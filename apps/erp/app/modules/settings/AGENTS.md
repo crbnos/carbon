@@ -62,7 +62,7 @@ pnpm run lint
 | `apiKey` | Hashed API keys with per-module scopes |
 | `webhook` / `webhookTable` | Outbound webhooks and the tables they may subscribe to |
 | `companyAccountsPayableBillingAddress` / `companyAccountsReceivableBillingAddress` | Remit-to / bill-to addresses printed on documents |
-| `employeeType` / `employeeTypePermission` / `employee` | Written only by `updateConsoleSetting`, which provisions a "Console Operator" type |
+| `employeeType` / `employeeTypePermission` / `employee` | Written only by `updateConsoleSetting` (now in the commercial `@carbon/ee/console.server`, gated to Business via the `PERMISSIONS` feature), which provisions a "Console Operator" type |
 
 ## Key Service Functions
 
@@ -73,7 +73,7 @@ pnpm run lint
 - `getTerms` — company terms fallback for the Terms block; `getAccountsPayableBillingAddress` / `getAccountsReceivableBillingAddress` (+ `update*`) — addresses printed on documents
 - `getCustomField(s)` / `getCustomFieldsTables`, plus `upsertCustomField` / `deleteCustomField` / `updateCustomFieldsSortOrder` (`settings.server.ts`, cache-clearing)
 - `getIntegration(s)` / `getCompanyIntegrations` / `upsertCompanyIntegration` / `deactivateIntegration` / `getIntegrationsWithHealth`
-- `upsertApiKey` / `deleteApiKey`; `upsertWebhook` / `deleteWebhook` / `deactivateWebhooks` / `getWebhookTables`
+- Webhook + API-key READ helpers stay here (`getWebhook(s)` / `getWebhookTables`, `getApiKey(s)`); the commercial AUTHORING writers moved to `@carbon/ee` behind the entitlement lock — `upsertApiKey` / `deleteApiKey` (`@carbon/ee/api-keys.server`, `API_KEYS`) and `upsertWebhook` / `deleteWebhook` / `deactivateWebhooks` (`@carbon/ee/webhooks.server`, `WEBHOOKS`)
 - `insertCompany` / `insertSubsidiary` / `updateSubsidiary` / `deleteSubsidiary` / `seedCompany` / `updateCompany` / `updateCompanyPlan`
 - `updateLogoLight|LightIcon|Dark|DarkIcon|Watermark` — store the storage path on `company`, not a URL (readers prefix it)
 - `exportCompanyBackup` / `listCompanyBackupFolders` / `deleteCompanyBackup` / `getCompanyRestoreRuns` / `getCompanyExportRun` (`backups.service.ts`); `getCompanyBackups` — the Backups loader's list, which computes each backup's live compatibility verdict via `@carbon/jobs/backups` — and the restore triggers live in `backups.server.ts`

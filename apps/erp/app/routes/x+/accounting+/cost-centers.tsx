@@ -1,6 +1,7 @@
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { getApprovalRulesForApprover } from "@carbon/ee/approvals.server";
 import {
   Heading,
   HStack,
@@ -19,7 +20,6 @@ import {
   CostCentersListView,
   CostCentersTreeView
 } from "~/modules/accounting/ui/CostCenters";
-import { getApprovalRulesForApprover } from "~/modules/shared";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 

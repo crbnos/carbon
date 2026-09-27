@@ -30,7 +30,6 @@ import {
   Number as NumberInput,
   Submit
 } from "~/components/Form";
-import SettingsSectionHeader from "~/components/SettingsSectionHeader";
 import { useFlags } from "~/hooks";
 import { getDefaultAccounts } from "~/modules/accounting";
 import {
@@ -238,10 +237,6 @@ export default function AccountingSettingsRoute() {
           <Trans>Accounting</Trans>
         </Heading>
 
-        <SettingsSectionHeader>
-          <Trans>Ledger</Trans>
-        </SettingsSectionHeader>
-
         <Card>
           <CardHeader>
             <CardTitle>
@@ -292,10 +287,6 @@ export default function AccountingSettingsRoute() {
           </CardContent>
         </Card>
 
-        <SettingsSectionHeader>
-          <Trans>Currency</Trans>
-        </SettingsSectionHeader>
-
         <Card>
           <CardHeader>
             <HStack className="justify-between items-center">
@@ -320,10 +311,6 @@ export default function AccountingSettingsRoute() {
             </HStack>
           </CardHeader>
         </Card>
-
-        <SettingsSectionHeader>
-          <Trans>Assets</Trans>
-        </SettingsSectionHeader>
 
         <ValidatedForm
           className="w-full"

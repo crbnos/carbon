@@ -1,53 +1,13 @@
 import { assertIsPost } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { getCarbonServiceRole } from "@carbon/auth/client.server";
-import type { Database } from "@carbon/database";
-import type { SupabaseClient } from "@supabase/supabase-js";
 import type { ActionFunctionArgs } from "react-router";
 import {
   notifyScheduleInputsChanged,
-  recalculateJobRequirements,
   releaseJobOperationBatch
 } from "~/modules/production";
+import { releaseBatchMemberJobs } from "~/modules/production/production.server";
+import { getDatabaseClient } from "~/services/database.server";
 import { getEdgeFunctionErrorMessage } from "~/utils/error";
-
-// Releasing a batch can pull a Draft/Planned job's operation onto the floor, so
-// refresh those jobs' requirements first — the same safety recalc job release
-// and the single-batch `batching.update` action perform (no MRP). Returns an
-// error message, or null when every recalc succeeded.
-async function recalculateUnreleasedMemberJobs(
-  client: SupabaseClient<Database>,
-  jobIds: string[],
-  companyId: string,
-  userId: string
-): Promise<string | null> {
-  const uniqueJobIds = [...new Set(jobIds)];
-  if (uniqueJobIds.length === 0) return null;
-
-  const jobs = await client
-    .from("job")
-    .select("id, status")
-    .in("id", uniqueJobIds)
-    .eq("companyId", companyId);
-  if (jobs.error) {
-    return "Failed to load the batch's jobs";
-  }
-
-  const serviceRole = getCarbonServiceRole();
-  for (const job of jobs.data ?? []) {
-    if (job.status === "Draft" || job.status === "Planned") {
-      const recalc = await recalculateJobRequirements(serviceRole, {
-        id: job.id,
-        companyId,
-        userId
-      });
-      if (recalc.error) {
-        return `Failed to recalculate requirements for job ${job.id}`;
-      }
-    }
-  }
-  return null;
-}
 
 // Bulk release — one release per selected Planned batch. Each is independent:
 // a batch the edge fn refuses (no members, already recorded production) is
@@ -102,16 +62,21 @@ export async function action({ request }: ActionFunctionArgs) {
       continue;
     }
 
-    // Requirements refresh BEFORE the flip (mirrors job release's ordering); a
-    // failure stops this batch's release rather than dispatching stale BOMs.
-    const recalcError = await recalculateUnreleasedMemberJobs(
+    // Member jobs release first, through the job page's release path. With no
+    // dialog here, a batch with an invalid job or a PO choice to make is
+    // skipped and named — the planner releases it from its drawer.
+    const releasedJobs = await releaseBatchMemberJobs({
       client,
-      (members.data ?? []).map((op) => op.jobId),
+      db: getDatabaseClient(),
+      jobIds: (members.data ?? []).map((op) => op.jobId),
       companyId,
       userId
-    );
-    if (recalcError) {
-      failed.push({ readableId: batch.readableId, message: recalcError });
+    });
+    if (releasedJobs.error) {
+      failed.push({
+        readableId: batch.readableId,
+        message: releasedJobs.error
+      });
       continue;
     }
 

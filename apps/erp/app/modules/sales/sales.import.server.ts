@@ -1,8 +1,9 @@
 import type { Database } from "@carbon/database";
 import { fetchAllFromTable } from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
+import { storage } from "@carbon/files";
+import { parseCsv } from "@carbon/files/csv";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import Papa from "papaparse";
 import { itemType as sellableItemTypes } from "~/modules/shared/shared.models";
 import {
   insertQuote,
@@ -193,27 +194,27 @@ export async function importQuotes(
   };
 
   // 1. download + parse ----------------------------------------------------
-  const download = await client.storage.from("private").download(filePath);
-  if (download.error || !download.data) {
+  const download = await storage(client).company(companyId).download(filePath);
+  if (!download.data) {
     return {
       data: null,
-      error: { message: download.error?.message ?? "Failed to download file" }
+      error: {
+        message: download.error.message || "Failed to download file"
+      }
     };
   }
 
   const csvText = await download.data.text();
-  const parsed = Papa.parse<Rec>(csvText, {
-    header: true,
-    skipEmptyLines: true
-  });
-  const rawRows = parsed.data ?? [];
+  const rawRows = parseCsv<Rec>(csvText).rows;
 
   // 2. apply column (and any enum) mappings → per-field records ------------
   const records: Rec[] = rawRows.map((raw) => {
     const mapped: Rec = {};
     for (const [field, header] of Object.entries(columnMappings)) {
       if (!header || header === "N/A") continue;
-      const value = text(raw[header]);
+      // parseCsv trims header names; mappings saved before that change may
+      // hold padded ones, so match on the trimmed form.
+      const value = text(raw[header.trim()]);
       const enumMap = args.enumMappings?.[field];
       mapped[field] = enumMap
         ? (enumMap[value] ?? enumMap.Default ?? value)

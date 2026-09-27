@@ -10,6 +10,7 @@ import {
   recalculateQuoteLinePrices,
   upsertQuoteOperation
 } from "~/modules/sales";
+import { requireCompanyRecord } from "~/modules/shared/shared.server";
 import { setCustomFields } from "~/utils/form";
 
 export async function action({ request, params }: ActionFunctionArgs) {
@@ -34,6 +35,20 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (validation.error) {
     return validationError(validation.error);
   }
+
+  // RLS only checks the new row's companyId, and the recalculation below uses
+  // the service role: the line and make method must belong to this company.
+  const serviceRole = getCarbonServiceRole();
+  await Promise.all([
+    requireCompanyRecord(serviceRole, "quoteLine", companyId, {
+      id: lineId,
+      quoteId
+    }),
+    requireCompanyRecord(serviceRole, "quoteMakeMethod", companyId, {
+      id: validation.data.quoteMakeMethodId,
+      quoteLineId: lineId
+    })
+  ]);
 
   const insertQuoteOperation = await upsertQuoteOperation(client, {
     ...validation.data,
@@ -68,8 +83,13 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  const serviceRole = getCarbonServiceRole();
-  await recalculateQuoteLinePrices(serviceRole, quoteId, lineId, userId);
+  await recalculateQuoteLinePrices(
+    serviceRole,
+    companyId,
+    quoteId,
+    lineId,
+    userId
+  );
 
   return {
     id: quoteOperationId,

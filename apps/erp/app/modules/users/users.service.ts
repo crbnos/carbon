@@ -5,9 +5,7 @@ import { datetime } from "@carbon/utils";
 import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
 import type { GenericQueryFilters } from "~/utils/query";
 import { setGenericQueryFilters } from "~/utils/query";
-import { capitalize } from "~/utils/string";
-import { sanitize } from "~/utils/supabase";
-import type { CompanyPermission, UserSelectGroupMembers } from "./types";
+import type { UserSelectGroupMembers } from "./types";
 
 const logger = getLogger("erp", "users");
 
@@ -146,17 +144,6 @@ export async function getItarCertificationReport(
   });
 
   return { data, error: null };
-}
-
-export async function deleteEmployeeType(
-  client: SupabaseClient<Database>,
-  employeeTypeId: string
-) {
-  return client
-    .from("employeeType")
-    .delete()
-    .eq("id", employeeTypeId)
-    .eq("protected", false);
 }
 
 export async function deleteGroup(
@@ -587,61 +574,11 @@ export async function getUserEmails(
     .filter((email): email is string => !!email);
 }
 
-export async function insertEmployeeType(
-  client: SupabaseClient<Database>,
-  employeeType: { name: string; companyId: string }
-) {
-  return client
-    .from("employeeType")
-    .insert([employeeType])
-    .select("id")
-    .single();
-}
-
 export async function insertGroup(
   client: SupabaseClient<Database>,
   group: { name: string; companyId: string }
 ) {
   return client.from("group").insert(group).select("*").single();
-}
-
-export async function upsertEmployeeType(
-  client: SupabaseClient<Database>,
-  employeeType:
-    | { name: string; companyId: string }
-    | { id: string; name: string }
-) {
-  if ("id" in employeeType) {
-    return client
-      .from("employeeType")
-      .update(sanitize(employeeType))
-      .eq("id", employeeType.id)
-      .select("id")
-      .single();
-  }
-  return client
-    .from("employeeType")
-    .insert([employeeType])
-    .select("id")
-    .single();
-}
-
-export async function upsertEmployeeTypePermissions(
-  client: SupabaseClient<Database>,
-  employeeTypeId: string,
-  companyId: string,
-  permissions: { name: string; permission: CompanyPermission }[]
-) {
-  const employeeTypePermissions = permissions.map(({ name, permission }) => ({
-    employeeTypeId,
-    module: capitalize(name) as "Accounting",
-    view: permission.view ? [companyId] : [],
-    create: permission.create ? [companyId] : [],
-    update: permission.update ? [companyId] : [],
-    delete: permission.delete ? [companyId] : []
-  }));
-
-  return client.from("employeeTypePermission").upsert(employeeTypePermissions);
 }
 
 export async function upsertGroup(

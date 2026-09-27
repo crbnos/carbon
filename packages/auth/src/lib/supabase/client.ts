@@ -30,8 +30,15 @@ const isStorageUpload = (input: RequestInfo | URL, init?: RequestInit) => {
   return url.includes("/storage/v1/object/");
 };
 
-const fetchWithRetry: typeof fetch = async (input, init) => {
-  if (isStorageUpload(input, init)) return fetch(input, init);
+const isEdgeFunctionInvoke = (input: RequestInfo | URL) => {
+  const url = input instanceof Request ? input.url : String(input);
+  return url.includes("/functions/v1/");
+};
+
+export const fetchWithRetry: typeof fetch = async (input, init) => {
+  if (isStorageUpload(input, init) || isEdgeFunctionInvoke(input)) {
+    return fetch(input, init);
+  }
 
   let lastError: unknown;
   for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {

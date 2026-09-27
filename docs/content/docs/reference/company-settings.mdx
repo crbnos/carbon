@@ -35,7 +35,7 @@ Company membership is per-user: one login can hold several companies and switch 
 <FieldTable>
   <Field name="accountingEnabled" type="boolean">Master switch for the ledger. When off, operations complete without posting journal entries.</Field>
   <Field name="timeCardEnabled" type="boolean">Turns on shop-floor time cards.</Field>
-  <Field name="consoleEnabled" type="boolean">Enables the support/impersonation console.</Field>
+  <Field name="consoleEnabled" type="boolean">Enables MES console (shared-station) mode, where operators pin in with a 4-digit PIN. Business plan; toggled from **Settings → People** by someone with `settings_update`, and only through that screen — the API refuses a direct write to this column. See [console mode](/docs/reference/mes#console-shared-station-mode).</Field>
   <Field name="requireMfa" type="boolean">Everyone needs an authenticator app to open this company. Edited from **Settings → System → Security**; locked on in controlled (ITAR) deployments. See [two-factor authentication](/docs/reference/two-factor).</Field>
   <Field name="useMetric" type="boolean">Whether material units default to metric.</Field>
   <Field name="materialGeneratedIds" type="boolean">Whether new materials get an auto-generated readable id.</Field>

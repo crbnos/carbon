@@ -1,5 +1,5 @@
 import type { Result } from "@carbon/auth";
-import { useStorageRuleViolations } from "@carbon/ee/storage-rules";
+import { useRuleViolations } from "@carbon/ee/rules";
 import {
   Button,
   Copy,
@@ -57,14 +57,14 @@ const StockTransferHeader = () => {
   const postModal = useDisclosure();
   const deleteModal = useDisclosure();
   const statusFetcher = useFetcher<Result>();
-  // Item rules fire on Release + Complete (the "go" transitions). Each gets
+  // Storage rules fire on Release + Complete (the "go" transitions). Each gets
   // its own fetcher so Release's loading state doesn't disable Complete and
   // vice versa, and violations surface via a single shared modal.
-  const releaseRules = useStorageRuleViolations({
+  const releaseRules = useRuleViolations({
     action: path.to.stockTransferStatus(id)
   });
   const releaseFetcher = releaseRules.fetcher;
-  const completeRules = useStorageRuleViolations({
+  const completeRules = useRuleViolations({
     action: path.to.stockTransferStatus(id)
   });
   const completeFetcher = completeRules.fetcher;

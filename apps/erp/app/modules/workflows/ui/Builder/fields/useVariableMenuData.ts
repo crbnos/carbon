@@ -1,4 +1,4 @@
-import type { ValueType } from "@carbon/workflows";
+import type { ValueType } from "@carbon/ee/workflows";
 import { useCallback, useRef } from "react";
 import { useWorkflowCatalog, useWorkflowLabel } from "../catalog";
 import { describeVariable } from "../labelKeys";

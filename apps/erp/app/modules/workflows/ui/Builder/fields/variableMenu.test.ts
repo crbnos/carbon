@@ -1,5 +1,5 @@
-import type { AvailableVariable } from "@carbon/workflows";
-import { createWorkflowCatalog } from "@carbon/workflows";
+import type { AvailableVariable } from "@carbon/ee/workflows";
+import { createWorkflowCatalog } from "@carbon/ee/workflows";
 import { describe, expect, it } from "vitest";
 import { decodeTokenId } from "./tokenId";
 import {

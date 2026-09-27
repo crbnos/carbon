@@ -1,13 +1,13 @@
-import type { TermId } from "@carbon/glossary";
-import type { WorkflowCatalog } from "@carbon/workflows";
+import type { WorkflowCatalog } from "@carbon/ee/workflows";
 import {
   buildCatalogOverlay,
   CUSTOM_FIELD_PREFIX,
   createWorkflowCatalog,
   parseCustomFieldEventId
-} from "@carbon/workflows";
-import { WORKFLOW_FIELD_HELP } from "@carbon/workflows/help";
-import { WORKFLOW_LABELS } from "@carbon/workflows/labels";
+} from "@carbon/ee/workflows";
+import { WORKFLOW_FIELD_HELP } from "@carbon/ee/workflows/help";
+import { WORKFLOW_LABELS } from "@carbon/ee/workflows/labels";
+import type { TermId } from "@carbon/glossary";
 import { useLingui } from "@lingui/react";
 import { useLingui as useLinguiMacro } from "@lingui/react/macro";
 import { useMemo } from "react";

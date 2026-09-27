@@ -91,6 +91,16 @@ Format: `Context → Problem → Rule → Applies to`
 
 **Applies to:** `packages/viewer/`, geometry planner (`crates/planner`).
 
+## "What is drawn" and "what blocks the view" must be derived from one predicate
+
+**Context:** Adding `installedMode` to the assembly viewer (`packages/viewer/src/visibility.ts`). Two pieces of code answered questions about the same timeline: `visualForComponent` decided how a component renders, while the camera's AABB view-direction scorer decided how much it counts as an obstacle. The scorer was written inline inside `AssemblyPlayer`, hundreds of lines away.
+
+**Problem:** They disagreed on one input. `visualForComponent` treats a component that **no step installs** exactly like a future-step one ("never already there"), so under the MES default `futureMode: "hidden"` it rendered hidden. The inline scorer computed `isFuture = stepIndex !== undefined && stepIndex > activeStepIndex` — `undefined` failed that test, so the same component kept full occluder weight. The camera picked view angles that dodged geometry it was not drawing. Silent: no error, nothing visibly broken, just subtly worse framing that no test covered because the logic was un-extractable inline.
+
+**Rule:** When one fact (here: a component's position relative to the active step) drives both what the user sees and what the system reasons about, derive both from a single exported predicate in the same module, and assert the invariant that links them — *anything invisible is never an obstacle* — over the full cross-product of modes, not over hand-picked cases. The cross-product test is what caught this; a case-by-case test would have encoded the bug. Extracting the inline logic is the fix, not adding a comment telling the next person to keep them in sync.
+
+**Applies to:** `packages/viewer/src/visibility.ts` (`visualForComponent` / `occluderWeight`), `packages/viewer/src/AssemblyPlayer.tsx`; any pair of render-vs-reason helpers over the same state.
+
 ## Posting-group-style matrices are a rejected pattern
 
 **Context:** Designing multi-jurisdiction tax determination; the spec anchored on the customerType × itemPostingGroup posting-group matrix as "Carbon precedent."
@@ -376,7 +386,7 @@ Format: `Context → Problem → Rule → Applies to`
 
 **Rule:** When hand-seeding `journalLine` rows, set the sign to move the account toward its natural balance: `+` increases an Asset/Expense (debit) and increases a Liability/Equity/Revenue (credit). Verify against the `journalEntries` view (`totalDebits == totalCredits` per `journalEntryId`) before relying on the data — an unbalanced entry silently blocks period close. Posted `journal`/`journalLine` rows are immutable (`journal_posted_immutable` / `journalLine_posted_immutable`); to correct seeded mistakes you must disable those triggers on the local DB (superuser), never in a migration.
 
-**Applies to:** any SQL journal fixtures; the `journalEntries` view; the `tb-balanced` close check in `computePeriodReadiness` (`accounting.ee.service.ts`).
+**Applies to:** any SQL journal fixtures; the `journalEntries` view; the `tb-balanced` close check in `computePeriodReadiness` (`accounting.service.ts`).
 
 ## A period snapshot written at close races Locked-period postings unless the posting guard locks the period row
 
@@ -507,6 +517,20 @@ Format: `Context → Problem → Rule → Applies to`
 **Rule:** Never define an internal SECURITY DEFINER helper (especially one calling `net.http_post` / pg_net) in `public`. Put it in the internal `util` schema (the existing Carbon/Supabase convention — cf. `util.process_embeddings`), where `anon`/`authenticated` have no `USAGE`, so the API can't reference it at all and a hostile call fails cleanly with `permission denied for schema util` before any crash-prone planning. Callers that are triggers/pg_cron run as owner and reach `util` fine; update their bodies to `util.<fn>()`. Keep `REVOKE ALL … FROM PUBLIC` on the util function as defense-in-depth, but the schema-USAGE gate is the real fix. Verify with `SET ROLE authenticated; SELECT util.<fn>();` → must be a clean `permission denied`, not a dropped connection. Note PostgREST-exposed schemas exclude `util`/`pgmq` but include `public`/`net` (`has_schema_privilege('anon', <schema>, 'USAGE')`).
 
 **Applies to:** any new SECURITY DEFINER function that calls pg_net/`net.http_post` or is meant to be trigger/cron-only (`packages/database/supabase/migrations/`). Trigger functions returning `trigger` are not RPC-exposed (safe in public), but VOID/scalar helpers are.
+
+**Update (2026-09-24):** pg_net is not required. On `supabase/postgres:15.14.1.112`, a plain
+`LANGUAGE sql` function (`select 1`) with `REVOKE EXECUTE … FROM PUBLIC, anon, authenticated`
+segfaults the backend (signal 11) when called under `SET ROLE authenticated` or `anon`. This was
+reproduced in a fresh container of that image. A missing table privilege, a `RAISE`, and "must be owner"
+are all ordinary errors. So `REVOKE EXECUTE` on any function in `public` is itself an unauthenticated DoS
+(`POST /rest/v1/rpc/<fn>`). Gate API access INSIDE the function instead, and raise on
+`current_setting('role', true) IN ('anon','authenticated')` without the permission — see
+`assert_audit_log_access` in `20260924171942_audit-log-company-scope.sql`. When you test a revoke, use a
+throwaway container (`docker run --rm supabase/postgres:<tag>`), never a shared dev database. The crash
+restarts every backend. `20260924192316_api-function-guards-not-revokes.sql` replaced the six existing public-function
+revokes (integration secrets, `upsert_company_integration_patch`, the job-completion helpers). A nested
+helper of a SECURITY DEFINER function cannot use the role-GUC guard, because `current_setting('role')`
+still reads `authenticated` inside the nested call. Make those `SECURITY INVOKER` instead.
 
 ## The local Inngest dev server (v1.19.4) can't handle `debounce` — it errors on every debounce item
 
@@ -1123,6 +1147,26 @@ canvas hosting Radix popovers/selects.
 
 **Applies to:** `packages/form/src/components/InputOTP.tsx`, `packages/form/src/ValidatedForm.tsx`, any auto-submitting form field.
 
+## A blanket symbol rename re-homes family-neutral code into one family
+
+**Context:** Renaming the "Item Rules" feature to "Sales Rules" was done with a repo-wide `ItemRule` → `SalesRule` string sweep. It also caught `ItemRuleFilter` / `toItemRuleFilter` in `packages/utils` — a shared item-scoping matcher where "Item" meant *the item being filtered*, not the feature. The result was `toSalesRuleFilter`, imported by the **storage** evaluator, with a docstring still reading "Normalize a raw `storageRule` row". Nothing failed: types, tests, and lint were all green, because a wrong name is not a type error.
+
+**Problem:** A string-match rename cannot distinguish "the feature named X" from "the noun X used as a domain word". Shared code is exactly where the two collide, and the damage is invisible to every automated gate — it only shows up when the next reader trusts the name.
+
+**Rule:** Before a blanket rename, list the symbols that will match and check each one's *consumers*, not just its definition: a symbol used by more than one feature is shared and must get a family-neutral name (`ItemFilter`, not `SalesRuleFilter`), not the new feature's name. After the sweep, grep the renamed symbols inside the OTHER feature's directories — a hit there is the tell. Docstrings and comments are part of the rename: a comment that contradicts its symbol's new name is proof the rename was mechanical.
+
+**Applies to:** `packages/utils/src/rules.ts`, `packages/utils/src/rule-filters.ts`, `packages/ee/src/rules/**`, any repo-wide identifier rename.
+
+## `git add` aborts the whole invocation on one unmatched pathspec
+
+**Context:** Committing a spec that had been moved with `git mv`, the staging command listed both the old and new paths. The old path no longer existed, so `git add` exited with `fatal: pathspec … did not match any files` and staged **nothing** — but the following `git commit` still ran and produced a commit containing only the already-staged deletion. The spec was removed from the branch without its replacement, and it was pushed before anyone noticed.
+
+**Problem:** `git add` is all-or-nothing across its arguments, and a `fatal:` from it does not stop a `&&`-free command sequence. The failure message scrolls past in a multi-command block, and `git commit` happily commits whatever the index already held — which after a `git mv` is exactly the destructive half of the change.
+
+**Rule:** Never list a path that a previous step may have moved or deleted. Build the staging list from `git status --porcelain` output rather than typing paths, and **verify the index before committing** — `git status --porcelain | grep -vc "^[MARD]"` must be 0, or diff `git diff --cached --name-only` against the intended file list. Treat a commit whose file count differs from the intended change as a failed commit, not a done one.
+
+**Applies to:** any commit flow following a `git mv`, `/check-and-commit`, scripted staging.
+
 ## Dating a synthetic-entity journal with company_today() drops it out of the "as of" report window
 
 **Context:** Intercompany elimination journals post to a synthetic "elimination entity" company (no user membership, no location). `generateEliminationEntries` dated them `company_today(elimination_entity)`. Because the elimination entity has no location, `company_today` fell back to UTC — and on an evening-Pacific boundary UTC had already rolled to the next day. The eliminations posted on Aug 18 while the invoices they eliminate posted Aug 17. The consolidated balance sheet ("Aug 2026 to date", cutoff = today = Aug 17) then showed Inter-Company Payables/Receivables = 100 (un-eliminated), while the account drill-down ("all time") correctly netted to 0 — a confusing split where the row and its own drill-down disagree.
@@ -1307,6 +1351,26 @@ any new `memo` writer.
 **Rule:** Treat `as { someField?: T }` on a row/DTO type as a smell, not a convenience — it is indistinguishable from a field that does not exist. When a UI needs a column its loader does not return, widen the RPC/view and regenerate types so the compiler enforces the contract. More generally: a field written to the DB but rendered nowhere has no feedback loop — `jobMaterial.itemScrapPercentage` was wrong in three code paths for the same reason.
 
 **Applies to:** `apps/erp/app/**` table cells reading loader rows; any `as { x?: T }` over a generated DB/RPC type.
+
+---
+
+**Context:** Ramp integration live verification kept failing at every DB touch of the chart of accounts — post-card-transaction 500'd, pushChartOfAccounts pushed 0, every coded card charge failed "Failed to verify accounts" (2026-08-28).
+
+**Problem:** The `account` (chart of accounts) table is scoped by **`companyGroupId`, not `companyId`** — it has **no `companyId` column** and its PK is `id` alone (globally unique). Four separate sites wrote `.from("account")…​.eq("companyId", companyId)`, which PostgREST rejects ("column companyId does not exist"). Each caller either 500'd or swallowed the error and behaved as if zero accounts existed. The bug was invisible to unit tests (they mock the data, never hit the query) and recurred because a well-meaning "add companyId scoping everywhere" self-review pass applied the standard multi-tenant pattern to a table that breaks it. Same class as `item` (single-column PK, globally unique).
+
+**Rule:** Before scoping any query by `companyId`, confirm the table HAS a `companyId` column. Group-shared config tables — `account` (chart of accounts), and check others — are scoped by `companyGroupId`; resolve it from `company.companyGroupId` (or `ctx.companyGroupId`) and filter by that, or by `id` alone when the ids already come from this company's own rows. `account.id` is globally unique, so an `.in("id", ids)` lookup is correct and tenant-safe on its own.
+
+**Applies to:** any `.from("account")` in services/edge-functions/jobs; the general check "does this table actually have companyId?" before applying the multi-tenant scoping pattern (mirror of the `item` single-column-PK lesson).
+
+---
+
+**Context:** ramp-sync's card family silently created 0 transactions every run; the error "Cannot use a pool after calling end on the pool" was swallowed by family-failure isolation (2026-08-28).
+
+**Problem:** `getJobDatabaseClient(size)` (packages/jobs/src/db.ts) caches a Kysely client over the shared pool from `getPostgresConnectionPool(size)`. Three accounting sweeps (`accounting-outbound-sweep` cron 15,45, `-consolidation`, `-reconciliation`) call `getPostgresConnectionPool(5)` and `pool.end()` it in a `finally`. `getPostgresConnectionPool` evicts an ended pool for ITS callers, but `getJobDatabaseClient` kept a SEPARATE client cache still wrapping the dead pool — so after any sweep ran, every later `getJobDatabaseClient(5)` job broke until process restart.
+
+**Rule:** A cached client over a shared, end-able pool must detect the ended pool and rebuild — cache the pool alongside the client and check `pool.ending` (node-postgres) before returning the cached client. More generally, never `pool.end()` a pool obtained from a shared cache (`getPostgresConnectionPool`) unless every cache that wraps it also re-derives on end.
+
+**Applies to:** `packages/jobs/src/db.ts` and any code calling `pool.end()` on a `getPostgresConnectionPool(...)` result.
 
 ## A verdict computed against its own input is a tautology — diff across time, at read time
 
@@ -1640,7 +1704,7 @@ full-screen ERP route.
 
 **Rule:** Use `distributeRoundingResidual` (`@carbon/utils`) whenever a total is apportioned across parts — largest remainder, at most one minor unit moved per part. Never hand-roll "assign the difference to the biggest line". Order the parts by a stable business key (component id) before distributing, because the distributor's own tie-break is positional and the same invoice must allocate identically whatever order its lines arrive in. Where a derived value must reproduce the reconciled amount (a unit price times its quantity), derive it and then VERIFY — refuse when no representable value works, rather than emitting an inconsistent one.
 
-**Applies to:** `packages/ee/src/accounting/core/sales-document-components.ts`, `packages/database/supabase/functions/shared/sales-posting-amounts.ts`, `packages/ee/src/accounting/core/document-costing.ts`, and any future provider document mapper.
+**Applies to:** `packages/ee/src/accounting/core/sales-document-components.ts`, `packages/database/supabase/functions/shared/sales-posting-amounts.ts`, `packages/ee/src/accounting/core/document-costing.ts`, Ramp card/repayment allocation, and any future provider document mapper.
 
 ## Two halves of an intercompany trade must round at the same scale
 
@@ -1671,6 +1735,216 @@ full-screen ERP route.
 **Rule:** Include a UI-only field's initial value in ValidatedForm defaults, and key stateful composers by the document/party/currency/direction identity whose data they hold. Verify the initial label and actual submitted fields in the browser.
 
 **Applies to:** PaymentForm, PaymentApplyTable, and other forms using derived presentation choices.
+
+## A generated column is writable in the Supabase Insert type but rejected at runtime
+
+**Context:** The Ramp inbound bill/reimbursement sync inserted `purchaseInvoiceLine` rows with `unitPrice: line.amount` and `exchangeRate: 1`. Since `20260811123616`, `purchaseInvoiceLine.unitPrice`/`totalAmount`/`shippingCost`/`taxAmount` are `GENERATED ALWAYS AS (supplier* / exchangeRate) STORED` — base-currency mirrors of the document-currency `supplier*` columns.
+
+**Problem:** `supabase gen types` lists STORED generated columns in the `Insert`/`Update` types as optional, so `unitPrice: line.amount` typechecks — but Postgres rejects a non-DEFAULT write to a generated column at runtime, and the value never reaches `supplierUnitPrice`, so `post-purchase-invoice` (which posts `quantity * unitPrice`, unitPrice already base) had nothing to post. The path also hardcoded `exchangeRate: 1`, so even when it did post, a foreign-currency bill posted at par. Both are invisible to typecheck and to unit tests that mock the insert.
+
+**Rule:** Write purchase amounts to the `supplier*` document-currency columns (`supplierUnitPrice`, `supplierShippingCost`, `supplierTaxAmount`) plus the real `exchangeRate` (foreign-per-base, from `get_exchange_rate`); never write the generated unprefixed `unitPrice`/`totalAmount`/`shippingCost`/`taxAmount`. A column being present in the generated `Insert` type is NOT proof it is writable — check the migration for `GENERATED ALWAYS`. The generated base column then derives correctly and posts in base currency.
+
+**Applies to:** any code inserting `purchaseInvoiceLine` / `purchaseOrderLine` / `supplierQuoteLinePrice` rows (Ramp `syncBill`/reimbursement path, CSV import, AI extraction), and the general "is this Insert-typed column actually generated?" check before writing a value-bearing purchase column.
+
+## A Ramp custom accounting field is typed OTHER — match it by external id, never by the type enum
+
+**Context:** Carbon pushes cost centers to Ramp as a custom `SINGLE_CHOICE` accounting field (`POST /accounting/fields`, `id: "carbon-cost-center"`) so a card holder can tag a charge with a project. The read-back in `ramp-sync` matched a selection's `category_info.type === "COST_CENTER"` to recover the cost center.
+
+**Problem:** The custom-field create body has no `type` property, so Ramp reports its selections as `OTHER`; `COST_CENTER` is Ramp's native enum for its own cost-center concept. The match never fired, `costCenterId` stayed null, and every project tag was silently dropped — while the GL-account leg (a native `GL_ACCOUNT` field) worked, so the sandbox verification of "a coded transaction" proved nothing about the custom field. Three more breaks hid behind it: the push sent `external_id` where Ramp wants `id` (and the string id as `field_id`, which wants the `ramp_id` UUID), `POST /field-options` is all-or-nothing and rejects existing options so every second converge threw into a swallowed `catch`, and the posting function needs a `CostCenter` `dimension` row that nothing seeds for company groups created after the `20260228024512` backfill.
+
+**Rule:** Identify a custom Ramp field by `category_info.external_id` (the `id` Carbon created it with), and keep that constant in one pure, unit-tested module (`packages/ee/src/ramp/lib/coding.ts`). Treat every Carbon → Ramp push as a converge (list, diff by fingerprint, create/PATCH/hide) and verify the *inbound* leg of a custom field on the sandbox separately from the native GL account. A tag the customer typed must fail loudly if it cannot be kept — never post a balanced journal that lost it.
+
+**Applies to:** `pushCostCenters` / `pushChartOfAccounts` and any future Ramp coding field (departments, locations); `codeSelections`; `post-card-transaction`'s dimension write; and, generally, any integration where a provider echoes an ERP-created object under a different classification than the ERP's own.
+
+## A per-row document representation must be decided in ONE place the policy and the syncer both read
+
+**Context:** Card charges became provider objects, but only some rows of the same journal source type qualify (a `Charge` with a supplier; a `Credit` only where the provider has a refund object; never a statement `Payment`/`Cashback`/`Repayment`). The journal policy decides DOC_BACKED per journal; the charge syncer decides `shouldSync` per document.
+
+**Problem:** If the two rules drift — the policy excludes the journal but the syncer skips the charge (no supplier, unsupported Credit), or the reverse — the spend reaches the provider as both a journal entry and a charge, or as neither. Neither failure is loud: DOC_BACKED is a terminal "handled" disposition and a syncer skip is a benign reason string.
+
+**Rule:** Put the eligibility rule in one pure function (`isChargeBackedCardTransaction(row, docSync)`) with explicit inputs (`type`, `hasSupplier`, provider capability set `CHARGE_CREDIT_PROVIDERS`), have the executor/planner resolve those inputs with one query per batch, and make every adapter's `shouldSync` restate the same conditions with the same constants. Pin both sides in tests (`posting-policy.test.ts`, the adapter's mapper tests, `reconcile-golden`).
+
+**Applies to:** any future "document instead of journal" family whose eligibility depends on the row rather than the source type (returns, memos, per-provider capabilities).
+
+## A live sandbox pass finds what unit tests cannot: the wire contract
+
+**Context:** The Ramp Part C run (2026-09-10) on a fresh worktree DB against the demo sandbox, after Parts A/B were unit-tested and typecheck-clean.
+
+**Problem:** Three things only the real API surfaced: (1) the batch account push sent a new Carbon-side `visible` flag inside the POST items → Ramp 422 "Unknown field" failed the whole chart push; (2) every sync confirm had been failing for weeks — `successful_syncs`/`failed_syncs` have `minItems: 1` (an empty `[]` is a 422) and a failed item is `{ id, error: { message } }` — and the failure was only `console.error`'d, so Ramp kept every synced transaction `SYNC_READY`; (3) `ensureRampConnection` only creates, so a fresh DB against a business that already has a Carbon connection cannot install.
+
+**Rule:** Keep wire payloads behind pure, exported builders (`toRampGlAccountPayload`, `buildSyncConfirmBody`) with tests pinning the exact shape, never spread an internal object onto a request; put every caught provider error on the Inngest step OUTPUT (`error` / `confirmError`), not just the console — the run record is the only thing an operator can read; and when a verification note says "pushed", check the provider's own status field (`sync_status`, `synced_at`) rather than the HTTP code.
+
+**Applies to:** every Ramp push/confirm, the accounting providers' adapters, and any integration verified only by "the request returned 2xx".
+
+## A document-backed journal is found through its LINES' document link, never through the document's own journalId
+
+**Context:** Card charges as provider objects (2026-09-10). A `cardTransaction` books TWO journals over its life — the posting journal (`cardTransaction.journalId`) and, on void, a NEW Posted "VOID Card Transaction" journal with no `reversalOfId`. Both carry `journalLine.documentType = 'Card Transaction'` / `documentId = <card id>`.
+
+**Problem:** The reconciler resolved the backing card transaction by `cardTransaction.journalId`, so only the posting journal was DOC_BACKED. The void journal looked like a plain journal, pushed to Rillet as a journal entry on top of the charge DELETE, and Rillet netted to minus one charge — invisible in unit tests, found only by voiding on the live sandbox and reading Rillet's GL.
+
+**Rule:** When a journal's disposition depends on a backing document, resolve journal → document through the journal lines' `documentType`/`documentId` (one batch query), which every journal the document produces shares; treat the document's own `journalId` column as a fallback for unlinked rows. And any DOC_BACKED carve-out must be exercised across the document's full lifecycle (post → void) on a real provider before it is called done.
+
+**Applies to:** `loadCardTransactionPolicyInputs`, every future DOC_BACKED source type, and the void/reversal audit still open in the always-on posting plan (Task 7).
+
+## Integration money shapes are contracts, not interchangeable numbers
+
+**Context:** Ramp returns signed `{ value, currency }` and `{ amount, currency_code }` values in minor units, while its deprecated card-transaction `amount` fallback is a major-unit decimal. Several inbound families also still expose unverified bare-number fields.
+
+**Problem:** One generic converter treated every number as minor units, understating a `$123.45` fallback to `$1.23`; missing values became zero, unknown currency precision became two decimals, and unresolved foreign exchange rates became one. Those defaults turned malformed or incomplete provider payloads into apparently valid financial documents.
+
+**Rule:** Normalize each provider money field through a helper tied to its verified wire shape. Reject missing, non-finite, fractional-minor, currency-mismatched, or unverified bare-number values per item. Currency precision and exchange rates are required accounting facts; never guess them or silently post foreign currency at par.
+
+**Applies to:** Ramp card transactions, transfers, cashbacks, bills, bill payments, reimbursements, repayments, and future provider payloads with multiple monetary representations.
+
+## An external mapping must be committed with the Draft it makes idempotent
+
+**Context:** Ramp reimbursement sync created a supplier interaction, purchase-invoice Draft, delivery, and lines through separate Supabase requests, then wrote the external mapping last.
+
+**Problem:** A crash before the mapping left a complete but untracked Draft, so the next provider retry could create a duplicate. A transaction alone also leaves same-key concurrent workers racing until the final unique mapping write.
+
+**Rule:** Create the local Draft structure and its external mapping in one Kysely transaction. Serialize the tenant-scoped external key before the initial mapping read (for example with a transaction advisory lock), and provide a narrowly constrained legacy-adoption path for Drafts created by the old writer. Prove create/resume, two-connection convergence, and mid-write rollback against real Postgres.
+
+**Applies to:** inbound provider document/payment staging and any retryable workflow whose idempotency anchor is `externalIntegrationMapping`.
+
+## Prove batching through the real workflow entry point
+
+**Context:** The accounting charge supplier lookup was consolidated into one joined batch loader, but the new lifecycle's `pushBatchToAccounting` still called the single-item push for every charge.
+
+**Problem:** A test of `fetchLocalBatch` alone passed while the real QBO batch made four card-source reads for two rows; re-entering the parent single-item workflow also fetched mapped rows again.
+
+**Rule:** Assert query counts through the public multi-item entry point, not only its loader. Load source rows and tenant/provider-scoped mappings once, pass those snapshots into the shared per-item lifecycle, and persist each remote success before advancing. Cover mixed creates, updates, voids, missing rows, and failures to prove batching preserves durability and error isolation.
+
+**Applies to:** accounting sync batches and any workflow refactor that combines per-item remote effects with batched local reads.
+
+## Bind authorization to the authenticated subject
+
+**Context:** An edge-function request carried a `userId` in its JSON body and also carried an authenticated Supabase JWT.
+
+**Problem:** The permission helper looked up claims for the body-supplied user without proving that user matched the JWT `sub`, so a caller could borrow another user's permissions by changing one request field.
+
+**Rule:** For an `authenticated` JWT, require a non-empty `sub`, require it to match the requested actor id, and use that subject for permission lookup. Treat body actor ids as attribution inputs only for trusted service-role/API-key flows; they are never authentication evidence.
+
+**Applies to:** Supabase edge functions using `requirePermissions` and any endpoint that accepts a caller/actor id alongside a bearer token.
+
+## Header-only financial documents must reject persisted detail
+
+**Context:** Card `Payment` and `Cashback` journals are derived entirely from the header amount, card account, and offset account.
+
+**Problem:** If either document nevertheless carried coding lines, the journal builder silently ignored those rows and posted a GL entry that did not represent all persisted document detail.
+
+**Rule:** When a financial document type is header-only, assert that its detail collection is empty before posting. Never silently discard stored financial rows merely because the current journal shape does not consume them.
+
+**Applies to:** Card payments and cashback today, and any future header-derived posting path that accepts a shared document shape containing optional lines.
+
+## Provider errors are not confirmation of the desired remote state
+
+**Context:** Carbon retracts a pushed Ramp bill after its local invoice settles, then marks the external mapping archived so the action does not repeat.
+
+**Problem:** The archive helper swallowed every provider error—including authentication, rate-limit, server, and not-found failures—and permanently marked the mapping archived even though no response proved the bill was gone.
+
+**Rule:** Persist completion metadata only after a successful provider response or a specifically documented idempotent response contract. Error text, status guesses, and hoped-for remote state are not confirmation; propagate unknown failures so the workflow remains retryable.
+
+**Applies to:** Ramp bill archival and every external integration that records a local completion flag after a remote mutation.
+
+## Prerequisite lookup failures must hold outbound cursors
+
+**Context:** Ramp outbound purchase-order and invoice families batch-load suppliers and supplier types before deciding whether and how to export each document.
+
+**Problem:** Query errors were treated like empty results. The workflow could skip documents, misclassify an Employee reimbursement as a vendor bill, and still advance the family cursor beyond the unread data.
+
+**Rule:** Distinguish an empty successful lookup from a failed lookup. If data required for eligibility or payload construction cannot be read, fail the family before remote effects and keep its cursor unchanged so the same page replays after recovery.
+
+**Applies to:** Ramp outbound suppliers and classifications, and every cursor-based exporter with prerequisite database reads.
+
+## Idempotent mappings do not make mutable Drafts immutable
+
+**Context:** Ramp retries find an existing external mapping before staging and posting a card transaction.
+
+**Problem:** Treating every mapping as completed caused a corrected provider record to post the stale Carbon Draft left by an earlier failed attempt. The mapping proved identity, not finalization.
+
+**Rule:** Branch retry behavior on the mapped entity's lifecycle state. Refresh a mutable Draft and its lines atomically under the same lock used for posting; only a finalized, observably Posted entity may bypass source normalization and be reconfirmed unchanged.
+
+**Applies to:** Ramp card transactions, transfers, cashback, and any mapped inbound document whose provider data can change before local finalization.
+
+## Never correlate bulk-insert results by RETURNING position
+
+**Context:** Card posting and voiding bulk-insert journal lines, then create dimensions that must reference the exact source line they describe.
+
+**Problem:** The code paired source rows with `INSERT ... RETURNING` rows by array index, but PostgreSQL does not guarantee that returned rows preserve input order. A reordered result could attach a cost center to the wrong GL account.
+
+**Rule:** Allocate native ids up front in one query, include them in the bulk insert, and build dependent rows from those explicit ids. Positional correlation is safe only within application-owned arrays, never across an unordered database result.
+
+**Applies to:** Journal lines and dimensions, and any bulk insert followed by dependent rows that need source-to-result identity.
+
+## Financial discriminators require explicit verified allowlists
+
+**Context:** Ramp payment methods, reimbursement states, and repayment funding values determine whether Carbon creates a bank settlement, skips a card-funded payment, or leaves an invoice open.
+
+**Problem:** Unknown values fell through to financially meaningful defaults, so new or misunderstood provider enums could debit the statement bank account or mark a reimbursement paid without a verified basis.
+
+**Rule:** Route financial side effects only from an explicit allowlist grounded in the provider contract. Unsupported, missing, or ambiguous discriminator values must fail before mapping or posting; expanding the allowlist requires contract evidence and positive routing tests.
+
+**Applies to:** Ramp bills, reimbursements, repayments, and every integration enum that selects accounts, settlement state, or document type.
+
+## Coding lines are positive magnitudes, not signed journal legs
+
+**Context:** Card Charge, Credit, and Repayment documents translate positive coding allocations into debit or credit journal legs according to the transaction type.
+
+**Problem:** Zero, negative, or non-finite line amounts could pass a header-sum check and invert or erase an individual accounting leg even though the overall entry still balanced.
+
+**Rule:** Validate every document coding amount as finite and strictly positive before applying debit/credit semantics. A balanced journal is necessary but does not prove the document's line-level meaning is valid.
+
+**Applies to:** Card transaction coding lines and other financial document builders that assign journal direction separately from stored line magnitude.
+
+## Unverified write contracts need a code-level release gate
+
+**Context:** Ramp invoice export had complete-looking draft-bill and submit code, while its monetary units, coding fields, PDF shape, and returned bill identity had not been proven against the provider.
+
+**Problem:** A customer setting could enable a financial write path whose payload contract was still explicitly speculative, allowing production data to exercise guesses.
+
+**Rule:** Gate an unverified external write at its lowest shared entry point before any local or remote side effect. Do not expose a customer or environment bypass; enable it only in code after contract tests pin the real request and response shapes.
+
+**Applies to:** Ramp draft-bill export and any external financial mutation implemented ahead of live contract verification.
+
+## Authenticate webhook challenges before acting on them
+
+**Context:** Ramp webhook ownership challenges can trigger a provider callback and echo a challenge value from a tenant-addressed public endpoint.
+
+**Problem:** Challenge extraction ran before HMAC verification and accepted an unsigned query parameter, allowing unauthenticated callers to invoke the callback path and receive an echo.
+
+**Rule:** Verify the stored secret and signature over the raw body before handling any webhook delivery, including ownership challenges. Only authenticated bytes may supply challenge data; unsigned query parameters must never alter it.
+
+**Applies to:** Ramp webhook verification and all provider handshakes sharing an endpoint with signed event deliveries.
+
+## Legacy adoption must prove the entire document identity
+
+**Context:** Ramp reimbursement retries may encounter an untracked purchase-invoice Draft created by the older non-transactional writer before its external mapping was saved.
+
+**Problem:** A supplier/reference match alone could adopt a user document, a finalized invoice, an incomplete Draft, or a document already linked to another Ramp source; silently repairing it could overwrite ambiguous business data.
+
+**Rule:** Legacy adoption is a narrow compatibility proof, not a fuzzy lookup. Require one unposted system Draft with the canonical external reference, matching dates/currency, intact supporting rows, exact financial/coding/provenance lines, and no conflicting mapping. Reject mismatches without mutation.
+
+**Applies to:** Ramp reimbursement Draft adoption and any retry migration that links pre-idempotency records by business keys.
+
+## Unbounded mapping sets require bounded status reads
+
+**Context:** Ramp archive-on-settlement loads every unarchived external mapping, then reads the corresponding Carbon invoice statuses through PostgREST.
+
+**Problem:** One `.in()` request could exceed both URL limits and the API's 1,000-row response cap. A settled invoice after the cap could be omitted on every sweep, while lookup and archive errors were not fully reflected in the family result.
+
+**Rule:** Chunk unbounded identifier sets below transport and response limits, finish all prerequisite reads before remote writes, and count every failed remote mutation in the owning family result.
+
+**Applies to:** Ramp settlement archival and any integration that joins unbounded mappings to API-backed status reads before external side effects.
+
+## Lifecycle transitions need a stored state invariant
+
+**Context:** Card transactions use triggers to restrict Draft edits and the Draft→Posted→Voided transition sequence, while imports and test cleanup can intentionally bypass ordinary triggers.
+
+**Problem:** Transition guards constrained how a row could change but did not guarantee that every stored status had its required audit shape. A status-only write could leave a Posted or Voided row without its actor and timestamp evidence.
+
+**Rule:** Pair lifecycle transition guards with a validated database CHECK that defines every legal stored state. Fail migration preflight with row identities when existing data violates the invariant; never fabricate missing audit actors or timestamps.
+
+**Applies to:** Card transactions and any auditable document lifecycle whose writers can bypass ordinary triggers or write status and audit fields independently.
 
 ## A RAISE in a completion RPC aborts the UPDATE that triggered it
 
@@ -1703,6 +1977,36 @@ full-screen ERP route.
 
 **Follow-up (found later):** The original fix only covered the `quote` header row's `internalNotes`/`externalNotes` in `quoteToQuote`. The per-line copy loop in the SAME function (`quoteToQuote`'s `sourceQuoteLines.data` insert into `quoteLine`) still spread the source row raw (`{...line, quoteId, companyId}`), leaving `additionalCharges`, `configuration`, `customFields`, `externalNotes`, `internalNotes`, and `priceTrace` unserialised — and `quoteOperation.workInstruction` (NOT NULL jsonb) was copied raw too. Any quote whose line ever picked up one of these as a non-object (a string/array) fails the copy deterministically with the same "invalid input syntax for type json" 500 — which the caller's `fetchWithRetry` (`packages/auth/src/lib/supabase/client.ts`) then retries blindly up to 3 times, and because this failure lands inside the SAME transaction as the `quote`/`quoteLine`/`quoteLinePrice` inserts it rolls back cleanly (no duplicate). **Rule addendum:** when applying this fix, grep the whole function for every `{...row}` spread and every raw `column: source.column` assignment into a jsonb column, not just the columns already known to be trouble — a partial rollout re-creates the exact bug it fixed, just narrower.
 
+## Resolve the accounting period BEFORE a transaction that writes for N records
+
+**Context:** The batch material pick (`issue` case `trackedEntitiesToBatch`) runs one Kysely transaction and calls the per-member consumption writer once per batch member. Each member's write path reaches `createMaterialWipEntries` → `getCurrentAccountingPeriod`.
+
+**Problem:** `getCurrentAccountingPeriod` READS the period over HTTP (supabase-js) but CREATES a missing one through the transaction handle. Inside one transaction, member 2's read cannot see member 1's uncommitted insert, so both try to create the same month and the `accountingPeriod_company_fy_period_idx` unique index aborts the whole pick. It only fires on the first posting of a month into a fresh database, so it passes every test run but the first — and the rollback makes it look like the pick silently did nothing (HTTP 200, empty body; the real error is only in the edge-runtime log).
+
+**Rule:** Any lazily-created singleton that reads outside the transaction and writes inside it must be resolved BEFORE the transaction opens, once, when a flow writes for N records in one transaction. For the accounting period that is `await getCurrentAccountingPeriod(client, companyId, db, companyToday.toString())` ahead of `db.transaction()`, guarded on `accountingEnabled`.
+
+**Applies to:** `getCurrentAccountingPeriod` / `getAccountingPeriodForDate` in any multi-record edge-function transaction; the same shape applies to `getNextSequence` and any other get-or-create helper straddling the transaction boundary.
+
+## A post-success prompt must not live in the component the success unmounts
+
+**Context:** MES batch completion. `BatchCompleteModal` submitted the completion and was meant to swap itself for a "merge these lots?" prompt when the action returned one.
+
+**Problem:** The modal is rendered `{batch && batchCompleteModal.isOpen && …}`, and `batch` is only passed by the loader while the batch is `Active`/`Completing`. Completing it — the very thing that produces the prompt — revalidates the loader, `batch` becomes null, and the modal unmounts with its `useFetcher` still holding the response. The prompt could never render, and the symptom was indistinguishable from the server never sending it (the page just sat there, because a `data()` reply does not navigate).
+
+**Rule:** When an action's response drives UI that appears AFTER success, own the fetcher in a component that outlives the state change — here `JobOperation`, passing the fetcher down into the modal and rendering the prompt itself, ungated by `batch`. Before wiring a post-success view, ask which component the success unmounts.
+
+**Applies to:** MES `JobOperation` + `BatchCompleteModal`/`BatchMergePrompt`; any modal gated on loader data that its own submit invalidates.
+
+## Vite caches a module-resolution MISS for the whole dev session
+
+**Context:** Added a `BatchMergePrompt` component: edited the importing file first, created the new file a moment later.
+
+**Problem:** The SSR module graph cached the failed resolution, so every request 500'd with `Failed to load url ./components/BatchMergePrompt … Does the file exist?` even though it did. `docker exec … grep` and `ls` both confirmed the file, which sends you hunting a phantom bug in the import path.
+
+**Rule:** Create the new module BEFORE the code that imports it. If the overlay already says "Does the file exist?" and it does, `touch` the new file and its importer to force re-resolution — the file's presence alone will not invalidate the cached miss.
+
+**Applies to:** any new file under `apps/{erp,mes}/app` added after its importer during a running `crbn up`; the sibling failure mode for edge functions is the cached compiled isolate (`crbn reload edge-runtime`).
+
 ## An unchecked supabase-js insert turns a NOT NULL violation into silence
 
 **Context:** Inspection rejects were supposed to seed `nonConformanceItemTrackedEntity` links on the NCR's default Scrap row so the MRB could split or reassign specific entities. Nothing ever appeared. Both writers — `x+/inspection+/$id.reject.tsx` and `x+/issue+/new.tsx`'s job-operation auto-link — built their rows without `nonConformanceId`, which is `NOT NULL` on that table (`20260421130000_nc-item-tracked-entity.sql`).
@@ -1712,6 +2016,55 @@ full-screen ERP route.
 **Rule:** Never discard a supabase-js write result — bind it and check `.error`, even for a fire-and-forget link write. Treat `as any` on a `.from(...).insert(...)` as a defect in review: the cast exists precisely because the row object does not satisfy the generated type, which is the compiler telling you a required column is missing. When a "seeded" side table is mysteriously empty, check the writer's error handling before suspecting the read.
 
 **Applies to:** every `.from(...).insert(...)` / `.update(...)` whose result is not bound, especially in post-commit "also link X" tails; fixed for both writers in PR #1612 by moving them into a Kysely transaction under `lockIssueDispositions`.
+
+## Retrying a 5xx from a non-idempotent Edge Function multiplies its side effects
+
+**Context:** Duplicating a quote (`quoteToQuote` in `get-method`) kept failing with a generic toast while silently leaving 3-4 duplicate quotes behind — recurring across three separate production incidents, including twice AFTER the underlying jsonb-serialisation bug (see the lesson above) had already been fixed and deployed. Vercel logs showed exactly ONE incoming `POST .../duplicate.data` per incident, always HTTP 200 (the route swallows `copy.error` into a generic `{success:false}` and never throws, so the response code tells you nothing), with zero attached application logs.
+
+**Problem:** `getCarbonServiceRole()` (and every other Supabase client) goes through `fetchWithRetry` (`packages/auth/src/lib/supabase/client.ts`), which blindly retries ANY 5xx response — including `client.functions.invoke(...)` calls into Edge Functions — up to `MAX_RETRIES` (2) more times. `quoteToQuote` is not idempotent (it always creates a brand-new quote/opportunity/externalLink) and runs across two separate Kysely transactions, so a deterministic failure partway through the second transaction lets the first transaction's insert commit on EVERY retry attempt before failing again — one incoming request, N internal retries, N duplicate quotes, and the client still reports failure because the last attempt also failed. This is a structural flaw independent of whatever is actually throwing: fixing one root cause (the jsonb bug) only stops the retries from being triggered by THAT cause — any other exception in the same code path reproduces the identical multiply-duplicate symptom, which is exactly what happened on the two later incidents.
+
+**Rule:** A retry wrapper must never blindly retry a write with real side effects and no idempotency key. `fetchWithRetry` already carved out `isStorageUpload` for this exact reason ("re-sending a multi-GB PUT ... is wasteful"); the same reasoning applies even harder to Edge Function invocations, which routinely do multi-table, multi-transaction writes (`get-method`, `convert`, every `post-*` function). Added `isEdgeFunctionInvoke` (matches `/functions/v1/`) alongside it — one attempt only, honoring the caller's own signal, no retry on status or network error. When debugging "op failed but extra copies appeared," check for exactly this shape (one incoming request, several committed results) before assuming a client-side double-submit or a browser retry.
+
+**Applies to:** `packages/auth/src/lib/supabase/client.ts` (`fetchWithRetry`, `isEdgeFunctionInvoke`); any future retry/timeout wrapper placed in front of `client.functions.invoke`. Also: `$quoteId.duplicate.tsx` and similar routes that discard the real error into a generic message — add `logger.error` there so a recurrence is diagnosable from Vercel logs alone, without needing Supabase edge-function log access.
+## pdfjs rejects Node Buffer by constructor check
+
+**Context:** `@carbon/files/pdf` and the shared image pipeline feed bytes from `fs.readFile` / `storage.download().arrayBuffer()` into pdfjs (via unpdf) and jSquash codecs.
+
+**Problem:** pdfjs throws `Please provide binary data as 'Uint8Array', rather than 'Buffer'` — it checks the constructor, and Node's `Buffer` fails despite being a `Uint8Array` subclass. The failure only appears in Node (tests, jobs), never in the browser or Deno.
+
+**Rule:** Normalize at the boundary: wrap as a plain view over the same memory — `new Uint8Array(data.buffer, data.byteOffset, data.byteLength)` — before handing bytes to a wasm codec or pdfjs. `@carbon/files` does this in its `toBytes` helpers; new entry points must too.
+
+**Applies to:** `packages/files/src/pdf/pdf.ts`, `packages/database/supabase/functions/shared/image-pipeline.ts`, any future wasm codec wrapper.
+
+## A functions/shared source with npm deps must register them twice
+
+**Context:** `functions/shared/image-pipeline.ts` follows the `precision.ts` pattern (source under `supabase/functions/`, re-exported by a Node package) but, unlike precision, imports npm packages (`libheif-js`, `@jsquash/*`).
+
+**Problem:** Module resolution follows the FILE's location, not the importer's. Deno resolves the bare specifiers via `functions/deno.json` `imports`; Node/Vite resolve them from `packages/database/node_modules` — not from the re-exporting package. Registering the dep in only one place typechecks in one world and crashes in the other, and the versions can silently drift.
+
+**Rule:** A shared `functions/` source with npm deps registers each dep in BOTH `functions/deno.json` `imports` (pinned `npm:` specifier) and `packages/database/package.json` `dependencies`, at the same version. Type declarations it needs must sit next to it (triple-slash reference), not in a consuming package — ambient `.d.ts` files only load for programs that include them.
+
+**Applies to:** `packages/database/supabase/functions/shared/**` and every `@carbon/*` re-export of it.
+
+## unpdf ships a dead 1.5 MB engine chunk unless aliased away
+
+**Context:** `@carbon/files/pdf` uses unpdf but points it at react-pdf's `pdfjs-dist` in the browser (`definePDFJSModule`) so each bundle has one PDF.js engine.
+
+**Problem:** unpdf's fallback `import("unpdf/pdfjs")` is never reached but is statically visible, so Vite emits its bundled serverless engine as a ~1.5 MB lazy chunk in every client build.
+
+**Rule:** Any browser app consuming `@carbon/files/pdf` aliases `unpdf/pdfjs` to `app/ssr-shims/unpdf-pdfjs-stub.mjs` in its Vite config (both apps do). Verify with the built output: exactly one chunk should contain `GlobalWorkerOptions` + `PDFWorker`.
+
+**Applies to:** `apps/{erp,mes}/vite.config.ts`, any new React Router app that reads PDFs client-side.
+
+## crbn reload of storage leaves Kong routing 502s
+
+**Context:** Recreating the `storage` container (`crbn reload storage imgproxy`) after a compose edit.
+
+**Problem:** Kong resolves upstreams via Docker DNS at proxy time but held the old container IP — every `/storage/v1/*` request returned 502 while the storage container itself was healthy and listening.
+
+**Rule:** After `crbn reload` of any service Kong proxies (storage, auth, postgrest, edge-runtime), also run `crbn reload kong`. Verify with `curl $SUPABASE_URL/storage/v1/version` (expect 200), not with `docker ps`.
+
+**Applies to:** `packages/dev` compose workflow, any per-service reload.
 
 ## A running total must be subtracted from the pool it was taken from
 
@@ -1732,3 +2085,234 @@ full-screen ERP route.
 **Rule:** One `step.run` per tenant, wrapped in `try/catch` that records `{ error }` and continues; return the per-tenant outcomes so the run output says who failed. Classify terminal failures (a refused OAuth grant is `AccountingAuthError`) and return them from the step instead of throwing — retries cannot fix them and only delay the next tenant. Pair the per-tenant step with a `maxDuration` on the serve route: a step's ceiling is that function's ceiling.
 
 **Applies to:** `packages/jobs/src/inngest/functions/**` — every cron with a per-company loop (`accounting-*-sweep`, `accounting-reconciliation`, `accounting-consolidation`, `scheduled/mrp.ts`); use `runIsolatedCompanyStep` (`integrations/accounting-auth-failure.ts`) for the accounting ones.
+
+## Sweeping storage call sites by one literal misses named-constant buckets
+
+**Context:** The company-private-bucket migration swept every `storage.from("private")` call in the repo to per-company buckets. The literal grep found ~160 call sites and missed six more: `RAW_DURABLE_BUCKET = "private"` (assembler-client), `STORAGE_BUCKET = "private"` (company-backup/export), `BUCKET = "private"` (onshape-attach), `DOCUMENTS_BUCKET = "private"` (download.$token), `archiveBucket: "private"` (audit.config), and the `["private", "temp-staging"]` probe arrays in both apps' model.artifacts/model.download routes.
+
+**Problem:** Each miss was a real defect, not noise — new CAD raws kept landing in the legacy bucket, backups silently skipped assets uploaded to company buckets, restores wrote assets back into the legacy bucket, and token downloads / audit-archive reads would 404 on new files once the legacy fallback is removed.
+
+**Rule:** When migrating a string-keyed resource (a bucket, a queue, a topic), grep for the VALUE in every syntactic position — `= "x"`, `: "x"`, `"x",`, `("x"`, and type unions — not just the one call pattern you are rewriting. Constants exist precisely to hide the literal from the call site.
+
+**Applies to:** any repo-wide sweep keyed on a string literal; storage buckets (`private`, `temp-staging`, `company-templates`), PGMQ queue names, Inngest event names.
+
+## A merged-away table breaks every existing backup unless the rename map and schema manifest move with it
+
+**Context:** The sales-rules PR (#1382) merged `storageRule` / `storageRuleItemAssignment` / `storageRuleWorkCenterAssignment` into the shared `enforcementRule*` tables and dropped the old ones. The branch shipped with no `TABLE_RENAMES` entries and a stale `packages/jobs/manifests/schema.json` still listing the dropped tables.
+
+**Problem:** A restore that meets an unmapped missing table refuses by design (`applyTableRenames` → `assertBackupImportable`), so every customer backup taken before the merge would stop restoring the moment it shipped. The pre-commit `db:check:backups` gate that catches this only runs against a migrated LOCAL database — on a worktree with no dev stack the hook skips with a warning, which is exactly the state a reviewer or merge-fixer is in.
+
+**Rule:** A migration that renames or drops any tenant-scoped table needs, in the same commit: (1) a `TABLE_RENAMES` entry (`packages/jobs/src/backups/renames.ts` — new name, or `null` if the feature died), (2) a default (or nullability) on any NEW NOT-NULL column of the rename target so old backup rows can load, and (3) a regenerated `manifests/schema.json`, which requires running `pnpm db:migrate` + `pnpm db:check:backups` against a live local DB. If the DB isn't running, say so — a skipped hook is not a passed check.
+
+**Applies to:** `packages/database/supabase/migrations/**` table renames/drops, `packages/jobs/src/backups/renames.ts`, `packages/jobs/manifests/schema.json`, `.claude/rules/workflow-database-migration.md` step 3b.
+
+## OAuth signup bypasses app-level email gates — GoTrue provisions before your code runs
+
+**Context:** The free/disposable-domain self-signup blocklist (#1661) was enforced only on the email/password path (`login.tsx` unknown-user branch, `verify.tsx` before `createEmailAuthAccount`). "Sign in with Google" / "Sign in with Outlook" (`signInWithOAuth`) let a gmail/outlook address self-sign-up anyway.
+
+**Problem:** For OAuth there is no app-code seam before account creation. GoTrue creates the `auth.users` row during the IdP handshake and the `create_public_user` trigger fires inside that same transaction — all before the app's `/callback` action runs. So an email-path-only check has an OAuth-shaped hole, and the callback is the *first* point app code can react. The tempting "let it create, then delete it" teardown is a smell; the truly-earlier options (a GoTrue `before-user-created` hook, `GOTRUE_DISABLE_SIGNUP=true`, or a trigger `RAISE`) each cost more than they save (infra + Cloud config, or breaking existing-user first-time OAuth login, or a DB-resident blocklist + no edition signal + a raw error instead of a message).
+
+**Rule:** Any signup/identity gate must cover OAuth, not just the email path, and OAuth is enforced in the auth callback's non-SSO branch (both ERP and MES). Gate on a GENUINE self-signup only — no company membership AND no pending invite — so existing members and invited contractors pass. Prefer *not minting a session* over deleting the account: a membership-less `user` row can access nothing and is reused by `createEmployeeAccount` if the address is later invited, so no teardown is needed and the email stays invitable. Keep the check + domain list in one shared home (`@carbon/auth/self-signup.server`) so every entry point (ERP login/verify/callback + MES callback) shares one copy.
+
+**Applies to:** `apps/{erp,mes}/app/routes/_public+/callback.tsx` (non-SSO branch), `packages/auth/src/services/self-signup.server.ts`, and any future email/domain restriction — check the OAuth callback, not only the email/password flow.
+
+## Retrying a 5xx from a non-idempotent Edge Function multiplies its side effects
+
+**Context:** Duplicating a quote (`quoteToQuote` in `get-method`) kept failing with a generic toast while silently leaving 3-4 duplicate quotes behind — recurring across three separate production incidents, including twice AFTER the underlying jsonb-serialisation bug (see the lesson above) had already been fixed and deployed. Vercel logs showed exactly ONE incoming `POST .../duplicate.data` per incident, always HTTP 200 (the route swallows `copy.error` into a generic `{success:false}` and never throws, so the response code tells you nothing), with zero attached application logs.
+
+**Problem:** `getCarbonServiceRole()` (and every other Supabase client) goes through `fetchWithRetry` (`packages/auth/src/lib/supabase/client.ts`), which blindly retries ANY 5xx response — including `client.functions.invoke(...)` calls into Edge Functions — up to `MAX_RETRIES` (2) more times. `quoteToQuote` is not idempotent (it always creates a brand-new quote/opportunity/externalLink) and runs across two separate Kysely transactions, so a deterministic failure partway through the second transaction lets the first transaction's insert commit on EVERY retry attempt before failing again — one incoming request, N internal retries, N duplicate quotes, and the client still reports failure because the last attempt also failed. This is a structural flaw independent of whatever is actually throwing: fixing one root cause (the jsonb bug) only stops the retries from being triggered by THAT cause — any other exception in the same code path reproduces the identical multiply-duplicate symptom, which is exactly what happened on the two later incidents.
+
+**Rule:** A retry wrapper must never blindly retry a write with real side effects and no idempotency key. `fetchWithRetry` already carved out `isStorageUpload` for this exact reason ("re-sending a multi-GB PUT ... is wasteful"); the same reasoning applies even harder to Edge Function invocations, which routinely do multi-table, multi-transaction writes (`get-method`, `convert`, every `post-*` function). Added `isEdgeFunctionInvoke` (matches `/functions/v1/`) alongside it — one attempt only, honoring the caller's own signal, no retry on status or network error. When debugging "op failed but extra copies appeared," check for exactly this shape (one incoming request, several committed results) before assuming a client-side double-submit or a browser retry.
+
+**Applies to:** `packages/auth/src/lib/supabase/client.ts` (`fetchWithRetry`, `isEdgeFunctionInvoke`); any future retry/timeout wrapper placed in front of `client.functions.invoke`. Also: `$quoteId.duplicate.tsx` and similar routes that discard the real error into a generic message — add `logger.error` there so a recurrence is diagnosable from Vercel logs alone, without needing Supabase edge-function log access.
+
+## A fetcher's redirect is dropped when anything revalidates during the action
+
+**Context:** MES "Complete Batch" posts through a `useFetcher` to an action that runs for several seconds and ends in `redirect(path.to.operations)`. The operation page also subscribes to realtime changes on `jobOperation`/`job` and calls `revalidate()` on each.
+
+**Problem:** The completion's own writes fired the realtime `revalidate()` mid-action. React Router (`handleFetcherAction`) ignores a fetcher's redirect when `pendingNavigationLoadId > originatingLoadId` — any navigation or revalidation started after the submit wins. The redirect was silently discarded, the fetcher went idle, and the page sat on stale loader data from the mid-run revalidation (the batch still "Completing", button reading "Retry Completion") even though the work had landed.
+
+**Rule:** Realtime listeners must not revalidate while a fetcher on the page is submitting — use `useRealtimeRevalidator()` (`apps/mes/app/hooks/useRealtime.tsx`), never a bare `useRevalidator().revalidate()` in a realtime callback. Skipping loses nothing: the router revalidates after every action, which is why `revalidate()` already no-ops during a navigation submission. The same race also reached single-operation completion: finishing a job's last operation completes the job, the job UPDATE revalidated the operation loader mid-action, its floor gate redirected with "This operation's job has not been released to the floor", and the operator saw that error instead of "Operation finished successfully" (reproduced 2 of 10 runs before the guard, 0 of 8 after). Batch completion additionally returns `data({ completed: true })` and navigates client-side.
+
+**Applies to:** every realtime- or interval-driven `revalidate()` on a page that submits fetchers — MES `useOperation`, `AssemblyView`, `useRealtime`.
+
+## A hardcoded list that mirrors the schema goes stale silently, and a restore still reports success
+
+**Context:** Two independent cross-company restore defects, found together while
+tracing one broken restored company. (1) #1148 (2026-07-20) added `glbPath` /
+`graphPath` to `modelUpload` and removed `modelPath` from `STORAGE_PATH_COLUMNS`
+without adding the two new columns, so restored assemblies pointed at the SOURCE
+company's storage prefix. (2) `2a19048def` (2026-08-31) correctly widened
+id-remapping to composite-PK tables, which swept in `part`/`material`/
+`consumable`/`service`/`tool` — whose `id` is a human-authored part number
+(`ADCS-001`) that the `parts` view joins against `item."readableId"`, not an
+identifier. Every Items page rendered empty against 860 intact rows.
+
+**Problem:** Both lists mirror a schema property no constraint expresses, so
+neither compiler nor DB catches drift. Worse, the restore job reports SUCCESS in
+both cases — the rows load and the files copy; only a join or a URL silently
+resolves to nothing. And both are invisible on a same-company restore, where the
+remap is a no-op, so the usual manual test passes.
+
+**Rule:** When a list in code enumerates schema facts (path columns, tables
+exempt from a transform), pin it with a test that fails when the schema outgrows
+it, and state in the list's own doc comment what must be added alongside a new
+column/table. When widening a rule that mints or rewrites ids, ask which of the
+newly-swept tables use that column as a VALUE others match on rather than as an
+identifier — `part.id` is a part number. Verify a restore by querying the view
+the UI reads (`parts`), not the table (`part`); the table was always full.
+
+**Applies to:** `packages/jobs/src/inngest/functions/tasks/company-backup.ts`
+(`STORAGE_PATH_COLUMNS`, `READABLE_ID_TABLES`), `buildIdMaps` in
+`company-backup.transforms.ts`, and any future cross-company restore work — test
+cross-company, never same-company.
+
+## A folder that implies "run this in production" arms every file dropped into it
+
+**Context:** One-off data migrations (copying the legacy `private` bucket into
+per-company buckets) needed to run automatically, once per database. The design
+made `scripts/one-off/` self-registering: `discoverOneOffScripts` reads the
+directory and every `.ts` file is executed against every production database
+after `supabase db push`, recorded in that database's own `scriptRun` table.
+
+**Problem:** Removing the hardcoded registry array killed a real duplication —
+a list that could disagree with the folder — but replaced an explicit opt-in
+with an implicit one. `endsWith(".ts")` also matches `foo.test.ts`, and
+`scripts/lib/` already colocates `*.test.ts` beside its sources. A developer
+following the repo's own established convention would have shipped a test file
+into production execution. Nothing in the type system, the linter, or a review
+diff makes a new file in a directory look dangerous.
+
+**Rule:** When a directory's *membership* is what triggers an action, gate it
+with an ALLOWLIST pattern and make non-matching files a loud failure, never a
+silent skip. A blocklist arms whatever nobody thought to exclude; a silent skip
+is worse than a crash, because a script ignored for a filename typo is
+indistinguishable from one that already ran, and the deploy reports success
+having done nothing. State the naming rule in the folder's README, and test it
+with the exact filename the surrounding conventions would produce.
+
+**Applies to:** `ci/src/one-off-scripts.ts` (`SCRIPT_FILENAME`,
+`discoverOneOffScripts`), `scripts/one-off/`, and any future
+convention-over-configuration discovery where the discovered thing is executed
+rather than merely loaded.
+
+## A wrapper that narrows a result type needs its call sites re-read, not re-cast
+
+**Context:** Replacing the free-function storage helpers
+(`listCompanyPrivateObjects` and friends) with a fluent
+`storage(client).company(id)` client in `@carbon/files`. The old helpers
+returned `{ data: StorageFileLike[]; errors: [] }` — `data` never null, entries
+structurally typed — so ~10 call sites carried `as FileObject[]` /
+`as unknown as StorageItem[]` casts to recover the real supabase fields. The
+new client returns supabase's own `{ data: FileObject[] | null; error }`.
+
+**Problem:** Every one of those casts still compiled, and now silently asserted
+away a `null` the wrapper had just introduced. `(result.data as FileObject[]).map(...)`
+typechecks and throws at runtime the first time a company bucket errors —
+exactly the case the legacy-fallback window makes likely. A cast written to
+paper over a WIDER type keeps compiling when the type gets NARROWER, and TS
+reports nothing.
+
+**Rule:** When a refactor changes a shared helper's return type, grep its call
+sites for casts on the changed field BEFORE trusting a green typecheck — a cast
+is a silenced diagnostic, so the compiler cannot tell you it is now wrong.
+Delete the cast and let the type flow; if the new type is right, the cast was
+load-bearing only for the old one.
+
+**Applies to:** `packages/files/src/storage.ts` (`CompanyBucket`), its ~60 call
+sites across `apps/erp`, `apps/mes`, `packages/{jobs,ee,lib}`, and any future
+change to a helper whose result is destructured widely.
+
+## Lingui: a ternary inside t`` bakes the English words as runtime values
+
+**Context:** Building the quote lead-time modal, plural labels were written as
+`` t`${days} ${days === 1 ? "day" : "days"}` `` and
+`` t`${n} ${n === 1 ? "operation has" : "operations have"} no time standards` ``.
+
+**Problem:** Lingui extracts that as `{0} {1} no time standards` — the "day"/
+"days"/"operation has"/"operations have" strings are computed at runtime and
+passed in as PLACEHOLDER VALUES, never as translatable text. So every locale's
+`msgstr` still contains the English word, `linguito check` stays green (nothing
+is "missing"), and a French user reads "5 days", not "5 jours". The defect is
+invisible to the missing-translation gate because the placeholder IS filled.
+
+**Rule:** Never put a pluralizing (or any word-choosing) ternary inside a
+`t` tagged template or `<Trans>`. Use the ICU plural macro: `<Plural value={n}
+one="# day" other="# days" />` from `@lingui/react/macro` (or `plural()` in
+non-JSX). The whole phrase with `#` goes in each branch
+(`one="# operation has no time standards"`), so the words are extracted and
+translated. After adding one, re-run `lingui:extract` + `/translate` — the new
+ICU msgid needs its own filled `msgstr` per locale (locales with more CLDR
+categories, e.g. Polish/Russian `few`/`many`, get the extra branches).
+
+**Applies to:** any `apps/{erp,mes}/app` or `packages/{react,form}/src` string
+with a count-dependent word; grep `? "` inside `` t` `` templates when reviewing
+i18n.
+
+---
+
+**Context:** A security report: any signed-in user could read, create, update and delete every
+`public."user"` row through PostgREST. The policy was `FOR ALL USING
+(has_any_company_permission('users_update'))`, and a self-serve signup holds `users_update` in
+its own company.
+
+**Problem:** `has_any_company_permission(claim)` answers "does the caller hold this permission
+ANYWHERE?" It never relates the row to a company, so any policy built on it alone is
+cross-tenant. A table with no `companyId` (`user`) cannot use the standard four-policy template,
+so the shortcut looked reasonable.
+
+**Rule:** Never gate a policy on `has_any_company_permission`. Every policy must connect the ROW
+to a company in `get_companies_with_employee_role()` or
+`get_companies_with_employee_permission(...)`. For tables without `companyId`, go through a
+membership table (`userToCompany`, `employee`, …), as `20260924153817` does. When a global
+row is shared by several tenants, also pin the columns no single tenant owns (a BEFORE UPDATE
+guard on `current_user IN ('anon','authenticated')`), and revoke INSERT/DELETE from the API
+roles when only the server writes them. Also check `pg_policies` for `qual = 'true'`.
+
+**Applies to:** `packages/database/supabase/migrations/**` RLS on global tables (`user`,
+`userPermission`, `group`), and any review of an RLS helper.
+
+---
+
+**Context:** A security report: with only the published anon key, a caller could reach 84+
+SECURITY DEFINER functions through `/rest/v1/rpc` — inventory valuation, claims, document
+sequences, the event interceptors — for any company, plus a SQL injection in
+`get_company_id_from_foreign_key`. Table RLS held on all 438 tables; the functions went around it.
+
+**Problem:** Every function in `public` is an RPC endpoint, and a SECURITY DEFINER one bypasses
+RLS. Guards were written inline as `IF NOT (has_role(...) OR ...)`, which is NULL — not true —
+when a lookup finds nothing, so they never raised. The obvious fix, `REVOKE EXECUTE`, segfaults
+this Postgres image on the next anon call (`20260924192316`); a first draft of the fix did exactly
+that and only a rule file caught it, because its test checked `has_function_privilege` instead of
+making the call.
+
+**Rule:** Never `REVOKE EXECUTE` on a public function. A SECURITY DEFINER function that takes a
+company id calls `assert_company_access` first; one that only servers call raises on
+`current_setting('role')`; everything internal (helpers, event interceptors) is SECURITY INVOKER.
+Never trust a user id parameter without relating it to `auth.uid()`. Test a guard by CALLING the
+function as `anon` and as another company's user, not by reading the catalog. Edge functions:
+`verify_jwt` accepts the anon key, so authorize in-function (`requirePermissions` / `requireCaller`).
+
+**Applies to:** every `CREATE FUNCTION` in `packages/database/supabase/migrations/**`,
+`packages/database/supabase/functions/*/index.ts`; enforced by the
+`public-definer-function-authorizes-caller` invariant and `supabase/tests/rpc-privileges.test.sql`.
+
+## `CREATE OR REPLACE VIEW` without `WITH (...)` silently drops `security_invoker`
+
+**Context:** `openJobMaterialLines` served every company's open job material lines to the anon
+key (reported against production, 2026-09-26). The clause had been added, audited back in, and
+then dropped by four separate migrations that recreated the view from an older copy.
+
+**Problem:** `CREATE OR REPLACE VIEW` REPLACES the view's options with whatever the statement
+states, so a recreation that omits `WITH (security_invoker = true)` turns an invoker view back
+into an owner-rights one. Owner rights bypass RLS on every table underneath, and every `public`
+view is a PostgREST endpoint. Nothing failed: the app filters by `companyId` itself, so every
+screen still looked right.
+
+**Rule:** Every `CREATE [OR REPLACE] VIEW` states `security_invoker` — copy a view's definition
+from its NEWEST migration, and re-check the `WITH` clause when you do. Test a view the way an
+attacker reads it: `SET LOCAL ROLE anon; SELECT count(*) FROM "view";` must be 0. Join on
+`companyId` too, so a view is tenant-consistent on its own.
+
+**Applies to:** `packages/database/supabase/migrations/**`; enforced by the
+`no-view-without-invoker` conformance check and the `view-without-security-invoker` invariant.

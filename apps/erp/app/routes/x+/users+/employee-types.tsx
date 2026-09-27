@@ -3,7 +3,12 @@ import { VStack } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { Outlet, useLoaderData } from "react-router";
-import { EmployeeTypesTable, getEmployeeTypes } from "~/modules/users";
+import { usePlanGate } from "~/hooks/usePlanGate";
+import {
+  EmployeeTypesTable,
+  EmployeeTypesUpgradeOverlay,
+  getEmployeeTypes
+} from "~/modules/users";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";
@@ -41,6 +46,11 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 export default function EmployeeTypesRoute() {
   const { data, count } = useLoaderData<typeof loader>();
+  const { isGated } = usePlanGate({ feature: "PERMISSIONS" });
+
+  if (isGated) {
+    return <EmployeeTypesUpgradeOverlay />;
+  }
 
   return (
     <VStack spacing={0} className="h-full">

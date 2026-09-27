@@ -67,7 +67,7 @@ An invite is a company-scoped record keyed by email, and it carries the permissi
 
 Not everyone who needs to touch Carbon has an email inbox. A machinist on the floor signs in to the `docs/reference/mes` with a **4-digit PIN** on a shared station tablet, not a magic link. These are **console operators**, and they're a distinct kind of account.
 
-Add one under **Settings → Users → Operators** (visible only when console mode is enabled for the company) with a name, a location, and a 4-digit PIN (`apps/erp/app/modules/users/users.models.ts:31`). Carbon creates a lightweight account with no email login and assigns it the **Console Operator** employee type automatically. On the shop floor the operator taps their name and enters the PIN, which Carbon checks against the account before starting their session (`apps/mes/app/routes/x+/console.pin-in.tsx:61`). You can reset an operator's PIN at any time from the same screen.
+Add one under **Settings → Users → Operators** (visible only when console mode is enabled for the company) with a name and a location. Carbon creates a lightweight account with no email login, assigns it the **Console Operator** employee type automatically, and generates a 4-digit PIN that is shown once, when the operator is created — Carbon stores only a hash of it, so copy it then. On the shop floor the operator taps their name and enters the PIN, which Carbon checks before starting their session. If a PIN is lost, reset it from the same screen to generate a new one; the old PIN stops working immediately. Resetting an operator's PIN takes `users_update`; setting a console PIN for any other employee (from the **Accounts** list) also takes `settings_update`.
 
 When a PIN account needs real ERP access, convert it: give it an email and a full employee type, and Carbon promotes the same person to a normal invited user without losing their history (`apps/erp/app/modules/users/users.server.ts:905`). Their old floor activity stays attached to the one identity.
 
@@ -86,11 +86,11 @@ Access gates, PIN accounts, and why a permission change didn't take.
 ### "Incorrect PIN"
 The 4-digit PIN entered on the shop-floor station doesn't match the operator's account. Re-enter it, or reset the operator's PIN from **Settings → Users → Operators**.
 
-### "No PIN set. Please set a PIN in your account settings."
-The operator account being signed into has no PIN on record. Set one for that operator from the Operators screen before they can sign in on the floor.
+### "Too many incorrect PINs. Please wait a few minutes and try again."
+Five wrong PINs for one person within 15 minutes lock that person's pin-in for a while, from every station; the lock lasts a minute at first and doubles on repeat offenses. A single station is also capped at 30 wrong PINs in 15 minutes across everyone, and stations signed in with the same login share that cap. Wait it out — a correct PIN afterwards clears the person's count.
 
-### "PIN must be 4 digits"
-Creating or resetting an operator rejects anything that isn't exactly four digits. Enter a 4-digit numeric PIN.
+### "No PIN set. Ask an admin to set a console PIN for you."
+The person has no PIN on record, and PINs are never chosen on the floor: an admin generates one. For an operator, use **Reset PIN** on **Settings → Users → Operators** (needs `users_update`). For any other employee, use **Set Console PIN** on the **Accounts** list, which also needs `settings_update`, because a PIN lets whoever holds it act as that person on the floor.
 
 ### "Group members are required"
 A bulk action — bulk permission edit, group edit, deactivate, resend/revoke invite — was submitted with no users selected. Select at least one user first.

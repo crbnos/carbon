@@ -6,12 +6,13 @@ import type {
   KyselyDatabase,
   KyselyTx
 } from "@carbon/database/client";
+import { storage } from "@carbon/files";
 import { getLogger } from "@carbon/logger";
 import { datetime } from "@carbon/utils";
 import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
 import { nanoid } from "nanoid";
 import type { z } from "zod";
-import { buildDocumentUploadPath } from "~/modules/documents/documents.models";
+import { createDocumentUploadUrl } from "~/modules/documents/documents.service";
 import type { GenericQueryFilters } from "~/utils/query";
 import {
   LIST_COUNT,
@@ -34,6 +35,7 @@ import {
   type SourcingType,
   type SupplierPriceMap
 } from "../shared";
+import { updateSortOrder } from "../shared/sort-order";
 import {
   type ChangeNoticeChangeType,
   type ChangeNoticeError,
@@ -659,7 +661,7 @@ export async function getItemDemand(
     companyId: string;
   }
 ) {
-  const [actuals, forecasts] = await Promise.all([
+  const [actuals, forecasts, projections] = await Promise.all([
     client
       .from("demandActual")
       .select("*")
@@ -674,12 +676,20 @@ export async function getItemDemand(
       .eq("locationId", locationId)
       .eq("companyId", companyId)
       .in("periodId", periods)
-      .order("periodId")
+      .order("periodId"),
+    client
+      .from("demandProjection")
+      .select("*")
+      .eq("itemId", itemId)
+      .eq("locationId", locationId)
+      .eq("companyId", companyId)
+      .in("periodId", periods)
   ]);
 
   return {
     actuals: actuals.data ?? [],
-    forecasts: forecasts.data ?? []
+    forecasts: forecasts.data ?? [],
+    projections: projections.data ?? []
   };
 }
 
@@ -788,10 +798,10 @@ export async function getItemFiles(
   itemId: string,
   companyId: string
 ) {
-  const result = await client.storage
-    .from("private")
+  const result = await storage(client)
+    .company(companyId)
     .list(`${companyId}/parts/${itemId}`);
-  return result.data || [];
+  return result.data ?? [];
 }
 
 export async function getItemPostingGroup(
@@ -883,6 +893,47 @@ export async function getItemQuantities(
     } as { location_id: string; company_id: string })
     .eq("id", itemId)
     .maybeSingle();
+}
+
+/**
+ * On-hand quantity per item for the Item picker's badge, as a plain map.
+ *
+ * `locationId` of "all" totals every location (including the '' bucket for
+ * ledger rows with no location), matching what the picker shows when no
+ * location is in play. Zero rows are dropped — the picker renders no badge for
+ * an item it has no row for, so they carry no information and are the bulk of
+ * the table on a tenant with history.
+ */
+export async function getItemStockQuantitiesByLocation(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  locationId: string
+) {
+  const { data, error } = await fetchAllFromTable<{
+    itemId: string;
+    quantityOnHand: number;
+  }>(client, "itemStockQuantities", "itemId, quantityOnHand", (query) => {
+    const scoped = query
+      .eq("companyId", companyId)
+      .neq("quantityOnHand", 0)
+      // Total order across the whole key: fetchAllFromTable pages, and without
+      // one a concurrent write can shift a row across a page boundary.
+      .order("itemId")
+      .order("locationId");
+
+    return locationId === "all" ? scoped : scoped.eq("locationId", locationId);
+  });
+
+  if (error) return { data: null, error };
+
+  const quantities: Record<string, number> = {};
+  for (const row of data ?? []) {
+    if (!row.itemId) continue;
+    quantities[row.itemId] =
+      (quantities[row.itemId] ?? 0) + (Number(row.quantityOnHand) || 0);
+  }
+
+  return { data: quantities, error: null };
 }
 
 export async function getItemReplenishment(
@@ -2846,6 +2897,7 @@ export async function upsertPickMethodWithShelfLife(
     defaultStorageUnitId?: string | null;
     sortMethod?: (typeof pickMethodSortMethods)[number];
     customFields?: Json;
+    companyId: string;
     userId: string;
     shelfLife: {
       mode?: (typeof shelfLifeModes)[number];
@@ -2859,6 +2911,18 @@ export async function upsertPickMethodWithShelfLife(
   const updatedAt = datetime.timestamp();
 
   return db.transaction().execute(async (trx) => {
+    // Kysely bypasses RLS and itemId comes from the URL, so prove the item is
+    // this company's before any write — every statement below is also scoped.
+    const item = await trx
+      .selectFrom("item")
+      .select("id")
+      .where("id", "=", args.itemId)
+      .where("companyId", "=", args.companyId)
+      .executeTakeFirst();
+    if (!item) {
+      throw new Error(`Item ${args.itemId} not found`);
+    }
+
     await trx
       .updateTable("pickMethod")
       .set({
@@ -2872,6 +2936,7 @@ export async function upsertPickMethodWithShelfLife(
       })
       .where("itemId", "=", args.itemId)
       .where("locationId", "=", args.locationId)
+      .where("companyId", "=", args.companyId)
       .execute();
 
     const { mode, days, triggerProcessId, triggerTiming, calculateFromBom } =
@@ -2885,6 +2950,7 @@ export async function upsertPickMethodWithShelfLife(
       await trx
         .deleteFrom("itemShelfLife")
         .where("itemId", "=", args.itemId)
+        .where("companyId", "=", args.companyId)
         .execute();
       return;
     }
@@ -2907,6 +2973,7 @@ export async function upsertPickMethodWithShelfLife(
         .innerJoin("activeMakeMethods as amm", "amm.id", "mo.makeMethodId")
         .select("mo.processId")
         .where("amm.itemId", "=", args.itemId)
+        .where("amm.companyId", "=", args.companyId)
         .where("mo.processId", "is not", null)
         .execute();
       const allowed = new Set(
@@ -2925,6 +2992,7 @@ export async function upsertPickMethodWithShelfLife(
       .selectFrom("itemShelfLife")
       .select("itemId")
       .where("itemId", "=", args.itemId)
+      .where("companyId", "=", args.companyId)
       .executeTakeFirst();
 
     if (existing) {
@@ -2940,18 +3008,9 @@ export async function upsertPickMethodWithShelfLife(
           updatedAt
         })
         .where("itemId", "=", args.itemId)
+        .where("companyId", "=", args.companyId)
         .execute();
       return;
-    }
-
-    const itemRow = await trx
-      .selectFrom("item")
-      .select("companyId")
-      .where("id", "=", args.itemId)
-      .executeTakeFirstOrThrow();
-
-    if (!itemRow.companyId) {
-      throw new Error(`Item ${args.itemId} has no companyId`);
     }
 
     await trx
@@ -2963,7 +3022,7 @@ export async function upsertPickMethodWithShelfLife(
         triggerProcessId: normalizedTriggerProcess,
         triggerTiming: normalizedTriggerTiming,
         calculateFromBom: normalizedCalcFromBom,
-        companyId: itemRow.companyId,
+        companyId: args.companyId,
         createdBy: args.userId
       })
       .execute();
@@ -3142,10 +3201,22 @@ export async function updateItemMethodAndSourcing(
 
   const updatedAt = datetime.timestamp();
 
+  // An explicit allow-list, never a spread: `itemUpdate` reaches this from the
+  // API with whatever keys the caller sent, and Kysely bypasses RLS — a spread
+  // would let `{ companyId }` (or any other column) through to the UPDATE.
+  const { replenishmentSystem, defaultMethodType, sourcingType } =
+    args.itemUpdate;
+
   return db.transaction().execute(async (trx) => {
     await trx
       .updateTable("item")
-      .set({ ...args.itemUpdate, updatedBy: args.userId, updatedAt })
+      .set({
+        ...(replenishmentSystem !== undefined && { replenishmentSystem }),
+        ...(defaultMethodType !== undefined && { defaultMethodType }),
+        ...(sourcingType !== undefined && { sourcingType }),
+        updatedBy: args.userId,
+        updatedAt
+      })
       .where("id", "in", args.itemIds)
       .where("companyId", "=", args.companyId)
       .execute();
@@ -7138,28 +7209,20 @@ export async function deleteChangeNoticeAction(
   return client.from("changeOrderActionTask").delete().eq("id", id);
 }
 
-// Bulk reorder (drag-sort) — a multi-row write, so Kysely (route passes
-// getDatabaseClient()). Kysely bypasses RLS and the ids come from the request
-// body, so every update is scoped to the owning change notice + company.
 export async function updateChangeNoticeActionOrder(
   db: Kysely<KyselyDatabase>,
-  args: {
-    changeNoticeId: string;
-    companyId: string;
-    updates: { id: string; sortOrder: number; updatedBy: string }[];
-  }
+  companyId: string,
+  userId: string,
+  changeNoticeId: string,
+  updates: { id: string; sortOrder: number }[]
 ) {
-  const { changeNoticeId, companyId, updates } = args;
-  return db.transaction().execute(async (trx) => {
-    for (const { id, sortOrder, updatedBy } of updates) {
-      await trx
-        .updateTable("changeOrderActionTask")
-        .set({ sortOrder, updatedBy })
-        .where("id", "=", id)
-        .where("changeOrderId", "=", changeNoticeId)
-        .where("companyId", "=", companyId)
-        .execute();
-    }
+  return updateSortOrder(db, {
+    table: "changeOrderActionTask",
+    column: "sortOrder",
+    companyId,
+    userId,
+    parent: { column: "changeOrderId", id: changeNoticeId },
+    updates
   });
 }
 
@@ -8249,13 +8312,10 @@ export async function createItemDocumentUploadUrl(
   client: SupabaseClient<Database>,
   args: { companyId: string; itemId: string; name: string }
 ) {
-  const documentPath = buildDocumentUploadPath({
+  return createDocumentUploadUrl(client, {
     companyId: args.companyId,
     folder: "parts",
     entityId: args.itemId,
     name: args.name
   });
-  return client.storage
-    .from("private")
-    .createSignedUploadUrl(documentPath, { upsert: true });
 }

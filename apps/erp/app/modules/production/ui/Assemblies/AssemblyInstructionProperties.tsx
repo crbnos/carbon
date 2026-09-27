@@ -1,4 +1,3 @@
-import { useCarbon } from "@carbon/auth";
 import {
   Array as ArrayInput,
   Boolean as BooleanInput,
@@ -22,13 +21,11 @@ import {
   TabsContent,
   TabsList,
   TabsTrigger,
-  toast,
   VStack
 } from "@carbon/react";
 import { Editor } from "@carbon/react/Editor";
 import type { AssemblyGraphIndex, NamedUnit } from "@carbon/viewer";
 import { describeStep, groupComponentNodeIds } from "@carbon/viewer";
-import { nanoid } from "nanoid";
 import { memo, useMemo, useState } from "react";
 import {
   LuCirclePlus,
@@ -39,9 +36,9 @@ import {
 import { useFetcher, useParams } from "react-router";
 import { UnitOfMeasure } from "~/components/Form";
 import { ProcedureStepTypeIcon } from "~/components/Icons";
-import { usePermissions, useUser } from "~/hooks";
+import { useImageUpload, usePermissions } from "~/hooks";
 import { procedureStepType } from "~/modules/shared";
-import { getPrivateUrl, path } from "~/utils/path";
+import { path } from "~/utils/path";
 import {
   assemblyInstructionStepValidator,
   fastenerSchema,
@@ -356,10 +353,6 @@ function StepForm({
 
   const permissions = usePermissions();
   const fetcher = useFetcher<{ success: boolean }>();
-  const { carbon } = useCarbon();
-  const {
-    company: { id: companyId }
-  } = useUser();
 
   const [stepType, setStepType] = useState<(typeof procedureStepType)[number]>(
     step.type ?? "Task"
@@ -382,23 +375,7 @@ function StepForm({
     []
   );
 
-  const onUploadImage = async (file: File) => {
-    const fileType = file.name.split(".").pop();
-    const fileName = `${companyId}/assembly/${instructionId}/${nanoid()}.${fileType}`;
-
-    const result = await carbon?.storage.from("private").upload(fileName, file);
-
-    if (result?.error) {
-      toast.error("Failed to upload image");
-      throw new Error(result.error.message);
-    }
-
-    if (!result?.data) {
-      throw new Error("Failed to upload image");
-    }
-
-    return getPrivateUrl(result.data.path);
-  };
+  const onUploadImage = useImageUpload(`assembly/${instructionId}`);
 
   const componentNodeIds = draftComponentNodeIds ?? step.componentNodeIds ?? [];
 

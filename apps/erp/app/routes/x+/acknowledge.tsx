@@ -1,7 +1,11 @@
-import { ITAR_RIDER_SHA256, ITAR_RIDER_VERSION } from "@carbon/auth";
+import {
+  ITAR_RIDER_SHA256,
+  ITAR_RIDER_VERSION,
+  safeRedirect
+} from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
-import { insertAuditLogEntries } from "@carbon/database/audit";
+import { insertAuditLogEntries } from "@carbon/ee/audit.server";
 import { getLogger } from "@carbon/logger";
 import { datetime, requiresItarEntityCertification } from "@carbon/utils";
 import { parseAbsolute } from "@internationalized/date";
@@ -248,7 +252,7 @@ export async function action({ request }: ActionFunctionArgs) {
     }
 
     if (redirectTo) {
-      throw redirect(redirectTo);
+      throw redirect(safeRedirect(redirectTo));
     }
 
     return { success: true, message: "Flag updated" };

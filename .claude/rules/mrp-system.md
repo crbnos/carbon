@@ -2,7 +2,7 @@
 description: MRP (Material Requirements Planning) — run flow, data model, planning UI
 paths:
   - "packages/jobs/src/inngest/functions/scheduled/mrp.ts"
-  - "packages/ee/src/planning/mrp/**"
+  - "packages/planning/src/mrp/**"
   - "packages/database/supabase/functions/lib/mrp-engine.ts"
   - "apps/erp/app/modules/{production,purchasing}/ui/Planning/**"
 ---
@@ -12,7 +12,7 @@ paths:
 MRP nets demand against supply per item/location/period and projects on-hand
 forward so users can create planned purchase orders (purchasing) and jobs
 (production). It runs **IN-PROCESS in Node** via `runMrp` (exported from
-`@carbon/ee/planning`, source `packages/ee/src/planning/mrp/mrp.ts`), driven
+`@carbon/planning`, source `packages/planning/src/mrp/mrp.ts`), driven
 either by an **Inngest** scheduled cron or a manual route POST — NOT a Supabase
 edge function (the old `mrp` Deno function and its `config.toml` entry were
 DELETED), and NOT Trigger.dev. `runMrp(client, db, payload)` takes an injected
@@ -63,12 +63,12 @@ Phase-7 write) and throws on failure.
    `runMRP(getCarbonServiceRole(), { type: locationId ? "location" : "company",
    id: locationId ?? companyId, companyId, userId })`. `runMRP` lives in
    `apps/erp/app/modules/production/production.service.ts`; it dynamic-imports
-   `runMrp` from `@carbon/ee/planning`, gets a Kysely handle via
+   `runMrp` from `@carbon/planning`, gets a Kysely handle via
    `getSchedulingDb()`, calls `runMrp(client, db, params)` **in-process**, and
    preserves the `{ data, error }` shape (catching the throw). The planning tables
    submit to this via `path.to.api.mrp(locationId)`.
 
-3. **In-process engine** — `packages/ee/src/planning/mrp/mrp.ts`
+3. **In-process engine** — `packages/planning/src/mrp/mrp.ts`
    (`runMrp(client, db, payload)`, Node, ~1130 lines). Reads go through the
    injected service-role Supabase client (PostgREST); the atomic Phase-7 write
    goes through the injected Kysely handle. Payload validator accepts
@@ -212,7 +212,7 @@ All join through `itemReplenishment` to expose `replenishmentSystem`, `leadTime`
 ## Gotchas
 
 - The cron is **Inngest**, not Trigger.dev. There is no `apps/erp/app/trigger/mrp.ts`.
-  The engine itself is in-process Node (`runMrp` from `@carbon/ee/planning`), NOT
+  The engine itself is in-process Node (`runMrp` from `@carbon/planning`), NOT
   a Supabase edge function — the `mrp` Deno function was deleted.
 - MRP itself writes `demandForecast`/`demandActual`/`supplyActual`/
   `demandForecastSource`; it does **not** write `supplyForecast` — that comes from

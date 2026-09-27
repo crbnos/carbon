@@ -1,6 +1,11 @@
 import { assertIsPost } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
+import {
+  dedupeViolations,
+  evaluateSalesRulesForSalesDocument,
+  isBlocked
+} from "@carbon/ee/rules.server";
 import { validator } from "@carbon/form";
 import { trackWorkEvent } from "@carbon/lib/telemetry";
 import { datetime, getSalesOrderStatus } from "@carbon/utils";
@@ -12,6 +17,7 @@ import {
   getSalesOrderLines,
   salesConfirmValidator
 } from "~/modules/sales";
+import { recordSalesRuleOutcome } from "~/modules/sales/sales.server";
 import {
   generateAndAttachSalesOrderPdf,
   sendSalesOrderEmail
@@ -57,6 +63,43 @@ export async function action(args: ActionFunctionArgs) {
       };
     }
 
+    // Terminal gate: re-evaluate sales rules across EVERY line on the order,
+    // with today's context. Per-line checks only cover lines added through the
+    // line routes — conversions, duplication, integrations and the API all
+    // write lines without them — and a line that passed weeks ago may violate
+    // a rule authored since, or a ship-to that has changed. Runs before the PDF
+    // so a blocked order doesn't generate one.
+    const formData = await request.formData();
+    const acknowledged = formData.get("acknowledged") === "true";
+
+    const { violations, ruleNames } = await evaluateSalesRulesForSalesDocument({
+      client: serviceRole,
+      companyId,
+      userId,
+      documentType: "salesOrder",
+      documentId: orderId
+    });
+    const deduped = dedupeViolations(violations);
+    if (deduped.length > 0 && isBlocked(deduped, acknowledged)) {
+      // Record the same evidence + notification the per-line checks write —
+      // an override at a gate is the strongest kind and must leave a trail.
+      await recordSalesRuleOutcome(serviceRole, {
+        companyId,
+        userId,
+        documentType: "salesOrder",
+        documentId: orderId,
+        outcome: "blocked",
+        violations: deduped,
+        ruleNames
+      });
+      return {
+        success: false,
+        message: "Sales rule violations must be resolved before confirming",
+        violations: deduped,
+        ruleNames
+      };
+    }
+
     const acceptLanguage = request.headers.get("accept-language");
     const locales = parseAcceptLanguage(acceptLanguage, {
       validate: Intl.DateTimeFormat.supportedLocalesOf
@@ -87,7 +130,7 @@ export async function action(args: ActionFunctionArgs) {
     }
 
     const validation = await validator(salesConfirmValidator).validate(
-      await request.formData()
+      formData
     );
 
     if (validation.error) {
@@ -168,6 +211,21 @@ export async function action(args: ActionFunctionArgs) {
         success: false,
         message: "Failed to confirm sales order"
       };
+    }
+
+    // Acknowledged-override evidence is written only once the confirm has
+    // actually committed — evidence (and its notification) for a transition
+    // that then failed would be a false trail, and a retry would duplicate it.
+    if (deduped.length > 0) {
+      await recordSalesRuleOutcome(serviceRole, {
+        companyId,
+        userId,
+        documentType: "salesOrder",
+        documentId: orderId,
+        outcome: "acknowledged",
+        violations: deduped,
+        ruleNames
+      });
     }
 
     await runMRP(getCarbonServiceRole(), getDatabaseClient(), {

@@ -5,7 +5,8 @@ import {
 import {
   type BatchSplitInput,
   buildBatchSplitRecords,
-  buildMergeRecords
+  buildMergeRecords,
+  isFullDraw
 } from "./batch-split.ts";
 
 const splitInput = (
@@ -190,4 +191,77 @@ Deno.test("merge: throws when mergeQuantity exceeds child quantity or is <= 0", 
   };
   assertThrows(() => buildMergeRecords({ ...base, mergeQuantity: 2 }));
   assertThrows(() => buildMergeRecords({ ...base, mergeQuantity: 0 }));
+});
+
+// --- persist-boundary rounding (PR C) --------------------------------------
+
+Deno.test("split: a float-residue draw persists clean 5dp quantities", () => {
+  // Drawing 0.98 from 1 leaves 0.020000000000000018 in raw float; the parent,
+  // child, ledger, edges and Split blob must all read the rounded values.
+  const r = buildBatchSplitRecords(
+    splitInput({ parent: { id: "parent-1", quantity: 1 }, drawQuantity: 0.98 })
+  );
+  assertEquals(r.parentUpdate, { quantity: 0.02 });
+  assertEquals(r.childEntityInsert.quantity, 0.98);
+  assertEquals(r.activityInsert.attributes, {
+    "Original Quantity": 1,
+    "Drawn Quantity": 0.98,
+    "Remaining Quantity": 0.02,
+    "Split Entity ID": "child-1"
+  });
+  assertEquals(r.activityInputInsert.quantity, 0.98);
+  assertEquals(r.activityOutputInsert.quantity, 0.98);
+  const [minus, plus] = r.ledgerInserts;
+  assertEquals(minus.quantity, -0.98);
+  assertEquals(plus.quantity, 0.98);
+  assertEquals(minus.quantity + plus.quantity, 0);
+});
+
+Deno.test("merge: a 0.30000000000000004 child settles the parent to a clean quantity", () => {
+  const r = buildMergeRecords({
+    child: { id: "child-1", quantity: 0.1 + 0.2 },
+    parent: { id: "parent-1", quantity: 0.1 },
+    mergeQuantity: 0.1 + 0.2,
+    mergeActivityId: "merge-1",
+    companyId: "co-1",
+    userId: "user-1"
+  });
+  assertEquals(r.activityInputInsert.quantity, 0.3);
+  assertEquals(r.activityOutputInsert.quantity, 0.3);
+  assertEquals(r.parentUpdate, { quantity: 0.4 });
+  // Draining the whole (rounded) child flips it Consumed via an exact === 0.
+  assertEquals(r.childUpdate, { quantity: 0, status: "Consumed" });
+});
+
+Deno.test("isFullDraw: an exact whole draw is full", () => {
+  assertEquals(isFullDraw(10, 10), true);
+  assertEquals(isFullDraw(0.02, 0.02), true);
+});
+
+Deno.test("isFullDraw: a residue draw is full, and would otherwise throw", () => {
+  // The lot left after drawing 0.98 from 1 holds 0.020000000000000018. Drawing
+  // 0.02 of it is the whole lot — a raw !== reads it as partial, and the
+  // builder then refuses `draw >= parentQty` on a legitimate full pick.
+  const residue = 1 - 0.98;
+  assertEquals(residue === 0.02, false);
+  assertEquals(isFullDraw(residue, 0.02), true);
+  assertThrows(
+    () =>
+      buildBatchSplitRecords(splitInput({
+        parent: { ...splitInput().parent, quantity: residue },
+        drawQuantity: 0.02
+      })),
+    Error,
+    "a full draw is not a split"
+  );
+});
+
+Deno.test("isFullDraw: one minor unit of real stock is still a partial draw", () => {
+  // 1e-5 is a storable difference at internal scale, not float noise.
+  assertEquals(isFullDraw(1, 0.99999), false);
+  assertEquals(isFullDraw(10, 9.99999), false);
+});
+
+Deno.test("isFullDraw: an over-draw is not reported as full", () => {
+  assertEquals(isFullDraw(1, 1.5), false);
 });

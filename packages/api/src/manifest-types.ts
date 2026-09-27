@@ -11,7 +11,8 @@ export type AuthField =
   | "companyId"
   | "companyGroupId"
   | "createdBy"
-  | "updatedBy";
+  | "updatedBy"
+  | "userId";
 
 export type PermissionAction = "view" | "create" | "update" | "delete";
 

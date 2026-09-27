@@ -21,12 +21,16 @@ export const BACKUP_VERSION = 1;
  * Tables whose contents must never travel in a backup — credentials,
  * integration tokens and webhook targets stay with the source company.
  * (`apiKeyRateLimit` dangles without its stripped `apiKey` and is an UNLOGGED
- * operational counter, never user data.)
+ * operational counter, never user data. `employeePin` holds console PIN
+ * hashes — a 4-digit PIN's bcrypt hash is brute-forced offline in minutes, so
+ * it is a credential; being secret also keeps an in-place restore from wiping
+ * every operator's PIN.)
  */
 export const SECRET_TABLES = [
   "apiKey",
   "apiKeyRateLimit",
   "companyIntegration",
+  "employeePin",
   "webhook",
   "oauthClient",
   "oauthToken"

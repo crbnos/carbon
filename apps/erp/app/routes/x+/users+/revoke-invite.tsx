@@ -3,7 +3,7 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { deactivateUser } from "@carbon/auth/users.server";
-import { insertAuditLogEntries } from "@carbon/database/audit";
+import { insertAuditLogEntries } from "@carbon/ee/audit.server";
 import { validationError, validator } from "@carbon/form";
 import { batchTrigger } from "@carbon/jobs";
 import { getLogger } from "@carbon/logger";

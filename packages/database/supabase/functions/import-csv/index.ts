@@ -59,6 +59,233 @@ const importCsvValidator = z.object({
 
 const EXTERNAL_ID_KEY = "csv";
 
+type ImportTable = z.infer<typeof importCsvValidator>["table"];
+
+// The module whose `update` permission each import needs — the same map the
+// ERP's import route checks (`importPermissions` in `imports.models.ts`).
+const IMPORT_PERMISSIONS: Record<ImportTable, string> = {
+  customer: "sales",
+  customerContact: "sales",
+  supplier: "purchasing",
+  supplierContact: "purchasing",
+  part: "parts",
+  material: "parts",
+  bom: "parts",
+  operations: "parts",
+  partWithMethod: "parts",
+  tool: "parts",
+  fixture: "parts",
+  consumable: "parts",
+  workCenter: "production",
+  process: "production",
+  storageUnit: "inventory",
+  service: "parts",
+  unitOfMeasure: "parts",
+  itemPostingGroup: "accounting",
+  storageType: "parts",
+  scrapReason: "production",
+  department: "people",
+  materialSubstance: "parts",
+  materialForm: "parts",
+  materialFinish: "parts",
+  materialGrade: "parts",
+  materialType: "parts",
+  materialDimension: "parts",
+};
+
+// The columns each importer may write from a CSV row. Kysely here runs as the
+// service role, so spreading a row into an INSERT/UPDATE would let a crafted
+// mapping write `id`, `createdBy`, `intercompanyCompanyId`, or any other
+// column. These mirror `fieldMappings` / `importSchemas` in the ERP's
+// `imports.models.ts`; columns the importer derives itself (rates, flags,
+// side-table fields) are handled explicitly at the call site.
+type Tables = Database["public"]["Tables"];
+type InsertColumns<T extends keyof Tables> = readonly (keyof Tables[T]["Insert"] &
+  string)[];
+
+const CUSTOMER_COLUMNS = [
+  "name",
+  "accountManagerId",
+  "customerStatusId",
+  "customerTypeId",
+  "phone",
+  "fax",
+  "currencyCode",
+  "website",
+] as const satisfies InsertColumns<"customer">;
+const SUPPLIER_COLUMNS = [
+  "name",
+  "accountManagerId",
+  "supplierStatus",
+  "supplierTypeId",
+  "phone",
+  "fax",
+  "currencyCode",
+  "website",
+] as const satisfies InsertColumns<"supplier">;
+const CONTACT_COLUMNS = [
+  "firstName",
+  "lastName",
+  "email",
+  "title",
+  "mobilePhone",
+  "workPhone",
+  "homePhone",
+  "fax",
+  "notes",
+] as const satisfies InsertColumns<"contact">;
+const WORK_CENTER_COLUMNS = [
+  "name",
+  "description",
+  "defaultStandardFactor",
+  "locationId",
+] as const satisfies InsertColumns<"workCenter">;
+const PROCESS_COLUMNS = [
+  "name",
+  "defaultStandardFactor",
+] as const satisfies InsertColumns<"process">;
+
+/**
+ * The allow-listed columns of a CSV row, typed as `table`'s own columns. CSV
+ * cells are strings; the enum and numeric columns among them are checked by
+ * Postgres on write, as they were before the allow-list.
+ */
+function pickColumns<T extends keyof Tables, K extends keyof Tables[T]["Insert"] & string>(
+  _table: T,
+  record: Partial<Record<string, string>>,
+  columns: readonly K[]
+): Partial<Pick<Tables[T]["Insert"], K>> {
+  const out: Partial<Record<K, string>> = {};
+  for (const column of columns) {
+    if (column in record) out[column] = record[column];
+  }
+  return out as unknown as Partial<Pick<Tables[T]["Insert"], K>>;
+}
+
+// Tables a CSV row may reference by id. The material taxonomy has global
+// system rows (companyId IS NULL) that every company may use.
+type ReferencedTable =
+  | "employee"
+  | "customerStatus"
+  | "customerType"
+  | "supplierType"
+  | "paymentTerm"
+  | "shippingMethod"
+  | "supplier"
+  | "location"
+  | "materialSubstance"
+  | "materialForm"
+  | "materialFinish"
+  | "materialGrade"
+  | "materialDimension";
+
+const GLOBAL_REFERENCED_TABLES = new Set<ReferencedTable>([
+  "materialSubstance",
+  "materialForm",
+  "materialFinish",
+  "materialGrade",
+  "materialDimension",
+]);
+
+type ReferenceSpec = { column: string; table: ReferencedTable; label: string };
+
+const itemReferences: ReferenceSpec[] = [
+  { column: "supplierId", table: "supplier", label: "Supplier" },
+];
+
+// Id-valued columns per import. The wizard resolves these through
+// company-scoped fetchers, but the ids arrive in the request body, so each is
+// re-checked against the caller's company before anything is written.
+const REFERENCES: Partial<Record<ImportTable, ReferenceSpec[]>> = {
+  customer: [
+    { column: "accountManagerId", table: "employee", label: "Account Manager" },
+    { column: "customerStatusId", table: "customerStatus", label: "Status" },
+    { column: "customerTypeId", table: "customerType", label: "Type" },
+    { column: "paymentTermId", table: "paymentTerm", label: "Payment Term" },
+  ],
+  supplier: [
+    { column: "accountManagerId", table: "employee", label: "Account Manager" },
+    { column: "supplierTypeId", table: "supplierType", label: "Type" },
+    { column: "paymentTermId", table: "paymentTerm", label: "Payment Term" },
+    {
+      column: "shippingMethodId",
+      table: "shippingMethod",
+      label: "Shipping Method",
+    },
+  ],
+  part: itemReferences,
+  tool: itemReferences,
+  fixture: itemReferences,
+  consumable: itemReferences,
+  service: itemReferences,
+  material: [
+    ...itemReferences,
+    {
+      column: "materialSubstanceId",
+      table: "materialSubstance",
+      label: "Substance",
+    },
+    { column: "materialFormId", table: "materialForm", label: "Form" },
+    { column: "finishId", table: "materialFinish", label: "Finish" },
+    { column: "gradeId", table: "materialGrade", label: "Grade" },
+    { column: "dimensionId", table: "materialDimension", label: "Dimensions" },
+  ],
+  workCenter: [{ column: "locationId", table: "location", label: "Location" }],
+  storageUnit: [{ column: "locationId", table: "location", label: "Location" }],
+};
+
+type CsvRecord = Record<string, string>;
+
+/**
+ * Report every row that references a record outside the caller's company, and
+ * return the other rows as `[rowIndex, record]` pairs (the index is the CSV row
+ * the summary reports). One query per referenced column, run together.
+ */
+async function rejectForeignReferences(
+  table: ImportTable,
+  records: CsvRecord[],
+  cId: string,
+  errors: Array<{ row: number; reason: string }>
+): Promise<Array<[number, CsvRecord]>> {
+  const ownedBySpec = await Promise.all(
+    (REFERENCES[table] ?? []).map(async (spec) => {
+      const ids = [
+        ...new Set(records.map((r) => r[spec.column]).filter((v) => !!v)),
+      ];
+      if (ids.length === 0) return { spec, owned: new Set<string>() };
+      const scope = GLOBAL_REFERENCED_TABLES.has(spec.table)
+        ? sql<boolean>`("companyId" = ${cId} OR "companyId" IS NULL)`
+        : sql<boolean>`"companyId" = ${cId}`;
+      // Every referenced table has an `id` and a `companyId`; the cast only
+      // narrows the union for Kysely's types.
+      const rows = await db
+        .selectFrom(spec.table as "location")
+        .select(["id"])
+        .where("id", "in", ids)
+        .where(scope)
+        .execute();
+      return { spec, owned: new Set(rows.map((r) => r.id)) };
+    })
+  );
+
+  const accepted: Array<[number, CsvRecord]> = [];
+  for (const [rowIndex, record] of records.entries()) {
+    const foreign = ownedBySpec.find(
+      ({ spec, owned }) =>
+        !!record[spec.column] && !owned.has(record[spec.column])
+    );
+    if (foreign) {
+      errors.push({
+        row: rowIndex,
+        reason: `${foreign.spec.label} "${record[foreign.spec.column]}" was not found in this company`,
+      });
+    } else {
+      accepted.push([rowIndex, record]);
+    }
+  }
+  return accepted;
+}
+
 /**
  * Fallback CSV parser used when std/csv rejects a row-length mismatch.
  * Handles RFC-4180 quoting but tolerates uneven row widths (extra cells
@@ -966,9 +1193,23 @@ serve(async (req: Request) => {
 
     logger.info({ table, filePath, columnMappings, enumMappings, companyId, userId });
 
-    const client = await requirePermissions(req, companyId, userId, { create: "resources" });
+    const client = await requirePermissions(req, companyId, userId, {
+      update: IMPORT_PERMISSIONS[table],
+    });
 
-    const csvFile = await client.storage.from("private").download(filePath);
+    // The client is service-role and the legacy bucket is shared across
+    // tenants, so the `${companyId}/` key prefix is the tenant boundary on the
+    // caller-supplied path — refuse anything outside it.
+    if (!filePath.startsWith(`${companyId}/`)) {
+      throw new Error("File path is outside the company's storage prefix");
+    }
+
+    // Try the company bucket first; fall back to the legacy shared bucket
+    // for files uploaded before the per-company bucket migration.
+    let csvFile = await client.storage.from(companyId).download(filePath);
+    if (csvFile.error || !csvFile.data) {
+      csvFile = await client.storage.from("private").download(filePath);
+    }
     if (!csvFile.data) {
       throw new Error("Failed to download file");
     }
@@ -1030,6 +1271,13 @@ serve(async (req: Request) => {
       skipped: [] as Array<{ row: number; reason: string }>,
     };
 
+    const acceptedRows = await rejectForeignReferences(
+      table,
+      mappedRecords,
+      companyId,
+      summary.errors
+    );
+
     switch (table) {
       case "customer": {
         const externalIdMap = await getCsvExternalIdMap("customer", companyId);
@@ -1076,7 +1324,7 @@ serve(async (req: Request) => {
             ext: PartnerExtensionData;
           }> = [];
 
-          for (const [rowIndex, record] of mappedRecords.entries()) {
+          for (const [rowIndex, record] of acceptedRows) {
             const ext = extractPartnerExtensions(record);
             const {
               id,
@@ -1118,7 +1366,7 @@ serve(async (req: Request) => {
               customerUpdates.push({
                 id: decision.entityId,
                 data: {
-                  ...nullifyEmptyStrings(rest),
+                  ...nullifyEmptyStrings(pickColumns("customer", rest, CUSTOMER_COLUMNS)),
                   updatedAt: new Date().toISOString(),
                   updatedBy: userId,
                 },
@@ -1134,7 +1382,7 @@ serve(async (req: Request) => {
               }
             } else {
               customerInserts.push({
-                ...nullifyEmptyStrings(rest),
+                ...nullifyEmptyStrings(pickColumns("customer", rest, CUSTOMER_COLUMNS)),
                 readableId: id || null,
                 companyId,
                 createdAt: new Date().toISOString(),
@@ -1277,7 +1525,7 @@ serve(async (req: Request) => {
             ext: PartnerExtensionData;
           }> = [];
 
-          for (const [rowIndex, record] of mappedRecords.entries()) {
+          for (const [rowIndex, record] of acceptedRows) {
             const ext = extractPartnerExtensions(record);
             const {
               id,
@@ -1319,7 +1567,9 @@ serve(async (req: Request) => {
               supplierUpdates.push({
                 id: decision.entityId,
                 data: {
-                  ...nullifyEmptyStrings(rest),
+                  ...nullifyEmptyStrings(
+                    pickColumns("supplier", rest, SUPPLIER_COLUMNS)
+                  ),
                   updatedAt: new Date().toISOString(),
                   updatedBy: userId,
                 },
@@ -1335,7 +1585,7 @@ serve(async (req: Request) => {
               }
             } else {
               supplierInserts.push({
-                ...nullifyEmptyStrings(rest),
+                ...nullifyEmptyStrings(pickColumns("supplier", rest, SUPPLIER_COLUMNS)),
                 readableId: id || null,
                 companyId,
                 createdAt: new Date().toISOString(),
@@ -1569,7 +1819,10 @@ serve(async (req: Request) => {
             const dimensionPairs: Array<{ scopeId: string; name: string }> =
               [];
 
-            for (const record of mappedRecords) {
+            // Rejected rows are left out: one may name another company's
+            // substance or form, and resolving it would create taxonomy rows
+            // under that parent.
+            for (const [, record] of acceptedRows) {
               const substanceId = record.materialSubstanceId;
               const formId = record.materialFormId;
               // An explicit *Id (possible via direct invocation) wins over the
@@ -1678,7 +1931,7 @@ serve(async (req: Request) => {
             }
           }
 
-          for (const [rowIndex, record] of mappedRecords.entries()) {
+          for (const [rowIndex, record] of acceptedRows) {
             const item = itemValidator.safeParse(record);
 
             if (!item.success) {
@@ -2122,7 +2375,7 @@ serve(async (req: Request) => {
             [];
 
           const isContactValid = (
-            record: Record<string, string>
+            record: { email?: string | null }
           ): record is {
             email: string;
           } => {
@@ -2132,7 +2385,10 @@ serve(async (req: Request) => {
           };
 
           for (const [rowIndex, record] of mappedRecords.entries()) {
-            const { id, companyId: customerId, ...contactData } = record;
+            // `companyId` here is the parent's External Company ID; only
+            // contact columns are written.
+            const { id, companyId: customerId } = record;
+            const contactData = pickColumns("contact", record, CONTACT_COLUMNS);
 
             if (externalContactIdMap.has(id)) {
               const existingEntityId = externalContactIdMap.get(id)!;
@@ -2243,7 +2499,7 @@ serve(async (req: Request) => {
             [];
 
           const isContactValid = (
-            record: Record<string, string>
+            record: { email?: string | null }
           ): record is {
             email: string;
           } => {
@@ -2253,7 +2509,10 @@ serve(async (req: Request) => {
           };
 
           for (const [rowIndex, record] of mappedRecords.entries()) {
-            const { id, companyId: supplierId, ...contactData } = record;
+            // `companyId` here is the parent's External Company ID; only
+            // contact columns are written.
+            const { id, companyId: supplierId } = record;
+            const contactData = pickColumns("contact", record, CONTACT_COLUMNS);
 
             if (externalContactIdMap.has(id)) {
               const existingEntityId = externalContactIdMap.get(id)!;
@@ -2368,7 +2627,7 @@ serve(async (req: Request) => {
             );
           };
 
-          for (const record of mappedRecords) {
+          for (const [, record] of acceptedRows) {
             const { id, ...rest } = record;
             if (externalIdMap.has(id)) {
               const existingEntityId = externalIdMap.get(id)!;
@@ -2377,7 +2636,7 @@ serve(async (req: Request) => {
                 workCenterUpdates.push({
                   id: existingEntityId,
                   data: {
-                    ...rest,
+                    ...pickColumns("workCenter", rest, WORK_CENTER_COLUMNS),
                     laborRate: rest.laborRate ? parseFloat(rest.laborRate) : 0,
                     machineRate: rest.machineRate
                       ? parseFloat(rest.machineRate)
@@ -2393,7 +2652,7 @@ serve(async (req: Request) => {
             } else if (isWorkCenterValid(rest) && !workCenterIds.has(id)) {
               workCenterIds.add(id);
               workCenterInserts.push({
-                ...rest,
+                ...pickColumns("workCenter", rest, WORK_CENTER_COLUMNS),
                 laborRate: rest.laborRate ? parseFloat(rest.laborRate) : 0,
                 machineRate: rest.machineRate
                   ? parseFloat(rest.machineRate)
@@ -2494,7 +2753,7 @@ serve(async (req: Request) => {
                 processUpdates.push({
                   id: existingEntityId,
                   data: {
-                    ...rest,
+                    ...pickColumns("process", rest, PROCESS_COLUMNS),
                     processType: normalizeProcessType(rest.processType),
                     completeAllOnScan:
                       rest.completeAllOnScan?.toLowerCase() === "true" ?? false,
@@ -2506,7 +2765,7 @@ serve(async (req: Request) => {
             } else if (isProcessValid(rest) && !processIds.has(id)) {
               processIds.add(id);
               processInserts.push({
-                ...rest,
+                ...pickColumns("process", rest, PROCESS_COLUMNS),
                 processType: normalizeProcessType(rest.processType),
                 completeAllOnScan:
                   rest.completeAllOnScan?.toLowerCase() === "true" ?? false,
@@ -2690,7 +2949,7 @@ serve(async (req: Request) => {
             return ids;
           };
 
-          for (const [rowIndex, record] of mappedRecords.entries()) {
+          for (const [rowIndex, record] of acceptedRows) {
             const id = record.id ?? "";
             const name = (record.name ?? "").trim();
             const locationId = (record.locationId ?? "").trim();

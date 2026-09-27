@@ -1,5 +1,5 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { companyHasPlan } from "@carbon/ee/plan.server";
+import { companyHasFeature } from "@carbon/ee/plan.server";
 import type { UIMessage } from "ai";
 import type { ActionFunctionArgs } from "react-router";
 import {
@@ -31,7 +31,7 @@ export async function action({ request }: ActionFunctionArgs) {
   const { client, companyId, companyGroupId, userId } =
     await requirePermissions(request, {});
 
-  const allowed = await companyHasPlan(client, companyId, {
+  const allowed = await companyHasFeature(client, companyId, {
     feature: "AI_AGENT"
   });
   if (!allowed) {

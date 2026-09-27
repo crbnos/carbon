@@ -12,6 +12,7 @@ import {
   recalculateJobOperationDependencies,
   upsertJobMaterial
 } from "~/modules/production";
+import { requireCompanyRecord } from "~/modules/shared/shared.server";
 import { getDatabaseClient } from "~/services/database.server";
 import { setCustomFields } from "~/utils/form";
 
@@ -33,7 +34,23 @@ export async function action({ request, params }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
+  // The writes below use the service role, which bypasses RLS: the job and
+  // every parent id in the form must belong to this company.
   const serviceRole = getCarbonServiceRole();
+  await Promise.all([
+    requireCompanyRecord(serviceRole, "job", companyId, { id: jobId }),
+    requireCompanyRecord(serviceRole, "jobMakeMethod", companyId, {
+      id: validation.data.jobMakeMethodId,
+      jobId
+    }),
+    validation.data.jobOperationId
+      ? requireCompanyRecord(serviceRole, "jobOperation", companyId, {
+          id: validation.data.jobOperationId,
+          jobId
+        })
+      : undefined
+  ]);
+
   const insertJobMaterial = await upsertJobMaterial(serviceRole, {
     ...validation.data,
     jobId,
@@ -74,6 +91,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     .from("job")
     .select("status")
     .eq("id", jobId)
+    .eq("companyId", companyId)
     .single();
   const isReleased = !["Draft", "Planned"].includes(job.data?.status ?? "");
 

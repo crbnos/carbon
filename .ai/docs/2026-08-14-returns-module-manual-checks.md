@@ -295,7 +295,7 @@ company).*
 
 ---
 
-## T12 — Replacement order ✅ (link) 
+## T12 — Replacement order ✅ (link)
 
 1. On the RMA header, click **Create Replacement**.
 2. **Expected:** a new **Draft sales order** opens, pre-filled with the RMA's

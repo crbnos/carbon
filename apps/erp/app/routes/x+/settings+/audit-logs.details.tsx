@@ -1,5 +1,5 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { getGlobalAuditLog } from "@carbon/database/audit";
+import { getGlobalAuditLog } from "@carbon/ee/audit.server";
 import {
   Drawer,
   DrawerBody,

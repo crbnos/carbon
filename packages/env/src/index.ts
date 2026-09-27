@@ -9,7 +9,6 @@ declare global {
       CARBON_API_URL: string;
       CARBON_SLACK_ENABLED: string;
       STRIPE_CONNECT_ENABLED: string;
-      CLOUDFLARE_TURNSTILE_SITE_KEY: string;
       CONTROLLED_ENVIRONMENT: string;
       ERP_URL: string;
       JIRA_CLIENT_ID: string;
@@ -19,6 +18,7 @@ declare global {
       ONSHAPE_CLIENT_ID: string;
       POSTHOG_API_HOST: string;
       POSTHOG_PROJECT_PUBLIC_KEY: string;
+      RAMP_CLIENT_ID: string;
       SUPABASE_URL: string;
       SUPABASE_ANON_KEY: string;
       VERCEL_URL: string;
@@ -162,6 +162,8 @@ export const CARBON_API_URL =
     isSecret: false
   }) ?? getEnv("SUPABASE_URL", { isSecret: false });
 
+// Turnstile guards login wherever BotID can't run (anything not on Vercel).
+// Both keys or neither: a site key alone would render a widget nobody checks.
 export const CLOUDFLARE_TURNSTILE_SITE_KEY = getEnv(
   "CLOUDFLARE_TURNSTILE_SITE_KEY",
   { isRequired: false, isSecret: false }
@@ -289,6 +291,21 @@ export const QUICKBOOKS_ENVIRONMENT =
     isSecret: false
   }) ?? "production";
 
+/**
+ * Carbon's own Ramp OAuth application (the "Connect to Ramp" authorization-code
+ * flow). Distinct from any single customer's client-credentials pair — this is
+ * the one app Carbon registers with Ramp. The client id is public (it appears in
+ * the authorize URL); the secret is server-only (code exchange + token refresh).
+ */
+export const RAMP_CLIENT_ID = getEnv("RAMP_CLIENT_ID", {
+  isRequired: false
+});
+
+export const RAMP_CLIENT_SECRET = getEnv("RAMP_CLIENT_SECRET", {
+  isRequired: false,
+  isSecret: true
+});
+
 export const QUICKBOOKS_WEBHOOK_SECRET = getEnv("QUICKBOOKS_WEBHOOK_SECRET", {
   isRequired: false,
   isSecret: true
@@ -360,15 +377,6 @@ export const SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID = getEnv(
     isRequired: false,
     isSecret: true
   }
-);
-// True once Supabase Auth captcha (Attack Protection) is enabled — login
-// actions then forward Turnstile tokens to GoTrue instead of verifying in-app.
-export const SUPABASE_AUTH_CAPTCHA_ENABLED = parseBoolean(
-  getEnv("SUPABASE_AUTH_CAPTCHA_ENABLED", {
-    isRequired: false,
-    isSecret: false
-  }),
-  false
 );
 export const SESSION_SECRET = getEnv("SESSION_SECRET");
 export const SESSION_KEY = "auth";
@@ -477,6 +485,20 @@ export const IS_LOCAL_DEV =
   VERCEL_ENV !== "production" &&
   VERCEL_ENV !== "preview";
 
+// Set to "1" by Vercel itself on every build and function — never by SST,
+// Docker, or a local stack, which all set VERCEL_ENV by hand. Server-only.
+export const IS_VERCEL =
+  getEnv("VERCEL", { isRequired: false, isSecret: true }) === "1";
+
+// Which check guards login: "botid" or "turnstile". Unset picks one — BotID
+// for the Cloud edition on Vercel, else Turnstile when its keys are set. Set it
+// when the keys are there for something else (GoTrue, another form) and login
+// should still use BotID. Vercel exposes no variable of its own for BotID.
+export const BOT_PROTECTION = getEnv("BOT_PROTECTION", {
+  isRequired: false,
+  isSecret: false
+});
+
 export const POSTHOG_API_HOST = getEnv("POSTHOG_API_HOST", {
   isSecret: false
 });
@@ -564,7 +586,6 @@ export function getBrowserEnv() {
     CARBON_EDITION,
     CARBON_SLACK_ENABLED: CARBON_SLACK_ENABLED ? "true" : "",
     STRIPE_CONNECT_ENABLED: STRIPE_CONNECT_ENABLED ? "true" : "",
-    CLOUDFLARE_TURNSTILE_SITE_KEY,
     CONTROLLED_ENVIRONMENT,
     DEFAULT_LANGUAGE,
     ERP_URL,
@@ -577,6 +598,7 @@ export function getBrowserEnv() {
     POSTHOG_API_HOST,
     POSTHOG_PROJECT_PUBLIC_KEY,
     QUICKBOOKS_CLIENT_ID,
+    RAMP_CLIENT_ID,
     SUPABASE_ANON_KEY,
     SUPABASE_URL,
     VERCEL_ENV,

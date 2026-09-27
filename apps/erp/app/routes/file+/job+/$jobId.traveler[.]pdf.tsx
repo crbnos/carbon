@@ -59,9 +59,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     throw new Error("Failed to load job");
   }
 
-  // Verify job belongs to this company
+  // Verify job belongs to this company before anything else is read with the
+  // service role (every query below is keyed off this job).
   if (job.data.companyId !== companyId) {
-    throw new Error("Job does not belong to this company");
+    logger.error("Job does not belong to this company", { companyId, jobId });
+    throw new Response("Not found", { status: 404 });
   }
 
   // Get all make methods for this job
@@ -98,6 +100,15 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         includeMaterialsOnTraveler?: boolean | null;
       } | null
     )?.includeMaterialsOnTraveler ?? false;
+
+  // Opt-out company setting (defaults on): render the operations (routing +
+  // scan barcodes) section on the traveler.
+  const includeOperations =
+    (
+      companySettings.data as {
+        includeOperationsOnTraveler?: boolean | null;
+      } | null
+    )?.includeOperationsOnTraveler ?? true;
 
   const customer = await serviceRole
     .from("customer")
@@ -272,6 +283,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
             notes={index === 0 ? jobNotes : undefined}
             thumbnail={data.thumbnail}
             includeMaterials={includeMaterials}
+            includeOperations={includeOperations}
             materials={data.materials}
             methodRevision={data.makeMethod.version?.toString()}
             template={templateConfig}

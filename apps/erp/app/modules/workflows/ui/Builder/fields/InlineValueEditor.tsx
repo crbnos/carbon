@@ -1,9 +1,9 @@
+import type { ValueOrRef, ValueType } from "@carbon/ee/workflows";
 import { cn } from "@carbon/react";
 import {
   VariableText,
   type VariableTextPart
 } from "@carbon/react/VariableText";
-import type { ValueOrRef, ValueType } from "@carbon/workflows";
 import { useLingui } from "@lingui/react/macro";
 import { useCallback, useEffect, useRef } from "react";
 import { useCustomFieldLabels } from "../catalog";

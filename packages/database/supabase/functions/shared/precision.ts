@@ -34,6 +34,20 @@ export function round(
   return shift(fn(shift(value, scale)), -scale);
 }
 
+/** Value equality at the one float-noise tolerance. Two 5dp quantities that
+ *  differ only by ~1e-12 float residue (0.98 + 0.02 vs 1) are the SAME
+ *  quantity — use this instead of `===`/`!==` when a raw compare would mistake
+ *  that residue for a real difference (e.g. deciding whether a draw is a full
+ *  draw). `tolerance` defaults to EPSILON; pass a business tolerance only where
+ *  the caller decides what a difference MEANS. */
+export function equals(
+  a: number,
+  b: number,
+  tolerance: number = EPSILON
+): boolean {
+  return Math.abs(a - b) <= tolerance;
+}
+
 /** Round every part to `scale` so the results sum EXACTLY to `target`, moving at
  *  most ONE minor unit per part (largest-remainder / Hamilton apportionment).
  *

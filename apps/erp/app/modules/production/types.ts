@@ -248,8 +248,14 @@ export type BatchCandidate = {
   jobReadableId: string | null;
   jobDueDate: string | null;
   jobStatus: string | null;
+  itemId: string | null;
   itemReadableId: string | null;
   itemDescription: string | null;
+  // The produced item's lot tracking and the job's live WIP entity, whose
+  // readableId is the lot number (pre-fills the builder's Output card).
+  requiresBatchTracking: boolean | null;
+  trackedEntityId: string | null;
+  lotNumber: string | null;
   description: string | null;
   operationQuantity: number | null;
   status: string | null;

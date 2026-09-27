@@ -119,6 +119,20 @@ Applies pending migrations against the worktree's local DB and (only if new
 migrations were applied) regenerates DB types + swagger. To regenerate types
 alone, `pnpm db:types`. **Do NOT run `npm run db:build` — it does not exist.**
 
+### 6. Update the demo data
+
+The four demo datasets (`packages/database/src/datasets/`) must keep showing every
+screen. When a migration adds, renames or drops a table or column, or changes a status
+enum or CHECK constraint:
+
+- **New table or feature a user can see:** add realistic rows to all four datasets
+  (`data/<key>/`, plus the tier that inserts them), and a floor in `datasets/coverage.ts`.
+- **Renamed/dropped column or table:** update the tier and data that write it.
+- **New enum value a user can reach:** make it appear in the demo data.
+
+Then run `pnpm db:check:datasets` — it applies every dataset and rolls back, and the
+pre-commit hook runs it anyway. Details: `onboarding-company-templates.md`.
+
 ## Checklist
 
 - [ ] File created with `pnpm db:migrate:new <name>` (HHMMSS not `000000`)
@@ -133,3 +147,4 @@ alone, `pnpm db:types`. **Do NOT run `npm run db:build` — it does not exist.**
       (`packages/jobs/src/backups/renames.ts`) — new name, or `null` if dropped with its feature
 - [ ] Zod validators updated in `{module}.models.ts`
 - [ ] Applied locally with `pnpm db:migrate` (regenerates types) — never `db:build`
+- [ ] Demo data updated for the new/changed tables, and `pnpm db:check:datasets` ✓×4

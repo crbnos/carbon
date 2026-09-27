@@ -1,3 +1,14 @@
+import {
+  conditionAstFormField,
+  equals,
+  getFieldDef,
+  isFieldAvailableOnSurfaces,
+  RULE_SEVERITIES,
+  round,
+  SURFACES_BY_TARGET_TYPE,
+  TARGET_TYPES,
+  TRANSACTION_SURFACES
+} from "@carbon/utils";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
 import { batchPropertyDataTypes } from "../items/items.models";
@@ -570,8 +581,64 @@ export const stockTransferLineScanValidator = z.object({
   stockTransferId: z.string().min(1, { message: "Stock transfer is required" }),
   trackedEntityId: z
     .string()
-    .min(1, { message: "Tracked entity ID is required" })
+    .min(1, { message: "Tracked entity ID is required" }),
+  // The picker sends the clamped pick quantity and the bin the user chose; the
+  // action forwards both to the edge function (serial always posts 1).
+  quantity: z.number().positive({ message: "Quantity must be greater than 0" }),
+  storageUnitId: z.string().nullable().optional()
 });
+
+/**
+ * Decide what a stock-transfer scan forwards to the post-stock-transfer edge
+ * function, or refuse the pick before invoking it. Pure so the route's parsing
+ * is testable without the edge function or the client graph — the edge function
+ * re-checks the same limits under a row lock (see post-stock-transfer/pick-guards).
+ *   - A serial scan always moves one unit; a batch scan moves the picker's
+ *     clamped quantity.
+ *   - The bin the user chose wins; the highest-quantity bin is only a fallback.
+ *   - A line with no outstanding quantity (or a pick that exceeds it) is refused.
+ */
+export function resolveStockTransferPickForward(input: {
+  transferType: "batch" | "serial";
+  quantity: number;
+  storageUnitId: string | null | undefined;
+  currentStorageUnitId: string | null;
+  lineQuantity: number;
+  pickedQuantity: number;
+}):
+  | { ok: true; quantity: number; fromStorageUnitId: string | null }
+  | { ok: false; message: string } {
+  // Round like the edge function's resolvePick does, so the pre-check and the
+  // post-lock re-check cannot disagree about a residue pick.
+  const pickQuantity = round(
+    input.transferType === "batch" ? input.quantity : 1
+  );
+  const outstanding = round(
+    round(input.lineQuantity) - round(input.pickedQuantity)
+  );
+  // Checked first, matching resolvePick's order, so the pre-check and the
+  // edge function name the same refusal for the same input.
+  if (pickQuantity <= 0) {
+    return { ok: false, message: "Enter a quantity to pick" };
+  }
+  if (equals(outstanding, 0) || outstanding < 0) {
+    return { ok: false, message: "This line is already fully picked" };
+  }
+  // Two different refusals: nothing left to pick, versus more than is left.
+  // One message for both told an operator with 2 outstanding that the line was
+  // fully picked.
+  if (!equals(pickQuantity, outstanding) && pickQuantity > outstanding) {
+    return {
+      ok: false,
+      message: `Only ${outstanding} left to pick on this line`
+    };
+  }
+  return {
+    ok: true,
+    quantity: pickQuantity,
+    fromStorageUnitId: input.storageUnitId ?? input.currentStorageUnitId
+  };
+}
 
 export const pickingListStatusType = [
   "Draft",
@@ -639,3 +706,63 @@ export const pickQuantityValidator = z.object({
   quantity: zfd.numeric(z.number().min(0)),
   markShort: zfd.text(z.string().optional())
 });
+
+// -----------------------------------------------------------------------------
+// Storage Rules — predicate rules evaluated on warehouse/MES transaction
+// surfaces (receipt, shipment, pick, place, …). Sibling feature to sales rules
+// (`~/modules/sales`, sales-document surfaces); both share the engine and the
+// AST schema in @carbon/utils.
+// -----------------------------------------------------------------------------
+export const storageRuleSeverities = RULE_SEVERITIES;
+
+export const storageRuleValidator = z
+  .object({
+    id: zfd.text(z.string().optional()),
+    name: z.string().trim().min(1, { message: "Name is required" }).max(120),
+    description: zfd.text(z.string().optional()),
+    message: z.string().min(1, { message: "Message is required" }).max(500),
+    severity: z.enum(storageRuleSeverities),
+    targetType: z.enum(TARGET_TYPES),
+    // Broadcast gate for workCenter rules. Item-target storage rules ignore
+    // this and use the filteredItem* fields instead (empty = all items).
+    appliesToAll: zfd.checkbox(),
+    filteredItemTypes: zfd.repeatableOfType(z.string()).optional(),
+    filteredItemGroupIds: zfd.repeatableOfType(z.string()).optional(),
+    filteredItemMatchAll: zfd.checkbox(),
+    active: zfd.checkbox(),
+    surfaces: zfd
+      .repeatableOfType(z.enum(TRANSACTION_SURFACES))
+      .refine((arr) => arr.length >= 1, {
+        message: "Pick at least one surface"
+      }),
+    conditionAst: conditionAstFormField
+  })
+  .superRefine((val, ctx) => {
+    // Reject any surface that isn't valid for the chosen targetType. Schema
+    // enforcement only — DB has no CHECK; UI also filters the picker.
+    const allowed = new Set<string>(SURFACES_BY_TARGET_TYPE[val.targetType]);
+    for (let i = 0; i < val.surfaces.length; i++) {
+      const s = val.surfaces[i]!;
+      if (!allowed.has(s)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["surfaces", i],
+          message: `Surface "${s}" not valid for ${val.targetType} rules`
+        });
+      }
+    }
+
+    // Reject conditions on a registry field whose context the evaluator won't
+    // populate for every selected surface (else it resolves undefined → false
+    // "X is required"). Unknown paths are left to runtime presence handling.
+    val.conditionAst.conditions.forEach((c, i) => {
+      const def = getFieldDef(c.field);
+      if (def && !isFieldAvailableOnSurfaces(def, val.surfaces)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["conditionAst", "conditions", i, "field"],
+          message: `"${def.label}" isn't available on the selected surface(s)`
+        });
+      }
+    });
+  });

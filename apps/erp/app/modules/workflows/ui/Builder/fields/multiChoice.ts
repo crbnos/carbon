@@ -1,4 +1,4 @@
-import type { ValueOrRef, ValueType } from "@carbon/workflows";
+import type { ValueOrRef, ValueType } from "@carbon/ee/workflows";
 
 // The value round-trip for a multi-select input, with no React and no macro, so the
 // part that decides what gets STORED can be unit-tested.

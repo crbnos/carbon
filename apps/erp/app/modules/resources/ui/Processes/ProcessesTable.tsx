@@ -37,6 +37,7 @@ import {
   Table
 } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
+import { EnumerableGroup } from "~/components/EnumerableGroup";
 import { useWorkCenters } from "~/components/Form/WorkCenter";
 import { usePermissions, useUrlParams } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
@@ -139,21 +140,18 @@ const ProcessesTable = memo(({ data, count }: ProcessesTableProps) => {
         id: "workCenters",
         header: t`Work Centers`,
         cell: ({ row }) => (
-          <span className="flex gap-2 items-center flex-wrap py-2">
-            {((row.original.workCenters ?? []) as Array<string>).map((wc) => {
-              const workCenter = workCenters.find((w) => w.value === wc);
-              return (
-                <Enumerable
-                  key={workCenter?.label}
-                  onClick={() =>
-                    navigate(path.to.workCenter(workCenter?.value!))
-                  }
-                  className="cursor-pointer"
-                  value={workCenter?.label ?? null}
-                />
-              );
-            })}
-          </span>
+          <EnumerableGroup
+            items={((row.original.workCenters ?? []) as Array<string>).flatMap(
+              (wc) => {
+                const workCenter = workCenters.find((w) => w.value === wc);
+                if (!workCenter) return [];
+                return {
+                  label: workCenter.label,
+                  onClick: () => navigate(path.to.workCenter(workCenter.value))
+                };
+              }
+            )}
+          />
         ),
         meta: {
           icon: <LuBuilding2 />,

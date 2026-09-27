@@ -27,6 +27,7 @@ import {
 import type { BadgeProps } from "./Badge";
 import { Badge, BadgeCloseButton } from "./Badge";
 import { BarProgress } from "./BarProgress";
+import { useBotProtection } from "./BotProtection";
 import {
   BottomSheet,
   BottomSheetBody,
@@ -39,6 +40,7 @@ import {
 } from "./BottomSheet";
 import type { ButtonProps } from "./Button";
 import { Button, buttonVariants } from "./Button";
+import { CarbonPulse } from "./CarbonPulse";
 import {
   Card,
   CardAction,
@@ -180,7 +182,6 @@ import { Kbd } from "./Kbd";
 import { Label } from "./Label";
 import { LabelWithHelp } from "./LabelWithHelp";
 import { Loading } from "./Loading";
-import { LoadingBars } from "./LoadingBars";
 import {
   Menu,
   MenuCheckboxItem,
@@ -348,7 +349,6 @@ import {
   usePickOrderOptions
 } from "./TrackedEntityPicker";
 import { TruncatedTooltipText } from "./TruncatedTooltipText";
-import { TurnstileChallenge } from "./Turnstile";
 import { TVColorBars } from "./TVColorBars";
 import { cn } from "./utils/cn";
 import { hasOpenDialog, isInsideTopmostDialog } from "./utils/dialog";
@@ -495,7 +495,7 @@ export {
   Label,
   LabelWithHelp,
   Loading,
-  LoadingBars,
+  CarbonPulse,
   Menu,
   MenuCheckboxItem,
   MenuGroup,
@@ -634,7 +634,6 @@ export {
   TimePicker,
   Toaster,
   Toggle,
-  TurnstileChallenge,
   ToggleGroup,
   ToggleGroupItem,
   TrackedEntityPicker,
@@ -656,6 +655,7 @@ export {
   reactNodeToString,
   shortcutKeyVariants,
   toast,
+  useBotProtection,
   useModalCardType,
   useModalDrawerType,
   useOperatingSystem,

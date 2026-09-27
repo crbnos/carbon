@@ -9,7 +9,7 @@ import {
   getFixedAsset,
   getOrCreateAccountingPeriod
 } from "~/modules/accounting";
-import { postDisposal } from "~/modules/accounting/accounting.ee.server";
+import { postDisposal } from "~/modules/accounting/accounting.server";
 import { FixedAssetDisposalForm } from "~/modules/accounting/ui/FixedAssets";
 import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
@@ -77,6 +77,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
       .from("fixedAsset")
       .select("*, fixedAssetClass:fixedAssetClassId(*)")
       .eq("id", fixedAssetId)
+      .eq("companyId", companyId)
       .single(),
     client
       .from("dimension")

@@ -13,6 +13,7 @@ import {
   supplierContactValidator
 } from "~/modules/purchasing";
 import SupplierContactForm from "~/modules/purchasing/ui/Supplier/SupplierContactForm";
+import { requireCompanyRecord } from "~/modules/shared/shared.server";
 import { setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 import { supplierContactsQuery } from "~/utils/react-query";
@@ -42,6 +43,18 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
   const { id, contactId, supplierLocationId, ...contact } = validation.data;
+
+  // The contact is written through the service role: the supplier in the URL
+  // (and the location on the form) must belong to this company.
+  await Promise.all([
+    requireCompanyRecord(client, "supplier", companyId, { id: supplierId }),
+    supplierLocationId
+      ? requireCompanyRecord(client, "supplierLocation", companyId, {
+          id: supplierLocationId,
+          supplierId
+        })
+      : null
+  ]);
 
   const createSupplierContact = await insertSupplierContact(client, {
     supplierId,

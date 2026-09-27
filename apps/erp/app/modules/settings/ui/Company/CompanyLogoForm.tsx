@@ -1,4 +1,10 @@
 import { SUPABASE_URL, useCarbon } from "@carbon/auth";
+import { getCompanyPrivateBucket } from "@carbon/files";
+import {
+  IMAGE_UPLOAD_MIME_TYPES,
+  isHeic,
+  prepareImageUpload
+} from "@carbon/files/media";
 import { getLogger } from "@carbon/logger";
 import {
   Avatar,
@@ -56,9 +62,9 @@ const CompanyLogoForm = ({ company, target }: CompanyLogoFormProps) => {
   const isIcon = target === "logoLightIcon" || target === "logoDarkIcon";
   const isDark = target === "logoDark" || target === "logoDarkIcon";
   // The watermark is drawn at ~50% page width, so keep it large; everything
-  // else is a small inline logo. Either way the resizer re-encodes to PNG,
-  // which is the only raster format @react-pdf/renderer can decode (a raw
-  // webp/gif upload renders blank in the PDF).
+  // else is a small inline logo. Either way the canvas pipeline re-encodes to
+  // PNG (JPEG for JPEG input) — the only raster formats @react-pdf/renderer
+  // can decode (a raw webp/gif upload renders blank in the PDF).
   const resizeHeight = target === "logoWatermark" ? 512 : 128;
 
   const getLogoPath = (file: File) => {
@@ -73,15 +79,13 @@ const CompanyLogoForm = ({ company, target }: CompanyLogoFormProps) => {
     if (e.target.files && carbon) {
       let logo = e.target.files[0];
 
-      const supportedTypes = [
-        "image/jpeg",
-        "image/png",
-        "image/webp",
-        "image/gif"
-      ];
-      if (!supportedTypes.includes(logo.type)) {
+      // Windows often reports no MIME type for .heic, so also match by name.
+      if (
+        !IMAGE_UPLOAD_MIME_TYPES.includes(logo.type) &&
+        !isHeic(logo.name, logo.type)
+      ) {
         toast.error(
-          t`File type not supported. Please use JPG, PNG, WebP, or GIF.`
+          t`File type not supported. Please use JPG, PNG, WebP, GIF, or HEIC.`
         );
         return;
       }
@@ -96,45 +100,26 @@ const CompanyLogoForm = ({ company, target }: CompanyLogoFormProps) => {
         return;
       }
 
-      {
-        const formData = new FormData();
-        formData.append("file", logo);
-        formData.append("height", String(resizeHeight));
-        formData.append("contained", "true");
-
-        try {
-          const response = await fetch(
-            `${SUPABASE_URL}/functions/v1/image-resizer`,
-            {
-              method: "POST",
-              body: formData
-            }
-          );
-
-          if (!response.ok) {
-            const errorText = await response
-              .text()
-              .catch(() => response.statusText);
-            throw new Error(
-              `Image resize failed: ${response.status} ${
-                errorText || "Unknown error"
-              }`
-            );
+      try {
+        const processed = await prepareImageUpload(carbon, {
+          bucket: getCompanyPrivateBucket(company.id ?? ""),
+          directory: `${company.id}/tmp`,
+          file: logo,
+          height: resizeHeight
+        });
+        logo = new File(
+          [processed],
+          `logo.${processed.name.split(".").pop()}`,
+          {
+            type: processed.type
           }
-
-          const blob = await response.blob();
-          const resizedFile = new File([blob], "logo.png", {
-            type: "image/png"
-          });
-
-          logo = resizedFile;
-        } catch (error) {
-          const errorMessage =
-            error instanceof Error ? error.message : "Unknown error";
-          logger.error("Image resize error", { error });
-          toast.error(t`Failed to resize image: ${errorMessage}`);
-          return;
-        }
+        );
+      } catch (error) {
+        const errorMessage =
+          error instanceof Error ? error.message : "Unknown error";
+        logger.error("Image resize error", { error });
+        toast.error(t`Failed to resize image: ${errorMessage}`);
+        return;
       }
 
       const previousStoragePath = toStoragePath(currentLogoPath);

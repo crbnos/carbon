@@ -1,10 +1,7 @@
-import { insertId, insertRow, one } from "../sql.ts";
-import type { Ctx } from "../types.ts";
-import {
-  EVENT_SOURCES,
-  FORMAT_VERSION,
-  type Node
-} from "./workflow-definitions.ts";
+import { resolveDate } from "../dates.ts";
+import { insertId, insertRow, need, one } from "../sql.ts";
+import type { Ctx, Node, WorkflowRunSpec } from "../types.ts";
+import { EVENT_SOURCES, FORMAT_VERSION } from "./workflow-definitions.ts";
 
 // Wired exactly as the publish and activate routes do it, so a later change in the app
 // really fires them. Definitions must pass `validateDefinition` in @carbon/workflows —
@@ -68,6 +65,7 @@ export async function runTier11(ctx: Ctx): Promise<void> {
   const data = ctx.dataset.workflows;
   const { userId } = ctx;
   const allEventIds: string[] = [];
+  const publishedByName = new Map<string, PublishedWorkflow>();
 
   // The issue-creating workflow names a type, which is NOT NULL on the table.
   const issueType = await one<{ id: string }>(
@@ -107,6 +105,11 @@ export async function runTier11(ctx: Ctx): Promise<void> {
       `UPDATE "workflow" SET "publishedVersionId" = $1 WHERE "id" = $2 AND "companyId" = $3`,
       [versionId, workflowId, ctx.companyId]
     );
+    publishedByName.set(workflow.name, {
+      workflowId,
+      versionId,
+      nodes: workflow.nodes
+    });
 
     for (const row of triggerRowsFor(workflow.nodes)) {
       await insertRow(ctx, "workflowTriggerEvent", {
@@ -121,4 +124,193 @@ export async function runTier11(ctx: Ctx): Promise<void> {
 
   const tables = await reconcileSubscriptions(ctx, allEventIds);
   ctx.log(`workflow subscriptions — ${tables.join(", ")}`);
+
+  ctx.log(`workflow runs — ${data.runs.length}`);
+  for (const [index, spec] of data.runs.entries()) {
+    const workflow = publishedByName.get(spec.workflow);
+    if (!workflow) {
+      throw new Error(
+        `Seed: workflow run "${spec.workflow}": not a published seed workflow`
+      );
+    }
+    await seedRun(ctx, workflow, spec, `seed:${index + 1}`);
+  }
+}
+
+type PublishedWorkflow = {
+  workflowId: string;
+  versionId: string;
+  nodes: Node[];
+};
+
+type EntityValue = {
+  kind: "entity";
+  of: string;
+  id: string;
+  row?: Record<string, unknown>;
+};
+
+/**
+ * Millisecond offsets are fixed so durationMs agrees with the timestamps. A
+ * Skipped run settles at `load`: never claimed, no step rows.
+ */
+async function seedRun(
+  ctx: Ctx,
+  workflow: PublishedWorkflow,
+  spec: WorkflowRunSpec,
+  sourceEventId: string
+): Promise<void> {
+  const trigger = workflow.nodes.find((node) => node.type === "trigger");
+  const eventId = ((trigger?.data.events as string[] | undefined) ?? [])[0];
+  if (!trigger || !eventId) {
+    throw new Error(`Seed: workflow "${spec.workflow}" has no trigger event`);
+  }
+  const source = EVENT_SOURCES[eventId];
+  if (!source) {
+    throw new Error(
+      `Seed: workflow run "${spec.workflow}": event "${eventId}" has no source table to name the triggering record`
+    );
+  }
+  const recordId = need(ctx.refs.documents, spec.triggerRef, "document");
+  const second = `${resolveDate(ctx.anchor, spec.at.offset)}T${spec.at.time}`;
+  const ms = (n: number) => `${second}.${String(n).padStart(3, "0")}Z`;
+
+  const record: EntityValue = {
+    kind: "entity",
+    of: source.table,
+    id: recordId,
+    row: await triggerRow(ctx, source.table, recordId)
+  };
+
+  const claimedAt = 250;
+  const lastStepEnd = 270 + spec.steps.length * 360;
+  const settledAt = spec.status === "Skipped" ? 180 : lastStepEnd + 60;
+  const runId = await insertId(ctx, "workflowRun", {
+    workflowId: workflow.workflowId,
+    workflowVersionId: workflow.versionId,
+    eventId,
+    sourceEventId,
+    triggerTable: source.table,
+    triggerRecordId: recordId,
+    ownerId: ctx.userId,
+    status: spec.status,
+    statusReason: spec.statusReason,
+    isTest: false,
+    startedAt: spec.status === "Skipped" ? undefined : ms(claimedAt),
+    completedAt: ms(settledAt),
+    durationMs: settledAt - (spec.status === "Skipped" ? 0 : claimedAt),
+    createdAt: ms(0)
+  });
+  if (spec.status === "Skipped") return;
+
+  await insertRow(ctx, "workflowStepRun", {
+    runId,
+    sequence: 0,
+    nodeId: trigger.id,
+    nodeType: "trigger",
+    status: "Succeeded",
+    output: JSON.stringify({ record }),
+    startedAt: ms(260),
+    completedAt: ms(270),
+    durationMs: 10
+  });
+
+  for (const [index, step] of spec.steps.entries()) {
+    const node = workflow.nodes.find((n) => n.id === step.nodeId);
+    if (!node || node.type === "trigger") {
+      throw new Error(
+        `Seed: workflow run "${spec.workflow}": "${step.nodeId}" is not an action node of the definition`
+      );
+    }
+    const start = 270 + index * 360;
+    const inputs = (node.data.inputs ?? {}) as Record<string, unknown>;
+    const settled = actionOutcome(node, record);
+    await insertRow(ctx, "workflowStepRun", {
+      runId,
+      sequence: index + 1,
+      nodeId: node.id,
+      nodeType: node.type,
+      status: step.status,
+      statusReason: step.status === "Succeeded" ? settled.summary : undefined,
+      input: JSON.stringify({
+        inputs,
+        resolved: resolveInputs(inputs, trigger.id, record)
+      }),
+      output:
+        step.status === "Succeeded"
+          ? JSON.stringify(settled.output)
+          : undefined,
+      error: step.error,
+      startedAt: ms(start + 10),
+      completedAt: ms(start + 360),
+      durationMs: 350
+    });
+  }
+}
+
+/** Mirrors the loader's entity row for the triggering record. */
+async function triggerRow(
+  ctx: Ctx,
+  table: string,
+  id: string
+): Promise<Record<string, unknown>> {
+  if (table !== "salesOrder") {
+    throw new Error(`Seed: no trigger row shape for "${table}" runs`);
+  }
+  return one<Record<string, unknown>>(
+    ctx.client,
+    `SELECT id, "salesOrderId", "customerId", status,
+            "orderDate"::text AS "orderDate", "currencyCode"
+     FROM "salesOrder" WHERE id = $1 AND "companyId" = $2`,
+    [id, ctx.companyId]
+  );
+}
+
+function resolveInputs(
+  inputs: Record<string, unknown>,
+  triggerId: string,
+  record: EntityValue
+): Record<string, EntityValue> {
+  const resolved: Record<string, EntityValue> = {};
+  for (const [name, raw] of Object.entries(inputs)) {
+    const value = raw as {
+      kind?: string;
+      nodeId?: string;
+      output?: string;
+      type?: { kind?: string; of?: string };
+      value?: unknown;
+    };
+    if (value.kind === "ref" && value.nodeId === triggerId) {
+      resolved[name] = record;
+    } else if (
+      value.kind === "literal" &&
+      value.type?.kind === "entity" &&
+      typeof value.type.of === "string" &&
+      typeof value.value === "string"
+    ) {
+      resolved[name] = { kind: "entity", of: value.type.of, id: value.value };
+    } else {
+      throw new Error(`Seed: cannot resolve workflow input "${name}"`);
+    }
+  }
+  return resolved;
+}
+
+/** Mirrors what actions/update.ts settles with. */
+function actionOutcome(
+  node: Node,
+  record: EntityValue
+): { output: unknown; summary: string } {
+  const action = node.data.action as string | undefined;
+  if (!action?.endsWith(".update")) {
+    throw new Error(`Seed: no seeded outcome for action "${action}"`);
+  }
+  const target = action.slice(0, -".update".length);
+  const fields = Object.keys(
+    (node.data.inputs ?? {}) as Record<string, unknown>
+  ).filter((name) => name !== target).length;
+  return {
+    output: { record: { kind: "entity", of: target, id: record.id } },
+    summary: `Updated ${fields} field(s).`
+  };
 }

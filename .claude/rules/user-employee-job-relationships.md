@@ -48,9 +48,11 @@ is the separate `job` table from `20240909194622_jobs.sql`).
    employee type can do per module/action, scoped to company IDs.
 3. Flattened: those grants are materialized into `userPermission.permissions` (JSONB,
    `<module>_<action>` → company-ID array).
-4. Claims: SQL `get_claims(uid, company)` (`20230123004206_claims.sql`) reads `role` from
+4. Claims: SQL `get_claims(uid, company)` (latest: `20260925121735_rpc-function-guards.sql`) reads `role` from
    `userToCompany` and `permissions` from `userPermission`, then returns
-   `(jsonb_build_object('role', role) || permissions)`. RLS helpers like `has_company_permission`,
+   `(jsonb_build_object('role', role) || permissions)`. Called through the API it answers only for
+   the caller's own `uid`, or for someone in a company where the caller holds `users_view` or
+   `users_update`; service role and direct connections are unrestricted. RLS helpers like `has_company_permission`,
    `get_companies_with_employee_role()`, and `get_companies_with_employee_permission('<module>_<action>')`
    enforce this in policies (helpers re-defined in later migrations — read the newest).
 5. App layer (`packages/auth/src/services/`): `getUserClaims()` caches claims in Redis at
@@ -74,6 +76,16 @@ is the separate `job` table from `20240909194622_jobs.sql`).
 
 ## Gotchas
 
+- **`user` RLS is company-scoped** (`20260924153817_user-rls-company-scope.sql`). A caller
+  sees themselves, users who share a `userToCompany` company, and, as an employee,
+  users with an `employee` / `customerAccount` / `supplierAccount` row in their company
+  (pending invites, deactivated people). Another user's row is writable only with
+  `users_update` in a company where that user has an active `userToCompany` row. INSERT
+  and DELETE are revoked from `anon`/`authenticated`, so they go through the service role.
+  A BEFORE UPDATE trigger (`guard_user_identity_columns`) rejects any API-role change to
+  `id`, `email`, `active`, `admin`, `developer` or `isConsoleOperator`. Sending those
+  columns unchanged is fine. Deleting a user also deletes its identity `group`
+  (`sync_delete_user_identity_group`).
 - `employee` and `employeeJob` share composite PK `(id, companyId)` and `id → user.id` — always scope
   queries by **both** id and companyId. A user has one employee/employeeJob row **per company**.
 - `userToCompany.role` (membership type) is distinct from `employeeType` (which permission set);

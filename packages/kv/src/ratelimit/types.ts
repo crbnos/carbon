@@ -53,6 +53,12 @@ export interface Algorithm {
    * Reset the rate limit for a key
    */
   resetTokens: (ctx: RatelimitContext, key: string) => Promise<void>;
+
+  /**
+   * Give back one token a successful `limit()` consumed. Sliding window only;
+   * the others leave the token spent.
+   */
+  refund?: (ctx: RatelimitContext, key: string) => Promise<void>;
 }
 
 /**

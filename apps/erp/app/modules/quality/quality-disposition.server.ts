@@ -91,13 +91,17 @@ export async function assignEntitiesToIssueItem(args: {
         .where("companyId", "=", companyId)
         .execute();
 
-      const existingQty = existingLinks.reduce(
-        (acc, l) => acc + Number(l.quantity ?? 0),
-        0
+      // Round PER LINK, then round the sum: each link quantity is itself a
+      // persisted value, so the row totals below must net exactly against the
+      // link rows rather than against their raw float sum.
+      const existingQty = round(
+        existingLinks.reduce(
+          (acc, l) => acc + round(Number(l.quantity ?? 0)),
+          0
+        )
       );
-      const movingQty = assignments.reduce(
-        (acc, a) => acc + Number(a.quantity),
-        0
+      const movingQty = round(
+        assignments.reduce((acc, a) => acc + round(Number(a.quantity)), 0)
       );
 
       await trx
@@ -114,7 +118,7 @@ export async function assignEntitiesToIssueItem(args: {
             nonConformanceItemId: targetItemId,
             nonConformanceId: target.nonConformanceId,
             trackedEntityId: a.trackedEntityId,
-            quantity: Number(a.quantity),
+            quantity: round(Number(a.quantity)),
             companyId,
             createdBy: userId
           }))
@@ -124,7 +128,10 @@ export async function assignEntitiesToIssueItem(args: {
       await trx
         .updateTable("nonConformanceItem")
         .set({
-          quantity: Math.max(0, Number(source.quantity ?? 0) - existingQty),
+          quantity: Math.max(
+            0,
+            round(round(Number(source.quantity ?? 0)) - existingQty)
+          ),
           updatedBy: userId,
           updatedAt: nowIso
         })
@@ -135,7 +142,7 @@ export async function assignEntitiesToIssueItem(args: {
       await trx
         .updateTable("nonConformanceItem")
         .set({
-          quantity: Number(target.quantity ?? 0) + movingQty,
+          quantity: round(round(Number(target.quantity ?? 0)) + movingQty),
           updatedBy: userId,
           updatedAt: nowIso
         })
@@ -338,18 +345,18 @@ export async function linkEntitiesToIssueItemRow(
         nonConformanceItemId: row.id,
         nonConformanceId,
         trackedEntityId: e.id,
-        quantity: e.quantity,
+        quantity: round(e.quantity),
         companyId,
         createdBy: userId
       }))
     )
     .execute();
 
-  const addedQty = toLink.reduce((acc, e) => acc + e.quantity, 0);
+  const addedQty = round(toLink.reduce((acc, e) => acc + round(e.quantity), 0));
   await trx
     .updateTable("nonConformanceItem")
     .set({
-      quantity: currentQty + addedQty,
+      quantity: round(round(currentQty) + addedQty),
       updatedBy: userId,
       updatedAt: nowIso
     })
@@ -367,7 +374,8 @@ export async function linkEntitiesToIssueItemRow(
 
 // Physically subdivides a batch tracked entity, mirroring the MES issue split:
 // creates a new lot for `moveQty` linked to `newRowId`, decrements the original
-// lot to `keepQty` (kept on its existing row), and writes split genealogy
+// lot to the builder's remaining quantity (kept on its existing row), and
+// writes split genealogy
 // (trackedActivity "Split" + input/output + net-zero "Batch Split" itemLedger,
 // which leaves on-hand unchanged).
 //
@@ -429,7 +437,6 @@ async function subdivideBatchEntity(
     locationId: string | null;
     entityQty: number;
     moveQty: number;
-    keepQty: number;
     companyId: string;
     userId: string;
     nowIso: string;
@@ -445,7 +452,6 @@ async function subdivideBatchEntity(
     locationId,
     entityQty,
     moveQty,
-    keepQty,
     companyId,
     userId,
     nowIso
@@ -504,17 +510,23 @@ async function subdivideBatchEntity(
     .execute();
 
   // The retained lot is only decremented — no pointer is written on it; the
-  // child carries "Split From Entity ID" instead.
+  // child carries "Split From Entity ID" instead. The remaining quantity comes
+  // from the builder (rounded at the persist boundary), never from a separately
+  // derived entityQty − moveQty that could round differently.
   await trx
     .updateTable("trackedEntity")
-    .set({ quantity: keepQty })
+    .set(split.parentUpdate)
     .where("id", "=", source.id)
     .where("companyId", "=", companyId)
     .execute();
 
   await trx
     .updateTable("nonConformanceItemTrackedEntity")
-    .set({ quantity: keepQty, updatedBy: userId, updatedAt: nowIso })
+    .set({
+      quantity: split.parentUpdate.quantity,
+      updatedBy: userId,
+      updatedAt: nowIso
+    })
     .where("id", "=", linkId)
     .where("companyId", "=", companyId)
     .execute();
@@ -525,7 +537,7 @@ async function subdivideBatchEntity(
       nonConformanceItemId: newRowId,
       nonConformanceId,
       trackedEntityId: newEntityId,
-      quantity: moveQty,
+      quantity: split.childEntityInsert.quantity,
       companyId,
       createdBy: userId
     })
@@ -644,9 +656,13 @@ export async function splitIssueItem(args: {
       // (e.g. scrap N, use-as-is the rest). Create a new Pending row for the
       // split-off quantity and shrink the original — no entity subdivision.
       if (links.length === 0) {
-        const current = Number(item.quantity ?? 0);
-        const splitQty =
-          typeof splitQuantity === "number" ? splitQuantity : NaN;
+        // Compare at the SAME scale the writes below persist at. Raw operands
+        // let a 0.999996 split of a 1 pass this gate and then round to a full
+        // draw: the new row takes 1 and the original is set to 0.
+        const current = round(Number(item.quantity ?? 0));
+        const splitQty = round(
+          typeof splitQuantity === "number" ? splitQuantity : NaN
+        );
         if (!(splitQty > 0)) {
           throw new Error("Missing split parameters");
         }
@@ -661,7 +677,7 @@ export async function splitIssueItem(args: {
           .values({
             nonConformanceId: item.nonConformanceId,
             itemId: item.itemId,
-            quantity: splitQty,
+            quantity: round(splitQty),
             disposition: "Pending",
             companyId,
             createdBy: userId
@@ -672,7 +688,7 @@ export async function splitIssueItem(args: {
         await trx
           .updateTable("nonConformanceItem")
           .set({
-            quantity: current - splitQty,
+            quantity: round(round(current) - round(splitQty)),
             updatedBy: userId,
             updatedAt: nowIso
           })
@@ -725,8 +741,10 @@ export async function splitIssueItem(args: {
         throw new Error("Missing split parameters");
       }
 
-      const effectiveSplitQty = moves.reduce((acc, m) => acc + m.moveQty, 0);
-      const current = Number(item.quantity ?? 0);
+      const effectiveSplitQty = round(
+        moves.reduce((acc, m) => acc + round(m.moveQty), 0)
+      );
+      const current = round(Number(item.quantity ?? 0));
       if (effectiveSplitQty >= current) {
         throw new Error(
           `Split quantity (${effectiveSplitQty}) must be less than the current quantity (${current})`
@@ -784,7 +802,6 @@ export async function splitIssueItem(args: {
           locationId,
           entityQty,
           moveQty,
-          keepQty: entityQty - moveQty,
           companyId,
           userId,
           nowIso
@@ -795,7 +812,7 @@ export async function splitIssueItem(args: {
       await trx
         .updateTable("nonConformanceItem")
         .set({
-          quantity: current - effectiveSplitQty,
+          quantity: round(round(current) - effectiveSplitQty),
           updatedBy: userId,
           updatedAt: nowIso
         })

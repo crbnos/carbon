@@ -39,7 +39,7 @@ vi.mock("@carbon/auth", () => ({
     companyId: string
   ) => Boolean(permissions?.[`${module}_${action}`]?.includes(companyId))
 }));
-vi.mock("@carbon/ee/storage-rules.server", () => ({
+vi.mock("@carbon/ee/rules.server", () => ({
   evaluateLinesForSurface: vi.fn(),
   isBlocked: vi.fn()
 }));

@@ -5,6 +5,7 @@ import { getLogger } from "@carbon/logger";
 import type { TrackedEntityAttributes } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
+import { requireCompanyRecord } from "~/modules/shared/shared.server";
 
 const logger = getLogger("erp", "receipt", "tracking");
 
@@ -22,6 +23,21 @@ export async function action({ request, context }: ActionFunctionArgs) {
     | "serial"
     | "returnEntity";
 
+  // The batch and serial paths write through service-role RPCs that key on
+  // these form ids alone (and upsert the tracked entity by id), so the receipt
+  // line must belong to this receipt and company before either runs.
+  if (trackingType === "batch" || trackingType === "serial") {
+    await requireCompanyRecord(
+      getCarbonServiceRole(),
+      "receiptLine",
+      companyId,
+      {
+        id: receiptLineId,
+        receiptId
+      }
+    );
+  }
+
   if (trackingType === "batch") {
     const batchNumber = formData.get("batchNumber") as string;
     const quantity = Number(formData.get("quantity"));
@@ -35,7 +51,16 @@ export async function action({ request, context }: ActionFunctionArgs) {
     // Line so a stale batch-number rename never orphans the prior entity.
     let trackedEntityId: string | undefined =
       passedTrackedEntityId ?? undefined;
-    if (!trackedEntityId) {
+    if (trackedEntityId) {
+      // The RPC upserts by this id, so an id from another company would
+      // overwrite that company's lot.
+      await requireCompanyRecord(
+        getCarbonServiceRole(),
+        "trackedEntity",
+        companyId,
+        { id: trackedEntityId }
+      );
+    } else {
       const { data: existing, error: batchQueryError } = await client
         .from("trackedEntity")
         .select("id")

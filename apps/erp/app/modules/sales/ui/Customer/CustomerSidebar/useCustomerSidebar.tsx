@@ -3,6 +3,8 @@ import {
   LuBuilding,
   LuContact,
   LuCreditCard,
+  LuFiles,
+  LuLandmark,
   LuMapPin,
   LuReceipt,
   LuShieldAlert,
@@ -60,6 +62,19 @@ export function useCustomerSidebar({ contacts, locations }: Props) {
       shortcut: DETAIL_TAB_SHORTCUTS.payment
     },
     {
+      name: t`Bank Accounts`,
+      to: path.to.customerBankAccounts(customerId),
+      role: ["employee"],
+      permission: { action: "view" as const, module: "accounting" },
+      icon: <LuLandmark />
+    },
+    {
+      name: t`Documents`,
+      to: path.to.customerDocuments(customerId),
+      role: ["employee"],
+      icon: <LuFiles />
+    },
+    {
       name: t`Tax`,
       to: path.to.customerTax(customerId),
       role: ["employee"],
@@ -109,9 +124,24 @@ export function useCustomerSidebar({ contacts, locations }: Props) {
     //   icon: <LuLandmark />,
     //   shortcut: DETAIL_TAB_SHORTCUTS.accounting,
     // },
-  ].filter(
-    (item) =>
+  ].filter((item) => {
+    // `role` gates on WHO the user is (employee / supplier / customer);
+    // `permission` gates on WHAT they may do (a <module>_<action> grant).
+    // They are separate checks — permissions.is() cannot express a module permission.
+    const roleOk =
       item.role === undefined ||
-      item.role.some((role) => permissions.is(role as Role))
-  );
+      item.role.some((role) => permissions.is(role as Role));
+    const permission = (
+      item as {
+        permission?: {
+          action: "view" | "create" | "update" | "delete";
+          module: string;
+        };
+      }
+    ).permission;
+    const permissionOk =
+      permission === undefined ||
+      permissions.can(permission.action, permission.module);
+    return roleOk && permissionOk;
+  });
 }

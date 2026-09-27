@@ -20,6 +20,7 @@ import {
 import { useNavigate } from "react-router";
 import { DateTime, EmployeeAvatar, Hyperlink, New, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
+import { EnumerableGroup } from "~/components/EnumerableGroup";
 import { useLocations } from "~/components/Form/Location";
 import { ConfirmDelete } from "~/components/Modals";
 import { usePermissions } from "~/hooks";
@@ -223,17 +224,16 @@ const IssuesTable = memo(({ data, types, count }: IssuesTableProps) => {
         id: "items",
         header: t`Items`,
         cell: ({ row }) => (
-          <span className="flex gap-2 items-center flex-wrap py-2">
-            {((row.original.items ?? []) as Array<string>).map((i) => {
-              const item = items.find((x) => x.id === i);
-              if (!item) return null;
-              return (
-                <Badge variant="outline" key={item?.id}>
-                  {item?.readableIdWithRevision}
-                </Badge>
-              );
-            })}
-          </span>
+          <EnumerableGroup
+            chip="outline"
+            items={((row.original.items ?? []) as Array<string>).flatMap(
+              (i) => {
+                const item = items.find((x) => x.id === i);
+                if (!item) return [];
+                return { label: item.readableIdWithRevision ?? item.id };
+              }
+            )}
+          />
         ),
         meta: {
           icon: <LuBlocks />,

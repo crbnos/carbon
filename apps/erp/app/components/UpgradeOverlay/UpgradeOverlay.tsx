@@ -5,8 +5,10 @@ import {
   cn,
   Modal,
   ModalContent,
+  useEdition,
   VStack
 } from "@carbon/react";
+import { Edition } from "@carbon/utils";
 import { Trans } from "@lingui/react/macro";
 import type { ReactNode } from "react";
 import { Link } from "react-router";
@@ -177,14 +179,32 @@ function UpgradeOverlaySection({
 
 function UpgradeOverlayUpgradeButton({
   children,
-  to = path.to.billing
+  to
 }: {
   children?: ReactNode;
   to?: string;
 }) {
+  // On Cloud the upgrade path is the Business plan (Stripe billing); everywhere
+  // else (self-hosted Community) it's an Enterprise license, which is a
+  // conversation off-app rather than a self-serve billing page.
+  const isCloud = useEdition() === Edition.Cloud;
+  const target = to ?? (isCloud ? path.to.billing : path.to.pricing);
+  const isExternal = target.startsWith("http");
+
   return (
     <Button asChild>
-      <Link to={to}>{children ?? <Trans>Upgrade to Business</Trans>}</Link>
+      <Link
+        to={target}
+        reloadDocument={isExternal}
+        target={isExternal ? "_blank" : undefined}
+      >
+        {children ??
+          (isCloud ? (
+            <Trans>Upgrade to Business</Trans>
+          ) : (
+            <Trans>Upgrade to Enterprise</Trans>
+          ))}
+      </Link>
     </Button>
   );
 }

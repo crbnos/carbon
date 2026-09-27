@@ -186,7 +186,7 @@ Posthog has a free tier which should be plenty to support local development. If 
 
 ### Clone
 
-Clone the repo into a public GitHub repository (or fork https://github.com/crbnos/carbon/fork). If you want to make the repo private, you should [acquire a commercial license](https://carbon.ms/sales) to comply with the AGPL license.
+Clone the repo, or fork it at https://github.com/crbnos/carbon/fork. Carbon is licensed under AGPLv3. If you'd rather not share your changes with your users, as AGPLv3 requires, or if you want the Enterprise features in packages/ee, you'll need a [commercial license](https://carbon.ms/sales).
 
 ```bash
 git clone https://github.com/crbnos/carbon.git

@@ -32,7 +32,7 @@ const logger = getLogger("erp", "customers-new");
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
   const { client, companyId, userId } = await requirePermissions(request, {
-    view: "users"
+    create: "users"
   });
 
   const validation = await validator(createCustomerAccountValidator).validate(

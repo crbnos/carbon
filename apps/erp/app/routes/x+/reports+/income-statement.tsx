@@ -18,7 +18,7 @@ import {
   getFinancialStatementPeriodSeries,
   getFiscalYearSettings
 } from "~/modules/accounting";
-import { getConsolidatedPeriodSeriesForReport } from "~/modules/accounting/accounting.ee.server";
+import { getConsolidatedPeriodSeriesForReport } from "~/modules/accounting/accounting.server";
 import {
   exportPeriodReport,
   getPeriodColumnLabel,

@@ -6,6 +6,7 @@ import {
   getOrCreateJobOperationInspection,
   reconcileInspectionSamplingPlans
 } from "@carbon/database/quality";
+import { getLogger } from "@carbon/logger";
 import type { LoaderFunctionArgs } from "react-router";
 import { redirect, useLoaderData, useParams } from "react-router";
 import { InspectionView } from "~/components/Inspection/InspectionView";
@@ -30,6 +31,8 @@ import { makeDurations } from "~/utils/durations";
 import { resolveOperationView } from "~/utils/operationView";
 import { path } from "~/utils/path";
 
+const logger = getLogger("mes", "inspection");
+
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { userId, companyId } = await requirePermissions(request, {});
 
@@ -38,6 +41,29 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   const url = new URL(request.url);
   const serviceRole = await getCarbonServiceRole();
+
+  // Every read below uses the service role, so prove the operation belongs to
+  // this company before any of them runs.
+  const scopedOperation = await serviceRole
+    .from("jobOperation")
+    .select("id")
+    .eq("id", operationId)
+    .eq("companyId", companyId)
+    .maybeSingle();
+  if (scopedOperation.error || !scopedOperation.data) {
+    logger.warn("Job operation not found for company", {
+      companyId,
+      operationId,
+      error: scopedOperation.error
+    });
+    throw redirect(
+      path.to.operations,
+      await flash(
+        request,
+        error(scopedOperation.error, "Failed to fetch operation")
+      )
+    );
+  }
 
   const [job, operation] = await Promise.all([
     getJobByOperationId(serviceRole, operationId),

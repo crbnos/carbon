@@ -34,13 +34,46 @@ Export subpaths (`package.json`): `.` (`index.ts`), `./auth.server`, `./session.
 ## Login (`apps/erp/app/routes/_public+/login.tsx`)
 
 Magic link is the primary flow. The action rate-limits by IP (Upstash via `@carbon/kv`,
-`RATE_LIMIT` env default **5 / hour**), optionally verifies a Cloudflare Turnstile token
-(Cloud edition), then:
+`RATE_LIMIT` env default **5 / hour**), runs the bot check (`verifyBotProtection`), then:
 
-- `DEV_BYPASS_EMAIL` match + active user → `signInWithBypassEmail` (local dev only).
-- Existing active user → `sendMagicLink` (Supabase OTP email).
+**Bot protection.** `botProtection` (`bot-protection.server.ts`, re-exported from
+`auth.server.ts`) picks ONE provider per process from `BOT_PROTECTION`: `"botid"` (only
+ON Vercel — `IS_VERCEL`, from Vercel's own `VERCEL=1`, which SST/Docker/the BYOC chart
+never set) or `"turnstile"` (needs both `CLOUDFLARE_TURNSTILE_SITE_KEY` and
+`_SECRET_KEY`). Unset: BotID for Cloud on Vercel, else Turnstile when both keys are set,
+else `null` (no check). It is explicit because the Turnstile keys can be present for
+something else (GoTrue, another form) while login uses BotID. An explicit value that
+cannot work (botid off Vercel, turnstile without keys, anything else) throws at boot.
+Every login loader (erp, mes, academy, starter) returns it, and the page calls
+`useBotProtection("/login", botProtection)` (`@carbon/react`), which returns
+`{ token, ready, challenge }`: render `challenge` in the form, post `token` as the hidden
+`botToken`, and disable submit until `ready`. For BotID the hook runs `initBotId`, which
+patches `window.fetch` so a POST to `/login` or `/login.data` carries the invisible
+challenge, and `challenge` is null. For Turnstile it renders the widget and `ready` waits
+on its token. The action calls `verifyBotProtection({ token: botToken, ip, actor })`.
+Both sides read the one value on purpose: off Vercel the BotID script (served through the
+`apps/*/vercel.json` rewrites) 404s and the patched fetch rejects, so the client must
+never init BotID where the server cannot verify it. Failure modes differ deliberately: a
+`checkBotId` THROW fails OPEN and logs (a platform misconfiguration would otherwise lock
+out every Cloud user), while an unreachable Turnstile siteverify fails CLOSED (an operator
+chose Turnstile by setting its keys). The rate limit and lockout apply either way.
+Turnstile is verified in-app only; Supabase Auth captcha (Attack Protection) must stay OFF,
+because the magic-link call forwards no token to GoTrue.
 - Unknown user (non-Enterprise) → `sendVerificationCode`, redirect to `/verify` (email
   verification-code signup). Enterprise edition rejects unknown users.
+
+**Self-signup blocklist (Cloud edition only)** — `isSelfSignupBlockedForEmail` /
+`SELF_SIGNUP_BLOCKED_MESSAGE` in `@carbon/auth/self-signup.server` (the domain list is
+the bundled `self-signup-blocked-domains.txt`, loaded via `?raw`). A brand-new
+self-signup on a free/disposable email domain is refused. The email path checks
+before the account exists — `login.tsx` (unknown-user branch) and `verify.tsx`
+(before `createEmailAuthAccount`). OAuth (Google/Azure) has **no** pre-create seam:
+GoTrue and the `create_public_user` trigger provision the user during the handshake,
+so both apps' `callback.tsx` refuse a blocked-domain **self-signup** (no company
+membership AND no pending `invite`) in the non-SSO branch and decline to mint a
+session — the inert, membership-less account is left as-is (a later legitimate invite
+reuses the row via `createEmployeeAccount`), so there is no teardown. Existing members
+and invited contractors are never affected. No-op outside Cloud edition.
 
 Other methods on the login page: Google + Azure OAuth (`signInWithOAuth`, redirect to
 `/callback`), Passkey/WebAuthn (`@simplewebauthn`, `/api/passkey/authenticate/*`,
@@ -183,6 +216,19 @@ querying), and every route entry point checks it too — login buttons, the
   `REFRESH_ACCESS_TOKEN_THRESHOLD` (10 min) of expiry via `refreshAccessToken`.
 - `destroyAuthSession` clears auth + company-id cookies, redirects to login.
   `updateCompanySession` / `updateSessionConsole` switch active company / console mode.
+- **Console pin-in** (`@carbon/auth/console-pin.server`): which operator is pinned in
+  at a console terminal lives in the `console-pin-<companyId>` cookie, SIGNED with
+  `SESSION_SECRET` and bound to the company and the terminal's session user
+  (`setConsolePinIn` / `clearConsolePinIn`). `resolveConsolePinIn` re-validates it on
+  every request — the operator must still be an active employee of the company and
+  `companySettings.consoleEnabled` still on — and is memoized per read request. PINs
+  are bcrypt hashes in `employeePin` (no API-role access; `set_employee_pin` /
+  `verify_employee_pin` over the server's Kysely connection, via
+  `@carbon/ee/console.server`). MES pin-in (`x+/console.pin-in.tsx`) consumes the
+  per-operator `AccountLockout` attempt and the per-terminal `Ratelimit` token BEFORE
+  verifying (refunding both on a non-guess), so a parallel burst cannot outrun the
+  limits. `companySettings.consoleEnabled` is server-only: a trigger refuses API-role
+  writes, and it only moves through `updateConsoleSetting` (`requireEntitlement`).
 
 ## MFA / TOTP (`mfa.server.ts`)
 
@@ -288,6 +334,11 @@ the gate used in every loader/action. Two paths:
    - Returns `{ client, companyId, companyGroupId, email, userId, sessionUserId,
      consoleMode }`. `bypassRls: true` + employee role returns a service-role client;
      otherwise a Bearer-authed `getCarbon(accessToken)` client (RLS enforced).
+   - `consoleMode` is `authSession.console === companyId`. In console mode `userId`
+     is the pinned operator from `resolveConsolePinIn` (falling back to the session
+     user when nobody valid is pinned in); `sessionUserId` is always the account the
+     terminal is signed in with. Gate terminal-level actions (entering console mode)
+     on `sessionUserId`, never `userId`.
 
 Claims cache must be invalidated when permissions change — `users.server.ts` deactivate
 flows call `redis.del(getPermissionCacheKey(userId))`.
@@ -369,7 +420,7 @@ ERP exposes an OAuth 2.0 AS for use as a remote Claude/MCP connector. Routes und
 `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_JWT_SECRET`,
 `SESSION_SECRET`, `SESSION_KEY` (`"auth"`), `SESSION_MAX_AGE`,
 `REFRESH_ACCESS_TOKEN_THRESHOLD`, `DOMAIN`, `RATE_LIMIT`, `CarbonEdition`,
-`STRIPE_BYPASS_COMPANY_IDS`, Turnstile + OAuth-provider keys.
+`STRIPE_BYPASS_COMPANY_IDS`, `IS_VERCEL`, Turnstile + OAuth-provider keys.
 
 ## Gotchas
 
@@ -385,4 +436,4 @@ ERP exposes an OAuth 2.0 AS for use as a remote Claude/MCP connector. Routes und
 - Service-role clients bypass RLS — only use behind `bypassRls` + employee role.
 - API key `scopes: {}` denies, not grants. Don't assume empty = full access.
 - Edition matters: Enterprise rejects unknown-user login; Cloud gates API keys by plan
-  and enforces Turnstile.
+  and enforces the bot check (BotID on Vercel, Turnstile elsewhere).

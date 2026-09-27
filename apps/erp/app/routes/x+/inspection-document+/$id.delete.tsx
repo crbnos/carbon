@@ -2,6 +2,7 @@ import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
+import { storage } from "@carbon/files";
 import type {
   ActionFunctionArgs,
   ClientActionFunctionArgs
@@ -35,7 +36,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const storagePath = result.data?.storagePath;
   if (storagePath) {
     const serviceRole = await getCarbonServiceRole();
-    await serviceRole.storage.from("private").remove([storagePath]);
+    await storage(serviceRole).company(companyId).remove([storagePath]);
   }
 
   throw redirect(

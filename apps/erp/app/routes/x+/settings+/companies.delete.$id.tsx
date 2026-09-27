@@ -2,12 +2,15 @@ import { error, notFound, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
+import { getLogger } from "@carbon/logger";
 import { isInternalEmail } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { redirect, useLoaderData, useNavigate, useParams } from "react-router";
 import { ConfirmDelete } from "~/components/Modals";
 import { deleteSubsidiary, getSubsidiary } from "~/modules/settings";
 import { path } from "~/utils/path";
+
+const logger = getLogger("erp", "settings-companies-delete");
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, email } = await requirePermissions(request, {
@@ -34,7 +37,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 }
 
 export async function action({ request, params }: ActionFunctionArgs) {
-  const { email } = await requirePermissions(request, {
+  const { companyGroupId, email } = await requirePermissions(request, {
     delete: "settings"
   });
 
@@ -51,10 +54,29 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  const { error: deleteError } = await deleteSubsidiary(
-    getCarbonServiceRole(),
-    id
-  );
+  const serviceRole = getCarbonServiceRole();
+
+  // The delete runs as the service role on a URL id: prove the company is in
+  // the caller's own group first, or any company id could be deleted.
+  const subsidiary = await serviceRole
+    .from("company")
+    .select("id")
+    .eq("id", id)
+    .eq("companyGroupId", companyGroupId)
+    .maybeSingle();
+  if (subsidiary.error || !subsidiary.data) {
+    logger.error("Subsidiary not found in the caller's company group", {
+      companyGroupId,
+      subsidiaryId: id,
+      error: subsidiary.error
+    });
+    throw redirect(
+      path.to.companies,
+      await flash(request, error(subsidiary.error, "Subsidiary not found"))
+    );
+  }
+
+  const { error: deleteError } = await deleteSubsidiary(serviceRole, id);
   if (deleteError) {
     throw redirect(
       path.to.companies,

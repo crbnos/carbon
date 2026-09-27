@@ -4,7 +4,7 @@
 // dispatcher all resolve through it.
 
 import * as accountFunctions from "~/modules/account/account.service";
-import * as accountingFunctions from "~/modules/accounting/accounting.ee.service";
+import * as accountingFunctions from "~/modules/accounting/accounting.service";
 import * as documentsFunctions from "~/modules/documents/documents.service";
 import * as inventoryFunctions from "~/modules/inventory/inventory.service";
 import * as invoicingFunctions from "~/modules/invoicing/invoicing.service";

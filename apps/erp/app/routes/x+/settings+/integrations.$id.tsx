@@ -46,9 +46,13 @@ import {
   getIntegrationServerHooks,
   onshapeConnectionHasWriteScope
 } from "@carbon/ee/hooks.server";
-import { getPath, SECRET_KEYS } from "@carbon/ee/integrations/secrets";
+import {
+  getPath,
+  SECRET_KEYS,
+  WEBHOOK_SIGNING_SECRET_KEY
+} from "@carbon/ee/integrations/secrets";
 import { isIntegrationWhitelisted } from "@carbon/ee/plan";
-import { requirePlan } from "@carbon/ee/plan.server";
+import { requireFeature } from "@carbon/ee/plan.server";
 import { STRIPE_SECRET_KEY } from "@carbon/env";
 import { validationError, validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
@@ -70,7 +74,10 @@ import {
 // Deep service import (not the ~/modules/accounting barrel) to keep this
 // route's type graph light — see the TS2589 note in
 // ~/modules/settings/ui/Integrations/index.ts.
-import { getActiveDimensionsWithValues } from "~/modules/accounting/accounting.ee.service";
+import {
+  getAccountsList,
+  getActiveDimensionsWithValues
+} from "~/modules/accounting/accounting.service";
 import {
   getIntegration,
   IntegrationForm,
@@ -172,6 +179,63 @@ function unfoldRilletCredentials(
       typeof providerMetadata.webhookToken === "string"
         ? providerMetadata.webhookToken
         : ""
+  };
+}
+
+/**
+ * Ramp authenticates with an OAuth client-credentials pair
+ * (clientId/clientSecret) entered flat on the standard install form. The
+ * engine reads credentials exclusively from `metadata.credentials`, so fold
+ * the flat form fields into the canonical client_credentials variant. The
+ * account-mapping and sync-toggle fields stay flat at the metadata root. Like
+ * Rillet, an empty clientSecret means "keep the existing vaulted value": the
+ * folded credentials carry an empty secret and splitSecrets' anti-overwrite
+ * (D4a) preserves what's in the vault; a non-empty value replaces it.
+ */
+function foldRampCredentials(
+  metadata: Record<string, unknown>
+): Record<string, unknown> {
+  const { clientId, clientSecret, environment, ...rest } = metadata;
+  if (typeof clientId !== "string" || clientId.length === 0) return metadata;
+
+  return {
+    ...rest,
+    credentials: {
+      type: "client_credentials",
+      clientId,
+      clientSecret: typeof clientSecret === "string" ? clientSecret : "",
+      environment: environment === "sandbox" ? "sandbox" : "production"
+    }
+  };
+}
+
+/**
+ * Inverse of `foldRampCredentials`: unfold the stored
+ * `metadata.credentials` back into the flat clientId/clientSecret/environment
+ * fields the settings form binds to, so the drawer prefills instead of showing
+ * blanks (which a re-save would then persist over the real stored connection).
+ * The clientSecret is vaulted and stripped from the plaintext metadata, so it
+ * reads back empty — the masked field left blank means "keep the vaulted value".
+ */
+function unfoldRampCredentials(
+  metadata: Record<string, unknown>
+): Record<string, unknown> {
+  const credentials = metadata.credentials as
+    | Record<string, unknown>
+    | undefined;
+  if (!credentials || credentials.type !== "client_credentials")
+    return metadata;
+
+  return {
+    ...metadata,
+    clientId:
+      typeof credentials.clientId === "string" ? credentials.clientId : "",
+    clientSecret:
+      typeof credentials.clientSecret === "string"
+        ? credentials.clientSecret
+        : "",
+    environment:
+      credentials.environment === "sandbox" ? "sandbox" : "production"
   };
 }
 
@@ -532,6 +596,40 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const integration = availableIntegrations.find((i) => i.id === integrationId);
   if (!integration) throw new Error("Integration not found");
 
+  // Server-fetched options for "options"-type settings fields. Ramp populates
+  // its Account-group selects from the chart of accounts. These are needed on
+  // the INSTALL form (before any companyIntegration row exists), so they must be
+  // computed BEFORE the not-installed early return below — otherwise the account
+  // pickers render "No options available" for a brand-new install.
+  const dynamicOptions: Record<
+    string,
+    Array<{ value: string; label: string; description?: string }>
+  > = {};
+
+  // Ramp's account-mapping fields choose from the company's leaf accounts,
+  // partitioned by account class. Options over CHOICE_CARD_MAX_OPTIONS render
+  // as a Select automatically.
+  if (integrationId === "ramp") {
+    const accountsResult = await getAccountsList(client, companyGroupId, {
+      isGroup: false
+    });
+    const accounts = accountsResult.data ?? [];
+    const optionsForClass = (
+      accountClass: Database["public"]["Enums"]["glAccountClass"]
+    ) =>
+      accounts
+        .filter((account) => account.class === accountClass)
+        .map((account) => ({
+          value: account.id,
+          label: `${account.number} ${account.name}`
+        }));
+    const assetOptions = optionsForClass("Asset");
+    dynamicOptions.cardLiabilityAccountId = optionsForClass("Liability");
+    dynamicOptions.statementBankAccountId = assetOptions;
+    dynamicOptions.cashbackIncomeAccountId = optionsForClass("Revenue");
+    dynamicOptions.reimbursementBankAccountId = assetOptions;
+  }
+
   const integrationData = await getIntegration(
     client,
     integrationId,
@@ -542,7 +640,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     return {
       installed: false,
       metadata: {},
-      dynamicOptions: {},
+      dynamicOptions,
       syncActivity: null,
       accountMapping: null,
       postingSync: null,
@@ -553,9 +651,17 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const isAccountingInstalled =
     integration.category === "Accounting" && integrationData.data.active;
 
-  // Sync-operation inbox for accounting integrations (RLS SELECT covers
-  // employees, so the user-scoped client is enough). Params are prefixed
-  // (syncStatus/syncPage) to avoid clashing with other search params.
+  // Ramp (Spend Management) also writes accountingSyncOperation rows for its
+  // inbound/outbound families, so it gets the same Sync Activity inbox — minus
+  // the accounting-only tie-out/reconciliation surfaces, which stay gated on
+  // isAccountingInstalled below.
+  const producesSyncOperations =
+    isAccountingInstalled ||
+    (integration.id === "ramp" && integrationData.data.active);
+
+  // Sync-operation inbox (RLS SELECT covers employees, so the user-scoped
+  // client is enough). Params are prefixed (syncStatus/syncPage) to avoid
+  // clashing with other search params.
   let syncActivity: {
     operations: SyncOperation[];
     count: number;
@@ -578,7 +684,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     } | null;
   } | null = null;
 
-  if (isAccountingInstalled) {
+  if (producesSyncOperations) {
     const url = new URL(request.url);
     const statusFilter = SyncOperationStatusSchema.safeParse(
       url.searchParams.get("syncStatus")
@@ -605,13 +711,15 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         status: ["Failed", "Warning"],
         limit: 1
       }),
-      // Tie-out cells for this integration. The table is not in the
-      // generated DB types yet — cast, same pattern as
-      // @carbon/ee/accounting core/operations.ts.
-      (client.from("accountingSyncTieOut" as any) as any)
-        .select("internalDelta, externalDelta, computedAt")
-        .eq("companyId", companyId)
-        .eq("integration", integrationId)
+      // Tie-out cells for this integration — accounting-only (Ramp has no
+      // reconciliation tie-out). The table is not in the generated DB types
+      // yet — cast, same pattern as @carbon/ee/accounting core/operations.ts.
+      isAccountingInstalled
+        ? (client.from("accountingSyncTieOut" as any) as any)
+            .select("internalDelta, externalDelta, computedAt")
+            .eq("companyId", companyId)
+            .eq("integration", integrationId)
+        : Promise.resolve({ data: [], error: null })
     ]);
 
     if (operations.error) {
@@ -687,14 +795,14 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   if (integrationId === "rillet") {
     flattenedMetadata = unfoldRilletCredentials(flattenedMetadata);
   }
+  // Ramp keeps its client-credentials pair under metadata.credentials; unfold
+  // them into the flat form fields so the drawer prefills.
+  if (integrationId === "ramp") {
+    flattenedMetadata = unfoldRampCredentials(flattenedMetadata);
+  }
 
-  // Server-fetched options for "options"-type settings fields. No current
-  // integration config populates this, but IntegrationForm still accepts it
-  // generically for a future provider-fetched choice list.
-  const dynamicOptions: Record<
-    string,
-    Array<{ value: string; label: string; description?: string }>
-  > = {};
+  // (Ramp's account-mapping `dynamicOptions` are computed above, before the
+  // not-installed early return, so the install form has them too.)
 
   // Provider chart of accounts for the Account Mapping tab. Xero manual
   // journals reference accounts by code, so only coded accounts are
@@ -1473,7 +1581,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   if (!isIntegrationWhitelisted(integrationId)) {
-    await requirePlan({
+    await requireFeature({
       request,
       client,
       companyId,
@@ -1510,6 +1618,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (integrationId === "rillet") {
     metadata = foldRilletCredentials(metadata);
   }
+  if (integrationId === "ramp") {
+    metadata = foldRampCredentials(metadata);
+  }
 
   // Onshape asset sync needs the OAuth2Write scope (export jobs + webhook). A
   // connection authorized read-only can't run it, and a refresh can't widen the
@@ -1536,14 +1647,19 @@ export async function action({ request, params }: ActionFunctionArgs) {
     "linear",
     "paperless-parts",
     "email",
+    "ramp",
     "rillet"
   ]);
   if (FORM_SECRET_INTEGRATIONS.has(integrationId)) {
     const alreadyVaulted = existing.data?.secretRef != null;
-    const providedSecret = (SECRET_KEYS[integrationId] ?? []).some((p) => {
-      const v = getPath(metadata, p);
-      return typeof v === "string" && v.trim().length > 0;
-    });
+    // The optional webhook signing secret is not a credential: it must not
+    // satisfy the "a credential is required" check on its own.
+    const providedSecret = (SECRET_KEYS[integrationId] ?? [])
+      .filter((p) => p !== WEBHOOK_SIGNING_SECRET_KEY)
+      .some((p) => {
+        const v = getPath(metadata, p);
+        return typeof v === "string" && v.trim().length > 0;
+      });
     if (!alreadyVaulted && !providedSecret) {
       return data(
         {},

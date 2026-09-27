@@ -169,6 +169,26 @@ export class ExternalIntegrationMappingService {
     return (mapping as ExternalIntegrationMapping) ?? null;
   }
 
+  /** Tenant/provider-scoped mappings for one outbound entity batch. */
+  async getByEntities(
+    entityType: string,
+    entityIds: string[],
+    integration: string
+  ): Promise<Map<string, ExternalIntegrationMapping>> {
+    if (entityIds.length === 0) return new Map();
+    const rows = await this.db
+      .selectFrom("externalIntegrationMapping")
+      .selectAll()
+      .where("entityType", "=", entityType)
+      .where("entityId", "in", entityIds)
+      .where("integration", "=", integration)
+      .where("companyId", "=", this.companyId)
+      .execute();
+    return new Map(
+      rows.map((row) => [row.entityId, row as ExternalIntegrationMapping])
+    );
+  }
+
   /**
    * Get the full mapping for an external ID.
    */

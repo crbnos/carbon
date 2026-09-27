@@ -12,7 +12,7 @@ import {
   UpgradeOverlayTitle,
   UpgradeOverlayUpgradeButton
 } from "~/components/UpgradeOverlay";
-import CustomerPortalsTable from "./CustomerPortalsTable";
+import CustomerPortalsTable from "./CustomerPortalsTable.ee";
 
 type CustomerPortal = Database["public"]["Tables"]["externalLink"]["Row"];
 

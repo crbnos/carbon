@@ -1,5 +1,6 @@
-import { VERCEL_URL, XERO_CLIENT_ID, XERO_CLIENT_SECRET } from "@carbon/auth";
+import { getAppUrl, XERO_CLIENT_ID, XERO_CLIENT_SECRET } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
+import { consumeOAuthState } from "@carbon/auth/oauth-state.server";
 import { Xero } from "@carbon/ee";
 import {
   DEFAULT_SYNC_CONFIG,
@@ -36,9 +37,23 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   const { data: params } = xeroAuthResponse;
 
-  // TODO: Verify state parameter
-  if (!params.state) {
-    return data({ error: "Invalid state parameter" }, { status: 400 });
+  // The state must be the one the integrations page issued to THIS browser
+  // for this user and company (IntegrationCard puts it on the authorize URL).
+  // Without the check anyone could send a victim a callback URL carrying the
+  // attacker's own authorization code, linking the victim's company to the
+  // attacker's Xero account. Single-use: consumed whether it matches or not.
+  const consumedState = await consumeOAuthState(request, params.state, {
+    integrationId: Xero.id,
+    userId,
+    companyId
+  });
+
+  if (!consumedState.valid) {
+    logger.error("Invalid Xero OAuth state", { companyId, userId });
+    return data(
+      { error: "Invalid state parameter" },
+      { status: 400, headers: { "Set-Cookie": consumedState.cookie } }
+    );
   }
 
   if (!XERO_CLIENT_ID || !XERO_CLIENT_SECRET) {
@@ -48,10 +63,13 @@ export async function loader({ request }: LoaderFunctionArgs) {
   try {
     const provider = getProviderIntegration(client, companyId, ProviderID.XERO);
 
-    // Exchange the authorization code for tokens
+    // Exchange the authorization code for tokens. The redirect_uri must match
+    // the authorize-time one (IntegrationCard builds it from
+    // `window.location.origin`); `new URL(request.url).origin` is the internal
+    // proxy address behind a TLS-terminating proxy and fails as a mismatch.
     const auth = await provider.authenticate(
       params.code,
-      `${url.origin}/api/integrations/xero/oauth`
+      `${getAppUrl()}/api/integrations/xero/oauth`
     );
 
     if (!auth || auth.type !== "oauth2") {
@@ -191,15 +209,11 @@ export async function loader({ request }: LoaderFunctionArgs) {
     await xeroOnInstall(companyId);
 
     if (createdXeroIntegration?.data?.metadata) {
-      const requestUrl = new URL(request.url);
-
-      if (!VERCEL_URL || VERCEL_URL.includes("localhost")) {
-        requestUrl.protocol = "http";
-      }
-
-      const redirectUrl = `${requestUrl.origin}${path.to.integrations}`;
-
-      return redirect(redirectUrl);
+      // Canonical public origin — `request.url`'s origin is the internal proxy
+      // address in dev, which would drop the session cookies on redirect.
+      return redirect(`${getAppUrl()}${path.to.integrations}`, {
+        headers: { "Set-Cookie": consumedState.cookie }
+      });
     } else {
       return data(
         { error: "Failed to save Xero integration" },

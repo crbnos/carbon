@@ -1,6 +1,7 @@
 import type { Database, Json } from "@carbon/database";
 import { fetchAllFromTable, getCompanyTimeZone } from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
+import { storage } from "@carbon/files";
 import { getLogger } from "@carbon/logger";
 import {
   datetime,
@@ -17,7 +18,7 @@ import type {
 } from "@supabase/supabase-js";
 import { sql } from "kysely";
 import type { z } from "zod";
-import { buildDocumentUploadPath } from "~/modules/documents/documents.models";
+import { createDocumentUploadUrl } from "~/modules/documents/documents.service";
 import { getEmployeeJob } from "~/modules/people";
 import type { GenericQueryFilters } from "~/utils/query";
 import { LIST_COUNT, setGenericQueryFilters } from "~/utils/query";
@@ -25,13 +26,10 @@ import { sanitize } from "~/utils/supabase";
 import {
   getCurrencyByCode,
   getExchangeRate
-} from "../accounting/accounting.ee.service";
+} from "../accounting/accounting.service";
 import type { PurchaseInvoice } from "../invoicing/types";
-import {
-  canApproveRequest,
-  getLatestApprovalRequestForDocument,
-  upsertExternalLink
-} from "../shared/shared.service";
+import { upsertExternalLink } from "../shared/shared.service";
+import { updateSortOrder } from "../shared/sort-order";
 import type {
   purchaseOrderDeliveryValidator,
   purchaseOrderLineValidator,
@@ -45,6 +43,7 @@ import type {
   purchasingRfqStatusType,
   selectedLinesValidator,
   supplierAccountingValidator,
+  supplierBankAccountValidator,
   supplierContactValidator,
   supplierPaymentValidator,
   supplierProcessValidator,
@@ -271,6 +270,64 @@ export async function deleteSupplierLocation(
       .eq("supplierId", supplierId)
       .eq("id", supplierLocationId);
   }
+}
+
+export async function deleteSupplierBankAccount(
+  client: SupabaseClient<Database>,
+  id: string
+) {
+  return client.from("supplierBankAccount").delete().eq("id", id);
+}
+
+export async function getSupplierBankAccounts(
+  client: SupabaseClient<Database>,
+  supplierId: string
+) {
+  return client
+    .from("supplierBankAccount")
+    .select("*")
+    .eq("supplierId", supplierId)
+    .order("name");
+}
+
+export async function upsertSupplierBankAccount(
+  db: Kysely<KyselyDatabase>,
+  bankAccount:
+    | (Omit<z.infer<typeof supplierBankAccountValidator>, "id"> & {
+        companyId: string;
+        createdBy: string;
+        customFields?: Json;
+      })
+    | (Omit<z.infer<typeof supplierBankAccountValidator>, "id"> & {
+        id: string;
+        companyId: string;
+        updatedBy: string;
+        customFields?: Json;
+      })
+) {
+  const { supplierId, companyId } = bankAccount;
+
+  if ("createdBy" in bankAccount) {
+    return await db
+      .insertInto("supplierBankAccount")
+      .values(bankAccount)
+      .returning("id")
+      .executeTakeFirstOrThrow();
+  }
+
+  const { id, ...update } = bankAccount;
+
+  // supplierId and companyId are scoping columns, not editable fields. They are
+  // also re-asserted in the WHERE clause so a forged form value cannot move
+  // this row to another supplier.
+  return await db
+    .updateTable("supplierBankAccount")
+    .set({ ...update, updatedAt: datetime.timestamp() })
+    .where("id", "=", id)
+    .where("supplierId", "=", supplierId)
+    .where("companyId", "=", companyId)
+    .returning("id")
+    .executeTakeFirstOrThrow();
 }
 
 export async function deleteSupplierProcess(
@@ -524,92 +581,19 @@ export async function getSupplier(
   return client.from("suppliers").select("*").eq("id", supplierId).single();
 }
 
-type ApprovalContext = {
-  approvalRequest: { id: string } | null;
-  canApprove: boolean;
-  decision: {
-    status: "Approved" | "Rejected";
-    decisionBy: string;
-    decisionAt: string;
-  } | null;
-};
-
-export async function getSupplierApprovalContext(
-  serviceRole: SupabaseClient<Database>,
-  supplierId: string,
-  status: string | null,
-  companyId: string,
-  userId: string
-): Promise<ApprovalContext> {
-  const latest = await getLatestApprovalRequestForDocument(
-    serviceRole,
-    "supplier",
-    supplierId
-  );
-
-  const req = latest.data;
-
-  const canApprove = await canApproveRequest(
-    serviceRole,
-    {
-      amount: req?.amount ?? null,
-      documentType: "supplier",
-      companyId
-    },
-    userId
-  );
-
-  // Look for the latest terminal decision (Approved or Rejected)
-  let decision: ApprovalContext["decision"] = null;
-  const terminalRequest = await serviceRole
-    .from("approvalRequest")
-    .select("status, decisionBy, decisionAt")
-    .eq("documentType", "supplier")
-    .eq("documentId", supplierId)
-    .in("status", ["Approved", "Rejected"])
-    .order("decisionAt", { ascending: false })
-    .limit(1)
-    .maybeSingle();
-
-  if (
-    terminalRequest.data?.decisionBy &&
-    terminalRequest.data?.decisionAt &&
-    (terminalRequest.data.status === "Approved" ||
-      terminalRequest.data.status === "Rejected")
-  ) {
-    decision = {
-      status: terminalRequest.data.status,
-      decisionBy: terminalRequest.data.decisionBy,
-      decisionAt: terminalRequest.data.decisionAt
-    };
-  }
-
-  if (!req || req.status !== "Pending" || !req.requestedBy || !req.id) {
-    return {
-      approvalRequest: null,
-      canApprove,
-      decision
-    };
-  }
-
-  return {
-    approvalRequest: { id: req.id },
-    canApprove,
-    decision
-  };
-}
-
 export async function getSupplierContact(
   client: SupabaseClient<Database>,
-  supplierContactId: string
+  supplierContactId: string,
+  companyId?: string
 ) {
-  return client
+  let query = client
     .from("supplierContact")
     .select(
       "*, contact(id, firstName, lastName, email, mobilePhone, homePhone, workPhone, fax, title, notes)"
     )
-    .eq("id", supplierContactId)
-    .single();
+    .eq("id", supplierContactId);
+  if (companyId) query = query.eq("companyId", companyId);
+  return query.single();
 }
 
 export async function getSupplierContacts(
@@ -670,18 +654,21 @@ export async function getSupplierInteractionDocuments(
   companyId: string,
   interactionId: string
 ) {
-  const result = await client.storage
-    .from("private")
+  const result = await storage(client)
+    .company(companyId)
     .list(`${companyId}/supplier-interaction/${interactionId}`);
 
   if (result.error) {
-    logger.error("Failed to list supplier interaction documents", result.error);
+    logger.error("Failed to list supplier interaction documents", {
+      error: result.error
+    });
     return [];
   }
 
-  return (
-    result.data?.map((f) => ({ ...f, bucket: "supplier-interaction" })) ?? []
-  );
+  return result.data.map((f) => ({
+    ...f,
+    bucket: "supplier-interaction"
+  }));
 }
 
 export async function getSupplierInteractionLineDocuments(
@@ -689,24 +676,21 @@ export async function getSupplierInteractionLineDocuments(
   companyId: string,
   lineId: string
 ) {
-  const result = await client.storage
-    .from("private")
+  const result = await storage(client)
+    .company(companyId)
     .list(`${companyId}/supplier-interaction-line/${lineId}`);
 
   if (result.error) {
-    logger.error(
-      "Failed to list supplier interaction line documents",
-      result.error
-    );
+    logger.error("Failed to list supplier interaction line documents", {
+      error: result.error
+    });
     return [];
   }
 
-  return (
-    result.data?.map((f) => ({
-      ...f,
-      bucket: "supplier-interaction-line"
-    })) ?? []
-  );
+  return result.data.map((f) => ({
+    ...f,
+    bucket: "supplier-interaction-line"
+  }));
 }
 
 export async function getSupplierLocations(
@@ -1946,16 +1930,18 @@ export async function upsertPurchaseOrderLine(
 
 export async function updatePurchaseOrderLineOrder(
   db: Kysely<KyselyDatabase>,
-  updates: { id: string; sortOrder: number; updatedBy: string }[]
+  companyId: string,
+  userId: string,
+  purchaseOrderId: string,
+  updates: { id: string; sortOrder: number }[]
 ) {
-  return db.transaction().execute(async (trx) => {
-    for (const { id, sortOrder, updatedBy } of updates) {
-      await trx
-        .updateTable("purchaseOrderLine")
-        .set({ sortOrder, updatedBy })
-        .where("id", "=", id)
-        .execute();
-    }
+  return updateSortOrder(db, {
+    table: "purchaseOrderLine",
+    column: "sortOrder",
+    companyId,
+    userId,
+    parent: { column: "purchaseOrderId", id: purchaseOrderId },
+    updates
   });
 }
 
@@ -2494,16 +2480,18 @@ export async function upsertSupplierQuoteLine(
 
 export async function updateSupplierQuoteLineOrder(
   db: Kysely<KyselyDatabase>,
-  updates: { id: string; sortOrder: number; updatedBy: string }[]
+  companyId: string,
+  userId: string,
+  supplierQuoteId: string,
+  updates: { id: string; sortOrder: number }[]
 ) {
-  return db.transaction().execute(async (trx) => {
-    for (const { id, sortOrder, updatedBy } of updates) {
-      await trx
-        .updateTable("supplierQuoteLine")
-        .set({ sortOrder, updatedBy })
-        .where("id", "=", id)
-        .execute();
-    }
+  return updateSortOrder(db, {
+    table: "supplierQuoteLine",
+    column: "sortOrder",
+    companyId,
+    userId,
+    parent: { column: "supplierQuoteId", id: supplierQuoteId },
+    updates
   });
 }
 
@@ -2811,16 +2799,18 @@ export async function upsertPurchasingRFQLine(
 
 export async function updatePurchasingRFQLineOrder(
   db: Kysely<KyselyDatabase>,
-  updates: { id: string; sortOrder: number; updatedBy: string }[]
+  companyId: string,
+  userId: string,
+  purchasingRfqId: string,
+  updates: { id: string; sortOrder: number }[]
 ) {
-  return db.transaction().execute(async (trx) => {
-    for (const { id, sortOrder, updatedBy } of updates) {
-      await trx
-        .updateTable("purchasingRfqLine")
-        .set({ order: sortOrder, updatedBy })
-        .where("id", "=", id)
-        .execute();
-    }
+  return updateSortOrder(db, {
+    table: "purchasingRfqLine",
+    column: "order",
+    companyId,
+    userId,
+    parent: { column: "purchasingRfqId", id: purchasingRfqId },
+    updates
   });
 }
 
@@ -3096,11 +3086,12 @@ export async function getDefaultAttachmentsForPO(
   }
 
   const results = await Promise.all(
-    prefixes.map(({ path }) => client.storage.from("private").list(path))
+    prefixes.map(({ path }) => storage(client).company(companyId).list(path))
   );
 
   return results.flatMap((result, idx) => {
     const { source, path: prefix } = prefixes[idx];
+    // the union helper's structural type omits supabase's metadata field
     return (result.data ?? []).map((f) => ({
       source,
       name: f.name,
@@ -4426,15 +4417,12 @@ export async function createSupplierInteractionDocumentUploadUrl(
   client: SupabaseClient<Database>,
   args: { companyId: string; interactionId: string; name: string }
 ) {
-  const documentPath = buildDocumentUploadPath({
+  return createDocumentUploadUrl(client, {
     companyId: args.companyId,
     folder: "supplier-interaction",
     entityId: args.interactionId,
     name: args.name
   });
-  return client.storage
-    .from("private")
-    .createSignedUploadUrl(documentPath, { upsert: true });
 }
 
 /**
@@ -4447,13 +4435,10 @@ export async function createSupplierInteractionLineDocumentUploadUrl(
   client: SupabaseClient<Database>,
   args: { companyId: string; lineId: string; name: string }
 ) {
-  const documentPath = buildDocumentUploadPath({
+  return createDocumentUploadUrl(client, {
     companyId: args.companyId,
     folder: "supplier-interaction-line",
     entityId: args.lineId,
     name: args.name
   });
-  return client.storage
-    .from("private")
-    .createSignedUploadUrl(documentPath, { upsert: true });
 }

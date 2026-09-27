@@ -2,10 +2,8 @@ import { error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
-import {
-  evaluateLinesForSurface,
-  isBlocked
-} from "@carbon/ee/storage-rules.server";
+import { evaluateLinesForSurface, isBlocked } from "@carbon/ee/rules.server";
+import { getLogger } from "@carbon/logger";
 import type { LoaderFunctionArgs } from "react-router";
 import { redirect } from "react-router";
 import {
@@ -16,6 +14,8 @@ import {
   isSerialEntityIncompleteForOperation
 } from "~/services/operations.service";
 import { path } from "~/utils/path";
+
+const logger = getLogger("mes", "end-operation");
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { userId, companyId } = await requirePermissions(request, {});
@@ -55,6 +55,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   }
 
   if (jobOperation.data?.companyId !== companyId) {
+    logger.warn("Job operation does not belong to company", {
+      companyId,
+      operationId
+    });
     return redirect(
       path.to.operations,
       await flash(request, {

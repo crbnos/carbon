@@ -2,6 +2,7 @@ import { assertIsPost, error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
+import { storage } from "@carbon/files";
 import { validationError, validator } from "@carbon/form";
 import { deriveRate, taxableBase } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
@@ -203,8 +204,8 @@ export async function action({ request }: ActionFunctionArgs) {
           const safeFilename = stripSpecialCharacters(originalFilename);
           const newStoragePath = `${companyId}/supplier-interaction/${interactionId}/${safeFilename}`;
 
-          const copyResult = await client.storage
-            .from("private")
+          const copyResult = await storage(client)
+            .company(companyId)
             .copy(extractedStoragePath, newStoragePath);
 
           if (!copyResult.error) {

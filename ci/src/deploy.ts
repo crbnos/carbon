@@ -61,6 +61,8 @@ export type Workspace = {
   quickbooks_client_id: string | null;
   quickbooks_client_secret: string | null;
   quickbooks_webhook_secret: string | null;
+  ramp_client_id: string | null;
+  ramp_client_secret: string | null;
   redis_url: string | null;
   resend_api_key: string | null;
   resend_domain: string | null;
@@ -146,6 +148,8 @@ async function deploy(): Promise<void> {
         quickbooks_client_id,
         quickbooks_client_secret,
         quickbooks_webhook_secret,
+        ramp_client_id,
+        ramp_client_secret,
         redis_url,
         resend_api_key,
         resend_domain,
@@ -308,6 +312,8 @@ async function deploy(): Promise<void> {
           QUICKBOOKS_CLIENT_ID: quickbooks_client_id ?? undefined,
           QUICKBOOKS_CLIENT_SECRET: quickbooks_client_secret ?? undefined,
           QUICKBOOKS_WEBHOOK_SECRET: quickbooks_webhook_secret ?? undefined,
+          RAMP_CLIENT_ID: ramp_client_id ?? undefined,
+          RAMP_CLIENT_SECRET: ramp_client_secret ?? undefined,
           REDIS_URL: redis_url ?? undefined,
           RESEND_API_KEY: resend_api_key,
           RESEND_DOMAIN: resend_domain ?? "carbon.ms",

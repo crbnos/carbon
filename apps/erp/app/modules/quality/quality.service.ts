@@ -1,5 +1,6 @@
 import type { Database, Json } from "@carbon/database";
 import { fetchAllFromTable, getCompanyTimeZone } from "@carbon/database";
+import { storage } from "@carbon/files";
 import { getLogger } from "@carbon/logger";
 import type { JSONContent } from "@carbon/react";
 import { datetime } from "@carbon/utils";
@@ -1130,17 +1131,12 @@ export async function getQualityDocumentsList(
     id: string;
     name: string;
     version: number;
-    processId: string;
     status: string;
-  }>(
-    client,
-    "qualityDocument",
-    "id, name, version, processId, status",
-    (query) =>
-      query
-        .eq("companyId", companyId)
-        .order("name", { ascending: true })
-        .order("version", { ascending: false })
+  }>(client, "qualityDocument", "id, name, version, status", (query) =>
+    query
+      .eq("companyId", companyId)
+      .order("name", { ascending: true })
+      .order("version", { ascending: false })
   );
 }
 
@@ -1149,10 +1145,10 @@ export async function getQualityFiles(
   id: string,
   companyId: string
 ) {
-  const result = await client.storage
-    .from("private")
+  const result = await storage(client)
+    .company(companyId)
     .list(`${companyId}/quality/${id}`);
-  return result.data || [];
+  return result.data ?? [];
 }
 
 export async function getRequiredActionsList(
@@ -1771,16 +1767,20 @@ export async function insertIssue(
   }
 
   if (jobOperationId) {
+    // Callers pass the service role, so every lookup keyed on a caller id is
+    // scoped: a foreign id matches nothing and no link is written.
     const jobOperation = await client
       .from("jobOperation")
       .select("*")
       .eq("id", jobOperationId)
+      .eq("companyId", input.companyId)
       .single();
     if (jobOperation?.data) {
       const job = await client
         .from("job")
         .select("*")
         .eq("id", jobOperation.data.jobId)
+        .eq("companyId", input.companyId)
         .single();
       if (job.data) {
         const jobOperationInsert = await client
@@ -1825,6 +1825,7 @@ export async function insertIssue(
       .from("salesOrderLine")
       .select("*, salesOrder(salesOrderId)")
       .eq("id", salesOrderLineId)
+      .eq("companyId", input.companyId)
       .single();
     if (salesOrderLine.data) {
       const salesOrderLineInsert = await client
@@ -1852,6 +1853,7 @@ export async function insertIssue(
       .from("supplierProcess")
       .select("*")
       .eq("id", operationSupplierProcessId)
+      .eq("companyId", input.companyId)
       .single();
 
     if (operationSupplierProcess.data) {

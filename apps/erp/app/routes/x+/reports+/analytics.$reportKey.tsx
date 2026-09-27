@@ -2,6 +2,8 @@ import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import type { Json } from "@carbon/database";
+import { downloadText } from "@carbon/files";
+import { CSV_CONTENT_TYPE, encodeCsvTable } from "@carbon/files/csv";
 import { validationError, validator } from "@carbon/form";
 import { VStack } from "@carbon/react";
 import {
@@ -572,29 +574,12 @@ export default function AnalyticsReportRoute() {
     // Label cells (dimension values, saved names) are user-controlled: prefix
     // formula-trigger characters so spreadsheets treat them as text. Numeric
     // measure cells (incl. negatives) pass through untouched.
-    const sanitizeCell = (value: string) => {
-      if (value === "" || Number.isFinite(Number(value))) return value;
-      return /^[=+\-@]/.test(value) ? `'${value}` : value;
-    };
-    const csvData = rows
-      .map((row) =>
-        row
-          .map(sanitizeCell)
-          .map((value) =>
-            /[",\n]/.test(value) ? `"${value.replace(/"/g, '""')}"` : value
-          )
-          .join(",")
-      )
-      .join("\n");
-    const blob = new Blob([csvData], { type: "text/csv" });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `${reportKey}.csv`;
-    document.body.appendChild(a);
-    a.click();
-    window.URL.revokeObjectURL(url);
-    document.body.removeChild(a);
+    const [header, ...body] = rows;
+    downloadText(
+      encodeCsvTable(header, body),
+      `${reportKey}.csv`,
+      CSV_CONTENT_TYPE
+    );
   };
 
   return (

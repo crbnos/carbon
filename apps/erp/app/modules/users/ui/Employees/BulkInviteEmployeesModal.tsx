@@ -32,6 +32,7 @@ import {
   Submit
 } from "~/components/Form";
 import { useFlags, useUser } from "~/hooks";
+import { usePlanGate } from "~/hooks/usePlanGate";
 import type { getEmployeeTypes } from "~/modules/users";
 import {
   type BulkInviteActionData,
@@ -58,25 +59,19 @@ const emptyEmployee = (locationId?: string | null): EmployeeRow => ({
 
 function EmployeeRows({
   defaultLocationId,
-  resultsByRowId
+  resultsByRowId,
+  employeeTypeOptions,
+  permissionsGated,
+  adminEmployeeType
 }: {
   defaultLocationId?: string | null;
   resultsByRowId: Map<string, BulkInviteResult>;
+  employeeTypeOptions: { value: string; label: string }[];
+  permissionsGated: boolean;
+  adminEmployeeType?: string;
 }) {
   const { t } = useLingui();
   const { isControlledEnvironment } = useFlags();
-  const employeeTypeFetcher =
-    useFetcher<Awaited<ReturnType<typeof getEmployeeTypes>>>();
-
-  useMount(() => {
-    employeeTypeFetcher.load(path.to.api.employeeTypes);
-  });
-
-  const employeeTypeOptions =
-    employeeTypeFetcher.data?.data?.map((et) => ({
-      value: et.id,
-      label: et.name
-    })) ?? [];
 
   const [items, { push, remove }, error] =
     useFieldArray<EmployeeRow>("employees");
@@ -136,13 +131,20 @@ function EmployeeRows({
                 name={`employees[${index}].lastName`}
                 label={t`Last Name`}
               />
-              <Select
-                name={`employees[${index}].employeeType`}
-                label={t`Employee Type`}
-                termId="create-employee-employee-type"
-                options={employeeTypeOptions}
-                placeholder={t`Select Employee Type`}
-              />
+              {permissionsGated ? (
+                <Hidden
+                  name={`employees[${index}].employeeType`}
+                  value={adminEmployeeType ?? ""}
+                />
+              ) : (
+                <Select
+                  name={`employees[${index}].employeeType`}
+                  label={t`Employee Type`}
+                  termId="create-employee-employee-type"
+                  options={employeeTypeOptions}
+                  placeholder={t`Select Employee Type`}
+                />
+              )}
               <Location
                 name={`employees[${index}].locationId`}
                 label={t`Location`}
@@ -182,7 +184,25 @@ const BulkInviteEmployeesModal = () => {
   const { defaults } = useUser();
   const navigate = useNavigate();
   const formFetcher = useFetcher<BulkInviteActionData>();
+  const employeeTypeFetcher =
+    useFetcher<Awaited<ReturnType<typeof getEmployeeTypes>>>();
+  const { isGated: permissionsGated } = usePlanGate({ feature: "PERMISSIONS" });
   const [results, setResults] = useState<BulkInviteResult[]>([]);
+
+  useMount(() => {
+    employeeTypeFetcher.load(path.to.api.employeeTypes);
+  });
+
+  const employeeTypes = employeeTypeFetcher.data?.data ?? [];
+  const employeeTypeOptions = employeeTypes.map((et) => ({
+    value: et.id,
+    label: et.name
+  }));
+  // Match the existing single-invite fallback while the shared fetch resolves.
+  const adminType =
+    employeeTypes.find((et) => et.systemType === "Admin") ??
+    employeeTypes.find((et) => et.protected) ??
+    employeeTypes[0];
 
   const resultsByRowId = useMemo(
     () => indexBulkInviteResultsByRowId(results),
@@ -242,6 +262,9 @@ const BulkInviteEmployeesModal = () => {
             <EmployeeRows
               defaultLocationId={defaultLocationId}
               resultsByRowId={resultsByRowId}
+              employeeTypeOptions={employeeTypeOptions}
+              permissionsGated={permissionsGated}
+              adminEmployeeType={adminType?.id}
             />
           </ModalBody>
           <ModalFooter>
@@ -249,7 +272,10 @@ const BulkInviteEmployeesModal = () => {
               <Button variant="solid" onClick={() => navigate(-1)}>
                 <Trans>Cancel</Trans>
               </Button>
-              <Submit isLoading={formFetcher.state !== "idle"}>
+              <Submit
+                isLoading={formFetcher.state !== "idle"}
+                isDisabled={permissionsGated && !adminType}
+              >
                 <Trans>Invite</Trans>
               </Submit>
             </HStack>

@@ -1,7 +1,7 @@
 import { error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
-import { runLocationSchedule } from "@carbon/ee/planning";
+import { runLocationSchedule } from "@carbon/planning";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("@carbon/auth", () => ({
@@ -18,7 +18,7 @@ vi.mock("@carbon/auth/client.server", () => ({
 vi.mock("@carbon/auth/session.server", () => ({
   flash: vi.fn(async () => ({}))
 }));
-vi.mock("@carbon/ee/planning", () => ({
+vi.mock("@carbon/planning", () => ({
   runLocationSchedule: vi.fn()
 }));
 vi.mock("@carbon/logger", () => ({
@@ -36,6 +36,9 @@ vi.mock("~/utils/path", () => ({
   },
   requestReferrer: () => null
 }));
+vi.mock("~/modules/shared/shared.server", () => ({
+  requireCompanyRecord: vi.fn(async () => undefined)
+}));
 vi.mock("~/modules/inventory", () => ({
   cancelOpenPickingListsForJob: vi.fn()
 }));
@@ -50,17 +53,38 @@ vi.mock("~/modules/production", () => ({
     "Closed",
     "Cancelled"
   ],
+  getJobReleaseReadiness: vi.fn(),
   recalculateJobRequirements: vi.fn(async () => ({ data: null, error: null })),
   returnPickedRemaindersForJob: vi.fn(),
   runMRP: vi.fn(async () => ({ data: null, error: null })),
   updateJobStatus: vi.fn()
 }));
+// The Release dialog goes through the shared releaseJobs path; delegate its
+// status flip to the mocked updateJobStatus so the ordering guard still sees it.
+vi.mock("~/modules/production/production.server", async () => {
+  const production = await import("~/modules/production");
+  return {
+    releaseJobs: vi.fn(async ({ jobIds, companyId, userId }) => {
+      for (const id of jobIds) {
+        await production.updateJobStatus({} as any, {
+          id,
+          companyId,
+          status: "Ready",
+          updatedBy: userId
+        });
+      }
+      return { error: null };
+    })
+  };
+});
 
 import { cancelOpenPickingListsForJob } from "~/modules/inventory";
 import {
+  getJobReleaseReadiness,
   returnPickedRemaindersForJob,
   updateJobStatus
 } from "~/modules/production";
+import { requireCompanyRecord } from "~/modules/shared/shared.server";
 import { action } from "./$jobId.status";
 
 type QueryResult = { data: unknown; error: unknown };
@@ -116,6 +140,22 @@ function setup() {
   vi.mocked(updateJobStatus).mockImplementation(async () => {
     events.push("updateJobStatus");
     return { data: { id: "job-1" }, error: null } as any;
+  });
+  vi.mocked(getJobReleaseReadiness).mockResolvedValue({
+    data: {
+      jobs: [
+        {
+          id: "job-1",
+          jobId: "J000001",
+          status: "Draft",
+          manufacturingBlocked: false,
+          missingAssemblies: [],
+          outsideOperationsWithoutSupplier: []
+        }
+      ],
+      suppliers: []
+    },
+    error: null
   });
   vi.mocked(runLocationSchedule).mockImplementation(async () => {
     events.push("runLocationSchedule");
@@ -186,6 +226,57 @@ describe("Job release status action", () => {
     expect(events.indexOf("updateJobStatus")).toBeLessThan(
       events.indexOf("runLocationSchedule")
     );
+  });
+
+  it("refuses release when an assembly has no operations", async () => {
+    vi.mocked(getJobReleaseReadiness).mockResolvedValue({
+      data: {
+        jobs: [
+          {
+            id: "job-1",
+            jobId: "J000001",
+            status: "Draft",
+            manufacturingBlocked: false,
+            missingAssemblies: [
+              { makeMethodId: "mm-2", description: "Bracket" }
+            ],
+            outsideOperationsWithoutSupplier: []
+          }
+        ],
+        suppliers: []
+      },
+      error: null
+    });
+
+    await expect(runRelease()).rejects.toBeInstanceOf(Response);
+
+    expect(updateJobStatus).not.toHaveBeenCalled();
+    expect(runLocationSchedule).not.toHaveBeenCalled();
+    expect(success).not.toHaveBeenCalled();
+  });
+});
+
+describe("Job status tenancy", () => {
+  it("refuses a job outside the caller's company before any side effect", async () => {
+    // The action runs MRP, scheduling and picking sweeps with the service role
+    // keyed on the URL id — a foreign job must stop at the ownership check.
+    vi.mocked(requireCompanyRecord).mockRejectedValueOnce(
+      new Response("Not found", { status: 404 })
+    );
+
+    const thrown = await runRelease().catch((e) => e);
+
+    expect(thrown).toBeInstanceOf(Response);
+    expect((thrown as Response).status).toBe(404);
+    expect(requireCompanyRecord).toHaveBeenCalledWith(
+      expect.anything(),
+      "job",
+      "company-1",
+      { id: "job-1" }
+    );
+    expect(updateJobStatus).not.toHaveBeenCalled();
+    expect(runLocationSchedule).not.toHaveBeenCalled();
+    expect(events).toEqual([]);
   });
 });
 

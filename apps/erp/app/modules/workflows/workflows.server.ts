@@ -1,14 +1,15 @@
 import type { Database } from "@carbon/database";
-import { trigger } from "@carbon/jobs";
-import { getLogger } from "@carbon/logger";
-import { datetime } from "@carbon/utils";
-import type { CompanyLock, WorkflowIssue } from "@carbon/workflows";
+import type { CompanyLock, WorkflowIssue } from "@carbon/ee/workflows";
 import {
   createWorkflowCatalog,
   readWorkflowVersion,
   syncWorkflowTriggers,
   validateDefinition
-} from "@carbon/workflows";
+} from "@carbon/ee/workflows";
+import { requireWorkflowsEntitlement } from "@carbon/ee/workflows.server";
+import { trigger } from "@carbon/jobs";
+import { getLogger } from "@carbon/logger";
+import { datetime } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { sql } from "kysely";
 import { getDatabaseClient } from "~/services/database.server";
@@ -98,6 +99,12 @@ export async function publishWorkflowVersion(
     userId: string;
   }
 ): Promise<WorkflowSyncResult> {
+  // Commercial LOCK: publishing a workflow is what makes it live, so the
+  // entitlement check sits here inside the server path (backstopping the route's
+  // strippable `requireFeature` UX gate). Throws `EntitlementError` on a
+  // non-entitled company.
+  await requireWorkflowsEntitlement(client, companyId);
+
   const version = await getWorkflowVersion(client, versionId, companyId);
   if (
     version.error ||

@@ -56,7 +56,14 @@ export function materialSignature(
     const s = lineSignature(m, rules);
     if (s) sigs.add(s);
   }
-  return [...sigs].sort().join(" + ");
+  const parts = [...sigs].sort();
+  // Candidate-level dimension: when the process cares about the produced item,
+  // it splits groups (and shows in the mixed warning) like any other dimension.
+  // Default is "ignore", so an unconfigured process's signature is unchanged.
+  if (rules.producedItem !== "ignore" && candidate.itemReadableId) {
+    parts.push(`→ ${candidate.itemReadableId}`);
+  }
+  return parts.join(" + ");
 }
 
 // The GROUPING key: the material signature, falling back to the produced item
@@ -87,7 +94,10 @@ export function candidateValueSets(candidate: BatchCandidate): MemberValueSets {
     if (m.formName) form.push(m.formName);
     if (m.finishName) finish.push(m.finishName);
   }
-  return { item, substance, grade, dimension, form, finish };
+  const producedItem = candidate.itemReadableId
+    ? [candidate.itemReadableId]
+    : [];
+  return { item, substance, grade, dimension, form, finish, producedItem };
 }
 
 export function setupDurationOf(candidate: BatchCandidate): number {

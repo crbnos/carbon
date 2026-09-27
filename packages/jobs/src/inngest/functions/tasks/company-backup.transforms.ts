@@ -6,6 +6,7 @@ import {
   type CompanyBackup,
   mapWithConcurrency,
   newIdForTable,
+  READABLE_ID_TABLES,
   RETAINED_REF_TABLES,
   rewriteStoragePath,
   rewriteToTemplateAssetPath,
@@ -238,6 +239,13 @@ export function buildIdMaps(
 ): Map<string, Map<string, string>> {
   const idMaps = new Map<string, Map<string, string>>();
   for (const table of tables) {
+    // A readable-id table's `id` is a part number other rows match by value
+    // (`item."readableId"`), not an identifier — minting a fresh one orphans
+    // every row from its item. Skipped in BOTH the restore and the reseed/import
+    // path: the restore wipes the target first so the original values are free,
+    // and on an additive reseed a genuine duplicate hits the composite PK and
+    // fails loudly rather than silently corrupting the readable key.
+    if (READABLE_ID_TABLES.has(table.name)) continue;
     const idType = table.columns.find((c) => c.name === "id")?.udtName;
     if (idType !== "uuid" && idType !== "text") continue;
     const idFk = table.foreignKeys.find(

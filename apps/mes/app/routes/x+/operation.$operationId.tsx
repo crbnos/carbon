@@ -3,11 +3,14 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { activeJobStatuses } from "@carbon/database";
+import { getLogger } from "@carbon/logger";
 import type { LoaderFunctionArgs } from "react-router";
 import { redirect, useLoaderData, useParams } from "react-router";
 import { JobOperation } from "~/components/JobOperation";
 import { getCompanySettings } from "~/services/inventory.service";
 import {
+  getBatchMaterialTotals,
+  getBatchWorkInstructions,
   getJobByOperationId,
   getJobFiles,
   getJobMakeMethod,
@@ -15,6 +18,7 @@ import {
   getJobMethodBomIdMap,
   getJobOperationBatch,
   getJobOperationById,
+  getJobOperationForCompany,
   getJobOperationProcedure,
   getKanbanByJobId,
   getNextIncompleteSerialEntity,
@@ -35,6 +39,8 @@ import { makeDurations } from "~/utils/durations";
 import { resolveOperationView } from "~/utils/operationView";
 import { path } from "~/utils/path";
 
+const logger = getLogger("mes", "operation");
+
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { userId, companyId } = await requirePermissions(request, {});
 
@@ -45,6 +51,32 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const trackedEntityId = url.searchParams.get("trackedEntityId");
 
   const serviceRole = await getCarbonServiceRole();
+
+  // Every read below is service-role, so verify the caller-supplied ids belong
+  // to this company first (the tracked entity feeds the genealogy lookup).
+  const [ownedOperation, ownedEntity] = await Promise.all([
+    getJobOperationForCompany(serviceRole, operationId, companyId),
+    trackedEntityId
+      ? serviceRole
+          .from("trackedEntity")
+          .select("id")
+          .eq("id", trackedEntityId)
+          .eq("companyId", companyId)
+          .maybeSingle()
+      : null
+  ]);
+  if (!ownedOperation.data || (ownedEntity && !ownedEntity.data)) {
+    logger.warn("Operation or tracked entity not found in company", {
+      companyId,
+      operationId,
+      trackedEntityId,
+      error: ownedOperation.error ?? ownedEntity?.error
+    });
+    throw redirect(
+      path.to.operations,
+      await flash(request, error(null, "Operation not found"))
+    );
+  }
 
   let [events, quantities, job, operation] = await Promise.all([
     getProductionEventsForJobOperation(serviceRole, {
@@ -239,6 +271,21 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     jobMakeMethod: jobMakeMethod.data,
     kanban: kanban.data,
     files: getJobFiles(serviceRole, companyId, job.data, operation.data),
+    // Batch mode: the combined per-item requirement across every member, so
+    // the materials panel can show the one shared pick.
+    batchMaterialTotals: batch
+      ? await getBatchMaterialTotals(serviceRole, {
+          batchId: batch.id as string,
+          companyId
+        })
+      : null,
+    // Batch mode: steps, parameters and files across every member (deferred).
+    batchWorkInstructions: batch
+      ? getBatchWorkInstructions(serviceRole, {
+          batchId: batch.id as string,
+          companyId
+        })
+      : null,
     materials: getJobMaterialsByOperationId(serviceRole, {
       operation: operation.data?.[0],
       trackedEntityId:
@@ -281,6 +328,8 @@ export default function OperationRoute() {
 
   const {
     batch,
+    batchMaterialTotals,
+    batchWorkInstructions,
     events,
     expiredEntityPolicy,
     autoSelectMaterialWithoutPickingList,
@@ -302,6 +351,8 @@ export default function OperationRoute() {
     <JobOperation
       key={`job-operation-${operationId}`}
       batch={batch}
+      batchMaterialTotals={batchMaterialTotals}
+      batchWorkInstructions={batchWorkInstructions}
       events={events}
       expiredEntityPolicy={expiredEntityPolicy}
       autoSelectMaterialWithoutPickingList={

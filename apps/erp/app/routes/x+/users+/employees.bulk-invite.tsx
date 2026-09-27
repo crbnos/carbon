@@ -3,6 +3,7 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { InviteEmail } from "@carbon/documents/email";
+import { companyHasFeature } from "@carbon/ee/plan.server";
 import { getSsoAwareInviteLink } from "@carbon/ee/sso.server";
 import { validationError, validator } from "@carbon/form";
 import { sendEmail } from "@carbon/lib/email.server";
@@ -54,6 +55,22 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 
   const { employees } = validation.data;
+
+  // Preserve the single-invite role policy for every row. Resolve once, not
+  // once per employee: Community / Starter receives the seeded Admin type.
+  const canAuthorRoles = await companyHasFeature(client, companyId, {
+    feature: "PERMISSIONS"
+  });
+  let adminEmployeeType: string | undefined;
+  if (!canAuthorRoles) {
+    const adminType = await client
+      .from("employeeType")
+      .select("id")
+      .eq("companyId", companyId)
+      .eq("systemType", "Admin")
+      .maybeSingle();
+    adminEmployeeType = adminType.data?.id;
+  }
 
   const location = request.headers.get("x-vercel-ip-city") ?? "Unknown";
   const ip = request.headers.get("x-forwarded-for") ?? "127.0.0.1";
@@ -112,7 +129,7 @@ export async function action({ request }: ActionFunctionArgs) {
       email,
       firstName,
       lastName,
-      employeeType,
+      employeeType: adminEmployeeType ?? employeeType,
       locationId,
       companyId,
       createdBy: userId,

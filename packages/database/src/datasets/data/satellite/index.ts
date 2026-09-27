@@ -4,6 +4,7 @@ import { satelliteChangeOrders } from "./change-orders.ts";
 import { satelliteFoundation } from "./foundation.ts";
 import { satelliteInventory } from "./inventory.ts";
 import { satelliteItems } from "./items.ts";
+import { satelliteOps } from "./ops.ts";
 import { satellitePlanning } from "./planning.ts";
 import { satelliteProduction } from "./production.ts";
 import { satellitePurchasing } from "./purchasing.ts";
@@ -28,6 +29,7 @@ export const satellite: Dataset = {
   quality: satelliteQuality,
   changeOrders: satelliteChangeOrders,
   accounting: satelliteAccounting,
+  ops: satelliteOps,
   workflows: satelliteWorkflows,
   planning: satellitePlanning
 };

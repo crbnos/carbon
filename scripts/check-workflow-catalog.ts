@@ -8,26 +8,27 @@ import { execFileSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import schema from "../packages/database/src/swagger-docs-schema";
-import { WORKFLOW_ACTIONS } from "../packages/workflows/src/catalog/actions";
+import { WORKFLOW_ACTIONS } from "../packages/ee/src/workflows/catalog/actions";
 import {
   WORKFLOW_ACTION_CATALOG,
   WORKFLOW_OPERATION_CATALOG
-} from "../packages/workflows/src/catalog/actions.generated";
-import { buildCatalog, validateCatalogInputs } from "../packages/workflows/src/catalog/build";
-import { WORKFLOW_ENTITY_REGISTRY } from "../packages/workflows/src/catalog/entities";
+} from "../packages/ee/src/workflows/catalog/actions.generated";
+import { buildCatalog, validateCatalogInputs } from "../packages/ee/src/workflows/catalog/build";
+import { WORKFLOW_ENTITY_REGISTRY } from "../packages/ee/src/workflows/catalog/entities";
 import {
   WORKFLOW_ENTITIES,
   WORKFLOW_EVENTS
-} from "../packages/workflows/src/catalog/events.generated";
+} from "../packages/ee/src/workflows/catalog/events.generated";
 // Direct import, unlike labels: this file has no `msg` macro, so plain Node can read it.
-import { WORKFLOW_FIELD_HELP } from "../packages/workflows/src/catalog/help.generated";
-import { WORKFLOW_MOMENTS } from "../packages/workflows/src/catalog/moments";
-import { WORKFLOW_OPERATIONS } from "../packages/workflows/src/catalog/operations";
+import { WORKFLOW_FIELD_HELP } from "../packages/ee/src/workflows/catalog/help.generated";
+import { WORKFLOW_MOMENTS } from "../packages/ee/src/workflows/catalog/moments";
+import { WORKFLOW_OPERATIONS } from "../packages/ee/src/workflows/catalog/operations";
+import { MOMENT_OUTPUT_KEYS } from "../packages/workflows-core/src/moments";
 
 const ROOT = process.cwd();
 const LABELS_FILE = path.join(
   ROOT,
-  "packages/workflows/src/catalog/labels.generated.ts"
+  "packages/ee/src/workflows/catalog/labels.generated.ts"
 );
 const TOOL_METADATA_FILE = path.join(
   ROOT,
@@ -74,7 +75,37 @@ for (const key of Object.keys(WORKFLOW_MOMENTS)) {
 for (const key of raised.keys()) {
   if (!(key in WORKFLOW_MOMENTS)) {
     fail(
-      `raiseMoment("${key}") names a moment that is not declared in packages/workflows/src/catalog/moments.ts.`
+      `raiseMoment("${key}") names a moment that is not declared in packages/ee/src/workflows/catalog/moments.ts.`
+    );
+  }
+}
+
+// The CE leaf `@carbon/workflows-core` mirrors each moment's output KEY NAMES —
+// `MomentPayload<K>` derives from `MOMENT_OUTPUT_KEYS`, and the engine re-exports
+// the leaf's `MomentKey`/`MomentPayload`, so a drift between the two is invisible
+// to the type checker. This is the invariant that keeps them honest.
+const leafMoments = MOMENT_OUTPUT_KEYS as Record<string, readonly string[]>;
+for (const key of Object.keys(WORKFLOW_MOMENTS)) {
+  const engineKeys = Object.keys(
+    WORKFLOW_MOMENTS[key as keyof typeof WORKFLOW_MOMENTS].outputs
+  ).sort();
+  const leafKeys = leafMoments[key];
+  if (!leafKeys) {
+    fail(
+      `Moment "${key}" is in WORKFLOW_MOMENTS but missing from MOMENT_OUTPUT_KEYS in @carbon/workflows-core — add it (with the same output keys) so MomentPayload stays correct.`
+    );
+    continue;
+  }
+  if (engineKeys.join(",") !== [...leafKeys].sort().join(",")) {
+    fail(
+      `Moment "${key}" output keys drifted: WORKFLOW_MOMENTS has [${engineKeys}] but @carbon/workflows-core MOMENT_OUTPUT_KEYS has [${[...leafKeys].sort()}]. Update packages/workflows-core/src/moments.ts to match.`
+    );
+  }
+}
+for (const key of Object.keys(leafMoments)) {
+  if (!(key in WORKFLOW_MOMENTS)) {
+    fail(
+      `Moment "${key}" is in @carbon/workflows-core MOMENT_OUTPUT_KEYS but not declared in WORKFLOW_MOMENTS — remove it from packages/workflows-core/src/moments.ts.`
     );
   }
 }

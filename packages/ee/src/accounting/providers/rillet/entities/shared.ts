@@ -170,9 +170,6 @@ export async function writeDroppingUnregisteredReferences<
     ) {
       throw error;
     }
-    console.warn(
-      `[Rillet] external-reference type slugs are not registered for this organization (Rillet Settings → External References: add "${RILLET_CARBON_REFERENCE_TYPE}" and "${RILLET_CARBON_COMPANY_REFERENCE_TYPE}"); retrying without references`
-    );
     const { external_references: _dropped, ...stripped } = payload;
     return await write(stripped as TPayload);
   }
@@ -480,14 +477,6 @@ export abstract class RilletEntitySyncer<
         await this.linkEntities(tx, entityId, remoteId);
       });
 
-      console.log("[SyncLog]", {
-        direction: "PUSH",
-        entity: this.entityType,
-        localId: entityId,
-        remoteId,
-        status: "success"
-      });
-
       return {
         status: "success",
         action: existingMapping ? "updated" : "created",
@@ -496,10 +485,6 @@ export abstract class RilletEntitySyncer<
       };
     } catch (err) {
       if (err instanceof JournalEntrySyncError) {
-        console.error(`[${this.constructor.name}] structured push failure`, {
-          entityId,
-          ...err.failure
-        });
         return {
           status: "error",
           action: "none",
@@ -507,11 +492,6 @@ export abstract class RilletEntitySyncer<
           error: err.failure
         };
       }
-
-      console.error(`[${this.constructor.name}] push failed`, {
-        entityId,
-        err
-      });
       return {
         status: "error",
         action: "none",
@@ -619,7 +599,15 @@ export abstract class RilletTransactionSyncer<
     return false;
   }
 
-  protected async deleteRemote(_remoteId: string): Promise<void> {
+  /**
+   * Delete the remote document on a local void. `metadata` is the push
+   * mapping's metadata — a syncer that writes one Carbon entity to more than
+   * one Rillet object kind (bills vs reimbursements) reads the kind from it.
+   */
+  protected async deleteRemote(
+    _remoteId: string,
+    _metadata?: Record<string, unknown>
+  ): Promise<void> {
     throw new Error("This Rillet transaction does not support native voids");
   }
 
@@ -869,7 +857,10 @@ export abstract class RilletTransactionSyncer<
 
       if (existingMapping?.externalId && this.isVoided(localEntity)) {
         if (existingMapping.metadata?.voided !== true) {
-          await this.deleteRemote(existingMapping.externalId);
+          await this.deleteRemote(
+            existingMapping.externalId,
+            existingMapping.metadata ?? undefined
+          );
           await withTriggersDisabled(this.database, async (tx) => {
             await createMappingService(tx, this.companyId).link(
               this.entityType,
@@ -934,10 +925,6 @@ export abstract class RilletTransactionSyncer<
       };
     } catch (err) {
       if (err instanceof JournalEntrySyncError) {
-        console.error(`[${this.constructor.name}] pre-flight failure`, {
-          entityId,
-          ...err.failure
-        });
         return {
           status: "error",
           action: "none",
@@ -945,11 +932,6 @@ export abstract class RilletTransactionSyncer<
           error: err.failure
         };
       }
-
-      console.error(`[${this.constructor.name}] push failed`, {
-        entityId,
-        err
-      });
       return {
         status: "error",
         action: "none",

@@ -1,4 +1,5 @@
 import { getBrowserEnv } from "@carbon/auth";
+import { convertKbToString } from "@carbon/files";
 import {
   Badge,
   BadgeCloseButton,
@@ -15,7 +16,7 @@ import {
   PopoverTrigger,
   useDisclosure
 } from "@carbon/react";
-import { convertKbToString, filterEmpty } from "@carbon/utils";
+import { filterEmpty } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useEffect, useMemo, useState } from "react";
@@ -667,6 +668,10 @@ function getDocumentLocation(
       return path.to.salesInvoice(sourceDocumentId);
     case "Supplier Quote":
       return path.to.supplierQuote(sourceDocumentId);
+    case "Supplier":
+      return path.to.supplierDetails(sourceDocumentId);
+    case "Customer":
+      return path.to.customerDetails(sourceDocumentId);
     default:
       return "#";
   }

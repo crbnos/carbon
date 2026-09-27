@@ -58,9 +58,12 @@ export default function SalesRFQExplorer() {
   }>(path.to.salesRfq(rfqId));
   const permissions = usePermissions();
 
+  const modelPaths = (salesRfqData?.lines ?? [])
+    .map((d) => d.modelPath)
+    .filter(Boolean);
   useRealtime(
     "modelUpload",
-    `modelPath=in.(${salesRfqData?.lines.map((d) => d.modelPath).join(",")})`
+    modelPaths.length ? `modelPath=in.(${modelPaths.join(",")})` : undefined
   );
 
   const newSalesRFQLineDisclosure = useDisclosure();

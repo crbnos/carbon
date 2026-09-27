@@ -1,7 +1,9 @@
 import type { Database } from "@carbon/database";
 import { SalesOrderEmail } from "@carbon/documents/email";
+import { storage } from "@carbon/files";
 import { trigger } from "@carbon/jobs";
 import { redis } from "@carbon/kv";
+import { getLogger } from "@carbon/logger";
 import type { CalendarDate } from "@internationalized/date";
 import { startOfWeek } from "@internationalized/date";
 import { renderAsync } from "@react-email/components";
@@ -25,6 +27,8 @@ import { getDatabaseClient } from "~/services/database.server";
 import { stripSpecialCharacters } from "~/utils/string";
 import { upsertDocument } from "../documents/documents.service";
 import type { CustomFieldsTableType } from "../settings";
+
+const logger = getLogger("erp", "shared");
 
 export async function assign(
   client: SupabaseClient<Database>,
@@ -187,8 +191,8 @@ export async function generateAndAttachSalesOrderPdf(args: {
   // 2. Upload to Supabase storage
   const documentFilePath = `${companyId}/opportunity/${opportunityId}/${fileName}`;
 
-  const uploadResult = await serviceRole.storage
-    .from("private")
+  const uploadResult = await storage(serviceRole)
+    .company(companyId)
     .upload(documentFilePath, file, {
       cacheControl: `${12 * 60 * 60}`,
       contentType: "application/pdf",
@@ -261,8 +265,8 @@ export async function generateAndAttachSalesReturnOrderPdf(
   // 2. Upload to Supabase storage
   const documentFilePath = `${companyId}/sales-return-order/${id}/${fileName}`;
 
-  const uploadResult = await serviceRole.storage
-    .from("private")
+  const uploadResult = await storage(serviceRole)
+    .company(companyId)
     .upload(documentFilePath, file, {
       cacheControl: `${12 * 60 * 60}`,
       contentType: "application/pdf",
@@ -338,8 +342,8 @@ export async function generateAndAttachPurchaseReturnOrderPdf(
   // 2. Upload to Supabase storage
   const documentFilePath = `${companyId}/purchase-return-order/${id}/${fileName}`;
 
-  const uploadResult = await serviceRole.storage
-    .from("private")
+  const uploadResult = await storage(serviceRole)
+    .company(companyId)
     .upload(documentFilePath, file, {
       cacheControl: `${12 * 60 * 60}`,
       contentType: "application/pdf",
@@ -411,7 +415,9 @@ export async function sendSalesOrderEmail(args: {
     paymentTerms
   ] = await Promise.all([
     getCompany(serviceRole, companyId),
-    getCustomerContact(serviceRole, customerContactId),
+    // customerContactId comes from the form and the service role bypasses
+    // RLS — scope it so another company's contact is never read or emailed.
+    getCustomerContact(serviceRole, customerContactId, companyId),
     getSalesOrder(serviceRole, salesOrderId),
     getSalesOrderLines(serviceRole, salesOrderId),
     getSalesOrderCustomerDetails(serviceRole, salesOrderId),
@@ -470,8 +476,8 @@ export async function sendSalesOrderEmail(args: {
 
   const html = await renderAsync(emailTemplate);
   const text = await renderAsync(emailTemplate, { plainText: true });
-  const { data: signedUrlData } = await serviceRole.storage
-    .from("private")
+  const signed = await storage(serviceRole)
+    .company(companyId)
     .createSignedUrl(documentFilePath, 3600);
 
   await trigger("send-email", {
@@ -481,10 +487,10 @@ export async function sendSalesOrderEmail(args: {
     subject: `Order ${salesOrder.data.salesOrderId} from ${company.data.name}`,
     html,
     text,
-    attachments: signedUrlData?.signedUrl
+    attachments: signed.data
       ? [
           {
-            path: signedUrlData.signedUrl,
+            path: signed.data.signedUrl,
             filename: fileName
           }
         ]
@@ -584,4 +590,59 @@ function toPlainPeriod(p: {
     endDate: dateToString(p.endDate),
     periodType: p.periodType
   };
+}
+
+type Tables = Database["public"]["Tables"];
+
+/**
+ * Every table with a string `id` and a `companyId` column. A nullable
+ * `companyId` (e.g. `item`) is fine: global rows never match `.eq("companyId")`.
+ */
+type CompanyScopedTable = {
+  [K in keyof Tables]: Tables[K]["Row"] extends {
+    id: string;
+    companyId: string | null;
+  }
+    ? K
+    : never;
+}[keyof Tables];
+
+/**
+ * Throws a 404 `Response` unless a row of `table` in `companyId` matches every
+ * column in `match` — e.g. `{ id: lineId, quoteId }` proves the line exists,
+ * belongs to the company AND hangs off that quote. One query.
+ *
+ * Record ids in a URL or form body prove nothing about tenancy:
+ * `requirePermissions` authorizes the CALLER for `companyId`, not the ids it
+ * sends. Most tables have single-column foreign keys, so a service-role or
+ * Kysely write happily accepts another company's row as a parent. Call this
+ * before any RLS-bypassing read or write keyed on a caller-supplied id.
+ */
+export async function requireCompanyRecord(
+  client: SupabaseClient<Database>,
+  table: CompanyScopedTable,
+  companyId: string,
+  match: { id: string } & Record<string, string>
+): Promise<void> {
+  // Every table in the union has `id` + `companyId`; the cast only narrows the
+  // union so supabase-js can type the builder.
+  const { data, error } = await client
+    .from(table as "quoteLine")
+    .select("id")
+    .match(match)
+    .eq("companyId", companyId)
+    .maybeSingle();
+
+  if (error) {
+    logger.error(`Failed to verify ${table} for company`, {
+      companyId,
+      match,
+      error
+    });
+    throw new Response("Not found", { status: 404 });
+  }
+  if (!data) {
+    logger.error(`${table} not found for company`, { companyId, match });
+    throw new Response("Not found", { status: 404 });
+  }
 }

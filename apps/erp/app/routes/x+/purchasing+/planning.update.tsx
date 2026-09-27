@@ -9,6 +9,7 @@ import {
   plannedOrderValidator,
   upsertPurchaseOrderLine
 } from "~/modules/purchasing";
+import { requireCompanyRecord } from "~/modules/shared/shared.server";
 
 const logger = getLogger("erp", "purchasing", "planning");
 
@@ -30,6 +31,12 @@ export async function action({ request }: ActionFunctionArgs) {
   const { items, action, locationId } = await request.json();
 
   if (typeof locationId !== "string") {
+    logger.warn("Planning update rejected: locationId missing", {
+      companyId,
+      userId,
+      action,
+      locationIdType: typeof locationId
+    });
     return data(
       {
         success: false,
@@ -40,6 +47,12 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 
   if (typeof action !== "string") {
+    logger.warn("Planning update rejected: action missing", {
+      companyId,
+      userId,
+      locationId,
+      actionType: typeof action
+    });
     return data(
       {
         success: false,
@@ -82,6 +95,13 @@ export async function action({ request }: ActionFunctionArgs) {
           return error.message;
         });
 
+        logger.warn("Planning order payload failed validation", {
+          companyId,
+          userId,
+          locationId,
+          errors: errorMessages,
+          issues: parsedItems.error.issues
+        });
         return data(
           {
             success: false,
@@ -94,6 +114,11 @@ export async function action({ request }: ActionFunctionArgs) {
 
       const itemsToOrder = parsedItems.data;
       if (itemsToOrder.length === 0) {
+        logger.warn("Planning order payload had no items", {
+          companyId,
+          userId,
+          locationId
+        });
         return data(
           {
             success: false,
@@ -157,16 +182,65 @@ export async function action({ request }: ActionFunctionArgs) {
           }
         }
 
+        // bypassRls hands back the service role, and every id below comes
+        // from the request body: the location, items and existing lines must
+        // belong to this company before anything is read or written by them
+        // (supplyForecast upserts on (itemId, locationId, periodId) alone).
+        const existingLineIds = existingLineUpdates.map(
+          ({ order }) => order.existingLineId!
+        );
+        await requireCompanyRecord(client, "location", companyId, {
+          id: locationId
+        });
+        const [ownedItems, ownedLines] = await Promise.all([
+          client
+            .from("item")
+            .select("id")
+            .in("id", Array.from(itemIds))
+            .eq("companyId", companyId),
+          existingLineIds.length > 0
+            ? client
+                .from("purchaseOrderLine")
+                .select("id")
+                .in("id", existingLineIds)
+                .eq("companyId", companyId)
+            : Promise.resolve({ data: [] as { id: string }[], error: null })
+        ]);
+        if (
+          ownedItems.error ||
+          ownedLines.error ||
+          (ownedItems.data?.length ?? 0) !== itemIds.size ||
+          (ownedLines.data?.length ?? 0) !== new Set(existingLineIds).size
+        ) {
+          logger.error("Planning order references records outside company", {
+            companyId,
+            userId,
+            locationId,
+            itemIds: Array.from(itemIds),
+            existingLineIds,
+            error: ownedItems.error ?? ownedLines.error
+          });
+          return data(
+            {
+              success: false,
+              message: "Item or purchase order line not found"
+            },
+            { status: 404 }
+          );
+        }
+
         const [suppliers, supplierParts, periods, company, currencies] =
           await Promise.all([
             client
               .from("supplier")
               .select("id, name, taxPercent, currencyCode")
-              .in("id", Array.from(supplierIds)),
+              .in("id", Array.from(supplierIds))
+              .eq("companyId", companyId),
             client
               .from("supplierPart")
               .select("*")
-              .in("itemId", Array.from(itemIds)),
+              .in("itemId", Array.from(itemIds))
+              .eq("companyId", companyId),
             client.from("period").select("*").in("id", Array.from(periodIds)),
             client
               .from("company")
@@ -249,7 +323,8 @@ export async function action({ request }: ActionFunctionArgs) {
               requiredDate: order.dueDate ?? null,
               updatedBy: userId
             })
-            .eq("id", order.existingLineId!);
+            .eq("id", order.existingLineId!)
+            .eq("companyId", companyId);
           if (updateLine.error) {
             errors.push(
               `Failed to update existing PO line ${order.existingLineId}: ${updateLine.error.message}`
@@ -288,6 +363,7 @@ export async function action({ request }: ActionFunctionArgs) {
                 )
                 .gte("requiredDate", period.startDate)
                 .lte("requiredDate", period.endDate)
+                .eq("companyId", companyId)
                 .eq("purchaseOrder.supplierId", supplierId)
                 .in("purchaseOrder.status", ["Draft", "Planned"])
                 .limit(1);
@@ -337,6 +413,7 @@ export async function action({ request }: ActionFunctionArgs) {
               .from("itemReplenishment")
               .select("purchasingBlocked")
               .eq("itemId", itemId)
+              .eq("companyId", companyId)
               .single();
 
             if (purchasing.error) {
@@ -367,6 +444,7 @@ export async function action({ request }: ActionFunctionArgs) {
               .select("id, purchaseQuantity")
               .eq("purchaseOrderId", purchaseOrderId)
               .eq("itemId", itemId)
+              .eq("companyId", companyId)
               .limit(1);
 
             if (existingLines?.[0]) {
@@ -378,7 +456,8 @@ export async function action({ request }: ActionFunctionArgs) {
                     (existing.purchaseQuantity ?? 0) + adjustedQuantity,
                   updatedBy: userId
                 })
-                .eq("id", existing.id);
+                .eq("id", existing.id)
+                .eq("companyId", companyId);
 
               if (updateLine.error) {
                 errors.push(
@@ -464,6 +543,15 @@ export async function action({ request }: ActionFunctionArgs) {
         }
 
         if (errors.length > 0 && processedItems === 0) {
+          logger.error("Failed to process any planning orders", {
+            companyId,
+            userId,
+            locationId,
+            itemIds: Array.from(itemIds),
+            supplierIds: Array.from(supplierIds),
+            periodIds: Array.from(periodIds),
+            errors
+          });
           return data(
             {
               success: false,
@@ -495,6 +583,27 @@ export async function action({ request }: ActionFunctionArgs) {
           ).values()
         );
 
+        if (errors.length > 0) {
+          logger.warn("Planning orders processed with errors", {
+            companyId,
+            userId,
+            locationId,
+            processedItems,
+            totalItems: itemsToOrder.length,
+            purchaseOrderIds: purchaseOrders.map((po) => po.readableId),
+            errors
+          });
+        } else {
+          logger.info("Planning orders processed", {
+            companyId,
+            userId,
+            locationId,
+            processedItems,
+            totalItems: itemsToOrder.length,
+            purchaseOrderIds: purchaseOrders.map((po) => po.readableId)
+          });
+        }
+
         return {
           success: processedItems > 0,
           message,
@@ -504,7 +613,12 @@ export async function action({ request }: ActionFunctionArgs) {
           errors: errors.length > 0 ? errors : undefined
         };
       } catch (error) {
-        logger.error("Unexpected error processing purchase orders", { error });
+        logger.error("Unexpected error processing purchase orders", {
+          companyId,
+          userId,
+          locationId,
+          error
+        });
         return data(
           {
             success: false,

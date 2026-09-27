@@ -20,17 +20,14 @@ const TYPESCRIPT_ROOTS = [
   // helpers live (a local `round` shadow hid here), and form/react own the
   // number inputs whose formatOptions are part of the storage round-trip.
   "packages/utils/src",
+  "packages/files/src",
   "packages/form/src",
   "packages/react/src",
-  "packages/printing/src",
-  "packages/workflows/src"
+  "packages/printing/src"
+  // (workflows source now lives under packages/ee/src, already scanned above)
 ];
 
-const EXCLUDED_DIRS = new Set([
-  "node_modules",
-  "image-resizer",
-  "logo-resizer"
-]);
+const EXCLUDED_DIRS = new Set(["node_modules"]);
 
 const isTest = (name: string) =>
   name.endsWith(".test.ts") ||
