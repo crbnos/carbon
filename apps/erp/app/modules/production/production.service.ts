@@ -3369,7 +3369,6 @@ export async function insertJob(
     salesOrderLineId?: string;
     quoteId?: string;
     quoteLineId?: string;
-    parentJobId?: string;
     modelUploadId?: string;
     notes?: string;
     customFields?: Json;
@@ -3491,7 +3490,6 @@ export async function insertJob(
       salesOrderLineId: input.salesOrderLineId,
       quoteId: input.quoteId,
       quoteLineId: input.quoteLineId,
-      parentJobId: input.parentJobId,
       modelUploadId: input.modelUploadId,
       notes: input.notes,
       customFields: input.customFields,
@@ -3638,7 +3636,6 @@ export async function updateJob(
     salesOrderLineId?: string | null;
     quoteId?: string | null;
     quoteLineId?: string | null;
-    parentJobId?: string | null;
     modelUploadId?: string | null;
     /** Rich text: plain text, a JSON-encoded tiptap document, or the document
      *  itself — stored as a tiptap document either way. */
