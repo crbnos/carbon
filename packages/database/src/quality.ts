@@ -86,6 +86,15 @@ export type InspectionDispositionInput = {
   requireSource?: "Receipt" | "Job Operation" | "First Article";
 };
 
+/** A dependent MMC/LMC reading re-valuated because its size reading changed. */
+export type RevaluatedDependentMeasurement = {
+  inspectionFeatureId: string;
+  measurementId: string;
+  status: InspectionVerdict;
+  bonus: number | null;
+  allowable: number | null;
+};
+
 export type InspectionMeasurementInput = {
   inspectionId: string;
   // Absent = create an anonymous sample (non-serial grid columns).
@@ -726,6 +735,8 @@ export async function upsertInspectionMeasurement(
     sampleStatus: string;
     bonus: number | null;
     allowable: number | null;
+    /** MMC/LMC readings on this sample re-valuated against this size reading. */
+    dependents: RevaluatedDependentMeasurement[];
   }>
 > {
   const nowIso = new Date().toISOString();
@@ -907,7 +918,9 @@ export async function upsertInspectionMeasurement(
 
       // This reading may be the size feature of MMC/LMC geometric features:
       // re-valuate their recorded readings on this sample against the new
-      // size, before the sample status is derived from them.
+      // size, before the sample status is derived from them. They are
+      // returned so the grids can refresh those cells without a reload.
+      const dependents: RevaluatedDependentMeasurement[] = [];
       const dependentFeatures = await trx
         .selectFrom("inspectionFeature")
         .select([
@@ -962,6 +975,13 @@ export async function upsertInspectionMeasurement(
             })
             .where("id", "=", dependent.id)
             .execute();
+          dependents.push({
+            inspectionFeatureId: dependent.inspectionFeatureId,
+            measurementId: dependent.id,
+            status: valuation.status,
+            bonus: valuation.bonus,
+            allowable: valuation.allowable
+          });
         }
       }
 
@@ -1048,7 +1068,8 @@ export async function upsertInspectionMeasurement(
         measurementStatus,
         sampleStatus: derivedStatus,
         bonus,
-        allowable
+        allowable,
+        dependents
       };
     });
 

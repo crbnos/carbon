@@ -1,3 +1,4 @@
+import type { RevaluatedDependentMeasurement } from "@carbon/database/quality";
 import {
   Badge,
   Button,
@@ -40,6 +41,9 @@ export type MeasurementSaveResult = {
   // feature's reading and the resulting allowable tolerance.
   bonus: number | null;
   allowable: number | null;
+  // MMC/LMC readings on the same sample that the server re-valuated because
+  // this save changed their size feature's reading. Empty for most saves.
+  dependents: RevaluatedDependentMeasurement[];
 };
 
 type MeasurementPayload = {
@@ -276,6 +280,7 @@ const InspectionMeasurementGrid = ({
           sampleStatus: string;
           bonus: number | null;
           allowable: number | null;
+          dependents?: RevaluatedDependentMeasurement[];
         } | null;
         error?: { message: string } | null;
       } | null;
@@ -301,7 +306,8 @@ const InspectionMeasurementGrid = ({
         passed: payload.passed !== undefined ? payload.passed === "true" : null,
         notes: notes || null,
         bonus: body.data.bonus ?? null,
-        allowable: body.data.allowable ?? null
+        allowable: body.data.allowable ?? null,
+        dependents: body.data.dependents ?? []
       };
     },
     [inspectionId, sampleIdByColumn, cellNotes, t]
@@ -350,7 +356,8 @@ const InspectionMeasurementGrid = ({
         passed: status === "Passed",
         notes: null,
         bonus: null,
-        allowable: null
+        allowable: null,
+        dependents: []
       };
     },
     [inspectionId, sampleIdByColumn, samples, t]
@@ -394,10 +401,56 @@ const InspectionMeasurementGrid = ({
           allowable: result.allowable
         }
       }));
+      // A size reading re-valuates the MMC/LMC readings that take their bonus
+      // from it on the same sample: show the server's verdicts for those
+      // cells too (never recomputed here), and report them upward so the
+      // disposition gating sees the same statuses.
+      const dependentCell = (featureId: string) =>
+        `${columnIndex}:${featureId}`;
+      if (result.dependents.length > 0) {
+        setStatusByCell((prev) => {
+          const next = { ...prev };
+          for (const dependent of result.dependents) {
+            next[dependentCell(dependent.inspectionFeatureId)] =
+              dependent.status;
+          }
+          return next;
+        });
+        setToleranceByCell((prev) => {
+          const next = { ...prev };
+          for (const dependent of result.dependents) {
+            next[dependentCell(dependent.inspectionFeatureId)] = {
+              bonus: dependent.bonus,
+              allowable: dependent.allowable
+            };
+          }
+          return next;
+        });
+      }
       onMeasurementSaved(result);
+      for (const dependent of result.dependents) {
+        onMeasurementSaved({
+          ...result,
+          measurementId: dependent.measurementId,
+          measurementStatus: dependent.status,
+          inspectionFeatureId: dependent.inspectionFeatureId,
+          value: cellValue(columnIndex, dependent.inspectionFeatureId),
+          passed: null,
+          notes: cellNotes(columnIndex, dependent.inspectionFeatureId),
+          bonus: dependent.bonus,
+          allowable: dependent.allowable,
+          dependents: []
+        });
+      }
       return result;
     },
-    [persistMeasurement, persistOverall, onMeasurementSaved]
+    [
+      persistMeasurement,
+      persistOverall,
+      onMeasurementSaved,
+      cellValue,
+      cellNotes
+    ]
   );
 
   // Note popover Save: re-post the cell's current reading with the new note
