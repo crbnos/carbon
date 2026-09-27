@@ -346,8 +346,13 @@ that condition, capped at the size's own tolerance band:
 unit serialise), uses the size feature's reading on the **same sample** (unit),
 stores `bonus` / `allowable` on the measurement, and — when the saved reading
 is itself a size feature — **re-valuates every dependent MMC/LMC reading on
-that sample** before deriving the sample status. Both
-grids show "allowable Y (bonus X)" on a reading that earned a bonus.
+that sample** before deriving the sample status, and returns them as
+`dependents` (`RevaluatedDependentMeasurement[]`: feature, measurement id,
+status, bonus, allowable). Both grids merge those into the dependent cells'
+status/bonus state and report each one through `onMeasurementSaved`, so the
+view's disposition gating sees them too — the server's valuation is
+trusted, nothing is recomputed client-side. Both grids show
+"allowable Y (bonus X)" on a reading that earned a bonus.
 
 ## Notes per reading
 
@@ -493,7 +498,8 @@ GL/cost posting and `.ai/plans/2026-07-25-inspection-disposition-gl-posting.md`.
   pass/fail UI there; deviations resolve at disposition via MRB/NCR (spec decision).
 - **Per-cell measurement saves are quiet** (plain `fetch`, no revalidation) — the grid and
   the view mirror statuses locally from the action's returned
-  `{sampleId, measurementStatus, sampleStatus}`.
+  `{sampleId, measurementStatus, sampleStatus, dependents}` (`dependents` =
+  MMC/LMC readings a size save re-valuated on the same sample).
 - **MES dispositions are one-shot; ERP receipt dispositions are not.** The MES
   disposition routes and the ERP routes for **First Article** lots pass
   `requireOpen` — don't add it for ERP receipt lots (their Reject retry

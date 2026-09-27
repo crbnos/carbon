@@ -2332,10 +2332,23 @@ root-level `manifests/schema.json` — a new stray file — while the real basel
 stale. Separately, the hook's `git add packages/locale/locales/**/*.po` stages EVERY
 modified catalog, so extracted strings from unrelated work ride along on the commit.
 
-**Rule:** After any commit that touches `packages/database/supabase/migrations/`, run
-`git show --stat HEAD` and confirm the manifest landed at
-`packages/jobs/manifests/schema.json` (and that no root `manifests/` path exists); if not,
-move it and amend. Check the same stat for `.po` files you did not mean to commit.
+**Cause:** git exports `GIT_DIR` + `GIT_INDEX_FILE` to hooks but NOT `GIT_WORK_TREE`
+(verified in a scratch worktree), and with `GIT_DIR` set git takes the current directory
+as the work-tree root. `pnpm --filter @carbon/jobs` runs the script from `packages/jobs`,
+so the absolute path resolved to `manifests/schema.json` relative to that "root".
 
-**Applies to:** `.husky/pre-commit`, `packages/jobs/src/scripts/check-backups.ts`
+**Fixed (2026-09-26):** `check-backups.ts`'s `git()` helper now runs every git call with
+`cwd` = the repo root (derived from `import.meta.dirname`, four levels up) and
+`GIT_WORK_TREE` pinned to it, and stages the repo-relative `SCHEMA_REPO_PATH`. Reproduced
+before/after against a copy of the worktree index (`GIT_DIR=$(git rev-parse
+--absolute-git-dir) GIT_INDEX_FILE=<copy>` from `packages/jobs`): before staged
+`A manifests/schema.json`, after staged `packages/jobs/manifests/schema.json`.
+
+**Rule:** Any script that shells out to git and may run inside a hook must set `cwd` to
+the repo root (and pin `GIT_WORK_TREE`) and pass repo-relative paths — never rely on the
+inherited cwd. The `.po` side-effect is NOT fixed: after a commit, check
+`git show --stat HEAD` for catalogs you did not mean to commit.
+
+**Applies to:** `.husky/pre-commit`, `packages/jobs/src/scripts/check-backups.ts`, any
+git-calling script run from a hook via `pnpm --filter`
 (`writeSchemaFile`), commits made from worktrees.

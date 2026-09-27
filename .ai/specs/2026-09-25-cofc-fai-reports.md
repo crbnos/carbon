@@ -105,6 +105,13 @@ Captured from the receipt line's actions menu ("Certificates") and from the FAI'
 `upsertDocument` (`sourceDocument = 'Receipt'` or `'Job'`), then inserts the
 `certificate` row.
 
+Regenerating a receipt (source document or location changed) rebuilds its lines in the
+`create` edge function. Certificates on the old lines are moved, with their ids, to the
+new line for the same source line (`receiptLine.lineId`, else `itemId`) before the old
+lines are deleted, so neither the certificate nor a Form 2 row pointing at it is lost. A
+certificate whose source line is gone from the rebuilt receipt has no valid target and is
+deleted with the old line, with a logged warning naming it.
+
 ### 2. Certification lineage resolver
 
 `getCertificationLineage(client, companyId, input)` in `quality.service.ts`, one
@@ -176,9 +183,12 @@ blocks and adds two built-in blocks, `conformityDetails` (13) and `conformitySta
 - **Reissue** — required "reason for update"; revision n+1 with the same number, reason
   printed in field 13; earlier revisions stay downloadable.
 - **Download issued** — the stored PDF, never re-rendered.
-- **Auto-issue** — when `customerShipping.requiresCertificateOfConformance`, the shipment
-  post route issues revision 0 after a successful post, signed by the posting user;
-  failures never fail the post (warning flash).
+- **Auto-issue** — when `customerShipping.requiresCertificateOfConformance`, revision 0 is
+  issued after a successful post, signed by the posting user; failures never fail the
+  post (warning flash). Two call sites share `autoIssueCertificatesOfConformance`: the
+  shipment post route, and the sales invoice post route for the shipments
+  `post-sales-invoice` inserts already Posted (`sourceDocument = 'Sales Invoice'`). A
+  shipment that already has revision 0 is skipped.
 
 **Email** — an issued revision can be emailed, following the sales invoice pattern
 (`renderAsync` a react-email template, signed URL of the stored PDF as the attachment,
@@ -296,8 +306,19 @@ userId, today })` in `packages/database/src/quality.ts`, beside
   (`apps/erp/app/routes/api+/kanban.$id.tsx` ~:185, which writes `Ready` directly). Not
   inside `updateJobStatus` itself: it is a `*.service.ts` function, and service files may
   not build a Kysely client (`no-db-client-in-service`). Best-effort and logged — a
-  generation failure never blocks a release. Known gap: the MES auto-start of a Draft job
-  (`autoStartJobAndOperation`) skips release entirely, so it generates nothing.
+  generation failure never blocks a release.
+- **MES auto-start.** `autoStartJobAndOperation` (MES `startProductionEvent`) moves a
+  Draft/Planned job straight to In Progress. When that write is what released the job
+  (a guarded Draft/Planned → In Progress update that returned the row; Ready → In Progress
+  is not a release), the MES start routes run the same `createFirstArticleInspections`
+  (`generateFirstArticlesForStartedJob`, `apps/mes/app/services/quality.server.ts`),
+  best-effort. The blocker does not run — the operator is never refused; a part that
+  needs an FAI but resolves no plan shows "First article plan missing for {part} — tell
+  quality" on the MES job page and the make method's operation view (`resolveFirstArticleNeeds`
+  → `blocked`). Form 2 is not seeded in the MES (the lineage resolver is ERP-only): the
+  ERP detail loader seeds a Draft FAI with a job + make method and zero Form 2 rows the
+  first time it is opened (`seedFirstArticleProductsOnView`; the seed re-checks emptiness
+  under the FAI row lock).
 - Release is the right moment: the make-method tree is final (recalculated by
   `releaseJobs`), it precedes any shop-floor work, and planned jobs that never release
   create nothing. Job creation is too early (MRP jobs have no method tree), first-piece
@@ -595,7 +616,8 @@ default, catalog, merge fields), `CertificateOfConformancePDF` + samples + test,
 for the operation's make method); note affordance in `InspectionMeasurementMatrix`;
 completion guards in `end.$operationId.tsx` and `complete.tsx`.
 
-**Routes (ERP)** — CofC: preview/issued file routes, issue, send, post auto-issue;
+**Routes (ERP)** — CofC: preview/issued file routes, issue, send, auto-issue on shipment
+post and sales invoice post;
 receipt line certificates; compliance statements CRUD; FAI: `x+/quality+/first-articles.tsx`
 (list), `x+/first-article+/new.tsx` (manual), `x+/first-article+/$id.tsx` (detail) with
 `$id.header`, `$id.products`, `$id.products.$productId.delete`, `$id.refresh`,
@@ -831,3 +853,13 @@ Autonomous (review at the PR):
   fixes: firstArticleInspection job/make-method FKs are ON DELETE SET NULL; an open FAI for
   the item on another job satisfies the need; Draft/Planned → In Progress counts as a
   release; CofC auto-send requires the email integration; lineage uses the descendants RPC.
+- 2026-09-26: Closed the gap where regenerating a Draft receipt silently cascade-deleted
+  its certificates: `create` now moves them to the rebuilt lines by source line (§1).
+  Remaining: a certificate whose source line is not on the re-sourced receipt is still
+  deleted (logged; no valid target exists).
+- 2026-09-26: Closed the gap where shipments posted by `post-sales-invoice` were never
+  auto-certified — the sales invoice post route now auto-issues for them through the same
+  helper as the shipment post route, which skips a shipment already certified.
+- 2026-09-26: Closed the gap where the MES auto-start released a Draft/Planned job with no
+  First Article generation — it now generates (no blocker; a "plan missing" banner in the
+  MES instead), and the ERP detail page seeds Form 2 lazily for such FAIs.

@@ -39,6 +39,23 @@ uploaded file) and exactly one target — CHECK `certificate_one_target`
   unless another `document` already points at that path); a form `supplierId`
   that is not the company's is dropped; delete is scoped to the line and fails
   when it removed nothing.
+
+  **Regenerating a receipt keeps its certificates.** The `create` edge function
+  rebuilds every line of an existing receipt when its source document or
+  location changes (`receiptFromPurchaseOrder`, `receiptFromInboundTransfer`,
+  `receiptFromSalesReturnOrder`), and `receiptLineId` is ON DELETE CASCADE. The
+  rebuild goes through `replaceReceiptLines` (`functions/create/index.ts`): in
+  the same transaction it reads the receipt's certificates, inserts the new
+  lines, MOVES each certificate (one `UPDATE … CASE "id"`, so it keeps its id)
+  to the new line with the same `receiptLine.lineId` — or the same `itemId`
+  when the old line had no `lineId` — and only then deletes the old lines. An
+  UPDATE rather than re-insert because Form 2 rows point at the certificate
+  (`firstArticleInspectionProduct.certificateId`, ON DELETE SET NULL) and a
+  Draft outside-processing receipt's certificates are already on Form 2. A
+  certificate whose source line is not on the rebuilt receipt (the receipt was
+  re-sourced to another document) has no valid target under
+  `certificate_one_target`; it is deleted with its old line and logged as a
+  warning with the certificate ids and numbers. The response carries no count.
 - **Job operation** — `x+/first-article+/$id.certificates.new.tsx` ("Attach
   certificate" on FAI Form 2; `quality` create+update, Draft FAI only). The
   operation id comes from the client, so the route re-checks it belongs to the
@@ -115,18 +132,35 @@ nonconformances as concessions, statements, reason for update).
 | Issue / Reissue | `x+/shipment+/$shipmentId.certificate.tsx` → `issueCertificateOfConformance` | Posted shipments only. One Kysely txn: `FOR UPDATE` on the shipment (two clicks cannot mint two numbers), sequence (rev 0) or latest+1 (reissue — throws without a reason), render, upload, `document` row, `certificateOfConformance` row. An uploaded object is removed if anything after it fails |
 | Download | `file+/shipment+/$id.certificate.$revision[.]pdf.tsx` → `getIssuedCertificateOfConformancePdf` | The **stored** PDF, never re-rendered. The `document` row's read groups are the issuer's, so its path is read with the service role after the caller's client proved it can see the certificate |
 | Send | `$shipmentId.certificate.$certificateId.send.tsx` → `sendCertificateOfConformance` | Emails the stored PDF (signed URL attachment via `send-email`) to a contact of the certificate's customer, plus the sender; stamps `lastSentAt/To` |
-| Auto-issue | `x+/shipment+/$shipmentId.post.tsx` → `autoIssueCertificateOfConformance` | After a post that stuck, when `customerShipping.requiresCertificateOfConformance`: issue, then email the customer's shipping contact. **Never fails the post** — every failure becomes part of the flash |
+| Auto-issue | `autoIssueCertificatesOfConformance` (inventory.server.tsx), from the shipment post route and the sales invoice post route (below) | After a post that stuck, when `customerShipping.requiresCertificateOfConformance`: issue revision 0, then email the customer's shipping contact when the email integration is active. Skips a shipment that already has revision 0, so it never reissues. **Never fails the post** — every failure becomes part of the flash |
 
 The PDF is template-driven: document type `certificateOfConformance`
 (`CertificateOfConformancePDF.tsx`, registry
 `pdf/blocks/certificateOfConformance/`), see `document-template-customizer.md`.
 
+Auto-issue has two call sites, both after the post has committed:
+
+- `x+/shipment+/$shipmentId.post.tsx` — the one shipment, with the user's
+  client. The outcome shares one flash with the expired-batch warning; a
+  failed issue turns it into an error flash, the post still stands.
+- `x+/sales-invoice+/$invoiceId.post.tsx` — `post-sales-invoice` inserts one
+  `shipment` per location for invoice lines no shipment covered, already
+  `Posted`, with `sourceDocument = 'Sales Invoice'` and `sourceDocumentId` =
+  the invoice (its void reads them back by the same key). The route reads those
+  (status Posted, `companyId`-scoped) with the **service role** — like the rest
+  of that route after the post, since the caller holds `invoicing`, not
+  necessarily `inventory` — and issues right after the post, before the PDF and
+  the invoice email, so their early returns cannot skip it. The route returns
+  `{ success, message }` rather than a flash: the outcome is appended to
+  whatever it returns, and `certificateFailed` makes `SalesInvoicePostModal`
+  toast it as an error while still closing. The invoice email is independent.
+  The certificate's customer and PO come from the Sales Invoice
+  (`getCertificateOfConformanceData`'s `Sales Invoice` branch).
+  A shipment the invoice merely references (`salesInvoice.shipmentId`) was
+  posted — and certified — by the shipment post route.
+
 Not covered:
 
-- **Shipments posted by `post-sales-invoice`** (it inserts `shipment` rows as
-  `Posted` directly) are never auto-issued — auto-issue lives only in the ERP
-  shipment post route. They can still be issued by hand; the data loader reads
-  the customer/PO from the Sales Invoice.
 - **Customer portal: never.** No `share+/` route exposes certificates or FAIRs.
   Per the spec, `share+/customer.$id.*` pages are unauthenticated.
 
@@ -199,6 +233,28 @@ that releases a job:
 - kanban auto-release (`api+/kanban.$id.tsx`) — generates, but is **not gated**
   by the blocker (it never reads readiness).
 
+**MES auto-start is a release too.** `autoStartJobAndOperation`
+(`apps/mes/app/services/operations.service.ts`, from `startProductionEvent`)
+moves the job to In Progress when an operator starts a production event. It
+writes Draft/Planned → In Progress and Ready → In Progress as two guarded
+updates; a row back from the first (`.in("status", ["Draft", "Planned"])
+.select("id")`) is the proof THIS start released the job, and only then does
+it call the route's `onJobReleased` callback — Ready → In Progress is an
+ordinary start, generated at its release already. The callback is
+`generateFirstArticlesForStartedJob` (`apps/mes/app/services/quality.server.ts`;
+`operations.service.ts` is browser-bundled and cannot hold the Kysely client),
+passed by `x+/event.tsx` and `x+/start.$operationId.tsx`: the same
+`createFirstArticleInspections` with the company-timezone today, best-effort
+(logged, never fails the start). It does **not** run the blocker — the
+operator is already working. A part with no plan instead shows a
+"First article plan missing for {part}" banner on the MES job page and on the
+operation view of its make method (`getFirstArticlePlansMissingForJob`:
+`loadFirstArticleNeedInput` + `resolveFirstArticleNeeds` → `blocked`). It also
+does not seed Form 2 — the lineage resolver lives in the ERP; see the lazy seed
+below. (The MES floor rule only lets an operator start an unbatched operation
+of a released job, so in practice this is a batched member whose batch was
+released while its job was still Draft/Planned.)
+
 Not inside `updateJobStatus`: a `*.service.ts` may not hold a Kysely client.
 Best-effort: a failure is logged and never undoes a release; a missed lot can be
 created by hand at `x+/first-article+/new.tsx` (`only` request: treated as
@@ -214,7 +270,16 @@ released change orders as additional changes, the sales order's customer
 reference as PO, `Assembly` when the make method has a Make to Order child.
 Idempotent: the lot insert is `ON CONFLICT (sourceDocument,
 sourceDocumentLineId) DO NOTHING`. Form 2 is then seeded from the lineage by
-`seedFirstArticleProducts` (= `refreshFirstArticleProducts` on an empty FAI).
+`seedFirstArticleProducts` — the refresh below, but a no-op once the FAI has
+any Form 2 row (re-checked under the FAI's `FOR UPDATE` lock, so two
+concurrent seeds cannot both insert).
+
+**Lazy Form 2 seed.** An MES-generated FAI has no Form 2 rows. The ERP detail
+loader (`x+/first-article+/$id.tsx`) calls `seedFirstArticleProductsOnView`
+when the FAI is Draft, still has its job and make method, and has zero product
+rows, then reloads the detail if anything was inserted. Best-effort (logged;
+the page loads without rows and Refresh still works). Consequence: a user who
+deletes EVERY Form 2 row of a Draft FAI gets them re-seeded on the next view.
 
 `refreshFirstArticleProducts` ("Refresh from traceability", Draft only) inserts
 lineage rows not already present, matched by `certificateId`, or by
@@ -268,15 +333,11 @@ deletion and Get Method's sub-assembly rebuild (which deletes and re-inserts
   anything that is not this company's First Article lot. Reject's NCR is raised
   against the make method's first operation. The MES job and operation pages
   show a "First article required" banner (`getOpenFirstArticleInspectionsForJob`)
-  with an Inspect button.
+  with an Inspect button, and a "First article plan missing" banner for a part
+  that needs one but resolves no plan (above).
 
 ## Known gaps
 
-- **MES auto-start skips release.** `autoStartJobAndOperation`
-  (`apps/mes/app/services/operations.service.ts`) flips a Draft/Planned/Ready
-  job straight to In Progress when an operator starts a production event. A
-  Draft job started that way never passes the blocker and never gets its lots.
-- **Sales-invoice-posted shipments** are not auto-certified (above).
 - **Attaching a certificate does not retire the old `No certificate on file`
   Form 2 row.** Refresh keys a real certificate by `certificateId` and a
   missing one by `kind + name`, so it adds the new row beside the old one; the
