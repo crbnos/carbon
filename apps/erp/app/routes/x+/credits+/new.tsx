@@ -6,7 +6,7 @@ import { datetime } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { redirect, useLoaderData } from "react-router";
 import { MemoForm, memoValidator, upsertMemo } from "~/modules/invoicing";
-import { getCompany, getNextSequence } from "~/modules/settings";
+import { getCompany } from "~/modules/settings";
 import { getCompanyTimeZone } from "~/modules/shared/timezone.server";
 import { setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
@@ -49,21 +49,8 @@ export async function action({ request }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
-  let memoId = validation.data.memoId;
-  if (!memoId) {
-    const next = await getNextSequence(
-      client,
-      validation.data.direction === "Credit" ? "creditMemo" : "debitMemo",
-      companyId
-    );
-    if (next.error || !next.data) {
-      throw redirect(
-        path.to.memos,
-        await flash(request, error(next.error, "Failed to allocate memo id"))
-      );
-    }
-    memoId = next.data;
-  }
+  // A typed number is kept; a blank one is allocated by the service.
+  const memoId = validation.data.memoId || undefined;
 
   // The form posts a hidden `id` as "" which validates to null. The create
   // branch must omit it so the table's xid() default generates the id.

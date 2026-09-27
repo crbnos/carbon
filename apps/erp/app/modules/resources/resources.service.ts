@@ -9,6 +9,7 @@ import type { z } from "zod";
 import type { GenericQueryFilters } from "~/utils/query";
 import { setGenericQueryFilters } from "~/utils/query";
 import { sanitize } from "~/utils/supabase";
+import { getOrAllocateReadableId } from "../shared/readable-id";
 import type { optionalTiptapDoc } from "../shared/shared.models";
 import type {
   failureModeValidator,
@@ -1527,26 +1528,14 @@ export async function insertMaintenanceDispatch(
   data: { id: string; maintenanceDispatchId: string } | null;
   error: import("@supabase/supabase-js").PostgrestError | null;
 }> {
-  let maintenanceDispatchId: string;
-  if (input.maintenanceDispatchId) {
-    maintenanceDispatchId = input.maintenanceDispatchId;
-  } else {
-    const seq = await client.rpc("get_next_sequence", {
-      sequence_name: "maintenanceDispatch",
-      company_id: input.companyId
-    });
-    if (seq.error || !seq.data) {
-      return {
-        data: null,
-        error:
-          seq.error ??
-          ({
-            message: "Failed to generate maintenanceDispatch sequence"
-          } as import("@supabase/supabase-js").PostgrestError)
-      };
-    }
-    maintenanceDispatchId = seq.data;
-  }
+  const readableId = await getOrAllocateReadableId(
+    client,
+    "maintenanceDispatch",
+    input.companyId,
+    input.maintenanceDispatchId
+  );
+  if (readableId.error) return { data: null, error: readableId.error };
+  const maintenanceDispatchId = readableId.data;
 
   const dispatch = await client
     .from("maintenanceDispatch")

@@ -43,7 +43,16 @@ export const MCP_BLOCKED_TOOL_NAMES: readonly string[] = [
   "sales_updateSalesOrderFavorite",
   "sales_updateSalesRFQFavorite",
   "purchasing_updateSupplierQuoteFavorite",
-  "resources_insertTrainingCompletion"
+  "resources_insertTrainingCompletion",
+  // Dead create paths with no in-app caller. Both upserts insert whatever
+  // `maintenanceDispatchId` they are given (a NOT NULL readable number the
+  // new-dispatch route never has to pass), and the production copy has no
+  // `locationId`, so a dispatch it did create was missing from every
+  // by-location list. The app creates dispatches through
+  // `resources_insertMaintenanceDispatch` (allocates the number) and edits
+  // them through `resources_updateMaintenanceDispatch`.
+  "production_upsertMaintenanceDispatch",
+  "resources_upsertMaintenanceDispatch"
 ];
 
 export function isMcpBlockedTool(name: string): boolean {

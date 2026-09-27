@@ -1,5 +1,5 @@
 {
-  "totalTools": 1548,
+  "totalTools": 1546,
   "modules": 15,
   "tools": [
     {"name":"account_deleteUserAttributeValue","classification":"DESTRUCTIVE","paramCount":2,"schema":"0d38e12233b4","response":"bcde375ebd4c","injectAuth":"companyId+userId","permission":"none","paginates":false},
@@ -857,7 +857,6 @@
     {"name":"production_upsertJobOperationStep","classification":"WRITE","paramCount":11,"schema":"b00e13983658","response":"3797626bd17e","injectAuth":"companyId+createdBy+updatedBy","permission":"production:create+update","paginates":false,"coerce":"description"},
     {"name":"production_upsertJobOperationStepSlide","classification":"WRITE","paramCount":9,"schema":"80315e32d9a8","response":"3797626bd17e","injectAuth":"companyId+createdBy+updatedBy","permission":"production:create+update","paginates":false,"coerce":"annotations"},
     {"name":"production_upsertJobOperationTool","classification":"WRITE","paramCount":5,"schema":"7876b6d0a497","response":"3797626bd17e","injectAuth":"companyId+createdBy+updatedBy","permission":"production:create+update","paginates":false},
-    {"name":"production_upsertMaintenanceDispatch","classification":"WRITE","paramCount":13,"schema":"5255ffcd7a1c","response":"3797626bd17e","injectAuth":"companyId+createdBy+updatedBy","permission":"production:create+update","paginates":false},
     {"name":"production_upsertMaintenanceDispatchComment","classification":"WRITE","paramCount":3,"schema":"f79295d5eb89","response":"3797626bd17e","injectAuth":"companyId+createdBy+updatedBy","permission":"production:create+update","paginates":false},
     {"name":"production_upsertMaintenanceDispatchEvent","classification":"WRITE","paramCount":7,"schema":"834d4e0bf908","response":"3797626bd17e","injectAuth":"companyId+createdBy+updatedBy","permission":"production:create+update","paginates":false},
     {"name":"production_upsertMaintenanceDispatchItem","classification":"WRITE","paramCount":6,"schema":"04fec211f623","response":"3797626bd17e","injectAuth":"companyId+createdBy+updatedBy","permission":"production:create+update","paginates":false},
@@ -1177,7 +1176,6 @@
     {"name":"resources_upsertEmployeeAbilityCell","classification":"WRITE","paramCount":4,"schema":"800b78f5bbae","response":"3797626bd17e","injectAuth":"companyId+createdBy+updatedBy","permission":"resources:create+update","paginates":false},
     {"name":"resources_upsertFailureMode","classification":"WRITE","paramCount":4,"schema":"d864dff7b59d","response":"8394fbabd845","injectAuth":"companyId+createdBy+updatedBy","permission":"resources:create+update","paginates":false},
     {"name":"resources_upsertLocation","classification":"WRITE","paramCount":13,"schema":"28b97eeddff1","response":"5fe568931f57","injectAuth":"companyId+createdBy+updatedBy","permission":"resources:create+update","paginates":false},
-    {"name":"resources_upsertMaintenanceDispatch","classification":"WRITE","paramCount":15,"schema":"33186b41e4bb","response":"3797626bd17e","injectAuth":"companyId+createdBy+updatedBy","permission":"resources:create+update","paginates":false},
     {"name":"resources_upsertMaintenanceDispatchComment","classification":"WRITE","paramCount":3,"schema":"f79295d5eb89","response":"3797626bd17e","injectAuth":"companyId+createdBy+updatedBy","permission":"resources:create+update","paginates":false},
     {"name":"resources_upsertMaintenanceDispatchEvent","classification":"WRITE","paramCount":7,"schema":"834d4e0bf908","response":"3797626bd17e","injectAuth":"companyId+createdBy+updatedBy","permission":"resources:create+update","paginates":false},
     {"name":"resources_upsertMaintenanceDispatchItem","classification":"WRITE","paramCount":6,"schema":"04fec211f623","response":"3797626bd17e","injectAuth":"companyId+createdBy+updatedBy","permission":"resources:create+update","paginates":false},

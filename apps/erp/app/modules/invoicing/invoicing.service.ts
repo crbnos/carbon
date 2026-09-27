@@ -40,6 +40,7 @@ import {
   getCustomerPayment,
   getCustomerShipping
 } from "../sales/sales.service";
+import { getOrAllocateReadableId } from "../shared/readable-id";
 import { updateSortOrder } from "../shared/sort-order";
 import type {
   CardTransactionStatusType,
@@ -2163,11 +2164,16 @@ export async function getAvailableOnAccountCredit(
   }
 }
 
+/**
+ * Create (`createdBy` present) or update a payment. On create a blank
+ * `paymentId` is allocated from the payment sequence and a typed one is kept,
+ * as the new-payment form does.
+ */
 export async function upsertPayment(
   client: SupabaseClient<Database>,
   payment:
     | (Omit<z.infer<typeof paymentValidator>, "id" | "paymentId"> & {
-        paymentId: string;
+        paymentId?: string;
         companyId: string;
         createdBy: string;
         customFields?: Json;
@@ -2179,11 +2185,19 @@ export async function upsertPayment(
       })
 ) {
   if ("createdBy" in payment) {
+    const paymentId = await getOrAllocateReadableId(
+      client,
+      "payment",
+      payment.companyId,
+      payment.paymentId
+    );
+    if (paymentId.error) return { data: null, error: paymentId.error };
     return client
       .from("payment")
       .insert([
         {
           ...sanitize(payment),
+          paymentId: paymentId.data,
           customerId: payment.customerId ?? null,
           supplierId: payment.supplierId ?? null
         }
@@ -2951,11 +2965,16 @@ export async function getMemos(
   return query;
 }
 
+/**
+ * Create (`createdBy` present) or update a credit or debit memo. On create a
+ * blank `memoId` is allocated from the creditMemo or debitMemo sequence (by
+ * `direction`) and a typed one is kept, as the new-memo form does.
+ */
 export async function upsertMemo(
   client: SupabaseClient<Database>,
   memo:
     | (Omit<z.infer<typeof memoValidator>, "id" | "memoId"> & {
-        memoId: string;
+        memoId?: string;
         companyId: string;
         createdBy: string;
         customFields?: Json;
@@ -2967,9 +2986,16 @@ export async function upsertMemo(
       })
 ) {
   if ("createdBy" in memo) {
+    const memoId = await getOrAllocateReadableId(
+      client,
+      memo.direction === "Credit" ? "creditMemo" : "debitMemo",
+      memo.companyId,
+      memo.memoId
+    );
+    if (memoId.error) return { data: null, error: memoId.error };
     return client
       .from("memo")
-      .insert([sanitize(memo)])
+      .insert([{ ...sanitize(memo), memoId: memoId.data }])
       .select("id, memoId")
       .single();
   }

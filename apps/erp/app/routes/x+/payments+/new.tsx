@@ -18,7 +18,7 @@ import {
   replaceInvoiceSettlements,
   upsertPayment
 } from "~/modules/invoicing";
-import { getCompany, getNextSequence } from "~/modules/settings";
+import { getCompany } from "~/modules/settings";
 import { getCompanyTimeZone } from "~/modules/shared/timezone.server";
 import { getDatabaseClient } from "~/services/database.server";
 import { setCustomFields } from "~/utils/form";
@@ -222,17 +222,8 @@ export async function action({ request }: ActionFunctionArgs) {
     );
   }
 
-  let paymentId = validation.data.paymentId;
-  if (!paymentId) {
-    const next = await getNextSequence(client, "payment", companyId);
-    if (next.error || !next.data) {
-      throw redirect(
-        path.to.payments,
-        await flash(request, error(next.error, "Failed to allocate payment id"))
-      );
-    }
-    paymentId = next.data;
-  }
+  // A typed number is kept; a blank one is allocated by the service.
+  const paymentId = validation.data.paymentId || undefined;
 
   // The form posts a hidden `id` as "" which validates to null. The create
   // branch must omit it so the table's xid() default generates the id.
