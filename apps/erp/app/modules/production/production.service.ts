@@ -43,7 +43,7 @@ import {
   LIST_COUNT,
   setGenericQueryFilters
 } from "~/utils/query";
-import { sanitize } from "~/utils/supabase";
+import { ruleError, sanitize } from "~/utils/supabase";
 import { getDefaultStorageUnitForJob } from "../inventory";
 import { getEmployeeJob } from "../people";
 import type {
@@ -2124,7 +2124,7 @@ export async function getProductionEventsPage(
   const { data, error, count } = await query;
 
   if (error) {
-    return { error };
+    return { data: null, count: null, page, pageSize, hasMore: false, error };
   }
 
   return {
@@ -2132,7 +2132,8 @@ export async function getProductionEventsPage(
     count,
     page,
     pageSize,
-    hasMore: count !== null && offset + pageSize < count
+    hasMore: count !== null && offset + pageSize < count,
+    error: null
   };
 }
 
@@ -5954,7 +5955,8 @@ export async function assignPeopleWeek(
 }
 
 /** Remove a person from a station for the whole week (their other stations
- * and other weeks are untouched). */
+ * and other weeks are untouched). Returns `{ removed }`, the number of
+ * assignment rows deleted. */
 export async function unassignPeopleWeek(
   db: Kysely<KyselyDatabase>,
   args: {
@@ -5975,7 +5977,9 @@ export async function unassignPeopleWeek(
   if (args.shiftId) {
     query = query.where(whereEffectiveShift(args.shiftId, args.companyId));
   }
-  return query.execute();
+  const result = await query.executeTakeFirst();
+  // Kysely counts in bigint, which JSON cannot carry.
+  return { removed: Number(result?.numDeletedRows ?? 0) };
 }
 
 /**
@@ -7939,9 +7943,13 @@ function insertAssemblyStepMaterialSeeds(
 
 /**
  * Adds the BOM items matched to each step's components (via
- * assemblyComponentMapping) as step materials. Additive and best-effort:
- * existing rows are never updated or removed — manual quantities and
- * deliberate deletions survive — and failures never block the caller.
+ * assemblyComponentMapping) as step materials. Additive: existing rows are
+ * never updated or removed, so manual quantities and deliberate deletions
+ * survive. Returns `{ data: { created } }`; `created` is 0 when there is
+ * nothing to add (no mappings, no matching steps). An unknown instruction, an
+ * instruction without a processed model, an unreadable model graph or a failed
+ * insert is an error — the in-app callers treat the sync as best-effort and
+ * ignore it.
  */
 export async function syncAssemblyStepMaterialsFromMappings(
   client: SupabaseClient<Database>,
@@ -7956,26 +7964,38 @@ export async function syncAssemblyStepMaterialsFromMappings(
     /** Limit to component groups containing one of these instances */
     onlyComponentNodeIds?: string[];
   }
-): Promise<{ created: number }> {
+): Promise<ServiceResult<{ created: number }>> {
+  const nothingCreated = { data: { created: 0 }, error: null };
   const instruction = await client
     .from("assemblyInstruction")
     .select("id, modelUploadId, modelUpload(graphPath)")
     .eq("id", args.assemblyInstructionId)
-    .single();
-  const modelUploadId = instruction.data?.modelUploadId;
-  const graphPath = instruction.data?.modelUpload?.graphPath;
-  if (instruction.error || !modelUploadId || !graphPath) {
-    return { created: 0 };
+    .maybeSingle();
+  if (instruction.error) return { data: null, error: instruction.error };
+  if (!instruction.data) {
+    return { data: null, error: assemblyInstructionNotFound() };
+  }
+  const modelUploadId = instruction.data.modelUploadId;
+  const graphPath = instruction.data.modelUpload?.graphPath;
+  if (!modelUploadId) {
+    return { data: null, error: ruleError("This instruction has no model") };
+  }
+  if (!graphPath) {
+    return {
+      data: null,
+      error: ruleError("The model has not been processed")
+    };
   }
 
   const mappings = await getAssemblyComponentMappings(client, modelUploadId);
+  if (mappings.error) return { data: null, error: mappings.error };
   const hashFilter = args.geometryHashes ? new Set(args.geometryHashes) : null;
   const itemIdByGeometryHash = new Map<string, string>();
   for (const mapping of mappings.data ?? []) {
     if (hashFilter && !hashFilter.has(mapping.geometryHash)) continue;
     itemIdByGeometryHash.set(mapping.geometryHash, mapping.itemId);
   }
-  if (itemIdByGeometryHash.size === 0) return { created: 0 };
+  if (itemIdByGeometryHash.size === 0) return nothingCreated;
 
   let stepsQuery = client
     .from("assemblyInstructionStep")
@@ -7985,19 +8005,22 @@ export async function syncAssemblyStepMaterialsFromMappings(
     stepsQuery = stepsQuery.in("id", args.stepIds);
   }
   const steps = await stepsQuery;
-  if (!steps.data?.length) return { created: 0 };
+  if (steps.error) return { data: null, error: steps.error };
+  if (!steps.data.length) return nothingCreated;
 
   const graphFile = await storage(client)
     .company(args.companyId)
     .download(graphPath);
-  if (!graphFile.data) return { created: 0 };
+  if (!graphFile.data) {
+    return { data: null, error: ruleError("Failed to load the model graph") };
+  }
   let graphIndex: AssemblyGraphIndex;
   try {
     graphIndex = indexAssemblyGraph(
       JSON.parse(await graphFile.data.text()) as AssemblyGraph
     );
   } catch {
-    return { created: 0 };
+    return { data: null, error: ruleError("Failed to parse the model graph") };
   }
 
   const existing = await client
@@ -8007,6 +8030,7 @@ export async function syncAssemblyStepMaterialsFromMappings(
       "stepId",
       steps.data.map((step) => step.id)
     );
+  if (existing.error) return { data: null, error: existing.error };
   const existingItemIds = new Map<string, Set<string>>();
   const nextSortOrder = new Map<string, number>();
   for (const row of existing.data ?? []) {
@@ -8029,10 +8053,11 @@ export async function syncAssemblyStepMaterialsFromMappings(
       ? new Set(args.onlyComponentNodeIds)
       : undefined
   });
-  if (seeds.length === 0) return { created: 0 };
+  if (seeds.length === 0) return nothingCreated;
 
   const insert = await insertAssemblyStepMaterialSeeds(client, seeds, args);
-  return { created: insert.error ? 0 : seeds.length };
+  if (insert.error) return { data: null, error: insert.error };
+  return { data: { created: seeds.length }, error: null };
 }
 
 export async function getAssemblyUnits(
@@ -8321,43 +8346,68 @@ export type AutoMatchResult = {
   unmatchedBomItems: string[];
 };
 
+/** A service error: a database/storage failure, or a `ruleError` refusal. */
+type ServiceError = PostgrestError | ReturnType<typeof ruleError>;
+
+/** The `{ data, error }` result every service returns (never `{ error }` alone). */
+type ServiceResult<T, E = ServiceError> =
+  | { data: T; error: null }
+  | { data: null; error: E };
+
+function assemblyInstructionNotFound() {
+  return ruleError("Assembly instruction not found");
+}
+
 /**
  * Suggests and persists component→BOM mappings for an instruction's model:
  * strong name matches first (greedy, best score wins), then unique
  * quantity matches (a component appearing N times matched to the only BOM line
  * with quantity N) as low-confidence fallbacks. Existing mappings are kept.
+ * An unknown instruction, one with no model, no linked item or no bill of
+ * materials is an error, each with its own message.
  */
 export async function autoMatchAssemblyComponents(
   client: SupabaseClient<Database>,
   args: { assemblyInstructionId: string; companyId: string; userId: string }
-): Promise<AutoMatchResult | { error: string }> {
+): Promise<ServiceResult<AutoMatchResult>> {
   const instruction = await client
     .from("assemblyInstruction")
     .select("id, itemId, modelUploadId, modelUpload(graphPath)")
     .eq("id", args.assemblyInstructionId)
-    .single();
-  if (instruction.error || !instruction.data.modelUploadId) {
-    return { error: "This instruction has no model" };
+    .maybeSingle();
+  if (instruction.error) return { data: null, error: instruction.error };
+  if (!instruction.data) {
+    return { data: null, error: assemblyInstructionNotFound() };
   }
-  if (!instruction.data.itemId) {
-    return { error: "Link the instruction to an item first" };
+  const { itemId, modelUploadId } = instruction.data;
+  if (!modelUploadId) {
+    return { data: null, error: ruleError("This instruction has no model") };
+  }
+  if (!itemId) {
+    return {
+      data: null,
+      error: ruleError("Link the instruction to an item first")
+    };
   }
   const graphPath = instruction.data.modelUpload?.graphPath;
   if (!graphPath) {
-    return { error: "The model has not been processed" };
+    return {
+      data: null,
+      error: ruleError("The model has not been processed")
+    };
   }
 
   const graphFile = await storage(client)
     .company(args.companyId)
     .download(graphPath);
   if (!graphFile.data) {
-    return { error: "Failed to load the model graph" };
+    return { data: null, error: ruleError("Failed to load the model graph") };
   }
   let graph: AssemblyGraph;
   try {
     graph = JSON.parse(await graphFile.data.text()) as AssemblyGraph;
   } catch {
-    return { error: "Failed to parse the model graph" };
+    return { data: null, error: ruleError("Failed to parse the model graph") };
   }
 
   // Distinct parts: hash → { name, count }
@@ -8373,19 +8423,16 @@ export async function autoMatchAssemblyComponents(
   };
   visit(graph.root);
 
-  const bom = await getFlattenedBomMaterials(
-    client,
-    instruction.data.itemId,
-    args.companyId
-  );
+  const bom = await getFlattenedBomMaterials(client, itemId, args.companyId);
   if (bom.length === 0) {
-    return { error: "The item has no bill of materials" };
+    return {
+      data: null,
+      error: ruleError("The item has no bill of materials")
+    };
   }
 
-  const existing = await getAssemblyComponentMappings(
-    client,
-    instruction.data.modelUploadId
-  );
+  const existing = await getAssemblyComponentMappings(client, modelUploadId);
+  if (existing.error) return { data: null, error: existing.error };
   const mappedHashes = new Set(
     (existing.data ?? []).map((mapping) => mapping.geometryHash)
   );
@@ -8472,9 +8519,9 @@ export async function autoMatchAssemblyComponents(
   // helper (upsertAssemblyComponentMapping).
   if (accepted.length > 0) {
     const now = new Date().toISOString();
-    await client.from("assemblyComponentMapping").upsert(
+    const saved = await client.from("assemblyComponentMapping").upsert(
       accepted.map((suggestion) => ({
-        modelUploadId: instruction.data.modelUploadId,
+        modelUploadId,
         geometryHash: suggestion.geometryHash,
         itemId: suggestion.itemId,
         confidence: suggestion.confidence,
@@ -8485,28 +8532,54 @@ export async function autoMatchAssemblyComponents(
       })),
       { onConflict: "modelUploadId,geometryHash" }
     );
+    if (saved.error) return { data: null, error: saved.error };
   }
 
   return {
-    mapped: matchedHashes.size,
-    totalComponents: componentGroups.size,
-    unmatchedBomItems: bom
-      .filter((material) => !matchedItems.has(material.itemId))
-      .map(
-        (material) =>
-          material.readableIdWithRevision ?? material.name ?? material.itemId
-      )
+    data: {
+      mapped: matchedHashes.size,
+      totalComponents: componentGroups.size,
+      unmatchedBomItems: bom
+        .filter((material) => !matchedItems.has(material.itemId))
+        .map(
+          (material) =>
+            material.readableIdWithRevision ?? material.name ?? material.itemId
+        )
+    },
+    error: null
   };
 }
 
-type GenerateStepsResult =
-  | { ok: true; created: number; unmappedComponentCount: number }
-  | {
-      ok: false;
-      reason: "no-model" | "no-plan" | "steps-exist" | "steps-locked" | "error";
-      modelUploadId?: string;
-      message?: string;
-    };
+export type GenerateStepsFailureReason =
+  | "not-found"
+  | "no-model"
+  | "no-plan"
+  | "steps-exist"
+  | "steps-locked"
+  | "error";
+
+/** A refusal the generate route branches on (`no-plan` starts planning). */
+export type GenerateStepsRefusal = ReturnType<typeof ruleError> & {
+  reason: GenerateStepsFailureReason;
+  modelUploadId?: string;
+};
+
+function generateStepsRefusal(
+  reason: GenerateStepsFailureReason,
+  message: string,
+  modelUploadId?: string
+): GenerateStepsRefusal {
+  return {
+    ...ruleError(message),
+    reason,
+    ...(modelUploadId ? { modelUploadId } : {})
+  };
+}
+
+type GenerateStepsResult = ServiceResult<
+  { created: number; unmappedComponentCount: number },
+  GenerateStepsRefusal | PostgrestError
+>;
 
 // Minimal tiptap document wrapping a plain-text instruction, for source steps that
 // have text but no rich description.
@@ -9158,7 +9231,9 @@ export async function syncAssemblyInstructionToOperation(
  * the planner flagged (blockedBy: no collision-free path exists) are stored
  * with motion "none" plus a `warnings` payload — the viewer fades them in
  * rather than animating a fabricated colliding path. The author
- * validates/edits the drafts instead of authoring motions by hand.
+ * validates/edits the drafts instead of authoring motions by hand. A refusal
+ * (unknown instruction, no model, no motion plan yet, steps exist or are
+ * locked) is an error whose `reason` names it; this never starts planning.
  */
 export async function generateAssemblyStepsFromPlan(
   client: SupabaseClient<Database>,
@@ -9181,9 +9256,22 @@ export async function generateAssemblyStepsFromPlan(
     .select("id, modelUploadId, modelUpload(graphPath)")
     .eq("id", args.assemblyInstructionId)
     .eq("companyId", args.companyId)
-    .single();
-  if (instruction.error || !instruction.data.modelUploadId) {
-    return { ok: false, reason: "no-model" };
+    .maybeSingle();
+  if (instruction.error) return { data: null, error: instruction.error };
+  if (!instruction.data) {
+    return {
+      data: null,
+      error: generateStepsRefusal("not-found", "Assembly instruction not found")
+    };
+  }
+  if (!instruction.data.modelUploadId) {
+    return {
+      data: null,
+      error: generateStepsRefusal(
+        "no-model",
+        "This instruction has no processed model"
+      )
+    };
   }
   const modelUploadId = instruction.data.modelUploadId;
 
@@ -9192,21 +9280,31 @@ export async function generateAssemblyStepsFromPlan(
     .select("id, planConfidence, status")
     .eq("assemblyInstructionId", args.assemblyInstructionId)
     .eq("companyId", args.companyId);
-  if ((existing.data ?? []).length > 0) {
+  if (existing.error) return { data: null, error: existing.error };
+  if (existing.data.length > 0) {
     if (args.mode !== "regenerate") {
-      return { ok: false, reason: "steps-exist", modelUploadId };
+      return {
+        data: null,
+        error: generateStepsRefusal(
+          "steps-exist",
+          "Steps already exist — delete them before generating from the plan",
+          modelUploadId
+        )
+      };
     }
-    const locked = (existing.data ?? []).filter(
+    const locked = existing.data.filter(
       (step) => step.planConfidence === "manual" || step.status === "Done"
     );
     if (locked.length > 0) {
       return {
-        ok: false,
-        reason: "steps-locked",
-        modelUploadId,
-        message: `${locked.length} ${
-          locked.length === 1 ? "step is" : "steps are"
-        } manually authored or done — delete or reset them before regenerating`
+        data: null,
+        error: generateStepsRefusal(
+          "steps-locked",
+          `${locked.length} ${
+            locked.length === 1 ? "step is" : "steps are"
+          } manually authored or done — delete or reset them before regenerating`,
+          modelUploadId
+        )
       };
     }
     const removed = await client
@@ -9214,14 +9312,19 @@ export async function generateAssemblyStepsFromPlan(
       .delete()
       .eq("assemblyInstructionId", args.assemblyInstructionId)
       .eq("companyId", args.companyId);
-    if (removed.error) {
-      return { ok: false, reason: "error", message: removed.error.message };
-    }
+    if (removed.error) return { data: null, error: removed.error };
   }
 
   const plan = await getAssemblyPlanJson(client, modelUploadId);
   if (!plan) {
-    return { ok: false, reason: "no-plan", modelUploadId };
+    return {
+      data: null,
+      error: generateStepsRefusal(
+        "no-plan",
+        "The model has no motion plan yet",
+        modelUploadId
+      )
+    };
   }
 
   // graph.json powers identical-part grouping (geometryHash) and fallback
@@ -9244,7 +9347,10 @@ export async function generateAssemblyStepsFromPlan(
 
   const groups = buildAssemblyStepGroups(plan, graphIndex);
   if (groups.length === 0) {
-    return { ok: false, reason: "error", message: "The plan has no parts" };
+    return {
+      data: null,
+      error: generateStepsRefusal("error", "The plan has no parts")
+    };
   }
 
   // Materialize planner-DETECTED groups (id "swarm:<host>" — e.g. a populated
@@ -9371,9 +9477,7 @@ export async function generateAssemblyStepsFromPlan(
     .from("assemblyInstructionStep")
     .insert(rows)
     .select("id, componentNodeIds");
-  if (insert.error) {
-    return { ok: false, reason: "error", message: insert.error.message };
-  }
+  if (insert.error) return { data: null, error: insert.error };
 
   // Seed each step's materials from the model's component→BOM mappings —
   // best-effort; generation succeeds regardless.
@@ -9419,7 +9523,10 @@ export async function generateAssemblyStepsFromPlan(
     ).filter((group) => !itemIdByGeometryHash.has(group.key)).length;
   }
 
-  return { ok: true, created: rows.length, unmappedComponentCount };
+  return {
+    data: { created: rows.length, unmappedComponentCount },
+    error: null
+  };
 }
 
 /**

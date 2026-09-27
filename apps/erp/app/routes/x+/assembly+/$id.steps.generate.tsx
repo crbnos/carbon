@@ -38,14 +38,14 @@ export async function action({ request, params }: ActionFunctionArgs) {
     mode
   });
 
-  if (result.ok) {
+  if (!result.error) {
     const base =
       mode === "regenerate"
-        ? `Regenerated ${result.created} steps from the motion plan`
-        : `Generated ${result.created} steps from the motion plan`;
+        ? `Regenerated ${result.data.created} steps from the motion plan`
+        : `Generated ${result.data.created} steps from the motion plan`;
     // Some geometry has no BOM match, so those parts got no material — point the
     // user at Match BOM rather than leaving a silent gap.
-    const unmapped = result.unmappedComponentCount ?? 0;
+    const unmapped = result.data.unmappedComponentCount ?? 0;
     return data(
       { success: true },
       await flash(
@@ -59,7 +59,11 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  if (result.reason === "no-plan" && result.modelUploadId) {
+  // A refusal carries its reason; a database failure does not.
+  const refusal = "reason" in result.error ? result.error : null;
+
+  if (refusal?.reason === "no-plan" && refusal.modelUploadId) {
+    const modelUploadId = refusal.modelUploadId;
     // No plan yet — planning is lazy, so this click is what starts it, which
     // needs the geometry service. Refuse when it's down (a stale tab could POST
     // here after the loader gated the button).
@@ -82,9 +86,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
       client
         .from("modelUpload")
         .select("processingStatus")
-        .eq("id", result.modelUploadId)
+        .eq("id", modelUploadId)
         .maybeSingle(),
-      getLatestAssemblyPlanJob(client, result.modelUploadId)
+      getLatestAssemblyPlanJob(client, modelUploadId)
     ]);
 
     const isConverting =
@@ -97,13 +101,13 @@ export async function action({ request, params }: ActionFunctionArgs) {
       // read; the worker adopts it via planJobId (falls back to inserting its
       // own row when the insert fails).
       const created = await createAssemblyPlanJob(client, {
-        modelUploadId: result.modelUploadId,
+        modelUploadId,
         companyId,
         userId
       });
 
       await trigger("assembly-plan", {
-        modelUploadId: result.modelUploadId,
+        modelUploadId,
         companyId,
         userId,
         ...(created.data?.id ? { planJobId: created.data.id } : {})
@@ -113,14 +117,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     return { success: false, planning: true };
   }
 
-  const message =
-    result.reason === "steps-exist"
-      ? "Steps already exist — delete them before generating from the plan"
-      : result.reason === "steps-locked"
-        ? (result.message ?? "Some steps are locked — cannot regenerate")
-        : result.reason === "no-model"
-          ? "This instruction has no processed model"
-          : (result.message ?? "Failed to generate steps");
+  const message = result.error.message || "Failed to generate steps";
 
   return data({ success: false }, await flash(request, error(null, message)));
 }

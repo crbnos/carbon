@@ -23,36 +23,39 @@ export async function action({ request, params }: ActionFunctionArgs) {
     userId
   });
 
-  if ("error" in result) {
+  if (result.error) {
     return data(
       { success: false },
-      await flash(request, error(null, result.error))
+      await flash(request, error(null, result.error.message))
     );
   }
+  const matched = result.data;
 
   // An explicit "match everything" gesture — also backfill every step's
   // materials from the full mapping set (additive; manual edits survive).
+  // Best-effort: a failed sync still reports the mapping result.
   const materials = await syncAssemblyStepMaterialsFromMappings(client, {
     assemblyInstructionId: id,
     companyId,
     userId
   });
+  const created = materials.data?.created ?? 0;
 
   const summary =
-    result.unmatchedBomItems.length > 0
-      ? ` (${result.unmatchedBomItems.length} BOM line${result.unmatchedBomItems.length === 1 ? "" : "s"} unmatched: ${result.unmatchedBomItems.slice(0, 3).join(", ")}${result.unmatchedBomItems.length > 3 ? "…" : ""})`
+    matched.unmatchedBomItems.length > 0
+      ? ` (${matched.unmatchedBomItems.length} BOM line${matched.unmatchedBomItems.length === 1 ? "" : "s"} unmatched: ${matched.unmatchedBomItems.slice(0, 3).join(", ")}${matched.unmatchedBomItems.length > 3 ? "…" : ""})`
       : "";
   const materialsSummary =
-    materials.created > 0
-      ? ` and added ${materials.created} step material${materials.created === 1 ? "" : "s"}`
+    created > 0
+      ? ` and added ${created} step material${created === 1 ? "" : "s"}`
       : "";
 
   return data(
-    { success: true, ...result },
+    { success: true, ...matched },
     await flash(
       request,
       success(
-        `Mapped ${result.mapped} of ${result.totalComponents} components to the bill of materials${summary}${materialsSummary}`
+        `Mapped ${matched.mapped} of ${matched.totalComponents} components to the bill of materials${summary}${materialsSummary}`
       )
     )
   );
