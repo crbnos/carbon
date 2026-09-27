@@ -21,6 +21,7 @@ import { noUnroundedTrackedQuantity } from "./conformance/no-unrounded-tracked-q
 import { noUnscopedKyselyWrite } from "./conformance/no-unscoped-kysely-write";
 import { noViewWithoutInvoker } from "./conformance/no-view-without-invoker";
 import { noZeroConcurrency } from "./conformance/no-zero-concurrency";
+import { serviceWriteSatisfiesTableType } from "./conformance/service-write-satisfies-table-type";
 import { loadEdgeFunctions } from "./sources/edge-functions";
 import { loadSqlFiles, migrationsDir, repoRoot } from "./sources/migrations";
 import { loadModules, modulesDir } from "./sources/modules";
@@ -48,7 +49,8 @@ export const TS_CHECKS: ConformanceCheck[] = [
   noDbClientInService,
   noDefaultOnEffects,
   noUnroundedTrackedQuantity,
-  noUnscopedKyselyWrite
+  noUnscopedKyselyWrite,
+  serviceWriteSatisfiesTableType
 ];
 
 /** Checks that run once per edge function, over all of its .ts files. */

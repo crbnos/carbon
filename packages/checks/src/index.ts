@@ -18,6 +18,7 @@ export { noNumericPrecision } from "./conformance/no-numeric-precision";
 export { noRawRounding } from "./conformance/no-raw-rounding";
 export { noRequiredColumnWithoutDefault } from "./conformance/no-required-column-without-default";
 export { noZeroConcurrency } from "./conformance/no-zero-concurrency";
+export { serviceWriteSatisfiesTableType } from "./conformance/service-write-satisfies-table-type";
 export {
   type Invariant,
   type InvariantResult,
