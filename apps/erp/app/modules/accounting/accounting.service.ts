@@ -21,7 +21,7 @@ import type { z } from "zod";
 import { getNextSequence } from "~/modules/settings";
 import type { GenericQueryFilters } from "~/utils/query";
 import { setGenericQueryFilters } from "~/utils/query";
-import { sanitize } from "~/utils/supabase";
+import { ruleError, sanitize } from "~/utils/supabase";
 import type {
   AnalyticsAccountScope,
   AnalyticsReportDefinition,
@@ -715,7 +715,8 @@ function overlayTranslationOnSeries<
  * Per-bucket currency translation for a period series. Calls the existing
  * translateCompanyBalances once per bucket (bucket end = closing rate date,
  * bucket start = average-rate window start) on synthetic single-measure rows
- * built from that bucket's balanceAtDate.
+ * built from that bucket's balanceAtDate. Returns `{ data }` keyed by bucket;
+ * one failed bucket fails the whole series (no partial report).
  */
 export async function translateCompanyPeriodSeries(
   client: SupabaseClient<Database>,
@@ -731,7 +732,7 @@ export async function translateCompanyPeriodSeries(
     periods: Record<string, PeriodCell>;
   }>
 ): Promise<{
-  byBucket: Record<string, { balances: TranslatedBalance[]; cta: number }>;
+  data: Record<string, { balances: TranslatedBalance[]; cta: number }>;
   error: string | null;
 }> {
   const results = await Promise.all(
@@ -762,12 +763,12 @@ export async function translateCompanyPeriodSeries(
   > = {};
   for (const { key, translation } of results) {
     if (translation.error) {
-      return { byBucket: {}, error: translation.error };
+      return { data: {}, error: translation.error };
     }
     byBucket[key] = { balances: translation.data ?? [], cta: translation.cta };
   }
 
-  return { byBucket, error: null };
+  return { data: byBucket, error: null };
 }
 
 /**
@@ -942,8 +943,8 @@ export async function getFinancialStatementPeriodSeries(
         error: { message: translation.error }
       };
     }
-    mapped = overlayTranslationOnSeries(mapped, translation.byBucket);
-    for (const [key, bucket] of Object.entries(translation.byBucket)) {
+    mapped = overlayTranslationOnSeries(mapped, translation.data);
+    for (const [key, bucket] of Object.entries(translation.data)) {
       ctaByBucket[key] = bucket.cta;
     }
   }
@@ -1024,7 +1025,7 @@ export async function getConsolidatedPeriodSeries(
       const translation =
         series.error || !series.data
           ? {
-              byBucket: {} as Record<
+              data: {} as Record<
                 string,
                 { balances: TranslatedBalance[]; cta: number }
               >,
@@ -1111,7 +1112,7 @@ export async function getConsolidatedPeriodSeries(
       }
       netChangeByAccount.set(row.id, rec);
     }
-    for (const [key, bucket] of Object.entries(translation.byBucket)) {
+    for (const [key, bucket] of Object.entries(translation.data)) {
       ctaByBucket[key] = (ctaByBucket[key] ?? 0) + bucket.cta;
       for (const row of bucket.balances) {
         let record = translatedByAccount.get(row.accountId);
@@ -3915,13 +3916,20 @@ export async function updateDefaultAccounts(
     .eq("companyId", defaultAccounts.companyId);
 }
 
-/** Validate the effective shipping mapping before either defaults section saves. */
+/**
+ * Validate the effective shipping mapping before either defaults section saves.
+ * Returns `{ data: null, error: null }` when the mapping is valid; a refusal
+ * names what is wrong with it.
+ */
 export async function validateDefaultIncomeAccounts(
   client: SupabaseClient<Database>,
   defaultAccounts: z.infer<typeof defaultIncomeAcountValidator> & {
     companyId: string;
   }
-) {
+): Promise<{
+  data: null;
+  error: PostgrestError | ReturnType<typeof ruleError> | null;
+}> {
   const [company, stored] = await Promise.all([
     client
       .from("company")
@@ -3931,10 +3939,13 @@ export async function validateDefaultIncomeAccounts(
     getDefaultAccounts(client, defaultAccounts.companyId)
   ]);
   if (company.error || stored.error) {
-    return { error: company.error ?? stored.error };
+    return { data: null, error: company.error ?? stored.error };
   }
   if (!company.data?.companyGroupId || !stored.data) {
-    return { error: { message: "Company account defaults not found" } };
+    return {
+      data: null,
+      error: ruleError("Company account defaults not found")
+    };
   }
   const shippingId =
     defaultAccounts.salesShippingRevenueAccount === undefined
@@ -3942,9 +3953,8 @@ export async function validateDefaultIncomeAccounts(
       : defaultAccounts.salesShippingRevenueAccount;
   if (!shippingId || shippingId === defaultAccounts.salesAccount) {
     return {
-      error: {
-        message: "Select a shipping revenue account distinct from Sales"
-      }
+      data: null,
+      error: ruleError("Select a shipping revenue account distinct from Sales")
     };
   }
   const account = await client
@@ -3953,7 +3963,7 @@ export async function validateDefaultIncomeAccounts(
     .eq("id", shippingId)
     .eq("companyGroupId", company.data.companyGroupId)
     .maybeSingle();
-  if (account.error) return { error: account.error };
+  if (account.error) return { data: null, error: account.error };
   if (
     !account.data ||
     account.data.active !== true ||
@@ -3962,13 +3972,13 @@ export async function validateDefaultIncomeAccounts(
     account.data.incomeBalance !== "Income Statement"
   ) {
     return {
-      error: {
-        message:
-          "Shipping revenue must be an active Revenue leaf account in this company group"
-      }
+      data: null,
+      error: ruleError(
+        "Shipping revenue must be an active Revenue leaf account in this company group"
+      )
     };
   }
-  return { error: null };
+  return { data: null, error: null };
 }
 
 export async function updateFiscalYearSettings(

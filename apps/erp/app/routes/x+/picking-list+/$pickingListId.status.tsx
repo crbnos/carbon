@@ -81,7 +81,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
     const policy =
       settings.data.incompletePickingListPolicy === "error" ? "error" : "warn";
-    const { unresolved, hasShort } = lineResult;
+    const { unresolved, hasShort } = lineResult.data;
     const acknowledged = formData.get("acknowledged") === "true";
 
     if (unresolved.length > 0) {

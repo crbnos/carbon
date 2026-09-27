@@ -105,9 +105,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
         )
       );
     }
-    rows = searchResult.rows;
-    count = searchResult.rows.length;
-    initialExpanded = searchResult.expandedParentIds;
+    rows = searchResult.data.rows;
+    count = searchResult.data.rows.length;
+    initialExpanded = searchResult.data.expandedParentIds;
   } else {
     const rootsResult = await getStorageUnitRoots(
       client,

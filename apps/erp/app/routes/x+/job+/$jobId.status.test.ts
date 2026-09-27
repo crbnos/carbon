@@ -167,7 +167,7 @@ function setup() {
   });
   vi.mocked(cancelOpenPickingListsForJob).mockImplementation(async () => {
     events.push("cancelOpenPickingLists");
-    return { error: null };
+    return { data: null, error: null };
   });
 
   return { client, serviceRole };

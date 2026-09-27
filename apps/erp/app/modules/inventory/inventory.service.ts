@@ -203,7 +203,7 @@ export async function getItemLedgerPage(
   const { data, error, count } = await query;
 
   if (error) {
-    return { error };
+    return { data: null, count: null, page, pageSize, hasMore: false, error };
   }
 
   return {
@@ -211,7 +211,8 @@ export async function getItemLedgerPage(
     count,
     page,
     pageSize,
-    hasMore: count !== null && offset + pageSize < count
+    hasMore: count !== null && offset + pageSize < count,
+    error: null
   };
 }
 
@@ -1067,10 +1068,12 @@ export async function getStorageUnitParentIdsWithChildren(
   return { data: Array.from(ids), error: null };
 }
 
-// Search-mode payload: every storage unit whose name matches `search` PLUS
-// every ancestor of each match, so the tree path renders intact. Returns the
-// flat ordered row set + the parentIds that should be pre-expanded so that
-// matches are visible to the user.
+/**
+ * Search-mode payload: every storage unit whose name matches `search` PLUS
+ * every ancestor of each match, so the tree path renders intact. Returns
+ * `{ data: { rows, expandedParentIds } }`: the flat ordered row set and the
+ * parentIds to pre-expand so the matches are visible.
+ */
 export async function searchStorageUnitsWithAncestors(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1084,8 +1087,7 @@ export async function searchStorageUnitsWithAncestors(
     .eq("locationId", locationId)
     .ilike("name", `%${search}%`);
 
-  if (matches.error)
-    return { rows: [], expandedParentIds: [], error: matches.error };
+  if (matches.error) return { data: null, error: matches.error };
 
   const idsToFetch = new Set<string>();
   const expanded = new Set<string>();
@@ -1101,7 +1103,7 @@ export async function searchStorageUnitsWithAncestors(
   }
 
   if (idsToFetch.size === 0) {
-    return { rows: [], expandedParentIds: [], error: null };
+    return { data: { rows: [], expandedParentIds: [] }, error: null };
   }
 
   const rows = await client
@@ -1112,11 +1114,10 @@ export async function searchStorageUnitsWithAncestors(
     .in("id", Array.from(idsToFetch))
     .order("ancestorPath");
 
-  if (rows.error) return { rows: [], expandedParentIds: [], error: rows.error };
+  if (rows.error) return { data: null, error: rows.error };
 
   return {
-    rows: rows.data ?? [],
-    expandedParentIds: Array.from(expanded),
+    data: { rows: rows.data ?? [], expandedParentIds: Array.from(expanded) },
     error: null
   };
 }
@@ -2572,7 +2573,7 @@ export async function deleteStorageTypeWithCascade(
     .eq("companyId", companyId)
     .contains("storageTypeIds", [id]);
 
-  if (fetchError) return { error: fetchError };
+  if (fetchError) return { data: null, error: fetchError };
 
   for (const unit of units ?? []) {
     const next = (unit.storageTypeIds ?? []).filter((x) => x !== id);
@@ -2580,7 +2581,7 @@ export async function deleteStorageTypeWithCascade(
       .from("storageUnit")
       .update({ storageTypeIds: next })
       .eq("id", unit.id);
-    if (updateError) return { error: updateError };
+    if (updateError) return { data: null, error: updateError };
   }
 
   return client.from("storageType").delete().eq("id", id);
@@ -3083,19 +3084,24 @@ export type UnresolvedPickingListLine = {
   outstanding: number;
 };
 
-// Lines still owing material when Finish is pressed. "Unresolved" = a line the
-// operator neither fully picked, cancelled, nor explicitly marked Short — i.e.
-// silently left behind. `hasShort` reports whether any acknowledged shortfall
-// exists, which forces the final header status to Partial rather than Completed.
+/**
+ * Lines still owing material when Finish is pressed. "Unresolved" = a line the
+ * operator neither fully picked, cancelled, nor explicitly marked Short — i.e.
+ * silently left behind. Returns `{ data: { unresolved, hasShort } }`;
+ * `hasShort` reports whether any acknowledged shortfall exists, which forces
+ * the final header status to Partial rather than Completed.
+ */
 export async function getUnresolvedPickingListLines(
   client: SupabaseClient<Database>,
   pickingListId: string,
   companyId: string
-): Promise<{
-  unresolved: UnresolvedPickingListLine[];
-  hasShort: boolean;
-  error: unknown;
-}> {
+): Promise<
+  | {
+      data: { unresolved: UnresolvedPickingListLine[]; hasShort: boolean };
+      error: null;
+    }
+  | { data: null; error: PostgrestError }
+> {
   const { data, error } = await client
     .from("pickingListLine")
     .select(
@@ -3104,7 +3110,7 @@ export async function getUnresolvedPickingListLines(
     .eq("pickingListId", pickingListId)
     .eq("companyId", companyId);
 
-  if (error) return { unresolved: [], hasShort: false, error };
+  if (error) return { data: null, error };
 
   const lines = data ?? [];
   const hasShort = lines.some((line) => line.status === "Short");
@@ -3129,13 +3135,13 @@ export async function getUnresolvedPickingListLines(
       };
     });
 
-  return { unresolved, hasShort, error: null };
+  return { data: { unresolved, hasShort }, error: null };
 }
 
 export async function cancelOpenPickingListsForJob(
   db: Kysely<KyselyDatabase>,
   args: { jobId: string; companyId: string; userId: string }
-): Promise<{ error: Error | null }> {
+): Promise<{ data: null; error: Error | null }> {
   try {
     await db.transaction().execute(async (trx) => {
       const lines = await trx
@@ -3182,9 +3188,12 @@ export async function cancelOpenPickingListsForJob(
         .where("companyId", "=", args.companyId)
         .execute();
     });
-    return { error: null };
+    return { data: null, error: null };
   } catch (err) {
-    return { error: err instanceof Error ? err : new Error(String(err)) };
+    return {
+      data: null,
+      error: err instanceof Error ? err : new Error(String(err))
+    };
   }
 }
 

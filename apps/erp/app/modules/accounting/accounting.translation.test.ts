@@ -405,8 +405,8 @@ describe("translateCompanyPeriodSeries", () => {
       series
     );
     expect(result.error).toBeNull();
-    expect(result.byBucket["2026-07"]?.cta).toBe(0);
-    expect(result.byBucket["2026-08"]?.cta).toBe(40);
+    expect(result.data["2026-07"]?.cta).toBe(0);
+    expect(result.data["2026-08"]?.cta).toBe(40);
     for (const bucket of buckets) {
       expect(rpc).toHaveBeenCalledWith("getConsolidationRates", {
         p_company_group_id: "group",
@@ -432,7 +432,7 @@ describe("translateCompanyPeriodSeries", () => {
       series
     );
     expect(result).toEqual({
-      byBucket: {},
+      data: {},
       error: expect.stringMatching(/rate|currency/i)
     });
   });
