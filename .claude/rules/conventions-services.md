@@ -86,6 +86,14 @@ export async function getCustomers(
 }
 ```
 
+The `GenericQueryFilters` param must be named `args`. The MCP/API generator reads
+it from the TypeScript checker and publishes it flat beside the function's other
+params: its own members (`search`, …) are never required, `limit`/`offset` default
+to the MCP page size, and `filters`/`sorts` are published only when `args` reaches
+`setGenericQueryFilters` (directly, spread, or through another service function).
+Read `args.search` with a truthiness check and flags with `?? false` — callers may
+omit them. `generate:mcp` fails when a list param breaks these rules.
+
 For an unpaginated full list (e.g. a select dropdown), use
 `fetchAllFromTable(client, table, columns, qb)` from `@carbon/database`, which pages
 through large result sets (`getCustomersList` in `sales.service.ts`).

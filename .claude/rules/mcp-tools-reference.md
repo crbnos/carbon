@@ -261,7 +261,14 @@ dispatcher (`apps/erp/app/routes/api+/inngest.ts`). There is no separate
     another property rejects a flat body at validation, before dispatch.
   - A flat schema also accepts a lone `{ args: {...} }` envelope, unwrapped in
     `callOperation` before validation because the published instructions taught
-    that shape.
+    that shape. An envelope sent BESIDE sibling params
+    (`{ locationId, args: { search } }`, the shape the old nested list schemas
+    taught) is lifted over the top-level keys in the dispatcher's `args` branch,
+    so HTTP callers get it too.
+  - Every list operation's `GenericQueryFilters` param is published flat (see
+    "Input schemas from the checker" below). In `addressesWholeParam`, a flat
+    `args` means every other param is declared under its own name, so a sibling
+    such as `locationId` is read by name, never mistaken for a flattened object.
 
   A param the schema declares as a **scalar** is passed `undefined` when no key
   matches rather than being handed the whole payload object — that fallback made
@@ -475,6 +482,31 @@ the model context or the MCP dispatch.
 
 ## Gotchas
 
+- **Input schemas from the checker** (`scripts/lib/param-schema.ts`). The same
+  ts-morph project the response reflection loads (`loadServiceProject`) also
+  reflects every exported function's params, and `buildToolSchema` uses it where
+  text cannot see: optionality of every non-context param and of each field of a
+  flattened or nested object param (a `?`, an initializer, or a type that admits
+  undefined — `assignee: null | undefined` is optional, never a required
+  `{type:"null"}`); a literal initializer published as `default`
+  (`quantity: number = 1`); a typed schema wherever the textual path yields `{}`
+  (`options: AgingOptions`, tuple fields, a validator field typed `z.any()`
+  whose TS type is a real shape); `@param` tags merged into descriptions,
+  including dotted `@param update.assignee` for fields. Zod-typed params keep the
+  validator path and take only param-level optionality. A `GenericQueryFilters`
+  param (must be named `args`) is published FLAT: its members, none required;
+  `limit` with `default: MCP_DEFAULT_LIMIT` and `offset` with `default: 0`
+  (input validation applies these defaults for every caller); `filters` and
+  `sorts` only when the param reaches `setGenericQueryFilters` (directly,
+  `args ?? {}`, `{ ...args }`, or forwarded to another function that does) or
+  is read field by field. The filter `operator` enum is read from
+  `getGenericFilter`'s switch in `utils/query.ts`; `value` is the
+  comma-separated string the list views send for `in`/`contains`.
+  `scripts/lib/input-schema-guards.ts` fails `generate:mcp` on any violation of
+  those rules (also run by `apps/erp/test/mcp-input-schema.test.ts`), and
+  `findCheckerDisagreements` keeps the remaining textual-vs-checker type
+  differences in `apps/erp/test/__snapshots__/mcp-checker-disagreements.txt`.
+  Context params are never walked — a `SupabaseClient` type costs minutes.
 - The generator reads a service's **parameter list textually**, but resolves more
   shapes than it used to. An **inline** array-of-objects
   (`prices: { quantity: number; ... }[]`) now publishes as a typed
