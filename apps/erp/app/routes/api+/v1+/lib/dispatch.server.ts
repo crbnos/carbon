@@ -236,6 +236,13 @@ function addressesWholeParam(meta: ManifestEntry, paramName: string): boolean {
   // Undeclared, so a key of this name can only be the caller nesting the payload
   // under it — the documented `{ account: {...} }` wrapper.
   if (!properties || !(paramName in properties)) return true;
+  // A list operation publishes its `args` (GenericQueryFilters) param flat,
+  // beside its other params. Those siblings are never flattened themselves —
+  // each is declared under its own name — so the extra keys are args', not
+  // this param's fields.
+  if (meta.serviceParams.includes("args") && !("args" in properties)) {
+    return true;
+  }
 
   const payloadParams = meta.serviceParams.filter(
     (p) => !CONTEXT_PARAM_NAMES.has(p)
@@ -324,18 +331,32 @@ export async function dispatchOperation(
     } else if (paramName === "args") {
       // Two wire shapes, told apart by the operation's own schema: when it
       // declares an `args` object the body is `{ args: {...} }`, otherwise the
-      // body already IS the args object. A flat body is accepted for both — 18
+      // body already IS the args object. A flat body is accepted for both — many
       // ops mix `args` with sibling top-level params and the extra keys are
       // inert, since setGenericQueryFilters reads only filters/sorts/offset/limit.
+      // A flat schema still accepts the legacy `{ args: {...} }` envelope, alone
+      // or beside sibling params (`{ locationId, args: { search } }`): its
+      // contents are lifted over the top-level keys. List operations publish
+      // flat since the generator reads GenericQueryFilters from the checker,
+      // and callers that followed the old wrapped schema must keep working.
       const wrapped = normalizedArgs?.args;
-      const value =
+      const wrappedObject =
+        wrapped && typeof wrapped === "object" && !Array.isArray(wrapped)
+          ? (wrapped as Record<string, unknown>)
+          : null;
+      const declaresArgs = Boolean(
         (meta.schema as { properties?: Record<string, unknown> })?.properties
-          ?.args &&
-        wrapped &&
-        typeof wrapped === "object" &&
-        !Array.isArray(wrapped)
-          ? wrapped
-          : normalizedArgs || {};
+          ?.args
+      );
+      let value: Record<string, unknown>;
+      if (wrappedObject && declaresArgs) {
+        value = wrappedObject;
+      } else if (wrappedObject) {
+        const { args: _envelope, ...siblings } = normalizedArgs ?? {};
+        value = { ...siblings, ...wrappedObject };
+      } else {
+        value = normalizedArgs || {};
+      }
       functionArgs.push(
         enrichWithAuthContext(value, context, meta.injectAuth, operation)
       );
