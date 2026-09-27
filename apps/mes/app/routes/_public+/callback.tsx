@@ -34,7 +34,7 @@ import {
   AlertDescription,
   AlertTitle,
   Button,
-  LoadingBars,
+  CarbonPulse,
   VStack
 } from "@carbon/react";
 import { Trans } from "@lingui/react/macro";
@@ -325,7 +325,7 @@ export default function AuthCallback() {
   }, [fetcher]);
 
   return (
-    <div className="flex flex-col items-center justify-center">
+    <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-background">
       {error ? (
         <div className="rounded-lg p-8 mt-8 w-[380px]">
           <VStack spacing={4}>
@@ -354,7 +354,7 @@ export default function AuthCallback() {
           </VStack>
         </div>
       ) : (
-        <LoadingBars />
+        <CarbonPulse />
       )}
     </div>
   );
