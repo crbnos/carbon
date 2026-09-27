@@ -32,6 +32,7 @@ import {
   type SpendBillSource
 } from "../../spend/bill-source";
 import { isPushableInvoiceStatus } from "../../spend/gates";
+import { describeMissingVendorFields } from "../../spend/parties";
 import { buildRampIdempotencyKey } from "../lib/client";
 import { buildLineCodingSelections } from "../lib/coding";
 import { resolveOrCreateRampSpendVendor } from "../lib/spend";
@@ -100,7 +101,11 @@ export class RampBillSyncer extends RampPushOnlyEntitySyncer<
     );
     if (!vendorId) {
       throw new Error(
-        `Cannot push invoice ${local.readableId} to Ramp: its supplier has no Ramp spend vendor (a create needs a name, email and country)`
+        // Name the supplier and the field that is actually missing. The old
+        // message listed all three requirements without saying which one was
+        // absent or whose supplier it was, so acting on it meant reading the
+        // database.
+        `Cannot push invoice ${local.readableId} to Ramp: ${describeMissingVendorFields(local.supplier)}`
       );
     }
 

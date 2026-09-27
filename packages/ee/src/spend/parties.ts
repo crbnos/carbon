@@ -45,6 +45,17 @@ export function emptySpendVendorParty(
  * country through whichever of the supplier's locations carries one — platforms
  * require a country on a vendor create, and a location without one is useless
  * for that, so a location that HAS a country is preferred over the first.
+ *
+ * When no purchasing contact is set, the supplier's SOLE emailable contact is
+ * used instead. A vendor create needs an email — Ramp rejects the whole request
+ * with `business_vendor_contacts.email: "Missing data for required field"`,
+ * verified live 2026-09-26 — so a supplier that plainly has one contact would
+ * otherwise block every bill for want of a pointer field nobody knew to set.
+ *
+ * Exactly one, never a guess: with two or more emailable contacts there is no
+ * unambiguous answer and the caller is told to set the purchasing contact. This
+ * is the same rule the counterpart ladder uses — a single match links, ambiguity
+ * refuses.
  */
 export async function loadSpendVendorParties(
   db: Kysely<KyselyDatabase>,
@@ -81,6 +92,46 @@ export async function loadSpendVendorParties(
     .where("supplier.id", "in", ids)
     .execute();
 
+  // Fall back to a sole emailable contact for suppliers with no purchasing
+  // contact. Scoped to those suppliers so the common path costs nothing.
+  const withoutContact = suppliers
+    .filter((supplier) => !supplier.email)
+    .map((supplier) => supplier.id);
+
+  const soleContactBySupplier = new Map<
+    string,
+    {
+      email: string | null;
+      firstName: string | null;
+      lastName: string | null;
+      mobilePhone: string | null;
+      homePhone: string | null;
+      workPhone: string | null;
+    }
+  >();
+
+  if (withoutContact.length > 0) {
+    const candidates = await db
+      .selectFrom("supplierContact")
+      .innerJoin("contact", "contact.id", "supplierContact.contactId")
+      .select([
+        "supplierContact.supplierId as supplierId",
+        "contact.email as email",
+        "contact.firstName as firstName",
+        "contact.lastName as lastName",
+        "contact.mobilePhone as mobilePhone",
+        "contact.homePhone as homePhone",
+        "contact.workPhone as workPhone"
+      ])
+      .where("supplierContact.companyId", "=", companyId)
+      .where("supplierContact.supplierId", "in", withoutContact)
+      .execute();
+
+    for (const [supplierId, contact] of pickSoleEmailableContacts(candidates)) {
+      soleContactBySupplier.set(supplierId, contact);
+    }
+  }
+
   const locations = await db
     .selectFrom("supplierLocation")
     .innerJoin("address", "address.id", "supplierLocation.addressId")
@@ -107,27 +158,28 @@ export async function loadSpendVendorParties(
 
   for (const supplier of suppliers) {
     const address = addressBySupplier.get(supplier.id) ?? null;
-    const hasContact = Boolean(
-      supplier.email ?? supplier.firstName ?? supplier.lastName
-    );
+    const fallback = supplier.email
+      ? undefined
+      : soleContactBySupplier.get(supplier.id);
+    const email = supplier.email ?? fallback?.email ?? null;
+    const firstName = supplier.firstName ?? fallback?.firstName ?? null;
+    const lastName = supplier.lastName ?? fallback?.lastName ?? null;
+    const phone =
+      supplier.mobilePhone ??
+      supplier.workPhone ??
+      supplier.homePhone ??
+      fallback?.mobilePhone ??
+      fallback?.workPhone ??
+      fallback?.homePhone ??
+      null;
+    const hasContact = Boolean(email ?? firstName ?? lastName);
 
     map.set(supplier.id, {
       id: supplier.id,
       name: supplier.name,
       supplierTypeId: supplier.supplierTypeId ?? null,
       country: address?.countryCode ?? null,
-      contact: hasContact
-        ? {
-            email: supplier.email ?? null,
-            firstName: supplier.firstName ?? null,
-            lastName: supplier.lastName ?? null,
-            phone:
-              supplier.mobilePhone ??
-              supplier.workPhone ??
-              supplier.homePhone ??
-              null
-          }
-        : null,
+      contact: hasContact ? { email, firstName, lastName, phone } : null,
       address: address
         ? {
             line1: address.addressLine1 ?? null,
@@ -141,4 +193,62 @@ export async function loadSpendVendorParties(
   }
 
   return map;
+}
+
+/**
+ * The one contact per supplier that can stand in for an unset purchasing contact.
+ *
+ * "Emailable" because a vendor create without an email is rejected outright, so a
+ * contact carrying none cannot substitute. EXACTLY one, never a guess: a supplier
+ * with two emailable contacts has no unambiguous answer, and picking either would
+ * put a stranger on the vendor record at the platform. The caller is told to set
+ * the purchasing contact instead.
+ *
+ * Same rule as the counterpart ladder: a single match links, ambiguity refuses.
+ */
+export function pickSoleEmailableContacts<
+  T extends { supplierId: string; email: string | null }
+>(candidates: readonly T[]): Map<string, T> {
+  const bySupplier = new Map<string, T[]>();
+  for (const candidate of candidates) {
+    if (!candidate.email?.trim()) continue;
+    const list = bySupplier.get(candidate.supplierId);
+    if (list) list.push(candidate);
+    else bySupplier.set(candidate.supplierId, [candidate]);
+  }
+
+  const sole = new Map<string, T>();
+  for (const [supplierId, list] of bySupplier) {
+    const only = list.length === 1 ? list[0] : undefined;
+    if (only) sole.set(supplierId, only);
+  }
+  return sole;
+}
+
+/**
+ * Why a spend vendor could not be created, in terms the reader can act on.
+ *
+ * Ramp requires `name`, `country` and `business_vendor_contacts.email` — all
+ * three verified live 2026-09-26 (a create without a contact, and one with a
+ * contact carrying no email, are both rejected `DEVELOPER_7001 "Missing data for
+ * required field"`). Which of them is absent is the only useful part, and the
+ * previous message omitted it along with the supplier's name.
+ */
+export function describeMissingVendorFields(
+  supplier: SpendVendorParty
+): string {
+  const missing: string[] = [];
+  if (!supplier.name?.trim()) missing.push("a name");
+  if (!supplier.contact?.email?.trim()) missing.push("a contact email");
+  if (!supplier.country?.trim())
+    missing.push("a country on one of its locations");
+
+  const who = supplier.name?.trim() || `supplier ${supplier.id}`;
+  if (missing.length === 0) {
+    // Everything Carbon checks is present, so the platform refused for its own
+    // reason — say so rather than implying the record is incomplete.
+    return `${who} could not be created as a Ramp vendor; see the provider error on the previous attempt`;
+  }
+
+  return `${who} needs ${missing.join(" and ")} before it can be created as a Ramp vendor. If the supplier has several contacts, set its purchasing contact so Carbon knows which to use.`;
 }

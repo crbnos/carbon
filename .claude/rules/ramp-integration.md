@@ -54,7 +54,16 @@ providers, which own the data and mirror it out.
 >   (`POST /vendors`), NOT an accounting vendor — `resolveOrCreateRampSpendVendor` matches by
 >   `external_vendor_id`/name then CREATES one with the supplier's synced purchasing-contact
 >   email + `country` + `state` (US requires it) and `business_vendor_contacts` as a **single
->   object** (plural name, `allOf` of one). `loadRampVendorSuppliers` batches the
+>   object** (plural name, `allOf` of one). **`business_vendor_contacts` AND its `email`
+>   are both REQUIRED** — a create with no contact, and one whose contact carries no
+>   email, are each rejected `422 DEVELOPER_7001 "Missing data for required field"`
+>   (verified live 2026-09-26). So when `supplier.purchasingContactId` is unset,
+>   `loadSpendVendorParties` falls back to the supplier's SOLE emailable contact
+>   (`pickSoleEmailableContacts`); two or more is ambiguous and refuses, exactly as the
+>   counterpart ladder does. Without that fallback a supplier with one perfectly good
+>   contact blocked every bill for want of a pointer field nobody knew to set.
+>   `describeMissingVendorFields` names the supplier and the specific missing field.
+>   `loadRampVendorSuppliers` batches the
 >   supplier→purchasing-contact/address embed. Webhook signing encoding is the one thing the
 >   public docs don't cover.
 > - **Outbound bill push (draft-only)** — SHIPPED + live-verified 2026-09-11 (the release
