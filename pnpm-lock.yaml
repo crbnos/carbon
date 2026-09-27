@@ -2138,6 +2138,9 @@ importers:
       dotenv:
         specifier: 16.3.1
         version: 16.3.1
+      libpg-query:
+        specifier: 18.1.5
+        version: 18.1.5
       npm-run-all:
         specifier: 'catalog:'
         version: 4.1.5
@@ -6743,6 +6746,9 @@ packages:
   '@peculiar/x509@1.14.3':
     resolution: {integrity: sha512-C2Xj8FZ0uHWeCXXqX5B4/gVFQmtSkiuOolzAgutjTfseNOHT3pUjljDZsTSxXFGgio54bCzVFqmEOUrIVk8RDA==}
     engines: {node: '>=20.0.0'}
+
+  '@pgsql/types@18.0.0':
+    resolution: {integrity: sha512-jtAY4JU7jdVYZ/Vv3zlZqVP+FRWZokyCLKPPCnAApiaJAElpyyiMC3HRiquBu29kSrVs+rkqZD50SUIb/zyEGw==}
 
   '@pkgjs/parseargs@0.11.0':
     resolution: {integrity: sha512-+1VkjdD0QBLPodGrJUeqarH8VAIvQODIbwh9XpP5Syisf7YoQgsJKPNFoqqLQlu+VQ/tVSshMR6loPMn8U+dPg==}
@@ -13421,6 +13427,9 @@ packages:
   libheif-js@1.23.2:
     resolution: {integrity: sha512-qvHIXtggEsw1lCNCWBYKloL2Z36DJBm0R9ThGiH2JnhKYdeZFLPFkP30Lw4yMskxxhx0bKg1gLrBHX1D2w2pSw==}
     engines: {node: '>=8.0.0'}
+
+  libpg-query@18.1.5:
+    resolution: {integrity: sha512-xsksgH106LyVUylIp2bJz1MPFmVVIGKbB8belGWmh+J8/i38w8eM1twDIBnd97tzeNQFctH9MWKMthl22+fWcQ==}
 
   libphonenumber-js@1.12.41:
     resolution: {integrity: sha512-lsmMmGXBxXIK/VMLEj0kL6MtUs1kBGj1nTCzi6zgQoG1DEwqwt2DQyHxcLykceIxAnfE3hya7NuIh6PpC6S3fA==}
@@ -20105,6 +20114,8 @@ snapshots:
       reflect-metadata: 0.2.2
       tslib: 2.8.1
       tsyringe: 4.10.0
+
+  '@pgsql/types@18.0.0': {}
 
   '@pkgjs/parseargs@0.11.0':
     optional: true
@@ -28162,6 +28173,10 @@ snapshots:
   leven@3.1.0: {}
 
   libheif-js@1.23.2: {}
+
+  libpg-query@18.1.5:
+    dependencies:
+      '@pgsql/types': 18.0.0
 
   libphonenumber-js@1.12.41: {}
 

@@ -247,7 +247,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
 - Multi-tenant: nearly every table has `companyId` (composite PK `("id", "companyId")`).
 - Standardized policy names `SELECT` / `INSERT` / `UPDATE` / `DELETE`, gated by SQL helpers
   `get_companies_with_employee_role()` (read) and `get_companies_with_employee_permission('<module>_<action>')`
-  (write). Verified current in the newest migrations (e.g. `20260603140000_storage-rules-inventory-rls.sql`).
+  (write). Policies and those helpers are authored in `packages/database/src/authz/`, not in
+  migrations — see `authz-manifest.md`.
 - RLS is the real authorization boundary for supabase-js clients; `requirePermissions` is the app-layer gate
   (and the only gate for service-role / Kysely paths). See `conventions-database.md` for the table+RLS template.
 

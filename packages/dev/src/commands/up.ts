@@ -38,6 +38,7 @@ import {
   applyMigrations,
   ensureConfigRow,
   ensureSmokeTestUser,
+  syncAuthz,
   waitForPostgres,
   waitForStorageReady,
   waitForTcp
@@ -608,6 +609,14 @@ async function runDatabaseMigrations(
               }
               return "types refreshed";
             }
+          }
+        ]
+      : []),
+    ...(cfg.shouldMigrate
+      ? [
+          {
+            title: "Sync RLS policies with the authz manifest",
+            task: () => syncAuthz(ctx.root, ctx.ports.PORT_DB)
           }
         ]
       : [])
