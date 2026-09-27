@@ -593,6 +593,9 @@ msgstr "A customer is created"
 msgid "A customer is deleted"
 msgstr "A customer is deleted"
 
+msgid "A customer must have at least one contact with an email address before its quotes, orders and invoices can be issued or posted. The mirror of the supplier requirement under Purchasing; no integration requires it today."
+msgstr "A customer must have at least one contact with an email address before its quotes, orders and invoices can be issued or posted. The mirror of the supplier requirement under Purchasing; no integration requires it today."
+
 msgid "A customer's account manager changes"
 msgstr "A customer's account manager changes"
 
@@ -1009,6 +1012,9 @@ msgstr "A supplier is created"
 
 msgid "A supplier is deleted"
 msgstr "A supplier is deleted"
+
+msgid "A supplier must have at least one contact with an email address before its quotes, orders and invoices can be issued or posted. Spend platforms cannot create a vendor without one, so a supplier missing it has its bills rejected after the fact."
+msgstr "A supplier must have at least one contact with an email address before its quotes, orders and invoices can be issued or posted. Spend platforms cannot create a vendor without one, so a supplier missing it has its bills rejected after the fact."
 
 msgid "A supplier return sends previously received goods back to the supplier for credit or replacement."
 msgstr "A supplier return sends previously received goods back to the supplier for credit or replacement."
@@ -14404,6 +14410,12 @@ msgstr "Requested Date"
 
 msgid "Require a 6-digit code from an authenticator app when signing in."
 msgstr "Require a 6-digit code from an authenticator app when signing in."
+
+msgid "Require a Customer Contact"
+msgstr "Require a Customer Contact"
+
+msgid "Require a Supplier Contact"
+msgstr "Require a Supplier Contact"
 
 msgid "Require an assigned operator before the scheduler places work at a location. When on, unstaffed work centers get no work and an operation with no manned coverage shows as unschedulable. Lights-out (24×7) work centers are exempt."
 msgstr "Require an assigned operator before the scheduler places work at a location. When on, unstaffed work centers get no work and an operation with no manned coverage shows as unschedulable. Lights-out (24×7) work centers are exempt."

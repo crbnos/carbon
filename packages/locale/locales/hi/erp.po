@@ -593,6 +593,9 @@ msgstr "एक ग्राहक बनाया गया है"
 msgid "A customer is deleted"
 msgstr "एक ग्राहक हटाया गया है"
 
+msgid "A customer must have at least one contact with an email address before its quotes, orders and invoices can be issued or posted. The mirror of the supplier requirement under Purchasing; no integration requires it today."
+msgstr ""
+
 msgid "A customer's account manager changes"
 msgstr "किसी ग्राहक के खाता प्रबंधक में परिवर्तन"
 
@@ -1009,6 +1012,9 @@ msgstr "एक आपूर्तिकर्ता बनाया गया �
 
 msgid "A supplier is deleted"
 msgstr "एक आपूर्तिकर्ता हटा दिया गया है"
+
+msgid "A supplier must have at least one contact with an email address before its quotes, orders and invoices can be issued or posted. Spend platforms cannot create a vendor without one, so a supplier missing it has its bills rejected after the fact."
+msgstr ""
 
 msgid "A supplier return sends previously received goods back to the supplier for credit or replacement."
 msgstr "एक आपूर्तिकर्ता रिटर्न पहले से प्राप्त सामानों को क्रेडिट या प्रतिस्थापन के लिए आपूर्तिकर्ता को वापस भेजता है।"
@@ -14404,6 +14410,12 @@ msgstr "अनुरोधित तिथि"
 
 msgid "Require a 6-digit code from an authenticator app when signing in."
 msgstr "साइन इन करते समय ऑथेंटिकेटर ऐप से 6-अंकीय कोड की आवश्यकता है।"
+
+msgid "Require a Customer Contact"
+msgstr ""
+
+msgid "Require a Supplier Contact"
+msgstr ""
 
 msgid "Require an assigned operator before the scheduler places work at a location. When on, unstaffed work centers get no work and an operation with no manned coverage shows as unschedulable. Lights-out (24×7) work centers are exempt."
 msgstr "शेड्यूलर किसी स्थान पर काम रखने से पहले एक असाइन किया गया ऑपरेटर आवश्यक करें। जब सक्षम हो, तो अनस्टाफ्ड वर्क सेंटर को कोई काम नहीं मिलते और कोई मानव कवरेज के बिना एक ऑपरेशन गैर-शेड्यूल करने योग्य दिखाई देता है। लाइट-आउट (24×7) वर्क सेंटर छूट प्राप्त हैं।"

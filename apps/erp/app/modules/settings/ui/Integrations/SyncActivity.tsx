@@ -112,6 +112,13 @@ type SyncActivityProps = {
   /** Shared tab bar, rendered at the top of this tab's body card. */
   tabs?: ReactNode;
   operations: SyncActivityOperation[];
+  /**
+   * `entityType:entityId` -> the document number a human reads
+   * (`PO000001`) plus the CARBON row id to link to, resolved in the loader.
+   * Sparse on purpose: a pulled record that never landed a Carbon row has
+   * only the PROVIDER's remote id, and those rows fall back to it.
+   */
+  readableIds?: Record<string, SyncOperationReference>;
   count: number;
   status: SyncOperationStatus | null;
   page: number;
@@ -200,9 +207,28 @@ function getEntityLabel(entityType: string): string {
   return ENTITY_LABELS[entityType] ?? entityType;
 }
 
-function getEntityPath(operation: SyncActivityOperation): string | null {
+/** What the loader resolved for one operation's record. */
+type SyncOperationReference = { label: string; recordId: string };
+
+/**
+ * What to show for an operation's record, and where it links: the document
+ * number and the Carbon row when the loader resolved one, else the raw id
+ * it stored.
+ */
+function getEntityReference(
+  operation: SyncActivityOperation,
+  readableIds: Record<string, SyncOperationReference> | undefined
+): { label: string; isReadable: boolean; path: string | null } {
+  const resolved =
+    readableIds?.[`${operation.entityType}:${operation.entityId}`];
   const pathFn = ENTITY_PATHS[operation.entityType];
-  return pathFn ? pathFn(operation.entityId) : null;
+  const recordId = resolved?.recordId ?? operation.entityId;
+
+  return {
+    label: resolved?.label ?? operation.entityId,
+    isReadable: resolved !== undefined,
+    path: pathFn ? pathFn(recordId) : null
+  };
 }
 
 function formatTrigger(trigger: string): string {
@@ -232,6 +258,7 @@ function getAvailableTransitions(status: SyncOperationStatus): {
 export function SyncActivity({
   tabs,
   operations,
+  readableIds,
   count,
   status,
   page,
@@ -412,7 +439,10 @@ export function SyncActivity({
               <Tbody>
                 {operations.map((operation) => {
                   const transitions = getAvailableTransitions(operation.status);
-                  const entityPath = getEntityPath(operation);
+                  const entityReference = getEntityReference(
+                    operation,
+                    readableIds
+                  );
                   return (
                     <Tr
                       key={operation.id}
@@ -429,18 +459,28 @@ export function SyncActivity({
                           <span className="text-sm font-medium">
                             {getEntityLabel(operation.entityType)}
                           </span>
-                          {entityPath ? (
+                          {entityReference.path ? (
                             <Link
-                              to={entityPath}
+                              to={entityReference.path}
                               prefetch="intent"
                               onClick={(e) => e.stopPropagation()}
-                              className="block max-w-[180px] truncate font-mono text-xs text-muted-foreground hover:text-foreground hover:underline"
+                              title={operation.entityId}
+                              className={cn(
+                                "block max-w-[180px] truncate text-xs text-muted-foreground hover:text-foreground hover:underline",
+                                !entityReference.isReadable && "font-mono"
+                              )}
                             >
-                              {operation.entityId}
+                              {entityReference.label}
                             </Link>
                           ) : (
-                            <span className="block max-w-[180px] truncate font-mono text-xs text-muted-foreground">
-                              {operation.entityId}
+                            <span
+                              title={operation.entityId}
+                              className={cn(
+                                "block max-w-[180px] truncate text-xs text-muted-foreground",
+                                !entityReference.isReadable && "font-mono"
+                              )}
+                            >
+                              {entityReference.label}
                             </span>
                           )}
                         </div>
@@ -586,6 +626,7 @@ export function SyncActivity({
 
       <SyncOperationDetailDrawer
         operation={selectedOperation}
+        readableIds={readableIds}
         canUpdate={canUpdate}
         isTransitioning={isTransitioning}
         onTransition={submitTransition}
@@ -792,12 +833,14 @@ function Detail({
 
 function SyncOperationDetailDrawer({
   operation,
+  readableIds,
   canUpdate,
   isTransitioning,
   onTransition,
   onClose
 }: {
   operation: SyncActivityOperation | null;
+  readableIds?: Record<string, SyncOperationReference>;
   canUpdate: boolean;
   isTransitioning: boolean;
   onTransition: (ids: string[], to: "Pending" | "Skipped") => void;
@@ -809,7 +852,7 @@ function SyncOperationDetailDrawer({
   if (!operation) return null;
 
   const transitions = getAvailableTransitions(operation.status);
-  const entityPath = getEntityPath(operation);
+  const entityReference = getEntityReference(operation, readableIds);
   const hasMetadata =
     operation.metadata && Object.keys(operation.metadata).length > 0;
 
@@ -824,8 +867,13 @@ function SyncOperationDetailDrawer({
         <DrawerHeader>
           <DrawerTitle>
             {getEntityLabel(operation.entityType)}{" "}
-            <span className="font-mono text-muted-foreground">
-              {operation.entityId}
+            <span
+              className={cn(
+                "text-muted-foreground",
+                !entityReference.isReadable && "font-mono"
+              )}
+            >
+              {entityReference.label}
             </span>
           </DrawerTitle>
           <DrawerDescription>
@@ -877,19 +925,34 @@ function SyncOperationDetailDrawer({
             </Detail>
           </div>
           <Detail label={t`Entity`}>
-            {entityPath ? (
-              <Link
-                to={entityPath}
-                prefetch="intent"
-                className="break-all font-mono text-xs hover:underline"
-              >
-                {operation.entityId}
-              </Link>
-            ) : (
-              <span className="break-all font-mono text-xs">
-                {operation.entityId}
-              </span>
-            )}
+            <div className="flex flex-col gap-0.5">
+              {entityReference.path ? (
+                <Link
+                  to={entityReference.path}
+                  prefetch="intent"
+                  className={cn(
+                    "break-all text-xs hover:underline",
+                    !entityReference.isReadable && "font-mono"
+                  )}
+                >
+                  {entityReference.label}
+                </Link>
+              ) : (
+                <span
+                  className={cn(
+                    "break-all text-xs",
+                    !entityReference.isReadable && "font-mono"
+                  )}
+                >
+                  {entityReference.label}
+                </span>
+              )}
+              {entityReference.isReadable && (
+                <span className="break-all font-mono text-xs text-muted-foreground">
+                  {operation.entityId}
+                </span>
+              )}
+            </div>
           </Detail>
           <Detail label={t`Idempotency key`}>
             <span className="break-all font-mono text-xs">

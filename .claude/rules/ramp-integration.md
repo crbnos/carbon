@@ -63,6 +63,15 @@ providers, which own the data and mirror it out.
 >   counterpart ladder does. Without that fallback a supplier with one perfectly good
 >   contact blocked every bill for want of a pointer field nobody knew to set.
 >   `describeMissingVendorFields` names the supplier and the specific missing field.
+>   The PREVENTIVE half is the `requireSupplierContact` company setting
+>   (`apps/erp/app/modules/settings/party-contact.ts`): when on, a supplier must have
+>   an emailable contact before its supplier quote, purchase order or purchase invoice
+>   can be issued or posted, so the gap is caught while the person who can fix it is
+>   still looking at the document. Off by default and NOT flipped by the Ramp install
+>   hook — silently changing a company-wide data-entry policy as a side effect of
+>   installing an integration has no good uninstall answer. `requireCustomerContact`
+>   is its sales-side mirror, also off; no accounting provider requires a customer
+>   email (Rillet, Xero and QuickBooks all treat it as optional).
 >   `loadRampVendorSuppliers` batches the
 >   supplier→purchasing-contact/address embed. Webhook signing encoding is the one thing the
 >   public docs don't cover.

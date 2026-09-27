@@ -100,6 +100,7 @@ import {
   postingSyncSettingsValidator
 } from "~/modules/settings/settings.models";
 import {
+  getSyncOperationReadableIds,
   invalidateIntegrationHealthCache,
   upsertCompanyIntegration
 } from "~/modules/settings/settings.server";
@@ -678,6 +679,13 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   // clashing with other search params.
   let syncActivity: {
     operations: SyncOperation[];
+    /**
+     * `entityType:entityId` -> the document number a human reads
+     * (`PO000001`) plus the Carbon row id to link to. Sparse: a pulled
+     * record that never landed a Carbon row is keyed by the provider's
+     * remote id, and the table falls back to it.
+     */
+    readableIds: Record<string, { label: string; recordId: string }>;
     count: number;
     status: SyncOperationStatus | null;
     page: number;
@@ -787,6 +795,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
     syncActivity = {
       operations: operations.data,
+      readableIds: await getSyncOperationReadableIds(
+        client,
+        companyId,
+        operations.data
+      ),
       count: operations.count ?? 0,
       status: statusFilter.success ? statusFilter.data : null,
       page,
@@ -1940,6 +1953,7 @@ export default function IntegrationRoute() {
           status={syncActivity.status}
           page={syncActivity.page}
           pageSize={syncActivity.pageSize}
+          readableIds={syncActivity.readableIds}
           lastReconciliation={syncActivity.lastReconciliation}
           tieOut={syncActivity.tieOut}
         />

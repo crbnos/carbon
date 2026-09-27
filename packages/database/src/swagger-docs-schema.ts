@@ -92440,6 +92440,12 @@ export default {
             $ref: "#/parameters/rowFilter.companySettings.includeOperationsOnTraveler"
           },
           {
+            $ref: "#/parameters/rowFilter.companySettings.requireSupplierContact"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.requireCustomerContact"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -92649,6 +92655,12 @@ export default {
             $ref: "#/parameters/rowFilter.companySettings.includeOperationsOnTraveler"
           },
           {
+            $ref: "#/parameters/rowFilter.companySettings.requireSupplierContact"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.requireCustomerContact"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -92810,6 +92822,12 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.companySettings.includeOperationsOnTraveler"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.requireSupplierContact"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.requireCustomerContact"
           },
           {
             $ref: "#/parameters/body.companySettings"
@@ -150110,7 +150128,9 @@ export default {
         "showCurrencyTrailingZeros",
         "requireMfa",
         "allowLowercaseItemIds",
-        "includeOperationsOnTraveler"
+        "includeOperationsOnTraveler",
+        "requireSupplierContact",
+        "requireCustomerContact"
       ],
       properties: {
         id: {
@@ -150381,6 +150401,20 @@ export default {
         },
         includeOperationsOnTraveler: {
           default: true,
+          format: "boolean",
+          type: "boolean"
+        },
+        requireSupplierContact: {
+          default: false,
+          description:
+            "When true, a supplier must have at least one contact with an email address before its purchase orders, supplier quotes and purchase invoices can be released or posted.",
+          format: "boolean",
+          type: "boolean"
+        },
+        requireCustomerContact: {
+          default: false,
+          description:
+            "When true, a customer must have at least one contact with an email address before its quotes, sales orders and sales invoices can be released or posted.",
           format: "boolean",
           type: "boolean"
         }
@@ -200156,6 +200190,22 @@ export default {
     },
     "rowFilter.companySettings.includeOperationsOnTraveler": {
       name: "includeOperationsOnTraveler",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.companySettings.requireSupplierContact": {
+      name: "requireSupplierContact",
+      description:
+        "When true, a supplier must have at least one contact with an email address before its purchase orders, supplier quotes and purchase invoices can be released or posted.",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.companySettings.requireCustomerContact": {
+      name: "requireCustomerContact",
+      description:
+        "When true, a customer must have at least one contact with an email address before its quotes, sales orders and sales invoices can be released or posted.",
       required: false,
       in: "query",
       type: "string"

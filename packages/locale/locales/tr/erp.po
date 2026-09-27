@@ -593,6 +593,9 @@ msgstr "Bir müşteri oluşturuldu"
 msgid "A customer is deleted"
 msgstr "Bir müşteri silindi"
 
+msgid "A customer must have at least one contact with an email address before its quotes, orders and invoices can be issued or posted. The mirror of the supplier requirement under Purchasing; no integration requires it today."
+msgstr ""
+
 msgid "A customer's account manager changes"
 msgstr "Bir müşterinin hesap yöneticisi değiştirildi"
 
@@ -1009,6 +1012,9 @@ msgstr "Bir tedarikçi oluşturuldu"
 
 msgid "A supplier is deleted"
 msgstr "Bir tedarikçi silindi"
+
+msgid "A supplier must have at least one contact with an email address before its quotes, orders and invoices can be issued or posted. Spend platforms cannot create a vendor without one, so a supplier missing it has its bills rejected after the fact."
+msgstr ""
 
 msgid "A supplier return sends previously received goods back to the supplier for credit or replacement."
 msgstr "Bir tedarikçi iadesesi, daha önce alınan malları kredi veya yedek için tedarikçiye geri gönderir."
@@ -14404,6 +14410,12 @@ msgstr "Talep Edilen Tarih"
 
 msgid "Require a 6-digit code from an authenticator app when signing in."
 msgstr "Oturum açarken kimlik doğrulayıcı uygulamasından 6 haneli kod isteyini."
+
+msgid "Require a Customer Contact"
+msgstr ""
+
+msgid "Require a Supplier Contact"
+msgstr ""
 
 msgid "Require an assigned operator before the scheduler places work at a location. When on, unstaffed work centers get no work and an operation with no manned coverage shows as unschedulable. Lights-out (24×7) work centers are exempt."
 msgstr "Çizelgeleme sistemi bir lokasyon'da iş yerleştirmeden önce atanmış bir operatör gerekli kılın. Etkinleştirildiğinde, personel olmayan iş merkezleri iş almaz ve uygun personel olmayan bir operasyon zamanlanmaz olarak görünür. Tam otomasyonlu (24×7) iş merkezleri muaftır."

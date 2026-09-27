@@ -10,6 +10,7 @@ import {
   getSupplierQuoteLinePricesByQuoteId,
   getSupplierQuoteLines
 } from "~/modules/purchasing";
+import { checkPartyContactRequirement } from "~/modules/settings/party-contact.server";
 import { upsertExternalLink } from "~/modules/shared";
 import { path } from "~/utils/path";
 
@@ -33,6 +34,22 @@ export async function action(args: ActionFunctionArgs) {
     throw redirect(
       path.to.supplierQuote(id),
       await flash(request, error(quote.error, "Failed to get supplier quote"))
+    );
+  }
+
+  // A supplier with no reachable contact cannot be created as a vendor/customer at
+  // a connected platform, so its documents are rejected there long after anyone
+  // is watching. Gate at issue time, where the record can still be fixed. No-op
+  // unless the company has turned the setting on.
+  const supplierContactError = await checkPartyContactRequirement(
+    client,
+    companyId,
+    { kind: "supplier", id: quote.data.supplierId }
+  );
+  if (supplierContactError) {
+    throw redirect(
+      path.to.supplierQuote(id),
+      await flash(request, error(supplierContactError))
     );
   }
 

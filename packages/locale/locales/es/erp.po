@@ -593,6 +593,9 @@ msgstr "Se crea un cliente"
 msgid "A customer is deleted"
 msgstr "Se elimina un cliente"
 
+msgid "A customer must have at least one contact with an email address before its quotes, orders and invoices can be issued or posted. The mirror of the supplier requirement under Purchasing; no integration requires it today."
+msgstr ""
+
 msgid "A customer's account manager changes"
 msgstr "El gestor de cuenta de un cliente cambia"
 
@@ -1009,6 +1012,9 @@ msgstr "Se crea un proveedor"
 
 msgid "A supplier is deleted"
 msgstr "Se elimina un proveedor"
+
+msgid "A supplier must have at least one contact with an email address before its quotes, orders and invoices can be issued or posted. Spend platforms cannot create a vendor without one, so a supplier missing it has its bills rejected after the fact."
+msgstr ""
 
 msgid "A supplier return sends previously received goods back to the supplier for credit or replacement."
 msgstr "Una devolución de proveedor envía los bienes recibidos anteriormente de vuelta al proveedor para crédito o reemplazo."
@@ -14404,6 +14410,12 @@ msgstr "Fecha Solicitada"
 
 msgid "Require a 6-digit code from an authenticator app when signing in."
 msgstr "Requerir un código de 6 dígitos de una aplicación de autenticación al iniciar sesión."
+
+msgid "Require a Customer Contact"
+msgstr ""
+
+msgid "Require a Supplier Contact"
+msgstr ""
 
 msgid "Require an assigned operator before the scheduler places work at a location. When on, unstaffed work centers get no work and an operation with no manned coverage shows as unschedulable. Lights-out (24×7) work centers are exempt."
 msgstr "Requerir un operario asignado antes de que el programador coloque trabajo en una ubicación. Cuando está activado, los centros de trabajo sin personal no reciben trabajo y una operación sin cobertura de personal se muestra como no programable. Los centros de trabajo automáticos (24×7) están exentos."

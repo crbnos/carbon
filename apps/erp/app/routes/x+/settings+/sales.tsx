@@ -49,6 +49,7 @@ import {
   updateDefaultCustomerCc,
   updateDigitalQuoteSetting,
   updateQuoteLineCategoryMarkups,
+  updateRequireCustomerContactSetting,
   updateRfqReadySetting,
   updateSalesRuleNotificationSetting,
   updateShowCustomerReadableIdSetting
@@ -93,6 +94,22 @@ export async function action({ request }: ActionFunctionArgs) {
   const intent = formData.get("intent");
 
   switch (intent) {
+    case "requireCustomerContactToggle": {
+      const enabled = formData.get("enabled") === "true";
+      const result = await updateRequireCustomerContactSetting(
+        client,
+        companyId,
+        enabled
+      );
+      if (result.error) {
+        return { success: false, message: result.error.message };
+      }
+      return {
+        success: true,
+        message: `Customer contact requirement ${enabled ? "enabled" : "disabled"}`
+      };
+    }
+
     case "accountsReceivableAddressToggle":
       const arToggleEnabled = formData.get("enabled") === "true";
       const arToggleResult = await updateAccountsReceivableAddressSetting(
@@ -281,6 +298,25 @@ export default function SalesSettingsRoute() {
     companySettings.accountsReceivableAddress ?? false
   );
 
+  const [requireCustomerContact, setRequireCustomerContact] = useState(
+    (companySettings as { requireCustomerContact?: boolean })
+      .requireCustomerContact ?? false
+  );
+
+  const handleRequireCustomerContactToggle = useCallback(
+    (checked: boolean) => {
+      setRequireCustomerContact(checked);
+      toggleFetcher.submit(
+        {
+          intent: "requireCustomerContactToggle",
+          enabled: checked.toString()
+        },
+        { method: "POST" }
+      );
+    },
+    [toggleFetcher]
+  );
+
   const handleArAddressToggle = useCallback(
     (checked: boolean) => {
       setArAddressEnabled(checked);
@@ -387,6 +423,30 @@ export default function SalesSettingsRoute() {
               </Submit>
             </CardFooter>
           </ValidatedForm>
+        </Card>
+        <Card>
+          <CardHeader>
+            <HStack className="justify-between items-center">
+              <div>
+                <CardTitle>
+                  <Trans>Require a Customer Contact</Trans>
+                </CardTitle>
+                <CardDescription>
+                  <Trans>
+                    A customer must have at least one contact with an email
+                    address before its quotes, orders and invoices can be issued
+                    or posted. The mirror of the supplier requirement under
+                    Purchasing; no integration requires it today.
+                  </Trans>
+                </CardDescription>
+              </div>
+              <Switch
+                checked={requireCustomerContact}
+                onCheckedChange={handleRequireCustomerContactToggle}
+                disabled={toggleFetcher.state !== "idle"}
+              />
+            </HStack>
+          </CardHeader>
         </Card>
         <Card>
           <CardHeader>

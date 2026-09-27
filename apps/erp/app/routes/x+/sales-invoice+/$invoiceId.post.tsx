@@ -44,6 +44,7 @@ import {
 import { getCustomerContact, updateCustomerContact } from "~/modules/sales";
 import { recordSalesRuleOutcome } from "~/modules/sales/sales.server";
 import { getCompany } from "~/modules/settings";
+import { checkPartyContactRequirement } from "~/modules/settings/party-contact.server";
 import { getCompanyTimeZone } from "~/modules/shared/timezone.server";
 import { getUser } from "~/modules/users/users.server";
 import { loader as pdfLoader } from "~/routes/file+/sales-invoice+/$id[.]pdf";
@@ -502,6 +503,25 @@ export async function action(args: ActionFunctionArgs) {
       success: false,
       message: "Could not find invoiceId"
     };
+  }
+
+  // Mirror of the supplier gate on the purchasing side. Off by default and
+  // nothing downstream forces it today — Rillet, Xero and QuickBooks all treat a
+  // customer email as optional — so this only fires for a company that has asked
+  // for the policy. It exists so the two sides behave the same when they do.
+  const invoiceCustomer = await client
+    .from("salesInvoice")
+    .select("customerId")
+    .eq("id", invoiceId)
+    .maybeSingle();
+
+  const customerContactError = await checkPartyContactRequirement(
+    client,
+    companyId,
+    { kind: "customer", id: invoiceCustomer.data?.customerId }
+  );
+  if (customerContactError) {
+    return { success: false, message: customerContactError };
   }
 
   let file: ArrayBuffer;

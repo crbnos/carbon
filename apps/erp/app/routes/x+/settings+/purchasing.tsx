@@ -48,6 +48,7 @@ import {
   updateDefaultSupplierCc,
   updateLeadTimesOnReceiptSetting,
   updatePurchasePriceUpdateTimingSetting,
+  updateRequireSupplierContactSetting,
   updateShowSupplierReadableIdSetting,
   updateSupplierQuoteNotificationSetting
 } from "~/modules/settings";
@@ -121,6 +122,25 @@ export async function action({ request }: ActionFunctionArgs) {
         success: true,
         message: `Accounts payable billing address ${apToggleEnabled ? "enabled" : "disabled"}`
       };
+
+    case "requireSupplierContactToggle": {
+      const enabled = formData.get("enabled") === "true";
+      const result = await updateRequireSupplierContactSetting(
+        client,
+        companyId,
+        enabled
+      );
+      if (result.error) {
+        logger.error("Failed to update require supplier contact", {
+          error: result.error
+        });
+        return { success: false, message: result.error.message };
+      }
+      return {
+        success: true,
+        message: `Supplier contact requirement ${enabled ? "enabled" : "disabled"}`
+      };
+    }
 
     case "purchasePriceUpdateTiming":
       const validation = await validator(
@@ -316,6 +336,11 @@ export default function PurchasingSettingsRoute() {
     companySettings.accountsPayableAddress ?? false
   );
 
+  const [requireSupplierContact, setRequireSupplierContact] = useState(
+    (companySettings as { requireSupplierContact?: boolean })
+      .requireSupplierContact ?? false
+  );
+
   const [leadTimesOnReceiptEnabled, setLeadTimesOnReceiptEnabled] = useState(
     (companySettings as { updateLeadTimesOnReceipt?: boolean })
       .updateLeadTimesOnReceipt ?? false
@@ -329,6 +354,20 @@ export default function PurchasingSettingsRoute() {
       setShowSupplierReadableIdEnabled(checked);
       toggleFetcher.submit(
         { intent: "showSupplierReadableIdToggle", enabled: checked.toString() },
+        { method: "POST" }
+      );
+    },
+    [toggleFetcher]
+  );
+
+  const handleRequireSupplierContactToggle = useCallback(
+    (checked: boolean) => {
+      setRequireSupplierContact(checked);
+      toggleFetcher.submit(
+        {
+          intent: "requireSupplierContactToggle",
+          enabled: checked.toString()
+        },
         { method: "POST" }
       );
     },
@@ -427,6 +466,32 @@ export default function PurchasingSettingsRoute() {
               </Submit>
             </CardFooter>
           </ValidatedForm>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <HStack className="justify-between items-center">
+              <div>
+                <CardTitle>
+                  <Trans>Require a Supplier Contact</Trans>
+                </CardTitle>
+                <CardDescription>
+                  <Trans>
+                    A supplier must have at least one contact with an email
+                    address before its quotes, orders and invoices can be issued
+                    or posted. Spend platforms cannot create a vendor without
+                    one, so a supplier missing it has its bills rejected after
+                    the fact.
+                  </Trans>
+                </CardDescription>
+              </div>
+              <Switch
+                checked={requireSupplierContact}
+                onCheckedChange={handleRequireSupplierContactToggle}
+                disabled={toggleFetcher.state !== "idle"}
+              />
+            </HStack>
+          </CardHeader>
         </Card>
 
         <Card>

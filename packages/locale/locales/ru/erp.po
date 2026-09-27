@@ -593,6 +593,9 @@ msgstr "Покупатель создан."
 msgid "A customer is deleted"
 msgstr "Покупатель удален."
 
+msgid "A customer must have at least one contact with an email address before its quotes, orders and invoices can be issued or posted. The mirror of the supplier requirement under Purchasing; no integration requires it today."
+msgstr ""
+
 msgid "A customer's account manager changes"
 msgstr "Изменился менеджер аккаунта покупателя."
 
@@ -1009,6 +1012,9 @@ msgstr "Поставщик создан"
 
 msgid "A supplier is deleted"
 msgstr "Поставщик удален"
+
+msgid "A supplier must have at least one contact with an email address before its quotes, orders and invoices can be issued or posted. Spend platforms cannot create a vendor without one, so a supplier missing it has its bills rejected after the fact."
+msgstr ""
 
 msgid "A supplier return sends previously received goods back to the supplier for credit or replacement."
 msgstr "Возврат поставщику отправляет ранее полученный товар обратно поставщику для получения кредита или замены."
@@ -14404,6 +14410,12 @@ msgstr "Запрошенная дата"
 
 msgid "Require a 6-digit code from an authenticator app when signing in."
 msgstr "Требовать 6-значный код из приложения-аутентификатора при входе."
+
+msgid "Require a Customer Contact"
+msgstr ""
+
+msgid "Require a Supplier Contact"
+msgstr ""
 
 msgid "Require an assigned operator before the scheduler places work at a location. When on, unstaffed work centers get no work and an operation with no manned coverage shows as unschedulable. Lights-out (24×7) work centers are exempt."
 msgstr "Требовать назначенного оператора перед размещением планировщиком работ на площадке. Когда включено, рабочие центры без персонала не получают работу, а операция без назначенного оператора отображается как невозможная для планирования. Круглосуточные (24×7) рабочие центры освобождены от этого требования."
