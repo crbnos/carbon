@@ -14,7 +14,7 @@
 
 import * as fs from "fs";
 import * as path from "path";
-import { Node, Project, type Type } from "ts-morph";
+import { Node, Project, type SourceFile, type Type } from "ts-morph";
 
 export type JsonSchema = Record<string, unknown>;
 
@@ -103,14 +103,27 @@ export function typeToJsonSchema(
   type: Type,
   at: Node,
   depth = 0,
-  seen: ReadonlySet<string> = new Set()
+  seen: ReadonlySet<string> = new Set(),
+  opts: WalkOptions = {}
 ): JsonSchema {
   if (depth > MAX_DEPTH) return {};
 
   if (type.isString()) return { type: "string" };
   if (type.isNumber()) return { type: "number" };
   if (type.isBoolean()) return { type: "boolean" };
-  if (type.isNull() || type.isUndefined()) return { type: "null" };
+  if (opts.input) {
+    // A request carries JSON, which has no undefined: an undefined member makes
+    // the property optional (see `isOptionalProperty`), never a null value.
+    if (type.isNull()) return { type: "null" };
+    if (type.isUndefined()) return {};
+    // `Json` is any JSON value. Expanding its recursive union publishes a
+    // five-member anyOf that says nothing more than "any value".
+    if (isJsonAlias(type)) return {};
+    // Dates cross the wire as ISO strings.
+    if (type.getSymbol()?.getName() === "Date") return { type: "string" };
+  } else if (type.isNull() || type.isUndefined()) {
+    return { type: "null" };
+  }
   if (type.isAny() || type.isUnknown()) return {};
   if (type.isStringLiteral()) {
     return { type: "string", enum: [type.getLiteralValue()] };
@@ -124,11 +137,30 @@ export function typeToJsonSchema(
     const element = type.getArrayElementType();
     return {
       type: "array",
-      items: element ? typeToJsonSchema(element, at, depth + 1, seen) : {}
+      items: element
+        ? typeToJsonSchema(element, at, depth + 1, seen, opts)
+        : {}
     };
   }
 
-  if (type.isUnion()) return unionToJsonSchema(type, at, depth, seen);
+  // A fixed-length tuple (`[number, number, number]`) is an array of exactly
+  // that many elements.
+  if (opts.input && type.isTuple()) {
+    const elements = dedupe(
+      type
+        .getTupleElements()
+        .map((t) => typeToJsonSchema(t, at, depth + 1, seen, opts))
+    );
+    const length = type.getTupleElements().length;
+    return {
+      type: "array",
+      items: elements.length === 1 ? elements[0] : { anyOf: elements },
+      minItems: length,
+      maxItems: length
+    };
+  }
+
+  if (type.isUnion()) return unionToJsonSchema(type, at, depth, seen, opts);
 
   if (type.isObject()) {
     const symbolName = type.getSymbol()?.getName();
@@ -157,7 +189,8 @@ export function typeToJsonSchema(
           indexValue,
           at,
           depth + 1,
-          nextSeen
+          nextSeen,
+          opts
         )
       };
     }
@@ -178,9 +211,13 @@ export function typeToJsonSchema(
         propertyType,
         at,
         depth + 1,
-        nextSeen
+        nextSeen,
+        opts
       );
-      if (!property.isOptional()) required.push(property.getName());
+      const optional = opts.input
+        ? isOptionalProperty(property, propertyType)
+        : property.isOptional();
+      if (!optional) required.push(property.getName());
     }
 
     const out: JsonSchema = { type: "object", properties: shape };
@@ -195,11 +232,20 @@ function unionToJsonSchema(
   type: Type,
   at: Node,
   depth: number,
-  seen: ReadonlySet<string>
+  seen: ReadonlySet<string>,
+  opts: WalkOptions
 ): JsonSchema {
   const members = type.getUnionTypes();
   const concrete = members.filter((t) => !t.isNull() && !t.isUndefined());
-  const nullable = concrete.length !== members.length;
+  // Input side: only null makes a value nullable; undefined makes the
+  // property optional and is handled by the caller.
+  const nullable = opts.input
+    ? members.some((t) => t.isNull())
+    : concrete.length !== members.length;
+  if (opts.input && isJsonAlias(type)) return {};
+  if (opts.input && concrete.length === 0) {
+    return nullable ? { type: "null" } : {};
+  }
 
   // A union of string literals is an enum — the single most useful thing this
   // reflection recovers, and invisible in a hand-written response example.
@@ -216,7 +262,7 @@ function unionToJsonSchema(
   }
 
   if (concrete.length === 1) {
-    const inner = typeToJsonSchema(concrete[0], at, depth, seen);
+    const inner = typeToJsonSchema(concrete[0], at, depth, seen, opts);
     if (nullable && typeof inner.type === "string") {
       return { ...inner, type: [inner.type, "null"] };
     }
@@ -228,7 +274,7 @@ function unionToJsonSchema(
   // identical `{type:"boolean"}` members. The all-boolean shortcut above only fires
   // when every member is a boolean literal, so mixed unions need this.
   const anyOf = dedupe(
-    concrete.map((t) => typeToJsonSchema(t, at, depth + 1, seen))
+    concrete.map((t) => typeToJsonSchema(t, at, depth + 1, seen, opts))
   );
   if (anyOf.length === 1 && !nullable) return anyOf[0];
   return nullable ? { anyOf: [...anyOf, { type: "null" }] } : { anyOf };
@@ -246,6 +292,40 @@ function dedupe(schemas: JsonSchema[]): JsonSchema[] {
   return out;
 }
 
+/** Walk options. `input` switches to request semantics (see `typeToJsonSchema`). */
+export interface WalkOptions {
+  /**
+   * Describe a value a caller SENDS rather than one it receives: `undefined`
+   * makes a property optional instead of nullable, `Date` is an ISO string, and
+   * `Json` is left open.
+   */
+  input?: boolean;
+}
+
+/** The generated database `Json` type, alone or with null/undefined. */
+export function isJsonAlias(type: Type): boolean {
+  if (type.getAliasSymbol()?.getName() === "Json") return true;
+  return /^(?:import\([^)]*\)\.)?Json(?: \| (?:null|undefined))*$/.test(
+    type.getText()
+  );
+}
+
+/** Does the type admit `undefined` (a `T | undefined` union, or bare undefined)? */
+export function admitsUndefined(type: Type): boolean {
+  // any/unknown say nothing about undefined; treating them as optional would
+  // let a caller omit a value the service never checks for.
+  if (type.isUndefined()) return true;
+  return type.isUnion() && type.getUnionTypes().some((t) => t.isUndefined());
+}
+
+/** Input-side optionality: a `?` property, or one whose type admits undefined. */
+export function isOptionalProperty(
+  property: { isOptional(): boolean },
+  propertyType: Type
+): boolean {
+  return property.isOptional() || admitsUndefined(propertyType);
+}
+
 export interface ResponseSchemaIndex {
   /** `{module}_{fn}` → response schema, absent when nothing useful was derived. */
   get(module: string, functionName: string): JsonSchema | null;
@@ -260,14 +340,24 @@ function isUseful(schema: JsonSchema): boolean {
   return !(keys.length === 1 && schema.type === "object");
 }
 
+/** One module's scanned source file, as loaded into the shared ts-morph project. */
+export interface ServiceSource {
+  mod: string;
+  source: SourceFile;
+}
+
+/** The ts-morph project over every scanned service file, loaded once per run. */
+export interface ServiceProject {
+  project: Project;
+  sources: ServiceSource[];
+}
+
 /**
- * Reflect every module's service functions once. Loading the TS project is the
- * expensive part (~4s), so it happens here and the result is a plain lookup the
- * synchronous manifest builder can consult.
+ * Load every module's scanned service files (`.service.ts`, `.ee.service.ts`,
+ * `.mcp.server.ts`) into one ts-morph project. Loading is the expensive part
+ * (~4s), so the response and input reflections share one instance.
  */
-export function buildResponseSchemaIndex(
-  modules: readonly string[]
-): ResponseSchemaIndex {
+export function loadServiceProject(modules: readonly string[]): ServiceProject {
   const project = new Project({
     tsConfigFilePath: path.join(ERP_ROOT, "tsconfig.json"),
     skipAddingFilesFromTsConfig: true
@@ -280,6 +370,18 @@ export function buildResponseSchemaIndex(
       .map((entry) => ({ mod: entry.mod, source: project.addSourceFileAtPath(entry.file) }))
   );
   project.resolveSourceFileDependencies();
+  return { project, sources };
+}
+
+/**
+ * Reflect every module's service functions once. The result is a plain lookup
+ * the synchronous manifest builder can consult.
+ */
+export function buildResponseSchemaIndex(
+  modules: readonly string[],
+  loaded: ServiceProject = loadServiceProject(modules)
+): ResponseSchemaIndex {
+  const { sources } = loaded;
 
   const schemas = new Map<string, JsonSchema>();
   const stats = { functions: 0, derived: 0, empty: 0 };
