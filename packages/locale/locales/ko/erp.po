@@ -594,7 +594,7 @@ msgid "A customer is deleted"
 msgstr "고객이 삭제됨"
 
 msgid "A customer must have at least one contact with an email address before its quotes, orders and invoices can be issued or posted. The mirror of the supplier requirement under Purchasing; no integration requires it today."
-msgstr ""
+msgstr "고객은 견적, 주문 및 송장을 발행하거나 게시하기 전에 이메일 주소가 있는 연락처를 최소 1개 이상 보유해야 합니다. 구매 부서의 공급업체 요구사항을 반영한 것이며, 현재 이를 요구하는 통합은 없습니다."
 
 msgid "A customer's account manager changes"
 msgstr "고객의 담당자가 변경됨"
@@ -1014,7 +1014,7 @@ msgid "A supplier is deleted"
 msgstr "공급업체가 삭제됨"
 
 msgid "A supplier must have at least one contact with an email address before its quotes, orders and invoices can be issued or posted. Spend platforms cannot create a vendor without one, so a supplier missing it has its bills rejected after the fact."
-msgstr ""
+msgstr "공급업체는 견적, 주문 및 송장을 발행하거나 게시하기 전에 이메일 주소가 있는 연락처를 최소 하나 이상 보유해야 합니다. 지출 플랫폼은 이것 없이 공급업체를 생성할 수 없으므로 이것이 없는 공급업체는 나중에 청구서가 거부됩니다."
 
 msgid "A supplier return sends previously received goods back to the supplier for credit or replacement."
 msgstr "공급업체 반품은 이전에 받은 상품을 교환 또는 교체를 위해 공급업체에 다시 보냅니다."
@@ -14412,10 +14412,10 @@ msgid "Require a 6-digit code from an authenticator app when signing in."
 msgstr "로그인 시 인증 앱의 6자리 코드를 입력하세요."
 
 msgid "Require a Customer Contact"
-msgstr ""
+msgstr "고객 연락처 필수"
 
 msgid "Require a Supplier Contact"
-msgstr ""
+msgstr "공급업체 연락처 필수"
 
 msgid "Require an assigned operator before the scheduler places work at a location. When on, unstaffed work centers get no work and an operation with no manned coverage shows as unschedulable. Lights-out (24×7) work centers are exempt."
 msgstr "스케줄러가 사업장에 작업을 배치하기 전에 할당된 작업자를 요구하세요. 활성화되면 인력이 부족한 작업장은 작업을 받지 않으며 배치된 작업자가 없는 공정은 일정을 잡을 수 없는 것으로 표시됩니다. 조명 없는(24×7) 작업장은 제외됩니다."

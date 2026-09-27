@@ -594,7 +594,7 @@ msgid "A customer is deleted"
 msgstr "得意先が削除されました"
 
 msgid "A customer must have at least one contact with an email address before its quotes, orders and invoices can be issued or posted. The mirror of the supplier requirement under Purchasing; no integration requires it today."
-msgstr ""
+msgstr "顧客は、見積書、注文書、請求書を発行または転記する前に、メールアドレスを持つ少なくとも1つの連絡先を持つ必要があります。これは購買部門の仕入先要件の対応物です。現在、統合がこれを要求していません。"
 
 msgid "A customer's account manager changes"
 msgstr "得意先のアカウント マネージャーが変わりました"
@@ -1014,7 +1014,7 @@ msgid "A supplier is deleted"
 msgstr "仕入先が削除される"
 
 msgid "A supplier must have at least one contact with an email address before its quotes, orders and invoices can be issued or posted. Spend platforms cannot create a vendor without one, so a supplier missing it has its bills rejected after the fact."
-msgstr ""
+msgstr "サプライヤーは、見積書、注文書、請求書を発行または転記する前に、メールアドレスを持つ連絡先を少なくとも1つ持つ必要があります。支出プラットフォームはそれなしでベンダーを作成できないため、それが不足しているサプライヤーは後で請求書が拒否されます。"
 
 msgid "A supplier return sends previously received goods back to the supplier for credit or replacement."
 msgstr "仕入先への返品は、以前受け取った商品を仕入先に返品してクレジットまたは交換を受けます。"
@@ -14412,10 +14412,10 @@ msgid "Require a 6-digit code from an authenticator app when signing in."
 msgstr "サインイン時に認証器アプリから6桁のコードが必要です。"
 
 msgid "Require a Customer Contact"
-msgstr ""
+msgstr "顧客連絡先が必須"
 
 msgid "Require a Supplier Contact"
-msgstr ""
+msgstr "仕入先の連絡先が必須"
 
 msgid "Require an assigned operator before the scheduler places work at a location. When on, unstaffed work centers get no work and an operation with no manned coverage shows as unschedulable. Lights-out (24×7) work centers are exempt."
 msgstr "スケジューラがある拠点に作業を配置する前に、割当済の作業者を必要とします。オンの場合、スタッフなしの作業区は作業を取得せず、配置された人員がいない工程はスケジュール不可として表示されます。ライトアウト（24×7）作業区は除外されます。"

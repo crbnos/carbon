@@ -594,7 +594,7 @@ msgid "A customer is deleted"
 msgstr "Un cliente è eliminato"
 
 msgid "A customer must have at least one contact with an email address before its quotes, orders and invoices can be issued or posted. The mirror of the supplier requirement under Purchasing; no integration requires it today."
-msgstr ""
+msgstr "Un cliente deve avere almeno un contatto con un indirizzo email prima che i suoi preventivi, ordini e fatture possano essere emessi o registrati. Lo specchio del requisito del fornitore in Acquisti; nessuna integrazione lo richiede oggi."
 
 msgid "A customer's account manager changes"
 msgstr "Il gestore account del cliente cambia"
@@ -1014,7 +1014,7 @@ msgid "A supplier is deleted"
 msgstr "Un fornitore è eliminato"
 
 msgid "A supplier must have at least one contact with an email address before its quotes, orders and invoices can be issued or posted. Spend platforms cannot create a vendor without one, so a supplier missing it has its bills rejected after the fact."
-msgstr ""
+msgstr "Un fornitore deve avere almeno un contatto con un indirizzo email prima che i suoi preventivi, ordini e fatture possano essere emessi o registrati. Le piattaforme di spesa non possono creare un fornitore senza uno, quindi un fornitore che ne manca ha le sue fatture rifiutate dopo il fatto."
 
 msgid "A supplier return sends previously received goods back to the supplier for credit or replacement."
 msgstr "Un reso fornitore invia merce precedentemente ricevuta al fornitore per credito o sostituzione."
@@ -14412,10 +14412,10 @@ msgid "Require a 6-digit code from an authenticator app when signing in."
 msgstr "Richiedi un codice a 6 cifre dall'app autenticatore al momento dell'accesso."
 
 msgid "Require a Customer Contact"
-msgstr ""
+msgstr "Richiedi un Contatto Cliente"
 
 msgid "Require a Supplier Contact"
-msgstr ""
+msgstr "Richiedi un Contatto Fornitore"
 
 msgid "Require an assigned operator before the scheduler places work at a location. When on, unstaffed work centers get no work and an operation with no manned coverage shows as unschedulable. Lights-out (24×7) work centers are exempt."
 msgstr "Richiedi un operatore assegnato prima che lo scheduler assegni il lavoro a un'ubicazione. Quando attivato, i centri di lavoro non staffati non ricevono lavoro e un'operazione senza copertura di manodopera appare come non programmabile. I centri di lavoro lights-out (24×7) sono esentati."
