@@ -134,6 +134,38 @@ Notes that match real code:
 - Pure `insert{Thing}` functions exist where there's never an update path (e.g.
   `insertCustomerContact`, `insertManualInventoryAdjustment`).
 
+### Every exported service is also an API/MCP operation
+
+The generator publishes every named export of a `*.service.ts` (see
+`mcp-tools-reference.md`), so an API caller reaches the service WITHOUT the
+route in front of it. Anything the route did before calling is a bridge the
+API caller never crosses:
+
+- **Write shape lives in the service.** Drop form-only keys (a link row's id,
+  a location id that belongs on another table) inside the service, and write
+  a sibling table whenever its field is sent — never only inside an
+  `if (customFields)` branch the form always happened to take
+  (`updateCustomerContact`, `updateCustomerLocation`).
+- **Type literal writes against the table**: `{ … } satisfies
+  TablesInsert<"t">` / `TablesUpdate<"t">` (`@carbon/database`). postgrest-js
+  lets a phantom column compile; PostgREST refuses it with PGRST204. Enforced
+  by `service-write-satisfies-table-type` (`@carbon/checks`). A payload you
+  spread whole must only carry the table's columns — `Omit<>` validator
+  fields the table lacks so the manifest stops advertising them.
+- **Readable numbers are allocated in the create branch** with
+  `getOrAllocateReadableId(client, sequence, companyId, provided)`
+  (`modules/shared/readable-id.ts`): a typed number is kept, a blank one
+  allocated. Routes pass the typed value and never allocate.
+- **Transforms live in the validator.** A rich-text json column is fed by an
+  `optionalTiptapDoc` field (or a service field typed
+  `z.infer<typeof optionalTiptapDoc>`), never `string` or `Json`; dispatch runs
+  that field's transform for API callers. A route that `JSON.parse`s a field
+  before calling is the same smell.
+- **Full-replace stays.** A blank form field arrives as `undefined` and
+  `sanitize` / `?? null` turn it into a clear; that is how the UI clears.
+  Whether API partial updates should overlay the stored row is an open
+  product decision — do not switch a service to presence-only semantics.
+
 ## Delete
 
 ```typescript
@@ -197,7 +229,8 @@ route-wiring example is in [database-patterns.md](database-patterns.md#transacti
 
 ## Calling out to other helpers
 
-- **Sequence numbers**: `getNextSequence(client, table, companyId)`
+- **Readable numbers on create**: `getOrAllocateReadableId` (above). For a bare
+  read of the next value: `getNextSequence(client, table, companyId)`
   (`~/modules/settings`) calls the `get_next_sequence` RPC and returns `{ data, error }`
   like any other service call — await and check `error` before using `data`. Note the arg
   order: `(client, table, companyId)`.
@@ -224,6 +257,7 @@ route-wiring example is in [database-patterns.md](database-patterns.md#transacti
 - [ ] List queries scope `.eq("companyId", companyId)` and run `setGenericQueryFilters`.
 - [ ] `.select(...)` + `.single()`/`.maybeSingle()` after insert/update to return the row.
 - [ ] Update payloads wrapped in `sanitize(...)`.
+- [ ] Literal writes carry `satisfies TablesInsert<"t">` / `TablesUpdate<"t">`; nothing the route strips or allocates is left for the route to do.
 - [ ] Multi-row writes use a Kysely transaction (`db.transaction().execute`).
 - [ ] Exported from the module barrel (ERP).
 

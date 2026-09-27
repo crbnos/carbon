@@ -36,6 +36,7 @@ describe("serviceWriteSatisfiesTableType", () => {
       '    .from("item")',
       "    .update({",
       "      name: x, // a comment with a } brace",
+      // biome-ignore lint/suspicious/noTemplateCurlyInString: the scanned source holds a template literal
       '      description: `text ${"}"}`',
       '    } satisfies TablesUpdate<"item">);',
       "}"
