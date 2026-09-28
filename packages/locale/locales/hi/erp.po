@@ -297,6 +297,12 @@ msgstr "{count, plural, one {# शेष राशि वाला खाता}
 msgid "{count, plural, one {# course} other {# courses}}"
 msgstr "{count, plural, one {# कोर्स} other {# कोर्स}}"
 
+msgid "{count} of {total} units"
+msgstr ""
+
+msgid "{count} units"
+msgstr ""
+
 msgid "{days}d"
 msgstr "{days}d"
 
@@ -489,6 +495,9 @@ msgstr "1 समस्या — प्रकाशित नहीं"
 
 msgid "1 suggested batch"
 msgstr "1 सुझाया गया बैच"
+
+msgid "1 unit"
+msgstr ""
 
 msgid "1 unposted document"
 msgstr "1 अपोस्ट किया गया दस्तावेज़"
@@ -913,6 +922,9 @@ msgstr "एक किराये की पंक्ति एक बिक्�
 msgid "A rental that meets any of the five ASC 842 lease tests, booked as a sale when its agreement activates: the unit leaves the fleet, lease revenue and cost of goods sold post, and a net investment in the lease takes its place."
 msgstr "एक किराया जो किसी भी पाँच ASC 842 लीज परीक्षण को पूरा करता है, बिक्रय के रूप में बुक किया जाता है जब इसका समझौता सक्रिय होता है: इकाई बेड़े को छोड़ देती है, लीज राजस्व और बेचे गए माल की लागत पोस्ट होती है, और लीज में शुद्ध निवेश इसकी जगह लेता है।"
 
+msgid "A rental treated as a sale must be in the company's base currency. Change the agreement currency or override the treatment."
+msgstr ""
+
 msgid "A return merchandise authorization (RMA) authorizes a customer to return goods for credit, replacement, or repair."
 msgstr "एक रिटर्न मर्चेंडाइज ऑथराइजेशन (RMA) एक ग्राहक को क्रेडिट, प्रतिस्थापन या मरम्मत के लिए सामान वापस करने का अधिकार देता है।"
 
@@ -981,9 +993,6 @@ msgstr "एक विक्रय कोटेशन अनुरोध (RFQ) �
 
 msgid "A sales RFQ (a customer asks you to quote) or a purchasing RFQ (you ask suppliers); both feed the opportunity thread."
 msgstr "एक बिक्रय RFQ (एक ग्राहक आपको उद्धृत करने के लिए कहता है) या खरीद RFQ (आप आपूर्तिकर्ताओं से पूछते हैं); दोनों अवसर धागे को खिलाते हैं।"
-
-msgid "A sales-type lease must be in the company's base currency. Change the agreement currency or override the classification."
-msgstr "एक बिक्रय-प्रकार लीज कंपनी की मूल मुद्रा में होना चाहिए। समझौते की मुद्रा बदलें या वर्गीकरण को ओवरराइड करें।"
 
 msgid "A scoped secret sent on the carbon-key request header that authenticates programmatic calls to Carbon, carrying its own permissions and rate limit rather than a user session's."
 msgstr "कार्बन-कुंजी अनुरोध हेडर पर भेजा गया एक स्कोप्ड गोपनीय जो कार्बन के लिए प्रोग्रामेटिक कॉल को प्रमाणित करता है, उपयोगकर्ता सत्र की बजाय अपनी स्वयं की अनुमतियां और दर सीमा ले जाता है।"
@@ -1083,6 +1092,9 @@ msgstr "एक जॉब ऑपरेशन के विरुद्ध लॉ�
 
 msgid "A tool is a physical item used to make a part that can be used across multiple jobs"
 msgstr "एक टूल एक भौतिक आइटम है जिसका उपयोग एक पार्ट बनाने के लिए किया जाता है जिसे कई जॉब में उपयोग किया जा सकता है"
+
+msgid "A unit is treated as a sale when any of these is true, and as a rental otherwise."
+msgstr ""
 
 msgid "A user records the expiry date on each batch or serial when the goods are received. Use when suppliers ship lots with different expiry dates."
 msgstr "एक उपयोगकर्ता प्रत्येक बैच या सीरीज पर समाप्ति तिथि दर्ज करता है जब माल प्राप्त होता है। जब आपूर्तिकर्ता विभिन्न समाप्ति तिथियों के साथ लॉट भेजते हैं तो इसका उपयोग करें।"
@@ -1216,6 +1228,12 @@ msgstr "लेखांकन अवधि"
 
 msgid "Accounting Periods"
 msgstr "लेखांकन अवधि"
+
+msgid "Accounting treatment"
+msgstr ""
+
+msgid "Accounting treatment inputs"
+msgstr ""
 
 msgid "Accounting: GL, AR, AP, and month-end close"
 msgstr "लेखांकन: सामान्य खाता बही, प्राप्य खाते, देय खाते, और माह-अंत बंद"
@@ -1947,8 +1965,8 @@ msgstr "किसी आइटम का ट्रैकिंग प्रक�
 msgid "An item's unit of measure changes"
 msgstr "किसी आइटम की माप की इकाई बदलती है"
 
-msgid "An open-ended agreement is always an operating lease: a sales-type lease needs an end date."
-msgstr "एक खुले समाप्ति वाला समझौता हमेशा एक परिचालन लीज होता है: एक बिक्रय-प्रकार लीज को एक समाप्ति तिथि की आवश्यकता होती है।"
+msgid "An open-ended agreement is always treated as a rental: a sale needs an end date."
+msgstr ""
 
 msgid "An operation done by an outside supplier rather than an in-house work center, covered by a subcontracting purchase order."
 msgstr "एक आपूर्तिकर्ता द्वारा किया गया एक ऑपरेशन एक इन-हाउस वर्क सेंटर के बजाय, एक उप-अनुबंध क्रय आदेश द्वारा कवर किया गया।"
@@ -3770,6 +3788,9 @@ msgstr "अवधि के अंत तक किसी भी आइटम �
 
 msgid "Check your email"
 msgstr "अपना ईमेल जांचें"
+
+msgid "Checked for each unit once units are added"
+msgstr ""
 
 msgid "Checking Stripe for this customer…"
 msgstr "इस ग्राहक के लिए Stripe की जांच की जा रही है…"
@@ -6216,6 +6237,9 @@ msgstr "आयाम"
 msgid "Direct"
 msgstr "सीधा"
 
+msgid "Direct financing lease"
+msgstr ""
+
 msgid "Direct message to each recipient in your Slack workspace."
 msgstr "आपके Slack वर्कस्पेस में प्रत्येक प्राप्तकर्ता को सीधा संदेश।"
 
@@ -6651,9 +6675,6 @@ msgstr "प्रत्येक, lb, ft…"
 
 msgid "Earliest operation start"
 msgstr "सबसे पहले संचालन शुरू"
-
-msgid "Early termination of a sales-type lease is a manual journal."
-msgstr "एक बिक्रय-प्रकार लीज की प्रारंभिक समाप्ति एक मैनुअल जर्नल है।"
 
 msgid "Easier to extend"
 msgstr "विस्तार करना आसान"
@@ -7147,6 +7168,9 @@ msgstr "समाप्त"
 #. placeholder {0}: parentCurrency ?? "Translated"
 msgid "Ending ({0})"
 msgstr "समाप्त ({0})"
+
+msgid "Ending a rental treated as a sale early is a manual journal."
+msgstr ""
 
 msgid "Ends"
 msgstr "समाप्त होता है"
@@ -8124,6 +8148,9 @@ msgstr "एक वित्तीय महीने को खुला → ल
 msgid "Financial Statements"
 msgstr "वित्तीय विवरण"
 
+msgid "Financing"
+msgstr ""
+
 msgid "finish"
 msgstr "तैयार माल"
 
@@ -8606,11 +8633,17 @@ msgstr "पहली बार ही सही तरीके से लाइ
 msgid "Go to {0}"
 msgstr "{0} पर जाएं"
 
+msgid "Go to depreciation runs"
+msgstr ""
+
 msgid "Go to implementation hub"
 msgstr "कार्यान्वयन हब पर जाएं"
 
 msgid "Go to module"
 msgstr "मॉड्यूल पर जाएं"
+
+msgid "Go to revenue recognition runs"
+msgstr ""
 
 msgid "Go to that week"
 msgstr "उस सप्ताह पर जाएं"
@@ -8770,9 +8803,6 @@ msgstr "छुट्टी का नाम"
 
 msgid "Holidays"
 msgstr "छुट्टियाँ"
-
-msgid "Home Location"
-msgstr "मुख्य स्थान"
 
 msgid "Home Phone"
 msgstr "होम फोन"
@@ -9962,9 +9992,6 @@ msgstr "अधिक जानें"
 msgid "Lease Classification"
 msgstr "लीज वर्गीकरण"
 
-msgid "Lease classification inputs"
-msgstr "पट्टा वर्गीकरण इनपुट"
-
 msgid "Lease Revenue"
 msgstr "पट्टा राजस्व"
 
@@ -9979,9 +10006,6 @@ msgstr "बिल्ट-इन के लिए खाली छोड़ें"
 
 msgid "Leave blank to use the next revision automatically"
 msgstr "अगले रिवीजन को स्वचालित रूप से उपयोग करने के लिए खाली छोड़ें"
-
-msgid "Leave empty for an open-ended agreement"
-msgstr "खुली अवधि के समझौते के लिए खाली छोड़ें"
 
 msgid "Leave empty for exact match"
 msgstr "सटीक मिलान के लिए खाली छोड़ें"
@@ -12121,6 +12145,9 @@ msgstr "कॉन्फ़िगर नहीं किया गया"
 msgid "Not enough jobs to cover quantity"
 msgstr "मात्रा को कवर करने के लिए पर्याप्त जॉबें नहीं हैं"
 
+msgid "Not enough unit data"
+msgstr ""
+
 msgid "Not feasible"
 msgstr "संभव नहीं"
 
@@ -12555,9 +12582,6 @@ msgstr "इस संपत्ति को Carbon में जोड़े ज
 msgid "Opening Balances"
 msgstr "प्रारंभिक शेष राशि"
 
-msgid "Operating"
-msgstr "परिचालन"
-
 msgid "Operating Expenses"
 msgstr "परिचालन व्यय"
 
@@ -12566,6 +12590,9 @@ msgstr "परिचालन घंटे"
 
 msgid "Operating Income"
 msgstr "परिचालन आय"
+
+msgid "Operating lease"
+msgstr ""
 
 msgid "operation"
 msgstr "ऑपरेशन"
@@ -13430,9 +13457,6 @@ msgstr "प्रारंभिक शेष राशि पोस्ट क�
 msgid "Post Receipt"
 msgstr "रसीद पोस्ट करें"
 
-msgid "Post Run"
-msgstr "पोस्ट रन"
-
 msgid "Post Shipment"
 msgstr "शिपमेंट पोस्ट करें"
 
@@ -13501,6 +13525,9 @@ msgstr "अग्रिम भुगतान (डिफ़ॉल्ट)"
 
 msgid "Present value of payments is at least {threshold} of fair value ({actual})"
 msgstr "भुगतान का वर्तमान मूल्य न्यायसंगत मूल्य का कम से कम {threshold} है ({actual})"
+
+msgid "Present value of the rent is at least {threshold} of a unit's fair value"
+msgstr ""
 
 msgid "Present Week"
 msgstr "वर्तमान सप्ताह"
@@ -15559,6 +15586,9 @@ msgstr "सुरक्षा स्टॉक ({0})"
 msgid "Safety Stock:"
 msgstr "सुरक्षा स्टॉक:"
 
+msgid "Sale"
+msgstr ""
+
 msgid "Sale Price"
 msgstr "विक्रय मूल्य"
 
@@ -15660,9 +15690,6 @@ msgstr "देय बिक्रय कर"
 
 msgid "Sales Tax Payable (default)"
 msgstr "देय बिक्रय कर (डिफ़ॉल्ट)"
-
-msgid "Sales-Type"
-msgstr "बिक्रय-प्रकार"
 
 msgid "Sales-type lease"
 msgstr "बिक्रय-प्रकार लीज"
@@ -16412,8 +16439,8 @@ msgstr "मूल्य निर्धारण सेट करें"
 msgid "Set Quantity"
 msgstr "मात्रा निर्धारित करें"
 
-msgid "Set the agreement's start date to classify the lease."
-msgstr "लीज को वर्गीकृत करने के लिए समझौते की प्रारंभ तिथि सेट करें।"
+msgid "Set the agreement's start date to see the accounting treatment."
+msgstr ""
 
 msgid "Set up authenticator app"
 msgstr "प्रमाणकर्ता ऐप सेटअप करें"
@@ -17797,6 +17824,9 @@ msgstr "अस्थायी निपटान-समाशोधन खात
 msgid "Term"
 msgstr "अवधि"
 
+msgid "Term is at least {threshold} of a unit's economic life"
+msgstr ""
+
 msgid "Term is at least {threshold} of the economic life ({actual})"
 msgstr "अवधि आर्थिक जीवन के कम से कम {threshold} है ({actual})"
 
@@ -17969,8 +17999,17 @@ msgstr "इस लॉट/सीरीज़ के लिए सही की �
 msgid "The currencies you trade in and their rates"
 msgstr "आप जिन मुद्राओं में व्यापार करते हैं और उनकी दरें"
 
+msgid "The customer effectively buys the unit. It leaves your fixed assets at commencement, the sale is booked, and interest is earned on the receivable over the term."
+msgstr ""
+
+msgid "The customer effectively buys the units. They leave your fixed assets on activation, the sale is booked, and interest is earned over the term."
+msgstr ""
+
 msgid "The customer exercises the purchase option. A purchase option charge of {formatOptionAmount} is billed today and its invoice drafted; posting that invoice transfers the unit and marks it Sold."
 msgstr "ग्राहक खरीद विकल्प का प्रयोग करता है। {formatOptionAmount} का एक खरीद विकल्प शुल्क आज बिल किया जाता है और इसका चालान तैयार किया जाता है; उस चालान को पोस्ट करने से इकाई स्थानांतरित होती है और इसे बेचा हुआ चिह्नित किया जाता है।"
+
+msgid "The customer is expected to buy the unit at the end of the term."
+msgstr ""
 
 msgid "The customer record this portal account links to; only contacts already on that customer can be selected as the account holder below."
 msgstr "ग्राहक रिकॉर्ड जिससे यह पोर्टल खाता जुड़ा है; केवल वे संपर्क जो उस ग्राहक के साथ पहले से हैं, नीचे खाता धारक के रूप में चुने जा सकते हैं।"
@@ -18633,14 +18672,17 @@ msgid "The unit and its rates are fixed once the agreement is activated."
 msgstr "समझौता सक्रिय होने के बाद इकाई और इसकी दरें तय हो जाती हैं।"
 
 #. placeholder {0}: formatDate(endDate)
-msgid "The unit can be returned on or after the end date, {0}. Early termination of a sales-type lease is a manual journal."
-msgstr "इकाई को अंतिम तिथि {0} पर या उसके बाद वापस किया जा सकता है। बिक्री-प्रकार पट्टे की प्रारंभिक समाप्ति एक मैनुअल जर्नल है।"
+msgid "The unit can be returned on or after the end date, {0}. Ending a rental treated as a sale early is a manual journal."
+msgstr ""
 
 msgid "The unit goes back into stock at its net book value and the asset is closed with no gain or loss."
 msgstr "इकाई अपने शुद्ध बही मूल्य पर स्टॉक में वापस जाती है और संपत्ति बिना लाभ या हानि के बंद कर दी जाती है।"
 
 msgid "The unit goes to maintenance instead of back to available."
 msgstr "इकाई उपलब्ध स्थिति में लौटने के बजाय रखरखाव में जाती है।"
+
+msgid "The unit has no other use to you once the term ends."
+msgstr ""
 
 msgid "The unit is removed from availability until it is returned to service. Depreciation continues and its accounting is unchanged."
 msgstr "इकाई उपलब्धता से हटा दी जाती है जब तक इसे सेवा में वापस नहीं किया जाता। मूल्यह्रास जारी रहता है और इसका लेखांकन अपरिवर्तित रहता है।"
@@ -18686,9 +18728,6 @@ msgstr "गोदाम जिससे इस आदेश पर सामा�
 
 msgid "The warehouse goods on this quote will ship from; the customer's Shipping Location is where they'll arrive."
 msgstr "गोदाम जिससे इस उद्धरण पर सामान भेज दिया जाएगा; ग्राहक का शिप स्थान वह जगह है जहां वे पहुंचेंगे।"
-
-msgid "The warehouse the units return to"
-msgstr "गोदाम जहां इकाइयां वापस आती हैं"
 
 msgid "The ways equipment fails, for maintenance and quality tracking"
 msgstr "उपकरण की विफलता के तरीके, रखरखाव और गुणवत्ता ट्रैकिंग के लिए"
@@ -18759,8 +18798,8 @@ msgstr "ये पंक्तियां इस कंपनी के बा�
 msgid "These rows link to data outside this company, so they could never be restored. Everything else was backed up."
 msgstr "ये पंक्तियां इस कंपनी के बाहर के डेटा से जुड़ी हुई हैं, इसलिए उन्हें कभी भी पुनर्स्थापित नहीं किया जा सकता। बाकी सब कुछ बैक अप किया गया था।"
 
-msgid "These units classify as sales-type leases. Activating derecognizes each one and posts its commencement journal:"
-msgstr "ये इकाइयां बिक्री-प्रकार पट्टे के रूप में वर्गीकृत हैं। सक्रियण प्रत्येक को विमुक्त करता है और इसकी शुरुआत जर्नल पोस्ट करता है:"
+msgid "These units are treated as sales. Activating derecognizes each one and posts its commencement journal:"
+msgstr ""
 
 msgid "this ability"
 msgstr "यह कौशल"
@@ -18833,9 +18872,6 @@ msgstr "यह एक नियंत्रित वातावरण है, 
 
 msgid "This is a purchased item — it has no BoM/BoP; only its attributes and documents can change."
 msgstr "यह एक खरीदा गया आइटम है — इसके पास कोई BoM/BoP नहीं है; केवल इसकी विशेषताओं और दस्तावेजों को बदला जा सकता है।"
-
-msgid "This is a sales-type lease. The closing net investment comes back onto the balance sheet with the unit, and the unposted interest schedule is removed."
-msgstr "यह एक बिक्री-प्रकार पट्टा है। समापन शुद्ध निवेश इकाई के साथ तुलन पत्र पर वापस आता है, और अपोस्टेड ब्याज शेड्यूल को हटा दिया जाता है।"
 
 msgid "This is a unique identifier for the webhook"
 msgstr "यह वेबहुक के लिए एक अद्वितीय पहचानकर्ता है"
@@ -18933,6 +18969,9 @@ msgstr "इस त्रैमासिक"
 msgid "This removes their authenticator app, so their next sign-in only needs a magic link. Use this when they have lost access to their authenticator. It affects their sign-in for every company they belong to."
 msgstr "यह उनके प्रमाणीकरणकर्ता ऐप को निकालता है, इसलिए उनके अगले साइन-इन के लिए केवल एक जादुई लिंक की आवश्यकता होती है। जब वे अपने प्रमाणीकरणकर्ता तक पहुंच खो गए हों तो इसका उपयोग करें। यह उनके साइन-इन को उन सभी कंपनियों के लिए प्रभावित करता है जिनसे वे संबंधित हैं।"
 
+msgid "This rental is treated as a sale. The closing net investment comes back onto the balance sheet with the unit, and the unposted interest schedule is removed."
+msgstr ""
+
 msgid "This restore could not be completed."
 msgstr "यह पुनर्स्थापन पूर्ण नहीं किया जा सका।"
 
@@ -19009,6 +19048,10 @@ msgstr "इस version की परिभाषा को पढ़ा नह�
 
 msgid "This week"
 msgstr "इस सप्ताह"
+
+#. placeholder {0}: formatDate(periodEnd)
+msgid "This will create a draft depreciation run for the period ending {0}. All active assets will be calculated automatically."
+msgstr ""
 
 #. placeholder {0}: formatDate(nextPeriodEnd)
 msgid "This will create a draft revenue recognition run for the next period, ending {0}. Every schedule row due on or before that date will be included."
@@ -19148,6 +19191,9 @@ msgstr "समय क्षेत्र"
 
 msgid "Title"
 msgstr "शीर्षक"
+
+msgid "Title passes to the customer when the term ends."
+msgstr ""
 
 msgid "To"
 msgstr "को"
@@ -19964,9 +20010,6 @@ msgstr "रिपोर्टिंग और विश्लेषण के �
 msgid "Used when a cell is empty or doesn't match an option above. Clear it to leave those rows blank."
 msgstr "तब उपयोग किया जाता है जब कोई सेल खाली हो या ऊपर दिए गए किसी विकल्प से मेल न खाता हो। उन पंक्तियों को खाली छोड़ने के लिए इसे साफ़ करें।"
 
-msgid "Used when the agreement is activated to classify each line as an operating or sales-type lease."
-msgstr "समझौता सक्रिय होने पर प्रत्येक पंक्ति को ऑपरेटिंग या बिक्री-प्रकार लीज के रूप में वर्गीकृत करने के लिए उपयोग किया जाता है।"
-
 msgid "Useful Life (default)"
 msgstr "उपयोगी जीवन (डिफ़ॉल्ट)"
 
@@ -20746,9 +20789,6 @@ msgstr "स्टॉक कहाँ रहता है और यह कैस
 msgid "Where the affected items are used across the system. Informational — nothing here blocks releasing."
 msgstr "जहां प्रभावित आइटम पूरे सिस्टम में उपयोग किए जाते हैं। सूचनात्मक — यहां कुछ भी जारी करने में बाधा नहीं डालता।"
 
-msgid "Where the units are while on rent"
-msgstr "किराये पर होते समय इकाइयाँ कहाँ हैं"
-
 msgid "Where this entry originated (manual entry, posting from sales/purchasing, recurring template, etc.)."
 msgstr "यह प्रविष्टि कहाँ से उत्पन्न हुई (मैनुअल प्रविष्टि, बिक्रय/खरीद से पोस्टिंग, पुनरावर्ती टेम्पलेट, आदि)।"
 
@@ -20772,6 +20812,9 @@ msgstr "क्या राशि को लाइन मूल्य के प
 
 msgid "Whether Carbon follows each unit (Serial), each lot (Batch), the quantity (Inventory), or no tracking (Non-Inventory)."
 msgstr "क्या Carbon प्रत्येक इकाई (Serial), प्रत्येक बैच (Batch), मात्रा (Inventory), या कोई ट्रैकिंग नहीं (गैर-इन्वेंटरी) का पालन करता है।"
+
+msgid "Whether each unit is treated as a rental or a sale is decided when the agreement is activated."
+msgstr ""
 
 msgid "Whether the clock starts when the chosen process begins or when it completes."
 msgstr "क्या घड़ी तब शुरू होती है जब चुनी गई प्रक्रिया शुरू होती है या जब वह पूरी होती है।"
@@ -20895,6 +20938,9 @@ msgstr "WIP"
 
 msgid "Without a picking list, operators pick material from the Scan tab."
 msgstr "पिकिंग सूची के बिना, ऑपरेटर Scan टैब से सामग्री पिकिंग करते हैं।"
+
+msgid "Without an end date this is always treated as a rental: a unit can only pass to the customer over a fixed term. Add an end date to test whether it is a sale."
+msgstr ""
 
 #. placeholder {0}: quarter.start + 1
 #. placeholder {1}: quarter.end
@@ -21080,6 +21126,12 @@ msgstr "आपके पास {0} लाइनें हैं जो PDF स�
 
 msgid "You haven't created any contacts yet."
 msgstr "आपने अभी तक कोई संपर्क नहीं बनाया है।"
+
+msgid "You keep the unit on your books and depreciate it. Rent is revenue as it is earned."
+msgstr ""
+
+msgid "You keep the units on your books and depreciate them. Rent is revenue as it is earned."
+msgstr ""
 
 msgid "You lead"
 msgstr "आप नेतृत्व करते हैं"

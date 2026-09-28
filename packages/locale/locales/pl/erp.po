@@ -297,6 +297,12 @@ msgstr "{count, plural, one {# konto z saldem} other {# konta z saldem}}"
 msgid "{count, plural, one {# course} other {# courses}}"
 msgstr "{count, plural, one {# kurs} other {# kursy}}"
 
+msgid "{count} of {total} units"
+msgstr ""
+
+msgid "{count} units"
+msgstr ""
+
 msgid "{days}d"
 msgstr "{days}d"
 
@@ -489,6 +495,9 @@ msgstr "1 problem — nie opublikowano"
 
 msgid "1 suggested batch"
 msgstr "1 sugerowana partia"
+
+msgid "1 unit"
+msgstr ""
 
 msgid "1 unposted document"
 msgstr "1 nieopublikowany dokument"
@@ -913,6 +922,9 @@ msgstr "Pozycja wynajmu jest leasingiem sprzedażowym, gdy spełniony jest któr
 msgid "A rental that meets any of the five ASC 842 lease tests, booked as a sale when its agreement activates: the unit leaves the fleet, lease revenue and cost of goods sold post, and a net investment in the lease takes its place."
 msgstr "Wynajem spełniający którykolwiek z pięciu testów leasingu ASC 842, zaksięgowany jako sprzedaż, gdy jego umowa się aktywuje: jednostka opuszcza flotę, przychody ze sprzedaży i koszt własny sprzedaży są zaksięgowane, a na ich miejsce pojawia się inwestycja netto w leasing."
 
+msgid "A rental treated as a sale must be in the company's base currency. Change the agreement currency or override the treatment."
+msgstr ""
+
 msgid "A return merchandise authorization (RMA) authorizes a customer to return goods for credit, replacement, or repair."
 msgstr "Autoryzacja zwrotu produktów (RMA) upoważnia klienta do zwrotu towarów w celu uzyskania kredytu, wymiany lub naprawy."
 
@@ -981,9 +993,6 @@ msgstr "Zapytanie ofertowe do sprzedaży (RFQ) to zapytanie klienta o ustalanie 
 
 msgid "A sales RFQ (a customer asks you to quote) or a purchasing RFQ (you ask suppliers); both feed the opportunity thread."
 msgstr "Zapytanie ofertowe do sprzedaży (klient prosi o ofertę) lub zapytanie ofertowe do zakupów (pytasz dostawców); oba zasilają wątek szansy sprzedaży."
-
-msgid "A sales-type lease must be in the company's base currency. Change the agreement currency or override the classification."
-msgstr "Leasing sprzedażowy musi być w walucie bazowej firmy. Zmień walutę umowy lub nadpisz klasyfikację."
 
 msgid "A scoped secret sent on the carbon-key request header that authenticates programmatic calls to Carbon, carrying its own permissions and rate limit rather than a user session's."
 msgstr "Tajny klucz wysyłany w nagłówku żądania carbon-key, który uwierzytelnia programowe wywołania do Carbon, niosąc własne uprawnienia i limit szybkości zamiast sesji użytkownika."
@@ -1083,6 +1092,9 @@ msgstr "Zanotowany w czasie zapis pracy Przezbrojenia, Robocizny lub Maszyny zal
 
 msgid "A tool is a physical item used to make a part that can be used across multiple jobs"
 msgstr "Narzędzie to rzeczywisty artykuł używany do produkcji części, które można stosować w wielu zleceniach produkcyjnych"
+
+msgid "A unit is treated as a sale when any of these is true, and as a rental otherwise."
+msgstr ""
 
 msgid "A user records the expiry date on each batch or serial when the goods are received. Use when suppliers ship lots with different expiry dates."
 msgstr "Użytkownik notuje termin ważności dla każdej partii produkcyjnej lub serii, gdy towary są odbierane. Użyj, gdy dostawcy wysyłają partie z różnymi terminami ważności."
@@ -1216,6 +1228,12 @@ msgstr "Okres księgowy"
 
 msgid "Accounting Periods"
 msgstr "Okresy Księgowe"
+
+msgid "Accounting treatment"
+msgstr ""
+
+msgid "Accounting treatment inputs"
+msgstr ""
 
 msgid "Accounting: GL, AR, AP, and month-end close"
 msgstr "Księgowość: Księga główna, Należności, Zobowiązania i zamknięcie na koniec miesiąca"
@@ -1947,8 +1965,8 @@ msgstr "Typ śledzenia elementu ulega zmianie"
 msgid "An item's unit of measure changes"
 msgstr "Jednostka miary elementu uległa zmianie"
 
-msgid "An open-ended agreement is always an operating lease: a sales-type lease needs an end date."
-msgstr "Umowa bez określonego okresu zawsze jest leasingiem operacyjnym: leasing sprzedażowy potrzebuje daty końcowej."
+msgid "An open-ended agreement is always treated as a rental: a sale needs an end date."
+msgstr ""
 
 msgid "An operation done by an outside supplier rather than an in-house work center, covered by a subcontracting purchase order."
 msgstr "Operacja wykonywana przez dostawcę zewnętrznego zamiast wewnętrznego stanowiska roboczego, pokryta zamówieniem zakupu na kooperację."
@@ -3770,6 +3788,9 @@ msgstr "Sprawdź księgę artykułów pod kątem artykułów z ujemną ilością
 
 msgid "Check your email"
 msgstr "Sprawdź swoją pocztę"
+
+msgid "Checked for each unit once units are added"
+msgstr ""
 
 msgid "Checking Stripe for this customer…"
 msgstr "Sprawdzanie Stripe dla tego klienta…"
@@ -6216,6 +6237,9 @@ msgstr "Wymiary"
 msgid "Direct"
 msgstr "Bezpośredni"
 
+msgid "Direct financing lease"
+msgstr ""
+
 msgid "Direct message to each recipient in your Slack workspace."
 msgstr "Bezpośrednia wiadomość do każdego odbiorcy w Twojej przestrzeni roboczej Slack."
 
@@ -6651,9 +6675,6 @@ msgstr "Każdy, lb, ft…"
 
 msgid "Earliest operation start"
 msgstr "Najwcześniejszy początek operacji"
-
-msgid "Early termination of a sales-type lease is a manual journal."
-msgstr "Wcześniejsze wygaśnięcie leasingu sprzedażowego to ręczny dowód księgowy."
 
 msgid "Easier to extend"
 msgstr "Łatwiej rozszerzać"
@@ -7147,6 +7168,9 @@ msgstr "Koniec"
 #. placeholder {0}: parentCurrency ?? "Translated"
 msgid "Ending ({0})"
 msgstr "Koniec ({0})"
+
+msgid "Ending a rental treated as a sale early is a manual journal."
+msgstr ""
 
 msgid "Ends"
 msgstr "Kończy się"
@@ -8124,6 +8148,9 @@ msgstr "Finalizowanie miesiąca obrachunkowego poprzez cykl Otwarte → Zablokow
 msgid "Financial Statements"
 msgstr "Sprawozdania finansowe"
 
+msgid "Financing"
+msgstr ""
+
 msgid "finish"
 msgstr "Wyroby gotowe"
 
@@ -8606,11 +8633,17 @@ msgstr "Wdrażaj bez błędów za pierwszym razem — z naszym zespołem u boku"
 msgid "Go to {0}"
 msgstr "Przejdź do {0}"
 
+msgid "Go to depreciation runs"
+msgstr ""
+
 msgid "Go to implementation hub"
 msgstr "Przejdź do centrum wdrożeniowego"
 
 msgid "Go to module"
 msgstr "Przejdź do modułu"
+
+msgid "Go to revenue recognition runs"
+msgstr ""
 
 msgid "Go to that week"
 msgstr "Przejdź do tego tygodnia"
@@ -8770,9 +8803,6 @@ msgstr "Nazwa Dnia Wolnego"
 
 msgid "Holidays"
 msgstr "Święta"
-
-msgid "Home Location"
-msgstr "Lokalizacja główna"
 
 msgid "Home Phone"
 msgstr "Telefon domowy"
@@ -9962,9 +9992,6 @@ msgstr "Dowiedz się więcej"
 msgid "Lease Classification"
 msgstr "Klasyfikacja leasingu"
 
-msgid "Lease classification inputs"
-msgstr "Dane wejściowe klasyfikacji leasingu"
-
 msgid "Lease Revenue"
 msgstr "Przychód z dzierżawy"
 
@@ -9979,9 +10006,6 @@ msgstr "Pozostaw puste dla wbudowanego"
 
 msgid "Leave blank to use the next revision automatically"
 msgstr "Pozostaw puste, aby automatycznie użyć następnej rewizji"
-
-msgid "Leave empty for an open-ended agreement"
-msgstr "Pozostaw puste dla umowy otwartej"
 
 msgid "Leave empty for exact match"
 msgstr "Pozostaw puste dla dokładnego dopasowania"
@@ -12121,6 +12145,9 @@ msgstr "Nie skonfigurowane"
 msgid "Not enough jobs to cover quantity"
 msgstr "Niewystarczająco zleceń produkcyjnych aby pokryć ilość"
 
+msgid "Not enough unit data"
+msgstr ""
+
 msgid "Not feasible"
 msgstr "Niemożliwe do wykonania"
 
@@ -12555,9 +12582,6 @@ msgstr "Saldo otwarcia amortyzacji już zaksięgowanej przed dodaniem tego zasob
 msgid "Opening Balances"
 msgstr "Salda Otwarcia"
 
-msgid "Operating"
-msgstr "Operacyjny"
-
 msgid "Operating Expenses"
 msgstr "Wydatki operacyjne"
 
@@ -12566,6 +12590,9 @@ msgstr "Godziny pracy"
 
 msgid "Operating Income"
 msgstr "Przychody operacyjne"
+
+msgid "Operating lease"
+msgstr ""
 
 msgid "operation"
 msgstr "operacja"
@@ -13430,9 +13457,6 @@ msgstr "Zaksięguj salda otwarcia"
 msgid "Post Receipt"
 msgstr "Zaksięguj Paragon"
 
-msgid "Post Run"
-msgstr "Przebieg zaksięgowania"
-
 msgid "Post Shipment"
 msgstr "Zaksięguj wysyłkę"
 
@@ -13501,6 +13525,9 @@ msgstr "Zaliczki (domyślnie)"
 
 msgid "Present value of payments is at least {threshold} of fair value ({actual})"
 msgstr "Wartość obecna płatności wynosi co najmniej {threshold} wartości godziwej ({actual})"
+
+msgid "Present value of the rent is at least {threshold} of a unit's fair value"
+msgstr ""
 
 msgid "Present Week"
 msgstr "Bieżący tydzień"
@@ -15559,6 +15586,9 @@ msgstr "Zapas bezpieczeństwa ({0})"
 msgid "Safety Stock:"
 msgstr "Zapas bezpieczeństwa:"
 
+msgid "Sale"
+msgstr ""
+
 msgid "Sale Price"
 msgstr "Cena sprzedaży"
 
@@ -15660,9 +15690,6 @@ msgstr "Podatek od sprzedaży do zapłaty"
 
 msgid "Sales Tax Payable (default)"
 msgstr "Podatek od sprzedaży do zapłaty (domyślnie)"
-
-msgid "Sales-Type"
-msgstr "Sprzedażowy"
 
 msgid "Sales-type lease"
 msgstr "Leasing sprzedażowy"
@@ -16412,8 +16439,8 @@ msgstr "Ustaw ceny"
 msgid "Set Quantity"
 msgstr "Ustaw ilość"
 
-msgid "Set the agreement's start date to classify the lease."
-msgstr "Ustaw datę rozpoczęcia umowy, aby zaklasyfikować leasing."
+msgid "Set the agreement's start date to see the accounting treatment."
+msgstr ""
 
 msgid "Set up authenticator app"
 msgstr "Skonfiguruj aplikację authenticator"
@@ -17797,6 +17824,9 @@ msgstr "Tymczasowe konto rozliczeniowe zbycia, obciążane wartością księgow�
 msgid "Term"
 msgstr "Termin"
 
+msgid "Term is at least {threshold} of a unit's economic life"
+msgstr ""
+
 msgid "Term is at least {threshold} of the economic life ({actual})"
 msgstr "Okres trwania wynosi co najmniej {threshold} ekonomicznego okresu życia ({actual})"
 
@@ -17969,8 +17999,17 @@ msgstr "Poprawiona data wygaśnięcia dla tego lotu/numeru seryjnego; istniejąc
 msgid "The currencies you trade in and their rates"
 msgstr "Waluty, w których handlujesz, i ich kursy"
 
+msgid "The customer effectively buys the unit. It leaves your fixed assets at commencement, the sale is booked, and interest is earned on the receivable over the term."
+msgstr ""
+
+msgid "The customer effectively buys the units. They leave your fixed assets on activation, the sale is booked, and interest is earned over the term."
+msgstr ""
+
 msgid "The customer exercises the purchase option. A purchase option charge of {formatOptionAmount} is billed today and its invoice drafted; posting that invoice transfers the unit and marks it Sold."
 msgstr "Klient wykonuje opcję nabycia. Opłata za opcję nabycia {formatOptionAmount} jest rozliczana dzisiaj i jej faktura przygotowywana; księgowanie tej faktury przenosi sztukę i oznacza ją jako sprzedaną."
+
+msgid "The customer is expected to buy the unit at the end of the term."
+msgstr ""
 
 msgid "The customer record this portal account links to; only contacts already on that customer can be selected as the account holder below."
 msgstr "Rekord klienta, do którego jest powiązane to konto portalu; tylko kontakty już na tym kliencie mogą być wybrane jako posiadacz konta poniżej."
@@ -18633,14 +18672,17 @@ msgid "The unit and its rates are fixed once the agreement is activated."
 msgstr "Sztuka i jej stawki są zablokowane po aktywacji umowy."
 
 #. placeholder {0}: formatDate(endDate)
-msgid "The unit can be returned on or after the end date, {0}. Early termination of a sales-type lease is a manual journal."
-msgstr "Sztuka może być zwrócona w dniu {0} lub później. Wczesne rozwiązanie leasingu finansowego to ręczny dowód księgowy."
+msgid "The unit can be returned on or after the end date, {0}. Ending a rental treated as a sale early is a manual journal."
+msgstr ""
 
 msgid "The unit goes back into stock at its net book value and the asset is closed with no gain or loss."
 msgstr "Sztuka wraca do zapasu w swojej wartości księgowej netto, a zasób zostaje zamknięty bez zysku lub straty."
 
 msgid "The unit goes to maintenance instead of back to available."
 msgstr "Sztuka trafia do utrzymania ruchu zamiast powrócić do dostępnych."
+
+msgid "The unit has no other use to you once the term ends."
+msgstr ""
 
 msgid "The unit is removed from availability until it is returned to service. Depreciation continues and its accounting is unchanged."
 msgstr "Sztuka jest usunięta z dostępności, dopóki nie zostanie zwrócona do użytku. Amortyzacja trwa, a jej księgowość pozostaje bez zmian."
@@ -18686,9 +18728,6 @@ msgstr "Magazyn, z którego towary z tego zamówienia będą wysłane; lokalizac
 
 msgid "The warehouse goods on this quote will ship from; the customer's Shipping Location is where they'll arrive."
 msgstr "Magazyn, z którego towary z tego wyceny będą wysłane; lokalizacja wysyłki klienta to miejsce, w którym dotrą."
-
-msgid "The warehouse the units return to"
-msgstr "Magazyn, do którego powracają sztuki."
 
 msgid "The ways equipment fails, for maintenance and quality tracking"
 msgstr "Sposoby, w jakie urządzenie się psuje, do śledzenia utrzymania ruchu i jakości"
@@ -18759,8 +18798,8 @@ msgstr "Te wiersze łączą się z danymi spoza tej firmy, dlatego nie można wy
 msgid "These rows link to data outside this company, so they could never be restored. Everything else was backed up."
 msgstr "Te wiersze są połączone z danymi spoza tej firmy, dlatego nigdy nie mogły być przywrócone. Wszystko inne miało kopię zapasową."
 
-msgid "These units classify as sales-type leases. Activating derecognizes each one and posts its commencement journal:"
-msgstr "Te sztuki klasyfikują się jako leasing finansowy. Aktywacja wyłącza każdą z nich z bilansu i zaksięgowuje jej dowód księgowy rozpoczęcia:"
+msgid "These units are treated as sales. Activating derecognizes each one and posts its commencement journal:"
+msgstr ""
 
 msgid "this ability"
 msgstr "ta umiejętność"
@@ -18833,9 +18872,6 @@ msgstr "To jest kontrolowane środowisko, dlatego uwierzytelnianie dwuskładniko
 
 msgid "This is a purchased item — it has no BoM/BoP; only its attributes and documents can change."
 msgstr "To jest element nabywany — nie ma BoM/BoP; mogą zmieniać się tylko jego atrybuty i dokumenty."
-
-msgid "This is a sales-type lease. The closing net investment comes back onto the balance sheet with the unit, and the unposted interest schedule is removed."
-msgstr "To jest leasing finansowy. Zamykająca inwestycja netto powraca na bilans ze sztuką, a niezaksięgowany harmonogram odsetek jest usuwany."
 
 msgid "This is a unique identifier for the webhook"
 msgstr "To jest unikalny identyfikator dla webhooka"
@@ -18933,6 +18969,9 @@ msgstr "Ten Kwartał"
 msgid "This removes their authenticator app, so their next sign-in only needs a magic link. Use this when they have lost access to their authenticator. It affects their sign-in for every company they belong to."
 msgstr "To usuwa ich aplikację uwierzytelniającą, więc ich następny login potrzebuje tylko magicznego linku. Użyj tego, gdy stracili dostęp do swojej aplikacji uwierzytelniającej. To wpływa na ich logowanie dla każdej firmy, do której należą."
 
+msgid "This rental is treated as a sale. The closing net investment comes back onto the balance sheet with the unit, and the unposted interest schedule is removed."
+msgstr ""
+
 msgid "This restore could not be completed."
 msgstr "Nie można było ukończyć tego przywrócenia."
 
@@ -19009,6 +19048,10 @@ msgstr "Definicję tej wersji nie można było odczytać."
 
 msgid "This week"
 msgstr "Ten tydzień"
+
+#. placeholder {0}: formatDate(periodEnd)
+msgid "This will create a draft depreciation run for the period ending {0}. All active assets will be calculated automatically."
+msgstr ""
 
 #. placeholder {0}: formatDate(nextPeriodEnd)
 msgid "This will create a draft revenue recognition run for the next period, ending {0}. Every schedule row due on or before that date will be included."
@@ -19148,6 +19191,9 @@ msgstr "Strefa czasowa"
 
 msgid "Title"
 msgstr "Tytuł"
+
+msgid "Title passes to the customer when the term ends."
+msgstr ""
 
 msgid "To"
 msgstr "Do"
@@ -19964,9 +20010,6 @@ msgstr "Używane do kategoryzacji pozycji do raportowania i analizy"
 msgid "Used when a cell is empty or doesn't match an option above. Clear it to leave those rows blank."
 msgstr "Używane, gdy komórka jest pusta lub nie odpowiada żadnej z powyższych opcji. Wyczyść ją, aby pozostawić te wiersze puste."
 
-msgid "Used when the agreement is activated to classify each line as an operating or sales-type lease."
-msgstr "Używane podczas aktywacji umowy do klasyfikacji każdej pozycji jako leasingu operacyjnego lub sprzedażowego."
-
 msgid "Useful Life (default)"
 msgstr "Okres użytkowania (domyślnie)"
 
@@ -20746,9 +20789,6 @@ msgstr "Gdzie znajduje się zapas i jak się wysyła."
 msgid "Where the affected items are used across the system. Informational — nothing here blocks releasing."
 msgstr "Gdzie używane są dotknięte elementy w całym systemie. Informacyjne — nic tutaj nie blokuje wydawania."
 
-msgid "Where the units are while on rent"
-msgstr "Gdzie znajdują się sztuki w trakcie wynajmu"
-
 msgid "Where this entry originated (manual entry, posting from sales/purchasing, recurring template, etc.)."
 msgstr "Skąd pochodzi ten wpis (wpis ręczny, zaksięgowanie ze sprzedaży/zakupów, szablon powtarzalny itp.)."
 
@@ -20772,6 +20812,9 @@ msgstr "Czy kwota jest interpretowana jako procent ceny pozycji, czy jako stała
 
 msgid "Whether Carbon follows each unit (Serial), each lot (Batch), the quantity (Inventory), or no tracking (Non-Inventory)."
 msgstr "Czy Carbon śledzi każdą sztukę (Nr seryjny), każdą partię (Partia produkcyjna), ilość (Zapasy), czy brak śledzenia (Niemagazynowy)."
+
+msgid "Whether each unit is treated as a rental or a sale is decided when the agreement is activated."
+msgstr ""
 
 msgid "Whether the clock starts when the chosen process begins or when it completes."
 msgstr "Czy licznik czasu rozpoczyna się, gdy wybrany proces się zaczyna, czy gdy się kończy."
@@ -20895,6 +20938,9 @@ msgstr "Produkcja w toku"
 
 msgid "Without a picking list, operators pick material from the Scan tab."
 msgstr "Bez listy kompletacyjnej operatorzy pobierają materiał z karty Skanuj."
+
+msgid "Without an end date this is always treated as a rental: a unit can only pass to the customer over a fixed term. Add an end date to test whether it is a sale."
+msgstr ""
 
 #. placeholder {0}: quarter.start + 1
 #. placeholder {1}: quarter.end
@@ -21076,6 +21122,12 @@ msgstr "Masz {0} linii wyodrębnionych z pliku PDF, które nie są mapowane na �
 
 msgid "You haven't created any contacts yet."
 msgstr "Nie utworzyłeś jeszcze żadnych kontaktów."
+
+msgid "You keep the unit on your books and depreciate it. Rent is revenue as it is earned."
+msgstr ""
+
+msgid "You keep the units on your books and depreciate them. Rent is revenue as it is earned."
+msgstr ""
 
 msgid "You lead"
 msgstr "Ty prowadzisz"

@@ -297,6 +297,12 @@ msgstr "{count, plural, one {# 个有余额的账户} other {# 个有余额的�
 msgid "{count, plural, one {# course} other {# courses}}"
 msgstr "{count, plural, one {# 门课程} other {# 门课程}}"
 
+msgid "{count} of {total} units"
+msgstr ""
+
+msgid "{count} units"
+msgstr ""
+
 msgid "{days}d"
 msgstr "{days}天"
 
@@ -489,6 +495,9 @@ msgstr "1个问题——未发布"
 
 msgid "1 suggested batch"
 msgstr "1 个建议生产批次"
+
+msgid "1 unit"
+msgstr ""
 
 msgid "1 unposted document"
 msgstr "1个未过账的文件"
@@ -913,6 +922,9 @@ msgstr "当满足任何ASC 842测试时，租赁行是销售型租赁。这些�
 msgid "A rental that meets any of the five ASC 842 lease tests, booked as a sale when its agreement activates: the unit leaves the fleet, lease revenue and cost of goods sold post, and a net investment in the lease takes its place."
 msgstr "满足五项ASC 842租赁测试之一的租赁，在其协议激活时作为销售入账：该件设备离开租赁队伍，租赁收入和销售成本过账，租赁净投资代替其位置。"
 
+msgid "A rental treated as a sale must be in the company's base currency. Change the agreement currency or override the treatment."
+msgstr ""
+
 msgid "A return merchandise authorization (RMA) authorizes a customer to return goods for credit, replacement, or repair."
 msgstr "退货授权（RMA）授权客户退回商品以换取贷项、替代品或维修。"
 
@@ -981,9 +993,6 @@ msgstr "销售报价请求 (RFQ) 是客户对一组零件和数量的定价询�
 
 msgid "A sales RFQ (a customer asks you to quote) or a purchasing RFQ (you ask suppliers); both feed the opportunity thread."
 msgstr "销售RFQ（客户要求您报价）或采购RFQ（您要求供应商）；两者都为商机线程提供信息。"
-
-msgid "A sales-type lease must be in the company's base currency. Change the agreement currency or override the classification."
-msgstr "销售型租赁必须采用公司基础货币。更改协议货币或覆盖分类。"
 
 msgid "A scoped secret sent on the carbon-key request header that authenticates programmatic calls to Carbon, carrying its own permissions and rate limit rather than a user session's."
 msgstr "在 carbon-key 请求标头上发送的范围内秘密，用于验证对 Carbon 的编程调用，携带自己的权限和速率限制，而不是用户会话的。"
@@ -1083,6 +1092,9 @@ msgstr "针对工单工序记录的换型、人工或机器工作的计时记录
 
 msgid "A tool is a physical item used to make a part that can be used across multiple jobs"
 msgstr "刀具是用于制造零件的物理物料，可在多个工单中使用"
+
+msgid "A unit is treated as a sale when any of these is true, and as a rental otherwise."
+msgstr ""
 
 msgid "A user records the expiry date on each batch or serial when the goods are received. Use when suppliers ship lots with different expiry dates."
 msgstr "用户在收货时记录每个生产批次或序列号的有效期。当供应商发运具有不同有效期的批次时使用。"
@@ -1216,6 +1228,12 @@ msgstr "会计期间"
 
 msgid "Accounting Periods"
 msgstr "会计期间"
+
+msgid "Accounting treatment"
+msgstr ""
+
+msgid "Accounting treatment inputs"
+msgstr ""
 
 msgid "Accounting: GL, AR, AP, and month-end close"
 msgstr "会计：总账、应收账款、应付账款和月末结账"
@@ -1947,8 +1965,8 @@ msgstr "物料的追踪类型更改"
 msgid "An item's unit of measure changes"
 msgstr "物料的计量单位更改"
 
-msgid "An open-ended agreement is always an operating lease: a sales-type lease needs an end date."
-msgstr "开放式协议总是经营型租赁：销售型租赁需要结束日期。"
+msgid "An open-ended agreement is always treated as a rental: a sale needs an end date."
+msgstr ""
 
 msgid "An operation done by an outside supplier rather than an in-house work center, covered by a subcontracting purchase order."
 msgstr "一项由外部供应商而非内部工作中心执行的工序，由分包采购订单涵盖。"
@@ -3770,6 +3788,9 @@ msgstr "检查物料分类账以查找期末现有数量为负的任何物料 �
 
 msgid "Check your email"
 msgstr "检查您的电子邮件"
+
+msgid "Checked for each unit once units are added"
+msgstr ""
 
 msgid "Checking Stripe for this customer…"
 msgstr "正在为此客户检查Stripe…"
@@ -6216,6 +6237,9 @@ msgstr "维度"
 msgid "Direct"
 msgstr "直接"
 
+msgid "Direct financing lease"
+msgstr ""
+
 msgid "Direct message to each recipient in your Slack workspace."
 msgstr "在您的 Slack 工作区中直接消息给每个收件人。"
 
@@ -6651,9 +6675,6 @@ msgstr "每个、磅、英尺…"
 
 msgid "Earliest operation start"
 msgstr "最早操作开始"
-
-msgid "Early termination of a sales-type lease is a manual journal."
-msgstr "销售型租赁的提前终止是手动凭证。"
 
 msgid "Easier to extend"
 msgstr "更容易扩展"
@@ -7147,6 +7168,9 @@ msgstr "结束"
 #. placeholder {0}: parentCurrency ?? "Translated"
 msgid "Ending ({0})"
 msgstr "结束 ({0})"
+
+msgid "Ending a rental treated as a sale early is a manual journal."
+msgstr ""
 
 msgid "Ends"
 msgstr "结束"
@@ -8124,6 +8148,9 @@ msgstr "通过未结 → 已锁定 → 已关闭的生命周期来最终化会�
 msgid "Financial Statements"
 msgstr "财务报表"
 
+msgid "Financing"
+msgstr ""
+
 msgid "finish"
 msgstr "成品"
 
@@ -8606,11 +8633,17 @@ msgstr "第一次就上线成功 — 我们的团队陪伴您"
 msgid "Go to {0}"
 msgstr "前往 {0}"
 
+msgid "Go to depreciation runs"
+msgstr ""
+
 msgid "Go to implementation hub"
 msgstr "前往实施中心"
 
 msgid "Go to module"
 msgstr "转到模块"
+
+msgid "Go to revenue recognition runs"
+msgstr ""
 
 msgid "Go to that week"
 msgstr "跳转到该周"
@@ -8770,9 +8803,6 @@ msgstr "假期名称"
 
 msgid "Holidays"
 msgstr "假期"
-
-msgid "Home Location"
-msgstr "主要地点"
 
 msgid "Home Phone"
 msgstr "家庭电话"
@@ -9962,9 +9992,6 @@ msgstr "了解更多"
 msgid "Lease Classification"
 msgstr "租赁分类"
 
-msgid "Lease classification inputs"
-msgstr "租赁分类输入"
-
 msgid "Lease Revenue"
 msgstr "租赁收入"
 
@@ -9979,9 +10006,6 @@ msgstr "留空以使用内置"
 
 msgid "Leave blank to use the next revision automatically"
 msgstr "留空以自动使用下一个修订版"
-
-msgid "Leave empty for an open-ended agreement"
-msgstr "留空表示开放式协议"
 
 msgid "Leave empty for exact match"
 msgstr "留空以精确匹配"
@@ -12121,6 +12145,9 @@ msgstr "未配置"
 msgid "Not enough jobs to cover quantity"
 msgstr "工单数量不足以覆盖所需数量"
 
+msgid "Not enough unit data"
+msgstr ""
+
 msgid "Not feasible"
 msgstr "不可行"
 
@@ -12555,9 +12582,6 @@ msgstr "在将此资产添加到Carbon之前已入账的折旧的期初余额（
 msgid "Opening Balances"
 msgstr "期初余额"
 
-msgid "Operating"
-msgstr "经营型"
-
 msgid "Operating Expenses"
 msgstr "运营费用"
 
@@ -12566,6 +12590,9 @@ msgstr "运营时间"
 
 msgid "Operating Income"
 msgstr "营运收益"
+
+msgid "Operating lease"
+msgstr ""
 
 msgid "operation"
 msgstr "工序"
@@ -13430,9 +13457,6 @@ msgstr "过账期初余额"
 msgid "Post Receipt"
 msgstr "过账收据"
 
-msgid "Post Run"
-msgstr "过账运行"
-
 msgid "Post Shipment"
 msgstr "过账发货"
 
@@ -13501,6 +13525,9 @@ msgstr "预付款（默认）"
 
 msgid "Present value of payments is at least {threshold} of fair value ({actual})"
 msgstr "付款现值至少为公允价值的{threshold}({actual})"
+
+msgid "Present value of the rent is at least {threshold} of a unit's fair value"
+msgstr ""
 
 msgid "Present Week"
 msgstr "本周"
@@ -15559,6 +15586,9 @@ msgstr "安全库存 ({0})"
 msgid "Safety Stock:"
 msgstr "安全库存："
 
+msgid "Sale"
+msgstr ""
+
 msgid "Sale Price"
 msgstr "销售价格"
 
@@ -15660,9 +15690,6 @@ msgstr "应付销售税"
 
 msgid "Sales Tax Payable (default)"
 msgstr "应付销售税 (默认)"
-
-msgid "Sales-Type"
-msgstr "销售型"
 
 msgid "Sales-type lease"
 msgstr "销售型租赁"
@@ -16412,8 +16439,8 @@ msgstr "设置定价"
 msgid "Set Quantity"
 msgstr "设置数量"
 
-msgid "Set the agreement's start date to classify the lease."
-msgstr "设置协议的开始日期以分类租赁。"
+msgid "Set the agreement's start date to see the accounting treatment."
+msgstr ""
 
 msgid "Set up authenticator app"
 msgstr "设置身份验证器应用"
@@ -17797,6 +17824,9 @@ msgstr "临时处置清算账户，在发货时按资产账面净值做借方记
 msgid "Term"
 msgstr "期限"
 
+msgid "Term is at least {threshold} of a unit's economic life"
+msgstr ""
+
 msgid "Term is at least {threshold} of the economic life ({actual})"
 msgstr "租赁期至少为经济寿命的{threshold}({actual})"
 
@@ -17969,8 +17999,17 @@ msgstr "此批次/序列号的修正有效期；更改后，现有库存会根�
 msgid "The currencies you trade in and their rates"
 msgstr "您交易的货币及其汇率"
 
+msgid "The customer effectively buys the unit. It leaves your fixed assets at commencement, the sale is booked, and interest is earned on the receivable over the term."
+msgstr ""
+
+msgid "The customer effectively buys the units. They leave your fixed assets on activation, the sale is booked, and interest is earned over the term."
+msgstr ""
+
 msgid "The customer exercises the purchase option. A purchase option charge of {formatOptionAmount} is billed today and its invoice drafted; posting that invoice transfers the unit and marks it Sold."
 msgstr "客户行使购买选择权。购买选择权费用{formatOptionAmount}今天计费，其发票已起草；过账该发票会转移该件并将其标记为已售出。"
+
+msgid "The customer is expected to buy the unit at the end of the term."
+msgstr ""
 
 msgid "The customer record this portal account links to; only contacts already on that customer can be selected as the account holder below."
 msgstr "此门户帐户链接到的客户记录；只有该客户上已有的联系人才能被选为以下帐户持有人。"
@@ -18633,14 +18672,17 @@ msgid "The unit and its rates are fixed once the agreement is activated."
 msgstr "协议激活后，单位及其费率被固定。"
 
 #. placeholder {0}: formatDate(endDate)
-msgid "The unit can be returned on or after the end date, {0}. Early termination of a sales-type lease is a manual journal."
-msgstr "该件可在结束日期{0}或之后退回。销售型租赁的提前终止是一笔手工凭证。"
+msgid "The unit can be returned on or after the end date, {0}. Ending a rental treated as a sale early is a manual journal."
+msgstr ""
 
 msgid "The unit goes back into stock at its net book value and the asset is closed with no gain or loss."
 msgstr "该件按其账面净值返回库存，资产已关闭，无收益或损失。"
 
 msgid "The unit goes to maintenance instead of back to available."
 msgstr "该单位进入维护而不是返回可用。"
+
+msgid "The unit has no other use to you once the term ends."
+msgstr ""
 
 msgid "The unit is removed from availability until it is returned to service. Depreciation continues and its accounting is unchanged."
 msgstr "该件在返回服务前不可用。折旧继续，其会计处理保持不变。"
@@ -18686,9 +18728,6 @@ msgstr "此订单的商品将从其发货的仓库；客户的发货地点是他
 
 msgid "The warehouse goods on this quote will ship from; the customer's Shipping Location is where they'll arrive."
 msgstr "此报价的商品将从其发货的仓库；客户的发货地点是他们到达的地方。"
-
-msgid "The warehouse the units return to"
-msgstr "单位返回到的仓库"
 
 msgid "The ways equipment fails, for maintenance and quality tracking"
 msgstr "设备失效的方式,用于维护和质量追踪"
@@ -18759,8 +18798,8 @@ msgstr "这些行链接到此公司外的数据，因此无法创建当前数据
 msgid "These rows link to data outside this company, so they could never be restored. Everything else was backed up."
 msgstr "这些行链接到公司外的数据，因此无法恢复它们。其他所有内容都已备份。"
 
-msgid "These units classify as sales-type leases. Activating derecognizes each one and posts its commencement journal:"
-msgstr "这些件分类为销售型租赁。激活会解除确认每个并过账其开始凭证："
+msgid "These units are treated as sales. Activating derecognizes each one and posts its commencement journal:"
+msgstr ""
 
 msgid "this ability"
 msgstr "此能力"
@@ -18833,9 +18872,6 @@ msgstr "这是受控环境，因此每个人都需要双因素认证，无法关
 
 msgid "This is a purchased item — it has no BoM/BoP; only its attributes and documents can change."
 msgstr "这是一个采购项目 — 它没有BoM/BoP；只有其属性和文档可以更改。"
-
-msgid "This is a sales-type lease. The closing net investment comes back onto the balance sheet with the unit, and the unposted interest schedule is removed."
-msgstr "这是销售型租赁。结束净投资与该件一起重新进入资产负债表，未过账的利息计划表被删除。"
 
 msgid "This is a unique identifier for the webhook"
 msgstr "这是webhook的唯一标识符"
@@ -18933,6 +18969,9 @@ msgstr "本季度"
 msgid "This removes their authenticator app, so their next sign-in only needs a magic link. Use this when they have lost access to their authenticator. It affects their sign-in for every company they belong to."
 msgstr "此操作移除其身份验证应用，因此其下次登录只需要魔法链接。当他们无法访问其身份验证器时使用此选项。它影响其所属每个公司的登录。"
 
+msgid "This rental is treated as a sale. The closing net investment comes back onto the balance sheet with the unit, and the unposted interest schedule is removed."
+msgstr ""
+
 msgid "This restore could not be completed."
 msgstr "无法完成此恢复。"
 
@@ -19009,6 +19048,10 @@ msgstr "无法读取此版本的定义。"
 
 msgid "This week"
 msgstr "本周"
+
+#. placeholder {0}: formatDate(periodEnd)
+msgid "This will create a draft depreciation run for the period ending {0}. All active assets will be calculated automatically."
+msgstr ""
 
 #. placeholder {0}: formatDate(nextPeriodEnd)
 msgid "This will create a draft revenue recognition run for the next period, ending {0}. Every schedule row due on or before that date will be included."
@@ -19148,6 +19191,9 @@ msgstr "时区"
 
 msgid "Title"
 msgstr "标题"
+
+msgid "Title passes to the customer when the term ends."
+msgstr ""
 
 msgid "To"
 msgstr "至"
@@ -19964,9 +20010,6 @@ msgstr "用于对物料进行分类以进行报告和分析"
 msgid "Used when a cell is empty or doesn't match an option above. Clear it to leave those rows blank."
 msgstr "当单元格为空或与上述任何选项不匹配时使用。清除它以将这些行留空。"
 
-msgid "Used when the agreement is activated to classify each line as an operating or sales-type lease."
-msgstr "在协议激活时用于将每一行分类为经营型或销售型租赁。"
-
 msgid "Useful Life (default)"
 msgstr "使用年限（默认）"
 
@@ -20746,9 +20789,6 @@ msgstr "库存存放位置及其发货方式。"
 msgid "Where the affected items are used across the system. Informational — nothing here blocks releasing."
 msgstr "受影响的物料在整个系统中的使用位置。仅供参考——此处没有任何内容阻止已下达。"
 
-msgid "Where the units are while on rent"
-msgstr "租赁期间这些件所在的位置"
-
 msgid "Where this entry originated (manual entry, posting from sales/purchasing, recurring template, etc.)."
 msgstr "此条目的来源(手动输入、来自销售/采购的过账、重复模板等)。"
 
@@ -20772,6 +20812,9 @@ msgstr "金额是按行价格的百分比解释，还是按固定货币金额解
 
 msgid "Whether Carbon follows each unit (Serial), each lot (Batch), the quantity (Inventory), or no tracking (Non-Inventory)."
 msgstr "Carbon 是否跟踪每个件(序列号)、每个生产批次(批次)、数量(库存管理)或不跟踪(非库存)。"
+
+msgid "Whether each unit is treated as a rental or a sale is decided when the agreement is activated."
+msgstr ""
 
 msgid "Whether the clock starts when the chosen process begins or when it completes."
 msgstr "计时是在所选工序开始时启动，还是在其完成时启动。"
@@ -20895,6 +20938,9 @@ msgstr "在制品"
 
 msgid "Without a picking list, operators pick material from the Scan tab."
 msgstr "没有拣货单的情况下,操作员从扫码选项卡中拣选原材料。"
+
+msgid "Without an end date this is always treated as a rental: a unit can only pass to the customer over a fixed term. Add an end date to test whether it is a sale."
+msgstr ""
 
 #. placeholder {0}: quarter.start + 1
 #. placeholder {1}: quarter.end
@@ -21080,6 +21126,12 @@ msgstr "您有从 PDF 中提取的 {0} 行未映射到任何库存物料。"
 
 msgid "You haven't created any contacts yet."
 msgstr "你还没有创建任何联系人。"
+
+msgid "You keep the unit on your books and depreciate it. Rent is revenue as it is earned."
+msgstr ""
+
+msgid "You keep the units on your books and depreciate them. Rent is revenue as it is earned."
+msgstr ""
 
 msgid "You lead"
 msgstr "你主导"

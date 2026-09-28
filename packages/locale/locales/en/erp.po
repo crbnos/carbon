@@ -297,6 +297,12 @@ msgstr "{count, plural, one {# account with a balance} other {# accounts with a 
 msgid "{count, plural, one {# course} other {# courses}}"
 msgstr "{count, plural, one {# course} other {# courses}}"
 
+msgid "{count} of {total} units"
+msgstr "{count} of {total} units"
+
+msgid "{count} units"
+msgstr "{count} units"
+
 msgid "{days}d"
 msgstr "{days}d"
 
@@ -489,6 +495,9 @@ msgstr "1 problem — not published"
 
 msgid "1 suggested batch"
 msgstr "1 suggested batch"
+
+msgid "1 unit"
+msgstr "1 unit"
 
 msgid "1 unposted document"
 msgstr "1 unposted document"
@@ -913,6 +922,9 @@ msgstr "A rental line is a sales-type lease when any ASC 842 test is met. These 
 msgid "A rental that meets any of the five ASC 842 lease tests, booked as a sale when its agreement activates: the unit leaves the fleet, lease revenue and cost of goods sold post, and a net investment in the lease takes its place."
 msgstr "A rental that meets any of the five ASC 842 lease tests, booked as a sale when its agreement activates: the unit leaves the fleet, lease revenue and cost of goods sold post, and a net investment in the lease takes its place."
 
+msgid "A rental treated as a sale must be in the company's base currency. Change the agreement currency or override the treatment."
+msgstr "A rental treated as a sale must be in the company's base currency. Change the agreement currency or override the treatment."
+
 msgid "A return merchandise authorization (RMA) authorizes a customer to return goods for credit, replacement, or repair."
 msgstr "A return merchandise authorization (RMA) authorizes a customer to return goods for credit, replacement, or repair."
 
@@ -981,9 +993,6 @@ msgstr "A sales request for quote (RFQ) is a customer inquiry for pricing on a s
 
 msgid "A sales RFQ (a customer asks you to quote) or a purchasing RFQ (you ask suppliers); both feed the opportunity thread."
 msgstr "A sales RFQ (a customer asks you to quote) or a purchasing RFQ (you ask suppliers); both feed the opportunity thread."
-
-msgid "A sales-type lease must be in the company's base currency. Change the agreement currency or override the classification."
-msgstr "A sales-type lease must be in the company's base currency. Change the agreement currency or override the classification."
 
 msgid "A scoped secret sent on the carbon-key request header that authenticates programmatic calls to Carbon, carrying its own permissions and rate limit rather than a user session's."
 msgstr "A scoped secret sent on the carbon-key request header that authenticates programmatic calls to Carbon, carrying its own permissions and rate limit rather than a user session's."
@@ -1083,6 +1092,9 @@ msgstr "A timed record of Setup, Labor, or Machine work logged against a job ope
 
 msgid "A tool is a physical item used to make a part that can be used across multiple jobs"
 msgstr "A tool is a physical item used to make a part that can be used across multiple jobs"
+
+msgid "A unit is treated as a sale when any of these is true, and as a rental otherwise."
+msgstr "A unit is treated as a sale when any of these is true, and as a rental otherwise."
 
 msgid "A user records the expiry date on each batch or serial when the goods are received. Use when suppliers ship lots with different expiry dates."
 msgstr "A user records the expiry date on each batch or serial when the goods are received. Use when suppliers ship lots with different expiry dates."
@@ -1216,6 +1228,12 @@ msgstr "Accounting period"
 
 msgid "Accounting Periods"
 msgstr "Accounting Periods"
+
+msgid "Accounting treatment"
+msgstr "Accounting treatment"
+
+msgid "Accounting treatment inputs"
+msgstr "Accounting treatment inputs"
 
 msgid "Accounting: GL, AR, AP, and month-end close"
 msgstr "Accounting: GL, AR, AP, and month-end close"
@@ -1947,8 +1965,8 @@ msgstr "An item's tracking type changes"
 msgid "An item's unit of measure changes"
 msgstr "An item's unit of measure changes"
 
-msgid "An open-ended agreement is always an operating lease: a sales-type lease needs an end date."
-msgstr "An open-ended agreement is always an operating lease: a sales-type lease needs an end date."
+msgid "An open-ended agreement is always treated as a rental: a sale needs an end date."
+msgstr "An open-ended agreement is always treated as a rental: a sale needs an end date."
 
 msgid "An operation done by an outside supplier rather than an in-house work center, covered by a subcontracting purchase order."
 msgstr "An operation done by an outside supplier rather than an in-house work center, covered by a subcontracting purchase order."
@@ -3770,6 +3788,9 @@ msgstr "Check the item ledger for any items with a negative on-hand quantity as 
 
 msgid "Check your email"
 msgstr "Check your email"
+
+msgid "Checked for each unit once units are added"
+msgstr "Checked for each unit once units are added"
 
 msgid "Checking Stripe for this customer…"
 msgstr "Checking Stripe for this customer…"
@@ -6216,6 +6237,9 @@ msgstr "Dimensions"
 msgid "Direct"
 msgstr "Direct"
 
+msgid "Direct financing lease"
+msgstr "Direct financing lease"
+
 msgid "Direct message to each recipient in your Slack workspace."
 msgstr "Direct message to each recipient in your Slack workspace."
 
@@ -6651,9 +6675,6 @@ msgstr "Each, lb, ft…"
 
 msgid "Earliest operation start"
 msgstr "Earliest operation start"
-
-msgid "Early termination of a sales-type lease is a manual journal."
-msgstr "Early termination of a sales-type lease is a manual journal."
 
 msgid "Easier to extend"
 msgstr "Easier to extend"
@@ -7147,6 +7168,9 @@ msgstr "Ending"
 #. placeholder {0}: parentCurrency ?? "Translated"
 msgid "Ending ({0})"
 msgstr "Ending ({0})"
+
+msgid "Ending a rental treated as a sale early is a manual journal."
+msgstr "Ending a rental treated as a sale early is a manual journal."
 
 msgid "Ends"
 msgstr "Ends"
@@ -8124,6 +8148,9 @@ msgstr "Finalizing a fiscal month through the Open → Locked → Closed lifecyc
 msgid "Financial Statements"
 msgstr "Financial Statements"
 
+msgid "Financing"
+msgstr "Financing"
+
 msgid "finish"
 msgstr "finish"
 
@@ -8606,11 +8633,17 @@ msgstr "Go live right the first time — with our team alongside you"
 msgid "Go to {0}"
 msgstr "Go to {0}"
 
+msgid "Go to depreciation runs"
+msgstr "Go to depreciation runs"
+
 msgid "Go to implementation hub"
 msgstr "Go to implementation hub"
 
 msgid "Go to module"
 msgstr "Go to module"
+
+msgid "Go to revenue recognition runs"
+msgstr "Go to revenue recognition runs"
 
 msgid "Go to that week"
 msgstr "Go to that week"
@@ -8770,9 +8803,6 @@ msgstr "Holiday Name"
 
 msgid "Holidays"
 msgstr "Holidays"
-
-msgid "Home Location"
-msgstr "Home Location"
 
 msgid "Home Phone"
 msgstr "Home Phone"
@@ -9962,9 +9992,6 @@ msgstr "Learn more"
 msgid "Lease Classification"
 msgstr "Lease Classification"
 
-msgid "Lease classification inputs"
-msgstr "Lease classification inputs"
-
 msgid "Lease Revenue"
 msgstr "Lease Revenue"
 
@@ -9979,9 +10006,6 @@ msgstr "Leave blank for built-in"
 
 msgid "Leave blank to use the next revision automatically"
 msgstr "Leave blank to use the next revision automatically"
-
-msgid "Leave empty for an open-ended agreement"
-msgstr "Leave empty for an open-ended agreement"
 
 msgid "Leave empty for exact match"
 msgstr "Leave empty for exact match"
@@ -12121,6 +12145,9 @@ msgstr "Not Configured"
 msgid "Not enough jobs to cover quantity"
 msgstr "Not enough jobs to cover quantity"
 
+msgid "Not enough unit data"
+msgstr "Not enough unit data"
+
 msgid "Not feasible"
 msgstr "Not feasible"
 
@@ -12555,9 +12582,6 @@ msgstr "Opening balance of depreciation already booked before this asset was add
 msgid "Opening Balances"
 msgstr "Opening Balances"
 
-msgid "Operating"
-msgstr "Operating"
-
 msgid "Operating Expenses"
 msgstr "Operating Expenses"
 
@@ -12566,6 +12590,9 @@ msgstr "Operating hours"
 
 msgid "Operating Income"
 msgstr "Operating Income"
+
+msgid "Operating lease"
+msgstr "Operating lease"
 
 msgid "operation"
 msgstr "operation"
@@ -13430,9 +13457,6 @@ msgstr "Post opening balances"
 msgid "Post Receipt"
 msgstr "Post Receipt"
 
-msgid "Post Run"
-msgstr "Post Run"
-
 msgid "Post Shipment"
 msgstr "Post Shipment"
 
@@ -13501,6 +13525,9 @@ msgstr "Prepayments (default)"
 
 msgid "Present value of payments is at least {threshold} of fair value ({actual})"
 msgstr "Present value of payments is at least {threshold} of fair value ({actual})"
+
+msgid "Present value of the rent is at least {threshold} of a unit's fair value"
+msgstr "Present value of the rent is at least {threshold} of a unit's fair value"
 
 msgid "Present Week"
 msgstr "Present Week"
@@ -15559,6 +15586,9 @@ msgstr "Safety stock ({0})"
 msgid "Safety Stock:"
 msgstr "Safety Stock:"
 
+msgid "Sale"
+msgstr "Sale"
+
 msgid "Sale Price"
 msgstr "Sale Price"
 
@@ -15660,9 +15690,6 @@ msgstr "Sales Tax Payable"
 
 msgid "Sales Tax Payable (default)"
 msgstr "Sales Tax Payable (default)"
-
-msgid "Sales-Type"
-msgstr "Sales-Type"
 
 msgid "Sales-type lease"
 msgstr "Sales-type lease"
@@ -16412,8 +16439,8 @@ msgstr "Set Pricing"
 msgid "Set Quantity"
 msgstr "Set Quantity"
 
-msgid "Set the agreement's start date to classify the lease."
-msgstr "Set the agreement's start date to classify the lease."
+msgid "Set the agreement's start date to see the accounting treatment."
+msgstr "Set the agreement's start date to see the accounting treatment."
 
 msgid "Set up authenticator app"
 msgstr "Set up authenticator app"
@@ -17797,6 +17824,9 @@ msgstr "Temporary disposal-clearing account debited for an asset's net book valu
 msgid "Term"
 msgstr "Term"
 
+msgid "Term is at least {threshold} of a unit's economic life"
+msgstr "Term is at least {threshold} of a unit's economic life"
+
 msgid "Term is at least {threshold} of the economic life ({actual})"
 msgstr "Term is at least {threshold} of the economic life ({actual})"
 
@@ -17969,8 +17999,17 @@ msgstr "The corrected expiration for this lot/serial; existing on-hand stock is 
 msgid "The currencies you trade in and their rates"
 msgstr "The currencies you trade in and their rates"
 
+msgid "The customer effectively buys the unit. It leaves your fixed assets at commencement, the sale is booked, and interest is earned on the receivable over the term."
+msgstr "The customer effectively buys the unit. It leaves your fixed assets at commencement, the sale is booked, and interest is earned on the receivable over the term."
+
+msgid "The customer effectively buys the units. They leave your fixed assets on activation, the sale is booked, and interest is earned over the term."
+msgstr "The customer effectively buys the units. They leave your fixed assets on activation, the sale is booked, and interest is earned over the term."
+
 msgid "The customer exercises the purchase option. A purchase option charge of {formatOptionAmount} is billed today and its invoice drafted; posting that invoice transfers the unit and marks it Sold."
 msgstr "The customer exercises the purchase option. A purchase option charge of {formatOptionAmount} is billed today and its invoice drafted; posting that invoice transfers the unit and marks it Sold."
+
+msgid "The customer is expected to buy the unit at the end of the term."
+msgstr "The customer is expected to buy the unit at the end of the term."
 
 msgid "The customer record this portal account links to; only contacts already on that customer can be selected as the account holder below."
 msgstr "The customer record this portal account links to; only contacts already on that customer can be selected as the account holder below."
@@ -18633,14 +18672,17 @@ msgid "The unit and its rates are fixed once the agreement is activated."
 msgstr "The unit and its rates are fixed once the agreement is activated."
 
 #. placeholder {0}: formatDate(endDate)
-msgid "The unit can be returned on or after the end date, {0}. Early termination of a sales-type lease is a manual journal."
-msgstr "The unit can be returned on or after the end date, {0}. Early termination of a sales-type lease is a manual journal."
+msgid "The unit can be returned on or after the end date, {0}. Ending a rental treated as a sale early is a manual journal."
+msgstr "The unit can be returned on or after the end date, {0}. Ending a rental treated as a sale early is a manual journal."
 
 msgid "The unit goes back into stock at its net book value and the asset is closed with no gain or loss."
 msgstr "The unit goes back into stock at its net book value and the asset is closed with no gain or loss."
 
 msgid "The unit goes to maintenance instead of back to available."
 msgstr "The unit goes to maintenance instead of back to available."
+
+msgid "The unit has no other use to you once the term ends."
+msgstr "The unit has no other use to you once the term ends."
 
 msgid "The unit is removed from availability until it is returned to service. Depreciation continues and its accounting is unchanged."
 msgstr "The unit is removed from availability until it is returned to service. Depreciation continues and its accounting is unchanged."
@@ -18686,9 +18728,6 @@ msgstr "The warehouse goods on this order will ship from; the customer's Shippin
 
 msgid "The warehouse goods on this quote will ship from; the customer's Shipping Location is where they'll arrive."
 msgstr "The warehouse goods on this quote will ship from; the customer's Shipping Location is where they'll arrive."
-
-msgid "The warehouse the units return to"
-msgstr "The warehouse the units return to"
 
 msgid "The ways equipment fails, for maintenance and quality tracking"
 msgstr "The ways equipment fails, for maintenance and quality tracking"
@@ -18759,8 +18798,8 @@ msgstr "These rows link to data outside this company, so a safety copy of your c
 msgid "These rows link to data outside this company, so they could never be restored. Everything else was backed up."
 msgstr "These rows link to data outside this company, so they could never be restored. Everything else was backed up."
 
-msgid "These units classify as sales-type leases. Activating derecognizes each one and posts its commencement journal:"
-msgstr "These units classify as sales-type leases. Activating derecognizes each one and posts its commencement journal:"
+msgid "These units are treated as sales. Activating derecognizes each one and posts its commencement journal:"
+msgstr "These units are treated as sales. Activating derecognizes each one and posts its commencement journal:"
 
 msgid "this ability"
 msgstr "this ability"
@@ -18833,9 +18872,6 @@ msgstr "This is a controlled environment, so two-factor authentication is requir
 
 msgid "This is a purchased item — it has no BoM/BoP; only its attributes and documents can change."
 msgstr "This is a purchased item — it has no BoM/BoP; only its attributes and documents can change."
-
-msgid "This is a sales-type lease. The closing net investment comes back onto the balance sheet with the unit, and the unposted interest schedule is removed."
-msgstr "This is a sales-type lease. The closing net investment comes back onto the balance sheet with the unit, and the unposted interest schedule is removed."
 
 msgid "This is a unique identifier for the webhook"
 msgstr "This is a unique identifier for the webhook"
@@ -18933,6 +18969,9 @@ msgstr "This Quarter"
 msgid "This removes their authenticator app, so their next sign-in only needs a magic link. Use this when they have lost access to their authenticator. It affects their sign-in for every company they belong to."
 msgstr "This removes their authenticator app, so their next sign-in only needs a magic link. Use this when they have lost access to their authenticator. It affects their sign-in for every company they belong to."
 
+msgid "This rental is treated as a sale. The closing net investment comes back onto the balance sheet with the unit, and the unposted interest schedule is removed."
+msgstr "This rental is treated as a sale. The closing net investment comes back onto the balance sheet with the unit, and the unposted interest schedule is removed."
+
 msgid "This restore could not be completed."
 msgstr "This restore could not be completed."
 
@@ -19009,6 +19048,10 @@ msgstr "This version's definition could not be read."
 
 msgid "This week"
 msgstr "This week"
+
+#. placeholder {0}: formatDate(periodEnd)
+msgid "This will create a draft depreciation run for the period ending {0}. All active assets will be calculated automatically."
+msgstr "This will create a draft depreciation run for the period ending {0}. All active assets will be calculated automatically."
 
 #. placeholder {0}: formatDate(nextPeriodEnd)
 msgid "This will create a draft revenue recognition run for the next period, ending {0}. Every schedule row due on or before that date will be included."
@@ -19148,6 +19191,9 @@ msgstr "Timezone"
 
 msgid "Title"
 msgstr "Title"
+
+msgid "Title passes to the customer when the term ends."
+msgstr "Title passes to the customer when the term ends."
 
 msgid "To"
 msgstr "To"
@@ -19964,9 +20010,6 @@ msgstr "Used to categorize items for reporting and analysis"
 msgid "Used when a cell is empty or doesn't match an option above. Clear it to leave those rows blank."
 msgstr "Used when a cell is empty or doesn't match an option above. Clear it to leave those rows blank."
 
-msgid "Used when the agreement is activated to classify each line as an operating or sales-type lease."
-msgstr "Used when the agreement is activated to classify each line as an operating or sales-type lease."
-
 msgid "Useful Life (default)"
 msgstr "Useful Life (default)"
 
@@ -20746,9 +20789,6 @@ msgstr "Where stock lives and how it ships."
 msgid "Where the affected items are used across the system. Informational — nothing here blocks releasing."
 msgstr "Where the affected items are used across the system. Informational — nothing here blocks releasing."
 
-msgid "Where the units are while on rent"
-msgstr "Where the units are while on rent"
-
 msgid "Where this entry originated (manual entry, posting from sales/purchasing, recurring template, etc.)."
 msgstr "Where this entry originated (manual entry, posting from sales/purchasing, recurring template, etc.)."
 
@@ -20772,6 +20812,9 @@ msgstr "Whether Amount is interpreted as a percentage of the line price or as a 
 
 msgid "Whether Carbon follows each unit (Serial), each lot (Batch), the quantity (Inventory), or no tracking (Non-Inventory)."
 msgstr "Whether Carbon follows each unit (Serial), each lot (Batch), the quantity (Inventory), or no tracking (Non-Inventory)."
+
+msgid "Whether each unit is treated as a rental or a sale is decided when the agreement is activated."
+msgstr "Whether each unit is treated as a rental or a sale is decided when the agreement is activated."
 
 msgid "Whether the clock starts when the chosen process begins or when it completes."
 msgstr "Whether the clock starts when the chosen process begins or when it completes."
@@ -20895,6 +20938,9 @@ msgstr "WIP"
 
 msgid "Without a picking list, operators pick material from the Scan tab."
 msgstr "Without a picking list, operators pick material from the Scan tab."
+
+msgid "Without an end date this is always treated as a rental: a unit can only pass to the customer over a fixed term. Add an end date to test whether it is a sale."
+msgstr "Without an end date this is always treated as a rental: a unit can only pass to the customer over a fixed term. Add an end date to test whether it is a sale."
 
 #. placeholder {0}: quarter.start + 1
 #. placeholder {1}: quarter.end
@@ -21080,6 +21126,12 @@ msgstr "You have {0} lines extracted from a PDF that are not mapped to any inven
 
 msgid "You haven't created any contacts yet."
 msgstr "You haven't created any contacts yet."
+
+msgid "You keep the unit on your books and depreciate it. Rent is revenue as it is earned."
+msgstr "You keep the unit on your books and depreciate it. Rent is revenue as it is earned."
+
+msgid "You keep the units on your books and depreciate them. Rent is revenue as it is earned."
+msgstr "You keep the units on your books and depreciate them. Rent is revenue as it is earned."
 
 msgid "You lead"
 msgstr "You lead"

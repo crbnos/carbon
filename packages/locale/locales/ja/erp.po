@@ -297,6 +297,12 @@ msgstr "{count, plural, one {# 件の残高のある勘定} other {# 件の残�
 msgid "{count, plural, one {# course} other {# courses}}"
 msgstr "{count, plural, one {# コース} other {# コース}}"
 
+msgid "{count} of {total} units"
+msgstr ""
+
+msgid "{count} units"
+msgstr ""
+
 msgid "{days}d"
 msgstr "{days}日"
 
@@ -489,6 +495,9 @@ msgstr "1個の問題 — 公開済ではありません"
 
 msgid "1 suggested batch"
 msgstr "推奨バッチ 1 個"
+
+msgid "1 unit"
+msgstr ""
 
 msgid "1 unposted document"
 msgstr "1 件の未転記文書"
@@ -913,6 +922,9 @@ msgstr "リース明細は、いずれかのASC 842テストが満たされた�
 msgid "A rental that meets any of the five ASC 842 lease tests, booked as a sale when its agreement activates: the unit leaves the fleet, lease revenue and cost of goods sold post, and a net investment in the lease takes its place."
 msgstr "5つのASC 842リーステストのいずれかを満たし、その契約が開始する際に販売としてブックされたリース。資産はフリートから除外され、リース売上高および売上原価が転記され、そのリースに対する純投資がその場所に記入されます。"
 
+msgid "A rental treated as a sale must be in the company's base currency. Change the agreement currency or override the treatment."
+msgstr ""
+
 msgid "A return merchandise authorization (RMA) authorizes a customer to return goods for credit, replacement, or repair."
 msgstr "返品認可（RMA）は、得意先がクレジット、交換、または修理のために商品を返品することを認可します。"
 
@@ -981,9 +993,6 @@ msgstr "売上見積依頼（RFQ）は、複数の部品と数量に関する価
 
 msgid "A sales RFQ (a customer asks you to quote) or a purchasing RFQ (you ask suppliers); both feed the opportunity thread."
 msgstr "売上見積依頼（得意先が見積をお願いする）または購買見積依頼（仕入先に見積をお願いする）で、どちらも商談に情報を提供します。"
-
-msgid "A sales-type lease must be in the company's base currency. Change the agreement currency or override the classification."
-msgstr "セールスタイプリースは会社の基本通貨である必要があります。契約通貨を変更するか、分類を上書きしてください。"
 
 msgid "A scoped secret sent on the carbon-key request header that authenticates programmatic calls to Carbon, carrying its own permissions and rate limit rather than a user session's."
 msgstr "carbon-key リクエスト ヘッダーで送信されるスコープ付きシークレット。Carbon へのプログラマティック呼び出しを認証し、ユーザー セッションではなく独自の権限とレート制限を保有します。"
@@ -1083,6 +1092,9 @@ msgstr "ジョブ指図工程に対して記録された段取り、労務、ま
 
 msgid "A tool is a physical item used to make a part that can be used across multiple jobs"
 msgstr "工具は部品を製造するために使用され、複数の製造指図で使用できる物理的アイテムです"
+
+msgid "A unit is treated as a sale when any of these is true, and as a rental otherwise."
+msgstr ""
 
 msgid "A user records the expiry date on each batch or serial when the goods are received. Use when suppliers ship lots with different expiry dates."
 msgstr "ユーザーは商品受取時に各バッチまたはシリアルの使用期限を記録します。仕入先が異なる使用期限のロットを出荷する場合に使用します。"
@@ -1216,6 +1228,12 @@ msgstr "会計期間"
 
 msgid "Accounting Periods"
 msgstr "会計期間"
+
+msgid "Accounting treatment"
+msgstr ""
+
+msgid "Accounting treatment inputs"
+msgstr ""
 
 msgid "Accounting: GL, AR, AP, and month-end close"
 msgstr "会計: 総勘定元帳、売掛金、買掛金、および月末クローズ"
@@ -1947,8 +1965,8 @@ msgstr "アイテムの追跡タイプが変更されます"
 msgid "An item's unit of measure changes"
 msgstr "アイテムの計量単位が変更されます"
 
-msgid "An open-ended agreement is always an operating lease: a sales-type lease needs an end date."
-msgstr "オープンエンド契約は常にオペレーティングリースです。セールスタイプリースは終了日が必要です。"
+msgid "An open-ended agreement is always treated as a rental: a sale needs an end date."
+msgstr ""
 
 msgid "An operation done by an outside supplier rather than an in-house work center, covered by a subcontracting purchase order."
 msgstr "社内作業区ではなく外部仕入先が実行する工程で、外注発注書でカバーされます。"
@@ -3770,6 +3788,9 @@ msgstr "期末時点で保有数量がマイナスの品目がないか品目台
 
 msgid "Check your email"
 msgstr "メールを確認してください"
+
+msgid "Checked for each unit once units are added"
+msgstr ""
 
 msgid "Checking Stripe for this customer…"
 msgstr "この得意先の Stripe を確認中…"
@@ -6216,6 +6237,9 @@ msgstr "ディメンション"
 msgid "Direct"
 msgstr "直接"
 
+msgid "Direct financing lease"
+msgstr ""
+
 msgid "Direct message to each recipient in your Slack workspace."
 msgstr "Slackワークスペース内の各受信者への直接メッセージ。"
 
@@ -6651,9 +6675,6 @@ msgstr "各、ポンド、フィート…"
 
 msgid "Earliest operation start"
 msgstr "最早操作開始"
-
-msgid "Early termination of a sales-type lease is a manual journal."
-msgstr "セールスタイプリースの早期終了は手動仕訳です。"
 
 msgid "Easier to extend"
 msgstr "拡張が簡単"
@@ -7147,6 +7168,9 @@ msgstr "終了"
 #. placeholder {0}: parentCurrency ?? "Translated"
 msgid "Ending ({0})"
 msgstr "終了 ({0})"
+
+msgid "Ending a rental treated as a sale early is a manual journal."
+msgstr ""
 
 msgid "Ends"
 msgstr "終了"
@@ -8124,6 +8148,9 @@ msgstr "会計月をオープン → ロック中 → クローズ済のライ�
 msgid "Financial Statements"
 msgstr "財務諸表"
 
+msgid "Financing"
+msgstr ""
+
 msgid "finish"
 msgstr "完成品"
 
@@ -8606,11 +8633,17 @@ msgstr "初回から正しく本番運用を開始 — 当社チームがサポ�
 msgid "Go to {0}"
 msgstr "{0}に移動"
 
+msgid "Go to depreciation runs"
+msgstr ""
+
 msgid "Go to implementation hub"
 msgstr "実施ハブに移動"
 
 msgid "Go to module"
 msgstr "モジュールに移動"
+
+msgid "Go to revenue recognition runs"
+msgstr ""
 
 msgid "Go to that week"
 msgstr "その週に移動"
@@ -8770,9 +8803,6 @@ msgstr "休日名"
 
 msgid "Holidays"
 msgstr "休日"
-
-msgid "Home Location"
-msgstr "ホーム拠点"
 
 msgid "Home Phone"
 msgstr "自宅電話"
@@ -9962,9 +9992,6 @@ msgstr "詳細情報"
 msgid "Lease Classification"
 msgstr "リース分類"
 
-msgid "Lease classification inputs"
-msgstr "リース分類の入力項目"
-
 msgid "Lease Revenue"
 msgstr "リース売上高"
 
@@ -9979,9 +10006,6 @@ msgstr "組み込みの場合は空白のままにしてください"
 
 msgid "Leave blank to use the next revision automatically"
 msgstr "空白のままにして、次のリビジョンを自動的に使用します"
-
-msgid "Leave empty for an open-ended agreement"
-msgstr "無期限契約の場合は空白のままにしてください"
 
 msgid "Leave empty for exact match"
 msgstr "正確な一致のために空のままにしてください"
@@ -12121,6 +12145,9 @@ msgstr "未設定"
 msgid "Not enough jobs to cover quantity"
 msgstr "数量をカバーするのに十分な製造指図がありません"
 
+msgid "Not enough unit data"
+msgstr ""
+
 msgid "Not feasible"
 msgstr "実現不可能"
 
@@ -12555,9 +12582,6 @@ msgstr "このアセットがCarbonに追加される前に既に予約されて
 msgid "Opening Balances"
 msgstr "初期残高"
 
-msgid "Operating"
-msgstr "オペレーティング"
-
 msgid "Operating Expenses"
 msgstr "営業費用"
 
@@ -12566,6 +12590,9 @@ msgstr "営業時間"
 
 msgid "Operating Income"
 msgstr "営業収益"
+
+msgid "Operating lease"
+msgstr ""
 
 msgid "operation"
 msgstr "工程"
@@ -13430,9 +13457,6 @@ msgstr "初期残高を転記"
 msgid "Post Receipt"
 msgstr "領収書を転記"
 
-msgid "Post Run"
-msgstr "転記実行"
-
 msgid "Post Shipment"
 msgstr "出荷を転記する"
 
@@ -13501,6 +13525,9 @@ msgstr "前払金 (デフォルト)"
 
 msgid "Present value of payments is at least {threshold} of fair value ({actual})"
 msgstr "支払の現在価値は公正価値の{threshold}以上です({actual})"
+
+msgid "Present value of the rent is at least {threshold} of a unit's fair value"
+msgstr ""
 
 msgid "Present Week"
 msgstr "今週"
@@ -15559,6 +15586,9 @@ msgstr "安全在庫 ({0})"
 msgid "Safety Stock:"
 msgstr "安全在庫:"
 
+msgid "Sale"
+msgstr ""
+
 msgid "Sale Price"
 msgstr "販売価格"
 
@@ -15660,9 +15690,6 @@ msgstr "支払い売上税"
 
 msgid "Sales Tax Payable (default)"
 msgstr "支払い売上税（デフォルト）"
-
-msgid "Sales-Type"
-msgstr "セールスタイプ"
 
 msgid "Sales-type lease"
 msgstr "セールスタイプリース"
@@ -16412,8 +16439,8 @@ msgstr "価格設定"
 msgid "Set Quantity"
 msgstr "数量を設定"
 
-msgid "Set the agreement's start date to classify the lease."
-msgstr "リースを分類するために、契約の開始日を設定してください。"
+msgid "Set the agreement's start date to see the accounting treatment."
+msgstr ""
 
 msgid "Set up authenticator app"
 msgstr "認証アプリをセットアップ"
@@ -17797,6 +17824,9 @@ msgstr "一時的な除却クリアリング勘定は、出荷時に資産の未
 msgid "Term"
 msgstr "条件"
 
+msgid "Term is at least {threshold} of a unit's economic life"
+msgstr ""
+
 msgid "Term is at least {threshold} of the economic life ({actual})"
 msgstr "期間は経済的耐用年数の少なくとも{threshold}です({actual})"
 
@@ -17969,8 +17999,17 @@ msgstr "このロット/シリアル番号の修正された有効期限。変�
 msgid "The currencies you trade in and their rates"
 msgstr "あなたが取引する通貨とそのレート"
 
+msgid "The customer effectively buys the unit. It leaves your fixed assets at commencement, the sale is booked, and interest is earned on the receivable over the term."
+msgstr ""
+
+msgid "The customer effectively buys the units. They leave your fixed assets on activation, the sale is booked, and interest is earned over the term."
+msgstr ""
+
 msgid "The customer exercises the purchase option. A purchase option charge of {formatOptionAmount} is billed today and its invoice drafted; posting that invoice transfers the unit and marks it Sold."
 msgstr "得意先が購入オプションを実行します。購入オプション料{formatOptionAmount}は本日請求され、その請求書が作成されます。その請求書を転記すると、この個が譲渡され、売却済みとしてマークされます。"
+
+msgid "The customer is expected to buy the unit at the end of the term."
+msgstr ""
 
 msgid "The customer record this portal account links to; only contacts already on that customer can be selected as the account holder below."
 msgstr "このポータル アカウントがリンクしている得意先レコード。その得意先にすでに存在する担当者のみが、以下のアカウント ホルダーとして選択できます。"
@@ -18633,14 +18672,17 @@ msgid "The unit and its rates are fixed once the agreement is activated."
 msgstr "契約が有効化されるとユニットと料率は確定します。"
 
 #. placeholder {0}: formatDate(endDate)
-msgid "The unit can be returned on or after the end date, {0}. Early termination of a sales-type lease is a manual journal."
-msgstr "この個は終了日{0}以降に返却できます。売却型リースの早期終了は手動仕訳です。"
+msgid "The unit can be returned on or after the end date, {0}. Ending a rental treated as a sale early is a manual journal."
+msgstr ""
 
 msgid "The unit goes back into stock at its net book value and the asset is closed with no gain or loss."
 msgstr "この品目は未償却残高で在庫に戻り、資産はゲインまたはロスなくクローズされます。"
 
 msgid "The unit goes to maintenance instead of back to available."
 msgstr "ユニットは利用可能に戻すのではなく保全に移行します。"
+
+msgid "The unit has no other use to you once the term ends."
+msgstr ""
 
 msgid "The unit is removed from availability until it is returned to service. Depreciation continues and its accounting is unchanged."
 msgstr "この品目は使用再開までの間、利用不可となります。減価償却は継続され、会計処理は変わりません。"
@@ -18686,9 +18728,6 @@ msgstr "この注文から出荷される倉庫。得意先の出荷拠点がそ
 
 msgid "The warehouse goods on this quote will ship from; the customer's Shipping Location is where they'll arrive."
 msgstr "この見積から出荷される倉庫。得意先の出荷拠点がそれらの到着地点です。"
-
-msgid "The warehouse the units return to"
-msgstr "ユニットが返却される倉庫"
 
 msgid "The ways equipment fails, for maintenance and quality tracking"
 msgstr "設備障害の形式（保全および品質追跡用）"
@@ -18759,8 +18798,8 @@ msgstr "これらの行はこの会社外のデータにリンクしているた
 msgid "These rows link to data outside this company, so they could never be restored. Everything else was backed up."
 msgstr "これらの行は会社外のデータにリンクしているため、復元することはできません。その他すべてがバックアップされました。"
 
-msgid "These units classify as sales-type leases. Activating derecognizes each one and posts its commencement journal:"
-msgstr "これらの個は売却型リースに分類されます。有効化されると各個が認識消除され、その開始仕訳が転記されます。"
+msgid "These units are treated as sales. Activating derecognizes each one and posts its commencement journal:"
+msgstr ""
 
 msgid "this ability"
 msgstr "このスキル"
@@ -18833,9 +18872,6 @@ msgstr "これは管理されたリソースのため、二要素認証は全員
 
 msgid "This is a purchased item — it has no BoM/BoP; only its attributes and documents can change."
 msgstr "これは購買品目です。BOM/BoPはありません。属性とドキュメントのみが変更できます。"
-
-msgid "This is a sales-type lease. The closing net investment comes back onto the balance sheet with the unit, and the unposted interest schedule is removed."
-msgstr "これは売却型リースです。決算時のネット投資は貸借対照表にこの個とともに戻され、未転記の利息計画は削除されます。"
 
 msgid "This is a unique identifier for the webhook"
 msgstr "これはWebhookの一意識別子です"
@@ -18933,6 +18969,9 @@ msgstr "今四半期"
 msgid "This removes their authenticator app, so their next sign-in only needs a magic link. Use this when they have lost access to their authenticator. It affects their sign-in for every company they belong to."
 msgstr "これにより認証器アプリが削除されるため、次回のサインインはマジックリンクのみが必要になります。認証器へのアクセスを失った場合にこれを使用してください。彼らが属するすべての会社のサインインに影響します。"
 
+msgid "This rental is treated as a sale. The closing net investment comes back onto the balance sheet with the unit, and the unposted interest schedule is removed."
+msgstr ""
+
 msgid "This restore could not be completed."
 msgstr "この復元を完了できませんでした。"
 
@@ -19009,6 +19048,10 @@ msgstr "このバージョンの定義を読み取ることができませんで
 
 msgid "This week"
 msgstr "今週"
+
+#. placeholder {0}: formatDate(periodEnd)
+msgid "This will create a draft depreciation run for the period ending {0}. All active assets will be calculated automatically."
+msgstr ""
 
 #. placeholder {0}: formatDate(nextPeriodEnd)
 msgid "This will create a draft revenue recognition run for the next period, ending {0}. Every schedule row due on or before that date will be included."
@@ -19148,6 +19191,9 @@ msgstr "タイムゾーン"
 
 msgid "Title"
 msgstr "タイトル"
+
+msgid "Title passes to the customer when the term ends."
+msgstr ""
 
 msgid "To"
 msgstr "へ"
@@ -19964,9 +20010,6 @@ msgstr "レポートと分析のためにアイテムを分類するために使
 msgid "Used when a cell is empty or doesn't match an option above. Clear it to leave those rows blank."
 msgstr "セルが空いているか、上記のどのオプションにも一致しない場合に使用します。クリアして、これらの行を空白のままにします。"
 
-msgid "Used when the agreement is activated to classify each line as an operating or sales-type lease."
-msgstr "契約が有効化される際に各明細を営業型リースまたは販売型リースとして分類する場合に使用されます。"
-
 msgid "Useful Life (default)"
 msgstr "耐用年数(デフォルト)"
 
@@ -20746,9 +20789,6 @@ msgstr "在庫がどこに保管され、どのように出荷されるか。"
 msgid "Where the affected items are used across the system. Informational — nothing here blocks releasing."
 msgstr "影響を受けるアイテムがシステム全体でどこで使用されているか。情報提供 - ここに何もリリースをブロックしません。"
 
-msgid "Where the units are while on rent"
-msgstr "レンタル中の個の所在地"
-
 msgid "Where this entry originated (manual entry, posting from sales/purchasing, recurring template, etc.)."
 msgstr "このエントリーの発生元（手動入力、販売/購買からの転記、定期テンプレートなど）。"
 
@@ -20772,6 +20812,9 @@ msgstr "金額を明細価格に対する割合として解釈するか、固定
 
 msgid "Whether Carbon follows each unit (Serial), each lot (Batch), the quantity (Inventory), or no tracking (Non-Inventory)."
 msgstr "Carbonが各単位（Serial）、各ロット（バッチ）、数量（Inventory）、またはトラッキングなし（非在庫）のいずれを追跡するかどうか。"
+
+msgid "Whether each unit is treated as a rental or a sale is decided when the agreement is activated."
+msgstr ""
 
 msgid "Whether the clock starts when the chosen process begins or when it completes."
 msgstr "選択したプロセスの開始時にカウントを開始するか、完了時に開始するか。"
@@ -20895,6 +20938,9 @@ msgstr "仕掛品"
 
 msgid "Without a picking list, operators pick material from the Scan tab."
 msgstr "ピッキングリストがない場合、作業者はスキャンタブから材料をピッキングします。"
+
+msgid "Without an end date this is always treated as a rental: a unit can only pass to the customer over a fixed term. Add an end date to test whether it is a sale."
+msgstr ""
 
 #. placeholder {0}: quarter.start + 1
 #. placeholder {1}: quarter.end
@@ -21076,6 +21122,12 @@ msgstr "あなたは、PDFから抽出された{0}行を持っていますが、
 
 msgid "You haven't created any contacts yet."
 msgstr "まだ担当者を作成していません。"
+
+msgid "You keep the unit on your books and depreciate it. Rent is revenue as it is earned."
+msgstr ""
+
+msgid "You keep the units on your books and depreciate them. Rent is revenue as it is earned."
+msgstr ""
 
 msgid "You lead"
 msgstr "あなたがリード"

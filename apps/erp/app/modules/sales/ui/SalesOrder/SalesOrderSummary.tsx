@@ -443,6 +443,7 @@ function LineItems({
                     >
                       <HStack spacing={4}>
                         <MotionMoney
+                          className="font-semibold text-xl whitespace-nowrap"
                           value={
                             ((line?.convertedUnitPrice ?? 0) *
                               (line?.saleQuantity ?? 0) +
@@ -651,7 +652,7 @@ function LineItems({
                       </Td>
                     </Tr>
 
-                    <Tr key="total" className="font-bold">
+                    <Tr key="total" className="font-semibold">
                       <Td>Total</Td>
                       <Td className="text-right">
                         <MotionMoney

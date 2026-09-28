@@ -345,7 +345,7 @@ const ErrorMessage = ({
 }) => {
   return (
     <div className="flex min-h-screen flex-col items-center justify-center p-4 text-center">
-      <h1 className="text-3xl font-bold">{title}</h1>
+      <h1 className="text-3xl font-semibold">{title}</h1>
       <p className="text-lg text-muted-foreground">{message}</p>
     </div>
   );

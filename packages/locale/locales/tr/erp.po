@@ -297,6 +297,12 @@ msgstr "{count, plural, one {# bakiyesi olan hesap} other {# bakiyesi olan hesap
 msgid "{count, plural, one {# course} other {# courses}}"
 msgstr "{count, plural, one {# kurs} other {# kurs}}"
 
+msgid "{count} of {total} units"
+msgstr ""
+
+msgid "{count} units"
+msgstr ""
+
 msgid "{days}d"
 msgstr "{days}g"
 
@@ -489,6 +495,9 @@ msgstr "1 sorun — yayınlanmadı"
 
 msgid "1 suggested batch"
 msgstr "1 önerilen parti"
+
+msgid "1 unit"
+msgstr ""
 
 msgid "1 unposted document"
 msgstr "1 deftere geçmemiş belge"
@@ -913,6 +922,9 @@ msgstr "Bir kiralama satırı, herhangi bir ASC 842 testi karşılandığında s
 msgid "A rental that meets any of the five ASC 842 lease tests, booked as a sale when its agreement activates: the unit leaves the fleet, lease revenue and cost of goods sold post, and a net investment in the lease takes its place."
 msgstr "Beş ASC 842 kira testinden herhangi birini karşılayan bir kiralama, sözleşmesi etkinleştirildiğinde satış olarak muhasebeleştirilen: birim filo ayrılır, kira hasılatı ve satılan malın maliyeti muhasebeleştirilir ve kiralamada net yatırım yerini alır."
 
+msgid "A rental treated as a sale must be in the company's base currency. Change the agreement currency or override the treatment."
+msgstr ""
+
 msgid "A return merchandise authorization (RMA) authorizes a customer to return goods for credit, replacement, or repair."
 msgstr "İade malı yetkilendirmesi (RMA), bir müşterinin kredi, yedek veya onarım için malları iade etmesine yetki verir."
 
@@ -981,9 +993,6 @@ msgstr "Satış teklif talebi (RFQ), bir dizi parça ve miktar üzerinde fiyatla
 
 msgid "A sales RFQ (a customer asks you to quote) or a purchasing RFQ (you ask suppliers); both feed the opportunity thread."
 msgstr "Bir satış RFQ (müşteri sizi alıntı yapmak için ister) veya satın alma RFQ (siz tedarikçileri istersiniz); her ikisi de fırsat ipliğini besler."
-
-msgid "A sales-type lease must be in the company's base currency. Change the agreement currency or override the classification."
-msgstr "Satış tipi kiralama şirketin temel para biriminde olmalıdır. Sözleşme para birimini değiştirin veya sınıflandırmayı geçersiz kılın."
 
 msgid "A scoped secret sent on the carbon-key request header that authenticates programmatic calls to Carbon, carrying its own permissions and rate limit rather than a user session's."
 msgstr "Carbon'a programlı çağrıları doğrulayan carbon-key istek başlığında gönderilen kapsamlı bir gizli anahtar; bir kullanıcı oturumunun yerine kendi izinleri ve hız sınırını taşır."
@@ -1083,6 +1092,9 @@ msgstr "Bir iş emri operasyonuna karşı kaydedilen Hazırlık, İşçilik veya
 
 msgid "A tool is a physical item used to make a part that can be used across multiple jobs"
 msgstr "Takım, bir Parça yapmak için kullanılan ve birden fazla İş emirlerine göre kullanılabilen fiziksel bir Stok kartıdır."
+
+msgid "A unit is treated as a sale when any of these is true, and as a rental otherwise."
+msgstr ""
 
 msgid "A user records the expiry date on each batch or serial when the goods are received. Use when suppliers ship lots with different expiry dates."
 msgstr "Kullanıcı, mallar alındığında her parti veya seri için son kullanma tarihini kaydeder. Tedarikçiler farklı son kullanma tarihlerine sahip partiler gönderdiğinde kullanılır."
@@ -1216,6 +1228,12 @@ msgstr "Muhasebe dönemi"
 
 msgid "Accounting Periods"
 msgstr "Muhasebe Dönemleri"
+
+msgid "Accounting treatment"
+msgstr ""
+
+msgid "Accounting treatment inputs"
+msgstr ""
 
 msgid "Accounting: GL, AR, AP, and month-end close"
 msgstr "Muhasebe: Büyük defter, Alacak hesapları, Borç hesapları ve ay sonu kapanışı"
@@ -1947,8 +1965,8 @@ msgstr "Bir stok kartının izleme türü değişir"
 msgid "An item's unit of measure changes"
 msgstr "Bir öğenin ölçü birimi değişir"
 
-msgid "An open-ended agreement is always an operating lease: a sales-type lease needs an end date."
-msgstr "Açık uçlu bir sözleşme her zaman bir işletme kiramasıdır: satış tipi kiralama bir bitiş tarihi gerektirir."
+msgid "An open-ended agreement is always treated as a rental: a sale needs an end date."
+msgstr ""
 
 msgid "An operation done by an outside supplier rather than an in-house work center, covered by a subcontracting purchase order."
 msgstr "Dış tedarikçi tarafından yapılan operasyon, bir taşeronluk satın alma siparişi ile kapsanan, içeriye iş merkezi yerine."
@@ -3770,6 +3788,9 @@ msgstr "Dönem sonu itibariyle negatif eldeki miktarı olan herhangi bir stok ka
 
 msgid "Check your email"
 msgstr "E-postanızı kontrol edin"
+
+msgid "Checked for each unit once units are added"
+msgstr ""
 
 msgid "Checking Stripe for this customer…"
 msgstr "Bu müşteri için Stripe kontrol ediliyor…"
@@ -6216,6 +6237,9 @@ msgstr "Boyutlar"
 msgid "Direct"
 msgstr "Doğrudan"
 
+msgid "Direct financing lease"
+msgstr ""
+
 msgid "Direct message to each recipient in your Slack workspace."
 msgstr "Slack çalışma alanınızdaki her alıcıya doğrudan mesaj."
 
@@ -6651,9 +6675,6 @@ msgstr "Her, lb, ft…"
 
 msgid "Earliest operation start"
 msgstr "En erken operasyon başlangıcı"
-
-msgid "Early termination of a sales-type lease is a manual journal."
-msgstr "Satış tipi kiralamada erken sonlandırma bir manuel muhasebe fişidir."
 
 msgid "Easier to extend"
 msgstr "Genişletmesi daha kolay"
@@ -7147,6 +7168,9 @@ msgstr "Son"
 #. placeholder {0}: parentCurrency ?? "Translated"
 msgid "Ending ({0})"
 msgstr "Son ({0})"
+
+msgid "Ending a rental treated as a sale early is a manual journal."
+msgstr ""
 
 msgid "Ends"
 msgstr "Bitiş"
@@ -8124,6 +8148,9 @@ msgstr "Mali bir ayı Açık → Kilitli → Kapalı yaşam döngüsü aracılı
 msgid "Financial Statements"
 msgstr "Mali Tablolar"
 
+msgid "Financing"
+msgstr ""
+
 msgid "finish"
 msgstr "Bitmiş ürünler"
 
@@ -8606,11 +8633,17 @@ msgstr "İlk seferde canlı yayına geç — ekibimiz yanınızda"
 msgid "Go to {0}"
 msgstr "Şuraya git: {0}"
 
+msgid "Go to depreciation runs"
+msgstr ""
+
 msgid "Go to implementation hub"
 msgstr "Uygulama merkezine git"
 
 msgid "Go to module"
 msgstr "Modüle git"
+
+msgid "Go to revenue recognition runs"
+msgstr ""
 
 msgid "Go to that week"
 msgstr "O haftaya git"
@@ -8770,9 +8803,6 @@ msgstr "Tatil Adı"
 
 msgid "Holidays"
 msgstr "Tatiller"
-
-msgid "Home Location"
-msgstr "Merkez Lokasyon"
 
 msgid "Home Phone"
 msgstr "Ev Telefonu"
@@ -9962,9 +9992,6 @@ msgstr "Daha fazla bilgi edinin"
 msgid "Lease Classification"
 msgstr "Kiralama Sınıflandırması"
 
-msgid "Lease classification inputs"
-msgstr "Kira Sınıflandırması Verileri"
-
 msgid "Lease Revenue"
 msgstr "Finansal Kiralama Hasılat"
 
@@ -9979,9 +10006,6 @@ msgstr "Yerleşik için boş bırakın"
 
 msgid "Leave blank to use the next revision automatically"
 msgstr "Sonraki revizyonu otomatik olarak kullanmak için boş bırakın"
-
-msgid "Leave empty for an open-ended agreement"
-msgstr "Açık uçlu bir anlaşma için boş bırakın"
 
 msgid "Leave empty for exact match"
 msgstr "Tam eşleşme için boş bırakın"
@@ -12121,6 +12145,9 @@ msgstr "Yapılandırılmadı"
 msgid "Not enough jobs to cover quantity"
 msgstr "Miktarı karşılamak için yeterli İş emri yok"
 
+msgid "Not enough unit data"
+msgstr ""
+
 msgid "Not feasible"
 msgstr "Gerçekleştirilemez"
 
@@ -12555,9 +12582,6 @@ msgstr "Bu varlık Carbon'a eklenmeden önce zaten deftere geçirilmiş amortism
 msgid "Opening Balances"
 msgstr "Açılış Bakiyeleri"
 
-msgid "Operating"
-msgstr "İşletme"
-
 msgid "Operating Expenses"
 msgstr "İşletme Giderleri"
 
@@ -12566,6 +12590,9 @@ msgstr "İşletme saatleri"
 
 msgid "Operating Income"
 msgstr "İşletme Geliri"
+
+msgid "Operating lease"
+msgstr ""
 
 msgid "operation"
 msgstr "operasyon"
@@ -13430,9 +13457,6 @@ msgstr "Açılış Bakiyelerini Muhasebeleştir"
 msgid "Post Receipt"
 msgstr "Makbuzu Kaydet"
 
-msgid "Post Run"
-msgstr "Muhasebeleştirme Çalıştırması"
-
 msgid "Post Shipment"
 msgstr "Sevkiyatı Kaydet"
 
@@ -13501,6 +13525,9 @@ msgstr "Avanslar (varsayılan)"
 
 msgid "Present value of payments is at least {threshold} of fair value ({actual})"
 msgstr "Ödemelerin bugünkü değeri adil değerin en azından {threshold}'idir ({actual})"
+
+msgid "Present value of the rent is at least {threshold} of a unit's fair value"
+msgstr ""
 
 msgid "Present Week"
 msgstr "Mevcut Hafta"
@@ -15559,6 +15586,9 @@ msgstr "Emniyet stoku ({0})"
 msgid "Safety Stock:"
 msgstr "Emniyet Stoku:"
 
+msgid "Sale"
+msgstr ""
+
 msgid "Sale Price"
 msgstr "Satış Fiyatı"
 
@@ -15660,9 +15690,6 @@ msgstr "Ödenmesi gereken satış vergisi"
 
 msgid "Sales Tax Payable (default)"
 msgstr "Ödenmesi gereken satış vergisi (varsayılan)"
-
-msgid "Sales-Type"
-msgstr "Satış Tipi"
 
 msgid "Sales-type lease"
 msgstr "Satış tipi kiralama"
@@ -16412,8 +16439,8 @@ msgstr "Fiyatlandırmayı Ayarla"
 msgid "Set Quantity"
 msgstr "Miktarı Ayarla"
 
-msgid "Set the agreement's start date to classify the lease."
-msgstr "Kiralamayı sınıflandırmak için sözleşmenin başlangıç tarihini ayarlayın."
+msgid "Set the agreement's start date to see the accounting treatment."
+msgstr ""
 
 msgid "Set up authenticator app"
 msgstr "Doğrulayıcı uygulamayı ayarla"
@@ -17797,6 +17824,9 @@ msgstr "Sevkiyat sırasında bir varlığın net defter değeri için borçland�
 msgid "Term"
 msgstr "Vade"
 
+msgid "Term is at least {threshold} of a unit's economic life"
+msgstr ""
+
 msgid "Term is at least {threshold} of the economic life ({actual})"
 msgstr "Vade ekonomik ömrün en az {threshold}'sidir ({actual})"
 
@@ -17969,8 +17999,17 @@ msgstr "Bu lot/seri numarası için düzeltilmiş son kullanma tarihi; mevcut el
 msgid "The currencies you trade in and their rates"
 msgstr "Ticaret yaptığınız para birimleri ve bunların oranları"
 
+msgid "The customer effectively buys the unit. It leaves your fixed assets at commencement, the sale is booked, and interest is earned on the receivable over the term."
+msgstr ""
+
+msgid "The customer effectively buys the units. They leave your fixed assets on activation, the sale is booked, and interest is earned over the term."
+msgstr ""
+
 msgid "The customer exercises the purchase option. A purchase option charge of {formatOptionAmount} is billed today and its invoice drafted; posting that invoice transfers the unit and marks it Sold."
 msgstr "Müşteri satın alma seçeneğini kullanır. {formatOptionAmount} tutarında satın alma seçeneği ücreti bugün faturalanır ve faturası hazırlanır; bu faturanın muhasebeleştirilmesi adeti transfer eder ve onu Satıldı olarak işaretler."
+
+msgid "The customer is expected to buy the unit at the end of the term."
+msgstr ""
 
 msgid "The customer record this portal account links to; only contacts already on that customer can be selected as the account holder below."
 msgstr "Bu portal hesabının bağlandığı müşteri kaydı; yalnızca zaten o müşteri üzerindeki ilgili kişiler aşağıda hesap sahibi olarak seçilebilir."
@@ -18633,14 +18672,17 @@ msgid "The unit and its rates are fixed once the agreement is activated."
 msgstr "Sözleşme etkinleştirildikten sonra adet ve oranları sabitlenir."
 
 #. placeholder {0}: formatDate(endDate)
-msgid "The unit can be returned on or after the end date, {0}. Early termination of a sales-type lease is a manual journal."
-msgstr "Adet, bitiş tarihi {0} tarihinde veya sonrasında iade edilebilir. Satış türü kiralamanın erken sonlandırılması manuel bir muhasebe fişidir."
+msgid "The unit can be returned on or after the end date, {0}. Ending a rental treated as a sale early is a manual journal."
+msgstr ""
 
 msgid "The unit goes back into stock at its net book value and the asset is closed with no gain or loss."
 msgstr "Birim, net defter değerindeki stoka geri gider ve varlık kar veya zarar olmaksızın kapatılır."
 
 msgid "The unit goes to maintenance instead of back to available."
 msgstr "Adet, kullanılabilir durumuna geri dönmek yerine bakıma gönderilir."
+
+msgid "The unit has no other use to you once the term ends."
+msgstr ""
 
 msgid "The unit is removed from availability until it is returned to service. Depreciation continues and its accounting is unchanged."
 msgstr "Birim, hizmete döndürülünceye kadar kullanılabilirlikten kaldırılır. Amortisman devam eder ve muhasebesi değişmez."
@@ -18686,9 +18728,6 @@ msgstr "Bu siparişin mallarının gönderileceği depo; müşterinin Sevkiyat K
 
 msgid "The warehouse goods on this quote will ship from; the customer's Shipping Location is where they'll arrive."
 msgstr "Bu alıntının mallarının gönderileceği depo; müşterinin Sevkiyat Konumu, nereye varacakları yer."
-
-msgid "The warehouse the units return to"
-msgstr "Adetlerin iade edildiği depo"
 
 msgid "The ways equipment fails, for maintenance and quality tracking"
 msgstr "Ekipmanın arıza yapma şekilleri, bakım ve kalite izlemesi için"
@@ -18759,8 +18798,8 @@ msgstr "Bu satırlar bu Şirket dışındaki verilere bağlı olduğundan, mevcu
 msgid "These rows link to data outside this company, so they could never be restored. Everything else was backed up."
 msgstr "Bu satırlar bu şirket dışındaki verilere bağlantılı, bu nedenle bunlar hiçbir zaman geri yüklenemez. Diğer her şey yedeklendi."
 
-msgid "These units classify as sales-type leases. Activating derecognizes each one and posts its commencement journal:"
-msgstr "Bu adetler satış türü kiralaması olarak sınıflandırılır. Etkinleştirildiğinde her birini tanınmaz hale getirir ve başlangıç muhasebe fişini muhasebeleştirir:"
+msgid "These units are treated as sales. Activating derecognizes each one and posts its commencement journal:"
+msgstr ""
 
 msgid "this ability"
 msgstr "bu yetkinlik"
@@ -18833,9 +18872,6 @@ msgstr "Bu kontrollü bir ortamdır, bu nedenle iki faktörlü kimlik doğrulama
 
 msgid "This is a purchased item — it has no BoM/BoP; only its attributes and documents can change."
 msgstr "Bu satın alınan bir üründür — BoM/BoP'si yoktur; yalnızca öznitelikleri ve belgeleri değişebilir."
-
-msgid "This is a sales-type lease. The closing net investment comes back onto the balance sheet with the unit, and the unposted interest schedule is removed."
-msgstr "Bu bir satış türü kiralamasıdır. Kapanış net yatırımı adet ile birlikte bilançoya geri gelir ve muhasebeleştirilmemiş faiz takvimi kaldırılır."
 
 msgid "This is a unique identifier for the webhook"
 msgstr "Bu, webhook için benzersiz bir tanımlayıcıdır"
@@ -18933,6 +18969,9 @@ msgstr "Bu Çeyrek"
 msgid "This removes their authenticator app, so their next sign-in only needs a magic link. Use this when they have lost access to their authenticator. It affects their sign-in for every company they belong to."
 msgstr "Bu işlem onların kimlik doğrulayıcı uygulamasını kaldırır, bu nedenle sonraki oturum açışları yalnızca sihirli bir bağlantı gerektirir. Kimlik doğrulayıcılarına erişimini kaybettikleri zaman bunu kullanın. Ait oldukları her şirket için oturum açışlarını etkiler."
 
+msgid "This rental is treated as a sale. The closing net investment comes back onto the balance sheet with the unit, and the unposted interest schedule is removed."
+msgstr ""
+
 msgid "This restore could not be completed."
 msgstr "Bu geri yükleme tamamlanamadı."
 
@@ -19009,6 +19048,10 @@ msgstr "Bu sürümün tanımı okunamadı."
 
 msgid "This week"
 msgstr "Bu hafta"
+
+#. placeholder {0}: formatDate(periodEnd)
+msgid "This will create a draft depreciation run for the period ending {0}. All active assets will be calculated automatically."
+msgstr ""
 
 #. placeholder {0}: formatDate(nextPeriodEnd)
 msgid "This will create a draft revenue recognition run for the next period, ending {0}. Every schedule row due on or before that date will be included."
@@ -19148,6 +19191,9 @@ msgstr "Saat Dilim"
 
 msgid "Title"
 msgstr "Unvan"
+
+msgid "Title passes to the customer when the term ends."
+msgstr ""
 
 msgid "To"
 msgstr "Kime"
@@ -19964,9 +20010,6 @@ msgstr "Raporlama ve analiz için ürünleri kategorize etmek amacıyla kullanı
 msgid "Used when a cell is empty or doesn't match an option above. Clear it to leave those rows blank."
 msgstr "Bir hücre boş olduğunda veya yukarıdaki seçeneklerin hiçbiriyle eşleşmediğinde kullanılır. Bu satırları boş bırakmak için temizleyin."
 
-msgid "Used when the agreement is activated to classify each line as an operating or sales-type lease."
-msgstr "Sözleşme etkinleştirirken her satırı işletme veya satış türü kiralamesi olarak sınıflandırmak için kullanılır."
-
 msgid "Useful Life (default)"
 msgstr "Faydalı Ömür (varsayılan)"
 
@@ -20746,9 +20789,6 @@ msgstr "Stokun nerede bulunduğu ve nasıl gönderildiği."
 msgid "Where the affected items are used across the system. Informational — nothing here blocks releasing."
 msgstr "Etkilenen ürünlerin sistem genelinde nerede kullanıldığı. Bilgilendirici — burada hiçbir şey yayınlamayı engellemiyor."
 
-msgid "Where the units are while on rent"
-msgstr "Kiralama sırasında adetlerin bulunduğu yer"
-
 msgid "Where this entry originated (manual entry, posting from sales/purchasing, recurring template, etc.)."
 msgstr "Bu girişin nereden kaynaklandığı (manuel giriş, satıştan/satın almadan muhasebeleştirme, yinelenen şablon, vb.)."
 
@@ -20772,6 +20812,9 @@ msgstr "Tutarın, satır fiyatının yüzdesi olarak mı yoksa sabit bir para bi
 
 msgid "Whether Carbon follows each unit (Serial), each lot (Batch), the quantity (Inventory), or no tracking (Non-Inventory)."
 msgstr "Carbon'un takip şekli — her birim (Seri), her lot (Parti), miktar (Envanter), veya hiçbir takip (Stok dışı)"
+
+msgid "Whether each unit is treated as a rental or a sale is decided when the agreement is activated."
+msgstr ""
 
 msgid "Whether the clock starts when the chosen process begins or when it completes."
 msgstr "Sayacın, seçilen süreç başladığında mı yoksa tamamlandığında mı başlayacağı."
@@ -20895,6 +20938,9 @@ msgstr "Yarı Mamul"
 
 msgid "Without a picking list, operators pick material from the Scan tab."
 msgstr "Toplama listesi olmadan, operatörler Tara sekmesinden malzemeyi toplarlar."
+
+msgid "Without an end date this is always treated as a rental: a unit can only pass to the customer over a fixed term. Add an end date to test whether it is a sale."
+msgstr ""
 
 #. placeholder {0}: quarter.start + 1
 #. placeholder {1}: quarter.end
@@ -21076,6 +21122,12 @@ msgstr "{0} satırı PDF'den çıkarıldı ancak hiçbir envanter öğesine eşl
 
 msgid "You haven't created any contacts yet."
 msgstr "Henüz hiç ilgili kişi oluşturmadınız."
+
+msgid "You keep the unit on your books and depreciate it. Rent is revenue as it is earned."
+msgstr ""
+
+msgid "You keep the units on your books and depreciate them. Rent is revenue as it is earned."
+msgstr ""
 
 msgid "You lead"
 msgstr "Siz yönetiyorsunuz"
