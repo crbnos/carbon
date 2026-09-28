@@ -592,10 +592,10 @@ msgid "A custom solution to meet your needs"
 msgstr "Sizin ihtiyaçlarınızı karşılamak için özel bir çözüm"
 
 msgid "A customer contact and location are optional"
-msgstr ""
+msgstr "Bir müşteri ilgili kişisi ve lokasyonu isteğe bağlıdır"
 
 msgid "A customer contact and location are required"
-msgstr ""
+msgstr "Bir müşteri ilgili kişisi ve lokasyonu gereklidir"
 
 msgid "A customer is a business or person who buys your parts or services."
 msgstr "Bir müşteri, parçalarınızı veya hizmetlerinizi satın alan bir işletme veya kişidir."
@@ -607,7 +607,7 @@ msgid "A customer is deleted"
 msgstr "Bir müşteri silindi"
 
 msgid "A customer must have at least one contact with an email address and at least one location with a country — plus a state, for US addresses — before its quotes, orders and invoices can be issued or posted. The mirror of the supplier requirement under Purchasing; no integration requires it today."
-msgstr ""
+msgstr "Bir müşterinin teklifleri, siparişleri ve faturaları yayınlanabilmesi veya muhasebeleştirilebilmesi için en az bir e-posta adresi olan ilgili kişiye ve bir ülkesi olan (ABD adresleri için ek olarak bir eyaleti olan) en az bir lokasyona sahip olması gerekir. Bu, Satın alma kapsamında yer alan tedarikçi gereksiniminin karşılığıdır; bugün hiçbir entegrasyon bunu gerektirmemektedir."
 
 msgid "A customer's account manager changes"
 msgstr "Bir müşterinin hesap yöneticisi değiştirildi"
@@ -643,7 +643,7 @@ msgid "A depreciation method that charges an equal amount each period across the
 msgstr "Varlığın Faydalı ömrü boyunca her dönemde eşit bir tutarı yükleyen Amortisman yöntemidir."
 
 msgid "A different inspector is required"
-msgstr ""
+msgstr "Farklı bir denetçi gereklidir"
 
 #. placeholder {0}: file.name
 msgid "A file named {0} already exists — delete or rename it first"
@@ -871,10 +871,10 @@ msgid "A quote's status changes"
 msgstr "Teklifin durumu değişti"
 
 msgid "A readable Customer ID appears on lists, forms and dropdowns."
-msgstr ""
+msgstr "Okunabilir bir Müşteri ID'si listeler, formlar ve açılır listelerde görünür."
 
 msgid "A readable Supplier ID appears on lists, forms and dropdowns."
-msgstr ""
+msgstr "Okunabilir bir Tedarikçi ID'si listeler, formlar ve açılır listelerde görünür."
 
 msgid "A receipt is created"
 msgstr "Bir makbuz oluşturuldu"
@@ -1030,10 +1030,10 @@ msgid "A stored booking of a work center or operator for one operation's placed 
 msgstr "Bir operasyon'un yerleştirilmiş zaman aralığı için iş merkezi veya operatör'ün saklı bir rezervasyonu — bir planlama çalışmasının gerçekleştirilmiş çıktısı ve Tahmin'in çizdiği şey."
 
 msgid "A supplier contact and location are optional"
-msgstr ""
+msgstr "Bir tedarikçi ilgili kişisi ve lokasyonu isteğe bağlıdır"
 
 msgid "A supplier contact and location are required"
-msgstr ""
+msgstr "Bir tedarikçi ilgili kişisi ve lokasyonu gereklidir"
 
 msgid "A supplier is created"
 msgstr "Bir tedarikçi oluşturuldu"
@@ -1042,7 +1042,7 @@ msgid "A supplier is deleted"
 msgstr "Bir tedarikçi silindi"
 
 msgid "A supplier must have at least one contact with an email address and at least one location with a country — plus a state, for US addresses — before its quotes, orders and invoices can be issued or posted. Spend platforms cannot create a vendor without all of them, so a supplier missing any has its bills rejected after the fact."
-msgstr ""
+msgstr "Bir tedarikçinin teklifleri, siparişleri ve faturaları yayınlanabilmesi veya muhasebeleştirilebilmesi için en az bir e-posta adresi olan ilgili kişiye ve bir ülkesi olan (ABD adresleri için ek olarak bir eyaleti olan) en az bir lokasyona sahip olması gerekir. Harcama platformları bütün bunlar olmadan bir satıcı oluşturamaz, bu nedenle bunlardan herhangi birinden yoksun bir tedarikçinin faturaları sonradan reddedilir."
 
 msgid "A supplier return sends previously received goods back to the supplier for credit or replacement."
 msgstr "Bir tedarikçi iadesesi, daha önce alınan malları kredi veya yedek için tedarikçiye geri gönderir."
@@ -1809,10 +1809,10 @@ msgid "Amount Type"
 msgstr "Tutar Türü"
 
 msgid "Amounts are padded to their currency's decimal places."
-msgstr ""
+msgstr "Tutarlar para biriminin ondalık basamaklarına göre doldurulur."
 
 msgid "Amounts show only the digits that carry value."
-msgstr ""
+msgstr "Tutarlar yalnızca değer taşıyan rakamları gösterir."
 
 msgid "An ability is a process's qualification. Only processes without one are listed."
 msgstr "Bir yetkinlik, bir prosesin niteliğidir. Bunun olmadığı prosesler listelenir."
@@ -1999,7 +1999,7 @@ msgid "AP Clerk"
 msgstr "Borç Hesapları Memuru"
 
 msgid "AP invoices are routed to a single billing address."
-msgstr ""
+msgstr "Borç hesapları faturaları tek bir fatura adresine yönlendirilir."
 
 msgid "AP Outstanding"
 msgstr "Ödenmemiş Borç Hesapları"
@@ -2150,7 +2150,7 @@ msgid "AR Clerk"
 msgstr "Alacak Hesapları Memuru"
 
 msgid "AR invoices are routed to a single billing address."
-msgstr ""
+msgstr "Alacak hesapları faturaları tek bir fatura adresine yönlendirilir."
 
 msgid "AR Outstanding"
 msgstr "Ödenmemiş Alacak Hesapları"
@@ -3564,10 +3564,10 @@ msgid "Centralized Billing Address"
 msgstr "Merkezi Faturalama Adresi"
 
 msgid "Centralized billing is disabled"
-msgstr ""
+msgstr "Merkezleştirilmiş faturalandırma devre dışı bırakıldı"
 
 msgid "Centralized billing is enabled"
-msgstr ""
+msgstr "Merkezleştirilmiş faturalandırma etkinleştirildi"
 
 msgid "Cert Version"
 msgstr "Sertifika Versiyonu"
@@ -5111,10 +5111,10 @@ msgid "Customer ID cannot be changed after creation"
 msgstr "Müşteri Kimliği oluşturulduktan sonra değiştirilemez"
 
 msgid "Customer IDs are hidden"
-msgstr ""
+msgstr "Müşteri ID'leri gizlendi"
 
 msgid "Customer IDs are shown"
-msgstr ""
+msgstr "Müşteri ID'leri gösteriliyor"
 
 msgid "Customer Invoice Number"
 msgstr "Müşteri Fatura Numarası"
@@ -6917,10 +6917,10 @@ msgid "Enable to automatically post transactions to the general ledger."
 msgstr "Hareketleri otomatik olarak büyük deftere muhasebeleştirmek için etkinleştirin."
 
 msgid "Enable to block issuing or posting for a customer with no contact or no location."
-msgstr ""
+msgstr "İlgili kişisi veya lokasyonu olmayan bir müşteri için yayınlamayı veya muhasebeleştirmeyi engellemek için etkinleştirin."
 
 msgid "Enable to block issuing or posting for a supplier with no contact or no location."
-msgstr ""
+msgstr "İlgili kişisi veya lokasyonu olmayan bir tedarikçi için yayınlamayı veya muhasebeleştirmeyi engellemek için etkinleştirin."
 
 msgid "Enable to configure tax-specific depreciation methods on asset classes (e.g., MACRS, accelerated)."
 msgstr "Varlık sınıfları için vergiye özgü amortisman yöntemlerini yapılandırmayı etkinleştirir (örneğin, MACRS, hızlandırılmış)."
@@ -6929,19 +6929,19 @@ msgid "Enable to generate IDs and descriptions for raw materials."
 msgstr "Hammaddeler için ID'ler ve açıklamalar oluşturmayı etkinleştir."
 
 msgid "Enable to require an authenticator app before anyone can open this company."
-msgstr ""
+msgstr "Herhangi birinin bu şirketi açabilmesi için kimlik doğrulaması uygulaması gerektirmek için etkinleştirin."
 
 msgid "Enable to route all AP invoices to a single billing address."
-msgstr ""
+msgstr "Tüm borç hesapları faturalarını tek bir fatura adresine yönlendirmek için etkinleştirin."
 
 msgid "Enable to route all AR invoices to a single billing address."
-msgstr ""
+msgstr "Tüm alacak hesapları faturalarını tek bir fatura adresine yönlendirmek için etkinleştirin."
 
 msgid "Enable to show a readable Customer ID on lists, forms and dropdowns."
-msgstr ""
+msgstr "Listeler, formlar ve açılır listelerde okunabilir bir Müşteri ID'si göstermek için etkinleştirin."
 
 msgid "Enable to show a readable Supplier ID on lists, forms and dropdowns."
-msgstr ""
+msgstr "Listeler, formlar ve açılır listelerde okunabilir bir Tedarikçi ID'si göstermek için etkinleştirin."
 
 msgid "Enable to start tracking changes to your data."
 msgstr "Verilerinizi izlemeye başlamak için etkinleştirin."
@@ -6950,13 +6950,13 @@ msgid "Enable to start tracking work shifts."
 msgstr "Çalışma vardiyalarını izlemeye başlamak için etkinleştir."
 
 msgid "Enable to update part lead times from posted purchase receipts."
-msgstr ""
+msgstr "Parça tedarik sürelerini muhasebeleştirilmiş mal kabul belgelerinden güncellemek için etkinleştirin."
 
 msgid "Enable to use metric units for material dimensions."
 msgstr "Malzeme boyutları için metrik birim kullanmak üzere etkinleştirin."
 
 msgid "Enable to warn when the inspector also received the item."
-msgstr ""
+msgstr "Denetçi de ürünü aldığında uyarmak için etkinleştirin."
 
 msgid "Enabled"
 msgstr "Etkinleştirilmiş"
@@ -7231,7 +7231,7 @@ msgid "Every row was imported successfully."
 msgstr "Her satır başarıyla içe aktarıldı."
 
 msgid "Everyone must set up an authenticator app before opening this company."
-msgstr ""
+msgstr "Herkes bu şirketi açmadan önce bir kimlik doğrulaması uygulaması kurması gerekir."
 
 msgid "Everyone working any day of the week you pick stays on past their shift by the hours you set. Only the departments and shifts you're filtering by are affected."
 msgstr "Seçtiğiniz haftanın herhangi bir gününde çalışan herkes, kendi vardiyalarının ötesinde belirlediğiniz saatler kadar kalır. Yalnızca filtrelediğiniz departmanlar ve vardiyalar etkilenir."
@@ -9027,7 +9027,7 @@ msgid "Inspect Item"
 msgstr "Ürünü İncele"
 
 msgid "Inspecting an item you received shows a warning."
-msgstr ""
+msgstr "Aldığınız bir ürünü denetleme uyarı gösterir."
 
 msgid "Inspection"
 msgstr "Muayene"
@@ -9725,10 +9725,10 @@ msgid "Lead Time (Days)"
 msgstr "Tedarik süresi (Gün)"
 
 msgid "Lead time updates are disabled"
-msgstr ""
+msgstr "Tedarik süresi güncellemeleri devre dışı bırakıldı"
 
 msgid "Lead time updates are enabled"
-msgstr ""
+msgstr "Tedarik süresi güncellemeleri etkinleştirildi"
 
 msgid "Lead Time:"
 msgstr "Tedarik süresi:"
@@ -12621,7 +12621,7 @@ msgid "Part is configured for manufacturing"
 msgstr "Parça üretim için yapılandırılmış"
 
 msgid "Part lead times update from posted purchase receipts."
-msgstr ""
+msgstr "Parça tedarik süreleri muhasebeleştirilmiş mal kabul belgelerinden güncellenmiştir."
 
 msgid "Part Number"
 msgstr "Parça Numarası"
@@ -13881,10 +13881,10 @@ msgid "Quotes with Lines"
 msgstr "Satırlı Teklifler"
 
 msgid "Quotes, orders and invoices are blocked until the customer has a contact with an email address and a location with a country."
-msgstr ""
+msgstr "Müşterinin bir e-posta adresi olan ilgili kişi ve bir ülkesi olan lokasyonu olana kadar teklifler, siparişler ve faturalar engellenir."
 
 msgid "Quotes, orders and invoices are blocked until the supplier has a contact with an email address and a location with a country."
-msgstr ""
+msgstr "Tedarikçinin bir e-posta adresi olan ilgili kişi ve bir ülkesi olan lokasyonu olana kadar teklifler, siparişler ve faturalar engellenir."
 
 msgid "Quoting and sales orders"
 msgstr "Teklifler ve satış siparişleri"
@@ -14522,10 +14522,10 @@ msgid "Require a 6-digit code from an authenticator app when signing in."
 msgstr "Oturum açarken kimlik doğrulayıcı uygulamasından 6 haneli kod isteyini."
 
 msgid "Require a Customer Contact and Location"
-msgstr ""
+msgstr "Müşteri İlgili Kişisi ve Lokasyonu İste"
 
 msgid "Require a Supplier Contact and Location"
-msgstr ""
+msgstr "Tedarikçi İlgili Kişisi ve Lokasyonu İste"
 
 msgid "Require an assigned operator before the scheduler places work at a location. When on, unstaffed work centers get no work and an operation with no manned coverage shows as unschedulable. Lights-out (24×7) work centers are exempt."
 msgstr "Çizelgeleme sistemi bir lokasyon'da iş yerleştirmeden önce atanmış bir operatör gerekli kılın. Etkinleştirildiğinde, personel olmayan iş merkezleri iş almaz ve uygun personel olmayan bir operasyon zamanlanmaz olarak görünür. Tam otomasyonlu (24×7) iş merkezleri muaftır."
@@ -16930,10 +16930,10 @@ msgid "Supplier ID cannot be changed after creation"
 msgstr "Tedarikçi Kimliği oluşturulduktan sonra değiştirilemez"
 
 msgid "Supplier IDs are hidden"
-msgstr ""
+msgstr "Tedarikçi ID'leri gizlendi"
 
 msgid "Supplier IDs are shown"
-msgstr ""
+msgstr "Tedarikçi ID'leri gösteriliyor"
 
 msgid "Supplier interaction"
 msgstr "Tedarikçi etkileşimi"
@@ -17964,7 +17964,7 @@ msgid "The sales order line this job was created to supply, tying the job to the
 msgstr "Bu iş emrinin arzulanacak satış siparişi satırı, iş emrini arkasındaki müşteri talebine bağlayan."
 
 msgid "The same person may inspect"
-msgstr ""
+msgstr "Aynı kişi denetim yapabilir"
 
 msgid "The SAML metadata URL published by your identity provider"
 msgstr "Kimlik sağlayıcınız tarafından yayınlanan SAML meta veri URL'si"
@@ -18838,10 +18838,10 @@ msgid "Tracking URL"
 msgstr "Takip URL'si"
 
 msgid "Trailing zeros are hidden"
-msgstr ""
+msgstr "Sondaki sıfırlar gizlendi"
 
 msgid "Trailing zeros are shown"
-msgstr ""
+msgstr "Sondaki sıfırlar gösteriliyor"
 
 msgid "Train"
 msgstr "Eğit"
@@ -18952,10 +18952,10 @@ msgid "Two-factor authentication is not enabled."
 msgstr "İki Faktörlü Kimlik Doğrulama Etkin Değildir."
 
 msgid "Two-factor authentication is optional"
-msgstr ""
+msgstr "İki faktörlü kimlik doğrulama isteğe bağlıdır"
 
 msgid "Two-factor authentication is required"
-msgstr ""
+msgstr "İki faktörlü kimlik doğrulama zorunludur"
 
 msgid "Type"
 msgstr "Tür"

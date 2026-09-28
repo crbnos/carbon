@@ -592,10 +592,10 @@ msgid "A custom solution to meet your needs"
 msgstr "お客様のニーズに合わせたカスタムソリューション"
 
 msgid "A customer contact and location are optional"
-msgstr ""
+msgstr "得意先の担当者と拠点は任意です"
 
 msgid "A customer contact and location are required"
-msgstr ""
+msgstr "得意先の担当者と拠点が必須です"
 
 msgid "A customer is a business or person who buys your parts or services."
 msgstr "得意先は、あなたの部品またはサービスを購入する企業または個人です。"
@@ -607,7 +607,7 @@ msgid "A customer is deleted"
 msgstr "得意先が削除されました"
 
 msgid "A customer must have at least one contact with an email address and at least one location with a country — plus a state, for US addresses — before its quotes, orders and invoices can be issued or posted. The mirror of the supplier requirement under Purchasing; no integration requires it today."
-msgstr ""
+msgstr "得意先は、見積、注文書、請求書を発行または転記する前に、メールアドレスを持つ担当者が少なくとも1人と、国を指定した拠点が少なくとも1つ必要です。米国の住所の場合は州も必須です。これは購買の仕入先要件の対称です。現在のところ、どの連携でも要求されていません。"
 
 msgid "A customer's account manager changes"
 msgstr "得意先のアカウント マネージャーが変わりました"
@@ -643,7 +643,7 @@ msgid "A depreciation method that charges an equal amount each period across the
 msgstr "資産の耐用年数全体にわたって、毎期同じ金額を請求する減価償却方法。"
 
 msgid "A different inspector is required"
-msgstr ""
+msgstr "異なる検査担当者が必須です"
 
 #. placeholder {0}: file.name
 msgid "A file named {0} already exists — delete or rename it first"
@@ -871,10 +871,10 @@ msgid "A quote's status changes"
 msgstr "見積のステータスが変更される"
 
 msgid "A readable Customer ID appears on lists, forms and dropdowns."
-msgstr ""
+msgstr "読みやすい得意先IDがリスト、フォーム、ドロップダウンに表示されます。"
 
 msgid "A readable Supplier ID appears on lists, forms and dropdowns."
-msgstr ""
+msgstr "読みやすい仕入先IDがリスト、フォーム、ドロップダウンに表示されます。"
 
 msgid "A receipt is created"
 msgstr "領収書が作成される"
@@ -1030,10 +1030,10 @@ msgid "A stored booking of a work center or operator for one operation's placed 
 msgstr "作業区または作業者の予約で、1つの工程の配置された時間帯のもの — スケジュール実行の具現化された出力で、予測が描画するもの"
 
 msgid "A supplier contact and location are optional"
-msgstr ""
+msgstr "仕入先の担当者と拠点は任意です"
 
 msgid "A supplier contact and location are required"
-msgstr ""
+msgstr "仕入先の担当者と拠点が必須です"
 
 msgid "A supplier is created"
 msgstr "仕入先が作成される"
@@ -1042,7 +1042,7 @@ msgid "A supplier is deleted"
 msgstr "仕入先が削除される"
 
 msgid "A supplier must have at least one contact with an email address and at least one location with a country — plus a state, for US addresses — before its quotes, orders and invoices can be issued or posted. Spend platforms cannot create a vendor without all of them, so a supplier missing any has its bills rejected after the fact."
-msgstr ""
+msgstr "仕入先は、見積、注文書、請求書を発行または転記する前に、メールアドレスを持つ担当者が少なくとも1人と、国を指定した拠点が少なくとも1つ必要です。米国の住所の場合は州も必須です。支出管理プラットフォームはこれらすべてがなければベンダーを作成できないため、不足している仕入先の請求書は後で却下されます。"
 
 msgid "A supplier return sends previously received goods back to the supplier for credit or replacement."
 msgstr "仕入先への返品は、以前受け取った商品を仕入先に返品してクレジットまたは交換を受けます。"
@@ -1809,10 +1809,10 @@ msgid "Amount Type"
 msgstr "金額タイプ"
 
 msgid "Amounts are padded to their currency's decimal places."
-msgstr ""
+msgstr "金額は通貨の小数点以下の桁数までパディングされます。"
 
 msgid "Amounts show only the digits that carry value."
-msgstr ""
+msgstr "金額は値を持つ桁のみを表示します。"
 
 msgid "An ability is a process's qualification. Only processes without one are listed."
 msgstr "スキルは工法の適格条件です。適格条件のない工法のみが表示されます。"
@@ -1999,7 +1999,7 @@ msgid "AP Clerk"
 msgstr "買掛金担当者"
 
 msgid "AP invoices are routed to a single billing address."
-msgstr ""
+msgstr "買掛金請求書は単一の請求先住所にルーティングされます。"
 
 msgid "AP Outstanding"
 msgstr "未払買掛金"
@@ -2150,7 +2150,7 @@ msgid "AR Clerk"
 msgstr "売掛金係員"
 
 msgid "AR invoices are routed to a single billing address."
-msgstr ""
+msgstr "売掛金請求書は単一の請求先住所にルーティングされます。"
 
 msgid "AR Outstanding"
 msgstr "売掛金未払い"
@@ -3564,10 +3564,10 @@ msgid "Centralized Billing Address"
 msgstr "一元化された請求先住所"
 
 msgid "Centralized billing is disabled"
-msgstr ""
+msgstr "一括請求は無効です"
 
 msgid "Centralized billing is enabled"
-msgstr ""
+msgstr "一括請求は有効です"
 
 msgid "Cert Version"
 msgstr "認定バージョン"
@@ -5111,10 +5111,10 @@ msgid "Customer ID cannot be changed after creation"
 msgstr "得意先IDは作成後に変更することはできません"
 
 msgid "Customer IDs are hidden"
-msgstr ""
+msgstr "得意先IDは非表示です"
 
 msgid "Customer IDs are shown"
-msgstr ""
+msgstr "得意先IDは表示されています"
 
 msgid "Customer Invoice Number"
 msgstr "得意先請求書番号"
@@ -6917,10 +6917,10 @@ msgid "Enable to automatically post transactions to the general ledger."
 msgstr "自動的にトランザクションを総勘定元帳に転記するには有効にしてください。"
 
 msgid "Enable to block issuing or posting for a customer with no contact or no location."
-msgstr ""
+msgstr "担当者または拠点がない得意先の発行または転記をブロックするために有効にします。"
 
 msgid "Enable to block issuing or posting for a supplier with no contact or no location."
-msgstr ""
+msgstr "担当者または拠点がない仕入先の発行または転記をブロックするために有効にします。"
 
 msgid "Enable to configure tax-specific depreciation methods on asset classes (e.g., MACRS, accelerated)."
 msgstr "税固有の減価償却方法を資産クラスで設定するために有効にします（例：MACRS、加速）。"
@@ -6929,19 +6929,19 @@ msgid "Enable to generate IDs and descriptions for raw materials."
 msgstr "有効にして、原材料のIDと説明を生成します。"
 
 msgid "Enable to require an authenticator app before anyone can open this company."
-msgstr ""
+msgstr "この会社を開く前に誰でも認証器アプリが必須となるように有効にします。"
 
 msgid "Enable to route all AP invoices to a single billing address."
-msgstr ""
+msgstr "すべての買掛金請求書を単一の請求先住所にルーティングするために有効にします。"
 
 msgid "Enable to route all AR invoices to a single billing address."
-msgstr ""
+msgstr "すべての売掛金請求書を単一の請求先住所にルーティングするために有効にします。"
 
 msgid "Enable to show a readable Customer ID on lists, forms and dropdowns."
-msgstr ""
+msgstr "リスト、フォーム、ドロップダウンに読みやすい得意先IDを表示するために有効にします。"
 
 msgid "Enable to show a readable Supplier ID on lists, forms and dropdowns."
-msgstr ""
+msgstr "リスト、フォーム、ドロップダウンに読みやすい仕入先IDを表示するために有効にします。"
 
 msgid "Enable to start tracking changes to your data."
 msgstr "データへの変更の追跡を開始するには有効にしてください。"
@@ -6950,13 +6950,13 @@ msgid "Enable to start tracking work shifts."
 msgstr "作業シフトの追跡を開始するには有効にしてください。"
 
 msgid "Enable to update part lead times from posted purchase receipts."
-msgstr ""
+msgstr "転記済の購買入荷から部品のリードタイムを更新するために有効にします。"
 
 msgid "Enable to use metric units for material dimensions."
 msgstr "材料の寸法にメートル法単位を使用できるようにします。"
 
 msgid "Enable to warn when the inspector also received the item."
-msgstr ""
+msgstr "検査担当者が品目を受け取った場合に警告するために有効にします。"
 
 msgid "Enabled"
 msgstr "有効"
@@ -7231,7 +7231,7 @@ msgid "Every row was imported successfully."
 msgstr "すべての行が正常にインポートされました。"
 
 msgid "Everyone must set up an authenticator app before opening this company."
-msgstr ""
+msgstr "この会社を開く前に、誰もが認証器アプリをセットアップする必要があります。"
 
 msgid "Everyone working any day of the week you pick stays on past their shift by the hours you set. Only the departments and shifts you're filtering by are affected."
 msgstr "選択した週のどの日でも勤務している全員が、設定した時間分シフトを超えて勤務します。フィルタリングしている部門とシフトのみが影響を受けます。"
@@ -9027,7 +9027,7 @@ msgid "Inspect Item"
 msgstr "検査項目"
 
 msgid "Inspecting an item you received shows a warning."
-msgstr ""
+msgstr "受け取った品目の検査時に警告が表示されます。"
 
 msgid "Inspection"
 msgstr "検査"
@@ -9725,10 +9725,10 @@ msgid "Lead Time (Days)"
 msgstr "リードタイム（日数）"
 
 msgid "Lead time updates are disabled"
-msgstr ""
+msgstr "リードタイム更新は無効です"
 
 msgid "Lead time updates are enabled"
-msgstr ""
+msgstr "リードタイム更新は有効です"
 
 msgid "Lead Time:"
 msgstr "リードタイム:"
@@ -12621,7 +12621,7 @@ msgid "Part is configured for manufacturing"
 msgstr "部品は製造用に構成されています"
 
 msgid "Part lead times update from posted purchase receipts."
-msgstr ""
+msgstr "部品のリードタイムは転記済の購買入荷から更新されます。"
 
 msgid "Part Number"
 msgstr "部品番号"
@@ -13881,10 +13881,10 @@ msgid "Quotes with Lines"
 msgstr "明細付き見積"
 
 msgid "Quotes, orders and invoices are blocked until the customer has a contact with an email address and a location with a country."
-msgstr ""
+msgstr "得意先がメールアドレスを持つ担当者と国を指定した拠点を持つまで、見積、注文書、請求書はブロックされます。"
 
 msgid "Quotes, orders and invoices are blocked until the supplier has a contact with an email address and a location with a country."
-msgstr ""
+msgstr "仕入先がメールアドレスを持つ担当者と国を指定した拠点を持つまで、見積、注文書、請求書はブロックされます。"
 
 msgid "Quoting and sales orders"
 msgstr "見積と受注"
@@ -14522,10 +14522,10 @@ msgid "Require a 6-digit code from an authenticator app when signing in."
 msgstr "サインイン時に認証器アプリから6桁のコードが必要です。"
 
 msgid "Require a Customer Contact and Location"
-msgstr ""
+msgstr "得意先の担当者と拠点が必須"
 
 msgid "Require a Supplier Contact and Location"
-msgstr ""
+msgstr "仕入先の担当者と拠点が必須"
 
 msgid "Require an assigned operator before the scheduler places work at a location. When on, unstaffed work centers get no work and an operation with no manned coverage shows as unschedulable. Lights-out (24×7) work centers are exempt."
 msgstr "スケジューラがある拠点に作業を配置する前に、割当済の作業者を必要とします。オンの場合、スタッフなしの作業区は作業を取得せず、配置された人員がいない工程はスケジュール不可として表示されます。ライトアウト（24×7）作業区は除外されます。"
@@ -16930,10 +16930,10 @@ msgid "Supplier ID cannot be changed after creation"
 msgstr "仕入先IDは作成後に変更できません"
 
 msgid "Supplier IDs are hidden"
-msgstr ""
+msgstr "仕入先IDは非表示です"
 
 msgid "Supplier IDs are shown"
-msgstr ""
+msgstr "仕入先IDは表示されています"
 
 msgid "Supplier interaction"
 msgstr "仕入先対応"
@@ -17964,7 +17964,7 @@ msgid "The sales order line this job was created to supply, tying the job to the
 msgstr "この製造指図が供給するために作成された受注明細であり、製造指図を背後の得意先所要量に結びつけます。"
 
 msgid "The same person may inspect"
-msgstr ""
+msgstr "同じ個人が検査できます"
 
 msgid "The SAML metadata URL published by your identity provider"
 msgstr "あなたのアイデンティティプロバイダーによって公開されたSAMLメタデータURL"
@@ -18838,10 +18838,10 @@ msgid "Tracking URL"
 msgstr "トラッキングURL"
 
 msgid "Trailing zeros are hidden"
-msgstr ""
+msgstr "末尾の0は非表示です"
 
 msgid "Trailing zeros are shown"
-msgstr ""
+msgstr "末尾の0は表示されています"
 
 msgid "Train"
 msgstr "トレーニング"
@@ -18952,10 +18952,10 @@ msgid "Two-factor authentication is not enabled."
 msgstr "二要素認証は有効になっていません。"
 
 msgid "Two-factor authentication is optional"
-msgstr ""
+msgstr "二要素認証は任意です"
 
 msgid "Two-factor authentication is required"
-msgstr ""
+msgstr "二要素認証は必須です"
 
 msgid "Type"
 msgstr "種類"

@@ -592,10 +592,10 @@ msgid "A custom solution to meet your needs"
 msgstr "आपकी आवश्यकताओं को पूरा करने के लिए एक कस्टम समाधान"
 
 msgid "A customer contact and location are optional"
-msgstr ""
+msgstr "ग्राहक संपर्क और स्थान वैकल्पिक हैं"
 
 msgid "A customer contact and location are required"
-msgstr ""
+msgstr "ग्राहक संपर्क और स्थान आवश्यक हैं"
 
 msgid "A customer is a business or person who buys your parts or services."
 msgstr "एक ग्राहक एक व्यवसाय या व्यक्ति है जो आपके पार्ट्स या सेवाएं खरीदता है।"
@@ -607,7 +607,7 @@ msgid "A customer is deleted"
 msgstr "एक ग्राहक हटाया गया है"
 
 msgid "A customer must have at least one contact with an email address and at least one location with a country — plus a state, for US addresses — before its quotes, orders and invoices can be issued or posted. The mirror of the supplier requirement under Purchasing; no integration requires it today."
-msgstr ""
+msgstr "ग्राहक के पास कोटेशन, आदेश और चालान जारी या पोस्ट किए जाने से पहले कम से कम एक ईमेल पते वाला संपर्क और कम से कम एक देश वाला स्थान होना चाहिए — साथ ही यूएस पते के लिए एक राज्य। यह क्रय के तहत आपूर्तिकर्ता आवश्यकता का दर्पण है; आज कोई एकीकरण इसकी आवश्यकता नहीं है।"
 
 msgid "A customer's account manager changes"
 msgstr "किसी ग्राहक के खाता प्रबंधक में परिवर्तन"
@@ -643,7 +643,7 @@ msgid "A depreciation method that charges an equal amount each period across the
 msgstr "एक मूल्यह्रास विधि जो संपत्ति के उपयोगी जीवन में प्रत्येक अवधि में समान राशि चार्ज करती है।"
 
 msgid "A different inspector is required"
-msgstr ""
+msgstr "एक अलग निरीक्षक आवश्यक है"
 
 #. placeholder {0}: file.name
 msgid "A file named {0} already exists — delete or rename it first"
@@ -871,10 +871,10 @@ msgid "A quote's status changes"
 msgstr "किसी उद्धरण की स्थिति में परिवर्तन होता है"
 
 msgid "A readable Customer ID appears on lists, forms and dropdowns."
-msgstr ""
+msgstr "एक पठनीय ग्राहक ID सूचियों, फॉर्म और ड्रॉपडाउन पर दिखाई देता है।"
 
 msgid "A readable Supplier ID appears on lists, forms and dropdowns."
-msgstr ""
+msgstr "एक पठनीय आपूर्तिकर्ता ID सूचियों, फॉर्म और ड्रॉपडाउन पर दिखाई देता है।"
 
 msgid "A receipt is created"
 msgstr "एक रसीद बनाई गई है"
@@ -1030,10 +1030,10 @@ msgid "A stored booking of a work center or operator for one operation's placed 
 msgstr "एक वर्क सेंटर या ऑपरेटर की एक संग्रहीत बुकिंग एक ऑपरेशन की रखी गई समय अवधि के लिए — एक शेड्यूलिंग रन का मूर्त आउटपुट, और जो पूर्वानुमान में दिखाई देता है।"
 
 msgid "A supplier contact and location are optional"
-msgstr ""
+msgstr "आपूर्तिकर्ता संपर्क और स्थान वैकल्पिक हैं"
 
 msgid "A supplier contact and location are required"
-msgstr ""
+msgstr "आपूर्तिकर्ता संपर्क और स्थान आवश्यक हैं"
 
 msgid "A supplier is created"
 msgstr "एक आपूर्तिकर्ता बनाया गया है"
@@ -1042,7 +1042,7 @@ msgid "A supplier is deleted"
 msgstr "एक आपूर्तिकर्ता हटा दिया गया है"
 
 msgid "A supplier must have at least one contact with an email address and at least one location with a country — plus a state, for US addresses — before its quotes, orders and invoices can be issued or posted. Spend platforms cannot create a vendor without all of them, so a supplier missing any has its bills rejected after the fact."
-msgstr ""
+msgstr "आपूर्तिकर्ता के पास कोटेशन, आदेश और चालान जारी या पोस्ट किए जाने से पहले कम से कम एक ईमेल पते वाला संपर्क और कम से कम एक देश वाला स्थान होना चाहिए — साथ ही यूएस पते के लिए एक राज्य। व्यय प्लेटफॉर्म सभी के बिना विक्रेता नहीं बना सकते, इसलिए कोई भी कमी होने वाले आपूर्तिकर्ता के बिल बाद में अस्वीकार कर दिए जाते हैं।"
 
 msgid "A supplier return sends previously received goods back to the supplier for credit or replacement."
 msgstr "एक आपूर्तिकर्ता रिटर्न पहले से प्राप्त सामानों को क्रेडिट या प्रतिस्थापन के लिए आपूर्तिकर्ता को वापस भेजता है।"
@@ -1809,10 +1809,10 @@ msgid "Amount Type"
 msgstr "राशि प्रकार"
 
 msgid "Amounts are padded to their currency's decimal places."
-msgstr ""
+msgstr "राशियों को उनकी मुद्रा के दशमलव स्थानों तक पैड किया जाता है।"
 
 msgid "Amounts show only the digits that carry value."
-msgstr ""
+msgstr "राशियां केवल मूल्य ले जाने वाले अंकों को दिखाती हैं।"
 
 msgid "An ability is a process's qualification. Only processes without one are listed."
 msgstr "कौशल एक प्रक्रिया की योग्यता है। केवल बिना कौशल की प्रक्रियाएं सूचीबद्ध हैं।"
@@ -1999,7 +1999,7 @@ msgid "AP Clerk"
 msgstr "देय खाते क्लर्क"
 
 msgid "AP invoices are routed to a single billing address."
-msgstr ""
+msgstr "देय खाते चालान एक एकल बिलिंग पते पर भेजे जाते हैं।"
 
 msgid "AP Outstanding"
 msgstr "देय खाते शेष राशि"
@@ -2150,7 +2150,7 @@ msgid "AR Clerk"
 msgstr "प्राप्य खाते लिपिक"
 
 msgid "AR invoices are routed to a single billing address."
-msgstr ""
+msgstr "प्राप्य खाते चालान एक एकल बिलिंग पते पर भेजे जाते हैं।"
 
 msgid "AR Outstanding"
 msgstr "प्राप्य खाते बकाया"
@@ -3564,10 +3564,10 @@ msgid "Centralized Billing Address"
 msgstr "केंद्रीकृत बिलिंग पता"
 
 msgid "Centralized billing is disabled"
-msgstr ""
+msgstr "केंद्रीकृत बिलिंग अक्षम है"
 
 msgid "Centralized billing is enabled"
-msgstr ""
+msgstr "केंद्रीकृत बिलिंग सक्षम है"
 
 msgid "Cert Version"
 msgstr "सर्ट संस्करण"
@@ -5111,10 +5111,10 @@ msgid "Customer ID cannot be changed after creation"
 msgstr "ग्राहक ID निर्माण के बाद नहीं बदला जा सकता"
 
 msgid "Customer IDs are hidden"
-msgstr ""
+msgstr "ग्राहक ID छिपे हुए हैं"
 
 msgid "Customer IDs are shown"
-msgstr ""
+msgstr "ग्राहक ID दिखाए गए हैं"
 
 msgid "Customer Invoice Number"
 msgstr "ग्राहक चालान संख्या"
@@ -6917,10 +6917,10 @@ msgid "Enable to automatically post transactions to the general ledger."
 msgstr "सामान्य खाता बही में लेनदेन को स्वचालित रूप से पोस्ट करने के लिए सक्षम करें।"
 
 msgid "Enable to block issuing or posting for a customer with no contact or no location."
-msgstr ""
+msgstr "संपर्क या स्थान के बिना ग्राहक के लिए जारी करना या पोस्टिंग को ब्लॉक करने के लिए सक्षम करें।"
 
 msgid "Enable to block issuing or posting for a supplier with no contact or no location."
-msgstr ""
+msgstr "संपर्क या स्थान के बिना आपूर्तिकर्ता के लिए जारी करना या पोस्टिंग को ब्लॉक करने के लिए सक्षम करें।"
 
 msgid "Enable to configure tax-specific depreciation methods on asset classes (e.g., MACRS, accelerated)."
 msgstr "परिसंपत्ति वर्गों पर कर-विशिष्ट मूल्यह्रास विधियों को कॉन्फ़िगर करने के लिए सक्षम करें (उदा., MACRS, त्वरित)।"
@@ -6929,19 +6929,19 @@ msgid "Enable to generate IDs and descriptions for raw materials."
 msgstr "कच्चे माल के लिए ID और विवरण उत्पन्न करने के लिए सक्षम करें।"
 
 msgid "Enable to require an authenticator app before anyone can open this company."
-msgstr ""
+msgstr "कोई भी इस कंपनी को खोलने से पहले प्रमाणकर्ता ऐप की आवश्यकता होने के लिए सक्षम करें।"
 
 msgid "Enable to route all AP invoices to a single billing address."
-msgstr ""
+msgstr "सभी देय खाते चालान को एक एकल बिलिंग पते पर भेजने के लिए सक्षम करें।"
 
 msgid "Enable to route all AR invoices to a single billing address."
-msgstr ""
+msgstr "सभी प्राप्य खाते चालान को एक एकल बिलिंग पते पर भेजने के लिए सक्षम करें।"
 
 msgid "Enable to show a readable Customer ID on lists, forms and dropdowns."
-msgstr ""
+msgstr "सूचियों, फॉर्म और ड्रॉपडाउन पर एक पठनीय ग्राहक ID दिखाने के लिए सक्षम करें।"
 
 msgid "Enable to show a readable Supplier ID on lists, forms and dropdowns."
-msgstr ""
+msgstr "सूचियों, फॉर्म और ड्रॉपडाउन पर एक पठनीय आपूर्तिकर्ता ID दिखाने के लिए सक्षम करें।"
 
 msgid "Enable to start tracking changes to your data."
 msgstr "अपने डेटा में परिवर्तन ट्रैक करना शुरू करने के लिए सक्षम करें।"
@@ -6950,13 +6950,13 @@ msgid "Enable to start tracking work shifts."
 msgstr "कार्य शिफ्ट को ट्रैक करना शुरू करने के लिए सक्षम करें।"
 
 msgid "Enable to update part lead times from posted purchase receipts."
-msgstr ""
+msgstr "पोस्ट की गई क्रय प्राप्तियों से पार्ट लीड टाइम अपडेट करने के लिए सक्षम करें।"
 
 msgid "Enable to use metric units for material dimensions."
 msgstr "सामग्री आयामों के लिए मीट्रिक इकाइयों का उपयोग करने के लिए सक्षम करें।"
 
 msgid "Enable to warn when the inspector also received the item."
-msgstr ""
+msgstr "जब निरीक्षक ने भी आइटम प्राप्त किया हो तो चेतावनी देने के लिए सक्षम करें।"
 
 msgid "Enabled"
 msgstr "सक्षम"
@@ -7231,7 +7231,7 @@ msgid "Every row was imported successfully."
 msgstr "हर पंक्ति सफलतापूर्वक आयात की गई।"
 
 msgid "Everyone must set up an authenticator app before opening this company."
-msgstr ""
+msgstr "इस कंपनी को खोलने से पहले सभी को प्रमाणकर्ता ऐप सेट अप करना होगा।"
 
 msgid "Everyone working any day of the week you pick stays on past their shift by the hours you set. Only the departments and shifts you're filtering by are affected."
 msgstr "जो कोई भी आपके चुने गए सप्ताह के किसी भी दिन काम कर रहा है वह आपके द्वारा निर्धारित घंटों तक अपनी शिफ्ट के बाद रहता है। केवल आप जिन विभागों और शिफ्ट को फ़िल्टर कर रहे हैं वे प्रभावित होते हैं।"
@@ -9027,7 +9027,7 @@ msgid "Inspect Item"
 msgstr "आइटम का निरीक्षण करें"
 
 msgid "Inspecting an item you received shows a warning."
-msgstr ""
+msgstr "आपके द्वारा प्राप्त आइटम का निरीक्षण एक चेतावनी दिखाता है।"
 
 msgid "Inspection"
 msgstr "निरीक्षण"
@@ -9725,10 +9725,10 @@ msgid "Lead Time (Days)"
 msgstr "लीड टाइम (दिन)"
 
 msgid "Lead time updates are disabled"
-msgstr ""
+msgstr "लीड टाइम अपडेट अक्षम हैं"
 
 msgid "Lead time updates are enabled"
-msgstr ""
+msgstr "लीड टाइम अपडेट सक्षम हैं"
 
 msgid "Lead Time:"
 msgstr "लीड टाइम:"
@@ -12621,7 +12621,7 @@ msgid "Part is configured for manufacturing"
 msgstr "भाग विनिर्माण के लिए कॉन्फ़िगर किया गया है"
 
 msgid "Part lead times update from posted purchase receipts."
-msgstr ""
+msgstr "पार्ट लीड टाइम पोस्ट की गई क्रय प्राप्तियों से अपडेट होते हैं।"
 
 msgid "Part Number"
 msgstr "भाग संख्या"
@@ -13881,10 +13881,10 @@ msgid "Quotes with Lines"
 msgstr "पंक्तियों के साथ उद्धरण"
 
 msgid "Quotes, orders and invoices are blocked until the customer has a contact with an email address and a location with a country."
-msgstr ""
+msgstr "कोटेशन, आदेश और चालान को ब्लॉक किया जाता है जब तक ग्राहक के पास एक ईमेल पते वाला संपर्क और एक देश वाला स्थान न हो।"
 
 msgid "Quotes, orders and invoices are blocked until the supplier has a contact with an email address and a location with a country."
-msgstr ""
+msgstr "कोटेशन, आदेश और चालान को ब्लॉक किया जाता है जब तक आपूर्तिकर्ता के पास एक ईमेल पते वाला संपर्क और एक देश वाला स्थान न हो।"
 
 msgid "Quoting and sales orders"
 msgstr "कोटेशन और विक्रय आदेश"
@@ -14522,10 +14522,10 @@ msgid "Require a 6-digit code from an authenticator app when signing in."
 msgstr "साइन इन करते समय ऑथेंटिकेटर ऐप से 6-अंकीय कोड की आवश्यकता है।"
 
 msgid "Require a Customer Contact and Location"
-msgstr ""
+msgstr "ग्राहक संपर्क और स्थान की आवश्यकता है"
 
 msgid "Require a Supplier Contact and Location"
-msgstr ""
+msgstr "आपूर्तिकर्ता संपर्क और स्थान की आवश्यकता है"
 
 msgid "Require an assigned operator before the scheduler places work at a location. When on, unstaffed work centers get no work and an operation with no manned coverage shows as unschedulable. Lights-out (24×7) work centers are exempt."
 msgstr "शेड्यूलर किसी स्थान पर काम रखने से पहले एक असाइन किया गया ऑपरेटर आवश्यक करें। जब सक्षम हो, तो अनस्टाफ्ड वर्क सेंटर को कोई काम नहीं मिलते और कोई मानव कवरेज के बिना एक ऑपरेशन गैर-शेड्यूल करने योग्य दिखाई देता है। लाइट-आउट (24×7) वर्क सेंटर छूट प्राप्त हैं।"
@@ -16930,10 +16930,10 @@ msgid "Supplier ID cannot be changed after creation"
 msgstr "आपूर्तिकर्ता ID निर्माण के बाद नहीं बदला जा सकता"
 
 msgid "Supplier IDs are hidden"
-msgstr ""
+msgstr "आपूर्तिकर्ता ID छिपे हुए हैं"
 
 msgid "Supplier IDs are shown"
-msgstr ""
+msgstr "आपूर्तिकर्ता ID दिखाए गए हैं"
 
 msgid "Supplier interaction"
 msgstr "आपूर्तिकर्ता इंटरैक्शन"
@@ -17964,7 +17964,7 @@ msgid "The sales order line this job was created to supply, tying the job to the
 msgstr "विक्रय आदेश पंक्ति जिसे आपूर्ति के लिए यह जॉब बनाया गया था, जॉब को इसके पीछे ग्राहक मांग से जोड़ता है।"
 
 msgid "The same person may inspect"
-msgstr ""
+msgstr "एक ही व्यक्ति निरीक्षण कर सकता है"
 
 msgid "The SAML metadata URL published by your identity provider"
 msgstr "आपके आइडेंटिटी प्रदाता द्वारा प्रकाशित SAML मेटाडेटा URL"
@@ -18838,10 +18838,10 @@ msgid "Tracking URL"
 msgstr "ट्रैकिंग URL"
 
 msgid "Trailing zeros are hidden"
-msgstr ""
+msgstr "पिछली शून्य छिपी हुई हैं"
 
 msgid "Trailing zeros are shown"
-msgstr ""
+msgstr "पिछली शून्य दिखाई गई हैं"
 
 msgid "Train"
 msgstr "प्रशिक्षण"
@@ -18952,10 +18952,10 @@ msgid "Two-factor authentication is not enabled."
 msgstr "दो-कारक प्रमाणीकरण सक्षम नहीं है।"
 
 msgid "Two-factor authentication is optional"
-msgstr ""
+msgstr "दो-कारक प्रमाणीकरण वैकल्पिक है"
 
 msgid "Two-factor authentication is required"
-msgstr ""
+msgstr "दो-कारक प्रमाणीकरण आवश्यक है"
 
 msgid "Type"
 msgstr "प्रकार"

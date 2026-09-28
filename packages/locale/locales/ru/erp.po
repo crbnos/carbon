@@ -592,10 +592,10 @@ msgid "A custom solution to meet your needs"
 msgstr "Пользовательское решение для удовлетворения ваших потребностей."
 
 msgid "A customer contact and location are optional"
-msgstr ""
+msgstr "Контактное лицо и площадка покупателя опциональны"
 
 msgid "A customer contact and location are required"
-msgstr ""
+msgstr "Контактное лицо и площадка покупателя обязательны"
 
 msgid "A customer is a business or person who buys your parts or services."
 msgstr "Клиент — это компания или физическое лицо, которое покупает ваши детали или услуги."
@@ -607,7 +607,7 @@ msgid "A customer is deleted"
 msgstr "Покупатель удален."
 
 msgid "A customer must have at least one contact with an email address and at least one location with a country — plus a state, for US addresses — before its quotes, orders and invoices can be issued or posted. The mirror of the supplier requirement under Purchasing; no integration requires it today."
-msgstr ""
+msgstr "Покупатель должен иметь как минимум одно контактное лицо с адресом электронной почты и как минимум одну площадку со страной — а также штатом для адресов в США — перед тем, как его коммерческие предложения, заказы и счета-фактуры смогут быть выпущены или проведены. Зеркало требования поставщика в разделе Закупки; сегодня никакая интеграция этого не требует."
 
 msgid "A customer's account manager changes"
 msgstr "Изменился менеджер аккаунта покупателя."
@@ -643,7 +643,7 @@ msgid "A depreciation method that charges an equal amount each period across the
 msgstr "Метод амортизации, который списывает равную сумму каждый период в течение срока полезного использования актива."
 
 msgid "A different inspector is required"
-msgstr ""
+msgstr "Требуется другой инспектор"
 
 #. placeholder {0}: file.name
 msgid "A file named {0} already exists — delete or rename it first"
@@ -871,10 +871,10 @@ msgid "A quote's status changes"
 msgstr "Статус предложения меняется"
 
 msgid "A readable Customer ID appears on lists, forms and dropdowns."
-msgstr ""
+msgstr "Читаемый идентификатор покупателя отображается в списках, формах и раскрывающихся списках."
 
 msgid "A readable Supplier ID appears on lists, forms and dropdowns."
-msgstr ""
+msgstr "Читаемый идентификатор поставщика отображается в списках, формах и раскрывающихся списках."
 
 msgid "A receipt is created"
 msgstr "Квитанция создана"
@@ -1030,10 +1030,10 @@ msgid "A stored booking of a work center or operator for one operation's placed 
 msgstr "Сохраненное бронирование рабочего центра или оператора на время размещения одной операции — материализованный результат запуска планирования и то, что отображает Прогноз."
 
 msgid "A supplier contact and location are optional"
-msgstr ""
+msgstr "Контактное лицо и площадка поставщика опциональны"
 
 msgid "A supplier contact and location are required"
-msgstr ""
+msgstr "Контактное лицо и площадка поставщика обязательны"
 
 msgid "A supplier is created"
 msgstr "Поставщик создан"
@@ -1042,7 +1042,7 @@ msgid "A supplier is deleted"
 msgstr "Поставщик удален"
 
 msgid "A supplier must have at least one contact with an email address and at least one location with a country — plus a state, for US addresses — before its quotes, orders and invoices can be issued or posted. Spend platforms cannot create a vendor without all of them, so a supplier missing any has its bills rejected after the fact."
-msgstr ""
+msgstr "Поставщик должен иметь как минимум одно контактное лицо с адресом электронной почты и как минимум одну площадку со страной — а также штатом для адресов в США — перед тем, как его коммерческие предложения, заказы и счета-фактуры смогут быть выпущены или проведены. Платформы управления расходами не могут создать поставщика без всего этого, поэтому поставщик, у которого отсутствует какой-либо из этих элементов, имеет свои счета отклоненными постфактум."
 
 msgid "A supplier return sends previously received goods back to the supplier for credit or replacement."
 msgstr "Возврат поставщику отправляет ранее полученный товар обратно поставщику для получения кредита или замены."
@@ -1809,10 +1809,10 @@ msgid "Amount Type"
 msgstr "Тип суммы"
 
 msgid "Amounts are padded to their currency's decimal places."
-msgstr ""
+msgstr "Суммы дополняются в соответствии с количеством десятичных знаков валюты."
 
 msgid "Amounts show only the digits that carry value."
-msgstr ""
+msgstr "Суммы отображают только значащие цифры."
 
 msgid "An ability is a process's qualification. Only processes without one are listed."
 msgstr "Навык — это квалификация процесса. Отображаются только процессы без него."
@@ -1999,7 +1999,7 @@ msgid "AP Clerk"
 msgstr "Специалист по учету кредиторской задолженности"
 
 msgid "AP invoices are routed to a single billing address."
-msgstr ""
+msgstr "Счета-фактуры от поставщиков маршрутизируются на один адрес выставления счета."
 
 msgid "AP Outstanding"
 msgstr "Неоплаченная кредиторская задолженность"
@@ -2150,7 +2150,7 @@ msgid "AR Clerk"
 msgstr "Менеджер дебиторской задолженности"
 
 msgid "AR invoices are routed to a single billing address."
-msgstr ""
+msgstr "Счета-фактуры покупателей маршрутизируются на один адрес выставления счета."
 
 msgid "AR Outstanding"
 msgstr "Дебиторская задолженность"
@@ -3564,10 +3564,10 @@ msgid "Centralized Billing Address"
 msgstr "Централизованный адрес выставления счетов"
 
 msgid "Centralized billing is disabled"
-msgstr ""
+msgstr "Централизованное выставление счетов отключено"
 
 msgid "Centralized billing is enabled"
-msgstr ""
+msgstr "Централизованное выставление счетов включено"
 
 msgid "Cert Version"
 msgstr "Версия сертификата"
@@ -5111,10 +5111,10 @@ msgid "Customer ID cannot be changed after creation"
 msgstr "ID покупателя нельзя изменить после создания"
 
 msgid "Customer IDs are hidden"
-msgstr ""
+msgstr "Идентификаторы покупателей скрыты"
 
 msgid "Customer IDs are shown"
-msgstr ""
+msgstr "Идентификаторы покупателей отображаются"
 
 msgid "Customer Invoice Number"
 msgstr "Номер счета-фактуры"
@@ -6917,10 +6917,10 @@ msgid "Enable to automatically post transactions to the general ledger."
 msgstr "Включите, чтобы автоматически отправлять транзакции в главную книгу."
 
 msgid "Enable to block issuing or posting for a customer with no contact or no location."
-msgstr ""
+msgstr "Включите, чтобы заблокировать выпуск или проведение для покупателя без контактного лица или площадки."
 
 msgid "Enable to block issuing or posting for a supplier with no contact or no location."
-msgstr ""
+msgstr "Включите, чтобы заблокировать выпуск или проведение для поставщика без контактного лица или площадки."
 
 msgid "Enable to configure tax-specific depreciation methods on asset classes (e.g., MACRS, accelerated)."
 msgstr "Включите, чтобы настроить налоговые методы амортизации для классов основных средств (например, MACRS, ускоренная)."
@@ -6929,19 +6929,19 @@ msgid "Enable to generate IDs and descriptions for raw materials."
 msgstr "Включите для создания идентификаторов и описаний для сырья."
 
 msgid "Enable to require an authenticator app before anyone can open this company."
-msgstr ""
+msgstr "Включите, чтобы требовать приложение-аутентификатор перед открытием этой организации."
 
 msgid "Enable to route all AP invoices to a single billing address."
-msgstr ""
+msgstr "Включите, чтобы маршрутизировать все счета-фактуры от поставщиков на один адрес выставления счета."
 
 msgid "Enable to route all AR invoices to a single billing address."
-msgstr ""
+msgstr "Включите, чтобы маршрутизировать все счета-фактуры покупателей на один адрес выставления счета."
 
 msgid "Enable to show a readable Customer ID on lists, forms and dropdowns."
-msgstr ""
+msgstr "Включите, чтобы отображать читаемый идентификатор покупателя в списках, формах и раскрывающихся списках."
 
 msgid "Enable to show a readable Supplier ID on lists, forms and dropdowns."
-msgstr ""
+msgstr "Включите, чтобы отображать читаемый идентификатор поставщика в списках, формах и раскрывающихся списках."
 
 msgid "Enable to start tracking changes to your data."
 msgstr "Включите, чтобы начать отслеживание изменений ваших данных."
@@ -6950,13 +6950,13 @@ msgid "Enable to start tracking work shifts."
 msgstr "Включите для начала отслеживания рабочих смен."
 
 msgid "Enable to update part lead times from posted purchase receipts."
-msgstr ""
+msgstr "Включите обновление сроков поставки деталей из проведенных поступлений от поставщиков."
 
 msgid "Enable to use metric units for material dimensions."
 msgstr "Включить использование метрических единиц для размеров материалов."
 
 msgid "Enable to warn when the inspector also received the item."
-msgstr ""
+msgstr "Включите предупреждение, если инспектор также получил номенклатуру."
 
 msgid "Enabled"
 msgstr "Включено"
@@ -7231,7 +7231,7 @@ msgid "Every row was imported successfully."
 msgstr "Каждая строка была успешно импортирована."
 
 msgid "Everyone must set up an authenticator app before opening this company."
-msgstr ""
+msgstr "Все должны установить приложение-аутентификатор перед открытием этой организации."
 
 msgid "Everyone working any day of the week you pick stays on past their shift by the hours you set. Only the departments and shifts you're filtering by are affected."
 msgstr "Все работающие в любой день недели, который вы выберете, остаются после смены на количество часов, которые вы установите. Затронуты только отделы и смены, по которым вы фильтруете."
@@ -9027,7 +9027,7 @@ msgid "Inspect Item"
 msgstr "Проверить товар"
 
 msgid "Inspecting an item you received shows a warning."
-msgstr ""
+msgstr "При проверке полученной вами номенклатуры отображается предупреждение."
 
 msgid "Inspection"
 msgstr "Контроль"
@@ -9725,10 +9725,10 @@ msgid "Lead Time (Days)"
 msgstr "Срок поставки (Дни)"
 
 msgid "Lead time updates are disabled"
-msgstr ""
+msgstr "Обновления сроков поставки отключены"
 
 msgid "Lead time updates are enabled"
-msgstr ""
+msgstr "Обновления сроков поставки включены"
 
 msgid "Lead Time:"
 msgstr "Срок поставки:"
@@ -12621,7 +12621,7 @@ msgid "Part is configured for manufacturing"
 msgstr "Деталь настроена для производства"
 
 msgid "Part lead times update from posted purchase receipts."
-msgstr ""
+msgstr "Сроки поставки деталей обновляются из проведенных поступлений от поставщиков."
 
 msgid "Part Number"
 msgstr "Номер детали"
@@ -13881,10 +13881,10 @@ msgid "Quotes with Lines"
 msgstr "Предложения со строками"
 
 msgid "Quotes, orders and invoices are blocked until the customer has a contact with an email address and a location with a country."
-msgstr ""
+msgstr "Коммерческие предложения, заказы и счета-фактуры блокируются до тех пор, пока у покупателя не будет контактного лица с адресом электронной почты и площадки со страной."
 
 msgid "Quotes, orders and invoices are blocked until the supplier has a contact with an email address and a location with a country."
-msgstr ""
+msgstr "Коммерческие предложения, заказы и счета-фактуры блокируются до тех пор, пока у поставщика не будет контактного лица с адресом электронной почты и площадки со страной."
 
 msgid "Quoting and sales orders"
 msgstr "Коммерческие предложения и заказы покупателей"
@@ -14522,10 +14522,10 @@ msgid "Require a 6-digit code from an authenticator app when signing in."
 msgstr "Требовать 6-значный код из приложения-аутентификатора при входе."
 
 msgid "Require a Customer Contact and Location"
-msgstr ""
+msgstr "Требовать контактное лицо и площадку покупателя"
 
 msgid "Require a Supplier Contact and Location"
-msgstr ""
+msgstr "Требовать контактное лицо и площадку поставщика"
 
 msgid "Require an assigned operator before the scheduler places work at a location. When on, unstaffed work centers get no work and an operation with no manned coverage shows as unschedulable. Lights-out (24×7) work centers are exempt."
 msgstr "Требовать назначенного оператора перед размещением планировщиком работ на площадке. Когда включено, рабочие центры без персонала не получают работу, а операция без назначенного оператора отображается как невозможная для планирования. Круглосуточные (24×7) рабочие центры освобождены от этого требования."
@@ -16930,10 +16930,10 @@ msgid "Supplier ID cannot be changed after creation"
 msgstr "ID поставщика не может быть изменен после создания"
 
 msgid "Supplier IDs are hidden"
-msgstr ""
+msgstr "Идентификаторы поставщиков скрыты"
 
 msgid "Supplier IDs are shown"
-msgstr ""
+msgstr "Идентификаторы поставщиков отображаются"
 
 msgid "Supplier interaction"
 msgstr "Взаимодействие поставщика"
@@ -17964,7 +17964,7 @@ msgid "The sales order line this job was created to supply, tying the job to the
 msgstr "Строка заказа покупателя, для которой был создан этот Производственный заказ с целью Обеспечения, связывающая Производственный заказ с Потребностью Покупателя."
 
 msgid "The same person may inspect"
-msgstr ""
+msgstr "Тот же инспектор может проверять"
 
 msgid "The SAML metadata URL published by your identity provider"
 msgstr "URL метаданных SAML, опубликованный вашим поставщиком удостоверений"
@@ -18838,10 +18838,10 @@ msgid "Tracking URL"
 msgstr "URL отслеживания"
 
 msgid "Trailing zeros are hidden"
-msgstr ""
+msgstr "Конечные нули скрыты"
 
 msgid "Trailing zeros are shown"
-msgstr ""
+msgstr "Конечные нули отображаются"
 
 msgid "Train"
 msgstr "Обучение"
@@ -18952,10 +18952,10 @@ msgid "Two-factor authentication is not enabled."
 msgstr "Двухфакторная аутентификация не включена."
 
 msgid "Two-factor authentication is optional"
-msgstr ""
+msgstr "Двухфакторная аутентификация — опциональна"
 
 msgid "Two-factor authentication is required"
-msgstr ""
+msgstr "Двухфакторная аутентификация требуется"
 
 msgid "Type"
 msgstr "Тип"

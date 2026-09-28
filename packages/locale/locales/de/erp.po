@@ -592,10 +592,10 @@ msgid "A custom solution to meet your needs"
 msgstr "Eine maßgeschneiderte Lösung für Ihre Anforderungen."
 
 msgid "A customer contact and location are optional"
-msgstr ""
+msgstr "Ein Kundenkontakt und ein Standort sind optional"
 
 msgid "A customer contact and location are required"
-msgstr ""
+msgstr "Ein Kundenkontakt und ein Standort sind erforderlich"
 
 msgid "A customer is a business or person who buys your parts or services."
 msgstr "Ein Kunde ist ein Unternehmen oder eine Person, die Ihre Teile oder Dienstleistungen kauft."
@@ -607,7 +607,7 @@ msgid "A customer is deleted"
 msgstr "Ein Kunde wird gelöscht"
 
 msgid "A customer must have at least one contact with an email address and at least one location with a country — plus a state, for US addresses — before its quotes, orders and invoices can be issued or posted. The mirror of the supplier requirement under Purchasing; no integration requires it today."
-msgstr ""
+msgstr "Ein Kunde muss mindestens einen Kontakt mit einer E-Mail-Adresse und mindestens einen Standort mit einem Land – plus ein Bundesstaat für US-Adressen – haben, bevor seine Angebote, Bestellungen und Rechnungen ausgestellt oder gebucht werden können. Dies spiegelt die Lieferantenanforderung unter Einkauf; heute benötigt keine Integration dies."
 
 msgid "A customer's account manager changes"
 msgstr "Der Kontoführer eines Kunden ändert sich"
@@ -643,7 +643,7 @@ msgid "A depreciation method that charges an equal amount each period across the
 msgstr "Eine Abschreibungsmethode, die über die gesamte Nutzungsdauer des Vermögenswerts einen gleichen Betrag pro Periode belastet."
 
 msgid "A different inspector is required"
-msgstr ""
+msgstr "Ein anderer Prüfer ist erforderlich"
 
 #. placeholder {0}: file.name
 msgid "A file named {0} already exists — delete or rename it first"
@@ -871,10 +871,10 @@ msgid "A quote's status changes"
 msgstr "Der Status eines Angebots ändert sich"
 
 msgid "A readable Customer ID appears on lists, forms and dropdowns."
-msgstr ""
+msgstr "Eine lesbare Kunden-ID wird in Listen, Formularen und Dropdown-Menüs angezeigt."
 
 msgid "A readable Supplier ID appears on lists, forms and dropdowns."
-msgstr ""
+msgstr "Eine lesbare Lieferanten-ID wird in Listen, Formularen und Dropdown-Menüs angezeigt."
 
 msgid "A receipt is created"
 msgstr "Ein Wareneingang wird erstellt"
@@ -1030,10 +1030,10 @@ msgid "A stored booking of a work center or operator for one operation's placed 
 msgstr "Eine gespeicherte Buchung eines Arbeitsplatzes oder Werkers für den zeitlichen Umfang eines plazierten Arbeitsgangs — die materialisierte Ausgabe eines Planungslaufs und das, was die Prognose zeichnet."
 
 msgid "A supplier contact and location are optional"
-msgstr ""
+msgstr "Ein Lieferantenkontakt und ein Standort sind optional"
 
 msgid "A supplier contact and location are required"
-msgstr ""
+msgstr "Ein Lieferantenkontakt und ein Standort sind erforderlich"
 
 msgid "A supplier is created"
 msgstr "Ein Lieferant wird erstellt"
@@ -1042,7 +1042,7 @@ msgid "A supplier is deleted"
 msgstr "Ein Lieferant wird gelöscht"
 
 msgid "A supplier must have at least one contact with an email address and at least one location with a country — plus a state, for US addresses — before its quotes, orders and invoices can be issued or posted. Spend platforms cannot create a vendor without all of them, so a supplier missing any has its bills rejected after the fact."
-msgstr ""
+msgstr "Ein Lieferant muss mindestens einen Kontakt mit einer E-Mail-Adresse und mindestens einen Standort mit einem Land – plus ein Bundesstaat für US-Adressen – haben, bevor seine Angebote, Bestellungen und Rechnungen ausgestellt oder gebucht werden können. Ausgabenverwaltungsplattformen können einen Lieferanten ohne alle erforderlichen Angaben nicht einrichten, daher werden Rechnungen eines Lieferanten, dem eine dieser Angaben fehlt, nachträglich abgelehnt."
 
 msgid "A supplier return sends previously received goods back to the supplier for credit or replacement."
 msgstr "Eine Lieferantenrückgabe sendet zuvor erhaltene Waren zur Gutschrift oder zum Austausch an den Lieferanten zurück."
@@ -1809,10 +1809,10 @@ msgid "Amount Type"
 msgstr "Betragtyp"
 
 msgid "Amounts are padded to their currency's decimal places."
-msgstr ""
+msgstr "Beträge werden auf die Dezimalstellen ihrer Währung aufgefüllt."
 
 msgid "Amounts show only the digits that carry value."
-msgstr ""
+msgstr "Beträge zeigen nur die notwendigen Ziffern an."
 
 msgid "An ability is a process's qualification. Only processes without one are listed."
 msgstr "Eine Qualifikation ist eine Qualifikation eines Verfahrens. Nur Verfahren ohne eine werden aufgelistet."
@@ -1999,7 +1999,7 @@ msgid "AP Clerk"
 msgstr "Kreditoren-Sachbearbeiter"
 
 msgid "AP invoices are routed to a single billing address."
-msgstr ""
+msgstr "Kreditoren-Rechnungen werden an eine einzelne Rechnungsadresse weitergeleitet."
 
 msgid "AP Outstanding"
 msgstr "Ausstehende Kreditoren"
@@ -2150,7 +2150,7 @@ msgid "AR Clerk"
 msgstr "Debitoren-Sachbearbeiter"
 
 msgid "AR invoices are routed to a single billing address."
-msgstr ""
+msgstr "Debitoren-Rechnungen werden an eine einzelne Rechnungsadresse weitergeleitet."
 
 msgid "AR Outstanding"
 msgstr "Ausstehende Debitoren"
@@ -3564,10 +3564,10 @@ msgid "Centralized Billing Address"
 msgstr "Zentralisierte Rechnungsadresse"
 
 msgid "Centralized billing is disabled"
-msgstr ""
+msgstr "Zentrale Abrechnung ist deaktiviert"
 
 msgid "Centralized billing is enabled"
-msgstr ""
+msgstr "Zentrale Abrechnung ist aktiviert"
 
 msgid "Cert Version"
 msgstr "Zertifikat-Version"
@@ -5111,10 +5111,10 @@ msgid "Customer ID cannot be changed after creation"
 msgstr "Kundennummer kann nach der Erstellung nicht geändert werden"
 
 msgid "Customer IDs are hidden"
-msgstr ""
+msgstr "Kunden-IDs sind verborgen"
 
 msgid "Customer IDs are shown"
-msgstr ""
+msgstr "Kunden-IDs werden angezeigt"
 
 msgid "Customer Invoice Number"
 msgstr "Kundenrechnungsnummer"
@@ -6917,10 +6917,10 @@ msgid "Enable to automatically post transactions to the general ledger."
 msgstr "Aktivieren Sie diese Option, um Transaktionen automatisch ins Hauptbuch zu buchen."
 
 msgid "Enable to block issuing or posting for a customer with no contact or no location."
-msgstr ""
+msgstr "Aktivieren, um die Ausstellung oder Buchung für einen Kunden ohne Kontakt oder ohne Standort zu blockieren."
 
 msgid "Enable to block issuing or posting for a supplier with no contact or no location."
-msgstr ""
+msgstr "Aktivieren, um die Ausstellung oder Buchung für einen Lieferanten ohne Kontakt oder ohne Standort zu blockieren."
 
 msgid "Enable to configure tax-specific depreciation methods on asset classes (e.g., MACRS, accelerated)."
 msgstr "Ermöglichen Sie die Konfiguration steuerlicher Abschreibungsmethoden für Anlagenklassen (z. B. MACRS, beschleunigt)."
@@ -6929,19 +6929,19 @@ msgid "Enable to generate IDs and descriptions for raw materials."
 msgstr "Aktivieren Sie diese Option, um IDs und Beschreibungen für Rohstoffe zu generieren."
 
 msgid "Enable to require an authenticator app before anyone can open this company."
-msgstr ""
+msgstr "Aktivieren, um eine Authentifizierungs-App zu erfordern, bevor jemand dieses Unternehmen öffnen kann."
 
 msgid "Enable to route all AP invoices to a single billing address."
-msgstr ""
+msgstr "Aktivieren, um alle Kreditoren-Rechnungen an eine einzelne Rechnungsadresse weiterzuleiten."
 
 msgid "Enable to route all AR invoices to a single billing address."
-msgstr ""
+msgstr "Aktivieren, um alle Debitoren-Rechnungen an eine einzelne Rechnungsadresse weiterzuleiten."
 
 msgid "Enable to show a readable Customer ID on lists, forms and dropdowns."
-msgstr ""
+msgstr "Aktivieren, um eine lesbare Kunden-ID in Listen, Formularen und Dropdown-Menüs anzuzeigen."
 
 msgid "Enable to show a readable Supplier ID on lists, forms and dropdowns."
-msgstr ""
+msgstr "Aktivieren, um eine lesbare Lieferanten-ID in Listen, Formularen und Dropdown-Menüs anzuzeigen."
 
 msgid "Enable to start tracking changes to your data."
 msgstr "Aktivieren Sie diese Option, um Änderungen an Ihren Daten zu verfolgen."
@@ -6950,13 +6950,13 @@ msgid "Enable to start tracking work shifts."
 msgstr "Aktivieren Sie die Nachverfolgung von Schichten."
 
 msgid "Enable to update part lead times from posted purchase receipts."
-msgstr ""
+msgstr "Aktivieren, um Beschaffungszeiten von Teilen aus gebuchten Wareneingängen zu aktualisieren."
 
 msgid "Enable to use metric units for material dimensions."
 msgstr "Aktivieren Sie diese Option, um metrische Einheiten für Materialdimensionen zu verwenden."
 
 msgid "Enable to warn when the inspector also received the item."
-msgstr ""
+msgstr "Aktivieren, um zu warnen, wenn der Prüfer den Artikel auch erhalten hat."
 
 msgid "Enabled"
 msgstr "Aktiviert"
@@ -7231,7 +7231,7 @@ msgid "Every row was imported successfully."
 msgstr "Jede Zeile wurde erfolgreich importiert."
 
 msgid "Everyone must set up an authenticator app before opening this company."
-msgstr ""
+msgstr "Jeder muss eine Authentifizierungs-App einrichten, bevor er dieses Unternehmen öffnet."
 
 msgid "Everyone working any day of the week you pick stays on past their shift by the hours you set. Only the departments and shifts you're filtering by are affected."
 msgstr "Alle, die an einem Tag der von Ihnen gewählten Woche arbeiten, bleiben um die von Ihnen festgelegten Stunden nach ihrer Schicht. Nur die Abteilungen und Schichten, nach denen Sie filtern, sind betroffen."
@@ -9027,7 +9027,7 @@ msgid "Inspect Item"
 msgstr "Artikel überprüfen"
 
 msgid "Inspecting an item you received shows a warning."
-msgstr ""
+msgstr "Das Überprüfen eines Artikels, den Sie erhalten haben, zeigt eine Warnung an."
 
 msgid "Inspection"
 msgstr "Prüfung"
@@ -9725,10 +9725,10 @@ msgid "Lead Time (Days)"
 msgstr "Beschaffungszeit (Tage)"
 
 msgid "Lead time updates are disabled"
-msgstr ""
+msgstr "Beschaffungszeit-Aktualisierungen sind deaktiviert"
 
 msgid "Lead time updates are enabled"
-msgstr ""
+msgstr "Beschaffungszeit-Aktualisierungen sind aktiviert"
 
 msgid "Lead Time:"
 msgstr "Beschaffungszeit:"
@@ -12621,7 +12621,7 @@ msgid "Part is configured for manufacturing"
 msgstr "Teil ist für Fertigung konfiguriert"
 
 msgid "Part lead times update from posted purchase receipts."
-msgstr ""
+msgstr "Beschaffungszeiten von Teilen werden aus gebuchten Wareneingängen aktualisiert."
 
 msgid "Part Number"
 msgstr "Teilenummer"
@@ -13881,10 +13881,10 @@ msgid "Quotes with Lines"
 msgstr "Angebote mit Zeilen"
 
 msgid "Quotes, orders and invoices are blocked until the customer has a contact with an email address and a location with a country."
-msgstr ""
+msgstr "Angebote, Bestellungen und Rechnungen werden blockiert, bis der Kunde einen Kontakt mit einer E-Mail-Adresse und einen Standort mit einem Land hat."
 
 msgid "Quotes, orders and invoices are blocked until the supplier has a contact with an email address and a location with a country."
-msgstr ""
+msgstr "Angebote, Bestellungen und Rechnungen werden blockiert, bis der Lieferant einen Kontakt mit einer E-Mail-Adresse und einen Standort mit einem Land hat."
 
 msgid "Quoting and sales orders"
 msgstr "Angebote und Kundenaufträge"
@@ -14522,10 +14522,10 @@ msgid "Require a 6-digit code from an authenticator app when signing in."
 msgstr "Erfordert einen 6-stelligen Code aus einer Authentifikator-App beim Anmelden."
 
 msgid "Require a Customer Contact and Location"
-msgstr ""
+msgstr "Kundenkontakt und Standort erforderlich"
 
 msgid "Require a Supplier Contact and Location"
-msgstr ""
+msgstr "Lieferantenkontakt und Standort erforderlich"
 
 msgid "Require an assigned operator before the scheduler places work at a location. When on, unstaffed work centers get no work and an operation with no manned coverage shows as unschedulable. Lights-out (24×7) work centers are exempt."
 msgstr "Erfordert einen zugewiesenen Werker, bevor der Planer Arbeiten an einem Standort platziert. Wenn aktiviert, erhalten unbesetzte Arbeitsplätze keine Arbeiten und ein Arbeitsgang ohne bemannte Abdeckung wird als nicht planbar angezeigt. Lichter-aus (24×7) Arbeitsplätze sind ausgenommen."
@@ -16930,10 +16930,10 @@ msgid "Supplier ID cannot be changed after creation"
 msgstr "Lieferanten-ID kann nach der Erstellung nicht geändert werden"
 
 msgid "Supplier IDs are hidden"
-msgstr ""
+msgstr "Lieferanten-IDs sind verborgen"
 
 msgid "Supplier IDs are shown"
-msgstr ""
+msgstr "Lieferanten-IDs werden angezeigt"
 
 msgid "Supplier interaction"
 msgstr "Lieferanteninteraktion"
@@ -17964,7 +17964,7 @@ msgid "The sales order line this job was created to supply, tying the job to the
 msgstr "Die Kundenauftragsposition, die dieser Fertigungsauftrag liefern soll, wodurch der Fertigungsauftrag an den dahinter liegenden Kundenbedarf gebunden wird."
 
 msgid "The same person may inspect"
-msgstr ""
+msgstr "Dieselbe Person darf überprüfen"
 
 msgid "The SAML metadata URL published by your identity provider"
 msgstr "Die von Ihrem Identitätsanbieter veröffentlichte SAML-Metadaten-URL"
@@ -18838,10 +18838,10 @@ msgid "Tracking URL"
 msgstr "Tracking-URL"
 
 msgid "Trailing zeros are hidden"
-msgstr ""
+msgstr "Nachfolgende Nullen sind verborgen"
 
 msgid "Trailing zeros are shown"
-msgstr ""
+msgstr "Nachfolgende Nullen werden angezeigt"
 
 msgid "Train"
 msgstr "Schulung"
@@ -18952,10 +18952,10 @@ msgid "Two-factor authentication is not enabled."
 msgstr "Zwei-Faktor-Authentifizierung ist nicht aktiviert."
 
 msgid "Two-factor authentication is optional"
-msgstr ""
+msgstr "Zwei-Faktor-Authentifizierung ist optional"
 
 msgid "Two-factor authentication is required"
-msgstr ""
+msgstr "Zwei-Faktor-Authentifizierung ist erforderlich"
 
 msgid "Type"
 msgstr "Typ"
