@@ -130,7 +130,18 @@ Notes that match real code:
 - Use `.select("id")` (or `"id, name"`) + `.single()` after insert/update to return the
   written row.
 - Wrap update payloads in `sanitize(...)` to strip `undefined`/empty values before
-  sending (`upsertCustomer`, and the MES `clockOut`/`updateTimeCardEntry`).
+  sending (`upsertCustomer`, and the MES `clockOut`/`updateTimeCardEntry`). Note that
+  `sanitize` turns an `undefined` key into `null`, so a key that is present is sent.
+- Write only columns the table has. postgrest-js types `.insert()`/`.update()`/`.upsert()`
+  generically, so a key the table lacks compiles and PostgREST then refuses the whole
+  write (PGRST204). When a validator carries a form-only field (a link-row id, a value
+  stored in another table), `Omit` it from the service's parameter type AND drop it at
+  runtime with `withoutKeys(payload, [...])` (`~/utils/supabase`): API and MCP input
+  validation passes unknown keys through. Update-only upserts whose table has no
+  `createdBy` drop it on the update branch (the API stamps both audit fields when no
+  `_operation` is given). `apps/erp/test/service-write-columns.test.ts` fails when any
+  ERP write (literal, or by the argument's static type) names a column missing from the
+  generated `Database` type.
 - Pure `insert{Thing}` functions exist where there's never an update path (e.g.
   `insertCustomerContact`, `insertManualInventoryAdjustment`).
 

@@ -502,6 +502,14 @@ the model context or the MCP dispatch.
   packages, `Map<...>` params, and genuine `Json`/`unknown`/rich-text fields.
   Keep `//` comments above the function, not inside the parameter list (a
   comment there is parsed as a property name).
+- **Every published write must name only real columns.** Input validation passes
+  unknown keys through, and postgrest-js does not type-check a write's keys, so a
+  service parameter field the table lacks makes the tool fail with PGRST204 for
+  every caller who sends it (`closeSalesOrder` wrote a nonexistent `closed` and
+  could never succeed; it was removed, since the sales order UI has no close
+  action). `apps/erp/test/service-write-columns.test.ts` checks every ERP write
+  against the generated `Database` type; a form-only field is `Omit`ted from the
+  parameter type and dropped with `withoutKeys` (see `conventions-services.md`).
 - A service whose first parameter is `db` (a Kysely transaction client) is served
   `getDatabaseClient()` by `dispatch.server.ts`, the same way `client` is served
   the supabase one. A first parameter named anything else falls through to the
