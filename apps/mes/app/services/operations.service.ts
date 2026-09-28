@@ -1905,12 +1905,14 @@ export async function getScrapReasonsList(
 
 export async function getTrackedEntitiesByMakeMethodId(
   client: SupabaseClient<Database>,
-  jobMakeMethodId: string
+  jobMakeMethodId: string,
+  companyId: string
 ) {
   return client
     .from("trackedEntity")
     .select("*")
     .eq("attributes->>Job Make Method", jobMakeMethodId)
+    .eq("companyId", companyId)
     .order("createdAt", { ascending: true });
 }
 
@@ -1978,12 +1980,14 @@ export async function getTrackedEntity(
 
 export async function getTrackedEntitiesByOperationId(
   client: SupabaseClient<Database>,
-  operationId: string
+  operationId: string,
+  companyId: string
 ) {
   const jobOperation = await client
     .from("jobOperation")
     .select("jobMakeMethodId")
     .eq("id", operationId)
+    .eq("companyId", companyId)
     .single();
 
   if (jobOperation.error || !jobOperation.data.jobMakeMethodId)
@@ -1994,7 +1998,8 @@ export async function getTrackedEntitiesByOperationId(
 
   return getTrackedEntitiesByMakeMethodId(
     client,
-    jobOperation.data.jobMakeMethodId
+    jobOperation.data.jobMakeMethodId,
+    companyId
   );
 }
 
