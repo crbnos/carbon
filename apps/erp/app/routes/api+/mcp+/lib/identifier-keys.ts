@@ -21,7 +21,7 @@
 export interface IdentifierKey {
   /** Table whose `id` the param carries. Every table here has `companyId`. */
   table: string;
-  /** Readable columns tried, in order, after `id`. Empty for an id-only key. */
+  /** Readable columns checked after `id`; a value must name one record across all of them. Empty for an id-only key. */
   readable: string[];
   /** Why a readable-looking column is not accepted (id-only keys). */
   idOnlyReason?: string;
@@ -43,7 +43,9 @@ export const IDENTIFIER_KEYS: Record<string, IdentifierKey> = {
   inspection: { table: "inspection", readable: ["inspectionId"] },
   inventoryCount: { table: "inventoryCount", readable: ["inventoryCountId"] },
   // A readable id names every revision of an item; readableIdWithRevision
-  // names one (and equals readableId for the first revision).
+  // names one. The first revision's readableIdWithRevision equals its bare
+  // readableId, so the resolver checks both and refuses a value that names
+  // more than one row across them.
   item: { table: "item", readable: ["readableIdWithRevision", "readableId"] },
   job: { table: "job", readable: ["jobId"] },
   maintenanceDispatch: {

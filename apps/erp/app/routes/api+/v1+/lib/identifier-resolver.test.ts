@@ -79,6 +79,12 @@ const items: Row[] = [
     companyId: "c1",
     readableId: "P-200",
     readableIdWithRevision: "P-200.B"
+  },
+  {
+    id: "item_d0",
+    companyId: "c1",
+    readableId: "P-300",
+    readableIdWithRevision: "P-300"
   }
 ];
 
@@ -108,14 +114,31 @@ describe("resolveIdentifier", () => {
     expect(result.error?.kind).toBe("notFound");
   });
 
-  it("resolves an item by readable id with revision before readable id", async () => {
+  it("resolves an item by readable id with revision", async () => {
     const client = postgrest({ item: items });
     expect(await resolveIdentifier(client, "c1", "item", "P-100.B")).toEqual({
       id: "item_aB"
     });
-    // The first revision's readableIdWithRevision is its bare readable id.
-    expect(await resolveIdentifier(client, "c1", "item", "P-100")).toEqual({
-      id: "item_a0"
+    expect(await resolveIdentifier(client, "c1", "item", "P-200.A")).toEqual({
+      id: "item_c1"
+    });
+  });
+
+  it("resolves the bare readable id of an item with one revision", async () => {
+    const client = postgrest({ item: items });
+    expect(await resolveIdentifier(client, "c1", "item", "P-300")).toEqual({
+      id: "item_d0"
+    });
+  });
+
+  it("refuses a bare readable id that is also the first revision's", async () => {
+    // "P-100" is item_a0's readableIdWithRevision and item_aB's readableId.
+    const client = postgrest({ item: items });
+    const result = await resolveIdentifier(client, "c1", "item", "P-100");
+    expect(result.error).toEqual({
+      kind: "ambiguous",
+      message:
+        "P-100 matches more than one item record by readableIdWithRevision or readableId; pass the record id (the `id` field) of the one you mean."
     });
   });
 

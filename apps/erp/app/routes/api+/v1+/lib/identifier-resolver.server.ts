@@ -44,10 +44,12 @@ type UntypedClient = {
 
 /**
  * The record id `value` names for `entity` within `companyId`: the record
- * whose `id` is `value`, else the one record whose readable column (tried in
- * the key's order) is `value`. A readable value shared by several records
- * (revisions) is refused rather than guessed, as `resolveTypedItemRevision`
- * does for item writes.
+ * whose `id` is `value`, else the one record any readable column names. Every
+ * readable column is checked, so a value that names one record by one column
+ * and others by another is refused rather than guessed: an item's bare
+ * readable id equals the first revision's `readableIdWithRevision` and also
+ * names every later revision. This is the refusal `resolveTypedItemRevision`
+ * gives item writes.
  */
 export async function resolveIdentifier(
   client: SupabaseClient<Database>,
@@ -58,26 +60,38 @@ export async function resolveIdentifier(
   const key = IDENTIFIER_KEYS[entity];
   if (!key) throw new Error(`Unknown identifier entity: ${entity}`);
   const db = client as unknown as UntypedClient;
-
-  for (const column of ["id", ...key.readable]) {
-    const { data, error } = await db
+  const lookup = (column: string) =>
+    db
       .from(key.table)
       .select("id")
       .eq(column, value)
       .eq("companyId", companyId)
       .limit(2);
+
+  const byId = await lookup("id");
+  if (byId.error) return { error: { kind: "database", error: byId.error } };
+  if (byId.data && byId.data.length > 0) return { id: byId.data[0].id };
+
+  const matches = new Set<string>();
+  const matchedBy: string[] = [];
+  for (const column of key.readable) {
+    const { data, error } = await lookup(column);
     if (error) return { error: { kind: "database", error } };
     if (!data || data.length === 0) continue;
-    if (data.length > 1) {
-      return {
-        error: {
-          kind: "ambiguous",
-          message: `${value} matches ${data.length} ${entity} records by ${column}; pass the record id (the \`id\` field) of the one you mean.`
-        }
-      };
-    }
-    return { id: data[0].id };
+    matchedBy.push(column);
+    for (const row of data) matches.add(row.id);
   }
+
+  if (matches.size > 1) {
+    return {
+      error: {
+        kind: "ambiguous",
+        message: `${value} matches more than one ${entity} record by ${matchedBy.join(" or ")}; pass the record id (the \`id\` field) of the one you mean.`
+      }
+    };
+  }
+  const [id] = matches;
+  if (id) return { id };
 
   const tried = ["id", ...key.readable].join(" or ");
   return {
