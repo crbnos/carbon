@@ -9,6 +9,7 @@ import metadata from "../app/routes/api+/mcp+/lib/tool-metadata.json";
 type Tool = {
   name: string;
   classification: "READ" | "WRITE" | "DESTRUCTIVE";
+  description?: string;
   serviceParams: string[];
   schema: {
     type?: string;
@@ -114,6 +115,26 @@ describe("mcp tool-metadata generator", () => {
     }
     // updateItem never changes the item type, so it does not take one.
     expect(Object.keys(props(get("items_updateItem")))).not.toContain("type");
+    // Its Omit<> key list is formatter-wrapped (leading `|`); every omitted
+    // key must drop out, not only the first line's.
+    for (const omitted of [
+      "readableId",
+      "postingGroupId",
+      "unitCost",
+      "defaultStorageUnitId",
+      "shelfLifeMode",
+      "shelfLifeDays",
+      "shelfLifeTriggerProcessId",
+      "shelfLifeTriggerTiming",
+      "shelfLifeCalculateFromBom"
+    ]) {
+      expect(Object.keys(props(get("items_updateItem")))).not.toContain(
+        omitted
+      );
+    }
+    expect(get("items_updateItem").description).toContain(
+      "items_upsertItemCost"
+    );
     // PickPartial<..., "email"> demotes email from required.
     const insertContact = props(get("sales_insertCustomerContact")).contact;
     expect(insertContact?.required ?? []).not.toContain("email");

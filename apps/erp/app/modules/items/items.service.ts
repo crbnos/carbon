@@ -3902,11 +3902,11 @@ const ITEM_FORM_COLUMNS = [
 ] as const satisfies readonly (keyof TablesUpdate<"item">)[];
 
 /**
- * Update an item's own columns: name, description, MPN, replenishment,
- * default method, tracking type and unit of measure. It never renames the
- * item (`readableId`) or changes its type. Use `items_upsertItemCost` for
- * unit cost and posting group, `items_upsertItemDefaultPickMethod` for the
- * default storage unit, and `items_upsertItemShelfLife` for shelf life.
+ * Update an item's columns; cost via items_upsertItemCost, storage unit via
+ * items_upsertItemDefaultPickMethod, shelf life via items_upsertItemShelfLife.
+ * It writes name, description, MPN, replenishment, default method, tracking
+ * type and unit of measure. It never renames the item (`readableId`) or
+ * changes its type. Posting group is on `items_upsertItemCost` too.
  */
 export async function updateItem(
   client: SupabaseClient<Database>,

@@ -779,8 +779,12 @@ function resolveInferExpression(
   // PickPartial<X, "a" | "b"> — the listed keys turn optional.
   // Omit<X, "a" | "b"> — the listed keys are removed.
   // X is any expression this function resolves, so the two nest
-  // (`PickPartial<Omit<z.infer<typeof V>, "id">, "email">`).
-  m = t.match(/^(PickPartial|Omit)<(.+),\s*((?:"\w+"\s*\|\s*)*"\w+")\s*>$/);
+  // (`PickPartial<Omit<z.infer<typeof V>, "id">, "email">`). A key list the
+  // formatter broke onto several lines starts with `|`; without the optional
+  // leading pipe the Omit failed to match and every omitted key was published.
+  m = t.match(
+    /^(PickPartial|Omit)<(.+),\s*(?:\|\s*)?((?:"\w+"\s*\|\s*)*"\w+")\s*>$/
+  );
   if (m) {
     const schema = resolveInferExpression(m[2], ctx);
     if (!schema) return null;
