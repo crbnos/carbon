@@ -4,16 +4,8 @@ import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
-import {
-  changeNoticeNotifyStages,
-  changeNoticeStatusValidator,
-  updateChangeNoticeStatus
-} from "~/modules/items";
-import {
-  applyChangeNotice,
-  changeNoticeStageEvent,
-  notifyChangeNoticeTransition
-} from "~/modules/items/items.server";
+import { changeNoticeStatusValidator } from "~/modules/items";
+import { transitionChangeNoticeStatus } from "~/modules/items/items.server";
 import { getDatabaseClient } from "~/services/database.server";
 import { path, requestReferrer } from "~/utils/path";
 
@@ -37,56 +29,16 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   const { fromStatus, status: toStatus, assignee } = validation.data;
 
-  // Implementation → Done IS the apply: applyChangeNotice activates each affected
-  // item's CO-owned Draft make method and performs the final CAS flip to Done
-  // (G1/G2). All other transitions go through the plain guarded status writer.
-  if (toStatus === "Done") {
-    const applied = await applyChangeNotice(client, getDatabaseClient(), {
-      changeNoticeId: id,
-      userId,
-      companyId
-    });
-    if (applied.error || !applied.data) {
-      throw redirect(
-        requestReferrer(request) ?? path.to.changeNoticeDetails(id),
-        await flash(
-          request,
-          error(applied.error, "Failed to apply change notice")
-        )
-      );
-    }
-  } else {
-    const update = await updateChangeNoticeStatus(client, {
-      id,
-      companyId,
-      fromStatus,
-      toStatus,
-      assignee,
-      updatedBy: userId
-    });
-
-    if (update.error || !update.data) {
-      throw redirect(
-        requestReferrer(request) ?? path.to.changeNoticeDetails(id),
-        await flash(
-          request,
-          error(update.error, "Failed to update change notice status")
-        )
-      );
-    }
-  }
-
-  // Notify the CO assignee + action-task assignees only on the stages that
-  // notify on entry (Start / Implementation / Done). Best-effort; never blocks
-  // the redirect.
-  if (changeNoticeNotifyStages.includes(toStatus)) {
-    await notifyChangeNoticeTransition({
-      client,
-      event: changeNoticeStageEvent[toStatus],
-      changeNoticeId: id,
-      companyId,
-      userId
-    });
+  const result = await transitionChangeNoticeStatus(
+    client,
+    getDatabaseClient(),
+    { id, companyId, userId, fromStatus, toStatus, assignee }
+  );
+  if (result.error) {
+    throw redirect(
+      requestReferrer(request) ?? path.to.changeNoticeDetails(id),
+      await flash(request, error(result.cause, result.error.message))
+    );
   }
 
   throw redirect(

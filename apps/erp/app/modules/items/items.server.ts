@@ -11,16 +11,20 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { data } from "react-router";
 import {
   activateMethodVersion,
+  copyMakeMethod,
   findChangeNoticesForItem,
-  upsertItemSupersession
+  updateChangeNoticeStatus,
+  upsertItemSupersession,
+  upsertMakeMethodVersion
 } from "~/modules/items";
 import { getCompanySettings } from "~/modules/settings";
 import { requireUnlockedBulk } from "~/utils/lockedGuard.server";
-import type { plmReleaseControl } from "./items.models";
+import type { changeNoticeStatus, plmReleaseControl } from "./items.models";
 import {
   canEditChangeNoticeEngineering,
   canEditChangeNoticeWorkflow,
   changeNoticeLockedMessage,
+  changeNoticeNotifyStages,
   changeNoticeOpenStatuses,
   supersessionModes
 } from "./items.models";
@@ -919,4 +923,120 @@ export function unreleasedChangeOrderItemsMessage(
         `${item.itemName} was created by change order ${item.changeOrderReadableId}, which has not been released yet.`
     )
     .join(" ");
+}
+
+type ChangeNoticeStatus = (typeof changeNoticeStatus)[number];
+
+/**
+ * Move a change notice to a new status as its status buttons do
+ * (`x+/items+/change-notice+/$id.status.tsx`). Implementation -> Done IS the
+ * apply: `applyChangeNotice` activates each affected item's change-notice
+ * Draft make method and performs the final guarded flip to Done. Every other
+ * transition goes through the guarded status writer, which refuses a
+ * transition the workflow does not allow or a notice no longer in
+ * `fromStatus`. Entering Start, Implementation or Done notifies the assignee
+ * and action-task assignees afterwards (best-effort).
+ */
+export async function transitionChangeNoticeStatus(
+  client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
+  args: {
+    id: string;
+    companyId: string;
+    userId: string;
+    fromStatus: ChangeNoticeStatus;
+    toStatus: ChangeNoticeStatus;
+    assignee?: string | null;
+  }
+): Promise<{
+  data: { id: string } | null;
+  error: { message: string } | null;
+  cause?: unknown;
+}> {
+  const { id, companyId, userId, fromStatus, toStatus } = args;
+
+  if (toStatus === "Done") {
+    const applied = await applyChangeNotice(client, db, {
+      changeNoticeId: id,
+      userId,
+      companyId
+    });
+    if (applied.error || !applied.data) {
+      return {
+        data: null,
+        error: { message: "Failed to apply change notice" },
+        cause: applied.error
+      };
+    }
+  } else {
+    const update = await updateChangeNoticeStatus(client, {
+      id,
+      companyId,
+      fromStatus,
+      toStatus,
+      assignee: args.assignee,
+      updatedBy: userId
+    });
+    if (update.error || !update.data) {
+      return {
+        data: null,
+        error: { message: "Failed to update change notice status" },
+        cause: update.error
+      };
+    }
+  }
+
+  if (changeNoticeNotifyStages.includes(toStatus)) {
+    await notifyChangeNoticeTransition({
+      client,
+      event: changeNoticeStageEvent[toStatus],
+      changeNoticeId: id,
+      companyId,
+      userId
+    });
+  }
+  return { data: { id }, error: null };
+}
+
+/**
+ * Create a new make method version as the New Version dialog does
+ * (`x+/items+/methods+/version.new.tsx`): a Draft copy of the source method's
+ * header, then its bill of materials and bill of process copied from
+ * `copyFromId` by `get-method`.
+ */
+export async function createMakeMethodVersion(
+  client: SupabaseClient<Database>,
+  version: Parameters<typeof upsertMakeMethodVersion>[1]
+): Promise<{
+  data: { id: string; itemId: string | null; type: string | null } | null;
+  error: { message: string } | null;
+  cause?: unknown;
+}> {
+  const insert = await upsertMakeMethodVersion(client, version);
+  const makeMethodId = insert.data?.id;
+  const itemType = (insert.data as { type?: string | null } | null)?.type;
+  if (insert.error || !makeMethodId || !itemType) {
+    return {
+      data: null,
+      error: { message: "Failed to insert new version" },
+      cause: insert.error
+    };
+  }
+  const itemId =
+    (insert.data as { itemId?: string | null } | null)?.itemId ?? null;
+
+  const copy = await copyMakeMethod(getCarbonServiceRole(), {
+    sourceId: version.copyFromId,
+    targetId: makeMethodId,
+    companyId: version.companyId,
+    userId: version.createdBy
+  } as Parameters<typeof copyMakeMethod>[1]);
+  if (copy.error) {
+    return {
+      data: { id: makeMethodId, itemId, type: itemType },
+      error: { message: "Failed to copy make method" },
+      cause: copy.error
+    };
+  }
+  return { data: { id: makeMethodId, itemId, type: itemType }, error: null };
 }
