@@ -18,6 +18,13 @@ reviews:
   auto_review:
     enabled: true
     drafts: false
+    # Stacked PRs. `base_branches` is a list of regexes, and it defaults to the
+    # repository's default branch alone — so a PR based on another feature branch
+    # gets no automatic review at all, which is what happens to the upper half of
+    # a split PR. Carbon splits large PRs into a stack to stay under the 300-file
+    # review limit, so any branch may legitimately be a base.
+    base_branches:
+      - ".*"
 
   path_filters:
     # Generated — regenerate, never hand-edit (AGENTS.md: "Never hand-edit

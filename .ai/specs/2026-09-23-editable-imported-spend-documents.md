@@ -149,9 +149,28 @@ columns. `reimbursementLine` gets the identical child table.
 
 **The existing `costCenterId` / `projectId` columns stay for now** — the Ramp inbound sync
 writes them and `post-charge` reads them today, so removing them in the same change would
-couple a UI feature to an integration rewrite. Posting unions both sources, de-duplicating by
-`dimensionId`. Consolidating onto the generic table alone is the follow-up, and is recorded as
-an open question rather than assumed.
+couple a UI feature to an integration rewrite. Consolidating onto the generic table alone is
+the follow-up, and is recorded as an open question rather than assumed.
+
+**Precedence, stated explicitly, because two sources can disagree.** Once both exist, a line
+can carry a cost centre in `costCenterId` AND a `chargeLineDimension` row for the cost-centre
+dimension, with different values — the Ramp value and the reviewer's. Posting must not pick the
+stale one:
+
+1. **The generic `chargeLineDimension` rows win, per `dimensionId`.** They are the only source a
+   reviewer can write, and this feature exists so that their coding is what posts.
+2. **A column supplies a value only for a `dimensionId` the generic table has no row for.** That
+   is what keeps a never-edited imported line posting exactly as it does today.
+3. **The line editor promotes before it edits.** On the first write to a line, it copies whatever
+   `costCenterId` / `projectId` hold into `chargeLineDimension` rows and nulls the columns, so
+   from then on the generic rows are the line's whole dimension set.
+
+Rule 3 is what makes CLEARING possible, and without it the model is broken rather than merely
+ambiguous: under rules 1–2 alone, a reviewer who removes a cost centre leaves no generic row,
+the column becomes the fallback again, and the value they just deleted posts anyway. De-duplicate
+by `dimensionId` AFTER applying this precedence, never before — de-duplicating first discards one
+of the two values while the decision is still unmade, and which one survives then depends on the
+order the two sources happen to be read in.
 
 ### Design Decisions
 
@@ -161,7 +180,7 @@ an open question rather than assumed.
 | Sync auto-post | **Stop auto-posting; import as Draft** | Without a Draft window there is no editable moment at all. Draft becomes the review queue. |
 | Editable scope | Header + lines, **while Draft only** | Matches the existing lifecycle trigger exactly (Draft edits allowed, Posted immutable) — no trigger change, and posted history stays immutable. |
 | Line dimensions | The existing **`DimensionSelector`**, backed by a generic `chargeLineDimension` child table | Carbon already has the component that renders a company's configured dimensions generically, including searchable high-cardinality types. A column per Rillet concept would fight the dimension model and need a migration each. Cost: v1 gains one small table per document type. |
-| `costCenterId` / `projectId` columns | **Keep for now**; posting unions both sources | The Ramp sync writes them and `post-charge` reads them; removing them here would couple this UI feature to an integration rewrite. |
+| `costCenterId` / `projectId` columns | **Keep for now**; the generic rows take precedence per `dimensionId`, a column is a fallback only where no row exists, and the line editor promotes the columns into rows on first edit | The Ramp sync writes them and `post-charge` reads them; removing them here would couple this UI feature to an integration rewrite. Precedence has to be stated: a reviewer's edit losing to the stale Ramp value defeats the feature, and without promote-on-edit a cleared dimension silently comes back from the column. |
 | Sync re-write | **Create only — never update an existing document's lines** | The resume path replacing lines was harmless when nothing was editable; under an editable model it silently destroys a reviewer's coding. Cost: a provider-side correction after import doesn't flow through. |
 | Activity/timeline | **Not built** | Carbon has no generic activity table; the audit log is the real history. Inventing a subsystem for a decoration is the wrong trade — the SOURCE badge carries provenance. |
 | Source attribution | Provider logo + name + external id | `charge.integration` already stores the provider; the logo comes from the existing integration registry, so new providers are free. |

@@ -563,12 +563,44 @@ export class QboJournalEntrySyncer extends BaseEntitySyncer<
       settings,
       {
         inventoryAdjustmentEntitySyncEnabled:
-          this.provider.getSyncConfig("inventoryAdjustment")?.enabled ?? false
+          this.provider.getSyncConfig("inventoryAdjustment")?.enabled ?? false,
+        memoParty: await this.resolveMemoJournalParty(local)
       }
     );
     if (sourceTypeSkipReason) return sourceTypeSkipReason;
 
     return true;
+  }
+
+  /**
+   * The backing memo's PARTY for a "Credit Memo" / "Debit Memo" journal —
+   * the two `family: "per-party"` source types. Without it the backstop
+   * parks every memo journal as MEMO_PARTY_UNRESOLVED, so a memo family in
+   * `journals` mode would never reach QuickBooks Online even though the
+   * enqueue decision — which resolves the same party from `memo.journalId` —
+   * said push. Every other source type answers null without a query.
+   */
+  private async resolveMemoJournalParty(
+    journal: Accounting.JournalEntry
+  ): Promise<"customer" | "supplier" | null> {
+    if (
+      journal.sourceType !== "Credit Memo" &&
+      journal.sourceType !== "Debit Memo"
+    ) {
+      return null;
+    }
+
+    const memo = await this.database
+      .selectFrom("memo")
+      .select(["customerId", "supplierId"])
+      .where("journalId", "=", journal.id)
+      .where("companyId", "=", this.companyId)
+      .executeTakeFirst();
+
+    if (!memo) return null;
+    if (memo.customerId) return "customer";
+    if (memo.supplierId) return "supplier";
+    return null;
   }
 
   // =================================================================

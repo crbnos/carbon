@@ -541,16 +541,30 @@ export function toDebitSignedAmount(
 export function getPostingSyncSourceTypeSkipReason(
   sourceType: string | null | undefined,
   settings: PostingSyncSettings,
-  options?: { inventoryAdjustmentEntitySyncEnabled?: boolean }
+  options?: {
+    inventoryAdjustmentEntitySyncEnabled?: boolean;
+    /**
+     * The backing memo's party for a "Credit Memo" / "Debit Memo" journal
+     * (`family: "per-party"`), resolved by the caller from
+     * `memo.journalId`. Omitting it parks the journal as
+     * MEMO_PARTY_UNRESOLVED — which for a memo family in `journals` mode is a
+     * silent delivery hole: the enqueue decision said push, and the backstop
+     * would skip it.
+     */
+    memoParty?: "customer" | "supplier" | null;
+  }
 ): string | null {
   const decision = getJournalPostingPolicyDecision({
     sourceType,
     settings: asCarbonOwnedSettings(settings),
     docSync: {
       invoiceEnabled: settings.families.ar === "documents",
-      billEnabled: settings.families.ap === "documents"
+      billEnabled: settings.families.ap === "documents",
+      creditMemoEnabled: settings.families.creditMemo === "documents",
+      supplierCreditEnabled: settings.families.supplierCredit === "documents"
     },
     paymentFamily: null,
+    memoParty: options?.memoParty ?? null,
     inventoryAdjustmentEntitySyncEnabled:
       options?.inventoryAdjustmentEntitySyncEnabled ?? false
   });

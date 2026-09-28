@@ -53,6 +53,13 @@ import {
  * the bill date (Rillet's own default for invoices).
  */
 
+/**
+ * Mapping metadata marking a bill this syncer once wrote as a Rillet
+ * reimbursement (the employee-supplier detour that predates the native
+ * `reimbursement` entity). Read-only now — see `deleteRemote`.
+ */
+const LEGACY_REIMBURSEMENT_REMOTE_KIND = "reimbursement";
+
 // Only posted bills are pushed (Draft has no journal to replay) — mirrors the
 // Rillet invoice syncer's posted-status gate.
 const SYNCABLE_STATUSES: Accounting.Bill["status"][] = [
@@ -288,7 +295,25 @@ export class RilletBillSyncer extends RilletTransactionSyncer<
     return local.status === "Voided";
   }
 
-  protected async deleteRemote(remoteId: string): Promise<void> {
+  /**
+   * A bill's void deletes `/bills/{id}` — EXCEPT for a legacy mapping stamped
+   * `remoteKind: "reimbursement"`. Between 2026-09-20 (#1503) and the native
+   * `reimbursement` entity, this syncer wrote an employee-supplier purchase
+   * invoice as a Rillet reimbursement and stamped the kind on the mapping; the
+   * stamp is the only record that the remote id lives in the `/reimbursements`
+   * id space. `deleteEntity` swallows a 404 as "already gone", so sending such
+   * an id to `/bills` tombstones the mapping and reports success while the
+   * reimbursement stays live in Rillet — a silent divergence with no error to
+   * act on. Nothing writes the stamp any more; this only reads it.
+   */
+  protected async deleteRemote(
+    remoteId: string,
+    metadata?: Record<string, unknown>
+  ): Promise<void> {
+    if (metadata?.remoteKind === LEGACY_REIMBURSEMENT_REMOTE_KIND) {
+      await this.rilletProvider.deleteReimbursement(remoteId);
+      return;
+    }
     await this.rilletProvider.deleteBill(remoteId);
   }
 

@@ -553,13 +553,9 @@ msgid "A \"must match\" rule on this process blocks these from sharing a batch"
 msgstr "Reguła \"muszą się zgadzać\" w tym procesie blokuje wspólne tworzenie partii produkcyjnej"
 
 msgid "A 3D model the operator can turn around"
-msgstr ""
 
 msgid "A 4-digit PIN is generated when the operator is created."
 msgstr "4-cyfrowy PIN jest generowany podczas tworzenia operatora."
-
-msgid "A batch needs at least one operation. To break up the whole batch, use Dissolve instead."
-msgstr "Partia produkcyjna wymaga co najmniej jednej operacji. Aby podzielić całą partię produkcyjną, użyj opcji Rozpuść."
 
 msgid "A Carbon-run data migration — you load your own data"
 msgstr "Migracja danych prowadzona przez Carbon — ty ładujesz swoje dane"

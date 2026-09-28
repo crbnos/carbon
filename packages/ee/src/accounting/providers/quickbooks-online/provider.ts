@@ -762,9 +762,16 @@ export class QboProvider extends BaseProvider {
   }
 
   async createVendor(
-    vendor: QboCreatePayload<Qbo.Vendor>
+    vendor: QboCreatePayload<Qbo.Vendor>,
+    requestId?: string
   ): Promise<Qbo.Vendor> {
-    return this.writeEntity("vendor", "Vendor", "create vendor", vendor);
+    return this.writeEntity(
+      "vendor",
+      "Vendor",
+      "create vendor",
+      vendor,
+      requestId
+    );
   }
 
   async updateVendor(

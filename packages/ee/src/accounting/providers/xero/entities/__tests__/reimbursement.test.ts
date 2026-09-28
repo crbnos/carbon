@@ -234,13 +234,26 @@ describe("mapReimbursementToXeroInvoice", () => {
  */
 function makeEmployeeContactSyncer() {
   let created = 0;
-  const request = vi.fn(async () => {
+  // Resolving now makes TWO kinds of request: a name lookup that recovers a
+  // Contact a crashed run left behind, then a create when it finds none. The
+  // mock has to tell them apart, or "created once" cannot be asserted at all.
+  const request = vi.fn(async (method: string, _url: string) => {
+    if (method === "GET") {
+      // No Contact of that name exists in this fixture, so the lookup finds
+      // nothing and the create below runs. `Name` is absent on purpose: the
+      // finder matches on it exactly, so a nameless row must NOT be adopted.
+      return { error: false, data: { Contacts: [] } };
+    }
     created += 1;
     return {
       error: false,
       data: { Contacts: [{ ContactID: `xero-contact-${created}` }] }
     };
   });
+  const creates = () =>
+    request.mock.calls.filter(([method]) => method === "POST");
+  const lookups = () =>
+    request.mock.calls.filter(([method]) => method === "GET");
 
   const syncer = new XeroReimbursementSyncer({
     database: {} as never,
@@ -259,6 +272,8 @@ function makeEmployeeContactSyncer() {
     resolve: (local: ReimbursementSource) =>
       (syncer as any).resolveEmployeeContact(local) as Promise<string>,
     request,
+    creates,
+    lookups,
     store: mappingRows
   };
 }
@@ -276,7 +291,10 @@ describe("XeroReimbursementSyncer.resolveEmployeeContact", () => {
     const first = await test.resolve(stale);
     const second = await test.resolve(stale);
 
-    expect(test.request).toHaveBeenCalledTimes(1);
+    // ONE create across both — the second resolve re-reads the mapping the
+    // first one wrote, so it neither looks up nor creates.
+    expect(test.creates()).toHaveLength(1);
+    expect(test.lookups()).toHaveLength(1);
     expect(second).toBe(first);
     expect(test.store.get("employeeVendor::emp_1")).toBe(first);
   });

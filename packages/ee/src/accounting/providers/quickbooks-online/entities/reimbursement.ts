@@ -27,6 +27,7 @@ import { withTriggersDisabled } from "../../../core/utils";
 import { parseQboDate, type Qbo, type QboCreatePayload } from "../models";
 import {
   buildQboRequestId,
+  isQboDuplicateNameError,
   QBO_DIMENSION_TARGET_CLASS,
   QBO_DIMENSION_TARGET_DEPARTMENT,
   type QboProvider
@@ -34,6 +35,7 @@ import {
 import type { QboJournalDimensionArgs } from "./journal-entry";
 import {
   buildQboDocNumberFields,
+  escapeQboQueryValue,
   loadQboAccountRefsById,
   type QboWriteOmit
 } from "./shared";
@@ -428,19 +430,29 @@ export class QboReimbursementSyncer extends ChargeSyncerBase<
   /**
    * The QBO Vendor the reimbursement is billed to. Mapping-first under
    * `employeeVendor` (NOT `vendor` — that id space holds Carbon supplier ids),
-   * else create the Vendor JIT and link it. QBO's name namespace is shared
-   * across customers, vendors and employees, so a DisplayName collision
-   * surfaces as Intuit fault 6240 on the operation rather than silently
-   * reusing someone else's record.
+   * else create the Vendor JIT and link it.
    *
    * The mapping is RE-READ here rather than taken from
    * `local.employeeVendorExternalId`: `pushBatchToAccounting` calls
    * `fetchLocalBatch` exactly ONCE, so every snapshot in a batch carries the
    * value as of that single read. Two Posted reimbursements for one employee in
-   * one drain therefore both saw `null` and both POSTed the same DisplayName —
-   * the second failing with fault 6240 and parking Failed, which a Posted
-   * reimbursement's unchanged `updatedAt` never re-enqueues. `ensureDependencySynced`
-   * re-reads `getRemoteId` per call for exactly this reason.
+   * one drain therefore both see `null` and both POST the same DisplayName.
+   * `ensureDependencySynced` re-reads `getRemoteId` per call for exactly this
+   * reason.
+   *
+   * The re-read narrows that window but cannot close it, and QBO's name
+   * namespace is shared across customers, vendors and employees, so a
+   * DisplayName collision is always reachable — as is a Vendor created by a
+   * past run that crashed before `link()` committed, which no re-read can see
+   * because there is no mapping row to find. Both surface as Intuit fault 6240,
+   * and `createOrAdoptEmployeeVendor` ADOPTS the existing Vendor of that exact
+   * name rather than parking. Parking was permanent here: a Posted
+   * reimbursement's `updatedAt` never changes, so nothing re-enqueues it.
+   *
+   * Adoption is deliberately narrow. A 6240 whose name belongs to a CUSTOMER or
+   * an EMPLOYEE finds no Vendor and rethrows — that is a genuine collision with
+   * someone else's record, and silently reusing it is the failure this comment
+   * used to warn about.
    */
   private async resolveEmployeeVendor(
     local: QboReimbursement
@@ -452,28 +464,77 @@ export class QboReimbursementSyncer extends ChargeSyncerBase<
     );
     if (mapped) return mapped;
 
-    const created = await this.qboProvider.createVendor({
-      DisplayName: employeeVendorName(local.employee),
-      ...(local.employee.email
-        ? { PrimaryEmailAddr: { Address: local.employee.email } }
-        : {})
-    });
-    if (!created?.Id) {
-      throw new Error(
-        `QuickBooks did not return a Vendor Id for employee ${local.employeeId}`
-      );
-    }
+    const displayName = employeeVendorName(local.employee);
+    const vendorId = await this.createOrAdoptEmployeeVendor(local, displayName);
 
     await withTriggersDisabled(this.database, async (tx) => {
       await createMappingService(tx, this.companyId).link(
         EMPLOYEE_VENDOR_ENTITY_TYPE,
         local.employeeId,
         this.provider.id,
-        created.Id
+        vendorId
       );
     });
 
-    return created.Id;
+    return vendorId;
+  }
+
+  /**
+   * Create the employee's QBO Vendor, or ADOPT the one a previous attempt
+   * already created.
+   *
+   * The remote create and the `employeeVendor` mapping write are not one
+   * transaction, so a crash (or a failed link) between them leaves a Vendor on
+   * QBO that Carbon has no row for. QBO's name namespace is shared and unique
+   * across customers, vendors and employees, so a bare retry then fails with
+   * Intuit fault 6240 FOREVER and the reimbursement can never sync without a
+   * hand-made mapping. Two rungs close that, in the order they apply:
+   *
+   *  1. a deterministic `requestid` keyed on the CARBON employee id, so Intuit
+   *     replays the original response inside its dedupe window — the same
+   *     contract `upsertRemote` uses for the Bill, and Rillet's
+   *     `employee-vendor` idempotency key;
+   *  2. adoption on fault 6240 — query the Vendor by `DisplayName` and take
+   *     the exact match. Durable, because it needs nothing but the name, which
+   *     is derived from the employee and therefore stable across retries.
+   *
+   * A 6240 raised by a CUSTOMER or EMPLOYEE sharing the name finds no Vendor,
+   * and the original fault is rethrown rather than guessed at — that one is a
+   * real collision a human has to resolve in QuickBooks.
+   */
+  private async createOrAdoptEmployeeVendor(
+    local: QboReimbursement,
+    displayName: string
+  ): Promise<string> {
+    try {
+      const created = await this.qboProvider.createVendor(
+        {
+          DisplayName: displayName,
+          ...(local.employee.email
+            ? { PrimaryEmailAddr: { Address: local.employee.email } }
+            : {})
+        },
+        buildQboRequestId(this.companyId, "employee-vendor", local.employeeId)
+      );
+      if (!created?.Id) {
+        throw new Error(
+          `QuickBooks did not return a Vendor Id for employee ${local.employeeId}`
+        );
+      }
+      return created.Id;
+    } catch (error) {
+      if (!isQboDuplicateNameError(error)) throw error;
+
+      const matches = await this.qboProvider.query<Qbo.Vendor>(
+        "Vendor",
+        `DisplayName = '${escapeQboQueryValue(displayName)}'`
+      );
+      const adopted = matches.find(
+        (vendor) => vendor.DisplayName === displayName && vendor.Id
+      );
+      if (!adopted) throw error;
+      return adopted.Id;
+    }
   }
 
   // =================================================================

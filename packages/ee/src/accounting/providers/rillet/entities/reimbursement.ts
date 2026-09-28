@@ -40,9 +40,12 @@ import {
  *
  * This replaces the employee-supplier detour the BILL syncer used to carry
  * (`isReimbursement` → `toRilletReimbursement`), which existed only because
- * Carbon had no reimbursement document. It is now the primary path; the bill
- * syncer keeps one legacy branch so a void of a PREVIOUSLY-synced
- * employee-supplier bill still deletes the right remote object.
+ * Carbon had no reimbursement document. That write path is deleted — nothing
+ * routes a bill to `/reimbursements` any more. The bill syncer keeps only the
+ * READ side of it: its `deleteRemote` still honours a mapping stamped
+ * `remoteKind: "reimbursement"`, so a void of a bill synced during the window
+ * that path was live deletes the reimbursement rather than silently 404ing
+ * against `/bills`.
  *
  * Wire shape VERIFIED against Rillet's published OpenAPI
  * (`docs.api.rillet.com/reference/create-a-reimbursement`, 2026-09-23):
