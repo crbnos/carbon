@@ -5,6 +5,9 @@ paths:
   - packages/ee/src/plan*.ts
   - packages/database/supabase/migrations/*billing*.sql
   - apps/erp/app/routes/api+/webhook.stripe.ts
+  - packages/jobs/src/inngest/functions/scheduled/weekly.ts
+  - packages/jobs/src/inngest/functions/scheduled/inactive-companies.ts
+  - packages/jobs/src/inngest/functions/scheduled/purge-company.ts
 ---
 
 # Billing System
@@ -160,6 +163,48 @@ Env: `STRIPE_BYPASS_COMPANY_IDS`, `STRIPE_BYPASS_USER_IDS` (comma-separated, ser
 - In gating: `isBypassCompany(companyId)` makes `companyHasPlan`/`requirePlan` pass.
 - In `getStripeCustomerByCompanyId`: bypass returns a synthetic active subscription with
   `planId: Plan.Partner` (highest tier, ~1-year period) — no real Stripe call.
+
+## Inactive-company cleanup (Cloud only)
+
+The weekly job (`packages/jobs/.../scheduled/weekly.ts`, Sunday 21:00 UTC) deletes
+companies that stopped paying. Until 2026-09 it never deleted anything: it fetched its
+bypass list from a scheme-less `VERCEL_URL` and failed. Each run logs whom it warned and
+whom it deleted.
+
+- **Warned first, always.** A company that has never been warned gets a
+  `CompanyDeletionWarningEmail` (`@carbon/documents/email`) sent to its group owner, naming
+  the deletion date, and a marker row in `externalIntegrationMapping`
+  (`integration = "inactive-company-warning"`, `metadata.warnedAt`).
+  - It is deleted only at a later run, once the warning is at least 6 days old
+    (`splitByWarning`, tested). Six rather than seven, because the warning is stamped a
+    few minutes into a run and would otherwise miss the next one.
+  - A company with no group owner is never warned, so it is never deleted.
+  - A marker whose company is no longer inactive (it bought a plan) is cleared, so a later
+    lapse starts a fresh warning. The purge deletes the marker along with the company.
+
+- **The group is the unit** (`selectInactiveCompanies`, `inactive-companies.ts`, tested).
+  A company goes when it has no `companyPlan` row, no company in its group has one, it is
+  over 7 days old, and it is not protected. `companyPlan` rows are written only by Stripe
+  checkout/sync. A paying customer's second company (Settings → New Company) has no row of
+  its own, and bypass and Carbon-owned access is served without one.
+- **Protected:** `STRIPE_BYPASS_COMPANY_IDS`, plus any group whose owner is in
+  `STRIPE_BYPASS_USER_IDS` or has an internal email (the `isCarbonOwnedCompany` rule).
+- **`Canceled` is not deleted.** It is set when the customer cancels at period end, while
+  the period is still paid. `customer.subscription.deleted` removes the plan row when the
+  subscription actually ends, and the company becomes a candidate then.
+- **Deletion** (`purgeCompany`, `purge-company.ts`):
+  - Posted journals and invoices are trigger-immutable, so a plain `DELETE FROM company`
+    fails for any company that ever posted. The purge instead wipes every catalog table in
+    `session_replication_role = 'replica'`, as a restore does, then deletes the company.
+    The group and its shared data go only when no other company is left in it.
+  - Without replica permission it falls back to the plain cascade. A company with posted
+    documents then fails, and is logged and skipped.
+  - After the commit, `removeCompanyLeftovers` removes the Vault `integration:<companyId>:*`
+    secrets, the per-company bucket, and legacy files under `private/<companyId>/`.
+    Provider tokens are not revoked at the provider.
+- At most 100 companies per run (Inngest's per-run step limit), 10 per step. Oldest go first.
+- A company with live intercompany history (`intercompanyTransaction` is NO ACTION) fails
+  its delete, is logged, and is retried every week.
 
 ## Env vars (`packages/env/src/index.ts`, server-only / secret)
 

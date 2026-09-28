@@ -1,141 +1,365 @@
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { fetchAllFromTable } from "@carbon/database";
-import { isReminderItemStatus } from "@carbon/documents/email";
-import { STRIPE_BYPASS_COMPANY_IDS } from "@carbon/env";
+import {
+  CompanyDeletionWarningEmail,
+  isReminderItemStatus
+} from "@carbon/documents/email";
+import {
+  getAppUrl,
+  STRIPE_BYPASS_COMPANY_IDS,
+  STRIPE_BYPASS_USER_IDS
+} from "@carbon/env";
+import { sendEmail } from "@carbon/lib/email.server";
 import {
   MAX_NOTIFICATION_DELIVERIES,
   NotificationEvent
 } from "@carbon/notifications";
-import { Edition } from "@carbon/utils";
+import {
+  chunkArray,
+  datetime,
+  Edition,
+  formatDate,
+  isInternalEmail
+} from "@carbon/utils";
+import { render } from "@react-email/components";
+import { getJobDatabaseClient } from "../../../db";
 import { inngest } from "../../client";
+import {
+  canSetReplicationRole,
+  getCompanyTableCatalog
+} from "../tasks/company-backup";
+import {
+  type CompanyCandidate,
+  selectInactiveCompanies,
+  splitByWarning
+} from "./inactive-companies";
+import { purgeCompany, removeCompanyLeftovers } from "./purge-company";
+
+/** Keeps a backlog under Inngest's per-run step limit; later weeks drain the rest. */
+const MAX_COMPANY_DELETIONS_PER_RUN = 100;
+
+const splitIds = (value: string | undefined) =>
+  (value ?? "")
+    .split(",")
+    .map((id) => id.trim())
+    .filter(Boolean);
+
+/** Marker per warned company in `externalIntegrationMapping`; the purge clears it. */
+const WARNING_INTEGRATION = "inactive-company-warning";
+
+type CleanupTarget = Pick<CompanyCandidate, "id" | "name" | "companyGroupId">;
+const NOTHING_TO_DO: {
+  toWarn: CleanupTarget[];
+  toDelete: CleanupTarget[];
+  staleWarningIds: string[];
+} = { toWarn: [], toDelete: [], staleWarningIds: [] };
+
+type GroupOwner = { id: string; email: string; firstName: string | null };
+
+/** The owner of each company group, for protection and for the warning email. */
+async function getGroupOwners(
+  groupIds: string[]
+): Promise<Map<string, GroupOwner>> {
+  const serviceRole = getCarbonServiceRole();
+  const ownerIds = new Map<string, string>();
+  for (const ids of chunkArray([...new Set(groupIds)], 200)) {
+    const { data, error } = await serviceRole
+      .from("companyGroup")
+      .select("id, ownerId")
+      .in("id", ids);
+    if (error)
+      throw new Error(`Failed to load company groups: ${error.message}`);
+    for (const group of data) {
+      if (group.ownerId) ownerIds.set(group.id, group.ownerId);
+    }
+  }
+
+  const users = new Map<string, GroupOwner>();
+  for (const ids of chunkArray([...new Set(ownerIds.values())], 200)) {
+    const { data, error } = await serviceRole
+      .from("user")
+      .select("id, email, firstName")
+      .in("id", ids);
+    if (error) throw new Error(`Failed to load group owners: ${error.message}`);
+    for (const user of data) users.set(user.id, user);
+  }
+
+  const owners = new Map<string, GroupOwner>();
+  for (const [groupId, ownerId] of ownerIds) {
+    const owner = users.get(ownerId);
+    if (owner) owners.set(groupId, owner);
+  }
+  return owners;
+}
 
 export const weeklyFunction = inngest.createFunction(
   { id: "weekly", retries: 2 },
   { cron: "0 21 * * 0" },
   async ({ step, logger }) => {
     const serviceRole = getCarbonServiceRole();
-    await step.run("cloud-cleanup", async () => {
-      logger.info("Starting weekly tasks");
+    // Cloud only. A canceled subscription keeps its plan row until Stripe ends it
+    // (customer.subscription.deleted removes the row), so a company is never
+    // deleted inside a period it paid for.
+    const plan = await step.run("plan-inactive-company-cleanup", async () => {
+      if (process.env.CARBON_EDITION !== Edition.Cloud) return NOTHING_TO_DO;
 
+      // Paged: PostgREST caps a plain select at 1000 rows, and a plan row cut
+      // off there would make a paying company look planless.
+      const [companies, plans] = await Promise.all([
+        fetchAllFromTable<CompanyCandidate>(
+          serviceRole,
+          "company",
+          "id, name, createdAt, companyGroupId"
+        ),
+        fetchAllFromTable<{ id: string }>(serviceRole, "companyPlan", "id")
+      ]);
+      if (companies.error || plans.error) {
+        logger.error("Failed to load companies for cleanup", {
+          error: companies.error ?? plans.error
+        });
+        return NOTHING_TO_DO;
+      }
+
+      const selection = {
+        companies: companies.data,
+        planCompanyIds: new Set(plans.data.map((plan) => plan.id)),
+        protectedCompanyIds: new Set(splitIds(STRIPE_BYPASS_COMPANY_IDS)),
+        now: Date.now(),
+        limit: Number.POSITIVE_INFINITY
+      };
+      // Owners are looked up only for the candidates' groups: a group owned by
+      // a Carbon or bypass user has plan access without a plan row.
+      const candidates = selectInactiveCompanies({
+        ...selection,
+        protectedGroupIds: new Set()
+      });
+      let owners: Map<string, GroupOwner>;
       try {
-        if (process.env.CARBON_EDITION === Edition.Cloud) {
-          const bypassList = (STRIPE_BYPASS_COMPANY_IDS ?? "")
-            .split(",")
-            .map((id) => id.trim())
-            .filter(Boolean);
+        owners = await getGroupOwners(
+          candidates.flatMap((c) =>
+            c.companyGroupId ? [c.companyGroupId] : []
+          )
+        );
+      } catch (error) {
+        logger.error("Failed to load company group owners", { error });
+        return NOTHING_TO_DO;
+      }
+      // A group owned by a Carbon or bypass user has plan access without a row.
+      const bypassUsers = new Set(splitIds(STRIPE_BYPASS_USER_IDS));
+      const protectedGroupIds = new Set(
+        [...owners]
+          .filter(
+            ([, owner]) =>
+              bypassUsers.has(owner.id) || isInternalEmail(owner.email)
+          )
+          .map(([groupId]) => groupId)
+      );
+      const inactive = selectInactiveCompanies({
+        ...selection,
+        protectedGroupIds
+      });
 
-          logger.info("Bypass list", { bypassList });
+      const markers = await fetchAllFromTable<{
+        id: string;
+        companyId: string;
+        metadata: { warnedAt?: string } | null;
+      }>(
+        serviceRole,
+        "externalIntegrationMapping",
+        "id, companyId, metadata",
+        (query) => query.eq("integration", WARNING_INTEGRATION)
+      );
+      if (markers.error) {
+        logger.error("Failed to load company deletion warnings", {
+          error: markers.error
+        });
+        return NOTHING_TO_DO;
+      }
 
-          // Get all companies
-          const { data: companies, error: companiesError } = await serviceRole
-            .from("company")
-            .select("id, name, createdAt");
+      // A warning only counts while the company is still inactive: one that
+      // regained a plan is cleared, and is warned afresh if it lapses again.
+      const inactiveIds = new Set(inactive.map((c) => c.id));
+      const warnedAt = new Map<string, string>();
+      const staleWarningIds: string[] = [];
+      for (const marker of markers.data) {
+        if (!inactiveIds.has(marker.companyId)) staleWarningIds.push(marker.id);
+        else if (marker.metadata?.warnedAt)
+          warnedAt.set(marker.companyId, marker.metadata.warnedAt);
+      }
 
-          if (companiesError) {
-            logger.error("Failed to fetch companies", {
-              error: companiesError
-            });
-            return;
-          }
+      const { toWarn, toDelete } = splitByWarning({
+        inactive,
+        warnedAt,
+        now: selection.now,
+        limit: MAX_COMPANY_DELETIONS_PER_RUN
+      });
+      const slim = (list: CompanyCandidate[]) =>
+        list.map(({ id, name, companyGroupId }) => ({
+          id,
+          name,
+          companyGroupId
+        }));
 
-          logger.info("Found companies", { count: companies?.length || 0 });
+      logger.info("Inactive companies", {
+        inactive: inactive.length,
+        protectedByOwner: candidates.length - inactive.length,
+        toWarn: slim(toWarn),
+        toDelete: slim(toDelete),
+        staleWarnings: staleWarningIds.length
+      });
+      return {
+        toWarn: slim(toWarn),
+        toDelete: slim(toDelete),
+        staleWarningIds
+      };
+    });
 
-          // Get all company plans
-          const { data: companyPlans, error: plansError } = await serviceRole
-            .from("companyPlan")
-            .select("id, stripeSubscriptionStatus");
-
-          if (plansError) {
-            logger.error("Failed to fetch company plans", {
-              error: plansError
-            });
-            return;
-          }
-
-          // Create a map of company plans for quick lookup
-          const planMap = new Map(
-            companyPlans?.map((plan) => [
-              plan.id,
-              plan.stripeSubscriptionStatus
-            ]) || []
-          );
-
-          // Filter companies to delete
-          const oneWeekAgo = new Date();
-          oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
-
-          const companiesToDelete =
-            companies?.filter((company) => {
-              if (planMap.get(company.id) === "Canceled") {
-                return true;
-              }
-
-              if (bypassList.includes(company.id)) {
-                return false;
-              }
-
-              if (planMap.get(company.id)) {
-                return false;
-              }
-
-              // Keep companies created in the last week
-              const createdAt = new Date(company.createdAt);
-              if (createdAt > oneWeekAgo) {
-                return false;
-              }
-
-              // Delete this company
-              return true;
-            }) || [];
-
-          logger.info("Companies to delete", {
-            count: companiesToDelete.length
-          });
-
-          const { error: deletedCompaniesError } = await serviceRole
-            .from("company")
+    if (plan.staleWarningIds.length > 0) {
+      await step.run("clear-stale-deletion-warnings", async () => {
+        for (const ids of chunkArray(plan.staleWarningIds, 200)) {
+          const { error } = await serviceRole
+            .from("externalIntegrationMapping")
             .delete()
-            .in(
-              "id",
-              companiesToDelete.map((company) => company.id)
-            );
-
-          if (deletedCompaniesError) {
-            logger.error("Failed to delete companies", {
-              error: deletedCompaniesError
-            });
-            return;
-          } else {
-            logger.info("Deleted companies", {
-              count: companiesToDelete.length
-            });
-            for (const company of companiesToDelete) {
-              logger.info("Deleted company", { company: company.name });
-            }
-          }
-
-          // Drop search index tables for companies being deleted
-          for (const company of companiesToDelete) {
-            const { error: dropSearchError } = await serviceRole.rpc(
-              "drop_company_search_index",
-              { p_company_id: company.id }
-            );
-            if (dropSearchError) {
-              logger.error("Failed to drop search index for company", {
-                company: company.name,
-                error: dropSearchError
-              });
-            } else {
-              logger.info("Dropped search index for company", {
-                company: company.name
-              });
-            }
+            .in("id", ids);
+          if (error) {
+            logger.error("Failed to clear stale deletion warnings", { error });
           }
         }
-      } catch (error) {
-        logger.error("Unexpected error in cloud cleanup", { error });
-      }
-    });
+      });
+    }
+
+    const warnBatches = chunkArray(plan.toWarn, 10);
+    for (let i = 0; i < warnBatches.length; i++) {
+      await step.run(`warn-inactive-companies-${i}`, async () => {
+        const batch = warnBatches[i]!;
+        const owners = await getGroupOwners(
+          batch.flatMap((c) => (c.companyGroupId ? [c.companyGroupId] : []))
+        );
+        // A retried step skips the companies an earlier attempt already warned.
+        const { data: warned, error: warnedError } = await serviceRole
+          .from("externalIntegrationMapping")
+          .select("companyId")
+          .eq("integration", WARNING_INTEGRATION)
+          .in(
+            "companyId",
+            batch.map((c) => c.id)
+          );
+        if (warnedError) throw new Error(warnedError.message);
+        const alreadyWarned = new Set(warned.map((w) => w.companyId));
+
+        const deletionDate = formatDate(
+          datetime.today("UTC").add({ days: 7 }).toString(),
+          { dateStyle: "long" },
+          "en-US"
+        );
+        const billingUrl = `${getAppUrl()}/x/settings/billing`;
+
+        for (const company of batch) {
+          if (alreadyWarned.has(company.id)) continue;
+          const owner = company.companyGroupId
+            ? owners.get(company.companyGroupId)
+            : undefined;
+          if (!owner) {
+            // Never warned means never deleted, so a company nobody owns is kept.
+            logger.warn("No owner to warn; company kept", company);
+            continue;
+          }
+
+          const { error } = await sendEmail({
+            to: owner.email,
+            subject: `${company.name} will be deleted on ${deletionDate}`,
+            html: await render(
+              CompanyDeletionWarningEmail({
+                recipientName: owner.firstName ?? undefined,
+                companyName: company.name,
+                deletionDate,
+                billingUrl
+              })
+            )
+          });
+          if (error) {
+            logger.error("Failed to send company deletion warning", {
+              ...company,
+              error
+            });
+            continue;
+          }
+
+          const { error: markerError } = await serviceRole
+            .from("externalIntegrationMapping")
+            .insert({
+              entityType: "company",
+              entityId: company.id,
+              integration: WARNING_INTEGRATION,
+              externalId: "",
+              metadata: { warnedAt: datetime.timestamp(), to: owner.email },
+              companyId: company.id
+            });
+          if (markerError) {
+            logger.error("Failed to record company deletion warning", {
+              ...company,
+              error: markerError
+            });
+          }
+        }
+      });
+    }
+
+    // Ten companies per step: a company that cannot be deleted is logged and
+    // skipped, and the table catalog is read once per step, not per company.
+    // Only companies warned at least six days ago reach this list.
+    const batches = chunkArray(plan.toDelete, 10);
+    for (let i = 0; i < batches.length; i++) {
+      await step.run(`delete-inactive-companies-${i}`, async () => {
+        const db = getJobDatabaseClient();
+        const replica = await canSetReplicationRole(db);
+        const catalog = await getCompanyTableCatalog(db);
+        const results: { id: string; deleted: boolean }[] = [];
+
+        for (const company of batches[i]!) {
+          try {
+            await db
+              .transaction()
+              .execute((trx) =>
+                purgeCompany(trx, catalog, company.id, { replica })
+              );
+          } catch (error) {
+            logger.error("Failed to delete company", {
+              ...company,
+              replica,
+              error
+            });
+            results.push({ id: company.id, deleted: false });
+            continue;
+          }
+
+          const { error: searchError } = await serviceRole.rpc(
+            "drop_company_search_index",
+            { p_company_id: company.id }
+          );
+          if (searchError) {
+            logger.error("Failed to drop search index for company", {
+              ...company,
+              error: searchError
+            });
+          }
+          for (const failure of await removeCompanyLeftovers(
+            db,
+            serviceRole,
+            company.id
+          )) {
+            logger.error(`Failed to remove company ${failure.part}`, {
+              ...company,
+              error: failure.error
+            });
+          }
+
+          logger.info("Deleted company", company);
+          results.push({ id: company.id, deleted: true });
+        }
+        return results;
+      });
+    }
 
     // Build inside a memoized step, send via step.sendEvent — sending
     // mid-step would double-deliver on a retry after a partial send.
