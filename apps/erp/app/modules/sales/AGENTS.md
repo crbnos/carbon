@@ -77,7 +77,7 @@ cd apps/erp && pnpm exec vitest run app/modules/sales
 - `getSalesReturnOrders` / `insertSalesReturnOrder` / `upsertSalesReturnOrderLine` — RMA CRUD; `confirmSalesReturnOrder` (Kysely, row-locked reversible-quantity caps, THROWS), `cancelSalesReturnOrder` / `completeSalesReturnOrder` (guarded), `shortCloseSalesReturnOrderLine`
 - `getReturnableLinesForCustomer` (posted shipment lines minus already-authorized) — RMA line picker; `getShippedTrackedEntitiesForCustomer` — receipt-side serial/batch candidates (entities of the item currently with the customer via posted shipments)
 - `createSalesReturnOrderCredit` (Kysely, row-locked creditable cap, THROWS) / `getCreditableQuantities` / `createReplacementSalesOrder` (resolvePrice-priced draft SO)
-- `setSalesReturnOrderLineDisposition` — Use As Is releases returned entities; Scrap/Rework escalate to a quality Issue via the line's issue route
+- `setSalesReturnOrderLineDisposition` — Use As Is releases returned entities; Scrap/Rework escalate to a quality Issue via the line's issue route. The disposition picker runs `setReturnLineDispositionFromPicker` (`sales-transitions.server.ts`: picker values only, Scrap/Rework refused); `sales_setSalesReturnOrderLineDisposition` publishes it. Sales order status changes run `transitionSalesOrderStatus` (Cancelled goes through `cancelSalesOrder`)
 - `createOpportunityDocumentUploadUrl` / `createOpportunityLineDocumentUploadUrl` — MCP file upload (step 1): presigned URLs for opportunity (`opportunity/{opportunityId}`) and opportunity-line documents; pair with `documents_insertUploadedDocument`. See `.claude/rules/mcp-tools-reference.md` → "File uploads"
 
 ## Key Exports

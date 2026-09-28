@@ -218,7 +218,8 @@ recover the source's target (`estimatedQuantity − scrapQuantity` on a Buy/Pick
 row), convert, and re-derive scrap at the TARGET item's rate — the rate the
 row now carries.
 
-Cancelling a job (`$jobId.status.tsx`) returns the staged material first, then
+Cancelling a job (`transitionJobStatus` in `production.server.ts`, run by
+`$jobId.status.tsx` and `production_updateJobStatus`) returns the staged material first, then
 `cancelOpenPickingListsForJob` cancels its lines on every open list and the
 lists that have no live line left; a list shared with other jobs stays open.
 `get_picking_schedule` ignores a cancelled LINE as well as a cancelled list, so

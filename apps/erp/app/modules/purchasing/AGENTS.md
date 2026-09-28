@@ -62,7 +62,7 @@ cd apps/erp && pnpm exec vitest run app/modules/purchasing
 - `shortClosePurchaseOrderLine` — Kysely transaction; sets a line's `receivedComplete` ("Stop/Resume Receiving") and recomputes the header status. Open-PO supply queries (`get_inventory_quantities`, `openPurchaseOrderLines`, `get_job_quantity_on_hand`) exclude `receivedComplete` lines, so short-closed remainders stop counting as incoming stock
 - `convertSupplierQuoteToOrder` — calls `convert` edge function
 - `duplicatePurchaseOrder` — copies a PO with new sequence
-- `finalizePurchaseOrder` / `finalizeSupplierQuote` — lock documents for processing
+- `finalizePurchaseOrder` / `finalizeSupplierQuote` — lock documents for processing. The purchase order Finalize action commits through `commitPurchaseOrderFinalize` (`purchasing.server.ts`: supplier approval gate, approval request and Needs Approval, purchased-price update); the route then renders the PDF and emails. `purchasing_finalizePurchaseOrder` publishes the command without the PDF or email
 - `sendSupplierQuote` — sends quote to supplier
 - `getPurchasingPlanning` — MRP-driven planned order view (RPC `get_purchasing_planning`)
 - `getSupplierApprovalContext` — reads approval workflow state

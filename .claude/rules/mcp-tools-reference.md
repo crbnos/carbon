@@ -562,6 +562,34 @@ the model context or the MCP dispatch.
   command), the companion cases in `dispatch-parity.test.ts`, and
   `route-commands.test.ts` / `mcp-route-command-wrappers.test.ts` /
   `items-route-commands.test.ts`.
+- **Status changes are transition commands, never column flips.** A UI status
+  route runs side effects around the write (a cancelled job returns picked
+  material and cancels its picking lists; an NCR close posts its dispositions;
+  a PO finalize may raise an approval; a change notice Done applies its make
+  methods; a picking list finish applies the incomplete-list policy). Every
+  exported service function is a tool, so a service function that writes a
+  `status` column must be shadowed by a companion export that runs the route's
+  transition command under the same tool name. The commands live beside the
+  route they came from: `transitionJobStatus`, `setJobOperationStatus`,
+  `createJobOperation`, `deleteJobOperationWithDependencies`,
+  `prepareAssemblyPlanRun` / `startAssemblyPlanRun` (`production.server.ts`);
+  `transitionStockTransferStatus`, `transitionInventoryCountStatus`,
+  `transitionPickingListStatus` (`inventory/inventory-transitions.server.ts`);
+  `transitionIssueStatus` (`quality/quality-transitions.server.ts`, also behind
+  the Complete button); `transitionChangeNoticeStatus`, `createMakeMethodVersion`
+  (`items.server.ts`); `commitPurchaseOrderFinalize` (`purchasing.server.ts`, the
+  part before the PDF and email); `transitionSalesOrderStatus`,
+  `setReturnLineDispositionFromPicker` (`sales/sales-transitions.server.ts`);
+  `removeMaintenanceDispatchItem` (`resources.server.ts`). A command that needs a
+  stronger permission for one branch (reopening a closed picking list or stock
+  transfer needs inventory delete) takes it as a `requireReopenPermission`
+  callback, so the route passes `requirePermissions` and the wrapper passes
+  `requireToolPermission`. A warn-level gate the UI shows as a dialog (storage
+  rules, the incomplete picking list policy) comes back to an MCP caller as an
+  error until it repeats the call with `acknowledged: true`. Guarded by
+  `apps/erp/test/mcp-status-transitions.test.ts`: a service function that writes
+  `status` must be shadowed by a companion export or listed, with its reason, in
+  `mcp-status-transitions.baseline.json` (a stale entry fails too).
 - **Routes never write tables directly.** The `no-direct-table-write-in-route`
   check (`@carbon/checks`, `SERVER_CHECKS`) fails an `apps/erp/app/routes/x+/**`
   action that calls `.from(t).insert|update|upsert|delete(` or a Kysely

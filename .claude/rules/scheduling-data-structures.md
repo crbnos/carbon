@@ -230,7 +230,7 @@ materialized output for active jobs only; before this, a cancelled/completed job
 rows lingered as orphans (invisible to the forecast/capacity reads, which filter
 terminal jobs, but resurfacing as past-dated bars for any read that forgot the
 filter). The trigger is the one chokepoint every terminal path funnels through
-(the status route's `updateJobStatus`, and `complete_job_to_inventory` for
+(`transitionJobStatus`'s `updateJobStatus`, and `complete_job_to_inventory` for
 Completed); SECURITY DEFINER because a cancel only holds `production_update` while
 the DELETE policy needs `production_delete`.
 
