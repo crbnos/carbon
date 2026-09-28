@@ -21,21 +21,23 @@ const allTools = metadata.tools as Tool[];
 // excluded from the rule-based assertions. The API-key WRITES (upsert/delete)
 // moved to @carbon/ee/api-keys.server behind requireEntitlement, so they are no
 // longer MCP tools — only the read (getApiKeys) remains and keeps the override.
-const OVERRIDDEN = new Set(["settings_getApiKeys"]);
+const OVERRIDES: Record<string, Tool["permission"]> = {
+  settings_getApiKeys: { module: "users", actions: ["update"] },
+  // Closing a PO is gated on purchasing delete by its status route.
+  purchasing_closePurchaseOrder: { module: "purchasing", actions: ["delete"] }
+};
+const OVERRIDDEN = new Set(Object.keys(OVERRIDES));
 
 const tools = allTools.filter((t) => !OVERRIDDEN.has(t.name));
 
 const funcName = (t: Tool) => t.name.slice(t.module.length + 1).toLowerCase();
 
 describe("permission overrides", () => {
-  it("API-key management gates on users_update, matching its ERP routes", () => {
-    for (const name of OVERRIDDEN) {
+  it("each override matches the permission its ERP route requires", () => {
+    for (const [name, permission] of Object.entries(OVERRIDES)) {
       const t = allTools.find((t) => t.name === name);
       expect(t, name).toBeDefined();
-      expect(t?.permission, name).toEqual({
-        module: "users",
-        actions: ["update"]
-      });
+      expect(t?.permission, name).toEqual(permission);
     }
   });
 });
