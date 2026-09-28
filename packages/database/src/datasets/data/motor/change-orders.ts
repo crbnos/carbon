@@ -64,6 +64,73 @@ export const CHANGE_ORDERS: ChangeOrderSpec[] = [
         sortOrder: 1
       }
     ]
+  },
+  // Lifecycle-only notices: no affected items yet (every change type spins a
+  // method draft), so they exercise the stage flow + action tasks alone.
+  {
+    ref: "co:start",
+    name: "Add strain-relief boss at the HSG-9000 encoder cable exit",
+    type: "Engineering",
+    changeOrderType: "Design Improvement",
+    status: "Start",
+    priority: "Medium",
+    openDateOffset: -9,
+    dueDateOffset: 30,
+    reasonForChange:
+      "Dyno vibration runs showed the encoder cable flexing at the end-bell exit; two line-driver conductors fatigued inside the jacket.",
+    affectedItems: [],
+    actionTasks: [
+      { action: "Engineering Review", status: "In Progress", dueDateOffset: 5 },
+      { action: "Update Drawings / CAD", status: "Pending", dueDateOffset: 20 }
+    ]
+  },
+  {
+    ref: "co:eng-complete",
+    name: "Add slot-liner thickness check to the Nomex receiving plan",
+    type: "Manufacturing",
+    changeOrderType: "Quality / Reliability Improvement",
+    status: "Engineering Complete",
+    priority: "High",
+    openDateOffset: -60,
+    dueDateOffset: 14,
+    reasonForChange:
+      "The Copperline Nomex escape showed a label and cert review alone cannot catch under-thickness slot liner before it reaches the winding line.",
+    nonConformance: "ncr:nomex-thin",
+    affectedItems: [],
+    actionTasks: [
+      {
+        action: "Quality Review",
+        status: "Completed",
+        dueDateOffset: -45,
+        completedOffset: -48
+      },
+      {
+        action: "Notify Affected Parties",
+        status: "In Progress",
+        dueDateOffset: 7
+      }
+    ]
+  },
+  {
+    ref: "co:cancelled",
+    name: "Revise the TD-4500 nameplate drawing for a dual-voltage rating",
+    type: "Documentation",
+    changeOrderType: "Documentation Error / Correction",
+    status: "Cancelled",
+    priority: "Low",
+    openDateOffset: -120,
+    reasonForChange:
+      "Sales asked for a 230/460 V dual rating on the TD-4500; the customer later standardized on 460 V only and the single-voltage plate stays.",
+    affectedItems: [],
+    actionTasks: [
+      {
+        action: "Cost Impact Review",
+        status: "Completed",
+        dueDateOffset: -110,
+        completedOffset: -112
+      },
+      { action: "Update Drawings / CAD", status: "Skipped" }
+    ]
   }
 ];
 

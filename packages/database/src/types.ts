@@ -14034,21 +14034,18 @@ export type Database = {
           companyId: string
           employeeTypeId: string
           id: string
-          pin: string | null
         }
         Insert: {
           active?: boolean
           companyId: string
           employeeTypeId: string
           id?: string
-          pin?: string | null
         }
         Update: {
           active?: boolean
           companyId?: string
           employeeTypeId?: string
           id?: string
-          pin?: string | null
         }
         Relationships: [
           {
@@ -14393,6 +14390,101 @@ export type Database = {
           },
           {
             foreignKeyName: "employeeJob_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          }
+        ]
+      }
+      employeePin: {
+        Row: {
+          companyId: string
+          employeeId: string
+          pinHash: string
+          updatedAt: string
+          updatedBy: string | null
+        }
+        Insert: {
+          companyId: string
+          employeeId: string
+          pinHash: string
+          updatedAt?: string
+          updatedBy?: string | null
+        }
+        Update: {
+          companyId?: string
+          employeeId?: string
+          pinHash?: string
+          updatedAt?: string
+          updatedBy?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "employeePin_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employeePin_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "company"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employeePin_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "customFieldTables"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "employeePin_companyId_fkey"
+            columns: ["companyId"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["companyId"]
+          },
+          {
+            foreignKeyName: "employeePin_employee_fkey"
+            columns: ["employeeId", "companyId"]
+            isOneToOne: true
+            referencedRelation: "employee"
+            referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "employeePin_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employeePin_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employeePin_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employeePin_updatedBy_fkey"
+            columns: ["updatedBy"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "employeePin_updatedBy_fkey"
             columns: ["updatedBy"]
             isOneToOne: false
             referencedRelation: "userDefaults"
@@ -82013,6 +82105,14 @@ export type Database = {
           netChange: number
         }[]
       }
+      assert_audit_log_access: {
+        Args: { p_company_id: string; p_permission: string }
+        Returns: undefined
+      }
+      assert_company_access: {
+        Args: { p_company_id: string; p_permission?: string }
+        Returns: undefined
+      }
       attach_audit_log_append_only: {
         Args: { p_table_name: string }
         Returns: undefined
@@ -82110,48 +82210,6 @@ export type Database = {
           id: string
           name: string
           table: string
-        }[]
-      }
-      create_rfq_from_model_v1: {
-        Args: {
-          company_id: string
-          customer_part_id: string
-          email: string
-          model_id: string
-          notes?: Json
-          sequence_number: string
-          unit_of_measure: string
-        }
-        Returns: {
-          rfq_id: string
-          rfq_line_id: string
-          rfq_readable_id: string
-        }[]
-      }
-      create_rfq_from_models_v1: {
-        Args: {
-          company_id: string
-          email: string
-          model_data: Json[]
-          sequence_number: string
-        }
-        Returns: {
-          rfq_id: string
-          rfq_line_ids: string[]
-          rfq_readable_id: string
-        }[]
-      }
-      create_rfq_from_models_v2: {
-        Args: {
-          company_id: string
-          email: string
-          model_data: Json[]
-          sequence_number: string
-        }
-        Returns: {
-          rfq_id: string
-          rfq_line_ids: string[]
-          rfq_readable_id: string
         }[]
       }
       create_search_subscriptions_for_company: {
@@ -82542,10 +82600,6 @@ export type Database = {
         Returns: string[]
       }
       get_companies_with_employee_role: { Args: never; Returns: string[] }
-      get_companies_with_permission: {
-        Args: { permission: string }
-        Returns: string[]
-      }
       get_company_groups_for_employee: { Args: never; Returns: string[] }
       get_company_groups_for_root_permission: {
         Args: { permission: string }
@@ -83349,7 +83403,6 @@ export type Database = {
       }
       get_period_end_date: { Args: { period: string }; Returns: string }
       get_period_start_date: { Args: { period: string }; Returns: string }
-      get_permission_companies: { Args: { claim: string }; Returns: string[] }
       get_picking_list_availability: {
         Args: { p_picking_list_id: string }
         Returns: {
@@ -84138,14 +84191,6 @@ export type Database = {
         }[]
       }
       has_any_company_permission: { Args: { claim: string }; Returns: boolean }
-      has_company_permission: {
-        Args: { claim: string; company: string }
-        Returns: boolean
-      }
-      has_role: {
-        Args: { company: string; required_role: string }
-        Returns: boolean
-      }
       has_valid_api_key_for_company: {
         Args: { company: string }
         Returns: boolean
@@ -84168,19 +84213,6 @@ export type Database = {
       increment_webhook_success: {
         Args: { webhook_id: string }
         Returns: undefined
-      }
-      insert_audit_log: {
-        Args: {
-          p_actor_id: string
-          p_actor_name: string
-          p_company_id: string
-          p_diff?: Json
-          p_entity_id: string
-          p_entity_type: string
-          p_metadata?: Json
-          p_operation: string
-        }
-        Returns: string
       }
       insert_audit_log_batch: {
         Args: { p_company_id: string; p_entries: Json[] }
@@ -84423,6 +84455,19 @@ export type Database = {
           title: string
         }[]
       }
+      secure_audit_log_table: {
+        Args: { p_company_id: string }
+        Returns: undefined
+      }
+      set_employee_pin: {
+        Args: {
+          p_company_id: string
+          p_employee_id: string
+          p_pin: string
+          p_updated_by: string
+        }
+        Returns: undefined
+      }
       set_shelf_life_for_operation: {
         Args: {
           p_event: Database["public"]["Enums"]["shelfLifeTriggerTiming"]
@@ -84564,6 +84609,10 @@ export type Database = {
         Returns: undefined
       }
       sync_delete_tracked_entity_on_job_make_method: {
+        Args: { p_new: Json; p_old: Json; p_operation: string; p_table: string }
+        Returns: undefined
+      }
+      sync_delete_user_identity_group: {
         Args: { p_new: Json; p_old: Json; p_operation: string; p_table: string }
         Returns: undefined
       }
@@ -84811,6 +84860,10 @@ export type Database = {
       }
       uuid_generate_v4: { Args: never; Returns: string }
       uuid_to_base58: { Args: { _uuid: string }; Returns: string }
+      verify_employee_pin: {
+        Args: { p_company_id: string; p_employee_id: string; p_pin: string }
+        Returns: boolean
+      }
       workflow_merge_custom_fields: {
         Args: {
           p_company_id: string

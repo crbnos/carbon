@@ -4,6 +4,7 @@ import { motorChangeOrders } from "./change-orders.ts";
 import { motorFoundation } from "./foundation.ts";
 import { motorInventory } from "./inventory.ts";
 import { motorItems } from "./items.ts";
+import { motorOps } from "./ops.ts";
 import { motorPlanning } from "./planning.ts";
 import { motorProduction } from "./production.ts";
 import { motorPurchasing } from "./purchasing.ts";
@@ -27,6 +28,7 @@ export const motor: Dataset = {
   quality: motorQuality,
   changeOrders: motorChangeOrders,
   accounting: motorAccounting,
+  ops: motorOps,
   workflows: motorWorkflows,
   planning: motorPlanning
 };

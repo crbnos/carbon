@@ -5,6 +5,7 @@ import { Buffer } from "node:buffer";
 import { corsHeaders } from "../lib/headers.ts";
 import { getFunctionLogger } from "../lib/logging.ts";
 import { corsPreflight, errorResponse } from "../lib/response.ts";
+import { requireServiceRole } from "../lib/supabase.ts";
 
 import {
   decodeImage,
@@ -27,6 +28,13 @@ const browserWSEndpoint =
 serve(async (req: Request) => {
   const preflight = corsPreflight(req);
   if (preflight) return preflight;
+
+  // It drives a browser to whatever URL it is handed: servers only.
+  try {
+    requireServiceRole(req);
+  } catch (err) {
+    return errorResponse(err, 401);
+  }
 
   let browser;
   try {

@@ -29,6 +29,7 @@ import { useTraceabilityStore } from "~/modules/inventory/ui/Traceability/store"
 import { TraceabilityGraph } from "~/modules/inventory/ui/Traceability/TraceabilityGraph";
 import { TraceabilitySidebar } from "~/modules/inventory/ui/Traceability/TraceabilitySidebar";
 import { stateEntityId } from "~/modules/inventory/ui/Traceability/utils";
+import { requireCompanyRecord } from "~/modules/shared/shared.server";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
@@ -43,7 +44,7 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  const { client, companyId } = await requirePermissions(request, {
     view: "inventory",
     bypassRls: true
   });
@@ -59,6 +60,25 @@ export async function loader({ request }: LoaderFunctionArgs) {
     throw redirect(path.to.traceability);
   }
 
+  // bypassRls makes `client` the service role and the lineage reads below are
+  // not company-scoped, so every root id from the query string must be proven
+  // to be this company's first.
+  await Promise.all([
+    trackedEntityId
+      ? requireCompanyRecord(client, "trackedEntity", companyId, {
+          id: trackedEntityId
+        })
+      : null,
+    jobId
+      ? requireCompanyRecord(client, "job", companyId, { id: jobId })
+      : null,
+    trackedActivityId
+      ? requireCompanyRecord(client, "trackedActivity", companyId, {
+          id: trackedActivityId
+        })
+      : null
+  ]);
+
   if (trackedEntityId) {
     let payload = await fetchLineageSubgraph(
       client,
@@ -73,6 +93,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
       const jobPayload = await fetchJobScopedLineage(
         client,
         associatedJobId,
+        companyId,
         depth
       );
       const jobReadableId = await getJobReadableId(client, associatedJobId);
@@ -98,7 +119,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   if (jobId) {
     const jobReadableId = await getJobReadableId(client, jobId);
     const payload = withJobNode(
-      await fetchJobScopedLineage(client, jobId, depth),
+      await fetchJobScopedLineage(client, jobId, companyId, depth),
       jobId,
       jobReadableId
     );

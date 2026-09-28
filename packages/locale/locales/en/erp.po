@@ -246,6 +246,10 @@ msgstr "{0} values"
 msgid "{0} values missing"
 msgstr "{0} values missing"
 
+#. placeholder {0}: file.name
+msgid "{0} will be saved as {name}"
+msgstr "{0} will be saved as {name}"
+
 #. placeholder {0}: item.days
 msgid "{0}d"
 msgstr "{0}d"
@@ -537,6 +541,9 @@ msgstr "90D"
 
 msgid "A \"must match\" rule on this process blocks these from sharing a batch"
 msgstr "A \"must match\" rule on this process blocks these from sharing a batch"
+
+msgid "A 4-digit PIN is generated when the operator is created."
+msgstr "A 4-digit PIN is generated when the operator is created."
 
 msgid "A batch needs at least one operation. To break up the whole batch, use Dissolve instead."
 msgstr "A batch needs at least one operation. To break up the whole batch, use Dissolve instead."
@@ -1382,6 +1389,9 @@ msgstr "Add Company"
 
 msgid "Add condition"
 msgstr "Add condition"
+
+msgid "Add Console Operator"
+msgstr "Add Console Operator"
 
 msgid "Add Contractor"
 msgstr "Add Contractor"
@@ -3286,6 +3296,10 @@ msgstr "Can't disable the only active break. Add another break or toggle the ove
 msgid "Can't download this file"
 msgstr "Can't download this file"
 
+#. placeholder {0}: file.name
+msgid "Can't upload a file named {0}"
+msgstr "Can't upload a file named {0}"
+
 msgid "Cancel"
 msgstr "Cancel"
 
@@ -4107,6 +4121,9 @@ msgstr "Console mode is enabled"
 msgid "Console Operator"
 msgstr "Console Operator"
 
+msgid "Console Operator Created"
+msgstr "Console Operator Created"
+
 msgid "consumable"
 msgstr "consumable"
 
@@ -4349,9 +4366,6 @@ msgstr "Copy part number"
 
 msgid "Copy part unique identifier"
 msgstr "Copy part unique identifier"
-
-msgid "Copy PIN"
-msgstr "Copy PIN"
 
 msgid "Copy previous day"
 msgstr "Copy previous day"
@@ -4673,6 +4687,9 @@ msgstr "Create New"
 
 msgid "Create new rule"
 msgstr "Create new rule"
+
+msgid "Create Operator"
+msgstr "Create Operator"
 
 msgid "Create PO Revision"
 msgstr "Create PO Revision"
@@ -5490,6 +5507,9 @@ msgstr "Delete action"
 
 msgid "Delete Action"
 msgstr "Delete Action"
+
+msgid "Delete and apply"
+msgstr "Delete and apply"
 
 msgid "Delete and restore"
 msgstr "Delete and restore"
@@ -6353,6 +6373,9 @@ msgstr "Each job needs its own lot number — or combine them into one lot."
 
 msgid "Each line is a link from this company's data to a row it doesn't own. A backup with these rows could never be restored."
 msgstr "Each line is a link from this company's data to a row it doesn't own. A backup with these rows could never be restored."
+
+msgid "Each line is a link from this company's data to a row it doesn't own. Removing those rows lets the demo data apply."
+msgstr "Each line is a link from this company's data to a row it doesn't own. Removing those rows lets the demo data apply."
 
 msgid "Each line is a link from this company's data to a row it doesn't own. Removing those rows lets the restore run."
 msgstr "Each line is a link from this company's data to a row it doesn't own. Removing those rows lets the restore run."
@@ -8087,8 +8110,8 @@ msgstr "General Ledger and month-end close"
 msgid "Generate"
 msgstr "Generate"
 
-msgid "Generate a new 4-digit PIN. Share it with the operator so they can pin in at MES terminals."
-msgstr "Generate a new 4-digit PIN. Share it with the operator so they can pin in at MES terminals."
+msgid "Generate a new 4-digit PIN. The operator's current PIN stops working immediately."
+msgstr "Generate a new 4-digit PIN. The operator's current PIN stops working immediately."
 
 msgid "Generate and send customer invoices"
 msgstr "Generate and send customer invoices"
@@ -8101,9 +8124,6 @@ msgstr "Generate Fiscal Year"
 
 msgid "Generate material IDs and descriptions based on the properties of the material."
 msgstr "Generate material IDs and descriptions based on the properties of the material."
-
-msgid "Generate new PIN"
-msgstr "Generate new PIN"
 
 msgid "Generate Picking List"
 msgstr "Generate Picking List"
@@ -10901,9 +10921,6 @@ msgstr "New Payment Term"
 
 msgid "New Picking List"
 msgstr "New Picking List"
-
-msgid "New PIN"
-msgstr "New PIN"
 
 msgid "New PO"
 msgstr "New PO"
@@ -14118,9 +14135,6 @@ msgstr "Remaining"
 msgid "Remaining after split stays on the original row."
 msgstr "Remaining after split stays on the original row."
 
-msgid "Remember this PIN. You will need it to exit console mode on MES terminals."
-msgstr "Remember this PIN. You will need it to exit console mode on MES terminals."
-
 msgid "Remove"
 msgstr "Remove"
 
@@ -14152,6 +14166,9 @@ msgstr "Remove clause"
 
 msgid "Remove condition"
 msgstr "Remove condition"
+
+msgid "Remove corrupted data and apply"
+msgstr "Remove corrupted data and apply"
 
 msgid "Remove corrupted data and restore"
 msgstr "Remove corrupted data and restore"
@@ -14557,6 +14574,9 @@ msgstr "Return Reason"
 
 msgid "Return Reasons"
 msgstr "Return Reasons"
+
+msgid "Return to Integrations and connect Onshape again."
+msgstr "Return to Integrations and connect Onshape again."
 
 msgid "Return to Integrations and connect Ramp again."
 msgstr "Return to Integrations and connect Ramp again."
@@ -15817,6 +15837,12 @@ msgstr "Share Link"
 
 msgid "Share Quote"
 msgstr "Share Quote"
+
+msgid "Share this PIN with {name} so they can pin in at MES terminals."
+msgstr "Share this PIN with {name} so they can pin in at MES terminals."
+
+msgid "Share this PIN with the operator so they can pin in at MES terminals."
+msgstr "Share this PIN with the operator so they can pin in at MES terminals."
 
 msgid "Shared"
 msgstr "Shared"
@@ -17595,6 +17621,9 @@ msgstr "The number of months over which this asset will be depreciated."
 msgid "The on-hand level that triggers a new replenishment order under the quantity-based policies."
 msgstr "The on-hand level that triggers a new replenishment order under the quantity-based policies."
 
+msgid "The Onshape connection expired"
+msgstr "The Onshape connection expired"
+
 msgid "The operations and steps your parts move through"
 msgstr "The operations and steps your parts move through"
 
@@ -17977,6 +18006,9 @@ msgstr "These operations use a process with multiple suppliers. Choose a supplie
 msgid "These parts are being replaced by this one. Each rule is set on the old part; open it to change the rule."
 msgstr "These parts are being replaced by this one. Each rule is set on the old part; open it to change the rule."
 
+msgid "These rows link to data outside this company, so a safety copy of your current data can't be made. Deleting them cannot be undone. If they turn out to be shared with other companies in this group, nothing is deleted and the demo data isn't applied."
+msgstr "These rows link to data outside this company, so a safety copy of your current data can't be made. Deleting them cannot be undone. If they turn out to be shared with other companies in this group, nothing is deleted and the demo data isn't applied."
+
 msgid "These rows link to data outside this company, so a safety copy of your current data can't be made. Deleting them cannot be undone. If they turn out to be shared with other companies in this group, nothing is deleted and the restore doesn't start."
 msgstr "These rows link to data outside this company, so a safety copy of your current data can't be made. Deleting them cannot be undone. If they turn out to be shared with other companies in this group, nothing is deleted and the restore doesn't start."
 
@@ -18141,6 +18173,15 @@ msgstr "This path only decides what runs next"
 
 msgid "This period has no journal entries posted to it and can be permanently deleted. This cannot be undone."
 msgstr "This period has no journal entries posted to it and can be permanently deleted. This cannot be undone."
+
+msgid "This PIN will not be shown again."
+msgstr "This PIN will not be shown again."
+
+msgid "This PIN will not be shown again. If it is lost, reset it from the operators list."
+msgstr "This PIN will not be shown again. If it is lost, reset it from the operators list."
+
+msgid "This PIN will not be shown again. You will need it to exit console mode on MES terminals."
+msgstr "This PIN will not be shown again. You will need it to exit console mode on MES terminals."
 
 msgid "this purchase order"
 msgstr "this purchase order"
@@ -20032,6 +20073,9 @@ msgstr "Why stock is changing — Positive (found), Negative (lost/scrap), or Se
 
 msgid "Why this backup failed"
 msgstr "Why this backup failed"
+
+msgid "Why this failed"
+msgstr "Why this failed"
 
 msgid "Why this line is being declined; surfaced on the printable quote and recorded for win-loss reporting."
 msgstr "Why this line is being declined; surfaced on the printable quote and recorded for win-loss reporting."

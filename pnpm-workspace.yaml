@@ -59,12 +59,14 @@ catalog:
   '@dnd-kit/utilities': 3.2.2
   '@emoji-mart/data': 1.2.1
   '@emoji-mart/react': 1.1.1
+  '@fontsource-variable/hedvig-letters-serif': 5.3.0
   '@internationalized/date': 3.12.0
   '@lingui/cli': 5.9.4
   '@lingui/core': 5.9.4
   '@lingui/macro': 5.9.4
   '@lingui/react': 5.9.4
   '@lingui/vite-plugin': 5.9.4
+  '@marsidev/react-turnstile': 1.5.0
   '@logtape/logtape': 2.2.3
   '@logtape/redaction': 2.2.3
   '@logtape/testing': 2.2.3

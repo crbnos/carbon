@@ -246,6 +246,10 @@ msgstr "{0} 个值"
 msgid "{0} values missing"
 msgstr "{0} 个值缺失"
 
+#. placeholder {0}: file.name
+msgid "{0} will be saved as {name}"
+msgstr "{0} 将被保存为 {name}"
+
 #. placeholder {0}: item.days
 msgid "{0}d"
 msgstr "{0}天"
@@ -538,8 +542,11 @@ msgstr "90天"
 msgid "A \"must match\" rule on this process blocks these from sharing a batch"
 msgstr "此工序上的 \"必须匹配\" 规则阻止这些共享一个生产批次"
 
+msgid "A 4-digit PIN is generated when the operator is created."
+msgstr "创建操作员时会生成4位数PIN。"
+
 msgid "A batch needs at least one operation. To break up the whole batch, use Dissolve instead."
-msgstr ""
+msgstr "生产批次需要至少一个工序。要分解整个生产批次，请改用\"分解\"。"
 
 msgid "A Carbon-run data migration — you load your own data"
 msgstr "Carbon 运行的数据迁移 — 您加载自己的数据"
@@ -1382,6 +1389,9 @@ msgstr "添加公司"
 
 msgid "Add condition"
 msgstr "添加条件"
+
+msgid "Add Console Operator"
+msgstr "添加控制台操作员"
 
 msgid "Add Contractor"
 msgstr "添加外协人员"
@@ -3286,6 +3296,10 @@ msgstr "无法禁用唯一的启用休息时间。请添加另一个休息时间
 msgid "Can't download this file"
 msgstr "无法下载此文件"
 
+#. placeholder {0}: file.name
+msgid "Can't upload a file named {0}"
+msgstr "无法上传名为 {0} 的文件"
+
 msgid "Cancel"
 msgstr "取消"
 
@@ -4107,6 +4121,9 @@ msgstr "控制台模式已启用"
 msgid "Console Operator"
 msgstr "控制台操作员"
 
+msgid "Console Operator Created"
+msgstr "控制台操作员已创建"
+
 msgid "consumable"
 msgstr "耗材"
 
@@ -4349,9 +4366,6 @@ msgstr "复制零件号"
 
 msgid "Copy part unique identifier"
 msgstr "复制零件唯一标识符"
-
-msgid "Copy PIN"
-msgstr "复制PIN"
 
 msgid "Copy previous day"
 msgstr "复制前一天"
@@ -4673,6 +4687,9 @@ msgstr "新建"
 
 msgid "Create new rule"
 msgstr "创建新规则"
+
+msgid "Create Operator"
+msgstr "创建操作员"
 
 msgid "Create PO Revision"
 msgstr "创建采购订单修订版本"
@@ -5490,6 +5507,9 @@ msgstr "删除操作"
 
 msgid "Delete Action"
 msgstr "删除操作"
+
+msgid "Delete and apply"
+msgstr "删除并应用"
 
 msgid "Delete and restore"
 msgstr "删除并恢复"
@@ -6353,6 +6373,9 @@ msgstr "每个工单需要自己的批次号 — 或将它们合并为一个批�
 
 msgid "Each line is a link from this company's data to a row it doesn't own. A backup with these rows could never be restored."
 msgstr "每一行都是从该公司的数据链接到它不拥有的一行。包含这些行的备份永远无法恢复。"
+
+msgid "Each line is a link from this company's data to a row it doesn't own. Removing those rows lets the demo data apply."
+msgstr "每一行都是从此公司的数据指向其不拥有的行的链接。移除这些行可以应用演示数据。"
 
 msgid "Each line is a link from this company's data to a row it doesn't own. Removing those rows lets the restore run."
 msgstr "每一行都是从该公司的数据链接到它不拥有的一行。删除这些行可以运行恢复。"
@@ -8087,8 +8110,8 @@ msgstr "总账和月末结账"
 msgid "Generate"
 msgstr "生成"
 
-msgid "Generate a new 4-digit PIN. Share it with the operator so they can pin in at MES terminals."
-msgstr "生成新的4位PIN码。与操作员分享，以便他们可以在MES终端上登录。"
+msgid "Generate a new 4-digit PIN. The operator's current PIN stops working immediately."
+msgstr "生成新的4位数PIN。操作员的当前PIN将立即停止工作。"
 
 msgid "Generate and send customer invoices"
 msgstr "生成并发送客户发票"
@@ -8101,9 +8124,6 @@ msgstr "生成会计年度"
 
 msgid "Generate material IDs and descriptions based on the properties of the material."
 msgstr "根据原材料的属性生成原材料ID和描述。"
-
-msgid "Generate new PIN"
-msgstr "生成新PIN"
 
 msgid "Generate Picking List"
 msgstr "生成拣货单"
@@ -10901,9 +10921,6 @@ msgstr "新建付款条件"
 
 msgid "New Picking List"
 msgstr "新拣货单"
-
-msgid "New PIN"
-msgstr "新PIN"
 
 msgid "New PO"
 msgstr "新采购订单"
@@ -14118,9 +14135,6 @@ msgstr "剩余"
 msgid "Remaining after split stays on the original row."
 msgstr "拆分后的剩余部分保留在原始行上。"
 
-msgid "Remember this PIN. You will need it to exit console mode on MES terminals."
-msgstr "记住此PIN。您需要它来退出MES终端上的控制台模式。"
-
 msgid "Remove"
 msgstr "移除"
 
@@ -14130,7 +14144,7 @@ msgstr "移除{0}"
 
 #. placeholder {0}: selectedIds.size
 msgid "Remove {0} from batch"
-msgstr ""
+msgstr "从生产批次中移除 {0}"
 
 #. placeholder {0}: removing.jobReadableId ?? "this operation"
 msgid "Remove {0} from this batch? Its operation goes back to the schedule to run on its own."
@@ -14139,7 +14153,7 @@ msgstr "从此生产批次中移除 {0}？其工序回到排程以单独运行�
 #. placeholder {0}: selectedIds.size
 #. placeholder {1}: batch.readableId
 msgid "Remove {0} of {memberCount} operations from {1}?"
-msgstr ""
+msgstr "从 {1} 中移除 {0} 个（共 {memberCount} 个）工序？"
 
 msgid "Remove {label}"
 msgstr "移除 {label}"
@@ -14152,6 +14166,9 @@ msgstr "移除条款"
 
 msgid "Remove condition"
 msgstr "移除条件"
+
+msgid "Remove corrupted data and apply"
+msgstr "移除损坏的数据并应用"
 
 msgid "Remove corrupted data and restore"
 msgstr "移除损坏数据并恢复"
@@ -14557,6 +14574,9 @@ msgstr "退货原因"
 
 msgid "Return Reasons"
 msgstr "退货原因"
+
+msgid "Return to Integrations and connect Onshape again."
+msgstr "返回集成并重新连接Onshape。"
 
 msgid "Return to Integrations and connect Ramp again."
 msgstr "返回集成页面并重新连接 Ramp。"
@@ -15817,6 +15837,12 @@ msgstr "分享链接"
 
 msgid "Share Quote"
 msgstr "分享报价"
+
+msgid "Share this PIN with {name} so they can pin in at MES terminals."
+msgstr "将此PIN与 {name} 分享，以便他们可以在MES终端登入。"
+
+msgid "Share this PIN with the operator so they can pin in at MES terminals."
+msgstr "将此PIN与操作员分享，以便他们可以在MES终端登入。"
 
 msgid "Shared"
 msgstr "共享"
@@ -17595,6 +17621,9 @@ msgstr "此资产将折旧的月数。"
 msgid "The on-hand level that triggers a new replenishment order under the quantity-based policies."
 msgstr "按数量触发新补充订单的库存水平根据基于数量的政策。"
 
+msgid "The Onshape connection expired"
+msgstr "Onshape连接已过期"
+
 msgid "The operations and steps your parts move through"
 msgstr "您的零件所经历的工序和步骤"
 
@@ -17977,6 +18006,9 @@ msgstr "这些工序使用的工艺支持多个供应商。请为每个工序选
 msgid "These parts are being replaced by this one. Each rule is set on the old part; open it to change the rule."
 msgstr "这些零件被此零件替代。每个规则都在旧零件上设置；打开它来更改规则。"
 
+msgid "These rows link to data outside this company, so a safety copy of your current data can't be made. Deleting them cannot be undone. If they turn out to be shared with other companies in this group, nothing is deleted and the demo data isn't applied."
+msgstr "这些行链接到此公司外部的数据，因此无法为您当前的数据创建安全副本。删除它们无法撤销。如果它们与此集团中的其他公司共享，则不会删除任何内容，演示数据也不会应用。"
+
 msgid "These rows link to data outside this company, so a safety copy of your current data can't be made. Deleting them cannot be undone. If they turn out to be shared with other companies in this group, nothing is deleted and the restore doesn't start."
 msgstr "这些行链接到此公司外的数据，因此无法创建当前数据的安全备份。删除它们无法撤销。如果这些行实际上与此集团中的其他公司共享，则不删除任何行，且不启动还原。"
 
@@ -18141,6 +18173,15 @@ msgstr "此路径仅决定接下来运行什么"
 
 msgid "This period has no journal entries posted to it and can be permanently deleted. This cannot be undone."
 msgstr "此期间没有已过账的凭证，可以永久删除。此操作无法撤销。"
+
+msgid "This PIN will not be shown again."
+msgstr "此PIN将不再显示。"
+
+msgid "This PIN will not be shown again. If it is lost, reset it from the operators list."
+msgstr "此PIN将不再显示。如果丢失，可从操作员列表中重置。"
+
+msgid "This PIN will not be shown again. You will need it to exit console mode on MES terminals."
+msgstr "此PIN将不再显示。您需要它来在MES终端上退出控制台模式。"
 
 msgid "this purchase order"
 msgstr "此采购订单"
@@ -20032,6 +20073,9 @@ msgstr "为什么库存在变化 — 正向（发现）、负向（丢失/报废
 
 msgid "Why this backup failed"
 msgstr "备份失败原因"
+
+msgid "Why this failed"
+msgstr "为什么失败"
 
 msgid "Why this line is being declined; surfaced on the printable quote and recorded for win-loss reporting."
 msgstr "该行被拒绝的原因;显示在可打印报价上,并为损益报告记录。"

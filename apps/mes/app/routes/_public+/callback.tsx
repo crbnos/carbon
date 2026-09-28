@@ -28,12 +28,13 @@ import {
 } from "@carbon/ee/sso.server";
 import { validator } from "@carbon/form";
 import { AccountLockout, redis } from "@carbon/kv";
+import { getLogger } from "@carbon/logger";
 import {
   Alert,
   AlertDescription,
   AlertTitle,
   Button,
-  LoadingBars,
+  CarbonPulse,
   VStack
 } from "@carbon/react";
 import { Trans } from "@lingui/react/macro";
@@ -42,6 +43,8 @@ import { LuTriangleAlert } from "react-icons/lu";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, Link, redirect, useFetcher, useLocation } from "react-router";
 import { path } from "~/utils/path";
+
+const logger = getLogger("mes", "callback");
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const authSession = await getAuthSession(request);
@@ -87,6 +90,21 @@ export async function action({ request }: ActionFunctionArgs) {
     return redirect(
       path.to.root,
       await flash(request, error(authSession, "Invalid refresh token"))
+    );
+  }
+
+  // The form's `userId` is caller-supplied: the membership read above, the SSO
+  // lookup and the self-signup gate below all key on it. Only the refresh
+  // token proves identity, so a `userId` that is not the token's owner would
+  // stamp another user's company onto this session — refuse it.
+  if (authSession.userId !== userId) {
+    logger.warn("Callback userId does not match the refresh token's user", {
+      userId,
+      sessionUserId: authSession.userId
+    });
+    return redirect(
+      path.to.root,
+      await flash(request, error(null, "Invalid refresh token"))
     );
   }
 
@@ -307,7 +325,7 @@ export default function AuthCallback() {
   }, [fetcher]);
 
   return (
-    <div className="flex flex-col items-center justify-center">
+    <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-background">
       {error ? (
         <div className="rounded-lg p-8 mt-8 w-[380px]">
           <VStack spacing={4}>
@@ -336,7 +354,7 @@ export default function AuthCallback() {
           </VStack>
         </div>
       ) : (
-        <LoadingBars />
+        <CarbonPulse />
       )}
     </div>
   );

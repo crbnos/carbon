@@ -374,18 +374,24 @@ const EmployeesTable = memo(
                   <MenuIcon icon={<LuPencil />} />
                   <Trans>Edit Permissions</Trans>
                 </MenuItem>
-                {settings.consoleEnabled && (
-                  <MenuItem
-                    onClick={() =>
-                      navigate(
-                        `${path.to.operatorResetPin(row.id!)}?${params.toString()}`
-                      )
-                    }
-                  >
-                    <MenuIcon icon={<LuShield />} />
-                    <Trans>Set Console PIN</Trans>
-                  </MenuItem>
-                )}
+                {/* Resetting a PIN hands over that person's console identity:
+                    console operators need users_update, anyone else also
+                    settings_update (enforced again by the route). */}
+                {settings.consoleEnabled &&
+                  permissions.can("update", "users") &&
+                  (permissions.can("update", "settings") ||
+                    row.email?.endsWith("@console.internal")) && (
+                    <MenuItem
+                      onClick={() =>
+                        navigate(
+                          `${path.to.operatorResetPin(row.id!)}?${params.toString()}`
+                        )
+                      }
+                    >
+                      <MenuIcon icon={<LuShield />} />
+                      <Trans>Set Console PIN</Trans>
+                    </MenuItem>
+                  )}
                 <MenuItem
                   onClick={() =>
                     navigate(

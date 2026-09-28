@@ -182,6 +182,34 @@ export async function applyMigrations(
   return { applied: didApplyMigrations(r) };
 }
 
+// Make every table's RLS policies match packages/database/src/authz/manifest.ts — the
+// one place policies are authored; migrations only create tables. Callers run it after
+// migrations (which create the tables) and after type regen, so a manifest problem
+// fails loudly without leaving the generated types stale.
+export async function syncAuthz(root: string, dbPort: number): Promise<string> {
+  const r = await execa(
+    "pnpm",
+    ["--silent", "--filter", "@carbon/database", "run", "authz", "sync"],
+    {
+      cwd: root,
+      reject: false,
+      env: {
+        ...process.env,
+        SUPABASE_DB_URL: `postgresql://supabase_admin:postgres@localhost:${dbPort}/postgres`
+      }
+    }
+  );
+  if (r.exitCode !== 0) {
+    process.stderr.write(r.stderr?.toString() ?? "");
+    process.stdout.write(r.stdout?.toString() ?? "");
+    throw new Error(
+      "authz sync failed: fix packages/database/src/authz/manifest.ts, then migrate again"
+    );
+  }
+  const counts = (r.stdout ?? "").match(/changed \d+ (helper|table)\(s\)/g);
+  return counts?.join(", ") ?? "policies in sync";
+}
+
 // supabase prints "Applying migration <ts>_<name>.sql..." per applied
 // migration — on STDERR (stdout says "Local database is up to date." even
 // while applying), so both streams must be checked.

@@ -122,7 +122,8 @@ job instead — see [the self-host deployment README](../../contrib/deploying/si
 ## Env vars passed to the services (`sst.config.ts` `environment`)
 Both services get Supabase (`SUPABASE_URL`/`ANON_KEY`/`SERVICE_ROLE_KEY`/`JWT_SECRET`/
 `DB_URL`), `SESSION_SECRET`, `REDIS_URL`, `INNGEST_*`, `RESEND_*`, `EXCHANGE_RATES_API_KEY`,
-`POSTHOG_*`, `CARBON_EDITION`, `CONTROLLED_ENVIRONMENT`, `DOMAIN`, `ERP_URL`/`MES_URL`,
+`POSTHOG_*`, `CARBON_EDITION`, `BOT_PROTECTION`, `CLOUDFLARE_TURNSTILE_*`,
+`CONTROLLED_ENVIRONMENT`, `DOMAIN`, `ERP_URL`/`MES_URL`,
 `NODE_ENV=production`, `VERCEL_ENV=production`, `VERCEL_URL` (set to the app host —
 there is no real Vercel deploy, this is just an env shim). ERP additionally gets
 `OPENAI_API_KEY`, `GOOGLE_PLACES_API_KEY`, `STRIPE_*`,

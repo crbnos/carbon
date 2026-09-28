@@ -11,6 +11,7 @@ import {
   supplierQuoteValidator
 } from "~/modules/purchasing";
 import { SupplierQuoteForm } from "~/modules/purchasing/ui/SupplierQuote";
+import { requireCompanyRecord } from "~/modules/shared/shared.server";
 import { setCustomFields } from "~/utils/form";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -37,6 +38,24 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 
   const { id: _id, ...data } = validation.data;
+
+  // bypassRls hands back the service role: the supplier (and its contact and
+  // location) on the form must belong to this company.
+  await Promise.all([
+    requireCompanyRecord(client, "supplier", companyId, {
+      id: data.supplierId
+    }),
+    data.supplierContactId
+      ? requireCompanyRecord(client, "supplierContact", companyId, {
+          id: data.supplierContactId
+        })
+      : null,
+    data.supplierLocationId
+      ? requireCompanyRecord(client, "supplierLocation", companyId, {
+          id: data.supplierLocationId
+        })
+      : null
+  ]);
 
   const result = await insertSupplierQuote(client, {
     ...data,

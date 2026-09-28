@@ -1,4 +1,4 @@
-import { ValidatedForm } from "@carbon/form";
+import { useUpdateControlledField, ValidatedForm } from "@carbon/form";
 import {
   cn,
   ModalCard,
@@ -18,7 +18,7 @@ import {
 } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { PostgrestResponse } from "@supabase/supabase-js";
-import { useEffect, useState } from "react";
+import { useEffect, useId, useState } from "react";
 import { useFetcher } from "react-router";
 import type { z } from "zod";
 import { TrackingTypeIcon } from "~/components";
@@ -91,6 +91,11 @@ const MaterialForm = ({
   const [substanceId, setSubstanceId] = useState<string | undefined>();
   const [formId, setFormId] = useState<string | undefined>();
 
+  // A new substance or shape clears the picks that belong to the old one, as
+  // the properties panel does; their pickers would otherwise hide them.
+  const validatedFormId = useId();
+  const setField = useUpdateControlledField(validatedFormId);
+
   const { company } = useUser();
   const baseCurrency = company?.baseCurrencyCode ?? "USD";
   const currencyDecimals = useCurrencyDecimals(baseCurrency);
@@ -157,6 +162,7 @@ const MaterialForm = ({
       <ModalCard onClose={onClose}>
         <ModalCardContent>
           <ValidatedForm
+            id={validatedFormId}
             action={path.to.newMaterial}
             method="post"
             validator={
@@ -224,9 +230,24 @@ const MaterialForm = ({
                   name="materialSubstanceId"
                   label={t`Substance`}
                   onChange={(value) => {
-                    setSubstanceId(value?.value as string | undefined);
+                    const newSubstanceId = value?.value as string | undefined;
+                    const changed = newSubstanceId !== substanceId;
+                    if (changed) {
+                      setField("gradeId", "");
+                      setField("finishId", "");
+                      setField("materialTypeId", "");
+                    }
+                    setSubstanceId(newSubstanceId);
                     setProperties((prev) => ({
                       ...prev,
+                      ...(changed
+                        ? {
+                            grade: "",
+                            finish: "",
+                            materialType: "",
+                            materialTypeCode: ""
+                          }
+                        : {}),
                       substance: (value?.label as string) ?? "",
                       substanceCode:
                         substance.find((s) => s.value === value?.value)?.code ??
@@ -249,9 +270,22 @@ const MaterialForm = ({
                   name="materialFormId"
                   label={t`Shape`}
                   onChange={(value) => {
-                    setFormId(value?.value as string | undefined);
+                    const newFormId = value?.value as string | undefined;
+                    const changed = newFormId !== formId;
+                    if (changed) {
+                      setField("dimensionId", "");
+                      setField("materialTypeId", "");
+                    }
+                    setFormId(newFormId);
                     setProperties((prev) => ({
                       ...prev,
+                      ...(changed
+                        ? {
+                            dimensions: "",
+                            materialType: "",
+                            materialTypeCode: ""
+                          }
+                        : {}),
                       shape: (value?.label as string) ?? "",
                       shapeCode:
                         shape.find((s) => s.value === value?.value)?.code ?? ""

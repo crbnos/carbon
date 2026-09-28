@@ -1,13 +1,19 @@
 import type {
   ContractorAgencySpec,
+  EmployeeJobSpec,
   FoundationData,
+  HolidaySpec,
+  MaterialTaxonomySpec,
+  PartnerSpec,
   PlantSpec,
   PrinterRouteSpec,
   ProcedureSpec,
   ProcedureStepSpec,
   ShelfSpec,
   ShiftSpec,
-  WarehouseSpec
+  TagSpec,
+  WarehouseSpec,
+  WorkCenterSpec
 } from "../../types.ts";
 
 // ---------------------------------------------------------------------------
@@ -115,6 +121,26 @@ export const WORK_CENTER_PROCESS_LINKS: Array<[string, string]> = [
   ["Inspection Bench", "Final Inspection"],
   ["Inspection Bench", "Burn-In Test"]
 ];
+
+export const WORK_CENTER_SHIFTS: Array<[string, string]> = [
+  ["CNC Mill Cell", "First Shift"],
+  ["Gearbox Bench", "First Shift"],
+  ["SMT Line", "First Shift"],
+  ["SMT Line", "Second Shift"],
+  ["Harness Bench", "First Shift"],
+  ["Integration Cell 1", "First Shift"],
+  ["Integration Cell 1", "Weekend Shift"],
+  ["Burn-In Rack", "First Shift"],
+  ["Burn-In Rack", "Second Shift"],
+  ["Inspection Bench", "First Shift"]
+];
+
+export const EMPLOYEE_JOB: EmployeeJobSpec = {
+  title: "Cell Lead",
+  department: "Assembly & Integration",
+  shift: "First Shift",
+  startDateOffset: -910
+};
 
 export const PLANT: PlantSpec = {
   name: "Robotics Assembly Plant",
@@ -323,6 +349,37 @@ export const SUPPLIERS = [
     type: "Services",
     phone: "+1-919-555-1100",
     website: "https://vertexcal.com"
+  },
+  // Status showcases + the EUR vendor. None of these may be referenced by
+  // purchasing data — they exist so every supplier status renders somewhere.
+  {
+    name: "Allegheny Gearworks",
+    type: "Motion Control",
+    phone: "+1-412-555-1200",
+    website: "https://alleghenygear.com",
+    status: "Inactive" as const
+  },
+  {
+    name: "Voltaic Drive Systems",
+    type: "Electronics",
+    phone: "+1-614-555-1300",
+    website: "https://voltaicdrives.com",
+    status: "Pending" as const
+  },
+  {
+    name: "Discount Servo Supply",
+    type: "Motion Control",
+    phone: "+1-216-555-1400",
+    website: "https://discountservo.com",
+    status: "Rejected" as const
+  },
+  {
+    name: "Schwarzwald Antriebstechnik GmbH",
+    type: "Motion Control",
+    phone: "+49-761-555-1500",
+    website: "https://schwarzwald-antrieb.de",
+    status: "Active" as const,
+    currencyCode: "EUR"
   }
 ];
 
@@ -375,6 +432,34 @@ export const SUPPLIER_CONTACTS = [
     lastName: "Halvorsen",
     email: "ihalvorsen@vertexcal.com",
     title: "Service Coordinator"
+  },
+  {
+    supplier: "Allegheny Gearworks",
+    firstName: "Stan",
+    lastName: "Kubiak",
+    email: "skubiak@alleghenygear.com",
+    title: "Sales Manager"
+  },
+  {
+    supplier: "Voltaic Drive Systems",
+    firstName: "Renee",
+    lastName: "Castillo",
+    email: "rcastillo@voltaicdrives.com",
+    title: "Business Development"
+  },
+  {
+    supplier: "Discount Servo Supply",
+    firstName: "Terry",
+    lastName: "Mullins",
+    email: "tmullins@discountservo.com",
+    title: "Account Executive"
+  },
+  {
+    supplier: "Schwarzwald Antriebstechnik GmbH",
+    firstName: "Jürgen",
+    lastName: "Baumann",
+    email: "j.baumann@schwarzwald-antrieb.de",
+    title: "Export Sales"
   }
 ];
 
@@ -388,6 +473,27 @@ export const SUPPLIER_PROCESSES = [
   // Backs the outside-processing (hard anodize) step on the arm base.
   { supplier: "Kappa Contract Machining", process: "Outside Processing" }
 ];
+
+export const PARTNERS: PartnerSpec[] = [
+  {
+    supplier: "Kappa Contract Machining",
+    ability: "CNC Machining",
+    hoursPerWeek: 40
+  },
+  {
+    supplier: "Vertex Calibration Services",
+    ability: "Inspection",
+    hoursPerWeek: 16
+  }
+];
+
+export const HQ_WORK_CENTER: WorkCenterSpec = {
+  name: "Customer Demo Cell",
+  dept: "Engineering",
+  ability: "Robot Programming",
+  laborRate: 85,
+  machineRate: 40
+};
 
 export const CONTRACTORS = [
   {
@@ -449,10 +555,15 @@ export const PROCEDURES: ProcedureSpec[] = [
     process: "Gearbox Assembly",
     description:
       "Assembly and torque procedure for the J1 base and column of the Vertex 10 arm.",
+    parameters: [
+      { key: "J1 bolt torque", value: "45 N·m (M8 A2-70)" },
+      { key: "Gearbox grease fill", value: "12 g EP-2 per joint" },
+      { key: "Thread locker", value: "Loctite 243 on base bolts" }
+    ],
     versions: [
       {
         version: 1,
-        status: "Draft",
+        status: "Archived",
         steps: [
           {
             name: "Verify base kit against the pick list",
@@ -471,7 +582,7 @@ export const PROCEDURES: ProcedureSpec[] = [
           }
         ]
       },
-      { version: 2, status: "Draft", steps: ARM_BASE_STEPS_V2 }
+      { version: 2, status: "Active", steps: ARM_BASE_STEPS_V2 }
     ]
   },
   {
@@ -482,7 +593,7 @@ export const PROCEDURES: ProcedureSpec[] = [
     versions: [
       {
         version: 1,
-        status: "Draft",
+        status: "Active",
         steps: [
           {
             name: "Stage subassemblies at the integration cell",
@@ -526,6 +637,11 @@ export const PROCEDURES: ProcedureSpec[] = [
     process: "Burn-In Test",
     description:
       "Twenty-four hour duty-cycle burn-in and repeatability check for an integrated arm.",
+    parameters: [
+      { key: "Burn-in duration", value: "24 h" },
+      { key: "Chamber ambient", value: "40 °C" },
+      { key: "Repeatability limit", value: "±0.02 mm" }
+    ],
     versions: [
       {
         version: 1,
@@ -557,6 +673,26 @@ export const PROCEDURES: ProcedureSpec[] = [
             type: "Checkbox",
             instruction:
               "Run the ISO 9283 pose set immediately after the burn-in and confirm every axis stays inside +/- 0.03 mm."
+          },
+          {
+            name: "Stamp burn-in completion time",
+            type: "Timestamp",
+            instruction:
+              "Record the moment the 24-hour duty cycle completes — the cool-down clock for the at-temperature repeatability window starts here."
+          },
+          {
+            name: "Attach burn-in data log",
+            type: "File",
+            instruction:
+              "Export the joint temperature and following-error log from the burn-in rack controller and attach it to the test record.",
+            fileTypes: ["csv", "pdf"]
+          },
+          {
+            name: "Post-burn-in workmanship inspection",
+            type: "Inspection",
+            instruction:
+              "Inspect harness dress points, cover seams and gearbox output seals for heat or vibration damage. Photograph any finding.",
+            required: false
           }
         ]
       }
@@ -600,11 +736,72 @@ export const NO_QUOTE_REASONS = [
   "Strategic Hold"
 ];
 
+// Offsets are positive (upcoming) and distinct — holiday has UNIQUE (date).
+export const HOLIDAYS: HolidaySpec[] = [
+  { name: "Founders Day", dateOffset: 40 },
+  { name: "Automation Expo Shutdown", dateOffset: 100 },
+  { name: "Year-End Shutdown", dateOffset: 160 }
+];
+
+export const TAGS: TagSpec[] = [
+  { name: "Safety Critical", table: "operation" },
+  { name: "CE Marked", table: "procedure" },
+  { name: "Robot Cell Certified", table: "training" },
+  { name: "ESD Sensitive", table: "material" },
+  { name: "Calibrated", table: "tool" }
+];
+
+// Names deliberately avoid the GLOBAL substances/forms migrations seed (Steel,
+// Aluminum, Sheet, Plate, …) so the settings screens don't show duplicates.
+export const MATERIAL_TAXONOMY: MaterialTaxonomySpec = {
+  substances: [
+    { name: "Polyoxymethylene", code: "POM" },
+    // Backs the servo cable classification on MAT-CBL-16AWG (items.ts).
+    { name: "Copper Conductor", code: "CU" },
+    // Backs the solder paste classification on MAT-SOLDER-PST (items.ts).
+    { name: "Solder Alloy", code: "SAC" }
+  ],
+  forms: [
+    { name: "Extruded Profile", code: "EXTPROF" },
+    { name: "Cable Spool", code: "CBLSPOOL" }
+  ],
+  types: [
+    {
+      name: "POM Extruded Profile",
+      code: "POM-EXT",
+      substance: "Polyoxymethylene",
+      form: "Extruded Profile"
+    },
+    {
+      name: "Shielded Servo Cable",
+      code: "CU-SRVCBL",
+      substance: "Copper Conductor",
+      form: "Cable Spool"
+    }
+  ],
+  grades: [
+    { name: "Delrin 150", substance: "Polyoxymethylene" },
+    { name: "Delrin AF", substance: "Polyoxymethylene" },
+    { name: "16 AWG Tinned", substance: "Copper Conductor" },
+    { name: "SAC305", substance: "Solder Alloy" }
+  ],
+  finishes: [
+    { name: "Machined Smooth", substance: "Polyoxymethylene" },
+    { name: "PUR Jacket", substance: "Copper Conductor" }
+  ],
+  dimensions: [
+    { name: "40 x 40mm", form: "Extruded Profile", isMetric: true },
+    { name: "80 x 40mm", form: "Extruded Profile", isMetric: true },
+    { name: "16 AWG x 4 Core", form: "Cable Spool", isMetric: false }
+  ]
+};
+
 export const roboticsFoundation: FoundationData = {
   departments: DEPT_NAMES,
   abilities: ABILITIES,
   processes: PROCESSES,
   workCenters: WORK_CENTERS,
+  hqWorkCenter: HQ_WORK_CENTER,
   customers: CUSTOMERS,
   customerContacts: CUSTOMER_CONTACTS,
   suppliers: SUPPLIERS,
@@ -620,12 +817,18 @@ export const roboticsFoundation: FoundationData = {
   costCenters: COST_CENTERS,
   noQuoteReasons: NO_QUOTE_REASONS,
   contractors: CONTRACTORS,
+  partners: PARTNERS,
   plant: PLANT,
   shifts: SHIFTS,
+  workCenterShifts: WORK_CENTER_SHIFTS,
+  employeeJob: EMPLOYEE_JOB,
   warehouses: WAREHOUSES,
   storageTypes: STORAGE_TYPES,
   shelves: SHELVES,
   printerRoute: PRINTER_ROUTE,
+  holidays: HOLIDAYS,
+  tags: TAGS,
+  materialTaxonomy: MATERIAL_TAXONOMY,
   defaultShippingMethod: "UPS Ground",
   contractorAgency: CONTRACTOR_AGENCY,
   partyAddressCity: "Pittsburgh",

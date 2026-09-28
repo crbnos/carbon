@@ -10,13 +10,13 @@ import {
   RATE_LIMIT
 } from "@carbon/auth";
 import {
-  botIdEnabled,
+  botProtection,
   getMagicLinkErrorMessage,
   logAuthEvent,
   sendMagicLink,
   signInWithBypassEmail,
   verifyAuthSession,
-  verifyBotId
+  verifyBotProtection
 } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import {
@@ -38,11 +38,11 @@ import {
   ItarLoginDisclaimer,
   Separator,
   toast,
-  useBotIdProtection,
+  useBotProtection,
   useMount,
   VStack
 } from "@carbon/react";
-import { Edition } from "@carbon/utils";
+import { Edition, getClientIp } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import {
   browserSupportsWebAuthn,
@@ -87,7 +87,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
         hasGoogleAuth,
         hasPasskeyAuth,
         hasSsoAuth,
-        botIdEnabled
+        botProtection
       },
       { headers: cookieHeaders }
     );
@@ -98,13 +98,13 @@ export async function loader({ request }: LoaderFunctionArgs) {
     hasGoogleAuth,
     hasPasskeyAuth,
     hasSsoAuth,
-    botIdEnabled
+    botProtection
   };
 }
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const ip = request.headers.get("x-forwarded-for") ?? "127.0.0.1";
+  const ip = getClientIp(request) ?? "127.0.0.1";
   const ratelimit = new Ratelimit({
     redis,
     limiter: Ratelimit.slidingWindow(RATE_LIMIT, "1 h"),
@@ -127,9 +127,13 @@ export async function action({ request }: ActionFunctionArgs) {
     return error(validation.error, "Invalid email address");
   }
 
-  const { email } = validation.data;
+  const { email, botToken } = validation.data;
 
-  const botError = await verifyBotId(ip, email);
+  const botError = await verifyBotProtection({
+    token: botToken,
+    ip,
+    actor: email
+  });
   if (botError) {
     return data(
       error(null, botError),
@@ -241,9 +245,8 @@ export default function LoginRoute() {
     hasGoogleAuth,
     hasPasskeyAuth,
     hasSsoAuth,
-    botIdEnabled
+    botProtection
   } = useLoaderData<typeof loader>();
-  useBotIdProtection("/login", botIdEnabled);
 
   const [searchParams] = useSearchParams();
   const redirectTo = searchParams.get("redirectTo") ?? undefined;
@@ -252,6 +255,7 @@ export default function LoginRoute() {
   const fetcher = useFetcher<
     { success: true } | { success: false; message: string }
   >();
+  const bot = useBotProtection("/login", botProtection, fetcher.data);
 
   const [passkeySupported, setPasskeySupported] = useState(false);
   const [passkeyLoading, setPasskeyLoading] = useState(false);
@@ -497,6 +501,7 @@ export default function LoginRoute() {
             onSubmit={onSubmitEmail}
           >
             <Hidden name="redirectTo" value={redirectTo} type="hidden" />
+            <Hidden name="botToken" value={bot.token} />
             <VStack spacing={2}>
               {((fetcher.data?.success === false && fetcher.data?.message) ||
                 ssoError) && (
@@ -571,7 +576,9 @@ export default function LoginRoute() {
               />
 
               <Submit
-                isDisabled={fetcher.state !== "idle" || ssoLoading}
+                isDisabled={
+                  fetcher.state !== "idle" || ssoLoading || !bot.ready
+                }
                 isLoading={fetcher.state === "submitting" || ssoLoading}
                 hideShortcutKey
                 size="lg"
@@ -581,6 +588,7 @@ export default function LoginRoute() {
               >
                 <Trans>Continue</Trans>
               </Submit>
+              {bot.challenge}
             </VStack>
           </ValidatedForm>
         )}

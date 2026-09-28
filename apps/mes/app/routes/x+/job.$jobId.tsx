@@ -1,9 +1,10 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
+import { getLogger } from "@carbon/logger";
 import { Heading, SidebarTrigger } from "@carbon/react";
 import { LuArrowLeft } from "react-icons/lu";
 import type { LoaderFunctionArgs } from "react-router";
-import { Link, useLoaderData } from "react-router";
+import { Link, redirect, useLoaderData } from "react-router";
 import { JobDag } from "~/components/JobDag";
 import {
   getJobOperationDependencies,
@@ -11,21 +12,39 @@ import {
 } from "~/services/operations.service";
 import { path } from "~/utils/path";
 
+const logger = getLogger("mes", "job-dag");
+
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  await requirePermissions(request, {});
+  const { companyId } = await requirePermissions(request, {});
   const serviceRole = getCarbonServiceRole();
 
   const { jobId } = params;
   if (!jobId) throw new Error("Could not find jobId");
 
-  const [job, operations, dependencies] = await Promise.all([
-    serviceRole.from("jobs").select("jobId").eq("id", jobId).single(),
+  // Service-role reads below are keyed on jobId alone, so the job must be
+  // verified as this company's before any of them run.
+  const job = await serviceRole
+    .from("job")
+    .select("jobId")
+    .eq("id", jobId)
+    .eq("companyId", companyId)
+    .maybeSingle();
+  if (!job.data) {
+    logger.warn("Job not found in company", {
+      companyId,
+      jobId,
+      error: job.error
+    });
+    throw redirect(path.to.jobs);
+  }
+
+  const [operations, dependencies] = await Promise.all([
     getJobOperations(serviceRole, jobId),
     getJobOperationDependencies(serviceRole, jobId)
   ]);
 
   return {
-    readableId: job.data?.jobId ?? jobId,
+    readableId: job.data.jobId ?? jobId,
     operations: operations.data ?? [],
     dependencies: dependencies.data ?? []
   };

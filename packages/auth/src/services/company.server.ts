@@ -7,6 +7,12 @@ import { getCookieDomain } from "../utils/cookie";
 const cookieName = "companyId";
 const isTestEdition = CarbonEdition === Edition.Test;
 const cookieDomain = isTestEdition ? undefined : getCookieDomain(DOMAIN);
+// The same SameSite/Secure rules as the session cookie.
+const attributes = {
+  domain: cookieDomain,
+  sameSite: isTestEdition ? ("none" as const) : ("lax" as const),
+  secure: isTestEdition || !!cookieDomain
+};
 
 export function getCompanyId(request: Request): string | null {
   const cookieHeader = request.headers.get("Cookie");
@@ -19,14 +25,14 @@ export function setCompanyId(companyId: string | null) {
     return cookie.serialize(cookieName, "", {
       path: "/",
       expires: new Date(0),
-      domain: cookieDomain
+      ...attributes
     });
   }
 
   return cookie.serialize(cookieName, companyId, {
     path: "/",
     maxAge: 31536000, // 1 year
-    domain: cookieDomain
+    ...attributes
   });
 }
 

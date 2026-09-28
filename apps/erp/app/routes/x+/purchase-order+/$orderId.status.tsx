@@ -14,6 +14,7 @@ import {
   reopenPurchaseOrderAsRevision,
   updatePurchaseOrderStatus
 } from "~/modules/purchasing";
+import { requireCompanyRecord } from "~/modules/shared/shared.server";
 import { getDatabaseClient } from "~/services/database.server";
 import { path, requestReferrer } from "~/utils/path";
 
@@ -91,6 +92,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   const serviceRole = getCarbonServiceRole();
 
+  // The approval writes below go through the service role, keyed on the URL's
+  // id: the purchase order must belong to this company first.
+  await requireCompanyRecord(serviceRole, "purchaseOrder", companyId, { id });
+
   // Cancel pending approval requests when closing the PO
   // Closed POs are terminal - no approvals should remain pending
   // Note: Approved/Rejected requests are NOT cancelled - they serve as audit trail
@@ -106,6 +111,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
       })
       .eq("documentType", "purchaseOrder")
       .eq("documentId", id)
+      .eq("companyId", companyId)
       .eq("status", "Pending")
       .select("id");
 
@@ -125,6 +131,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
       .select("*")
       .eq("documentType", "purchaseOrder")
       .eq("documentId", id)
+      .eq("companyId", companyId)
       .eq("status", "Pending");
 
     if (pendingApprovals.data && pendingApprovals.data.length > 0) {
@@ -139,6 +146,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
           })
           .eq("documentType", "purchaseOrder")
           .eq("documentId", id)
+          .eq("companyId", companyId)
           .eq("status", "Pending");
       } else if (currentStatus === "Needs Approval") {
         // Security check: Only allow reopening if user is the requester OR an approver
@@ -180,6 +188,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
           })
           .eq("documentType", "purchaseOrder")
           .eq("documentId", id)
+          .eq("companyId", companyId)
           .eq("status", "Pending");
       }
     }

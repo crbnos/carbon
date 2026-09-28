@@ -1,3 +1,4 @@
+import "./zod.client";
 import { CONTROLLED_ENVIRONMENT, error, getBrowserEnv } from "@carbon/auth";
 import { flashClientMiddleware } from "@carbon/auth/middleware/flash.client";
 import {
@@ -5,6 +6,7 @@ import {
   flashMiddleware,
   flashResultContext
 } from "@carbon/auth/middleware/flash.server";
+import { securityMiddleware } from "@carbon/auth/middleware/security.server";
 import { validator } from "@carbon/form";
 import { requestIdMiddleware } from "@carbon/logger/middleware.server";
 import { Button, Heading, Toaster, useMode } from "@carbon/react";
@@ -13,6 +15,7 @@ import { modeValidator, themes } from "@carbon/utils";
 import { faviconLinks } from "@carbon/utils/favicon";
 import { Analytics } from "@vercel/analytics/react";
 import type React from "react";
+import { useContext } from "react";
 import type {
   ActionFunctionArgs,
   LinksFunction,
@@ -27,6 +30,7 @@ import {
   Outlet,
   Scripts,
   ScrollRestoration,
+  UNSAFE_FrameworkContext,
   useLoaderData
 } from "react-router";
 import { getMode, setMode } from "~/services/mode.server";
@@ -35,7 +39,11 @@ import NProgress from "~/styles/nprogress.css?url";
 import Tailwind from "~/styles/tailwind.css?url";
 import { getTheme } from "./services/theme.server";
 
-export const middleware = [requestIdMiddleware, flashMiddleware];
+export const middleware = [
+  requestIdMiddleware,
+  securityMiddleware,
+  flashMiddleware
+];
 export const clientMiddleware = [flashClientMiddleware];
 
 export const links: LinksFunction = () => [
@@ -176,6 +184,7 @@ function Document({
 }
 
 export default function App() {
+  const nonce = useContext(UNSAFE_FrameworkContext)?.nonce;
   const loaderData = useLoaderData<typeof loader>();
   const env = loaderData?.env ?? {};
   const theme = loaderData?.theme ?? "zinc";
@@ -187,6 +196,9 @@ export default function App() {
     <Document mode={mode} theme={theme}>
       <Outlet />
       <script
+        // Server render only: on the client the nonce is undefined (and browsers hide it).
+        nonce={nonce}
+        suppressHydrationWarning
         dangerouslySetInnerHTML={{
           __html: `window.env = ${JSON.stringify(env)}`
         }}

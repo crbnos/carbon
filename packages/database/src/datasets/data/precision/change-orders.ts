@@ -64,6 +64,73 @@ export const CHANGE_ORDERS: ChangeOrderSpec[] = [
         sortOrder: 1
       }
     ]
+  },
+  // Lifecycle-only notices: no affected items yet (every change type spins a
+  // method draft), so they exercise the stage flow + action tasks alone.
+  {
+    ref: "co:start",
+    name: "Add lead-in chamfer to the pump housing needle-bearing bore",
+    type: "Engineering",
+    changeOrderType: "Design Improvement",
+    status: "Start",
+    priority: "Medium",
+    openDateOffset: -10,
+    dueDateOffset: 30,
+    reasonForChange:
+      "Assembly is shaving the drawn cup on press-in because the bore has only a break-edge; a 15° lead-in chamfer would guide the cup square.",
+    affectedItems: [],
+    actionTasks: [
+      { action: "Engineering Review", status: "In Progress", dueDateOffset: 5 },
+      { action: "Update Drawings / CAD", status: "Pending", dueDateOffset: 20 }
+    ]
+  },
+  {
+    ref: "co:eng-complete",
+    name: "Add 100% ring-gauge check of HK1512 cup OD to the receiving plan",
+    type: "Manufacturing",
+    changeOrderType: "Quality / Reliability Improvement",
+    status: "Engineering Complete",
+    priority: "High",
+    openDateOffset: -58,
+    dueDateOffset: 14,
+    reasonForChange:
+      "The Midway needle-bearing escape showed an AQL sample of three cannot reliably catch an oversize drawn cup before it reaches the press.",
+    nonConformance: "ncr:needle-od",
+    affectedItems: [],
+    actionTasks: [
+      {
+        action: "Quality Review",
+        status: "Completed",
+        dueDateOffset: -44,
+        completedOffset: -46
+      },
+      {
+        action: "Notify Affected Parties",
+        status: "In Progress",
+        dueDateOffset: 7
+      }
+    ]
+  },
+  {
+    ref: "co:cancelled",
+    name: "Correct the port thread callout on the manifold end cap drawing",
+    type: "Documentation",
+    changeOrderType: "Documentation Error / Correction",
+    status: "Cancelled",
+    priority: "Low",
+    openDateOffset: -130,
+    reasonForChange:
+      "Cedar Valley flagged a 1/4 NPT vs. SAE-6 ORB mismatch on MCH-END-CAP; their copy turned out to be a superseded print and our drawing was already correct.",
+    affectedItems: [],
+    actionTasks: [
+      {
+        action: "Engineering Review",
+        status: "Completed",
+        dueDateOffset: -120,
+        completedOffset: -124
+      },
+      { action: "Update Drawings / CAD", status: "Skipped" }
+    ]
   }
 ];
 

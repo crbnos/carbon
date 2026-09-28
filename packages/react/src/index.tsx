@@ -27,7 +27,7 @@ import {
 import type { BadgeProps } from "./Badge";
 import { Badge, BadgeCloseButton } from "./Badge";
 import { BarProgress } from "./BarProgress";
-import { useBotIdProtection } from "./BotId";
+import { useBotProtection } from "./BotProtection";
 import {
   BottomSheet,
   BottomSheetBody,
@@ -40,6 +40,7 @@ import {
 } from "./BottomSheet";
 import type { ButtonProps } from "./Button";
 import { Button, buttonVariants } from "./Button";
+import { CarbonPulse } from "./CarbonPulse";
 import {
   Card,
   CardAction,
@@ -181,7 +182,6 @@ import { Kbd } from "./Kbd";
 import { Label } from "./Label";
 import { LabelWithHelp } from "./LabelWithHelp";
 import { Loading } from "./Loading";
-import { LoadingBars } from "./LoadingBars";
 import {
   Menu,
   MenuCheckboxItem,
@@ -495,7 +495,7 @@ export {
   Label,
   LabelWithHelp,
   Loading,
-  LoadingBars,
+  CarbonPulse,
   Menu,
   MenuCheckboxItem,
   MenuGroup,
@@ -655,7 +655,7 @@ export {
   reactNodeToString,
   shortcutKeyVariants,
   toast,
-  useBotIdProtection,
+  useBotProtection,
   useModalCardType,
   useModalDrawerType,
   useOperatingSystem,

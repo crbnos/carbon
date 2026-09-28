@@ -51,7 +51,12 @@ export default $config({
         ASSEMBLER_SERVICE_API_KEY: process.env.ASSEMBLER_SERVICE_API_KEY,
         ASSEMBLER_SERVICE_URL: process.env.ASSEMBLER_SERVICE_URL,
         AUTH_PROVIDERS: process.env.AUTH_PROVIDERS,
+        BOT_PROTECTION: process.env.BOT_PROTECTION,
         CARBON_EDITION: process.env.CARBON_EDITION,
+        CLOUDFLARE_TURNSTILE_SECRET_KEY:
+          process.env.CLOUDFLARE_TURNSTILE_SECRET_KEY,
+        CLOUDFLARE_TURNSTILE_SITE_KEY:
+          process.env.CLOUDFLARE_TURNSTILE_SITE_KEY,
         CONTROLLED_ENVIRONMENT: process.env.CONTROLLED_ENVIRONMENT,
         DOMAIN: process.env.DOMAIN ?? "carbon.ms",
         ERP_URL: process.env.URL_ERP ? `https://${process.env.URL_ERP}` : "https://itar.carbon.ms",
@@ -159,7 +164,12 @@ export default $config({
         ASSEMBLER_SERVICE_API_KEY: process.env.ASSEMBLER_SERVICE_API_KEY,
         ASSEMBLER_SERVICE_URL: process.env.ASSEMBLER_SERVICE_URL,
         AUTH_PROVIDERS: process.env.AUTH_PROVIDERS,
+        BOT_PROTECTION: process.env.BOT_PROTECTION,
         CARBON_EDITION: process.env.CARBON_EDITION,
+        CLOUDFLARE_TURNSTILE_SECRET_KEY:
+          process.env.CLOUDFLARE_TURNSTILE_SECRET_KEY,
+        CLOUDFLARE_TURNSTILE_SITE_KEY:
+          process.env.CLOUDFLARE_TURNSTILE_SITE_KEY,
         CONTROLLED_ENVIRONMENT: process.env.CONTROLLED_ENVIRONMENT,
         DOMAIN: process.env.DOMAIN ?? "carbon.ms",
         ERP_URL: process.env.URL_ERP ? `https://${process.env.URL_ERP}` : "https://itar.carbon.ms",

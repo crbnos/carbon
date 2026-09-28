@@ -1,23 +1,13 @@
 import { assertSingle, insertId, insertMaybe, maybeOne } from "../sql.ts";
-import type { Ctx, ItemRef, ItemType } from "../types.ts";
-
-export type ItemSpec = {
-  readableId: string;
-  revision?: string;
-  name: string;
-  type: ItemType;
-  replenishment?: "Buy" | "Make" | "Buy and Make";
-  defaultMethodType?:
-    | "Pull from Inventory"
-    | "Purchase to Order"
-    | "Make to Order";
-  trackingType?: "Inventory" | "Non-Inventory" | "Serial" | "Batch";
-  unitOfMeasureCode?: string;
-  standardCost?: number;
-  unitSalePrice?: number;
-  leadTime?: number;
-  description?: string;
-};
+import type {
+  Ctx,
+  ItemRef,
+  ItemSpec,
+  ItemType,
+  MethodType,
+  OperationType
+} from "../types.ts";
+import { bootstrapIdByName } from "./bootstrap-lookup.ts";
 
 /**
  * Inserts an item and its positional extension row, then activates the
@@ -71,7 +61,9 @@ export async function createItem(ctx: Ctx, spec: ItemSpec): Promise<ItemRef> {
     thumbnailPath: ctx.dataset.industryId
       ? `_templates/${ctx.dataset.industryId}/${spec.readableId}.svg`
       : null,
-    active: true
+    active: spec.active ?? true,
+    // undefined is dropped by insertRow, keeping the column default.
+    revisionStatus: spec.revisionStatus
   });
 
   // The item interceptor creates itemCost, itemReplenishment, itemUnitSalePrice,
@@ -80,18 +72,45 @@ export async function createItem(ctx: Ctx, spec: ItemSpec): Promise<ItemRef> {
 
   // Positional extension row (part.id = readableId). All revisions share one row.
   const extensionTable = extensionTableFor(spec.type);
+  const classification = spec.material;
+  const lookup = (table: string, name: string | undefined) =>
+    name ? bootstrapIdByName(ctx, table, name) : undefined;
+  const taxonomy =
+    spec.type === "Material" && classification
+      ? {
+          materialSubstanceId: await lookup(
+            "materialSubstance",
+            classification.substance
+          ),
+          materialFormId: await lookup("materialForm", classification.form),
+          materialTypeId: await lookup(
+            "materialType",
+            classification.materialType
+          ),
+          gradeId: await lookup("materialGrade", classification.grade),
+          finishId: await lookup("materialFinish", classification.finish),
+          dimensionId: await lookup(
+            "materialDimension",
+            classification.dimension
+          )
+        }
+      : {};
   await insertMaybe(ctx, extensionTable, {
     id: spec.readableId,
     approved: true,
     companyId,
-    createdBy: userId
+    createdBy: userId,
+    ...taxonomy
   });
 
   // Apply cost/price/lead-time by UPDATE (not insert).
+  // unitCost too: FIFO valuation and calculateCOGS fall back to it for stock no
+  // cost layer covers (opening stock, job output).
   if (spec.standardCost !== undefined) {
     await client.query(
-      `UPDATE "itemCost" SET "standardCost" = $1 WHERE "itemId" = $2`,
-      [spec.standardCost, itemId]
+      `UPDATE "itemCost" SET "standardCost" = $1, "unitCost" = $1
+       WHERE "itemId" = $2 AND "companyId" = $3`,
+      [spec.standardCost, itemId, companyId]
     );
   }
   if (spec.unitSalePrice !== undefined) {
@@ -107,9 +126,8 @@ export async function createItem(ctx: Ctx, spec: ItemSpec): Promise<ItemRef> {
     );
   }
 
-  // For Part / Tool / Service the interceptor created a Draft makeMethod. Leave
-  // it Draft — Active freezes the BOM and BOP, and a demo company should be able
-  // to edit them without first cutting a new version.
+  // For Part / Tool / Service the interceptor created a Draft makeMethod; tier 02
+  // releases the authored ones (Active) once their BOM and BOP are written.
   let makeMethodId: string | null = null;
   if (["Part", "Tool", "Service"].includes(spec.type)) {
     const mmRow = await maybeOne<{ id: string }>(
@@ -185,17 +203,6 @@ export async function addBomLine(
   });
 }
 
-export type MethodType =
-  | "Make to Order"
-  | "Pull from Inventory"
-  | "Purchase to Order";
-
-export type OperationType =
-  | "Process"
-  | "Assembly"
-  | "Inspection"
-  | "Outside Processing";
-
 export async function addBopOperation(
   ctx: Ctx,
   makeMethodId: string,
@@ -215,6 +222,7 @@ export async function addBopOperation(
     operationLeadTime?: number;
     operationUnitCost?: number;
     procedureId?: string;
+    inspectionDocumentId?: string;
   } = {}
 ): Promise<string> {
   return insertId(ctx, "methodOperation", {
@@ -231,6 +239,7 @@ export async function addBopOperation(
     operationSupplierProcessId: opts.operationSupplierProcessId ?? null,
     operationLeadTime: opts.operationLeadTime ?? 0,
     operationUnitCost: opts.operationUnitCost ?? 0,
-    procedureId: opts.procedureId ?? null
+    procedureId: opts.procedureId ?? null,
+    inspectionDocumentId: opts.inspectionDocumentId ?? null
   });
 }

@@ -1,6 +1,7 @@
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { fetchAllFromTable } from "@carbon/database";
 import { isReminderItemStatus } from "@carbon/documents/email";
+import { STRIPE_BYPASS_COMPANY_IDS } from "@carbon/env";
 import {
   MAX_NOTIFICATION_DELIVERIES,
   NotificationEvent
@@ -18,18 +19,10 @@ export const weeklyFunction = inngest.createFunction(
 
       try {
         if (process.env.CARBON_EDITION === Edition.Cloud) {
-          const bypassUrl = `${process.env.VERCEL_URL}/api/settings/bypass`;
-          const bypassResponse = await fetch(bypassUrl);
-          if (!bypassResponse.ok) {
-            logger.error("Failed to fetch bypass list", {
-              statusText: bypassResponse.statusText
-            });
-            return;
-          }
-          const bypassData = (await bypassResponse.json()) as {
-            bypassList?: string[];
-          };
-          const bypassList = bypassData.bypassList ?? [];
+          const bypassList = (STRIPE_BYPASS_COMPANY_IDS ?? "")
+            .split(",")
+            .map((id) => id.trim())
+            .filter(Boolean);
 
           logger.info("Bypass list", { bypassList });
 

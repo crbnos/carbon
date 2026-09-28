@@ -6,7 +6,7 @@ import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { Database } from "@carbon/database";
 import { insertAuditLogEntries } from "@carbon/ee/audit.server";
 import { getLogger } from "@carbon/logger";
-import { datetime } from "@carbon/utils";
+import { datetime, getClientIp } from "@carbon/utils";
 import { parseAbsolute } from "@internationalized/date";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
@@ -81,11 +81,7 @@ export async function getItarCertificationStatus(
 }
 
 export function getRequestMeta(request: Request) {
-  const forwardedFor = request.headers.get("x-forwarded-for");
-  const ipAddress =
-    forwardedFor?.split(",")[0]?.trim() ||
-    request.headers.get("x-real-ip") ||
-    null;
+  const ipAddress = getClientIp(request);
   const userAgent = request.headers.get("user-agent") ?? null;
   return { ipAddress, userAgent };
 }

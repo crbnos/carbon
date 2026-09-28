@@ -3,6 +3,7 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { runLocationSchedule } from "@carbon/planning";
 import type { ActionFunctionArgs } from "react-router";
+import { requireCompanyRecord } from "~/modules/shared/shared.server";
 import { getDatabaseClient } from "~/services/database.server";
 
 export async function action({ request }: ActionFunctionArgs) {
@@ -18,6 +19,12 @@ export async function action({ request }: ActionFunctionArgs) {
   if (!locationId) {
     return { success: false, error: "A location is required to regenerate" };
   }
+
+  // The location id comes from the query string and the run below is
+  // privileged (Kysely + service role), so prove it is this company's first.
+  await requireCompanyRecord(getCarbonServiceRole(), "location", companyId, {
+    id: locationId
+  });
 
   // Regenerate the whole location's forecast IN-PROCESS (Node) rather than
   // round-tripping to the `schedule` edge function — no cold start, no HTTP hop.
