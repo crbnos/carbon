@@ -25,6 +25,7 @@ const spies = vi.hoisted(() => ({
   insertSalesOrder: vi.fn(),
   replaceInvoiceSettlements: vi.fn(),
   applyCreditsToInvoices: vi.fn(),
+  resolveIdentifierArgs: vi.fn(),
   FAKE_DB: { __kysely: true },
   FAKE_CLIENT: { __supabase: true }
 }));
@@ -76,6 +77,12 @@ vi.mock("~/modules/settings/settings.service", () => ({}));
 // these golden tests pin, so stub it as "no block".
 vi.mock("./sales-rules-gate.server", () => ({
   checkSalesRulesForOperation: vi.fn(async () => null)
+}));
+// Keyed-param resolution reads the database through the caller's client; its
+// own behavior is pinned by identifier-resolver.test.ts. Here it passes the
+// args through unless a case says otherwise.
+vi.mock("./identifier-resolver.server", () => ({
+  resolveIdentifierArgs: spies.resolveIdentifierArgs
 }));
 vi.mock("~/modules/shared/shared.service", () => ({}));
 vi.mock("~/modules/users/users.service", () => ({}));
@@ -163,6 +170,10 @@ beforeEach(() => {
     spy.mockReset();
     spy.mockResolvedValue({ data: null, error: null });
   }
+  spies.resolveIdentifierArgs.mockReset();
+  spies.resolveIdentifierArgs.mockImplementation(
+    async (_meta: unknown, _context: unknown, args: unknown) => args
+  );
 });
 
 describe("dispatchOperation service-call contract (golden, ex-executeFunction parity)", () => {
@@ -497,6 +508,46 @@ describe("dispatchOperation service-call contract (golden, ex-executeFunction pa
         ]
       ]
     ]);
+  });
+
+  it("k1. an entity-keyed param reaches the service as the id the resolver returns", async () => {
+    // A caller reading a list passes its readable number (the list rows'
+    // `quoteId` field); the service filters by record id.
+    spies.resolveIdentifierArgs.mockImplementation(
+      async (
+        _meta: unknown,
+        _context: unknown,
+        args: Record<string, unknown>
+      ) => ({ ...args, quoteId: "quote-record-id" })
+    );
+    const r = await runDispatch(
+      "sales_updateQuoteLineOrder",
+      spies.updateQuoteLineOrder,
+      { quoteId: "Q000004", updates: [{ id: "ql1", sortOrder: 1 }] }
+    );
+    const meta = operationsByName.get("sales_updateQuoteLineOrder");
+    expect(meta?.keys).toEqual({ quoteId: "quote" });
+    expect(spies.resolveIdentifierArgs).toHaveBeenCalledWith(meta, ctx, {
+      quoteId: "Q000004",
+      updates: [{ id: "ql1", sortOrder: 1 }]
+    });
+    expect(r.calls[0]?.[3]).toBe("quote-record-id");
+  });
+
+  it("k2. a key that resolves to nothing never reaches the service", async () => {
+    spies.resolveIdentifierArgs.mockRejectedValue(
+      new ORPCError("NOT_FOUND", { message: "No quote matches Q999" })
+    );
+    const r = await runDispatch(
+      "sales_updateQuoteLineOrder",
+      spies.updateQuoteLineOrder,
+      { quoteId: "Q999", updates: [] }
+    );
+    expect(r.calls).toEqual([]);
+    expect(r.dispatchError).toBeInstanceOf(ORPCError);
+    expect((r.dispatchError as ORPCError<string, unknown>).code).toBe(
+      "NOT_FOUND"
+    );
   });
 
   it("h3. a tenant key the caller nested one level down is overwritten, never added", () => {

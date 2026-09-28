@@ -31,6 +31,9 @@ export interface DigestEntry {
   permission: string;
   /** Whether the service pages itself — decides who applies limit/offset. */
   paginates: boolean;
+  /** Entity-keyed params the dispatcher resolves (`param:entity`, sorted);
+   *  absent when the operation has none. */
+  keys?: string;
 }
 
 export interface ManifestDigest {
@@ -99,7 +102,15 @@ export function buildManifestDigest(tools: ManifestEntry[]): ManifestDigest {
         permission: t.permission?.module
           ? `${t.permission.module}:${[...t.permission.actions].sort().join("+")}`
           : "none",
-        paginates: t.paginates
+        paginates: t.paginates,
+        ...(t.keys
+          ? {
+              keys: Object.entries(t.keys)
+                .map(([param, entity]) => `${param}:${entity}`)
+                .sort()
+                .join("+")
+            }
+          : {})
       }))
   };
 }
@@ -154,6 +165,9 @@ export function formatDigestDiff(diff: DigestDiff): string {
     }
     if (before.paginates !== after.paginates) {
       parts.push(`paginates ${before.paginates} → ${after.paginates}`);
+    }
+    if (before.keys !== after.keys) {
+      parts.push(`keys ${before.keys ?? "none"} → ${after.keys ?? "none"}`);
     }
     if (before.schema !== after.schema) parts.push("input schema changed");
     if (before.response !== after.response) {

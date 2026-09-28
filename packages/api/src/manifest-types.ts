@@ -46,6 +46,11 @@ export interface ManifestEntry {
    *  property is present here — that property IS the marker (there is no parallel
    *  flag), matching how the dispatcher decides today. */
   schema: Record<string, unknown>;
+  /** Entity-keyed params: param name → entity (a key of `IDENTIFIER_KEYS` in
+   *  the erp app's `mcp+/lib/identifier-keys.ts`). The param takes the record
+   *  id; the dispatcher also accepts the entity's readable number and resolves
+   *  it to the id before the service runs. Absent when the operation has none. */
+  keys?: Record<string, string>;
   /** The JSON Schema for the operation's RESPONSE `data`, reflected from the
    *  service function's TypeScript return type — absent when nothing useful could
    *  be derived (an `any`, a void, or an opaque shape). Describes the payload the

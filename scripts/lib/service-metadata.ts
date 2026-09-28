@@ -27,6 +27,11 @@ import {
 } from "./response-schema";
 import { getDbEnumValues, getDbTableTypeFields } from "./db-types";
 import {
+  deriveIdentifierContract,
+  type IdentifierFinding,
+  readableColumnUniverse
+} from "./identifier-contract";
+import {
   buildValidatorRegistry,
   CONTEXT_PARAMS,
   type ValidatorRegistry,
@@ -1319,6 +1324,34 @@ function addOperationArg(schema: Record<string, unknown>): void {
   schema.required = required;
 }
 
+/**
+ * Publish the identifier contract on each keyed param that is a top-level
+ * schema property, after any `/** doc *\/` the param already carries. Returns
+ * the params it published — a key the schema does not expose (a field inside
+ * an object payload) is not one the dispatcher can resolve.
+ */
+function describeKeyedParams(
+  schema: Record<string, unknown>,
+  descriptions: Record<string, string>
+): string[] {
+  const properties = schema.properties as
+    | Record<string, Record<string, unknown>>
+    | undefined;
+  const published: string[] = [];
+  for (const [param, contract] of Object.entries(descriptions)) {
+    const property = properties?.[param];
+    if (!property || property.type === "object") continue;
+    const own =
+      typeof property.description === "string" ? property.description : "";
+    properties[param] = {
+      ...property,
+      description: own ? `${own} ${contract}` : contract,
+    };
+    published.push(param);
+  }
+  return published;
+}
+
 function generateDescription(funcName: string): string {
   return funcName
     .replace(/([A-Z])/g, " $1")
@@ -1590,6 +1623,18 @@ export interface BuildOptions {
     validatorName: string,
     how: ValidatorResolution
   ) => void;
+  /** Called with every identifier-contract violation an operation shows
+   *  (see `identifier-contract.ts`); the guard test collects them. */
+  onIdentifierFinding?: (finding: IdentifierFinding) => void;
+  /** Called with each operation's parsed params and comment-stripped body. */
+  onOperationSource?: (source: OperationSource) => void;
+}
+
+/** One operation's signature and body, as the generator read them. */
+export interface OperationSource {
+  name: string;
+  params: Array<{ name: string; typeStr: string }>;
+  body: string;
 }
 
 /**
@@ -1598,6 +1643,7 @@ export interface BuildOptions {
  */
 export function buildAllToolMetadata(opts: BuildOptions = {}): ManifestEntry[] {
   const allTools: ManifestEntry[] = [];
+  const readableUniverse = readableColumnUniverse();
 
   for (const mod of MODULE_LIST) {
     let serviceFile = path.join(MODULES_DIR, mod, `${mod}.service.ts`);
@@ -1694,6 +1740,25 @@ export function buildAllToolMetadata(opts: BuildOptions = {}): ManifestEntry[] {
       const responseSchema = opts.responses?.get(mod, func.name) ?? undefined;
       const paginates = functionBodyPaginates(content, func.name);
 
+      const body = stripComments(extractFunctionBody(content, func.name) ?? "");
+      opts.onOperationSource?.({ name: toolName, params: func.params, body });
+      const identifiers = deriveIdentifierContract(
+        toolName,
+        func.params,
+        body,
+        readableUniverse
+      );
+      for (const finding of identifiers.findings) {
+        opts.onIdentifierFinding?.(finding);
+      }
+      const published = describeKeyedParams(schema, identifiers.descriptions);
+      const keys =
+        published.length > 0
+          ? Object.fromEntries(
+              published.map((param) => [param, identifiers.keys[param]])
+            )
+          : undefined;
+
       allTools.push({
         name: toolName,
         module: mod,
@@ -1705,6 +1770,7 @@ export function buildAllToolMetadata(opts: BuildOptions = {}): ManifestEntry[] {
         permission,
         paginates,
         schema,
+        ...(keys ? { keys } : {}),
         ...(responseSchema ? { responseSchema } : {}),
       });
       toolCount++;

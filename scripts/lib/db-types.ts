@@ -112,3 +112,44 @@ export function getDbTableTypeFields(
   }
   return fields.length > 0 ? fields : null;
 }
+
+export type DbRelation = { kind: "table" | "view"; columns: string[] };
+
+let cachedRelations: Map<string, DbRelation> | undefined;
+let cachedRelationsFor: string | null | undefined;
+
+/**
+ * Every `public` table and view with its Row column names, read from the
+ * generated types. Empty when the generated file is missing.
+ */
+export function getDbRelations(): Map<string, DbRelation> {
+  const content = typesContent();
+  if (cachedRelations && cachedRelationsFor === content) return cachedRelations;
+  const relations = new Map<string, DbRelation>();
+  cachedRelations = relations;
+  cachedRelationsFor = content;
+  if (!content) return relations;
+
+  const publicStart = content.indexOf("\n  public: {");
+  if (publicStart < 0) return relations;
+  const tablesStart = content.indexOf("\n    Tables: {", publicStart);
+  const viewsStart = content.indexOf("\n    Views: {", tablesStart);
+  const functionsStart = content.indexOf("\n    Functions: {", viewsStart);
+  if (tablesStart < 0 || viewsStart < 0 || functionsStart < 0) return relations;
+
+  const sections: Array<[DbRelation["kind"], string]> = [
+    ["table", content.slice(tablesStart, viewsStart)],
+    ["view", content.slice(viewsStart, functionsStart)]
+  ];
+  for (const [kind, section] of sections) {
+    for (const match of section.matchAll(
+      /\n {6}(\w+): \{\n {8}Row: \{\n([\s\S]*?)\n {8}\}/g
+    )) {
+      const columns = [...match[2].matchAll(/^ {10}(\w+)\??:/gm)].map(
+        (m) => m[1]
+      );
+      relations.set(match[1], { kind, columns });
+    }
+  }
+  return relations;
+}

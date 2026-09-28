@@ -11,6 +11,7 @@ import type { AuthField, ManifestEntry } from "@carbon/api";
 import { ORPCError } from "@orpc/server";
 import { getDatabaseClient } from "~/services/database.server";
 import type { AuthedContext } from "./base.server";
+import { resolveIdentifierArgs } from "./identifier-resolver.server";
 import { functionRegistry } from "./registry.server";
 import { checkSalesRulesForOperation } from "./sales-rules-gate.server";
 
@@ -268,7 +269,7 @@ export async function dispatchOperation(
       : undefined;
 
   // Strip the MCP `_operation` discriminator before the args reach the service.
-  const { operations: requestedOperations, args: normalizedArgs } =
+  const { operations: requestedOperations, args: operationArgs } =
     extractOperation(rawArgs);
 
   const funcName = meta.name.slice(meta.module.length + 1);
@@ -304,6 +305,15 @@ export async function dispatchOperation(
   const operation = needsOperation
     ? (requestedOperation as McpOperation)
     : undefined;
+
+  // Entity-keyed params (`meta.keys`) take the record id; a readable number
+  // (J000123, SO000001, an item's readable id) is resolved to it here, within
+  // the caller's company, so the service's `.eq("id", …)` finds the record.
+  const normalizedArgs = await resolveIdentifierArgs(
+    meta,
+    context,
+    operationArgs
+  );
 
   const functionArgs: any[] = [];
   for (const paramName of meta.serviceParams) {
