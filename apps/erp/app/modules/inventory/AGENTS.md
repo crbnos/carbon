@@ -67,10 +67,21 @@ pnpm exec turbo run typecheck --filter=erp   # the app's package name is "erp", 
 - `getAvailableTrackedEntities` — calls `get_available_tracked_entities` RPC
 - `getReceipts` / `getReceiptLines` / `reconcileReceiptSerialEntities` — receipt management
 - `getShipments` / `getShipmentLines` / `getShipmentRelatedItems` — shipment management
+- `upsertReceipt` / `upsertShipment` — header writes; only the form validator's fields (plus identity, audit, `customFields`). Status and posting columns move only through the posting edge functions.
+- `updateReceiptLines` / `updateShipmentLines` — the line grid's single-field save (`receivedQuantity` / `shippedQuantity` or `storageUnitId`)
 - `generatePickingList` / `getPickingListAvailability` / `getPickingSchedule` — picking operations
 - `getDefaultStorageUnitOrStorageUnitWithHighestQuantity` — picking defaults
 - `getTrackedEntities` / `getTrackedEntityExpirations` / `getShelfLifeForItems` — tracking and expiry
 - `generateInventoryCountLines` — Kysely; aggregates `itemLedger` on-hand into `inventoryCountLine` rows, scoped by the optional `storageUnitIds` + `itemType`. Excludes `Rejected` and `Consumed` tracked lots (status-aware, matching `quantityOnHand`); non-tracked rows (NULL status) always included. `getInventoryCountLines` reads the `inventoryCountLines` view (joins item + subtype tables on `id = item."readableId"` — the same predicate `get_inventory_quantities` uses, all LEFT — + `storageUnit`) so the detail table can apply generic column filters on flat columns.
+
+## Commands (`inventory.server.ts`, server-only)
+
+The create-from-source, header-edit, post and void bodies of the receipt/shipment routes, returning `CommandResult` (`~/utils/command-result`). The routes are parse → call → flash; `inventory.mcp.server.ts` publishes the same commands as MCP tools (re-applying the route's `requirePermissions` through `requireToolPermission`, since the commands use the service role). Change behaviour here, not in a route.
+
+- `createReceipt` / `createShipment` / `createSalesOrderLineShipment` — invoke the `create` edge function (lines copied from the source; one open Draft per return order)
+- `updateReceiptDetails` / `updateShipmentDetails` — header save; a changed source document or location rebuilds the document through `create`
+- `postReceipt` / `postShipment` — storage/over-receipt/sales rules (a block is data, `{ status: "blocked" }`), expired-batch policy, Pending flip, `post-receipt` / `post-shipment`, rollback to Draft, lead times, auto-print, workflow moment. `postShipment` files the packing slip only when given `renderPackingSlip` (the route)
+- `voidReceipt` / `voidShipment` — status guards, then the posting function with `type: "void"`
 
 ## Key Exports
 

@@ -531,14 +531,25 @@ the model context or the MCP dispatch.
   `upsertProductionEvent`), `settings` (custom-field definitions; the writes clear the redis
   cache), `quality` (inspection sample / measurement / Accept-Partial disposition — Reject stays
   route-only), `accounting` (`registerFixedAsset`, `disposeFixedAsset`, `postDepreciationRun`,
-  `createDepreciationRun`).
+  `createDepreciationRun`), `inventory` (`createReceipt`, `postReceipt`, `voidReceipt`,
+  `createShipment`, `createSalesOrderLineShipment`, `postShipment`, `voidShipment`, shadowing
+  `upsertReceipt` / `upsertShipment` so a header update with a changed source rebuilds the
+  document as the details forms do), `invoicing` (`postPayment`, `voidPayment`, `postMemo`,
+  `voidMemo`, `voidCardTransaction`; sales and purchase invoice post/void are still route-only).
 - **When the route action IS the command, extract it.** A tool that re-implements a route body
   drifts. Move the body into a `{module}.server.ts` command returning `CommandResult`
   (`~/utils/command-result`: `error.flash` is the route's unchanged toast, `error.message` adds an
   application refusal's reason for API callers, `error.cause` is logged by the route); the route
   becomes parse → call → flash, and the companion wraps the command with `toToolResult`, which
   turns the error into a `ruleError` so the caller reads it instead of the generic
-  database-failure text. Precedent: the fixed-asset commands in `accounting.server.ts`.
+  database-failure text. Precedents: the fixed-asset commands in `accounting.server.ts`; the
+  receipt/shipment commands in `inventory.server.ts` (a rule block is DATA,
+  `{ status: "blocked", violations }`, which the route returns to the violations modal and the
+  tool turns into a rule error that says whether `acknowledged: true` can override it; a
+  route-only input such as the shipment packing-slip renderer, which needs the browser request,
+  is an optional command argument the tool omits); the payment/memo/card-transaction commands in
+  `invoicing.server.ts`. An edge function's refusal reaches the API caller through
+  `getEdgeFunctionErrorMessage` (`errorResponse` never puts database errors in the body).
 - **Permission in a companion.** `gate()` checks scopes only for API keys; an OAuth MCP caller
   gets no tool-level check. A companion whose body (or a local function it calls) reaches
   `getDatabaseClient()`, `getCarbonServiceRole()` or a SECURITY DEFINER RPC bypasses RLS, so it
@@ -552,7 +563,15 @@ the model context or the MCP dispatch.
 - **Posting edge functions.** `test/mcp-registry-parity.test.ts` lists every
   `supabase/functions/post-*` (and `create`) and fails unless registry-reachable code invokes it
   or it is in `ROUTE_ONLY_POSTINGS` with the follow-up that will extract its route command. A
-  posting moved into a command removes its baseline entry.
+  posting moved into a command removes its baseline entry. The scan matches
+  `functions.invoke("<name>"` literally, so name the function at the call site, never through a
+  variable. `create` is reachable through the receipt/shipment commands, but its
+  `nonConformanceTasks` type is still invoked only from the issue and inspection-reject routes.
+- **Posting state is never a header field.** A document whose status moves through a posting
+  edge function (receipt, shipment, payment, memo) must not accept `status` or posting columns
+  through its upsert: the service writes only its form validator's fields (plus audit, identity
+  and `customFields`), and payment/memo updates match `status = 'Draft'` only. Otherwise a
+  caller can flip a document to Posted with no ledger, cost or journal rows.
 - **A same-named `{module}.mcp.server.ts` export SHADOWS the service function** —
   the generator dedupes by name (mcp wins, matching the runtime registry spread),
   so an orchestration wrapper can replace a bare service function without

@@ -2,6 +2,8 @@
 paths:
   - apps/erp/app/modules/inventory/ui/{Shipments,Receipts}/**
   - apps/erp/app/routes/x+/{shipment,receipt}+/**
+  - apps/erp/app/modules/inventory/inventory.server.ts
+  - apps/erp/app/modules/inventory/inventory.mcp.server.ts
   - packages/database/supabase/functions/{post-shipment,post-receipt,create}/**
 ---
 
@@ -15,10 +17,18 @@ only holds the two list routes `shipments.tsx` / `receipts.tsx`).
 
 ## Routes (per document, e.g. `shipment+/`)
 
+The create, details, post and void actions are thin: parse, call a command in
+`modules/inventory/inventory.server.ts`, flash/redirect. The commands hold the bodies
+(`createReceipt` / `createShipment` / `createSalesOrderLineShipment`, `updateReceiptDetails` /
+`updateShipmentDetails`, `postReceipt` / `postShipment`, `voidReceipt` / `voidShipment`) and
+return `CommandResult`; `inventory.mcp.server.ts` publishes the same commands as MCP tools.
+Change behaviour in the command, not the route, or the screen and the tool drift apart.
+
 - `new.tsx` — **action only**. Creates the doc by invoking the **`create` edge function**
   (`serviceRole.functions.invoke("create", { body: { type, companyId, locationId, ...sourceIds, userId } })`),
   then `throw redirect(path.to.shipmentDetails(id))`. There is **no `upsert` on create** — the
-  edge fn allocates the human ID and copies source-document lines.
+  edge fn allocates the human ID and copies source-document lines. (The sales order line Ship
+  action, `sales-order+/$orderId.$lineId.shipment.tsx`, does the same for one line.)
 - `$id.tsx` — layout loader: parallel `getShipment` / `getShipmentLines` / `getShipmentTracking`,
   plus fixed-asset lines (`shipmentFixedAssetLine`) and related items. Receipt also loads
   `getReceiptFiles`, `getBatchProperties`, `getShelfLifeForItems`, `companySettings`. Renders `<Outlet/>`.
@@ -28,8 +38,10 @@ only holds the two list routes `shipments.tsx` / `receipts.tsx`).
 - `$id.post.tsx` — see posting flow below.
 - `$id.void.tsx` — guards status, invokes post fn with `type: "void"`.
 - `$id.delete.tsx` — `deleteShipment` / `deleteReceipt` service fn; **guard: blocked once `postingDate` is set**.
-- `lines.update.tsx` — Supabase upsert on `shipmentLine`; only `storageUnitId` + `shippedQuantity`
-  (receipt: `receivedQuantity`). Item/storage rules are NOT evaluated here, only at post.
+- `lines.update.tsx` — `updateShipmentLines` / `updateReceiptLines` (service); only
+  `storageUnitId` + `shippedQuantity` (receipt: `receivedQuantity`). Item/storage rules are NOT
+  evaluated here, only at post. `upsertShipment` / `upsertReceipt` write only the header form's
+  fields — status and posting columns move only through the posting edge functions.
 - `lines.tracking.tsx` — writes `trackedEntity.attributes` (`"Shipment Line"`, `Shipment`, serial
   `"Shipment Line Index"`); guards entity status — `"Available"` normally, `"On Hold"` when the
   shipment's source is a Sales Return Order (returned stock ships back from hold); clears stale
@@ -77,13 +89,16 @@ Navigate via the typed `path.to.*` helpers (`shipmentDetails`, `shipment`, `ship
   expect `On Hold` rather than `Available` when the shipment's source is a
   `Sales Return Order` (see `expectedEntityStatus` in `ShipmentLines.tsx`).
 
-## Posting flow (`$id.post.tsx` → edge fn)
+## Posting flow (`$id.post.tsx` → `postShipment` / `postReceipt` → edge fn)
 
-The route action: evaluates storage/sales rules (`@carbon/ee/rules.server`) over the
-relevant surfaces, optimistically sets `status: "Pending"`, then
+The command: evaluates storage/sales rules (`@carbon/ee/rules.server`) over the
+relevant surfaces (a block is returned as data, `{ status: "blocked", violations, ruleNames }`,
+which the route hands to the violations modal), optimistically sets `status: "Pending"`, then
 `serviceRole.functions.invoke("post-shipment" | "post-receipt", { body: { type: "post", id, userId, companyId } })`.
-On error it reverts status to `Draft`. May then auto-print and (sales shipment) generate a packing
-slip PDF; receipt may invoke `update-purchased-prices` when `updateLeadTimesOnReceipt` is set.
+On error it reverts status to `Draft`. May then auto-print and (sales shipment) file a packing
+slip PDF — only when the caller passes `renderPackingSlip`, which needs the browser request, so
+the screen files one and the MCP tool does not; receipt may invoke `update-purchased-prices`
+when `updateLeadTimesOnReceipt` is set.
 
 `post-receipt` and `post-shipment` (`packages/database/supabase/functions/`) take
 `{ type: "post" | "void", {receipt,shipment}Id, userId, companyId }`, run under
