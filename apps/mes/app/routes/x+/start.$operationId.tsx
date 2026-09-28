@@ -16,6 +16,7 @@ import {
   getTrackedEntitiesByMakeMethodId,
   startProductionEvent
 } from "~/services/operations.service";
+import { generateFirstArticlesForStartedJob } from "~/services/quality.server";
 import { path } from "~/utils/path";
 
 const logger = getLogger("mes", "start-operation");
@@ -254,7 +255,13 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     },
     trackedEntityId || undefined,
     undefined,
-    "mes_qr"
+    "mes_qr",
+    (jobId) =>
+      generateFirstArticlesForStartedJob(serviceRole, {
+        jobId,
+        companyId,
+        userId
+      })
   );
 
   if (startEvent.error) {

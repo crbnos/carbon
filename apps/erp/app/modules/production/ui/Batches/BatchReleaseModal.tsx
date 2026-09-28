@@ -20,11 +20,13 @@ import Select from "~/components/Select";
 import SupplierAvatar from "~/components/SupplierAvatar";
 import { path } from "~/utils/path";
 import type { JobReleaseReadiness } from "../../production.service";
+import { FirstArticlePlanLinks } from "../Jobs/FirstArticlePlanLinks";
 
 // Releasing a batch releases its Draft/Planned member jobs, so this is the job
 // Release dialog for all of them at once: the same checks (every assembly has an
-// operation, manufacturing not blocked — any failure blocks the whole batch) and
-// the same purchase-order choice, made once per supplier across every job.
+// operation, every part needing a first article has a plan, manufacturing not
+// blocked — any failure blocks the whole batch) and the same purchase-order
+// choice, made once per supplier across every job.
 export function BatchReleaseModal({
   target,
   title,
@@ -69,6 +71,7 @@ export function BatchReleaseModal({
     (job) =>
       job.manufacturingBlocked ||
       job.missingAssemblies.length > 0 ||
+      job.firstArticlesWithoutPlan.length > 0 ||
       job.outsideOperationsWithoutSupplier.length > 0
   );
   const jobIds = (readiness?.jobs ?? []).map((job) => job.jobId);
@@ -112,32 +115,42 @@ export function BatchReleaseModal({
                       be ready for the floor.
                     </Trans>
                     <ul className="mt-2 list-disc pl-4 space-y-1">
-                      {blocked.map((job) => (
-                        <li key={job.id}>
-                          <Link
-                            to={path.to.job(job.id)}
-                            className="font-medium underline-offset-2 hover:underline"
-                          >
-                            {job.jobId}
-                          </Link>
-                          {" — "}
-                          {[
-                            job.manufacturingBlocked &&
-                              t`manufacturing is blocked`,
-                            job.missingAssemblies.length > 0 &&
-                              t`no operations on ${job.missingAssemblies
-                                .map((m) => m.description)
-                                .join(", ")}`,
-                            ...job.outsideOperationsWithoutSupplier.map((op) =>
-                              op.missing === "choose"
-                                ? t`choose a supplier for ${op.description} on the job`
-                                : t`${op.description} has no supplier`
-                            )
-                          ]
-                            .filter(Boolean)
-                            .join("; ")}
-                        </li>
-                      ))}
+                      {blocked.map((job) => {
+                        const reasons = [
+                          job.manufacturingBlocked &&
+                            t`manufacturing is blocked`,
+                          job.missingAssemblies.length > 0 &&
+                            t`no operations on ${job.missingAssemblies
+                              .map((m) => m.description)
+                              .join(", ")}`,
+                          ...job.outsideOperationsWithoutSupplier.map((op) =>
+                            op.missing === "choose"
+                              ? t`choose a supplier for ${op.description} on the job`
+                              : t`${op.description} has no supplier`
+                          )
+                        ].filter(Boolean);
+                        return (
+                          <li key={job.id}>
+                            <Link
+                              to={path.to.job(job.id)}
+                              className="font-medium underline-offset-2 hover:underline"
+                            >
+                              {job.jobId}
+                            </Link>
+                            {" — "}
+                            {reasons.join("; ")}
+                            {job.firstArticlesWithoutPlan.length > 0 && (
+                              <>
+                                {reasons.length > 0 && "; "}
+                                <Trans>assign a first article plan for</Trans>{" "}
+                                <FirstArticlePlanLinks
+                                  parts={job.firstArticlesWithoutPlan}
+                                />
+                              </>
+                            )}
+                          </li>
+                        );
+                      })}
                     </ul>
                   </AlertDescription>
                 </Alert>

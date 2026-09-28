@@ -93,13 +93,24 @@ Pattern: insert `trackedActivity`, then `trackedActivityInput` for each consumed
 ## How lineage is queried
 
 Per-entity strict RPCs (`20251231172218`, returns `readableId`):
-`get_direct_ancestors_of_tracked_entity_strict(p_tracked_entity_id)` (backward / "where from") and
-`get_direct_descendants_of_tracked_entity_strict(p_tracked_entity_id)` (forward / "where to").
+`get_direct_descendants_of_tracked_entity_strict(p_tracked_entity_id)` and
+`get_direct_ancestors_of_tracked_entity_strict(p_tracked_entity_id)`.
 Non-strict variants exist but include same-activity siblings — prefer strict.
+
+**The names read from the assembly DOWN, so they are the reverse of "where
+from / where to".** `…descendants…` finds the activity that OUTPUT the entity
+and returns that activity's INPUTS — the lots the part was made from, or the
+parent it was split from (backward, "where from"). `…ancestors…` finds the
+activities that took the entity as an INPUT and returns their OUTPUTS
+(forward, "where to"). The MES `getTrackedInputs` reads the descendants RPC as
+the inputs; `getCertificationLineage` walks descendants back to the received
+lots (see `quality-certification-documents.md`).
 
 **Batch variants** (`20260430090114`, take a `TEXT[]`, add a `sourceEntityId` output column):
 `get_direct_ancestors_of_tracked_entities_strict` / `get_direct_descendants_of_tracked_entities_strict`
-— one round-trip per BFS frontier instead of per node. The ERP graph view uses these.
+— one round-trip per BFS frontier instead of per node, same direction semantics. The ERP
+graph view uses these (`lineage.server.ts` records a descendants row's `id` as an INPUT and
+its `sourceEntityId` as an OUTPUT of `trackedActivityId`; an ancestors row the other way round).
 
 - Graph route: `apps/erp/app/routes/x+/traceability+/graph.tsx` → calls
   `fetchLineageSubgraph` / `fetchJobScopedLineage` in

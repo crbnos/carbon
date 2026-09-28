@@ -66,7 +66,12 @@ export default function BalloonNewRoute() {
 
   return (
     <InspectionDocumentForm
-      initialValues={{ name: "", partId: "", drawingNumber: "" }}
+      initialValues={{
+        name: "",
+        partId: "",
+        drawingNumber: "",
+        drawingRevision: ""
+      }}
       onClose={() => navigate(-1)}
     />
   );

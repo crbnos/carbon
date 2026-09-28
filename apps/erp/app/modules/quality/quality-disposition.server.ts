@@ -1043,10 +1043,12 @@ export async function closeIssue(
   const readableNc = issueResult.data.nonConformanceId ?? nonConformanceId;
   const locationId = issueResult.data.locationId;
 
-  // Non-tracked origin: an inspection-rejected Inventory lot was already written
+  // Non-tracked origin: an inspection-rejected RECEIPT lot was already written
   // off at reject (so Use As Is / Rework restores value); a MES/manual non-tracked
-  // scrap must be written off now. Detected via the NCR's inspection link (only
-  // the reject route creates one).
+  // scrap must be written off now. Detected via the NCR's inspection link — but
+  // only a Receipt inspection's reject writes stock off. A Job Operation or
+  // First Article reject links an inspection too and moves no stock, so
+  // treating it as "already written off" would restore phantom stock.
   const linklessRows = plan.filter((r) => r.links.length === 0);
   const inventoryItemIds = new Set<string>();
   let inspectionOriginated = false;
@@ -1060,9 +1062,10 @@ export async function closeIssue(
         .eq("companyId", companyId),
       client
         .from("nonConformanceInspection")
-        .select("id")
+        .select("id, inspection!inner(sourceDocument)")
         .eq("nonConformanceId", nonConformanceId)
         .eq("companyId", companyId)
+        .eq("inspection.sourceDocument", "Receipt")
         .limit(1)
     ]);
     for (const it of trackingRes.data ?? []) {

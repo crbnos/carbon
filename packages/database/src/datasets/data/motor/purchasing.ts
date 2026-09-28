@@ -298,6 +298,11 @@ export const PURCHASE_ORDERS: PurchaseOrderSpec[] = [
       lines: [
         {
           item: "MAT-CU-18AWG",
+          certificate: {
+            type: "Material",
+            certificateNumber: "CU-18-66310",
+            specification: "ASTM B3 annealed copper"
+          },
           orderQuantity: 120,
           outstandingQuantity: 0,
           receivedQuantity: 120,
@@ -310,6 +315,11 @@ export const PURCHASE_ORDERS: PurchaseOrderSpec[] = [
         },
         {
           item: "MAT-INS-NOMEX",
+          certificate: {
+            type: "Material",
+            certificateNumber: "NMX-410-2291",
+            specification: "Nomex 410"
+          },
           orderQuantity: 20,
           outstandingQuantity: 0,
           receivedQuantity: 20,
@@ -351,6 +361,11 @@ export const PURCHASE_ORDERS: PurchaseOrderSpec[] = [
       lines: [
         {
           item: "MAT-AL6061-BAR",
+          certificate: {
+            type: "Material",
+            certificateNumber: "HT-6061-88420",
+            specification: "AMS-QQ-A-225/8 T6511 bar"
+          },
           orderQuantity: 400,
           outstandingQuantity: 150,
           receivedQuantity: 250,

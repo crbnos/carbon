@@ -216,6 +216,27 @@ const ISSUE_MERGE_FIELDS: MergeField[] = [
   { token: "company.country", label: "Company Country", group: "Company" }
 ];
 
+const CERTIFICATE_OF_CONFORMANCE_MERGE_FIELDS: MergeField[] = [
+  {
+    token: "certificate.number",
+    label: "Certificate Number",
+    group: "Certificate"
+  },
+  {
+    token: "certificate.date",
+    label: "Certificate Date",
+    group: "Certificate"
+  },
+  {
+    token: "certificate.purchaseOrderNumber",
+    label: "Purchase Order Number",
+    group: "Certificate"
+  },
+  { token: "certificate.signer", label: "Signed By", group: "Certificate" },
+  { token: "customer.name", label: "Customer Name", group: "Customer" },
+  ...COMPANY_MERGE_FIELDS
+];
+
 const TRACKING_LABEL_MERGE_FIELDS: MergeField[] = [
   { token: "item.id", label: "Item ID", group: "Item" },
   { token: "item.revision", label: "Revision", group: "Item" },
@@ -237,6 +258,7 @@ export const MERGE_FIELDS: Record<string, MergeField[]> = {
   stockTransfer: STOCK_TRANSFER_MERGE_FIELDS,
   jobTraveler: JOB_TRAVELER_MERGE_FIELDS,
   issue: ISSUE_MERGE_FIELDS,
+  certificateOfConformance: CERTIFICATE_OF_CONFORMANCE_MERGE_FIELDS,
   trackingLabel: TRACKING_LABEL_MERGE_FIELDS
 };
 

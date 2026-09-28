@@ -15,6 +15,7 @@ export const COVERAGE_FLOORS: Record<string, number> = {
   assemblyInstructionStepMaterial: 3,
   assemblyInstructionStepTool: 2,
   batchProperty: 4,
+  certificate: 3,
   changeOrder: 6,
   changeOrderActionTask: 6,
   changeOrderAffectedItem: 3,

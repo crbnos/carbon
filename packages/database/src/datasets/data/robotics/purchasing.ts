@@ -295,6 +295,11 @@ export const PURCHASE_ORDERS: PurchaseOrderSpec[] = [
       lines: [
         {
           item: "ENC-ABS-19",
+          certificate: {
+            type: "Other",
+            certificateNumber: "ENC-COC-3320",
+            specification: "Supplier CofC"
+          },
           orderQuantity: 6,
           outstandingQuantity: 0,
           receivedQuantity: 6,
@@ -307,6 +312,11 @@ export const PURCHASE_ORDERS: PurchaseOrderSpec[] = [
         },
         {
           item: "PCB-BARE-4L",
+          certificate: {
+            type: "Other",
+            certificateNumber: "PCB-COC-5512",
+            specification: "IPC-6012 Class 2"
+          },
           orderQuantity: 20,
           outstandingQuantity: 0,
           receivedQuantity: 20,
@@ -348,6 +358,11 @@ export const PURCHASE_ORDERS: PurchaseOrderSpec[] = [
       lines: [
         {
           item: "GBX-HD-80",
+          certificate: {
+            type: "Other",
+            certificateNumber: "GBX-COC-0917",
+            specification: "Supplier CofC; ISO 1328 grade 6"
+          },
           orderQuantity: 4,
           outstandingQuantity: 2,
           receivedQuantity: 2,

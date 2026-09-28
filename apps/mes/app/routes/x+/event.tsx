@@ -12,6 +12,7 @@ import {
   getOperationEligibility,
   startProductionEvent
 } from "~/services/operations.service";
+import { generateFirstArticlesForStartedJob } from "~/services/quality.server";
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -96,7 +97,14 @@ export async function action({ request }: ActionFunctionArgs) {
         createdBy: userId
       },
       trackedEntityId,
-      unitIndex
+      unitIndex,
+      "mes",
+      (jobId) =>
+        generateFirstArticlesForStartedJob(serviceRole, {
+          jobId,
+          companyId,
+          userId
+        })
     );
 
     if (startEvent.error) {

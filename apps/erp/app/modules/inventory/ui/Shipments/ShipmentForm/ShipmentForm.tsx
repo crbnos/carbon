@@ -65,6 +65,7 @@ import {
 import type { SalesInvoice } from "~/modules/invoicing/types";
 import SalesInvoiceStatus from "~/modules/invoicing/ui/SalesInvoice/SalesInvoiceStatus";
 import { path } from "~/utils/path";
+import CertificateOfConformanceMenu from "../CertificateOfConformanceMenu";
 import ShipmentPostModal from "../ShipmentPostModal";
 import ShipmentStatus from "../ShipmentStatus";
 import ShipmentVoidModal from "../ShipmentVoidModal";
@@ -77,6 +78,12 @@ type ShipmentFormProps = {
 };
 
 const formId = "shipment-form";
+
+const CUSTOMER_SHIPMENT_SOURCES = new Set<string>([
+  "Sales Order",
+  "Sales Invoice",
+  "Sales Return Order"
+]);
 
 const ShipmentForm = ({
   initialValues,
@@ -127,6 +134,11 @@ const ShipmentForm = ({
     (shipmentLines.length > 0 &&
       shipmentLines.some((line) => (line.shippedQuantity ?? 0) !== 0)) ||
     hasShippableFaLines;
+
+  // Certificates of Conformance go to customers only.
+  const isCustomerShipment = CUSTOMER_SHIPMENT_SOURCES.has(
+    routeData?.shipment?.sourceDocument ?? ""
+  );
 
   const shipmentLineTracking = routeData?.shipmentLineTracking ?? [];
   const hasTrackingLabels = shipmentLineTracking.length > 0;
@@ -210,6 +222,12 @@ const ShipmentForm = ({
                     <Trans>Packing Slip</Trans>
                   </a>
                 </Button>
+                {isCustomerShipment && (
+                  <CertificateOfConformanceMenu
+                    shipmentId={shipmentId}
+                    isPosted={isPosted}
+                  />
+                )}
                 <SourceDocumentLink
                   sourceDocument={
                     routeData?.shipment?.sourceDocument ?? undefined

@@ -12,6 +12,8 @@ import {
   isCrossSiteNavigation
 } from "../lib/security";
 
+export { isCrossSiteNavigation };
+
 /** Where every app receives CSP violation reports (`api+/csp-report.ts`). */
 export const CSP_REPORT_PATH = "/api/csp-report";
 

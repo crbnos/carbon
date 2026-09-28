@@ -1,6 +1,8 @@
 import type { Database } from "@carbon/database";
 import type {
+  CertificateOfConformanceShipmentData,
   getBatchProperties,
+  getCertificatesOfConformance,
   getInventoryCountLines,
   getInventoryCounts,
   getInventoryItems,
@@ -22,6 +24,13 @@ import type {
   getWarehouseTransferLines,
   getWarehouseTransfers
 } from "./inventory.service";
+
+export type CertificateOfConformance = NonNullable<
+  Awaited<ReturnType<typeof getCertificatesOfConformance>>["data"]
+>[number];
+
+export type CertificateOfConformanceWarnings =
+  CertificateOfConformanceShipmentData["warnings"];
 
 export type BatchProperty = NonNullable<
   Awaited<ReturnType<typeof getBatchProperties>>["data"]

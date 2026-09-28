@@ -42,6 +42,8 @@ type SalesInvoicePostModalProps = {
     success?: boolean;
     message?: string;
     violations?: unknown[];
+    /** The post stood, but an auto-issued certificate did not. */
+    certificateFailed?: boolean;
   }>;
   isOpen: boolean;
   onClose: () => void;
@@ -122,7 +124,10 @@ const SalesInvoicePostModal = ({
   // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   useEffect(() => {
     if (fetcher.data?.success) {
-      if (fetcher.data?.message) toast.success(fetcher.data.message);
+      if (fetcher.data?.message) {
+        if (fetcher.data.certificateFailed) toast.error(fetcher.data.message);
+        else toast.success(fetcher.data.message);
+      }
       onClose();
     } else if (
       fetcher.data?.success === false &&

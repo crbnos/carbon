@@ -4,6 +4,7 @@ import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import { ASSEMBLER_SERVICE_URL } from "@carbon/env";
 import { datetime } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { afterJobsReleased } from "~/modules/quality/firstArticle.server";
 import { getEdgeFunctionErrorMessage } from "~/utils/error";
 import {
   getJobReleaseReadiness,
@@ -62,9 +63,10 @@ export async function isAssemblerServiceHealthy(): Promise<boolean> {
 }
 
 // Release jobs to the floor: the one path the job page and batch release share.
-// Per job, in order: refresh requirements, run MRP, flip to Ready, put outside
-// operations on purchase orders, stamp releasedDate. Scheduling is the
-// caller's (one location run, or a notify, after all jobs are released).
+// Per job, in order: refresh requirements, run MRP, flip to Ready, create its
+// first article lots, put outside operations on purchase orders, stamp
+// releasedDate. Scheduling is the caller's (one location run, or a notify,
+// after all jobs are released).
 //
 // `purchaseOrdersBySupplierId` maps a supplier to "new" or a Draft PO id; a
 // supplier's first "new" PO is reused for the jobs after it, so a batch puts
@@ -105,6 +107,10 @@ export async function releaseJobs({
       updatedBy: userId
     });
     if (update.error) return { error: `Failed to release job ${id}` };
+
+    // The job is on the floor from here, so its first article lots are too —
+    // even if a later step (purchase orders) fails. Best-effort, never throws.
+    await afterJobsReleased(db, client, { jobIds: [id], companyId, userId });
 
     const purchaseOrder = await serviceRole.functions.invoke<{
       purchaseOrderIdsBySupplierId?: Record<string, string>;
@@ -184,6 +190,13 @@ export async function releaseBatchMemberJobs({
     ...(job.missingAssemblies.length > 0
       ? [
           `${job.jobId}: no operations on ${job.missingAssemblies
+            .map((m) => m.description)
+            .join(", ")}`
+        ]
+      : []),
+    ...(job.firstArticlesWithoutPlan.length > 0
+      ? [
+          `${job.jobId}: assign a first article plan for ${job.firstArticlesWithoutPlan
             .map((m) => m.description)
             .join(", ")}`
         ]

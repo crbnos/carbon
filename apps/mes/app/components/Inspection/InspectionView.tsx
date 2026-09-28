@@ -4,9 +4,11 @@ import {
   BottomSheetBody,
   BottomSheetContent,
   Button,
+  Checkbox,
   ClientOnly,
   cn,
   IconButton,
+  Label,
   Modal,
   ModalBody,
   ModalContent,
@@ -14,8 +16,13 @@ import {
   ModalHeader,
   ModalOverlay,
   ModalTitle,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
   SidebarTrigger,
   Spinner,
+  Select as StaticSelect,
   useDisclosure,
   useMode,
   VStack
@@ -101,9 +108,12 @@ type DrawingBalloonRow = {
 type WorkType = "Setup" | "Labor" | "Machine";
 
 type InspectionViewProps = {
-  operationId: string;
+  // Null for a First Article lot: it belongs to a make method, not to an
+  // operation, so the view has no clock and posts no production — Accept and
+  // Reject record the verdict only, through the first-article route's action.
+  operationId: string | null;
   job: Job;
-  operation: OperationWithDetails;
+  operation: OperationWithDetails | null;
   inspection: InspectionRow & {
     item?: {
       readableId: string | null;
@@ -160,6 +170,7 @@ export function InspectionView({
   const { t } = useLingui();
   const user = useUser();
   const mode = useMode();
+  const isVerdictOnly = operationId === null || operation === null;
 
   // Which entity the produced lot samples come from: the job make method's
   // WIP entities (the part being made), not receipt entities.
@@ -392,9 +403,9 @@ export function InspectionView({
   // its replacement still has to be completed.
   const opRemaining = Math.max(
     0,
-    (operation.targetQuantity ?? operation.operationQuantity ?? 0) -
-      (operation.quantityComplete ?? 0) -
-      (operation.quantityReworked ?? 0)
+    (operation?.targetQuantity ?? operation?.operationQuantity ?? 0) -
+      (operation?.quantityComplete ?? 0) -
+      (operation?.quantityReworked ?? 0)
   );
 
   // Passed but not yet posted — the "Complete passed (n)" affordance.
@@ -558,9 +569,9 @@ export function InspectionView({
   // contract as the assembly view's TimerControl → /x/event).
   const workTypes = useMemo<WorkType[]>(() => {
     const list: WorkType[] = [];
-    if ((operation.setupDuration ?? 0) > 0) list.push("Setup");
-    if ((operation.laborDuration ?? 0) > 0) list.push("Labor");
-    if ((operation.machineDuration ?? 0) > 0) list.push("Machine");
+    if ((operation?.setupDuration ?? 0) > 0) list.push("Setup");
+    if ((operation?.laborDuration ?? 0) > 0) list.push("Labor");
+    if ((operation?.machineDuration ?? 0) > 0) list.push("Machine");
     return list.length > 0 ? list : ["Labor"];
   }, [operation]);
 
@@ -580,7 +591,7 @@ export function InspectionView({
   // parent shares one lot entity across every unit.
   const quantityComplete = Math.max(
     0,
-    Math.round((operation.quantityComplete as number) ?? 0)
+    Math.round((operation?.quantityComplete as number) ?? 0)
   );
   const completeEntityId = requiresBatchTracking
     ? (trackedEntities[0]?.id ?? "")
@@ -640,7 +651,7 @@ export function InspectionView({
             <Trans>Add Sample</Trans>
           </button>
         ) : null}
-        {!lotClosed && completablePassed > 0 ? (
+        {!lotClosed && completablePassed > 0 && operationId !== null ? (
           <CompletePassedButton
             inspectionId={inspection.id}
             operationId={operationId}
@@ -659,7 +670,7 @@ export function InspectionView({
             <Trans>Reject</Trans>
           </span>
         </button>
-        {canPartial ? (
+        {canPartial && !isVerdictOnly ? (
           <button
             type="button"
             onClick={partialDisclosure.onOpen}
@@ -682,24 +693,28 @@ export function InspectionView({
             <Trans>Accept</Trans>
           </span>
         </button>
-        <button
-          type="button"
-          aria-label={t`More actions`}
-          onClick={actionsSheet.onOpen}
-          className="flex h-full shrink-0 items-center justify-center border-l border-border px-2 transition-colors hover:bg-accent active:scale-[0.98] md:px-4"
-        >
-          <LuEllipsisVertical className="size-4" />
-        </button>
+        {!isVerdictOnly || (isSerial && !lotClosed) ? (
+          <button
+            type="button"
+            aria-label={t`More actions`}
+            onClick={actionsSheet.onOpen}
+            className="flex h-full shrink-0 items-center justify-center border-l border-border px-2 transition-colors hover:bg-accent active:scale-[0.98] md:px-4"
+          >
+            <LuEllipsisVertical className="size-4" />
+          </button>
+        ) : null}
 
-        {workTypes.map((wt) => (
-          <TimerControl
-            key={wt}
-            operationId={operationId}
-            workCenterId={operation.workCenterId ?? undefined}
-            openEvent={openEventForWorkType(wt)}
-            workType={wt}
-          />
-        ))}
+        {operationId !== null && operation !== null
+          ? workTypes.map((wt) => (
+              <TimerControl
+                key={wt}
+                operationId={operationId}
+                workCenterId={operation.workCenterId ?? undefined}
+                openEvent={openEventForWorkType(wt)}
+                workType={wt}
+              />
+            ))
+          : null}
       </header>
 
       {/* ── META BAR ── */}
@@ -721,11 +736,17 @@ export function InspectionView({
           </span>
         ) : null}
         <div className="flex-1" />
-        <span className="whitespace-nowrap text-xs text-muted-foreground tabular-nums">
-          <Trans>Completed</Trans> {productionQuantities.production} ·{" "}
-          <Trans>Scrap</Trans> {productionQuantities.scrap} ·{" "}
-          <Trans>Rework</Trans> {productionQuantities.rework}
-        </span>
+        {isVerdictOnly ? (
+          <span className="whitespace-nowrap text-xs text-muted-foreground">
+            <Trans>First article</Trans>
+          </span>
+        ) : (
+          <span className="whitespace-nowrap text-xs text-muted-foreground tabular-nums">
+            <Trans>Completed</Trans> {productionQuantities.production} ·{" "}
+            <Trans>Scrap</Trans> {productionQuantities.scrap} ·{" "}
+            <Trans>Rework</Trans> {productionQuantities.rework}
+          </span>
+        )}
       </div>
 
       {/* ── BODY ── */}
@@ -877,7 +898,27 @@ export function InspectionView({
         />
       )}
 
-      {acceptDisclosure.isOpen && (
+      {isVerdictOnly && acceptDisclosure.isOpen && (
+        <VerdictModal
+          decision="Accept"
+          inspectionId={inspection.id}
+          issueTypes={issueTypes}
+          failedFeatureSummary={failedFeatureSummary}
+          onClose={acceptDisclosure.onClose}
+        />
+      )}
+
+      {isVerdictOnly && rejectDisclosure.isOpen && (
+        <VerdictModal
+          decision="Reject"
+          inspectionId={inspection.id}
+          issueTypes={issueTypes}
+          failedFeatureSummary={failedFeatureSummary}
+          onClose={rejectDisclosure.onClose}
+        />
+      )}
+
+      {operationId !== null && acceptDisclosure.isOpen && (
         <AcceptLotModal
           inspectionId={inspection.id}
           operationId={operationId}
@@ -888,7 +929,7 @@ export function InspectionView({
         />
       )}
 
-      {rejectDisclosure.isOpen && (
+      {operationId !== null && rejectDisclosure.isOpen && (
         <DispositionModal
           decision="Reject"
           inspectionId={inspection.id}
@@ -906,7 +947,7 @@ export function InspectionView({
         />
       )}
 
-      {partialDisclosure.isOpen && (
+      {operationId !== null && partialDisclosure.isOpen && (
         <DispositionModal
           decision="Partial"
           inspectionId={inspection.id}
@@ -924,14 +965,16 @@ export function InspectionView({
         />
       )}
 
-      <QualityIssueModal
-        operationId={operationId}
-        trackedEntityId={
-          isTracked ? (trackedEntities[0]?.id ?? undefined) : undefined
-        }
-        isOpen={qualityModal.isOpen}
-        onClose={qualityModal.onClose}
-      />
+      {operationId !== null ? (
+        <QualityIssueModal
+          operationId={operationId}
+          trackedEntityId={
+            isTracked ? (trackedEntities[0]?.id ?? undefined) : undefined
+          }
+          isOpen={qualityModal.isOpen}
+          onClose={qualityModal.onClose}
+        />
+      ) : null}
 
       {scrapModal.isOpen && operation && (
         <QuantityModal
@@ -983,38 +1026,42 @@ export function InspectionView({
         <BottomSheetContent className="mx-auto max-w-md">
           <BottomSheetBody>
             <div className="flex flex-col gap-2 pb-2">
-              <ActionSheetButton
-                icon={<LuTrash className="size-4 shrink-0" />}
-                label={t`Scrap`}
-                onClick={() => {
-                  actionsSheet.onClose();
-                  scrapModal.onOpen();
-                }}
-              />
-              <ActionSheetButton
-                icon={<LuGitPullRequest className="size-4 shrink-0" />}
-                label={t`Rework`}
-                onClick={() => {
-                  actionsSheet.onClose();
-                  reworkModal.onOpen();
-                }}
-              />
-              <ActionSheetButton
-                icon={<LuCheck className="size-4 shrink-0" />}
-                label={t`Finish`}
-                onClick={() => {
-                  actionsSheet.onClose();
-                  finishModal.onOpen();
-                }}
-              />
-              <ActionSheetButton
-                icon={<LuFlag className="size-4 shrink-0" />}
-                label={t`Quality Issue`}
-                onClick={() => {
-                  actionsSheet.onClose();
-                  qualityModal.onOpen();
-                }}
-              />
+              {isVerdictOnly ? null : (
+                <>
+                  <ActionSheetButton
+                    icon={<LuTrash className="size-4 shrink-0" />}
+                    label={t`Scrap`}
+                    onClick={() => {
+                      actionsSheet.onClose();
+                      scrapModal.onOpen();
+                    }}
+                  />
+                  <ActionSheetButton
+                    icon={<LuGitPullRequest className="size-4 shrink-0" />}
+                    label={t`Rework`}
+                    onClick={() => {
+                      actionsSheet.onClose();
+                      reworkModal.onOpen();
+                    }}
+                  />
+                  <ActionSheetButton
+                    icon={<LuCheck className="size-4 shrink-0" />}
+                    label={t`Finish`}
+                    onClick={() => {
+                      actionsSheet.onClose();
+                      finishModal.onOpen();
+                    }}
+                  />
+                  <ActionSheetButton
+                    icon={<LuFlag className="size-4 shrink-0" />}
+                    label={t`Quality Issue`}
+                    onClick={() => {
+                      actionsSheet.onClose();
+                      qualityModal.onOpen();
+                    }}
+                  />
+                </>
+              )}
               {isSerial && !lotClosed ? (
                 <ActionSheetButton
                   icon={<LuScan className="size-4 shrink-0" />}
@@ -1034,16 +1081,18 @@ export function InspectionView({
           is running (any work type — the exclusive start would end it).
           Always on for inspections, independent of the company-level
           autoStartOperationTimer setting. */}
-      <AutoTimer
-        operationId={operationId}
-        workType={workTypes.includes("Labor") ? "Labor" : workTypes[0]}
-        workCenterId={operation.workCenterId ?? undefined}
-        openEvent={
-          (events.find((e) => !e.endTime) as
-            | { id: string; startTime: string }
-            | undefined) ?? null
-        }
-      />
+      {operationId !== null && operation !== null ? (
+        <AutoTimer
+          operationId={operationId}
+          workType={workTypes.includes("Labor") ? "Labor" : workTypes[0]}
+          workCenterId={operation.workCenterId ?? undefined}
+          openEvent={
+            (events.find((e) => !e.endTime) as
+              | { id: string; startTime: string }
+              | undefined) ?? null
+          }
+        />
+      ) : null}
     </div>
   );
 }
@@ -1197,6 +1246,171 @@ function AcceptLotModal({
             </Button>
           </fetcher.Form>
         </ModalFooter>
+      </ModalContent>
+    </Modal>
+  );
+}
+
+// First Article verdict: the lot closes on the decision alone — no quantities
+// are completed, scrapped or reworked. A rejection may open an NCR.
+function VerdictModal({
+  decision,
+  inspectionId,
+  issueTypes,
+  failedFeatureSummary,
+  onClose
+}: {
+  decision: "Accept" | "Reject";
+  inspectionId: string;
+  issueTypes: IssueTypeListItem[];
+  failedFeatureSummary: FailedFeatureSummary[];
+  onClose: () => void;
+}) {
+  const { t } = useLingui();
+  const fetcher = useFetcher<{}>();
+  const submitted = useRef(false);
+  const hasIssueTypes = issueTypes.length > 0;
+  const [createNcr, setCreateNcr] = useState(
+    decision === "Reject" && hasIssueTypes
+  );
+  const [issueTypeId, setIssueTypeId] = useState<string>(
+    issueTypes[0]?.id ?? ""
+  );
+
+  useEffect(() => {
+    if (fetcher.state === "idle" && submitted.current) {
+      onClose();
+      submitted.current = false;
+    }
+  }, [fetcher.state, onClose]);
+
+  const busy = fetcher.state !== "idle";
+
+  return (
+    <Modal
+      open
+      onOpenChange={(open) => {
+        if (!open) onClose();
+      }}
+    >
+      <ModalOverlay />
+      <ModalContent>
+        <fetcher.Form
+          method="post"
+          action={path.to.firstArticle(inspectionId)}
+          onSubmit={() => (submitted.current = true)}
+        >
+          <ModalHeader>
+            <ModalTitle>
+              {decision === "Accept" ? (
+                <Trans>Accept first article?</Trans>
+              ) : (
+                <Trans>Reject first article?</Trans>
+              )}
+            </ModalTitle>
+          </ModalHeader>
+          <ModalBody>
+            <input type="hidden" name="decision" value={decision} />
+            <input
+              type="hidden"
+              name="createNcr"
+              value={createNcr ? "true" : "false"}
+            />
+            <input
+              type="hidden"
+              name="nonConformanceTypeId"
+              value={createNcr ? issueTypeId : ""}
+            />
+            <VStack spacing={4}>
+              <p className="text-sm text-muted-foreground">
+                {decision === "Accept" ? (
+                  <Trans>
+                    The first article will be marked Passed and its results
+                    locked. No quantities are recorded.
+                  </Trans>
+                ) : (
+                  <Trans>
+                    The first article will be marked Failed and its results
+                    locked. No quantities are recorded.
+                  </Trans>
+                )}
+              </p>
+              {decision === "Reject" && failedFeatureSummary.length > 0 ? (
+                <div className="w-full rounded-md border p-3">
+                  <p className="mb-1 text-xs font-medium text-muted-foreground">
+                    <Trans>Failed features</Trans>
+                  </p>
+                  <ul className="flex flex-col gap-0.5">
+                    {failedFeatureSummary.map((feature) => (
+                      <li
+                        key={feature.label}
+                        className="font-mono text-xs text-red-500"
+                      >
+                        {feature.label}
+                        {feature.spec ? ` (${feature.spec})` : ""}
+                        {feature.failedValues.length > 0
+                          ? `: ${feature.failedValues.join(", ")}`
+                          : ""}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ) : null}
+              {decision === "Reject" && hasIssueTypes ? (
+                <>
+                  <label className="flex w-full cursor-pointer items-center gap-2">
+                    <Checkbox
+                      isChecked={createNcr}
+                      onCheckedChange={(checked) => setCreateNcr(!!checked)}
+                    />
+                    <span className="text-sm font-medium">
+                      <Trans>Open an NCR for MRB disposition</Trans>
+                    </span>
+                  </label>
+                  {createNcr ? (
+                    <div className="flex w-full flex-col gap-2">
+                      <Label htmlFor="firstArticleIssueType">
+                        <Trans>Issue Type</Trans>
+                      </Label>
+                      <StaticSelect
+                        value={issueTypeId}
+                        onValueChange={setIssueTypeId}
+                      >
+                        <SelectTrigger id="firstArticleIssueType">
+                          <SelectValue placeholder={t`Select an issue type`} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {issueTypes.map((type) => (
+                            <SelectItem key={type.id} value={type.id}>
+                              {type.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </StaticSelect>
+                    </div>
+                  ) : null}
+                </>
+              ) : null}
+            </VStack>
+          </ModalBody>
+          <ModalFooter>
+            <Button variant="secondary" onClick={onClose}>
+              <Trans>Cancel</Trans>
+            </Button>
+            <Button
+              type="submit"
+              variant={decision === "Reject" ? "destructive" : "primary"}
+              isLoading={busy}
+              isDisabled={busy || (createNcr && !issueTypeId)}
+            >
+              {decision === "Accept" ? (
+                <Trans>Accept</Trans>
+              ) : (
+                <Trans>Reject</Trans>
+              )}
+            </Button>
+          </ModalFooter>
+        </fetcher.Form>
       </ModalContent>
     </Modal>
   );

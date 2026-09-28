@@ -33,8 +33,11 @@ import {
   JobProperties
 } from "~/modules/production/ui/Jobs";
 import type { JobOrderStatusData } from "~/modules/production/ui/Jobs/JobBoMExplorer";
+import { getFirstArticleInspectionsByJob } from "~/modules/quality";
+import { getFirstArticlesDueForJob } from "~/modules/quality/firstArticle.server";
 import { getTagsList } from "~/modules/shared";
 import { getLocationTimeZone } from "~/modules/shared/timezone.server";
+import { getDatabaseClient } from "~/services/database.server";
 import { detailBreadcrumb, type Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
@@ -123,8 +126,22 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     unbatchedBatchableOperations = count ?? 0;
   }
 
+  // First articles: the job's FAIs, and the parts whose FAI is due but not
+  // yet created (a finished job no longer needs one).
+  const [firstArticles, firstArticlesDue] = await Promise.all([
+    getFirstArticleInspectionsByJob(client, jobId, companyId),
+    ["Completed", "Cancelled"].includes(job.data.status ?? "")
+      ? Promise.resolve([])
+      : getFirstArticlesDueForJob(getDatabaseClient(), client, {
+          jobId,
+          companyId
+        })
+  ]);
+
   return {
     job: job.data,
+    firstArticles: firstArticles.data ?? [],
+    firstArticlesDue,
     unbatchedBatchableOperations,
     tags: tags.data ?? [],
     files: getJobDocuments(client, companyId, job.data),

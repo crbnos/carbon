@@ -179,6 +179,17 @@ type JobOperationProps = {
   expiredEntityPolicy?: "Warn" | "Block" | "BlockWithOverride";
   autoSelectMaterialWithoutPickingList?: boolean;
   files: Promise<StorageItem[]>;
+  // Open First Article lots of this operation's make method — each shows a
+  // "First article required" banner linking to its inspection.
+  firstArticles?: {
+    id: string;
+    inspectionId: string;
+    itemReadableId: string | null;
+  }[];
+  // Parts of this make method that need a first article but resolve no plan
+  // — the ERP release blocker, which an MES auto-start skips. Each shows a
+  // "First article plan missing" banner; the operator is never blocked.
+  firstArticlePlansMissing?: string[];
   kanban: Kanban | null;
   materials: Promise<{
     materials: JobMaterial[];
@@ -298,6 +309,8 @@ export const JobOperation = ({
   expiredEntityPolicy = "Block",
   autoSelectMaterialWithoutPickingList = false,
   files,
+  firstArticles = [],
+  firstArticlePlansMissing = [],
   job,
   kanban,
   materials,
@@ -1126,6 +1139,50 @@ export const JobOperation = ({
           className="[grid-area:main] mt-0 h-full min-h-0 overflow-y-auto scroll-fade scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent"
         >
           <div className="w-full min-w-0">
+            {firstArticlePlansMissing.map((part) => (
+              <div key={part} className="px-4 pt-4 lg:px-6">
+                <Alert variant="warning">
+                  <LuTriangleAlert />
+                  <AlertTitle>
+                    <Trans>First article plan missing for {part}</Trans>
+                  </AlertTitle>
+                  <AlertDescription>
+                    <Trans>
+                      Tell quality — this part needs a first article, but no
+                      inspection plan is assigned to it.
+                    </Trans>
+                  </AlertDescription>
+                </Alert>
+              </div>
+            ))}
+            {firstArticles.map((firstArticle) => (
+              <div key={firstArticle.id} className="px-4 pt-4 lg:px-6">
+                <Alert variant="warning">
+                  <LuClipboardCheck />
+                  <AlertTitle>
+                    <Trans>
+                      First article required for{" "}
+                      {firstArticle.itemReadableId ?? firstArticle.inspectionId}
+                    </Trans>
+                  </AlertTitle>
+                  <AlertDescription>
+                    <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
+                      <span className="text-pretty">
+                        <Trans>
+                          Inspect the first unit on every characteristic before
+                          running the rest.
+                        </Trans>
+                      </span>
+                      <Button variant="secondary" asChild>
+                        <Link to={path.to.firstArticle(firstArticle.id)}>
+                          <Trans>Inspect</Trans>
+                        </Link>
+                      </Button>
+                    </div>
+                  </AlertDescription>
+                </Alert>
+              </div>
+            ))}
             {isCompleting && (
               <div className="px-4 pt-4 lg:px-6">
                 <Card>

@@ -31,6 +31,7 @@ import {
   insertPurchaseOrder,
   upsertPurchaseOrderLine
 } from "~/modules/purchasing";
+import { afterJobsReleased } from "~/modules/quality/firstArticle.server";
 import {
   getCompanyTimeZone,
   getLocationTimeZone
@@ -153,7 +154,7 @@ async function handleKanban({
     }
 
     if (!upsertMethod.error && kanban.data.autoRelease) {
-      await Promise.all([
+      const [, , , release] = await Promise.all([
         trigger("recalculate", {
           type: "jobRequirements",
           id,
@@ -180,6 +181,17 @@ async function handleKanban({
           })
           .eq("id", id)
       ]);
+
+      // A released job gets its first article lots, as on every release path.
+      if (release.error) {
+        logger.error("Kanban auto-release failed", { error: release.error });
+      } else {
+        await afterJobsReleased(getDatabaseClient(), serviceRole, {
+          jobIds: [id],
+          companyId,
+          userId
+        });
+      }
 
       // This path writes job.status directly, so it never reaches
       // updateJobStatus and its raiseMoment. The job was just created above,

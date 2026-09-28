@@ -279,6 +279,15 @@ export const sequences = [
     step: 1
   },
   {
+    table: "certificateOfConformance",
+    name: "Certificate of Conformance",
+    prefix: "COC",
+    suffix: null,
+    next: 0,
+    size: 6,
+    step: 1
+  },
+  {
     table: "inventoryCount",
     name: "Inventory Count",
     prefix: "IC",

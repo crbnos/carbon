@@ -16,12 +16,18 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (!id) throw new Error("Could not find id");
 
   const formData = await request.formData();
-  const drawingNumber = String(formData.get("drawingNumber") ?? "").trim();
+  // Each header field submits on its own; only update the fields sent.
+  const update: Record<string, string | null> = {};
+  for (const field of ["drawingNumber", "drawingRevision"] as const) {
+    if (formData.has(field)) {
+      update[field] = String(formData.get(field) ?? "").trim() || null;
+    }
+  }
 
   const result = await (client as any)
     .from("inspectionDocument")
     .update({
-      drawingNumber: drawingNumber || null,
+      ...update,
       updatedBy: userId,
       updatedAt: new Date().toISOString()
     })
