@@ -5,7 +5,7 @@
   "sourceCompanyId": "schema-baseline",
   "sourceCompanyGroupId": null,
   "sourceCompanyName": null,
-  "exportedAt": "2026-09-28T01:35:33.697Z",
+  "exportedAt": "2026-09-28T05:22:00.453Z",
   "exportedBy": "schema-baseline",
   "label": "schema baseline",
   "includeStorage": "none",
@@ -189,16 +189,16 @@
       "name": "address",
       "rows": 0,
       "columns": [
-        "postalCode",
-        "id",
-        "fax",
-        "phone",
-        "companyId",
-        "addressLine1",
         "stateProvince",
         "countryCode",
+        "addressLine2",
         "city",
-        "addressLine2"
+        "postalCode",
+        "fax",
+        "id",
+        "phone",
+        "companyId",
+        "addressLine1"
       ]
     },
     {
@@ -400,7 +400,7 @@
         "id",
         "includeOperationsOnTraveler",
         "plmReleaseControl",
-        "requireCustomerContact",
+        "requireCustomerContactAndLocation",
         "salesJobCompletedNotificationGroup",
         "autoStartOperationTimer",
         "enforceInspectionFourEyes",
@@ -414,7 +414,7 @@
         "digitalQuoteIncludesPurchaseOrders",
         "digitalQuoteNotificationGroup",
         "purchasePriceUpdateTiming",
-        "requireSupplierContact",
+        "requireSupplierContactAndLocation",
         "autoSelectMaterialWithoutPickingList",
         "showSupplierReadableId",
         "qualityDispatchNotificationGroup",
@@ -472,18 +472,18 @@
       "name": "contact",
       "rows": 0,
       "columns": [
-        "email",
-        "isCustomer",
-        "notes",
-        "companyId",
-        "lastName",
-        "mobilePhone",
+        "firstName",
+        "homePhone",
+        "fax",
         "id",
         "workPhone",
         "title",
-        "firstName",
-        "fax",
-        "homePhone"
+        "lastName",
+        "notes",
+        "companyId",
+        "mobilePhone",
+        "isCustomer",
+        "email"
       ]
     },
     {
@@ -545,46 +545,46 @@
       "rows": 0,
       "columns": [
         "updatedBy",
-        "tags",
         "id",
+        "tags",
         "customFields",
         "name",
         "createdBy",
         "updatedAt",
-        "companyId",
-        "createdAt"
+        "createdAt",
+        "companyId"
       ]
     },
     {
       "name": "customerType",
       "rows": 0,
       "columns": [
-        "updatedBy",
         "companyId",
         "protected",
+        "updatedBy",
         "createdAt",
+        "name",
         "tags",
         "updatedAt",
-        "name",
-        "createdBy",
         "id",
-        "customFields"
+        "customFields",
+        "createdBy"
       ]
     },
     {
       "name": "department",
       "rows": 0,
       "columns": [
-        "createdAt",
-        "id",
-        "customFields",
-        "updatedAt",
-        "tags",
-        "name",
         "createdBy",
-        "updatedBy",
+        "parentDepartmentId",
         "companyId",
-        "parentDepartmentId"
+        "updatedBy",
+        "customFields",
+        "id",
+        "createdAt",
+        "name",
+        "tags",
+        "updatedAt"
       ]
     },
     {
@@ -736,19 +736,19 @@
       "name": "employeeType",
       "rows": 0,
       "columns": [
+        "updatedAt",
+        "id",
+        "name",
+        "createdAt",
         "systemType",
         "protected",
-        "companyId",
-        "createdAt",
-        "name",
-        "updatedAt",
-        "id"
+        "companyId"
       ]
     },
     {
       "name": "employee",
       "rows": 0,
-      "columns": ["companyId", "id", "active", "employeeTypeId"]
+      "columns": ["employeeTypeId", "active", "id", "companyId"]
     },
     {
       "name": "employeeTypePermission",
@@ -914,17 +914,17 @@
       "name": "group",
       "rows": 0,
       "columns": [
-        "isSupplierOrgGroup",
-        "id",
-        "updatedAt",
-        "isCustomerOrgGroup",
-        "name",
-        "isSupplierTypeGroup",
-        "createdAt",
-        "isEmployeeTypeGroup",
         "companyId",
         "isIdentityGroup",
-        "isCustomerTypeGroup"
+        "isCustomerTypeGroup",
+        "isEmployeeTypeGroup",
+        "name",
+        "createdAt",
+        "isSupplierTypeGroup",
+        "updatedAt",
+        "isSupplierOrgGroup",
+        "id",
+        "isCustomerOrgGroup"
       ]
     },
     {
@@ -1158,26 +1158,26 @@
       "name": "location",
       "rows": 0,
       "columns": [
-        "longitude",
-        "id",
-        "timezone",
-        "stateProvince",
+        "countryCode",
+        "latitude",
+        "updatedAt",
         "name",
         "createdBy",
-        "updatedAt",
-        "latitude",
-        "countryCode",
-        "requiresStaffing",
-        "companyId",
-        "city",
-        "customFields",
-        "updatedBy",
+        "stateProvince",
+        "timezone",
+        "id",
+        "longitude",
+        "postalCode",
+        "createdAt",
+        "addressLine1",
+        "addressLine2",
         "tags",
         "code",
-        "addressLine2",
-        "addressLine1",
-        "createdAt",
-        "postalCode"
+        "customFields",
+        "updatedBy",
+        "companyId",
+        "requiresStaffing",
+        "city"
       ]
     },
     {
@@ -1385,7 +1385,7 @@
     {
       "name": "membership",
       "rows": 0,
-      "columns": ["id", "groupId", "memberGroupId", "memberUserId"]
+      "columns": ["groupId", "id", "memberUserId", "memberGroupId"]
     },
     {
       "name": "modelUpload",
@@ -1624,16 +1624,16 @@
       "name": "note",
       "rows": 0,
       "columns": [
-        "id",
-        "updatedAt",
-        "companyId",
-        "documentId",
-        "updatedBy",
-        "createdBy",
         "active",
+        "createdAt",
         "noteRichText",
         "note",
-        "createdAt"
+        "companyId",
+        "id",
+        "updatedAt",
+        "updatedBy",
+        "createdBy",
+        "documentId"
       ]
     },
     {
@@ -1902,17 +1902,17 @@
       "name": "ability",
       "rows": 0,
       "columns": [
-        "active",
-        "recertifyEveryDays",
-        "shadowWeeks",
-        "curve",
-        "createdAt",
         "processId",
         "id",
         "updatedAt",
         "companyId",
         "updatedBy",
-        "createdBy"
+        "createdBy",
+        "active",
+        "recertifyEveryDays",
+        "shadowWeeks",
+        "curve",
+        "createdAt"
       ]
     },
     {
@@ -2028,62 +2028,62 @@
       "name": "reimbursement",
       "rows": 0,
       "columns": [
-        "payableAccountId",
-        "createdBy",
-        "status",
-        "updatedBy",
-        "postedBy",
-        "journalId",
-        "createdAt",
-        "voidedAt",
-        "voidedBy",
-        "notes",
-        "reimbursementId",
-        "employeeId",
-        "reimbursementDate",
-        "updatedAt",
         "amount",
         "currencyCode",
         "id",
         "integration",
-        "companyId",
         "reference",
+        "companyId",
         "postedAt",
-        "exchangeRate",
         "customFields",
-        "postingDate"
+        "exchangeRate",
+        "postingDate",
+        "status",
+        "payableAccountId",
+        "createdBy",
+        "updatedBy",
+        "journalId",
+        "createdAt",
+        "postedBy",
+        "voidedBy",
+        "voidedAt",
+        "notes",
+        "reimbursementId",
+        "employeeId",
+        "reimbursementDate",
+        "updatedAt"
       ]
     },
     {
       "name": "reimbursementLine",
       "rows": 0,
       "columns": [
-        "projectId",
+        "costCenterId",
+        "updatedBy",
+        "reimbursementId",
+        "customFields",
+        "accountId",
+        "description",
         "sequence",
         "id",
         "createdAt",
-        "amount",
-        "createdBy",
+        "projectId",
         "updatedAt",
         "companyId",
-        "costCenterId",
-        "updatedBy",
-        "description",
-        "customFields",
-        "reimbursementId",
-        "accountId"
+        "amount",
+        "createdBy"
       ]
     },
     {
       "name": "reimbursementLineDimension",
       "rows": 0,
       "columns": [
-        "companyId",
+        "reimbursementLineId",
+        "createdAt",
+        "id",
         "dimensionId",
         "valueId",
-        "id",
-        "createdAt",
-        "reimbursementLineId"
+        "companyId"
       ]
     },
     {
@@ -2190,49 +2190,49 @@
       "rows": 0,
       "columns": [
         "sunday",
-        "friday",
         "wednesday",
         "id",
-        "thursday",
+        "friday",
         "tuesday",
+        "thursday",
+        "createdAt",
         "name",
         "active",
-        "createdAt",
         "updatedBy",
         "createdBy",
         "saturday",
         "tags",
         "locationId",
         "monday",
-        "updatedAt",
-        "customFields",
         "companyId",
         "startTime",
-        "endTime"
+        "endTime",
+        "updatedAt",
+        "customFields"
       ]
     },
     {
       "name": "employeeJob",
       "rows": 0,
       "columns": [
-        "managerId",
-        "shiftId",
-        "companyId",
         "title",
+        "shiftId",
+        "managerId",
+        "companyId",
+        "departmentId",
+        "updatedBy",
+        "id",
+        "startDate",
         "tags",
         "locationId",
         "customFields",
-        "updatedAt",
-        "departmentId",
-        "id",
-        "updatedBy",
-        "startDate"
+        "updatedAt"
       ]
     },
     {
       "name": "employeeShift",
       "rows": 0,
-      "columns": ["companyId", "shiftId", "employeeId", "id"]
+      "columns": ["employeeId", "id", "companyId", "shiftId"]
     },
     {
       "name": "peopleAbsence",
@@ -2387,16 +2387,16 @@
       "name": "supplierType",
       "rows": 0,
       "columns": [
-        "protected",
-        "companyId",
-        "updatedBy",
         "createdAt",
-        "name",
-        "updatedAt",
-        "tags",
-        "customFields",
+        "updatedBy",
+        "companyId",
+        "protected",
+        "createdBy",
         "id",
-        "createdBy"
+        "customFields",
+        "tags",
+        "updatedAt",
+        "name"
       ]
     },
     {
@@ -3352,54 +3352,54 @@
       "name": "userAttributeCategory",
       "rows": 0,
       "columns": [
-        "active",
+        "name",
+        "updatedBy",
+        "createdBy",
         "emoji",
         "updatedAt",
         "id",
-        "updatedBy",
-        "createdBy",
-        "name",
-        "companyId",
-        "createdAt",
+        "active",
         "public",
-        "protected"
+        "protected",
+        "createdAt",
+        "companyId"
       ]
     },
     {
       "name": "userAttribute",
       "rows": 0,
       "columns": [
-        "attributeDataTypeId",
-        "updatedBy",
-        "userAttributeCategoryId",
-        "sortOrder",
-        "canSelfManage",
         "id",
         "createdAt",
         "updatedAt",
         "listOptions",
         "name",
         "active",
-        "createdBy"
+        "createdBy",
+        "updatedBy",
+        "attributeDataTypeId",
+        "userAttributeCategoryId",
+        "sortOrder",
+        "canSelfManage"
       ]
     },
     {
       "name": "userAttributeValue",
       "rows": 0,
       "columns": [
+        "updatedBy",
+        "valueDate",
+        "valueText",
+        "userId",
+        "valueBoolean",
         "valueNumeric",
         "createdAt",
         "id",
         "updatedAt",
         "valueUser",
         "createdBy",
-        "valueFile",
         "userAttributeId",
-        "valueDate",
-        "updatedBy",
-        "valueText",
-        "userId",
-        "valueBoolean"
+        "valueFile"
       ]
     },
     {
@@ -3418,7 +3418,7 @@
     {
       "name": "userToCompany",
       "rows": 0,
-      "columns": ["role", "companyId", "userId"]
+      "columns": ["role", "userId", "companyId"]
     },
     {
       "name": "warehouse",
@@ -3943,30 +3943,30 @@
       "name": "customer",
       "rows": 0,
       "columns": [
-        "updatedBy",
-        "name",
-        "phone",
-        "createdAt",
-        "assignee",
-        "readableId",
-        "intercompanyCompanyId",
-        "createdBy",
-        "id",
-        "companyId",
-        "defaultCc",
-        "accountManagerId",
+        "fax",
+        "currencyCode",
+        "tags",
+        "updatedAt",
+        "taxPercent",
+        "embedding",
+        "logo",
+        "salesContactId",
         "website",
-        "customerStatusId",
         "customerTypeId",
         "customFields",
-        "salesContactId",
-        "logo",
-        "taxPercent",
-        "updatedAt",
-        "embedding",
-        "tags",
-        "currencyCode",
-        "fax"
+        "customerStatusId",
+        "defaultCc",
+        "accountManagerId",
+        "createdBy",
+        "intercompanyCompanyId",
+        "companyId",
+        "id",
+        "createdAt",
+        "readableId",
+        "assignee",
+        "name",
+        "updatedBy",
+        "phone"
       ]
     },
     {
@@ -4041,27 +4041,27 @@
       "name": "customerLocation",
       "rows": 0,
       "columns": [
-        "name",
-        "customFields",
-        "addressId",
         "tags",
         "id",
         "companyId",
-        "customerId"
+        "customerId",
+        "name",
+        "addressId",
+        "customFields"
       ]
     },
     {
       "name": "customerContact",
       "rows": 0,
       "columns": [
-        "companyId",
-        "customerId",
-        "customFields",
-        "id",
-        "tags",
-        "contactId",
+        "userId",
         "customerLocationId",
-        "userId"
+        "contactId",
+        "tags",
+        "id",
+        "customFields",
+        "customerId",
+        "companyId"
       ]
     },
     {
@@ -5504,17 +5504,17 @@
       "name": "partner",
       "rows": 0,
       "columns": [
-        "hoursPerWeek",
-        "updatedBy",
-        "customFields",
-        "id",
-        "updatedAt",
         "tags",
+        "updatedAt",
+        "id",
         "createdBy",
-        "active",
+        "hoursPerWeek",
+        "customFields",
+        "updatedBy",
+        "companyId",
         "abilityId",
-        "createdAt",
-        "companyId"
+        "active",
+        "createdAt"
       ]
     },
     {
@@ -6173,36 +6173,36 @@
       "name": "supplier",
       "rows": 0,
       "columns": [
-        "readableId",
-        "assignee",
-        "createdAt",
-        "phone",
-        "updatedBy",
-        "name",
-        "accountManagerId",
-        "defaultCc",
-        "id",
-        "companyId",
-        "supplierStatus",
-        "createdBy",
-        "purchasingContactId",
-        "logo",
-        "intercompanyCompanyId",
+        "embedding",
+        "updatedAt",
+        "tags",
+        "fax",
+        "taxPercent",
+        "currencyCode",
         "customFields",
         "supplierTypeId",
         "website",
-        "currencyCode",
-        "taxPercent",
-        "fax",
-        "embedding",
-        "tags",
-        "updatedAt"
+        "intercompanyCompanyId",
+        "logo",
+        "purchasingContactId",
+        "companyId",
+        "id",
+        "createdBy",
+        "supplierStatus",
+        "accountManagerId",
+        "defaultCc",
+        "phone",
+        "name",
+        "updatedBy",
+        "readableId",
+        "assignee",
+        "createdAt"
       ]
     },
     {
       "name": "supplierAccount",
       "rows": 0,
-      "columns": ["active", "companyId", "id", "supplierId"]
+      "columns": ["supplierId", "id", "active", "companyId"]
     },
     {
       "name": "supplierBankAccount",
@@ -6317,13 +6317,13 @@
       "name": "supplierLocation",
       "rows": 0,
       "columns": [
+        "customFields",
+        "addressId",
+        "name",
         "companyId",
         "supplierId",
         "tags",
-        "id",
-        "customFields",
-        "addressId",
-        "name"
+        "id"
       ]
     },
     {
@@ -6336,8 +6336,8 @@
         "supplierId",
         "userId",
         "tags",
-        "supplierLocationId",
-        "contactId"
+        "contactId",
+        "supplierLocationId"
       ]
     },
     {
