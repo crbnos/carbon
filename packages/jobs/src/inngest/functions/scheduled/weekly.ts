@@ -99,8 +99,10 @@ async function getGroupOwners(
 
 /**
  * Whether a planned delete still holds, read in the purge's own transaction: the
- * company exists, is not bypassed, no company in its group has a plan, and its
- * warning is still due. The plan step ran minutes (or retries) earlier.
+ * company exists and is not bypassed, no company in its group has a plan, the
+ * group's current owner is the person who was warned (and is not internal or a
+ * bypass user), and that warning is due. The plan step ran minutes (or retries)
+ * earlier.
  */
 async function isStillDueForDeletion(
   trx: Kysely<KyselyDatabase>,
@@ -134,21 +136,21 @@ async function isStillDueForDeletion(
     .executeTakeFirst();
   if (paying) return false;
 
-  // The owner may have changed, or become internal, since the plan step.
-  if (groupId !== null) {
-    const owner = await trx
-      .selectFrom("companyGroup")
-      .innerJoin("user", "user.id", "companyGroup.ownerId")
-      .select(["user.id", "user.email"])
-      .where("companyGroup.id", "=", groupId)
-      .executeTakeFirst();
-    if (
-      owner &&
-      (splitIds(STRIPE_BYPASS_USER_IDS).includes(owner.id) ||
-        isInternalEmail(owner.email))
-    ) {
-      return false;
-    }
+  // Only an owned group is ever warned. The owner may have changed, or become
+  // internal, since the plan step, and a new owner has not been warned.
+  if (groupId === null) return false;
+  const owner = await trx
+    .selectFrom("companyGroup")
+    .innerJoin("user", "user.id", "companyGroup.ownerId")
+    .select(["user.id", "user.email"])
+    .where("companyGroup.id", "=", groupId)
+    .executeTakeFirst();
+  if (
+    !owner ||
+    splitIds(STRIPE_BYPASS_USER_IDS).includes(owner.id) ||
+    isInternalEmail(owner.email)
+  ) {
+    return false;
   }
 
   const marker = await trx
@@ -157,7 +159,9 @@ async function isStillDueForDeletion(
     .where("integration", "=", WARNING_INTEGRATION)
     .where("companyId", "=", companyId)
     .executeTakeFirst();
-  return isDueForDeletion(marker?.metadata as Warning | undefined, {
+  const warning = marker?.metadata as Warning | undefined;
+  if (warning?.ownerId !== owner.id) return false;
+  return isDueForDeletion(warning, {
     now: Date.now(),
     today: datetime.today("UTC").toString()
   });
@@ -218,7 +222,7 @@ export const weeklyFunction = inngest.createFunction(
 
         const { error } = await sendEmail({
           to: owner.email,
-          subject: `${company.name} will be deleted on ${deletionDate}`,
+          subject: `${company.name} will be deleted on or after ${deletionDate}`,
           html: await render(
             CompanyDeletionWarningEmail({
               recipientName: owner.firstName ?? undefined,
@@ -247,7 +251,7 @@ export const weeklyFunction = inngest.createFunction(
               entityId: company.id,
               integration: WARNING_INTEGRATION,
               externalId: "",
-              metadata: { ...warning, to: owner.email },
+              metadata: { ...warning, ownerId: owner.id, to: owner.email },
               companyId: company.id
             },
             { onConflict: "entityType,entityId,integration,companyId" }

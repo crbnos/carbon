@@ -34,7 +34,7 @@ export const CompanyDeletionWarningEmail = ({
   return (
     <EmailThemeProvider
       preview={
-        <Preview>{`${companyName} will be deleted on ${deletionDate}`}</Preview>
+        <Preview>{`${companyName} will be deleted on or after ${deletionDate}`}</Preview>
       }
       additionalHeadContent={<style>{notificationStyles}</style>}
     >

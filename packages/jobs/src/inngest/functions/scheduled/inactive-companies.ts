@@ -66,6 +66,8 @@ export type Warning = {
   warnedAt?: string;
   deleteAfter?: string;
   failedAt?: string;
+  /** The group owner the email went to; a purge requires the same owner. */
+  ownerId?: string;
 };
 
 /** Now as an instant (ms) and as today's UTC date (`YYYY-MM-DD`). */

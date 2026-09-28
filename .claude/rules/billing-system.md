@@ -188,7 +188,9 @@ whom it deleted.
     a fresh warning. The purge deletes the marker along with the company.
   - Right before each purge, `isStillDueForDeletion` re-reads, inside the purge's own
     transaction, the company, the group's plan rows, the bypass list, the group owner and
-    the warning. A plan bought, or an owner changed, after the plan step stops the delete.
+    the warning. The marker stores the warned owner's id (`ownerId`); the purge requires
+    the group's current owner to be that same person. A plan bought, or an owner cleared
+    or changed, after the warning stops the delete.
   - Each warn or delete batch that still fails after its retries is logged and skipped.
     It never ends the run, so the training reminders after it still go out.
 
