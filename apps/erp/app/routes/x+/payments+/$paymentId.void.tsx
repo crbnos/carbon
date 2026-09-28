@@ -1,9 +1,9 @@
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
+import { voidPayment } from "~/modules/invoicing/invoicing.server";
 import { path } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
@@ -16,26 +16,15 @@ export async function action({ request, params }: ActionFunctionArgs) {
     return { success: false, message: "Missing paymentId" };
   }
 
-  const serviceRole = getCarbonServiceRole();
-  try {
-    const result = await serviceRole.functions.invoke("post-payment", {
-      body: {
-        type: "void",
-        paymentId,
-        userId,
-        companyId
-      }
-    });
-    if (result.error) {
-      throw redirect(
-        path.to.payment(paymentId),
-        await flash(request, error(result.error, "Failed to void payment"))
-      );
-    }
-  } catch (err) {
+  // Shared with the invoicing_voidPayment tool.
+  const result = await voidPayment({ paymentId, companyId, userId });
+  if (result.error) {
     throw redirect(
       path.to.payment(paymentId),
-      await flash(request, error(err, "Failed to void payment"))
+      await flash(
+        request,
+        error(result.error.cause ?? null, result.error.flash)
+      )
     );
   }
 

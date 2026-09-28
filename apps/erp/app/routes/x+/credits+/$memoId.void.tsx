@@ -1,9 +1,9 @@
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
+import { voidMemo } from "~/modules/invoicing/invoicing.server";
 import { path } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
@@ -16,26 +16,15 @@ export async function action({ request, params }: ActionFunctionArgs) {
     return { success: false, message: "Missing memoId" };
   }
 
-  const serviceRole = getCarbonServiceRole();
-  try {
-    const result = await serviceRole.functions.invoke("post-memo", {
-      body: {
-        type: "void",
-        memoId,
-        userId,
-        companyId
-      }
-    });
-    if (result.error) {
-      throw redirect(
-        path.to.memo(memoId),
-        await flash(request, error(result.error, "Failed to void memo"))
-      );
-    }
-  } catch (err) {
+  // Shared with the invoicing_voidMemo tool.
+  const result = await voidMemo({ memoId, companyId, userId });
+  if (result.error) {
     throw redirect(
       path.to.memo(memoId),
-      await flash(request, error(err, "Failed to void memo"))
+      await flash(
+        request,
+        error(result.error.cause ?? null, result.error.flash)
+      )
     );
   }
 

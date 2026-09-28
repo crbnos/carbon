@@ -33,7 +33,7 @@ import {
 } from "~/modules/purchasing";
 import type { GenericQueryFilters } from "~/utils/query";
 import { LIST_COUNT, setGenericQueryFilters } from "~/utils/query";
-import { sanitize } from "~/utils/supabase";
+import { ruleError, sanitize } from "~/utils/supabase";
 import { getExchangeRate } from "../accounting/accounting.service";
 import { getEmployeeJob } from "../people/people.service";
 import {
@@ -56,6 +56,10 @@ import type {
   salesInvoiceShipmentValidator,
   salesInvoiceStatusType,
   salesInvoiceValidator
+} from "./invoicing.models";
+import {
+  memoValidator as memoFormValidator,
+  paymentValidator as paymentFormValidator
 } from "./invoicing.models";
 
 const PURCHASE_INVOICES_LIST_COLUMNS =
@@ -2178,29 +2182,67 @@ export async function upsertPayment(
         customFields?: Json;
       })
 ) {
+  // Only the payment form's fields are written: status, journalId and the
+  // other posting columns move through the post-payment edge function
+  // (invoicing_postPayment / invoicing_voidPayment).
+  const fields = pickFields(payment, PAYMENT_FORM_FIELDS);
   if ("createdBy" in payment) {
     return client
       .from("payment")
       .insert([
         {
-          ...sanitize(payment),
+          ...sanitize(fields),
+          paymentId: payment.paymentId,
+          companyId: payment.companyId,
+          createdBy: payment.createdBy,
           customerId: payment.customerId ?? null,
           supplierId: payment.supplierId ?? null
-        }
+        } as Database["public"]["Tables"]["payment"]["Insert"]
       ])
       .select("id, paymentId")
       .single();
   }
-  return client
+  // Only Draft payments are editable, as the payment form enforces.
+  const updated = await client
     .from("payment")
     .update({
-      ...sanitize(payment),
+      ...sanitize(fields),
+      updatedBy: payment.updatedBy,
       customerId: payment.customerId ?? null,
       supplierId: payment.supplierId ?? null
     })
     .eq("id", payment.id)
+    .eq("status", "Draft")
     .select("id, paymentId")
     .single();
+  // PGRST116: no row matched, so the payment is missing or no longer Draft.
+  if (updated.error?.code === "PGRST116") {
+    return {
+      data: null,
+      error: ruleError(
+        "Payment not found, or not Draft: only draft payments can be edited."
+      )
+    };
+  }
+  return updated;
+}
+
+/** Fields the payment form edits, plus custom fields. */
+const PAYMENT_FORM_FIELDS = [
+  ...Object.keys(paymentFormValidator.shape).filter((key) => key !== "id"),
+  "customFields"
+];
+
+/** Fields the memo form edits, plus custom fields. */
+const MEMO_FORM_FIELDS = [
+  ...Object.keys(memoFormValidator.shape).filter((key) => key !== "id"),
+  "customFields"
+];
+
+function pickFields(row: object, fields: string[]): Record<string, unknown> {
+  return Object.fromEntries(
+    Object.entries(row).filter(([key]) => fields.includes(key))
+  );
 }
 
 // RLS DELETE policy on payment restricts to status='Draft'.
@@ -2966,19 +3008,42 @@ export async function upsertMemo(
         customFields?: Json;
       })
 ) {
+  // Only the memo form's fields are written: status, journalId and the other
+  // posting columns move through the post-memo edge function
+  // (invoicing_postMemo / invoicing_voidMemo).
+  const fields = pickFields(memo, MEMO_FORM_FIELDS);
   if ("createdBy" in memo) {
     return client
       .from("memo")
-      .insert([sanitize(memo)])
+      .insert([
+        {
+          ...sanitize(fields),
+          memoId: memo.memoId,
+          companyId: memo.companyId,
+          createdBy: memo.createdBy
+        } as Database["public"]["Tables"]["memo"]["Insert"]
+      ])
       .select("id, memoId")
       .single();
   }
-  return client
+  // Only Draft memos are editable, as the memo form enforces.
+  const updated = await client
     .from("memo")
-    .update(sanitize(memo))
+    .update({ ...sanitize(fields), updatedBy: memo.updatedBy })
     .eq("id", memo.id)
+    .eq("status", "Draft")
     .select("id, memoId")
     .single();
+  // PGRST116: no row matched, so the memo is missing or no longer Draft.
+  if (updated.error?.code === "PGRST116") {
+    return {
+      data: null,
+      error: ruleError(
+        "Memo not found, or not Draft: only draft memos can be edited."
+      )
+    };
+  }
+  return updated;
 }
 
 // RLS DELETE policy on memo restricts to status='Draft'.

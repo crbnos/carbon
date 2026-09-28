@@ -307,11 +307,9 @@ const ROUTE_ONLY_POSTINGS: Record<string, string> = {
   "post-inventory-count": "inventory document commands (inventory count post)",
   "post-nonconformance":
     "inspection reject + nonconformance task/approval generation",
-  "post-sales-invoice": "invoicing post/void commands",
-  "post-purchase-invoice": "invoicing post/void commands",
-  "post-payment": "invoicing post/void commands",
-  "post-memo": "invoicing post/void commands",
-  "post-card-transaction": "invoicing post/void commands"
+  "post-sales-invoice":
+    "sales invoice post/void commands (sales rules, PDF and email in the route)",
+  "post-purchase-invoice": "purchase invoice post/void commands"
 };
 
 /** Every app file transitively imported (value imports) from the registry. */
@@ -377,5 +375,11 @@ describe("posting edge functions reachable from the tool surface", () => {
     expect(isReachable("post-receipt")).toBe(true);
     expect(isReachable("post-shipment")).toBe(true);
     expect(isReachable("create")).toBe(true);
+  });
+
+  it("payment, memo and card transaction posting are reachable (the invoicing settlement tools)", () => {
+    expect(isReachable("post-payment")).toBe(true);
+    expect(isReachable("post-memo")).toBe(true);
+    expect(isReachable("post-card-transaction")).toBe(true);
   });
 });
