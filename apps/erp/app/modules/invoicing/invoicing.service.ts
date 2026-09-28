@@ -40,6 +40,7 @@ import {
   getCustomerPayment,
   getCustomerShipping
 } from "../sales/sales.service";
+import { updateSortOrder } from "../shared/sort-order";
 import type {
   CardTransactionStatusType,
   CardTransactionType,
@@ -978,16 +979,18 @@ export async function upsertPurchaseInvoiceLine(
 
 export async function updatePurchaseInvoiceLineOrder(
   db: Kysely<KyselyDatabase>,
-  updates: { id: string; sortOrder: number; updatedBy: string }[]
+  companyId: string,
+  userId: string,
+  invoiceId: string,
+  updates: { id: string; sortOrder: number }[]
 ) {
-  return db.transaction().execute(async (trx) => {
-    for (const { id, sortOrder, updatedBy } of updates) {
-      await trx
-        .updateTable("purchaseInvoiceLine")
-        .set({ sortOrder, updatedBy })
-        .where("id", "=", id)
-        .execute();
-    }
+  return updateSortOrder(db, {
+    table: "purchaseInvoiceLine",
+    column: "sortOrder",
+    companyId,
+    userId,
+    parent: { column: "invoiceId", id: invoiceId },
+    updates
   });
 }
 
@@ -1354,16 +1357,18 @@ export async function upsertSalesInvoiceLine(
 
 export async function updateSalesInvoiceLineOrder(
   db: Kysely<KyselyDatabase>,
-  updates: { id: string; sortOrder: number; updatedBy: string }[]
+  companyId: string,
+  userId: string,
+  invoiceId: string,
+  updates: { id: string; sortOrder: number }[]
 ) {
-  return db.transaction().execute(async (trx) => {
-    for (const { id, sortOrder, updatedBy } of updates) {
-      await trx
-        .updateTable("salesInvoiceLine")
-        .set({ sortOrder, updatedBy })
-        .where("id", "=", id)
-        .execute();
-    }
+  return updateSortOrder(db, {
+    table: "salesInvoiceLine",
+    column: "sortOrder",
+    companyId,
+    userId,
+    parent: { column: "invoiceId", id: invoiceId },
+    updates
   });
 }
 

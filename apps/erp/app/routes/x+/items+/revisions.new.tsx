@@ -2,11 +2,14 @@ import { assertIsPost } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { validator } from "@carbon/form";
+import { getLogger } from "@carbon/logger";
 import type { ActionFunctionArgs } from "react-router";
 import { revisionValidator } from "~/modules/items/items.models";
 import { requireItemChangeNoticeUnlocked } from "~/modules/items/items.server";
 import { createRevision, getItem } from "~/modules/items/items.service";
 import { path } from "~/utils/path";
+
+const logger = getLogger("erp", "items-revisions-new");
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -40,6 +43,16 @@ export async function action({ request }: ActionFunctionArgs) {
   const currentItem = await getItem(client, validation.data.copyFromId);
 
   if (currentItem.error) {
+    return { success: false, error: "Failed to get current item" };
+  }
+
+  // createRevision writes through the service role with the SOURCE item's
+  // companyId, and the RLS read above admits any company the user belongs to.
+  if (currentItem.data.companyId !== companyId) {
+    logger.error("Revision source item is not in the caller's company", {
+      companyId,
+      itemId: validation.data.copyFromId
+    });
     return { success: false, error: "Failed to get current item" };
   }
 

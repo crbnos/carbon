@@ -8,11 +8,13 @@ A brand-new account has no company yet, so Carbon holds you in the setup wizard 
 
 **Your profile.** First and last name, both required.
 
-**Company.** The substantive step: company name, full address, base currency, optional website. Submitting creates the company and everything a usable tenant needs.
+**Company.** Company name, full address, base currency, optional website.
 
-Two steps appear conditionally: **Industry** (internal Carbon staff only: offers a `docs/platform/demo-data` or a `docs/platform/backups` restore) and **Plan** (Carbon Cloud only: Stripe checkout; self-hosted installs go straight to the app).
+**Industry.** How to start: a `docs/platform/demo-data` for your industry, or a clean, empty company. Carbon staff also get a `docs/platform/backups` restore option. Submitting creates the company and everything a usable tenant needs.
 
-Saving the company also creates a **"Headquarters"** location from your address, links you as an employee, and seeds the baseline: chart of accounts, posting accounts, numbering sequences, payment terms, units of measure. Fiscal year, periods, and sequences are deliberately *not* asked for — they come pre-seeded and you tune them later under `docs/reference/company-settings`.
+One step appears conditionally: **Plan** (Carbon Cloud only: Stripe checkout; self-hosted installs go straight to the app).
+
+Creating the company also creates a **"Headquarters"** location from your address, links you as an employee, and seeds the baseline: chart of accounts, posting accounts, numbering sequences, payment terms, units of measure. Fiscal year, periods, and sequences are deliberately *not* asked for — they come pre-seeded and you tune them later under `docs/reference/company-settings`.
 
 ## Where to go next
 
@@ -23,9 +25,9 @@ The wizard's job is a working tenant, not a configured one. Refine the seeded se
 The completion gate is the layout loader (`routes/onboarding+/_layout.tsx:33-44`); step order is `utils/path.ts:2103-2109`; conditional steps at `_layout.tsx:49-53`. Theme validator `settings.models.ts:306-311`; profile `onboardingUserValidator` (`account.models.ts:12-17`); company `addressValidator` (`settings.models.ts:95-107`). Provisioning runs `provisionOnboardingCompany` (`services/onboarding.server.ts`) with the seed via `seedCompany` (`settings.service.ts:751-765`).
 
 ### Stuck in the setup wizard / keeps redirecting to /onboarding
-The company lacks a name or a location — there is no `onboarded` flag. Complete the Company step; it creates both at once.
+The company lacks a name or a location — there is no `onboarded` flag. Complete the Company and Industry steps; the Industry step creates both at once.
 
-### The Industry step isn't showing
+### "Restore from a backup" isn't offered on the Industry step
 Internal Carbon staff accounts only. Its absence for regular sign-ups is expected.
 
 ### The Plan step isn't showing

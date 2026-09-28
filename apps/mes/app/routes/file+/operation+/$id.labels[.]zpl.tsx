@@ -11,7 +11,7 @@ import {
   getCompanyLogoForLabel,
   resolveLabelLogo
 } from "~/services/labelLogo.server";
-import { getTrackedEntitiesByMakeMethodId } from "~/services/operations.service";
+import { getTrackedEntitiesByOperationId } from "~/services/operations.service";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
@@ -22,7 +22,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   const [companySettings, trackedEntities] = await Promise.all([
     getCompanySettings(client, companyId),
-    getTrackedEntitiesByMakeMethodId(client, id)
+    getTrackedEntitiesByOperationId(client, id, companyId)
   ]);
 
   const url = new URL(request.url);

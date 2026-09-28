@@ -58,6 +58,10 @@ export const integrationErrors = {
       title: msg`Onshape denied the connection`,
       description: msg`The authorization was refused in Onshape. Try connecting again.`
     },
+    "invalid-state": {
+      title: msg`The Onshape connection expired`,
+      description: msg`Return to Integrations and connect Onshape again.`
+    },
     "invalid-response": {
       title: msg`Onshape didn't return an authorization code`,
       description: msg`The response from Onshape was missing required parameters. Try connecting again.`

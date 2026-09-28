@@ -1,8 +1,8 @@
 import { assertIsPost } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
+import { clearConsolePinIn } from "@carbon/auth/console-pin.server";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
-import { clearConsolePinIn } from "~/services/console.server";
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -15,7 +15,7 @@ export async function action({ request }: ActionFunctionArgs) {
     { success: true },
     {
       headers: {
-        "Set-Cookie": clearConsolePinIn(companyId)
+        "Set-Cookie": await clearConsolePinIn(companyId)
       }
     }
   );

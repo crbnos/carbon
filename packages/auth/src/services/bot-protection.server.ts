@@ -115,8 +115,7 @@ async function verifyTurnstileToken(
         body: new URLSearchParams({
           secret: CLOUDFLARE_TURNSTILE_SECRET_KEY ?? "",
           response: token,
-          // the client address, not the full x-forwarded-for proxy chain
-          remoteip: remoteip.split(",")[0]?.trim() ?? ""
+          remoteip
         })
       }
     );

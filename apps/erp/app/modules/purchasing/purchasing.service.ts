@@ -29,6 +29,7 @@ import {
 } from "../accounting/accounting.service";
 import type { PurchaseInvoice } from "../invoicing/types";
 import { upsertExternalLink } from "../shared/shared.service";
+import { updateSortOrder } from "../shared/sort-order";
 import type {
   purchaseOrderDeliveryValidator,
   purchaseOrderLineValidator,
@@ -582,15 +583,17 @@ export async function getSupplier(
 
 export async function getSupplierContact(
   client: SupabaseClient<Database>,
-  supplierContactId: string
+  supplierContactId: string,
+  companyId?: string
 ) {
-  return client
+  let query = client
     .from("supplierContact")
     .select(
       "*, contact(id, firstName, lastName, email, mobilePhone, homePhone, workPhone, fax, title, notes)"
     )
-    .eq("id", supplierContactId)
-    .single();
+    .eq("id", supplierContactId);
+  if (companyId) query = query.eq("companyId", companyId);
+  return query.single();
 }
 
 export async function getSupplierContacts(
@@ -1927,16 +1930,18 @@ export async function upsertPurchaseOrderLine(
 
 export async function updatePurchaseOrderLineOrder(
   db: Kysely<KyselyDatabase>,
-  updates: { id: string; sortOrder: number; updatedBy: string }[]
+  companyId: string,
+  userId: string,
+  purchaseOrderId: string,
+  updates: { id: string; sortOrder: number }[]
 ) {
-  return db.transaction().execute(async (trx) => {
-    for (const { id, sortOrder, updatedBy } of updates) {
-      await trx
-        .updateTable("purchaseOrderLine")
-        .set({ sortOrder, updatedBy })
-        .where("id", "=", id)
-        .execute();
-    }
+  return updateSortOrder(db, {
+    table: "purchaseOrderLine",
+    column: "sortOrder",
+    companyId,
+    userId,
+    parent: { column: "purchaseOrderId", id: purchaseOrderId },
+    updates
   });
 }
 
@@ -2475,16 +2480,18 @@ export async function upsertSupplierQuoteLine(
 
 export async function updateSupplierQuoteLineOrder(
   db: Kysely<KyselyDatabase>,
-  updates: { id: string; sortOrder: number; updatedBy: string }[]
+  companyId: string,
+  userId: string,
+  supplierQuoteId: string,
+  updates: { id: string; sortOrder: number }[]
 ) {
-  return db.transaction().execute(async (trx) => {
-    for (const { id, sortOrder, updatedBy } of updates) {
-      await trx
-        .updateTable("supplierQuoteLine")
-        .set({ sortOrder, updatedBy })
-        .where("id", "=", id)
-        .execute();
-    }
+  return updateSortOrder(db, {
+    table: "supplierQuoteLine",
+    column: "sortOrder",
+    companyId,
+    userId,
+    parent: { column: "supplierQuoteId", id: supplierQuoteId },
+    updates
   });
 }
 
@@ -2792,16 +2799,18 @@ export async function upsertPurchasingRFQLine(
 
 export async function updatePurchasingRFQLineOrder(
   db: Kysely<KyselyDatabase>,
-  updates: { id: string; sortOrder: number; updatedBy: string }[]
+  companyId: string,
+  userId: string,
+  purchasingRfqId: string,
+  updates: { id: string; sortOrder: number }[]
 ) {
-  return db.transaction().execute(async (trx) => {
-    for (const { id, sortOrder, updatedBy } of updates) {
-      await trx
-        .updateTable("purchasingRfqLine")
-        .set({ order: sortOrder, updatedBy })
-        .where("id", "=", id)
-        .execute();
-    }
+  return updateSortOrder(db, {
+    table: "purchasingRfqLine",
+    column: "order",
+    companyId,
+    userId,
+    parent: { column: "purchasingRfqId", id: purchasingRfqId },
+    updates
   });
 }
 

@@ -3,6 +3,7 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { getLogger } from "@carbon/logger";
+import { getRequestOrigin } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
 import { checkRevisionLock } from "~/modules/items/items.server";
@@ -42,17 +43,14 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const redirectPath = requestReferrer(request)?.replace(methodToReplace, id);
 
   if (!redirectPath) {
-    // requestReferrer returns null when the Referer is missing or its origin
-    // differs from request.url's — behind a proxy the server can see an
-    // internal scheme/host, which rejects every same-site referrer.
+    // requestReferrer returns null when the Referer is missing or points at
+    // another origin.
     logger.warning("Method version activation could not resolve a redirect", {
       methodVersionId: id,
       methodToReplace,
       referer: request.headers.get("referer"),
       requestUrl: request.url,
-      host: request.headers.get("host"),
-      forwardedHost: request.headers.get("x-forwarded-host"),
-      forwardedProto: request.headers.get("x-forwarded-proto")
+      origin: getRequestOrigin(request)
     });
     return {
       success: false,

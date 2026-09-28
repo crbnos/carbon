@@ -86,7 +86,10 @@ both use it; `company-backup.ts` re-exports it), exported to app code as
   data; `companyGroupId` = config shared across a company group (chart of
   accounts, currencies, dimensions).
 - Skip/scope sets: `SECRET_TABLES` (`apiKey`, `apiKeyRateLimit`,
-  `companyIntegration`, `webhook`, `oauthClient`, `oauthToken` — never travel;
+  `companyIntegration`, `employeePin`, `webhook`, `oauthClient`, `oauthToken` — never travel;
+  `employeePin` holds console-PIN bcrypt hashes, a credential for a 4-digit PIN, and
+  stays in place on restore alongside `employee` (`IN_PLACE_SKIPPED_TABLES`), which is
+  never wiped, so its (employee, company) FK has nothing to orphan it from;
   `apiKeyRateLimit` is here because its NOT-NULL `apiKeyId` references the stripped
   secret `apiKey`, so exporting it alone would dangle every row on restore — and
   it's UNLOGGED operational counters, not user data), `STRUCTURAL_TABLES` (`company` —

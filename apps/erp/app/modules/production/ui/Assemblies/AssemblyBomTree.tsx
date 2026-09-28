@@ -28,8 +28,9 @@ import {
 } from "@carbon/react";
 import type { AssemblyGraphIndex, ComponentGroup } from "@carbon/viewer";
 import { describeStep, groupComponentNodeIds } from "@carbon/viewer";
+import { Trans, useLingui } from "@lingui/react/macro";
 import { useVirtualizer } from "@tanstack/react-virtual";
-import type { MouseEvent } from "react";
+import type { MouseEvent, ReactNode } from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   LuArrowDownAZ,
@@ -37,6 +38,7 @@ import {
   LuBlocks,
   LuChevronDown,
   LuChevronRight,
+  LuCircleDot,
   LuCirclePlus,
   LuEye,
   LuEyeOff,
@@ -46,6 +48,7 @@ import {
   LuPencil,
   LuSearch,
   LuSettings,
+  LuSparkles,
   LuTrash,
   LuX
 } from "react-icons/lu";
@@ -129,7 +132,10 @@ type AssemblyBomTreeProps = {
   /** A new-step create is in flight — disables the Add Step action */
   isAddingStep: boolean;
   onHighlightComponents: (nodeIds: string[]) => void;
-  onHideComponents: (nodeIds: string[]) => void;
+  hasSelectedStep: boolean;
+  ownNodeIds: string[];
+  hiddenNodeIds: string[];
+  onSetHiddenComponents: (nodeIds: string[]) => void;
   onSelectStep: (stepId: string) => void;
   /** Create a step seeded with the current selection (shared with the parent) */
   onAddStep: () => void;
@@ -156,12 +162,16 @@ export default function AssemblyBomTree({
   isActive,
   isAddingStep,
   onHighlightComponents,
-  onHideComponents,
+  hasSelectedStep,
+  ownNodeIds,
+  hiddenNodeIds: savedHiddenNodeIds,
+  onSetHiddenComponents,
   onSelectStep,
   onAddStep
 }: AssemblyBomTreeProps) {
   const { id } = useParams();
   if (!id) throw new Error("Could not find id");
+  const { t } = useLingui();
 
   const permissions = usePermissions();
   const canGroup = !isDisabled && permissions.can("create", "production");
@@ -196,9 +206,12 @@ export default function AssemblyBomTree({
     () => new Set(selectedNodeIds),
     [selectedNodeIds]
   );
-  const [hiddenNodeIds, setHiddenNodeIds] = useState<ReadonlySet<string>>(
-    new Set()
+  const hiddenNodeIds = useMemo<ReadonlySet<string>>(
+    () => new Set(savedHiddenNodeIds),
+    [savedHiddenNodeIds]
   );
+  const ownSet = useMemo(() => new Set(ownNodeIds), [ownNodeIds]);
+  const canHide = hasSelectedStep && !isDisabled;
   const [expandedKeys, setExpandedKeys] = useState<ReadonlySet<string>>(
     new Set()
   );
@@ -447,11 +460,6 @@ export default function AssemblyBomTree({
     [stepList, steps, selectedSet, submitAssign]
   );
 
-  // Push the hidden instance set up to the viewer.
-  useEffect(() => {
-    onHideComponents([...hiddenNodeIds]);
-  }, [hiddenNodeIds, onHideComponents]);
-
   const applyNodeSelection = (next: ReadonlySet<string>) => {
     onHighlightComponents([...next]);
   };
@@ -498,30 +506,50 @@ export default function AssemblyBomTree({
   };
 
   const onHideSelection = () => {
-    setHiddenNodeIds((prev) => {
-      const next = new Set(prev);
-      for (const id of selectedNodeIds) next.add(id);
-      return next;
-    });
+    if (!canHide) return;
+    const next = new Set(hiddenNodeIds);
+    for (const id of selectedNodeIds) if (!ownSet.has(id)) next.add(id);
+    onSetHiddenComponents([...next]);
     applyNodeSelection(new Set());
   };
 
-  // Toggle visibility of a set of instances (a whole group, or one instance).
-  // A group hides unless every instance is already hidden, in which case it
-  // reveals them (Onshape-style per-row eye).
+  // A group hides unless every eligible instance is already hidden, then it
+  // reveals them. The step's own parts are skipped: they can never be hidden.
   const onToggleHide = (nodeIds: string[]) => {
-    setHiddenNodeIds((prev) => {
-      const next = new Set(prev);
-      const allHidden = nodeIds.every((id) => next.has(id));
-      for (const id of nodeIds) {
-        if (allHidden) next.delete(id);
-        else next.add(id);
-      }
-      return next;
-    });
+    if (!canHide) return;
+    const eligible = nodeIds.filter((id) => !ownSet.has(id));
+    if (eligible.length === 0) return;
+    const next = new Set(hiddenNodeIds);
+    const allHidden = eligible.every((id) => next.has(id));
+    for (const id of eligible) {
+      if (allHidden) next.delete(id);
+      else next.add(id);
+    }
+    onSetHiddenComponents([...next]);
   };
 
-  const onShowAll = () => setHiddenNodeIds(new Set());
+  const onShowAll = () => {
+    if (canHide) onSetHiddenComponents([]);
+  };
+
+  const hideAvailability = (
+    nodeIds: string[]
+  ): { isHideDisabled: boolean; hideDisabledReason?: string } => {
+    if (!hasSelectedStep) {
+      return {
+        isHideDisabled: true,
+        hideDisabledReason: t`Select a step to hide parts on it.`
+      };
+    }
+    if (isDisabled) return { isHideDisabled: true };
+    if (nodeIds.length > 0 && nodeIds.every((id) => ownSet.has(id))) {
+      return {
+        isHideDisabled: true,
+        hideDisabledReason: t`Installed on this step, so it can't be hidden here.`
+      };
+    }
+    return { isHideDisabled: false };
+  };
 
   const parentRef = useRef<HTMLDivElement>(null);
   const virtualizer = useVirtualizer({
@@ -668,32 +696,36 @@ export default function AssemblyBomTree({
               <TooltipContent>Plan as one component</TooltipContent>
             </Tooltip>
           )}
-          {hasSelection && (
+          {hasSelection && canHide && (
             <Tooltip>
               <TooltipTrigger asChild>
                 <IconButton
-                  aria-label="Hide selected components"
+                  aria-label={t`Hide selected on this step`}
                   icon={<LuEyeOff />}
                   variant="ghost"
                   size="sm"
                   onClick={onHideSelection}
                 />
               </TooltipTrigger>
-              <TooltipContent>Hide selected components</TooltipContent>
+              <TooltipContent>
+                <Trans>Hide selected on this step</Trans>
+              </TooltipContent>
             </Tooltip>
           )}
-          {hiddenNodeIds.size > 0 && (
+          {canHide && hiddenNodeIds.size > 0 && (
             <Tooltip>
               <TooltipTrigger asChild>
                 <IconButton
-                  aria-label="Show all hidden components"
+                  aria-label={t`Show all hidden on this step`}
                   icon={<LuEye />}
                   variant="ghost"
                   size="sm"
                   onClick={onShowAll}
                 />
               </TooltipTrigger>
-              <TooltipContent>Show all hidden components</TooltipContent>
+              <TooltipContent>
+                <Trans>Show all hidden on this step</Trans>
+              </TooltipContent>
             </Tooltip>
           )}
           <Tooltip>
@@ -777,6 +809,8 @@ export default function AssemblyBomTree({
                       style={style}
                       onClick={(event) => onRowClick(event, virtualRow.index)}
                       onToggleHide={() => onToggleHide(nodes)}
+                      {...hideAvailability(nodes)}
+                      isOnStep={nodes.some((nodeId) => ownSet.has(nodeId))}
                       onToggleExpand={() =>
                         onToggleExpand(`unit:${row.unit.id}`)
                       }
@@ -795,6 +829,8 @@ export default function AssemblyBomTree({
                       style={style}
                       onClick={(event) => onRowClick(event, virtualRow.index)}
                       onToggleHide={() => onToggleHide(nodes)}
+                      {...hideAvailability(nodes)}
+                      isOnStep={nodes.some((nodeId) => ownSet.has(nodeId))}
                     />
                   );
                 }
@@ -809,6 +845,8 @@ export default function AssemblyBomTree({
                       style={style}
                       onClick={(event) => onRowClick(event, virtualRow.index)}
                       onToggleHide={() => onToggleHide(nodes)}
+                      {...hideAvailability(nodes)}
+                      isOnStep={nodes.some((nodeId) => ownSet.has(nodeId))}
                     />
                   );
                 }
@@ -830,6 +868,8 @@ export default function AssemblyBomTree({
                     style={style}
                     onClick={(event) => onRowClick(event, virtualRow.index)}
                     onToggleHide={() => onToggleHide(nodes)}
+                    {...hideAvailability(nodes)}
+                    isOnStep={nodes.some((nodeId) => ownSet.has(nodeId))}
                     onToggleExpand={() => onToggleExpand(group.key)}
                     onSelectStep={onSelectStep}
                   />
@@ -861,16 +901,19 @@ export default function AssemblyBomTree({
             Plan as one component
           </ContextMenuItem>
           <ContextMenuSeparator />
-          <ContextMenuItem disabled={!hasSelection} onClick={onHideSelection}>
+          <ContextMenuItem
+            disabled={!hasSelection || !canHide}
+            onClick={onHideSelection}
+          >
             <LuEyeOff className="mr-2 h-4 w-4" />
-            Hide selected components
+            <Trans>Hide selected on this step</Trans>
           </ContextMenuItem>
           <ContextMenuItem
-            disabled={hiddenNodeIds.size === 0}
+            disabled={!canHide || hiddenNodeIds.size === 0}
             onClick={onShowAll}
           >
             <LuEye className="mr-2 h-4 w-4" />
-            Show all hidden components
+            <Trans>Show all hidden on this step</Trans>
           </ContextMenuItem>
           <ContextMenuItem
             disabled={!hasSelection}
@@ -991,6 +1034,9 @@ function UnitListRow({
   style,
   onClick,
   onToggleHide,
+  isHideDisabled,
+  hideDisabledReason,
+  isOnStep,
   onToggleExpand,
   onEdit
 }: {
@@ -1005,9 +1051,13 @@ function UnitListRow({
   style: React.CSSProperties;
   onClick: (event: MouseEvent) => void;
   onToggleHide: () => void;
+  isHideDisabled: boolean;
+  hideDisabledReason?: string;
+  isOnStep: boolean;
   onToggleExpand: () => void;
   onEdit: () => void;
 }) {
+  const { t } = useLingui();
   const permissions = usePermissions();
   const deleteFetcher = useFetcher<{ success: boolean }>();
   const canUpdate = !isDisabled && permissions.can("update", "production");
@@ -1048,7 +1098,7 @@ function UnitListRow({
         <button
           type="button"
           aria-label={
-            isExpanded ? `Collapse ${unit.name}` : `Expand ${unit.name}`
+            isExpanded ? t`Collapse ${unit.name}` : t`Expand ${unit.name}`
           }
           className="flex h-5 w-5 shrink-0 items-center justify-center rounded-sm text-muted-foreground hover:bg-accent"
           onClick={(event) => {
@@ -1069,42 +1119,29 @@ function UnitListRow({
       <span className="min-w-0 flex-1 truncate font-medium" title={unit.name}>
         {unit.name}
       </span>
-      {unit.sourceGroupId && (
-        <Badge
-          variant="outline"
-          className="text-muted-foreground"
-          title="Detected by the motion planner"
-        >
-          Auto
+      {unit.sourceGroupId && <DetectedIcon />}
+      {isOnStep && <ThisStepIcon />}
+      {memberCount > 1 && (
+        <Badge variant="secondary" className="tabular-nums">
+          ×{memberCount}
         </Badge>
       )}
-      <Badge variant="secondary" className="tabular-nums">
-        ×{memberCount}
-      </Badge>
       <div className="flex items-center">
-        <IconButton
-          aria-label={allHidden ? `Show ${unit.name}` : `Hide ${unit.name}`}
-          icon={allHidden ? <LuEyeOff /> : <LuEye />}
-          variant="ghost"
-          size="sm"
-          className={cn(
-            "focus:opacity-100",
-            hidden !== "none"
-              ? "opacity-100 text-muted-foreground"
-              : "opacity-0 group-hover:opacity-100"
-          )}
-          onClick={(event) => {
-            event.stopPropagation();
-            onToggleHide();
-          }}
+        <HideToggle
+          label={unit.name}
+          isHidden={allHidden}
+          isMarked={hidden !== "none"}
+          isDisabled={isHideDisabled}
+          disabledReason={hideDisabledReason}
+          onToggle={onToggleHide}
         />
         {canUpdate && (
           <IconButton
-            aria-label={`Edit subassembly ${unit.name}`}
+            aria-label={t`Edit subassembly ${unit.name}`}
             icon={<LuPencil />}
             variant="ghost"
             size="sm"
-            className="opacity-0 group-hover:opacity-100 focus:opacity-100"
+            className="opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus:opacity-100"
             onClick={(event) => {
               event.stopPropagation();
               onEdit();
@@ -1113,11 +1150,11 @@ function UnitListRow({
         )}
         {canDelete && (
           <IconButton
-            aria-label={`Delete subassembly ${unit.name}`}
+            aria-label={t`Delete subassembly ${unit.name}`}
             icon={<LuTrash />}
             variant="ghost"
             size="sm"
-            className="opacity-0 group-hover:opacity-100 focus:opacity-100"
+            className="opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus:opacity-100"
             onClick={(event) => {
               event.stopPropagation();
               deleteFetcher.submit(new FormData(), {
@@ -1140,7 +1177,10 @@ function UnitChildRow({
   hidden,
   style,
   onClick,
-  onToggleHide
+  onToggleHide,
+  isHideDisabled,
+  hideDisabledReason,
+  isOnStep
 }: {
   group: ComponentGroup;
   count: number;
@@ -1149,6 +1189,9 @@ function UnitChildRow({
   style: React.CSSProperties;
   onClick: (event: MouseEvent) => void;
   onToggleHide: () => void;
+  isHideDisabled: boolean;
+  hideDisabledReason?: string;
+  isOnStep: boolean;
 }) {
   const allHidden = hidden === "all";
   return (
@@ -1186,24 +1229,19 @@ function UnitChildRow({
       >
         {group.name}
       </span>
-      <Badge variant="secondary" className="tabular-nums">
-        ×{count}
-      </Badge>
-      <IconButton
-        aria-label={allHidden ? `Show ${group.name}` : `Hide ${group.name}`}
-        icon={allHidden ? <LuEyeOff /> : <LuEye />}
-        variant="ghost"
-        size="sm"
-        className={cn(
-          "focus:opacity-100",
-          hidden !== "none"
-            ? "opacity-100 text-muted-foreground"
-            : "opacity-0 group-hover:opacity-100"
-        )}
-        onClick={(event) => {
-          event.stopPropagation();
-          onToggleHide();
-        }}
+      {isOnStep && <ThisStepIcon />}
+      {count > 1 && (
+        <Badge variant="secondary" className="tabular-nums">
+          ×{count}
+        </Badge>
+      )}
+      <HideToggle
+        label={group.name}
+        isHidden={allHidden}
+        isMarked={hidden !== "none"}
+        isDisabled={isHideDisabled}
+        disabledReason={hideDisabledReason}
+        onToggle={onToggleHide}
       />
     </div>
   );
@@ -1464,6 +1502,9 @@ function ComponentRow({
   style,
   onClick,
   onToggleHide,
+  isHideDisabled,
+  hideDisabledReason,
+  isOnStep,
   onToggleExpand,
   onSelectStep
 }: {
@@ -1481,9 +1522,13 @@ function ComponentRow({
   style: React.CSSProperties;
   onClick: (event: MouseEvent) => void;
   onToggleHide: () => void;
+  isHideDisabled: boolean;
+  hideDisabledReason?: string;
+  isOnStep: boolean;
   onToggleExpand: () => void;
   onSelectStep: (stepId: string) => void;
 }) {
+  const { t } = useLingui();
   const bomLine = mapping ? bomByItemId.get(mapping.itemId) : undefined;
   const quantityMismatch =
     bomLine !== undefined && Math.round(bomLine.quantity) !== group.count;
@@ -1524,7 +1569,7 @@ function ComponentRow({
         <button
           type="button"
           aria-label={
-            isExpanded ? `Collapse ${group.name}` : `Expand ${group.name}`
+            isExpanded ? t`Collapse ${group.name}` : t`Expand ${group.name}`
           }
           className="flex h-5 w-5 shrink-0 items-center justify-center rounded-sm text-muted-foreground hover:bg-accent"
           onClick={(event) => {
@@ -1563,37 +1608,30 @@ function ComponentRow({
           </span>
         )}
       </div>
-      <Badge variant="secondary" className="tabular-nums">
-        ×{group.count}
-      </Badge>
+      {isOnStep && <ThisStepIcon />}
+      {group.count > 1 && (
+        <Badge variant="secondary" className="tabular-nums">
+          ×{group.count}
+        </Badge>
+      )}
       {/* Ghost icon buttons sit flush together (no gap between them) */}
       <div className="flex items-center">
-        <IconButton
-          aria-label={allHidden ? `Show ${group.name}` : `Hide ${group.name}`}
-          icon={allHidden ? <LuEyeOff /> : <LuEye />}
-          variant="ghost"
-          size="sm"
-          className={cn(
-            "focus:opacity-100",
-            // A group with any hidden instance keeps the eye visible as its
-            // status + control; fully-visible groups reveal it on hover.
-            hidden !== "none"
-              ? "opacity-100 text-muted-foreground"
-              : "opacity-0 group-hover:opacity-100"
-          )}
-          onClick={(event) => {
-            event.stopPropagation();
-            onToggleHide();
-          }}
+        <HideToggle
+          label={group.name}
+          isHidden={allHidden}
+          isMarked={hidden !== "none"}
+          isDisabled={isHideDisabled}
+          disabledReason={hideDisabledReason}
+          onToggle={onToggleHide}
         />
         <Popover>
           <PopoverTrigger asChild>
             <IconButton
-              aria-label={`Component details: ${group.name}`}
+              aria-label={t`Component details: ${group.name}`}
               icon={<LuSettings />}
               variant="ghost"
               size="sm"
-              className="opacity-0 group-hover:opacity-100 focus:opacity-100 data-[state=open]:opacity-100"
+              className="opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 focus:opacity-100 data-[state=open]:opacity-100"
               onClick={(event) => event.stopPropagation()}
             />
           </PopoverTrigger>
@@ -1619,6 +1657,95 @@ function ComponentRow({
   );
 }
 
+/** Blue matches the viewer's active-step tint. An icon, so the name keeps the row. */
+function ThisStepIcon() {
+  const { t } = useLingui();
+  return (
+    <RowIcon label={t`In this step`}>
+      <LuCircleDot className="size-3.5 text-blue-500" />
+    </RowIcon>
+  );
+}
+
+/** A subassembly the motion planner found on its own (not authored). */
+function DetectedIcon() {
+  const { t } = useLingui();
+  return (
+    <RowIcon label={t`Detected by the motion planner`}>
+      <LuSparkles className="size-3.5 text-muted-foreground" />
+    </RowIcon>
+  );
+}
+
+function RowIcon({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <span role="img" aria-label={label} className="inline-flex shrink-0">
+          {children}
+        </span>
+      </TooltipTrigger>
+      <TooltipContent>{label}</TooltipContent>
+    </Tooltip>
+  );
+}
+
+/** Stays visible while anything in the row is hidden; otherwise reveals on hover. */
+function HideToggle({
+  label,
+  isHidden,
+  isMarked,
+  isDisabled,
+  disabledReason,
+  onToggle
+}: {
+  label: string;
+  isHidden: boolean;
+  isMarked: boolean;
+  isDisabled: boolean;
+  disabledReason?: string;
+  onToggle: () => void;
+}) {
+  const { t } = useLingui();
+  const button = (
+    <IconButton
+      aria-label={isHidden ? t`Show ${label}` : t`Hide ${label}`}
+      icon={isHidden ? <LuEyeOff /> : <LuEye />}
+      variant="ghost"
+      size="sm"
+      isDisabled={isDisabled}
+      className={cn(
+        "focus:opacity-100",
+        isMarked
+          ? "opacity-100 text-muted-foreground"
+          : "opacity-0 group-hover:opacity-100 group-focus-within:opacity-100"
+      )}
+      onClick={(event) => {
+        event.stopPropagation();
+        onToggle();
+      }}
+    />
+  );
+  if (!disabledReason) return button;
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        {/* A disabled button fires no pointer events, so the span carries the tooltip */}
+        <span
+          className={cn(
+            "inline-flex",
+            !isMarked &&
+              "opacity-0 group-hover:opacity-100 group-focus-within:opacity-100"
+          )}
+        >
+          {button}
+        </span>
+      </TooltipTrigger>
+      <TooltipContent>{disabledReason}</TooltipContent>
+    </Tooltip>
+  );
+}
+
 /** A single instance of an expanded group — selectable and hideable on its own. */
 function InstanceRow({
   group,
@@ -1627,7 +1754,10 @@ function InstanceRow({
   isHidden,
   style,
   onClick,
-  onToggleHide
+  onToggleHide,
+  isHideDisabled,
+  hideDisabledReason,
+  isOnStep
 }: {
   group: ComponentGroup;
   instanceIndex: number;
@@ -1636,6 +1766,9 @@ function InstanceRow({
   style: React.CSSProperties;
   onClick: (event: MouseEvent) => void;
   onToggleHide: () => void;
+  isHideDisabled: boolean;
+  hideDisabledReason?: string;
+  isOnStep: boolean;
 }) {
   const label = `${group.name} #${instanceIndex + 1}`;
   return (
@@ -1672,21 +1805,14 @@ function InstanceRow({
           #{instanceIndex + 1}
         </span>
       </span>
-      <IconButton
-        aria-label={isHidden ? `Show ${label}` : `Hide ${label}`}
-        icon={isHidden ? <LuEyeOff /> : <LuEye />}
-        variant="ghost"
-        size="sm"
-        className={cn(
-          "focus:opacity-100",
-          isHidden
-            ? "opacity-100 text-muted-foreground"
-            : "opacity-0 group-hover:opacity-100"
-        )}
-        onClick={(event) => {
-          event.stopPropagation();
-          onToggleHide();
-        }}
+      {isOnStep && <ThisStepIcon />}
+      <HideToggle
+        label={label}
+        isHidden={isHidden}
+        isMarked={isHidden}
+        isDisabled={isHideDisabled}
+        disabledReason={hideDisabledReason}
+        onToggle={onToggleHide}
       />
     </div>
   );

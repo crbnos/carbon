@@ -40,6 +40,7 @@ import {
 } from "./BottomSheet";
 import type { ButtonProps } from "./Button";
 import { Button, buttonVariants } from "./Button";
+import { CarbonPulse } from "./CarbonPulse";
 import {
   Card,
   CardAction,
@@ -181,7 +182,6 @@ import { Kbd } from "./Kbd";
 import { Label } from "./Label";
 import { LabelWithHelp } from "./LabelWithHelp";
 import { Loading } from "./Loading";
-import { LoadingBars } from "./LoadingBars";
 import {
   Menu,
   MenuCheckboxItem,
@@ -495,7 +495,7 @@ export {
   Label,
   LabelWithHelp,
   Loading,
-  LoadingBars,
+  CarbonPulse,
   Menu,
   MenuCheckboxItem,
   MenuGroup,

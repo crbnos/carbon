@@ -6,10 +6,17 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { generateEmbedding } from "../lib/ai/embedding.ts";
 import { corsPreflight, errorResponse, jsonResponse } from "../lib/response.ts";
+import { requireCaller } from "../lib/supabase.ts";
 
 Deno.serve(async (req) => {
   const preflight = corsPreflight(req);
   if (preflight) return preflight;
+
+  try {
+    await requireCaller(req);
+  } catch (err) {
+    return errorResponse(err, (err as { status?: number }).status ?? 401);
+  }
 
   try {
     const { text } = await req.json();

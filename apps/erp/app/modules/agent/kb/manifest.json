@@ -356,6 +356,24 @@
       ]
     },
     {
+      "slug": "docs/reference/assembly-instructions",
+      "title": "Assembly instructions",
+      "description": "Step-by-step 3D build guides for a made part, authored in the ERP from its CAD model and played to operators on the shop floor.",
+      "keywords": ["assembly", "instructions", "docs", "reference"],
+      "headings": [
+        "Versions and status",
+        "Steps",
+        "Step details",
+        "Components and hidden parts",
+        "Playback settings",
+        "Building a group off to the side",
+        "Materials, tools, and slides",
+        "On jobs and the shop floor",
+        "Related",
+        "Internals, exact strings, and troubleshooting"
+      ]
+    },
+    {
       "slug": "docs/reference/audit-log",
       "title": "Audit log",
       "description": "A per-company change history for key business entities. What gets recorded, how to view and filter it, and how old entries are archived.",
@@ -982,7 +1000,8 @@
         "Maintenance dispatch",
         "Troubleshooting",
         "\"Incorrect PIN\"",
-        "\"No PIN set. Please set a PIN in your account settings.\"",
+        "\"Too many incorrect PINs. Please wait a few minutes and try again.\"",
+        "\"No PIN set. Ask an admin to set a console PIN for you.\"",
         "\"This picking list is closed. Reopen it from the ERP to continue.\"",
         "Finish is blocked or warns (\"Insufficient quantity\" / \"Steps are missing\")",
         "\"Forgot to Clock Out?\"",
@@ -1038,7 +1057,7 @@
         "Where to go next",
         "Internals and troubleshooting",
         "Stuck in the setup wizard / keeps redirecting to /onboarding",
-        "The Industry step isn't showing",
+        "\"Restore from a backup\" isn't offered on the Industry step",
         "The Plan step isn't showing"
       ]
     },
@@ -1130,8 +1149,8 @@
         "Where each piece lives",
         "Troubleshooting",
         "\"Incorrect PIN\"",
-        "\"No PIN set. Please set a PIN in your account settings.\"",
-        "\"PIN must be 4 digits\"",
+        "\"Too many incorrect PINs. Please wait a few minutes and try again.\"",
+        "\"No PIN set. Ask an admin to set a console PIN for you.\"",
         "\"Group members are required\"",
         "A user can sign in but sees nothing / can't open a module",
         "Editing an employee type didn't change existing people's access",

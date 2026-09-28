@@ -6,6 +6,7 @@ export type {
   Violation
 } from "./check";
 export { findClobbers, objectRefs } from "./clobber";
+export { edgeFunctionAuthorizesCaller } from "./conformance/edge-function-authorizes-caller";
 export { moduleShape } from "./conformance/module-shape";
 export { noDbClientInService } from "./conformance/no-db-client-in-service";
 export { noDefaultOnEffects } from "./conformance/no-default-on-effects";
@@ -14,6 +15,7 @@ export { noInlineFractionDigits } from "./conformance/no-inline-fraction-digits"
 export { noLegacyRls } from "./conformance/no-legacy-rls";
 export { noLocalTimezone } from "./conformance/no-local-timezone";
 export { noNumericPrecision } from "./conformance/no-numeric-precision";
+export { noRawForwardedHeaders } from "./conformance/no-raw-forwarded-headers";
 export { noRawRounding } from "./conformance/no-raw-rounding";
 export { noRequiredColumnWithoutDefault } from "./conformance/no-required-column-without-default";
 export { noZeroConcurrency } from "./conformance/no-zero-concurrency";
@@ -27,6 +29,7 @@ export {
 export {
   CONFORMANCE_CHECKS,
   collectFindings,
+  EDGE_FUNCTION_CHECKS,
   type Finding,
   newViolations,
   SERVER_CHECKS,
@@ -35,6 +38,7 @@ export {
   scanModules,
   TS_CHECKS
 } from "./run";
+export { loadEdgeFunctions } from "./sources/edge-functions";
 export { loadModules, modulesDir } from "./sources/modules";
 export { loadServerFiles } from "./sources/server-files";
 export { loadTypescriptFiles } from "./sources/typescript";

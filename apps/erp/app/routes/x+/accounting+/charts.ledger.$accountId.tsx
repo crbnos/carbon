@@ -1,6 +1,7 @@
 import { error, notFound } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { getLogger } from "@carbon/logger";
 import type { LoaderFunctionArgs } from "react-router";
 import { redirect, useLoaderData } from "react-router";
 import {
@@ -10,6 +11,8 @@ import {
 } from "~/modules/accounting";
 import { AccountLedgerDrawer } from "~/modules/accounting/ui/Reports";
 import { path } from "~/utils/path";
+
+const logger = getLogger("erp", "accounting-charts-ledger");
 
 const LEDGER_PAGE_SIZE = 50;
 
@@ -31,8 +34,25 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const endDate = searchParams.get("endDate") || null;
   const offset = Math.max(0, Number(searchParams.get("offset")) || 0);
 
-  const [account, ledger, summary] = await Promise.all([
-    getAccount(client, accountId),
+  // bypassRls makes `client` the service role and the ledger read below is
+  // unscoped by company, so the account must be proven to be this group's
+  // before any of its lines are read.
+  const account = await getAccount(client, accountId);
+  if (account.error || !account.data) {
+    throw redirect(
+      path.to.chartOfAccounts,
+      await flash(request, error(account.error, "Failed to load account"))
+    );
+  }
+  if (account.data.companyGroupId !== companyGroupId) {
+    logger.error("Account is not in the caller's company group", {
+      companyGroupId,
+      accountId
+    });
+    throw redirect(path.to.chartOfAccounts);
+  }
+
+  const [ledger, summary] = await Promise.all([
     getAccountLedger(client, {
       accountId,
       companyId: null,
@@ -47,13 +67,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       endDate
     })
   ]);
-
-  if (account.error || !account.data) {
-    throw redirect(
-      path.to.chartOfAccounts,
-      await flash(request, error(account.error, "Failed to load account"))
-    );
-  }
 
   return {
     account: account.data,

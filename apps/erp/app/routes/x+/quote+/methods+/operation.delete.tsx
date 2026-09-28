@@ -5,7 +5,7 @@ import { data } from "react-router";
 import { recalculateQuoteLinePrices } from "~/modules/sales";
 
 export async function action({ request }: ActionFunctionArgs) {
-  const { client, userId } = await requirePermissions(request, {
+  const { client, companyId, userId } = await requirePermissions(request, {
     delete: "sales"
   });
 
@@ -26,9 +26,14 @@ export async function action({ request }: ActionFunctionArgs) {
     .from("quoteOperation")
     .select("quoteId, quoteLineId")
     .eq("id", id)
+    .eq("companyId", companyId)
     .single();
 
-  const { error } = await client.from("quoteOperation").delete().eq("id", id);
+  const { error } = await client
+    .from("quoteOperation")
+    .delete()
+    .eq("id", id)
+    .eq("companyId", companyId);
 
   if (error) {
     return data(
@@ -43,6 +48,7 @@ export async function action({ request }: ActionFunctionArgs) {
     const serviceRole = getCarbonServiceRole();
     await recalculateQuoteLinePrices(
       serviceRole,
+      companyId,
       op.data.quoteId,
       op.data.quoteLineId,
       userId

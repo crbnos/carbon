@@ -99,7 +99,13 @@ export async function action(args: ActionFunctionArgs) {
     orderId
   );
 
-  if (!approvalRequest.data || approvalRequest.data.id !== approvalRequestId) {
+  // The service role bypasses RLS and orderId comes from the URL: the request
+  // must belong to this company, not just to a purchase order with this id.
+  if (
+    !approvalRequest.data ||
+    approvalRequest.data.id !== approvalRequestId ||
+    approvalRequest.data.companyId !== companyId
+  ) {
     throw redirect(
       path.to.purchaseOrder(orderId),
       await flash(request, error(null, "Approval request not found"))
@@ -271,7 +277,7 @@ export async function action(args: ActionFunctionArgs) {
             buyer
           ] = await Promise.all([
             getCompany(serviceRole, companyId),
-            getSupplierContact(serviceRole, supplierContact),
+            getSupplierContact(serviceRole, supplierContact, companyId),
             getPurchaseOrderLines(serviceRole, orderId),
             getPurchaseOrderLocations(serviceRole, orderId),
             getPaymentTermsList(serviceRole, companyId),

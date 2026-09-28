@@ -81,12 +81,24 @@ serve(async (req: Request) => {
 
     const [receipt, receiptLines, receiptLineTracking, dimensions] =
       await Promise.all([
-        client.from("receipt").select("*").eq("id", receiptId).single(),
-        client.from("receiptLine").select("*").eq("receiptId", receiptId),
+        // The client is service-role: requirePermissions proved the caller may
+        // act in companyId, not that receiptId belongs to it.
+        client
+          .from("receipt")
+          .select("*")
+          .eq("id", receiptId)
+          .eq("companyId", companyId)
+          .maybeSingle(),
+        client
+          .from("receiptLine")
+          .select("*")
+          .eq("receiptId", receiptId)
+          .eq("companyId", companyId),
         client
           .from("trackedEntity")
           .select("*")
-          .eq("attributes->> Receipt", receiptId),
+          .eq("attributes->> Receipt", receiptId)
+          .eq("companyId", companyId),
         client
           .from("dimension")
           .select("id, entityType")
@@ -96,6 +108,7 @@ serve(async (req: Request) => {
       ]);
 
     if (receipt.error) throw new Error("Failed to fetch receipt");
+    if (!receipt.data) return errorResponse("Receipt not found", 404);
     if (receiptLines.error) throw new Error("Failed to fetch receipt lines");
     if (dimensions.error) {
       console.error("Failed to fetch dimensions", dimensions.error);
@@ -3198,7 +3211,8 @@ serve(async (req: Request) => {
       await client
         .from("receipt")
         .update({ status: "Draft" })
-        .eq("id", payload.receiptId);
+        .eq("id", payload.receiptId)
+        .eq("companyId", payload.companyId);
     }
     return errorResponse(err, 500);
   }

@@ -23,7 +23,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const [company, companySettings, trackedEntities] = await Promise.all([
     getCompany(client, companyId),
     getCompanySettings(client, companyId),
-    getTrackedEntitiesByMakeMethodId(client, id)
+    getTrackedEntitiesByMakeMethodId(client, id, companyId)
   ]);
 
   if (company.error) {

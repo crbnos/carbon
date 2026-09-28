@@ -39,6 +39,7 @@ export async function action({ request }: ActionFunctionArgs) {
       optimizeError: "Cancelled by user"
     })
     .eq("id", modelUploadId)
+    .eq("companyId", companyId)
     .in("optimizeStatus", ["Queued", "Processing"])
     .select("id");
 

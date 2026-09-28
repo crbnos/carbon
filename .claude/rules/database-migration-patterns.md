@@ -72,53 +72,19 @@ ALTER TABLE "documentTemplate" ADD CONSTRAINT "documentTemplate_companyId_docume
 - Index `companyId` and every FK (e.g. `createdBy`).
 - Never add an `itemReadableId` column, and never specify decimal places in a `NUMERIC` — this applies everywhere: column definitions, `RETURNS TABLE` declarations, and `::NUMERIC` casts. Always use bare `NUMERIC`, never `NUMERIC(19,4)` or any precision form.
 
-## RLS (the only correct pattern)
+## RLS
 
-Enable RLS and create the four standardized policies named exactly `SELECT` / `INSERT` /
-`UPDATE` / `DELETE`. Schema-qualify the table (`"public"."t"`) on the `ALTER`/`CREATE POLICY`,
-and cast the helper result with `::text[]`.
-
-```sql
-ALTER TABLE "public"."documentTemplate" ENABLE ROW LEVEL SECURITY;
-
-CREATE POLICY "SELECT" ON "public"."documentTemplate"
-FOR SELECT USING (
-  "companyId" = ANY ((SELECT get_companies_with_employee_role())::text[])
-);
-
-CREATE POLICY "INSERT" ON "public"."documentTemplate"
-FOR INSERT WITH CHECK (
-  "companyId" = ANY ((SELECT get_companies_with_employee_permission('settings_create'))::text[])
-);
--- UPDATE → USING get_companies_with_employee_permission('<module>_update')
--- DELETE → USING get_companies_with_employee_permission('<module>_delete')
-```
-
-- **SELECT** uses `get_companies_with_employee_role()` (any employee of the company can read).
-- **INSERT/UPDATE/DELETE** use `get_companies_with_employee_permission('<module>_<action>')`
-  where `<action>` is `create` / `update` / `delete` (e.g. `settings_create`, `inventory_update`).
-- The old `has_role` / `has_company_permission` pattern is **deprecated** — never use it.
-
-### Tables without a `companyId` column
-
-Reach the company through the parent via `EXISTS`, gating on the same permission.
-From `20260614092317_picking-tracked-entity-rls.sql`:
-
-```sql
-CREATE POLICY "INSERT" ON "pickingListLineTrackedEntity"
-FOR INSERT WITH CHECK (
-  EXISTS (
-    SELECT 1 FROM "pickingListLine" pll
-    WHERE pll."id" = "pickingListLineId"
-      AND pll."companyId" = ANY (
-        (SELECT get_companies_with_employee_permission('inventory_create'))::text[]
-      )
-  )
-);
-```
+Policies are **not** written in migrations. Add the table's rule to
+`packages/database/src/authz/manifest.ts` — usually one line, `entityName: company("<module>")`,
+which renders the four standard policies (`SELECT` any employee via
+`get_companies_with_employee_role()`, writes via
+`get_companies_with_employee_permission('<module>_<action>')`) — then `pnpm db:migrate` syncs it
+locally and `pnpm --filter @carbon/database authz migration <name>` ships it to production.
+Full guide, including tables without a `companyId`: `authz-manifest.md`.
 
 Gate writes on the **write** permission, not just visibility — a SELECT-only predicate on
-INSERT/UPDATE/DELETE is a privilege-escalation bug (the reason that migration exists).
+INSERT/UPDATE/DELETE is a privilege-escalation bug (`20260614092317_picking-tracked-entity-rls.sql`
+exists because of one). `parent(table, fk, module)` gets this right for child tables.
 
 ## Views
 
@@ -130,6 +96,13 @@ SELECT e.*, u."fullName" AS "createdByFullName"
 FROM "entityName" e
 LEFT JOIN "user" u ON u."id" = e."createdBy";
 ```
+
+`CREATE OR REPLACE VIEW` replaces the view's options, so recreating a view without the `WITH`
+clause silently turns it back into an owner-rights view that bypasses RLS for every PostgREST
+caller, anon included (`openJobMaterialLines`, fixed in `20260926093417`). The
+`no-view-without-invoker` check (`@carbon/checks`) fails any `CREATE VIEW` that does not state
+`security_invoker`; the `view-without-security-invoker` invariant checks the live catalog.
+Materialized views cannot run as the caller — revoke SELECT from `anon, authenticated` instead.
 
 ## Triggers
 
@@ -152,17 +125,34 @@ unauthenticated one-request DoS. (A missing TABLE privilege is an ordinary error
   `IF current_setting('role', true) IN ('anon','authenticated') THEN RAISE EXCEPTION … USING ERRCODE = 'insufficient_privilege'; END IF;`
   PostgREST's `SET ROLE` stays visible inside SECURITY DEFINER, and service role / direct connections
   (`none`) pass. Examples: `get_integration_secret`, `assert_audit_log_access(company, NULL)`.
-- **Tenant-scoped function** — raise unless `p_company_id = ANY(get_companies_with_employee_permission(…))`
-  (`assert_audit_log_access`).
+- **Tenant-scoped function** (SECURITY DEFINER, takes a company id from the caller) — first
+  statement `PERFORM assert_company_access(company_id[, '<module>_<action>'])` (in a
+  `LANGUAGE sql` body: a leading `SELECT assert_company_access(company_id);`). It raises; never
+  write the check inline as `IF NOT (x = ANY(helper()) OR …)`: when a lookup finds nothing that
+  expression is NULL, `IF NOT NULL` does not raise, and the guard fails open. That is how
+  `get_next_sequence` and the storage-requirement RPCs let any caller through until
+  `20260925121735`. A user id from the caller needs the same care (`get_claims`,
+  `groups_for_user`).
 - **Internal helper of a SECURITY DEFINER function** — the role GUC still says `authenticated` inside
   the nested call, so the guard above would refuse legitimate callers. Make the helper
   `SECURITY INVOKER`: from its SECURITY DEFINER caller it runs as the owner, and from the API it runs
   under the caller's RLS (`terminal_job_operations`, `complete_job_remaining_quantities`). Or put it in
   `util` (no API `USAGE`) — see `event-system.md`.
 
+- **Event interceptor** — SECURITY INVOKER. The dispatchers are SECURITY DEFINER, so it runs as
+  the owner on every write; called directly it runs under the caller's RLS (`event-system.md`).
+
+Every public table has RLS (including the per-company `searchIndex_*` / `auditLog_*` tables), so a
+SECURITY INVOKER function can do nothing through the API that REST could not. Default to it; reach
+for SECURITY DEFINER only when the function must see across RLS, and then guard it as above. The
+`public-definer-function-authorizes-caller` invariant (`pnpm --filter @carbon/checks invariants`)
+fails on any SECURITY DEFINER function with no recognized guard.
+
 Migration `20260924192316_api-function-guards-not-revokes.sql` converted the six functions that used
-REVOKE. Test a new guard in a throwaway container (`docker run --rm supabase/postgres:<tag>`), never a
-shared database.
+REVOKE; `20260925121735_rpc-function-guards.sql` closed the other 98. Test a new guard in a
+throwaway container (`docker run --rm supabase/postgres:<tag>`), never a shared database — and call
+the function as `anon`, don't just check `has_function_privilege`: the segfault only shows on the
+call. `packages/database/supabase/tests/rpc-privileges.test.sql` is the tenant-isolation test.
 
 ## Enums
 
