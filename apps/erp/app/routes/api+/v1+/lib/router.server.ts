@@ -4,6 +4,7 @@
 
 import type { ManifestEntry } from "@carbon/api";
 import { jsonSchema, jsonSchemaInput } from "@carbon/api/schema";
+import { unwrapArgsEnvelope } from "./args-envelope";
 import { base, gate, mapThrownErrors } from "./base.server";
 import { dispatchOperation } from "./dispatch.server";
 import {
@@ -38,7 +39,16 @@ function buildProcedure(meta: ManifestEntry, id: string) {
       })
       // Input validates; output does NOT — shapeHttpBody rewrites the body, so a
       // correct response does not match the declared response schema.
-      .input(jsonSchemaInput(meta.schema))
+      // The legacy `{ args: {...} }` envelope is unwrapped first, so its
+      // contents are validated like a flat body.
+      .input(
+        jsonSchemaInput(meta.schema, {
+          normalize: (value) =>
+            value && typeof value === "object" && !Array.isArray(value)
+              ? unwrapArgsEnvelope(meta, value as Record<string, unknown>)
+              : value
+        })
+      )
       .output(jsonSchema(outputSchema(meta)))
       // callOperation reverses this shaping with the same static bit, so
       // MCP/agent/workflow callers still see DispatchResult semantics.

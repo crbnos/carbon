@@ -22,7 +22,9 @@ zod round-trip. Internal workspace package — never published to npm.
   required wrapper's contents may be sent flat (the workflow engine's
   `job.create` sends `insertJob`'s inner fields at the top level). An
   unconvertible schema falls back to pass-through rather than failing every
-  request to that operation.
+  request to that operation. An optional `normalize` rewrites the raw input before validation
+  (the ERP router unwraps the legacy `{ args: {...} }` envelope with it); the
+  rewritten value is what the handler receives.
 - Keep `@orpc/openapi` imports in `schema.ts` type-only — it is a devDependency, and
   the runtime module must not pull it in.
 

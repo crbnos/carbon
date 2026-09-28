@@ -259,12 +259,14 @@ dispatcher (`apps/erp/app/routes/api+/inngest.ts`). There is no separate
     the wrapper is the schema's **sole required property** (`compileSoleWrapper`
     in `packages/api/src/schema.ts`). An operation that requires `args` alongside
     another property rejects a flat body at validation, before dispatch.
-  - A flat schema also accepts a lone `{ args: {...} }` envelope, unwrapped in
-    `callOperation` before validation because the published instructions taught
-    that shape. An envelope sent BESIDE sibling params
+  - A flat schema also accepts a lone `{ args: {...} }` envelope, because the
+    published instructions taught that shape. For a list operation (service
+    param `args`), an envelope sent BESIDE sibling params
     (`{ locationId, args: { search } }`, the shape the old nested list schemas
-    taught) is lifted over the top-level keys in the dispatcher's `args` branch,
-    so HTTP callers get it too.
+    taught) is lifted over the top-level keys. Both happen in
+    `unwrapArgsEnvelope`, run as the `normalize` step of the procedure's input
+    validation (`router.server.ts`), so the envelope's contents are validated
+    like a flat body for HTTP and `callOperation` callers alike.
   - Every list operation's `GenericQueryFilters` param is published flat (see
     "Input schemas from the checker" below). In `addressesWholeParam`, a flat
     `args` means every other param is declared under its own name, so a sibling

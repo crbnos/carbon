@@ -8,7 +8,6 @@ import { getLogger } from "@carbon/logger";
 import { call, ORPCError } from "@orpc/server";
 import { getEdgeFunctionErrorMessage } from "~/utils/error";
 import { isMcpBlockedTool } from "../../mcp+/lib/mcp-blocked-tools";
-import { unwrapArgsEnvelope } from "./args-envelope";
 import type { AuthedContext } from "./base.server";
 import {
   classifyDatabaseFailure,
@@ -83,16 +82,13 @@ export async function callOperation(
     };
   }
 
-  const callArgs = unwrapArgsEnvelope(
-    meta,
-    args as Record<string, unknown> | undefined
-  );
-
   try {
     // The handler shapes the HTTP body (bare single results, `{ results, count }`
     // lists); unshapeHttpBody reverses it so MCP/agent/workflow callers keep
     // DispatchResult semantics.
-    const body = await call(procedure, callArgs ?? {}, { context });
+    // The procedure's input validation unwraps a legacy `{ args: {...} }`
+    // envelope (router.server.ts) before validating it.
+    const body = await call(procedure, args ?? {}, { context });
     const result = unshapeHttpBody(meta, body);
     return {
       success: true,

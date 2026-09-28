@@ -38,6 +38,15 @@ describe("unwrapArgsEnvelope", () => {
     expect(unwrapArgsEnvelope({ schema: flatSchema }, body)).toBe(body);
   });
 
+  it("lifts an envelope beside siblings for a flat list operation", () => {
+    expect(
+      unwrapArgsEnvelope(
+        { schema: flatSchema, serviceParams: ["client", "jobId", "args"] },
+        { jobId: "job_1", args: { search: "weld", jobId: "job_2" } }
+      )
+    ).toEqual({ jobId: "job_2", search: "weld" });
+  });
+
   it("does not unwrap a non-object envelope", () => {
     for (const value of [null, ["jo_1"], "jobId"]) {
       const body: Record<string, unknown> = { args: value };

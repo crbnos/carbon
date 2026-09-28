@@ -1568,15 +1568,20 @@ function buildListToolSchema(
         ...(description ? { description } : {})
       };
     }
+    // A service that ignores paging reads every row; the MCP server pages its
+    // response (pageMcpListResult), and the HTTP API returns every row.
+    const unpaged = gqf.usage.paging
+      ? ""
+      : " The service reads every row: MCP pages the response, the HTTP API returns every row.";
     properties.limit = {
       type: "integer",
       default: MCP_DEFAULT_LIMIT,
-      description: "Maximum number of rows to return."
+      description: `Maximum number of rows to return.${unpaged}`
     };
     properties.offset = {
       type: "integer",
       default: 0,
-      description: "Number of rows to skip."
+      description: `Number of rows to skip.${unpaged}`
     };
     if (gqf.usage.filters) {
       const item = structuredClone(gqf.filterItem) as {

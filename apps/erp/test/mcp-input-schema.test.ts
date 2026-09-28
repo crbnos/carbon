@@ -39,9 +39,11 @@ describe("input schemas against the TypeScript checker (whole manifest)", () => 
     index = buildParamSchemaIndex(MODULE_LIST);
   }, 180_000);
 
+  // The CheckedParam schema/fields getters walk types lazily, so these run
+  // checker work in the test body: they share the beforeAll's budget.
   it("has no input schema violations", () => {
     expect(findInputSchemaViolations(tools, index)).toEqual([]);
-  });
+  }, 180_000);
 
   // Where the textual parser still resolves a param differently from the
   // checker. Not a failure: review the list when it changes, and empty it
@@ -50,7 +52,7 @@ describe("input schemas against the TypeScript checker (whole manifest)", () => 
     await expect(
       `${findCheckerDisagreements(tools, index).join("\n")}\n`
     ).toMatchFileSnapshot("__snapshots__/mcp-checker-disagreements.txt");
-  });
+  }, 180_000);
 
   it("reads the filter operators from getGenericFilter's switch", () => {
     expect(index.filterOperators).toEqual([

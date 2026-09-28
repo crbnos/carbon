@@ -76,7 +76,14 @@ export function jsonSchema(schema: Record<string, unknown>): CarbonJsonSchema {
  * than failing every request to that operation.
  */
 export function jsonSchemaInput(
-  schema: Record<string, unknown>
+  schema: Record<string, unknown>,
+  options: {
+    /**
+     * Rewrites the raw input before it is validated; the rewritten value is
+     * what validation checks and what the handler receives.
+     */
+    normalize?: (value: unknown) => unknown;
+  } = {}
 ): CarbonJsonSchema {
   let compiled: z.ZodType | null | undefined;
   let unwrapped: z.ZodType | null | undefined;
@@ -85,7 +92,8 @@ export function jsonSchemaInput(
     "~standard": {
       version: 1,
       vendor: CARBON_VENDOR,
-      validate: (value: unknown) => {
+      validate: (raw: unknown) => {
+        const value = options.normalize ? options.normalize(raw) : raw;
         if (compiled === undefined) compiled = compileJsonSchema(schema);
         if (compiled === null) return { value };
 

@@ -960,6 +960,48 @@ describe("list operations with a flat GenericQueryFilters args param", () => {
     ]);
   });
 
+  it("f6. an envelope beside a sibling param is lifted before validation", async () => {
+    spies.getInventoryItems.mockResolvedValue({
+      data: [],
+      error: null,
+      count: 0
+    });
+    const result = await callOperation("inventory_getInventoryItems", ctx, {
+      locationId: "loc_1",
+      args: { search: "bolt", limit: 5 }
+    });
+    expect(result.success).toBe(true);
+    expect(spies.getInventoryItems.mock.calls).toEqual([
+      [
+        spies.FAKE_CLIENT,
+        "loc_1",
+        "c1",
+        {
+          locationId: "loc_1",
+          search: "bolt",
+          limit: 5,
+          offset: 0,
+          companyId: "c1"
+        }
+      ]
+    ]);
+  });
+
+  it("f7. invalid contents of an envelope beside a sibling are rejected by validation", async () => {
+    for (const envelope of [
+      { search: { nested: true } },
+      { limit: "x" },
+      { filters: [{ column: "name", operator: "like", value: "bolt" }] }
+    ]) {
+      const result = await callOperation("inventory_getInventoryItems", ctx, {
+        locationId: "loc_1",
+        args: envelope
+      });
+      expect(result.success, JSON.stringify(envelope)).toBe(false);
+    }
+    expect(spies.getInventoryItems).not.toHaveBeenCalled();
+  });
+
   it("f5. an unknown filter operator is rejected by validation, before the service", async () => {
     const result = await callOperation("sales_getCustomers", ctx, {
       filters: [{ column: "name", operator: "like", value: "Acme" }]
