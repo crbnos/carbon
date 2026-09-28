@@ -14,7 +14,7 @@
 
 import * as fs from "fs";
 import * as path from "path";
-import { Node, Project, type Type } from "ts-morph";
+import { Node, Project, type SourceFile, type Type } from "ts-morph";
 
 export type JsonSchema = Record<string, unknown>;
 
@@ -260,14 +260,29 @@ function isUseful(schema: JsonSchema): boolean {
   return !(keys.length === 1 && schema.type === "object");
 }
 
+/** One service source file of a published module, loaded into the shared project. */
+export interface ServiceSource {
+  mod: string;
+  source: SourceFile;
+}
+
 /**
- * Reflect every module's service functions once. Loading the TS project is the
- * expensive part (~4s), so it happens here and the result is a plain lookup the
- * synchronous manifest builder can consult.
+ * The ts-morph project every source-reflecting pass shares: response schemas and
+ * the effect summary (`effect-summary.ts`) both walk the same service files, and
+ * loading the program is the expensive part (~4s), so it is built once.
+ *
+ * Sources are ordered service → `.ee.service` → `.mcp.server` per module, so a
+ * consumer that writes a keyed map in iteration order lets the `.mcp.server`
+ * export win — the same shadowing the runtime registry applies.
  */
-export function buildResponseSchemaIndex(
+export interface ServiceProject {
+  project: Project;
+  sources: ServiceSource[];
+}
+
+export function createServiceProject(
   modules: readonly string[]
-): ResponseSchemaIndex {
+): ServiceProject {
   const project = new Project({
     tsConfigFilePath: path.join(ERP_ROOT, "tsconfig.json"),
     skipAddingFilesFromTsConfig: true
@@ -280,6 +295,22 @@ export function buildResponseSchemaIndex(
       .map((entry) => ({ mod: entry.mod, source: project.addSourceFileAtPath(entry.file) }))
   );
   project.resolveSourceFileDependencies();
+  return { project, sources };
+}
+
+/**
+ * Reflect every module's service functions once. Loading the TS project is the
+ * expensive part (~4s), so it happens here and the result is a plain lookup the
+ * synchronous manifest builder can consult. Pass a `ServiceProject` to reuse one
+ * another pass already loaded.
+ */
+export function buildResponseSchemaIndex(
+  modulesOrProject: readonly string[] | ServiceProject
+): ResponseSchemaIndex {
+  const { sources } =
+    "sources" in modulesOrProject
+      ? modulesOrProject
+      : createServiceProject(modulesOrProject);
 
   const schemas = new Map<string, JsonSchema>();
   const stats = { functions: 0, derived: 0, empty: 0 };
