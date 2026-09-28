@@ -83,6 +83,7 @@ import {
   postReceipt,
   postShipment,
   upsertReceipt,
+  upsertShipment,
   voidReceipt
 } from "~/modules/inventory/inventory.mcp.server";
 import { createReceipt } from "~/modules/inventory/inventory.server";
@@ -94,11 +95,14 @@ type Write = { table: string; op: "update"; payload: Row; filters: unknown[] };
 /**
  * A Supabase client answering reads from `tables` (every read of a table
  * returns its rows; `single`/`maybeSingle` the first) and recording writes and
- * edge-function calls. `invoke` answers from `functions`.
+ * edge-function calls. `invoke` answers from `functions`. An update matches
+ * one row unless `updateMatches` is false (a conditional update that lost a
+ * race).
  */
 function fakeClient(
   tables: Record<string, Row[]>,
-  functions: Record<string, { data: unknown; error: unknown }> = {}
+  functions: Record<string, { data: unknown; error: unknown }> = {},
+  { updateMatches = true }: { updateMatches?: boolean } = {}
 ) {
   const writes: Write[] = [];
   const invokes: { name: string; body: Row }[] = [];
@@ -116,7 +120,10 @@ function fakeClient(
           write?.filters.push(["neq", ...args]);
           return chain;
         },
-        in: () => chain,
+        in: (...args: unknown[]) => {
+          write?.filters.push(["in", ...args]);
+          return chain;
+        },
         order: () => chain,
         limit: () => chain,
         update: (payload: Row) => {
@@ -131,7 +138,10 @@ function fakeClient(
         maybeSingle: async () => ({ data: rows()[0] ?? null, error: null }),
         // biome-ignore lint/suspicious/noThenProperty: awaited like a PostgREST builder
         then: (resolve: (value: unknown) => unknown) =>
-          resolve({ data: write ? [{ id: "x" }] : rows(), error: null })
+          resolve({
+            data: write ? (updateMatches ? [{ id: "x" }] : []) : rows(),
+            error: null
+          })
       };
       return chain;
     },
@@ -204,6 +214,46 @@ describe("inventory_postReceipt", () => {
       message: "Cannot post a voided receipt"
     });
     expect(caller.writes).toEqual([]);
+    expect(service.invokes).toEqual([]);
+  });
+
+  it("refuses a posted receipt with no write and no second posting", async () => {
+    const service = fakeClient({
+      receiptLine: [],
+      receipt: [{ sourceDocument: "Purchase Order", status: "Posted" }]
+    });
+    boundary.serviceRole = service.client;
+    const caller = fakeClient({});
+    const result = await postReceipt(caller.client, "c1", "u1", {
+      receiptId: "r1"
+    });
+    expect(result.error?.message).toBe(
+      "Cannot post a receipt that is already posted"
+    );
+    expect(caller.writes).toEqual([]);
+    expect(service.invokes).toEqual([]);
+  });
+
+  it("flips only a Draft or Pending receipt to Pending, and stops when a concurrent post got there first", async () => {
+    const service = fakeClient({
+      receiptLine: [],
+      receipt: [{ sourceDocument: "Purchase Order", status: "Draft" }]
+    });
+    boundary.serviceRole = service.client;
+    const caller = fakeClient({}, {}, { updateMatches: false });
+    const result = await postReceipt(caller.client, "c1", "u1", {
+      receiptId: "r1"
+    });
+    expect(result.error?.message).toBe(
+      "Cannot post a receipt that is already posted or voided"
+    );
+    expect(caller.writes).toHaveLength(1);
+    expect(caller.writes[0].payload).toEqual({ status: "Pending" });
+    expect(caller.writes[0].filters).toContainEqual([
+      "in",
+      "status",
+      ["Draft", "Pending"]
+    ]);
     expect(service.invokes).toEqual([]);
   });
 
@@ -389,6 +439,61 @@ describe("create from source", () => {
 });
 
 describe("inventory_postShipment", () => {
+  it.each([
+    ["Posted", "Cannot post a shipment that is already posted"],
+    ["Voided", "Cannot post a voided shipment"]
+  ])("refuses a %s shipment with no write and no posting", async (status, reason) => {
+    const service = fakeClient({
+      shipmentLine: [],
+      shipment: [
+        {
+          sourceDocument: "Sales Order",
+          sourceDocumentId: null,
+          locationId: null,
+          status
+        }
+      ]
+    });
+    boundary.serviceRole = service.client;
+    const caller = fakeClient({});
+    const result = await postShipment(caller.client, "c1", "u1", {
+      shipmentId: "s1"
+    });
+    expect(result.error?.message).toBe(reason);
+    expect(caller.writes).toEqual([]);
+    expect(service.invokes).toEqual([]);
+  });
+
+  it("flips only a Draft or Pending shipment of this company to Pending, and stops when a concurrent post got there first", async () => {
+    const service = fakeClient({
+      shipmentLine: [],
+      shipment: [
+        {
+          sourceDocument: "Sales Order",
+          sourceDocumentId: null,
+          locationId: null,
+          status: "Draft"
+        }
+      ],
+      companySettings: [{ inventoryShelfLife: null }],
+      trackedEntity: []
+    });
+    boundary.serviceRole = service.client;
+    const caller = fakeClient({}, {}, { updateMatches: false });
+    const result = await postShipment(caller.client, "c1", "u1", {
+      shipmentId: "s1"
+    });
+    expect(result.error?.message).toBe(
+      "Cannot post a shipment that is already posted or voided"
+    );
+    expect(caller.writes[0].filters).toEqual([
+      ["eq", "id", "s1"],
+      ["eq", "companyId", "c1"],
+      ["in", "status", ["Draft", "Pending"]]
+    ]);
+    expect(service.invokes).toEqual([]);
+  });
+
   it("refuses expired batches under the Block policy before the Pending flip", async () => {
     const service = fakeClient({
       shipmentLine: [],
@@ -498,6 +603,55 @@ describe("inventory_upsertReceipt (update)", () => {
     ]);
   });
 
+  it("reads a blank source key as left out, as the details form does", async () => {
+    const service = fakeClient({});
+    boundary.serviceRole = service.client;
+    const caller = fakeClient({ receipt: [stored] });
+    const result = await upsertReceipt(caller.client, "c1", "u1", {
+      id: "r1",
+      receiptId: "RE000001",
+      sourceDocumentId: "po1",
+      locationId: "",
+      externalDocumentId: "PACK-9",
+      updatedBy: "u1"
+    });
+    expect(result).toEqual({ data: { id: "r1", rebuilt: false }, error: null });
+    expect(caller.writes[0].payload).toMatchObject({ locationId: null });
+    expect(service.invokes).toEqual([]);
+  });
+
+  it("refuses to change the source of a Posted receipt, whose form locks it", async () => {
+    const service = fakeClient({});
+    boundary.serviceRole = service.client;
+    const caller = fakeClient({ receipt: [{ ...stored, status: "Posted" }] });
+    const result = await upsertReceipt(caller.client, "c1", "u1", {
+      id: "r1",
+      receiptId: "RE000001",
+      sourceDocumentId: "po2",
+      updatedBy: "u1"
+    });
+    expect(result.error?.message).toBe(
+      "Failed to update receipt: The source document and location of a posted receipt cannot be changed"
+    );
+    expect(caller.writes).toEqual([]);
+    expect(service.invokes).toEqual([]);
+  });
+
+  it("still writes the editable header fields of a Posted receipt", async () => {
+    const service = fakeClient({});
+    boundary.serviceRole = service.client;
+    const caller = fakeClient({ receipt: [{ ...stored, status: "Posted" }] });
+    const result = await upsertReceipt(caller.client, "c1", "u1", {
+      id: "r1",
+      receiptId: "RE000001",
+      sourceDocumentId: "po1",
+      externalDocumentId: "PACK-9",
+      updatedBy: "u1"
+    });
+    expect(result).toEqual({ data: { id: "r1", rebuilt: false }, error: null });
+    expect(service.invokes).toEqual([]);
+  });
+
   it("refuses an update without inventory update", async () => {
     claims.current.permissions = inventoryPermissions(["create"]);
     await expect(
@@ -508,5 +662,35 @@ describe("inventory_upsertReceipt (update)", () => {
         updatedBy: "u1"
       })
     ).rejects.toThrow("(inventory update)");
+  });
+});
+
+describe("inventory_upsertShipment (update)", () => {
+  it("refuses to change the source of a Posted shipment, whose form locks it", async () => {
+    const service = fakeClient({});
+    boundary.serviceRole = service.client;
+    const caller = fakeClient({
+      shipment: [
+        {
+          id: "s1",
+          shipmentId: "SH000001",
+          sourceDocument: "Sales Order",
+          sourceDocumentId: "so1",
+          locationId: "loc1",
+          status: "Posted"
+        }
+      ]
+    });
+    const result = await upsertShipment(caller.client, "c1", "u1", {
+      id: "s1",
+      shipmentId: "SH000001",
+      sourceDocumentId: "so2",
+      updatedBy: "u1"
+    });
+    expect(result.error?.message).toBe(
+      "Failed to update shipment: The source document and location of a posted shipment cannot be changed"
+    );
+    expect(caller.writes).toEqual([]);
+    expect(service.invokes).toEqual([]);
   });
 });

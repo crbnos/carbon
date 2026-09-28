@@ -124,8 +124,8 @@ export async function createReceipt(
  * are checked first: an error, or a warning not acknowledged with
  * `acknowledged: true`, refuses the post and lists the violations. Posting writes the item ledger, cost layers and
  * (with accounting enabled) the journal, updates the purchase order's received
- * quantities and opens any receipt inspections. A voided receipt cannot be
- * posted again. `receiptId` is the receipt's id (not its RE… readable id).
+ * quantities and opens any receipt inspections. A Posted or Voided receipt is
+ * refused. `receiptId` is the receipt's id (not its RE… readable id).
  */
 export async function postReceipt(
   client: SupabaseClient<Database>,
@@ -259,7 +259,8 @@ export async function createSalesOrderLineShipment(
  * and lists the violations. Expired batches refuse the post unless the
  * company's expired-batch policy is Warn (`warning` then names them). Posting
  * writes the item ledger and (with accounting enabled) cost of goods sold, and
- * updates the order's shipped quantities. No packing slip PDF is filed on the
+ * updates the order's shipped quantities. A Posted or Voided shipment is
+ * refused. No packing slip PDF is filed on the
  * opportunity from here; the Post button files one. `shipmentId` is the
  * shipment's id (not its SH… readable id).
  */
@@ -311,9 +312,10 @@ export async function voidShipment(
   );
 }
 
-/** The source keys an update left out keep their stored value, so a partial
- *  update over MCP never reads as "source changed" and rebuilds the lines.
- *  The details form always sends all three. */
+/** The source keys an update left out (or sent as "") keep their stored
+ *  value, so a partial update over MCP never reads as "source changed" and
+ *  rebuilds the lines. The details form always sends all three, and its
+ *  validator reads a blank field as left out. */
 const SOURCE_KEYS = [
   "sourceDocument",
   "sourceDocumentId",
@@ -328,7 +330,9 @@ function withStoredSource<T extends Record<string, unknown>>(
   for (const key of SOURCE_KEYS) {
     // The stored value as is (null included), so the command's comparison
     // with the stored row sees no change.
-    if (merged[key] === undefined) merged[key] = stored[key];
+    if (merged[key] === undefined || merged[key] === "") {
+      merged[key] = stored[key];
+    }
   }
   return merged as T;
 }
@@ -338,7 +342,8 @@ function withStoredSource<T extends Record<string, unknown>>(
  * as the receipt's details form does: changing the source document or location
  * rebuilds the receipt's lines from the new source (other header edits in
  * that call are not saved); otherwise the header fields are written. A source
- * key left out keeps its stored value. Status and posting fields are never
+ * key left out (or blank) keeps its stored value. The source and location of
+ * a Posted receipt cannot be changed, as on its details form. Status and posting fields are never
  * written here (inventory_postReceipt / inventory_voidReceipt). Create inserts
  * a bare header with no lines; to receive an order use inventory_createReceipt.
  */
@@ -393,8 +398,9 @@ export async function upsertReceipt(
  * as the shipment's details form does: changing the source document or
  * location rebuilds the shipment's lines from the new source (other header
  * edits in that call are not saved); otherwise the header fields (tracking
- * number, shipping method, …) are written. A source key left out keeps its
- * stored value. Status and posting fields are never written here
+ * number, shipping method, …) are written. A source key left out (or blank)
+ * keeps its stored value. The source and location of a Posted shipment cannot
+ * be changed, as on its details form. Status and posting fields are never written here
  * (inventory_postShipment / inventory_voidShipment). Create inserts a bare
  * header with no lines; to ship an order use inventory_createShipment.
  */

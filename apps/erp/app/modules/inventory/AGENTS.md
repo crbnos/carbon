@@ -79,8 +79,8 @@ pnpm exec turbo run typecheck --filter=erp   # the app's package name is "erp", 
 The create-from-source, header-edit, post and void bodies of the receipt/shipment routes, returning `CommandResult` (`~/utils/command-result`). The routes are parse → call → flash; `inventory.mcp.server.ts` publishes the same commands as MCP tools (re-applying the route's `requirePermissions` through `requireToolPermission`, since the commands use the service role). Change behaviour here, not in a route.
 
 - `createReceipt` / `createShipment` / `createSalesOrderLineShipment` — invoke the `create` edge function (lines copied from the source; one open Draft per return order)
-- `updateReceiptDetails` / `updateShipmentDetails` — header save; a changed source document or location rebuilds the document through `create`
-- `postReceipt` / `postShipment` — storage/over-receipt/sales rules (a block is data, `{ status: "blocked" }`), expired-batch policy, Pending flip, `post-receipt` / `post-shipment`, rollback to Draft, lead times, auto-print, workflow moment. `postShipment` files the packing slip only when given `renderPackingSlip` (the route)
+- `updateReceiptDetails` / `updateShipmentDetails` — header save; a changed source document or location rebuilds the document through `create` (refused on a Posted document: `create` deletes the lines without checking status)
+- `postReceipt` / `postShipment` — refuse Posted and Voided (the edge functions do not catch a re-post once the command has flipped to Pending), storage/over-receipt/sales rules (a block is data, `{ status: "blocked" }`), expired-batch policy, Pending flip conditioned on Draft/Pending, `post-receipt` / `post-shipment`, rollback to Draft, lead times, auto-print, workflow moment. `postShipment` files the packing slip only when given `renderPackingSlip` (the route)
 - `voidReceipt` / `voidShipment` — status guards, then the posting function with `type: "void"`
 
 ## Key Exports

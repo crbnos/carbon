@@ -395,6 +395,11 @@ export type ShipmentDetails = Omit<z.infer<typeof shipmentValidator>, "id"> & {
   customFields?: Json;
 };
 
+const POSTED_RECEIPT_SOURCE_LOCKED =
+  "The source document and location of a posted receipt cannot be changed";
+const POSTED_SHIPMENT_SOURCE_LOCKED =
+  "The source document and location of a posted shipment cannot be changed";
+
 /**
  * Save a receipt's header, as its details form does
  * (`x+/receipt+/$receiptId.details.tsx`). When the source document or the
@@ -418,6 +423,16 @@ export async function updateReceiptDetails(
     current.data.sourceDocument !== d.sourceDocument ||
     current.data.sourceDocumentId !== d.sourceDocumentId ||
     current.data.locationId !== d.locationId;
+
+  // The details form makes the source and location read-only on a Posted
+  // receipt: a rebuild would delete the lines whose ledger and journal entries
+  // stand (the create edge function does not check the status).
+  if (sourceChanged && current.data.status === "Posted") {
+    return commandError(
+      "Failed to update receipt",
+      new Error(POSTED_RECEIPT_SOURCE_LOCKED)
+    );
+  }
 
   if (!sourceChanged) {
     const updated = await upsertReceipt(client, {
@@ -495,6 +510,16 @@ export async function updateShipmentDetails(
     current.data.sourceDocument !== d.sourceDocument ||
     current.data.sourceDocumentId !== d.sourceDocumentId ||
     current.data.locationId !== d.locationId;
+
+  // The details form makes the source and location read-only on a Posted
+  // shipment: a rebuild would delete the lines whose ledger and journal entries
+  // stand (the create edge function does not check the status).
+  if (sourceChanged && current.data.status === "Posted") {
+    return commandError(
+      "Failed to update shipment",
+      new Error(POSTED_SHIPMENT_SOURCE_LOCKED)
+    );
+  }
 
   if (!sourceChanged) {
     const updated = await upsertShipment(client, {
@@ -577,6 +602,14 @@ export async function updateShipmentDetails(
 // ---------------------------------------------------------------------------
 
 const VOIDED_RECEIPT = "Cannot post a voided receipt";
+const POSTED_RECEIPT = "Cannot post a receipt that is already posted";
+const NOT_POSTABLE_RECEIPT =
+  "Cannot post a receipt that is already posted or voided";
+
+/** The statuses the Post button is enabled in (it is disabled once a document
+ *  is Posted or Voided). A Pending document is one whose posting did not
+ *  finish, and the screen lets it be posted again. */
+const POSTABLE_STATUSES = ["Draft", "Pending"] as const;
 
 /**
  * Post a receipt, as the Post button does (`x+/receipt+/$receiptId.post.tsx`):
@@ -614,11 +647,17 @@ export async function postReceipt(
     .eq("companyId", companyId)
     .single();
 
-  // A voided receipt has already been reversed — re-posting would duplicate
-  // ledger entries, cost layers and journal lines. Refused before any write
-  // (the Pending flip below is also conditioned on it).
+  // A posted receipt has already written its ledger, cost layers and journal,
+  // and a voided one has already been reversed: posting either again would
+  // duplicate them (the post-receipt edge function does not refuse a document
+  // this command has flipped to Pending). The Post button is disabled in both
+  // states. Refused before any write; the Pending flip below is conditioned
+  // on the same statuses.
   if (receiptForSurface?.status === "Voided") {
     return commandError(VOIDED_RECEIPT);
+  }
+  if (receiptForSurface?.status === "Posted") {
+    return commandError(POSTED_RECEIPT);
   }
 
   // Receipts from an Inbound Transfer ALSO evaluate the `warehouseTransfer`
@@ -703,20 +742,20 @@ export async function postReceipt(
     lines: lines ?? []
   });
 
-  // Atomic with the voided guard above: a concurrent void between the check
-  // and here matches zero rows instead of being flipped back to Pending.
+  // Atomic with the status guard above: a concurrent post or void between
+  // the check and here matches zero rows instead of being flipped to Pending.
   const setPendingState = await client
     .from("receipt")
     .update({ status: "Pending" })
     .eq("id", receiptId)
     .eq("companyId", companyId)
-    .neq("status", "Voided")
+    .in("status", [...POSTABLE_STATUSES])
     .select("id");
   if (setPendingState.error) {
     return commandError("Failed to post receipt", setPendingState.error);
   }
   if (!setPendingState.data?.length) {
-    return commandError(VOIDED_RECEIPT);
+    return commandError(NOT_POSTABLE_RECEIPT);
   }
 
   const revertToDraft = () =>
@@ -877,6 +916,10 @@ export async function voidReceipt(
 type ExpiredEntityPolicy = "Warn" | "Block" | "BlockWithOverride";
 
 export const SHIPMENT_NOT_FOUND = "Shipment not found";
+const VOIDED_SHIPMENT = "Cannot post a voided shipment";
+const POSTED_SHIPMENT = "Cannot post a shipment that is already posted";
+const NOT_POSTABLE_SHIPMENT =
+  "Cannot post a shipment that is already posted or voided";
 
 /**
  * Post a shipment, as the Post button does
@@ -916,7 +959,7 @@ export async function postShipment(
 
   const { data: shipmentForSurface } = await serviceRole
     .from("shipment")
-    .select("sourceDocument, sourceDocumentId, locationId")
+    .select("sourceDocument, sourceDocumentId, locationId, status")
     .eq("id", shipmentId)
     // Service-role read: companyId scope is not backstopped by RLS here.
     .eq("companyId", companyId)
@@ -927,6 +970,19 @@ export async function postShipment(
   if (!shipmentForSurface) {
     logger.error("Shipment not found for company", { companyId, shipmentId });
     return commandError(SHIPMENT_NOT_FOUND);
+  }
+
+  // A posted shipment has already written its ledger and cost of goods sold,
+  // and a voided one has already been reversed: posting either again would
+  // duplicate them (the post-shipment edge function does not refuse a
+  // document this command has flipped to Pending). The Post button is
+  // disabled in both states. Refused before any write; the Pending flip below
+  // is conditioned on the same statuses.
+  if (shipmentForSurface.status === "Voided") {
+    return commandError(VOIDED_SHIPMENT);
+  }
+  if (shipmentForSurface.status === "Posted") {
+    return commandError(POSTED_SHIPMENT);
   }
 
   // Outbound transfers ALSO evaluate the `warehouseTransfer` surface — the
@@ -1068,12 +1124,20 @@ export async function postShipment(
     expiredWarning = `Posted shipment with expired batch${plural}: ${ids}`;
   }
 
+  // Atomic with the status guard above: a concurrent post or void between
+  // the check and here matches zero rows instead of being flipped to Pending.
   const setPendingState = await client
     .from("shipment")
     .update({ status: "Pending" })
-    .eq("id", shipmentId);
+    .eq("id", shipmentId)
+    .eq("companyId", companyId)
+    .in("status", [...POSTABLE_STATUSES])
+    .select("id");
   if (setPendingState.error) {
     return commandError("Failed to post shipment", setPendingState.error);
+  }
+  if (!setPendingState.data?.length) {
+    return commandError(NOT_POSTABLE_SHIPMENT);
   }
 
   const revertToDraft = () =>
