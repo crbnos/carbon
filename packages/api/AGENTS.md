@@ -49,7 +49,9 @@ pnpm run check:manifest        # digest current?
 ## Consumers
 
 - `apps/erp/app/routes/api+/v1+/lib/` — the oRPC router/dispatch/gate read
-  `ManifestEntry` and build procedures with `jsonSchema()`.
+  `ManifestEntry` and build procedures with `jsonSchema()`; the dispatcher
+  resolves the params in `ManifestEntry.keys` (the identifier contract,
+  `mcp+/lib/identifier-keys.ts`) before calling the service.
 - `scripts/lib/service-metadata.ts` + `scripts/lib/manifest-digest.ts` — the
   generator emits entries in this shape and hashes them for the digest.
 

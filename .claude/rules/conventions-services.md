@@ -216,6 +216,21 @@ route-wiring example is in [database-patterns.md](database-patterns.md#transacti
 | Delete | `deleteCustomer(client, id)` | client |
 | Multi-row / reorder | `updateQuoteLineOrder(db, companyId, userId, quoteId, updates)` | `Kysely<KyselyDatabase>` |
 
+Key params are published as MCP/API arguments under their own names, so the
+name must say which key the service filters on:
+
+- A record's own id is `id`, or `<entity>Id` (`jobId`, `quoteId`, `itemId`)
+  when the entity is not obvious from the function. Both take the record id;
+  the dispatcher resolves the entity's readable number to it (the identifier
+  contract in `.claude/rules/mcp-tools-reference.md`).
+- A child row's own id is `id`, never the name of a foreign-key column the row
+  also carries (`deleteMaintenanceDispatchItem(client, id)`, not `itemId`).
+- A param named `id` is compared against an `id` column; a parent filter
+  (`.eq("itemId", …)`) takes `itemId`.
+- A list read returns `id` on every row when other tools key that table by id.
+
+`apps/erp/test/mcp-identifier-contract.test.ts` fails on each of these.
+
 ## Checklist
 
 - [ ] In the right place: ERP `modules/{module}/{module}.service.ts`, MES `services/*.service.ts`.

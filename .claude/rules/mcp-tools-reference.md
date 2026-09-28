@@ -371,6 +371,45 @@ dispatcher (`apps/erp/app/routes/api+/inngest.ts`). There is no separate
   deleted `executeFunction`) — a change there is a behavior change for MCP,
   the agent, workflows and HTTP at once.
 
+## Identifier contract (`mcp+/lib/identifier-keys.ts`)
+
+A document table has a record id (`id`) and a readable number (`job.jobId`,
+`quote.quoteId`, `item.readableIdWithRevision`, …), and list rows return both.
+Services name their key param after the entity (`jobId`), which is also the
+readable column's name, so a caller reusing a list row's `jobId` field used to
+hand a readable number to an `.eq("id", …)` filter: reads came back empty and
+deletes matched nothing while reporting success.
+
+- **Keyed params.** `IDENTIFIER_KEYS` maps an entity to its table and readable
+  columns. A scalar string param keys an entity when it is named `<entity>Id`,
+  is aliased (`transferId` → warehouseTransfer), is named per tool in
+  `TOOL_IDENTIFIER_KEYS` (`invoiceId`, which two tables share), or is `id` and
+  every `id` comparison in the body runs against one entity's table or its `s`
+  list view. The generator records them as `ManifestEntry.keys`
+  (`{ param: entity }`, also a `keys` field in the digest) and appends the
+  contract to the param's description.
+- **Resolution.** `resolveIdentifierArgs` (`api+/v1+/lib/identifier-resolver.server.ts`)
+  runs in `dispatchOperation` before the positional args are built, so it
+  covers MCP, HTTP, the agent and workflows. For each keyed param it looks up
+  the record by `id`, then by each readable column in order, always with
+  `companyId` = the caller's, through the caller's client. A readable value
+  that matches more than one row (item or quote revisions) is refused with
+  BAD_REQUEST; no match is NOT_FOUND naming the tool. Routes pass the id and
+  never run it. This mirrors `resolveTypedItem` in items.service.ts, which the
+  typed item upserts use for the same reason. Each keyed call costs one extra
+  single-row read.
+- **Id-only keys.** `supplierPart` has an empty readable list:
+  `supplierPartId` is the supplier's own number and not unique.
+- **List rows** return `id` (or `<table>Id` for a projection) whenever another
+  tool keys that table by id.
+- **Guard.** `apps/erp/test/mcp-identifier-contract.test.ts` runs the source
+  scan in `scripts/lib/identifier-contract.ts` and fails on a param named
+  after a readable column that no key covers, a keyed param the service
+  compares against the readable column, a param named for a foreign-key column
+  but compared against the row's `id`, an `id` param never compared against an
+  `id` column, and a list read whose rows omit the key (reviewed projections
+  are listed in the test with a reason each).
+
 ## Tool metadata & the generator (`scripts/generate-mcp.ts`)
 
 `tool-metadata.json` is **generated**, never hand-edited. Run
@@ -381,7 +420,7 @@ functions that must import `*.server` modules — see the gotcha below — e.g.
 `production.mcp.server.ts`; the registry (`api+/v1+/lib/registry.server.ts`) merges its
 exports into the same module namespace), and writes `apps/erp/app/routes/api+/mcp+/lib/tool-metadata.json`
 (`{ generated, totalTools, modules, tools }`). Each tool entry:
-`{ name, module, classification, description, paramCount, serviceParams, injectAuth, schema }`.
+`{ name, module, classification, description, paramCount, serviceParams, injectAuth, permission, paginates, schema, keys?, responseSchema? }`.
 
 - **Classification** (`classifyFunction`): `delete*` → `DESTRUCTIVE`;
   `get|list|fetch|search|find|count|check|is|has*` → `READ`; a WRITE whose
