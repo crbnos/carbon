@@ -68,11 +68,16 @@ export async function purgeCompany(
 }
 
 /**
- * What a deleted company leaves outside its tables: integration secrets in Vault,
- * its own storage bucket, and pre-bucket-migration files under `<companyId>/` in
- * the shared private bucket. Run only after `purgeCompany` committed, so a failed
- * delete never leaves a live company without its files or credentials. Returns
- * the failures; each part is attempted regardless.
+ * What a company owns outside its tables: integration secrets in Vault, its own
+ * storage bucket, and pre-bucket-migration files under `<companyId>/` in the
+ * shared private bucket. Returns the failures; each part is attempted
+ * regardless.
+ *
+ * Run inside the purge transaction, after `purgeCompany`, and roll the purge back
+ * when anything failed: the company row is then the retry target, so nothing is
+ * left behind once the delete commits. The price is that a company whose cleanup
+ * failed part-way may already have lost some files. It was warned and is still
+ * due, so the next run finishes it.
  */
 export async function removeCompanyLeftovers(
   db: Kysely<KyselyDatabase>,
@@ -90,22 +95,32 @@ export async function removeCompanyLeftovers(
     failures.push({ part: "vault secrets", error });
   }
 
+  // A bucket already gone (removed by an earlier attempt that then rolled back)
+  // is done, not a failure, or that company would roll back every week.
   const bucket = getCompanyPrivateBucket(companyId);
   const emptied = await serviceRole.storage.emptyBucket(bucket);
   const removed = emptied.error
     ? emptied
     : await serviceRole.storage.deleteBucket(bucket);
-  if (removed.error)
+  if (removed.error && !/not found/i.test(removed.error.message))
     failures.push({ part: "company bucket", error: removed.error });
 
   // Each listing returns at most 1000 entries per folder, so drain in passes.
-  // ponytail: 20 passes (~20k files); a larger legacy folder finishes next week.
+  // Stops at 20 passes (~20k files) without an error, so the delete commits and
+  // a larger legacy folder keeps its remainder.
   for (let pass = 0; pass < 20; pass++) {
-    const files = await listBucketFilesRecursive(
-      serviceRole,
-      STORAGE_BUCKET,
-      companyId
-    );
+    let files: { path: string }[];
+    try {
+      files = await listBucketFilesRecursive(
+        serviceRole,
+        STORAGE_BUCKET,
+        companyId,
+        { strict: true }
+      );
+    } catch (error) {
+      failures.push({ part: "legacy private files", error });
+      break;
+    }
     if (files.length === 0) break;
     let failed = false;
     for (const paths of chunkArray(

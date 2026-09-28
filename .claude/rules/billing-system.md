@@ -211,9 +211,15 @@ whom it deleted.
     The group and its shared data go only when no other company is left in it.
   - Without replica permission it falls back to the plain cascade. A company with posted
     documents then fails, and is logged and skipped.
-  - After the commit, `removeCompanyLeftovers` removes the Vault `integration:<companyId>:*`
-    secrets, the per-company bucket, and legacy files under `private/<companyId>/`.
-    Provider tokens are not revoked at the provider.
+  - Inside the same transaction, after the wipe and before the commit,
+    `removeCompanyLeftovers` removes the Vault `integration:<companyId>:*` secrets, the
+    per-company bucket (already missing counts as done), and legacy files under
+    `private/<companyId>/` (listed strictly, so a listing error is a failure). Any failure
+    rolls the delete back, so the company row stays as the retry target and nothing is
+    orphaned once a delete commits. A company whose cleanup failed part-way may have
+    lost some files; it is still warned and due, so the next run finishes it. The search
+    index is dropped after the commit, and a failure there is only logged. Provider
+    tokens are not revoked at the provider.
 - At most 100 companies per run (Inngest's per-run step limit), 10 per step. Oldest go first.
 - A company with live intercompany history (`intercompanyTransaction` is NO ACTION) fails
   its delete, is logged, and is retried every week.

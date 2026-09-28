@@ -442,6 +442,24 @@ export const weeklyFunction = inngest.createFunction(
                 if (!(await isStillDueForDeletion(trx, company.id)))
                   return false;
                 await purgeCompany(trx, catalog, company.id, { replica });
+                // Before the commit: when any of it fails the delete rolls back,
+                // and the company, still warned and due, is retried next week.
+                const failures = await removeCompanyLeftovers(
+                  trx,
+                  serviceRole,
+                  company.id
+                );
+                if (failures.length > 0) {
+                  for (const failure of failures) {
+                    logger.error(`Failed to remove company ${failure.part}`, {
+                      ...company,
+                      error: failure.error
+                    });
+                  }
+                  throw new Error(
+                    `Company cleanup incomplete: ${failures.map((f) => f.part).join(", ")}`
+                  );
+                }
                 return true;
               });
               if (!purged) {
@@ -472,17 +490,6 @@ export const weeklyFunction = inngest.createFunction(
                 error: searchError
               });
             }
-            for (const failure of await removeCompanyLeftovers(
-              db,
-              serviceRole,
-              company.id
-            )) {
-              logger.error(`Failed to remove company ${failure.part}`, {
-                ...company,
-                error: failure.error
-              });
-            }
-
             logger.info("Deleted company", company);
             results.push({ id: company.id, deleted: true });
           }
