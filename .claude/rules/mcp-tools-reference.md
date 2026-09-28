@@ -3,6 +3,8 @@ paths:
   - "apps/erp/app/routes/api+/mcp+/**"
   - "packages/ee/src/mcp/**"
   - "scripts/generate-mcp.ts"
+  - "scripts/lib/service-metadata.ts"
+  - "scripts/lib/effect-summary.ts"
 ---
 
 # Carbon ERP MCP Server
@@ -229,7 +231,8 @@ dispatcher (`apps/erp/app/routes/api+/inngest.ts`). There is no separate
   `<module>_<action>` for the company). OAuth-connector and in-process
   (`authKind: "session"`) callers skip the scope gate; RLS/role bounds them.
 - The service registry lives at `api+/v1+/lib/registry.server.ts` (the 15 module
-  namespaces); the arg assembly lives in `api+/v1+/lib/dispatch.server.ts`.
+  namespaces, kept equal to the generator's `MODULE_LIST` by
+  `mcp-registry-parity.test.ts`); the arg assembly lives in `api+/v1+/lib/dispatch.server.ts`.
 - **Input is validated** against the operation's own schema before dispatch.
   `router.server.ts` wires `.input(jsonSchemaInput(meta.schema))` from
   `@carbon/api/schema`, which converts the manifest's JSON Schema back to zod at
@@ -383,6 +386,15 @@ exports into the same module namespace), and writes `apps/erp/app/routes/api+/mc
 (`{ generated, totalTools, modules, tools }`). Each tool entry:
 `{ name, module, classification, description, paramCount, serviceParams, injectAuth, schema }`.
 
+- **Which exports become tools** (`isPublishableExport`): every named export of
+  the scanned files EXCEPT `@deprecated` ones (the UI moved to their
+  `insert*`/`update*` replacements, which are tools) and exports that take none
+  of `CONTEXT_PARAMS` (`client`, `db`, `companyId`, …) — pure helpers that cannot
+  touch company data and whose args are an earlier read's output (sometimes a
+  `Set`/`Map`). `MODULE_LIST` is explicit; every other service file under
+  `apps/erp/app/modules/` must sit in `MODULE_EXCLUSIONS` with a reason
+  (`agent`, `workflows` — no per-feature WORKFLOWS gate on the MCP path —,
+  `settings/backups`). `mcp-registry-parity.test.ts` fails on an undecided file.
 - **Classification** (`classifyFunction`): `delete*` → `DESTRUCTIVE`;
   `get|list|fetch|search|find|count|check|is|has*` → `READ`; a WRITE whose
   **body issues a delete** (`.delete(` / `.deleteFrom(`, detected by
@@ -390,7 +402,20 @@ exports into the same module namespace), and writes `apps/erp/app/routes/api+/mc
   (e.g. `upsertQuoteLinePrices`, `replace*Steps`, favourite toggles) is
   destructive-by-omission and the client must treat it as such; everything else →
   `WRITE`. Drives the MCP annotations (`READ_ONLY_/WRITE_/DESTRUCTIVE_ANNOTATIONS`
-  in `packages/ee/src/mcp/types.ts`).
+  in `packages/ee/src/mcp/types.ts`) and the in-app agent's READ-only tool index.
+- **Effect check** (`scripts/lib/effect-summary.ts`): the name is a claim, so
+  `generate:mcp` checks it against the code. A ts-morph pass (sharing the
+  response-schema `Project`) walks each export and every repo function it calls
+  for supabase `.insert/.update/.upsert/.delete`, Kysely
+  `insertInto/updateTable/deleteFrom`, raw `sql\`INSERT|UPDATE|DELETE…\``,
+  `functions.invoke`, `trigger()`, storage writes, and `.rpc(fn)` where fn's
+  LATEST migration body writes (volatility markers are ignored — many pure-read
+  RPCs are unmarked VOLATILE; `RPC_EFFECTS` covers what the scan cannot resolve).
+  The generator FAILS when a READ-named export has an effect or a WRITE-named one
+  has none, unless `CLASSIFICATION_OVERRIDES` carries a grounded entry — which
+  sets the hint and, only when the UI gate differs, the permission separately
+  (e.g. `getPeriodCloseChecklist`: WRITE hint, `accounting` view, because the
+  close-page loader upserts its tasks under view). A stale entry also fails.
 - **Description** precedence: a function-level **JSDoc** on the service export
   (first sentence, `@tag`s stripped, trailing period removed, leading letter
   lowercased unless it starts an acronym, capped ~160 chars —
@@ -414,7 +439,7 @@ exports into the same module namespace), and writes `apps/erp/app/routes/api+/mc
   there is no parallel metadata flag. **BOTH discriminator directions count**:
   `if ("createdBy" in …)` (create-branch first, e.g. `upsertQuoteOperation`) AND
   `if ("updatedBy" in …)` (update-branch first, e.g. `upsertQuoteMaterial`,
-  `upsertJobMaterial`, `upsertJob`, `upsertProductionQuantity`, `upsertPartner`,
+  `upsertJobMaterial`, `upsertProductionQuantity`, `upsertPartner`,
   `upsertPeriodCloseTaskDefinition`). The generator only matched `"createdBy" in`
   until it was broadened — so the inverted ones shipped WITHOUT `_operation`, and
   since `enrichWithAuthContext` always stamped `updatedBy`, their `"updatedBy" in`
@@ -440,7 +465,9 @@ exports into the same module namespace), and writes `apps/erp/app/routes/api+/mc
 `account` · `accounting` · `documents` · `inventory` · `invoicing` · `items` ·
 `people` · `production` · `purchasing` · `quality` · `resources` · `sales` ·
 `settings` · `shared` · `users`. Each maps 1:1 to a
-`apps/erp/app/modules/<module>/<module>.service.ts` namespace.
+`apps/erp/app/modules/<module>/<module>.service.ts` namespace. `agent`,
+`workflows` and `settings/backups.service.ts` are excluded
+(`MODULE_EXCLUSIONS` in `scripts/lib/service-metadata.ts`).
 
 <!-- UNVERIFIED: exact per-module/total tool counts (~1200) drift on every regen — read tool-metadata.json for the live number, don't trust a hardcoded count. -->
 

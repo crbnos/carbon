@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { CLASSIFICATION_OVERRIDES } from "../../../scripts/lib/service-metadata";
 import metadata from "../app/routes/api+/mcp+/lib/tool-metadata.json";
 
 // Pins the permission-derivation rules in scripts/lib/service-metadata.ts
@@ -23,7 +24,24 @@ const allTools = metadata.tools as Tool[];
 // longer MCP tools — only the read (getApiKeys) remains and keeps the override.
 const OVERRIDDEN = new Set(["settings_getApiKeys"]);
 
-const tools = allTools.filter((t) => !OVERRIDDEN.has(t.name));
+// CLASSIFICATION_OVERRIDES entries whose permission is set explicitly because
+// the UI gate for the same call differs from what the classification derives
+// (a WRITE hint on a call the UI serves under `view`). Pinned one by one: each
+// is an authorization decision.
+const CLASSIFICATION_PERMISSION_PINS: Record<
+  string,
+  { module: string; actions: string[] }
+> = {
+  // Consumes a sequence number; the gate is unchanged from the name-derived
+  // one pending the product decision (block it, or name a permission).
+  settings_getNextSequence: { module: "settings", actions: ["view"] },
+  // Upserts period-close tasks inside the close page LOADER (accounting view).
+  accounting_getPeriodCloseChecklist: { module: "accounting", actions: ["view"] }
+};
+
+const tools = allTools.filter(
+  (t) => !OVERRIDDEN.has(t.name) && !(t.name in CLASSIFICATION_PERMISSION_PINS)
+);
 
 const funcName = (t: Tool) => t.name.slice(t.module.length + 1).toLowerCase();
 
@@ -37,6 +55,52 @@ describe("permission overrides", () => {
         actions: ["update"]
       });
     }
+  });
+});
+
+describe("classification overrides", () => {
+  it("pins every explicit permission a CLASSIFICATION_OVERRIDES entry sets", () => {
+    const explicit = Object.fromEntries(
+      Object.entries(CLASSIFICATION_OVERRIDES)
+        .filter(([, o]) => o.permission)
+        .map(([name, o]) => [name, o.permission])
+    );
+    expect(explicit).toEqual(CLASSIFICATION_PERMISSION_PINS);
+    for (const [name, permission] of Object.entries(
+      CLASSIFICATION_PERMISSION_PINS
+    )) {
+      expect(allTools.find((t) => t.name === name)?.permission, name).toEqual(
+        permission
+      );
+    }
+  });
+
+  it("an override without a permission derives it from its classification", () => {
+    for (const [name, o] of Object.entries(CLASSIFICATION_OVERRIDES)) {
+      if (o.permission) continue;
+      const t = allTools.find((t) => t.name === name);
+      expect(t?.classification, name).toBe(o.classification);
+    }
+  });
+
+  it("the READ overrides of pure lookups gate on view", () => {
+    for (const name of [
+      "items_lookupBuyPrice",
+      "sales_resolvePrice",
+      "sales_resolvePriceList",
+      "production_calculateJobPriority"
+    ]) {
+      expect(allTools.find((t) => t.name === name)?.permission.actions, name).toEqual(
+        ["view"]
+      );
+    }
+  });
+
+  it("getOrCreateAccountingPeriod gates on accounting update, like its only UI callers", () => {
+    expect(
+      allTools.find((t) => t.name === "accounting_getOrCreateAccountingPeriod")
+        ?.permission
+    ).toEqual({ module: "accounting", actions: ["update"] });
   });
 });
 

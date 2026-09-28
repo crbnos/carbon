@@ -393,3 +393,31 @@ describe("mcp tool set", () => {
     }
   });
 });
+
+// Classification follows what the code does (see CLASSIFICATION_OVERRIDES and
+// the effect check in scripts/lib/service-metadata.ts). The hint is what MCP
+// clients read as readOnlyHint, and the in-app agent only sees READ tools.
+describe("mcp tool classification", () => {
+  it("marks READ-named exports that change state as WRITE", () => {
+    for (const name of [
+      "settings_getNextSequence",
+      "accounting_getOrCreateAccountingPeriod",
+      "accounting_getPeriodCloseChecklist"
+    ]) {
+      expect(get(name).classification, name).toBe("WRITE");
+    }
+  });
+
+  it("marks side-effect-free lookups and pricing helpers as READ", () => {
+    for (const name of [
+      "items_lookupBuyPrice",
+      "items_matchItemIdByText",
+      "items_resolveItemIdFromExtractedText",
+      "sales_resolvePrice",
+      "sales_resolvePriceList",
+      "production_calculateJobPriority"
+    ]) {
+      expect(get(name).classification, name).toBe("READ");
+    }
+  });
+});

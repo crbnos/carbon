@@ -36,7 +36,13 @@ export const DIGEST_FILE = path.join(
 export async function generateToolMetadata(): Promise<void> {
   console.log("Generating tool metadata from service files...");
 
-  const { tools: allTools, registryStats, responseStats, resolutions } =
+  const {
+    tools: allTools,
+    registryStats,
+    responseStats,
+    effectStats,
+    resolutions
+  } =
     await buildAllToolMetadataWithValidators({
       onModule: (mod, count) => console.log(`  ✓ ${mod}: ${count} tools`),
     });
@@ -69,6 +75,9 @@ export async function generateToolMetadata(): Promise<void> {
   );
   console.log(
     `  Responses: ${responseStats.derived}/${responseStats.functions} reflected from return types (${responseStats.empty} yielded nothing usable)`
+  );
+  console.log(
+    `  Effects: ${effectStats.withEffects}/${effectStats.functions} exports change state; every published classification agrees with its code or has a CLASSIFICATION_OVERRIDES entry`
   );
   if (registryStats.moduleErrors.length > 0) {
     console.warn(`  ⚠ ${registryStats.moduleErrors.length} module(s) failed to load:`);

@@ -21,8 +21,10 @@ import type {
   ToolPermission,
 } from "@carbon/api";
 import { MCP_BLOCKED_TOOL_NAMES } from "../../apps/erp/app/routes/api+/mcp+/lib/mcp-blocked-tools";
+import { buildEffectIndex, type Effect, type EffectIndex } from "./effect-summary";
 import {
   buildResponseSchemaIndex,
+  createServiceProject,
   type ResponseSchemaIndex,
 } from "./response-schema";
 import { getDbEnumValues, getDbTableTypeFields } from "./db-types";
@@ -168,6 +170,119 @@ const PERMISSION_OVERRIDES: Record<string, ToolPermission> = {
   // requireEntitlement, so they are no longer scanned as MCP tools; only the
   // read remains here.
   settings_getApiKeys: { module: "users", actions: ["update"] },
+};
+
+/**
+ * A classification the name prefix gets wrong, grounded in what the code does.
+ *
+ * The name-prefix rule (`classifyFunction`) stays the classifier. The effect
+ * summary (`effect-summary.ts`) is its checker: the generator fails when a
+ * READ-named export changes state or a WRITE-named export changes none, until an
+ * entry here settles the disagreement. `classification` is the client hint
+ * (readOnlyHint, the in-app agent's READ-only index, search filters).
+ * `permission` is set separately, and only when the UI's gate for the same call
+ * differs from what the classification would derive — a WRITE hint must not
+ * silently raise a read the UI serves under `view`.
+ */
+export interface ClassificationOverride {
+  classification: Classification;
+  permission?: ToolPermission;
+  reason: string;
+}
+
+// Pure-read helpers with a WRITE-sounding name. They read only, so like every
+// other READ they gate on the module's `view`. Most UI callers are view-gated
+// loaders; calculateJobPriority, resolveEmployeeAbilityExpiresAt and
+// resolveItemIdFromExtractedText are also called inside write actions, which
+// then write the computed value under their own create/update gate.
+const PURE_READ = (reason: string): ClassificationOverride => ({
+  classification: "READ",
+  reason,
+});
+
+export const CLASSIFICATION_OVERRIDES: Record<string, ClassificationOverride> = {
+  // --- READ-named, but they change state ---------------------------------
+  settings_getNextSequence: {
+    classification: "WRITE",
+    // Unchanged from the name-derived gate: whether a view key may consume
+    // numbers at all is an open product decision (block the tool, or name a
+    // permission). The hint is corrected now — it is not idempotent.
+    permission: { module: "settings", actions: ["view"] },
+    reason:
+      "rpc get_next_sequence increments sequence.next: every call consumes a document number.",
+  },
+  accounting_getOrCreateAccountingPeriod: {
+    classification: "WRITE",
+    reason:
+      "Inserts (or reopens) the accountingPeriod covering the date. Its only UI callers are accounting update actions (fixed-asset register/dispose, depreciation post), which the derived accounting update gate matches.",
+  },
+  accounting_getPeriodCloseChecklist: {
+    classification: "WRITE",
+    permission: { module: "accounting", actions: ["view"] },
+    reason:
+      "Upserts the period's periodCloseTask rows before reading them. The UI runs it in the periods.$periodId.close loader under accounting view, so the gate stays view.",
+  },
+  production_getJobExpediteForecast: {
+    classification: "READ",
+    reason:
+      "runExpediteWhatIf calls placeReleasedBatches with persist: false; the write branch the scan sees never runs.",
+  },
+
+  // --- WRITE-named, but read-only ----------------------------------------
+  accounting_applyCtaToReportPeriodSeries: PURE_READ(
+    "Adds the translation adjustment to report series in memory; reads rates only."
+  ),
+  accounting_translateCompanyPeriodSeries: PURE_READ(
+    "Translates report period series in memory; reads rates only."
+  ),
+  accounting_translateCompanyBalances: PURE_READ(
+    "Translates trial-balance rows in memory; called by the trial-balance loader under accounting view."
+  ),
+  accounting_validateDefaultIncomeAccounts: PURE_READ(
+    "Checks proposed default accounts against the chart; writes nothing."
+  ),
+  inventory_expandStorageUnitIdsWithDescendants: PURE_READ(
+    "Reads the storage-unit subtree; called by the quantities loader under inventory view."
+  ),
+  items_assertMethodOperationIsDraft: PURE_READ(
+    "Reads the operation's make-method status and reports whether it is editable."
+  ),
+  items_matchItemIdByText: PURE_READ(
+    "Matches free text against item readable ids; reads only."
+  ),
+  items_resolveItemIdFromExtractedText: PURE_READ(
+    "Resolves extracted text to an item via supplier/customer part lookups; called by the map-lines loaders under view."
+  ),
+  items_lookupBuyPrice: PURE_READ(
+    "Reads supplier part price breaks; the quote material form calls it client-side under the user's read access."
+  ),
+  production_calculateJobPriority: PURE_READ(
+    "Computes a priority from existing job deadlines; the caller writes the result."
+  ),
+  resources_resolveEmployeeAbilityExpiresAt: PURE_READ(
+    "Computes an expiry date from the ability's validity; the caller writes the result."
+  ),
+  sales_resolvePrice: PURE_READ(
+    "Evaluates price overrides and rules; the resolve-price route gates it on sales view."
+  ),
+  sales_resolvePriceList: PURE_READ(
+    "Evaluates the price list for a customer; the price-list loader gates it on sales view."
+  ),
+  sales_buildPullFromInventoryPriceRows: PURE_READ(
+    "Builds quote price rows from item costs in memory; the caller writes them."
+  ),
+  sales_buildPurchaseToOrderPriceRows: PURE_READ(
+    "Builds quote price rows from supplier prices in memory; the caller writes them."
+  ),
+  settings_resolveSections: PURE_READ(
+    "Reads document template sections for rendering; the templates loader gates it on settings view."
+  ),
+  users_resolveUserSelectIds: PURE_READ(
+    "Resolves user and group ids to display rows; reads only."
+  ),
+  shared_generateEmbedding: PURE_READ(
+    "Calls the compute-only `embedding` edge function (EDGE_FUNCTION_EFFECTS) and returns the vector; stores nothing."
+  ),
 };
 
 // ---------------------------------------------------------------------------
@@ -1252,6 +1367,8 @@ function derivePermission(
   classification: Classification
 ): ToolPermission {
   if (PERMISSION_OVERRIDES[toolName]) return PERMISSION_OVERRIDES[toolName];
+  const classificationPermission = CLASSIFICATION_OVERRIDES[toolName]?.permission;
+  if (classificationPermission) return classificationPermission;
 
   const permModule =
     mod in PERMISSION_MODULE_MAP ? PERMISSION_MODULE_MAP[mod] : mod;
@@ -1600,6 +1717,13 @@ export interface BuildOptions {
   validators?: ValidatorRegistry;
   /** Reflected response schemas, keyed `{module}_{fn}`. Absent = inputs only. */
   responses?: ResponseSchemaIndex;
+  /**
+   * What each export does, from its code. When present every published tool's
+   * name-derived classification is checked against it (`checkClassification`).
+   */
+  effects?: EffectIndex;
+  /** Called once per classification disagreement the effect check finds. */
+  onClassificationFinding?: (finding: ClassificationFinding) => void;
   /** Called once per `z.infer` param with how its schema was resolved. */
   onValidatorResolved?: (
     toolName: string,
@@ -1627,6 +1751,73 @@ export function isPublishableExport(func: {
 }): boolean {
   if (func.jsdoc && /@deprecated\b/.test(func.jsdoc)) return false;
   return func.params.some((p) => CONTEXT_PARAMS.has(p.name));
+}
+
+/** A disagreement between an export's name and what its code does. */
+export interface ClassificationFinding {
+  toolName: string;
+  kind:
+    | "read-named-with-effect"
+    | "write-named-without-effect"
+    | "stale-override"
+    | "override-for-unpublished-tool";
+  nameClassification: Classification;
+  effects: Effect[];
+}
+
+/**
+ * Compare the name-derived classification against the effect summary. Returns
+ * a finding when they disagree and no `CLASSIFICATION_OVERRIDES` entry settles
+ * it, or when an entry exists but the disagreement it settled is gone (the
+ * code changed; the override would now mislabel the tool).
+ */
+export function checkClassification(
+  toolName: string,
+  nameClassification: Classification,
+  effects: Effect[] | null
+): ClassificationFinding | null {
+  if (effects === null) return null;
+  const readByName = nameClassification === "READ";
+  const hasEffect = effects.length > 0;
+  const disagrees = readByName === hasEffect;
+  const overridden = toolName in CLASSIFICATION_OVERRIDES;
+  if (disagrees && !overridden) {
+    return {
+      toolName,
+      kind: readByName ? "read-named-with-effect" : "write-named-without-effect",
+      nameClassification,
+      effects,
+    };
+  }
+  if (!disagrees && overridden) {
+    return { toolName, kind: "stale-override", nameClassification, effects };
+  }
+  return null;
+}
+
+export function formatClassificationFindings(
+  findings: ClassificationFinding[]
+): string {
+  const lines = findings.map((f) => {
+    const witness = f.effects[0]
+      ? ` — ${[...f.effects[0].via, f.effects[0].detail].join(" → ")}`
+      : "";
+    switch (f.kind) {
+      case "read-named-with-effect":
+        return `  ${f.toolName}: READ by name, but changes state${witness}`;
+      case "write-named-without-effect":
+        return `  ${f.toolName}: ${f.nameClassification} by name, but no write, rpc write, edge function, job or storage write was found`;
+      case "stale-override":
+        return `  ${f.toolName}: CLASSIFICATION_OVERRIDES entry no longer needed — name and code now agree${witness}`;
+      case "override-for-unpublished-tool":
+        return `  ${f.toolName}: CLASSIFICATION_OVERRIDES entry names a tool that is not published`;
+    }
+  });
+  return [
+    `${findings.length} MCP classification disagreement(s) between an export's name and its code:`,
+    ...lines,
+    "Fix the name, or add a CLASSIFICATION_OVERRIDES entry in scripts/lib/service-metadata.ts with the grounded reason (and a permission when the UI gate differs).",
+  ].join("\n");
 }
 
 /**
@@ -1695,7 +1886,17 @@ export function buildAllToolMetadata(opts: BuildOptions = {}): ManifestEntry[] {
       if (MCP_BLOCKED_TOOL_NAMES.includes(toolName)) continue;
       if (!isPublishableExport(func)) continue;
 
-      const classification = classifyFunction(func.name, content);
+      const nameClassification = classifyFunction(func.name, content);
+      const override = CLASSIFICATION_OVERRIDES[toolName];
+      const classification = override?.classification ?? nameClassification;
+      if (opts.effects) {
+        const finding = checkClassification(
+          toolName,
+          nameClassification,
+          opts.effects.get(mod, func.name)
+        );
+        if (finding) opts.onClassificationFinding?.(finding);
+      }
       const injectAuth = withPayloadUserId(
         INJECT_AUTH_OVERRIDES[toolName] ||
           computeInjectAuth(func.name, classification),
@@ -1765,6 +1966,7 @@ export interface BuildWithValidatorsResult {
   tools: ManifestEntry[];
   registryStats: ValidatorRegistry["stats"];
   responseStats: ResponseSchemaIndex["stats"];
+  effectStats: EffectIndex["stats"];
   resolutions: ValidatorResolutionRecord[];
 }
 
@@ -1778,23 +1980,51 @@ export async function buildAllToolMetadataWithValidators(
   opts: Omit<BuildOptions, "validators"> = {}
 ): Promise<BuildWithValidatorsResult> {
   const validators = await buildValidatorRegistry(MODULE_LIST);
-  const responses = buildResponseSchemaIndex(MODULE_LIST);
+  const serviceProject = createServiceProject(MODULE_LIST);
+  const responses = buildResponseSchemaIndex(serviceProject);
+  const effects = buildEffectIndex(serviceProject);
   const resolutions: ValidatorResolutionRecord[] = [];
+  const findings: ClassificationFinding[] = [];
 
   const tools = buildAllToolMetadata({
     ...opts,
     validators,
     responses,
+    effects,
+    onClassificationFinding: (finding) => {
+      findings.push(finding);
+      opts.onClassificationFinding?.(finding);
+    },
     onValidatorResolved: (toolName, validatorName, how) => {
       resolutions.push({ toolName, validatorName, how });
       opts.onValidatorResolved?.(toolName, validatorName, how);
     },
   });
 
+  // An override for a tool that is no longer published is as stale as one
+  // whose disagreement went away.
+  const published = new Set(tools.map((t) => t.name));
+  for (const toolName of Object.keys(CLASSIFICATION_OVERRIDES)) {
+    if (!published.has(toolName)) {
+      findings.push({
+        toolName,
+        kind: "override-for-unpublished-tool",
+        nameClassification: classifyFunction(
+          toolName.slice(toolName.indexOf("_") + 1)
+        ),
+        effects: [],
+      });
+    }
+  }
+  if (findings.length > 0) {
+    throw new Error(formatClassificationFindings(findings));
+  }
+
   return {
     tools,
     registryStats: validators.stats,
     responseStats: responses.stats,
+    effectStats: effects.stats,
     resolutions,
   };
 }

@@ -2298,6 +2298,11 @@ type AccountingPeriodCloseColumns = {
   periodNumber?: number | null;
 };
 
+/**
+ * Resolve the accounting period that covers a posting date, creating it when
+ * none exists and making it the active period. Refuses a Closed period, and a
+ * Locked one for operational postings.
+ */
 export async function getOrCreateAccountingPeriod(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -3474,8 +3479,11 @@ export function evaluateCloseChecklist(
   return { tasks: views, canClose, blockingReason, autoTaskStates };
 }
 
-// Idempotently instantiate the checklist for a period from active definitions,
-// then overlay live readiness. Returns the evaluated tasks plus the close gate.
+/**
+ * Instantiate the period's close checklist from the active task definitions
+ * (idempotent upsert of its periodCloseTask rows), then overlay live readiness.
+ * Returns the evaluated tasks plus the close gate.
+ */
 export async function getPeriodCloseChecklist(
   client: SupabaseClient<Database>,
   companyId: string,

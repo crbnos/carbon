@@ -372,6 +372,12 @@ export async function getKanbanOutputSetting(
     .single();
 }
 
+/**
+ * Allocate the next document number for a sequence table such as salesOrder.
+ * Each call consumes one number: it is not a preview and is not idempotent.
+ * The insert* services allocate their own numbers, so callers creating a
+ * document through them never need this.
+ */
 export async function getNextSequence(
   client: SupabaseClient<Database>,
   table: string,
