@@ -89,8 +89,16 @@ The `detail` JSON shape is `NodeDetail` (`packages/ee/src/workflows/runtime/type
 
 Pass 3 runs **before** pass 4 so `compactedAt` is always set on the `workflowRun` row before its step rows are deleted. The UI uses `run.compactedAt !== null` to distinguish "steps purged" from "run has no steps yet".
 
-Age is always `COALESCE("completedAt", "createdAt")` — `Blocked` and `Skipped` runs never set
-`completedAt`, and `workflowRun_retention_idx` is the index for it.
+Age is always `COALESCE("completedAt", "createdAt")`, and `workflowRun_retention_idx` is the
+index for it. Some terminal runs are INSERTED terminal and never get `completedAt` (or
+`startedAt`): **`Blocked`** runs (the matcher's loop guard, `planRuns` in `matcher.ts`) and
+the scheduler's **`Skipped`** runs (`TOO_LATE`, `PREVIOUS_RUN_ACTIVE` in `scheduler.ts`), both
+written by `insertRunsAndBuildEvents` with no timestamp. A `Skipped` run settled at the engine's
+`load` step (`NOT_ENTITLED`, `UNPUBLISHED` in `engine/execute.ts`) goes through `finishRun`
+(`engine/log.ts`), which ALWAYS sets `completedAt` and `durationMs` — but `claimRun` never ran,
+so its `startedAt` stays null. The migration's own comment
+(`20260810100200_workflow-run-history.sql`: "Blocked and Skipped runs never set completedAt")
+is wrong for that load-time skip; the COALESCE covers both shapes either way.
 
 Every pass selects `ORDER BY` that age ascending, so a backlog drains oldest-first instead of
 re-reading the same page each night. Each pass must also be able to *leave* its own candidate

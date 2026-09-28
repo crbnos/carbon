@@ -79,6 +79,7 @@ serve(async (req: Request) => {
       const job = await trx
         .selectFrom("job")
         .where("id", "=", jobId)
+        .where("companyId", "=", companyId)
         .select(["jobId", "itemId", "locationId"])
         .executeTakeFirstOrThrow();
 

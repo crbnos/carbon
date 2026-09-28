@@ -4,34 +4,33 @@ import { flash } from "@carbon/auth/session.server";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { updateSalesRFQLineOrder } from "~/modules/sales";
+import { parseSortOrderUpdates } from "~/modules/shared/sort-order";
 import { getDatabaseClient } from "~/services/database.server";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { userId } = await requirePermissions(request, {
+  const { companyId, userId } = await requirePermissions(request, {
     update: "sales"
   });
 
   if (!params.rfqId) throw new Error("Could not find rfqId");
 
-  const updateMap = (await request.formData()).get("updates") as string;
-  if (!updateMap) {
+  const updates = parseSortOrderUpdates(await request.formData());
+  if (!updates) {
     return data(
       { success: false },
       await flash(request, error(null, "Failed to receive a new sort order"))
     );
   }
 
-  const updates = Object.entries(JSON.parse(updateMap)).map(
-    ([id, sortOrderString]) => ({
-      id,
-      sortOrder: Number(sortOrderString),
-      updatedBy: userId
-    })
-  );
-
   try {
-    await updateSalesRFQLineOrder(getDatabaseClient(), updates);
+    await updateSalesRFQLineOrder(
+      getDatabaseClient(),
+      companyId,
+      userId,
+      params.rfqId,
+      updates
+    );
   } catch (err) {
     return data(
       { success: false },

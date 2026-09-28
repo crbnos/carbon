@@ -3,6 +3,7 @@
   "tasks": {
     "build": {
       "dependsOn": ["^build", "//#lingui:compile", "//#generate:mcp"],
+      "env": ["ASSETS_URL"],
       "outputs": [
         "dist/**",
         "build/**",

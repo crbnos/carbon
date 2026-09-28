@@ -44,6 +44,7 @@ import {
 import { getCustomerContact, updateCustomerContact } from "~/modules/sales";
 import { recordSalesRuleOutcome } from "~/modules/sales/sales.server";
 import { getCompany } from "~/modules/settings";
+import { requireCompanyRecord } from "~/modules/shared/shared.server";
 import { getCompanyTimeZone } from "~/modules/shared/timezone.server";
 import { getUser } from "~/modules/users/users.server";
 import { loader as pdfLoader } from "~/routes/file+/sales-invoice+/$id[.]pdf";
@@ -317,7 +318,13 @@ async function preflightStripeSend({
   }
 
   if (stripeContactEmail) {
-    const contact = await getCustomerContact(serviceRole, customerContact);
+    // customerContact comes from the form and the service role bypasses RLS:
+    // scope it so another company's contact is never read or rewritten.
+    const contact = await getCustomerContact(
+      serviceRole,
+      customerContact,
+      companyId
+    );
     if (contact.data && !contact.data.contact?.email) {
       const update = await updateCustomerContact(serviceRole, {
         contactId: contact.data.contactId,
@@ -509,6 +516,13 @@ export async function action(args: ActionFunctionArgs) {
   let documentFilePath: string;
 
   const serviceRole = getCarbonServiceRole();
+
+  // Everything below reads and writes through the service role (and the
+  // Stripe preflight runs before the edge function re-checks the invoice), so
+  // the URL's invoiceId must belong to this company before anything happens.
+  await requireCompanyRecord(serviceRole, "salesInvoice", companyId, {
+    id: invoiceId
+  });
 
   const formData = await request.formData();
   const validation = await validator(salesInvoicePostValidator).validate(
@@ -812,7 +826,7 @@ export async function action(args: ActionFunctionArgs) {
           paymentTerms
         ] = await Promise.all([
           getCompany(serviceRole, companyId),
-          getCustomerContact(serviceRole, customerContact),
+          getCustomerContact(serviceRole, customerContact, companyId),
           getSalesInvoice(serviceRole, invoiceId),
           getSalesInvoiceLines(serviceRole, invoiceId),
           getSalesInvoiceCustomerDetails(serviceRole, invoiceId),

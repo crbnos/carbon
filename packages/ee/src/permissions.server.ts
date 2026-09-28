@@ -263,6 +263,23 @@ export function makeCompanyPermissionsFromEmployeeType(
 // The write path — builds and persists the flattened permission object
 // ---------------------------------------------------------------------------
 
+// The target user id comes from the caller's form (and the bulk path runs as
+// the service role), so prove it is an employee of the company whose
+// permissions are being written before touching the user's grants. Read via
+// the service role: the membership fact must not depend on the caller's RLS.
+async function isCompanyEmployee(
+  userId: string,
+  companyId: string
+): Promise<boolean> {
+  const employee = await getCarbonServiceRole()
+    .from("employee")
+    .select("id")
+    .eq("id", userId)
+    .eq("companyId", companyId)
+    .maybeSingle();
+  return !employee.error && !!employee.data;
+}
+
 export async function updateEmployee(
   client: SupabaseClient<Database>,
   {
@@ -282,6 +299,24 @@ export async function updateEmployee(
   }
 ): Promise<Result> {
   await requireEntitlement(client, companyId, "PERMISSIONS");
+  if (!(await isCompanyEmployee(id, companyId))) {
+    // error() logs the context when it is non-null.
+    return error({ companyId, userId: id }, "Employee not found");
+  }
+  // The employee type comes from the form and employee.employeeTypeId has a
+  // single-column foreign key, so another company's type would be accepted.
+  const ownType = await getCarbonServiceRole()
+    .from("employeeType")
+    .select("id")
+    .eq("id", employeeType)
+    .eq("companyId", companyId)
+    .maybeSingle();
+  if (ownType.error || !ownType.data) {
+    return error(
+      { companyId, employeeTypeId: employeeType, error: ownType.error },
+      "Employee type not found"
+    );
+  }
   const updateEmployeeEmployeeType = await client
     .from("employee")
     .upsert([{ id, companyId, employeeTypeId: employeeType }]);
@@ -317,6 +352,10 @@ export async function updatePermissions(
   }
 ): Promise<Result> {
   await requireEntitlement(client, companyId, "PERMISSIONS");
+  if (!(await isCompanyEmployee(id, companyId))) {
+    // error() logs the context when it is non-null.
+    return error({ companyId, userId: id }, "Employee not found");
+  }
   const claimsAdmin = await client.rpc("is_claims_admin", {
     company: companyId
   });

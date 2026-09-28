@@ -58,6 +58,7 @@
   "scripts": {
     "db:check:backups": "tsx --env-file-if-exists=../../.env --env-file-if-exists=../../.env.local src/scripts/check-backups.ts",
     "dev:jobs": "pnpm dlx inngest-cli@latest dev --no-discovery -u http://localhost:3000/api/inngest",
+    "plan:company": "tsx --env-file-if-exists=../../.env --env-file-if-exists=../../.env.local src/scripts/plan-company.ts",
     "test": "vitest run",
     "typecheck": "tsc --noEmit"
   },

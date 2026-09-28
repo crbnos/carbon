@@ -6,7 +6,7 @@ import path from "node:path";
 import { defineConfig, PluginOption } from "vite";
 import babelMacros from "vite-plugin-babel-macros";
 
-export default defineConfig(({ mode, isSsrBuild }) => {
+export default defineConfig(({ command, mode, isSsrBuild }) => {
   applyDotenvToProcessEnv(mode, __dirname);
 
   /**
@@ -47,6 +47,14 @@ export default defineConfig(({ mode, isSsrBuild }) => {
   ];
 
   return {
+    // ASSETS_URL bakes a CDN asset base into the client build (Dockerfile
+    // build arg). Vite's base is build-time only, so an image built without
+    // it serves assets same-origin — that IS the controlled/air-gapped
+    // variant, not a fallback. Normalized: Vite requires the trailing slash.
+    base:
+      command === "build" && process.env.ASSETS_URL
+        ? process.env.ASSETS_URL.replace(/\/*$/, "/")
+        : undefined,
     build: {
       minify: true,
       rolldownOptions: {

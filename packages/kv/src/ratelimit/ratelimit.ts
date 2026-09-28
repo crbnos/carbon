@@ -4,6 +4,7 @@ import { ms } from "./duration";
 import {
   fixedWindowRemainingScript,
   fixedWindowScript,
+  slidingWindowRefundScript,
   slidingWindowRemainingScript,
   slidingWindowScript,
   tokenBucketRemainingScript,
@@ -181,6 +182,23 @@ export class Ratelimit {
     }
   }
 
+  /**
+   * Give back one token a successful `limit()` consumed — for callers that
+   * must consume BEFORE doing the work (so a concurrent burst cannot all pass a
+   * read-only check) but only want some outcomes to count. Sliding window
+   * only: the fixed window counts rejected calls too, and a token bucket has no
+   * counter, so both keep the token. Never goes below zero.
+   * @param identifier - Unique identifier
+   */
+  async refund(identifier: string): Promise<void> {
+    const key = this.getKey(identifier);
+    try {
+      await this.limiter().refund?.(this.ctx, key);
+    } catch {
+      // Redis down: limit() failed open too, so there is nothing to give back.
+    }
+  }
+
   private getKey(identifier: string): string {
     return `${this.prefix}:${identifier}`;
   }
@@ -336,6 +354,16 @@ export class Ratelimit {
         const currentKey = `${key}:${currentWindow}`;
         const previousKey = `${key}:${currentWindow - 1}`;
         await ctx.redis.del(currentKey, previousKey);
+      },
+
+      async refund(ctx, key) {
+        const currentWindow = Math.floor(Date.now() / windowMs);
+        await ctx.redis.eval(
+          slidingWindowRefundScript,
+          2,
+          `${key}:${currentWindow}`,
+          `${key}:${currentWindow - 1}`
+        );
       }
     });
   }

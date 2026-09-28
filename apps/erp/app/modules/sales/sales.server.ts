@@ -194,25 +194,38 @@ export async function duplicatePriceOverrides(
  * written here.
  */
 export async function saveQuoteLineWithPrices(args: {
+  companyId: string;
+  quoteId: string;
   lineId: string;
   line: Record<string, unknown>;
   removedQuantities: number[];
   priceRows: Record<string, unknown>[];
 }): Promise<void> {
-  const { lineId, line, removedQuantities, priceRows } = args;
+  const { companyId, quoteId, lineId, line, removedQuantities, priceRows } =
+    args;
   const db = getDatabaseClient();
 
   await db.transaction().execute(async (trx) => {
-    await trx
+    // Kysely bypasses RLS and lineId/quoteId come from the URL: the line must
+    // belong to this company AND to the quote whose lock state the route
+    // checked, or nothing is written. The form's own quoteId is overridden so
+    // a line can't be re-parented onto another document.
+    const result = await trx
       .updateTable("quoteLine")
-      .set(line as never)
+      .set({ ...line, quoteId } as never)
       .where("id", "=", lineId)
-      .execute();
+      .where("quoteId", "=", quoteId)
+      .where("companyId", "=", companyId)
+      .executeTakeFirst();
+    if (Number(result.numUpdatedRows) === 0) {
+      throw new Error(`Quote line ${lineId} not found`);
+    }
 
     if (removedQuantities.length > 0) {
       await trx
         .deleteFrom("quoteLinePrice")
         .where("quoteLineId", "=", lineId)
+        .where("companyId", "=", companyId)
         .where("quantity", "in", removedQuantities)
         .execute();
     }

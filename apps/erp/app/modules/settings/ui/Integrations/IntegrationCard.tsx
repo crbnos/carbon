@@ -34,7 +34,6 @@ export function IntegrationCard({
   const fetcher = useFetcher<{}>();
   const navigate = useNavigate();
   const routeData = useRouteData<{
-    state: string;
     oauthStates: Record<string, string>;
     activeRoles: Record<string, string | null>;
   }>(path.to.integrations);
@@ -57,10 +56,7 @@ export function IntegrationCard({
 
   const handleInstall = async () => {
     if ("oauth" in integration && integration.oauth) {
-      const state =
-        integration.id === "ramp"
-          ? routeData?.oauthStates?.[integration.id]
-          : routeData?.state;
+      const state = routeData?.oauthStates?.[integration.id];
       const oauthUrl = buildIntegrationOAuthUrl(
         integration.oauth,
         state,

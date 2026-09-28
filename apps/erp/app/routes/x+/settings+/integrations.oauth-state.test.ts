@@ -7,10 +7,16 @@ vi.mock("@carbon/auth", () => ({ error: vi.fn() }));
 vi.mock("@carbon/auth/auth.server", () => ({ requirePermissions }));
 vi.mock("@carbon/auth/session.server", () => ({ flash: vi.fn() }));
 vi.mock("@carbon/ee", () => ({
-  integrations: [],
+  integrations: [
+    { id: "ramp", oauth: { clientId: "ramp-client" } },
+    { id: "xero", oauth: { clientId: "xero-client" } },
+    // Slack and Onshape start their flows elsewhere (no `oauth` config).
+    { id: "slack" }
+  ],
   quickInstallConnectors: [],
   // The loader derives which role slots are taken so the cards can disable a
-  // conflicting Install. No integrations in this fixture, so no role is held.
+  // conflicting Install. This fixture holds no ACTIVE integration, so no role
+  // is taken regardless of what the registry would return.
   getIntegrationIdsByRole: () => []
 }));
 vi.mock("@carbon/react", () => ({ toast: { error: vi.fn() } }));
@@ -31,7 +37,7 @@ vi.mock("~/utils/path", () => ({
 import { loader } from "./integrations";
 
 describe("integrations OAuth state loader", () => {
-  it("issues a server-bound Ramp state and sends its signed cookie", async () => {
+  it("issues a server-bound state per OAuth integration in one signed cookie", async () => {
     requirePermissions.mockResolvedValue({
       client: {},
       userId: "user-1",
@@ -47,9 +53,17 @@ describe("integrations OAuth state loader", () => {
       init?: { headers?: HeadersInit };
     };
 
-    expect(result.data?.oauthStates?.ramp).toMatch(
-      /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+    const uuid =
+      /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    expect(result.data?.oauthStates?.ramp).toMatch(uuid);
+    expect(result.data?.oauthStates?.xero).toMatch(uuid);
+    expect(result.data?.oauthStates?.ramp).not.toBe(
+      result.data?.oauthStates?.xero
     );
+    expect(Object.keys(result.data?.oauthStates ?? {})).toEqual([
+      "ramp",
+      "xero"
+    ]);
     expect(new Headers(result.init?.headers).get("Set-Cookie")).toContain(
       "carbon-oauth-state="
     );

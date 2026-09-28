@@ -1,6 +1,10 @@
 import { openAsBlob } from "node:fs";
 import type { Database } from "@carbon/database";
-import { getCompanyPrivateBucket, storage } from "@carbon/files";
+import {
+  getCompanyPrivateBucket,
+  storage,
+  TEMP_STAGING_BUCKET
+} from "@carbon/files";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { nanoid } from "nanoid";
 import { resolveModelSourceBucket } from "../tasks/assembler-client";
@@ -50,12 +54,6 @@ export interface AttachOnshapeAssetsResult {
   documentIds: string[];
   preservedPriorModelAsDocument: boolean;
 }
-
-// Durable files land in the company's own private bucket (bucket id =
-// companyId; object keys keep the companyId prefix).
-// Raw model sources live in temp-staging (same as manual CadModel uploads); the
-// model-optimize job reads from there and later zstd-compacts the raw in place.
-const STAGING_BUCKET = "temp-staging";
 
 function modelContentType(extension: string): string {
   return extension === "glb" ? "model/gltf-binary" : "model/gltf+json";
@@ -124,7 +122,7 @@ async function ensureImmutableModel(
     type: contentType
   });
   const uploaded = await carbon.storage
-    .from(STAGING_BUCKET)
+    .from(TEMP_STAGING_BUCKET)
     .upload(modelPath, rawBlob, { upsert: false, contentType });
   // A concurrent redelivery (or a retry after upload but before DB insert) can
   // already own these immutable bytes. Never overwrite them. Both callers then
@@ -356,7 +354,7 @@ export async function attachOnshapeAssetsToItem(
         // overwriting the stored object.
         const modelPath = `${companyId}/models/${priorModel.id}.${extension}`;
         const reupload = await carbon.storage
-          .from(STAGING_BUCKET)
+          .from(TEMP_STAGING_BUCKET)
           .upload(modelPath, rawBlob, {
             upsert: true,
             contentType: modelContentType(extension)
@@ -369,7 +367,7 @@ export async function attachOnshapeAssetsToItem(
         if (priorModel.modelPath !== modelPath) {
           // Best-effort: drop the superseded object (e.g. the old .zst compact).
           await carbon.storage
-            .from(STAGING_BUCKET)
+            .from(TEMP_STAGING_BUCKET)
             .remove([priorModel.modelPath])
             .catch(() => {});
         }
@@ -395,7 +393,7 @@ export async function attachOnshapeAssetsToItem(
         const modelId = nanoid();
         const modelPath = `${companyId}/models/${modelId}.${extension}`;
         const modelUpload = await carbon.storage
-          .from(STAGING_BUCKET)
+          .from(TEMP_STAGING_BUCKET)
           .upload(modelPath, rawBlob, {
             upsert: true,
             contentType: modelContentType(extension)

@@ -4,6 +4,7 @@ import {
   getMESUrl,
   SUPABASE_URL
 } from "@carbon/auth";
+import { getRequestOrigin } from "@carbon/utils";
 import { generatePath } from "react-router";
 
 const x = "/x"; // from ~/routes/x+ folder
@@ -373,6 +374,10 @@ export const path = {
       generatePath(`${x}/assembly/${id}/steps/components/${stepId}`),
     assemblyInstructionStepComponentsReassign: (id: string) =>
       generatePath(`${x}/assembly/${id}/steps/components/reassign`),
+    assemblyInstructionStepHiddenComponents: (id: string, stepId: string) =>
+      generatePath(`${x}/assembly/${id}/steps/hidden/${stepId}`),
+    assemblyInstructionStepJoin: (id: string, stepId: string) =>
+      generatePath(`${x}/assembly/${id}/steps/join/${stepId}`),
     assemblyInstructionStepMotion: (id: string, stepId: string) =>
       generatePath(`${x}/assembly/${id}/steps/motion/${stepId}`),
     assemblyInstructionStepOrder: (id: string) =>
@@ -545,6 +550,8 @@ export const path = {
     consumableRoot: `${x}/consumable`,
     consumableRules: (id: string) =>
       generatePath(`${x}/consumable/${id}/rules`),
+    consumableSales: (id: string) =>
+      generatePath(`${x}/consumable/${id}/sales`),
     consumableSupplier: (itemId: string, id: string) =>
       generatePath(`${x}/consumable/${itemId}/purchasing/${id}`),
     consumableSuppliers: (id: string) =>
@@ -1446,6 +1453,7 @@ export const path = {
       generatePath(`${x}/material/${id}/quality`),
     materialRoot: `${x}/material`,
     materialRules: (id: string) => generatePath(`${x}/material/${id}/rules`),
+    materialSales: (id: string) => generatePath(`${x}/material/${id}/sales`),
     materialSubstance: (id: string) =>
       generatePath(`${x}/items/substances/${id}`),
     materialSubstances: `${x}/items/substances`,
@@ -2314,6 +2322,7 @@ export const path = {
     toolQuality: (id: string) => generatePath(`${x}/tool/${id}/quality`),
     toolRoot: `${x}/tool`,
     toolRules: (id: string) => generatePath(`${x}/tool/${id}/rules`),
+    toolSales: (id: string) => generatePath(`${x}/tool/${id}/sales`),
     toolSupplier: (itemId: string, id: string) =>
       generatePath(`${x}/tool/${itemId}/suppliers/${id}`),
     toolSuppliers: (id: string) => generatePath(`${x}/tool/${id}/suppliers`),
@@ -2411,26 +2420,17 @@ export const getStoragePath = (bucket: string, path: string) => {
  * cross-origin or unparsable referer yields null and callers fall back to
  * their fixed route.
  *
- * Behind a TLS-terminating load balancer `request.url` is `http://` (the
- * server does not trust proxy headers) while the browser's Referer is
- * `https://`, so the scheme comes from `X-Forwarded-Proto` when it names one.
- * Only the scheme is taken from it; the host still has to match.
+ * Compared with the origin the client addressed (`getRequestOrigin`), not
+ * `request.url`'s: behind the proxy that is the internal scheme and host, which
+ * never matches a real Referer.
  */
 export const requestReferrer = (request: Request, withParams = true) => {
   const referer = request.headers.get("referer");
   if (!referer) return null;
   try {
-    const requestUrl = new URL(request.url);
-    const forwardedProto = request.headers
-      .get("x-forwarded-proto")
-      ?.split(",")[0]
-      ?.trim()
-      .toLowerCase();
-    if (forwardedProto === "http" || forwardedProto === "https") {
-      requestUrl.protocol = `${forwardedProto}:`;
-    }
-    const url = new URL(referer, requestUrl.origin);
-    if (url.origin !== requestUrl.origin) return null;
+    const origin = getRequestOrigin(request) ?? new URL(request.url).origin;
+    const url = new URL(referer, origin);
+    if (url.origin !== origin) return null;
     return url.pathname + url.search + url.hash;
   } catch {
     return null;

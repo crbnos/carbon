@@ -1,3 +1,4 @@
+import "./zod.client";
 import { CONTROLLED_ENVIRONMENT, error, getBrowserEnv } from "@carbon/auth";
 import { flashClientMiddleware } from "@carbon/auth/middleware/flash.client";
 import {
@@ -5,6 +6,7 @@ import {
   flashMiddleware,
   flashResultContext
 } from "@carbon/auth/middleware/flash.server";
+import { securityMiddleware } from "@carbon/auth/middleware/security.server";
 import { validator } from "@carbon/form";
 import { LocaleProvider, resolveLanguage } from "@carbon/locale";
 import {
@@ -30,7 +32,7 @@ import { I18nProvider } from "@react-aria/i18n";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Analytics } from "@vercel/analytics/react";
 import type React from "react";
-import { useState } from "react";
+import { useContext, useState } from "react";
 import type {
   ActionFunctionArgs,
   LinksFunction,
@@ -45,6 +47,7 @@ import {
   Outlet,
   Scripts,
   ScrollRestoration,
+  UNSAFE_FrameworkContext,
   useLoaderData
 } from "react-router";
 import SonnerStyle from "sonner/dist/styles.css?url";
@@ -61,6 +64,7 @@ export const middleware = [
   // First: publishes the request context so server code can reach it via ALS.
   requestContextMiddleware,
   requestIdMiddleware,
+  securityMiddleware,
   flashMiddleware
 ];
 export const clientMiddleware = [flashClientMiddleware];
@@ -95,7 +99,6 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
     CARBON_EDITION,
     CARBON_API_URL,
     CARBON_SLACK_ENABLED,
-    CLOUDFLARE_TURNSTILE_SITE_KEY,
     CONTROLLED_ENVIRONMENT,
     ERP_URL,
     GOOGLE_PLACES_API_KEY,
@@ -128,7 +131,6 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
         CARBON_API_URL,
         CARBON_EDITION,
         CARBON_SLACK_ENABLED,
-        CLOUDFLARE_TURNSTILE_SITE_KEY,
         CONTROLLED_ENVIRONMENT,
         DEFAULT_LANGUAGE,
         ERP_URL,
@@ -200,6 +202,7 @@ export function Document({
   theme?: string;
   env?: Record<string, unknown>;
 }) {
+  const nonce = useContext(UNSAFE_FrameworkContext)?.nonce;
   const selectedTheme = themes.find((t) => t.name === theme) as
     | Theme
     | undefined;
@@ -251,6 +254,9 @@ export function Document({
             window.env at module load and otherwise crashes hydration. */}
         {env ? (
           <script
+            // Server render only: on the client the nonce is undefined (and browsers hide it).
+            nonce={nonce}
+            suppressHydrationWarning
             dangerouslySetInnerHTML={{
               __html: `window.env = ${JSON.stringify(env)};`
             }}

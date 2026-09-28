@@ -33,7 +33,13 @@ export function buildColumnMaps<T>(
 
   for (const column of columns) {
     const accessorKey = getAccessorKey(column);
-    if (accessorKey?.includes("_")) {
+    // '_' is the nested-path separator for editable cells (updateNestedProperty).
+    // Custom-field columns are read-only and keyed by a generated id that may
+    // contain '_', so they are exempt.
+    if (
+      accessorKey?.includes("_") &&
+      !accessorKey.startsWith("customFields->>")
+    ) {
       throw new Error(`Invalid accessorKey ${accessorKey}. Cannot contain '_'`);
     }
 

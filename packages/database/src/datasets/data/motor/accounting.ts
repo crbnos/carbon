@@ -1,7 +1,11 @@
 import type {
   AccountingData,
   FixedAssetSpec,
-  JournalEntrySpec
+  JournalEntrySpec,
+  MemoSpec,
+  PaymentSpec,
+  PeriodCloseTaskSpec,
+  ProjectSpec
 } from "../../types.ts";
 
 export const FIXED_ASSETS: FixedAssetSpec[] = [
@@ -78,6 +82,50 @@ export const FIXED_ASSETS: FixedAssetSpec[] = [
     acquisitionOffset: -2617,
     depreciationStartOffset: -2586,
     accumulatedDepreciation: 52000
+  },
+  {
+    key: "winder-gen1",
+    className: "Machinery & Equipment",
+    location: "Plant",
+    name: "Coil Winding Machine (Gen 1)",
+    description:
+      "First-generation coil winder replaced by the automatic winder; sold to a rewind shop",
+    serialNumber: "CW-G1-20944",
+    status: "Disposed",
+    depreciationMethod: "Straight Line",
+    usefulLifeMonths: 120,
+    residualValuePercent: 0,
+    acquisitionCost: 72000,
+    acquisitionOffset: -3100,
+    depreciationStartOffset: -3080,
+    // 72,000 / 120 = 600 per month x the 100 months depreciated before sale.
+    // NBV 12,000 against 9,000 proceeds books a 3,000 loss.
+    accumulatedDepreciation: 60000,
+    disposal: { dateOffset: -40, method: "Sale", saleProceeds: 9000 }
+  },
+  {
+    key: "balancer",
+    className: "Machinery & Equipment",
+    location: "Plant",
+    name: "Rotor Balancing Machine",
+    description: "Dynamic rotor balancer, depreciated by balancing cycles",
+    serialNumber: "RBM-2P-61507",
+    status: "Active",
+    depreciationMethod: "Units of Production",
+    usefulLifeMonths: 96,
+    residualValuePercent: 0,
+    acquisitionCost: 84000,
+    acquisitionOffset: -120,
+    depreciationStartOffset: -100,
+    // 84,000 / 420,000 cycles = 0.20 per cycle. The first logged month (3,800)
+    // was booked on registration; the run's month (4,100) is the charge.
+    assetLifetimeUsage: 420000,
+    accumulatedDepreciation: 760,
+    usageLogs: [
+      { monthsBack: 2, unitsProduced: 3800 },
+      { monthsBack: 1, unitsProduced: 4100 }
+    ],
+    depreciationCharge: 820
   }
 ];
 
@@ -107,10 +155,320 @@ export const JOURNAL_ENTRIES: JournalEntrySpec[] = [
         journalLineReference: "JE-SEED-001"
       }
     ]
+  },
+  {
+    ref: "journal:payroll-accrual",
+    journalEntryId: "JE-SEED-002",
+    description: "Payroll accrual — winding and assembly crew, final week",
+    status: "Posted",
+    postingOffset: -12,
+    lines: [
+      {
+        account: "6060",
+        description: "Accrued winding and assembly wages",
+        amount: 29400,
+        quantity: 1,
+        journalLineReference: "JE-SEED-002-1",
+        dimensions: [
+          { dimension: "Project", value: "ridgeline-traction" },
+          { dimension: "Motor Family", value: "Traction Motors" }
+        ]
+      },
+      {
+        account: "2150",
+        description: "Accrued winding and assembly wages",
+        amount: 29400,
+        quantity: 1,
+        journalLineReference: "JE-SEED-002-2"
+      }
+    ]
+  },
+  {
+    ref: "journal:amortization",
+    journalEntryId: "JE-SEED-003",
+    description: "Monthly amortization — winding pattern design license",
+    status: "Posted",
+    postingOffset: -23,
+    lines: [
+      {
+        account: "6310",
+        description: "Winding pattern design license amortization",
+        amount: 720,
+        quantity: 1,
+        journalLineReference: "JE-SEED-003"
+      },
+      {
+        // A credit on the contra-asset: negative on a debit-normal class.
+        account: "1420",
+        description: "Winding pattern design license amortization",
+        amount: -720,
+        quantity: 1,
+        journalLineReference: "JE-SEED-003"
+      }
+    ]
+  },
+  {
+    ref: "journal:freight-accrual",
+    journalEntryId: "JE-SEED-004",
+    description: "Accrued outbound freight — duplicate of carrier invoice",
+    status: "Reversed",
+    postingOffset: -40,
+    lines: [
+      {
+        account: "6040",
+        description: "Outbound LTL freight",
+        amount: 2860,
+        quantity: 1,
+        journalLineReference: "JE-SEED-004"
+      },
+      {
+        account: "2140",
+        description: "Outbound LTL freight",
+        amount: 2860,
+        quantity: 1,
+        journalLineReference: "JE-SEED-004"
+      }
+    ],
+    reversal: {
+      ref: "journal:freight-accrual-reversal",
+      journalEntryId: "JE-SEED-005",
+      postingOffset: -33
+    }
+  },
+  {
+    ref: "journal:opening-balance",
+    journalEntryId: "JE-SEED-006",
+    description: "Opening balances — cutover from the legacy ledger",
+    status: "Posted",
+    sourceType: "Opening Balance",
+    postingOffset: -242,
+    lines: [
+      {
+        account: "1010",
+        description: "Operating cash",
+        amount: 610000,
+        quantity: 1,
+        journalLineReference: "JE-SEED-006-1"
+      },
+      {
+        account: "1210",
+        description: "Raw materials on hand",
+        amount: 180000,
+        quantity: 1,
+        journalLineReference: "JE-SEED-006-2"
+      },
+      {
+        account: "1220",
+        description: "Finished goods on hand",
+        amount: 140000,
+        quantity: 1,
+        journalLineReference: "JE-SEED-006-3"
+      },
+      {
+        account: "1350",
+        description: "Machinery & equipment at cost",
+        amount: 1120000,
+        quantity: 1,
+        journalLineReference: "JE-SEED-006-4"
+      },
+      {
+        account: "1330",
+        description: "Accumulated depreciation to date",
+        amount: -290000,
+        quantity: 1,
+        journalLineReference: "JE-SEED-006-5"
+      },
+      {
+        account: "2410",
+        description: "Equipment term loan",
+        amount: 650000,
+        quantity: 1,
+        journalLineReference: "JE-SEED-006-6"
+      },
+      {
+        account: "3010",
+        description: "Paid-in capital",
+        amount: 600000,
+        quantity: 1,
+        journalLineReference: "JE-SEED-006-7"
+      },
+      {
+        account: "3100",
+        description: "Retained earnings brought forward",
+        amount: 510000,
+        quantity: 1,
+        journalLineReference: "JE-SEED-006-8"
+      }
+    ]
+  }
+];
+
+// Credit/Debit Note Issued invoices settle by their memos as zero-cash credit
+// applications, the way applyCreditsToInvoices records them.
+export const PAYMENTS: PaymentSpec[] = [
+  {
+    key: "wabash-ach",
+    type: "Receipt",
+    customer: "Wabash Industrial Supply",
+    dateOffset: -45,
+    amount: 300,
+    reference: "ACH 9021-3345",
+    applies: [{ invoiceKey: "paid", amount: 300 }]
+  },
+  {
+    key: "ridgeline-wire",
+    type: "Receipt",
+    customer: "Ridgeline Drive Systems",
+    dateOffset: -10,
+    amount: 710,
+    reference: "WIRE 61188",
+    applies: [{ invoiceKey: "partial", amount: 710 }]
+  },
+  {
+    key: "cardinal-credit",
+    type: "Receipt",
+    customer: "Cardinal Motorworks",
+    dateOffset: -49,
+    amount: 0,
+    reference: "Credit application",
+    applies: [],
+    credits: [{ memoKey: "cardinal-shafts", invoiceKey: "credit", amount: 410 }]
+  },
+  {
+    key: "copperline-ach",
+    type: "Disbursement",
+    supplier: "Copperline Wire Works",
+    dateOffset: -31,
+    amount: 1036,
+    reference: "ACH 2217-8806",
+    applies: [{ invoiceKey: "paid", amount: 1036 }]
+  },
+  {
+    key: "copperline-check",
+    type: "Disbursement",
+    supplier: "Copperline Wire Works",
+    dateOffset: -12,
+    amount: 178,
+    reference: "CHK 41209",
+    applies: [{ invoiceKey: "partial", amount: 178 }]
+  },
+  {
+    key: "lakeland-debit",
+    type: "Disbursement",
+    supplier: "Lakeland Electrical Steel",
+    dateOffset: -66,
+    amount: 0,
+    reference: "Debit application",
+    applies: [],
+    credits: [
+      { memoKey: "lakeland-bar", invoiceKey: "debit-note", amount: 975 }
+    ]
+  },
+  {
+    key: "draft-receipt",
+    type: "Receipt",
+    status: "Draft",
+    customer: "Cardinal Motorworks",
+    dateOffset: -1,
+    amount: 780,
+    reference: "ACH advice 5580 — 4500 stator",
+    applies: []
+  },
+  {
+    key: "draft-disbursement",
+    type: "Disbursement",
+    status: "Draft",
+    supplier: "Lakeland Electrical Steel",
+    dateOffset: 0,
+    amount: 540,
+    reference: "ACH batch 0930 — lamination steel",
+    applies: []
+  }
+];
+
+export const MEMOS: MemoSpec[] = [
+  {
+    key: "cardinal-shafts",
+    direction: "Credit",
+    customer: "Cardinal Motorworks",
+    invoiceKey: "credit",
+    dateOffset: -52,
+    amount: 410,
+    notes:
+      "Full credit — precision shafts returned with bearing-seat runout out of tolerance"
+  },
+  {
+    key: "lakeland-bar",
+    direction: "Debit",
+    supplier: "Lakeland Electrical Steel",
+    invoiceKey: "debit-note",
+    dateOffset: -70,
+    amount: 975,
+    notes: "Bar stock failed the mill-cert review at Lakeland — billing debited"
+  }
+];
+
+export const PROJECTS: ProjectSpec[] = [
+  {
+    key: "ridgeline-traction",
+    name: "Ridgeline EV Traction Motor Launch",
+    description:
+      "Production launch of the 9000-series traction motor for Ridgeline",
+    purchaseInvoiceLine: { invoiceKey: "paid", item: "MAT-CU-18AWG" }
+  },
+  {
+    key: "dyno-automation",
+    name: "Dyno Cell Automation",
+    description:
+      "Automated load profiles and data capture for end-of-line testing"
+  }
+];
+
+export const CLOSE_TASKS: PeriodCloseTaskSpec[] = [
+  { definition: "Post pending operational documents", status: "Done" },
+  {
+    definition: "Review negative on-hand inventory",
+    status: "Skipped",
+    skippedReason: "Physical count at month end found no negative bins"
+  },
+  {
+    definition: "Review financial statements",
+    status: "Open",
+    notes: "Plant controller to review absorption variance"
   }
 ];
 
 export const motorAccounting: AccountingData = {
   fixedAssets: FIXED_ASSETS,
-  journalEntries: JOURNAL_ENTRIES
+  journalEntries: JOURNAL_ENTRIES,
+  payments: PAYMENTS,
+  memos: MEMOS,
+  projects: PROJECTS,
+  customDimension: {
+    name: "Motor Family",
+    values: ["Traction Motors", "Industrial Servo"]
+  },
+  closeTasks: CLOSE_TASKS,
+  // EUR per 1 USD (foreign units per base unit), the same direction as the EUR purchase order's 0.92 snapshot.
+  exchangeRateOverrides: [{ currencyCode: "EUR", rate: 0.9215 }],
+  billingAddresses: {
+    receivable: {
+      addressLine1: "1450 Meyer Industrial Road",
+      city: "Fort Wayne",
+      state: "IN",
+      postalCode: "46803",
+      countryCode: "US",
+      phone: "+1-260-555-0174",
+      email: "ar@torquedynamics.example"
+    },
+    payable: {
+      addressLine1: "1450 Meyer Industrial Road",
+      city: "Fort Wayne",
+      state: "IN",
+      postalCode: "46803",
+      countryCode: "US",
+      phone: "+1-260-555-0175",
+      email: "ap@torquedynamics.example"
+    }
+  }
 };

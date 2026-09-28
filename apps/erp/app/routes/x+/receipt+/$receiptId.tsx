@@ -92,7 +92,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       .select(
         "id, purchaseOrderLineId, received, serialNumber, purchaseOrderLine:purchaseOrderLineId(assetId, description, fixedAsset:assetId(name, fixedAssetId, serialNumber))"
       )
-      .eq("receiptId", receiptId);
+      .eq("receiptId", receiptId)
+      .eq("companyId", companyId);
 
     fixedAssetLines = (faLineRecords.data ?? [])
       .filter((row) => {

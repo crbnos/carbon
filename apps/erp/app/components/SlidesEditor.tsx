@@ -2,7 +2,16 @@ import { useCarbon } from "@carbon/auth";
 import type { Database } from "@carbon/database";
 import { storage } from "@carbon/files";
 import { supportedModelTypes } from "@carbon/files/cad";
-import { Button, cn, IconButton, Label, VStack } from "@carbon/react";
+import {
+  Button,
+  cn,
+  IconButton,
+  Label,
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+  VStack
+} from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { nanoid } from "nanoid";
@@ -207,33 +216,49 @@ export function SlidesEditor({
                 onChange={onModelFileChange}
               />
             )}
-            <Button
-              variant="secondary"
-              size="sm"
-              leftIcon={<LuCirclePlus />}
-              isLoading={busy}
-              isDisabled={busy}
-              onClick={() => fileInputRef.current?.click()}
-            >
-              Add slide
-            </Button>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  leftIcon={<LuCirclePlus />}
+                  isLoading={busy}
+                  isDisabled={busy}
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  {t`Add Slide`}
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                {t`A photo or PDF the operator sees on this step`}
+              </TooltipContent>
+            </Tooltip>
             {withModels && (
-              <Button
-                variant="secondary"
-                size="sm"
-                leftIcon={<LuBox />}
-                isLoading={busy}
-                isDisabled={busy}
-                onClick={() => modelInputRef?.current?.click()}
-              >
-                Add model
-              </Button>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    leftIcon={<LuBox />}
+                    isLoading={busy}
+                    isDisabled={busy}
+                    onClick={() => modelInputRef?.current?.click()}
+                  >
+                    {t`Add Model`}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  {t`A 3D model the operator can turn around`}
+                </TooltipContent>
+              </Tooltip>
             )}
           </div>
         )}
       </div>
       {slides.length === 0 ? (
-        <p className="w-full text-xs text-muted-foreground">No slides</p>
+        <p className="w-full text-xs text-muted-foreground">
+          {t`No slides yet`}
+        </p>
       ) : (
         <div className="flex w-full flex-wrap items-start gap-3">
           {slides.map((slide, index) => {

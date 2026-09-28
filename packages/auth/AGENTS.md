@@ -5,10 +5,13 @@ Authentication, RBAC, session management, Supabase client factories, API key aut
 ## Always
 
 - Gate loaders/actions with `requirePermissions(request, { view?, create?, update?, delete? })` — never construct Supabase clients directly in routes.
+- `requirePermissions` refuses customer and supplier portal sessions with a 403 (API keys are unaffected). `{}` used to admit them everywhere, and ~50 routes that then read with the service role were reachable by a portal account. Pass `allowPortalAccounts: true` ONLY on a route that acts on the user's own identity (onboarding, company switch, notification links, academy progress) — never on one that returns company data.
 - Use the factory from `@carbon/auth/client.server`: `getCarbon(accessToken)` for user-scoped (RLS), `getCarbonServiceRole()` for privileged server ops only.
 - Invalidate Redis permission cache (`redis.del(getPermissionCacheKey(userId))`) when changing user permissions — stale cache is the #1 cause of "Access Denied" bugs.
 - API key `scopes: {}` **denies all** — never treat empty scopes as full access.
 - Import env constants from `@carbon/auth` (re-exports `@carbon/env`) — not `process.env` directly.
+- Keep `securityMiddleware` in every app's root `middleware`. It refuses cross-origin POST/PUT/PATCH/DELETE (CSRF), issues the CSP nonce and sets `nosniff`/`X-Frame-Options`/`Referrer-Policy`/HSTS on every response. A route that browsers must reach from another origin goes in `CROSS_ORIGIN_ENDPOINTS` (`lib/security.ts`) — webhooks and API-key callers do not need it (servers send neither `Sec-Fetch-Site` nor `Origin`).
+- A loader that writes on GET calls `rejectCrossSiteNavigation(request)` first: the `SameSite=Lax` session cookie still rides a top-level link from another site.
 - Re-issue the session cookie after any `supabase.auth.mfa.challengeAndVerify` — it rotates the refresh token, and the old one dies after GoTrue's reuse interval.
 
 ## Ask First
@@ -41,8 +44,10 @@ pnpm --filter @carbon/auth test
 | `./company.server` | Company switching, `updateCompanySession` |
 | `./users.server` | `getUserClaims`, deactivation flows, cache invalidation |
 | `./passkey.server` | WebAuthn/passkey registration and authentication |
+| `./console-pin.server` | MES console pin-in cookie (signed, bound to company + terminal session user): `setConsolePinIn`, `clearConsolePinIn`, `resolveConsolePinIn` (re-validated against the DB, memoized per read), `ConsolePinIn`; `requirePermissions` uses it to derive `userId` in console mode |
 | `./self-signup.server` | Cloud self-signup blocklist: `isSelfSignupBlockedForEmail`, `SELF_SIGNUP_BLOCKED_MESSAGE` (free/disposable email domains; used by ERP login/verify/callback + MES callback) |
 | `./middleware/flash.server` | Flash message middleware |
+| `./middleware/security.server` | `securityMiddleware` (CSRF check + CSP nonce + baseline headers), `rejectCrossSiteNavigation`, `getNonce`, `setStrictContentSecurityPolicy` (report-only for now; `entry.server` calls it), `cspReportAction` + `CSP_REPORT_PATH`. The decisions are pure and tested in `lib/security.ts` |
 
 SAML SSO lives in `@carbon/ee/sso.server` (Enterprise-gated), NOT here — auth
 only carries `AuthSession.ssoProviderId` and its preservation across refresh.

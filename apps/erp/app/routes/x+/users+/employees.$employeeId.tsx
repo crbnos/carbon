@@ -19,6 +19,7 @@ import {
   ModalTitle,
   VStack
 } from "@carbon/react";
+import { getClientIp } from "@carbon/utils";
 import { Trans } from "@lingui/react/macro";
 import { LuShield } from "react-icons/lu";
 import type {
@@ -190,7 +191,7 @@ export async function action({ request }: ActionFunctionArgs) {
     );
   }
 
-  const ip = request.headers.get("x-forwarded-for") ?? undefined;
+  const ip = getClientIp(request) ?? undefined;
 
   const result = await updateEmployee(client, {
     id,

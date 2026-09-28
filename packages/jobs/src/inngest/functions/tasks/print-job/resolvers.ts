@@ -151,6 +151,7 @@ async function queryTrackedEntities(
           "jobMakeMethodId, ...jobMakeMethod(...item(readableIdWithRevision))"
         )
         .eq("id", sourceDocumentId)
+        .eq("companyId", companyId)
         .single();
 
       if (!jobOperation?.jobMakeMethodId)
@@ -160,6 +161,7 @@ async function queryTrackedEntities(
         .from("trackedEntity")
         .select("*")
         .eq("attributes->>Job Make Method", jobOperation?.jobMakeMethodId)
+        .eq("companyId", companyId)
         .order("createdAt", { ascending: true });
 
       return {

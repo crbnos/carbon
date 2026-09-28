@@ -9,7 +9,7 @@ import { data } from "react-router";
 // cookie with lastActiveAt = now. requirePermissions runs requireAuthSession, so once the
 // session is already idle-locked this redirects to /unlock instead of resuming it — only a
 // real re-auth clears the lock. Console DEVICE sessions are exempt from the lock and never
-// redirect here (see console.server / requireAuthSession).
+// redirect here (see @carbon/auth console-pin.server / requireAuthSession).
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
   await requirePermissions(request, {});

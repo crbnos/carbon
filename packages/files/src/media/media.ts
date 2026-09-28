@@ -90,6 +90,35 @@ export function getContentType(extension: string): string {
   );
 }
 
+// A type the browser renders as a document that can run script: SVG and every
+// other +xml, HTML, JS.
+const ACTIVE_CONTENT = /html|xml|script/i;
+
+/**
+ * Headers for stored bytes served from the app origin. The type comes from a
+ * file name the uploader chose, so it is never sniffed, and a type that can run
+ * script (an uploaded SVG) is a download and a sandbox, never a page on our
+ * origin. `<img src>` still renders an SVG: it ignores both headers.
+ */
+export function fileResponseHeaders(
+  contentType: string,
+  cacheControl: string
+): Headers {
+  const headers = new Headers({
+    "Content-Type": contentType,
+    "Cache-Control": cacheControl,
+    "X-Content-Type-Options": "nosniff"
+  });
+  if (ACTIVE_CONTENT.test(contentType)) {
+    headers.set("Content-Disposition", "attachment");
+    headers.set(
+      "Content-Security-Policy",
+      "default-src 'none'; style-src 'unsafe-inline'; sandbox"
+    );
+  }
+  return headers;
+}
+
 export function isHeic(fileName: string, mimeType?: string | null): boolean {
   const extension = getFileExtension(fileName);
   return (

@@ -262,6 +262,10 @@
   --animate-scan: scan 6s linear infinite;
   --animate-flicker: flicker 1.6s steps(1, end) infinite;
 
+  /* CarbonPulse loader: a band of light sweeps the mark bottom-left to top-right */
+  --animate-carbon-sweep: carbon-sweep var(--carbon-pulse-duration, 2400ms)
+    cubic-bezier(0.65, 0, 0.35, 1) infinite;
+
   --container-2xl: 1400px;
 }
 
@@ -290,6 +294,22 @@
   }
   to {
     stroke-dashoffset: 0;
+  }
+}
+
+/* CarbonPulse: the mask band travels from just beyond the bottom-left corner
+   to just beyond the top-right, then rests off the mark before the next pass.
+   82%/18% puts the band's resting spots just outside a square mark; 100%/0%
+   left it off the mark for half the sweep. */
+@keyframes carbon-sweep {
+  0% {
+    mask-position: 82% 18%;
+    -webkit-mask-position: 82% 18%;
+  }
+  75%,
+  100% {
+    mask-position: 18% 82%;
+    -webkit-mask-position: 18% 82%;
   }
 }
 

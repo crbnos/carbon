@@ -61,6 +61,14 @@ export default defineConfig(({ command, isSsrBuild, mode }) => {
   ];
 
   return {
+    // ASSETS_URL bakes a CDN asset base into the client build (Dockerfile
+    // build arg). Vite's base is build-time only, so an image built without
+    // it serves assets same-origin — that IS the controlled/air-gapped
+    // variant, not a fallback. Normalized: Vite requires the trailing slash.
+    base:
+      command === "build" && process.env.ASSETS_URL
+        ? process.env.ASSETS_URL.replace(/\/*$/, "/")
+        : undefined,
     build: {
       minify: true,
       rolldownOptions: {

@@ -4,8 +4,10 @@ import { nanoid } from "https://deno.land/x/nanoid@v3.0.0/nanoid.ts";
 import { z } from "https://deno.land/x/zod@v3.21.4/mod.ts";
 import { sql } from "kysely";
 import { DB, getConnectionPool, getDatabaseClient } from "../lib/database.ts";
+import { assertCompanyRecords, RecordNotFoundError } from "../lib/company-records.ts";
 import { datetime, getCompanyTimeZone } from "../lib/datetime.ts";
 import { corsPreflight, errorResponse, jsonResponse } from "../lib/response.ts";
+import { requirePermissions } from "../lib/supabase.ts";
 import type { Database } from "../lib/types.ts";
 import { buildBatchSplitRecords, isFullDraw } from "../shared/batch-split.ts";
 import { round } from "../shared/precision.ts";
@@ -136,6 +138,40 @@ serve(async (req: Request) => {
 
   try {
     const validatedPayload = payloadValidator.parse(payload);
+
+    // Kysely below bypasses RLS: the caller must belong to the company it names.
+    try {
+      await requirePermissions(req, validatedPayload.companyId, validatedPayload.userId, {});
+    } catch (err) {
+      return errorResponse(err, 401);
+    }
+
+    // requirePermissions proves the caller may act in companyId, not that the
+    // body's ids belong to it. Every case writes stockTransferId as the
+    // ledger/activity documentId and locationId / fromStorageUnitId onto this
+    // company's ledger rows, so they are re-read under companyId — and the line
+    // must be on the transfer the body names.
+    {
+      const { companyId, stockTransferId, stockTransferLineId, locationId } =
+        validatedPayload;
+      const line = await db
+        .selectFrom("stockTransferLine")
+        .select("id")
+        .where("id", "=", stockTransferLineId)
+        .where("stockTransferId", "=", stockTransferId)
+        .where("companyId", "=", companyId)
+        .executeTakeFirst();
+      if (!line) throw new RecordNotFoundError("Stock transfer line not found");
+      await assertCompanyRecords(db, "location", [locationId], companyId, "Location");
+      await assertCompanyRecords(
+        db,
+        "storageUnit",
+        ["fromStorageUnitId" in validatedPayload ? validatedPayload.fromStorageUnitId : null],
+        companyId,
+        "Storage unit"
+      );
+    }
+
     const companyToday = datetime.today(await getCompanyTimeZone(db, validatedPayload.companyId));
     const today = companyToday.toString();
     let expiredWarning: string | undefined;

@@ -1,8 +1,8 @@
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import {
   NODE_ENV,
-  SUPABASE_ANON_KEY,
   SUPABASE_INTERNAL_URL,
+  SUPABASE_SERVICE_ROLE_KEY,
   VERCEL_URL
 } from "@carbon/env";
 import { storage } from "@carbon/files";
@@ -67,7 +67,7 @@ export const modelThumbnailFunction = inngest.createFunction(
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${SUPABASE_ANON_KEY}`
+          Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`
         },
         body: JSON.stringify({ url })
       });

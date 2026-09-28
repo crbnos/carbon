@@ -1,11 +1,11 @@
 {
   "kind": "carbon-company-backup",
   "version": 1,
-  "schemaVersion": "20260924133915",
+  "schemaVersion": "20260927230425",
   "sourceCompanyId": "schema-baseline",
   "sourceCompanyGroupId": null,
   "sourceCompanyName": null,
-  "exportedAt": "2026-09-24T13:41:54.380Z",
+  "exportedAt": "2026-09-27T23:05:53.317Z",
   "exportedBy": "schema-baseline",
   "label": "schema baseline",
   "includeStorage": "none",
@@ -92,8 +92,7 @@
         "scrapAccount",
         "intercompanyPayablesAccount",
         "salesShippingRevenueAccount",
-        "salesReturnsAccount",
-        "employeeReimbursementsPayableAccount"
+        "salesReturnsAccount"
       ]
     },
     {
@@ -746,7 +745,7 @@
     {
       "name": "employee",
       "rows": 0,
-      "columns": ["active", "id", "companyId", "employeeTypeId", "pin"]
+      "columns": ["active", "id", "companyId", "employeeTypeId"]
     },
     {
       "name": "employeeTypePermission",
@@ -1704,12 +1703,12 @@
       "name": "part",
       "rows": 0,
       "columns": [
-        "approved",
-        "fromDate",
-        "toDate",
         "createdAt",
         "updatedAt",
         "customFields",
+        "approved",
+        "fromDate",
+        "toDate",
         "id",
         "approvedBy",
         "companyId",
@@ -2023,68 +2022,6 @@
       ]
     },
     {
-      "name": "reimbursement",
-      "rows": 0,
-      "columns": [
-        "status",
-        "reimbursementDate",
-        "postingDate",
-        "exchangeRate",
-        "amount",
-        "postedAt",
-        "voidedAt",
-        "createdAt",
-        "updatedAt",
-        "customFields",
-        "id",
-        "companyId",
-        "reimbursementId",
-        "employeeId",
-        "integration",
-        "currencyCode",
-        "payableAccountId",
-        "reference",
-        "notes",
-        "journalId",
-        "postedBy",
-        "voidedBy",
-        "createdBy",
-        "updatedBy"
-      ]
-    },
-    {
-      "name": "reimbursementLine",
-      "rows": 0,
-      "columns": [
-        "amount",
-        "sequence",
-        "createdAt",
-        "updatedAt",
-        "customFields",
-        "id",
-        "companyId",
-        "reimbursementId",
-        "accountId",
-        "costCenterId",
-        "projectId",
-        "description",
-        "createdBy",
-        "updatedBy"
-      ]
-    },
-    {
-      "name": "reimbursementLineDimension",
-      "rows": 0,
-      "columns": [
-        "createdAt",
-        "id",
-        "reimbursementLineId",
-        "dimensionId",
-        "valueId",
-        "companyId"
-      ]
-    },
-    {
       "name": "reportPin",
       "rows": 0,
       "columns": [
@@ -2385,10 +2322,10 @@
       "name": "supplierType",
       "rows": 0,
       "columns": [
-        "protected",
-        "createdAt",
         "updatedAt",
         "customFields",
+        "protected",
+        "createdAt",
         "id",
         "name",
         "companyId",
@@ -2572,10 +2509,10 @@
       "name": "unitOfMeasure",
       "rows": 0,
       "columns": [
-        "updatedAt",
-        "customFields",
         "active",
         "createdAt",
+        "updatedAt",
+        "customFields",
         "id",
         "code",
         "name",
@@ -2660,6 +2597,7 @@
       "name": "assemblyInstructionStep",
       "rows": 0,
       "columns": [
+        "hiddenComponentNodeIds",
         "sortOrder",
         "type",
         "description",
@@ -2677,6 +2615,8 @@
         "updatedAt",
         "status",
         "buildWave",
+        "updatedBy",
+        "rootStepId",
         "id",
         "assemblyInstructionId",
         "parentStepId",
@@ -2688,9 +2628,7 @@
         "componentNodeIds",
         "planConfidence",
         "companyId",
-        "createdBy",
-        "updatedBy",
-        "rootStepId"
+        "createdBy"
       ]
     },
     {
@@ -2974,8 +2912,6 @@
         "createdAt",
         "updatedAt",
         "customFields",
-        "createdBy",
-        "updatedBy",
         "id",
         "companyId",
         "inventoryCountId",
@@ -2985,7 +2921,9 @@
         "trackedEntityId",
         "readableId",
         "countedBy",
-        "postedItemLedgerId"
+        "postedItemLedgerId",
+        "createdBy",
+        "updatedBy"
       ]
     },
     {
@@ -3385,19 +3323,19 @@
       "name": "userAttributeValue",
       "rows": 0,
       "columns": [
-        "createdAt",
         "updatedAt",
         "valueBoolean",
         "valueDate",
         "valueNumeric",
+        "createdAt",
         "id",
         "userAttributeId",
         "userId",
         "valueText",
         "valueUser",
         "createdBy",
-        "updatedBy",
-        "valueFile"
+        "valueFile",
+        "updatedBy"
       ]
     },
     {
@@ -3832,7 +3770,7 @@
       ]
     },
     {
-      "name": "charge",
+      "name": "cardTransaction",
       "rows": 0,
       "columns": [
         "type",
@@ -3848,7 +3786,7 @@
         "customFields",
         "id",
         "companyId",
-        "chargeId",
+        "cardTransactionId",
         "integration",
         "cardAccountId",
         "offsetAccountId",
@@ -3866,23 +3804,23 @@
       ]
     },
     {
-      "name": "chargeLine",
+      "name": "cardTransactionLine",
       "rows": 0,
       "columns": [
-        "customFields",
-        "updatedAt",
         "amount",
         "sequence",
         "createdAt",
+        "updatedAt",
+        "customFields",
         "id",
         "companyId",
-        "chargeId",
+        "cardTransactionId",
         "accountId",
         "costCenterId",
-        "projectId",
         "description",
         "createdBy",
-        "updatedBy"
+        "updatedBy",
+        "projectId"
       ]
     },
     {
@@ -4484,9 +4422,6 @@
       "name": "job",
       "rows": 0,
       "columns": [
-        "status",
-        "dueDate",
-        "deadlineType",
         "quantity",
         "scrapQuantity",
         "quantityComplete",
@@ -4505,6 +4440,9 @@
         "priority",
         "projectedCompletionAt",
         "scheduleOutdatedAt",
+        "status",
+        "dueDate",
+        "deadlineType",
         "id",
         "jobId",
         "itemId",
@@ -4529,9 +4467,9 @@
       "name": "fulfillment",
       "rows": 0,
       "columns": [
-        "createdAt",
         "type",
         "quantity",
+        "createdAt",
         "id",
         "salesOrderLineId",
         "jobId",
@@ -5543,8 +5481,7 @@
         "voidedBy",
         "companyId",
         "createdBy",
-        "updatedBy",
-        "employeeId"
+        "updatedBy"
       ]
     },
     {
@@ -5786,6 +5723,11 @@
       "name": "quoteOperation",
       "rows": 0,
       "columns": [
+        "order",
+        "operationOrder",
+        "laborRate",
+        "overheadRate",
+        "createdAt",
         "updatedAt",
         "customFields",
         "setupTime",
@@ -5800,11 +5742,6 @@
         "operationLeadTime",
         "operationUnitCost",
         "workInstruction",
-        "order",
-        "operationOrder",
-        "laborRate",
-        "overheadRate",
-        "createdAt",
         "id",
         "quoteId",
         "quoteLineId",
@@ -5841,14 +5778,14 @@
       "name": "quoteOperationStep",
       "rows": 0,
       "columns": [
-        "required",
-        "sortOrder",
-        "type",
         "minValue",
         "maxValue",
         "createdAt",
         "updatedAt",
         "description",
+        "required",
+        "sortOrder",
+        "type",
         "id",
         "name",
         "unitOfMeasureCode",
@@ -5919,15 +5856,15 @@
       "name": "receiptLine",
       "rows": 0,
       "columns": [
+        "orderQuantity",
+        "outstandingQuantity",
+        "receivedQuantity",
+        "unitPrice",
         "createdAt",
         "updatedAt",
         "conversionFactor",
         "requiresSerialTracking",
         "requiresBatchTracking",
-        "orderQuantity",
-        "outstandingQuantity",
-        "receivedQuantity",
-        "unitPrice",
         "id",
         "receiptId",
         "lineId",
@@ -6171,12 +6108,12 @@
       "name": "supplier",
       "rows": 0,
       "columns": [
-        "taxPercent",
-        "embedding",
-        "supplierStatus",
         "createdAt",
         "updatedAt",
         "customFields",
+        "taxPercent",
+        "embedding",
+        "supplierStatus",
         "id",
         "name",
         "supplierTypeId",
@@ -6568,8 +6505,7 @@
         "createdBy",
         "appliedViaPaymentId",
         "updatedBy",
-        "sourcePaymentId",
-        "targetReimbursementId"
+        "sourcePaymentId"
       ]
     },
     {
@@ -6920,6 +6856,7 @@
     "apiKey",
     "apiKeyRateLimit",
     "companyIntegration",
+    "employeePin",
     "oauthClient",
     "oauthToken",
     "webhook"

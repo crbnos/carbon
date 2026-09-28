@@ -3,10 +3,10 @@ import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { getLogger } from "@carbon/logger";
 import {
   Button,
+  CarbonPulse,
   ClientOnly,
   Heading,
   Input,
-  LoadingBars,
   Popover,
   PopoverContent,
   PopoverTrigger,
@@ -351,7 +351,7 @@ export default function AssignedRoute() {
             <ClientOnly
               fallback={
                 <div className="flex w-full h-[calc(100%-var(--header-height))] items-center justify-center">
-                  <LoadingBars />
+                  <CarbonPulse />
                 </div>
               }
             >

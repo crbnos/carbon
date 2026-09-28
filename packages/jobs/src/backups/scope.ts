@@ -534,3 +534,52 @@ export async function purgeScopeViolations(
   }
   return { deleted };
 }
+
+/**
+ * Rows `ON DELETE CASCADE` would have removed, had the restore wipe not run under
+ * `session_replication_role='replica'`. Deliberately NOT "outside company scope":
+ * the user must confirm deleting a live cross-company reference (`purgeScopeViolations`).
+ */
+export function buildDanglingPredicate(
+  table: TableInfo,
+  byName: Map<string, TableInfo>
+): RawBuilder<unknown> | null {
+  const colByName = new Map(table.columns.map((c) => [c.name, c]));
+  const terms: RawBuilder<unknown>[] = [];
+  for (const fk of table.foreignKeys) {
+    if (fk.refColumn !== "id") continue;
+    if (RETAINED_REF_TABLES.has(fk.refTable)) continue;
+    if (!byName.has(fk.refTable)) continue;
+    const col = colByName.get(fk.column);
+    if (!col || col.isNullable) continue;
+    terms.push(
+      sql`${sql.id(fk.column)} NOT IN (SELECT ${sql.id("id")} FROM ${sql.id(
+        fk.refTable
+      )})`
+    );
+  }
+  if (terms.length === 0) return null;
+  return sql.join(terms, sql` OR `);
+}
+
+/** Children first; run inside the restore transaction. */
+export async function deleteDanglingRows(
+  trx: Kysely<KyselyDatabase>,
+  tables: TableInfo[],
+  byName: Map<string, TableInfo>,
+  companyId: string,
+  companyGroupId: string | null
+): Promise<Array<{ table: string; rows: number }>> {
+  const deleted: Array<{ table: string; rows: number }> = [];
+  for (const table of [...tables].reverse()) {
+    const predicate = buildDanglingPredicate(table, byName);
+    if (!predicate) continue;
+    const r = await sql`
+      DELETE FROM ${sql.id(table.name)}
+      WHERE ${buildScopeFilter(table, byName, companyId, companyGroupId)}
+        AND (${predicate})`.execute(trx);
+    const rows = Number(r.numAffectedRows ?? 0);
+    if (rows > 0) deleted.push({ table: table.name, rows });
+  }
+  return deleted;
+}

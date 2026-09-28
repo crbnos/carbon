@@ -47,6 +47,30 @@ forked to attach the trigger to every new (and pre-existing) table via the idemp
 `attach_audit_log_append_only(table)`. The DELETE branch of `prevent_audit_log_mutation` is what the
 `audit-archive` job relies on: it runs `delete_old_audit_logs`, so its per-day deletes carry the flag.
 
+## Access (migration `20260924171942_audit-log-company-scope.sql`)
+
+Each `auditLog_{companyId}` table has ONE policy, `"SELECT"`, true only for callers holding
+`settings_view` in that company. INSERT/UPDATE/DELETE/TRUNCATE are revoked from `anon`/`authenticated`.
+`secure_audit_log_table(companyId)` applies both, and `create_audit_log_table` calls it on every table it
+creates or touches, because the default privileges on `public` re-grant ALL to the API roles on each new
+table. (Before this, the policy was `audit_log_access` FOR ALL USING (true), and any holder of the anon
+key could read or append to any company's log.)
+
+The RPCs are all SECURITY DEFINER, so each one begins with
+`assert_audit_log_access(p_company_id, <permission>)`:
+
+| Permission | Functions |
+|---|---|
+| `settings_view` | `get_entity_audit_log`, `get_audit_log`, `get_audit_log_count` |
+| `settings_update` | `create_audit_log_table` |
+| `NULL` (service role only) | `insert_audit_log_batch`, `get_audit_logs_for_archive`, `delete_old_audit_logs`, `drop_audit_log_table` |
+
+The guard only applies when `current_setting('role')` is `anon` or `authenticated`, so the service role
+and direct Postgres connections pass. **Never swap it for `REVOKE EXECUTE`**: on supabase/postgres
+15.14.1.112, calling any function the caller lacks EXECUTE on, as `anon`/`authenticated`, segfaults the
+backend (see `.ai/lessons.md`). The controlled-environment auto-enable in the `settings+/audit-logs.tsx`
+loader therefore runs as the service role, because that loader only requires `settings_view`.
+
 ## On-by-default in controlled environments (3.3.1)
 
 Audit is opt-in per company (`company.auditLogEnabled`), **except** under `CONTROLLED_ENVIRONMENT`
@@ -147,4 +171,5 @@ than from config.
 `20260217120000_audit_log_add_table_name.sql`, `20260218000000_expand_audit_log_entities.sql`,
 `20260418000000_audit_log_add_record_id.sql`, `20260427120000_audit-event-timestamp.sql`,
 `20260513130000_audit-item-shelf-life-history.sql`,
-`20260713095136_attach-inventory-count-audit-triggers.sql` (attaches triggers on `inventoryCount`/`inventoryCountLine`).
+`20260713095136_attach-inventory-count-audit-triggers.sql` (attaches triggers on `inventoryCount`/`inventoryCountLine`),
+`20260818014100_audit-log-append-only.sql`, `20260924171942_audit-log-company-scope.sql` (access guards).

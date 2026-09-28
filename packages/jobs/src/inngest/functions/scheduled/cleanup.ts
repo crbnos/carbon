@@ -1,5 +1,9 @@
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
-import { LEGACY_PRIVATE_BUCKET, storage } from "@carbon/files";
+import {
+  LEGACY_PRIVATE_BUCKET,
+  storage,
+  TEMP_STAGING_BUCKET
+} from "@carbon/files";
 import { NotificationEvent } from "@carbon/notifications";
 import { inngest } from "../../client";
 
@@ -401,7 +405,7 @@ export const cleanupFunction = inngest.createFunction(
         .schema("storage")
         .from("objects")
         .select("name")
-        .eq("bucket_id", "temp-staging")
+        .eq("bucket_id", TEMP_STAGING_BUCKET)
         .lt("created_at", cutoff)
         .limit(1000);
 
@@ -491,7 +495,7 @@ export const cleanupFunction = inngest.createFunction(
       }
 
       const removed = await serviceRole.storage
-        .from("temp-staging")
+        .from(TEMP_STAGING_BUCKET)
         .remove(toRemove);
       if (removed.error) {
         logger.error("Error pruning staged raws", { error: removed.error });

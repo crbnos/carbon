@@ -11,6 +11,7 @@ import {
   processRawImage,
   UnsupportedImageFormatError
 } from "../../../database/supabase/functions/shared/image-pipeline.ts";
+import { isUnsafeStoragePath } from "../storage";
 import { getFileExtension, isHeic } from "./media";
 
 export * from "../../../database/supabase/functions/shared/image-pipeline.ts";
@@ -59,6 +60,11 @@ export async function transformImageViaStorage(
 ): Promise<Blob> {
   const extension = file.name.split(".").pop() ?? "bin";
   const tempPath = `${directory}/${nanoid()}.${extension}`;
+  // The directory is the caller's and the extension comes from the file name;
+  // neither may move the staged object out of the directory it names.
+  if (isUnsafeStoragePath(tempPath)) {
+    throw new Error(`Refused to stage an image at an unsafe path: ${tempPath}`);
+  }
 
   const upload = await client.storage.from(bucket).upload(tempPath, file, {
     upsert: true

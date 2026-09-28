@@ -8,8 +8,11 @@ import {
   Badge,
   Button,
   Card,
+  CardAction,
   CardContent,
+  CardDescription,
   CardHeader,
+  CardTitle,
   Combobox,
   HStack,
   IconButton,
@@ -118,49 +121,36 @@ export default function SalesRuleAssignmentsList({
 
   const isEmpty = assignments.length === 0;
 
-  const header = (
-    <div className="flex items-start justify-between gap-4">
-      <div className="min-w-0 flex-1">
-        <div className="flex items-center gap-2">
-          <h2 className="text-base font-semibold">
-            <Trans>Sales rules</Trans>
-          </h2>
-          {!isEmpty && (
-            <span className="text-sm font-normal text-muted-foreground tabular-nums">
-              {assignments.length}
-            </span>
-          )}
-        </div>
-        <p className="mt-1 max-w-[64ch] text-sm text-muted-foreground text-pretty">
-          {description}
-        </p>
+  const actions =
+    !isEmpty && canUpdate ? (
+      <div className="flex shrink-0 items-center gap-2">
+        {availableOptions.length > 0 && (
+          <Combobox
+            size="md"
+            value=""
+            options={availableOptions}
+            onChange={handleAssign}
+            placeholder={t`Add from library…`}
+            className="w-[200px]"
+          />
+        )}
+        <Button variant="primary" leftIcon={<LuPlus />} asChild>
+          <Link to={path.to.newSalesRule}>
+            <Trans>Add rule</Trans>
+          </Link>
+        </Button>
       </div>
-      {!isEmpty && canUpdate && (
-        <div className="flex shrink-0 items-center gap-2">
-          {availableOptions.length > 0 && (
-            <Combobox
-              size="md"
-              value=""
-              options={availableOptions}
-              onChange={handleAssign}
-              placeholder={t`Add from library…`}
-              className="w-[200px]"
-            />
-          )}
-          <Button variant="primary" leftIcon={<LuPlus />} asChild>
-            <Link to={path.to.newSalesRule}>
-              <Trans>Add rule</Trans>
-            </Link>
-          </Button>
-        </div>
-      )}
-    </div>
-  );
+    ) : null;
 
   if (isGated) {
     return (
       <Card className="flex-grow">
-        <CardHeader>{header}</CardHeader>
+        <CardHeader>
+          <CardTitle>
+            <Trans>Sales Rules</Trans>
+          </CardTitle>
+          <CardDescription>{description}</CardDescription>
+        </CardHeader>
         <CardContent>
           <div className="flex flex-col items-center justify-center gap-4 py-10 text-center">
             <UpgradeOverlayIcon>
@@ -362,7 +352,20 @@ export default function SalesRuleAssignmentsList({
 
   return (
     <Card className="flex-grow">
-      <CardHeader>{header}</CardHeader>
+      <HStack className="w-full justify-between items-start">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Trans>Sales Rules</Trans>
+            {!isEmpty && (
+              <span className="text-sm font-normal text-muted-foreground tabular-nums">
+                {assignments.length}
+              </span>
+            )}
+          </CardTitle>
+          <CardDescription>{description}</CardDescription>
+        </CardHeader>
+        {actions && <CardAction>{actions}</CardAction>}
+      </HStack>
       <CardContent>{body}</CardContent>
     </Card>
   );

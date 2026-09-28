@@ -23,7 +23,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   const [companySettings, trackedEntities] = await Promise.all([
     getCompanySettings(client, companyId),
-    getTrackedEntitiesByMakeMethodId(client, id)
+    getTrackedEntitiesByMakeMethodId(client, id, companyId)
   ]);
 
   const url = new URL(request.url);

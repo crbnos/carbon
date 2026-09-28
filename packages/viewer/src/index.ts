@@ -45,6 +45,17 @@ export {
   planMotionForComponents,
   type StepPhase
 } from "./plan";
+export {
+  buildStaging,
+  EMPTY_STAGING,
+  type JoinTargets,
+  joinTargets,
+  parkedOffsetsAt,
+  STAGING_GLIDE_SECONDS,
+  type Staging,
+  type StagingJoin,
+  stagedGroupNodeIds
+} from "./staging";
 export type {
   AssemblyGraph,
   AssemblyGraphNode,

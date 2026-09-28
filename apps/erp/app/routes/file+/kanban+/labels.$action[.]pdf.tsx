@@ -1,6 +1,7 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { KanbanLabelPDF } from "@carbon/documents/pdf";
 import { getLogger } from "@carbon/logger";
+import { getRequestOrigin } from "@carbon/utils";
 import { renderToStream } from "@react-pdf/renderer";
 import type { LoaderFunctionArgs } from "react-router";
 import { getCompany } from "~/modules/settings";
@@ -27,7 +28,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   const url = new URL(request.url);
   const idsParam = url.searchParams.get("ids");
-  const baseUrl = url.origin;
+  const baseUrl = getRequestOrigin(request) ?? url.origin;
 
   if (!idsParam) {
     return new Response("No kanban IDs provided", { status: 400 });

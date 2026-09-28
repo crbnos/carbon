@@ -16,9 +16,13 @@ import type {
   CameraPose,
   Motion
 } from "@carbon/viewer";
-import { AssemblyPlayer, indexAssemblyGraph } from "@carbon/viewer";
+import {
+  AssemblyPlayer,
+  indexAssemblyGraph,
+  stagedGroupNodeIds
+} from "@carbon/viewer";
 import { msg } from "@lingui/core/macro";
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import {
   data,
@@ -235,7 +239,10 @@ export default function AssemblyInstructionRoute() {
   // three panels: it renders red in the viewer, marks + scrolls to the row in the
   // Components panel, and (while authoring a step) stages the step's draft components.
   const [selectedNodeIds, setSelectedNodeIds] = useState<string[]>([]);
-  const [hiddenNodeIds, setHiddenNodeIds] = useState<string[]>([]);
+  // null = read from the step; reset on step change, like the components draft.
+  const [draftHiddenNodeIds, setDraftHiddenNodeIds] = useState<string[] | null>(
+    null
+  );
   // Isolate/focus: picking components in the Components panel shows ONLY them in
   // the viewer (everything else hidden) so the part can be inspected alone.
   // Cleared by a viewer/3D pick, a step change, add-mode, or an empty selection.
@@ -279,6 +286,68 @@ export default function AssemblyInstructionRoute() {
     [componentsFetcher, id]
   );
 
+  const hiddenFetcher = useFetcher<{ success: boolean }>();
+  const saveHiddenNodeIds = useCallback(
+    (stepId: string, hiddenNodeIds: string[]) => {
+      const formData = new FormData();
+      formData.set("hiddenComponentNodeIds", JSON.stringify(hiddenNodeIds));
+      hiddenFetcher.submit(formData, {
+        method: "post",
+        action: path.to.assemblyInstructionStepHiddenComponents(id, stepId)
+      });
+    },
+    [hiddenFetcher, id]
+  );
+  // A failed save must not keep showing the unsaved list: fall back to the step's saved one.
+  useEffect(() => {
+    if (
+      hiddenFetcher.state === "idle" &&
+      hiddenFetcher.data?.success === false
+    ) {
+      setDraftHiddenNodeIds(null);
+    }
+  }, [hiddenFetcher.state, hiddenFetcher.data]);
+
+  // The selected step shows its hidden draft before the autosave round-trips.
+  const viewerSteps = useMemo(
+    () =>
+      steps.map((step) => {
+        const viewerStep = toViewerStep(step);
+        return draftHiddenNodeIds && step.id === selectedStep?.id
+          ? { ...viewerStep, hiddenComponentNodeIds: draftHiddenNodeIds }
+          : viewerStep;
+      }),
+    [steps, draftHiddenNodeIds, selectedStep]
+  );
+
+  // A join step also "owns" the group built aside for it: those parts move on
+  // it, so they get the This-step badge and can't be hidden there.
+  const selectedOwnNodeIds = useMemo(() => {
+    const own = draftComponentNodeIds ?? selectedStep?.componentNodeIds ?? [];
+    if (!selectedStep) return own;
+    const staged = stagedGroupNodeIds(viewerSteps, selectedStep.id);
+    return staged.length === 0 ? own : [...new Set([...own, ...staged])];
+  }, [draftComponentNodeIds, selectedStep, viewerSteps]);
+  // Mirrors the DB trigger for the in-flight drafts: a part the step installs is
+  // never listed as hidden on it (e.g. right after adding it to the step).
+  const selectedHiddenNodeIds = useMemo(() => {
+    const own = new Set(selectedOwnNodeIds);
+    return (
+      draftHiddenNodeIds ??
+      selectedStep?.hiddenComponentNodeIds ??
+      []
+    ).filter((nodeId) => !own.has(nodeId));
+  }, [draftHiddenNodeIds, selectedStep, selectedOwnNodeIds]);
+
+  const onSetHiddenComponents = useCallback(
+    (nodeIds: string[]) => {
+      if (isDisabled || !selectedStep) return;
+      setDraftHiddenNodeIds(nodeIds);
+      saveHiddenNodeIds(selectedStep.id, nodeIds);
+    },
+    [isDisabled, selectedStep, saveHiddenNodeIds]
+  );
+
   // Bumped to preview (play) the active step — a double-click in the Explorer.
   const [playStepNonce, setPlayStepNonce] = useState(0);
 
@@ -286,6 +355,7 @@ export default function AssemblyInstructionRoute() {
     (stepId: string, options?: { selectComponents?: boolean }) => {
       setSelectedStepId(stepId);
       setDraftComponentNodeIds(null);
+      setDraftHiddenNodeIds(null);
       setIsAddingComponents(false);
       // Leave any open motion-path edit session when moving to another step.
       setEditingStepId(null);
@@ -387,8 +457,6 @@ export default function AssemblyInstructionRoute() {
     },
     [isDisabled, selectedStep, draftComponentNodeIds, saveComponentNodeIds]
   );
-
-  const viewerSteps = useMemo(() => steps.map(toViewerStep), [steps]);
 
   // Per-step slides/tools/materials for the properties panel — memoized so a
   // per-frame motion-drag re-render (draftMotion) doesn't hand the panel new
@@ -543,7 +611,10 @@ export default function AssemblyInstructionRoute() {
                   onSelectStep={onSelectStep}
                   onPreviewStep={onPreviewStep}
                   onHighlightComponents={onFocusComponents}
-                  onHideComponents={setHiddenNodeIds}
+                  hasSelectedStep={Boolean(selectedStep)}
+                  ownNodeIds={selectedOwnNodeIds}
+                  hiddenNodeIds={selectedHiddenNodeIds}
+                  onSetHiddenComponents={onSetHiddenComponents}
                 />
               }
               content={
@@ -595,7 +666,6 @@ export default function AssemblyInstructionRoute() {
                           onSelectComponents={onSelectComponents}
                           onGraphLoaded={setGraph}
                           highlightedNodeIds={selectedNodeIds}
-                          hiddenNodeIds={hiddenNodeIds}
                           focusedNodeIds={focusedNodeIds}
                           readOnly={isDisabled}
                           editMotion={
@@ -676,6 +746,8 @@ export default function AssemblyInstructionRoute() {
                   onStartAddComponents={onStartAddComponents}
                   onStopAddComponents={onStopAddComponents}
                   onRemoveComponents={onRemoveComponents}
+                  hiddenNodeIds={selectedHiddenNodeIds}
+                  onSetHiddenComponents={onSetHiddenComponents}
                   isEditingMotion={isEditingSelectedMotion}
                   onEditMotion={onEditMotion}
                   onStopEditMotion={onStopEditMotion}
@@ -685,6 +757,8 @@ export default function AssemblyInstructionRoute() {
                   stepSlides={selectedStepSlides}
                   stepTools={selectedStepTools}
                   bomMaterials={bomMaterials}
+                  viewerSteps={viewerSteps}
+                  onSelectStep={onSelectStep}
                 />
               }
             />
