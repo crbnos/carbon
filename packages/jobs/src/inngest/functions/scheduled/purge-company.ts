@@ -48,6 +48,15 @@ export async function purgeCompany(
       .limit(1)
       .executeTakeFirst()) === undefined;
 
+  // Without replica the group's system accounts refuse deletion
+  // (protect_system_accounts), so deleting only the company would strand the
+  // group and its shared data. Refuse instead; the company stays for a later run.
+  if (!replica && lastInGroup) {
+    throw new Error(
+      "The last company in a group can only be purged in replica mode"
+    );
+  }
+
   if (replica) {
     await sql`SET LOCAL session_replication_role = 'replica'`.execute(trx);
     await wipeScopedData(
@@ -60,9 +69,7 @@ export async function purgeCompany(
   }
 
   await trx.deleteFrom("company").where("id", "=", companyId).execute();
-  // Without replica the group's system accounts are still there and refuse the
-  // cascade (protect_system_accounts), so an emptied group is only dropped after a wipe.
-  if (replica && lastInGroup && groupId) {
+  if (lastInGroup && groupId) {
     await trx.deleteFrom("companyGroup").where("id", "=", groupId).execute();
   }
 }

@@ -210,7 +210,8 @@ whom it deleted.
     `session_replication_role = 'replica'`, as a restore does, then deletes the company.
     The group and its shared data go only when no other company is left in it.
   - Without replica permission it falls back to the plain cascade. A company with posted
-    documents then fails, and is logged and skipped.
+    documents then fails, and is logged and skipped. So does the last company in a group,
+    because its group's system accounts refuse deletion and the group would be stranded.
   - Inside the same transaction, after the wipe and before the commit,
     `removeCompanyLeftovers` removes the Vault `integration:<companyId>:*` secrets, the
     per-company bucket (already missing counts as done), and legacy files under
