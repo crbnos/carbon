@@ -233,8 +233,9 @@ const NON_ADVANCING_SALES_ORDER_STATUSES = new Set([
 
 /**
  * Ops that can move a document's `status` past the confirm/finalize gates
- * without going through them: the direct status setters, the generic updates
- * (whose payload may carry `status`), and the deprecated upserts. The gate
+ * without going through them: the direct status setters and the generic updates
+ * (whose payload may carry `status`). The deprecated upserts are not published
+ * (see `isPublishableExport` in scripts/lib/service-metadata.ts). The gate
  * evaluates only when the payload actually carries an ADVANCING status for an
  * EXISTING document (a create has no lines yet, so there is nothing to
  * evaluate).
@@ -257,11 +258,6 @@ const STATUS_WRITE_OPERATIONS: Record<
     param: "update",
     nonAdvancing: NON_ADVANCING_QUOTE_STATUSES
   },
-  sales_upsertQuote: {
-    documentType: "quote",
-    param: "quote",
-    nonAdvancing: NON_ADVANCING_QUOTE_STATUSES
-  },
   sales_updateSalesOrder: {
     documentType: "salesOrder",
     param: "input",
@@ -270,11 +266,6 @@ const STATUS_WRITE_OPERATIONS: Record<
   sales_updateSalesOrderStatus: {
     documentType: "salesOrder",
     param: "update",
-    nonAdvancing: NON_ADVANCING_SALES_ORDER_STATUSES
-  },
-  sales_upsertSalesOrder: {
-    documentType: "salesOrder",
-    param: "salesOrder",
     nonAdvancing: NON_ADVANCING_SALES_ORDER_STATUSES
   }
 };

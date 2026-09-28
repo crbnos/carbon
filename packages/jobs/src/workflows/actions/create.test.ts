@@ -25,7 +25,7 @@ async function create(result: DispatchResult) {
   const outcome = await runCreateAction({
     dispatch,
     context,
-    call: "production_upsertJob",
+    call: "production_insertJob",
     entity: "job",
     inputs
   });
@@ -39,7 +39,7 @@ describe("runCreateAction", () => {
       data: { data: { id: "job_1", jobId: "JOB000001" }, error: null }
     });
 
-    expect(dispatch).toHaveBeenCalledWith("production_upsertJob", context, {
+    expect(dispatch).toHaveBeenCalledWith("production_insertJob", context, {
       itemId: "item_1",
       quantity: 5,
       dueDate: "2026-08-01T00:00:00.000Z"
@@ -54,12 +54,12 @@ describe("runCreateAction", () => {
   it("surfaces a dispatcher that refused", async () => {
     const { outcome } = await create({
       success: false,
-      error: "Tool disabled: production_upsertJob is not available via MCP."
+      error: "Tool disabled: production_insertJob is not available via MCP."
     });
 
     expect(outcome).toEqual({
       ok: false,
-      error: "Tool disabled: production_upsertJob is not available via MCP."
+      error: "Tool disabled: production_insertJob is not available via MCP."
     });
   });
 

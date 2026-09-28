@@ -53,6 +53,22 @@ export const MODULE_LIST = [
   "users",
 ];
 
+/**
+ * Service files under `apps/erp/app/modules/` that are deliberately NOT
+ * published as MCP tools, keyed by path relative to the modules directory.
+ * `MODULE_LIST` stays explicit — a new module is reviewed before it is
+ * published — and `mcp-registry-parity.test.ts` fails on any service file that
+ * is in neither list, so no module is left out by omission either.
+ */
+export const MODULE_EXCLUSIONS: Record<string, string> = {
+  "agent/agent.service.ts":
+    "The in-app agent's own chat storage (threads, messages, feedback, rate limit). It is keyed to the signed-in user's session and has no meaning for an API key.",
+  "workflows/workflows.service.ts":
+    "Workflow authoring is a commercial feature (WORKFLOWS). The plan gate lives in the x+/workflows+ route actions (requireFeature) and in publishWorkflowVersion (workflows.server.ts, requireWorkflowsEntitlement); the service functions carry none, and the MCP dispatch has no per-feature gate, so publishing them would bypass the plan.",
+  "settings/backups.service.ts":
+    "Company backup export/restore is gated per route by canManageBackups and the BACKUPS entitlement lives in the ee job functions; the service carries neither.",
+};
+
 const DESCRIPTION_OVERRIDES: Record<string, string> = {
   purchasing_insertPurchaseOrder:
     "Create a new purchase order with all business logic - generates sequence, creates supplier interaction, resolves payment/shipping defaults from supplier. LLM can create a PO with just supplierId.",
@@ -1593,6 +1609,27 @@ export interface BuildOptions {
 }
 
 /**
+ * Whether an export is published as a tool at all. Two kinds are not:
+ *
+ * - `@deprecated` exports. The UI moved to their replacements (the insert/
+ *   update pairs that allocate sequences and enforce locks); the deprecated
+ *   bodies skip both, and every replacement is itself a tool.
+ * - Exports that take none of the context params (client, db, companyId, …).
+ *   Without a client they cannot read or write company data: they are pure
+ *   helpers (price-break math, step-plan diffs) whose args are the output of an
+ *   earlier read, sometimes a Set or Map no JSON value can satisfy.
+ *
+ * The functions stay exported for the app; only the tool surface changes.
+ */
+export function isPublishableExport(func: {
+  params: { name: string }[];
+  jsdoc?: string;
+}): boolean {
+  if (func.jsdoc && /@deprecated\b/.test(func.jsdoc)) return false;
+  return func.params.some((p) => CONTEXT_PARAMS.has(p.name));
+}
+
+/**
  * Parse every module's service file(s) into the full operation manifest. Pure —
  * reads source files, returns metadata, writes nothing.
  */
@@ -1656,6 +1693,7 @@ export function buildAllToolMetadata(opts: BuildOptions = {}): ManifestEntry[] {
     for (const func of functions) {
       const toolName = `${mod}_${func.name}`;
       if (MCP_BLOCKED_TOOL_NAMES.includes(toolName)) continue;
+      if (!isPublishableExport(func)) continue;
 
       const classification = classifyFunction(func.name, content);
       const injectAuth = withPayloadUserId(

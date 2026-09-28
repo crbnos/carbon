@@ -1,4 +1,7 @@
+import * as fs from "node:fs";
+import * as path from "node:path";
 import { describe, expect, it } from "vitest";
+import { CONTEXT_PARAMS } from "../../../scripts/lib/validator-registry";
 import metadata from "../app/routes/api+/mcp+/lib/tool-metadata.json";
 
 // Regression guards for the MCP tool-metadata generator (scripts/generate-mcp.ts).
@@ -8,6 +11,7 @@ import metadata from "../app/routes/api+/mcp+/lib/tool-metadata.json";
 
 type Tool = {
   name: string;
+  module: string;
   classification: "READ" | "WRITE" | "DESTRUCTIVE";
   serviceParams: string[];
   schema: {
@@ -258,21 +262,25 @@ describe("mcp tool-metadata generator", () => {
 
   // Array<{...}> generics publish as typed arrays, same as the `[]` suffix.
   it("resolves Array<T> generic params to typed arrays", () => {
-    const sourceTools = props(get("production_maxToolQuantityByItem")).sourceTools;
-    expect(sourceTools?.type).toBe("array");
-    expect(Object.keys(sourceTools?.items?.properties ?? {})).toContain("itemId");
+    const dimensions = props(
+      get("accounting_saveJournalLineDimensions")
+    ).dimensions;
+    expect(dimensions?.type).toBe("array");
+    expect(Object.keys(dimensions?.items?.properties ?? {})).toContain(
+      "dimensionId"
+    );
   });
 
   // A bare type alias declared in the module's own sources (service file,
   // types.ts, models, or shared) resolves; Partial<{...}> drops required.
-  // `diffMethod(input: DiffMethodInput)` — DiffMethodInput is a named type
-  // alias declared in items.service.ts, so it must resolve to real properties
-  // rather than an opaque {}.
+  // `getAvailableOnAccountCredit(…, party: PaymentParty)` — PaymentParty is a
+  // named type alias declared in invoicing.service.ts, so it must resolve to
+  // real properties rather than an opaque {}.
   it("resolves module-local type aliases and Partial wrappers", () => {
-    const input = props(get("items_diffMethod")).input;
-    const inputBranches = input?.anyOf ?? [input];
+    const party = props(get("invoicing_getAvailableOnAccountCredit")).party;
+    const partyBranches = party?.anyOf ?? [party];
     expect(
-      Object.keys(inputBranches[0]?.properties ?? {}).length
+      Object.keys(partyBranches[0]?.properties ?? {}).length
     ).toBeGreaterThan(0);
 
     // updateAbility takes an optional `name` and an optional cadence, so the
@@ -302,10 +310,86 @@ describe("mcp tool-metadata generator", () => {
     // Inverted (`"updatedBy" in`) — the ones that were broken.
     requiresOperation("sales_upsertQuoteMaterial");
     requiresOperation("production_upsertJobMaterial");
-    requiresOperation("production_upsertJob");
     requiresOperation("production_upsertProductionQuantity");
     requiresOperation("resources_upsertPartner");
     // Standard (`"createdBy" in`) control — unchanged, still carries the flag.
     requiresOperation("sales_upsertQuoteOperation");
+  });
+});
+
+// The tool SET is a decision about each export, not "every named export". A
+// deprecated export's replacement is already a tool, and an export with no
+// client/db/company context is a pure helper: it cannot touch company data, and
+// its args (sometimes a Set or Map) are the output of an earlier read.
+describe("mcp tool set", () => {
+  const MODULES_DIR = path.resolve(__dirname, "../app/modules");
+  const sourceCache = new Map<string, string>();
+  const moduleSource = (mod: string) => {
+    let source = sourceCache.get(mod);
+    if (source === undefined) {
+      source = [`${mod}.service.ts`, `${mod}.ee.service.ts`, `${mod}.mcp.server.ts`]
+        .map((f) => path.join(MODULES_DIR, mod, f))
+        .filter((f) => fs.existsSync(f))
+        .map((f) => fs.readFileSync(f, "utf-8"))
+        .join("\n");
+      sourceCache.set(mod, source);
+    }
+    return source;
+  };
+  /** The JSDoc block directly above `export function <fn>(`, if any. */
+  const jsdocOf = (mod: string, fn: string): string | null => {
+    const source = moduleSource(mod);
+    const match = new RegExp(
+      `export\\s+(?:async\\s+)?function\\s+${fn}\\s*[<(]`
+    ).exec(source);
+    if (!match) return null;
+    const before = source.slice(0, match.index).trimEnd();
+    if (!before.endsWith("*/")) return null;
+    return before.slice(before.lastIndexOf("/**"));
+  };
+
+  it("publishes no @deprecated export", () => {
+    const deprecated = tools
+      .filter((t) => {
+        const fn = t.name.slice(t.module.length + 1);
+        return /@deprecated\b/.test(jsdocOf(t.module, fn) ?? "");
+      })
+      .map((t) => t.name);
+    expect(deprecated).toEqual([]);
+  });
+
+  it("every tool takes at least one context param (client, db, companyId, …)", () => {
+    const contextless = tools
+      .filter((t) => !t.serviceParams.some((p) => CONTEXT_PARAMS.has(p)))
+      .map((t) => t.name);
+    expect(contextless).toEqual([]);
+  });
+
+  it("drops the deprecated upserts and keeps their replacements", () => {
+    for (const [removed, replacements] of [
+      ["sales_upsertQuote", ["sales_insertQuote", "sales_updateQuote"]],
+      ["sales_upsertSalesOrder", ["sales_insertSalesOrder", "sales_updateSalesOrder"]],
+      ["sales_upsertSalesRFQ", ["sales_insertSalesRFQ", "sales_updateSalesRFQ"]],
+      ["purchasing_upsertPurchaseOrder", ["purchasing_insertPurchaseOrder", "purchasing_updatePurchaseOrder"]],
+      ["purchasing_updatePurchaseOrderStatusLegacy", ["purchasing_updatePurchaseOrderStatus"]],
+      ["production_upsertJob", ["production_insertJob", "production_updateJob"]],
+      ["invoicing_upsertSalesInvoice", ["invoicing_insertSalesInvoice", "invoicing_updateSalesInvoice"]]
+    ] as const) {
+      expect(byName.has(removed), removed).toBe(false);
+      for (const name of replacements) expect(byName.has(name), name).toBe(true);
+    }
+  });
+
+  it("drops the context-free helpers", () => {
+    for (const name of [
+      "production_planOrphanStepAdoption",
+      "production_buildAssemblyToolStepLinks",
+      "sales_applyPriceRules",
+      "shared_lookupPriceFromBreaks",
+      "items_diffMethod",
+      "accounting_evaluateCloseChecklist"
+    ]) {
+      expect(byName.has(name), name).toBe(false);
+    }
   });
 });
