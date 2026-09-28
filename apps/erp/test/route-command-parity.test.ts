@@ -109,6 +109,127 @@ const CASES: Case[] = [
       `x+/${t}+/$itemId.purchasing.new.tsx`,
       `x+/${t}+/$itemId.purchasing.$supplierPartId.tsx`
     ])
+  },
+  // Status transitions (fix/mcp-status-transitions).
+  {
+    tool: "production_updateJobStatus",
+    companion: "production/production.mcp.server.ts",
+    commands: ["transitionJobStatus"],
+    from: "~/modules/production/production.server",
+    routes: ["x+/job+/$jobId.status.tsx"]
+  },
+  {
+    tool: "production_updateJobOperationStatus",
+    companion: "production/production.mcp.server.ts",
+    commands: ["setJobOperationStatus"],
+    from: "~/modules/production/production.server",
+    routes: ["x+/job+/methods+/operation.status.tsx"]
+  },
+  {
+    tool: "production_upsertJobOperation",
+    companion: "production/production.mcp.server.ts",
+    commands: ["createJobOperation"],
+    from: "~/modules/production/production.server",
+    routes: ["x+/job+/methods+/$jobId.operation.new.tsx"]
+  },
+  {
+    tool: "production_deleteJobOperation",
+    companion: "production/production.mcp.server.ts",
+    commands: ["deleteJobOperationWithDependencies"],
+    from: "~/modules/production/production.server",
+    routes: ["x+/job+/methods+/$jobId.operation.delete.tsx"]
+  },
+  {
+    tool: "production_createAssemblyPlanJob",
+    companion: "production/production.mcp.server.ts",
+    commands: ["prepareAssemblyPlanRun", "startAssemblyPlanRun"],
+    from: "~/modules/production/production.server",
+    routes: [
+      "x+/assembly+/$id.plan.rerun.tsx",
+      "x+/assembly+/$id.steps.generate.tsx",
+      "x+/production+/assemblies.new.tsx"
+    ]
+  },
+  {
+    tool: "production_deleteMaintenanceDispatchItem",
+    companion: "production/production.mcp.server.ts",
+    companionCalls: ["deleteMaintenanceDispatchItemCommand"],
+    commands: ["removeMaintenanceDispatchItem"],
+    from: "~/modules/resources/resources.server",
+    routes: ["x+/maintenance+/$dispatchId.item.$itemId.delete.tsx"]
+  },
+  {
+    tool: "resources_deleteMaintenanceDispatchItem",
+    companion: "resources/resources.mcp.server.ts",
+    commands: ["removeMaintenanceDispatchItem"],
+    from: "~/modules/resources/resources.server",
+    routes: ["x+/maintenance+/$dispatchId.item.$itemId.delete.tsx"]
+  },
+  {
+    tool: "inventory_updateStockTransferStatus",
+    companion: "inventory/inventory.mcp.server.ts",
+    commands: ["transitionStockTransferStatus"],
+    from: "~/modules/inventory/inventory-transitions.server",
+    routes: ["x+/stock-transfer+/$id.status.tsx"]
+  },
+  {
+    tool: "inventory_updateInventoryCountStatus",
+    companion: "inventory/inventory.mcp.server.ts",
+    commands: ["transitionInventoryCountStatus"],
+    from: "~/modules/inventory/inventory-transitions.server",
+    routes: [
+      "x+/inventory-count+/$id.confirm.tsx",
+      "x+/inventory-count+/$id.reopen.tsx"
+    ]
+  },
+  {
+    tool: "inventory_updatePickingListStatus",
+    companion: "inventory/inventory.mcp.server.ts",
+    commands: ["transitionPickingListStatus"],
+    from: "~/modules/inventory/inventory-transitions.server",
+    routes: ["x+/picking-list+/$pickingListId.status.tsx"]
+  },
+  {
+    tool: "quality_updateIssueStatus",
+    companion: "quality/quality.mcp.server.ts",
+    commands: ["transitionIssueStatus"],
+    from: "~/modules/quality/quality-transitions.server",
+    routes: ["x+/issue+/$id.status.tsx", "x+/issue+/$id.close.tsx"]
+  },
+  {
+    tool: "items_updateChangeNoticeStatus",
+    companion: "items/items.mcp.server.ts",
+    commands: ["transitionChangeNoticeStatus"],
+    from: "~/modules/items/items.server",
+    routes: ["x+/items+/change-notice+/$id.status.tsx"]
+  },
+  {
+    tool: "items_upsertMakeMethodVersion",
+    companion: "items/items.mcp.server.ts",
+    commands: ["createMakeMethodVersion"],
+    from: "~/modules/items/items.server",
+    routes: ["x+/items+/methods+/version.new.tsx"]
+  },
+  {
+    tool: "purchasing_finalizePurchaseOrder",
+    companion: "purchasing/purchasing.mcp.server.ts",
+    commands: ["commitPurchaseOrderFinalize"],
+    from: "~/modules/purchasing/purchasing.server",
+    routes: ["x+/purchase-order+/$orderId.finalize.tsx"]
+  },
+  {
+    tool: "sales_updateSalesOrderStatus",
+    companion: "sales/sales.mcp.server.ts",
+    commands: ["transitionSalesOrderStatus"],
+    from: "~/modules/sales/sales-transitions.server",
+    routes: ["x+/sales-order+/$orderId.status.tsx"]
+  },
+  {
+    tool: "sales_setSalesReturnOrderLineDisposition",
+    companion: "sales/sales.mcp.server.ts",
+    commands: ["setReturnLineDispositionFromPicker"],
+    from: "~/modules/sales/sales-transitions.server",
+    routes: ["x+/sales-return-order+/$id.$lineId.disposition.tsx"]
   }
 ];
 
