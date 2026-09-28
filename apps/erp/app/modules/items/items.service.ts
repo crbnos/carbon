@@ -62,7 +62,7 @@ import {
   type itemSupersessionValidator,
   type itemTrackingTypes,
   type itemUnitSalePriceValidator,
-  type itemValidator,
+  itemValidator,
   type MethodDiffEntry,
   type MethodDiffStatus,
   type makeMethodVersionValidator,
@@ -3884,6 +3884,13 @@ export async function upsertPart(
   return updated;
 }
 
+/**
+ * Update an item's form fields (name, description, replenishment, default
+ * method, tracking type, unit of measure, readable id). Only the item form's
+ * fields are written: `active` and other item columns a caller adds are
+ * ignored — activation goes through `setItemActive`, which refuses items an
+ * unreleased change notice created.
+ */
 export async function updateItem(
   client: SupabaseClient<Database>,
   item: z.infer<typeof itemValidator> & {
@@ -3891,9 +3898,19 @@ export async function updateItem(
     type: Database["public"]["Enums"]["itemType"];
   }
 ) {
+  // The tool schema passes undeclared keys through, and this spread goes
+  // straight into the UPDATE — so the declared form fields are the allow-list.
+  const allowed = new Set<string>([
+    ...Object.keys(itemValidator.shape),
+    "type",
+    "updatedBy"
+  ]);
+  const update = Object.fromEntries(
+    Object.entries(item).filter(([key]) => allowed.has(key))
+  ) as typeof item;
   return client
     .from("item")
-    .update(sanitize(item))
+    .update(sanitize(update))
     .eq("id", item.id)
     .eq("companyId", item.companyId);
 }
@@ -6289,6 +6306,91 @@ export async function getSupplierPartPriceBreaks(
     quantity: pb.quantity,
     unitPrice: pb.unitPrice
   }));
+}
+
+/**
+ * Replace a supplier part's quantity price breaks with `priceBreaks` (an
+ * empty list clears them), as the supplier part form does on save. Rows are
+ * written as "Manual Entry" prices; `leadTime` defaults to 0. Purchase order,
+ * invoice and quote pricing read these breaks before falling back to the
+ * supplier part's flat `unitPrice`.
+ *
+ * One transaction: the delete and the insert land together or not at all. The
+ * supplier part must belong to `companyId`.
+ */
+export async function upsertSupplierPartPrices(
+  db: Kysely<KyselyDatabase>,
+  args: {
+    supplierPartId: string;
+    companyId: string;
+    userId: string;
+    priceBreaks: { quantity: number; unitPrice: number; leadTime?: number }[];
+  }
+): Promise<{
+  data: { count: number } | null;
+  error: { message: string } | null;
+}> {
+  const { supplierPartId, companyId, userId, priceBreaks } = args;
+  const quantities = priceBreaks.map((pb) => pb.quantity);
+  if (new Set(quantities).size !== quantities.length) {
+    return {
+      data: null,
+      error: { message: "Each price break needs a different quantity." }
+    };
+  }
+
+  try {
+    await db.transaction().execute(async (trx) => {
+      const supplierPart = await trx
+        .selectFrom("supplierPart")
+        .select("id")
+        .where("id", "=", supplierPartId)
+        .where("companyId", "=", companyId)
+        .executeTakeFirst();
+      if (!supplierPart) {
+        throw new Error(`Supplier part ${supplierPartId} not found`);
+      }
+
+      await trx
+        .deleteFrom("supplierPartPrice")
+        .where("supplierPartId", "=", supplierPartId)
+        .where("companyId", "=", companyId)
+        .execute();
+
+      if (priceBreaks.length > 0) {
+        await trx
+          .insertInto("supplierPartPrice")
+          .values(
+            priceBreaks.map((pb) => ({
+              supplierPartId,
+              quantity: pb.quantity,
+              unitPrice: pb.unitPrice,
+              leadTime: pb.leadTime ?? 0,
+              sourceType: "Manual Entry" as const,
+              companyId,
+              createdBy: userId,
+              updatedBy: userId
+            }))
+          )
+          .execute();
+      }
+    });
+  } catch (err) {
+    logger.error("Failed to save supplier part price breaks", {
+      supplierPartId,
+      companyId,
+      error: err
+    });
+    return {
+      data: null,
+      error: {
+        message:
+          err instanceof Error ? err.message : "Failed to save price breaks"
+      }
+    };
+  }
+
+  return { data: { count: priceBreaks.length }, error: null };
 }
 // =============================================================================
 // Change Notices — header CRUD, stage transitions, list, and CO Types config.

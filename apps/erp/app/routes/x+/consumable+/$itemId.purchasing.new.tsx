@@ -5,8 +5,13 @@ import { useRouteData } from "@carbon/react";
 import type { ActionFunctionArgs } from "react-router";
 import { useNavigate, useParams } from "react-router";
 import type { ConsumableSummary } from "~/modules/items";
-import { supplierPartValidator, upsertSupplierPart } from "~/modules/items";
+import {
+  supplierPartValidator,
+  upsertSupplierPart,
+  upsertSupplierPartPrices
+} from "~/modules/items";
 import { SupplierPartForm } from "~/modules/items/ui/Item";
+import { getDatabaseClient } from "~/services/database.server";
 import { setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 
@@ -52,18 +57,19 @@ export async function action({ request, params }: ActionFunctionArgs) {
       leadTime: number;
     }[];
     if (priceBreaks.length > 0) {
-      await client.from("supplierPartPrice").insert(
-        priceBreaks.map((pb) => ({
-          supplierPartId: newSupplierPartId,
-          quantity: pb.quantity,
-          unitPrice: pb.unitPrice,
-          leadTime: pb.leadTime ?? 0,
-          sourceType: "Manual Entry" as const,
-          companyId,
-          createdBy: userId,
-          updatedBy: userId
-        }))
-      );
+      // The same write `items_upsertSupplierPartPrices` makes over MCP.
+      const prices = await upsertSupplierPartPrices(getDatabaseClient(), {
+        supplierPartId: newSupplierPartId,
+        companyId,
+        userId,
+        priceBreaks
+      });
+      if (prices.error) {
+        return {
+          success: false,
+          message: `Supplier created, but its price breaks were not saved: ${prices.error.message}`
+        };
+      }
     }
   }
 

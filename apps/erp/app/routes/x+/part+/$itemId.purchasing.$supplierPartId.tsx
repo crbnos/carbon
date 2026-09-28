@@ -5,7 +5,11 @@ import { useRouteData } from "@carbon/react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { useLoaderData, useNavigate, useParams } from "react-router";
 import type { PartSummary } from "~/modules/items";
-import { supplierPartValidator, upsertSupplierPart } from "~/modules/items";
+import {
+  supplierPartValidator,
+  upsertSupplierPart,
+  upsertSupplierPartPrices
+} from "~/modules/items";
 import { SupplierPartForm } from "~/modules/items/ui/Item";
 import { getDatabaseClient } from "~/services/database.server";
 import { setCustomFields } from "~/utils/form";
@@ -95,31 +99,20 @@ export async function action({ request, params }: ActionFunctionArgs) {
       unitPrice: number;
       leadTime: number;
     }[];
-    const db = getDatabaseClient();
-    await db.transaction().execute(async (trx) => {
-      await trx
-        .deleteFrom("supplierPartPrice")
-        .where("supplierPartId", "=", supplierPartId)
-        .where("companyId", "=", companyId)
-        .execute();
-      if (priceBreaks.length > 0) {
-        await trx
-          .insertInto("supplierPartPrice")
-          .values(
-            priceBreaks.map((pb) => ({
-              supplierPartId,
-              quantity: pb.quantity,
-              unitPrice: pb.unitPrice,
-              leadTime: pb.leadTime ?? 0,
-              sourceType: "Manual Entry" as const,
-              companyId,
-              createdBy: userId,
-              updatedBy: userId
-            }))
-          )
-          .execute();
-      }
+    // Replaces the whole set in one transaction — the same write
+    // `items_upsertSupplierPartPrices` makes over MCP.
+    const prices = await upsertSupplierPartPrices(getDatabaseClient(), {
+      supplierPartId,
+      companyId,
+      userId,
+      priceBreaks
     });
+    if (prices.error) {
+      return {
+        success: false,
+        message: `Supplier updated, but its price breaks were not saved: ${prices.error.message}`
+      };
+    }
   }
 
   // Fetcher-friendly success (mirrors the create route): the form's fetcher

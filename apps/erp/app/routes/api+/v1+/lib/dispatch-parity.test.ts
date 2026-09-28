@@ -25,6 +25,14 @@ const spies = vi.hoisted(() => ({
   insertSalesOrder: vi.fn(),
   replaceInvoiceSettlements: vi.fn(),
   applyCreditsToInvoices: vi.fn(),
+  // Route commands published by the mcp.server companions.
+  mcpUpsertQuoteMaterial: vi.fn(),
+  mcpReleaseSalesOrder: vi.fn(),
+  mcpSetItemActive: vi.fn(),
+  mcpUpsertSupplierPartPrices: vi.fn(),
+  serviceUpsertQuoteMaterial: vi.fn(),
+  serviceReleaseSalesOrder: vi.fn(),
+  serviceUpsertSupplierPartPrices: vi.fn(),
   FAKE_DB: { __kysely: true },
   FAKE_CLIENT: { __supabase: true }
 }));
@@ -49,7 +57,12 @@ vi.mock("~/modules/invoicing/invoicing.service", () => ({
   applyCreditsToInvoices: spies.applyCreditsToInvoices
 }));
 vi.mock("~/modules/items/items.service", () => ({
-  upsertMethodMaterial: spies.upsertMethodMaterial
+  upsertMethodMaterial: spies.upsertMethodMaterial,
+  upsertSupplierPartPrices: spies.serviceUpsertSupplierPartPrices
+}));
+vi.mock("~/modules/items/items.mcp.server", () => ({
+  setItemActive: spies.mcpSetItemActive,
+  upsertSupplierPartPrices: spies.mcpUpsertSupplierPartPrices
 }));
 vi.mock("~/modules/people/people.service", () => ({}));
 vi.mock("~/modules/production/production.mcp.server", () => ({}));
@@ -67,9 +80,14 @@ vi.mock("~/modules/resources/resources.service", () => ({}));
 vi.mock("~/modules/sales/sales.service", () => ({
   upsertQuoteLinePrices: spies.upsertQuoteLinePrices,
   updateQuoteLineOrder: spies.updateQuoteLineOrder,
-  insertSalesOrder: spies.insertSalesOrder
+  insertSalesOrder: spies.insertSalesOrder,
+  upsertQuoteMaterial: spies.serviceUpsertQuoteMaterial,
+  releaseSalesOrder: spies.serviceReleaseSalesOrder
 }));
-vi.mock("~/modules/sales/sales.mcp.server", () => ({}));
+vi.mock("~/modules/sales/sales.mcp.server", () => ({
+  upsertQuoteMaterial: spies.mcpUpsertQuoteMaterial,
+  releaseSalesOrder: spies.mcpReleaseSalesOrder
+}));
 vi.mock("~/modules/settings/settings.service", () => ({}));
 // The sales-rule gate imports `~/modules/sales/sales.server` and
 // `@carbon/ee/rules.server` — both server-only graphs (glossary/lingui, env
@@ -156,7 +174,14 @@ const allSpies = [
   spies.insertPurchaseOrder,
   spies.insertSalesOrder,
   spies.replaceInvoiceSettlements,
-  spies.applyCreditsToInvoices
+  spies.applyCreditsToInvoices,
+  spies.mcpUpsertQuoteMaterial,
+  spies.mcpReleaseSalesOrder,
+  spies.mcpSetItemActive,
+  spies.mcpUpsertSupplierPartPrices,
+  spies.serviceUpsertQuoteMaterial,
+  spies.serviceReleaseSalesOrder,
+  spies.serviceUpsertSupplierPartPrices
 ];
 
 beforeEach(() => {
@@ -796,6 +821,72 @@ function idIn(payload: unknown): string | undefined {
   const id = (payload as Record<string, unknown>).id;
   return typeof id === "string" ? id : undefined;
 }
+
+// A tool whose route command lives in a `{module}.mcp.server.ts` companion
+// must dispatch to the companion, never to the bare service primitive of the
+// same name — that primitive is what skipped the route's orchestration.
+describe("route commands dispatch to the mcp.server companion", () => {
+  it("sales_upsertQuoteMaterial reaches the companion, not the bare upsert", async () => {
+    const r = await runDispatch(
+      "sales_upsertQuoteMaterial",
+      spies.mcpUpsertQuoteMaterial,
+      {
+        _operation: "create",
+        quoteId: "q1",
+        quoteLineId: "l1",
+        quoteMakeMethodId: "qmm1",
+        itemId: "i1"
+      }
+    );
+    expect(r.dispatchError).toBeUndefined();
+    expect(spies.serviceUpsertQuoteMaterial).not.toHaveBeenCalled();
+    const [client, payload] = r.calls[0] as [unknown, Record<string, unknown>];
+    expect(client).toBe(spies.FAKE_CLIENT);
+    expect(payload).toMatchObject({
+      createdBy: "u1",
+      companyId: "c1",
+      quoteLineId: "l1"
+    });
+  });
+
+  it("sales_releaseSalesOrder reaches the confirm command with the caller's identity", async () => {
+    const r = await runDispatch(
+      "sales_releaseSalesOrder",
+      spies.mcpReleaseSalesOrder,
+      { salesOrderId: "so1" }
+    );
+    expect(spies.serviceReleaseSalesOrder).not.toHaveBeenCalled();
+    expect(r.calls[0]).toEqual([spies.FAKE_CLIENT, "so1", "u1", "c1"]);
+  });
+
+  it("items_setItemActive and items_upsertSupplierPartPrices are companion-only tools", async () => {
+    const active = await runDispatch(
+      "items_setItemActive",
+      spies.mcpSetItemActive,
+      { itemIds: ["i1"], active: false }
+    );
+    expect(active.calls[0]?.slice(0, 3)).toEqual([
+      spies.FAKE_CLIENT,
+      "c1",
+      "u1"
+    ]);
+    expect(active.calls[0]?.[3]).toMatchObject({
+      itemIds: ["i1"],
+      active: false
+    });
+
+    const prices = await runDispatch(
+      "items_upsertSupplierPartPrices",
+      spies.mcpUpsertSupplierPartPrices,
+      { supplierPartId: "sp1", priceBreaks: [{ quantity: 1, unitPrice: 2 }] }
+    );
+    expect(spies.serviceUpsertSupplierPartPrices).not.toHaveBeenCalled();
+    expect(prices.calls[0]?.[3]).toMatchObject({
+      supplierPartId: "sp1",
+      priceBreaks: [{ quantity: 1, unitPrice: 2 }]
+    });
+  });
+});
 
 describe("callOperation (the MCP/agent/workflow entry point)", () => {
   it.each(

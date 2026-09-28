@@ -1,13 +1,9 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { getLogger } from "@carbon/logger";
 import type { ActionFunctionArgs } from "react-router";
 import type { InventoryItemType } from "~/modules/items";
 import { deriveItemMethodUpdate } from "~/modules/items";
-import {
-  getUnreleasedChangeOrderItems,
-  unreleasedChangeOrderItemsMessage
-} from "~/modules/items/items.server";
+import { setItemActive } from "~/modules/items/items.server";
 import {
   cascadeItemTrackingType,
   updateItemMethodAndSourcing,
@@ -151,40 +147,14 @@ export async function action({ request }: ActionFunctionArgs) {
       return { data: null, error: null };
     }
     case "active": {
-      // Activating is the change notice's job: applyChangeNotice flips the
-      // revisions and parts it minted when it reaches Done. Switching one on by
-      // hand beforehand puts an unreleased item into the pickers, MRP and job
-      // creation carrying the notice's un-approved draft BOM. Deactivating is
-      // always allowed — that takes an item out of circulation, never into it.
-      if (value === "on") {
-        const unreleased = await getUnreleasedChangeOrderItems(
-          getCarbonServiceRole(),
-          { itemIds: items as string[], companyId }
-        );
-        if (unreleased.error) {
-          return { error: { message: unreleased.error }, data: null };
-        }
-        if (unreleased.data.length > 0) {
-          return {
-            error: {
-              message: `${unreleasedChangeOrderItemsMessage(
-                unreleased.data
-              )} Release the change notice to activate it.`
-            },
-            data: null
-          };
-        }
-      }
-
-      return await client
-        .from("item")
-        .update({
-          active: value === "on",
-          updatedBy: userId,
-          updatedAt: new Date().toISOString()
-        })
-        .in("id", items as string[])
-        .eq("companyId", companyId);
+      // Refuses activating an item an unreleased change notice created — the
+      // same command `items_setItemActive` runs over MCP.
+      return await setItemActive(client, {
+        itemIds: items as string[],
+        active: value === "on",
+        companyId,
+        userId
+      });
     }
 
     case "itemPostingGroupId":

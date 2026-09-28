@@ -1,5 +1,5 @@
 {
-  "totalTools": 1548,
+  "totalTools": 1550,
   "modules": 15,
   "tools": [
     {"name":"account_deleteUserAttributeValue","classification":"DESTRUCTIVE","paramCount":2,"schema":"0d38e12233b4","response":"bcde375ebd4c","injectAuth":"companyId+userId","permission":"none","paginates":false},
@@ -519,6 +519,7 @@
     {"name":"items_resolveItemIdFromExtractedText","classification":"WRITE","paramCount":2,"schema":"19341b333045","response":"174e29b899b9","injectAuth":"companyId","permission":"parts:update","paginates":false},
     {"name":"items_seedDefaultChangeNoticeActions","classification":"WRITE","paramCount":1,"schema":"29578070edb2","response":"ce08332e0ce6","injectAuth":"companyId+userId","permission":"parts:update","paginates":false},
     {"name":"items_setChangeNoticeActionTasks","classification":"DESTRUCTIVE","paramCount":2,"schema":"0a99ac2dd23d","response":"bcde375ebd4c","injectAuth":"companyId+updatedBy+userId","permission":"parts:update","paginates":false},
+    {"name":"items_setItemActive","classification":"WRITE","paramCount":2,"schema":"24aa0b813b44","response":"bcde375ebd4c","injectAuth":"companyId+updatedBy","permission":"parts:update","paginates":false},
     {"name":"items_setMethodMaterialStepLink","classification":"DESTRUCTIVE","paramCount":4,"schema":"9a5230c97e72","response":"bcde375ebd4c","injectAuth":"companyId+updatedBy","permission":"parts:update","paginates":false},
     {"name":"items_setMethodOperationToolStepLink","classification":"DESTRUCTIVE","paramCount":4,"schema":"3912df9a58b9","response":"bcde375ebd4c","injectAuth":"companyId+updatedBy","permission":"parts:update","paginates":false},
     {"name":"items_updateChangeNotice","classification":"WRITE","paramCount":13,"schema":"a99b6ea4de95","response":"3797626bd17e","injectAuth":"companyId+updatedBy","permission":"parts:update","paginates":false},
@@ -572,6 +573,7 @@
     {"name":"items_upsertPickMethodWithShelfLife","classification":"DESTRUCTIVE","paramCount":6,"schema":"3af3fd086443","response":"none","injectAuth":"companyId+createdBy+updatedBy+userId","permission":"parts:create+update","paginates":false},
     {"name":"items_upsertService","classification":"WRITE","paramCount":19,"schema":"ca47ea7769d4","response":"87c54a97c0fa","injectAuth":"companyId+createdBy+updatedBy","permission":"parts:create+update","paginates":false},
     {"name":"items_upsertSupplierPart","classification":"WRITE","paramCount":10,"schema":"4885a2836c70","response":"3797626bd17e","injectAuth":"companyId+createdBy+updatedBy","permission":"parts:create+update","paginates":false},
+    {"name":"items_upsertSupplierPartPrices","classification":"DESTRUCTIVE","paramCount":2,"schema":"4279eb2ab5ee","response":"85c82e9f9d11","injectAuth":"companyId+createdBy+updatedBy","permission":"parts:create+update","paginates":false},
     {"name":"items_upsertTool","classification":"WRITE","paramCount":21,"schema":"37a9a8506af0","response":"none","injectAuth":"companyId+createdBy+updatedBy","permission":"parts:create+update","paginates":false},
     {"name":"items_upsertUnitOfMeasure","classification":"WRITE","paramCount":4,"schema":"e954af0763b4","response":"3797626bd17e","injectAuth":"companyId+createdBy+updatedBy","permission":"parts:create+update","paginates":false},
     {"name":"people_clockIn","classification":"WRITE","paramCount":1,"schema":"3d90cb5d0437","response":"bcde375ebd4c","injectAuth":"companyId","permission":"people:update","paginates":false},

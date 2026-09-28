@@ -1,11 +1,12 @@
 import { error } from "@carbon/auth";
+import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import type { Database } from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import { trigger } from "@carbon/jobs";
 import { getLogger } from "@carbon/logger";
 import { NotificationEvent } from "@carbon/notifications";
-import { chunkArray } from "@carbon/utils";
+import { chunkArray, datetime } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { data } from "react-router";
 import {
@@ -843,6 +844,69 @@ export async function getUnreleasedChangeOrderIssue(
   if (unreleased.error) return unreleased.error;
   if (unreleased.data.length === 0) return null;
   return unreleasedChangeOrderItemsMessage(unreleased.data);
+}
+
+/**
+ * Activate or deactivate items, as the items table's bulk Active edit does.
+ * Activating is the change notice's job: `applyChangeNotice` flips the
+ * revisions and parts it minted when it reaches Done, and switching one on by
+ * hand beforehand puts an unreleased item into the pickers, MRP and job
+ * creation carrying the notice's un-approved draft BOM. So activation is
+ * refused for any item an unreleased change notice created, naming each one.
+ * Deactivating is always allowed.
+ *
+ * `client` does the write (the route passes the caller's client, so RLS
+ * applies); the change-notice check reads on the service role, scoped to
+ * `companyId`.
+ */
+export async function setItemActive(
+  client: SupabaseClient<Database>,
+  args: {
+    itemIds: string[];
+    active: boolean;
+    companyId: string;
+    userId: string;
+  }
+): Promise<{ data: null; error: { message: string } | null }> {
+  const { itemIds, active, companyId, userId } = args;
+  if (active) {
+    const unreleased = await getUnreleasedChangeOrderItems(
+      getCarbonServiceRole(),
+      { itemIds, companyId }
+    );
+    if (unreleased.error) {
+      return { data: null, error: { message: unreleased.error } };
+    }
+    if (unreleased.data.length > 0) {
+      return {
+        data: null,
+        error: {
+          message: `${unreleasedChangeOrderItemsMessage(
+            unreleased.data
+          )} Release the change notice to activate it.`
+        }
+      };
+    }
+  }
+
+  const update = await client
+    .from("item")
+    .update({
+      active,
+      updatedBy: userId,
+      updatedAt: datetime.timestamp()
+    })
+    .in("id", itemIds)
+    .eq("companyId", companyId);
+  if (update.error) {
+    logger.error("Failed to set item active", {
+      companyId,
+      itemIds,
+      error: update.error
+    });
+    return { data: null, error: update.error };
+  }
+  return { data: null, error: null };
 }
 
 // Names every offending item so a bulk edit says which row to fix.
