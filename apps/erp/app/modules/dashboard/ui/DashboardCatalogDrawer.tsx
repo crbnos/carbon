@@ -8,6 +8,7 @@ import {
   DrawerHeader,
   DrawerTitle,
   HStack,
+  Subheading,
   Switch,
   VStack
 } from "@carbon/react";
@@ -98,7 +99,7 @@ export function DashboardCatalogDrawer({
       <DrawerContent>
         <DrawerHeader>
           <DrawerTitle>
-            <Trans>Customize analytics</Trans>
+            <Trans>Customize Analytics</Trans>
           </DrawerTitle>
           <DrawerDescription>
             <Trans>Choose which widgets appear on your home page.</Trans>
@@ -108,9 +109,7 @@ export function DashboardCatalogDrawer({
           <VStack spacing={4}>
             {groups.map((group) => (
               <VStack key={group.module} spacing={2}>
-                <h3 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                  {group.name}
-                </h3>
+                <Subheading as="h3">{group.name}</Subheading>
                 {group.items.map((w) => {
                   const labels = widgetLabels[w.key as WidgetKey];
                   return (
@@ -142,14 +141,14 @@ export function DashboardCatalogDrawer({
         <DrawerFooter>
           <HStack>
             <Button
-              variant="solid"
+              variant="primary"
               onClick={save}
               isDisabled={!isDirty || isSaving}
               isLoading={isSaving}
             >
               {t`Save`}
             </Button>
-            <Button variant="secondary" onClick={onClose} isDisabled={isSaving}>
+            <Button variant="solid" onClick={onClose} isDisabled={isSaving}>
               {t`Cancel`}
             </Button>
           </HStack>

@@ -1,17 +1,14 @@
-import { cn } from "@carbon/react";
-import { Trans } from "@lingui/react/macro";
-import { LuMoveDownRight, LuMoveUpRight } from "react-icons/lu";
+import { Badge } from "@carbon/react";
+import { round } from "@carbon/utils";
+import { Plural, Trans } from "@lingui/react/macro";
 import {
   useCurrencyFormatter,
   usePercentFormatter,
   useQuantityFormatter
 } from "~/hooks";
-import type {
-  ResolvedWidget,
-  StatPayload,
-  WidgetValueKind
-} from "../dashboard.models";
+import type { ResolvedWidget, WidgetValueKind } from "../dashboard.models";
 import { percentChange } from "../dashboard.models";
+import type { StatPayload } from "../types";
 
 function useStatFormatter(kind: WidgetValueKind | undefined) {
   const money = useCurrencyFormatter();
@@ -30,7 +27,10 @@ function useStatFormatter(kind: WidgetValueKind | undefined) {
   };
 }
 
-/** Big number + delta vs the prior window, coloured by the widget's goal. */
+/**
+ * Big number + delta vs the prior window. The delta is a green/red Badge, the
+ * way the purchasing dashboard shows its period change — never coloured text.
+ */
 export function StatWidget({
   widget,
   payload
@@ -55,32 +55,34 @@ export function StatWidget({
         : "bad";
 
   return (
-    <div className="flex flex-col gap-1">
+    <div className="flex flex-col gap-2">
       <h3 className="text-4xl font-medium tracking-tighter tabular-nums truncate">
         {payload.empty && widget.valueKind === "percent"
           ? "—"
           : format(payload.value)}
       </h3>
       {change !== null ? (
-        <span
-          className={cn(
-            "flex items-center gap-1 text-xs tabular-nums",
-            tone === "good" && "text-emerald-600 dark:text-emerald-500",
-            tone === "bad" && "text-red-600 dark:text-red-500",
-            tone === "neutral" && "text-muted-foreground"
-          )}
-        >
-          {change > 0 ? (
-            <LuMoveUpRight className="size-3" />
-          ) : change < 0 ? (
-            <LuMoveDownRight className="size-3" />
-          ) : null}
-          {percent.format(Math.abs(change) / 100)}{" "}
-          <Trans>vs prior period</Trans>
-        </span>
+        <div className="flex items-center gap-2 min-w-0">
+          <Badge
+            variant={
+              tone === "good" ? "green" : tone === "bad" ? "red" : "outline"
+            }
+            className="shrink-0 tabular-nums"
+          >
+            {change > 0 ? "+" : ""}
+            {percent.format(round(change, 0) / 100)}
+          </Badge>
+          <span className="text-xs text-muted-foreground truncate">
+            <Trans>vs prior period</Trans>
+          </span>
+        </div>
       ) : payload.detail !== undefined ? (
         <span className="text-xs text-muted-foreground tabular-nums">
-          <Trans>{payload.detail} lines past due</Trans>
+          <Plural
+            value={payload.detail}
+            one="# line past due"
+            other="# lines past due"
+          />
         </span>
       ) : null}
     </div>

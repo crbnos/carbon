@@ -36,29 +36,7 @@ CREATE INDEX IF NOT EXISTS "userDashboardWidget_updatedBy_idx"
   ON "userDashboardWidget" ("updatedBy");
 
 ALTER TABLE "public"."userDashboardWidget" ENABLE ROW LEVEL SECURITY;
-
--- A personal UI preference: rows are visible/writable only by their owner,
--- within companies the user belongs to (reportPin pattern).
-DROP POLICY IF EXISTS "SELECT" ON "public"."userDashboardWidget";
-CREATE POLICY "SELECT" ON "public"."userDashboardWidget" FOR SELECT USING (
-  (SELECT auth.uid())::text = "userId"
-  AND "companyId" = ANY ((SELECT get_companies_with_employee_role())::text[])
-);
-DROP POLICY IF EXISTS "INSERT" ON "public"."userDashboardWidget";
-CREATE POLICY "INSERT" ON "public"."userDashboardWidget" FOR INSERT WITH CHECK (
-  (SELECT auth.uid())::text = "userId"
-  AND "companyId" = ANY ((SELECT get_companies_with_employee_role())::text[])
-);
-DROP POLICY IF EXISTS "UPDATE" ON "public"."userDashboardWidget";
-CREATE POLICY "UPDATE" ON "public"."userDashboardWidget" FOR UPDATE USING (
-  (SELECT auth.uid())::text = "userId"
-  AND "companyId" = ANY ((SELECT get_companies_with_employee_role())::text[])
-);
-DROP POLICY IF EXISTS "DELETE" ON "public"."userDashboardWidget";
-CREATE POLICY "DELETE" ON "public"."userDashboardWidget" FOR DELETE USING (
-  (SELECT auth.uid())::text = "userId"
-  AND "companyId" = ANY ((SELECT get_companies_with_employee_role())::text[])
-);
+-- Policies: packages/database/src/authz/manifest.ts (owner-only within the user's companies).
 
 -- One row per user per company: the page-wide time range. Absent = '30d'.
 CREATE TABLE IF NOT EXISTS "userDashboardPreference" (
@@ -83,27 +61,7 @@ CREATE INDEX IF NOT EXISTS "userDashboardPreference_companyId_idx"
   ON "userDashboardPreference" ("companyId");
 
 ALTER TABLE "public"."userDashboardPreference" ENABLE ROW LEVEL SECURITY;
-
-DROP POLICY IF EXISTS "SELECT" ON "public"."userDashboardPreference";
-CREATE POLICY "SELECT" ON "public"."userDashboardPreference" FOR SELECT USING (
-  (SELECT auth.uid())::text = "userId"
-  AND "companyId" = ANY ((SELECT get_companies_with_employee_role())::text[])
-);
-DROP POLICY IF EXISTS "INSERT" ON "public"."userDashboardPreference";
-CREATE POLICY "INSERT" ON "public"."userDashboardPreference" FOR INSERT WITH CHECK (
-  (SELECT auth.uid())::text = "userId"
-  AND "companyId" = ANY ((SELECT get_companies_with_employee_role())::text[])
-);
-DROP POLICY IF EXISTS "UPDATE" ON "public"."userDashboardPreference";
-CREATE POLICY "UPDATE" ON "public"."userDashboardPreference" FOR UPDATE USING (
-  (SELECT auth.uid())::text = "userId"
-  AND "companyId" = ANY ((SELECT get_companies_with_employee_role())::text[])
-);
-DROP POLICY IF EXISTS "DELETE" ON "public"."userDashboardPreference";
-CREATE POLICY "DELETE" ON "public"."userDashboardPreference" FOR DELETE USING (
-  (SELECT auth.uid())::text = "userId"
-  AND "companyId" = ANY ((SELECT get_companies_with_employee_role())::text[])
-);
+-- Policies: packages/database/src/authz/manifest.ts.
 
 -- ------------------------------------------------------------
 -- KPI functions. All SECURITY INVOKER so RLS on the underlying tables applies;

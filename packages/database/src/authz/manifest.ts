@@ -1514,6 +1514,14 @@ export const manifest = {
   userAttributeValue: policies({
     all: or(and(owner("userId"), ownAttribute), managedAttribute)
   }),
+  // Per-user home-page analytics preferences: rows are the owner's alone, within a
+  // company they belong to (the reportPin shape).
+  userDashboardPreference: policies({
+    all: and(owner("userId"), inCompany("companyId", "employee"))
+  }),
+  userDashboardWidget: policies({
+    all: and(owner("userId"), inCompany("companyId", "employee"))
+  }),
   userModulePreference: policies({ all: owner("userId") }),
   userPermission: policies({
     select: through("id", "userToCompany", "userId", member("companyId"))

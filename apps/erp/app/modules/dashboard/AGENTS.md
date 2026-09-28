@@ -10,14 +10,15 @@ gates it. Spec: `.ai/specs/2026-09-05-homepage-analytics-dashboard.md`.
 
 | File | What it is |
 |---|---|
-| `dashboard.models.ts` | `DASHBOARD_RANGES` + `resolveDashboardRange` / `windowFromDates` (pure `@internationalized/date`), the `DASHBOARD_WIDGETS` registry, `resolveDashboardLayout`, `percentChange` / `ratioPercent`, zod validators, payload types. **Imports nothing from Lingui or `~/utils/path`** so vitest can load it. |
+| `dashboard.models.ts` | `DASHBOARD_RANGES` + `resolveDashboardRange` / `windowFromDates` (pure `@internationalized/date`), the `DASHBOARD_WIDGETS` registry, `resolveDashboardLayout`, `percentChange` / `ratioPercent`, zod validators. **Imports nothing from Lingui or `~/utils/path`** so vitest can load it. |
+| `types.ts` | Widget payload types (`StatPayload`, `TrendPayload`, `BreakdownPayload`, `ListPayload` + `ListRowEntity`, `WidgetPayload`) shared by the service and the widget components. |
 | `dashboard.labels.ts` | `useWidgetLabels()` (title + description per key) and `useDashboardRangeLabels()` — React-macro `t` hooks. Vite-only. |
 | `dashboard.links.ts` | `widgetLinks`: drill-down `path.to.*` per key. Kept apart from the registry because `~/utils/path` pulls the glossary's `msg` macro. |
 | `dashboard.service.ts` | `getDashboardLayout`, `getDashboardPreference`, `upsertDashboardWidgets`, `upsertDashboardPreference`, and `getWidgetData` — one exhaustive `switch` arm per registry key (no `default`). |
 | `dashboard.models.test.ts` | Range arithmetic, layout resolution, delta math, validator cases. |
-| `ui/DashboardSection.tsx` | Rendered by `routes/x+/_index.tsx`; range select, "Add widgets" button, drag-to-reorder widget grid (dnd-kit), catalog drawer. |
-| `ui/DashboardWidget.tsx` | Card shell: per-widget `useFetcher` load, skeleton, drill-down link, range-override menu. |
-| `ui/{Stat,Trend,Breakdown,List}Widget.tsx` | Kind renderers. |
+| `ui/DashboardSection.tsx` | Rendered by `routes/x+/_index.tsx`; range select, "Add Widgets" button, drag-to-reorder widget grid (dnd-kit, keyboard sensor), catalog drawer. |
+| `ui/DashboardWidget.tsx` | Card shell: drag grip (`IconButton`), per-widget `useFetcher` load, skeleton / failed-load states, drill-down link, ⋯ menu (range override + Hide Widget). |
+| `ui/{Stat,Trend,Breakdown,List}Widget.tsx` | Kind renderers. Stat deltas are `Badge green|red` (never coloured text); List rows are a `Table` with `Hyperlink` IDs and the row's own entity Status wrapper (`ListRowEntity`). |
 | `ui/DashboardCatalogDrawer.tsx` | Show/hide switches grouped by module; Save posts the full layout. |
 
 Routes: `routes/api+/dashboard.widget.$key.ts` (GET, gated on the widget's module),
@@ -29,9 +30,11 @@ JSON, personal rows only). Path helpers: `path.to.api.dashboardWidget(key)`,
 
 - `userDashboardWidget (widgetKey, userId, companyId, visible, range)` — explicit
   override per widget; absent row = the registry's `defaultVisible`, `range` null =
-  follow the page. `userDashboardPreference (userId, companyId, range)` — the page
-  range; absent = `30d`. Both owner-only RLS (`reportPin` pattern). Migration
-  `20260904202730_homepage-dashboard.sql`.
+  follow the page. `userDashboardPreference (userId, companyId, range, widgetOrder)` —
+  the page range (absent = `30d`) and the drag order (full key list; empty = registry
+  order). Both owner-only, ruled in `packages/database/src/authz/manifest.ts` (the
+  `reportPin` shape) and shipped by `20260928201248_homepage-dashboard-authz.sql`.
+  Tables: `20260928201218_homepage-dashboard.sql`.
 - SQL functions (all `SECURITY INVOKER`, company id explicit, never divide):
   `get_on_time_delivery`, `get_production_quantity_summary` (scrap rate + first-pass
   yield), `get_inspection_pass_rate` (table `inspection`, `dispositionedAt`),

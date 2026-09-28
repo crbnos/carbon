@@ -10,17 +10,19 @@ import { getSalesDocumentsAssignedToMe } from "~/modules/sales/sales.service";
 import { groupDataByDay, groupDataByMonth } from "~/utils/chart";
 import { path } from "~/utils/path";
 import type {
-  BreakdownPayload,
   DashboardPreferenceInput,
   DashboardRange,
   DashboardWindow,
+  WidgetKey
+} from "./dashboard.models";
+import { ratioPercent } from "./dashboard.models";
+import type {
+  BreakdownPayload,
   ListPayload,
   StatPayload,
   TrendPayload,
-  WidgetKey,
   WidgetPayload
-} from "./dashboard.models";
-import { ratioPercent } from "./dashboard.models";
+} from "./types";
 
 // ---------------------------------------------------------------------------
 // Layout + preference (per user, per company; RLS restricts rows to the owner)
@@ -131,8 +133,10 @@ const OPEN_PURCHASE_ORDER_STATUSES = [
 // apps/erp/app/routes/x+/quality+/_index.tsx
 const OPEN_ISSUE_STATUSES = ["Registered", "In Progress"] as const;
 
-/** Rows shown by a list widget, and bars in a breakdown. */
+/** Bars in a breakdown. */
 const TOP_N = 8;
+/** Rows in a list widget: what fits a two-unit tile at the Table's row height. */
+const LIST_ROWS = 6;
 const DAYS_IN_WEEK = 7;
 const MS_PER_HOUR = 3_600_000;
 
@@ -387,13 +391,14 @@ export async function getWidgetData(
         companyId
       );
       const rows: ListPayload["rows"] = docs
-        .slice(-TOP_N)
+        .slice(-LIST_ROWS)
         .reverse()
         .map((doc) => {
           switch (doc.type) {
             case "salesOrder":
               return {
                 id: doc.id,
+                entity: "salesOrder" as const,
                 title:
                   (doc as { salesOrderId?: string }).salesOrderId ?? doc.id,
                 status: doc.status ?? undefined,
@@ -403,6 +408,7 @@ export async function getWidgetData(
             case "quote":
               return {
                 id: doc.id,
+                entity: "quote" as const,
                 title: (doc as { quoteId?: string }).quoteId ?? doc.id,
                 status: doc.status ?? undefined,
                 date: doc.createdAt ?? undefined,
@@ -411,6 +417,7 @@ export async function getWidgetData(
             default:
               return {
                 id: doc.id,
+                entity: "salesRfq" as const,
                 title: (doc as { rfqId?: string }).rfqId ?? doc.id,
                 status: doc.status ?? undefined,
                 date: doc.createdAt ?? undefined,
@@ -438,7 +445,7 @@ export async function getWidgetData(
         company_id: companyId,
         as_of: today
       });
-      const top = (result.data ?? []).slice(0, TOP_N);
+      const top = (result.data ?? []).slice(0, LIST_ROWS);
       const names = await supplierNames(
         client,
         companyId,
@@ -448,6 +455,7 @@ export async function getWidgetData(
         kind: "list",
         rows: top.map((r) => ({
           id: r.id,
+          entity: "purchaseOrder" as const,
           title: r.purchaseOrderId,
           subtitle: r.supplierId ? names.get(r.supplierId) : undefined,
           date: r.earliestPromisedDate ?? undefined,
@@ -545,11 +553,12 @@ export async function getWidgetData(
         .gte("dueDate", today)
         .lte("dueDate", weekEnd)
         .order("dueDate", { ascending: true })
-        .limit(TOP_N);
+        .limit(LIST_ROWS);
       return {
         kind: "list",
         rows: (result.data ?? []).map((j) => ({
           id: j.id!,
+          entity: "job" as const,
           title: j.jobId ?? j.id!,
           subtitle: j.itemReadableIdWithRevision ?? undefined,
           status: j.status ?? undefined,
@@ -735,6 +744,3 @@ export async function getWidgetData(
     }
   }
 }
-
-// Keep the exported payload types reachable from the barrel for UI consumers.
-export type { BreakdownPayload, ListPayload, StatPayload, TrendPayload };

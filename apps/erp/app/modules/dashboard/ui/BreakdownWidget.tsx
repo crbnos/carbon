@@ -6,7 +6,7 @@ import {
 } from "@carbon/react/Chart";
 import { Bar, BarChart, XAxis, YAxis } from "recharts";
 import { Empty } from "~/components";
-import type { BreakdownPayload } from "../dashboard.models";
+import type { BreakdownPayload } from "../types";
 
 const chartConfig = {
   value: { color: "hsl(var(--primary))" }
@@ -20,10 +20,13 @@ export function BreakdownWidget({
   formatValue: (value: number) => string;
 }) {
   if (payload.rows.length === 0 || payload.rows.every((r) => r.value === 0)) {
-    return <Empty className="h-40" />;
+    return <Empty className="flex-1 min-h-40" />;
   }
   return (
-    <ChartContainer config={chartConfig} className="aspect-auto h-40 w-full">
+    <ChartContainer
+      config={chartConfig}
+      className="aspect-auto flex-1 min-h-40 w-full"
+    >
       <BarChart
         data={payload.rows}
         layout="vertical"

@@ -6,7 +6,7 @@ import {
 } from "@carbon/react/Chart";
 import { Area, AreaChart, CartesianGrid, XAxis } from "recharts";
 import { Empty } from "~/components";
-import type { TrendPayload } from "../dashboard.models";
+import type { TrendPayload } from "../types";
 
 const chartConfig = {
   value: { color: "hsl(var(--primary))" }
@@ -23,10 +23,13 @@ export function TrendWidget({
     payload.points.length === 0 ||
     payload.points.every((p) => p.value === 0)
   ) {
-    return <Empty className="h-40" />;
+    return <Empty className="flex-1 min-h-40" />;
   }
   return (
-    <ChartContainer config={chartConfig} className="aspect-auto h-40 w-full">
+    <ChartContainer
+      config={chartConfig}
+      className="aspect-auto flex-1 min-h-40 w-full"
+    >
       <AreaChart data={payload.points} margin={{ left: 4, right: 4 }}>
         <CartesianGrid vertical={false} />
         <XAxis

@@ -6,6 +6,7 @@ import {
   startOfYear
 } from "@internationalized/date";
 import { z } from "zod";
+import type { WidgetPayload } from "./types";
 
 // ---------------------------------------------------------------------------
 // Time ranges
@@ -551,49 +552,6 @@ export const dashboardPreferenceValidator = z
 export type DashboardPreferenceInput = z.infer<
   typeof dashboardPreferenceValidator
 >;
-
-// ---------------------------------------------------------------------------
-// Widget payloads (what the widget API returns per kind)
-// ---------------------------------------------------------------------------
-
-export type StatPayload = {
-  kind: "stat";
-  value: number;
-  /** Same measure over the previous window; absent for "as of now" stats. */
-  previous?: number;
-  /** A secondary count shown under the value (e.g. past-due backlog lines). */
-  detail?: number;
-  /** True when the denominator was empty, so 0 means "no data" not "0%". */
-  empty?: boolean;
-};
-
-export type TrendPayload = {
-  kind: "trend";
-  points: { key: string; label: string; value: number }[];
-};
-
-export type BreakdownPayload = {
-  kind: "breakdown";
-  rows: { name: string; value: number; to?: string }[];
-};
-
-export type ListPayload = {
-  kind: "list";
-  rows: {
-    id: string;
-    title: string;
-    subtitle?: string;
-    status?: string;
-    date?: string;
-    to: string;
-  }[];
-};
-
-export type WidgetPayload =
-  | StatPayload
-  | TrendPayload
-  | BreakdownPayload
-  | ListPayload;
 
 export function emptyPayload(kind: WidgetKind): WidgetPayload {
   switch (kind) {

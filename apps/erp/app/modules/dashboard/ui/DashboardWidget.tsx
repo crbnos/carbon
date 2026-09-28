@@ -2,10 +2,12 @@ import {
   Button,
   Card,
   CardContent,
+  CardDescription,
   CardHeader,
   CardTitle,
   DropdownMenu,
   DropdownMenuContent,
+  DropdownMenuIcon,
   DropdownMenuItem,
   DropdownMenuRadioGroup,
   DropdownMenuRadioItem,
@@ -15,13 +17,14 @@ import {
   Skeleton
 } from "@carbon/react";
 import type { useSortable } from "@dnd-kit/sortable";
-import { useLingui } from "@lingui/react/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
 import { useEffect, useMemo } from "react";
 import {
   LuArrowUpRight,
   LuEllipsisVertical,
   LuEyeOff,
-  LuGripVertical
+  LuGripVertical,
+  LuTriangleAlert
 } from "react-icons/lu";
 import { Link, useFetcher, useRevalidator } from "react-router";
 import {
@@ -35,10 +38,10 @@ import { widgetLinks } from "../dashboard.links";
 import type {
   DashboardRange,
   ResolvedWidget,
-  WidgetKey,
-  WidgetPayload
+  WidgetKey
 } from "../dashboard.models";
 import { DASHBOARD_RANGES, resolveDashboardRange } from "../dashboard.models";
+import type { WidgetPayload } from "../types";
 import { BreakdownWidget } from "./BreakdownWidget";
 import { ListWidget } from "./ListWidget";
 import { StatWidget } from "./StatWidget";
@@ -134,35 +137,34 @@ export function DashboardWidget({
   }, [layoutFetcher.state, layoutFetcher.data]);
 
   const isLoading = fetcher.state !== "idle" || !fetcher.data;
+  // A 404/500 from the widget route arrives as data without a `kind`; that is a
+  // failed load, and it must not read as "no data".
+  const payload =
+    fetcher.data && "kind" in fetcher.data ? fetcher.data : undefined;
   const to = widgetLinks[widget.key as keyof typeof widgetLinks];
 
   return (
     <Card className="shadow-none h-full">
       <CardHeader className="flex-row items-start gap-2">
         {dragHandle ? (
-          <button
-            type="button"
+          <IconButton
             ref={dragHandle.ref}
             aria-label={t`Drag to reorder`}
-            className="flex-shrink-0 -ml-2 -my-1 p-1 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted cursor-grab active:cursor-grabbing touch-none"
+            icon={<LuGripVertical />}
+            variant="ghost"
+            size="sm"
+            className="flex-shrink-0 -ml-2 -my-1 text-muted-foreground cursor-grab active:cursor-grabbing touch-none"
             {...dragHandle.attributes}
             {...dragHandle.listeners}
-          >
-            <LuGripVertical className="w-4 h-4" />
-          </button>
+          />
         ) : null}
-        <div className="flex-1 min-w-0">
-          <CardTitle
-            className="truncate line-clamp-none"
-            title={labels.description}
-          >
-            {labels.title}
-          </CardTitle>
-          {widget.supportsRange && widget.range ? (
-            <span className="text-xs text-muted-foreground">
-              {rangeLabels[widget.range]}
-            </span>
-          ) : null}
+        <div className="flex-1 min-w-0 flex flex-col">
+          <CardTitle>{labels.title}</CardTitle>
+          <CardDescription className="truncate">
+            {widget.supportsRange && widget.range
+              ? rangeLabels[widget.range]
+              : labels.description}
+          </CardDescription>
         </div>
         {to ? (
           <Button
@@ -178,7 +180,7 @@ export function DashboardWidget({
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <IconButton
-              aria-label={t`Widget options`}
+              aria-label={t`More options`}
               icon={<LuEllipsisVertical />}
               variant="ghost"
               size="sm"
@@ -193,7 +195,7 @@ export function DashboardWidget({
                   onValueChange={setRange}
                 >
                   <DropdownMenuRadioItem value={FOLLOW_PAGE}>
-                    {t`Follow page range`}
+                    {t`Follow Page Range`}
                   </DropdownMenuRadioItem>
                   <DropdownMenuSeparator />
                   {DASHBOARD_RANGES.map((range) => (
@@ -206,8 +208,8 @@ export function DashboardWidget({
               </>
             ) : null}
             <DropdownMenuItem onClick={hide}>
-              <LuEyeOff className="mr-2 w-4 h-4" />
-              {t`Hide widget`}
+              <DropdownMenuIcon icon={<LuEyeOff />} />
+              {t`Hide Widget`}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -215,12 +217,17 @@ export function DashboardWidget({
       <CardContent>
         {isLoading ? (
           <WidgetSkeleton kind={widget.kind} />
-        ) : (
+        ) : payload ? (
           <WidgetBody
             widget={widget}
-            payload={fetcher.data!}
+            payload={payload}
             formatValue={formatValue}
           />
+        ) : (
+          <div className="flex items-center gap-2 text-xs text-muted-foreground h-10">
+            <LuTriangleAlert className="size-4 shrink-0 text-red-500" />
+            <Trans>Failed to load widget</Trans>
+          </div>
         )}
       </CardContent>
     </Card>
@@ -236,7 +243,7 @@ function WidgetSkeleton({ kind }: { kind: ResolvedWidget["kind"] }) {
       </div>
     );
   }
-  return <Skeleton className="h-40 w-full" />;
+  return <Skeleton className="flex-1 min-h-40 w-full" />;
 }
 
 function WidgetBody({

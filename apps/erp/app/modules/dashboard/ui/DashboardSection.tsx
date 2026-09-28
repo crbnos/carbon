@@ -18,7 +18,7 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import { Trans } from "@lingui/react/macro";
 import { useEffect, useMemo, useState } from "react";
-import { LuPlus } from "react-icons/lu";
+import { LuCirclePlus } from "react-icons/lu";
 import { useFetcher } from "react-router";
 import { Empty } from "~/components";
 import { usePermissions } from "~/hooks";
@@ -113,18 +113,22 @@ export function DashboardSection({
         <Button
           variant="secondary"
           size="sm"
-          leftIcon={<LuPlus />}
+          leftIcon={<LuCirclePlus />}
           onClick={() => setEditing(true)}
         >
-          <Trans>Add widgets</Trans>
+          <Trans>Add Widgets</Trans>
         </Button>
       </div>
       {visible.length === 0 ? (
         <Card className="shadow-none">
           <CardContent className="py-8">
             <Empty>
-              <Button variant="secondary" onClick={() => setEditing(true)}>
-                <Trans>Add widgets</Trans>
+              <Button
+                variant="secondary"
+                leftIcon={<LuCirclePlus />}
+                onClick={() => setEditing(true)}
+              >
+                <Trans>Add Widgets</Trans>
               </Button>
             </Empty>
           </CardContent>
@@ -139,7 +143,12 @@ export function DashboardSection({
             items={visible.map((w) => w.key)}
             strategy={rectSortingStrategy}
           >
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+            {/* Tiles on a fixed row unit: a stat is one unit tall, a chart or
+                list two (SortableWidget), so rows line up instead of a stat
+                stretching into blank space or rows ending ragged. Dense flow
+                lets a later stat backfill the hole a wrapped two-column tile
+                leaves, so the grid stays solid whatever order is saved. */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 grid-flow-dense gap-4 auto-rows-[minmax(13rem,auto)]">
               {visible.map((widget) => (
                 <SortableWidget
                   key={widget.key}
@@ -189,7 +198,8 @@ function SortableWidget({
       }}
       className={cn(
         SIZE_CLASS[widget.size],
-        "transition-opacity duration-150",
+        widget.kind !== "stat" && "row-span-2",
+        "h-full transition-opacity duration-150 motion-reduce:transition-none",
         isDragging && "z-10 opacity-60"
       )}
     >
