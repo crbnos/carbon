@@ -1,30 +1,22 @@
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
-import { getLogger } from "@carbon/logger";
 import type { JSONContent } from "@carbon/react";
 import type { ActionFunctionArgs } from "react-router";
 import { data, redirect, useParams } from "react-router";
 import { useRouteData } from "~/hooks";
 import type { Shipment, ShipmentLine } from "~/modules/inventory";
-import {
-  getShipment,
-  shipmentValidator,
-  upsertShipment
-} from "~/modules/inventory";
+import { shipmentValidator } from "~/modules/inventory";
+import { updateShipmentDetails } from "~/modules/inventory/inventory.server";
 import {
   ShipmentForm,
   ShipmentLines,
   ShipmentNotes
 } from "~/modules/inventory/ui/Shipments";
 import type { Note } from "~/modules/shared";
-import { getEdgeFunctionErrorMessage } from "~/utils/error";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
-
-const logger = getLogger("erp", "shipment", "details");
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -42,209 +34,34 @@ export async function action({ request }: ActionFunctionArgs) {
   const { id, ...d } = validation.data;
   if (!id) throw new Error("id not found");
 
-  const currentShipment = await getShipment(client, id);
-  if (currentShipment.error) {
-    return data(
-      {},
-      await flash(
-        request,
-        error(currentShipment.error, "Failed to load shipment")
-      )
-    );
-  }
+  // Shared with the inventory_upsertShipment tool: a changed source document or
+  // location rebuilds the shipment from the new source.
+  const result = await updateShipmentDetails(client, {
+    companyId,
+    userId,
+    shipment: { id, ...d, customFields: setCustomFields(formData) }
+  });
 
-  const shipmentDataHasChanged =
-    currentShipment.data.sourceDocument !== d.sourceDocument ||
-    currentShipment.data.sourceDocumentId !== d.sourceDocumentId ||
-    currentShipment.data.locationId !== d.locationId;
-
-  if (shipmentDataHasChanged) {
-    const serviceRole = getCarbonServiceRole();
-    switch (d.sourceDocument) {
-      case "Sales Order":
-        const salesOrderShipment = await serviceRole.functions.invoke<{
-          id: string;
-        }>("create", {
-          body: {
-            type: "shipmentFromSalesOrder",
-            companyId,
-            locationId: d.locationId,
-            salesOrderId: d.sourceDocumentId,
-            shipmentId: id,
-            userId: userId
-          }
-        });
-        if (!salesOrderShipment.data || salesOrderShipment.error) {
-          logger.error("Failed to create shipment from source document", {
-            error: salesOrderShipment.error
-          });
-          throw redirect(
-            path.to.shipment(id),
-            await flash(
-              request,
-              error(
-                salesOrderShipment.error,
-                await getEdgeFunctionErrorMessage(
-                  salesOrderShipment.error,
-                  "Failed to create shipment"
-                )
-              )
-            )
-          );
-        }
-        break;
-      case "Sales Return Order": {
-        const salesReturnShipment = await serviceRole.functions.invoke<{
-          id: string;
-        }>("create", {
-          body: {
-            type: "shipmentFromSalesReturnOrder",
-            companyId,
-            locationId: d.locationId,
-            salesReturnOrderId: d.sourceDocumentId,
-            shipmentId: id,
-            userId: userId
-          }
-        });
-        if (!salesReturnShipment.data || salesReturnShipment.error) {
-          logger.error("Failed to create shipment from source document", {
-            error: salesReturnShipment.error
-          });
-          throw redirect(
-            path.to.shipment(id),
-            await flash(
-              request,
-              error(
-                salesReturnShipment.error,
-                await getEdgeFunctionErrorMessage(
-                  salesReturnShipment.error,
-                  "Failed to create shipment"
-                )
-              )
-            )
-          );
-        }
-        break;
-      }
-      case "Purchase Return Order": {
-        const purchaseReturnShipment = await serviceRole.functions.invoke<{
-          id: string;
-        }>("create", {
-          body: {
-            type: "shipmentFromPurchaseReturnOrder",
-            companyId,
-            locationId: d.locationId,
-            purchaseReturnOrderId: d.sourceDocumentId,
-            shipmentId: id,
-            userId: userId
-          }
-        });
-        if (!purchaseReturnShipment.data || purchaseReturnShipment.error) {
-          logger.error("Failed to create shipment from source document", {
-            error: purchaseReturnShipment.error
-          });
-          throw redirect(
-            path.to.shipment(id),
-            await flash(
-              request,
-              error(
-                purchaseReturnShipment.error,
-                await getEdgeFunctionErrorMessage(
-                  purchaseReturnShipment.error,
-                  "Failed to create shipment"
-                )
-              )
-            )
-          );
-        }
-        break;
-      }
-      case "Purchase Order":
-        const purchaseOrderShipment = await serviceRole.functions.invoke<{
-          id: string;
-        }>("create", {
-          body: {
-            type: "shipmentFromPurchaseOrder",
-            companyId,
-            locationId: d.locationId,
-            purchaseOrderId: d.sourceDocumentId,
-            shipmentId: id,
-            userId: userId
-          }
-        });
-        if (!purchaseOrderShipment.data || purchaseOrderShipment.error) {
-          logger.error("Failed to create shipment from source document", {
-            error: purchaseOrderShipment.error
-          });
-          throw redirect(
-            path.to.shipment(id),
-            await flash(
-              request,
-              error(
-                purchaseOrderShipment.error,
-                await getEdgeFunctionErrorMessage(
-                  purchaseOrderShipment.error,
-                  "Failed to create shipment"
-                )
-              )
-            )
-          );
-        }
-        break;
-      case "Outbound Transfer":
-        const warehouseTransferShipment = await serviceRole.functions.invoke<{
-          id: string;
-        }>("create", {
-          body: {
-            type: "shipmentFromWarehouseTransfer",
-            companyId,
-            warehouseTransferId: d.sourceDocumentId,
-            shipmentId: id,
-            userId: userId
-          }
-        });
-        if (
-          !warehouseTransferShipment.data ||
-          warehouseTransferShipment.error
-        ) {
-          logger.error("Failed to create shipment from source document", {
-            error: warehouseTransferShipment.error
-          });
-          throw redirect(
-            path.to.shipment(id),
-            await flash(
-              request,
-              error(
-                warehouseTransferShipment.error,
-                await getEdgeFunctionErrorMessage(
-                  warehouseTransferShipment.error,
-                  "Failed to create shipment"
-                )
-              )
-            )
-          );
-        }
-        break;
-      default:
-        throw new Error(`Unsupported source document: ${d.sourceDocument}`);
-    }
-  } else {
-    const updateShipment = await upsertShipment(client, {
-      id,
-      ...d,
-      updatedBy: userId,
-      customFields: setCustomFields(formData)
-    });
-
-    if (updateShipment.error) {
+  if (result.error) {
+    if (
+      result.error.flash === "Failed to load shipment" ||
+      result.error.flash === "Failed to update shipment"
+    ) {
       return data(
         {},
         await flash(
           request,
-          error(updateShipment.error, "Failed to update shipment")
+          error(result.error.cause ?? null, result.error.flash)
         )
       );
     }
+    throw redirect(
+      path.to.shipment(id),
+      await flash(
+        request,
+        error(result.error.cause ?? null, result.error.flash)
+      )
+    );
   }
 
   throw redirect(

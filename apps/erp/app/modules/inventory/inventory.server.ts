@@ -1,5 +1,5 @@
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
-import type { Database } from "@carbon/database";
+import type { Database, Json } from "@carbon/database";
 import {
   dedupeViolations,
   evaluateLinesForSurface,
@@ -17,6 +17,7 @@ import type { Violation } from "@carbon/utils";
 import { datetime, getOverReceiptViolations } from "@carbon/utils";
 import { parseDate } from "@internationalized/date";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import type { z } from "zod";
 import { upsertDocument } from "~/modules/documents/documents.service";
 import { recordSalesRuleOutcome } from "~/modules/sales/sales.server";
 import { getSalesOrderLine } from "~/modules/sales/sales.service";
@@ -33,7 +34,14 @@ import {
 } from "~/utils/command-result";
 import { getEdgeFunctionErrorMessage } from "~/utils/error";
 import { stripSpecialCharacters } from "~/utils/string";
-import { reconcileReceiptSerialEntities } from "./inventory.service";
+import type { receiptValidator, shipmentValidator } from "./inventory.models";
+import {
+  getReceipt,
+  getShipment,
+  reconcileReceiptSerialEntities,
+  upsertReceipt,
+  upsertShipment
+} from "./inventory.service";
 import type { ReceiptSourceDocument, ShipmentSourceDocument } from "./types";
 
 // Receipt and shipment COMMANDS: the create-from-source, post and void bodies
@@ -371,6 +379,197 @@ export async function createSalesOrderLineShipment(
     return edgeFunctionError("Failed to create shipment", created.error);
   }
   return commandOk({ id: created.data.id });
+}
+
+// ---------------------------------------------------------------------------
+// Header edits
+// ---------------------------------------------------------------------------
+
+export type ReceiptDetails = Omit<z.infer<typeof receiptValidator>, "id"> & {
+  id: string;
+  customFields?: Json;
+};
+
+export type ShipmentDetails = Omit<z.infer<typeof shipmentValidator>, "id"> & {
+  id: string;
+  customFields?: Json;
+};
+
+/**
+ * Save a receipt's header, as its details form does
+ * (`x+/receipt+/$receiptId.details.tsx`). When the source document or the
+ * location changed, the `create` edge function rebuilds the receipt from the
+ * new source (its lines replaced), and the other header fields are not
+ * written; otherwise the header is updated.
+ */
+export async function updateReceiptDetails(
+  client: SupabaseClient<Database>,
+  args: DocumentCommandContext & { receipt: ReceiptDetails }
+): Promise<CommandResult<{ id: string; rebuilt: boolean }>> {
+  const { companyId, userId } = args;
+  const { id, ...d } = args.receipt;
+
+  const current = await getReceipt(client, id);
+  if (current.error) {
+    return commandError("Failed to load receipt", current.error);
+  }
+
+  const sourceChanged =
+    current.data.sourceDocument !== d.sourceDocument ||
+    current.data.sourceDocumentId !== d.sourceDocumentId ||
+    current.data.locationId !== d.locationId;
+
+  if (!sourceChanged) {
+    const updated = await upsertReceipt(client, {
+      id,
+      ...d,
+      updatedBy: userId
+    });
+    if (updated.error) {
+      return commandError("Failed to update receipt", updated.error);
+    }
+    return commandOk({ id, rebuilt: false });
+  }
+
+  let body: Record<string, unknown>;
+  switch (d.sourceDocument) {
+    case "Purchase Order":
+      body = {
+        type: "receiptFromPurchaseOrder",
+        locationId: d.locationId,
+        purchaseOrderId: d.sourceDocumentId
+      };
+      break;
+    case "Sales Return Order":
+      body = {
+        type: "receiptFromSalesReturnOrder",
+        locationId: d.locationId,
+        salesReturnOrderId: d.sourceDocumentId
+      };
+      break;
+    case "Inbound Transfer":
+      body = {
+        type: "receiptFromInboundTransfer",
+        warehouseTransferId: d.sourceDocumentId
+      };
+      break;
+    default:
+      return commandError(
+        "Failed to update receipt",
+        new Error(`Unsupported source document: ${d.sourceDocument}`)
+      );
+  }
+
+  const rebuilt = await invokeCreate(getCarbonServiceRole(), {
+    ...body,
+    companyId,
+    receiptId: id,
+    userId
+  });
+  if (!rebuilt.data || rebuilt.error) {
+    return edgeFunctionError("Failed to create receipt", rebuilt.error);
+  }
+  return commandOk({ id, rebuilt: true });
+}
+
+/**
+ * Save a shipment's header, as its details form does
+ * (`x+/shipment+/$shipmentId.details.tsx`). When the source document or the
+ * location changed, the `create` edge function rebuilds the shipment from the
+ * new source (its lines replaced), and the other header fields are not
+ * written; otherwise the header is updated.
+ */
+export async function updateShipmentDetails(
+  client: SupabaseClient<Database>,
+  args: DocumentCommandContext & { shipment: ShipmentDetails }
+): Promise<CommandResult<{ id: string; rebuilt: boolean }>> {
+  const { companyId, userId } = args;
+  const { id, ...d } = args.shipment;
+
+  const current = await getShipment(client, id);
+  if (current.error) {
+    return commandError("Failed to load shipment", current.error);
+  }
+
+  const sourceChanged =
+    current.data.sourceDocument !== d.sourceDocument ||
+    current.data.sourceDocumentId !== d.sourceDocumentId ||
+    current.data.locationId !== d.locationId;
+
+  if (!sourceChanged) {
+    const updated = await upsertShipment(client, {
+      id,
+      ...d,
+      updatedBy: userId
+    });
+    if (updated.error) {
+      return commandError("Failed to update shipment", updated.error);
+    }
+    return commandOk({ id, rebuilt: false });
+  }
+
+  let body: Record<string, unknown>;
+  switch (d.sourceDocument) {
+    case "Sales Order":
+      body = {
+        type: "shipmentFromSalesOrder",
+        locationId: d.locationId,
+        salesOrderId: d.sourceDocumentId
+      };
+      break;
+    case "Sales Return Order":
+      body = {
+        type: "shipmentFromSalesReturnOrder",
+        locationId: d.locationId,
+        salesReturnOrderId: d.sourceDocumentId
+      };
+      break;
+    case "Purchase Return Order":
+      body = {
+        type: "shipmentFromPurchaseReturnOrder",
+        locationId: d.locationId,
+        purchaseReturnOrderId: d.sourceDocumentId
+      };
+      break;
+    case "Purchase Order":
+      body = {
+        type: "shipmentFromPurchaseOrder",
+        locationId: d.locationId,
+        purchaseOrderId: d.sourceDocumentId
+      };
+      break;
+    case "Outbound Transfer":
+      body = {
+        type: "shipmentFromWarehouseTransfer",
+        warehouseTransferId: d.sourceDocumentId
+      };
+      break;
+    default:
+      return commandError(
+        "Failed to update shipment",
+        new Error(`Unsupported source document: ${d.sourceDocument}`)
+      );
+  }
+
+  const rebuilt = await invokeCreate(getCarbonServiceRole(), {
+    ...body,
+    companyId,
+    shipmentId: id,
+    userId
+  });
+  if (!rebuilt.data || rebuilt.error) {
+    logger.error("Failed to create shipment from source document", {
+      error: rebuilt.error
+    });
+    return edgeFunctionError(
+      await getEdgeFunctionErrorMessage(
+        rebuilt.error,
+        "Failed to create shipment"
+      ),
+      rebuilt.error
+    );
+  }
+  return commandOk({ id, rebuilt: true });
 }
 
 // ---------------------------------------------------------------------------

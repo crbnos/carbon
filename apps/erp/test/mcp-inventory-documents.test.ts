@@ -82,6 +82,7 @@ import {
   createShipment,
   postReceipt,
   postShipment,
+  upsertReceipt,
   voidReceipt
 } from "~/modules/inventory/inventory.mcp.server";
 import { createReceipt } from "~/modules/inventory/inventory.server";
@@ -434,5 +435,78 @@ describe("inventory_postShipment", () => {
       error: null
     });
     expect(service.invokes.map((i) => i.body.type)).toEqual(["post"]);
+  });
+});
+
+describe("inventory_upsertReceipt (update)", () => {
+  const stored = {
+    id: "r1",
+    receiptId: "RE000001",
+    sourceDocument: "Purchase Order",
+    sourceDocumentId: "po1",
+    locationId: null
+  };
+
+  it("writes the header when the source is unchanged, a left-out source key keeping its stored value", async () => {
+    const service = fakeClient({});
+    boundary.serviceRole = service.client;
+    const caller = fakeClient({ receipt: [stored] });
+    const result = await upsertReceipt(caller.client, "c1", "u1", {
+      id: "r1",
+      receiptId: "RE000001",
+      sourceDocumentId: "po1",
+      externalDocumentId: "PACK-9",
+      updatedBy: "u1"
+    });
+    expect(result).toEqual({
+      data: { id: "r1", rebuilt: false },
+      error: null
+    });
+    expect(caller.writes[0].payload).toMatchObject({
+      externalDocumentId: "PACK-9",
+      sourceDocument: "Purchase Order",
+      updatedBy: "u1"
+    });
+    expect(service.invokes).toEqual([]);
+  });
+
+  it("rebuilds the receipt from a changed source, as the details form does", async () => {
+    const service = fakeClient({});
+    boundary.serviceRole = service.client;
+    const caller = fakeClient({ receipt: [stored] });
+    const result = await upsertReceipt(caller.client, "c1", "u1", {
+      id: "r1",
+      receiptId: "RE000001",
+      sourceDocument: "Purchase Order",
+      sourceDocumentId: "po2",
+      updatedBy: "u1"
+    });
+    expect(result).toEqual({ data: { id: "r1", rebuilt: true }, error: null });
+    expect(caller.writes).toEqual([]);
+    expect(service.invokes).toEqual([
+      {
+        name: "create",
+        body: {
+          type: "receiptFromPurchaseOrder",
+          locationId: null,
+          purchaseOrderId: "po2",
+          companyId: "c1",
+          receiptId: "r1",
+          userId: "u1"
+        }
+      }
+    ]);
+  });
+
+  it("refuses an update without inventory update", async () => {
+    claims.current.permissions = inventoryPermissions(["create"]);
+    await expect(
+      upsertReceipt(fakeClient({ receipt: [stored] }).client, "c1", "u1", {
+        id: "r1",
+        receiptId: "RE000001",
+        sourceDocumentId: "po2",
+        updatedBy: "u1"
+      })
+    ).rejects.toThrow("(inventory update)");
   });
 });

@@ -1,6 +1,5 @@
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import type { JSONContent } from "@carbon/react";
@@ -9,12 +8,11 @@ import { data, redirect, useParams } from "react-router";
 import { useRouteData } from "~/hooks";
 import type { Receipt, ReceiptLine } from "~/modules/inventory";
 import {
-  getReceipt,
   ReceiptForm,
   ReceiptLines,
-  receiptValidator,
-  upsertReceipt
+  receiptValidator
 } from "~/modules/inventory";
+import { updateReceiptDetails } from "~/modules/inventory/inventory.server";
 import { SupplierInteractionNotes } from "~/modules/purchasing/ui/SupplierInteraction";
 import type { Note } from "~/modules/shared";
 import { getCustomFields, setCustomFields } from "~/utils/form";
@@ -36,116 +34,34 @@ export async function action({ request }: ActionFunctionArgs) {
   const { id, ...d } = validation.data;
   if (!id) throw new Error("id not found");
 
-  const currentReceipt = await getReceipt(client, id);
-  if (currentReceipt.error) {
-    return data(
-      {},
-      await flash(
-        request,
-        error(currentReceipt.error, "Failed to load receipt")
-      )
-    );
-  }
+  // Shared with the inventory_upsertReceipt tool: a changed source document or
+  // location rebuilds the receipt from the new source.
+  const result = await updateReceiptDetails(client, {
+    companyId,
+    userId,
+    receipt: { id, ...d, customFields: setCustomFields(formData) }
+  });
 
-  const receiptDataHasChanged =
-    currentReceipt.data.sourceDocument !== d.sourceDocument ||
-    currentReceipt.data.sourceDocumentId !== d.sourceDocumentId ||
-    currentReceipt.data.locationId !== d.locationId;
-
-  if (receiptDataHasChanged) {
-    const serviceRole = getCarbonServiceRole();
-    switch (d.sourceDocument) {
-      case "Purchase Order":
-        const purchaseOrderReceipt = await serviceRole.functions.invoke<{
-          id: string;
-        }>("create", {
-          body: {
-            type: "receiptFromPurchaseOrder",
-            companyId,
-            locationId: d.locationId,
-            purchaseOrderId: d.sourceDocumentId,
-            receiptId: id,
-            userId: userId
-          }
-        });
-        if (!purchaseOrderReceipt.data || purchaseOrderReceipt.error) {
-          throw redirect(
-            path.to.receipt(id),
-            await flash(
-              request,
-              error(purchaseOrderReceipt.error, "Failed to create receipt")
-            )
-          );
-        }
-        break;
-
-      case "Sales Return Order":
-        const salesReturnOrderReceipt = await serviceRole.functions.invoke<{
-          id: string;
-        }>("create", {
-          body: {
-            type: "receiptFromSalesReturnOrder",
-            companyId,
-            locationId: d.locationId,
-            salesReturnOrderId: d.sourceDocumentId,
-            receiptId: id,
-            userId: userId
-          }
-        });
-        if (!salesReturnOrderReceipt.data || salesReturnOrderReceipt.error) {
-          throw redirect(
-            path.to.receipt(id),
-            await flash(
-              request,
-              error(salesReturnOrderReceipt.error, "Failed to create receipt")
-            )
-          );
-        }
-        break;
-
-      case "Inbound Transfer":
-        const warehouseTransferReceipt = await serviceRole.functions.invoke<{
-          id: string;
-        }>("create", {
-          body: {
-            type: "receiptFromInboundTransfer",
-            companyId,
-            warehouseTransferId: d.sourceDocumentId,
-            receiptId: id,
-            userId: userId
-          }
-        });
-        if (!warehouseTransferReceipt.data || warehouseTransferReceipt.error) {
-          throw redirect(
-            path.to.receipt(id),
-            await flash(
-              request,
-              error(warehouseTransferReceipt.error, "Failed to create receipt")
-            )
-          );
-        }
-        break;
-
-      default:
-        throw new Error("Unsupported source document");
-    }
-  } else {
-    const updateReceipt = await upsertReceipt(client, {
-      id,
-      ...d,
-      updatedBy: userId,
-      customFields: setCustomFields(formData)
-    });
-
-    if (updateReceipt.error) {
+  if (result.error) {
+    if (
+      result.error.flash === "Failed to load receipt" ||
+      result.error.flash === "Failed to update receipt"
+    ) {
       return data(
         {},
         await flash(
           request,
-          error(updateReceipt.error, "Failed to update receipt")
+          error(result.error.cause ?? null, result.error.flash)
         )
       );
     }
+    throw redirect(
+      path.to.receipt(id),
+      await flash(
+        request,
+        error(result.error.cause ?? null, result.error.flash)
+      )
+    );
   }
 
   throw redirect(

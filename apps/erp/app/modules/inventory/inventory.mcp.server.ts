@@ -1,8 +1,10 @@
-import type { Database } from "@carbon/database";
+import type { Database, Json } from "@carbon/database";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import type { z } from "zod";
 import { requireToolPermission } from "~/modules/shared/tool-permission.server";
 import { type CommandResult, toToolResult } from "~/utils/command-result";
 import { ruleError } from "~/utils/supabase";
+import type { receiptValidator, shipmentValidator } from "./inventory.models";
 import {
   createReceipt as createReceiptCommand,
   createSalesOrderLineShipment as createSalesOrderLineShipmentCommand,
@@ -10,9 +12,17 @@ import {
   type PostOutcome,
   postReceipt as postReceiptCommand,
   postShipment as postShipmentCommand,
+  updateReceiptDetails,
+  updateShipmentDetails,
   voidReceipt as voidReceiptCommand,
   voidShipment as voidShipmentCommand
 } from "./inventory.server";
+import {
+  getReceipt,
+  getShipment,
+  upsertReceipt as upsertReceiptRow,
+  upsertShipment as upsertShipmentRow
+} from "./inventory.service";
 
 // MCP/API tools for the receipt and shipment lifecycle. Each wraps the command
 // its ERP route calls (`inventory.server.ts`), so the tool and the screen run
@@ -26,6 +36,10 @@ import {
 // "inventory" }` on `x+/receipt+/new.tsx`, `x+/shipment+/new.tsx` and the
 // sales order line Ship action; `{ update: "inventory" }` on the post and void
 // actions — through `requireToolPermission` first.
+//
+// `upsertReceipt` / `upsertShipment` shadow the service functions so a header
+// update runs the details form's command (a changed source rebuilds the
+// document); the schema and `_operation` contract are unchanged.
 //
 // Typical flow: create the document from its source (lines are copied from
 // the order), set quantities with inventory_updateReceiptLines /
@@ -293,6 +307,137 @@ export async function voidShipment(
       companyId,
       userId,
       shipmentId: args.shipmentId
+    })
+  );
+}
+
+/** The source keys an update left out keep their stored value, so a partial
+ *  update over MCP never reads as "source changed" and rebuilds the lines.
+ *  The details form always sends all three. */
+const SOURCE_KEYS = [
+  "sourceDocument",
+  "sourceDocumentId",
+  "locationId"
+] as const;
+
+function withStoredSource<T extends Record<string, unknown>>(
+  update: T,
+  stored: Record<string, unknown>
+): T {
+  const merged: Record<string, unknown> = { ...update };
+  for (const key of SOURCE_KEYS) {
+    // The stored value as is (null included), so the command's comparison
+    // with the stored row sees no change.
+    if (merged[key] === undefined) merged[key] = stored[key];
+  }
+  return merged as T;
+}
+
+/**
+ * Create or update a receipt header. Update (`_operation: "update"`) saves it
+ * as the receipt's details form does: changing the source document or location
+ * rebuilds the receipt's lines from the new source (other header edits in
+ * that call are not saved); otherwise the header fields are written. A source
+ * key left out keeps its stored value. Status and posting fields are never
+ * written here (inventory_postReceipt / inventory_voidReceipt). Create inserts
+ * a bare header with no lines; to receive an order use inventory_createReceipt.
+ */
+export async function upsertReceipt(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  userId: string,
+  receipt:
+    | (Omit<z.infer<typeof receiptValidator>, "id" | "receiptId"> & {
+        receiptId: string;
+        companyId: string;
+        createdBy: string;
+        customFields?: Json;
+      })
+    | (Omit<z.infer<typeof receiptValidator>, "id" | "receiptId"> & {
+        id: string;
+        receiptId: string;
+        updatedBy: string;
+        customFields?: Json;
+      })
+) {
+  if ("createdBy" in receipt) {
+    return upsertReceiptRow(client, receipt);
+  }
+  // Rebuilding from a new source invokes `create` through the service role;
+  // the details form's gate is { update: "inventory" }.
+  await requireToolPermission(
+    companyId,
+    userId,
+    INVENTORY_UPDATE,
+    "update receipts"
+  );
+  const stored = await getReceipt(client, receipt.id);
+  if (stored.error) {
+    return { data: null, error: ruleError("Receipt not found") };
+  }
+  const { updatedBy: _updatedBy, ...details } = withStoredSource(
+    receipt,
+    stored.data
+  );
+  return toToolResult(
+    await updateReceiptDetails(client, {
+      companyId,
+      userId,
+      receipt: details
+    })
+  );
+}
+
+/**
+ * Create or update a shipment header. Update (`_operation: "update"`) saves it
+ * as the shipment's details form does: changing the source document or
+ * location rebuilds the shipment's lines from the new source (other header
+ * edits in that call are not saved); otherwise the header fields (tracking
+ * number, shipping method, …) are written. A source key left out keeps its
+ * stored value. Status and posting fields are never written here
+ * (inventory_postShipment / inventory_voidShipment). Create inserts a bare
+ * header with no lines; to ship an order use inventory_createShipment.
+ */
+export async function upsertShipment(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  userId: string,
+  shipment:
+    | (Omit<z.infer<typeof shipmentValidator>, "id" | "shipmentId"> & {
+        shipmentId: string;
+        companyId: string;
+        createdBy: string;
+        customFields?: Json;
+      })
+    | (Omit<z.infer<typeof shipmentValidator>, "id" | "shipmentId"> & {
+        id: string;
+        shipmentId: string;
+        updatedBy: string;
+        customFields?: Json;
+      })
+) {
+  if ("createdBy" in shipment) {
+    return upsertShipmentRow(client, shipment);
+  }
+  await requireToolPermission(
+    companyId,
+    userId,
+    INVENTORY_UPDATE,
+    "update shipments"
+  );
+  const stored = await getShipment(client, shipment.id);
+  if (stored.error) {
+    return { data: null, error: ruleError("Shipment not found") };
+  }
+  const { updatedBy: _updatedBy, ...details } = withStoredSource(
+    shipment,
+    stored.data
+  );
+  return toToolResult(
+    await updateShipmentDetails(client, {
+      companyId,
+      userId,
+      shipment: details
     })
   );
 }
