@@ -25,7 +25,7 @@ import { getSupplierPriceBreaksForItems } from "~/modules/items/items.service";
 import { getEmployeeJob } from "~/modules/people";
 import type { GenericQueryFilters } from "~/utils/query";
 import { LIST_COUNT, setGenericQueryFilters } from "~/utils/query";
-import { sanitize } from "~/utils/supabase";
+import { sanitize, withoutKeys } from "~/utils/supabase";
 import { getCurrencyByCode, getExchangeRate } from "../accounting";
 import type {
   operationParameterValidator,
@@ -33,6 +33,7 @@ import type {
   operationToolValidator
 } from "../shared";
 import { normalizeOperationSourceIds } from "../shared";
+import type { optionalTiptapDoc } from "../shared/shared.models";
 import {
   getModelByItemId,
   lookupBuyPriceFromMap,
@@ -1991,30 +1992,43 @@ export async function getSalesRFQLines(
     .order("customerPartId", { ascending: true });
 }
 
+/** Keys of the contact form that are not contact columns. */
+type FormOnlyContactKeys = {
+  id?: unknown;
+  contactId?: unknown;
+  customerLocationId?: unknown;
+};
+
 /**
  * Create a contact and link it to a customer. `contact` takes the contact's own
- * fields; a `contactId`, `customerLocationId` or `id` inside it is ignored — pass the
- * location as the top-level `customerLocationId`.
+ * fields; pass the location as the top-level `customerLocationId`.
  */
 export async function insertCustomerContact(
   client: SupabaseClient<Database>,
   customerContact: {
     customerId: string;
     companyId: string;
-    contact: PickPartial<z.infer<typeof customerContactValidator>, "email">;
+    contact: PickPartial<
+      Omit<
+        z.infer<typeof customerContactValidator>,
+        "id" | "contactId" | "customerLocationId"
+      >,
+      "email"
+    >;
     customerLocationId?: string;
     customFields?: Json;
   }
 ) {
   // The form's own keys (the customer-contact row id, the contact id, the
-  // location) are not contact columns: the new-contact route stripped them
-  // before calling, and an API caller does not.
+  // location) are not contact columns and not in the type, but API input
+  // validation passes unknown keys through, so strip them at runtime too.
   const {
     id: _id,
     contactId: _contactId,
     customerLocationId: _customerLocationId,
     ...contact
-  } = customerContact.contact;
+  } = customerContact.contact as typeof customerContact.contact &
+    FormOnlyContactKeys;
   const insertContact = await client
     .from("contact")
     .insert([
@@ -3141,14 +3155,16 @@ export async function updateCustomerAccounting(
 
 /**
  * Update a customer contact: the contact's own fields, and — on the
- * customer-contact link — its location and custom fields when sent. A
- * `contactId`, `customerLocationId` or `id` inside `contact` is ignored.
+ * customer-contact link — its location and custom fields when sent.
  */
 export async function updateCustomerContact(
   client: SupabaseClient<Database>,
   customerContact: {
     contactId: string;
-    contact: z.infer<typeof customerContactValidator>;
+    contact: Omit<
+      z.infer<typeof customerContactValidator>,
+      "id" | "contactId" | "customerLocationId"
+    >;
     customerLocationId?: string;
     customFields?: Json;
   }
@@ -3181,7 +3197,8 @@ export async function updateCustomerContact(
     contactId: _contactId,
     customerLocationId: _customerLocationId,
     ...contact
-  } = customerContact.contact;
+  } = customerContact.contact as typeof customerContact.contact &
+    FormOnlyContactKeys;
   return client
     .from("contact")
     .update(sanitize(contact))
@@ -5501,7 +5518,9 @@ export async function insertSalesOrder(
     opportunityId?: string;
     requestedDate?: string;
     promisedDate?: string;
-    notes?: string;
+    /** Internal notes: plain text, a JSON-encoded tiptap document, or the
+     *  document itself — stored as a tiptap document either way. */
+    notes?: z.infer<typeof optionalTiptapDoc>;
     customerReference?: string;
     customerEngineeringContactId?: string;
     salesPersonId?: string;
@@ -5669,7 +5688,9 @@ export async function updateSalesOrder(
     customerContactId?: string | null;
     customerLocationId?: string | null;
     customerId?: string;
-    notes?: string | null;
+    /** Internal notes: plain text, a JSON-encoded tiptap document, or the
+     *  document itself — stored as a tiptap document either way. */
+    notes?: z.infer<typeof optionalTiptapDoc> | null;
     customFields?: Json;
   }
 ): Promise<{
@@ -6045,6 +6066,8 @@ export async function upsertSalesOrderLine(
         customFields?: Json;
       })
 ) {
+  // Not a salesOrderLine column.
+  salesOrderLine = withoutKeys(salesOrderLine, ["serviceId"]);
   if ("id" in salesOrderLine) {
     return client
       .from("salesOrderLine")
@@ -6132,6 +6155,8 @@ export async function upsertSalesOrderPayment(
         customFields?: Json;
       })
 ) {
+  // Not a salesOrderPayment column.
+  salesOrderPayment = withoutKeys(salesOrderPayment, ["currencyCode"]);
   if ("id" in salesOrderPayment) {
     return client
       .from("salesOrderPayment")
@@ -6164,7 +6189,9 @@ export async function insertSalesRFQ(
     customerLocationId?: string;
     customerReference?: string;
     status?: "Draft" | "Ready for Quote" | "Quoted" | "Closed";
-    notes?: string;
+    /** Internal notes: plain text, a JSON-encoded tiptap document, or the
+     *  document itself — stored as a tiptap document either way. */
+    notes?: z.infer<typeof optionalTiptapDoc>;
     customFields?: Json;
   }
 ): Promise<{
@@ -6333,7 +6360,9 @@ export async function updateSalesRFQ(
     locationId?: string;
     salesPersonId?: string | null;
     status?: "Draft" | "Ready for Quote" | "Quoted" | "Closed";
-    notes?: string | null;
+    /** Internal notes: plain text, a JSON-encoded tiptap document, or the
+     *  document itself — stored as a tiptap document either way. */
+    notes?: z.infer<typeof optionalTiptapDoc> | null;
     customFields?: Json;
   }
 ): Promise<{

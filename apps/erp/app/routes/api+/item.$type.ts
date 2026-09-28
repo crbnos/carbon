@@ -28,7 +28,6 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   const update = await updateItem(client, {
     ...validation.data,
-    type: type as "Part",
     companyId
   });
 

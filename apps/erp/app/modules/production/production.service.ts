@@ -43,7 +43,7 @@ import {
   LIST_COUNT,
   setGenericQueryFilters
 } from "~/utils/query";
-import { sanitize } from "~/utils/supabase";
+import { sanitize, withoutKeys } from "~/utils/supabase";
 import { getDefaultStorageUnitForJob } from "../inventory";
 import { getEmployeeJob } from "../people";
 import type {
@@ -3370,7 +3370,7 @@ export async function insertJob(
     quoteId?: string;
     quoteLineId?: string;
     modelUploadId?: string;
-    notes?: string;
+    notes?: z.infer<typeof optionalTiptapDoc>;
     customFields?: Json;
     configuration?: Record<string, unknown>;
   },
@@ -4745,6 +4745,8 @@ export async function upsertFailureMode(
         updatedBy: string;
       })
 ) {
+  // maintenanceFailureMode has no customFields column.
+  failureMode = withoutKeys(failureMode, ["customFields"]);
   if ("createdBy" in failureMode) {
     return client
       .from("maintenanceFailureMode")

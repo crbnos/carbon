@@ -776,11 +776,13 @@ function resolveInferExpression(
     return schema;
   }
 
-  // PickPartial<z.infer<typeof V>, "a" | "b"> — the listed keys turn optional.
-  // Omit<z.infer<typeof V>, "a" | "b"> — the listed keys are removed.
-  m = t.match(/^(PickPartial|Omit)<\s*z\.infer<typeof\s+(\w+)>\s*,\s*([\s\S]+)>$/);
+  // PickPartial<X, "a" | "b"> — the listed keys turn optional.
+  // Omit<X, "a" | "b"> — the listed keys are removed.
+  // X is any expression this function resolves, so the two nest
+  // (`PickPartial<Omit<z.infer<typeof V>, "id">, "email">`).
+  m = t.match(/^(PickPartial|Omit)<(.+),\s*((?:"\w+"\s*\|\s*)*"\w+")\s*>$/);
   if (m) {
-    const schema = lookupValidatorSchema(m[2], ctx);
+    const schema = resolveInferExpression(m[2], ctx);
     if (!schema) return null;
     const keys = [...m[3].matchAll(/"(\w+)"/g)].map((k) => k[1]);
     if (m[1] === "Omit") {

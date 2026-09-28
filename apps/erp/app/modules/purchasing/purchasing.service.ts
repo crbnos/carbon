@@ -1030,30 +1030,40 @@ export async function insertSupplier(
   return client.from("supplier").insert([supplier]).select("*").single();
 }
 
+/** Keys of the contact form that are not contact columns. */
+type FormOnlyContactKeys = {
+  id?: unknown;
+  contactId?: unknown;
+  supplierLocationId?: unknown;
+};
+
 /**
  * Create a contact and link it to a supplier. `contact` takes the contact's own
- * fields; a `contactId`, `supplierLocationId` or `id` inside it is ignored — pass the
- * location as the top-level `supplierLocationId`.
+ * fields; pass the location as the top-level `supplierLocationId`.
  */
 export async function insertSupplierContact(
   client: SupabaseClient<Database>,
   supplierContact: {
     supplierId: string;
     companyId: string;
-    contact: z.infer<typeof supplierContactValidator>;
+    contact: Omit<
+      z.infer<typeof supplierContactValidator>,
+      "id" | "contactId" | "supplierLocationId"
+    >;
     supplierLocationId?: string;
     customFields?: Json;
   }
 ) {
   // The form's own keys (the supplier-contact row id, the contact id, the
-  // location) are not contact columns: the new-contact route stripped them
-  // before calling, and an API caller does not.
+  // location) are not contact columns and not in the type, but API input
+  // validation passes unknown keys through, so strip them at runtime too.
   const {
     id: _id,
     contactId: _contactId,
     supplierLocationId: _supplierLocationId,
     ...contact
-  } = supplierContact.contact;
+  } = supplierContact.contact as typeof supplierContact.contact &
+    FormOnlyContactKeys;
   const insertContact = await client
     .from("contact")
     .insert([
@@ -1319,14 +1329,16 @@ export async function updateSupplierAccounting(
 
 /**
  * Update a supplier contact: the contact's own fields, and — on the
- * supplier-contact link — its location and custom fields when sent. A
- * `contactId`, `supplierLocationId` or `id` inside `contact` is ignored.
+ * supplier-contact link — its location and custom fields when sent.
  */
 export async function updateSupplierContact(
   client: SupabaseClient<Database>,
   supplierContact: {
     contactId: string;
-    contact: z.infer<typeof supplierContactValidator>;
+    contact: Omit<
+      z.infer<typeof supplierContactValidator>,
+      "id" | "contactId" | "supplierLocationId"
+    >;
     supplierLocationId?: string;
     customFields?: Json;
   }
@@ -1359,7 +1371,8 @@ export async function updateSupplierContact(
     contactId: _contactId,
     supplierLocationId: _supplierLocationId,
     ...contact
-  } = supplierContact.contact;
+  } = supplierContact.contact as typeof supplierContact.contact &
+    FormOnlyContactKeys;
   return client
     .from("contact")
     .update(sanitize(contact))
@@ -1533,7 +1546,9 @@ export async function insertPurchaseOrder(
     supplierQuoteId?: string;
     receiptRequestedDate?: string;
     supplierReference?: string;
-    notes?: Json;
+    /** Internal notes: plain text, a JSON-encoded tiptap document, or the
+     *  document itself — stored as a tiptap document either way. */
+    notes?: z.infer<typeof optionalTiptapDoc>;
     /** Rich text: plain text, a JSON-encoded tiptap document, or the document
      *  itself — stored as a tiptap document either way. */
     externalNotes?: z.infer<typeof optionalTiptapDoc>;
@@ -1681,7 +1696,9 @@ export async function updatePurchaseOrder(
     supplierLocationId?: string | null;
     supplierReference?: string;
     purchaseOrderType?: (typeof purchaseOrderTypeType)[number];
-    notes?: string | null;
+    /** Internal notes: plain text, a JSON-encoded tiptap document, or the
+     *  document itself — stored as a tiptap document either way. */
+    notes?: z.infer<typeof optionalTiptapDoc> | null;
     customFields?: Json;
   }
 ): Promise<{
@@ -2179,7 +2196,9 @@ export async function insertSupplierQuote(
     expirationDate?: string;
     supplierContactId?: string;
     supplierLocationId?: string;
-    notes?: string;
+    /** Internal notes: plain text, a JSON-encoded tiptap document, or the
+     *  document itself — stored as a tiptap document either way. */
+    notes?: z.infer<typeof optionalTiptapDoc>;
     customFields?: Json;
     quotedDate?: string;
     supplierReference?: string;
@@ -2291,7 +2310,9 @@ export async function updateSupplierQuote(
     expirationDate?: string | null;
     supplierContactId?: string | null;
     supplierLocationId?: string | null;
-    notes?: string | null;
+    /** Internal notes: plain text, a JSON-encoded tiptap document, or the
+     *  document itself — stored as a tiptap document either way. */
+    notes?: z.infer<typeof optionalTiptapDoc> | null;
     customFields?: Json;
   }
 ): Promise<{

@@ -3923,7 +3923,6 @@ export async function updateItem(
     | "shelfLifeCalculateFromBom"
   > & {
     companyId: string;
-    type: Database["public"]["Enums"]["itemType"];
   }
 ) {
   // Only the keys the caller sent: a sent-but-blank form field is `undefined`

@@ -102,7 +102,18 @@ describe("mcp tool-metadata generator", () => {
       expect(keys, name).toContain("workPhone");
       // The table has mobilePhone/homePhone/workPhone — never a bare `phone`.
       expect(keys, name).not.toContain("phone");
+      // The form's own keys are not contact columns; the service omits them.
+      for (const formKey of [
+        "id",
+        "contactId",
+        "customerLocationId",
+        "supplierLocationId"
+      ]) {
+        expect(keys, name).not.toContain(formKey);
+      }
     }
+    // updateItem never changes the item type, so it does not take one.
+    expect(Object.keys(props(get("items_updateItem")))).not.toContain("type");
     // PickPartial<..., "email"> demotes email from required.
     const insertContact = props(get("sales_insertCustomerContact")).contact;
     expect(insertContact?.required ?? []).not.toContain("email");

@@ -8,6 +8,8 @@ import { beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 const spies = vi.hoisted(() => ({
   upsertMethodOperationStep: vi.fn(),
+  upsertMethodOperationStepSlide: vi.fn(),
+  updateSalesOrder: vi.fn(),
   upsertStockTransferLines: vi.fn(),
   upsertPurchaseInvoiceLine: vi.fn(),
   updateCustomerTax: vi.fn(),
@@ -25,7 +27,8 @@ vi.mock("~/modules/invoicing/invoicing.service", () => ({
   upsertPurchaseInvoiceLine: spies.upsertPurchaseInvoiceLine
 }));
 vi.mock("~/modules/items/items.service", () => ({
-  upsertMethodOperationStep: spies.upsertMethodOperationStep
+  upsertMethodOperationStep: spies.upsertMethodOperationStep,
+  upsertMethodOperationStepSlide: spies.upsertMethodOperationStepSlide
 }));
 vi.mock("~/modules/people/people.service", () => ({}));
 vi.mock("~/modules/production/production.mcp.server", () => ({}));
@@ -35,7 +38,8 @@ vi.mock("~/modules/quality/quality.service", () => ({}));
 vi.mock("~/modules/resources/resources.service", () => ({}));
 vi.mock("~/modules/sales/sales.service", () => ({
   updateCustomerTax: spies.updateCustomerTax,
-  updatePricingRule: spies.updatePricingRule
+  updatePricingRule: spies.updatePricingRule,
+  updateSalesOrder: spies.updateSalesOrder
 }));
 vi.mock("~/modules/settings/settings.service", () => ({}));
 vi.mock("~/modules/shared/shared.service", () => ({}));
@@ -137,6 +141,44 @@ describe("transforms the UI's form validator runs", () => {
     );
     expect(payload.lines).toEqual(lines);
     expect(payload.stockTransferId).toBe("st-1");
+  });
+
+  it("hands the service a tiptap document for notes stored under another column name", async () => {
+    const payload = await call(
+      "sales_updateSalesOrder",
+      spies.updateSalesOrder,
+      {
+        id: "so-1",
+        notes: "Ship with the next pallet"
+      }
+    );
+    expect(payload.notes).toEqual({
+      type: "doc",
+      content: [
+        {
+          type: "paragraph",
+          content: [{ type: "text", text: "Ship with the next pallet" }]
+        }
+      ]
+    });
+  });
+
+  it("accepts slide annotations as an array or as their JSON string", async () => {
+    const annotations = [{ id: "pin-1", x: 0.25, y: 0.5, label: "Bolt" }];
+    for (const sent of [annotations, JSON.stringify(annotations)]) {
+      spies.upsertMethodOperationStepSlide.mockReset();
+      const payload = await call(
+        "items_upsertMethodOperationStepSlide",
+        spies.upsertMethodOperationStepSlide,
+        {
+          _operation: "update",
+          id: "slide-1",
+          stepId: "step-1",
+          annotations: sent
+        }
+      );
+      expect(payload.annotations).toEqual(annotations);
+    }
   });
 });
 

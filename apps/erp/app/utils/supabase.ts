@@ -11,3 +11,18 @@ export const SERVICE_RULE_ERROR_CODE = "CARBON_RULE";
 export function ruleError(message: string) {
   return { code: SERVICE_RULE_ERROR_CODE, message };
 }
+
+/**
+ * Drop named keys a service's type omits but an API caller can still send:
+ * input validation passes unknown keys through, and a service that spreads its
+ * payload into a row would send them to PostgREST (PGRST204). Name each key;
+ * never replace this with a column allowlist, which would hide real mistakes.
+ */
+export function withoutKeys<T extends object>(
+  input: T,
+  keys: readonly string[]
+): T {
+  const output = { ...input } as Record<string, unknown>;
+  for (const key of keys) delete output[key];
+  return output as T;
+}

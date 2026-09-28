@@ -358,18 +358,25 @@ export const operationStepSlideValidator = z
     // Absent = "not changed" (preserve on update / default on insert); a JSON string (incl.
     // "[]" to clear) = the new pin set. Returning undefined when absent lets sanitize() drop
     // it so a caption/size-only save never wipes existing annotations.
-    annotations: zfd.text(z.string().optional()).transform((value, ctx) => {
-      if (!value) return undefined;
-      try {
-        return z.array(slideAnnotationValidator).parse(JSON.parse(value));
-      } catch {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: "Invalid annotations"
-        });
-        return z.NEVER;
-      }
-    })
+    // An API caller may send the array itself instead of its JSON encoding.
+    // `.optional()` LAST so the inferred key stays optional (see optionalTiptapDoc).
+    annotations: z
+      .union([z.string(), z.array(slideAnnotationValidator)])
+      .transform((value, ctx) => {
+        if (value === "") return undefined;
+        try {
+          return z
+            .array(slideAnnotationValidator)
+            .parse(typeof value === "string" ? JSON.parse(value) : value);
+        } catch {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: "Invalid annotations"
+          });
+          return z.NEVER;
+        }
+      })
+      .optional()
   })
   .superRefine((slide, ctx) => {
     if (!slide.id && !slide.imagePath && !slide.modelUploadId) {

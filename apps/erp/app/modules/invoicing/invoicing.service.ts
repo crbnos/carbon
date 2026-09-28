@@ -33,7 +33,7 @@ import {
 } from "~/modules/purchasing";
 import type { GenericQueryFilters } from "~/utils/query";
 import { LIST_COUNT, setGenericQueryFilters } from "~/utils/query";
-import { sanitize } from "~/utils/supabase";
+import { sanitize, withoutKeys } from "~/utils/supabase";
 import { getExchangeRate } from "../accounting/accounting.service";
 import { getEmployeeJob } from "../people/people.service";
 import {
@@ -822,6 +822,8 @@ export async function upsertPurchaseInvoice(
         customFields?: Json;
       })
 ) {
+  // Not a purchaseInvoice column.
+  purchaseInvoice = withoutKeys(purchaseInvoice, ["supplierShippingCost"]);
   if ("id" in purchaseInvoice) {
     return client
       .from("purchaseInvoice")
@@ -1206,6 +1208,8 @@ export async function upsertSalesInvoice(
         customFields?: Json;
       })
 ) {
+  // Not a salesInvoice column.
+  salesInvoice = withoutKeys(salesInvoice, ["supplierShippingCost"]);
   if ("id" in salesInvoice) {
     return client
       .from("salesInvoice")
@@ -1348,6 +1352,11 @@ export async function upsertSalesInvoiceLine(
         customFields?: Json;
       })
 ) {
+  // Not salesInvoiceLine columns.
+  salesInvoiceLine = withoutKeys(salesInvoiceLine, [
+    "purchaseOrderId",
+    "purchaseOrderLineId"
+  ]);
   if ("id" in salesInvoiceLine) {
     return client
       .from("salesInvoiceLine")

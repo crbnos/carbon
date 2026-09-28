@@ -8,7 +8,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { z } from "zod";
 import type { GenericQueryFilters } from "~/utils/query";
 import { setGenericQueryFilters } from "~/utils/query";
-import { sanitize } from "~/utils/supabase";
+import { sanitize, withoutKeys } from "~/utils/supabase";
 import { getOrAllocateReadableId } from "../shared/readable-id";
 import type { optionalTiptapDoc } from "../shared/shared.models";
 import type {
@@ -1460,6 +1460,8 @@ export async function upsertFailureMode(
         updatedBy: string;
       })
 ) {
+  // maintenanceFailureMode has no customFields column.
+  failureMode = withoutKeys(failureMode, ["customFields"]);
   if ("createdBy" in failureMode) {
     return client
       .from("maintenanceFailureMode")

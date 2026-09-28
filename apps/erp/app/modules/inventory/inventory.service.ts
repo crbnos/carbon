@@ -21,7 +21,7 @@ import {
   setGenericQueryFilters,
   setSearchFilter
 } from "~/utils/query";
-import { sanitize } from "~/utils/supabase";
+import { sanitize, withoutKeys } from "~/utils/supabase";
 import { getItemStorageUnitQuantities } from "../items/items.service";
 import type {
   batchPropertyOrderValidator,
@@ -2149,6 +2149,8 @@ export async function upsertKanban(
         updatedBy: string;
       })
 ) {
+  // kanban has no customFields column.
+  kanban = withoutKeys(kanban, ["customFields"]);
   if ("createdBy" in kanban) {
     return client
       .from("kanban")

@@ -64,8 +64,13 @@ const writesTo = (table: string) => writes.filter((w) => w.table === table);
 // again through the accounting models. Entering through the sales models
 // lets the barrel finish before that read.
 await import("~/modules/sales/sales.models");
-const { insertCustomerContact, updateCustomerContact, updateCustomerLocation } =
-  await import("~/modules/sales/sales.service");
+const {
+  insertCustomerContact,
+  updateCustomerContact,
+  updateCustomerLocation,
+  upsertSalesOrderPayment
+} = await import("~/modules/sales/sales.service");
+const { upsertKanban } = await import("~/modules/inventory/inventory.service");
 const { updateSupplierContact, updateSupplierLocation } = await import(
   "~/modules/purchasing/purchasing.service"
 );
@@ -84,13 +89,15 @@ describe("customer and supplier contacts", () => {
     await updateCustomerContact(client, {
       contactId: "con-1",
       customerLocationId: "loc-2",
+      // An API caller can still send the form's keys: input validation passes
+      // unknown keys through.
       contact: {
         id: "cc-1",
         contactId: "con-1",
         customerLocationId: "loc-2",
         email: "buyer@example.com",
         firstName: "Ada"
-      }
+      } as Parameters<typeof updateCustomerContact>[1]["contact"]
     });
     expect(writesTo("customerContact")).toEqual([
       {
@@ -126,7 +133,7 @@ describe("customer and supplier contacts", () => {
         contactId: "con-9",
         customerLocationId: "loc-2",
         email: "new@example.com"
-      }
+      } as Parameters<typeof insertCustomerContact>[1]["contact"]
     });
     const [contact] = writesTo("contact")[0]?.values as Record<
       string,
@@ -194,7 +201,6 @@ describe("updateItem", () => {
     await updateItem(client, {
       id: "item-1",
       companyId: "c1",
-      type: "Part",
       name: "Bracket",
       description: undefined,
       replenishmentSystem: "Buy",
@@ -205,6 +211,31 @@ describe("updateItem", () => {
     const values = writesTo("item")[0]?.values as Record<string, unknown>;
     expect(values.description).toBeNull();
     expect("mpn" in values).toBe(false);
+  });
+});
+
+describe("keys the service type omits but an API caller can send", () => {
+  it("never writes a non-column key to the row, on update or insert", async () => {
+    await upsertSalesOrderPayment(client, {
+      id: "so-1",
+      updatedBy: "u1",
+      currencyCode: "EUR",
+      paymentTermId: "net-30"
+    } as unknown as Parameters<typeof upsertSalesOrderPayment>[1]);
+    const updated = writesTo("salesOrderPayment")[0]?.values as Record<
+      string,
+      unknown
+    >;
+    expect("currencyCode" in updated).toBe(false);
+    expect(updated.paymentTermId).toBe("net-30");
+
+    await upsertKanban(client, {
+      companyId: "c1",
+      createdBy: "u1",
+      customFields: { bin: "A1" }
+    } as unknown as Parameters<typeof upsertKanban>[1]);
+    const inserted = writesTo("kanban")[0]?.values as Record<string, unknown>;
+    expect("customFields" in inserted).toBe(false);
   });
 });
 

@@ -164,6 +164,70 @@ function jsonColumnsByTable(): Map<string, Set<string>> {
   return out;
 }
 
+/** Tables a service body writes, through supabase-js or Kysely. */
+function writtenTables(body: string): Set<string> {
+  return new Set(
+    [
+      ...body.matchAll(
+        /\.from\("(\w+)"\)\s*\.(?:insert|update|upsert)\b|\.(?:insertInto|updateTable)\("(\w+)"\)/g
+      )
+    ].map((m) => m[1] ?? m[2])
+  );
+}
+
+/**
+ * Identifiers assigned to a json column under the column's name —
+ * `internalNotes: input.notes ?? null`, `{ externalNotes: notes }`. A value the
+ * service itself converts (`toTiptapDoc(…)`, `JSON.parse(…)`) is not counted.
+ */
+function renamedJsonTargets(
+  body: string,
+  jsonColumns: Set<string>
+): Set<string> {
+  const out = new Set<string>();
+  for (const column of jsonColumns) {
+    for (const m of body.matchAll(
+      new RegExp(`\\b${column}\\s*:\\s*([^,\\n}]+)`, "g")
+    )) {
+      const expr = m[1];
+      if (/toTiptapDoc|JSON\.parse|JSON\.stringify/.test(expr)) continue;
+      const ref = /^\s*(?:\w+\.)?(\w+)\b/.exec(expr);
+      if (ref && ref[1] !== column) out.add(ref[1]);
+    }
+  }
+  return out;
+}
+
+function isStringSchema(prop: Record<string, unknown>): boolean {
+  const type = prop.type;
+  return (
+    type === "string" ||
+    (Array.isArray(type) &&
+      type.includes("string") &&
+      type.every((x) => x === "string" || x === "null"))
+  );
+}
+
+/** Top-level properties, plus those one level under a payload published under
+ *  its own param name (`{ contact: { … } }`), keyed by dotted path. */
+function publishedProperties(
+  t: Tool
+): Array<[string, Record<string, unknown>]> {
+  const out: Array<[string, Record<string, unknown>]> = [];
+  for (const [key, prop] of Object.entries(t.schema.properties ?? {})) {
+    out.push([key, prop]);
+    const nested = prop.properties as
+      | Record<string, Record<string, unknown>>
+      | undefined;
+    if (prop.type === "object" && nested) {
+      for (const [inner, child] of Object.entries(nested)) {
+        out.push([`${key}.${inner}`, child]);
+      }
+    }
+  }
+  return out;
+}
+
 describe("form bridge guards", () => {
   it("no update-capable tool publishes a JSON Schema default", () => {
     const offenders = writeTools
@@ -194,29 +258,42 @@ describe("form bridge guards", () => {
     for (const t of writeTools) {
       const fn = t.name.slice(t.module.length + 1);
       const body = functionBody(serviceSource(t.module), fn);
-      const written = new Set(
-        [
-          ...body.matchAll(/\.from\("(\w+)"\)\s*\.(?:insert|update|upsert)\b/g)
-        ].map((m) => m[1])
+      const written = writtenTables(body);
+      const writtenJson = new Set(
+        [...written].flatMap((table) => [...(jsonColumns.get(table) ?? [])])
       );
       const coerced = new Set((t.coercers ?? []).map((c) => c.at.join(".")));
-      for (const [key, prop] of Object.entries(t.schema.properties ?? {})) {
-        const type = prop.type;
-        const isString =
-          type === "string" ||
-          (Array.isArray(type) &&
-            type.includes("string") &&
-            type.every((x) => x === "string" || x === "null"));
-        if (!isString || coerced.has(key)) continue;
-        const intoJson = [...written].some((table) =>
-          jsonColumns.get(table)?.has(key)
-        );
+      // `notes` published, `internalNotes: input.notes` written: the json
+      // columns each published key reaches under another name.
+      const renamedInto = renamedJsonTargets(body, writtenJson);
+      for (const [path, prop] of publishedProperties(t)) {
+        if (!isStringSchema(prop) || coerced.has(path)) continue;
+        const key = path.split(".").at(-1) as string;
+        const intoJson = writtenJson.has(key) || renamedInto.has(key);
         if (!intoJson) continue;
-        const id = `${t.name}.${key}`;
+        const id = `${t.name}.${path}`;
         if (!(id in STRING_INTO_JSON_ALLOWED)) offenders.push(id);
       }
     }
     expect(offenders).toEqual([]);
+  });
+
+  it("the string-into-json guard sees renamed and Kysely writes", () => {
+    const body = `export async function f(client, db, input) {
+      const { notes, ...rest } = input;
+      await db.insertInto("quote").values({ internalNotes: input.notes ?? null });
+      await client.from("quote").update({ ...(notes !== undefined && { externalNotes: notes }) });
+    }`;
+    expect([...writtenTables(body)]).toEqual(["quote"]);
+    expect([
+      ...renamedJsonTargets(body, new Set(["internalNotes", "externalNotes"]))
+    ]).toEqual(["notes"]);
+    expect(
+      renamedJsonTargets(
+        "{ internalNotes: toTiptapDoc(input.notes) }",
+        new Set(["internalNotes"])
+      ).size
+    ).toBe(0);
   });
 
   it("every create path that inserts a readable number allocates or requires it", () => {
