@@ -520,12 +520,25 @@ export async function action(args: ActionFunctionArgs) {
     .from("salesInvoice")
     .select("customerId")
     .eq("id", invoiceId)
+    .eq("companyId", companyId)
     .maybeSingle();
+
+  // Fail CLOSED — see the supplier gate on the purchasing side. An unchecked
+  // error left `customerId` undefined, and a party with no id is not checked at
+  // all, so the read failing silently disabled the gate.
+  if (invoiceCustomer.error || !invoiceCustomer.data) {
+    logger.error("Could not read the invoice customer before posting", {
+      companyId,
+      invoiceId,
+      error: invoiceCustomer.error
+    });
+    return { success: false, message: "Failed to post sales invoice" };
+  }
 
   const customerContactError = await checkPartyContactRequirement(
     client,
     companyId,
-    { kind: "customer", id: invoiceCustomer.data?.customerId }
+    { kind: "customer", id: invoiceCustomer.data.customerId }
   );
   if (customerContactError) {
     return { success: false, message: customerContactError };

@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   invoiceSettlementValidator,
   isInvoicePayable,
+  memoValidator,
   paymentValidator
 } from "./invoicing.models";
 
@@ -286,4 +287,59 @@ it("retains exact document principal when its rounded base is zero", () => {
   });
   expect(result.success).toBe(true);
   if (result.success) expect(result.data).toHaveProperty("sourceAmount", 0.01);
+});
+
+describe("memoValidator", () => {
+  /**
+   * All four party × direction combinations are legal and must stay authorable.
+   * `memoDirection` carries both values, `memo`'s only party constraint is
+   * customer-XOR-supplier (verified against the live schema — nothing pairs the
+   * two), both memo list routes filter on the PARTY and offer direction as a
+   * separate filter, and `packages/database/src/datasets/validate.ts` requires
+   * coverage of both directions.
+   *
+   * `MemoForm` briefly derived `direction` from the party and force-submitted it
+   * with `<Hidden value>`, which both overwrote a stored direction on save and
+   * made a customer Debit / supplier Credit memo unauthorable. This pins the
+   * contract that change violated.
+   */
+  const base = {
+    memoDate: "2026-09-28",
+    currencyCode: "USD",
+    amount: "100",
+    exchangeRate: "1"
+  };
+
+  it.each([
+    ["customer", "Credit"],
+    ["customer", "Debit"],
+    ["supplier", "Credit"],
+    ["supplier", "Debit"]
+  ] as const)("accepts a %s memo in the %s direction", (party, direction) => {
+    const result = memoValidator.safeParse({
+      ...base,
+      direction,
+      ...(party === "customer"
+        ? { customerId: "cust_1" }
+        : { supplierId: "sup_1" })
+    });
+    expect(result.success).toBe(true);
+    if (result.success) expect(result.data.direction).toBe(direction);
+  });
+
+  it("still requires exactly one party", () => {
+    for (const parties of [{}, { customerId: "cust_1", supplierId: "sup_1" }]) {
+      expect(
+        memoValidator.safeParse({ ...base, direction: "Credit", ...parties })
+          .success
+      ).toBe(false);
+    }
+  });
+
+  it("requires a direction rather than defaulting one", () => {
+    // A defaulted direction is how a wrong one reaches the journal unnoticed.
+    expect(
+      memoValidator.safeParse({ ...base, customerId: "cust_1" }).success
+    ).toBe(false);
+  });
 });

@@ -27,6 +27,7 @@ import {
   Hidden,
   Input,
   Number,
+  Select,
   SequenceOrCustomId,
   Submit,
   Supplier,
@@ -34,7 +35,11 @@ import {
 } from "~/components/Form";
 import { ConfirmDelete } from "~/components/Modals";
 import { useCurrencyDecimals, usePermissions, useUser } from "~/hooks";
-import { isMemoLocked, memoValidator } from "~/modules/invoicing";
+import {
+  isMemoLocked,
+  memoDirection,
+  memoValidator
+} from "~/modules/invoicing";
 import { path } from "~/utils/path";
 import MemoStatus from "./MemoStatus";
 
@@ -73,8 +78,22 @@ const MemoForm = ({ initialValues, type }: MemoFormProps) => {
   const voidModal = useDisclosure();
 
   const isVendor = type === "supplierCredit";
-  const direction: "Credit" | "Debit" = isVendor ? "Debit" : "Credit";
   const typeLabel = isVendor ? t`Supplier Credit` : t`Credit Memo`;
+
+  // `type` decides the PARTY (and therefore which list this memo appears in and
+  // which selector is shown) — never the direction. All four party×direction
+  // combinations are legal: `memoDirection` has both values, `memo`'s only party
+  // constraint is customer-XOR-supplier, both list routes filter on the party and
+  // offer direction as a FILTER, and the dataset validator requires coverage of
+  // both. Deriving `direction` from the party and force-submitting it via
+  // `<Hidden value>` overwrote the stored value on any save (`Hidden` prefers
+  // `value` over `defaultValue`), so editing a customer Debit memo's reference
+  // silently flipped it to Credit and posting then booked the opposite journal —
+  // and it made two of the four combinations unauthorable.
+  const directionOptions = memoDirection.map((d) => ({
+    label: <Enumerable value={d} />,
+    value: d
+  }));
 
   return (
     <>
@@ -160,8 +179,6 @@ const MemoForm = ({ initialValues, type }: MemoFormProps) => {
           )}
           <CardContent>
             <Hidden name="id" />
-            {/* Direction is fixed by the memo type, never chosen. */}
-            <Hidden name="direction" value={direction} />
             {isEditing && <Hidden name="memoId" />}
             <VStack>
               <div className="grid w-full gap-x-8 gap-y-4 grid-cols-1 md:grid-cols-2">
@@ -177,6 +194,11 @@ const MemoForm = ({ initialValues, type }: MemoFormProps) => {
                 ) : (
                   <Customer name="customerId" label={t`Customer`} />
                 )}
+                <Select
+                  name="direction"
+                  label={t`Direction`}
+                  options={directionOptions}
+                />
                 <DatePicker name="memoDate" label={t`Memo Date`} />
                 <Currency name="currencyCode" label={t`Currency`} />
                 <Number
