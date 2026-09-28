@@ -17,7 +17,8 @@ vi.mock("../accounting/accounting.service", () => ({}));
 
 import {
   getInvoiceSettlements,
-  getInvoiceSettlementsForInvoice
+  getInvoiceSettlementsForInvoice,
+  getMemoApplications
 } from "./invoicing.service";
 
 type Row = Record<string, unknown>;
@@ -242,5 +243,98 @@ describe.each([
     expect(
       result.data?.find((row) => row.source.type === "memo")?.appliedAmount
     ).toBe(2);
+  });
+});
+
+// A memo's "Applied To" card. `memoId` reaches the reader as a bare xid from the
+// URL, so the tenant filter — not the id — is what bounds the read; RLS admits
+// every company the caller is an employee of.
+function memoApplication(n: number, extra: Row = {}): Row {
+  return {
+    id: `memo-application-${String(n).padStart(4, "0")}`,
+    companyId: "co",
+    paymentId: null,
+    memoId: "memo",
+    appliedViaPaymentId: null,
+    targetSalesInvoiceId: "invoice",
+    targetPurchaseInvoiceId: null,
+    targetMemoId: null,
+    targetReimbursementId: null,
+    appliedAmount: 1,
+    appliedDate: "2026-09-09",
+    salesInvoice: { invoiceId: "AR-1" },
+    purchaseInvoice: null,
+    targetMemo: null,
+    targetReimbursement: null,
+    ...extra
+  };
+}
+
+describe("memo application history", () => {
+  it("scopes the read to the caller's company", async () => {
+    const { client, requests } = cappedClient({
+      invoiceSettlement: [
+        memoApplication(0),
+        memoApplication(1, { companyId: "other" })
+      ]
+    });
+    const result = await getMemoApplications(client, "co", "memo");
+    expect(result.error).toBeNull();
+    expect(result.data).toHaveLength(1);
+    expect(result.data?.[0]?.id).toBe("memo-application-0000");
+    // The filter must be on the wire, not applied after the fact.
+    expect(
+      requests.some((url) => url.searchParams.get("companyId") === "eq.co")
+    ).toBe(true);
+  });
+
+  it("scopes the posted-via-payment lookup to the caller's company too", async () => {
+    const { client } = cappedClient({
+      invoiceSettlement: [
+        memoApplication(0, { appliedViaPaymentId: "via" }),
+        memoApplication(1, { appliedViaPaymentId: "via-other" })
+      ],
+      payment: [payment("via"), { ...payment("via-other"), companyId: "other" }]
+    });
+    const result = await getMemoApplications(client, "co", "memo");
+    expect(result.error).toBeNull();
+    // Only the payment visible in "co" counts the credit as applied; the row
+    // whose via-payment belongs to another company is staged, not applied.
+    expect(result.data).toHaveLength(1);
+    expect(result.data?.[0]?.id).toBe("memo-application-0000");
+  });
+
+  it("labels every target kind the union covers", async () => {
+    const { client } = cappedClient({
+      invoiceSettlement: [
+        memoApplication(0),
+        memoApplication(1, {
+          targetSalesInvoiceId: null,
+          salesInvoice: null,
+          targetPurchaseInvoiceId: "ap-invoice",
+          purchaseInvoice: { invoiceId: "AP-1" }
+        }),
+        memoApplication(2, {
+          targetSalesInvoiceId: null,
+          salesInvoice: null,
+          targetMemoId: "other-memo",
+          targetMemo: { memoId: "MEMO-2" }
+        }),
+        memoApplication(3, {
+          targetSalesInvoiceId: null,
+          salesInvoice: null,
+          targetReimbursementId: "reimb",
+          targetReimbursement: { reimbursementId: "REIMB-1" }
+        })
+      ]
+    });
+    const result = await getMemoApplications(client, "co", "memo");
+    expect(result.error).toBeNull();
+    expect(result.data?.map((row) => row.target)).toEqual([
+      { type: "salesInvoice", id: "invoice", readableId: "AR-1" },
+      { type: "purchaseInvoice", id: "ap-invoice", readableId: "AP-1" },
+      { type: "memo", id: "other-memo", readableId: "MEMO-2" },
+      { type: "reimbursement", id: "reimb", readableId: "REIMB-1" }
+    ]);
   });
 });

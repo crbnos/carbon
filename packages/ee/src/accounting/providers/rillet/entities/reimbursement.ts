@@ -22,6 +22,7 @@ import {
   carbonExternalReference,
   loadRilletAccountCodesById,
   RilletTransactionSyncer,
+  readCarbonExternalReference,
   toRilletExchangeRate,
   toRilletMoney,
   writeDroppingUnregisteredReferences
@@ -41,11 +42,14 @@ import {
  * This replaces the employee-supplier detour the BILL syncer used to carry
  * (`isReimbursement` → `toRilletReimbursement`), which existed only because
  * Carbon had no reimbursement document. That write path is deleted — nothing
- * routes a bill to `/reimbursements` any more. The bill syncer keeps only the
- * READ side of it: its `deleteRemote` still honours a mapping stamped
- * `remoteKind: "reimbursement"`, so a void of a bill synced during the window
- * that path was live deletes the reimbursement rather than silently 404ing
- * against `/bills`.
+ * routes a bill to `/reimbursements` any more. Only the READ side of it
+ * survives, in BOTH the places a legacy row is still reachable: a mapping
+ * stamped `RILLET_LEGACY_REIMBURSEMENT_REMOTE_KIND` routes
+ * `RilletBillSyncer.deleteRemote`'s void to `/reimbursements/{id}` rather
+ * than silently 404ing against `/bills`, and routes
+ * `RilletPaymentSyncer.pushRemotePayment`'s payout to
+ * `/reimbursements/{id}/payments` rather than 404ing against
+ * `/bills/{id}/payments`.
  *
  * Wire shape VERIFIED against Rillet's published OpenAPI
  * (`docs.api.rillet.com/reference/create-a-reimbursement`, 2026-09-23):
@@ -267,7 +271,8 @@ export class RilletReimbursementSyncer extends RilletTransactionSyncer<
    * The Rillet vendor the reimbursement is paid to. Mapping-first under
    * `employeeVendor` (NOT `vendor` — that id space holds Carbon supplier ids,
    * and keeping the employee out of the vendor master is the point of this
-   * document), else create the Rillet vendor JIT and link it.
+   * document), else ADOPT the vendor a previous attempt stranded, else create
+   * one JIT. Either way the `employeeVendor` mapping is linked afterwards.
    *
    * This is the ONE place `resolveEmployeeSupplier`'s naming convention
    * survives: the provider still needs a payable counterparty, so the
@@ -278,16 +283,84 @@ export class RilletReimbursementSyncer extends RilletTransactionSyncer<
   ): Promise<string> {
     if (local.employeeVendorExternalId) return local.employeeVendorExternalId;
 
-    const name = employeeVendorName(local.employee);
+    const vendorId =
+      (await this.findStrandedEmployeeVendor(local.employeeId)) ??
+      (await this.createEmployeeVendor(local));
+
+    await withTriggersDisabled(this.database, async (tx) => {
+      await createMappingService(tx, this.companyId).link(
+        EMPLOYEE_VENDOR_ENTITY_TYPE,
+        local.employeeId,
+        this.provider.id,
+        vendorId
+      );
+    });
+
+    return vendorId;
+  }
+
+  /**
+   * The Rillet vendor a PREVIOUS attempt created for this employee but never
+   * mapped, or null when there is none.
+   *
+   * The remote create and the `employeeVendor` mapping write are separate
+   * transactions, so a crash between them leaves a Rillet vendor Carbon has no
+   * row for. Rillet does NOT enforce unique vendor names, so unlike QBO (fault
+   * 6240) the retry raises nothing to adopt on — it silently creates a SECOND
+   * vendor and the employee's payables split across two counterparties. The
+   * `employee-vendor` idempotency key only covers Rillet's 24 h replay window;
+   * this lookup is what recovers a strand of any age (the same role the Xero
+   * syncer's `findEmployeeContactByName` plays).
+   *
+   * Matched on the company-qualified `carbon` external reference, never on the
+   * name: the name is a human string a real supplier could share, while the
+   * reference proves THIS company's Carbon pushed the record for THIS
+   * employee. It is always present on a strand — `createEmployeeVendor` sends
+   * it unconditionally and is deliberately NOT wrapped in
+   * `writeDroppingUnregisteredReferences`, so a create that could not carry
+   * the reference never succeeded.
+   *
+   * Two matches throw rather than pick one: both are this employee, so
+   * adopting either would silently leave half their history on the other, and
+   * a duplicate a human merges in Rillet is recoverable.
+   */
+  private async findStrandedEmployeeVendor(
+    employeeId: string
+  ): Promise<string | null> {
+    const matches = (await this.rilletProvider.listVendors()).filter(
+      (vendor) =>
+        Boolean(vendor.id) &&
+        readCarbonExternalReference(
+          vendor.external_references,
+          this.companyId
+        ) === employeeId
+    );
+    if (matches.length > 1) {
+      throw new Error(
+        `Rillet has ${matches.length} vendors carrying the Carbon reference for employee ${employeeId} (${matches
+          .map((vendor) => vendor.id)
+          .join(
+            ", "
+          )}); merge or clear the duplicates in Rillet, then retry the reimbursement`
+      );
+    }
+    return matches[0]?.id ?? null;
+  }
+
+  private async createEmployeeVendor(
+    local: RilletReimbursement
+  ): Promise<string> {
     const created = await this.rilletProvider.createVendor(
       {
-        name,
+        name: employeeVendorName(local.employee),
         ...(local.employee.email ? { email: local.employee.email } : {}),
         external_references: [
           carbonExternalReference(local.employeeId),
           carbonCompanyExternalReference(this.companyId)
         ]
       },
+      // Transient-retry guard only (Rillet replays a stored response for 24 h);
+      // the durable recovery is `findStrandedEmployeeVendor` above.
       buildRilletIdempotencyKey({
         companyId: this.companyId,
         operation: "employee-vendor",
@@ -299,16 +372,6 @@ export class RilletReimbursementSyncer extends RilletTransactionSyncer<
         `Rillet did not return a vendor id for employee ${local.employeeId}`
       );
     }
-
-    await withTriggersDisabled(this.database, async (tx) => {
-      await createMappingService(tx, this.companyId).link(
-        EMPLOYEE_VENDOR_ENTITY_TYPE,
-        local.employeeId,
-        this.provider.id,
-        created.id
-      );
-    });
-
     return created.id;
   }
 

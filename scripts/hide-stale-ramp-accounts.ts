@@ -92,12 +92,20 @@ async function main() {
       .filter((a) => liveIds.has(String(a.id)) && a.visibility !== "HIDDEN")
       .map((a) => String(a.code ?? ""))
   );
-  const { data: liveNumbers } = await serviceRole
+  // Unchecked, a failed read here would leave `liveNumbers` null, `orphaned`
+  // empty, and the guard below silently satisfied — disabling the very safety
+  // net it exists to be, right before `--apply` starts hiding accounts.
+  const { data: liveNumbers, error: liveNumbersError } = await serviceRole
     .from("account")
     .select("number")
     .eq("companyGroupId", company.companyGroupId)
     .eq("isGroup", false)
     .eq("active", true);
+  if (liveNumbersError) {
+    throw new Error(
+      `Failed to load live account numbers: ${liveNumbersError.message}`
+    );
+  }
   const orphaned = (liveNumbers ?? [])
     .map((r) => String(r.number ?? ""))
     .filter(

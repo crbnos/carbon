@@ -46,6 +46,7 @@ import {
   type PostingSyncSettings,
   parseJournalEntrySyncEntityId,
   RatelimitError,
+  resolveMemoJournalPartyFromClient,
   resolvePostingSyncSettings,
   resolveSyncConfig,
   SYNC_OPERATION_STALE_IN_FLIGHT_MS,
@@ -289,22 +290,21 @@ export async function resolvePaymentJournalFamily(
  * decides whether it is gated by the Credit Memos or Vendor Credits family
  * (`family: "per-party"` in POSTING_POLICY), so a supplier memo in the Credit
  * direction is a vendor credit, not an AR document.
+ *
+ * ONE definition, shared with the three provider `shouldSync` backstops
+ * (`@carbon/ee/accounting` → `core/memo-party.ts`): the memo is resolved
+ * through the journal LINES (`documentType = 'Memo'`, `documentId = memo.id`)
+ * with `memo.journalId` only as a fallback, because voiding a memo INSERTS A
+ * NEW journal and leaves `memo.journalId` on the original. Keying on
+ * `memo.journalId` alone resolved no memo for a void, so the policy parked a
+ * spurious MEMO_PARTY_UNRESOLVED Warning and the void never reached the
+ * provider. Kept under the local name the ledger paths already import.
  */
 export async function resolveMemoJournalParty(
   client: SupabaseClient<Database>,
   args: { companyId: string; journalId: string }
 ): Promise<"customer" | "supplier" | null> {
-  const memo = await client
-    .from("memo")
-    .select("customerId, supplierId")
-    .eq("companyId", args.companyId)
-    .eq("journalId", args.journalId)
-    .maybeSingle();
-
-  if (memo.error || !memo.data) return null;
-  if (memo.data.customerId) return "customer";
-  if (memo.data.supplierId) return "supplier";
-  return null;
+  return resolveMemoJournalPartyFromClient(client, args);
 }
 
 export type TerminalSyncOperationRequest = {

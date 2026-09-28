@@ -43,7 +43,7 @@ export const handle: Handle = {
 // settlement UI lives in one place. The invoice's "Applied" panel shows where a
 // posted credit ended up.
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  const { client, companyId } = await requirePermissions(request, {
     view: "invoicing"
   });
   const { memoId } = params;
@@ -57,7 +57,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
-  const applications = await getMemoApplications(client, memoId);
+  const applications = await getMemoApplications(client, companyId, memoId);
 
   return { memo: memo.data, applications: applications.data ?? [] };
 }

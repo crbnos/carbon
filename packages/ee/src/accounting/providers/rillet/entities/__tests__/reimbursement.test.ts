@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { JournalEntrySyncError } from "../../../../core/posting";
 import type { ReimbursementSource } from "../../../../core/reimbursement-source";
 import type {
+  Rillet,
   RilletReimbursementCreate,
   RilletVendorWrite
 } from "../../models";
@@ -217,7 +218,12 @@ function fakeMappingService(mapping: unknown = null) {
   };
 }
 
-function setupSyncer(args: { local: ReimbursementSource; mapping?: unknown }) {
+function setupSyncer(args: {
+  local: ReimbursementSource;
+  mapping?: unknown;
+  /** What Rillet's vendor list already holds (the strand-recovery source). */
+  vendors?: Array<Partial<Rillet.Vendor>>;
+}) {
   linked.length = 0;
   const createReimbursement = vi.fn(
     async (_payload: RilletReimbursementCreate) => ({
@@ -230,6 +236,7 @@ function setupSyncer(args: { local: ReimbursementSource; mapping?: unknown }) {
       id: "rillet-new-vendor-1"
     })
   );
+  const listVendors = vi.fn(async () => args.vendors ?? []);
 
   const syncer = new RilletReimbursementSyncer({
     database: {} as never,
@@ -241,7 +248,8 @@ function setupSyncer(args: { local: ReimbursementSource; mapping?: unknown }) {
       subsidiaryId: null,
       createReimbursement,
       deleteReimbursement,
-      createVendor
+      createVendor,
+      listVendors
     } as never
   });
 
@@ -252,7 +260,13 @@ function setupSyncer(args: { local: ReimbursementSource; mapping?: unknown }) {
     fieldValueIdsByValue: new Map()
   }));
 
-  return { syncer, createReimbursement, deleteReimbursement, createVendor };
+  return {
+    syncer,
+    createReimbursement,
+    deleteReimbursement,
+    createVendor,
+    listVendors
+  };
 }
 
 describe("RilletReimbursementSyncer", () => {
@@ -335,5 +349,121 @@ describe("RilletReimbursementSyncer", () => {
     expect(result.action).toBe("deleted");
     expect(deleteReimbursement).toHaveBeenCalledWith("rillet-reimbursement-1");
     expect(createReimbursement).not.toHaveBeenCalled();
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Stranded employee vendor. The Rillet create and the `employeeVendor` mapping
+// write are separate transactions; a crash between them leaves a vendor Carbon
+// has no row for. Rillet does NOT enforce unique vendor names, so a retry
+// raises nothing to adopt on (unlike QBO fault 6240) — it would silently make a
+// SECOND vendor and split the employee's payables. The idempotency key only
+// covers Rillet's 24 h replay window, so the durable recovery is a lookup on
+// the company-qualified `carbon` external reference (the Xero syncer's
+// `findEmployeeContactByName` role).
+// ---------------------------------------------------------------------------
+const strandedVendor = (
+  overrides: Partial<Rillet.Vendor> = {}
+): Partial<Rillet.Vendor> => ({
+  id: "rillet-stranded-vendor-1",
+  name: "Dana Okafor (dana@example.com)",
+  external_references: [
+    { type: "carbon", id: "emp_1" },
+    { type: "carbon-company", id: "company-1" }
+  ],
+  ...overrides
+});
+
+describe("RilletReimbursementSyncer — stranded employee vendor", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("adopts the stranded vendor instead of creating a duplicate", async () => {
+    const { syncer, createVendor, createReimbursement } = setupSyncer({
+      local: reimbursement({ employeeVendorExternalId: null }),
+      vendors: [strandedVendor()]
+    });
+
+    const result = await syncer.pushToAccounting("reimb_1");
+
+    expect(result.status).toBe("success");
+    // The duplicate-name create Rillet would have silently accepted.
+    expect(createVendor).not.toHaveBeenCalled();
+    expect(createReimbursement.mock.calls[0]?.[0]?.vendor_id).toBe(
+      "rillet-stranded-vendor-1"
+    );
+    // And the missing mapping is written, so the next push short-circuits.
+    expect(linked).toContainEqual(
+      expect.objectContaining({
+        entityType: "employeeVendor",
+        entityId: "emp_1",
+        externalId: "rillet-stranded-vendor-1"
+      })
+    );
+  });
+
+  it("ignores a same-named vendor that is not this employee's", async () => {
+    const { syncer, createVendor, createReimbursement } = setupSyncer({
+      local: reimbursement({ employeeVendorExternalId: null }),
+      vendors: [
+        // A real SUPPLIER that happens to share the name — matching on the name
+        // would bill the reimbursement to the wrong counterparty.
+        strandedVendor({
+          id: "rillet-supplier-1",
+          external_references: [
+            { type: "carbon", id: "sup_abc" },
+            { type: "carbon-company", id: "company-1" }
+          ]
+        }),
+        // ANOTHER Carbon instance's employee whose id collides: the reference is
+        // read company-qualified, so this is not ours either.
+        strandedVendor({
+          id: "rillet-other-instance-1",
+          external_references: [
+            { type: "carbon", id: "emp_1" },
+            { type: "carbon-company", id: "company-2" }
+          ]
+        })
+      ]
+    });
+
+    const result = await syncer.pushToAccounting("reimb_1");
+
+    expect(result.status).toBe("success");
+    expect(createVendor).toHaveBeenCalledTimes(1);
+    expect(createReimbursement.mock.calls[0]?.[0]?.vendor_id).toBe(
+      "rillet-new-vendor-1"
+    );
+  });
+
+  it("refuses to guess between two vendors carrying the same employee reference", async () => {
+    const { syncer, createVendor, createReimbursement } = setupSyncer({
+      local: reimbursement({ employeeVendorExternalId: null }),
+      vendors: [
+        strandedVendor(),
+        strandedVendor({ id: "rillet-stranded-vendor-2" })
+      ]
+    });
+
+    const result = await syncer.pushToAccounting("reimb_1");
+
+    expect(result.status).toBe("error");
+    expect(String((result.error as Error)?.message ?? result.error)).toMatch(
+      /2 vendors carrying the Carbon reference for employee emp_1/
+    );
+    expect(createVendor).not.toHaveBeenCalled();
+    expect(createReimbursement).not.toHaveBeenCalled();
+  });
+
+  it("does not list vendors at all when the employee is already mapped", async () => {
+    const { syncer, listVendors, createVendor } = setupSyncer({
+      local: reimbursement() // employeeVendorExternalId set
+    });
+
+    await syncer.pushToAccounting("reimb_1");
+
+    expect(listVendors).not.toHaveBeenCalled();
+    expect(createVendor).not.toHaveBeenCalled();
   });
 });

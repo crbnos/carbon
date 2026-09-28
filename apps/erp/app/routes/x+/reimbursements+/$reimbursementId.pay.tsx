@@ -16,6 +16,7 @@ import {
 } from "~/modules/invoicing";
 import { getNextSequence } from "~/modules/settings";
 import { getDatabaseClient } from "~/services/database.server";
+import { getEdgeFunctionErrorMessage } from "~/utils/error";
 import { path } from "~/utils/path";
 
 /**
@@ -189,10 +190,13 @@ export async function action({ request, params }: ActionFunctionArgs) {
       body: { type: "post", paymentId: payment.data.id, userId, companyId }
     });
     if (result.error) {
-      const message =
-        (result.data as { message?: string } | undefined)?.message ??
-        result.error.message ??
-        "Failed to post the payment";
+      // `result.data` is ALWAYS null on a non-2xx, and `FunctionsHttpError.message`
+      // is the fixed "Edge Function returned a non-2xx status code" — so reading
+      // either hides the real reason post-payment refused.
+      const message = await getEdgeFunctionErrorMessage(
+        result.error,
+        "Failed to post the payment"
+      );
       throw redirect(
         path.to.payment(payment.data.id),
         await flash(request, error(result.error, message))

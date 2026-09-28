@@ -9,6 +9,7 @@ import {
   resolveDimensionValueLabels,
   upsertDimensionValueMapping
 } from "../../../core/dimension-mapping";
+import { resolveMemoJournalPartyFromDatabase } from "../../../core/memo-party";
 import type { PostingSyncDimensionSlot } from "../../../core/models";
 import {
   getPostingSyncSourceTypeSkipReason,
@@ -560,8 +561,13 @@ export class JournalEntrySyncer extends BaseEntitySyncer<
    * the two `family: "per-party"` source types. Without it the backstop
    * parks every memo journal as MEMO_PARTY_UNRESOLVED, so a memo family in
    * `journals` mode would never reach Xero even though the enqueue decision
-   * — which resolves the same party from `memo.journalId` — said push.
-   * Every other source type answers null without a query.
+   * said push. Every other source type answers null without a query.
+   *
+   * The resolution itself is the shared `resolveMemoJournalPartyFromDatabase`
+   * — the SAME rule the enqueue decision uses (journal lines first,
+   * `memo.journalId` as a fallback), so this backstop and that decision
+   * cannot disagree. A VOID memo journal is exactly where they used to: a
+   * void is a NEW journal and `memo.journalId` still names the original.
    */
   private async resolveMemoJournalParty(
     journal: Accounting.JournalEntry
@@ -573,17 +579,10 @@ export class JournalEntrySyncer extends BaseEntitySyncer<
       return null;
     }
 
-    const memo = await this.database
-      .selectFrom("memo")
-      .select(["customerId", "supplierId"])
-      .where("journalId", "=", journal.id)
-      .where("companyId", "=", this.companyId)
-      .executeTakeFirst();
-
-    if (!memo) return null;
-    if (memo.customerId) return "customer";
-    if (memo.supplierId) return "supplier";
-    return null;
+    return resolveMemoJournalPartyFromDatabase(this.database, {
+      companyId: this.companyId,
+      journalId: journal.id
+    });
   }
 
   // =================================================================
