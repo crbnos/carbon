@@ -53,7 +53,10 @@ import {
   SWEPT_PAYMENT_STATUSES,
   SWEPT_REIMBURSEMENT_STATUSES
 } from "./accounting-sync-operations";
-import { MASTER_DATA_SWEEP_TARGETS } from "./master-data-targets";
+import {
+  collectPagedIds,
+  MASTER_DATA_SWEEP_TARGETS
+} from "./master-data-targets";
 import type { ReconcileRef } from "./reconcile";
 import { type ReconcileSummary, reconcileEntities } from "./reconcile-executor";
 import { loadIntegrationTopology } from "./topology";
@@ -162,28 +165,41 @@ async function parkedBillIds(ctx: SweepContext): Promise<string[]> {
 
 /**
  * Rows of a master-data table changed since the floor. Master tables carry no
- * `status`, so this cannot reuse `pageIds`.
+ * `status`, so this cannot reuse `pageIds` — but it PAGES the window under the
+ * same `MAX_PAGES` bound, and that is not optional. `reconcileMasterData` only
+ * decides that a row is already in step; it does not change the row's
+ * `updatedAt`, so a swept row keeps passing `updatedAt >= floor` until it ages
+ * out of the window days later. A single `.limit()` therefore returns the SAME
+ * rows every pass, and with more changes in the window than the limit, every
+ * row past it is never swept at all — the dropped-event recovery this sweep
+ * exists to provide. Ordered by `id` (like `pageIds`) rather than `updatedAt`,
+ * because offset paging over a column concurrent writes are bumping skips rows.
  */
 async function pageChangedMasterDataIds(args: {
   ctx: SweepContext;
   table: "customer" | "supplier" | "item";
   floor: string;
-  limit: number;
 }): Promise<string[]> {
-  const result = await args.ctx.client
-    .from(args.table)
-    .select("id")
-    .eq("companyId", args.ctx.companyId)
-    .gte("updatedAt", args.floor)
-    .order("updatedAt", { ascending: false })
-    .limit(args.limit);
+  return collectPagedIds({
+    pageSize: PAGE_SIZE,
+    maxPages: MAX_PAGES,
+    fetchPage: async (offset, size) => {
+      const result = await args.ctx.client
+        .from(args.table)
+        .select("id")
+        .eq("companyId", args.ctx.companyId)
+        .gte("updatedAt", args.floor)
+        .order("id", { ascending: true })
+        .range(offset, offset + size - 1);
 
-  if (result.error) {
-    throw new Error(
-      `Failed to page ${args.table} for sweep: ${result.error.message}`
-    );
-  }
-  return (result.data ?? []).map((row: { id: string }) => row.id);
+      if (result.error) {
+        throw new Error(
+          `Failed to page ${args.table} for sweep: ${result.error.message}`
+        );
+      }
+      return (result.data ?? []).map((row: { id: string }) => row.id);
+    }
+  });
 }
 
 async function sweepCompanyProvider(args: {
@@ -539,8 +555,7 @@ async function sweepCompanyProvider(args: {
       pageChangedMasterDataIds({
         ctx,
         table: master.table,
-        floor,
-        limit: master.limit
+        floor
       })
     ]);
 

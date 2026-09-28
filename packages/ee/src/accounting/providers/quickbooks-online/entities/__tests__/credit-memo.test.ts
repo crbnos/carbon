@@ -3,14 +3,17 @@ import { CREDIT_REASON_ITEM_ENTITY_TYPE } from "../../../../core/credit-reason-i
 import type { ExternalIntegrationMappingService } from "../../../../core/external-mapping";
 import type { Qbo } from "../../models";
 import {
+  buildQboCreditMemoApplicationPayload,
   buildQboCreditMemoPayload,
   buildQboCreditReasonItemName,
   QBO_MEMO_INCREASER_SKIP_REASON,
+  type QboMemoSettlementRow,
   type QboMemoSource,
   qboCreditMemoSkipReason,
   resolveQboCreditReasonItemRef
 } from "../credit-memo";
 import {
+  buildQboVendorCreditApplicationPayload,
   buildQboVendorCreditPayload,
   qboVendorCreditSkipReason
 } from "../vendor-credit";
@@ -36,6 +39,31 @@ function memo(overrides: Partial<QboMemoSource> = {}): QboMemoSource {
     notes: "Short shipment on SO-000019",
     updatedAt: "2026-09-21T10:00:00.000Z",
     settlements: [],
+    ...overrides
+  };
+}
+
+/**
+ * One `invoiceSettlement` row applying the memo. The default is the
+ * foreign-currency case this fixture exists for: 100 EUR of principal
+ * (`sourceAmount`) carried as 125 USD of base relief (`appliedAmount`) at
+ * Carbon's 0.8 EUR-per-USD rate.
+ */
+function settlement(
+  overrides: Partial<QboMemoSettlementRow> = {}
+): QboMemoSettlementRow {
+  return {
+    id: "isl_1",
+    appliedAmount: 125,
+    sourceAmount: 100,
+    appliedDate: "2026-09-22",
+    targetSalesInvoiceId: "sinv_1",
+    targetPurchaseInvoiceId: null,
+    targetMemoId: null,
+    discountAmount: 0,
+    writeOffAmount: 0,
+    sourceExchangeRate: 0.8,
+    targetExchangeRate: 0.8,
     ...overrides
   };
 }
@@ -228,6 +256,116 @@ describe("buildQboVendorCreditPayload", () => {
     });
 
     expect(payload.APAccountRef).toBeUndefined();
+  });
+});
+
+/**
+ * The currency of an APPLICATION, which is a different question from the
+ * currency of the credit document. `appliedAmount` is base-currency carrying
+ * value; a QBO Payment/BillPayment line is in the transaction's currency.
+ */
+describe("applying a memo in the document currency", () => {
+  it("sends the memo-currency principal, not the base-currency applied amount", () => {
+    const payload = buildQboCreditMemoApplicationPayload({
+      memo: memo({ currencyCode: "EUR", exchangeRate: 0.8 }),
+      settlement: settlement(),
+      customerRef: { value: "17" },
+      invoiceRemoteId: "440",
+      creditMemoRemoteId: "512",
+      baseCurrencyCode: "USD"
+    });
+
+    // 100 EUR of credit, NOT the 125 USD of base relief the row also carries.
+    expect(payload.Line.map((line) => line.Amount)).toEqual([100, 100]);
+    expect(payload.TotalAmt).toBe(0);
+    expect(payload.TxnDate).toBe("2026-09-22");
+    expect(payload.Line[0]?.LinkedTxn).toEqual([
+      { TxnId: "440", TxnType: "Invoice" }
+    ]);
+    expect(payload.Line[1]?.LinkedTxn).toEqual([
+      { TxnId: "512", TxnType: "CreditMemo" }
+    ]);
+    // The transaction currency is stated, not inherited from the customer, and
+    // the rate is inverted to QBO's home-per-foreign convention.
+    expect(payload.CurrencyRef).toEqual({ value: "EUR" });
+    expect(payload.ExchangeRate).toBeCloseTo(1.25, 10);
+  });
+
+  it("does the same on the AP side, on top of the required zero-cash bank fields", () => {
+    const payload = buildQboVendorCreditApplicationPayload({
+      memo: memo({
+        direction: "Debit",
+        customerId: null,
+        supplierId: "supp_1",
+        currencyCode: "EUR",
+        exchangeRate: 0.8
+      }),
+      settlement: settlement({
+        targetSalesInvoiceId: null,
+        targetPurchaseInvoiceId: "pinv_1"
+      }),
+      vendorRef: { value: "55" },
+      bankAccountRef: { value: "35", name: "Checking" },
+      billRemoteId: "701",
+      vendorCreditRemoteId: "702",
+      baseCurrencyCode: "USD"
+    });
+
+    expect(payload.Line.map((line) => line.Amount)).toEqual([100, 100]);
+    expect(payload.PayType).toBe("Check");
+    expect(payload.CheckPayment).toEqual({
+      BankAccountRef: { value: "35", name: "Checking" }
+    });
+    expect(payload.CurrencyRef).toEqual({ value: "EUR" });
+    expect(payload.ExchangeRate).toBeCloseTo(1.25, 10);
+  });
+
+  it("adds no FX fields when the memo is in base currency — the two amounts agree there", () => {
+    const payload = buildQboCreditMemoApplicationPayload({
+      memo: memo(),
+      settlement: settlement({
+        appliedAmount: 90,
+        sourceAmount: 90,
+        sourceExchangeRate: 1,
+        targetExchangeRate: 1
+      }),
+      customerRef: { value: "17" },
+      invoiceRemoteId: "440",
+      creditMemoRemoteId: "512",
+      baseCurrencyCode: "USD"
+    });
+
+    expect(payload.Line.map((line) => line.Amount)).toEqual([90, 90]);
+    expect(payload.CurrencyRef).toBeUndefined();
+    expect(payload.ExchangeRate).toBeUndefined();
+  });
+
+  it("falls back to appliedAmount on a legacy base-currency row, and refuses a foreign one", () => {
+    const legacy = settlement({ appliedAmount: 90, sourceAmount: null });
+
+    expect(
+      buildQboCreditMemoApplicationPayload({
+        memo: memo(),
+        settlement: legacy,
+        customerRef: { value: "17" },
+        invoiceRemoteId: "440",
+        creditMemoRemoteId: "512",
+        baseCurrencyCode: "USD"
+      }).Line.map((line) => line.Amount)
+    ).toEqual([90, 90]);
+
+    // A foreign row with no stored principal is refused rather than converted
+    // back from the rounded base value.
+    expect(() =>
+      buildQboCreditMemoApplicationPayload({
+        memo: memo({ currencyCode: "EUR", exchangeRate: 0.8 }),
+        settlement: legacy,
+        customerRef: { value: "17" },
+        invoiceRemoteId: "440",
+        creditMemoRemoteId: "512",
+        baseCurrencyCode: "USD"
+      })
+    ).toThrow(/carries no document principal/);
   });
 });
 

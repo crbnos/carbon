@@ -15,8 +15,10 @@ import {
 import {
   loadQboMemoSources,
   QBO_MEMO_INCREASER_SKIP_REASON,
+  type QboMemoSettlementRow,
   type QboMemoSource,
   qboMemoStatusSkipReason,
+  qboSettlementDocumentAmount,
   readQboAppliedSettlementIds
 } from "./credit-memo";
 import {
@@ -103,6 +105,58 @@ export function buildQboVendorCreditPayload(args: {
         AccountBasedExpenseLineDetail: {
           AccountRef: args.reasonAccountRef
         }
+      }
+    ]
+  };
+}
+
+/**
+ * Build the zero-cash QBO `BillPayment` that APPLIES this vendor credit to one
+ * bill. Pure — exported for tests.
+ *
+ * The line amounts are the settlement's DOCUMENT-currency principal, not the
+ * base-currency `appliedAmount` — see `qboSettlementDocumentAmount`. The
+ * foreign-currency fields mirror the VendorCredit document's, so the
+ * transaction currency is stated rather than inherited from the vendor.
+ */
+export function buildQboVendorCreditApplicationPayload(args: {
+  memo: QboMemoSource;
+  settlement: QboMemoSettlementRow;
+  vendorRef: Qbo.Ref;
+  bankAccountRef: Qbo.Ref;
+  billRemoteId: string;
+  vendorCreditRemoteId: string;
+  baseCurrencyCode: string;
+}): QboVendorCreditApplicationPayload {
+  const { memo, settlement } = args;
+  const amount = qboSettlementDocumentAmount({
+    memo,
+    settlement,
+    baseCurrencyCode: args.baseCurrencyCode
+  });
+
+  return {
+    VendorRef: args.vendorRef,
+    TotalAmt: 0,
+    TxnDate: settlement.appliedDate,
+    PayType: "Check",
+    CheckPayment: { BankAccountRef: args.bankAccountRef },
+    ...(memo.currencyCode !== args.baseCurrencyCode
+      ? {
+          CurrencyRef: { value: memo.currencyCode },
+          ExchangeRate: toQboExchangeRate(settlement.sourceExchangeRate)
+        }
+      : {}),
+    Line: [
+      {
+        Amount: amount,
+        LinkedTxn: [{ TxnId: args.billRemoteId, TxnType: "Bill" }]
+      },
+      {
+        Amount: amount,
+        LinkedTxn: [
+          { TxnId: args.vendorCreditRemoteId, TxnType: "VendorCredit" }
+        ]
       }
     ]
   };
@@ -417,6 +471,7 @@ export class QboVendorCreditSyncer extends BaseEntitySyncer<
     }
 
     const bankRef = await this.resolveBankAccountRef(local);
+    const baseCurrencyCode = await this.getBaseCurrencyCode();
 
     for (const settlement of pending) {
       const billRemoteId = await this.mappingService.getExternalId(
@@ -436,23 +491,15 @@ export class QboVendorCreditSyncer extends BaseEntitySyncer<
         });
       }
 
-      const payload: QboVendorCreditApplicationPayload = {
-        VendorRef: vendorRef,
-        TotalAmt: 0,
-        TxnDate: settlement.appliedDate,
-        PayType: "Check",
-        CheckPayment: { BankAccountRef: bankRef },
-        Line: [
-          {
-            Amount: settlement.appliedAmount,
-            LinkedTxn: [{ TxnId: billRemoteId, TxnType: "Bill" }]
-          },
-          {
-            Amount: settlement.appliedAmount,
-            LinkedTxn: [{ TxnId: remoteId, TxnType: "VendorCredit" }]
-          }
-        ]
-      };
+      const payload = buildQboVendorCreditApplicationPayload({
+        memo: local,
+        settlement,
+        vendorRef,
+        bankAccountRef: bankRef,
+        billRemoteId,
+        vendorCreditRemoteId: remoteId,
+        baseCurrencyCode
+      });
 
       await this.qboProvider.applyVendorCredit(
         payload,

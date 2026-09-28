@@ -27,6 +27,7 @@ import { withTriggersDisabled } from "../../../core/utils";
 import { parseQboDate, type Qbo, type QboCreatePayload } from "../models";
 import {
   buildQboRequestId,
+  isQboDuplicateNameError,
   QBO_DIMENSION_TARGET_CLASS,
   QBO_DIMENSION_TARGET_DEPARTMENT,
   type QboProvider
@@ -34,6 +35,7 @@ import {
 import type { QboJournalDimensionArgs } from "./journal-entry";
 import {
   buildQboDocNumberFields,
+  escapeQboQueryValue,
   loadQboAccountRefsById,
   type QboWriteOmit
 } from "./shared";
@@ -428,38 +430,84 @@ export class QboReimbursementSyncer extends ChargeSyncerBase<
   /**
    * The QBO Vendor the reimbursement is billed to. Mapping-first under
    * `employeeVendor` (NOT `vendor` — that id space holds Carbon supplier ids),
-   * else create the Vendor JIT and link it. QBO's name namespace is shared
-   * across customers, vendors and employees, so a DisplayName collision
-   * surfaces as Intuit fault 6240 on the operation rather than silently
-   * reusing someone else's record.
+   * else create the Vendor JIT and link it.
    */
   private async resolveEmployeeVendor(
     local: QboReimbursement
   ): Promise<string> {
     if (local.employeeVendorExternalId) return local.employeeVendorExternalId;
 
-    const created = await this.qboProvider.createVendor({
-      DisplayName: employeeVendorName(local.employee),
-      ...(local.employee.email
-        ? { PrimaryEmailAddr: { Address: local.employee.email } }
-        : {})
-    });
-    if (!created?.Id) {
-      throw new Error(
-        `QuickBooks did not return a Vendor Id for employee ${local.employeeId}`
-      );
-    }
+    const displayName = employeeVendorName(local.employee);
+    const vendorId = await this.createOrAdoptEmployeeVendor(local, displayName);
 
     await withTriggersDisabled(this.database, async (tx) => {
       await createMappingService(tx, this.companyId).link(
         EMPLOYEE_VENDOR_ENTITY_TYPE,
         local.employeeId,
         this.provider.id,
-        created.Id
+        vendorId
       );
     });
 
-    return created.Id;
+    return vendorId;
+  }
+
+  /**
+   * Create the employee's QBO Vendor, or ADOPT the one a previous attempt
+   * already created.
+   *
+   * The remote create and the `employeeVendor` mapping write are not one
+   * transaction, so a crash (or a failed link) between them leaves a Vendor on
+   * QBO that Carbon has no row for. QBO's name namespace is shared and unique
+   * across customers, vendors and employees, so a bare retry then fails with
+   * Intuit fault 6240 FOREVER and the reimbursement can never sync without a
+   * hand-made mapping. Two rungs close that, in the order they apply:
+   *
+   *  1. a deterministic `requestid` keyed on the CARBON employee id, so Intuit
+   *     replays the original response inside its dedupe window — the same
+   *     contract `upsertRemote` uses for the Bill, and Rillet's
+   *     `employee-vendor` idempotency key;
+   *  2. adoption on fault 6240 — query the Vendor by `DisplayName` and take
+   *     the exact match. Durable, because it needs nothing but the name, which
+   *     is derived from the employee and therefore stable across retries.
+   *
+   * A 6240 raised by a CUSTOMER or EMPLOYEE sharing the name finds no Vendor,
+   * and the original fault is rethrown rather than guessed at — that one is a
+   * real collision a human has to resolve in QuickBooks.
+   */
+  private async createOrAdoptEmployeeVendor(
+    local: QboReimbursement,
+    displayName: string
+  ): Promise<string> {
+    try {
+      const created = await this.qboProvider.createVendor(
+        {
+          DisplayName: displayName,
+          ...(local.employee.email
+            ? { PrimaryEmailAddr: { Address: local.employee.email } }
+            : {})
+        },
+        buildQboRequestId(this.companyId, "employee-vendor", local.employeeId)
+      );
+      if (!created?.Id) {
+        throw new Error(
+          `QuickBooks did not return a Vendor Id for employee ${local.employeeId}`
+        );
+      }
+      return created.Id;
+    } catch (error) {
+      if (!isQboDuplicateNameError(error)) throw error;
+
+      const matches = await this.qboProvider.query<Qbo.Vendor>(
+        "Vendor",
+        `DisplayName = '${escapeQboQueryValue(displayName)}'`
+      );
+      const adopted = matches.find(
+        (vendor) => vendor.DisplayName === displayName && vendor.Id
+      );
+      if (!adopted) throw error;
+      return adopted.Id;
+    }
   }
 
   // =================================================================

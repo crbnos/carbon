@@ -57,7 +57,17 @@ import {
 /** A settlement that applies this memo to an open document. */
 export type QboMemoSettlementRow = {
   id: string;
+  /**
+   * The target-document principal relieved in COMPANY BASE currency — the
+   * column's own documented meaning (migration `20260908021155`). NOT what a
+   * provider payment line carries; see `qboSettlementDocumentAmount`.
+   */
   appliedAmount: number;
+  /**
+   * The principal consumed in the funding MEMO's own currency, or null on a
+   * legacy row written before the column existed.
+   */
+  sourceAmount: number | null;
   appliedDate: string;
   targetSalesInvoiceId: string | null;
   targetPurchaseInvoiceId: string | null;
@@ -280,6 +290,7 @@ export async function loadQboMemoSources(
       "id",
       "memoId",
       "appliedAmount",
+      "sourceAmount",
       "appliedDate",
       "targetSalesInvoiceId",
       "targetPurchaseInvoiceId",
@@ -304,6 +315,10 @@ export async function loadQboMemoSources(
     existing.push({
       id: row.id,
       appliedAmount: Number(row.appliedAmount) || 0,
+      // NULL is meaningful here (a legacy row with no stored document
+      // principal), so it must survive the numeric coercion — `Number(null)`
+      // is 0, which would read as "applies nothing".
+      sourceAmount: row.sourceAmount == null ? null : Number(row.sourceAmount),
       appliedDate: toDateString(row.appliedDate),
       targetSalesInvoiceId: row.targetSalesInvoiceId,
       targetPurchaseInvoiceId: row.targetPurchaseInvoiceId,
@@ -371,6 +386,94 @@ export function readQboAppliedSettlementIds(
   return Array.isArray(value)
     ? value.filter((id): id is string => typeof id === "string")
     : [];
+}
+
+/**
+ * The principal one settlement applies, in the currency a QBO application
+ * transaction is denominated in — the MEMO's, not the company's base.
+ *
+ * `invoiceSettlement` stores the same application twice on purpose:
+ * `appliedAmount` is "target-document principal relieved in company base
+ * currency" and `sourceAmount` is "principal consumed in the funding source
+ * document currency" (both column comments, migration `20260908021155`). A QBO
+ * `Payment` / `BillPayment` line `Amount` is in the TRANSACTION's currency, so
+ * a 100 EUR credit on a base-USD company at rate 0.8 must send 100, not the
+ * 125 that `appliedAmount` holds — otherwise QBO applies more credit than
+ * Carbon recorded, or rejects the application for exceeding the open balance.
+ * This is the convention `PaymentSyncerBase` already pushes for cash payments
+ * (`amount: settlement.sourceAmount`).
+ *
+ * A legacy row predating the column keeps NULL. When the memo is in base
+ * currency the two values are the same number, so `appliedAmount` is exact —
+ * the identical fallback the `salesInvoices` / `purchaseInvoices` views take
+ * (`COALESCE("sourceAmount", "appliedAmount")`, migration `20260916143022`).
+ * A FOREIGN memo with no stored principal is REFUSED rather than converted:
+ * `.claude/rules/numeric-precision.md` forbids reconstructing source units
+ * from the rounded base value, and a silently-wrong credit application is real
+ * accounting corruption.
+ */
+export function qboSettlementDocumentAmount(args: {
+  memo: QboMemoSource;
+  settlement: QboMemoSettlementRow;
+  baseCurrencyCode: string;
+}): number {
+  const { memo, settlement } = args;
+  if (settlement.sourceAmount !== null) return settlement.sourceAmount;
+  if (memo.currencyCode === args.baseCurrencyCode) {
+    return settlement.appliedAmount;
+  }
+  throw new Error(
+    `Cannot apply memo ${memo.memoId} in QuickBooks Online: settlement ${settlement.id} is in ${memo.currencyCode} but carries no document principal, and its base-currency amount cannot be converted back without losing precision. Re-apply the credit in Carbon, then retry.`
+  );
+}
+
+/**
+ * Build the zero-cash QBO `Payment` that APPLIES this credit memo to one
+ * invoice. Pure — exported for tests.
+ *
+ * Both lines carry the SAME document-currency amount (Carbon requires a memo
+ * and the invoice it settles to share a currency and an exchange rate), and
+ * the foreign-currency fields mirror the CreditMemo document's: the
+ * transaction currency is stated rather than inherited from the customer, and
+ * the rate is the one Carbon booked for THIS application
+ * (`sourceExchangeRate`), inverted to QBO's home-per-foreign convention.
+ */
+export function buildQboCreditMemoApplicationPayload(args: {
+  memo: QboMemoSource;
+  settlement: QboMemoSettlementRow;
+  customerRef: Qbo.Ref;
+  invoiceRemoteId: string;
+  creditMemoRemoteId: string;
+  baseCurrencyCode: string;
+}): QboCreditMemoApplicationPayload {
+  const { memo, settlement } = args;
+  const amount = qboSettlementDocumentAmount({
+    memo,
+    settlement,
+    baseCurrencyCode: args.baseCurrencyCode
+  });
+
+  return {
+    CustomerRef: args.customerRef,
+    TotalAmt: 0,
+    TxnDate: settlement.appliedDate,
+    ...(memo.currencyCode !== args.baseCurrencyCode
+      ? {
+          CurrencyRef: { value: memo.currencyCode },
+          ExchangeRate: toQboExchangeRate(settlement.sourceExchangeRate)
+        }
+      : {}),
+    Line: [
+      {
+        Amount: amount,
+        LinkedTxn: [{ TxnId: args.invoiceRemoteId, TxnType: "Invoice" }]
+      },
+      {
+        Amount: amount,
+        LinkedTxn: [{ TxnId: args.creditMemoRemoteId, TxnType: "CreditMemo" }]
+      }
+    ]
+  };
 }
 
 export class QboCreditMemoSyncer extends BaseEntitySyncer<
@@ -677,6 +780,7 @@ export class QboCreditMemoSyncer extends BaseEntitySyncer<
 
     const alreadyApplied = new Set(readQboAppliedSettlementIds(mapping));
     const applied = [...alreadyApplied];
+    const baseCurrencyCode = await this.getBaseCurrencyCode();
 
     for (const settlement of local.settlements) {
       if (alreadyApplied.has(settlement.id)) continue;
@@ -699,21 +803,14 @@ export class QboCreditMemoSyncer extends BaseEntitySyncer<
         });
       }
 
-      const payload: QboCreditMemoApplicationPayload = {
-        CustomerRef: customerRef,
-        TotalAmt: 0,
-        TxnDate: settlement.appliedDate,
-        Line: [
-          {
-            Amount: settlement.appliedAmount,
-            LinkedTxn: [{ TxnId: invoiceRemoteId, TxnType: "Invoice" }]
-          },
-          {
-            Amount: settlement.appliedAmount,
-            LinkedTxn: [{ TxnId: remoteId, TxnType: "CreditMemo" }]
-          }
-        ]
-      };
+      const payload = buildQboCreditMemoApplicationPayload({
+        memo: local,
+        settlement,
+        customerRef,
+        invoiceRemoteId,
+        creditMemoRemoteId: remoteId,
+        baseCurrencyCode
+      });
 
       await this.qboProvider.applyCreditMemo(
         payload,

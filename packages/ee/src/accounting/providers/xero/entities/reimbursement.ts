@@ -397,22 +397,86 @@ export class XeroReimbursementSyncer extends ChargeSyncerBase<
   /**
    * The Xero Contact the reimbursement is billed to. Mapping-first under
    * `employeeVendor` (NOT `vendor` — that id space holds Carbon supplier ids),
-   * else create the Contact JIT and link it. Xero enforces unique ACTIVE
-   * contact names, so a name collision surfaces as a Xero validation error on
-   * the operation rather than silently reusing someone else's record.
+   * else ADOPT the Contact a previous attempt already created, else create it
+   * JIT and link it.
+   *
+   * The remote create and the `employeeVendor` mapping write are not one
+   * transaction, so a crash (or a failed link) between them leaves a Contact in
+   * Xero that Carbon has no row for. Xero enforces unique contact names, so a
+   * bare retry then fails with a duplicate-name validation error FOREVER and
+   * the reimbursement can never sync without a hand-made mapping. The
+   * name lookup below is the durable recovery — the same shape `upsertRemote`
+   * uses on `InvoiceNumber`, and the one `ContactSyncer.upsertRemote` already
+   * uses for suppliers. The `Idempotency-Key` on the POST only covers the
+   * transient-network window (Xero expires it after six minutes), exactly as on
+   * the credit note.
    */
   private async resolveEmployeeContact(
     local: XeroReimbursement
   ): Promise<string> {
     if (local.employeeVendorExternalId) return local.employeeVendorExternalId;
 
+    const name = employeeVendorName(local.employee);
+    const contactId =
+      (await this.findEmployeeContactByName(name)) ??
+      (await this.createEmployeeContact(local, name));
+
+    await withTriggersDisabled(this.database, async (tx) => {
+      await createMappingService(tx, this.companyId).link(
+        EMPLOYEE_VENDOR_ENTITY_TYPE,
+        local.employeeId,
+        this.provider.id,
+        contactId
+      );
+    });
+
+    return contactId;
+  }
+
+  /**
+   * The employee's Xero Contact by EXACT name, or null when Xero has none.
+   *
+   * Two or more contacts answering to the same name throws rather than picking
+   * one: billing a reimbursement to the wrong person's contact is not something
+   * anything downstream would flag, while a duplicate a human resolves in Xero
+   * is recoverable. Same stance as `upsertRemote`'s invoice recovery read and
+   * the shared counterpart ladder (`core/counterpart.ts`).
+   */
+  private async findEmployeeContactByName(
+    name: string
+  ): Promise<string | null> {
+    const result = await this.xeroProvider.request<{
+      Contacts: Xero.Contact[];
+    }>(
+      "GET",
+      `/Contacts?where=${encodeURIComponent(
+        `Name==${JSON.stringify(name)}`
+      )}&page=1`
+    );
+    if (result.error) throwXeroApiError("find employee contact", result);
+
+    const matches = (result.data?.Contacts ?? []).filter(
+      (contact) => contact.Name === name && contact.ContactID
+    );
+    if (matches.length > 1) {
+      throw new Error(
+        `Multiple Xero contacts are named "${name}"; resolve the duplicates in Xero before retrying`
+      );
+    }
+    return matches[0]?.ContactID ?? null;
+  }
+
+  private async createEmployeeContact(
+    local: XeroReimbursement,
+    name: string
+  ): Promise<string> {
     const result = await this.xeroProvider.request<{
       Contacts: Xero.Contact[];
     }>("POST", "/Contacts", {
       body: JSON.stringify({
         Contacts: [
           {
-            Name: employeeVendorName(local.employee),
+            Name: name,
             ...(local.employee.firstName
               ? { FirstName: local.employee.firstName }
               : {}),
@@ -425,7 +489,14 @@ export class XeroReimbursementSyncer extends ChargeSyncerBase<
             IsSupplier: true
           }
         ]
-      })
+      }),
+      headers: {
+        // Transient-network guard only (Xero expires the key after six
+        // minutes); the durable recovery is the name lookup above.
+        "Idempotency-Key": createHash("sha256")
+          .update(`${this.companyId}:employee-vendor:${local.employeeId}`)
+          .digest("hex")
+      }
     });
     if (result.error) throwXeroApiError("create employee contact", result);
     const contactId = result.data?.Contacts?.[0]?.ContactID;
@@ -434,16 +505,6 @@ export class XeroReimbursementSyncer extends ChargeSyncerBase<
         `Xero returned no ContactID for employee ${local.employeeId}`
       );
     }
-
-    await withTriggersDisabled(this.database, async (tx) => {
-      await createMappingService(tx, this.companyId).link(
-        EMPLOYEE_VENDOR_ENTITY_TYPE,
-        local.employeeId,
-        this.provider.id,
-        contactId
-      );
-    });
-
     return contactId;
   }
 

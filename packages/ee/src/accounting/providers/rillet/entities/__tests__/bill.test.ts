@@ -1,8 +1,12 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { JournalEntrySyncError } from "../../../../core/posting";
 import type { Accounting } from "../../../../core/types";
 import { Rillet } from "../../models";
-import { type BillPostingJournalLine, mapBillToRilletBill } from "../bill";
+import {
+  type BillPostingJournalLine,
+  mapBillToRilletBill,
+  RilletBillSyncer
+} from "../bill";
 import { toRilletExchangeRate } from "../shared";
 
 // The bill's G/L costing comes from its posted Purchase Invoice journal
@@ -447,5 +451,58 @@ describe("Rillet bill currency contract", () => {
       amount: expected,
       currency: "EUR"
     });
+  });
+});
+
+// A bill synced between 2026-09-20 (#1503) and the native `reimbursement`
+// entity could have been written to `/reimbursements`, with the object kind
+// recorded only on its mapping. Rillet's DELETE swallows a 404 as "already
+// gone", so a void routed to `/bills` reports success and tombstones the
+// mapping while the reimbursement stays live — the divergence is silent.
+describe("RilletBillSyncer.deleteRemote (legacy reimbursement mappings)", () => {
+  function setup() {
+    const deleteBill = vi.fn().mockResolvedValue(undefined);
+    const deleteReimbursement = vi.fn().mockResolvedValue(undefined);
+    const syncer = new RilletBillSyncer({
+      database: {} as never,
+      companyId: "company-1",
+      entityType: "bill",
+      config: {
+        enabled: true,
+        direction: "push-to-accounting",
+        owner: "carbon"
+      },
+      provider: { id: "rillet", deleteBill, deleteReimbursement } as never
+    });
+    return {
+      deleteBill,
+      deleteReimbursement,
+      deleteRemote: (remoteId: string, metadata?: Record<string, unknown>) =>
+        (
+          syncer as unknown as {
+            deleteRemote: (
+              id: string,
+              metadata?: Record<string, unknown>
+            ) => Promise<void>;
+          }
+        ).deleteRemote(remoteId, metadata)
+    };
+  }
+
+  it("voids a remoteKind:reimbursement mapping through /reimbursements", async () => {
+    const { deleteBill, deleteReimbursement, deleteRemote } = setup();
+    await deleteRemote("reimb-remote-1", { remoteKind: "reimbursement" });
+    expect(deleteReimbursement).toHaveBeenCalledWith("reimb-remote-1");
+    expect(deleteBill).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ["no metadata", undefined],
+    ["unrelated metadata", { voided: true } as Record<string, unknown>]
+  ])("voids an ordinary bill through /bills (%s)", async (_label, metadata) => {
+    const { deleteBill, deleteReimbursement, deleteRemote } = setup();
+    await deleteRemote("bill-remote-1", metadata);
+    expect(deleteBill).toHaveBeenCalledWith("bill-remote-1");
+    expect(deleteReimbursement).not.toHaveBeenCalled();
   });
 });
