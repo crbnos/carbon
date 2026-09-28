@@ -1211,11 +1211,11 @@ export async function updateAccountsPayableAddressSetting(
 export async function updateRequireSupplierContactSetting(
   client: SupabaseClient<Database>,
   companyId: string,
-  requireSupplierContact: boolean
+  requireSupplierContactAndLocation: boolean
 ) {
   return client
     .from("companySettings")
-    .update(sanitize({ requireSupplierContact }))
+    .update(sanitize({ requireSupplierContactAndLocation }))
     .eq("id", companyId);
 }
 
@@ -1223,11 +1223,11 @@ export async function updateRequireSupplierContactSetting(
 export async function updateRequireCustomerContactSetting(
   client: SupabaseClient<Database>,
   companyId: string,
-  requireCustomerContact: boolean
+  requireCustomerContactAndLocation: boolean
 ) {
   return client
     .from("companySettings")
-    .update(sanitize({ requireCustomerContact }))
+    .update(sanitize({ requireCustomerContactAndLocation }))
     .eq("id", companyId);
 }
 

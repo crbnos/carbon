@@ -123,11 +123,11 @@ const SupplierQuoteForm = ({ initialValues }: SupplierQuoteFormProps) => {
   // The contact requirement is a company setting, so the schema is built per
   // render — that is what marks the field and puts the error on the control
   // instead of surfacing it after a failed submit.
-  const requireSupplierContact =
-    useCompanySettings()?.requireSupplierContact === true;
+  const requireSupplierContactAndLocation =
+    useCompanySettings()?.requireSupplierContactAndLocation === true;
   const contactAwareValidator = useMemo(
-    () => makeSupplierQuoteValidator({ requireSupplierContact }),
-    [requireSupplierContact]
+    () => makeSupplierQuoteValidator({ requireSupplierContactAndLocation }),
+    [requireSupplierContactAndLocation]
   );
 
   return (

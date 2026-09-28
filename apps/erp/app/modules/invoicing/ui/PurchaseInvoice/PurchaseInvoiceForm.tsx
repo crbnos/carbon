@@ -75,11 +75,11 @@ const PurchaseInvoiceForm = ({ initialValues }: PurchaseInvoiceFormProps) => {
   // The contact requirement is a company setting, so the schema is built per
   // render — that is what marks the field and puts the error on the control
   // instead of surfacing it after a failed submit.
-  const requireSupplierContact =
-    useCompanySettings()?.requireSupplierContact === true;
+  const requireSupplierContactAndLocation =
+    useCompanySettings()?.requireSupplierContactAndLocation === true;
   const contactAwareValidator = useMemo(
-    () => makePurchaseInvoiceValidator({ requireSupplierContact }),
-    [requireSupplierContact]
+    () => makePurchaseInvoiceValidator({ requireSupplierContactAndLocation }),
+    [requireSupplierContactAndLocation]
   );
 
   return (

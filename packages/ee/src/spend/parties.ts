@@ -234,13 +234,31 @@ export function pickVendorContacts<
 }
 
 /**
+ * Countries whose vendor create needs more than a country code.
+ *
+ * `US` with no `state` is refused `400 DEVELOPER_7080`, while `GB` with no state
+ * is accepted — so this is a real per-country rule, not address hygiene.
+ */
+export const STATE_REQUIRED_VENDOR_COUNTRIES = new Set(["US", "USA"]);
+
+/**
  * Why a spend vendor could not be created, in terms the reader can act on.
  *
- * Ramp requires `name`, `country` and `business_vendor_contacts.email` — all
- * three verified live 2026-09-26 (a create without a contact, and one with a
- * contact carrying no email, are both rejected `DEVELOPER_7001 "Missing data for
- * required field"`). Which of them is absent is the only useful part, and the
- * previous message omitted it along with the supplier's name.
+ * Ramp requires `name`, `country`, `business_vendor_contacts.email`, AND — for a
+ * US country — a two-letter `state`. All four verified field-by-field against
+ * the sandbox on 2026-09-28:
+ *
+ *   - no `country`                  → `422 {"country": ["Missing data for required field."]}`
+ *   - no `business_vendor_contacts` → `422 {"business_vendor_contacts": [...]}`
+ *   - a contact with no email       → `422 {"business_vendor_contacts": {"email": [...]}}`
+ *   - `US` with no `state`          → `400 DEVELOPER_7080 "State is required for US"`
+ *   - email + `US` + state `VA`     → 200
+ *   - email + `GB`, no state        → 200
+ *
+ * Which of them is absent is the only useful part of the message. The US state
+ * was missing from this list until 2026-09-28, so a US supplier with a country
+ * but no state fell through to the "see the provider error" branch — technically
+ * true, and useless to the person who has to fix the record.
  */
 export function describeMissingVendorFields(
   supplier: SpendVendorParty
@@ -248,8 +266,16 @@ export function describeMissingVendorFields(
   const missing: string[] = [];
   if (!supplier.name?.trim()) missing.push("a name");
   if (!supplier.contact?.email?.trim()) missing.push("a contact email");
-  if (!supplier.country?.trim())
+  const country = supplier.country?.trim();
+  if (!country) {
     missing.push("a country on one of its locations");
+  } else if (
+    STATE_REQUIRED_VENDOR_COUNTRIES.has(country.toUpperCase()) &&
+    !supplier.address?.stateProvince?.trim()
+  ) {
+    // Ramp names the remedy precisely, so pass it through rather than paraphrasing.
+    missing.push("a two-letter state on its US location");
+  }
 
   const who = supplier.name?.trim() || `supplier ${supplier.id}`;
   if (missing.length === 0) {

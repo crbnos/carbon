@@ -131,7 +131,7 @@ export const plannedOrderValidator = z.object({
 export type PlannedOrder = z.infer<typeof plannedOrderValidator>;
 
 /**
- * `requireSupplierContact` is a COMPANY SETTING, and a zod schema cannot read the
+ * `requireSupplierContactAndLocation` is a COMPANY SETTING, and a zod schema cannot read the
  * database — so the schema is built per request instead of being a fixed object.
  *
  * Doing it here rather than as a check in the action is what makes the field
@@ -165,7 +165,7 @@ const basePurchaseOrder = z.object({
 });
 
 /**
- * `requireSupplierContact` is a COMPANY SETTING, and a zod schema cannot read the
+ * `requireSupplierContactAndLocation` is a COMPANY SETTING, and a zod schema cannot read the
  * database — so the schema is built per request rather than being a fixed object.
  *
  * Doing it here rather than as a check in the action is what makes the field
@@ -182,12 +182,13 @@ const basePurchaseOrder = z.object({
  * the field look required to every existing caller).
  */
 export function makePurchaseOrderValidator(
-  options: { requireSupplierContact?: boolean } = {}
+  options: { requireSupplierContactAndLocation?: boolean } = {}
 ) {
-  if (!options.requireSupplierContact) return basePurchaseOrder;
+  if (!options.requireSupplierContactAndLocation) return basePurchaseOrder;
 
   return basePurchaseOrder.extend({
-    supplierContactId: requiredContactField("Supplier contact")
+    supplierContactId: requiredContactField("Supplier contact"),
+    supplierLocationId: requiredContactField("Supplier location")
   });
 }
 
@@ -613,7 +614,7 @@ const baseSupplierQuote = z.object({
 });
 
 /**
- * `requireSupplierContact` is a company setting, so the schema is built per
+ * `requireSupplierContactAndLocation` is a company setting, so the schema is built per
  * request — a zod schema cannot read the database. See `makePurchaseOrderValidator`
  * for why this belongs in the schema rather than in the action.
  *
@@ -634,13 +635,13 @@ const supplierQuoteExpirationError = {
 };
 
 export function makeSupplierQuoteValidator(
-  options: { requireSupplierContact?: boolean } = {}
+  options: { requireSupplierContactAndLocation?: boolean } = {}
 ) {
   // Each branch refines its OWN object. Refining a union of the two schemas does
   // not type-check (zod's `.refine` overloads cannot resolve against a union), and
   // `.refine()` must come last regardless: it returns a ZodEffects, which has no
   // `.extend()`.
-  if (!options.requireSupplierContact) {
+  if (!options.requireSupplierContactAndLocation) {
     return baseSupplierQuote.refine(
       supplierQuoteExpirationRule,
       supplierQuoteExpirationError
@@ -648,7 +649,10 @@ export function makeSupplierQuoteValidator(
   }
 
   return baseSupplierQuote
-    .extend({ supplierContactId: requiredContactField("Supplier contact") })
+    .extend({
+      supplierContactId: requiredContactField("Supplier contact"),
+      supplierLocationId: requiredContactField("Supplier location")
+    })
     .refine(supplierQuoteExpirationRule, supplierQuoteExpirationError);
 }
 

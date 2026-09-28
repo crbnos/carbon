@@ -117,7 +117,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const settings = await getCompanySettings(client, companyId);
   const validation = await validator(
     makePurchaseOrderValidator({
-      requireSupplierContact: settings.data?.requireSupplierContact === true
+      requireSupplierContactAndLocation:
+        settings.data?.requireSupplierContactAndLocation === true
     })
   ).validate(formData);
 

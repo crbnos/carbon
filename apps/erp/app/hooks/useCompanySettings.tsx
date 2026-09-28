@@ -8,8 +8,8 @@ type CompanySettings = {
   showCurrencyTrailingZeros?: boolean | null;
   allowLowercaseItemIds?: boolean | null;
   /** Declared so the document forms can build their validator from it. */
-  requireSupplierContact?: boolean | null;
-  requireCustomerContact?: boolean | null;
+  requireSupplierContactAndLocation?: boolean | null;
+  requireCustomerContactAndLocation?: boolean | null;
 } & Record<string, unknown>;
 
 /** Set by a route that loaded the settings itself. `useRouteData` matches on the

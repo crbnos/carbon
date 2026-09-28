@@ -37,7 +37,12 @@ describe("RampProvider", () => {
       transport: "rest",
       supportsWebhooks: true,
       ownsRemoteCodingSurface: true,
-      ownsLedgerFamilies: []
+      ownsLedgerFamilies: [],
+      // Ramp cannot create a spend vendor without a contact email, so
+      // connecting it turns `requireSupplierContactAndLocation` on — see
+      // `sync/party-contact.ts`. Declared on the MODE profile, so this is also
+      // what stops the requirement being a Ramp-shaped special case.
+      requiresPartyContactAndLocation: ["supplier"]
     });
   });
 

@@ -92,7 +92,7 @@ const basePurchaseInvoice = z.object({
 });
 
 /**
- * `requireSupplierContact` is a company setting, so the schema is built per request —
+ * `requireSupplierContactAndLocation` is a company setting, so the schema is built per request —
  * a zod schema cannot read the database. Enforcing it HERE rather than in the
  * action is what makes the field behave like a required field: the form marks
  * it, the error lands on the control while the document is being filled in, and
@@ -102,12 +102,13 @@ const basePurchaseInvoice = z.object({
  * is unchanged and `z.infer<typeof purchaseInvoiceValidator>` keeps its shape.
  */
 export function makePurchaseInvoiceValidator(
-  options: { requireSupplierContact?: boolean } = {}
+  options: { requireSupplierContactAndLocation?: boolean } = {}
 ) {
-  if (!options.requireSupplierContact) return basePurchaseInvoice;
+  if (!options.requireSupplierContactAndLocation) return basePurchaseInvoice;
 
   return basePurchaseInvoice.extend({
-    invoiceSupplierContactId: requiredContactField("Supplier contact")
+    invoiceSupplierContactId: requiredContactField("Supplier contact"),
+    invoiceSupplierLocationId: requiredContactField("Supplier location")
   });
 }
 
@@ -222,7 +223,7 @@ const baseSalesInvoice = z.object({
 });
 
 /**
- * `requireCustomerContact` is a company setting, so the schema is built per request —
+ * `requireCustomerContactAndLocation` is a company setting, so the schema is built per request —
  * a zod schema cannot read the database. Enforcing it HERE rather than in the
  * action is what makes the field behave like a required field: the form marks
  * it, the error lands on the control while the document is being filled in, and
@@ -232,12 +233,13 @@ const baseSalesInvoice = z.object({
  * is unchanged and `z.infer<typeof salesInvoiceValidator>` keeps its shape.
  */
 export function makeSalesInvoiceValidator(
-  options: { requireCustomerContact?: boolean } = {}
+  options: { requireCustomerContactAndLocation?: boolean } = {}
 ) {
-  if (!options.requireCustomerContact) return baseSalesInvoice;
+  if (!options.requireCustomerContactAndLocation) return baseSalesInvoice;
 
   return baseSalesInvoice.extend({
-    invoiceCustomerContactId: requiredContactField("Customer contact")
+    invoiceCustomerContactId: requiredContactField("Customer contact"),
+    invoiceCustomerLocationId: requiredContactField("Customer location")
   });
 }
 

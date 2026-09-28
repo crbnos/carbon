@@ -54,7 +54,12 @@ export const RAMP_MODE_PROFILES: Record<SpendInstallMode, RampModeProfile> = {
       transport: "rest",
       supportsWebhooks: true,
       ownsRemoteCodingSurface: true,
-      ownsLedgerFamilies: []
+      ownsLedgerFamilies: [],
+      // A Ramp spend-vendor create needs a contact email AND a country (plus a
+      // state for US), all verified live 2026-09-28. BOTH modes push vendors and
+      // bills, so both need it. On the mode profiles rather than beside them
+      // because everything else about Ramp's capabilities already lives here.
+      requiresPartyContactAndLocation: ["supplier"]
     },
     outboundCeiling: { purchaseOrder: true, bill: true },
     inboundCeiling: new Set(ALL_INBOUND_FAMILIES)
@@ -77,7 +82,8 @@ export const RAMP_MODE_PROFILES: Record<SpendInstallMode, RampModeProfile> = {
       // forwarding AP. `applyLedgerDelegation` turns this into
       // `families.ap = "none"` PLUS disabling AP's backing entities, derived
       // from POSTING_POLICY rather than a hard-coded "bill".
-      ownsLedgerFamilies: ["ap"]
+      ownsLedgerFamilies: ["ap"],
+      requiresPartyContactAndLocation: ["supplier"]
     },
     outboundCeiling: { purchaseOrder: true, bill: true },
     // Bill payments ONLY. Every other family is the seat-holder's to post, and

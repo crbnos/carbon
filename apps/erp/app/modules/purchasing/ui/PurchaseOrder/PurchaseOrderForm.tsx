@@ -116,11 +116,11 @@ const PurchaseOrderForm = ({ initialValues }: PurchaseOrderFormProps) => {
   // The supplier-contact requirement is a company setting, so the schema is built
   // per render. Marking the field required in the schema is what puts the error on
   // the control itself instead of surfacing it after the fact.
-  const requireSupplierContact =
-    useCompanySettings()?.requireSupplierContact === true;
+  const requireSupplierContactAndLocation =
+    useCompanySettings()?.requireSupplierContactAndLocation === true;
   const validator = useMemo(
-    () => makePurchaseOrderValidator({ requireSupplierContact }),
-    [requireSupplierContact]
+    () => makePurchaseOrderValidator({ requireSupplierContactAndLocation }),
+    [requireSupplierContactAndLocation]
   );
 
   return (

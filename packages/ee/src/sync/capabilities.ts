@@ -50,7 +50,34 @@ type SharedCapabilities = {
    * enumerate vendors but not items. Empty = the import has nothing to pull.
    */
   importableEntities?: ExternalIdentityKind[];
+  /**
+   * Party kinds this provider CANNOT create a counterpart for unless the party
+   * has BOTH a reachable (emailable) contact AND a location carrying a country
+   * — so Carbon should require them at the document boundary rather than
+   * discovering the gap at push time.
+   *
+   * Ramp declares `["supplier"]`. Verified field-by-field against the sandbox on
+   * 2026-09-28 (`POST /developer/v1/vendors`): no `country` is
+   * `422 {"country": [...]}`, no `business_vendor_contacts` is
+   * `422 {"business_vendor_contacts": [...]}`, a contact with no email is
+   * `422 {"business_vendor_contacts": {"email": [...]}}`, and `US` with no state
+   * is `400 DEVELOPER_7080`. So an incomplete supplier fails EVERY bill, long
+   * after the person who could have fixed it moved on.
+   *
+   * Both facts travel together because the platform needs all of it or none of
+   * it: a supplier with a contact but no location fails exactly as hard as one
+   * with neither, so a provider cannot meaningfully demand just one.
+   *
+   * A CAPABILITY rather than a line in one provider's install hook, because the
+   * question "does connecting this platform make these mandatory?" is a fact
+   * about the platform. A second spend provider declares it and inherits the
+   * enforcement; nothing branches on a provider id.
+   */
+  requiresPartyContactAndLocation?: PartyContactKind[];
 };
+
+/** The party kinds a provider can demand a complete record for. */
+export type PartyContactKind = "supplier" | "customer";
 
 export type AccountingCapabilities = SharedCapabilities & {
   role: "accounting";
@@ -104,6 +131,7 @@ export type ResolvedCapabilities = Required<
   maxJournalDimensionSlots?: number;
   ownsRemoteCodingSurface: boolean;
   ownsLedgerFamilies: LedgerFamilyKey[];
+  requiresPartyContactAndLocation: PartyContactKind[];
 };
 
 /**
@@ -120,7 +148,8 @@ export const CAPABILITY_DEFAULTS: ResolvedCapabilities = {
   searchableCounterparts: [],
   importableEntities: [],
   ownsRemoteCodingSurface: true,
-  ownsLedgerFamilies: []
+  ownsLedgerFamilies: [],
+  requiresPartyContactAndLocation: []
 };
 
 export function resolveCapabilities(
@@ -137,7 +166,9 @@ export function resolveCapabilities(
       ...(declared.externalAddressing ?? {})
     },
     searchableCounterparts: declared.searchableCounterparts ?? [],
-    importableEntities: declared.importableEntities ?? []
+    importableEntities: declared.importableEntities ?? [],
+    requiresPartyContactAndLocation:
+      declared.requiresPartyContactAndLocation ?? []
   };
 
   if (declared.role === "spend") {

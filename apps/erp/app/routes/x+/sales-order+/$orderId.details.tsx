@@ -115,9 +115,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const formData = await request.formData();
   const validation = await validator(
     makeSalesOrderValidator({
-      requireCustomerContact:
+      requireCustomerContactAndLocation:
         (await getCompanySettings(client, companyId)).data
-          ?.requireCustomerContact === true
+          ?.requireCustomerContactAndLocation === true
     })
   ).validate(formData);
 

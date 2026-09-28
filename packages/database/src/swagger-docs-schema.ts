@@ -92431,10 +92431,10 @@ export default {
             $ref: "#/parameters/rowFilter.companySettings.includeOperationsOnTraveler"
           },
           {
-            $ref: "#/parameters/rowFilter.companySettings.requireSupplierContact"
+            $ref: "#/parameters/rowFilter.companySettings.requireSupplierContactAndLocation"
           },
           {
-            $ref: "#/parameters/rowFilter.companySettings.requireCustomerContact"
+            $ref: "#/parameters/rowFilter.companySettings.requireCustomerContactAndLocation"
           },
           {
             $ref: "#/parameters/select"
@@ -92646,10 +92646,10 @@ export default {
             $ref: "#/parameters/rowFilter.companySettings.includeOperationsOnTraveler"
           },
           {
-            $ref: "#/parameters/rowFilter.companySettings.requireSupplierContact"
+            $ref: "#/parameters/rowFilter.companySettings.requireSupplierContactAndLocation"
           },
           {
-            $ref: "#/parameters/rowFilter.companySettings.requireCustomerContact"
+            $ref: "#/parameters/rowFilter.companySettings.requireCustomerContactAndLocation"
           },
           {
             $ref: "#/parameters/preferReturn"
@@ -92815,10 +92815,10 @@ export default {
             $ref: "#/parameters/rowFilter.companySettings.includeOperationsOnTraveler"
           },
           {
-            $ref: "#/parameters/rowFilter.companySettings.requireSupplierContact"
+            $ref: "#/parameters/rowFilter.companySettings.requireSupplierContactAndLocation"
           },
           {
-            $ref: "#/parameters/rowFilter.companySettings.requireCustomerContact"
+            $ref: "#/parameters/rowFilter.companySettings.requireCustomerContactAndLocation"
           },
           {
             $ref: "#/parameters/body.companySettings"
@@ -150334,8 +150334,8 @@ export default {
         "requireMfa",
         "allowLowercaseItemIds",
         "includeOperationsOnTraveler",
-        "requireSupplierContact",
-        "requireCustomerContact"
+        "requireSupplierContactAndLocation",
+        "requireCustomerContactAndLocation"
       ],
       properties: {
         id: {
@@ -150609,17 +150609,17 @@ export default {
           format: "boolean",
           type: "boolean"
         },
-        requireSupplierContact: {
+        requireSupplierContactAndLocation: {
           default: false,
           description:
-            "When true, a supplier must have at least one contact with an email address before its purchase orders, supplier quotes and purchase invoices can be released or posted.",
+            "When true, a supplier must have at least one contact with an email address AND at least one location whose address carries a country (plus a state when that country is US) before its purchase orders, supplier quotes and purchase invoices can be released or posted.",
           format: "boolean",
           type: "boolean"
         },
-        requireCustomerContact: {
+        requireCustomerContactAndLocation: {
           default: false,
           description:
-            "When true, a customer must have at least one contact with an email address before its quotes, sales orders and sales invoices can be released or posted.",
+            "When true, a customer must have at least one contact with an email address AND at least one location whose address carries a country (plus a state when that country is US) before its quotes, sales orders and sales invoices can be released or posted.",
           format: "boolean",
           type: "boolean"
         }
@@ -200393,18 +200393,18 @@ export default {
       in: "query",
       type: "string"
     },
-    "rowFilter.companySettings.requireSupplierContact": {
-      name: "requireSupplierContact",
+    "rowFilter.companySettings.requireSupplierContactAndLocation": {
+      name: "requireSupplierContactAndLocation",
       description:
-        "When true, a supplier must have at least one contact with an email address before its purchase orders, supplier quotes and purchase invoices can be released or posted.",
+        "When true, a supplier must have at least one contact with an email address AND at least one location whose address carries a country (plus a state when that country is US) before its purchase orders, supplier quotes and purchase invoices can be released or posted.",
       required: false,
       in: "query",
       type: "string"
     },
-    "rowFilter.companySettings.requireCustomerContact": {
-      name: "requireCustomerContact",
+    "rowFilter.companySettings.requireCustomerContactAndLocation": {
+      name: "requireCustomerContactAndLocation",
       description:
-        "When true, a customer must have at least one contact with an email address before its quotes, sales orders and sales invoices can be released or posted.",
+        "When true, a customer must have at least one contact with an email address AND at least one location whose address carries a country (plus a state when that country is US) before its quotes, sales orders and sales invoices can be released or posted.",
       required: false,
       in: "query",
       type: "string"

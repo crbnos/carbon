@@ -2,14 +2,15 @@ import type { Database } from "@carbon/database";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import {
   hasEmailableContact,
+  hasUsableLocation,
   PARTY_CONTACT_SETTING,
   type PartyKind,
   partyContactRequiredMessage
 } from "./party-contact";
 
 /**
- * Enforce the "party must have a reachable contact" setting at a document
- * boundary.
+ * Enforce the "party must have a reachable contact AND an identifiable
+ * location" setting at a document boundary.
  *
  * Returns an error MESSAGE, or null when the document may proceed. A route
  * turns that into its own flash/validation shape rather than this throwing,
@@ -19,7 +20,7 @@ import {
  * Fails OPEN on a read error. This gate exists to stop a document reaching a
  * platform that will reject it — a transient database hiccup is not a reason to
  * block someone from posting, and the push itself still refuses with a named
- * error if the contact really is missing.
+ * error if the record really is incomplete.
  */
 export async function checkPartyContactRequirement(
   client: SupabaseClient<Database>,
@@ -39,29 +40,63 @@ export async function checkPartyContactRequirement(
   const required = (settings.data as Record<string, unknown>)[settingColumn];
   if (required !== true) return null;
 
+  const isSupplier = party.kind === "supplier";
   // `supplierContact` / `customerContact` are the join rows; the email lives on
-  // `contact`.
-  const joinTable =
-    party.kind === "supplier" ? "supplierContact" : "customerContact";
-  const partyColumn = party.kind === "supplier" ? "supplierId" : "customerId";
+  // `contact`. Same shape for locations: the join row carries the address.
+  const contactTable = isSupplier ? "supplierContact" : "customerContact";
+  const locationTable = isSupplier ? "supplierLocation" : "customerLocation";
+  const partyColumn = isSupplier ? "supplierId" : "customerId";
 
-  const contacts = await client
-    .from(joinTable)
-    .select("contact(email)")
-    .eq(partyColumn, party.id)
-    .eq("companyId", companyId);
+  const [contacts, locations] = await Promise.all([
+    client
+      .from(contactTable)
+      .select("contact(email)")
+      .eq(partyColumn, party.id)
+      .eq("companyId", companyId),
+    client
+      .from(locationTable)
+      .select("address(countryCode, stateProvince)")
+      .eq(partyColumn, party.id)
+      .eq("companyId", companyId)
+  ]);
 
-  if (contacts.error) return null;
+  // Fail open per read, independently: a locations query that errored must not
+  // be reported as "no location".
+  if (contacts.error || locations.error) return null;
 
-  const rows = (contacts.data ?? []).flatMap((row) => {
+  const contactRows = (contacts.data ?? []).flatMap((row) => {
     const contact = (row as { contact?: { email?: string | null } | null })
       .contact;
     return contact ? [contact] : [];
   });
 
-  if (hasEmailableContact(rows)) return null;
+  const addressRows = (locations.data ?? []).flatMap((row) => {
+    const address = (
+      row as {
+        address?: {
+          countryCode?: string | null;
+          stateProvince?: string | null;
+        } | null;
+      }
+    ).address;
+    return address
+      ? [
+          {
+            country: address.countryCode ?? null,
+            stateProvince: address.stateProvince ?? null
+          }
+        ]
+      : [];
+  });
 
-  const table = party.kind === "supplier" ? "supplier" : "customer";
+  const missing = {
+    contact: !hasEmailableContact(contactRows),
+    location: !hasUsableLocation(addressRows)
+  };
+
+  if (!missing.contact && !missing.location) return null;
+
+  const table = isSupplier ? "supplier" : "customer";
   const named = await client
     .from(table)
     .select("name")
@@ -71,6 +106,7 @@ export async function checkPartyContactRequirement(
 
   return partyContactRequiredMessage(
     party.kind,
-    (named.data as { name?: string | null } | null)?.name ?? null
+    (named.data as { name?: string | null } | null)?.name ?? null,
+    missing
   );
 }

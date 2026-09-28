@@ -414,7 +414,7 @@ const baseQuote = z.object({
 });
 
 /**
- * `requireCustomerContact` is a company setting, so the schema is built per request —
+ * `requireCustomerContactAndLocation` is a company setting, so the schema is built per request —
  * a zod schema cannot read the database. Enforcing it HERE rather than in the
  * action is what makes the field behave like a required field: the form marks
  * it, the error lands on the control while the document is being filled in, and
@@ -424,12 +424,13 @@ const baseQuote = z.object({
  * is unchanged and `z.infer<typeof quoteValidator>` keeps its shape.
  */
 export function makeQuoteValidator(
-  options: { requireCustomerContact?: boolean } = {}
+  options: { requireCustomerContactAndLocation?: boolean } = {}
 ) {
-  if (!options.requireCustomerContact) return baseQuote;
+  if (!options.requireCustomerContactAndLocation) return baseQuote;
 
   return baseQuote.extend({
-    customerContactId: requiredContactField("Customer contact")
+    customerContactId: requiredContactField("Customer contact"),
+    customerLocationId: requiredContactField("Customer location")
   });
 }
 
@@ -880,7 +881,7 @@ const baseSalesOrder = z.object({
 });
 
 /**
- * `requireCustomerContact` is a company setting, so the schema is built per request —
+ * `requireCustomerContactAndLocation` is a company setting, so the schema is built per request —
  * a zod schema cannot read the database. Enforcing it HERE rather than in the
  * action is what makes the field behave like a required field: the form marks
  * it, the error lands on the control while the document is being filled in, and
@@ -890,12 +891,13 @@ const baseSalesOrder = z.object({
  * is unchanged and `z.infer<typeof salesOrderValidator>` keeps its shape.
  */
 export function makeSalesOrderValidator(
-  options: { requireCustomerContact?: boolean } = {}
+  options: { requireCustomerContactAndLocation?: boolean } = {}
 ) {
-  if (!options.requireCustomerContact) return baseSalesOrder;
+  if (!options.requireCustomerContactAndLocation) return baseSalesOrder;
 
   return baseSalesOrder.extend({
-    customerContactId: requiredContactField("Customer contact")
+    customerContactId: requiredContactField("Customer contact"),
+    customerLocationId: requiredContactField("Customer location")
   });
 }
 

@@ -118,7 +118,7 @@ describe("canCreatePurchaseOrderRevision", () => {
 
 describe("makePurchaseOrderValidator", () => {
   /**
-   * `requireSupplierContact` is a company setting, so the schema is built per
+   * `requireSupplierContactAndLocation` is a company setting, so the schema is built per
    * request. Enforcing it in the SCHEMA rather than in the action is what makes
    * the error land on the field: a route-level check could only flash after the
    * fact, and when the flash was miswired it failed silently — the document just
@@ -139,34 +139,50 @@ describe("makePurchaseOrderValidator", () => {
     // widened the inferred type and made the field look required to every
     // existing caller.
     expect(makePurchaseOrderValidator()).toBe(purchaseOrderValidator);
-    expect(makePurchaseOrderValidator({ requireSupplierContact: false })).toBe(
-      purchaseOrderValidator
-    );
+    expect(
+      makePurchaseOrderValidator({ requireSupplierContactAndLocation: false })
+    ).toBe(purchaseOrderValidator);
   });
 
-  it("requires the contact when the setting is on", () => {
+  it("requires BOTH the contact and the location when the setting is on", () => {
+    // Ramp refuses a vendor create missing either one (no `country` → 422, no
+    // `business_vendor_contacts` → 422; verified live 2026-09-28), so requiring
+    // only the contact would still let the document post and fail at push time.
     const validatorWith = makePurchaseOrderValidator({
-      requireSupplierContact: true
+      requireSupplierContactAndLocation: true
     });
 
     const missing = validatorWith.safeParse(base);
     expect(missing.success).toBe(false);
-    expect(JSON.stringify(missing.error?.issues)).toContain(
-      "Supplier contact is required"
-    );
+    const issues = JSON.stringify(missing.error?.issues);
+    expect(issues).toContain("Supplier contact is required");
+    expect(issues).toContain("Supplier location is required");
+
+    const contactOnly = validatorWith.safeParse({
+      ...base,
+      supplierContactId: "cnt_1"
+    });
+    expect(contactOnly.success).toBe(false);
+
+    const locationOnly = validatorWith.safeParse({
+      ...base,
+      supplierLocationId: "loc_1"
+    });
+    expect(locationOnly.success).toBe(false);
 
     const present = validatorWith.safeParse({
       ...base,
-      supplierContactId: "cnt_1"
+      supplierContactId: "cnt_1",
+      supplierLocationId: "loc_1"
     });
     expect(present.success).toBe(true);
   });
 
-  it("rejects an empty contact, not just an absent one", () => {
+  it("rejects empty values, not just absent ones", () => {
     // An empty select posts "" rather than omitting the field.
     const result = makePurchaseOrderValidator({
-      requireSupplierContact: true
-    }).safeParse({ ...base, supplierContactId: "" });
+      requireSupplierContactAndLocation: true
+    }).safeParse({ ...base, supplierContactId: "", supplierLocationId: "" });
 
     expect(result.success).toBe(false);
   });

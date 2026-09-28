@@ -7947,9 +7947,9 @@ export type Database = {
           qualityDispatchNotificationGroup: string[] | null
           qualityIssueTarget: number
           quoteLineCategoryMarkups: Json | null
-          requireCustomerContact: boolean
+          requireCustomerContactAndLocation: boolean
           requireMfa: boolean
-          requireSupplierContact: boolean
+          requireSupplierContactAndLocation: boolean
           returnPickedMaterialTiming: string
           rfqReadyNotificationGroup: string[]
           salesJobCompletedNotificationGroup: string[]
@@ -8001,9 +8001,9 @@ export type Database = {
           qualityDispatchNotificationGroup?: string[] | null
           qualityIssueTarget?: number
           quoteLineCategoryMarkups?: Json | null
-          requireCustomerContact?: boolean
+          requireCustomerContactAndLocation?: boolean
           requireMfa?: boolean
-          requireSupplierContact?: boolean
+          requireSupplierContactAndLocation?: boolean
           returnPickedMaterialTiming?: string
           rfqReadyNotificationGroup?: string[]
           salesJobCompletedNotificationGroup?: string[]
@@ -8055,9 +8055,9 @@ export type Database = {
           qualityDispatchNotificationGroup?: string[] | null
           qualityIssueTarget?: number
           quoteLineCategoryMarkups?: Json | null
-          requireCustomerContact?: boolean
+          requireCustomerContactAndLocation?: boolean
           requireMfa?: boolean
-          requireSupplierContact?: boolean
+          requireSupplierContactAndLocation?: boolean
           returnPickedMaterialTiming?: string
           rfqReadyNotificationGroup?: string[]
           salesJobCompletedNotificationGroup?: string[]

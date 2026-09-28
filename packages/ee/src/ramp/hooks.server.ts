@@ -2,6 +2,8 @@ import { getAppUrl } from "@carbon/auth";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { SpendProviderID } from "../accounting/core/models";
 import { ensureProviderSubscriptions } from "../accounting/core/subscriptions";
+import { resolveCapabilities } from "../sync/capabilities";
+import { applyPartyContactRequirements } from "../sync/party-contact";
 import {
   extractConnections,
   isCarbonConnection,
@@ -9,7 +11,7 @@ import {
   linkedConnections,
   resolveConnectedProviderName
 } from "./lib/connection-status";
-import { rampOwnsCodingSurface } from "./lib/modes";
+import { rampOwnsCodingSurface, resolveRampModeProfile } from "./lib/modes";
 import {
   clearRampConnectionMetadata,
   ensureRampConnection,
@@ -55,6 +57,32 @@ async function convergeRamp(
   }
 
   const ownsCodingSurface = rampOwnsCodingSurface(metadata);
+
+  // Connecting a platform that cannot create a vendor without a reachable
+  // contact AND an identifiable location is what makes both mandatory, so
+  // connecting it turns the requirement on. Driven by the mode profile's
+  // declared capabilities, NOT by this being the Ramp hook — a second spend
+  // provider declares the same capability and gets the same behaviour with no
+  // edit here.
+  //
+  // Best-effort: a settings write must never fail an otherwise-good connection.
+  try {
+    const enabled = await applyPartyContactRequirements(
+      serviceRole,
+      companyId,
+      resolveCapabilities(resolveRampModeProfile(metadata).capabilities)
+    );
+    if (enabled.length > 0) {
+      console.log(
+        `[ramp] enabled ${enabled.join(", ")} for company ${companyId} — Ramp cannot create a vendor without a contact email and a country`
+      );
+    }
+  } catch (err) {
+    console.error(
+      `[ramp] could not enable party-contact requirements for company ${companyId}:`,
+      (err as Error).message
+    );
+  }
 
   // Only the seat-holder may create the accounting connection. In push-only
   // another system holds it, and claiming it is precisely what this mode exists
