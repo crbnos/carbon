@@ -4,11 +4,11 @@ import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
+import { salesReturnOrderDispositionValidator } from "~/modules/sales";
 import {
-  salesReturnOrderDispositionValidator,
-  setSalesReturnOrderLineDisposition
-} from "~/modules/sales";
-import { getDatabaseClient } from "~/services/database.server";
+  ESCALATE_TO_ISSUE_MESSAGE,
+  setReturnLineDispositionFromPicker
+} from "~/modules/sales/sales-transitions.server";
 import { path, requestReferrer } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
@@ -43,36 +43,22 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  // Scrap and Rework are quality decisions — they escalate to an Issue (the
-  // line's issue route), which sets the disposition after the NCR is created.
-  if (disposition === "Scrap" || disposition === "Rework") {
-    throw redirect(
-      redirectTo,
-      await flash(
-        request,
-        error(
-          null,
-          "Scrap and Rework are set by escalating the line to an Issue"
-        )
-      )
-    );
-  }
-
-  const result = await setSalesReturnOrderLineDisposition(
-    client,
-    getDatabaseClient(),
-    {
-      lineId,
-      companyId,
-      disposition,
-      userId
-    }
-  );
+  const result = await setReturnLineDispositionFromPicker(client, {
+    lineId,
+    companyId,
+    disposition,
+    userId
+  });
 
   if (result.error) {
     throw redirect(
       redirectTo,
-      await flash(request, error(result.error, "Failed to update disposition"))
+      await flash(
+        request,
+        result.error.message === ESCALATE_TO_ISSUE_MESSAGE
+          ? error(null, ESCALATE_TO_ISSUE_MESSAGE)
+          : error(result.error, "Failed to update disposition")
+      )
     );
   }
 

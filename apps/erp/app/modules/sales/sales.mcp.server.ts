@@ -11,7 +11,9 @@ import {
   isQuoteLocked,
   type quoteLineValidator,
   type quoteMaterialValidator,
-  type quoteOperationValidator
+  type quoteOperationValidator,
+  type salesOrderStatusType,
+  type salesReturnDispositionType
 } from "./sales.models";
 import {
   confirmSalesOrder,
@@ -22,6 +24,10 @@ import {
   saveQuoteOperationWithPrices,
   updateQuoteLineWithPrices
 } from "./sales.server";
+import {
+  setReturnLineDispositionFromPicker,
+  transitionSalesOrderStatus
+} from "./sales-transitions.server";
 
 // Sales route commands published under the tool names of the bare service
 // primitives they replace. Each export here SHADOWS the same-named export of
@@ -501,4 +507,80 @@ export async function releaseSalesOrder(
 
 function lowerFirst(text: string): string {
   return text.charAt(0).toLowerCase() + text.slice(1);
+}
+
+/**
+ * Set a customer return line's disposition as the line's disposition picker does; Scrap and Rework are refused (they are set by escalating the line to an Issue).
+ *
+ * Accepts Pending, Return to Customer and Use As Is. Refused on a Cancelled
+ * return order, and for anything but Pending before a quantity is received.
+ * `lineId` is the return order line's uuid.
+ */
+export async function setSalesReturnOrderLineDisposition(
+  client: SupabaseClient<Database>,
+  args: {
+    lineId: string;
+    companyId: string;
+    disposition: (typeof salesReturnDispositionType)[number];
+    userId: string;
+  }
+) {
+  await requireToolPermission(
+    args.userId,
+    args.companyId,
+    "sales",
+    "update",
+    "set return line dispositions"
+  );
+  const result = await setReturnLineDispositionFromPicker(client, args);
+  if (result.error) {
+    return { data: null, error: { message: result.error.message } };
+  }
+  return { data: result.data, error: null };
+}
+
+/**
+ * Change a sales order's status as its status menu does; Cancelled runs the cancel flow, which also cancels the jobs made for the order.
+ *
+ * With Cancelled, `cancelJobIds` limits which of the order's jobs are
+ * cancelled (omit it to cancel all of them, send an empty list to cancel
+ * none). Closed clears the assignee. `id` is the order's uuid.
+ */
+export async function updateSalesOrderStatus(
+  client: SupabaseClient<Database>,
+  update: {
+    id: string;
+    companyId: string;
+    status: (typeof salesOrderStatusType)[number];
+    cancelJobIds?: string[];
+    updatedBy: string;
+  }
+) {
+  const { id, companyId, updatedBy: userId } = update;
+  await requireToolPermission(
+    userId,
+    companyId,
+    "sales",
+    "update",
+    "change sales order status"
+  );
+  await requireToolCompanyRecord(
+    "salesOrder",
+    companyId,
+    { id },
+    "Sales order"
+  );
+  const result = await transitionSalesOrderStatus(client, {
+    id,
+    userId,
+    status: update.status,
+    cancelJobIds: update.cancelJobIds
+  });
+  if (result.error) {
+    return {
+      data: null,
+      error: commandError(result.error.message, result.cause)
+    };
+  }
+  return { data: result.data, error: null };
 }

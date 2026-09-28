@@ -48,6 +48,9 @@ vi.mock("~/modules/sales/sales.server", () => ({
   deleteQuoteOperationWithPrices: m.deleteQuoteOperationWithPrices,
   confirmSalesOrder: m.confirmSalesOrder
 }));
+vi.mock("~/modules/sales/sales-transitions.server", () => ({
+  setReturnLineDispositionFromPicker: vi.fn()
+}));
 // sales.models' module graph needs the Lingui macro transform vitest does not
 // run; the wrapper only takes isQuoteLocked from it (Draft is the one
 // editable quote status).
