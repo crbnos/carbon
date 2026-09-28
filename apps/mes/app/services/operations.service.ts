@@ -1,5 +1,6 @@
-import type { Database } from "@carbon/database";
+import type { Database, Json } from "@carbon/database";
 import { activeJobStatuses, getCompanyTimeZone } from "@carbon/database";
+import { storage } from "@carbon/files";
 import type { WorkSource } from "@carbon/lib/telemetry";
 import { trackWorkEvent } from "@carbon/lib/telemetry";
 import { raiseMoment } from "@carbon/lib/workflows";
@@ -10,6 +11,7 @@ import {
   type FlatTree,
   flattenTree,
   generateBomIds,
+  round,
   type TrackedActivityAttributes
 } from "@carbon/utils";
 import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
@@ -18,6 +20,7 @@ import type { z } from "zod";
 import { sanitize } from "~/utils/supabase";
 import { getPickedQuantitiesByJobMaterial } from "./inventory.service";
 import type {
+  batchStepRecordsValidator,
   documentTypes,
   nonScrapQuantityValidator,
   productionEventValidator,
@@ -39,20 +42,154 @@ function isMissingQuantityColumn(
   return error?.code === "42703" || error?.code === "PGRST204";
 }
 
+/**
+ * A `{ data, error }` failure shaped like a PostgREST response, for when a
+ * caller-supplied record id does not belong to the caller's company. Callers
+ * of these services pass service-role clients, so the companyId check is the
+ * only tenant boundary — a miss must stop the write, not no-op past it.
+ */
+function notFoundResponse(message: string) {
+  return {
+    data: null,
+    error: {
+      name: "PostgrestError",
+      message,
+      details: "",
+      hint: "",
+      code: "PGRST116"
+    } as PostgrestError,
+    count: null,
+    status: 404,
+    statusText: "Not Found"
+  };
+}
+
 export async function getOpenJobs(
   client: SupabaseClient<Database>,
   args: { companyId: string; locationId: string }
 ) {
-  return client
+  // Floor rule: an operation in a Released (Active/Completing) batch is
+  // floor-visible even when its own job is not released yet, so the jobs
+  // list widens to include those member jobs alongside the released ones.
+  const memberJobs = await client
+    .from("jobOperation")
+    .select("jobId, jobOperationBatch!inner(status)")
+    .eq("companyId", args.companyId)
+    .in("jobOperationBatch.status", ["Active", "Completing"]);
+
+  const memberJobIds = [
+    ...new Set((memberJobs.data ?? []).map((op) => op.jobId))
+  ];
+
+  let query = client
     .from("jobs")
     .select(
       "id, jobId, status, itemReadableIdWithRevision, name, quantity, quantityComplete, dueDate, deadlineType, assignee, jobMakeMethodId"
     )
     .eq("companyId", args.companyId)
-    .eq("locationId", args.locationId)
-    .in("status", [...activeJobStatuses])
-    .order("jobId", { ascending: true });
+    .eq("locationId", args.locationId);
+
+  if (memberJobIds.length > 0) {
+    // PostgREST `in` lists inside `.or()` quote each value — "In Progress"
+    // contains a space.
+    const statuses = activeJobStatuses.map((s) => `"${s}"`).join(",");
+    const ids = memberJobIds.map((id) => `"${id}"`).join(",");
+    query = query.or(`status.in.(${statuses}),id.in.(${ids})`);
+  } else {
+    query = query.in("status", [...activeJobStatuses]);
+  }
+
+  return query.order("jobId", { ascending: true });
 }
+
+export async function getJobOperationBatch(
+  client: SupabaseClient<Database>,
+  batchId: string,
+  companyId: string
+) {
+  const batch = await client
+    .from("jobOperationBatch")
+    .select("*, process(batchType)")
+    .eq("id", batchId)
+    .eq("companyId", companyId)
+    .single();
+  if (batch.error) return batch;
+  // Only what the operation view's batch mode consumes: member planned times
+  // (summed into the work-type toggle), completion pre-fill quantities, the
+  // member's job id for the chip / completion table, and the due dates and
+  // customers the batch's header summarizes.
+  const operations = await client
+    .from("jobOperation")
+    .select(
+      "id, description, operationQuantity, quantityComplete, quantityScrapped, setupTime, setupUnit, laborTime, laborUnit, machineTime, machineUnit, dueDate, jobMakeMethodId, jobMakeMethod(requiresBatchTracking, itemId, item(readableIdWithRevision, name, thumbnailPath, type)), job(jobId, status, deadlineType, customer(name))"
+    )
+    .eq("jobOperationBatchId", batchId)
+    .eq("companyId", companyId)
+    .order("jobId", { referencedTable: "job", ascending: true });
+
+  // Batch-tracked outputs: each member's WIP entity (finalized as the produced
+  // lot at completion) and its current batch number, for the completion form's
+  // per-member batch-number field.
+  const makeMethodIds = [
+    ...new Set(
+      (operations.data ?? [])
+        .map((o) => o.jobMakeMethodId)
+        .filter(Boolean) as string[]
+    )
+  ];
+  const entities = makeMethodIds.length
+    ? await client
+        .from("trackedEntity")
+        .select("id, readableId, attributes, createdAt")
+        .in("attributes->>Job Make Method", makeMethodIds)
+        .eq("companyId", companyId)
+        .order("createdAt", { ascending: true })
+    : { data: [], error: null };
+  const entityByMakeMethod = new Map<
+    string,
+    { id: string; readableId: string | null }
+  >();
+  for (const e of entities.data ?? []) {
+    const makeMethodId =
+      e.attributes !== null &&
+      typeof e.attributes === "object" &&
+      "Job Make Method" in e.attributes
+        ? (e.attributes["Job Make Method"] as string)
+        : null;
+    if (makeMethodId && !entityByMakeMethod.has(makeMethodId)) {
+      entityByMakeMethod.set(makeMethodId, {
+        id: e.id,
+        readableId: e.readableId
+      });
+    }
+  }
+
+  return {
+    data: {
+      ...batch.data,
+      operations: (operations.data ?? []).map((o) => {
+        const entity = o.jobMakeMethodId
+          ? entityByMakeMethod.get(o.jobMakeMethodId)
+          : undefined;
+        return {
+          ...o,
+          requiresBatchTracking:
+            o.jobMakeMethod?.requiresBatchTracking ?? false,
+          itemId: o.jobMakeMethod?.itemId ?? null,
+          trackedEntityId: entity?.id ?? null,
+          batchNumber: entity?.readableId ?? null
+        };
+      })
+    },
+    // The entities carry the planned lot numbers — completion must not run
+    // on a batch whose lots could not be read.
+    error: operations.error ?? entities.error
+  };
+}
+
+export type JobOperationBatch = NonNullable<
+  Awaited<ReturnType<typeof getJobOperationBatch>>["data"]
+>;
 
 export async function getTrackedEntitiesByJobMakeMethodIds(
   client: SupabaseClient<Database>,
@@ -87,7 +224,9 @@ export async function getJobOperations(
 ) {
   return client
     .from("jobOperation")
-    .select("*, jobMakeMethod(parentMaterialId, item(readableIdWithRevision))")
+    .select(
+      "*, jobOperationBatch(readableId, status), jobMakeMethod(parentMaterialId, item(readableIdWithRevision))"
+    )
     .eq("jobId", jobId);
 }
 
@@ -171,13 +310,26 @@ export async function finishJobOperation(
     companyId: string;
   }
 ) {
+  // Callers pass a service-role client, so the companyId filter is the tenant
+  // check: an operation id from another company updates nothing, and nothing
+  // downstream (GL posting, picked-material returns, moments) may run for it.
   const result = await client
     .from("jobOperation")
     .update({
       status: "Done",
       updatedBy: args.userId
     })
-    .eq("id", args.jobOperationId);
+    .eq("id", args.jobOperationId)
+    .eq("companyId", args.companyId)
+    .select("id");
+
+  if (!result.error && result.data.length === 0) {
+    log.warn("finishJobOperation: job operation not found in company", {
+      companyId: args.companyId,
+      jobOperationId: args.jobOperationId
+    });
+    return notFoundResponse("Job operation not found");
+  }
 
   if (!result.error) {
     client
@@ -350,6 +502,20 @@ export async function getActiveJobOperationsByLocation(
   });
 }
 
+export async function getJobOperationBatchMembers(
+  client: SupabaseClient<Database>,
+  batchIds: string[],
+  companyId: string
+) {
+  return client
+    .from("jobOperation")
+    .select(
+      "jobOperationBatchId, operationQuantity, targetQuantity, job(jobId)"
+    )
+    .in("jobOperationBatchId", batchIds)
+    .eq("companyId", companyId);
+}
+
 export async function getActiveJobCount(
   client: SupabaseClient<Database>,
   args: {
@@ -506,7 +672,7 @@ export async function getAssemblyPlaybackByOperationId(
   const steps = await client
     .from("assemblyInstructionStep")
     .select(
-      "id, title, instructionText, componentNodeIds, motion, camera, fastener, durationSeconds, warnings"
+      "id, title, instructionText, componentNodeIds, hiddenComponentNodeIds, parentStepId, motion, camera, fastener, durationSeconds, warnings"
     )
     .eq("assemblyInstructionId", instructionId)
     .order("sortOrder", { ascending: true });
@@ -527,6 +693,24 @@ export async function getJobAttributesByOperationId(
     .from("jobOperationStep")
     .select("*, jobOperationStepRecord(*)")
     .eq("operationId", operationId);
+}
+
+/**
+ * Tenant check for a caller-supplied job operation id. Routes read operations
+ * with a service-role client (operators often lack RLS rights), so this scoped
+ * lookup is the boundary: null data means the id is not in the company.
+ */
+export async function getJobOperationForCompany(
+  client: SupabaseClient<Database>,
+  operationId: string,
+  companyId: string
+) {
+  return client
+    .from("jobOperation")
+    .select("id, jobId")
+    .eq("id", operationId)
+    .eq("companyId", companyId)
+    .maybeSingle();
 }
 
 export async function getJobByOperationId(
@@ -552,13 +736,19 @@ const getItemFiles = async (
   items: Array<{ itemId: string }>
 ) => {
   const getFile = async (id: string) => {
-    const res = await client.storage
-      .from("private")
+    const res = await storage(client)
+      .company(companyId)
       .list(`${companyId}/parts/${id}`);
 
-    if (res.error || !res.data) return null;
+    if (!res.data?.length) return null;
 
-    return res.data.map((f) => ({ ...f, bucket: "parts", itemId: id }));
+    return res.data.map(
+      (f): StorageItem => ({
+        ...f,
+        bucket: "parts",
+        itemId: id
+      })
+    );
   };
 
   const elems = items.map((el) => getFile(el.itemId));
@@ -578,30 +768,30 @@ export async function getJobFiles(
     const opportunityLine = job.salesOrderLineId || job.quoteLineId;
 
     const [opportunityLineFiles, jobFiles, itemFiles] = await Promise.all([
-      client.storage
-        .from("private")
+      storage(client)
+        .company(companyId)
         .list(`${companyId}/opportunity-line/${opportunityLine}`),
-      client.storage.from("private").list(`${companyId}/job/${job.id}`),
+      storage(client).company(companyId).list(`${companyId}/job/${job.id}`),
       getItemFiles(client, companyId, items)
     ]);
 
     // Combine and return both sets of files
     return [
-      ...(opportunityLineFiles.data?.map((f) => ({
+      ...(opportunityLineFiles.data ?? []).map((f) => ({
         ...f,
         bucket: "opportunity-line"
-      })) || []),
-      ...(jobFiles.data?.map((f) => ({ ...f, bucket: "job" })) || []),
+      })),
+      ...(jobFiles.data ?? []).map((f) => ({ ...f, bucket: "job" })),
       ...itemFiles
     ];
   } else {
     const [jobFiles, itemFiles] = await Promise.all([
-      client.storage.from("private").list(`${companyId}/job/${job.id}`),
+      storage(client).company(companyId).list(`${companyId}/job/${job.id}`),
       getItemFiles(client, companyId, items)
     ]);
 
     return [
-      ...(jobFiles.data?.map((f) => ({ ...f, bucket: "job" })) || []),
+      ...(jobFiles.data ?? []).map((f) => ({ ...f, bucket: "job" })),
       ...itemFiles
     ];
   }
@@ -612,6 +802,314 @@ export async function getJobMakeMethod(
   id: string
 ) {
   return client.from("jobMakeMethod").select("*").eq("id", id).single();
+}
+
+// Batch-wide material requirement per item: summed estimated vs issued across
+// every member operation's BOM lines. Feeds the batch-mode materials panel so
+// the operator sees the combined pick (e.g. 6,500 seeds); recording still
+// happens per member via the issue fn's trackedEntitiesToBatch case.
+export type BatchMaterialTotal = {
+  required: number;
+  issued: number;
+  itemReadableId: string | null;
+  name: string | null;
+  thumbnailPath: string | null;
+  itemType: string | null;
+  // Where the members' rows say to pick it from (the first one set).
+  storageUnitName: string | null;
+  unitOfMeasureCode: string | null;
+  requiresBatchTracking: boolean;
+  requiresSerialTracking: boolean;
+  // each member's share, in member order, for the per-job split line
+  perMember: { jobOperationId: string; required: number }[];
+};
+
+// The batch's materials, summed per item across every member. Reads the same
+// op-linked rows the shared pick (issue `trackedEntitiesToBatch`) issues
+// against, so what the batch view shows is exactly what one pick can cover.
+export async function getBatchMaterialTotals(
+  client: SupabaseClient<Database>,
+  args: { batchId: string; companyId: string }
+): Promise<Record<string, BatchMaterialTotal>> {
+  const members = await client
+    .from("jobOperation")
+    .select("id, jobMakeMethodId")
+    .eq("jobOperationBatchId", args.batchId)
+    .eq("companyId", args.companyId);
+  if (members.error || !members.data?.length) return {};
+  // A member's materials are what its operation view lists — its make method's
+  // BOM — with a row linked straight to a member operation kept on it. The
+  // batch pick (`issue` trackedEntitiesToBatch) attributes rows the same way.
+  const memberIds = new Set(members.data.map((m) => m.id));
+  const memberByMakeMethod = new Map(
+    members.data
+      .filter((m) => m.jobMakeMethodId)
+      .map((m) => [m.jobMakeMethodId as string, m.id])
+  );
+  const rows = await client
+    .from("jobMaterial")
+    .select(
+      "itemId, jobOperationId, jobMakeMethodId, estimatedQuantity, quantityIssued, description, unitOfMeasureCode, requiresBatchTracking, requiresSerialTracking, item(readableIdWithRevision, thumbnailPath, type), storageUnit(name)"
+    )
+    .or(
+      [
+        `jobOperationId.in.(${[...memberIds].join(",")})`,
+        memberByMakeMethod.size
+          ? `jobMakeMethodId.in.(${[...memberByMakeMethod.keys()].join(",")})`
+          : null
+      ]
+        .filter(Boolean)
+        .join(",")
+    )
+    .eq("companyId", args.companyId);
+  const totals: Record<string, BatchMaterialTotal> = {};
+  for (const r of rows.data ?? []) {
+    const jobOperationId =
+      r.jobOperationId && memberIds.has(r.jobOperationId)
+        ? r.jobOperationId
+        : memberByMakeMethod.get(r.jobMakeMethodId);
+    if (!r.itemId || !jobOperationId) continue;
+    const t = (totals[r.itemId] ??= {
+      required: 0,
+      issued: 0,
+      itemReadableId: r.item?.readableIdWithRevision ?? null,
+      thumbnailPath: r.item?.thumbnailPath ?? null,
+      itemType: r.item?.type ?? null,
+      storageUnitName: null,
+      name: r.description ?? null,
+      unitOfMeasureCode: r.unitOfMeasureCode ?? null,
+      requiresBatchTracking: Boolean(r.requiresBatchTracking),
+      requiresSerialTracking: Boolean(r.requiresSerialTracking),
+      perMember: []
+    });
+    t.storageUnitName ??= r.storageUnit?.name ?? null;
+    const required = Number(r.estimatedQuantity ?? 0);
+    t.required += required;
+    t.issued += Number(r.quantityIssued ?? 0);
+    const share = t.perMember.find((m) => m.jobOperationId === jobOperationId);
+    if (share) share.required += required;
+    else t.perMember.push({ jobOperationId, required });
+  }
+  // Rounded to internal scale like the pick's own check (splitPickAcrossMembers),
+  // so a requirement finer than a quantity input (0.000072 KG) reads as done
+  // once the pickable 0.00007 is issued, and the default pick is one it accepts.
+  for (const t of Object.values(totals)) {
+    t.required = round(t.required);
+    t.issued = round(t.issued);
+  }
+  return totals;
+}
+
+export type BatchStep = {
+  key: string;
+  name: string;
+  type: string;
+  sortOrder: number;
+  required: boolean;
+  unitOfMeasureCode: string | null;
+  minValue: number | null;
+  maxValue: number | null;
+  listValues: string[] | null;
+  // The reference material, taken from the first member carrying the step
+  // (the same procedure step on every job).
+  description: Json | null;
+  slides: {
+    id: string;
+    imagePath: string | null;
+    caption: string | null;
+    sortOrder: number | null;
+    annotations: Json | null;
+  }[];
+  // One entry per member operation carrying this step.
+  perMember: {
+    jobOperationId: string;
+    stepId: string;
+    recorded: boolean;
+    record: BatchStepRecord | null;
+  }[];
+};
+
+export type BatchStepRecord = {
+  value: string | null;
+  numericValue: number | null;
+  booleanValue: boolean | null;
+  userValue: string | null;
+};
+
+export type BatchParameter = {
+  key: string;
+  // Distinct values and the member operations holding each; one entry when
+  // every job runs the same setting.
+  values: { value: string; jobOperationIds: string[] }[];
+};
+
+export type BatchWorkInstructions = Awaited<
+  ReturnType<typeof getBatchWorkInstructions>
+>;
+
+export type BatchFile = StorageItem & {
+  storagePath: string;
+  // The member job a job file belongs to; null for item files every job shares.
+  jobReadableId: string | null;
+};
+
+// The batch view's work instructions, aggregated across members: each step
+// once (members share the routing) with who has recorded it, each parameter
+// once with any per-job differences, and every file — the item's shared
+// drawings once, plus each job's own attachments labelled by job.
+export async function getBatchWorkInstructions(
+  client: SupabaseClient<Database>,
+  args: { batchId: string; companyId: string }
+): Promise<{
+  steps: BatchStep[];
+  parameters: BatchParameter[];
+  files: BatchFile[];
+}> {
+  const members = await client
+    .from("jobOperation")
+    .select("id, jobId, job(jobId, itemId)")
+    .eq("jobOperationBatchId", args.batchId)
+    .eq("companyId", args.companyId);
+  if (members.error || !members.data?.length) {
+    return { steps: [], parameters: [], files: [] };
+  }
+  const memberIds = members.data.map((m) => m.id);
+
+  const [steps, parameters] = await Promise.all([
+    client
+      .from("jobOperationStep")
+      .select(
+        "id, operationId, name, type, sortOrder, required, unitOfMeasureCode, minValue, maxValue, listValues, description, jobOperationStepSlide(id, imagePath, caption, sortOrder, annotations), jobOperationStepRecord(index, value, numericValue, booleanValue, userValue)"
+      )
+      .in("operationId", memberIds)
+      .eq("companyId", args.companyId),
+    client
+      .from("jobOperationParameter")
+      .select("operationId, key, value")
+      .in("operationId", memberIds)
+      .eq("companyId", args.companyId)
+  ]);
+
+  const stepsByKey = new Map<string, BatchStep>();
+  for (const step of steps.data ?? []) {
+    const key = `${step.sortOrder ?? 0}|${step.type}|${step.name}`;
+    const entry =
+      stepsByKey.get(key) ??
+      ({
+        key,
+        name: step.name,
+        type: step.type,
+        sortOrder: Number(step.sortOrder ?? 0),
+        required: Boolean(step.required),
+        unitOfMeasureCode: step.unitOfMeasureCode ?? null,
+        minValue: step.minValue ?? null,
+        maxValue: step.maxValue ?? null,
+        listValues: step.listValues ?? null,
+        description: step.description ?? null,
+        slides: step.jobOperationStepSlide ?? [],
+        perMember: []
+      } satisfies BatchStep);
+    const records = step.jobOperationStepRecord ?? [];
+    const record = records.find((r) => r.index === 0) ?? records[0] ?? null;
+    entry.perMember.push({
+      jobOperationId: step.operationId,
+      stepId: step.id,
+      recorded: records.length > 0,
+      record: record
+        ? {
+            value: record.value ?? null,
+            numericValue: record.numericValue ?? null,
+            booleanValue: record.booleanValue ?? null,
+            userValue: record.userValue ?? null
+          }
+        : null
+    });
+    stepsByKey.set(key, entry);
+  }
+
+  const parametersByKey = new Map<string, BatchParameter>();
+  for (const parameter of parameters.data ?? []) {
+    const entry = parametersByKey.get(parameter.key) ?? {
+      key: parameter.key,
+      values: []
+    };
+    const same = entry.values.find((v) => v.value === parameter.value);
+    if (same) same.jobOperationIds.push(parameter.operationId);
+    else
+      entry.values.push({
+        value: parameter.value,
+        jobOperationIds: [parameter.operationId]
+      });
+    parametersByKey.set(parameter.key, entry);
+  }
+
+  // Storage has no multi-folder list: one listing per member job and per
+  // distinct item, bounded by the batch's size (the same shape getJobFiles uses).
+  const jobs = members.data
+    .map((m) => ({
+      id: m.jobId,
+      readableId: (m.job as { jobId?: string } | null)?.jobId ?? m.jobId,
+      itemId: (m.job as { itemId?: string } | null)?.itemId ?? null
+    }))
+    .filter((job, i, all) => all.findIndex((j) => j.id === job.id) === i);
+  const itemIds = [
+    ...new Set(jobs.map((job) => job.itemId).filter((id): id is string => !!id))
+  ];
+  const [jobFiles, itemFiles] = await Promise.all([
+    Promise.all(
+      jobs.map(async (job) => {
+        const folder = `${args.companyId}/job/${job.id}`;
+        const listed = await storage(client)
+          .company(args.companyId)
+          .list(folder);
+        return (listed.data ?? []).map(
+          (file): BatchFile => ({
+            ...file,
+            bucket: "job",
+            storagePath: `${folder}/${file.name}`,
+            jobReadableId: job.readableId
+          })
+        );
+      })
+    ),
+    Promise.all(
+      itemIds.map(async (itemId) => {
+        const folder = `${args.companyId}/parts/${itemId}`;
+        const listed = await storage(client)
+          .company(args.companyId)
+          .list(folder);
+        return (listed.data ?? []).map(
+          (file): BatchFile => ({
+            ...file,
+            bucket: "parts",
+            itemId,
+            storagePath: `${folder}/${file.name}`,
+            jobReadableId: null
+          })
+        );
+      })
+    )
+  ]);
+
+  return {
+    steps: [...stepsByKey.values()].sort((a, b) => a.sortOrder - b.sortOrder),
+    parameters: [...parametersByKey.values()],
+    files: [
+      ...itemFiles.flat(),
+      ...jobFiles.flat().sort((a, b) =>
+        (a.jobReadableId ?? "").localeCompare(
+          b.jobReadableId ?? "",
+          undefined,
+          {
+            numeric: true
+          }
+        )
+      )
+    ].filter(
+      // Supabase lists a folder placeholder with no id; it is not a file.
+      (file) => file.id && !file.name.startsWith(".")
+    )
+  };
 }
 
 export async function getJobMaterialsByOperationId(
@@ -789,7 +1287,8 @@ export async function getJobMaterialsByOperationId(
   const pickedFor = (materialId: string | null) =>
     (materialId ? pickedByMaterial[materialId] : undefined) ?? {
       quantityPicked: 0,
-      quantityToPick: 0
+      quantityToPick: 0,
+      pickedByItem: []
     };
 
   if (requiresSerialTracking) {
@@ -916,6 +1415,7 @@ export async function backflushUntrackedMaterialsOnStepRecord(
     .from("jobOperationStep")
     .select("id, operationId")
     .eq("id", args.jobOperationStepId)
+    .eq("companyId", args.companyId)
     .single();
   if (step.error || !step.data.operationId) return { error: step.error };
   const operationId = step.data.operationId;
@@ -1168,13 +1668,10 @@ export async function getOperationEligibility(
     .from("jobOperation")
     .select("processId")
     .eq("id", operationId)
+    .eq("companyId", companyId)
     .maybeSingle();
 
   if (operation.error) {
-    console.error(
-      "getOperationEligibility: failed to fetch jobOperation",
-      operation.error
-    );
     return { eligible: true, reason: null };
   }
 
@@ -1190,10 +1687,6 @@ export async function getOperationEligibility(
     .maybeSingle();
 
   if (process.error) {
-    console.error(
-      "getOperationEligibility: failed to fetch process",
-      process.error
-    );
     return { eligible: true, reason: null };
   }
 
@@ -1203,17 +1696,13 @@ export async function getOperationEligibility(
 
   const ability = await client
     .from("ability")
-    .select("id, name")
+    .select("id")
     .eq("processId", operation.data.processId)
     .eq("companyId", companyId)
     .eq("active", true)
     .maybeSingle();
 
   if (ability.error) {
-    console.error(
-      "getOperationEligibility: failed to fetch ability",
-      ability.error
-    );
     return { eligible: true, reason: null };
   }
 
@@ -1223,7 +1712,8 @@ export async function getOperationEligibility(
     return { eligible: true, reason: null };
   }
 
-  const abilityName = ability.data.name ?? process.data.name ?? "ability";
+  // The ability's name IS the process's name (abilities no longer store one).
+  const abilityName = process.data.name ?? "ability";
 
   const employeeAbility = await client
     .from("employeeAbility")
@@ -1234,10 +1724,6 @@ export async function getOperationEligibility(
     .maybeSingle();
 
   if (employeeAbility.error) {
-    console.error(
-      "getOperationEligibility: failed to fetch employeeAbility",
-      employeeAbility.error
-    );
     return { eligible: true, reason: null };
   }
 
@@ -1298,6 +1784,20 @@ export async function getProductionQuantitiesForJobOperation(
     .from("productionQuantity")
     .select("*")
     .eq("jobOperationId", operationId);
+}
+
+// Every productionEvent tagged with the batch — a batch timer started from any
+// member's operation page is tagged with the batch id, not one member's
+// operationId, so a batched operation view reads the batch's events rather than
+// its own to show the shared running timer and progress.
+export async function getProductionEventsForBatch(
+  client: SupabaseClient<Database>,
+  batchId: string
+) {
+  return client
+    .from("productionEvent")
+    .select("*")
+    .eq("jobOperationBatchId", batchId);
 }
 
 export async function getToolsByOperationId(
@@ -1405,12 +1905,14 @@ export async function getScrapReasonsList(
 
 export async function getTrackedEntitiesByMakeMethodId(
   client: SupabaseClient<Database>,
-  jobMakeMethodId: string
+  jobMakeMethodId: string,
+  companyId: string
 ) {
   return client
     .from("trackedEntity")
     .select("*")
     .eq("attributes->>Job Make Method", jobMakeMethodId)
+    .eq("companyId", companyId)
     .order("createdAt", { ascending: true });
 }
 
@@ -1478,12 +1980,14 @@ export async function getTrackedEntity(
 
 export async function getTrackedEntitiesByOperationId(
   client: SupabaseClient<Database>,
-  operationId: string
+  operationId: string,
+  companyId: string
 ) {
   const jobOperation = await client
     .from("jobOperation")
     .select("jobMakeMethodId")
     .eq("id", operationId)
+    .eq("companyId", companyId)
     .single();
 
   if (jobOperation.error || !jobOperation.data.jobMakeMethodId)
@@ -1494,7 +1998,8 @@ export async function getTrackedEntitiesByOperationId(
 
   return getTrackedEntitiesByMakeMethodId(
     client,
-    jobOperation.data.jobMakeMethodId
+    jobOperation.data.jobMakeMethodId,
+    companyId
   );
 }
 
@@ -1712,10 +2217,75 @@ export async function insertAttributeRecord(
     createdBy: string;
   }
 ) {
+  // Callers pass a service-role client and the step id comes from the form.
+  // The upsert's conflict target is (jobOperationStepId, index), so a foreign
+  // step id would overwrite — and re-tenant — another company's record.
+  const step = await client
+    .from("jobOperationStep")
+    .select("id")
+    .eq("id", data.jobOperationStepId)
+    .eq("companyId", data.companyId)
+    .maybeSingle();
+  if (step.error) return step;
+  if (!step.data) {
+    log.warn("insertAttributeRecord: step not found in company", {
+      companyId: data.companyId,
+      jobOperationStepId: data.jobOperationStepId
+    });
+    return notFoundResponse("Job operation step not found");
+  }
+
   return client.from("jobOperationStepRecord").upsert(data, {
     onConflict: "jobOperationStepId, index",
     ignoreDuplicates: false
   });
+}
+
+// The batch view's Record: one step written for several members in one upsert,
+// at record set 0 (batch members are never serial-tracked, so each job has one
+// set). The steps are re-read under the batch and company — this runs with the
+// service role and the ids come from the form.
+export async function insertBatchStepRecords(
+  client: SupabaseClient<Database>,
+  args: {
+    batchId: string;
+    companyId: string;
+    createdBy: string;
+    records: z.infer<typeof batchStepRecordsValidator>["records"];
+  }
+): Promise<{ error: { message: string } | null }> {
+  const members = await client
+    .from("jobOperation")
+    .select("id")
+    .eq("jobOperationBatchId", args.batchId)
+    .eq("companyId", args.companyId);
+  if (members.error) return { error: members.error };
+
+  const stepIds = [...new Set(args.records.map((r) => r.jobOperationStepId))];
+  const steps = await client
+    .from("jobOperationStep")
+    .select("id")
+    .in("id", stepIds)
+    .in(
+      "operationId",
+      (members.data ?? []).map((m) => m.id)
+    )
+    .eq("companyId", args.companyId);
+  if (steps.error) return { error: steps.error };
+  if ((steps.data ?? []).length !== stepIds.length) {
+    return { error: { message: "A step is not part of this batch" } };
+  }
+
+  const upsert = await client.from("jobOperationStepRecord").upsert(
+    args.records.map((record) => ({
+      ...record,
+      index: 0,
+      companyId: args.companyId,
+      createdBy: args.createdBy
+    })),
+    { onConflict: "jobOperationStepId, index", ignoreDuplicates: false }
+  );
+  return { error: upsert.error };
 }
 
 // Manager override: record every step of an operation that has no record yet for this unit
@@ -1930,12 +2500,13 @@ export async function endProductionEventsByWorkCenter(
 // block the production event that already succeeded.
 async function autoStartJobAndOperation(
   client: SupabaseClient<Database>,
-  args: { jobOperationId: string; userId: string }
+  args: { jobOperationId: string; userId: string; companyId: string }
 ) {
   const op = await client
     .from("jobOperation")
     .select("jobId, status")
     .eq("id", args.jobOperationId)
+    .eq("companyId", args.companyId)
     .maybeSingle();
   if (op.error || !op.data) return;
 
@@ -1946,6 +2517,7 @@ async function autoStartJobAndOperation(
         .from("jobOperation")
         .update({ status: "In Progress", updatedBy: args.userId })
         .eq("id", args.jobOperationId)
+        .eq("companyId", args.companyId)
         .in("status", ["Todo", "Ready", "Waiting"])
     );
   }
@@ -1955,10 +2527,86 @@ async function autoStartJobAndOperation(
         .from("job")
         .update({ status: "In Progress", updatedBy: args.userId })
         .eq("id", op.data.jobId)
+        .eq("companyId", args.companyId)
         .in("status", ["Draft", "Planned", "Ready"])
     );
   }
   await Promise.all(updates);
+}
+
+/**
+ * Every record id a production event references must belong to the event's
+ * company. `startProductionEvent` is called with a service-role client (the
+ * QR start route) as well as the user client, and a foreign id here would
+ * attach another tenant's operation, work center, batch or serial to this
+ * company's timer and genealogy. One scoped query per id type.
+ */
+async function verifyProductionEventRefs(
+  client: SupabaseClient<Database>,
+  args: {
+    companyId: string;
+    jobOperationId: string;
+    workCenterId?: string;
+    jobOperationBatchId?: string;
+    trackedEntityId?: string;
+  }
+): Promise<{ ok: true } | { ok: false; message: string }> {
+  const { companyId } = args;
+  const [operation, workCenter, batch, entity] = await Promise.all([
+    client
+      .from("jobOperation")
+      .select("id")
+      .eq("id", args.jobOperationId)
+      .eq("companyId", companyId)
+      .maybeSingle(),
+    args.workCenterId
+      ? client
+          .from("workCenter")
+          .select("id")
+          .eq("id", args.workCenterId)
+          .eq("companyId", companyId)
+          .maybeSingle()
+      : null,
+    args.jobOperationBatchId
+      ? client
+          .from("jobOperationBatch")
+          .select("id")
+          .eq("id", args.jobOperationBatchId)
+          .eq("companyId", companyId)
+          .maybeSingle()
+      : null,
+    args.trackedEntityId
+      ? client
+          .from("trackedEntity")
+          .select("id")
+          .eq("id", args.trackedEntityId)
+          .eq("companyId", companyId)
+          .maybeSingle()
+      : null
+  ]);
+
+  const missing = [
+    !operation.data && "Job operation",
+    workCenter && !workCenter.data && "Work center",
+    batch && !batch.data && "Operation batch",
+    entity && !entity.data && "Tracked entity"
+  ].filter(Boolean) as string[];
+
+  if (missing.length > 0) {
+    log.warn("startProductionEvent: referenced record not found in company", {
+      companyId,
+      missing,
+      jobOperationId: args.jobOperationId,
+      workCenterId: args.workCenterId,
+      jobOperationBatchId: args.jobOperationBatchId,
+      trackedEntityId: args.trackedEntityId,
+      error:
+        operation.error ?? workCenter?.error ?? batch?.error ?? entity?.error
+    });
+    return { ok: false, message: `${missing[0]} not found` };
+  }
+
+  return { ok: true };
 }
 
 export async function startProductionEvent(
@@ -1971,12 +2619,23 @@ export async function startProductionEvent(
     employeeId: string;
     companyId: string;
     createdBy: string;
+    // Tags the event as part of an operation batch (sliced per-member at completion).
+    jobOperationBatchId?: string;
   },
   trackedEntityId: string | undefined,
   unitIndex?: number,
   /** `mes_qr` when the operator scanned a traveller rather than tapping a station. */
   source: WorkSource = "mes"
 ) {
+  const refs = await verifyProductionEventRefs(client, {
+    companyId: data.companyId,
+    jobOperationId: data.jobOperationId,
+    workCenterId: data.workCenterId,
+    jobOperationBatchId: data.jobOperationBatchId,
+    trackedEntityId
+  });
+  if (!refs.ok) return notFoundResponse(refs.message);
+
   if (trackedEntityId) {
     const activityId = nanoid();
 
@@ -1986,6 +2645,7 @@ export async function startProductionEvent(
         .from("jobOperation")
         .select("*")
         .eq("id", data.jobOperationId)
+        .eq("companyId", data.companyId)
         .single()
     ]);
 
@@ -2041,7 +2701,8 @@ export async function startProductionEvent(
 
     await autoStartJobAndOperation(client, {
       jobOperationId: data.jobOperationId,
-      userId: data.createdBy
+      userId: data.createdBy,
+      companyId: data.companyId
     });
 
     trackWorkEvent("job_operation_started", {
@@ -2064,7 +2725,8 @@ export async function startProductionEvent(
   if (!eventInsert.error) {
     await autoStartJobAndOperation(client, {
       jobOperationId: data.jobOperationId,
-      userId: data.createdBy
+      userId: data.createdBy,
+      companyId: data.companyId
     });
 
     const inserted = eventInsert.data?.[0];

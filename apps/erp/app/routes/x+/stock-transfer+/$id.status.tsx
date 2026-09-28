@@ -2,10 +2,7 @@ import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
-import {
-  evaluateLinesForSurface,
-  isBlocked
-} from "@carbon/ee/storage-rules.server";
+import { evaluateLinesForSurface, isBlocked } from "@carbon/ee/rules.server";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
 import {
@@ -49,7 +46,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     }
   }
 
-  // Item Rule evaluation at "go" transitions — Released is the user's
+  // Storage Rule evaluation at "go" transitions — Released is the user's
   // commitment to the transfer plan; pre-flight here so violations surface
   // before any picking happens. Completed kept as a defense-in-depth gate.
   // Draft / In Progress excluded — Draft is editing, In Progress is auto-set

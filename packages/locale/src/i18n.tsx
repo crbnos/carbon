@@ -1,11 +1,11 @@
-import { setupI18n } from "@lingui/core";
+import { type Messages, setupI18n } from "@lingui/core";
 import { I18nProvider as LinguiProvider } from "@lingui/react";
 import { type ReactNode, useMemo } from "react";
 import { resolveLanguage } from "./config";
 
 type LocaleProviderProps = {
   locale?: string | null;
-  catalog?: Record<string, string>;
+  catalog?: Messages;
   children: ReactNode;
 };
 

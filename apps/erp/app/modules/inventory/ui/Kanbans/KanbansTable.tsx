@@ -178,7 +178,7 @@ const KanbansTable = memo(
                       </a>
                     </TooltipTrigger>
                     <TooltipContent>
-                      {t`Label to create a ${row.original.replenishmentSystem === "Make" ? "Job" : "Order"} for this kanban`}
+                      {t`Label to create a ${getKanbanCreateNoun(row.original.replenishmentSystem)} for this kanban`}
                     </TooltipContent>
                   </Tooltip>
                   {row.original.replenishmentSystem === "Make" && (
@@ -255,7 +255,7 @@ const KanbansTable = memo(
                         </HoverCardTrigger>
                       </TooltipTrigger>
                       <TooltipContent>
-                        {t`QR Code to create a ${row.original.replenishmentSystem === "Make" ? "Job" : "Order"} for this kanban`}
+                        {t`QR Code to create a ${getKanbanCreateNoun(row.original.replenishmentSystem)} for this kanban`}
                       </TooltipContent>
                     </Tooltip>
                     <HoverCardContent
@@ -356,11 +356,9 @@ const KanbansTable = memo(
                   <CopyBadge
                     text="Create"
                     url={path.to.api.kanban(row.original.id!)}
-                    tooltip={`Copy link to create a ${
-                      row.original.replenishmentSystem === "Make"
-                        ? "Job"
-                        : "Order"
-                    } for this kanban`}
+                    tooltip={`Copy link to create a ${getKanbanCreateNoun(
+                      row.original.replenishmentSystem
+                    )} for this kanban`}
                   />
                   {row.original.replenishmentSystem === "Make" && (
                     <>
@@ -409,7 +407,7 @@ const KanbansTable = memo(
           meta: {
             filter: {
               type: "static",
-              options: ["Buy", "Make"].map((type) => ({
+              options: ["Buy", "Make", "Transfer"].map((type) => ({
                 value: type,
                 label: <Enumerable value={type} />
               }))
@@ -437,7 +435,16 @@ const KanbansTable = memo(
         {
           accessorKey: "storageUnitName",
           header: t`Storage Unit`,
-          cell: ({ row }) => row.original.storageUnitName || "",
+          cell: ({ row }) =>
+            row.original.replenishmentSystem === "Transfer" ? (
+              <span>
+                {row.original.fromStorageUnitName || "—"}
+                {" → "}
+                {row.original.storageUnitName || "—"}
+              </span>
+            ) : (
+              row.original.storageUnitName || ""
+            ),
           meta: {
             icon: <LuMapPin />
           }
@@ -663,6 +670,14 @@ const KanbansTable = memo(
 KanbansTable.displayName = "KanbansTable";
 
 export default KanbansTable;
+
+// The document a "create" scan produces: a Job for Make, a Transfer for
+// Transfer, otherwise a purchase Order.
+function getKanbanCreateNoun(replenishmentSystem: string | null) {
+  if (replenishmentSystem === "Make") return "Job";
+  if (replenishmentSystem === "Transfer") return "Transfer";
+  return "Order";
+}
 
 function getLocationPath(locationId: string) {
   return `${path.to.kanbans}?location=${locationId}`;

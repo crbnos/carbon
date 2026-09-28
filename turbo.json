@@ -2,7 +2,8 @@
   "$schema": "https://turborepo.org/schema.json",
   "tasks": {
     "build": {
-      "dependsOn": ["^build", "//#lingui:compile"],
+      "dependsOn": ["^build", "//#lingui:compile", "//#generate:mcp"],
+      "env": ["ASSETS_URL"],
       "outputs": [
         "dist/**",
         "build/**",
@@ -23,18 +24,18 @@
         "apps/erp/app/**",
         "apps/mes/app/**",
         "packages/react/src/**",
-        "packages/workflows/src/**",
+        "packages/ee/src/workflows/**",
         "packages/locale/locales/**/*.po"
       ],
       "outputs": ["packages/locale/locales/**/*.mjs"]
     },
     "test": {
       "cache": false,
-      "dependsOn": ["^build"]
+      "dependsOn": ["^build", "//#generate:mcp"]
     },
     "typecheck": {
       "cache": false,
-      "dependsOn": []
+      "dependsOn": ["//#generate:mcp"]
     },
     "lint": {
       "dependsOn": ["^build"],
@@ -70,6 +71,21 @@
     "typegen": {
       "cache": false,
       "outputs": []
+    },
+    "//#generate:mcp": {
+      "cache": false,
+      "inputs": [
+        "apps/erp/app/modules/*/*.service.ts",
+        "apps/erp/app/modules/*/*.mcp.server.ts",
+        "apps/erp/app/modules/*/*.models.ts",
+        "apps/erp/app/routes/api+/mcp+/lib/mcp-blocked-tools.ts",
+        "scripts/generate-mcp.ts",
+        "scripts/lib/**"
+      ],
+      "outputs": [
+        "apps/erp/app/routes/api+/mcp+/lib/tool-metadata.json",
+        "apps/erp/app/routes/api+/mcp+/lib/tool-manifest.digest.json"
+      ]
     }
   }
 }

@@ -1,5 +1,7 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
+import { storage } from "@carbon/files";
 import { Trans } from "@lingui/react/macro";
+import type { FileObject } from "@supabase/storage-js";
 import type { LoaderFunctionArgs } from "react-router";
 import { useLoaderData } from "react-router";
 import DefaultAttachmentsPanel from "~/components/DefaultAttachmentsPanel";
@@ -11,13 +13,14 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { supplierId } = params;
   if (!supplierId) throw new Error("Missing supplierId");
 
-  const result = await client.storage
-    .from("private")
+  const result = await storage(client)
+    .company(companyId)
     .list(`${companyId}/default-attachments/supplier/${supplierId}`);
 
   return {
     supplierId,
-    files: result.data ?? []
+    // the union helper's structural type omits supabase's FileObject fields
+    files: (result.data ?? []) as FileObject[]
   };
 }
 

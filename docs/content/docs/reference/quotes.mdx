@@ -33,11 +33,15 @@ Each line tracks its own progress too: **Not Started**, **In Progress**, **Compl
 
 ## Digital quotes
 
-A **Sent** quote can be shared with the customer over a private link, no login. From it the customer **accepts**, optionally entering their PO number, and the quote converts straight to a sales order; or they **reject**, and it moves to **Lost**. Internal notes are stripped before anything reaches the customer.
+A **Sent** quote can be shared with the customer over a private link, no login — the URL is in the quote's share dialog. The page shows the quote lines with images, the quantity-break pricing, the totals (subtotal, discount, tax, shipping), the shipping method and payment term, and any external notes. Internal notes are stripped before anything renders, so the customer never sees your working comments.
 
-<Callout type="note">
-Digital acceptance is gated: the quote must be **Sent** and the company must have digital quotes enabled. A companion customer portal then shows the buyer live order and job status as the work proceeds.
+From that page the customer **accepts** — entering their name and email, picking the quantity break per line, and optionally attaching a purchase-order PDF — and the quote converts straight to a sales order, stamping who accepted it. Or they **reject**, again with a name and email, and the quote moves to **Lost**.
+
+<Callout type="note" title="The link is the only credential">
+There is no account or password behind the link — whoever holds the URL can open the quote. Send it to the right person and don't post it anywhere public. Both actions are gated on status: only a **Sent** quote can be answered, and once the `expirationDate` passes the page shows an expired state and the buttons are gone.
 </Callout>
+
+A companion [customer portal](/docs/reference/customer-portal) then shows the buyer live order and job status as the work proceeds.
 
 ## Becoming an order
 
@@ -69,4 +73,10 @@ In the quote line's bill of materials, the item being made was selected as one o
 
 ### "Failed to convert quote to order"
 The conversion action failed after line selection. Have the user retry with the lines re-selected; if it persists, check that the selected lines have valid quantities and pricing, and ask for the full error text.
+
+### "This quote is no longer available for a response." (digital quote)
+A customer tried to accept or reject a digital quote whose status is no longer `Sent` (it's already `Ordered`, `Partial`, `Cancelled`, or similar). Only a `Sent` quote can be answered — the accept/reject buttons are hidden once it leaves that state.
+
+### "Oops! The link you're trying to access has expired or is no longer valid." (digital quote)
+A `Sent` quote past its `expirationDate` shows the expired state on its public page and can no longer be accepted. Re-send a fresh quote with a new expiration date; the old link stays expired.
 </AgentContext>

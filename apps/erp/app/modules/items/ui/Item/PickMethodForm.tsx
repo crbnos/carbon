@@ -164,7 +164,7 @@ const PickMethodForm = ({
                   <IconButton
                     aria-label={t`Inventory actions`}
                     icon={<LuEllipsisVertical />}
-                    size="sm"
+                    size="md"
                     variant="secondary"
                   />
                 </DropdownMenuTrigger>

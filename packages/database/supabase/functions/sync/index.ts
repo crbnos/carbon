@@ -2,13 +2,15 @@ import { serve } from "https://deno.land/std@0.175.0/http/server.ts";
 import { Transaction } from "npm:kysely";
 import { DB, getConnectionPool, getDatabaseClient } from "../lib/database.ts";
 
-import z from "npm:zod@^3.24.1";
+import z from "npm:zod@^4.5.4";
+import { getFunctionLogger } from "../lib/logging.ts";
 import { corsPreflight, errorResponse, jsonResponse } from "../lib/response.ts";
 import { requirePermissions } from "../lib/supabase.ts";
 import { getReadableIdWithRevision } from "../lib/utils.ts";
 
 const pool = getConnectionPool(1);
 const db = getDatabaseClient<DB>(pool);
+const logger = getFunctionLogger("sync");
 
 const onShapeDataValidator = z.object({
   index: z.string(),
@@ -175,14 +177,7 @@ serve(async (req: Request) => {
     case "onshape": {
       const { makeMethodId, data } = payload;
 
-      console.log({
-        function: "sync",
-        type,
-        makeMethodId,
-        data,
-        companyId,
-        userId,
-      });
+      logger.info({ type, makeMethodId, data, companyId, userId });
 
       const client = await requirePermissions(req, companyId, userId, { update: "resources" });
 
@@ -191,7 +186,39 @@ serve(async (req: Request) => {
         .from("makeMethod")
         .select("id, itemId, version, status")
         .eq("id", makeMethodId)
-        .single();
+        .eq("companyId", companyId)
+        .maybeSingle();
+
+      // Service-role client: a make method outside companyId is a 404.
+      if (!topLevelMakeMethod.data) {
+        return errorResponse("Make method not found", 404);
+      }
+
+      const existingItemIds = new Set(
+        data.map((item: { id?: string }) => item.id).filter(Boolean)
+      );
+
+      const existingItems = await client
+        .from("item")
+        .select(
+          "id, readableId, readableIdWithRevision, unitOfMeasureCode, type, revision"
+        )
+        .eq("companyId", companyId)
+        .in("id", Array.from(existingItemIds));
+      if (existingItems.error) return errorResponse("Failed to fetch items", 500);
+
+      const existingItemsByItemId = new Map(
+        existingItems.data?.map((item) => [item.id, item]) ?? []
+      );
+
+      // Every item id in the body is updated by id alone below, so each must
+      // have come back from the companyId-scoped read above. Checked before
+      // anything is written (the Draft make method below).
+      for (const itemId of existingItemIds) {
+        if (!existingItemsByItemId.has(itemId as string)) {
+          return errorResponse("Item not found", 404);
+        }
+      }
 
       let activeMakeMethodId = makeMethodId;
       let topLevelSourceMakeMethodId: string | null = null;
@@ -225,8 +252,7 @@ serve(async (req: Request) => {
           const maxVersion = Number(allVersions.data?.version ?? 0);
           const newVersion = maxVersion + 1;
 
-          console.log({
-            function: "sync",
+          logger.info({
             action: "creating_top_level_draft",
             itemId: topLevelMakeMethod.data.itemId,
             maxVersion,
@@ -252,27 +278,17 @@ serve(async (req: Request) => {
         }
       }
 
-      const existingItemIds = new Set(
-        data.map((item: { id?: string }) => item.id).filter(Boolean)
-      );
+      // Read after the Draft above may have been created, as before.
+      const existingMakeMethods = await client
+        .from("activeMakeMethods")
+        .select("id, itemId, version, status")
+        .eq("companyId", companyId)
+        .in("itemId", Array.from(existingItemIds));
+      if (existingMakeMethods.error) {
+        return errorResponse("Failed to fetch make methods", 500);
+      }
 
-      const [existingMakeMethods, existingItems] = await Promise.all([
-        client
-          .from("activeMakeMethods")
-          .select("id, itemId, version, status")
-          .eq("companyId", companyId)
-          .in("itemId", Array.from(existingItemIds)),
-        client
-          .from("item")
-          .select(
-            "id, readableId, readableIdWithRevision, unitOfMeasureCode, type, revision"
-          )
-          .eq("companyId", companyId)
-          .in("id", Array.from(existingItemIds)),
-      ]);
-
-      console.log({
-        function: "sync",
+      logger.info({
         action: "fetched_active_make_methods",
         count: existingMakeMethods.data?.length ?? 0,
         data: existingMakeMethods.data,
@@ -288,10 +304,6 @@ serve(async (req: Request) => {
             status: makeMethod.status as "Draft" | "Active" | "Archived",
           },
         ]) ?? []
-      );
-
-      const existingItemsByItemId = new Map(
-        existingItems.data?.map((item) => [item.id, item]) ?? []
       );
 
       try {
@@ -546,8 +558,7 @@ serve(async (req: Request) => {
               existingMakeMethodsByItemId.get(itemId) ||
               newlyCreatedMakeMethodsByItemId.get(itemId);
 
-            console.log({
-              function: "sync",
+            logger.info({
               action: "processing_item",
               itemId,
               partId,
@@ -572,8 +583,7 @@ serve(async (req: Request) => {
                     .orderBy("version", "desc")
                     .executeTakeFirst();
 
-                  console.log({
-                    function: "sync",
+                  logger.info({
                     action: "check_existing_draft",
                     itemId,
                     companyId,
@@ -604,8 +614,7 @@ serve(async (req: Request) => {
                     const maxVersion = Number(maxVersionRow?.version ?? 0);
                     const newVersion = maxVersion + 1;
 
-                    console.log({
-                      function: "sync",
+                    logger.info({
                       action: "creating_child_draft",
                       itemId,
                       companyId,

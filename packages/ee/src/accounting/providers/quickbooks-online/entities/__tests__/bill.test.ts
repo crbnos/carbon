@@ -261,6 +261,15 @@ function makeBillDb(config: {
       orderBy: () => builder,
       async execute() {
         if (table === "journalLine") return config.journalLine;
+        if (table === "purchaseInvoiceLine")
+          return [
+            {
+              quantity: 1,
+              supplierUnitPrice: 80,
+              supplierShippingCost: 0,
+              supplierTaxAmount: 0
+            }
+          ];
         if (table === "journalLineDimension") return [];
         if (table === "purchaseOrderLine") return [];
         if (table === "externalIntegrationMapping as m")
@@ -276,7 +285,11 @@ function makeBillDb(config: {
         return [];
       },
       async executeTakeFirst() {
-        if (table === "purchaseInvoice") return config.purchaseInvoice;
+        if (table === "purchaseInvoice")
+          return { ...config.purchaseInvoice, postingDate: "2026-09-07" };
+        if (table === "company")
+          return { baseCurrencyCode: "USD", companyGroupId: "group-1" };
+        if (table === "currency") return { decimalPlaces: 2 };
         if (table === "accountDefault") return config.accountDefault;
         return undefined;
       }
@@ -290,12 +303,12 @@ describe("QboBillSyncer.mapToRemote (FX currency wiring)", () => {
   it("pins CurrencyRef + ExchangeRate and replays transaction-currency amounts", async () => {
     const syncer = new QboBillSyncer({
       database: makeBillDb({
-        purchaseInvoice: { currencyCode: "EUR", exchangeRate: 2 },
+        purchaseInvoice: { currencyCode: "EUR", exchangeRate: 0.8 },
         journalLine: [
           {
             id: "jl-1",
             accountId: "acc-grir",
-            amount: 300,
+            amount: 100,
             description: "GR/IR Clearing",
             documentLineReference: null,
             accountClass: "Asset"
@@ -303,7 +316,7 @@ describe("QboBillSyncer.mapToRemote (FX currency wiring)", () => {
           {
             id: "jl-2",
             accountId: "acc-ap",
-            amount: 300, // Liability natural balance → debit-signed -300
+            amount: 100, // Liability natural balance → debit-signed -100
             description: "Accounts Payable",
             documentLineReference: null,
             accountClass: "Liability"
@@ -332,14 +345,14 @@ describe("QboBillSyncer.mapToRemote (FX currency wiring)", () => {
       syncer as unknown as {
         mapToRemote(local: Accounting.Bill): Promise<Qbo.Bill>;
       }
-    ).mapToRemote(billFixture({ currencyCode: "EUR", exchangeRate: 2 }));
+    ).mapToRemote(billFixture({ currencyCode: "EUR", exchangeRate: 0.8 }));
 
     expect(payload.CurrencyRef).toEqual({ value: "EUR" });
-    expect(payload.ExchangeRate).toBe(2);
-    // Base 300 @ rate 2 → 150 EUR to the mapped GR/IR account only (AP excluded).
+    expect(payload.ExchangeRate).toBe(1.25);
+    // Base 100 @ rate 0.8 → 80 EUR to the mapped GR/IR account only (AP excluded).
     expect(payload.Line).toEqual([
       {
-        Amount: 150,
+        Amount: 80,
         Description: "GR/IR Clearing",
         DetailType: "AccountBasedExpenseLineDetail",
         AccountBasedExpenseLineDetail: { AccountRef: { value: "2125" } }
@@ -395,5 +408,156 @@ describe("deriveCarbonBillStatus (pull status from Balance/TotalAmt/DueDate)", (
         now
       })
     ).toBeUndefined();
+  });
+});
+
+describe("QBO inbound bill stored currency snapshots", () => {
+  it("persists reciprocal rate before populating supplier document fields", async () => {
+    const writes: Array<{ table: string; values: any }> = [];
+    let header: any = {
+      companyId: "company-1",
+      createdBy: "user-1",
+      exchangeRate: 1
+    };
+    const builder = (table: string, writing = false) => {
+      let values: any;
+      const filters: any[] = [];
+      const b: any = {
+        select: () => b,
+        selectAll: () => b,
+        where: (...args: any[]) => {
+          filters.push(args);
+          return b;
+        },
+        set: (v: any) => {
+          values = v;
+          return b;
+        },
+        values: (v: any) => {
+          values = v;
+          return b;
+        },
+        execute: async () => {
+          if (writing) {
+            writes.push({ table, values });
+            if (table === "purchaseInvoice") header = { ...header, ...values };
+          }
+          return [];
+        },
+        executeTakeFirst: async () =>
+          table === "company"
+            ? { baseCurrencyCode: "USD", companyGroupId: "group-1" }
+            : table === "externalIntegrationMapping"
+              ? {
+                  entityId:
+                    filters.find((f) => f[0] === "externalId")?.[2] ===
+                    "vendor-99"
+                      ? "sup-1"
+                      : "acc-grir"
+                }
+              : header,
+        executeTakeFirstOrThrow: async () => header
+      };
+      return b;
+    };
+    const db = {
+      selectFrom: (t: string) => builder(t),
+      updateTable: (t: string) => builder(t, true),
+      insertInto: (t: string) => builder(t, true),
+      deleteFrom: (t: string) => builder(t, true)
+    } as never;
+    const syncer = new QboBillSyncer({
+      database: db,
+      companyId: "company-1",
+      provider: { id: "quickbooks" } as never,
+      config: { enabled: true, direction: "two-way", owner: "accounting" },
+      entityType: "bill"
+    }) as any;
+    syncer.getLocalId = async () => "pi_1";
+    const local = await syncer.mapToLocal({
+      Id: "qb-1",
+      VendorRef: { value: "vendor-99" },
+      CurrencyRef: { value: "EUR" },
+      ExchangeRate: 1.25,
+      TotalAmt: 80,
+      Balance: 80,
+      TxnDate: "2026-09-07",
+      Line: [
+        {
+          Amount: 80,
+          DetailType: "AccountBasedExpenseLineDetail",
+          AccountBasedExpenseLineDetail: { AccountRef: { value: "2125" } }
+        }
+      ]
+    });
+    expect(local).toMatchObject({
+      currencyCode: "EUR",
+      exchangeRate: 0.8,
+      totalAmount: 100
+    });
+    await syncer.upsertLocal(db, local, "qb-1");
+    expect(
+      writes.find((w) => w.table === "purchaseInvoice")?.values
+    ).toMatchObject({ currencyCode: "EUR", exchangeRate: 0.8 });
+    const rows = writes.find(
+      (w) => w.table === "purchaseInvoiceLine" && w.values
+    )?.values;
+    expect(rows).toEqual([
+      expect.objectContaining({
+        supplierUnitPrice: 80,
+        supplierTaxAmount: 0,
+        exchangeRate: 0.8
+      })
+    ]);
+    expect(rows[0]).not.toHaveProperty("unitPrice");
+    expect(rows[0]).not.toHaveProperty("totalAmount");
+    expect(rows[0]).not.toHaveProperty("supplierExtendedPrice");
+  });
+});
+
+it("handles a malformed QBO account detail without AccountRef without losing the remaining bill", async () => {
+  const database = {
+    selectFrom: () => {
+      const q: any = {
+        select: () => q,
+        where: () => q,
+        execute: async () => [],
+        executeTakeFirst: async () => ({ baseCurrencyCode: "USD" })
+      };
+      return q;
+    }
+  };
+  const syncer = new QboBillSyncer({
+    database: database as never,
+    companyId: "company-1",
+    provider: { id: "quickbooks" } as never,
+    config: { enabled: true, direction: "two-way", owner: "accounting" },
+    entityType: "bill"
+  }) as any;
+  await expect(
+    syncer.mapToLocal({
+      Id: "remote",
+      VendorRef: { value: "vendor" },
+      CurrencyRef: { value: "USD" },
+      TotalAmt: 10,
+      Balance: 10,
+      Line: [
+        {
+          Id: "bad",
+          Amount: 0,
+          DetailType: "AccountBasedExpenseLineDetail",
+          AccountBasedExpenseLineDetail: {}
+        },
+        {
+          Id: "good",
+          Amount: 10,
+          DetailType: "AccountBasedExpenseLineDetail",
+          AccountBasedExpenseLineDetail: { AccountRef: { value: "cost" } }
+        }
+      ]
+    })
+  ).resolves.toMatchObject({
+    totalAmount: 10,
+    lines: expect.arrayContaining([expect.objectContaining({ id: "good" })])
   });
 });

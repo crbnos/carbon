@@ -1,3 +1,10 @@
+import type { Origin, Schedule } from "@carbon/ee/workflows";
+import {
+  customFieldEventId,
+  ENTITY_BY_TABLE,
+  WORKFLOW_ENTITY_REGISTRY,
+  WORKFLOW_EVENTS
+} from "@carbon/ee/workflows";
 import {
   Command,
   CommandEmpty,
@@ -20,13 +27,6 @@ import {
   ToggleGroupItem
 } from "@carbon/react";
 import { getTimezones } from "@carbon/utils";
-import type { Origin, Schedule } from "@carbon/workflows";
-import {
-  customFieldEventId,
-  ENTITY_BY_TABLE,
-  WORKFLOW_ENTITY_REGISTRY,
-  WORKFLOW_EVENTS
-} from "@carbon/workflows";
 import { getLocalTimeZone } from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useMemo, useState } from "react";

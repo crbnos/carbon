@@ -1,7 +1,7 @@
 # Agent knowledge base (auto-generated — do not edit)
 
 Every file in this folder is generated from the docs site (`docs/content/**`) by
-`scripts/generate-agent-kb.ts`. It is the read-only corpus the in-app agent searches
+`docs/scripts/generate-agent-kb.ts`. It is the read-only corpus the in-app agent searches
 (`search_docs`) and reads (`read_doc`), bundled into the erp image so it ships with the app.
 
 **Do not edit these files by hand — your changes will be overwritten.**

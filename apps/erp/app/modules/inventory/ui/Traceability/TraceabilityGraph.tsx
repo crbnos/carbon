@@ -193,11 +193,15 @@ function TraceabilityGraphInner({
           if (!isMeta) return;
         }
         e.preventDefault();
+        // Capture phase + stopPropagation so node search takes precedence
+        // over the global ⌘K search binding (a document-level listener)
+        // while the graph is mounted.
+        e.stopPropagation();
         setSearchOpen(true);
       }
     };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+    window.addEventListener("keydown", onKey, true);
+    return () => window.removeEventListener("keydown", onKey, true);
   }, []);
   const handleRelayout = useCallback(() => {
     setLayoutVersion((v) => v + 1);

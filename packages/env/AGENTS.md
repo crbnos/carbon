@@ -37,7 +37,7 @@ All from `src/index.ts` (single file):
 - **Edition:** `CarbonEdition` (Community/Cloud/Enterprise/Test), `CONTROLLED_ENVIRONMENT` (ITAR flag)
 - **URLs:** `getAppUrl()`, `getMESUrl()`, `getBrowserEnv()`
 - **Logging:** `LOG_LEVEL` (optional, non-secret, browser-safe — consumed by `@carbon/logger`)
-- **Integrations:** Stripe, Resend, Slack, Xero, Jira, OnShape, QuickBooks keys (all optional)
+- **Integrations:** Stripe, SMTP email, Slack, Xero, Jira, OnShape, QuickBooks keys (all optional)
 
 ## Cross-References
 

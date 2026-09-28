@@ -1,17 +1,25 @@
 import type { ButtonProps } from "@carbon/react";
-import {
-  Button,
-  HStack,
-  Kbd,
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-  useKeyboardShortcuts
-} from "@carbon/react";
+import { Button } from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
-import { useRef } from "react";
+import { useEffect, useSyncExternalStore } from "react";
 import { LuCirclePlus } from "react-icons/lu";
 import { Link } from "react-router";
+import { SHORTCUTS } from "~/shortcuts";
+
+// `n` means "the New action" only while a screen shows exactly one New
+// button. With two visible Add buttons (e.g. Chart of Accounts renders
+// Add Group AND Add Account) one key cannot name both, so every instance
+// drops the binding and the badge instead of racing for it.
+let mountedCount = 0;
+const listeners = new Set<() => void>();
+const subscribe = (listener: () => void) => {
+  listeners.add(listener);
+  return () => {
+    listeners.delete(listener);
+  };
+};
+const getCount = () => mountedCount;
+const getServerCount = () => 1;
 
 type NewProps = {
   label?: string;
@@ -21,35 +29,34 @@ type NewProps = {
 
 const New = ({ label, to, variant = "primary" }: NewProps) => {
   const { i18n, t } = useLingui();
-  const buttonRef = useRef<HTMLButtonElement>(null);
   const translatedLabel = label ? i18n._(label) : undefined;
-  useKeyboardShortcuts({
-    n: (event: KeyboardEvent) => {
-      event.stopPropagation();
-      buttonRef.current?.click();
-    }
-  });
+
+  useEffect(() => {
+    mountedCount++;
+    listeners.forEach((listener) => {
+      listener();
+    });
+    return () => {
+      mountedCount--;
+      listeners.forEach((listener) => {
+        listener();
+      });
+    };
+  }, []);
+  const isSoleNew =
+    useSyncExternalStore(subscribe, getCount, getServerCount) <= 1;
 
   return (
-    <Tooltip>
-      <TooltipTrigger asChild>
-        <Button
-          asChild
-          leftIcon={<LuCirclePlus />}
-          variant={variant}
-          ref={buttonRef}
-        >
-          <Link to={to}>
-            {translatedLabel ? `${t`Add`} ${translatedLabel}` : t`Add`}
-          </Link>
-        </Button>
-      </TooltipTrigger>
-      <TooltipContent>
-        <HStack>
-          <Kbd>N</Kbd>
-        </HStack>
-      </TooltipContent>
-    </Tooltip>
+    <Button
+      asChild
+      leftIcon={<LuCirclePlus />}
+      variant={variant}
+      shortcut={isSoleNew ? SHORTCUTS.newRecord : undefined}
+    >
+      <Link to={to}>
+        {translatedLabel ? `${t`Add`} ${translatedLabel}` : t`Add`}
+      </Link>
+    </Button>
   );
 };
 

@@ -4,6 +4,7 @@ import { flash } from "@carbon/auth/session.server";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
 import { activateAssemblyInstructionVersion } from "~/modules/production";
+import { getDatabaseClient } from "~/services/database.server";
 import { path, requestReferrer } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
@@ -18,7 +19,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const update = await activateAssemblyInstructionVersion(client, {
     id,
     companyId,
-    userId
+    userId,
+    db: getDatabaseClient()
   });
 
   if (update.error) {

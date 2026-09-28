@@ -3,6 +3,8 @@ import {
   LuBuilding,
   LuContact,
   LuCreditCard,
+  LuFiles,
+  LuLandmark,
   LuMapPin,
   LuReceipt,
   LuShieldAlert,
@@ -15,6 +17,7 @@ import {
 } from "react-icons/ri";
 import { useParams } from "react-router";
 import { usePermissions } from "~/hooks";
+import { DETAIL_TAB_SHORTCUTS } from "~/shortcuts";
 import type { Role } from "~/types";
 import { path } from "~/utils/path";
 
@@ -33,7 +36,7 @@ export function useCustomerSidebar({ contacts, locations }: Props) {
       name: t`Details`,
       to: path.to.customerDetails(customerId),
       icon: <LuBuilding />,
-      shortcut: "Command+Shift+d"
+      shortcut: DETAIL_TAB_SHORTCUTS.details
     },
     {
       name: t`Contacts`,
@@ -41,7 +44,7 @@ export function useCustomerSidebar({ contacts, locations }: Props) {
       role: ["employee"],
       count: contacts,
       icon: <LuContact />,
-      shortcut: "Command+Shift+c"
+      shortcut: DETAIL_TAB_SHORTCUTS.contacts
     },
     {
       name: t`Locations`,
@@ -49,28 +52,41 @@ export function useCustomerSidebar({ contacts, locations }: Props) {
       role: ["employee", "customer"],
       count: locations,
       icon: <LuMapPin />,
-      shortcut: "Command+Shift+l"
+      shortcut: DETAIL_TAB_SHORTCUTS.locations
     },
     {
       name: t`Payment`,
       to: path.to.customerPayment(customerId),
       role: ["employee"],
       icon: <LuCreditCard />,
-      shortcut: "Command+Shift+p"
+      shortcut: DETAIL_TAB_SHORTCUTS.payment
+    },
+    {
+      name: t`Bank Accounts`,
+      to: path.to.customerBankAccounts(customerId),
+      role: ["employee"],
+      permission: { action: "view" as const, module: "accounting" },
+      icon: <LuLandmark />
+    },
+    {
+      name: t`Documents`,
+      to: path.to.customerDocuments(customerId),
+      role: ["employee"],
+      icon: <LuFiles />
     },
     {
       name: t`Tax`,
       to: path.to.customerTax(customerId),
       role: ["employee"],
       icon: <LuReceipt />,
-      shortcut: "Command+Shift+t"
+      shortcut: DETAIL_TAB_SHORTCUTS.tax
     },
     {
       name: t`Shipping`,
       to: path.to.customerShipping(customerId),
       role: ["employee"],
       icon: <LuTruck />,
-      shortcut: "Command+Shift+s"
+      shortcut: DETAIL_TAB_SHORTCUTS.shipping
     },
     {
       name: t`Risks`,
@@ -106,11 +122,26 @@ export function useCustomerSidebar({ contacts, locations }: Props) {
     //   to: path.to.customerAccounting(customerId),
     //   role: ["employee"],
     //   icon: <LuLandmark />,
-    //   shortcut: "Command+Shift+a",
+    //   shortcut: DETAIL_TAB_SHORTCUTS.accounting,
     // },
-  ].filter(
-    (item) =>
+  ].filter((item) => {
+    // `role` gates on WHO the user is (employee / supplier / customer);
+    // `permission` gates on WHAT they may do (a <module>_<action> grant).
+    // They are separate checks — permissions.is() cannot express a module permission.
+    const roleOk =
       item.role === undefined ||
-      item.role.some((role) => permissions.is(role as Role))
-  );
+      item.role.some((role) => permissions.is(role as Role));
+    const permission = (
+      item as {
+        permission?: {
+          action: "view" | "create" | "update" | "delete";
+          module: string;
+        };
+      }
+    ).permission;
+    const permissionOk =
+      permission === undefined ||
+      permissions.can(permission.action, permission.module);
+    return roleOk && permissionOk;
+  });
 }

@@ -5,11 +5,11 @@ import { getLocationTimeZone } from "@carbon/database";
 import { getLogger } from "@carbon/logger";
 import {
   Button,
+  CarbonPulse,
   ClientOnly,
   Heading,
   HStack,
   IconButton,
-  LoadingBars,
   Popover,
   PopoverContent,
   PopoverTrigger,
@@ -47,6 +47,7 @@ import { getFilters, setFilters } from "~/services/operation.server";
 import {
   getActiveJobOperationsByLocation,
   getCustomers,
+  getJobOperationBatchMembers,
   getMyPeopleAssignment,
   getProcessesList,
   getWorkCentersByLocation
@@ -57,6 +58,75 @@ import { makeDurations } from "~/utils/durations";
 import { path } from "~/utils/path";
 
 const log = getLogger("mes");
+
+type BatchTotals = {
+  size: number;
+  quantity: number;
+  targetQuantity: number;
+  jobReadableIds: string[];
+};
+
+function getBatchTotals(
+  members: NonNullable<
+    Awaited<ReturnType<typeof getJobOperationBatchMembers>>["data"]
+  >
+): Map<string, BatchTotals> {
+  const totals = new Map<string, BatchTotals>();
+  for (const member of members) {
+    if (!member.jobOperationBatchId) continue;
+    const total = totals.get(member.jobOperationBatchId) ?? {
+      size: 0,
+      quantity: 0,
+      targetQuantity: 0,
+      jobReadableIds: []
+    };
+    total.size += 1;
+    total.quantity += member.operationQuantity ?? 0;
+    total.targetQuantity +=
+      member.targetQuantity ?? member.operationQuantity ?? 0;
+    if (member.job?.jobId) total.jobReadableIds.push(member.job.jobId);
+    totals.set(member.jobOperationBatchId, total);
+  }
+  return totals;
+}
+
+// Collapse operations sharing a jobOperationBatchId into one card: keep the first
+// as the card, tag it with the member count and summed quantities.
+function collapseBatches(
+  items: Item[],
+  batchTotals: Map<string, BatchTotals>
+): Item[] {
+  const byBatch = new Map<string, Item[]>();
+  const result: Item[] = [];
+  for (const item of items) {
+    // Require a resolvable batch (readableId comes from the join to
+    // jobOperationBatch): a stale batchId whose header is gone must not suppress
+    // the op — render it as an individual card, mirroring the ERP board.
+    if (item.batchId && item.batchReadableId) {
+      const arr = byBatch.get(item.batchId);
+      if (arr) arr.push(item);
+      else byBatch.set(item.batchId, [item]);
+    } else {
+      result.push(item);
+    }
+  }
+  for (const [batchId, members] of byBatch) {
+    const total = batchTotals.get(batchId);
+    result.push({
+      ...members[0],
+      batchSize: total?.size ?? members.length,
+      batchJobReadableIds:
+        total?.jobReadableIds ?? members.map((m) => m.title).filter(Boolean),
+      quantity:
+        total?.quantity ??
+        members.reduce((sum, m) => sum + (m.quantity ?? 0), 0),
+      targetQuantity:
+        total?.targetQuantity ??
+        members.reduce((sum, m) => sum + (m.targetQuantity ?? 0), 0)
+    });
+  }
+  return result;
+}
 
 export async function loader({ context, request }: LoaderFunctionArgs) {
   const { companyId } = await requirePermissions(request, {});
@@ -223,14 +293,31 @@ export async function loader({ context, request }: LoaderFunctionArgs) {
   }
 
   if (search) {
+    const term = search.toLowerCase();
     filteredOperations = filteredOperations.filter(
       (op) =>
-        op.jobReadableId.toLowerCase().includes(search.toLowerCase()) ||
-        op.itemReadableId.toLowerCase().includes(search.toLowerCase()) ||
-        op.itemDescription?.toLowerCase().includes(search.toLowerCase()) ||
-        op.description?.toLowerCase().includes(search.toLowerCase())
+        op.jobReadableId?.toLowerCase().includes(term) ||
+        op.itemReadableId?.toLowerCase().includes(term) ||
+        op.itemDescription?.toLowerCase().includes(term) ||
+        op.description?.toLowerCase().includes(term) ||
+        op.batchReadableId?.toLowerCase().includes(term)
     );
   }
+
+  const batchIds = Array.from(
+    new Set(
+      filteredOperations
+        .map((op) => op.jobOperationBatchId)
+        .filter((id): id is string => Boolean(id))
+    )
+  );
+  const batchMembers = batchIds.length
+    ? await getJobOperationBatchMembers(serviceRole, batchIds, companyId)
+    : null;
+  if (batchMembers?.error) {
+    log.error("Failed to load batch members", { error: batchMembers.error });
+  }
+  const batchTotals = getBatchTotals(batchMembers?.data ?? []);
 
   const filteredWorkCenters =
     workCenters.data?.filter((wc: any) => {
@@ -278,46 +365,51 @@ export async function loader({ context, request }: LoaderFunctionArgs) {
           blockingDispatchReadableId: wc.blockingDispatchReadableId ?? undefined
         }))
         .sort((a, b) => a.title.localeCompare(b.title)) satisfies Column[],
-      items: (filteredOperations.map((op) => {
-        const operation = makeDurations(op);
-        return {
-          id: op.id,
-          assignee: op.assignee,
-          tags: op.tags,
-          columnId: op.workCenterId,
-          columnType: op.processId,
-          priority: op.priority,
-          title: op.jobReadableId,
-          subtitle: op.itemReadableId,
-          description: op.description,
-          dueDate: op.operationDueDate,
-          duration:
-            operation.setupDuration +
-            Math.max(operation.laborDuration, operation.machineDuration),
-          deadlineType: op.jobDeadlineType,
-          customerId: op.jobCustomerId,
-          operationQuantity: op.operationQuantity,
-          targetQuantity: op.targetQuantity ?? op.operationQuantity,
-          jobReadableId: op.jobReadableId,
-          itemReadableId: op.itemReadableId,
-          itemDescription: op.itemDescription,
-          salesOrderReadableId: op.salesOrderReadableId,
-          salesOrderId: op.salesOrderId,
-          salesOrderLineId: op.salesOrderLineId,
-          status: op.operationStatus,
-          thumbnailPath: op.thumbnailPath,
-          quantity: op.operationQuantity,
-          quantityCompleted: op.quantityComplete,
-          quantityReworked: op.quantityReworked,
-          quantityScrapped: op.quantityScrapped,
-          reworkId: op.reworkId,
-          setupDuration: operation.setupDuration,
-          laborDuration: operation.laborDuration,
-          machineDuration: operation.machineDuration,
-          hasConflict: op.hasConflict ?? undefined,
-          conflictReason: op.conflictReason ?? undefined
-        };
-      }) ?? []) satisfies Item[],
+      items: collapseBatches(
+        (filteredOperations.map((op) => {
+          const operation = makeDurations(op);
+          return {
+            id: op.id,
+            assignee: op.assignee,
+            tags: op.tags,
+            columnId: op.workCenterId,
+            columnType: op.processId,
+            priority: op.priority,
+            title: op.jobReadableId,
+            subtitle: op.itemReadableId,
+            description: op.description,
+            dueDate: op.operationDueDate,
+            duration:
+              operation.setupDuration +
+              Math.max(operation.laborDuration, operation.machineDuration),
+            deadlineType: op.jobDeadlineType,
+            customerId: op.jobCustomerId,
+            operationQuantity: op.operationQuantity,
+            targetQuantity: op.targetQuantity ?? op.operationQuantity,
+            jobReadableId: op.jobReadableId,
+            itemReadableId: op.itemReadableId,
+            itemDescription: op.itemDescription,
+            salesOrderReadableId: op.salesOrderReadableId,
+            salesOrderId: op.salesOrderId,
+            salesOrderLineId: op.salesOrderLineId,
+            status: op.operationStatus,
+            thumbnailPath: op.thumbnailPath,
+            quantity: op.operationQuantity,
+            quantityCompleted: op.quantityComplete,
+            quantityReworked: op.quantityReworked,
+            quantityScrapped: op.quantityScrapped,
+            reworkId: op.reworkId,
+            setupDuration: operation.setupDuration,
+            laborDuration: operation.laborDuration,
+            machineDuration: operation.machineDuration,
+            batchId: op.jobOperationBatchId,
+            batchReadableId: op.batchReadableId,
+            hasConflict: op.hasConflict ?? undefined,
+            conflictReason: op.conflictReason ?? undefined
+          };
+        }) ?? []) satisfies Item[],
+        batchTotals
+      ),
       processes: processes.data ?? [],
       workCenters: workCenters.data ?? [],
       customers: customers.data ?? [],
@@ -332,7 +424,7 @@ export default function ScheduleRoute() {
     <ClientOnly
       fallback={
         <div className="flex h-screen w-[calc(100dvw-var(--sidebar-width-icon))] items-center justify-center">
-          <LoadingBars />
+          <CarbonPulse />
         </div>
       }
     >

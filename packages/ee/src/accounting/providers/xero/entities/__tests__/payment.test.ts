@@ -110,7 +110,7 @@ describe("XeroPaymentSyncer.mapToNormalized", () => {
       paymentRemoteId: "pay-1",
       amount: 500,
       currencyCode: "USD",
-      exchangeRate: 1,
+      exchangeRate: null,
       paidDate: "2026-08-01",
       reference: "pay-1",
       status: "settled"
@@ -180,7 +180,7 @@ describe("XeroPaymentSyncer.mapToNormalized", () => {
     );
     expect(normalized.amount).toBe(40);
     expect(normalized.currencyCode).toBeNull();
-    expect(normalized.exchangeRate).toBe(1);
+    expect(normalized.exchangeRate).toBeNull();
   });
 });
 

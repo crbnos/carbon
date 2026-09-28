@@ -25,6 +25,7 @@ import {
   Heading,
   VStack
 } from "@carbon/react";
+import { getClientIp } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useEffect, useRef } from "react";
 import { LuCircleAlert } from "react-icons/lu";
@@ -76,7 +77,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const ip = request.headers.get("x-forwarded-for") ?? "127.0.0.1";
+  const ip = getClientIp(request) ?? "127.0.0.1";
 
   const ratelimit = new Ratelimit({
     redis,
@@ -154,7 +155,7 @@ function MfaCodeField({ result }: { result?: Result }) {
     if (result?.success === false) setCode("");
   }, [result, setCode]);
 
-  return <InputOTP name="code" label="" />;
+  return <InputOTP name="code" label="" autoFocus />;
 }
 
 export default function MfaRoute() {
@@ -202,6 +203,7 @@ export default function MfaRoute() {
             <MfaCodeField result={fetcher.data} />
 
             <Submit
+              hideShortcutKey
               size="lg"
               className="w-full"
               withBlocker={false}

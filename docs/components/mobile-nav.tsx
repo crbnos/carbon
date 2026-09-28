@@ -4,13 +4,13 @@
  * The mobile navigation drawer. Below `lg` the section sidebars are hidden and the
  * header's link row collapses, so this is the *only* way to move around on a phone:
  * a hamburger in the header opens a left drawer that carries the site-level nav
- * (Guides · Reference · API · MCP) plus, when a surface passes one, its full section
- * tree. The header stays on top (higher z) so the hamburger morphs to an X and can
- * close what it opened; the scrim and Esc close it too.
+ * (Reference · Guides · API · Data API) plus, when a surface passes one, its full
+ * section tree. The header stays on top (higher z) so the hamburger morphs to an X and
+ * can close what it opened; the scrim and Esc close it too.
  *
- * Section trees are passed as `children`. Reference/API/MCP use `<Link>`, so a route
- * change closes the drawer on its own; the editorial Guide navigates via client state
- * (no route change), so its tree calls `useMobileNavClose()` to dismiss on select.
+ * Section trees are passed as `children`. Reference/API/Data API use `<Link>`, so a
+ * route change closes the drawer on its own; the editorial Guide navigates via client
+ * state (no route change), so its tree calls `useMobileNavClose()` to dismiss on select.
  */
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -27,8 +27,7 @@ import { createPortal } from "react-dom";
 const NAV = [
   { key: "reference", label: "Reference", href: "/docs" },
   { key: "guides", label: "Guides", href: "/guides/order" },
-  { key: "api", label: "API", href: "/api-reference" },
-  { key: "mcp", label: "MCP", href: "/mcp" },
+  { key: "api", label: "API", href: "/api" },
 ] as const;
 
 type Active = (typeof NAV)[number]["key"];

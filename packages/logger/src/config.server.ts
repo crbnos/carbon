@@ -1,15 +1,16 @@
 import { AsyncLocalStorage } from "node:async_hooks";
 import {
-  ansiColorFormatter,
   configureSync,
   getConsoleSink,
   getJsonLinesFormatter
 } from "@logtape/logtape";
 import { redactByField } from "@logtape/redaction";
+import { devFormatter } from "./dev-formatter";
 import { readEnv } from "./env";
 import { httpDevFormatter } from "./http-formatter";
 import { type CarbonLogLevel, resolveLevel } from "./levels";
 import { CARBON_ROOT_CATEGORY } from "./logger";
+import { maskRedactedField, REDACT_FIELD_PATTERNS } from "./redaction";
 
 const CONFIGURED = Symbol.for("carbon.logging.configured");
 
@@ -23,7 +24,7 @@ export type ConfigureLoggingOptions = {
 /**
  * Configure LogTape for a Node server once per process.
  *
- * - dev  → `ansiColorFormatter` (colored terminal)
+ * - dev  → `devFormatter` (colored terminal)
  * - prod → `getJsonLinesFormatter()` (JSONL, no ANSI), field-redacted
  *
  * Idempotent: a `globalThis` flag survives Vite SSR module re-evaluation, and
@@ -39,11 +40,17 @@ export function ensureLoggingConfigured(
   const level = options.level ?? resolveLevel("server");
   const pretty = options.pretty ?? !isProd;
 
-  const formatter = pretty ? ansiColorFormatter : getJsonLinesFormatter();
+  const formatter = pretty ? devFormatter : getJsonLinesFormatter();
   const consoleSink = getConsoleSink({ formatter });
   // Redact sensitive field names (password, token, secret, …) before records
-  // reach the sink. Cheap: matches field names, not values.
-  const sink = pretty ? consoleSink : redactByField(consoleSink);
+  // reach the sink. Cheap: matches field names, not values. Masks rather than
+  // deletes, and skips email/phone/address — see ./redaction.ts.
+  const sink = pretty
+    ? consoleSink
+    : redactByField(consoleSink, {
+        fieldPatterns: REDACT_FIELD_PATTERNS,
+        action: maskRedactedField
+      });
 
   // HTTP access logs (`requestIdMiddleware`) get their own sink: a Morgan
   // "dev"-style colored line in dev, the same structured+redacted sink as

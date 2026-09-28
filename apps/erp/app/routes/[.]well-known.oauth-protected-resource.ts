@@ -1,9 +1,10 @@
 import { getAppUrl } from "@carbon/env";
+import { getRequestOrigin } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const url = new URL(request.url);
-  const origin = getAppUrl() || url.origin;
+  const origin =
+    getAppUrl() || getRequestOrigin(request) || new URL(request.url).origin;
 
   return new Response(
     JSON.stringify({

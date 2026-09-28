@@ -183,7 +183,7 @@ const JournalEntryForm = ({
         >
           <CardHeader className="flex-row items-center justify-between">
             <HStack>
-              <Heading as="h1" size="h3">
+              <Heading as="h1" size="h3" className="font-sans">
                 {displayId}
               </Heading>
               <Copy text={displayId} />

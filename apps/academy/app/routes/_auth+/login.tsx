@@ -7,7 +7,13 @@ import {
   SUPABASE_AUTH_EXTERNAL_AZURE_CLIENT_ID,
   SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID
 } from "@carbon/auth";
-import { sendMagicLink, verifyAuthSession } from "@carbon/auth/auth.server";
+import {
+  botProtection,
+  getMagicLinkErrorMessage,
+  sendMagicLink,
+  verifyAuthSession,
+  verifyBotProtection
+} from "@carbon/auth/auth.server";
 import { flash, getAuthSession } from "@carbon/auth/session.server";
 import { getUserByEmail } from "@carbon/auth/users.server";
 import { Hidden, Input, Submit, ValidatedForm, validator } from "@carbon/form";
@@ -20,8 +26,10 @@ import {
   Heading,
   Separator,
   toast,
+  useBotProtection,
   VStack
 } from "@carbon/react";
+import { getClientIp } from "@carbon/utils";
 import { LuCircleAlert } from "react-icons/lu";
 import type {
   ActionFunctionArgs,
@@ -50,13 +58,14 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   return {
     hasOutlookAuth: !!SUPABASE_AUTH_EXTERNAL_AZURE_CLIENT_ID,
-    hasGoogleAuth: !!SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID
+    hasGoogleAuth: !!SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID,
+    botProtection
   };
 }
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const ip = request.headers.get("x-forwarded-for") ?? "127.0.0.1";
+  const ip = getClientIp(request) ?? "127.0.0.1";
   const ratelimit = new Ratelimit({
     redis,
     limiter: Ratelimit.slidingWindow(RATE_LIMIT, "1 h"),
@@ -79,16 +88,30 @@ export async function action({ request }: ActionFunctionArgs) {
     return error(validation.error, "Invalid email address");
   }
 
-  const { email } = validation.data;
+  const { email, botToken } = validation.data;
+
+  const botError = await verifyBotProtection({
+    token: botToken,
+    ip,
+    actor: email
+  });
+  if (botError) {
+    return data(
+      error(null, botError),
+      await flash(request, error(null, botError))
+    );
+  }
+
   const user = await getUserByEmail(email);
 
   if (user.data && user.data.active) {
     const magicLink = await sendMagicLink(email);
 
-    if (!magicLink) {
+    if (magicLink.error) {
+      const message = getMagicLinkErrorMessage(magicLink.error);
       return data(
-        error(magicLink, "Failed to send magic link"),
-        await flash(request, error(magicLink, "Failed to send magic link"))
+        error(magicLink, message),
+        await flash(request, error(magicLink, message))
       );
     }
   } else {
@@ -102,13 +125,15 @@ export async function action({ request }: ActionFunctionArgs) {
 }
 
 export default function LoginRoute() {
-  const { hasOutlookAuth, hasGoogleAuth } = useLoaderData<typeof loader>();
+  const { hasOutlookAuth, hasGoogleAuth, botProtection } =
+    useLoaderData<typeof loader>();
   const [searchParams] = useSearchParams();
   const redirectTo = searchParams.get("redirectTo") ?? undefined;
 
   const fetcher = useFetcher<
     { success: true } | { success: false; message: string }
   >();
+  const bot = useBotProtection("/login", botProtection, fetcher.data);
 
   const onSignInWithGoogle = async () => {
     const { error } = await carbonClient.auth.signInWithOAuth({
@@ -164,6 +189,7 @@ export default function LoginRoute() {
             method="post"
           >
             <Hidden name="redirectTo" value={redirectTo} type="hidden" />
+            <Hidden name="botToken" value={bot.token} />
             <VStack spacing={2}>
               {fetcher.data?.success === false && fetcher.data?.message && (
                 <Alert variant="destructive">
@@ -209,7 +235,7 @@ export default function LoginRoute() {
               <Input name="email" label="" placeholder="Email Address" />
 
               <Submit
-                isDisabled={fetcher.state !== "idle"}
+                isDisabled={fetcher.state !== "idle" || !bot.ready}
                 isLoading={fetcher.state === "submitting"}
                 size="lg"
                 className="w-full"
@@ -218,6 +244,7 @@ export default function LoginRoute() {
               >
                 Sign in with Email
               </Submit>
+              {bot.challenge}
             </VStack>
           </ValidatedForm>
         )}

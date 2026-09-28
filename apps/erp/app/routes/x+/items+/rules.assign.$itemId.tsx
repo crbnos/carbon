@@ -1,15 +1,11 @@
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { requirePlan } from "@carbon/ee/plan.server";
-import type {
-  ActionFunctionArgs,
-  ClientActionFunctionArgs
-} from "react-router";
+import { requireFeature } from "@carbon/ee/plan.server";
+import { assignStorageRule } from "@carbon/ee/rules.server";
+import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
-import { assignStorageRule } from "~/modules/storage-rules";
 import { path } from "~/utils/path";
-import { getCompanyId, storageRuleAssignmentsQuery } from "~/utils/react-query";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -17,7 +13,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     create: "parts"
   });
 
-  await requirePlan({
+  await requireFeature({
     request,
     client,
     companyId,
@@ -56,18 +52,4 @@ export async function action({ request, params }: ActionFunctionArgs) {
     request.headers.get("Referer") ?? path.to.storageRules,
     await flash(request, success("Rule assigned"))
   );
-}
-
-export async function clientAction({
-  serverAction,
-  params
-}: ClientActionFunctionArgs) {
-  const { itemId } = params;
-  if (itemId) {
-    window?.clientCache?.setQueryData(
-      storageRuleAssignmentsQuery("item", itemId, getCompanyId()).queryKey,
-      null
-    );
-  }
-  return await serverAction();
 }

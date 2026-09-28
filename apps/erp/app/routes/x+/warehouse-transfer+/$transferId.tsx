@@ -69,7 +69,7 @@ export default function WarehouseTransferRoute() {
   return (
     <div className="flex h-[calc(100dvh-var(--topbar-height)-var(--content-inset))] overflow-y-auto scrollbar-hide w-full">
       <div className="h-full p-4 w-full max-w-5xl mx-auto">
-        <div className="flex flex-col gap-2 pb-16 w-full">
+        <div className="flex flex-col gap-4 pb-16 w-full">
           <Outlet />
         </div>
       </div>

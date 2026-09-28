@@ -1,4 +1,12 @@
 import type { KyselyTx } from "@carbon/database/client";
+import {
+  assertExchangeRate,
+  calculateSettlementFx,
+  round,
+  toBaseAmount,
+  toDocumentAmount
+} from "@carbon/utils";
+import { now as currentTime } from "@internationalized/date";
 import { createMappingService } from "./external-mapping";
 
 /**
@@ -31,8 +39,8 @@ export type NormalizedPayment = {
   amount: number;
   /** Payment currency (falls back to the document currency when absent). */
   currencyCode: string | null;
-  /** Payment → base exchange rate (v1 same-currency paths record 1). */
-  exchangeRate: number;
+  /** Foreign per base rate; null means omitted by the provider, resolved from authoritative currencies. */
+  exchangeRate: number | null;
   /** YYYY-MM-DD. */
   paidDate: string;
   /** Human/provider reference stored on the payment. */
@@ -49,28 +57,6 @@ export type NormalizedPayment = {
    */
   linkedDocuments?: { remoteId: string; amount: number }[];
 };
-
-/**
- * Invoice status implied by its settled total (cents-accurate). Returns null
- * for "don't touch": a zero/negative settled total says nothing about what the
- * status should be, and a degenerate zero-total invoice is never restated.
- *
- * Kept as a shared export because the payment tests assert its boundaries. The
- * runtime pull path no longer calls it — `post-payment` owns document status
- * (the invoice/bill status is derived in the `salesInvoices`/`purchaseInvoices`
- * views from Posted-payment settlements).
- */
-export function getSettledInvoiceStatus(args: {
-  invoiceTotal: number;
-  settledTotal: number;
-}): "Paid" | "Partially Paid" | null {
-  const totalCents = Math.round(args.invoiceTotal * 100);
-  const settledCents = Math.round(args.settledTotal * 100);
-
-  if (totalCents <= 0 || settledCents <= 0) return null;
-  if (settledCents >= totalCents) return "Paid";
-  return "Partially Paid";
-}
 
 /**
  * Separator in the outbound push's per-settlement `payment` mapping key
@@ -136,7 +122,7 @@ export async function upsertLocalPaymentDraft(
   const { family, status } = normalized;
   const mapping = createMappingService(tx, companyId);
   const docEntityType = family === "ar" ? "invoice" : "bill";
-  const now = new Date().toISOString();
+  const now = currentTime("UTC").toAbsoluteString();
 
   // Resolve linked documents (default: the single documentRemoteId).
   const linked =
@@ -144,41 +130,109 @@ export async function upsertLocalPaymentDraft(
       ? normalized.linkedDocuments
       : [{ remoteId: normalized.documentRemoteId, amount: normalized.amount }];
 
-  const resolved: { invoiceId: string; amount: number }[] = [];
+  const mappings = await tx
+    .selectFrom("externalIntegrationMapping")
+    .select(["entityId", "externalId"])
+    .where("integration", "=", providerId)
+    .where("entityType", "=", docEntityType)
+    .where(
+      "externalId",
+      "in",
+      linked.map((doc) => doc.remoteId)
+    )
+    .where("companyId", "=", companyId)
+    .execute();
+  const idByRemote = new Map<string, string>();
+  for (const row of mappings) {
+    if (!row.externalId || !row.entityId)
+      throw new Error("Invalid provider document mapping");
+    if (idByRemote.has(row.externalId))
+      throw new Error("Ambiguous provider document mapping");
+    idByRemote.set(row.externalId, row.entityId);
+  }
+  const ids = [...new Set(mappings.map((row) => row.entityId))];
+  const [company, invoices] = await Promise.all([
+    tx
+      .selectFrom("company")
+      .select(["baseCurrencyCode", "companyGroupId"])
+      .where("id", "=", companyId)
+      .executeTakeFirst(),
+    ids.length === 0
+      ? Promise.resolve([])
+      : family === "ar"
+        ? tx
+            .selectFrom("salesInvoices")
+            .select([
+              "id",
+              "customerId as partyId",
+              "currencyCode",
+              "exchangeRate",
+              "totalAmount",
+              "balance"
+            ])
+            .where("id", "in", ids)
+            .where("companyId", "=", companyId)
+            .execute()
+        : tx
+            .selectFrom("purchaseInvoices")
+            .select([
+              "id",
+              "supplierId as partyId",
+              "currencyCode",
+              "exchangeRate",
+              "totalAmount",
+              "balance"
+            ])
+            .where("id", "in", ids)
+            .where("companyId", "=", companyId)
+            .execute()
+  ]);
+  const invoiceById = new Map(invoices.map((invoice) => [invoice.id, invoice]));
+  const resolved: {
+    invoiceId: string;
+    amount: number;
+    exchangeRate: number;
+    totalAmount: number;
+    balance: number;
+  }[] = [];
   let partyId: string | null = null;
   let documentCurrency: string | null = null;
-
+  const resolvedIds = new Set<string>();
   for (const doc of linked) {
-    const localDocId = await mapping.getEntityId(
-      providerId,
-      doc.remoteId,
-      docEntityType
-    );
-    if (!localDocId) continue; // ownership skip: drop unmapped documents
-
-    if (family === "ar") {
-      const invoice = await tx
-        .selectFrom("salesInvoice")
-        .select(["id", "customerId", "currencyCode"])
-        .where("id", "=", localDocId)
-        .where("companyId", "=", companyId)
-        .executeTakeFirst();
-      if (!invoice) continue;
-      partyId ??= invoice.customerId;
-      documentCurrency ??= invoice.currencyCode;
-      resolved.push({ invoiceId: invoice.id, amount: doc.amount });
-    } else {
-      const invoice = await tx
-        .selectFrom("purchaseInvoice")
-        .select(["id", "supplierId", "currencyCode"])
-        .where("id", "=", localDocId)
-        .where("companyId", "=", companyId)
-        .executeTakeFirst();
-      if (!invoice) continue;
-      partyId ??= invoice.supplierId;
-      documentCurrency ??= invoice.currencyCode;
-      resolved.push({ invoiceId: invoice.id, amount: doc.amount });
-    }
+    const invoiceId = idByRemote.get(doc.remoteId);
+    if (!invoiceId) continue; // Only genuinely unmapped provider documents are ownership skips.
+    if (resolvedIds.has(invoiceId))
+      throw new Error("Duplicate provider payment document application");
+    resolvedIds.add(invoiceId);
+    const invoice = invoiceById.get(invoiceId);
+    if (!invoice?.partyId || !invoice.currencyCode)
+      throw new Error(
+        `Mapped ${docEntityType} ${invoiceId} is missing or has invalid company/party/currency metadata`
+      );
+    const rate = Number(invoice.exchangeRate);
+    assertExchangeRate(rate);
+    if (invoice.currencyCode === company?.baseCurrencyCode && rate !== 1)
+      throw new Error("Base-currency document requires identity exchange rate");
+    if (partyId && partyId !== invoice.partyId)
+      throw new Error("Payment links documents for different parties");
+    if (documentCurrency && documentCurrency !== invoice.currencyCode)
+      throw new Error("Payment links unsupported document currency pair");
+    partyId = invoice.partyId;
+    documentCurrency = invoice.currencyCode;
+    if (
+      !Number.isFinite(doc.amount) ||
+      doc.amount < 0 ||
+      !Number.isFinite(Number(invoice.totalAmount)) ||
+      !Number.isFinite(Number(invoice.balance))
+    )
+      throw new Error("Payment/document amount must be finite and nonnegative");
+    resolved.push({
+      invoiceId,
+      amount: doc.amount,
+      exchangeRate: rate,
+      totalAmount: Number(invoice.totalAmount),
+      balance: Number(invoice.balance)
+    });
   }
 
   if (resolved.length === 0) {
@@ -233,12 +287,57 @@ export async function upsertLocalPaymentDraft(
   }
 
   const paymentType = family === "ar" ? "Receipt" : "Disbursement";
-  const currencyCode = normalized.currencyCode ?? documentCurrency ?? undefined;
-  if (!currencyCode) {
+  const currencyCode = normalized.currencyCode ?? documentCurrency;
+  if (
+    !company?.baseCurrencyCode ||
+    !company.companyGroupId ||
+    !currencyCode ||
+    currencyCode !== documentCurrency
+  )
+    throw new Error("Unsupported payment/document currency pair");
+  const exchangeRate =
+    normalized.exchangeRate ??
+    (currencyCode === company.baseCurrencyCode ? 1 : null);
+  if (exchangeRate === null)
+    throw new Error("Foreign-currency payment exchange rate is required");
+  assertExchangeRate(exchangeRate);
+  if (currencyCode === company.baseCurrencyCode && exchangeRate !== 1)
+    throw new Error("Base-currency payment requires identity exchange rate");
+  const currency = await tx
+    .selectFrom("currency")
+    .select("decimalPlaces")
+    .where("code", "=", currencyCode)
+    .where("companyGroupId", "=", company.companyGroupId)
+    .executeTakeFirst();
+  if (!currency || currency.decimalPlaces == null)
+    throw new Error("Payment currency precision is required");
+  const decimalPlaces = currency.decimalPlaces;
+  if (
+    !Number.isFinite(normalized.amount) ||
+    normalized.amount <= 0 ||
+    toDocumentAmount(normalized.amount, 1, decimalPlaces) !== normalized.amount
+  )
     throw new Error(
-      `Cannot record ${providerId} payment ${normalized.paymentRemoteId}: no currency on the payment or its document`
+      "Payment total must be positive in document currency precision"
     );
+  let resolvedTotal = 0;
+  for (const doc of resolved) {
+    if (
+      toDocumentAmount(doc.amount, 1, decimalPlaces) !== doc.amount ||
+      doc.amount >
+        toDocumentAmount(
+          Math.min(doc.totalAmount, doc.balance),
+          doc.exchangeRate,
+          decimalPlaces
+        )
+    )
+      throw new Error(
+        "Payment principal exceeds invoice balance or document precision"
+      );
+    resolvedTotal += doc.amount;
   }
+  if (round(resolvedTotal, decimalPlaces) > normalized.amount)
+    throw new Error("Linked principal exceeds payment total");
 
   let paymentRowId: string;
   if (existingPayment) {
@@ -253,7 +352,7 @@ export async function upsertLocalPaymentDraft(
         paymentDate: normalized.paidDate,
         postingDate: normalized.paidDate,
         currencyCode,
-        exchangeRate: normalized.exchangeRate,
+        exchangeRate,
         totalAmount: normalized.amount,
         bankAccount,
         reference: normalized.reference,
@@ -281,7 +380,7 @@ export async function upsertLocalPaymentDraft(
         paymentDate: normalized.paidDate,
         postingDate: normalized.paidDate,
         currencyCode,
-        exchangeRate: normalized.exchangeRate,
+        exchangeRate,
         totalAmount: normalized.amount,
         bankAccount,
         reference: normalized.reference,
@@ -316,11 +415,19 @@ export async function upsertLocalPaymentDraft(
       ...(family === "ar"
         ? { targetSalesInvoiceId: r.invoiceId }
         : { targetPurchaseInvoiceId: r.invoiceId }),
-      appliedAmount: r.amount,
+      appliedAmount: toBaseAmount(r.amount, r.exchangeRate),
+      sourceAmount: r.amount,
+      sourcePaymentId: null,
+      fxGainLossAmount: calculateSettlementFx({
+        appliedAmount: toBaseAmount(r.amount, r.exchangeRate),
+        sourceAmount: r.amount,
+        sourceExchangeRate: exchangeRate,
+        isAR: family === "ar"
+      }),
       discountAmount: 0,
       writeOffAmount: 0,
-      sourceExchangeRate: normalized.exchangeRate,
-      targetExchangeRate: 1,
+      sourceExchangeRate: exchangeRate,
+      targetExchangeRate: r.exchangeRate,
       appliedDate: normalized.paidDate,
       companyId,
       createdBy: actorId

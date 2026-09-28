@@ -3,9 +3,8 @@ import { round } from "@carbon/utils";
 // Xero's API rounds/validates decimal places per field class. These constants
 // are the boundary's external contract (not internal scale choices): monetary
 // line/total/payment fields carry two decimals, per-unit amounts allow four,
-// and exchange rates allow six. Rounding at serialization keeps payloads valid
-// no matter what precision Carbon carries internally — and stops raw float
-// artifacts (0.45000000000000007) from reaching the API.
+// and exchange rates allow six. Document replay validates exact representability
+// before writing; it must never round away Carbon document principal.
 export const XERO_MONEY_DECIMALS = 2;
 export const XERO_UNIT_AMOUNT_DECIMALS = 4;
 export const XERO_QUANTITY_DECIMALS = 4;
@@ -24,3 +23,16 @@ export const xeroQuantity = (value: number) =>
 
 export const xeroCurrencyRate = (value: number) =>
   round(value, XERO_CURRENCY_RATE_DECIMALS);
+
+/** Refuse unsupported principal instead of letting Xero silently round it. */
+export function assertXeroMoneyPrecision(...values: number[]): void {
+  if (
+    values.some(
+      (value) => !Number.isFinite(value) || xeroMoney(value) !== value
+    )
+  ) {
+    throw new Error(
+      "Xero document monetary precision is limited to two decimal places; this document cannot be represented without changing its amounts"
+    );
+  }
+}

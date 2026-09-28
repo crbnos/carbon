@@ -2,6 +2,7 @@ import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
+import { canApproveRequest } from "@carbon/ee/approvals.server";
 import { getLogger } from "@carbon/logger";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
@@ -13,7 +14,7 @@ import {
   reopenPurchaseOrderAsRevision,
   updatePurchaseOrderStatus
 } from "~/modules/purchasing";
-import { canApproveRequest } from "~/modules/shared";
+import { requireCompanyRecord } from "~/modules/shared/shared.server";
 import { getDatabaseClient } from "~/services/database.server";
 import { path, requestReferrer } from "~/utils/path";
 
@@ -32,7 +33,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   if (!status || !purchaseOrderStatusType.includes(status)) {
     throw redirect(
-      path.to.quote(id),
+      path.to.purchaseOrder(id),
       await flash(request, error(null, "Invalid status"))
     );
   }
@@ -91,6 +92,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   const serviceRole = getCarbonServiceRole();
 
+  // The approval writes below go through the service role, keyed on the URL's
+  // id: the purchase order must belong to this company first.
+  await requireCompanyRecord(serviceRole, "purchaseOrder", companyId, { id });
+
   // Cancel pending approval requests when closing the PO
   // Closed POs are terminal - no approvals should remain pending
   // Note: Approved/Rejected requests are NOT cancelled - they serve as audit trail
@@ -106,6 +111,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
       })
       .eq("documentType", "purchaseOrder")
       .eq("documentId", id)
+      .eq("companyId", companyId)
       .eq("status", "Pending")
       .select("id");
 
@@ -125,6 +131,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
       .select("*")
       .eq("documentType", "purchaseOrder")
       .eq("documentId", id)
+      .eq("companyId", companyId)
       .eq("status", "Pending");
 
     if (pendingApprovals.data && pendingApprovals.data.length > 0) {
@@ -139,6 +146,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
           })
           .eq("documentType", "purchaseOrder")
           .eq("documentId", id)
+          .eq("companyId", companyId)
           .eq("status", "Pending");
       } else if (currentStatus === "Needs Approval") {
         // Security check: Only allow reopening if user is the requester OR an approver
@@ -157,7 +165,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
         if (!isRequester && !isApprover) {
           throw redirect(
-            requestReferrer(request) ?? path.to.quote(id),
+            requestReferrer(request) ?? path.to.purchaseOrder(id),
             await flash(
               request,
               error(
@@ -180,6 +188,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
           })
           .eq("documentType", "purchaseOrder")
           .eq("documentId", id)
+          .eq("companyId", companyId)
           .eq("status", "Pending");
       }
     }
@@ -225,7 +234,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   });
   if (update.error) {
     throw redirect(
-      requestReferrer(request) ?? path.to.quote(id),
+      requestReferrer(request) ?? path.to.purchaseOrder(id),
       await flash(
         request,
         error(update.error, "Failed to update purchasing order status")
@@ -243,7 +252,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   throw redirect(
-    requestReferrer(request) ?? path.to.quote(id),
+    requestReferrer(request) ?? path.to.purchaseOrder(id),
     await flash(request, success("Updated purchasing order status"))
   );
 }

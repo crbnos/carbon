@@ -1,13 +1,15 @@
+import type { ShortcutInput } from "@carbon/react";
 import {
   Count,
   cn,
   HStack,
+  ShortcutKey,
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-  useKeyboardShortcuts,
-  usePrettifyShortcut
+  useShortcutKeyMap
 } from "@carbon/react";
+import { useMemo } from "react";
 import type { IconType } from "react-icons";
 import { Link, useNavigate } from "react-router";
 import { useOptimisticLocation, useUrlParams } from "~/hooks";
@@ -18,7 +20,7 @@ type DetailTopbarProps = {
     to: string;
     icon?: IconType;
     count?: number;
-    shortcut?: string;
+    shortcut?: ShortcutInput;
     isActive?: (pathname: string) => boolean;
   }[];
 
@@ -33,20 +35,27 @@ const DetailTopbar = ({
   const navigate = useNavigate();
   const location = useOptimisticLocation();
   const [params] = useUrlParams();
-  const prettifyShortcut = usePrettifyShortcut();
 
-  useKeyboardShortcuts(
-    links.reduce<Record<string, () => void>>((acc, link) => {
-      if (link.shortcut) {
-        acc[link.shortcut] = () => {
-          const url = preserveParams
-            ? `${link.to}?${params.toString()}`
-            : link.to;
-          navigate(url);
-        };
-      }
-      return acc;
-    }, {})
+  useShortcutKeyMap(
+    useMemo(
+      () =>
+        links.flatMap((link) =>
+          link.shortcut
+            ? [
+                {
+                  shortcut: link.shortcut,
+                  action: () => {
+                    const url = preserveParams
+                      ? `${link.to}?${params.toString()}`
+                      : link.to;
+                    navigate(url);
+                  }
+                }
+              ]
+            : []
+        ),
+      [links, navigate, params, preserveParams]
+    )
   );
 
   return (
@@ -80,7 +89,9 @@ const DetailTopbar = ({
             </TooltipTrigger>
             {route.shortcut && (
               <TooltipContent side="bottom">
-                <HStack>{prettifyShortcut(route.shortcut)}</HStack>
+                <HStack>
+                  <ShortcutKey shortcut={route.shortcut} variant="small" />
+                </HStack>
               </TooltipContent>
             )}
           </Tooltip>

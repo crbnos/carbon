@@ -143,8 +143,8 @@ function makeItem(
     id: material.id!,
     title: (
       <VStack spacing={0} className="py-1 cursor-pointer">
-        <div className="flex items-center gap-2 group">
-          <h3 className="font-semibold truncate">{itemReadableId}</h3>
+        <div className="flex w-full min-w-0 items-center gap-2 group">
+          <h3 className="font-semibold min-w-0 truncate">{itemReadableId}</h3>
           {material.itemId && material.itemType && (
             <Link
               to={getLinkToItemDetails(material.itemType, material.itemId)}

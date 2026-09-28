@@ -2,18 +2,30 @@ import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuIcon,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
   Heading,
   HStack,
+  IconButton,
   Tabs,
   TabsContent,
   TabsList,
   TabsTrigger
 } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
-import { useCallback } from "react";
+import { Trans, useLingui } from "@lingui/react/macro";
+import { useCallback, useState } from "react";
+import { BsThreeDotsVertical } from "react-icons/bs";
+import { LuDownload } from "react-icons/lu";
 import type { LoaderFunctionArgs } from "react-router";
 import { Outlet, redirect, useLoaderData, useNavigate } from "react-router";
 import { New } from "~/components";
+import { ImportCSVModal } from "~/components/ImportCSVModal";
 import { getDepartmentsTree } from "~/modules/people";
 import {
   DepartmentsListView,
@@ -54,6 +66,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 export default function Route() {
   const { departments } = useLoaderData<typeof loader>();
   const navigate = useNavigate();
+  const { t } = useLingui();
 
   const handleEdit = useCallback(
     (id: string) => {
@@ -68,6 +81,15 @@ export default function Route() {
     },
     [navigate]
   );
+
+  // Departments render a bespoke tree/list rather than the shared <Table>, so
+  // the Bulk Import entry cannot arrive through its `importCSV` prop. Same
+  // dropdown shape as TableHeader so the control is where users expect it.
+  const [importOpen, setImportOpen] = useState(false);
+  // Named `label` deliberately: Lingui bakes the placeholder name into the
+  // msgid, so this must match TableHeader's `Import {label} CSV` to reuse its
+  // existing translation rather than create a second, untranslated key.
+  const label = t`Departments`;
 
   const handleAddChild = useCallback(
     (parentId: string) => {
@@ -90,6 +112,28 @@ export default function Route() {
             to={path.to.newDepartment}
             variant="primary"
           />
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <IconButton
+                aria-label={t`Table actions`}
+                variant="secondary"
+                icon={<BsThreeDotsVertical />}
+              />
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuLabel>
+                <Trans>Bulk Import</Trans>
+              </DropdownMenuLabel>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => setImportOpen(true)}>
+                <DropdownMenuIcon icon={<LuDownload />} />
+                {/* Reuses TableHeader's parameterized msgid rather than
+                    introducing a second one that every catalog would have to
+                    translate again. */}
+                {t`Import ${label} CSV`}
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </HStack>
       </div>
 
@@ -110,6 +154,13 @@ export default function Route() {
           onAddChild={handleAddChild}
         />
       </TabsContent>
+
+      {importOpen && (
+        <ImportCSVModal
+          table="department"
+          onClose={() => setImportOpen(false)}
+        />
+      )}
 
       <Outlet />
     </Tabs>

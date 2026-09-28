@@ -1,12 +1,14 @@
 import { serve } from "https://deno.land/std@0.175.0/http/server.ts";
 import { type CalendarDate, parseDate } from "@internationalized/date";
-import { Transaction } from "kysely";
-import { z } from "npm:zod@^3.24.1";
+import { sql, Transaction } from "kysely";
+import { z } from "npm:zod@^4.5.4";
 
 import { DB, getConnectionPool, getDatabaseClient } from "../lib/database.ts";
+import { assertCompanyRecords, RecordNotFoundError } from "../lib/company-records.ts";
 import { datetime, getCompanyTimeZone } from "../lib/datetime.ts";
 
 import { nanoid } from "https://deno.land/x/nanoid@v3.0.0/nanoid.ts";
+import { getFunctionLogger } from "../lib/logging.ts";
 import { corsPreflight, errorResponse, jsonResponse } from "../lib/response.ts";
 import {
   getStorageUnitWithHighestQuantity,
@@ -17,7 +19,10 @@ import { Database } from "../lib/types.ts";
 import type { Json } from "../lib/types.ts";
 import { TrackedEntityAttributes, credit, debit, journalReference } from "../lib/utils.ts";
 
-import { buildBatchSplitRecords } from "../shared/batch-split.ts";
+import { buildBatchSplitRecords, isFullDraw } from "../shared/batch-split.ts";
+import { buildBatchMergeRecords } from "../shared/batch-merge.ts";
+import { round } from "../shared/precision.ts";
+import { splitPickAcrossMembers } from "../shared/batch-pick-split.ts";
 import { getCurrentAccountingPeriod } from "../shared/get-accounting-period.ts";
 import { bookAdjustment } from "../shared/post-adjustment.ts";
 import { getNextSequence } from "../shared/get-next-sequence.ts";
@@ -28,6 +33,15 @@ import {
   resolveInventoryAccount,
 } from "../shared/get-posting-group.ts";
 import { calculateCOGS } from "../shared/calculate-cogs.ts";
+import {
+  allocateAcrossBudgets,
+  getOperationLinesideBin,
+  getPickedBudgets,
+  orderOldFirst,
+  recordSharedTakes,
+  type SharedTakes,
+  splitTakeByBin,
+} from "../lib/picked-consumption.ts";
 import { resolveTrackedEntityBin } from "./resolve-tracked-entity-bin.ts";
 
 type ExpiredEntityPolicy = "Warn" | "Block" | "BlockWithOverride";
@@ -139,6 +153,7 @@ async function issueJobOperationMaterials(
   const materialsToIssue = await trx
     .selectFrom("jobMaterial")
     .where("jobOperationId", "=", jobOperationId)
+    .where("companyId", "=", companyId)
     .where("itemType", "in", ["Material", "Part", "Consumable"])
     .where("methodType", "!=", "Make to Order")
     .where("estimatedQuantity", ">", 0)
@@ -150,6 +165,7 @@ async function issueJobOperationMaterials(
   const kittedChildren = await trx
     .selectFrom("jobMaterialWithMakeMethodId")
     .where("jobOperationId", "=", jobOperationId)
+    .where("companyId", "=", companyId)
     .where("itemType", "in", ["Material", "Part", "Consumable"])
     .where("methodType", "=", "Make to Order")
     .where("kit", "=", true)
@@ -214,6 +230,11 @@ async function issueJobOperationMaterials(
   const itemLedgerInserts: Database["public"]["Tables"]["itemLedger"]["Insert"][] =
     [];
 
+  const opStorageUnitId = await getOperationLinesideBin(trx, {
+    jobOperationId,
+    companyId,
+  });
+  const takenShared: SharedTakes = new Map();
   for await (const material of materialsToIssue) {
     // Cap the backflush at the material's remaining unissued requirement,
     // mirroring backflush_job_materials. Without this, materials already
@@ -230,92 +251,130 @@ async function issueJobOperationMaterials(
 
     if (quantityToIssue <= 0) continue;
 
-    let proposedStorageUnitId = material.storageUnitId;
+    const budgets = orderOldFirst(
+      await getPickedBudgets(trx, {
+        material,
+        locationId: job.locationId,
+        companyId,
+        opStorageUnitId,
+        takenShared,
+      }),
+      material.itemId
+    );
+    const { takes, remaining } = allocateAcrossBudgets(
+      quantityToIssue,
+      budgets,
+      Number(material.quantity ?? 0)
+    );
+    recordSharedTakes(takenShared, takes);
+    for (const take of takes) {
+      if (!take.budget.isInventory) continue;
+      for (const row of splitTakeByBin(take)) {
+        itemLedgerInserts.push({
+          entryType: "Consumption",
+          documentType: "Job Consumption",
+          documentId: jobId,
+          documentLineId: jobOperationId,
+          companyId,
+          itemId: take.budget.itemId,
+          quantity: -row.quantity,
+          locationId: job.locationId,
+          storageUnitId: row.storageUnitId,
+          postingDate: today,
+          createdBy: userId,
+        });
+      }
+    }
 
-    if (!proposedStorageUnitId) {
-      if (material.defaultStorageUnit) {
-        const pickMethod = await trx
-          .selectFrom("pickMethod")
-          .where("itemId", "=", material.itemId)
-          .where("locationId", "=", job.locationId!)
-          .where("companyId", "=", companyId)
-          .select("defaultStorageUnitId")
-          .executeTakeFirst();
+    if (remaining > 0) {
+      let proposedStorageUnitId = material.storageUnitId;
 
-        proposedStorageUnitId = pickMethod?.defaultStorageUnitId;
+      if (!proposedStorageUnitId) {
+        if (material.defaultStorageUnit) {
+          const pickMethod = await trx
+            .selectFrom("pickMethod")
+            .where("itemId", "=", material.itemId)
+            .where("locationId", "=", job.locationId!)
+            .where("companyId", "=", companyId)
+            .select("defaultStorageUnitId")
+            .executeTakeFirst();
 
-        if (!proposedStorageUnitId) {
+          proposedStorageUnitId = pickMethod?.defaultStorageUnitId;
+
+          if (!proposedStorageUnitId) {
+            proposedStorageUnitId = await getStorageUnitWithHighestQuantity(
+              trx,
+              material.itemId,
+              job.locationId!
+            );
+          }
+        } else {
           proposedStorageUnitId = await getStorageUnitWithHighestQuantity(
             trx,
             material.itemId,
             job.locationId!
           );
         }
-      } else {
-        proposedStorageUnitId = await getStorageUnitWithHighestQuantity(
-          trx,
-          material.itemId,
-          job.locationId!
-        );
       }
-    }
 
-    const currentStorageUnitQuantity = await trx
-      .selectFrom("itemLedger")
-      .select((eb) => eb.fn.sum("quantity").as("quantity"))
-      .where("itemId", "=", material.itemId)
-      .where("locationId", "=", job.locationId!)
-      .where("storageUnitId", "=", proposedStorageUnitId ?? "")
-      .executeTakeFirst();
+      const currentStorageUnitQuantity = await trx
+        .selectFrom("itemLedger")
+        .select((eb) => eb.fn.sum("quantity").as("quantity"))
+        .where("itemId", "=", material.itemId)
+        .where("locationId", "=", job.locationId!)
+        .where("storageUnitId", "=", proposedStorageUnitId ?? "")
+        .executeTakeFirst();
 
-    const allStorageUnitQuantities = await trx
-      .selectFrom("itemLedger")
-      .select([
-        "storageUnitId",
-        (eb) => eb.fn.sum("quantity").as("quantity"),
-      ])
-      .where("itemId", "=", material.itemId)
-      .where("locationId", "=", job.locationId!)
-      .groupBy("storageUnitId")
-      .having((eb) => eb.fn.sum("quantity"), ">", 0)
-      .execute();
+      const allStorageUnitQuantities = await trx
+        .selectFrom("itemLedger")
+        .select([
+          "storageUnitId",
+          (eb) => eb.fn.sum("quantity").as("quantity"),
+        ])
+        .where("itemId", "=", material.itemId)
+        .where("locationId", "=", job.locationId!)
+        .groupBy("storageUnitId")
+        .having((eb) => eb.fn.sum("quantity"), ">", 0)
+        .execute();
 
-    let finalStorageUnitId = proposedStorageUnitId;
-    const currentQuantity = Number(currentStorageUnitQuantity?.quantity ?? 0);
+      let finalStorageUnitId = proposedStorageUnitId;
+      const currentQuantity = Number(currentStorageUnitQuantity?.quantity ?? 0);
 
-    if (
-      currentQuantity < quantityToIssue &&
-      allStorageUnitQuantities.length > 0
-    ) {
-      const bestStorageUnit = allStorageUnitQuantities.reduce((best, current) =>
-        Number(current.quantity) > Number(best.quantity) ? current : best
-      );
-      finalStorageUnitId = bestStorageUnit.storageUnitId ?? null;
-    }
+      if (
+        currentQuantity < remaining &&
+        allStorageUnitQuantities.length > 0
+      ) {
+        const bestStorageUnit = allStorageUnitQuantities.reduce((best, current) =>
+          Number(current.quantity) > Number(best.quantity) ? current : best
+        );
+        finalStorageUnitId = bestStorageUnit.storageUnitId ?? null;
+      }
 
-    const isTracked = itemIdIsTracked.get(material.itemId);
+      const isTracked = itemIdIsTracked.get(material.itemId);
 
-    if (isTracked) {
-      itemLedgerInserts.push({
-        entryType: "Consumption",
-        documentType: "Job Consumption",
-        documentId: jobId,
-        documentLineId: jobOperationId,
-        companyId,
-        itemId: material.itemId,
-        quantity: -quantityToIssue,
-        locationId: job.locationId,
-        storageUnitId: finalStorageUnitId,
-        postingDate: today,
-        createdBy: userId,
-      });
+      if (isTracked) {
+        itemLedgerInserts.push({
+          entryType: "Consumption",
+          documentType: "Job Consumption",
+          documentId: jobId,
+          documentLineId: jobOperationId,
+          companyId,
+          itemId: material.itemId,
+          quantity: -remaining,
+          locationId: job.locationId,
+          storageUnitId: finalStorageUnitId,
+          postingDate: today,
+          createdBy: userId,
+        });
+      }
     }
 
     await trx
       .updateTable("jobMaterial")
       .set({
-        quantityIssued:
-          (Number(material.quantityIssued) ?? 0) + quantityToIssue,
+        quantityIssued: round(
+          round(Number(material.quantityIssued) ?? 0) + round(quantityToIssue)
+        ),
       })
       .where("id", "=", material.id)
       .execute();
@@ -807,8 +866,21 @@ async function createMaterialWipEntries(
   }
 }
 
+// Each child's quantity is its own persist boundary — it becomes one
+// Consumption ledger row — so round PER CHILD and then round the sum. That is
+// what makes jobMaterial.quantityIssued net exactly against those rows; a
+// single round of the raw sum can differ from them by a minor unit.
+function roundedChildTotal(
+  children: { quantity: number | string }[]
+): number {
+  return round(
+    children.reduce((sum, child) => sum + round(Number(child.quantity)), 0)
+  );
+}
+
 const pool = getConnectionPool(1);
 const db = getDatabaseClient<DB>(pool);
+const logger = getFunctionLogger("issue");
 
 const payloadValidator = z.discriminatedUnion("type", [
   z.object({
@@ -849,6 +921,15 @@ const payloadValidator = z.discriminatedUnion("type", [
     // same verdict fail instead of double-counting.
     inspectionId: z.string().optional(),
     inspectionSampleId: z.string().optional(),
+  }),
+  z.object({
+    type: z.literal("jobOperationBatchOutput"),
+    jobOperationId: z.string(),
+    trackedEntityId: z.string(),
+    quantity: z.number(),
+    readableId: z.string().optional().nullable(),
+    companyId: z.string(),
+    userId: z.string(),
   }),
   z.object({
     type: z.literal("jobOperationSerialComplete"),
@@ -901,6 +982,28 @@ const payloadValidator = z.discriminatedUnion("type", [
     parentTrackedEntityId: z.string(),
     scrapReasonId: z.string(),
     makeReplacement: z.boolean().optional(),
+    companyId: z.string(),
+    userId: z.string(),
+  }),
+  z.object({
+    type: z.literal("mergeTrackedEntities"),
+    trackedEntityIds: z.array(z.string()).min(2),
+    readableId: z.string().optional().nullable(),
+    companyId: z.string(),
+    userId: z.string(),
+  }),
+  z.object({
+    type: z.literal("trackedEntitiesToBatch"),
+    batchId: z.string(),
+    itemId: z.string(),
+    children: z.array(
+      z.object({
+        trackedEntityId: z.string(),
+        quantity: z.number(),
+      })
+    ),
+    overrideExpired: z.boolean().optional(),
+    overrideReason: z.string().optional(),
     companyId: z.string(),
     userId: z.string(),
   }),
@@ -984,19 +1087,736 @@ const payloadValidator = z.discriminatedUnion("type", [
   }),
 ]);
 
+
+// The production-event and inspection links a completion/scrap payload carries
+// are written verbatim into productionQuantity, whose single-column FKs accept
+// any company's row — re-read them under companyId first (one query per table).
+async function assertProductionQuantityLinks(
+  companyId: string,
+  links: {
+    laborProductionEventId?: string;
+    machineProductionEventId?: string;
+    setupProductionEventId?: string;
+    inspectionId?: string;
+    inspectionSampleId?: string;
+  }
+) {
+  await assertCompanyRecords(
+    db,
+    "productionEvent",
+    [
+      links.laborProductionEventId,
+      links.machineProductionEventId,
+      links.setupProductionEventId,
+    ],
+    companyId,
+    "Production event"
+  );
+  await assertCompanyRecords(db, "inspection", [links.inspectionId], companyId, "Inspection");
+  await assertCompanyRecords(
+    db,
+    "inspectionSample",
+    [links.inspectionSampleId],
+    companyId,
+    "Inspection sample"
+  );
+}
+
+// Shared accounting context for the tracked-consumption paths (the per-op and
+// per-batch cases): whether accounting is enabled, the posting-group defaults,
+// and the active dimension map.
+async function loadConsumeAccountingContext(
+  // deno-lint-ignore no-explicit-any
+  client: any,
+  companyId: string
+) {
+  const [accountingSettings, companyRecord] = await Promise.all([
+    client
+      .from("companySettings")
+      .select("accountingEnabled")
+      .eq("id", companyId)
+      .single(),
+    client.from("company").select("companyGroupId").eq("id", companyId).single(),
+  ]);
+  if (companyRecord.error) throw new Error("Failed to fetch company");
+  const accountingEnabled = accountingSettings.data?.accountingEnabled ?? false;
+
+  const accountDefaults = accountingEnabled
+    ? await getDefaultPostingGroup(client, companyId)
+    : null;
+  if (accountingEnabled && (accountDefaults?.error || !accountDefaults?.data)) {
+    throw new Error("Error getting account defaults");
+  }
+
+  const dimensions = accountingEnabled
+    ? await client
+        .from("dimension")
+        .select("id, entityType")
+        .eq("companyGroupId", companyRecord.data.companyGroupId)
+        .eq("active", true)
+        .in("entityType", ["ItemPostingGroup", "Item", "Location"])
+    : null;
+
+  const dimensionMap = new Map<string, string>();
+  if (dimensions?.data) {
+    for (const dim of dimensions.data) {
+      if (dim.entityType) dimensionMap.set(dim.entityType, dim.id);
+    }
+  }
+
+  return { accountingEnabled, accountDefaults, dimensionMap };
+}
+
+// The per-operation tracked-consumption write sequence, extracted verbatim from
+// the trackedEntitiesToOperation case so trackedEntitiesToBatch can run it once
+// per member inside ONE transaction. Reads run against `trx`, so sequential
+// member calls drawing from the same lot see each other's decrements.
+async function consumeTrackedEntitiesIntoOperation(
+  trx: Transaction<DB>,
+  {
+    materialId,
+    jobOperationId,
+    itemId,
+    parentTrackedEntityId,
+    children,
+    jobOperationStepId,
+    unitNumber,
+    overrideExpired,
+    overrideReason,
+    companyId,
+    userId,
+    companyToday,
+    client,
+    accountingEnabled: accountingEnabledTracked,
+    accountDefaults: accountDefaultsTracked,
+    dimensionMap: dimensionMapTracked,
+  }: {
+    materialId?: string;
+    jobOperationId?: string;
+    itemId?: string;
+    parentTrackedEntityId: string;
+    children: { trackedEntityId: string; quantity: number }[];
+    jobOperationStepId?: string;
+    unitNumber?: number;
+    overrideExpired?: boolean;
+    overrideReason?: string | null;
+    companyId: string;
+    userId: string;
+    companyToday: CalendarDate;
+    // deno-lint-ignore no-explicit-any
+    client: any;
+    accountingEnabled: boolean;
+    // deno-lint-ignore no-explicit-any
+    accountDefaults: any;
+    dimensionMap: Map<string, string>;
+  }
+): Promise<{
+  splitEntities: Array<{
+    originalId: string;
+    newId: string;
+    readableId: string;
+    quantity: number;
+    remainingQuantity: number;
+  }>;
+  warning: string | undefined;
+}> {
+  let expiredWarning: string | undefined;
+
+          const trackedEntities = await trx
+            .selectFrom("trackedEntity")
+            .where(
+              "id",
+              "in",
+              children.map((child) => child.trackedEntityId)
+            )
+            .where("companyId", "=", companyId)
+            .selectAll()
+            .execute();
+
+          const itemLedgers = await trx
+            .selectFrom("itemLedger")
+            .where("trackedEntityId", "in", [
+              ...children.map((child) => child.trackedEntityId),
+            ])
+            .orderBy("createdBy", "desc")
+            .selectAll()
+            .execute();
+
+          if (trackedEntities.length !== children.length) {
+            throw new Error("Tracked entities not found");
+          }
+
+          if (trackedEntities.some((entity) => entity.status !== "Available")) {
+            throw new Error("Tracked entities are not available");
+          }
+
+          // Expiry policy gate. Reads companySettings.inventoryShelfLife.
+          const expiredPolicy = await getExpiredEntityPolicy(trx, companyId);
+          const expiredCheck = checkExpiredEntities(
+            trackedEntities.map((e) => ({
+              id: e.id,
+              expirationDate: e.expirationDate,
+            })),
+            expiredPolicy,
+            { allowed: !!overrideExpired, reason: overrideReason ?? null },
+            companyToday
+          );
+          if (!expiredCheck.ok) {
+            throw new Error(expiredCheck.reason);
+          }
+          if (expiredCheck.warning) {
+            expiredWarning = expiredCheck.warning;
+          }
+
+          let jobMaterial: Awaited<
+            ReturnType<
+              ReturnType<typeof trx.selectFrom<"jobMaterial">>["selectAll"]
+            >
+          >[0] | undefined;
+          let actualMaterialId: string | undefined = materialId;
+          const firstTrackedEntity = trackedEntities[0];
+
+          if (materialId) {
+            // Existing behavior: fetch the jobMaterial
+            jobMaterial = await trx
+              .selectFrom("jobMaterial")
+              .where("id", "=", materialId)
+              .where("companyId", "=", companyId)
+              .selectAll()
+              .executeTakeFirst();
+
+            // Check if any tracked entity has a different sourceDocumentId than the material's itemId
+            if (
+              firstTrackedEntity &&
+              jobMaterial &&
+              firstTrackedEntity.sourceDocumentId !== jobMaterial.itemId
+            ) {
+              // Create a new jobMaterial for the tracked entity's item
+              const totalChildQuantity = roundedChildTotal(children);
+
+              const itemCost = await trx
+                .selectFrom("itemCost")
+                .where("itemId", "=", firstTrackedEntity.sourceDocumentId!)
+                .select("unitCost")
+                .executeTakeFirst();
+
+              const newJobMaterial = await trx
+                .insertInto("jobMaterial")
+                .values({
+                  companyId,
+                  createdBy: userId,
+                  description: firstTrackedEntity.sourceDocumentReadableId ?? "",
+                  estimatedQuantity: 0,
+                  itemId: firstTrackedEntity.sourceDocumentId!,
+                  jobId: jobMaterial.jobId!,
+                  jobMakeMethodId: jobMaterial.jobMakeMethodId,
+                  jobOperationId: jobMaterial.jobOperationId,
+                  itemType: jobMaterial.itemType,
+                  methodType: jobMaterial.methodType,
+                  quantity: 0,
+                  quantityIssued: totalChildQuantity,
+                  requiresBatchTracking: jobMaterial.requiresBatchTracking,
+                  requiresSerialTracking: jobMaterial.requiresSerialTracking,
+                  unitCost: itemCost?.unitCost ?? 0,
+                })
+                .returning("id")
+                .executeTakeFirstOrThrow();
+
+              actualMaterialId = newJobMaterial.id!;
+
+              // Fetch the newly created jobMaterial
+              jobMaterial = await trx
+                .selectFrom("jobMaterial")
+                .where("id", "=", actualMaterialId)
+                .selectAll()
+                .executeTakeFirstOrThrow();
+            }
+          } else if (jobOperationId && itemId) {
+            // New behavior: create a jobMaterial on the fly
+            const jobOperation = await trx
+              .selectFrom("jobOperation")
+              .where("id", "=", jobOperationId)
+              .where("companyId", "=", companyId)
+              .select(["jobId", "jobMakeMethodId"])
+              .executeTakeFirst();
+
+            if (!jobOperation) {
+              throw new Error("Job operation not found");
+            }
+
+            const item = await trx
+              .selectFrom("item")
+              .where("id", "=", itemId)
+              .where("companyId", "=", companyId)
+              .select(["name", "type", "itemTrackingType", "defaultMethodType"])
+              .executeTakeFirst();
+
+            if (!item) {
+              throw new Error("Item not found");
+            }
+
+            const totalChildQuantity = roundedChildTotal(children);
+
+            const itemCost = await trx
+              .selectFrom("itemCost")
+              .where("itemId", "=", itemId)
+              .select("unitCost")
+              .executeTakeFirst();
+
+            const newJobMaterial = await trx
+              .insertInto("jobMaterial")
+              .values({
+                companyId,
+                createdBy: userId,
+                description: item.name ?? "",
+                estimatedQuantity: 0,
+                itemId: itemId,
+                jobId: jobOperation.jobId!,
+                jobMakeMethodId: jobOperation.jobMakeMethodId,
+                jobOperationId: jobOperationId,
+                itemType: item.type ?? "Part",
+                methodType: item.defaultMethodType ?? "Pull from Inventory",
+                quantity: 0,
+                quantityIssued: totalChildQuantity,
+                requiresBatchTracking: item.itemTrackingType === "Batch",
+                requiresSerialTracking: item.itemTrackingType === "Serial",
+                unitCost: itemCost?.unitCost ?? 0,
+              })
+              .returning("id")
+              .executeTakeFirstOrThrow();
+
+            actualMaterialId = newJobMaterial.id!;
+
+            // Scope this unplanned tracked part to the step it was issued on
+            // (assembly view), so it shows on that step rather than as General.
+            if (jobOperationStepId) {
+              await trx
+                .insertInto("jobMaterialStep")
+                .values({
+                  jobMaterialId: actualMaterialId,
+                  jobOperationStepId,
+                })
+                .onConflict((oc) => oc.doNothing())
+                .execute();
+            }
+
+            // Fetch the newly created jobMaterial
+            jobMaterial = await trx
+              .selectFrom("jobMaterial")
+              .where("id", "=", actualMaterialId)
+              .selectAll()
+              .executeTakeFirstOrThrow();
+          }
+
+          if (!jobMaterial) {
+            throw new Error("Job material not found");
+          }
+
+          // Get item details
+          const item = await trx
+            .selectFrom("item")
+            .where("id", "=", jobMaterial?.itemId!)
+            .select(["readableIdWithRevision"])
+            .executeTakeFirst();
+
+          // Get job location
+          const job = await trx
+            .selectFrom("job")
+            .select(["id", "locationId"])
+            .where("id", "=", jobMaterial?.jobId!)
+            .executeTakeFirst();
+
+          // Get parent tracked entity details
+          const parentTrackedEntity = await trx
+            .selectFrom("trackedEntity")
+            .where("id", "=", parentTrackedEntityId)
+            .where("companyId", "=", companyId)
+            .select([
+              "id",
+              "sourceDocumentId",
+              "quantity",
+              "attributes",
+              "status",
+            ])
+            .executeTakeFirst();
+
+          if (!parentTrackedEntity) {
+            throw new Error("Parent tracked entity not found");
+          }
+
+          // Create tracked activity
+          const activityId = nanoid();
+          await trx
+            .insertInto("trackedActivity")
+            .values({
+              id: activityId,
+              type: "Consume",
+              sourceDocument: "Job Material",
+              sourceDocumentId: actualMaterialId,
+              sourceDocumentReadableId: item?.readableIdWithRevision ?? "",
+              attributes: {
+                Job: job?.id!,
+                "Job Make Method": jobMaterial?.jobMakeMethodId!,
+                "Job Material": jobMaterial?.id!,
+                Employee: userId,
+                // Assembly view: which step + 1-based unit this consume was for, so
+                // the MES can attribute issued quantities per-unit even for a batch
+                // parent (where all units share one lot entity).
+                ...(jobOperationStepId
+                  ? { "Job Operation Step": jobOperationStepId }
+                  : {}),
+                ...(unitNumber !== undefined ? { Unit: unitNumber } : {}),
+              },
+              companyId,
+              createdBy: userId,
+            })
+            .execute();
+
+          await trx
+            .insertInto("trackedActivityOutput")
+            .values({
+              trackedActivityId: activityId,
+              trackedEntityId: parentTrackedEntityId,
+              quantity: parentTrackedEntity.quantity,
+              companyId,
+              createdBy: userId,
+            })
+            .execute();
+
+          const itemLedgerInserts: Database["public"]["Tables"]["itemLedger"]["Insert"][] =
+            [];
+          const trackedActivityInputs: Database["public"]["Tables"]["trackedActivityInput"]["Insert"][] =
+            [];
+
+          const splitEntities: Array<{
+            originalId: string;
+            newId: string;
+            readableId: string;
+            quantity: number;
+            remainingQuantity: number;
+          }> = [];
+
+          // Process each child tracked entity
+          for (const child of children) {
+            const trackedEntity = trackedEntities.find(
+              (entity) => entity.id === child.trackedEntityId
+            );
+            if (!trackedEntity) {
+              throw new Error("Tracked entity not found");
+            }
+            const { trackedEntityId } = child;
+
+            // ONE canonical quantity for this child, rounded at the persist
+            // boundary. On a FULL draw it is the lot's own on-hand: the entity
+            // is flipped Consumed without its quantity being rewritten, so
+            // booking the requested figure instead would leave the Consumption
+            // ledger row disagreeing with the lot it just emptied.
+            const entityQuantity = round(Number(trackedEntity.quantity));
+            const fullDraw = isFullDraw(entityQuantity, child.quantity);
+            const quantity = fullDraw ? entityQuantity : round(child.quantity);
+
+            // Partial consume → split: the lineside entity keeps its id and
+            // is decremented; a NEW child entity carries the consumed
+            // quantity. EVERYTHING below (Consumed status, Consume input,
+            // Consumption ledger) books against the child — flipping the
+            // entity half without the ledger half would double-count on-hand.
+            let consumedEntityId = trackedEntityId;
+            if (!fullDraw) {
+              const consumedChildId = nanoid();
+              consumedEntityId = consumedChildId;
+
+              const split = buildBatchSplitRecords({
+                parent: {
+                  id: trackedEntity.id!,
+                  readableId: trackedEntity.readableId,
+                  quantity: entityQuantity,
+                  sourceDocument: trackedEntity.sourceDocument,
+                  sourceDocumentId: trackedEntity.sourceDocumentId,
+                  sourceDocumentReadableId:
+                    trackedEntity.sourceDocumentReadableId,
+                  itemId:
+                    trackedEntity.itemId ?? trackedEntity.sourceDocumentId,
+                  expirationDate: trackedEntity.expirationDate ?? null,
+                  attributes: trackedEntity.attributes as Record<
+                    string,
+                    unknown
+                  > | null
+                },
+                drawQuantity: quantity,
+                childId: consumedChildId,
+                splitActivityId: nanoid(),
+                activitySourceDocument: "Job Material",
+                activitySourceDocumentId: actualMaterialId,
+                bin: {
+                  storageUnitId: resolveTrackedEntityBin(
+                    itemLedgers,
+                    trackedEntityId
+                  ),
+                  locationId: job?.locationId ?? null
+                },
+                itemLedgerItemId: trackedEntity.sourceDocumentId,
+                companyId,
+                userId,
+                postingDate: companyToday.toString(),
+                // Created Available; the shared status update below flips the
+                // child to Consumed in the same transaction.
+                childStatus: "Available",
+                extraChildAttributes: {
+                  ...(jobOperationStepId
+                    ? { "Job Operation Step": jobOperationStepId }
+                    : {}),
+                  ...(unitNumber !== undefined ? { Unit: unitNumber } : {})
+                }
+              });
+
+              // Track split entity for the MES confirmation: quantity = what
+              // was consumed (the child), remainingQuantity = what the
+              // surviving lineside entity still holds.
+              splitEntities.push({
+                originalId: trackedEntityId,
+                newId: consumedChildId,
+                readableId: trackedEntity.sourceDocumentReadableId ?? "",
+                quantity,
+                remainingQuantity: split.parentUpdate.quantity,
+              });
+
+              await trx
+                .insertInto("trackedActivity")
+                .values(split.activityInsert)
+                .execute();
+
+              await trx
+                .insertInto("trackedEntity")
+                .values(split.childEntityInsert)
+                .execute();
+
+              await trx
+                .insertInto("trackedActivityInput")
+                .values(split.activityInputInsert)
+                .execute();
+
+              await trx
+                .insertInto("trackedActivityOutput")
+                .values(split.activityOutputInsert)
+                .execute();
+
+              await trx
+                .updateTable("trackedEntity")
+                .set(split.parentUpdate)
+                .where("id", "=", trackedEntityId)
+                .execute();
+
+              // MTO skips ONLY the ledger inserts; entity/activity writes
+              // above still happen.
+              if (jobMaterial?.methodType !== "Make to Order") {
+                itemLedgerInserts.push(...split.ledgerInserts);
+              }
+            }
+
+            // Consume the drawn entity — the split child, or the whole
+            // entity on a full draw.
+            await trx
+              .updateTable("trackedEntity")
+              .set({
+                status: "Consumed",
+              })
+              .where("id", "=", consumedEntityId)
+              .execute();
+
+            trackedActivityInputs.push({
+              trackedActivityId: activityId,
+              trackedEntityId: consumedEntityId,
+              quantity,
+              companyId,
+              createdBy: userId,
+            });
+
+            if (jobMaterial?.methodType !== "Make to Order") {
+              itemLedgerInserts.push({
+                entryType: "Consumption",
+                documentType: "Job Consumption",
+                documentId: job?.id!,
+                companyId,
+                itemId: trackedEntity.sourceDocumentId,
+                quantity: -quantity,
+                locationId: job?.locationId,
+                // The split child has no rows in the pre-transaction ledger
+                // snapshot — it sits at the parent's resolved bin.
+                storageUnitId: resolveTrackedEntityBin(itemLedgers, trackedEntityId),
+                trackedEntityId: consumedEntityId,
+                createdBy: userId,
+              });
+            }
+          }
+
+          if (trackedActivityInputs.length > 0) {
+            await trx
+              .insertInto("trackedActivityInput")
+              .values(trackedActivityInputs)
+              .execute();
+          }
+
+          if (itemLedgerInserts.length > 0) {
+            await trx
+              .insertInto("itemLedger")
+              .values(itemLedgerInserts)
+              .execute();
+
+            // Update pickMethod defaultStorageUnitId if needed for each inserted ledger
+            for (const ledger of itemLedgerInserts) {
+              await updatePickMethodDefaultStorageUnitIfNeeded(
+                trx,
+                ledger.itemId,
+                ledger.locationId,
+                ledger.storageUnitId,
+                companyId,
+                userId
+              );
+            }
+          }
+
+          if (accountingEnabledTracked && accountDefaultsTracked?.data && itemLedgerInserts.length > 0) {
+            const consumptionEntries = itemLedgerInserts
+              .filter((l) => l.entryType === "Consumption")
+              .map((l) => ({ itemId: l.itemId as string, quantity: Number(l.quantity) }));
+
+            if (consumptionEntries.length > 0) {
+              await createMaterialWipEntries(trx, {
+                consumptionLedgers: consumptionEntries,
+                jobId: job?.id!,
+                operationId: jobMaterial?.jobOperationId ?? actualMaterialId!,
+                description: "Tracked Entity Material Issue",
+                wipAccount: accountDefaultsTracked.data.workInProgressAccount,
+                rawMaterialsAccount: accountDefaultsTracked.data.rawMaterialsAccount,
+                finishedGoodsAccount: accountDefaultsTracked.data.finishedGoodsAccount,
+                dimensionMap: dimensionMapTracked,
+  
+                jobLocationId: job?.locationId ?? null,
+                client,
+                db,
+                companyId,
+                userId,
+              });
+            }
+          }
+
+          const totalChildQuantity = roundedChildTotal(children);
+
+          // Only update if we didn't create a new jobMaterial (in which case it's already set)
+          if (actualMaterialId === materialId) {
+            const currentQuantityIssued = round(
+              Number(jobMaterial?.quantityIssued) || 0
+            );
+            const newQuantityIssued = round(
+              currentQuantityIssued + totalChildQuantity
+            );
+
+            await trx
+              .updateTable("jobMaterial")
+              .set({
+                quantityIssued: newQuantityIssued,
+              })
+              .where("id", "=", actualMaterialId)
+              .execute();
+
+            logger.info("Job material quantity updated", {
+              materialId: actualMaterialId,
+              newQuantityIssued,
+            });
+          }
+
+
+  return { splitEntities, warning: expiredWarning };
+}
+
+
+// The Produce half of a batch-tracked operation completion — the activity +
+// entity flip EXTRACTED from jobOperationBatchComplete, so the batch-operations
+// Phase 2 (jobOperationBatchOutput) can finalize a member's output WITHOUT that
+// case's productionQuantity insert (batch Phase 1 already recorded it) and
+// WITHOUT its backflush (the batch's own issue step already ran).
+async function produceBatchOutput(
+  trx: Transaction<DB>,
+  {
+    jobOperationId,
+    trackedEntityId,
+    producedQuantity,
+    totalQuantity,
+    companyId,
+    userId,
+  }: {
+    jobOperationId: string;
+    trackedEntityId: string;
+    producedQuantity: number;
+    totalQuantity: number;
+    companyId: string;
+    userId: string;
+  }
+) {
+  const trackedEntity = await trx
+    .selectFrom("trackedEntity")
+    .where("id", "=", trackedEntityId)
+    .where("companyId", "=", companyId)
+    .selectAll()
+    .executeTakeFirst();
+
+  if (!trackedEntity) {
+    throw new Error("Tracked entity not found");
+  }
+
+  if (trackedEntity.status !== "Consumed") {
+    const activityId = nanoid();
+    await trx
+      .insertInto("trackedActivity")
+      .values({
+        id: activityId,
+        type: "Produce",
+        sourceDocument: "Job Operation",
+        sourceDocumentId: jobOperationId,
+        attributes: {
+          "Job Operation": jobOperationId,
+          Employee: userId,
+          Quantity: producedQuantity,
+        },
+        companyId,
+        createdBy: userId,
+      })
+      .execute();
+
+    await trx
+      .insertInto("trackedActivityOutput")
+      .values({
+        trackedActivityId: activityId,
+        trackedEntityId: trackedEntityId,
+        quantity: producedQuantity,
+        companyId,
+        createdBy: userId,
+      })
+      .execute();
+
+    // Update the current trackedEntity to Complete
+    await trx
+      .updateTable("trackedEntity")
+      .set({
+        status: "Available",
+        quantity: totalQuantity,
+      })
+      .where("id", "=", trackedEntityId)
+      .where("companyId", "=", companyId)
+      .execute();
+  }
+}
+
 serve(async (req: Request) => {
   const preflight = corsPreflight(req);
   if (preflight) return preflight;
   const payload = await req.json();
-  console.log({ payload });
+  logger.info({ payload });
 
   try {
     const validatedPayload = payloadValidator.parse(payload);
 
-    console.log({
-      function: "issue",
-      ...validatedPayload,
-    });
+    logger.info(validatedPayload);
 
     const itemLedgerInserts: Database["public"]["Tables"]["itemLedger"]["Insert"][] =
       [];
@@ -1060,17 +1880,20 @@ serve(async (req: Request) => {
       case "jobOperationBatchComplete": {
         const { trackedEntityId, companyId, userId, ...row } = validatedPayload;
         const client = await requirePermissions(req, companyId, userId, { update: "production" });
+        await assertProductionQuantityLinks(companyId, row);
 
         const [jobOperation, productionQuantities] = await Promise.all([
           client
             .from("jobOperation")
             .select("*")
             .eq("id", row.jobOperationId)
+            .eq("companyId", companyId)
             .single(),
           client
             .from("productionQuantity")
             .select("*")
             .eq("jobOperationId", row.jobOperationId)
+            .eq("companyId", companyId)
             .eq("type", "Production"),
         ]);
 
@@ -1078,39 +1901,10 @@ serve(async (req: Request) => {
           throw new Error("Job operation not found");
         }
 
-        const [accountingSettingsBatch, companyRecordBatch] = await Promise.all([
-          client
-            .from("companySettings")
-            .select("accountingEnabled")
-            .eq("id", companyId)
-            .single(),
-          client.from("company").select("companyGroupId").eq("id", companyId).single(),
-        ]);
-        if (companyRecordBatch.error) throw new Error("Failed to fetch company");
-        const accountingEnabledBatch = accountingSettingsBatch.data?.accountingEnabled ?? false;
-
-        const accountDefaultsBatch = accountingEnabledBatch
-          ? await getDefaultPostingGroup(client, companyId)
-          : null;
-        if (accountingEnabledBatch && (accountDefaultsBatch?.error || !accountDefaultsBatch?.data)) {
-          throw new Error("Error getting account defaults");
-        }
-
-        const dimensionsBatch = accountingEnabledBatch
-          ? await client
-              .from("dimension")
-              .select("id, entityType")
-              .eq("companyGroupId", companyRecordBatch.data.companyGroupId)
-              .eq("active", true)
-              .in("entityType", ["ItemPostingGroup", "Item", "Location"])
-          : null;
-
-        const dimensionMapBatch = new Map<string, string>();
-        if (dimensionsBatch?.data) {
-          for (const dim of dimensionsBatch.data) {
-            if (dim.entityType) dimensionMapBatch.set(dim.entityType, dim.id);
-          }
-        }
+        const accountingBatch = await loadConsumeAccountingContext(
+          client,
+          companyId
+        );
 
         await db.transaction().execute(async (trx) => {
           await trx
@@ -1123,71 +1917,31 @@ serve(async (req: Request) => {
             })
             .executeTakeFirst();
 
-          const trackedEntity = await trx
-            .selectFrom("trackedEntity")
-            .where("id", "=", trackedEntityId)
-            .selectAll()
-            .executeTakeFirst();
+          const previousProductionQuantities =
+            productionQuantities?.data?.reduce((acc, curr) => {
+              const quantity = Number(curr.quantity);
+              return acc + quantity;
+            }, 0) ?? 0;
 
-          if (!trackedEntity) {
-            throw new Error("Tracked entity not found");
-          }
-
-          if (trackedEntity.status !== "Consumed") {
-            const activityId = nanoid();
-            await trx
-              .insertInto("trackedActivity")
-              .values({
-                id: activityId,
-                type: "Produce",
-                sourceDocument: "Job Operation",
-                sourceDocumentId: row.jobOperationId,
-                attributes: {
-                  "Job Operation": row.jobOperationId,
-                  Employee: userId,
-                  Quantity: row.quantity,
-                },
-                companyId,
-                createdBy: userId,
-              })
-              .execute();
-
-            await trx
-              .insertInto("trackedActivityOutput")
-              .values({
-                trackedActivityId: activityId,
-                trackedEntityId: trackedEntityId,
-                quantity: row.quantity,
-                companyId,
-                createdBy: userId,
-              })
-              .execute();
-
-            const previousProductionQuantities =
-              productionQuantities?.data?.reduce((acc, curr) => {
-                const quantity = Number(curr.quantity);
-                return acc + quantity;
-              }, 0) ?? 0;
-
-            // Update the current trackedEntity to Complete
-            await trx
-              .updateTable("trackedEntity")
-              .set({
-                status: "Available",
-                quantity: previousProductionQuantities + row.quantity,
-              })
-              .where("id", "=", trackedEntityId)
-              .execute();
-          }
+          await produceBatchOutput(trx, {
+            jobOperationId: row.jobOperationId,
+            trackedEntityId,
+            producedQuantity: row.quantity,
+            totalQuantity: previousProductionQuantities + row.quantity,
+            companyId,
+            userId,
+          });
 
           await issueJobOperationMaterials(trx, {
             jobOperationId: row.jobOperationId,
             quantity: row.quantity,
             companyId,
             userId,
-            accountingEnabled: accountingEnabledBatch,
-            accountDefaults: accountDefaultsBatch?.data ? accountDefaultsBatch : null,
-            dimensionMap: dimensionMapBatch,
+            accountingEnabled: accountingBatch.accountingEnabled,
+            accountDefaults: accountingBatch.accountDefaults?.data
+              ? accountingBatch.accountDefaults
+              : null,
+            dimensionMap: accountingBatch.dimensionMap,
             client,
             db,
           });
@@ -1197,14 +1951,86 @@ serve(async (req: Request) => {
           success: true,
         });
       }
+      case "jobOperationBatchOutput": {
+        const { jobOperationId, trackedEntityId, quantity, readableId, companyId, userId } =
+          validatedPayload;
+        const client = await requirePermissions(req, companyId, userId, { update: "production" });
+
+        const [entity, productionQuantities] = await Promise.all([
+          client
+            .from("trackedEntity")
+            .select("id, status, readableId")
+            .eq("id", trackedEntityId)
+            .eq("companyId", companyId)
+            .single(),
+          client
+            .from("productionQuantity")
+            .select("quantity")
+            .eq("jobOperationId", jobOperationId)
+            .eq("companyId", companyId)
+            .eq("type", "Production"),
+        ]);
+        if (entity.error || !entity.data) {
+          throw new Error("Tracked entity not found");
+        }
+
+        // Resume no-op: a prior attempt already produced this member's output.
+        if (entity.data.status === "Available") {
+          return jsonResponse({ success: true, created: false });
+        }
+
+        // An Available lot must carry a number. Batch creation plans it (the
+        // entity's readableId, or the merged lot passed as readableId); this is
+        // the backstop for direct calls and for batches planned before that.
+        if (!readableId && !entity.data.readableId) {
+          throw new Error(
+            `Operation ${jobOperationId} produces a batch-tracked item — its batch number is required`
+          );
+        }
+
+        const totalQuantity =
+          productionQuantities.data?.reduce(
+            (acc: number, curr: { quantity: number | string | null }) =>
+              acc + Number(curr.quantity),
+            0
+          ) ?? 0;
+        if (totalQuantity <= 0) {
+          throw new Error(
+            "No recorded production quantity for this operation — complete the batch first"
+          );
+        }
+
+        await db.transaction().execute(async (trx) => {
+          if (readableId) {
+            await trx
+              .updateTable("trackedEntity")
+              .set({ readableId })
+              .where("id", "=", trackedEntityId)
+              .where("companyId", "=", companyId)
+              .execute();
+          }
+          await produceBatchOutput(trx, {
+            jobOperationId,
+            trackedEntityId,
+            producedQuantity: quantity,
+            totalQuantity,
+            companyId,
+            userId,
+          });
+        });
+
+        return jsonResponse({ success: true, created: true });
+      }
       case "jobOperationSerialComplete": {
         const { trackedEntityId, companyId, userId, ...row } = validatedPayload;
         const client = await requirePermissions(req, companyId, userId, { update: "production" });
+        await assertProductionQuantityLinks(companyId, row);
 
         const jobOperation = await client
           .from("jobOperation")
           .select("*")
           .eq("id", row.jobOperationId)
+          .eq("companyId", companyId)
           .single();
         if (!jobOperation.data || !jobOperation.data.jobMakeMethodId) {
           throw new Error("Job operation not found");
@@ -1214,6 +2040,7 @@ serve(async (req: Request) => {
           .from("trackedEntity")
           .select("*")
           .eq("attributes->>Job Make Method", jobOperation.data.jobMakeMethodId)
+          .eq("companyId", companyId)
           .order("createdAt", { ascending: true });
 
         if (!trackedEntities.data || trackedEntities.data.length === 0) {
@@ -1275,6 +2102,7 @@ serve(async (req: Request) => {
           const trackedEntity = await trx
             .selectFrom("trackedEntity")
             .where("id", "=", trackedEntityId)
+            .where("companyId", "=", companyId)
             .selectAll()
             .executeTakeFirst();
 
@@ -1426,6 +2254,14 @@ serve(async (req: Request) => {
         } = validatedPayload;
         const client = await requirePermissions(req, companyId, userId, {
           update: "production",
+        });
+        // Lands on productionQuantity, the Scrap activity and the journal's
+        // ScrapReason dimension — all this company's rows.
+        await assertCompanyRecords(db, "scrapReason", [scrapReasonId], companyId, "Scrap reason");
+        await assertProductionQuantityLinks(companyId, {
+          laborProductionEventId,
+          machineProductionEventId,
+          setupProductionEventId,
         });
 
         const operationRes = await client
@@ -1875,10 +2711,9 @@ serve(async (req: Request) => {
             signal: AbortSignal.timeout(10_000),
           });
         } catch (rescheduleError) {
-          console.error(
-            "Failed to trigger reschedule after scrap:",
-            rescheduleError
-          );
+          logger.error("Failed to trigger reschedule after scrap", {
+            error: String((rescheduleError as Error)?.stack ?? rescheduleError),
+          });
         }
 
         return jsonResponse({
@@ -1899,6 +2734,14 @@ serve(async (req: Request) => {
         } = validatedPayload;
 
         const client = await requirePermissions(req, companyId, userId, { update: "production" });
+        // Written into jobMaterialStep for an unplanned part (no companyId there).
+        await assertCompanyRecords(
+          db,
+          "jobOperationStep",
+          [jobOperationStepId],
+          companyId,
+          "Job operation step"
+        );
 
         const [accountingSettings, companyRecord] = await Promise.all([
           client
@@ -1938,8 +2781,10 @@ serve(async (req: Request) => {
           const jobOperation = await trx
             .selectFrom("jobOperation")
             .where("id", "=", id)
+            .where("companyId", "=", companyId)
             .select(["jobId", "jobMakeMethodId"])
             .executeTakeFirst();
+          if (!jobOperation) throw new RecordNotFoundError("Job operation not found");
 
           const [job, item] = await Promise.all([
             trx
@@ -1950,6 +2795,7 @@ serve(async (req: Request) => {
             trx
               .selectFrom("item")
               .where("id", "=", itemId)
+              .where("companyId", "=", companyId)
               .select([
                 "id",
                 "itemTrackingType",
@@ -1964,8 +2810,10 @@ serve(async (req: Request) => {
             const material = await trx
               .selectFrom("jobMaterial")
               .where("id", "=", materialId)
+              .where("companyId", "=", companyId)
               .selectAll()
               .executeTakeFirst();
+            if (!material) throw new RecordNotFoundError("Job material not found");
 
             let storageUnitId: string | null | undefined;
             // Prioritize material.storageUnitId if available
@@ -1987,32 +2835,73 @@ serve(async (req: Request) => {
               );
             }
 
-            const quantityToIssue =
+            // Rounded once here: it drives the ledger rows, the budget
+            // allocation and the quantityIssued write below.
+            const quantityToIssue = round(
               adjustmentType === "Positive Adjmt."
                 ? Number(quantity)
                 : adjustmentType === "Negative Adjmt."
                 ? Number(quantity)
-                : Number(quantity) - Number(material?.quantityIssued); // set quantity
+                : round(Number(quantity)) -
+                  round(Number(material?.quantityIssued)) // set quantity
+            );
 
-            if (
-              material?.methodType !== "Make to Order" &&
-              item?.itemTrackingType === "Inventory"
-            ) {
-              itemLedgerInserts.push({
-                entryType: "Consumption",
-                documentType: "Job Consumption",
-                documentId: material?.jobId,
-                documentLineId: id,
-                companyId,
-                itemId: material?.itemId!,
-                locationId: job?.locationId,
-                storageUnitId,
-                quantity:
-                  adjustmentType === "Positive Adjmt."
-                    ? Number(quantityToIssue)
-                    : -Number(quantityToIssue),
-                createdBy: userId,
-              });
+            if (material && material.methodType !== "Make to Order") {
+              let remaining = Number(quantityToIssue);
+              if (adjustmentType !== "Positive Adjmt." && remaining > 0) {
+                const budgets = orderOldFirst(
+                  await getPickedBudgets(trx, {
+                    material,
+                    locationId: job?.locationId!,
+                    companyId,
+                    opStorageUnitId: await getOperationLinesideBin(trx, {
+                      jobOperationId: material.jobOperationId,
+                      companyId,
+                    }),
+                  }),
+                  material.itemId
+                );
+                const allocation = allocateAcrossBudgets(
+                  remaining,
+                  budgets,
+                  Number(material.quantity ?? 0)
+                );
+                remaining = allocation.remaining;
+                for (const take of allocation.takes) {
+                  if (!take.budget.isInventory) continue;
+                  for (const row of splitTakeByBin(take)) {
+                    itemLedgerInserts.push({
+                      entryType: "Consumption",
+                      documentType: "Job Consumption",
+                      documentId: material.jobId,
+                      documentLineId: id,
+                      companyId,
+                      itemId: take.budget.itemId,
+                      locationId: job?.locationId,
+                      storageUnitId: row.storageUnitId,
+                      quantity: -row.quantity,
+                      createdBy: userId,
+                    });
+                  }
+                }
+              }
+              if (item?.itemTrackingType === "Inventory" && remaining !== 0) {
+                itemLedgerInserts.push({
+                  entryType: "Consumption",
+                  documentType: "Job Consumption",
+                  documentId: material.jobId,
+                  documentLineId: id,
+                  companyId,
+                  itemId: material.itemId,
+                  locationId: job?.locationId,
+                  storageUnitId,
+                  quantity:
+                    adjustmentType === "Positive Adjmt."
+                      ? Number(remaining)
+                      : -Number(remaining),
+                  createdBy: userId,
+                });
+              }
             }
 
             await trx
@@ -2021,11 +2910,12 @@ serve(async (req: Request) => {
                 // A positive adjustment returns material to inventory, so it
                 // reduces quantityIssued — otherwise the backflush cap sees
                 // returned material as still issued.
-                quantityIssued:
-                  (Number(material?.quantityIssued) ?? 0) +
-                  (adjustmentType === "Positive Adjmt."
-                    ? -Number(quantityToIssue)
-                    : Number(quantityToIssue)),
+                quantityIssued: round(
+                  round(Number(material?.quantityIssued) ?? 0) +
+                    (adjustmentType === "Positive Adjmt."
+                      ? -quantityToIssue
+                      : quantityToIssue)
+                ),
               })
               .where("id", "=", materialId)
               .execute();
@@ -2104,7 +2994,7 @@ serve(async (req: Request) => {
                 storageUnitId: storageUnitId ?? undefined,
                 methodType: "Pull from Inventory",
                 quantity: 0,
-                quantityIssued: Number(quantity ?? 0),
+                quantityIssued: round(Number(quantity ?? 0)),
                 unitCost: itemCost?.unitCost ?? 0,
               })
               .returning("id")
@@ -2194,6 +3084,16 @@ serve(async (req: Request) => {
         const client = await requirePermissions(req, companyId, userId, {
           update: "production",
         });
+        // The parent lands in trackedActivityOutput and the reason on the ledger,
+        // the activity and the journal dimension — both must be this company's.
+        await assertCompanyRecords(
+          db,
+          "trackedEntity",
+          [parentTrackedEntityId],
+          companyId,
+          "Parent tracked entity"
+        );
+        await assertCompanyRecords(db, "scrapReason", [scrapReasonId], companyId, "Scrap reason");
 
         const [trackedEntity, jobMaterial] = await Promise.all([
           client
@@ -2557,11 +3457,16 @@ serve(async (req: Request) => {
 
             // Reopen the requirement — the consumed part is gone, so the
             // assembly needs a replacement issued.
-            const currentQuantityIssued = Number(material.quantityIssued) || 0;
+            const currentQuantityIssued = round(
+              Number(material.quantityIssued) || 0
+            );
             await trx
               .updateTable("jobMaterial")
               .set({
-                quantityIssued: Math.max(0, currentQuantityIssued - quantity),
+                quantityIssued: Math.max(
+                  0,
+                  round(currentQuantityIssued - round(quantity))
+                ),
               })
               .where("id", "=", materialId)
               .execute();
@@ -2676,10 +3581,9 @@ serve(async (req: Request) => {
               signal: AbortSignal.timeout(10_000),
             });
           } catch (rescheduleError) {
-            console.error(
-              "Failed to trigger reschedule after scrap:",
-              rescheduleError
-            );
+            logger.error("Failed to trigger reschedule after scrap", {
+              error: String((rescheduleError as Error)?.stack ?? rescheduleError),
+            });
           }
         }
 
@@ -2718,309 +3622,186 @@ serve(async (req: Request) => {
         }
 
         const client = await requirePermissions(req, companyId, userId, { update: "production" });
+        // Stamped on the Consume activity and written into jobMaterialStep.
+        await assertCompanyRecords(
+          db,
+          "jobOperationStep",
+          [jobOperationStepId],
+          companyId,
+          "Job operation step"
+        );
         const companyToday = datetime.today(await getCompanyTimeZone(client, companyId));
+        const accounting = await loadConsumeAccountingContext(client, companyId);
 
-        const [accountingSettingsTracked, companyRecordTracked] = await Promise.all([
-          client
-            .from("companySettings")
-            .select("accountingEnabled")
-            .eq("id", companyId)
-            .single(),
-          client.from("company").select("companyGroupId").eq("id", companyId).single(),
-        ]);
-        if (companyRecordTracked.error) throw new Error("Failed to fetch company");
-        const accountingEnabledTracked = accountingSettingsTracked.data?.accountingEnabled ?? false;
+        const result = await db.transaction().execute((trx) =>
+          consumeTrackedEntitiesIntoOperation(trx, {
+            materialId,
+            jobOperationId,
+            itemId,
+            parentTrackedEntityId,
+            children,
+            jobOperationStepId,
+            unitNumber,
+            overrideExpired,
+            overrideReason,
+            companyId,
+            userId,
+            companyToday,
+            client,
+            ...accounting,
+          })
+        );
 
-        const accountDefaultsTracked = accountingEnabledTracked
-          ? await getDefaultPostingGroup(client, companyId)
-          : null;
-        if (accountingEnabledTracked && (accountDefaultsTracked?.error || !accountDefaultsTracked?.data)) {
-          throw new Error("Error getting account defaults");
+        return jsonResponse({
+          success: true,
+          splitEntities: result.splitEntities,
+          warning: result.warning,
+        });
+      }
+      case "trackedEntitiesToBatch": {
+        const {
+          batchId,
+          itemId,
+          children,
+          overrideExpired,
+          overrideReason,
+          companyId,
+          userId,
+        } = validatedPayload;
+
+        if (children.length === 0) {
+          throw new Error("Children are required");
         }
 
-        const dimensionsTracked = accountingEnabledTracked
-          ? await client
-              .from("dimension")
-              .select("id, entityType")
-              .eq("companyGroupId", companyRecordTracked.data.companyGroupId)
-              .eq("active", true)
-              .in("entityType", ["ItemPostingGroup", "Item", "Location"])
-          : null;
+        const client = await requirePermissions(req, companyId, userId, { update: "production" });
+        const companyToday = datetime.today(await getCompanyTimeZone(client, companyId));
+        const accounting = await loadConsumeAccountingContext(client, companyId);
 
-        const dimensionMapTracked = new Map<string, string>();
-        if (dimensionsTracked?.data) {
-          for (const dim of dimensionsTracked.data) {
-            if (dim.entityType) dimensionMapTracked.set(dim.entityType, dim.id);
-          }
-        }
-
-        let expiredWarning: string | undefined;
-
-        const splitEntities = await db.transaction().execute(async (trx) => {
-          const trackedEntities = await trx
-            .selectFrom("trackedEntity")
-            .where(
-              "id",
-              "in",
-              children.map((child) => child.trackedEntityId)
-            )
-            .selectAll()
-            .execute();
-
-          const itemLedgers = await trx
-            .selectFrom("itemLedger")
-            .where("trackedEntityId", "in", [
-              ...children.map((child) => child.trackedEntityId),
-            ])
-            .orderBy("createdBy", "desc")
-            .selectAll()
-            .execute();
-
-          if (trackedEntities.length !== children.length) {
-            throw new Error("Tracked entities not found");
-          }
-
-          if (trackedEntities.some((entity) => entity.status !== "Available")) {
-            throw new Error("Tracked entities are not available");
-          }
-
-          // Expiry policy gate. Reads companySettings.inventoryShelfLife.
-          const expiredPolicy = await getExpiredEntityPolicy(trx, companyId);
-          const expiredCheck = checkExpiredEntities(
-            trackedEntities.map((e) => ({
-              id: e.id,
-              expirationDate: e.expirationDate,
-            })),
-            expiredPolicy,
-            { allowed: !!overrideExpired, reason: overrideReason ?? null },
-            companyToday
+        // Resolve (and lazily create) the accounting period BEFORE the member
+        // transaction opens. getCurrentAccountingPeriod reads over HTTP but
+        // writes in-transaction, so two members inside ONE transaction would
+        // each try to create a missing period — the second cannot see the
+        // first's uncommitted insert and the unique index rolls the whole pick
+        // back. Committed here, every member's read finds it.
+        if (accounting.accountingEnabled) {
+          await getCurrentAccountingPeriod(
+            client,
+            companyId,
+            db,
+            companyToday.toString()
           );
-          if (!expiredCheck.ok) {
-            throw new Error(expiredCheck.reason);
-          }
-          if (expiredCheck.warning) {
-            expiredWarning = expiredCheck.warning;
-          }
+        }
 
-          let jobMaterial: Awaited<
-            ReturnType<
-              ReturnType<typeof trx.selectFrom<"jobMaterial">>["selectAll"]
-            >
-          >[0] | undefined;
-          let actualMaterialId: string | undefined = materialId;
-          const firstTrackedEntity = trackedEntities[0];
-
-          if (materialId) {
-            // Existing behavior: fetch the jobMaterial
-            jobMaterial = await trx
-              .selectFrom("jobMaterial")
-              .where("id", "=", materialId)
-              .selectAll()
-              .executeTakeFirst();
-
-            // Check if any tracked entity has a different sourceDocumentId than the material's itemId
-            if (
-              firstTrackedEntity &&
-              jobMaterial &&
-              firstTrackedEntity.sourceDocumentId !== jobMaterial.itemId
-            ) {
-              // Create a new jobMaterial for the tracked entity's item
-              const totalChildQuantity = children.reduce((sum, child) => {
-                return sum + Number(child.quantity);
-              }, 0);
-
-              const itemCost = await trx
-                .selectFrom("itemCost")
-                .where("itemId", "=", firstTrackedEntity.sourceDocumentId!)
-                .select("unitCost")
-                .executeTakeFirst();
-
-              const newJobMaterial = await trx
-                .insertInto("jobMaterial")
-                .values({
-                  companyId,
-                  createdBy: userId,
-                  description: firstTrackedEntity.sourceDocumentReadableId ?? "",
-                  estimatedQuantity: 0,
-                  itemId: firstTrackedEntity.sourceDocumentId!,
-                  jobId: jobMaterial.jobId!,
-                  jobMakeMethodId: jobMaterial.jobMakeMethodId,
-                  jobOperationId: jobMaterial.jobOperationId,
-                  itemType: jobMaterial.itemType,
-                  methodType: jobMaterial.methodType,
-                  quantity: 0,
-                  quantityIssued: totalChildQuantity,
-                  requiresBatchTracking: jobMaterial.requiresBatchTracking,
-                  requiresSerialTracking: jobMaterial.requiresSerialTracking,
-                  unitCost: itemCost?.unitCost ?? 0,
-                })
-                .returning("id")
-                .executeTakeFirstOrThrow();
-
-              actualMaterialId = newJobMaterial.id!;
-
-              // Fetch the newly created jobMaterial
-              jobMaterial = await trx
-                .selectFrom("jobMaterial")
-                .where("id", "=", actualMaterialId)
-                .selectAll()
-                .executeTakeFirstOrThrow();
-            }
-          } else if (jobOperationId && itemId) {
-            // New behavior: create a jobMaterial on the fly
-            const jobOperation = await trx
-              .selectFrom("jobOperation")
-              .where("id", "=", jobOperationId)
-              .select(["jobId", "jobMakeMethodId"])
-              .executeTakeFirst();
-
-            if (!jobOperation) {
-              throw new Error("Job operation not found");
-            }
-
-            const item = await trx
-              .selectFrom("item")
-              .where("id", "=", itemId)
-              .select(["name", "type", "itemTrackingType", "defaultMethodType"])
-              .executeTakeFirst();
-
-            if (!item) {
-              throw new Error("Item not found");
-            }
-
-            const totalChildQuantity = children.reduce((sum, child) => {
-              return sum + Number(child.quantity);
-            }, 0);
-
-            const itemCost = await trx
-              .selectFrom("itemCost")
-              .where("itemId", "=", itemId)
-              .select("unitCost")
-              .executeTakeFirst();
-
-            const newJobMaterial = await trx
-              .insertInto("jobMaterial")
-              .values({
-                companyId,
-                createdBy: userId,
-                description: item.name ?? "",
-                estimatedQuantity: 0,
-                itemId: itemId,
-                jobId: jobOperation.jobId!,
-                jobMakeMethodId: jobOperation.jobMakeMethodId,
-                jobOperationId: jobOperationId,
-                itemType: item.type ?? "Part",
-                methodType: item.defaultMethodType ?? "Pull from Inventory",
-                quantity: 0,
-                quantityIssued: totalChildQuantity,
-                requiresBatchTracking: item.itemTrackingType === "Batch",
-                requiresSerialTracking: item.itemTrackingType === "Serial",
-                unitCost: itemCost?.unitCost ?? 0,
-              })
-              .returning("id")
-              .executeTakeFirstOrThrow();
-
-            actualMaterialId = newJobMaterial.id!;
-
-            // Scope this unplanned tracked part to the step it was issued on
-            // (assembly view), so it shows on that step rather than as General.
-            if (jobOperationStepId) {
-              await trx
-                .insertInto("jobMaterialStep")
-                .values({
-                  jobMaterialId: actualMaterialId,
-                  jobOperationStepId,
-                })
-                .onConflict((oc) => oc.doNothing())
-                .execute();
-            }
-
-            // Fetch the newly created jobMaterial
-            jobMaterial = await trx
-              .selectFrom("jobMaterial")
-              .where("id", "=", actualMaterialId)
-              .selectAll()
-              .executeTakeFirstOrThrow();
-          }
-
-          if (!jobMaterial) {
-            throw new Error("Job material not found");
-          }
-
-          // Get item details
-          const item = await trx
-            .selectFrom("item")
-            .where("id", "=", jobMaterial?.itemId!)
-            .select(["readableIdWithRevision"])
+        const batchResult = await db.transaction().execute(async (trx) => {
+          const batch = await trx
+            .selectFrom("jobOperationBatch")
+            .select(["id", "status"])
+            .where("id", "=", batchId)
+            .where("companyId", "=", companyId)
             .executeTakeFirst();
+          if (!batch) {
+            throw new Error("Batch not found");
+          }
+          if (batch.status === "Completed") {
+            throw new Error("Batch is already completed");
+          }
 
-          // Get job location
-          const job = await trx
-            .selectFrom("job")
-            .select(["id", "locationId"])
-            .where("id", "=", jobMaterial?.jobId!)
-            .executeTakeFirst();
+          const members = await trx
+            .selectFrom("jobOperation")
+            .select(["id", "jobId", "jobMakeMethodId"])
+            .where("jobOperationBatchId", "=", batchId)
+            .where("companyId", "=", companyId)
+            .execute();
+          if (members.length === 0) {
+            throw new Error("Batch has no member operations");
+          }
+          const memberIds = members.map((m) => m.id);
+          const memberIdSet = new Set(memberIds);
+          // A member's materials are what its operation view lists: the
+          // operation's make method BOM. A row linked straight to a member
+          // operation stays with it; the rest belong to the member on its make
+          // method (BOMs are usually not assigned per operation, and jobs built
+          // from an item never carry the link).
+          const memberByMakeMethod = new Map(
+            members
+              .filter((m) => m.jobMakeMethodId)
+              .map((m) => [m.jobMakeMethodId as string, m.id])
+          );
 
-          // Get parent tracked entity details
-          const parentTrackedEntity = await trx
-            .selectFrom("trackedEntity")
-            .where("id", "=", parentTrackedEntityId)
+          // Lock the member material rows so a concurrent batch pick (or a
+          // member-level manual issue) cannot double-allocate the remaining
+          // requirement.
+          const materialRows = await trx
+            .selectFrom("jobMaterial")
             .select([
               "id",
-              "sourceDocumentId",
-              "quantity",
-              "attributes",
-              "status",
+              "jobOperationId",
+              "jobMakeMethodId",
+              "estimatedQuantity",
+              "quantityIssued",
             ])
-            .executeTakeFirst();
+            .where("companyId", "=", companyId)
+            .where("itemId", "=", itemId)
+            .where((eb) =>
+              eb.or([
+                eb("jobOperationId", "in", memberIds),
+                ...(memberByMakeMethod.size
+                  ? [eb("jobMakeMethodId", "in", [...memberByMakeMethod.keys()])]
+                  : []),
+              ])
+            )
+            .forUpdate()
+            .execute();
 
-          if (!parentTrackedEntity) {
-            throw new Error("Parent tracked entity not found");
+          const rowByOp = new Map<string, string>();
+          const remainingByOp = new Map<string, number>();
+          for (const row of materialRows) {
+            const opId =
+              row.jobOperationId && memberIdSet.has(row.jobOperationId)
+                ? row.jobOperationId
+                : memberByMakeMethod.get(row.jobMakeMethodId as string);
+            if (!opId) continue;
+            const remaining = Math.max(
+              0,
+              Number(row.estimatedQuantity ?? 0) - Number(row.quantityIssued ?? 0)
+            );
+            remainingByOp.set(opId, (remainingByOp.get(opId) ?? 0) + remaining);
+            // The write target: an OPEN row for this member/item when one
+            // exists, else any row (which one is arbitrary either way).
+            if (!rowByOp.has(opId) || remaining > 0) {
+              rowByOp.set(opId, row.id as string);
+            }
           }
 
-          // Create tracked activity
-          const activityId = nanoid();
-          await trx
-            .insertInto("trackedActivity")
-            .values({
-              id: activityId,
-              type: "Consume",
-              sourceDocument: "Job Material",
-              sourceDocumentId: actualMaterialId,
-              sourceDocumentReadableId: item?.readableIdWithRevision ?? "",
-              attributes: {
-                Job: job?.id!,
-                "Job Make Method": jobMaterial?.jobMakeMethodId!,
-                "Job Material": jobMaterial?.id!,
-                Employee: userId,
-                // Assembly view: which step + 1-based unit this consume was for, so
-                // the MES can attribute issued quantities per-unit even for a batch
-                // parent (where all units share one lot entity).
-                ...(jobOperationStepId
-                  ? { "Job Operation Step": jobOperationStepId }
-                  : {}),
-                ...(unitNumber !== undefined ? { Unit: unitNumber } : {}),
-              },
-              companyId,
-              createdBy: userId,
-            })
-            .execute();
-
-          await trx
-            .insertInto("trackedActivityOutput")
-            .values({
-              trackedActivityId: activityId,
-              trackedEntityId: parentTrackedEntityId,
-              quantity: parentTrackedEntity.quantity,
-              companyId,
-              createdBy: userId,
-            })
-            .execute();
-
-          const itemLedgerInserts: Database["public"]["Tables"]["itemLedger"]["Insert"][] =
-            [];
-          const trackedActivityInputs: Database["public"]["Tables"]["trackedActivityInput"]["Insert"][] =
-            [];
+          // Per picked lot, split pro-rata by each member's CURRENT remaining —
+          // every member links to every lot it physically drew from, and a
+          // multi-lot pick converges on exact per-member BOM totals.
+          const drawsByOp = new Map<
+            string,
+            { trackedEntityId: string; quantity: number }[]
+          >();
+          for (const child of children) {
+            const open = members
+              .map((m) => ({
+                jobOperationId: m.id,
+                remaining: remainingByOp.get(m.id) ?? 0,
+              }))
+              .filter((m) => m.remaining > 0);
+            const shares = splitPickAcrossMembers(open, Number(child.quantity));
+            for (const share of shares) {
+              if (share.quantity <= 0) continue;
+              remainingByOp.set(
+                share.jobOperationId,
+                (remainingByOp.get(share.jobOperationId) ?? 0) - share.quantity
+              );
+              const draws = drawsByOp.get(share.jobOperationId) ?? [];
+              draws.push({
+                trackedEntityId: child.trackedEntityId,
+                quantity: share.quantity,
+              });
+              drawsByOp.set(share.jobOperationId, draws);
+            }
+          }
 
           const splitEntities: Array<{
             originalId: string;
@@ -3029,234 +3810,211 @@ serve(async (req: Request) => {
             quantity: number;
             remainingQuantity: number;
           }> = [];
+          let warning: string | undefined;
 
-          // Process each child tracked entity
-          for (const child of children) {
-            const trackedEntity = trackedEntities.find(
-              (entity) => entity.id === child.trackedEntityId
-            );
-            if (!trackedEntity) {
-              throw new Error("Tracked entity not found");
+          for (const member of members) {
+            const draws = drawsByOp.get(member.id);
+            if (!draws || draws.length === 0) continue;
+            if (!member.jobMakeMethodId) {
+              throw new Error(`Job operation ${member.id} has no make method`);
             }
-            const { trackedEntityId, quantity } = child;
-
-            // Partial consume → split: the lineside entity keeps its id and
-            // is decremented; a NEW child entity carries the consumed
-            // quantity. EVERYTHING below (Consumed status, Consume input,
-            // Consumption ledger) books against the child — flipping the
-            // entity half without the ledger half would double-count on-hand.
-            let consumedEntityId = trackedEntityId;
-            if (Number(trackedEntity.quantity) !== quantity) {
-              const consumedChildId = nanoid();
-              consumedEntityId = consumedChildId;
-
-              const split = buildBatchSplitRecords({
-                parent: {
-                  id: trackedEntity.id!,
-                  readableId: trackedEntity.readableId,
-                  quantity: Number(trackedEntity.quantity),
-                  sourceDocument: trackedEntity.sourceDocument,
-                  sourceDocumentId: trackedEntity.sourceDocumentId,
-                  sourceDocumentReadableId:
-                    trackedEntity.sourceDocumentReadableId,
-                  itemId:
-                    trackedEntity.itemId ?? trackedEntity.sourceDocumentId,
-                  expirationDate: trackedEntity.expirationDate ?? null,
-                  attributes: trackedEntity.attributes as Record<
-                    string,
-                    unknown
-                  > | null
-                },
-                drawQuantity: quantity,
-                childId: consumedChildId,
-                splitActivityId: nanoid(),
-                activitySourceDocument: "Job Material",
-                activitySourceDocumentId: actualMaterialId,
-                bin: {
-                  storageUnitId: resolveTrackedEntityBin(
-                    itemLedgers,
-                    trackedEntityId
-                  ),
-                  locationId: job?.locationId ?? null
-                },
-                itemLedgerItemId: trackedEntity.sourceDocumentId,
-                companyId,
-                userId,
-                postingDate: companyToday.toString(),
-                // Created Available; the shared status update below flips the
-                // child to Consumed in the same transaction.
-                childStatus: "Available",
-                extraChildAttributes: {
-                  ...(jobOperationStepId
-                    ? { "Job Operation Step": jobOperationStepId }
-                    : {}),
-                  ...(unitNumber !== undefined ? { Unit: unitNumber } : {})
-                }
-              });
-
-              // Track split entity for the MES confirmation: quantity = what
-              // was consumed (the child), remainingQuantity = what the
-              // surviving lineside entity still holds.
-              splitEntities.push({
-                originalId: trackedEntityId,
-                newId: consumedChildId,
-                readableId: trackedEntity.sourceDocumentReadableId ?? "",
-                quantity,
-                remainingQuantity: split.parentUpdate.quantity,
-              });
-
-              await trx
-                .insertInto("trackedActivity")
-                .values(split.activityInsert)
-                .execute();
-
-              await trx
-                .insertInto("trackedEntity")
-                .values(split.childEntityInsert)
-                .execute();
-
-              await trx
-                .insertInto("trackedActivityInput")
-                .values(split.activityInputInsert)
-                .execute();
-
-              await trx
-                .insertInto("trackedActivityOutput")
-                .values(split.activityOutputInsert)
-                .execute();
-
-              await trx
-                .updateTable("trackedEntity")
-                .set(split.parentUpdate)
-                .where("id", "=", trackedEntityId)
-                .execute();
-
-              // MTO skips ONLY the ledger inserts; entity/activity writes
-              // above still happen.
-              if (jobMaterial?.methodType !== "Make to Order") {
-                itemLedgerInserts.push(...split.ledgerInserts);
-              }
-            }
-
-            // Consume the drawn entity — the split child, or the whole
-            // entity on a full draw.
-            await trx
-              .updateTable("trackedEntity")
-              .set({
-                status: "Consumed",
-              })
-              .where("id", "=", consumedEntityId)
-              .execute();
-
-            trackedActivityInputs.push({
-              trackedActivityId: activityId,
-              trackedEntityId: consumedEntityId,
-              quantity,
-              companyId,
-              createdBy: userId,
-            });
-
-            if (jobMaterial?.methodType !== "Make to Order") {
-              itemLedgerInserts.push({
-                entryType: "Consumption",
-                documentType: "Job Consumption",
-                documentId: job?.id!,
-                companyId,
-                itemId: trackedEntity.sourceDocumentId,
-                quantity: -quantity,
-                locationId: job?.locationId,
-                // The split child has no rows in the pre-transaction ledger
-                // snapshot — it sits at the parent's resolved bin.
-                storageUnitId: resolveTrackedEntityBin(itemLedgers, trackedEntityId),
-                trackedEntityId: consumedEntityId,
-                createdBy: userId,
-              });
-            }
-          }
-
-          if (trackedActivityInputs.length > 0) {
-            await trx
-              .insertInto("trackedActivityInput")
-              .values(trackedActivityInputs)
-              .execute();
-          }
-
-          if (itemLedgerInserts.length > 0) {
-            await trx
-              .insertInto("itemLedger")
-              .values(itemLedgerInserts)
-              .execute();
-
-            // Update pickMethod defaultStorageUnitId if needed for each inserted ledger
-            for (const ledger of itemLedgerInserts) {
-              await updatePickMethodDefaultStorageUnitIfNeeded(
-                trx,
-                ledger.itemId,
-                ledger.locationId,
-                ledger.storageUnitId,
-                companyId,
-                userId
+            // The member's WIP entity — what its consumption books into (the
+            // same entity the single-operation page passes as the parent).
+            const parent = await trx
+              .selectFrom("trackedEntity")
+              .select(["id"])
+              .where(sql`"attributes"->>'Job Make Method'`, "=", member.jobMakeMethodId)
+              .where("companyId", "=", companyId)
+              // Scrap and split children inherit the attribute, so an earlier
+              // run's dead entity can be the oldest match — it must not absorb
+              // this member's consumption.
+              .where("status", "not in", ["Consumed", "Scrapped", "Rejected"])
+              .orderBy("createdAt", "asc")
+              .executeTakeFirst();
+            if (!parent) {
+              throw new Error(
+                `No tracked entity found for job operation ${member.id} — release the member job before picking to the batch`
               );
             }
-          }
 
-          if (accountingEnabledTracked && accountDefaultsTracked?.data && itemLedgerInserts.length > 0) {
-            const consumptionEntries = itemLedgerInserts
-              .filter((l) => l.entryType === "Consumption")
-              .map((l) => ({ itemId: l.itemId as string, quantity: Number(l.quantity) }));
-
-            if (consumptionEntries.length > 0) {
-              await createMaterialWipEntries(trx, {
-                consumptionLedgers: consumptionEntries,
-                jobId: job?.id!,
-                operationId: jobMaterial?.jobOperationId ?? actualMaterialId!,
-                description: "Tracked Entity Material Issue",
-                wipAccount: accountDefaultsTracked.data.workInProgressAccount,
-                rawMaterialsAccount: accountDefaultsTracked.data.rawMaterialsAccount,
-                finishedGoodsAccount: accountDefaultsTracked.data.finishedGoodsAccount,
-                dimensionMap: dimensionMapTracked,
-  
-                jobLocationId: job?.locationId ?? null,
-                client,
-                db,
-                companyId,
-                userId,
-              });
-            }
-          }
-
-          const totalChildQuantity = children.reduce((sum, child) => {
-            return sum + Number(child.quantity);
-          }, 0);
-
-          // Only update if we didn't create a new jobMaterial (in which case it's already set)
-          if (actualMaterialId === materialId) {
-            const currentQuantityIssued =
-              Number(jobMaterial?.quantityIssued) || 0;
-            const newQuantityIssued =
-              currentQuantityIssued + totalChildQuantity;
-
-            await trx
-              .updateTable("jobMaterial")
-              .set({
-                quantityIssued: newQuantityIssued,
-              })
-              .where("id", "=", actualMaterialId)
-              .execute();
-
-            console.log("Job material quantity updated:", {
-              materialId: actualMaterialId,
-              newQuantityIssued,
+            const memberResult = await consumeTrackedEntitiesIntoOperation(trx, {
+              materialId: rowByOp.get(member.id),
+              jobOperationId: member.id,
+              itemId,
+              parentTrackedEntityId: parent.id as string,
+              children: draws,
+              overrideExpired,
+              overrideReason,
+              companyId,
+              userId,
+              companyToday,
+              client,
+              ...accounting,
             });
+            splitEntities.push(...memberResult.splitEntities);
+            warning = warning ?? memberResult.warning;
           }
 
-          return splitEntities;
+          return { splitEntities, warning };
         });
 
         return jsonResponse({
           success: true,
-          splitEntities,
-          warning: expiredWarning,
+          ...batchResult,
+        });
+      }
+      case "mergeTrackedEntities": {
+        const { trackedEntityIds, readableId, companyId, userId } =
+          validatedPayload;
+
+        const client = await requirePermissions(req, companyId, userId, { update: "inventory" });
+        const companyToday = datetime.today(await getCompanyTimeZone(client, companyId));
+
+        const mergeResult = await db.transaction().execute(async (trx) => {
+          const parents = await trx
+            .selectFrom("trackedEntity")
+            .selectAll()
+            .where("id", "in", trackedEntityIds)
+            .where("companyId", "=", companyId)
+            .forUpdate()
+            .execute();
+
+          if (parents.length !== trackedEntityIds.length) {
+            throw new Error("Tracked entities not found");
+          }
+
+          // Order by the caller's list, not the DB's row order: the builder
+          // reads the FIRST parent for the merged lot's number, bin, and
+          // attribute base, so an unordered read makes those non-deterministic.
+          const parentById = new Map(parents.map((p) => [p.id, p]));
+          const orderedParents = trackedEntityIds.map((id) => {
+            const row = parentById.get(id);
+            if (!row) throw new Error("Tracked entities not found");
+            return row;
+          });
+
+          const parentLedgers = await trx
+            .selectFrom("itemLedger")
+            .select([
+              "trackedEntityId",
+              "storageUnitId",
+              "locationId",
+              "quantity",
+              "createdAt",
+            ])
+            .where("trackedEntityId", "in", trackedEntityIds)
+            .where("companyId", "=", companyId)
+            .orderBy("createdAt", "desc")
+            .execute();
+
+          // The parent's on-ledger balance: what its job receipt has put into
+          // stock so far. The merge only moves this — unreceived quantity
+          // reaches inventory later, through the member job's own receipt.
+          const receivedOf = (entityId: string) =>
+            // deno-lint-ignore no-explicit-any
+            (parentLedgers as any[])
+              .filter((l) => l.trackedEntityId === entityId)
+              .reduce((acc, l) => acc + Number(l.quantity), 0);
+
+          const locationOf = (entityId: string) =>
+            // deno-lint-ignore no-explicit-any
+            (parentLedgers as any[]).find(
+              (l) => l.trackedEntityId === entityId && l.locationId
+            )?.locationId ?? null;
+
+          const mergedId = nanoid();
+          const mergeActivityId = nanoid();
+
+          const records = buildBatchMergeRecords({
+            parents: orderedParents.map((p) => ({
+              id: p.id,
+              readableId: p.readableId,
+              quantity: Number(p.quantity),
+              receivedQuantity: receivedOf(p.id),
+              status: p.status as string,
+              sourceDocument: p.sourceDocument,
+              sourceDocumentId: p.sourceDocumentId,
+              sourceDocumentReadableId: p.sourceDocumentReadableId,
+              itemId: p.itemId ?? null,
+              expirationDate: (p.expirationDate as string | null) ?? null,
+              attributes: p.attributes as Record<string, unknown> | null,
+              bin: {
+                storageUnitId: resolveTrackedEntityBin(
+                  // deno-lint-ignore no-explicit-any
+                  parentLedgers as any[],
+                  p.id
+                ),
+                locationId: locationOf(p.id),
+              },
+            })),
+            mergedId,
+            mergeActivityId,
+            readableId: readableId ?? null,
+            activitySourceDocument: "Tracked Entity",
+            activitySourceDocumentId: mergedId,
+            companyId,
+            userId,
+            postingDate: companyToday.toString(),
+          });
+
+          await trx
+            .insertInto("trackedEntity")
+            .values({
+              ...records.mergedEntityInsert,
+              // TEXT NOT NULL columns; the builder sources them from the first
+              // parent, which the schema guarantees is non-null.
+              sourceDocument: records.mergedEntityInsert.sourceDocument as string,
+              sourceDocumentId: records.mergedEntityInsert.sourceDocumentId as string,
+              attributes: records.mergedEntityInsert.attributes as Json,
+            })
+            .execute();
+
+          await trx
+            .insertInto("trackedActivity")
+            .values({
+              ...records.activityInsert,
+              attributes: records.activityInsert.attributes as Json,
+            })
+            .execute();
+
+          await trx
+            .insertInto("trackedActivityInput")
+            .values(records.activityInputInserts)
+            .execute();
+
+          await trx
+            .insertInto("trackedActivityOutput")
+            .values(records.activityOutputInsert)
+            .execute();
+
+          await trx
+            .insertInto("itemLedger")
+            .values(
+              records.ledgerInserts.map((l) => ({
+                ...l,
+                itemId: l.itemId as string,
+              }))
+            )
+            .execute();
+
+          for (const update of records.parentUpdates) {
+            await trx
+              .updateTable("trackedEntity")
+              .set({ status: update.status })
+              .where("id", "=", update.id)
+              .execute();
+          }
+
+          return {
+            trackedEntityId: mergedId,
+            readableId: records.mergedEntityInsert.readableId,
+            quantity: records.mergedEntityInsert.quantity,
+          };
+        });
+
+        return jsonResponse({
+          success: true,
+          ...mergeResult,
         });
       }
       case "unconsumeTrackedEntities": {
@@ -3320,6 +4078,7 @@ serve(async (req: Request) => {
               "in",
               children.map((child) => child.trackedEntityId)
             )
+            .where("companyId", "=", companyId)
             .selectAll()
             .execute();
 
@@ -3345,8 +4104,10 @@ serve(async (req: Request) => {
           const jobMaterial = await trx
             .selectFrom("jobMaterial")
             .where("id", "=", materialId)
+            .where("companyId", "=", companyId)
             .selectAll()
             .executeTakeFirst();
+          if (!jobMaterial) throw new RecordNotFoundError("Job material not found");
 
           // Get item details
           const item = await trx
@@ -3366,6 +4127,7 @@ serve(async (req: Request) => {
           const parentTrackedEntity = await trx
             .selectFrom("trackedEntity")
             .where("id", "=", parentTrackedEntityId)
+            .where("companyId", "=", companyId)
             .select([
               "id",
               "sourceDocumentId",
@@ -3512,13 +4274,14 @@ serve(async (req: Request) => {
             }
           }
 
-          const totalChildQuantity = children.reduce((sum, child) => {
-            return sum + Number(child.quantity);
-          }, 0);
+          const totalChildQuantity = roundedChildTotal(children);
 
-          const currentQuantityIssued =
-            Number(jobMaterial?.quantityIssued) || 0;
-          const newQuantityIssued = currentQuantityIssued - totalChildQuantity;
+          const currentQuantityIssued = round(
+            Number(jobMaterial?.quantityIssued) || 0
+          );
+          const newQuantityIssued = round(
+            currentQuantityIssued - totalChildQuantity
+          );
 
           await trx
             .updateTable("jobMaterial")
@@ -3535,10 +4298,14 @@ serve(async (req: Request) => {
         const { trackedEntityId, newRevision, quantity, companyId, userId } =
           validatedPayload;
 
+        // Kysely below bypasses RLS, so the caller must hold this permission in the company it names.
+        await requirePermissions(req, companyId, userId, { update: "inventory" });
+
         const convertedEntity = await db.transaction().execute(async (trx) => {
           const trackedEntity = await trx
             .selectFrom("trackedEntity")
             .where("id", "=", trackedEntityId)
+            .where("companyId", "=", companyId)
             .selectAll()
             .executeTakeFirstOrThrow();
 
@@ -3743,7 +4510,7 @@ serve(async (req: Request) => {
             await trx.insertInto("itemLedger").values(ledgerEntries).execute();
           }
 
-          console.log("Entity converted:", {
+          logger.info("Entity converted", {
             trackedEntityId,
             oldRevision: oldItem.revision,
             newRevision,
@@ -3782,11 +4549,15 @@ serve(async (req: Request) => {
           userId,
         } = validatedPayload;
 
+        // Kysely below bypasses RLS, so the caller must hold this permission in the company it names.
+        await requirePermissions(req, companyId, userId, { update: "resources" });
+
         await db.transaction().execute(async (trx) => {
           // Get the maintenance dispatch to find the location
           const dispatch = await trx
             .selectFrom("maintenanceDispatch")
             .where("id", "=", maintenanceDispatchId)
+            .where("companyId", "=", companyId)
             .select(["id", "maintenanceDispatchId", "workCenterId", "locationId"])
             .executeTakeFirstOrThrow();
 
@@ -3796,6 +4567,7 @@ serve(async (req: Request) => {
           const item = await trx
             .selectFrom("item")
             .where("id", "=", itemId)
+            .where("companyId", "=", companyId)
             .select(["id", "itemTrackingType"])
             .executeTakeFirstOrThrow();
 
@@ -3871,6 +4643,9 @@ serve(async (req: Request) => {
           userId,
         } = validatedPayload;
 
+        // Kysely below bypasses RLS, so the caller must hold this permission in the company it names.
+        await requirePermissions(req, companyId, userId, { update: "resources" });
+
         if (children.length === 0) {
           throw new Error("At least one tracked entity is required");
         }
@@ -3883,6 +4658,7 @@ serve(async (req: Request) => {
           const dispatch = await trx
             .selectFrom("maintenanceDispatch")
             .where("id", "=", maintenanceDispatchId)
+            .where("companyId", "=", companyId)
             .select(["id", "maintenanceDispatchId", "workCenterId", "locationId"])
             .executeTakeFirstOrThrow();
 
@@ -3916,6 +4692,7 @@ serve(async (req: Request) => {
               "in",
               children.map((child) => child.trackedEntityId)
             )
+            .where("companyId", "=", companyId)
             .selectAll()
             .execute();
 
@@ -3961,6 +4738,7 @@ serve(async (req: Request) => {
           const item = await trx
             .selectFrom("item")
             .where("id", "=", itemId)
+            .where("companyId", "=", companyId)
             .select(["id", "readableIdWithRevision"])
             .executeTakeFirstOrThrow();
 
@@ -4014,7 +4792,13 @@ serve(async (req: Request) => {
             if (!trackedEntity) {
               throw new Error("Tracked entity not found");
             }
-            const { trackedEntityId, quantity } = child;
+            const { trackedEntityId } = child;
+
+            // Same canonical quantity as the job-consumption loop above: a
+            // full draw books the lot's own rounded on-hand.
+            const entityQuantity = round(Number(trackedEntity.quantity));
+            const fullDraw = isFullDraw(entityQuantity, child.quantity);
+            const quantity = fullDraw ? entityQuantity : round(child.quantity);
 
             // Book against the entity's ACTUAL bin (net on-hand), not an
             // arbitrary first ledger row — aligns with the job-consumption
@@ -4030,7 +4814,7 @@ serve(async (req: Request) => {
             // Maintenance Consumption ledger, junction row) books against
             // the child.
             let consumedEntityId = trackedEntityId;
-            if (Number(trackedEntity.quantity) !== quantity) {
+            if (!fullDraw) {
               const consumedChildId = nanoid();
               consumedEntityId = consumedChildId;
 
@@ -4038,7 +4822,7 @@ serve(async (req: Request) => {
                 parent: {
                   id: trackedEntity.id!,
                   readableId: trackedEntity.readableId,
-                  quantity: Number(trackedEntity.quantity),
+                  quantity: entityQuantity,
                   sourceDocument: trackedEntity.sourceDocument,
                   sourceDocumentId: trackedEntity.sourceDocumentId,
                   sourceDocumentReadableId:
@@ -4197,6 +4981,9 @@ serve(async (req: Request) => {
         const { maintenanceDispatchItemId, children, companyId, userId } =
           validatedPayload;
 
+        // Kysely below bypasses RLS, so the caller must hold this permission in the company it names.
+        await requirePermissions(req, companyId, userId, { update: "resources" });
+
         if (children.length === 0) {
           throw new Error("At least one tracked entity is required");
         }
@@ -4206,6 +4993,7 @@ serve(async (req: Request) => {
           const dispatchItem = await trx
             .selectFrom("maintenanceDispatchItem")
             .where("id", "=", maintenanceDispatchItemId)
+            .where("companyId", "=", companyId)
             .selectAll()
             .executeTakeFirstOrThrow();
 
@@ -4226,6 +5014,7 @@ serve(async (req: Request) => {
               "in",
               children.map((child) => child.trackedEntityId)
             )
+            .where("companyId", "=", companyId)
             .selectAll()
             .execute();
 
@@ -4364,12 +5153,13 @@ serve(async (req: Request) => {
           }
 
           // Update the dispatch item quantity
-          const totalChildQuantity = children.reduce((sum, child) => {
-            return sum + Number(child.quantity);
-          }, 0);
+          const totalChildQuantity = roundedChildTotal(children);
 
-          const currentQuantity = Number(dispatchItem.quantity) || 0;
-          const newQuantity = Math.max(0, currentQuantity - totalChildQuantity);
+          const currentQuantity = round(Number(dispatchItem.quantity) || 0);
+          const newQuantity = Math.max(
+            0,
+            round(currentQuantity - totalChildQuantity)
+          );
 
           await trx
             .updateTable("maintenanceDispatchItem")
@@ -4391,11 +5181,15 @@ serve(async (req: Request) => {
         const { maintenanceDispatchItemId, companyId, userId } =
           validatedPayload;
 
+        // Kysely below bypasses RLS, so the caller must hold this permission in the company it names.
+        await requirePermissions(req, companyId, userId, { update: "resources" });
+
         await db.transaction().execute(async (trx) => {
           // Get the maintenance dispatch item
           const dispatchItem = await trx
             .selectFrom("maintenanceDispatchItem")
             .where("id", "=", maintenanceDispatchItemId)
+            .where("companyId", "=", companyId)
             .selectAll()
             .executeTakeFirstOrThrow();
 

@@ -1,5 +1,5 @@
+import type { AvailableVariable } from "@carbon/ee/workflows";
 import { Popover, PopoverAnchor, PopoverContent } from "@carbon/react";
-import type { AvailableVariable } from "@carbon/workflows";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { Handle, Position } from "@xyflow/react";
 import { useCallback, useEffect, useRef, useState } from "react";

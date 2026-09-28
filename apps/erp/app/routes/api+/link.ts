@@ -60,6 +60,16 @@ function resolve(
     case NotificationEvent.SalesRfqAssignment:
     case NotificationEvent.SalesRfqReady:
       return path.to.salesRfq(documentId);
+    case NotificationEvent.SalesRuleViolation: {
+      // Compound documentId: "<quote|salesOrder|salesInvoice>:<documentId>:<outcome>"
+      const [docType, docId] = documentId.split(":");
+      if (!docId) return null;
+      return docType === "salesInvoice"
+        ? path.to.salesInvoice(docId)
+        : docType === "salesOrder"
+          ? path.to.salesOrder(docId)
+          : path.to.quote(docId);
+    }
     case NotificationEvent.MaintenanceDispatchAssignment:
     case NotificationEvent.MaintenanceDispatchCreated:
       return path.to.maintenanceDispatch(documentId);
@@ -103,7 +113,11 @@ export async function loader({ request }: LoaderFunctionArgs) {
     client,
     companyId: sessionCompanyId,
     userId
-  } = await requirePermissions(request, {});
+  } = await requirePermissions(request, {
+    // Notification links switch to the linked company, which must work from a
+    // portal company session too.
+    allowPortalAccounts: true
+  });
 
   const url = new URL(request.url);
   const event = url.searchParams.get("event") as NotificationEvent | null;

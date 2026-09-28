@@ -2,6 +2,7 @@
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { convertKbToString } from "@carbon/files";
 import {
   Hidden,
   Input,
@@ -22,19 +23,11 @@ import {
   CardTitle,
   Heading,
   HStack,
-  Modal,
-  ModalBody,
-  ModalContent,
-  ModalFooter,
-  ModalHeader,
-  ModalOverlay,
-  ModalTitle,
   ScrollArea,
   toast,
   useDisclosure,
   VStack
 } from "@carbon/react";
-import { convertKbToString } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import { Plural, Trans, useLingui } from "@lingui/react/macro";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -60,6 +53,7 @@ import {
   totalScopeRows
 } from "~/modules/settings";
 import {
+  canManageBackups,
   dismissCompanyExportFailure,
   finalizeCompanyRestore,
   getCompanyBackups,
@@ -78,11 +72,11 @@ import {
   formatBackupName,
   IncludeStorageChoice,
   JobProgressModal,
+  PurgeCorruptedRowsModal,
   RestoreDisclosure,
   RestoreIncludeChoice,
   RestoreReviewRow
 } from "~/modules/settings/ui/Backups";
-import { canAccessBackups } from "~/utils/backups";
 import { getEdgeFunctionErrorMessage } from "~/utils/error";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -148,19 +142,14 @@ async function clearStaleExportFailure(
   }
 }
 
-function requireBackupAccess(email: string | null) {
-  // Internal-only in real deployments while multi-tenant hardening is pending;
-  // open to everyone on a local dev stack.
-  if (!canAccessBackups(email)) {
-    throw redirect(path.to.settings);
-  }
-}
-
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId, email } = await requirePermissions(request, {
     update: "settings"
   });
-  requireBackupAccess(email);
+  // Business/Enterprise feature, plus an internal/local-dev escape hatch.
+  if (!(await canManageBackups(client, companyId, email))) {
+    throw redirect(path.to.settings);
+  }
 
   const [backupsList, restoreRuns, exportRun] = await Promise.all([
     getCompanyBackups(client, companyId),
@@ -184,7 +173,9 @@ export async function action({ request }: ActionFunctionArgs) {
       update: "settings"
     }
   );
-  requireBackupAccess(email);
+  if (!(await canManageBackups(client, companyId, email))) {
+    throw redirect(path.to.settings);
+  }
 
   const formData = await request.formData();
   const intent = formData.get("intent");
@@ -557,9 +548,6 @@ export default function BackupsRoute() {
   const [purgeRun, setPurgeRun] = useState<
     (typeof visibleRestoreRuns)[number] | null
   >(null);
-  // Distinct ROWS, not per-edge violations — a row escaping scope through three
-  // of its FKs is one row, and this number sits on an irreversible-delete button.
-  const purgeRowCount = totalScopeRows(purgeRun?.violationRowsByTable ?? []);
   const exportChoices = useExportChoices();
   // A failed run's label and include setting seed the form, so "Skip corrupted
   // rows and retry" reuses what that run asked for and the person can see it.
@@ -738,70 +726,30 @@ export default function BackupsRoute() {
         )}
 
         {purgeRun && (
-          <Modal
-            open
-            onOpenChange={(open) => {
-              if (!open) setPurgeRun(null);
+          <PurgeCorruptedRowsModal
+            rowsByTable={purgeRun.violationRowsByTable}
+            description={
+              <Trans>
+                These rows link to data outside this company, so a safety copy
+                of your current data can't be made. Deleting them cannot be
+                undone. If they turn out to be shared with other companies in
+                this group, nothing is deleted and the restore doesn't start.
+              </Trans>
+            }
+            confirmLabel={<Trans>Delete and restore</Trans>}
+            onCancel={() => setPurgeRun(null)}
+            onConfirm={() => {
+              fetcher.submit(
+                {
+                  intent: "purgeAndRestore",
+                  restoreRunId: purgeRun.restoreRunId
+                },
+                { method: "post" }
+              );
+              resolveRun(purgeRun.restoreRunId);
+              setPurgeRun(null);
             }}
-          >
-            <ModalOverlay />
-            <ModalContent>
-              <ModalHeader>
-                <ModalTitle>
-                  <Plural
-                    value={purgeRowCount}
-                    one="Permanently delete # row?"
-                    other="Permanently delete # rows?"
-                  />
-                </ModalTitle>
-              </ModalHeader>
-              <ModalBody>
-                <p className="text-sm text-muted-foreground">
-                  <Trans>
-                    These rows link to data outside this company, so a safety
-                    copy of your current data can't be made. Deleting them
-                    cannot be undone. If they turn out to be shared with other
-                    companies in this group, nothing is deleted and the restore
-                    doesn't start.
-                  </Trans>
-                </p>
-                {/* Per TABLE, not per FK edge: the title counts distinct rows,
-                    and a per-edge list beside it would show larger numbers for
-                    the same delete. */}
-                <ul className="mt-3 flex flex-col gap-1 text-xs font-mono">
-                  {purgeRun.violationRowsByTable.map((t) => (
-                    <li key={t.table} className="flex justify-between gap-3">
-                      <span className="break-all">{t.table}</span>
-                      <span className="tabular-nums shrink-0">
-                        {t.rows.toLocaleString()}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              </ModalBody>
-              <ModalFooter>
-                <Button variant="secondary" onClick={() => setPurgeRun(null)}>
-                  <Trans>Cancel</Trans>
-                </Button>
-                <Button
-                  variant="destructive"
-                  onClick={() => {
-                    fetcher.submit(
-                      {
-                        intent: "purgeAndRestore",
-                        restoreRunId: purgeRun.restoreRunId
-                      },
-                      { method: "post" }
-                    );
-                    resolveRun(purgeRun.restoreRunId);
-                    setPurgeRun(null);
-                  }}
-                >
-                  <Trans>Delete and restore</Trans>
-                </Button>
-              </ModalFooter>
-            </ModalContent>
-          </Modal>
+          />
         )}
 
         {active && (

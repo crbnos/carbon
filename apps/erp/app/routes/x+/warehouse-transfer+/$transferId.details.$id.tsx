@@ -189,7 +189,7 @@ export default function WarehouseTransferLineDetailsRoute() {
   const navigate = useNavigate();
 
   return (
-    <div className="flex flex-col gap-2 pb-16 w-full">
+    <div className="flex flex-col gap-4 pb-16 w-full">
       <WarehouseTransferLineForm
         key={initialValues.id}
         initialValues={initialValues}

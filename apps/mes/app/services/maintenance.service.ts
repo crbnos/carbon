@@ -138,6 +138,7 @@ export async function endMaintenanceEvent(
     eventId: string;
     endTime: string;
     updatedBy: string;
+    companyId: string;
   }
 ) {
   return client
@@ -147,6 +148,7 @@ export async function endMaintenanceEvent(
       updatedBy: args.updatedBy
     })
     .eq("id", args.eventId)
+    .eq("companyId", args.companyId)
     .select("id")
     .single();
 }
@@ -160,6 +162,7 @@ export async function updateMaintenanceDispatchStatus(
     actualStartTime?: string;
     actualEndTime?: string;
     completedAt?: string;
+    companyId: string;
   }
 ) {
   return client
@@ -172,6 +175,7 @@ export async function updateMaintenanceDispatchStatus(
       updatedBy: args.updatedBy
     })
     .eq("id", args.dispatchId)
+    .eq("companyId", args.companyId)
     .select("id")
     .single();
 }
@@ -182,6 +186,7 @@ export async function assignMaintenanceDispatch(
     dispatchId: string;
     assignee: string;
     updatedBy: string;
+    companyId: string;
   }
 ) {
   return client
@@ -192,6 +197,7 @@ export async function assignMaintenanceDispatch(
       updatedBy: args.updatedBy
     })
     .eq("id", args.dispatchId)
+    .eq("companyId", args.companyId)
     .select("id")
     .single();
 }
@@ -266,9 +272,14 @@ export async function addMaintenanceDispatchItem(
 
 export async function deleteMaintenanceDispatchItem(
   client: SupabaseClient<Database>,
-  itemId: string
+  itemId: string,
+  companyId: string
 ) {
-  return client.from("maintenanceDispatchItem").delete().eq("id", itemId);
+  return client
+    .from("maintenanceDispatchItem")
+    .delete()
+    .eq("id", itemId)
+    .eq("companyId", companyId);
 }
 
 export async function getMaintenanceDispatchItemTrackedEntities(

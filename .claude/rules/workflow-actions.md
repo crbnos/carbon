@@ -1,6 +1,6 @@
 ---
 description: Workflow actions and operations — the two hand-written catalogue sources plus the entity `write` allowlists, and the job-side executors that carry them out as the workflow's owner. Read before adding an action, an operation, or anything a workflow can write or call.
-paths: ["packages/jobs/src/workflows/actions/**", "packages/workflows/src/catalog/actions.ts", "packages/workflows/src/catalog/operations.ts"]
+paths: ["packages/jobs/src/workflows/actions/**", "packages/ee/src/workflows/catalog/actions.ts", "packages/ee/src/workflows/catalog/operations.ts"]
 ---
 
 # Workflow Actions and Operations
@@ -15,14 +15,14 @@ Matcher: `workflow-matcher.md`.
 ## Where the catalogue comes from
 
 ```
-packages/workflows/src/catalog/actions.ts     HAND-WRITTEN  the actions with no generic form
-packages/workflows/src/catalog/operations.ts  HAND-WRITTEN  read-only computations
-packages/workflows/src/catalog/entities.ts    HAND-WRITTEN  `write` allowlist per entity
+packages/ee/src/workflows/catalog/actions.ts     HAND-WRITTEN  the actions with no generic form
+packages/ee/src/workflows/catalog/operations.ts  HAND-WRITTEN  read-only computations
+packages/ee/src/workflows/catalog/entities.ts    HAND-WRITTEN  `write` allowlist per entity
                     │
                     ▼  scripts/generate-workflow-catalog.ts → buildCatalog (pure)
-packages/workflows/src/catalog/actions.generated.ts   COMMITTED
+packages/ee/src/workflows/catalog/actions.generated.ts   COMMITTED
       WORKFLOW_ACTION_CATALOG  +  WORKFLOW_OPERATION_CATALOG   (one file, both maps)
-packages/workflows/src/catalog/labels.generated.ts    COMMITTED  labels for events, actions and operations
+packages/ee/src/workflows/catalog/labels.generated.ts    COMMITTED  labels for events, actions and operations
 ```
 
 Today: **16 actions** (6 hand-written, 10 generated `<entity>.update`) and
@@ -84,30 +84,40 @@ export function setWorkflowDispatch(fn: WorkflowDispatch): void
 export function getWorkflowDispatch(): WorkflowDispatch | undefined
 ```
 
-`apps/erp/app/routes/api+/inngest.ts` fills it at boot:
+`apps/erp/app/routes/api+/inngest.ts` fills it on first request (lazy, so the
+client build can tree-shake the server graph):
 
 ```ts
 import { functions, inngest, setWorkflowDispatch } from "@carbon/jobs/inngest";
-import { executeFunction } from "./mcp+/lib/direct-executor";
+import { callOperation } from "./v1+/lib/call.server";
 
-setWorkflowDispatch(executeFunction);
+setWorkflowDispatch((name, context, args) =>
+  callOperation(name, { ...context, authKind: "session", scopes: {} }, args)
+);
 ```
 
-`WorkflowDispatch` is declared to be **structurally** satisfied by
-`executeFunction`, so nothing in `@carbon/jobs` names an app type. An unfilled
-slot is not a crash: `runAction` returns
+`callOperation` is the Carbon API's canonical entry point (the same one MCP
+`call_tool` and the in-app agent use) — it runs the operation through the real
+oRPC procedure. `authKind: "session"` marks the workflow engine as an
+already-authorized in-process caller, so the per-operation API-key scope gate
+does not apply; the owner-scoped client's RLS still does. `WorkflowDispatch` is
+**structurally** satisfied by the wrapper, so nothing in `@carbon/jobs` names an
+app type. An unfilled slot is not a crash: `runAction` returns
 `"This step is not available in this environment."`
 
 `runCreateAction` (`actions/create.ts`) converts each `RuntimeValue` with
-`toPlainValue`, dispatches, then digs the new row's id out of whatever came back
-— the service functions return a Supabase envelope whose `error` it checks
-separately, and `idIn` walks a list if one came back. No id means
-`"The record was created but could not be read back."`, never a silent success.
-`companyId`, `createdBy` and `updatedBy` are stamped by the dispatcher.
+`toPlainValue`, dispatches, then digs the new row's id out of whatever came back.
+`callOperation` returns the service data already UNWRAPPED (`{ success, data }`),
+and `create.ts` handles both that and the legacy envelope shape: it checks
+`envelope.error` when the payload looks like one, and `idIn` walks a list if one
+came back. No id means `"The record was created but could not be read back."`,
+never a silent success. `companyId`, `createdBy` and `updatedBy` are stamped by
+the dispatch layer (`enrichWithAuthContext` in
+`apps/erp/app/routes/api+/v1+/lib/dispatch.server.ts`).
 
 ## `createWorkflowServices` — the one port
 
-`packages/workflows/src/runtime/types.ts` declares `WorkflowServices`
+`packages/ee/src/workflows/runtime/types.ts` declares `WorkflowServices`
 (`runAction`, `runOperation`, `search`). It is **required** on `RuntimeContext`,
 so a missing implementation is a compile error. The pure runtime knows nothing
 else about the world.

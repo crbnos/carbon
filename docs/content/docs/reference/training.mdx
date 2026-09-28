@@ -24,7 +24,7 @@ Each training is one row in the `training` table (`packages/database/supabase/mi
 
 The status enum is a simple linear lifecycle on the training record — not to be confused with an employee's *completion* status further down.
 
-<StatusFlow>
+<StatusFlow entity="trainingCourse">
 <Status name="Draft">Being authored. Not yet meant for assignment.</Status>
 <Status name="Active" accent>Published and in use. Assignments and reminders operate against active trainings.</Status>
 <Status name="Archived" terminal>Retired. Kept for history, no longer assigned.</Status>
@@ -68,7 +68,7 @@ The **period** is the heart of the recurring logic (`20251206000000_training_ass
 
 An employee's status is *computed*, not stored — Carbon evaluates it from whether a completion exists for the current period and when the employee started. There are four possible values (`apps/erp/app/modules/resources/resources.models.ts:318`):
 
-<StatusFlow>
+<StatusFlow entity="trainingAssignment">
 <Status name="Pending">Assigned, in the current period, not yet completed. The default state.</Status>
 <Status name="Completed" accent>A completion row exists for this employee and period.</Status>
 <Status name="Overdue" branch>A recurring period has already ended and the employee never completed it.</Status>

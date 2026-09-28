@@ -1,14 +1,17 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import type { Transaction } from "kysely";
 import { nanoid } from "https://deno.land/x/nanoid@v3.0.0/nanoid.ts";
-import z from "npm:zod@^3.24.1";
+import z from "npm:zod@^4.5.4";
+import { assertCompanyRecords } from "../lib/company-records.ts";
 import { getConnectionPool, getDatabaseClient } from "../lib/database.ts";
+import { getFunctionLogger } from "../lib/logging.ts";
 import { corsPreflight, errorResponse, jsonResponse } from "../lib/response.ts";
 import { requirePermissions } from "../lib/supabase.ts";
 import type { DB } from "../lib/types.ts";
 
 const pool = getConnectionPool(1);
 const db = getDatabaseClient<DB>(pool);
+const logger = getFunctionLogger("trigger-rework");
 
 interface TriggerReworkRequest {
   jobId: string;
@@ -110,7 +113,7 @@ async function triggerRework(
     triggeredAtJobOperationId
   );
 
-  console.info(
+  logger.info(
     `📋 Rework path: ${operationPath.length} operations to clone`
   );
 
@@ -263,7 +266,7 @@ async function triggerRework(
     sourceToCloneMap.set(sourceOp.id, clonedOps[i].id);
   });
 
-  console.info(`🔧 Cloned ${clonedOperationIds.length} operations`);
+  logger.info(`🔧 Cloned ${clonedOperationIds.length} operations`);
 
   // 6. Clone steps, tools, and parameters (batch fetch + batch insert)
   const [allSteps, allTools, allParams] = await Promise.all([
@@ -380,7 +383,7 @@ async function triggerRework(
       .execute();
   }
 
-  console.info(`🔗 DAG wired with ${downstreamDeps.length} downstream deps rewired`);
+  logger.info(`🔗 DAG wired with ${downstreamDeps.length} downstream deps rewired`);
 
   // 8. Record a productionQuantity entry for the rework
   await trx
@@ -458,7 +461,42 @@ serve(async (req) => {
       return errorResponse("Job not found in this company", 404);
     }
 
-    console.info(
+    // The same holds for the two operation ids: triggerRework reads, clones and
+    // writes productionQuantity against them by id alone, so both must be
+    // operations of this job (the job is already proven to be this company's).
+    const operationIds = [
+      ...new Set([body.triggeredAtJobOperationId, body.targetJobOperationId]),
+    ];
+    const operations = await db
+      .selectFrom("jobOperation")
+      .select("id")
+      .where("id", "in", operationIds)
+      .where("jobId", "=", body.jobId)
+      .where("companyId", "=", body.companyId)
+      .execute();
+    if (operations.length !== operationIds.length) {
+      return errorResponse("Job operation not found in this company", 404);
+    }
+
+    await assertCompanyRecords(
+      db,
+      "trackedEntity",
+      body.trackedEntityIds ?? [],
+      body.companyId,
+      "Tracked entity"
+    );
+
+    // Written as productionQuantity.inspectionId, whose FK accepts any company's
+    // inspection.
+    await assertCompanyRecords(
+      db,
+      "inspection",
+      [body.inspectionId],
+      body.companyId,
+      "Inspection"
+    );
+
+    logger.info(
       `🔰 Starting rework for job ${body.jobId}: go back to ${body.targetJobOperationId} from ${body.triggeredAtJobOperationId}`
     );
 
@@ -483,12 +521,14 @@ serve(async (req) => {
         }),
       });
     } catch (err) {
-      console.error("Failed to trigger reschedule after rework:", err);
+      logger.error("Failed to trigger reschedule after rework", {
+        error: String((err as Error)?.stack ?? err),
+      });
     }
 
     return jsonResponse({ success: true, ...result });
   } catch (error) {
-    console.error(
+    logger.error(
       `❌ Rework failed: ${
         error instanceof Error ? error.message : String(error)
       }`

@@ -1,7 +1,9 @@
 import type { Database } from "@carbon/database";
 import { SalesOrderEmail } from "@carbon/documents/email";
+import { storage } from "@carbon/files";
 import { trigger } from "@carbon/jobs";
 import { redis } from "@carbon/kv";
+import { getLogger } from "@carbon/logger";
 import type { CalendarDate } from "@internationalized/date";
 import { startOfWeek } from "@internationalized/date";
 import { renderAsync } from "@react-email/components";
@@ -17,10 +19,16 @@ import {
 import { getCompany } from "~/modules/settings";
 import { getTimezoneNames } from "~/modules/shared/shared.service";
 import { getUser } from "~/modules/users/users.server";
+// Created concurrently with the returns module; see routes/file+/purchase-return-order+/
+import { loader as purchaseReturnOrderPdfLoader } from "~/routes/file+/purchase-return-order+/$id[.]pdf";
+// Created concurrently with the RMA module; see routes/file+/sales-return-order+/
+import { loader as salesReturnOrderPdfLoader } from "~/routes/file+/sales-return-order+/$id[.]pdf";
 import { getDatabaseClient } from "~/services/database.server";
 import { stripSpecialCharacters } from "~/utils/string";
 import { upsertDocument } from "../documents/documents.service";
 import type { CustomFieldsTableType } from "../settings";
+
+const logger = getLogger("erp", "shared");
 
 export async function assign(
   client: SupabaseClient<Database>,
@@ -183,8 +191,8 @@ export async function generateAndAttachSalesOrderPdf(args: {
   // 2. Upload to Supabase storage
   const documentFilePath = `${companyId}/opportunity/${opportunityId}/${fileName}`;
 
-  const uploadResult = await serviceRole.storage
-    .from("private")
+  const uploadResult = await storage(serviceRole)
+    .company(companyId)
     .upload(documentFilePath, file, {
       cacheControl: `${12 * 60 * 60}`,
       contentType: "application/pdf",
@@ -202,6 +210,157 @@ export async function generateAndAttachSalesOrderPdf(args: {
     size: Math.round(file.byteLength / 1024),
     sourceDocument: "Sales Order",
     sourceDocumentId: salesOrderId,
+    readGroups: [userId],
+    writeGroups: [userId],
+    createdBy: userId,
+    companyId
+  });
+
+  if (documentResult.error) {
+    throw new Error("Failed to create document record");
+  }
+
+  return { file, fileName, documentFilePath };
+}
+
+/**
+ * Generates a sales return order (RMA) PDF via the pdf route loader, uploads
+ * it to Supabase storage under the return order path, and creates a document
+ * DB record.
+ *
+ * Returns the PDF ArrayBuffer and the generated file name.
+ */
+export async function generateAndAttachSalesReturnOrderPdf(
+  /** A service-role Supabase client for storage + DB writes */
+  serviceRole: SupabaseClient<Database>,
+  args: {
+    /** The original action/loader args from the route */
+    routeArgs: LoaderFunctionArgs;
+    /** Sales return order DB id */
+    id: string;
+    /** Human-readable RMA identifier (e.g. "RMA000001") */
+    salesReturnOrderIdentifier: string;
+    companyId: string;
+    userId: string;
+  }
+): Promise<{ file: ArrayBuffer; fileName: string; documentFilePath: string }> {
+  const { routeArgs, id, salesReturnOrderIdentifier, companyId, userId } = args;
+
+  // 1. Generate the PDF
+  const pdfArgs = {
+    ...routeArgs,
+    params: { ...routeArgs.params, id }
+  };
+  const pdf = await salesReturnOrderPdfLoader(pdfArgs);
+
+  if (pdf.headers.get("content-type") !== "application/pdf") {
+    throw new Error("Failed to generate PDF");
+  }
+
+  const file = await pdf.arrayBuffer();
+  const fileName = stripSpecialCharacters(
+    `${salesReturnOrderIdentifier} - ${new Date().toISOString().slice(0, -5)}.pdf`
+  );
+
+  // 2. Upload to Supabase storage
+  const documentFilePath = `${companyId}/sales-return-order/${id}/${fileName}`;
+
+  const uploadResult = await storage(serviceRole)
+    .company(companyId)
+    .upload(documentFilePath, file, {
+      cacheControl: `${12 * 60 * 60}`,
+      contentType: "application/pdf",
+      upsert: true
+    });
+
+  if (uploadResult.error) {
+    throw new Error("Failed to upload PDF to storage");
+  }
+
+  // 3. Create the document DB record
+  const documentResult = await upsertDocument(serviceRole, {
+    path: documentFilePath,
+    name: fileName,
+    size: Math.round(file.byteLength / 1024),
+    sourceDocument: "Sales Return Order",
+    sourceDocumentId: id,
+    readGroups: [userId],
+    writeGroups: [userId],
+    createdBy: userId,
+    companyId
+  });
+
+  if (documentResult.error) {
+    throw new Error("Failed to create document record");
+  }
+
+  return { file, fileName, documentFilePath };
+}
+
+/**
+ * Generates a purchase return order (supplier return) PDF via the pdf route
+ * loader, uploads it to Supabase storage under the return order path, and
+ * creates a document DB record.
+ *
+ * Returns the PDF ArrayBuffer and the generated file name.
+ */
+export async function generateAndAttachPurchaseReturnOrderPdf(
+  /** A service-role Supabase client for storage + DB writes */
+  serviceRole: SupabaseClient<Database>,
+  args: {
+    /** The original action/loader args from the route */
+    routeArgs: LoaderFunctionArgs;
+    /** Purchase return order DB id */
+    id: string;
+    /** Human-readable return identifier (e.g. "PRO000001") */
+    purchaseReturnOrderIdentifier: string;
+    companyId: string;
+    userId: string;
+  }
+): Promise<{ file: ArrayBuffer; fileName: string; documentFilePath: string }> {
+  const { routeArgs, id, purchaseReturnOrderIdentifier, companyId, userId } =
+    args;
+
+  // 1. Generate the PDF
+  const pdfArgs = {
+    ...routeArgs,
+    params: { ...routeArgs.params, id }
+  };
+  const pdf = await purchaseReturnOrderPdfLoader(pdfArgs);
+
+  if (pdf.headers.get("content-type") !== "application/pdf") {
+    throw new Error("Failed to generate PDF");
+  }
+
+  const file = await pdf.arrayBuffer();
+  const fileName = stripSpecialCharacters(
+    `${purchaseReturnOrderIdentifier} - ${new Date()
+      .toISOString()
+      .slice(0, -5)}.pdf`
+  );
+
+  // 2. Upload to Supabase storage
+  const documentFilePath = `${companyId}/purchase-return-order/${id}/${fileName}`;
+
+  const uploadResult = await storage(serviceRole)
+    .company(companyId)
+    .upload(documentFilePath, file, {
+      cacheControl: `${12 * 60 * 60}`,
+      contentType: "application/pdf",
+      upsert: true
+    });
+
+  if (uploadResult.error) {
+    throw new Error("Failed to upload PDF to storage");
+  }
+
+  // 3. Create the document DB record
+  const documentResult = await upsertDocument(serviceRole, {
+    path: documentFilePath,
+    name: fileName,
+    size: Math.round(file.byteLength / 1024),
+    sourceDocument: "Purchase Return Order",
+    sourceDocumentId: id,
     readGroups: [userId],
     writeGroups: [userId],
     createdBy: userId,
@@ -256,7 +415,9 @@ export async function sendSalesOrderEmail(args: {
     paymentTerms
   ] = await Promise.all([
     getCompany(serviceRole, companyId),
-    getCustomerContact(serviceRole, customerContactId),
+    // customerContactId comes from the form and the service role bypasses
+    // RLS — scope it so another company's contact is never read or emailed.
+    getCustomerContact(serviceRole, customerContactId, companyId),
     getSalesOrder(serviceRole, salesOrderId),
     getSalesOrderLines(serviceRole, salesOrderId),
     getSalesOrderCustomerDetails(serviceRole, salesOrderId),
@@ -315,8 +476,8 @@ export async function sendSalesOrderEmail(args: {
 
   const html = await renderAsync(emailTemplate);
   const text = await renderAsync(emailTemplate, { plainText: true });
-  const { data: signedUrlData } = await serviceRole.storage
-    .from("private")
+  const signed = await storage(serviceRole)
+    .company(companyId)
     .createSignedUrl(documentFilePath, 3600);
 
   await trigger("send-email", {
@@ -326,10 +487,10 @@ export async function sendSalesOrderEmail(args: {
     subject: `Order ${salesOrder.data.salesOrderId} from ${company.data.name}`,
     html,
     text,
-    attachments: signedUrlData?.signedUrl
+    attachments: signed.data
       ? [
           {
-            path: signedUrlData.signedUrl,
+            path: signed.data.signedUrl,
             filename: fileName
           }
         ]
@@ -429,4 +590,59 @@ function toPlainPeriod(p: {
     endDate: dateToString(p.endDate),
     periodType: p.periodType
   };
+}
+
+type Tables = Database["public"]["Tables"];
+
+/**
+ * Every table with a string `id` and a `companyId` column. A nullable
+ * `companyId` (e.g. `item`) is fine: global rows never match `.eq("companyId")`.
+ */
+type CompanyScopedTable = {
+  [K in keyof Tables]: Tables[K]["Row"] extends {
+    id: string;
+    companyId: string | null;
+  }
+    ? K
+    : never;
+}[keyof Tables];
+
+/**
+ * Throws a 404 `Response` unless a row of `table` in `companyId` matches every
+ * column in `match` — e.g. `{ id: lineId, quoteId }` proves the line exists,
+ * belongs to the company AND hangs off that quote. One query.
+ *
+ * Record ids in a URL or form body prove nothing about tenancy:
+ * `requirePermissions` authorizes the CALLER for `companyId`, not the ids it
+ * sends. Most tables have single-column foreign keys, so a service-role or
+ * Kysely write happily accepts another company's row as a parent. Call this
+ * before any RLS-bypassing read or write keyed on a caller-supplied id.
+ */
+export async function requireCompanyRecord(
+  client: SupabaseClient<Database>,
+  table: CompanyScopedTable,
+  companyId: string,
+  match: { id: string } & Record<string, string>
+): Promise<void> {
+  // Every table in the union has `id` + `companyId`; the cast only narrows the
+  // union so supabase-js can type the builder.
+  const { data, error } = await client
+    .from(table as "quoteLine")
+    .select("id")
+    .match(match)
+    .eq("companyId", companyId)
+    .maybeSingle();
+
+  if (error) {
+    logger.error(`Failed to verify ${table} for company`, {
+      companyId,
+      match,
+      error
+    });
+    throw new Response("Not found", { status: 404 });
+  }
+  if (!data) {
+    logger.error(`${table} not found for company`, { companyId, match });
+    throw new Response("Not found", { status: 404 });
+  }
 }

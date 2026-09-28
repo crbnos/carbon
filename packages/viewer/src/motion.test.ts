@@ -394,6 +394,60 @@ describe("buildStepClip", () => {
     expect(times[times.length - 2]).toBeCloseTo(2);
   });
 
+  it("glides a join step from its staging spot, then inserts", () => {
+    const { nodesById } = makeAssembly();
+    const motion: Motion = {
+      type: "linear",
+      direction: [1, 0, 0],
+      distance: 10
+    };
+    const clip = buildStepClip(makeStep(motion, ["node-a"]), nodesById, {
+      duration: 2,
+      holdSeconds: 0.5,
+      glide: { offset: [0, 100, 0], seconds: 1.2 }
+    });
+    if (!clip) throw new Error("expected clip");
+    expect(clip.duration).toBeCloseTo(1.2 + 2 + 0.5);
+
+    const [positionTrack] = clip.tracks;
+    if (!positionTrack) throw new Error("expected tracks");
+    const values = [...positionTrack.values];
+    const times = [...positionTrack.times];
+    // Seated world [6,2,3] + offset [0,100,0] → parent-local [1,102,3]
+    expectVectorClose(values.slice(0, 3), [1, 102, 3]);
+    // Glide ends at the linear insertion start: world [-4,2,3] → local [-9,2,3]
+    const glideEnd = times.findIndex((time) => Math.abs(time - 1.2) < 1e-5);
+    expect(glideEnd).toBeGreaterThan(0);
+    expectVectorClose(values.slice(glideEnd * 3, glideEnd * 3 + 3), [-9, 2, 3]);
+    // Still ends seated, with the hold
+    expectVectorClose(values.slice(-6, -3), [1, 2, 3]);
+    expect(times[times.length - 2]).toBeCloseTo(3.2);
+    for (let i = 1; i < times.length; i++) {
+      expect(times[i]).toBeGreaterThan(
+        times[i - 1] ?? Number.POSITIVE_INFINITY
+      );
+    }
+  });
+
+  it("glides a none-motion join step straight to the seat", () => {
+    const { nodesById } = makeAssembly();
+    const clip = buildStepClip(
+      makeStep({ type: "none" }, ["node-a"]),
+      nodesById,
+      {
+        holdSeconds: 0,
+        glide: { offset: [50, 0, 0], seconds: 1.2 }
+      }
+    );
+    if (!clip) throw new Error("expected clip");
+    expect(clip.duration).toBeCloseTo(1.2);
+    const [positionTrack] = clip.tracks;
+    if (!positionTrack) throw new Error("expected tracks");
+    const values = [...positionTrack.values];
+    expectVectorClose(values.slice(0, 3), [51, 2, 3]);
+    expectVectorClose(values.slice(-3), [1, 2, 3]);
+  });
+
   it("converts world-space motion into the local space of a rotated parent", () => {
     const root = new Group();
     const parent = new Group();

@@ -13,6 +13,7 @@ import {
   purchaseOrderValidator
 } from "~/modules/purchasing";
 import { PurchaseOrderForm } from "~/modules/purchasing/ui/PurchaseOrder";
+import { requireCompanyRecord } from "~/modules/shared/shared.server";
 import { setCustomFields } from "~/utils/form";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -42,6 +43,27 @@ export async function action({ request }: ActionFunctionArgs) {
   if (validation.error) {
     return validationError(validation.error);
   }
+
+  // bypassRls hands back the service role, and insertPurchaseOrder copies the
+  // supplier's payment and shipping defaults by these form ids.
+  const { supplierId, supplierLocationId, supplierContactId, locationId } =
+    validation.data;
+  await Promise.all([
+    requireCompanyRecord(client, "supplier", companyId, { id: supplierId }),
+    supplierLocationId
+      ? requireCompanyRecord(client, "supplierLocation", companyId, {
+          id: supplierLocationId
+        })
+      : null,
+    supplierContactId
+      ? requireCompanyRecord(client, "supplierContact", companyId, {
+          id: supplierContactId
+        })
+      : null,
+    locationId
+      ? requireCompanyRecord(client, "location", companyId, { id: locationId })
+      : null
+  ]);
 
   const result = await insertPurchaseOrder(client, {
     ...validation.data,

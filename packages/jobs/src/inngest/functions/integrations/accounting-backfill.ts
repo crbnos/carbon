@@ -98,7 +98,7 @@ const BackfillPayloadSchema = z.object({
       vendors: z.boolean().default(true),
       items: z.boolean().default(true)
     })
-    .default({})
+    .prefault({})
 });
 
 /**
@@ -290,7 +290,8 @@ export const accountingBackfillFunction = inngest.createFunction(
                 },
                 old: null
               },
-              integrationMetadata: phaseIntegration.metadata
+              integrationMetadata: phaseIntegration.metadata,
+              providerId: phaseIntegration.id
             });
 
             if (plan.action === "push") {
@@ -316,7 +317,8 @@ export const accountingBackfillFunction = inngest.createFunction(
                 },
                 old: { status: "Posted" }
               },
-              integrationMetadata: phaseIntegration.metadata
+              integrationMetadata: phaseIntegration.metadata,
+              providerId: phaseIntegration.id
             });
 
             if (reversalPlan.action === "push") {

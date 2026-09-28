@@ -1,9 +1,10 @@
 import { serve } from "https://deno.land/std@0.175.0/http/server.ts";
-import { z } from "npm:zod@^3.24.1";
+import { z } from "npm:zod@^4.5.4";
 
 import { DB, getConnectionPool, getDatabaseClient } from "../lib/database.ts";
 
 import { sql, Transaction } from "kysely";
+import { getFunctionLogger } from "../lib/logging.ts";
 import { corsPreflight, errorResponse, jsonResponse } from "../lib/response.ts";
 import {
   computeJobQuantities,
@@ -15,6 +16,7 @@ import { requirePermissions } from "../lib/supabase.ts";
 
 const pool = getConnectionPool(1);
 const db = getDatabaseClient<DB>(pool);
+const logger = getFunctionLogger("recalculate");
 
 const payloadValidator = z.object({
   type: z.enum(["jobMakeMethodRequirements", "jobRequirements"]),
@@ -31,13 +33,7 @@ serve(async (req: Request) => {
   try {
     const { type, id, companyId, userId } = payloadValidator.parse(payload);
 
-    console.log({
-      function: "recalculate",
-      type,
-      id,
-      companyId,
-      userId,
-    });
+    logger.info({ type, id, companyId, userId });
 
     const client = await requirePermissions(req, companyId, userId, { update: "production" });
 
@@ -50,13 +46,18 @@ serve(async (req: Request) => {
             .from("jobMakeMethod")
             .select("*")
             .eq("id", jobMakeMethodId)
-            .single(),
+            .eq("companyId", companyId)
+            .maybeSingle(),
         ]);
 
         if (jobMakeMethod.error) {
           throw new Error(
             `Failed to get job makeMethod: ${jobMakeMethod.error.message}`
           );
+        }
+        // Service-role client: a make method outside companyId is a 404.
+        if (!jobMakeMethod.data) {
+          return errorResponse("Job make method not found", 404);
         }
 
         let parentQuantity = 1;
@@ -83,7 +84,7 @@ serve(async (req: Request) => {
           }
 
           if (jobMaterial.data.methodType !== "Make to Order") {
-            console.log(
+            logger.info(
               `Job material ${jobMakeMethod.data.parentMaterialId} is not a 'Make' type. Skipping recalculation.`
             );
             return jsonResponse({ success: true });
@@ -131,14 +132,23 @@ serve(async (req: Request) => {
       case "jobRequirements": {
         const jobId = id;
         const [job, jobMakeMethod] = await Promise.all([
-          client.from("job").select("*").eq("id", jobId).single(),
+          client
+            .from("job")
+            .select("*")
+            .eq("id", jobId)
+            .eq("companyId", companyId)
+            .maybeSingle(),
           client
             .from("jobMakeMethod")
             .select("*")
             .eq("jobId", jobId)
+            .eq("companyId", companyId)
             .is("parentMaterialId", null)
             .single(),
         ]);
+
+        // Service-role client: a job outside companyId is a 404.
+        if (!job.data) return errorResponse("Job not found", 404);
 
         if (jobMakeMethod.error) {
           throw new Error(
@@ -242,10 +252,9 @@ const updateJobQuantities = async (
   const allCycleNodeIds = new Set([...flattenCycles, ...cycleNodeIds]);
   if (allCycleNodeIds.size > 0) {
     // Corrupt tree data — the nodes were skipped rather than looped on.
-    console.error(
-      "recalculate: cyclic job method tree; skipped node ids:",
-      [...allCycleNodeIds]
-    );
+    logger.error("recalculate: cyclic job method tree; skipped nodes", {
+      skippedNodeIds: [...allCycleNodeIds],
+    });
   }
 
   // jobMaterial scrap/estimated — one VALUES-join update for the whole tree

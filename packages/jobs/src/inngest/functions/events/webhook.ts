@@ -1,4 +1,5 @@
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
+import { companyHasFeature } from "@carbon/ee/plan.server";
 import axios from "axios";
 import { inngest } from "../../client.ts";
 import { toWebhookBody, webhookPayloadSchema } from "./webhook-body.ts";
@@ -27,6 +28,23 @@ export const webhookFunction = inngest.createFunction(
       String(payload.msgId)
     );
     const webhookId = payload.config.webhookId;
+
+    // Commercial feature gate — WEBHOOKS is a Business/entitled feature. An
+    // unentitled company keeps its subscriptions but delivery degrades to a
+    // no-op (mirrors the EMAIL_NOTIFICATIONS gate in notify.ts). Do NOT throw:
+    // a throw would retry and count as a delivery failure.
+    const entitled = await step.run("check-webhook-plan", () =>
+      companyHasFeature(getCarbonServiceRole(), payload.companyId, {
+        feature: "WEBHOOKS"
+      })
+    );
+
+    if (!entitled) {
+      console.warn(
+        `WEBHOOKS not enabled for company ${payload.companyId}; skipping webhook delivery`
+      );
+      return;
+    }
 
     await step.run("send-webhook", async () => {
       // Never log payload.url — the docs tell customers to treat the URL itself

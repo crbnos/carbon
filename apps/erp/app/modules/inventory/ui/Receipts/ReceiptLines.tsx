@@ -1,4 +1,5 @@
 import { useCarbon } from "@carbon/auth";
+import { isPreviewableDocumentType, storage } from "@carbon/files";
 import { Number, Submit, ValidatedForm } from "@carbon/form";
 import {
   Button,
@@ -84,6 +85,7 @@ import { path } from "~/utils/path";
 import { stripSpecialCharacters } from "~/utils/string";
 import BatchPropertiesConfig from "../Batches/BatchPropertiesConfig";
 import { BatchPropertiesFields } from "../Batches/BatchPropertiesFields";
+import { ReturnEntityForm } from "./ReturnEntityForm";
 
 const ReceiptLines = () => {
   const { receiptId } = useParams();
@@ -594,8 +596,24 @@ function ReceiptLineItem({
           </div>
         </div>
       </div>
-      {line.requiresBatchTracking && (
-        <>
+      {line.requiresBatchTracking &&
+        (receipt?.sourceDocument === "Sales Return Order" ? (
+          <ReturnEntityForm
+            receipt={receipt}
+            line={line}
+            trackingType="batch"
+            isReadOnly={isReadOnly}
+          >
+            <BatchForm
+              receipt={receipt}
+              line={line}
+              isReadOnly={isReadOnly}
+              tracking={tracking}
+              batchProperties={batchProperties}
+              itemShelfLife={itemShelfLife}
+            />
+          </ReturnEntityForm>
+        ) : (
           <BatchForm
             receipt={receipt}
             line={line}
@@ -604,19 +622,36 @@ function ReceiptLineItem({
             batchProperties={batchProperties}
             itemShelfLife={itemShelfLife}
           />
-        </>
-      )}
-      {line.requiresSerialTracking && (
-        <SerialForm
-          receipt={receipt}
-          line={line}
-          serialNumbers={serialNumbers}
-          isReadOnly={isReadOnly}
-          onSerialNumbersChange={onSerialNumbersChange}
-          itemShelfLife={itemShelfLife}
-          tracking={tracking}
-        />
-      )}
+        ))}
+      {line.requiresSerialTracking &&
+        (receipt?.sourceDocument === "Sales Return Order" ? (
+          <ReturnEntityForm
+            receipt={receipt}
+            line={line}
+            trackingType="serial"
+            isReadOnly={isReadOnly}
+          >
+            <SerialForm
+              receipt={receipt}
+              line={line}
+              serialNumbers={serialNumbers}
+              isReadOnly={isReadOnly}
+              onSerialNumbersChange={onSerialNumbersChange}
+              itemShelfLife={itemShelfLife}
+              tracking={tracking}
+            />
+          </ReturnEntityForm>
+        ) : (
+          <SerialForm
+            receipt={receipt}
+            line={line}
+            serialNumbers={serialNumbers}
+            isReadOnly={isReadOnly}
+            onSerialNumbersChange={onSerialNumbersChange}
+            itemShelfLife={itemShelfLife}
+            tracking={tracking}
+          />
+        ))}
       {(line.requiresBatchTracking || line.requiresSerialTracking) && (
         <>
           <Suspense fallback={null}>
@@ -629,20 +664,16 @@ function ReceiptLineItem({
                   <div className="flex flex-col gap-2">
                     {lineFiles.map((file) => {
                       const documentType = getDocumentType(file.name);
-                      const isPreviewable = ["PDF", "Image"].includes(
-                        documentType
-                      );
 
                       return (
                         <HStack key={file.id}>
                           <DocumentIcon type={documentType} />
                           <span className="font-medium text-sm">
-                            {isPreviewable ? (
+                            {isPreviewableDocumentType(documentType) ? (
                               <DocumentPreview
                                 bucket="private"
                                 pathToFile={getPath(file)}
-                                // @ts-expect-error
-                                type={getDocumentType(file.name)}
+                                type={documentType}
                               >
                                 {file.name}
                               </DocumentPreview>
@@ -1298,12 +1329,11 @@ function useReceiptFiles(receiptId: string) {
         toast.error(t`Carbon client not available`);
         return;
       }
-
       for (const file of files) {
         const fileName = getPath({ name: file.name }, lineId);
         toast.info(`Uploading ${file.name}`);
-        const fileUpload = await carbon.storage
-          .from("private")
+        const fileUpload = await storage(carbon)
+          .company(company.id)
           .upload(fileName, file, {
             cacheControl: `${12 * 60 * 60}`,
             upsert: true
@@ -1330,24 +1360,28 @@ function useReceiptFiles(receiptId: string) {
       }
       revalidator.revalidate();
     },
-    [carbon, revalidator, getPath, receiptId, submit, t]
+    [carbon, company.id, revalidator, getPath, receiptId, submit, t]
   );
 
   const deleteFile = useCallback(
     async (file: StorageItem, lineId: string) => {
-      const fileDelete = await carbon?.storage
-        .from("private")
+      if (!carbon) {
+        toast.error("Error deleting file");
+        return;
+      }
+      const { error } = await storage(carbon)
+        .company(company.id)
         .remove([getPath(file, lineId)]);
 
-      if (!fileDelete || fileDelete.error) {
-        toast.error(fileDelete?.error?.message || "Error deleting file");
+      if (error) {
+        toast.error(error.message || "Error deleting file");
         return;
       }
 
       toast.success(`${file.name} deleted successfully`);
       revalidator.revalidate();
     },
-    [getPath, carbon?.storage, revalidator]
+    [getPath, carbon, company.id, revalidator]
   );
 
   return { upload, deleteFile, getPath };

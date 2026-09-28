@@ -65,7 +65,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       .select(
         "id, salesOrderLineId, shipped, serialNumber, salesOrderLine:salesOrderLineId(assetId, description, fixedAsset:assetId(name, fixedAssetId, serialNumber))"
       )
-      .eq("shipmentId", shipmentId);
+      .eq("shipmentId", shipmentId)
+      .eq("companyId", companyId);
 
     fixedAssetLines = (faLineRecords.data ?? [])
       .filter((row) => {
@@ -108,7 +109,7 @@ export default function ShipmentRoute() {
   return (
     <div className="flex h-[calc(100dvh-var(--topbar-height)-var(--content-inset))] overflow-y-auto scrollbar-hide w-full">
       <div className="h-full p-4 w-full max-w-5xl mx-auto">
-        <div className="flex flex-col gap-2 pb-16 w-full">
+        <div className="flex flex-col gap-4 pb-16 w-full">
           <Outlet />
         </div>
       </div>

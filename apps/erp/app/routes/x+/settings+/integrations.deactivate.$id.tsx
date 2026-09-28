@@ -4,7 +4,7 @@ import { flash } from "@carbon/auth/session.server";
 import { integrations as availableIntegrations } from "@carbon/ee";
 import { getIntegrationServerHooks } from "@carbon/ee/hooks.server";
 import { isIntegrationWhitelisted } from "@carbon/ee/plan";
-import { requirePlan } from "@carbon/ee/plan.server";
+import { requireFeature } from "@carbon/ee/plan.server";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
 import {
@@ -23,7 +23,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (!integrationId) throw new Error("Integration ID not found");
 
   if (!isIntegrationWhitelisted(integrationId)) {
-    await requirePlan({
+    await requireFeature({
       request,
       client,
       companyId,

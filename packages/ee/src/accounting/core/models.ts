@@ -115,7 +115,7 @@ export const AccountingSyncSchema = z.object({
   syncType: z.enum(["webhook", "scheduled", "trigger"]),
   syncDirection: SyncDirectionSchema,
   entities: z.array(z.custom<AccountingEntity>()),
-  metadata: z.record(z.any()).optional()
+  metadata: z.record(z.string(), z.any()).optional()
 });
 
 export const ENTITY_DEFINITIONS: Record<
@@ -197,6 +197,12 @@ export const ENTITY_DEFINITIONS: Record<
     label: "Journal Entries",
     type: "transaction",
     supportedDirections: ["push-to-accounting"]
+  },
+  charge: {
+    label: "Card Charges",
+    type: "transaction",
+    dependsOn: ["vendor"],
+    supportedDirections: ["push-to-accounting"]
   }
 };
 
@@ -244,6 +250,15 @@ export const DEFAULT_SYNC_CONFIG: GlobalSyncConfig = {
       // connecting an accounting integration means Carbon's automated GL
       // postings mirror to it. Manual journals are excluded by POSTING_POLICY
       // (syncable: false), not by this flag.
+      enabled: true,
+      direction: "push-to-accounting",
+      owner: "carbon"
+    },
+    charge: {
+      // Card charges (Charge/Credit cardTransactions) push as the provider's
+      // native card-charge object; while enabled, their "Card Transaction"
+      // journals are DOC_BACKED-excluded per row (core/posting.ts) so the
+      // same spend is never both a journal entry and a charge.
       enabled: true,
       direction: "push-to-accounting",
       owner: "carbon"
@@ -323,6 +338,15 @@ export const POSTING_POLICY: Record<
     defaultEnabled: true,
     defaultGranularity: "individual"
   },
+  // New in the returns module. Left OFF by default so upgrading an existing
+  // integration never starts pushing a new journal type to the customer's
+  // ledger unasked — this keeps POSTING_SYNC_DEFAULT_SOURCE_TYPES at the
+  // frozen v2 set. Flip to true if returns should sync out of the box.
+  "Purchase Return Shipment": {
+    representation: "journal",
+    defaultEnabled: false,
+    defaultGranularity: "individual"
+  },
   "Transfer Receipt": {
     representation: "journal",
     defaultEnabled: true,
@@ -333,7 +357,30 @@ export const POSTING_POLICY: Record<
     defaultEnabled: true,
     defaultGranularity: "individual"
   },
+  // New in the returns module. Left OFF by default so upgrading an existing
+  // integration never starts pushing a new journal type to the customer's
+  // ledger unasked — this keeps POSTING_SYNC_DEFAULT_SOURCE_TYPES at the
+  // frozen v2 set. Flip to true if returns should sync out of the box.
+  "Sales Return Receipt": {
+    representation: "journal",
+    defaultEnabled: false,
+    defaultGranularity: "individual"
+  },
+  // New in the returns module (return-to-customer shipments; these used to
+  // post as "Sales Shipment", which pushed them through the always-on policy
+  // and double-counted them in shipment reporting). Same opt-in stance as the
+  // other two return types.
+  "Sales Return Shipment": {
+    representation: "journal",
+    defaultEnabled: false,
+    defaultGranularity: "individual"
+  },
   "Inventory Adjustment": {
+    representation: "journal",
+    defaultEnabled: true,
+    defaultGranularity: "individual"
+  },
+  "Card Transaction": {
     representation: "journal",
     defaultEnabled: true,
     defaultGranularity: "individual"
@@ -617,12 +664,17 @@ export const PostingSyncSettingsSchema = z.preprocess(
       };
     }
 
-    // Always-on: the set of syncing journal types is defined by POSTING_POLICY
-    // (journal-represented, non-Manual), never by stored per-type enables.
+    // Always-on for the frozen v2 set: those types sync regardless of stored
+    // per-type enables. Types shipped defaultEnabled: false (the return
+    // journals) are the exception — posting.ts pushes them only when the
+    // stored config explicitly enables them, so they are excluded here unless
+    // enabled.
     const enabledJournalTypes = JOURNAL_ENTRY_SOURCE_TYPES.filter(
       (sourceType) =>
         POSTING_POLICY[sourceType].representation === "journal" &&
-        POSTING_POLICY[sourceType].syncable !== false
+        POSTING_POLICY[sourceType].syncable !== false &&
+        (POSTING_POLICY[sourceType].defaultEnabled !== false ||
+          sourceTypes[sourceType].enabled)
     );
     const consolidation: "individual" | "daily" =
       enabledJournalTypes.length > 0 &&
@@ -701,7 +753,8 @@ export const SyncConfigSchema = z
         invoice: createEntityConfigSchema().optional(),
         payment: createEntityConfigSchema().optional(),
         inventoryAdjustment: createEntityConfigSchema().optional(),
-        journalEntry: createEntityConfigSchema().optional()
+        journalEntry: createEntityConfigSchema().optional(),
+        charge: createEntityConfigSchema().optional()
       })
       .optional()
   })
@@ -777,7 +830,7 @@ export const SyncOperationSchema = z.object({
   errorCode: z.string().nullable(),
   errorMessage: z.string().nullable(),
   externalId: z.string().nullable(),
-  metadata: z.record(z.any()).nullable(),
+  metadata: z.record(z.string(), z.any()).nullable(),
   createdBy: z.string(),
   createdAt: z.string(),
   updatedBy: z.string().nullable(),
@@ -879,7 +932,7 @@ export const ContactSchema = z.object({
       postalCode: z.string().nullish()
     })
   ),
-  raw: z.record(z.any())
+  raw: z.record(z.string(), z.any())
 });
 
 export const EmployeeSchema = z.object({
@@ -904,7 +957,7 @@ export const EmployeeSchema = z.object({
     })
     .optional(),
   updatedAt: z.string().datetime(),
-  raw: z.record(z.any()).optional()
+  raw: z.record(z.string(), z.any()).optional()
 });
 
 // ============================================================================
@@ -949,7 +1002,7 @@ export const SalesOrderSchema = z.object({
   customerReference: withNullable(z.string()),
   lines: z.array(SalesOrderLineSchema),
   updatedAt: z.string().datetime(),
-  raw: z.record(z.any()).optional()
+  raw: z.record(z.string(), z.any()).optional()
 });
 
 // Sales Invoice schemas
@@ -966,6 +1019,9 @@ export const SalesInvoiceLineSchema = z.object({
   // not every provider selects it; push this to any payload that declares a
   // currency code, since unitPrice above is base.
   convertedUnitPrice: withNullable(z.number()).optional(),
+  shippingCost: z.number().default(0),
+  addOnCost: z.number().default(0),
+  nonTaxableAddOnCost: z.number().default(0),
   taxPercent: z.number(),
   lineAmount: z.number()
 });
@@ -987,8 +1043,15 @@ export const SalesInvoiceSchema = z.object({
     "Credit Note Issued",
     "Return"
   ]),
-  currencyCode: z.string(),
+  currencyCode: z.string().min(1),
+  baseCurrencyCode: z.string().min(1),
+  baseCurrencyDecimalPlaces: z.number().int().nonnegative(),
+  currencyDecimalPlaces: z.number().int().nonnegative(),
+  headerShippingCost: z.number(),
+  /** Original posted shipping account; null before posting or when no shipping. */
+  shippingRevenueAccountId: z.string().nullable(),
   exchangeRate: z.number(),
+  postingDate: z.string().nullish(),
   dateIssued: withNullable(z.string()),
   dateDue: withNullable(z.string()),
   datePaid: withNullable(z.string()),
@@ -1000,7 +1063,7 @@ export const SalesInvoiceSchema = z.object({
   balance: z.number(),
   lines: z.array(SalesInvoiceLineSchema),
   updatedAt: z.string().datetime(),
-  raw: z.record(z.any()).optional()
+  raw: z.record(z.string(), z.any()).optional()
 });
 
 // Bill (Purchase Invoice) schemas
@@ -1050,7 +1113,7 @@ export const BillSchema = z.object({
   supplierReference: withNullable(z.string()),
   lines: z.array(BillLineSchema),
   updatedAt: z.string().datetime(),
-  raw: z.record(z.any()).optional()
+  raw: z.record(z.string(), z.any()).optional()
 });
 
 // Purchase Order schemas
@@ -1101,7 +1164,7 @@ export const PurchaseOrderSchema = z.object({
   supplierReference: withNullable(z.string()),
   lines: z.array(PurchaseOrderLineSchema),
   updatedAt: z.string().datetime(),
-  raw: z.record(z.any()).optional()
+  raw: z.record(z.string(), z.any()).optional()
 });
 
 // ============================================================================
@@ -1132,7 +1195,7 @@ export const ItemSchema = z.object({
   isSold: z.boolean(),
   isTrackedAsInventory: z.boolean(),
   updatedAt: z.string(),
-  raw: z.record(z.any()).optional()
+  raw: z.record(z.string(), z.any()).optional()
 });
 
 // ============================================================================
@@ -1152,7 +1215,7 @@ export const InventoryAdjustmentSchema = z.object({
   inventoryAccount: z.string(), // resolved GL account from accountDefault (rawMaterialsAccount for Buy items, finishedGoodsAccount for Make / Buy and Make)
   adjustmentVarianceAccount: z.string(), // GL account code from accountDefault
   updatedAt: z.string().datetime(),
-  raw: z.record(z.any()).optional()
+  raw: z.record(z.string(), z.any()).optional()
 });
 
 // ============================================================================
@@ -1202,5 +1265,5 @@ export const JournalEntrySchema = z.object({
   reversal: z.boolean(),
   lines: z.array(JournalEntryLineSchema),
   updatedAt: z.string(),
-  raw: z.record(z.any()).optional()
+  raw: z.record(z.string(), z.any()).optional()
 });

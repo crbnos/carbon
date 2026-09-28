@@ -26,26 +26,33 @@ export const SEO = {
   },
   api: {
     intro: {
-      title: "API reference",
-      description: "Carbon's REST API — every table and view is an endpoint.",
+      title: "Data API",
+      description:
+        "Direct REST access to Carbon's tables and views — the escape hatch under the Carbon API.",
     },
     auth: {
-      title: "API authentication",
+      title: "Data API authentication",
       description: "Create a scoped API key, send it as a bearer token.",
     },
   },
-  mcp: {
+  carbonApi: {
     intro: {
-      title: "MCP server",
+      title: "The Carbon API",
+      description:
+        "Carbon's service layer — the safe way to read and write, with validation and permissions built in.",
+    },
+    mcp: {
+      title: "Connect over MCP",
       description: "Connect Carbon to Claude, Cursor, and other AI clients over MCP.",
     },
     auth: {
-      title: "MCP authentication",
-      description: "Authenticate MCP clients with OAuth or a scoped API key.",
+      title: "Carbon API authentication",
+      description: "Authenticate with OAuth or a scoped API key.",
     },
-    tools: {
-      title: "MCP tools",
-      description: "1,200+ tools, reached through one lean discovery pattern.",
+    sdks: {
+      title: "Client SDKs",
+      description:
+        "Generate a typed client in any language from the Carbon API's OpenAPI spec.",
     },
   },
   // Per-guide blurb, keyed by flow slug — shared by every chapter of that guide.

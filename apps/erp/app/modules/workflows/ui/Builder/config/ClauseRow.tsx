@@ -1,12 +1,15 @@
+import type { Clause, ValueType, WorkflowIssue } from "@carbon/ee/workflows";
+import {
+  expectedClauseRightType,
+  operatorsForType
+} from "@carbon/ee/workflows";
 import { Combobox, cn, IconButton } from "@carbon/react";
 import type { Operator } from "@carbon/utils";
-import type { Clause, ValueType, WorkflowIssue } from "@carbon/workflows";
-import { expectedClauseRightType, operatorsForType } from "@carbon/workflows";
 import { useLingui } from "@lingui/react/macro";
 import type React from "react";
 import { memo, useEffect, useMemo } from "react";
 import { LuX } from "react-icons/lu";
-import OperatorCombobox from "~/modules/storage-rules/ui/OperatorCombobox";
+import OperatorCombobox from "~/modules/inventory/ui/StorageRules/OperatorCombobox";
 import {
   propertyLabelKey,
   useWorkflowCatalog,

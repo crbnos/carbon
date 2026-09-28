@@ -16,6 +16,7 @@ import type { ValidationBehaviorOptions } from "../internal/getInputProps";
 type FormInputOTPProps = {
   name: string;
   label?: ReactNode;
+  autoFocus?: boolean;
   isConfigured?: boolean;
   isOptional?: boolean;
   isRequired?: boolean;
@@ -30,6 +31,7 @@ const InputOTP = forwardRef<HTMLInputElement, FormInputOTPProps>(
     {
       name,
       label,
+      autoFocus,
       isConfigured,
       isOptional,
       isRequired,
@@ -95,6 +97,7 @@ const InputOTP = forwardRef<HTMLInputElement, FormInputOTPProps>(
           value={value}
           onChange={setValue}
           ref={ref}
+          autoFocus={autoFocus}
           disabled={isDisabled}
         >
           <InputOTPGroup>

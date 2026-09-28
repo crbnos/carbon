@@ -39,6 +39,12 @@ A quote is editable only while it's a **"Draft"**. Finalizing moves it to **"Act
 
 Any status other than Draft locks the quote. If a supplier revises their pricing after you've finalized, you record the new numbers on a fresh quote rather than editing the old one, which keeps the paper trail intact for the comparison.
 
+## The supplier's link
+
+Sending the quote emails the supplier a private link along with the request — no Carbon login needed. The supplier prices the work directly on the page: for each quantity they choose, they enter a **unit price**, a **lead time** in days, **shipping cost**, and **tax**, and can attach a note per line. When every selected line has both a price and a lead time, **"Submit Quote"** lights up; they enter their name and email and submit. They can instead **"Decline Quote"**, optionally leaving a reason.
+
+Both flows are open only while the quote is a **"Draft"**; once submitted or declined the page is read-only, and a Draft past its expiration date shows an expired state. Each visit stamps the link's last-accessed time, so you can see whether the supplier has opened it. Whoever holds the URL can open the page — send it to the right contact and nowhere public.
+
 ## From quote to purchase order
 
 When you've picked a winning quote, **"Convert to Order"** turns it into a purchase order. You choose which lines and which quantity tier to buy, and Carbon raises a purchase order for that supplier with the item lines, the supplier's contact and location, and the exchange rate all carried across from the quote. If the quote came from an RFQ, the new order is linked back to that RFQ.
@@ -70,3 +76,9 @@ A supplier quote is editable only while its status is `Draft`. Any other status 
 
 ### Why is the Finalize or Send button disabled?
 Finalize/Send require the purchasing update permission and at least one line on the quote. Send is also disabled once the quote is already `Active`. Delete additionally requires the purchasing delete permission, an unlocked (Draft) quote, and an employee login.
+
+### Why is the supplier's "Submit Quote" button disabled (on the public link)?
+Submit lights up only when every selected line has both a unit price and a lead time greater than zero, and only while the quote is `Draft`. Once submitted or declined the page is read-only.
+
+### The supplier's link shows "expired or is no longer valid"
+A `Draft` supplier quote past its `expirationDate` shows the expired state and can no longer be submitted. Re-send a fresh request with a new expiration date.

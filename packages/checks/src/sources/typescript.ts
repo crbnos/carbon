@@ -20,17 +20,14 @@ const TYPESCRIPT_ROOTS = [
   // helpers live (a local `round` shadow hid here), and form/react own the
   // number inputs whose formatOptions are part of the storage round-trip.
   "packages/utils/src",
+  "packages/files/src",
   "packages/form/src",
   "packages/react/src",
-  "packages/printing/src",
-  "packages/workflows/src"
+  "packages/printing/src"
+  // (workflows source now lives under packages/ee/src, already scanned above)
 ];
 
-const EXCLUDED_DIRS = new Set([
-  "node_modules",
-  "image-resizer",
-  "logo-resizer"
-]);
+const EXCLUDED_DIRS = new Set(["node_modules"]);
 
 const isTest = (name: string) =>
   name.endsWith(".test.ts") ||
@@ -59,9 +56,27 @@ function walk(dir: string, out: SourceFile[], repoRootDir: string) {
   }
 }
 
-export function loadTypescriptFiles(root: string): SourceFile[] {
+// Every app and every package that handles a request: no-raw-forwarded-headers
+// covers auth and the smaller apps, which the numeric checks do not.
+export const REQUEST_HANDLING_ROOTS = [
+  "apps/erp/app",
+  "apps/mes/app",
+  "apps/academy/app",
+  "apps/starter/app",
+  "packages/auth/src",
+  "packages/database/supabase/functions",
+  "packages/ee/src",
+  "packages/jobs/src",
+  "packages/lib/src",
+  "packages/utils/src"
+];
+
+export function loadTypescriptFiles(
+  root: string,
+  roots: string[] = TYPESCRIPT_ROOTS
+): SourceFile[] {
   const out: SourceFile[] = [];
-  for (const dir of TYPESCRIPT_ROOTS) {
+  for (const dir of roots) {
     walk(join(root, dir), out, root);
   }
   return out;

@@ -96,7 +96,69 @@ export function isPaymentSyncbackEnabled(
 export type PostingSyncDocumentSyncFlags = {
   invoiceEnabled: boolean;
   billEnabled: boolean;
+  /** The `charge` entity is enabled — Charge card transactions push as the
+   * provider's native card-charge object instead of a journal entry. */
+  chargeEnabled?: boolean;
+  /** The provider can represent a merchant REFUND (a `Credit` card
+   * transaction) as a native object too (QBO `Credit: true`, Xero RECEIVE);
+   * Rillet posts a Credit as a charge with negative items. */
+  chargeCreditEnabled?: boolean;
 };
+
+export type CardTransactionType =
+  | "Charge"
+  | "Credit"
+  | "Payment"
+  | "Cashback"
+  | "Repayment";
+
+/**
+ * What the journal policy needs to know about the cardTransaction behind a
+ * "Card Transaction" journal — resolved by the caller with one query. A row
+ * with no supplier cannot become a provider charge (every provider object
+ * needs a vendor), so its journal keeps pushing: the policy and the charge
+ * syncer's `shouldSync` must agree, or the spend reaches the provider as
+ * neither.
+ */
+export type CardTransactionPolicyInput = {
+  type: CardTransactionType;
+  hasSupplier: boolean;
+};
+
+/**
+ * Providers whose native card-charge object can represent a merchant REFUND
+ * (a `Credit` cardTransaction): QBO `Purchase` with `Credit: true`, Xero a
+ * `RECEIVE` bank transaction on the card account, Rillet a charge with
+ * NEGATIVE items (its sandbox accepted, stored and returned a `-59.49` item
+ * on 2026-09-10). Read by the reconcile executor / event planner
+ * (`docSync.chargeCreditEnabled`) and mirrored by each charge syncer's
+ * `shouldSync`, so the policy and the syncer can never disagree.
+ */
+export const CHARGE_CREDIT_PROVIDERS: ReadonlySet<string> = new Set([
+  "xero",
+  "quickbooks",
+  "rillet"
+]);
+
+/** Native card-document deletion is implemented and checked by each adapter. */
+export const CHARGE_NATIVE_VOID_PROVIDERS: ReadonlySet<string> = new Set([
+  "xero",
+  "quickbooks",
+  "rillet"
+]);
+
+/** Whether this card transaction's journal is replaced by a synced charge. */
+export function isChargeBackedCardTransaction(
+  cardTransaction: CardTransactionPolicyInput | null | undefined,
+  docSync: PostingSyncDocumentSyncFlags
+): boolean {
+  if (!cardTransaction || !docSync.chargeEnabled) return false;
+  if (!cardTransaction.hasSupplier) return false;
+  if (cardTransaction.type === "Charge") return true;
+  if (cardTransaction.type === "Credit")
+    return docSync.chargeCreditEnabled === true;
+  return false;
+}
 
 export type JournalPostingPolicyDecision =
   | { kind: "push"; granularity: PostingGranularity }
@@ -147,6 +209,12 @@ export function getJournalPostingPolicyDecision(args: {
    */
   paymentFamily?: "ar" | "ap" | null;
   inventoryAdjustmentEntitySyncEnabled?: boolean;
+  /**
+   * For "Card Transaction" journals: the backing cardTransaction, resolved by
+   * the caller (see {@link CardTransactionPolicyInput}). Null when unknown —
+   * treated as no charge backing, so the journal pushes.
+   */
+  cardTransaction?: CardTransactionPolicyInput | null;
 }): JournalPostingPolicyDecision {
   const { settings } = args;
 
@@ -183,6 +251,24 @@ export function getJournalPostingPolicyDecision(args: {
     };
   }
 
+  // Per ROW, not per source type: a "Card Transaction" journal is backed by a
+  // provider charge object only when the charge entity is enabled AND the
+  // card transaction is a Charge/Credit (vendor-facing, carries lines). A
+  // statement Payment, Cashback or Repayment journal on the same source type
+  // keeps pushing as a journal entry — Rillet/QBO/Xero have no charge object
+  // for those money movements.
+  if (
+    sourceType === "Card Transaction" &&
+    isChargeBackedCardTransaction(args.cardTransaction, args.docSync)
+  ) {
+    return {
+      kind: "exclude",
+      reason: "DOC_BACKED",
+      message: `Card transaction (${args.cardTransaction?.type}) is document-backed and excluded from posting sync (the synced charge already books it)`,
+      backingDocument: { entityType: "charge" }
+    };
+  }
+
   const config = settings.sourceTypes[sourceType];
 
   if (policy.representation === "journal") {
@@ -196,6 +282,17 @@ export function getJournalPostingPolicyDecision(args: {
         reason: "MANUAL_DISABLED",
         message:
           "Manual journals are never synced — the external ledger owns manual journals; Carbon syncs only its automated postings"
+      };
+    }
+
+    // Types shipped default-off (the return journals) are strictly opt-in:
+    // an upgraded integration must not start pushing a new journal type to
+    // the customer's ledger unasked. Always-on types stay always-on.
+    if (policy.defaultEnabled === false && !config?.enabled) {
+      return {
+        kind: "exclude",
+        reason: "SOURCE_TYPE_DISABLED",
+        message: `Source type "${sourceType}" is disabled — enable it in the accounting sync settings to push these journals`
       };
     }
     return { kind: "push", granularity: config.granularity };
@@ -413,6 +510,7 @@ export function parseJournalEntrySyncEntityId(entityId: string): {
 
 export const JOURNAL_ENTRY_SYNC_ERROR_CODES = [
   "UNMAPPED_ACCOUNTS",
+  "UNMAPPED_TAX_CODES",
   // A slot-configured dimension value on a journal line has no provider
   // option mapping (and autoCreate did not resolve it) while the company's
   // onUnmappedDimensionValue policy is "warn" — user-fixable by mapping
@@ -448,7 +546,12 @@ export const JOURNAL_ENTRY_SYNC_ERROR_CODES = [
   // NOT an account-mapping problem: it self-resolves once the document syncs
   // (the outbound sweep / manual Retry re-drives the payment). Kept distinct
   // from UNMAPPED_ACCOUNTS so it stops masquerading as a missing account.
-  "UNSYNCED_DOCUMENT"
+  "UNSYNCED_DOCUMENT",
+  // A Carbon payment settles a bill that was written to Rillet as a native
+  // REIMBURSEMENT, and Rillet publishes no reimbursement-payment endpoint —
+  // the document stays UNPAID there until it is marked paid in Rillet by hand.
+  // Retryable once Rillet ships the endpoint.
+  "UNSUPPORTED_REIMBURSEMENT_PAYMENT"
 ] as const;
 
 export type JournalEntrySyncErrorCode =

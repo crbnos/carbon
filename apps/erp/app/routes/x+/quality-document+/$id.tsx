@@ -3,6 +3,14 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import type { Database } from "@carbon/database";
+import {
+  approveRequest,
+  canApproveRequest,
+  canCancelRequest,
+  getLatestApprovalRequestForDocument,
+  isApprovalRequired,
+  rejectRequest
+} from "@carbon/ee/approvals.server";
 import { validationError, validator } from "@carbon/form";
 import { trigger } from "@carbon/jobs";
 import { getLogger } from "@carbon/logger";
@@ -20,15 +28,7 @@ import {
 import QualityDocumentEditor from "~/modules/quality/ui/Documents/QualityDocumentEditor";
 import QualityDocumentHeader from "~/modules/quality/ui/Documents/QualityDocumentHeader";
 import QualityDocumentProperties from "~/modules/quality/ui/Documents/QualityDocumentProperties";
-import {
-  approveRequest,
-  canApproveRequest,
-  canCancelRequest,
-  getLatestApprovalRequestForDocument,
-  getTagsList,
-  isApprovalRequired,
-  rejectRequest
-} from "~/modules/shared";
+import { getTagsList } from "~/modules/shared";
 import { getDatabaseClient } from "~/services/database.server";
 import { detailBreadcrumb, type Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -109,9 +109,12 @@ export const handle: Handle = {
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { userId } = await requirePermissions(request, {
-    update: "quality"
-  });
+  const { companyId: callerCompanyId, userId } = await requirePermissions(
+    request,
+    {
+      update: "quality"
+    }
+  );
 
   const { id } = params;
   if (!id) throw new Error("Could not find id");
@@ -135,7 +138,18 @@ export async function action({ request, params }: ActionFunctionArgs) {
     id
   );
 
-  if (!approvalRequest.data || approvalRequest.data.id !== approvalRequestId) {
+  // The request is read through the service role by a URL id, so it must be
+  // proven to be this company's before anything acts on it.
+  if (
+    !approvalRequest.data ||
+    approvalRequest.data.id !== approvalRequestId ||
+    approvalRequest.data.companyId !== callerCompanyId
+  ) {
+    logger.error("Quality document approval request not found", {
+      companyId: callerCompanyId,
+      documentId: id,
+      approvalRequestId
+    });
     throw redirect(
       path.to.qualityDocument(id),
       await flash(request, error(null, "Approval request not found"))
@@ -247,6 +261,16 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
+  // bypassRls makes `client` the service role, so the URL id is only proven
+  // to exist — not to be this company's.
+  if (document.data.companyId !== companyId) {
+    logger.error("Quality document is not in the caller's company", {
+      companyId,
+      documentId: id
+    });
+    throw redirect(path.to.qualityDocuments);
+  }
+
   return {
     document: document.data,
     versions: getQualityDocumentVersions(client, document.data, companyId),
@@ -269,7 +293,7 @@ export default function QualityDocumentRoute() {
           <div className="flex flex-grow overflow-hidden">
             <ResizablePanels
               content={
-                <div className="bg-card h-[calc(100dvh-var(--topbar-height)-var(--header-height)-var(--content-inset))] overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent w-full">
+                <div className="bg-muted dark:bg-card h-[calc(100dvh-var(--topbar-height)-var(--header-height)-var(--content-inset))] overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent w-full">
                   <QualityDocumentEditor />
                   <Outlet />
                 </div>

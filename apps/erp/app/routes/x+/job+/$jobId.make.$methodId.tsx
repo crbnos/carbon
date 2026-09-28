@@ -26,6 +26,7 @@ import {
 } from "~/modules/production/ui/Jobs";
 import JobMakeMethodTools from "~/modules/production/ui/Jobs/JobMakeMethodTools";
 import { getModelByItemId, getTagsList } from "~/modules/shared";
+import { requireCompanyRecord } from "~/modules/shared/shared.server";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
@@ -37,6 +38,13 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { jobId, methodId } = params;
   if (!jobId) throw new Error("Could not find jobId");
   if (!methodId) throw new Error("Could not find methodId");
+
+  // `client` is the service role (bypassRls) and every read keys on the URL
+  // ids: the make method must belong to this job and company.
+  await requireCompanyRecord(client, "jobMakeMethod", companyId, {
+    id: methodId,
+    jobId
+  });
 
   const [job, makeMethod, materials, operations, tags] = await Promise.all([
     getJob(client, jobId),

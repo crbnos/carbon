@@ -1,3 +1,4 @@
+import type { KyselyTx } from "@carbon/database/client";
 import { buildDimensionValueMappingEntityId } from "../../../core/dimension-mapping";
 import {
   type CostingLine,
@@ -14,6 +15,7 @@ import type { Accounting, ShouldSyncContext } from "../../../core/types";
 import type {
   Rillet,
   RilletBillCreate,
+  RilletReimbursementCreate,
   RilletTransactionWriteOmit
 } from "../models";
 import { buildRilletIdempotencyKey } from "../provider";
@@ -23,6 +25,7 @@ import {
   carbonExternalReference,
   loadRilletAccountCodesById,
   RilletTransactionSyncer,
+  toRilletExchangeRate,
   toRilletMoney,
   writeDroppingUnregisteredReferences
 } from "./shared";
@@ -120,24 +123,25 @@ function describeCostingLine(line: CostingLine): string | undefined {
 /**
  * Map a Carbon bill to the Rillet bill create payload. Pure — exported for
  * tests. `postingJournalLines` are the bill's costing lines (AP control line
- * already excluded by `loadBillCostingLines`); the mapper re-runs the AP
- * filter defensively so direct callers may pass raw journal lines too.
+ * already excluded by `loadBillCostingLines`). The mapper accepts costing only.
  *
  * The costing lines carry base-currency debit-signed amounts;
  * `bill.exchangeRate` converts them to the invoice's transaction currency
- * (pass-through at rate 1). Throws structured Warnings when the journal is
+ * (rounded at the document currency boundary). Throws structured Warnings when the journal is
  * missing (invoice not posted / accounting off) or an account is unmapped.
  */
 export function mapBillToRilletBill(args: {
   bill: Accounting.Bill;
+  documentTotal: number;
+  decimalPlaces: number;
+  baseCurrencyCode: string;
+  postingDate: string;
   vendorRemoteId: string;
   accountCodesById: ReadonlyMap<string, string>;
   subsidiaryId: string | null;
   companyId: string;
   /** Costing lines of the bill's posted Purchase Invoice journal, debit-signed. */
   postingJournalLines: BillPostingJournalLine[];
-  /** accountDefault.payablesAccount — the AP control line(s) to exclude. */
-  payablesAccountId: string | null;
   /**
    * Slot config + resolved Field-value ids (same contract as the journal
    * mapper's RilletJournalDimensionArgs). Slotted line dimensions with no
@@ -158,12 +162,7 @@ export function mapBillToRilletBill(args: {
     });
   }
 
-  // Defensive re-filter: loadBillCostingLines already dropped the AP control
-  // line, but keep the filter so raw journal lines (tests) also work.
-  const costingLines = args.postingJournalLines.filter(
-    (line) =>
-      line.accountId === null || line.accountId !== args.payablesAccountId
-  );
+  const costingLines = args.postingJournalLines;
 
   const unmapped = new Set<string>();
   const lineIdsWithoutAccount: string[] = [];
@@ -202,11 +201,12 @@ export function mapBillToRilletBill(args: {
   }
 
   // FX: convert base-currency amounts to the invoice's transaction currency
-  // (pass-through at rate 1) and pin exchange_rate on the payload below.
-  const transactionLines = toTransactionCurrencyLines(
-    costingLines,
-    bill.exchangeRate
-  );
+  // (rounded at the document currency boundary) and pin exchange_rate on the payload below.
+  const transactionLines = toTransactionCurrencyLines(costingLines, {
+    exchangeRate: bill.exchangeRate,
+    documentTotal: args.documentTotal,
+    decimalPlaces: args.decimalPlaces
+  });
 
   const items: Rillet.BillItem[] = transactionLines.map((line) => {
     const fieldRefs: Rillet.ItemFieldRef[] = [];
@@ -231,15 +231,13 @@ export function mapBillToRilletBill(args: {
 
     return {
       account_code: args.accountCodesById.get(line.accountId!)!,
-      amount: toRilletMoney(line.amount, currency),
+      amount: toRilletMoney(line.amount, currency, args.decimalPlaces),
       ...(description ? { description } : {}),
       ...(fieldRefs.length > 0 ? { fields: fieldRefs } : {})
     };
   });
 
-  const billDate = toPostingDateString(
-    bill.dateIssued ?? new Date().toISOString()
-  );
+  const billDate = toPostingDateString(bill.dateIssued ?? args.postingDate);
 
   return {
     vendor_id: args.vendorRemoteId,
@@ -249,12 +247,47 @@ export function mapBillToRilletBill(args: {
     due_date: toPostingDateString(bill.dateDue ?? billDate),
     items,
     ...(args.subsidiaryId ? { subsidiary_id: args.subsidiaryId } : {}),
-    // Pin the provider exchange rate for FX bills (omit at parity rate 1).
-    ...(bill.exchangeRate !== 1 ? { exchange_rate: bill.exchangeRate } : {}),
+    // Pin the directed provider exchange rate for foreign-currency bills.
+    exchange_rate: toRilletExchangeRate({
+      baseCurrencyCode: args.baseCurrencyCode,
+      documentCurrencyCode: currency,
+      foreignPerBaseRate: bill.exchangeRate,
+      date: args.postingDate
+    }),
     external_references: [
       carbonExternalReference(bill.id),
       carbonCompanyExternalReference(args.companyId)
     ]
+  };
+}
+
+/** The `supplierType` the Ramp sync tags auto-created employee suppliers with. */
+const EMPLOYEE_SUPPLIER_TYPE = "Employee";
+
+/** Mapping metadata marking a bill that was written as a Rillet reimbursement. */
+const REIMBURSEMENT_REMOTE_KIND = "reimbursement";
+
+/**
+ * Re-shape a bill payload as a Rillet reimbursement: same vendor, items,
+ * dates, FX and references; the bill date becomes the reimbursement date and
+ * the caller supplies the payable account Rillet does not derive. Pure —
+ * exported for tests.
+ */
+export function toRilletReimbursement(
+  bill: RilletBillCreate,
+  payableAccountCode: string
+): RilletReimbursementCreate {
+  return {
+    vendor_id: bill.vendor_id,
+    items: bill.items,
+    reimbursement_date: bill.bill_date,
+    impact_date: bill.impact_date ?? bill.bill_date,
+    payable_account_code: payableAccountCode,
+    ...(bill.subsidiary_id ? { subsidiary_id: bill.subsidiary_id } : {}),
+    ...(bill.exchange_rate ? { exchange_rate: bill.exchange_rate } : {}),
+    ...(bill.external_references
+      ? { external_references: bill.external_references }
+      : {})
   };
 }
 
@@ -264,6 +297,12 @@ export class RilletBillSyncer extends RilletTransactionSyncer<
   RilletTransactionWriteOmit
 > {
   private accountCodesByIdPromise?: Promise<Map<string, string>>;
+  /** Suppliers already classified this drain: supplierId → is an Employee. */
+  private readonly employeeSupplierIds = new Map<string, boolean>();
+  /** Bills routed to `POST /reimbursements`: localId → payable account code. */
+  private readonly reimbursementPayableCodes = new Map<string, string>();
+  /** Remote ids created as reimbursements, so the mapping can say so. */
+  private readonly reimbursementRemoteIds = new Set<string>();
 
   protected get pushOnlyEntityLabel(): string {
     return "Bills";
@@ -279,9 +318,64 @@ export class RilletBillSyncer extends RilletTransactionSyncer<
     return this.accountCodesByIdPromise;
   }
 
+  /**
+   * An employee reimbursement is a purchase invoice to a supplier of the
+   * "Employee" type (what the Ramp reimbursement sync creates). It is always
+   * written as Rillet's native reimbursement object, never as a bill.
+   */
+  private async isReimbursement(local: Accounting.Bill): Promise<boolean> {
+    if (!local.supplierId) return false;
+    const cached = this.employeeSupplierIds.get(local.supplierId);
+    if (cached !== undefined) return cached;
+    const row = await this.database
+      .selectFrom("supplier")
+      .leftJoin("supplierType", "supplierType.id", "supplier.supplierTypeId")
+      .select("supplierType.name as supplierTypeName")
+      .where("supplier.id", "=", local.supplierId)
+      .where("supplier.companyId", "=", this.companyId)
+      .executeTakeFirst();
+    const isEmployee = row?.supplierTypeName === EMPLOYEE_SUPPLIER_TYPE;
+    this.employeeSupplierIds.set(local.supplierId, isEmployee);
+    return isEmployee;
+  }
+
+  /** Stamp the mapping with the remote object kind so a void deletes the right thing. */
+  protected async linkEntities(
+    tx: KyselyTx,
+    localId: string,
+    remoteId: string,
+    remoteUpdatedAt?: Date
+  ): Promise<void> {
+    await super.linkEntities(tx, localId, remoteId, remoteUpdatedAt);
+    if (this.reimbursementRemoteIds.has(remoteId)) {
+      await createMappingService(tx, this.companyId).link(
+        this.entityType,
+        localId,
+        this.provider.id,
+        remoteId,
+        { metadata: { remoteKind: REIMBURSEMENT_REMOTE_KIND } }
+      );
+    }
+  }
+
   // =================================================================
   // 1. LOCAL FETCH (Single + Batch)
   // =================================================================
+
+  protected isVoided(local: Accounting.Bill): boolean {
+    return local.status === "Voided";
+  }
+
+  protected async deleteRemote(
+    remoteId: string,
+    metadata?: Record<string, unknown>
+  ): Promise<void> {
+    if (metadata?.remoteKind === REIMBURSEMENT_REMOTE_KIND) {
+      await this.rilletProvider.deleteReimbursement(remoteId);
+      return;
+    }
+    await this.rilletProvider.deleteBill(remoteId);
+  }
 
   async fetchLocal(id: string): Promise<Accounting.Bill | null> {
     const bills = await this.fetchBillsByIds([id]);
@@ -491,11 +585,18 @@ export class RilletBillSyncer extends RilletTransactionSyncer<
       );
     }
 
-    const payablesAccountId = await this.getPayablesAccountId();
-    const { lines: costingLines } = await loadBillCostingLines(this.database, {
+    const {
+      lines: costingLines,
+      payablesAccountId,
+      documentTotal,
+      decimalPlaces,
+      baseCurrencyCode,
+      postingDate,
+      currencyCode,
+      exchangeRate
+    } = await loadBillCostingLines(this.database, {
       companyId: this.companyId,
-      billId: local.id,
-      payablesAccountId
+      billId: local.id
     });
 
     // Send ALL dimensions on the bill: auto-provision every Rillet Field +
@@ -505,26 +606,45 @@ export class RilletBillSyncer extends RilletTransactionSyncer<
     const { fieldIdByDimensionId, fieldValueIdsByValue } =
       await this.resolveLineDimensions(costingLines);
 
+    const accountCodesById = await this.getAccountCodesById();
+
+    // An employee reimbursement is written to POST /reimbursements, which —
+    // unlike a bill — does not derive its payable: it takes the AP control
+    // account the posting credited. Resolve it now so upsertRemote can route.
+    if (await this.isReimbursement(local)) {
+      const payableAccountCode = payablesAccountId
+        ? accountCodesById.get(payablesAccountId)
+        : undefined;
+      if (!payableAccountCode) {
+        throw new JournalEntrySyncError({
+          errorCode: "UNMAPPED_ACCOUNTS",
+          warning: true,
+          message:
+            "Cannot sync reimbursement: its payables control account is not mapped to a Rillet account. Map it under the integration's Accounts tab, then retry.",
+          metadata: {
+            billId: local.id,
+            unmappedAccountIds: payablesAccountId ? [payablesAccountId] : []
+          }
+        });
+      }
+      this.reimbursementPayableCodes.set(local.id, payableAccountCode);
+    } else {
+      this.reimbursementPayableCodes.delete(local.id);
+    }
+
     return mapBillToRilletBill({
-      bill: local,
+      bill: { ...local, currencyCode, exchangeRate },
+      documentTotal,
+      decimalPlaces,
+      baseCurrencyCode,
+      postingDate,
       vendorRemoteId,
-      accountCodesById: await this.getAccountCodesById(),
+      accountCodesById,
       subsidiaryId: this.rilletProvider.subsidiaryId,
       companyId: this.companyId,
       postingJournalLines: costingLines,
-      payablesAccountId,
       dimensions: { fieldIdByDimensionId, fieldValueIdsByValue }
     });
-  }
-
-  /** accountDefault.payablesAccount — the AP control line to exclude. */
-  private async getPayablesAccountId(): Promise<string | null> {
-    const defaults = await this.database
-      .selectFrom("accountDefault")
-      .select("payablesAccount")
-      .where("companyId", "=", this.companyId)
-      .executeTakeFirst();
-    return defaults?.payablesAccount ?? null;
   }
 
   // =================================================================
@@ -536,6 +656,24 @@ export class RilletBillSyncer extends RilletTransactionSyncer<
     data: RilletBillCreate,
     localId: string
   ): Promise<string> {
+    const payableAccountCode = this.reimbursementPayableCodes.get(localId);
+    if (payableAccountCode) {
+      const created = await writeDroppingUnregisteredReferences(
+        toRilletReimbursement(data, payableAccountCode),
+        (payload) =>
+          this.rilletProvider.createReimbursement(
+            payload,
+            buildRilletIdempotencyKey({
+              companyId: this.companyId,
+              operation: "reimbursement",
+              localId
+            })
+          )
+      );
+      this.reimbursementRemoteIds.add(created.id);
+      return created.id;
+    }
+
     const created = await writeDroppingUnregisteredReferences(data, (payload) =>
       this.rilletProvider.createBill(
         payload,

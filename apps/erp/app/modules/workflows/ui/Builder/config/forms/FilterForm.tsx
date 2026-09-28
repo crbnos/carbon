@@ -1,3 +1,4 @@
+import type { Clause } from "@carbon/ee/workflows";
 import {
   Button,
   Command,
@@ -11,8 +12,6 @@ import {
   PopoverContent,
   PopoverTrigger
 } from "@carbon/react";
-
-import type { Clause } from "@carbon/workflows";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useMemo, useState } from "react";
 import { LuChevronDown, LuPlus } from "react-icons/lu";

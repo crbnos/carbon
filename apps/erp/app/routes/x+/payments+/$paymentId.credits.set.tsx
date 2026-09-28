@@ -19,11 +19,18 @@ const setCreditsValidator = z.object({
 });
 
 const rowsValidator = z.array(
-  z.object({
-    memoId: z.string().min(1),
-    invoiceId: z.string().min(1),
-    amount: z.number().positive()
-  })
+  z
+    .object({
+      memoId: z.string().min(1),
+      invoiceId: z.string().min(1),
+      amount: z.number().finite().nonnegative(),
+      sourceAmount: z.number().finite().nonnegative().optional()
+    })
+    .strict()
+    .refine(
+      (a) => a.amount > 0 || (a.sourceAmount ?? 0) > 0,
+      "Applied document amount must be positive"
+    )
 );
 
 export async function action({ request, params }: ActionFunctionArgs) {
@@ -66,7 +73,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   // The invoice side follows the payment's party: a customer's credits clear
   // sales invoices; a supplier's clear purchase invoices.
-  const payment = await getPayment(client, paymentId);
+  const payment = await getPayment(client, paymentId, companyId);
   if (payment.error || !payment.data) {
     throw redirect(
       path.to.payment(paymentId),

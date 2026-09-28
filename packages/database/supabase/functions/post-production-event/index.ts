@@ -1,6 +1,6 @@
 import { serve } from "https://deno.land/std@0.175.0/http/server.ts";
 import { nanoid } from "https://deno.land/x/nanoid@v3.0.0/mod.ts";
-import z from "npm:zod@^3.24.1";
+import z from "npm:zod@^4.5.4";
 import { DB, getConnectionPool, getDatabaseClient } from "../lib/database.ts";
 import { datetime, getCompanyTimeZone } from "../lib/datetime.ts";
 import { corsPreflight, errorResponse, jsonResponse } from "../lib/response.ts";
@@ -63,7 +63,8 @@ serve(async (req: Request) => {
         .from("productionEvent")
         .select("*, jobOperation!inner(jobId, processId)")
         .eq("id", productionEventId)
-        .single(),
+        .eq("companyId", companyId)
+        .maybeSingle(),
       getDefaultPostingGroup(client, companyId),
       client
         .from("dimension")
@@ -74,6 +75,10 @@ serve(async (req: Request) => {
     ]);
 
     if (productionEvent.error) throw new Error("Failed to fetch production event");
+    // Service-role client: a production event outside companyId is a 404.
+    if (!productionEvent.data) {
+      return errorResponse("Production event not found", 404);
+    }
     if (accountDefaults?.error || !accountDefaults?.data) {
       throw new Error("Error getting account defaults");
     }

@@ -40,7 +40,7 @@ export const departmentValidator = z.object({
 export const employeeJobValidator = z.object({
   title: zfd.text(z.string().optional()),
   startDate: zfd.text(z.string().optional()),
-  locationId: zfd.text(z.string().optional()),
+  locationId: z.string().min(1, { message: "Location is required" }),
   shiftId: zfd.text(z.string().optional()),
   departmentId: zfd.text(z.string().optional()),
   managerId: zfd.text(z.string().optional())

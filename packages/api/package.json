@@ -1,0 +1,29 @@
+{
+  "name": "@carbon/api",
+  "private": true,
+  "version": "0.0.0",
+  "sideEffects": false,
+  "exports": {
+    ".": "./src/index.ts",
+    "./schema": "./src/schema.ts"
+  },
+  "scripts": {
+    "clean": "rimraf .turbo node_modules dist",
+    "lint": "biome lint --write ",
+    "test": "vitest run --passWithNoTests",
+    "typecheck": "tsgo --noEmit"
+  },
+  "dependencies": {
+    "@orpc/client": "catalog:",
+    "@orpc/contract": "catalog:",
+    "@orpc/openapi-client": "catalog:",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@carbon/config": "workspace:*",
+    "@orpc/openapi": "catalog:",
+    "tsx": "catalog:",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  }
+}

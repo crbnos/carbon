@@ -1,13 +1,15 @@
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { requirePlan } from "@carbon/ee/plan.server";
+import { upsertApiKey } from "@carbon/ee/api-keys.server";
+import { requireFeature } from "@carbon/ee/plan.server";
 import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { data, redirect, useNavigate, useParams } from "react-router";
 import { useRouteData } from "~/hooks";
 import type { ApiKey } from "~/modules/settings";
-import { ApiKeyForm, apiKeyValidator, upsertApiKey } from "~/modules/settings";
+import { ApiKeyForm, apiKeyValidator } from "~/modules/settings";
+import { invalidateApiKeyCache } from "~/modules/settings/settings.server";
 import { getParams, path } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
@@ -16,7 +18,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     update: "users"
   });
 
-  await requirePlan({
+  await requireFeature({
     request,
     client,
     companyId,
@@ -55,6 +57,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
       )
     );
   }
+
+  // A scope/expiry edit must not keep authenticating from the 30s auth cache.
+  await invalidateApiKeyCache(id, companyId);
 
   throw redirect(
     `${path.to.apiKeys}?${getParams(request)}`,

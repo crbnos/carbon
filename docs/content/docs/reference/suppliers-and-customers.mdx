@@ -23,7 +23,44 @@ The asymmetry to remember: **supplier status is a fixed four-value set; customer
 
 ## What they share
 
-Both records carry the same satellite shape: **contacts**, **locations/addresses**, and **payment, shipping, and tax** defaults. Payment terms, currency, and tax settings live on those satellites, not on the core record. Both also have a human-readable id (`SUP…` / `CUS…`) on top of their internal key, and both can expose an external **portal**: suppliers respond to <Term id="rfq">RFQs</Term> through a digital-quote link; customers track their orders through a customer portal.
+Both records carry the same satellite shape: **contacts**, **locations/addresses**, and **payment, shipping, and tax** defaults. Payment terms, currency, and tax settings live on those satellites, not on the core record. Both also have a human-readable id (`SUP…` / `CUS…`) on top of their internal key, and both can expose an external **portal**: suppliers respond to <Term id="rfq">RFQs</Term> through a digital-quote link; customers track their orders through a [customer portal](/docs/reference/customer-portal).
+
+## Bank accounts
+
+Both parties can carry bank accounts: the account you pay a supplier into, and the one you refund a customer to. They live on the **Bank Accounts** tab of the record, and they are reference data. Nothing in Carbon moves money from them; a person reads the details and enters them in their own banking system.
+
+<Screenshot src="/screens/reference-bank-accounts.png" label="Customer Bank Accounts tab listing two Indian accounts, one in USD and one in INR, each showing a masked account number with its IFSC and SWIFT codes" caption="Currency, bank, and country sit on every row, so two accounts at different banks stay distinguishable without opening either." ratio="wide" />
+
+The fields adapt to the account's country, because banking identifiers are not the same everywhere. Pick France and the account field is labelled **"IBAN"** with no routing field, since an <Term>IBAN</Term> already identifies the bank. Pick India and you get an **"IFSC Code"** field plus a required <Term id="swift-bic">SWIFT / BIC</Term>, because one routes the payment inside the country and the other gets it there.
+
+<FieldTable>
+  <Field name="Name" required>Your label for the account, so two accounts at one bank stay distinguishable.</Field>
+  <Field name="Account Holder">Only needed when it differs from the party's own name.</Field>
+  <Field name="Bank Name" required>The bank the account sits with.</Field>
+  <Field name="Bank Address" required>Printed onto payment files; correspondent banks route international wires on it.</Field>
+  <Field name="Country" required>Selects which validation rules apply to everything below.</Field>
+  <Field name="Currency">The currency the account settles in.</Field>
+  <Field name="Account Number / IBAN" required>Labelled by country. Validated by checksum where the scheme has one.</Field>
+  <Field name="Routing code" required>Named for the country: *Routing Number (ABA)*, *Sort Code*, *BSB*, *IFSC Code*, or *Transit & Institution*. Absent for countries whose IBAN carries it.</Field>
+  <Field name="SWIFT / BIC">Required wherever the country expects a cross-border payment to route.</Field>
+  <Field name="Notes">Free text for anything the fixed fields do not cover.</Field>
+</FieldTable>
+
+<Callout type="warn" title="Bank details sit behind accounting permissions, not purchasing or sales">
+Most people who can open a supplier should not see its bank account, so the tab is gated on **accounting** rather than the module that owns the record. Without `accounting` view permission the tab does not appear in the sidebar, and opening its URL directly is refused. Adding, editing, and deleting are gated separately.
+</Callout>
+
+Account numbers display masked, showing the last four characters with a toggle to reveal the rest. That deters someone reading over your shoulder or catching it in a screenshot; it is not an access control, and the permission above is what actually protects the data.
+
+<Callout type="note" title="Validation proves the format, never the owner">
+A checksum confirms an <Term id="iban">IBAN</Term> was typed correctly. It cannot tell you the account belongs to the supplier you think it does. Confirming that is an out-of-band step, a call to a number you already had, and it is the control that stops payment-redirection fraud.
+</Callout>
+
+## Documents
+
+Both records have a **Documents** tab for files that belong to the party itself rather than to one transaction: a W-9, an insurance certificate, a signed master agreement. Drop a file on the tab and it is filed against that record, and it also appears in the shared [document library](/docs/reference/documents), so you can find it either by opening the party or by searching.
+
+<Screenshot src="/screens/reference-party-documents.png" label="Customer Documents tab listing two uploaded files with their size and upload date, above the drag-and-drop area" caption="Files filed here belong to the party, not to any one order." ratio="wide" />
 
 ## Related
 

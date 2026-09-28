@@ -91,6 +91,26 @@ export const terms = {
     definition: msg`A Make to Order component that gets its own job and routing inside the parent's build.`,
     href: "/docs/reference/methods#kit-or-subassembly"
   },
+  "assembly-step-motion": {
+    term: msg`Motion`,
+    definition: msg`The path this step's components travel into place during playback; worked out from the model, or drawn by hand with Edit Path.`,
+    href: "/docs/reference/assembly-instructions#playback-settings"
+  },
+  "assembly-step-camera": {
+    term: msg`Camera`,
+    definition: msg`The view a step plays from; without a saved view the step frames its own components.`,
+    href: "/docs/reference/assembly-instructions#playback-settings"
+  },
+  "assembly-step-build-aside": {
+    term: msg`Build off to the side`,
+    definition: msg`Builds this step's components beside the model as a group, then carries the group in at a later join step.`,
+    href: "/docs/reference/assembly-instructions#building-a-group-off-to-the-side"
+  },
+  "assembly-step-hidden-components": {
+    term: msg`Hidden on this step`,
+    definition: msg`Components hidden only while this step plays, such as a fixture in the way; use the eye in the Components tab to hide one.`,
+    href: "/docs/reference/assembly-instructions#components-and-hidden-parts"
+  },
   kit: {
     term: msg`Kit`,
     definition: msg`A Make to Order component whose parts are issued together into the parent job — no separate build.`,
@@ -153,6 +173,11 @@ export const terms = {
     definition: msg`Where an operation runs; carries labor and quoting rates, with overhead the difference between them.`,
     href: "/docs/reference/work-centers"
   },
+  "operation-batch": {
+    term: msg`Operation batch`,
+    definition: msg`Unstarted job operations on one batchable process grouped to run together at a work center, sharing one setup and one timer whose time splits back per job in proportion to quantity.`,
+    href: "/docs/reference/batching"
+  },
   backflush: {
     term: msg`Backflush`,
     definition: msg`Automatic, prorated consumption of a job's untracked materials when output is reported — tracked materials are issued manually.`,
@@ -192,6 +217,10 @@ export const terms = {
     term: msg`Quote`,
     definition: msg`A priced sales quotation; Draft → Sent → Ordered, or ends Lost, Expired, or Cancelled.`,
     href: "/docs/reference/quotes"
+  },
+  "drop-shipment": {
+    term: msg`Drop shipment`,
+    definition: msg`A sales order shipped straight to a different customer and location than the ordering customer's header address; the shipment's destination overrides the header's.`
   },
   rfq: {
     term: msg`RFQ (request for quote)`,
@@ -552,6 +581,10 @@ export const terms = {
   "account-default-sales": {
     term: msg`Sales (default)`,
     definition: msg`Default revenue GL account credited when a sales invoice posts.`
+  },
+  "account-default-sales-shipping-revenue": {
+    term: msg`Shipping Revenue (default)`,
+    definition: msg`Revenue GL account credited for shipping charged to customers, posted on its own line; it must be a different account from the Sales default.`
   },
   "account-default-sales-discounts": {
     term: msg`Sales Discounts (default)`,
@@ -1714,8 +1747,12 @@ export const terms = {
     definition: msg`The outside suppliers that perform this process; each gets a row of pricing and lead-time inputs on the supplier process form.`
   },
   "process-complete-all-on-scan": {
-    term: msg`Complete all quantities on barcode scan`,
+    term: msg`Complete all quantities on kanban complete scan`,
     definition: msg`When on, scanning this process's operation barcode reports all remaining open quantity as complete in one action; turn off when operators routinely report partials.`
+  },
+  "batch-type": {
+    term: msg`Batch type`,
+    definition: msg`How a batchable process runs its grouped work: Sequential runs parts one after another on one machine (a saw or laser table), while Simultaneous runs them together in a single load (a furnace, oven, or plating bath).`
   },
 
   // ── Resources: Work centers (WorkCenterForm) ────────────────────────────
@@ -1972,7 +2009,7 @@ export const terms = {
   "api-key": {
     term: msg`API key`,
     definition: msg`A scoped secret sent on the carbon-key request header that authenticates programmatic calls to Carbon, carrying its own permissions and rate limit rather than a user session's.`,
-    href: "/docs/reference/api-keys"
+    href: "/docs/building/api-keys"
   },
   notification: {
     term: msg`Notification`,
@@ -2042,5 +2079,13 @@ export const terms = {
   "magic-link": {
     term: msg`Magic link`,
     definition: msg`Carbon's default passwordless sign-in: an emailed one-time link that signs you in when opened, with no password to remember or leak.`
+  },
+  iban: {
+    term: msg`IBAN`,
+    definition: msg`An International Bank Account Number: one string holding the country, bank, branch, and account, with two check digits. Because it already identifies the bank, countries that use it need no separate routing code.`
+  },
+  "swift-bic": {
+    term: msg`SWIFT / BIC`,
+    definition: msg`The code that identifies a bank internationally, 8 or 11 characters. A cross-border payment will not route without it, while a domestic transfer usually travels on the local routing code instead.`
   }
 } as const satisfies Record<string, GlossaryEntry>;

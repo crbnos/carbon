@@ -1,42 +1,21 @@
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
-import { companyHasPlan } from "@carbon/ee/plan.server";
+import { companyHasFeature } from "@carbon/ee/plan.server";
+import {
+  fileResponseHeaders,
+  getContentType,
+  hasCompanyPrivateObjectPathPrefix,
+  isUnsafeStoragePath,
+  MEDIA_CONTENT_TYPES,
+  storage
+} from "@carbon/files";
+import { supportedModelTypes } from "@carbon/files/cad";
 import { Ratelimit, redis } from "@carbon/kv";
 import { getLogger } from "@carbon/logger";
-import { supportedModelTypes } from "@carbon/utils";
+import { getClientIp } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
 import { getJobByOperationId } from "~/modules/production";
 import { getCustomerPortal } from "~/modules/shared/shared.service";
 import { parseJobFilePath } from "~/utils/supabase";
-
-const supportedFileTypes: Record<string, string> = {
-  pdf: "application/pdf",
-  jpg: "image/jpeg",
-  jpeg: "image/jpeg",
-  png: "image/png",
-  gif: "image/gif",
-  svg: "image/svg+xml",
-  avif: "image/avif",
-  webp: "image/webp",
-  mp4: "video/mp4",
-  webm: "video/webm",
-  mov: "video/quicktime",
-  avi: "video/x-msvideo",
-  wmv: "video/x-ms-wmv",
-  mp3: "audio/mpeg",
-  wav: "audio/wav",
-  ogg: "audio/ogg",
-  flac: "audio/flac",
-  dxf: "application/dxf",
-  dwg: "application/dxf",
-  stl: "application/stl",
-  obj: "application/obj",
-  glb: "application/glb",
-  gltf: "application/gltf",
-  fbx: "application/fbx",
-  ply: "application/ply",
-  off: "application/off",
-  step: "application/step"
-};
 
 const logger = getLogger("erp", "share", "customer-portal");
 
@@ -46,7 +25,7 @@ export let loader = async ({ params, request }: LoaderFunctionArgs) => {
     throw new Error("Customer ID is required");
   }
 
-  const ip = request.headers.get("x-forwarded-for") ?? "127.0.0.1";
+  const ip = getClientIp(request) ?? "127.0.0.1";
   const ratelimit = new Ratelimit({
     redis,
     limiter: Ratelimit.slidingWindow(10, "1 m"), // 10 downloads per minute
@@ -71,7 +50,10 @@ export let loader = async ({ params, request }: LoaderFunctionArgs) => {
     throw new Error("Customer not found");
   }
 
-  const hasPlan = await companyHasPlan(serviceRole, customer.data.companyId, {
+  // hoisted so the narrowing survives into downloadFile's closure
+  const shareCompanyId = customer.data.companyId;
+
+  const hasPlan = await companyHasFeature(serviceRole, shareCompanyId, {
     feature: "CUSTOMER_PORTALS"
   });
   if (!hasPlan) {
@@ -79,11 +61,24 @@ export let loader = async ({ params, request }: LoaderFunctionArgs) => {
   }
 
   let path = params["*"];
-  let bucket = "private"; // TODO: refactor to use companyId when we separate the storage buckets
 
   if (!path) throw new Error("Path not found");
 
   path = decodeURIComponent(path);
+
+  if (isUnsafeStoragePath(path)) {
+    logger.error("Refused a storage path that escapes its prefix", {
+      companyId: shareCompanyId,
+      path
+    });
+    return new Response(null, { status: 404 });
+  }
+
+  // Private objects are keyed by companyId — a path outside the portal's
+  // company must not resolve to another tenant's bucket.
+  if (!hasCompanyPrivateObjectPathPrefix(customer.data.companyId, path)) {
+    return new Response(null, { status: 404 });
+  }
 
   const jobFile = parseJobFilePath(path);
 
@@ -112,15 +107,17 @@ export let loader = async ({ params, request }: LoaderFunctionArgs) => {
 
   if (
     !fileType ||
-    (!(fileType in supportedFileTypes) &&
+    (!(fileType in MEDIA_CONTENT_TYPES) &&
       !supportedModelTypes.includes(fileType))
   )
     throw new Error(`File type ${fileType} not supported`);
-  const contentType = supportedFileTypes[fileType];
+  const contentType = getContentType(fileType);
 
   async function downloadFile() {
-    const result = await serviceRole.storage.from(bucket!).download(`${path}`);
-    if (result.error) {
+    const result = await storage(serviceRole)
+      .company(shareCompanyId)
+      .download(`${path}`);
+    if (!result.data) {
       logger.error("Failed to download file", { error: result.error });
       return null;
     }
@@ -137,9 +134,9 @@ export let loader = async ({ params, request }: LoaderFunctionArgs) => {
     }
   }
 
-  const headers = new Headers({
-    "Content-Type": contentType,
-    "Cache-Control": "private, max-age=31536000, immutable"
-  });
+  const headers = fileResponseHeaders(
+    contentType,
+    "private, max-age=31536000, immutable"
+  );
   return new Response(fileData, { status: 200, headers });
 };

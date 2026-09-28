@@ -1,5 +1,4 @@
 import type { Database } from "@carbon/database";
-import { datetime } from "@carbon/utils";
 import {
   type ActionOutcome,
   type CatalogAction,
@@ -7,7 +6,8 @@ import {
   entityValue,
   REGISTRY_ENTRIES,
   type RuntimeValue
-} from "@carbon/workflows";
+} from "@carbon/ee/workflows";
+import { datetime } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { toPlainValue } from "./values";
 

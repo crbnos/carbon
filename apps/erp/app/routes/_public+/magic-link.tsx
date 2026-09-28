@@ -43,6 +43,7 @@ export default function ConfirmMagicLink() {
           <Button
             size="lg"
             className="w-full mt-6"
+            autoFocus
             onClick={() => {
               window.location.href = getConfirmationURL(token);
             }}

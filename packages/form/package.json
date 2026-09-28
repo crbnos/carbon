@@ -22,7 +22,8 @@
     "ts-toolbelt": "9.6.0",
     "tsconfig": "*",
     "typescript": "catalog:",
-    "vitest": "catalog:"
+    "vitest": "catalog:",
+    "zod-form-data": "catalog:"
   },
   "dependencies": {
     "@carbon/glossary": "workspace:*",

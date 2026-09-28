@@ -1,3 +1,4 @@
+import { downloadCsv } from "@carbon/files/csv";
 import { ValidatedForm } from "@carbon/form";
 import {
   Button,
@@ -43,7 +44,6 @@ import {
 } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
 import { useLocale } from "@react-aria/i18n";
-import { json2csv } from "json-2-csv";
 import { useCallback, useMemo } from "react";
 import { LuDownload } from "react-icons/lu";
 import { useFetcher, useNavigate } from "react-router";
@@ -127,16 +127,10 @@ const CurrencyForm = ({
 
   const onDownloadCSV = useCallback(() => {
     if (!exchangeRateHistory.length) return;
-    const csvData = json2csv(exchangeRateHistory);
-    const blob = new Blob([csvData], { type: "text/csv" });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `${initialValues.code}-exchange-rates.csv`;
-    document.body.appendChild(a);
-    a.click();
-    window.URL.revokeObjectURL(url);
-    document.body.removeChild(a);
+    downloadCsv(
+      exchangeRateHistory,
+      `${initialValues.code}-exchange-rates.csv`
+    );
   }, [exchangeRateHistory, initialValues.code]);
 
   const onResetToMarketRate = useCallback(() => {

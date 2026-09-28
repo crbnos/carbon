@@ -1,10 +1,10 @@
+import type { ApprovalDecision } from "@carbon/ee/approvals";
 import { Hidden, TextArea, ValidatedForm } from "@carbon/form";
 import {
   Button,
   Modal,
   ModalBody,
   ModalContent,
-  ModalDescription,
   ModalFooter,
   ModalHeader,
   ModalTitle
@@ -12,7 +12,6 @@ import {
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { FetcherWithComponents } from "react-router";
 import { useParams } from "react-router";
-import type { ApprovalDecision } from "~/modules/shared/types";
 import { path } from "~/utils/path";
 import { qualityDocumentApprovalValidator } from "../../quality.models";
 import type { QualityDocument } from "../../types";
@@ -64,15 +63,15 @@ const QualityDocumentApprovalModal = ({
             <ModalTitle>
               {isApproving ? "Approve" : "Reject"} {qualityDocument?.name}
             </ModalTitle>
-            <ModalDescription>
-              {isApproving
-                ? "Are you sure you want to approve this quality document? This will make it active."
-                : "Are you sure you want to reject this quality document? The document will remain in draft status."}
-            </ModalDescription>
           </ModalHeader>
           <ModalBody>
             <Hidden name="approvalRequestId" />
             <Hidden name="decision" />
+            <p className="text-sm text-muted-foreground mb-4">
+              {isApproving
+                ? "Are you sure you want to approve this quality document? This will make it active."
+                : "Are you sure you want to reject this quality document? The document will remain in draft status."}
+            </p>
             <TextArea
               name="notes"
               label={t`Notes (optional)`}

@@ -337,6 +337,68 @@ export namespace Xero {
   export type ManualJournalLine = z.infer<typeof ManualJournalLineSchema>;
   export type ManualJournal = z.infer<typeof ManualJournalSchema>;
 
+  // Bank Transaction schemas for the Xero Accounting API BankTransactions
+  // endpoint — spend/receive money against a BANK-type account. Xero models a
+  // credit card as a bank account (BankAccountType CREDITCARD), so a card
+  // Charge is a SPEND and a merchant refund (Credit) a RECEIVE on the card
+  // account. There is no DELETE verb: a POST carrying Status DELETED deletes
+  // an unreconciled spend/receive money transaction.
+  export const BankTransactionLineItemSchema = z.object({
+    LineItemID: z.string().uuid().optional(),
+    Description: z.string().optional(),
+    Quantity: z.number().optional(),
+    UnitAmount: z.number().optional(),
+    ItemCode: z.string().optional(),
+    AccountCode: z.string().optional(),
+    TaxType: z.string().optional(),
+    TaxAmount: z.number().optional(),
+    LineAmount: z.number().optional(),
+    /** Max 2 entries (one per active tracking category). */
+    Tracking: z.array(ManualJournalTrackingSchema).optional()
+  });
+
+  /** Only AccountID or Code is required. */
+  export const BankTransactionBankAccountSchema = z.object({
+    AccountID: z.string().optional(),
+    Code: z.string().optional()
+  });
+
+  export const BankTransactionSchema = z.object({
+    BankTransactionID: z.string().uuid(),
+    // SPEND = money out (a card charge), RECEIVE = money in (a refund); the
+    // overpayment/prepayment/transfer subtypes are read-only for us
+    Type: z.enum([
+      "SPEND",
+      "RECEIVE",
+      "SPEND-OVERPAYMENT",
+      "SPEND-PREPAYMENT",
+      "RECEIVE-OVERPAYMENT",
+      "RECEIVE-PREPAYMENT",
+      "SPEND-TRANSFER",
+      "RECEIVE-TRANSFER"
+    ]),
+    Contact: InvoiceContactSchema.optional(),
+    LineItems: z.array(BankTransactionLineItemSchema),
+    BankAccount: BankTransactionBankAccountSchema,
+    IsReconciled: z.boolean().optional(),
+    Date: z.string().optional(), // YYYY-MM-DD
+    Reference: z.string().optional(),
+    CurrencyCode: z.string().optional(),
+    CurrencyRate: z.number().optional(),
+    Url: z.string().optional(),
+    Status: z.enum(["AUTHORISED", "DELETED"]).optional(),
+    LineAmountTypes: z.enum(["Exclusive", "Inclusive", "NoTax"]).optional(),
+    SubTotal: z.number().optional(),
+    TotalTax: z.number().optional(),
+    Total: z.number().optional(),
+    UpdatedDateUTC: z.string()
+  });
+
+  export type BankTransactionLineItem = z.infer<
+    typeof BankTransactionLineItemSchema
+  >;
+  export type BankTransaction = z.infer<typeof BankTransactionSchema>;
+
   // Quote schemas for Xero Accounting API Quotes endpoint
   // Xero Quotes are the closest equivalent to Sales Orders
   export const QuoteLineItemSchema = z.object({

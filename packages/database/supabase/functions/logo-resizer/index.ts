@@ -1,23 +1,14 @@
 import { serve } from "https://deno.land/std@0.175.0/http/server.ts";
-import {
-  AlphaOption,
-  ImageMagick,
-  initializeImageMagick,
-  MagickColor,
-  MagickFormat,
-  MagickGeometry,
-  Percentage,
-} from "npm:@imagemagick/magick-wasm@0.0.30";
 
 import { corsPreflight, errorResponse, jsonResponse } from "../lib/response.ts";
-
-const wasmBytes = await Deno.readFile(
-  new URL(
-    "magick.wasm",
-    import.meta.resolve("npm:@imagemagick/magick-wasm@0.0.30")
-  )
-);
-await initializeImageMagick(wasmBytes);
+import {
+  decodeImage,
+  encodeImage,
+  flattenOntoWhite,
+  resizeImage
+} from "../shared/image-pipeline.ts";
+import type { RawImage } from "../shared/image-pipeline.ts";
+import { round } from "../shared/precision.ts";
 
 const HEX = "0123456789ABCDEF";
 
@@ -25,8 +16,13 @@ const HEX = "0123456789ABCDEF";
  * Pack a monochrome RGBA buffer into a ZPL `^GFA` graphic field: rows of 1-bpp
  * pixels (MSB-first, `1` = black), padded to a byte boundary per row, hex-coded.
  */
-function rgbaToGFA(rgba: Uint8Array, w: number, h: number, thresh = 128): string {
-  const rowBytes = Math.ceil(w / 8);
+function rgbaToGFA(
+  rgba: Uint8ClampedArray,
+  w: number,
+  h: number,
+  thresh = 128
+): string {
+  const rowBytes = round(w / 8, 0, "up");
   const total = rowBytes * h;
   const bytes = new Uint8Array(total);
   for (let y = 0; y < h; y++) {
@@ -34,7 +30,9 @@ function rgbaToGFA(rgba: Uint8Array, w: number, h: number, thresh = 128): string
       const i = (y * w + x) * 4;
       const a = rgba[i + 3];
       const lum =
-        a === 0 ? 255 : rgba[i] * 0.299 + rgba[i + 1] * 0.587 + rgba[i + 2] * 0.114;
+        a === 0
+          ? 255
+          : rgba[i] * 0.299 + rgba[i + 1] * 0.587 + rgba[i + 2] * 0.114;
       if (lum < thresh) bytes[y * rowBytes + (x >> 3)] |= 0x80 >> (x & 7);
     }
   }
@@ -43,6 +41,52 @@ function rgbaToGFA(rgba: Uint8Array, w: number, h: number, thresh = 128): string
     hex += HEX[bytes[k] >> 4] + HEX[bytes[k] & 15];
   }
   return `^GFA,${total},${total},${rowBytes},${hex}`;
+}
+
+/** In place: every pixel becomes pure black or pure white at `cutoff`. */
+function thresholdToMono(image: RawImage, cutoff: number): RawImage {
+  const { data } = image;
+  for (let i = 0; i < data.length; i += 4) {
+    const lum = data[i] * 0.299 + data[i + 1] * 0.587 + data[i + 2] * 0.114;
+    const value = lum < cutoff ? 0 : 255;
+    data[i] = value;
+    data[i + 1] = value;
+    data[i + 2] = value;
+    data[i + 3] = 255;
+  }
+  return image;
+}
+
+function cropNormalized(
+  image: RawImage,
+  x: number,
+  y: number,
+  w: number,
+  h: number
+): RawImage {
+  const px = Math.max(1, round(w * image.width, 0));
+  const py = Math.max(1, round(h * image.height, 0));
+  const ox = Math.min(image.width - 1, Math.max(0, round(x * image.width, 0)));
+  const oy = Math.min(
+    image.height - 1,
+    Math.max(0, round(y * image.height, 0))
+  );
+  const width = Math.min(px, image.width - ox);
+  const height = Math.min(py, image.height - oy);
+  const data = new Uint8ClampedArray(width * height * 4);
+  for (let row = 0; row < height; row++) {
+    const start = ((oy + row) * image.width + ox) * 4;
+    data.set(image.data.subarray(start, start + width * 4), row * width * 4);
+  }
+  return { data, width, height };
+}
+
+function toBase64(bytes: Uint8Array): string {
+  let binary = "";
+  for (let i = 0; i < bytes.length; i++) {
+    binary += String.fromCharCode(bytes[i]);
+  }
+  return btoa(binary);
 }
 
 serve(async (req: Request) => {
@@ -54,9 +98,15 @@ serve(async (req: Request) => {
     const file = formData.get("file") as File;
     const widthDots = Math.max(
       16,
-      Math.min(1200, parseInt((formData.get("widthDots") as string) || "240", 10))
+      Math.min(
+        1200,
+        parseInt((formData.get("widthDots") as string) || "240", 10)
+      )
     );
-    const threshold = parseInt((formData.get("threshold") as string) || "50", 10);
+    const threshold = parseInt(
+      (formData.get("threshold") as string) || "50",
+      10
+    );
     // Optional crop, normalized 0..1 relative to the source image.
     const num = (k: string) => {
       const v = formData.get(k);
@@ -71,54 +121,39 @@ serve(async (req: Request) => {
 
     if (!file) throw new Error("No file provided");
     const bytes = new Uint8Array(await file.arrayBuffer());
+    const extension = file.name.split(".").pop()?.toLowerCase() ?? "png";
 
-    let monoPng = "";
-    let gfa = "";
-    let outW = 0;
-    let outH = 0;
+    let image = await decodeImage(bytes, extension);
+    if (hasCrop) {
+      image = cropNormalized(
+        image,
+        cropX as number,
+        cropY as number,
+        cropW as number,
+        cropH as number
+      );
+    }
+    // Flatten transparency onto white so it doesn't threshold to black, then
+    // scale to the requested dot width and snap to clean 1-bit black & white.
+    flattenOntoWhite(image);
+    const outH = Math.max(1, round(widthDots * (image.height / image.width), 0));
+    const resized = await resizeImage(image, widthDots, outH);
+    const cutoff = round((threshold * 255) / 100, 0);
+    thresholdToMono(resized, cutoff);
 
-    ImageMagick.read(bytes, (img) => {
-      // Crop first (normalized → pixels), so downstream sizing sees the region.
-      if (hasCrop) {
-        const px = Math.max(1, Math.round((cropW as number) * img.width));
-        const py = Math.max(1, Math.round((cropH as number) * img.height));
-        img.crop(
-          new MagickGeometry(
-            Math.round((cropX as number) * img.width),
-            Math.round((cropY as number) * img.height),
-            px,
-            py
-          )
-        );
-        img.resetPage();
-      }
-      // Flatten transparency onto white so it doesn't threshold to black.
-      img.backgroundColor = new MagickColor("white");
-      img.alpha(AlphaOption.Remove);
-      // Grayscale + threshold → clean 1-bit black & white.
-      img.grayscale();
-      img.threshold(new Percentage(threshold));
-      // Scale to the requested dot width (height proportional).
-      img.resize(new MagickGeometry(`${widthDots}`));
-      outW = img.width;
-      outH = img.height;
+    // PDF B&W logo.
+    const png = await encodeImage(resized, "png");
+    const monoPng = `data:image/png;base64,${toBase64(png)}`;
 
-      // PDF B&W logo.
-      img.format = MagickFormat.Png;
-      img.write((data) => {
-        let b = "";
-        for (let i = 0; i < data.length; i++) b += String.fromCharCode(data[i]);
-        monoPng = `data:image/png;base64,${btoa(b)}`;
-      });
+    // ZPL graphic.
+    const gfa = rgbaToGFA(resized.data, resized.width, resized.height);
 
-      // ZPL graphic.
-      img.getPixels((pixels) => {
-        const rgba = pixels.toByteArray(0, 0, outW, outH, "RGBA");
-        if (rgba) gfa = rgbaToGFA(rgba, outW, outH);
-      });
+    return jsonResponse({
+      monoPng,
+      gfa,
+      widthDots: resized.width,
+      heightDots: resized.height
     });
-
-    return jsonResponse({ monoPng, gfa, widthDots: outW, heightDots: outH });
   } catch (err) {
     return errorResponse(err, 500);
   }

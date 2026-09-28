@@ -13,8 +13,8 @@ import {
 } from "@internationalized/date";
 import type { RealtimeChannel } from "@supabase/supabase-js";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useParams, useRevalidator } from "react-router";
-import { useUrlParams, useUser } from "~/hooks";
+import { useParams } from "react-router";
+import { useRealtimeRevalidator, useUrlParams, useUser } from "~/hooks";
 import { isSerialEntityIncompleteForOperation } from "~/services/operations.service";
 import { shouldAdvanceToNextSerialUnit } from "~/services/serial-advancement";
 import type {
@@ -35,6 +35,7 @@ export function useOperation({
   requiresSerialTracking,
   pauseInterval,
   procedure,
+  batchId,
   onAdvanceToUnit
 }: {
   operation: OperationWithDetails;
@@ -52,6 +53,10 @@ export function useOperation({
     attributes: JobOperationStep[];
     parameters: JobOperationParameter[];
   }>;
+  // In batch mode, subscribe to every productionEvent for the batch (all
+  // members' timers) rather than just this operation's, so the shared running
+  // timer stays live regardless of which member started it.
+  batchId?: string;
   // Auto-select the next serial unit (used on the first operation, where there
   // are no printed labels to scan yet). Provided by JobOperation.
   onAdvanceToUnit?: (entity: TrackedEntity) => void;
@@ -62,7 +67,7 @@ export function useOperation({
   const { carbon, accessToken } = useCarbon();
   const user = useUser();
 
-  const revalidator = useRevalidator();
+  const revalidate = useRealtimeRevalidator();
   // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
   const channelRef = useRef<RealtimeChannel | null>(null);
 
@@ -114,7 +119,7 @@ export function useOperation({
 
   useRealtimeChannel({
     topic: `job-operations:${operation.id}`,
-    dependencies: [operation.jobId],
+    dependencies: [operation.jobId, batchId],
     setup(channel) {
       return channel
         .on(
@@ -127,7 +132,7 @@ export function useOperation({
           },
           (payload) => {
             if (payload.eventType === "UPDATE") {
-              revalidator.revalidate();
+              revalidate();
             }
           }
         )
@@ -137,7 +142,9 @@ export function useOperation({
             event: "*",
             schema: "public",
             table: "productionEvent",
-            filter: `jobOperationId=eq.${operation.id}`
+            filter: batchId
+              ? `jobOperationBatchId=eq.${batchId}`
+              : `jobOperationId=eq.${operation.id}`
           },
           (payload) => {
             switch (payload.eventType) {

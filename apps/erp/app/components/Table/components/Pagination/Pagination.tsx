@@ -9,15 +9,16 @@ import {
   DropdownMenuTrigger,
   HStack,
   IconButton,
+  ShortcutKey,
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-  useKeyboardShortcuts,
-  usePrettifyShortcut
+  useShortcutKeyMap
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useCallback, useRef } from "react";
+import { useCallback, useMemo, useRef } from "react";
 import { BsChevronLeft, BsChevronRight } from "react-icons/bs";
+import { PAGINATION_SHORTCUTS } from "~/shortcuts";
 import { PAGE_SIZES } from "~/utils/pagination";
 
 export type PaginationProps = {
@@ -92,7 +93,6 @@ export const PaginationButtons = ({
   const { t } = useLingui();
   const nextButtonRef = useRef<HTMLButtonElement>(null);
   const previousButtonRef = useRef<HTMLButtonElement>(null);
-  const prettifyShortcut = usePrettifyShortcut();
 
   const scrollToTop = useCallback(() => {
     document
@@ -110,16 +110,21 @@ export const PaginationButtons = ({
     scrollToTop();
   }, [nextPage, scrollToTop]);
 
-  useKeyboardShortcuts({
-    ArrowRight: (event: KeyboardEvent) => {
-      event.stopPropagation();
-      nextButtonRef.current?.click();
-    },
-    ArrowLeft: (event: KeyboardEvent) => {
-      event.stopPropagation();
-      previousButtonRef.current?.click();
-    }
-  });
+  useShortcutKeyMap(
+    useMemo(
+      () => [
+        {
+          shortcut: PAGINATION_SHORTCUTS.next,
+          action: () => nextButtonRef.current?.click()
+        },
+        {
+          shortcut: PAGINATION_SHORTCUTS.previous,
+          action: () => previousButtonRef.current?.click()
+        }
+      ],
+      []
+    )
+  );
 
   return (
     <>
@@ -128,6 +133,7 @@ export const PaginationButtons = ({
           <Tooltip>
             <TooltipTrigger asChild>
               <IconButton
+                ref={previousButtonRef}
                 aria-label={t`Previous`}
                 icon={<BsChevronLeft />}
                 isDisabled={!canPreviousPage}
@@ -136,12 +142,16 @@ export const PaginationButtons = ({
               />
             </TooltipTrigger>
             <TooltipContent>
-              <HStack>{prettifyShortcut("ArrowLeft")}</HStack>
+              <ShortcutKey
+                shortcut={PAGINATION_SHORTCUTS.previous}
+                variant="small"
+              />
             </TooltipContent>
           </Tooltip>
           <Tooltip>
             <TooltipTrigger asChild>
               <IconButton
+                ref={nextButtonRef}
                 aria-label={t`Next`}
                 icon={<BsChevronRight />}
                 isDisabled={!canNextPage}
@@ -150,7 +160,10 @@ export const PaginationButtons = ({
               />
             </TooltipTrigger>
             <TooltipContent>
-              <HStack>{prettifyShortcut("ArrowRight")}</HStack>
+              <ShortcutKey
+                shortcut={PAGINATION_SHORTCUTS.next}
+                variant="small"
+              />
             </TooltipContent>
           </Tooltip>
         </>
@@ -173,7 +186,10 @@ export const PaginationButtons = ({
               </Button>
             </TooltipTrigger>
             <TooltipContent>
-              <HStack>{prettifyShortcut("ArrowLeft")}</HStack>
+              <ShortcutKey
+                shortcut={PAGINATION_SHORTCUTS.previous}
+                variant="small"
+              />
             </TooltipContent>
           </Tooltip>
           <Tooltip>
@@ -189,7 +205,10 @@ export const PaginationButtons = ({
               </Button>
             </TooltipTrigger>
             <TooltipContent>
-              <HStack>{prettifyShortcut("ArrowRight")}</HStack>
+              <ShortcutKey
+                shortcut={PAGINATION_SHORTCUTS.next}
+                variant="small"
+              />
             </TooltipContent>
           </Tooltip>
         </>

@@ -70,18 +70,41 @@ Other exports: `creatableLookups`, and types `CreatableLookup`, `CreatableForm`.
 ### Tables & permissions
 
 `customer`, `customerContact` → `sales`; `supplier`, `supplierContact` → `purchasing`;
-`part`, `material`, `tool`, `fixture`, `consumable`, `bom`,
+`part`, `material`, `tool`, `fixture`, `consumable`, `service`, `bom`,
 `operations`, `partWithMethod`, `materialSubstance`, `materialForm`, `materialFinish`,
-`materialGrade`, `materialType`, `materialDimension` → `parts`;
-`workCenter`, `process` → `production`; `storageUnit` → `inventory`;
-`fixedAsset` → `accounting`.
+`materialGrade`, `materialType`, `materialDimension`, `unitOfMeasure`,
+`storageType` → `parts`;
+`workCenter`, `process`, `scrapReason` → `production`; `storageUnit`,
+`inventoryQuantity`, `batchQuantity`, `serialQuantity` → `inventory`;
+`department` → `people`; `itemPostingGroup`, `fixedAsset` → `accounting`.
+
+An import's permission is the one its table's **RLS INSERT policy** requires, not
+the one that opens its list page. The edge function writes through a service-role
+Kysely connection that bypasses RLS, so `importPermissions` is the only
+authorization on a bulk import — taking it from the page gate would let a user
+create rows the database itself would refuse. `itemPostingGroup` is where the two
+disagree: its page is parts-gated, its policies are `accounting_*`.
 
 The edge function's own `table` enum (`import-csv/index.ts`) accepts: `consumable`,
 `customer`, `customerContact`, `fixture`, `material`, `bom`, `operations`,
-`partWithMethod`, `part`, `supplier`, `supplierContact`, `tool`, `workCenter`,
-`process`, `storageUnit`, `materialSubstance`, `materialForm`, `materialFinish`,
-`materialGrade`, `materialType`, `materialDimension`. Note it does **not** list
-`fixedAsset` (see Gotchas).
+`partWithMethod`, `part`, `service`, `supplier`, `supplierContact`, `tool`,
+`workCenter`, `process`, `storageUnit`, `unitOfMeasure`, `itemPostingGroup`,
+`storageType`, `scrapReason`, `department`, `materialSubstance`, `materialForm`,
+`materialFinish`, `materialGrade`, `materialType`, `materialDimension`,
+`inventoryQuantity`, `batchQuantity`, `serialQuantity`. Note it does
+**not** list `fixedAsset` (see Gotchas).
+
+### Service import (rides the item path)
+
+A `service` is an item — `item.type = "Service"` plus a row in `service` keyed by
+`readableId` — so it is handled by the SAME case as part/tool/fixture/consumable
+rather than a path of its own. Two service-specific rules live in that case:
+`itemTrackingType` is forced to `"Non-Inventory"` before validation (a service can
+never be shipped, received or stocked, so the wizard offers no Tracking Type
+column, and the item validator requires one), and the type-row insert writes the
+legacy `serviceType: "External"` instead of `approved: true`. Both mirror
+`upsertService` in `items.service.ts`; the wizard's replenishment options are
+narrowed to `Buy | Make`, since "Buy and Make" is not a service.
 
 ### Storage-unit import (natural-key match + two-pass parent linking)
 
@@ -103,6 +126,105 @@ individual `UPDATE`s outside the insert transaction — so a parent defined late
 same file resolves and an unresolved/cyclic/self parent reports a per-row error instead
 of rolling back the whole import. The DB same-location / no-cycle interceptors
 (`20260417000200`) are the final guard; their exceptions are caught per row.
+
+### Opening-stock imports (additive Positive Adjmt. only)
+
+`inventoryQuantity`, `batchQuantity` and `serialQuantity` load on-hand stock for
+items that already exist, one import per `itemTrackingType` (Inventory / Batch /
+Serial; Non-Inventory has none). Surfaced from the Inventory → Quantities table
+(`InventoryTable.tsx`). Handled by `import-csv/stock-quantity-import.ts`; the pure
+per-row decision is `classify-stock-row.ts` (tested by `classify-stock-row.test.ts`).
+
+- **Columns**: `readableId` (Part Number), `revision` (blank → `"0"`), `locationId`
+  (enum via the shared `locationFetcher`, re-checked against the company's locations),
+  `storageUnitName` (optional, resolved case-insensitively within the row's location
+  like the storageUnit natural key; named-but-missing is a row error, never created),
+  `quantity` (Inventory/Batch; must be > 0), `batchNumber` / `serialNumber`,
+  `expirationDate` (Batch/Serial; optional ISO `YYYY-MM-DD`), `comment` (itemLedger
+  comment). Serial rows have no Quantity: each row is 1 unit.
+- **Item resolution**: readableId + revision (method-import key). `item_unique`
+  includes `type`, so several items can share the key; `buildStockItemMap` prefers
+  the candidate whose tracking type matches the import, else the first by
+  `(type, id)`. Wrong tracking type, missing item or missing `itemCost` row → row error.
+- **Storage units**: only `active` units resolve, matching
+  `getStorageUnitsListForLocation` in the manual adjustment; an inactive name is the
+  "not found in this location" row error.
+- **Dedup**: Batch/Serial key on `(itemId, readableId)`. A number already on that item
+  (any status) or repeated in the file → `skipped`. Same number on different items is
+  fine. Inventory rows have **no natural key**: re-importing posts them again.
+- **Writes** mirror post-inventory-adjustment's Positive Adjmt.: Batch/Serial rows
+  insert a new `trackedEntity` (sourceDocument "Item", `"Inventory Adjustment"`
+  attributes stamp with reason "Created via CSV import", Fixed Duration shelf-life
+  fallback when no expiry), then every row gets an `itemLedger` row, a `costLedger`
+  layer at current item cost and (accounting on) a balanced `journalLine` pair with
+  its `journalLineDimension` tags — posting date = company today, `documentType`
+  NULL. With accounting enabled the whole file shares ONE journal, created only if
+  some row carries value (post-inventory-count pattern). Accounting context is
+  resolved before the transaction; the whole file writes in one transaction.
+- **Bulk writes, not `bookAdjustment` per row.** `bookAdjustment` costs ~7 round
+  trips per movement, which is ~7 rows/second — a 2,000-row file exceeded the edge
+  runtime's wall clock and rolled back. The importer instead plans every row in
+  memory and writes one statement per table per 500-row chunk (`INSERT_CHUNK_SIZE`).
+  The rows are byte-for-byte what `bookAdjustment` writes because **both call the
+  same pure builders** in `shared/plan-adjustment.ts` — `buildItemLedgerRow`,
+  `buildCostLedgerRow`, `buildAdjustmentJournalLines`, `buildJournalLineDimensions`,
+  `toJournalLineDocumentType` — and the same open-layer query (`loadOpenCostLayers`
+  in `shared/post-adjustment.ts`, which takes a list of item ids and chunks its
+  applied-child lookup over the layer ids, since open layers per item are
+  unbounded). Do not fork a row shape or an arithmetic step into the importer:
+  a column added to a builder must reach both paths at once, which is the whole
+  reason the item ledger row is built there too rather than inline.
+- **Ids come back keyed, not positional.** Each movement's `itemLedger` id is the
+  `documentId` on its cost layer and journal lines, so a reordered `RETURNING`
+  would silently attach them to the wrong movement. `itemLedger` returns
+  `["id", "entryNumber"]` and each chunk is sorted by that SERIAL; `journalLine`
+  returns `["id", "journalLineReference"]` and the pair is grouped by the
+  reference the importer generated per movement.
+- **The plan itself is pure and tested.** `planStockRows` in
+  `shared/plan-adjustment.ts` takes the file's rows plus the item costs and open
+  layers and returns, per row, `{ carriesValue, cost, postsJournal }` — the
+  per-item grouping, the cost replay, the scatter back onto source rows and the
+  journal filter. The transaction body only inserts what it returns.
+  `shared/plan-adjustment.test.ts` covers mixed items, repeated rows for one item,
+  a zero-cost item, accounting disabled and a Non-Inventory / zero-quantity row.
+- **Cost layers are replayed, not hoisted.** `bookAdjustment` re-reads the item's
+  open layers before every increase, so row n+1 sees the layer row n wrote.
+  `planIncreaseUnitCosts` reproduces that in memory from one snapshot per item.
+  Standard/Average ignore layers, so their unit cost is constant per item; FIFO/LIFO
+  are unchanged by adding a layer at the current weighted average **in exact
+  arithmetic** — but the layer is stored at `round(q × u, 5)`, so the average drifts
+  by the rounding and the drift is scaled by the next row's quantity (a 1-unit row at
+  ⅓ stores 0.33333, and a following 1000-unit row books 333.33, not 333.33333).
+  Hoisting one unit cost per item would therefore change what is written. Pinned by
+  `shared/plan-adjustment.test.ts`, which asserts the plan equals booking the rows
+  one at a time for all four costing methods.
+- No Unique ID column and no `externalIntegrationMapping` writes. Business rules
+  (`evaluateLinesForSurface`) that the single-record adjustment route runs are NOT
+  evaluated by the import. The journal description is the fixed
+  "Inventory Adjustment — CSV import" (no per-row comment), and a zero-cost row
+  posts no journal lines.
+
+### Configuration-lookup imports (skip-duplicate, create-only)
+
+`unitOfMeasure`, `itemPostingGroup`, `storageType`, `scrapReason` and `department`
+are small company-scoped config tables filled in once during onboarding. They are
+handled by `import-csv/config-lookup-import.ts` — one `CONFIGS` entry per table,
+one shared walk — with the same **create-only, skip-duplicate** semantics as the
+material lookups below: no `externalIntegrationMapping`, no updates, and no
+`id` column in the wizard, because none of these carries a natural external id.
+
+Dedup mirrors the DB unique constraints, case- and whitespace-insensitively.
+`unitOfMeasure` is the one with TWO of them (`code` and `name`, each unique per
+company), so it contributes two keys and a row colliding on either is reported as
+skipped rather than swallowed by the `ON CONFLICT DO NOTHING` clause. Every other
+table keys on `name` alone.
+
+`department.parentName` resolves in a **second pass** after the inserts commit —
+individual `UPDATE`s outside the insert transaction, so a parent defined further
+down the same file resolves and an unresolved or self-referencing parent reports
+one row error instead of rolling back the batch. Same shape as the storage-unit
+parent pass. `CONFIGS[table].parentField` is what gates it; only `department` sets
+one, and `config-lookup-import.test.ts` pins that.
 
 ### Material-property imports (skip-duplicate, create-only)
 
@@ -128,7 +250,7 @@ parent is an `errors` row. New rows get a DB-generated `xid()` id.
 
 Action only (no loader). Steps:
 1. `notFound` if `tableId` missing or not a key of `importPermissions`.
-2. `requirePermissions(request, { update: importPermissions[table] })`.
+2. `requirePermissions(request, { update: importPermissions[table] })`, plus `create` on the same module for tables in `importRequiresCreate` (the three stock imports, matching the single-record adjustment's `create: inventory` route gate and `update: inventory` Save button).
 3. Validate form against `importSchemas[table].extend({ filePath, enumMappings })`.
    `enumMappings` arrives as a JSON **string** and is `JSON.parse`d before the service call.
 4. `columnMappings` = the remaining validated form fields after destructuring `filePath`
@@ -145,6 +267,9 @@ edge function directly.
 Deno `serve` handler. Payload validated by `importCsvValidator` (table enum, `filePath`,
 `columnMappings`, optional `enumMappings`, `companyId`, `userId`).
 
+- Re-checks the caller: `update` on `IMPORT_PERMISSIONS[table]`, plus `create` for tables in
+  `IMPORT_REQUIRES_CREATE`. Both mirror `importPermissions` / `importRequiresCreate` in the
+  models, so a new import type adds its table to both sides.
 - Downloads CSV: `client.storage.from("private").download(filePath)`.
 - Parses with Deno std `import { parse } from "https://deno.land/std@0.175.0/encoding/csv.ts"`
   (`skipFirstRow: true, lazyQuotes: true`), falling back to a custom `parsePermissiveCsv()`
@@ -194,7 +319,7 @@ See `.claude/rules/accounting-sync-handlers.md` for the full `externalIntegratio
   They are separate parsers — don't assume identical behavior.
 - `enumMappings` crosses the route boundary as a JSON string; the service/edge function expect
   the parsed object.
-- The edge function transaction uses Kysely and bypasses RLS — the route's `requirePermissions`
-  is the only authorization gate.
+- The edge function transaction uses Kysely and bypasses RLS; authorization is the route's
+  `requirePermissions` plus the edge function's own check on the same permissions.
 - Row-level failures are returned in `errors[]` with `{ row, reason }`; only a thrown
   exception produces a 500.

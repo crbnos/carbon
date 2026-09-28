@@ -1,10 +1,10 @@
+import { convertKbToString } from "@carbon/files";
 import {
   Button,
   ResizableHandle,
   ResizablePanel,
   Skeleton
 } from "@carbon/react";
-import { convertKbToString } from "@carbon/utils";
 import { Trans } from "@lingui/react/macro";
 import { lazy, Suspense } from "react";
 import { LuDownload, LuX } from "react-icons/lu";

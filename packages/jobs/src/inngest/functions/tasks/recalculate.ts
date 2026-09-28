@@ -1,5 +1,5 @@
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
-import { runLocationSchedule } from "@carbon/ee/planning";
+import { runLocationSchedule } from "@carbon/planning";
 import type { FunctionsResponse } from "@supabase/functions-js";
 import { getJobDatabaseClient } from "../../../db";
 import { inngest } from "../../client";

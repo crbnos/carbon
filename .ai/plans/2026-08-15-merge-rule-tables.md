@@ -1,7 +1,7 @@
 # Implementation plan — Sales Rules on a unified `enforcementRule` table
 
 - Date: 2026-08-15
-- Spec: `.ai/specs/2026-08-11-item-rules.md`
+- Spec: `.ai/specs/implemented/2026-08-11-item-rules.md`
 - Scope of this plan: the **data model and code layer** — create the unified rule table, move the shipped Storage Rules onto it, and build the sales family on top. The sales enforcement gates, notifications, and acknowledgment evidence are specified in the spec's Phase 1–3 and planned separately.
 
 ## Starting point

@@ -1,4 +1,4 @@
-import type { PairEntry, PairValue, ValueOrRef } from "@carbon/workflows";
+import type { PairEntry, PairValue, ValueOrRef } from "@carbon/ee/workflows";
 
 /** A new row starts with an empty name and an empty value — never absent, because
  * a row's value is not optional. Blank rows are dropped before the request goes out. */

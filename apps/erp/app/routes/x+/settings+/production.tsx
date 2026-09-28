@@ -30,7 +30,8 @@ import {
   getCompanySettings,
   jobCompletedValidator,
   updateAutoSelectMaterialWithoutPickingListSetting,
-  updateIncludeMaterialsOnTravelerSetting
+  updateIncludeMaterialsOnTravelerSetting,
+  updateIncludeOperationsOnTravelerSetting
 } from "~/modules/settings";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -137,6 +138,25 @@ export async function action({ request }: ActionFunctionArgs) {
     };
   }
 
+  if (intent === "jobTravelerOperations") {
+    const includeOperationsOnTraveler = formData.get("enabled") === "true";
+
+    const update = await updateIncludeOperationsOnTravelerSetting(
+      client,
+      companyId,
+      includeOperationsOnTraveler
+    );
+
+    if (update.error) return { success: false, message: update.error.message };
+
+    return {
+      success: true,
+      message: `Traveler operations ${
+        includeOperationsOnTraveler ? "enabled" : "disabled"
+      }`
+    };
+  }
+
   if (intent === "autoSelectMaterialWithoutPickingListToggle") {
     const autoSelectMaterialWithoutPickingList =
       formData.get("enabled") === "true";
@@ -198,6 +218,9 @@ export default function ProductionSettingsRoute() {
   const includeMaterialsOnTraveler =
     (companySettings as { includeMaterialsOnTraveler?: boolean | null })
       .includeMaterialsOnTraveler ?? false;
+  const includeOperationsOnTraveler =
+    (companySettings as { includeOperationsOnTraveler?: boolean | null })
+      .includeOperationsOnTraveler ?? true;
   const autoStartOperationTimer =
     companySettings.autoStartOperationTimer ?? false;
   const autoSelectMaterialWithoutPickingList =
@@ -207,6 +230,16 @@ export default function ProductionSettingsRoute() {
     (checked: boolean) => {
       fetcher.submit(
         { intent: "jobTravelerMaterials", enabled: String(checked) },
+        { method: "POST" }
+      );
+    },
+    [fetcher]
+  );
+
+  const handleTravelerOperationsToggle = useCallback(
+    (checked: boolean) => {
+      fetcher.submit(
+        { intent: "jobTravelerOperations", enabled: String(checked) },
         { method: "POST" }
       );
     },
@@ -311,35 +344,69 @@ export default function ProductionSettingsRoute() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <HStack className="justify-between items-center">
-              <VStack className="items-start" spacing={1}>
-                <span className="font-medium">
-                  {includeMaterialsOnTraveler ? (
-                    <Trans>Materials are included</Trans>
-                  ) : (
-                    <Trans>Materials are not included</Trans>
-                  )}
-                </span>
-                <span className="text-sm text-muted-foreground">
-                  {includeMaterialsOnTraveler ? (
-                    <Trans>
-                      The traveler lists each item on the bill of materials with
-                      its quantity.
-                    </Trans>
-                  ) : (
-                    <Trans>
-                      Add a materials section that lists each item on the bill
-                      of materials with its quantity.
-                    </Trans>
-                  )}
-                </span>
-              </VStack>
-              <Switch
-                checked={includeMaterialsOnTraveler}
-                onCheckedChange={handleTravelerMaterialsToggle}
-                disabled={isToggling}
-              />
-            </HStack>
+            <VStack spacing={4}>
+              <HStack className="justify-between items-center w-full">
+                <VStack className="items-start" spacing={1}>
+                  <span className="font-medium">
+                    {includeOperationsOnTraveler ? (
+                      <Trans>Operations are included</Trans>
+                    ) : (
+                      <Trans>Operations are not included</Trans>
+                    )}
+                  </span>
+                  <span className="text-sm text-muted-foreground">
+                    {includeOperationsOnTraveler ? (
+                      <Trans>
+                        The traveler lists each routing operation with its
+                        expected times and scan barcodes.
+                      </Trans>
+                    ) : (
+                      <Trans>
+                        Add an operations section that lists each routing
+                        operation with its expected times and scan barcodes.
+                      </Trans>
+                    )}
+                  </span>
+                </VStack>
+                <Switch
+                  checked={includeOperationsOnTraveler}
+                  onCheckedChange={handleTravelerOperationsToggle}
+                  disabled={isToggling}
+                />
+              </HStack>
+
+              <Separator />
+
+              <HStack className="justify-between items-center w-full">
+                <VStack className="items-start" spacing={1}>
+                  <span className="font-medium">
+                    {includeMaterialsOnTraveler ? (
+                      <Trans>Materials are included</Trans>
+                    ) : (
+                      <Trans>Materials are not included</Trans>
+                    )}
+                  </span>
+                  <span className="text-sm text-muted-foreground">
+                    {includeMaterialsOnTraveler ? (
+                      <Trans>
+                        The traveler lists each item on the bill of materials
+                        with its quantity.
+                      </Trans>
+                    ) : (
+                      <Trans>
+                        Add a materials section that lists each item on the bill
+                        of materials with its quantity.
+                      </Trans>
+                    )}
+                  </span>
+                </VStack>
+                <Switch
+                  checked={includeMaterialsOnTraveler}
+                  onCheckedChange={handleTravelerMaterialsToggle}
+                  disabled={isToggling}
+                />
+              </HStack>
+            </VStack>
           </CardContent>
         </Card>
 

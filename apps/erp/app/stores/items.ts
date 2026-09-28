@@ -13,8 +13,6 @@ export type Item = ListItem & {
   unitOfMeasureCode: string;
   type: Database["public"]["Enums"]["itemType"];
   active: boolean;
-  quantityOnHand?: number;
-  quantityByLocation?: Record<string, number>;
   supersessionMode?: Database["public"]["Enums"]["supersessionMode"] | null;
   successorItemId?: string | null;
 };

@@ -7,7 +7,7 @@ import {
   type RuntimeValue,
   type SearchCriterion,
   WORKFLOW_ENTITIES
-} from "@carbon/workflows";
+} from "@carbon/ee/workflows";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { describe, expect, it } from "vitest";
 import { runSearch } from "./search";

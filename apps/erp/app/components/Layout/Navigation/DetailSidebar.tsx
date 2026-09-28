@@ -1,15 +1,17 @@
+import type { ShortcutInput } from "@carbon/react";
 import {
   Button,
   Count,
   HStack,
+  ShortcutKey,
   Tooltip,
   TooltipContent,
   TooltipTrigger,
-  useKeyboardShortcuts,
-  usePrettifyShortcut,
+  useShortcutKeyMap,
   VStack
 } from "@carbon/react";
 import type { ReactNode } from "react";
+import { useMemo } from "react";
 import { Link, useNavigate } from "react-router";
 import { useOptimisticLocation } from "~/hooks";
 
@@ -19,22 +21,24 @@ type DetailSidebarProps = {
     to: string;
     icon?: ReactNode;
     count?: number;
-    shortcut?: string;
+    shortcut?: ShortcutInput;
   }[];
 };
 
 const DetailSidebar = ({ links }: DetailSidebarProps) => {
   const navigate = useNavigate();
   const location = useOptimisticLocation();
-  const prettifyShortcut = usePrettifyShortcut();
 
-  useKeyboardShortcuts(
-    links.reduce<Record<string, () => void>>((acc, link) => {
-      if (link.shortcut) {
-        acc[link.shortcut] = () => navigate(link.to);
-      }
-      return acc;
-    }, {})
+  useShortcutKeyMap(
+    useMemo(
+      () =>
+        links.flatMap((link) =>
+          link.shortcut
+            ? [{ shortcut: link.shortcut, action: () => navigate(link.to) }]
+            : []
+        ),
+      [links, navigate]
+    )
   );
 
   return (
@@ -68,7 +72,9 @@ const DetailSidebar = ({ links }: DetailSidebarProps) => {
             </TooltipTrigger>
             {route.shortcut && (
               <TooltipContent side="right">
-                <HStack>{prettifyShortcut(route.shortcut)}</HStack>
+                <HStack>
+                  <ShortcutKey shortcut={route.shortcut} variant="small" />
+                </HStack>
               </TooltipContent>
             )}
           </Tooltip>

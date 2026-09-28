@@ -1,4 +1,4 @@
-import { entityValue, primitiveValue } from "@carbon/workflows";
+import { entityValue, primitiveValue } from "@carbon/ee/workflows";
 import { describe, expect, it, vi } from "vitest";
 import { runCreateAction } from "./create";
 import type { DispatchContext, DispatchResult } from "./dispatcher";

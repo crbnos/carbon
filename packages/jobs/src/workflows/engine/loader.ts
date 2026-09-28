@@ -6,7 +6,7 @@ import {
   type RunTrigger,
   type RuntimeValue,
   type WorkflowCatalog
-} from "@carbon/workflows";
+} from "@carbon/ee/workflows";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 export type EntityCache = Map<string, Record<string, unknown> | null>;

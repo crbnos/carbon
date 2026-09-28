@@ -1,3 +1,5 @@
+import type { ValueOrRef } from "@carbon/ee/workflows";
+import { WORKFLOW_OPERATION_CATALOG } from "@carbon/ee/workflows";
 import {
   Command,
   CommandEmpty,
@@ -10,8 +12,6 @@ import {
   PopoverContent,
   PopoverTrigger
 } from "@carbon/react";
-import type { ValueOrRef } from "@carbon/workflows";
-import { WORKFLOW_OPERATION_CATALOG } from "@carbon/workflows";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useMemo, useState } from "react";
 import { LuCheck, LuChevronsUpDown, LuListOrdered } from "react-icons/lu";

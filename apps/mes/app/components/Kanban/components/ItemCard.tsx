@@ -23,7 +23,6 @@ import {
   LuCalendarDays,
   LuCircleCheck,
   LuCirclePlay,
-  LuCircleX,
   LuClipboardCheck,
   LuSquareUser,
   LuTimer,
@@ -32,10 +31,7 @@ import {
 } from "react-icons/lu";
 import { RiProgress8Line } from "react-icons/ri";
 import { Link } from "react-router";
-import { AlmostDoneIcon } from "~/assets/icons/AlmostDoneIcon";
-import { InProgressStatusIcon } from "~/assets/icons/InProgressStatusIcon";
-import { TodoStatusIcon } from "~/assets/icons/TodoStatusIcon";
-import { DateTime } from "~/components";
+import { DateTime, OperationStatusIcon } from "~/components";
 import Avatar from "~/components/Avatar";
 import EmployeeAvatar from "~/components/EmployeeAvatar";
 import { DeadlineIcon } from "~/components/Icons";
@@ -110,8 +106,12 @@ export function ItemCard({
     ? Array.from(progressByItemId[item.id].employees!)
     : undefined;
 
+  const isBatch = (item.batchSize ?? 0) > 1 && !!item.batchId;
+
   return (
-    <Link to={path.to.operation(item.id)}>
+    <Link
+      to={isBatch ? path.to.batch(item.batchId!) : path.to.operation(item.id)}
+    >
       <Card
         className={cn(
           "max-w-[330px]",
@@ -126,11 +126,13 @@ export function ItemCard({
             <div className="flex flex-col space-y-0 min-w-0">
               {item.itemReadableId && (
                 <span className="text-xs text-muted-foreground line-clamp-1">
-                  {item.itemReadableId}
+                  {isBatch ? item.batchReadableId : item.itemReadableId}
                 </span>
               )}
               <span className="mr-auto font-semibold line-clamp-2 leading-tight text-foreground">
-                {item.itemDescription || item.itemReadableId}
+                {isBatch
+                  ? `${item.batchSize} jobs batched`
+                  : item.itemDescription || item.itemReadableId}
               </span>
             </div>
             <HStack spacing={2} className="flex-shrink-0">
@@ -145,7 +147,9 @@ export function ItemCard({
                 </Tooltip>
               )}
               <Heading size="h4" className="text-foreground">
-                {item.targetQuantity}
+                {isBatch
+                  ? `×${item.batchSize} · ${item.targetQuantity}`
+                  : item.targetQuantity}
               </Heading>
             </HStack>
           </div>
@@ -219,7 +223,11 @@ export function ItemCard({
           )}
           <HStack className="justify-start space-x-2">
             <LuCirclePlay className="text-muted-foreground" />
-            <span className="text-sm line-clamp-1">{item.title}</span>
+            <span className="text-sm line-clamp-1">
+              {isBatch && item.batchJobReadableIds?.length
+                ? item.batchJobReadableIds.join(", ")
+                : item.title}
+            </span>
             {item.reworkId && <Badge variant="red">Rework</Badge>}
           </HStack>
 
@@ -231,7 +239,7 @@ export function ItemCard({
           )}
           {showStatus && status && (
             <HStack className="justify-start space-x-2">
-              {getStatusIcon(status)}
+              <OperationStatusIcon status={status} />
               <span className="text-sm">{status}</span>
             </HStack>
           )}
@@ -334,40 +342,5 @@ export function ItemCard({
         )}
       </Card>
     </Link>
-  );
-}
-
-function getStatusIcon(status: Item["status"] | "In Progress") {
-  const getIcon = () => {
-    switch (status) {
-      case "Ready":
-      case "Todo":
-        return <TodoStatusIcon className="text-foreground" />;
-      case "Waiting":
-      case "Canceled":
-        return <LuCircleX className="text-muted-foreground" />;
-      case "Done":
-        return <LuCircleCheck className="text-blue-600" />;
-      case "In Progress":
-        return <AlmostDoneIcon />;
-      case "Paused":
-        return <InProgressStatusIcon />;
-      default:
-        return null;
-    }
-  };
-
-  const icon = getIcon();
-  if (!icon) return null;
-
-  return (
-    <Tooltip>
-      <TooltipTrigger asChild>
-        <span className="inline-flex">{icon}</span>
-      </TooltipTrigger>
-      <TooltipContent>
-        <span>{status}</span>
-      </TooltipContent>
-    </Tooltip>
   );
 }

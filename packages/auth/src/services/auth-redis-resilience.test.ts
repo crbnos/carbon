@@ -17,7 +17,6 @@ vi.mock("@carbon/kv", () => ({
 // Env is validated at import time (getEnv throws on missing required vars), so we
 // stub the config module rather than requiring a full environment in the test run.
 vi.mock("../config/env", () => ({
-  RESEND_DOMAIN: "test.dev",
   DOMAIN: "localhost",
   ERP_URL: "http://localhost:3000",
   MES_URL: "http://localhost:3001",
@@ -30,7 +29,7 @@ vi.mock("../config/env", () => ({
 }));
 
 // Heavy / side-effectful dependencies of the modules under test.
-vi.mock("@carbon/lib/resend.server", () => ({
+vi.mock("@carbon/lib/email.server", () => ({
   sendEmail: vi.fn().mockResolvedValue({ error: null })
 }));
 vi.mock("@carbon/documents/email", () => ({
@@ -75,7 +74,7 @@ vi.mock("./mfa.server", () => ({
 }));
 
 import { redis } from "@carbon/kv";
-import { sendEmail } from "@carbon/lib/resend.server";
+import { sendEmail } from "@carbon/lib/email.server";
 import type { AuthSession } from "../types";
 import {
   getAndDeleteAuthChallenge,

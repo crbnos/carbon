@@ -10,9 +10,13 @@ import {
   useMode
 } from "@carbon/react";
 import data from "@emoji-mart/data";
-import Picker from "@emoji-mart/react";
-import { useState } from "react";
+import { lazy, Suspense, useState } from "react";
 import { LuSmilePlus, LuTrash } from "react-icons/lu";
+
+// Lazy, not a static import: @emoji-mart/react is CommonJS, so under SSR its
+// default import is `{ default: Picker }` and dev React warns "type is
+// invalid" the moment the element is created, even in a closed popover.
+const Picker = lazy(() => import("@emoji-mart/react"));
 
 type EmojiPickerProps = {
   name: string;
@@ -67,15 +71,17 @@ const EmojiPicker = ({ name }: EmojiPickerProps) => {
           align="start"
           sideOffset={8}
         >
-          <Picker
-            data={data}
-            onEmojiSelect={onEmojiSelect}
-            theme={pickerTheme}
-            previewPosition="none"
-            skinTonePosition="none"
-            navPosition="bottom"
-            perLine={8}
-          />
+          <Suspense>
+            <Picker
+              data={data}
+              onEmojiSelect={onEmojiSelect}
+              theme={pickerTheme}
+              previewPosition="none"
+              skinTonePosition="none"
+              navPosition="bottom"
+              perLine={8}
+            />
+          </Suspense>
           {value && (
             <PopoverFooter className="flex justify-center">
               <Button

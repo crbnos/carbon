@@ -39,6 +39,7 @@ interface JobTravelerProps extends PDF {
   notes?: JSONContent;
   thumbnail?: string | null;
   includeMaterials?: boolean;
+  includeOperations?: boolean;
   materials?: JobTravelerMaterial[];
   template?: DocumentTemplate | null;
   sections?: Record<string, ResolvedSection>;
@@ -77,6 +78,7 @@ function buildData(
     thumbnail: props.thumbnail,
     methodRevision: props.methodRevision,
     includeMaterials: props.includeMaterials,
+    includeOperations: props.includeOperations,
     materials: props.materials,
     theme: template.theme,
     sections,
@@ -94,8 +96,13 @@ export const JobTravelerPageContent = (props: PageContentProps) => {
   const resolved = resolveTemplate("jobTraveler", props.template ?? null);
   const data = buildData(props, resolved);
   const showHeader = resolved.headerSectionId !== null;
+  // `includeOperations` is an opt-out company setting (undefined = shown).
+  const showOperations = data.includeOperations !== false;
   const visibleBlocks = resolved.blocks.filter(
-    (block) => block.visible && !(block.type === "header" && !showHeader)
+    (block) =>
+      block.visible &&
+      !(block.type === "header" && !showHeader) &&
+      !(block.type === "operations" && !showOperations)
   );
 
   return (
@@ -124,6 +131,7 @@ const JobTravelerPDF = ({
   notes,
   thumbnail,
   includeMaterials,
+  includeOperations,
   materials,
   title = "Job Traveler",
   template,
@@ -175,6 +183,7 @@ const JobTravelerPDF = ({
         notes={notes}
         thumbnail={thumbnail}
         includeMaterials={includeMaterials}
+        includeOperations={includeOperations}
         materials={materials}
         methodRevision={jobMakeMethod?.version?.toString()}
         template={template}

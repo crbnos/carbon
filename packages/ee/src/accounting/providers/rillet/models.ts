@@ -86,7 +86,7 @@ export namespace Rillet {
     id: z.string(),
     name: z.string(),
     values: z.array(FieldValueSchema).default([]),
-    settings: z.record(z.unknown()).nullish(),
+    settings: z.record(z.string(), z.unknown()).nullish(),
     updated_at: z.string().nullish()
   });
 
@@ -197,7 +197,7 @@ export namespace Rillet {
 
   /**
    * Carbon only ever writes ONE_TIME prices (Rillet also supports
-   * FIXED_RECURRING and USAGE; Carbon-generated AR_ONLY invoices carry
+   * FIXED_RECURRING and USAGE; Carbon-generated invoices carry
    * their own line totals, so the product price is nominal).
    */
   export const ProductPriceSchema = z.object({
@@ -224,8 +224,25 @@ export namespace Rillet {
 
   export type Product = z.infer<typeof ProductSchema>;
 
-  /** AR_ONLY invoice item — product_id is REQUIRED on every line. */
+  export const ExchangeRateSchema = z.object({
+    base: z.string().min(1),
+    target: z.string().min(1),
+    rate: z
+      .string()
+      .refine((value) => Number.isFinite(Number(value)) && Number(value) > 0),
+    date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/)
+  });
+  export type ExchangeRate = z.infer<typeof ExchangeRateSchema>;
+
+  /** External invoice item — product_id is REQUIRED on every line. */
   export const InvoiceItemSchema = z.object({
+    revenue: z
+      .object({
+        account_code: z.string().optional(),
+        period: z.object({ start: z.string(), end: z.string() }).optional(),
+        pattern: z.enum(["DAILY", "EVEN_PERIOD"]).optional()
+      })
+      .optional(),
     id: z.string().optional(),
     product_id: z.string(),
     description: z.string(),
@@ -238,12 +255,12 @@ export namespace Rillet {
   export type InvoiceItem = z.infer<typeof InvoiceItemSchema>;
 
   /**
-   * AR_ONLY invoice: Carbon keeps generating/sending the invoice; Rillet
-   * carries the receivable. `invoice_number` is Carbon's readable id.
+   * External invoice: Carbon issues the invoice; Rillet carries the receivable.
+   * New postings use REVENUE_RECOGNITION_ONLY for fixed FX and immediate revenue. `invoice_number` is Carbon's readable id.
    */
   export const InvoiceSchema = z.object({
     id: z.string(),
-    scope: z.literal("AR_ONLY"),
+    scope: z.enum(["AR_ONLY", "REVENUE_RECOGNITION_ONLY"]),
     customer_id: z.string(),
     /** YYYY-MM-DD. */
     invoice_date: z.string(),
@@ -252,7 +269,7 @@ export namespace Rillet {
     due_date: z.string().optional(),
     tax_amount: MonetaryAmountSchema.optional(),
     subsidiary_id: z.string().optional(),
-    exchange_rate: z.number().optional(),
+    exchange_rate: ExchangeRateSchema.optional(),
     items: z.array(InvoiceItemSchema).min(1),
     external_references: z.array(ExternalReferenceSchema).min(1),
     status: z.string().optional(),
@@ -295,12 +312,86 @@ export namespace Rillet {
     subsidiary_id: z.string().optional(),
     impact_date: z.string().optional(),
     external_references: z.array(ExternalReferenceSchema).optional(),
-    exchange_rate: z.number().optional(),
+    exchange_rate: ExchangeRateSchema.optional(),
     status: BillStatusSchema.optional(),
     updated_at: z.string().optional()
   });
 
   export type Bill = z.infer<typeof BillSchema>;
+
+  /** One coded line of a card charge (`POST /charges`). Same shape as a bill item. */
+  export const ChargeItemSchema = z.object({
+    id: z.string().optional(),
+    account_code: z.string(),
+    amount: MonetaryAmountSchema,
+    description: z.string().optional(),
+    tax_rate: z.number().optional(),
+    fields: z.array(ItemFieldRefSchema).optional()
+  });
+
+  export type ChargeItem = z.infer<typeof ChargeItemSchema>;
+
+  export const ChargeStatusSchema = z.enum([
+    "UNPAID",
+    "PAID",
+    "PARTIALLY_PAID"
+  ]);
+
+  /**
+   * A credit-card charge (`/charges`, spec `ChargeRequest`): Rillet derives
+   * the posting itself — debit each item's `account_code`, credit the
+   * `credit_card_account_code` liability — which is exactly what Carbon's
+   * "Card Transaction" journal books, so the two ledgers cannot drift.
+   */
+  export const ChargeSchema = z.object({
+    id: z.string(),
+    vendor_id: z.string(),
+    items: z.array(ChargeItemSchema).min(1),
+    /** The date the card was charged. */
+    charge_date: z.string(),
+    /** GL impact date; defaults to charge_date when omitted. */
+    impact_date: z.string().optional(),
+    /** The credit-card liability account the charge is settled against. */
+    credit_card_account_code: z.string(),
+    subsidiary_id: z.string().optional(),
+    external_references: z.array(ExternalReferenceSchema).optional(),
+    exchange_rate: ExchangeRateSchema.optional(),
+    status: ChargeStatusSchema.optional(),
+    updated_at: z.string().optional()
+  });
+
+  export type Charge = z.infer<typeof ChargeSchema>;
+
+  export const ReimbursementStatusSchema = z.enum([
+    "UNPAID",
+    "PAID",
+    "PARTIALLY_PAID"
+  ]);
+
+  /**
+   * An employee reimbursement (`/reimbursements`, spec
+   * `CreateReimbursementRequest`). Unlike a charge, Rillet does NOT derive
+   * the payable: the caller names `payable_account_code`, which Carbon takes
+   * from the AP control line of the posted "Purchase Invoice" journal. The
+   * items are the same account-costed shape as a bill's. Rillet publishes no
+   * reimbursement-PAYMENT endpoint (2026-09-10), so a Carbon payment against
+   * one parks Skipped until it does.
+   */
+  export const ReimbursementSchema = z.object({
+    id: z.string(),
+    vendor_id: z.string(),
+    items: z.array(BillItemSchema).min(1),
+    reimbursement_date: z.string(),
+    payable_account_code: z.string(),
+    impact_date: z.string().optional(),
+    subsidiary_id: z.string().optional(),
+    external_references: z.array(ExternalReferenceSchema).optional(),
+    exchange_rate: ExchangeRateSchema.optional(),
+    status: ReimbursementStatusSchema.optional(),
+    updated_at: z.string().optional()
+  });
+
+  export type Reimbursement = z.infer<typeof ReimbursementSchema>;
 
   /**
    * Payment status union across BOTH sources: the list endpoint
@@ -387,6 +478,14 @@ export type RilletInvoiceCreate = Omit<
   RilletTransactionWriteOmit
 >;
 export type RilletBillCreate = Omit<Rillet.Bill, RilletTransactionWriteOmit>;
+export type RilletChargeCreate = Omit<
+  Rillet.Charge,
+  RilletTransactionWriteOmit
+>;
+export type RilletReimbursementCreate = Omit<
+  Rillet.Reimbursement,
+  RilletTransactionWriteOmit
+>;
 
 /**
  * Create payload for a Rillet payment recorded against one document

@@ -1,10 +1,11 @@
 import type { Database, Json } from "@carbon/database";
 import { fetchAllFromTable, getCompanyTimeZone } from "@carbon/database";
+import { storage } from "@carbon/files";
 import { getLogger } from "@carbon/logger";
 import type { JSONContent } from "@carbon/react";
 import { datetime } from "@carbon/utils";
 import { parseDate } from "@internationalized/date";
-import type { SupabaseClient } from "@supabase/supabase-js";
+import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
 import type { z } from "zod";
 import type { GenericQueryFilters } from "~/utils/query";
 import { setGenericQueryFilters } from "~/utils/query";
@@ -129,6 +130,44 @@ export async function deleteIssueAssociation(
         .from("nonConformanceReceiptLine")
         .delete()
         .eq("id", associationId);
+    case "salesReturnOrderLines":
+      return await client
+        .from("nonConformanceSalesReturnOrderLine")
+        .delete()
+        .eq("id", associationId);
+    case "purchaseReturnOrderLines": {
+      // This association row carries the per-quantity coverage that reduces
+      // closeIssue's write-off. Deleting it after the linked return line has
+      // shipped would make closeIssue write the same goods off AGAIN (the
+      // return shipment already relieved inventory) — double relief for
+      // untracked stock. Cancel or void the return instead.
+      const association = await client
+        .from("nonConformancePurchaseReturnOrderLine")
+        .select("id, purchaseReturnOrderLine(quantityShipped)")
+        .eq("id", associationId)
+        .maybeSingle();
+      if (association.error) return association;
+      const shipped = Number(
+        (
+          association.data?.purchaseReturnOrderLine as {
+            quantityShipped: number | null;
+          } | null
+        )?.quantityShipped ?? 0
+      );
+      if (shipped > 0) {
+        return {
+          data: null,
+          error: {
+            message:
+              "Cannot remove this supplier-return link: quantity has already shipped against it, and the Issue's write-off depends on that coverage. Void the return shipment first."
+          } as PostgrestError
+        };
+      }
+      return await client
+        .from("nonConformancePurchaseReturnOrderLine")
+        .delete()
+        .eq("id", associationId);
+    }
     case "trackedEntities":
       return await client
         .from("nonConformanceTrackedEntity")
@@ -495,6 +534,8 @@ export async function getIssueAssociations(
     salesOrderLines,
     shipmentLines,
     receiptLines,
+    salesReturnOrderLines,
+    purchaseReturnOrderLines,
     trackedEntities,
     customers,
     suppliers,
@@ -625,6 +666,34 @@ export async function getIssueAssociations(
         receiptLineId,
         receiptId,
         receiptReadableId
+      `
+      )
+      .eq("nonConformanceId", nonConformanceId)
+      .eq("companyId", companyId),
+
+    // Sales Return Order Lines
+    client
+      .from("nonConformanceSalesReturnOrderLine")
+      .select(
+        `
+        id,
+        salesReturnOrderLineId,
+        salesReturnOrderId,
+        salesReturnOrderReadableId
+      `
+      )
+      .eq("nonConformanceId", nonConformanceId)
+      .eq("companyId", companyId),
+
+    // Purchase Return Order Lines
+    client
+      .from("nonConformancePurchaseReturnOrderLine")
+      .select(
+        `
+        id,
+        purchaseReturnOrderLineId,
+        purchaseReturnOrderId,
+        purchaseReturnOrderReadableId
       `
       )
       .eq("nonConformanceId", nonConformanceId)
@@ -766,6 +835,22 @@ export async function getIssueAssociations(
         documentId: item.receiptId ?? "",
         documentLineId: item.receiptLineId,
         documentReadableId: item.receiptReadableId || ""
+      })) || [],
+    salesReturnOrderLines:
+      salesReturnOrderLines.data?.map((item) => ({
+        id: item.id,
+        type: "salesReturnOrderLines",
+        documentId: item.salesReturnOrderId ?? "",
+        documentLineId: item.salesReturnOrderLineId,
+        documentReadableId: item.salesReturnOrderReadableId || ""
+      })) || [],
+    purchaseReturnOrderLines:
+      purchaseReturnOrderLines.data?.map((item) => ({
+        id: item.id,
+        type: "purchaseReturnOrderLines",
+        documentId: item.purchaseReturnOrderId ?? "",
+        documentLineId: item.purchaseReturnOrderLineId,
+        documentReadableId: item.purchaseReturnOrderReadableId || ""
       })) || [],
     trackedEntities:
       trackedEntities.data?.map((item) => ({
@@ -1046,17 +1131,12 @@ export async function getQualityDocumentsList(
     id: string;
     name: string;
     version: number;
-    processId: string;
     status: string;
-  }>(
-    client,
-    "qualityDocument",
-    "id, name, version, processId, status",
-    (query) =>
-      query
-        .eq("companyId", companyId)
-        .order("name", { ascending: true })
-        .order("version", { ascending: false })
+  }>(client, "qualityDocument", "id, name, version, status", (query) =>
+    query
+      .eq("companyId", companyId)
+      .order("name", { ascending: true })
+      .order("version", { ascending: false })
   );
 }
 
@@ -1065,10 +1145,10 @@ export async function getQualityFiles(
   id: string,
   companyId: string
 ) {
-  const result = await client.storage
-    .from("private")
+  const result = await storage(client)
+    .company(companyId)
     .list(`${companyId}/quality/${id}`);
-  return result.data || [];
+  return result.data ?? [];
 }
 
 export async function getRequiredActionsList(
@@ -1687,16 +1767,20 @@ export async function insertIssue(
   }
 
   if (jobOperationId) {
+    // Callers pass the service role, so every lookup keyed on a caller id is
+    // scoped: a foreign id matches nothing and no link is written.
     const jobOperation = await client
       .from("jobOperation")
       .select("*")
       .eq("id", jobOperationId)
+      .eq("companyId", input.companyId)
       .single();
     if (jobOperation?.data) {
       const job = await client
         .from("job")
         .select("*")
         .eq("id", jobOperation.data.jobId)
+        .eq("companyId", input.companyId)
         .single();
       if (job.data) {
         const jobOperationInsert = await client
@@ -1741,6 +1825,7 @@ export async function insertIssue(
       .from("salesOrderLine")
       .select("*, salesOrder(salesOrderId)")
       .eq("id", salesOrderLineId)
+      .eq("companyId", input.companyId)
       .single();
     if (salesOrderLine.data) {
       const salesOrderLineInsert = await client
@@ -1768,6 +1853,7 @@ export async function insertIssue(
       .from("supplierProcess")
       .select("*")
       .eq("id", operationSupplierProcessId)
+      .eq("companyId", input.companyId)
       .single();
 
     if (operationSupplierProcess.data) {
@@ -2244,7 +2330,7 @@ export async function getInspections(
 ) {
   // No receipt embed: the generic sourceDocumentId carries no FK, so the
   // source document is denormalized onto the row (sourceDocumentReadableId).
-  let query = (client as any)
+  let query = client
     .from("inspection")
     .select(
       "*, item(readableId, name), supplier(name), inspectionSample(status)",
@@ -2298,7 +2384,7 @@ export async function getReceiptInspections(
   receiptId: string,
   companyId: string
 ) {
-  return (client as any)
+  return client
     .from("inspection")
     .select("id, inspectionId, itemId, itemReadableId, status")
     .eq("sourceDocument", "Receipt")

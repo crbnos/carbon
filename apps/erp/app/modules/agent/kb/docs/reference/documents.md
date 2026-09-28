@@ -47,12 +47,13 @@ The explorer search box does a case-insensitive substring match across a file's 
 
 A document can point back at the record it belongs to. The row's **Source Document** column shows that link and jumps straight to the parent record (`DocumentsTable.tsx:207-237`). The set of record types a document can attach to is fixed (`documents.models.ts:9-23`):
 
-  - **Sales side**: Quote, Request for Quote, Sales Order, Sales Invoice, Shipment.
-  - **Purchasing side**: Purchase Order, Purchase Invoice, Purchasing Request for Quote, Supplier Quote.
+  - **Sales side**: Quote, Request for Quote, Sales Order, Sales Invoice, Sales Return Order, Shipment.
+  - **Purchasing side**: Purchase Order, Purchase Invoice, Purchase Return Order, Purchasing Request for Quote, Supplier Quote.
   - **Production & quality**: Job, Gauge Calibration Record, Issue.
   - **Items**: Part, Material, Tool, Consumable, Service.
+  - **Trading parties**: Supplier, Customer. These are the master records rather than transactions, for files that belong to the party itself.
 
-The attachment is stored as a `sourceDocument` (the type) plus a `sourceDocumentId` (the record's id) on the file (`documents.service.ts:154-183`). Because the file also lives in the shared explorer, you can find it either by opening the record or by searching the library. See the `docs/reference/sales-orders`, `docs/reference/purchase-orders`, and `docs/reference/jobs` references for where each record surfaces its files.
+The attachment is stored as a `sourceDocument` (the type) plus a `sourceDocumentId` (the record's id) on the file (`documents.service.ts:154-183`). Because the file also lives in the shared explorer, you can find it either by opening the record or by searching the library. See the `docs/reference/sales-orders`, `docs/reference/purchase-orders`, and `docs/reference/jobs` references for where each record surfaces its files, and `docs/reference/suppliers-and-customers` for the party-level Documents tab.
 
 ## AI extraction
 

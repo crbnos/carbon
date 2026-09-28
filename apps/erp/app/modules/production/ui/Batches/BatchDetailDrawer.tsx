@@ -1,0 +1,913 @@
+import {
+  BarProgress,
+  Button,
+  Checkbox,
+  Combobox,
+  cn,
+  Drawer,
+  DrawerBody,
+  DrawerContent,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuIcon,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+  HStack,
+  IconButton,
+  Table,
+  Tbody,
+  Td,
+  Th,
+  Thead,
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+  Tr,
+  toast,
+  VStack
+} from "@carbon/react";
+import {
+  formatDurationMilliseconds,
+  getItemReadableId,
+  groupBy
+} from "@carbon/utils";
+import { Trans, useLingui } from "@lingui/react/macro";
+import { useEffect, useMemo, useRef, useState } from "react";
+import {
+  LuCirclePlay,
+  LuCombine,
+  LuCopy,
+  LuEllipsisVertical,
+  LuHammer,
+  LuHardHat,
+  LuLayers,
+  LuPlus,
+  LuPrinter,
+  LuStickyNote,
+  LuTimer,
+  LuTrash,
+  LuTriangleAlert,
+  LuUndo2,
+  LuX
+} from "react-icons/lu";
+import { Link, useFetcher } from "react-router";
+import {
+  DateTime,
+  EmployeeAvatar,
+  Enumerable,
+  ItemThumbnail
+} from "~/components";
+import { useWorkCenters } from "~/components/Form/WorkCenter";
+import { ConfirmDelete } from "~/components/Modals";
+import { usePermissions } from "~/hooks";
+import { useCustomers, useItems } from "~/stores";
+import { path } from "~/utils/path";
+import { copyToClipboard } from "~/utils/string";
+import type {
+  JobOperationBatchDetail,
+  JobOperationBatchEvent
+} from "../../types";
+import JobStatus from "../Jobs/JobStatus";
+import { BatchStatus } from "./BatchesTable";
+import { BatchReleaseModal } from "./BatchReleaseModal";
+import { batchPlanBreakdown } from "./batch-builder-logic";
+
+const EVENT_TYPES = ["Setup", "Labor", "Machine"] as const;
+type EventType = (typeof EVENT_TYPES)[number];
+
+const EVENT_ICONS: Record<
+  EventType,
+  React.ComponentType<{ className?: string }>
+> = {
+  Setup: LuTimer,
+  Labor: LuHardHat,
+  Machine: LuHammer
+};
+
+export function BatchDetailDrawer({
+  batch,
+  events,
+  outputLots = [],
+  onClose
+}: {
+  batch: JobOperationBatchDetail;
+  events: JobOperationBatchEvent[];
+  // The members' MERGEABLE output lots (the service filters to Available with
+  // stock) — >=2 of one item make a Completed batch mergeable.
+  outputLots?: {
+    id: string;
+    readableId: string | null;
+    itemId: string | null;
+  }[];
+  onClose: () => void;
+}) {
+  const { t } = useLingui();
+
+  // Customer names by id — only meaningful for jobs tied to a sales order
+  // (make-to-order). Resolved from the shared store to avoid an extra embed.
+  const [customers] = useCustomers();
+  const customerNameById = useMemo(
+    () => new Map(customers.map((c) => [c.id, c.name] as const)),
+    [customers]
+  );
+
+  const isLive = batch.status === "Active" || batch.status === "Completing";
+  // Planned and Active batches stay composable/dissolvable; the edge fn's
+  // production-event guard is what actually freezes a started batch.
+  const isPreStart = batch.status === "Planned" || batch.status === "Active";
+
+  // The edge fn refuses "remove" once production is recorded.
+  const permissions = usePermissions();
+  const canRemoveOperations =
+    isPreStart &&
+    events.length === 0 &&
+    permissions.can("update", "production");
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [removeOpen, setRemoveOpen] = useState(false);
+  useEffect(() => {
+    setSelectedIds((prev) => {
+      const memberIds = new Set(batch.members.map((m) => m.id));
+      const next = new Set([...prev].filter((id) => memberIds.has(id)));
+      return next.size === prev.size ? prev : next;
+    });
+  }, [batch.members]);
+  const toggleSelected = (id: string) =>
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+
+  // A Completed batch can merge each item's lots into one — every item with
+  // >=2 Available lots is its own merge (a mixed batch A, A, B merges the As).
+  // After a merge those lots are Consumed, so its button disappears on
+  // revalidation.
+  const [items] = useItems();
+  const mergeableItemIds = useMemo(() => {
+    if (batch.status !== "Completed") return [];
+    return Object.entries(
+      groupBy(
+        outputLots.filter((lot) => lot.itemId),
+        (lot) => lot.itemId as string
+      )
+    )
+      .filter(([, lots]) => lots.length >= 2)
+      .map(([itemId]) => itemId);
+  }, [batch.status, outputLots]);
+
+  const mergeFetcher = useFetcher<{ success?: boolean; message?: string }>();
+  const wasMerging = useRef(false);
+  useEffect(() => {
+    if (mergeFetcher.state !== "idle") {
+      wasMerging.current = true;
+      return;
+    }
+    if (!wasMerging.current) return;
+    wasMerging.current = false;
+    const d = mergeFetcher.data;
+    if (d?.message) {
+      if (d.success === false) {
+        toast.error(d.message);
+      } else {
+        toast.success(d.message);
+      }
+    }
+  }, [mergeFetcher.state, mergeFetcher.data]);
+
+  // Release (Planned → Active) / Unrelease (Active → Planned). The server's
+  // refusal (no work center, production already recorded) comes back as
+  // { success: false, message } and lands in the toast; success revalidates
+  // the loader and the badge flips.
+  const releaseFetcher = useFetcher<{
+    success?: boolean;
+    message?: string;
+  }>();
+  const wasReleasing = useRef(false);
+  useEffect(() => {
+    if (releaseFetcher.state !== "idle") {
+      wasReleasing.current = true;
+      return;
+    }
+    if (!wasReleasing.current) return;
+    wasReleasing.current = false;
+    const d = releaseFetcher.data;
+    if (d?.success === false && d.message) {
+      toast.error(d.message);
+    }
+  }, [releaseFetcher.state, releaseFetcher.data]);
+
+  const [releaseOpen, setReleaseOpen] = useState(false);
+  const submitBatchIntent = (
+    intent: "release" | "unrelease",
+    purchaseOrdersBySupplierId?: Record<string, string>
+  ) => {
+    releaseFetcher.submit(
+      {
+        intent,
+        batchId: batch.id,
+        ...(purchaseOrdersBySupplierId && {
+          purchaseOrdersBySupplierId: JSON.stringify(purchaseOrdersBySupplierId)
+        })
+      },
+      { method: "post", action: path.to.priorityBatchingUpdate }
+    );
+  };
+
+  // Planned durations, batch semantics (mirrors the MES operation view and the
+  // scheduler's reservation): ONE shared setup (the largest member's), per-type
+  // labor/machine buckets, and a wall-clock `total` (setup + each member's run —
+  // the longer of its labor and machine — combined per the process's batch
+  // type). Missing units default to Total Minutes (setup) / Minutes/Piece
+  // (labor, machine).
+  const plan = useMemo(() => {
+    const { setup, labor, machine, total } = batchPlanBreakdown(
+      batch.members ?? [],
+      {
+        setupUnit: "Total Minutes",
+        laborUnit: "Minutes/Piece",
+        machineUnit: "Minutes/Piece"
+      },
+      batch.process?.batchType ?? "Sequential"
+    );
+    return { Setup: setup, Labor: labor, Machine: machine, total };
+  }, [batch.members, batch.process?.batchType]);
+
+  // Actual durations from the batch's events. `duration` is generated SECONDS;
+  // an open event (endTime null) accrues from startTime to render time —
+  // absolute-instant math, allowed by the date rule's narrow exception.
+  const { actual, openEvent } = useMemo(() => {
+    const totals = { Setup: 0, Labor: 0, Machine: 0 };
+    let open: JobOperationBatchEvent | null = null;
+    const now = Date.now();
+    for (const e of events) {
+      const type = (e.type ?? "Machine") as EventType;
+      if (e.endTime == null) {
+        open = e;
+        if (e.startTime) {
+          totals[type] += Math.max(0, now - Date.parse(e.startTime));
+        }
+      } else {
+        totals[type] += (e.duration ?? 0) * 1000;
+      }
+    }
+    return { actual: totals, openEvent: open };
+  }, [events]);
+
+  const shownTypes = EVENT_TYPES.filter(
+    (type) => plan[type] > 0 || actual[type] > 0
+  );
+
+  const memberCount = batch.members.length;
+  const pendingJobs = batch.members.filter(
+    (m) => m.job?.status && !["Completed", "Cancelled"].includes(m.job.status)
+  );
+  const totalQuantity = batch.members.reduce(
+    (sum, m) => sum + (m.operationQuantity ?? 0),
+    0
+  );
+  const plannedTotal = plan.total;
+
+  const sortedEvents = useMemo(
+    () =>
+      [...events].sort(
+        (a, b) =>
+          Date.parse(b.startTime ?? "1970-01-01") -
+          Date.parse(a.startTime ?? "1970-01-01")
+      ),
+    [events]
+  );
+
+  return (
+    <Drawer
+      open
+      onOpenChange={(open) => {
+        if (!open) onClose();
+      }}
+    >
+      <DrawerContent size="full">
+        <DrawerHeader className="px-6 flex-shrink-0">
+          {/* Header is just identity — the batch's facts (process, work center,
+              location, created by) live in the right sidebar's Details list. */}
+          <HStack spacing={2} className="items-center">
+            <DrawerTitle>{batch.readableId}</DrawerTitle>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <IconButton
+                  aria-label={t`Copy batch number`}
+                  variant="ghost"
+                  size="sm"
+                  icon={<LuCopy />}
+                  onClick={() => copyToClipboard(batch.readableId)}
+                />
+              </TooltipTrigger>
+              <TooltipContent>{t`Copy batch number`}</TooltipContent>
+            </Tooltip>
+            <BatchStatus status={batch.status} />
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <IconButton
+                  aria-label={t`More options`}
+                  variant="secondary"
+                  size="sm"
+                  icon={<LuEllipsisVertical />}
+                />
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="start">
+                <DropdownMenuItem asChild>
+                  <a
+                    href={path.to.file.batchList(batch.id)}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    <DropdownMenuIcon icon={<LuPrinter />} />
+                    {t`Print batch list`}
+                  </a>
+                </DropdownMenuItem>
+                {isLive && (
+                  <DropdownMenuItem asChild>
+                    <Link to={path.to.priorityOperation}>
+                      <DropdownMenuIcon icon={<LuLayers />} />
+                      {t`View on schedule board`}
+                    </Link>
+                  </DropdownMenuItem>
+                )}
+                {isPreStart && (
+                  <>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem destructive asChild>
+                      <Link to={path.to.deleteOperationBatch(batch.id)}>
+                        <DropdownMenuIcon icon={<LuTrash />} />
+                        {t`Dissolve`}
+                      </Link>
+                    </DropdownMenuItem>
+                  </>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </HStack>
+          {batch.notes && (
+            <HStack
+              spacing={1}
+              className="pt-2 items-start text-sm text-muted-foreground"
+            >
+              <LuStickyNote className="size-3.5 flex-shrink-0 mt-0.5" />
+              <span className="text-pretty">{batch.notes}</span>
+            </HStack>
+          )}
+        </DrawerHeader>
+
+        {/* One surface (DrawerBody), two panes divided by a rule — the members
+            list grows to fill the page and scrolls internally, so the drawer
+            never leaves a dead lower half. No nested cards. */}
+        <DrawerBody className="w-full flex-1 min-h-0 overflow-hidden p-0">
+          <div className="grid h-full min-h-0 w-full grid-cols-1 lg:grid-cols-3">
+            {/* Operations — the batch's contents */}
+            <section className="flex min-h-0 flex-col lg:col-span-2">
+              {/* Members whose batched operation was their LAST auto-complete
+                  and receive with the batch; this nudge covers the rest — a
+                  member with operations still remaining has made its lot but
+                  put nothing on hand until the job finishes. */}
+              {batch.status === "Completed" && pendingJobs.length > 0 && (
+                <div className="mx-6 mt-5 flex items-start gap-2 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3 py-2 text-xs text-amber-700 dark:text-amber-400">
+                  <LuTriangleAlert className="mt-0.5 size-3.5 shrink-0" />
+                  <span>
+                    <Trans>
+                      {pendingJobs.length} of {memberCount} member jobs are not
+                      completed yet — their output stays out of stock until each
+                      job is completed.
+                    </Trans>
+                  </span>
+                </div>
+              )}
+              <div className="flex items-center gap-2 px-6 pt-5 pb-3">
+                <h2 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                  <Trans>Operations</Trans>
+                </h2>
+                <span className="text-xs tabular-nums text-muted-foreground/70">
+                  {memberCount}
+                </span>
+              </div>
+              <div className="min-h-0 flex-1 overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent px-2">
+                {/* Process, work center and per-op status repeat for every member
+                    of a batch, so they'd add no information — the batch header
+                    carries them. Customer shows only for sales-order jobs. */}
+                <Table className="[&_td]:px-4 [&_th]:px-4">
+                  <Thead>
+                    <Tr>
+                      {canRemoveOperations && (
+                        <Th className="w-px">
+                          <Checkbox
+                            checked={
+                              selectedIds.size === memberCount
+                                ? true
+                                : selectedIds.size > 0
+                                  ? "indeterminate"
+                                  : false
+                            }
+                            onCheckedChange={() =>
+                              setSelectedIds(
+                                selectedIds.size === memberCount
+                                  ? new Set()
+                                  : new Set(batch.members.map((m) => m.id))
+                              )
+                            }
+                            aria-label={t`Select all`}
+                          />
+                        </Th>
+                      )}
+                      <Th>
+                        <Trans>Job</Trans>
+                      </Th>
+                      <Th>
+                        <Trans>Item</Trans>
+                      </Th>
+                      <Th>
+                        <Trans>Customer</Trans>
+                      </Th>
+                      <Th className="text-right">
+                        <Trans>Qty</Trans>
+                      </Th>
+                    </Tr>
+                  </Thead>
+                  <Tbody>
+                    {batch.members.map((member) => {
+                      const customerName =
+                        member.job?.salesOrderId && member.job?.customerId
+                          ? (customerNameById.get(member.job.customerId) ??
+                            null)
+                          : null;
+                      return (
+                        <Tr key={member.id}>
+                          {canRemoveOperations && (
+                            <Td className="w-px">
+                              <Checkbox
+                                checked={selectedIds.has(member.id)}
+                                onCheckedChange={() =>
+                                  toggleSelected(member.id)
+                                }
+                                aria-label={t`Select operation`}
+                              />
+                            </Td>
+                          )}
+                          <Td className="font-medium">
+                            <HStack spacing={2}>
+                              {member.job?.id ? (
+                                <Link
+                                  to={path.to.jobDetails(member.job.id)}
+                                  className="hover:underline"
+                                >
+                                  {member.job.jobId}
+                                </Link>
+                              ) : (
+                                member.job?.jobId
+                              )}
+                              {batch.status === "Completed" &&
+                                member.job?.status &&
+                                member.job.status !== "Completed" && (
+                                  <JobStatus status={member.job.status} />
+                                )}
+                            </HStack>
+                          </Td>
+                          <Td>
+                            <HStack spacing={2}>
+                              <ItemThumbnail
+                                thumbnailPath={
+                                  member.jobMakeMethod?.item?.thumbnailPath ??
+                                  null
+                                }
+                                type="Part"
+                                size="sm"
+                              />
+                              <VStack spacing={0} className="min-w-0">
+                                <span className="max-w-[22ch] truncate text-sm">
+                                  {member.jobMakeMethod?.item
+                                    ?.readableIdWithRevision ?? "—"}
+                                </span>
+                                <span
+                                  className="max-w-[22ch] truncate text-xs text-muted-foreground"
+                                  title={
+                                    member.jobMakeMethod?.item?.name ??
+                                    undefined
+                                  }
+                                >
+                                  {member.jobMakeMethod?.item?.name}
+                                </span>
+                              </VStack>
+                            </HStack>
+                          </Td>
+                          <Td className="text-muted-foreground">
+                            {customerName ? (
+                              <span
+                                className="line-clamp-1 max-w-[20ch]"
+                                title={customerName}
+                              >
+                                {customerName}
+                              </span>
+                            ) : (
+                              <span className="text-muted-foreground/50">
+                                —
+                              </span>
+                            )}
+                          </Td>
+                          <Td className="text-right">
+                            <VStack spacing={0} className="items-end">
+                              <span className="tabular-nums">
+                                {member.quantityComplete ?? 0}/
+                                {member.operationQuantity ?? 0}
+                              </span>
+                              {(member.quantityScrapped ?? 0) > 0 && (
+                                <span className="text-xs tabular-nums text-red-500">
+                                  {t`${member.quantityScrapped} scrapped`}
+                                </span>
+                              )}
+                            </VStack>
+                          </Td>
+                        </Tr>
+                      );
+                    })}
+                  </Tbody>
+                </Table>
+              </div>
+            </section>
+
+            {/* Details — the batch's facts + time breakdown, divided from the
+                operations list by a rule. Everything that used to sit in the
+                drawer header lives here now. */}
+            <section className="flex min-h-0 flex-col border-t lg:border-t-0 lg:border-l border-border/60">
+              <div className="flex items-center justify-between gap-2 px-6 pt-5 pb-3">
+                <h2 className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                  <Trans>Details</Trans>
+                </h2>
+                {openEvent && (
+                  <span className="flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-2 py-0.5 text-xs text-emerald-600 dark:text-emerald-400">
+                    <span className="relative flex size-2">
+                      <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-500 opacity-60" />
+                      <span className="relative inline-flex size-2 rounded-full bg-emerald-500" />
+                    </span>
+                    <Trans>Timer running</Trans>
+                  </span>
+                )}
+              </div>
+
+              <div className="min-h-0 flex-1 overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent px-6 pb-6">
+                {/* At-a-glance facts, description-list style */}
+                <dl className="grid grid-cols-2 gap-x-6 gap-y-4 border-b border-border/60 pb-5">
+                  <SummaryFact
+                    label={t`Process`}
+                    value={
+                      batch.process?.name ? (
+                        <Enumerable value={batch.process.name} />
+                      ) : (
+                        "—"
+                      )
+                    }
+                    title={batch.process?.name ?? undefined}
+                  />
+                  <WorkCenterFact batch={batch} />
+                  <SummaryFact
+                    label={t`Location`}
+                    value={
+                      batch.location?.name ? (
+                        <Enumerable value={batch.location.name} />
+                      ) : (
+                        "—"
+                      )
+                    }
+                    title={batch.location?.name ?? undefined}
+                  />
+                  <SummaryFact
+                    label={t`Operations`}
+                    value={String(memberCount)}
+                  />
+                  <SummaryFact
+                    label={t`Total quantity`}
+                    value={totalQuantity.toLocaleString()}
+                  />
+                  <SummaryFact
+                    label={t`Planned time`}
+                    value={
+                      plannedTotal > 0
+                        ? formatDurationMilliseconds(plannedTotal, {
+                            style: "short"
+                          })
+                        : "—"
+                    }
+                  />
+                  <SummaryFact
+                    label={t`Created by`}
+                    value={
+                      <EmployeeAvatar employeeId={batch.createdBy} size="xs" />
+                    }
+                  />
+                  <SummaryFact
+                    label={t`Created`}
+                    value={
+                      <DateTime value={batch.createdAt} variant="relative" />
+                    }
+                  />
+                </dl>
+
+                <VStack spacing={4} className="pt-5">
+                  {shownTypes.length === 0 && (
+                    <span className="text-sm text-muted-foreground">
+                      <Trans>No planned or recorded time.</Trans>
+                    </span>
+                  )}
+                  {shownTypes.map((type) => {
+                    const Icon = EVENT_ICONS[type];
+                    const planned = plan[type];
+                    const done = actual[type];
+                    const overPlan = planned > 0 && done > planned;
+                    return (
+                      <VStack key={type} spacing={1} className="w-full">
+                        <HStack className="w-full justify-between">
+                          <span className="flex items-center gap-1.5 text-sm">
+                            <Icon className="size-3.5 text-muted-foreground" />
+                            {type === "Setup" ? (
+                              <Trans>Setup</Trans>
+                            ) : type === "Labor" ? (
+                              <Trans>Labor</Trans>
+                            ) : (
+                              <Trans>Machine</Trans>
+                            )}
+                          </span>
+                          <span className="text-xs tabular-nums text-muted-foreground">
+                            {formatDurationMilliseconds(done, {
+                              style: "short"
+                            })}
+                            {planned > 0 && (
+                              <>
+                                {" / "}
+                                {formatDurationMilliseconds(planned, {
+                                  style: "short"
+                                })}
+                              </>
+                            )}
+                          </span>
+                        </HStack>
+                        <BarProgress
+                          progress={done}
+                          max={planned > 0 ? planned : done > 0 ? done : 1}
+                          activeClassName={cn(
+                            overPlan ? "bg-amber-500" : "bg-emerald-500"
+                          )}
+                        />
+                      </VStack>
+                    );
+                  })}
+
+                  <VStack spacing={1} className="w-full border-t pt-4">
+                    <span className="text-xs font-medium uppercase text-muted-foreground">
+                      <Trans>Production events</Trans>
+                    </span>
+                    {sortedEvents.length === 0 ? (
+                      <span className="text-sm text-muted-foreground">
+                        <Trans>No production recorded yet.</Trans>
+                      </span>
+                    ) : (
+                      <VStack spacing={0} className="w-full">
+                        {sortedEvents.map((event) => {
+                          const Icon =
+                            EVENT_ICONS[(event.type ?? "Machine") as EventType];
+                          const isOpen = event.endTime == null;
+                          return (
+                            <HStack
+                              key={event.id}
+                              className="w-full justify-between gap-2 rounded-md px-1 py-1.5 hover:bg-muted/50 transition-colors"
+                            >
+                              <HStack spacing={2} className="min-w-0">
+                                <Icon className="size-3.5 flex-shrink-0 text-muted-foreground" />
+                                <EmployeeAvatar
+                                  employeeId={event.employeeId}
+                                  size="xs"
+                                />
+                                {event.startTime && (
+                                  <span className="text-xs text-muted-foreground truncate">
+                                    <DateTime
+                                      value={event.startTime}
+                                      variant="relative"
+                                    />
+                                  </span>
+                                )}
+                              </HStack>
+                              <span
+                                className={cn(
+                                  "flex-shrink-0 text-xs tabular-nums",
+                                  isOpen
+                                    ? "text-emerald-600 dark:text-emerald-400"
+                                    : "text-muted-foreground"
+                                )}
+                              >
+                                {isOpen
+                                  ? t`Running`
+                                  : formatDurationMilliseconds(
+                                      (event.duration ?? 0) * 1000,
+                                      { style: "short" }
+                                    )}
+                              </span>
+                            </HStack>
+                          );
+                        })}
+                      </VStack>
+                    )}
+                  </VStack>
+                </VStack>
+              </div>
+            </section>
+          </div>
+        </DrawerBody>
+
+        <DrawerFooter className="flex-shrink-0">
+          {/* Primary lifecycle actions only — secondary actions (print, view on
+              board) and the destructive Dissolve live in the header's ⋯ menu. */}
+          <HStack spacing={2}>
+            {batch.status === "Active" && (
+              <Button
+                variant="secondary"
+                leftIcon={<LuUndo2 />}
+                isLoading={releaseFetcher.state !== "idle"}
+                isDisabled={releaseFetcher.state !== "idle"}
+                onClick={() => submitBatchIntent("unrelease")}
+              >
+                {t`Unrelease`}
+              </Button>
+            )}
+            {canRemoveOperations && selectedIds.size > 0 && (
+              <Button
+                variant="secondary"
+                leftIcon={<LuX />}
+                onClick={() => setRemoveOpen(true)}
+              >
+                {t`Remove ${selectedIds.size} from batch`}
+              </Button>
+            )}
+            {isPreStart && (
+              <Button variant="secondary" leftIcon={<LuPlus />} asChild>
+                <Link to={`${path.to.newOperationBatch}?batchId=${batch.id}`}>
+                  {t`Add operations`}
+                </Link>
+              </Button>
+            )}
+            {mergeableItemIds.map((itemId) => (
+              <Button
+                key={itemId}
+                variant="primary"
+                leftIcon={<LuCombine />}
+                isLoading={
+                  mergeFetcher.state !== "idle" &&
+                  mergeFetcher.formData?.get("itemId") === itemId
+                }
+                isDisabled={mergeFetcher.state !== "idle"}
+                onClick={() =>
+                  mergeFetcher.submit(
+                    { intent: "mergeOutputs", batchId: batch.id, itemId },
+                    { method: "post", action: path.to.priorityBatchingUpdate }
+                  )
+                }
+              >
+                {mergeableItemIds.length === 1
+                  ? t`Merge output lots`
+                  : t`Merge ${getItemReadableId(items, itemId) ?? itemId} lots`}
+              </Button>
+            ))}
+            {batch.status === "Planned" && (
+              // Never gated on a work center: the scheduler auto-selects one
+              // (earliest finish among the process's work centers — the same
+              // load balancing a job's operations get) for a Released batch
+              // that lacks it. The header picker is an optional override.
+              <Button
+                variant="primary"
+                leftIcon={<LuCirclePlay />}
+                isLoading={releaseFetcher.state !== "idle"}
+                isDisabled={releaseFetcher.state !== "idle"}
+                onClick={() => setReleaseOpen(true)}
+              >
+                {t`Release`}
+              </Button>
+            )}
+          </HStack>
+        </DrawerFooter>
+      </DrawerContent>
+      {removeOpen && (
+        <ConfirmDelete
+          action={path.to.priorityBatchingUpdate}
+          title={t`Remove from batch`}
+          name={batch.readableId}
+          text={
+            selectedIds.size === memberCount
+              ? t`A batch needs at least one operation. To break up the whole batch, use Dissolve instead.`
+              : t`Remove ${selectedIds.size} of ${memberCount} operations from ${batch.readableId}?`
+          }
+          deleteText={t`Remove`}
+          isDisabled={selectedIds.size === memberCount}
+          fields={{
+            intent: "remove",
+            batchId: batch.id,
+            jobOperationIds: [...selectedIds]
+          }}
+          onCancel={() => setRemoveOpen(false)}
+          onSubmit={() => {
+            setRemoveOpen(false);
+            setSelectedIds(new Set());
+          }}
+        />
+      )}
+      {releaseOpen && (
+        <BatchReleaseModal
+          target={{ batchId: batch.id }}
+          title={t`Release batch ${batch.readableId}`}
+          confirmLabel={t`Release Batch`}
+          onClose={() => setReleaseOpen(false)}
+          onConfirm={(purchaseOrders) => {
+            submitBatchIntent("release", purchaseOrders);
+            setReleaseOpen(false);
+          }}
+        />
+      )}
+    </Drawer>
+  );
+}
+
+// Vercel-style labeled fact: quiet uppercase key over a high-contrast value.
+function SummaryFact({
+  label,
+  value,
+  title
+}: {
+  label: string;
+  value: React.ReactNode;
+  title?: string;
+}) {
+  return (
+    <div className="flex flex-col gap-1 min-w-0">
+      <dt className="text-xs uppercase tracking-wide text-muted-foreground">
+        {label}
+      </dt>
+      <dd className="truncate text-sm font-medium tabular-nums" title={title}>
+        {value}
+      </dd>
+    </div>
+  );
+}
+
+// The details sidebar's Work center fact — editable while the batch is
+// composable (Planned/Active pre-start), read-only once production started.
+// Optional pre-pick: release never waits on a work center — the scheduler
+// auto-selects the earliest-finish candidate (load balancing) for a Released
+// batch lacking one and persists it. A planner who KNOWS the machine can
+// assign it here inline (intent="update") and the auto-selection defers to
+// it. Constrained to the batch's own process + location so it can only pick
+// a center that can actually run it.
+function WorkCenterFact({ batch }: { batch: JobOperationBatchDetail }) {
+  const { t } = useLingui();
+  const fetcher = useFetcher<{ success?: boolean; message?: string }>();
+  const { options } = useWorkCenters({
+    processId: batch.processId ?? undefined,
+    locationId: batch.locationId ?? undefined
+  });
+
+  const isEditable = batch.status === "Planned" || batch.status === "Active";
+
+  if (!isEditable) {
+    return (
+      <SummaryFact
+        label={t`Work center`}
+        value={
+          batch.workCenterName ? (
+            <Enumerable value={batch.workCenterName} />
+          ) : (
+            "—"
+          )
+        }
+        title={batch.workCenterName ?? undefined}
+      />
+    );
+  }
+
+  return (
+    <div className="flex flex-col gap-1 min-w-0">
+      <dt className="text-xs uppercase tracking-wide text-muted-foreground">
+        <Trans>Work center</Trans>
+      </dt>
+      <dd className="min-w-0">
+        <Combobox
+          size="sm"
+          value={batch.workCenterId ?? ""}
+          options={options}
+          placeholder={t`Auto-assigned on release`}
+          onChange={(workCenterId) =>
+            fetcher.submit(
+              { intent: "update", batchId: batch.id, workCenterId },
+              { method: "post", action: path.to.priorityBatchingUpdate }
+            )
+          }
+        />
+      </dd>
+    </div>
+  );
+}

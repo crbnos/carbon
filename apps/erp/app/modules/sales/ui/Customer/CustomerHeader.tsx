@@ -160,7 +160,9 @@ const CustomerHeader = () => {
                 </CardAttributeValue>
               </CardAttribute>
               <CardAttribute>
-                <CardAttributeLabel>Tax Status</CardAttributeLabel>
+                <CardAttributeLabel>
+                  <Trans>Tax Status</Trans>
+                </CardAttributeLabel>
                 <CardAttributeValue>
                   {routeData?.customerTax?.taxExempt ? (
                     <Status color="red">Exempt</Status>

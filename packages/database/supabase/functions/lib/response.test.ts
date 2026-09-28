@@ -120,12 +120,45 @@ Deno.test("sanitizer suppresses node-pg-shaped error", async () => {
   assertEquals(await errorResponse(err).json(), {});
 });
 
-Deno.test("sanitizer suppresses ZodError", async () => {
+// A ZodError's raw `.message` is a JSON dump, so `isDataLayerError` still blocks
+// it — but a payload-validation failure is the CALLER's input contract, not a
+// data-layer leak. `zodIssueSummary` replaces it with a compact `path: message`
+// summary so an API caller has something to converge on; suppressing it entirely
+// left them with only the service's generic fallback string.
+Deno.test("ZodError is replaced by a compact issue summary, never its raw dump", async () => {
   const err = Object.assign(new Error("[{...}]"), {
     name: "ZodError",
     issues: [{ path: [], message: "x" }],
   });
   assert(isDataLayerError(err));
+  const body = await errorResponse(err).json();
+  assertEquals(body, { message: "Invalid payload — x" });
+  assert(!body.message.includes("[{...}]"));
+});
+
+Deno.test("ZodError summary names the offending field and caps at five issues", async () => {
+  const err = Object.assign(new Error("[{...}]"), {
+    name: "ZodError",
+    issues: Array.from({ length: 7 }, (_, i) => ({
+      path: ["body", `field${i}`],
+      message: "Required",
+    })),
+  });
+  const { message } = await errorResponse(err).json();
+  assertEquals(
+    message,
+    "Invalid payload — body.field0: Required; body.field1: Required; " +
+      "body.field2: Required; body.field3: Required; body.field4: Required; +2 more",
+  );
+});
+
+Deno.test("a ZodError with no issues omits the message key entirely", async () => {
+  const err = Object.assign(new Error("[{...}]"), {
+    name: "ZodError",
+    issues: [],
+  });
+  // `getEdgeFunctionErrorMessage` falls back to the caller's own copy when the
+  // key is absent, so an empty summary must not ship an empty string.
   assertEquals(await errorResponse(err).json(), {});
 });
 
@@ -142,5 +175,25 @@ Deno.test("sanitizer does not overreach: authored Error with DB-looking text is 
 Deno.test("isDataLayerError returns false for non-data-layer values", () => {
   for (const input of ["a string", null, undefined, 42, {}, new Error("x")]) {
     assertEquals(isDataLayerError(input), false);
+  }
+});
+
+Deno.test("errorResponse uses a numeric 4xx/5xx err.status over the passed status", async () => {
+  // Shaped like lib/company-records.ts' RecordNotFoundError.
+  class NotFoundError extends Error {
+    readonly status = 404;
+  }
+  const res = errorResponse(new NotFoundError("Receipt not found"), 500);
+  assertEquals(res.status, 404);
+  assertEquals(await res.json(), { message: "Receipt not found" });
+
+  const limited = Object.assign(new Error("Rate limit exceeded"), { status: 429 });
+  assertEquals(errorResponse(limited, 401).status, 429);
+});
+
+Deno.test("errorResponse ignores a non-HTTP err.status", () => {
+  for (const status of [200, 302, 700, "404", 404.5]) {
+    const err = Object.assign(new Error("x"), { status });
+    assertEquals(errorResponse(err, 400).status, 400);
   }
 });

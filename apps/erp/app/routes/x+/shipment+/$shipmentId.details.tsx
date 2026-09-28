@@ -93,6 +93,72 @@ export async function action({ request }: ActionFunctionArgs) {
           );
         }
         break;
+      case "Sales Return Order": {
+        const salesReturnShipment = await serviceRole.functions.invoke<{
+          id: string;
+        }>("create", {
+          body: {
+            type: "shipmentFromSalesReturnOrder",
+            companyId,
+            locationId: d.locationId,
+            salesReturnOrderId: d.sourceDocumentId,
+            shipmentId: id,
+            userId: userId
+          }
+        });
+        if (!salesReturnShipment.data || salesReturnShipment.error) {
+          logger.error("Failed to create shipment from source document", {
+            error: salesReturnShipment.error
+          });
+          throw redirect(
+            path.to.shipment(id),
+            await flash(
+              request,
+              error(
+                salesReturnShipment.error,
+                await getEdgeFunctionErrorMessage(
+                  salesReturnShipment.error,
+                  "Failed to create shipment"
+                )
+              )
+            )
+          );
+        }
+        break;
+      }
+      case "Purchase Return Order": {
+        const purchaseReturnShipment = await serviceRole.functions.invoke<{
+          id: string;
+        }>("create", {
+          body: {
+            type: "shipmentFromPurchaseReturnOrder",
+            companyId,
+            locationId: d.locationId,
+            purchaseReturnOrderId: d.sourceDocumentId,
+            shipmentId: id,
+            userId: userId
+          }
+        });
+        if (!purchaseReturnShipment.data || purchaseReturnShipment.error) {
+          logger.error("Failed to create shipment from source document", {
+            error: purchaseReturnShipment.error
+          });
+          throw redirect(
+            path.to.shipment(id),
+            await flash(
+              request,
+              error(
+                purchaseReturnShipment.error,
+                await getEdgeFunctionErrorMessage(
+                  purchaseReturnShipment.error,
+                  "Failed to create shipment"
+                )
+              )
+            )
+          );
+        }
+        break;
+      }
       case "Purchase Order":
         const purchaseOrderShipment = await serviceRole.functions.invoke<{
           id: string;

@@ -29,7 +29,7 @@ import {
   toast,
   VStack
 } from "@carbon/react";
-import { INPUT_FORMAT } from "@carbon/utils";
+import { INPUT_FORMAT, INPUT_STEP } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { PostgrestResponse } from "@supabase/supabase-js";
 import { useEffect, useState } from "react";
@@ -242,6 +242,28 @@ const WorkCenterForm = ({
                 {scheduleMode === "lightsOut" && (
                   <Hidden name="alwaysOn" value="on" />
                 )}
+
+                <Subheading variant="heavy" className="block pt-2">
+                  <Trans>Batching</Trans>
+                </Subheading>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full">
+                  <Number
+                    name="batchCapacity"
+                    label={t`Batch Capacity`}
+                    formatOptions={INPUT_FORMAT.quantity}
+                    step={INPUT_STEP.quantity}
+                    minValue={1}
+                    helperText={t`Pieces per run. Leave empty for no limit.`}
+                  />
+                  <Number
+                    name="minimumBatchQuantity"
+                    label={t`Minimum Batch Quantity`}
+                    formatOptions={INPUT_FORMAT.quantity}
+                    step={INPUT_STEP.quantity}
+                    minValue={1}
+                    helperText={t`Smallest run worth batching. Leave empty for none.`}
+                  />
+                </div>
 
                 <CustomFormFields table="workCenter" />
               </VStack>

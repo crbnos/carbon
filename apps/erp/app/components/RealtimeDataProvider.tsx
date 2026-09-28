@@ -3,8 +3,8 @@
 import { useCarbon } from "@carbon/auth";
 import { type Database, fetchAllFromTable } from "@carbon/database";
 import { getLogger } from "@carbon/logger";
-import { useInterval, useRealtimeChannel } from "@carbon/react";
-import { useEffect, useRef } from "react";
+import { useRealtimeChannel } from "@carbon/react";
+import { useEffect } from "react";
 import { useUser } from "~/hooks";
 import {
   upsertIntoListStore,
@@ -15,6 +15,7 @@ import {
 } from "~/stores";
 import type { Item } from "~/stores/items";
 import type { ListItem } from "~/types";
+import { ITEM_QUANTITIES_QUERY_KEY } from "~/utils/react-query";
 
 const logger = getLogger("erp", "realtime-data-provider");
 
@@ -48,86 +49,6 @@ const RealtimeDataProvider = ({ children }: { children: React.ReactNode }) => {
   const [, setSuppliers] = useSuppliers();
   const [, setCustomers] = useCustomers();
   const [, setPeople] = usePeople();
-
-  const fetchQuantities = async () => {
-    if (!carbon || !companyId) return;
-    // A company switch (including A -> B -> A) bumps this. Comparing ids alone
-    // would let a request from the FIRST visit to A land after returning to A
-    // and overwrite newer quantities.
-    const requestedGeneration = quantitiesGeneration.current;
-
-    const { data, error } = await fetchAllFromTable<{
-      itemId: string;
-      locationId: string;
-      quantityOnHand: number;
-    }>(
-      carbon,
-      "itemStockQuantities",
-      "itemId, locationId, quantityOnHand",
-      // Ordered by the rest of the table's key: fetchAllFromTable pages, and
-      // without a stable sort a concurrent write can shift rows across a page
-      // boundary, dropping or duplicating one in `totalMap`.
-      (query) =>
-        query.eq("companyId", companyId).order("itemId").order("locationId")
-    );
-
-    if (error || !data) return;
-    if (quantitiesGeneration.current !== requestedGeneration) return;
-
-    const totalMap = new Map<string, number>();
-    const locationMap = new Map<string, Record<string, number>>();
-
-    for (const row of data) {
-      if (!row.itemId) continue;
-      const qty = Number(row.quantityOnHand) || 0;
-      const locId = row.locationId || "";
-
-      totalMap.set(row.itemId, (totalMap.get(row.itemId) ?? 0) + qty);
-
-      if (!locationMap.has(row.itemId)) locationMap.set(row.itemId, {});
-      if (locId) locationMap.get(row.itemId)![locId] = qty;
-    }
-
-    setItems((currentItems) =>
-      currentItems.map((item) => ({
-        ...item,
-        quantityOnHand: totalMap.get(item.id) ?? 0,
-        quantityByLocation: locationMap.get(item.id) ?? {}
-      }))
-    );
-  };
-
-  // A posting writes one itemStockQuantities row per (item, location) it
-  // touched, so a single receipt can emit a burst. Coalesce them into one
-  // refetch — the same 1.5s quiet window `useDebouncedRealtime` uses.
-  const quantitiesRefresh = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const quantitiesGeneration = useRef(0);
-
-  // Bumped on every company change so in-flight reads and pending timers from
-  // the previous company are discarded rather than applied to the new one.
-  // biome-ignore lint/correctness/useExhaustiveDependencies: keyed on companyId by design
-  useEffect(() => {
-    quantitiesGeneration.current += 1;
-    if (quantitiesRefresh.current) {
-      clearTimeout(quantitiesRefresh.current);
-      quantitiesRefresh.current = null;
-    }
-  }, [companyId]);
-
-  const scheduleQuantitiesRefresh = () => {
-    if (quantitiesRefresh.current) clearTimeout(quantitiesRefresh.current);
-    quantitiesRefresh.current = setTimeout(() => {
-      quantitiesRefresh.current = null;
-      fetchQuantities();
-    }, 1500);
-  };
-
-  useEffect(
-    () => () => {
-      if (quantitiesRefresh.current) clearTimeout(quantitiesRefresh.current);
-    },
-    []
-  );
 
   const hydrate = async () => {
     const idb = (await import("localforage")).default;
@@ -261,8 +182,6 @@ const RealtimeDataProvider = ({ children }: { children: React.ReactNode }) => {
       idb.setItem(`customers:${requestedCompanyId}`, customers.data),
       idb.setItem(`people:${requestedCompanyId}`, people.data)
     ]);
-
-    fetchQuantities();
   };
 
   // Re-run when auth becomes ready: `hydrate()` bails if `carbon` / `accessToken` are missing,
@@ -274,8 +193,11 @@ const RealtimeDataProvider = ({ children }: { children: React.ReactNode }) => {
     hydrate().catch((err) => logger.error("hydrate failed", { error: err }));
   }, [companyId, carbon, accessToken]);
 
-  useInterval(fetchQuantities, companyId ? 10 * 60 * 1000 : null);
-
+  // Every subscription below is filtered by `companyId` server-side. Without it
+  // each tenant's row changes are fanned out to every connected client and then
+  // discarded in JS — the client-side guards stay as defence in depth. The filter
+  // holds on DELETE too: `companyId` is part of each table's composite PK, so it
+  // is present in a payload that otherwise carries only key columns.
   useRealtimeChannel({
     topic: `realtime:core`,
     dependencies: [companyId],
@@ -286,7 +208,8 @@ const RealtimeDataProvider = ({ children }: { children: React.ReactNode }) => {
           {
             event: "*",
             schema: "public",
-            table: "item"
+            table: "item",
+            filter: `companyId=eq.${companyId}`
           },
           (payload) => {
             switch (payload.eventType) {
@@ -366,10 +289,8 @@ const RealtimeDataProvider = ({ children }: { children: React.ReactNode }) => {
             event: "*",
             schema: "public",
             // Quantities are maintained incrementally by triggers on itemLedger,
-            // so this fires on the posting itself rather than up to 40 min later
-            // (the old 30 min matview refresh + the 10 min poll below).
-            // Server-side filter: with ~1600 tenants an unfiltered subscription
-            // would fan every company's postings out to every client.
+            // so this fires on the posting itself rather than up to 30 min later
+            // (the matview refresh this replaced).
             table: "itemStockQuantities",
             filter: `companyId=eq.${companyId}`
           },
@@ -380,7 +301,21 @@ const RealtimeDataProvider = ({ children }: { children: React.ReactNode }) => {
               payload.eventType === "DELETE" ? payload.old : payload.new;
             if (row && "companyId" in row && row.companyId !== companyId)
               return;
-            scheduleQuantitiesRefresh();
+            // Invalidate rather than refetch: the on-hand map is fetched by the
+            // item picker (`useItemQuantities` in `~/components/Form/Item`) and
+            // only when one is mounted. Re-reading the whole table here cost a
+            // full download per burst of stock movements for a dropdown badge
+            // that may not be on screen at all.
+            // Every key under this prefix, not just this company's: the
+            // companyId term of the key comes from `getCompanyId()`, which
+            // reads `document.cookie` — and every cookie here is httpOnly, so
+            // it is always "null". Matching on it invalidated nothing. Keys for
+            // another company would only exist after a company switch, which
+            // reloads the page and empties this in-memory cache anyway.
+            window.clientCache?.invalidateQueries({
+              predicate: (query) =>
+                (query.queryKey as unknown[])[0] === ITEM_QUANTITIES_QUERY_KEY
+            });
           }
         )
         .on(
@@ -388,7 +323,8 @@ const RealtimeDataProvider = ({ children }: { children: React.ReactNode }) => {
           {
             event: "*",
             schema: "public",
-            table: "customer"
+            table: "customer",
+            filter: `companyId=eq.${companyId}`
           },
           (payload) => {
             switch (payload.eventType) {
@@ -444,7 +380,8 @@ const RealtimeDataProvider = ({ children }: { children: React.ReactNode }) => {
           {
             event: "*",
             schema: "public",
-            table: "supplier"
+            table: "supplier",
+            filter: `companyId=eq.${companyId}`
           },
           (payload) => {
             switch (payload.eventType) {
@@ -502,7 +439,8 @@ const RealtimeDataProvider = ({ children }: { children: React.ReactNode }) => {
           {
             event: "*",
             schema: "public",
-            table: "employee"
+            table: "employee",
+            filter: `companyId=eq.${companyId}`
           },
           async (payload) => {
             // TODO: there's a cleaner way of doing this, but since customers and suppliers

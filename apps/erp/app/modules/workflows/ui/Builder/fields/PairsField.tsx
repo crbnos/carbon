@@ -1,5 +1,5 @@
+import type { PairEntry, ValueOrRef } from "@carbon/ee/workflows";
 import { Button, cn, IconButton, Input } from "@carbon/react";
-import type { PairEntry, ValueOrRef } from "@carbon/workflows";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useCallback } from "react";
 import { LuPlus, LuX } from "react-icons/lu";

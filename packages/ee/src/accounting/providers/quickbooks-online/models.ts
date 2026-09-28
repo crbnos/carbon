@@ -101,7 +101,65 @@ export namespace Qbo {
 
   export type Item = z.infer<typeof ItemSchema>;
 
+  export const TaxRateDetailSchema = z.object({
+    TaxRateRef: RefSchema,
+    TaxTypeApplicable: z.string().optional(),
+    TaxOrder: z.number().optional(),
+    TaxOnTaxOrder: z.number().optional()
+  });
+  export const TaxRateListSchema = z.object({
+    TaxRateDetail: z.array(TaxRateDetailSchema)
+  });
+  export const TaxCodeSchema = z.object({
+    Id: z.string(),
+    Name: z.string().optional(),
+    Active: z.boolean().optional(),
+    Taxable: z.boolean().optional(),
+    TaxGroup: z.boolean().optional(),
+    SalesTaxRateList: TaxRateListSchema.optional(),
+    PurchaseTaxRateList: TaxRateListSchema.optional()
+  });
+  export type TaxCode = z.infer<typeof TaxCodeSchema>;
+  export const TaxRateSchema = z.object({
+    Id: z.string(),
+    Name: z.string().optional(),
+    Active: z.boolean().optional(),
+    RateValue: z.number().optional(),
+    SpecialTaxType: z.string().optional(),
+    EffectiveTaxRate: z
+      .array(
+        z
+          .object({
+            EffectiveDate: z.string().optional(),
+            RateValue: z.number().optional()
+          })
+          .passthrough()
+      )
+      .optional()
+  });
+  export type TaxRate = z.infer<typeof TaxRateSchema>;
+  export const TaxLineDetailSchema = z.object({
+    TaxRateRef: RefSchema,
+    NetAmountTaxable: z.number(),
+    PercentBased: z.literal(true),
+    TaxPercent: z.number()
+  });
+  export type TaxLineDetail = z.infer<typeof TaxLineDetailSchema>;
+  export const TxnTaxDetailSchema = z.object({
+    TxnTaxCodeRef: RefSchema.optional(),
+    TotalTax: z.number(),
+    TaxLine: z.array(
+      z.object({
+        Amount: z.number(),
+        DetailType: z.literal("TaxLineDetail"),
+        TaxLineDetail: TaxLineDetailSchema
+      })
+    )
+  });
+  export type TxnTaxDetail = z.infer<typeof TxnTaxDetailSchema>;
+
   export const SalesItemLineDetailSchema = z.object({
+    TaxCodeRef: RefSchema.optional(),
     ItemRef: RefSchema.optional(),
     Qty: z.number().optional(),
     UnitPrice: z.number().optional()
@@ -125,6 +183,12 @@ export namespace Qbo {
   export type InvoiceLine = z.infer<typeof InvoiceLineSchema>;
 
   export const InvoiceSchema = z.object({
+    TxnTaxDetail: TxnTaxDetailSchema.optional(),
+    CurrencyRef: RefSchema.optional(),
+    ExchangeRate: z.number().optional(),
+    GlobalTaxCalculation: z
+      .enum(["TaxExcluded", "TaxInclusive", "NotApplicable"])
+      .optional(),
     Id: z.string(),
     SyncToken: z.string(),
     /** QBO caps DocNumber at 21 characters. */
@@ -142,7 +206,11 @@ export namespace Qbo {
   export type Invoice = z.infer<typeof InvoiceSchema>;
 
   export const AccountBasedExpenseLineDetailSchema = z.object({
-    AccountRef: RefSchema
+    AccountRef: RefSchema,
+    /** Dimension slot target "class" (QBO Class entity) — per line on
+     * expense-style transactions; `DepartmentRef` is transaction-level there
+     * (only JournalEntry carries it per line). */
+    ClassRef: RefSchema.optional()
   });
 
   export type AccountBasedExpenseLineDetail = z.infer<
@@ -213,6 +281,50 @@ export namespace Qbo {
   });
 
   export type PurchaseOrder = z.infer<typeof PurchaseOrderSchema>;
+
+  /**
+   * Reference to a transaction counterparty (`Purchase.EntityRef`): a plain
+   * ref plus the entity kind, since a Purchase can be paid to a Vendor,
+   * Customer or Employee.
+   */
+  export const EntityRefSchema = RefSchema.extend({
+    type: z.enum(["Vendor", "Customer", "Employee"]).optional()
+  });
+
+  export type EntityRef = z.infer<typeof EntityRefSchema>;
+
+  /**
+   * QBO Purchase — a bank / credit-card expense transaction. Carbon writes
+   * only `PaymentType: "CreditCard"` purchases (card charges, entityType
+   * "charge"): `AccountRef` is the credit-card liability account, `EntityRef`
+   * the vendor, and `Credit: true` marks a card REFUND (Intuit: "If Credit is
+   * Null or False, it is considered as Charge. If true, the CreditCard
+   * represents a Refund"). `DepartmentRef` is transaction-level here.
+   */
+  export const PurchaseSchema = z.object({
+    Id: z.string(),
+    SyncToken: z.string(),
+    PaymentType: z.enum(["Cash", "Check", "CreditCard"]),
+    /** The bank / credit-card account the purchase is paid from. */
+    AccountRef: RefSchema,
+    EntityRef: EntityRefSchema.optional(),
+    /** Only meaningful for PaymentType "CreditCard": true = refund. */
+    Credit: z.boolean().optional(),
+    DocNumber: z.string().optional(),
+    TxnDate: z.string().optional(),
+    PrivateNote: z.string().optional(),
+    /** Dimension slot target "department" (QBO Department / Location). */
+    DepartmentRef: RefSchema.optional(),
+    /** ISO-4217 currency ref (`{ value: "EUR" }`) — set on FX purchases. */
+    CurrencyRef: RefSchema.optional(),
+    /** Foreign→home exchange rate — set on FX purchases (omitted at rate 1). */
+    ExchangeRate: z.number().optional(),
+    Line: z.array(ExpenseLineSchema),
+    TotalAmt: z.number().optional(),
+    MetaData: MetaDataSchema.optional()
+  });
+
+  export type Purchase = z.infer<typeof PurchaseSchema>;
 
   /**
    * A settled transaction referenced by a payment line. QBO BillPayment lines

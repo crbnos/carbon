@@ -144,7 +144,7 @@ function SortableListItem<T>({
                         {typeof item.title === "string" ? (
                           <span
                             className={cn(
-                              "flex font-medium text-sm md:text-base truncate hover:underline cursor-pointer",
+                              "flex min-w-0 font-medium text-sm md:text-base truncate hover:underline cursor-pointer",
                               item.checked ? "text-red-400" : "text-foreground"
                             )}
                             onClick={(e) => {
@@ -162,7 +162,10 @@ function SortableListItem<T>({
                                 onSelectItem(item.id);
                               }
                             }}
-                            className={item.checked ? "text-red-400" : ""}
+                            className={cn(
+                              "min-w-0 flex-1",
+                              item.checked && "text-red-400"
+                            )}
                           >
                             {item.title}
                           </div>

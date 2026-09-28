@@ -1,4 +1,4 @@
-import type { WorkflowNodeType } from "@carbon/workflows";
+import type { WorkflowNodeType } from "@carbon/ee/workflows";
 
 // Per-kind facts that layout and store code need. Kept apart from `meta.ts`
 // because that module reaches the translation catalog, which the unit-test

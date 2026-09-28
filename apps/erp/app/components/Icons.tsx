@@ -39,6 +39,7 @@ import {
   LuExternalLink,
   LuEye,
   LuFlaskConical,
+  LuFolderKanban,
   LuGroup,
   LuHammer,
   LuHandCoins,
@@ -614,6 +615,10 @@ export const JournalEntrySourceTypeIcon = ({
       return <LuTruck className={className} />;
     case "Sales Return":
       return <LuRotateCcw className={className} />;
+    case "Sales Return Receipt":
+      return <LuRotateCcw className={className} />;
+    case "Purchase Return Shipment":
+      return <LuRotateCcw className={className} />;
     case "Transfer Receipt":
       return <LuArrowLeftRight className={className} />;
     case "Inventory Adjustment":
@@ -634,6 +639,8 @@ export const JournalEntrySourceTypeIcon = ({
       return <LuBuilding2 className={className} />;
     case "Payment":
       return <LuBanknote className={className} />;
+    case "Card Transaction":
+      return <LuCreditCard className={className} />;
     case "Credit Memo":
       return <LuCreditCard className={className} />;
     case "Debit Memo":
@@ -683,6 +690,8 @@ export const DimensionEntityTypeIcon = ({
       return <LuLocateFixed className={className} />;
     case "Process":
       return <LuRedoDot className={className} />;
+    case "Project":
+      return <LuFolderKanban className={className} />;
     case "ScrapReason":
       return <LuTriangleAlert className={className} />;
   }

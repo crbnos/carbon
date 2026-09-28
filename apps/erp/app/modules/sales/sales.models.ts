@@ -1,3 +1,13 @@
+import {
+  bicMatchesCountry,
+  conditionAstFormField,
+  getBankFieldConfig,
+  getFieldDef,
+  isFieldAvailableOnSalesRuleSurfaces,
+  isValidSwiftBic,
+  RULE_SEVERITIES,
+  SALES_RULE_SURFACES
+} from "@carbon/utils";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
 import { address, contact } from "~/types/validators";
@@ -9,6 +19,7 @@ import {
   methodOperationOrders,
   methodType,
   operationTypes,
+  optionalTiptapDoc,
   standardFactorType,
   taxExemptionReasons
 } from "../shared";
@@ -100,6 +111,109 @@ export const customerTaxValidator = z
       path: ["taxExemptionReason"]
     }
   );
+
+export const customerBankAccountValidator = z
+  .object({
+    id: zfd.text(z.string().optional()),
+    customerId: z.string().min(1, { message: "Customer is required" }),
+    name: zfd.text(z.string().min(1, { message: "Name is required" })),
+    accountHolderName: zfd.text(z.string().optional()),
+    bankName: zfd.text(z.string().min(1, { message: "Bank name is required" })),
+    // Correspondent banks route international wires on this.
+    bankAddress: zfd.text(
+      z.string().min(1, { message: "Bank address is required" })
+    ),
+    // Required because it SELECTS the validation rules below — left blank, the
+    // permissive default applies and nothing is really checked.
+    countryCode: zfd.text(
+      z.string().min(1, { message: "Country is required" })
+    ),
+    currencyCode: zfd.text(z.string().optional()),
+    // Generic by design: `accountNumber` holds an IBAN in SEPA and a plain
+    // account number elsewhere; `bankCode` holds an ABA / sort code / BSB /
+    // IFSC / transit. countryCode decides which validator applies, so a new
+    // country is an entry in getBankFieldConfig, not a migration.
+    accountNumber: zfd.text(z.string().optional()),
+    bankCode: zfd.text(z.string().optional()),
+    swiftBic: zfd.text(z.string().optional()),
+    notes: zfd.text(z.string().optional())
+  })
+  .superRefine((data, ctx) => {
+    const config = getBankFieldConfig(data.countryCode);
+
+    if (!data.accountNumber) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "An account number is required",
+        path: ["accountNumber"]
+      });
+    } else if (
+      config.validateAccount &&
+      !config.validateAccount(data.accountNumber)
+    ) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Invalid account number for the selected country",
+        path: ["accountNumber"]
+      });
+    }
+
+    if (config.bankCodeLabel !== null) {
+      // A country that defines a routing identifier always needs it — there is
+      // no scheme where it is optional.
+      if (!data.bankCode) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "A bank code is required for the selected country",
+          path: ["bankCode"]
+        });
+      } else if (
+        config.validateBankCode &&
+        !config.validateBankCode(data.bankCode)
+      ) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Invalid bank code for the selected country",
+          path: ["bankCode"]
+        });
+      }
+    }
+
+    // Cross-border payments will not route without a BIC, so where the country
+    // config demands one, absence is an error rather than a blank field.
+    if (!data.swiftBic) {
+      if (config.requiresSwift) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "A SWIFT/BIC code is required for this country",
+          path: ["swiftBic"]
+        });
+      }
+    } else if (!isValidSwiftBic(data.swiftBic)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Invalid SWIFT/BIC code",
+        path: ["swiftBic"]
+      });
+    } else if (!bicMatchesCountry(data.swiftBic, data.countryCode)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "This SWIFT/BIC belongs to a different country",
+        path: ["swiftBic"]
+      });
+    }
+  })
+  // Countries with no routing identifier (SEPA: the IBAN carries it) unmount the
+  // input, so nothing is submitted. Left undefined, an update would skip the
+  // column entirely and strand the previous country's code on the row — so it is
+  // explicitly nulled rather than merely absent.
+  .transform((data) => ({
+    ...data,
+    bankCode:
+      getBankFieldConfig(data.countryCode).bankCodeLabel === null
+        ? null
+        : (data.bankCode ?? null)
+  }));
 
 export const customerPaymentValidator = z.object({
   customerId: z.string().min(1, { message: "Customer is required" }),
@@ -288,7 +402,7 @@ export const quoteValidator = z.object({
   customerReference: zfd.text(z.string().optional()),
   locationId: z.string().min(1, { message: "Location is required" }),
   status: z.enum(quoteStatusType).optional(),
-  notes: z.any().optional(),
+  notes: optionalTiptapDoc,
   dueDate: zfd.text(z.string().optional()),
   expirationDate: zfd.text(z.string().optional()),
   currencyCode: zfd.text(z.string().optional()),
@@ -299,9 +413,10 @@ export const quoteValidator = z.object({
 });
 
 export const quoteLineAdditionalChargesValidator = z.record(
+  z.string(),
   z.object({
     description: z.string(),
-    amounts: z.record(z.number()),
+    amounts: z.record(z.string(), z.number()),
     taxable: z.boolean().default(true)
   })
 );
@@ -321,7 +436,7 @@ export const costCategoryKeys = [
 export type CostCategoryKey = (typeof costCategoryKeys)[number];
 
 export const quoteLineCategoryMarkupsValidator = z
-  .record(z.number().min(0))
+  .record(z.string(), z.number().min(0))
   .default({});
 
 export const quoteLineValidator = z.object({
@@ -330,12 +445,12 @@ export const quoteLineValidator = z.object({
   itemType: z.enum(itemType).optional(),
   itemId: z.string().min(1, { message: "Part is required" }),
   status: z.enum(quoteLineStatusType, {
-    errorMap: () => ({ message: "Status is required" })
+    error: "Status is required"
   }),
   estimatorId: zfd.text(z.string().optional()),
   description: z.string().min(1, { message: "Description is required" }),
   methodType: z.enum(methodType, {
-    errorMap: () => ({ message: "Method is required" })
+    error: "Method is required"
   }),
   customerPartId: zfd.text(z.string().optional()),
   customerPartRevision: zfd.text(z.string().optional()),
@@ -350,6 +465,8 @@ export const quoteLineValidator = z.object({
   taxPercent: zfd.numeric(
     z.number().min(0).max(1, { message: "Tax percent must be between 0 and 1" })
   ),
+  internalNotes: z.any().optional(),
+  externalNotes: z.any().optional(),
   configuration: z.any().optional()
 });
 
@@ -361,14 +478,10 @@ export const quoteMaterialValidator = z
       .min(1, { message: "Make method is required" }),
     order: zfd.numeric(z.number().min(0)),
     itemType: z.enum(methodItemType, {
-      errorMap: (issue, ctx) => ({
-        message: "Item type is required"
-      })
+      error: "Item type is required"
     }),
     methodType: z.enum(methodType, {
-      errorMap: (issue, ctx) => ({
-        message: "Method type is required"
-      })
+      error: "Method type is required"
     }),
     itemId: z.string().min(1, { message: "Item is required" }),
     kit: zfd.text(z.string().optional()).transform((value) => value === "true"),
@@ -429,14 +542,10 @@ export const quoteOperationValidator = z
       .min(1, { message: "Quote Make Method is required" }),
     order: zfd.numeric(z.number().min(0)),
     operationOrder: z.enum(methodOperationOrders, {
-      errorMap: (issue, ctx) => ({
-        message: "Operation order is required"
-      })
+      error: "Operation order is required"
     }),
     operationType: z.enum(operationTypes, {
-      errorMap: (issue, ctx) => ({
-        message: "Operation type is required"
-      })
+      error: "Operation type is required"
     }),
     processId: z.string().min(1, { message: "Process is required" }),
     procedureId: zfd.text(z.string().optional()),
@@ -448,19 +557,19 @@ export const quoteOperationValidator = z
     ),
     setupUnit: z
       .enum(standardFactorType, {
-        errorMap: () => ({ message: "Setup unit is required" })
+        error: "Setup unit is required"
       })
       .optional(),
     setupTime: zfd.numeric(z.number().min(0).optional()),
     laborUnit: z
       .enum(standardFactorType, {
-        errorMap: () => ({ message: "Labor unit is required" })
+        error: "Labor unit is required"
       })
       .optional(),
     laborTime: zfd.numeric(z.number().min(0).optional()),
     machineUnit: z
       .enum(standardFactorType, {
-        errorMap: () => ({ message: "Machine unit is required" })
+        error: "Machine unit is required"
       })
       .optional(),
     machineTime: zfd.numeric(z.number().min(0).optional()),
@@ -785,9 +894,7 @@ export const salesOrderLineValidator = z
     id: zfd.text(z.string().optional()),
     salesOrderId: z.string().min(1, { message: "Order is required" }),
     salesOrderLineType: z.enum(salesOrderLineType, {
-      errorMap: (issue, ctx) => ({
-        message: "Type is required"
-      })
+      error: "Type is required"
     }),
     accountId: zfd.text(z.string().optional()),
     shippingCost: zfd.numeric(z.number().optional()),
@@ -804,7 +911,7 @@ export const salesOrderLineValidator = z
     methodType: zfd.text(
       z
         .enum(methodType, {
-          errorMap: () => ({ message: "Method is required" })
+          error: "Method is required"
         })
         .optional()
     ),
@@ -963,6 +1070,17 @@ export const selectedLineSchema = z.object({
 
 export const selectedLinesValidator = z.record(z.string(), selectedLineSchema);
 
+// Quote lead-time prediction — a JSON body (not FormData), so plain zod.
+export const quoteLeadTimeValidator = z.object({
+  // Each quantity runs two full scheduling simulations; cap the per-request work.
+  quantities: z.array(z.number().positive()).min(1).max(50),
+  dueDate: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/)
+    .optional()
+    .nullable()
+});
+
 // Sales Order Locked Status
 export const SALES_ORDER_LOCKED_STATUSES = [
   "To Ship and Invoice",
@@ -988,3 +1106,158 @@ export function isSalesRfqLocked(status: string | null | undefined): boolean {
 export function isQuoteLocked(status: string | null | undefined): boolean {
   return status !== null && status !== undefined && status !== "Draft";
 }
+
+// -----------------------------------------------------------------------------
+// Sales Rules — predicate rules evaluated when an item is added to a sales
+// document (quote line / sales order line). Distinct from storage rules
+// (`~/modules/inventory`, warehouse/MES surfaces) and the configurator's
+// `configurationRule`. The AST schema and engine are shared via @carbon/utils.
+// -----------------------------------------------------------------------------
+export const salesRuleSeverities = RULE_SEVERITIES;
+
+export const salesRuleValidator = z
+  .object({
+    id: zfd.text(z.string().optional()),
+    name: z.string().trim().min(1, { message: "Name is required" }).max(120),
+    description: zfd.text(z.string().optional()),
+    message: z.string().min(1, { message: "Message is required" }).max(500),
+    severity: z.enum(salesRuleSeverities),
+    // Sales rules are always item-target and broadcast via the filteredItem*
+    // columns (empty = all items), so there is no targetType/appliesToAll.
+    filteredItemTypes: zfd.repeatableOfType(z.string()).optional(),
+    filteredItemGroupIds: zfd.repeatableOfType(z.string()).optional(),
+    filteredItemMatchAll: zfd.checkbox(),
+    active: zfd.checkbox(),
+    surfaces: zfd
+      .repeatableOfType(z.enum(SALES_RULE_SURFACES))
+      .refine((arr) => arr.length >= 1, {
+        message: "Pick at least one surface"
+      }),
+    conditionAst: conditionAstFormField
+  })
+  .superRefine((val, ctx) => {
+    // Reject conditions on a registry field whose context the evaluator won't
+    // populate for every selected surface (else it resolves undefined → false
+    // "X is required"). Unknown paths are left to runtime presence handling.
+    val.conditionAst.conditions.forEach((c, i) => {
+      const def = getFieldDef(c.field);
+      if (def && !isFieldAvailableOnSalesRuleSurfaces(def, val.surfaces)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["conditionAst", "conditions", i, "field"],
+          message: `"${def.label}" isn't available on the selected surface(s)`
+        });
+      }
+    });
+  });
+// ─── Sales Return Orders (RMAs) ───
+
+export const salesReturnOrderStatusType = [
+  "Draft",
+  "To Receive",
+  "Completed",
+  "Cancelled"
+] as const;
+
+// Picker subset of the DB `disposition` enum for RMA lines — same
+// commented-subset technique as `disposition` in quality.models.ts. Scrap and
+// Rework are set via Issue escalation, not directly.
+export const salesReturnDispositionType = [
+  // "Conditional Acceptance",
+  // "Deviation Accepted",
+  // "Hold",
+  // "No Action Required",
+  "Pending",
+  // "Quarantine",
+  // "Repair",
+  "Return to Customer",
+  "Rework",
+  "Scrap",
+  "Use As Is"
+] as const;
+
+export const SALES_RETURN_ORDER_LOCKED_STATUSES = [
+  "Completed",
+  "Cancelled"
+] as const;
+
+export function isSalesReturnOrderLocked(
+  status: string | null | undefined
+): boolean {
+  return SALES_RETURN_ORDER_LOCKED_STATUSES.includes(
+    status as (typeof SALES_RETURN_ORDER_LOCKED_STATUSES)[number]
+  );
+}
+
+export const returnReasonValidator = z.object({
+  id: zfd.text(z.string().optional()),
+  name: z.string().trim().min(1, { message: "Name is required" }),
+  inventoryValueZero: zfd.checkbox()
+});
+
+export const salesReturnOrderValidator = z.object({
+  id: zfd.text(z.string().optional()),
+  salesReturnOrderId: zfd.text(z.string().optional()),
+  status: z.enum(salesReturnOrderStatusType).optional(),
+  customerId: z.string().min(1, { message: "Customer is required" }),
+  customerLocationId: zfd.text(z.string().optional()),
+  customerContactId: zfd.text(z.string().optional()),
+  customerReference: zfd.text(z.string().optional()),
+  locationId: zfd.text(z.string().optional()),
+  salesOrderId: zfd.text(z.string().optional()),
+  currencyCode: zfd.text(z.string().optional()),
+  exchangeRate: zfd.numeric(z.number().optional()),
+  orderDate: z.string().min(1, { message: "Order date is required" }),
+  expirationDate: zfd.text(z.string().optional()),
+  assignee: zfd.text(z.string().optional())
+});
+
+export const salesReturnOrderLineValidator = z.object({
+  id: zfd.text(z.string().optional()),
+  salesReturnOrderId: z
+    .string()
+    .min(1, { message: "Return order is required" }),
+  itemId: z.string().min(1, { message: "Item is required" }),
+  quantity: zfd.numeric(
+    z.number().gt(0, { message: "Quantity must be positive" })
+  ),
+  unitOfMeasureCode: zfd.text(z.string().optional()),
+  unitPrice: zfd.numeric(z.number().min(0)),
+  restockFeePercent: zfd.numeric(z.number().min(0).max(1).optional()),
+  returnReasonId: zfd.text(z.string().optional()),
+  salesOrderLineId: zfd.text(z.string().optional()),
+  shipmentLineId: zfd.text(z.string().optional()),
+  salesInvoiceLineId: zfd.text(z.string().optional())
+});
+
+export const salesReturnOrderDispositionValidator = z.object({
+  lineId: z.string().min(1),
+  disposition: z.enum(salesReturnDispositionType, {
+    error: "Disposition is required"
+  })
+});
+
+// Credit dialog: repeatable per-line quantity rows (same encoding as
+// selectedLines in purchasing.models.ts — a JSON-encoded field)
+export const salesReturnOrderCreditValidator = z.object({
+  lines: z
+    .string()
+    .transform((val, ctx) => {
+      try {
+        return JSON.parse(val) as unknown;
+      } catch {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, message: "Invalid lines" });
+        return z.NEVER;
+      }
+    })
+    .pipe(
+      z
+        .array(
+          z.object({
+            salesReturnOrderLineId: z.string().min(1),
+            quantity: z.number().min(0)
+          })
+        )
+        .min(1, { message: "At least one line is required" })
+    )
+});

@@ -1,15 +1,36 @@
-import { hashOAuthSecret, requirePermissions } from "@carbon/auth/auth.server";
+import type { ManifestEntry } from "@carbon/api";
+import { hashOAuthSecret } from "@carbon/auth/auth.server";
 import {
   getCarbonServiceRole,
   getUserScopedClient
 } from "@carbon/auth/client.server";
+import { EntitlementError } from "@carbon/ee/entitlements.server";
+import { createCatalogSearch } from "@carbon/ee/mcp";
+import { createMcpServer } from "@carbon/ee/mcp.server";
 import { getAppUrl } from "@carbon/env";
-import { datetime } from "@carbon/utils";
+import { Ratelimit, redis } from "@carbon/kv";
+import { withLogContext } from "@carbon/logger/middleware.server";
+import { datetime, getRequestOrigin } from "@carbon/utils";
 import { WebStandardStreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js";
-import type { SupabaseClient } from "@supabase/supabase-js";
 import type { ActionFunctionArgs } from "react-router";
 import { getCompanyTimeZone } from "~/modules/shared/timezone.server";
-import { createMcpServer } from "./lib/server";
+import { authenticateApiKey } from "../v1+/lib/authenticate.server";
+import type { AuthedContext } from "../v1+/lib/base.server";
+import { callOperation } from "../v1+/lib/call.server";
+import {
+  isListOperation,
+  operationsByName
+} from "../v1+/lib/operations.server";
+import { isMcpBlockedTool } from "./lib/mcp-blocked-tools";
+import toolMetadata from "./lib/tool-metadata.json";
+
+// One catalog search index for the process (built lazily on first query); the
+// MCP engine now lives in `@carbon/ee/mcp.server` and takes the dispatch, the
+// manifest and this index as injected deps — they derive from `~/modules/*` and
+// cannot move into a package.
+const catalogSearch = createCatalogSearch(
+  toolMetadata.tools as unknown as ManifestEntry[]
+);
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -28,13 +49,6 @@ function addCorsHeaders(response: Response): Response {
     headers
   });
 }
-
-type McpContext = {
-  client: SupabaseClient;
-  companyId: string;
-  companyGroupId: string;
-  userId: string;
-};
 
 async function authenticateOAuthToken(
   accessToken: string
@@ -55,8 +69,56 @@ async function authenticateOAuthToken(
   };
 }
 
+/**
+ * OAuth (connector) callers get the same allowance an API key gets by default —
+ * 60 requests/minute — but through the app's Redis limiter rather than the
+ * Postgres one: `apiKeyRateLimit` has an FK to `apiKey`, so it cannot count a
+ * synthetic per-user id, and this route only exists in the Node app where Redis
+ * is the house tool (the login limiter is the precedent). Keyed by USER, not by
+ * token, so minting extra tokens does not multiply the allowance. Without this,
+ * the OAuth branch was the one authenticated path with no rate limit at all —
+ * it never touches requirePermissions, where the API-key limit lives.
+ */
+const OAUTH_RATE_LIMIT = 60;
+const oauthRatelimit = new Ratelimit({
+  redis,
+  limiter: Ratelimit.slidingWindow(OAUTH_RATE_LIMIT, "1 m")
+});
+
+function make429Response(reset: number, remaining: number): Response {
+  const retryAfterSeconds = Math.max(1, Math.ceil((reset - Date.now()) / 1000));
+  return new Response(JSON.stringify({ error: "Rate limit exceeded" }), {
+    status: 429,
+    headers: {
+      "X-RateLimit-Limit": OAUTH_RATE_LIMIT.toString(),
+      "X-RateLimit-Remaining": remaining.toString(),
+      "X-RateLimit-Reset": reset.toString(),
+      "Retry-After": retryAfterSeconds.toString(),
+      ...corsHeaders
+    }
+  });
+}
+
+// The MCP server is a commercial (Business+) feature. companyHasFeature returns
+// false on the Community edition and, on Cloud, for Starter-plan companies — so
+// this one gate makes the server unavailable to community/starter across BOTH
+// the OAuth-connector and carbon-key auth paths.
+function makeMcpDisabledResponse(): Response {
+  return new Response(
+    JSON.stringify({
+      error:
+        "The MCP server is available on the Business plan. Upgrade to connect an agent to Carbon."
+    }),
+    {
+      status: 402,
+      headers: corsHeaders
+    }
+  );
+}
+
 function make401Response(request: Request): Response {
-  const origin = getAppUrl() || new URL(request.url).origin;
+  const origin =
+    getAppUrl() || getRequestOrigin(request) || new URL(request.url).origin;
   return new Response(null, {
     status: 401,
     headers: {
@@ -67,7 +129,7 @@ function make401Response(request: Request): Response {
 }
 
 async function resolveAuth(request: Request): Promise<{
-  ctx: McpContext;
+  ctx: AuthedContext;
   request: Request;
 }> {
   const authHeader = request.headers.get("Authorization");
@@ -80,6 +142,11 @@ async function resolveAuth(request: Request): Promise<{
     if (!token.startsWith("crbn_")) {
       const oauthAuth = await authenticateOAuthToken(token);
       if (oauthAuth) {
+        const rl = await oauthRatelimit.limit(`mcp-oauth:${oauthAuth.userId}`);
+        if (!rl.success) {
+          throw make429Response(rl.reset, rl.remaining);
+        }
+
         const client = await getUserScopedClient(oauthAuth.userId);
         const companyResult = await client
           .from("company")
@@ -93,7 +160,9 @@ async function resolveAuth(request: Request): Promise<{
             companyId: oauthAuth.companyId,
             companyGroupId:
               companyResult.data?.companyGroupId ?? oauthAuth.companyId,
-            userId: oauthAuth.userId
+            userId: oauthAuth.userId,
+            authKind: "oauth" as const,
+            scopes: {}
           },
           request
         };
@@ -113,11 +182,12 @@ async function resolveAuth(request: Request): Promise<{
     throw make401Response(request);
   }
 
-  const { client, companyId, companyGroupId, userId } =
-    await requirePermissions(request, {});
-
+  // `request` here carries the carbon-key header for both entry forms
+  // (`Bearer crbn_…` was rewritten above). Same helper as the v1 HTTP transport,
+  // so the requirePermissions-then-read-scopes dance exists once.
+  const rawKey = request.headers.get("carbon-key") ?? "";
   return {
-    ctx: { client, companyId, companyGroupId, userId },
+    ctx: await authenticateApiKey(request.url, rawKey),
     request
   };
 }
@@ -125,21 +195,47 @@ async function resolveAuth(request: Request): Promise<{
 export async function action({ request }: ActionFunctionArgs) {
   const { ctx, request: authedRequest } = await resolveAuth(request);
 
-  // The agent is told what "today" is; it has to be the company's day, not the
-  // server's, or every relative-date tool call it makes lands a day off.
-  const server = createMcpServer(
-    ctx,
-    datetime
-      .today(await getCompanyTimeZone(ctx.client, ctx.companyId))
-      .toString()
-  );
-  const transport = new WebStandardStreamableHTTPServerTransport({
-    sessionIdGenerator: undefined,
-    enableJsonResponse: true
-  });
+  // Stamp the authenticated identity into the logging context so every log
+  // line in this request carries it alongside the middleware's requestId.
+  let response: Response;
+  try {
+    response = await withLogContext(
+      { companyId: ctx.companyId, userId: ctx.userId, authKind: ctx.authKind },
+      async () => {
+        // The agent is told what "today" is; it has to be the company's day, not
+        // the server's, or every relative-date tool call it makes lands a day off.
+        // `createMcpServer` embeds the MCP entitlement LOCK (Business+), covering
+        // every auth path since both resolve to an authed context first — it
+        // throws `EntitlementError` for community/starter, caught below as 402.
+        const server = await createMcpServer(
+          ctx,
+          datetime
+            .today(await getCompanyTimeZone(ctx.client, ctx.companyId))
+            .toString(),
+          {
+            callOperation,
+            operationsByName,
+            isListOperation,
+            isMcpBlockedTool,
+            catalogSearch,
+            toolMetadata
+          }
+        );
+        const transport = new WebStandardStreamableHTTPServerTransport({
+          sessionIdGenerator: undefined,
+          enableJsonResponse: true
+        });
 
-  await server.connect(transport);
-  const response = await transport.handleRequest(authedRequest);
+        await server.connect(transport);
+        return transport.handleRequest(authedRequest);
+      }
+    );
+  } catch (err) {
+    if (err instanceof EntitlementError) {
+      return addCorsHeaders(makeMcpDisabledResponse());
+    }
+    throw err;
+  }
 
   return addCorsHeaders(response);
 }

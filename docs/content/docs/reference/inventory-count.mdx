@@ -9,7 +9,7 @@ An inventory count freezes what Carbon thinks is on hand, sends someone to count
 
 A count moves through three statuses in order. Posting is atomic, so a count is never left half-applied.
 
-<StatusFlow>
+<StatusFlow entity="inventoryCount">
   <Status name="Draft">
     The count is being set up and counted. Carbon has snapshotted on-hand into the lines, and counters enter what they physically find. Lines can still be regenerated from scratch while the count is Draft.
   </Status>

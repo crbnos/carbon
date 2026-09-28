@@ -18,9 +18,8 @@
  *  FIX-3  Master data uses updatedAt vs lastSyncedAt instead of the 60s
  *         completed-row cooldown (no window to swallow a real change, no
  *         window to wait out for a no-op).
- *  FIX-4  A Voided payment with prior operations records nothing (v1 has no
- *         void echo — the legacy transition enqueue only produced a Skipped
- *         park).
+ *  FIX-4  Native Rillet voids reconcile from durable active mapping state;
+ *         unsupported providers preserve their prior disposition behavior.
  *
  * The journal POLICY routing itself (push vs Excluded vs Warning, metadata,
  * granularity) is shared by construction — both the legacy path and the
@@ -49,7 +48,12 @@ const baseContext: ReconcileContext = {
   entityPushEnabled: true,
   providerSupportsPaymentPush: true,
   settings,
-  docSync: { invoiceEnabled: true, billEnabled: true },
+  docSync: {
+    invoiceEnabled: true,
+    billEnabled: true,
+    chargeEnabled: true,
+    chargeCreditEnabled: false
+  },
   inventoryAdjustmentEnabled: false,
   paymentFamily: null
 };
@@ -246,6 +250,113 @@ describe("golden: journals", () => {
 });
 
 // ── Documents ───────────────────────────────────────────────────────────────
+
+describe("golden: charges", () => {
+  // A Charge/Credit cardTransaction as a provider charge object — the same
+  // document rules as bills/invoices, with the card statuses.
+  const postedCharge = { status: "Posted", updatedAt: "2026-08-12T01:00:00Z" };
+
+  it("posted + lost event (no ops, no mapping) ⇔ enqueue", () => {
+    expect(
+      kinds(
+        computeReconcileDecision(
+          input({ entityType: "charge", snapshot: postedCharge })
+        )
+      )
+    ).toEqual(["enqueue"]);
+  });
+
+  it("phantom success (latest Completed, no mapping) ⇔ enqueue", () => {
+    expect(
+      kinds(
+        computeReconcileDecision(
+          input({
+            entityType: "charge",
+            snapshot: postedCharge,
+            latestOperation: {
+              id: "op_1",
+              status: "Completed",
+              errorCode: null,
+              attemptCount: 1,
+              createdAt: "2026-08-12T00:00:00Z"
+            }
+          })
+        )
+      )
+    ).toEqual(["enqueue"]);
+  });
+
+  it("mapped ⇔ nothing", () => {
+    expect(
+      kinds(
+        computeReconcileDecision(
+          input({
+            entityType: "charge",
+            snapshot: postedCharge,
+            hasMappingWithExternalId: true
+          })
+        )
+      )
+    ).toEqual(["nothing"]);
+  });
+
+  it("Draft ⇔ nothing (only Posted pushes)", () => {
+    expect(
+      kinds(
+        computeReconcileDecision(
+          input({
+            entityType: "charge",
+            snapshot: { status: "Draft", updatedAt: "2026-08-12T01:00:00Z" }
+          })
+        )
+      )
+    ).toEqual(["nothing"]);
+  });
+
+  it("charge push disabled ⇔ nothing", () => {
+    expect(
+      kinds(
+        computeReconcileDecision(
+          input({
+            entityType: "charge",
+            snapshot: postedCharge,
+            context: { ...baseContext, entityPushEnabled: false }
+          })
+        )
+      )
+    ).toEqual(["nothing"]);
+  });
+
+  it("a Charge's own journal records DOC_BACKED terminal instead of pushing", () => {
+    const decision = computeReconcileDecision(
+      input({
+        entityType: "journalEntry",
+        snapshot: {
+          status: "Posted",
+          sourceType: "Card Transaction",
+          reversalOfId: null
+        },
+        cardTransaction: { type: "Charge", hasSupplier: true }
+      })
+    );
+    expect(kinds(decision)).toEqual(["record-terminal"]);
+  });
+
+  it("a statement Payment's journal still pushes", () => {
+    const decision = computeReconcileDecision(
+      input({
+        entityType: "journalEntry",
+        snapshot: {
+          status: "Posted",
+          sourceType: "Card Transaction",
+          reversalOfId: null
+        },
+        cardTransaction: { type: "Payment", hasSupplier: false }
+      })
+    );
+    expect(kinds(decision)).toEqual(["enqueue"]);
+  });
+});
 
 describe("golden: documents", () => {
   const openBill = { status: "Open", updatedAt: "2026-08-12T01:00:00Z" };
@@ -542,7 +653,7 @@ describe("golden: payments", () => {
     ).toEqual(["nothing"]);
   });
 
-  it("FIX-4: a Voided payment with prior ops records nothing (no void echo in v1)", () => {
+  it("unsupported native-void adapter preserves the prior payment disposition", () => {
     expect(
       kinds(
         computeReconcileDecision(
@@ -617,5 +728,96 @@ describe("golden: master data", () => {
         )
       )
     ).toEqual(["nothing"]);
+  });
+});
+
+describe("Rillet mapped void reconciliation", () => {
+  it("parks an attempted but unmapped charge void for explicit remote verification", () => {
+    const source = input({
+      entityType: "charge",
+      snapshot: { status: "Voided" },
+      hasUnvoidedPushMapping: false,
+      context: { ...baseContext, providerSupportsNativeVoid: true },
+      latestOperation: {
+        id: "ambiguous-create",
+        status: "Failed",
+        errorCode: "API_ERROR",
+        attemptCount: 1,
+        createdAt: "2026-09-09T10:00:00Z"
+      }
+    });
+    expect(computeReconcileDecision(source).actions).toEqual([
+      {
+        kind: "record-terminal",
+        request: expect.objectContaining({
+          entityType: "charge",
+          status: "Warning",
+          errorCode: "UNCONFIRMED_REMOTE_VOID"
+        })
+      }
+    ]);
+    expect(
+      kinds(
+        computeReconcileDecision({
+          ...source,
+          latestOperation: {
+            ...source.latestOperation!,
+            status: "Warning",
+            errorCode: "UNCONFIRMED_REMOTE_VOID"
+          }
+        })
+      )
+    ).toEqual(["nothing"]);
+    expect(
+      kinds(computeReconcileDecision({ ...source, latestOperation: null }))
+    ).toEqual(["nothing"]);
+    expect(
+      kinds(computeReconcileDecision({ ...source, hasLiveOperation: true }))
+    ).toEqual(["nothing"]);
+  });
+
+  it.each([
+    "invoice",
+    "bill",
+    "payment"
+  ] as const)("enqueues %s void after Completed creation until all native mappings are voided", (entityType) => {
+    const source = input({
+      entityType,
+      snapshot: { status: "Voided" },
+      hasUnvoidedPushMapping: true,
+      context: { ...baseContext, providerSupportsNativeVoid: true },
+      latestOperation: {
+        id: "op-post",
+        status: "Completed",
+        errorCode: null,
+        attemptCount: 1,
+        createdAt: "2026-09-09T10:00:00Z"
+      }
+    });
+    expect(kinds(computeReconcileDecision(source))).toEqual(["enqueue"]);
+    expect(
+      kinds(computeReconcileDecision({ ...source, hasLiveOperation: true }))
+    ).toEqual(["nothing"]);
+    expect(
+      kinds(
+        computeReconcileDecision({ ...source, hasUnvoidedPushMapping: false })
+      )
+    ).toEqual(["nothing"]);
+    expect(
+      kinds(
+        computeReconcileDecision({
+          ...source,
+          context: { ...source.context, providerSupportsNativeVoid: false }
+        })
+      )
+    ).toEqual(["nothing"]);
+    expect(
+      kinds(
+        computeReconcileDecision({
+          ...source,
+          latestOperation: { ...source.latestOperation!, status: "Failed" }
+        })
+      )
+    ).toEqual(["re-drive"]);
   });
 });

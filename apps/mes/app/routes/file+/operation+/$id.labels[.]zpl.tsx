@@ -4,12 +4,14 @@ import { labelSizes } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
 import { redirect } from "react-router";
 import {
-  getCompany,
   getCompanySettings,
   getDocumentTemplateConfig
 } from "~/services/inventory.service";
-import { resolveLabelLogo } from "~/services/labelLogo.server";
-import { getTrackedEntitiesByMakeMethodId } from "~/services/operations.service";
+import {
+  getCompanyLogoForLabel,
+  resolveLabelLogo
+} from "~/services/labelLogo.server";
+import { getTrackedEntitiesByOperationId } from "~/services/operations.service";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
@@ -20,7 +22,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   const [companySettings, trackedEntities] = await Promise.all([
     getCompanySettings(client, companyId),
-    getTrackedEntitiesByMakeMethodId(client, id)
+    getTrackedEntitiesByOperationId(client, id, companyId)
   ]);
 
   const url = new URL(request.url);
@@ -92,8 +94,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     "trackingLabel"
   );
 
-  const company = await getCompany(client, companyId);
-  const logo = await resolveLabelLogo(company.data, template, labelSize);
+  const companyLogo = await getCompanyLogoForLabel(client, companyId);
+  const logo = await resolveLabelLogo(companyLogo, template, labelSize);
 
   // Generate ZPL for each item
   const zplCommands = items.map((item) =>

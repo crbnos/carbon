@@ -1,5 +1,5 @@
 import type { KyselyDatabase } from "@carbon/database/client";
-import { MAX_CHAIN_DEPTH, type Origin } from "@carbon/workflows";
+import { MAX_CHAIN_DEPTH, type Origin } from "@carbon/ee/workflows";
 import type { Kysely } from "kysely";
 import type { CausingRun, MatchInput, RunTrace, Subscriber } from "./types";
 

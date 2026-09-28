@@ -17,7 +17,7 @@ Every posting is a **journal** with balanced **journal lines**: debits positive,
 | Source type | Posted by |
 | --- | --- |
 | Sales Shipment | Posting a shipment: relieves inventory to COGS. |
-| Sales Invoice | Posting a sales invoice: receivable against revenue. |
+| Sales Invoice | Posting a sales invoice: receivable against sales revenue, shipping revenue, and sales tax payable, on separate lines. |
 | Purchase Receipt | Posting a receipt: inventory or WIP against GR/IR. |
 | Purchase Invoice | Posting a supplier bill: payables, clearing GR/IR. |
 | Inventory Adjustment | Manual adjustments and inventory count variances: stock gains and losses against the inventory adjustment account. |
@@ -35,8 +35,12 @@ Carbon resolves the accounts to post to from a **single company-level set of def
 | Work in process | Cost accumulating on open jobs. |
 | Cost of goods sold | Cost relieved when goods are sold. |
 | Accounts receivable / payable | Customer and supplier balances. |
+| Sales | Revenue from goods and services sold. |
+| Shipping revenue | Shipping charged to the customer — its own revenue leaf, never the sales account. |
 | Goods received, not invoiced | The accrual between receiving goods and being billed for them. |
 | Variance | Differences swept at job close or from purchase price. |
+
+A sales invoice line splits its charge three ways rather than folding everything into revenue: the line's own shipping plus its share of any header-level shipping credits the **shipping revenue** account, tax credits **sales tax payable**, and merchandise and add-ons credit the **sales** account. The two revenue defaults must be distinct accounts — posting refuses a line that would credit shipping to the sales account. A new company seeds account **4040 "Shipping Revenue"** under Revenue and points the default at it; a company joining an existing group inherits that group's shipping default instead.
 
 ## Dimensions
 

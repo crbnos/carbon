@@ -1,19 +1,6 @@
 import { Status } from "@carbon/react";
+import { CHANGE_ORDER_STATUS_COLOR_MAP } from "@carbon/utils";
 import type { ChangeNoticeStatus as ChangeNoticeStatusType } from "../../types";
-
-// Stage → badge color. Done is success (green); the open stages step through
-// gray → blue → yellow → orange as work progresses; Cancelled is red.
-const CHANGE_ORDER_STATUS_COLOR_MAP: Record<
-  string,
-  "green" | "orange" | "red" | "yellow" | "blue" | "gray" | "purple"
-> = {
-  Draft: "gray",
-  Start: "blue",
-  "Engineering Complete": "yellow",
-  Implementation: "orange",
-  Done: "green",
-  Cancelled: "red"
-};
 
 type ChangeNoticeStatusProps = {
   status?: ChangeNoticeStatusType | null;

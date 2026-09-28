@@ -46,13 +46,13 @@ describe("health loader", () => {
     expect(body.checks.redis).toBe("down");
   });
 
-  it("reports the database down (never throws) on a query error", async () => {
+  it("returns 503 when the database is down — the code is the readiness gate", async () => {
     select.mockResolvedValue({ error: { message: "boom" } });
 
     const response = await loader();
     const body = await response.json();
 
-    expect(response.status).toBe(200);
+    expect(response.status).toBe(503);
     expect(body.status).toBe("degraded");
     expect(body.checks.database).toBe("down");
   });

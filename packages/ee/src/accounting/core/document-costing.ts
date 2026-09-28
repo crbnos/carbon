@@ -1,9 +1,18 @@
 import type { Kysely, KyselyDatabase, KyselyTx } from "@carbon/database/client";
+import {
+  assertCurrencyDecimals,
+  assertExchangeRate,
+  classifyAccountingPostingRole,
+  round,
+  SCALE,
+  toDocumentAmount
+} from "@carbon/utils";
 import { loadJournalLineDimensions } from "./dimension-mapping";
 import {
+  JournalEntrySyncError,
   type JournalLineDimensionRef,
-  roundCurrency,
-  toDebitSignedAmount
+  toDebitSignedAmount,
+  toPostingDateString
 } from "./posting";
 
 type Db = Kysely<KyselyDatabase> | KyselyTx;
@@ -56,10 +65,17 @@ export type CostingLine = {
 export type BillCostingResult = {
   /** Costing lines (AP control line excluded), base-currency, debit-signed. */
   lines: CostingLine[];
+  /** The AP control account the posting credited — what a provider
+   * reimbursement (which does not derive its own payable) is booked against. */
+  payablesAccountId?: string;
   /** The invoice's transaction currency (ISO-4217). */
   currencyCode: string;
-  /** Base-per-transaction exchange rate (1 for base-currency bills). */
+  /** Document currency per company-base currency. */
   exchangeRate: number;
+  documentTotal: number;
+  decimalPlaces: number;
+  baseCurrencyCode: string;
+  postingDate: string;
 };
 
 /**
@@ -72,22 +88,84 @@ export type BillCostingResult = {
  * (`documentLineReference = purchase-invoice:<purchaseOrderLineId>`); direct
  * no-PO lines and variance lines resolve to `sourceItem: undefined`.
  *
- * Returns `lines: []` when the invoice has no posted Purchase Invoice
- * journal (not posted / accounting off) — the caller surfaces the Warning.
+ * Missing original posting/control metadata raises a structured Warning before
+ * any currency reconciliation can hide the actionable source problem.
  */
 export async function loadBillCostingLines(
   db: Db,
-  args: { companyId: string; billId: string; payablesAccountId: string | null }
+  args: { companyId: string; billId: string }
 ): Promise<BillCostingResult> {
   const invoice = await db
     .selectFrom("purchaseInvoice")
-    .select(["currencyCode", "exchangeRate"])
+    .select(["currencyCode", "exchangeRate", "postingDate"])
     .where("id", "=", args.billId)
     .where("companyId", "=", args.companyId)
     .executeTakeFirst();
 
-  const currencyCode = invoice?.currencyCode ?? "USD";
-  const exchangeRate = Number(invoice?.exchangeRate) || 1;
+  const company = await db
+    .selectFrom("company")
+    .select(["baseCurrencyCode", "companyGroupId"])
+    .where("id", "=", args.companyId)
+    .executeTakeFirst();
+  if (
+    !invoice?.currencyCode ||
+    !invoice.postingDate ||
+    !company?.baseCurrencyCode ||
+    !company.companyGroupId
+  ) {
+    throw new Error(
+      "Bill currency, posting date and company base currency are required"
+    );
+  }
+  const currencyCode = invoice.currencyCode;
+  const baseCurrencyCode = company.baseCurrencyCode;
+  const exchangeRate = Number(invoice.exchangeRate);
+  const currency = await db
+    .selectFrom("currency")
+    .select("decimalPlaces")
+    .where("code", "=", currencyCode)
+    .where("companyGroupId", "=", company.companyGroupId)
+    .executeTakeFirst();
+  if (!currency || currency.decimalPlaces == null)
+    throw new Error("Bill currency precision is required");
+  const decimalPlaces = currency.decimalPlaces;
+  assertExchangeRate(exchangeRate);
+  assertCurrencyDecimals(decimalPlaces);
+  if (currencyCode === baseCurrencyCode && exchangeRate !== 1)
+    throw new Error("Base-currency bill requires identity exchange rate");
+  const [invoiceLines, delivery] = await Promise.all([
+    db
+      .selectFrom("purchaseInvoiceLine")
+      .select([
+        "quantity",
+        "supplierUnitPrice",
+        "supplierShippingCost",
+        "supplierTaxAmount"
+      ])
+      .where("invoiceId", "=", args.billId)
+      .where("companyId", "=", args.companyId)
+      .where("invoiceLineType", "!=", "Comment")
+      .execute(),
+    db
+      .selectFrom("purchaseInvoiceDelivery")
+      .select("supplierShippingCost")
+      .where("id", "=", args.billId)
+      .where("companyId", "=", args.companyId)
+      .executeTakeFirst()
+  ]);
+  const documentTotal = round(
+    invoiceLines.reduce(
+      (total, line) =>
+        total +
+        Number(line.quantity) * Number(line.supplierUnitPrice) +
+        Number(line.supplierShippingCost) +
+        Number(line.supplierTaxAmount),
+      Number(delivery?.supplierShippingCost ?? 0)
+    ),
+    decimalPlaces
+  );
+  if (!Number.isFinite(documentTotal))
+    throw new Error("Bill document total must be finite");
 
   const rows = await db
     .selectFrom("journalLine")
@@ -105,6 +183,7 @@ export async function loadBillCostingLines(
       "journalLine.documentLineReference",
       "account.class as accountClass"
     ])
+    .where("journalLine.documentType", "=", "Invoice")
     .where("journalLine.documentId", "=", args.billId)
     .where("journalLine.companyId", "=", args.companyId)
     .where("journal.sourceType", "=", "Purchase Invoice")
@@ -113,11 +192,43 @@ export async function loadBillCostingLines(
     .orderBy("journalLine.journalLineReference", "asc")
     .execute();
 
-  // AP control line(s) are re-booked by the provider's own bill mechanics —
-  // exclude them; keep null-account lines (they fail preflight as unmapped).
-  const costingRows = rows.filter(
-    (row) => row.accountId === null || row.accountId !== args.payablesAccountId
+  const controls = rows.filter(
+    (row) => classifyAccountingPostingRole(row.description) === "Payables"
   );
+  if (
+    !rows.length ||
+    !controls.length ||
+    controls.some((row) => !row.accountId)
+  ) {
+    throw new JournalEntrySyncError({
+      errorCode: "UNMAPPED_ACCOUNTS",
+      warning: true,
+      message: !rows.length
+        ? "Cannot sync bill: no posted Purchase Invoice journal found. Post the invoice with accounting enabled, then retry."
+        : "Cannot sync bill: its original posted payables control account is missing. Correct the posting, then retry.",
+      metadata: {
+        billId: args.billId,
+        controlLineIds: controls.map((row) => row.id)
+      }
+    });
+  }
+  // The provider creates its own AP control. Exclude the original role rows,
+  // preserving explicit costing even when it happens to use the same account.
+  const costingRows = rows.filter(
+    (row) => classifyAccountingPostingRole(row.description) !== "Payables"
+  );
+  const missingAccountLines = costingRows.filter((row) => !row.accountId);
+  if (missingAccountLines.length)
+    throw new JournalEntrySyncError({
+      errorCode: "UNMAPPED_ACCOUNTS",
+      warning: true,
+      message:
+        "Cannot sync bill: posted costing lines have no account. Correct the posting, then retry.",
+      metadata: {
+        billId: args.billId,
+        lineIdsWithoutAccount: missingAccountLines.map((row) => row.id)
+      }
+    });
 
   const dimensionsByLine = await loadJournalLineDimensions(db, {
     companyId: args.companyId,
@@ -168,14 +279,194 @@ export async function loadBillCostingLines(
     return {
       id: row.id,
       accountId: row.accountId ?? null,
-      amount: toDebitSignedAmount(row.accountClass, Number(row.amount) || 0),
+      amount: toDebitSignedAmount(row.accountClass, Number(row.amount)),
       description: row.description ?? null,
       ...(sourceItem ? { sourceItem } : {}),
       ...(dimensions ? { dimensions } : {})
     };
   });
 
-  return { lines, currencyCode, exchangeRate };
+  return {
+    lines,
+    payablesAccountId: controls[0]?.accountId ?? undefined,
+    currencyCode,
+    exchangeRate,
+    documentTotal,
+    decimalPlaces,
+    baseCurrencyCode,
+    postingDate: toPostingDateString(invoice.postingDate)
+  };
+}
+
+export type CardTransactionCostingResult = BillCostingResult & {
+  /** The card-liability account the charge is settled against. */
+  cardAccountId: string;
+  /** Charge (spend) or Credit (merchant refund). */
+  type: "Charge" | "Credit";
+  /** The date the card was charged (the provider's charge date). */
+  transactionDate: string;
+};
+
+/**
+ * Load a card transaction's account-costed replay lines from its posted
+ * "Card Transaction" journal — the same contract as {@link loadBillCostingLines}
+ * with a simpler control rule: the card-liability line is identified by the
+ * header's `cardAccountId`, not by a description role. Everything else the
+ * journal booked (the expense lines, with their cost-center dimensions) IS the
+ * charge's items, base-currency and debit-signed; a Credit's lines come out
+ * credit-signed (negative), which the provider adapters turn into their native
+ * refund shape. `postingDate` falls back to `transactionDate` (nullable on the
+ * header). No item labels: card lines have no item.
+ */
+export async function loadCardTransactionCostingLines(
+  db: Db,
+  args: { companyId: string; cardTransactionId: string }
+): Promise<CardTransactionCostingResult> {
+  const cardTransaction = await db
+    .selectFrom("cardTransaction")
+    .select([
+      "type",
+      "currencyCode",
+      "exchangeRate",
+      "postingDate",
+      "transactionDate",
+      "cardAccountId",
+      "amount"
+    ])
+    .where("id", "=", args.cardTransactionId)
+    .where("companyId", "=", args.companyId)
+    .executeTakeFirst();
+
+  const company = await db
+    .selectFrom("company")
+    .select(["baseCurrencyCode", "companyGroupId"])
+    .where("id", "=", args.companyId)
+    .executeTakeFirst();
+  if (
+    !cardTransaction?.currencyCode ||
+    !cardTransaction.transactionDate ||
+    !company?.baseCurrencyCode ||
+    !company.companyGroupId
+  ) {
+    throw new Error(
+      "Card transaction currency, transaction date and company base currency are required"
+    );
+  }
+  if (cardTransaction.type !== "Charge" && cardTransaction.type !== "Credit") {
+    throw new Error(
+      `Card transaction type ${cardTransaction.type} has no charge representation`
+    );
+  }
+  const currencyCode = cardTransaction.currencyCode;
+  const baseCurrencyCode = company.baseCurrencyCode;
+  const exchangeRate = Number(cardTransaction.exchangeRate);
+  const currency = await db
+    .selectFrom("currency")
+    .select("decimalPlaces")
+    .where("code", "=", currencyCode)
+    .where("companyGroupId", "=", company.companyGroupId)
+    .executeTakeFirst();
+  if (!currency || currency.decimalPlaces == null)
+    throw new Error("Card transaction currency precision is required");
+  const decimalPlaces = currency.decimalPlaces;
+  assertExchangeRate(exchangeRate);
+  assertCurrencyDecimals(decimalPlaces);
+  if (currencyCode === baseCurrencyCode && exchangeRate !== 1)
+    throw new Error(
+      "Base-currency card transaction requires identity exchange rate"
+    );
+  // The header amount is the authoritative document total (post-card-
+  // transaction asserts the lines sum to it); a Credit's total is negative in
+  // charge terms.
+  const documentTotal = round(
+    Number(cardTransaction.amount) *
+      (cardTransaction.type === "Credit" ? -1 : 1),
+    decimalPlaces
+  );
+  if (!Number.isFinite(documentTotal))
+    throw new Error("Card transaction document total must be finite");
+
+  const rows = await db
+    .selectFrom("journalLine")
+    .innerJoin("journal", (join) =>
+      join
+        .onRef("journal.id", "=", "journalLine.journalId")
+        .onRef("journal.companyId", "=", "journalLine.companyId")
+    )
+    .leftJoin("account", "account.id", "journalLine.accountId")
+    .select([
+      "journalLine.id",
+      "journalLine.accountId",
+      "journalLine.amount",
+      "journalLine.description",
+      "account.class as accountClass"
+    ])
+    .where("journalLine.documentType", "=", "Card Transaction")
+    .where("journalLine.documentId", "=", args.cardTransactionId)
+    .where("journalLine.companyId", "=", args.companyId)
+    .where("journal.sourceType", "=", "Card Transaction")
+    .where("journal.status", "=", "Posted")
+    .where("journal.companyId", "=", args.companyId)
+    .orderBy("journalLine.journalLineReference", "asc")
+    .execute();
+
+  if (!rows.length) {
+    throw new JournalEntrySyncError({
+      errorCode: "UNMAPPED_ACCOUNTS",
+      warning: true,
+      message:
+        "Cannot sync card charge: no posted Card Transaction journal found. Post the card transaction with accounting enabled, then retry.",
+      metadata: { cardTransactionId: args.cardTransactionId }
+    });
+  }
+  // The provider books the card liability itself from `credit_card_account_code`
+  // (or its equivalent); only the coded lines become items.
+  const costingRows = rows.filter(
+    (row) => row.accountId !== cardTransaction.cardAccountId
+  );
+  const missingAccountLines = costingRows.filter((row) => !row.accountId);
+  if (!costingRows.length || missingAccountLines.length)
+    throw new JournalEntrySyncError({
+      errorCode: "UNMAPPED_ACCOUNTS",
+      warning: true,
+      message:
+        "Cannot sync card charge: its posted lines have no account. Correct the posting, then retry.",
+      metadata: {
+        cardTransactionId: args.cardTransactionId,
+        lineIdsWithoutAccount: missingAccountLines.map((row) => row.id)
+      }
+    });
+
+  const dimensionsByLine = await loadJournalLineDimensions(db, {
+    companyId: args.companyId,
+    journalLineIds: costingRows.map((row) => row.id)
+  });
+
+  const lines: CostingLine[] = costingRows.map((row) => {
+    const dimensions = dimensionsByLine.get(row.id);
+    return {
+      id: row.id,
+      accountId: row.accountId ?? null,
+      amount: toDebitSignedAmount(row.accountClass, Number(row.amount)),
+      description: row.description ?? null,
+      ...(dimensions ? { dimensions } : {})
+    };
+  });
+
+  return {
+    lines,
+    currencyCode,
+    exchangeRate,
+    documentTotal,
+    decimalPlaces,
+    baseCurrencyCode,
+    postingDate: toPostingDateString(
+      cardTransaction.postingDate ?? cardTransaction.transactionDate
+    ),
+    transactionDate: toPostingDateString(cardTransaction.transactionDate),
+    cardAccountId: cardTransaction.cardAccountId,
+    type: cardTransaction.type
+  };
 }
 
 /** The item code/name label for a costing line (`"<code> <name>"`), or null
@@ -205,51 +496,59 @@ function parsePurchaseInvoiceLineReference(
   return id.length > 0 ? id : null;
 }
 
-/**
- * Convert base-currency costing lines to the invoice's transaction currency:
- * divide each amount by `exchangeRate` (base = transaction × rate), round to
- * 2dp, then book the post-rounding residue into the largest-|amount| line so
- * the lines sum exactly to the invoice's transaction-currency total. Negative
- * amounts (credit variance lines) are preserved. `exchangeRate === 1` is a
- * pass-through (base-currency bills are byte-identical).
- */
+/** Convert posted base costs once, reconciling only differences explained by rounding. */
 export function toTransactionCurrencyLines(
   lines: CostingLine[],
-  exchangeRate: number
+  args: { exchangeRate: number; documentTotal: number; decimalPlaces: number }
 ): CostingLine[] {
-  if (exchangeRate === 1 || lines.length === 0) {
-    return lines.map((line) => ({ ...line }));
+  const { exchangeRate, documentTotal, decimalPlaces } = args;
+  if (
+    !Number.isInteger(decimalPlaces) ||
+    decimalPlaces < 0 ||
+    decimalPlaces > SCALE
+  )
+    throw new Error("Unsupported document decimal scale");
+  toDocumentAmount(documentTotal, exchangeRate, decimalPlaces);
+  if (round(documentTotal, decimalPlaces) !== documentTotal)
+    throw new Error("Bill document total exceeds currency precision");
+  const unroundedTotal = lines.reduce((sum, line) => {
+    if (!Number.isFinite(line.amount))
+      throw new Error("Costing line amount must be finite");
+    return sum + line.amount * exchangeRate;
+  }, 0);
+  // Each posted source is stored at SCALE; the authoritative document
+  // is rounded once at its own boundary. This envelope cannot conceal a cost gap.
+  const envelope =
+    lines.length * (0.5 / 10 ** SCALE) * exchangeRate +
+    0.5 * 10 ** -decimalPlaces;
+  if (
+    Math.abs(unroundedTotal - documentTotal) >
+    envelope + Number.EPSILON * Math.max(1, Math.abs(documentTotal)) * 8
+  ) {
+    throw new Error(
+      "Posted bill costing does not reconcile to its document total"
+    );
   }
-
   const converted = lines.map((line) => ({
     ...line,
-    amount: roundCurrency(line.amount / exchangeRate)
+    amount: toDocumentAmount(line.amount, exchangeRate, decimalPlaces)
   }));
-
-  const baseTotalCents = lines.reduce(
-    (sum, line) => sum + Math.round(line.amount * 100),
-    0
+  const residual = round(
+    documentTotal - converted.reduce((sum, line) => sum + line.amount, 0),
+    decimalPlaces
   );
-  const targetCents = Math.round(baseTotalCents / exchangeRate);
-  const convertedCents = converted.reduce(
-    (sum, line) => sum + Math.round(line.amount * 100),
-    0
-  );
-  const residueCents = targetCents - convertedCents;
-
-  if (residueCents !== 0) {
-    let largestIndex = 0;
-    let largestMagnitude = -1;
-    for (let i = 0; i < converted.length; i++) {
-      const magnitude = Math.abs(converted[i]!.amount);
-      if (magnitude > largestMagnitude) {
-        largestMagnitude = magnitude;
-        largestIndex = i;
-      }
+  if (residual !== 0) {
+    if (!converted.length)
+      throw new Error("Bill has a document total but no costing lines");
+    let largest = 0;
+    for (let i = 1; i < converted.length; i++) {
+      if (Math.abs(lines[i]!.amount) > Math.abs(lines[largest]!.amount))
+        largest = i;
     }
-    const target = converted[largestIndex]!;
-    target.amount = roundCurrency(target.amount + residueCents / 100);
+    converted[largest]!.amount = round(
+      converted[largest]!.amount + residual,
+      decimalPlaces
+    );
   }
-
   return converted;
 }

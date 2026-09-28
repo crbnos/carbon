@@ -158,6 +158,23 @@ export interface RateLimitInfo {
   details?: Record<string, unknown>;
 }
 
+/**
+ * The provider's token endpoint rejected the stored grant (invalid_grant /
+ * invalid_client): the refresh token was revoked, expired, or rotated away by
+ * another runner and lost. Not transient — retrying cannot mint a new pair;
+ * only reconnecting the integration can.
+ */
+export class AccountingAuthError extends Error {
+  constructor(
+    public readonly provider: string,
+    public readonly code: number,
+    detail: string
+  ) {
+    super(`[${provider}] authentication failed (HTTP ${code}): ${detail}`);
+    this.name = "AccountingAuthError";
+  }
+}
+
 export class RatelimitError extends Error {
   public rateLimitInfo: RateLimitInfo;
 
@@ -488,6 +505,15 @@ export function createOAuthClient({
         throw new Error("No refresh token available");
       }
 
+      // ponytail: read-then-write CAS; add a pg advisory lock RPC if two
+      // runners still collide inside the same second.
+      const stored = options.beforeRefresh && (await options.beforeRefresh());
+      if (stored && stored.refreshToken !== creds.refreshToken) {
+        logger.info("Adopting tokens rotated by another runner");
+        creds = { ...creds, ...stored };
+        return creds;
+      }
+
       const response = await http.request<{
         access_token: string;
         refresh_token: string;
@@ -503,12 +529,28 @@ export function createOAuthClient({
         })
       });
 
-      if (response.error || !response.data) {
+      if (response.error || !response.data?.access_token) {
         logger.error("Token refresh failed", {
-          error: response.error,
+          code: response.code,
+          message: response.message,
           data: response.data
         });
-        throw new Error(`Token refresh failed: ${response.error}`);
+        const detail =
+          typeof response.data === "string"
+            ? response.data
+            : JSON.stringify(response.data);
+        // 400/401 from the token endpoint is the grant itself being refused
+        // (invalid_grant / invalid_client) — terminal, see AccountingAuthError.
+        if (response.code === 400 || response.code === 401) {
+          throw new AccountingAuthError(
+            new URL(options.tokenUrl).hostname,
+            response.code,
+            detail
+          );
+        }
+        throw new Error(
+          `Token refresh failed (HTTP ${response.code}): ${detail}`
+        );
       }
 
       const newCreds = {

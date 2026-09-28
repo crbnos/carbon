@@ -16,7 +16,6 @@ import {
   parseAbsolute,
   toCalendarDateTime
 } from "@internationalized/date";
-import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useState } from "react";
 import { useNavigate } from "react-router";
@@ -47,13 +46,13 @@ const ProductionEventForm = ({
   operationOptions
 }: ProductionEventFormProps) => {
   const permissions = usePermissions();
-  const { t, i18n } = useLingui();
+  const { t } = useLingui();
   const navigate = useNavigate();
 
   const eventTypeOptions = [
-    { label: i18n._(msg`Labor`), value: "Labor" },
-    { label: i18n._(msg`Machine`), value: "Machine" },
-    { label: i18n._(msg`Setup`), value: "Setup" }
+    { label: t`Labor`, value: "Labor" },
+    { label: t`Machine`, value: "Machine" },
+    { label: t`Setup`, value: "Setup" }
   ];
   const onClose = () => navigate(-1);
 

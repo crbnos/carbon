@@ -18,11 +18,7 @@ import {
   TooltipContent,
   TooltipTrigger
 } from "@carbon/react";
-import {
-  convertDateStringToIsoString,
-  formatDate,
-  formatDurationMilliseconds
-} from "@carbon/utils";
+import { formatDate } from "@carbon/utils";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { parseDate } from "@internationalized/date";
@@ -30,7 +26,6 @@ import { useLingui } from "@lingui/react/macro";
 import { cva } from "class-variance-authority";
 import {
   LuCalendarClock,
-  LuCalendarDays,
   LuCircleCheck,
   LuCirclePlay,
   LuClipboardCheck,
@@ -49,21 +44,18 @@ import {
 import { RiProgress8Line } from "react-icons/ri";
 import { Link } from "react-router";
 import { z } from "zod";
-import {
-  Assignee,
-  CustomerAvatar,
-  DateTime,
-  EmployeeAvatarGroup
-} from "~/components";
+import { Assignee, CustomerAvatar, EmployeeAvatarGroup } from "~/components";
 import { Tags } from "~/components/Form";
 import { useDateFormatter } from "~/hooks";
 import { useTags } from "~/hooks/useTags";
-import { getDeadlineIcon } from "~/modules/production/ui/Jobs/Deadline";
 import { JobOperationStatus } from "~/modules/production/ui/Jobs/JobOperationStatus";
 import { getPrivateUrl, path } from "~/utils/path";
+import { KANBAN_CARD_SHELL } from "../cardShell";
 import { useKanban } from "../context/KanbanContext";
-import type { Item } from "../types";
+import type { Item, OperationItem } from "../types";
+import { isBatchItem } from "../types";
 import { useScheduleToday } from "../useScheduleToday";
+import { CardMaterialChips, CardSummaryRows } from "./CardSummaryRows";
 
 interface Progress {
   totalDuration: number;
@@ -72,34 +64,31 @@ interface Progress {
   employees?: Set<string>;
 }
 
-const cardVariants = cva(
-  "bg-card hover:bg-muted/30 dark:border-none dark:shadow-[inset_0_0.5px_0_rgb(255_255_255_/_0.08),_inset_0_0_1px_rgb(255_255_255_/_0.24),_0_0_0_0.5px_rgb(0,0,0,1),0px_0px_4px_rgba(0,_0,_0,_0.08)]",
-  {
-    variants: {
-      highlighted: {
-        true: "ring-2 ring-primary opacity-100",
-        false: ""
-      },
-      dragging: {
-        over: "ring-2 ring-primary opacity-30",
-        overlay: "ring-2 ring-primary hover:bg-muted"
-      },
-      status: {
-        "In Progress": "border-emerald-600/30",
-        Ready: "",
-        Done: "",
-        Paused: "",
-        Canceled: "border-red-500/30",
-        Cancelled: "border-red-500/30",
-        Waiting: "opacity-50",
-        Todo: "border-border"
-      }
+const cardVariants = cva(KANBAN_CARD_SHELL, {
+  variants: {
+    highlighted: {
+      true: "ring-2 ring-primary opacity-100",
+      false: ""
     },
-    defaultVariants: {
-      status: "Todo"
+    dragging: {
+      over: "ring-2 ring-primary opacity-30",
+      overlay: "ring-2 ring-primary hover:bg-muted"
+    },
+    status: {
+      "In Progress": "border-emerald-600/30",
+      Ready: "",
+      Done: "",
+      Paused: "",
+      Canceled: "border-red-500/30",
+      Cancelled: "border-red-500/30",
+      Waiting: "opacity-50",
+      Todo: "border-border"
     }
+  },
+  defaultVariants: {
+    status: "Todo"
   }
-);
+});
 
 type ItemCardProps = {
   item: Item;
@@ -107,7 +96,22 @@ type ItemCardProps = {
   progressByItemId: Record<string, Progress>;
 };
 
-export function ItemCard({ item, isOverlay, progressByItemId }: ItemCardProps) {
+// Batch items render via BatchItemCard (an explicit variant); this guard keeps
+// the union out of the hook-bearing body so field access stays narrowed.
+export function ItemCard({ item, ...rest }: ItemCardProps) {
+  if (isBatchItem(item)) return null;
+  return <OperationCard item={item} {...rest} />;
+}
+
+function OperationCard({
+  item,
+  isOverlay,
+  progressByItemId
+}: {
+  item: Exclude<Item, { batchId: string }>;
+  isOverlay?: boolean;
+  progressByItemId: Record<string, Progress>;
+}) {
   const { t } = useLingui();
   const { formatRelativeTime } = useDateFormatter();
   const { displaySettings, selectedGroup, setSelectedGroup, tags } =
@@ -167,7 +171,7 @@ export function ItemCard({ item, isOverlay, progressByItemId }: ItemCardProps) {
       ref={setNodeRef}
       style={style}
       className={cn(
-        "max-w-[330px]",
+        "group/card max-w-[330px]",
         item.hasConflict && "border-red-500 border-2",
         cardVariants({
           dragging: isOverlay ? "overlay" : isDragging ? "over" : undefined,
@@ -323,6 +327,11 @@ export function ItemCard({ item, isOverlay, progressByItemId }: ItemCardProps) {
           <span className="text-sm line-clamp-1">{item.title}</span>
           {item.reworkId && <Badge variant="red">Rework</Badge>}
         </HStack>
+        {displaySettings.showMaterial &&
+          "materialChips" in item &&
+          (item.materialChips?.length ?? 0) > 0 && (
+            <CardMaterialChips chips={item.materialChips ?? []} />
+          )}
         {displaySettings.showDescription && item.description && (
           <HStack className="justify-start space-x-2">
             <LuClipboardCheck className="text-muted-foreground" />
@@ -343,45 +352,18 @@ export function ItemCard({ item, isOverlay, progressByItemId }: ItemCardProps) {
             <span className="text-sm">{status}</span>
           </HStack>
         )}
-        {/* @ts-expect-error TS2339 */}
-        {displaySettings.showDuration && typeof item.duration === "number" && (
-          <HStack className="justify-start space-x-2">
-            <LuTimer className="text-muted-foreground" />
-            <span className="text-sm">
-              {/* @ts-expect-error TS2339 */}
-              {formatDurationMilliseconds(item.duration)}
-            </span>
-          </HStack>
-        )}
-        {displaySettings.showDueDate && item.deadlineType && (
-          <HStack className="justify-start space-x-2">
-            {getDeadlineIcon(item.deadlineType)}
-            <Tooltip>
-              <TooltipTrigger>
-                <span
-                  className={cn("text-sm", isOverdue ? "text-red-500" : "")}
-                >
-                  {["ASAP", "No Deadline"].includes(item.deadlineType)
-                    ? item.deadlineType
-                    : item.dueDate
-                      ? `Due ${formatRelativeTime(
-                          convertDateStringToIsoString(item.dueDate)
-                        )}`
-                      : "–"}
-                </span>
-              </TooltipTrigger>
-              <TooltipContent side="right">{item.deadlineType}</TooltipContent>
-            </Tooltip>
-          </HStack>
-        )}
-        {displaySettings.showDueDate && item.dueDate && (
-          <HStack className="justify-start space-x-2">
-            <LuCalendarDays />
-            <span className="text-sm">
-              <DateTime value={item.dueDate} variant="date" />
-            </span>
-          </HStack>
-        )}
+        <CardSummaryRows
+          showDuration={
+            displaySettings.showDuration &&
+            typeof (item as OperationItem).duration === "number"
+          }
+          duration={(item as OperationItem).duration ?? 0}
+          showDueDate={displaySettings.showDueDate}
+          deadlineType={item.deadlineType}
+          dueDate={item.dueDate}
+          isOverdue={isOverdue}
+          formatRelativeTime={formatRelativeTime}
+        />
         {displaySettings.showDueDate && projectedCompletionDate && (
           <HStack className="justify-start space-x-2">
             <LuCalendarClock className="text-muted-foreground" />
@@ -464,7 +446,7 @@ function JobOperationTags({
   operation,
   availableTags
 }: {
-  operation: Item;
+  operation: Exclude<Item, { batchId: string }>;
   availableTags: { name: string }[];
 }) {
   const { onUpdateTags } = useTags({ id: operation.id, table: "jobOperation" });

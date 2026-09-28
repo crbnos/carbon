@@ -1,5 +1,5 @@
-import type { WorkflowNodeType } from "@carbon/workflows";
-import { getNodeHandles, NODE_KINDS } from "@carbon/workflows";
+import type { WorkflowNodeType } from "@carbon/ee/workflows";
+import { getNodeHandles, NODE_KINDS } from "@carbon/ee/workflows";
 import type { MessageDescriptor } from "@lingui/core";
 import { describe, expect, it, vi } from "vitest";
 import { createNode } from "./graph";

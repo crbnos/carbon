@@ -42,6 +42,7 @@ export const metadata: Metadata = {
     "MES",
     "MRP",
     "manufacturing software",
+    "Carbon API",
     "REST API",
     "MCP"
   ],

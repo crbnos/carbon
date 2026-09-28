@@ -40,7 +40,7 @@ export const workflowTestRunValidator = z.object({
 /** Parsed out of `triggerInput` after the form validator passes. */
 export const workflowTestRunInputSchema = z.union([
   z.object({ recordId: z.string().min(1) }),
-  z.object({ outputs: z.record(z.string().min(1)) }),
+  z.object({ outputs: z.record(z.string(), z.string().min(1)) }),
   z.object({})
 ]);
 

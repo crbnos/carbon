@@ -1,6 +1,6 @@
 import { ValidatedForm } from "@carbon/form";
 import type { TermId } from "@carbon/glossary";
-import { Button, HStack, LabelWithHelp } from "@carbon/react";
+import { Button, Heading, HStack, LabelWithHelp } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useMemo } from "react";
 import { useNavigate } from "react-router";
@@ -67,9 +67,9 @@ const FiscalYearSettingsForm = ({
       <div className="rounded-lg border border-border bg-card">
         <div className="flex items-center justify-between border-b border-border p-6">
           <div>
-            <h1 className="text-xl font-semibold text-foreground">
+            <Heading as="h1" size="h3">
               <Trans>Fiscal Year Settings</Trans>
-            </h1>
+            </Heading>
             <p className="text-sm text-muted-foreground">
               <Trans>
                 Configure the start months for your fiscal and tax years

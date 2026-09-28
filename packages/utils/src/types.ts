@@ -50,6 +50,7 @@ export interface TrackedEntityAttributes {
   Shipment?: string;
   "Split Entity ID"?: string;
   "Split From Entity ID"?: string;
+  "Merged From Entity IDs"?: string[];
   "Stock Transfer Line"?: string;
   "Stock Transfer"?: string;
   expirationDate?: string;

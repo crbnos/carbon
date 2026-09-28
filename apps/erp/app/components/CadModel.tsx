@@ -1,4 +1,6 @@
 import { useCarbon } from "@carbon/auth";
+import { convertKbToString, TEMP_STAGING_BUCKET } from "@carbon/files";
+import { supportedModelTypes } from "@carbon/files/cad";
 import {
   Button,
   CardHeader,
@@ -17,12 +19,7 @@ import {
   useDisclosure,
   useMode
 } from "@carbon/react";
-import {
-  convertKbToString,
-  getFileSizeLimit,
-  MODEL_RAW_KEEP_MAX_BYTES,
-  supportedModelTypes
-} from "@carbon/utils";
+import { getFileSizeLimit, MODEL_RAW_KEEP_MAX_BYTES } from "@carbon/utils";
 import { ModelPreview } from "@carbon/viewer/model-preview";
 import { OptimizeProgress } from "@carbon/viewer/optimize-progress";
 import { useOptimizedModel } from "@carbon/viewer/use-optimized-model";
@@ -181,7 +178,7 @@ const CadModel = ({
       // (<=50 MB) to `private`.
       const toastId = toast.loading(`Uploading ${file.name}…`);
       const { error: uploadError } = await runUpload({
-        bucket: "temp-staging",
+        bucket: TEMP_STAGING_BUCKET,
         path: fileName,
         file
       });

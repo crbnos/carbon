@@ -1,4 +1,4 @@
-import { WORKFLOW_EVENTS } from "@carbon/workflows";
+import { WORKFLOW_EVENTS } from "@carbon/ee/workflows";
 import { z } from "zod";
 import { getJobDatabaseClient } from "../../../db";
 import { matchAndQueue } from "../../../workflows/matcher";
@@ -8,7 +8,7 @@ const momentPayloadSchema = z.object({
   momentId: z.string(),
   moment: z.string(),
   companyId: z.string(),
-  outputs: z.record(z.object({ id: z.string() }).passthrough())
+  outputs: z.record(z.string(), z.object({ id: z.string() }).passthrough())
 });
 
 /** Moment entry point of the workflow matcher. A moment already IS a catalog event

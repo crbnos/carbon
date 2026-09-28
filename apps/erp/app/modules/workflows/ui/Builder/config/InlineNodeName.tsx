@@ -1,4 +1,4 @@
-import { slugifyNodeName } from "@carbon/workflows";
+import { slugifyNodeName } from "@carbon/ee/workflows";
 import { useLingui } from "@lingui/react/macro";
 import { useRef, useState } from "react";
 import { LuPencil } from "react-icons/lu";

@@ -13,7 +13,7 @@ import {
 import { getParams, path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  const { client, companyId } = await requirePermissions(request, {
     view: "inventory",
     role: "employee"
   });
@@ -21,7 +21,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { id } = params;
   if (!id) throw notFound("id not found");
 
-  const kanban = await getKanban(client, id);
+  const kanban = await getKanban(client, id, companyId);
 
   return {
     kanban: kanban?.data ?? null
@@ -74,6 +74,7 @@ export default function EditKanbanRoute() {
     replenishmentSystem: kanban?.replenishmentSystem ?? "Buy",
     locationId: kanban?.locationId ?? "",
     storageUnitId: kanban?.storageUnitId ?? "",
+    fromStorageUnitId: kanban?.fromStorageUnitId ?? "",
     supplierId: kanban?.supplierId ?? "",
     purchaseUnitOfMeasureCode: kanban?.purchaseUnitOfMeasureCode ?? "",
     conversionFactor: kanban?.conversionFactor ?? 1,

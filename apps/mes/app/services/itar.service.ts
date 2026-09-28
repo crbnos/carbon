@@ -4,9 +4,9 @@
 import { ITAR_RIDER_SHA256, ITAR_RIDER_VERSION } from "@carbon/auth";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { Database } from "@carbon/database";
-import { insertAuditLogEntries } from "@carbon/database/audit";
+import { insertAuditLogEntries } from "@carbon/ee/audit.server";
 import { getLogger } from "@carbon/logger";
-import { datetime } from "@carbon/utils";
+import { datetime, getClientIp } from "@carbon/utils";
 import { parseAbsolute } from "@internationalized/date";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
@@ -15,10 +15,10 @@ const logger = getLogger("mes", "itar");
 
 export const itarEntityCertificationValidator = z.object({
   authorityToBind: z.literal(true, {
-    errorMap: () => ({ message: "You must confirm your authority to bind" })
+    error: "You must confirm your authority to bind"
   }),
   acceptRider: z.literal(true, {
-    errorMap: () => ({ message: "You must accept the Rider" })
+    error: "You must accept the Rider"
   }),
   fullLegalName: z
     .string()
@@ -33,15 +33,13 @@ export const itarEntityCertificationValidator = z.object({
 
 export const itarUserCertificationValidator = z.object({
   certifyUsPerson: z.literal(true, {
-    errorMap: () => ({ message: "You must certify that you are a U.S. Person" })
+    error: "You must certify that you are a U.S. Person"
   }),
   agreeNotify: z.literal(true, {
-    errorMap: () => ({
-      message: "You must agree to the notification requirement"
-    })
+    error: "You must agree to the notification requirement"
   }),
   understandPenalty: z.literal(true, {
-    errorMap: () => ({ message: "You must acknowledge the penalties" })
+    error: "You must acknowledge the penalties"
   }),
   fullLegalName: z
     .string()
@@ -83,11 +81,7 @@ export async function getItarCertificationStatus(
 }
 
 export function getRequestMeta(request: Request) {
-  const forwardedFor = request.headers.get("x-forwarded-for");
-  const ipAddress =
-    forwardedFor?.split(",")[0]?.trim() ||
-    request.headers.get("x-real-ip") ||
-    null;
+  const ipAddress = getClientIp(request);
   const userAgent = request.headers.get("user-agent") ?? null;
   return { ipAddress, userAgent };
 }

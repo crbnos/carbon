@@ -363,7 +363,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
       : Promise.resolve({ data: [] as { id: string; name: string }[] }),
     abilityIds.size > 0
       ? client
-          .from("ability")
+          .from("abilities")
           .select("id, name")
           .in("id", Array.from(abilityIds))
       : Promise.resolve({ data: [] as { id: string; name: string }[] }),
@@ -377,11 +377,38 @@ export async function loader({ request }: LoaderFunctionArgs) {
         })
   ]);
 
+  // A batch-tagged reservation is ONE coalesced hold for N member jobs — it
+  // must read as the BATCH (BAT… · N jobs), not as its anchor member. Member
+  // counts come from one grouped read over the visible batches.
+  const visibleBatchIds = [
+    ...new Set(
+      rows
+        .map((r) => r.jobOperationBatchId)
+        .filter((id): id is string => Boolean(id))
+    )
+  ];
+  const batchMemberRows =
+    visibleBatchIds.length > 0
+      ? await client
+          .from("jobOperation")
+          .select("jobOperationBatchId")
+          .in("jobOperationBatchId", visibleBatchIds)
+          .eq("companyId", companyId)
+      : { data: [] as { jobOperationBatchId: string | null }[] };
+  const batchMemberCounts = new Map<string, number>();
+  for (const row of batchMemberRows.data ?? []) {
+    if (!row.jobOperationBatchId) continue;
+    batchMemberCounts.set(
+      row.jobOperationBatchId,
+      (batchMemberCounts.get(row.jobOperationBatchId) ?? 0) + 1
+    );
+  }
+
   const workCenterNames = new Map(
     (workCenters.data ?? []).map((w) => [w.id, w.name])
   );
   const abilityNames = new Map(
-    (abilities.data ?? []).map((a) => [a.id, a.name])
+    (abilities.data ?? []).map((a) => [a.id ?? "", a.name ?? ""])
   );
   const operatorNames = new Map(
     (operators.data ?? []).map((u) => [u.id, u.fullName])
@@ -406,6 +433,17 @@ export async function loader({ request }: LoaderFunctionArgs) {
       jobReadableId: r.job?.jobId ?? r.jobId,
       operationId: r.operationId,
       operationDescription: r.jobOperation?.description ?? null,
+      itemReadableId:
+        r.jobOperation?.jobMakeMethod?.item?.readableIdWithRevision ?? null,
+      itemName: r.jobOperation?.jobMakeMethod?.item?.name ?? null,
+      itemThumbnailPath:
+        r.jobOperation?.jobMakeMethod?.item?.thumbnailPath ?? null,
+      itemType: r.jobOperation?.jobMakeMethod?.item?.type ?? null,
+      batchReadableId: r.jobOperationBatch?.readableId ?? null,
+      batchId: r.jobOperationBatchId ?? null,
+      batchMemberCount: r.jobOperationBatchId
+        ? (batchMemberCounts.get(r.jobOperationBatchId) ?? null)
+        : null,
       hasConflict: r.jobOperation?.hasConflict ?? false,
       conflictReason: r.jobOperation?.conflictReason ?? null,
       unschedulable: r.isPlaceholder ?? false,

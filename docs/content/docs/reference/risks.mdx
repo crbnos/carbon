@@ -37,7 +37,7 @@ Because the two ratings are independent, a low-likelihood, high-severity risk (a
 
 Status is a free-set enum (`riskStatus`, `quality.models.ts:96`). Carbon does not enforce a state machine — any status can move to any other; you set where the entry stands.
 
-<StatusFlow>
+<StatusFlow entity="risk">
   <Status name="Open">A newly raised risk, not yet worked. The default for a new entry.</Status>
   <Status name="In Review">Being assessed — someone is deciding whether and how to act on it.</Status>
   <Status name="Mitigating">A treatment is in progress: you're actively reducing the severity or likelihood.</Status>

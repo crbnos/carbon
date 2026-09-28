@@ -1,1 +1,1 @@
-export { ConfiguratorModal } from "./ConfiguratorForm.ee";
+export { ConfiguratorModal } from "./ConfiguratorForm";

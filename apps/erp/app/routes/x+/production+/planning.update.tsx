@@ -54,7 +54,7 @@ export async function action({ request }: ActionFunctionArgs) {
       const parsedItems = itemsValidator.safeParse(items);
 
       if (!parsedItems.success) {
-        const errorMessages = parsedItems.error.errors.map((error) => {
+        const errorMessages = parsedItems.error.issues.map((error) => {
           const path = error.path;
           const field = path[path.length - 1];
 
@@ -79,7 +79,7 @@ export async function action({ request }: ActionFunctionArgs) {
           return error.message;
         });
 
-        logger.error("Validation errors", { errors: parsedItems.error.errors });
+        logger.error("Validation errors", { errors: parsedItems.error.issues });
         return data(
           {
             success: false,
@@ -99,6 +99,57 @@ export async function action({ request }: ActionFunctionArgs) {
           },
           { status: 500 }
         );
+      }
+
+      // `client` is the service role (bypassRls) and every id below comes from
+      // the request body: prove the location, items and existing jobs are this
+      // company's before any job is created or rewritten. One query per type.
+      const itemIds = [...new Set(itemsToOrder.map((item) => item.id))];
+      const existingJobIds = [
+        ...new Set(
+          itemsToOrder.flatMap((item) =>
+            item.orders.flatMap((order) =>
+              order.existingId ? [order.existingId] : []
+            )
+          )
+        )
+      ];
+      const [ownedLocation, ownedItems, ownedJobs] = await Promise.all([
+        client
+          .from("location")
+          .select("id")
+          .eq("id", locationId)
+          .eq("companyId", companyId)
+          .maybeSingle(),
+        client
+          .from("item")
+          .select("id")
+          .in("id", itemIds)
+          .eq("companyId", companyId),
+        existingJobIds.length > 0
+          ? client
+              .from("job")
+              .select("id")
+              .in("id", existingJobIds)
+              .eq("companyId", companyId)
+          : Promise.resolve({ data: [] as { id: string }[], error: null })
+      ]);
+      if (
+        ownedLocation.error ||
+        !ownedLocation.data ||
+        ownedItems.error ||
+        (ownedItems.data ?? []).length !== itemIds.length ||
+        ownedJobs.error ||
+        (ownedJobs.data ?? []).length !== existingJobIds.length
+      ) {
+        logger.error("Planning order references records outside the company", {
+          companyId,
+          locationId,
+          itemIds,
+          existingJobIds,
+          error: ownedLocation.error ?? ownedItems.error ?? ownedJobs.error
+        });
+        return data({ success: false, message: "Not found" }, { status: 404 });
       }
 
       try {
@@ -139,6 +190,7 @@ export async function action({ request }: ActionFunctionArgs) {
               "manufacturingBlocked, scrapPercentage, requiresConfiguration"
             )
             .eq("itemId", item.id)
+            .eq("companyId", companyId)
             .single();
 
           if (manufacturing.error) {
@@ -242,7 +294,8 @@ export async function action({ request }: ActionFunctionArgs) {
                   updatedAt: new Date().toISOString(),
                   updatedBy: userId
                 })
-                .eq("id", order.existingId);
+                .eq("id", order.existingId)
+                .eq("companyId", companyId);
 
               if (updateJob.error) {
                 const errorMsg = `Failed to update job ${order.existingId} for item ${item.id}: ${updateJob.error.message}`;

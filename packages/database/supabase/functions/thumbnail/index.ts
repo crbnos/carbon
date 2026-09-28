@@ -1,24 +1,19 @@
 import { serve } from "https://deno.land/std@0.175.0/http/server.ts";
 import puppeteer from "npm:puppeteer-core@16.2.0";
-import { z } from "npm:zod@^3.24.1";
+import { z } from "npm:zod@^4.5.4";
 import { Buffer } from "node:buffer";
 import { corsHeaders } from "../lib/headers.ts";
+import { getFunctionLogger } from "../lib/logging.ts";
 import { corsPreflight, errorResponse } from "../lib/response.ts";
+import { requireServiceRole } from "../lib/supabase.ts";
 
 import {
-  ImageMagick,
-  MagickColor,
-  MagickFormat,
-  initializeImageMagick,
-} from "npm:@imagemagick/magick-wasm@0.0.30";
+  decodeImage,
+  encodeImage,
+  resizeImage,
+} from "../shared/image-pipeline.ts";
 
-const wasmBytes = await Deno.readFile(
-  new URL(
-    "magick.wasm",
-    import.meta.resolve("npm:@imagemagick/magick-wasm@0.0.30")
-  )
-);
-await initializeImageMagick(wasmBytes);
+const logger = getFunctionLogger("thumbnail");
 
 const payloadSchema = z.object({
   url: z.string(),
@@ -34,15 +29,19 @@ serve(async (req: Request) => {
   const preflight = corsPreflight(req);
   if (preflight) return preflight;
 
+  // It drives a browser to whatever URL it is handed: servers only.
+  try {
+    requireServiceRole(req);
+  } catch (err) {
+    return errorResponse(err, 401);
+  }
+
   let browser;
   try {
     const payload = await req.json();
     const { url } = payloadSchema.parse(payload);
 
-    console.log({
-      function: "thumbnail",
-      url,
-    });
+    logger.info({ url });
 
     browser = await puppeteer.connect({
       browserWSEndpoint,
@@ -50,18 +49,18 @@ serve(async (req: Request) => {
       // valid cert so this is a no-op there.
       ignoreHTTPSErrors: true,
     });
-    console.log("browser connected");
+    logger.debug("browser connected");
     const page = await browser.newPage();
-    console.log("page created");
+    logger.debug("page created");
     await page.setViewport({ width: 1000, height: 1000 });
-    console.log("viewport set");
+    logger.debug("viewport set");
     await page.goto(url);
-    console.log(`navigated to ${url}`);
+    logger.debug(`navigated to ${url}`);
     // Wait for the canvas with id=viewer to be visible, but no longer than 5 seconds
     await page.waitForSelector("#model-viewer-canvas", {
       timeout: 10000,
     });
-    console.log("model-viewer-canvas visible");
+    logger.debug("model-viewer-canvas visible");
     // Capture just the center portion of the viewport to avoid the ring
     const screenshot = await page.screenshot({
       encoding: "binary",
@@ -74,19 +73,22 @@ serve(async (req: Request) => {
         : screenshot
     );
 
-    const result = await ImageMagick.read(screenshotArray, (img) => {
-      img.transparent(new MagickColor("white"));
+    const image = await decodeImage(screenshotArray, "png");
+    // Knock the white viewer background out to transparency, as magick's
+    // `transparent(white)` did.
+    for (let i = 0; i < image.data.length; i += 4) {
+      if (
+        image.data[i] === 255 &&
+        image.data[i + 1] === 255 &&
+        image.data[i + 2] === 255
+      ) {
+        image.data[i + 3] = 0;
+      }
+    }
+    const resized = await resizeImage(image, 300, 300);
+    const result = await encodeImage(resized, "png");
 
-      img.resize(300, 300);
-      // Set the output format explicitly and COPY the bytes out of the callback:
-      // the `data` handed to `write` is a view into ImageMagick's WASM heap that is
-      // reused/freed once the callback returns — returning it directly yields a
-      // corrupt PNG (valid header, garbage body → "200 but invalid image").
-      img.format = MagickFormat.Png;
-      return img.write((data) => new Uint8Array(data));
-    });
-
-    return new Response(result, {
+    return new Response(result as BodyInit, {
       headers: { ...corsHeaders, "Content-Type": "image/png" },
       status: 200,
     });
@@ -95,7 +97,7 @@ serve(async (req: Request) => {
   } finally {
     if (browser) {
       await browser.close();
-      console.log("browser closed");
+      logger.debug("browser closed");
     }
   }
 });

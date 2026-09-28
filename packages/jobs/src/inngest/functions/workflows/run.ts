@@ -1,4 +1,4 @@
-import { runTriggerSchema } from "@carbon/workflows";
+import { runTriggerSchema } from "@carbon/ee/workflows";
 import { z } from "zod";
 import { getJobDatabaseClient } from "../../../db";
 import {

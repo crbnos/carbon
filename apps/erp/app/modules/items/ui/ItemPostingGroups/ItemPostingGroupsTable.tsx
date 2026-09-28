@@ -91,6 +91,12 @@ const ItemGroupsTable = memo(({ data, count }: ItemGroupsTableProps) => {
       data={data}
       columns={columns}
       count={count}
+      importCSV={[
+        {
+          table: "itemPostingGroup" as const,
+          label: t`Item Groups`
+        }
+      ]}
       primaryAction={
         permissions.can("create", "parts") && (
           <New

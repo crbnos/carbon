@@ -20,11 +20,15 @@
  * duplicates, and cooldown races unrepresentable rather than specially
  * handled.
  */
-import type { PostingSyncSettings } from "@carbon/ee/accounting";
+import type {
+  CardTransactionPolicyInput,
+  PostingSyncSettings
+} from "@carbon/ee/accounting";
 import {
   MAX_REDRIVE_ATTEMPTS,
   planJournalPostingFromState,
   SWEPT_BILL_STATUSES,
+  SWEPT_CHARGE_STATUSES,
   SWEPT_INVOICE_STATUSES,
   SWEPT_PAYMENT_STATUSES,
   type SyncOperationRequest,
@@ -37,6 +41,7 @@ export type ReconcileEntityType =
   | "journalEntry"
   | "bill"
   | "invoice"
+  | "charge"
   | "payment"
   | "customer"
   | "vendor"
@@ -76,6 +81,8 @@ export type ReconcileEntityInput = {
   } | null;
   /** externalIntegrationMapping state for the entity (push identity). */
   hasMappingWithExternalId: boolean;
+  /** A native push mapping remains remotely active (including payment fan-out). */
+  hasUnvoidedPushMapping?: boolean;
   lastSyncedAt: string | null;
   /** A Pending/In Flight push op exists for the tuple. */
   hasLiveOperation: boolean;
@@ -86,6 +93,13 @@ export type ReconcileEntityInput = {
    * the `${id}:reversal` id (spec I1 coverage — one disposition each).
    */
   journalCoverage?: { normalCovered: boolean; reversalCovered: boolean };
+  /**
+   * journalEntry only, "Card Transaction" source: the backing cardTransaction
+   * (`type` + whether it has a supplier). A Charge with a supplier is
+   * DOC_BACKED by the synced charge object when the charge entity is enabled;
+   * everything else keeps pushing as a journal entry.
+   */
+  cardTransaction?: CardTransactionPolicyInput | null;
   /**
    * bill only: a posted "Purchase Invoice" journal exists for this bill —
    * the input the account-costed replay needs (the re-drive condition).
@@ -108,9 +122,16 @@ export type ReconcileContext = {
   entityPushEnabled: boolean;
   /** Rillet true — the only provider with outbound payment push. */
   providerSupportsPaymentPush: boolean;
+  /** Rillet supports native document/payment deletion; Xero/QBO support charge deletion. */
+  providerSupportsNativeVoid?: boolean;
   /** Inputs the journal policy core needs (planJournalPostingFromState). */
   settings: PostingSyncSettings;
-  docSync: { invoiceEnabled: boolean; billEnabled: boolean };
+  docSync: {
+    invoiceEnabled: boolean;
+    billEnabled: boolean;
+    chargeEnabled: boolean;
+    chargeCreditEnabled: boolean;
+  };
   inventoryAdjustmentEnabled: boolean;
   /** Resolved by the executor only for Payment-source journals when the
    * AR/AP family modes diverge (otherwise the side cannot matter). */
@@ -149,6 +170,7 @@ export function computeReconcileDecision(
       return reconcileJournal(input);
     case "bill":
     case "invoice":
+    case "charge":
       return reconcileDocument(input);
     case "payment":
       return reconcilePayment(input);
@@ -204,7 +226,8 @@ function reconcileJournal(input: ReconcileEntityInput): ReconcileDecision {
       docSync: input.context.docSync,
       paymentFamily: input.context.paymentFamily,
       inventoryAdjustmentEntitySyncEnabled:
-        input.context.inventoryAdjustmentEnabled
+        input.context.inventoryAdjustmentEnabled,
+      cardTransaction: input.cardTransaction ?? null
     });
     if (planned.action === "push") {
       actions.push({ kind: "enqueue", request: planned.request });
@@ -239,6 +262,64 @@ function reconcileJournal(input: ReconcileEntityInput): ReconcileDecision {
  *    data-and-save retries without waiting for a human or the re-drive).
  * 4. Otherwise nothing — parked dispositions belong to humans/policy.
  */
+function reconcileNativeVoid(input: ReconcileEntityInput): ReconcileDecision {
+  if (!input.context.providerSupportsNativeVoid) {
+    return nothing("no active native push mapping to void");
+  }
+  if (input.hasLiveOperation)
+    return nothing("a live operation covers the void");
+  const latest = input.latestOperation;
+  if (!input.hasUnvoidedPushMapping) {
+    // A create may have reached the provider before its response or mapping
+    // persisted. Do not silently lose that remote GL effect when Carbon voids
+    // before a retry can recover the create identity. Never create just to void.
+    if (
+      input.entityType === "charge" &&
+      !input.hasMappingWithExternalId &&
+      latest &&
+      ["Failed", "Warning", "Completed"].includes(latest.status) &&
+      latest.errorCode !== "UNCONFIRMED_REMOTE_VOID"
+    ) {
+      return {
+        actions: [
+          {
+            kind: "record-terminal",
+            request: {
+              entityType: input.entityType,
+              entityId: input.entityId,
+              direction: "push-to-accounting",
+              status: "Warning",
+              errorCode: "UNCONFIRMED_REMOTE_VOID",
+              errorMessage:
+                "A card charge was voided after a sync attempt without a durable remote identity. Verify and remove any provider transaction before resolving this warning."
+            }
+          }
+        ]
+      };
+    }
+    return nothing("no active native push mapping to void");
+  }
+  if (latest?.status === "Failed" || latest?.status === "Warning") {
+    // A document can reach the provider before its payment void drains. Retry
+    // that transient ordering failure through the bounded ledger lifecycle.
+    return latest.attemptCount < MAX_REDRIVE_ATTEMPTS
+      ? { actions: [{ kind: "re-drive", operationId: latest.id }] }
+      : nothing("native void exhausted automatic retries");
+  }
+  return {
+    actions: [
+      {
+        kind: "enqueue",
+        request: {
+          entityType: input.entityType,
+          entityId: input.entityId,
+          direction: "push-to-accounting"
+        }
+      }
+    ]
+  };
+}
+
 function reconcileDocument(input: ReconcileEntityInput): ReconcileDecision {
   const snapshot = input.snapshot;
   if (!snapshot) return nothing("entity not found");
@@ -247,8 +328,14 @@ function reconcileDocument(input: ReconcileEntityInput): ReconcileDecision {
     return nothing(`${input.entityType} push is disabled in the sync config`);
   }
 
+  if (snapshot.status === "Voided") return reconcileNativeVoid(input);
+
   const postedStatuses: readonly string[] =
-    input.entityType === "bill" ? SWEPT_BILL_STATUSES : SWEPT_INVOICE_STATUSES;
+    input.entityType === "bill"
+      ? SWEPT_BILL_STATUSES
+      : input.entityType === "charge"
+        ? SWEPT_CHARGE_STATUSES
+        : SWEPT_INVOICE_STATUSES;
   if (!snapshot.status || !postedStatuses.includes(snapshot.status)) {
     return nothing(
       `${input.entityType} status '${snapshot.status ?? "unknown"}' is not posted`
@@ -318,12 +405,9 @@ function reconcileDocument(input: ReconcileEntityInput): ReconcileDecision {
 }
 
 /**
- * Payments (Phase G — Rillet only). Strictest rule: only a Posted/Voided
- * payment with NO push operation at all enqueues (payment mapping ids are
- * composite, so a mapping-based phantom check does not apply; ineligible
- * payments park as Skipped on first drain and leave the set). A Voided
- * payment that already has operations records nothing — v1 has no void
- * echo (the syncer parks voids as Skipped by design).
+ * Payments (Rillet only). Posted payments enqueue once. Voided payments with
+ * active Carbon-originated mappings enqueue again, independently of the prior
+ * posting operation, until native deletion is durably recorded.
  */
 function reconcilePayment(input: ReconcileEntityInput): ReconcileDecision {
   const snapshot = input.snapshot;
@@ -331,6 +415,12 @@ function reconcilePayment(input: ReconcileEntityInput): ReconcileDecision {
 
   if (!input.context.providerSupportsPaymentPush) {
     return nothing("provider has no outbound payment push");
+  }
+  if (
+    snapshot.status === "Voided" &&
+    input.context.providerSupportsNativeVoid
+  ) {
+    return reconcileNativeVoid(input);
   }
   const posted: readonly string[] = SWEPT_PAYMENT_STATUSES;
   if (!snapshot.status || !posted.includes(snapshot.status)) {

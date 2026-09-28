@@ -20,6 +20,15 @@ export function useRealtime(
   const revalidator = useRevalidator();
   const timeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // Default to the caller's company rather than subscribing to every tenant's
+  // writes and discarding them below — with ~1600 tenants an unfiltered
+  // subscription fans every company's changes out to every client. A caller
+  // that passes its own narrower filter (`runId=eq.…`) keeps it. This assumes
+  // the table has a `companyId` column; every table reached without a filter
+  // does. Pass an explicit filter for one that does not — a filter on a column
+  // that doesn't exist delivers nothing at all, silently.
+  const scopedFilter = filter ?? `companyId=eq.${company.id}`;
+
   useEffect(
     () => () => {
       if (timeout.current) clearTimeout(timeout.current);
@@ -29,16 +38,14 @@ export function useRealtime(
 
   const channel = useRealtimeChannel({
     topic: `postgres_changes:${table}`,
-    dependencies: [company.id, filter, debounceMs],
+    dependencies: [company.id, scopedFilter, debounceMs],
     setup(channel) {
       return channel.on(
         "postgres_changes",
-        { event: "*", schema: "public", table: table, filter: filter },
+        { event: "*", schema: "public", table: table, filter: scopedFilter },
         (payload) => {
-          // The row lives under `new`/`old`, never on the payload itself. This
-          // guard is what stops the subscriptions that pass no `filter`
-          // (journal, purchaseOrder, changeOrder, printJob, part) from
-          // revalidating on another tenant's writes.
+          // The row lives under `new`/`old`, never on the payload itself.
+          // Defence in depth behind the server-side filter above.
           const row = (payload.new ?? payload.old) as
             | { companyId?: string }
             | undefined;

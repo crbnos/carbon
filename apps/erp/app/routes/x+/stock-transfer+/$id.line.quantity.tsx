@@ -1,5 +1,6 @@
 import { assertIsPost, error, notFound, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
+import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { trigger } from "@carbon/jobs";
 import { getLogger } from "@carbon/logger";
@@ -93,8 +94,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   // Call the post-stock-transfer function for inventory items
+  // Service role: `userId` is the effective (console pin-in) user, not the
+  // token's subject, which the edge function's membership check compares.
   const { data: transferResult, error: functionError } =
-    await client.functions.invoke("post-stock-transfer", {
+    await getCarbonServiceRole().functions.invoke("post-stock-transfer", {
       body: JSON.stringify({
         type: type,
         stockTransferId: stockTransferLine.data.stockTransferId,

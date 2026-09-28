@@ -4,6 +4,8 @@
 > Author: Claude (audit follow-up), for brad@carbonos.dev
 > Date: 2026-07-02
 
+> Superseded corrective design: [Accounting Posting Corrections](2026-09-07-accounting-posting-corrections.md) resolves the amount contract and covers the current invoice/payment/provider code. The user explicitly authorized assuming accounting has no users, so this document's historical-transition proposal does not apply to that implementation. Retained below as historical context, not implementation instructions.
+
 ## TLDR
 
 The platform's documented currency convention is `currency.exchangeRate` =

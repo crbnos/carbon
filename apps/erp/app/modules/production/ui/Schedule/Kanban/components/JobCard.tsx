@@ -43,6 +43,7 @@ import { getDeadlineIcon } from "~/modules/production/ui/Jobs/Deadline";
 import { useCustomers } from "~/stores";
 import { getPrivateUrl, path } from "~/utils/path";
 import JobStatus from "../../../Jobs/JobStatus";
+import { KANBAN_CARD_SHELL } from "../cardShell";
 import { useKanban } from "../context/KanbanContext";
 import {
   getDateOnly,
@@ -59,36 +60,33 @@ interface Progress {
   employees?: Set<string>;
 }
 
-const cardVariants = cva(
-  "bg-card hover:bg-muted/30 dark:border-none dark:shadow-[inset_0_0.5px_0_rgb(255_255_255_/_0.08),_inset_0_0_1px_rgb(255_255_255_/_0.24),_0_0_0_0.5px_rgb(0,0,0,1),0px_0px_4px_rgba(0,_0,_0,_0.08)]",
-  {
-    variants: {
-      highlighted: {
-        true: "ring-2 ring-primary opacity-100",
-        false: ""
-      },
-      dragging: {
-        over: "ring-2 ring-primary opacity-30",
-        overlay: "ring-2 ring-primary hover:bg-muted"
-      },
-      status: {
-        Draft: "border-border",
-        Planned: "border-yellow-500/30",
-        Ready: "border-blue-500/30",
-        "In Progress": "border-emerald-600/30",
-        Paused: "border-orange-500/30",
-        Completed: "border-green-500/30",
-        Closed: "border-border",
-        Cancelled: "border-red-500/30",
-        Overdue: "border-red-500/50",
-        "Due Today": "border-orange-500/50"
-      }
+const cardVariants = cva(KANBAN_CARD_SHELL, {
+  variants: {
+    highlighted: {
+      true: "ring-2 ring-primary opacity-100",
+      false: ""
     },
-    defaultVariants: {
-      status: "Planned"
+    dragging: {
+      over: "ring-2 ring-primary opacity-30",
+      overlay: "ring-2 ring-primary hover:bg-muted"
+    },
+    status: {
+      Draft: "border-border",
+      Planned: "border-yellow-500/30",
+      Ready: "border-blue-500/30",
+      "In Progress": "border-emerald-600/30",
+      Paused: "border-orange-500/30",
+      Completed: "border-green-500/30",
+      Closed: "border-border",
+      Cancelled: "border-red-500/30",
+      Overdue: "border-red-500/50",
+      "Due Today": "border-orange-500/50"
     }
+  },
+  defaultVariants: {
+    status: "Planned"
   }
-);
+});
 
 type JobCardProps = {
   item: JobItem;

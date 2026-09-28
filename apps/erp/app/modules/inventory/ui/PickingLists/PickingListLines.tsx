@@ -51,6 +51,38 @@ import type {
 } from "../../inventory.service";
 import { ShortPickModal } from "./ShortPickModal";
 
+type PickLineSourceMaterial = {
+  itemId?: string | null;
+  quantity?: number | string | null;
+  substitutionFactor?: number | string | null;
+  item?: {
+    readableId?: string | null;
+    itemSupersession?: { conversionFactor?: number | string | null } | null;
+  } | null;
+};
+
+export function assembliesCovered(
+  pickItemId: string,
+  quantityToPick: number,
+  material: PickLineSourceMaterial | null | undefined
+): number | null {
+  const perAssembly = Number(material?.quantity ?? 0);
+  if (!material?.itemId || !(perAssembly > 0)) return null;
+  const substitutionFactor = Number(material.substitutionFactor ?? 0);
+  const conversionFactor = Number(
+    material.item?.itemSupersession?.conversionFactor ?? 0
+  );
+  const factor =
+    substitutionFactor > 0
+      ? 1 / substitutionFactor
+      : conversionFactor > 0
+        ? conversionFactor
+        : null;
+  if (factor === null || pickItemId === material.itemId) return null;
+  const assemblies = quantityToPick / (perAssembly * factor);
+  return Number.isInteger(assemblies) ? assemblies : null;
+}
+
 type PickingListData = NonNullable<
   Awaited<ReturnType<typeof getPickingList>>["data"]
 >;
@@ -267,10 +299,7 @@ function PickingListLineItem({
   // item (an item-supersession redirect at generation time). Show the original.
   const sourceMaterial = (
     line as {
-      jobMaterial?: {
-        itemId?: string | null;
-        item?: { readableId?: string | null } | null;
-      } | null;
+      jobMaterial?: PickLineSourceMaterial | null;
     }
   ).jobMaterial;
   const substitutedFrom =
@@ -281,6 +310,9 @@ function PickingListLineItem({
         sourceMaterial.itemId)
       : null;
   const quantityToPick = Number(line.quantityToPick ?? 0);
+  const assemblies = substitutedFrom
+    ? assembliesCovered(line.itemId, quantityToPick, sourceMaterial)
+    : null;
   const quantityPicked = Number(line.quantityPicked ?? 0);
   const quantityReturned = Number(
     (line as { quantityReturned?: number | null }).quantityReturned ?? 0
@@ -352,7 +384,17 @@ function PickingListLineItem({
           </p>
           {substitutedFrom && (
             <p className="truncate text-sm text-blue-700 dark:text-blue-300 sm:text-xs">
-              ↩ <Trans>substituted from</Trans> {substitutedFrom}
+              ↩{" "}
+              {assemblies !== null ? (
+                <Trans>
+                  picking in place of {substitutedFrom}, the item on the job,
+                  for {assemblies} assemblies
+                </Trans>
+              ) : (
+                <Trans>
+                  picking in place of {substitutedFrom}, the item on the job
+                </Trans>
+              )}
             </p>
           )}
           {isTracked && !isPicked && (

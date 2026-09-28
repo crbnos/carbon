@@ -279,7 +279,7 @@ function CompanyBreadcrumb() {
                 action={path.to.newCompany}
                 validator={companyValidator}
                 method="post"
-                onSubmit={companyForm.onClose}
+                onAfterSubmit={companyForm.onClose}
                 defaultValues={{
                   countryCode: "US",
                   baseCurrencyCode: "USD",

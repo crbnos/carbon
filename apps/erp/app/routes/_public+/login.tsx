@@ -1,8 +1,6 @@
 import {
   assertIsPost,
   CarbonEdition,
-  CLOUDFLARE_TURNSTILE_SECRET_KEY,
-  CLOUDFLARE_TURNSTILE_SITE_KEY,
   CONTROLLED_ENVIRONMENT,
   carbonClient,
   error,
@@ -11,12 +9,21 @@ import {
   RATE_LIMIT
 } from "@carbon/auth";
 import {
+  botProtection,
+  getMagicLinkErrorMessage,
   logAuthEvent,
   sendMagicLink,
   signInWithBypassEmail,
-  verifyAuthSession
+  verifyAuthSession,
+  verifyBotProtection
 } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
+import {
+  isPlatformSignupDisabled,
+  isSelfSignupBlockedForEmail,
+  PLATFORM_SIGNUP_DISABLED_MESSAGE,
+  SELF_SIGNUP_BLOCKED_MESSAGE
+} from "@carbon/auth/self-signup.server";
 import {
   clearAuthCookies,
   flash,
@@ -37,13 +44,12 @@ import {
   ItarLoginDisclaimer,
   Separator,
   toast,
-  useMode,
+  useBotProtection,
   useMount,
   VStack
 } from "@carbon/react";
-import { Edition } from "@carbon/utils";
+import { Edition, getClientIp } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { Turnstile } from "@marsidev/react-turnstile";
 import {
   browserSupportsWebAuthn,
   startAuthentication
@@ -82,7 +88,13 @@ export async function loader({ request }: LoaderFunctionArgs) {
     }
     const cookieHeaders = await clearAuthCookies(request);
     return data(
-      { hasOutlookAuth, hasGoogleAuth, hasPasskeyAuth, hasSsoAuth },
+      {
+        hasOutlookAuth,
+        hasGoogleAuth,
+        hasPasskeyAuth,
+        hasSsoAuth,
+        botProtection
+      },
       { headers: cookieHeaders }
     );
   }
@@ -91,13 +103,14 @@ export async function loader({ request }: LoaderFunctionArgs) {
     hasOutlookAuth,
     hasGoogleAuth,
     hasPasskeyAuth,
-    hasSsoAuth
+    hasSsoAuth,
+    botProtection
   };
 }
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const ip = request.headers.get("x-forwarded-for") ?? "127.0.0.1";
+  const ip = getClientIp(request) ?? "127.0.0.1";
   const ratelimit = new Ratelimit({
     redis,
     limiter: Ratelimit.slidingWindow(RATE_LIMIT, "1 h"),
@@ -121,7 +134,7 @@ export async function action({ request }: ActionFunctionArgs) {
     return error(validation.error, "Invalid email address");
   }
 
-  const { email, turnstileToken } = validation.data;
+  const { email, botToken } = validation.data;
 
   // Per-account lockout (NIST 800-171 3.1.8) — layered ON TOP of the IP limit
   // above. Keyed by the normalized email so an attacker rotating IPs, or
@@ -146,35 +159,16 @@ export async function action({ request }: ActionFunctionArgs) {
     );
   }
 
-  if (
-    CarbonEdition === Edition.Cloud &&
-    CLOUDFLARE_TURNSTILE_SITE_KEY !== "1x00000000000000000000AA"
-  ) {
-    const verifyResponse = await fetch(
-      "https://challenges.cloudflare.com/turnstile/v0/siteverify",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/x-www-form-urlencoded"
-        },
-        body: new URLSearchParams({
-          secret: CLOUDFLARE_TURNSTILE_SECRET_KEY ?? "",
-          response: turnstileToken ?? "",
-          remoteip: ip
-        })
-      }
+  const botError = await verifyBotProtection({
+    token: botToken,
+    ip,
+    actor: email
+  });
+  if (botError) {
+    return data(
+      error(null, botError),
+      await flash(request, error(null, botError))
     );
-
-    const verifyData = await verifyResponse.json();
-    if (!verifyData.success) {
-      return data(
-        error(null, "Bot verification failed. Please try again."),
-        await flash(
-          request,
-          error(null, "Bot verification failed. Please try again.")
-        )
-      );
-    }
   }
 
   // Count this attempt against the account. If it tips the account past the
@@ -241,9 +235,10 @@ export async function action({ request }: ActionFunctionArgs) {
         ip,
         reason: "magic link send failed"
       });
+      const message = getMagicLinkErrorMessage(magicLink.error);
       return data(
-        error(magicLink, "Failed to send magic link"),
-        await flash(request, error(magicLink, "Failed to send magic link"))
+        error(magicLink, message),
+        await flash(request, error(magicLink, message))
       );
     }
     logAuthEvent("magic_link_sent", { actor: email, ip });
@@ -257,6 +252,29 @@ export async function action({ request }: ActionFunctionArgs) {
     return data(
       { success: false, message: "User record not found" },
       await flash(request, error(null, "Failed to sign in"))
+    );
+  } else if (await isPlatformSignupDisabled()) {
+    // Self-hosted with sign-ups switched off: same refusal as Enterprise,
+    // but named — the person can act on "ask for an invitation".
+    logAuthEvent("login_failed", {
+      actor: email,
+      ip,
+      reason: "sign-ups disabled on this instance"
+    });
+    return data(
+      { success: false, message: PLATFORM_SIGNUP_DISABLED_MESSAGE },
+      await flash(request, error(null, PLATFORM_SIGNUP_DISABLED_MESSAGE))
+    );
+  } else if (isSelfSignupBlockedForEmail(email)) {
+    // Cloud self-signup rejects consumer email domains (self-signup-blocked-domains.txt).
+    logAuthEvent("login_failed", {
+      actor: email,
+      ip,
+      reason: "self-signup domain blocked"
+    });
+    return data(
+      { success: false, message: SELF_SIGNUP_BLOCKED_MESSAGE },
+      await flash(request, error(null, SELF_SIGNUP_BLOCKED_MESSAGE))
     );
   } else {
     // User doesn't exist, send verification code for signup
@@ -275,23 +293,40 @@ export async function action({ request }: ActionFunctionArgs) {
 
 export default function LoginRoute() {
   const { t } = useLingui();
-  const { hasOutlookAuth, hasGoogleAuth, hasPasskeyAuth, hasSsoAuth } =
-    useLoaderData<typeof loader>();
+  const {
+    hasOutlookAuth,
+    hasGoogleAuth,
+    hasPasskeyAuth,
+    hasSsoAuth,
+    botProtection
+  } = useLoaderData<typeof loader>();
 
   const [searchParams] = useSearchParams();
   const redirectTo = searchParams.get("redirectTo") ?? undefined;
   const emailParam = searchParams.get("email") ?? undefined;
   const [mode, setMode] = useState<"login" | "signup" | "verify">("login");
   const [signupEmail, setSignupEmail] = useState<string>("");
-  const [turnstileToken, setTurnstileToken] = useState<string>("");
   const [passkeySupported, setPasskeySupported] = useState(false);
   const [passkeyLoading, setPasskeyLoading] = useState(false);
   const [ssoLoading, setSsoLoading] = useState(false);
   const [ssoError, setSsoError] = useState<string | null>(null);
   const conditionalAbortRef = useRef<AbortController | null>(null);
 
+  // A forced logout (see destroyAuthSession) arrives as a bare 302, leaving the
+  // browser no trace of what went wrong. "no-claims" is almost always a user
+  // with no company membership.
+  const logoutReason = searchParams.get("reason");
+  useEffect(() => {
+    if (logoutReason) {
+      // biome-ignore lint/suspicious/noConsole: surfacing the silent logout is the point
+      console.warn(
+        `[carbon:auth] Session was destroyed server-side (reason: ${logoutReason}). See server logs for the full record.`
+      );
+    }
+  }, [logoutReason]);
+
   const fetcher = useFetcher<Result & { mode?: string; email?: string }>();
-  const theme = useMode();
+  const bot = useBotProtection("/login", botProtection, fetcher.data);
 
   useEffect(() => {
     if (fetcher.data?.success && fetcher.data.mode) {
@@ -575,7 +610,7 @@ export default function LoginRoute() {
             onSubmit={onSubmitEmail}
           >
             <Hidden name="redirectTo" value={redirectTo} type="hidden" />
-            <Hidden name="turnstileToken" value={turnstileToken} />
+            <Hidden name="botToken" value={bot.token} />
             <VStack spacing={2}>
               {((fetcher.data?.success === false && fetcher.data?.message) ||
                 ssoError) && (
@@ -641,17 +676,17 @@ export default function LoginRoute() {
               <Input
                 name="email"
                 label=""
+                autoFocus
                 placeholder={t`Email Address`}
                 autoComplete={hasPasskeyAuth ? "email webauthn" : "email"}
               />
 
               <Submit
                 isDisabled={
-                  fetcher.state !== "idle" ||
-                  ssoLoading ||
-                  (!!CLOUDFLARE_TURNSTILE_SITE_KEY && !turnstileToken)
+                  fetcher.state !== "idle" || ssoLoading || !bot.ready
                 }
                 isLoading={fetcher.state === "submitting" || ssoLoading}
+                hideShortcutKey
                 size="lg"
                 className="w-full"
                 withBlocker={false}
@@ -659,19 +694,7 @@ export default function LoginRoute() {
               >
                 <Trans>Continue</Trans>
               </Submit>
-              {!!CLOUDFLARE_TURNSTILE_SITE_KEY && (
-                <div className="w-full flex justify-center">
-                  <Turnstile
-                    siteKey={CLOUDFLARE_TURNSTILE_SITE_KEY}
-                    onSuccess={(token) => setTurnstileToken(token)}
-                    onError={() => setTurnstileToken("")}
-                    onExpire={() => setTurnstileToken("")}
-                    options={{
-                      theme: theme === "dark" ? "dark" : "light"
-                    }}
-                  />
-                </div>
-              )}
+              {bot.challenge}
             </VStack>
           </ValidatedForm>
         )}

@@ -3,8 +3,11 @@ import { generateProductLabelZPL } from "@carbon/documents/zpl";
 import { labelSizes } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
 import { redirect } from "react-router";
-import { getCompany, getDocumentTemplateConfig } from "~/modules/settings";
-import { resolveLabelLogo } from "~/modules/settings/labelLogo.server";
+import { getDocumentTemplateConfig } from "~/modules/settings";
+import {
+  getCompanyLogoForLabel,
+  resolveLabelLogo
+} from "~/modules/settings/labelLogo.server";
 import { getCompanySettings } from "~/modules/settings/settings.service";
 import { path } from "~/utils/path";
 import { getStockTransferLabelItems } from "./labels.server";
@@ -63,8 +66,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     companyId,
     "trackingLabel"
   );
-  const company = await getCompany(client, companyId);
-  const logo = await resolveLabelLogo(company.data, template, labelSize);
+  const companyLogo = await getCompanyLogoForLabel(client, companyId);
+  const logo = await resolveLabelLogo(companyLogo, template, labelSize);
 
   const zplOutput = items
     .map((item) => generateProductLabelZPL(item, labelSize, template, logo))

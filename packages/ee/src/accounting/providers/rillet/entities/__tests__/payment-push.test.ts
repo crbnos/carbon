@@ -27,7 +27,7 @@ vi.mock("../../../../core/utils", async (importOriginal) => {
     ) => {
       const insertBuilder: Record<string, unknown> = {};
       insertBuilder.values = (v: Record<string, unknown>) => {
-        txLinkSink.push(v);
+        txLinkSink.push(...(Array.isArray(v) ? v : [v]));
         return insertBuilder;
       };
       insertBuilder.onConflict = () => insertBuilder;
@@ -47,6 +47,7 @@ type PaymentRow = {
   bankAccount: string;
   currencyCode: string;
   exchangeRate: number;
+  totalAmount?: number;
   paymentDate: string;
   postingDate: string | null;
   reference: string | null;
@@ -56,15 +57,22 @@ type SettlementRow = {
   targetSalesInvoiceId: string | null;
   targetPurchaseInvoiceId: string | null;
   appliedAmount: number;
+  sourceAmount: number;
+  sourcePaymentId: string | null;
+  targetExchangeRate?: number;
+  fxGainLossAmount?: number;
   discountAmount: number;
   writeOffAmount: number;
 };
 
 function makePushDb(opts: {
   metadata?: unknown;
+  mappings?: Array<Record<string, unknown>>;
   payment?: PaymentRow;
   settlements?: SettlementRow[];
   linkSink: Array<Record<string, unknown>>;
+  /** `currency.decimalPlaces` of the payment currency (USD unless overridden). */
+  currencyDecimals?: number;
 }) {
   const selectChain = (rows: unknown[]) => {
     const b: Record<string, unknown> = {};
@@ -81,10 +89,17 @@ function makePushDb(opts: {
           opts.metadata === undefined ? [] : [{ metadata: opts.metadata }]
         );
       }
+      if (t === "externalIntegrationMapping")
+        return selectChain(opts.mappings ?? []);
       if (t === "payment") {
         return selectChain(opts.payment ? [opts.payment] : []);
       }
       if (t === "invoiceSettlement") return selectChain(opts.settlements ?? []);
+      // The settlement scale is read from the company's group-scoped currency
+      // row — the same authoritative source the bill syncer uses.
+      if (t === "company") return selectChain([{ companyGroupId: "group-1" }]);
+      if (t === "currency")
+        return selectChain([{ decimalPlaces: opts.currencyDecimals ?? 2 }]);
       return selectChain([]);
     },
     transaction: () => ({
@@ -114,6 +129,8 @@ function makeSyncer(opts: {
   enabled?: boolean;
   createInvoicePayment?: ReturnType<typeof vi.fn>;
   createBillPayment?: ReturnType<typeof vi.fn>;
+  deleteInvoicePayment?: ReturnType<typeof vi.fn>;
+  deleteBillPayment?: ReturnType<typeof vi.fn>;
 }) {
   const createInvoicePayment =
     opts.createInvoicePayment ??
@@ -122,13 +139,18 @@ function makeSyncer(opts: {
     opts.createBillPayment ??
     vi.fn(async () => ({ id: "rillet-pay-1", status: "SUCCESSFUL" }));
 
+  const deleteInvoicePayment =
+    opts.deleteInvoicePayment ?? vi.fn(async () => {});
+  const deleteBillPayment = opts.deleteBillPayment ?? vi.fn(async () => {});
   const syncer = new RilletPaymentSyncer({
     database: opts.db,
     companyId: "company-1",
     provider: {
       id: "rillet",
       createInvoicePayment,
-      createBillPayment
+      createBillPayment,
+      deleteInvoicePayment,
+      deleteBillPayment
     } as never,
     config: {
       enabled: opts.enabled ?? true,
@@ -148,7 +170,13 @@ function makeSyncer(opts: {
     opts.accountCodes ?? new Map([["bank-1", "1000"]])
   );
 
-  return { syncer, createInvoicePayment, createBillPayment };
+  return {
+    syncer,
+    createInvoicePayment,
+    createBillPayment,
+    deleteInvoicePayment,
+    deleteBillPayment
+  };
 }
 
 const apPayment: PaymentRow = {
@@ -157,6 +185,7 @@ const apPayment: PaymentRow = {
   bankAccount: "bank-1",
   currencyCode: "USD",
   exchangeRate: 1,
+  totalAmount: 140,
   paymentDate: "2026-08-07",
   postingDate: "2026-08-07",
   reference: "PAY-1"
@@ -166,6 +195,10 @@ const apSettlement: SettlementRow = {
   targetSalesInvoiceId: null,
   targetPurchaseInvoiceId: "pinv-1",
   appliedAmount: 100,
+  sourceAmount: 100,
+  sourcePaymentId: null,
+  targetExchangeRate: 1,
+  fxGainLossAmount: 0,
   discountAmount: 0,
   writeOffAmount: 0
 };
@@ -297,7 +330,8 @@ describe("RilletPaymentSyncer push — gates (parked as Skipped)", () => {
           {
             ...apSettlement,
             targetPurchaseInvoiceId: "pinv-2",
-            appliedAmount: 40
+            appliedAmount: 40,
+            sourceAmount: 40
           },
           apSettlement
         ],
@@ -333,6 +367,53 @@ describe("RilletPaymentSyncer push — gates (parked as Skipped)", () => {
     expect(txLinkSink[1]).toMatchObject({
       entityId: "pay_1:pinv-2",
       externalId: "bill:bill-remote-1:rillet-pay-2"
+    });
+  });
+
+  it("serializes a 0-decimal currency (JPY) at its own scale, not at cents", async () => {
+    // JPY settles at 0 decimals: ¥1000 is "1000". Serializing it as "1000.00"
+    // claims a precision the currency does not have.
+    const { syncer, createBillPayment } = makeSyncer({
+      db: makePushDb({
+        payment: { ...apPayment, currencyCode: "JPY", totalAmount: 1000 },
+        settlements: [
+          { ...apSettlement, appliedAmount: 1000, sourceAmount: 1000 }
+        ],
+        linkSink: [],
+        currencyDecimals: 0
+      }),
+      mapping: null,
+      documentRemoteId: "bill-remote-1"
+    });
+
+    const result = await syncer.pushToAccounting("pay_1");
+
+    expect(result.status).toBe("success");
+    expect(createBillPayment.mock.calls[0]?.[1]).toMatchObject({
+      amount: { amount: "1000", currency: "JPY" }
+    });
+  });
+
+  it("serializes a 3-decimal currency (BHD) without losing its third decimal", async () => {
+    // BHD settles at 3 decimals (1000 fils): 0.563 must survive the wire.
+    const { syncer, createBillPayment } = makeSyncer({
+      db: makePushDb({
+        payment: { ...apPayment, currencyCode: "BHD", totalAmount: 0.563 },
+        settlements: [
+          { ...apSettlement, appliedAmount: 0.563, sourceAmount: 0.563 }
+        ],
+        linkSink: [],
+        currencyDecimals: 3
+      }),
+      mapping: null,
+      documentRemoteId: "bill-remote-1"
+    });
+
+    const result = await syncer.pushToAccounting("pay_1");
+
+    expect(result.status).toBe("success");
+    expect(createBillPayment.mock.calls[0]?.[1]).toMatchObject({
+      amount: { amount: "0.563", currency: "BHD" }
     });
   });
 
@@ -384,19 +465,89 @@ describe("RilletPaymentSyncer push — gates (parked as Skipped)", () => {
 });
 
 describe("RilletPaymentSyncer push — void routing", () => {
-  it("skips (not supported) a voided Carbon-originated payment", async () => {
-    const { syncer } = makeSyncer({
+  it.each([
+    "ar",
+    "ap"
+  ])("voids every Carbon-originated %s settlement and retains idempotent tombstones", async (family) => {
+    const remote = (n: number) =>
+      `${family === "ap" ? "bill:" : ""}doc-${n}:pay-${n}`;
+    const mappings = [1, 2].map((n) => ({
+      entityId: `pay_1:doc-${n}`,
+      externalId: remote(n),
+      metadata: { origin: "carbon", other: "preserved" }
+    }));
+    const { syncer, deleteInvoicePayment, deleteBillPayment } = makeSyncer({
       db: makePushDb({
         payment: { ...apPayment, status: "Voided" },
         settlements: [apSettlement],
+        mappings,
         linkSink: []
-      }),
-      mapping: { metadata: { origin: "carbon" } }
+      })
     });
+    expect(await syncer.pushToAccounting("pay_1")).toMatchObject({
+      status: "success",
+      action: "deleted"
+    });
+    const deletion = family === "ar" ? deleteInvoicePayment : deleteBillPayment;
+    expect(deletion.mock.calls).toEqual([
+      ["doc-1", "pay-1"],
+      ["doc-2", "pay-2"]
+    ]);
+    expect(txLinkSink).toHaveLength(2);
+    expect(
+      txLinkSink.every(
+        (row) =>
+          (row.metadata as any)?.voided === true &&
+          (row.metadata as any)?.other === "preserved"
+      )
+    ).toBe(true);
+  });
 
-    const result = await syncer.pushToAccounting("pay_1");
-    expect(result.status).toBe("skipped");
-    expect(result.error).toContain("not supported");
+  it("retains all mappings on partial delete failure so retry is safe", async () => {
+    const deletion = vi
+      .fn()
+      .mockResolvedValueOnce(undefined)
+      .mockRejectedValueOnce(new Error("cleared payment"));
+    const { syncer } = makeSyncer({
+      deleteBillPayment: deletion,
+      db: makePushDb({
+        payment: { ...apPayment, status: "Voided" },
+        settlements: [apSettlement],
+        linkSink: [],
+        mappings: [1, 2].map((n) => ({
+          entityId: `pay_1:doc-${n}`,
+          externalId: `bill:doc-${n}:pay-${n}`,
+          metadata: { origin: "carbon" }
+        }))
+      })
+    });
+    expect(await syncer.pushToAccounting("pay_1")).toMatchObject({
+      status: "error",
+      error: "cleared payment"
+    });
+    expect(txLinkSink).toHaveLength(0);
+  });
+
+  it("does not delete an already voided mapping again", async () => {
+    const { syncer, deleteBillPayment } = makeSyncer({
+      db: makePushDb({
+        payment: { ...apPayment, status: "Voided" },
+        settlements: [],
+        linkSink: [],
+        mappings: [
+          {
+            entityId: "pay_1",
+            externalId: "bill:doc-1:pay-1",
+            metadata: { origin: "carbon", voided: true }
+          }
+        ]
+      })
+    });
+    expect(await syncer.pushToAccounting("pay_1")).toMatchObject({
+      status: "success",
+      action: "deleted"
+    });
+    expect(deleteBillPayment).not.toHaveBeenCalled();
   });
 
   it("skips a voided pulled payment (no Carbon-originated provider payment to reverse)", async () => {
@@ -467,5 +618,23 @@ describe("RilletPaymentSyncer.pushRemotePayment — mapping Warnings", () => {
     ).rejects.toMatchObject({
       failure: { errorCode: "UNMAPPED_ACCOUNTS", warning: true }
     });
+  });
+});
+
+describe("outbound cash funding validation", () => {
+  it("refuses credit-funded applications before provider writes", async () => {
+    const { syncer, createBillPayment } = makeSyncer({
+      db: makePushDb({
+        payment: apPayment,
+        settlements: [{ ...apSettlement, sourcePaymentId: "prior-credit" }],
+        linkSink: []
+      }),
+      mapping: null,
+      documentRemoteId: "bill-remote-1"
+    });
+    const result = await syncer.pushToAccounting("pay_1");
+    expect(result.status).toBe("skipped");
+    expect(String(result.error)).toMatch(/credit/i);
+    expect(createBillPayment).not.toHaveBeenCalled();
   });
 });

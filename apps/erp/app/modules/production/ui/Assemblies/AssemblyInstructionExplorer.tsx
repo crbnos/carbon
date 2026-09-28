@@ -21,6 +21,10 @@ import {
   TabsContent,
   TabsList,
   TabsTrigger,
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+  TruncatedTooltipText,
   useDebounce,
   useInterval,
   VStack
@@ -31,12 +35,13 @@ import {
   groupComponentNodeIds,
   synthesizeFallbackMotion
 } from "@carbon/viewer";
+import { Trans, useLingui } from "@lingui/react/macro";
 import type { DragControls } from "framer-motion";
 import { MotionConfig, Reorder, useDragControls } from "framer-motion";
 import type { ReactNode } from "react";
 import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
-  LuChevronDown,
+  LuBoxes,
   LuCirclePlus,
   LuEllipsisVertical,
   LuGripVertical,
@@ -58,7 +63,11 @@ import { ProcedureStepTypeIcon } from "~/components/Icons";
 import { ConfirmDelete } from "~/components/Modals";
 import { usePermissions, useRealtime } from "~/hooks";
 import { path } from "~/utils/path";
-import { isAssemblyPlanRunning } from "../../production.models";
+import {
+  assemblyStepStatuses,
+  isAssemblyPlanRunning,
+  stepPlanWarningsSchema
+} from "../../production.models";
 import type { FlattenedBomMaterial } from "../../production.service";
 import { toViewerStep } from "../../production.service";
 import type {
@@ -67,6 +76,12 @@ import type {
   AssemblyUnit
 } from "../../types";
 import AssemblyBomTree from "./AssemblyBomTree";
+import type { AssemblyStepStatusValue } from "./AssemblyStepStatus";
+import {
+  AssemblyStepStatusIcon,
+  normalizeStepStatus,
+  useStepStatusLabel
+} from "./AssemblyStepStatus";
 
 type AssemblyInstructionExplorerProps = {
   steps: AssemblyInstructionStepRow[];
@@ -96,7 +111,10 @@ type AssemblyInstructionExplorerProps = {
   /** Double-click a step — preview (play) its insertion motion */
   onPreviewStep: (stepId: string) => void;
   onHighlightComponents: (nodeIds: string[]) => void;
-  onHideComponents: (nodeIds: string[]) => void;
+  hasSelectedStep: boolean;
+  ownNodeIds: string[];
+  hiddenNodeIds: string[];
+  onSetHiddenComponents: (nodeIds: string[]) => void;
 };
 
 // Memoized: the parent route re-renders on every motion-drag frame
@@ -119,7 +137,10 @@ function AssemblyInstructionExplorer({
   onSelectStep,
   onPreviewStep,
   onHighlightComponents,
-  onHideComponents
+  hasSelectedStep,
+  ownNodeIds,
+  hiddenNodeIds,
+  onSetHiddenComponents
 }: AssemblyInstructionExplorerProps) {
   const { id } = useParams();
   if (!id) throw new Error("Could not find id");
@@ -777,7 +798,10 @@ function AssemblyInstructionExplorer({
             isActive={tab === "components"}
             isAddingStep={newStepFetcher.state !== "idle"}
             onHighlightComponents={onHighlightComponents}
-            onHideComponents={onHideComponents}
+            hasSelectedStep={hasSelectedStep}
+            ownNodeIds={ownNodeIds}
+            hiddenNodeIds={hiddenNodeIds}
+            onSetHiddenComponents={onSetHiddenComponents}
             onSelectStep={onSelectStep}
             onAddStep={onAddStep}
           />
@@ -809,6 +833,14 @@ function AssemblyInstructionExplorer({
                 motion plan — titles, descriptions, and other edits on the
                 current steps are lost. Refused if any step is manually authored
                 or marked Done.
+                {steps.some((step) => step.parentStepId) && (
+                  <>
+                    {" "}
+                    <Trans>
+                      Regenerating removes "Build off to the side" settings.
+                    </Trans>
+                  </>
+                )}
               </ModalDescription>
             </ModalHeader>
             <ModalFooter>
@@ -898,43 +930,28 @@ function AssemblyInstructionExplorer({
   );
 }
 
-const stepStatusOrder = ["Todo", "Review", "Done"] as const;
-type StepStatus = (typeof stepStatusOrder)[number];
-
-const stepStatusStyles: Record<StepStatus, string> = {
-  Todo: "bg-red-500",
-  Review: "bg-yellow-500",
-  Done: "bg-green-500"
-};
-
-const StepStatusDot = ({ status }: { status: StepStatus }) => (
-  <span
-    className={cn(
-      "block size-2 shrink-0 rounded-full",
-      stepStatusStyles[status] ?? stepStatusStyles.Todo
-    )}
-  />
-);
-
 function StepStatusControl({
   stepId,
   status,
   isDisabled
 }: {
   stepId: string;
-  status: StepStatus;
+  status: AssemblyStepStatusValue;
   isDisabled: boolean;
 }) {
   const { id } = useParams();
   if (!id) throw new Error("Could not find id");
 
+  const { t } = useLingui();
+  const statusLabel = useStepStatusLabel();
   const fetcher = useFetcher<{ success: boolean }>();
 
   // Optimistic: show the in-flight status while the fetcher is busy
   const displayed =
     fetcher.state !== "idle" && fetcher.formData
-      ? ((fetcher.formData.get("status") as StepStatus) ?? status)
+      ? normalizeStepStatus(fetcher.formData.get("status") as string | null)
       : status;
+  const label = statusLabel(displayed);
 
   const onSelect = (value: string) => {
     if (value === status) return;
@@ -946,42 +963,52 @@ function StepStatusControl({
     });
   };
 
-  // Non-interactive: a labeled chip so the status is legible without the dot
-  // color code (published/archived instructions can't be edited)
+  // Published/archived instructions can't be edited: the icon alone, named by its tooltip
   if (isDisabled) {
     return (
-      <span className="inline-flex h-6 shrink-0 items-center gap-1.5 rounded-md border border-border px-1.5 text-xs text-foreground">
-        <StepStatusDot status={displayed} />
-        {displayed}
-      </span>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <span
+            role="img"
+            aria-label={t`Step status: ${label}`}
+            className="inline-flex size-6 shrink-0 items-center justify-center"
+          >
+            <AssemblyStepStatusIcon status={displayed} />
+          </span>
+        </TooltipTrigger>
+        <TooltipContent>{label}</TooltipContent>
+      </Tooltip>
     );
   }
 
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <button
-          type="button"
-          aria-label={`Step status: ${displayed}. Change status`}
-          className="inline-flex h-6 shrink-0 items-center gap-1.5 rounded-md border border-border bg-card px-1.5 text-xs text-foreground shadow-button-base hover:bg-accent focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 active:scale-[0.98]"
-          onClick={(e) => e.stopPropagation()}
-        >
-          <StepStatusDot status={displayed} />
-          {displayed}
-          <LuChevronDown className="size-3 text-muted-foreground" />
-        </button>
-      </DropdownMenuTrigger>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <DropdownMenuTrigger asChild>
+            <button
+              type="button"
+              aria-label={t`Step status: ${label}. Change status`}
+              className="inline-flex size-6 shrink-0 items-center justify-center rounded-md hover:bg-accent focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 active:scale-[0.96]"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <AssemblyStepStatusIcon status={displayed} />
+            </button>
+          </DropdownMenuTrigger>
+        </TooltipTrigger>
+        <TooltipContent>{label}</TooltipContent>
+      </Tooltip>
       <DropdownMenuContent
-        align="start"
+        align="end"
         className="min-w-[8rem]"
         onClick={(e) => e.stopPropagation()}
       >
         <DropdownMenuRadioGroup value={displayed} onValueChange={onSelect}>
-          {stepStatusOrder.map((option) => (
+          {assemblyStepStatuses.map((option) => (
             <DropdownMenuRadioItem key={option} value={option}>
               <span className="flex items-center gap-2">
-                <StepStatusDot status={option} />
-                {option}
+                <AssemblyStepStatusIcon status={option} className="size-3.5" />
+                {statusLabel(option)}
               </span>
             </DropdownMenuRadioItem>
           ))}
@@ -1037,12 +1064,16 @@ function StepItem({
   onDelete
 }: StepItemProps) {
   const permissions = usePermissions();
+  const { t } = useLingui();
   if (!step) return null;
 
   const componentCount = step.componentNodeIds?.length ?? 0;
+  const stepType = step.type ?? "Task";
 
   const needsSupport = (step.warnings as { needsSupport?: boolean } | null)
     ?.needsSupport;
+  const flagged =
+    stepPlanWarningsSchema.safeParse(step.warnings).data?.flagged === true;
 
   return (
     <div
@@ -1052,7 +1083,7 @@ function StepItem({
       )}
       onClick={onSelect}
       onDoubleClick={onPreview}
-      title="Double-click to play this step"
+      title={t`Double-click to play this step`}
     >
       {isSelected && (
         <span
@@ -1061,7 +1092,7 @@ function StepItem({
         />
       )}
       <IconButton
-        aria-label="Drag handle"
+        aria-label={t`Drag handle`}
         icon={<LuGripVertical />}
         variant="ghost"
         size="sm"
@@ -1075,43 +1106,54 @@ function StepItem({
       <span className="w-5 shrink-0 text-right text-xs tabular-nums text-muted-foreground">
         {index + 1}
       </span>
-      <ProcedureStepTypeIcon
-        type={step.type ?? "Task"}
-        className="size-3.5 shrink-0 text-muted-foreground"
-      />
-      <span
+      {/* Only a non-default type earns an icon — the same Task icon on every row said nothing */}
+      {stepType !== "Task" && (
+        <ProcedureStepTypeIcon
+          type={stepType}
+          className="size-3.5 shrink-0 text-muted-foreground"
+        />
+      )}
+      <TruncatedTooltipText
+        tooltip={title}
         className="min-w-0 flex-1 truncate text-sm text-foreground"
-        title={title}
       >
         {title}
-      </span>
-      {needsSupport && (
-        <span
-          className="shrink-0 text-amber-600 dark:text-amber-500"
-          title="A part in this step may tip once placed — consider a fixture or a second person."
-        >
-          <LuHand className="size-3.5" />
-        </span>
+      </TruncatedTooltipText>
+      {flagged && (
+        <RowIcon label={t`No collision-free path`}>
+          <LuTriangleAlert className="size-3.5 text-amber-500" />
+        </RowIcon>
       )}
-      <span
-        className="shrink-0 text-xs tabular-nums text-muted-foreground"
-        title={`${componentCount} component${componentCount === 1 ? "" : "s"}`}
-      >
+      {needsSupport && (
+        <RowIcon
+          label={t`A part in this step may tip once placed — consider a fixture or a second person.`}
+        >
+          <LuHand className="size-3.5 text-amber-500" />
+        </RowIcon>
+      )}
+      {step.parentStepId && (
+        <RowIcon
+          label={t`Built off to the side, then carried in at its join step`}
+        >
+          <LuBoxes className="size-3.5 text-muted-foreground" />
+        </RowIcon>
+      )}
+      <span className="shrink-0 text-xs tabular-nums text-muted-foreground">
         ×{componentCount}
       </span>
       <StepStatusControl
         stepId={step.id}
-        status={step.status ?? "Todo"}
+        status={normalizeStepStatus(step.status)}
         isDisabled={isDisabled}
       />
       {!isDisabled && (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <IconButton
-              aria-label="More"
+              aria-label={t`More options`}
               size="sm"
               variant="ghost"
-              className="size-6 shrink-0 opacity-0 group-hover:opacity-100 data-[state=open]:opacity-100"
+              className="size-6 shrink-0 opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 data-[state=open]:opacity-100"
               icon={<LuEllipsisVertical />}
               onClick={(e) => e.stopPropagation()}
             />
@@ -1126,12 +1168,26 @@ function StepItem({
               }}
             >
               <DropdownMenuIcon icon={<LuTrash />} />
-              Delete Step
+              <Trans>Delete Step</Trans>
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       )}
     </div>
+  );
+}
+
+/** A small meaning-carrying icon in a step row, named by its tooltip. */
+function RowIcon({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <span role="img" aria-label={label} className="inline-flex shrink-0">
+          {children}
+        </span>
+      </TooltipTrigger>
+      <TooltipContent>{label}</TooltipContent>
+    </Tooltip>
   );
 }
 

@@ -54,7 +54,11 @@ const forbiddenPatterns: Array<{ pattern: RegExp; description: string }> = [
     description: "raw header aria label"
   },
   {
-    pattern: /<CardAttributeLabel>[^<{]+<\/CardAttributeLabel>/g,
+    // Requires a non-whitespace character: once the `<Trans>` children are
+    // stripped above, a correctly localized label is left as an element
+    // containing only the newline and indentation it was written across, and
+    // `[^<{]+` alone would match that whitespace and report it as raw.
+    pattern: /<CardAttributeLabel>\s*[^<{\s][^<{]*<\/CardAttributeLabel>/g,
     description: "raw card attribute label"
   },
   {
@@ -70,9 +74,21 @@ describe("localized sales and invoicing submodule UI", () => {
 
     for (const relativePath of files) {
       const source = readFileSync(join(root, relativePath), "utf8");
-      const sanitizedSource = source.replace(/\/\*[\s\S]*?\*\//g, "");
+      const sanitizedSource = source
+        .replace(/\/\*[\s\S]*?\*\//g, "")
+        // Strip already-localized JSX before scanning. The `>Label<` patterns
+        // below cannot see element boundaries, and `<Trans>Edit</Trans>`
+        // literally contains `>Edit<` — so without this every correctly
+        // localized label reported itself as a raw one, and the suite could
+        // only be satisfied by UNDOING the localization it exists to enforce.
+        .replace(/<Trans[^>]*>[\s\S]*?<\/Trans>/g, "");
 
       for (const { pattern, description } of forbiddenPatterns) {
+        // `RegExp.test` on a /g regex advances `lastIndex` and the object is
+        // shared across every file in this loop, so a match in one file made
+        // the next file start mid-string and silently under-report. Reset per
+        // use rather than dropping the /g flag, which the descriptions rely on.
+        pattern.lastIndex = 0;
         if (pattern.test(sanitizedSource)) {
           offenders.push(`${relativePath}: ${description}`);
         }

@@ -147,6 +147,7 @@ const Number = forwardRef<HTMLInputElement, FormNumberProps>(
           value={controlValue}
           onChange={handleChange}
           isDisabled={isDisabled}
+          isReadOnly={isReadOnly}
           onBlur={async (e) => {
             if (inline) {
               const result = await validate();

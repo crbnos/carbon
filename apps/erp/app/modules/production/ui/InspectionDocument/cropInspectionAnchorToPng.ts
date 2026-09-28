@@ -1,4 +1,4 @@
-import { pdfjs } from "react-pdf";
+import { closePdf, openPdf } from "@carbon/files/pdf";
 
 /** Extra resolution for vision / OCR vs on-screen PDF preview. */
 const VISION_RENDER_SCALE = 1.75;
@@ -78,8 +78,7 @@ export async function cropInspectionAnchorToPngBlob(
     height: rh
   } = prepareVisionCropRect(x, y, width, height);
 
-  const data = new Uint8Array(pdfBytes);
-  const pdf = await pdfjs.getDocument({ data }).promise;
+  const pdf = await openPdf(pdfBytes);
 
   try {
     const page = await pdf.getPage(pageNumber);
@@ -134,6 +133,6 @@ export async function cropInspectionAnchorToPngBlob(
       }, "image/png");
     });
   } finally {
-    await pdf.destroy();
+    await closePdf(pdf);
   }
 }

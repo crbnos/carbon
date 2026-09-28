@@ -1,5 +1,5 @@
-import type { ValueOrRef } from "@carbon/workflows";
-import { operatorsForType } from "@carbon/workflows";
+import type { ValueOrRef } from "@carbon/ee/workflows";
+import { operatorsForType } from "@carbon/ee/workflows";
 import { describe, expect, it } from "vitest";
 import { encodeTokenId } from "./tokenId";
 import {

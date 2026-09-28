@@ -1,6 +1,7 @@
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { getLogger } from "@carbon/logger";
 import { VStack } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
 import { useLingui } from "@lingui/react/macro";
@@ -35,6 +36,8 @@ import IssueProperties from "~/modules/quality/ui/Issue/IssueProperties";
 import { getTagsList } from "~/modules/shared";
 import { detailBreadcrumb, type Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
+
+const logger = getLogger("erp", "issue-detail");
 
 export const handle: Handle = {
   breadcrumb: detailBreadcrumb(
@@ -75,6 +78,16 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       path.to.issues,
       await flash(request, error(nonConformance.error, "Failed to load issue"))
     );
+  }
+
+  // bypassRls makes `client` the service role, so the URL id is only proven to
+  // exist — not to be this company's.
+  if (nonConformance.data.companyId !== companyId) {
+    logger.error("Issue is not in the caller's company", {
+      companyId,
+      issueId: id
+    });
+    throw redirect(path.to.issues);
   }
 
   return {
@@ -151,6 +164,21 @@ export default function IssueRoute() {
                           children: resolvedAssociations.receiptLines
                         },
                         {
+                          key: "salesReturnOrderLines",
+                          name: t`RMA Line`,
+                          pluralName: t`RMA Lines`,
+                          module: "sales",
+                          children: resolvedAssociations.salesReturnOrderLines
+                        },
+                        {
+                          key: "purchaseReturnOrderLines",
+                          name: t`Supplier Return Line`,
+                          pluralName: t`Supplier Return Lines`,
+                          module: "purchasing",
+                          children:
+                            resolvedAssociations.purchaseReturnOrderLines
+                        },
+                        {
                           key: "trackedEntities",
                           name: t`Tracked Entity`,
                           pluralName: t`Tracked Entities`,
@@ -211,7 +239,7 @@ export default function IssueRoute() {
                 </Suspense>
               }
               content={
-                <div className="bg-card h-[calc(100dvh-var(--topbar-height)-var(--header-height)-var(--content-inset))] overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent w-full">
+                <div className="bg-muted dark:bg-card h-[calc(100dvh-var(--topbar-height)-var(--header-height)-var(--content-inset))] overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent w-full">
                   <VStack spacing={4} className="p-4">
                     <Outlet />
                   </VStack>
