@@ -3,13 +3,13 @@ import type { ChangeOrderData, ChangeOrderSpec } from "../../types.ts";
 export const CHANGE_ORDERS: ChangeOrderSpec[] = [
   {
     ref: "co:draft",
-    name: "MTR-9000 Rev A — encoder mount and cable gland relocation",
+    name: "TRM-BOX-9000 — cable gland relocation",
     type: "Engineering",
     status: "Draft",
     openDateOffset: -346,
     affectedItems: [
       {
-        item: "MTR-9000",
+        item: "TRM-BOX-9000",
         changeType: "Version",
         sortOrder: 1
       }
@@ -17,13 +17,13 @@ export const CHANGE_ORDERS: ChangeOrderSpec[] = [
   },
   {
     ref: "co:impl",
-    name: "STA-9000 revision — Class H insulation system upgrade",
+    name: "COIL-9000 revision — Class H insulation system upgrade",
     type: "Engineering",
     status: "Implementation",
     openDateOffset: -307,
     affectedItems: [
       {
-        item: "STA-9000",
+        item: "COIL-9000",
         changeType: "Revision",
         sortOrder: 1,
         supersessionMode: "Consume First",
@@ -31,20 +31,19 @@ export const CHANGE_ORDERS: ChangeOrderSpec[] = [
         successorEffectivityOffset: 49,
         revision: {
           revision: "A",
-          unitSalePrice: 1265,
+          unitSalePrice: 505,
           description:
-            "Rev A — heavier varnish fill and phase separators replace the loose slot liner, lifting the winding to a full Class H system",
+            "Rev A — coils are trickle-varnished in Class H resin before insertion, replacing the loose Nomex slot liner",
           bomEdits: [
             { op: "delete", component: "MAT-INS-NOMEX" },
-            { op: "setQuantity", component: "MAT-VARNISH", quantity: 0.375 },
-            { op: "add", component: "MAT-CU-18AWG", quantity: 1.5, order: 5 }
+            { op: "setQuantity", component: "MAT-CU-18AWG", quantity: 7 },
+            { op: "add", component: "MAT-VARNISH", quantity: 0.25, order: 3 }
           ],
           operationEdits: [
             {
-              order: 2,
-              description:
-                "Vacuum-pressure impregnate and bake Class H varnish",
-              laborTime: 8
+              order: 1,
+              description: "Wind, form and trickle-varnish the coil set",
+              laborTime: 3
             }
           ]
         }
