@@ -150,7 +150,7 @@ export async function deleteGroup(
   client: SupabaseClient<Database>,
   groupId: string
 ) {
-  return client.from("group").delete().eq("id", groupId);
+  return client.from("group").delete().eq("id", groupId).select("id").single();
 }
 
 export async function getCompaniesForUser(

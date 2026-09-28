@@ -21,7 +21,7 @@ import type { z } from "zod";
 import { getNextSequence } from "~/modules/settings";
 import type { GenericQueryFilters } from "~/utils/query";
 import { setGenericQueryFilters } from "~/utils/query";
-import { sanitize } from "~/utils/supabase";
+import { ruleError, sanitize } from "~/utils/supabase";
 import type {
   AnalyticsAccountScope,
   AnalyticsReportDefinition,
@@ -1864,7 +1864,9 @@ export async function deleteReportView(
     .from("reportView")
     .delete()
     .eq("id", id)
-    .eq("companyId", companyId);
+    .eq("companyId", companyId)
+    .select("id")
+    .single();
 }
 
 export async function getCompaniesInGroup(
@@ -1886,7 +1888,12 @@ export async function deleteAccount(
   client: SupabaseClient<Database>,
   accountId: string
 ) {
-  return client.from("account").delete().eq("id", accountId);
+  return client
+    .from("account")
+    .delete()
+    .eq("id", accountId)
+    .select("id")
+    .single();
 }
 
 export async function deletePaymentTerm(
@@ -1896,7 +1903,9 @@ export async function deletePaymentTerm(
   return client
     .from("paymentTerm")
     .update({ active: false })
-    .eq("id", paymentTermId);
+    .eq("id", paymentTermId)
+    .select("id")
+    .single();
 }
 
 export async function getAccount(
@@ -3799,7 +3808,9 @@ export async function deletePeriodCloseTaskDefinition(
     .from("periodCloseTaskDefinition")
     .delete()
     .eq("id", args.id)
-    .eq("companyId", args.companyId);
+    .eq("companyId", args.companyId)
+    .select("id")
+    .single();
 }
 
 export async function getDefaultAccounts(
@@ -3912,7 +3923,9 @@ export async function updateDefaultAccounts(
   return client
     .from("accountDefault")
     .update(defaultAccounts)
-    .eq("companyId", defaultAccounts.companyId);
+    .eq("companyId", defaultAccounts.companyId)
+    .select("companyId")
+    .single();
 }
 
 /** Validate the effective shipping mapping before either defaults section saves. */
@@ -3981,7 +3994,9 @@ export async function updateFiscalYearSettings(
   return client
     .from("fiscalYearSettings")
     .update(sanitize(fiscalYearSettings))
-    .eq("companyId", fiscalYearSettings.companyId);
+    .eq("companyId", fiscalYearSettings.companyId)
+    .select("companyId")
+    .single();
 }
 
 export async function upsertAccount(
@@ -4068,7 +4083,12 @@ export async function deleteCostCenter(
   client: SupabaseClient<Database>,
   costCenterId: string
 ) {
-  return client.from("costCenter").delete().eq("id", costCenterId);
+  return client
+    .from("costCenter")
+    .delete()
+    .eq("id", costCenterId)
+    .select("id")
+    .single();
 }
 
 export async function getCostCenter(
@@ -4357,7 +4377,9 @@ export async function deleteDimension(
   return client
     .from("dimension")
     .update({ active: false })
-    .eq("id", dimensionId);
+    .eq("id", dimensionId)
+    .select("id")
+    .single();
 }
 
 export async function getActiveDimensionsWithValues(
@@ -5303,6 +5325,37 @@ export async function createJournalEntry(
     .single();
 }
 
+/**
+ * Refuses a write to a document that is no longer Draft. A status guard in the
+ * write's WHERE clause alone matches no row once the document is posted, which
+ * PostgREST reports as success, so the caller is told the edit or delete
+ * happened when nothing changed. Returns the refusal, or null to proceed.
+ */
+async function refuseUnlessDraft(
+  client: SupabaseClient<Database>,
+  table: "journal" | "fixedAsset" | "depreciationRun",
+  id: string,
+  label: string
+) {
+  const row = await client
+    .from(table as "journal")
+    .select("status")
+    .eq("id", id)
+    .single();
+  if (row.error) return { data: null, error: row.error };
+  if (row.data.status !== "Draft") {
+    return {
+      data: null,
+      error: ruleError(`${label} is not in Draft status`)
+    };
+  }
+  return null;
+}
+
+/**
+ * Edits a Draft journal entry's header. A posted entry, or an id that matches
+ * no entry, is an error rather than a silent no-op.
+ */
 export async function updateJournalEntry(
   client: SupabaseClient<Database>,
   id: string,
@@ -5310,19 +5363,47 @@ export async function updateJournalEntry(
     updatedBy: string;
   }
 ) {
+  const refused = await refuseUnlessDraft(
+    client,
+    "journal",
+    id,
+    "Journal entry"
+  );
+  if (refused) return refused;
+
   const { id: _id, ...rest } = data;
   return client
     .from("journal")
     .update(sanitize(rest))
     .eq("id", id)
-    .eq("status", "Draft");
+    .eq("status", "Draft")
+    .select("id")
+    .single();
 }
 
+/**
+ * Deletes a Draft journal entry. A posted entry, or an id that matches no
+ * entry, is an error rather than a silent no-op.
+ */
 export async function deleteJournalEntry(
   client: SupabaseClient<Database>,
   id: string
 ) {
-  return client.from("journal").delete().eq("id", id).eq("status", "Draft");
+  const refused = await refuseUnlessDraft(
+    client,
+    "journal",
+    id,
+    "Journal entry"
+  );
+  if (refused) return refused;
+
+  return client
+    .from("journal")
+    .delete()
+    .eq("id", id)
+    .eq("status", "Draft")
+    .select("id")
+    .single();
 }
 
 export async function upsertJournalEntryLine(
@@ -5389,7 +5470,7 @@ export async function deleteJournalEntryLine(
   client: SupabaseClient<Database>,
   id: string
 ) {
-  return client.from("journalLine").delete().eq("id", id);
+  return client.from("journalLine").delete().eq("id", id).select("id").single();
 }
 
 export async function saveJournalEntryWithLines(
@@ -5410,7 +5491,17 @@ export async function saveJournalEntryWithLines(
     companyGroupId: string;
   }
 ) {
-  // 1. Update journal header
+  // 1. Update journal header. Refuse a posted entry up front: the status
+  // guard alone matches no row, and the line rewrite below would then run
+  // against a posted entry.
+  const refused = await refuseUnlessDraft(
+    client,
+    "journal",
+    data.journalEntryId,
+    "Journal entry"
+  );
+  if (refused) return refused;
+
   const headerUpdate = await client
     .from("journal")
     .update(
@@ -5421,7 +5512,9 @@ export async function saveJournalEntryWithLines(
       })
     )
     .eq("id", data.journalEntryId)
-    .eq("status", "Draft");
+    .eq("status", "Draft")
+    .select("id")
+    .single();
 
   if (headerUpdate.error) return headerUpdate;
 
@@ -5514,13 +5607,13 @@ export async function postJournalEntry(
   if (entry.data.status !== "Draft") {
     return {
       data: null,
-      error: { message: "Journal entry is not in Draft status" }
+      error: ruleError("Journal entry is not in Draft status")
     };
   }
 
   const lines = entry.data.journalLine ?? [];
   if (lines.length === 0) {
-    return { data: null, error: { message: "Journal entry has no lines" } };
+    return { data: null, error: ruleError("Journal entry has no lines") };
   }
 
   // 2. Validate balance. journalLine.amount is a class-signed *natural balance*
@@ -5540,7 +5633,7 @@ export async function postJournalEntry(
     if (!accountClass) {
       return {
         data: null,
-        error: { message: "A journal line is missing its account class" }
+        error: ruleError("A journal line is missing its account class")
       };
     }
     totalDebit += toDisplayDebit(Number(l.amount), accountClass);
@@ -5550,7 +5643,7 @@ export async function postJournalEntry(
   if (!isBalanced(totalDebit, totalCredit, JOURNAL_BALANCE_TOLERANCE)) {
     return {
       data: null,
-      error: { message: "Total debits must equal total credits" }
+      error: ruleError("Total debits must equal total credits")
     };
   }
 
@@ -5960,7 +6053,12 @@ export async function deleteFixedAssetClass(
   client: SupabaseClient<Database>,
   id: string
 ) {
-  return client.from("fixedAssetClass").delete().eq("id", id);
+  return client
+    .from("fixedAssetClass")
+    .delete()
+    .eq("id", id)
+    .select("id")
+    .single();
 }
 
 // -- Fixed Assets --
@@ -6181,11 +6279,29 @@ export async function upsertFixedAsset(
     .single();
 }
 
+/**
+ * Deletes a Draft fixed asset. An asset past Draft, or an id that matches no
+ * asset, is an error rather than a silent no-op.
+ */
 export async function deleteFixedAsset(
   client: SupabaseClient<Database>,
   id: string
 ) {
-  return client.from("fixedAsset").delete().eq("id", id).eq("status", "Draft");
+  const refused = await refuseUnlessDraft(
+    client,
+    "fixedAsset",
+    id,
+    "Fixed asset"
+  );
+  if (refused) return refused;
+
+  return client
+    .from("fixedAsset")
+    .delete()
+    .eq("id", id)
+    .eq("status", "Draft")
+    .select("id")
+    .single();
 }
 
 export async function insertDepreciationRun(
@@ -6268,15 +6384,29 @@ export async function insertDepreciationRun(
   };
 }
 
+/**
+ * Deletes a Draft depreciation run. A posted run, or an id that matches no
+ * run, is an error rather than a silent no-op.
+ */
 export async function deleteDepreciationRun(
   client: SupabaseClient<Database>,
   id: string
 ) {
+  const refused = await refuseUnlessDraft(
+    client,
+    "depreciationRun",
+    id,
+    "Depreciation run"
+  );
+  if (refused) return refused;
+
   return client
     .from("depreciationRun")
     .delete()
     .eq("id", id)
-    .eq("status", "Draft");
+    .eq("status", "Draft")
+    .select("id")
+    .single();
 }
 
 // -- Depreciation --

@@ -511,56 +511,91 @@ export async function deleteJob(
   client: SupabaseClient<Database>,
   jobId: string
 ) {
-  return client.from("job").delete().eq("id", jobId);
+  return client.from("job").delete().eq("id", jobId).select("id").single();
 }
 
 export async function deleteJobMaterial(
   client: SupabaseClient<Database>,
   jobMaterialId: string
 ) {
-  return client.from("jobMaterial").delete().eq("id", jobMaterialId);
+  return client
+    .from("jobMaterial")
+    .delete()
+    .eq("id", jobMaterialId)
+    .select("id")
+    .single();
 }
 
 export async function deleteJobOperation(
   client: SupabaseClient<Database>,
   jobOperationId: string
 ) {
-  return client.from("jobOperation").delete().eq("id", jobOperationId);
+  return client
+    .from("jobOperation")
+    .delete()
+    .eq("id", jobOperationId)
+    .select("id")
+    .single();
 }
 
 export async function deleteJobOperationStep(
   client: SupabaseClient<Database>,
   id: string
 ) {
-  return client.from("jobOperationStep").delete().eq("id", id);
+  return client
+    .from("jobOperationStep")
+    .delete()
+    .eq("id", id)
+    .select("id")
+    .single();
 }
 
 export async function deleteJobOperationStepSlide(
   client: SupabaseClient<Database>,
   id: string
 ) {
-  return client.from("jobOperationStepSlide").delete().eq("id", id);
+  return client
+    .from("jobOperationStepSlide")
+    .delete()
+    .eq("id", id)
+    .select("id")
+    .single();
 }
 
 export async function deleteJobOperationParameter(
   client: SupabaseClient<Database>,
   id: string
 ) {
-  return client.from("jobOperationParameter").delete().eq("id", id);
+  return client
+    .from("jobOperationParameter")
+    .delete()
+    .eq("id", id)
+    .select("id")
+    .single();
 }
 
 export async function deleteJobOperationTool(
   client: SupabaseClient<Database>,
   id: string
 ) {
-  return client.from("jobOperationTool").delete().eq("id", id);
+  return client
+    .from("jobOperationTool")
+    .delete()
+    .eq("id", id)
+    .select("id")
+    .single();
 }
 
 export async function deleteProcedure(
   client: SupabaseClient<Database>,
   procedureId: string
 ) {
-  return client.from("procedure").delete().eq("id", procedureId);
+  return client
+    .from("procedure")
+    .delete()
+    .eq("id", procedureId)
+    .select("id")
+    .single();
 }
 
 export async function deleteProcedureStep(
@@ -572,7 +607,9 @@ export async function deleteProcedureStep(
     .from("procedureStep")
     .delete()
     .eq("id", procedureStepId)
-    .eq("companyId", companyId);
+    .eq("companyId", companyId)
+    .select("id")
+    .single();
 }
 
 export async function deleteProcedureParameter(
@@ -584,7 +621,9 @@ export async function deleteProcedureParameter(
     .from("procedureParameter")
     .delete()
     .eq("id", procedureParameterId)
-    .eq("companyId", companyId);
+    .eq("companyId", companyId)
+    .select("id")
+    .single();
 }
 
 export async function deleteProductionEvent(
@@ -637,7 +676,9 @@ export async function deleteProductionEvent(
     .from("productionEvent")
     .delete()
     .eq("id", productionEventId)
-    .eq("companyId", companyId);
+    .eq("companyId", companyId)
+    .select("id")
+    .single();
 }
 
 export async function deleteProductionQuantity(
@@ -647,7 +688,9 @@ export async function deleteProductionQuantity(
   return client
     .from("productionQuantity")
     .delete()
-    .eq("id", productionQuantityId);
+    .eq("id", productionQuantityId)
+    .select("id")
+    .single();
 }
 
 export async function getActiveJobOperationByJobId(
@@ -738,42 +781,72 @@ export async function deleteScrapReason(
   client: SupabaseClient<Database>,
   scrapReasonId: string
 ) {
-  return client.from("scrapReason").delete().eq("id", scrapReasonId);
+  return client
+    .from("scrapReason")
+    .delete()
+    .eq("id", scrapReasonId)
+    .select("id")
+    .single();
 }
 
 export async function deleteFailureMode(
   client: SupabaseClient<Database>,
   failureModeId: string
 ) {
-  return client.from("maintenanceFailureMode").delete().eq("id", failureModeId);
+  return client
+    .from("maintenanceFailureMode")
+    .delete()
+    .eq("id", failureModeId)
+    .select("id")
+    .single();
 }
 
 export async function deleteMaintenanceDispatch(
   client: SupabaseClient<Database>,
   dispatchId: string
 ) {
-  return client.from("maintenanceDispatch").delete().eq("id", dispatchId);
+  return client
+    .from("maintenanceDispatch")
+    .delete()
+    .eq("id", dispatchId)
+    .select("id")
+    .single();
 }
 
 export async function deleteMaintenanceDispatchComment(
   client: SupabaseClient<Database>,
   commentId: string
 ) {
-  return client.from("maintenanceDispatchComment").delete().eq("id", commentId);
+  return client
+    .from("maintenanceDispatchComment")
+    .delete()
+    .eq("id", commentId)
+    .select("id")
+    .single();
 }
 
 export async function deleteMaintenanceDispatchEvent(
   client: SupabaseClient<Database>,
   eventId: string
 ) {
-  return client.from("maintenanceDispatchEvent").delete().eq("id", eventId);
+  return client
+    .from("maintenanceDispatchEvent")
+    .delete()
+    .eq("id", eventId)
+    .select("id")
+    .single();
 }
 
 export async function deleteMaintenanceDispatchItem(
   client: SupabaseClient<Database>,
   itemId: string
 ) {
-  return client.from("maintenanceDispatchItem").delete().eq("id", itemId);
+  return client
+    .from("maintenanceDispatchItem")
+    .delete()
+    .eq("id", itemId)
+    .select("id")
+    .single();
 }
 
 export async function deleteMaintenanceDispatchWorkCenter(
@@ -783,21 +856,33 @@ export async function deleteMaintenanceDispatchWorkCenter(
   return client
     .from("maintenanceDispatchWorkCenter")
     .delete()
-    .eq("id", workCenterId);
+    .eq("id", workCenterId)
+    .select("id")
+    .single();
 }
 
 export async function deleteMaintenanceSchedule(
   client: SupabaseClient<Database>,
   scheduleId: string
 ) {
-  return client.from("maintenanceSchedule").delete().eq("id", scheduleId);
+  return client
+    .from("maintenanceSchedule")
+    .delete()
+    .eq("id", scheduleId)
+    .select("id")
+    .single();
 }
 
 export async function deleteMaintenanceScheduleItem(
   client: SupabaseClient<Database>,
   itemId: string
 ) {
-  return client.from("maintenanceScheduleItem").delete().eq("id", itemId);
+  return client
+    .from("maintenanceScheduleItem")
+    .delete()
+    .eq("id", itemId)
+    .select("id")
+    .single();
 }
 
 export async function getDemandForecasts(
@@ -2742,7 +2827,8 @@ export async function updateJobBatchNumber(
     })
     .eq("id", trackedEntityId)
     .eq("companyId", companyId)
-    .select("id, readableId");
+    .select("id, readableId")
+    .single();
 }
 
 export type JobReleaseReadiness = {
@@ -2993,7 +3079,9 @@ export async function updateJobStatus(
       updatedAt: new Date().toISOString(),
       ...(clearsCompletion ? { completedDate: null } : {})
     })
-    .eq("id", id);
+    .eq("id", id)
+    .select("id")
+    .single();
 
   if (!result.error && prior.data && prior.data.status !== status) {
     if (status === "Ready") {
@@ -3081,7 +3169,9 @@ export async function updateKanbanJob(
     .from("kanban")
     .update({ jobId, updatedBy: userId, updatedAt: new Date().toISOString() })
     .eq("id", id)
-    .eq("companyId", companyId);
+    .eq("companyId", companyId)
+    .select("id")
+    .single();
 }
 
 export async function updateQuoteOperationStepOrder(
@@ -4728,7 +4818,9 @@ export async function upsertScrapReason(
     return client
       .from("scrapReason")
       .update(sanitize(scrapReason))
-      .eq("id", scrapReason.id);
+      .eq("id", scrapReason.id)
+      .select("id")
+      .single();
   }
 }
 
@@ -4755,7 +4847,9 @@ export async function upsertFailureMode(
     return client
       .from("maintenanceFailureMode")
       .update(sanitize(failureMode))
-      .eq("id", failureMode.id);
+      .eq("id", failureMode.id)
+      .select("id")
+      .single();
   }
 }
 
@@ -4786,7 +4880,9 @@ export async function upsertMaintenanceDispatch(
     return client
       .from("maintenanceDispatch")
       .update(sanitize(dispatch))
-      .eq("id", dispatch.id);
+      .eq("id", dispatch.id)
+      .select("id")
+      .single();
   }
 }
 
@@ -4812,7 +4908,9 @@ export async function upsertMaintenanceDispatchComment(
     return client
       .from("maintenanceDispatchComment")
       .update(sanitize(comment))
-      .eq("id", comment.id);
+      .eq("id", comment.id)
+      .select("id")
+      .single();
   }
 }
 
@@ -4838,7 +4936,9 @@ export async function upsertMaintenanceDispatchEvent(
     return client
       .from("maintenanceDispatchEvent")
       .update(sanitize(event))
-      .eq("id", event.id);
+      .eq("id", event.id)
+      .select("id")
+      .single();
   }
 }
 
@@ -4864,7 +4964,9 @@ export async function upsertMaintenanceDispatchItem(
     return client
       .from("maintenanceDispatchItem")
       .update(sanitize(item))
-      .eq("id", item.id);
+      .eq("id", item.id)
+      .select("id")
+      .single();
   }
 }
 
@@ -4890,7 +4992,9 @@ export async function upsertMaintenanceDispatchWorkCenter(
     return client
       .from("maintenanceDispatchWorkCenter")
       .update(sanitize(workCenter))
-      .eq("id", workCenter.id);
+      .eq("id", workCenter.id)
+      .select("id")
+      .single();
   }
 }
 
@@ -4916,7 +5020,9 @@ export async function upsertMaintenanceSchedule(
     return client
       .from("maintenanceSchedule")
       .update(sanitize(schedule))
-      .eq("id", schedule.id);
+      .eq("id", schedule.id)
+      .select("id")
+      .single();
   }
 }
 
@@ -4942,7 +5048,9 @@ export async function upsertMaintenanceScheduleItem(
     return client
       .from("maintenanceScheduleItem")
       .update(sanitize(item))
-      .eq("id", item.id);
+      .eq("id", item.id)
+      .select("id")
+      .single();
   }
 }
 
@@ -7084,7 +7192,9 @@ export async function deleteAssemblyInstruction(
   const deletion = await client
     .from("assemblyInstruction")
     .delete()
-    .eq("id", id);
+    .eq("id", id)
+    .select("id")
+    .single();
   if (deletion.error) return deletion;
 
   const modelUploadId = instruction.data?.modelUploadId;
@@ -7253,7 +7363,9 @@ export async function invalidateAssemblyModelCache(
       glbPath: null,
       graphPath: null
     })
-    .eq("id", modelUploadId);
+    .eq("id", modelUploadId)
+    .select("id")
+    .single();
 }
 
 export async function upsertAssemblyInstructionStep(
@@ -7622,7 +7734,12 @@ export async function deleteAssemblyInstructionStep(
   client: SupabaseClient<Database>,
   id: string
 ) {
-  return client.from("assemblyInstructionStep").delete().eq("id", id);
+  return client
+    .from("assemblyInstructionStep")
+    .delete()
+    .eq("id", id)
+    .select("id")
+    .single();
 }
 
 export async function getAssemblyInstructionStepSlides(
@@ -7684,7 +7801,12 @@ export async function deleteAssemblyInstructionStepSlide(
   client: SupabaseClient<Database>,
   id: string
 ) {
-  return client.from("assemblyInstructionStepSlide").delete().eq("id", id);
+  return client
+    .from("assemblyInstructionStepSlide")
+    .delete()
+    .eq("id", id)
+    .select("id")
+    .single();
 }
 
 export async function getAssemblyInstructionStepTools(
@@ -7763,7 +7885,12 @@ export async function deleteAssemblyInstructionStepTool(
   client: SupabaseClient<Database>,
   id: string
 ) {
-  return client.from("assemblyInstructionStepTool").delete().eq("id", id);
+  return client
+    .from("assemblyInstructionStepTool")
+    .delete()
+    .eq("id", id)
+    .select("id")
+    .single();
 }
 
 export async function getAssemblyInstructionStepMaterials(
@@ -7868,7 +7995,12 @@ export async function deleteAssemblyInstructionStepMaterial(
   client: SupabaseClient<Database>,
   id: string
 ) {
-  return client.from("assemblyInstructionStepMaterial").delete().eq("id", id);
+  return client
+    .from("assemblyInstructionStepMaterial")
+    .delete()
+    .eq("id", id)
+    .select("id")
+    .single();
 }
 
 type AssemblyStepMaterialSeed = {
@@ -8092,7 +8224,12 @@ export async function deleteAssemblyUnit(
   client: SupabaseClient<Database>,
   id: string
 ) {
-  return client.from("assemblyUnit").delete().eq("id", id);
+  return client
+    .from("assemblyUnit")
+    .delete()
+    .eq("id", id)
+    .select("id")
+    .single();
 }
 
 /**
@@ -8239,7 +8376,12 @@ export async function deleteAssemblyComponentMapping(
   client: SupabaseClient<Database>,
   id: string
 ) {
-  return client.from("assemblyComponentMapping").delete().eq("id", id);
+  return client
+    .from("assemblyComponentMapping")
+    .delete()
+    .eq("id", id)
+    .select("id")
+    .single();
 }
 
 export type FlattenedBomMaterial = {
@@ -10076,7 +10218,9 @@ export async function updateInspectionDocumentSampling(
       updatedAt: new Date().toISOString()
     })
     .eq("id", inspectionDocumentId)
-    .eq("companyId", companyId);
+    .eq("companyId", companyId)
+    .select("id")
+    .single();
 }
 
 export async function saveInspectionDocumentAtomic(

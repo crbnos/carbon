@@ -63,5 +63,7 @@ export async function deleteCustomerPortal(
     .from("externalLink")
     .delete()
     .eq("id", id)
-    .eq("companyId", companyId);
+    .eq("companyId", companyId)
+    .select("id")
+    .single();
 }

@@ -110,7 +110,12 @@ export async function deletePurchaseOrder(
   client: SupabaseClient<Database>,
   purchaseOrderId: string
 ) {
-  return client.from("purchaseOrder").delete().eq("id", purchaseOrderId);
+  return client
+    .from("purchaseOrder")
+    .delete()
+    .eq("id", purchaseOrderId)
+    .select("id")
+    .single();
 }
 
 export async function deletePurchaseOrderLine(
@@ -120,7 +125,9 @@ export async function deletePurchaseOrderLine(
   return client
     .from("purchaseOrderLine")
     .delete()
-    .eq("id", purchaseOrderLineId);
+    .eq("id", purchaseOrderLineId)
+    .select("id")
+    .single();
 }
 
 // Creates a new Draft PO header + delivery + payment via insertPurchaseOrder
@@ -221,7 +228,12 @@ export async function deleteSupplier(
   client: SupabaseClient<Database>,
   supplierId: string
 ) {
-  return client.from("supplier").delete().eq("id", supplierId);
+  return client
+    .from("supplier")
+    .delete()
+    .eq("id", supplierId)
+    .select("id")
+    .single();
 }
 
 export async function deleteSupplierContact(
@@ -261,14 +273,21 @@ export async function deleteSupplierLocation(
     .single();
 
   if (supplierLocation?.addressId) {
-    return client.from("address").delete().eq("id", supplierLocation.addressId);
+    return client
+      .from("address")
+      .delete()
+      .eq("id", supplierLocation.addressId)
+      .select("id")
+      .single();
   } else {
     // The supplierLocation should always have an addressId, but just in case
     return client
       .from("supplierLocation")
       .delete()
       .eq("supplierId", supplierId)
-      .eq("id", supplierLocationId);
+      .eq("id", supplierLocationId)
+      .select("id")
+      .single();
   }
 }
 
@@ -276,7 +295,12 @@ export async function deleteSupplierBankAccount(
   client: SupabaseClient<Database>,
   id: string
 ) {
-  return client.from("supplierBankAccount").delete().eq("id", id);
+  return client
+    .from("supplierBankAccount")
+    .delete()
+    .eq("id", id)
+    .select("id")
+    .single();
 }
 
 export async function getSupplierBankAccounts(
@@ -334,28 +358,48 @@ export async function deleteSupplierProcess(
   client: SupabaseClient<Database>,
   supplierProcessId: string
 ) {
-  return client.from("supplierProcess").delete().eq("id", supplierProcessId);
+  return client
+    .from("supplierProcess")
+    .delete()
+    .eq("id", supplierProcessId)
+    .select("id")
+    .single();
 }
 
 export async function deleteSupplierQuote(
   client: SupabaseClient<Database>,
   supplierQuoteId: string
 ) {
-  return client.from("supplierQuote").delete().eq("id", supplierQuoteId);
+  return client
+    .from("supplierQuote")
+    .delete()
+    .eq("id", supplierQuoteId)
+    .select("id")
+    .single();
 }
 
 export async function deleteSupplierQuoteLine(
   client: SupabaseClient<Database>,
   id: string
 ) {
-  return client.from("supplierQuoteLine").delete().eq("id", id);
+  return client
+    .from("supplierQuoteLine")
+    .delete()
+    .eq("id", id)
+    .select("id")
+    .single();
 }
 
 export async function deleteSupplierType(
   client: SupabaseClient<Database>,
   supplierTypeId: string
 ) {
-  return client.from("supplierType").delete().eq("id", supplierTypeId);
+  return client
+    .from("supplierType")
+    .delete()
+    .eq("id", supplierTypeId)
+    .select("id")
+    .single();
 }
 
 export async function getPurchaseOrder(
@@ -381,7 +425,9 @@ export async function finalizeSupplierQuote(
       updatedAt: datetime.timestamp(),
       updatedBy: userId
     })
-    .eq("id", supplierQuoteId);
+    .eq("id", supplierQuoteId)
+    .select("id")
+    .single();
 
   if (quoteUpdate.error) {
     return quoteUpdate;
@@ -1164,7 +1210,9 @@ export async function finalizePurchaseOrder(
   return client
     .from("purchaseOrder")
     .update(updateData)
-    .eq("id", purchaseOrderId);
+    .eq("id", purchaseOrderId)
+    .select("id")
+    .single();
 }
 
 export async function sendSupplierQuote(
@@ -1179,7 +1227,9 @@ export async function sendSupplierQuote(
       updatedAt: datetime.timestamp(),
       updatedBy: userId
     })
-    .eq("id", supplierQuoteId);
+    .eq("id", supplierQuoteId)
+    .select("id")
+    .single();
 
   if (quoteUpdate.error) {
     return quoteUpdate;
@@ -1200,7 +1250,9 @@ export async function updatePurchaseOrderStatusLegacy(
   return client
     .from("purchaseOrder")
     .update(purchaseOrder)
-    .eq("id", purchaseOrder.id);
+    .eq("id", purchaseOrder.id)
+    .select("id")
+    .single();
 }
 
 export async function updatePurchaseOrderExchangeRate(
@@ -1216,7 +1268,12 @@ export async function updatePurchaseOrderExchangeRate(
     exchangeRateUpdatedAt: new Date().toISOString()
   };
 
-  return client.from("purchaseOrder").update(update).eq("id", update.id);
+  return client
+    .from("purchaseOrder")
+    .update(update)
+    .eq("id", update.id)
+    .select("id")
+    .single();
 }
 
 export async function updatePurchaseOrderFavorite(
@@ -1250,7 +1307,12 @@ export async function updatePurchaseOrderStatus(
     updatedBy: string;
   }
 ) {
-  return client.from("purchaseOrder").update(update).eq("id", update.id);
+  return client
+    .from("purchaseOrder")
+    .update(update)
+    .eq("id", update.id)
+    .select("id")
+    .single();
 }
 
 /**
@@ -1299,7 +1361,9 @@ export async function updateSupplierAccounting(
   return client
     .from("supplier")
     .update(sanitize(supplierAccounting))
-    .eq("id", supplierAccounting.id);
+    .eq("id", supplierAccounting.id)
+    .select("id")
+    .single();
 }
 
 export async function updateSupplierContact(
@@ -1379,7 +1443,9 @@ export async function updateSupplierPayment(
   return client
     .from("supplierPayment")
     .update(sanitize(supplierPayment))
-    .eq("supplierId", supplierPayment.supplierId);
+    .eq("supplierId", supplierPayment.supplierId)
+    .select("supplierId")
+    .single();
 }
 
 export async function updateSupplierQuoteExchangeRate(
@@ -1395,7 +1461,12 @@ export async function updateSupplierQuoteExchangeRate(
     exchangeRateUpdatedAt: new Date().toISOString()
   };
 
-  return client.from("supplierQuote").update(update).eq("id", update.id);
+  return client
+    .from("supplierQuote")
+    .update(update)
+    .eq("id", update.id)
+    .select("id")
+    .single();
 }
 
 export async function updateSupplierQuoteFavorite(
@@ -1429,7 +1500,12 @@ export async function updateSupplierQuoteStatus(
     updatedBy: string;
   }
 ) {
-  return client.from("supplierQuote").update(update).eq("id", update.id);
+  return client
+    .from("supplierQuote")
+    .update(update)
+    .eq("id", update.id)
+    .select("id")
+    .single();
 }
 
 export async function updateSupplierShipping(
@@ -1442,7 +1518,9 @@ export async function updateSupplierShipping(
   return client
     .from("supplierShipping")
     .update(sanitize(supplierShipping))
-    .eq("supplierId", supplierShipping.supplierId);
+    .eq("supplierId", supplierShipping.supplierId)
+    .select("supplierId")
+    .single();
 }
 
 export async function getSupplierTax(
@@ -1467,7 +1545,9 @@ export async function updateSupplierTax(
   return client
     .from("supplierTax")
     .update(sanitize(supplierTax))
-    .eq("supplierId", supplierTax.supplierId);
+    .eq("supplierId", supplierTax.supplierId)
+    .select("supplierId")
+    .single();
 }
 
 export async function insertPurchaseOrder(
@@ -2428,7 +2508,9 @@ export async function upsertSupplierQuote(
             : (supplierQuote.status ?? existingStatus ?? "Draft"),
         updatedAt: datetime.timestamp()
       })
-      .eq("id", supplierQuote.id);
+      .eq("id", supplierQuote.id)
+      .select("id")
+      .single();
   }
 }
 
@@ -2519,7 +2601,9 @@ export async function upsertSupplierType(
     return client
       .from("supplierType")
       .update(sanitize(supplierType))
-      .eq("id", supplierType.id);
+      .eq("id", supplierType.id)
+      .select("id")
+      .single();
   }
 }
 
@@ -2531,7 +2615,12 @@ export async function deletePurchasingRFQ(
   client: SupabaseClient<Database>,
   purchasingRfqId: string
 ) {
-  return client.from("purchasingRfq").delete().eq("id", purchasingRfqId);
+  return client
+    .from("purchasingRfq")
+    .delete()
+    .eq("id", purchasingRfqId)
+    .select("id")
+    .single();
 }
 
 export async function deletePurchasingRFQLine(
@@ -2541,7 +2630,9 @@ export async function deletePurchasingRFQLine(
   return client
     .from("purchasingRfqLine")
     .delete()
-    .eq("id", purchasingRfqLineId);
+    .eq("id", purchasingRfqLineId)
+    .select("id")
+    .single();
 }
 
 export async function getPurchasingRFQ(
@@ -3372,14 +3463,21 @@ export async function deletePurchaseReturnOrder(
   return client
     .from("purchaseReturnOrder")
     .delete()
-    .eq("id", purchaseReturnOrderId);
+    .eq("id", purchaseReturnOrderId)
+    .select("id")
+    .single();
 }
 
 export async function deletePurchaseReturnOrderLine(
   client: SupabaseClient<Database>,
   lineId: string
 ) {
-  return client.from("purchaseReturnOrderLine").delete().eq("id", lineId);
+  return client
+    .from("purchaseReturnOrderLine")
+    .delete()
+    .eq("id", lineId)
+    .select("id")
+    .single();
 }
 
 export async function setPurchaseReturnOrderLineTrackedEntities(

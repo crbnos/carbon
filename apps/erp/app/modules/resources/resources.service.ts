@@ -33,7 +33,12 @@ export async function activateWorkCenter(
   client: SupabaseClient<Database>,
   id: string
 ) {
-  return client.from("workCenter").update({ active: true }).eq("id", id);
+  return client
+    .from("workCenter")
+    .update({ active: true })
+    .eq("id", id)
+    .select("id")
+    .single();
 }
 
 export async function deleteAbility(
@@ -42,64 +47,109 @@ export async function deleteAbility(
   hardDelete = true
 ) {
   return hardDelete
-    ? client.from("ability").delete().eq("id", abilityId)
-    : client.from("ability").update({ active: false }).eq("id", abilityId);
+    ? client.from("ability").delete().eq("id", abilityId).select("id").single()
+    : client
+        .from("ability")
+        .update({ active: false })
+        .eq("id", abilityId)
+        .select("id")
+        .single();
 }
 
 export async function deleteContractor(
   client: SupabaseClient<Database>,
   contractorId: string
 ) {
-  return client.from("contractor").delete().eq("id", contractorId);
+  return client
+    .from("contractor")
+    .delete()
+    .eq("id", contractorId)
+    .select("id")
+    .single();
 }
 
 export async function deleteEmployeeAbility(
   client: SupabaseClient<Database>,
   employeeAbilityId: string
 ) {
-  return client.from("employeeAbility").delete().eq("id", employeeAbilityId);
+  return client
+    .from("employeeAbility")
+    .delete()
+    .eq("id", employeeAbilityId)
+    .select("id")
+    .single();
 }
 
 export async function deleteFailureMode(
   client: SupabaseClient<Database>,
   failureModeId: string
 ) {
-  return client.from("maintenanceFailureMode").delete().eq("id", failureModeId);
+  return client
+    .from("maintenanceFailureMode")
+    .delete()
+    .eq("id", failureModeId)
+    .select("id")
+    .single();
 }
 
 export async function deleteLocation(
   client: SupabaseClient<Database>,
   locationId: string
 ) {
-  return client.from("location").delete().eq("id", locationId);
+  return client
+    .from("location")
+    .delete()
+    .eq("id", locationId)
+    .select("id")
+    .single();
 }
 
 export async function deleteMaintenanceDispatch(
   client: SupabaseClient<Database>,
   dispatchId: string
 ) {
-  return client.from("maintenanceDispatch").delete().eq("id", dispatchId);
+  return client
+    .from("maintenanceDispatch")
+    .delete()
+    .eq("id", dispatchId)
+    .select("id")
+    .single();
 }
 
 export async function deleteMaintenanceDispatchComment(
   client: SupabaseClient<Database>,
   commentId: string
 ) {
-  return client.from("maintenanceDispatchComment").delete().eq("id", commentId);
+  return client
+    .from("maintenanceDispatchComment")
+    .delete()
+    .eq("id", commentId)
+    .select("id")
+    .single();
 }
 
 export async function deleteMaintenanceDispatchEvent(
   client: SupabaseClient<Database>,
   eventId: string
 ) {
-  return client.from("maintenanceDispatchEvent").delete().eq("id", eventId);
+  return client
+    .from("maintenanceDispatchEvent")
+    .delete()
+    .eq("id", eventId)
+    .select("id")
+    .single();
 }
 
 export async function deleteMaintenanceDispatchItem(
   client: SupabaseClient<Database>,
   itemId: string
 ) {
-  return client.from("maintenanceDispatchItem").delete().eq("id", itemId);
+  return client
+    .from("maintenanceDispatchItem")
+    .delete()
+    .eq("id", itemId)
+    .select("id")
+    .single();
 }
 
 export async function deleteMaintenanceDispatchWorkCenter(
@@ -109,21 +159,33 @@ export async function deleteMaintenanceDispatchWorkCenter(
   return client
     .from("maintenanceDispatchWorkCenter")
     .delete()
-    .eq("id", workCenterId);
+    .eq("id", workCenterId)
+    .select("id")
+    .single();
 }
 
 export async function deleteMaintenanceSchedule(
   client: SupabaseClient<Database>,
   scheduleId: string
 ) {
-  return client.from("maintenanceSchedule").delete().eq("id", scheduleId);
+  return client
+    .from("maintenanceSchedule")
+    .delete()
+    .eq("id", scheduleId)
+    .select("id")
+    .single();
 }
 
 export async function deleteMaintenanceScheduleItem(
   client: SupabaseClient<Database>,
   itemId: string
 ) {
-  return client.from("maintenanceScheduleItem").delete().eq("id", itemId);
+  return client
+    .from("maintenanceScheduleItem")
+    .delete()
+    .eq("id", itemId)
+    .select("id")
+    .single();
 }
 
 export async function deletePartner(
@@ -137,21 +199,36 @@ export async function activateProcess(
   client: SupabaseClient<Database>,
   processId: string
 ) {
-  return client.from("process").update({ active: true }).eq("id", processId);
+  return client
+    .from("process")
+    .update({ active: true })
+    .eq("id", processId)
+    .select("id")
+    .single();
 }
 
 export async function processDeactivate(
   client: SupabaseClient<Database>,
   processId: string
 ) {
-  return client.from("process").update({ active: false }).eq("id", processId);
+  return client
+    .from("process")
+    .update({ active: false })
+    .eq("id", processId)
+    .select("id")
+    .single();
 }
 
 export async function deleteProcess(
   client: SupabaseClient<Database>,
   processId: string
 ) {
-  return client.from("process").delete().eq("id", processId);
+  return client
+    .from("process")
+    .delete()
+    .eq("id", processId)
+    .select("id")
+    .single();
 }
 
 export async function deleteShift(
@@ -159,28 +236,48 @@ export async function deleteShift(
   shiftId: string
 ) {
   // TODO: Set all employeeShifts to null
-  return client.from("shift").update({ active: false }).eq("id", shiftId);
+  return client
+    .from("shift")
+    .update({ active: false })
+    .eq("id", shiftId)
+    .select("id")
+    .single();
 }
 
 export async function deleteSuggestion(
   client: SupabaseClient<Database>,
   suggestionId: string
 ) {
-  return client.from("suggestion").delete().eq("id", suggestionId);
+  return client
+    .from("suggestion")
+    .delete()
+    .eq("id", suggestionId)
+    .select("id")
+    .single();
 }
 
 export async function deleteTraining(
   client: SupabaseClient<Database>,
   trainingId: string
 ) {
-  return client.from("training").delete().eq("id", trainingId);
+  return client
+    .from("training")
+    .delete()
+    .eq("id", trainingId)
+    .select("id")
+    .single();
 }
 
 export async function deleteTrainingAssignment(
   client: SupabaseClient<Database>,
   assignmentId: string
 ) {
-  return client.from("trainingAssignment").delete().eq("id", assignmentId);
+  return client
+    .from("trainingAssignment")
+    .delete()
+    .eq("id", assignmentId)
+    .select("id")
+    .single();
 }
 
 export async function deleteTrainingQuestion(
@@ -192,14 +289,21 @@ export async function deleteTrainingQuestion(
     .from("trainingQuestion")
     .delete()
     .eq("id", trainingQuestionId)
-    .eq("companyId", companyId);
+    .eq("companyId", companyId)
+    .select("id")
+    .single();
 }
 
 export async function deleteWorkCenter(
   client: SupabaseClient<Database>,
   id: string
 ) {
-  return client.from("workCenter").update({ active: false }).eq("id", id);
+  return client
+    .from("workCenter")
+    .update({ active: false })
+    .eq("id", id)
+    .select("id")
+    .single();
 }
 
 export async function getAbilities(
@@ -1263,7 +1367,12 @@ export async function updateAbility(
     recertifyEveryDays?: number | null;
   }
 ) {
-  return client.from("ability").update(ability).eq("id", id);
+  return client
+    .from("ability")
+    .update(ability)
+    .eq("id", id)
+    .select("id")
+    .single();
 }
 
 /**
@@ -1360,7 +1469,12 @@ export async function updateSuggestionEmoji(
   suggestionId: string,
   emoji: string
 ) {
-  return client.from("suggestion").update({ emoji }).eq("id", suggestionId);
+  return client
+    .from("suggestion")
+    .update({ emoji })
+    .eq("id", suggestionId)
+    .select("id")
+    .single();
 }
 
 export async function updateSuggestionTags(
@@ -1368,7 +1482,12 @@ export async function updateSuggestionTags(
   suggestionId: string,
   tags: string[]
 ) {
-  return client.from("suggestion").update({ tags }).eq("id", suggestionId);
+  return client
+    .from("suggestion")
+    .update({ tags })
+    .eq("id", suggestionId)
+    .select("id")
+    .single();
 }
 
 export async function updateTrainingQuestionOrder(
@@ -1413,7 +1532,9 @@ export async function upsertContractor(
     const updateContractor = await client
       .from("contractor")
       .update(sanitize(contractor))
-      .eq("id", contractor.id);
+      .eq("id", contractor.id)
+      .select("id")
+      .single();
     if (updateContractor.error) {
       return updateContractor;
     }
@@ -1469,7 +1590,9 @@ export async function upsertFailureMode(
     return client
       .from("maintenanceFailureMode")
       .update(sanitize(failureMode))
-      .eq("id", failureMode.id);
+      .eq("id", failureMode.id)
+      .select("id")
+      .single();
   }
 }
 
@@ -1491,7 +1614,9 @@ export async function upsertLocation(
     return client
       .from("location")
       .update(sanitize(location))
-      .eq("id", location.id);
+      .eq("id", location.id)
+      .select("id")
+      .single();
   }
   return client.from("location").insert([location]).select("*").single();
 }
@@ -1653,7 +1778,9 @@ export async function upsertMaintenanceDispatch(
     return client
       .from("maintenanceDispatch")
       .update(sanitize(dispatch))
-      .eq("id", dispatch.id);
+      .eq("id", dispatch.id)
+      .select("id")
+      .single();
   }
 }
 
@@ -1679,7 +1806,9 @@ export async function upsertMaintenanceDispatchComment(
     return client
       .from("maintenanceDispatchComment")
       .update(sanitize(comment))
-      .eq("id", comment.id);
+      .eq("id", comment.id)
+      .select("id")
+      .single();
   }
 }
 
@@ -1705,7 +1834,9 @@ export async function upsertMaintenanceDispatchEvent(
     return client
       .from("maintenanceDispatchEvent")
       .update(sanitize(event))
-      .eq("id", event.id);
+      .eq("id", event.id)
+      .select("id")
+      .single();
   }
 }
 
@@ -1731,7 +1862,9 @@ export async function upsertMaintenanceDispatchItem(
     return client
       .from("maintenanceDispatchItem")
       .update(sanitize(item))
-      .eq("id", item.id);
+      .eq("id", item.id)
+      .select("id")
+      .single();
   }
 }
 
@@ -1757,7 +1890,9 @@ export async function upsertMaintenanceDispatchWorkCenter(
     return client
       .from("maintenanceDispatchWorkCenter")
       .update(sanitize(workCenter))
-      .eq("id", workCenter.id);
+      .eq("id", workCenter.id)
+      .select("id")
+      .single();
   }
 }
 
@@ -1783,7 +1918,9 @@ export async function upsertMaintenanceSchedule(
     return client
       .from("maintenanceSchedule")
       .update(sanitize(schedule))
-      .eq("id", schedule.id);
+      .eq("id", schedule.id)
+      .select("id")
+      .single();
   }
 }
 
@@ -1809,7 +1946,9 @@ export async function upsertMaintenanceScheduleItem(
     return client
       .from("maintenanceScheduleItem")
       .update(sanitize(item))
-      .eq("id", item.id);
+      .eq("id", item.id)
+      .select("id")
+      .single();
   }
 }
 
@@ -1936,7 +2075,9 @@ export async function upsertProcess(
     // batchRule* form fields out and folded them into this value — so it must
     // be added explicitly (null = all-default, and null must be written).
     .update({ ...sanitize(update), batchRules })
-    .eq("id", process.id);
+    .eq("id", process.id)
+    .select("id")
+    .single();
   if (processUpdate.error) {
     return processUpdate;
   }
@@ -2120,7 +2261,9 @@ export async function upsertWorkCenter(
   const workCenterUpdate = await client
     .from("workCenter")
     .update(sanitize(update))
-    .eq("id", workCenter.id);
+    .eq("id", workCenter.id)
+    .select("id")
+    .single();
   if (workCenterUpdate.error) {
     return workCenterUpdate;
   }

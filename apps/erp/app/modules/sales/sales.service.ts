@@ -342,14 +342,24 @@ export async function deleteCustomer(
   client: SupabaseClient<Database>,
   customerId: string
 ) {
-  return client.from("customer").delete().eq("id", customerId);
+  return client
+    .from("customer")
+    .delete()
+    .eq("id", customerId)
+    .select("id")
+    .single();
 }
 
 export async function deleteCustomerBankAccount(
   client: SupabaseClient<Database>,
   id: string
 ) {
-  return client.from("customerBankAccount").delete().eq("id", id);
+  return client
+    .from("customerBankAccount")
+    .delete()
+    .eq("id", id)
+    .select("id")
+    .single();
 }
 
 export async function getCustomerBankAccounts(
@@ -441,14 +451,21 @@ export async function deleteCustomerLocation(
     .single();
 
   if (customerLocation?.addressId) {
-    return client.from("address").delete().eq("id", customerLocation.addressId);
+    return client
+      .from("address")
+      .delete()
+      .eq("id", customerLocation.addressId)
+      .select("id")
+      .single();
   } else {
     // The customerLocation should always have an addressId, but just in case
     return client
       .from("customerLocation")
       .delete()
       .eq("customerId", customerId)
-      .eq("id", customerLocationId);
+      .eq("id", customerLocationId)
+      .select("id")
+      .single();
   }
 }
 
@@ -456,112 +473,187 @@ export async function deleteCustomerStatus(
   client: SupabaseClient<Database>,
   customerStatusId: string
 ) {
-  return client.from("customerStatus").delete().eq("id", customerStatusId);
+  return client
+    .from("customerStatus")
+    .delete()
+    .eq("id", customerStatusId)
+    .select("id")
+    .single();
 }
 
 export async function deleteCustomerType(
   client: SupabaseClient<Database>,
   customerTypeId: string
 ) {
-  return client.from("customerType").delete().eq("id", customerTypeId);
+  return client
+    .from("customerType")
+    .delete()
+    .eq("id", customerTypeId)
+    .select("id")
+    .single();
 }
 
 export async function deleteNoQuoteReason(
   client: SupabaseClient<Database>,
   noQuoteReasonId: string
 ) {
-  return client.from("noQuoteReason").delete().eq("id", noQuoteReasonId);
+  return client
+    .from("noQuoteReason")
+    .delete()
+    .eq("id", noQuoteReasonId)
+    .select("id")
+    .single();
 }
 
 export async function deletePricingRule(
   client: SupabaseClient<Database>,
   pricingRuleId: string
 ) {
-  return client.from("pricingRule").delete().eq("id", pricingRuleId);
+  return client
+    .from("pricingRule")
+    .delete()
+    .eq("id", pricingRuleId)
+    .select("id")
+    .single();
 }
 
 export async function deleteQuote(
   client: SupabaseClient<Database>,
   quoteId: string
 ) {
-  return client.from("quote").delete().eq("id", quoteId);
+  return client.from("quote").delete().eq("id", quoteId).select("id").single();
 }
 
 export async function deleteQuoteMakeMethod(
   client: SupabaseClient<Database>,
   quoteMakeMethodId: string
 ) {
-  return client.from("quoteMakeMethod").delete().eq("id", quoteMakeMethodId);
+  return client
+    .from("quoteMakeMethod")
+    .delete()
+    .eq("id", quoteMakeMethodId)
+    .select("id")
+    .single();
 }
 
 export async function deleteQuoteLine(
   client: SupabaseClient<Database>,
   quoteLineId: string
 ) {
-  return client.from("quoteLine").delete().eq("id", quoteLineId);
+  return client
+    .from("quoteLine")
+    .delete()
+    .eq("id", quoteLineId)
+    .select("id")
+    .single();
 }
 
 export async function deleteQuoteMaterial(
   client: SupabaseClient<Database>,
   quoteMaterialId: string
 ) {
-  return client.from("quoteMaterial").delete().eq("id", quoteMaterialId);
+  return client
+    .from("quoteMaterial")
+    .delete()
+    .eq("id", quoteMaterialId)
+    .select("id")
+    .single();
 }
 
 export async function deleteQuoteOperation(
   client: SupabaseClient<Database>,
   quoteOperationId: string
 ) {
-  return client.from("quoteOperation").delete().eq("id", quoteOperationId);
+  return client
+    .from("quoteOperation")
+    .delete()
+    .eq("id", quoteOperationId)
+    .select("id")
+    .single();
 }
 
 export async function deleteQuoteOperationStep(
   client: SupabaseClient<Database>,
   id: string
 ) {
-  return client.from("quoteOperationStep").delete().eq("id", id);
+  return client
+    .from("quoteOperationStep")
+    .delete()
+    .eq("id", id)
+    .select("id")
+    .single();
 }
 
 export async function deleteQuoteOperationParameter(
   client: SupabaseClient<Database>,
   id: string
 ) {
-  return client.from("quoteOperationParameter").delete().eq("id", id);
+  return client
+    .from("quoteOperationParameter")
+    .delete()
+    .eq("id", id)
+    .select("id")
+    .single();
 }
 
 export async function deleteQuoteOperationTool(
   client: SupabaseClient<Database>,
   id: string
 ) {
-  return client.from("quoteOperationTool").delete().eq("id", id);
+  return client
+    .from("quoteOperationTool")
+    .delete()
+    .eq("id", id)
+    .select("id")
+    .single();
 }
 
 export async function deleteSalesOrder(
   client: SupabaseClient<Database>,
   salesOrderId: string
 ) {
-  return client.from("salesOrder").delete().eq("id", salesOrderId);
+  return client
+    .from("salesOrder")
+    .delete()
+    .eq("id", salesOrderId)
+    .select("id")
+    .single();
 }
 
 export async function deleteSalesOrderLine(
   client: SupabaseClient<Database>,
   salesOrderLineId: string
 ) {
-  return client.from("salesOrderLine").delete().eq("id", salesOrderLineId);
+  return client
+    .from("salesOrderLine")
+    .delete()
+    .eq("id", salesOrderLineId)
+    .select("id")
+    .single();
 }
 
 export async function deleteSalesRFQ(
   client: SupabaseClient<Database>,
   salesRfqId: string
 ) {
-  return client.from("salesRfq").delete().eq("id", salesRfqId);
+  return client
+    .from("salesRfq")
+    .delete()
+    .eq("id", salesRfqId)
+    .select("id")
+    .single();
 }
 
 export async function deleteSalesRFQLine(
   client: SupabaseClient<Database>,
   salesRFQLineId: string
 ) {
-  return client.from("salesRfqLine").delete().eq("id", salesRFQLineId);
+  return client
+    .from("salesRfqLine")
+    .delete()
+    .eq("id", salesRFQLineId)
+    .select("id")
+    .single();
 }
 
 export async function duplicatePricingRule(
@@ -2117,7 +2209,9 @@ export async function finalizeQuote(
       updatedAt: datetime.timestamp(),
       updatedBy: userId
     })
-    .eq("id", quoteId);
+    .eq("id", quoteId)
+    .select("id")
+    .single();
 
   if (quoteUpdate.error) {
     return quoteUpdate;
@@ -2160,7 +2254,9 @@ export async function releaseSalesOrder(
       updatedAt: datetime.timestamp(),
       updatedBy: userId
     })
-    .eq("id", salesOrderId);
+    .eq("id", salesOrderId)
+    .select("id")
+    .single();
 }
 
 export async function resolvePrice(
@@ -3027,7 +3123,9 @@ export async function deleteCustomerItemPriceOverride(
     .from("customerItemPriceOverride")
     .delete()
     .eq("id", id)
-    .eq("companyId", companyId);
+    .eq("companyId", companyId)
+    .select("id")
+    .single();
 }
 
 type CustomerItemPriceOverrideWithRelations =
@@ -3122,7 +3220,9 @@ export async function updateCustomerAccounting(
   return client
     .from("customer")
     .update(sanitize(customerAccounting))
-    .eq("id", customerAccounting.id);
+    .eq("id", customerAccounting.id)
+    .select("id")
+    .single();
 }
 
 export async function updateCustomerContact(
@@ -3200,7 +3300,9 @@ export async function updateCustomerPayment(
   return client
     .from("customerPayment")
     .update(sanitize(customerPayment))
-    .eq("customerId", customerPayment.customerId);
+    .eq("customerId", customerPayment.customerId)
+    .select("customerId")
+    .single();
 }
 
 export async function updateCustomerShipping(
@@ -3212,7 +3314,9 @@ export async function updateCustomerShipping(
   return client
     .from("customerShipping")
     .update(sanitize(customerShipping))
-    .eq("customerId", customerShipping.customerId);
+    .eq("customerId", customerShipping.customerId)
+    .select("customerId")
+    .single();
 }
 
 export async function updateCustomerTax(
@@ -3225,7 +3329,9 @@ export async function updateCustomerTax(
   return client
     .from("customerTax")
     .update(sanitize(customerTax))
-    .eq("customerId", customerTax.customerId);
+    .eq("customerId", customerTax.customerId)
+    .select("customerId")
+    .single();
 }
 
 export async function updatePricingRule(
@@ -3268,7 +3374,9 @@ export async function upsertCustomerStatus(
     return client
       .from("customerStatus")
       .update(sanitize(customerStatus))
-      .eq("id", customerStatus.id);
+      .eq("id", customerStatus.id)
+      .select("id")
+      .single();
   }
 }
 
@@ -3292,7 +3400,9 @@ export async function upsertCustomerType(
     return client
       .from("customerType")
       .update(sanitize(customerType))
-      .eq("id", customerType.id);
+      .eq("id", customerType.id)
+      .select("id")
+      .single();
   }
 }
 
@@ -3316,7 +3426,9 @@ export async function upsertNoQuoteReason(
     return client
       .from("noQuoteReason")
       .update(sanitize(noQuoteReason))
-      .eq("id", noQuoteReason.id);
+      .eq("id", noQuoteReason.id)
+      .select("id")
+      .single();
   }
 }
 
@@ -3355,7 +3467,12 @@ export async function updateQuoteExchangeRate(
     exchangeRateUpdatedAt: new Date().toISOString()
   };
 
-  return client.from("quote").update(update).eq("id", update.id);
+  return client
+    .from("quote")
+    .update(update)
+    .eq("id", update.id)
+    .select("id")
+    .single();
 }
 
 export async function updateQuoteLinePrecision(
@@ -3397,7 +3514,12 @@ export async function updateSalesOrderExchangeRate(
     exchangeRateUpdatedAt: new Date().toISOString()
   };
 
-  return client.from("salesOrder").update(update).eq("id", update.id);
+  return client
+    .from("salesOrder")
+    .update(update)
+    .eq("id", update.id)
+    .select("id")
+    .single();
 }
 
 export async function updateQuoteFavorite(
@@ -3443,7 +3565,12 @@ export async function updateSalesRFQStatus(
       : {})
   };
 
-  return client.from("salesRfq").update(updateData).eq("id", update.id);
+  return client
+    .from("salesRfq")
+    .update(updateData)
+    .eq("id", update.id)
+    .select("id")
+    .single();
 }
 
 export async function updateQuoteMaterialOrder(
@@ -3491,7 +3618,12 @@ export async function updateQuoteStatus(
     ...rest,
     ...(status === "Sent" ? { completedDate: datetime.timestamp() } : {})
   };
-  return client.from("quote").update(updateData).eq("id", update.id);
+  return client
+    .from("quote")
+    .update(updateData)
+    .eq("id", update.id)
+    .select("id")
+    .single();
 }
 
 export async function upsertMakeMethodFromQuoteLine(
@@ -3986,7 +4118,9 @@ export async function upsertQuote(
         ...sanitize(quoteUpdateData),
         updatedAt: datetime.timestamp()
       })
-      .eq("id", quote.id);
+      .eq("id", quote.id)
+      .select("id")
+      .single();
   }
 }
 
@@ -4055,7 +4189,12 @@ export async function upsertQuoteLineAdditionalCharges(
     updatedBy: string;
   }
 ) {
-  return client.from("quoteLine").update(update).eq("id", lineId);
+  return client
+    .from("quoteLine")
+    .update(update)
+    .eq("id", lineId)
+    .select("id")
+    .single();
 }
 
 type QuoteLinePriceInput = {
@@ -5432,7 +5571,12 @@ export async function updateSalesOrderStatus(
       : {})
   };
 
-  return client.from("salesOrder").update(updateData).eq("id", update.id);
+  return client
+    .from("salesOrder")
+    .update(updateData)
+    .eq("id", update.id)
+    .select("id")
+    .single();
 }
 
 export async function insertSalesOrder(
@@ -6389,7 +6533,9 @@ export async function upsertSalesRFQ(
         ...sanitize(rfq),
         updatedAt: datetime.timestamp()
       })
-      .eq("id", rfq.id);
+      .eq("id", rfq.id)
+      .select("id")
+      .single();
   }
 }
 
@@ -6534,7 +6680,12 @@ export async function deleteReturnReason(
   client: SupabaseClient<Database>,
   returnReasonId: string
 ) {
-  return client.from("returnReason").delete().eq("id", returnReasonId);
+  return client
+    .from("returnReason")
+    .delete()
+    .eq("id", returnReasonId)
+    .select("id")
+    .single();
 }
 
 export async function getSalesReturnOrders(
@@ -6796,14 +6947,24 @@ export async function deleteSalesReturnOrder(
   client: SupabaseClient<Database>,
   salesReturnOrderId: string
 ) {
-  return client.from("salesReturnOrder").delete().eq("id", salesReturnOrderId);
+  return client
+    .from("salesReturnOrder")
+    .delete()
+    .eq("id", salesReturnOrderId)
+    .select("id")
+    .single();
 }
 
 export async function deleteSalesReturnOrderLine(
   client: SupabaseClient<Database>,
   lineId: string
 ) {
-  return client.from("salesReturnOrderLine").delete().eq("id", lineId);
+  return client
+    .from("salesReturnOrderLine")
+    .delete()
+    .eq("id", lineId)
+    .select("id")
+    .single();
 }
 
 export async function getSalesReturnOrderReceipts(

@@ -21,6 +21,7 @@ import { noNumericPrecision } from "./conformance/no-numeric-precision";
 import { noRawForwardedHeaders } from "./conformance/no-raw-forwarded-headers";
 import { noRawRounding } from "./conformance/no-raw-rounding";
 import { noRequiredColumnWithoutDefault } from "./conformance/no-required-column-without-default";
+import { noUnconfirmedWrite } from "./conformance/no-unconfirmed-write";
 import { noUnroundedTrackedQuantity } from "./conformance/no-unrounded-tracked-quantity";
 import { noUnscopedKyselyWrite } from "./conformance/no-unscoped-kysely-write";
 import { noViewWithoutInvoker } from "./conformance/no-view-without-invoker";
@@ -55,7 +56,8 @@ export const TS_CHECKS: ConformanceCheck[] = [
   noDbClientInService,
   noDefaultOnEffects,
   noUnroundedTrackedQuantity,
-  noUnscopedKyselyWrite
+  noUnscopedKyselyWrite,
+  noUnconfirmedWrite
 ];
 
 /** Checks that run once per edge function, over all of its .ts files. */

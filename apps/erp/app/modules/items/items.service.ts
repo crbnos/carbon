@@ -299,7 +299,12 @@ export async function deleteConfigurationParameter(
   client: SupabaseClient<Database>,
   id: string
 ) {
-  return client.from("configurationParameter").delete().eq("id", id);
+  return client
+    .from("configurationParameter")
+    .delete()
+    .eq("id", id)
+    .select("id")
+    .single();
 }
 
 export async function deleteConfigurationRule(
@@ -323,7 +328,9 @@ export async function deleteItemCustomerPart(
     .from("customerPartToItem")
     .delete()
     .eq("id", id)
-    .eq("companyId", companyId);
+    .eq("companyId", companyId)
+    .select("id")
+    .single();
 }
 
 export async function deleteSupplierPart(
@@ -335,7 +342,9 @@ export async function deleteSupplierPart(
     .from("supplierPart")
     .delete()
     .eq("id", id)
-    .eq("companyId", companyId);
+    .eq("companyId", companyId)
+    .select("id")
+    .single();
 }
 
 export async function deleteConfigurationParameterGroup(
@@ -364,60 +373,100 @@ export async function deleteConfigurationParameterGroup(
         .eq("configurationParameterGroupId", id);
     }
   }
-  return client.from("configurationParameterGroup").delete().eq("id", id);
+  return client
+    .from("configurationParameterGroup")
+    .delete()
+    .eq("id", id)
+    .select("id")
+    .single();
 }
 
 export async function deleteItem(client: SupabaseClient<Database>, id: string) {
-  return client.from("item").delete().eq("id", id);
+  return client.from("item").delete().eq("id", id).select("id").single();
 }
 
 export async function deleteItemPostingGroup(
   client: SupabaseClient<Database>,
   id: string
 ) {
-  return client.from("itemPostingGroup").delete().eq("id", id);
+  return client
+    .from("itemPostingGroup")
+    .delete()
+    .eq("id", id)
+    .select("id")
+    .single();
 }
 
 export async function deleteMaterialDimension(
   client: SupabaseClient<Database>,
   id: string
 ) {
-  return client.from("materialDimension").delete().eq("id", id);
+  return client
+    .from("materialDimension")
+    .delete()
+    .eq("id", id)
+    .select("id")
+    .single();
 }
 
 export async function deleteMaterialFinish(
   client: SupabaseClient<Database>,
   id: string
 ) {
-  return client.from("materialFinish").delete().eq("id", id);
+  return client
+    .from("materialFinish")
+    .delete()
+    .eq("id", id)
+    .select("id")
+    .single();
 }
 
 export async function deleteMaterialForm(
   client: SupabaseClient<Database>,
   id: string
 ) {
-  return client.from("materialForm").delete().eq("id", id);
+  return client
+    .from("materialForm")
+    .delete()
+    .eq("id", id)
+    .select("id")
+    .single();
 }
 
 export async function deleteMaterialGrade(
   client: SupabaseClient<Database>,
   id: string
 ) {
-  return client.from("materialGrade").delete().eq("id", id);
+  return client
+    .from("materialGrade")
+    .delete()
+    .eq("id", id)
+    .select("id")
+    .single();
 }
 
 export async function deleteMaterialSubstance(
   client: SupabaseClient<Database>,
   id: string
 ) {
-  return client.from("materialSubstance").delete().eq("id", id);
+  return client
+    .from("materialSubstance")
+    .delete()
+    .eq("id", id)
+    .select("id")
+    .single();
 }
 
 export async function deleteMethodMaterial(
   client: SupabaseClient<Database>,
   id: string
 ) {
-  return client.from("methodMaterial").delete().eq("id", id);
+  return client
+    .from("methodMaterial")
+    .delete()
+    .eq("id", id)
+    .select("id")
+    .single();
 }
 
 export async function assertMethodOperationIsDraft(
@@ -446,42 +495,72 @@ export async function deleteMethodOperation(
   client: SupabaseClient<Database>,
   methodOperationId: string
 ) {
-  return client.from("methodOperation").delete().eq("id", methodOperationId);
+  return client
+    .from("methodOperation")
+    .delete()
+    .eq("id", methodOperationId)
+    .select("id")
+    .single();
 }
 
 export async function deleteMethodOperationStep(
   client: SupabaseClient<Database>,
   id: string
 ) {
-  return client.from("methodOperationStep").delete().eq("id", id);
+  return client
+    .from("methodOperationStep")
+    .delete()
+    .eq("id", id)
+    .select("id")
+    .single();
 }
 
 export async function deleteMethodOperationStepSlide(
   client: SupabaseClient<Database>,
   id: string
 ) {
-  return client.from("methodOperationStepSlide").delete().eq("id", id);
+  return client
+    .from("methodOperationStepSlide")
+    .delete()
+    .eq("id", id)
+    .select("id")
+    .single();
 }
 
 export async function deleteMethodOperationParameter(
   client: SupabaseClient<Database>,
   id: string
 ) {
-  return client.from("methodOperationParameter").delete().eq("id", id);
+  return client
+    .from("methodOperationParameter")
+    .delete()
+    .eq("id", id)
+    .select("id")
+    .single();
 }
 
 export async function deleteMethodOperationTool(
   client: SupabaseClient<Database>,
   id: string
 ) {
-  return client.from("methodOperationTool").delete().eq("id", id);
+  return client
+    .from("methodOperationTool")
+    .delete()
+    .eq("id", id)
+    .select("id")
+    .single();
 }
 
 export async function deleteUnitOfMeasure(
   client: SupabaseClient<Database>,
   id: string
 ) {
-  return client.from("unitOfMeasure").delete().eq("id", id);
+  return client
+    .from("unitOfMeasure")
+    .delete()
+    .eq("id", id)
+    .select("id")
+    .single();
 }
 
 export async function getConfigurationParameters(
@@ -2386,7 +2465,9 @@ export async function updateConfigurationParameterGroupOrder(
   return client
     .from("configurationParameterGroup")
     .update(sanitize(data))
-    .eq("id", data.id);
+    .eq("id", data.id)
+    .select("id")
+    .single();
 }
 
 export async function updateDefaultRevision(
@@ -2442,7 +2523,9 @@ export async function updateConfigurationParameterOrder(
   return client
     .from("configurationParameter")
     .update(sanitize(data))
-    .eq("id", data.id);
+    .eq("id", data.id)
+    .select("id")
+    .single();
 }
 
 export async function updateItemCost(
@@ -2506,7 +2589,9 @@ export async function updateRevision(
       ...revision,
       updatedAt: datetime.timestamp()
     })
-    .eq("id", revision.id);
+    .eq("id", revision.id)
+    .select("id")
+    .single();
 }
 
 export async function upsertConfigurationParameter(
@@ -2527,7 +2612,9 @@ export async function upsertConfigurationParameter(
           updatedAt: datetime.timestamp()
         })
       )
-      .eq("id", configurationParameter.id);
+      .eq("id", configurationParameter.id)
+      .select("id")
+      .single();
   }
 
   let ungroupedGroupId: string | null = null;
@@ -2587,7 +2674,9 @@ export async function upsertConfigurationParameterGroup(
       .update({
         name: data.name
       })
-      .eq("id", configurationParameterGroup.id);
+      .eq("id", configurationParameterGroup.id)
+      .select("id")
+      .single();
   }
 
   const existingGroups = await client
@@ -2867,7 +2956,9 @@ export async function upsertItemShelfLife(
         updatedBy: args.userId,
         updatedAt: new Date().toISOString()
       })
-      .eq("itemId", args.itemId);
+      .eq("itemId", args.itemId)
+      .select("itemId")
+      .single();
   }
 
   let companyId = args.companyId;
@@ -3895,7 +3986,9 @@ export async function updateItem(
     .from("item")
     .update(sanitize(item))
     .eq("id", item.id)
-    .eq("companyId", item.companyId);
+    .eq("companyId", item.companyId)
+    .select("id")
+    .single();
 }
 
 export async function upsertItemCost(
@@ -3947,7 +4040,9 @@ export async function upsertItemManufacturing(
   return client
     .from("itemReplenishment")
     .update(sanitize(partManufacturing))
-    .eq("itemId", partManufacturing.itemId);
+    .eq("itemId", partManufacturing.itemId)
+    .select("itemId")
+    .single();
 }
 
 export async function upsertItemPlanning(
@@ -4011,7 +4106,9 @@ export async function upsertItemPurchasing(
   return client
     .from("itemReplenishment")
     .update(sanitize(update))
-    .eq("itemId", update.itemId);
+    .eq("itemId", update.itemId)
+    .select("itemId")
+    .single();
 }
 
 export const SUPERSESSION_CYCLE_CODE = "SUPERSESSION_CYCLE";
@@ -4161,7 +4258,9 @@ export async function upsertItemSupersession(
       .from("itemSupersession")
       .update({ ...row, updatedBy, updatedAt: new Date().toISOString() })
       .eq("itemId", itemId)
-      .eq("companyId", companyId);
+      .eq("companyId", companyId)
+      .select("itemId")
+      .single();
   }
 
   return client
@@ -5820,7 +5919,12 @@ export async function deleteMaterialType(
   client: SupabaseClient<Database>,
   id: string
 ) {
-  return client.from("materialType").delete().eq("id", id);
+  return client
+    .from("materialType")
+    .delete()
+    .eq("id", id)
+    .select("id")
+    .single();
 }
 
 export async function getMaterialTypes(
@@ -6474,7 +6578,9 @@ export async function deleteChangeNotice(
     .from("changeOrder")
     .delete()
     .eq("id", changeNoticeId)
-    .eq("companyId", companyId);
+    .eq("companyId", companyId)
+    .select("id")
+    .single();
 }
 
 // -----------------------------------------------------------------------------
@@ -6633,7 +6739,9 @@ export async function deleteChangeNoticeType(
     .from("changeOrderType")
     .delete()
     .eq("id", id)
-    .eq("companyId", companyId);
+    .eq("companyId", companyId)
+    .select("id")
+    .single();
 }
 
 // =============================================================================
@@ -7601,7 +7709,9 @@ export async function removeChangeNoticeAffectedItem(
     .from("changeOrderAffectedItem")
     .delete()
     .eq("id", id)
-    .eq("companyId", companyId);
+    .eq("companyId", companyId)
+    .select("id")
+    .single();
 }
 
 // =============================================================================
@@ -7873,7 +7983,12 @@ export async function deleteChangeNoticeAction(
   client: SupabaseClient<Database>,
   id: string
 ) {
-  return client.from("changeOrderActionTask").delete().eq("id", id);
+  return client
+    .from("changeOrderActionTask")
+    .delete()
+    .eq("id", id)
+    .select("id")
+    .single();
 }
 
 export async function updateChangeNoticeActionOrder(
@@ -7990,7 +8105,9 @@ export async function deleteChangeNoticeRequiredAction(
     .from("changeOrderRequiredAction")
     .delete()
     .eq("id", id)
-    .eq("companyId", companyId);
+    .eq("companyId", companyId)
+    .select("id")
+    .single();
 }
 
 // Reconcile a change notice's action tasks to a chosen set of required-action

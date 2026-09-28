@@ -156,7 +156,9 @@ export async function deleteThread(
     .delete()
     .eq("id", args.threadId)
     .eq("companyId", args.companyId)
-    .eq("userId", args.userId);
+    .eq("userId", args.userId)
+    .select("id")
+    .single();
 }
 
 export async function getMessages(
@@ -194,7 +196,9 @@ export async function setFeedback(
     .from("agentMessage")
     .update({ feedback: args.feedback, feedbackNote: args.note ?? null })
     .eq("id", latest.id)
-    .eq("companyId", args.companyId);
+    .eq("companyId", args.companyId)
+    .select("id")
+    .single();
 }
 
 /** Append the browsing context to the latest user message so it travels with the turn. */

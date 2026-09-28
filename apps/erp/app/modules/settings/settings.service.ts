@@ -69,7 +69,9 @@ export async function updateAccountsPayableBillingAddress(
   return client
     .from("companyAccountsPayableBillingAddress")
     .update(sanitize({ ...data, updatedBy }))
-    .eq("id", companyId);
+    .eq("id", companyId)
+    .select("id")
+    .single();
 }
 
 export async function updateAccountsReceivableBillingAddress(
@@ -87,7 +89,12 @@ export async function deleteSubsidiary(
   client: SupabaseClient<Database>,
   companyId: string
 ) {
-  return client.from("company").delete().eq("id", companyId);
+  return client
+    .from("company")
+    .delete()
+    .eq("id", companyId)
+    .select("id")
+    .single();
 }
 
 export async function getApiKeys(
@@ -535,7 +542,9 @@ export async function deleteItemSerialSequence(
     .from("itemSerialSequence")
     .delete()
     .eq("id", id)
-    .eq("companyId", companyId);
+    .eq("companyId", companyId)
+    .select("id")
+    .single();
 }
 
 export async function getSubsidiaries(
@@ -688,7 +697,8 @@ export async function upsertDocumentSection(
         },
         { onConflict: "id,companyId" }
       )
-      .select("id");
+      .select("id")
+      .single();
   }
 
   if ("createdBy" in documentSection) {
@@ -699,7 +709,8 @@ export async function upsertDocumentSection(
         content: documentSection.content as Json,
         config: (documentSection.config ?? {}) as Json
       })
-      .select("id");
+      .select("id")
+      .single();
   }
   const { id, companyId, ...update } = documentSection;
   return client
@@ -712,7 +723,8 @@ export async function upsertDocumentSection(
     })
     .eq("id", id ?? "")
     .eq("companyId", companyId)
-    .select("id");
+    .select("id")
+    .single();
 }
 
 export async function deleteDocumentSection(
@@ -724,7 +736,9 @@ export async function deleteDocumentSection(
     .from("documentSection")
     .delete()
     .eq("id", id)
-    .eq("companyId", companyId);
+    .eq("companyId", companyId)
+    .select("id")
+    .single();
 }
 
 /** Fetch the given section ids and return them keyed by id for rendering. */
@@ -822,7 +836,7 @@ export async function updateSubsidiary(
   }
 ) {
   const { id: _, ...data } = subsidiary;
-  return client.from("company").update(data).eq("id", id);
+  return client.from("company").update(data).eq("id", id).select("id").single();
 }
 
 export async function seedCompany(
@@ -854,7 +868,12 @@ export async function updateCompanyPlan(
   // Extract companyId and build the update data without it
   const { companyId, ...updateData } = data;
 
-  return client.from("companyPlan").update(updateData).eq("id", companyId);
+  return client
+    .from("companyPlan")
+    .update(updateData)
+    .eq("id", companyId)
+    .select("id")
+    .single();
 }
 
 export async function updateDefaultCustomerCc(
@@ -870,6 +889,8 @@ export async function updateDefaultCustomerCc(
       // `companyId` column, so the old predicate made every save fail with a
       // PostgREST error surfaced straight to the user on Settings → Sales.
       .eq("id", companyId)
+      .select("id")
+      .single()
   );
 }
 
@@ -880,7 +901,12 @@ export async function updateCompany(
     updatedBy: string;
   }
 ) {
-  return client.from("company").update(sanitize(company)).eq("id", companyId);
+  return client
+    .from("company")
+    .update(sanitize(company))
+    .eq("id", companyId)
+    .select("id")
+    .single();
 }
 
 /**
@@ -942,7 +968,9 @@ export async function updateShelfLifeSettings(
         expiredEntityPolicy: settings.expiredEntityPolicy
       }
     })
-    .eq("id", companyId);
+    .eq("id", companyId)
+    .select("id")
+    .single();
 }
 
 export async function updateDigitalQuoteSetting(
@@ -961,7 +989,9 @@ export async function updateDigitalQuoteSetting(
         digitalQuoteIncludesPurchaseOrders
       })
     )
-    .eq("id", companyId);
+    .eq("id", companyId)
+    .select("id")
+    .single();
 }
 
 // NOTE: updateIntegrationMetadata lives in settings.server.ts, NOT here. It needs
@@ -977,7 +1007,9 @@ export async function updateAccountingEnabledSetting(
   return client
     .from("companySettings")
     .update(sanitize({ accountingEnabled }))
-    .eq("id", companyId);
+    .eq("id", companyId)
+    .select("id")
+    .single();
 }
 
 export async function updateAssetTaxDepreciationSettings(
@@ -991,7 +1023,9 @@ export async function updateAssetTaxDepreciationSettings(
   return client
     .from("companySettings")
     .update(sanitize(settings))
-    .eq("id", companyId);
+    .eq("id", companyId)
+    .select("id")
+    .single();
 }
 
 export async function updateTimeCardSetting(
@@ -1002,7 +1036,9 @@ export async function updateTimeCardSetting(
   return client
     .from("companySettings")
     .update(sanitize({ timeCardEnabled }))
-    .eq("id", companyId);
+    .eq("id", companyId)
+    .select("id")
+    .single();
 }
 
 export async function updateKanbanOutputSetting(
@@ -1013,7 +1049,9 @@ export async function updateKanbanOutputSetting(
   return client
     .from("companySettings")
     .update(sanitize({ kanbanOutput }))
-    .eq("id", companyId);
+    .eq("id", companyId)
+    .select("id")
+    .single();
 }
 
 export async function updateLogoDark(
@@ -1028,7 +1066,9 @@ export async function updateLogoDark(
         logoDark
       })
     )
-    .eq("id", companyId);
+    .eq("id", companyId)
+    .select("id")
+    .single();
 }
 
 export async function updateLogoDarkIcon(
@@ -1039,7 +1079,9 @@ export async function updateLogoDarkIcon(
   return client
     .from("company")
     .update(sanitize({ logoDarkIcon }))
-    .eq("id", companyId);
+    .eq("id", companyId)
+    .select("id")
+    .single();
 }
 
 export async function updateLogoLight(
@@ -1050,7 +1092,9 @@ export async function updateLogoLight(
   return client
     .from("company")
     .update(sanitize({ logoLight }))
-    .eq("id", companyId);
+    .eq("id", companyId)
+    .select("id")
+    .single();
 }
 
 export async function updateLogoLightIcon(
@@ -1061,7 +1105,9 @@ export async function updateLogoLightIcon(
   return client
     .from("company")
     .update(sanitize({ logoLightIcon }))
-    .eq("id", companyId);
+    .eq("id", companyId)
+    .select("id")
+    .single();
 }
 
 export async function updateLogoWatermark(
@@ -1072,7 +1118,9 @@ export async function updateLogoWatermark(
   return client
     .from("company")
     .update(sanitize({ logoWatermark }))
-    .eq("id", companyId);
+    .eq("id", companyId)
+    .select("id")
+    .single();
 }
 
 export async function updateMaintenanceDispatchNotificationSettings(
@@ -1088,7 +1136,9 @@ export async function updateMaintenanceDispatchNotificationSettings(
   return client
     .from("companySettings")
     .update(sanitize(settings))
-    .eq("id", companyId);
+    .eq("id", companyId)
+    .select("id")
+    .single();
 }
 
 export async function updateMaterialGeneratedIdsSetting(
@@ -1099,7 +1149,9 @@ export async function updateMaterialGeneratedIdsSetting(
   return client
     .from("companySettings")
     .update(sanitize({ materialGeneratedIds }))
-    .eq("id", companyId);
+    .eq("id", companyId)
+    .select("id")
+    .single();
 }
 
 export async function updateMetricSettings(
@@ -1110,7 +1162,9 @@ export async function updateMetricSettings(
   return client
     .from("companySettings")
     .update(sanitize({ useMetric }))
-    .eq("id", companyId);
+    .eq("id", companyId)
+    .select("id")
+    .single();
 }
 
 export async function updateAllowLowercaseItemIdsSetting(
@@ -1121,7 +1175,9 @@ export async function updateAllowLowercaseItemIdsSetting(
   return client
     .from("companySettings")
     .update(sanitize({ allowLowercaseItemIds }))
-    .eq("id", companyId);
+    .eq("id", companyId)
+    .select("id")
+    .single();
 }
 
 export async function updatePlmReleaseControlSetting(
@@ -1132,7 +1188,9 @@ export async function updatePlmReleaseControlSetting(
   return client
     .from("companySettings")
     .update(sanitize({ plmReleaseControl }))
-    .eq("id", companyId);
+    .eq("id", companyId)
+    .select("id")
+    .single();
 }
 
 export async function updateProductLabelSize(
@@ -1143,7 +1201,9 @@ export async function updateProductLabelSize(
   return client
     .from("companySettings")
     .update(sanitize({ productLabelSize }))
-    .eq("id", companyId);
+    .eq("id", companyId)
+    .select("id")
+    .single();
 }
 
 export async function updatePurchasePriceUpdateTimingSetting(
@@ -1154,7 +1214,9 @@ export async function updatePurchasePriceUpdateTimingSetting(
   return client
     .from("companySettings")
     .update(sanitize({ purchasePriceUpdateTiming }))
-    .eq("id", companyId);
+    .eq("id", companyId)
+    .select("id")
+    .single();
 }
 
 export async function updateLeadTimesOnReceiptSetting(
@@ -1188,7 +1250,9 @@ export async function updateIncludeOperationsOnTravelerSetting(
   return client
     .from("companySettings")
     .update(sanitize({ includeOperationsOnTraveler }))
-    .eq("id", companyId);
+    .eq("id", companyId)
+    .select("id")
+    .single();
 }
 
 export async function updateAccountsPayableAddressSetting(
@@ -1199,7 +1263,9 @@ export async function updateAccountsPayableAddressSetting(
   return client
     .from("companySettings")
     .update(sanitize({ accountsPayableAddress }))
-    .eq("id", companyId);
+    .eq("id", companyId)
+    .select("id")
+    .single();
 }
 
 export async function updateAccountsReceivableAddressSetting(
@@ -1210,7 +1276,9 @@ export async function updateAccountsReceivableAddressSetting(
   return client
     .from("companySettings")
     .update(sanitize({ accountsReceivableAddress }))
-    .eq("id", companyId);
+    .eq("id", companyId)
+    .select("id")
+    .single();
 }
 
 export async function updateAccountsPayableEmail(
@@ -1221,7 +1289,9 @@ export async function updateAccountsPayableEmail(
   return client
     .from("companySettings")
     .update(sanitize({ accountsPayableEmail: accountsPayableEmail ?? null }))
-    .eq("id", companyId);
+    .eq("id", companyId)
+    .select("id")
+    .single();
 }
 
 export async function updateAccountsReceivableEmail(
@@ -1234,7 +1304,9 @@ export async function updateAccountsReceivableEmail(
     .update(
       sanitize({ accountsReceivableEmail: accountsReceivableEmail ?? null })
     )
-    .eq("id", companyId);
+    .eq("id", companyId)
+    .select("id")
+    .single();
 }
 
 export async function updateSalesRuleNotificationSetting(
@@ -1245,7 +1317,9 @@ export async function updateSalesRuleNotificationSetting(
   return client
     .from("companySettings")
     .update(sanitize({ salesRuleNotificationGroup }))
-    .eq("id", companyId);
+    .eq("id", companyId)
+    .select("id")
+    .single();
 }
 
 export async function updateQuoteLineCategoryMarkups(
@@ -1256,7 +1330,9 @@ export async function updateQuoteLineCategoryMarkups(
   return client
     .from("companySettings")
     .update(sanitize({ quoteLineCategoryMarkups }))
-    .eq("id", companyId);
+    .eq("id", companyId)
+    .select("id")
+    .single();
 }
 
 export async function updateRfqReadySetting(
@@ -1267,7 +1343,9 @@ export async function updateRfqReadySetting(
   return client
     .from("companySettings")
     .update(sanitize({ rfqReadyNotificationGroup }))
-    .eq("id", companyId);
+    .eq("id", companyId)
+    .select("id")
+    .single();
 }
 
 export async function updateSequence(
@@ -1282,7 +1360,9 @@ export async function updateSequence(
     .from("sequence")
     .update(sanitize(sequence))
     .eq("companyId", companyId)
-    .eq("table", table);
+    .eq("table", table)
+    .select("companyId")
+    .single();
 }
 
 export async function updateSuggestionNotificationSetting(
@@ -1293,7 +1373,9 @@ export async function updateSuggestionNotificationSetting(
   return client
     .from("company")
     .update(sanitize({ suggestionNotificationGroup }))
-    .eq("id", companyId);
+    .eq("id", companyId)
+    .select("id")
+    .single();
 }
 
 export async function updateSupplierQuoteNotificationSetting(
@@ -1304,7 +1386,9 @@ export async function updateSupplierQuoteNotificationSetting(
   return client
     .from("companySettings")
     .update(sanitize({ supplierQuoteNotificationGroup }))
-    .eq("id", companyId);
+    .eq("id", companyId)
+    .select("id")
+    .single();
 }
 
 export async function updateDefaultSupplierCc(
@@ -1315,7 +1399,9 @@ export async function updateDefaultSupplierCc(
   return client
     .from("companySettings")
     .update(sanitize({ defaultSupplierCc }))
-    .eq("id", companyId);
+    .eq("id", companyId)
+    .select("id")
+    .single();
 }
 
 export async function updateShowCurrencyTrailingZerosSetting(
@@ -1326,7 +1412,9 @@ export async function updateShowCurrencyTrailingZerosSetting(
   return client
     .from("companySettings")
     .update(sanitize({ showCurrencyTrailingZeros }))
-    .eq("id", companyId);
+    .eq("id", companyId)
+    .select("id")
+    .single();
 }
 
 export async function updateShowSupplierReadableIdSetting(
@@ -1337,7 +1425,9 @@ export async function updateShowSupplierReadableIdSetting(
   return client
     .from("companySettings")
     .update(sanitize({ showSupplierReadableId }))
-    .eq("id", companyId);
+    .eq("id", companyId)
+    .select("id")
+    .single();
 }
 
 export async function updateShowCustomerReadableIdSetting(
@@ -1348,7 +1438,9 @@ export async function updateShowCustomerReadableIdSetting(
   return client
     .from("companySettings")
     .update(sanitize({ showCustomerReadableId }))
-    .eq("id", companyId);
+    .eq("id", companyId)
+    .select("id")
+    .single();
 }
 
 export async function updateAutoSelectMaterialWithoutPickingListSetting(
@@ -1359,7 +1451,9 @@ export async function updateAutoSelectMaterialWithoutPickingListSetting(
   return client
     .from("companySettings")
     .update(sanitize({ autoSelectMaterialWithoutPickingList }))
-    .eq("id", companyId);
+    .eq("id", companyId)
+    .select("id")
+    .single();
 }
 
 export async function updateIncompletePickingListPolicySetting(
@@ -1370,7 +1464,9 @@ export async function updateIncompletePickingListPolicySetting(
   return client
     .from("companySettings")
     .update(sanitize({ incompletePickingListPolicy }))
-    .eq("id", companyId);
+    .eq("id", companyId)
+    .select("id")
+    .single();
 }
 
 export async function updateReturnPickedMaterialTimingSetting(
@@ -1381,5 +1477,7 @@ export async function updateReturnPickedMaterialTimingSetting(
   return client
     .from("companySettings")
     .update(sanitize({ returnPickedMaterialTiming }))
-    .eq("id", companyId);
+    .eq("id", companyId)
+    .select("id")
+    .single();
 }

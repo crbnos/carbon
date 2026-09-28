@@ -23,7 +23,7 @@ export async function deleteDocument(
   client: SupabaseClient<Database>,
   id: string
 ) {
-  return client.from("document").delete().eq("id", id);
+  return client.from("document").delete().eq("id", id).select("id").single();
 }
 
 export async function deleteDocumentFavorite(
@@ -140,7 +140,9 @@ export async function moveDocumentToTrash(
       updatedBy: userId,
       updatedAt: new Date().toISOString()
     })
-    .eq("id", id);
+    .eq("id", id)
+    .select("id")
+    .single();
 }
 
 export async function restoreDocument(
@@ -155,7 +157,9 @@ export async function restoreDocument(
       updatedBy: userId,
       updatedAt: new Date().toISOString()
     })
-    .eq("id", id);
+    .eq("id", id)
+    .select("id")
+    .single();
 }
 
 type SourceDocumentData = {
@@ -200,7 +204,9 @@ export async function upsertDocument(
         updatedAt: new Date().toISOString()
       })
     )
-    .eq("id", document.id);
+    .eq("id", document.id)
+    .select("id")
+    .single();
 }
 
 /**

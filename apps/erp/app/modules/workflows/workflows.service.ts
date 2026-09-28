@@ -147,7 +147,9 @@ export async function updateWorkflow(
       updatedAt: datetime.timestamp()
     })
     .eq("id", workflow.id)
-    .eq("companyId", workflow.companyId);
+    .eq("companyId", workflow.companyId)
+    .select("id")
+    .single();
 }
 
 export async function insertWorkflowVersion(
@@ -198,7 +200,9 @@ export async function updateWorkflowDefinition(
       updatedAt: datetime.timestamp()
     })
     .eq("id", definition.versionId)
-    .eq("companyId", definition.companyId);
+    .eq("companyId", definition.companyId)
+    .select("id")
+    .single();
 }
 
 /**
@@ -251,7 +255,9 @@ export async function updateWorkflowNodePositions(
     .from("workflowVersion")
     .update({ nodes: nodes as unknown as Json })
     .eq("id", versionId)
-    .eq("companyId", companyId);
+    .eq("companyId", companyId)
+    .select("id")
+    .single();
 }
 
 // No audit bump: panning the canvas is not an edit to the workflow, and stamping
@@ -268,7 +274,9 @@ export async function updateWorkflowCanvasState(
     .from("workflow")
     .update({ canvasState })
     .eq("id", id)
-    .eq("companyId", companyId);
+    .eq("companyId", companyId)
+    .select("id")
+    .single();
 }
 
 export async function deleteWorkflow(
@@ -280,7 +288,9 @@ export async function deleteWorkflow(
     .from("workflow")
     .delete()
     .eq("id", id)
-    .eq("companyId", companyId);
+    .eq("companyId", companyId)
+    .select("id")
+    .single();
 }
 
 export async function getWorkflowRuns(

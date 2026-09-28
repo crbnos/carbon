@@ -40,7 +40,9 @@ export async function activateGauge(
   return client
     .from("gauges")
     .update({ gaugeStatus: "Active" })
-    .eq("id", gaugeId);
+    .eq("id", gaugeId)
+    .select("id")
+    .single();
 }
 
 export async function deactivateGauge(
@@ -50,14 +52,16 @@ export async function deactivateGauge(
   return client
     .from("gauges")
     .update({ gaugeStatus: "Inactive" })
-    .eq("id", gaugeId);
+    .eq("id", gaugeId)
+    .select("id")
+    .single();
 }
 
 export async function deleteGauge(
   client: SupabaseClient<Database>,
   gaugeId: string
 ) {
-  return client.from("gauges").delete().eq("id", gaugeId);
+  return client.from("gauges").delete().eq("id", gaugeId).select("id").single();
 }
 
 export async function deleteGaugeCalibrationRecord(
@@ -67,21 +71,33 @@ export async function deleteGaugeCalibrationRecord(
   return client
     .from("gaugeCalibrationRecord")
     .delete()
-    .eq("id", gaugeCalibrationRecordId);
+    .eq("id", gaugeCalibrationRecordId)
+    .select("id")
+    .single();
 }
 
 export async function deleteGaugeType(
   client: SupabaseClient<Database>,
   gaugeTypeId: string
 ) {
-  return client.from("gaugeType").delete().eq("id", gaugeTypeId);
+  return client
+    .from("gaugeType")
+    .delete()
+    .eq("id", gaugeTypeId)
+    .select("id")
+    .single();
 }
 
 export async function deleteIssue(
   client: SupabaseClient<Database>,
   nonConformanceId: string
 ) {
-  return client.from("nonConformance").delete().eq("id", nonConformanceId);
+  return client
+    .from("nonConformance")
+    .delete()
+    .eq("id", nonConformanceId)
+    .select("id")
+    .single();
 }
 
 export async function deleteIssueAssociation(
@@ -94,47 +110,65 @@ export async function deleteIssueAssociation(
       return await client
         .from("nonConformanceItem")
         .delete()
-        .eq("id", associationId);
+        .eq("id", associationId)
+        .select("id")
+        .single();
     case "customers":
       return await client
         .from("nonConformanceCustomer")
         .delete()
-        .eq("id", associationId);
+        .eq("id", associationId)
+        .select("id")
+        .single();
     case "suppliers":
       return await client
         .from("nonConformanceSupplier")
         .delete()
-        .eq("id", associationId);
+        .eq("id", associationId)
+        .select("id")
+        .single();
     case "jobOperations":
       return await client
         .from("nonConformanceJobOperation")
         .delete()
-        .eq("id", associationId);
+        .eq("id", associationId)
+        .select("id")
+        .single();
     case "purchaseOrderLines":
       return await client
         .from("nonConformancePurchaseOrderLine")
         .delete()
-        .eq("id", associationId);
+        .eq("id", associationId)
+        .select("id")
+        .single();
     case "salesOrderLines":
       return await client
         .from("nonConformanceSalesOrderLine")
         .delete()
-        .eq("id", associationId);
+        .eq("id", associationId)
+        .select("id")
+        .single();
     case "shipmentLines":
       return await client
         .from("nonConformanceShipmentLine")
         .delete()
-        .eq("id", associationId);
+        .eq("id", associationId)
+        .select("id")
+        .single();
     case "receiptLines":
       return await client
         .from("nonConformanceReceiptLine")
         .delete()
-        .eq("id", associationId);
+        .eq("id", associationId)
+        .select("id")
+        .single();
     case "salesReturnOrderLines":
       return await client
         .from("nonConformanceSalesReturnOrderLine")
         .delete()
-        .eq("id", associationId);
+        .eq("id", associationId)
+        .select("id")
+        .single();
     case "purchaseReturnOrderLines": {
       // This association row carries the per-quantity coverage that reduces
       // closeIssue's write-off. Deleting it after the linked return line has
@@ -166,18 +200,24 @@ export async function deleteIssueAssociation(
       return await client
         .from("nonConformancePurchaseReturnOrderLine")
         .delete()
-        .eq("id", associationId);
+        .eq("id", associationId)
+        .select("id")
+        .single();
     }
     case "trackedEntities":
       return await client
         .from("nonConformanceTrackedEntity")
         .delete()
-        .eq("id", associationId);
+        .eq("id", associationId)
+        .select("id")
+        .single();
     case "inspections":
       return await (client as any)
         .from("nonConformanceInspection")
         .delete()
-        .eq("id", associationId);
+        .eq("id", associationId)
+        .select("id")
+        .single();
     default:
       throw new Error(`Invalid type: ${type}`);
   }
@@ -190,7 +230,9 @@ export async function deleteIssueType(
   return client
     .from("nonConformanceType")
     .delete()
-    .eq("id", nonConformanceTypeId);
+    .eq("id", nonConformanceTypeId)
+    .select("id")
+    .single();
 }
 
 export async function deleteIssueWorkflow(
@@ -200,7 +242,9 @@ export async function deleteIssueWorkflow(
   return client
     .from("nonConformanceWorkflow")
     .update({ active: false })
-    .eq("id", nonConformanceWorkflowId);
+    .eq("id", nonConformanceWorkflowId)
+    .select("id")
+    .single();
 }
 
 export async function deleteRequiredAction(
@@ -210,14 +254,21 @@ export async function deleteRequiredAction(
   return client
     .from("nonConformanceRequiredAction")
     .delete()
-    .eq("id", requiredActionId);
+    .eq("id", requiredActionId)
+    .select("id")
+    .single();
 }
 
 export async function deleteQualityDocument(
   client: SupabaseClient<Database>,
   qualityDocumentId: string
 ) {
-  return client.from("qualityDocument").delete().eq("id", qualityDocumentId);
+  return client
+    .from("qualityDocument")
+    .delete()
+    .eq("id", qualityDocumentId)
+    .select("id")
+    .single();
 }
 
 export async function deleteQualityDocumentStep(
@@ -229,14 +280,21 @@ export async function deleteQualityDocumentStep(
     .from("qualityDocumentStep")
     .delete()
     .eq("id", qualityDocumentStepId)
-    .eq("companyId", companyId);
+    .eq("companyId", companyId)
+    .select("id")
+    .single();
 }
 
 export async function deleteRisk(
   client: SupabaseClient<Database>,
   riskId: string
 ) {
-  return client.from("riskRegister").delete().eq("id", riskId);
+  return client
+    .from("riskRegister")
+    .delete()
+    .eq("id", riskId)
+    .select("id")
+    .single();
 }
 
 export async function getIssueFromExternalLink(
@@ -1305,7 +1363,12 @@ export async function updateIssueStatus(
     updatedBy: string;
   }
 ) {
-  return client.from("nonConformance").update(update).eq("id", update.id);
+  return client
+    .from("nonConformance")
+    .update(update)
+    .eq("id", update.id)
+    .select("id")
+    .single();
 }
 
 export async function updateIssueTaskStatus(
@@ -1402,7 +1465,12 @@ export async function updateRiskStatus(
   riskId: string,
   status: (typeof riskStatus)[number]
 ) {
-  return client.from("riskRegister").update({ status }).eq("id", riskId);
+  return client
+    .from("riskRegister")
+    .update({ status })
+    .eq("id", riskId)
+    .select("id")
+    .single();
 }
 
 export async function insertGauge(
@@ -1543,7 +1611,12 @@ export async function upsertGauge(
   if ("createdBy" in gauge) {
     return client.from("gauges").insert([gauge]).select("id, gaugeId").single();
   } else {
-    return client.from("gauges").update(sanitize(gauge)).eq("id", gauge.id);
+    return client
+      .from("gauges")
+      .update(sanitize(gauge))
+      .eq("id", gauge.id)
+      .select("id")
+      .single();
   }
 }
 
@@ -1628,7 +1701,9 @@ export async function upsertGaugeCalibrationRecord(
         updatedAt: new Date().toISOString()
       })
     )
-    .eq("id", gaugeCalibrationRecord.id);
+    .eq("id", gaugeCalibrationRecord.id)
+    .select("id")
+    .single();
 }
 
 export async function upsertGaugeType(
@@ -1651,7 +1726,9 @@ export async function upsertGaugeType(
     return client
       .from("gaugeType")
       .update(sanitize(gaugeType))
-      .eq("id", gaugeType.id);
+      .eq("id", gaugeType.id)
+      .select("id")
+      .single();
   }
 }
 
@@ -2080,7 +2157,9 @@ export async function upsertIssue(
     return client
       .from("nonConformance")
       .update(sanitize(data))
-      .eq("id", nonConformance.id);
+      .eq("id", nonConformance.id)
+      .select("id")
+      .single();
   }
 }
 
@@ -2106,7 +2185,9 @@ export async function upsertIssueWorkflow(
     return client
       .from("nonConformanceWorkflow")
       .update(sanitize(nonConformanceWorkflow))
-      .eq("id", nonConformanceWorkflow.id);
+      .eq("id", nonConformanceWorkflow.id)
+      .select("id")
+      .single();
   }
 }
 
@@ -2133,7 +2214,9 @@ export async function upsertIssueType(
     return client
       .from("nonConformanceType")
       .update(sanitize(nonConformanceType))
-      .eq("id", nonConformanceType.id);
+      .eq("id", nonConformanceType.id)
+      .select("id")
+      .single();
   }
 }
 
@@ -2160,7 +2243,9 @@ export async function upsertRequiredAction(
     return client
       .from("nonConformanceRequiredAction")
       .update(sanitize(requiredAction))
-      .eq("id", requiredAction.id);
+      .eq("id", requiredAction.id)
+      .select("id")
+      .single();
   }
 }
 

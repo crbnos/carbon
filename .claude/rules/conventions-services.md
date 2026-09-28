@@ -128,7 +128,8 @@ form. Supabase's native `.upsert(...)` is also used in places — all three are 
 
 Notes that match real code:
 - Use `.select("id")` (or `"id, name"`) + `.single()` after insert/update to return the
-  written row.
+  written row. For an update this is also what makes a miss an error: see
+  [Confirming a write](#confirming-a-write).
 - Wrap update payloads in `sanitize(...)` to strip `undefined`/empty values before
   sending (`upsertCustomer`, and the MES `clockOut`/`updateTimeCardEntry`).
 - Pure `insert{Thing}` functions exist where there's never an update path (e.g.
@@ -142,9 +143,42 @@ export async function deleteCustomer(
   client: SupabaseClient<Database>,
   customerId: string
 ) {
-  return client.from("customer").delete().eq("id", customerId);
+  return client
+    .from("customer")
+    .delete()
+    .eq("id", customerId)
+    .select("id")
+    .single();
 }
 ```
+
+## Confirming a write
+
+PostgREST answers an UPDATE or DELETE that matches no row with 204, and supabase-js returns
+`{ data: null, error: null }`. The route, the API and the MCP server all read that as success, so
+a wrong id, a readable id where the key is a uuid, a row RLS hides, or a status guard that no
+longer holds all report "done" while nothing changed.
+
+- A write keyed on the row's unique key (`id`, or the table's own key such as `customerId` on
+  `customerPayment`) ends `.select("id").single()`. A miss becomes PGRST116, which the API maps
+  to "no matching record was found" and the UI shows through its existing `result.error` flash.
+  `.select()` alone does not do it (a miss is `data: []`); neither does `.maybeSingle()` unless
+  the caller then checks `!result.data` (`updateChangeNoticeStatus`).
+- A write keyed on a non-unique column (`.eq("quoteId", id)`, `.in("id", ids)`) must NOT end in
+  `.single()`: PostgREST rolls back a singular-response write that touches more than one row.
+  Zero rows is a success there by design; add `.select("id")` only when a caller checks the
+  count.
+- A write that only applies in a state (`.eq("status", "Draft")`) pre-reads the row and returns
+  `{ data: null, error: ruleError("… is not in Draft status") }` (`ruleError` from
+  `~/utils/supabase`; `postJournalEntry`, `deleteJournalEntry`). Keep the guard in the write too,
+  with `.single()`, for the race. A bare `{ message }` error is masked by the API as an unknown
+  database error; `ruleError` is shown as written.
+- An idempotent clear ("remove the shelf-life row if there is one") stays bare; the check
+  baselines it.
+- Kysely writes: check `numUpdatedRows` / `numDeletedRows` when a zero-row write is a caller
+  error.
+- Enforced for supabase-js chains in ERP services by the `no-unconfirmed-write` conformance
+  check (`@carbon/checks`); current hits are baselined and burned down per module.
 
 ## Multi-row transactions: Kysely
 
@@ -222,7 +256,9 @@ route-wiring example is in [database-patterns.md](database-patterns.md#transacti
 - [ ] First arg is `client: SupabaseClient<Database>` (or `db: Kysely<KyselyDatabase>` for transactions).
 - [ ] Returns the raw `{ data, error }` — does **not** throw, does **not** unwrap.
 - [ ] List queries scope `.eq("companyId", companyId)` and run `setGenericQueryFilters`.
-- [ ] `.select(...)` + `.single()`/`.maybeSingle()` after insert/update to return the row.
+- [ ] `.select(...)` + `.single()` after insert/update to return the row; `.select("id").single()`
+      on every update/delete keyed on a unique key (not on multi-row writes).
+- [ ] Status-guarded writes pre-read and return `ruleError(...)`.
 - [ ] Update payloads wrapped in `sanitize(...)`.
 - [ ] Multi-row writes use a Kysely transaction (`db.transaction().execute`).
 - [ ] Exported from the module barrel (ERP).

@@ -18,6 +18,7 @@ export { noNumericPrecision } from "./conformance/no-numeric-precision";
 export { noRawForwardedHeaders } from "./conformance/no-raw-forwarded-headers";
 export { noRawRounding } from "./conformance/no-raw-rounding";
 export { noRequiredColumnWithoutDefault } from "./conformance/no-required-column-without-default";
+export { noUnconfirmedWrite } from "./conformance/no-unconfirmed-write";
 export { noZeroConcurrency } from "./conformance/no-zero-concurrency";
 export {
   type Invariant,

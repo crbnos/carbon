@@ -328,7 +328,12 @@ export async function deletePurchaseInvoice(
     };
   }
 
-  return client.from("purchaseInvoice").delete().eq("id", purchaseInvoiceId);
+  return client
+    .from("purchaseInvoice")
+    .delete()
+    .eq("id", purchaseInvoiceId)
+    .select("id")
+    .single();
 }
 
 export async function deletePurchaseInvoiceLine(
@@ -338,7 +343,9 @@ export async function deletePurchaseInvoiceLine(
   return client
     .from("purchaseInvoiceLine")
     .delete()
-    .eq("id", purchaseInvoiceLineId);
+    .eq("id", purchaseInvoiceLineId)
+    .select("id")
+    .single();
 }
 
 export async function deleteSalesInvoice(
@@ -366,14 +373,24 @@ export async function deleteSalesInvoice(
     };
   }
 
-  return client.from("salesInvoice").delete().eq("id", salesInvoiceId);
+  return client
+    .from("salesInvoice")
+    .delete()
+    .eq("id", salesInvoiceId)
+    .select("id")
+    .single();
 }
 
 export async function deleteSalesInvoiceLine(
   client: SupabaseClient<Database>,
   salesInvoiceLineId: string
 ) {
-  return client.from("salesInvoiceLine").delete().eq("id", salesInvoiceLineId);
+  return client
+    .from("salesInvoiceLine")
+    .delete()
+    .eq("id", salesInvoiceLineId)
+    .select("id")
+    .single();
 }
 
 export async function getPurchaseInvoice(
@@ -547,7 +564,12 @@ export async function updatePurchaseInvoiceExchangeRate(
     updatedAt: new Date().toISOString()
   };
 
-  return client.from("purchaseInvoice").update(update).eq("id", update.id);
+  return client
+    .from("purchaseInvoice")
+    .update(update)
+    .eq("id", update.id)
+    .select("id")
+    .single();
 }
 
 export async function updatePurchaseInvoiceStatus(
@@ -573,7 +595,12 @@ export async function updatePurchaseInvoiceStatus(
     };
   }
 
-  return client.from("purchaseInvoice").update(update).eq("id", update.id);
+  return client
+    .from("purchaseInvoice")
+    .update(update)
+    .eq("id", update.id)
+    .select("id")
+    .single();
 }
 
 export async function updateSalesInvoiceExchangeRate(
@@ -592,7 +619,12 @@ export async function updateSalesInvoiceExchangeRate(
     updatedAt: new Date().toISOString()
   };
 
-  return client.from("salesInvoice").update(update).eq("id", update.id);
+  return client
+    .from("salesInvoice")
+    .update(update)
+    .eq("id", update.id)
+    .select("id")
+    .single();
 }
 
 export async function updateSalesInvoiceStatus(
@@ -618,7 +650,12 @@ export async function updateSalesInvoiceStatus(
     };
   }
 
-  return client.from("salesInvoice").update(update).eq("id", update.id);
+  return client
+    .from("salesInvoice")
+    .update(update)
+    .eq("id", update.id)
+    .select("id")
+    .single();
 }
 
 export async function insertPurchaseInvoice(
@@ -2208,7 +2245,7 @@ export async function deletePayment(
   client: SupabaseClient<Database>,
   id: string
 ) {
-  return client.from("payment").delete().eq("id", id);
+  return client.from("payment").delete().eq("id", id).select("id").single();
 }
 
 export async function upsertInvoiceSettlement(
@@ -2242,7 +2279,12 @@ export async function deleteInvoiceSettlement(
   client: SupabaseClient<Database>,
   id: string
 ) {
-  return client.from("invoiceSettlement").delete().eq("id", id);
+  return client
+    .from("invoiceSettlement")
+    .delete()
+    .eq("id", id)
+    .select("id")
+    .single();
 }
 
 // Replace-all for the apply table. The delete + insert run in a single
@@ -2983,7 +3025,7 @@ export async function upsertMemo(
 
 // RLS DELETE policy on memo restricts to status='Draft'.
 export async function deleteMemo(client: SupabaseClient<Database>, id: string) {
-  return client.from("memo").delete().eq("id", id);
+  return client.from("memo").delete().eq("id", id).select("id").single();
 }
 
 // The party's available credit to draw on when clearing invoices alongside cash:

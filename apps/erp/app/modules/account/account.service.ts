@@ -46,7 +46,9 @@ export async function deleteUserAttributeValue(
     .delete()
     .eq("id", args.userAttributeValueId)
     .eq("userAttributeId", args.userAttributeId)
-    .eq("userId", args.userId);
+    .eq("userId", args.userId)
+    .select("id")
+    .single();
 }
 
 export async function getAccount(client: SupabaseClient<Database>, id: string) {
@@ -172,7 +174,9 @@ export async function updateAvatar(
         avatarUrl
       })
     )
-    .eq("id", userId);
+    .eq("id", userId)
+    .select("id")
+    .single();
 }
 
 export async function updatePublicAccount(
@@ -185,7 +189,12 @@ export async function updatePublicAccount(
     phone?: string;
   }
 ) {
-  return client.from("user").update(sanitize(account)).eq("id", account.id);
+  return client
+    .from("user")
+    .update(sanitize(account))
+    .eq("id", account.id)
+    .select("id")
+    .single();
 }
 
 export async function upsertUserAttributeValue(

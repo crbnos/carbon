@@ -58,35 +58,60 @@ export async function deleteBatchProperty(
   client: SupabaseClient<Database>,
   id: string
 ) {
-  return client.from("batchProperty").delete().eq("id", id);
+  return client
+    .from("batchProperty")
+    .delete()
+    .eq("id", id)
+    .select("id")
+    .single();
 }
 
 export async function deleteKanban(
   client: SupabaseClient<Database>,
   kanbanId: string
 ) {
-  return client.from("kanban").delete().eq("id", kanbanId);
+  return client
+    .from("kanban")
+    .delete()
+    .eq("id", kanbanId)
+    .select("id")
+    .single();
 }
 
 export async function deleteReceipt(
   client: SupabaseClient<Database>,
   receiptId: string
 ) {
-  return client.from("receipt").delete().eq("id", receiptId);
+  return client
+    .from("receipt")
+    .delete()
+    .eq("id", receiptId)
+    .select("id")
+    .single();
 }
 
 export async function deleteReceiptLine(
   client: SupabaseClient<Database>,
   receiptLineId: string
 ) {
-  return client.from("receiptLine").delete().eq("id", receiptLineId);
+  return client
+    .from("receiptLine")
+    .delete()
+    .eq("id", receiptLineId)
+    .select("id")
+    .single();
 }
 
 export async function deleteStorageUnit(
   client: SupabaseClient<Database>,
   storageUnitId: string
 ) {
-  return client.from("storageUnit").delete().eq("id", storageUnitId);
+  return client
+    .from("storageUnit")
+    .delete()
+    .eq("id", storageUnitId)
+    .select("id")
+    .single();
 }
 
 /**
@@ -117,7 +142,12 @@ export async function deleteStorageUnitCascade(
   // Safety net: fall back to the single-row delete if the view returned
   // nothing (shouldn't happen — the self row is always in the subtree).
   if (ids.length === 0) {
-    return client.from("storageUnit").delete().eq("id", storageUnitId);
+    return client
+      .from("storageUnit")
+      .delete()
+      .eq("id", storageUnitId)
+      .select("id")
+      .single();
   }
 
   return client.from("storageUnit").delete().in("id", ids);
@@ -127,14 +157,24 @@ export async function deleteShipment(
   client: SupabaseClient<Database>,
   shipmentId: string
 ) {
-  return client.from("shipment").delete().eq("id", shipmentId);
+  return client
+    .from("shipment")
+    .delete()
+    .eq("id", shipmentId)
+    .select("id")
+    .single();
 }
 
 export async function deleteShipmentLine(
   client: SupabaseClient<Database>,
   shipmentLineId: string
 ) {
-  return client.from("shipmentLine").delete().eq("id", shipmentLineId);
+  return client
+    .from("shipmentLine")
+    .delete()
+    .eq("id", shipmentLineId)
+    .select("id")
+    .single();
 }
 
 export async function deleteShippingMethod(
@@ -144,14 +184,21 @@ export async function deleteShippingMethod(
   return client
     .from("shippingMethod")
     .update({ active: false })
-    .eq("id", shippingMethodId);
+    .eq("id", shippingMethodId)
+    .select("id")
+    .single();
 }
 
 export async function deleteStockTransfer(
   client: SupabaseClient<Database>,
   stockTransferId: string
 ) {
-  return client.from("stockTransfer").delete().eq("id", stockTransferId);
+  return client
+    .from("stockTransfer")
+    .delete()
+    .eq("id", stockTransferId)
+    .select("id")
+    .single();
 }
 
 export async function deleteStockTransferLine(
@@ -161,21 +208,33 @@ export async function deleteStockTransferLine(
   return client
     .from("stockTransferLine")
     .delete()
-    .eq("id", stockTransferLineId);
+    .eq("id", stockTransferLineId)
+    .select("id")
+    .single();
 }
 
 export async function deleteWarehouseTransfer(
   client: SupabaseClient<Database>,
   transferId: string
 ) {
-  return client.from("warehouseTransfer").delete().eq("id", transferId);
+  return client
+    .from("warehouseTransfer")
+    .delete()
+    .eq("id", transferId)
+    .select("id")
+    .single();
 }
 
 export async function deleteWarehouseTransferLine(
   client: SupabaseClient<Database>,
   transferLineId: string
 ) {
-  return client.from("warehouseTransferLine").delete().eq("id", transferLineId);
+  return client
+    .from("warehouseTransferLine")
+    .delete()
+    .eq("id", transferLineId)
+    .select("id")
+    .single();
 }
 
 export async function getItemLedgerPage(
@@ -1491,7 +1550,9 @@ export async function updateTrackedEntityExpiry(
       expirationDate: args.expirationDate,
       attributes: nextAttrs as unknown as Json
     })
-    .eq("id", args.trackedEntityId);
+    .eq("id", args.trackedEntityId)
+    .select("id")
+    .single();
 }
 
 export async function getTrackedEntitiesByOperationId(
@@ -1864,7 +1925,9 @@ export async function deleteInventoryCount(
     .from("inventoryCount")
     .delete()
     .eq("id", id)
-    .eq("companyId", companyId);
+    .eq("companyId", companyId)
+    .select("id")
+    .single();
 }
 
 // Snapshot the current on-hand into count lines: one line per
@@ -2083,7 +2146,12 @@ export async function updateBatchPropertyOrder(
     updatedBy: string;
   }
 ) {
-  return client.from("batchProperty").update(sanitize(data)).eq("id", data.id);
+  return client
+    .from("batchProperty")
+    .update(sanitize(data))
+    .eq("id", data.id)
+    .select("id")
+    .single();
 }
 
 export async function updateStockTransferStatus(
@@ -2105,7 +2173,9 @@ export async function updateStockTransferStatus(
       completedAt,
       updatedBy
     })
-    .eq("id", id);
+    .eq("id", id)
+    .select("id")
+    .single();
 }
 
 export async function upsertBatchProperty(
@@ -2126,7 +2196,9 @@ export async function upsertBatchProperty(
           updatedAt: new Date().toISOString()
         })
       )
-      .eq("id", batchProperty.id);
+      .eq("id", batchProperty.id)
+      .select("id")
+      .single();
   }
 
   return client.from("batchProperty").insert({
@@ -2424,7 +2496,9 @@ export async function updateWarehouseTransferStatus(
       updatedBy,
       updatedAt: new Date().toISOString()
     })
-    .eq("id", transferId);
+    .eq("id", transferId)
+    .select("id")
+    .single();
 }
 
 export async function upsertWarehouseTransferLine(
@@ -2583,7 +2657,7 @@ export async function deleteStorageTypeWithCascade(
     if (updateError) return { error: updateError };
   }
 
-  return client.from("storageType").delete().eq("id", id);
+  return client.from("storageType").delete().eq("id", id).select("id").single();
 }
 
 export async function getStorageTypes(
@@ -3201,7 +3275,9 @@ export async function updatePickingListStatus(
       updatedBy,
       updatedAt: new Date().toISOString()
     })
-    .eq("id", pickingListId);
+    .eq("id", pickingListId)
+    .select("id")
+    .single();
 }
 
 export async function upsertPickingListLine(
@@ -3234,14 +3310,24 @@ export async function deletePickingList(
   client: SupabaseClient<Database>,
   pickingListId: string
 ) {
-  return client.from("pickingList").delete().eq("id", pickingListId);
+  return client
+    .from("pickingList")
+    .delete()
+    .eq("id", pickingListId)
+    .select("id")
+    .single();
 }
 
 export async function deletePickingListLine(
   client: SupabaseClient<Database>,
   lineId: string
 ) {
-  return client.from("pickingListLine").delete().eq("id", lineId);
+  return client
+    .from("pickingListLine")
+    .delete()
+    .eq("id", lineId)
+    .select("id")
+    .single();
 }
 
 // ----------------------------------------------------------------------------

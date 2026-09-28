@@ -14,14 +14,24 @@ export async function deleteNote(
   client: SupabaseClient<Database>,
   noteId: string
 ) {
-  return client.from("note").update({ active: false }).eq("id", noteId);
+  return client
+    .from("note")
+    .update({ active: false })
+    .eq("id", noteId)
+    .select("id")
+    .single();
 }
 
 export async function deleteSavedView(
   client: SupabaseClient<Database>,
   viewId: string
 ) {
-  return client.from("tableView").delete().eq("id", viewId);
+  return client
+    .from("tableView")
+    .delete()
+    .eq("id", viewId)
+    .select("id")
+    .single();
 }
 
 export async function generateEmbedding(
@@ -306,7 +316,12 @@ export async function updateModelThumbnail(
   modelId: string,
   thumbnailPath: string
 ) {
-  return client.from("modelUpload").update({ thumbnailPath }).eq("id", modelId);
+  return client
+    .from("modelUpload")
+    .update({ thumbnailPath })
+    .eq("id", modelId)
+    .select("id")
+    .single();
 }
 
 export async function upsertModelUpload(
@@ -328,7 +343,12 @@ export async function upsertModelUpload(
   if ("createdBy" in upload) {
     return client.from("modelUpload").insert(upload);
   }
-  return client.from("modelUpload").update(upload).eq("id", upload.id);
+  return client
+    .from("modelUpload")
+    .update(upload)
+    .eq("id", upload.id)
+    .select("id")
+    .single();
 }
 
 export async function updateNote(
@@ -336,7 +356,12 @@ export async function updateNote(
   id: string,
   note: string
 ) {
-  return client.from("note").update({ note }).eq("id", id);
+  return client
+    .from("note")
+    .update({ note })
+    .eq("id", id)
+    .select("id")
+    .single();
 }
 
 export async function upsertSavedView(

@@ -25,7 +25,9 @@ export async function deleteAttribute(
   return client
     .from("userAttribute")
     .update({ active: false })
-    .eq("id", attributeId);
+    .eq("id", attributeId)
+    .select("id")
+    .single();
 }
 
 export async function deleteAttributeCategory(
@@ -35,21 +37,33 @@ export async function deleteAttributeCategory(
   return client
     .from("userAttributeCategory")
     .update({ active: false })
-    .eq("id", attributeCategoryId);
+    .eq("id", attributeCategoryId)
+    .select("id")
+    .single();
 }
 
 export async function deleteDepartment(
   client: SupabaseClient<Database>,
   departmentId: string
 ) {
-  return client.from("department").delete().eq("id", departmentId);
+  return client
+    .from("department")
+    .delete()
+    .eq("id", departmentId)
+    .select("id")
+    .single();
 }
 
 export async function deleteHoliday(
   client: SupabaseClient<Database>,
   holidayId: string
 ) {
-  return client.from("holiday").delete().eq("id", holidayId);
+  return client
+    .from("holiday")
+    .delete()
+    .eq("id", holidayId)
+    .select("id")
+    .single();
 }
 
 export async function deleteShift(
@@ -57,7 +71,12 @@ export async function deleteShift(
   shiftId: string
 ) {
   // TODO: Set all employeeShifts to null
-  return client.from("shift").update({ active: false }).eq("id", shiftId);
+  return client
+    .from("shift")
+    .update({ active: false })
+    .eq("id", shiftId)
+    .select("id")
+    .single();
 }
 
 export async function getAttribute(
@@ -563,7 +582,9 @@ export async function updateAttribute(
         updatedBy: attribute.updatedBy
       })
     )
-    .eq("id", attribute.id);
+    .eq("id", attribute.id)
+    .select("id")
+    .single();
 }
 
 export async function updateAttributeCategory(
@@ -580,7 +601,9 @@ export async function updateAttributeCategory(
   return client
     .from("userAttributeCategory")
     .update(sanitize(update))
-    .eq("id", id);
+    .eq("id", id)
+    .select("id")
+    .single();
 }
 
 export async function updateAttributeSortOrder(
@@ -748,7 +771,9 @@ export async function upsertDepartment(
     return client
       .from("department")
       .update(sanitize(department))
-      .eq("id", department.id);
+      .eq("id", department.id)
+      .select("id")
+      .single();
   }
   return client.from("department").insert(department).select("*").single();
 }
@@ -770,7 +795,12 @@ export async function upsertHoliday(
   if ("createdBy" in holiday) {
     return client.from("holiday").insert(holiday).select("*").single();
   }
-  return client.from("holiday").update(sanitize(holiday)).eq("id", holiday.id);
+  return client
+    .from("holiday")
+    .update(sanitize(holiday))
+    .eq("id", holiday.id)
+    .select("id")
+    .single();
 }
 
 export async function upsertShift(
@@ -790,7 +820,12 @@ export async function upsertShift(
   if ("createdBy" in shift) {
     return client.from("shift").insert([shift]).select("*").single();
   }
-  return client.from("shift").update(sanitize(shift)).eq("id", shift.id);
+  return client
+    .from("shift")
+    .update(sanitize(shift))
+    .eq("id", shift.id)
+    .select("id")
+    .single();
 }
 
 export async function clockIn(
@@ -842,7 +877,9 @@ export async function clockOut(
         updatedAt: new Date().toISOString()
       })
     )
-    .eq("id", open.data.id);
+    .eq("id", open.data.id)
+    .select("id")
+    .single();
 }
 
 export async function createTimeCardEntry(
@@ -867,7 +904,12 @@ export async function deleteTimeCardEntry(
   client: SupabaseClient<Database>,
   entryId: string
 ) {
-  return client.from("timeCardEntry").delete().eq("id", entryId);
+  return client
+    .from("timeCardEntry")
+    .delete()
+    .eq("id", entryId)
+    .select("id")
+    .single();
 }
 
 export async function getClockedInEmployees(
@@ -1048,5 +1090,7 @@ export async function updateTimeCardEntry(
         updatedAt: new Date().toISOString()
       })
     )
-    .eq("id", args.entryId);
+    .eq("id", args.entryId)
+    .select("id")
+    .single();
 }

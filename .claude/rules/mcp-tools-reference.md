@@ -311,8 +311,11 @@ dispatcher (`apps/erp/app/routes/api+/inngest.ts`). There is no separate
   returns success, so `deleteNote` answered `200` while the row stayed untouched.
   `*_upsertMaintenanceDispatchComment` and `shared_insertNote` are deliberately NOT
   blocked: their INSERT path is companyId-scoped and works. The upserts' `update`
-  branch still no-ops silently — making it work is an RLS decision, not an app-code
-  one.
+  branch still cannot match the row — making it work is an RLS decision, not an app-code
+  one. Single-key service writes now end `.select("id").single()` (the
+  `no-unconfirmed-write` conformance check, see `conventions-services.md`), so such a
+  zero-row match comes back as PGRST116 ("no matching record was found") rather than
+  success; the block stays because the operation still cannot succeed.
 - **A thrown service error is mapped to a 422 carrying its message** by the
   `mapThrownErrors` middleware (`lib/base.server.ts`), composed ahead of `gate`
   in `router.server.ts`. Services are meant to return the Supabase
