@@ -14,6 +14,7 @@ import {
   SESSION_MAX_AGE,
   SESSION_SECRET
 } from "../config/env";
+import { getCarbonServiceRole } from "../lib/supabase/client.server";
 import type { AuthSession, Result } from "../types";
 import { getCookieDomain } from "../utils/cookie";
 import { getCurrentPath, isGet, makeRedirectToFromHere } from "../utils/http";
@@ -30,6 +31,7 @@ import {
   userHasVerifiedTotpFactor,
   verifyTotpChallenge
 } from "./mfa.server";
+import { markLoginMfaComplete } from "./user-login.server";
 import { getPermissionCacheKey } from "./users";
 
 async function assertAuthSession(
@@ -147,6 +149,7 @@ export async function completeMfaChallenge(
       authSession: AuthSession;
       sessionCookie: string;
       redirectTo?: string;
+      isNewDevice: boolean;
     }
   | { success: false; reason: "no-session" | "invalid-code" }
 > {
@@ -194,13 +197,19 @@ export async function completeMfaChallenge(
 
   const sessionCookie = await setAuthSession(request, { authSession });
 
+  const { isNewDevice } = await markLoginMfaComplete(
+    source.accessToken,
+    authSession.accessToken
+  );
+
   logAuthEvent("mfa_challenge_success", { userId: authSession.userId });
 
   return {
     success: true,
     authSession,
     sessionCookie,
-    redirectTo: pending?.redirectTo
+    redirectTo: pending?.redirectTo,
+    isNewDevice
   };
 }
 
@@ -214,6 +223,8 @@ export async function clearAuthCookies(request: Request) {
   ];
 }
 
+const REVOKE_TIMEOUT_MS = 2000;
+
 /**
  * `reason` is a slug naming why the session was destroyed (e.g. "no-claims"),
  * echoed to the browser console by login.tsx — a forced logout is otherwise
@@ -223,7 +234,26 @@ export async function clearAuthCookies(request: Request) {
  * internal state names: nothing user-identifying, and nothing that reveals
  * whether an account exists. Identifying detail goes in the server log instead.
  */
-export async function destroyAuthSession(request: Request, reason?: string) {
+export async function destroyAuthSession(
+  request: Request,
+  { revoke = false, reason }: { revoke?: boolean; reason?: string } = {}
+) {
+  if (revoke) {
+    try {
+      const authSession = await getAuthSession(request);
+      if (authSession?.accessToken) {
+        await Promise.race([
+          getCarbonServiceRole().auth.admin.signOut(
+            authSession.accessToken,
+            "local"
+          ),
+          new Promise((resolve) => setTimeout(resolve, REVOKE_TIMEOUT_MS))
+        ]);
+      }
+    } catch {
+      // best-effort
+    }
+  }
   const headers = await clearAuthCookies(request);
   const destination = reason
     ? `${path.to.login}?reason=${encodeURIComponent(reason)}`

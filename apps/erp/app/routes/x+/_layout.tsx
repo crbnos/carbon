@@ -226,7 +226,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
       groupsError: groups.error?.message ?? null
     });
 
-    throw await destroyAuthSession(request, reason);
+    throw await destroyAuthSession(request, { reason });
   }
 
   const employeeCompanies = employeeCompaniesResult.data ?? [];

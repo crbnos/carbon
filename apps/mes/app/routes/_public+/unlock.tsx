@@ -102,7 +102,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   // would make /login bounce the user back into the app and /unlock relock them,
   // an ERR_TOO_MANY_REDIRECTS loop. Clearing the cookie makes /login render.
   if (isSessionExpiredAbsolute(authSession)) {
-    throw await destroyAuthSession(request);
+    throw await destroyAuthSession(request, { revoke: true });
   }
   if (!isSessionIdleLocked(authSession)) {
     throw redirect(safeRedirect(redirectTo, path.to.authenticatedRoot));
@@ -121,7 +121,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   ]);
 
   if (!hasTotp && !hasPasskey) {
-    throw await destroyAuthSession(request);
+    throw await destroyAuthSession(request, { revoke: true });
   }
 
   return { hasTotp, hasPasskey };

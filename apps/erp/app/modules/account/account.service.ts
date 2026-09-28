@@ -1,6 +1,81 @@
 import type { Database } from "@carbon/database";
+import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { sql } from "kysely";
 import { sanitize } from "~/utils/supabase";
+
+export type ActiveSession = {
+  id: string;
+  createdAt: string;
+  refreshedAt: string | null;
+  userAgent: string | null;
+  ip: string | null;
+};
+
+export async function getActiveSessions(
+  db: Kysely<KyselyDatabase>,
+  userId: string,
+  maxAgeSeconds: number
+): Promise<ActiveSession[]> {
+  const { rows } = await sql<ActiveSession>`
+    SELECT id::text AS id,
+           to_jsonb(created_at) #>> '{}' AS "createdAt",
+           to_jsonb(refreshed_at AT TIME ZONE 'UTC') #>> '{}' AS "refreshedAt",
+           user_agent AS "userAgent",
+           host(ip) AS ip
+    FROM auth.sessions
+    WHERE user_id::text = ${userId}
+      AND (not_after IS NULL OR not_after > now())
+      AND COALESCE(refreshed_at AT TIME ZONE 'UTC', created_at)
+            > now() - make_interval(secs => ${maxAgeSeconds})
+  `.execute(db);
+  return rows;
+}
+
+export async function revokeSession(
+  db: Kysely<KyselyDatabase>,
+  userId: string,
+  sessionId: string
+): Promise<number> {
+  const result = await sql`
+    DELETE FROM auth.sessions
+    WHERE id::text = ${sessionId} AND user_id::text = ${userId}
+  `.execute(db);
+  return Number(result.numAffectedRows ?? 0);
+}
+
+export async function getUserLogins(
+  client: SupabaseClient<Database>,
+  userId: string,
+  limit = 20
+) {
+  return client
+    .from("userLogin")
+    .select(
+      "id, sessionId, method, app, ipAddress, city, country, userAgent, createdAt"
+    )
+    .eq("userId", userId)
+    .order("createdAt", { ascending: false })
+    .limit(limit);
+}
+
+export async function getDeviceFirstSeenAt(
+  client: SupabaseClient<Database>,
+  userId: string,
+  deviceId: string | null
+): Promise<string | null> {
+  if (!deviceId) return null;
+  const { data } = await client
+    .from("userLogin")
+    .select("createdAt")
+    .eq("userId", userId)
+    .eq("deviceId", deviceId)
+    .eq("mfaPending", false)
+    .order("createdAt", { ascending: true })
+    .limit(1)
+    .maybeSingle();
+  return data?.createdAt ?? null;
+}
 
 export async function getNotificationPreferences(
   client: SupabaseClient<Database>,

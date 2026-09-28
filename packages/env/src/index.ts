@@ -422,6 +422,14 @@ export const REDIS_URL = getEnv("REDIS_URL", {
   isRequired: true,
   isSecret: true
 });
+export const TRUSTED_PROXY_COUNT = getEnv("TRUSTED_PROXY_COUNT", {
+  isRequired: false,
+  isSecret: false
+});
+export const TRUSTED_PROXY_IPS = getEnv("TRUSTED_PROXY_IPS", {
+  isRequired: false,
+  isSecret: false
+});
 export const SESSION_MAX_AGE = 60 * 60 * 24 * 7; // 7 days;
 export const REFRESH_ACCESS_TOKEN_THRESHOLD = 60 * 10; // 10 minutes left before token expires
 // Session lock / termination (NIST 800-171 3.1.10 / 3.1.11). All in MILLISECONDS

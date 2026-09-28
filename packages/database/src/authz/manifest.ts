@@ -1514,6 +1514,7 @@ export const manifest = {
   userAttributeValue: policies({
     all: or(and(owner("userId"), ownAttribute), managedAttribute)
   }),
+  userLogin: policies({ select: owner("userId") }),
   userModulePreference: policies({ all: owner("userId") }),
   userPermission: policies({
     select: through("id", "userToCompany", "userId", member("companyId"))

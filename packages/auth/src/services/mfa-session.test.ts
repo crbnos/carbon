@@ -12,6 +12,12 @@ vi.mock("@carbon/kv", () => ({
   }
 }));
 
+vi.mock("../lib/supabase/client.server", () => ({
+  getCarbonServiceRole: vi.fn(() => ({
+    auth: { admin: { signOut: vi.fn().mockResolvedValue({ error: null }) } }
+  }))
+}));
+
 vi.mock("../config/env", () => ({
   DOMAIN: "localhost",
   CarbonEdition: "Community",

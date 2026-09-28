@@ -2,18 +2,21 @@ import { assertIsPost, error, isAuthProviderEnabled } from "@carbon/auth";
 import { signInWithPasskey } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { setCompanyId } from "@carbon/auth/company.server";
+import { ensureDeviceId } from "@carbon/auth/device.server";
 import { userHasVerifiedTotpFactor } from "@carbon/auth/mfa.server";
 import { verifyPasskeyAuthentication } from "@carbon/auth/passkey.server";
 import {
   setAuthSession,
   setPendingMfaSession
 } from "@carbon/auth/session.server";
+import { recordLogin } from "@carbon/auth/user-login.server";
 import { isSsoRequiredForEmail } from "@carbon/ee/sso.server";
 import { AccountLockout, redis } from "@carbon/kv";
 import type { WebAuthnCredential } from "@simplewebauthn/browser";
 import type { ActionFunctionArgs } from "react-router";
 import { data, redirect } from "react-router";
 import { getEmployeeCompanies } from "~/modules/settings";
+import { sendNewDeviceEmail } from "~/services/mfa-email.server";
 import { path } from "~/utils/path";
 
 export async function action({ request }: ActionFunctionArgs) {
@@ -134,6 +137,19 @@ export async function action({ request }: ActionFunctionArgs) {
     // (NIST 3.1.8 reset-on-success), before the TOTP gate below.
     await new AccountLockout({ redis }).reset(authUser.user.email);
 
+    const mfaPending = await userHasVerifiedTotpFactor(credRow.userId);
+    const { deviceId, setCookie: deviceCookie } = await ensureDeviceId(request);
+    const login = await recordLogin({
+      request,
+      userId: credRow.userId,
+      email: authUser.user.email,
+      accessToken: authSession.accessToken,
+      method: "passkey",
+      app: "erp",
+      deviceId,
+      mfaPending
+    });
+
     const employeeCompanies = await getEmployeeCompanies(
       serviceRole,
       credRow.userId
@@ -144,6 +160,15 @@ export async function action({ request }: ActionFunctionArgs) {
       });
     }
 
+    if (login.isNewDevice && authSession.companyId && !mfaPending) {
+      await sendNewDeviceEmail(
+        serviceRole,
+        authSession.companyId,
+        credRow.userId,
+        request
+      );
+    }
+
     const safeRedirect =
       redirectTo && redirectTo.startsWith("/") && !redirectTo.startsWith("//")
         ? redirectTo
@@ -152,18 +177,21 @@ export async function action({ request }: ActionFunctionArgs) {
     // TOTP gate: a passkey sign-in still lands at AAL1 (it is minted through
     // a server-side magic link), so an enrolled user is challenged like any
     // other login before the full session cookie exists.
-    if (await userHasVerifiedTotpFactor(credRow.userId)) {
+    if (mfaPending) {
       const pendingCookie = await setPendingMfaSession(request, {
         authSession,
         redirectTo: safeRedirect
       });
+      const mfaHeaders: [string, string][] = [["Set-Cookie", pendingCookie]];
+      if (deviceCookie) mfaHeaders.push(["Set-Cookie", deviceCookie]);
       return redirect(path.to.mfa, {
-        headers: [["Set-Cookie", pendingCookie]]
+        headers: mfaHeaders
       });
     }
 
     const sessionCookie = await setAuthSession(request, { authSession });
     const headers: [string, string][] = [["Set-Cookie", sessionCookie]];
+    if (deviceCookie) headers.push(["Set-Cookie", deviceCookie]);
 
     if (employeeCompanies.data.length <= 1) {
       headers.push(["Set-Cookie", setCompanyId(authSession.companyId)]);

@@ -622,6 +622,28 @@
       ]
     },
     {
+      "slug": "docs/reference/devices",
+      "title": "Your devices",
+      "description": "See every device signed in to your account across ERP and MES, sign out the ones you don't recognize, and get an email when a new device signs in.",
+      "keywords": ["your", "devices", "docs", "reference"],
+      "headings": [
+        "Reading the list",
+        "Signing out a device",
+        "Why some devices say \"Newer device\"",
+        "The new-device email",
+        "What Carbon records",
+        "Troubleshooting",
+        "A row shows \"Newer device\" instead of a sign-out button",
+        "\"Sign out other devices\" is disabled",
+        "The device cookie",
+        "No new-device email arrived",
+        "A row says \"Unknown device\" with no location",
+        "Rows read \"Local network\" or \"Unknown location\"",
+        "The device I signed out is still on screen",
+        "A sign-in stuck at the two-factor prompt"
+      ]
+    },
+    {
       "slug": "docs/reference/dimensions",
       "title": "Dimensions & cost centers",
       "description": "Tag axes on journal lines that slice the general ledger without multiplying the chart of accounts.",

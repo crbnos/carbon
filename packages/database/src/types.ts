@@ -62859,6 +62859,87 @@ export type Database = {
           }
         ]
       }
+      userLogin: {
+        Row: {
+          app: string
+          city: string | null
+          country: string | null
+          createdAt: string
+          deviceId: string | null
+          id: string
+          ipAddress: string | null
+          method: string
+          mfaPending: boolean
+          sessionId: string | null
+          userAgent: string | null
+          userId: string
+        }
+        Insert: {
+          app: string
+          city?: string | null
+          country?: string | null
+          createdAt?: string
+          deviceId?: string | null
+          id?: string
+          ipAddress?: string | null
+          method: string
+          mfaPending?: boolean
+          sessionId?: string | null
+          userAgent?: string | null
+          userId: string
+        }
+        Update: {
+          app?: string
+          city?: string | null
+          country?: string | null
+          createdAt?: string
+          deviceId?: string | null
+          id?: string
+          ipAddress?: string | null
+          method?: string
+          mfaPending?: boolean
+          sessionId?: string | null
+          userAgent?: string | null
+          userId?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "userLogin_userId_fkey"
+            columns: ["userId"]
+            isOneToOne: false
+            referencedRelation: "employeeSummary"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "userLogin_userId_fkey"
+            columns: ["userId"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "userLogin_userId_fkey"
+            columns: ["userId"]
+            isOneToOne: false
+            referencedRelation: "employeesAcrossCompanies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "userLogin_userId_fkey"
+            columns: ["userId"]
+            isOneToOne: false
+            referencedRelation: "user"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "userLogin_userId_fkey"
+            columns: ["userId"]
+            isOneToOne: false
+            referencedRelation: "userDefaults"
+            referencedColumns: ["userId"]
+          }
+        ]
+      }
       userModulePreference: {
         Row: {
           companyId: string
@@ -84340,6 +84421,10 @@ export type Database = {
       }
       prevent_posted_sales_invoice_deletion: {
         Args: { p_new: Json; p_old: Json; p_operation: string; p_table: string }
+        Returns: undefined
+      }
+      prune_user_logins: {
+        Args: { p_cutoff: string; p_user_id: string }
         Returns: undefined
       }
       purchaseLineDimensionPivot: {

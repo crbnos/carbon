@@ -4,6 +4,7 @@ import {
   createEmailAuthAccount,
   signInWithEmail
 } from "@carbon/auth/auth.server";
+import { ensureDeviceId } from "@carbon/auth/device.server";
 import {
   isPlatformSignupDisabled,
   isSelfSignupBlockedForEmail,
@@ -15,6 +16,7 @@ import {
   getAuthSession,
   setAuthSession
 } from "@carbon/auth/session.server";
+import { recordLogin } from "@carbon/auth/user-login.server";
 import { verifyEmailCode } from "@carbon/auth/verification.server";
 import { Hidden, InputOTP, ValidatedForm, validator } from "@carbon/form";
 import { Ratelimit, redis } from "@carbon/kv";
@@ -144,6 +146,17 @@ export async function action({ request }: ActionFunctionArgs) {
     );
   }
 
+  const { deviceId, setCookie: deviceCookie } = await ensureDeviceId(request);
+  await recordLogin({
+    request,
+    userId: authSession.userId,
+    email,
+    accessToken: authSession.accessToken,
+    method: "verification_code",
+    app: "erp",
+    deviceId
+  });
+
   const sessionCookie = await setAuthSession(request, {
     authSession
   });
@@ -151,8 +164,11 @@ export async function action({ request }: ActionFunctionArgs) {
   // Set the authentication session
   const onboardingUrl = redirectTo || path.to.onboarding.root;
 
+  const headers: [string, string][] = [["Set-Cookie", sessionCookie]];
+  if (deviceCookie) headers.push(["Set-Cookie", deviceCookie]);
+
   return redirect(onboardingUrl, {
-    headers: [["Set-Cookie", sessionCookie]]
+    headers
   });
 }
 

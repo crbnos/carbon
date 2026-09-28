@@ -18,6 +18,7 @@ import {
   verifyBotProtection
 } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
+import { ensureDeviceId } from "@carbon/auth/device.server";
 import {
   isPlatformSignupDisabled,
   isSelfSignupBlockedForEmail,
@@ -30,6 +31,7 @@ import {
   getAuthSession,
   setAuthSession
 } from "@carbon/auth/session.server";
+import { recordLogin } from "@carbon/auth/user-login.server";
 import { getUserByEmail } from "@carbon/auth/users.server";
 import { sendVerificationCode } from "@carbon/auth/verification.server";
 import { isSsoEnabled, isSsoRequiredForEmail } from "@carbon/ee/sso.server";
@@ -200,10 +202,22 @@ export async function action({ request }: ActionFunctionArgs) {
     if (authSession) {
       // Genuine completed login — clear any accumulated lockout state.
       await lockout.reset(email);
-      logAuthEvent("login_success", { actor: email, ip, method: "bypass" });
+      const { deviceId, setCookie: deviceCookie } =
+        await ensureDeviceId(request);
+      await recordLogin({
+        request,
+        userId: authSession.userId,
+        email,
+        accessToken: authSession.accessToken,
+        method: "bypass",
+        app: "erp",
+        deviceId
+      });
       const sessionCookie = await setAuthSession(request, { authSession });
+      const headers: [string, string][] = [["Set-Cookie", sessionCookie]];
+      if (deviceCookie) headers.push(["Set-Cookie", deviceCookie]);
       return redirect(path.to.authenticatedRoot, {
-        headers: [["Set-Cookie", sessionCookie]]
+        headers
       });
     }
   }

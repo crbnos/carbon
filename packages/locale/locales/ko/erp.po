@@ -289,6 +289,9 @@ msgstr "매입채무의 {apOverduePct}%"
 msgid "{arOverduePct}% of receivables"
 msgstr "매출채권의 {arOverduePct}%"
 
+msgid "{browser} on {os}"
+msgstr "{browser}의 {os}"
+
 msgid "{chainLabel}. Consider pointing this part directly at the final successor."
 msgstr "{chainLabel}. 이 품목을 최종 후속 품목으로 직접 연결하는 것을 고려하세요."
 
@@ -7216,6 +7219,9 @@ msgstr "기간을 마감하기 전에 모든 필수 작업이 완료 또는 건�
 msgid "Every row was imported successfully."
 msgstr "모든 행이 성공적으로 가져와졌습니다."
 
+msgid "Every session except the one you are using now will be signed out. Other devices are returned to the login page within a minute of their next page load."
+msgstr "현재 사용 중인 세션을 제외한 모든 세션이 로그아웃됩니다. 다른 기기는 다음 페이지 로드 후 1분 이내에 로그인 페이지로 돌아갑니다."
+
 msgid "Everyone working any day of the week you pick stays on past their shift by the hours you set. Only the departments and shifts you're filtering by are affected."
 msgstr "선택한 주의 어느 날이든 근무하는 모든 사람이 설정한 시간만큼 교대조를 초과 근무합니다. 필터링하는 부서 및 교대조만 영향을 받습니다."
 
@@ -9671,6 +9677,9 @@ msgstr "언어"
 msgid "Last 6 Months"
 msgstr "지난 6개월"
 
+msgid "Last active"
+msgstr "마지막 활동"
+
 msgid "Last Activity"
 msgstr "최근 활동"
 
@@ -9868,7 +9877,7 @@ msgid "Lines"
 msgstr "라인"
 
 msgid "Lines appear here once a purchase order receipt has been posted, and only for quantities not already authorized on another supplier return. Use Add Line Item for a blind return."
-msgstr "발주서 입고가 전기된 후 라인이 여기에 표시되며, 다른 공급업체 반품에서 아직 승인되지 않은 수량에만 표시됩니다. 맹목적 반품의 경우 라인 품목 추가를 사용하세요."
+msgstr "발주서 입고가 전기되면 라인이 여기에 나타나며, 다른 공급업체 반품에서 이미 승인되지 않은 수량에 대해서만 표시됩니다. 블라인드 반품의 경우 라인 항목 추가를 사용하세요."
 
 msgid "Lines appear here once a sales order shipment has been posted, and only for quantities not already authorized on another RMA. Use Add Line Item for a blind return."
 msgstr "수주 출하가 전기된 후 라인이 여기에 나타나며, 다른 RMA에서 이미 승인되지 않은 수량만 나타납니다. 맹목적 반품의 경우 「라인 항목 추가」를 사용하세요."
@@ -9981,6 +9990,9 @@ msgstr "불러오는 중…"
 
 msgid "Local"
 msgstr "로컬"
+
+msgid "Local network"
+msgstr "로컬 네트워크"
 
 msgid "location"
 msgstr "위치"
@@ -11195,6 +11207,9 @@ msgstr "새 작업장"
 msgid "New Workflow"
 msgstr "새 워크플로우"
 
+msgid "Newer device"
+msgstr "새로운 장치"
+
 msgid "Newest first"
 msgstr "최신순"
 
@@ -11701,6 +11716,9 @@ msgstr "아직 출하가 없습니다"
 msgid "No shortcuts available on this page."
 msgstr "이 페이지에서 사용할 수 있는 단축키가 없습니다."
 
+msgid "No signed-in devices found."
+msgstr "로그인된 기기를 찾을 수 없습니다."
+
 msgid "No single, trusted number for inventory or job status"
 msgstr "재고나 작업 상태를 나타내는 신뢰할 수 있는 단일 수치가 없음"
 
@@ -12091,6 +12109,9 @@ msgstr "공유 셋업 하나와 각 멤버의 가공 시간(노무와 기계 중
 
 msgid "One shared setup plus the longest member's run time — the greater of its labor and machine — since the members run together"
 msgstr "공유되는 셋업 하나 플러스 가장 오래 걸리는 구성원의 가공 시간 — 노무와 기계 중 더 큰 값 — 구성원들이 함께 실행되기 때문"
+
+msgid "One signed-in browser or device on your account, created when a sign-in completes and lasting up to seven days of activity; it ends when you log out, when you sign that device out from Account → Security, or when it expires."
+msgstr "계정의 한 개의 로그인된 브라우저 또는 기기로, 로그인이 완료될 때 생성되고 최대 7일 동안 유지됩니다. 로그아웃할 때, 계정 → 보안에서 해당 기기를 로그아웃할 때, 또는 만료될 때 종료됩니다."
 
 msgid "One step in a job's routing, naming a process and a work center and carrying its own setup, labor, and machine times and rates."
 msgstr "작업 지시의 라우팅에서 한 단계로, 공법과 작업장을 지정하고 각자의 셋업, 노무, 기계 시간 및 요금을 포함합니다."
@@ -15445,7 +15466,7 @@ msgid "Search by linear issue title..."
 msgstr "linear 이슈 제목으로 검색..."
 
 msgid "Search by receipt, PO, or item"
-msgstr "입고, 발주서 또는 품목으로 검색"
+msgstr "입고, PO 또는 품목으로 검색"
 
 msgid "Search by shipment, sales order, or item"
 msgstr "출하, 수주, 또는 품목으로 검색"
@@ -15896,11 +15917,14 @@ msgstr "서비스"
 msgid "Services"
 msgstr "서비스"
 
+msgid "Session"
+msgstr "세션"
+
 msgid "Session locked"
 msgstr "세션 잠김"
 
 msgid "Set a customer on this return to add from a shipment."
-msgstr "출하에서 추가하려면 이 반품에 고객을 설정하세요."
+msgstr "이 반품에 고객을 설정하여 출하에서 추가하세요."
 
 msgid "Set a supplier on this return to add from a receipt."
 msgstr "이 반품에 공급업체를 지정하여 입고에서 추가하세요."
@@ -16314,8 +16338,17 @@ msgstr "로그아웃"
 msgid "Sign Out"
 msgstr "로그아웃"
 
+msgid "Sign out all other devices"
+msgstr "다른 모든 기기에서 로그아웃"
+
+msgid "Sign out device"
+msgstr "기기 로그아웃"
+
 msgid "Sign out instead"
 msgstr "대신 로그아웃"
+
+msgid "Sign out other devices"
+msgstr "다른 기기에서 로그아웃"
 
 msgid "Sign-off review before moving to the next step"
 msgstr "다음 단계로 넘어가기 전 서명 검토"
@@ -16787,7 +16820,7 @@ msgid "Stripe"
 msgstr "Stripe"
 
 msgid "Stripe already has a customer with this email"
-msgstr "Stripe에 이미 이 이메일을 가진 고객이 있습니다"
+msgstr "Stripe에 이미 이 이메일의 고객이 있습니다"
 
 msgid "Stripe Due Date"
 msgstr "스트라이프 마감일"
@@ -18248,6 +18281,9 @@ msgstr "이 백업을 완료할 수 없습니다."
 msgid "This backup hasn't been checked yet. Any differences are found when the restore runs."
 msgstr "이 백업은 아직 확인되지 않았습니다. 복원이 실행될 때 차이점이 발견됩니다."
 
+msgid "This browser joined the account after that session started, so it can't end it. Sign out from a browser you've used for longer, or wait: a session unused for a week drops off this list. Clearing site data makes a browser new again."
+msgstr "이 브라우저는 해당 세션 시작 후에 계정에 추가되었으므로 그 세션을 종료할 수 없습니다. 더 오래 사용한 브라우저에서 로그아웃하거나 기다리세요. 1주일 동안 사용하지 않은 세션은 이 목록에서 제거됩니다. 브라우저의 사이트 데이터를 지우면 해당 브라우저가 새 브라우저가 됩니다."
+
 msgid "This Carbon instance is missing its Onshape OAuth credentials. Ask an administrator to set them."
 msgstr "이 Carbon 인스턴스에 Onshape OAuth 자격 증명이 없습니다. 관리자에게 설정을 요청하세요."
 
@@ -18269,8 +18305,14 @@ msgstr "이 담당자는 이메일 주소가 없습니다."
 msgid "This counterparty has nothing outstanding — the payment will be recorded on-account."
 msgstr "이 거래처는 미결 항목이 없으므로 지불이 외상으로 기록됩니다."
 
+msgid "This device"
+msgstr "이 기기"
+
 msgid "This download link is invalid or has been tampered with."
 msgstr "이 다운로드 링크가 유효하지 않거나 변조되었습니다."
+
+msgid "This ends that device's session — it can no longer stay signed in and is returned to the login page within a minute of its next page load."
+msgstr "이것은 해당 기기의 세션을 종료합니다 — 더 이상 로그인된 상태를 유지할 수 없으며 다음 페이지 로드 후 1분 이내에 로그인 페이지로 돌아갑니다."
 
 msgid "This file is no longer available, or you don't have permission to download it."
 msgstr "이 파일은 더 이상 사용할 수 없거나 다운로드할 권한이 없습니다."
@@ -19084,10 +19126,16 @@ msgstr "공정작업에서 사유와 함께 회복 불가로 보고된 수량으
 msgid "Unknown"
 msgstr "알 수 없음"
 
+msgid "Unknown device"
+msgstr "알 수 없는 기기"
+
 msgid "unknown error"
 msgstr "알 수 없는 오류"
 
 msgid "unknown location"
+msgstr "알 수 없는 위치"
+
+msgid "Unknown location"
 msgstr "알 수 없는 위치"
 
 msgid "Unlimited functional support"
@@ -20197,6 +20245,9 @@ msgstr "현재 상황"
 msgid "Where you want to grow"
 msgstr "성장하고자 하는 방향"
 
+msgid "Where you're signed in. Sign out of any device you don't recognize — from a device you've used for longer than that session. Clearing your browser's site data makes it a new device."
+msgstr "로그인한 위치입니다. 인식하지 못한 기기에서 로그아웃하세요 — 해당 세션보다 더 오래 사용한 기기에서. 브라우저의 사이트 데이터를 지우면 그 기기가 새 기기가 됩니다."
+
 msgid "Whether Amount is interpreted as a percentage of the line price or as a fixed currency amount."
 msgstr "금액을 라인 가격의 백분율로 해석할지, 고정 통화 금액으로 해석할지 여부입니다."
 
@@ -20554,6 +20605,9 @@ msgstr "데이터에 접근 가능하고 어느 정도 정리되어 있음"
 
 msgid "Your data was not changed — the restore stops before touching anything if it can't complete."
 msgstr "귀하의 데이터는 변경되지 않았습니다 — 복원이 완료될 수 없으면 아무것도 변경하기 전에 중단됩니다."
+
+msgid "Your devices"
+msgstr "내 기기"
 
 msgid "Your DNS provider may auto-append your domain to the record name — if so, enter only the part before it (e.g. _carbon-challenge plus any subdomain)."
 msgstr "DNS 공급자가 레코드 이름에 도메인을 자동으로 추가할 수 있습니다 — 그렇다면 그 앞 부분만 입력하세요 (예: _carbon-challenge 및 모든 하위 도메인)."

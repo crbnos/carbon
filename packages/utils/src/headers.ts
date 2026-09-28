@@ -1,5 +1,6 @@
 import * as cookie from "cookie";
 import { parseAcceptLanguage } from "intl-parse-accept-language";
+import { normalizeIp } from "./ip";
 
 type OperatingSystemPlatform = "mac" | "windows";
 
@@ -31,8 +32,37 @@ const listOf = (value: string | null) =>
  * caller any rate-limit bucket or audit-log address it likes. Vercel and Caddy
  * write a single entry, which is the same address.
  */
-export function getClientIp(input: RequestLike): string | null {
-  return listOf(headersOf(input).get("x-forwarded-for")).at(-1) ?? null;
+export type ClientIpOptions = {
+  /** How many rightmost x-forwarded-for hops are our own proxies. */
+  trustedProxyCount?: number;
+  /** Explicit proxy addresses to skip, in addition to the count. */
+  trustedProxyIps?: string[];
+};
+
+export function getClientIp(
+  input: RequestLike,
+  options: ClientIpOptions = {}
+): string | null {
+  const { trustedProxyCount = 0, trustedProxyIps = [] } = options;
+  const hops = listOf(headersOf(input).get("x-forwarded-for"))
+    .map((hop) => normalizeIp(stripPort(hop)))
+    .filter((hop): hop is string => hop !== null);
+  if (hops.length === 0) return null;
+
+  const trusted = new Set(
+    trustedProxyIps
+      .map((ip) => normalizeIp(ip))
+      .filter((ip): ip is string => ip !== null)
+  );
+  let index = hops.length - 1 - trustedProxyCount;
+  while (index >= 0 && trusted.has(hops[index]!)) index--;
+  return hops[Math.max(index, 0)] ?? null;
+}
+
+function stripPort(value: string): string {
+  const bracketed = value.match(/^\[(.+)\](?::\d+)?$/);
+  if (bracketed) return bracketed[1]!;
+  return value.split(":").length === 2 ? value.split(":")[0]! : value;
 }
 
 /** `https` or `http` as the client used it: the proxy's, else `request.url`'s. */

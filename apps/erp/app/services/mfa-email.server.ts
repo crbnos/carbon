@@ -1,5 +1,10 @@
+import { describeNewDeviceLogin } from "@carbon/auth/user-login.server";
 import type { Database } from "@carbon/database";
-import { MfaEnabledEmail, MfaRequiredEmail } from "@carbon/documents/email";
+import {
+  MfaEnabledEmail,
+  MfaRequiredEmail,
+  NewDeviceEmail
+} from "@carbon/documents/email";
 import { batchTrigger, trigger } from "@carbon/jobs";
 import { getLogger } from "@carbon/logger";
 import { chunkArray } from "@carbon/utils";
@@ -136,6 +141,40 @@ export async function sendMfaEnabledEmail(
     });
   } catch (err) {
     logger.error("Failed to send two-factor enabled email", {
+      companyId,
+      userId,
+      error: err
+    });
+  }
+}
+
+export async function sendNewDeviceEmail(
+  serviceRole: SupabaseClient<Database>,
+  companyId: string,
+  userId: string,
+  request: Request
+) {
+  try {
+    const user = await getUser(serviceRole, userId);
+
+    if (user.error) throw user.error;
+    if (!user.data.email) return;
+
+    const email = NewDeviceEmail({
+      recipientName: user.data.fullName ?? undefined,
+      ...describeNewDeviceLogin(request),
+      securityUrl: SECURITY_URL
+    });
+
+    await trigger("send-email", {
+      to: [user.data.email],
+      subject: "We've noticed a new login to your Carbon account",
+      html: await render(email),
+      text: await render(email, { plainText: true }),
+      companyId
+    });
+  } catch (err) {
+    logger.error("Failed to send new device email", {
       companyId,
       userId,
       error: err

@@ -44,6 +44,7 @@ import {
 import { z } from "zod";
 
 import { getEmployeeCompanies } from "~/modules/settings";
+import { sendNewDeviceEmail } from "~/services/mfa-email.server";
 import type { Result } from "~/types";
 import { path } from "~/utils/path";
 
@@ -131,6 +132,15 @@ export async function action({ request }: ActionFunctionArgs) {
 
   if (employeeCompanies.length <= 1) {
     headers.push(["Set-Cookie", setCompanyId(result.authSession.companyId)]);
+  }
+
+  if (result.isNewDevice && result.authSession.companyId) {
+    await sendNewDeviceEmail(
+      getCarbonServiceRole(),
+      result.authSession.companyId,
+      result.authSession.userId,
+      request
+    );
   }
 
   return redirect(

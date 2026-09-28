@@ -127,6 +127,7 @@ const REFERENCE_GROUPS: { label: string; slugs: string[] }[] = [
       "two-factor",
       "single-sign-on",
       "account",
+      "devices",
     ],
   },
   {

@@ -18,6 +18,8 @@
     "./download-token.server": "./src/lib/download-token.server.ts",
     "./oauth-state.server": "./src/lib/oauth-state.server.ts",
     "./company.server": "./src/services/company.server.ts",
+    "./device.server": "./src/services/device.server.ts",
+    "./user-login.server": "./src/services/user-login.server.ts",
     "./console-pin.server": "./src/services/console-pin.server.ts",
     "./mfa.server": "./src/services/mfa.server.ts",
     "./session.server": "./src/services/session.server.ts",

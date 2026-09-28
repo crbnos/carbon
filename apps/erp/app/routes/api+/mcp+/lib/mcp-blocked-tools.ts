@@ -43,7 +43,11 @@ export const MCP_BLOCKED_TOOL_NAMES: readonly string[] = [
   "sales_updateSalesOrderFavorite",
   "sales_updateSalesRFQFavorite",
   "purchasing_updateSupplierQuoteFavorite",
-  "resources_insertTrainingCompletion"
+  "resources_insertTrainingCompletion",
+  "account_revokeSession",
+  "account_getActiveSessions",
+  "account_getUserLogins",
+  "account_getDeviceFirstSeenAt"
 ];
 
 export function isMcpBlockedTool(name: string): boolean {

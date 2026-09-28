@@ -289,6 +289,9 @@ msgstr "{apOverduePct}% de contas a pagar"
 msgid "{arOverduePct}% of receivables"
 msgstr "{arOverduePct}% de contas a receber"
 
+msgid "{browser} on {os}"
+msgstr "{browser} em {os}"
+
 msgid "{chainLabel}. Consider pointing this part directly at the final successor."
 msgstr "{chainLabel}. Considere apontar esta peça diretamente para o sucessor final."
 
@@ -7216,6 +7219,9 @@ msgstr "Cada tarefa necessária deve estar Feita ou Ignorada antes que o períod
 msgid "Every row was imported successfully."
 msgstr "Cada linha foi importada com sucesso."
 
+msgid "Every session except the one you are using now will be signed out. Other devices are returned to the login page within a minute of their next page load."
+msgstr "Todas as sessões, exceto a que você está usando agora, serão desconectadas. Outros dispositivos são retornados à página de login dentro de um minuto do seu próximo carregamento de página."
+
 msgid "Everyone working any day of the week you pick stays on past their shift by the hours you set. Only the departments and shifts you're filtering by are affected."
 msgstr "Todos que trabalham em qualquer dia da semana que você escolher ficam além do seu turno pelas horas que você definir. Apenas os departamentos e turnos que você está filtrando são afetados."
 
@@ -9671,6 +9677,9 @@ msgstr "Idioma"
 msgid "Last 6 Months"
 msgstr "Últimos 6 Meses"
 
+msgid "Last active"
+msgstr "Ativo por último"
+
 msgid "Last Activity"
 msgstr "Última atividade"
 
@@ -9868,7 +9877,7 @@ msgid "Lines"
 msgstr "Linhas"
 
 msgid "Lines appear here once a purchase order receipt has been posted, and only for quantities not already authorized on another supplier return. Use Add Line Item for a blind return."
-msgstr "As linhas aparecem aqui após um recebimento de pedido de compra ter sido contabilizado, e apenas para quantidades não já autorizadas em outra devolução de fornecedor. Use Adicionar Item de Linha para uma devolução às cegas."
+msgstr "Linhas aparecem aqui após um recebimento de pedido de compra ter sido contabilizado, e apenas para quantidades não autorizadas em outra devolução de fornecedor. Para uma devolução cega, use Adicionar item de linha."
 
 msgid "Lines appear here once a sales order shipment has been posted, and only for quantities not already authorized on another RMA. Use Add Line Item for a blind return."
 msgstr "As linhas aparecem aqui uma vez que uma remessa de pedido de venda tenha sido contabilizada, e apenas para quantidades não já autorizadas em outro RMA. Use Adicionar Item de Linha para uma devolução cega."
@@ -9981,6 +9990,9 @@ msgstr "Carregando…"
 
 msgid "Local"
 msgstr "Local"
+
+msgid "Local network"
+msgstr "Rede local"
 
 msgid "location"
 msgstr "localização"
@@ -11195,6 +11207,9 @@ msgstr "Novo Centro de Trabalho"
 msgid "New Workflow"
 msgstr "Novo fluxo de trabalho"
 
+msgid "Newer device"
+msgstr "Dispositivo mais novo"
+
 msgid "Newest first"
 msgstr "Mais recente primeiro"
 
@@ -11701,6 +11716,9 @@ msgstr "Nenhuma remessa ainda"
 msgid "No shortcuts available on this page."
 msgstr "Nenhum atalho disponível nesta página."
 
+msgid "No signed-in devices found."
+msgstr "Nenhum dispositivo conectado encontrado."
+
 msgid "No single, trusted number for inventory or job status"
 msgstr "Nenhum número único e confiável para inventário ou status do trabalho"
 
@@ -12091,6 +12109,9 @@ msgstr "Um setup compartilhado mais o tempo de execução de cada membro — o m
 
 msgid "One shared setup plus the longest member's run time — the greater of its labor and machine — since the members run together"
 msgstr "Um setup compartilhado mais o tempo de execução do membro mais longo — o maior entre sua mão de obra e máquina — já que os membros executam juntos"
+
+msgid "One signed-in browser or device on your account, created when a sign-in completes and lasting up to seven days of activity; it ends when you log out, when you sign that device out from Account → Security, or when it expires."
+msgstr "Um navegador conectado ou dispositivo na sua conta, criado quando um login é concluído e durando até sete dias de atividade; termina quando você faz logout, quando você desconecta esse dispositivo em Conta → Segurança, ou quando expira."
 
 msgid "One step in a job's routing, naming a process and a work center and carrying its own setup, labor, and machine times and rates."
 msgstr "Uma etapa no roteiro de produção de uma ordem de produção, nomeando um processo e um centro de trabalho e incluindo seu próprio setup, mão de obra, tempos de máquina e taxas."
@@ -15896,6 +15917,9 @@ msgstr "serviços"
 msgid "Services"
 msgstr "Serviços"
 
+msgid "Session"
+msgstr "Sessão"
+
 msgid "Session locked"
 msgstr "Sessão bloqueada"
 
@@ -16314,8 +16338,17 @@ msgstr "Sair"
 msgid "Sign Out"
 msgstr "Sair"
 
+msgid "Sign out all other devices"
+msgstr "Desconecte todos os outros dispositivos"
+
+msgid "Sign out device"
+msgstr "Desconectar dispositivo"
+
 msgid "Sign out instead"
 msgstr "Sair em vez disso"
+
+msgid "Sign out other devices"
+msgstr "Desconectar outros dispositivos"
 
 msgid "Sign-off review before moving to the next step"
 msgstr "Revisão de aprovação antes de passar para a próxima etapa"
@@ -16787,7 +16820,7 @@ msgid "Stripe"
 msgstr "Stripe"
 
 msgid "Stripe already has a customer with this email"
-msgstr "O Stripe já possui um cliente com este e-mail"
+msgstr "Stripe já tem um cliente com este email"
 
 msgid "Stripe Due Date"
 msgstr "Data de Vencimento Stripe"
@@ -18248,6 +18281,9 @@ msgstr "Este backup não pôde ser concluído."
 msgid "This backup hasn't been checked yet. Any differences are found when the restore runs."
 msgstr "Este backup ainda não foi verificado. As diferenças são encontradas quando a restauração é executada."
 
+msgid "This browser joined the account after that session started, so it can't end it. Sign out from a browser you've used for longer, or wait: a session unused for a week drops off this list. Clearing site data makes a browser new again."
+msgstr "Este navegador entrou na conta depois desta sessão ter começado, portanto não consegue encerrá-la. Termine a sessão de um navegador que tem utilizado há mais tempo ou aguarde: uma sessão não utilizada durante uma semana desaparece desta lista. Limpar os dados do site do navegador faz-o parecer novo novamente."
+
 msgid "This Carbon instance is missing its Onshape OAuth credentials. Ask an administrator to set them."
 msgstr "Esta instância do Carbon não tem credenciais OAuth do Onshape. Peça a um administrador para configurá-las."
 
@@ -18269,8 +18305,14 @@ msgstr "Este contato não possui endereço de e-mail"
 msgid "This counterparty has nothing outstanding — the payment will be recorded on-account."
 msgstr "Este terceiro não tem nada pendente — o pagamento será registrado em conta."
 
+msgid "This device"
+msgstr "Este dispositivo"
+
 msgid "This download link is invalid or has been tampered with."
 msgstr "Este link de download é inválido ou foi adulterado."
+
+msgid "This ends that device's session — it can no longer stay signed in and is returned to the login page within a minute of its next page load."
+msgstr "Isso encerra a sessão desse dispositivo — ele não pode mais permanecer conectado e é retornado à página de login dentro de um minuto do seu próximo carregamento de página."
 
 msgid "This file is no longer available, or you don't have permission to download it."
 msgstr "Este arquivo não está mais disponível, ou você não tem permissão para baixá-lo."
@@ -18477,7 +18519,7 @@ msgid "This version cannot be opened"
 msgstr "Esta versão não pode ser aberta"
 
 msgid "This version is published"
-msgstr "Esta versão é publicada."
+msgstr "Esta versão foi publicada"
 
 msgid "This version is published. Create a new version to edit."
 msgstr "Esta versão está publicada. Crie uma nova versão para editar."
@@ -19084,11 +19126,17 @@ msgstr "Unidades reportadas como irrecuperáveis em uma operação, com um motiv
 msgid "Unknown"
 msgstr "Desconhecido"
 
+msgid "Unknown device"
+msgstr "Dispositivo desconhecido"
+
 msgid "unknown error"
 msgstr "erro desconhecido"
 
 msgid "unknown location"
 msgstr "localização desconhecida"
+
+msgid "Unknown location"
+msgstr "Local desconhecido"
 
 msgid "Unlimited functional support"
 msgstr "Suporte funcional ilimitado"
@@ -20197,6 +20245,9 @@ msgstr "Onde você está hoje"
 msgid "Where you want to grow"
 msgstr "Onde você quer crescer"
 
+msgid "Where you're signed in. Sign out of any device you don't recognize — from a device you've used for longer than that session. Clearing your browser's site data makes it a new device."
+msgstr "Onde está autenticado. Termine a sessão de qualquer dispositivo que não reconheça — de um dispositivo que tenha utilizado há mais tempo do que essa sessão. Limpar os dados do site do seu navegador faz-o tornar-se um novo dispositivo."
+
 msgid "Whether Amount is interpreted as a percentage of the line price or as a fixed currency amount."
 msgstr "Se o valor é interpretado como uma porcentagem do preço da linha ou como um valor fixo em moeda."
 
@@ -20554,6 +20605,9 @@ msgstr "Os seus dados são acessíveis e razoavelmente limpos"
 
 msgid "Your data was not changed — the restore stops before touching anything if it can't complete."
 msgstr "Seus dados não foram alterados — a restauração para antes de fazer qualquer alteração se não conseguir ser concluída."
+
+msgid "Your devices"
+msgstr "Seus dispositivos"
 
 msgid "Your DNS provider may auto-append your domain to the record name — if so, enter only the part before it (e.g. _carbon-challenge plus any subdomain)."
 msgstr "Seu provedor de DNS pode anexar automaticamente seu domínio ao nome do registro — se for o caso, digite apenas a parte anterior (por exemplo, _carbon-challenge mais qualquer subdomínio)."

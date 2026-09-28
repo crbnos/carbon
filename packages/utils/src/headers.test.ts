@@ -26,6 +26,42 @@ describe("getClientIp", () => {
     expect(getClientIp(req({}))).toBeNull();
     expect(getClientIp(req({ "x-forwarded-for": " , " }))).toBeNull();
   });
+
+  it("skips a trusted proxy count to reach the real client", () => {
+    expect(
+      getClientIp(req({ "x-forwarded-for": "9.9.9.9, 1.2.3.4, 10.0.0.1" }), {
+        trustedProxyCount: 1
+      })
+    ).toBe("1.2.3.4");
+  });
+
+  it("never walks past the leftmost hop even when every hop is trusted", () => {
+    expect(
+      getClientIp(req({ "x-forwarded-for": "evil, 1.2.3.4" }), {
+        trustedProxyCount: 5
+      })
+    ).toBe("evil");
+  });
+
+  it("skips explicitly trusted proxy addresses", () => {
+    expect(
+      getClientIp(req({ "x-forwarded-for": "1.2.3.4, 10.0.0.1" }), {
+        trustedProxyIps: ["10.0.0.1"]
+      })
+    ).toBe("1.2.3.4");
+  });
+
+  it("strips a port suffix and the IPv4-mapped IPv6 prefix", () => {
+    expect(getClientIp(req({ "x-forwarded-for": "1.2.3.4:53819" }))).toBe(
+      "1.2.3.4"
+    );
+    expect(getClientIp(req({ "x-forwarded-for": "::ffff:127.0.0.1" }))).toBe(
+      "127.0.0.1"
+    );
+    expect(getClientIp(req({ "x-forwarded-for": "[2001:db8::1]:443" }))).toBe(
+      "2001:db8::1"
+    );
+  });
 });
 
 describe("getRequestProtocol", () => {

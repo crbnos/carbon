@@ -1,4 +1,5 @@
 import { assertIsPost, error, RATE_LIMIT, safeRedirect } from "@carbon/auth";
+import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { setCompanyId } from "@carbon/auth/company.server";
 import { userHasVerifiedTotpFactor } from "@carbon/auth/mfa.server";
 import {
@@ -42,6 +43,7 @@ import {
 } from "react-router";
 import { z } from "zod";
 
+import { sendNewDeviceEmail } from "~/services/device-email.server";
 import { path } from "~/utils/path";
 
 export const meta: MetaFunction = () => {
@@ -110,6 +112,15 @@ export async function action({ request }: ActionFunctionArgs) {
     return data(
       error(null, "Invalid or expired code"),
       await flash(request, error(null, "Invalid or expired code"))
+    );
+  }
+
+  if (result.isNewDevice && result.authSession.companyId) {
+    await sendNewDeviceEmail(
+      getCarbonServiceRole(),
+      result.authSession.companyId,
+      result.authSession.userId,
+      request
     );
   }
 

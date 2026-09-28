@@ -289,6 +289,9 @@ msgstr "{apOverduePct}%の買掛金"
 msgid "{arOverduePct}% of receivables"
 msgstr "{arOverduePct}%の売掛金"
 
+msgid "{browser} on {os}"
+msgstr "{browser}の{os}"
+
 msgid "{chainLabel}. Consider pointing this part directly at the final successor."
 msgstr "{chainLabel}。この部品を最終的な後継品目に直接ポイントすることを検討してください。"
 
@@ -7216,6 +7219,9 @@ msgstr "すべての必須タスクは期間がクローズされる前に完了
 msgid "Every row was imported successfully."
 msgstr "すべての行が正常にインポートされました。"
 
+msgid "Every session except the one you are using now will be signed out. Other devices are returned to the login page within a minute of their next page load."
+msgstr "現在使用中のセッション以外のすべてのセッションがサインアウトされます。他のデバイスは次のページロード時に1分以内にログインページに戻されます。"
+
 msgid "Everyone working any day of the week you pick stays on past their shift by the hours you set. Only the departments and shifts you're filtering by are affected."
 msgstr "選択した週のどの日でも勤務している全員が、設定した時間分シフトを超えて勤務します。フィルタリングしている部門とシフトのみが影響を受けます。"
 
@@ -9671,6 +9677,9 @@ msgstr "言語"
 msgid "Last 6 Months"
 msgstr "過去6ヶ月"
 
+msgid "Last active"
+msgstr "最後のアクティビティ"
+
 msgid "Last Activity"
 msgstr "最終更新"
 
@@ -9868,7 +9877,7 @@ msgid "Lines"
 msgstr "行"
 
 msgid "Lines appear here once a purchase order receipt has been posted, and only for quantities not already authorized on another supplier return. Use Add Line Item for a blind return."
-msgstr "発注書の入荷が転記済になると、ここに明細が表示されます。ただし、他の仕入先返品で既に承認されていない数量のみです。その他の返品の場合は「明細を追加」を使用してください。"
+msgstr "発注書の入荷が転記済になった後、明細がここに表示されます。別の仕入先返品で既に認可されていない数量のみが対象です。ブラインド返品には「明細品目を追加」を使用してください。"
 
 msgid "Lines appear here once a sales order shipment has been posted, and only for quantities not already authorized on another RMA. Use Add Line Item for a blind return."
 msgstr "受注出荷が転記された後に、別のRMAで既に認可されていない数量のみが表示されます。目隠し返品の場合は「明細を追加」を使用してください。"
@@ -9981,6 +9990,9 @@ msgstr "読み込み中…"
 
 msgid "Local"
 msgstr "ローカル"
+
+msgid "Local network"
+msgstr "ローカルネットワーク"
 
 msgid "location"
 msgstr "場所"
@@ -11195,6 +11207,9 @@ msgstr "新規作業区"
 msgid "New Workflow"
 msgstr "新規ワークフロー"
 
+msgid "Newer device"
+msgstr "新しいデバイス"
+
 msgid "Newest first"
 msgstr "最新順"
 
@@ -11672,7 +11687,7 @@ msgid "No results found"
 msgstr "検索結果が見つかりません"
 
 msgid "No returnable lines for this customer"
-msgstr "この得意先の返品対象明細がありません"
+msgstr "この得意先に対する返品対象の明細がありません"
 
 msgid "No returnable lines for this supplier"
 msgstr "この仕入先に返品対象の明細がありません。"
@@ -11700,6 +11715,9 @@ msgstr "出荷がまだありません"
 
 msgid "No shortcuts available on this page."
 msgstr "このページで利用可能なショートカットはありません。"
+
+msgid "No signed-in devices found."
+msgstr "サインインしたデバイスが見つかりません。"
 
 msgid "No single, trusted number for inventory or job status"
 msgstr "在庫またはジョブステータスの単一の信頼できる数値がない"
@@ -12091,6 +12109,9 @@ msgstr "1つの共有段取りと、各メンバーの加工時間（労務と�
 
 msgid "One shared setup plus the longest member's run time — the greater of its labor and machine — since the members run together"
 msgstr "1つの共有段取りプラス最長メンバーの加工時間（労務と機械のいずれか大きい方）、メンバーは同時に実行"
+
+msgid "One signed-in browser or device on your account, created when a sign-in completes and lasting up to seven days of activity; it ends when you log out, when you sign that device out from Account → Security, or when it expires."
+msgstr "アカウント上のサインイン済みブラウザまたはデバイス。サインインが完了すると作成され、最大7日間のアクティビティが続きます。ログアウト時、アカウント→セキュリティからそのデバイスをサインアウトしたとき、または有効期限が切れたときに終了します。"
 
 msgid "One step in a job's routing, naming a process and a work center and carrying its own setup, labor, and machine times and rates."
 msgstr "製造指図の工順の1つのステップ。工法と作業区を指定し、段取り、労務、機械時間とそのレートを独自に保有しています。"
@@ -15698,7 +15719,7 @@ msgid "Select operations"
 msgstr "工程を選択"
 
 msgid "Select posted receipt lines from this supplier to return."
-msgstr "この仕入先からの転記済入荷明細を返品するために選択してください。"
+msgstr "この仕入先からの転記済の入荷明細を選択して返品します。"
 
 msgid "Select posted shipment lines to this customer to return."
 msgstr "この得意先への転記済出荷明細を選択して返品する"
@@ -15896,11 +15917,14 @@ msgstr "サービス"
 msgid "Services"
 msgstr "サービス"
 
+msgid "Session"
+msgstr "セッション"
+
 msgid "Session locked"
 msgstr "セッションがロック中"
 
 msgid "Set a customer on this return to add from a shipment."
-msgstr "この返品に得意先を設定して出荷から追加してください。"
+msgstr "このリターンに得意先を設定して出荷から追加します。"
 
 msgid "Set a supplier on this return to add from a receipt."
 msgstr "この返品に仕入先を設定して入荷から追加"
@@ -16314,8 +16338,17 @@ msgstr "ログアウト"
 msgid "Sign Out"
 msgstr "サインアウト"
 
+msgid "Sign out all other devices"
+msgstr "他のすべてのデバイスからサインアウト"
+
+msgid "Sign out device"
+msgstr "デバイスをサインアウト"
+
 msgid "Sign out instead"
 msgstr "代わりにサインアウト"
+
+msgid "Sign out other devices"
+msgstr "他のデバイスからサインアウト"
 
 msgid "Sign-off review before moving to the next step"
 msgstr "次のステップに進む前のサインオフレビュー"
@@ -18248,6 +18281,9 @@ msgstr "このバックアップを完了できませんでした。"
 msgid "This backup hasn't been checked yet. Any differences are found when the restore runs."
 msgstr "このバックアップはまだチェックされていません。違いは復元の実行時に見つかります。"
 
+msgid "This browser joined the account after that session started, so it can't end it. Sign out from a browser you've used for longer, or wait: a session unused for a week drops off this list. Clearing site data makes a browser new again."
+msgstr "このブラウザーはセッション開始後にアカウントに追加されたため、そのセッションを終了することはできません。より長く使用しているブラウザーからサインアウトするか、待機してください。1週間使用されていないセッションはリストから削除されます。ブラウザーのサイトデータをクリアすると、そのブラウザーが新しいものとして扱われます。"
+
 msgid "This Carbon instance is missing its Onshape OAuth credentials. Ask an administrator to set them."
 msgstr "この Carbon インスタンスには Onshape の OAuth 認証情報がありません。管理者に設定を依頼してください。"
 
@@ -18269,8 +18305,14 @@ msgstr "この担当者はメールアドレスを持っていません。"
 msgid "This counterparty has nothing outstanding — the payment will be recorded on-account."
 msgstr "この取引先には未払い金がありません。支払いは掛け金として記録されます。"
 
+msgid "This device"
+msgstr "このデバイス"
+
 msgid "This download link is invalid or has been tampered with."
 msgstr "このダウンロードリンクは無効であるか、改ざんされています。"
+
+msgid "This ends that device's session — it can no longer stay signed in and is returned to the login page within a minute of its next page load."
+msgstr "これはそのデバイスのセッションを終了します。サインインしたままにはできず、次のページロード時に1分以内にログインページに戻されます。"
 
 msgid "This file is no longer available, or you don't have permission to download it."
 msgstr "このファイルは利用できなくなったか、ダウンロードする権限がありません。"
@@ -19084,10 +19126,16 @@ msgstr "工程で回復不可能として報告された単位数（理由付き
 msgid "Unknown"
 msgstr "不明"
 
+msgid "Unknown device"
+msgstr "不明なデバイス"
+
 msgid "unknown error"
 msgstr "不明なエラー"
 
 msgid "unknown location"
+msgstr "不明な場所"
+
+msgid "Unknown location"
 msgstr "不明な場所"
 
 msgid "Unlimited functional support"
@@ -20197,6 +20245,9 @@ msgstr "今日のあなたの状況"
 msgid "Where you want to grow"
 msgstr "成長したい場所"
 
+msgid "Where you're signed in. Sign out of any device you don't recognize — from a device you've used for longer than that session. Clearing your browser's site data makes it a new device."
+msgstr "サインイン中のデバイス一覧です。認識していないデバイスからサインアウトしてください — そのセッションより長く使用しているデバイスからサインアウトしてください。ブラウザーのサイトデータをクリアするとデバイスが新しくなります。"
+
 msgid "Whether Amount is interpreted as a percentage of the line price or as a fixed currency amount."
 msgstr "金額を明細価格に対する割合として解釈するか、固定の通貨額として解釈するか。"
 
@@ -20554,6 +20605,9 @@ msgstr "あなたのデータはアクセス可能で、適切にクリーンで
 
 msgid "Your data was not changed — the restore stops before touching anything if it can't complete."
 msgstr "データは変更されませんでした — 復元が完了できない場合、復元は何も変更する前に停止します。"
+
+msgid "Your devices"
+msgstr "あなたのデバイス"
 
 msgid "Your DNS provider may auto-append your domain to the record name — if so, enter only the part before it (e.g. _carbon-challenge plus any subdomain)."
 msgstr "DNS プロバイダーはレコード名にドメインを自動的に追加する場合があります。その場合は、その前の部分のみを入力してください（例：_carbon-challenge または任意のサブドメイン付き）。"
