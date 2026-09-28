@@ -93,7 +93,15 @@ export async function runTier8(ctx: Ctx): Promise<void> {
         case "Version": {
           // A Version stays on the same item: the notice owns a new Draft method
           // version cloned from the active one, and the affected item points at
-          // both ends.
+          // both ends. A still-Draft base is promoted to Active first, as
+          // createChangeNoticeDraftMethod does — otherwise the notice's higher
+          // version outranks it in `activeMakeMethods` and its unreleased edits
+          // reach quotes, jobs and MRP.
+          await ctx.client.query(
+            `UPDATE "makeMethod" SET status = 'Active', "updatedBy" = $3
+     WHERE id = $1 AND "companyId" = $2 AND status = 'Draft'`,
+            [base.id, ctx.companyId, ctx.userId]
+          );
           const draftVersion = Number(base.version) + 1;
           const draft = await insertId(ctx, "makeMethod", {
             itemId: item.id,
@@ -109,7 +117,7 @@ export async function runTier8(ctx: Ctx): Promise<void> {
         }
 
         case "Revision": {
-          // A Revision mints a new revision of the item (EPS-001.A) and edits ITS
+          // A Revision mints a new revision of the item (HARNESS-001.A) and edits ITS
           // method. The revision stays hidden — inactive, notice-owned — until release.
           const revisionSpec = affected.revision;
           if (!revisionSpec) {

@@ -321,6 +321,23 @@ employee every people screen shows. Volume: `validate.ts` requires `MIN_JOBS` (1
 dataset, every open job due within `OPEN_JOB_DUE_WINDOW` (−3…+21 days), open operations on
 every plant work center and running work on several.
 
+## Make methods stay Draft
+
+Every seeded make method is left `Draft` — the item interceptor's default — so a demo user can
+open any BOM/BOP and edit it; an `Active` method is read-only in the app. Nothing downstream
+needs `Active`: `activeMakeMethods` falls back to the highest-version Draft, so quotes, jobs,
+get-method and MRP read the same method. The one exception is a **Version** change notice
+(tier 08): it promotes its base to `Active` before cutting the notice's Draft v2, exactly as
+`createChangeNoticeDraftMethod` does — otherwise the notice's unreleased v2 outranks the base in
+`activeMakeMethods` and reaches production. Do not reintroduce a blanket release in tier 02.
+
+**Open change notices lock more than their affected item.** `findChangeNoticesForItem` treats
+every component of a notice's Draft method as "in" that notice, and the part page locks it. So
+an open Version or Revision notice on a top-level assembly locks every sub-assembly beneath it.
+The open notices' affected items are therefore LEAF make parts (BOMs of purchased components
+only), and a Revision's `add` edits name purchased components: each dataset locks exactly two
+make parts. Keep it that way when authoring a new notice or a new dataset.
+
 ## Posted documents carry their downstream rows
 
 Posted receipts and shipments, completed returns / transfers / picking lists / counts,
@@ -398,8 +415,8 @@ path before the storage proxy is ever reached. So there is **no bucket object, n
 assembler run at seed time** — `seedAssembly` in `tiers/02-items.ts` writes a `modelUpload`
 row whose `modelPath`/`glbPath`/`graphPath` are those bundled paths, `processingStatus` already
 `Success`, then an `assemblyInstruction` + its `assemblyInstructionStep` rows, points
-`item.modelUploadId` at it, and links the item's Assembly `methodOperation` — before the method
-is released, so quote lines (tier 04) and jobs (tier 06) both copy the link.
+`item.modelUploadId` at it, and links the item's Assembly `methodOperation`, so quote lines
+(tier 04) and jobs (tier 06) both copy the link.
 
 The data is `ItemsData.assembly` (`AssemblySpec`), authored in `data/<key>/assembly.ts`. It
 is **optional** — a dataset with a null `industryId` has nowhere to resolve a model from and is
