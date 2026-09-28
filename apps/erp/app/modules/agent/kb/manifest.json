@@ -216,6 +216,55 @@
       ]
     },
     {
+      "slug": "changelog/2026-09-18-returns-batching-and-the-carbon-api",
+      "title": "Returns, operation batching, and the Carbon API",
+      "description": "Customer RMAs and supplier returns, job operations that run as one batch across ERP and MES, every service operation reachable over plain HTTP, and keyboard shortcuts everywhere.",
+      "keywords": [
+        "returns,",
+        "operation",
+        "batching,",
+        "and",
+        "the",
+        "carbon",
+        "api",
+        "changelog",
+        "2026",
+        "returns",
+        "batching"
+      ],
+      "headings": [
+        "Job operation batching",
+        "The Carbon API",
+        "Keyboard shortcuts everywhere"
+      ]
+    },
+    {
+      "slug": "changelog/2026-09-28-ramp-batch-materials-and-community-planning",
+      "title": "Ramp card transactions, batch materials, and a larger community edition",
+      "description": "Ramp card spend and AP flow into the ledger, batches share materials and plan their output lots, quotes predict lead time from the real schedule, and planning, the configurator, and accounting join the community edition.",
+      "keywords": [
+        "ramp",
+        "card",
+        "transactions,",
+        "batch",
+        "materials,",
+        "and",
+        "larger",
+        "community",
+        "edition",
+        "changelog",
+        "2026",
+        "materials",
+        "planning"
+      ],
+      "headings": [
+        "Batches share materials and plan their output",
+        "A larger community edition",
+        "Quotes predict lead time from the schedule",
+        "Demo data for everyone"
+      ]
+    },
+    {
       "slug": "docs/building/api-keys",
       "title": "API keys",
       "description": "A scoped secret that lets an external system call the Carbon API on your behalf, with its own permissions.",
