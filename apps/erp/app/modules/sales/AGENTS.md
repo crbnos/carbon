@@ -66,7 +66,7 @@ cd apps/erp && pnpm exec vitest run app/modules/sales
 - `applyPriceRules` — applies matched discount/markup rules to a starting price
 - `resolvePrice` — full price resolution: base → overrides → rules → final
 - `resolvePriceList` — batch price list for a customer/type with quantity preview
-- `closeSalesOrder` / `finalizeQuote` — status transitions. `finalizeQuote` also refreshes the quote's share link and stamps `completedDate` (the Finalize route adds only the PDF and email around it)
+- `closeSalesOrder` / `finalizeQuote` — status transitions. `finalizeQuote` also refreshes the quote's share link and stamps `completedDate` only when that issues a new link, so a quote that already has one (every app-created quote) keeps its `completedDate` (the Finalize route adds only the PDF and email around it)
 - Route commands in `sales.server.ts` — the whole operation a route runs, called by the route and published under the bare primitive's tool name by `sales.mcp.server.ts`: `createQuoteLineWithPrices` / `updateQuoteLineWithPrices` (`sales_upsertQuoteLine`), `saveQuoteMaterialWithPrices` / `deleteQuoteMaterialWithPrices`, `saveQuoteOperationWithPrices` / `deleteQuoteOperationWithPrices` (reprice the line), `confirmSalesOrder` (status from lines, order date, MRP — published as `sales_releaseSalesOrder`; the service `releaseSalesOrder` has no caller). `convertSalesRfqToQuote` seeds every new line's price rows itself
 - `getQuote` / `getQuoteLines` / `getQuoteLinePrices` / `getQuoteMaterials` / `getQuoteOperations` — quote reads
 - `getSalesOrder(s)` / `getSalesOrderLines` / `getExternalSalesOrderLines` — order reads

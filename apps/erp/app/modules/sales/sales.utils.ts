@@ -115,3 +115,56 @@ export function decideRecalcPricing(
   }
   return { mode: "reprice", markups: effectiveDefaults };
 }
+
+/**
+ * The quote columns Finalize writes after refreshing the share link. Only a
+ * refresh that issued a NEW link (the quote had none, or the id changed) links
+ * it and stamps `completedDate`; refreshing the quote's existing link writes
+ * nothing, so `completedDate` keeps its value. Every quote created in the app
+ * or converted from an RFQ already has a link, so for those Finalize leaves
+ * `completedDate` as it was.
+ */
+export function finalizeShareLinkUpdate(
+  currentLinkId: string | null,
+  refreshedLinkId: string | null | undefined,
+  now: string
+): { externalLinkId: string; completedDate: string } | null {
+  if (!refreshedLinkId || refreshedLinkId === currentLinkId) return null;
+  return { externalLinkId: refreshedLinkId, completedDate: now };
+}
+
+export type ConvertedLinePricer =
+  | "Make to Order"
+  | "Pull from Inventory"
+  | "Purchase to Order";
+
+/**
+ * Which pricer seeds each line of a quote just converted from an RFQ, and for
+ * which quantities. A line with no quantity array is priced for one unit; an
+ * empty array, or a method type with no pricer, is skipped.
+ */
+export function planConvertedLinePricing(
+  lines: {
+    id: string;
+    methodType: string | null;
+    quantity: number[] | null;
+  }[]
+): { lineId: string; pricer: ConvertedLinePricer; quantities: number[] }[] {
+  const pricers: readonly string[] = [
+    "Make to Order",
+    "Pull from Inventory",
+    "Purchase to Order"
+  ];
+  return lines.flatMap((line) => {
+    const quantities = line.quantity ?? [1];
+    if (quantities.length === 0) return [];
+    if (!line.methodType || !pricers.includes(line.methodType)) return [];
+    return [
+      {
+        lineId: line.id,
+        pricer: line.methodType as ConvertedLinePricer,
+        quantities
+      }
+    ];
+  });
+}

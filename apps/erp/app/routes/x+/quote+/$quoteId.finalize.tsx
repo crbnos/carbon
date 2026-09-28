@@ -167,8 +167,9 @@ export async function action(args: ActionFunctionArgs) {
       );
     }
 
-    // finalizeQuote also refreshes the share link and stamps completedDate —
-    // the same call `sales_finalizeQuote` makes over MCP.
+    // finalizeQuote also refreshes the share link (stamping completedDate
+    // only when it issues a new one) — the same call `sales_finalizeQuote`
+    // makes over MCP.
     const finalize = await finalizeQuote(client, quoteId, userId, companyId);
     if (finalize.error) {
       throw redirect(

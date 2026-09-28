@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
   decideRecalcPricing,
+  finalizeShareLinkUpdate,
   getEffectiveDefaultMarkups,
+  planConvertedLinePricing,
   reconcileQuantityBreaks,
   resolvePreservedQuoteLinePriceFields
 } from "./sales.utils";
@@ -176,5 +178,65 @@ describe("decideRecalcPricing", () => {
         {}
       )
     ).toEqual({ mode: "reprice", markups: { laborCost: 20 } });
+  });
+});
+
+describe("finalizeShareLinkUpdate", () => {
+  const now = "2026-09-28T10:00:00Z";
+
+  it("writes nothing when the refresh kept the quote's existing link", () => {
+    // Every app-created quote already has a link, so Finalize leaves its
+    // completedDate as it was.
+    expect(finalizeShareLinkUpdate("link1", "link1", now)).toBeNull();
+  });
+
+  it("links a newly issued link and stamps completedDate", () => {
+    expect(finalizeShareLinkUpdate(null, "link2", now)).toEqual({
+      externalLinkId: "link2",
+      completedDate: now
+    });
+    expect(finalizeShareLinkUpdate("link1", "link2", now)).toEqual({
+      externalLinkId: "link2",
+      completedDate: now
+    });
+  });
+
+  it("writes nothing when the refresh returned no link", () => {
+    expect(finalizeShareLinkUpdate(null, undefined, now)).toBeNull();
+    expect(finalizeShareLinkUpdate("link1", null, now)).toBeNull();
+  });
+});
+
+describe("planConvertedLinePricing", () => {
+  it("routes each method type to its pricer with the line's quantities", () => {
+    expect(
+      planConvertedLinePricing([
+        { id: "l1", methodType: "Make to Order", quantity: [1, 10] },
+        { id: "l2", methodType: "Pull from Inventory", quantity: [5] },
+        { id: "l3", methodType: "Purchase to Order", quantity: [2, 20] }
+      ])
+    ).toEqual([
+      { lineId: "l1", pricer: "Make to Order", quantities: [1, 10] },
+      { lineId: "l2", pricer: "Pull from Inventory", quantities: [5] },
+      { lineId: "l3", pricer: "Purchase to Order", quantities: [2, 20] }
+    ]);
+  });
+
+  it("prices a line with no quantities set for one unit", () => {
+    expect(
+      planConvertedLinePricing([
+        { id: "l1", methodType: "Purchase to Order", quantity: null }
+      ])
+    ).toEqual([{ lineId: "l1", pricer: "Purchase to Order", quantities: [1] }]);
+  });
+
+  it("skips an empty quantity list and a method type with no pricer", () => {
+    expect(
+      planConvertedLinePricing([
+        { id: "l1", methodType: "Make to Order", quantity: [] },
+        { id: "l2", methodType: null, quantity: [1] },
+        { id: "l3", methodType: "Something Else", quantity: [1] }
+      ])
+    ).toEqual([]);
   });
 });

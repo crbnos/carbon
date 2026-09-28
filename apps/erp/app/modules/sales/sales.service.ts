@@ -79,7 +79,9 @@ import { costCategoryKeys, OPEN_SALES_ORDER_STATUSES } from "./sales.models";
 import type { CategoryMarkups, QuoteLinePriceSource } from "./sales.utils";
 import {
   decideRecalcPricing,
+  finalizeShareLinkUpdate,
   getEffectiveDefaultMarkups,
+  planConvertedLinePricing,
   resolvePreservedQuoteLinePriceFields
 } from "./sales.utils";
 import type {
@@ -247,44 +249,34 @@ export async function convertSalesRfqToQuote(
 
   if (!newLines.error && newLines.data) {
     const results = await Promise.all(
-      newLines.data.map((line) => {
-        const quantities = line.quantity ?? [1];
-        if (quantities.length === 0) return null;
-
-        switch (line.methodType) {
-          case "Make to Order":
+      planConvertedLinePricing(newLines.data).map(
+        ({ lineId, pricer, quantities }) => {
+          if (pricer === "Make to Order") {
             return calculatePricesForQuantities(
               client,
               quoteId,
-              line.id,
+              lineId,
               quantities,
               payload.userId
             );
-          case "Pull from Inventory":
-            return resolveQuoteLinePrices(
-              client,
-              payload.companyId,
-              quoteId,
-              line.id,
-              quantities,
-              payload.userId
-            );
-          case "Purchase to Order":
-            return resolvePurchaseToOrderPrices(
-              client,
-              payload.companyId,
-              quoteId,
-              line.id,
-              quantities,
-              payload.userId
-            );
-          default:
-            return null;
+          }
+          const price =
+            pricer === "Pull from Inventory"
+              ? resolveQuoteLinePrices
+              : resolvePurchaseToOrderPrices;
+          return price(
+            client,
+            payload.companyId,
+            quoteId,
+            lineId,
+            quantities,
+            payload.userId
+          );
         }
-      })
+      )
     );
     for (const result of results) {
-      if (result && "error" in result && result.error) {
+      if (result.error) {
         logger.error("Failed to price a converted quote line", {
           quoteId,
           error: result.error
@@ -2182,11 +2174,14 @@ export async function insertSalesOrderLines(
 }
 
 /**
- * Send a quote as the Finalize button does, without the PDF or email: refresh the share link, set completedDate, mark it Sent and its lines Complete.
+ * Send a quote as the Finalize button does, without the PDF or email: refresh the share link, mark it Sent and its lines Complete.
  *
- * The share link is refreshed with the quote's expiry and customer, and
- * `completedDate` is stamped when a new link is issued. This is the whole
- * state change the Finalize button makes;
+ * The share link is refreshed with the quote's expiry and customer.
+ * `completedDate` is stamped only when a new link is issued, i.e. when the
+ * quote had none. Quotes created in the app or converted from an RFQ already
+ * have one, so for them `completedDate` is left as it was, exactly as the
+ * Finalize button leaves it. This is the whole state change the Finalize
+ * button makes;
  * the route adds the PDF (stored as a Quote document) and the optional
  * customer email around it, which this function does not do. Sales rules are
  * evaluated before it runs — by the route, and by the dispatch gate for API
@@ -2217,7 +2212,7 @@ export async function finalizeQuote(
 
   // The share link carries the quote's current expiry and customer. A failed
   // link write never blocks the send (the Finalize route has always ignored
-  // it); completedDate is stamped only when a new link is issued.
+  // it). See finalizeShareLinkUpdate for when completedDate is stamped.
   const externalLink = await upsertExternalLink(client, {
     id: quote.data.externalLinkId ?? undefined,
     documentType: "Quote",
@@ -2231,18 +2226,19 @@ export async function finalizeQuote(
       quoteId,
       error: externalLink.error
     });
-  } else if (
-    externalLink.data &&
-    quote.data.externalLinkId !== externalLink.data.id
-  ) {
-    await client
-      .from("quote")
-      .update({
-        externalLinkId: externalLink.data.id,
-        completedDate: datetime.timestamp()
-      })
-      .eq("id", quoteId)
-      .eq("companyId", companyId);
+  } else {
+    const linkUpdate = finalizeShareLinkUpdate(
+      quote.data.externalLinkId,
+      externalLink.data?.id,
+      datetime.timestamp()
+    );
+    if (linkUpdate) {
+      await client
+        .from("quote")
+        .update(linkUpdate)
+        .eq("id", quoteId)
+        .eq("companyId", companyId);
+    }
   }
 
   const quoteUpdate = await client
