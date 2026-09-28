@@ -4,23 +4,26 @@ import {
   CONTROLLED_ENVIRONMENT,
   carbonClient,
   error,
+  getMESUrl,
   isAuthProviderEnabled,
   magicLinkValidator,
   RATE_LIMIT
 } from "@carbon/auth";
 import {
+  botProtection,
   getMagicLinkErrorMessage,
   logAuthEvent,
   sendMagicLink,
-  turnstileSiteKey,
+  signInWithBypassEmail,
   verifyAuthSession,
-  verifyLoginCaptcha
+  verifyBotProtection
 } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import {
   clearAuthCookies,
   flash,
-  getAuthSession
+  getAuthSession,
+  setAuthSession
 } from "@carbon/auth/session.server";
 import { getUserByEmail } from "@carbon/auth/users.server";
 import { isSsoEnabled, isSsoRequiredForEmail } from "@carbon/ee/sso.server";
@@ -34,12 +37,12 @@ import {
   Heading,
   ItarLoginDisclaimer,
   Separator,
-  TurnstileChallenge,
   toast,
+  useBotProtection,
   useMount,
   VStack
 } from "@carbon/react";
-import { Edition } from "@carbon/utils";
+import { Edition, getClientIp } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import {
   browserSupportsWebAuthn,
@@ -84,7 +87,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
         hasGoogleAuth,
         hasPasskeyAuth,
         hasSsoAuth,
-        turnstileSiteKey
+        botProtection
       },
       { headers: cookieHeaders }
     );
@@ -95,13 +98,13 @@ export async function loader({ request }: LoaderFunctionArgs) {
     hasGoogleAuth,
     hasPasskeyAuth,
     hasSsoAuth,
-    turnstileSiteKey
+    botProtection
   };
 }
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const ip = request.headers.get("x-forwarded-for") ?? "127.0.0.1";
+  const ip = getClientIp(request) ?? "127.0.0.1";
   const ratelimit = new Ratelimit({
     redis,
     limiter: Ratelimit.slidingWindow(RATE_LIMIT, "1 h"),
@@ -124,13 +127,17 @@ export async function action({ request }: ActionFunctionArgs) {
     return error(validation.error, "Invalid email address");
   }
 
-  const { email, turnstileToken } = validation.data;
+  const { email, botToken } = validation.data;
 
-  const captchaError = await verifyLoginCaptcha(turnstileToken, ip);
-  if (captchaError) {
+  const botError = await verifyBotProtection({
+    token: botToken,
+    ip,
+    actor: email
+  });
+  if (botError) {
     return data(
-      error(null, captchaError),
-      await flash(request, error(null, captchaError))
+      error(null, botError),
+      await flash(request, error(null, botError))
     );
   }
 
@@ -153,6 +160,26 @@ export async function action({ request }: ActionFunctionArgs) {
       { success: false, message: LOCKED_MESSAGE },
       await flash(request, error(null, LOCKED_MESSAGE))
     );
+  }
+
+  const user = await getUserByEmail(email);
+
+  const devBypassEmail = process.env.DEV_BYPASS_EMAIL;
+  if (
+    devBypassEmail &&
+    email.toLowerCase() === devBypassEmail.toLowerCase() &&
+    user.data?.active
+  ) {
+    const authSession = await signInWithBypassEmail(email);
+    if (authSession) {
+      // Genuine completed login — clear any accumulated lockout state.
+      await lockout.reset(email);
+      logAuthEvent("login_success", { actor: email, ip, method: "bypass" });
+      const sessionCookie = await setAuthSession(request, { authSession });
+      return redirect(path.to.authenticatedRoot, {
+        headers: [["Set-Cookie", sessionCookie]]
+      });
+    }
   }
 
   const attempt = await lockout.recordFailure(email);
@@ -185,10 +212,8 @@ export async function action({ request }: ActionFunctionArgs) {
     );
   }
 
-  const user = await getUserByEmail(email);
-
   if (user.data && user.data.active) {
-    const magicLink = await sendMagicLink(email, turnstileToken);
+    const magicLink = await sendMagicLink(email, getMESUrl());
 
     if (magicLink.error) {
       logAuthEvent("login_failed", {
@@ -220,7 +245,7 @@ export default function LoginRoute() {
     hasGoogleAuth,
     hasPasskeyAuth,
     hasSsoAuth,
-    turnstileSiteKey: siteKey
+    botProtection
   } = useLoaderData<typeof loader>();
 
   const [searchParams] = useSearchParams();
@@ -230,8 +255,8 @@ export default function LoginRoute() {
   const fetcher = useFetcher<
     { success: true } | { success: false; message: string }
   >();
+  const bot = useBotProtection("/login", botProtection, fetcher.data);
 
-  const [turnstileToken, setTurnstileToken] = useState<string>("");
   const [passkeySupported, setPasskeySupported] = useState(false);
   const [passkeyLoading, setPasskeyLoading] = useState(false);
   const [ssoLoading, setSsoLoading] = useState(false);
@@ -476,7 +501,7 @@ export default function LoginRoute() {
             onSubmit={onSubmitEmail}
           >
             <Hidden name="redirectTo" value={redirectTo} type="hidden" />
-            <Hidden name="turnstileToken" value={turnstileToken} />
+            <Hidden name="botToken" value={bot.token} />
             <VStack spacing={2}>
               {((fetcher.data?.success === false && fetcher.data?.message) ||
                 ssoError) && (
@@ -552,9 +577,7 @@ export default function LoginRoute() {
 
               <Submit
                 isDisabled={
-                  fetcher.state !== "idle" ||
-                  ssoLoading ||
-                  (!!siteKey && !turnstileToken)
+                  fetcher.state !== "idle" || ssoLoading || !bot.ready
                 }
                 isLoading={fetcher.state === "submitting" || ssoLoading}
                 hideShortcutKey
@@ -565,10 +588,7 @@ export default function LoginRoute() {
               >
                 <Trans>Continue</Trans>
               </Submit>
-              <TurnstileChallenge
-                siteKey={siteKey ?? undefined}
-                onToken={setTurnstileToken}
-              />
+              {bot.challenge}
             </VStack>
           </ValidatedForm>
         )}

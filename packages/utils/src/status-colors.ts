@@ -61,6 +61,22 @@ export const JOB_OPERATION_STATUS_COLOR_MAP = {
 // done=green) so a batch reads the same as the jobs it dispatches. "Released"
 // is a display alias for Active (BatchStatus rewrites the label) so consumers
 // that render the display name — the docs StatusFlow — resolve the same blue.
+/* assemblyInstruction statuses (AssemblyInstructionStatus.tsx): an editable Draft is gray, the
+ * active Published version green, a superseded Archived version red. */
+export const ASSEMBLY_INSTRUCTION_STATUS_COLOR_MAP = {
+  Draft: "gray",
+  Published: "green",
+  Archived: "red"
+} as const satisfies Record<string, StatusColor>;
+
+/* assemblyInstructionStep statuses (production.models.ts `assemblyStepStatuses`): a step
+ * not started yet is gray, one waiting on a reviewer is yellow, a finished one is green. */
+export const ASSEMBLY_STEP_STATUS_COLOR_MAP = {
+  Todo: "gray",
+  Review: "yellow",
+  Done: "green"
+} as const satisfies Record<string, StatusColor>;
+
 export const BATCH_STATUS_COLOR_MAP = {
   Planned: "yellow",
   Active: "blue",
@@ -358,6 +374,8 @@ export const statusColorMaps = {
   job: JOB_STATUS_COLOR_MAP,
   jobOperation: JOB_OPERATION_STATUS_COLOR_MAP,
   jobOperationBatch: BATCH_STATUS_COLOR_MAP,
+  assemblyInstruction: ASSEMBLY_INSTRUCTION_STATUS_COLOR_MAP,
+  assemblyStep: ASSEMBLY_STEP_STATUS_COLOR_MAP,
   quote: QUOTE_STATUS_COLOR_MAP,
   salesOrder: SALES_STATUS_COLOR_MAP,
   salesReturnOrder: SALES_RETURN_ORDER_STATUS_COLOR_MAP,

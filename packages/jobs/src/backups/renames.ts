@@ -16,7 +16,14 @@ export const TABLE_RENAMES: Record<string, string | null> = {
   // rate table never had a writer and held zero rows everywhere; replaced by
   // the platform-global "exchangeRate" table, which is not tenant-scoped and
   // therefore never appears in a backup.
-  exchangeRateHistory: null
+  exchangeRateHistory: null,
+  // Renamed 2026-09 (sales rules): the storage-rule tables merged into the
+  // shared enforcement-rule tables (20260817143512). Column lists carry over
+  // 1:1; the new "family" column defaults to 'storage', which is what every
+  // pre-merge row was.
+  storageRule: "enforcementRule",
+  storageRuleItemAssignment: "enforcementRuleItemAssignment",
+  storageRuleWorkCenterAssignment: "enforcementRuleWorkCenterAssignment"
 };
 
 /**

@@ -1,9 +1,9 @@
-import type { WorkflowNodeType } from "@carbon/workflows";
+import type { WorkflowNodeType } from "@carbon/ee/workflows";
 import {
   NODE_KINDS,
   nodeSchema,
   workflowDefinitionSchema
-} from "@carbon/workflows";
+} from "@carbon/ee/workflows";
 import { describe, expect, it } from "vitest";
 import type { BuilderEdge, BuilderNode } from "../../types";
 import {

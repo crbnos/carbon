@@ -431,6 +431,30 @@ export class RilletPaymentSyncer extends PaymentSyncerBase<RilletPayment> {
       });
     }
 
+    // A bill written to Rillet as a native REIMBURSEMENT cannot be paid
+    // through the API — Rillet publishes no reimbursement-payment endpoint
+    // (2026-09-10; the request schema exists in its spec without a path).
+    // Park visibly rather than 404 against /bills/{id}/payments.
+    if (context.family === "ap") {
+      const billMapping = await this.mappingService.getByEntity(
+        "bill",
+        context.targetDocumentId,
+        this.provider.id
+      );
+      if (billMapping?.metadata?.remoteKind === "reimbursement") {
+        throw new JournalEntrySyncError({
+          errorCode: "UNSUPPORTED_REIMBURSEMENT_PAYMENT",
+          message:
+            "Rillet has no reimbursement-payment endpoint yet, so this payout cannot close the reimbursement in Rillet (it stays UNPAID there). Mark the reimbursement paid in Rillet; retry once Rillet supports reimbursement payments.",
+          warning: true,
+          metadata: {
+            targetDocumentId: context.targetDocumentId,
+            reimbursementRemoteId: documentRemoteId
+          }
+        });
+      }
+    }
+
     const accountCode = (await this.getAccountCodesById()).get(
       context.bankAccountId
     );

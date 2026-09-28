@@ -8,7 +8,8 @@ export const RoundingMode = {
   /** Ties away from zero — matches Postgres round(). (Math.round(-2.5) = -2; Postgres = -3.) */
   HalfUp: "halfUp",
   /** Away from zero to the next step — scrap allowances. */
-  Up: "up"
+  Up: "up",
+  Down: "down"
 } as const;
 export type RoundingMode = (typeof RoundingMode)[keyof typeof RoundingMode];
 
@@ -27,8 +28,24 @@ export function round(
   const fn =
     mode === RoundingMode.Up
       ? (n: number) => Math.sign(n) * Math.ceil(Math.abs(n))
-      : (n: number) => Math.sign(n) * Math.round(Math.abs(n));
+      : mode === RoundingMode.Down
+        ? (n: number) => Math.sign(n) * Math.floor(Math.abs(n))
+        : (n: number) => Math.sign(n) * Math.round(Math.abs(n));
   return shift(fn(shift(value, scale)), -scale);
+}
+
+/** Value equality at the one float-noise tolerance. Two 5dp quantities that
+ *  differ only by ~1e-12 float residue (0.98 + 0.02 vs 1) are the SAME
+ *  quantity — use this instead of `===`/`!==` when a raw compare would mistake
+ *  that residue for a real difference (e.g. deciding whether a draw is a full
+ *  draw). `tolerance` defaults to EPSILON; pass a business tolerance only where
+ *  the caller decides what a difference MEANS. */
+export function equals(
+  a: number,
+  b: number,
+  tolerance: number = EPSILON
+): boolean {
+  return Math.abs(a - b) <= tolerance;
 }
 
 /** Round every part to `scale` so the results sum EXACTLY to `target`, moving at

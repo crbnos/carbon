@@ -2,7 +2,7 @@ import {
   type LadderShiftRow,
   resolveLocationWindows,
   subtractIntervals
-} from "@carbon/ee/planning";
+} from "@carbon/planning";
 
 /** The `shift` rows returned by getShiftsWithTimes (weekday flags + times). */
 type ShiftRow = {

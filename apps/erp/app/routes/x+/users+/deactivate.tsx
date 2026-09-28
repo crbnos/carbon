@@ -4,6 +4,7 @@ import { flash } from "@carbon/auth/session.server";
 import { deactivateUser } from "@carbon/auth/users.server";
 import { validationError, validator } from "@carbon/form";
 import { batchTrigger } from "@carbon/jobs";
+import { getClientIp } from "@carbon/utils";
 import type {
   ActionFunctionArgs,
   ClientActionFunctionArgs
@@ -27,7 +28,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
   const { users, redirectTo } = validation.data;
 
-  const ip = request.headers.get("x-forwarded-for") ?? undefined;
+  const ip = getClientIp(request) ?? undefined;
 
   if (users.includes(userId)) {
     throw redirect(

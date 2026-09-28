@@ -61,7 +61,6 @@ const ENV_PLACEHOLDERS: Record<string, string> = {
   VERCEL_URL: "localhost",
   POSTHOG_API_HOST: "http://localhost",
   POSTHOG_PROJECT_PUBLIC_KEY: "placeholder",
-  RESEND_API_KEY: "re_placeholder",
 };
 
 function applyEnvPlaceholders(): void {

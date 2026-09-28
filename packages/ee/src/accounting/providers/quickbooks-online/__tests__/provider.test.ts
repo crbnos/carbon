@@ -72,6 +72,50 @@ function requestInit(callIndex: number): RequestInit | undefined {
 }
 
 describe("QboProvider base URL", () => {
+  it("sends the caller's stable requestid on charge creates", async () => {
+    fetchMock.mockResolvedValueOnce(
+      jsonResponse({ Purchase: { Id: "purchase-1", SyncToken: "0" } })
+    );
+    const { provider } = makeProvider();
+    await provider.createPurchase(
+      { PaymentType: "CreditCard", AccountRef: { value: "card" }, Line: [] },
+      "stable-charge-request"
+    );
+    expect(requestUrl(0)).toContain("requestid=stable-charge-request");
+  });
+
+  it("deletes a purchase with its current SyncToken and validates the deletion response", async () => {
+    fetchMock.mockResolvedValueOnce(
+      jsonResponse({ Purchase: { Id: "purchase-1", SyncToken: "7" } })
+    );
+    fetchMock.mockResolvedValueOnce(
+      jsonResponse({ Purchase: { Id: "purchase-1", status: "Deleted" } })
+    );
+    const { provider } = makeProvider();
+    expect(provider.deletePurchase).toBeTypeOf("function");
+    await provider.deletePurchase("purchase-1");
+    expect(requestUrl(1)).toContain("/purchase?operation=delete");
+    expect(JSON.parse(String(requestInit(1)?.body))).toEqual({
+      Id: "purchase-1",
+      SyncToken: "7"
+    });
+  });
+
+  it.each([
+    404, 503
+  ])("does not treat an unreadable purchase (%s) as a successful delete", async (status) => {
+    fetchMock.mockResolvedValueOnce(
+      jsonResponse(
+        { Fault: { Error: [{ code: "10000", Message: "Unavailable" }] } },
+        status
+      )
+    );
+    const { provider } = makeProvider();
+    expect(provider.deletePurchase).toBeTypeOf("function");
+    await expect(provider.deletePurchase("purchase-1")).rejects.toThrow();
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
   it("targets the production host by default, under /v3/company/{realmId} with the pinned minorversion", async () => {
     fetchMock.mockResolvedValueOnce(
       jsonResponse({ QueryResponse: { Account: [] } })

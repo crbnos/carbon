@@ -1,15 +1,13 @@
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
-import {
-  MODEL_RAW_KEEP_MAX_BYTES,
-  modelPathOptimizeFormat
-} from "@carbon/utils";
+import { TEMP_STAGING_BUCKET } from "@carbon/files";
+import { modelPathOptimizeFormat } from "@carbon/files/cad";
+import { MODEL_RAW_KEEP_MAX_BYTES } from "@carbon/utils";
 import { inngest } from "../../client";
 import {
   ASSEMBLER_CONCURRENCY,
   assemblerEnabled,
   copyRawToDurable,
   internalizeStorageUrl,
-  RAW_STAGING_BUCKET,
   resolveModelSourceBucket,
   runAssemblerJob,
   signSourceUrl
@@ -91,7 +89,7 @@ export const modelCompactFunction = inngest.createFunction(
 
     // Already durable (in `private`) or gone — nothing to relocate. `private`
     // rows also cover legacy pre-assembler uploads that already live there.
-    if (model.sourceBucket !== RAW_STAGING_BUCKET) {
+    if (model.sourceBucket !== TEMP_STAGING_BUCKET) {
       logger.info("model compact skipped — raw not in staging", {
         modelUploadId,
         sourceBucket: model.sourceBucket
@@ -165,7 +163,7 @@ export const modelCompactFunction = inngest.createFunction(
         const client = getCarbonServiceRole();
         const signedUrl = await signSourceUrl(
           client,
-          RAW_STAGING_BUCKET,
+          TEMP_STAGING_BUCKET,
           model.modelPath,
           SIGNED_URL_EXPIRY
         );
@@ -180,7 +178,7 @@ export const modelCompactFunction = inngest.createFunction(
       mintUploadUrls: async () => {
         const client = getCarbonServiceRole();
         const upload = await client.storage
-          .from(RAW_STAGING_BUCKET)
+          .from(TEMP_STAGING_BUCKET)
           .createSignedUploadUrl(compactPath, { upsert: true });
         const urls: Record<string, string> = {};
         if (upload.data)

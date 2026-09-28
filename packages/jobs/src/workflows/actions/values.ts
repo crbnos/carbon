@@ -1,4 +1,4 @@
-import type { RuntimeValue } from "@carbon/workflows";
+import type { RuntimeValue } from "@carbon/ee/workflows";
 
 /** A RuntimeValue as the plain value a column or a service function expects.
  * Shared so the create and update executors convert identically. */

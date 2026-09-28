@@ -30,7 +30,8 @@ export const magicLinkValidator = z.object({
     .min(1, { message: "Email is required" })
     .email("Must be a valid email"),
   redirectTo: zfd.text(z.string().optional()),
-  turnstileToken: zfd.text(z.string().optional())
+  // The Turnstile response, when Turnstile is the bot check (see botProtection)
+  botToken: zfd.text(z.string().optional())
 });
 
 export const passwordLoginValidator = z.object({
@@ -39,8 +40,7 @@ export const passwordLoginValidator = z.object({
     .min(1, { message: "Email is required" })
     .email("Must be a valid email"),
   password: z.string().min(6, { message: "Password is too short" }),
-  redirectTo: zfd.text(z.string().optional()),
-  turnstileToken: zfd.text(z.string().optional())
+  redirectTo: zfd.text(z.string().optional())
 });
 
 export const resetPasswordValidator = z.object({

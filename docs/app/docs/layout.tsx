@@ -80,6 +80,7 @@ const REFERENCE_GROUPS: { label: string; slugs: string[] }[] = [
       "work-centers",
       "maintenance",
       "mes",
+      "assembly-instructions",
     ],
   },
   {

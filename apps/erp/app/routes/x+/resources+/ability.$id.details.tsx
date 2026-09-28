@@ -8,7 +8,7 @@ import { useRouteData } from "~/hooks";
 import type { Ability } from "~/modules/resources";
 import {
   AbilityForm,
-  abilityValidator,
+  abilityRecertifyValidator,
   updateAbility
 } from "~/modules/resources";
 import { path } from "~/utils/path";
@@ -23,16 +23,17 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (!id) throw notFound("Invalid ability id");
 
   const formData = await request.formData();
-  const validation = await validator(abilityValidator).validate(formData);
+  const validation = await validator(abilityRecertifyValidator).validate(
+    formData
+  );
 
   if (validation.error) {
     return validationError(validation.error);
   }
 
-  const { name, recertifyEveryDays } = validation.data;
+  const { recertifyEveryDays } = validation.data;
 
   const update = await updateAbility(client, id, {
-    name,
     recertifyEveryDays: recertifyEveryDays ?? null
   });
   if (update.error) {

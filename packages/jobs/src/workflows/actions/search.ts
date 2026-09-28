@@ -10,7 +10,7 @@ import {
   type SearchCriterion,
   type SearchOutcome,
   WORKFLOW_ENTITIES
-} from "@carbon/workflows";
+} from "@carbon/ee/workflows";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 /** The scalar a criterion filters by; a list has no single value to compare. */

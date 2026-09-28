@@ -8,18 +8,21 @@ import {
 import { useCompanyTimeZone, useLocationTimeZone } from "./useCompanyTimeZone";
 import { useDateFormatter } from "./useDateFormatter";
 import { useIdle } from "./useIdle";
-import { useRealtime } from "./useRealtime";
+import { useImageUpload } from "./useImageUpload";
+import { useRealtime, useRealtimeRevalidator } from "./useRealtime";
 import { useUser } from "./useUser";
 
 export {
   useCompanyTimeZone,
   useDateFormatter,
   useIdle,
+  useImageUpload,
   useLocationTimeZone,
   useNanoStore,
   useOptimisticLocation,
   usePrinting,
   useRealtime,
+  useRealtimeRevalidator,
   useRouteData,
   useUrlParams,
   useUser

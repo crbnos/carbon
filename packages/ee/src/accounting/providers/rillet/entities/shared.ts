@@ -76,6 +76,54 @@ export function carbonCompanyExternalReference(
 }
 
 /**
+ * The Carbon entity id a Rillet record was pushed FROM, read back off its
+ * `external_references`. Only trusted when the record also carries this
+ * company's `carbon-company` reference: several Carbon instances can write
+ * into one Rillet organization, and entity ids are only unique within one
+ * database, so an unqualified `carbon` reference could name a DIFFERENT
+ * instance's customer whose id happens to collide. A reference with no
+ * company tag at all is from before that tag shipped and is accepted.
+ */
+export function readCarbonExternalReference(
+  references: Rillet.ExternalReference[] | undefined,
+  companyId: string
+): string | null {
+  if (!references?.length) return null;
+
+  const companyRefs = references.filter(
+    (reference) => reference.type === RILLET_CARBON_COMPANY_REFERENCE_TYPE
+  );
+  if (companyRefs.length > 0 && !companyRefs.some((r) => r.id === companyId)) {
+    return null;
+  }
+
+  const carbonRef = references.find(
+    (reference) => reference.type === RILLET_CARBON_REFERENCE_TYPE
+  );
+  return carbonRef?.id ?? null;
+}
+
+/**
+ * Rillet carries one flat contact `name`, Carbon a first/last pair. Split
+ * on the LAST space so "Acme Industrial Supply" keeps everything but the
+ * final word in `firstName` rather than inventing a middle name; a
+ * single-word name leaves `lastName` empty. Both apps render `fullName`
+ * (a generated column), so the join is what the user actually sees.
+ */
+export function splitRilletContactName(name: string): {
+  firstName: string;
+  lastName: string;
+} {
+  const trimmed = name.trim().replace(/\s+/g, " ");
+  const lastSpace = trimmed.lastIndexOf(" ");
+  if (lastSpace === -1) return { firstName: trimmed, lastName: "" };
+  return {
+    firstName: trimmed.slice(0, lastSpace),
+    lastName: trimmed.slice(lastSpace + 1)
+  };
+}
+
+/**
  * Rillet's built-in "custom source" external-reference type. When a Rillet org
  * has Revenue Recognition enabled, rev-rec validation rejects an AR invoice
  * unless the invoice + items carry a reference from a KNOWN integration —
@@ -122,9 +170,6 @@ export async function writeDroppingUnregisteredReferences<
     ) {
       throw error;
     }
-    console.warn(
-      `[Rillet] external-reference type slugs are not registered for this organization (Rillet Settings → External References: add "${RILLET_CARBON_REFERENCE_TYPE}" and "${RILLET_CARBON_COMPANY_REFERENCE_TYPE}"); retrying without references`
-    );
     const { external_references: _dropped, ...stripped } = payload;
     return await write(stripped as TPayload);
   }
@@ -311,16 +356,19 @@ export async function loadCurrencyDecimalPlaces(
 export type RilletTimestamped = { updated_at?: string };
 
 /**
- * Base class for the push-only Rillet master-data syncers (customer,
- * vendor, item).
+ * Base class for the Rillet master-data syncers (customer, vendor, item).
  *
  * Reimplements the push workflow with the SAME behavior as
  * BaseEntitySyncer.pushToAccounting (mapping check, shouldSync gate,
  * lastSyncedAt fast bailout, map → upsert → link) so that a thrown
  * JournalEntrySyncError reaches the caller as the structured failure
  * object on `SyncResult.error` — the base catch flattens every throw to a
- * string, which would lose errorCode/warning/metadata. Also centralizes
- * the push-only pull rejections (v1 forces push for these entities).
+ * string, which would lose errorCode/warning/metadata.
+ *
+ * The PULL half is inherited from BaseEntitySyncer, so a subclass that
+ * implements `mapToLocal` + `upsertLocal` is pullable (customer and vendor,
+ * for the Rillet contact import). Subclasses with no inbound mapping extend
+ * `RilletPushOnlyEntitySyncer` below instead.
  */
 export abstract class RilletEntitySyncer<
   TLocal,
@@ -330,9 +378,6 @@ export abstract class RilletEntitySyncer<
   protected get rilletProvider(): RilletProvider {
     return this.provider as RilletProvider;
   }
-
-  /** Plural label used in push-only rejection messages, e.g. "Customers". */
-  protected abstract get pushOnlyEntityLabel(): string;
 
   protected getRemoteUpdatedAt(remote: TRemote): Date | null {
     return parseRilletDate(remote.updated_at);
@@ -432,14 +477,6 @@ export abstract class RilletEntitySyncer<
         await this.linkEntities(tx, entityId, remoteId);
       });
 
-      console.log("[SyncLog]", {
-        direction: "PUSH",
-        entity: this.entityType,
-        localId: entityId,
-        remoteId,
-        status: "success"
-      });
-
       return {
         status: "success",
         action: existingMapping ? "updated" : "created",
@@ -448,10 +485,6 @@ export abstract class RilletEntitySyncer<
       };
     } catch (err) {
       if (err instanceof JournalEntrySyncError) {
-        console.error(`[${this.constructor.name}] structured push failure`, {
-          entityId,
-          ...err.failure
-        });
         return {
           status: "error",
           action: "none",
@@ -459,11 +492,6 @@ export abstract class RilletEntitySyncer<
           error: err.failure
         };
       }
-
-      console.error(`[${this.constructor.name}] push failed`, {
-        entityId,
-        err
-      });
       return {
         status: "error",
         action: "none",
@@ -494,6 +522,22 @@ export abstract class RilletEntitySyncer<
       skippedCount: results.filter((r) => r.status === "skipped").length
     };
   }
+}
+
+/**
+ * Base class for the Rillet syncers with no inbound mapping: Rillet is a
+ * downstream mirror for them, so a pull is refused rather than silently
+ * doing nothing. Splitting this out of `RilletEntitySyncer` is what lets
+ * customer and vendor keep the base pull workflow for the contact import
+ * while item and every transaction syncer stay push-only.
+ */
+export abstract class RilletPushOnlyEntitySyncer<
+  TLocal,
+  TRemote extends RilletTimestamped,
+  TOmit extends string | symbol | number
+> extends RilletEntitySyncer<TLocal, TRemote, TOmit> {
+  /** Plural label used in push-only rejection messages, e.g. "Items". */
+  protected abstract get pushOnlyEntityLabel(): string;
 
   // =================================================================
   // PULL WORKFLOW - Not supported (v1 forces push for these entities)
@@ -550,12 +594,20 @@ export abstract class RilletTransactionSyncer<
   TLocal,
   TRemote extends RilletTimestamped,
   TOmit extends string | symbol | number
-> extends RilletEntitySyncer<TLocal, TRemote, TOmit> {
+> extends RilletPushOnlyEntitySyncer<TLocal, TRemote, TOmit> {
   protected isVoided(_local: TLocal): boolean {
     return false;
   }
 
-  protected async deleteRemote(_remoteId: string): Promise<void> {
+  /**
+   * Delete the remote document on a local void. `metadata` is the push
+   * mapping's metadata — a syncer that writes one Carbon entity to more than
+   * one Rillet object kind (bills vs reimbursements) reads the kind from it.
+   */
+  protected async deleteRemote(
+    _remoteId: string,
+    _metadata?: Record<string, unknown>
+  ): Promise<void> {
     throw new Error("This Rillet transaction does not support native voids");
   }
 
@@ -805,7 +857,10 @@ export abstract class RilletTransactionSyncer<
 
       if (existingMapping?.externalId && this.isVoided(localEntity)) {
         if (existingMapping.metadata?.voided !== true) {
-          await this.deleteRemote(existingMapping.externalId);
+          await this.deleteRemote(
+            existingMapping.externalId,
+            existingMapping.metadata ?? undefined
+          );
           await withTriggersDisabled(this.database, async (tx) => {
             await createMappingService(tx, this.companyId).link(
               this.entityType,
@@ -870,10 +925,6 @@ export abstract class RilletTransactionSyncer<
       };
     } catch (err) {
       if (err instanceof JournalEntrySyncError) {
-        console.error(`[${this.constructor.name}] pre-flight failure`, {
-          entityId,
-          ...err.failure
-        });
         return {
           status: "error",
           action: "none",
@@ -881,11 +932,6 @@ export abstract class RilletTransactionSyncer<
           error: err.failure
         };
       }
-
-      console.error(`[${this.constructor.name}] push failed`, {
-        entityId,
-        err
-      });
       return {
         status: "error",
         action: "none",

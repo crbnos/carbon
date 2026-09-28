@@ -1,6 +1,7 @@
 import { ProviderID } from "../../core/models";
 import { type SyncerRegistry, SyncFactory } from "../../core/sync";
 import { BillSyncer } from "./entities/bill";
+import { XeroChargeSyncer } from "./entities/charge";
 import { ContactSyncer } from "./entities/contact";
 import { InventoryAdjustmentSyncer } from "./entities/inventory-adjustment";
 import { SalesInvoiceSyncer } from "./entities/invoice";
@@ -11,6 +12,7 @@ import { PurchaseOrderSyncer } from "./entities/purchase-order";
 import { SalesOrderSyncer } from "./entities/sales-order";
 
 export * from "./entities/bill";
+export * from "./entities/charge";
 export * from "./entities/contact";
 export * from "./entities/invoice";
 export * from "./entities/item";
@@ -44,6 +46,9 @@ export const xeroSyncerRegistry: SyncerRegistry = {
   purchaseOrder: PurchaseOrderSyncer,
   salesOrder: SalesOrderSyncer,
   inventoryAdjustment: InventoryAdjustmentSyncer,
+  // Card charges (Ramp card spend) as Xero spend/receive-money bank
+  // transactions on the card account; their journals are DOC_BACKED-excluded
+  charge: XeroChargeSyncer,
 
   // Posting sync (push-only journal entries -> Xero Manual Journals)
   journalEntry: JournalEntrySyncer,

@@ -33,7 +33,8 @@ export type ArchitectureDiagramKey =
   | "runs"
   | "triage"
   | "buy-hosted"
-  | "buy-selfhosted";
+  | "buy-selfhosted"
+  | "plans";
 
 /* Part 1. The spine only: people, the two apps, Supabase over Postgres, and the event
  * loop back into the ERP. Redis and the Assembler are deliberately absent — they are
@@ -458,31 +459,108 @@ function BuyHosted() {
 }
 
 /* The mirror image: when the customer runs it. Community is free under the AGPL; the
- * commercial license is what lifts the copyleft and unlocks Enterprise, and it splits
- * into a path for a company running Carbon and a path for a partner selling it. */
+ * commercial license is what unlocks the Business features and lets you keep your changes
+ * private, and it splits into a path for a company running Carbon and a path for a partner
+ * selling it. */
 function BuySelfHosted() {
   return (
     <svg viewBox="0 0 740 428" className="w-full h-auto" role="img" aria-label="How to buy a self-hosted Carbon license">
       <ArrowDefs />
 
-      <Node x={40} y={16} w={290} h={54} label="Community Edition" sub="AGPLv3 · free" tone="svc" />
-      <Node x={410} y={16} w={290} h={54} label="Commercial License" sub="unlocks Enterprise" tone="svc" />
+      <Node x={40} y={16} w={290} h={54} label="Community Edition" sub="CE · AGPLv3 · free" tone="svc" />
+      <Node x={410} y={16} w={290} h={54} label="Commercial License" sub="EE · unlocks Business features" tone="svc" />
 
       <Edge pts={[[185, 70], [185, 100]]} />
-      <Node x={45} y={100} w={280} h={48} label="Unmodified, your own use" sub="no license needed" />
+      <Node x={45} y={100} w={280} h={48} label="Your own use, modified or not" sub="no license needed" />
 
       <Edge pts={[[555, 70], [555, 180]]} />
 
       <Boundary x={16} y={180} w={708} h={232} label="Inside the Commercial License">
         <Eyebrow x={40} y={210} label="For businesses" />
-        <Node x={40} y={220} w={326} h={54} label="Subscription (SCLA)" sub="per user, per year" />
-        <Node x={390} y={220} w={306} h={54} label="Perpetual (PCLA)" sub="one-time · own it" />
+        <Node x={40} y={220} w={656} h={54} label="Subscription (SCLA)" sub="per user, per year" />
 
         <Eyebrow x={40} y={306} label="For partners" />
         <Node x={40} y={316} w={206} h={54} label="Reseller" sub="under Carbon's name" />
         <Node x={270} y={316} w={196} h={54} label="White label" sub="their brand" />
         <Node x={490} y={316} w={206} h={54} label="OEM embedded" sub="ships in their machines" />
       </Boundary>
+    </svg>
+  );
+}
+
+/* The Cloud plans as cumulative bars, not a flow. An earlier version drew an arrow from
+ * each plan down into the code rows; arrows read as "becomes", so three of them landing on
+ * Community Edition said every plan turns into CE, and the EE row had nothing pointing at
+ * it at all. There is no flow here to draw. The relationship is inclusion, so the columns
+ * ARE the boundaries and a plan's row simply extends across the ones it includes.
+ *
+ * The third column is NOT a services column, and naming it one was the second thing to go
+ * wrong here: read at a glance, "Services" says Enterprise is Business plus implementation
+ * help, when it is really Business plus capabilities that exist nowhere else (SSO is
+ * packages/ee code but gates on CarbonEdition rather than the plan, so Business never
+ * reaches it; BYOC, GovCloud/ITAR and self-hosting are deployment options, not code at
+ * all) AND the people to stand them up. The amber tone marks it as the one column that is
+ * not a code boundary.
+ *
+ * Columns are equal at 208, which is what keeps the three bars reading as categories
+ * rather than magnitudes. Two things pay for that, and both are deliberate: the third
+ * detail line wraps to two lines (it is 210 units, two over), and its bar label is
+ * abbreviated to "Add'l" (164 units, versus 194 spelled out, which left barely seven units
+ * of padding a side and looked cramped). The headers and the detail text keep "Additional"
+ * spelled out — only the bar is abbreviated.
+ *
+ * Widths are measured, not guessed, and the measurement has to be taken IN THE RENDERED
+ * PAGE: getBBox in a standalone SVG returned widths ~28% wider than the real figure,
+ * because the page's font never loaded there, and every column would have been sized
+ * wrong. Live user units: detail lines 163 / 155 / 130 + 79, bar label 164, headers
+ * 121 / 114 / 165. Re-measure in the page before lengthening any of these strings.
+ *
+ * Prices stay on the pricing page; a second copy here would drift the day one changes. */
+function Plans() {
+  /* Column x/width drive both the header text and every bar, so a bar can never drift
+   * out of line with the header naming it. */
+  const CE = { x: 92, w: 208 };
+  const EE = { x: 308, w: 208 };
+  const EXTRA = { x: 524, w: 208 };
+  const ROWS = [
+    { label: "Starter", y: 84, segments: [CE] },
+    { label: "Business", y: 138, segments: [CE, EE] },
+    { label: "Enterprise", y: 192, segments: [CE, EE, EXTRA] },
+  ];
+  const TONES = ["svc", "app", "async"] as const;
+  const BARS = ["CE", "EE", "Add'l features and services"];
+  const HEADERS = [
+    { col: CE, name: "Community Edition (CE)", detail: ["everything outside packages/ee · AGPLv3"] },
+    { col: EE, name: "Enterprise Edition (EE)", detail: ["packages/ee and .ee. files · Commercial"] },
+    { col: EXTRA, name: "Additional Features and Services", detail: ["Additional Features, Compliance,", "and Implementation"] },
+  ];
+  return (
+    <svg viewBox="0 0 740 252" className="w-full h-auto" role="img" aria-label="What each Carbon Cloud plan includes: Starter runs Community Edition code only, Business and Enterprise add Enterprise Edition code, and Enterprise adds features and services available nowhere else">
+      <Eyebrow x={0} y={14} label="Carbon Cloud, pick one" />
+
+      {HEADERS.map(({ col, name, detail }) => (
+        <g key={name}>
+          <text x={col.x + col.w / 2} y={44} textAnchor="middle" fontSize="11.5" fontWeight={600} fill={INK}>
+            {name}
+          </text>
+          {detail.map((line, i) => (
+            <text key={line} x={col.x + col.w / 2} y={58 + i * 12} textAnchor="middle" fontSize="9.5" fill={INK_45}>
+              {line}
+            </text>
+          ))}
+        </g>
+      ))}
+
+      {ROWS.map(({ label, y, segments }) => (
+        <g key={label}>
+          <text x={84} y={y + 28} textAnchor="end" fontSize="14" fontWeight={545} fill={INK}>
+            {label}
+          </text>
+          {segments.map((col, i) => (
+            <Node key={col.x} x={col.x} y={y} w={col.w} h={44} label={BARS[i]} tone={TONES[i]} />
+          ))}
+        </g>
+      ))}
     </svg>
   );
 }
@@ -497,4 +575,5 @@ export const architectureDiagrams: Record<ArchitectureDiagramKey, () => ReactEle
   triage: Triage,
   "buy-hosted": BuyHosted,
   "buy-selfhosted": BuySelfHosted,
+  plans: Plans,
 };

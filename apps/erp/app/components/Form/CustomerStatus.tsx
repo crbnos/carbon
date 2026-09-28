@@ -17,7 +17,7 @@ import { useEmptyState } from "./emptyStates";
 type CustomerStatusSelectProps = Omit<ComboboxProps, "options">;
 
 const CustomerStatus = (props: CustomerStatusSelectProps) => {
-  const { i18n, t } = useLingui();
+  const { t } = useLingui();
   const newCustomerStatusModal = useDisclosure();
   const [created, setCreated] = useState<string>("");
   const triggerRef = useRef<HTMLButtonElement>(null);
@@ -35,7 +35,7 @@ const CustomerStatus = (props: CustomerStatusSelectProps) => {
         options={
           options.map((o) => ({
             value: o.value,
-            label: <Enumerable value={i18n._(o.label)} />
+            label: <Enumerable value={o.label} />
           })) ?? []
         }
         emptyMessage={emptyMessage}
@@ -67,7 +67,7 @@ CustomerStatus.displayName = "CustomerStatus";
 
 export default CustomerStatus;
 
-export const useCustomerStatuses = () => {
+export const useCustomerStatuses = (enabled = true) => {
   const customerStatusFetcher =
     useFetcher<Awaited<ReturnType<typeof getCustomerStatusesList>>>();
 
@@ -78,7 +78,7 @@ export const useCustomerStatuses = () => {
   const hasCustomerData = sharedCustomerData?.customerStatuses;
 
   useMount(() => {
-    if (!hasCustomerData)
+    if (enabled && !hasCustomerData)
       customerStatusFetcher.load(path.to.api.customerStatuses);
   });
 

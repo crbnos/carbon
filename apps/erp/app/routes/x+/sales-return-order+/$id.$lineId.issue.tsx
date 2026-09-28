@@ -2,6 +2,7 @@ import { assertIsPost, error, notFound, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
+import { lockIssueDispositions } from "@carbon/database/quality";
 import { datetime } from "@carbon/utils";
 import { FunctionRegion } from "@supabase/supabase-js";
 import type { ActionFunctionArgs } from "react-router";
@@ -236,34 +237,6 @@ export async function action({ request, params }: ActionFunctionArgs) {
     return failWith(err, message);
   };
 
-  // insertIssue seeded a nonConformanceItem row with default qty and Pending
-  // disposition. Overwrite with the line's received quantity and the requested
-  // disposition so MRB starts from the escalation's context.
-  const itemUpdate = await serviceRole
-    .from("nonConformanceItem")
-    .update({
-      quantity: quantityReceived,
-      disposition,
-      updatedBy: userId,
-      updatedAt: datetime.timestamp()
-    })
-    .eq("nonConformanceId", ncrId)
-    .eq("itemId", line.data.itemId);
-  if (itemUpdate.error) {
-    throw await failWithRollback(
-      itemUpdate.error,
-      "Failed to set the Issue's item"
-    );
-  }
-
-  const itemRow = await serviceRole
-    .from("nonConformanceItem")
-    .select("id")
-    .eq("nonConformanceId", ncrId)
-    .eq("itemId", line.data.itemId)
-    .single();
-  const nonConformanceItemId = itemRow.data?.id ?? null;
-
   // Link the RMA line so the issue explorer can surface the origin and
   // deep-link back to the return order.
   const lineLink = await serviceRole
@@ -283,8 +256,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  // Link the line's returned entities to the NCR, and seed the per-row entity
-  // links on the item row so MRB can split / reassign specific entities.
+  // Link the line's returned entities to the NCR.
+  let entityRows: { id: string; quantity: number }[] = [];
   if (entityIds.length > 0) {
     const entityLinks = await serviceRole
       .from("nonConformanceTrackedEntity")
@@ -303,32 +276,70 @@ export async function action({ request, params }: ActionFunctionArgs) {
       );
     }
 
-    if (nonConformanceItemId) {
-      const entityQuantities = await serviceRole
-        .from("trackedEntity")
-        .select("id, quantity")
-        .in("id", entityIds)
-        .eq("companyId", companyId);
-      const rows = (entityQuantities.data ?? []).map((entity) => ({
-        nonConformanceItemId,
-        nonConformanceId: ncrId,
-        trackedEntityId: entity.id,
-        quantity: Number(entity.quantity ?? 1),
-        companyId,
-        createdBy: userId
-      }));
-      if (rows.length > 0) {
-        const itemEntityLinks = await serviceRole
-          .from("nonConformanceItemTrackedEntity")
-          .insert(rows);
-        if (itemEntityLinks.error) {
-          throw await failWithRollback(
-            itemEntityLinks.error,
-            "Failed to link the returned entities to the Issue's item"
-          );
-        }
-      }
+    const entityQuantities = await serviceRole
+      .from("trackedEntity")
+      .select("id, quantity")
+      .in("id", entityIds)
+      .eq("companyId", companyId);
+    if (entityQuantities.error) {
+      throw await failWithRollback(
+        entityQuantities.error,
+        "Failed to read the returned entities for the Issue"
+      );
     }
+    entityRows = (entityQuantities.data ?? []).map((entity) => ({
+      id: entity.id,
+      quantity: Number(entity.quantity ?? 1)
+    }));
+  }
+
+  // insertIssue seeded a nonConformanceItem row with default qty and Pending
+  // disposition. Overwrite with the line's received quantity and the requested
+  // disposition so MRB starts from the escalation's context, and seed the
+  // per-row entity links so MRB can split / reassign specific entities. Both
+  // run under the issue lock shared by every disposition writer, so a quantity
+  // edit cannot land between the quantity and the links.
+  try {
+    await getDatabaseClient()
+      .transaction()
+      .execute(async (trx) => {
+        await lockIssueDispositions(trx, {
+          nonConformanceId: ncrId,
+          companyId
+        });
+
+        const itemRow = await trx
+          .updateTable("nonConformanceItem")
+          .set({
+            quantity: quantityReceived,
+            disposition,
+            updatedBy: userId,
+            updatedAt: datetime.timestamp()
+          })
+          .where("nonConformanceId", "=", ncrId)
+          .where("itemId", "=", line.data.itemId)
+          .where("companyId", "=", companyId)
+          .returning(["id"])
+          .executeTakeFirst();
+
+        if (itemRow && entityRows.length > 0) {
+          await trx
+            .insertInto("nonConformanceItemTrackedEntity")
+            .values(
+              entityRows.map((entity) => ({
+                nonConformanceItemId: itemRow.id,
+                nonConformanceId: ncrId,
+                trackedEntityId: entity.id,
+                quantity: entity.quantity,
+                companyId,
+                createdBy: userId
+              }))
+            )
+            .execute();
+        }
+      });
+  } catch (err) {
+    throw await failWithRollback(err, "Failed to set the Issue's item");
   }
 
   const tasks = await serviceRole.functions.invoke("create", {

@@ -1,4 +1,3 @@
-import { useCarbon } from "@carbon/auth";
 import { DateTimePicker, Select, ValidatedForm } from "@carbon/form";
 import type { JSONContent } from "@carbon/react";
 import {
@@ -9,12 +8,10 @@ import {
   CardHeader,
   CardTitle,
   Label,
-  toast,
   VStack
 } from "@carbon/react";
 import { Editor } from "@carbon/react/Editor";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { nanoid } from "nanoid";
 import { useState } from "react";
 import { BsExclamationSquareFill } from "react-icons/bs";
 import type { z } from "zod";
@@ -28,8 +25,8 @@ import {
   Submit,
   WorkCenter
 } from "~/components/Form";
-import { usePermissions, useRouteData, useUser } from "~/hooks";
-import { getPrivateUrl, path } from "~/utils/path";
+import { useImageUpload, usePermissions, useRouteData } from "~/hooks";
+import { path } from "~/utils/path";
 import {
   isMaintenanceDispatchLocked,
   maintenanceDispatchPriority,
@@ -69,10 +66,6 @@ const MaintenanceDispatchForm = ({
 }: MaintenanceDispatchFormProps) => {
   const { t } = useLingui();
   const permissions = usePermissions();
-  const {
-    company: { id: companyId }
-  } = useUser();
-  const { carbon } = useCarbon();
 
   const isEditing = initialValues.id !== undefined;
 
@@ -98,23 +91,7 @@ const MaintenanceDispatchForm = ({
   const showFailureModes =
     oeeImpactValue === "Down" || oeeImpactValue === "Impact";
 
-  const onUploadImage = async (file: File) => {
-    const fileType = file.name.split(".").pop();
-    const fileName = `${companyId}/maintenance/${nanoid()}.${fileType}`;
-
-    const result = await carbon?.storage.from("private").upload(fileName, file);
-
-    if (result?.error) {
-      toast.error("Failed to upload image");
-      throw new Error(result.error.message);
-    }
-
-    if (!result?.data) {
-      throw new Error("Failed to upload image");
-    }
-
-    return getPrivateUrl(result.data.path);
-  };
+  const onUploadImage = useImageUpload("maintenance");
 
   return (
     <Card>

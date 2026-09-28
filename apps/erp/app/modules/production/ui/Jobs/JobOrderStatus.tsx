@@ -11,6 +11,7 @@ import {
 import { AlmostDoneIcon } from "~/assets/icons/AlmostDoneIcon";
 import { InProgressStatusIcon } from "~/assets/icons/InProgressStatusIcon";
 import { TodoStatusIcon } from "~/assets/icons/TodoStatusIcon";
+import { useItems } from "~/stores";
 import { getJobOrderStatusCategory } from "../../production.models";
 import type { ItemOrderStatus } from "../../types";
 
@@ -31,6 +32,11 @@ export function JobOrderStatusBadge({
   );
 
   const category = getJobOrderStatusCategory(status);
+  const [items] = useItems();
+  const substitute = status?.substituteItemId
+    ? (items.find((i) => i.id === status.substituteItemId)
+        ?.readableIdWithRevision ?? status.substituteItemId)
+    : null;
 
   switch (category) {
     case "issued":
@@ -41,12 +47,22 @@ export function JobOrderStatusBadge({
     case "inStock":
       return badge(
         <LuCircleCheck className="text-emerald-600" />,
-        <Trans>In stock</Trans>
+        substitute ? (
+          <Trans>In stock, the remainder as {substitute}</Trans>
+        ) : (
+          <Trans>In stock</Trans>
+        )
       );
     case "needsOrder":
       return badge(
         <LuCircleAlert className="text-red-500" />,
-        <Trans>Order {status?.shortfall} for this job</Trans>
+        substitute ? (
+          <Trans>
+            Order {status?.shortfall} × {substitute} for this job
+          </Trans>
+        ) : (
+          <Trans>Order {status?.shortfall} for this job</Trans>
+        )
       );
     case "needsJob":
       return badge(

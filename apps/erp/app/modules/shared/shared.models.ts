@@ -1,74 +1,6 @@
-import type { Database } from "@carbon/database";
 import { textToTiptap } from "@carbon/utils";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
-
-export const approvalDecisionValidator = z.object({
-  id: zfd.text(z.string().optional()),
-  decision: z.enum(["Approved", "Rejected"], {
-    error: "Decision is required"
-  }),
-  decisionNotes: zfd.text(z.string().optional())
-});
-
-export const approvalDocumentType = [
-  "purchaseOrder",
-  "qualityDocument",
-  "supplier"
-] as const;
-
-export type ApprovalDocumentType =
-  Database["public"]["Enums"]["approvalDocumentType"];
-
-export const approvalDocumentTypeLabel: Record<ApprovalDocumentType, string> = {
-  purchaseOrder: "Purchase Order",
-  qualityDocument: "Quality Document",
-  supplier: "Supplier"
-};
-
-export const approvalDocumentTypesWithAmounts: ApprovalDocumentType[] = [
-  "purchaseOrder"
-] as const;
-
-export const approvalFiltersValidator = z.object({
-  documentType: z.enum(approvalDocumentType, {
-    error: "Document type is required"
-  }),
-  status: zfd.text(z.string().optional()),
-  dateFrom: zfd.text(z.string().optional()),
-  dateTo: zfd.text(z.string().optional())
-});
-
-export const approvalRequestValidator = z.object({
-  id: zfd.text(z.string().optional()),
-  documentType: z.enum(approvalDocumentType, {
-    error: "Document type is required"
-  }),
-  documentId: zfd.text(
-    z.string().min(1, { message: "Document ID is required" })
-  ),
-  approverGroupIds: zfd.repeatableOfType(z.string()).optional()
-});
-
-export const approvalRuleValidator = z.object({
-  id: zfd.text(z.string().optional()),
-  documentType: z.enum(approvalDocumentType, {
-    error: "Document type is required"
-  }),
-  approverGroupIds: z.array(
-    z.string().min(1, { message: "Invalid selection" })
-  ),
-  defaultApproverId: zfd.text(z.string().optional()),
-  lowerBoundAmount: zfd.numeric(z.number().gt(0).default(0)).optional(),
-  enabled: zfd.checkbox()
-});
-
-export const approvalStatusType = [
-  "Pending",
-  "Approved",
-  "Rejected",
-  "Cancelled"
-] as const;
 
 export const chartIntervals = [
   { key: "week", label: "Week" },
@@ -78,19 +10,7 @@ export const chartIntervals = [
   { key: "custom", label: "Custom" }
 ];
 
-export const documentTypes = [
-  "Archive",
-  "Document",
-  "Presentation",
-  "PDF",
-  "Spreadsheet",
-  "Text",
-  "Image",
-  "Video",
-  "Audio",
-  "Model",
-  "Other"
-] as const;
+export { documentTypes } from "@carbon/files";
 
 export const incoterms = [
   "EXW",
@@ -288,6 +208,58 @@ export const oAuthCallbackSchema = z.object({
   state: z.string()
 });
 
+/**
+ * Coerces whatever a caller sent for a rich-text column into a tiptap document
+ * object. Accepts plain text, a JSON-encoded document (a form post), or the
+ * document itself (an MCP / API JSON body).
+ *
+ * Rich-text columns (`internalNotes`, `externalNotes`, step descriptions) are
+ * `json`, and they MUST hold an object. A JSON string scalar stored there is
+ * read back by supabase-js as a JS string; when the row is later copied through
+ * Kysely (quote → sales order, RFQ → quote, quote → revision, method copies)
+ * deno-postgres sends that string as raw text and Postgres rejects it with
+ * `invalid input syntax for type json`. The edge functions now serialise on
+ * their side too (`lib/json.ts`), but the write side must never store the
+ * scalar in the first place. Never drops content to `{}`.
+ *
+ * Returns `any`: the doc is consumed both as a DB Json value and as editor
+ * JSONContent, and a narrower type breaks one of the two call sites.
+ */
+export function toTiptapDoc(value: unknown): any {
+  if (typeof value === "string") {
+    let parsed: unknown = value;
+    try {
+      parsed = JSON.parse(value);
+    } catch {
+      // raw text, not JSON
+    }
+    if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+      return parsed;
+    }
+    // Anything else the caller typed is literal text — including text that
+    // happens to parse as JSON (`"quoted"`, `123`, `[1,2]`). Wrap the ORIGINAL
+    // value so no characters are lost to the parse.
+    return textToTiptap(value);
+  }
+  if (value && typeof value === "object" && !Array.isArray(value)) return value;
+  return textToTiptap(String(value));
+}
+
+/**
+ * Optional rich-text field: absent or empty leaves the column untouched,
+ * anything else is stored as a tiptap document via `toTiptapDoc`. Declared as
+ * `string | object` on the input side so the MCP manifest (which publishes the
+ * INPUT schema) tells a caller both shapes are accepted, instead of the bare
+ * `{}` a `z.any()` produced.
+ */
+export const optionalTiptapDoc = z
+  .union([z.string(), z.record(z.string(), z.unknown())])
+  .transform((value): any => (value === "" ? undefined : toTiptapDoc(value)))
+  // `.optional()` LAST so the inferred key is optional (`notes?:`) — placing it
+  // before the transform makes zod infer a required key and every caller that
+  // omits `notes` stops compiling.
+  .optional();
+
 export const operationStepValidator = z
   .object({
     id: zfd.text(z.string().optional()),
@@ -296,22 +268,7 @@ export const operationStepValidator = z
     description: z
       .string()
       .min(1, { message: "Description is required" })
-      // Returns `any`: the tiptap doc is consumed both as a DB Json value and as
-      // editor JSONContent, and a narrower type breaks one of the two call sites.
-      .transform((val): any => {
-        let parsed: unknown;
-        try {
-          parsed = JSON.parse(val);
-          // biome-ignore lint/correctness/noUnusedVariables: raw text is not JSON
-        } catch (e) {
-          parsed = val;
-        }
-        // Always store a tiptap doc object, never a scalar string (jsonb scalar
-        // strings break method copies) and never silently drop content to {}.
-        if (typeof parsed === "string") return textToTiptap(parsed);
-        if (parsed && typeof parsed === "object") return parsed;
-        return textToTiptap(String(val));
-      }),
+      .transform((val): any => toTiptapDoc(val)),
     type: z.enum(procedureStepType, {
       error: "Type is required"
     }),

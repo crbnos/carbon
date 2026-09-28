@@ -91,6 +91,26 @@ export const terms = {
     definition: msg`A Make to Order component that gets its own job and routing inside the parent's build.`,
     href: "/docs/reference/methods#kit-or-subassembly"
   },
+  "assembly-step-motion": {
+    term: msg`Motion`,
+    definition: msg`The path this step's components travel into place during playback; worked out from the model, or drawn by hand with Edit Path.`,
+    href: "/docs/reference/assembly-instructions#playback-settings"
+  },
+  "assembly-step-camera": {
+    term: msg`Camera`,
+    definition: msg`The view a step plays from; without a saved view the step frames its own components.`,
+    href: "/docs/reference/assembly-instructions#playback-settings"
+  },
+  "assembly-step-build-aside": {
+    term: msg`Build off to the side`,
+    definition: msg`Builds this step's components beside the model as a group, then carries the group in at a later join step.`,
+    href: "/docs/reference/assembly-instructions#building-a-group-off-to-the-side"
+  },
+  "assembly-step-hidden-components": {
+    term: msg`Hidden on this step`,
+    definition: msg`Components hidden only while this step plays, such as a fixture in the way; use the eye in the Components tab to hide one.`,
+    href: "/docs/reference/assembly-instructions#components-and-hidden-parts"
+  },
   kit: {
     term: msg`Kit`,
     definition: msg`A Make to Order component whose parts are issued together into the parent job — no separate build.`,
@@ -197,6 +217,10 @@ export const terms = {
     term: msg`Quote`,
     definition: msg`A priced sales quotation; Draft → Sent → Ordered, or ends Lost, Expired, or Cancelled.`,
     href: "/docs/reference/quotes"
+  },
+  "drop-shipment": {
+    term: msg`Drop shipment`,
+    definition: msg`A sales order shipped straight to a different customer and location than the ordering customer's header address; the shipment's destination overrides the header's.`
   },
   rfq: {
     term: msg`RFQ (request for quote)`,
@@ -2060,5 +2084,13 @@ export const terms = {
   "magic-link": {
     term: msg`Magic link`,
     definition: msg`Carbon's default passwordless sign-in: an emailed one-time link that signs you in when opened, with no password to remember or leak.`
+  },
+  iban: {
+    term: msg`IBAN`,
+    definition: msg`An International Bank Account Number: one string holding the country, bank, branch, and account, with two check digits. Because it already identifies the bank, countries that use it need no separate routing code.`
+  },
+  "swift-bic": {
+    term: msg`SWIFT / BIC`,
+    definition: msg`The code that identifies a bank internationally, 8 or 11 characters. A cross-border payment will not route without it, while a domestic transfer usually travels on the local routing code instead.`
   }
 } as const satisfies Record<string, GlossaryEntry>;

@@ -8,6 +8,7 @@ import {
   setPickingListLineTrackedEntity
 } from "~/modules/inventory";
 import { getCompanySettings } from "~/modules/settings";
+import { requireCompanyRecord } from "~/modules/shared/shared.server";
 
 /**
  * GET: available tracked lots for a picking line (non-lineside, deduped),
@@ -77,11 +78,22 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { userId } = await requirePermissions(request, { update: "inventory" });
+  const { companyId, userId } = await requirePermissions(request, {
+    update: "inventory"
+  });
   const serviceRole = getCarbonServiceRole();
 
-  const { lineId } = params;
-  if (!lineId) return { success: false, message: "Missing line" };
+  const { pickingListId, lineId } = params;
+  if (!pickingListId || !lineId) {
+    return { success: false, message: "Missing line" };
+  }
+
+  // The pick runs through the service role: the line must belong to this
+  // company and to the picking list in the URL.
+  await requireCompanyRecord(serviceRole, "pickingListLine", companyId, {
+    id: lineId,
+    pickingListId
+  });
 
   const formData = await request.formData();
   const trackedEntityId = formData.get("trackedEntityId") as string;
@@ -100,7 +112,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
     fromStorageUnitId,
     quantity,
     unpick,
-    userId
+    userId,
+    companyId
   });
 
   if (result.error) {

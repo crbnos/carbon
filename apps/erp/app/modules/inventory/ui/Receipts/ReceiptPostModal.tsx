@@ -1,5 +1,5 @@
 import { useCarbon } from "@carbon/auth";
-import { useStorageRuleViolations } from "@carbon/ee/storage-rules";
+import { useRuleViolations } from "@carbon/ee/rules";
 import {
   Alert,
   AlertDescription,
@@ -104,7 +104,13 @@ const ReceiptPostModal = ({ onClose }: { onClose: () => void }) => {
           return attributes["Receipt Line"] === line.id;
         });
 
-        if (!trackedEntity?.readableId) {
+        // A sales-return receipt picks an existing entity (ReturnEntityForm) —
+        // the entity itself is the batch, so it counts even without a
+        // readableId (mirrors the serial branch below).
+        const isSalesReturn =
+          routeData?.receipt?.sourceDocument === "Sales Return Order";
+
+        if (isSalesReturn ? !trackedEntity : !trackedEntity?.readableId) {
           errors.push({
             itemReadableId: getItemReadableId(items, line.itemId) ?? null,
             receivedQuantity: line.receivedQuantity ?? 0,
@@ -163,7 +169,7 @@ const ReceiptPostModal = ({ onClose }: { onClose: () => void }) => {
     validateReceiptTracking();
   });
 
-  const ruleViolations = useStorageRuleViolations({
+  const ruleViolations = useRuleViolations({
     action: path.to.receiptPost(receiptId),
     onSuccess: onClose
   });

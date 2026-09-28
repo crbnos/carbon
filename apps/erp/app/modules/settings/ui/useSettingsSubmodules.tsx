@@ -29,23 +29,25 @@ import {
 } from "react-icons/lu";
 import { usePermissions } from "~/hooks";
 import { useFlags } from "~/hooks/useFlags";
+import { usePlanGate } from "~/hooks/usePlanGate";
 import type { AuthenticatedRouteGroup, Role } from "~/types";
 import { path } from "~/utils/path";
 
 const internalOnlyRoutes = new Set<string>([path.to.companies]);
 
-// Internal-only in real deployments, but usable by anyone on a local dev stack —
-// mirrors `canAccessBackups`, which gates the route and the backup APIs.
-const localOrInternalRoutes = new Set<string>([
-  path.to.backups,
-  path.to.demoData
-]);
+// Demo Data (template seeding) stays internal / local-dev only — mirrors
+// `canAccessBackups`. Backups is now a Business/Enterprise feature gated
+// separately below (with the same internal/local-dev escape hatch).
+const localOrInternalRoutes = new Set<string>([path.to.demoData]);
 
 export default function useSettingsSubmodules() {
   const { t } = useLingui();
   const permissions = usePermissions();
   const { isCloud, isControlledEnvironment, isInternal, isLocalDev } =
     useFlags();
+  // Enterprise: backups are a Business plan feature, but internal staff and
+  // local dev keep access (mirrors the server `canManageBackups`).
+  const { isGated: backupsGated } = usePlanGate({ feature: "BACKUPS" });
 
   const settingsRoutes: AuthenticatedRouteGroup<{
     requiresOwnership?: boolean;
@@ -251,6 +253,14 @@ export default function useSettingsSubmodules() {
       return false;
     if (!isInternal && internalOnlyRoutes.has(route.to)) return false;
     if (!isInternal && !isLocalDev && localOrInternalRoutes.has(route.to))
+      return false;
+    // Backups: visible to Business/Enterprise, internal staff, or local dev.
+    if (
+      route.to === path.to.backups &&
+      backupsGated &&
+      !isInternal &&
+      !isLocalDev
+    )
       return false;
     return true;
   };

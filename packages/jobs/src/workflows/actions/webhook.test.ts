@@ -1,6 +1,6 @@
 import dns from "node:dns";
 import type { Database } from "@carbon/database";
-import { pairsValue, primitiveValue } from "@carbon/workflows";
+import { pairsValue, primitiveValue } from "@carbon/ee/workflows";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { runWebhookAction } from "./webhook";

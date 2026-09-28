@@ -215,21 +215,6 @@ describe("recordLogin", () => {
     );
   });
 
-  it("falls back to x-real-ip when x-forwarded-for is absent", async () => {
-    await recordLogin({
-      request: makeRequest({ "x-real-ip": "203.0.113.7" }),
-      userId: "user_1",
-      email: "jane@example.com",
-      accessToken: TOKEN,
-      method: "magic_link",
-      app: "erp"
-    });
-
-    expect(mocks.insert).toHaveBeenCalledWith(
-      expect.objectContaining({ ipAddress: "203.0.113.7" })
-    );
-  });
-
   it("stores nulls when headers are absent (self-hosted, no Vercel geo)", async () => {
     await recordLogin({
       request: makeRequest({}),

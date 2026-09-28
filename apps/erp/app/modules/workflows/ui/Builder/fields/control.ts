@@ -1,4 +1,4 @@
-import type { ValueOrRef, ValueType } from "@carbon/workflows";
+import type { ValueOrRef, ValueType } from "@carbon/ee/workflows";
 import { hasRecordPicker } from "./recordPickers";
 
 /** Which control a value field renders. */

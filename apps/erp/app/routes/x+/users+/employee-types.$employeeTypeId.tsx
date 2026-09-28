@@ -1,6 +1,12 @@
 import { assertIsPost, error, notFound, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import {
+  makeCompanyPermissionsFromEmployeeType,
+  upsertEmployeeType,
+  upsertEmployeeTypePermissions
+} from "@carbon/ee/permissions.server";
+import { requireFeature } from "@carbon/ee/plan.server";
 import { validationError, validator } from "@carbon/form";
 import type {
   ActionFunctionArgs,
@@ -13,11 +19,8 @@ import {
   employeeTypePermissionsValidator,
   employeeTypeValidator,
   getEmployeeType,
-  getPermissionsByEmployeeType,
-  upsertEmployeeType,
-  upsertEmployeeTypePermissions
+  getPermissionsByEmployeeType
 } from "~/modules/users";
-import { makeCompanyPermissionsFromEmployeeType } from "~/modules/users/users.server";
 import { path } from "~/utils/path";
 import { getCompanyId, invalidateUserSelectQueries } from "~/utils/react-query";
 
@@ -25,6 +28,14 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
     view: "users",
     role: "employee"
+  });
+
+  await requireFeature({
+    request,
+    client,
+    companyId,
+    redirectTo: path.to.employeeAccounts,
+    feature: "PERMISSIONS"
   });
 
   const { employeeTypeId } = params;
@@ -48,6 +59,14 @@ export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
   const { client, companyId } = await requirePermissions(request, {
     update: "users"
+  });
+
+  await requireFeature({
+    request,
+    client,
+    companyId,
+    redirectTo: path.to.employeeAccounts,
+    feature: "PERMISSIONS"
   });
 
   const validation = await validator(employeeTypeValidator).validate(

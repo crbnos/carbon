@@ -1,3 +1,4 @@
+import type { ValueType, WorkflowIssue } from "@carbon/ee/workflows";
 import {
   Button,
   Combobox,
@@ -12,7 +13,6 @@ import {
   ModalTitle,
   VStack
 } from "@carbon/react";
-import type { ValueType, WorkflowIssue } from "@carbon/workflows";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useFetcher } from "react-router";

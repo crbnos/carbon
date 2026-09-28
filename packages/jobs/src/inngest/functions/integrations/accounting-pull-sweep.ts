@@ -6,8 +6,8 @@
  *
  * Every 30 minutes, per company with an ACTIVE accounting integration
  * whose provider implements SupportsIncrementalPull (QBO wraps Intuit's
- * Change Data Capture; Rillet lists changed invoice payments; Xero has no
- * implementation yet and is skipped):
+ * Change Data Capture; Rillet lists changed invoice payments; Xero lists
+ * changed /Payments via If-Modified-Since):
  *
  * 1. Resolve the cursor from `metadata.settings.pullCursor`; default = the
  *    integration row's `updatedAt` (at-or-after install, so pre-connect
@@ -58,6 +58,10 @@ import {
 import { chunkArray } from "@carbon/utils";
 import { PostgresDriver } from "kysely";
 import { inngest } from "../../client";
+import {
+  type IsolatedStepOutcome,
+  runIsolatedCompanyStep
+} from "./accounting-auth-failure";
 import {
   drainSyncOperations,
   getAdvancedPullCursor,
@@ -417,7 +421,7 @@ export const accountingPullSweepFunction = inngest.createFunction(
     const targets = await step.run("find-pull-sweep-targets", async () => {
       const integrations = await client
         .from("companyIntegration")
-        .select("id, companyId")
+        .select("id, companyId, updatedBy")
         .in("id", Object.values(ProviderID))
         .eq("active", true);
 
@@ -429,7 +433,8 @@ export const accountingPullSweepFunction = inngest.createFunction(
 
       return (integrations.data ?? []).map((row) => ({
         companyId: row.companyId,
-        providerId: row.id as ProviderID
+        providerId: row.id as ProviderID,
+        updatedBy: row.updatedBy
       }));
     });
 
@@ -438,13 +443,19 @@ export const accountingPullSweepFunction = inngest.createFunction(
     }
 
     const results: Array<
-      { companyId: string; providerId: ProviderID } & SweepSummary
+      {
+        companyId: string;
+        providerId: ProviderID;
+      } & IsolatedStepOutcome<SweepSummary>
     > = [];
 
     for (const target of targets) {
-      const result = await step.run(
-        `sweep-${target.providerId}-${target.companyId}`,
-        async () => {
+      const result = await runIsolatedCompanyStep({
+        step,
+        client,
+        id: `sweep-${target.providerId}-${target.companyId}`,
+        target,
+        fn: async () => {
           // getPostgresConnectionPool returns a process-lifetime singleton
           // (cached, shared with any other caller requesting the same size) —
           // never end it here, or a concurrent invocation queries an ended pool
@@ -457,9 +468,13 @@ export const accountingPullSweepFunction = inngest.createFunction(
             database
           });
         }
-      );
+      });
 
-      results.push({ ...target, ...result });
+      results.push({
+        companyId: target.companyId,
+        providerId: target.providerId,
+        ...result
+      });
     }
 
     return { targets: targets.length, results };

@@ -10,6 +10,10 @@ import { setCompanyId } from "@carbon/auth/company.server";
 import { ensureDeviceId } from "@carbon/auth/device.server";
 import { userHasVerifiedTotpFactor } from "@carbon/auth/mfa.server";
 import {
+  isSelfSignupBlockedForEmail,
+  SELF_SIGNUP_BLOCKED_MESSAGE
+} from "@carbon/auth/self-signup.server";
+import {
   destroyAuthSession,
   flash,
   getAuthSession,
@@ -26,12 +30,13 @@ import {
 } from "@carbon/ee/sso.server";
 import { validator } from "@carbon/form";
 import { AccountLockout, redis } from "@carbon/kv";
+import { getLogger } from "@carbon/logger";
 import {
   Alert,
   AlertDescription,
   AlertTitle,
   Button,
-  LoadingBars,
+  CarbonPulse,
   VStack
 } from "@carbon/react";
 import { Trans } from "@lingui/react/macro";
@@ -41,6 +46,8 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, Link, redirect, useFetcher, useLocation } from "react-router";
 import { sendNewDeviceEmail } from "~/services/device-email.server";
 import { path } from "~/utils/path";
+
+const logger = getLogger("mes", "callback");
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const authSession = await getAuthSession(request);
@@ -86,6 +93,21 @@ export async function action({ request }: ActionFunctionArgs) {
     return redirect(
       path.to.root,
       await flash(request, error(authSession, "Invalid refresh token"))
+    );
+  }
+
+  // The form's `userId` is caller-supplied: the membership read above, the SSO
+  // lookup and the self-signup gate below all key on it. Only the refresh
+  // token proves identity, so a `userId` that is not the token's owner would
+  // stamp another user's company onto this session — refuse it.
+  if (authSession.userId !== userId) {
+    logger.warn("Callback userId does not match the refresh token's user", {
+      userId,
+      sessionUserId: authSession.userId
+    });
+    return redirect(
+      path.to.root,
+      await flash(request, error(null, "Invalid refresh token"))
     );
   }
 
@@ -201,6 +223,40 @@ export async function action({ request }: ActionFunctionArgs) {
   const user = await getUserByEmail(authSession.email);
 
   if (user?.data) {
+    // Self-signup blocklist (Cloud only). OAuth (Google/Azure) has no pre-create
+    // seam — GoTrue creates the auth user and the `create_public_user` trigger
+    // fires before this action runs — so the callback is where we refuse it,
+    // mirroring the ERP callback. Only a GENUINE self-signup is refused: a user
+    // who already belongs to a company, or who holds a pending invite, is never
+    // a self-signup. We simply decline to mint a session and leave the inert,
+    // membership-less account; there is nothing to tear down.
+    const memberships = companies.data ?? [];
+    if (
+      memberships.length === 0 &&
+      isSelfSignupBlockedForEmail(authSession.email)
+    ) {
+      // ilike for the case fold only — escape LIKE metacharacters so %/_ in an
+      // address can never act as wildcards and match someone else's invite.
+      const invitePattern = authSession.email.replace(
+        /[\\%_]/g,
+        (match) => `\\${match}`
+      );
+      const pendingInvite = await serviceRole
+        .from("invite")
+        .select("id")
+        .ilike("email", invitePattern)
+        .is("acceptedAt", null)
+        .is("revokedAt", null)
+        .limit(1);
+
+      if (!pendingInvite.data?.length) {
+        return redirect(
+          path.to.root,
+          await flash(request, error(null, SELF_SIGNUP_BLOCKED_MESSAGE))
+        );
+      }
+    }
+
     // Require-SSO gate: this is the non-SSO path (magic link, Google/Azure
     // OAuth, magic links minted elsewhere) — a covered + enforced domain may
     // only authenticate via SSO, so refuse before any session state is minted.
@@ -321,7 +377,7 @@ export default function AuthCallback() {
   }, [fetcher]);
 
   return (
-    <div className="flex flex-col items-center justify-center">
+    <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-background">
       {error ? (
         <div className="rounded-lg p-8 mt-8 w-[380px]">
           <VStack spacing={4}>
@@ -350,7 +406,7 @@ export default function AuthCallback() {
           </VStack>
         </div>
       ) : (
-        <LoadingBars />
+        <CarbonPulse />
       )}
     </div>
   );

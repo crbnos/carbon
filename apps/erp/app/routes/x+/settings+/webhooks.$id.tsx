@@ -1,15 +1,12 @@
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { requirePlan } from "@carbon/ee/plan.server";
+import { requireFeature } from "@carbon/ee/plan.server";
+import { upsertWebhook } from "@carbon/ee/webhooks.server";
 import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, redirect, useLoaderData, useNavigate } from "react-router";
-import {
-  getWebhook,
-  upsertWebhook,
-  webhookValidator
-} from "~/modules/settings";
+import { getWebhook, webhookValidator } from "~/modules/settings";
 import { WebhookForm } from "~/modules/settings/ui/Webhooks";
 import { getParams, path } from "~/utils/path";
 
@@ -40,7 +37,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     view: "settings"
   });
 
-  await requirePlan({
+  await requireFeature({
     request,
     client,
     companyId,

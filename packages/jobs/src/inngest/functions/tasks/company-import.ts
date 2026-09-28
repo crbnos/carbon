@@ -1,4 +1,5 @@
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
+import { requireBackupsEntitlement } from "@carbon/ee/backups.server";
 import { chunkArray } from "@carbon/utils";
 import { sql } from "kysely";
 import { applyTableRenames } from "../../../backups/renames";
@@ -62,6 +63,12 @@ export const companyImportFunction = inngest.createFunction(
     // backups have no industryId and stay self-contained (files embedded + copied).
     const referencedTemplate =
       typeof templateIndustryId === "string" && templateIndustryId.length > 0;
+
+    // A real (foreign) backup import is the gated BACKUPS feature; an onboarding
+    // demo-template import is not — keep templating available on every edition.
+    if (!referencedTemplate) {
+      await requireBackupsEntitlement(companyId);
+    }
 
     return await step.run("import-company", async () => {
       const client = getCarbonServiceRole();

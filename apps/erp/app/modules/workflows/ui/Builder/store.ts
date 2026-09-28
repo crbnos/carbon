@@ -2,12 +2,12 @@ import type {
   BatchPlan,
   WorkflowIssue,
   WorkflowNodeType
-} from "@carbon/workflows";
+} from "@carbon/ee/workflows";
 import {
   getNodeHandles,
   slugifyNodeName,
   uniqueNodeName
-} from "@carbon/workflows";
+} from "@carbon/ee/workflows";
 import type { Connection, EdgeChange, NodeChange } from "@xyflow/react";
 import { addEdge, applyEdgeChanges, applyNodeChanges } from "@xyflow/react";
 import { nanoid } from "nanoid";

@@ -1,11 +1,10 @@
 import { error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
+import { rejectCrossSiteNavigation } from "@carbon/auth/middleware/security.server";
 import { flash } from "@carbon/auth/session.server";
-import {
-  evaluateLinesForSurface,
-  isBlocked
-} from "@carbon/ee/storage-rules.server";
+import { evaluateLinesForSurface, isBlocked } from "@carbon/ee/rules.server";
+import { getLogger } from "@carbon/logger";
 import type { LoaderFunctionArgs } from "react-router";
 import { redirect } from "react-router";
 import {
@@ -17,7 +16,11 @@ import {
 } from "~/services/operations.service";
 import { path } from "~/utils/path";
 
+const logger = getLogger("mes", "end-operation");
+
 export async function loader({ request, params }: LoaderFunctionArgs) {
+  // Writes on GET: a link on another site must not trigger it.
+  rejectCrossSiteNavigation(request);
   const { userId, companyId } = await requirePermissions(request, {});
 
   const { operationId } = params;
@@ -55,6 +58,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   }
 
   if (jobOperation.data?.companyId !== companyId) {
+    logger.warn("Job operation does not belong to company", {
+      companyId,
+      operationId
+    });
     return redirect(
       path.to.operations,
       await flash(request, {
@@ -159,7 +166,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       if (!trackedEntityId) {
         const trackedEntities = await getTrackedEntitiesByMakeMethodId(
           serviceRole,
-          jobOperation.data.jobMakeMethodId
+          jobOperation.data.jobMakeMethodId,
+          companyId
         );
 
         // Complete the next incomplete serial unit for this operation (createdAt
@@ -229,7 +237,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         // "operation complete" redirect below.
         const remainingTrackedEntities = await getTrackedEntitiesByMakeMethodId(
           serviceRole,
-          jobOperation.data.jobMakeMethodId
+          jobOperation.data.jobMakeMethodId,
+          companyId
         );
         const nextTrackedEntity = (remainingTrackedEntities.data ?? []).find(
           (entity) => isSerialEntityIncompleteForOperation(entity, operationId)

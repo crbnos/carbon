@@ -1,5 +1,4 @@
 import type { Database } from "@carbon/database";
-import { textToTiptap } from "@carbon/utils";
 import { parseDate } from "@internationalized/date";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
@@ -14,7 +13,8 @@ import {
   methodType,
   operationTypes,
   procedureStepType,
-  standardFactorType
+  standardFactorType,
+  toTiptapDoc
 } from "../shared";
 import type {
   ItemOrderStatus,
@@ -1048,6 +1048,30 @@ export const createJobOperationBatchValidator = z.object({
     z
       .array(z.string().min(1))
       .min(1, { message: "Select at least one operation" })
+  ),
+  // Output lot identity is planned here, never typed on the floor. The
+  // batch-operations edge fn enforces the rules (one item to merge, unique
+  // numbers when split); these only carry the planner's choice through.
+  mergeOutput: zfd.checkbox(),
+  outputLotNumber: zfd.text(z.string().trim().optional()),
+  // JSON-encoded [{ jobOperationId, lotNumber }] — FormData has no nesting.
+  lotNumbers: z.preprocess(
+    (value) => {
+      if (typeof value !== "string" || value === "") return undefined;
+      try {
+        return JSON.parse(value);
+      } catch {
+        return value;
+      }
+    },
+    z
+      .array(
+        z.object({
+          jobOperationId: z.string().min(1),
+          lotNumber: z.string().trim().min(1)
+        })
+      )
+      .optional()
   )
 });
 
@@ -1368,20 +1392,9 @@ export const assemblyInstructionVersionValidator = z.object({
  */
 const optionalTiptapDescription = zfd
   .text(z.string().optional())
-  .transform((val): any => {
-    if (val === undefined || val === "") return undefined;
-    let parsed: unknown;
-    try {
-      parsed = JSON.parse(val);
-    } catch {
-      parsed = val;
-    }
-    // Always store a tiptap doc object, never a scalar string (jsonb scalar
-    // strings break method copies) and never silently drop content to {}.
-    if (typeof parsed === "string") return textToTiptap(parsed);
-    if (parsed && typeof parsed === "object") return parsed;
-    return textToTiptap(String(val));
-  });
+  .transform((val): any =>
+    val === undefined || val === "" ? undefined : toTiptapDoc(val)
+  );
 
 export const assemblyInstructionStepValidator = z
   .object({
@@ -1455,6 +1468,15 @@ export const assemblyInstructionStepMotionValidator = z.object({
  */
 export const assemblyInstructionStepComponentsValidator = z.object({
   componentNodeIds: jsonField(z.array(z.string()))
+});
+
+export const assemblyInstructionStepHiddenComponentsValidator = z.object({
+  hiddenComponentNodeIds: jsonField(z.array(z.string()))
+});
+
+/** Sub-assembly staging: the later step this one is built aside for. Empty = built in place. */
+export const assemblyInstructionStepJoinValidator = z.object({
+  joinStepId: zfd.text(z.string().optional())
 });
 
 export const assemblyStepComponentsReassignValidator = z

@@ -24,6 +24,16 @@ export {
 
 import { getLogger } from "./logger";
 
+/**
+ * Run `fn` inside a LogTape implicit-context scope so every log line emitted
+ * within it carries `properties` — the same mechanism `requestIdMiddleware`
+ * uses for `requestId`. Scopes nest and merge, so calling this inside a
+ * request adds to the request's context rather than replacing it. Use it to
+ * stamp identity that a whole request shares (e.g. `companyId`/`userId` once
+ * auth resolves) instead of repeating the fields at every log call site.
+ */
+export { withContext as withLogContext } from "@logtape/logtape";
+
 export const REQUEST_ID_HEADER = "x-request-id";
 
 /** Only these carry a body worth logging; GET/HEAD/OPTIONS don't. */

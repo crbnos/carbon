@@ -134,7 +134,7 @@ disable the alert first.
 On self-hosted Caddy, `trusted_proxies static private_ranges`
 (`contrib/deploying/simple-docker-caddy/Caddyfile:12`) forwards the client-seeded
 chain, so that value is attacker-controlled. Add `getClientIp` to
-`packages/utils/src/ip.ts`: rightmost-first walk skipping trusted proxies,
+`packages/utils/src/headers.ts` (main's forwarded-header helpers; merged 2026-09-29): rightmost-first walk skipping trusted proxies,
 bounded by `TRUSTED_PROXY_COUNT` / `TRUSTED_PROXY_IPS`, merging repeated XFF
 headers, stripping `:port` suffixes, and normalising IPv4-mapped IPv6 before
 comparison. `recordLogin` switches to it.
@@ -200,7 +200,7 @@ and already carries the retention and RLS stance a device record needs.
 
 ### `packages/utils`
 
-- **`getClientIp(request, opts?)`** in `ip.ts` — see §4 above. `normalizeIp` and
+- **`getClientIp(request, opts?)`** in `headers.ts` (the forwarded-header helpers) — see §4 above. `normalizeIp` and
   `isPrivateIp` stay as they are.
 
 ### ERP

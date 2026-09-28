@@ -45,7 +45,6 @@ import { Editor } from "@carbon/react/Editor";
 import { INPUT_FORMAT } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { FileObject } from "@supabase/storage-js";
-import { nanoid } from "nanoid";
 import { useEffect, useState } from "react";
 import { flushSync } from "react-dom";
 import { LuDraftingCompass, LuHash, LuShapes, LuShield } from "react-icons/lu";
@@ -61,8 +60,8 @@ import {
   Supplier
 } from "~/components/Form";
 import { useGauges } from "~/components/Form/Gauge";
-import { usePermissions, useRouteData, useUser } from "~/hooks";
-import { getPrivateUrl, path } from "~/utils/path";
+import { useImageUpload, usePermissions, useRouteData } from "~/hooks";
+import { path } from "~/utils/path";
 import { gaugeCalibrationRecordValidator } from "../../quality.models";
 import type { Gauge } from "../../types";
 import { GaugeRole } from "../Gauge/GaugeStatus";
@@ -84,9 +83,6 @@ const GaugeCalibrationRecordForm = ({
 }: GaugeCalibrationRecordFormProps) => {
   const { t } = useLingui();
   const permissions = usePermissions();
-  const {
-    company: { id: companyId }
-  } = useUser();
   const fetcher = useFetcher<{}>();
   const location = useLocation();
   const isEditing = !location.pathname.includes("new");
@@ -151,23 +147,7 @@ const GaugeCalibrationRecordForm = ({
       return Math.max(0, old - 1);
     });
 
-  const onUploadImage = async (file: File) => {
-    const fileType = file.name.split(".").pop();
-    const fileName = `${companyId}/parts/${nanoid()}.${fileType}`;
-
-    const result = await carbon?.storage.from("private").upload(fileName, file);
-
-    if (result?.error) {
-      toast.error(t`Failed to upload image`);
-      throw new Error(result.error.message);
-    }
-
-    if (!result?.data) {
-      throw new Error("Failed to upload image");
-    }
-
-    return getPrivateUrl(result.data.path);
-  };
+  const onUploadImage = useImageUpload("parts");
 
   return (
     <ModalDrawerProvider type={type}>

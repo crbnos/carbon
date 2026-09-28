@@ -24,7 +24,7 @@ import {
   getFinancialStatementPeriodSeries,
   translateCompanyBalances,
   translateCompanyPeriodSeries
-} from "./accounting.ee.service";
+} from "./accounting.service";
 import type { ChartPeriodSeries } from "./types";
 import { NET_INCOME_ACCOUNT_ID } from "./types";
 

@@ -1,3 +1,8 @@
+import { POSTHOG_API_HOST, SUPABASE_URL } from "@carbon/auth";
+import {
+  getNonce,
+  setStrictContentSecurityPolicy
+} from "@carbon/auth/middleware/security.server";
 import { getLogger } from "@carbon/logger";
 import { ensureLoggingConfigured } from "@carbon/logger/config.server";
 import { getRequestId } from "@carbon/logger/middleware.server";
@@ -44,12 +49,12 @@ if (
 
 export const streamTimeout = 60_000;
 
-// Baseline security response headers (NIST 800-171 3.13.13 control-of-mobile-code
-// + SC-7/SC-8 hardening). The CSP is a deliberately SAFE SUBSET: it omits
-// default-src/script-src so it cannot break the SPA's script/style/connect
-// loading, and sets only mobile-code / injection-vector controls — object-src
-// 'none' (no plugins), base-uri 'self', frame-ancestors 'self' (no cross-origin
-// framing/clickjacking while still allowing same-origin embeds like previews).
+// The ENFORCED CSP (NIST 800-171 3.13.13 control-of-mobile-code + SC-7/SC-8
+// hardening) is still this safe subset — object-src 'none' (no plugins),
+// base-uri 'self', frame-ancestors 'self' (no cross-origin framing while still
+// allowing same-origin embeds like previews). The strict nonce policy runs
+// report-only beside it until its reports are clean
+// (.ai/plans/2026-09-28-csp-csrf.md).
 const BASELINE_CSP_DIRECTIVES = [
   "object-src 'none'",
   "base-uri 'self'",
@@ -76,18 +81,17 @@ function composeContentSecurityPolicy(existing: string | null): string {
     : existing;
 }
 
-function applySecurityHeaders(headers: Headers) {
+// nosniff, X-Frame-Options, Referrer-Policy and HSTS are set on every response
+// (resource routes included) by securityMiddleware in root.tsx.
+function applySecurityHeaders(headers: Headers, nonce: string) {
   headers.set(
     "Content-Security-Policy",
     composeContentSecurityPolicy(headers.get("Content-Security-Policy"))
   );
-  headers.set("X-Content-Type-Options", "nosniff");
-  headers.set("X-Frame-Options", "SAMEORIGIN");
-  headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
-  headers.set(
-    "Strict-Transport-Security",
-    "max-age=31536000; includeSubDomains"
-  );
+  setStrictContentSecurityPolicy(headers, nonce, {
+    supabaseUrl: SUPABASE_URL,
+    posthogHost: POSTHOG_API_HOST
+  });
 }
 
 /**
@@ -130,13 +134,15 @@ export default function handleRequest(
   routerContext: EntryContext,
   _loadContext: RouterContextProvider // RouterContextProvider when v8_middleware is turned on
 ) {
-  applySecurityHeaders(responseHeaders);
+  const nonce = getNonce(_loadContext);
+  applySecurityHeaders(responseHeaders, nonce);
   return vercelHandleRequest(
     request,
     responseStatusCode,
     responseHeaders,
     routerContext,
     // @ts-expect-error
-    _loadContext // Vercel's handler still expecting AppLoadContext type
+    _loadContext, // Vercel's handler still expecting AppLoadContext type
+    { nonce }
   );
 }

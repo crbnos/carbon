@@ -349,6 +349,42 @@ export async function insertTerminalSyncOperation(
 }
 
 /**
+ * Delete terminal disposition rows for entities that have since synced
+ * successfully. Accounting journals get a permanent disposition, but a
+ * re-evaluating INBOUND family (Ramp) can fail an entity one run — a charge
+ * coded to an unrecognized account records a Warning — and succeed the next,
+ * once it is recoded. Without this the resolved failure lingers in the Sync
+ * Activity inbox and keeps the tab badge lit, so on every successful sync the
+ * caller clears any prior disposition for those (entityType, entityId,
+ * direction) tuples. Defaults to `Warning` (the only status the Ramp recorder
+ * writes); a no-op when `entityIds` is empty. Service-role only (the table has
+ * no DELETE policy — jobs delete via service role).
+ */
+export async function clearResolvedSyncOperations(
+  client: SupabaseClient<Database>,
+  args: {
+    companyId: string;
+    integration: string;
+    entityType: string;
+    direction: SyncOperationDirection;
+    entityIds: string[];
+    statuses?: SyncOperationStatus[];
+  }
+): Promise<{ error: string | null }> {
+  if (args.entityIds.length === 0) return { error: null };
+  const statuses = args.statuses ?? ["Warning"];
+  const { error } = await syncOperationTable(client)
+    .delete()
+    .eq("companyId", args.companyId)
+    .eq("integration", args.integration)
+    .eq("entityType", args.entityType)
+    .eq("direction", args.direction)
+    .in("entityId", args.entityIds)
+    .in("status", statuses);
+  return { error: error ? (error as { message: string }).message : null };
+}
+
+/**
  * Claim up to `limit` operations for a drain: Pending rows plus "In Flight"
  * rows whose lastAttemptAt is older than 10 minutes (abandoned by a crashed
  * drain). Claimed rows move to "In Flight" with lastAttemptAt = now and

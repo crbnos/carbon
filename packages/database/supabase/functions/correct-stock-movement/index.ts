@@ -7,6 +7,8 @@ import { requirePermissions } from "../lib/supabase.ts";
 import { getAccountingPeriodForDate } from "../shared/get-accounting-period.ts";
 import { getDefaultPostingGroup } from "../shared/get-posting-group.ts";
 import { bookAdjustment } from "../shared/post-adjustment.ts";
+import { statusAfterQuantityChange } from "../shared/entity-drain.ts";
+import { equals, round } from "../shared/precision.ts";
 
 const pool = getConnectionPool(1);
 const db = getDatabaseClient<DB>(pool);
@@ -106,8 +108,13 @@ serve(async (req: Request) => {
       }
     }
 
-    const delta = correctedQuantity - effectiveQuantity;
-    if (delta === 0) {
+    // Round the delta ONCE, here: it is persisted twice — into the entity via
+    // eb("quantity", "+", delta) and into the correction's own itemLedger row —
+    // and both must carry the same value at internal scale. A raw `=== 0` no-op
+    // gate also lets float residue (correcting a -5 line back to exactly its
+    // effective -4.99999999999999 sum) through as a 1e-14 correction row.
+    const delta = round(correctedQuantity - effectiveQuantity);
+    if (equals(delta, 0)) {
       throw new ValidationError(
         "Corrected quantity matches the current effective quantity — nothing to correct"
       );
@@ -219,7 +226,9 @@ serve(async (req: Request) => {
           "Cannot correct a movement of a consumed tracked entity"
         );
       }
-      if (Number(entity.data.quantity) + delta < 0) {
+      // Round before comparing: a correction that lands the lot exactly on
+      // zero can read as −1e-17 raw and refuse a legitimate full correction.
+      if (round(Number(entity.data.quantity) + delta) < 0) {
         throw new ValidationError(
           "Correction would make the tracked entity quantity negative"
         );
@@ -299,12 +308,26 @@ serve(async (req: Request) => {
           .where((eb) => eb("quantity", ">=", -delta))
           // Serial ceiling re-checked atomically: resulting quantity ≤ 1.
           .$if(isSerial, (qb) => qb.where((eb) => eb("quantity", "<=", 1 - delta)))
-          .returning(["id"])
+          .returning(["id", "quantity", "status"])
           .executeTakeFirst();
         if (!updated) {
           throw new ValidationError(
             "Tracked entity changed while correcting — try again"
           );
+        }
+        // If the correction drove the lot to zero, Consume it (a Scrapped lot
+        // stays Scrapped). `updated.status` is the unchanged pre-flip status.
+        const settledStatus = statusAfterQuantityChange(
+          Number(updated.quantity),
+          updated.status
+        );
+        if (settledStatus !== updated.status) {
+          await trx
+            .updateTable("trackedEntity")
+            .set({ status: settledStatus })
+            .where("id", "=", root.trackedEntityId!)
+            .where("companyId", "=", companyId)
+            .execute();
         }
       }
 

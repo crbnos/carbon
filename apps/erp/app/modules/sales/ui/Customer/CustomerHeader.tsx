@@ -37,7 +37,7 @@ import { path } from "~/utils/path";
 import type { CustomerDetail, CustomerStatus } from "../../types";
 
 const CustomerHeader = () => {
-  const { i18n, t } = useLingui();
+  const { t } = useLingui();
   const { customerId } = useParams();
 
   if (!customerId) throw new Error("Could not find customerId");
@@ -130,11 +130,7 @@ const CustomerHeader = () => {
                   <Trans>Status</Trans>
                 </CardAttributeLabel>
                 <CardAttributeValue>
-                  {customerStatus ? (
-                    <Enumerable value={i18n._(customerStatus)} />
-                  ) : (
-                    "-"
-                  )}
+                  {customerStatus ? <Enumerable value={customerStatus} /> : "-"}
                 </CardAttributeValue>
               </CardAttribute>
               <CardAttribute>

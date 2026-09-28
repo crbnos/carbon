@@ -27,6 +27,8 @@ type ConfirmDeleteProps = {
    * a URL-addressable delete route. Array values render one input per entry.
    */
   fields?: Record<string, string | string[]>;
+  /** Blocks the delete while still explaining why in `text`. */
+  isDisabled?: boolean;
   onCancel: () => void;
   onSubmit?: () => void;
 };
@@ -39,6 +41,7 @@ const ConfirmDelete = ({
   deleteText = "Delete",
   title,
   fields,
+  isDisabled = false,
   onCancel,
   onSubmit
 }: ConfirmDeleteProps) => {
@@ -95,8 +98,8 @@ const ConfirmDelete = ({
               )}
             <Button
               variant="destructive"
-              isLoading={fetcher.state !== "idle"}
-              isDisabled={fetcher.state !== "idle"}
+              isLoading={!isDisabled && fetcher.state !== "idle"}
+              isDisabled={isDisabled || fetcher.state !== "idle"}
               type="submit"
               shortcut={SHORTCUTS.confirm}
             >

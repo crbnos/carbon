@@ -11,11 +11,19 @@
  * An email that belongs to no company bootstraps a brand new user + company
  * first, which is what `crbn up` relies on for test@carbon.ms.
  *
+ * After the seed commits it runs MRP and the scheduler through
+ * `@carbon/jobs`'s `plan:company` (skip with `--skip-plan`).
+ *
  * Usage:
  *   pnpm run db:seed:dev -- --email your@email.com [--dataset satellite]
  */
 
+import { spawnSync } from "node:child_process";
+import { existsSync } from "node:fs";
+import { homedir } from "node:os";
+import path from "node:path";
 import process from "node:process";
+import { fileURLToPath } from "node:url";
 import { getPostgresConnectionPool } from "./client.ts";
 import { bootstrap, DEV_PASSWORD } from "./datasets/bootstrap.ts";
 import { loadEnv, parseSeedArgs } from "./datasets/cli.ts";
@@ -30,7 +38,8 @@ async function main() {
     email,
     dataset: datasetKey,
     tiers,
-    skipWipe
+    skipWipe,
+    skipPlan
   } = parseSeedArgs(datasetKeys());
   console.log(
     `\nSeeding development environment for: ${email} (${datasetKey})\n`
@@ -38,6 +47,7 @@ async function main() {
 
   const pool = getPostgresConnectionPool(1);
   const client = await pool.connect();
+  let seeded: { companyId: string; userId: string } | null = null;
 
   try {
     let resolved = await resolveCompany(client, email);
@@ -75,6 +85,7 @@ async function main() {
     });
 
     await printSummary(client, companyId);
+    seeded = { companyId, userId };
     console.log(`
 ========================================
 Dev environment seeded successfully!
@@ -91,6 +102,57 @@ Dev environment seeded successfully!
   } finally {
     client.release();
     await pool.end();
+  }
+
+  if (seeded && !skipPlan) planCompany(seeded);
+}
+
+// The engines reach Supabase over HTTPS; under portless that is its self-signed
+// CA, which `crbn up` hands its apps the same way (packages/dev services/apps.ts).
+function portlessCa(): Record<string, string> {
+  const caPath = path.join(homedir(), ".portless", "ca.pem");
+  return !process.env.NODE_EXTRA_CA_CERTS && existsSync(caPath)
+    ? { NODE_EXTRA_CA_CERTS: caPath }
+    : {};
+}
+
+// A spawned script, not an import: @carbon/planning depends on this package.
+function planCompany({
+  companyId,
+  userId
+}: {
+  companyId: string;
+  userId: string;
+}) {
+  const repoRoot = path.resolve(
+    path.dirname(fileURLToPath(import.meta.url)),
+    "..",
+    "..",
+    ".."
+  );
+  const planned = spawnSync(
+    "pnpm",
+    [
+      "--silent",
+      "--filter",
+      "@carbon/jobs",
+      "plan:company",
+      "--",
+      "--company",
+      companyId,
+      "--user",
+      userId
+    ],
+    {
+      stdio: "inherit",
+      cwd: repoRoot,
+      env: { ...process.env, ...portlessCa() }
+    }
+  );
+  if (planned.status !== 0) {
+    console.warn(
+      `⚠ Planning step failed — run it later with: pnpm --filter @carbon/jobs plan:company -- --company ${companyId} --user ${userId}`
+    );
   }
 }
 

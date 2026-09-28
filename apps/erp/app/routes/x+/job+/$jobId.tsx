@@ -2,6 +2,7 @@ import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { activeJobStatuses } from "@carbon/database";
+import { datetime } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import { Trans } from "@lingui/react/macro";
 import { Suspense, useMemo } from "react";
@@ -33,6 +34,7 @@ import {
 } from "~/modules/production/ui/Jobs";
 import type { JobOrderStatusData } from "~/modules/production/ui/Jobs/JobBoMExplorer";
 import { getTagsList } from "~/modules/shared";
+import { getLocationTimeZone } from "~/modules/shared/timezone.server";
 import { detailBreadcrumb, type Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
@@ -61,7 +63,10 @@ async function getJobOrderStatus(
     companyId,
     locationId,
     jobStatus,
-    materials.data ?? []
+    materials.data ?? [],
+    datetime
+      .today(await getLocationTimeZone(client, locationId, companyId))
+      .toString()
   );
 }
 

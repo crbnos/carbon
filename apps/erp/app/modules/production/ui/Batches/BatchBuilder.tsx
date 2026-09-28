@@ -65,10 +65,19 @@ import {
 } from "react-icons/lu";
 import { useFetcher, useNavigate } from "react-router";
 import { Enumerable, ItemThumbnail, Table } from "~/components";
+import { EnumerableGroup } from "~/components/EnumerableGroup";
 import { path } from "~/utils/path";
 import type { jobStatus } from "../../production.models";
 import type { BatchCandidate } from "../../types";
 import JobStatus from "../Jobs/JobStatus";
+import {
+  BatchOutputLots,
+  initialOutputLots,
+  type OutputLotsState,
+  outputLotsPayload,
+  outputLotsProblem
+} from "./BatchOutputLots";
+import { BatchReleaseModal } from "./BatchReleaseModal";
 import {
   type BatchAddTarget,
   batchPlanBreakdown,
@@ -194,7 +203,11 @@ function CandidateJobStatus({ status }: { status: string | null }) {
 // The material chips shown on a candidate row: one per distinct BOM line —
 // property string when present, else the material item's readable id.
 function materialChips(candidate: BatchCandidate): string[] {
-  const chips = new Set<string>();
+  // Property signatures first, bare readable-id fallbacks last: compatibility
+  // is judged on the signatures, so they are the chips worth showing inline
+  // when the list is collapsed behind a +N.
+  const signatures = new Set<string>();
+  const fallbacks = new Set<string>();
   for (const m of candidate.materials ?? []) {
     const parts = [
       m.substanceName,
@@ -203,10 +216,13 @@ function materialChips(candidate: BatchCandidate): string[] {
       m.formName,
       m.finishName
     ].filter(Boolean);
-    const chip = parts.length ? parts.join(" ") : m.itemReadableId;
-    if (chip) chips.add(chip);
+    if (parts.length) {
+      signatures.add(parts.join(" "));
+    } else if (m.itemReadableId) {
+      fallbacks.add(m.itemReadableId);
+    }
   }
-  return [...chips];
+  return [...signatures, ...fallbacks];
 }
 
 // Numbered wizard step marker (StockTransferWizard precedent).
@@ -317,6 +333,8 @@ export function BatchBuilder({
   const [dueWindow, setDueWindow] = useState<number | null>(null);
   const [workCenterId, setWorkCenterId] = useState<string | null>(null);
   const [notes, setNotes] = useState("");
+  const [outputLots, setOutputLots] =
+    useState<OutputLotsState>(initialOutputLots);
   const view: BuilderView = stored.view ?? "table";
 
   // Selection is held here (not via the Table's index-keyed rowSelection, which
@@ -479,7 +497,8 @@ export function BatchBuilder({
       grade: t`grade`,
       dimension: t`dimension`,
       form: t`form`,
-      finish: t`finish`
+      finish: t`finish`,
+      producedItem: t`produced item`
     }),
     [t]
   );
@@ -710,7 +729,14 @@ export function BatchBuilder({
     }
   }, [submitFetcher.state, submitFetcher.data, isAddMode, batch?.id, navigate]);
 
-  const submit = (targetBatchId?: string, opts?: { release?: boolean }) => {
+  const [createReleaseOpen, setCreateReleaseOpen] = useState(false);
+  const submit = (
+    targetBatchId?: string,
+    opts?: {
+      release?: boolean;
+      purchaseOrdersBySupplierId?: Record<string, string>;
+    }
+  ) => {
     const fd = new FormData();
     if (isAddMode || targetBatchId) {
       addTargetRef.current = targetBatchId ?? null;
@@ -722,9 +748,22 @@ export function BatchBuilder({
       fd.set("locationId", locationId);
       if (workCenterId) fd.set("workCenterId", workCenterId);
       if (notes.trim()) fd.set("notes", notes.trim());
+      const lots = outputLotsPayload(selected, outputLots);
+      if (lots.mergeOutput) {
+        fd.set("mergeOutput", "on");
+        fd.set("outputLotNumber", lots.outputLotNumber ?? "");
+      } else if (lots.lotNumbers?.length) {
+        fd.set("lotNumbers", JSON.stringify(lots.lotNumbers));
+      }
       // Create & Release: the create validator's zfd.checkbox reads "on" and
       // the edge fn inserts the batch already Active (on the floor).
       if (opts?.release) fd.set("release", "on");
+      if (opts?.purchaseOrdersBySupplierId) {
+        fd.set(
+          "purchaseOrdersBySupplierId",
+          JSON.stringify(opts.purchaseOrdersBySupplierId)
+        );
+      }
     }
     for (const id of selectedById.keys()) fd.append("jobOperationIds", id);
     submitFetcher.submit(fd, {
@@ -734,6 +773,8 @@ export function BatchBuilder({
   };
 
   const isSubmitting = submitFetcher.state !== "idle";
+  // Output lots are planned here; a batch never reaches the floor without them.
+  const lotPlanIncomplete = outputLotsProblem(selected, outputLots) !== null;
   const isLoading = candidatesFetcher.state !== "idle";
 
   const locationOptions = useMemo(
@@ -904,6 +945,8 @@ export function BatchBuilder({
               }
               notes={notes}
               onNotesChange={setNotes}
+              outputLots={outputLots}
+              onOutputLotsChange={setOutputLots}
             />
           }
         />
@@ -930,8 +973,12 @@ export function BatchBuilder({
               // Released batch that lacks it.
               <Button
                 variant="secondary"
-                isDisabled={selected.length === 0 || isSubmitting}
-                onClick={() => submit(undefined, { release: true })}
+                isDisabled={
+                  selected.length === 0 || isSubmitting || lotPlanIncomplete
+                }
+                // Opens the Release dialog: the selected jobs are checked and
+                // any outside-operation POs chosen before the batch is created.
+                onClick={() => setCreateReleaseOpen(true)}
               >
                 {t`Create & Release`}
               </Button>
@@ -939,7 +986,11 @@ export function BatchBuilder({
             <Button
               leftIcon={<LuLayers />}
               isLoading={isSubmitting}
-              isDisabled={selected.length === 0 || isSubmitting}
+              isDisabled={
+                selected.length === 0 ||
+                isSubmitting ||
+                (!isAddMode && lotPlanIncomplete)
+              }
               onClick={() => submit()}
             >
               {isAddMode
@@ -949,6 +1000,18 @@ export function BatchBuilder({
           </HStack>
         </DrawerFooter>
       </DrawerContent>
+      {createReleaseOpen && (
+        <BatchReleaseModal
+          target={{ jobIds: [...new Set(selected.map((c) => c.jobId))] }}
+          title={t`Create & release batch`}
+          confirmLabel={t`Create & Release`}
+          onClose={() => setCreateReleaseOpen(false)}
+          onConfirm={(purchaseOrdersBySupplierId) => {
+            submit(undefined, { release: true, purchaseOrdersBySupplierId });
+            setCreateReleaseOpen(false);
+          }}
+        />
+      )}
     </Drawer>
   );
 }
@@ -1792,16 +1855,11 @@ function CandidateTable({
                   {t`No materials`}
                 </span>
               ) : (
-                chips.map((chip) => (
-                  <Badge
-                    key={chip}
-                    variant="outline"
-                    className="max-w-[200px] font-normal text-muted-foreground"
-                    title={chip}
-                  >
-                    <span className="truncate">{chip}</span>
-                  </Badge>
-                ))
+                <EnumerableGroup
+                  chip="outline"
+                  chipClassName="max-w-[200px] font-normal text-muted-foreground"
+                  items={chips.map((chip) => ({ label: chip }))}
+                />
               )}
               <CompatBadge candidateId={row.original.id} compat={compat} />
             </HStack>
@@ -2184,7 +2242,9 @@ function ReviewPanel({
   batchCapacity,
   minimumBatchQuantity,
   notes,
-  onNotesChange
+  onNotesChange,
+  outputLots,
+  onOutputLotsChange
 }: {
   isAddMode: boolean;
   existingMembers: BatchBuilderBatch["members"];
@@ -2207,6 +2267,8 @@ function ReviewPanel({
   minimumBatchQuantity: number | null;
   notes: string;
   onNotesChange: (v: string) => void;
+  outputLots: OutputLotsState;
+  onOutputLotsChange: (next: OutputLotsState) => void;
 }) {
   const { t } = useLingui();
 
@@ -2364,6 +2426,14 @@ function ReviewPanel({
             placeholder={t`Notes (optional)`}
           />
         </VStack>
+      )}
+
+      {!isAddMode && (
+        <BatchOutputLots
+          selected={selected}
+          value={outputLots}
+          onChange={onOutputLotsChange}
+        />
       )}
 
       <div className="flex-1 min-h-0 w-full overflow-y-auto">

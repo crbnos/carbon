@@ -1,4 +1,5 @@
 import type { ConformanceCheck, Violation } from "../check";
+import { GENERATED_AUTHZ_MIGRATION } from "./no-authz-ddl-in-migrations";
 
 const LEGACY_RLS = /has_company_permission\s*\(/gi;
 
@@ -12,6 +13,9 @@ export const noLegacyRls: ConformanceCheck = {
     since: "20250201181148_rls-refactor.sql"
   },
   scan(file, contents) {
+    // Rendered from packages/database/src/authz, which owns the deprecated helpers' own
+    // definitions until they can be dropped.
+    if (contents.startsWith(GENERATED_AUTHZ_MIGRATION)) return [];
     const violations: Violation[] = [];
     contents.split("\n").forEach((text, i) => {
       for (const m of text.matchAll(LEGACY_RLS)) {

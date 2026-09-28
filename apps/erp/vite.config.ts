@@ -61,6 +61,14 @@ export default defineConfig(({ command, isSsrBuild, mode }) => {
   ];
 
   return {
+    // ASSETS_URL bakes a CDN asset base into the client build (Dockerfile
+    // build arg). Vite's base is build-time only, so an image built without
+    // it serves assets same-origin — that IS the controlled/air-gapped
+    // variant, not a fallback. Normalized: Vite requires the trailing slash.
+    base:
+      command === "build" && process.env.ASSETS_URL
+        ? process.env.ASSETS_URL.replace(/\/*$/, "/")
+        : undefined,
     build: {
       minify: true,
       rolldownOptions: {
@@ -121,6 +129,12 @@ export default defineConfig(({ command, isSsrBuild, mode }) => {
          * like `canvas` above.
          */
         ws: path.resolve(__dirname, "app/ssr-shims/ws-stub.cjs"),
+        // unpdf's bundled PDF.js engine is a dead lazy chunk here — the browser
+        // runs react-pdf's pdfjs-dist (see @carbon/files/pdf). Keep it out.
+        "unpdf/pdfjs": path.resolve(
+          __dirname,
+          "app/ssr-shims/unpdf-pdfjs-stub.mjs"
+        ),
         // Directory (not index.ts) so subpath imports like
         // `@carbon/utils/favicon` resolve to `src/favicon.ts`.
         "@carbon/utils": path.resolve(__dirname, "../../packages/utils/src"),

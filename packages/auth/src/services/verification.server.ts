@@ -1,9 +1,8 @@
 import { VerificationEmail } from "@carbon/documents/email";
 import { redis } from "@carbon/kv";
-import { sendEmail } from "@carbon/lib/resend.server";
+import { sendEmail } from "@carbon/lib/email.server";
 import { getLogger } from "@carbon/logger";
 import { render } from "@react-email/components";
-import { RESEND_DOMAIN } from "../config/env";
 
 const log = getLogger("auth");
 
@@ -39,14 +38,15 @@ export async function sendVerificationCode(email: string) {
     );
 
     const result = await sendEmail({
-      from: `Carbon <no-reply@${RESEND_DOMAIN}>`,
       to: email,
       subject: "Verify your email address",
       html
     });
     log.debug("Verification email sent", { result });
 
-    return !result.error;
+    // `data: null` with no error is the SMTP-unconfigured no-op — the user
+    // will never receive a code, so don't report success.
+    return !result.error && result.data !== null;
   } catch (error) {
     log.error("Failed to send verification code", { error });
     return false;

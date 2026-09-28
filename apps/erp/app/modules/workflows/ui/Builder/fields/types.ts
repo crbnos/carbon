@@ -1,5 +1,5 @@
+import type { ValueOrRef, ValueType } from "@carbon/ee/workflows";
 import type { TermId } from "@carbon/glossary";
-import type { ValueOrRef, ValueType } from "@carbon/workflows";
 
 export type FieldContext = {
   nodeId: string;

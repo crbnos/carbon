@@ -29,6 +29,8 @@ export interface DigestEntry {
   response: string;
   injectAuth: string;
   permission: string;
+  /** Whether the service pages itself — decides who applies limit/offset. */
+  paginates: boolean;
 }
 
 export interface ManifestDigest {
@@ -96,7 +98,8 @@ export function buildManifestDigest(tools: ManifestEntry[]): ManifestDigest {
         injectAuth: [...t.injectAuth].sort().join("+") || "none",
         permission: t.permission?.module
           ? `${t.permission.module}:${[...t.permission.actions].sort().join("+")}`
-          : "none"
+          : "none",
+        paginates: t.paginates
       }))
   };
 }
@@ -148,6 +151,9 @@ export function formatDigestDiff(diff: DigestDiff): string {
     }
     if (before.injectAuth !== after.injectAuth) {
       parts.push(`injectAuth ${before.injectAuth} → ${after.injectAuth}`);
+    }
+    if (before.paginates !== after.paginates) {
+      parts.push(`paginates ${before.paginates} → ${after.paginates}`);
     }
     if (before.schema !== after.schema) parts.push("input schema changed");
     if (before.response !== after.response) {

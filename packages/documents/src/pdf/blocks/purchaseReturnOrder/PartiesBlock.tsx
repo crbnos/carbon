@@ -45,23 +45,23 @@ export function PartiesBlock({ data }: { data: PurchaseReturnOrderData }) {
               Return Details
             </Text>
             <View style={tw("text-[9px] text-gray-800")}>
-              {purchaseReturnOrder?.purchaseReturnOrderId && (
+              {purchaseReturnOrder?.purchaseReturnOrderId ? (
                 <Text>
                   Return Number: {purchaseReturnOrder.purchaseReturnOrderId}
                 </Text>
-              )}
-              {purchaseReturnOrder?.supplierReference && (
+              ) : null}
+              {purchaseReturnOrder?.supplierReference ? (
                 <Text>
                   Supplier RMA #: {purchaseReturnOrder.supplierReference}
                 </Text>
-              )}
-              {purchaseReturnOrder?.orderDate && (
+              ) : null}
+              {purchaseReturnOrder?.orderDate ? (
                 <Text>
                   Date:{" "}
                   {formatDate(purchaseReturnOrder.orderDate, undefined, locale)}
                 </Text>
-              )}
-              {purchaseReturnOrder?.expirationDate && (
+              ) : null}
+              {purchaseReturnOrder?.expirationDate ? (
                 <Text>
                   Expires:{" "}
                   {formatDate(
@@ -70,7 +70,7 @@ export function PartiesBlock({ data }: { data: PurchaseReturnOrderData }) {
                     locale
                   )}
                 </Text>
-              )}
+              ) : null}
             </View>
           </View>
 

@@ -4,6 +4,7 @@ import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { VStack } from "@carbon/react";
 import type { FundingSource } from "@carbon/utils";
+import { msg } from "@lingui/core/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, redirect, useLoaderData } from "react-router";
 import {
@@ -29,7 +30,7 @@ import { path } from "~/utils/path";
 
 export const handle: Handle = {
   breadcrumb: detailBreadcrumb(
-    { breadcrumb: "Payments", to: path.to.payments },
+    { breadcrumb: msg`Payments`, to: path.to.payments },
     (data) => data?.payment?.paymentId
   ),
   module: "invoicing"

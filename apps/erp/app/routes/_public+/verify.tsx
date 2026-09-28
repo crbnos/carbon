@@ -6,6 +6,12 @@ import {
 } from "@carbon/auth/auth.server";
 import { ensureDeviceId } from "@carbon/auth/device.server";
 import {
+  isPlatformSignupDisabled,
+  isSelfSignupBlockedForEmail,
+  PLATFORM_SIGNUP_DISABLED_MESSAGE,
+  SELF_SIGNUP_BLOCKED_MESSAGE
+} from "@carbon/auth/self-signup.server";
+import {
   flash,
   getAuthSession,
   setAuthSession
@@ -22,6 +28,7 @@ import {
   Heading,
   VStack
 } from "@carbon/react";
+import { getClientIp } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { LuCircleAlert } from "react-icons/lu";
 import type {
@@ -62,7 +69,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const ip = request.headers.get("x-forwarded-for") ?? "127.0.0.1";
+  const ip = getClientIp(request) ?? "127.0.0.1";
 
   const ratelimit = new Ratelimit({
     redis,
@@ -88,6 +95,24 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 
   const { email, code, redirectTo } = validation.data;
+
+  // Defense in depth: the login action already refuses a blocked domain before
+  // any code is sent, so a valid code should never exist for one — but this is
+  // the route that actually creates the account, so gate it here too.
+  if (isSelfSignupBlockedForEmail(email)) {
+    return data(
+      { success: false, message: SELF_SIGNUP_BLOCKED_MESSAGE },
+      await flash(request, error(null, SELF_SIGNUP_BLOCKED_MESSAGE))
+    );
+  }
+  // Same defense for the platform toggle: a code sent moments before the
+  // administrator switched sign-ups off must not still create an account.
+  if (await isPlatformSignupDisabled()) {
+    return data(
+      { success: false, message: PLATFORM_SIGNUP_DISABLED_MESSAGE },
+      await flash(request, error(null, PLATFORM_SIGNUP_DISABLED_MESSAGE))
+    );
+  }
 
   // Verify the email code
   const isCodeValid = await verifyEmailCode(email, code);

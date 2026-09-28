@@ -1,5 +1,4 @@
-import type { Edge, SeedWorkflow } from "../../tiers/workflow-definitions.ts";
-import type { WorkflowData } from "../../types.ts";
+import type { Edge, SeedWorkflow, WorkflowData } from "../../types.ts";
 
 // A factory, not a constant: every definition names ids that only exist once the seed has run.
 
@@ -508,6 +507,38 @@ export function buildPrecisionWorkflows(refs: {
   ];
 }
 
+// The queued run was skipped at load while the workflow was briefly unpublished,
+// so it has no steps.
 export const precisionWorkflows: WorkflowData = {
-  build: buildPrecisionWorkflows
+  build: buildPrecisionWorkflows,
+  runs: [
+    {
+      workflow: "Assign new sales orders",
+      status: "Succeeded",
+      triggerRef: "so:dominion-dowels",
+      at: { offset: -14, time: "10:05:39" },
+      steps: [{ nodeId: "action_assign", status: "Succeeded" }]
+    },
+    {
+      workflow: "Assign new sales orders",
+      status: "Failed",
+      triggerRef: "so:solstice-capscrews",
+      at: { offset: -28, time: "14:22:17" },
+      steps: [
+        {
+          nodeId: "action_assign",
+          status: "Failed",
+          error: "The assignee you chose is not in this company."
+        }
+      ]
+    },
+    {
+      workflow: "Assign new sales orders",
+      status: "Skipped",
+      triggerRef: "so:cedarvalley-pins",
+      at: { offset: -21, time: "08:48:52" },
+      statusReason: "This workflow was unpublished before the run started.",
+      steps: []
+    }
+  ]
 };

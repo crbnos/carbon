@@ -60,7 +60,7 @@ const sessionStorage = createCookieSessionStorage({
     path: "/",
     sameSite: isTestEdition ? "none" : "lax",
     secrets: [SESSION_SECRET!],
-    secure: !!cookieDomain,
+    secure: isTestEdition || !!cookieDomain,
     domain: cookieDomain
   }
 });
@@ -225,9 +225,18 @@ export async function clearAuthCookies(request: Request) {
 
 const REVOKE_TIMEOUT_MS = 2000;
 
+/**
+ * `reason` is a slug naming why the session was destroyed (e.g. "no-claims"),
+ * echoed to the browser console by login.tsx — a forced logout is otherwise
+ * invisible client-side, since the browser sees nothing but a 302 to /login.
+ *
+ * It reaches the client in every environment, so it must stay a fixed set of
+ * internal state names: nothing user-identifying, and nothing that reveals
+ * whether an account exists. Identifying detail goes in the server log instead.
+ */
 export async function destroyAuthSession(
   request: Request,
-  { revoke = false }: { revoke?: boolean } = {}
+  { revoke = false, reason }: { revoke?: boolean; reason?: string } = {}
 ) {
   if (revoke) {
     try {
@@ -246,7 +255,11 @@ export async function destroyAuthSession(
     }
   }
   const headers = await clearAuthCookies(request);
-  return redirect(path.to.login, {
+  const destination = reason
+    ? `${path.to.login}?reason=${encodeURIComponent(reason)}`
+    : path.to.login;
+
+  return redirect(destination, {
     headers
   });
 }

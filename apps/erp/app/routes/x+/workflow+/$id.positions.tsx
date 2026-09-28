@@ -1,6 +1,6 @@
 import { assertIsPost } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { requirePlan } from "@carbon/ee/plan.server";
+import { requireFeature } from "@carbon/ee/plan.server";
 import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
@@ -27,7 +27,7 @@ export async function action({ params, request }: ActionFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
     update: "workflows"
   });
-  await requirePlan({
+  await requireFeature({
     request,
     client,
     companyId,

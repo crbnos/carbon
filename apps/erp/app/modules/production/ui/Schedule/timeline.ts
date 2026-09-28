@@ -43,6 +43,17 @@ export type TimelineNodeDetail = {
    */
   jobId?: string;
   jobReadableId?: string;
+  /** The operation's own description — shown as a secondary "Operation" row. */
+  operationDescription?: string | null;
+  /**
+   * The part this reservation's operation produces (its make method's item).
+   * `itemReadableId` titles the panel and appears as the "Part" row; the
+   * thumbnail is shown alongside the header.
+   */
+  itemReadableId?: string | null;
+  itemName?: string | null;
+  thumbnailPath?: string | null;
+  itemType?: string | null;
   /**
    * Set when this reservation is a Released operation batch's coalesced hold.
    * The panel opens the batch (not the anchor member's job) when present.

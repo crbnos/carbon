@@ -2,11 +2,11 @@ import type {
   WorkflowDefinition,
   WorkflowNode,
   WorkflowNodeType
-} from "@carbon/workflows";
+} from "@carbon/ee/workflows";
 import {
   CURRENT_DEFINITION_FORMAT_VERSION,
   nextNodeName
-} from "@carbon/workflows";
+} from "@carbon/ee/workflows";
 import { nanoid } from "nanoid";
 import type { BuilderEdge, BuilderNode } from "../../types";
 import { MAX_NODE_CARD_WIDTH, NODE_ACCEPTS_INCOMING } from "./nodes/kinds";

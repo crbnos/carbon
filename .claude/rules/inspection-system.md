@@ -111,8 +111,12 @@ strings (cosmetic).
   `sync_finish_job_operation` (the zero-completions fallback to the full job
   quantity now applies ONLY when the job recorded no scrap/rework — a fully
   scrapped job closes with `quantityComplete = 0` and receives nothing) and
-  `complete_job_to_inventory` (the serial branch excludes `Rejected` entities
-  from the Assembly Output ledger loop AND the Available release).
+  `complete_job_to_inventory` (the serial branch excludes `Rejected` entities).
+  `20260914095239_complete-job-received-quantity.sql` then rewrote that branch:
+  it no longer loops every entity and no longer releases them all to `Available`
+  — it receives only the delta between the cumulative completed quantity and
+  what the job already received, oldest-numbered first, skipping `Consumed`,
+  `Rejected` and `Scrapped`, and flips only the units it received.
 
 Execution-layer tables (`20260722040401_inbound-inspection-execution.sql`):
 
@@ -214,7 +218,8 @@ quality engine stays pure (verdicts only); orchestration lives in
 (`getInspectionOutcomeState` — buckets recomputed fresh from the DB per POST;
 `getSerialCompletionCandidates` / `postSerialCompletions` /
 `postBulkCompletion`; `createInspectionRejectionIssue` — the NCR block lifted
-from the retired reject route).
+from the retired reject route; it passes `inspectionId` to `createQualityIssue` so the
+inspection link is written with the disposition row under the issue lock).
 
 | Decision | Physical postings |
 |---|---|

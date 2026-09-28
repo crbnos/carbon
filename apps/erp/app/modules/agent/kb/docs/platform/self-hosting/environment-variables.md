@@ -44,8 +44,12 @@ Enterprise `docs/reference/single-sign-on` adds two more:
 Turns on the SAML engine in the auth service.
 SAML signing key — base64-encoded PKCS#1 DER RSA, minimum 2048-bit; the generation command is in `.env.example`.
 
-Sign-in bot protection uses Cloudflare Turnstile: `CLOUDFLARE_TURNSTILE_SITE_KEY` and
-`CLOUDFLARE_TURNSTILE_SECRET_KEY`.
+Sign-in bot protection is Cloudflare Turnstile off Vercel: set both
+`CLOUDFLARE_TURNSTILE_SITE_KEY` and `CLOUDFLARE_TURNSTILE_SECRET_KEY` and every login form
+shows the widget and verifies its token. With neither set there is no bot check, and the
+per-IP rate limit and per-account lockout are all that apply. `BOT_PROTECTION`
+chooses explicitly: `turnstile`, or `botid` for Vercel BotID, which is invisible but runs
+only on Vercel.
 
 ## Jobs & cache
 
@@ -58,8 +62,12 @@ Override the Inngest endpoint (self-hosted or dev).
 
 ## Email & billing
 
-Resend API key for transactional email.
-Verified sending domain.
+SMTP server for transactional email. Unset disables email sending.
+SMTP port; 465 uses implicit TLS, 587 (default) uses STARTTLS.
+SMTP username.
+SMTP password.
+From-address for outgoing email, e.g. `Carbon <no-reply@example.com>`.
+Optional. Resend marketing-contacts API; also a legacy SMTP fallback when `SMTP_*` is unset.
 Stripe secret key, Cloud / Enterprise billing.
 Verifies inbound Stripe webhooks.
 Verifies inbound Stripe Connect webhooks (connected-account events, signed with a separate secret).

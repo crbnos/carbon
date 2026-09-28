@@ -403,13 +403,22 @@ export async function fetchContainmentsForEntities(
 export async function fetchJobScopedLineage(
   client: SupabaseClient<Database>,
   jobId: string,
+  companyId: string,
   depth: number
 ): Promise<LineagePayload> {
   const safeDepth = clampDepth(depth);
 
   const [seedEntitiesRes, seedActivitiesRes] = await Promise.all([
-    client.from("trackedEntity").select("*").eq("attributes->>Job", jobId),
-    client.from("trackedActivity").select("*").eq("attributes->>Job", jobId)
+    client
+      .from("trackedEntity")
+      .select("*")
+      .eq("attributes->>Job", jobId)
+      .eq("companyId", companyId),
+    client
+      .from("trackedActivity")
+      .select("*")
+      .eq("attributes->>Job", jobId)
+      .eq("companyId", companyId)
   ]);
 
   const state = newLineageState();

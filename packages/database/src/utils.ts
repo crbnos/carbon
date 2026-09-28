@@ -38,6 +38,11 @@ export const isKysely = (db: AnyPostgresClient): db is Kysely<KyselyDatabase> =>
   typeof (db as Kysely<KyselyDatabase>).selectFrom === "function";
 
 const BATCH_SIZE = 1000;
+// How many pages to request at once past the first. Serial paging made a 150k-row
+// table 150 sequential round trips.
+const PAGE_CONCURRENCY = 4;
+// Backstop only: a server that ignored `Range` would otherwise loop forever.
+const MAX_PAGES = 1000;
 
 export type PaginatedResult<T> =
   | {
@@ -51,55 +56,72 @@ export type PaginatedResult<T> =
       error: PostgrestError;
     };
 
+type PageQuery<T extends object> = PostgrestFilterBuilder<
+  PostgrestClientOptions,
+  Database["public"],
+  Record<string, unknown>,
+  T[]
+>;
+
 /**
  * Fetches all records from a table by automatically handling pagination
- * to work around Supabase's 1000 row limit per request
+ * to work around Supabase's 1000 row limit per request.
+ *
+ * Takes a FACTORY, not a query: supabase-js builders are mutable — `.range()`
+ * sets `this.url.searchParams` and returns `this` — so concurrent awaits on one
+ * builder would all fetch whichever range was set last. Mirrors the Deno sibling
+ * `supabase/functions/lib/fetch-all.ts`.
  */
 export async function fetchAllRecords<T extends object>(
-  baseQuery: PostgrestFilterBuilder<
-    PostgrestClientOptions,
-    Database["public"],
-    Record<string, unknown>,
-    T[]
-  >
+  buildQuery: () => PageQuery<T>
 ): Promise<PaginatedResult<T>> {
-  const allData: T[] = [];
-  let offset = 0;
-  let totalCount: number = 0;
-  let hasMore = true;
+  const fetchPage = async (page: number) =>
+    await buildQuery().range(page * BATCH_SIZE, (page + 1) * BATCH_SIZE - 1);
 
-  while (hasMore) {
-    // Clone the query and add range for this batch
-    const query = baseQuery.range(offset, offset + BATCH_SIZE - 1);
+  // The first page alone, so a table that fits in one page stays at one request.
+  const first = await fetchPage(0);
+  if (first.error) {
+    return { data: null, count: null, error: first.error };
+  }
 
-    const result = await query;
+  const allData: T[] = first.data ?? [];
+  if (allData.length < BATCH_SIZE) {
+    return { data: allData, count: allData.length, error: null };
+  }
 
-    if (result.error) {
-      return {
-        data: null,
-        count: null,
-        error: result.error
-      };
+  for (let page = 1; page < MAX_PAGES; page += PAGE_CONCURRENCY) {
+    const results = await Promise.all(
+      Array.from({ length: PAGE_CONCURRENCY }, (_, i) => fetchPage(page + i))
+    );
+
+    // In page order, so the first SHORT page ends the read. Pages after it are
+    // speculative — they were issued before we knew where the data stopped, and
+    // a read past the end can legitimately fail (PostgREST answers an
+    // out-of-range `Range` with 416). Scanning every result for an error first
+    // would turn that into a failed fetch after the rows were already in hand.
+    for (const result of results) {
+      if (result.error) {
+        return { data: null, count: null, error: result.error };
+      }
+
+      const rows = (result.data ?? []) as T[];
+      allData.push(...rows);
+      if (rows.length < BATCH_SIZE) {
+        return { data: allData, count: allData.length, error: null };
+      }
     }
-
-    if (result.data) {
-      allData.push(...result.data);
-    }
-
-    // Set total count from first request
-    if (offset === 0) {
-      totalCount = result.count ?? 0;
-    }
-
-    // Check if we have more data to fetch
-    hasMore = result.data && result.data.length === BATCH_SIZE;
-    offset += BATCH_SIZE;
   }
 
   return {
-    data: allData,
-    count: totalCount,
-    error: null
+    data: null,
+    count: null,
+    error: {
+      message: `fetchAllRecords exceeded ${MAX_PAGES} pages — refusing to return a partial read`,
+      details: "",
+      hint: "",
+      code: "PGRST_PAGINATION_LIMIT",
+      name: "PostgrestError"
+    } as PostgrestError
   };
 }
 
@@ -114,17 +136,18 @@ export async function fetchAllFromTable<T extends object>(
   selectColumns: string = "*",
   filterFn?: (query: any) => any
 ): Promise<PaginatedResult<T>> {
-  let baseQuery = client
-    // @ts-expect-error
-    .from(tableName)
-    .select(selectColumns, { count: "exact" });
+  // No `count: "exact"` — that is a COUNT(*) OVER () across the whole filtered
+  // set on EVERY page, and no caller reads the returned count.
+  const buildQuery = () => {
+    const query = client
+      // @ts-expect-error
+      .from(tableName)
+      .select(selectColumns);
 
-  if (filterFn) {
-    baseQuery = filterFn(baseQuery);
-  }
+    return (filterFn ? filterFn(query) : query) as PageQuery<T>;
+  };
 
-  // @ts-expect-error
-  return fetchAllRecords(baseQuery);
+  return fetchAllRecords<T>(buildQuery);
 }
 
 /**

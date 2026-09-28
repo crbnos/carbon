@@ -12,6 +12,7 @@ import { ORPCError } from "@orpc/server";
 import { getDatabaseClient } from "~/services/database.server";
 import type { AuthedContext } from "./base.server";
 import { functionRegistry } from "./registry.server";
+import { checkSalesRulesForOperation } from "./sales-rules-gate.server";
 
 export interface DispatchResult {
   data: unknown;
@@ -41,18 +42,32 @@ export function enrichWithAuthContext(
 
   // Array payloads (e.g. the row list for upsertQuoteLinePrices) need per-element
   // stamping — enrichment never reached inside them, so a NOT NULL createdBy on
-  // the row table failed. Only createdBy is injected into elements (and only for
-  // an insert): element keys are spread straight into an INSERT, so injecting
-  // companyId/updatedBy could add a column the row table doesn't have. The
-  // service owns companyId for these rows. createdBy is stamped AFTER the spread
-  // so a caller can't forge audit attribution by supplying it in a row.
+  // the row table failed. Only createdBy is ADDED to elements (and only for an
+  // insert): element keys are spread straight into an INSERT, so adding
+  // companyId/updatedBy could add a column the row table doesn't have.
+  //
+  // But an identity key the CALLER put in a row is always OVERWRITTEN with the
+  // authenticated value, on every operation. The input schema preserves unknown
+  // keys, so without this a row could carry a forged createdBy/updatedBy (audit
+  // attribution) or a foreign companyId straight into a service that spreads it.
+  // Overwriting a key that is already present never changes the row's shape.
+  // userId is deliberately left alone: in a row it is usually data (the employee
+  // being assigned), not the caller.
   if (Array.isArray(value)) {
-    if (operation === "update" || !fields.includes("createdBy")) return value;
-    return value.map((element) =>
-      element && typeof element === "object" && !Array.isArray(element)
-        ? { ...(element as Record<string, unknown>), createdBy: context.userId }
-        : element
-    );
+    const addCreatedBy = operation !== "update" && fields.includes("createdBy");
+    return value.map((element) => {
+      if (!element || typeof element !== "object" || Array.isArray(element)) {
+        return element;
+      }
+      const row: Record<string, unknown> = {
+        ...(element as Record<string, unknown>)
+      };
+      if (addCreatedBy || "createdBy" in row) row.createdBy = context.userId;
+      if ("updatedBy" in row) row.updatedBy = context.userId;
+      if ("companyId" in row) row.companyId = context.companyId;
+      if ("companyGroupId" in row) row.companyGroupId = context.companyGroupId;
+      return row;
+    });
   }
 
   const enriched: Record<string, unknown> = {
@@ -86,8 +101,59 @@ export function enrichWithAuthContext(
   if (fields.includes("companyGroupId")) {
     enriched.companyGroupId = context.companyGroupId;
   }
+  if (fields.includes("userId")) {
+    enriched.userId = context.userId;
+  }
+
+  // One level down, too. The input schema passes unknown keys through nested
+  // objects as well, and a service handed the superuser `db` may spread one
+  // straight into a Kysely `.set()` — `updateItemMethodAndSourcing` spreads
+  // `itemUpdate`, so `{ itemUpdate: { companyId: "<other>" } }` moved the
+  // caller's items into another company. The same rule as the array branch:
+  // only an identity key the caller PUT there is overwritten, never added —
+  // createdBy/updatedBy included, so a nested row cannot forge attribution
+  // any more than a top-level array element can. Nested arrays inside THOSE
+  // are not reached.
+  for (const [key, nested] of Object.entries(enriched)) {
+    if (Array.isArray(nested)) {
+      enriched[key] = nested.map((element) =>
+        overwriteIdentityKeys(element, context)
+      );
+    } else {
+      enriched[key] = overwriteIdentityKeys(nested, context);
+    }
+  }
 
   return enriched;
+}
+
+const IDENTITY_KEYS = [
+  "createdBy",
+  "updatedBy",
+  "companyId",
+  "companyGroupId"
+] as const;
+
+/** A copy of a plain object with any caller-supplied `createdBy` /
+ *  `updatedBy` / `companyId` / `companyGroupId` replaced by the authenticated
+ *  value (the same keys, and the same never-add rule, as the top-level array
+ *  branch); anything else is returned as is. */
+function overwriteIdentityKeys(
+  value: unknown,
+  context: AuthStampContext
+): unknown {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return value;
+  }
+  if (!IDENTITY_KEYS.some((key) => key in value)) return value;
+  const row: Record<string, unknown> = {
+    ...(value as Record<string, unknown>)
+  };
+  if ("createdBy" in row) row.createdBy = context.userId;
+  if ("updatedBy" in row) row.updatedBy = context.userId;
+  if ("companyId" in row) row.companyId = context.companyId;
+  if ("companyGroupId" in row) row.companyGroupId = context.companyGroupId;
+  return row;
 }
 
 // Pulls the MCP-only `_operation` flag out of the args, top level or nested.
@@ -330,6 +396,19 @@ export async function dispatchOperation(
     // else: optional param with nothing to fill — skip.
   }
 
+  // Sales-rule gate — evaluates the RESOLVED payload for the gated sales
+  // operations (line writes + finalize/convert transitions) and refuses on
+  // error-severity violations, mirroring the route actions. Covers every
+  // dispatch caller: HTTP v1, MCP, the in-app agent, and workflows.
+  const salesRuleBlock = await checkSalesRulesForOperation(
+    meta,
+    context,
+    functionArgs
+  );
+  if (salesRuleBlock) {
+    throw new ORPCError("FORBIDDEN", { message: salesRuleBlock });
+  }
+
   let result = await (func as (...args: any[]) => any)(...functionArgs);
   // Supabase query builders are thenable but not yet executed.
   if (
@@ -344,9 +423,6 @@ export async function dispatchOperation(
   if (result && typeof result === "object" && "data" in result) {
     const r = result as { data: unknown; error?: unknown; count?: number };
     if (r.error) {
-      // The raw error rides along so callOperation can reconstruct MCP's
-      // byte-identical `Database error: ${JSON.stringify(error)}` text, and HTTP
-      // callers get the Postgres code/details/hint the way Supabase REST does.
       throw new ORPCError("BAD_REQUEST", {
         message: supabaseErrorMessage(r.error),
         data: { supabase: r.error }

@@ -90,6 +90,9 @@ export type ProductionQuantity = NonNullable<
 export type StorageItem = FileObject & {
   bucket: string;
   itemId?: string;
+  // The file's full storage path when it does not live under the current job
+  // (the batch view lists every member job's files).
+  storagePath?: string;
 };
 
 export type TrackedEntity = NonNullable<

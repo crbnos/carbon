@@ -12,6 +12,12 @@ import { getCompanyId, setCompanyId } from "@carbon/auth/company.server";
 import { ensureDeviceId } from "@carbon/auth/device.server";
 import { userHasVerifiedTotpFactor } from "@carbon/auth/mfa.server";
 import {
+  isPlatformSignupDisabled,
+  isSelfSignupBlockedForEmail,
+  PLATFORM_SIGNUP_DISABLED_MESSAGE,
+  SELF_SIGNUP_BLOCKED_MESSAGE
+} from "@carbon/auth/self-signup.server";
+import {
   destroyAuthSession,
   flash,
   getAuthSession,
@@ -31,11 +37,12 @@ import {
 } from "@carbon/ee/sso.server";
 import { validator } from "@carbon/form";
 import { AccountLockout, redis } from "@carbon/kv";
+import { getLogger } from "@carbon/logger";
 import {
   Alert,
   AlertDescription,
   AlertTitle,
-  LoadingBars,
+  CarbonPulse,
   VStack
 } from "@carbon/react";
 import { Trans } from "@lingui/react/macro";
@@ -53,6 +60,8 @@ import { getCompanies, getEmployeeCompanies } from "~/modules/settings";
 import { getDatabaseClient } from "~/services/database.server";
 import { sendNewDeviceEmail } from "~/services/mfa-email.server";
 import { path } from "~/utils/path";
+
+const logger = getLogger("erp", "callback");
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const authSession = await getAuthSession(request);
@@ -103,6 +112,21 @@ export async function action({ request }: ActionFunctionArgs) {
     return redirect(
       path.to.root,
       await flash(request, error(authSession, "Invalid refresh token"))
+    );
+  }
+
+  // `userId` is caller-supplied; the refresh token is the only proof of
+  // identity. Everything above (the company pick) and below (SSO
+  // classification, JIT cleanup) keys on `userId`, so refuse a form whose
+  // `userId` is not the token's own user.
+  if (authSession.userId !== userId) {
+    logger.error("Callback userId does not match the refresh token's user", {
+      userId,
+      tokenUserId: authSession.userId
+    });
+    return redirect(
+      path.to.root,
+      await flash(request, error(null, "Invalid refresh token"))
     );
   }
 
@@ -366,6 +390,67 @@ export async function action({ request }: ActionFunctionArgs) {
   const user = await getUserByEmail(authSession.email);
 
   if (user?.data) {
+    // Self-signup blocklist (Cloud only). The email/password path refuses a
+    // free/disposable domain in login.tsx and verify.tsx BEFORE the account is
+    // created; OAuth (Google/Azure) has no such seam — GoTrue creates the auth
+    // user and the `create_public_user` trigger fires before this action runs —
+    // so the callback is where we refuse it. Only a GENUINE self-signup is
+    // refused: a user who already belongs to a company (`pickable`), or who is
+    // holding a pending invite, is never a self-signup, so an existing gmail
+    // employee or an invited gmail contractor is unaffected. We simply decline
+    // to mint a session and leave the account: with no company it can access
+    // nothing, and a later legitimate invite reuses the same row
+    // (createEmployeeAccount), so there is nothing to tear down.
+    // The platform toggle closes this same OAuth seam: GoTrue exempts
+    // nothing here (the auth user already exists by the time this action
+    // runs), so a no-company, no-invite arrival is a self-signup however
+    // it authenticated.
+    //
+    // Except the first arrival on an empty instance. The seed creates the
+    // instance admin (ADMIN_EMAIL) with no company on purpose — onboarding
+    // is where they make the first one — so refusing a company-less user
+    // here locked every fresh self-hosted install out of its own front
+    // door. It is safe to let through: with sign-ups disabled, GoTrue only
+    // holds accounts made server-side, and before any company exists the
+    // seed's is the only one.
+    const platformClosed =
+      pickable.length === 0 &&
+      (await isPlatformSignupDisabled()) &&
+      (await instanceHasCompany(serviceRole));
+    if (
+      platformClosed ||
+      (pickable.length === 0 && isSelfSignupBlockedForEmail(authSession.email))
+    ) {
+      // ilike for the case fold only — escape LIKE metacharacters so %/_ in an
+      // address can never act as wildcards and match someone else's invite.
+      const invitePattern = authSession.email.replace(
+        /[\\%_]/g,
+        (match) => `\\${match}`
+      );
+      const pendingInvite = await serviceRole
+        .from("invite")
+        .select("id")
+        .ilike("email", invitePattern)
+        .is("acceptedAt", null)
+        .is("revokedAt", null)
+        .limit(1);
+
+      if (!pendingInvite.data?.length) {
+        return redirect(
+          path.to.root,
+          await flash(
+            request,
+            error(
+              null,
+              platformClosed
+                ? PLATFORM_SIGNUP_DISABLED_MESSAGE
+                : SELF_SIGNUP_BLOCKED_MESSAGE
+            )
+          )
+        );
+      }
+    }
+
     // Require-SSO gate: this is the non-SSO path (magic link, Google/Azure
     // OAuth, magic links minted elsewhere) — a covered + enforced domain may
     // only authenticate via SSO, so refuse before any session state is minted.
@@ -496,7 +581,7 @@ export default function AuthCallback() {
   }, [fetcher, redirectTo]);
 
   return (
-    <div className="flex flex-col items-center justify-center">
+    <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-background">
       {error ? (
         <div className="rounded-lg p-8 mt-8 w-[380px]">
           <VStack spacing={4}>
@@ -517,8 +602,20 @@ export default function AuthCallback() {
           </VStack>
         </div>
       ) : (
-        <LoadingBars />
+        <CarbonPulse />
       )}
     </div>
   );
+}
+
+/** Whether any company exists yet — false only before the first onboarding. */
+async function instanceHasCompany(
+  client: ReturnType<typeof getCarbonServiceRole>
+): Promise<boolean> {
+  const { count, error } = await client
+    .from("company")
+    .select("id", { count: "exact", head: true });
+  // Unanswerable reads as "has one": the gate stays shut rather than
+  // opening on a database hiccup.
+  return Boolean(error) || (count ?? 0) > 0;
 }

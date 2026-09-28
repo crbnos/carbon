@@ -19,15 +19,10 @@ type CustomerStatusesTableProps = {
 
 const CustomerStatusesTable = memo(
   ({ data, count }: CustomerStatusesTableProps) => {
-    const { t, i18n } = useLingui();
+    const { t } = useLingui();
     const [params] = useUrlParams();
     const navigate = useNavigate();
     const permissions = usePermissions();
-
-    const translateStatus = useCallback(
-      (value: string) => i18n._(value),
-      [i18n]
-    );
 
     const customColumns = useCustomColumns<CustomerStatus>("customerStatus");
     const columns = useMemo<ColumnDef<CustomerStatus>[]>(() => {
@@ -37,7 +32,7 @@ const CustomerStatusesTable = memo(
           header: t`Customer Status`,
           cell: ({ row }) => (
             <Hyperlink to={row.original.id}>
-              <Enumerable value={translateStatus(row.original.name ?? "")} />
+              <Enumerable value={row.original.name ?? ""} />
             </Hyperlink>
           ),
           meta: {
@@ -46,7 +41,7 @@ const CustomerStatusesTable = memo(
         }
       ];
       return [...defaultColumns, ...customColumns];
-    }, [customColumns, t, translateStatus]);
+    }, [customColumns, t]);
 
     const renderContextMenu = useCallback(
       (row: CustomerStatus) => {

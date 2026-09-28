@@ -1,3 +1,4 @@
+import "./zod.client";
 import { CONTROLLED_ENVIRONMENT, error, getBrowserEnv } from "@carbon/auth";
 import { flashClientMiddleware } from "@carbon/auth/middleware/flash.client";
 import {
@@ -5,6 +6,7 @@ import {
   flashMiddleware,
   flashResultContext
 } from "@carbon/auth/middleware/flash.server";
+import { securityMiddleware } from "@carbon/auth/middleware/security.server";
 import { validator } from "@carbon/form";
 import { LocaleProvider, resolveLanguage } from "@carbon/locale";
 import {
@@ -19,18 +21,24 @@ import {
 } from "@carbon/react";
 import { RootErrorBoundary } from "@carbon/react/ErrorBoundary";
 import type { Theme } from "@carbon/utils";
-import { getPreferenceHeaders, modeValidator, themes } from "@carbon/utils";
+import {
+  getPreferenceHeaders,
+  isSearchParamOnlyNavigation,
+  modeValidator,
+  themes
+} from "@carbon/utils";
 import { faviconLinks } from "@carbon/utils/favicon";
 import { I18nProvider } from "@react-aria/i18n";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Analytics } from "@vercel/analytics/react";
 import type React from "react";
-import { useState } from "react";
+import { useContext, useState } from "react";
 import type {
   ActionFunctionArgs,
   LinksFunction,
   LoaderFunctionArgs,
-  MetaFunction
+  MetaFunction,
+  ShouldRevalidateFunction
 } from "react-router";
 import {
   data,
@@ -39,10 +47,11 @@ import {
   Outlet,
   Scripts,
   ScrollRestoration,
+  UNSAFE_FrameworkContext,
   useLoaderData
 } from "react-router";
 import SonnerStyle from "sonner/dist/styles.css?url";
-import { loadLinguiCatalogForRequest } from "~/services/lingui.server";
+import { preloadCatalog, useCatalog } from "~/services/lingui";
 import { getMode, setMode } from "~/services/mode.server";
 import Background from "~/styles/background.css?url";
 import NProgress from "~/styles/nprogress.css?url";
@@ -55,6 +64,7 @@ export const middleware = [
   // First: publishes the request context so server code can reach it via ALS.
   requestContextMiddleware,
   requestIdMiddleware,
+  securityMiddleware,
   flashMiddleware
 ];
 export const clientMiddleware = [flashClientMiddleware];
@@ -77,13 +87,18 @@ export const meta: MetaFunction = ({ error }) => {
   ];
 };
 
+// Root data is cookies + env + the flash result. A same-pathname GET (table
+// filter, sort, page, useRevalidator from realtime hooks) can change none of
+// it; actions still revalidate so the flash toast is surfaced.
+export const shouldRevalidate: ShouldRevalidateFunction = (args) =>
+  isSearchParamOnlyNavigation(args) ? false : args.defaultShouldRevalidate;
+
 export async function loader({ request, context }: LoaderFunctionArgs) {
   const {
     AUTH_PROVIDERS,
     CARBON_EDITION,
     CARBON_API_URL,
     CARBON_SLACK_ENABLED,
-    CLOUDFLARE_TURNSTILE_SITE_KEY,
     CONTROLLED_ENVIRONMENT,
     ERP_URL,
     GOOGLE_PLACES_API_KEY,
@@ -95,6 +110,7 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
     POSTHOG_API_HOST,
     POSTHOG_PROJECT_PUBLIC_KEY,
     QUICKBOOKS_CLIENT_ID,
+    RAMP_CLIENT_ID,
     STRIPE_CONNECT_ENABLED,
     SUPABASE_ANON_KEY,
     SUPABASE_URL,
@@ -106,7 +122,7 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
 
   const preferences = getPreferenceHeaders(request);
   const appLanguage = resolveLanguage(preferences.locale);
-  const linguiCatalog = await loadLinguiCatalogForRequest(request, appLanguage);
+  await preloadCatalog(appLanguage);
 
   return data(
     {
@@ -115,7 +131,6 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
         CARBON_API_URL,
         CARBON_EDITION,
         CARBON_SLACK_ENABLED,
-        CLOUDFLARE_TURNSTILE_SITE_KEY,
         CONTROLLED_ENVIRONMENT,
         DEFAULT_LANGUAGE,
         ERP_URL,
@@ -128,6 +143,7 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
         POSTHOG_API_HOST,
         POSTHOG_PROJECT_PUBLIC_KEY,
         QUICKBOOKS_CLIENT_ID,
+        RAMP_CLIENT_ID,
         STRIPE_CONNECT_ENABLED,
         SUPABASE_ANON_KEY,
         SUPABASE_URL,
@@ -135,7 +151,6 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
         VERCEL_URL,
         XERO_CLIENT_ID
       },
-      linguiCatalog,
       mode: getMode(request),
       preferences: getPreferenceHeaders(request),
       result: context.get(flashResultContext),
@@ -187,6 +202,7 @@ export function Document({
   theme?: string;
   env?: Record<string, unknown>;
 }) {
+  const nonce = useContext(UNSAFE_FrameworkContext)?.nonce;
   const selectedTheme = themes.find((t) => t.name === theme) as
     | Theme
     | undefined;
@@ -238,6 +254,9 @@ export function Document({
             window.env at module load and otherwise crashes hydration. */}
         {env ? (
           <script
+            // Server render only: on the client the nonce is undefined (and browsers hide it).
+            nonce={nonce}
+            suppressHydrationWarning
             dangerouslySetInnerHTML={{
               __html: `window.env = ${JSON.stringify(env)};`
             }}
@@ -257,8 +276,8 @@ export default function App() {
   const env = loaderData?.env ?? {};
   const theme = loaderData?.theme ?? "zinc";
   const prefs = loaderData?.preferences;
-  const linguiCatalog = loaderData?.linguiCatalog;
   const appLanguage = resolveLanguage(prefs.locale);
+  const catalog = useCatalog(appLanguage);
   const mode = useMode();
 
   // One client for both consumers: the imperative `window.clientCache`
@@ -288,7 +307,7 @@ export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <OperatingSystemContextProvider platform={prefs.platform}>
-        <LocaleProvider locale={appLanguage} catalog={linguiCatalog}>
+        <LocaleProvider locale={appLanguage} catalog={catalog}>
           <I18nProvider locale={prefs.locale}>
             <TooltipProvider delayDuration={200}>
               <Document mode={mode} theme={theme} lang={appLanguage} env={env}>

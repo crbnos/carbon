@@ -197,6 +197,12 @@ export const ENTITY_DEFINITIONS: Record<
     label: "Journal Entries",
     type: "transaction",
     supportedDirections: ["push-to-accounting"]
+  },
+  charge: {
+    label: "Card Charges",
+    type: "transaction",
+    dependsOn: ["vendor"],
+    supportedDirections: ["push-to-accounting"]
   }
 };
 
@@ -244,6 +250,15 @@ export const DEFAULT_SYNC_CONFIG: GlobalSyncConfig = {
       // connecting an accounting integration means Carbon's automated GL
       // postings mirror to it. Manual journals are excluded by POSTING_POLICY
       // (syncable: false), not by this flag.
+      enabled: true,
+      direction: "push-to-accounting",
+      owner: "carbon"
+    },
+    charge: {
+      // Card charges (Charge/Credit cardTransactions) push as the provider's
+      // native card-charge object; while enabled, their "Card Transaction"
+      // journals are DOC_BACKED-excluded per row (core/posting.ts) so the
+      // same spend is never both a journal entry and a charge.
       enabled: true,
       direction: "push-to-accounting",
       owner: "carbon"
@@ -361,6 +376,11 @@ export const POSTING_POLICY: Record<
     defaultGranularity: "individual"
   },
   "Inventory Adjustment": {
+    representation: "journal",
+    defaultEnabled: true,
+    defaultGranularity: "individual"
+  },
+  "Card Transaction": {
     representation: "journal",
     defaultEnabled: true,
     defaultGranularity: "individual"
@@ -733,7 +753,8 @@ export const SyncConfigSchema = z
         invoice: createEntityConfigSchema().optional(),
         payment: createEntityConfigSchema().optional(),
         inventoryAdjustment: createEntityConfigSchema().optional(),
-        journalEntry: createEntityConfigSchema().optional()
+        journalEntry: createEntityConfigSchema().optional(),
+        charge: createEntityConfigSchema().optional()
       })
       .optional()
   })

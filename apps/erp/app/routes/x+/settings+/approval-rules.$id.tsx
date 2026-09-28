@@ -2,17 +2,18 @@ import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
+import { approvalRuleValidator } from "@carbon/ee/approvals";
+import {
+  getApprovalRuleById,
+  getApprovalRules,
+  upsertApprovalRule
+} from "@carbon/ee/approvals.server";
+import { requireFeature } from "@carbon/ee/plan.server";
 import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { redirect, useLoaderData, useNavigate } from "react-router";
 import { useUrlParams } from "~/hooks";
 import { ApprovalRuleForm } from "~/modules/settings";
-import {
-  approvalRuleValidator,
-  getApprovalRuleById,
-  getApprovalRules,
-  upsertApprovalRule
-} from "~/modules/shared";
 
 import { getParams, path } from "~/utils/path";
 
@@ -20,6 +21,14 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
     view: "settings",
     role: "employee"
+  });
+
+  await requireFeature({
+    request,
+    client,
+    companyId,
+    redirectTo: path.to.settings,
+    feature: "APPROVAL_RULES"
   });
 
   const { id } = params;
@@ -49,9 +58,17 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
 
-  const { companyId, userId } = await requirePermissions(request, {
+  const { client, companyId, userId } = await requirePermissions(request, {
     update: "settings",
     role: "employee"
+  });
+
+  await requireFeature({
+    request,
+    client,
+    companyId,
+    redirectTo: path.to.settings,
+    feature: "APPROVAL_RULES"
   });
 
   const serviceRole = getCarbonServiceRole();

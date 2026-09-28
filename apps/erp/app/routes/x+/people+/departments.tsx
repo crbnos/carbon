@@ -108,7 +108,7 @@ export default function Route() {
             <TabsTrigger value="list">List View</TabsTrigger>
           </TabsList>
           <New
-            label="Department"
+            label={t`Department`}
             to={path.to.newDepartment}
             variant="primary"
           />

@@ -1,7 +1,19 @@
 import { assertEquals } from "https://deno.land/std@0.175.0/testing/asserts.ts";
 import {
   buildSupersessionRedirectMap,
+  consumableInWholeAssemblies,
+  pullBackQuantities,
   type SupersessionRow,
+  withoutStockedConsumeFirst,
+  buildConsumeFirstRules,
+  consumeFirstStockItems,
+  keepsLineOnPredecessor,
+  settleConsumeFirstLine,
+  buildConsumeFirstHops,
+  firstStockedInConsumeFirstChain,
+  resolveMadeLinePull,
+  type SupersessionMode,
+  reserveConsumeFirstStock,
 } from "./supersession-pick.ts";
 
 // `buildSupersessionRedirectMap` is the single source of truth for "should this
@@ -38,15 +50,20 @@ Deno.test("redirects for Prefer New", () => {
   assertEquals(map.get("A"), { to: "B", factor: 1 });
 });
 
-// Stock Only keeps its successor as a reserve-governed reference and No Stock
-// has no successor to move demand to — neither redirects. Seeding a test with
-// one of these modes is the easiest way to "prove" a swap works when nothing
-// swapped at all.
-Deno.test("does not redirect for Stock Only or No Stock", () => {
-  for (const supersessionMode of ["Stock Only", "No Stock"]) {
-    const map = buildSupersessionRedirectMap([row({ supersessionMode })], ASOF);
-    assertEquals(map.size, 0, supersessionMode);
-  }
+Deno.test("redirects for Stock Only", () => {
+  const map = buildSupersessionRedirectMap(
+    [row({ supersessionMode: "Stock Only" })],
+    ASOF
+  );
+  assertEquals(map.get("A"), { to: "B", factor: 1 });
+});
+
+Deno.test("does not redirect for No Stock", () => {
+  const map = buildSupersessionRedirectMap(
+    [row({ supersessionMode: "No Stock", successorItemId: null })],
+    ASOF
+  );
+  assertEquals(map.size, 0);
 });
 
 Deno.test("does not redirect without a successor", () => {
@@ -213,4 +230,304 @@ Deno.test("last row wins for a duplicated itemId", () => {
 
 Deno.test("returns an empty map for no rows", () => {
   assertEquals(buildSupersessionRedirectMap([], ASOF).size, 0);
+});
+
+Deno.test("withoutStockedConsumeFirst keeps a stocked Consume First predecessor", () => {
+  const rows = [
+    row({ itemId: "A", successorItemId: "B" }),
+    row({ itemId: "B", successorItemId: "C" }),
+    row({ itemId: "D", successorItemId: "E", supersessionMode: "Prefer New" }),
+  ];
+  const map = buildSupersessionRedirectMap(
+    withoutStockedConsumeFirst(rows, new Set(["A", "D"])),
+    ASOF
+  );
+  assertEquals(map.has("A"), false);
+  assertEquals(map.get("B"), { to: "C", factor: 1 });
+  assertEquals(map.get("D"), { to: "E", factor: 1 });
+});
+
+Deno.test("withoutStockedConsumeFirst redirects once the predecessor is out", () => {
+  const map = buildSupersessionRedirectMap(
+    withoutStockedConsumeFirst([row()], new Set()),
+    ASOF
+  );
+  assertEquals(map.get("A"), { to: "B", factor: 1 });
+});
+
+Deno.test("pullBackQuantities converts the target and re-derives scrap at the predecessor's rate", () => {
+  const result = pullBackQuantities(
+    { quantity: 2, estimatedQuantity: 11, scrapQuantity: 1 },
+    0.5,
+    0.2
+  );
+  assertEquals(result.quantity, 1);
+  assertEquals(result.scrapQuantity, 1); // ceil(5 * 0.2)
+  assertEquals(result.estimatedQuantity, 6);
+});
+
+Deno.test("pullBackQuantities with no predecessor scrap carries none over", () => {
+  const result = pullBackQuantities(
+    { quantity: "2", estimatedQuantity: "11", scrapQuantity: "1" },
+    0.5,
+    0
+  );
+  assertEquals(result, { quantity: 1, estimatedQuantity: 5, scrapQuantity: 0 });
+});
+
+Deno.test("consumableInWholeAssemblies rounds stock down to whole assemblies", () => {
+  assertEquals(consumableInWholeAssemblies(3, 2), 2);
+  assertEquals(consumableInWholeAssemblies(1, 2), 0);
+  assertEquals(consumableInWholeAssemblies(4, 2), 4);
+  assertEquals(consumableInWholeAssemblies(10, 3), 9);
+  assertEquals(consumableInWholeAssemblies(0, 2), 0);
+  assertEquals(consumableInWholeAssemblies(-2, 2), 0);
+});
+
+Deno.test("consumableInWholeAssemblies handles fractional and missing per-assembly quantities", () => {
+  assertEquals(consumableInWholeAssemblies(0.3, 0.1), 0.3);
+  assertEquals(consumableInWholeAssemblies(1.25, 0.5), 1);
+  assertEquals(consumableInWholeAssemblies(3, 0), 3);
+  assertEquals(consumableInWholeAssemblies(3, Number.NaN), 3);
+});
+
+
+const CF_ROWS = [
+  {
+    itemId: "old",
+    successorItemId: "new",
+    successorEffectivityDate: null,
+    conversionFactor: 1,
+  },
+];
+const cfRules = () => buildConsumeFirstRules(CF_ROWS, "2026-09-16");
+const stock = (entries: Record<string, number>) =>
+  new Map(Object.entries(entries));
+
+Deno.test("keepsLineOnPredecessor is one whole assembly, never a unit", () => {
+  assertEquals(keepsLineOnPredecessor(3, 1), true);
+  assertEquals(keepsLineOnPredecessor(3, 2), true); // one pair, one odd part left
+  assertEquals(keepsLineOnPredecessor(1, 2), false); // half a pair is nothing
+  assertEquals(keepsLineOnPredecessor(0, 1), false);
+  assertEquals(keepsLineOnPredecessor(undefined, 1), false);
+});
+
+Deno.test("buildConsumeFirstRules indexes both directions and gates on effectivity", () => {
+  const rules = buildConsumeFirstRules(
+    [
+      ...CF_ROWS,
+      {
+        itemId: "older",
+        successorItemId: "new",
+        successorEffectivityDate: "2026-10-01",
+        conversionFactor: "2",
+      },
+      { itemId: "loose", successorItemId: null, successorEffectivityDate: null, conversionFactor: 1 },
+    ],
+    "2026-09-16"
+  );
+  assertEquals(rules.successorByPredecessor.get("old"), { itemId: "new", factor: 1 });
+  assertEquals(rules.successorByPredecessor.has("older"), false); // not yet effective
+  assertEquals(rules.successorByPredecessor.has("loose"), false); // no successor
+  assertEquals(rules.predecessorsBySuccessor.get("new"), [{ itemId: "old", factor: 1 }]);
+});
+
+Deno.test("case 17: a made line swapped at creation is reverted onto a stocked predecessor", () => {
+  const line = { itemId: "new", quantity: 1, substitutedFromItemId: "old" };
+  assertEquals(settleConsumeFirstLine(line, cfRules(), stock({ old: 3 })), {
+    kind: "revert",
+    toItemId: "old",
+    factor: 1,
+  });
+});
+
+Deno.test("case 18: a swapped line stays on the successor when the predecessor is empty", () => {
+  const line = { itemId: "new", quantity: 1, substitutedFromItemId: "old" };
+  assertEquals(settleConsumeFirstLine(line, cfRules(), stock({ old: 0 })), null);
+  assertEquals(settleConsumeFirstLine(line, cfRules(), stock({})), null);
+});
+
+Deno.test("case 19: no whole assembly in stock pushes a kept line to the successor", () => {
+  const line = { itemId: "old", quantity: 2, substitutedFromItemId: null };
+  assertEquals(settleConsumeFirstLine(line, cfRules(), stock({ old: 1 })), {
+    kind: "push",
+    toItemId: "new",
+    factor: 1,
+  });
+  assertEquals(settleConsumeFirstLine(line, cfRules(), stock({ old: 3 })), null);
+});
+
+Deno.test("case 20: a line the BOM names by the successor is pulled back onto a stocked predecessor", () => {
+  const line = { itemId: "new", quantity: 1, substitutedFromItemId: null };
+  assertEquals(settleConsumeFirstLine(line, cfRules(), stock({ old: 3 })), {
+    kind: "pullBack",
+    toItemId: "old",
+    factor: 1,
+  });
+  assertEquals(settleConsumeFirstLine(line, cfRules(), stock({ old: 0 })), null);
+});
+
+Deno.test("case 22: the factor converts the per-assembly quantity before the whole-assembly test", () => {
+  const rules = buildConsumeFirstRules(
+    [{ ...CF_ROWS[0]!, conversionFactor: 2 }],
+    "2026-09-16"
+  );
+  const line = { itemId: "new", quantity: 2, substitutedFromItemId: "old" };
+  assertEquals(settleConsumeFirstLine(line, rules, stock({ old: 1 })), {
+    kind: "revert",
+    toItemId: "old",
+    factor: 0.5,
+  });
+  const kept = { itemId: "old", quantity: 1, substitutedFromItemId: null };
+  assertEquals(settleConsumeFirstLine(kept, rules, stock({ old: 0 })), {
+    kind: "push",
+    toItemId: "new",
+    factor: 2,
+  });
+});
+
+Deno.test("case 21 (quantities): a revert recovers the target and re-derives scrap at the predecessor's rate", () => {
+  assertEquals(
+    pullBackQuantities({ quantity: 1, estimatedQuantity: 5, scrapQuantity: 0 }, 1, 0.1),
+    { quantity: 1, estimatedQuantity: 6, scrapQuantity: 1 }
+  );
+});
+
+Deno.test("a swapped row's provenance only counts when the predecessor's rule names this row's item", () => {
+  const rules = buildConsumeFirstRules(
+    [...CF_ROWS, { itemId: "older", successorItemId: "other", successorEffectivityDate: null, conversionFactor: 1 }],
+    "2026-09-16"
+  );
+  const line = { itemId: "new", quantity: 1, substitutedFromItemId: "older" };
+  assertEquals(settleConsumeFirstLine(line, rules, stock({ older: 5, old: 5 })), {
+    kind: "pullBack",
+    toItemId: "old",
+    factor: 1,
+  });
+});
+
+Deno.test("a line with no Consume First relation is left alone", () => {
+  const line = { itemId: "unrelated", quantity: 1, substitutedFromItemId: null };
+  assertEquals(settleConsumeFirstLine(line, cfRules(), stock({ old: 9 })), null);
+});
+
+Deno.test("consumeFirstStockItems names every item whose stock decides the line", () => {
+  const rules = cfRules();
+  assertEquals(consumeFirstStockItems({ itemId: "old", substitutedFromItemId: null }, rules), ["old"]);
+  assertEquals(consumeFirstStockItems({ itemId: "new", substitutedFromItemId: null }, rules), ["old"]);
+  assertEquals(consumeFirstStockItems({ itemId: "new", substitutedFromItemId: "old" }, rules), ["old"]);
+  assertEquals(consumeFirstStockItems({ itemId: "x", substitutedFromItemId: null }, rules), []);
+});
+
+
+const cfRow = (
+  itemId: string,
+  successorItemId: string | null,
+  supersessionMode: SupersessionMode = "Consume First",
+  conversionFactor: number | string | null = 1,
+  successorEffectivityDate: string | null = null
+) => ({ itemId, successorItemId, supersessionMode, conversionFactor, successorEffectivityDate });
+
+Deno.test("buildConsumeFirstHops stops at the next Consume First item instead of collapsing", () => {
+  const hops = buildConsumeFirstHops(
+    [cfRow("old", "mid"), cfRow("mid", "new")],
+    "2026-09-16"
+  );
+  assertEquals(hops.get("old"), { to: "mid", factor: 1 });
+  assertEquals(hops.get("mid"), { to: "new", factor: 1 });
+  assertEquals(
+    buildSupersessionRedirectMap([cfRow("old", "mid"), cfRow("mid", "new")], "2026-09-16").get("old"),
+    { to: "new", factor: 1 }
+  );
+});
+
+Deno.test("buildConsumeFirstHops collapses THROUGH a non-Consume-First hop and multiplies its factor", () => {
+  const hops = buildConsumeFirstHops(
+    [cfRow("old", "mid", "Consume First", 2), cfRow("mid", "new", "Prefer New", 3)],
+    "2026-09-16"
+  );
+  assertEquals(hops.get("old"), { to: "new", factor: 6 });
+  assertEquals(hops.has("mid"), false);
+});
+
+Deno.test("buildConsumeFirstHops honours effectivity per hop and drops cycles", () => {
+  const hops = buildConsumeFirstHops(
+    [
+      cfRow("old", "mid", "Consume First", 1, "2026-10-01"), // not yet
+      cfRow("mid", "new"),
+      cfRow("a", "b"),
+      cfRow("b", "a"),
+    ],
+    "2026-09-16"
+  );
+  assertEquals(hops.has("old"), false);
+  assertEquals(hops.get("mid"), { to: "new", factor: 1 });
+  assertEquals(hops.has("a"), false);
+  assertEquals(hops.has("b"), false);
+});
+
+Deno.test("firstStockedInConsumeFirstChain returns the first hop with a whole assembly, at the cumulative factor", () => {
+  const hops = buildConsumeFirstHops(
+    [cfRow("old", "mid", "Consume First", 2), cfRow("mid", "new")],
+    "2026-09-16"
+  );
+  const onHand = (m: Record<string, number>) => new Map(Object.entries(m));
+  assertEquals(firstStockedInConsumeFirstChain("old", 1, hops, onHand({ old: 1, mid: 9 })), {
+    itemId: "old",
+    factor: 1,
+  });
+  assertEquals(firstStockedInConsumeFirstChain("old", 1, hops, onHand({ old: 0, mid: 2 })), {
+    itemId: "mid",
+    factor: 2,
+  });
+  assertEquals(firstStockedInConsumeFirstChain("old", 1, hops, onHand({ old: 0, mid: 1 })), null);
+  assertEquals(firstStockedInConsumeFirstChain("old", 1, hops, onHand({ new: 50 })), null);
+  assertEquals(firstStockedInConsumeFirstChain("lonely", 1, hops, onHand({ lonely: 5 })), null);
+});
+
+Deno.test("resolveMadeLinePull: stocked chain first, then a bought successor, else build", () => {
+  const rows = [cfRow("old", "new")];
+  const ctx = {
+    redirect: buildSupersessionRedirectMap(rows, "2026-09-16"),
+    consumeFirstHops: buildConsumeFirstHops(rows, "2026-09-16"),
+    consumeFirstOnHand: new Map([["old", 0]]),
+    boughtSuccessors: new Set<string>(),
+  };
+  assertEquals(resolveMadeLinePull("old", 1, ctx), null);
+  assertEquals(
+    resolveMadeLinePull("old", 1, { ...ctx, consumeFirstOnHand: new Map([["old", 2]]) }),
+    { itemId: "old", factor: 1 }
+  );
+  assertEquals(
+    resolveMadeLinePull("old", 1, { ...ctx, boughtSuccessors: new Set(["new"]) }),
+    { itemId: "new", factor: 1 }
+  );
+  assertEquals(resolveMadeLinePull("other", 1, { ...ctx, boughtSuccessors: new Set(["new"]) }), null);
+});
+
+Deno.test("reserveConsumeFirstStock: a settled line draws its whole assemblies down for the next line", () => {
+  const rules = buildConsumeFirstRules([cfRow("old", "new")], "2026-09-16");
+  const onHand = new Map([["old", 6]]);
+  const first = { itemId: "old", quantity: 4, estimatedQuantity: 4, scrapQuantity: 0, substitutedFromItemId: null };
+  const second = { ...first };
+  const s1 = settleConsumeFirstLine(first, rules, onHand);
+  reserveConsumeFirstStock(first, s1, rules, onHand);
+  assertEquals(s1, null);
+  assertEquals(onHand.get("old"), 2);
+  assertEquals(settleConsumeFirstLine(second, rules, onHand), { kind: "push", toItemId: "new", factor: 1 });
+});
+
+Deno.test("reserveConsumeFirstStock: a revert reserves in the predecessor's units and a push reserves nothing", () => {
+  const rules = buildConsumeFirstRules([cfRow("old", "new", "Consume First", 2)], "2026-09-16");
+  const onHand = new Map([["old", 3]]);
+  const swapped = { itemId: "new", quantity: 2, estimatedQuantity: 8, scrapQuantity: 0, substitutedFromItemId: "old" };
+  const s = settleConsumeFirstLine(swapped, rules, onHand);
+  assertEquals(s, { kind: "revert", toItemId: "old", factor: 0.5 });
+  reserveConsumeFirstStock(swapped, s, rules, onHand);
+  assertEquals(onHand.get("old"), 0);
+  const kept = { itemId: "old", quantity: 1, estimatedQuantity: 2, scrapQuantity: 0, substitutedFromItemId: null };
+  const s3 = settleConsumeFirstLine(kept, rules, onHand);
+  assertEquals(s3, { kind: "push", toItemId: "new", factor: 2 });
+  reserveConsumeFirstStock(kept, s3, rules, onHand);
+  assertEquals(onHand.get("old"), 0);
 });

@@ -1,5 +1,5 @@
 import type { KyselyDatabase } from "@carbon/database/client";
-import { findTriggerSchedule, nextRunAfter } from "@carbon/workflows";
+import { findTriggerSchedule, nextRunAfter } from "@carbon/ee/workflows";
 import { type Kysely, sql } from "kysely";
 import type { MatchResult } from "./matcher";
 import { insertRunsAndBuildEvents, type PlannedRun } from "./matcher";

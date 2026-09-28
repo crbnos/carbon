@@ -25,9 +25,6 @@ CREATE INDEX "userLogin_userId_deviceId_idx"
 
 ALTER TABLE "userLogin" ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "SELECT" ON "public"."userLogin"
-  FOR SELECT USING (auth.uid()::text = "userId");
-
 CREATE OR REPLACE FUNCTION prune_user_logins(p_user_id TEXT, p_cutoff TIMESTAMP WITH TIME ZONE)
 RETURNS void
 LANGUAGE sql

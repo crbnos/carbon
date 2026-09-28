@@ -40,7 +40,7 @@ challenge exists anywhere in this design.
 
 **Depends on:** none
 **Files:**
-- Modify: `packages/utils/src/ip.ts` — add `getClientIp`
+- Modify: `packages/utils/src/headers.ts` — add trusted-proxy options to `getClientIp` (originally planned in `ip.ts`; main's forwarded-header helpers landed first)
 - Create: `packages/utils/src/ip.test.ts` additions (file exists; append cases)
 - Modify: `packages/env/src/index.ts` — add `TRUSTED_PROXY_COUNT`, `TRUSTED_PROXY_IPS`
 - Copy from (precedent): `packages/utils/src/ip.ts` (existing `normalizeIp` / `isPrivateIp` style)

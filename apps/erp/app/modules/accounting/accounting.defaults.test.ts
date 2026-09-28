@@ -45,18 +45,18 @@ vi.mock("~/modules/accounting/ui/AccountDefaults", () => ({
   AccountDefaultsForm: () => null
 }));
 vi.mock("~/modules/accounting", async () => ({
-  ...(await import("./accounting.ee.service")),
+  ...(await import("./accounting.service")),
   ...(await import("./accounting.models"))
 }));
 
 import {
-  getDefaultAccounts,
-  updateDefaultAccounts
-} from "./accounting.ee.service";
-import {
   defaultAccountValidator,
   defaultIncomeAcountValidator
 } from "./accounting.models";
+import {
+  getDefaultAccounts,
+  updateDefaultAccounts
+} from "./accounting.service";
 
 const income = Object.fromEntries(
   Object.keys(defaultIncomeAcountValidator.shape).map((key) => [

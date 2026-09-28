@@ -1,9 +1,19 @@
-import type { ItemSpec } from "../../helpers/items.ts";
 import type {
+  BatchPropertySpec,
+  ConfigurationSpec,
+  CustomerPartSpec,
+  EnforcementRuleSpec,
+  InspectionPlanSpec,
+  ItemSpec,
   ItemsData,
   MakeMethodSpec,
+  PriceOverrideSpec,
+  PricingRuleSpec,
+  RevisionLadderSpec,
+  SupersessionSpec,
   SupplierLinkSpec
 } from "../../types.ts";
+import { precisionAssembly } from "./assembly.ts";
 
 // ---------------------------------------------------------------------------
 // Job-shop catalog for Meridian Precision Works.
@@ -123,6 +133,16 @@ export const BUY_PARTS: ItemSpec[] = [
     standardCost: 285,
     unitSalePrice: 430,
     leadTime: 35
+  },
+  // Deliberately absent from every BOM: job creation and picking redirect to it via SUPERSESSIONS.
+  {
+    readableId: "BSH-PTFE-2012",
+    name: "PTFE-Lined Composite Bushing 20 x 12",
+    type: "Part",
+    replenishment: "Buy",
+    standardCost: 4.6,
+    unitSalePrice: 7.5,
+    leadTime: 10
   }
 ];
 
@@ -134,7 +154,13 @@ export const MATERIALS: ItemSpec[] = [
     trackingType: "Batch",
     standardCost: 3.85,
     unitOfMeasureCode: "LB",
-    leadTime: 10
+    leadTime: 10,
+    // Partially classified on purpose.
+    material: {
+      substance: "Extruded Aluminum",
+      grade: "6061-T6",
+      finish: "Mill Finish"
+    }
   },
   {
     readableId: "MAT-AL5052-SHT",
@@ -168,7 +194,15 @@ export const MATERIALS: ItemSpec[] = [
     trackingType: "Batch",
     standardCost: 2.75,
     unitOfMeasureCode: "LB",
-    leadTime: 14
+    leadTime: 14,
+    material: {
+      substance: "Chromoly Steel",
+      form: "Turned & Polished Bar",
+      materialType: "Chromoly TG&P Bar",
+      grade: "4140 Pre-Hard",
+      finish: "Rust-Preventive Oil",
+      dimension: '2.500" dia'
+    }
   },
   {
     readableId: "MAT-CRS-TUBE",
@@ -232,7 +266,7 @@ export const MAKE_PARTS: ItemSpec[] = [
     replenishment: "Make",
     // Serial-tracked: each unit gets its own genealogy in traceability.
     trackingType: "Serial",
-    standardCost: 0,
+    standardCost: 2310,
     unitSalePrice: 4200
   },
   {
@@ -240,7 +274,7 @@ export const MAKE_PARTS: ItemSpec[] = [
     name: "Manifold Block, 6061-T6",
     type: "Part",
     replenishment: "Make",
-    standardCost: 0,
+    standardCost: 539,
     unitSalePrice: 980
   },
   {
@@ -248,7 +282,7 @@ export const MAKE_PARTS: ItemSpec[] = [
     name: "Pump Housing, 6061-T6",
     type: "Part",
     replenishment: "Make",
-    standardCost: 0,
+    standardCost: 632,
     unitSalePrice: 1150
   },
   {
@@ -256,7 +290,7 @@ export const MAKE_PARTS: ItemSpec[] = [
     name: "Manifold End Cap, 316L",
     type: "Part",
     replenishment: "Make",
-    standardCost: 0,
+    standardCost: 132,
     unitSalePrice: 240
   },
   {
@@ -264,7 +298,7 @@ export const MAKE_PARTS: ItemSpec[] = [
     name: "Drive Shaft, 4140 Pre-Hard",
     type: "Part",
     replenishment: "Make",
-    standardCost: 0,
+    standardCost: 176,
     unitSalePrice: 320
   },
   {
@@ -272,7 +306,7 @@ export const MAKE_PARTS: ItemSpec[] = [
     name: "Piston Rod, 4140 Hard Chrome",
     type: "Part",
     replenishment: "Make",
-    standardCost: 0,
+    standardCost: 231,
     unitSalePrice: 420
   },
   {
@@ -280,7 +314,7 @@ export const MAKE_PARTS: ItemSpec[] = [
     name: "Mounting Flange, 304 Stainless",
     type: "Part",
     replenishment: "Make",
-    standardCost: 0,
+    standardCost: 102,
     unitSalePrice: 185
   },
   {
@@ -288,7 +322,7 @@ export const MAKE_PARTS: ItemSpec[] = [
     name: "Precision Spacer Set",
     type: "Part",
     replenishment: "Make",
-    standardCost: 0,
+    standardCost: 57.75,
     unitSalePrice: 105
   },
   {
@@ -296,7 +330,7 @@ export const MAKE_PARTS: ItemSpec[] = [
     name: "Sheet Metal Enclosure Panel Set",
     type: "Part",
     replenishment: "Make",
-    standardCost: 0,
+    standardCost: 352,
     unitSalePrice: 640
   },
   {
@@ -304,7 +338,7 @@ export const MAKE_PARTS: ItemSpec[] = [
     name: "Welded Base Frame",
     type: "Part",
     replenishment: "Make",
-    standardCost: 0,
+    standardCost: 814,
     unitSalePrice: 1480
   },
   {
@@ -312,7 +346,7 @@ export const MAKE_PARTS: ItemSpec[] = [
     name: "Valve Sub-Assembly",
     type: "Part",
     replenishment: "Make",
-    standardCost: 0,
+    standardCost: 490,
     unitSalePrice: 890
   }
 ];
@@ -386,7 +420,11 @@ export const METHODS: MakeMethodSpec[] = [
         order: 1,
         laborTime: 1.5,
         setupTime: 0.75,
-        machineTime: 1.25
+        machineTime: 1.25,
+        parameters: [
+          { key: "Workholding", value: "6 in vise, hard jaws on parallels" },
+          { key: "Coolant", value: "Flood — semi-synthetic" }
+        ]
       },
       {
         process: "CNC Milling",
@@ -396,7 +434,13 @@ export const METHODS: MakeMethodSpec[] = [
         laborTime: 2,
         machineTime: 1.75,
         // Gives the MES operation screen an Instructions tab with real steps.
-        procedure: "procedure:Pump Housing Second Operation"
+        procedure: "procedure:Pump Housing Second Operation",
+        tools: [{ tool: "TL-FIXT-HSG", quantity: 1 }],
+        parameters: [
+          { key: "Fixture", value: "TL-FIXT-HSG soft jaws, bored in place" },
+          { key: "Finish Bore Speed/Feed", value: "6200 RPM, 18 in/min" },
+          { key: "Coolant", value: "Flood — semi-synthetic" }
+        ]
       },
       {
         process: "Outside Processing",
@@ -475,7 +519,9 @@ export const METHODS: MakeMethodSpec[] = [
         workCenter: "CMM Lab",
         description: "Hardness check and runout report",
         order: 3,
-        laborTime: 0.5
+        laborTime: 0.5,
+        operationType: "Inspection",
+        inspectionPlan: "SHAFT-DR-RUNOUT"
       }
     ]
   },
@@ -776,10 +822,257 @@ export const SUPPLIER_LINKS: SupplierLinkSpec[] = [
     item: "SEAL-ORING-224",
     price: 0.35,
     leadTime: 10
+  },
+  {
+    supplier: "Midway Bearing & Seal",
+    item: "BSH-PTFE-2012",
+    price: 4.6,
+    leadTime: 10
   }
 ];
 
+// MCH-PISTON-ROD still names BSH-BRZ-2012 (140 in bin B2-L2), so Consume First
+// keeps pulling the bronze bushing until the bin is empty, then swaps to the
+// PTFE-lined replacement.
+export const SUPERSESSIONS: SupersessionSpec[] = [
+  {
+    predecessor: "BSH-BRZ-2012",
+    successor: "BSH-PTFE-2012",
+    mode: "Consume First",
+    successorEffectivityOffset: -14
+  }
+];
+
+export const CUSTOMER_PARTS: CustomerPartSpec[] = [
+  {
+    item: "HMA-4000",
+    customer: "Cedar Valley Hydraulics",
+    customerPartId: "CVH-HPU-4000",
+    customerRevision: "C"
+  },
+  {
+    item: "MCH-HSG-PUMP",
+    customer: "Granite State Instruments",
+    customerPartId: "GSI-PMP-118"
+  }
+];
+
+export const PRICE_OVERRIDES: PriceOverrideSpec[] = [
+  {
+    item: "HMA-4000",
+    customer: "Dominion Ag Equipment",
+    notes: "Season-build blanket pricing per the 2026 supply agreement.",
+    breaks: [
+      { quantity: 2, overridePrice: 4100 },
+      { quantity: 10, overridePrice: 3950 }
+    ]
+  }
+];
+
+export const PRICING_RULES: PricingRuleSpec[] = [
+  {
+    name: "Cedar Valley volume discount",
+    ruleType: "Discount",
+    amountType: "Percentage",
+    amount: 5,
+    customer: "Cedar Valley Hydraulics",
+    minQuantity: 10,
+    priority: 10
+  },
+  {
+    name: "Medical cleanroom packaging uplift",
+    ruleType: "Markup",
+    amountType: "Percentage",
+    amount: 15,
+    customerType: "Medical",
+    items: ["MCH-MANI-BLK", "MCH-HSG-PUMP"],
+    priority: 5
+  },
+  {
+    name: "Cap screw carton break",
+    ruleType: "Discount",
+    amountType: "Fixed",
+    amount: 0.04,
+    items: ["HW-SHCS-M6", "HW-SHCS-M10"],
+    minQuantity: 200,
+    priority: 1
+  }
+];
+
+export const CONFIGURATION: ConfigurationSpec = {
+  item: "HMA-4000",
+  group: "Power Unit Configuration",
+  parameters: [
+    {
+      key: "rated_pressure_psi",
+      label: "Rated Pressure (psi)",
+      dataType: "numeric"
+    },
+    {
+      key: "port_thread",
+      label: "Port Thread Standard",
+      dataType: "list",
+      listOptions: ["SAE ORB", "BSPP", "NPT"]
+    },
+    {
+      key: "hydro_test_cert",
+      label: "Include Hydrostatic Test Certificate",
+      dataType: "boolean"
+    }
+  ],
+  rules: [
+    {
+      target: { operation: 2 },
+      field: "laborTime",
+      code: "return params.rated_pressure_psi > 3000 ? 6 : 4;"
+    },
+    {
+      target: { operation: 3 },
+      field: "laborTime",
+      code: "return params.hydro_test_cert ? 2.5 : 1.5;"
+    }
+  ]
+};
+
+export const REVISION_LADDER: RevisionLadderSpec[] = [
+  {
+    item: "MCH-FLANGE-SS",
+    obsoleteRevision: "A",
+    nextRevision: "B",
+    nextStatus: "Prototype"
+  }
+];
+
+// A sampling plan of its own makes the MES open an inspection lot, not a plain operation.
+export const INSPECTION_PLANS: InspectionPlanSpec[] = [
+  {
+    key: "SHAFT-DR-RUNOUT",
+    item: "MCH-SHAFT-DR",
+    drawingNumber: "MPW-2217 Rev B",
+    aql: 1.0,
+    features: [
+      {
+        label: "1",
+        description: "Bearing journal diameter after induction harden",
+        nominalValue: "25.000",
+        tolerancePlus: "0.008",
+        toleranceMinus: "0.008",
+        unit: "mm"
+      },
+      {
+        label: "2",
+        description: "Total indicated runout at the coupling end",
+        nominalValue: "0.010",
+        tolerancePlus: "0.010",
+        toleranceMinus: "0.010",
+        unit: "mm"
+      }
+    ]
+  }
+];
+
+export const ENFORCEMENT_RULES: EnforcementRuleSpec[] = [
+  {
+    family: "sales",
+    name: "Power units — North America ship-to only",
+    description: "CRN / CSA registration covers US, Canada and Mexico.",
+    message:
+      "HMA-4000 pressure registration covers North American installations only. Route other destinations through engineering.",
+    severity: "error",
+    surfaces: ["salesOrderLine", "salesInvoiceLine"],
+    match: "all",
+    conditions: [
+      {
+        field: "customer.location.countryCode",
+        op: "in",
+        value: ["US", "CA", "MX"]
+      }
+    ],
+    items: ["HMA-4000"]
+  },
+  {
+    family: "sales",
+    name: "Medical manifolds need a cleanliness certificate",
+    message:
+      "Medical customers require an ISO 16232 cleanliness certificate — add the cleaning and cert to the quote.",
+    severity: "warn",
+    surfaces: ["quoteLine", "salesOrderLine"],
+    match: "all",
+    conditions: [
+      {
+        field: "customer.customerTypeId",
+        op: "notIn",
+        value: { customerTypes: ["Medical"] }
+      }
+    ],
+    items: ["MCH-MANI-BLK", "MCH-HSG-PUMP"]
+  },
+  {
+    family: "storage",
+    targetType: "item",
+    name: "Bar stock on racks",
+    message: "Bar stock is racked by grade — never binned.",
+    severity: "warn",
+    surfaces: ["place"],
+    match: "all",
+    conditions: [
+      {
+        field: "storageUnit.storageTypeId",
+        op: "eq",
+        value: { storageType: "Rack" }
+      }
+    ],
+    items: ["MAT-AL6061-BAR", "MAT-SS304-BAR", "MAT-4140-BAR"]
+  },
+  {
+    family: "storage",
+    targetType: "item",
+    name: "Bearings stay at the plant",
+    message:
+      "Bearings are kitted at the Rockford plant only — pick a plant bin.",
+    severity: "warn",
+    surfaces: ["receipt", "stockTransfer"],
+    match: "all",
+    conditions: [
+      {
+        field: "storageUnit.locationId",
+        op: "eq",
+        value: { location: "Plant" }
+      }
+    ],
+    items: ["BRG-DBL-6205", "BRG-NDL-HK1512"]
+  },
+  {
+    family: "storage",
+    targetType: "workCenter",
+    name: "Wire EDM in service",
+    message:
+      "The wire EDM is out of service — hold the cut until maintenance releases it.",
+    severity: "error",
+    surfaces: ["operationStart"],
+    match: "all",
+    conditions: [{ field: "workCenter.active", op: "eq", value: true }],
+    workCenters: ["Wire EDM Cell"]
+  }
+];
+
+export const BATCH_PROPERTIES: BatchPropertySpec[] = [
+  { item: "BRG-DBL-6205", label: "Date code", dataType: "text" },
+  {
+    item: "BRG-DBL-6205",
+    label: "Grease fill",
+    dataType: "list",
+    listOptions: ["Standard", "Low-temperature"]
+  },
+  { item: "MAT-AL6061-BAR", label: "Heat number", dataType: "text" },
+  { item: "MAT-SS304-BAR", label: "Heat number", dataType: "text" },
+  { item: "MAT-SS304-BAR", label: "Mill cert received", dataType: "boolean" },
+  { item: "MAT-4140-BAR", label: "Heat number", dataType: "text" },
+  { item: "MAT-4140-BAR", label: "Hardness (HRC)", dataType: "numeric" }
+];
+
 export const precisionItems: ItemsData = {
+  assembly: precisionAssembly,
   buyParts: BUY_PARTS,
   materials: MATERIALS,
   consumables: CONSUMABLES,
@@ -787,5 +1080,14 @@ export const precisionItems: ItemsData = {
   services: SERVICES,
   makeParts: MAKE_PARTS,
   methods: METHODS,
-  supplierLinks: SUPPLIER_LINKS
+  supplierLinks: SUPPLIER_LINKS,
+  supersessions: SUPERSESSIONS,
+  customerParts: CUSTOMER_PARTS,
+  priceOverrides: PRICE_OVERRIDES,
+  pricingRules: PRICING_RULES,
+  configuration: CONFIGURATION,
+  revisionLadder: REVISION_LADDER,
+  inspectionPlans: INSPECTION_PLANS,
+  enforcementRules: ENFORCEMENT_RULES,
+  batchProperties: BATCH_PROPERTIES
 };

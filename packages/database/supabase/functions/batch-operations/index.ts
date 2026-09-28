@@ -1,5 +1,5 @@
 import { serve } from "https://deno.land/std@0.175.0/http/server.ts";
-import { Transaction } from "kysely";
+import { sql, Transaction } from "kysely";
 import z from "npm:zod@^3.24.1";
 import { type DB, getConnectionPool, getDatabaseClient } from "../lib/database.ts";
 import { corsHeaders } from "../lib/headers.ts";
@@ -20,6 +20,7 @@ import {
   resolveBatchRules
 } from "../shared/batch-compatibility.ts";
 import { getNextSequence } from "../shared/get-next-sequence.ts";
+import { round } from "../shared/precision.ts";
 
 const pool = getConnectionPool(1);
 const db = getDatabaseClient<DB>(pool);
@@ -35,6 +36,19 @@ const payloadValidator = z.discriminatedUnion("type", [
     notes: z.string().optional().nullable(),
     // Create straight onto the floor (Active) instead of staging as Planned.
     release: z.boolean().optional(),
+    // Output lot identity is planned, never typed on the floor: either every
+    // member completes into one lot (mergeOutput + outputLotNumber), or each
+    // batch-tracked member gets its own number (lotNumbers).
+    mergeOutput: z.boolean().optional(),
+    outputLotNumber: z.string().trim().min(1).optional().nullable(),
+    lotNumbers: z
+      .array(
+        z.object({
+          jobOperationId: z.string(),
+          lotNumber: z.string().trim().min(1)
+        })
+      )
+      .optional(),
     companyId: z.string(),
     userId: z.string()
   }),
@@ -84,8 +98,19 @@ const payloadValidator = z.discriminatedUnion("type", [
       .array(
         z.object({
           jobOperationId: z.string(),
-          quantity: z.number().int().min(0),
-          scrapQuantity: z.number().int().min(0).optional(),
+          // Decimal, matching the MES validator: productionQuantity.quantity is
+          // NUMERIC. An `.int()` here rejected every fractional completion the
+          // (already decimal) MES validator let through. Rounded at parse.
+          quantity: z.number().min(0).transform((v) => round(v)),
+          scrapQuantity: z
+            .number()
+            .min(0)
+            .transform((v) => round(v))
+            .optional(),
+          // Batch-tracked output: the member's WIP entity to finalize as the
+          // produced lot, and the batch number to stamp on it.
+          trackedEntityId: z.string().optional().nullable(),
+          batchNumber: z.string().optional().nullable(),
           // "Not in this run": detach the member back to the schedule instead
           // of completing it. Its quantities must be 0.
           excluded: z.boolean().optional()
@@ -96,6 +121,68 @@ const payloadValidator = z.discriminatedUnion("type", [
     userId: z.string()
   })
 ]);
+
+// The produced item + tracking of each member, and its live WIP entity (the
+// entity a member's output lot is finalized from; its readableId is the lot
+// number).
+async function loadMemberOutputs(
+  trx: Transaction<DB>,
+  companyId: string,
+  jobMakeMethodIds: string[]
+) {
+  if (jobMakeMethodIds.length === 0) return new Map();
+  const makeMethods = await trx
+    .selectFrom("jobMakeMethod")
+    .select(["id", "itemId", "requiresBatchTracking"])
+    .where("id", "in", jobMakeMethodIds)
+    .where("companyId", "=", companyId)
+    .execute();
+  const entities = await trx
+    .selectFrom("trackedEntity")
+    .select(["id", "createdAt", sql<string>`"attributes"->>'Job Make Method'`.as("jobMakeMethodId")])
+    .where(sql`"attributes"->>'Job Make Method'`, "in", jobMakeMethodIds)
+    .where("companyId", "=", companyId)
+    .where("status", "not in", ["Consumed", "Scrapped", "Rejected"])
+    .orderBy("createdAt", "asc")
+    .execute();
+  const entityByMakeMethod = new Map<string, string>();
+  for (const e of entities) {
+    if (!entityByMakeMethod.has(e.jobMakeMethodId)) {
+      entityByMakeMethod.set(e.jobMakeMethodId, e.id);
+    }
+  }
+  return new Map(
+    makeMethods.map((m) => [
+      m.id,
+      {
+        itemId: m.itemId as string | null,
+        requiresBatchTracking: Boolean(m.requiresBatchTracking),
+        trackedEntityId: entityByMakeMethod.get(m.id) ?? null
+      }
+    ])
+  );
+}
+
+// A merged batch's members must all produce ONE batch-tracked item: lots of
+// different items can never merge, and an untracked item has no lot at all.
+function assertMergeable(
+  operations: Array<{ jobMakeMethodId: string | null }>,
+  outputs: Map<string, { itemId: string | null; requiresBatchTracking: boolean }>
+) {
+  const items = new Set<string>();
+  for (const op of operations) {
+    const out = op.jobMakeMethodId ? outputs.get(op.jobMakeMethodId) : undefined;
+    if (!out?.requiresBatchTracking || !out.itemId) {
+      throw new Error(
+        "Only operations that produce a batch-tracked item can combine into one lot"
+      );
+    }
+    items.add(out.itemId);
+  }
+  if (items.size > 1) {
+    throw new Error("Lots of different items can't combine into one lot");
+  }
+}
 
 async function assertEligible(
   trx: Transaction<DB>,
@@ -195,13 +282,33 @@ async function assertMaterialCompatible(
   // (jobOperationId IS NULL). The gate must judge the same materials the
   // builder shows, or a visible "must" match could still be refused (and vice
   // versa).
+  // Produced item mirrors the builder's candidate `itemReadableId` (the JOB's
+  // item — get_batchable_operations joins item on job.itemId), so the gate and
+  // the builder judge the producedItem dimension by the same value.
   const memberOps = await trx
     .selectFrom("jobOperation")
-    .select(["id", "jobId"])
-    .where("id", "in", jobOperationIds)
-    .where("companyId", "=", companyId)
+    .innerJoin("job", (join: any) =>
+      join
+        .onRef("job.id", "=", "jobOperation.jobId")
+        .onRef("job.companyId", "=", "jobOperation.companyId")
+    )
+    .leftJoin("item as pi", (join: any) =>
+      join
+        .onRef("pi.id", "=", "job.itemId")
+        .onRef("pi.companyId", "=", "job.companyId")
+    )
+    .select([
+      "jobOperation.id as id",
+      "jobOperation.jobId as jobId",
+      "pi.readableId as producedItemReadableId"
+    ])
+    .where("jobOperation.id", "in", jobOperationIds)
+    .where("jobOperation.companyId", "=", companyId)
     .execute();
   const jobIdByOp = new Map(memberOps.map((o) => [o.id, o.jobId]));
+  const producedByOp = new Map(
+    memberOps.map((o) => [o.id, o.producedItemReadableId])
+  );
   const memberJobIds = [...new Set(memberOps.map((o) => o.jobId))];
 
   const rows = await trx
@@ -250,13 +357,15 @@ async function assertMaterialCompatible(
 
   const byOp = new Map<string, MemberValueSets>();
   for (const id of jobOperationIds) {
+    const produced = producedByOp.get(id);
     byOp.set(id, {
       item: [],
       substance: [],
       grade: [],
       dimension: [],
       form: [],
-      finish: []
+      finish: [],
+      producedItem: produced ? [produced] : []
     });
   }
   const opsWithLinkedRows = new Set(
@@ -319,6 +428,8 @@ async function completeBatch(
       jobOperationId: string;
       quantity: number;
       scrapQuantity?: number;
+      trackedEntityId?: string | null;
+      batchNumber?: string | null;
       excluded?: boolean;
     }[];
   }
@@ -614,6 +725,80 @@ async function completeBatch(
     }
   }
 
+  // Finalize batch-tracked outputs: for each member producing a batch-tracked
+  // item, flip its WIP entity to an Available lot via the lean
+  // jobOperationBatchOutput case (Produce activity + entity flip only — the
+  // productionQuantity rows were written in Phase 1 and the member's materials
+  // were issued above). Idempotent: an already-Available entity is a no-op, so
+  // a resume fast-forwards. Runs BEFORE the Done flip so a failure here leaves
+  // the batch resumable with no member stranded Done without its output lot.
+  const memberOpRows = await client
+    .from("jobOperation")
+    .select("id, jobMakeMethodId")
+    .in("id", memberIds)
+    .eq("companyId", companyId);
+  if (memberOpRows.error) {
+    throw new Error(`Failed to load member operations: ${memberOpRows.error.message}`);
+  }
+  const makeMethodIds = [
+    ...new Set(
+      (memberOpRows.data ?? [])
+        // deno-lint-ignore no-explicit-any
+        .map((o: any) => o.jobMakeMethodId)
+        .filter(Boolean) as string[]
+    )
+  ];
+  const makeMethods = makeMethodIds.length
+    ? await client
+        .from("jobMakeMethod")
+        .select("id, requiresBatchTracking")
+        .in("id", makeMethodIds)
+        .eq("companyId", companyId)
+    : { data: [], error: null };
+  if (makeMethods.error) {
+    throw new Error(`Failed to load make methods: ${makeMethods.error.message}`);
+  }
+  const requiresBatchByMakeMethod = new Map(
+    // deno-lint-ignore no-explicit-any
+    (makeMethods.data ?? []).map((m: any) => [m.id, m.requiresBatchTracking])
+  );
+  const makeMethodByOp = new Map(
+    // deno-lint-ignore no-explicit-any
+    (memberOpRows.data ?? []).map((o: any) => [o.id, o.jobMakeMethodId])
+  );
+
+  const outputTrackedEntityIds: string[] = [];
+  for (const m of members) {
+    const makeMethodId = makeMethodByOp.get(m.jobOperationId);
+    const requiresBatch = makeMethodId
+      ? (requiresBatchByMakeMethod.get(makeMethodId) ?? false)
+      : false;
+    if (!requiresBatch) continue;
+    if (m.quantity <= 0) continue;
+    if (!m.trackedEntityId) {
+      throw new Error(
+        `Operation ${m.jobOperationId} produces a batch-tracked item — its output lot is required`
+      );
+    }
+    const output = await client.functions.invoke("issue", {
+      body: {
+        type: "jobOperationBatchOutput",
+        jobOperationId: m.jobOperationId,
+        trackedEntityId: m.trackedEntityId,
+        quantity: m.quantity,
+        readableId: m.batchNumber ?? null,
+        companyId,
+        userId
+      }
+    });
+    if (output.error) {
+      throw new Error(
+        `Failed to create the output lot for operation ${m.jobOperationId}: ${output.error.message}`
+      );
+    }
+    outputTrackedEntityIds.push(m.trackedEntityId);
+  }
+
   // Flip members Done — sync_finish_job_operation readies each member job's next
   // operation and completes the job independently. Skip already-Done so a resume
   // does not re-fire the trigger.
@@ -658,7 +843,8 @@ async function completeBatch(
     completed: members.length,
     excluded: excludedIds.length,
     memberIds,
-    eventIds: glEvents.map((e) => e.id)
+    eventIds: glEvents.map((e) => e.id),
+    outputTrackedEntityIds
   };
 }
 
@@ -725,6 +911,52 @@ serve(async (req: Request) => {
           // center: the scheduler's batch pre-pass auto-selects the
           // earliest-finish candidate (load balancing, like single ops) for
           // any Released batch still lacking one, and persists it.
+          const outputs = await loadMemberOutputs(
+            trx,
+            companyId,
+            // deno-lint-ignore no-explicit-any
+            operations.map((o: any) => o.jobMakeMethodId).filter(Boolean)
+          );
+          const mergeOutput = payload.mergeOutput === true;
+          if (mergeOutput) {
+            if (!payload.outputLotNumber) {
+              throw new Error("A combined output needs its lot number");
+            }
+            assertMergeable(operations, outputs);
+          }
+          // Split mode: one number per batch-tracked member, never repeated —
+          // two separate lots sharing a number is exactly the ambiguity the
+          // merge option exists to remove.
+          const lotNumbers = mergeOutput ? [] : (payload.lotNumbers ?? []);
+          const seen = new Set<string>();
+          const lotWrites: Array<{ trackedEntityId: string; lotNumber: string }> =
+            [];
+          for (const entry of lotNumbers) {
+            const op = operations.find(
+              // deno-lint-ignore no-explicit-any
+              (o: any) => o.id === entry.jobOperationId
+            );
+            const out = op?.jobMakeMethodId
+              ? outputs.get(op.jobMakeMethodId)
+              : undefined;
+            if (!out?.requiresBatchTracking || !out.trackedEntityId) {
+              throw new Error(
+                `Operation ${entry.jobOperationId} does not produce a batch-tracked lot`
+              );
+            }
+            const key = entry.lotNumber.toLowerCase();
+            if (seen.has(key)) {
+              throw new Error(
+                `Lot number ${entry.lotNumber} is used twice — give each job its own, or combine them into one lot`
+              );
+            }
+            seen.add(key);
+            lotWrites.push({
+              trackedEntityId: out.trackedEntityId,
+              lotNumber: entry.lotNumber
+            });
+          }
+
           const readableId = await getNextSequence(
             trx,
             "jobOperationBatch",
@@ -740,10 +972,21 @@ serve(async (req: Request) => {
               locationId: payload.locationId,
               status: payload.release ? "Active" : "Planned",
               notes: payload.notes ?? null,
+              mergeOutput,
+              outputLotNumber: mergeOutput ? payload.outputLotNumber : null,
               createdBy: userId
             })
             .returning(["id", "readableId"])
             .executeTakeFirstOrThrow();
+
+          for (const write of lotWrites) {
+            await trx
+              .updateTable("trackedEntity")
+              .set({ readableId: write.lotNumber, updatedBy: userId })
+              .where("id", "=", write.trackedEntityId)
+              .where("companyId", "=", companyId)
+              .execute();
+          }
 
           const memberUpdate: Record<string, unknown> = {
             jobOperationBatchId: batch.id,
@@ -799,7 +1042,7 @@ serve(async (req: Request) => {
             throw new Error("The batch has already started — complete it instead");
           }
 
-          await assertEligible(
+          const { operations: incoming } = await assertEligible(
             trx,
             companyId,
             payload.jobOperationIds,
@@ -810,10 +1053,23 @@ serve(async (req: Request) => {
           // plus the incoming ops together, not the newcomers in isolation.
           const existingMembers = await trx
             .selectFrom("jobOperation")
-            .select("id")
+            .select(["id", "jobMakeMethodId"])
             .where("jobOperationBatchId", "=", payload.batchId)
             .where("companyId", "=", companyId)
             .execute();
+
+          // A combined-output batch stays one item: a newcomer producing
+          // something else could never merge into the planned lot.
+          if (batch.mergeOutput) {
+            const all = [...existingMembers, ...incoming];
+            const outputs = await loadMemberOutputs(
+              trx,
+              companyId,
+              // deno-lint-ignore no-explicit-any
+              all.map((o: any) => o.jobMakeMethodId).filter(Boolean)
+            );
+            assertMergeable(all, outputs);
+          }
           await assertMaterialCompatible(trx, companyId, batch.processId, [
             // deno-lint-ignore no-explicit-any
             ...existingMembers.map((m: any) => m.id as string),
@@ -843,6 +1099,19 @@ serve(async (req: Request) => {
 
       case "remove": {
         result = await db.transaction().execute(async (trx) => {
+          const batch = await trx
+            .selectFrom("jobOperationBatch")
+            .select("status")
+            .where("id", "=", payload.batchId)
+            .where("companyId", "=", companyId)
+            .forUpdate()
+            .executeTakeFirst();
+          if (!batch) throw new Error("Batch not found");
+          if (batch.status !== "Planned" && batch.status !== "Active") {
+            throw new Error(
+              `Cannot remove operations from a batch with status ${batch.status}`
+            );
+          }
           const batchEvents = await trx
             .selectFrom("productionEvent")
             .select("id")
@@ -1090,6 +1359,8 @@ serve(async (req: Request) => {
             jobOperationId: string;
             quantity: number;
             scrapQuantity?: number;
+            trackedEntityId?: string | null;
+            batchNumber?: string | null;
           }[]
         });
         break;

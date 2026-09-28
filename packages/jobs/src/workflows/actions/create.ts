@@ -2,7 +2,7 @@ import {
   type ActionOutcome,
   entityValue,
   type RuntimeValue
-} from "@carbon/workflows";
+} from "@carbon/ee/workflows";
 import type { DispatchContext, WorkflowDispatch } from "./dispatcher";
 import { toPlainValue } from "./values";
 

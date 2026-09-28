@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 // Stands in for the Lingui macro's compiled output: a generated hash `id` plus the
 // real text on `message`. Mocking the module (not the macro) keeps this test honest
 // about which field `labelText` reads.
-vi.mock("@carbon/workflows/labels", () => ({
+vi.mock("@carbon/ee/workflows/labels", () => ({
   WORKFLOW_LABELS: {
     "purchaseOrder.created": {
       id: "U2ehIB",

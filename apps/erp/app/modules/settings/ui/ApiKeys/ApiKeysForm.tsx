@@ -132,7 +132,7 @@ const ApiKeyForm = ({
                   minValue={toCalendarDateTime(today(getLocalTimeZone()))}
                 />
 
-                <PermissionMatrix matrix={matrix} />
+                <PermissionMatrix matrix={matrix} isDisabled={isDisabled} />
               </VStack>
             </ModalBody>
             <ModalFooter>

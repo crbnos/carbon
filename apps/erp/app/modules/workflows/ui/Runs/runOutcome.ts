@@ -1,4 +1,4 @@
-import type { WorkflowDefinition } from "@carbon/workflows";
+import type { WorkflowDefinition } from "@carbon/ee/workflows";
 import type { WorkflowRunDetail } from "../../workflows.service";
 import type { LabelFor } from "../Builder/labelKeys";
 import { nodeTitle } from "../Builder/labelKeys";
@@ -37,7 +37,7 @@ function stepTitle(
 /**
  * One sentence describing what a run actually did. Exists because a condition
  * that matches no path still ends the run `Succeeded` — see
- * `conditionExecutor` in `packages/workflows/src/runtime/condition.ts`.
+ * `conditionExecutor` in `packages/ee/src/workflows/runtime/condition.ts`.
  */
 export function runOutcome(
   run: Pick<WorkflowRunDetail, "status" | "error" | "statusReason">,

@@ -2,6 +2,7 @@ import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
+import { isApprovalRequired } from "@carbon/ee/approvals.server";
 import { getLogger } from "@carbon/logger";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
@@ -11,7 +12,7 @@ import {
   getSupplierQuote,
   selectedLinesValidator
 } from "~/modules/purchasing";
-import { isApprovalRequired } from "~/modules/shared";
+import { getEdgeFunctionErrorMessage } from "~/utils/error";
 import { path } from "~/utils/path";
 
 const logger = getLogger("erp", "id-convert");
@@ -59,6 +60,19 @@ export async function action({ request, params }: ActionFunctionArgs) {
     isApprovalRequired(serviceRole, "supplier", companyId)
   ]);
 
+  // The service role bypasses RLS and id comes from the URL.
+  if (!quote.data || quote.data.companyId !== companyId) {
+    logger.error("Supplier quote not found for company", {
+      companyId,
+      supplierQuoteId: id,
+      error: quote.error
+    });
+    throw redirect(
+      path.to.supplierQuotes,
+      await flash(request, error(null, "Supplier quote not found"))
+    );
+  }
+
   if (supplierApprovalRequired && quote.data?.supplierId) {
     const supplier = await getSupplier(serviceRole, quote.data.supplierId);
     if (supplier.data?.status !== "Active") {
@@ -84,7 +98,13 @@ export async function action({ request, params }: ActionFunctionArgs) {
       path.to.supplierQuoteDetails(id),
       await flash(
         request,
-        error(convert.error, "Failed to convert quote to order")
+        error(
+          convert.error,
+          await getEdgeFunctionErrorMessage(
+            convert.error,
+            "Failed to convert quote to order"
+          )
+        )
       )
     );
   }

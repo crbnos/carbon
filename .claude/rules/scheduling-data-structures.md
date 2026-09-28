@@ -1,6 +1,6 @@
 ---
 paths:
-  - "packages/ee/src/planning/scheduling/**"
+  - "packages/planning/src/scheduling/**"
   - "apps/erp/app/routes/x+/priority+/**"
   - "apps/mes/app/routes/x+/operations.tsx"
   - "packages/database/supabase/migrations/*schedul*.sql"
@@ -10,11 +10,11 @@ paths:
 
 How job operations get sequenced onto work centers, scheduled with dates, and
 displayed. The scheduling engine lives in
-`packages/ee/src/planning/scheduling/` (relocated from the Supabase edge runtime)
+`packages/planning/src/scheduling/` (relocated from the Supabase edge runtime)
 and runs **IN-PROCESS in Node** — the ERP app (route actions,
 `production.service.ts`) and `@carbon/jobs` (the replan wave, the recalculate
 task) import `runLocationSchedule` / `runExpediteWhatIf` from
-**`@carbon/ee/planning`** and execute it in-process, eliminating the edge
+**`@carbon/planning`** and execute it in-process, eliminating the edge
 cold-start + HTTP round-trip that made a regen take >2s on trivial data. The
 `schedule` Deno **edge function** was **DELETED** — there is no remaining edge
 wrapper; every caller goes through the in-process engine. Not MES,
@@ -25,17 +25,28 @@ many times — read the newest, not the first match.
 Spec/plan: `.ai/specs/2026-08-19-schedule-in-process-node.md` +
 `.ai/plans/2026-08-19-schedule-in-process-node.md`.
 
+**Capable-to-promise on a quote** (`quote-lead-time.ts`,
+`runQuoteLeadTimeWhatIf`): the pure `WorkCenterSelector` is driven with SYNTHETIC
+ops built from a quote line's routing/BOM (`buildQuoteSimulation`), placed per
+quantity against TWO `buildFiniteContext` snapshots — queued (`excludeJobIds:
+[]`) and front-of-queue (whole batch excluded, like the expedite what-if). A
+purchased/short-stock material sets the optional `materialReadyAt` floor on its
+consuming op (never set on jobs, so live scheduling is unchanged). Persists
+nothing; `buildFiniteContext` + `loadAvailabilityWindows` were lifted out of the
+engine into `finite-context.ts` so the engine and this what-if cannot drift.
+Spec/plan: `.ai/specs/2026-09-22-quote-lead-time-prediction.md`.
+
 ## Where it lives
 
-- **Orchestration:** `packages/ee/src/planning/scheduling/run-schedule.ts`
+- **Orchestration:** `packages/planning/src/scheduling/run-schedule.ts`
   (`runLocationSchedule` / `runExpediteWhatIf`) loads a **whole LOCATION's** open
   jobs and runs `new SchedulingEngine(...).run()` once per job in one
   deterministic forward pass (§ Engine pipeline). Every Node caller goes through
   it — one orchestration, zero drift. It is exported via
-  `@carbon/ee/planning`; its shared edge-lib deps are reached through the
+  `@carbon/planning`; its shared edge-lib deps are reached through the
   `@carbon/database` subpath barrels (types → `@carbon/database`, postgres →
   `@carbon/database/client`). Modules in
-  `packages/ee/src/planning/scheduling/` (`scheduling-engine.ts`,
+  `packages/planning/src/scheduling/` (`scheduling-engine.ts`,
   `dependency-manager.ts`, `date-calculator.ts`, `need-by-calculator.ts`,
   `work-center-selector.ts`,
   `apply-work-center-selections.ts`, `priority-calculator.ts`, `material-manager.ts`,
@@ -50,7 +61,7 @@ Spec/plan: `.ai/specs/2026-08-19-schedule-in-process-node.md` +
   `slot-allocator.ts` / `apply-work-center-selections.ts` / `duration-calculator.ts` /
   `date-utils.ts` / `operator-eligibility.ts` / `people-utils.ts` /
   `need-by-calculator.ts` are pure and have unit
-  tests (`pnpm --filter @carbon/ee test`, vitest — colocated `*.test.ts`),
+  tests (`pnpm --filter @carbon/planning test`, vitest — colocated `*.test.ts`),
   alongside the determinism + envelope suites. `date-utils.toIsoDate`
   normalizes pg DATE columns (JS Date at local midnight) to "YYYY-MM-DD" —
   required before any lexicographic date comparison (operator expiry).
@@ -225,11 +236,11 @@ the DELETE policy needs `production_delete`.
 
 Other whole-location regen callers now run `runLocationSchedule(...)` IN-PROCESS
 (no edge invoke): `recalculateJobOperationDependencies` (`production.service.ts`,
-resolves the job's `locationId` first — it dynamic-imports `@carbon/ee/planning`
+resolves the job's `locationId` first — it dynamic-imports `@carbon/planning`
 + `@carbon/database/client` (via `getSchedulingDb`) and uses a lazy Node pool, because
 `production.service.ts` is also client-bundled and must not STATICALLY pull `pg`/`.server`
 code), `recalculate.ts`, `kanban.$id.tsx`, and `job/$jobId.status.tsx` (the last two are
-route actions, which CAN import `@carbon/ee/planning` + `~/services/database.server`
+route actions, which CAN import `@carbon/planning` + `~/services/database.server`
 directly since React Router strips their server code from the client bundle). The
 expedite what-if uses `runExpediteWhatIf`. A `functions/reschedule/` dir exists but
 is legacy.
@@ -493,7 +504,7 @@ capacity-planning migration and drive the dates board's forecast/stale surfaces.
 - `methodOperationOrder`: `'After Previous' | 'With Previous'` (`20240619095417_methods.sql`).
 - `jobOperationStatus`: `Canceled | Done | In Progress | Paused | Ready | Todo | Waiting`.
 - `deadlineType`: `No Deadline | ASAP | Soft Deadline | Hard Deadline`.
-- Engine types (`packages/ee/src/planning/scheduling/types.ts`): `enum SchedulingStrategy
+- Engine types (`packages/planning/src/scheduling/types.ts`): `enum SchedulingStrategy
   { PriorityLeastTime, LeastTime, Random }`. The `SchedulingDirection` /
   `SchedulingMode` types and the `initial`/`reschedule`/`backward`/`forward` plumbing
   are **deleted** — one uniform forward-ASAP rule.
@@ -531,3 +542,8 @@ capacity-planning migration and drive the dates board's forecast/stale surfaces.
   not even notify — it only re-sequences `workCenterId` + `priority`. The dates board
   notifies (`notifyScheduleInputsChanged`), and the debounced wave regenerates the whole
   location. The MES board is display/drag-only.
+- The selector MUTATES each context's reservation arrays as it places, so the quote
+  what-if runs every simulation on a `cloneFiniteContext` copy (`quote-lead-time.ts`) —
+  reusing one context across quantities/scenarios would let earlier runs' placements
+  bleed into later ones. One `WorkCenterSelector` instance is fine (it resets
+  `plannedReservations` per call), but the CONTEXT must be cloned per run.

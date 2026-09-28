@@ -17,7 +17,8 @@ import {
   LuX
 } from "react-icons/lu";
 import { Link } from "react-router";
-import { DateTime } from "~/components";
+import { DateTime, ItemThumbnail } from "~/components";
+import type { ItemType } from "~/modules/shared";
 import { path } from "~/utils/path";
 import type { TimelineNodeDetail } from "./timeline";
 
@@ -128,6 +129,10 @@ export function TimelineDetail({
 
   const linkedJobId = detail.jobId ?? jobId;
 
+  // Show the part's thumbnail in the header when this row carries an item —
+  // a work-center/operator reservation for an operation (a batch has none).
+  const showThumbnail = !!detail.itemReadableId || !!detail.thumbnailPath;
+
   // Real (booked) reservations get plant-clock times; approximate/placeholder
   // rows stay date-only.
   const showTimes =
@@ -228,24 +233,36 @@ export function TimelineDetail({
     <div className="flex h-full flex-col border-l border-border bg-card">
       {/* Header */}
       <div className="flex items-start justify-between gap-3 border-b border-border p-4">
-        <div className="flex min-w-0 flex-col gap-1.5">
-          <Subheading variant="heavy">{kindLabel[detail.kind]}</Subheading>
-          <Heading size="h3" className="truncate">
-            {detail.title}
-          </Heading>
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            <span className="inline-flex items-center gap-1.5 font-medium text-foreground">
-              <span
-                className={cn("size-1.5 rounded-full", STATUS_DOT[status.tone])}
-              />
-              {status.label}
-            </span>
-            {relative && (
-              <>
-                <span className="text-border">·</span>
-                <span className="tabular-nums">{relative}</span>
-              </>
-            )}
+        <div className="flex min-w-0 items-start gap-3">
+          {showThumbnail && (
+            <ItemThumbnail
+              thumbnailPath={detail.thumbnailPath}
+              type={(detail.itemType as ItemType | undefined) ?? undefined}
+              size="lg"
+            />
+          )}
+          <div className="flex min-w-0 flex-col gap-1.5">
+            <Subheading variant="heavy">{kindLabel[detail.kind]}</Subheading>
+            <Heading size="h3" className="truncate">
+              {detail.title}
+            </Heading>
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <span className="inline-flex items-center gap-1.5 font-medium text-foreground">
+                <span
+                  className={cn(
+                    "size-1.5 rounded-full",
+                    STATUS_DOT[status.tone]
+                  )}
+                />
+                {status.label}
+              </span>
+              {relative && (
+                <>
+                  <span className="text-border">·</span>
+                  <span className="tabular-nums">{relative}</span>
+                </>
+              )}
+            </div>
           </div>
         </div>
         <IconButton
@@ -324,6 +341,17 @@ export function TimelineDetail({
           </div>
         )}
 
+        {/* The operation's own description — the part now titles the panel, so
+            keep the work content here for context. */}
+        {detail.operationDescription && (
+          <div className="space-y-1">
+            <Subheading variant="heavy">{t`Operation`}</Subheading>
+            <p className="text-sm text-foreground text-pretty">
+              {detail.operationDescription}
+            </p>
+          </div>
+        )}
+
         {isUnscheduled ? (
           <p className="text-sm italic text-muted-foreground text-pretty">
             <Trans>
@@ -338,6 +366,21 @@ export function TimelineDetail({
             )}
             {detail.jobReadableId && (
               <DetailRow label={t`Job`} value={detail.jobReadableId} />
+            )}
+            {detail.itemReadableId && (
+              <DetailRow
+                label={t`Part`}
+                value={
+                  <span className="flex flex-col items-end">
+                    <span>{detail.itemReadableId}</span>
+                    {detail.itemName && (
+                      <span className="text-xs font-normal text-muted-foreground">
+                        {detail.itemName}
+                      </span>
+                    )}
+                  </span>
+                }
+              />
             )}
             {detail.workCenterName && (
               <DetailRow label={t`Work Center`} value={detail.workCenterName} />

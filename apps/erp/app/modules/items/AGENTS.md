@@ -22,6 +22,7 @@ Master data for all item types (Parts, Materials, Tools, Consumables, Services),
 
 ### Ask First
 - Deleting items that have inventory, open POs, or active jobs — blocked at the DB by FKs to `item`: `trackedEntity` (serial/batch) via `ON DELETE RESTRICT`, and `itemLedger`/`costLedger` (any inventory movement or cost history) via `ON DELETE NO ACTION`. Deactivate the item instead. `NO ACTION` (not `RESTRICT`) is deliberate so whole-company cascade deletes still work.
+- Changing how a unit of measure is deleted — `prevent_unit_of_measure_deletion_when_in_use_trigger` refuses any delete whose code is still referenced, across all 33 UoM columns including the ten that have no foreign key. It reads the referencing columns from `information_schema` at runtime, so a new table is covered without a migration. For those ten columns the guarantee is not concurrency-safe: a write takes no lock on the `unitOfMeasure` row, so one that commits between the trigger's check and the delete's commit can still leave a dangling code.
 - Changing `itemTrackingType` on items that already have tracked entities — use `cascadeItemTrackingType`.
 - Modifying Active method versions — create a new version instead.
 
@@ -61,7 +62,9 @@ pnpm --filter @carbon/erp test
 
 - `getItem` / `getPart` / `getMaterial` / `getConsumable` / `getTool` / `getService` — item reads by type (RPCs `get_part_details`, `get_material_details`, `get_service_details`, etc.)
 - `upsertService` — creates/updates a Service item; always `itemTrackingType = 'Non-Inventory'` (never shipped/received/stocked), replenishment `Buy` or `Make` only. The `service` row is keyed by `item.readableId` (like tool/material). Legacy `service.serviceType` is defaulted and no longer read.
-- `upsertMaterial` — creates/updates material with taxonomy FKs and `item`/`material` linkage
+- `upsertPart` / `upsertTool` / `upsertConsumable` / `upsertService` — an update takes `companyId` and an `id` that is the item uuid or the readable id; it writes the item row by uuid and the typed row by `readableId + companyId` (`updateTypedItem`), and an update that matches no row returns an error. A readable id shared by several revisions is refused.
+- `upsertMaterial(client, db, material)` — creates/updates material with taxonomy FKs and `item`/`material` linkage; an update writes only the keys sent and never touches `active`. Over MCP `name`, `replenishmentSystem`, `defaultMethodType`, `itemTrackingType` and `unitOfMeasureCode` are required, so they are always sent; with generated material IDs a sent `name` is ignored
+- `updateMaterialProperties(client, db, material)` — the one path for substance/form/type/finish/grade/dimension changes (properties panel, `upsertMaterial`, MCP): dependent resets, pick-list checks, generated-ID renames in one transaction. See `.claude/rules/material-tables.md`
 - `getMakeMethods` / `getMethodMaterials` / `getMethodOperations` / `getMethodTreeArray` — BOM/routing reads
 - `copyItem` / `copyMakeMethod` — duplicates via edge function
 - `createRevision` / `activateMethodVersion` — revision and version management
@@ -70,6 +73,7 @@ pnpm --filter @carbon/erp test
 - `getSupplierParts` / `getSupplierPriceBreaksForItems` / `lookupBuyPrice` — vendor pricing
 - `upsertPickMethodWithShelfLife` — pick method with shelf life configuration
 - `getConfigurationParameters` / `getConfigurationRules` — product configurator
+- `createItemDocumentUploadUrl` — MCP file upload (step 1): presigned URL for an item document (`parts/{itemId}` folder); pair with `documents_insertUploadedDocument`. See `.claude/rules/mcp-tools-reference.md` → "File uploads"
 
 ## Key Exports
 

@@ -2,7 +2,9 @@ export {
   AssemblyPlayer,
   type AssemblyPlayerHandle,
   type AssemblyPlayerProps,
-  type FutureComponentsMode
+  type AssemblyView,
+  type FutureComponentsMode,
+  type InstalledComponentsMode
 } from "./AssemblyPlayer";
 export { AssemblyViewer, type AssemblyViewerProps } from "./AssemblyViewer";
 export { type FramingFit, fitFraming } from "./camera";
@@ -43,6 +45,17 @@ export {
   planMotionForComponents,
   type StepPhase
 } from "./plan";
+export {
+  buildStaging,
+  EMPTY_STAGING,
+  type JoinTargets,
+  joinTargets,
+  parkedOffsetsAt,
+  STAGING_GLIDE_SECONDS,
+  type Staging,
+  type StagingJoin,
+  stagedGroupNodeIds
+} from "./staging";
 export type {
   AssemblyGraph,
   AssemblyGraphNode,
@@ -60,4 +73,10 @@ export type {
   Vec3
 } from "./types";
 export { type UseAssemblyResult, useAssembly } from "./useAssembly";
-export { type ComponentVisual, visualForComponent } from "./visibility";
+export {
+  ASSEMBLY_VIEWS,
+  type ComponentVisual,
+  VIEW_MODES,
+  viewForModes,
+  visualForComponent
+} from "./visibility";

@@ -1,9 +1,19 @@
-import type { ItemSpec } from "../../helpers/items.ts";
 import type {
+  BatchPropertySpec,
+  ConfigurationSpec,
+  CustomerPartSpec,
+  EnforcementRuleSpec,
+  InspectionPlanSpec,
+  ItemSpec,
   ItemsData,
   MakeMethodSpec,
+  PriceOverrideSpec,
+  PricingRuleSpec,
+  RevisionLadderSpec,
+  SupersessionSpec,
   SupplierLinkSpec
 } from "../../types.ts";
+import { motorAssembly } from "./assembly.ts";
 
 // ---------------------------------------------------------------------------
 // Motor item catalog for Torque Dynamics LLC.
@@ -126,6 +136,16 @@ export const BUY_PARTS: ItemSpec[] = [
     standardCost: 2.25,
     unitSalePrice: 3.8,
     leadTime: 12
+  },
+  // Deliberately absent from every BOM: job creation and picking redirect to it via SUPERSESSIONS.
+  {
+    readableId: "BRG-6206-HYB",
+    name: "Hybrid Ceramic Bearing 6206 (Si3N4 balls)",
+    type: "Part",
+    replenishment: "Buy",
+    standardCost: 34,
+    unitSalePrice: 52,
+    leadTime: 28
   }
 ];
 
@@ -137,7 +157,15 @@ export const MATERIALS: ItemSpec[] = [
     trackingType: "Batch",
     standardCost: 1.85,
     unitOfMeasureCode: "LB",
-    leadTime: 28
+    leadTime: 28,
+    material: {
+      substance: "Electrical Steel",
+      form: "Lamination Coil",
+      materialType: "Electrical Steel Lamination Coil",
+      grade: "M19",
+      finish: "C5 Insulation Coating",
+      dimension: "0.35mm x 200mm"
+    }
   },
   {
     readableId: "MAT-CU-18AWG",
@@ -147,7 +175,13 @@ export const MATERIALS: ItemSpec[] = [
     trackingType: "Batch",
     standardCost: 6.4,
     unitOfMeasureCode: "LB",
-    leadTime: 21
+    leadTime: 21,
+    // Partially classified on purpose.
+    material: {
+      substance: "Enameled Copper",
+      grade: "MW 35-C",
+      finish: "Polyamide-Imide Overcoat"
+    }
   },
   {
     readableId: "MAT-INS-NOMEX",
@@ -235,7 +269,7 @@ export const MAKE_PARTS: ItemSpec[] = [
     replenishment: "Make",
     // Serial-tracked: every finished motor gets its own genealogy and nameplate.
     trackingType: "Serial",
-    standardCost: 0,
+    standardCost: 2670,
     unitSalePrice: 4850
   },
   {
@@ -244,7 +278,7 @@ export const MAKE_PARTS: ItemSpec[] = [
     type: "Part",
     replenishment: "Make",
     trackingType: "Serial",
-    standardCost: 0,
+    standardCost: 1620,
     unitSalePrice: 2950
   },
   {
@@ -252,7 +286,7 @@ export const MAKE_PARTS: ItemSpec[] = [
     name: "Stator Assembly (9000 Frame)",
     type: "Part",
     replenishment: "Make",
-    standardCost: 0,
+    standardCost: 649,
     unitSalePrice: 1180
   },
   {
@@ -260,7 +294,7 @@ export const MAKE_PARTS: ItemSpec[] = [
     name: "Stator Assembly (4500 Frame)",
     type: "Part",
     replenishment: "Make",
-    standardCost: 0,
+    standardCost: 429,
     unitSalePrice: 780
   },
   {
@@ -268,7 +302,7 @@ export const MAKE_PARTS: ItemSpec[] = [
     name: "Rotor Assembly (9000 Frame)",
     type: "Part",
     replenishment: "Make",
-    standardCost: 0,
+    standardCost: 781,
     unitSalePrice: 1420
   },
   {
@@ -276,7 +310,7 @@ export const MAKE_PARTS: ItemSpec[] = [
     name: "Motor Housing & End Bells (9000 Frame)",
     type: "Part",
     replenishment: "Make",
-    standardCost: 0,
+    standardCost: 352,
     unitSalePrice: 640
   },
   {
@@ -284,7 +318,7 @@ export const MAKE_PARTS: ItemSpec[] = [
     name: "Precision Motor Shaft (9000 Frame)",
     type: "Part",
     replenishment: "Make",
-    standardCost: 0,
+    standardCost: 116,
     unitSalePrice: 210
   },
   {
@@ -292,7 +326,7 @@ export const MAKE_PARTS: ItemSpec[] = [
     name: "Wound Coil Set (9000 Frame)",
     type: "Part",
     replenishment: "Make",
-    standardCost: 0,
+    standardCost: 264,
     unitSalePrice: 480
   },
   {
@@ -300,7 +334,7 @@ export const MAKE_PARTS: ItemSpec[] = [
     name: "Stator Lamination Stack",
     type: "Part",
     replenishment: "Make",
-    standardCost: 0,
+    standardCost: 143,
     unitSalePrice: 260
   },
   {
@@ -308,7 +342,7 @@ export const MAKE_PARTS: ItemSpec[] = [
     name: "Rotor Lamination Stack",
     type: "Part",
     replenishment: "Make",
-    standardCost: 0,
+    standardCost: 105,
     unitSalePrice: 190
   },
   {
@@ -316,7 +350,7 @@ export const MAKE_PARTS: ItemSpec[] = [
     name: "Terminal Box Assembly",
     type: "Part",
     replenishment: "Make",
-    standardCost: 0,
+    standardCost: 90.75,
     unitSalePrice: 165
   }
 ];
@@ -356,6 +390,8 @@ export const METHODS: MakeMethodSpec[] = [
         workCenter: "Lamination Press",
         description: "Blank, stack and bond rotor laminations",
         order: 1,
+        setupTime: 0.75,
+        machineTime: 0.5,
         laborTime: 1
       },
       {
@@ -376,6 +412,8 @@ export const METHODS: MakeMethodSpec[] = [
         workCenter: "CNC Turning Cell",
         description: "Turn and grind shaft journals and keyway",
         order: 1,
+        setupTime: 0.5,
+        machineTime: 1.25,
         laborTime: 1.5
       },
       // Sent out to Maumee for nitride between turning and final inspection.
@@ -395,7 +433,9 @@ export const METHODS: MakeMethodSpec[] = [
         workCenter: "CMM Inspection Bench",
         description: "Journal diameter and runout check",
         order: 3,
-        laborTime: 0.5
+        laborTime: 0.5,
+        operationType: "Inspection",
+        inspectionPlan: "SHF-9000-JOURNAL"
       }
     ]
   },
@@ -411,6 +451,8 @@ export const METHODS: MakeMethodSpec[] = [
         workCenter: "Winding Line 1",
         description: "Wind and form the coil set",
         order: 1,
+        setupTime: 0.5,
+        machineTime: 2,
         laborTime: 2.5
       },
       {
@@ -472,7 +514,13 @@ export const METHODS: MakeMethodSpec[] = [
         workCenter: "Motor Assembly Bench",
         description: "Press stack to shaft and bond magnet segments",
         order: 1,
-        laborTime: 2.5
+        setupTime: 0.5,
+        laborTime: 2.5,
+        tools: [{ tool: "TL-ARBOR-PRESS", quantity: 1 }],
+        parameters: [
+          { key: "Press-Fit Force", value: "35 kN max" },
+          { key: "Epoxy Cure", value: "80 degC for 2 hours" }
+        ]
       },
       {
         process: "Rotor Balancing",
@@ -480,7 +528,14 @@ export const METHODS: MakeMethodSpec[] = [
         description: "Two-plane dynamic balance",
         order: 2,
         laborTime: 1,
-        procedure: "procedure:Rotor Balance Verification"
+        procedure: "procedure:Rotor Balance Verification",
+        parameters: [
+          { key: "Balance Grade", value: "ISO 21940 G2.5 at 3000 rpm" },
+          {
+            key: "Correction Method",
+            value: "Material removal, drive-end plane first"
+          }
+        ]
       },
       {
         process: "In-Process Inspection",
@@ -761,10 +816,265 @@ export const SUPPLIER_LINKS: SupplierLinkSpec[] = [
     item: "FST-M10-SS",
     price: 1.15,
     leadTime: 10
+  },
+  {
+    supplier: "Summit Bearing Supply",
+    item: "BRG-6206-HYB",
+    price: 34,
+    leadTime: 28
+  }
+];
+
+// MTR-4500 still names BRG-6206-C3 (60 on shelf A2-L1), so Consume First
+// keeps pulling the steel bearing until the shelf is empty, then swaps to
+// the hybrid ceramic.
+export const SUPERSESSIONS: SupersessionSpec[] = [
+  {
+    predecessor: "BRG-6206-C3",
+    successor: "BRG-6206-HYB",
+    mode: "Consume First",
+    successorEffectivityOffset: -14
+  }
+];
+
+export const CUSTOMER_PARTS: CustomerPartSpec[] = [
+  {
+    item: "MTR-9000",
+    customer: "Ridgeline Drive Systems",
+    customerPartId: "RDS-MTR-9000",
+    customerRevision: "B"
+  },
+  {
+    item: "MTR-4500",
+    customer: "Cardinal Motorworks",
+    customerPartId: "CMW-SRV-4500"
+  }
+];
+
+export const PRICE_OVERRIDES: PriceOverrideSpec[] = [
+  {
+    item: "MTR-4500",
+    customer: "Cardinal Motorworks",
+    notes: "Blanket-order pricing for the CY conveyor retrofit program.",
+    breaks: [
+      { quantity: 10, overridePrice: 2900 },
+      { quantity: 50, overridePrice: 2760 }
+    ]
+  }
+];
+
+export const PRICING_RULES: PricingRuleSpec[] = [
+  {
+    name: "Ridgeline OEM volume discount",
+    ruleType: "Discount",
+    amountType: "Percentage",
+    amount: 5,
+    customer: "Ridgeline Drive Systems",
+    minQuantity: 10,
+    priority: 10
+  },
+  {
+    name: "Aerospace documentation markup",
+    ruleType: "Markup",
+    amountType: "Percentage",
+    amount: 8,
+    customerType: "Aerospace",
+    items: ["MTR-4500", "MTR-9000"],
+    priority: 5
+  },
+  {
+    name: "Distributor spares case break",
+    ruleType: "Discount",
+    amountType: "Percentage",
+    amount: 6,
+    customerType: "Distribution",
+    items: ["BRG-6206-C3", "BRG-6308-C3", "FAN-AX-160"],
+    minQuantity: 20,
+    priority: 1
+  }
+];
+
+export const CONFIGURATION: ConfigurationSpec = {
+  item: "MTR-9000",
+  group: "Drive Configuration",
+  parameters: [
+    {
+      key: "shaft_extension_mm",
+      label: "Shaft Extension Length (mm)",
+      dataType: "numeric"
+    },
+    {
+      key: "mounting_flange",
+      label: "Mounting Flange",
+      dataType: "list",
+      listOptions: ["IEC B5", "IEC B14", "NEMA C-Face"]
+    },
+    {
+      key: "holding_brake",
+      label: "Include Holding Brake",
+      dataType: "boolean"
+    }
+  ],
+  rules: [
+    {
+      target: { operation: 1 },
+      field: "laborTime",
+      code: "return params.holding_brake ? 5 : 4;"
+    },
+    {
+      target: { operation: 2 },
+      field: "laborTime",
+      code: "return params.shaft_extension_mm > 80 ? 3.5 : 3;"
+    }
+  ]
+};
+
+export const REVISION_LADDER: RevisionLadderSpec[] = [
+  {
+    item: "HSG-9000",
+    obsoleteRevision: "A",
+    nextRevision: "B",
+    nextStatus: "Prototype"
+  }
+];
+
+// A sampling plan of its own makes the MES open an inspection lot, not a plain operation.
+export const INSPECTION_PLANS: InspectionPlanSpec[] = [
+  {
+    key: "SHF-9000-JOURNAL",
+    item: "SHF-9000",
+    drawingNumber: "TD-9000-SH Rev E",
+    aql: 1.0,
+    features: [
+      {
+        label: "1",
+        description: "Drive-end bearing journal diameter",
+        nominalValue: "40.010",
+        tolerancePlus: "0.008",
+        toleranceMinus: "0.008",
+        unit: "mm"
+      },
+      {
+        label: "2",
+        description: "Journal runout, drive end to non-drive end",
+        nominalValue: "0.008",
+        tolerancePlus: "0.007",
+        toleranceMinus: "0.008",
+        unit: "mm"
+      }
+    ]
+  }
+];
+
+export const ENFORCEMENT_RULES: EnforcementRuleSpec[] = [
+  {
+    family: "sales",
+    name: "Traction motor — US and Canada ship-to only",
+    description: "EAR99 review pending for the 9000-series drive.",
+    message:
+      "The MTR-9000 is cleared for US and Canadian customers only. Route export requests through Trade Compliance.",
+    severity: "error",
+    surfaces: ["salesOrderLine", "salesInvoiceLine"],
+    match: "all",
+    conditions: [
+      {
+        field: "customer.location.countryCode",
+        op: "in",
+        value: ["US", "CA"]
+      }
+    ],
+    items: ["MTR-9000"]
+  },
+  {
+    family: "sales",
+    name: "Distributors order the 4500 by the pallet",
+    message:
+      "Distribution partners order the MTR-4500 in pallet quantities (4 or more).",
+    severity: "warn",
+    surfaces: ["quoteLine", "salesOrderLine"],
+    match: "any",
+    conditions: [
+      {
+        field: "customer.customerTypeId",
+        op: "notIn",
+        value: { customerTypes: ["Distribution"] }
+      },
+      { field: "transaction.quantity", op: "gt", value: 3 }
+    ],
+    items: ["MTR-4500"]
+  },
+  {
+    family: "storage",
+    targetType: "item",
+    name: "Magnets in the cabinet",
+    message:
+      "Sintered NdFeB magnets are stored in the shielded cabinet, never on open shelving.",
+    severity: "warn",
+    surfaces: ["place"],
+    match: "all",
+    conditions: [
+      {
+        field: "storageUnit.storageTypeId",
+        op: "eq",
+        value: { storageType: "Cabinet" }
+      }
+    ],
+    items: ["MAG-NDFB-45", "MAG-NDFB-38"]
+  },
+  {
+    family: "storage",
+    targetType: "item",
+    name: "Encoders stay at the plant",
+    message:
+      "Encoders are kitted at the Fort Wayne plant only — pick a plant bin.",
+    severity: "warn",
+    surfaces: ["receipt", "stockTransfer"],
+    match: "all",
+    conditions: [
+      {
+        field: "storageUnit.locationId",
+        op: "eq",
+        value: { location: "Plant" }
+      }
+    ],
+    items: ["ENC-INC-2048"]
+  },
+  {
+    family: "storage",
+    targetType: "workCenter",
+    name: "Impregnation oven in service",
+    message:
+      "The impregnation oven is out of service — hold the cure until maintenance releases it.",
+    severity: "error",
+    surfaces: ["operationStart"],
+    match: "all",
+    conditions: [{ field: "workCenter.active", op: "eq", value: true }],
+    workCenters: ["Impregnation Oven"]
+  }
+];
+
+export const BATCH_PROPERTIES: BatchPropertySpec[] = [
+  { item: "MAG-NDFB-45", label: "Magnetization lot", dataType: "text" },
+  {
+    item: "MAG-NDFB-45",
+    label: "Coercivity grade",
+    dataType: "list",
+    listOptions: ["SH", "UH"]
+  },
+  { item: "MAG-NDFB-38", label: "Magnetization lot", dataType: "text" },
+  { item: "MAT-LAM-M19", label: "Coil number", dataType: "text" },
+  { item: "MAT-LAM-M19", label: "Core loss (W/kg)", dataType: "numeric" },
+  { item: "MAT-CU-18AWG", label: "Spool number", dataType: "text" },
+  {
+    item: "MAT-CU-18AWG",
+    label: "Insulation class",
+    dataType: "list",
+    listOptions: ["H", "N"]
   }
 ];
 
 export const motorItems: ItemsData = {
+  assembly: motorAssembly,
   buyParts: BUY_PARTS,
   materials: MATERIALS,
   consumables: CONSUMABLES,
@@ -772,5 +1082,14 @@ export const motorItems: ItemsData = {
   services: SERVICES,
   makeParts: MAKE_PARTS,
   methods: METHODS,
-  supplierLinks: SUPPLIER_LINKS
+  supplierLinks: SUPPLIER_LINKS,
+  supersessions: SUPERSESSIONS,
+  customerParts: CUSTOMER_PARTS,
+  priceOverrides: PRICE_OVERRIDES,
+  pricingRules: PRICING_RULES,
+  configuration: CONFIGURATION,
+  revisionLadder: REVISION_LADDER,
+  inspectionPlans: INSPECTION_PLANS,
+  enforcementRules: ENFORCEMENT_RULES,
+  batchProperties: BATCH_PROPERTIES
 };

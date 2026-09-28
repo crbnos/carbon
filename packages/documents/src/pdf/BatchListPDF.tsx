@@ -1,5 +1,5 @@
 import { formatDate } from "@carbon/utils";
-import { Text, View } from "@react-pdf/renderer";
+import { Image, Text, View } from "@react-pdf/renderer";
 import type { Company } from "../types";
 import { tw } from "./blocks/jobTraveler/tw";
 import { Header, Template } from "./components";
@@ -7,8 +7,9 @@ import { Header, Template } from "./components";
 // Shared column widths so the header and body rows can never drift out of
 // alignment (the MaterialsBlock convention: widths sum to 12/12; spacing via
 // in-cell right padding, never a flex gap).
+const COL_THUMBNAIL = "w-1/12 pr-2";
 const COL_JOB = "w-2/12 text-left pr-4";
-const COL_ITEM = "w-3/12 text-left pr-4";
+const COL_ITEM = "w-2/12 text-left pr-4";
 const COL_DESCRIPTION = "w-5/12 text-left pr-4";
 const COL_QUANTITY = "w-2/12 text-right";
 
@@ -19,6 +20,9 @@ export interface BatchListMember {
   itemDescription: string | null;
   operationDescription: string | null;
   quantity: number | null;
+  // The make-method item's thumbnail (base64 data URL), NOT the job's parent
+  // part — resolved by the route. Null when the item has no thumbnail.
+  thumbnail: string | null;
 }
 
 interface BatchListPDFProps {
@@ -57,6 +61,7 @@ export const BatchListPDF = ({
       )}
     >
       <Text style={tw(COL_JOB)}>Job</Text>
+      <Text style={tw(COL_THUMBNAIL)} />
       <Text style={tw(COL_ITEM)}>Item</Text>
       <Text style={tw(COL_DESCRIPTION)}>Description</Text>
       <Text style={tw(COL_QUANTITY)}>Quantity</Text>
@@ -80,23 +85,23 @@ export const BatchListPDF = ({
       />
 
       <View style={tw("flex flex-row gap-8 mb-4 text-xs")}>
-        {processName && (
+        {processName ? (
           <View style={tw("flex flex-col")}>
             <Text style={tw("font-bold text-gray-500 uppercase text-[8px]")}>
               Process
             </Text>
             <Text>{processName}</Text>
           </View>
-        )}
-        {workCenterName && (
+        ) : null}
+        {workCenterName ? (
           <View style={tw("flex flex-col")}>
             <Text style={tw("font-bold text-gray-500 uppercase text-[8px]")}>
               Work Center
             </Text>
             <Text>{workCenterName}</Text>
           </View>
-        )}
-        {batch.createdAt && (
+        ) : null}
+        {batch.createdAt ? (
           <View style={tw("flex flex-col")}>
             <Text style={tw("font-bold text-gray-500 uppercase text-[8px]")}>
               Created
@@ -105,7 +110,7 @@ export const BatchListPDF = ({
               {formatDate(batch.createdAt.slice(0, 10), undefined, locale)}
             </Text>
           </View>
-        )}
+        ) : null}
         <View style={tw("flex flex-col")}>
           <Text style={tw("font-bold text-gray-500 uppercase text-[8px]")}>
             Jobs
@@ -126,6 +131,14 @@ export const BatchListPDF = ({
               <Text style={tw(`${COL_JOB} font-bold`)}>
                 {member.jobReadableId ?? ""}
               </Text>
+              <View style={tw(COL_THUMBNAIL)}>
+                {member.thumbnail ? (
+                  <Image
+                    src={member.thumbnail}
+                    style={tw("w-full h-auto border rounded border-gray-300")}
+                  />
+                ) : null}
+              </View>
               <Text style={tw(COL_ITEM)}>{member.itemReadableId ?? ""}</Text>
               <Text style={tw(COL_DESCRIPTION)}>
                 {member.itemDescription ?? member.operationDescription ?? ""}
@@ -154,6 +167,7 @@ export const BatchListPDF = ({
           wrap={false}
         >
           <Text style={tw(COL_JOB)} />
+          <Text style={tw(COL_THUMBNAIL)} />
           <Text style={tw(COL_ITEM)} />
           <Text style={tw(COL_DESCRIPTION)}>Total</Text>
           <Text style={tw(COL_QUANTITY)}>{totalQuantity}</Text>

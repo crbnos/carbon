@@ -3,14 +3,17 @@
   "dependencies": {
     "@carbon/database": "workspace:*",
     "@carbon/env": "workspace:*",
+    "@carbon/files": "workspace:*",
     "@carbon/kv": "workspace:*",
     "@carbon/logger": "workspace:*",
     "@carbon/notifications": "workspace:*",
-    "@carbon/workflows": "workspace:*",
+    "@carbon/utils": "workspace:*",
+    "@carbon/workflows-core": "workspace:*",
     "@slack/web-api": "catalog:",
     "@supabase/supabase-js": "catalog:",
     "inngest": "3.54.0",
     "nanoid": "catalog:",
+    "nodemailer": "9.0.1",
     "resend": "3.5.0",
     "sst": "catalog:",
     "supabase": "catalog:",
@@ -19,6 +22,7 @@
   "devDependencies": {
     "@carbon/config": "workspace:*",
     "@types/node": "20.19.39",
+    "@types/nodemailer": "6.4.23",
     "dotenv": "16.3.1",
     "rimraf": "catalog:",
     "tsup": "catalog:",
@@ -27,6 +31,8 @@
     "vitest": "catalog:"
   },
   "exports": {
+    "./async": "./src/async.ts",
+    "./email.server": "./src/email.server.ts",
     "./events": "./src/events.ts",
     "./inngest": "./src/inngest/client.ts",
     "./resend.server": "./src/resend.server.ts",

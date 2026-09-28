@@ -1,5 +1,5 @@
+import { closePdf, openPdf } from "@carbon/files/pdf";
 import { PDFDocument } from "pdf-lib";
-import { pdfjs } from "react-pdf";
 
 const CALLOUT_STROKE = "#f97316";
 
@@ -178,8 +178,7 @@ export async function buildInspectionDocumentPdfWithOverlaysBytes(args: {
   scale?: number;
 }): Promise<Uint8Array> {
   const scale = args.scale ?? 2;
-  const data = new Uint8Array(args.pdfBytes);
-  const pdf = await pdfjs.getDocument({ data }).promise;
+  const pdf = await openPdf(args.pdfBytes);
   const outDoc = await PDFDocument.create();
 
   try {
@@ -232,6 +231,6 @@ export async function buildInspectionDocumentPdfWithOverlaysBytes(args: {
 
     return await outDoc.save({ useObjectStreams: true });
   } finally {
-    await pdf.destroy();
+    await closePdf(pdf);
   }
 }

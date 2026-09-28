@@ -123,6 +123,16 @@ export const itemPostingGroupsQuery = (companyId: string | null) => ({
   staleTime: RefreshRate.Low
 });
 
+export const ITEM_QUANTITIES_QUERY_KEY = "itemQuantities";
+
+export const itemQuantitiesQuery = (
+  locationId: string,
+  companyId: string | null
+) => ({
+  queryKey: [ITEM_QUANTITIES_QUERY_KEY, companyId ?? "null", locationId],
+  staleTime: RefreshRate.High
+});
+
 export const locationsQuery = (companyId: string | null) => ({
   queryKey: ["locations", companyId ?? "null"],
   staleTime: RefreshRate.Low
@@ -193,28 +203,6 @@ export const supplierTypesQuery = (companyId: string | null) => ({
 export const uomsQuery = (companyId: string | null) => ({
   queryKey: ["uoms", companyId ?? "null"],
   staleTime: RefreshRate.Medium
-});
-
-export const storageRulesQuery = (
-  companyId: string | null,
-  targetType?: "item" | "storageUnit" | "workCenter" | null
-) => ({
-  queryKey: ["storageRules", targetType ?? "all", companyId ?? "null"],
-  staleTime: RefreshRate.Low
-});
-
-export const storageRuleAssignmentsQuery = (
-  targetType: "item" | "storageUnit" | "workCenter",
-  targetId: string,
-  companyId: string | null
-) => ({
-  queryKey: [
-    "storageRuleAssignments",
-    targetType,
-    targetId,
-    companyId ?? "null"
-  ],
-  staleTime: RefreshRate.Low
 });
 
 export const webhookTablesQuery = () => ({

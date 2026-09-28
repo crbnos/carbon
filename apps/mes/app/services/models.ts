@@ -1,5 +1,13 @@
+import { round } from "@carbon/utils";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
+
+// Round an optional produced/scrap quantity to internal precision at parse, so a
+// decimal typed on the floor is stored at the same scale everywhere.
+const roundedOptionalQuantity = () =>
+  zfd
+    .numeric(z.number().min(0).optional())
+    .transform((v) => (v === undefined ? v : round(v)));
 
 export const documentTypes = [
   "Archive",
@@ -112,6 +120,25 @@ export const stepRecordValidator = z.object({
   userValue: zfd.text(z.string().optional())
 });
 
+// One step recorded for several batch members at once (the batch view's
+// Record). Rows are the members the operator filled in; unchanged ones are
+// never sent, so a re-open can't re-trigger a step's backflush.
+export const batchStepRecordsValidator = z.object({
+  records: z
+    .array(
+      z.object({
+        jobOperationStepId: z.string().min(1),
+        value: zfd.text(z.string().optional()),
+        numericValue: zfd.numeric(z.number().optional()),
+        booleanValue: zfd
+          .text(z.enum(["true", "false"]).transform((val) => val === "true"))
+          .optional(),
+        userValue: zfd.text(z.string().optional())
+      })
+    )
+    .min(1, { message: "Record at least one job" })
+});
+
 export const issueValidator = z.object({
   itemId: z.string().min(1, { message: "Item is required" }),
   jobOperationId: z.string().min(1, { message: "Job Operation is required" }),
@@ -177,7 +204,11 @@ export const issueTrackedEntityValidator = z.object({
   materialId: z.string().optional(),
   jobOperationId: z.string().optional(),
   itemId: z.string().optional(),
-  parentTrackedEntityId: z.string(),
+  // Batch mode: the pick covers every member of this operation batch — the
+  // edge fn splits it pro-rata and resolves each member's own parent entity,
+  // so parentTrackedEntityId is not sent.
+  batchId: z.string().optional(),
+  parentTrackedEntityId: z.string().optional(),
   children: z.array(
     z.object({
       trackedEntityId: z.string(),
@@ -219,9 +250,10 @@ export const scrapTrackedEntityValidator = z.object({
   notes: zfd.text(z.string().optional())
 });
 
-// Complete a job operation batch: per-member produced quantity (pre-filled with the
-// operation quantity) + optional per-member scrap. quantity is int —
-// productionQuantity.quantity is INTEGER. See
+// Complete a job operation batch: per-member produced quantity (pre-filled with
+// the operation quantity) + optional per-member scrap. Quantities are decimal —
+// productionQuantity.quantity is NUMERIC (widened for weight/length UoMs) — and
+// are rounded to internal precision at parse. See
 // .ai/specs/2026-08-21-job-operation-batching.md.
 export const completeJobOperationBatchValidator = z.object({
   batchId: z.string().min(1, { message: "Batch is required" }),
@@ -233,8 +265,17 @@ export const completeJobOperationBatchValidator = z.object({
         // disabled and therefore omitted from FormData. The route forces
         // excluded members to 0 after validation and coerces an omitted
         // included quantity to 0, so `undefined` never reaches the edge fn.
-        quantity: zfd.numeric(z.number().int().min(0).optional()),
-        scrapQuantity: zfd.numeric(z.number().int().min(0).optional()),
+        // Not integer-only: a job's operation quantity can be fractional (any
+        // non-discrete unit of measure), so the pre-filled remainder — and the
+        // operator's edit — must accept decimals, matching single-op completion
+        // (baseQuantityValidator). An `.int()` here silently failed validation
+        // and the modal never submitted. Rounded to internal precision at parse.
+        quantity: roundedOptionalQuantity(),
+        scrapQuantity: roundedOptionalQuantity(),
+        // Batch-tracked output: the member's WIP entity finalized as the
+        // produced lot. Its lot number was planned at batch creation and is
+        // resolved server-side — never an operator input.
+        trackedEntityId: zfd.text(z.string().optional()),
         // "Not in this run": the operation was not physically part of the
         // batch run — it detaches back to the schedule instead of being
         // marked Done. String flag (same idiom as productionEventValidator's

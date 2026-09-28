@@ -246,6 +246,19 @@ function sourcePrincipal(value: number | null): number {
   return nonnegativeAmount(Number(value), "Settlement document principal");
 }
 
+function settlementPrincipal(
+  row: { sourceAmount: number | null; appliedAmount: number },
+  exchangeRate: number,
+  decimals: number
+): number {
+  if (row.sourceAmount !== null) return sourcePrincipal(row.sourceAmount);
+  return toDocumentAmount(
+    nonnegativeAmount(Number(row.appliedAmount), "Settlement applied amount"),
+    exchangeRate,
+    decimals
+  );
+}
+
 /** Accumulate first; each adjustment is rounded at its document boundary. */
 export function reduceInvoiceSettlements(
   rows: readonly Pick<SettlementBalanceRow, "sourceAmount" | "appliedAmount" | "discountAmount" | "writeOffAmount">[],
@@ -257,7 +270,7 @@ export function reduceInvoiceSettlements(
   for (const row of rows) {
     const adjustments = nonnegativeAmount(Number(row.discountAmount), "Settlement discount") +
       nonnegativeAmount(Number(row.writeOffAmount), "Settlement write-off");
-    document += sourcePrincipal(row.sourceAmount) + toDocumentAmount(adjustments, exchangeRate, decimals);
+    document += settlementPrincipal(row, exchangeRate, decimals) + toDocumentAmount(adjustments, exchangeRate, decimals);
     base += nonnegativeAmount(Number(row.appliedAmount), "Settlement applied amount") + adjustments;
   }
   return { document: toDocumentAmount(document, 1, decimals), base: round(base) };
@@ -311,20 +324,31 @@ export function remainingFundingSources(
   decimals: ReadonlyMap<string, number>,
   isAR: boolean
 ): FundingSource[] {
+  const precisionFor = (payment: FundingPaymentRow): number => {
+    const precision = decimals.get(payment.currencyCode);
+    if (precision == null) throw new Error(`Currency ${payment.currencyCode} requires configured decimal places`);
+    return precision;
+  };
+  const paymentsById = new Map(payments.map((payment) => [payment.id, payment]));
   const consumed = new Map<string, { document: number; base: number }>();
   for (const row of consumption) {
     const sourceId = row.sourcePaymentId ?? row.paymentId;
     if (!sourceId) continue;
     const current = consumed.get(sourceId) ?? { document: 0, base: 0 };
-    current.document += sourcePrincipal(row.sourceAmount);
+    if (row.sourceAmount === null && row.sourcePaymentId === null) {
+      const payment = paymentsById.get(sourceId);
+      if (!payment) continue;
+      current.document += settlementPrincipal(row, Number(payment.exchangeRate), precisionFor(payment));
+    } else {
+      current.document += sourcePrincipal(row.sourceAmount);
+    }
     const fx = Number(row.fxGainLossAmount ?? 0);
     if (!Number.isFinite(fx)) throw new Error("Settlement FX must be finite");
     current.base += nonnegativeAmount(Number(row.appliedAmount), "Settlement applied amount") + (isAR ? 1 : -1) * fx;
     consumed.set(sourceId, current);
   }
   return payments.map((payment) => {
-    const precision = decimals.get(payment.currencyCode);
-    if (precision == null) throw new Error(`Currency ${payment.currencyCode} requires configured decimal places`);
+    const precision = precisionFor(payment);
     const use = consumed.get(payment.id);
     const total = nonnegativeAmount(Number(payment.totalAmount), "Funding document total");
     const remainingDocument = toDocumentAmount(total - (use?.document ?? 0), 1, precision);

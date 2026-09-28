@@ -66,6 +66,8 @@ const DESCRIPTION_OVERRIDES: Record<string, string> = {
     "Create a new quote with all business logic - generates sequence, creates opportunity, resolves payment/shipping defaults from customer. LLM can create a quote with just customerId.",
   sales_updateQuote:
     "Update an existing quote - handles exchange rate updates when currency changes, syncs customer to opportunity",
+  sales_upsertQuoteLine:
+    "Create or update a quote line. Keep description to a short one-line label - it is truncated on the digital quote. Long specifications belong in externalNotes (TipTap doc JSON, rendered in full under the line on the digital quote and PDF); internalNotes takes the same shape and is never shown to the customer.",
   sales_insertSalesOrder:
     "Create a new sales order with all business logic - generates sequence, creates opportunity, resolves payment/shipping defaults from customer. LLM can create a sales order with just customerId.",
   sales_updateSalesOrder:
@@ -95,16 +97,39 @@ const DESCRIPTION_OVERRIDES: Record<string, string> = {
 //   - accounting_upsertFixedAssetUsageLog       → fixedAssetUsageLog
 // account_upsertNotificationPreference spreads its argument into an upsert on
 // notificationPreference, which (like userModulePreference) carries no
-// createdBy/updatedBy columns at all — injecting them breaks the write.
+// createdBy/updatedBy columns at all — injecting them breaks the write. The
+// four lean material lookups (dimension, finish, grade, type) are the same:
+// no audit columns, argument spread into the row.
 const INJECT_AUTH_OVERRIDES: Record<string, AuthField[]> = {
   inventory_insertManualInventoryAdjustment: ["companyId", "createdBy"],
   accounting_upsertFixedAssetUsageLog: ["companyId", "createdBy"],
   account_upsertNotificationPreference: ["companyId"],
+  items_upsertMaterialDimension: ["companyId"],
+  items_upsertMaterialFinish: ["companyId"],
+  items_upsertMaterialGrade: ["companyId"],
+  items_upsertMaterialType: ["companyId"],
   // Both operations replace settlement rows in a transaction. Their verbs do
   // not imply INSERT to the name-based rule, but the service requires the
   // authenticated creator for every replacement row.
   invoicing_replaceInvoiceSettlements: ["companyId", "createdBy"],
   invoicing_applyCreditsToInvoices: ["companyId", "createdBy"],
+  // Both read the caller's group-scoped currency with the payload's
+  // companyGroupId and write a memo, so it must come from the auth context —
+  // a caller-supplied group would resolve another group's currency rows.
+  purchasing_createPurchaseReturnOrderCredit: [
+    "companyId",
+    "companyGroupId",
+    "createdBy",
+    "updatedBy",
+    "userId",
+  ],
+  sales_createSalesReturnOrderCredit: [
+    "companyId",
+    "companyGroupId",
+    "createdBy",
+    "updatedBy",
+    "userId",
+  ],
 };
 
 // service-module → permission-module. `items` operations are gated by the `parts`
@@ -120,13 +145,13 @@ const PERMISSION_MODULE_MAP: Record<string, string | null> = {
 // module than their service module (spot-checked against the real routes). Keep
 // this hand-curated list small and grounded — each entry needs a verified route.
 const PERMISSION_OVERRIDES: Record<string, ToolPermission> = {
-  // API-key management is an admin capability: every route in the family —
-  // x+/settings+/api-keys.tsx (list loader), api-keys.new.tsx, api-keys.$id.tsx,
-  // api-keys.delete.$id.tsx — gates on { update: "users" }, not "settings".
-  // Deriving "settings" would let a settings-scoped key mint new API keys.
+  // API-key management is an admin capability: the list loader
+  // (x+/settings+/api-keys.tsx) gates on { update: "users" }, not "settings" —
+  // deriving "settings" would let a settings-scoped key read the key family.
+  // The WRITES (upsert/delete) moved to @carbon/ee/api-keys.server behind
+  // requireEntitlement, so they are no longer scanned as MCP tools; only the
+  // read remains here.
   settings_getApiKeys: { module: "users", actions: ["update"] },
-  settings_upsertApiKey: { module: "users", actions: ["update"] },
-  settings_deleteApiKey: { module: "users", actions: ["update"] },
 };
 
 // ---------------------------------------------------------------------------
@@ -143,6 +168,8 @@ interface ParsedParam {
 interface ParsedFunction {
   name: string;
   params: ParsedParam[];
+  /** Body of a JSDoc block comment immediately preceding the export, if any. */
+  jsdoc?: string;
 }
 
 // ---------------------------------------------------------------------------
@@ -265,6 +292,41 @@ function destructuredParamName(raw: string, existing: ParsedParam[]): string {
   return `${base}${i}`;
 }
 
+/** The body of a JSDoc block whose closing marker directly precedes `index`. */
+function precedingJsdoc(content: string, index: number): string | undefined {
+  const before = content.slice(0, index);
+  const end = before.lastIndexOf("*/");
+  if (end === -1 || before.slice(end + 2).trim() !== "") return undefined;
+  const start = before.lastIndexOf("/**", end);
+  if (start === -1) return undefined;
+  return before.slice(start + 3, end);
+}
+
+/**
+ * Reduce a function-level JSDoc body to a one-line tool description: the prose
+ * before the first `@tag`, first sentence only, whitespace collapsed. The
+ * trailing period is stripped and the leading letter lowercased (unless it
+ * starts an acronym) to match the name-derived convention — the docs site
+ * capitalizes and appends its own period, so a sentence-cased summary would
+ * render doubled there.
+ */
+export function extractJsdocSummary(raw: string): string | undefined {
+  const prose = raw
+    .split("\n")
+    .map((line) => line.replace(/^\s*\*?\s?/, ""))
+    .join("\n");
+  const beforeTags = prose.split(/^\s*@\w/m)[0];
+  const text = beforeTags.replace(/\s+/g, " ").trim();
+  if (!text) return undefined;
+  const sentence = text.match(/^(.*?[.!?])(?:\s|$)/)?.[1] ?? text;
+  const normalized = sentence.replace(/[.!?]+$/, "").trim();
+  if (!normalized) return undefined;
+  const cased = /^[A-Z][a-z]/.test(normalized)
+    ? normalized.charAt(0).toLowerCase() + normalized.slice(1)
+    : normalized;
+  return cased.length > 160 ? `${cased.slice(0, 159).trimEnd()}…` : cased;
+}
+
 function parseExportedFunctions(content: string): ParsedFunction[] {
   const results: ParsedFunction[] = [];
   const regex = /export\s+(?:async\s+)?function\s+(\w+)\s*\(/g;
@@ -272,12 +334,13 @@ function parseExportedFunctions(content: string): ParsedFunction[] {
 
   while ((match = regex.exec(content)) !== null) {
     const name = match[1];
+    const jsdoc = precedingJsdoc(content, match.index);
     const openParen = match.index + match[0].length - 1;
     const closeParen = findMatchingBrace(content, openParen);
     const rawParams = content.substring(openParen + 1, closeParen).trim();
 
     if (!rawParams) {
-      results.push({ name, params: [] });
+      results.push({ name, params: [], jsdoc });
       continue;
     }
 
@@ -336,7 +399,7 @@ function parseExportedFunctions(content: string): ParsedFunction[] {
       });
     }
 
-    results.push({ name, params });
+    results.push({ name, params, jsdoc });
   }
 
   return results;
@@ -1090,6 +1153,22 @@ function functionBodyDeletes(content: string, funcName: string): boolean {
   return /\.delete\s*\(/.test(stripped) || /\.deleteFrom\s*\(/.test(stripped);
 }
 
+/**
+ * Whether the service itself applies limit/offset — `setGenericQueryFilters`
+ * (the canonical pager) or a direct `.range(`. A list operation without either
+ * ignores pagination args entirely (the fetchAll `get*List` reads), so the MCP
+ * layer pages the response instead. Same body-scan mechanism (and shadowed-
+ * wrapper first-match caveat) as `functionBodyDeletes`.
+ */
+function functionBodyPaginates(content: string, funcName: string): boolean {
+  const body = extractFunctionBody(content, funcName);
+  if (body === null) return false;
+  const stripped = stripComments(body);
+  return (
+    /setGenericQueryFilters\s*\(/.test(stripped) || /\.range\s*\(/.test(stripped)
+  );
+}
+
 function extractFunctionBody(content: string, funcName: string): string | null {
   const regex = new RegExp(
     `export\\s+(?:async\\s+)?function\\s+${funcName}\\s*\\(`
@@ -1133,6 +1212,17 @@ function computeInjectAuth(
     return ["companyId", "updatedBy"];
   }
   return ["companyId"];
+}
+
+export function withPayloadUserId(
+  fields: AuthField[],
+  func: ParsedFunction
+): AuthField[] {
+  if (fields.includes("userId")) return fields;
+  const declaresUserId = func.params.some(
+    (p) => p.name !== "userId" && /(^|[{;,\s])userId\s*\??\s*:/.test(p.typeStr)
+  );
+  return declaresUserId ? [...fields, "userId"] : fields;
 }
 
 // The permission an API-key caller must hold. `module` follows the service→permission
@@ -1514,7 +1604,7 @@ export function buildAllToolMetadata(opts: BuildOptions = {}): ManifestEntry[] {
     if (!fs.existsSync(serviceFile)) {
       // Fall back to the `.ee`-licensed variant (see root LICENSE) when a
       // module keeps its single service file under that name (e.g.
-      // accounting.ee.service.ts).
+      // accounting.service.ts).
       const eeServiceFile = path.join(MODULES_DIR, mod, `${mod}.ee.service.ts`);
       if (!fs.existsSync(eeServiceFile)) {
         console.warn(`  ⚠ Service file not found: ${serviceFile}`);
@@ -1568,11 +1658,17 @@ export function buildAllToolMetadata(opts: BuildOptions = {}): ManifestEntry[] {
       if (MCP_BLOCKED_TOOL_NAMES.includes(toolName)) continue;
 
       const classification = classifyFunction(func.name, content);
-      const injectAuth =
+      const injectAuth = withPayloadUserId(
         INJECT_AUTH_OVERRIDES[toolName] ||
-        computeInjectAuth(func.name, classification);
+          computeInjectAuth(func.name, classification),
+        func
+      );
+      // A JSDoc on the function itself beats the override table (code closest
+      // wins); the de-camelCased name remains the fallback.
       const description =
-        DESCRIPTION_OVERRIDES[toolName] || generateDescription(func.name);
+        (func.jsdoc && extractJsdocSummary(func.jsdoc)) ||
+        DESCRIPTION_OVERRIDES[toolName] ||
+        generateDescription(func.name);
       const serviceParams = func.params.map((p) => p.name);
       const permission = derivePermission(
         toolName,
@@ -1596,6 +1692,7 @@ export function buildAllToolMetadata(opts: BuildOptions = {}): ManifestEntry[] {
       }
 
       const responseSchema = opts.responses?.get(mod, func.name) ?? undefined;
+      const paginates = functionBodyPaginates(content, func.name);
 
       allTools.push({
         name: toolName,
@@ -1606,6 +1703,7 @@ export function buildAllToolMetadata(opts: BuildOptions = {}): ManifestEntry[] {
         serviceParams,
         injectAuth,
         permission,
+        paginates,
         schema,
         ...(responseSchema ? { responseSchema } : {}),
       });

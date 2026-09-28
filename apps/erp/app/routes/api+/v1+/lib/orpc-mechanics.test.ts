@@ -26,6 +26,7 @@ function meta(overrides: Partial<ManifestEntry>): ManifestEntry {
     serviceParams: ["client", "args"],
     injectAuth: [],
     permission: { module: null, actions: [] },
+    paginates: false,
     schema: { type: "object", properties: { name: { type: "string" } } },
     ...overrides
   };

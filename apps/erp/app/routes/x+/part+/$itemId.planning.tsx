@@ -13,6 +13,8 @@ import {
   getSupersessionChain,
   itemPlanningValidator,
   itemSupersessionValidator,
+  predecessorSupersessionValidator,
+  SUPERSESSION_CYCLE_CODE,
   upsertItemPlanning,
   upsertItemSupersession
 } from "~/modules/items";
@@ -90,6 +92,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     partPlanning: partPlanning.data,
     supersession: supersession.data,
     supersessionChain: supersessionChain.chain,
+    supersededBy: supersessionChain.supersededBy,
     quantityOnHand: quantities.data?.quantityOnHand ?? 0,
     locationId
   };
@@ -123,6 +126,12 @@ export async function action({ request, params }: ActionFunctionArgs) {
       updatedBy: userId
     });
     if (updateSupersession.error) {
+      if (updateSupersession.error.code === SUPERSESSION_CYCLE_CODE) {
+        return validationError({
+          fieldErrors: { successorItemId: updateSupersession.error.message },
+          formId: supersessionValidation.formId
+        });
+      }
       throw redirect(
         path.to.part(itemId),
         await flash(
@@ -140,6 +149,77 @@ export async function action({ request, params }: ActionFunctionArgs) {
           )
         : path.to.partPlanning(itemId),
       await flash(request, success("Updated supersession"))
+    );
+  }
+
+  if (formData.get("intent") === "supersession-predecessor") {
+    const predecessorValidation = await validator(
+      predecessorSupersessionValidator
+    ).validate(formData);
+
+    if (predecessorValidation.error) {
+      return validationError(predecessorValidation.error);
+    }
+
+    const { predecessorItemId, ...supersession } = predecessorValidation.data;
+    const fieldError = (message: string) =>
+      validationError({
+        fieldErrors: { predecessorItemId: message },
+        formId: predecessorValidation.formId
+      });
+
+    if (predecessorItemId === itemId) {
+      return fieldError("A part cannot be its own predecessor");
+    }
+
+    const [predecessor, existing] = await Promise.all([
+      client
+        .from("item")
+        .select("id, readableIdWithRevision")
+        .eq("id", predecessorItemId)
+        .eq("companyId", companyId)
+        .maybeSingle(),
+      getItemSupersession(client, predecessorItemId, companyId)
+    ]);
+    if (!predecessor.data) {
+      return fieldError("Part not found");
+    }
+    if (existing.error) {
+      return fieldError("Failed to read the part's supersession");
+    }
+    if (
+      existing.data?.successorItemId &&
+      existing.data.successorItemId !== itemId
+    ) {
+      return fieldError(
+        `${predecessor.data.readableIdWithRevision ?? predecessorItemId} already has a successor (${existing.data.successor?.readableIdWithRevision ?? existing.data.successorItemId}). Change it from that part's planning page.`
+      );
+    }
+
+    const insertSupersession = await upsertItemSupersession(client, {
+      ...supersession,
+      itemId: predecessorItemId,
+      successorItemId: itemId,
+      companyId,
+      createdBy: userId,
+      updatedBy: userId
+    });
+    if (insertSupersession.error) {
+      if (insertSupersession.error.code === SUPERSESSION_CYCLE_CODE) {
+        return fieldError(insertSupersession.error.message);
+      }
+      throw redirect(
+        path.to.partPlanning(itemId),
+        await flash(
+          request,
+          error(insertSupersession.error, "Failed to add predecessor")
+        )
+      );
+    }
+
+    throw redirect(
+      path.to.partPlanning(itemId),
+      await flash(request, success("Added predecessor"))
     );
   }
 
@@ -180,6 +260,7 @@ export default function PartPlanningRoute() {
     partPlanning,
     supersession,
     supersessionChain,
+    supersededBy,
     quantityOnHand,
     locationId
   } = useLoaderData<typeof loader>();
@@ -224,6 +305,7 @@ export default function PartPlanningRoute() {
         }
         quantityOnHand={quantityOnHand}
         chain={supersessionChain}
+        supersededBy={supersededBy}
       />
       <ItemPlanningChart
         itemId={partPlanning.itemId}

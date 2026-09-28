@@ -2,6 +2,7 @@ import { assertIsPost, ERP_URL, error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
+import { lockIssueDispositions } from "@carbon/database/quality";
 import { notifyIssueCreated } from "@carbon/ee/notifications";
 import { validationError, validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
@@ -19,8 +20,10 @@ import {
   insertIssue,
   issueValidator
 } from "~/modules/quality";
+import { linkEntitiesToIssueItemRow } from "~/modules/quality/quality-disposition.server";
 import IssueForm from "~/modules/quality/ui/Issue/IssueForm";
 import { getCompanyIntegrations } from "~/modules/settings/settings.server";
+import { getDatabaseClient } from "~/services/database.server";
 import { setCustomFields } from "~/utils/form";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -67,6 +70,49 @@ export async function action({ request }: ActionFunctionArgs) {
 
   const d = validation.data;
 
+  // insertIssue writes through the service role, and every id below comes
+  // from the form or the query string — each lands in this company's issue as
+  // a reference whose single-column FK accepts another company's row. One
+  // scoped read per table; a miss refuses the whole create.
+  const url = new URL(request.url);
+  const trackedEntityIdsParam = url.searchParams.get("trackedEntityIds");
+  const trackedEntityIds = trackedEntityIdsParam
+    ? [...new Set(trackedEntityIdsParam.split(",").filter(Boolean))]
+    : [];
+  const refs: [string, string[]][] = [
+    ["location", [d.locationId]],
+    ["nonConformanceType", [d.nonConformanceTypeId]],
+    [
+      "nonConformanceWorkflow",
+      d.nonConformanceWorkflowId ? [d.nonConformanceWorkflowId] : []
+    ],
+    ["nonConformanceRequiredAction", [...new Set(d.requiredActionIds ?? [])]],
+    ["item", [...new Set(d.items ?? [])]],
+    ["customer", d.customerId ? [d.customerId] : []],
+    ["trackedEntity", trackedEntityIds]
+  ];
+  const owned = await Promise.all(
+    refs.map(async ([table, ids]) => {
+      if (ids.length === 0) return true;
+      const rows = await serviceRole
+        .from(table as "location")
+        .select("id")
+        .in("id", ids)
+        .eq("companyId", companyId);
+      return !rows.error && (rows.data ?? []).length === ids.length;
+    })
+  );
+  if (owned.some((ok) => !ok)) {
+    logger.error("Issue references records outside the company", {
+      companyId,
+      refs: refs.filter((_, index) => !owned[index])
+    });
+    throw redirect(
+      path.to.issues,
+      await flash(request, error(null, "Failed to insert issue"))
+    );
+  }
+
   const createResult = await insertIssue(serviceRole, {
     nonConformanceId: d.nonConformanceId || undefined,
     name: d.name,
@@ -103,11 +149,6 @@ export async function action({ request }: ActionFunctionArgs) {
 
   // Pre-associate tracked entities passed via query string (used by the
   // "Create Issue from Inspection" button on inbound inspection lots).
-  const url = new URL(request.url);
-  const trackedEntityIdsParam = url.searchParams.get("trackedEntityIds");
-  const trackedEntityIds = trackedEntityIdsParam
-    ? trackedEntityIdsParam.split(",").filter(Boolean)
-    : [];
   if (trackedEntityIds.length > 0) {
     await serviceRole.from("nonConformanceTrackedEntity").insert(
       trackedEntityIds.map((trackedEntityId) => ({
@@ -266,10 +307,12 @@ async function autoLinkJobOperationDisposition(
 ) {
   const { nonConformanceId, companyId, userId, jobOperationId } = args;
 
+  // Service role and a form id: scope both reads to the company.
   const operation = await client
     .from("jobOperation")
     .select("jobMakeMethodId")
     .eq("id", jobOperationId)
+    .eq("companyId", companyId)
     .single();
   const jobMakeMethodId = operation.data?.jobMakeMethodId ?? null;
   if (!jobMakeMethodId) return;
@@ -278,6 +321,7 @@ async function autoLinkJobOperationDisposition(
     .from("jobMakeMethod")
     .select("itemId")
     .eq("id", jobMakeMethodId)
+    .eq("companyId", companyId)
     .single();
   const itemId = makeMethod.data?.itemId ?? null;
   if (!itemId) return;
@@ -323,79 +367,26 @@ async function autoLinkJobOperationDisposition(
     }
   }
 
-  // Disposition row: find or create. insertIssue may have already inserted
-  // one for this item via the form's `items` array.
-  const existingItem = await client
-    .from("nonConformanceItem")
-    .select("id, quantity")
-    .eq("nonConformanceId", nonConformanceId)
-    .eq("itemId", itemId)
-    .maybeSingle();
-
-  let itemRowId: string;
-  let currentQty: number;
-  if (existingItem.data) {
-    itemRowId = existingItem.data.id as string;
-    currentQty = Number(existingItem.data.quantity ?? 0);
-  } else {
-    const insert = await (client as any)
-      .from("nonConformanceItem")
-      .insert({
-        itemId,
-        nonConformanceId,
-        createdBy: userId,
-        companyId,
-        quantity: 0
-      })
-      .select("id, quantity")
-      .single();
-    if (insert.error || !insert.data) {
-      logger.error("Issue creation step failed", { error: insert.error });
-      return;
-    }
-    itemRowId = insert.data.id as string;
-    currentQty = Number(insert.data.quantity ?? 0);
+  // Disposition row: find or create (insertIssue may have already inserted
+  // one for this item via the form's `items` array), link the lot, and grow
+  // the row quantity — under the issue lock shared by every link writer.
+  try {
+    await getDatabaseClient()
+      .transaction()
+      .execute(async (trx) => {
+        await lockIssueDispositions(trx, { nonConformanceId, companyId });
+        await linkEntitiesToIssueItemRow(trx, {
+          nonConformanceId,
+          companyId,
+          userId,
+          itemId,
+          entities: lotEntities.map((e) => ({
+            id: e.id,
+            quantity: Number(e.quantity ?? 1)
+          }))
+        });
+      });
+  } catch (err) {
+    logger.error("Issue creation step failed", { error: err });
   }
-
-  // ncUnique: an entity may sit on at most one disposition row per NCR.
-  const alreadyLinked = await (client as any)
-    .from("nonConformanceItemTrackedEntity")
-    .select("trackedEntityId")
-    .eq("nonConformanceId", nonConformanceId)
-    .in("trackedEntityId", entityIds);
-  const alreadyLinkedSet = new Set(
-    ((alreadyLinked.data ?? []) as { trackedEntityId: string }[]).map(
-      (r) => r.trackedEntityId
-    )
-  );
-
-  const linkRows = lotEntities
-    .filter((e) => !alreadyLinkedSet.has(e.id))
-    .map((e) => ({
-      nonConformanceItemId: itemRowId,
-      trackedEntityId: e.id,
-      quantity: Number(e.quantity ?? 1),
-      companyId,
-      createdBy: userId
-    }));
-  if (linkRows.length === 0) return;
-
-  const linkInsert = await (client as any)
-    .from("nonConformanceItemTrackedEntity")
-    .insert(linkRows);
-  if (linkInsert.error) {
-    logger.error("Issue creation step failed", { error: linkInsert.error });
-    return;
-  }
-
-  const addedQty = linkRows.reduce((acc, r) => acc + r.quantity, 0);
-  await client
-    .from("nonConformanceItem")
-    .update({
-      quantity: currentQty + addedQty,
-      updatedBy: userId,
-      updatedAt: new Date().toISOString()
-    })
-    .eq("id", itemRowId)
-    .eq("companyId", companyId);
 }

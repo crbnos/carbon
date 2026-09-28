@@ -8,15 +8,18 @@
 
 export type BatchRuleLevel = "must" | "guide" | "ignore";
 
-// The six BOM dimensions a batch can be gated on. `item` is the material line's
-// own item; the other five are its material properties.
+// The dimensions a batch can be gated on. `item` is the material line's own
+// item and the five properties are that line's material properties;
+// `producedItem` is the member's own produced item (candidate-level, not a
+// BOM line).
 export const BATCH_RULE_DIMENSIONS = [
   "item",
   "substance",
   "grade",
   "dimension",
   "form",
-  "finish"
+  "finish",
+  "producedItem"
 ] as const;
 
 export type BatchRuleDimension = (typeof BATCH_RULE_DIMENSIONS)[number];
@@ -32,7 +35,8 @@ export const DEFAULT_BATCH_RULES: Required<BatchRules> = {
   grade: "guide",
   dimension: "guide",
   form: "ignore",
-  finish: "ignore"
+  finish: "ignore",
+  producedItem: "ignore"
 };
 
 const LEVELS: ReadonlySet<BatchRuleLevel> = new Set([

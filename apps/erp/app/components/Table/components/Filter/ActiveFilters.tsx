@@ -64,7 +64,7 @@ type ActiveFilterProps = {
 };
 
 const ActiveFilter = ({ filter, operator, value }: ActiveFilterProps) => {
-  const { t, i18n } = useLingui();
+  const { t } = useLingui();
   const { hasFilter, removeKey, toggleFilter } = useFilters();
 
   const [open, setOpen] = useState(false);
@@ -118,26 +118,18 @@ const ActiveFilter = ({ filter, operator, value }: ActiveFilterProps) => {
     const [first, ...others] = v.split(",");
     if (others && others.length > 0) {
       return `${1 + others.length} ${
-        filter.pluralHeader
-          ? translate(filter.pluralHeader)
-          : `${translate(filter.header)}s`
+        filter.pluralHeader || `${filter.header}s`
       }`;
     } else {
       if (filter.filter.type === "custom" && filter.filter.getLabel) {
         const node = filter.filter.getLabel(first);
         if (node == null) return first;
-        return typeof node === "string"
-          ? translate(node)
-          : reactNodeToString(node);
+        return typeof node === "string" ? node : reactNodeToString(node);
       }
       const node = options.find((o) => o.value === v)?.label ?? "";
-      return typeof node === "string"
-        ? translate(node)
-        : reactNodeToString(node);
+      return typeof node === "string" ? node : reactNodeToString(node);
     }
   };
-
-  const translate = (text: string) => i18n._(text);
 
   return (
     <HStack spacing={0}>
@@ -147,7 +139,7 @@ const ActiveFilter = ({ filter, operator, value }: ActiveFilterProps) => {
         size="sm"
         variant="secondary"
       >
-        {translate(filter.header)}
+        {filter.header}
       </Button>
       <Button className="rounded-none border-l-0" size="sm" variant="secondary">
         {operator === "eq" ? (
@@ -232,11 +224,7 @@ const ActiveFilter = ({ filter, operator, value }: ActiveFilterProps) => {
                     >
                       <HStack spacing={2}>
                         <Checkbox isChecked={isChecked} tabIndex={-1} />
-                        <span>
-                          {typeof option.label === "string"
-                            ? translate(option.label)
-                            : option.label}
-                        </span>
+                        <span>{option.label}</span>
                       </HStack>
                     </CommandItem>
                   );

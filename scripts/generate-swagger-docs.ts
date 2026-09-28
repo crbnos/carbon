@@ -1,26 +1,21 @@
-import { writeFileSync } from "node:fs";
-import * as dotenv from "dotenv";
+import { renameSync, writeFileSync } from "node:fs";
+import { loadDotEnv } from "./lib/local-script-config";
+import { normalizeSwaggerSchema } from "./lib/swagger-schema";
 
-dotenv.config({ path: ".env" });
-dotenv.config({ path: ".env.local", override: true });
-
-const studioPort = process.env.PORT_STUDIO;
-if (!studioPort) {
-  console.error(
-    "PORT_STUDIO not set (expected in .env.local). Run `pnpm dev:up` first."
+async function main(): Promise<void> {
+  loadDotEnv();
+  const studioPort = process.env.PORT_STUDIO;
+  if (!studioPort)
+    throw new Error(
+      "PORT_STUDIO not set (expected in .env.local). Run `pnpm dev:up` first."
+    );
+  const response = await fetch(
+    `http://127.0.0.1:${studioPort}/api/platform/projects/default/api/rest`,
+    { signal: AbortSignal.timeout(30_000) }
   );
-  process.exit(1);
-}
-
-const url = `http://localhost:${studioPort}/api/platform/projects/default/api/rest`;
-
-(async () => {
-  const response = await fetch(url);
-  if (!response.ok) {
-    throw new Error(`HTTP error! status: ${response.status}`);
-  }
-
-  const data = await response.json();
+  if (!response.ok)
+    throw new Error(`Swagger request failed (HTTP ${response.status})`);
+  const data = normalizeSwaggerSchema(await response.json());
 
   // Strip per-tenant `searchIndex_<companyId>` / `auditLog_<companyId>` tables
   // (created at runtime per company) — which ones exist depends on the local
@@ -41,8 +36,18 @@ const url = `http://localhost:${studioPort}/api/platform/projects/default/api/re
     return value;
   };
 
+  const output = "packages/database/src/swagger-docs-schema.ts";
   writeFileSync(
-    "packages/database/src/swagger-docs-schema.ts",
+    `${output}.tmp`,
     `export default ${JSON.stringify(stripPerTenantKeys(data), null, 2)}`
   );
-})();
+  renameSync(`${output}.tmp`, output);
+  process.stdout.write("Swagger schema refreshed.\n");
+}
+
+main().catch((error) => {
+  process.stderr.write(
+    `Swagger generation failed: ${error instanceof Error ? error.message : String(error)}\n`
+  );
+  process.exitCode = 1;
+});

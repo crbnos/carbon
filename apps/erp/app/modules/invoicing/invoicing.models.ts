@@ -424,6 +424,22 @@ export const paymentValidator = z
     path: ["customerId"]
   });
 
+// ----------------------------------------------------------------------
+// Card transactions (Ramp spend-management sync)
+// ----------------------------------------------------------------------
+
+export const cardTransactionType = [
+  "Charge",
+  "Credit",
+  "Payment",
+  "Cashback",
+  "Repayment"
+] as const;
+export const cardTransactionStatus = ["Draft", "Posted", "Voided"] as const;
+
+export type CardTransactionType = (typeof cardTransactionType)[number];
+export type CardTransactionStatusType = (typeof cardTransactionStatus)[number];
+
 // The raw object schema (no refinements). Routes that need to `.omit()` a source
 // key before injecting it from the URL use THIS — peeling `.refine()` layers off
 // the refined validator below with `.innerType()` is brittle (it breaks whenever
