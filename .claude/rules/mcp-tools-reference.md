@@ -377,9 +377,10 @@ dispatcher (`apps/erp/app/routes/api+/inngest.ts`). There is no separate
 `npx tsx scripts/generate-mcp.ts`; it parses every `apps/erp/app/modules/*/*.service.ts`
 (falling back to the `.ee`-licensed `<module>.ee.service.ts` — e.g. `accounting`),
 plus an optional server-only companion `<module>.mcp.server.ts` when present (for MCP
-functions that must import `*.server` modules — see the gotcha below — e.g.
-`production.mcp.server.ts`; the registry (`api+/v1+/lib/registry.server.ts`) merges its
-exports into the same module namespace), and writes `apps/erp/app/routes/api+/mcp+/lib/tool-metadata.json`
+functions that must import `*.server` modules — see the gotcha below; today
+`accounting`, `production`, `quality` and `settings` have one; the registry
+(`api+/v1+/lib/registry.server.ts`) statically imports and spreads EVERY companion into
+its module namespace, pinned by `test/mcp-registry-parity.test.ts`), and writes `apps/erp/app/routes/api+/mcp+/lib/tool-metadata.json`
 (`{ generated, totalTools, modules, tools }`). Each tool entry:
 `{ name, module, classification, description, paramCount, serviceParams, injectAuth, schema }`.
 
@@ -522,8 +523,36 @@ the model context or the MCP dispatch.
   module referenced by client"*. Put such MCP write functions in a server-only companion
   `{module}.mcp.server.ts` instead (never re-exported by the barrel). The generator parses it
   and `registry.server.ts` spreads its exports into the module namespace, so the tool names and
-  metadata are identical to a service-file function. Precedent: `production.mcp.server.ts`
-  holds `issueMaterial` / `completeJob`.
+  metadata are identical to a service-file function. A NEW companion must also be added to
+  `registry.server.ts` (static import + spread, companion LAST) and mocked in
+  `dispatch-parity.test.ts`; `test/mcp-registry-parity.test.ts` fails otherwise, since a
+  published tool with no dispatch target answers "Operation not found". Companions:
+  `production` (`issueMaterial`, `completeJob`, `scheduleJob`, shadowing `upsertJobMaterial` /
+  `upsertProductionEvent`), `settings` (custom-field definitions; the writes clear the redis
+  cache), `quality` (inspection sample / measurement / Accept-Partial disposition — Reject stays
+  route-only), `accounting` (`registerFixedAsset`, `disposeFixedAsset`, `postDepreciationRun`,
+  `createDepreciationRun`).
+- **When the route action IS the command, extract it.** A tool that re-implements a route body
+  drifts. Move the body into a `{module}.server.ts` command returning `CommandResult`
+  (`~/utils/command-result`: `error.flash` is the route's unchanged toast, `error.message` adds an
+  application refusal's reason for API callers, `error.cause` is logged by the route); the route
+  becomes parse → call → flash, and the companion wraps the command with `toToolResult`, which
+  turns the error into a `ruleError` so the caller reads it instead of the generic
+  database-failure text. Precedent: the fixed-asset commands in `accounting.server.ts`.
+- **Permission in a companion.** `gate()` checks scopes only for API keys; an OAuth MCP caller
+  gets no tool-level check. A companion whose body (or a local function it calls) reaches
+  `getDatabaseClient()`, `getCarbonServiceRole()` or a SECURITY DEFINER RPC bypasses RLS, so it
+  MUST call `requireToolPermission(companyId, userId, <its route's requirePermissions>, what)`
+  (`~/modules/shared/tool-permission.server`) first — `test/mcp-registry-parity.test.ts` scans
+  for it. Writes through the caller's client need no re-check (RLS), and neither does an edge
+  function invoked with the caller's client (it runs its own `requirePermissions`, e.g.
+  `postProductionEvent`). The published `permission` must equal the route's
+  `requirePermissions`: add a `PERMISSION_OVERRIDES` entry in `scripts/lib/service-metadata.ts`
+  when the verb-derived default differs, and pin it in `mcp-tool-permissions.test.ts`.
+- **Posting edge functions.** `test/mcp-registry-parity.test.ts` lists every
+  `supabase/functions/post-*` (and `create`) and fails unless registry-reachable code invokes it
+  or it is in `ROUTE_ONLY_POSTINGS` with the follow-up that will extract its route command. A
+  posting moved into a command removes its baseline entry.
 - **A same-named `{module}.mcp.server.ts` export SHADOWS the service function** —
   the generator dedupes by name (mcp wins, matching the runtime registry spread),
   so an orchestration wrapper can replace a bare service function without
@@ -534,8 +563,11 @@ the model context or the MCP dispatch.
   estimatedQuantity 0 and issue/picking pulled nothing. The wrapper mirrors both
   routes' orchestration (MTO method pull on transition, recalc released creates /
   all updates) and keeps the exact service payload type so the published schema
-  hash is unchanged. Body scans (classification, `_operation`) read the FIRST
-  match in the concatenated content — the service body — so a wrapper must keep
-  the same discriminator convention as the function it shadows. Pinned by
-  `mcp-upsert-job-material.test.ts` and the "registers a shadowed mcp.server
-  function exactly once" case in `mcp-tool-metadata.test.ts`.
+  hash is unchanged. `upsertProductionEvent` is the same shape: the wrapper posts
+  the event's GL entry (`postProductionEvent`) when `endTime` is set, as both job
+  event routes do. Body scans (classification, `_operation`, pagination) read the
+  wrapper's OWN body, so a wrapper that keeps the discriminated-upsert contract must
+  test `"createdBy" in` / `"updatedBy" in` itself. Pinned by
+  `mcp-upsert-job-material.test.ts`, `mcp-companion-tools.test.ts` and the
+  "registers a shadowed mcp.server function exactly once" / "classifies companion
+  functions from their own body" cases in `mcp-tool-metadata.test.ts`.

@@ -146,6 +146,40 @@ describe("mcp tool-metadata generator", () => {
     expect(props(entries[0]!)._operation?.enum).toEqual(["create", "update"]);
   });
 
+  // Companion wrappers are scanned from THEIR OWN body (classification,
+  // `_operation`), never from a same-named service function earlier in the
+  // concatenated source — a wrapper that shadows a bare service function keeps
+  // the discriminated-upsert contract because its body tests `"createdBy" in`.
+  it("classifies companion functions from their own body", () => {
+    for (const name of [
+      "production_upsertProductionEvent",
+      "settings_upsertCustomField"
+    ]) {
+      const entries = tools.filter((t) => t.name === name);
+      expect(entries, name).toHaveLength(1);
+      expect(entries[0]!.classification, name).toBe("WRITE");
+      expect(props(entries[0]!)._operation?.enum, name).toEqual([
+        "create",
+        "update"
+      ]);
+    }
+    // Commands that are not upserts publish no `_operation`.
+    for (const name of [
+      "accounting_registerFixedAsset",
+      "quality_dispositionInspection",
+      "quality_upsertInspectionSample"
+    ]) {
+      expect(props(get(name))._operation, name).toBeUndefined();
+    }
+  });
+
+  // insertFixedAsset always creates a Draft; the status is not an input.
+  it("does not publish a status on fixed-asset create", () => {
+    expect(Object.keys(props(get("accounting_insertFixedAsset")))).not.toContain(
+      "status"
+    );
+  });
+
   // A union/intersection AROUND a validator reference publishes the
   // intersection extras, not the validator verbatim. `jobId` is NOT NULL in
   // the DB but lived only in the `& { jobId: string }` extras, so the schema
