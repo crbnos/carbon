@@ -15,13 +15,14 @@ vi.mock("@carbon/glossary", () => ({
   terms: {}
 }));
 
+import * as purchasingModels from "./purchasing.models";
 import {
   canCreatePurchaseOrderRevision,
   isPurchaseOrderLocked,
-  makePurchaseOrderValidator,
   PURCHASE_ORDER_LOCKED_STATUSES,
   purchaseOrderStatusType,
-  purchaseOrderValidator
+  purchaseOrderValidator,
+  supplierQuoteValidator
 } from "./purchasing.models";
 
 const ORDER_DATE = "2026-06-01";
@@ -116,74 +117,41 @@ describe("canCreatePurchaseOrderRevision", () => {
   });
 });
 
-describe("makePurchaseOrderValidator", () => {
+describe("the document validators carry no contact requirement (D-2)", () => {
   /**
-   * `requireSupplierContactAndLocation` is a company setting, so the schema is built per
-   * request. Enforcing it in the SCHEMA rather than in the action is what makes
-   * the error land on the field: a route-level check could only flash after the
-   * fact, and when the flash was miswired it failed silently — the document just
-   * did not finalize and nothing said why.
+   * The requirement is on the SUPPLIER RECORD, checked once at the release
+   * boundary by `checkPartyContactRequirement` — not on the document. The
+   * `make*Validator` factories that made `supplierContactId` /
+   * `supplierLocationId` required were absent from every create action (so the
+   * API, MCP and curl wrote a null contact anyway) and refused to save an
+   * EXISTING draft whose optional location was null, which blocked editing
+   * unrelated fields such as `supplierReference`.
    */
-  const base = {
-    purchaseOrderType: "Purchase" as const,
-    supplierId: "sup_1"
-  };
-
-  it("leaves the contact optional by default", () => {
-    const result = makePurchaseOrderValidator().safeParse(base);
-    expect(result.success).toBe(true);
+  it("offers no strict variant to build a document-level rule from", () => {
+    const exported = Object.keys(purchasingModels);
+    expect(exported).not.toContain("makePurchaseOrderValidator");
+    expect(exported).not.toContain("makeSupplierQuoteValidator");
   });
 
-  it("is byte-identical to the exported validator when the setting is off", () => {
-    // The common path must not change shape — a ternary inside `z.object`
-    // widened the inferred type and made the field look required to every
-    // existing caller.
-    expect(makePurchaseOrderValidator()).toBe(purchaseOrderValidator);
+  it("saves a draft whose optional supplier location is null", () => {
+    // The concrete regression: a Draft PO with no location could no longer have
+    // its supplier reference changed.
     expect(
-      makePurchaseOrderValidator({ requireSupplierContactAndLocation: false })
-    ).toBe(purchaseOrderValidator);
-  });
+      purchaseOrderValidator.safeParse({
+        id: "po_1",
+        purchaseOrderType: "Purchase",
+        supplierId: "sup_1",
+        supplierReference: "PO-4417"
+      }).success
+    ).toBe(true);
 
-  it("requires BOTH the contact and the location when the setting is on", () => {
-    // Ramp refuses a vendor create missing either one (no `country` → 422, no
-    // `business_vendor_contacts` → 422; verified live 2026-09-28), so requiring
-    // only the contact would still let the document post and fail at push time.
-    const validatorWith = makePurchaseOrderValidator({
-      requireSupplierContactAndLocation: true
-    });
-
-    const missing = validatorWith.safeParse(base);
-    expect(missing.success).toBe(false);
-    const issues = JSON.stringify(missing.error?.issues);
-    expect(issues).toContain("Supplier contact is required");
-    expect(issues).toContain("Supplier location is required");
-
-    const contactOnly = validatorWith.safeParse({
-      ...base,
-      supplierContactId: "cnt_1"
-    });
-    expect(contactOnly.success).toBe(false);
-
-    const locationOnly = validatorWith.safeParse({
-      ...base,
-      supplierLocationId: "loc_1"
-    });
-    expect(locationOnly.success).toBe(false);
-
-    const present = validatorWith.safeParse({
-      ...base,
-      supplierContactId: "cnt_1",
-      supplierLocationId: "loc_1"
-    });
-    expect(present.success).toBe(true);
-  });
-
-  it("rejects empty values, not just absent ones", () => {
-    // An empty select posts "" rather than omitting the field.
-    const result = makePurchaseOrderValidator({
-      requireSupplierContactAndLocation: true
-    }).safeParse({ ...base, supplierContactId: "", supplierLocationId: "" });
-
-    expect(result.success).toBe(false);
+    expect(
+      supplierQuoteValidator.safeParse({
+        id: "sq_1",
+        supplierQuoteType: "Purchase",
+        supplierId: "sup_1",
+        supplierReference: "RFQ-9"
+      }).success
+    ).toBe(true);
   });
 });

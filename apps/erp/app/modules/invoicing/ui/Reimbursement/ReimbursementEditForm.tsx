@@ -28,7 +28,8 @@ import {
   NumberControlled,
   TextArea
 } from "~/components/Form";
-import { useCurrencyDecimals, useCurrencyFormatter } from "~/hooks";
+import ExchangeRate from "~/components/Form/ExchangeRate";
+import { useCurrencyDecimals, useCurrencyFormatter, useUser } from "~/hooks";
 import type { DimensionWithValues } from "~/modules/accounting/ui/JournalEntries/types";
 import { path } from "~/utils/path";
 import type { reimbursementUpdateValidator } from "../../invoicing.models";
@@ -52,7 +53,30 @@ const ReimbursementEditForm = ({
   dimensions
 }: ReimbursementEditFormProps) => {
   const { t } = useLingui();
+  const { company } = useUser();
+
+  /**
+   * The document currency is READ-ONLY, and the money formatters below follow
+   * from it.
+   *
+   * It used to be an editable `<Currency>` while `exchangeRate` was a bare
+   * `<Hidden>` nobody recomputed, so switching USD→EUR saved a EUR payable at
+   * rate 1 — and the amount inputs kept formatting and stepping at the ORIGINAL
+   * currency's decimals, which (because react-aria commits `parse(format(x))`)
+   * would have rounded a typed value against the wrong scale on a JPY selection.
+   *
+   * It is read-only rather than re-rated because there is no way to re-rate it
+   * here: the other document forms recompute through a per-document
+   * `*.exchange-rate` route that updates the row and revalidates, and a
+   * reimbursement has none. And it should not have one — a reimbursement is
+   * IMPORTED from a spend tool, never hand-created; its currency and its
+   * `exchangeRate` are the source transaction's facts, pinned at import and
+   * pushed on to Rillet / QBO / Xero. Re-denominating an imported expense is not
+   * a workflow; it is a way to corrupt one. The rate is now SHOWN (below)
+   * instead of living invisibly in a hidden field.
+   */
   const currencyCode = initialValues.currencyCode;
+  const isForeignCurrency = currencyCode !== company.baseCurrencyCode;
   const currencyDecimals = useCurrencyDecimals(currencyCode);
   const currencyFormatter = useCurrencyFormatter({ currency: currencyCode });
 
@@ -105,13 +129,21 @@ const ReimbursementEditForm = ({
           </CardHeader>
           <CardContent>
             <Hidden name="id" />
-            <Hidden name="exchangeRate" />
+            {!isForeignCurrency && <Hidden name="exchangeRate" />}
             <div className="grid gap-4 grid-cols-1 md:grid-cols-2 w-full">
               <DatePicker
                 name="reimbursementDate"
                 label={t`Reimbursement Date`}
               />
-              <Currency name="currencyCode" label={t`Currency`} />
+              <Currency name="currencyCode" label={t`Currency`} isReadOnly />
+              {isForeignCurrency && (
+                <ExchangeRate
+                  name="exchangeRate"
+                  value={initialValues.exchangeRate ?? 1}
+                  exchangeRateUpdatedAt={undefined}
+                  isReadOnly
+                />
+              )}
               <NumberControlled
                 name="amount"
                 label={t`Amount`}

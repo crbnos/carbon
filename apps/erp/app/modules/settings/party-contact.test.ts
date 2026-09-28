@@ -1,12 +1,13 @@
 import { describe, expect, it } from "vitest";
+import * as partyContact from "./party-contact";
 import {
   hasEmailableContact,
   hasUsableLocation,
   isEmailableContact,
   isUsableLocationAddress,
+  missingPartyFacts,
   PARTY_CONTACT_SETTING,
   partyContactRequiredMessage,
-  requiredContactField,
   STATE_REQUIRED_COUNTRIES
 } from "./party-contact";
 
@@ -197,27 +198,108 @@ describe("partyContactRequiredMessage", () => {
   });
 });
 
-describe("requiredContactField", () => {
+describe("missingPartyFacts", () => {
   /**
-   * One phrasing for all six documents, and the reason it is a helper rather
-   * than five copies: the message a user sees for a missing purchase-order
-   * contact and a missing sales-invoice contact should not drift apart.
+   * The decision `checkPartyContactRequirement` makes, without its three
+   * queries. Both halves below have been wrong in this file's history.
    */
-  it("rejects absent and empty values with a named message", () => {
-    const schema = requiredContactField("Supplier contact");
+  const reachable = [{ contact: { email: "aosei@dsrf.com" } }];
+  const placeable = [{ address: { countryCode: "GB" } }];
 
-    for (const value of [undefined, "", "   "]) {
-      const result = schema.safeParse(value);
-      expect(result.success).toBe(false);
-      expect(JSON.stringify(result.error?.issues)).toContain(
-        "Supplier contact is required"
-      );
-    }
+  it("finds nothing missing for a complete party", () => {
+    expect(
+      missingPartyFacts({
+        contacts: { rows: reachable, failed: false },
+        locations: { rows: placeable, failed: false }
+      })
+    ).toEqual({ contact: false, location: false });
   });
 
-  it("accepts a real id", () => {
+  it("maps address.countryCode onto the address rule's `country`", () => {
+    // The column is `countryCode`; the rule takes `country`. Miss the rename and
+    // every complete address reads as "no country", blocking a fine record.
     expect(
-      requiredContactField("Customer contact").safeParse("cnt_1").success
-    ).toBe(true);
+      missingPartyFacts({
+        contacts: { rows: reachable, failed: false },
+        locations: {
+          rows: [{ address: { countryCode: "US", stateProvince: "VA" } }],
+          failed: false
+        }
+      }).location
+    ).toBe(false);
+  });
+
+  it("carries the US state rule through the stored columns", () => {
+    expect(
+      missingPartyFacts({
+        contacts: { rows: reachable, failed: false },
+        locations: {
+          rows: [{ address: { countryCode: "US", stateProvince: null } }],
+          failed: false
+        }
+      })
+    ).toEqual({ contact: false, location: true });
+  });
+
+  it("treats an unjoined embed as absent, not as a crash", () => {
+    // PostgREST returns the join row with a null embed when the FK is dangling.
+    expect(
+      missingPartyFacts({
+        contacts: { rows: [{ contact: null }, {}], failed: false },
+        locations: { rows: [{ address: null }, {}], failed: false }
+      })
+    ).toEqual({ contact: true, location: true });
+  });
+
+  it("reports both missing for a party created from just a name", () => {
+    expect(
+      missingPartyFacts({
+        contacts: { rows: [], failed: false },
+        locations: { rows: [], failed: false }
+      })
+    ).toEqual({ contact: true, location: true });
+  });
+
+  it("fails open per read, without suppressing the other half", () => {
+    // A locations query that errored must not be reported as "no location" —
+    // and must not hide a genuinely unreachable supplier either. Skipping BOTH
+    // halves on EITHER error is what this pins against.
+    expect(
+      missingPartyFacts({
+        contacts: { rows: [], failed: false },
+        locations: { rows: null, failed: true }
+      })
+    ).toEqual({ contact: true, location: false });
+
+    expect(
+      missingPartyFacts({
+        contacts: { rows: null, failed: true },
+        locations: { rows: [], failed: false }
+      })
+    ).toEqual({ contact: false, location: true });
+  });
+
+  it("finds nothing missing when both reads failed", () => {
+    // Which makes `checkPartyContactRequirement` return null — a database hiccup
+    // is not a reason to block a post. The route logs the degradation.
+    expect(
+      missingPartyFacts({
+        contacts: { rows: null, failed: true },
+        locations: { rows: null, failed: true }
+      })
+    ).toEqual({ contact: false, location: false });
+  });
+});
+
+describe("the party check is the only enforcement point", () => {
+  it("exposes no document field-level requirement (D-2)", () => {
+    // `requiredContactField` was applied by six `make*Validator` factories, which
+    // only the six browser forms and the six `*.details.tsx` actions used — every
+    // CREATE action, the API and MCP kept the permissive validator, so the rule
+    // was cosmetic there. It also refused to save an EXISTING draft whose
+    // optional location was null, blocking edits to unrelated fields. Deleting
+    // the helper is what stops a seventh copy being built on it; the bar now
+    // lives in `checkPartyContactRequirement` alone.
+    expect(Object.keys(partyContact)).not.toContain("requiredContactField");
   });
 });

@@ -7,9 +7,11 @@ import {
   ModalDescription,
   ModalFooter,
   ModalHeader,
-  ModalTitle
+  ModalTitle,
+  RadioGroup,
+  RadioGroupButton
 } from "@carbon/react";
-import { Trans } from "@lingui/react/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
 import { useState } from "react";
 import { LuCheck } from "react-icons/lu";
 
@@ -44,6 +46,7 @@ export function InstallModeDialog({
   onClose: () => void;
   onChoose: (modeId: string) => void;
 }) {
+  const { t } = useLingui();
   const [selected, setSelected] = useState<string | null>(modes[0]?.id ?? null);
 
   return (
@@ -67,17 +70,27 @@ export function InstallModeDialog({
           </ModalDescription>
         </ModalHeader>
         <ModalBody>
-          <div className="flex flex-col gap-3">
+          {/* A real radio group, not N `aria-pressed` buttons: one tab stop,
+              arrow keys move between the options, and a screen reader is told
+              they are mutually exclusive. `RadioGroupButton` leaves Enter free
+              for Continue below, which is exactly this screen's shape. */}
+          <RadioGroup
+            value={selected ?? undefined}
+            onValueChange={setSelected}
+            aria-label={t`Install mode`}
+            className="flex flex-col gap-3"
+          >
             {modes.map((mode) => {
               const isSelected = selected === mode.id;
               return (
-                <button
+                <RadioGroupButton
                   key={mode.id}
-                  type="button"
-                  onClick={() => setSelected(mode.id)}
-                  aria-pressed={isSelected}
+                  value={mode.id}
+                  autoFocus={isSelected}
                   className={cn(
-                    "flex w-full items-start gap-3 rounded-lg border p-4 text-left transition-colors",
+                    // The options read as cards, so drop the button size's fixed
+                    // height and single-line clamp.
+                    "h-auto w-full items-start justify-start whitespace-normal rounded-lg border p-4 text-left",
                     isSelected
                       ? "border-primary bg-accent"
                       : "border-border hover:bg-accent/50"
@@ -99,10 +112,10 @@ export function InstallModeDialog({
                       {mode.description}
                     </span>
                   </span>
-                </button>
+                </RadioGroupButton>
               );
             })}
-          </div>
+          </RadioGroup>
         </ModalBody>
         <ModalFooter>
           <Button variant="secondary" onClick={onClose}>

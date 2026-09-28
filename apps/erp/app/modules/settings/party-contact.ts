@@ -1,6 +1,3 @@
-import { z } from "zod";
-import { zfd } from "zod-form-data";
-
 /**
  * "A supplier / customer must have someone we can reach and somewhere we can
  * place them."
@@ -9,9 +6,17 @@ import { zfd } from "zod-form-data";
  * `requireCustomerContactAndLocation` — gate this, both off by default. The
  * requirement is on the PARTY, not the document: a spend platform builds ONE
  * vendor per supplier and needs these facts once per supplier, not once per
- * order. Enforcement happens at the document boundary because that is where the
- * user has the context to answer it, but what gets checked (and fixed) is the
- * supplier record.
+ * order.
+ *
+ * `checkPartyContactRequirement` (`party-contact.server.ts`) is the SINGLE
+ * enforcement point, called at the six release / post boundaries (supplier
+ * quote, purchase order, purchase invoice and their sales mirrors). There is
+ * deliberately no field-level requirement on the documents themselves: a
+ * document naming a contact id is not what the push needs, it broke editing an
+ * existing document whose optional location happened to be null, and a zod
+ * schema on six forms could never cover the create actions, the API or MCP —
+ * which all reached the permissive validator anyway. The bar is asked once, of
+ * the party record, at the moment it actually matters.
  *
  * The bar is exactly what a vendor create needs, verified field-by-field against
  * the Ramp sandbox on 2026-09-28 (`POST /developer/v1/vendors`):
@@ -86,6 +91,64 @@ export function hasUsableLocation(
 }
 
 /**
+ * The two join-row shapes the party reads return — `supplierContact`/
+ * `customerContact` embedding `contact(email)`, and `supplierLocation`/
+ * `customerLocation` embedding `address(countryCode, stateProvince)`.
+ */
+export type PartyContactRow = { contact?: { email?: string | null } | null };
+export type PartyLocationRow = {
+  address?: {
+    countryCode?: string | null;
+    stateProvince?: string | null;
+  } | null;
+};
+
+/**
+ * Which of the two facts a party is missing, given both reads. The whole
+ * decision, with no I/O in it — `checkPartyContactRequirement` only runs the
+ * queries, logs, and phrases the answer.
+ *
+ * Two things live here because both have been wrong:
+ *
+ *  - The column is `address.countryCode`; the pure address rule above takes
+ *    `country`. Miss the rename and every complete US address reads as "no
+ *    country", blocking a record that is actually fine.
+ *  - The fail-open is PER READ. A read that FAILED reports nothing missing —
+ *    a locations query that errored must not be reported as "no location" —
+ *    but it must not suppress the other half's real finding either. Skipping
+ *    both halves on either error let one flaky query hide a genuinely
+ *    unreachable supplier.
+ */
+export function missingPartyFacts(reads: {
+  contacts: { rows: ReadonlyArray<PartyContactRow> | null; failed: boolean };
+  locations: { rows: ReadonlyArray<PartyLocationRow> | null; failed: boolean };
+}): { contact: boolean; location: boolean } {
+  return {
+    contact:
+      !reads.contacts.failed &&
+      !hasEmailableContact(
+        (reads.contacts.rows ?? []).flatMap((row) =>
+          row.contact ? [row.contact] : []
+        )
+      ),
+    location:
+      !reads.locations.failed &&
+      !hasUsableLocation(
+        (reads.locations.rows ?? []).flatMap((row) =>
+          row.address
+            ? [
+                {
+                  country: row.address.countryCode ?? null,
+                  stateProvince: row.address.stateProvince ?? null
+                }
+              ]
+            : []
+        )
+      )
+  };
+}
+
+/**
  * What to tell someone who cannot post because the party record is incomplete.
  *
  * Names the party AND which of the two facts is missing — "a contact is
@@ -116,28 +179,4 @@ export function partyContactRequiredMessage(
         ? "Locations"
         : "Contacts and Locations"
   }. This is required by your company's settings.)`;
-}
-
-/**
- * The schema for a document's contact / location field when the company
- * requires one.
- *
- * Lives here so all six documents phrase the requirement identically, and so the
- * rule sits next to the setting that governs it rather than being retyped in
- * three modules.
- *
- * Callers apply it with `.extend()` on a base object rather than a ternary inside
- * `z.object` — a ternary widens the INFERRED type, which makes the field look
- * required to every existing caller even when the setting is off.
- */
-export function requiredContactField(label: string) {
-  // `.trim()` before `.min(1)`: `zfd.text` turns an empty string into undefined but
-  // leaves a whitespace-only one alone, which would otherwise satisfy the
-  // requirement with a value that identifies nobody.
-  return zfd.text(
-    z
-      .string({ error: `${label} is required` })
-      .trim()
-      .min(1, { message: `${label} is required` })
-  );
 }

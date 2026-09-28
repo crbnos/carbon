@@ -10,7 +10,6 @@ import {
   VStack
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useMemo } from "react";
 import { useParams } from "react-router";
 import type { z } from "zod";
 import {
@@ -29,13 +28,11 @@ import {
 import PaymentTerm from "~/components/Form/PaymentTerm";
 import { PdfExtractor } from "~/components/Form/PdfExtractor";
 import {
-  useCompanySettings,
   usePermissions,
   useRouteData,
   useSupplierApprovalRequired
 } from "~/hooks";
-import type { purchaseInvoiceValidator } from "~/modules/invoicing";
-import { makePurchaseInvoiceValidator } from "~/modules/invoicing";
+import { purchaseInvoiceValidator } from "~/modules/invoicing";
 import { path } from "~/utils/path";
 import { isPurchaseInvoiceLocked } from "../../invoicing.models";
 import { usePurchaseInvoiceAutoFill } from "./usePurchaseInvoiceAutoFill";
@@ -72,21 +69,11 @@ const PurchaseInvoiceForm = ({ initialValues }: PurchaseInvoiceFormProps) => {
     onInvoiceSupplierChange
   } = usePurchaseInvoiceAutoFill(initialValues);
 
-  // The contact requirement is a company setting, so the schema is built per
-  // render — that is what marks the field and puts the error on the control
-  // instead of surfacing it after a failed submit.
-  const requireSupplierContactAndLocation =
-    useCompanySettings()?.requireSupplierContactAndLocation === true;
-  const contactAwareValidator = useMemo(
-    () => makePurchaseInvoiceValidator({ requireSupplierContactAndLocation }),
-    [requireSupplierContactAndLocation]
-  );
-
   return (
     <ValidatedForm
       key={formKey}
       method="post"
-      validator={contactAwareValidator}
+      validator={purchaseInvoiceValidator}
       defaultValues={currentValues}
       isDisabled={isEditing && isLocked}
     >

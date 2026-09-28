@@ -6,7 +6,6 @@ import {
 import { getLocalTimeZone, today } from "@internationalized/date";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
-import { requiredContactField } from "~/modules/settings/party-contact";
 import { address, contact } from "~/types/validators";
 import { incoterms, itemType, taxExemptionReasons } from "../shared";
 
@@ -130,22 +129,7 @@ export const plannedOrderValidator = z.object({
 
 export type PlannedOrder = z.infer<typeof plannedOrderValidator>;
 
-/**
- * `requireSupplierContactAndLocation` is a COMPANY SETTING, and a zod schema cannot read the
- * database — so the schema is built per request instead of being a fixed object.
- *
- * Doing it here rather than as a check in the action is what makes the field
- * behave like a required field everywhere: the form marks it, the inline error
- * lands ON the control instead of arriving as a toast after a failed submit, and
- * every other entry point (the API, MCP, a duplicate) is held to the same rule by
- * construction. A route-level check reached only the paths someone remembered to
- * edit — and when the document had already been saved, the only feedback left was
- * a redirect that looked like nothing happening.
- *
- * `purchaseOrderValidator` stays exported as the permissive default so existing
- * call sites and `z.infer` keep working unchanged.
- */
-const basePurchaseOrder = z.object({
+export const purchaseOrderValidator = z.object({
   id: zfd.text(z.string().optional()),
   purchaseOrderId: zfd.text(z.string().optional()),
   purchaseOrderType: z.enum(purchaseOrderTypeType, {
@@ -163,36 +147,6 @@ const basePurchaseOrder = z.object({
   exchangeRate: zfd.numeric(z.number().optional()),
   exchangeRateUpdatedAt: zfd.text(z.string().optional())
 });
-
-/**
- * `requireSupplierContactAndLocation` is a COMPANY SETTING, and a zod schema cannot read the
- * database — so the schema is built per request rather than being a fixed object.
- *
- * Doing it here rather than as a check in the action is what makes the field
- * behave like a required field everywhere: the form marks it, the inline error
- * lands ON the control instead of arriving as a toast after a failed submit, and
- * every other entry point (the API, MCP, a duplicate) is held to the same rule by
- * construction. A route-level check only covered the paths someone remembered to
- * edit — and once the document was already saved, the only feedback left was a
- * redirect that looked like nothing happening.
- *
- * Returns the BASE schema when the setting is off, so the common path is
- * byte-identical to before and `z.infer<typeof purchaseOrderValidator>` keeps its
- * existing shape (a ternary inside `z.object` widened the inferred type and made
- * the field look required to every existing caller).
- */
-export function makePurchaseOrderValidator(
-  options: { requireSupplierContactAndLocation?: boolean } = {}
-) {
-  if (!options.requireSupplierContactAndLocation) return basePurchaseOrder;
-
-  return basePurchaseOrder.extend({
-    supplierContactId: requiredContactField("Supplier contact"),
-    supplierLocationId: requiredContactField("Supplier location")
-  });
-}
-
-export const purchaseOrderValidator = basePurchaseOrder;
 
 export const supplierQuoteFinalizeValidator = z
   .object({
@@ -594,69 +548,37 @@ export const supplierTypeValidator = z.object({
   name: z.string().trim().min(1, { message: "Name is required" })
 });
 
-const baseSupplierQuote = z.object({
-  id: zfd.text(z.string().optional()),
-  supplierQuoteId: zfd.text(z.string().optional()),
-  supplierQuoteType: z.enum(purchaseOrderTypeType, {
-    error: "Type is required"
-  }),
-  supplierId: z.string().min(1, { message: "Supplier is required" }),
-  supplierLocationId: zfd.text(z.string().optional()),
-  supplierContactId: zfd.text(z.string().optional()),
-  supplierReference: zfd.text(z.string().optional()),
-  status: z.enum(supplierQuoteStatusType).optional(),
-  notes: z.any().optional(),
-  quotedDate: zfd.text(z.string().optional()),
-  expirationDate: zfd.text(z.string().optional()),
-  currencyCode: zfd.text(z.string().optional()),
-  exchangeRate: zfd.numeric(z.number().optional()),
-  exchangeRateUpdatedAt: zfd.text(z.string().optional())
-});
-
-/**
- * `requireSupplierContactAndLocation` is a company setting, so the schema is built per
- * request — a zod schema cannot read the database. See `makePurchaseOrderValidator`
- * for why this belongs in the schema rather than in the action.
- *
- * The expiration refinement is applied AFTER the optional extend, because
- * `.refine()` returns a ZodEffects and ZodEffects has no `.extend()`. Building the
- * object first and refining last keeps both rules on whichever variant is returned.
- */
-const supplierQuoteExpirationRule = (data: { expirationDate?: string }) => {
-  if (data.expirationDate) {
-    return data.expirationDate >= today(getLocalTimeZone()).toString();
-  }
-  return true;
-};
-
-const supplierQuoteExpirationError = {
-  message: "Expiration date must be today or after",
-  path: ["expirationDate"]
-};
-
-export function makeSupplierQuoteValidator(
-  options: { requireSupplierContactAndLocation?: boolean } = {}
-) {
-  // Each branch refines its OWN object. Refining a union of the two schemas does
-  // not type-check (zod's `.refine` overloads cannot resolve against a union), and
-  // `.refine()` must come last regardless: it returns a ZodEffects, which has no
-  // `.extend()`.
-  if (!options.requireSupplierContactAndLocation) {
-    return baseSupplierQuote.refine(
-      supplierQuoteExpirationRule,
-      supplierQuoteExpirationError
-    );
-  }
-
-  return baseSupplierQuote
-    .extend({
-      supplierContactId: requiredContactField("Supplier contact"),
-      supplierLocationId: requiredContactField("Supplier location")
-    })
-    .refine(supplierQuoteExpirationRule, supplierQuoteExpirationError);
-}
-
-export const supplierQuoteValidator = makeSupplierQuoteValidator();
+export const supplierQuoteValidator = z
+  .object({
+    id: zfd.text(z.string().optional()),
+    supplierQuoteId: zfd.text(z.string().optional()),
+    supplierQuoteType: z.enum(purchaseOrderTypeType, {
+      error: "Type is required"
+    }),
+    supplierId: z.string().min(1, { message: "Supplier is required" }),
+    supplierLocationId: zfd.text(z.string().optional()),
+    supplierContactId: zfd.text(z.string().optional()),
+    supplierReference: zfd.text(z.string().optional()),
+    status: z.enum(supplierQuoteStatusType).optional(),
+    notes: z.any().optional(),
+    quotedDate: zfd.text(z.string().optional()),
+    expirationDate: zfd.text(z.string().optional()),
+    currencyCode: zfd.text(z.string().optional()),
+    exchangeRate: zfd.numeric(z.number().optional()),
+    exchangeRateUpdatedAt: zfd.text(z.string().optional())
+  })
+  .refine(
+    (data) => {
+      if (data.expirationDate) {
+        return data.expirationDate >= today(getLocalTimeZone()).toString();
+      }
+      return true;
+    },
+    {
+      message: "Expiration date must be today or after",
+      path: ["expirationDate"] // path of error
+    }
+  );
 
 export const supplierQuoteLineValidator = z
   .object({

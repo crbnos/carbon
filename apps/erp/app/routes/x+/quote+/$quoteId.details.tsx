@@ -19,7 +19,7 @@ import type {
 import {
   getQuote,
   isQuoteLocked,
-  makeQuoteValidator,
+  quoteValidator,
   updateQuote
 } from "~/modules/sales";
 import {
@@ -33,7 +33,6 @@ import {
   QuoteSummary
 } from "~/modules/sales/ui/Quotes";
 import type { QuoteShipmentFormRef } from "~/modules/sales/ui/Quotes/QuoteShipmentForm";
-import { getCompanySettings } from "~/modules/settings";
 import { setCustomFields } from "~/utils/form";
 import { requireUnlocked } from "~/utils/lockedGuard.server";
 import { path } from "~/utils/path";
@@ -62,7 +61,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId, companyId } = await requirePermissions(request, {
+  const { client, userId } = await requirePermissions(request, {
     update: "sales"
   });
 
@@ -81,13 +80,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   });
 
   const formData = await request.formData();
-  const validation = await validator(
-    makeQuoteValidator({
-      requireCustomerContactAndLocation:
-        (await getCompanySettings(client, companyId)).data
-          ?.requireCustomerContactAndLocation === true
-    })
-  ).validate(formData);
+  const validation = await validator(quoteValidator).validate(formData);
 
   if (validation.error) {
     return validationError(validation.error);

@@ -21,8 +21,8 @@ import {
   getPurchaseInvoice,
   InvoicePaymentsPanel,
   isPurchaseInvoiceLocked,
-  makePurchaseInvoiceValidator,
   PurchaseInvoiceSummary,
+  purchaseInvoiceValidator,
   updatePurchaseInvoice
 } from "~/modules/invoicing";
 import { PurchaseInvoiceDeliveryForm } from "~/modules/invoicing/ui/PurchaseInvoice";
@@ -32,7 +32,6 @@ import {
   SupplierInteractionDocuments,
   SupplierInteractionNotes
 } from "~/modules/purchasing/ui/SupplierInteraction";
-import { getCompanySettings } from "~/modules/settings";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { requireUnlocked } from "~/utils/lockedGuard.server";
 import { path } from "~/utils/path";
@@ -94,18 +93,14 @@ export async function action({ request, params }: ActionFunctionArgs) {
     message: "Cannot modify a confirmed purchase invoice."
   });
 
-  const { client, companyId, userId } = await requirePermissions(request, {
+  const { client, userId } = await requirePermissions(request, {
     update: "invoicing"
   });
 
   const formData = await request.formData();
-  const validation = await validator(
-    makePurchaseInvoiceValidator({
-      requireSupplierContactAndLocation:
-        (await getCompanySettings(client, companyId)).data
-          ?.requireSupplierContactAndLocation === true
-    })
-  ).validate(formData);
+  const validation = await validator(purchaseInvoiceValidator).validate(
+    formData
+  );
 
   if (validation.error) {
     return validationError(validation.error);

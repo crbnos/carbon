@@ -1,6 +1,5 @@
 import { z } from "zod";
 import { zfd } from "zod-form-data";
-import { requiredContactField } from "~/modules/settings/party-contact";
 // Import the constants from the models file directly (not the `../shared` barrel),
 // which also re-exports shared.service/shared.server — those transitively pull in
 // `@carbon/auth`'s Lingui-macro glossary and break plain unit tests of this module.
@@ -73,7 +72,7 @@ export function isSalesInvoiceLocked(
   return status !== null && status !== undefined && status !== "Draft";
 }
 
-const basePurchaseInvoice = z.object({
+export const purchaseInvoiceValidator = z.object({
   id: zfd.text(z.string().optional()),
   invoiceId: zfd.text(z.string().optional()),
   supplierId: z.string().min(1, { message: "Supplier is required" }),
@@ -90,29 +89,6 @@ const basePurchaseInvoice = z.object({
   exchangeRate: zfd.numeric(z.number().optional()),
   exchangeRateUpdatedAt: zfd.text(z.string().optional())
 });
-
-/**
- * `requireSupplierContactAndLocation` is a company setting, so the schema is built per request —
- * a zod schema cannot read the database. Enforcing it HERE rather than in the
- * action is what makes the field behave like a required field: the form marks
- * it, the error lands on the control while the document is being filled in, and
- * every other entry point is held to the same rule by construction.
- *
- * Returns the base object untouched when the setting is off, so the common path
- * is unchanged and `z.infer<typeof purchaseInvoiceValidator>` keeps its shape.
- */
-export function makePurchaseInvoiceValidator(
-  options: { requireSupplierContactAndLocation?: boolean } = {}
-) {
-  if (!options.requireSupplierContactAndLocation) return basePurchaseInvoice;
-
-  return basePurchaseInvoice.extend({
-    invoiceSupplierContactId: requiredContactField("Supplier contact"),
-    invoiceSupplierLocationId: requiredContactField("Supplier location")
-  });
-}
-
-export const purchaseInvoiceValidator = basePurchaseInvoice;
 
 export const purchaseInvoiceDeliveryValidator = z.object({
   id: z.string(),
@@ -204,7 +180,7 @@ export const purchaseInvoiceLineValidator = z
     }
   );
 
-const baseSalesInvoice = z.object({
+export const salesInvoiceValidator = z.object({
   id: zfd.text(z.string().optional()),
   invoiceId: zfd.text(z.string().optional()),
   customerId: z.string().min(1, { message: "Customer is required" }),
@@ -221,29 +197,6 @@ const baseSalesInvoice = z.object({
   exchangeRate: zfd.numeric(z.number().optional()),
   exchangeRateUpdatedAt: zfd.text(z.string().optional())
 });
-
-/**
- * `requireCustomerContactAndLocation` is a company setting, so the schema is built per request —
- * a zod schema cannot read the database. Enforcing it HERE rather than in the
- * action is what makes the field behave like a required field: the form marks
- * it, the error lands on the control while the document is being filled in, and
- * every other entry point is held to the same rule by construction.
- *
- * Returns the base object untouched when the setting is off, so the common path
- * is unchanged and `z.infer<typeof salesInvoiceValidator>` keeps its shape.
- */
-export function makeSalesInvoiceValidator(
-  options: { requireCustomerContactAndLocation?: boolean } = {}
-) {
-  if (!options.requireCustomerContactAndLocation) return baseSalesInvoice;
-
-  return baseSalesInvoice.extend({
-    invoiceCustomerContactId: requiredContactField("Customer contact"),
-    invoiceCustomerLocationId: requiredContactField("Customer location")
-  });
-}
-
-export const salesInvoiceValidator = baseSalesInvoice;
 
 export const stripeCustomerActions = [
   "use-linked",

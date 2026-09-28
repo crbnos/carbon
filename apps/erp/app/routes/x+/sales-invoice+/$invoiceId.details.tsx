@@ -21,7 +21,7 @@ import {
   getSalesInvoice,
   InvoicePaymentsPanel,
   isSalesInvoiceLocked,
-  makeSalesInvoiceValidator,
+  salesInvoiceValidator,
   updateSalesInvoice
 } from "~/modules/invoicing";
 import type { SalesInvoiceShipmentFormRef } from "~/modules/invoicing/ui/SalesInvoice/SalesInvoiceShipmentForm";
@@ -32,7 +32,6 @@ import {
   OpportunityDocuments,
   OpportunityNotes
 } from "~/modules/sales/ui/Opportunity";
-import { getCompanySettings } from "~/modules/settings";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { requireUnlocked } from "~/utils/lockedGuard.server";
 import { path } from "~/utils/path";
@@ -88,18 +87,12 @@ export async function action({ request, params }: ActionFunctionArgs) {
     message: "Cannot modify a locked sales invoice. Reopen it first."
   });
 
-  const { client, companyId, userId } = await requirePermissions(request, {
+  const { client, userId } = await requirePermissions(request, {
     update: "invoicing"
   });
 
   const formData = await request.formData();
-  const validation = await validator(
-    makeSalesInvoiceValidator({
-      requireCustomerContactAndLocation:
-        (await getCompanySettings(client, companyId)).data
-          ?.requireCustomerContactAndLocation === true
-    })
-  ).validate(formData);
+  const validation = await validator(salesInvoiceValidator).validate(formData);
 
   if (validation.error) {
     return validationError(validation.error);

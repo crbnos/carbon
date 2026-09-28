@@ -1,12 +1,14 @@
 import type { Database } from "@carbon/database";
+import { getLogger } from "@carbon/logger";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import {
-  hasEmailableContact,
-  hasUsableLocation,
+  missingPartyFacts,
   PARTY_CONTACT_SETTING,
   type PartyKind,
   partyContactRequiredMessage
 } from "./party-contact";
+
+const logger = getLogger("erp", "party-contact");
 
 /**
  * Enforce the "party must have a reachable contact AND an identifiable
@@ -20,7 +22,10 @@ import {
  * Fails OPEN on a read error. This gate exists to stop a document reaching a
  * platform that will reject it — a transient database hiccup is not a reason to
  * block someone from posting, and the push itself still refuses with a named
- * error if the record really is incomplete.
+ * error if the record really is incomplete. But a fail-open that says nothing is
+ * indistinguishable from a passing gate, so every degradation is logged: a
+ * permanently broken read would otherwise disable a setting the customer turned
+ * on, silently and forever.
  */
 export async function checkPartyContactRequirement(
   client: SupabaseClient<Database>,
@@ -36,7 +41,15 @@ export async function checkPartyContactRequirement(
     .eq("id", companyId)
     .maybeSingle();
 
-  if (settings.error || !settings.data) return null;
+  if (settings.error || !settings.data) {
+    logger.warn("Party contact requirement skipped: settings unreadable", {
+      companyId,
+      kind: party.kind,
+      partyId: party.id,
+      error: settings.error
+    });
+    return null;
+  }
   const required = (settings.data as Record<string, unknown>)[settingColumn];
   if (required !== true) return null;
 
@@ -60,39 +73,26 @@ export async function checkPartyContactRequirement(
       .eq("companyId", companyId)
   ]);
 
-  // Fail open per read, independently: a locations query that errored must not
-  // be reported as "no location".
-  if (contacts.error || locations.error) return null;
+  // Fail open PER READ, independently: a locations query that errored must not
+  // be reported as "no location", but it must not suppress a genuinely missing
+  // contact either. Skipping both halves on either error made one flaky query
+  // hide the other half's real finding.
+  if (contacts.error || locations.error) {
+    logger.warn("Party contact requirement partially skipped: read failed", {
+      companyId,
+      kind: party.kind,
+      partyId: party.id,
+      contactsError: contacts.error,
+      locationsError: locations.error
+    });
+  }
 
-  const contactRows = (contacts.data ?? []).flatMap((row) => {
-    const contact = (row as { contact?: { email?: string | null } | null })
-      .contact;
-    return contact ? [contact] : [];
+  // The decision itself is pure and lives in `missingPartyFacts` — including the
+  // countryCode→country rename and the per-read fail-open.
+  const missing = missingPartyFacts({
+    contacts: { rows: contacts.data, failed: Boolean(contacts.error) },
+    locations: { rows: locations.data, failed: Boolean(locations.error) }
   });
-
-  const addressRows = (locations.data ?? []).flatMap((row) => {
-    const address = (
-      row as {
-        address?: {
-          countryCode?: string | null;
-          stateProvince?: string | null;
-        } | null;
-      }
-    ).address;
-    return address
-      ? [
-          {
-            country: address.countryCode ?? null,
-            stateProvince: address.stateProvince ?? null
-          }
-        ]
-      : [];
-  });
-
-  const missing = {
-    contact: !hasEmailableContact(contactRows),
-    location: !hasUsableLocation(addressRows)
-  };
 
   if (!missing.contact && !missing.location) return null;
 
@@ -104,9 +104,18 @@ export async function checkPartyContactRequirement(
     .eq("companyId", companyId)
     .maybeSingle();
 
+  if (named.error) {
+    logger.warn("Party contact requirement: party name unreadable", {
+      companyId,
+      kind: party.kind,
+      partyId: party.id,
+      error: named.error
+    });
+  }
+
   return partyContactRequiredMessage(
     party.kind,
-    (named.data as { name?: string | null } | null)?.name ?? null,
+    named.data?.name ?? null,
     missing
   );
 }

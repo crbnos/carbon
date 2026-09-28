@@ -14,7 +14,7 @@ import {
 import { getLocalTimeZone, today } from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ReactNode } from "react";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { flushSync } from "react-dom";
 import { useFetcher, useParams } from "react-router";
 import type { z } from "zod";
@@ -31,18 +31,12 @@ import {
   SupplierLocation
 } from "~/components/Form";
 import ExchangeRate from "~/components/Form/ExchangeRate";
-import {
-  useCompanySettings,
-  usePermissions,
-  useRouteData,
-  useUser
-} from "~/hooks";
+import { usePermissions, useRouteData, useUser } from "~/hooks";
 import { path } from "~/utils/path";
 import {
   isSupplierQuoteLocked,
-  makeSupplierQuoteValidator,
   purchaseOrderTypeType,
-  type supplierQuoteValidator
+  supplierQuoteValidator
 } from "../../purchasing.models";
 import type { SupplierQuote } from "../../types";
 
@@ -120,21 +114,11 @@ const SupplierQuoteForm = ({ initialValues }: SupplierQuoteFormProps) => {
     }
   };
 
-  // The contact requirement is a company setting, so the schema is built per
-  // render — that is what marks the field and puts the error on the control
-  // instead of surfacing it after a failed submit.
-  const requireSupplierContactAndLocation =
-    useCompanySettings()?.requireSupplierContactAndLocation === true;
-  const contactAwareValidator = useMemo(
-    () => makeSupplierQuoteValidator({ requireSupplierContactAndLocation }),
-    [requireSupplierContactAndLocation]
-  );
-
   return (
     <Card>
       <ValidatedForm
         method="post"
-        validator={contactAwareValidator}
+        validator={supplierQuoteValidator}
         defaultValues={initialValues}
         isDisabled={isEditing && isLocked}
       >

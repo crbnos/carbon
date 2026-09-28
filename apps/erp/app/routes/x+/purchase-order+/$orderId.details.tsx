@@ -19,7 +19,7 @@ import {
   getPurchaseOrder,
   getPurchaseOrderPayment,
   isPurchaseOrderLocked,
-  makePurchaseOrderValidator,
+  purchaseOrderValidator,
   updatePurchaseOrder
 } from "~/modules/purchasing";
 import {
@@ -33,7 +33,6 @@ import {
   SupplierInteractionNotes
 } from "~/modules/purchasing/ui/SupplierInteraction";
 import SupplierInteractionState from "~/modules/purchasing/ui/SupplierInteraction/SupplierInteractionState";
-import { getCompanySettings } from "~/modules/settings";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { requireUnlocked } from "~/utils/lockedGuard.server";
 import { path } from "~/utils/path";
@@ -97,7 +96,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const isLocked = isPurchaseOrderLocked(purchaseOrder.data?.status);
 
   // If locked, require delete permission; otherwise require update permission
-  const { client, companyId, userId } = await requirePermissions(request, {
+  const { client, userId } = await requirePermissions(request, {
     ...(isLocked ? { delete: "purchasing" } : { update: "purchasing" })
   });
 
@@ -111,16 +110,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   });
 
   const formData = await request.formData();
-  // Build the schema from the company setting so the requirement is enforced for
-  // every caller, not just the browser form — and so the failure comes back as a
-  // FIELD error on `supplierContactId` rather than a flash the user has to guess at.
-  const settings = await getCompanySettings(client, companyId);
-  const validation = await validator(
-    makePurchaseOrderValidator({
-      requireSupplierContactAndLocation:
-        settings.data?.requireSupplierContactAndLocation === true
-    })
-  ).validate(formData);
+  const validation = await validator(purchaseOrderValidator).validate(formData);
 
   if (validation.error) {
     return validationError(validation.error);

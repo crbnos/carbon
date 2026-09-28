@@ -13,7 +13,7 @@ import {
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ReactNode } from "react";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { flushSync } from "react-dom";
 import { useFetcher } from "react-router";
 import type { z } from "zod";
@@ -32,15 +32,9 @@ import {
   Submit
 } from "~/components/Form";
 import ExchangeRate from "~/components/Form/ExchangeRate";
-import {
-  useCompanySettings,
-  usePermissions,
-  useRouteData,
-  useUser
-} from "~/hooks";
-import { makeQuoteValidator } from "~/modules/sales";
+import { usePermissions, useRouteData, useUser } from "~/hooks";
 import { path } from "~/utils/path";
-import { isQuoteLocked, type quoteValidator } from "../../sales.models";
+import { isQuoteLocked, quoteValidator } from "../../sales.models";
 import type { Quotation } from "../../types";
 
 type QuoteFormValues = z.infer<typeof quoteValidator>;
@@ -126,21 +120,11 @@ const QuoteForm = ({ initialValues }: QuoteFormProps) => {
     }
   };
 
-  // The contact requirement is a company setting, so the schema is built per
-  // render — that is what marks the field and puts the error on the control
-  // instead of surfacing it after a failed submit.
-  const requireCustomerContactAndLocation =
-    useCompanySettings()?.requireCustomerContactAndLocation === true;
-  const contactAwareValidator = useMemo(
-    () => makeQuoteValidator({ requireCustomerContactAndLocation }),
-    [requireCustomerContactAndLocation]
-  );
-
   return (
     <Card>
       <ValidatedForm
         method="post"
-        validator={contactAwareValidator}
+        validator={quoteValidator}
         defaultValues={initialValues}
         isDisabled={isDisabled}
       >
