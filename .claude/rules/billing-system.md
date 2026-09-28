@@ -175,9 +175,10 @@ whom it deleted.
   `CompanyDeletionWarningEmail` (`@carbon/documents/email`) sent to its group owner, naming
   the deletion date, and a marker row in `externalIntegrationMapping`
   (`integration = "inactive-company-warning"`, `metadata.warnedAt`).
-  - It is deleted only at a later run, once the warning is at least 6 days old
-    (`splitByWarning`, tested). Six rather than seven, because the warning is stamped a
-    few minutes into a run and would otherwise miss the next one.
+  - The marker also stores `deleteAfter`, the UTC date the email names (today + 7). The
+    company is deleted at the first run on or after that date, never before
+    (`isDueForDeletion`, tested). A warning retried after UTC midnight therefore names,
+    and waits for, the later date.
   - A company with no group owner is never warned, so it is never deleted. It is also
     left out of the capped lists, where it would otherwise hold a slot every week.
   - A failed send is recorded as `metadata.failedAt`, and that company queues behind
@@ -185,9 +186,9 @@ whom it deleted.
   - A warning expires after 30 days, and the company is warned again. A marker whose
     company is no longer inactive (it bought a plan) is cleared, so a later lapse starts
     a fresh warning. The purge deletes the marker along with the company.
-  - Right before each purge, `isStillDueForDeletion` re-reads the company, the group's
-    plan rows, the bypass list and the warning inside the purge's own transaction. A
-    plan bought after the plan step stops the delete.
+  - Right before each purge, `isStillDueForDeletion` re-reads, inside the purge's own
+    transaction, the company, the group's plan rows, the bypass list, the group owner and
+    the warning. A plan bought, or an owner changed, after the plan step stops the delete.
   - Each warn or delete batch that still fails after its retries is logged and skipped.
     It never ends the run, so the training reminders after it still go out.
 

@@ -52,47 +52,54 @@ export function selectInactiveCompanies({
 }
 
 /**
- * A warning must be at least this old before the company is deleted. Six days,
- * not seven: warnings are stamped a few minutes into a weekly run, so a seven-day
- * cutoff would miss the next run by those minutes and delete a week late.
- */
-const NOTICE_MS = 6 * 24 * 60 * 60 * 1000;
-
-/**
  * A warning older than this no longer counts, and the company is warned again. A
  * warning that could not be cleared when its company regained a plan therefore
  * cannot qualify it for deletion months later without a fresh email.
  */
 const WARNING_TTL_MS = 30 * 24 * 60 * 60 * 1000;
 
-/** What the `inactive-company-warning` marker records. */
-export type Warning = { warnedAt?: string; failedAt?: string };
+/**
+ * What the `inactive-company-warning` marker records. `deleteAfter` is the UTC
+ * date (`YYYY-MM-DD`) the email named; nothing is deleted before it.
+ */
+export type Warning = {
+  warnedAt?: string;
+  deleteAfter?: string;
+  failedAt?: string;
+};
 
-const liveWarning = (warning: Warning | undefined, now: number) =>
+/** Now as an instant (ms) and as today's UTC date (`YYYY-MM-DD`). */
+export type Clock = { now: number; today: string };
+
+const liveWarning = (warning: Warning | undefined, { now }: Clock) =>
   warning?.warnedAt !== undefined &&
   Date.parse(warning.warnedAt) > now - WARNING_TTL_MS;
 
-/** Warned long enough ago to be deleted, and not so long ago it has expired. */
-export const isDueForDeletion = (warning: Warning | undefined, now: number) =>
-  liveWarning(warning, now) &&
-  Date.parse(warning!.warnedAt!) <= now - NOTICE_MS;
+/**
+ * The date the owner was told has arrived, and the warning has not expired.
+ * `YYYY-MM-DD` strings compare chronologically.
+ */
+export const isDueForDeletion = (warning: Warning | undefined, clock: Clock) =>
+  liveWarning(warning, clock) &&
+  warning?.deleteAfter !== undefined &&
+  warning.deleteAfter <= clock.today;
 
 /**
  * Split inactive companies (oldest first) by their warning: no live warning →
- * warn now; warned at least `NOTICE_MS` ago → delete; warned since → wait. A
- * company is never deleted without a warning, and each list is capped at `limit`.
+ * warn now; its `deleteAfter` date reached → delete; otherwise → wait. A company
+ * is never deleted without a warning, and each list is capped at `limit`.
  * A company whose last send failed goes after the rest, so a bad address cannot
  * hold the front of the capped list every week.
  */
 export function splitByWarning({
   inactive,
   warnings,
-  now,
+  clock,
   limit
 }: {
   inactive: CompanyCandidate[];
   warnings: Map<string, Warning>;
-  now: number;
+  clock: Clock;
   limit: number;
 }): { toWarn: CompanyCandidate[]; toDelete: CompanyCandidate[] } {
   const toWarn: CompanyCandidate[] = [];
@@ -100,8 +107,8 @@ export function splitByWarning({
   const toDelete: CompanyCandidate[] = [];
   for (const company of inactive) {
     const warning = warnings.get(company.id);
-    if (isDueForDeletion(warning, now)) toDelete.push(company);
-    else if (liveWarning(warning, now)) continue;
+    if (isDueForDeletion(warning, clock)) toDelete.push(company);
+    else if (liveWarning(warning, clock)) continue;
     else if (warning?.failedAt) retryWarn.push(company);
     else toWarn.push(company);
   }

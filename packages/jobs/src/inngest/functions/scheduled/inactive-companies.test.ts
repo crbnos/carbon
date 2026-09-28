@@ -86,12 +86,15 @@ describe("selectInactiveCompanies", () => {
   });
 });
 
+// The weekly run, Sunday 2026-10-04 21:00 UTC.
+const clock = { now, today: "2026-10-04" };
+
 describe("splitByWarning", () => {
   const split = (warnings: Record<string, Warning>, limit = 100) => {
     const { toWarn, toDelete } = splitByWarning({
       inactive: [company("a"), company("b"), company("c")],
       warnings: new Map(Object.entries(warnings)),
-      now,
+      clock,
       limit
     });
     return {
@@ -104,22 +107,33 @@ describe("splitByWarning", () => {
     expect(split({})).toEqual({ toWarn: ["a", "b", "c"], toDelete: [] });
   });
 
-  it("deletes at the next weekly run after the warning, not a week late", () => {
-    // Warned a few minutes into last week's run, which started exactly 7 days ago.
-    expect(split({ a: { warnedAt: "2026-09-27T21:04:00Z" } }).toDelete).toEqual(
-      ["a"]
-    );
+  it("deletes on the date the email named", () => {
+    // Warned a few minutes into last Sunday's run: the email said 2026-10-04.
+    const warning = {
+      warnedAt: "2026-09-27T21:04:00Z",
+      deleteAfter: "2026-10-04"
+    };
+    expect(split({ a: warning }).toDelete).toEqual(["a"]);
   });
 
-  it("waits while the warning is recent", () => {
-    expect(split({ a: { warnedAt: "2026-10-01T12:00:00Z" } })).toEqual({
+  it("never deletes before the date the email named", () => {
+    // A retry after UTC midnight named Monday, so Sunday's run waits.
+    const warning = {
+      warnedAt: "2026-09-28T00:10:00Z",
+      deleteAfter: "2026-10-05"
+    };
+    expect(split({ a: warning })).toEqual({
       toWarn: ["b", "c"],
       toDelete: []
     });
   });
 
   it("warns again instead of deleting when the warning has expired", () => {
-    expect(split({ a: { warnedAt: "2026-08-01T21:00:00Z" } })).toEqual({
+    const warning = {
+      warnedAt: "2026-08-01T21:00:00Z",
+      deleteAfter: "2026-08-08"
+    };
+    expect(split({ a: warning })).toEqual({
       toWarn: ["a", "b", "c"],
       toDelete: []
     });
@@ -136,19 +150,19 @@ describe("splitByWarning", () => {
 });
 
 describe("isDueForDeletion", () => {
-  it("needs a live warning at least six days old", () => {
-    expect(isDueForDeletion(undefined, now)).toBe(false);
-    expect(isDueForDeletion({ failedAt: "2026-09-01T00:00:00Z" }, now)).toBe(
+  it("needs a live warning whose named date has arrived", () => {
+    expect(isDueForDeletion(undefined, clock)).toBe(false);
+    expect(isDueForDeletion({ failedAt: "2026-09-01T00:00:00Z" }, clock)).toBe(
       false
     );
-    expect(isDueForDeletion({ warnedAt: "2026-10-01T00:00:00Z" }, now)).toBe(
+    expect(isDueForDeletion({ warnedAt: "2026-09-27T21:04:00Z" }, clock)).toBe(
       false
     );
-    expect(isDueForDeletion({ warnedAt: "2026-09-27T21:04:00Z" }, now)).toBe(
-      true
-    );
-    expect(isDueForDeletion({ warnedAt: "2026-08-01T00:00:00Z" }, now)).toBe(
-      false
-    );
+    expect(
+      isDueForDeletion(
+        { warnedAt: "2026-09-27T21:04:00Z", deleteAfter: "2026-10-04" },
+        clock
+      )
+    ).toBe(true);
   });
 });

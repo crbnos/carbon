@@ -134,13 +134,33 @@ async function isStillDueForDeletion(
     .executeTakeFirst();
   if (paying) return false;
 
+  // The owner may have changed, or become internal, since the plan step.
+  if (groupId !== null) {
+    const owner = await trx
+      .selectFrom("companyGroup")
+      .innerJoin("user", "user.id", "companyGroup.ownerId")
+      .select(["user.id", "user.email"])
+      .where("companyGroup.id", "=", groupId)
+      .executeTakeFirst();
+    if (
+      owner &&
+      (splitIds(STRIPE_BYPASS_USER_IDS).includes(owner.id) ||
+        isInternalEmail(owner.email))
+    ) {
+      return false;
+    }
+  }
+
   const marker = await trx
     .selectFrom("externalIntegrationMapping")
     .select("metadata")
     .where("integration", "=", WARNING_INTEGRATION)
     .where("companyId", "=", companyId)
     .executeTakeFirst();
-  return isDueForDeletion(marker?.metadata as Warning | undefined, Date.now());
+  return isDueForDeletion(marker?.metadata as Warning | undefined, {
+    now: Date.now(),
+    today: datetime.today("UTC").toString()
+  });
 }
 
 export const weeklyFunction = inngest.createFunction(
@@ -176,8 +196,10 @@ export const weeklyFunction = inngest.createFunction(
           .map((m) => m.companyId)
       );
 
+      // The email names this date, and the delete waits for it (isDueForDeletion).
+      const deleteAfter = datetime.today("UTC").add({ days: 7 }).toString();
       const deletionDate = formatDate(
-        datetime.today("UTC").add({ days: 7 }).toString(),
+        deleteAfter,
         { dateStyle: "long" },
         "en-US"
       );
@@ -216,7 +238,7 @@ export const weeklyFunction = inngest.createFunction(
         // A failed send is recorded too, so next week it queues behind the rest.
         const warning: Warning = error
           ? { failedAt: datetime.timestamp() }
-          : { warnedAt: datetime.timestamp() };
+          : { warnedAt: datetime.timestamp(), deleteAfter };
         const { error: markerError } = await serviceRole
           .from("externalIntegrationMapping")
           .upsert(
@@ -337,7 +359,10 @@ export const weeklyFunction = inngest.createFunction(
       const { toWarn, toDelete } = splitByWarning({
         inactive: warnable,
         warnings,
-        now: selection.now,
+        clock: {
+          now: selection.now,
+          today: datetime.today("UTC").toString()
+        },
         limit: MAX_COMPANY_DELETIONS_PER_RUN
       });
       const slim = (list: CompanyCandidate[]) =>

@@ -15,7 +15,7 @@ import { EmailThemeProvider, getEmailThemeClasses } from "./components/Theme";
 interface Props {
   recipientName?: string;
   companyName: string;
-  /** Already formatted for display, e.g. "October 11, 2026". */
+  /** Already formatted for display, e.g. "October 11, 2026". Nothing is deleted before it. */
   deletionDate: string;
   billingUrl: string;
 }
@@ -87,9 +87,9 @@ export const CompanyDeletionWarningEmail = ({
             <Text
               className={`text-[15px] leading-[24px] m-0 ${themeClasses.text}`}
             >
-              {companyName} doesn't have an active Carbon subscription. On{" "}
-              {deletionDate} we'll permanently delete it, along with its data
-              and files.
+              {companyName} doesn't have an active Carbon subscription. On or
+              after {deletionDate} we'll permanently delete it, along with its
+              data and files.
             </Text>
             <Text
               className={`text-[15px] leading-[24px] m-0 mt-[12px] ${themeClasses.text}`}
