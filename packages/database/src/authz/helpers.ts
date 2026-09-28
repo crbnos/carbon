@@ -19,16 +19,17 @@ export type Helper = { name: string; sql: string };
 
 /**
  * Helpers that were managed here and have been dropped from the database (by a later
- * migration). The generated migration that shipped their last definition still
- * contains it; `unshipped()` accepts exactly these names there instead of reporting
- * a function `authz migration` no longer writes.
+ * migration), each with the one generated migration that shipped its last definition.
+ * `unshipped()` accepts a retired definition in that file only; in any other generated
+ * migration it is reported, so no later file can bring the helper back. (`has_role` was
+ * retired too, but no generated migration ever defined it.)
  */
-export const RETIRED_HELPERS = [
-  "get_companies_with_permission",
-  "get_permission_companies",
-  "has_company_permission",
-  "has_role"
-];
+const SECURITY_FIXES = "20260927172338_authz-security-fixes.sql";
+export const RETIRED_HELPERS: Readonly<Record<string, string>> = {
+  get_companies_with_permission: SECURITY_FIXES,
+  get_permission_companies: SECURITY_FIXES,
+  has_company_permission: SECURITY_FIXES
+};
 
 // biome-ignore lint/suspicious/noExplicitAny: libpg-query's AST is untyped JSON
 type Ast = any;

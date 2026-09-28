@@ -34,7 +34,8 @@ DO $proof$
 DECLARE
   group_a text; group_b text; company_a text; company_b text;
   u text := gen_random_uuid()::text;  -- employee of A, several permissions, some naming B
-  w text := gen_random_uuid()::text;  -- plain employee of A
+  w text := gen_random_uuid()::text;  -- plain employee of A, no permissions at all
+  c text := gen_random_uuid()::text;  -- customer-portal account of A
   v text := gen_random_uuid()::text;  -- employee of B only
   bank text; customer_a text; draft_payment text; posted_payment text;
   note_id text; view_id text; category_a text; category_b text;
@@ -49,9 +50,11 @@ BEGIN
     VALUES ('Authz B', group_b, 'USD', 'America/New_York') RETURNING id INTO company_b;
 
   INSERT INTO "user" (id, email) VALUES
-    (u, u || '@authz.invalid'), (w, w || '@authz.invalid'), (v, v || '@authz.invalid');
+    (u, u || '@authz.invalid'), (w, w || '@authz.invalid'), (v, v || '@authz.invalid'),
+    (c, c || '@authz.invalid');
   INSERT INTO "userToCompany" ("userId", "companyId", role) VALUES
-    (u, company_a, 'employee'), (w, company_a, 'employee'), (v, company_b, 'employee');
+    (u, company_a, 'employee'), (w, company_a, 'employee'), (v, company_b, 'employee'),
+    (c, company_a, 'customer');
   INSERT INTO "userPermission" (id, permissions) VALUES
     (u, jsonb_build_object(
       'users_create', jsonb_build_array(company_a),
@@ -60,8 +63,7 @@ BEGIN
       'documents_view', jsonb_build_array(company_a, company_b),  -- names a company u is not in
       'inventory_view', jsonb_build_array('0')                    -- the old global wildcard
     )),
-    (w, jsonb_build_object('resources_view', jsonb_build_array(company_a))),
-    (v, '{}'::jsonb);
+    (w, '{}'::jsonb), (v, '{}'::jsonb), (c, '{}'::jsonb);
 
   INSERT INTO account (name, class, "incomeBalance", "isGroup", "companyGroupId", "createdBy")
     VALUES ('Authz bank', 'Asset', 'Balance Sheet', false, group_a, 'system') RETURNING id INTO bank;
@@ -151,10 +153,14 @@ BEGIN
   RAISE NOTICE 'PASS maintenance dispatch tracked entities use the resources permission';
   RESET ROLE;
 
-  -- ── userAttributeValue: an employee (resources_view, not _update) saves their own value
-  --    for a self-managed attribute of their own company, and nothing else ──
+  -- ── userAttributeValue: an employee with no resources permission at all saves their own
+  --    value for a self-managed attribute of their own company, and nothing else ──
   PERFORM pg_temp.act_as(w);
   SET LOCAL ROLE authenticated;
+  ASSERT (SELECT count(*) FROM "userAttribute" WHERE id = attribute_a) = 1,
+    'an employee sees the attributes they manage themselves';
+  ASSERT (SELECT count(*) FROM "userAttribute" WHERE id IN (attribute_locked, attribute_b)) = 0,
+    'but not other attributes, nor another company''s';
   INSERT INTO "userAttributeValue" ("userAttributeId", "userId", "valueBoolean", "createdBy")
     VALUES (attribute_a, w, true, w);
   BEGIN
@@ -184,6 +190,15 @@ BEGIN
   ASSERT NOT pg_temp.allows('userAttributeValue', 'DELETE', 'using',
     jsonb_build_object('userAttributeId', attribute_locked, 'userId', w)),
     'a user cleared their own value of an attribute that is not self-managed';
+  RESET ROLE;
+  PERFORM pg_temp.act_as(c);
+  SET LOCAL ROLE authenticated;
+  BEGIN
+    INSERT INTO "userAttributeValue" ("userAttributeId", "userId", "valueBoolean", "createdBy")
+      VALUES (attribute_a, c, true, c);
+    RAISE EXCEPTION 'a customer-portal account set a self-managed employee attribute';
+  EXCEPTION WHEN insufficient_privilege THEN NULL;
+  END;
   RAISE NOTICE 'PASS users save and clear their own attribute values, only in their own company';
   RESET ROLE;
 

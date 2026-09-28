@@ -66,7 +66,7 @@ const ownAttribute = through(
       "userAttributeCategoryId",
       "userAttributeCategory",
       "id",
-      member("companyId")
+      inCompany("companyId", "employee")
     )
   )
 );
@@ -1459,12 +1459,26 @@ export const manifest = {
           WHERE ("userToCompany_1"."userId" = (( SELECT auth.uid() AS uid))::text)))))));
   `
   ),
+  // Employees read the attributes they manage for themselves, so the self-service path of
+  // userAttributeValue (which reads these rows under the caller's RLS) works without
+  // resources_view; every other attribute still needs it.
   userAttribute: policies({
-    select: through(
-      "userAttributeCategoryId",
-      "userAttributeCategory",
-      "id",
-      inCompany("companyId", "resources_view")
+    select: or(
+      through(
+        "userAttributeCategoryId",
+        "userAttributeCategory",
+        "id",
+        inCompany("companyId", "resources_view")
+      ),
+      and(
+        where<"userAttribute">((eb) => eb("canSelfManage", "=", true)),
+        through(
+          "userAttributeCategoryId",
+          "userAttributeCategory",
+          "id",
+          inCompany("companyId", "employee")
+        )
+      )
     ),
     insert: through(
       "userAttributeCategoryId",
@@ -1485,8 +1499,10 @@ export const manifest = {
       inCompany("companyId", "resources_delete")
     )
   }),
+  // Any employee reads the categories (names only): userAttribute's self-service read goes
+  // through them, and they cannot look back at userAttribute without a policy cycle.
   userAttributeCategory: policies({
-    select: inCompany("companyId", "resources_view"),
+    select: inCompany("companyId", "employee"),
     insert: inCompany("companyId", "resources_create"),
     update: inCompany("companyId", "resources_update"),
     delete: inCompany("companyId", "resources_delete")

@@ -91,8 +91,8 @@ Behaviour tests (run against a local database, each rolls back):
   `/rpc/` call by checking `request.path` instead.
 - Retiring a helper is not automated. Move every caller (manifest rules via `authz
   migration`; storage policies and function bodies in a hand-written migration), delete its
-  `helpers/<name>.sql`, add it to `RETIRED_HELPERS` (`helpers.ts` — the generated migration
-  that last defined it stays valid), and `DROP FUNCTION` it in a migration AFTER the one that
+  `helpers/<name>.sql`, map it in `RETIRED_HELPERS` (`helpers.ts`) to the generated migration
+  that last defined it (only that file may still define it), and `DROP FUNCTION` it in a migration AFTER the one that
   moved the callers, without CASCADE so a missed dependent fails loudly. Done this way for
   `has_role`, `has_company_permission`, `get_companies_with_permission`,
   `get_permission_companies` (`20260927224243` + `20260927224314`).

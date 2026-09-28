@@ -100,4 +100,20 @@ describe("unshipped: production gets every rule and helper through a migration",
     expect(result.problems.join("\n")).toContain("GRANT ALL");
     expect(result.tables).toContain("note");
   });
+
+  test("a retired helper is accepted only in the migration that last shipped it", async () => {
+    const securityFixes = "20260927172338_authz-security-fixes.sql";
+    const dir = migrations({
+      [securityFixes]: readFileSync(
+        path.join(MIGRATIONS_DIR, securityFixes),
+        "utf8"
+      ),
+      "20270101000001_revive.sql": `${GENERATED_HEADER}\nCREATE OR REPLACE FUNCTION public.has_company_permission(p text) RETURNS boolean LANGUAGE sql AS $$ SELECT true $$;\n`
+    });
+    const { problems } = await unshipped(manifest, await loadHelpers(), dir);
+    expect(problems).toHaveLength(1);
+    expect(problems[0]).toMatch(
+      /^20270101000001_revive\.sql: .*has_company_permission/
+    );
+  });
 });
