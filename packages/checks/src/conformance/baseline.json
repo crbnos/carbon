@@ -450,7 +450,7 @@
   "no-raw-rounding::apps/erp/app/routes/x+/settings+/backups.tsx::{convertKbToString(Math.round(file.sizeBytes / 1024))}",
   "no-raw-rounding::apps/erp/app/routes/x+/settings+/printing.tsx::const heightDots = Math.round(height * dpi);",
   "no-raw-rounding::apps/erp/app/routes/x+/settings+/printing.tsx::const widthDots = Math.round(width * dpi);",
-  "no-raw-rounding::apps/erp/app/routes/x+/shipment+/$shipmentId.post.tsx::size: Math.round(file.byteLength / 1024),",
+  "no-raw-rounding::apps/erp/app/modules/inventory/inventory.server.ts::size: Math.round(file.byteLength / 1024),",
   "no-raw-rounding::apps/erp/app/routes/x+/users+/operators.new.tsx::return Math.floor(1000 + Math.random() * 9000).toString();",
   "no-raw-rounding::apps/erp/app/routes/x+/users+/operators.reset-pin.$operatorId.tsx::return Math.floor(1000 + Math.random() * 9000).toString();",
   "no-raw-rounding::apps/mes/app/components/AssemblyView.tsx::Math.round(operation?.operationQuantity ?? trackedEntities.length)",

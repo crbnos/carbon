@@ -1,13 +1,11 @@
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { msg } from "@lingui/core/macro";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
 import type { ReceiptSourceDocument } from "~/modules/inventory";
-import { getUserDefaults } from "~/modules/users/users.server";
-import { getEdgeFunctionErrorMessage } from "~/utils/error";
+import { createReceipt } from "~/modules/inventory/inventory.server";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
@@ -26,136 +24,39 @@ export async function action({ request }: ActionFunctionArgs) {
     (formData.get("sourceDocument") as ReceiptSourceDocument) ?? undefined;
   const sourceDocumentId = (formData.get("sourceDocumentId") as string) ?? "";
 
-  const defaults = await getUserDefaults(client, userId, companyId);
-  const serviceRole = getCarbonServiceRole();
+  // Shared with the inventory_createReceipt tool.
+  const result = await createReceipt(client, {
+    companyId,
+    userId,
+    sourceDocument,
+    sourceDocumentId
+  });
 
+  if (result.error) {
+    throw redirect(
+      sourceErrorPath(sourceDocument, sourceDocumentId),
+      await flash(
+        request,
+        error(result.error.cause ?? null, result.error.flash)
+      )
+    );
+  }
+
+  throw redirect(path.to.receiptDetails(result.data.id));
+}
+
+function sourceErrorPath(
+  sourceDocument: ReceiptSourceDocument | undefined,
+  sourceDocumentId: string
+) {
   switch (sourceDocument) {
     case "Purchase Order":
-      const purchaseOrderReceipt = await serviceRole.functions.invoke<{
-        id: string;
-      }>("create", {
-        body: {
-          type: "receiptFromPurchaseOrder",
-          companyId,
-          locationId: defaults.data?.locationId,
-          purchaseOrderId: sourceDocumentId,
-          receiptId: undefined,
-          userId: userId
-        }
-      });
-      if (!purchaseOrderReceipt.data || purchaseOrderReceipt.error) {
-        throw redirect(
-          path.to.purchaseOrder(sourceDocumentId),
-          await flash(
-            request,
-            error(purchaseOrderReceipt.error, "Failed to create receipt")
-          )
-        );
-      }
-
-      throw redirect(path.to.receiptDetails(purchaseOrderReceipt.data.id));
+      return path.to.purchaseOrder(sourceDocumentId);
     case "Sales Return Order":
-      // One open draft per RMA: clicking Receive again goes to the existing
-      // draft instead of stacking up duplicates.
-      const existingReturnReceipt = await client
-        .from("receipt")
-        .select("id")
-        .eq("sourceDocument", "Sales Return Order")
-        .eq("sourceDocumentId", sourceDocumentId)
-        .eq("status", "Draft")
-        .eq("companyId", companyId)
-        .order("createdAt", { ascending: false })
-        .limit(1)
-        .maybeSingle();
-      if (existingReturnReceipt.error) {
-        throw redirect(
-          path.to.salesReturnOrderDetails(sourceDocumentId),
-          await flash(
-            request,
-            error(
-              existingReturnReceipt.error,
-              "Failed to check for an existing receipt"
-            )
-          )
-        );
-      }
-      if (existingReturnReceipt.data) {
-        throw redirect(path.to.receiptDetails(existingReturnReceipt.data.id));
-      }
-
-      // No default-location guard: the create edge function falls back to
-      // the return order's own location and errors specifically otherwise.
-      const salesReturnOrderReceipt = await serviceRole.functions.invoke<{
-        id: string;
-      }>("create", {
-        body: {
-          type: "receiptFromSalesReturnOrder",
-          companyId,
-          locationId: defaults.data?.locationId,
-          salesReturnOrderId: sourceDocumentId,
-          receiptId: undefined,
-          userId: userId
-        }
-      });
-      if (!salesReturnOrderReceipt.data || salesReturnOrderReceipt.error) {
-        throw redirect(
-          path.to.salesReturnOrderDetails(sourceDocumentId),
-          await flash(
-            request,
-            error(
-              salesReturnOrderReceipt.error,
-              await getEdgeFunctionErrorMessage(
-                salesReturnOrderReceipt.error,
-                "Failed to create receipt"
-              )
-            )
-          )
-        );
-      }
-
-      throw redirect(path.to.receiptDetails(salesReturnOrderReceipt.data.id));
+      return path.to.salesReturnOrderDetails(sourceDocumentId);
     case "Inbound Transfer":
-      const warehouseTransferReceipt = await serviceRole.functions.invoke<{
-        id: string;
-      }>("create", {
-        body: {
-          type: "receiptFromInboundTransfer",
-          companyId,
-          warehouseTransferId: sourceDocumentId,
-          receiptId: undefined,
-          userId: userId
-        }
-      });
-      if (!warehouseTransferReceipt.data || warehouseTransferReceipt.error) {
-        throw redirect(
-          path.to.warehouseTransfer(sourceDocumentId),
-          await flash(
-            request,
-            error(warehouseTransferReceipt.error, "Failed to create receipt")
-          )
-        );
-      }
-
-      throw redirect(path.to.receiptDetails(warehouseTransferReceipt.data.id));
+      return path.to.warehouseTransfer(sourceDocumentId);
     default:
-      const defaultReceipt = await serviceRole.functions.invoke<{
-        id: string;
-      }>("create", {
-        body: {
-          type: "receiptDefault",
-          companyId,
-          locationId: defaults.data?.locationId,
-          userId: userId
-        }
-      });
-
-      if (!defaultReceipt.data || defaultReceipt.error) {
-        throw redirect(
-          path.to.receipts,
-          await flash(request, error(error, "Failed to create receipt"))
-        );
-      }
-
-      throw redirect(path.to.receiptDetails(defaultReceipt.data.id));
+      return path.to.receipts;
   }
 }

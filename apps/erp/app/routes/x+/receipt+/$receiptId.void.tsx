@@ -1,9 +1,9 @@
 import { error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
+import { voidReceipt } from "~/modules/inventory/inventory.server";
 import { path } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
@@ -14,75 +14,28 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const { receiptId } = params;
   if (!receiptId) throw new Error("receiptId not found");
 
+  let result: Awaited<ReturnType<typeof voidReceipt>>;
   try {
-    const serviceRole = getCarbonServiceRole();
-
-    const { data: receipt } = await client
-      .from("receipt")
-      .select("status, invoiced")
-      .eq("id", receiptId)
-      .eq("companyId", companyId)
-      .single();
-
-    if (!receipt) {
-      throw redirect(
-        path.to.receipts,
-        await flash(
-          request,
-          error(new Error("Receipt not found"), "Invalid operation")
-        )
-      );
-    }
-
-    if (receipt.status !== "Posted") {
-      throw redirect(
-        path.to.receiptDetails(receiptId),
-        await flash(
-          request,
-          error(new Error("Can only void posted receipts"), "Invalid operation")
-        )
-      );
-    }
-
-    if (receipt.invoiced) {
-      throw redirect(
-        path.to.receiptDetails(receiptId),
-        await flash(
-          request,
-          error(
-            new Error(
-              "Cannot void a receipt created by a purchase invoice. Void the invoice instead."
-            ),
-            "Invalid operation"
-          )
-        )
-      );
-    }
-
-    const voidReceipt = await serviceRole.functions.invoke("post-receipt", {
-      body: {
-        type: "void",
-        receiptId: receiptId,
-        userId: userId,
-        companyId: companyId
-      }
-    });
-
-    if (voidReceipt.error) {
-      throw redirect(
-        path.to.receiptDetails(receiptId),
-        await flash(request, error(voidReceipt.error, "Failed to void receipt"))
-      );
-    }
-
-    return redirect(
-      path.to.receiptDetails(receiptId),
-      await flash(request, success("Receipt voided"))
-    );
+    result = await voidReceipt(client, { receiptId, companyId, userId });
   } catch (err) {
     throw redirect(
       path.to.receiptDetails(receiptId),
       await flash(request, error(err, "Failed to void receipt"))
     );
   }
+
+  if (result.error) {
+    throw redirect(
+      path.to.receiptDetails(receiptId),
+      await flash(
+        request,
+        error(result.error.cause ?? null, result.error.flash)
+      )
+    );
+  }
+
+  return redirect(
+    path.to.receiptDetails(receiptId),
+    await flash(request, success("Receipt voided"))
+  );
 }

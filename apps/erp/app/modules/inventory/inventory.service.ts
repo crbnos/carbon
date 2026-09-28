@@ -2194,12 +2194,10 @@ function pickHeaderFields(
 }
 
 /**
- * Set one editable field on receipt lines, as the receipt screen's line grid
- * does: `receivedQuantity` (the quantity being received on this receipt) or
- * `storageUnitId` (where it is put away). `ids` are receiptLine ids from
- * inventory_getReceiptLines; `value` null or "" clears the field. Storage
- * rules are evaluated when the receipt is posted (inventory_postReceipt), not
- * here.
+ * Set receivedQuantity or storageUnitId (where it is put away) on receipt
+ * lines, ids from inventory_getReceiptLines, as the receipt's line grid does.
+ * `value` null or "" clears the field. Storage rules are evaluated when the
+ * receipt is posted (inventory_postReceipt), not here.
  */
 export async function updateReceiptLines(
   client: SupabaseClient<Database>,
@@ -2226,11 +2224,10 @@ export async function updateReceiptLines(
 }
 
 /**
- * Set one editable field on shipment lines, as the shipment screen's line grid
- * does: `shippedQuantity` or `storageUnitId` (where it is picked from). `ids`
- * are shipmentLine ids from inventory_getShipmentLines; `value` null or ""
- * clears the field. Storage and sales rules are evaluated when the shipment is
- * posted (inventory_postShipment), not here.
+ * Set shippedQuantity or storageUnitId (where it is picked from) on shipment
+ * lines, ids from inventory_getShipmentLines, as the shipment's line grid does.
+ * `value` null or "" clears the field. Storage and sales rules are evaluated
+ * when the shipment is posted (inventory_postShipment), not here.
  */
 export async function updateShipmentLines(
   client: SupabaseClient<Database>,

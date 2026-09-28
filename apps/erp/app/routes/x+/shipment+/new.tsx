@@ -1,18 +1,13 @@
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
-import { getLogger } from "@carbon/logger";
 import { msg } from "@lingui/core/macro";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
 import type { ShipmentSourceDocument } from "~/modules/inventory";
-import { getUserDefaults } from "~/modules/users/users.server";
-import { getEdgeFunctionErrorMessage } from "~/utils/error";
+import { createShipment } from "~/modules/inventory/inventory.server";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
-
-const logger = getLogger("erp", "shipment");
 
 export const handle: Handle = {
   breadcrumb: msg`Shipments`,
@@ -29,293 +24,43 @@ export async function action({ request }: ActionFunctionArgs) {
     (formData.get("sourceDocument") as ShipmentSourceDocument) ?? undefined;
   const sourceDocumentId = (formData.get("sourceDocumentId") as string) ?? "";
 
-  const defaults = await getUserDefaults(client, userId, companyId);
-  const serviceRole = getCarbonServiceRole();
+  // Shared with the inventory_createShipment tool.
+  const result = await createShipment(client, {
+    companyId,
+    userId,
+    sourceDocument,
+    sourceDocumentId
+  });
 
+  if (result.error) {
+    throw redirect(
+      sourceErrorPath(sourceDocument, sourceDocumentId),
+      await flash(
+        request,
+        error(result.error.cause ?? null, result.error.flash)
+      )
+    );
+  }
+
+  throw redirect(path.to.shipmentDetails(result.data.id));
+}
+
+function sourceErrorPath(
+  sourceDocument: ShipmentSourceDocument | undefined,
+  sourceDocumentId: string
+) {
   switch (sourceDocument) {
     case "Sales Order":
-      if (!defaults.data?.locationId) {
-        throw redirect(
-          path.to.salesOrder(sourceDocumentId),
-          await flash(
-            request,
-            error(
-              null,
-              "Set a default location in your settings before creating a shipment"
-            )
-          )
-        );
-      }
-      const salesOrderShipment = await serviceRole.functions.invoke<{
-        id: string;
-      }>("create", {
-        body: {
-          type: "shipmentFromSalesOrder",
-          companyId,
-          locationId: defaults.data?.locationId,
-          salesOrderId: sourceDocumentId,
-          shipmentId: undefined,
-          userId: userId
-        }
-      });
-      if (!salesOrderShipment.data || salesOrderShipment.error) {
-        logger.error("Failed to create shipment", {
-          error: salesOrderShipment.error
-        });
-        throw redirect(
-          path.to.salesOrder(sourceDocumentId),
-          await flash(
-            request,
-            error(
-              salesOrderShipment.error,
-              await getEdgeFunctionErrorMessage(
-                salesOrderShipment.error,
-                "Failed to create shipment"
-              )
-            )
-          )
-        );
-      }
-
-      throw redirect(path.to.shipmentDetails(salesOrderShipment.data.id));
-    case "Sales Return Order": {
-      // One open draft per return order: clicking Ship again goes to the
-      // existing draft instead of stacking up duplicates.
-      const existingDraftsalesReturnShipment = await client
-        .from("shipment")
-        .select("id")
-        .eq("sourceDocument", "Sales Return Order")
-        .eq("sourceDocumentId", sourceDocumentId)
-        .eq("status", "Draft")
-        .eq("companyId", companyId)
-        .order("createdAt", { ascending: false })
-        .limit(1)
-        .maybeSingle();
-      if (existingDraftsalesReturnShipment.error) {
-        throw redirect(
-          path.to.salesReturnOrderDetails(sourceDocumentId),
-          await flash(
-            request,
-            error(
-              existingDraftsalesReturnShipment.error,
-              "Failed to check for an existing shipment"
-            )
-          )
-        );
-      }
-      if (existingDraftsalesReturnShipment.data) {
-        throw redirect(
-          path.to.shipmentDetails(existingDraftsalesReturnShipment.data.id)
-        );
-      }
-
-      const salesReturnShipment = await serviceRole.functions.invoke<{
-        id: string;
-      }>("create", {
-        body: {
-          type: "shipmentFromSalesReturnOrder",
-          companyId,
-          locationId: defaults.data?.locationId,
-          salesReturnOrderId: sourceDocumentId,
-          shipmentId: undefined,
-          userId: userId
-        }
-      });
-      if (!salesReturnShipment.data || salesReturnShipment.error) {
-        logger.error("Failed to create shipment", {
-          error: salesReturnShipment.error
-        });
-        throw redirect(
-          path.to.salesReturnOrderDetails(sourceDocumentId),
-          await flash(
-            request,
-            error(
-              salesReturnShipment.error,
-              await getEdgeFunctionErrorMessage(
-                salesReturnShipment.error,
-                "Failed to create shipment"
-              )
-            )
-          )
-        );
-      }
-
-      throw redirect(path.to.shipmentDetails(salesReturnShipment.data.id));
-    }
-    case "Purchase Return Order": {
-      // One open draft per return order: clicking Ship again goes to the
-      // existing draft instead of stacking up duplicates.
-      const existingDraftpurchaseReturnShipment = await client
-        .from("shipment")
-        .select("id")
-        .eq("sourceDocument", "Purchase Return Order")
-        .eq("sourceDocumentId", sourceDocumentId)
-        .eq("status", "Draft")
-        .eq("companyId", companyId)
-        .order("createdAt", { ascending: false })
-        .limit(1)
-        .maybeSingle();
-      if (existingDraftpurchaseReturnShipment.error) {
-        throw redirect(
-          path.to.purchaseReturnOrderDetails(sourceDocumentId),
-          await flash(
-            request,
-            error(
-              existingDraftpurchaseReturnShipment.error,
-              "Failed to check for an existing shipment"
-            )
-          )
-        );
-      }
-      if (existingDraftpurchaseReturnShipment.data) {
-        throw redirect(
-          path.to.shipmentDetails(existingDraftpurchaseReturnShipment.data.id)
-        );
-      }
-
-      const purchaseReturnShipment = await serviceRole.functions.invoke<{
-        id: string;
-      }>("create", {
-        body: {
-          type: "shipmentFromPurchaseReturnOrder",
-          companyId,
-          locationId: defaults.data?.locationId,
-          purchaseReturnOrderId: sourceDocumentId,
-          shipmentId: undefined,
-          userId: userId
-        }
-      });
-      if (!purchaseReturnShipment.data || purchaseReturnShipment.error) {
-        logger.error("Failed to create shipment", {
-          error: purchaseReturnShipment.error
-        });
-        throw redirect(
-          path.to.purchaseReturnOrderDetails(sourceDocumentId),
-          await flash(
-            request,
-            error(
-              purchaseReturnShipment.error,
-              await getEdgeFunctionErrorMessage(
-                purchaseReturnShipment.error,
-                "Failed to create shipment"
-              )
-            )
-          )
-        );
-      }
-
-      throw redirect(path.to.shipmentDetails(purchaseReturnShipment.data.id));
-    }
+      return path.to.salesOrder(sourceDocumentId);
+    case "Sales Return Order":
+      return path.to.salesReturnOrderDetails(sourceDocumentId);
+    case "Purchase Return Order":
+      return path.to.purchaseReturnOrderDetails(sourceDocumentId);
     case "Purchase Order":
-      if (!defaults.data?.locationId) {
-        throw redirect(
-          path.to.purchaseOrder(sourceDocumentId),
-          await flash(
-            request,
-            error(
-              null,
-              "Set a default location in your settings before creating a shipment"
-            )
-          )
-        );
-      }
-      const purchaseOrderShipment = await serviceRole.functions.invoke<{
-        id: string;
-      }>("create", {
-        body: {
-          type: "shipmentFromPurchaseOrder",
-          companyId,
-          locationId: defaults.data?.locationId,
-          purchaseOrderId: sourceDocumentId,
-          shipmentId: undefined,
-          userId: userId
-        }
-      });
-      if (!purchaseOrderShipment.data || purchaseOrderShipment.error) {
-        logger.error("Failed to create shipment", {
-          error: purchaseOrderShipment.error
-        });
-        throw redirect(
-          path.to.purchaseOrder(sourceDocumentId),
-          await flash(
-            request,
-            error(
-              purchaseOrderShipment.error,
-              await getEdgeFunctionErrorMessage(
-                purchaseOrderShipment.error,
-                "Failed to create shipment"
-              )
-            )
-          )
-        );
-      }
-
-      throw redirect(path.to.shipmentDetails(purchaseOrderShipment.data.id));
+      return path.to.purchaseOrder(sourceDocumentId);
     case "Outbound Transfer":
-      const warehouseTransferShipment = await serviceRole.functions.invoke<{
-        id: string;
-      }>("create", {
-        body: {
-          type: "shipmentFromWarehouseTransfer",
-          companyId,
-          warehouseTransferId: sourceDocumentId,
-          shipmentId: undefined,
-          userId: userId
-        }
-      });
-      if (!warehouseTransferShipment.data || warehouseTransferShipment.error) {
-        logger.error("Failed to create shipment", {
-          error: warehouseTransferShipment.error
-        });
-        throw redirect(
-          path.to.warehouseTransferDetails(sourceDocumentId),
-          await flash(
-            request,
-            error(
-              warehouseTransferShipment.error,
-              await getEdgeFunctionErrorMessage(
-                warehouseTransferShipment.error,
-                "Failed to create shipment"
-              )
-            )
-          )
-        );
-      }
-
-      throw redirect(
-        path.to.shipmentDetails(warehouseTransferShipment.data.id)
-      );
+      return path.to.warehouseTransferDetails(sourceDocumentId);
     default:
-      const defaultShipment = await serviceRole.functions.invoke<{
-        id: string;
-      }>("create", {
-        body: {
-          type: "shipmentDefault",
-          companyId,
-          locationId: defaults.data?.locationId,
-          userId: userId
-        }
-      });
-
-      if (!defaultShipment.data || defaultShipment.error) {
-        logger.error("Failed to create shipment", {
-          error: defaultShipment.error
-        });
-        throw redirect(
-          path.to.shipments,
-          await flash(
-            request,
-            error(
-              defaultShipment.error,
-              await getEdgeFunctionErrorMessage(
-                defaultShipment.error,
-                "Failed to create shipment"
-              )
-            )
-          )
-        );
-      }
-
-      throw redirect(path.to.shipmentDetails(defaultShipment.data.id));
+      return path.to.shipments;
   }
 }

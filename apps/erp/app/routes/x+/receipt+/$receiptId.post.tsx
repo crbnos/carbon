@@ -1,24 +1,10 @@
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
-import {
-  dedupeViolations,
-  evaluateLinesForSurface,
-  isBlocked
-} from "@carbon/ee/rules.server";
-import { trigger } from "@carbon/jobs";
-import { trackWorkEvent } from "@carbon/lib/telemetry";
-import { raiseMoment } from "@carbon/lib/workflows";
-import { getLogger } from "@carbon/logger";
-import { getCachedPrinterConfig } from "@carbon/printing/printing.server";
-import { getOverReceiptViolations } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
-import { reconcileReceiptSerialEntities } from "~/modules/inventory";
+import { postReceipt } from "~/modules/inventory/inventory.server";
 import { path } from "~/utils/path";
-
-const logger = getLogger("erp", "receiptid-post");
 
 export async function action({ request, params }: ActionFunctionArgs) {
   const { client, companyId, userId } = await requirePermissions(request, {
@@ -31,304 +17,32 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const formData = await request.formData();
   const acknowledged = formData.get("acknowledged") === "true";
 
-  // Storage Rule evaluation across every line on this receipt before posting.
-  // Use service role so item / storageUnit reads are not blocked by RLS for
-  // users who have `inventory.update` but not `parts.view` etc.
-  const serviceRole = getCarbonServiceRole();
-  const { data: lines } = await serviceRole
-    .from("receiptLine")
-    .select(
-      "id, itemId, storageUnitId, receivedQuantity, locationId, receiptId, requiresSerialTracking, lineId, conversionFactor"
-    )
-    .eq("receiptId", receiptId)
-    .eq("companyId", companyId);
-
-  // Receipt source determines which surface(s) eval. Receipts originating from
-  // an Inbound Transfer ALSO eval the `warehouseTransfer` surface — the post
-  // auto-completes the parent transfer, so warehouse-scoped rules need to
-  // fire here too.
-  const { data: receiptForSurface } = await serviceRole
-    .from("receipt")
-    .select("sourceDocument, status")
-    .eq("id", receiptId)
-    .eq("companyId", companyId)
-    .single();
-
-  // A voided receipt has already been reversed — re-posting would duplicate
-  // ledger entries, cost layers and journal lines. Block it before mutating
-  // any state (the route flips status to "Pending" below, which is why this
-  // guard lives here and not in the edge function).
-  if (receiptForSurface?.status === "Voided") {
-    throw redirect(
-      path.to.receipt(receiptId),
-      await flash(request, error(null, "Cannot post a voided receipt"))
-    );
-  }
-
-  const surfaces: ("receipt" | "warehouseTransfer")[] = ["receipt"];
-  if (receiptForSurface?.sourceDocument === "Inbound Transfer") {
-    surfaces.push("warehouseTransfer");
-  }
-
-  const evalLines = (lines ?? []).map((l) => ({
-    lineId: l.id as string,
-    itemId: l.itemId as string | null,
-    storageUnitId: l.storageUnitId as string | null,
-    quantity: Number(l.receivedQuantity ?? 0),
-    locationId: l.locationId as string | null
-  }));
-
-  const allViolations = [];
-  const allRuleNames: Record<string, string> = {};
-  for (const surface of surfaces) {
-    const { violations, ruleNames } = await evaluateLinesForSurface({
-      client: serviceRole,
-      companyId,
-      userId,
-      targetType: "item",
-      surface,
-      lines: evalLines
-    });
-    allViolations.push(...violations);
-    Object.assign(allRuleNames, ruleNames);
-  }
-
-  // Place pass — the bin side of the receipt. Same lines, same item target;
-  // storage rules own the `place` surface. Transfers double-up via the
-  // warehouseTransfer surface (dedupe collapses the overlap).
-  const placeSurfaces: ("place" | "warehouseTransfer")[] = ["place"];
-  if (receiptForSurface?.sourceDocument === "Inbound Transfer") {
-    placeSurfaces.push("warehouseTransfer");
-  }
-  for (const surface of placeSurfaces) {
-    const { violations, ruleNames } = await evaluateLinesForSurface({
-      client: serviceRole,
-      companyId,
-      userId,
-      targetType: "item",
-      surface,
-      lines: evalLines
-    });
-    allViolations.push(...violations);
-    Object.assign(allRuleNames, ruleNames);
-  }
-
-  // Check over-receipt against the live PO lines rather than the receipt's
-  // outstanding-quantity snapshot so concurrent receipts are counted.
-  if (receiptForSurface?.sourceDocument === "Purchase Order") {
-    const purchaseOrderLineIds = [
-      ...new Set(
-        (lines ?? [])
-          .map((l) => l.lineId)
-          .filter((id): id is string => Boolean(id))
-      )
-    ];
-    if (purchaseOrderLineIds.length > 0) {
-      const { data: purchaseOrderLines } = await serviceRole
-        .from("purchaseOrderLine")
-        .select(
-          "id, purchaseQuantity, quantityReceived, item(readableIdWithRevision)"
-        )
-        .in("id", purchaseOrderLineIds)
-        .eq("companyId", companyId);
-
-      const overReceipt = getOverReceiptViolations(
-        lines ?? [],
-        (purchaseOrderLines ?? []).map((line) => ({
-          id: line.id,
-          purchaseQuantity: line.purchaseQuantity,
-          quantityReceived: line.quantityReceived,
-          itemReadableId: line.item?.readableIdWithRevision
-        }))
-      );
-      allViolations.push(...overReceipt.violations);
-      Object.assign(allRuleNames, overReceipt.ruleNames);
-    }
-  }
-
-  const deduped = dedupeViolations(allViolations);
-  if (deduped.length > 0 && isBlocked(deduped, acknowledged)) {
-    return {
-      error: null,
-      data: null,
-      violations: deduped,
-      ruleNames: allRuleNames
-    };
-  }
-
-  // Serial-tracked lines can accumulate stale tracked entities (reduced
-  // quantity leaves orphans, edited serials leave duplicates) that would
-  // otherwise be flipped to Available as phantom serials. Clear them before
-  // posting.
-  await reconcileReceiptSerialEntities(serviceRole, {
+  // Rule evaluation, the Pending flip, the post-receipt edge function and its
+  // follow-ups live in the command, shared with the inventory_postReceipt tool.
+  const result = await postReceipt(client, {
     receiptId,
     companyId,
-    lines: lines ?? []
+    userId,
+    acknowledged
   });
 
-  // Make the transition to Pending atomic with the voided guard above: the
-  // early check and this update are separated by rule evaluation + reconcile,
-  // so a concurrent void could slip in between. Conditioning the write on the
-  // status still not being "Voided" (and detecting a zero-row match) closes
-  // that race — a voided receipt won't be flipped back to Pending and reposted.
-  const setPendingState = await client
-    .from("receipt")
-    .update({
-      status: "Pending"
-    })
-    .eq("id", receiptId)
-    .eq("companyId", companyId)
-    .neq("status", "Voided")
-    .select("id");
-
-  if (setPendingState.error) {
+  if (result.error) {
     throw redirect(
       path.to.receipt(receiptId),
       await flash(
         request,
-        error(setPendingState.error, "Failed to post receipt")
+        error(result.error.cause ?? null, result.error.flash)
       )
     );
   }
 
-  if (!setPendingState.data?.length) {
-    throw redirect(
-      path.to.receipt(receiptId),
-      await flash(request, error(null, "Cannot post a voided receipt"))
-    );
-  }
-
-  /** Set by the catch below when the post was rolled back to Draft. */
-  let reverted = false;
-
-  try {
-    const receiptMetadata = await serviceRole
-      .from("receipt")
-      .select("sourceDocument,sourceDocumentId")
-      .eq("id", receiptId)
-      .single();
-
-    const companySettings = await (serviceRole.from("companySettings") as any)
-      .select("updateLeadTimesOnReceipt,printing")
-      .eq("id", companyId)
-      .single();
-
-    const postReceipt = await serviceRole.functions.invoke("post-receipt", {
-      body: {
-        receiptId: receiptId,
-        userId: userId,
-        companyId: companyId
-      }
-    });
-
-    if (postReceipt.error) {
-      await client
-        .from("receipt")
-        .update({
-          status: "Draft"
-        })
-        .eq("id", receiptId);
-
-      throw redirect(
-        path.to.receipt(receiptId),
-        await flash(request, error(postReceipt.error, "Failed to post receipt"))
-      );
-    }
-
-    const shouldUpdateLeadTimesOnReceipt = Boolean(
-      (companySettings.data as { updateLeadTimesOnReceipt?: boolean } | null)
-        ?.updateLeadTimesOnReceipt
-    );
-
-    if (
-      shouldUpdateLeadTimesOnReceipt &&
-      receiptMetadata.data?.sourceDocument === "Purchase Order" &&
-      receiptMetadata.data?.sourceDocumentId
-    ) {
-      const leadTimeUpdate = await serviceRole.functions.invoke(
-        "update-purchased-prices",
-        {
-          body: {
-            source: "purchaseOrder",
-            purchaseOrderId: receiptMetadata.data.sourceDocumentId,
-            companyId,
-            userId,
-            updatePrices: false,
-            updateLeadTimes: true
-          }
-        }
-      );
-
-      if (leadTimeUpdate.error) {
-        logger.error(
-          "Failed to update lead time on receipt posting:",
-          leadTimeUpdate.error
-        );
-      }
-    }
-
-    // Auto-print labels if enabled
-    try {
-      const { data: receipt } = await serviceRole
-        .from("receipt")
-        .select("locationId")
-        .eq("id", receiptId)
-        .single();
-      const locationId = receipt?.locationId as string | undefined;
-      if (locationId) {
-        const config = await getCachedPrinterConfig(
-          serviceRole,
-          companyId,
-          locationId,
-          "receiving"
-        );
-        if (config?.autoPrint ?? true) {
-          await trigger("print-job", {
-            sourceDocument: "Receipt",
-            sourceDocumentId: receiptId,
-            companyId,
-            userId,
-            locationId
-          });
-        }
-      }
-    } catch (e) {
-      logger.error("Auto-print failed", { error: e });
-    }
-  } catch (thrown) {
-    // Re-throw redirects — don't swallow them
-    if (thrown instanceof Response) throw thrown;
-
-    // Only reset to Draft for actual errors
-    reverted = true;
-    await client
-      .from("receipt")
-      .update({
-        status: "Draft"
-      })
-      .eq("id", receiptId);
-  }
-
-  // Must stay below the rollback catch above — a post that got reverted to
-  // Draft must not fire workflows.
-  await raiseMoment("inventory.receiptPosted", {
-    outputs: { receipt: { id: receiptId }, postedBy: { id: userId } },
-    companyId,
-    actorId: userId
-  });
-
-  // Below the catch is not the same as "only on success": the catch resets the
-  // receipt to Draft and then falls through to here. `reverted` is what makes
-  // this a post that actually stuck. (The raiseMoment above has the same
-  // exposure and predates this change — see #1294 — but changing when
-  // workflows fire is a separate decision.)
-  if (!reverted) {
-    trackWorkEvent("receipt_posted", {
-      companyId,
-      userId,
-      receiptId,
-      sourceDocument: receiptForSurface?.sourceDocument ?? null
-    });
+  if (result.data.status === "blocked") {
+    return {
+      error: null,
+      data: null,
+      violations: result.data.violations,
+      ruleNames: result.data.ruleNames
+    };
   }
 
   throw redirect(path.to.receipt(receiptId));

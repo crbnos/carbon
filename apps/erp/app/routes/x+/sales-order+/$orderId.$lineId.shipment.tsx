@@ -1,14 +1,10 @@
 import { assertIsPost, error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
-import { getLogger } from "@carbon/logger";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
-import { getSalesOrderLine } from "~/modules/sales";
+import { createSalesOrderLineShipment } from "~/modules/inventory/inventory.server";
 import { path } from "~/utils/path";
-
-const logger = getLogger("erp", "orderid-lineid-shipment");
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -22,64 +18,22 @@ export async function action({ request, params }: ActionFunctionArgs) {
     create: "inventory"
   });
 
-  const serviceRole = getCarbonServiceRole();
-  const salesOrderLine = await getSalesOrderLine(serviceRole, lineId);
-
-  if (salesOrderLine.error) {
-    throw redirect(
-      path.to.salesOrderLine(orderId, lineId),
-      await flash(
-        request,
-        error(salesOrderLine.error, "Failed to get sales order line")
-      )
-    );
-  }
-
-  if (companyId !== salesOrderLine.data.companyId) {
-    throw redirect(
-      path.to.salesOrderLine(orderId, lineId),
-      await flash(
-        request,
-        error("Company does not match", "Failed to get sales order line")
-      )
-    );
-  }
-
-  if (!salesOrderLine.data.locationId) {
-    throw redirect(
-      path.to.salesOrderLine(orderId, lineId),
-      await flash(
-        request,
-        error(
-          null,
-          "Set a location on this sales order line before creating a shipment"
-        )
-      )
-    );
-  }
-
-  const salesOrderShipment = await serviceRole.functions.invoke<{
-    id: string;
-  }>("create", {
-    body: {
-      type: "shipmentFromSalesOrderLine",
-      locationId: salesOrderLine.data.locationId,
-      salesOrderLineId: lineId,
-      companyId,
-      userId
-    }
+  // Shared with the inventory_createSalesOrderLineShipment tool.
+  const result = await createSalesOrderLineShipment({
+    salesOrderLineId: lineId,
+    companyId,
+    userId
   });
 
-  if (!salesOrderShipment.data || salesOrderShipment.error) {
-    logger.error(salesOrderShipment.error);
+  if (result.error) {
     throw redirect(
       path.to.salesOrderLine(orderId, lineId),
       await flash(
         request,
-        error(salesOrderShipment.error, "Failed to create shipment")
+        error(result.error.cause ?? null, result.error.flash)
       )
     );
   }
 
-  throw redirect(path.to.shipmentDetails(salesOrderShipment.data.id));
+  throw redirect(path.to.shipmentDetails(result.data.id));
 }

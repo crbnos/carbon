@@ -303,15 +303,10 @@ describe("companion permission guard", () => {
 // test fails when one becomes reachable (shrink this list) or when a new
 // posting function appears unreachable and unlisted.
 const ROUTE_ONLY_POSTINGS: Record<string, string> = {
-  "post-receipt":
-    "inventory document commands (post/void receipt, create from source)",
-  "post-shipment":
-    "inventory document commands (post/void shipment, create from source)",
   "post-stock-transfer": "inventory document commands (stock transfer lines)",
   "post-inventory-count": "inventory document commands (inventory count post)",
   "post-nonconformance":
     "inspection reject + nonconformance task/approval generation",
-  create: "inspection reject + nonconformance task/approval generation",
   "post-sales-invoice": "invoicing post/void commands",
   "post-purchase-invoice": "invoicing post/void commands",
   "post-payment": "invoicing post/void commands",
@@ -376,5 +371,11 @@ describe("posting edge functions reachable from the tool surface", () => {
 
   it("post-production-event is reachable (the event tools post)", () => {
     expect(isReachable("post-production-event")).toBe(true);
+  });
+
+  it("receipt and shipment posting and creation are reachable (the inventory document tools)", () => {
+    expect(isReachable("post-receipt")).toBe(true);
+    expect(isReachable("post-shipment")).toBe(true);
+    expect(isReachable("create")).toBe(true);
   });
 });
