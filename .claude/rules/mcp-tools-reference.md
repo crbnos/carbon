@@ -377,9 +377,12 @@ dispatcher (`apps/erp/app/routes/api+/inngest.ts`). There is no separate
 `npx tsx scripts/generate-mcp.ts`; it parses every `apps/erp/app/modules/*/*.service.ts`
 (falling back to the `.ee`-licensed `<module>.ee.service.ts` — e.g. `accounting`),
 plus an optional server-only companion `<module>.mcp.server.ts` when present (for MCP
-functions that must import `*.server` modules — see the gotcha below — e.g.
-`production.mcp.server.ts`; the registry (`api+/v1+/lib/registry.server.ts`) merges its
-exports into the same module namespace), and writes `apps/erp/app/routes/api+/mcp+/lib/tool-metadata.json`
+functions that must import `*.server` modules — see the gotcha below — today
+`production`, `sales` and `items`; the registry (`api+/v1+/lib/registry.server.ts`) spreads
+each companion into its module namespace AFTER the service, and
+`apps/erp/test/mcp-registry-companions.test.ts` fails when a companion exists on disk
+but is not spread there — `mcpServerCompanionModules()` in `scripts/lib/service-metadata.ts`
+is the generator's list), and writes `apps/erp/app/routes/api+/mcp+/lib/tool-metadata.json`
 (`{ generated, totalTools, modules, tools }`). Each tool entry:
 `{ name, module, classification, description, paramCount, serviceParams, injectAuth, schema }`.
 
@@ -539,3 +542,33 @@ the model context or the MCP dispatch.
   the same discriminator convention as the function it shadows. Pinned by
   `mcp-upsert-job-material.test.ts` and the "registers a shadowed mcp.server
   function exactly once" case in `mcp-tool-metadata.test.ts`.
+- **Route commands: one operation, one implementation.** When a UI route runs more
+  than the service primitive (a price reconciliation, a make-method pull, a status
+  derived from lines, MRP, a guard), that whole operation belongs in a command the
+  route CALLS — a service function when it is client-safe (`finalizeQuote`,
+  `convertSalesRfqToQuote`, `upsertSupplierPartPrices`), otherwise a
+  `{module}.server.ts` function (`updateQuoteLineWithPrices`,
+  `createQuoteLineWithPrices`, `save/deleteQuoteMaterialWithPrices`,
+  `save/deleteQuoteOperationWithPrices`, `confirmSalesOrder` in `sales.server.ts`;
+  `setItemActive` in `items.server.ts`). The companion's same-named export publishes
+  it under the primitive's tool name and does only three things: re-apply the route's
+  request gates that the MCP path would otherwise skip (`requireToolPermission` /
+  `requireToolCompanyRecord` from `~/services/mcp-guards.server`, the quote lock),
+  adapt the payload, and return `{ data, error }` (`commandError`,
+  `~/services/mcp-command-error`). Keep the client the route uses (service role vs
+  caller) — a command that runs on the service role or Kysely MUST be preceded by the
+  permission re-check, because an OAuth MCP caller is bounded only by RLS. Pinned by
+  `apps/erp/test/route-command-parity.test.ts` (route and tool reach the same
+  command), the companion cases in `dispatch-parity.test.ts`, and
+  `route-commands.test.ts` / `mcp-route-command-wrappers.test.ts` /
+  `items-route-commands.test.ts`.
+- **Routes never write tables directly.** The `no-direct-table-write-in-route`
+  check (`@carbon/checks`, `SERVER_CHECKS`) fails an `apps/erp/app/routes/x+/**`
+  action that calls `.from(t).insert|update|upsert|delete(` or a Kysely
+  `insertInto`/`updateTable`/`deleteFrom`; the existing hits are baselined as the
+  burn-down list. A write that lives only in a route has no MCP equivalent, or a
+  bare primitive that "succeeds" without the route's follow-up steps.
+- **Sales rules on these tools** are evaluated by the dispatch gate
+  (`api+/v1+/lib/sales-rules-gate.server.ts`), not the commands: error-severity
+  violations refuse the call, warns pass unrecorded (no human acknowledged them).
+  The UI routes keep their own evaluate-acknowledge-record flow around the command.
