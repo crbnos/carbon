@@ -81,6 +81,11 @@ const MAPPED_TYPES: ReadonlySet<ReconcileEntityType> = new Set([
   "invoice",
   "charge",
   "reimbursement",
+  // Both memo types push as native provider documents and carry a mapping. Left
+  // out, `hasMappingWithExternalId` was always false, so even once the decision
+  // arm existed every pass would have re-enqueued a duplicate push.
+  "creditMemo",
+  "supplierCredit",
   "payment",
   "customer",
   "vendor",

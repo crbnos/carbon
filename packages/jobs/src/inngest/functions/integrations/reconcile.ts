@@ -191,6 +191,14 @@ export function computeReconcileDecision(
     // `representation: "document"`), so there is no per-row charge-style
     // analogue to resolve first — it always reconciles as a document.
     case "reimbursement":
+    // Credit memos and supplier credits push as native provider documents too.
+    // They were wired into the entity union, the snapshot tables, the table map,
+    // the subscriptions and the outbound sweep — but not here, so every ref fell
+    // to `default` and returned "not reconciled": the document reached neither
+    // the provider's GL nor its subledger, while its journal was excluded as
+    // DOC_BACKED. Plumbed end to end except at the one place that decides.
+    case "creditMemo":
+    case "supplierCredit":
       return reconcileDocument(input);
     case "payment":
       return reconcilePayment(input);
@@ -341,6 +349,32 @@ function reconcileNativeVoid(input: ReconcileEntityInput): ReconcileDecision {
   };
 }
 
+/**
+ * Which statuses count as "posted" per document entity type.
+ *
+ * A lookup rather than a ternary chain: the chain's fallthrough was the bug
+ * surface — a type nobody added an arm for silently took the sales-invoice set,
+ * which never contains "Posted". Anything absent here is an invoice.
+ *
+ * `SWEPT_MEMO_STATUSES` is declared locally rather than beside its siblings in
+ * `accounting-sync-operations.ts` only to keep this change off a file another
+ * change is editing; fold it in there when convenient. It must NOT reuse
+ * `SWEPT_CHARGE_STATUSES` — the values coincide today and would silently follow
+ * any future change to charge statuses.
+ */
+const SWEPT_MEMO_STATUSES = ["Posted", "Voided"] as const;
+
+const DOCUMENT_POSTED_STATUSES: Partial<
+  Record<ReconcileEntityType, readonly string[]>
+> = {
+  bill: SWEPT_BILL_STATUSES,
+  charge: SWEPT_CHARGE_STATUSES,
+  reimbursement: SWEPT_REIMBURSEMENT_STATUSES,
+  creditMemo: SWEPT_MEMO_STATUSES,
+  supplierCredit: SWEPT_MEMO_STATUSES,
+  invoice: SWEPT_INVOICE_STATUSES
+};
+
 function reconcileDocument(input: ReconcileEntityInput): ReconcileDecision {
   const snapshot = input.snapshot;
   if (!snapshot) return nothing("entity not found");
@@ -352,13 +386,7 @@ function reconcileDocument(input: ReconcileEntityInput): ReconcileDecision {
   if (snapshot.status === "Voided") return reconcileNativeVoid(input);
 
   const postedStatuses: readonly string[] =
-    input.entityType === "bill"
-      ? SWEPT_BILL_STATUSES
-      : input.entityType === "charge"
-        ? SWEPT_CHARGE_STATUSES
-        : input.entityType === "reimbursement"
-          ? SWEPT_REIMBURSEMENT_STATUSES
-          : SWEPT_INVOICE_STATUSES;
+    DOCUMENT_POSTED_STATUSES[input.entityType] ?? SWEPT_INVOICE_STATUSES;
   if (!snapshot.status || !postedStatuses.includes(snapshot.status)) {
     return nothing(
       `${input.entityType} status '${snapshot.status ?? "unknown"}' is not posted`

@@ -876,3 +876,72 @@ describe("Rillet mapped void reconciliation", () => {
     ).toEqual(["re-drive"]);
   });
 });
+
+// ── Credit memos / supplier credits ─────────────────────────────────────────
+
+describe("golden: credit memos and supplier credits", () => {
+  /**
+   * The bug this pins: both types were wired into the entity union, the snapshot
+   * tables, the table map, the subscriptions and the outbound sweep, but had no
+   * arm in `computeReconcileDecision` — so every ref fell through to `default`
+   * and returned `nothing("... is not reconciled")`. With the family in
+   * `documents` mode the memo's journal is excluded as DOC_BACKED at the same
+   * time, so the credit reached neither the provider's GL nor its subledger, and
+   * nothing failed. No test in this file referenced either type.
+   */
+  for (const entityType of ["creditMemo", "supplierCredit"] as const) {
+    it(`enqueues a posted unmapped ${entityType}`, () => {
+      const decision = computeReconcileDecision(
+        input({
+          entityType,
+          entityId: "memo_1",
+          snapshot: {
+            id: "memo_1",
+            status: "Posted",
+            updatedAt: "2026-09-01T00:00:00.000Z"
+          } as never
+        })
+      );
+      expect(kinds(decision)).toContain("enqueue");
+    });
+
+    it(`leaves a Draft ${entityType} alone`, () => {
+      const decision = computeReconcileDecision(
+        input({
+          entityType,
+          entityId: "memo_1",
+          snapshot: {
+            id: "memo_1",
+            status: "Draft",
+            updatedAt: "2026-09-01T00:00:00.000Z"
+          } as never
+        })
+      );
+      expect(kinds(decision)).toEqual(["nothing"]);
+      expect(decision.actions[0]).toMatchObject({
+        kind: "nothing",
+        reason: expect.stringMatching(/not posted/i)
+      });
+    });
+
+    it(`does not re-enqueue an already-mapped ${entityType}`, () => {
+      // Without `creditMemo`/`supplierCredit` in the executor's MAPPED_TYPES,
+      // `hasMappingWithExternalId` was always false and every pass duplicated
+      // the push.
+      const decision = computeReconcileDecision(
+        input({
+          entityType,
+          entityId: "memo_1",
+          hasMappingWithExternalId: true,
+          lastSyncedAt: "2026-09-02T00:00:00.000Z",
+          snapshot: {
+            id: "memo_1",
+            status: "Posted",
+            updatedAt: "2026-09-01T00:00:00.000Z"
+          } as never
+        })
+      );
+      expect(kinds(decision)).toEqual(["nothing"]);
+    });
+  }
+});
