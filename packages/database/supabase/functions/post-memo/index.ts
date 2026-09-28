@@ -30,10 +30,12 @@ serve(async (req: Request) => {
 
     logger.info({ type, memoId, userId, companyId });
 
+    // An API key must carry the scope the ERP's post/void routes require.
     const client = await getSupabaseServiceRole(
       req.headers.get("Authorization"),
       req.headers.get("carbon-key") ?? "",
       companyId,
+      { update: "invoicing" },
     );
     const today = datetime.today(await getCompanyTimeZone(client, companyId))
       .toString();

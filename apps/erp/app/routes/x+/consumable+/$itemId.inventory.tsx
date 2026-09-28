@@ -188,7 +188,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { userId } = await requirePermissions(request, {
+  const { companyId, userId } = await requirePermissions(request, {
     update: "parts"
   });
 
@@ -220,6 +220,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
       defaultStorageUnitId: pickMethodFields.defaultStorageUnitId,
       sortMethod: pickMethodFields.sortMethod,
       customFields: setCustomFields(formData),
+      companyId,
       userId,
       shelfLife: {
         mode: shelfLifeMode,

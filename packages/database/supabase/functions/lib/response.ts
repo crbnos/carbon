@@ -116,6 +116,8 @@ function zodIssueSummary(err: unknown): string | null {
  * - `extra` merges additional top-level keys — currently only `invalidLineIds` from
  *   `post-inventory-count`. `undefined` values are dropped so callers can pass optionals
  *   without conditional spreads.
+ * - A numeric 4xx/5xx `err.status` (e.g. `RecordNotFoundError`'s 404, a rate-limit 429)
+ *   wins over `status`, so a catch block needn't map each error class itself.
  */
 export function errorResponse(
   err: unknown,
@@ -123,6 +125,16 @@ export function errorResponse(
   extra?: Record<string, unknown>
 ): Response {
   console.error(err);
+
+  const errStatus = (err as { status?: unknown } | null | undefined)?.status;
+  if (
+    typeof errStatus === "number" &&
+    Number.isInteger(errStatus) &&
+    errStatus >= 400 &&
+    errStatus <= 599
+  ) {
+    status = errStatus;
+  }
 
   const raw =
     typeof err === "string"

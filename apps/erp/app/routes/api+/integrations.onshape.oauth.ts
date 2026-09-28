@@ -6,6 +6,7 @@ import {
 } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
+import { consumeOAuthState } from "@carbon/auth/oauth-state.server";
 import { Onshape } from "@carbon/ee";
 import { getLogger } from "@carbon/logger";
 import type { LoaderFunctionArgs } from "react-router";
@@ -42,10 +43,12 @@ function integrationsUrl(request: Request) {
  */
 function connectionFailed(
   request: Request,
-  reason: IntegrationErrorCode<"onshape">
+  reason: IntegrationErrorCode<"onshape">,
+  stateCookie: string
 ) {
   return redirect(
-    `${integrationsUrl(request)}${integrationErrorSearch("onshape", reason)}`
+    `${integrationsUrl(request)}${integrationErrorSearch("onshape", reason)}`,
+    { headers: { "Set-Cookie": stateCookie } }
   );
 }
 
@@ -56,6 +59,21 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   const url = new URL(request.url);
   const searchParams = Object.fromEntries(url.searchParams.entries());
+
+  // The state must be the one install.ts issued to THIS browser for this user
+  // and company. Without the check anyone could send a victim a callback URL
+  // carrying the attacker's own Onshape code, linking the victim's company to
+  // the attacker's Onshape account. Single-use: consumed whether it matches or not.
+  const consumedState = await consumeOAuthState(
+    request,
+    url.searchParams.get("state") ?? "",
+    { integrationId: Onshape.id, userId, companyId }
+  );
+
+  if (!consumedState.valid) {
+    logger.error("Invalid Onshape OAuth state", { companyId, userId });
+    return connectionFailed(request, "invalid-state", consumedState.cookie);
+  }
 
   // Onshape reports a refused authorization by redirecting here with `error` (and
   // usually `error_description`) in place of `code` — e.g. `invalid_scope` when the
@@ -74,7 +92,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
     // instead of echoing Onshape's wording, which never says which scope is missing.
     return connectionFailed(
       request,
-      searchParams.error === "invalid_scope" ? "write-permission" : "denied"
+      searchParams.error === "invalid_scope" ? "write-permission" : "denied",
+      consumedState.cookie
     );
   }
 
@@ -86,21 +105,17 @@ export async function loader({ request }: LoaderFunctionArgs) {
     logger.error("Invalid Onshape auth response", {
       params: Object.keys(searchParams)
     });
-    return connectionFailed(request, "invalid-response");
+    return connectionFailed(request, "invalid-response", consumedState.cookie);
   }
 
   const { data: params } = authResponse;
-
-  if (!params.state) {
-    return connectionFailed(request, "invalid-response");
-  }
 
   if (
     !ONSHAPE_CLIENT_ID ||
     !ONSHAPE_CLIENT_SECRET ||
     !ONSHAPE_OAUTH_REDIRECT_URL
   ) {
-    return connectionFailed(request, "not-configured");
+    return connectionFailed(request, "not-configured", consumedState.cookie);
   }
 
   try {
@@ -123,14 +138,14 @@ export async function loader({ request }: LoaderFunctionArgs) {
         status: tokenResponse.status,
         body: await tokenResponse.text()
       });
-      return connectionFailed(request, "token-exchange");
+      return connectionFailed(request, "token-exchange", consumedState.cookie);
     }
 
     const tokenData = await tokenResponse.json();
 
     if (!tokenData.access_token) {
       logger.error("Onshape token response had no access token");
-      return connectionFailed(request, "token-exchange");
+      return connectionFailed(request, "token-exchange", consumedState.cookie);
     }
 
     const serviceRole = getCarbonServiceRole();
@@ -162,15 +177,17 @@ export async function loader({ request }: LoaderFunctionArgs) {
       // the integration settings save + ensureOnshapeReleaseWebhook), not on
       // connect — asset sync is off by default, so there's nothing to subscribe
       // to yet at this point.
-      return redirect(integrationsUrl(request));
+      return redirect(integrationsUrl(request), {
+        headers: { "Set-Cookie": consumedState.cookie }
+      });
     } else {
       logger.error("Failed to save Onshape integration", {
         createdIntegration
       });
-      return connectionFailed(request, "save-failed");
+      return connectionFailed(request, "save-failed", consumedState.cookie);
     }
   } catch (err) {
     logger.error("Onshape OAuth Error", { error: err });
-    return connectionFailed(request, "unexpected");
+    return connectionFailed(request, "unexpected", consumedState.cookie);
   }
 }

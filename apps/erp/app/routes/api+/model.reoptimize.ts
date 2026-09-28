@@ -40,7 +40,8 @@ export async function action({ request }: ActionFunctionArgs) {
     await serviceRole
       .from("modelUpload")
       .update({ optimizeStatus: "Queued", optimizeError: null })
-      .eq("id", modelUploadId);
+      .eq("id", modelUploadId)
+      .eq("companyId", companyId);
   }
 
   await trigger("model-optimize", { modelUploadId, companyId, userId, force });

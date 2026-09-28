@@ -270,23 +270,7 @@ CREATE INDEX IF NOT EXISTS "revenueRecognitionSchedule_creditAccountId_idx" ON "
 CREATE INDEX IF NOT EXISTS "revenueRecognitionSchedule_journalId_idx" ON "revenueRecognitionSchedule" ("journalId");
 CREATE INDEX IF NOT EXISTS "revenueRecognitionSchedule_createdBy_idx" ON "revenueRecognitionSchedule" ("createdBy");
 
-ALTER TABLE "public"."revenueRecognitionSchedule" ENABLE ROW LEVEL SECURITY;
-DROP POLICY IF EXISTS "SELECT" ON "public"."revenueRecognitionSchedule";
-CREATE POLICY "SELECT" ON "public"."revenueRecognitionSchedule" FOR SELECT USING (
-  "companyId" = ANY ((SELECT get_companies_with_employee_permission('accounting_view'))::text[])
-);
-DROP POLICY IF EXISTS "INSERT" ON "public"."revenueRecognitionSchedule";
-CREATE POLICY "INSERT" ON "public"."revenueRecognitionSchedule" FOR INSERT WITH CHECK (
-  "companyId" = ANY ((SELECT get_companies_with_employee_permission('accounting_create'))::text[])
-);
-DROP POLICY IF EXISTS "UPDATE" ON "public"."revenueRecognitionSchedule";
-CREATE POLICY "UPDATE" ON "public"."revenueRecognitionSchedule" FOR UPDATE USING (
-  "companyId" = ANY ((SELECT get_companies_with_employee_permission('accounting_update'))::text[])
-);
-DROP POLICY IF EXISTS "DELETE" ON "public"."revenueRecognitionSchedule";
-CREATE POLICY "DELETE" ON "public"."revenueRecognitionSchedule" FOR DELETE USING (
-  "companyId" = ANY ((SELECT get_companies_with_employee_permission('accounting_delete'))::text[])
-);
+-- RLS: the policies are rendered from packages/database/src/authz/manifest.ts.
 
 CREATE TABLE IF NOT EXISTS "revenueRecognitionRun" (
   "id" TEXT NOT NULL DEFAULT id('rvrn'),
@@ -310,23 +294,7 @@ CREATE INDEX IF NOT EXISTS "revenueRecognitionRun_journalId_idx" ON "revenueReco
 CREATE INDEX IF NOT EXISTS "revenueRecognitionRun_postedBy_idx" ON "revenueRecognitionRun" ("postedBy");
 CREATE INDEX IF NOT EXISTS "revenueRecognitionRun_createdBy_idx" ON "revenueRecognitionRun" ("createdBy");
 
-ALTER TABLE "public"."revenueRecognitionRun" ENABLE ROW LEVEL SECURITY;
-DROP POLICY IF EXISTS "SELECT" ON "public"."revenueRecognitionRun";
-CREATE POLICY "SELECT" ON "public"."revenueRecognitionRun" FOR SELECT USING (
-  "companyId" = ANY ((SELECT get_companies_with_employee_permission('accounting_view'))::text[])
-);
-DROP POLICY IF EXISTS "INSERT" ON "public"."revenueRecognitionRun";
-CREATE POLICY "INSERT" ON "public"."revenueRecognitionRun" FOR INSERT WITH CHECK (
-  "companyId" = ANY ((SELECT get_companies_with_employee_permission('accounting_create'))::text[])
-);
-DROP POLICY IF EXISTS "UPDATE" ON "public"."revenueRecognitionRun";
-CREATE POLICY "UPDATE" ON "public"."revenueRecognitionRun" FOR UPDATE USING (
-  "companyId" = ANY ((SELECT get_companies_with_employee_permission('accounting_update'))::text[])
-);
-DROP POLICY IF EXISTS "DELETE" ON "public"."revenueRecognitionRun";
-CREATE POLICY "DELETE" ON "public"."revenueRecognitionRun" FOR DELETE USING (
-  "companyId" = ANY ((SELECT get_companies_with_employee_permission('accounting_delete'))::text[])
-);
+-- RLS: the policies are rendered from packages/database/src/authz/manifest.ts.
 
 CREATE TABLE IF NOT EXISTS "revenueRecognitionRunLine" (
   "id" TEXT NOT NULL DEFAULT id('rvrl'),
@@ -348,22 +316,6 @@ CREATE INDEX IF NOT EXISTS "revenueRecognitionRunLine_companyId_idx" ON "revenue
 CREATE INDEX IF NOT EXISTS "revenueRecognitionRunLine_runId_idx" ON "revenueRecognitionRunLine" ("runId");
 CREATE INDEX IF NOT EXISTS "revenueRecognitionRunLine_createdBy_idx" ON "revenueRecognitionRunLine" ("createdBy");
 
-ALTER TABLE "public"."revenueRecognitionRunLine" ENABLE ROW LEVEL SECURITY;
-DROP POLICY IF EXISTS "SELECT" ON "public"."revenueRecognitionRunLine";
-CREATE POLICY "SELECT" ON "public"."revenueRecognitionRunLine" FOR SELECT USING (
-  "companyId" = ANY ((SELECT get_companies_with_employee_permission('accounting_view'))::text[])
-);
-DROP POLICY IF EXISTS "INSERT" ON "public"."revenueRecognitionRunLine";
-CREATE POLICY "INSERT" ON "public"."revenueRecognitionRunLine" FOR INSERT WITH CHECK (
-  "companyId" = ANY ((SELECT get_companies_with_employee_permission('accounting_create'))::text[])
-);
-DROP POLICY IF EXISTS "UPDATE" ON "public"."revenueRecognitionRunLine";
-CREATE POLICY "UPDATE" ON "public"."revenueRecognitionRunLine" FOR UPDATE USING (
-  "companyId" = ANY ((SELECT get_companies_with_employee_permission('accounting_update'))::text[])
-);
-DROP POLICY IF EXISTS "DELETE" ON "public"."revenueRecognitionRunLine";
-CREATE POLICY "DELETE" ON "public"."revenueRecognitionRunLine" FOR DELETE USING (
-  "companyId" = ANY ((SELECT get_companies_with_employee_permission('accounting_delete'))::text[])
-);
+-- RLS: the policies are rendered from packages/database/src/authz/manifest.ts.
 
 NOTIFY pgrst, 'reload schema';

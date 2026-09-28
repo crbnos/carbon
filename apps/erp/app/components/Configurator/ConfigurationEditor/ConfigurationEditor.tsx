@@ -229,14 +229,8 @@ export default function Configurator({
     }
   }, [fetcher.data]);
 
-  const runCode = useCallback(() => {
+  const runCode = useCallback(async () => {
     const jsCode = convertTypescriptToJavaScript(code);
-    if (isUnsafeCode(jsCode)) {
-      setOutput(
-        "Error: Unsupported code detected. The code you're trying to run contains disallowed patterns."
-      );
-      return;
-    }
 
     try {
       // Create parameters object from the panel
@@ -257,16 +251,11 @@ export default function Configurator({
         {} as Record<string, any>
       );
 
-      // Execute the code
-      const fn = new Function(
-        "parameters",
-        `
-        ${jsCode}
-        return configure(parameters);
-      `
+      // Rules run in the same QuickJS sandbox as get-method, never in this page's engine.
+      const { runConfigurationRule } = await import(
+        "@carbon/database/configuration-rule"
       );
-
-      const result = fn(parametersObj);
+      const result: any = await runConfigurationRule(jsCode, parametersObj);
 
       // Verify return type
       if (returnType.type === "list") {
@@ -435,17 +424,4 @@ export default function Configurator({
       )}
     </>
   );
-}
-
-function isUnsafeCode(code: string) {
-  // Check for disallowed code patterns
-  const disallowedPatterns = [
-    /\bfetch\b/, // fetch calls
-    /setTimeout|setInterval/, // timeouts
-    /\bimport\b/, // dynamic imports
-    /new Promise/, // promise construction
-    /Function\(/ // Function constructor
-  ];
-
-  return disallowedPatterns.some((pattern) => pattern.test(code));
 }

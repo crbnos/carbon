@@ -24,6 +24,9 @@ catalogs:
     '@emoji-mart/react':
       specifier: 1.1.1
       version: 1.1.1
+    '@fontsource-variable/hedvig-letters-serif':
+      specifier: 5.3.0
+      version: 5.3.0
     '@internationalized/date':
       specifier: 3.12.0
       version: 3.12.0
@@ -741,6 +744,9 @@ importers:
       '@epic-web/remember':
         specifier: 1.1.0
         version: 1.1.0
+      '@fontsource-variable/hedvig-letters-serif':
+        specifier: 'catalog:'
+        version: 5.3.0
       '@internationalized/date':
         specifier: 'catalog:'
         version: 3.12.0
@@ -1204,6 +1210,9 @@ importers:
       '@emoji-mart/react':
         specifier: 'catalog:'
         version: 1.1.1(emoji-mart@5.6.0)(react@18.3.1)
+      '@fontsource-variable/hedvig-letters-serif':
+        specifier: 'catalog:'
+        version: 5.3.0
       '@internationalized/date':
         specifier: 'catalog:'
         version: 3.12.0
@@ -1469,6 +1478,9 @@ importers:
       '@carbon/utils':
         specifier: workspace:*
         version: link:../../packages/utils
+      '@fontsource-variable/hedvig-letters-serif':
+        specifier: 'catalog:'
+        version: 5.3.0
       '@internationalized/date':
         specifier: 'catalog:'
         version: 3.12.0
@@ -2068,6 +2080,9 @@ importers:
       '@internationalized/date':
         specifier: 'catalog:'
         version: 3.12.0
+      '@jitl/quickjs-singlefile-browser-release-sync':
+        specifier: 0.32.0
+        version: 0.32.0
       '@jsquash/jpeg':
         specifier: 1.6.0
         version: 1.6.0
@@ -2110,6 +2125,9 @@ importers:
       pg:
         specifier: 8.20.0
         version: 8.20.0
+      quickjs-emscripten-core:
+        specifier: 0.32.0
+        version: 0.32.0
       react-pdf:
         specifier: 'catalog:'
         version: 10.4.1(@types/react@18.3.28)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
@@ -2138,6 +2156,9 @@ importers:
       dotenv:
         specifier: 16.3.1
         version: 16.3.1
+      libpg-query:
+        specifier: 18.1.5
+        version: 18.1.5
       npm-run-all:
         specifier: 'catalog:'
         version: 4.1.5
@@ -5204,6 +5225,9 @@ packages:
   '@floating-ui/utils@0.2.11':
     resolution: {integrity: sha512-RiB/yIh78pcIxl6lLMG0CgBXAZ2Y0eVHqMPYugu+9U0AeT6YBeiJpf7lbdJNIugFP5SIjwNRgo4DhR1Qxi26Gg==}
 
+  '@fontsource-variable/hedvig-letters-serif@5.3.0':
+    resolution: {integrity: sha512-MN6cYKUUb3o1tEECg02+IY6HK9fGHpZOnG+YhJaqU9TEp2FVo2dw8bFrwnxBVJCvnrC0F3xYF2OlXEZMWXZ0Jw==}
+
   '@fontsource/inter@5.2.8':
     resolution: {integrity: sha512-P6r5WnJoKiNVV+zvW2xM13gNdFhAEpQ9dQJHt3naLvfg+LkF2ldgSLiF4T41lf1SQCM9QmkqPTn4TH568IRagg==}
 
@@ -5506,6 +5530,12 @@ packages:
   '@jest/types@29.6.3':
     resolution: {integrity: sha512-u3UPsIilWKOM3F9CXtrG8LEJmNxwoCQC/XVj4IKYXvvpx7QIi/Kg1LI5uDmDpKlac62NUtX7eLjRh+jVZcLOzw==}
     engines: {node: ^14.15.0 || ^16.10.0 || >=18.0.0}
+
+  '@jitl/quickjs-ffi-types@0.32.0':
+    resolution: {integrity: sha512-v9T+GQpmk43VDJ7d72sf0Nexhk+ArvtUihW27dy7lqAl0zBObFKtSBBIm5RBjwIhE8VwsPPm9PNuvPvNqLWUEg==}
+
+  '@jitl/quickjs-singlefile-browser-release-sync@0.32.0':
+    resolution: {integrity: sha512-Hfdl7rh8dzxNWFRiYAYNbhn0RMF1/tO6SMH2mUW0aTibqwaAtqPRbi4WkwaIDlhNz8Z4dksJi1Zjl1R54Jsc/Q==}
 
   '@jpwilliams/waitgroup@2.1.1':
     resolution: {integrity: sha512-0CxRhNfkvFCTLZBKGvKxY2FYtYW1yWhO2McLqBL0X5UWvYjIf9suH8anKW/DNutl369A75Ewyoh2iJMwBZ2tRg==}
@@ -6743,6 +6773,9 @@ packages:
   '@peculiar/x509@1.14.3':
     resolution: {integrity: sha512-C2Xj8FZ0uHWeCXXqX5B4/gVFQmtSkiuOolzAgutjTfseNOHT3pUjljDZsTSxXFGgio54bCzVFqmEOUrIVk8RDA==}
     engines: {node: '>=20.0.0'}
+
+  '@pgsql/types@18.0.0':
+    resolution: {integrity: sha512-jtAY4JU7jdVYZ/Vv3zlZqVP+FRWZokyCLKPPCnAApiaJAElpyyiMC3HRiquBu29kSrVs+rkqZD50SUIb/zyEGw==}
 
   '@pkgjs/parseargs@0.11.0':
     resolution: {integrity: sha512-+1VkjdD0QBLPodGrJUeqarH8VAIvQODIbwh9XpP5Syisf7YoQgsJKPNFoqqLQlu+VQ/tVSshMR6loPMn8U+dPg==}
@@ -13422,6 +13455,9 @@ packages:
     resolution: {integrity: sha512-qvHIXtggEsw1lCNCWBYKloL2Z36DJBm0R9ThGiH2JnhKYdeZFLPFkP30Lw4yMskxxhx0bKg1gLrBHX1D2w2pSw==}
     engines: {node: '>=8.0.0'}
 
+  libpg-query@18.1.5:
+    resolution: {integrity: sha512-xsksgH106LyVUylIp2bJz1MPFmVVIGKbB8belGWmh+J8/i38w8eM1twDIBnd97tzeNQFctH9MWKMthl22+fWcQ==}
+
   libphonenumber-js@1.12.41:
     resolution: {integrity: sha512-lsmMmGXBxXIK/VMLEj0kL6MtUs1kBGj1nTCzi6zgQoG1DEwqwt2DQyHxcLykceIxAnfE3hya7NuIh6PpC6S3fA==}
 
@@ -14962,6 +14998,9 @@ packages:
 
   queue@6.0.2:
     resolution: {integrity: sha512-iHZWu+q3IdFZFX36ro/lKBkSvfkztY5Y7HMiPlOUjhupPcG2JMfst2KKEpu5XndviX/3UhFbRngUPNKtgvtZiA==}
+
+  quickjs-emscripten-core@0.32.0:
+    resolution: {integrity: sha512-QFnPfjFey8EqknSrSxe1hZrf1/8z7/6s1QzGOmKo6++02r7QRRX7ZoyNaZh7JuVjWsVW87KnQrbZqnHkOAzUyg==}
 
   radash@12.1.1:
     resolution: {integrity: sha512-h36JMxKRqrAxVD8201FrCpyeNuUY9Y5zZwujr20fFO77tpUtGa6EZzfKw/3WaiBX95fq7+MpsuMLNdSnORAwSA==}
@@ -18224,6 +18263,8 @@ snapshots:
 
   '@floating-ui/utils@0.2.11': {}
 
+  '@fontsource-variable/hedvig-letters-serif@5.3.0': {}
+
   '@fontsource/inter@5.2.8': {}
 
   '@fontsource/lato@5.2.7': {}
@@ -18487,6 +18528,12 @@ snapshots:
       '@types/node': 22.19.7
       '@types/yargs': 17.0.35
       chalk: 4.1.2
+
+  '@jitl/quickjs-ffi-types@0.32.0': {}
+
+  '@jitl/quickjs-singlefile-browser-release-sync@0.32.0':
+    dependencies:
+      '@jitl/quickjs-ffi-types': 0.32.0
 
   '@jpwilliams/waitgroup@2.1.1': {}
 
@@ -20105,6 +20152,8 @@ snapshots:
       reflect-metadata: 0.2.2
       tslib: 2.8.1
       tsyringe: 4.10.0
+
+  '@pgsql/types@18.0.0': {}
 
   '@pkgjs/parseargs@0.11.0':
     optional: true
@@ -28163,6 +28212,10 @@ snapshots:
 
   libheif-js@1.23.2: {}
 
+  libpg-query@18.1.5:
+    dependencies:
+      '@pgsql/types': 18.0.0
+
   libphonenumber-js@1.12.41: {}
 
   lie@3.1.1:
@@ -29879,6 +29932,10 @@ snapshots:
   queue@6.0.2:
     dependencies:
       inherits: 2.0.4
+
+  quickjs-emscripten-core@0.32.0:
+    dependencies:
+      '@jitl/quickjs-ffi-types': 0.32.0
 
   radash@12.1.1: {}
 

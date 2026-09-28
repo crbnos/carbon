@@ -1,11 +1,11 @@
 {
   "kind": "carbon-company-backup",
   "version": 1,
-  "schemaVersion": "20260925121735",
+  "schemaVersion": "20260928014618",
   "sourceCompanyId": "schema-baseline",
   "sourceCompanyGroupId": null,
   "sourceCompanyName": null,
-  "exportedAt": "2026-09-26T04:04:09.486Z",
+  "exportedAt": "2026-09-28T01:52:14.429Z",
   "exportedBy": "schema-baseline",
   "label": "schema baseline",
   "includeStorage": "none",
@@ -389,59 +389,59 @@
       "name": "companySettings",
       "rows": 0,
       "columns": [
-        "productLabelSize",
-        "showCustomerReadableId",
-        "leaseMajorPartThresholdPercent",
-        "plmReleaseControl",
-        "includeOperationsOnTraveler",
-        "id",
-        "salesJobCompletedNotificationGroup",
-        "autoStartOperationTimer",
-        "enforceInspectionFourEyes",
-        "showCurrencyTrailingZeros",
-        "updateLeadTimesOnReceipt",
-        "accountsPayableEmail",
-        "allowLowercaseItemIds",
-        "useMetric",
         "returnPickedMaterialTiming",
         "accountingEnabled",
-        "accountsReceivableAddress",
         "inventoryJobCompletedNotificationGroup",
+        "accountsReceivableAddress",
         "accountsPayableAddress",
         "includeMaterialsOnTraveler",
-        "materialGeneratedIds",
         "qualityIssueTarget",
-        "inventoryShelfLife",
+        "materialGeneratedIds",
         "incompletePickingListPolicy",
+        "inventoryShelfLife",
         "gaugeCalibrationExpiredNotificationGroup",
-        "digitalQuoteEnabled",
         "consoleEnabled",
-        "assetTaxDepreciationEnabled",
-        "leaseDefaultDiscountRate",
-        "otherDispatchNotificationGroup",
-        "requireMfa",
-        "supplierQuoteNotificationGroup",
-        "assetTaxRate",
-        "defaultSupplierCc",
+        "digitalQuoteEnabled",
+        "productLabelSize",
+        "showCustomerReadableId",
+        "includeOperationsOnTraveler",
+        "id",
+        "plmReleaseControl",
         "leaseSubstantiallyAllThresholdPercent",
-        "rfqReadyNotificationGroup",
-        "operationsDispatchNotificationGroup",
-        "kanbanOutput",
-        "quoteLineCategoryMarkups",
-        "defaultCustomerCc",
-        "printing",
+        "salesJobCompletedNotificationGroup",
+        "autoStartOperationTimer",
+        "updateLeadTimesOnReceipt",
+        "enforceInspectionFourEyes",
+        "showCurrencyTrailingZeros",
+        "accountsPayableEmail",
+        "useMetric",
+        "allowLowercaseItemIds",
         "salesRuleNotificationGroup",
-        "shelfLabelSize",
+        "printing",
+        "defaultCustomerCc",
         "timeCardEnabled",
+        "shelfLabelSize",
         "accountsReceivableEmail",
         "digitalQuoteIncludesPurchaseOrders",
-        "purchasePriceUpdateTiming",
         "digitalQuoteNotificationGroup",
+        "purchasePriceUpdateTiming",
         "autoSelectMaterialWithoutPickingList",
+        "leaseMajorPartThresholdPercent",
         "showSupplierReadableId",
         "qualityDispatchNotificationGroup",
+        "samplingStandard",
         "maintenanceDispatchNotificationGroup",
-        "samplingStandard"
+        "assetTaxDepreciationEnabled",
+        "supplierQuoteNotificationGroup",
+        "requireMfa",
+        "otherDispatchNotificationGroup",
+        "defaultSupplierCc",
+        "assetTaxRate",
+        "leaseDefaultDiscountRate",
+        "rfqReadyNotificationGroup",
+        "operationsDispatchNotificationGroup",
+        "quoteLineCategoryMarkups",
+        "kanbanOutput"
       ]
     },
     {
@@ -754,7 +754,7 @@
     {
       "name": "employee",
       "rows": 0,
-      "columns": ["id", "companyId", "pin", "active", "employeeTypeId"]
+      "columns": ["id", "companyId", "active", "employeeTypeId"]
     },
     {
       "name": "employeeTypePermission",
@@ -998,19 +998,19 @@
       "name": "invite",
       "rows": 0,
       "columns": [
+        "code",
+        "attestedAt",
         "revokedAt",
         "createdAt",
-        "attestedAt",
-        "code",
-        "companyId",
         "updatedBy",
         "id",
         "acceptedAt",
-        "createdBy",
+        "companyId",
         "permissions",
         "email",
-        "role",
-        "attestedBy"
+        "createdBy",
+        "attestedBy",
+        "role"
       ]
     },
     {
@@ -1360,14 +1360,14 @@
       "name": "noQuoteReason",
       "rows": 0,
       "columns": [
-        "createdBy",
-        "companyId",
-        "createdAt",
-        "updatedAt",
-        "id",
         "updatedBy",
+        "id",
+        "customFields",
         "name",
-        "customFields"
+        "createdBy",
+        "updatedAt",
+        "createdAt",
+        "companyId"
       ]
     },
     {
@@ -1841,8 +1841,8 @@
       "name": "employeeAbility",
       "rows": 0,
       "columns": [
-        "companyId",
         "employeeId",
+        "companyId",
         "id",
         "expiresAt",
         "abilityId",
@@ -1995,18 +1995,18 @@
       "name": "revenueRecognitionRun",
       "rows": 0,
       "columns": [
-        "updatedAt",
-        "status",
-        "periodEnd",
-        "runId",
-        "postedAt",
-        "updatedBy",
-        "id",
-        "createdBy",
         "journalId",
-        "companyId",
+        "createdBy",
+        "id",
+        "updatedBy",
+        "postedBy",
         "createdAt",
-        "postedBy"
+        "companyId",
+        "status",
+        "updatedAt",
+        "postedAt",
+        "runId",
+        "periodEnd"
       ]
     },
     {
@@ -2014,8 +2014,8 @@
       "rows": 0,
       "columns": [
         "updatedAt",
-        "companyId",
         "createdAt",
+        "companyId",
         "createdBy",
         "customFields",
         "name",
@@ -2302,12 +2302,12 @@
       "name": "tag",
       "rows": 0,
       "columns": [
-        "createdBy",
-        "createdAt",
         "companyId",
+        "createdAt",
+        "createdBy",
+        "table",
         "updatedBy",
-        "name",
-        "table"
+        "name"
       ]
     },
     {
@@ -2645,17 +2645,17 @@
       "name": "batchProperty",
       "rows": 0,
       "columns": [
-        "sortOrder",
-        "createdBy",
-        "id",
         "updatedBy",
-        "createdAt",
-        "updatedAt",
+        "id",
+        "createdBy",
+        "sortOrder",
         "itemId",
+        "updatedAt",
+        "createdAt",
         "listOptions",
-        "companyId",
+        "dataType",
         "label",
-        "dataType"
+        "companyId"
       ]
     },
     {
@@ -2683,8 +2683,8 @@
         "itemId",
         "id",
         "companyId",
-        "name",
         "sortOrder",
+        "name",
         "isUngrouped"
       ]
     },
@@ -2692,32 +2692,32 @@
       "name": "configurationParameter",
       "rows": 0,
       "columns": [
+        "updatedAt",
+        "dataType",
         "label",
         "materialFormFilterId",
         "key",
         "configurationParameterGroupId",
-        "updatedAt",
-        "dataType",
-        "itemId",
-        "updatedBy",
-        "sortOrder",
-        "createdAt",
+        "createdBy",
         "companyId",
         "id",
-        "createdBy",
-        "listOptions"
+        "listOptions",
+        "itemId",
+        "updatedBy",
+        "createdAt",
+        "sortOrder"
       ]
     },
     {
       "name": "configurationRule",
       "rows": 0,
       "columns": [
+        "field",
         "updatedBy",
         "itemId",
-        "field",
-        "updatedAt",
         "companyId",
-        "code"
+        "code",
+        "updatedAt"
       ]
     },
     {
@@ -4275,48 +4275,48 @@
       "name": "rentalLeaseScheduleLine",
       "rows": 0,
       "columns": [
-        "paymentAmount",
+        "periodDate",
+        "updatedBy",
+        "rentalAgreementLineId",
+        "interestAmount",
+        "createdBy",
+        "openingNetInvestment",
+        "updatedAt",
+        "companyId",
+        "createdAt",
+        "principalAmount",
+        "journalId",
         "id",
         "closingNetInvestment",
         "postedAt",
-        "principalAmount",
-        "journalId",
-        "companyId",
-        "createdAt",
-        "updatedAt",
-        "createdBy",
-        "openingNetInvestment",
-        "interestAmount",
-        "periodDate",
-        "rentalAgreementLineId",
-        "updatedBy"
+        "paymentAmount"
       ]
     },
     {
       "name": "revenueRecognitionSchedule",
       "rows": 0,
       "columns": [
-        "rentalAgreementLineId",
-        "id",
-        "periodEnd",
-        "accountingPeriodId",
-        "periodStart",
-        "scheduledDate",
-        "journalId",
-        "companyId",
-        "debitAccountId",
-        "billedBySalesInvoiceLineId",
         "runLineId",
         "updatedAt",
-        "updatedBy",
-        "amount",
+        "billedBySalesInvoiceLineId",
         "salesInvoiceLineId",
+        "amount",
+        "updatedBy",
         "rentalLeaseScheduleLineId",
-        "status",
-        "type",
-        "creditAccountId",
+        "createdAt",
         "createdBy",
-        "createdAt"
+        "creditAccountId",
+        "type",
+        "status",
+        "rentalAgreementLineId",
+        "accountingPeriodId",
+        "periodEnd",
+        "id",
+        "scheduledDate",
+        "periodStart",
+        "debitAccountId",
+        "companyId",
+        "journalId"
       ]
     },
     {
@@ -4601,14 +4601,14 @@
       "name": "externalLink",
       "rows": 0,
       "columns": [
-        "createdAt",
-        "companyId",
         "customerId",
         "documentId",
-        "expiresAt",
-        "id",
+        "companyId",
+        "createdAt",
+        "documentType",
         "supplierId",
-        "documentType"
+        "id",
+        "expiresAt"
       ]
     },
     {
@@ -5264,14 +5264,14 @@
       "name": "jobOperationTool",
       "rows": 0,
       "columns": [
-        "updatedBy",
         "id",
+        "updatedBy",
         "createdAt",
         "operationId",
         "updatedAt",
         "companyId",
-        "toolId",
         "quantity",
+        "toolId",
         "createdBy"
       ]
     },
@@ -5373,15 +5373,15 @@
       "name": "jobOperationNote",
       "rows": 0,
       "columns": [
+        "createdAt",
+        "updatedBy",
         "note",
         "companyId",
-        "updatedBy",
-        "createdAt",
-        "jobOperationId",
-        "updatedAt",
+        "createdBy",
         "productionQuantityId",
         "id",
-        "createdBy"
+        "updatedAt",
+        "jobOperationId"
       ]
     },
     {
@@ -5623,15 +5623,15 @@
       "name": "methodOperationTool",
       "rows": 0,
       "columns": [
-        "createdBy",
-        "quantity",
-        "toolId",
-        "companyId",
         "updatedAt",
         "operationId",
         "createdAt",
         "id",
-        "updatedBy"
+        "updatedBy",
+        "createdBy",
+        "quantity",
+        "toolId",
+        "companyId"
       ]
     },
     {
@@ -5777,17 +5777,17 @@
       "name": "purchaseInvoiceDelivery",
       "rows": 0,
       "columns": [
+        "updatedBy",
         "shippingTermId",
         "shippingMethodId",
-        "updatedBy",
         "supplierShippingCost",
-        "locationId",
         "incoterm",
         "updatedAt",
+        "locationId",
+        "companyId",
         "incotermLocation",
         "id",
-        "customFields",
-        "companyId"
+        "customFields"
       ]
     },
     {
@@ -6109,15 +6109,15 @@
       "name": "quoteOperationTool",
       "rows": 0,
       "columns": [
-        "operationId",
-        "updatedAt",
-        "id",
-        "updatedBy",
-        "createdAt",
+        "createdBy",
         "quantity",
         "toolId",
-        "createdBy",
-        "companyId"
+        "companyId",
+        "updatedAt",
+        "operationId",
+        "createdAt",
+        "id",
+        "updatedBy"
       ]
     },
     {
@@ -6465,7 +6465,7 @@
     {
       "name": "supplierInteraction",
       "rows": 0,
-      "columns": ["supplierId", "id", "companyId"]
+      "columns": ["companyId", "id", "supplierId"]
     },
     {
       "name": "receipt",
@@ -6925,32 +6925,32 @@
       "name": "supplierQuote",
       "rows": 0,
       "columns": [
-        "tags",
-        "customFields",
-        "quotedDate",
-        "currencyCode",
-        "revisionId",
-        "updatedBy",
-        "internalNotes",
-        "expirationDate",
-        "createdAt",
-        "supplierReference",
-        "updatedAt",
-        "createdBy",
-        "exchangeRate",
-        "externalLinkId",
-        "companyId",
-        "assignee",
-        "supplierQuoteId",
-        "exchangeRateUpdatedAt",
-        "supplierInteractionId",
         "supplierLocationId",
+        "supplierInteractionId",
         "externalNotes",
+        "supplierQuoteId",
+        "assignee",
+        "exchangeRateUpdatedAt",
+        "supplierQuoteType",
+        "status",
         "supplierContactId",
         "id",
         "supplierId",
-        "supplierQuoteType",
-        "status"
+        "updatedBy",
+        "internalNotes",
+        "customFields",
+        "tags",
+        "quotedDate",
+        "currencyCode",
+        "revisionId",
+        "externalLinkId",
+        "companyId",
+        "createdBy",
+        "exchangeRate",
+        "createdAt",
+        "supplierReference",
+        "expirationDate",
+        "updatedAt"
       ]
     },
     {
@@ -6978,8 +6978,8 @@
         "externalNotes",
         "updatedAt",
         "requiredDate",
-        "internalNotes",
         "companyId",
+        "internalNotes",
         "updatedBy",
         "customFields",
         "supplierQuoteRevisionId",
@@ -6993,20 +6993,20 @@
       "name": "supplierQuoteLinePrice",
       "rows": 0,
       "columns": [
-        "leadTime",
-        "quantity",
-        "updatedAt",
-        "createdAt",
-        "supplierUnitPrice",
-        "updatedBy",
-        "supplierQuoteLineId",
+        "taxPercent",
+        "supplierQuoteId",
+        "exchangeRate",
         "createdBy",
+        "supplierQuoteLineId",
         "supplierTaxAmount",
         "supplierShippingCost",
         "companyId",
-        "taxPercent",
-        "supplierQuoteId",
-        "exchangeRate"
+        "supplierUnitPrice",
+        "createdAt",
+        "updatedBy",
+        "updatedAt",
+        "quantity",
+        "leadTime"
       ]
     },
     {
@@ -7152,6 +7152,7 @@
     "apiKey",
     "apiKeyRateLimit",
     "companyIntegration",
+    "employeePin",
     "oauthClient",
     "oauthToken",
     "webhook"

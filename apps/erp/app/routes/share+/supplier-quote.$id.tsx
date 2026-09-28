@@ -62,7 +62,7 @@ import type {
   SupplierQuoteLinePrice
 } from "~/modules/purchasing/types";
 import type { Company } from "~/modules/settings";
-import { getCompany, getCompanySettings } from "~/modules/settings";
+import { getCompany } from "~/modules/settings";
 import { getBase64ImageFromSupabase } from "~/modules/shared";
 import type { action } from "~/routes/api+/purchasing.digital-quote.$id";
 import { path } from "~/utils/path";
@@ -127,13 +127,14 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
     };
   }
 
-  const [company, companySettings, quoteLines, quoteLinePrices] =
-    await Promise.all([
-      getCompany(serviceRole, quote.data.companyId),
-      getCompanySettings(serviceRole, quote.data.companyId),
-      getSupplierQuoteLines(serviceRole, quote.data.id),
-      getSupplierQuoteLinePricesByQuoteId(serviceRole, quote.data.id)
-    ]);
+  // No companySettings here: the page never reads it, and the row carries
+  // internal config (markups, notification groups, printing) that must not
+  // reach an unauthenticated supplier.
+  const [company, quoteLines, quoteLinePrices] = await Promise.all([
+    getCompany(serviceRole, quote.data.companyId),
+    getSupplierQuoteLines(serviceRole, quote.data.id),
+    getSupplierQuoteLinePricesByQuoteId(serviceRole, quote.data.id)
+  ]);
 
   const thumbnailPaths = quoteLines.data?.reduce<Record<string, string | null>>(
     (acc, line) => {
@@ -173,7 +174,6 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
     data: {
       quote: quote.data,
       company: company.data,
-      companySettings: companySettings.data,
       quoteLines:
         quoteLines.data?.map(({ internalNotes, ...line }) => ({
           ...line

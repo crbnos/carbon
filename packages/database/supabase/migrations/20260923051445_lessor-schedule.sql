@@ -31,25 +31,8 @@ CREATE INDEX IF NOT EXISTS "rentalLeaseScheduleLine_journalId_idx" ON "rentalLea
 CREATE INDEX IF NOT EXISTS "rentalLeaseScheduleLine_createdBy_idx" ON "rentalLeaseScheduleLine" ("createdBy");
 
 -- RLS: the schedule belongs to the rental agreement, a sales document. Rows are
--- written by service-role posting paths; the policies gate the app's reads.
-ALTER TABLE "public"."rentalLeaseScheduleLine" ENABLE ROW LEVEL SECURITY;
-
-DROP POLICY IF EXISTS "SELECT" ON "public"."rentalLeaseScheduleLine";
-CREATE POLICY "SELECT" ON "public"."rentalLeaseScheduleLine" FOR SELECT USING (
-  "companyId" = ANY ((SELECT get_companies_with_employee_permission('sales_view'))::text[])
-);
-DROP POLICY IF EXISTS "INSERT" ON "public"."rentalLeaseScheduleLine";
-CREATE POLICY "INSERT" ON "public"."rentalLeaseScheduleLine" FOR INSERT WITH CHECK (
-  "companyId" = ANY ((SELECT get_companies_with_employee_permission('sales_create'))::text[])
-);
-DROP POLICY IF EXISTS "UPDATE" ON "public"."rentalLeaseScheduleLine";
-CREATE POLICY "UPDATE" ON "public"."rentalLeaseScheduleLine" FOR UPDATE USING (
-  "companyId" = ANY ((SELECT get_companies_with_employee_permission('sales_update'))::text[])
-);
-DROP POLICY IF EXISTS "DELETE" ON "public"."rentalLeaseScheduleLine";
-CREATE POLICY "DELETE" ON "public"."rentalLeaseScheduleLine" FOR DELETE USING (
-  "companyId" = ANY ((SELECT get_companies_with_employee_permission('sales_delete'))::text[])
-);
+-- written by service-role posting paths; the policies, rendered from
+-- packages/database/src/authz/manifest.ts, gate the app's reads.
 
 -- An Interest schedule row points at the lease schedule line it recognizes.
 DO $leaseschedfk$

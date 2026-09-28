@@ -19,6 +19,8 @@ const PRESERVED_TABLES = new Set([
   "customerStatus",
   "employee",
   "employeeJob",
+  // Console PIN hashes belong to the employees above, not to the story
+  "employeePin",
   "employeeType",
   "fiscalYearSettings",
   "fixedAssetClass",

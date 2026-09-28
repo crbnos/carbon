@@ -35,11 +35,12 @@ import {
 } from "@carbon/ee/sso.server";
 import { validator } from "@carbon/form";
 import { AccountLockout, redis } from "@carbon/kv";
+import { getLogger } from "@carbon/logger";
 import {
   Alert,
   AlertDescription,
   AlertTitle,
-  LoadingBars,
+  CarbonPulse,
   VStack
 } from "@carbon/react";
 import { Trans } from "@lingui/react/macro";
@@ -56,6 +57,8 @@ import {
 import { getCompanies, getEmployeeCompanies } from "~/modules/settings";
 import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
+
+const logger = getLogger("erp", "callback");
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const authSession = await getAuthSession(request);
@@ -106,6 +109,21 @@ export async function action({ request }: ActionFunctionArgs) {
     return redirect(
       path.to.root,
       await flash(request, error(authSession, "Invalid refresh token"))
+    );
+  }
+
+  // `userId` is caller-supplied; the refresh token is the only proof of
+  // identity. Everything above (the company pick) and below (SSO
+  // classification, JIT cleanup) keys on `userId`, so refuse a form whose
+  // `userId` is not the token's own user.
+  if (authSession.userId !== userId) {
+    logger.error("Callback userId does not match the refresh token's user", {
+      userId,
+      tokenUserId: authSession.userId
+    });
+    return redirect(
+      path.to.root,
+      await flash(request, error(null, "Invalid refresh token"))
     );
   }
 
@@ -513,7 +531,7 @@ export default function AuthCallback() {
   }, [fetcher, redirectTo]);
 
   return (
-    <div className="flex flex-col items-center justify-center">
+    <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-background">
       {error ? (
         <div className="rounded-lg p-8 mt-8 w-[380px]">
           <VStack spacing={4}>
@@ -534,7 +552,7 @@ export default function AuthCallback() {
           </VStack>
         </div>
       ) : (
-        <LoadingBars />
+        <CarbonPulse />
       )}
     </div>
   );

@@ -11,6 +11,7 @@ import {
   type NotificationDetail,
   NotificationEvent
 } from "@carbon/notifications";
+import { NonRetriableError } from "inngest";
 
 type ApprovalDocumentType = Database["public"]["Enums"]["approvalDocumentType"];
 
@@ -116,12 +117,28 @@ export function buildDetails(
 // to resolve per-document state.
 type EventContentOptions = {
   companyId: string;
+  // Which approvable document an Approval* event is about.
+  documentType?: ApprovalDocumentType;
   documentIds?: string[];
   userId?: string;
   // Workflow-authored text, carried on the payload instead of read from a document.
   title?: string;
   body?: string;
 };
+
+// PGRST116: `.single()` matched no row — the document was deleted, or the id
+// does not belong to this company. Retrying cannot change either, so fail the
+// notify step for good instead of burning every Inngest retry on it. Any other
+// error (network, timeout) is returned unchanged and retried as before.
+function documentLookupError(error: { code?: string; message: string }) {
+  if (error.code === "PGRST116") {
+    return new NonRetriableError(
+      `Notification document not found in this company: ${error.message}`,
+      { cause: error }
+    );
+  }
+  return error;
+}
 
 function changeNoticeStageDescription(
   type: NotificationEvent,
@@ -141,8 +158,7 @@ async function buildEventContent(
   client: ReturnType<typeof getCarbonServiceRole>,
   type: NotificationEvent,
   documentId: string,
-  documentType?: ApprovalDocumentType,
-  opts?: EventContentOptions
+  opts: EventContentOptions
 ): Promise<NotificationContent | null> {
   switch (type) {
     case NotificationEvent.SalesRfqReady:
@@ -151,11 +167,12 @@ async function buildEventContent(
         .from("salesRfq")
         .select("*, customer(name)")
         .eq("id", documentId)
+        .eq("companyId", opts.companyId)
         .single();
 
       if (salesRfq.error) {
         console.error("Failed to get salesRfq", salesRfq.error);
-        throw salesRfq.error;
+        throw documentLookupError(salesRfq.error);
       }
 
       const baseDetails = [
@@ -192,10 +209,11 @@ async function buildEventContent(
         .from("quote")
         .select("*, customer(name)")
         .eq("id", documentId)
+        .eq("companyId", opts.companyId)
         .single();
       if (quote.error) {
         console.error("Failed to get quote", quote.error);
-        throw quote.error;
+        throw documentLookupError(quote.error);
       }
       return {
         description: `Quote ${quote?.data?.quoteId} assigned to you`,
@@ -217,10 +235,11 @@ async function buildEventContent(
         .from("quote")
         .select("*, customer(name)")
         .eq("id", documentId)
+        .eq("companyId", opts.companyId)
         .single();
       if (expiredQuote.error) {
         console.error("Failed to get quote", expiredQuote.error);
-        throw expiredQuote.error;
+        throw documentLookupError(expiredQuote.error);
       }
       return {
         description: `Quote ${expiredQuote?.data?.quoteId} has expired`,
@@ -244,11 +263,12 @@ async function buildEventContent(
         .from("salesOrder")
         .select("*, customer(name)")
         .eq("id", documentId)
+        .eq("companyId", opts.companyId)
         .single();
 
       if (salesOrder.error) {
         console.error("Failed to get salesOrder", salesOrder.error);
-        throw salesOrder.error;
+        throw documentLookupError(salesOrder.error);
       }
 
       return {
@@ -274,6 +294,7 @@ async function buildEventContent(
         .from("maintenanceDispatch")
         .select("*, workCenter(name)")
         .eq("id", documentId)
+        .eq("companyId", opts.companyId)
         .single();
 
       if (maintenanceDispatchCreated.error) {
@@ -281,7 +302,7 @@ async function buildEventContent(
           "Failed to get maintenanceDispatchCreated",
           maintenanceDispatchCreated.error
         );
-        throw maintenanceDispatchCreated.error;
+        throw documentLookupError(maintenanceDispatchCreated.error);
       }
 
       return {
@@ -311,6 +332,7 @@ async function buildEventContent(
         .from("maintenanceDispatch")
         .select("*, workCenter(id, name)")
         .eq("id", documentId)
+        .eq("companyId", opts.companyId)
         .single();
 
       if (maintenanceDispatch.error) {
@@ -318,7 +340,7 @@ async function buildEventContent(
           "Failed to get maintenanceDispatch",
           maintenanceDispatch.error
         );
-        throw maintenanceDispatch.error;
+        throw documentLookupError(maintenanceDispatch.error);
       }
 
       const workCenterName =
@@ -341,11 +363,12 @@ async function buildEventContent(
         .from("nonConformance")
         .select("*, location(name)")
         .eq("id", documentId)
+        .eq("companyId", opts.companyId)
         .single();
 
       if (nonConformance.error) {
         console.error("Failed to get nonConformance", nonConformance.error);
-        throw nonConformance.error;
+        throw documentLookupError(nonConformance.error);
       }
 
       return {
@@ -368,11 +391,12 @@ async function buildEventContent(
         .from("job")
         .select("*, customer(name), item(readableId, name)")
         .eq("id", documentId)
+        .eq("companyId", opts.companyId)
         .single();
 
       if (job.error) {
         console.error("Failed to get job", job.error);
-        throw job.error;
+        throw documentLookupError(job.error);
       }
 
       return {
@@ -395,11 +419,12 @@ async function buildEventContent(
         .from("job")
         .select("*, customer(name), item(readableId, name)")
         .eq("id", documentId)
+        .eq("companyId", opts.companyId)
         .single();
 
       if (completedJob.error) {
         console.error("Failed to get job", completedJob.error);
-        throw completedJob.error;
+        throw documentLookupError(completedJob.error);
       }
 
       return {
@@ -429,10 +454,11 @@ async function buildEventContent(
       const jobs = await client
         .from("job")
         .select("id, jobId, dueDate, projectedCompletionAt")
-        .in("id", ids);
+        .in("id", ids)
+        .eq("companyId", opts.companyId);
       if (jobs.error) {
         console.error("Failed to get jobs", jobs.error);
-        throw jobs.error;
+        throw documentLookupError(jobs.error);
       }
       const rows = jobs.data ?? [];
       if (rows.length === 0) return null;
@@ -460,11 +486,12 @@ async function buildEventContent(
         .from("jobOperation")
         .select("*, job(id, jobId), workCenter(name)")
         .eq("id", operationId!)
+        .eq("companyId", opts.companyId)
         .single();
 
       if (jobOperation.error) {
         console.error("Failed to get jobOperation", jobOperation.error);
-        throw jobOperation.error;
+        throw documentLookupError(jobOperation.error);
       }
 
       const details = buildDetails([
@@ -499,11 +526,12 @@ async function buildEventContent(
         .from("procedure")
         .select("name, version, status, process(name)")
         .eq("id", documentId)
+        .eq("companyId", opts.companyId)
         .single();
 
       if (procedure.error) {
         console.error("Failed to get procedure", procedure.error);
-        throw procedure.error;
+        throw documentLookupError(procedure.error);
       }
 
       return {
@@ -528,11 +556,12 @@ async function buildEventContent(
         .from("quote")
         .select("*, customer(name)")
         .eq("id", documentId)
+        .eq("companyId", opts.companyId)
         .single();
 
       if (digitalQuote.error) {
         console.error("Failed to get digital quote", digitalQuote.error);
-        throw digitalQuote.error;
+        throw documentLookupError(digitalQuote.error);
       }
 
       // The email body renders the reference (quote id), so the outcome must
@@ -592,11 +621,12 @@ async function buildEventContent(
           "gaugeId, description, gaugeCalibrationStatus, lastCalibrationDate, nextCalibrationDate"
         )
         .eq("id", documentId)
+        .eq("companyId", opts.companyId)
         .single();
 
       if (gauge.error) {
         console.error("Failed to get gauge", gauge.error);
-        throw gauge.error;
+        throw documentLookupError(gauge.error);
       }
 
       return {
@@ -624,8 +654,7 @@ async function buildEventContent(
       if (!docId) return null;
       // Service-role lookups below — scope by companyId so a stale or
       // mangled compound id can never surface another company's document.
-      const companyId = opts?.companyId;
-      if (!companyId) return null;
+      const { companyId } = opts;
 
       const phrase =
         outcome === "blocked"
@@ -645,7 +674,7 @@ async function buildEventContent(
 
         if (salesInvoice.error) {
           console.error("Failed to get salesInvoice", salesInvoice.error);
-          throw salesInvoice.error;
+          throw documentLookupError(salesInvoice.error);
         }
 
         return {
@@ -668,7 +697,7 @@ async function buildEventContent(
 
         if (salesOrder.error) {
           console.error("Failed to get salesOrder", salesOrder.error);
-          throw salesOrder.error;
+          throw documentLookupError(salesOrder.error);
         }
 
         return {
@@ -690,7 +719,7 @@ async function buildEventContent(
 
       if (quote.error) {
         console.error("Failed to get quote", quote.error);
-        throw quote.error;
+        throw documentLookupError(quote.error);
       }
 
       return {
@@ -708,11 +737,12 @@ async function buildEventContent(
         .from("stockTransfer")
         .select("*, location(name)")
         .eq("id", documentId)
+        .eq("companyId", opts.companyId)
         .single();
 
       if (stockTransfer.error) {
         console.error("Failed to get stockTransfer", stockTransfer.error);
-        throw stockTransfer.error;
+        throw documentLookupError(stockTransfer.error);
       }
 
       // Number of line items to move — the header only has one location, so the
@@ -720,7 +750,8 @@ async function buildEventContent(
       const { count: lineCount } = await client
         .from("stockTransferLine")
         .select("id", { count: "exact", head: true })
-        .eq("stockTransferId", documentId);
+        .eq("stockTransferId", documentId)
+        .eq("companyId", opts.companyId);
 
       return {
         description: `Stock Transfer ${stockTransfer?.data?.stockTransferId} assigned to you`,
@@ -741,11 +772,12 @@ async function buildEventContent(
         .from("pickingList")
         .select("*, location(name)")
         .eq("id", documentId)
+        .eq("companyId", opts.companyId)
         .single();
 
       if (pickingList.error) {
         console.error("Failed to get pickingList", pickingList.error);
-        throw pickingList.error;
+        throw documentLookupError(pickingList.error);
       }
 
       return {
@@ -764,6 +796,7 @@ async function buildEventContent(
         .from("trainingAssignment")
         .select("*, training(id, name, type, frequency, estimatedDuration)")
         .eq("id", documentId)
+        .eq("companyId", opts.companyId)
         .single();
 
       if (trainingAssignment.error) {
@@ -771,7 +804,7 @@ async function buildEventContent(
           "Failed to get trainingAssignment",
           trainingAssignment.error
         );
-        throw trainingAssignment.error;
+        throw documentLookupError(trainingAssignment.error);
       }
 
       // Assigned-to-you training (vs ResourceTrainingAssignment, which
@@ -802,11 +835,12 @@ async function buildEventContent(
       const assignments = await client
         .from("trainingAssignment")
         .select("id, training(id, name, type, frequency, estimatedDuration)")
-        .in("id", ids);
+        .in("id", ids)
+        .eq("companyId", opts.companyId);
 
       if (assignments.error) {
         console.error("Failed to get trainingAssignments", assignments.error);
-        throw assignments.error;
+        throw documentLookupError(assignments.error);
       }
       const rows = assignments.data ?? [];
       if (rows.length === 0) return null;
@@ -868,13 +902,11 @@ async function buildEventContent(
           period: periodByAssignment.get(assignment.id),
           status: statusByAssignment.get(assignment.id),
           title,
-          url: opts?.companyId
-            ? buildNotificationLink(
-                NotificationEvent.TrainingReminder,
-                assignment.id,
-                opts.companyId
-              )
-            : undefined
+          url: buildNotificationLink(
+            NotificationEvent.TrainingReminder,
+            assignment.id,
+            opts.companyId
+          )
         };
       });
 
@@ -898,11 +930,12 @@ async function buildEventContent(
         .from("training")
         .select("name, type, status, version")
         .eq("id", documentId)
+        .eq("companyId", opts.companyId)
         .single();
 
       if (training.error) {
         console.error("Failed to get training", training.error);
-        throw training.error;
+        throw documentLookupError(training.error);
       }
 
       // A newly available training (vs TrainingAssignment, which is a training
@@ -929,11 +962,12 @@ async function buildEventContent(
         .from("purchaseOrder")
         .select("*, supplier(name)")
         .eq("id", documentId)
+        .eq("companyId", opts.companyId)
         .single();
 
       if (purchaseOrder.error) {
         console.error("Failed to get purchaseOrder", purchaseOrder.error);
-        throw purchaseOrder.error;
+        throw documentLookupError(purchaseOrder.error);
       }
 
       return {
@@ -959,11 +993,12 @@ async function buildEventContent(
         .from("purchaseInvoice")
         .select("*, supplier!purchaseInvoice_supplierId_fkey(name)")
         .eq("id", documentId)
+        .eq("companyId", opts.companyId)
         .single();
 
       if (purchaseInvoice.error) {
         console.error("Failed to get purchaseInvoice", purchaseInvoice.error);
-        throw purchaseInvoice.error;
+        throw documentLookupError(purchaseInvoice.error);
       }
 
       return {
@@ -988,11 +1023,12 @@ async function buildEventContent(
         .from("suggestion")
         .select("*, user(id, fullName)")
         .eq("id", documentId)
+        .eq("companyId", opts.companyId)
         .single();
 
       if (suggestion.error) {
         console.error("Failed to get suggestion", suggestion.error);
-        throw suggestion.error;
+        throw documentLookupError(suggestion.error);
       }
 
       const submittedBy = suggestion.data.user?.fullName || "Anonymous";
@@ -1010,11 +1046,12 @@ async function buildEventContent(
         .from("riskRegister")
         .select("title, type, source, status, severity, likelihood")
         .eq("id", documentId)
+        .eq("companyId", opts.companyId)
         .single();
 
       if (risk.error) {
         console.error("Failed to get risk", risk.error);
-        throw risk.error;
+        throw documentLookupError(risk.error);
       }
 
       return {
@@ -1045,11 +1082,12 @@ async function buildEventContent(
         .from("purchasingRfq")
         .select("*")
         .eq("id", documentId)
+        .eq("companyId", opts.companyId)
         .single();
 
       if (purchasingRfq.error) {
         console.error("Failed to get purchasing RFQ", purchasingRfq.error);
-        throw purchasingRfq.error;
+        throw documentLookupError(purchasingRfq.error);
       }
 
       return {
@@ -1074,6 +1112,7 @@ async function buildEventContent(
         .from("supplierQuote")
         .select("*, supplier(name)")
         .eq("id", documentId)
+        .eq("companyId", opts.companyId)
         .single();
 
       if (supplierQuoteAssignment.error) {
@@ -1081,7 +1120,7 @@ async function buildEventContent(
           "Failed to get supplier quote",
           supplierQuoteAssignment.error
         );
-        throw supplierQuoteAssignment.error;
+        throw documentLookupError(supplierQuoteAssignment.error);
       }
 
       return {
@@ -1108,11 +1147,12 @@ async function buildEventContent(
         .from("supplierQuote")
         .select("*, supplier(name)")
         .eq("id", documentId)
+        .eq("companyId", opts.companyId)
         .single();
 
       if (supplierQuote.error) {
         console.error("Failed to get supplier quote", supplierQuote.error);
-        throw supplierQuote.error;
+        throw documentLookupError(supplierQuote.error);
       }
 
       const externalNotes = supplierQuote.data.externalNotes as Record<
@@ -1158,11 +1198,12 @@ async function buildEventContent(
         outcome === "requested" ? "requires your approval" : `was ${outcome}`;
       const docPhrase = poPhrase;
 
-      if (documentType === "purchaseOrder") {
+      if (opts.documentType === "purchaseOrder") {
         const po = await client
           .from("purchaseOrder")
           .select("purchaseOrderId, supplierReference, status, supplier(name)")
           .eq("id", documentId)
+          .eq("companyId", opts.companyId)
           .single();
 
         if (po.error || !po.data) {
@@ -1187,11 +1228,12 @@ async function buildEventContent(
         };
       }
 
-      if (documentType === "qualityDocument") {
+      if (opts.documentType === "qualityDocument") {
         const qd = await client
           .from("qualityDocument")
           .select("name, status, version")
           .eq("id", documentId)
+          .eq("companyId", opts.companyId)
           .single();
 
         if (qd.error || !qd.data) {
@@ -1232,12 +1274,7 @@ async function buildEventContent(
     case NotificationEvent.ChangeNoticeImplementation:
     case NotificationEvent.ChangeNoticeDone: {
       // Company-scope both lookups: readable ids (ECO-…) repeat across tenants.
-      const companyId = opts?.companyId;
-      if (!companyId) {
-        throw new Error(
-          `companyId is required to resolve change notice ${documentId}`
-        );
-      }
+      const { companyId } = opts;
 
       // documentId may be the row id (co_…) or the readable id (ECO-…) — try both.
       const changeNoticeColumns =
@@ -1250,7 +1287,7 @@ async function buildEventContent(
         .maybeSingle();
       if (rowLookup.error) {
         console.error("Failed to get changeOrder", rowLookup.error);
-        throw rowLookup.error;
+        throw documentLookupError(rowLookup.error);
       }
 
       let changeNoticeData = rowLookup.data;
@@ -1263,13 +1300,15 @@ async function buildEventContent(
           .maybeSingle();
         if (readableIdLookup.error) {
           console.error("Failed to get changeOrder", readableIdLookup.error);
-          throw readableIdLookup.error;
+          throw documentLookupError(readableIdLookup.error);
         }
         changeNoticeData = readableIdLookup.data;
       }
 
       if (!changeNoticeData) {
-        throw new Error(`Change notice not found for documentId ${documentId}`);
+        throw new NonRetriableError(
+          `Change notice not found for documentId ${documentId}`
+        );
       }
 
       const readableId = changeNoticeData.changeOrderId;
@@ -1374,16 +1413,9 @@ export async function getNotificationContent(
   type: NotificationEvent,
   documentId: string,
   from: string | undefined,
-  documentType?: ApprovalDocumentType,
-  opts?: EventContentOptions
+  opts: EventContentOptions
 ): Promise<NotificationContent | null> {
-  const content = await buildEventContent(
-    client,
-    type,
-    documentId,
-    documentType,
-    opts
-  );
+  const content = await buildEventContent(client, type, documentId, opts);
   if (!content) return content;
 
   const actorLabel = getActorLabel(type);

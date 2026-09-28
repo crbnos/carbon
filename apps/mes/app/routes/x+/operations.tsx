@@ -5,11 +5,11 @@ import { getLocationTimeZone } from "@carbon/database";
 import { getLogger } from "@carbon/logger";
 import {
   Button,
+  CarbonPulse,
   ClientOnly,
   Heading,
   HStack,
   IconButton,
-  LoadingBars,
   Popover,
   PopoverContent,
   PopoverTrigger,
@@ -424,7 +424,7 @@ export default function ScheduleRoute() {
     <ClientOnly
       fallback={
         <div className="flex h-screen w-[calc(100dvw-var(--sidebar-width-icon))] items-center justify-center">
-          <LoadingBars />
+          <CarbonPulse />
         </div>
       }
     >

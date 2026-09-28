@@ -87,23 +87,7 @@ CREATE INDEX IF NOT EXISTS "fixedAssetTransfer_journalId_idx" ON "fixedAssetTran
 CREATE INDEX IF NOT EXISTS "fixedAssetTransfer_postedBy_idx" ON "fixedAssetTransfer" ("postedBy");
 CREATE INDEX IF NOT EXISTS "fixedAssetTransfer_createdBy_idx" ON "fixedAssetTransfer" ("createdBy");
 
-ALTER TABLE "public"."fixedAssetTransfer" ENABLE ROW LEVEL SECURITY;
-DROP POLICY IF EXISTS "SELECT" ON "public"."fixedAssetTransfer";
-CREATE POLICY "SELECT" ON "public"."fixedAssetTransfer" FOR SELECT USING (
-  "companyId" = ANY ((SELECT get_companies_with_employee_permission('accounting_view'))::text[])
-);
-DROP POLICY IF EXISTS "INSERT" ON "public"."fixedAssetTransfer";
-CREATE POLICY "INSERT" ON "public"."fixedAssetTransfer" FOR INSERT WITH CHECK (
-  "companyId" = ANY ((SELECT get_companies_with_employee_permission('accounting_create'))::text[])
-);
-DROP POLICY IF EXISTS "UPDATE" ON "public"."fixedAssetTransfer";
-CREATE POLICY "UPDATE" ON "public"."fixedAssetTransfer" FOR UPDATE USING (
-  "companyId" = ANY ((SELECT get_companies_with_employee_permission('accounting_update'))::text[])
-);
-DROP POLICY IF EXISTS "DELETE" ON "public"."fixedAssetTransfer";
-CREATE POLICY "DELETE" ON "public"."fixedAssetTransfer" FOR DELETE USING (
-  "companyId" = ANY ((SELECT get_companies_with_employee_permission('accounting_delete'))::text[])
-);
+-- RLS: the policies are rendered from packages/database/src/authz/manifest.ts.
 
 -- 3) fixedAssetCipCost (append-only) ---------------------------------------------
 CREATE TABLE IF NOT EXISTS "fixedAssetCipCost" (
@@ -130,23 +114,7 @@ CREATE INDEX IF NOT EXISTS "fixedAssetCipCost_jobId_idx" ON "fixedAssetCipCost" 
 CREATE INDEX IF NOT EXISTS "fixedAssetCipCost_journalId_idx" ON "fixedAssetCipCost" ("journalId");
 CREATE INDEX IF NOT EXISTS "fixedAssetCipCost_createdBy_idx" ON "fixedAssetCipCost" ("createdBy");
 
-ALTER TABLE "public"."fixedAssetCipCost" ENABLE ROW LEVEL SECURITY;
-DROP POLICY IF EXISTS "SELECT" ON "public"."fixedAssetCipCost";
-CREATE POLICY "SELECT" ON "public"."fixedAssetCipCost" FOR SELECT USING (
-  "companyId" = ANY ((SELECT get_companies_with_employee_permission('accounting_view'))::text[])
-);
-DROP POLICY IF EXISTS "INSERT" ON "public"."fixedAssetCipCost";
-CREATE POLICY "INSERT" ON "public"."fixedAssetCipCost" FOR INSERT WITH CHECK (
-  "companyId" = ANY ((SELECT get_companies_with_employee_permission('accounting_create'))::text[])
-);
-DROP POLICY IF EXISTS "UPDATE" ON "public"."fixedAssetCipCost";
-CREATE POLICY "UPDATE" ON "public"."fixedAssetCipCost" FOR UPDATE USING (
-  "companyId" = ANY ((SELECT get_companies_with_employee_permission('accounting_update'))::text[])
-);
-DROP POLICY IF EXISTS "DELETE" ON "public"."fixedAssetCipCost";
-CREATE POLICY "DELETE" ON "public"."fixedAssetCipCost" FOR DELETE USING (
-  "companyId" = ANY ((SELECT get_companies_with_employee_permission('accounting_delete'))::text[])
-);
+-- RLS: the policies are rendered from packages/database/src/authz/manifest.ts.
 
 -- 4) Sequence per company -----------------------------------------------------------
 INSERT INTO "sequence" ("table", "name", "prefix", "suffix", "next", "size", "step", "companyId")

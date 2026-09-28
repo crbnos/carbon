@@ -187,22 +187,8 @@ CREATE INDEX IF NOT EXISTS "rentalBillingPeriod_due_idx" ON "rentalBillingPeriod
 CREATE INDEX IF NOT EXISTS "rentalBillingPeriod_salesInvoiceLineId_idx" ON "rentalBillingPeriod" ("salesInvoiceLineId");
 CREATE INDEX IF NOT EXISTS "rentalBillingPeriod_createdBy_idx" ON "rentalBillingPeriod" ("createdBy");
 
--- 6) RLS: the agreement is a sales document ----------------------------------------------
-DO $rentrls$
-DECLARE t TEXT;
-BEGIN
-  FOREACH t IN ARRAY ARRAY['itemRentalRate', 'rentalAgreement', 'rentalAgreementLine', 'rentalAgreementCharge', 'rentalBillingPeriod'] LOOP
-    EXECUTE format('ALTER TABLE "public".%I ENABLE ROW LEVEL SECURITY', t);
-    EXECUTE format('DROP POLICY IF EXISTS "SELECT" ON "public".%I', t);
-    EXECUTE format('CREATE POLICY "SELECT" ON "public".%I FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission(''sales_view''))::text[]))', t);
-    EXECUTE format('DROP POLICY IF EXISTS "INSERT" ON "public".%I', t);
-    EXECUTE format('CREATE POLICY "INSERT" ON "public".%I FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission(''sales_create''))::text[]))', t);
-    EXECUTE format('DROP POLICY IF EXISTS "UPDATE" ON "public".%I', t);
-    EXECUTE format('CREATE POLICY "UPDATE" ON "public".%I FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission(''sales_update''))::text[]))', t);
-    EXECUTE format('DROP POLICY IF EXISTS "DELETE" ON "public".%I', t);
-    EXECUTE format('CREATE POLICY "DELETE" ON "public".%I FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission(''sales_delete''))::text[]))', t);
-  END LOOP;
-END $rentrls$;
+-- 6) RLS: the agreement is a sales document; the policies are rendered from
+--    packages/database/src/authz/manifest.ts.
 
 -- 7) The Rental invoice line ---------------------------------------------------------------
 ALTER TABLE "salesInvoiceLine"

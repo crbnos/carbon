@@ -1,3 +1,4 @@
+import { safeRedirect } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getLogger } from "@carbon/logger";
 import { requiresItarEntityCertification } from "@carbon/utils";
@@ -9,6 +10,7 @@ import {
   itarUserCertificationValidator,
   recordItarCertification
 } from "~/services/itar.service";
+import { path } from "~/utils/path";
 
 const logger = getLogger("mes", "acknowledge");
 
@@ -39,7 +41,8 @@ export async function action({ request }: ActionFunctionArgs) {
     await client.from("user").update({ flags: updatedFlags }).eq("id", userId);
 
     if (redirectTo) {
-      throw redirect(redirectTo);
+      // Form-supplied, so only same-origin paths are honoured.
+      throw redirect(safeRedirect(redirectTo, path.to.authenticatedRoot));
     }
 
     return { success: true, message: "University acknowledged" };

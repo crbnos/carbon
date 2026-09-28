@@ -18,6 +18,7 @@ import {
 } from "~/modules/purchasing";
 import { getCompany } from "~/modules/settings";
 import { upsertExternalLink } from "~/modules/shared";
+import { requireCompanyRecord } from "~/modules/shared/shared.server";
 import { getUser } from "~/modules/users/users.server";
 import { path } from "~/utils/path";
 
@@ -35,6 +36,10 @@ export async function action(args: ActionFunctionArgs) {
 
   const { id } = params;
   if (!id) throw new Error("Could not find supplier quote id");
+
+  // bypassRls hands back the service role and every read/write below is keyed
+  // on the URL's id.
+  await requireCompanyRecord(client, "supplierQuote", companyId, { id });
 
   const quote = await getSupplierQuote(client, id);
   if (quote.error) {
@@ -101,7 +106,7 @@ export async function action(args: ActionFunctionArgs) {
         const [company, supplierContact, supplierQuote, user] =
           await Promise.all([
             getCompany(client, companyId),
-            getSupplierContact(client, supplierContactId),
+            getSupplierContact(client, supplierContactId, companyId),
             getSupplierQuote(client, id),
             getUser(client, userId)
           ]);

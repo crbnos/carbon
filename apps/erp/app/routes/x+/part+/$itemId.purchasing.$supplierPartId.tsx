@@ -100,6 +100,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
       await trx
         .deleteFrom("supplierPartPrice")
         .where("supplierPartId", "=", supplierPartId)
+        .where("companyId", "=", companyId)
         .execute();
       if (priceBreaks.length > 0) {
         await trx

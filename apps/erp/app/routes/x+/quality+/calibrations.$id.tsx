@@ -2,6 +2,7 @@ import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
+import { getLogger } from "@carbon/logger";
 import { msg } from "@lingui/core/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { redirect, useLoaderData, useNavigate, useParams } from "react-router";
@@ -17,6 +18,9 @@ import GaugeCalibrationRecordForm from "~/modules/quality/ui/Calibrations/GaugeC
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import type { Handle } from "~/utils/handle";
 import { getParams, path } from "~/utils/path";
+
+const logger = getLogger("erp", "calibration-detail");
+
 export const handle: Handle = {
   breadcrumb: msg`Gauges`,
   to: path.to.gauges
@@ -44,6 +48,16 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         error(record.error, "Failed to load gauge calibration record")
       )
     );
+  }
+
+  // bypassRls makes `client` the service role, so the URL id is only proven to
+  // exist — not to be this company's.
+  if (record.data.companyId !== companyId) {
+    logger.error("Gauge calibration record is not in the caller's company", {
+      companyId,
+      calibrationRecordId: id
+    });
+    throw redirect(path.to.gauges);
   }
 
   return {

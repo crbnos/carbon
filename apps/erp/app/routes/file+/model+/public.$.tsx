@@ -1,7 +1,11 @@
 import { notFound } from "@carbon/auth";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
-import { getContentType, MEDIA_CONTENT_TYPES, storage } from "@carbon/files";
-import { supportedModelTypes } from "@carbon/files/cad";
+import {
+  fileResponseHeaders,
+  getContentType,
+  isUnsafeStoragePath,
+  storage
+} from "@carbon/files";
 import { getLogger } from "@carbon/logger";
 import type { LoaderFunctionArgs } from "react-router";
 
@@ -14,19 +18,21 @@ export async function loader({ params }: LoaderFunctionArgs) {
 
   if (!path) throw new Error("Path not found");
 
-  if (!path.includes("models")) {
+  // Unauthenticated: the unguessable model id in the key is the only
+  // credential, so serve model objects (`${companyId}/models/…`) and nothing
+  // else — never any object whose key merely contains "models".
+  if (path.split("/")[1] !== "models" || isUnsafeStoragePath(path)) {
+    logger.error("Refused a public model path", { path });
     throw notFound("Invalid path");
   }
 
-  const fileType = path.split(".").pop()?.toLowerCase();
-
-  if (
-    !fileType ||
-    (!(fileType in MEDIA_CONTENT_TYPES) &&
-      !supportedModelTypes.includes(fileType))
-  )
-    throw new Error(`File type ${fileType} not supported`);
-  const contentType = getContentType(fileType);
+  // Only the GLB the model viewer draws (`/file/model/$id`, rendered headless
+  // for thumbnails). Any other type here is a tenant-uploaded file served with
+  // no session — an SVG under models/ ran script on our origin.
+  if (path.split(".").pop()?.toLowerCase() !== "glb") {
+    logger.error("Refused a public model file type", { path });
+    throw notFound("Invalid path");
+  }
 
   // No auth session on this public route — the object path's first segment is
   // the companyId, which selects the per-company bucket (with legacy fallback).
@@ -51,12 +57,12 @@ export async function loader({ params }: LoaderFunctionArgs) {
     }
   }
 
-  const headers = new Headers({
-    "Content-Type": contentType,
-    "Cache-Control": "public, max-age=31536000, immutable",
-    "Access-Control-Allow-Origin": "*", // Allow cross-origin requests
-    "Access-Control-Allow-Methods": "GET", // Only allow GET requests
-    "Access-Control-Allow-Headers": "Content-Type" // Allow Content-Type header
-  });
+  const headers = fileResponseHeaders(
+    getContentType("glb"),
+    "public, max-age=31536000, immutable"
+  );
+  headers.set("Access-Control-Allow-Origin", "*");
+  headers.set("Access-Control-Allow-Methods", "GET");
+  headers.set("Access-Control-Allow-Headers", "Content-Type");
   return new Response(fileData, { status: 200, headers });
 }

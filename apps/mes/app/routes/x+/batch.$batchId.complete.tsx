@@ -3,6 +3,7 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
+import { getLogger } from "@carbon/logger";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { completeJobOperationBatchValidator } from "~/services/models";
@@ -10,6 +11,8 @@ import {
   getJobOperationBatch,
   type JobOperationBatch
 } from "~/services/operations.service";
+
+const logger = getLogger("mes", "batch-complete");
 
 // A batch planned with a combined output merges every member's produced lot
 // into the planned lot number once completion lands. Parent ids are derived
@@ -69,6 +72,47 @@ export async function action({ request, params }: ActionFunctionArgs) {
   // number on every member's output; otherwise each member keeps its own
   // planned number (null leaves the entity's readableId untouched, and the
   // edge fn refuses an output with no number at all).
+  // The edge function is invoked with the service role, so the submitted
+  // member ids must be this batch's members, and any tracked entity this
+  // company's — one scoped query for the entity list.
+  const memberIds = new Set(
+    (planned.data.operations ?? []).map((operation) => operation.id)
+  );
+  const foreignMember = validation.data.members.find(
+    (m) => !memberIds.has(m.jobOperationId)
+  );
+  const submittedEntityIds = [
+    ...new Set(
+      validation.data.members
+        .map((m) => m.trackedEntityId)
+        .filter((id): id is string => Boolean(id))
+    )
+  ];
+  const ownedEntities = submittedEntityIds.length
+    ? await serviceRole
+        .from("trackedEntity")
+        .select("id")
+        .in("id", submittedEntityIds)
+        .eq("companyId", companyId)
+    : { data: [], error: null };
+  if (
+    foreignMember ||
+    ownedEntities.error ||
+    (ownedEntities.data ?? []).length !== submittedEntityIds.length
+  ) {
+    logger.warn("Batch completion references records outside the batch", {
+      companyId,
+      batchId,
+      jobOperationId: foreignMember?.jobOperationId,
+      trackedEntityIds: submittedEntityIds,
+      error: ownedEntities.error
+    });
+    return data(
+      {},
+      await flash(request, error(null, "Batch member not found"))
+    );
+  }
+
   const plannedLotNumber = planned.data.mergeOutput
     ? planned.data.outputLotNumber
     : null;

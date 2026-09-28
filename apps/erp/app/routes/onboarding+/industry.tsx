@@ -1,4 +1,4 @@
-import { assertIsPost } from "@carbon/auth";
+import { assertIsPost, safeRedirect } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { setCompanyId } from "@carbon/auth/company.server";
@@ -92,7 +92,11 @@ function appendDraftCompany(
 }
 
 export async function loader({ request }: ActionFunctionArgs) {
-  const { client, companyId, email } = await requirePermissions(request, {});
+  const { client, companyId, email } = await requirePermissions(request, {
+    // Onboarding acts on the user's own account: a portal-only user may still
+    // create a company of their own.
+    allowPortalAccounts: true
+  });
 
   // Restoring from a backup stays internal-only; the demo template and a clean
   // start are open to every signup.
@@ -116,7 +120,11 @@ export async function loader({ request }: ActionFunctionArgs) {
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId, email } = await requirePermissions(request, {});
+  const { client, userId, email } = await requirePermissions(request, {
+    // Onboarding acts on the user's own account: a portal-only user may still
+    // create a company of their own.
+    allowPortalAccounts: true
+  });
 
   // Get draft data from previous step (company)
   const draft = await getOnboardingDraft(request);
@@ -200,7 +208,7 @@ export async function action({ request }: ActionFunctionArgs) {
   const companyIdCookie = setCompanyId(companyId);
   const clearDraftCookie = await clearOnboardingDraft(request);
 
-  throw redirect(next, {
+  throw redirect(safeRedirect(next, path.to.onboarding.root), {
     headers: [
       ["Set-Cookie", sessionCookie],
       ["Set-Cookie", companyIdCookie],

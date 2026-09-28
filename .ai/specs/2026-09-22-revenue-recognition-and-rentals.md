@@ -715,6 +715,7 @@ Added 2026-09-22 when the tier-1 items were folded in (recommended, **pending ve
 
 ## Changelog
 
+- 2026-09-28: Merged main's authz manifest (#1737). The 11 new tables' policies moved out of the branch migrations into `packages/database/src/authz/manifest.ts` (`company("accounting", { read: "accounting_view" })` for the recognition and asset-transfer tables, `company("sales", { read: "sales_view" })` for the rental tables — the same policies as before), shipped by the generated `20260928014618_rental-revenue-recognition-rls.sql`. `20260928014435_complete-job-to-asset-guarded.sql` restores the Make to Asset branch of `complete_job_to_inventory`, which main's `20260925121735_rpc-function-guards.sql` had replaced, and adds that migration's `assert_company_access` guard.
 - 2026-09-23: Phases A–D built (plan Tasks 1–54; browser verification of B, C and D pending in Tasks 31, 46, 56). Plan-level decisions folded in:
   1. New journal source types `'Revenue Recognition'`, `'Asset Transfer'` and `'Lease'` ship `defaultEnabled: false` in `POSTING_POLICY` (this spec said `true`); the returns-types precedent that a new journal type never starts pushing to a customer's ledger unasked wins.
   2. Shared pure math lives in `packages/database/supabase/functions/shared/` (`revenue-schedule.ts`, `rental-billing.ts`, `lessor-lease.ts`), `YYYY-MM-DD` strings and integers only, re-exported to Node through `@carbon/utils`. `classifyLessorLease` lives in `shared/lessor-lease.ts`, not `accounting.utils.ts` as §4 says.

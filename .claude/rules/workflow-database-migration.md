@@ -70,16 +70,12 @@ newest migrations, e.g. `20260609143732_document-template.sql`):
   — the `*By` columns reference `"user"("id")` **inline** (no named constraints).
   `updatedAt` is set by the app, not a trigger.
 - **Indexes** on `companyId` and **every** FK (e.g. `createdBy`).
-- **RLS** — enable, then create exactly four policies named `SELECT` / `INSERT` /
-  `UPDATE` / `DELETE`, schema-qualified (`"public"."t"`) with the helper result
-  cast `::text[]`:
-  - `SELECT` → `get_companies_with_employee_role()` (any employee reads). Some
-    tables tighten read to a view permission — a valid variant.
-  - `INSERT`/`UPDATE`/`DELETE` →
-    `get_companies_with_employee_permission('<module>_<action>')`
-    (`<action>` ∈ `create` / `update` / `delete`).
-  - The old `has_role` / `has_company_permission` helpers are **deprecated** —
-    never use them. For tables without a `companyId`, reach the company through
+- **RLS** — not in the migration. Add the table's rule to
+  `packages/database/src/authz/manifest.ts` (usually `entityName: company("<module>")`),
+  then ship it with `pnpm --filter @carbon/database authz migration <name>`; CI's
+  `migration.test.ts` fails until you do. See `authz-manifest.md`.
+  - The old `has_role` / `has_company_permission` helpers no longer exist
+    (dropped in `20260927224314_retire-legacy-rls-helpers.sql` (they admitted customer and supplier portal accounts); `authz-fixes.test.sql` asserts they stay gone). For tables without a `companyId`, reach the company through
     the parent via `EXISTS` (see `database-migration-patterns.md`).
 - **Never**: an `itemReadableId` column, or a precision spec on `NUMERIC`.
 - **Views** use `WITH(SECURITY_INVOKER=true)`.
@@ -140,9 +136,8 @@ pre-commit hook runs it anyway. Details: `onboarding-company-templates.md`.
 - [ ] `companyId` + composite PK `("id", "companyId")` + FK `ON DELETE CASCADE`
 - [ ] Audit columns; `*By` reference `"user"("id")` inline
 - [ ] Indexes on `companyId` and every FK
-- [ ] RLS enabled with the four standardized policy names (SELECT via
-      `get_companies_with_employee_role()`, writes via
-      `get_companies_with_employee_permission('<module>_<action>')`)
+- [ ] Rule added to `packages/database/src/authz/manifest.ts` and shipped with
+      `pnpm --filter @carbon/database authz migration <name>` (no `CREATE POLICY` in migrations)
 - [ ] Renamed/dropped a tenant-scoped table? `TABLE_RENAMES` entry added
       (`packages/jobs/src/backups/renames.ts`) — new name, or `null` if dropped with its feature
 - [ ] Zod validators updated in `{module}.models.ts`

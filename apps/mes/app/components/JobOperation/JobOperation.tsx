@@ -1224,7 +1224,7 @@ export const JobOperation = ({
                     </div>
                   </HStack>
                   <div className="flex flex-col shrink-0 items-end">
-                    <Heading size="h2">
+                    <Heading size="h2" className="font-sans">
                       {formatDurationMilliseconds(
                         ((progress.setup ?? 0) +
                           (progress.labor ?? 0) +
@@ -1264,7 +1264,7 @@ export const JobOperation = ({
                       </CardHeader>
 
                       <CardContent>
-                        <Heading size="h1">
+                        <Heading size="h1" className="font-sans">
                           <Trans>
                             {operation.quantityComplete} of{" "}
                             {operation.targetQuantity}
@@ -1280,7 +1280,7 @@ export const JobOperation = ({
                         <FaTrash className="h-3 w-3 text-muted-foreground" />
                       </CardHeader>
                       <CardContent>
-                        <Heading size="h1">
+                        <Heading size="h1" className="font-sans">
                           {operation.quantityScrapped}
                         </Heading>
                       </CardContent>
@@ -1300,7 +1300,7 @@ export const JobOperation = ({
                           <Heading
                             size="h3"
                             className={cn(
-                              "w-full truncate",
+                              "w-full truncate font-sans",
                               isOverdue ? "text-red-500" : ""
                             )}
                           >
@@ -1514,7 +1514,10 @@ export const JobOperation = ({
                                                     </Button>
                                                   )}
                                                 {parentIsSerial && (
-                                                  <Heading size="h2">
+                                                  <Heading
+                                                    size="h2"
+                                                    className="font-sans"
+                                                  >
                                                     <Trans>
                                                       {serialIndex + 1} of{" "}
                                                       {
@@ -2731,7 +2734,10 @@ export const JobOperation = ({
                                             </Button>
                                           )}
                                         {parentIsSerial && (
-                                          <Heading size="h2">
+                                          <Heading
+                                            size="h2"
+                                            className="font-sans"
+                                          >
                                             <Trans>
                                               {serialIndex + 1} of{" "}
                                               {operation.operationQuantity}

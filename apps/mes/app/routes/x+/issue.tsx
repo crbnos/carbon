@@ -4,10 +4,13 @@ import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { evaluateLinesForSurface, isBlocked } from "@carbon/ee/rules.server";
 import { validationError, validator } from "@carbon/form";
+import { getLogger } from "@carbon/logger";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
 import { issueValidator } from "~/services/models";
 import { path, requestReferrer } from "~/utils/path";
+
+const logger = getLogger("mes", "issue");
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -41,9 +44,21 @@ export async function action({ request }: ActionFunctionArgs) {
     .from("jobOperation")
     .select("workCenterId")
     .eq("id", jobOperationId)
+    .eq("companyId", companyId)
     .maybeSingle();
 
-  if (jobOpRow?.workCenterId) {
+  if (!jobOpRow) {
+    logger.warn("Job operation not found for company", {
+      companyId,
+      jobOperationId
+    });
+    throw redirect(
+      requestReferrer(request) ?? path.to.operations,
+      await flash(request, error(null, "Job operation not found"))
+    );
+  }
+
+  if (jobOpRow.workCenterId) {
     const ruleEval = await evaluateLinesForSurface({
       client: serviceRole,
       companyId,
