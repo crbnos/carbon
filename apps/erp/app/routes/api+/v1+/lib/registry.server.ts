@@ -2,6 +2,14 @@
 // module's service namespace, keyed by the manifest's module name. This is the ONE
 // copy — the oRPC dispatch, MCP call_tool, the in-app agent, and the workflow
 // dispatcher all resolve through it.
+//
+// A module may also ship a server-only companion `{mod}.mcp.server.ts`: route
+// commands published under the same tool names as the bare service functions
+// they replace (the companion spread comes LAST, so its export wins). The
+// generator (`scripts/lib/service-metadata.ts`) parses every companion that
+// exists on disk; `test/mcp-registry-companions.test.ts` fails when a companion
+// exists but is not spread here, so a published tool can never resolve to the
+// bare primitive at runtime while the manifest describes the command.
 
 import * as accountFunctions from "~/modules/account/account.service";
 import * as accountingFunctions from "~/modules/accounting/accounting.service";

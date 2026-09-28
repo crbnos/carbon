@@ -53,6 +53,19 @@ export const MODULE_LIST = [
   "users",
 ];
 
+/**
+ * Modules that ship a server-only `{mod}.mcp.server.ts` companion. The
+ * generator parses each one (its exports shadow same-named service functions),
+ * and `api+/v1+/lib/registry.server.ts` must spread each one into the module
+ * namespace — `apps/erp/test/mcp-registry-companions.test.ts` holds the two
+ * lists equal.
+ */
+export function mcpServerCompanionModules(): string[] {
+  return MODULE_LIST.filter((mod) =>
+    fs.existsSync(path.join(MODULES_DIR, mod, `${mod}.mcp.server.ts`))
+  );
+}
+
 const DESCRIPTION_OVERRIDES: Record<string, string> = {
   purchasing_insertPurchaseOrder:
     "Create a new purchase order with all business logic - generates sequence, creates supplier interaction, resolves payment/shipping defaults from supplier. LLM can create a PO with just supplierId.",
