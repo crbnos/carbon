@@ -21,7 +21,7 @@ import {
   setGenericQueryFilters,
   setSearchFilter
 } from "~/utils/query";
-import { sanitize } from "~/utils/supabase";
+import { ruleError, sanitize } from "~/utils/supabase";
 import { getItemStorageUnitQuantities } from "../items/items.service";
 import type {
   batchPropertyOrderValidator,
@@ -43,7 +43,9 @@ import type {
 } from "./inventory.models";
 import {
   isPickingListLocked,
-  reconcileReceiptLineSerials
+  receiptValidator as receiptHeaderValidator,
+  reconcileReceiptLineSerials,
+  shipmentValidator as shipmentHeaderValidator
 } from "./inventory.models";
 import {
   effectiveSuccessorId,
@@ -2169,6 +2171,91 @@ export async function upsertKanban(
     .single();
 }
 
+/** Header columns the receipt form edits (its validator minus `id`), plus
+ *  custom fields. Everything else on a receipt row is posting state. */
+const RECEIPT_HEADER_FIELDS = [
+  ...Object.keys(receiptHeaderValidator.shape).filter((key) => key !== "id"),
+  "customFields"
+];
+
+/** Header columns the shipment form edits, plus custom fields. */
+const SHIPMENT_HEADER_FIELDS = [
+  ...Object.keys(shipmentHeaderValidator.shape).filter((key) => key !== "id"),
+  "customFields"
+];
+
+function pickHeaderFields(
+  row: object,
+  fields: string[]
+): Record<string, unknown> {
+  return Object.fromEntries(
+    Object.entries(row).filter(([key]) => fields.includes(key))
+  );
+}
+
+/**
+ * Set one editable field on receipt lines, as the receipt screen's line grid
+ * does: `receivedQuantity` (the quantity being received on this receipt) or
+ * `storageUnitId` (where it is put away). `ids` are receiptLine ids from
+ * inventory_getReceiptLines; `value` null or "" clears the field. Storage
+ * rules are evaluated when the receipt is posted (inventory_postReceipt), not
+ * here.
+ */
+export async function updateReceiptLines(
+  client: SupabaseClient<Database>,
+  args: {
+    ids: string[];
+    field: "receivedQuantity" | "storageUnitId";
+    value: string | number | null;
+    companyId: string;
+    updatedBy: string;
+  }
+) {
+  if (args.field !== "receivedQuantity" && args.field !== "storageUnitId") {
+    return { data: null, error: ruleError(`Invalid field: ${args.field}`) };
+  }
+  return client
+    .from("receiptLine")
+    .update({
+      [args.field]: args.value === "" ? null : args.value,
+      updatedBy: args.updatedBy,
+      updatedAt: new Date().toISOString()
+    })
+    .in("id", args.ids)
+    .eq("companyId", args.companyId);
+}
+
+/**
+ * Set one editable field on shipment lines, as the shipment screen's line grid
+ * does: `shippedQuantity` or `storageUnitId` (where it is picked from). `ids`
+ * are shipmentLine ids from inventory_getShipmentLines; `value` null or ""
+ * clears the field. Storage and sales rules are evaluated when the shipment is
+ * posted (inventory_postShipment), not here.
+ */
+export async function updateShipmentLines(
+  client: SupabaseClient<Database>,
+  args: {
+    ids: string[];
+    field: "shippedQuantity" | "storageUnitId";
+    value: string | number | null;
+    companyId: string;
+    updatedBy: string;
+  }
+) {
+  if (args.field !== "shippedQuantity" && args.field !== "storageUnitId") {
+    return { data: null, error: ruleError(`Invalid field: ${args.field}`) };
+  }
+  return client
+    .from("shipmentLine")
+    .update({
+      [args.field]: args.value === "" ? null : args.value,
+      updatedBy: args.updatedBy,
+      updatedAt: new Date().toISOString()
+    })
+    .in("id", args.ids)
+    .eq("companyId", args.companyId);
+}
+
 export async function upsertReceipt(
   client: SupabaseClient<Database>,
   receipt:
@@ -2185,13 +2272,29 @@ export async function upsertReceipt(
         customFields?: Json;
       })
 ) {
+  // Only the header form's fields are written: status, postingDate,
+  // postedBy and the other posting columns move through the post-receipt edge
+  // function (inventory_postReceipt / inventory_voidReceipt), never here.
+  const header = pickHeaderFields(receipt, RECEIPT_HEADER_FIELDS);
   if ("createdBy" in receipt) {
-    return client.from("receipt").insert([receipt]).select("*").single();
+    return client
+      .from("receipt")
+      .insert([
+        {
+          ...header,
+          receiptId: receipt.receiptId,
+          companyId: receipt.companyId,
+          createdBy: receipt.createdBy
+        }
+      ])
+      .select("*")
+      .single();
   }
   return client
     .from("receipt")
     .update({
-      ...sanitize(receipt),
+      ...sanitize(header),
+      updatedBy: receipt.updatedBy,
       updatedAt: datetime.timestamp()
     })
     .eq("id", receipt.id)
@@ -2279,13 +2382,29 @@ export async function upsertShipment(
         customFields?: Json;
       })
 ) {
+  // Only the header form's fields are written: status, postingDate,
+  // postedBy and the other posting columns move through the post-shipment
+  // edge function (inventory_postShipment / inventory_voidShipment).
+  const header = pickHeaderFields(shipment, SHIPMENT_HEADER_FIELDS);
   if ("createdBy" in shipment) {
-    return client.from("shipment").insert([shipment]).select("*").single();
+    return client
+      .from("shipment")
+      .insert([
+        {
+          ...header,
+          shipmentId: shipment.shipmentId,
+          companyId: shipment.companyId,
+          createdBy: shipment.createdBy
+        }
+      ])
+      .select("*")
+      .single();
   }
   return client
     .from("shipment")
     .update({
-      ...sanitize(shipment),
+      ...sanitize(header),
+      updatedBy: shipment.updatedBy,
       updatedAt: datetime.timestamp()
     })
     .eq("id", shipment.id)

@@ -1,5 +1,5 @@
 {
-  "totalTools": 1559,
+  "totalTools": 1561,
   "modules": 15,
   "tools": [
     {"name":"account_deleteUserAttributeValue","classification":"DESTRUCTIVE","paramCount":2,"schema":"0d38e12233b4","response":"bcde375ebd4c","injectAuth":"companyId+userId","permission":"none","paginates":false},
@@ -287,6 +287,8 @@
     {"name":"inventory_updateInventoryCountLine","classification":"WRITE","paramCount":3,"schema":"d0dcc5796dc7","response":"ae8f99e1d130","injectAuth":"companyId+updatedBy","permission":"inventory:update","paginates":false},
     {"name":"inventory_updateInventoryCountStatus","classification":"WRITE","paramCount":3,"schema":"7b6f2e6e7731","response":"3797626bd17e","injectAuth":"companyId+updatedBy","permission":"inventory:update","paginates":false},
     {"name":"inventory_updatePickingListStatus","classification":"WRITE","paramCount":2,"schema":"27fb9b18332a","response":"bcde375ebd4c","injectAuth":"companyId+updatedBy","permission":"inventory:update","paginates":false},
+    {"name":"inventory_updateReceiptLines","classification":"WRITE","paramCount":3,"schema":"9bfadadd6b9b","response":"bcde375ebd4c","injectAuth":"companyId+updatedBy","permission":"inventory:update","paginates":false},
+    {"name":"inventory_updateShipmentLines","classification":"WRITE","paramCount":3,"schema":"0573cde78200","response":"bcde375ebd4c","injectAuth":"companyId+updatedBy","permission":"inventory:update","paginates":false},
     {"name":"inventory_updateStockTransfer","classification":"WRITE","paramCount":4,"schema":"a10345a94a51","response":"3797626bd17e","injectAuth":"companyId+updatedBy","permission":"inventory:update","paginates":false},
     {"name":"inventory_updateStockTransferStatus","classification":"WRITE","paramCount":4,"schema":"e201e5617e35","response":"bcde375ebd4c","injectAuth":"companyId+updatedBy","permission":"inventory:update","paginates":false},
     {"name":"inventory_updateTrackedEntityExpiry","classification":"WRITE","paramCount":4,"schema":"ebdc5286d20c","response":"bcde375ebd4c","injectAuth":"companyId+updatedBy+userId","permission":"inventory:update","paginates":false},

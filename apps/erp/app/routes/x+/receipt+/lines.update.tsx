@@ -1,5 +1,6 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
 import type { ActionFunctionArgs } from "react-router";
+import { updateReceiptLines } from "~/modules/inventory";
 
 export async function action({ request }: ActionFunctionArgs) {
   const { client, companyId, userId } = await requirePermissions(request, {
@@ -24,15 +25,13 @@ export async function action({ request }: ActionFunctionArgs) {
 
   // Storage Rule evaluation runs at post time only (`$receiptId.post.tsx`).
   // Per-line saves go straight through.
-  const update = await client
-    .from("receiptLine")
-    .update({
-      [field]: value ? value : null,
-      updatedBy: userId,
-      updatedAt: new Date().toISOString()
-    })
-    .in("id", ids)
-    .eq("companyId", companyId);
+  const update = await updateReceiptLines(client, {
+    ids,
+    field,
+    value,
+    companyId,
+    updatedBy: userId
+  });
 
   return update;
 }
