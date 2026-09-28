@@ -1,8 +1,10 @@
 import { describe, expect, it } from "vitest";
 import {
   type CompanyCandidate,
+  isDueForDeletion,
   selectInactiveCompanies,
-  splitByWarning
+  splitByWarning,
+  type Warning
 } from "./inactive-companies";
 
 const now = Date.parse("2026-10-04T21:00:00Z");
@@ -85,10 +87,10 @@ describe("selectInactiveCompanies", () => {
 });
 
 describe("splitByWarning", () => {
-  const split = (warnedAt: Record<string, string>, limit = 100) => {
+  const split = (warnings: Record<string, Warning>, limit = 100) => {
     const { toWarn, toDelete } = splitByWarning({
       inactive: [company("a"), company("b"), company("c")],
-      warnedAt: new Map(Object.entries(warnedAt)),
+      warnings: new Map(Object.entries(warnings)),
       now,
       limit
     });
@@ -104,17 +106,49 @@ describe("splitByWarning", () => {
 
   it("deletes at the next weekly run after the warning, not a week late", () => {
     // Warned a few minutes into last week's run, which started exactly 7 days ago.
-    expect(split({ a: "2026-09-27T21:04:00Z" }).toDelete).toEqual(["a"]);
+    expect(split({ a: { warnedAt: "2026-09-27T21:04:00Z" } }).toDelete).toEqual(
+      ["a"]
+    );
   });
 
   it("waits while the warning is recent", () => {
-    expect(split({ a: "2026-10-01T12:00:00Z" })).toEqual({
+    expect(split({ a: { warnedAt: "2026-10-01T12:00:00Z" } })).toEqual({
       toWarn: ["b", "c"],
       toDelete: []
     });
   });
 
+  it("warns again instead of deleting when the warning has expired", () => {
+    expect(split({ a: { warnedAt: "2026-08-01T21:00:00Z" } })).toEqual({
+      toWarn: ["a", "b", "c"],
+      toDelete: []
+    });
+  });
+
+  it("puts a company whose last send failed behind the others", () => {
+    const failed = { failedAt: "2026-09-27T21:04:00Z" };
+    expect(split({ a: failed }, 2).toWarn).toEqual(["b", "c"]);
+  });
+
   it("caps both lists", () => {
     expect(split({}, 2).toWarn).toEqual(["a", "b"]);
+  });
+});
+
+describe("isDueForDeletion", () => {
+  it("needs a live warning at least six days old", () => {
+    expect(isDueForDeletion(undefined, now)).toBe(false);
+    expect(isDueForDeletion({ failedAt: "2026-09-01T00:00:00Z" }, now)).toBe(
+      false
+    );
+    expect(isDueForDeletion({ warnedAt: "2026-10-01T00:00:00Z" }, now)).toBe(
+      false
+    );
+    expect(isDueForDeletion({ warnedAt: "2026-09-27T21:04:00Z" }, now)).toBe(
+      true
+    );
+    expect(isDueForDeletion({ warnedAt: "2026-08-01T00:00:00Z" }, now)).toBe(
+      false
+    );
   });
 });

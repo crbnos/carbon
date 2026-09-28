@@ -59,27 +59,54 @@ export function selectInactiveCompanies({
 const NOTICE_MS = 6 * 24 * 60 * 60 * 1000;
 
 /**
- * Split inactive companies (oldest first) by their warning: never warned → warn
- * now; warned at least `NOTICE_MS` ago → delete; warned since → wait. A company
- * is never deleted without a warning, and each list is capped at `limit`.
+ * A warning older than this no longer counts, and the company is warned again. A
+ * warning that could not be cleared when its company regained a plan therefore
+ * cannot qualify it for deletion months later without a fresh email.
+ */
+const WARNING_TTL_MS = 30 * 24 * 60 * 60 * 1000;
+
+/** What the `inactive-company-warning` marker records. */
+export type Warning = { warnedAt?: string; failedAt?: string };
+
+const liveWarning = (warning: Warning | undefined, now: number) =>
+  warning?.warnedAt !== undefined &&
+  Date.parse(warning.warnedAt) > now - WARNING_TTL_MS;
+
+/** Warned long enough ago to be deleted, and not so long ago it has expired. */
+export const isDueForDeletion = (warning: Warning | undefined, now: number) =>
+  liveWarning(warning, now) &&
+  Date.parse(warning!.warnedAt!) <= now - NOTICE_MS;
+
+/**
+ * Split inactive companies (oldest first) by their warning: no live warning →
+ * warn now; warned at least `NOTICE_MS` ago → delete; warned since → wait. A
+ * company is never deleted without a warning, and each list is capped at `limit`.
+ * A company whose last send failed goes after the rest, so a bad address cannot
+ * hold the front of the capped list every week.
  */
 export function splitByWarning({
   inactive,
-  warnedAt,
+  warnings,
   now,
   limit
 }: {
   inactive: CompanyCandidate[];
-  warnedAt: Map<string, string>;
+  warnings: Map<string, Warning>;
   now: number;
   limit: number;
 }): { toWarn: CompanyCandidate[]; toDelete: CompanyCandidate[] } {
   const toWarn: CompanyCandidate[] = [];
+  const retryWarn: CompanyCandidate[] = [];
   const toDelete: CompanyCandidate[] = [];
   for (const company of inactive) {
-    const at = warnedAt.get(company.id);
-    if (at === undefined) toWarn.push(company);
-    else if (Date.parse(at) <= now - NOTICE_MS) toDelete.push(company);
+    const warning = warnings.get(company.id);
+    if (isDueForDeletion(warning, now)) toDelete.push(company);
+    else if (liveWarning(warning, now)) continue;
+    else if (warning?.failedAt) retryWarn.push(company);
+    else toWarn.push(company);
   }
-  return { toWarn: toWarn.slice(0, limit), toDelete: toDelete.slice(0, limit) };
+  return {
+    toWarn: [...toWarn, ...retryWarn].slice(0, limit),
+    toDelete: toDelete.slice(0, limit)
+  };
 }

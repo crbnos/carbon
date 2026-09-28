@@ -178,9 +178,18 @@ whom it deleted.
   - It is deleted only at a later run, once the warning is at least 6 days old
     (`splitByWarning`, tested). Six rather than seven, because the warning is stamped a
     few minutes into a run and would otherwise miss the next one.
-  - A company with no group owner is never warned, so it is never deleted.
-  - A marker whose company is no longer inactive (it bought a plan) is cleared, so a later
-    lapse starts a fresh warning. The purge deletes the marker along with the company.
+  - A company with no group owner is never warned, so it is never deleted. It is also
+    left out of the capped lists, where it would otherwise hold a slot every week.
+  - A failed send is recorded as `metadata.failedAt`, and that company queues behind
+    the never-tried ones next week, so a bad address cannot starve the rest.
+  - A warning expires after 30 days, and the company is warned again. A marker whose
+    company is no longer inactive (it bought a plan) is cleared, so a later lapse starts
+    a fresh warning. The purge deletes the marker along with the company.
+  - Right before each purge, `isStillDueForDeletion` re-reads the company, the group's
+    plan rows, the bypass list and the warning inside the purge's own transaction. A
+    plan bought after the plan step stops the delete.
+  - Each warn or delete batch that still fails after its retries is logged and skipped.
+    It never ends the run, so the training reminders after it still go out.
 
 - **The group is the unit** (`selectInactiveCompanies`, `inactive-companies.ts`, tested).
   A company goes when it has no `companyPlan` row, no company in its group has one, it is
