@@ -3884,20 +3884,32 @@ export async function upsertPart(
 }
 
 /**
- * Update an item's form fields (name, description, mpn, replenishment, default
- * method, tracking type, unit of measure). Only those columns are written:
- * `readableId`, `type`, `active` and any other key a caller adds are ignored.
- * Activation goes through `setItemActive`, which refuses items an unreleased
- * change notice created.
+ * Update an item's form fields (name, description, mpn, replenishment, default method, tracking type, unit of measure); other keys are ignored.
+ *
+ * Only those columns are written. `readableId`, `type`, `active`, unit cost,
+ * posting group, default storage unit and shelf life are not accepted and are
+ * dropped if sent: cost goes through `updateItemCost`, activation through
+ * `setItemActive` (which refuses items an unreleased change notice created).
  */
 export async function updateItem(
   client: SupabaseClient<Database>,
-  item: z.infer<typeof itemValidator> & {
+  item: Omit<
+    z.infer<typeof itemValidator>,
+    | "readableId"
+    | "postingGroupId"
+    | "unitCost"
+    | "defaultStorageUnitId"
+    | "shelfLifeMode"
+    | "shelfLifeDays"
+    | "shelfLifeTriggerProcessId"
+    | "shelfLifeTriggerTiming"
+    | "shelfLifeCalculateFromBom"
+  > & {
     companyId: string;
-    type: Database["public"]["Enums"]["itemType"];
   }
 ) {
-  // The tool schema passes undeclared keys through, and this spread goes
+  // The parameter type publishes only the editable columns, but the tool
+  // schema passes undeclared keys through, and this spread goes
   // straight into the UPDATE — so the item form's editable item columns are
   // the allow-list. `readableId` is read-only on the form and `type` is fixed;
   // the validator's form-only fields (cost, posting group, storage unit, shelf
