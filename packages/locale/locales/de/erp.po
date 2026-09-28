@@ -9065,6 +9065,9 @@ msgstr "Prüfungen: Unterschiedliche Inspektoren erforderlich"
 msgid "Install"
 msgstr "Installieren"
 
+msgid "Install mode"
+msgstr ""
+
 msgid "Installed"
 msgstr "Installiert"
 

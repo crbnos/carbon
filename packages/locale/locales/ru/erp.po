@@ -9065,6 +9065,9 @@ msgstr "Контроли: требуется другой инспектор"
 msgid "Install"
 msgstr "Установить"
 
+msgid "Install mode"
+msgstr ""
+
 msgid "Installed"
 msgstr "Установлено"
 

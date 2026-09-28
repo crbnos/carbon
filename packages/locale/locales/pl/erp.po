@@ -9065,6 +9065,9 @@ msgstr "Kontrole: Wymagaj innego inspektora"
 msgid "Install"
 msgstr "Zainstaluj"
 
+msgid "Install mode"
+msgstr ""
+
 msgid "Installed"
 msgstr "Zainstalowane"
 

@@ -4,7 +4,9 @@ import {
   toPostingDateString
 } from "../../../core/posting";
 import {
+  assertNoAssetDisposalComponents,
   buildSalesDocumentComponents,
+  hasRevenueComponent,
   type SalesDocumentComponents
 } from "../../../core/sales-document-components";
 import {
@@ -345,10 +347,10 @@ export class RilletSalesInvoiceSyncer extends RilletTransactionSyncer<
     // merchandise), so the item bought no GL fidelity while dragging the entire
     // parts catalog into Rillet Products. The account is replayed from the
     // POSTED journal, so a historical invoice keeps its own account.
-    const hasMerchandise = document.components.some(
-      (line) => line.kind !== "LineShipping" && line.kind !== "HeaderShipping"
-    );
-    const salesProductRemoteId = hasMerchandise
+    // A fixed-asset disposal has no sales-revenue posting to replay, so it is
+    // refused rather than bound to the sales product and reported as revenue.
+    assertNoAssetDisposalComponents(document);
+    const salesProductRemoteId = hasRevenueComponent(document.components)
       ? await (await this.getShippingItemSyncer()).ensureSalesProduct({
           revenueAccountId: requirePostedSalesAccountId(local),
           baseCurrencyCode: local.baseCurrencyCode,

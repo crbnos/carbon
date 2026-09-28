@@ -4,7 +4,12 @@ import { QboSalesInvoiceSyncer } from "../providers/quickbooks-online/entities/i
 import { RilletSalesInvoiceSyncer } from "../providers/rillet/entities/invoice";
 import { SalesInvoiceSyncer } from "../providers/xero/entities/invoice";
 import { SalesInvoiceSchema } from "./models";
-import { buildSalesDocumentComponents } from "./sales-document-components";
+import {
+  assertNoAssetDisposalComponents,
+  buildSalesDocumentComponents,
+  hasRevenueComponent,
+  isRevenueComponent
+} from "./sales-document-components";
 import { loadSalesInvoices } from "./sales-invoice-source";
 import type { Accounting } from "./types";
 
@@ -678,6 +683,143 @@ describe("canonical invoice posting source", () => {
         })
       ).get("invoice")?.shippingRevenueAccountId
     ).toBeNull();
+  });
+});
+
+describe("replayed sales revenue account", () => {
+  /**
+   * The bug this exists to stop coming back: every test in this file used to post
+   * only a "Shipping Revenue" line, so the whole SalesRevenue extraction could be
+   * reverted to a shipping-only map and the suite stayed green — while every
+   * provider fixture hand-set `salesRevenueAccountId` and hid it.
+   */
+  it("extracts the account the original journal credited for merchandise", async () => {
+    const postings = [
+      {
+        documentId: "a",
+        accountId: "sales-4000",
+        description: "Sales Account",
+        amount: 100,
+        accountClass: "Revenue",
+        isGroup: false
+      },
+      {
+        documentId: "a",
+        accountId: "shipping-4100",
+        description: "Shipping Revenue",
+        amount: 15,
+        accountClass: "Revenue",
+        isGroup: false
+      }
+    ];
+    const { database } = sourceDatabase(false, postings, ["a"]);
+    const result = await loadSalesInvoices(database as never, {
+      companyId: "company",
+      ids: ["a"]
+    });
+    const invoice = result.get("a")!;
+    expect(invoice.salesRevenueAccountId).toBe("sales-4000");
+    expect(invoice.shippingRevenueAccountId).toBe("shipping-4100");
+  });
+
+  it("refuses an invoice whose merchandise revenue hit two accounts", async () => {
+    // Carbon posts ALL merchandise revenue to one account, so two means the
+    // journal is not the shape this replay assumes and guessing would misstate.
+    const postings = ["sales-4000", "sales-4001"].map((accountId) => ({
+      documentId: "a",
+      accountId,
+      description: "Sales Account",
+      amount: 50,
+      accountClass: "Revenue",
+      isGroup: false
+    }));
+    const { database } = sourceDatabase(false, postings, ["a"]);
+    await expect(
+      loadSalesInvoices(database as never, {
+        companyId: "company",
+        ids: ["a"]
+      })
+    ).rejects.toThrow(/multiple accounts/i);
+  });
+});
+
+describe("fixed-asset disposal components", () => {
+  /**
+   * `post-sales-invoice` posts NO "Sales Account" line for a Fixed Asset line
+   * (`sales-posting-amounts.ts`, `if (!isAsset)`) — the proceeds go to the
+   * disposal accounts. Before `invoiceLineType` reached the component, a disposal
+   * was indistinguishable from a part and every provider reported it as sales
+   * revenue.
+   */
+  const assetComponent = {
+    id: "line-1:Merchandise",
+    sourceLineId: "line-1",
+    kind: "Merchandise" as const,
+    itemId: null,
+    itemCode: null,
+    invoiceLineType: "Fixed Asset",
+    description: "Haas VF-2 disposal",
+    quantity: 1,
+    unitAmount: 5000,
+    netAmount: 5000,
+    taxPercent: 0,
+    taxAmount: 0
+  };
+  const partComponent = {
+    ...assetComponent,
+    id: "line-2:Merchandise",
+    sourceLineId: "line-2",
+    invoiceLineType: "Part",
+    description: "Bracket",
+    unitAmount: 100,
+    netAmount: 100
+  };
+  const document = (components: (typeof assetComponent)[]) => ({
+    invoiceId: "a",
+    currencyCode: "USD",
+    decimalPlaces: 2,
+    components,
+    subtotal: 0,
+    totalTax: 0,
+    totalAmount: 0,
+    balance: 0
+  });
+
+  it("does not count a disposal as revenue", () => {
+    expect(isRevenueComponent(assetComponent)).toBe(false);
+    expect(isRevenueComponent(partComponent)).toBe(true);
+    expect(hasRevenueComponent([assetComponent])).toBe(false);
+    expect(hasRevenueComponent([assetComponent, partComponent])).toBe(true);
+  });
+
+  it("refuses a document carrying a disposal, naming the line", () => {
+    // The failure this replaces was silent: a mixed part + asset invoice pushed
+    // BOTH lines against the sales-revenue account, so the provider GL showed
+    // 5,100 of sales revenue and nothing as a disposal gain.
+    try {
+      assertNoAssetDisposalComponents(
+        document([partComponent, assetComponent])
+      );
+      throw new Error("expected a refusal");
+    } catch (error) {
+      expect((error as Error).message).toMatch(/fixed-asset disposal/i);
+      const { failure } = error as {
+        failure: {
+          errorCode: string;
+          warning?: boolean;
+          metadata?: { lineIds?: string[] };
+        };
+      };
+      expect(failure.errorCode).toBe("UNMAPPED_ACCOUNTS");
+      expect(failure.warning).toBe(true);
+      expect(failure.metadata?.lineIds).toEqual(["line-1"]);
+    }
+  });
+
+  it("passes a document with no disposal", () => {
+    expect(() =>
+      assertNoAssetDisposalComponents(document([partComponent]))
+    ).not.toThrow();
   });
 });
 

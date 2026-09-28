@@ -9065,6 +9065,9 @@ msgstr "Muayeneler: Farklı Müfettiş Gereklidir"
 msgid "Install"
 msgstr "Yükle"
 
+msgid "Install mode"
+msgstr ""
+
 msgid "Installed"
 msgstr "Yüklendi"
 

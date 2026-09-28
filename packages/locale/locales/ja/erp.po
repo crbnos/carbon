@@ -9065,6 +9065,9 @@ msgstr "検査：別の検査官が必要です"
 msgid "Install"
 msgstr "インストール"
 
+msgid "Install mode"
+msgstr ""
+
 msgid "Installed"
 msgstr "インストール済み"
 

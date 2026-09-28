@@ -9,7 +9,9 @@ import {
   toPostingDateString
 } from "../../../core/posting";
 import {
+  assertNoAssetDisposalComponents,
   buildSalesDocumentComponents,
+  hasRevenueComponent,
   type SalesDocumentComponents
 } from "../../../core/sales-document-components";
 import {
@@ -299,10 +301,10 @@ export class SalesInvoiceSyncer extends BaseEntitySyncer<
     const hasShipping = document.components.some(
       (line) => line.kind === "LineShipping" || line.kind === "HeaderShipping"
     );
-    const hasSales = document.components.some(
-      (line) => line.kind !== "LineShipping" && line.kind !== "HeaderShipping"
-    );
-    const salesAccountCode = hasSales
+    // A fixed-asset disposal has no sales-revenue posting to replay, so it is
+    // refused rather than coded to the sales account and reported as revenue.
+    assertNoAssetDisposalComponents(document);
+    const salesAccountCode = hasRevenueComponent(document.components)
       ? await this.getSalesAccountCode(local)
       : "";
     const shippingAccountCode = hasShipping

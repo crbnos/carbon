@@ -7,7 +7,9 @@ import {
   toPostingDateString
 } from "../../../core/posting";
 import {
+  assertNoAssetDisposalComponents,
   buildSalesDocumentComponents,
+  hasRevenueComponent,
   type SalesDocumentComponents
 } from "../../../core/sales-document-components";
 import {
@@ -350,10 +352,10 @@ export class QboSalesInvoiceSyncer extends BaseEntitySyncer<
       "customer",
       local.customerId
     );
-    const hasMerchandise = document.components.some(
-      (line) => line.kind !== "LineShipping" && line.kind !== "HeaderShipping"
-    );
-    const salesItemRemoteId = hasMerchandise
+    // A fixed-asset disposal has no sales-revenue posting to replay, so it is
+    // refused rather than bound to the sales item and reported as revenue.
+    assertNoAssetDisposalComponents(document);
+    const salesItemRemoteId = hasRevenueComponent(document.components)
       ? await (await this.getShippingItemSyncer()).ensureSalesItem({
           revenueAccountId: requirePostedSalesAccountId(local)
         })

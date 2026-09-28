@@ -9065,6 +9065,9 @@ msgstr "Inspeções: Exigir Inspetor Diferente"
 msgid "Install"
 msgstr "Instalar"
 
+msgid "Install mode"
+msgstr ""
+
 msgid "Installed"
 msgstr "Instalado"
 

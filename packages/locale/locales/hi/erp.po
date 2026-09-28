@@ -9065,6 +9065,9 @@ msgstr "निरीक्षण: विभिन्न निरीक्षक
 msgid "Install"
 msgstr "इंस्टॉल करें"
 
+msgid "Install mode"
+msgstr ""
+
 msgid "Installed"
 msgstr "स्थापित"
 

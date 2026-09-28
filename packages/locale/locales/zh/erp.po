@@ -9065,6 +9065,9 @@ msgstr "检验：需要不同的检验员"
 msgid "Install"
 msgstr "安装"
 
+msgid "Install mode"
+msgstr ""
+
 msgid "Installed"
 msgstr "已安装"
 
