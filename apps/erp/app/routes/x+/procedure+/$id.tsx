@@ -1,6 +1,7 @@
 import { error, useCarbon } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { getLogger } from "@carbon/logger";
 import type { JSONContent } from "@carbon/react";
 import { generateHTML, useDebounce } from "@carbon/react";
 import { Editor } from "@carbon/react/Editor";
@@ -27,6 +28,8 @@ import type { action } from "~/routes/x+/procedure+/update";
 import { useDocumentStore } from "~/stores";
 import { detailBreadcrumb, type Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
+
+const logger = getLogger("erp", "procedure-detail");
 
 export const handle: Handle = {
   breadcrumb: detailBreadcrumb(
@@ -56,6 +59,16 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       path.to.procedures,
       await flash(request, error(procedure.error, "Failed to load procedure"))
     );
+  }
+
+  // bypassRls makes `client` the service role, so the URL id is only proven to
+  // exist — not to be this company's.
+  if (procedure.data.companyId !== companyId) {
+    logger.error("Procedure is not in the caller's company", {
+      companyId,
+      procedureId: id
+    });
+    throw redirect(path.to.procedures);
   }
 
   return {

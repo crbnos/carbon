@@ -35,6 +35,7 @@ import {
   toast,
   VStack
 } from "@carbon/react";
+import { getClientIp } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { WebAuthnCredential } from "@simplewebauthn/browser";
 import {
@@ -265,7 +266,7 @@ async function unlockWithPasskey(request: Request) {
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const ip = request.headers.get("x-forwarded-for") ?? "127.0.0.1";
+  const ip = getClientIp(request) ?? "127.0.0.1";
 
   const ratelimit = new Ratelimit({
     redis,
@@ -280,6 +281,15 @@ export async function action({ request }: ActionFunctionArgs) {
       error(null, "Rate limit exceeded"),
       await flash(request, error(null, "Rate limit exceeded"))
     );
+  }
+
+  // Absolute cap already passed → termination wins over lock, as in the loader
+  // and requireAuthSession. Both unlock paths below re-stamp createdAt (the
+  // passkey path directly, TOTP via makeAuthSession), so a POST here would
+  // otherwise revive a session past its absolute cap.
+  const lockedSession = await getAuthSession(request);
+  if (lockedSession && isSessionExpiredAbsolute(lockedSession)) {
+    throw await destroyAuthSession(request);
   }
 
   // Passkey unlock arrives as JSON (the credential assertion); TOTP unlock is a

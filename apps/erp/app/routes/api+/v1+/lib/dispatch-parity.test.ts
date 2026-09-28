@@ -16,6 +16,7 @@ const spies = vi.hoisted(() => ({
   upsertJobMaterial: vi.fn(),
   upsertMethodMaterial: vi.fn(),
   upsertQuoteLinePrices: vi.fn(),
+  updateQuoteLineOrder: vi.fn(),
   generateInventoryCountLines: vi.fn(),
   upsertNotificationPreference: vi.fn(),
   insertJob: vi.fn(),
@@ -65,6 +66,7 @@ vi.mock("~/modules/quality/quality.service", () => ({
 vi.mock("~/modules/resources/resources.service", () => ({}));
 vi.mock("~/modules/sales/sales.service", () => ({
   upsertQuoteLinePrices: spies.upsertQuoteLinePrices,
+  updateQuoteLineOrder: spies.updateQuoteLineOrder,
   insertSalesOrder: spies.insertSalesOrder
 }));
 vi.mock("~/modules/settings/settings.service", () => ({}));
@@ -145,6 +147,7 @@ const allSpies = [
   spies.upsertJobMaterial,
   spies.upsertMethodMaterial,
   spies.upsertQuoteLinePrices,
+  spies.updateQuoteLineOrder,
   spies.generateInventoryCountLines,
   spies.upsertNotificationPreference,
   spies.insertJob,
@@ -428,18 +431,145 @@ describe("dispatchOperation service-call contract (golden, ex-executeFunction pa
     expect("updatedBy" in rows[0]).toBe(false);
   });
 
-  it("h. array payload on an update passes through untouched", () => {
+  it("h. array payload on an update adds nothing, but overwrites caller-supplied identity keys", () => {
     // No manifest op combines `_operation` with an array payload, so this pins the
     // enrichment helper directly.
-    const rows = [{ id: "p1", createdBy: "orig" }];
+    const rows = [
+      { id: "p1", sortOrder: 1 },
+      {
+        id: "p2",
+        createdBy: "forged",
+        updatedBy: "forged",
+        companyId: "other-company",
+        userId: "employee-7"
+      },
+      42
+    ];
     const out = enrichWithAuthContext(
       rows,
       ctx,
       ["companyId", "createdBy", "updatedBy"],
       "update"
     );
-    expect(out).toBe(rows);
-    expect(rows[0]).toEqual({ id: "p1", createdBy: "orig" });
+    expect(out).toEqual([
+      { id: "p1", sortOrder: 1 },
+      {
+        id: "p2",
+        createdBy: "u1",
+        updatedBy: "u1",
+        companyId: "c1",
+        // A row's userId is data (e.g. the assigned employee), never stamped.
+        userId: "employee-7"
+      },
+      42
+    ]);
+    // The caller's array is not mutated.
+    expect(rows[1]).toMatchObject({ createdBy: "forged" });
+  });
+
+  it("h2. a Kysely reorder gets the AUTHENTICATED companyId/userId positionally, never the body's", async () => {
+    // The service's companyId predicate is the only tenant boundary on a Kysely
+    // write, so it must come from context even when the body forges one.
+    const r = await runDispatch(
+      "sales_updateQuoteLineOrder",
+      spies.updateQuoteLineOrder,
+      {
+        companyId: "other-company",
+        userId: "forged",
+        quoteId: "q1",
+        updates: [
+          { id: "ql1", sortOrder: 2, updatedBy: "forged" },
+          { id: "ql2", sortOrder: 1 }
+        ]
+      }
+    );
+    // The parent quote id is the caller's (the service scopes every row to it);
+    // the identity fields never are.
+    expect(r.calls).toEqual([
+      [
+        spies.FAKE_DB,
+        "c1",
+        "u1",
+        "q1",
+        [
+          { id: "ql1", sortOrder: 2, updatedBy: "u1" },
+          { id: "ql2", sortOrder: 1 }
+        ]
+      ]
+    ]);
+  });
+
+  it("h3. a tenant key the caller nested one level down is overwritten, never added", () => {
+    // A `db` service may spread a nested object into `.set()`
+    // (updateItemMethodAndSourcing spreads `itemUpdate`), so a nested companyId
+    // would move the caller's rows into another company.
+    const out = enrichWithAuthContext(
+      {
+        itemIds: ["i1"],
+        itemUpdate: { sourcingType: "Buy", companyId: "other-company" },
+        cascade: { methodType: "Buy" },
+        rows: [{ id: "r1", companyGroupId: "other-group" }, { id: "r2" }]
+      },
+      ctx,
+      ["companyId", "updatedBy", "userId"],
+      "update"
+    );
+    expect(out).toEqual({
+      itemIds: ["i1"],
+      itemUpdate: { sourcingType: "Buy", companyId: "c1" },
+      cascade: { methodType: "Buy" },
+      rows: [{ id: "r1", companyGroupId: "g1" }, { id: "r2" }],
+      companyId: "c1",
+      updatedBy: "u1",
+      userId: "u1"
+    });
+  });
+
+  it("h3b. nested audit keys follow the top-level array rule: overwritten when supplied, never added", () => {
+    const out = enrichWithAuthContext(
+      {
+        lines: [
+          { id: "l1", createdBy: "forged", updatedBy: "forged" },
+          { id: "l2" }
+        ],
+        header: { updatedBy: "forged", userId: "employee-7" },
+        plain: { note: "untouched" }
+      },
+      ctx,
+      ["companyId"],
+      "update"
+    );
+    expect(out).toEqual({
+      lines: [{ id: "l1", createdBy: "u1", updatedBy: "u1" }, { id: "l2" }],
+      // A nested userId is data (e.g. an assignee), exactly as in an array row.
+      header: { updatedBy: "u1", userId: "employee-7" },
+      plain: { note: "untouched" },
+      companyId: "c1"
+    });
+  });
+
+  it("h4. a READ tool's nested identity keys are overwritten harmlessly — the read can only narrow to the caller's own company", async () => {
+    const r = await runDispatch(
+      "accounting_getAccountLedger",
+      spies.getAccountLedger,
+      {
+        accountNumber: "1000",
+        scope: { companyId: "other-company" },
+        filters: [{ column: "accountNumber", operator: "eq", value: "1000" }]
+      }
+    );
+    expect(r.calls).toEqual([
+      [
+        spies.FAKE_CLIENT,
+        {
+          accountNumber: "1000",
+          scope: { companyId: "c1" },
+          // Rows with no identity key pass through unchanged — nothing added.
+          filters: [{ column: "accountNumber", operator: "eq", value: "1000" }],
+          companyId: "c1"
+        }
+      ]
+    ]);
   });
 
   it("i. a `db` service param receives the Kysely client from getDatabaseClient()", async () => {

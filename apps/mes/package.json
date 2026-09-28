@@ -25,6 +25,7 @@
     "@dnd-kit/utilities": "catalog:",
     "@emoji-mart/data": "catalog:",
     "@emoji-mart/react": "catalog:",
+    "@fontsource-variable/hedvig-letters-serif": "catalog:",
     "@internationalized/date": "catalog:",
     "@lingui/core": "catalog:",
     "@lingui/macro": "catalog:",

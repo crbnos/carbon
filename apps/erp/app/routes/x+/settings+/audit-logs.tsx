@@ -11,6 +11,7 @@ import {
   syncAuditSubscriptions
 } from "@carbon/ee/audit.server";
 import { requireFeature } from "@carbon/ee/plan.server";
+import { getLogger } from "@carbon/logger";
 import { Button, Heading, ScrollArea, VStack } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
 import { Trans } from "@lingui/react/macro";
@@ -21,6 +22,8 @@ import { usePlanGate } from "~/hooks/usePlanGate";
 import { AuditLogSettings, AuditLogUpgradeOverlay } from "~/modules/settings";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
+
+const logger = getLogger("erp", "settings-audit-logs");
 
 export const handle: Handle = {
   breadcrumb: msg`Audit Log`,
@@ -156,10 +159,19 @@ export async function action({ request }: ActionFunctionArgs) {
 
       try {
         const serviceRole = getCarbonServiceRole();
-        const downloadUrl = await getArchiveDownloadUrl(serviceRole, archiveId);
+        const downloadUrl = await getArchiveDownloadUrl(
+          serviceRole,
+          archiveId,
+          companyId
+        );
         // Redirect to the signed URL for download
         return redirect(downloadUrl);
       } catch (err) {
+        logger.error("Failed to generate audit archive download URL", {
+          companyId,
+          archiveId,
+          error: err
+        });
         throw redirect(
           path.to.auditLog,
           await flash(request, error(err, "Failed to generate download URL"))

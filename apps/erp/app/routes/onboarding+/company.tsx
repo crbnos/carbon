@@ -1,4 +1,4 @@
-import { assertIsPost } from "@carbon/auth";
+import { assertIsPost, safeRedirect } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { ValidatedForm, validationError, validator } from "@carbon/form";
 import {
@@ -36,6 +36,7 @@ import {
   setOnboardingDraft
 } from "~/services/onboarding-draft.server";
 import { ONBOARDING_SHORTCUTS } from "~/shortcuts";
+import { path } from "~/utils/path";
 
 export async function loader({ request }: ActionFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {});
@@ -73,7 +74,7 @@ export async function action({ request }: ActionFunctionArgs) {
     company: companyData
   });
 
-  throw redirect(next, {
+  throw redirect(safeRedirect(next, path.to.onboarding.root), {
     headers: [["Set-Cookie", draftCookie]]
   });
 }

@@ -2296,3 +2296,75 @@ function as `anon` and as another company's user, not by reading the catalog. Ed
 **Applies to:** every `CREATE FUNCTION` in `packages/database/supabase/migrations/**`,
 `packages/database/supabase/functions/*/index.ts`; enforced by the
 `public-definer-function-authorizes-caller` invariant and `supabase/tests/rpc-privileges.test.sql`.
+
+## `CREATE OR REPLACE VIEW` without `WITH (...)` silently drops `security_invoker`
+
+**Context:** `openJobMaterialLines` served every company's open job material lines to the anon
+key (reported against production, 2026-09-26). The clause had been added, audited back in, and
+then dropped by four separate migrations that recreated the view from an older copy.
+
+**Problem:** `CREATE OR REPLACE VIEW` REPLACES the view's options with whatever the statement
+states, so a recreation that omits `WITH (security_invoker = true)` turns an invoker view back
+into an owner-rights one. Owner rights bypass RLS on every table underneath, and every `public`
+view is a PostgREST endpoint. Nothing failed: the app filters by `companyId` itself, so every
+screen still looked right.
+
+**Rule:** Every `CREATE [OR REPLACE] VIEW` states `security_invoker` — copy a view's definition
+from its NEWEST migration, and re-check the `WITH` clause when you do. Test a view the way an
+attacker reads it: `SET LOCAL ROLE anon; SELECT count(*) FROM "view";` must be 0. Join on
+`companyId` too, so a view is tenant-consistent on its own.
+
+**Applies to:** `packages/database/supabase/migrations/**`; enforced by the
+`no-view-without-invoker` conformance check and the `view-without-security-invoker` invariant.
+
+## A local-only sync step does not deploy (authz manifest, 2026-09-27)
+
+**Context:** RLS policies moved from migrations into `packages/database/src/authz/manifest.ts`,
+applied by `authz sync` after `crbn migrate`. Production runs migrations only.
+
+**Problem:** With policies forbidden in migrations, a new table would be correct locally and
+ship to production with no policies and RLS off — open to the anon key, since Supabase grants
+public tables to `anon`/`authenticated` by default. Edited rules would silently never deploy.
+Separately, a test of a missing UPDATE `WITH CHECK` passed against the broken policy: a
+filtered `UPDATE … WHERE` checks the new row against the SELECT policy too.
+
+**Rule:** Anything applied outside migrations needs a CI gate that proves the deploy path
+carries it (`migration.test.ts` → `authz migration`). Test a WITH CHECK with an unfiltered
+UPDATE or by evaluating the policy expression directly, and prove the test red first.
+
+**Applies to:** `packages/database/src/authz/**`, `packages/database/supabase/tests/authz-*.sql`.
+
+## A PostgREST update that matches no row reports success
+
+**Context:** Typed item updates (`upsertPart`, `upsertTool`, `upsertConsumable`,
+`upsertService`, `upsertMaterial`) filtered the typed table by the item's uuid,
+but those tables are keyed by the item's readable id plus `companyId`.
+
+**Problem:** `client.from(t).update(...).eq(...)` with no `.select()` returns
+`{ error: null }` when it matches zero rows. Half of every typed update wrote
+nothing, and the API and MCP reported success.
+
+**Rule:** An update whose miss is a bug ends with `.select("id").single()`, so
+a miss comes back as an error. Key each table by its own primary key: `item`
+by uuid, the typed tables by `readableId` + `companyId`
+(`resolveTypedItem` / `updateTypedItem` in `items.service.ts`).
+
+**Applies to:** any supabase-js update in a service, above all one that writes
+a pair of tables keyed differently.
+
+## A Kysely write needs its own RLS gate
+
+**Context:** Material property edits write the material row, every revision's
+item row and `itemCost` in one Kysely transaction.
+
+**Problem:** Kysely connects as the Postgres role and bypasses RLS, so a caller
+without `parts_update` in the company, or naming another company's material,
+would still write.
+
+**Rule:** Before a Kysely transaction on rows a caller names, run one UPDATE
+through the caller's supabase client, filtered by id and `companyId`, with
+`.select().single()`, and stop on its error (`requireMaterialUpdatable`). Pick
+a row whose policy also covers the other rows the transaction writes.
+
+**Applies to:** any service that takes both `client` and `db` and writes with
+`db` on behalf of an API or MCP caller.

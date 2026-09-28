@@ -1,4 +1,4 @@
-import { storage } from "@carbon/files";
+import { safeStorageFileName, storage } from "@carbon/files";
 import { getLogger } from "@carbon/logger";
 import { Spinner, useCarbon } from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
@@ -87,7 +87,9 @@ export function PdfExtractor({
     setUploadFailed(false);
     setUploadedFileName(file.name);
     setUploading(true);
-    const storagePath = `${company.id}/extractions/${Date.now()}_${file.name}`;
+    // The key is internal (the user sees file.name above); drop the characters
+    // a storage key can't hold so a "#" never shortens it.
+    const storagePath = `${company.id}/extractions/${Date.now()}_${safeStorageFileName(file.name) ?? "document.pdf"}`;
 
     const { error } = await storage(supabase)
       .company(company.id)

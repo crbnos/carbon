@@ -34,6 +34,14 @@ describe("buildColumnMaps", () => {
     ).toThrow(/Cannot contain '_'/);
   });
 
+  it("allows an underscore in a custom-field accessor (generated id)", () => {
+    const { accessors } = buildColumnMaps(
+      cols({ accessorKey: "customFields->>qzAx_-vk3", header: "Color" }),
+      upper
+    );
+    expect(accessors).toEqual({ "customFields->>qzAx_-vk3": "COLOR" });
+  });
+
   it("includes a display column (id, no accessor) that has exportValue", () => {
     const exportValue = (row: Row) => row.tags.join(", ");
     const { accessors, exportValues, sortKeyToLabel } = buildColumnMaps(

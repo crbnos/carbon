@@ -16,6 +16,7 @@ import {
   updateJobStatus
 } from "~/modules/production";
 import { releaseJobs } from "~/modules/production/production.server";
+import { requireCompanyRecord } from "~/modules/shared/shared.server";
 import { getDatabaseClient } from "~/services/database.server";
 import { path, requestReferrer } from "~/utils/path";
 
@@ -29,6 +30,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   const { jobId: id } = params;
   if (!id) throw new Error("Could not find id");
+
+  // Much of what follows (MRP, scheduling, picking sweeps, PO creation) runs
+  // with the service role or Kysely and keys on the URL job id.
+  await requireCompanyRecord(getCarbonServiceRole(), "job", companyId, { id });
 
   const url = new URL(request.url);
   const shouldSchedule = url.searchParams.get("schedule") === "1";
@@ -274,6 +279,7 @@ async function scheduleJobLocation({
     .from("job")
     .select("locationId")
     .eq("id", id)
+    .eq("companyId", companyId)
     .single();
   if (!jobLocation?.locationId) {
     throw new Error("Job has no location to schedule");

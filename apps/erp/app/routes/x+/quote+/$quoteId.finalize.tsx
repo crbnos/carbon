@@ -29,6 +29,7 @@ import {
 import { recordSalesRuleOutcome } from "~/modules/sales/sales.server";
 import { getCompany, getCompanySettings } from "~/modules/settings";
 import { upsertExternalLink } from "~/modules/shared";
+import { requireCompanyRecord } from "~/modules/shared/shared.server";
 import { getUser } from "~/modules/users/users.server";
 import { loader as pdfLoader } from "~/routes/file+/quote+/$id[.]pdf";
 import { path } from "~/utils/path";
@@ -52,6 +53,10 @@ export async function action(args: ActionFunctionArgs) {
   let file: ArrayBuffer;
   let fileName: string;
   let documentFilePath: string;
+
+  // `client` is the service role (bypassRls): the URL quote must belong to
+  // this company before it is evaluated, linked, rendered or sent.
+  await requireCompanyRecord(client, "quote", companyId, { id: quoteId });
 
   const quote = await getQuote(client, quoteId);
   if (quote.error) {
@@ -236,7 +241,7 @@ export async function action(args: ActionFunctionArgs) {
             getCompany(client, companyId),
             getCompanySettings(client, companyId),
             getCustomer(client, quote.data.customerId!),
-            getCustomerContact(client, customerContactId),
+            getCustomerContact(client, customerContactId, companyId),
             getUser(client, userId)
           ]);
 

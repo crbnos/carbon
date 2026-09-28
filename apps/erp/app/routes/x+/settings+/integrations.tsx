@@ -1,6 +1,6 @@
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { issueOAuthState } from "@carbon/auth/oauth-state.server";
+import { issueOAuthStates } from "@carbon/auth/oauth-state.server";
 import { flash } from "@carbon/auth/session.server";
 import {
   integrations as availableIntegrations,
@@ -48,21 +48,26 @@ export async function loader({ request }: LoaderFunctionArgs) {
     health: i.health
   }));
 
-  const rampOAuthState = await issueOAuthState({
-    integrationId: "ramp",
-    userId,
-    companyId
-  });
+  // Every integration whose Connect button builds an authorize URL
+  // (IntegrationCard) gets a single-use state bound to this browser, user and
+  // company; its OAuth callback consumes it with `consumeOAuthState`.
+  const oauthStates = await issueOAuthStates(
+    request,
+    availableIntegrations
+      .filter((integration) => "oauth" in integration && !!integration.oauth)
+      .map((integration) => ({
+        integrationId: integration.id,
+        userId,
+        companyId
+      }))
+  );
 
   return data(
     {
       integrations: items,
-      // Existing OAuth callbacks still receive a server-generated correlation
-      // value. Ramp uses the browser-bound, single-use value below.
-      state: crypto.randomUUID(),
-      oauthStates: { ramp: rampOAuthState.state }
+      oauthStates: oauthStates.states
     },
-    { headers: { "Set-Cookie": rampOAuthState.cookie } }
+    { headers: { "Set-Cookie": oauthStates.cookie } }
   );
 }
 

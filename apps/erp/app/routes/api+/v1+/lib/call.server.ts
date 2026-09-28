@@ -12,6 +12,7 @@ import { unwrapArgsEnvelope } from "./args-envelope";
 import type { AuthedContext } from "./base.server";
 import {
   classifyDatabaseFailure,
+  isServiceRuleError,
   publicDatabaseError,
   type SupabaseFailure
 } from "./database-errors";
@@ -103,6 +104,15 @@ export async function callOperation(
       err instanceof ORPCError
         ? (err.data as { supabase?: SupabaseFailure } | undefined)?.supabase
         : undefined;
+    // A service's own refusal is written for the caller; only a database
+    // failure is reduced to the fixed public messages below.
+    if (isServiceRuleError(supabase)) {
+      return {
+        success: false,
+        error: supabase.message,
+        errorKind: "execution"
+      };
+    }
     if (supabase) {
       const edgeMessage = await edgeFunctionMessage(supabase);
       logger.error("Operation failed", {

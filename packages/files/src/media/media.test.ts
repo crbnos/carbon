@@ -1,6 +1,30 @@
 import { describe, expect, it } from "vitest";
 import { findDuplicateFileName } from "./image";
-import { effectiveExtension, getDocumentType, isHeic } from "./media";
+import {
+  effectiveExtension,
+  fileResponseHeaders,
+  getContentType,
+  getDocumentType,
+  isHeic
+} from "./media";
+
+describe("fileResponseHeaders", () => {
+  it("never renders a scriptable type as a page", () => {
+    for (const type of [getContentType("svg"), getContentType("dae")]) {
+      const headers = fileResponseHeaders(type, "private");
+      expect(headers.get("Content-Disposition")).toBe("attachment");
+      expect(headers.get("Content-Security-Policy")).toContain("sandbox");
+      expect(headers.get("X-Content-Type-Options")).toBe("nosniff");
+    }
+  });
+  it("leaves inert types inline, but never sniffed", () => {
+    for (const ext of ["pdf", "png", "glb", "mp4"]) {
+      const headers = fileResponseHeaders(getContentType(ext), "private");
+      expect(headers.get("Content-Disposition")).toBeNull();
+      expect(headers.get("X-Content-Type-Options")).toBe("nosniff");
+    }
+  });
+});
 
 describe("effectiveExtension", () => {
   it("unwraps the .zst compaction suffix to the underlying format", () => {

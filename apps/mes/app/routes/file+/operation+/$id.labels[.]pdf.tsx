@@ -24,7 +24,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   const [companySettings, trackedEntities] = await Promise.all([
     getCompanySettings(client, companyId),
-    getTrackedEntitiesByOperationId(client, id)
+    getTrackedEntitiesByOperationId(client, id, companyId)
   ]);
 
   // Get the label size from query params or default to avery5163

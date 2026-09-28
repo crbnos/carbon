@@ -2,9 +2,12 @@ import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
+import { getLogger } from "@carbon/logger";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { addMaintenanceDispatchItem } from "~/services/maintenance.service";
+
+const logger = getLogger("mes", "dispatch-item");
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -33,6 +36,35 @@ export async function action({ request, params }: ActionFunctionArgs) {
       return data(
         {},
         await flash(request, error("Valid quantity is required"))
+      );
+    }
+
+    // The insert runs as the service role: the dispatch and the item must both
+    // belong to this company.
+    const [dispatch, item] = await Promise.all([
+      serviceRole
+        .from("maintenanceDispatch")
+        .select("id")
+        .eq("id", dispatchId)
+        .eq("companyId", companyId)
+        .maybeSingle(),
+      serviceRole
+        .from("item")
+        .select("id")
+        .eq("id", itemId)
+        .eq("companyId", companyId)
+        .maybeSingle()
+    ]);
+    if (!dispatch.data || !item.data) {
+      logger.warn("Dispatch or item not found for company", {
+        companyId,
+        dispatchId,
+        itemId,
+        error: dispatch.error ?? item.error
+      });
+      return data(
+        {},
+        await flash(request, error(null, "Failed to add spare part"))
       );
     }
 

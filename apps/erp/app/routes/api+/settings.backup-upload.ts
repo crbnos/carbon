@@ -53,8 +53,17 @@ export async function action({ request }: ActionFunctionArgs) {
 
   if (intent === "unpack") {
     const path = formData.get("path");
-    // Caller-supplied — only ever read back an archive staged for this company.
-    if (typeof path !== "string" || !path.startsWith(`${companyId}/backups/`)) {
+    // Caller-supplied — only ever read back (and then remove) an archive
+    // staged for this company. Match the exact shape `sign` mints: a prefix
+    // check alone would admit `${companyId}/backups/../<other>/…`.
+    if (
+      typeof path !== "string" ||
+      !path.startsWith(`${companyId}/backups/`) ||
+      !/^[A-Za-z0-9_-]+\.tar\.gz$/.test(
+        path.slice(`${companyId}/backups/`.length)
+      )
+    ) {
+      logger.error("Rejected backup archive path", { companyId, path });
       throw new Response("Invalid path", { status: 400 });
     }
     try {

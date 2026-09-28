@@ -8,7 +8,7 @@ import { validationError, validator } from "@carbon/form";
 import { batchTrigger } from "@carbon/jobs";
 import { getLogger } from "@carbon/logger";
 import { updateSubscriptionQuantityForCompany } from "@carbon/stripe/stripe.server";
-import { datetime, Edition } from "@carbon/utils";
+import { datetime, Edition, getClientIp } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { revokeInviteValidator } from "~/modules/users";
@@ -30,7 +30,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
   const { users } = validation.data;
 
-  const ip = request.headers.get("x-forwarded-for") ?? undefined;
+  const ip = getClientIp(request) ?? undefined;
 
   const serviceRole = getCarbonServiceRole();
 
@@ -119,9 +119,7 @@ export async function action({ request }: ActionFunctionArgs) {
           actorId: userId,
           diff: { revokedAt: { old: null, new: revokedAt } },
           metadata: {
-            ipAddress:
-              request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
-              undefined,
+            ipAddress: getClientIp(request) ?? undefined,
             userAgent: request.headers.get("user-agent") ?? undefined
           }
         }))

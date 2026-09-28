@@ -56,9 +56,27 @@ function walk(dir: string, out: SourceFile[], repoRootDir: string) {
   }
 }
 
-export function loadTypescriptFiles(root: string): SourceFile[] {
+// Every app and every package that handles a request: no-raw-forwarded-headers
+// covers auth and the smaller apps, which the numeric checks do not.
+export const REQUEST_HANDLING_ROOTS = [
+  "apps/erp/app",
+  "apps/mes/app",
+  "apps/academy/app",
+  "apps/starter/app",
+  "packages/auth/src",
+  "packages/database/supabase/functions",
+  "packages/ee/src",
+  "packages/jobs/src",
+  "packages/lib/src",
+  "packages/utils/src"
+];
+
+export function loadTypescriptFiles(
+  root: string,
+  roots: string[] = TYPESCRIPT_ROOTS
+): SourceFile[] {
   const out: SourceFile[] = [];
-  for (const dir of TYPESCRIPT_ROOTS) {
+  for (const dir of roots) {
     walk(join(root, dir), out, root);
   }
   return out;

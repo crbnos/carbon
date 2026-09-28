@@ -92,7 +92,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId } = await requirePermissions(request, {
+  const { client, companyId, userId } = await requirePermissions(request, {
     update: "parts"
   });
 
@@ -110,6 +110,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const updateService = await upsertService(client, {
     ...validation.data,
     id: itemId,
+    companyId,
     customFields: setCustomFields(formData),
     updatedBy: userId
   });
