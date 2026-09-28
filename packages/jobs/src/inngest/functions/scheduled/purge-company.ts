@@ -38,6 +38,16 @@ export async function purgeCompany(
   if (!company) return;
 
   const groupId = company.companyGroupId;
+  // Two purges in one group serialize on the group row, so they cannot both see
+  // the other company and both leave the group's shared data behind.
+  if (groupId !== null) {
+    await trx
+      .selectFrom("companyGroup")
+      .select("id")
+      .where("id", "=", groupId)
+      .forUpdate()
+      .execute();
+  }
   const lastInGroup =
     groupId !== null &&
     (await trx
