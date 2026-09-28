@@ -11,6 +11,7 @@ import { moduleShape } from "./conformance/module-shape";
 import { noDbClientInService } from "./conformance/no-db-client-in-service";
 import { noDefaultOnEffects } from "./conformance/no-default-on-effects";
 import { noDerivedPercentColumn } from "./conformance/no-derived-percent-column";
+import { noDirectTableWriteInRoute } from "./conformance/no-direct-table-write-in-route";
 import { noInlineFractionDigits } from "./conformance/no-inline-fraction-digits";
 import { noLegacyRls } from "./conformance/no-legacy-rls";
 import { noLocalTimezone } from "./conformance/no-local-timezone";
@@ -38,7 +39,8 @@ export const CONFORMANCE_CHECKS: ConformanceCheck[] = [
 /** Checks that run over server-side TS, not SQL migrations. */
 export const SERVER_CHECKS: ConformanceCheck[] = [
   noLocalTimezone,
-  noZeroConcurrency
+  noZeroConcurrency,
+  noDirectTableWriteInRoute
 ];
 
 /** Checks that run over ALL app + shared-package TS (client and server). */

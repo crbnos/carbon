@@ -11,6 +11,7 @@ export { moduleShape } from "./conformance/module-shape";
 export { noDbClientInService } from "./conformance/no-db-client-in-service";
 export { noDefaultOnEffects } from "./conformance/no-default-on-effects";
 export { noDerivedPercentColumn } from "./conformance/no-derived-percent-column";
+export { noDirectTableWriteInRoute } from "./conformance/no-direct-table-write-in-route";
 export { noInlineFractionDigits } from "./conformance/no-inline-fraction-digits";
 export { noLegacyRls } from "./conformance/no-legacy-rls";
 export { noLocalTimezone } from "./conformance/no-local-timezone";
