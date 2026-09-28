@@ -524,26 +524,50 @@ describe("storageErrorStatus", () => {
 });
 
 describe("isStorageNotFound", () => {
-  it("treats storage's 400 (and a plain 404) as a missing object", async () => {
+  // The shapes local storage actually returns from download(): HTTP 400 with
+  // the real code in a body download() leaves unread.
+  const downloadError = async (status: number, body?: unknown) => {
     const { StorageUnknownError } = await import("@supabase/storage-js");
-    for (const status of [400, 404]) {
-      const error = new StorageUnknownError(
-        "{}",
-        new Response(null, { status })
-      );
-      expect(isStorageNotFound(error)).toBe(true);
+    return new StorageUnknownError(
+      "{}",
+      new Response(body === undefined ? null : JSON.stringify(body), {
+        status
+      })
+    );
+  };
+
+  it("treats a 400 whose body says 404 as a miss (object or bucket)", async () => {
+    for (const error of ["not_found", "Bucket not found"]) {
+      expect(
+        await isStorageNotFound(
+          await downloadError(400, { statusCode: "404", error })
+        )
+      ).toBe(true);
     }
   });
 
+  it("treats a plain 404 as a miss", async () => {
+    expect(await isStorageNotFound(await downloadError(404))).toBe(true);
+    const { StorageApiError } = await import("@supabase/storage-js");
+    expect(
+      await isStorageNotFound(new StorageApiError("gone", 400, "404"))
+    ).toBe(true);
+  });
+
+  it("does not treat an invalid key or request (400) as a miss", async () => {
+    expect(
+      await isStorageNotFound(
+        await downloadError(400, { statusCode: "400", error: "InvalidKey" })
+      )
+    ).toBe(false);
+    expect(await isStorageNotFound(await downloadError(400))).toBe(false);
+  });
+
   it("does not treat server, auth or status-less errors as a miss", async () => {
-    const { StorageUnknownError } = await import("@supabase/storage-js");
     for (const status of [401, 403, 500, 503]) {
-      const error = new StorageUnknownError(
-        "{}",
-        new Response(null, { status })
-      );
-      expect(isStorageNotFound(error)).toBe(false);
+      expect(await isStorageNotFound(await downloadError(status))).toBe(false);
     }
-    expect(isStorageNotFound(new Error("offline"))).toBe(false);
+    expect(await isStorageNotFound(new Error("offline"))).toBe(false);
+    expect(await isStorageNotFound(null)).toBe(false);
   });
 });

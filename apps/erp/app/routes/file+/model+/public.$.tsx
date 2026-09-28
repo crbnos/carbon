@@ -51,7 +51,7 @@ export async function loader({ params }: LoaderFunctionArgs) {
       status: storageErrorStatus(error),
       error
     });
-    if (isStorageNotFound(error)) throw notFound("File not found");
+    if (await isStorageNotFound(error)) throw notFound("File not found");
     throw new Response(null, { status: 500 });
   }
 

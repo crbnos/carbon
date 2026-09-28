@@ -8640,7 +8640,7 @@ msgid "IBAN"
 msgstr "IBAN"
 
 msgid "IC Transaction"
-msgstr "Transaction intercompany"
+msgstr "Transaction intersociétés"
 
 msgid "Id"
 msgstr "Id"

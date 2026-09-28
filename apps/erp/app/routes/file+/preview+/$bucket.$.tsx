@@ -125,7 +125,7 @@ export let loader = async ({ request, params }: LoaderFunctionArgs) => {
     // never be saved to disk as if it were the file.
     // Anything else is a real failure and must not pass for a miss.
     return new Response(null, {
-      status: isStorageNotFound(result.error) ? 404 : 500
+      status: (await isStorageNotFound(result.error)) ? 404 : 500
     });
   }
   const fileData = result.data;

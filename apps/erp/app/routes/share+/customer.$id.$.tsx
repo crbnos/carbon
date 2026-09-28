@@ -127,7 +127,7 @@ export let loader = async ({ params, request }: LoaderFunctionArgs) => {
       error
     });
     return new Response(null, {
-      status: isStorageNotFound(error) ? 404 : 500
+      status: (await isStorageNotFound(error)) ? 404 : 500
     });
   }
 
