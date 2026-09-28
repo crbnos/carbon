@@ -10,8 +10,33 @@ import {
   hasRevenueComponent,
   isRevenueComponent
 } from "./sales-document-components";
-import { loadSalesInvoices } from "./sales-invoice-source";
+import {
+  loadSalesInvoices,
+  requirePostedSalesAccountId,
+  requirePostedShippingAccountId
+} from "./sales-invoice-source";
 import type { Accounting } from "./types";
+
+/**
+ * The structured facts a parked operation keeps: `failOperation` records
+ * `errorCode`/`warning` from `JournalEntrySyncError.failure`, and the invoice id
+ * is what tells a reader WHICH document to open — which is the whole point of
+ * raising per invoice rather than per batch.
+ */
+function failureOf(run: () => unknown) {
+  try {
+    run();
+  } catch (error) {
+    const failure = (error as { failure?: Record<string, unknown> }).failure;
+    return {
+      errorCode: failure?.errorCode,
+      warning: failure?.warning,
+      invoiceId: (failure?.metadata as { invoiceId?: string } | undefined)
+        ?.invoiceId
+    };
+  }
+  return null;
+}
 
 function fixture() {
   return {
@@ -654,13 +679,20 @@ describe("canonical invoice posting source", () => {
       isGroup: false
     }));
     const { database } = sourceDatabase(false, postings);
-    await expect(
-      loadSalesInvoices(database as never, {
+    // The refusal is the invoice's own, raised where the account is USED — the
+    // loader is a batch and must not fail its siblings. See the per-invoice
+    // isolation suite below.
+    const invoice = (
+      await loadSalesInvoices(database as never, {
         companyId: "company",
         ids: ["invoice"]
       })
-    ).rejects.toMatchObject({
-      failure: { errorCode: "UNMAPPED_ACCOUNTS", warning: true }
+    ).get("invoice")!;
+    expect(invoice.shippingRevenueAccountId).toBeNull();
+    expect(failureOf(() => requirePostedShippingAccountId(invoice))).toEqual({
+      errorCode: "UNMAPPED_ACCOUNTS",
+      warning: true,
+      invoiceId: "invoice"
     });
   });
   it("ignores reversal and arbitrary revenue descriptions as original shipping facts", async () => {
@@ -734,12 +766,165 @@ describe("replayed sales revenue account", () => {
       isGroup: false
     }));
     const { database } = sourceDatabase(false, postings, ["a"]);
-    await expect(
-      loadSalesInvoices(database as never, {
+    const invoice = (
+      await loadSalesInvoices(database as never, {
         companyId: "company",
         ids: ["a"]
       })
-    ).rejects.toThrow(/multiple accounts/i);
+    ).get("a")!;
+    expect(invoice.salesRevenueAccountId).toBeNull();
+    expect(failureOf(() => requirePostedSalesAccountId(invoice))).toEqual({
+      errorCode: "UNMAPPED_ACCOUNTS",
+      warning: true,
+      invoiceId: "a"
+    });
+  });
+});
+
+/**
+ * `loadSalesInvoices` is the batch loader behind every invoice syncer's
+ * `fetchLocalBatch`. `pushBatchToAccounting` calls it ONCE for the whole claimed
+ * group (`DEFAULT_CLAIM_LIMIT` = 20 operations) and its outer `catch` records
+ * whatever the loader threw against EVERY id in the group — so a throw for one
+ * invoice's malformed revenue posting parked up to 19 healthy posted invoices as
+ * `Warning UNMAPPED_ACCOUNTS` naming a document they have nothing to do with.
+ * Nothing automatic recovers them either: `shouldEnqueueMissingDocument` refuses
+ * to re-enqueue a parked Warning, the capped re-drive arm in
+ * `computeReconcileDecision` is `bill`-only, and the changed-since-failure retry
+ * needs the invoice to be edited. One bad document therefore stopped AR sync for
+ * its whole batch, permanently and silently.
+ *
+ * Before this branch only a *Shipping* Revenue row could reach those throws, so
+ * an invoice with no shipping was immune. Replaying merchandise revenue put
+ * every invoice on that path.
+ */
+describe("per-invoice revenue-account defects do not fail their batch", () => {
+  const cleanPostings = (documentId: string) => [
+    {
+      documentId,
+      accountId: "sales-4000",
+      description: "Sales Account",
+      amount: 100,
+      accountClass: "Revenue",
+      isGroup: false
+    },
+    {
+      documentId,
+      accountId: "shipping-4100",
+      description: "Shipping Revenue",
+      amount: 15,
+      accountClass: "Revenue",
+      isGroup: false
+    }
+  ];
+
+  async function loadPair(
+    badPostings: Array<Record<string, unknown>>
+  ): Promise<Map<string, Accounting.SalesInvoice>> {
+    const { database } = sourceDatabase(
+      false,
+      [...cleanPostings("good"), ...badPostings] as never,
+      ["good", "bad"]
+    );
+    return loadSalesInvoices(database as never, {
+      companyId: "company",
+      ids: ["good", "bad"]
+    });
+  }
+
+  function expectGoodInvoiceUnaffected(
+    result: Map<string, Accounting.SalesInvoice>
+  ) {
+    const good = result.get("good")!;
+    expect(requirePostedSalesAccountId(good)).toBe("sales-4000");
+    expect(requirePostedShippingAccountId(good)).toBe("shipping-4100");
+  }
+
+  it("leaves a sibling invoice fully usable when merchandise revenue is ambiguous", async () => {
+    const result = await loadPair(
+      ["sales-4000", "sales-4001"].map((accountId) => ({
+        documentId: "bad",
+        accountId,
+        description: "Sales Account",
+        amount: 50,
+        accountClass: "Revenue",
+        isGroup: false
+      }))
+    );
+    expectGoodInvoiceUnaffected(result);
+    const bad = result.get("bad")!;
+    expect(failureOf(() => requirePostedSalesAccountId(bad))).toEqual({
+      errorCode: "UNMAPPED_ACCOUNTS",
+      warning: true,
+      invoiceId: "bad"
+    });
+  });
+
+  it("leaves a sibling invoice fully usable when a merchandise posting is not a Revenue leaf", async () => {
+    // A group account, and a non-Revenue class, were the two conditions that
+    // threw from inside the posting-row loop — before the result map was even
+    // built, so they took every invoice in the batch with them.
+    const result = await loadPair([
+      {
+        documentId: "bad",
+        accountId: "sales-parent",
+        description: "Sales Account",
+        amount: 100,
+        accountClass: "Revenue",
+        isGroup: true
+      }
+    ]);
+    expectGoodInvoiceUnaffected(result);
+    expect(result.get("bad")!.salesRevenueAccountId).toBeNull();
+  });
+
+  it("leaves a sibling invoice fully usable when a shipping posting is not a Revenue leaf", async () => {
+    const result = await loadPair([
+      ...cleanPostings("bad").slice(0, 1),
+      {
+        documentId: "bad",
+        accountId: "shipping-asset",
+        description: "Shipping Revenue",
+        amount: 15,
+        accountClass: "Asset",
+        isGroup: false
+      }
+    ]);
+    expectGoodInvoiceUnaffected(result);
+    const bad = result.get("bad")!;
+    // Only the broken ROLE is unresolved — the invoice's merchandise account is
+    // still replayed, so a document with no shipping component still syncs.
+    expect(bad.salesRevenueAccountId).toBe("sales-4000");
+    expect(failureOf(() => requirePostedShippingAccountId(bad))).toEqual({
+      errorCode: "UNMAPPED_ACCOUNTS",
+      warning: true,
+      invoiceId: "bad"
+    });
+  });
+
+  it("does not fall back to the valid line when one posting of a role is unusable", async () => {
+    // Half-broken is still broken: picking the surviving account would be the
+    // guess the whole replay exists to avoid.
+    const result = await loadPair([
+      {
+        documentId: "bad",
+        accountId: "sales-parent",
+        description: "Sales Account",
+        amount: 40,
+        accountClass: "Revenue",
+        isGroup: true
+      },
+      {
+        documentId: "bad",
+        accountId: "sales-4000",
+        description: "Sales Account",
+        amount: 60,
+        accountClass: "Revenue",
+        isGroup: false
+      }
+    ]);
+    expectGoodInvoiceUnaffected(result);
+    expect(result.get("bad")!.salesRevenueAccountId).toBeNull();
   });
 });
 

@@ -163,10 +163,11 @@ describe("the owner of a delegated family keeps it", () => {
     );
   });
 
-  it("still reports the family as delegated for the owner", () => {
-    // The owner keeps its ENTITIES; the family modes are unchanged for it too,
-    // but the delegation itself is not erased — a caller inspecting `delegated`
-    // is asking "who owns this", not "is it off for me".
+  it("omits the owned family from the owner's own delegated list", () => {
+    // `delegated` is "families this configuration does not post itself", and the
+    // owner DOES post this one — the `continue` that keeps its entities on skips
+    // the push as well. Every other integration still sees the delegation, which
+    // is what the second assertion holds.
     const asOwner = apply(["ap"], "ramp");
     expect(asOwner.delegated.map((d) => d.family)).not.toContain("ap");
     expect(apply(["ap"], "rillet").delegated).toEqual([

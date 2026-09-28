@@ -22,6 +22,7 @@ import { trigger } from "@carbon/lib/trigger";
 import { NotificationEvent } from "@carbon/notifications";
 import { getJobDatabaseClient } from "../../../db";
 import { inngest } from "../../client";
+import { drainSyncOperations } from "./accounting-sync-operations";
 import { syncRampBillPayments, syncRampBills } from "./ramp-sync-bill";
 import {
   syncRampCashbacks,
@@ -29,9 +30,16 @@ import {
   syncRampTransfers
 } from "./ramp-sync-card";
 import { countRampSyncFailures } from "./ramp-sync-observability";
+import {
+  loadRampOutboundCandidates,
+  OUTBOUND_RECONCILE_BATCH_SIZE
+} from "./ramp-sync-outbound";
 import { syncRampReimbursements } from "./ramp-sync-reimbursement-family";
 import { syncRampRepayments } from "./ramp-sync-repayment";
 import type { RampSyncContext } from "./ramp-sync-shared";
+import { reconcileEntities } from "./reconcile-executor";
+import { resolveSyncProvider } from "./sync-provider";
+import { loadIntegrationTopology } from "./topology";
 
 export const rampSyncFunction = inngest.createFunction(
   {
@@ -40,7 +48,7 @@ export const rampSyncFunction = inngest.createFunction(
     concurrency: { key: "event.data.companyId", limit: 1 }
   },
   { event: "carbon/ramp-sync" },
-  async ({ event, step }) => {
+  async ({ event, step, runId }) => {
     const { companyId } = event.data;
     const client = getCarbonServiceRole();
 
@@ -158,6 +166,101 @@ export const rampSyncFunction = inngest.createFunction(
       }
     });
 
+    // Outbound correctness, and the other half of `ramp-subscriptions` above.
+    // Converging the subscriptions only fixes the NEXT event: a purchase order
+    // released or an invoice posted while the rows were missing produced no SYNC
+    // event, so no ledger operation exists and nothing else would ever look for
+    // it — the accounting outbound sweep walks `ProviderID` only, so it never
+    // reaches Ramp. This is the same convergence-then-sweep the accounting sweep
+    // performs, in the same order and over the same window
+    // (`SWEEP_LOOKBACK_DAYS`); history older than that is a backfill's job, not
+    // a silent mass-push.
+    //
+    // It runs AFTER the coding-master pushes on purpose: a bill pushed before
+    // its accounts and cost centers exist in Ramp arrives uncoded.
+    const outboundResult = await step.run(
+      "ramp-outbound-reconcile",
+      async () => {
+        try {
+          // Through `resolveSyncProvider` rather than `new RampProvider` so the
+          // syncer registration side-effect import and the push-only coding
+          // identity resolve exactly as they do on the event path.
+          const resolved = await resolveSyncProvider(
+            client,
+            companyId,
+            SpendProviderID.RAMP
+          );
+          if (!resolved) {
+            return {
+              purchaseOrders: 0,
+              invoices: 0,
+              enqueued: 0,
+              failed: 0,
+              skippedReasons: ["ramp provider could not be resolved"]
+            };
+          }
+
+          const topology = await loadIntegrationTopology(client, companyId);
+          const { refs, scanned, skippedReasons } =
+            await loadRampOutboundCandidates({
+              client,
+              companyId,
+              provider: resolved.provider
+            });
+
+          let enqueued = 0;
+          for (
+            let start = 0;
+            start < refs.length;
+            start += OUTBOUND_RECONCILE_BATCH_SIZE
+          ) {
+            const summary = await reconcileEntities({
+              client,
+              database: jobDb,
+              companyId,
+              providerId: SpendProviderID.RAMP,
+              integrationMetadata: resolved.metadata,
+              topology,
+              provider: resolved.provider,
+              createdBy: ctx.createdBy,
+              scope: runId,
+              refs: refs.slice(start, start + OUTBOUND_RECONCILE_BATCH_SIZE)
+            });
+            enqueued += summary.enqueued;
+          }
+
+          const drain = await drainSyncOperations({
+            client,
+            database: jobDb,
+            companyId,
+            integration: SpendProviderID.RAMP,
+            provider: resolved.provider,
+            integrationMetadata: resolved.metadata
+          });
+
+          return {
+            ...scanned,
+            enqueued,
+            failed: drain.failed,
+            skippedReasons
+          };
+        } catch (err) {
+          console.error(
+            `[RAMP SYNC] ${companyId}: outbound reconcile failed`,
+            err
+          );
+          return {
+            purchaseOrders: 0,
+            invoices: 0,
+            enqueued: 0,
+            failed: 1,
+            skippedReasons: [],
+            error: err instanceof Error ? err.message : String(err)
+          };
+        }
+      }
+    );
+
     const cardResult = await step.run("ramp-charges", () =>
       syncRampCharges(ctx, ramp, entityId, cardLiabilityAccountId)
     );
@@ -190,6 +293,7 @@ export const rampSyncFunction = inngest.createFunction(
       coaResult,
       costCenterResult,
       projectResult,
+      outboundResult,
       cardResult,
       transferResult,
       cashbackResult,
@@ -230,6 +334,7 @@ export const rampSyncFunction = inngest.createFunction(
       chartOfAccounts: coaResult,
       costCenters: costCenterResult,
       projects: projectResult,
+      outbound: outboundResult,
       card: cardResult,
       transfers: transferResult,
       cashbacks: cashbackResult,

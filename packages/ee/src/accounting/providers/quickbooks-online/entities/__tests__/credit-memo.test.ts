@@ -4,6 +4,7 @@ import type { ExternalIntegrationMappingService } from "../../../../core/externa
 import { JournalEntrySyncError } from "../../../../core/posting";
 import type { Qbo } from "../../models";
 import {
+  buildQboCreditMemoApplicationPayload,
   buildQboCreditMemoPayload,
   buildQboCreditReasonItemName,
   QBO_MEMO_INCREASER_SKIP_REASON,
@@ -15,7 +16,9 @@ import {
   resolveQboCreditReasonItemRef
 } from "../credit-memo";
 import {
+  buildQboVendorCreditApplicationPayload,
   buildQboVendorCreditPayload,
+  QboVendorCreditSyncer,
   qboVendorCreditSkipReason
 } from "../vendor-credit";
 
@@ -153,6 +156,83 @@ describe("buildQboCreditMemoPayload", () => {
 
     expect(payload.CurrencyRef).toEqual({ value: "EUR" });
     expect(payload.ExchangeRate).toBeCloseTo(1.25, 10);
+  });
+});
+
+/**
+ * The invariant behind `qboMemoCurrencyFields`: the APPLICATION carries exactly
+ * the FX fields its own DOCUMENT carries. If the two ever diverge, QBO values
+ * the application at a different rate than the credit it applies, the credit's
+ * home-currency balance does not close, and the difference lands in FX
+ * gain/loss.
+ */
+describe("the application's FX fields match its document's, both sides", () => {
+  const foreign = { currencyCode: "EUR", exchangeRate: 0.8 };
+
+  it.each([
+    ["foreign", foreign, { CurrencyRef: { value: "EUR" }, ExchangeRate: 1.25 }],
+    ["base", {}, undefined]
+  ] as const)("agrees on an AR %s memo", (_label, override, expected) => {
+    const source = memo({ ...override, settlements: [settlement()] });
+    const document = buildQboCreditMemoPayload({
+      memo: source,
+      customerRef: { value: "17" },
+      reasonItemRef: { value: "901" },
+      baseCurrencyCode: "USD"
+    });
+    const application = buildQboCreditMemoApplicationPayload({
+      memo: source,
+      settlement: source.settlements[0]!,
+      customerRef: { value: "17" },
+      invoiceRemoteId: "qbo-invoice-si_1",
+      creditMemoRemoteId: "qbo-cm-1",
+      baseCurrencyCode: "USD"
+    });
+
+    for (const payload of [document, application]) {
+      if (expected) {
+        expect(payload.CurrencyRef).toEqual(expected.CurrencyRef);
+        expect(payload.ExchangeRate).toBeCloseTo(expected.ExchangeRate, 10);
+      } else {
+        expect(payload).not.toHaveProperty("CurrencyRef");
+        expect(payload).not.toHaveProperty("ExchangeRate");
+      }
+    }
+  });
+
+  it.each([
+    ["foreign", foreign, { CurrencyRef: { value: "EUR" }, ExchangeRate: 1.25 }],
+    ["base", {}, undefined]
+  ] as const)("agrees on an AP %s memo", (_label, override, expected) => {
+    const source = supplierMemo({
+      ...override,
+      settlements: [supplierSettlement()]
+    });
+    const document = buildQboVendorCreditPayload({
+      memo: source,
+      vendorRef: { value: "55" },
+      reasonAccountRef: REASON_ACCOUNT_REF,
+      baseCurrencyCode: "USD"
+    });
+    const application = buildQboVendorCreditApplicationPayload({
+      memo: source,
+      settlement: source.settlements[0]!,
+      vendorRef: { value: "55" },
+      bankRef: { value: "60" },
+      billRemoteId: "qbo-bill-pi_1",
+      vendorCreditRemoteId: "qbo-vc-1",
+      baseCurrencyCode: "USD"
+    });
+
+    for (const payload of [document, application]) {
+      if (expected) {
+        expect(payload.CurrencyRef).toEqual(expected.CurrencyRef);
+        expect(payload.ExchangeRate).toBeCloseTo(expected.ExchangeRate, 10);
+      } else {
+        expect(payload).not.toHaveProperty("CurrencyRef");
+        expect(payload).not.toHaveProperty("ExchangeRate");
+      }
+    }
   });
 });
 
@@ -342,6 +422,7 @@ function settlement(
 function makeCreditMemoSyncer(args: {
   memo: QboMemoSource;
   applyCreditMemo?: ReturnType<typeof vi.fn>;
+  baseCurrencyCode?: string;
 }) {
   const applyCreditMemo =
     args.applyCreditMemo ?? vi.fn(async () => "qbo-payment-1");
@@ -364,6 +445,11 @@ function makeCreditMemoSyncer(args: {
         : (mappingRows.get(`${entityType}::${entityId}`) ?? null)
     )
   };
+  // The one company read `upsertRemote` needs — stubbed rather than faked,
+  // there is no database in this process.
+  patched.baseCurrencyCodePromise = Promise.resolve(
+    args.baseCurrencyCode ?? "USD"
+  );
   vi.spyOn(syncer, "fetchLocal").mockResolvedValue(args.memo);
 
   const push = () =>
@@ -373,6 +459,80 @@ function makeCreditMemoSyncer(args: {
     ) as Promise<string>;
 
   return { push, applyCreditMemo, createCreditMemo };
+}
+
+/** The AP mirror: drives `QboVendorCreditSyncer.upsertRemote`. */
+function makeVendorCreditSyncer(args: {
+  memo: QboMemoSource;
+  applyVendorCredit?: ReturnType<typeof vi.fn>;
+  baseCurrencyCode?: string;
+}) {
+  const applyVendorCredit =
+    args.applyVendorCredit ?? vi.fn(async () => "qbo-billpayment-1");
+  const createVendorCredit = vi.fn(async () => ({ Id: "qbo-vc-1" }));
+
+  const syncer = new QboVendorCreditSyncer({
+    database: {} as never,
+    companyId: "company-1",
+    provider: {
+      id: INTEGRATION,
+      createVendorCredit,
+      applyVendorCredit
+    } as never,
+    config: { enabled: true, direction: "push-to-accounting", owner: "carbon" },
+    entityType: "supplierCredit"
+  });
+
+  const patched = syncer as unknown as Record<string, any>;
+  patched.mappingService = {
+    getByEntity: vi.fn(async () => null),
+    getExternalId: vi.fn(async (entityType: string, entityId: string) =>
+      entityType === "bill"
+        ? `qbo-bill-${entityId}`
+        : (mappingRows.get(`${entityType}::${entityId}`) ?? null)
+    )
+  };
+  patched.accountDefaultsPromise = Promise.resolve({
+    payablesAccount: "acc_ap",
+    bankCashAccount: "acc_bank"
+  });
+  patched.accountRefsByIdPromise = Promise.resolve(
+    new Map<string, Qbo.Ref>([["acc_bank", { value: "60" }]])
+  );
+  patched.baseCurrencyCodePromise = Promise.resolve(
+    args.baseCurrencyCode ?? "USD"
+  );
+  vi.spyOn(syncer, "fetchLocal").mockResolvedValue(args.memo);
+
+  const push = () =>
+    patched.upsertRemote(
+      { VendorRef: { value: "55" } } as never,
+      args.memo.id
+    ) as Promise<string>;
+
+  return { push, applyVendorCredit, createVendorCredit };
+}
+
+/** A supplier-side memo whose settlement targets a purchase invoice. */
+function supplierMemo(overrides: Partial<QboMemoSource> = {}): QboMemoSource {
+  return memo({
+    id: "memo_2",
+    memoId: "DM-000007",
+    direction: "Debit",
+    customerId: null,
+    supplierId: "supp_1",
+    ...overrides
+  });
+}
+
+function supplierSettlement(
+  overrides: Partial<QboMemoSettlementRow> = {}
+): QboMemoSettlementRow {
+  return settlement({
+    targetSalesInvoiceId: null,
+    targetPurchaseInvoiceId: "pi_1",
+    ...overrides
+  });
 }
 
 describe("qboMemoApplicationAmount (document currency, never base)", () => {
@@ -493,6 +653,50 @@ describe("QboCreditMemoSyncer.applySettlements", () => {
     expect(applyCreditMemo).not.toHaveBeenCalled();
   });
 
+  /**
+   * The cross-currency guard (`qboMemoApplicationSkipReason`) parks a settlement
+   * whose SOURCE and TARGET rates disagree. It says nothing about the ordinary
+   * foreign application — a EUR memo against a EUR invoice at one rate — which
+   * passes it. Without `CurrencyRef`/`ExchangeRate` QuickBooks values the
+   * home-currency side of that application at ITS rate for `TxnDate` instead of
+   * Carbon's snapshot, so the credit memo's own home-currency balance does not
+   * close and QBO books the difference as FX gain/loss.
+   */
+  it("sends CurrencyRef and the inverted ExchangeRate on a FOREIGN application", async () => {
+    const { push, applyCreditMemo } = makeCreditMemoSyncer({
+      memo: memo({
+        currencyCode: "EUR",
+        // Carbon: 0.8 EUR per 1 USD of base. QBO wants USD per 1 EUR = 1.25.
+        exchangeRate: 0.8,
+        amount: 100,
+        settlements: [
+          settlement({ sourceExchangeRate: 0.8, targetExchangeRate: 0.8 })
+        ]
+      })
+    });
+
+    await push();
+
+    const payload = applyCreditMemo.mock.calls[0]?.[0] as {
+      CurrencyRef?: Qbo.Ref;
+      ExchangeRate?: number;
+    };
+    expect(payload.CurrencyRef).toEqual({ value: "EUR" });
+    expect(payload.ExchangeRate).toBeCloseTo(1.25, 10);
+  });
+
+  it("sends no currency metadata at all on a base-currency application", async () => {
+    const { push, applyCreditMemo } = makeCreditMemoSyncer({
+      memo: memo({ settlements: [settlement()] })
+    });
+
+    await push();
+
+    const payload = applyCreditMemo.mock.calls[0]?.[0] as object;
+    expect(payload).not.toHaveProperty("CurrencyRef");
+    expect(payload).not.toHaveProperty("ExchangeRate");
+  });
+
   it("keeps the FIRST application durable when the second fails, and never re-applies it", async () => {
     const memoWithTwo = memo({
       settlements: [
@@ -531,5 +735,51 @@ describe("QboCreditMemoSyncer.applySettlements", () => {
     expect(mappingRows.get("qboMemoApplication::memo_1:st_2")).toBe(
       "qbo-payment-1"
     );
+  });
+});
+
+describe("QboVendorCreditSyncer.applySettlements", () => {
+  beforeEach(() => {
+    mappingRows.clear();
+  });
+
+  it("sends CurrencyRef and the inverted ExchangeRate on a FOREIGN BillPayment", async () => {
+    const { push, applyVendorCredit } = makeVendorCreditSyncer({
+      memo: supplierMemo({
+        currencyCode: "EUR",
+        exchangeRate: 0.8,
+        amount: 100,
+        settlements: [
+          supplierSettlement({
+            sourceExchangeRate: 0.8,
+            targetExchangeRate: 0.8
+          })
+        ]
+      })
+    });
+
+    await push();
+
+    const payload = applyVendorCredit.mock.calls[0]?.[0] as {
+      CurrencyRef?: Qbo.Ref;
+      ExchangeRate?: number;
+      CheckPayment?: { BankAccountRef: Qbo.Ref };
+    };
+    expect(payload.CurrencyRef).toEqual({ value: "EUR" });
+    expect(payload.ExchangeRate).toBeCloseTo(1.25, 10);
+    // The bank account QBO demands even at zero cash is unchanged.
+    expect(payload.CheckPayment?.BankAccountRef).toEqual({ value: "60" });
+  });
+
+  it("sends no currency metadata at all on a base-currency BillPayment", async () => {
+    const { push, applyVendorCredit } = makeVendorCreditSyncer({
+      memo: supplierMemo({ settlements: [supplierSettlement()] })
+    });
+
+    await push();
+
+    const payload = applyVendorCredit.mock.calls[0]?.[0] as object;
+    expect(payload).not.toHaveProperty("CurrencyRef");
+    expect(payload).not.toHaveProperty("ExchangeRate");
   });
 });

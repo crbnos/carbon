@@ -4,6 +4,9 @@ import { classifyAccountingPostingRole } from "@carbon/utils";
 import { JournalEntrySyncError } from "./posting";
 import type { Accounting } from "./types";
 
+/** The posting roles whose original revenue account an AR document replays. */
+type RevenueRole = "ShippingRevenue" | "SalesRevenue";
+
 /** One provider-neutral source boundary for invoice amounts and original posting facts. */
 export async function loadSalesInvoices(
   db: Kysely<KyselyDatabase> | KyselyTx,
@@ -135,35 +138,63 @@ export async function loadSalesInvoices(
   // invoices stopped referencing items — the item used to carry the account
   // implicitly (via the provider item's own config), and with the item gone the
   // posted account is the only thing that can.
-  const revenueAccounts: Record<
-    "ShippingRevenue" | "SalesRevenue",
-    Map<string, Set<string>>
-  > = { ShippingRevenue: new Map(), SalesRevenue: new Map() };
+  //
+  // Every defect below belongs to ONE invoice, and none of them throws from
+  // here. This is a BATCH loader: `pushBatchToAccounting` calls it once for the
+  // whole claimed group (up to 20 operations) and its outer catch parks every
+  // id in that group as an error carrying whatever this function threw. So one
+  // invoice with a malformed revenue posting used to park every other posted
+  // invoice drained beside it — as a Warning naming a DIFFERENT document — and
+  // nothing brings those back: `shouldEnqueueMissingDocument` refuses to
+  // re-enqueue a parked Warning, the capped re-drive is `bill`-only, and the
+  // changed-since-failure retry needs the document to be edited. Instead the
+  // role's account is left unresolved (`null`) and
+  // `requirePostedSalesAccountId` / `requirePostedShippingAccountId` raise the
+  // structured error for that one invoice from inside `mapToRemote`, which
+  // `pushBatchToAccounting` already catches per entity.
+  const revenueAccounts: Record<RevenueRole, Map<string, Set<string>>> = {
+    ShippingRevenue: new Map(),
+    SalesRevenue: new Map()
+  };
+  // Invoices whose posting for a role is unusable, whatever else it posted.
+  const unusableRoles: Record<RevenueRole, Set<string>> = {
+    ShippingRevenue: new Set(),
+    SalesRevenue: new Set()
+  };
 
   for (const row of postingRows) {
     const role = classifyAccountingPostingRole(row.description);
     if (role !== "ShippingRevenue" && role !== "SalesRevenue") continue;
-    const label = role === "ShippingRevenue" ? "Shipping Revenue" : "Sales";
-    if (
-      !row.documentId ||
-      !row.accountId ||
-      row.accountClass !== "Revenue" ||
-      row.isGroup
-    ) {
-      throw new JournalEntrySyncError({
-        errorCode: "UNMAPPED_ACCOUNTS",
-        warning: true,
-        message: `Cannot sync invoice: original ${label} posting has no valid Revenue leaf account in the company group`,
-        metadata: { invoiceId: row.documentId, accountId: row.accountId }
-      });
+    // Unreachable in practice — the query filters `documentId in ids`, so the
+    // column is only nullable in the generated type — but a row that names no
+    // invoice cannot be recorded against one either, and the alternative here
+    // is a batch-wide throw.
+    if (!row.documentId) continue;
+    if (!row.accountId || row.accountClass !== "Revenue" || row.isGroup) {
+      unusableRoles[role].add(row.documentId);
+      continue;
     }
     const byInvoice = revenueAccounts[role];
     const accounts = byInvoice.get(row.documentId) ?? new Set<string>();
     accounts.add(row.accountId);
     byInvoice.set(row.documentId, accounts);
   }
-  const shippingAccounts = revenueAccounts.ShippingRevenue;
-  const salesAccounts = revenueAccounts.SalesRevenue;
+
+  /**
+   * The one account a role replays, or `null` when the journal cannot name it.
+   *
+   * Ambiguity is never resolved by guessing — Carbon posts ALL merchandise
+   * revenue to one account (`accountDefault.salesAccount`; there is no
+   * per-item revenue account in the schema) and all shipping revenue to
+   * another, so two of either means the journal is not the shape this replay
+   * assumes. A role with ANY unusable posting stays unresolved even when a
+   * second line did name a valid leaf, for the same reason.
+   */
+  const resolveReplayedAccountId = (role: RevenueRole, invoiceId: string) => {
+    if (unusableRoles[role].has(invoiceId)) return null;
+    const ids = [...(revenueAccounts[role].get(invoiceId) ?? [])];
+    return ids.length === 1 ? ids[0]! : null;
+  };
 
   // Group lines by invoice ID
   const linesByInvoiceId = new Map<string, (typeof lineRows)[number][]>();
@@ -198,28 +229,6 @@ export async function loadSalesInvoices(
     }
     const lines = linesByInvoiceId.get(row.id) ?? [];
 
-    const shippingIds = [...(shippingAccounts.get(row.id) ?? [])];
-    if (shippingIds.length > 1)
-      throw new JournalEntrySyncError({
-        errorCode: "UNMAPPED_ACCOUNTS",
-        warning: true,
-        message:
-          "Cannot sync invoice: original Shipping Revenue posting has multiple accounts",
-        metadata: { invoiceId: row.id, accountIds: shippingIds }
-      });
-    // Carbon posts ALL merchandise revenue to one account
-    // (`accountDefault.salesAccount`) — there is no per-item revenue account in
-    // the schema — so more than one here means the journal is not the shape this
-    // replay assumes, and guessing which to use would silently misstate revenue.
-    const salesIds = [...(salesAccounts.get(row.id) ?? [])];
-    if (salesIds.length > 1)
-      throw new JournalEntrySyncError({
-        errorCode: "UNMAPPED_ACCOUNTS",
-        warning: true,
-        message:
-          "Cannot sync invoice: original Sales Revenue posting has multiple accounts",
-        metadata: { invoiceId: row.id, accountIds: salesIds }
-      });
     result.set(row.id, {
       id: row.id,
       invoiceId: row.invoiceId,
@@ -231,8 +240,11 @@ export async function loadSalesInvoices(
       baseCurrencyCode: row.baseCurrencyCode,
       baseCurrencyDecimalPlaces: Number(row.baseCurrencyDecimalPlaces),
       currencyDecimalPlaces: Number(row.currencyDecimalPlaces),
-      shippingRevenueAccountId: shippingIds[0] ?? null,
-      salesRevenueAccountId: salesIds[0] ?? null,
+      shippingRevenueAccountId: resolveReplayedAccountId(
+        "ShippingRevenue",
+        row.id
+      ),
+      salesRevenueAccountId: resolveReplayedAccountId("SalesRevenue", row.id),
       headerShippingCost: Number(row.headerShippingCost ?? 0),
       exchangeRate: Number(row.exchangeRate),
       postingDate: row.postingDate,
@@ -278,7 +290,15 @@ export async function loadSalesInvoices(
   return result;
 }
 
-/** Merchandise components must replay an original account, never today's default. */
+/**
+ * Merchandise components must replay an original account, never today's default.
+ *
+ * This is also where an UNRESOLVABLE original account is reported, not just an
+ * absent one — the loader leaves every defect as `null` so the refusal lands on
+ * the one invoice it belongs to (see the comment in `loadSalesInvoices`). The
+ * message therefore names all three causes; the invoice id is what a reader
+ * needs to open the journal and see which.
+ */
 export function requirePostedSalesAccountId(
   invoice: Accounting.SalesInvoice
 ): string {
@@ -287,7 +307,7 @@ export function requirePostedSalesAccountId(
       errorCode: "UNMAPPED_ACCOUNTS",
       warning: true,
       message:
-        "Cannot sync invoice: original Sales Revenue account is missing from its posted journal",
+        "Cannot sync invoice: its posted journal does not name exactly one Sales Revenue account — it is absent, posted to more than one account, or not a Revenue leaf account in the company group",
       metadata: { invoiceId: invoice.id }
     });
   return invoice.salesRevenueAccountId;
@@ -302,7 +322,7 @@ export function requirePostedShippingAccountId(
       errorCode: "UNMAPPED_ACCOUNTS",
       warning: true,
       message:
-        "Cannot sync invoice: original Shipping Revenue account is missing from its posted journal",
+        "Cannot sync invoice: its posted journal does not name exactly one Shipping Revenue account — it is absent, posted to more than one account, or not a Revenue leaf account in the company group",
       metadata: { invoiceId: invoice.id }
     });
   return invoice.shippingRevenueAccountId;

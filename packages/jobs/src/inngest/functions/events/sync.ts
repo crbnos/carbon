@@ -196,6 +196,9 @@ export const syncFunction = inngest.createFunction(
               companyId,
               providerId: provider,
               integrationMetadata: resolved.metadata,
+              // A spend provider's effective config lives on the provider, not
+              // under `metadata.syncConfig` — see `reconcileEntities`.
+              provider: resolved.provider,
               createdBy: getSyncOperationActor({
                 updatedBy: resolved.updatedBy
               }),

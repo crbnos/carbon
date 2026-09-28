@@ -49,6 +49,7 @@ import { chunkArray } from "@carbon/utils";
 import { PostgresDriver } from "kysely";
 import z from "zod";
 import { inngest } from "../../client";
+import { runUnmappedPushLoop } from "./accounting-master-sync-loop";
 import {
   drainSyncOperations,
   enqueueSyncOperations,
@@ -86,9 +87,11 @@ export type AccountingMasterSyncPayload = z.input<
 >;
 
 /**
- * Bound on the per-entity batch loop. A push batch that keeps finding unmapped
- * rows would otherwise loop for as long as the provider keeps failing them;
- * stopping is recoverable (re-run the action), spinning is not.
+ * Bound on the per-entity batch loop. It advances by construction now
+ * (`runUnmappedPushLoop` never re-offers an id it has already handed to a
+ * batch), so this caps how much of a large unmapped backlog one run clears
+ * rather than guarding against a spin; stopping is recoverable — re-run the
+ * action.
  */
 const MAX_BATCHES_PER_ENTITY = 200;
 
@@ -234,10 +237,11 @@ export const accountingMasterSyncFunction = inngest.createFunction(
         continue;
       }
 
-      for (let index = 0; index < MAX_BATCHES_PER_ENTITY; index++) {
-        const unmappedIds = await step.run(
-          `unmapped-${entityType}-${index}`,
-          () =>
+      const loopCounts = await runUnmappedPushLoop({
+        batchSize: payload.batchSize,
+        maxBatches: MAX_BATCHES_PER_ENTITY,
+        fetchCandidateIds: (limit, index) =>
+          step.run(`unmapped-${entityType}-${index}`, () =>
             createMappingService(
               database,
               payload.companyId
@@ -245,38 +249,26 @@ export const accountingMasterSyncFunction = inngest.createFunction(
               entityType,
               MASTER_DATA_TABLES[entityType],
               payload.provider,
-              payload.batchSize
+              limit
             )
-        );
-
-        if (unmappedIds.length === 0) break;
-
-        const batchCounts = await runBatch(
-          `push-${entityType}-batch-${index}`,
-          unmappedIds.map((entityId) => ({
-            entityType,
-            entityId,
-            direction: "push-to-accounting" as const
-          }))
-        );
-
-        counts.succeeded += batchCounts.succeeded;
-        counts.skipped += batchCounts.skipped;
-        counts.failed += batchCounts.failed;
-
-        // A failed push leaves the record unmapped, so it comes straight back
-        // from getUnsyncedEntityIds. Its idempotency key (same run scope)
-        // absorbs the re-enqueue, so the drain claims nothing — which is the
-        // signal that the loop is no longer making progress.
-        if (
-          unmappedIds.length < payload.batchSize ||
-          batchCounts.claimed === 0
-        ) {
-          break;
+          ),
+        runBatch: (index, entityIds) =>
+          runBatch(
+            `push-${entityType}-batch-${index}`,
+            entityIds.map((entityId) => ({
+              entityType,
+              entityId,
+              direction: "push-to-accounting" as const
+            }))
+          ),
+        delay: async (index) => {
+          await step.sleep(`push-${entityType}-delay-${index}`, "2s");
         }
+      });
 
-        await step.sleep(`push-${entityType}-delay-${index}`, "2s");
-      }
+      counts.succeeded += loopCounts.succeeded;
+      counts.skipped += loopCounts.skipped;
+      counts.failed += loopCounts.failed;
     }
 
     log.info("Master data sync complete", {

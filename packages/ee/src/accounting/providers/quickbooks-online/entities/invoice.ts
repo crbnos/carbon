@@ -347,17 +347,24 @@ export class QboSalesInvoiceSyncer extends BaseEntitySyncer<
     const shippingAccountId = hasShipping
       ? await this.getShippingAccountId(local)
       : null;
-    // Tax, account and currency preflight finishes before any dependency writes.
+    // A fixed-asset disposal has no sales-revenue posting to replay, so it is
+    // refused rather than bound to the sales item and reported as revenue.
+    // Both of these are PURE refusals, so they belong ABOVE the dependency
+    // write: a QBO Customer created for an invoice that is then refused is a
+    // counterparty in the customer's books that nothing in Carbon asked for.
+    assertNoAssetDisposalComponents(document);
+    const salesRevenueAccountId = hasRevenueComponent(document.components)
+      ? requirePostedSalesAccountId(local)
+      : null;
+    // Tax, account, component and currency preflight finishes before any
+    // dependency writes.
     const customerRemoteId = await this.ensureDependencySynced(
       "customer",
       local.customerId
     );
-    // A fixed-asset disposal has no sales-revenue posting to replay, so it is
-    // refused rather than bound to the sales item and reported as revenue.
-    assertNoAssetDisposalComponents(document);
-    const salesItemRemoteId = hasRevenueComponent(document.components)
+    const salesItemRemoteId = salesRevenueAccountId
       ? await (await this.getShippingItemSyncer()).ensureSalesItem({
-          revenueAccountId: requirePostedSalesAccountId(local)
+          revenueAccountId: salesRevenueAccountId
         })
       : null;
     const shippingItemRemoteId = shippingAccountId

@@ -336,6 +336,17 @@ export class RilletSalesInvoiceSyncer extends RilletTransactionSyncer<
     const shippingAccount = hasShipping
       ? await this.getShippingAccount(local)
       : null;
+    // A fixed-asset disposal has no sales-revenue posting to replay, so it is
+    // refused rather than bound to the sales product and reported as revenue.
+    // Both refusals are PURE and run before any dependency write: pushing the
+    // customer first left a counterparty in the customer's Rillet books for an
+    // invoice Rillet would never receive. Xero already ordered it this way; QBO
+    // had the same defect and was fixed alongside this.
+    assertNoAssetDisposalComponents(document);
+    const salesRevenueAccountId = hasRevenueComponent(document.components)
+      ? requirePostedSalesAccountId(local)
+      : null;
+
     const customerRemoteId = await this.ensureDependencySynced(
       "customer",
       local.customerId
@@ -347,12 +358,9 @@ export class RilletSalesInvoiceSyncer extends RilletTransactionSyncer<
     // merchandise), so the item bought no GL fidelity while dragging the entire
     // parts catalog into Rillet Products. The account is replayed from the
     // POSTED journal, so a historical invoice keeps its own account.
-    // A fixed-asset disposal has no sales-revenue posting to replay, so it is
-    // refused rather than bound to the sales product and reported as revenue.
-    assertNoAssetDisposalComponents(document);
-    const salesProductRemoteId = hasRevenueComponent(document.components)
+    const salesProductRemoteId = salesRevenueAccountId
       ? await (await this.getShippingItemSyncer()).ensureSalesProduct({
-          revenueAccountId: requirePostedSalesAccountId(local),
+          revenueAccountId: salesRevenueAccountId,
           baseCurrencyCode: local.baseCurrencyCode,
           baseCurrencyDecimals: local.baseCurrencyDecimalPlaces
         })

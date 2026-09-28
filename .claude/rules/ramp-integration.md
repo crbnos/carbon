@@ -475,9 +475,24 @@ total. Durable steps remain, in order:
 | `ramp-reimbursements` | reimbursements `SYNC_READY` | Draft `reimbursement` (employee party) | `REIMBURSEMENT_SYNC` |
 | `ramp-repayments` | repayments (`from_repaid_at` cursor) | `charge` Repayment | *(no Ramp confirm)* |
 | `ramp-subscriptions` | — | converges Ramp's SYNC event subscriptions (self-healing, mirrors the accounting outbound sweep) | *(n/a)* |
+| `ramp-outbound-reconcile` | released POs + posted invoices in the sweep window | ledger operations, then a drain | *(n/a)* |
 
-**Outbound is no longer a `ramp-sync` step.** Purchase orders and draft bills push
-through the shared event engine — see "Outbound: on the event engine" below.
+**Outbound pushes run on the shared event engine, not a bespoke cursor sweep.**
+Purchase orders and draft bills go through `event-handler-sync` →
+`reconcileEntities` → `drainSyncOperations` → `SyncFactory` — see "Outbound: on
+the event engine" below. `ramp-outbound-reconcile` is that path's **correctness
+guarantee**, and the other half of `ramp-subscriptions`: converging the
+subscriptions only fixes the NEXT event, so a purchase order released or an
+invoice posted while the rows were missing has no ledger operation and nothing
+would ever look for it (the accounting outbound sweep walks `ProviderID` only, so
+it never reaches Ramp). The step therefore repeats the accounting sweep's
+convergence-then-walk over the same `SWEEP_LOOKBACK_DAYS` window, gating each
+candidate walk on the PROVIDER's own config (`pushPurchaseOrders` /
+`pushInvoices` plus the mode ceiling) — `loadRampOutboundCandidates` in
+`ramp-sync-outbound.ts`. It runs after the coding-master pushes, because a bill
+pushed before its accounts and cost centers exist in Ramp arrives uncoded, and
+history older than the window stays a backfill's job rather than a silent
+mass-push.
 
 Card families use `stageOrResumeRampCharge` to advisory-lock the company/Ramp id
 and atomically create or resume the **Draft** `charge`, lines, and mapping before

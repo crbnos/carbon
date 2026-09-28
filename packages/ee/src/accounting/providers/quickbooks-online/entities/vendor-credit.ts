@@ -9,15 +9,16 @@ import { parseQboDate, type Qbo, type QboCreatePayload } from "../models";
 import {
   buildQboRequestId,
   type QboProvider,
-  type QboVendorCreditApplicationPayload,
-  toQboExchangeRate
+  type QboVendorCreditApplicationPayload
 } from "../provider";
 import {
   loadQboMemoSources,
   QBO_MEMO_INCREASER_SKIP_REASON,
+  type QboMemoSettlementRow,
   type QboMemoSource,
   qboMemoApplicationAmount,
   qboMemoApplicationSkipReason,
+  qboMemoCurrencyFields,
   qboMemoStatusSkipReason,
   readQboAppliedSettlementIds,
   readQboMemoApplication,
@@ -93,12 +94,7 @@ export function buildQboVendorCreditPayload(args: {
     VendorRef: args.vendorRef,
     ...(args.apAccountRef ? { APAccountRef: args.apAccountRef } : {}),
     // QBO quotes company base per document currency, reciprocal to Carbon.
-    ...(memo.currencyCode !== args.baseCurrencyCode
-      ? {
-          CurrencyRef: { value: memo.currencyCode },
-          ExchangeRate: toQboExchangeRate(memo.exchangeRate)
-        }
-      : {}),
+    ...qboMemoCurrencyFields(memo, args.baseCurrencyCode),
     Line: [
       {
         Amount: memo.amount,
@@ -107,6 +103,45 @@ export function buildQboVendorCreditPayload(args: {
         AccountBasedExpenseLineDetail: {
           AccountRef: args.reasonAccountRef
         }
+      }
+    ]
+  };
+}
+
+/**
+ * Build the zero-cash `BillPayment` that applies ONE settlement of a vendor
+ * credit to its bill. Pure — exported for tests. QBO requires `PayType` and a
+ * bank account even at zero cash, so the caller resolves those first.
+ */
+export function buildQboVendorCreditApplicationPayload(args: {
+  memo: QboMemoSource;
+  settlement: QboMemoSettlementRow;
+  vendorRef: Qbo.Ref;
+  bankRef: Qbo.Ref;
+  billRemoteId: string;
+  vendorCreditRemoteId: string;
+  baseCurrencyCode: string;
+}): QboVendorCreditApplicationPayload {
+  // DOCUMENT-currency principal, never the base-currency `appliedAmount`.
+  const amount = qboMemoApplicationAmount(args.memo, args.settlement);
+
+  return {
+    VendorRef: args.vendorRef,
+    TotalAmt: 0,
+    TxnDate: args.settlement.appliedDate,
+    PayType: "Check",
+    CheckPayment: { BankAccountRef: args.bankRef },
+    ...qboMemoCurrencyFields(args.memo, args.baseCurrencyCode),
+    Line: [
+      {
+        Amount: amount,
+        LinkedTxn: [{ TxnId: args.billRemoteId, TxnType: "Bill" }]
+      },
+      {
+        Amount: amount,
+        LinkedTxn: [
+          { TxnId: args.vendorCreditRemoteId, TxnType: "VendorCredit" }
+        ]
       }
     ]
   };
@@ -427,6 +462,9 @@ export class QboVendorCreditSyncer extends BaseEntitySyncer<
     }
 
     const bankRef = await this.resolveBankAccountRef(local);
+    // The application must carry the SAME currency and rate as the vendor
+    // credit it applies — see qboMemoCurrencyFields.
+    const baseCurrencyCode = await this.getBaseCurrencyCode();
 
     for (const settlement of pending) {
       // Durable, per settlement — see recordQboMemoApplication. A failure on
@@ -459,26 +497,15 @@ export class QboVendorCreditSyncer extends BaseEntitySyncer<
         });
       }
 
-      // DOCUMENT-currency principal, never the base-currency `appliedAmount`.
-      const amount = qboMemoApplicationAmount(local, settlement);
-
-      const payload: QboVendorCreditApplicationPayload = {
-        VendorRef: vendorRef,
-        TotalAmt: 0,
-        TxnDate: settlement.appliedDate,
-        PayType: "Check",
-        CheckPayment: { BankAccountRef: bankRef },
-        Line: [
-          {
-            Amount: amount,
-            LinkedTxn: [{ TxnId: billRemoteId, TxnType: "Bill" }]
-          },
-          {
-            Amount: amount,
-            LinkedTxn: [{ TxnId: remoteId, TxnType: "VendorCredit" }]
-          }
-        ]
-      };
+      const payload = buildQboVendorCreditApplicationPayload({
+        memo: local,
+        settlement,
+        vendorRef,
+        bankRef,
+        billRemoteId,
+        vendorCreditRemoteId: remoteId,
+        baseCurrencyCode
+      });
 
       const billPaymentId = await this.qboProvider.applyVendorCredit(
         payload,

@@ -300,11 +300,18 @@ export class XeroProvider implements BaseProvider, SupportsIncrementalPull {
     const name = keys.name?.trim();
     if (!name) return [];
 
-    // Xero where filters double-quote string values and escape inner quotes.
-    const escaped = name.replace(/"/g, '\\"');
+    // Xero where filters double-quote string values and escape inner quotes —
+    // `JSON.stringify` does both — and the whole clause is then percent-encoded,
+    // the same shape `getCreditNoteByNumber` and the reimbursement contact
+    // lookup use. Encoding is not cosmetic here: an unencoded `&` in a name like
+    // "Smith & Sons" ends the `where` parameter early, so Xero searches for
+    // "Smith " and returns the wrong contact (or none), and an unencoded `#`
+    // never reaches Xero at all — `fetch` strips the fragment. Either way the
+    // caller reads "no such contact" and creates a duplicate.
+    const where = encodeURIComponent(`Name==${JSON.stringify(name)}`);
     const result = await this.request<{ Contacts: Xero.Contact[] }>(
       "GET",
-      `/Contacts?where=Name=="${escaped}"`
+      `/Contacts?where=${where}`
     );
 
     if (result.error) throwXeroApiError("search contacts", result);
@@ -746,6 +753,9 @@ export class XeroProvider implements BaseProvider, SupportsIncrementalPull {
     if (!filter) return [];
 
     const ids: string[] = [];
+    // A short page is the last one — the ONLY evidence the walk saw every
+    // contact. Running out of pages instead is not evidence of anything.
+    let complete = false;
 
     for (let page = 1; page <= XERO_IMPORT_MAX_PAGES; page++) {
       const params = new URLSearchParams();
@@ -766,7 +776,29 @@ export class XeroProvider implements BaseProvider, SupportsIncrementalPull {
         if (contact.ContactID) ids.push(contact.ContactID);
       }
 
-      if (contacts.length < XERO_CONTACTS_PAGE_SIZE) break;
+      if (contacts.length < XERO_CONTACTS_PAGE_SIZE) {
+        complete = true;
+        break;
+      }
+    }
+
+    // Exhausting the cap is the same failure as a failed page, and it must fail
+    // the same way: the caller (`accounting-master-sync`) pulls exactly the ids
+    // it is handed and then reports the import succeeded, so returning the first
+    // 10,000 would tell the customer every contact came across while the rest
+    // silently never arrived. "Carbon could not enumerate them all" is not
+    // "these are all of them".
+    if (!complete) {
+      logger.error("Xero contact enumeration exceeded the import page cap", {
+        kind,
+        maxPages: XERO_IMPORT_MAX_PAGES,
+        collected: ids.length
+      });
+      throw new Error(
+        `Xero has more than ${
+          XERO_IMPORT_MAX_PAGES * XERO_CONTACTS_PAGE_SIZE
+        } ${kind} contacts; refusing to import a partial list`
+      );
     }
 
     return ids;

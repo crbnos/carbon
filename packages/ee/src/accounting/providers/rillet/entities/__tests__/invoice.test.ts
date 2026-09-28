@@ -322,6 +322,30 @@ describe("Rillet actual invoice preflight", () => {
     expect(test.ensureShippingProduct).not.toHaveBeenCalled();
     expect(test.provider.createInvoice).not.toHaveBeenCalled();
   });
+  it.each([
+    "assetDisposal",
+    "missingSalesAccount"
+  ] as const)("refuses %s before the CUSTOMER is pushed to Rillet", async (option) => {
+    // Both refusals are PURE — they read the document and the local invoice
+    // only. Running them after `ensureDependencySynced("customer", …)` creates
+    // a Rillet counterparty in the customer's books for an invoice Rillet will
+    // never receive. Xero already ordered it this way; QBO had the same defect
+    // and was fixed in the same change as this.
+    const source = charges();
+    if (option === "assetDisposal") {
+      source.lines[0]!.invoiceLineType = "Fixed Asset";
+    } else {
+      source.salesRevenueAccountId = null;
+    }
+    const test = setupInvoice();
+
+    await expect(test.map(source)).rejects.toMatchObject({
+      failure: { errorCode: "UNMAPPED_ACCOUNTS", warning: true }
+    });
+    expect(test.ensureDependencySynced).not.toHaveBeenCalled();
+    expect(test.ensureSalesProduct).not.toHaveBeenCalled();
+    expect(test.provider.createInvoice).not.toHaveBeenCalled();
+  });
   it("provisions ONE sales product for the whole invoice, whatever the items", async () => {
     // The point of the change: three merchandise lines, one product call.
     const test = setupInvoice();

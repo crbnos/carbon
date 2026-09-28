@@ -379,6 +379,25 @@ describe("XeroProvider counterpart candidates", () => {
     );
   });
 
+  it("percent-encodes the where filter so a name cannot break the query", async () => {
+    fetchMock.mockResolvedValueOnce(jsonResponse({ Contacts: [] }));
+
+    // Every one of these is ordinary in a counterparty name.
+    await makeProvider().findRemoteCandidates("vendor", {
+      name: "Smith & Sons + Co #2"
+    });
+
+    const url = String(fetchMock.mock.calls[0]?.[0]);
+    // A bare `&` ends the `where` parameter early and adds a junk one; a bare
+    // `#` starts a fragment, which fetch never sends at all.
+    expect(url).not.toMatch(/[&#]/);
+    // And the whole name still reaches Xero, `+` included (a raw `+` in a query
+    // string decodes as a space).
+    expect(new URL(url).searchParams.get("where")).toBe(
+      'Name=="Smith & Sons + Co #2"'
+    );
+  });
+
   it("throws rather than reporting no match when the search fails", async () => {
     // Returning [] here would read as "no such contact" and create a duplicate.
     fetchMock.mockResolvedValueOnce(jsonResponse({ Message: "boom" }, 500));
@@ -457,5 +476,24 @@ describe("XeroProvider master-data enumeration", () => {
     await expect(
       makeProvider().listRemoteEntityIds("customer")
     ).rejects.toThrow();
+  });
+
+  it("throws at the page cap rather than returning a partial list", async () => {
+    // XERO_IMPORT_MAX_PAGES full pages: the walk never saw a short page, so it
+    // has no evidence these are every contact — and the master-data import
+    // would report a successful import of the subset it was handed.
+    const full = Array.from({ length: 100 }, (_, i) => ({
+      ContactID: `c-${i}`,
+      Name: `Contact ${i}`
+    }));
+    // A fresh Response per call — a body can only be read once.
+    fetchMock.mockImplementation(() =>
+      Promise.resolve(jsonResponse({ Contacts: full }))
+    );
+
+    await expect(
+      makeProvider().listRemoteEntityIds("customer")
+    ).rejects.toThrow(/refusing to import a partial list/);
+    expect(fetchMock).toHaveBeenCalledTimes(100);
   });
 });

@@ -14,15 +14,22 @@ import {
   CHARGE_CREDIT_PROVIDERS,
   CHARGE_NATIVE_VOID_PROVIDERS,
   type ChargePolicyInput,
+  type GlobalSyncConfig,
   MEMO_NATIVE_VOID_PROVIDERS,
   PAYMENT_PUSH_PROVIDERS,
   type ProviderID,
   REIMBURSEMENT_NATIVE_VOID_PROVIDERS,
   type resolveSyncConfig,
+  SpendProviderID,
   type SyncContext,
+  type SyncEntityType,
+  type SyncProvider,
   transitionOperation
 } from "@carbon/ee/accounting";
-import type { IntegrationTopology } from "@carbon/ee/sync";
+import {
+  applyLedgerDelegation,
+  type IntegrationTopology
+} from "@carbon/ee/sync";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { sql } from "kysely";
 import {
@@ -165,6 +172,27 @@ export async function reconcileEntities(args: {
    * `@carbon/ee` registry, whose import validates the server env.
    */
   topology: IntegrationTopology;
+  /**
+   * The provider the caller already resolved, for its EFFECTIVE sync config.
+   *
+   * A SPEND provider resolves its config from its install mode's ceiling and its
+   * own stored toggles (`buildSpendSyncConfig` — `pushInvoices` /
+   * `pushPurchaseOrders`), and stores none of it under `metadata.syncConfig`. So
+   * `resolveSyncConfig` — which reads only that key — hands back
+   * `DEFAULT_SYNC_CONFIG` verbatim, where `bill` and `purchaseOrder` are both
+   * enabled. Reconciliation therefore enqueued push operations for a family the
+   * platform does not sync: the drain resolved the real provider, its syncer
+   * skipped on `config.enabled`, and the ledger filled with
+   * "Sync disabled in config" rows — one per posted invoice, and (master data
+   * has no parked-disposition guard) one per purchase-order edit, forever.
+   *
+   * Only consulted for spend providers. An accounting provider's config already
+   * round-trips through `metadata.syncConfig`, and `getProviderIntegration`
+   * additionally FORCES entities (`payment` two-way for Rillet, say) that the
+   * generic default has off — so substituting it there would be a behaviour
+   * change well outside this gap.
+   */
+  provider?: Pick<SyncProvider, "getSyncConfig">;
   createdBy: string;
   /** Idempotency scope for this reconcile occasion (event id / run id). */
   scope: string;
@@ -177,11 +205,19 @@ export async function reconcileEntities(args: {
   // family modes and the backing entities — the pair that is only correct
   // together. With nothing delegated this is byte-identical to the previous
   // two lines.
-  const { settings, syncConfig } = applyEffectivePostingState(
-    args.integrationMetadata,
-    args.topology,
-    args.providerId
-  );
+  const { settings, syncConfig: metadataSyncConfig } =
+    applyEffectivePostingState(
+      args.integrationMetadata,
+      args.topology,
+      args.providerId
+    );
+  const syncConfig = resolveEffectiveSyncConfig({
+    providerId: args.providerId,
+    provider: args.provider,
+    metadataSyncConfig,
+    settings,
+    topology: args.topology
+  });
   // Always-on: automated postings sync whenever an accounting integration is
   // connected — the old settings.enabled master gate is gone. The entity flag
   // now defaults true and provider configs force it on.
@@ -553,6 +589,48 @@ export async function reconcileEntities(args: {
   }
 
   return summary;
+}
+
+const SPEND_PROVIDER_IDS: ReadonlySet<string> = new Set(
+  Object.values(SpendProviderID)
+);
+
+/**
+ * The config the DRAIN will actually use, so the reconciler cannot enqueue what
+ * the syncer is about to skip.
+ *
+ * Ledger delegation is re-applied over the provider's config rather than
+ * skipped: the two halves (`families[x] = "none"` plus disabling the family's
+ * backing entities) are only correct together, and the delegate — a spend
+ * platform that OWNS a family — must keep its own entities, which is what
+ * passing `integrationId` preserves. Re-running it over already-delegated
+ * settings is idempotent.
+ */
+function resolveEffectiveSyncConfig(args: {
+  providerId: string;
+  provider: Pick<SyncProvider, "getSyncConfig"> | undefined;
+  metadataSyncConfig: GlobalSyncConfig;
+  settings: Parameters<typeof applyLedgerDelegation>[0]["settings"];
+  topology: IntegrationTopology;
+}): GlobalSyncConfig {
+  if (!args.provider || !SPEND_PROVIDER_IDS.has(args.providerId)) {
+    return args.metadataSyncConfig;
+  }
+
+  const entities = Object.fromEntries(
+    Object.keys(args.metadataSyncConfig.entities).map((entityType) => [
+      entityType,
+      args.provider?.getSyncConfig(entityType as SyncEntityType) ??
+        args.metadataSyncConfig.entities[entityType as SyncEntityType]
+    ])
+  ) as GlobalSyncConfig["entities"];
+
+  return applyLedgerDelegation({
+    settings: args.settings,
+    syncConfig: { entities },
+    topology: args.topology,
+    integrationId: args.providerId
+  }).syncConfig;
 }
 
 function isEntityPushEnabled(

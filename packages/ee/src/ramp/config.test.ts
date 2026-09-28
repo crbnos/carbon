@@ -92,6 +92,28 @@ describe("Ramp settings by install mode", () => {
     expect(copy.toLowerCase()).not.toContain("into carbon's ledger");
   });
 
+  it("promises only the documents push-only mode can actually push", () => {
+    // The copy said Carbon "pushes purchase orders, receipts and provisional
+    // bills". Item-receipt push was designed and then dropped (2026-09-25): the
+    // mode's outbound ceiling is purchase orders and bills, `rampSyncerRegistry`
+    // registers exactly those two, and `RAMP_PUSH_ONLY_SCOPES` does not ask for
+    // `item_receipts:write`. This text is shown BEFORE consent for a choice that
+    // cannot be changed without reinstalling, so it sold a capability the mode
+    // does not have.
+    const pushOnly = (Ramp.modes ?? []).find((m) => m.id === "push-only");
+    const copy =
+      `${pushOnly?.description} ${pushOnly?.shortDescription}`.toLowerCase();
+
+    expect(RAMP_MODE_PROFILES["push-only"].outboundCeiling).toEqual({
+      purchaseOrder: true,
+      bill: true
+    });
+    expect(pushOnly?.scopes).not.toContain("item_receipts:write");
+    expect(copy).toContain("purchase orders");
+    expect(copy).toContain("bills");
+    expect(copy).not.toContain("receipt");
+  });
+
   it("names a ledger holder only when Carbon does not hold the seat", () => {
     // A provider-mode install showed "Ramp reports the ledger is held by Rillet"
     // beside "Carbon is my accounting system" — a flat contradiction, from a

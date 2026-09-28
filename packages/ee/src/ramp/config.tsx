@@ -155,7 +155,13 @@ export const Ramp = defineIntegration({
       id: "push-only",
       label: "Another system posts my ledger",
       description:
-        "Carbon pushes purchase orders, receipts and provisional bills into Ramp but never claims Ramp's accounting connection — your other accounting system keeps it, and codes and posts the spend.",
+        // Purchase orders and bills, and nothing else: the mode's
+        // `outboundCeiling` is `{ purchaseOrder: true, bill: true }` and
+        // `rampSyncerRegistry` registers exactly those two. Item-receipt push was
+        // designed and dropped (2026-09-25), so `RAMP_PUSH_ONLY_SCOPES` does not
+        // ask for `item_receipts:write` — and this copy is shown BEFORE consent,
+        // for a choice that cannot be changed without reinstalling.
+        "Carbon pushes purchase orders and provisional bills into Ramp but never claims Ramp's accounting connection — your other accounting system keeps it, and codes and posts the spend.",
       shortDescription:
         "Push purchase orders and bills to Ramp; another system posts the ledger.",
       scopes: [...RAMP_PUSH_ONLY_OAUTH_SCOPES]

@@ -341,6 +341,30 @@ describe("QBO actual invoice component/tax preflight", () => {
     expect(test.provider.createInvoice).not.toHaveBeenCalled();
     expect(test.provider.updateInvoice).not.toHaveBeenCalled();
   });
+  it.each([
+    "assetDisposal",
+    "missingSalesAccount"
+  ] as const)("refuses %s before the CUSTOMER is pushed to QuickBooks", async (option) => {
+    // Both of these refusals are PURE — they read the document and the local
+    // invoice only. Running them after `ensureDependencySynced("customer", …)`
+    // creates a QBO Customer in the customer's books for an invoice QBO will
+    // never receive: a counterparty they did not ask for, from a push that
+    // failed.
+    const source = fullInvoice();
+    if (option === "assetDisposal") {
+      source.lines[0]!.invoiceLineType = "Fixed Asset";
+    } else {
+      source.salesRevenueAccountId = null;
+    }
+    const test = setupInvoice();
+
+    await expect(test.map(source)).rejects.toMatchObject({
+      failure: { errorCode: "UNMAPPED_ACCOUNTS", warning: true }
+    });
+    expect(test.ensureDependencySynced).not.toHaveBeenCalled();
+    expect(test.ensureSalesItem).not.toHaveBeenCalled();
+    expect(test.provider.createInvoice).not.toHaveBeenCalled();
+  });
   it("rejects a non-finite reciprocal FX rate before provisioning", async () => {
     const source = fullInvoice();
     source.exchangeRate = Number.MIN_VALUE;

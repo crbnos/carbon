@@ -242,6 +242,12 @@ export class RampPurchaseOrderSyncer extends RampPushOnlyEntitySyncer<
 
     const { archive: _archive, ...payload } = data;
 
+    /**
+     * The Ramp id a 404 PATCH proved is gone, when this create is a RECREATE.
+     * It discriminates the idempotency key below — see there for why.
+     */
+    let recreateOf: string | null = null;
+
     if (existing) {
       // `vendor_id` is CREATE-only: Ramp answers a PATCH carrying it with
       // `422 DEVELOPER_7001 {"vendor_id": ["Unknown field."]}` and applies
@@ -278,18 +284,37 @@ export class RampPurchaseOrderSyncer extends RampPushOnlyEntitySyncer<
          * trade one permanent failure for another.
          */
         if (!(err instanceof RampApiError) || err.status !== 404) throw err;
+        recreateOf = existing;
         existing = null;
       }
     }
 
     const created = (await this.ramp.createPurchaseOrder(
       payload,
-      // Entity-scoped idempotency key (the Carbon purchase-order id), so a
-      // retried push cannot create a duplicate Ramp PO.
+      /**
+       * Entity-scoped idempotency key (the Carbon purchase-order id), so a
+       * retried push cannot create a duplicate Ramp PO.
+       *
+       * A RECREATE must not reuse the key the original create used, or the
+       * recovery above cannot work: an idempotency key that is still retained
+       * makes Ramp replay the ORIGINAL response, so the "new" purchase order is
+       * the archived one the PATCH just 404'd on — the mapping is rewritten to
+       * the same dead id, the next push 404s again, and the document never
+       * recovers. If instead Ramp refuses the reuse, the push fails outright
+       * (`DEVELOPER_7005`). Ramp documents no replay window at all — Rillet's,
+       * for comparison, is 24 h — so neither outcome can be ruled out by the
+       * age of the original create.
+       *
+       * The stale remote id is the discriminator rather than a timestamp or a
+       * nonce, because it keeps the key DETERMINISTIC: a transient retry of the
+       * same recreate reuses the same key and still cannot double-create, while
+       * a later recreate of a different Ramp purchase order gets a different
+       * one.
+       */
       buildRampIdempotencyKey({
         companyId: this.companyId,
         operation: "createPurchaseOrder",
-        scope: localId
+        scope: recreateOf ? `${localId}:recreate:${recreateOf}` : localId
       })
     )) as { id?: string } | null;
 
