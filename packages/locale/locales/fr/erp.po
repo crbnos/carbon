@@ -9066,7 +9066,7 @@ msgid "Install"
 msgstr "Installer"
 
 msgid "Install mode"
-msgstr ""
+msgstr "Mode d'installation"
 
 msgid "Installed"
 msgstr "Installé"

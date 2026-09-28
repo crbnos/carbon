@@ -9066,7 +9066,7 @@ msgid "Install"
 msgstr "설치"
 
 msgid "Install mode"
-msgstr ""
+msgstr "설치 모드"
 
 msgid "Installed"
 msgstr "설치됨"
