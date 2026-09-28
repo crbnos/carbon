@@ -3,6 +3,7 @@ import { describe, expect, it, vi } from "vitest";
 import {
   getCompanyPrivateBucket,
   hasCompanyPrivateObjectPathPrefix,
+  isStorageNotFound,
   isUnsafeStoragePath,
   LEGACY_PRIVATE_BUCKET,
   normalizeStorageSegment,
@@ -519,5 +520,30 @@ describe("storageErrorStatus", () => {
   it("is undefined when there is no status", () => {
     expect(storageErrorStatus(new Error("offline"))).toBeUndefined();
     expect(storageErrorStatus(null)).toBeUndefined();
+  });
+});
+
+describe("isStorageNotFound", () => {
+  it("treats storage's 400 (and a plain 404) as a missing object", async () => {
+    const { StorageUnknownError } = await import("@supabase/storage-js");
+    for (const status of [400, 404]) {
+      const error = new StorageUnknownError(
+        "{}",
+        new Response(null, { status })
+      );
+      expect(isStorageNotFound(error)).toBe(true);
+    }
+  });
+
+  it("does not treat server, auth or status-less errors as a miss", async () => {
+    const { StorageUnknownError } = await import("@supabase/storage-js");
+    for (const status of [401, 403, 500, 503]) {
+      const error = new StorageUnknownError(
+        "{}",
+        new Response(null, { status })
+      );
+      expect(isStorageNotFound(error)).toBe(false);
+    }
+    expect(isStorageNotFound(new Error("offline"))).toBe(false);
   });
 });

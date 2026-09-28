@@ -4,6 +4,7 @@ import {
   fileResponseHeaders,
   getContentType,
   hasCompanyPrivateObjectPathPrefix,
+  isStorageNotFound,
   isUnsafeStoragePath,
   MEDIA_CONTENT_TYPES,
   storage,
@@ -114,25 +115,21 @@ export let loader = async ({ params, request }: LoaderFunctionArgs) => {
     throw new Error(`File type ${fileType} not supported`);
   const contentType = getContentType(fileType);
 
-  async function downloadFile() {
-    const result = await storage(serviceRole)
-      .company(shareCompanyId)
-      .download(`${path}`);
-    if (!result.data) {
-      logger.error("Failed to download file", {
-        path,
-        status: storageErrorStatus(result.error),
-        error: result.error
-      });
-      return null;
-    }
-    return result.data;
-  }
-
   // No retry here: the client's fetchWithRetry already retries 5xx and
   // network failures.
-  const fileData = await downloadFile();
-  if (!fileData) return new Response(null, { status: 404 });
+  const { data: fileData, error } = await storage(serviceRole)
+    .company(shareCompanyId)
+    .download(path);
+  if (error) {
+    logger.error("Failed to download file", {
+      path,
+      status: storageErrorStatus(error),
+      error
+    });
+    return new Response(null, {
+      status: isStorageNotFound(error) ? 404 : 500
+    });
+  }
 
   const headers = fileResponseHeaders(
     contentType,

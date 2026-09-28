@@ -3,6 +3,7 @@ import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import {
   fileResponseHeaders,
   getContentType,
+  isStorageNotFound,
   isUnsafeStoragePath,
   storage,
   storageErrorStatus
@@ -39,23 +40,20 @@ export async function loader({ params }: LoaderFunctionArgs) {
   // the companyId, which selects the per-company bucket (with legacy fallback).
   const companyId = path.split("/")[0];
 
-  async function downloadFile() {
-    const result = await storage(client).company(companyId).download(`${path}`);
-    if (!result.data) {
-      logger.error("Failed to download file", {
-        path,
-        status: storageErrorStatus(result.error),
-        error: result.error
-      });
-      return null;
-    }
-    return result.data;
-  }
-
   // No retry here: the client's fetchWithRetry already retries 5xx and
   // network failures.
-  const fileData = await downloadFile();
-  if (!fileData) throw notFound("File not found");
+  const { data: fileData, error } = await storage(client)
+    .company(companyId)
+    .download(path);
+  if (error) {
+    logger.error("Failed to download file", {
+      path,
+      status: storageErrorStatus(error),
+      error
+    });
+    if (isStorageNotFound(error)) throw notFound("File not found");
+    throw new Response(null, { status: 500 });
+  }
 
   const headers = fileResponseHeaders(
     getContentType("glb"),

@@ -172,6 +172,17 @@ export function storageErrorStatus(error: unknown): number | undefined {
     : undefined;
 }
 
+/**
+ * Whether a storage error means the object is not there. Storage answers a
+ * missing object or bucket with HTTP 400 — the "404" is only in the body,
+ * which `download()` never reads — so 400 and 404 both count. Anything else
+ * (5xx, auth, no status at all) is a real failure, not a miss.
+ */
+export function isStorageNotFound(error: unknown): boolean {
+  const status = storageErrorStatus(error);
+  return status === 400 || status === 404;
+}
+
 export function storage(client: { storage: StorageClient }): CarbonStorage {
   return {
     from: (bucket) => client.storage.from(bucket),
