@@ -21,6 +21,7 @@ import {
   canCancelRequest,
   getLatestApprovalRequestForDocument
 } from "@carbon/ee/approvals.server";
+import { ORPCError } from "@orpc/server";
 import { checkRevisionLock } from "~/modules/items/items.server";
 import { assertMethodOperationIsDraft } from "~/modules/items/items.service";
 import {
@@ -65,7 +66,17 @@ export function createLockReader(context: GateContext): LockReader {
       .select(columns.join(", "))
       .in(column, values)
       .eq("companyId", context.companyId);
-    if (error) throw error;
+    if (error) {
+      // Fail closed with a message: the write must not run unchecked, and a
+      // raw PostgREST error object would surface as an unmapped failure.
+      const detail =
+        error && typeof error === "object" && "message" in error
+          ? String((error as { message: unknown }).message)
+          : String(error);
+      throw new ORPCError("INTERNAL_SERVER_ERROR", {
+        message: `Could not check whether this ${table} is locked: ${detail}`
+      });
+    }
     return data ?? [];
   };
 

@@ -388,11 +388,16 @@ dispatcher (`apps/erp/app/routes/api+/inngest.ts`). There is no separate
   `METHOD_LOCK_OPERATIONS` (`checkRevisionLock` + `assertMethodOperationIsDraft`;
   a `warn` verdict proceeds, as the routes do), and `INLINE_GUARDS` (per-tool
   functions copied from the imperative route checks). A tool not in a table is
-  not gated. `apps/erp/test/mcp-document-lock-coverage.test.ts` scans
+  not gated. Where a rule differs between create and update, the gate applies
+  the SERVICE's own insert test (`INSERT_TESTS`: `"id" in`, `row.id`,
+  `"createdBy" in`, `"updatedBy" in`) to the stamped payload, never a guess
+  from `id`: dispatch leaves a caller's `id` next to `_operation: "create"`.
+  `apps/erp/test/mcp-document-lock-coverage.test.ts` scans
   `routes/x+` and fails when a guarded route calls a registry write that is
   neither gated nor exempted with a reason, when an entry cites a route with no
   guard (an invented lock), or when a sibling write tool (same table) is
-  neither gated nor exempted. Adding a lock to a route therefore means adding
+  neither gated nor exempted, and when a create-sensitive tool's
+  `INSERT_TESTS` entry is missing or disagrees with its service. Adding a lock to a route therefore means adding
   the tool to a table (or an exemption) in the same change.
 
 ## Tool metadata & the generator (`scripts/generate-mcp.ts`)

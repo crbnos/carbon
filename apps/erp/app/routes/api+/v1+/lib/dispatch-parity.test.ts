@@ -14,6 +14,7 @@ const spies = vi.hoisted(() => ({
   getTrialBalance: vi.fn(),
   upsertAccount: vi.fn(),
   upsertJobMaterial: vi.fn(),
+  upsertProductionQuantity: vi.fn(),
   upsertMethodMaterial: vi.fn(),
   upsertQuoteLinePrices: vi.fn(),
   updateQuoteLineOrder: vi.fn(),
@@ -58,7 +59,8 @@ vi.mock("~/modules/people/people.service", () => ({}));
 vi.mock("~/modules/production/production.mcp.server", () => ({}));
 vi.mock("~/modules/production/production.service", () => ({
   insertJob: spies.insertJob,
-  upsertJobMaterial: spies.upsertJobMaterial
+  upsertJobMaterial: spies.upsertJobMaterial,
+  upsertProductionQuantity: spies.upsertProductionQuantity
 }));
 vi.mock("~/modules/purchasing/purchasing.service", () => ({
   insertPurchaseOrder: spies.insertPurchaseOrder
@@ -154,6 +156,7 @@ const allSpies = [
   spies.getTrialBalance,
   spies.upsertAccount,
   spies.upsertJobMaterial,
+  spies.upsertProductionQuantity,
   spies.upsertMethodMaterial,
   spies.upsertQuoteLinePrices,
   spies.updateQuoteLineOrder,
@@ -434,6 +437,31 @@ describe("dispatchOperation service-call contract (golden, ex-executeFunction pa
       unknown[]
     ];
     expect(functionArgs[1]).toMatchObject({ id: "mm_1", makeMethodId: "mk_1" });
+  });
+
+  it("e3. the lock gate sees the stamped payload: _operation create with a caller id still reads as an insert", async () => {
+    // The gate decides create vs update with the service's own test
+    // (upsertProductionQuantity inserts when updatedBy is absent). That only
+    // holds if the gate receives the payload after stamping, id included.
+    await runDispatch(
+      "production_upsertProductionQuantity",
+      spies.upsertProductionQuantity,
+      {
+        _operation: "create",
+        id: "pq_new",
+        jobOperationId: "op_1",
+        type: "Production",
+        quantity: 1
+      }
+    );
+    const [, , functionArgs] = spies.documentLock.mock.calls[0] as [
+      unknown,
+      unknown,
+      unknown[]
+    ];
+    const payload = functionArgs[1] as Record<string, unknown>;
+    expect(payload).toMatchObject({ id: "pq_new", createdBy: ctx.userId });
+    expect("updatedBy" in payload).toBe(false);
   });
 
   it("f. missing _operation on a tool that requires it is rejected before the service runs", async () => {

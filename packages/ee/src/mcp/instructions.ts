@@ -63,5 +63,8 @@ KEY PATTERNS:
 - Results omit null fields — an absent field means null
 - List reads default to ${MCP_DEFAULT_LIMIT} rows; pass limit/offset to page
 - Dates: ISO 8601 (YYYY-MM-DD)
-- Pagination: limit/offset`;
+- Pagination: limit/offset
+- Edits the app refuses on a locked document (a confirmed order, a released
+  make method, a posted receipt, a closed job or issue) are refused here too,
+  with the app's reason; status changes and reopen stay available`;
 }

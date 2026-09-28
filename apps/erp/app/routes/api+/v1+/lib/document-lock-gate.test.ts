@@ -201,6 +201,9 @@ describe("header status locks", () => {
       job: [{ id: "job_closed", status: "Cancelled" }],
       jobOperation: [{ id: "op_1", jobId: "job_closed" }]
     });
+    // Payloads as dispatch hands them over: `_operation: "create"` strips
+    // updatedBy, an update (or no `_operation`) stamps it, and the service
+    // inserts exactly when updatedBy is absent.
     expect(
       await run(
         "production_upsertProductionQuantity",
@@ -208,7 +211,8 @@ describe("header status locks", () => {
           productionQuantity: {
             jobOperationId: "op_1",
             type: "Production",
-            quantity: 1
+            quantity: 1,
+            createdBy: "user_1"
           }
         },
         jobs
@@ -223,12 +227,70 @@ describe("header status locks", () => {
             id: "pq_1",
             jobOperationId: "op_1",
             type: "Production",
-            quantity: 5
+            quantity: 5,
+            updatedBy: "user_1"
           }
         },
         jobs
       )
     ).toBeNull();
+  });
+
+  it("treats a caller-supplied id on an insert as a create", async () => {
+    // `_operation: "create"` with an id the caller made up: dispatch strips
+    // updatedBy / stamps createdBy and leaves the id, so the service inserts.
+    const jobs = reader({
+      job: [{ id: "job_closed", status: "Cancelled" }],
+      jobOperation: [{ id: "op_1", jobId: "job_closed" }]
+    });
+    expect(
+      await run(
+        "production_upsertProductionQuantity",
+        {
+          productionQuantity: {
+            id: "pq_new",
+            jobOperationId: "op_1",
+            type: "Production",
+            quantity: 1,
+            createdBy: "user_1"
+          }
+        },
+        jobs
+      )
+    ).toBe("Cannot modify a locked job. Reopen it first.");
+    expect(
+      await run(
+        "production_upsertProductionEvent",
+        {
+          productionEvent: {
+            id: "pe_new",
+            jobOperationId: "op_1",
+            type: "Labor",
+            createdBy: "user_1"
+          }
+        },
+        jobs
+      )
+    ).toBe("Cannot modify a locked job. Reopen it first.");
+
+    const returns = reader({
+      salesReturnOrder: [{ id: "rma_1", status: "To Receive" }]
+    });
+    expect(
+      await run(
+        "sales_upsertSalesReturnOrderLine",
+        {
+          line: {
+            id: "line_new",
+            salesReturnOrderId: "rma_1",
+            itemId: "item_1",
+            quantity: 1,
+            createdBy: "user_1"
+          }
+        },
+        returns
+      )
+    ).toBe("Lines can only be added while the return order is Draft");
   });
 
   it("lets the fields the inline editor changes on a locked invoice through", async () => {
@@ -297,7 +359,13 @@ describe("header status locks", () => {
     expect(
       await run(
         "invoicing_upsertPayment",
-        { payment: { paymentType: "Receipt", totalAmount: 10 } },
+        {
+          payment: {
+            paymentType: "Receipt",
+            totalAmount: 10,
+            createdBy: "user_1"
+          }
+        },
         payments
       )
     ).toBeNull();
@@ -444,19 +512,27 @@ describe("inline route guards", () => {
     const upsert = (line: Row) =>
       run("sales_upsertSalesReturnOrderLine", { line }, db);
 
+    // The service inserts when createdBy is present (dispatch stamps it on a
+    // create and strips it on an update).
     expect(
       await upsert({
         salesReturnOrderId: "rma_1",
         itemId: "item_1",
-        quantity: 1
+        quantity: 1,
+        createdBy: "user_1"
       })
     ).toBe("Lines can only be added while the return order is Draft");
-    expect(await upsert({ id: "line_1", quantity: 999 })).toBe(
-      "Quantity is locked after confirmation"
-    );
+    expect(
+      await upsert({ id: "line_1", quantity: 999, updatedBy: "user_1" })
+    ).toBe("Quantity is locked after confirmation");
     // Re-sending the stored values, or editing an unfrozen field, passes.
     expect(
-      await upsert({ id: "line_1", quantity: 1, returnReasonId: "rr_1" })
+      await upsert({
+        id: "line_1",
+        quantity: 1,
+        returnReasonId: "rr_1",
+        updatedBy: "user_1"
+      })
     ).toBeNull();
   });
 

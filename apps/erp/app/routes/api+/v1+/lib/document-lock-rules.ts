@@ -163,12 +163,76 @@ export async function resolveRefIds(
   return [...out];
 }
 
-/** A write is a create when its payload object carries no id. */
-function isCreate(args: ResolvedArgs, param: string): boolean {
+// ---------------------------------------------------------------------------
+// Create vs update: the service's own test, never the gate's guess.
+// ---------------------------------------------------------------------------
+
+/**
+ * How an upsert service picks its insert branch, read off the payload it
+ * receives. The gate sees the payload after `enrichWithAuthContext`, which
+ * stamps or strips `createdBy` / `updatedBy` per `_operation`, so applying the
+ * service's test to that payload lands on the branch the service will take —
+ * a caller-supplied `id` next to `_operation: "create"` cannot make an insert
+ * look like an edit.
+ *
+ * - `idFalsy`: `if (row.id)` updates.
+ * - `idKeyAbsent`: `if ("id" in row)` updates.
+ * - `createdByPresent`: `if ("createdBy" in row)` inserts.
+ * - `updatedByAbsent`: `if ("updatedBy" in row)` updates.
+ */
+export type InsertTest =
+  | "idFalsy"
+  | "idKeyAbsent"
+  | "createdByPresent"
+  | "updatedByAbsent";
+
+/**
+ * Every tool whose rules differ between create and update (`on`, a
+ * `{ create, update }` message, a create-aware inline guard), with its
+ * service's test. `mcp-document-lock-coverage.test.ts` reads each service and
+ * fails when an entry is missing or disagrees with the code.
+ */
+export const INSERT_TESTS: Record<string, InsertTest> = {
+  sales_upsertSalesOrderLine: "idKeyAbsent",
+  sales_upsertSalesOrder: "idKeyAbsent",
+  sales_upsertQuote: "createdByPresent",
+  sales_upsertSalesRFQ: "createdByPresent",
+  sales_upsertSalesReturnOrderLine: "createdByPresent",
+  invoicing_upsertSalesInvoice: "idKeyAbsent",
+  invoicing_upsertPurchaseInvoice: "idKeyAbsent",
+  invoicing_upsertPayment: "createdByPresent",
+  purchasing_upsertPurchaseOrder: "idKeyAbsent",
+  purchasing_upsertPurchaseReturnOrderLine: "createdByPresent",
+  purchasing_upsertPurchasingRFQ: "idFalsy",
+  purchasing_upsertSupplierQuote: "createdByPresent",
+  production_upsertProductionQuantity: "updatedByAbsent",
+  production_upsertProductionEvent: "createdByPresent",
+  production_upsertJob: "updatedByAbsent",
+  quality_upsertIssue: "createdByPresent",
+  inventory_upsertWarehouseTransfer: "createdByPresent",
+  resources_upsertMaintenanceDispatch: "createdByPresent",
+  production_upsertMaintenanceDispatch: "createdByPresent"
+};
+
+/** Whether the service will take its insert branch for this payload. */
+export function isCreate(
+  tool: string,
+  args: ResolvedArgs,
+  param: string
+): boolean {
   const value = args[param];
   if (!value || typeof value !== "object" || Array.isArray(value)) return false;
-  const id = (value as Row).id;
-  return typeof id !== "string" || id === "";
+  const row = value as Row;
+  switch (INSERT_TESTS[tool] ?? "idFalsy") {
+    case "idKeyAbsent":
+      return !("id" in row);
+    case "createdByPresent":
+      return "createdBy" in row;
+    case "updatedByAbsent":
+      return !("updatedBy" in row);
+    default:
+      return typeof row.id !== "string" || row.id === "";
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -1315,6 +1379,8 @@ export const METHOD_LOCK_OPERATIONS: Record<string, MethodLockRule> = {
 
 export type InlineGuard = {
   routes: string[];
+  /** The check branches on `create` (decided by `INSERT_TESTS`). */
+  createAware?: true;
   check: (
     args: ResolvedArgs,
     reader: LockReader,
@@ -1586,6 +1652,7 @@ export const INLINE_GUARDS: Record<string, InlineGuard> = {
       )
   },
   sales_upsertSalesReturnOrderLine: {
+    createAware: true,
     routes: [
       "sales-return-order+/$id.new.tsx",
       "sales-return-order+/$id.$lineId.details.tsx"
@@ -1602,6 +1669,7 @@ export const INLINE_GUARDS: Record<string, InlineGuard> = {
     })
   },
   purchasing_upsertPurchaseReturnOrderLine: {
+    createAware: true,
     routes: [
       "purchase-return-order+/$id.new.tsx",
       "purchase-return-order+/$id.$lineId.details.tsx"
@@ -1647,12 +1715,13 @@ function touchesOnly(
 }
 
 async function checkLockRule(
+  tool: string,
   rule: LockRule,
   args: ResolvedArgs,
   reader: LockReader
 ): Promise<string | null> {
   const writeParam = rule.writeParam ?? rule.refs[0]?.param;
-  const create = writeParam ? isCreate(args, writeParam) : false;
+  const create = writeParam ? isCreate(tool, args, writeParam) : false;
   if (rule.on === "create" && !create) return null;
   if (rule.on === "update" && create) return null;
   if (rule.when && !rule.when(args)) return null;
@@ -1723,7 +1792,7 @@ export async function evaluateDocumentLocks(
       ? lockRules
       : [lockRules]
     : []) {
-    const message = await checkLockRule(rule, args, reader);
+    const message = await checkLockRule(meta.name, rule, args, reader);
     if (message) return message;
   }
 
@@ -1739,7 +1808,7 @@ export async function evaluateDocumentLocks(
         : [lockRules]
       : [];
     const writeParam = rules[0]?.writeParam ?? rules[0]?.refs[0]?.param;
-    const create = writeParam ? isCreate(args, writeParam) : false;
+    const create = writeParam ? isCreate(meta.name, args, writeParam) : false;
     const message = await inline.check(args, reader, create);
     if (message) return message;
   }
@@ -1765,6 +1834,23 @@ export function gatedToolNames(): string[] {
       ...Object.keys(INLINE_GUARDS)
     ])
   ];
+}
+
+/** Every tool whose verdict depends on create vs update — for the coverage
+ *  test, which requires each to name its service's test in `INSERT_TESTS`. */
+export function createSensitiveToolNames(): string[] {
+  const out = new Set<string>();
+  for (const [tool, rules] of Object.entries(LOCK_OPERATIONS)) {
+    for (const rule of Array.isArray(rules) ? rules : [rules]) {
+      if (rule.on || (rule.message && typeof rule.message === "object")) {
+        out.add(tool);
+      }
+    }
+  }
+  for (const [tool, guard] of Object.entries(INLINE_GUARDS)) {
+    if (guard.createAware) out.add(tool);
+  }
+  return [...out];
 }
 
 /** Every route a gate entry cites, keyed by tool — for the coverage test. */

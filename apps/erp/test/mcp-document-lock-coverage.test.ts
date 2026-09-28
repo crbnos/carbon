@@ -20,9 +20,12 @@ import { fileURLToPath } from "node:url";
 import { describe, expect, it, vi } from "vitest";
 import toolMetadataJson from "../app/routes/api+/mcp+/lib/tool-metadata.json";
 import {
+  createSensitiveToolNames,
   gateRoutesByTool,
   gatedToolNames,
   INLINE_GUARDS,
+  INSERT_TESTS,
+  type InsertTest,
   LOCK_OPERATIONS,
   METHOD_LOCK_OPERATIONS,
   type Ref
@@ -297,6 +300,9 @@ function tablesWritten(body: string): Set<string> {
 
 /** Tables each exported service function writes, including through the
  *  private helpers of its file that it calls (one level deep). */
+/** Exported service bodies by tool name (`<module>_<export>`). */
+const serviceBodies = new Map<string, string>();
+
 const serviceWrites = (() => {
   const writes = new Map<string, Set<string>>();
   for (const module of readdirSync(MODULES_DIR)) {
@@ -319,6 +325,7 @@ const serviceWrites = (() => {
         else helpers.set(name, tablesWritten(body));
       }
       for (const [name, body] of exported) {
+        serviceBodies.set(`${module}_${name}`, body);
         const tables = tablesWritten(body);
         for (const [helper, helperTables] of helpers) {
           if (new RegExp(`\\b${helper}\\(`).test(body)) {
@@ -331,6 +338,23 @@ const serviceWrites = (() => {
   }
   return writes;
 })();
+
+/** The insert/update test an upsert service applies first, read off its
+ *  source, in the vocabulary of `INSERT_TESTS`. */
+function serviceInsertTest(body: string): InsertTest | null {
+  const tests: [InsertTest, RegExp][] = [
+    ["createdByPresent", /if\s*\(\s*"createdBy"\s+in\s+\w+\s*\)/],
+    ["updatedByAbsent", /if\s*\(\s*"updatedBy"\s+in\s+\w+\s*\)/],
+    ["idKeyAbsent", /if\s*\(\s*"id"\s+in\s+\w+/],
+    ["idFalsy", /if\s*\(\s*!?\w+\.id\s*\)/]
+  ];
+  let best: [InsertTest, number] | null = null;
+  for (const [test, pattern] of tests) {
+    const index = body.search(pattern);
+    if (index >= 0 && (!best || index < best[1])) best = [test, index];
+  }
+  return best?.[0] ?? null;
+}
 
 const gated = new Set(gatedToolNames());
 const routesByTool = gateRoutesByTool();
@@ -411,6 +435,31 @@ describe("document-lock gate coverage", () => {
       if (shared.length > 0) missing.push(`${tool} writes ${shared.join(", ")}`);
     }
     expect(missing).toEqual([]);
+  });
+
+  it("decides create vs update with the service's own test", () => {
+    // Dispatch stamps or strips createdBy/updatedBy per `_operation` and never
+    // strips `id`, so a gate that guessed from `id` could be told "update"
+    // while the service inserts. Each create-sensitive tool must name the
+    // test its service applies, and that test must match the code.
+    const bad: string[] = [];
+    for (const tool of createSensitiveToolNames()) {
+      const declared = INSERT_TESTS[tool];
+      const body = serviceBodies.get(tool);
+      if (!declared) bad.push(`${tool}: no INSERT_TESTS entry`);
+      else if (body === undefined) bad.push(`${tool}: service not found`);
+      else if (serviceInsertTest(body) !== declared) {
+        bad.push(
+          `${tool}: declared ${declared}, service uses ${serviceInsertTest(body)}`
+        );
+      }
+    }
+    for (const tool of Object.keys(INSERT_TESTS)) {
+      if (!createSensitiveToolNames().includes(tool)) {
+        bad.push(`${tool}: INSERT_TESTS entry for a tool no rule splits`);
+      }
+    }
+    expect(bad).toEqual([]);
   });
 
   it("keeps no stale exemption", () => {
