@@ -7,7 +7,7 @@ Enterprise edition — integrations registry (incl. Ramp), accounting sync (Xero
 - MUST wrap provider-originated database writes in `withTriggersDisabled()` so SYNC subscriptions cannot echo them back to the provider.
 - MUST link external ids through `createMappingService()` and `externalIntegrationMapping`; do not add per-entity external-id columns.
 - MUST register server lifecycle hooks in `src/hooks.server.ts`; integration config files are shared with browser bundles.
-- MUST use the operation-specific helpers from `@carbon/ee/ramp.server` for Ramp state. `patchRampSettings`, `patchRampOAuthCredentials`, `patchRampRefreshedTokens`, `patchRampConnection`, `patchRampWebhook`, and `patchRampCursor` own disjoint paths and delegate to the atomic `patchIntegrationState()` RPC boundary.
+- MUST use the operation-specific helpers from `@carbon/ee/ramp.server` for Ramp state. `patchRampSettings`, `patchRampOAuthCredentials`, `patchRampRefreshedTokens`, `patchRampConnection`, `patchRampWebhook`, `patchRampCursor`, and `patchRampAccountingConnectionProvider` (the one helper that REMOVES its key) own disjoint paths and delegate to the atomic `patchIntegrationState()` RPC boundary.
 - MUST use `FEATURE_PLANS` for client and server plan gating. `companyHasPlan()` and `requirePlan()` intentionally allow non-Cloud editions and bypass-listed companies. For features that must be BLOCKED on the **Community** edition (RBAC authoring/permissions, console mode, and the entitlement-gated feature writes), use `companyHasFeature`/`requireFeature`/`requireEntitlement` instead — they return false/throw on `Edition.Community` (Enterprise/Test still pass). See `.claude/rules/commercial-licensing.md`.
 
 ## Ask First
@@ -36,7 +36,7 @@ pnpm --filter @carbon/ee typecheck
 |---------|----------|
 | `.` | Integration descriptors/registry, `defineIntegration`, and secret-resolution helpers |
 | `./accounting` | `SyncFactory`, provider adapters, mappings, posting policy, reconciliation helpers |
-| `./sync` | Role-agnostic sync core: `SyncProviderCapabilities` + `resolveCapabilities` (one capability surface for accounting AND spend providers), `IntegrationTopology` + `buildIntegrationTopology` (who owns each GL family, whose identifiers a target expects), and `applyLedgerDelegation` + the branded `EffectivePostingSyncSettings`. Import-light on purpose — no `@carbon/auth`, so jobs and tests can use it without booting the server env |
+| `./sync` | Role-agnostic sync core: `SyncProviderCapabilities` + `resolveCapabilities` (one capability surface for accounting AND spend providers), `IntegrationTopology` + `buildIntegrationTopology` (who owns each GL family, whose identifiers a target expects), `applyLedgerDelegation` + the branded `EffectivePostingSyncSettings`, and `applyPartyContactRequirements` / `partyContactSettingsToEnable` / `PARTY_CONTACT_SETTING_COLUMN` (the `requiresPartyContactAndLocation` capability that turns the party-contact company settings ON at install — the one `./sync` export with a database side effect). Import-light on purpose — no `@carbon/auth`, so jobs and tests can use it without booting the server env |
 | `./integrations/secrets` | `patchIntegrationState`, Vault split/persist/resolve helpers, `SECRET_KEYS` |
 | `./ramp.server` | Ramp client, schemas, service operations, money/coding helpers, and key-owned state patches |
 | `./ramp/hooks.server` | `rampOnInstall`, `rampOnUpdate`, `rampOnUninstall`, `rampHealthcheck` |

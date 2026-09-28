@@ -1,19 +1,51 @@
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { CREDIT_REASON_ITEM_ENTITY_TYPE } from "../../../../core/credit-reason-item";
 import type { ExternalIntegrationMappingService } from "../../../../core/external-mapping";
+import { JournalEntrySyncError } from "../../../../core/posting";
 import type { Qbo } from "../../models";
 import {
   buildQboCreditMemoPayload,
   buildQboCreditReasonItemName,
   QBO_MEMO_INCREASER_SKIP_REASON,
+  QboCreditMemoSyncer,
+  type QboMemoSettlementRow,
   type QboMemoSource,
   qboCreditMemoSkipReason,
+  qboMemoApplicationAmount,
   resolveQboCreditReasonItemRef
 } from "../credit-memo";
 import {
   buildQboVendorCreditPayload,
   qboVendorCreditSkipReason
 } from "../vendor-credit";
+
+/**
+ * `recordQboMemoApplication` writes its mapping row inside
+ * `withTriggersDisabled`, a real Kysely transaction that opens with a `SET LOCAL`
+ * statement. Stub it so the row lands in `mappingRows` instead — that map is the
+ * durable store the resumability test reads back.
+ */
+const { mappingRows } = vi.hoisted(() => ({
+  mappingRows: new Map<string, string>()
+}));
+vi.mock("../../../../core/utils", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("../../../../core/utils")>()),
+  withTriggersDisabled: async (
+    _db: unknown,
+    cb: (tx: unknown) => Promise<unknown>
+  ) => {
+    const builder: Record<string, any> = {};
+    builder.values = (value: any) => {
+      for (const row of Array.isArray(value) ? value : [value]) {
+        mappingRows.set(`${row.entityType}::${row.entityId}`, row.externalId);
+      }
+      return builder;
+    };
+    builder.onConflict = () => builder;
+    builder.execute = async () => [];
+    return cb({ insertInto: () => builder });
+  }
+}));
 
 const INTEGRATION = "quickbooks";
 const REASON_ACCOUNT_REF: Qbo.Ref = { value: "84", name: "Sales Returns" };
@@ -272,5 +304,232 @@ describe("the v1 increaser skip (canonical rule, shared by all providers)", () =
       )
     ).toContain("not a customer memo");
     expect(qboVendorCreditSkipReason(memo())).toContain("not a supplier memo");
+  });
+});
+
+/**
+ * A settlement, with the pair `.claude/rules/numeric-precision.md` cares about:
+ * `sourceAmount` is the exact source-document principal (the MEMO's currency)
+ * and `appliedAmount` is BASE currency. The two differ on every foreign memo.
+ */
+function settlement(
+  overrides: Partial<QboMemoSettlementRow> = {}
+): QboMemoSettlementRow {
+  return {
+    id: "st_1",
+    sourceAmount: 100,
+    appliedAmount: 100,
+    appliedDate: "2026-09-22",
+    targetSalesInvoiceId: "si_1",
+    targetPurchaseInvoiceId: null,
+    targetMemoId: null,
+    discountAmount: 0,
+    writeOffAmount: 0,
+    sourceExchangeRate: 1,
+    targetExchangeRate: 1,
+    ...overrides
+  };
+}
+
+/**
+ * Drives `upsertRemote` (and so `applySettlements`) with no QBO and no database.
+ *
+ * `mappingRows` is the DURABLE store: `recordQboMemoApplication` writes into it
+ * through the mocked `withTriggersDisabled` above, and the same rows back
+ * `mappingService.getExternalId` — so a second push really does see what the
+ * first one recorded, which is the whole claim of the resumability test.
+ */
+function makeCreditMemoSyncer(args: {
+  memo: QboMemoSource;
+  applyCreditMemo?: ReturnType<typeof vi.fn>;
+}) {
+  const applyCreditMemo =
+    args.applyCreditMemo ?? vi.fn(async () => "qbo-payment-1");
+  const createCreditMemo = vi.fn(async () => ({ Id: "qbo-cm-1" }));
+
+  const syncer = new QboCreditMemoSyncer({
+    database: {} as never,
+    companyId: "company-1",
+    provider: { id: INTEGRATION, createCreditMemo, applyCreditMemo } as never,
+    config: { enabled: true, direction: "push-to-accounting", owner: "carbon" },
+    entityType: "creditMemo"
+  });
+
+  const patched = syncer as unknown as Record<string, any>;
+  patched.mappingService = {
+    getByEntity: vi.fn(async () => null),
+    getExternalId: vi.fn(async (entityType: string, entityId: string) =>
+      entityType === "invoice"
+        ? `qbo-invoice-${entityId}`
+        : (mappingRows.get(`${entityType}::${entityId}`) ?? null)
+    )
+  };
+  vi.spyOn(syncer, "fetchLocal").mockResolvedValue(args.memo);
+
+  const push = () =>
+    patched.upsertRemote(
+      { CustomerRef: { value: "17" } } as never,
+      args.memo.id
+    ) as Promise<string>;
+
+  return { push, applyCreditMemo, createCreditMemo };
+}
+
+describe("qboMemoApplicationAmount (document currency, never base)", () => {
+  it("returns the source-document principal", () => {
+    expect(qboMemoApplicationAmount(memo(), settlement())).toBe(100);
+  });
+
+  it("refuses a settlement with no source principal rather than sending the base amount", () => {
+    try {
+      qboMemoApplicationAmount(
+        memo(),
+        settlement({ sourceAmount: null, appliedAmount: 108.7 })
+      );
+      expect.unreachable("should have thrown");
+    } catch (error) {
+      expect(error).toBeInstanceOf(JournalEntrySyncError);
+      const failure = (error as JournalEntrySyncError).failure;
+      expect(failure.errorCode).toBe("UNSYNCED_DOCUMENT");
+      expect(failure.warning).toBe(true);
+    }
+  });
+
+  it("refuses a zero or negative principal", () => {
+    expect(() =>
+      qboMemoApplicationAmount(memo(), settlement({ sourceAmount: 0 }))
+    ).toThrowError(JournalEntrySyncError);
+  });
+});
+
+describe("the cross-currency application guard (parity with Xero)", () => {
+  const crossCurrency = settlement({
+    sourceExchangeRate: 0.92,
+    targetExchangeRate: 0.88
+  });
+
+  it("skips a customer credit memo whose application crosses currencies", () => {
+    const reason = qboCreditMemoSkipReason(
+      memo({ settlements: [crossCurrency] })
+    );
+    expect(reason).toContain("cross-currency");
+    expect(reason).toContain("st_1");
+  });
+
+  it("skips a supplier credit whose application crosses currencies", () => {
+    const reason = qboVendorCreditSkipReason(
+      memo({
+        direction: "Debit",
+        customerId: null,
+        supplierId: "supp_1",
+        settlements: [
+          settlement({
+            targetSalesInvoiceId: null,
+            targetPurchaseInvoiceId: "pi_1",
+            sourceExchangeRate: 0.92,
+            targetExchangeRate: 0.88
+          })
+        ]
+      })
+    );
+    expect(reason).toContain("cross-currency");
+  });
+
+  it("allows a same-rate foreign application", () => {
+    expect(
+      qboCreditMemoSkipReason(
+        memo({
+          currencyCode: "EUR",
+          exchangeRate: 0.92,
+          settlements: [
+            settlement({ sourceExchangeRate: 0.92, targetExchangeRate: 0.92 })
+          ]
+        })
+      )
+    ).toBeNull();
+  });
+});
+
+describe("QboCreditMemoSyncer.applySettlements", () => {
+  beforeEach(() => {
+    mappingRows.clear();
+  });
+
+  it("sends the DOCUMENT-currency principal for a foreign memo, not the base amount", async () => {
+    // EUR 100.00 at 0.92 EUR per USD of base: appliedAmount is 108.70 base.
+    const { push, applyCreditMemo } = makeCreditMemoSyncer({
+      memo: memo({
+        currencyCode: "EUR",
+        exchangeRate: 0.92,
+        amount: 100,
+        settlements: [
+          settlement({
+            sourceAmount: 100,
+            appliedAmount: 108.7,
+            sourceExchangeRate: 0.92,
+            targetExchangeRate: 0.92
+          })
+        ]
+      })
+    });
+
+    await push();
+
+    const payload = applyCreditMemo.mock.calls[0]?.[0] as {
+      Line: Array<{ Amount: number }>;
+    };
+    expect(payload.Line.map((line) => line.Amount)).toEqual([100, 100]);
+    expect(JSON.stringify(payload)).not.toContain("108.7");
+  });
+
+  it("refuses to apply a settlement with no source principal", async () => {
+    const { push, applyCreditMemo } = makeCreditMemoSyncer({
+      memo: memo({
+        settlements: [settlement({ sourceAmount: null, appliedAmount: 100 })]
+      })
+    });
+
+    await expect(push()).rejects.toThrowError(JournalEntrySyncError);
+    expect(applyCreditMemo).not.toHaveBeenCalled();
+  });
+
+  it("keeps the FIRST application durable when the second fails, and never re-applies it", async () => {
+    const memoWithTwo = memo({
+      settlements: [
+        settlement({ id: "st_1", targetSalesInvoiceId: "si_1" }),
+        settlement({ id: "st_2", targetSalesInvoiceId: "si_2" })
+      ]
+    });
+
+    const failing = vi.fn(async (payload: any) =>
+      (payload.Line[0].LinkedTxn[0].TxnId as string).includes("si_2")
+        ? Promise.reject(new Error("QuickBooks Online returned 500"))
+        : "qbo-payment-1"
+    );
+    const first = makeCreditMemoSyncer({
+      memo: memoWithTwo,
+      applyCreditMemo: failing
+    });
+
+    await expect(first.push()).rejects.toThrow("500");
+    // The whole point: linkEntities never ran, so the memo's own mapping
+    // metadata was never written — the per-application row is what survives.
+    expect(mappingRows.get("qboMemoApplication::memo_1:st_1")).toBe(
+      "qbo-payment-1"
+    );
+
+    const second = makeCreditMemoSyncer({ memo: memoWithTwo });
+    await second.push();
+
+    // ONE call, for st_2 only. Applying st_1 twice is real accounting
+    // corruption, not a cosmetic duplicate.
+    expect(second.applyCreditMemo).toHaveBeenCalledTimes(1);
+    const retried = second.applyCreditMemo.mock.calls[0]?.[0] as {
+      Line: Array<{ LinkedTxn: Array<{ TxnId: string }> }>;
+    };
+    expect(retried.Line[0]?.LinkedTxn[0]?.TxnId).toBe("qbo-invoice-si_2");
+    expect(mappingRows.get("qboMemoApplication::memo_1:st_2")).toBe(
+      "qbo-payment-1"
+    );
   });
 });

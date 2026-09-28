@@ -16,8 +16,12 @@ import {
   loadQboMemoSources,
   QBO_MEMO_INCREASER_SKIP_REASON,
   type QboMemoSource,
+  qboMemoApplicationAmount,
+  qboMemoApplicationSkipReason,
   qboMemoStatusSkipReason,
-  readQboAppliedSettlementIds
+  readQboAppliedSettlementIds,
+  readQboMemoApplication,
+  recordQboMemoApplication
 } from "./credit-memo";
 import {
   buildQboDocNumberFields,
@@ -60,7 +64,7 @@ export function qboVendorCreditSkipReason(memo: QboMemoSource): string | null {
   if (memo.direction !== "Debit") {
     return `${QBO_MEMO_INCREASER_SKIP_REASON}: memo ${memo.memoId} is a supplier + Credit memo, which INCREASES the payable and has no safe QuickBooks Online representation (TotalAmt is read-only)`;
   }
-  return null;
+  return qboMemoApplicationSkipReason(memo);
 }
 
 /**
@@ -425,6 +429,19 @@ export class QboVendorCreditSyncer extends BaseEntitySyncer<
     const bankRef = await this.resolveBankAccountRef(local);
 
     for (const settlement of pending) {
+      // Durable, per settlement — see recordQboMemoApplication. A failure on
+      // application k must not make the retry re-apply application 1.
+      const covered = await readQboMemoApplication({
+        mapping: this.mappingService,
+        integration: this.provider.id,
+        memoId: local.id,
+        settlementId: settlement.id
+      });
+      if (covered) {
+        applied.push(settlement.id);
+        continue;
+      }
+
       const billRemoteId = await this.mappingService.getExternalId(
         "bill",
         settlement.targetPurchaseInvoiceId!,
@@ -442,6 +459,9 @@ export class QboVendorCreditSyncer extends BaseEntitySyncer<
         });
       }
 
+      // DOCUMENT-currency principal, never the base-currency `appliedAmount`.
+      const amount = qboMemoApplicationAmount(local, settlement);
+
       const payload: QboVendorCreditApplicationPayload = {
         VendorRef: vendorRef,
         TotalAmt: 0,
@@ -450,20 +470,28 @@ export class QboVendorCreditSyncer extends BaseEntitySyncer<
         CheckPayment: { BankAccountRef: bankRef },
         Line: [
           {
-            Amount: settlement.appliedAmount,
+            Amount: amount,
             LinkedTxn: [{ TxnId: billRemoteId, TxnType: "Bill" }]
           },
           {
-            Amount: settlement.appliedAmount,
+            Amount: amount,
             LinkedTxn: [{ TxnId: remoteId, TxnType: "VendorCredit" }]
           }
         ]
       };
 
-      await this.qboProvider.applyVendorCredit(
+      const billPaymentId = await this.qboProvider.applyVendorCredit(
         payload,
         buildQboRequestId(this.companyId, "vendorCreditApply", settlement.id)
       );
+      await recordQboMemoApplication({
+        database: this.database,
+        companyId: this.companyId,
+        integration: this.provider.id,
+        memoId: local.id,
+        settlementId: settlement.id,
+        remoteId: billPaymentId || `${remoteId}:${settlement.id}`
+      });
       applied.push(settlement.id);
     }
 

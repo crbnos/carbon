@@ -1,14 +1,44 @@
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { JournalEntrySyncError } from "../../../../core/posting";
 import type { ReimbursementSource } from "../../../../core/reimbursement-source";
 import type { Qbo } from "../../models";
-import { mapReimbursementToQboBill } from "../reimbursement";
+import {
+  mapReimbursementToQboBill,
+  QboReimbursementSyncer
+} from "../reimbursement";
 
 // QBO has no native reimbursement object, so the document is a Bill against
 // an employee Vendor. What the mapper must get right is the pair the spec
 // cares about: account-based expense lines for the coding, and APAccountRef
 // carrying Carbon's SEGREGATED employee-payable control account rather than
 // letting QBO imply the trade-AP account.
+
+/**
+ * The JIT vendor's mapping row is written inside `withTriggersDisabled`, a real
+ * Kysely transaction that opens with a `SET LOCAL` statement. Stub it so the row
+ * lands in `mappingRows` — the store the re-read under test then reads back.
+ */
+const { mappingRows } = vi.hoisted(() => ({
+  mappingRows: new Map<string, string>()
+}));
+vi.mock("../../../../core/utils", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("../../../../core/utils")>()),
+  withTriggersDisabled: async (
+    _db: unknown,
+    cb: (tx: unknown) => Promise<unknown>
+  ) => {
+    const builder: Record<string, any> = {};
+    builder.values = (value: any) => {
+      for (const row of Array.isArray(value) ? value : [value]) {
+        mappingRows.set(`${row.entityType}::${row.entityId}`, row.externalId);
+      }
+      return builder;
+    };
+    builder.onConflict = () => builder;
+    builder.execute = async () => [];
+    return cb({ insertInto: () => builder });
+  }
+}));
 
 const reimbursement = (
   overrides: Partial<ReimbursementSource> = {}
@@ -172,5 +202,72 @@ describe("mapReimbursementToQboBill", () => {
       expect(failure.warning).toBe(true);
       expect(failure.metadata?.unmappedAccountIds).toEqual(["acct_meals"]);
     }
+  });
+});
+
+/**
+ * The employee Vendor, resolved per record.
+ *
+ * `ChargeSyncerBase.pushBatchToAccounting` calls `fetchLocalBatch(ids)` exactly
+ * ONCE, so every snapshot in a drain batch carries `employeeVendorExternalId` as
+ * of that single read — `null` for all of them. Two Posted reimbursements for
+ * one employee therefore both POSTed the same `DisplayName`, and the second
+ * failed with Intuit fault 6240 and parked Failed. A Posted reimbursement's
+ * `updatedAt` never changes, so nothing re-enqueued it without a human Retry.
+ */
+function makeEmployeeVendorSyncer() {
+  let created = 0;
+  const createVendor = vi.fn(async () => {
+    created += 1;
+    return { Id: `qbo-vendor-${created}` };
+  });
+
+  const syncer = new QboReimbursementSyncer({
+    database: {} as never,
+    companyId: "company-1",
+    provider: { id: "quickbooks", createVendor } as never,
+    config: { enabled: true, direction: "push-to-accounting", owner: "carbon" },
+    entityType: "reimbursement"
+  });
+
+  (syncer as any).mappingService = {
+    getExternalId: async (entityType: string, entityId: string) =>
+      mappingRows.get(`${entityType}::${entityId}`) ?? null
+  };
+
+  return {
+    resolve: (local: ReimbursementSource) =>
+      (syncer as any).resolveEmployeeVendor(local) as Promise<string>,
+    createVendor,
+    store: mappingRows
+  };
+}
+
+describe("QboReimbursementSyncer.resolveEmployeeVendor", () => {
+  beforeEach(() => {
+    mappingRows.clear();
+  });
+
+  it("creates the employee Vendor ONCE for two reimbursements in one batch", async () => {
+    const test = makeEmployeeVendorSyncer();
+    // Both snapshots come from the SAME fetchLocalBatch, so both say null.
+    const stale = reimbursement({ employeeVendorExternalId: null });
+
+    const first = await test.resolve(stale);
+    const second = await test.resolve(stale);
+
+    expect(test.createVendor).toHaveBeenCalledTimes(1);
+    expect(second).toBe(first);
+    expect(test.store.get("employeeVendor::emp_1")).toBe(first);
+  });
+
+  it("reuses an already-mapped Vendor without creating one", async () => {
+    const test = makeEmployeeVendorSyncer();
+    test.store.set("employeeVendor::emp_1", "qbo-vendor-77");
+
+    expect(
+      await test.resolve(reimbursement({ employeeVendorExternalId: null }))
+    ).toBe("qbo-vendor-77");
+    expect(test.createVendor).not.toHaveBeenCalled();
   });
 });

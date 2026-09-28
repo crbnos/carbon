@@ -410,39 +410,41 @@ describe("RilletCreditMemoSyncer", () => {
   });
 });
 
+function setupVendorCreditSyncer(memo: RilletMemoSource) {
+  const createVendorCredit = vi.fn(
+    async (_payload: RilletVendorCreditCreate) => ({ id: "rillet-vc-1" })
+  );
+  const applyVendorCredit = vi.fn(
+    async (_id: string, _applications: Rillet.VendorCreditApplication[]) =>
+      undefined
+  );
+  const syncer = new RilletVendorCreditSyncer({
+    database: {} as never,
+    companyId: "company-1",
+    entityType: "supplierCredit",
+    config: {
+      enabled: true,
+      direction: "push-to-accounting",
+      owner: "carbon"
+    },
+    provider: {
+      id: "rillet",
+      // Required on a vendor credit (optional on a credit memo and on bills).
+      subsidiaryId: "rillet-subsidiary-uuid",
+      createVendorCredit,
+      applyVendorCredit
+    } as never
+  });
+  vi.spyOn(syncer, "fetchLocal").mockResolvedValue(memo);
+  (syncer as any).mappingService = fakeMappingService();
+  (syncer as any).ensureDependencySynced = vi.fn(
+    async (_type: string, localId: string) => `rillet-bill-${localId}`
+  );
+  return { syncer, createVendorCredit, applyVendorCredit };
+}
+
 describe("RilletVendorCreditSyncer", () => {
-  function setup(memo: RilletMemoSource) {
-    const createVendorCredit = vi.fn(
-      async (_payload: RilletVendorCreditCreate) => ({ id: "rillet-vc-1" })
-    );
-    const applyVendorCredit = vi.fn(
-      async (_id: string, _applications: Rillet.VendorCreditApplication[]) =>
-        undefined
-    );
-    const syncer = new RilletVendorCreditSyncer({
-      database: {} as never,
-      companyId: "company-1",
-      entityType: "supplierCredit",
-      config: {
-        enabled: true,
-        direction: "push-to-accounting",
-        owner: "carbon"
-      },
-      provider: {
-        id: "rillet",
-        // Required on a vendor credit (optional on a credit memo and on bills).
-        subsidiaryId: "rillet-subsidiary-uuid",
-        createVendorCredit,
-        applyVendorCredit
-      } as never
-    });
-    vi.spyOn(syncer, "fetchLocal").mockResolvedValue(memo);
-    (syncer as any).mappingService = fakeMappingService();
-    (syncer as any).ensureDependencySynced = vi.fn(
-      async (_type: string, localId: string) => `rillet-bill-${localId}`
-    );
-    return { syncer, createVendorCredit, applyVendorCredit };
-  }
+  const setup = setupVendorCreditSyncer;
 
   it("skips a supplier CREDIT memo with the v1 limitation as the reason", async () => {
     const { syncer, createVendorCredit } = setup(
@@ -495,5 +497,57 @@ describe("RilletVendorCreditSyncer", () => {
         amount: { amount: "250.00", currency: "USD" }
       }
     ]);
+  });
+});
+
+describe("the Posted gate (an unmapped VOIDED memo must not be created)", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  /**
+   * The sequence that used to reach Rillet: the memo is posted, its first push
+   * fails (an unmapped reason account, say), the user VOIDS it, and the sweep
+   * retries after the account is mapped. There is no mapping row, so
+   * `pushToAccounting`'s void branch — which fires only on an EXISTING mapping
+   * — is skipped, and a gate that deny-listed `Draft` alone let a Voided memo
+   * through as a LIVE credit memo with its full application set.
+   */
+  it("skips a Voided memo that was never pushed, instead of creating it live", async () => {
+    const { syncer, createCreditMemo, applyCreditMemo } = setupCreditMemoSyncer(
+      {
+        memo: customerMemo({
+          status: "Voided",
+          applications: [
+            {
+              id: "st_1",
+              targetSalesInvoiceId: "si_1",
+              targetPurchaseInvoiceId: null,
+              amount: 250,
+              appliedDate: "2026-09-22"
+            }
+          ]
+        })
+      }
+    );
+
+    const result = await syncer.pushToAccounting("memo_1");
+
+    expect(result.status).toBe("skipped");
+    expect(result.error).toContain("Voided");
+    expect(createCreditMemo).not.toHaveBeenCalled();
+    expect(applyCreditMemo).not.toHaveBeenCalled();
+  });
+
+  it("skips an unmapped Voided supplier credit too", async () => {
+    const { syncer, createVendorCredit } = setupVendorCreditSyncer(
+      supplierMemo({ status: "Voided" })
+    );
+
+    const result = await syncer.pushToAccounting("memo_2");
+
+    expect(result.status).toBe("skipped");
+    expect(result.error).toContain("Voided");
+    expect(createVendorCredit).not.toHaveBeenCalled();
   });
 });

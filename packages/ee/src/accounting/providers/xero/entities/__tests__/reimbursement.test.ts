@@ -1,12 +1,42 @@
-import { describe, expect, it } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { JournalEntrySyncError } from "../../../../core/posting";
 import type { ReimbursementSource } from "../../../../core/reimbursement-source";
-import { mapReimbursementToXeroInvoice } from "../reimbursement";
+import {
+  mapReimbursementToXeroInvoice,
+  XeroReimbursementSyncer
+} from "../reimbursement";
 
 // Xero has no reimbursement object: the document is an ACCPAY invoice against
 // an employee Contact. The two things the mapper must not get wrong are the
 // ACCPAY field set (Reference is ACCREC-ONLY — the Carbon readable id has to
 // ride InvoiceNumber) and the two-decimal monetary boundary.
+
+/**
+ * The JIT contact's mapping row is written inside `withTriggersDisabled`, a real
+ * Kysely transaction that opens with a `SET LOCAL` statement. Stub it so the row
+ * lands in `mappingRows` — the store the re-read under test then reads back.
+ */
+const { mappingRows } = vi.hoisted(() => ({
+  mappingRows: new Map<string, string>()
+}));
+vi.mock("../../../../core/utils", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("../../../../core/utils")>()),
+  withTriggersDisabled: async (
+    _db: unknown,
+    cb: (tx: unknown) => Promise<unknown>
+  ) => {
+    const builder: Record<string, any> = {};
+    builder.values = (value: any) => {
+      for (const row of Array.isArray(value) ? value : [value]) {
+        mappingRows.set(`${row.entityType}::${row.entityId}`, row.externalId);
+      }
+      return builder;
+    };
+    builder.onConflict = () => builder;
+    builder.execute = async () => [];
+    return cb({ insertInto: () => builder });
+  }
+}));
 
 const reimbursement = (
   overrides: Partial<ReimbursementSource> = {}
@@ -189,5 +219,75 @@ describe("mapReimbursementToXeroInvoice", () => {
         accountCodesById: accountCodes
       })
     ).toThrow(/two decimal places/);
+  });
+});
+
+/**
+ * The employee Contact, resolved per record.
+ *
+ * `ChargeSyncerBase.pushBatchToAccounting` calls `fetchLocalBatch(ids)` exactly
+ * ONCE, so every snapshot in a drain batch carries `employeeVendorExternalId` as
+ * of that single read — `null` for all of them. Two Posted reimbursements for
+ * one employee therefore both POSTed the same contact `Name`, and the second
+ * failed Xero's unique-name validation and parked Failed. A Posted
+ * reimbursement's `updatedAt` never changes, so nothing re-enqueued it.
+ */
+function makeEmployeeContactSyncer() {
+  let created = 0;
+  const request = vi.fn(async () => {
+    created += 1;
+    return {
+      error: false,
+      data: { Contacts: [{ ContactID: `xero-contact-${created}` }] }
+    };
+  });
+
+  const syncer = new XeroReimbursementSyncer({
+    database: {} as never,
+    companyId: "company-1",
+    provider: { id: "xero", request } as never,
+    config: { enabled: true, direction: "push-to-accounting", owner: "carbon" },
+    entityType: "reimbursement"
+  });
+
+  (syncer as any).mappingService = {
+    getExternalId: async (entityType: string, entityId: string) =>
+      mappingRows.get(`${entityType}::${entityId}`) ?? null
+  };
+
+  return {
+    resolve: (local: ReimbursementSource) =>
+      (syncer as any).resolveEmployeeContact(local) as Promise<string>,
+    request,
+    store: mappingRows
+  };
+}
+
+describe("XeroReimbursementSyncer.resolveEmployeeContact", () => {
+  beforeEach(() => {
+    mappingRows.clear();
+  });
+
+  it("creates the employee Contact ONCE for two reimbursements in one batch", async () => {
+    const test = makeEmployeeContactSyncer();
+    // Both snapshots come from the SAME fetchLocalBatch, so both say null.
+    const stale = reimbursement({ employeeVendorExternalId: null });
+
+    const first = await test.resolve(stale);
+    const second = await test.resolve(stale);
+
+    expect(test.request).toHaveBeenCalledTimes(1);
+    expect(second).toBe(first);
+    expect(test.store.get("employeeVendor::emp_1")).toBe(first);
+  });
+
+  it("reuses an already-mapped Contact without creating one", async () => {
+    const test = makeEmployeeContactSyncer();
+    test.store.set("employeeVendor::emp_1", "xero-contact-uuid");
+
+    expect(
+      await test.resolve(reimbursement({ employeeVendorExternalId: null }))
+    ).toBe("xero-contact-uuid");
+    expect(test.request).not.toHaveBeenCalled();
   });
 });

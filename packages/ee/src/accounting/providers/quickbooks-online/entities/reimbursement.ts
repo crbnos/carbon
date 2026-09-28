@@ -432,11 +432,25 @@ export class QboReimbursementSyncer extends ChargeSyncerBase<
    * across customers, vendors and employees, so a DisplayName collision
    * surfaces as Intuit fault 6240 on the operation rather than silently
    * reusing someone else's record.
+   *
+   * The mapping is RE-READ here rather than taken from
+   * `local.employeeVendorExternalId`: `pushBatchToAccounting` calls
+   * `fetchLocalBatch` exactly ONCE, so every snapshot in a batch carries the
+   * value as of that single read. Two Posted reimbursements for one employee in
+   * one drain therefore both saw `null` and both POSTed the same DisplayName —
+   * the second failing with fault 6240 and parking Failed, which a Posted
+   * reimbursement's unchanged `updatedAt` never re-enqueues. `ensureDependencySynced`
+   * re-reads `getRemoteId` per call for exactly this reason.
    */
   private async resolveEmployeeVendor(
     local: QboReimbursement
   ): Promise<string> {
-    if (local.employeeVendorExternalId) return local.employeeVendorExternalId;
+    const mapped = await this.mappingService.getExternalId(
+      EMPLOYEE_VENDOR_ENTITY_TYPE,
+      local.employeeId,
+      this.provider.id
+    );
+    if (mapped) return mapped;
 
     const created = await this.qboProvider.createVendor({
       DisplayName: employeeVendorName(local.employee),

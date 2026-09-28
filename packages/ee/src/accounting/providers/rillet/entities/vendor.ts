@@ -1,6 +1,8 @@
 import type { KyselyTx } from "@carbon/database/client";
 import { resolveOrCreateRemoteCounterpart } from "../../../core/counterpart";
+import { createMappingService } from "../../../core/external-mapping";
 import type { Accounting } from "../../../core/types";
+import { withTriggersDisabled } from "../../../core/utils";
 import type { Rillet, RilletVendorWrite, RilletWriteOmit } from "../models";
 import { buildRilletIdempotencyKey } from "../provider";
 import {
@@ -542,7 +544,7 @@ export class RilletVendorSyncer extends RilletEntitySyncer<
     // Mapping first, then the shared ladder: a Rillet vendor a human typed in,
     // or one Carbon created before its mapping row was lost, must be ADOPTED
     // rather than duplicated. Ambiguity creates — see core/counterpart.ts.
-    const { remoteId: existingRemoteId } =
+    const { remoteId: existingRemoteId, decision } =
       await resolveOrCreateRemoteCounterpart({
         provider: this.rilletProvider,
         kind: "vendor",
@@ -552,10 +554,38 @@ export class RilletVendorSyncer extends RilletEntitySyncer<
           taxId: data.tax_id,
           carbonReference: localId
         },
-        existingRemoteId: await this.getRemoteId(localId)
+        existingRemoteId: await this.getRemoteId(localId),
+        localId,
+        // Two suppliers for one legal entity share a tax id, so the ladder
+        // would match this one to the vendor the OTHER supplier already owns.
+        isClaimed: async (remoteId) => {
+          const owner = await this.mappingService.getEntityId(
+            this.provider.id,
+            remoteId,
+            this.entityType
+          );
+          return owner !== null && owner !== localId;
+        }
       });
 
     if (existingRemoteId) {
+      // LINK BEFORE MUTATE when the ladder ADOPTED the record (decision
+      // present; a remote id that came from our own mapping row needs no
+      // second write). `updateVendor` overwrites the vendor's name, email and
+      // tax id, and the mapping's partial unique index is the only thing that
+      // can tell us the record belongs to a different supplier — so it has to
+      // refuse FIRST, while the remote record is still intact.
+      if (decision?.action === "link") {
+        await withTriggersDisabled(this.database, async (tx) => {
+          await createMappingService(tx, this.companyId).link(
+            this.entityType,
+            localId,
+            this.provider.id,
+            existingRemoteId
+          );
+        });
+      }
+
       const updated = await writeDroppingUnregisteredReferences(
         data,
         (payload) => this.rilletProvider.updateVendor(existingRemoteId, payload)

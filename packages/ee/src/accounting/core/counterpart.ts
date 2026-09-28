@@ -30,8 +30,17 @@
  * Falling through from an ambiguous strong key to a weaker one would be worse
  * than either: two records sharing a tax id but differing in name would link by
  * name, which is exactly the wrong answer for the strongest evidence available.
+ *
+ * **A single match is not enough — it must also be UNCLAIMED.** Two suppliers
+ * for one legal entity share a tax id, so pushing the second matches exactly
+ * one candidate: the vendor the FIRST supplier is already mapped to. Adopting
+ * it and then updating it overwrites that vendor's name, email and tax id while
+ * every bill of the first supplier still points at it, and the mapping's
+ * partial unique index only refuses AFTERWARDS. So the caller passes
+ * `isClaimed` and a claimed match creates, exactly as an ambiguous one does.
  */
 
+import { getLogger } from "@carbon/logger";
 import type {
   CounterpartSearchKeys,
   ExternalIdentityKind,
@@ -39,16 +48,37 @@ import type {
 } from "./counterpart-types";
 import { type BaseProvider, providerSupportsCounterpartSearch } from "./types";
 
+const logger = getLogger("ee", "accounting-counterpart");
+
 /** The rungs, in descending order of how strongly they identify a record. */
 const LADDER = ["carbonReference", "taxId", "email", "name"] as const;
 
 export type CounterpartRung = (typeof LADDER)[number];
 
+/**
+ * Why the ladder chose to create.
+ *
+ * - `not-searchable` — the provider declares no search for this kind, so
+ *   NOTHING was looked at. Distinct from `no-candidates` on purpose: the two
+ *   used to be the same string, which made "Rillet cannot search items" read
+ *   exactly like "we searched and the vendor is genuinely new".
+ * - `no-candidates` — searched, and nothing answered any key.
+ * - `ambiguous` — two or more records answered the strongest key that answered.
+ * - `claimed` — exactly one record answered, but it is already mapped to a
+ *   DIFFERENT local record of this kind, so adopting it would re-point one
+ *   party's provider master at another's.
+ */
+export type CounterpartCreateReason =
+  | "not-searchable"
+  | "no-candidates"
+  | "ambiguous"
+  | "claimed";
+
 export type CounterpartDecision =
   | { action: "link"; remoteId: string; via: CounterpartRung }
   | {
       action: "create";
-      reason: "no-candidates" | "ambiguous";
+      reason: CounterpartCreateReason;
       rung?: CounterpartRung;
     };
 
@@ -106,6 +136,24 @@ export async function resolveOrCreateRemoteCounterpart(args: {
   keys: CounterpartSearchKeys;
   /** An existing mapping row's remote id, if any — the zeroth rung. */
   existingRemoteId: string | null;
+  /** The local record being resolved — logging context only. */
+  localId?: string;
+  /**
+   * Is this remote id already mapped to a DIFFERENT local record of this kind
+   * in this company? The caller owns the question because it owns the mapping
+   * service and knows its own local id.
+   *
+   * **Pass it.** Without it the ladder can hand back a remote record another
+   * party already owns, and a caller that updates before it links (the Rillet
+   * vendor syncer did) overwrites that party's provider master — name, email,
+   * tax id — with every one of its bills still pointing at the record. The
+   * mapping's partial unique index refuses the link AFTERWARDS, so the
+   * operation closes Failed with the damage already done and no revert.
+   *
+   * Optional only so the four existing callers keep compiling; a caller that
+   * omits it gets the old, unsafe behaviour.
+   */
+  isClaimed?: (remoteId: string) => Promise<boolean>;
 }): Promise<{ remoteId: string | null; decision: CounterpartDecision | null }> {
   if (args.existingRemoteId) {
     return { remoteId: args.existingRemoteId, decision: null };
@@ -114,7 +162,10 @@ export async function resolveOrCreateRemoteCounterpart(args: {
   if (!providerSupportsCounterpartSearch(args.provider, args.kind)) {
     return {
       remoteId: null,
-      decision: { action: "create", reason: "no-candidates" }
+      decision: logDecision(args, {
+        action: "create",
+        reason: "not-searchable"
+      })
     };
   }
 
@@ -124,8 +175,58 @@ export async function resolveOrCreateRemoteCounterpart(args: {
   );
   const decision = decideCounterpart(args.keys, candidates);
 
+  if (decision.action === "link" && args.isClaimed) {
+    if (await args.isClaimed(decision.remoteId)) {
+      return {
+        remoteId: null,
+        decision: logDecision(args, {
+          action: "create",
+          reason: "claimed",
+          rung: decision.via
+        })
+      };
+    }
+  }
+
   return {
     remoteId: decision.action === "link" ? decision.remoteId : null,
-    decision
+    decision: logDecision(args, decision, candidates.length)
   };
+}
+
+/**
+ * Every caller destructures `{ remoteId }` and drops the decision, so the only
+ * record that ambiguity (or a claimed record) fired is this line. Without it a
+ * duplicated vendor is indistinguishable from a genuinely new one.
+ */
+function logDecision(
+  args: { kind: ExternalIdentityKind; localId?: string },
+  decision: CounterpartDecision,
+  candidateCount?: number
+): CounterpartDecision {
+  const context = {
+    kind: args.kind,
+    localId: args.localId,
+    ...(candidateCount === undefined ? {} : { candidateCount })
+  };
+
+  if (decision.action === "link") {
+    logger.info("Counterpart adopted an existing remote record", {
+      ...context,
+      remoteId: decision.remoteId,
+      via: decision.via
+    });
+    return decision;
+  }
+
+  // `ambiguous` and `claimed` are the two that produce a DUPLICATE on the
+  // provider, so they are warnings; the other two are ordinary.
+  const message = "Counterpart will create a new remote record";
+  const payload = { ...context, reason: decision.reason, rung: decision.rung };
+  if (decision.reason === "ambiguous" || decision.reason === "claimed") {
+    logger.warn(message, payload);
+  } else {
+    logger.info(message, payload);
+  }
+  return decision;
 }

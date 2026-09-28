@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import {
   type CounterpartDecision,
   decideCounterpart,
@@ -157,9 +157,12 @@ describe("resolveOrCreateRemoteCounterpart", () => {
       existingRemoteId: null
     });
     expect(result.remoteId).toBeNull();
+    // NOT "no-candidates": nothing was looked at. The two used to be the same
+    // string, so "this provider cannot search" read exactly like "we searched
+    // and this vendor is genuinely new".
     expect(result.decision).toEqual({
       action: "create",
-      reason: "no-candidates"
+      reason: "not-searchable"
     });
     expect(calls()).toBe(0);
   });
@@ -208,5 +211,78 @@ describe("resolveOrCreateRemoteCounterpart", () => {
     });
     expect(result.remoteId).toBeNull();
     expect(result.decision?.action).toBe("create");
+  });
+});
+
+describe("resolveOrCreateRemoteCounterpart — the unclaimed requirement", () => {
+  function searchableProvider(candidates: RemoteCandidate[]) {
+    return {
+      capabilities: { searchableCounterparts: ["vendor"] },
+      findRemoteCandidates: async () => candidates
+    } as unknown as BaseProvider;
+  }
+
+  /**
+   * Two suppliers for one legal entity share a tax id. Pushing the second
+   * matches EXACTLY ONE candidate — the vendor the first supplier already owns
+   * — so the single-match rule alone would adopt it, and a caller that updates
+   * before it links overwrites the first supplier's provider master while every
+   * one of its bills still points there.
+   */
+  it("creates instead of adopting a candidate another local record already claims", async () => {
+    const result = await resolveOrCreateRemoteCounterpart({
+      provider: searchableProvider([candidate("V1", { taxId: "TX-9" })]),
+      kind: "vendor",
+      keys: { taxId: "TX-9", name: "Acme Bolts West" },
+      existingRemoteId: null,
+      localId: "sup_2",
+      isClaimed: async (remoteId) => remoteId === "V1"
+    });
+
+    expect(result.remoteId).toBeNull();
+    expect(result.decision).toEqual({
+      action: "create",
+      reason: "claimed",
+      rung: "taxId"
+    });
+  });
+
+  it("still adopts an UNCLAIMED single match", async () => {
+    const result = await resolveOrCreateRemoteCounterpart({
+      provider: searchableProvider([candidate("V1", { taxId: "TX-9" })]),
+      kind: "vendor",
+      keys: { taxId: "TX-9" },
+      existingRemoteId: null,
+      localId: "sup_2",
+      isClaimed: async () => false
+    });
+
+    expect(result.remoteId).toBe("V1");
+    expect(result.decision).toEqual({
+      action: "link",
+      remoteId: "V1",
+      via: "taxId"
+    });
+  });
+
+  it("never asks whether a record is claimed when the ladder already decided to create", async () => {
+    const isClaimed = vi.fn(async () => true);
+    const result = await resolveOrCreateRemoteCounterpart({
+      provider: searchableProvider([
+        candidate("V1", { taxId: "TX-9" }),
+        candidate("V2", { taxId: "TX-9" })
+      ]),
+      kind: "vendor",
+      keys: { taxId: "TX-9" },
+      existingRemoteId: null,
+      isClaimed
+    });
+
+    expect(result.decision).toEqual({
+      action: "create",
+      reason: "ambiguous",
+      rung: "taxId"
+    });
+    expect(isClaimed).not.toHaveBeenCalled();
   });
 });

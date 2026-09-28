@@ -541,7 +541,13 @@ export function resolveMemoSyncGate(
   if (memoParty !== party) {
     return `Memo ${memo.memoId} is a ${memoParty} memo — it syncs as the other credit entity`;
   }
-  if (memo.status === "Draft") {
+  // Posted is REQUIRED, not "anything but Draft". A Voided memo whose first
+  // push never landed (an unmapped reason account, say) has no mapping row, so
+  // `pushToAccounting`'s void branch — which only fires on an EXISTING mapping
+  // — is skipped and the sweep would otherwise CREATE a live Rillet credit
+  // memo, with its full application set, for a memo Carbon has voided. QBO and
+  // Xero both gate on `Posted` for the same reason.
+  if (memo.status !== "Posted") {
     return `Memo must be posted before syncing (current status: ${memo.status})`;
   }
   if (!isBalanceDecreasingMemo(memo)) {

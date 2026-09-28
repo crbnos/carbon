@@ -12,6 +12,7 @@ import {
 import { MEMO_INCREASER_SKIP_REASON } from "../../../core/models";
 import { JournalEntrySyncError } from "../../../core/posting";
 import { BaseEntitySyncer, type ShouldSyncContext } from "../../../core/types";
+import { withTriggersDisabled } from "../../../core/utils";
 import { parseQboDate, type Qbo, type QboCreatePayload } from "../models";
 import {
   buildQboRequestId,
@@ -57,6 +58,13 @@ import {
 /** A settlement that applies this memo to an open document. */
 export type QboMemoSettlementRow = {
   id: string;
+  /**
+   * Exact source-document principal, in the MEMO's own currency — the amount a
+   * QBO application must carry. `appliedAmount` is BASE currency
+   * (`.claude/rules/numeric-precision.md`), so sending it against a foreign
+   * credit memo over-applies by the exchange rate.
+   */
+  sourceAmount: number | null;
   appliedAmount: number;
   appliedDate: string;
   targetSalesInvoiceId: string | null;
@@ -106,6 +114,111 @@ export function qboMemoStatusSkipReason(memo: QboMemoSource): string | null {
 }
 
 /**
+ * Why this memo's APPLICATIONS cannot be pushed, or null when they can.
+ *
+ * QBO applies a credit in the credit memo's own currency, and Carbon's posting
+ * already refuses a memo application whose rate snapshot differs from its
+ * target's — so a settlement whose source and target rates disagree has no
+ * amount we could send without guessing. Park the memo with the reason instead
+ * (the same guard, and the same wording, Xero's credit-note syncer uses).
+ */
+export function qboMemoApplicationSkipReason(
+  memo: QboMemoSource
+): string | null {
+  const crossCurrency = memo.settlements.find(
+    (settlement) =>
+      settlement.sourceExchangeRate !== settlement.targetExchangeRate
+  );
+  if (crossCurrency) {
+    return `Memo ${memo.memoId} has a cross-currency application (settlement ${crossCurrency.id}) — cross-currency credit application is not supported in v1`;
+  }
+  return null;
+}
+
+/**
+ * The amount ONE application must carry, in the memo's own currency.
+ *
+ * `invoiceSettlement.sourceAmount` is the exact source-document principal;
+ * `appliedAmount` is BASE currency (`.claude/rules/numeric-precision.md`).
+ * Sending the base amount against a foreign credit memo either over-applies it
+ * by the exchange rate or is refused by QBO — so a row with no source
+ * principal is parked with a reason rather than approximated.
+ */
+export function qboMemoApplicationAmount(
+  memo: QboMemoSource,
+  settlement: QboMemoSettlementRow
+): number {
+  const amount = settlement.sourceAmount;
+  if (amount === null || !Number.isFinite(amount) || amount <= 0) {
+    throw new JournalEntrySyncError({
+      errorCode: "UNSYNCED_DOCUMENT",
+      message: `Cannot apply memo ${memo.memoId}: settlement ${settlement.id} has no positive source principal, and its base-currency amount is not what QuickBooks Online applies.`,
+      warning: true,
+      metadata: { memoId: memo.id, settlementId: settlement.id }
+    });
+  }
+  return amount;
+}
+
+/**
+ * `externalIntegrationMapping.entityType` for ONE pushed memo application,
+ * keyed by `<memoId>:<invoiceSettlementId>`.
+ *
+ * The applied ids used to be flushed to the memo's OWN mapping metadata only
+ * AFTER the whole loop, so two applications where the second failed left
+ * nothing durable — `linkEntities` never ran, and the retry re-applied the
+ * first one a SECOND time. Applying the same credit twice is real accounting
+ * corruption and QBO's `requestid` replay window is not a durable dedupe, so
+ * each application gets its own row the moment it succeeds, exactly as Xero's
+ * credit-note allocations do.
+ */
+export const QBO_MEMO_APPLICATION_ENTITY_TYPE = "qboMemoApplication";
+
+/** `<memoId>:<invoiceSettlementId>` — the application mapping's Carbon-side key. */
+export function qboMemoApplicationKey(
+  memoId: string,
+  settlementId: string
+): string {
+  return `${memoId}:${settlementId}`;
+}
+
+/** Has this settlement already been applied remotely (durable, per settlement)? */
+export async function readQboMemoApplication(args: {
+  mapping: ExternalIntegrationMappingService;
+  integration: string;
+  memoId: string;
+  settlementId: string;
+}): Promise<string | null> {
+  return args.mapping.getExternalId(
+    QBO_MEMO_APPLICATION_ENTITY_TYPE,
+    qboMemoApplicationKey(args.memoId, args.settlementId),
+    args.integration
+  );
+}
+
+/**
+ * Record ONE applied settlement durably, immediately. Its own transaction on
+ * purpose: the point is that it survives a later application's failure.
+ */
+export async function recordQboMemoApplication(args: {
+  database: Kysely<KyselyDatabase>;
+  companyId: string;
+  integration: string;
+  memoId: string;
+  settlementId: string;
+  remoteId: string;
+}): Promise<void> {
+  await withTriggersDisabled(args.database, async (tx) => {
+    await createMappingService(tx, args.companyId).link(
+      QBO_MEMO_APPLICATION_ENTITY_TYPE,
+      qboMemoApplicationKey(args.memoId, args.settlementId),
+      args.integration,
+      args.remoteId
+    );
+  });
+}
+
+/**
  * Why this memo is NOT pushable as a QBO CreditMemo, or null when it is. Pure
  * — this is what `shouldSync` returns, and what the increaser test asserts.
  */
@@ -118,7 +231,7 @@ export function qboCreditMemoSkipReason(memo: QboMemoSource): string | null {
   if (memo.direction !== "Credit") {
     return `${QBO_MEMO_INCREASER_SKIP_REASON}: memo ${memo.memoId} is a customer + Debit memo, which INCREASES the receivable and has no safe QuickBooks Online representation (TotalAmt is read-only)`;
   }
-  return null;
+  return qboMemoApplicationSkipReason(memo);
 }
 
 /**
@@ -279,6 +392,7 @@ export async function loadQboMemoSources(
     .select([
       "id",
       "memoId",
+      "sourceAmount",
       "appliedAmount",
       "appliedDate",
       "targetSalesInvoiceId",
@@ -303,6 +417,7 @@ export async function loadQboMemoSources(
     const existing = settlementsByMemo.get(row.memoId) ?? [];
     existing.push({
       id: row.id,
+      sourceAmount: row.sourceAmount === null ? null : Number(row.sourceAmount),
       appliedAmount: Number(row.appliedAmount) || 0,
       appliedDate: toDateString(row.appliedDate),
       targetSalesInvoiceId: row.targetSalesInvoiceId,
@@ -663,8 +778,13 @@ export class QboCreditMemoSyncer extends BaseEntitySyncer<
   }
 
   /**
-   * One zero-cash `Payment` per NOT-YET-APPLIED settlement (see
-   * `readQboAppliedSettlementIds`).
+   * One zero-cash `Payment` per NOT-YET-APPLIED settlement.
+   *
+   * Each application is recorded durably (`recordQboMemoApplication`) the
+   * moment it succeeds, BEFORE the next one is attempted. Flushing the list
+   * only after the loop lost everything when application k failed: the throw
+   * left `upsertRemote` — so `linkEntities` never ran — and the retry re-read
+   * an empty applied set and applied application 1 a SECOND time.
    */
   private async applySettlements(
     localId: string,
@@ -675,12 +795,25 @@ export class QboCreditMemoSyncer extends BaseEntitySyncer<
     const local = await this.fetchLocal(localId);
     if (!local) return;
 
+    // Legacy metadata list first — mappings written before the per-application
+    // rows existed still carry their applied ids there.
     const alreadyApplied = new Set(readQboAppliedSettlementIds(mapping));
     const applied = [...alreadyApplied];
 
     for (const settlement of local.settlements) {
       if (alreadyApplied.has(settlement.id)) continue;
       if (!settlement.targetSalesInvoiceId) continue;
+
+      const covered = await readQboMemoApplication({
+        mapping: this.mappingService,
+        integration: this.provider.id,
+        memoId: local.id,
+        settlementId: settlement.id
+      });
+      if (covered) {
+        applied.push(settlement.id);
+        continue;
+      }
 
       const invoiceRemoteId = await this.mappingService.getExternalId(
         "invoice",
@@ -699,26 +832,37 @@ export class QboCreditMemoSyncer extends BaseEntitySyncer<
         });
       }
 
+      // DOCUMENT-currency principal, never the base-currency `appliedAmount`.
+      const amount = qboMemoApplicationAmount(local, settlement);
+
       const payload: QboCreditMemoApplicationPayload = {
         CustomerRef: customerRef,
         TotalAmt: 0,
         TxnDate: settlement.appliedDate,
         Line: [
           {
-            Amount: settlement.appliedAmount,
+            Amount: amount,
             LinkedTxn: [{ TxnId: invoiceRemoteId, TxnType: "Invoice" }]
           },
           {
-            Amount: settlement.appliedAmount,
+            Amount: amount,
             LinkedTxn: [{ TxnId: remoteId, TxnType: "CreditMemo" }]
           }
         ]
       };
 
-      await this.qboProvider.applyCreditMemo(
+      const paymentId = await this.qboProvider.applyCreditMemo(
         payload,
         buildQboRequestId(this.companyId, "creditMemoApply", settlement.id)
       );
+      await recordQboMemoApplication({
+        database: this.database,
+        companyId: this.companyId,
+        integration: this.provider.id,
+        memoId: local.id,
+        settlementId: settlement.id,
+        remoteId: paymentId || `${remoteId}:${settlement.id}`
+      });
       applied.push(settlement.id);
     }
 
