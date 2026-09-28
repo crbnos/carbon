@@ -1,4 +1,5 @@
 import { createClient } from "@supabase/supabase-js";
+import { decodeJwt, jwtVerify } from "npm:jose@5.9.6";
 import { createHash } from "node:crypto";
 import type { Database } from "../lib/types.ts";
 import { checkApiKeyRateLimit } from "./ratelimit.ts";
@@ -26,20 +27,44 @@ function postgrestServiceKey(authorizationHeader: string | null): string {
   return envKey;
 }
 
-function isTrustedBearer(authorizationHeader: string | null): boolean {
+/**
+ * A bearer token's claims, or null when it is not a usable JWT.
+ *
+ * With `JWT_SECRET` set (self-host, local dev) the signature is verified here, so
+ * a gateway left on `VERIFY_JWT=false` cannot pass a forged `role` claim through.
+ * Supabase Cloud does not set it: there the gateway's `verify_jwt` already
+ * verified the token, possibly with an asymmetric key this runtime does not hold.
+ */
+async function jwtClaims(
+  token: string
+): Promise<{ role?: string; sub?: string } | null> {
+  if (token.split(".").length !== 3) return null;
+  const secret = Deno.env.get("JWT_SECRET");
+  try {
+    if (secret) {
+      const { payload } = await jwtVerify(
+        token,
+        new TextEncoder().encode(secret)
+      );
+      return payload as { role?: string; sub?: string };
+    }
+    return decodeJwt(token) as { role?: string; sub?: string };
+  } catch {
+    return null;
+  }
+}
+
+const bearerToken = (authorizationHeader: string | null) =>
+  authorizationHeader?.replace(/^Bearer\s+/i, "").trim() ?? "";
+
+async function isTrustedBearer(
+  authorizationHeader: string | null
+): Promise<boolean> {
   const envKey = (Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "").trim();
-  const token =
-    authorizationHeader?.replace(/^Bearer\s+/i, "").trim() ?? "";
+  const token = bearerToken(authorizationHeader);
   if (!token) return false;
   if (token === envKey) return true;
-  const parts = token.split(".");
-  if (parts.length !== 3) return false;
-  try {
-    const role = (JSON.parse(atob(parts[1]!)) as { role?: string }).role;
-    return role === "service_role";
-  } catch {
-    return false;
-  }
+  return (await jwtClaims(token))?.role === "service_role";
 }
 
 type ApiKeyAuth = {
@@ -194,7 +219,7 @@ export const getSupabaseServiceRole = async (
   }
 
   if (authorizationHeader) {
-    if (!isTrustedBearer(authorizationHeader)) {
+    if (!(await isTrustedBearer(authorizationHeader))) {
       throw new Error("Valid authorization is required");
     }
 
@@ -314,28 +339,21 @@ export async function requireCaller(req: Request): Promise<void> {
     return;
   }
 
-  if (isTrustedBearer(authorizationHeader)) return;
+  if (await isTrustedBearer(authorizationHeader)) return;
 
-  const token = authorizationHeader?.replace(/^Bearer\s+/i, "").trim() ?? "";
-  try {
-    const role = (JSON.parse(atob(token.split(".")[1] ?? "")) as {
-      role?: string;
-    }).role;
-    if (role === "authenticated") return;
-  } catch {
-    // fall through
-  }
+  const claims = await jwtClaims(bearerToken(authorizationHeader));
+  if (claims?.role === "authenticated") return;
   throw new Error("Sign in or use an API key");
 }
 
 /** True when the request carries the service role key (jobs, other edge functions). */
-export function isServiceRoleRequest(req: Request): boolean {
+export function isServiceRoleRequest(req: Request): Promise<boolean> {
   return isTrustedBearer(req.headers.get("Authorization"));
 }
 
 /** For functions only servers call (jobs, other edge functions): the service role key or nothing. */
-export function requireServiceRole(req: Request): void {
-  if (!isServiceRoleRequest(req)) {
+export async function requireServiceRole(req: Request): Promise<void> {
+  if (!(await isServiceRoleRequest(req))) {
     throw new Error("Service role only");
   }
 }
@@ -365,7 +383,9 @@ export async function requirePermissions(
     const keyHash = hashApiKey(apiKeyHeader);
     const { data, error } = await serviceRole
       .from("apiKey")
-      .select("id, companyId, scopes, rateLimit, rateLimitWindow, expiresAt")
+      .select(
+        "id, companyId, scopes, rateLimit, rateLimitWindow, expiresAt, createdBy"
+      )
       .eq("keyHash" as any, keyHash)
       .eq("companyId", companyId)
       .single();
@@ -392,6 +412,12 @@ export async function requirePermissions(
 
     assertApiKeyScopes(row.scopes ?? {}, permissions, companyId);
 
+    // A key acts as the user who created it; any other userId in the payload
+    // would attribute the work to someone the key cannot speak for.
+    if (userId && userId !== row.createdBy) {
+      throw new Error("userId does not match the API key's user");
+    }
+
     return serviceRole;
   }
 
@@ -400,25 +426,11 @@ export async function requirePermissions(
     throw new Error("Authorization header or API key header is required");
   }
 
-  const token =
-    authorizationHeader.replace(/^Bearer\s+/i, "").trim();
-  const parts = token.split(".");
-  if (parts.length !== 3) {
+  const claims = await jwtClaims(bearerToken(authorizationHeader));
+  if (!claims) {
     throw new Error("Invalid authorization token");
   }
-
-  let role: string | undefined;
-  let subject: string | undefined;
-  try {
-    const claims = JSON.parse(atob(parts[1]!)) as {
-      role?: string;
-      sub?: string;
-    };
-    role = claims.role;
-    subject = claims.sub;
-  } catch {
-    throw new Error("Invalid authorization token");
-  }
+  const { role, sub: subject } = claims;
 
   if (role === "service_role") {
     return serviceRole;

@@ -31,7 +31,7 @@ serve(async (req: Request) => {
 
   // It drives a browser to whatever URL it is handed: servers only.
   try {
-    requireServiceRole(req);
+    await requireServiceRole(req);
   } catch (err) {
     return errorResponse(err, 401);
   }

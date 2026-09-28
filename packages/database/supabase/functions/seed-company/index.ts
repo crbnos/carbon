@@ -41,7 +41,7 @@ serve(async (req: Request) => {
   // userId becomes the company's Admin and parentCompanyId picks the group it
   // joins — companies.new checks that parent against the caller's group first.
   try {
-    requireServiceRole(req);
+    await requireServiceRole(req);
   } catch (err) {
     return errorResponse(err, 401);
   }

@@ -530,7 +530,7 @@ services:
       SUPABASE_ANON_KEY: __ANON_KEY__
       SUPABASE_SERVICE_ROLE_KEY: __SERVICE_ROLE_KEY__
       SUPABASE_DB_URL: postgresql://postgres:__POSTGRES_PASSWORD__@postgres:5432/postgres
-      VERIFY_JWT: ${EDGE_VERIFY_JWT:-false}
+      VERIFY_JWT: ${EDGE_VERIFY_JWT:-true}
     volumes:
       - *shim
       - type: bind

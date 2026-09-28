@@ -85,7 +85,7 @@ serve(async (req: Request) => {
   // Inngest embedding handler) is trusted and sends synthetic negative jobIds
   // that were never queued, so it skips the check.
   let pendingJobs = parseResult.data;
-  if (!isServiceRoleRequest(req)) {
+  if (!(await isServiceRoleRequest(req))) {
     let queued: Awaited<ReturnType<typeof getQueuedJobs>>;
     try {
       queued = await getQueuedJobs(db, pendingJobs);
