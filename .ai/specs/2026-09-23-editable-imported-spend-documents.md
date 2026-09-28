@@ -4,7 +4,7 @@
 > Author: Brad Barbin + Claude
 > Date: 2026-09-23
 > Reference UI: Rillet's Charge and Reimbursement screens (screenshots reviewed 2026-09-23).
-> Sibling spec: `.ai/specs/2026-09-23-reimbursements-first-class.md` — reimbursements adopt
+> Sibling spec: `.ai/specs/implemented/2026-09-23-reimbursements-first-class.md` — reimbursements adopt
 > this same editing model; that spec owns their data model, this one owns the shared shape.
 > Related: `.claude/rules/ramp-integration.md` (inbound sync, `post-charge`),
 > `.ai/specs/2026-09-19-ramp-integration.md`.

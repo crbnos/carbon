@@ -2,7 +2,7 @@
 
 **Date:** 2026-09-24
 **Branch:** `rillet-ramp-accounting-provider` (41 commits ahead of `origin/main`)
-**Affects:** `.ai/specs/2026-09-23-spend-management-push-only-mode.md` and all five
+**Affects:** `.ai/specs/implemented/2026-09-23-spend-management-push-only-mode.md` and all five
 `.ai/plans/2026-09-23-*` plans
 
 While the push-only spec and plans were being written, substantial two-way sync work

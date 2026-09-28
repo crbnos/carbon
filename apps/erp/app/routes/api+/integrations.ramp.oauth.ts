@@ -156,7 +156,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   // Which system holds Ramp's accounting connection. Read best-effort and treated
   // as UNKNOWN on failure, not as absent: whether a token lacking
   // `accounting:write` may call this at all is an OPEN QUESTION (see
-  // `.ai/plans/2026-09-23-spend-push-only-mode.md`). Recording "no peer" from a
+  // `.ai/plans/implemented/2026-09-23-spend-push-only-mode.md`). Recording "no peer" from a
   // 403 would make every push-only install report itself broken.
   const accountingConnectionProvider = await readAccountingConnectionProvider(
     companyId,

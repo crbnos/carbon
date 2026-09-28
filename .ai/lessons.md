@@ -2275,7 +2275,7 @@ any `pnpm db:check:*` or psql work inside a Conductor worktree.
 
 ## The `@carbon/ee` barrel boots the server env — four places that breaks
 
-**Context:** Adding `providerRole` + `IntegrationTopology` (`.ai/plans/2026-09-23-provider-roles-topology.md`).
+**Context:** Adding `providerRole` + `IntegrationTopology` (`.ai/plans/implemented/2026-09-23-provider-roles-topology.md`).
 Consumers across `@carbon/jobs`, `apps/erp` and tests needed the registry lookup
 `getIntegrationIdsByRole` / `resolveIntegrationTopology`.
 
@@ -2315,7 +2315,7 @@ mocking `@carbon/ee`.
 ## Kysely returns `date` columns as JS `Date`s; PostgREST returns strings
 
 **Context:** Porting Ramp's outbound draft-bill push from a Supabase-client job into a
-`BaseEntitySyncer` (which uses Kysely) — `.ai/plans/2026-09-23-spend-outbound-event-engine.md`.
+`BaseEntitySyncer` (which uses Kysely) — `.ai/plans/implemented/2026-09-23-spend-outbound-event-engine.md`.
 
 **Problem:** `purchaseInvoice.dateIssued` / `dateDue` are `date` columns. Read through
 PostgREST they arrive as `"2026-09-15"` strings; read through Kysely's pg driver they

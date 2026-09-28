@@ -22,7 +22,7 @@
  * `POST /creditmemo?operation=delete` / `POST /vendorcredit?operation=delete`
  * with the current `SyncToken` — plus reversing the applications first. It was
  * scoped out of the self-review pass on purpose (decision D-4 in
- * `.ai/plans/2026-09-28-self-review-must-fixes.md`): a new lifecycle is not a
+ * `.ai/plans/implemented/2026-09-28-self-review-must-fixes.md`): a new lifecycle is not a
  * defect fix.
  *
  * Keep this set in step with the memo syncers' `deleteRemote`. A provider named

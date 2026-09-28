@@ -22,7 +22,7 @@ import { assertXeroMoneyPrecision } from "../serialize";
  * than being copied into two files that would drift.
  *
  * Three Xero rules drive the shape (primary-source API survey, recorded in
- * `.ai/plans/2026-09-23-memo-external-gl-representation.md`):
+ * `.ai/plans/implemented/2026-09-23-memo-external-gl-representation.md`):
  *  1. A credit note is created directly AUTHORISED — Xero will not allocate a
  *     DRAFT one, and it forbids create-and-allocate in one request.
  *  2. Allocation is a separate `PUT /CreditNotes/{id}/Allocations` and is

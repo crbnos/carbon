@@ -6,7 +6,7 @@
 > Research: `.ai/research/2026-09-22-sap-grade-ap-ar-document-model.md` (§ employee expense /
 > reimbursement across SAP, NetSuite, Oracle Fusion, Dynamics 365) + the Rillet API survey and
 > sandbox probe of 2026-09-23.
-> Sibling spec: `.ai/specs/2026-09-23-memo-external-gl-representation.md` (credit documents).
+> Sibling spec: `.ai/specs/implemented/2026-09-23-memo-external-gl-representation.md` (credit documents).
 > Related rules: `.claude/rules/ramp-integration.md`, `.claude/rules/accounting-sync-handlers.md`.
 
 > **Open questions in this spec were resolved AUTONOMOUSLY** (codebase precedent → research

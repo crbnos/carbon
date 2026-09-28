@@ -1,6 +1,6 @@
 # Master data correctness — counterpart ladder + sweep (spec slice 1)
 
-**Spec:** `.ai/specs/2026-09-23-spend-management-push-only-mode.md` §8
+**Spec:** `.ai/specs/implemented/2026-09-23-spend-management-push-only-mode.md` §8
 **Research:** `.ai/research/spend-management-one-way-push.md`
 **Branch:** independent of push-only; ships alone
 

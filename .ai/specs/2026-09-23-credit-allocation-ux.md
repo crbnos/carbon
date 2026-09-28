@@ -3,8 +3,8 @@
 > Status: draft
 > Author: Brad Barbin + Claude
 > Date: 2026-09-23
-> Sibling specs: `.ai/specs/2026-09-23-memo-external-gl-representation.md` (credit documents
-> reach the external GL), `.ai/specs/2026-09-23-reimbursements-first-class.md`.
+> Sibling specs: `.ai/specs/implemented/2026-09-23-memo-external-gl-representation.md` (credit documents
+> reach the external GL), `.ai/specs/implemented/2026-09-23-reimbursements-first-class.md`.
 > Builds on: `.ai/specs/implemented/memo-refactor-plan.md` (the `memo` table and the
 > reducer/increaser model), `.ai/specs/implemented/2026-09-16-...` AR/AP payments work.
 > Related rules: `.claude/rules/accounting-sync-handlers.md`.

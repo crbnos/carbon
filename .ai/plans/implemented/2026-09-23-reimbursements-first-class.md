@@ -1,6 +1,6 @@
 # Reimbursements as a First-Class Carbon Document — implementation plan
 
-**Spec (data model):** `.ai/specs/2026-09-23-reimbursements-first-class.md`
+**Spec (data model):** `.ai/specs/implemented/2026-09-23-reimbursements-first-class.md`
 **Spec (shared shape):** `.ai/specs/2026-09-23-editable-imported-spend-documents.md`
 **Research:** `.ai/research/2026-09-22-sap-grade-ap-ar-document-model.md`
 **Branch:** `rillet-ramp-accounting-provider`
@@ -2938,7 +2938,7 @@ charge adapters do not attach them today either). Do not touch Rillet or QBO.
   - `packages/ee/src/accounting/AGENTS.md` and
     `apps/erp/app/modules/invoicing/AGENTS.md` (if present) — the new tables,
     service functions and entity type
-  - `.ai/specs/2026-09-23-reimbursements-first-class.md` — changelog entry, and
+  - `.ai/specs/implemented/2026-09-23-reimbursements-first-class.md` — changelog entry, and
     **correct the `ramp-sync-reimbursement.ts` path** (it is in `@carbon/jobs`,
     not `packages/ee/src/ramp/`)
 
@@ -3106,7 +3106,7 @@ returning to the owning task. Do not commit; do not open a PR unless asked.
 Re-checked against both specs at commit `595e0ba188`. Every criterion in scope
 maps to at least one task.
 
-### `.ai/specs/2026-09-23-reimbursements-first-class.md`
+### `.ai/specs/implemented/2026-09-23-reimbursements-first-class.md`
 
 | Criterion | Tasks |
 |---|---|

@@ -343,7 +343,7 @@ export const DEFAULT_SYNC_CONFIG: GlobalSyncConfig = {
     },
     // Employee reimbursements are opt-in: an upgrading integration must not
     // start pushing a new AP document to the customer's ledger unasked. Spec
-    // `.ai/specs/2026-09-23-reimbursements-first-class.md`: defaultEnabled false.
+    // `.ai/specs/implemented/2026-09-23-reimbursements-first-class.md`: defaultEnabled false.
     reimbursement: {
       enabled: false,
       direction: "push-to-accounting",

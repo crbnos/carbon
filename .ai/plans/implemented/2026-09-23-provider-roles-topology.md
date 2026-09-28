@@ -1,6 +1,6 @@
 # Provider roles + integration topology (spec slice 2)
 
-**Spec:** `.ai/specs/2026-09-23-spend-management-push-only-mode.md` §1, §1b, §1c, §5
+**Spec:** `.ai/specs/implemented/2026-09-23-spend-management-push-only-mode.md` §1, §1b, §1c, §5
 **Research:** `.ai/research/spend-management-one-way-push.md`
 **Branch:** independent of slice 1; foundation for slices 3–5
 

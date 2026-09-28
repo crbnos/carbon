@@ -1,6 +1,6 @@
 # Delegated coding + GR/IR verification (spec slice 5)
 
-**Spec:** `.ai/specs/2026-09-23-spend-management-push-only-mode.md` §4, §6
+**Spec:** `.ai/specs/implemented/2026-09-23-spend-management-push-only-mode.md` §4, §6
 **Research:** `.ai/research/spend-management-one-way-push.md`
 **Depends on:** slices 2, 3, 4
 

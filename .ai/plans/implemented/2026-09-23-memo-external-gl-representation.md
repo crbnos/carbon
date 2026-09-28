@@ -1,6 +1,6 @@
 # Memo External-GL Representation — implementation plan
 
-**Spec:** `.ai/specs/2026-09-23-memo-external-gl-representation.md`
+**Spec:** `.ai/specs/implemented/2026-09-23-memo-external-gl-representation.md`
 **Research:** `.ai/research/2026-09-22-sap-grade-ap-ar-document-model.md` + the Xero/QBO/Rillet
 API surveys and Rillet sandbox probe recorded in the spec.
 **Branch:** `rillet-ramp-accounting-provider` — stacks on the charge rename commit (`92a6e812e7`), which is a prerequisite and lives on this branch.

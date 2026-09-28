@@ -26,7 +26,7 @@ import { JournalEntrySyncError } from "./posting";
  *
  * Deliberately NOT `"vendor"` — that id space holds Carbon `supplier` ids, and
  * the whole point of the reimbursement document is that an employee is not in
- * the vendor master (`.ai/specs/2026-09-23-reimbursements-first-class.md`).
+ * the vendor master (`.ai/specs/implemented/2026-09-23-reimbursements-first-class.md`).
  * Deliberately NOT `"employee"` either: that is a declared (still
  * unimplemented) AccountingEntityType for a PAYROLL employee master sync —
  * Xero's `Employees` endpoint is a different object from a Contact, and

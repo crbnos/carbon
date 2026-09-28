@@ -2,7 +2,7 @@
 
 Implementation plan for the charge half of
 `.ai/specs/2026-09-23-editable-imported-spend-documents.md`.
-The reimbursement half is `.ai/plans/2026-09-23-reimbursements-first-class.md`;
+The reimbursement half is `.ai/plans/implemented/2026-09-23-reimbursements-first-class.md`;
 this plan deliberately reuses its shared components rather than cloning them.
 
 ## The gap this closes
@@ -56,7 +56,7 @@ parent is Draft" — it cannot see the parent row — so the guard belongs in
 
 ## Dependencies
 
-Tasks 12 and 13 of `.ai/plans/2026-09-23-reimbursements-first-class.md` build
+Tasks 12 and 13 of `.ai/plans/implemented/2026-09-23-reimbursements-first-class.md` build
 `DocumentSourceBadge` and `DocumentLineEditor` as **shared** components. This
 plan consumes them. Do not start Task 6 below until those exist, and do not
 fork a charge-specific copy of either — if one of them does not fit the charge

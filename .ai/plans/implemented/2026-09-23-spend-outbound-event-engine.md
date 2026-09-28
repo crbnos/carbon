@@ -1,8 +1,8 @@
 # Spend outbound onto the event engine (spec slice 3)
 
-**Spec:** `.ai/specs/2026-09-23-spend-management-push-only-mode.md` §10
+**Spec:** `.ai/specs/implemented/2026-09-23-spend-management-push-only-mode.md` §10
 **Research:** `.ai/research/spend-management-one-way-push.md`
-**Depends on:** `.ai/plans/2026-09-23-provider-roles-topology.md` (slice 2) fully landed
+**Depends on:** `.ai/plans/implemented/2026-09-23-provider-roles-topology.md` (slice 2) fully landed
 
 > **Provisional.** Tasks 1–4 rest on the exact shape slice 2 gives `SyncProviderCapabilities`
 > and `resolveCapabilities`. **Before starting, re-read

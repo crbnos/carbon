@@ -85,7 +85,7 @@ export async function patchRampOAuthCredentials(
     /**
      * Which system holds Ramp's accounting connection. UNDEFINED means unknown,
      * not absent — Carbon may be unable to read it at all (see the open question
-     * in `.ai/plans/2026-09-23-spend-push-only-mode.md`).
+     * in `.ai/plans/implemented/2026-09-23-spend-push-only-mode.md`).
      */
     accountingConnectionProvider?: string;
   }

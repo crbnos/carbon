@@ -52,7 +52,7 @@ export const RAMP_PROVIDER_SCOPES = [
  * which is how a Carbon invoice learns it was paid.
  *
  * NOT requested: `item_receipts:write`. Pushing item receipts was designed and then
- * dropped (2026-09-25) — see `.ai/specs/2026-09-23-spend-management-push-only-mode.md`
+ * dropped (2026-09-25) — see `.ai/specs/implemented/2026-09-23-spend-management-push-only-mode.md`
  * §7. Carbon's Ramp app IS configured for that scope, so this is a deliberate
  * choice not to ask for it, not a limitation.
  *

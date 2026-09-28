@@ -1,6 +1,6 @@
 # Push-only spend mode, uncoded (spec slice 4)
 
-**Spec:** `.ai/specs/2026-09-23-spend-management-push-only-mode.md` §2, §3, §5, §7, §9
+**Spec:** `.ai/specs/implemented/2026-09-23-spend-management-push-only-mode.md` §2, §3, §5, §7, §9
 **Research:** `.ai/research/spend-management-one-way-push.md`
 **Depends on:** slice 2 (`provider-roles-topology`) and slice 3 (`spend-outbound-event-engine`)
 
