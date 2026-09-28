@@ -154,7 +154,6 @@ export interface OnshapeRevision {
   releaseId?: string;
   releaseName?: string;
   releaseCreatedDate?: string;
-  configuration?: string | null;
   isObsolete?: boolean;
   [key: string]: unknown;
 }
