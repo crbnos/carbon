@@ -77,7 +77,7 @@ Because the datasets now seed posted/paid documents, the dataset wipe does these
 around its generic FK-null + topological delete, all inside the apply transaction:
 
 0. **It refuses two company states before any write** (`assertWipeable`): intercompany
-   customers/suppliers (`intercompanyCompanyId` set) and non-Draft `cardTransaction` rows.
+   customers/suppliers (`intercompanyCompanyId` set) and non-Draft `charge` rows.
    Both are trigger-protected and FK-linked to rows the wipe must delete, so the apply
    throws a `Seed: this company trades with other companies in its group …` /
    `Seed: this company has N posted or voided card transaction(s) …` error, which the

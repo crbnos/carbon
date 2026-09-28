@@ -230,15 +230,15 @@ async function assertWipeable(ctx: Ctx): Promise<void> {
       `Seed: this company trades with other companies in its group (${partnerCount} intercompany customer/supplier record(s)). Demo data can only be applied to a company without intercompany partners.`
     );
   }
-  const cards = await client.query<{ count: number }>(
-    `SELECT count(*) AS count FROM "cardTransaction"
+  const charges = await client.query<{ count: number }>(
+    `SELECT count(*) AS count FROM "charge"
      WHERE "companyId" = $1 AND status <> 'Draft'`,
     [companyId]
   );
-  const cardCount = Number(cards.rows[0]?.count ?? 0);
-  if (cardCount > 0) {
+  const chargeCount = Number(charges.rows[0]?.count ?? 0);
+  if (chargeCount > 0) {
     throw new Error(
-      `Seed: this company has ${cardCount} posted or voided card transaction(s), which cannot be deleted. Demo data can only be applied to a company without posted card transactions.`
+      `Seed: this company has ${chargeCount} posted or voided charge(s), which cannot be deleted. Demo data can only be applied to a company without posted charges.`
     );
   }
 }

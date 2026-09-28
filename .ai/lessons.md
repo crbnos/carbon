@@ -2539,3 +2539,31 @@ do name the same object before rebasing; a vague key like `function:public` is
 evidence about the check, not about the migrations.
 
 **Applies to:** `packages/checks/src/clobber.ts` and any future `OBJECT_PATTERNS` row.
+
+---
+
+**Context:** Immediately after that merge, `crbn reset` failed with
+`relation "cardTransaction" does not exist` from `assertWipeable`
+(`datasets/wipe.ts`) — a function that did not exist at the merge-base and was
+added by main while this branch was renaming that table to `charge`.
+
+**Problem:** Neither side edited the other's lines, so git merged it with no
+conflict and every gate stayed green. `pnpm db:check:datasets` does NOT cover it:
+`verifyDataset` seeds a SCRATCH company with `wipeFirst: false`, so the wipe — and
+`assertWipeable` with it — never runs. Only a real `db:seed:dev` / `crbn reset`
+reaches that path, which is exactly the step nobody runs while resolving a merge.
+Typecheck cannot see it either: the table name is a string inside `client.query`.
+
+**Rule:** After merging main into a branch that RENAMED a database object, grep the
+files MAIN changed for the OLD identifier — `git diff --name-only <merge-base>
+origin/main` piped into a grep for the old name — instead of trusting a clean merge
+or a green `db:check:datasets`. Exclude `supabase/migrations/**` (history),
+`authz/baseline.json` (what production had, never regenerated) and
+`jobs/src/backups/renames.ts` (the old→new restore map): all three are SUPPOSED to
+keep the old name. Then run the seed itself. Docs count as hits too — main's new
+`assertWipeable` paragraphs in `datasets/AGENTS.md` and
+`.claude/rules/onboarding-company-templates.md` named the old table as well.
+
+**Applies to:** any branch that renames a table, column or enum value and then
+merges main; `packages/database/src/datasets/wipe.ts` above all, since no automated
+gate executes it.
