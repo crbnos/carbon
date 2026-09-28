@@ -8613,7 +8613,7 @@ msgstr "I (수월한 검사)"
 msgid "I have a reasonable basis to believe this individual is a U.S. person as defined in 22 CFR 120.62"
 msgstr "나는 이 개인이 22 CFR 120.62에서 정의한 미국인이라고 합리적으로 믿을 이유가 있습니다"
 
-msgid "I understand, keep the demo data"
+msgid "I understand, replace my existing data with the new demo data"
 msgstr ""
 
 msgid "I'm Still Working"

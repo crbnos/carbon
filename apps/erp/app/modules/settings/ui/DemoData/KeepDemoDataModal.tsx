@@ -27,7 +27,7 @@ export function KeepDemoDataModal({
 }) {
   const { t } = useLingui();
   // Translated, so the phrase the user is asked to type is always in their language.
-  const confirmPhrase = t`I understand, keep the demo data`;
+  const confirmPhrase = t`I understand, replace my existing data with the new demo data`;
   const [typed, setTyped] = useState("");
   const canConfirm = typed.trim().toLowerCase() === confirmPhrase.toLowerCase();
 

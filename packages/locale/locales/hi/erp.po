@@ -8613,7 +8613,7 @@ msgstr "I (शिथिल)"
 msgid "I have a reasonable basis to believe this individual is a U.S. person as defined in 22 CFR 120.62"
 msgstr "मेरे पास यह मानने का उचित आधार है कि यह व्यक्ति 22 CFR 120.62 में परिभाषित अनुसार एक U.S. व्यक्ति है"
 
-msgid "I understand, keep the demo data"
+msgid "I understand, replace my existing data with the new demo data"
 msgstr ""
 
 msgid "I'm Still Working"

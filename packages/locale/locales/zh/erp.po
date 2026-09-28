@@ -8613,7 +8613,7 @@ msgstr "I（放宽检验）"
 msgid "I have a reasonable basis to believe this individual is a U.S. person as defined in 22 CFR 120.62"
 msgstr "我有合理的理由相信该个人是根据 22 CFR 120.62 定义的美国人"
 
-msgid "I understand, keep the demo data"
+msgid "I understand, replace my existing data with the new demo data"
 msgstr ""
 
 msgid "I'm Still Working"
