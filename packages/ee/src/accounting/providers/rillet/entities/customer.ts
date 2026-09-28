@@ -1,6 +1,8 @@
 import type { KyselyTx } from "@carbon/database/client";
 import { resolveOrCreateRemoteCounterpart } from "../../../core/counterpart";
+import { createMappingService } from "../../../core/external-mapping";
 import type { Accounting } from "../../../core/types";
+import { withTriggersDisabled } from "../../../core/utils";
 import type { Rillet, RilletCustomerWrite, RilletWriteOmit } from "../models";
 import { buildRilletIdempotencyKey } from "../provider";
 import {
@@ -554,7 +556,7 @@ export class RilletCustomerSyncer extends RilletEntitySyncer<
   ): Promise<string> {
     // Mapping first, then the shared ladder — see the vendor syncer. A Rillet
     // customer has no tax id, so it resolves by carbon reference then name.
-    const { remoteId: existingRemoteId } =
+    const { remoteId: existingRemoteId, decision } =
       await resolveOrCreateRemoteCounterpart({
         provider: this.rilletProvider,
         kind: "customer",
@@ -565,10 +567,38 @@ export class RilletCustomerSyncer extends RilletEntitySyncer<
             data.emails?.[0]?.email,
           carbonReference: localId
         },
-        existingRemoteId: await this.getRemoteId(localId)
+        existingRemoteId: await this.getRemoteId(localId),
+        localId,
+        // Two Carbon customers can share a name closely enough to match the same
+        // Rillet customer; adopting one another customer already owns and then
+        // updating it overwrites that customer's master while every invoice of
+        // theirs still points at it.
+        isClaimed: async (remoteId) => {
+          const owner = await this.mappingService.getEntityId(
+            this.provider.id,
+            remoteId,
+            this.entityType
+          );
+          return owner !== null && owner !== localId;
+        }
       });
 
     if (existingRemoteId) {
+      // LINK BEFORE MUTATE on an ADOPTED record — same reasoning as the vendor
+      // syncer: `updateCustomer` overwrites name and email, and the mapping's
+      // partial unique index is the only thing that can refuse, so it has to
+      // refuse while the remote record is still intact.
+      if (decision?.action === "link") {
+        await withTriggersDisabled(this.database, async (tx) => {
+          await createMappingService(tx, this.companyId).link(
+            this.entityType,
+            localId,
+            this.provider.id,
+            existingRemoteId
+          );
+        });
+      }
+
       const updated = await writeDroppingUnregisteredReferences(
         data,
         (payload) =>

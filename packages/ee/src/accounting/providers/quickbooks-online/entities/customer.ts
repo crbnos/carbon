@@ -363,7 +363,19 @@ export class QboCustomerSyncer extends QboEntitySyncer<
         provider: this.qboProvider,
         kind: "customer",
         keys: { name: data.DisplayName ?? null },
-        existingRemoteId: await this.getRemoteId(localId)
+        existingRemoteId: await this.getRemoteId(localId),
+        localId,
+        // A name match can land on a counterpart another Carbon record already
+        // owns; adopting it would repoint this record at a master that is not
+        // its own. Ambiguity creates — see core/counterpart.ts.
+        isClaimed: async (remoteId) => {
+          const owner = await this.mappingService.getEntityId(
+            this.provider.id,
+            remoteId,
+            this.entityType
+          );
+          return owner !== null && owner !== localId;
+        }
       });
 
     try {

@@ -45,11 +45,13 @@ import MemoStatus from "./MemoStatus";
 
 type MemoFormValues = z.infer<typeof memoValidator>;
 
-// The one memo document is presented as two forms. `type` fixes both the party
-// and the internal Credit/Debit direction, so neither is a user choice:
-//   creditMemo  → customer, direction Credit (reduces what the customer owes)
-//   supplierCredit → supplier, direction Debit  (reduces what you owe the vendor)
-// The direction field is hidden and the type is announced in the header.
+// The one memo document is presented as two forms. `type` fixes the PARTY — and
+// only the party — which is also what each list route filters on:
+//   creditMemo     → customer
+//   supplierCredit → supplier
+// Direction stays a user choice. It briefly did not: deriving it from the party
+// and force-submitting it rewrote a stored direction on every save and made two
+// of the four legal combinations unauthorable. See the Select below.
 export type MemoType = "creditMemo" | "supplierCredit";
 
 type MemoFormProps = {

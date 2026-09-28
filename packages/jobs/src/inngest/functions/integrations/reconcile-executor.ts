@@ -14,6 +14,7 @@ import {
   CHARGE_CREDIT_PROVIDERS,
   CHARGE_NATIVE_VOID_PROVIDERS,
   type ChargePolicyInput,
+  MEMO_NATIVE_VOID_PROVIDERS,
   PAYMENT_PUSH_PROVIDERS,
   type ProviderID,
   REIMBURSEMENT_NATIVE_VOID_PROVIDERS,
@@ -74,6 +75,23 @@ const SNAPSHOT_TABLES: Record<
     columns: "id, status, direction, customerId, supplierId, updatedAt"
   }
 };
+
+/**
+ * Which providers can natively void each document type — one lookup, so a new
+ * document type cannot inherit another's capability by falling through a chain.
+ * Absent from the map means the invoice/bill default.
+ */
+const NATIVE_VOID_PROVIDERS_BY_ENTITY: Partial<
+  Record<ReconcileEntityType, ReadonlySet<string>>
+> = {
+  charge: CHARGE_NATIVE_VOID_PROVIDERS,
+  reimbursement: REIMBURSEMENT_NATIVE_VOID_PROVIDERS,
+  creditMemo: MEMO_NATIVE_VOID_PROVIDERS,
+  supplierCredit: MEMO_NATIVE_VOID_PROVIDERS
+};
+
+/** Invoices and bills: Rillet is the only native document void today. */
+const DEFAULT_NATIVE_VOID_PROVIDERS: ReadonlySet<string> = new Set(["rillet"]);
 
 /** Entity types whose decision consults the push mapping. */
 const MAPPED_TYPES: ReadonlySet<ReconcileEntityType> = new Set([
@@ -445,17 +463,16 @@ export async function reconcileEntities(args: {
             }
           : {}),
         context: {
-          // Each document type declares its own native-void capability. A
-          // reimbursement is deletable on all three providers, so the old
-          // `=== "rillet"` fallback would have silently suppressed the QBO and
-          // Xero void paths their syncers actually implement — leaving the
-          // remote document live with nothing failing.
+          // Each document type declares its own native-void capability, as a
+          // capability SET. A reimbursement is deletable on all three providers,
+          // so a bare provider-id fallback would silently suppress the QBO and
+          // Xero void paths their syncers actually implement — leaving the remote
+          // document live with nothing failing. Memos are the opposite case: only
+          // Rillet can void one, and `MEMO_NATIVE_VOID_PROVIDERS` is where that
+          // hole is declared rather than hidden in a comparison here.
           providerSupportsNativeVoid:
-            entityType === "charge"
-              ? CHARGE_NATIVE_VOID_PROVIDERS.has(args.providerId)
-              : entityType === "reimbursement"
-                ? REIMBURSEMENT_NATIVE_VOID_PROVIDERS.has(args.providerId)
-                : args.providerId === "rillet",
+            NATIVE_VOID_PROVIDERS_BY_ENTITY[entityType]?.has(args.providerId) ??
+            DEFAULT_NATIVE_VOID_PROVIDERS.has(args.providerId),
           journalEntryPushEnabled,
           entityPushEnabled,
           providerSupportsPaymentPush: PAYMENT_PUSH_PROVIDERS.has(
