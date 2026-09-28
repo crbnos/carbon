@@ -18,6 +18,7 @@ import {
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ReactNode } from "react";
 import { useState } from "react";
+import { LuLock } from "react-icons/lu";
 import { usePermissions } from "~/hooks";
 import { postingSyncSettingsValidator } from "~/modules/settings/settings.models";
 
@@ -157,8 +158,12 @@ function FamilyRepresentationField({
   return (
     <div className="w-full">
       <div className="text-sm font-medium text-foreground">{label}</div>
-      <div className="mt-1.5 flex items-center gap-2 rounded-md border border-border bg-muted/40 px-3 py-2">
-        <Badge variant="secondary">{t`Handled by ${delegatedTo}`}</Badge>
+      {/* Reads as a locked field rather than a status chip: the box occupies the
+          same slot the Select would, and the lock says "not yours to set" without
+          a badge competing with the live controls beside it. */}
+      <div className="mt-1.5 flex items-center gap-2 rounded-md border border-border bg-muted/40 px-3 py-2 text-sm text-muted-foreground">
+        <LuLock className="size-4 shrink-0" />
+        <span>{t`Handled by ${delegatedTo}`}</span>
       </div>
       <p className="mt-1.5 text-xs text-muted-foreground">
         {t`${delegatedTo} posts this to your ledger, so Carbon doesn't push it. Your saved choice is kept in case that changes.`}
