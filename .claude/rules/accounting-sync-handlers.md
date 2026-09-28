@@ -66,7 +66,7 @@ Every entry point routes through the durable **`accountingSyncOperation`** ledge
 `packages/ee/src/accounting/core/subscriptions.ts` (exported from the `./accounting` barrel) is the single source of truth for the SYNC event-system subscriptions each provider's outbound sync needs: `REQUIRED_SYNC_SUBSCRIPTIONS[providerId]` + the idempotent `ensureProviderSubscriptions(client, companyId, providerId)` (the create RPC upserts on `(companyId, name, table)`; rows for tables no longer required are deleted). Subscription name: `${providerId}-sync` (`getSyncSubscriptionName`).
 
 - **Converged from three call sites** — the install hook, the `onUpdate` hook (every settings save of an installed integration), and the outbound sweep — so existing installs self-heal at runtime. **No migration ever backfills subscription rows**; migrations only attach table triggers (`20260807152238_payment-event-trigger.sql` is the precedent).
-- **The set**: every provider gets `customer`/`supplier`/`item`/`salesInvoice`/`purchaseInvoice` (INSERT/UPDATE/DELETE) + `journal` (INSERT/UPDATE only — journals are immutable once posted and DELETE sync doesn't exist). all three providers add `payment` (INSERT/UPDATE — Phase G outbound push, now Rillet/Xero/QBO); Xero adds `purchaseOrder` + `salesOrder`; QBO adds `purchaseOrder` only. **`address` is deliberately absent everywhere** — address edits reach sync via the parent-row `updatedAt` bump interceptor; a direct address subscription is a dead letter.
+- **The set**: every provider gets `customer`/`supplier`/`salesInvoice`/`purchaseInvoice` (INSERT/UPDATE/DELETE) + `journal` (INSERT/UPDATE only — journals are immutable once posted and DELETE sync doesn't exist). all three providers add `payment` (INSERT/UPDATE — Phase G outbound push, now Rillet/Xero/QBO); Xero adds `purchaseOrder` + `salesOrder`; QBO adds `purchaseOrder` only. **`address` is deliberately absent everywhere** — address edits reach sync via the parent-row `updatedAt` bump interceptor; a direct address subscription is a dead letter. **`item` is deliberately absent too** (removed 2026-09-28): Carbon's item master is a manufacturing parts catalog — tens of thousands of parts, materials, tools and consumables — and no item syncer overrides `shouldSync`, so subscribing the table pushed every row on every edit into Xero/QBO Products & Services and Rillet Products. **Sales invoices no longer reference items at all** (see "AR invoices" below), so the only remaining item pushes are JIT from purchase/sales ORDERS and inventory adjustments, which genuinely reference them. `item` is gone from `invoice.dependsOn` and `bill.dependsOn`, so a company can now disable the `item` entity outright and still sync both documents — `validateSyncConfig` refuses to enable an entity whose declared dependency is disabled, which is what previously made "invoices on, items off" invalid. The item syncers stay REGISTERED for the remaining JIT callers — the subscriptions↔syncer invariant only requires a syncer per subscription, not the reverse. Existing installs self-heal: `ensureProviderSubscriptions` deletes any subscription whose table is no longer required. The on-demand **Push customers, vendors & items** action still enumerates items.
 - Provider hooks (`packages/ee/src/{rillet,xero,quickbooks}/hooks.server.ts`) are thin wrappers over the convergence. The QBO install hook is **no longer a no-op** (its syncers shipped), and `quickbooksOnUninstall` exists. `onUpdate` is a new `IntegrationServerHooks` member (`packages/ee/src/types.ts`; registry `packages/ee/src/hooks.server.ts`; wired in `apps/erp/app/routes/x+/settings+/integrations.$id.tsx`).
 - **Invariant test**: `packages/jobs/src/inngest/functions/events/subscriptions-mapping.test.ts` pins every subscribed table ↔ a `TABLE_TO_ENTITY_MAP` entry (`events/sync-tables.ts`) ↔ a registered syncer for that provider — a subscription that routes nowhere fails CI. (`salesOrder` got its map entry as part of this; it was a dead Xero subscription before.)
 
@@ -234,6 +234,27 @@ revenue, so it cannot mirror Carbon's posting. Spec:
     QBO/Xero substitute it). Account codes resolve through the shared
     `loadAccountCodesById` (Xero) / `loadQboAccountRefsById` (QBO) /
     `loadRilletAccountCodesById` (Rillet).
+- **AR invoices are ACCOUNT-referenced, not item-referenced** (changed 2026-09-28).
+  Every line carries a SYNTHETIC item standing for the posted revenue ACCOUNT —
+  a Rillet product / QBO Service item provisioned per account, or nothing at all
+  on Xero, whose lines are account-coded already. Two helper items per company
+  instead of a mirrored parts catalog.
+  This reverses the 2026-08-05 spec's item-referenced AR decision, whose stated
+  premise was "the item's revenue account *is* what the invoice should post".
+  That premise is false in current Carbon: there is **no per-item revenue
+  account** in the schema — `post-sales-invoice` credits
+  `accountDefault.salesAccount` for ALL merchandise and
+  `salesShippingRevenueAccount` for shipping (posting groups were dropped). So
+  the item reference bought subledger detail only, and the posted GL is
+  byte-identical without it. The trade-off is real and deliberate: the
+  provider's AR subledger loses per-product breakdown (the item name stays in
+  the line Description; Carbon remains the system of record for sales detail).
+  The account is REPLAYED from the posted journal
+  (`salesRevenueAccountId`/`requirePostedSalesAccountId`, the same discipline
+  shipping already used), so changing a default after posting cannot change the
+  account a retry uses. Rillet/QBO helper items live under the `salesItem`
+  mapping entityType beside the existing `shippingItem`; Rillet's shipping
+  idempotency key is deliberately unchanged so existing installs keep deduping.
 - **AR invoices preserve separate sales, shipping and native tax components.**
   `core/sales-invoice-source.ts` is the single typed batch loader for all three
   invoice adapters: authoritative view totals, add-ons, line/header shipping,

@@ -23,6 +23,7 @@ function fixture() {
     currencyDecimalPlaces: 2,
     headerShippingCost: 5,
     shippingRevenueAccountId: "acct-shipping",
+    salesRevenueAccountId: "acct-sales",
     dateIssued: "2026-09-07",
     dateDue: null,
     datePaid: null,

@@ -12,6 +12,7 @@ import {
 } from "../../../core/sales-document-components";
 import {
   loadSalesInvoices,
+  requirePostedSalesAccountId,
   requirePostedShippingAccountId
 } from "../../../core/sales-invoice-source";
 import {
@@ -79,25 +80,27 @@ export function deriveCarbonInvoiceStatus(
 
 /**
  * Build QBO SalesItemLineDetail lines from Carbon invoice lines. Pure —
- * exported for tests. `itemRemoteIds` maps Carbon itemId → QBO item id
+ * exported for tests. Lines reference the synthetic per-revenue-account items
  * (resolved by ensureDependencySynced before mapping); lines without an
  * item ship without an ItemRef.
  */
 export function buildQboInvoiceLines(args: {
   document: SalesDocumentComponents;
-  itemRemoteIds: ReadonlyMap<string, string>;
+  salesItemRemoteId: string | null;
   shippingItemRemoteId: string | null;
   lineTaxCodeRefs: ReadonlyMap<string, Qbo.Ref>;
 }): Array<Omit<Qbo.InvoiceLine, "Id">> {
   return args.document.components.map((component) => {
     const shipping =
       component.kind === "LineShipping" || component.kind === "HeaderShipping";
+    // Every line references one of TWO synthetic items standing for the posted
+    // revenue ACCOUNT, not the Carbon item — a QBO item's account IS the line's
+    // account (no per-line override), and Carbon posts all merchandise revenue
+    // to one account, so per-item items bought no GL fidelity.
     const itemId = shipping
       ? args.shippingItemRemoteId
-      : component.itemId
-        ? args.itemRemoteIds.get(component.itemId)
-        : null;
-    if ((shipping || component.itemId) && !itemId)
+      : args.salesItemRemoteId;
+    if (!itemId)
       throw new JournalEntrySyncError({
         errorCode: "UNMAPPED_ACCOUNTS",
         warning: true,
@@ -347,24 +350,14 @@ export class QboSalesInvoiceSyncer extends BaseEntitySyncer<
       "customer",
       local.customerId
     );
-    const itemRemoteIds = new Map<string, string>();
-    const itemIds = [
-      ...new Set(
-        document.components
-          .filter(
-            (line) =>
-              line.kind !== "LineShipping" &&
-              line.kind !== "HeaderShipping" &&
-              line.itemId
-          )
-          .map((line) => line.itemId!)
-      )
-    ];
-    for (const itemId of itemIds)
-      itemRemoteIds.set(
-        itemId,
-        await this.ensureDependencySynced("item", itemId)
-      );
+    const hasMerchandise = document.components.some(
+      (line) => line.kind !== "LineShipping" && line.kind !== "HeaderShipping"
+    );
+    const salesItemRemoteId = hasMerchandise
+      ? await (await this.getShippingItemSyncer()).ensureSalesItem({
+          revenueAccountId: requirePostedSalesAccountId(local)
+        })
+      : null;
     const shippingItemRemoteId = shippingAccountId
       ? await (await this.getShippingItemSyncer()).ensureShippingItem({
           shippingAccountId
@@ -393,7 +386,7 @@ export class QboSalesInvoiceSyncer extends BaseEntitySyncer<
       TxnTaxDetail: tax.txnTaxDetail,
       Line: buildQboInvoiceLines({
         document,
-        itemRemoteIds,
+        salesItemRemoteId,
         shippingItemRemoteId,
         lineTaxCodeRefs: tax.lineTaxCodeRefs
       })

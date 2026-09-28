@@ -37,7 +37,25 @@ type RequiredSyncSubscription = {
 const COMMON_PUSH_TABLES: RequiredSyncSubscription[] = [
   { table: "customer", operations: ["INSERT", "UPDATE", "DELETE"] },
   { table: "supplier", operations: ["INSERT", "UPDATE", "DELETE"] },
-  { table: "item", operations: ["INSERT", "UPDATE", "DELETE"] },
+  // `item` is deliberately NOT here. Carbon is a manufacturing ERP: its item
+  // master is parts, materials, tools, consumables and fixtures — tens of
+  // thousands of rows that mean nothing to an accounting system. Subscribing the
+  // table pushed EVERY one of them, on every insert and every edit, into Xero /
+  // QuickBooks Products & Services and Rillet Products, with no filter (none of
+  // the three item syncers overrides `shouldSync`). That is catalog pollution,
+  // not integration: it buries the handful of real sellable goods, and it churns
+  // the provider on routine engineering edits.
+  //
+  // Nothing is lost, because no INVOICE references a Carbon item any more: an AR
+  // line carries a synthetic per-revenue-account product (Rillet / QBO) or is
+  // account-coded outright (Xero), and a bill replays its posting journal. The
+  // documents that DO reference items — sales orders, purchase orders, inventory
+  // adjustments — still push exactly the ones they name, JIT via
+  // `ensureDependencySynced("item", …)`. That path is load-bearing and must stay.
+  //
+  // Removing a table from this list is self-healing: `ensureProviderSubscriptions`
+  // deletes any subscription whose table is no longer required, so existing
+  // installs stop pushing their catalog at the next converge.
   { table: "salesInvoice", operations: ["INSERT", "UPDATE", "DELETE"] },
   { table: "purchaseInvoice", operations: ["INSERT", "UPDATE", "DELETE"] },
   // Card charges push on the transition to Posted/Voided; the row is never

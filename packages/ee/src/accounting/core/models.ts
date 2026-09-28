@@ -175,7 +175,24 @@ export const ENTITY_DEFINITIONS: Record<
   bill: {
     label: "Bills (Purchase Invoices)",
     type: "transaction",
-    dependsOn: ["vendor", "item"],
+    // NOT `item`. A bill is an account-costed replay of its posting journal —
+    // the item is a line label, never a GL driver — so no bill syncer references
+    // an item on the push: Xero passes `nonTrackedItemIds: undefined` (an
+    // `ItemCode` for a tracked item would double-post inventory), QBO and Rillet
+    // build account-coded lines, and none of the three calls
+    // `ensureDependencySynced("item", …)`. The `ItemRef`/`ItemCode` reads in
+    // those files are on the PULL path, mapping an inbound provider bill back to
+    // Carbon.
+    //
+    // This is load-bearing, not cosmetic: `validateSyncConfig` refuses to enable
+    // an entity while a declared dependency is disabled, so the stale `item` here
+    // made "bills on, items off" an invalid config — blocking the one thing a
+    // customer would most reasonably want. Purchase/sales ORDERS and sales
+    // INVOICES keep the dependency: they genuinely reference items (see
+    // `.ai/specs/implemented/2026-08-05-accounting-document-representation.md`
+    // — AP replays the journal, AR is item-referenced to the item's revenue
+    // account, and non-posting documents carry item detail as pure benefit).
+    dependsOn: ["vendor"],
     supportedDirections: ["two-way", "push-to-accounting"]
   },
   salesOrder: {
@@ -187,7 +204,19 @@ export const ENTITY_DEFINITIONS: Record<
   invoice: {
     label: "Sales Invoices",
     type: "transaction",
-    dependsOn: ["customer", "item"],
+    // NOT `item` — AR invoice lines no longer reference Carbon items. Each line
+    // carries a SYNTHETIC per-revenue-account item (Rillet product / QBO item)
+    // or none at all (Xero, whose lines are account-coded), replaying the
+    // account the ORIGINAL journal credited.
+    //
+    // The 2026-08-05 spec justified item-referenced AR on "the item's revenue
+    // account IS what the invoice should post". That premise no longer holds:
+    // Carbon has no per-item revenue account — `post-sales-invoice` credits
+    // `accountDefault.salesAccount` for ALL merchandise and
+    // `salesShippingRevenueAccount` for shipping — so the item reference bought
+    // subledger detail only, at the cost of mirroring a manufacturing parts
+    // catalog into the provider. The posted GL is byte-identical without it.
+    dependsOn: ["customer"],
     supportedDirections: ["two-way", "push-to-accounting"]
   },
   payment: {
@@ -1195,6 +1224,14 @@ export const SalesInvoiceSchema = z.object({
   headerShippingCost: z.number(),
   /** Original posted shipping account; null before posting or when no shipping. */
   shippingRevenueAccountId: z.string().nullable(),
+  /**
+   * The account the ORIGINAL journal credited for merchandise revenue. Replayed
+   * onto the provider document so a historical invoice keeps its own account
+   * rather than today's default — the same discipline as shipping above, and
+   * load-bearing since AR invoices stopped referencing items (the item used to
+   * carry the account implicitly through the provider item's own config).
+   */
+  salesRevenueAccountId: z.string().nullable(),
   exchangeRate: z.number(),
   postingDate: z.string().nullish(),
   dateIssued: withNullable(z.string()),

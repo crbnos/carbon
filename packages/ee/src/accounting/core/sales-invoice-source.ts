@@ -129,10 +129,21 @@ export async function loadSalesInvoices(
     .where("journal.sourceType", "=", "Sales Invoice")
     .where("journal.status", "=", "Posted")
     .execute();
-  const shippingAccounts = new Map<string, Set<string>>();
+  // Both revenue roles are extracted the same way, and for the same reason: a
+  // provider document must replay the account its ORIGINAL journal posted to,
+  // never today's default. Merchandise revenue joined shipping here when AR
+  // invoices stopped referencing items — the item used to carry the account
+  // implicitly (via the provider item's own config), and with the item gone the
+  // posted account is the only thing that can.
+  const revenueAccounts: Record<
+    "ShippingRevenue" | "SalesRevenue",
+    Map<string, Set<string>>
+  > = { ShippingRevenue: new Map(), SalesRevenue: new Map() };
+
   for (const row of postingRows) {
-    if (classifyAccountingPostingRole(row.description) !== "ShippingRevenue")
-      continue;
+    const role = classifyAccountingPostingRole(row.description);
+    if (role !== "ShippingRevenue" && role !== "SalesRevenue") continue;
+    const label = role === "ShippingRevenue" ? "Shipping Revenue" : "Sales";
     if (
       !row.documentId ||
       !row.accountId ||
@@ -142,15 +153,17 @@ export async function loadSalesInvoices(
       throw new JournalEntrySyncError({
         errorCode: "UNMAPPED_ACCOUNTS",
         warning: true,
-        message:
-          "Cannot sync invoice: original Shipping Revenue posting has no valid Revenue leaf account in the company group",
+        message: `Cannot sync invoice: original ${label} posting has no valid Revenue leaf account in the company group`,
         metadata: { invoiceId: row.documentId, accountId: row.accountId }
       });
     }
-    const accounts = shippingAccounts.get(row.documentId) ?? new Set<string>();
+    const byInvoice = revenueAccounts[role];
+    const accounts = byInvoice.get(row.documentId) ?? new Set<string>();
     accounts.add(row.accountId);
-    shippingAccounts.set(row.documentId, accounts);
+    byInvoice.set(row.documentId, accounts);
   }
+  const shippingAccounts = revenueAccounts.ShippingRevenue;
+  const salesAccounts = revenueAccounts.SalesRevenue;
 
   // Group lines by invoice ID
   const linesByInvoiceId = new Map<string, (typeof lineRows)[number][]>();
@@ -194,6 +207,19 @@ export async function loadSalesInvoices(
           "Cannot sync invoice: original Shipping Revenue posting has multiple accounts",
         metadata: { invoiceId: row.id, accountIds: shippingIds }
       });
+    // Carbon posts ALL merchandise revenue to one account
+    // (`accountDefault.salesAccount`) — there is no per-item revenue account in
+    // the schema — so more than one here means the journal is not the shape this
+    // replay assumes, and guessing which to use would silently misstate revenue.
+    const salesIds = [...(salesAccounts.get(row.id) ?? [])];
+    if (salesIds.length > 1)
+      throw new JournalEntrySyncError({
+        errorCode: "UNMAPPED_ACCOUNTS",
+        warning: true,
+        message:
+          "Cannot sync invoice: original Sales Revenue posting has multiple accounts",
+        metadata: { invoiceId: row.id, accountIds: salesIds }
+      });
     result.set(row.id, {
       id: row.id,
       invoiceId: row.invoiceId,
@@ -206,6 +232,7 @@ export async function loadSalesInvoices(
       baseCurrencyDecimalPlaces: Number(row.baseCurrencyDecimalPlaces),
       currencyDecimalPlaces: Number(row.currencyDecimalPlaces),
       shippingRevenueAccountId: shippingIds[0] ?? null,
+      salesRevenueAccountId: salesIds[0] ?? null,
       headerShippingCost: Number(row.headerShippingCost ?? 0),
       exchangeRate: Number(row.exchangeRate),
       postingDate: row.postingDate,
@@ -249,6 +276,21 @@ export async function loadSalesInvoices(
   }
 
   return result;
+}
+
+/** Merchandise components must replay an original account, never today's default. */
+export function requirePostedSalesAccountId(
+  invoice: Accounting.SalesInvoice
+): string {
+  if (!invoice.salesRevenueAccountId)
+    throw new JournalEntrySyncError({
+      errorCode: "UNMAPPED_ACCOUNTS",
+      warning: true,
+      message:
+        "Cannot sync invoice: original Sales Revenue account is missing from its posted journal",
+      metadata: { invoiceId: invoice.id }
+    });
+  return invoice.salesRevenueAccountId;
 }
 
 /** Shipping components must replay an original account, never today's default. */
