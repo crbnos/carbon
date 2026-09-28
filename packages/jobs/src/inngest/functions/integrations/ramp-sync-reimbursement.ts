@@ -125,121 +125,6 @@ const REIMBURSEMENT_INVOICE_ONLY_STATES = new Set([
 ]);
 
 /**
- * The advisory-lock key both writers of a Ramp reimbursement's mapping take, so
- * a create and a later payout-only recording can never interleave.
- */
-function reimbursementLockKey(
-  companyId: string,
-  reimbursementRemoteId: string
-): string {
-  return `ramp:reimbursement:${companyId}:${reimbursementRemoteId}`;
-}
-
-/**
- * The one guarded write of a payout intent: a jsonb `||` merge, so the receipt
- * and deep-link keys the mapping already carries survive. Callers must have
- * checked `hasRecordedPayout` under the advisory lock — an intent already on the
- * mapping carries the FX snapshot of the payout that actually happened.
- */
-async function mergePayoutIntoMapping(
-  tx: Kysely<KyselyDatabase>,
-  args: {
-    companyId: string;
-    mappingId: string;
-    payout: RampReimbursementPayout;
-  }
-): Promise<void> {
-  await tx
-    .updateTable("externalIntegrationMapping")
-    .set({
-      metadata: sql`coalesce("metadata", '{}'::jsonb) || ${JSON.stringify(
-        args.payout
-      )}::jsonb`
-    })
-    .where("id", "=", args.mappingId)
-    .where("companyId", "=", args.companyId)
-    .execute();
-}
-
-/**
- * Record the payout intent on an ALREADY-MAPPED reimbursement's mapping.
- *
- * The case: Ramp lists a reimbursement while it is `APPROVED`, Carbon imports
- * it, and Ramp later PAYS the employee and re-lists it `REIMBURSED`. The sync's
- * mapped path does no import work, so without this the mapping keeps no
- * `rampPaymentId` forever, the ERP's Post helper never creates the
- * `payment`/`invoiceSettlement`, and Carbon never settles money that already
- * left Ramp. `createRampReimbursement`'s own additive merge cannot cover it —
- * the sync returns before ever calling it for a mapped item.
- *
- * The DOCUMENT is still never refreshed. The snapshot is taken from the MAPPED
- * reimbursement's own stored `amount`/`currencyCode`/`exchangeRate` rather than
- * re-normalized from Ramp, because those are what the Draft a reviewer may have
- * edited will post at — a payout built from Ramp's numbers could settle an
- * amount the document does not carry.
- *
- * Returns an error rather than silently skipping: a Ramp-paid reimbursement
- * with no reimbursement/statement bank account configured must surface in Sync
- * Activity, not leave the payout unrecorded with nothing failing.
- */
-async function recordRampReimbursementPayout(
-  db: Kysely<KyselyDatabase>,
-  args: {
-    companyId: string;
-    reimbursementRemoteId: string;
-    bankAccountId: string | null | undefined;
-    paidAt: string | null | undefined;
-  }
-): Promise<{ error: string } | null> {
-  return db.transaction().execute(async (tx) => {
-    await sql`
-      SELECT pg_advisory_xact_lock(
-        hashtextextended(
-          ${reimbursementLockKey(args.companyId, args.reimbursementRemoteId)},
-          0
-        )
-      )
-    `.execute(tx);
-
-    const mapping = createMappingService(tx, args.companyId);
-    const mapped = await mapping.getByExternalId(
-      "ramp",
-      args.reimbursementRemoteId,
-      RAMP_REIMBURSEMENT_ENTITY_TYPE
-    );
-    if (!mapped) return null;
-    if (hasRecordedPayout(mapped.metadata)) return null;
-
-    const document = await tx
-      .selectFrom("reimbursement")
-      .select(["amount", "currencyCode", "exchangeRate"])
-      .where("id", "=", mapped.entityId)
-      .where("companyId", "=", args.companyId)
-      .executeTakeFirst();
-    if (!document) {
-      return { error: "Mapped Ramp reimbursement no longer exists" };
-    }
-
-    const built = buildRampReimbursementPayout({
-      rampReimbursementId: args.reimbursementRemoteId,
-      bankAccountId: args.bankAccountId,
-      paidAt: args.paidAt,
-      amount: Number(document.amount),
-      currencyCode: document.currencyCode,
-      exchangeRate: Number(document.exchangeRate)
-    });
-    if (!built.ok) return { error: built.error };
-
-    await mergePayoutIntoMapping(tx, {
-      companyId: args.companyId,
-      mappingId: mapped.id,
-      payout: built.value
-    });
-    return null;
-  });
-}
-
-/**
  * Atomically create the Draft `reimbursement`, its coding lines, and the Ramp
  * mapping that is its idempotency anchor.
  *
@@ -267,7 +152,7 @@ export async function createRampReimbursement(
     await sql`
       SELECT pg_advisory_xact_lock(
         hashtextextended(
-          ${reimbursementLockKey(args.companyId, args.reimbursementRemoteId)},
+          ${`ramp:reimbursement:${args.companyId}:${args.reimbursementRemoteId}`},
           0
         )
       )
@@ -304,7 +189,7 @@ export async function createRampReimbursement(
       // (it carries the FX snapshot of the payout that actually happened) and
       // is never overwritten by a later pass.
       if (args.payout && !hasRecordedPayout(mapped.metadata)) {
-        await mergePayoutIntoMapping(tx, {
+        await recordRampReimbursementPayout(tx, {
           companyId: args.companyId,
           mappingId: mapped.id,
           payout: args.payout
@@ -385,6 +270,35 @@ export async function createRampReimbursement(
       created: true
     };
   });
+}
+
+/**
+ * Merge a payout intent into a Ramp reimbursement mapping's metadata.
+ *
+ * Additive by construction (`||` over the existing object), and every caller
+ * must gate on `hasRecordedPayout` first: an intent already on the mapping
+ * carries the FX snapshot of the payout that actually happened and is never
+ * overwritten by a later pass. Takes a handle rather than a pool so it works
+ * inside the create transaction and on its own.
+ */
+export async function recordRampReimbursementPayout(
+  db: Kysely<KyselyDatabase>,
+  args: {
+    companyId: string;
+    mappingId: string;
+    payout: RampReimbursementPayout;
+  }
+): Promise<void> {
+  await db
+    .updateTable("externalIntegrationMapping")
+    .set({
+      metadata: sql`coalesce("metadata", '{}'::jsonb) || ${JSON.stringify(
+        args.payout
+      )}::jsonb`
+    })
+    .where("id", "=", args.mappingId)
+    .where("companyId", "=", args.companyId)
+    .execute();
 }
 
 export function reimbursementPaymentExternalId(
@@ -472,6 +386,63 @@ export function reimbursementHeaderAmount(
     reimbursement.original_reimbursement_amount ??
     reimbursement.amount
   );
+}
+
+/**
+ * The currency a reimbursement settles in. `entity_amount` first, matching
+ * `reimbursementHeaderAmount` — the two must agree about which amount is being
+ * read, or a payout would be stamped with the wrong currency's rate.
+ */
+export function reimbursementCurrency(
+  reimbursement: RampReimbursement,
+  baseCurrency: string
+): string {
+  return (
+    reimbursement.entity_amount?.currency ??
+    reimbursement.currency_code ??
+    reimbursement.currency ??
+    baseCurrency
+  );
+}
+
+/**
+ * The payout intent for a reimbursement Ramp has already paid, resolving the
+ * amount, currency and rate itself.
+ *
+ * Used by the already-mapped path, which has none of those in hand: the import
+ * pass computes them on its way to building the document, but a reimbursement
+ * that was imported while `APPROVED` and PAID afterwards reaches this file with
+ * nothing but the Ramp row.
+ */
+async function resolveRampReimbursementPayout(
+  deps: RampReimbursementDependencies,
+  reimbursement: RampReimbursement
+): Promise<{ value: RampReimbursementPayout } | { error: string }> {
+  const currencyCode = reimbursementCurrency(reimbursement, deps.baseCurrency);
+  const normalized = await deps.normalizeAmount(
+    reimbursementHeaderAmount(reimbursement),
+    currencyCode,
+    "Reimbursement amount"
+  );
+  if (!normalized.ok) return { error: normalized.error };
+  let exchangeRate: number;
+  try {
+    exchangeRate = await deps.getExchangeRate(currencyCode);
+  } catch (error) {
+    return {
+      error: error instanceof Error ? error.message : String(error)
+    };
+  }
+  const built = buildRampReimbursementPayout({
+    rampReimbursementId: reimbursement.id,
+    bankAccountId:
+      deps.reimbursementBankAccountId ?? deps.statementBankAccountId,
+    paidAt: reimbursement.approved_at ?? reimbursement.transaction_date,
+    amount: Math.abs(normalized.value),
+    currencyCode,
+    exchangeRate
+  });
+  return built.ok ? { value: built.value } : { error: built.error };
 }
 
 export function extractRampUser(reimbursement: RampReimbursement): {
@@ -760,31 +731,40 @@ export async function syncRampReimbursement(
   }
 
   const mapping = createMappingService(deps.db, deps.companyId);
-  const mappedId = await mapping.getEntityId(
+  const mapped = await mapping.getByExternalId(
     "ramp",
     reimbursement.id,
     RAMP_REIMBURSEMENT_ENTITY_TYPE
   );
-  if (mappedId) {
-    // Already imported. Carbon owns the DOCUMENT now — it is never refreshed.
+  if (mapped) {
+    // Already imported. Carbon owns the DOCUMENT now — it is never refreshed
+    // (see `createRampReimbursement`), so this is a re-confirm.
     //
-    // The payout intent is the one thing a later pass must still record: Ramp
-    // may have listed this reimbursement while it was APPROVED and PAID it
-    // since. Recording it here is mapping bookkeeping, not a document
-    // re-write, and it is additive-only (see recordRampReimbursementPayout).
-    if (isRampPaid) {
-      const recorded = await recordRampReimbursementPayout(deps.db, {
-        companyId: deps.companyId,
-        reimbursementRemoteId: reimbursement.id,
-        bankAccountId:
-          deps.reimbursementBankAccountId ?? deps.statementBankAccountId,
-        paidAt: reimbursement.approved_at ?? reimbursement.transaction_date
-      });
-      if (recorded) {
-        return { fail: { id: reimbursement.id, message: recorded.error } };
+    // The mapping's payout intent is the ONE thing this pass may still add, and
+    // it is not a document re-write — "never re-write" protects a reviewer's
+    // coding, and nobody edits mapping bookkeeping. A reimbursement imported
+    // while APPROVED that Ramp later PAYS re-lists here: returning without
+    // recording the intent left it with a payout-less mapping forever, so the
+    // ERP's Post helper never created the `payment`/`invoiceSettlement` — money
+    // moved in Ramp and Carbon never settled it, permanently.
+    //
+    // A paid reimbursement whose intent cannot be built FAILS the item (a
+    // visible Warning in Sync Activity) rather than confirming silently: Ramp
+    // has already paid, so "we cannot record it" is the operator's problem to
+    // see. Nothing else about the mapped path can fail it — the document's
+    // amount and coding are never re-read.
+    if (isRampPaid && !hasRecordedPayout(mapped.metadata)) {
+      const payout = await resolveRampReimbursementPayout(deps, reimbursement);
+      if ("error" in payout) {
+        return { fail: { id: reimbursement.id, message: payout.error } };
       }
+      await recordRampReimbursementPayout(deps.db, {
+        companyId: deps.companyId,
+        mappingId: mapped.id,
+        payout: payout.value
+      });
     }
-    return observeRampReimbursement(deps, reimbursement, mappedId);
+    return observeRampReimbursement(deps, reimbursement, mapped.entityId);
   }
 
   const reimbursementDate = reimbursement.transaction_date?.slice(0, 10);
@@ -811,11 +791,7 @@ export async function syncRampReimbursement(
     return { fail: { id: reimbursement.id, message: employee.error } };
   }
 
-  const currencyCode =
-    reimbursement.entity_amount?.currency ??
-    reimbursement.currency_code ??
-    reimbursement.currency ??
-    deps.baseCurrency;
+  const currencyCode = reimbursementCurrency(reimbursement, deps.baseCurrency);
   const normalizedAmount = await deps.normalizeAmount(
     reimbursementHeaderAmount(reimbursement),
     currencyCode,

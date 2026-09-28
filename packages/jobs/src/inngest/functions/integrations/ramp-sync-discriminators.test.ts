@@ -43,35 +43,26 @@ describe("Ramp inbound accounting discriminators", () => {
   });
 
   /**
-   * The payout the guarded jsonb `||` merge interpolated. The update's value is
-   * a Kysely raw fragment, so read its operation node's single parameter — the
-   * JSON the code stringified.
+   * A mapped reimbursement's DOCUMENT is never re-read, so the deps only have to
+   * answer the mapping lookup, the metadata merge, and the durability reread.
    */
-  function mergedPayout(update: unknown): unknown {
-    const fragment = (update as { metadata: unknown }).metadata as {
-      toOperationNode: () => { parameters: { value: unknown }[] };
-    };
-    const [parameter] = fragment.toOperationNode().parameters;
-    return JSON.parse(String(parameter?.value));
-  }
-
-  // The mapped-reimbursement harness. `transaction` is only reached by the
-  // Ramp-PAID states, which record a payout intent on the mapping; the
-  // invoice-only states must never open one.
-  function mappedReimbursementDeps(options?: {
-    mappingMetadata?: Record<string, unknown> | null;
-    document?: {
-      amount: number;
-      currencyCode: string;
-      exchangeRate: number;
-    } | null;
-  }) {
+  function mappedReimbursementDeps(
+    mappingMetadata: Record<string, unknown> | null
+  ) {
     const mappingQuery = {
+      selectAll: vi.fn().mockReturnThis(),
       select: vi.fn().mockReturnThis(),
       where: vi.fn().mockReturnThis(),
-      executeTakeFirst: vi
-        .fn()
-        .mockResolvedValue({ entityId: "reimbursement-row-1" })
+      executeTakeFirst: vi.fn().mockResolvedValue({
+        id: "mapping-1",
+        entityId: "reimbursement-row-1",
+        metadata: mappingMetadata
+      })
+    };
+    const metadataUpdate = {
+      set: vi.fn().mockReturnThis(),
+      where: vi.fn().mockReturnThis(),
+      execute: vi.fn().mockResolvedValue(undefined)
     };
     const documentQuery = {
       select: vi.fn().mockReturnThis(),
@@ -83,83 +74,30 @@ describe("Ramp inbound accounting discriminators", () => {
     };
     const normalizeAmount = vi
       .fn()
-      .mockResolvedValue({ ok: false, error: "Payment amount required" });
+      .mockResolvedValue({ ok: true, value: 125.5 });
     const from = vi.fn().mockReturnValue(documentQuery);
-    const updates: unknown[] = [];
-    const mappingRow =
-      options?.mappingMetadata === undefined
-        ? { id: "mapping-1", entityId: "reimbursement-row-1", metadata: {} }
-        : {
-            id: "mapping-1",
-            entityId: "reimbursement-row-1",
-            metadata: options.mappingMetadata
-          };
-    const document =
-      options?.document === undefined
-        ? { amount: 42.5, currencyCode: "EUR", exchangeRate: 0.9 }
-        : options.document;
-    const transaction = vi.fn().mockReturnValue({
-      execute: async (
-        cb: (tx: Record<string, unknown>) => Promise<unknown>
-      ) => {
-        const tx = {
-          // The advisory lock is a raw `sql` fragment, and RawBuilder.execute
-          // asks its argument for a Kysely executor — the minimum that satisfies
-          // it, since the lock has no result the code reads.
-          getExecutor: () => ({
-            transformQuery: (node: unknown) => node,
-            compileQuery: () => ({ sql: "", parameters: [] }),
-            executeQuery: async () => ({ rows: [] }),
-            provideConnection: async (
-              consumer: (connection: unknown) => Promise<unknown>
-            ) => consumer({ executeQuery: async () => ({ rows: [] }) })
-          }),
-          // createMappingService reads the mapping row; the document read then
-          // reuses the same builder with its own resolved value.
-          selectFrom: vi.fn().mockImplementation((table: string) => ({
-            selectAll: vi.fn().mockReturnThis(),
-            select: vi.fn().mockReturnThis(),
-            where: vi.fn().mockReturnThis(),
-            executeTakeFirst: vi
-              .fn()
-              .mockResolvedValue(
-                table === "reimbursement" ? document : mappingRow
-              )
-          })),
-          updateTable: vi.fn().mockReturnValue({
-            set: vi.fn().mockImplementation((values: unknown) => {
-              updates.push(values);
-              return {
-                where: vi.fn().mockReturnThis(),
-                execute: async () => []
-              };
-            })
-          })
-        };
-        return cb(tx);
-      }
-    });
     return {
-      updates,
+      metadataUpdate,
       normalizeAmount,
       from,
-      transaction,
       deps: {
         db: {
           selectFrom: vi.fn().mockReturnValue(mappingQuery),
-          transaction
+          updateTable: vi.fn().mockReturnValue(metadataUpdate)
         },
         client: { from },
         companyId: "company-1",
+        baseCurrency: "USD",
         reimbursementBankAccountId: "bank-1",
         normalizeAmount,
+        getExchangeRate: vi.fn().mockResolvedValue(1),
         reimbursementDeepLinkUrl: (id: string) =>
           `https://carbon.example/x/reimbursements/${id}`
       } as unknown as RampReimbursementDependencies
     };
   }
 
-  const confirmed = {
+  const reconfirmed = {
     ok: {
       id: "reimbursement-1",
       referenceId: "REIMB-1",
@@ -173,90 +111,93 @@ describe("Ramp inbound accounting discriminators", () => {
     "AWAITING_PAYMENT",
     "AWAITING_PUSH_PAYMENT"
   ])("re-confirms an already-imported reimbursement in state %s without touching it", async (state) => {
-    // Carbon owns the document once it lands. An invoice-only state has no
-    // payout to record, so a mapped item does no work beyond the re-confirm.
-    const harness = mappedReimbursementDeps();
-    const outcome = await syncRampReimbursement(harness.deps, {
-      id: "reimbursement-1",
-      state
-    });
-    expect(outcome).toEqual(confirmed);
-    expect(harness.normalizeAmount).not.toHaveBeenCalled();
-    expect(harness.transaction).not.toHaveBeenCalled();
-    expect(harness.from).toHaveBeenCalledWith("reimbursement");
+    // Carbon owns the document once it lands. These states record no payout
+    // intent, so a mapped item does no work at all beyond the reread.
+    const { deps, metadataUpdate, normalizeAmount, from } =
+      mappedReimbursementDeps(null);
+    expect(
+      await syncRampReimbursement(deps, { id: "reimbursement-1", state })
+    ).toEqual(reconfirmed);
+    expect(normalizeAmount).not.toHaveBeenCalled();
+    expect(metadataUpdate.execute).not.toHaveBeenCalled();
+    expect(from).toHaveBeenCalledWith("reimbursement");
   });
 
   it.each([
     "REIMBURSED",
     "REIMBURSED_VIA_PUSH"
-  ])("records the payout on an already-imported reimbursement Ramp has since paid (%s)", async (state) => {
-    // Ramp lists a reimbursement while APPROVED and pays it later. Without
-    // this the mapping keeps no `rampPaymentId`, Post never creates the
-    // `payment`/`invoiceSettlement`, and Carbon never settles money that has
-    // already left Ramp.
-    const harness = mappedReimbursementDeps();
-    const outcome = await syncRampReimbursement(harness.deps, {
-      id: "reimbursement-1",
-      state,
-      approved_at: "2026-09-20T12:00:00Z",
-      // Deliberately disagrees with the stored document: the snapshot must
-      // come from the MAPPED reimbursement, never re-normalized from Ramp.
-      entity_amount: { value: 999999, currency: "USD" }
-    });
-    expect(outcome).toEqual(confirmed);
-    expect(harness.transaction).toHaveBeenCalledTimes(1);
-    expect(harness.updates).toHaveLength(1);
-    // The merged payout: the amount/currency/rate are the MAPPED document's
-    // (42.50 EUR at 0.9), not the 999999 minor units Ramp re-listed.
-    expect(mergedPayout(harness.updates[0])).toEqual({
-      rampPaymentId: "reimbursement-payment:reimbursement-1",
-      paidAt: "2026-09-20",
-      bankAccountId: "bank-1",
-      amount: 42.5,
-      currencyCode: "EUR",
-      exchangeRate: 0.9
-    });
-    expect(harness.normalizeAmount).not.toHaveBeenCalled();
-  });
-
-  it("never overwrites a payout intent already on the mapping", async () => {
-    // An intent already recorded carries the FX snapshot of the payout that
-    // actually happened.
-    const harness = mappedReimbursementDeps({
-      mappingMetadata: {
-        rampPaymentId: "reimbursement-payment:reimbursement-1"
+  ])("records the payout intent on an already-imported reimbursement Ramp has since PAID in state %s", async (state) => {
+    // The document still is not touched — but the mapping must gain the
+    // payout, or Post never creates the `payment`/`invoiceSettlement` and the
+    // money Ramp moved is never settled in Carbon.
+    const { deps, metadataUpdate } = mappedReimbursementDeps(null);
+    expect(
+      await syncRampReimbursement(deps, {
+        id: "reimbursement-1",
+        state,
+        transaction_date: "2026-09-12",
+        approved_at: "2026-09-13T10:00:00Z",
+        entity_amount: { currency: "USD", value: 12550 }
+      })
+    ).toEqual(reconfirmed);
+    expect(metadataUpdate.execute).toHaveBeenCalledTimes(1);
+    expect(metadataUpdate.set).toHaveBeenCalledTimes(1);
+    // The merge is a raw jsonb `||` fragment; its one parameter is the intent.
+    const merged = metadataUpdate.set.mock.calls[0]?.[0] as {
+      metadata: { toOperationNode: () => { parameters: unknown[] } };
+    };
+    const node = merged.metadata.toOperationNode();
+    expect(node.parameters).toEqual([
+      {
+        kind: "ValueNode",
+        value: JSON.stringify({
+          rampPaymentId: "reimbursement-payment:reimbursement-1",
+          paidAt: "2026-09-13",
+          bankAccountId: "bank-1",
+          amount: 125.5,
+          currencyCode: "USD",
+          exchangeRate: 1
+        })
       }
-    });
-    const outcome = await syncRampReimbursement(harness.deps, {
-      id: "reimbursement-1",
-      state: "REIMBURSED",
-      approved_at: "2026-09-20T12:00:00Z"
-    });
-    expect(outcome).toEqual(confirmed);
-    expect(harness.updates).toHaveLength(0);
+    ]);
   });
 
-  it("fails a Ramp-paid mapped reimbursement with no bank account configured", async () => {
-    // Surfacing it in Sync Activity is the point: the alternative is an
-    // unrecorded payout with nothing failing.
-    const harness = mappedReimbursementDeps();
-    const deps = {
-      ...harness.deps,
-      reimbursementBankAccountId: null,
-      statementBankAccountId: null
-    } as unknown as RampReimbursementDependencies;
-    const outcome = await syncRampReimbursement(deps, {
-      id: "reimbursement-1",
-      state: "REIMBURSED",
-      approved_at: "2026-09-20T12:00:00Z"
+  it("does not record a second payout intent on the next pass", async () => {
+    // Idempotent, and the FIRST intent wins: it carries the FX snapshot of the
+    // payout that actually happened.
+    const { deps, metadataUpdate, normalizeAmount } = mappedReimbursementDeps({
+      rampPaymentId: "reimbursement-payment:reimbursement-1",
+      exchangeRate: 0.91
     });
-    expect(outcome).toEqual({
+    expect(
+      await syncRampReimbursement(deps, {
+        id: "reimbursement-1",
+        state: "REIMBURSED",
+        transaction_date: "2026-09-12",
+        entity_amount: { currency: "USD", value: 12550 }
+      })
+    ).toEqual(reconfirmed);
+    expect(metadataUpdate.execute).not.toHaveBeenCalled();
+    expect(normalizeAmount).not.toHaveBeenCalled();
+  });
+
+  it("fails a PAID reimbursement whose payout intent cannot be built", async () => {
+    // Ramp has already paid the employee, so an unrecordable payout is the
+    // operator's problem to see — not something to confirm away silently.
+    const { deps, metadataUpdate } = mappedReimbursementDeps(null);
+    expect(
+      await syncRampReimbursement(deps, {
+        id: "reimbursement-1",
+        state: "REIMBURSED",
+        entity_amount: { currency: "USD", value: 12550 }
+      })
+    ).toEqual({
       fail: {
         id: "reimbursement-1",
-        message: expect.stringContaining("bank account")
+        message: expect.stringContaining("payment date")
       }
     });
-    expect(harness.updates).toHaveLength(0);
+    expect(metadataUpdate.execute).not.toHaveBeenCalled();
   });
 
   it("continues original transaction resolution for documented ach repayments", async () => {

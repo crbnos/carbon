@@ -53,10 +53,7 @@ import {
   SWEPT_PAYMENT_STATUSES,
   SWEPT_REIMBURSEMENT_STATUSES
 } from "./accounting-sync-operations";
-import {
-  collectPagedIds,
-  MASTER_DATA_SWEEP_TARGETS
-} from "./master-data-targets";
+import { MASTER_DATA_SWEEP_TARGETS } from "./master-data-targets";
 import type { ReconcileRef } from "./reconcile";
 import { type ReconcileSummary, reconcileEntities } from "./reconcile-executor";
 import { loadIntegrationTopology } from "./topology";
@@ -95,6 +92,14 @@ type SweepContext = {
   todayIso: string;
 };
 
+/**
+ * One page-walk for every candidate table: ascending from the window floor,
+ * offset-paged to `MAX_PAGES`, so the whole window is covered rather than the
+ * newest page re-read every pass.
+ *
+ * `statuses` is optional — master-data tables carry no `status` column, and
+ * they page through here too so they get the same walk.
+ */
 async function pageIds(args: {
   ctx: SweepContext;
   table:
@@ -104,8 +109,11 @@ async function pageIds(args: {
     | "payment"
     | "charge"
     | "reimbursement"
-    | "memo";
-  statuses: readonly string[];
+    | "memo"
+    | "customer"
+    | "supplier"
+    | "item";
+  statuses?: readonly string[];
   dateColumn: string;
   floor: string;
   extraFilter?: (query: any) => any;
@@ -113,12 +121,14 @@ async function pageIds(args: {
   const ids: string[] = [];
   let offset = 0;
   for (let page = 0; page < MAX_PAGES; page++) {
-    let query = args.ctx.client
+    let query: any = args.ctx.client
       .from(args.table)
       .select("id")
       .eq("companyId", args.ctx.companyId)
-      .in("status", args.statuses as unknown as ("Posted" | "Reversed")[])
       .gte(args.dateColumn, args.floor);
+    if (args.statuses) {
+      query = query.in("status", args.statuses);
+    }
     if (args.extraFilter) query = args.extraFilter(query);
 
     const result = await query
@@ -164,41 +174,22 @@ async function parkedBillIds(ctx: SweepContext): Promise<string[]> {
 }
 
 /**
- * Rows of a master-data table changed since the floor. Master tables carry no
- * `status`, so this cannot reuse `pageIds` — but it PAGES the window under the
- * same `MAX_PAGES` bound, and that is not optional. `reconcileMasterData` only
- * decides that a row is already in step; it does not change the row's
- * `updatedAt`, so a swept row keeps passing `updatedAt >= floor` until it ages
- * out of the window days later. A single `.limit()` therefore returns the SAME
- * rows every pass, and with more changes in the window than the limit, every
- * row past it is never swept at all — the dropped-event recovery this sweep
- * exists to provide. Ordered by `id` (like `pageIds`) rather than `updatedAt`,
- * because offset paging over a column concurrent writes are bumping skips rows.
+ * Rows of a master-data table changed since the floor.
+ *
+ * Pages through the shared `pageIds` walk. It used to be a single DESCENDING
+ * `.limit(n)`, which never advanced: a bulk edit of 3000 suppliers meant every
+ * pass re-read the same newest n and the older rows were swept never.
  */
 async function pageChangedMasterDataIds(args: {
   ctx: SweepContext;
   table: "customer" | "supplier" | "item";
   floor: string;
 }): Promise<string[]> {
-  return collectPagedIds({
-    pageSize: PAGE_SIZE,
-    maxPages: MAX_PAGES,
-    fetchPage: async (offset, size) => {
-      const result = await args.ctx.client
-        .from(args.table)
-        .select("id")
-        .eq("companyId", args.ctx.companyId)
-        .gte("updatedAt", args.floor)
-        .order("id", { ascending: true })
-        .range(offset, offset + size - 1);
-
-      if (result.error) {
-        throw new Error(
-          `Failed to page ${args.table} for sweep: ${result.error.message}`
-        );
-      }
-      return (result.data ?? []).map((row: { id: string }) => row.id);
-    }
+  return await pageIds({
+    ctx: args.ctx,
+    table: args.table,
+    dateColumn: "updatedAt",
+    floor: args.floor
   });
 }
 
