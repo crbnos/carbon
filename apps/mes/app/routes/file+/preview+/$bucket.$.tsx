@@ -9,6 +9,7 @@ import {
   isUnsafeStoragePath,
   LEGACY_PRIVATE_BUCKET,
   storage,
+  storageErrorStatus,
   TEMP_STAGING_BUCKET
 } from "@carbon/files";
 import { getLogger } from "@carbon/logger";
@@ -116,23 +117,24 @@ export let loader = async ({ request, params }: LoaderFunctionArgs) => {
     // Use the original encoded path for the storage API call
     const result = await source.download(path);
     if (result.error) {
-      log.error("Failed to download file", { error: result.error });
+      log.error("Failed to download file", {
+        path,
+        status: storageErrorStatus(result.error),
+        error: result.error
+      });
       return null;
     }
     return result.data;
   }
 
-  let fileData = await downloadFile();
+  // No retry here: the client's fetchWithRetry already retries 5xx and
+  // network failures.
+  const fileData = await downloadFile();
   if (!fileData) {
-    // Wait for a second and try again
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    fileData = await downloadFile();
-    if (!fileData) {
-      // A missing object is a clean 404, not a 500 — consumers (e.g. the model
-      // download flow) branch on the status; an opaque error page body must
-      // never be saved to disk as if it were the file.
-      return new Response(null, { status: 404 });
-    }
+    // A missing object is a clean 404, not a 500 — consumers (e.g. the model
+    // download flow) branch on the status; an opaque error page body must
+    // never be saved to disk as if it were the file.
+    return new Response(null, { status: 404 });
   }
 
   const headers = fileResponseHeaders(

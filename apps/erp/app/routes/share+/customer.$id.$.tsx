@@ -6,7 +6,8 @@ import {
   hasCompanyPrivateObjectPathPrefix,
   isUnsafeStoragePath,
   MEDIA_CONTENT_TYPES,
-  storage
+  storage,
+  storageErrorStatus
 } from "@carbon/files";
 import { supportedModelTypes } from "@carbon/files/cad";
 import { Ratelimit, redis } from "@carbon/kv";
@@ -118,21 +119,20 @@ export let loader = async ({ params, request }: LoaderFunctionArgs) => {
       .company(shareCompanyId)
       .download(`${path}`);
     if (!result.data) {
-      logger.error("Failed to download file", { error: result.error });
+      logger.error("Failed to download file", {
+        path,
+        status: storageErrorStatus(result.error),
+        error: result.error
+      });
       return null;
     }
     return result.data;
   }
 
-  let fileData = await downloadFile();
-  if (!fileData) {
-    // Wait for a second and try again
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    fileData = await downloadFile();
-    if (!fileData) {
-      throw new Error("Failed to download file after retry");
-    }
-  }
+  // No retry here: the client's fetchWithRetry already retries 5xx and
+  // network failures.
+  const fileData = await downloadFile();
+  if (!fileData) return new Response(null, { status: 404 });
 
   const headers = fileResponseHeaders(
     contentType,

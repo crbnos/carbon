@@ -7,7 +7,8 @@ import {
   LEGACY_PRIVATE_BUCKET,
   normalizeStorageSegment,
   safeStorageFileName,
-  storage
+  storage,
+  storageErrorStatus
 } from "./storage";
 
 const ok = <T>(data: T) => Promise.resolve({ data, error: null });
@@ -495,5 +496,28 @@ describe("move falls back to a cross-bucket move out of the legacy bucket", () =
 
     expect(result.error).toBeTruthy();
     expect(companyMove).not.toHaveBeenCalled();
+  });
+});
+
+describe("storageErrorStatus", () => {
+  it("reads the status off a download's wrapped response", async () => {
+    const { StorageUnknownError } = await import("@supabase/storage-js");
+    const error = new StorageUnknownError(
+      "{}",
+      new Response(null, { status: 400 })
+    );
+    expect(storageErrorStatus(error)).toBe(400);
+  });
+
+  it("reads an API error's own status", async () => {
+    const { StorageApiError } = await import("@supabase/storage-js");
+    expect(storageErrorStatus(new StorageApiError("nope", 404, "404"))).toBe(
+      404
+    );
+  });
+
+  it("is undefined when there is no status", () => {
+    expect(storageErrorStatus(new Error("offline"))).toBeUndefined();
+    expect(storageErrorStatus(null)).toBeUndefined();
   });
 });

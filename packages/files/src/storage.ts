@@ -155,6 +155,23 @@ export type CarbonStorage = {
   company(companyId: string): CompanyBucket;
 };
 
+/**
+ * The HTTP status behind a storage error. `download()` skips reading the
+ * error body, so a 400/404 arrives as `StorageUnknownError("{}")` with the
+ * status only on the raw response in `originalError`.
+ */
+export function storageErrorStatus(error: unknown): number | undefined {
+  if (!error || typeof error !== "object") return undefined;
+  const { status, originalError } = error as {
+    status?: unknown;
+    originalError?: { status?: unknown };
+  };
+  if (typeof status === "number") return status;
+  return typeof originalError?.status === "number"
+    ? originalError.status
+    : undefined;
+}
+
 export function storage(client: { storage: StorageClient }): CarbonStorage {
   return {
     from: (bucket) => client.storage.from(bucket),
