@@ -152,6 +152,24 @@ const PERMISSION_OVERRIDES: Record<string, ToolPermission> = {
   // requireEntitlement, so they are no longer scanned as MCP tools; only the
   // read remains here.
   settings_getApiKeys: { module: "users", actions: ["update"] },
+  // Server-only companion tools ({mod}.mcp.server.ts) publish the permission
+  // their ERP route's requirePermissions checks, not the verb-derived default.
+  // Both custom-field form routes (x+/settings+/custom-fields.$table.new.tsx and
+  // .$id.tsx) gate on { create: "settings" }, the edit included.
+  settings_upsertCustomField: { module: "settings", actions: ["create"] },
+  // The reorder action in x+/settings+/custom-fields.$table.tsx gates on
+  // { update: "resources" }.
+  settings_updateCustomFieldsSortOrder: {
+    module: "resources",
+    actions: ["update"],
+  },
+  // x+/inspection+/$id.sample.tsx and $id.measurement.tsx gate on
+  // { update: "quality" }.
+  quality_upsertInspectionSample: { module: "quality", actions: ["update"] },
+  quality_upsertInspectionMeasurement: {
+    module: "quality",
+    actions: ["update"],
+  },
 };
 
 // ---------------------------------------------------------------------------
@@ -1157,8 +1175,9 @@ function functionBodyDeletes(content: string, funcName: string): boolean {
  * Whether the service itself applies limit/offset — `setGenericQueryFilters`
  * (the canonical pager) or a direct `.range(`. A list operation without either
  * ignores pagination args entirely (the fetchAll `get*List` reads), so the MCP
- * layer pages the response instead. Same body-scan mechanism (and shadowed-
- * wrapper first-match caveat) as `functionBodyDeletes`.
+ * layer pages the response instead. Same body-scan mechanism as
+ * `functionBodyDeletes`: the caller passes the source of the file that defines
+ * the function (a companion wrapper's own body, not the service it shadows).
  */
 function functionBodyPaginates(content: string, funcName: string): boolean {
   const body = extractFunctionBody(content, funcName);
@@ -1617,9 +1636,21 @@ export function buildAllToolMetadata(opts: BuildOptions = {}): ManifestEntry[] {
     const modelsContent = loadModelsContent(mod);
     const functions = parseExportedFunctions(content);
 
+    // Each function's body scans (classification, the `_operation`
+    // discriminator, pagination) read the file that DEFINES it, so a companion
+    // wrapper is classified from its own body, never from a same-named service
+    // function earlier in the concatenated content.
+    const bodySources = new Map<string, string>(
+      functions.map((f) => [f.name, content])
+    );
+
     // A module may expose MCP tools from a server-only companion file
     // (`{mod}.mcp.server.ts`) when those functions must import `*.server`
     // modules and therefore cannot live in the client-reachable service file.
+    // The runtime registry (`api+/v1+/lib/registry.server.ts`) must spread every
+    // companion found here — `test/mcp-registry-parity.test.ts` fails otherwise,
+    // since a tool published without its dispatch target answers "Operation not
+    // found".
     const mcpServerFile = path.join(MODULES_DIR, mod, `${mod}.mcp.server.ts`);
     if (fs.existsSync(mcpServerFile)) {
       const mcpServerContent = fs.readFileSync(mcpServerFile, "utf-8");
@@ -1627,16 +1658,14 @@ export function buildAllToolMetadata(opts: BuildOptions = {}): ManifestEntry[] {
       // A same-named mcp.server export SHADOWS the service one — matching the
       // runtime registry, where the mcp.server spread wins — so an orchestration
       // wrapper can replace a bare service function without renaming the
-      // published tool. Its PARAMS come from the wrapper; note that body scans
-      // (classification, the `_operation` discriminator) read the FIRST match in
-      // the concatenated content, i.e. the service body — a wrapper must keep
-      // the same discriminator convention as the function it shadows.
+      // published tool. Its params AND its body scans come from the wrapper.
       const mcpFunctions = parseExportedFunctions(mcpServerContent);
       const shadowed = new Set(mcpFunctions.map((f) => f.name));
       for (let i = functions.length - 1; i >= 0; i--) {
         if (shadowed.has(functions[i].name)) functions.splice(i, 1);
       }
       functions.push(...mcpFunctions);
+      for (const f of mcpFunctions) bodySources.set(f.name, mcpServerContent);
     }
 
     // Sources searched when a param references a bare type alias, most
@@ -1657,7 +1686,8 @@ export function buildAllToolMetadata(opts: BuildOptions = {}): ManifestEntry[] {
       const toolName = `${mod}_${func.name}`;
       if (MCP_BLOCKED_TOOL_NAMES.includes(toolName)) continue;
 
-      const classification = classifyFunction(func.name, content);
+      const bodySource = bodySources.get(func.name) ?? content;
+      const classification = classifyFunction(func.name, bodySource);
       const injectAuth = withPayloadUserId(
         INJECT_AUTH_OVERRIDES[toolName] ||
           computeInjectAuth(func.name, classification),
@@ -1686,13 +1716,13 @@ export function buildAllToolMetadata(opts: BuildOptions = {}): ManifestEntry[] {
       stripRedundantPatterns(schema);
       if (
         injectAuth.includes("createdBy") &&
-        usesOperationDiscriminator(content, func.name)
+        usesOperationDiscriminator(bodySource, func.name)
       ) {
         addOperationArg(schema);
       }
 
       const responseSchema = opts.responses?.get(mod, func.name) ?? undefined;
-      const paginates = functionBodyPaginates(content, func.name);
+      const paginates = functionBodyPaginates(bodySource, func.name);
 
       allTools.push({
         name: toolName,

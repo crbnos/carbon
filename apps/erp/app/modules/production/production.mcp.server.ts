@@ -1,9 +1,8 @@
-import { hasPermission } from "@carbon/auth";
-import { getUserClaims } from "@carbon/auth/users.server";
 import type { Database, Json } from "@carbon/database";
 import { evaluateLinesForSurface, isBlocked } from "@carbon/ee/rules.server";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { z } from "zod";
+import { requireToolPermission } from "~/modules/shared/tool-permission.server";
 import { getDatabaseClient } from "~/services/database.server";
 import type { jobMaterialValidator } from "./production.models";
 import {
@@ -14,7 +13,9 @@ import {
 } from "./production.service";
 
 // MCP-exposed production writes that depend on server-only modules
-// (`@carbon/auth/users.server`, `@carbon/ee/rules.server`). These CANNOT
+// (`@carbon/ee/rules.server`, Kysely via `getDatabaseClient`), plus wrappers
+// that shadow a bare service function with the orchestration its ERP routes
+// run (`upsertJobMaterial`). The former CANNOT
 // live in `production.service.ts`: that file is re-exported by the
 // `~/modules/production` barrel, which client components value-import, so it is
 // part of the client bundle and React Router's dot-server plugin rejects any
@@ -25,8 +26,8 @@ import {
 //
 // The MCP executor injects companyId/userId from the OAuth token but performs no
 // per-tool permission check, and some of these writes reach privileged paths (a
-// SECURITY DEFINER RPC, an Inngest trigger) that bypass RLS — so the ERP route's
-// permission gate is re-applied inline via `hasPermission` on the caller's claims.
+// SECURITY DEFINER RPC, Kysely) that bypass RLS — so the ERP route's permission
+// gate is re-applied via `requireToolPermission` (shared/tool-permission.server).
 
 /**
  * Issue material to a job operation, enforcing work-center material-issue rules first.
@@ -129,12 +130,12 @@ export async function completeJob(
     locationId?: string;
   }
 ) {
-  const claims = await getUserClaims(userId, companyId);
-  if (!hasPermission(claims?.permissions, "production", "update", companyId)) {
-    throw new Error(
-      "You do not have permission to complete jobs to inventory (production update)."
-    );
-  }
+  await requireToolPermission(
+    companyId,
+    userId,
+    { update: "production" },
+    "complete jobs to inventory"
+  );
   return client.rpc("complete_job_to_inventory", {
     p_job_id: args.jobId,
     p_quantity_complete: args.quantity,
@@ -167,12 +168,12 @@ export async function scheduleJob(
     jobId: string;
   }
 ) {
-  const claims = await getUserClaims(userId, companyId);
-  if (!hasPermission(claims?.permissions, "production", "update", companyId)) {
-    throw new Error(
-      "You do not have permission to schedule jobs (production update)."
-    );
-  }
+  await requireToolPermission(
+    companyId,
+    userId,
+    { update: "production" },
+    "schedule jobs"
+  );
   return recalculateJobOperationDependencies(client, getDatabaseClient(), {
     jobId: args.jobId,
     companyId,
@@ -226,12 +227,12 @@ export async function upsertJobMaterial(
   // The dependency recalc reaches the scheduling engine over Kysely (no RLS),
   // so the routes' production gate is re-applied here, like scheduleJob.
   const action = isUpdate ? ("update" as const) : ("create" as const);
-  const claims = await getUserClaims(userId, companyId);
-  if (!hasPermission(claims?.permissions, "production", action, companyId)) {
-    throw new Error(
-      `You do not have permission to ${action} job materials (production ${action}).`
-    );
-  }
+  await requireToolPermission(
+    companyId,
+    userId,
+    isUpdate ? { update: "production" } : { create: "production" },
+    `${action} job materials`
+  );
 
   // Capture the previous methodType BEFORE the write — the make-method pull
   // runs only on the transition INTO "Make to Order".

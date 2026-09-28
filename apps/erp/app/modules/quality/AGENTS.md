@@ -69,6 +69,7 @@ pnpm --filter @carbon/erp test
 - `getInspectionSamplingPlans` / `getInspectionMeasurements` — per-inspection feature plans and grid readings
 - `getItemInspectionDocumentAssignments` / `upsertItemInspectionDocumentAssignment` — Receipt-usage document assignment
 - `upsertInspectionMeasurement` / `reconcileInspectionSamplingPlans` / `changeInspectionDocument` / `valuateMeasurement` (quality.server.ts) — measurement recording, lazy plan resolution, document swap, pure valuation. The transactional engine lives in `@carbon/database/quality` (shared with the MES inspection routes); quality.server.ts is thin wrappers currying the ERP Kysely singleton
+- `quality.mcp.server.ts` (server-only MCP companion) — `upsertInspectionSample`, `upsertInspectionMeasurement`, `dispositionInspection` (Accept / Partial only, `requireSource: "Receipt"`) wrap the engine with the inspection routes' `{ update: "quality", role: "employee" }` gate via `requireToolPermission`. Reject is not a tool: its write-off (`post-nonconformance`) and NCR creation still live in `x+/inspection+/$id.reject.tsx`
 - `getGauge` / `getGauges` / `getGaugeCalibrationRecords` — gauge management
 - `getRisk` / `getRisks` / `upsertRisk` / `updateRiskStatus` — risk register
 - `getQualityDocument` / `getQualityDocumentSteps` — versioned SOPs

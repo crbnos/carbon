@@ -21,21 +21,53 @@ const allTools = metadata.tools as Tool[];
 // excluded from the rule-based assertions. The API-key WRITES (upsert/delete)
 // moved to @carbon/ee/api-keys.server behind requireEntitlement, so they are no
 // longer MCP tools — only the read (getApiKeys) remains and keeps the override.
-const OVERRIDDEN = new Set(["settings_getApiKeys"]);
+// The companion tools ({module}.mcp.server.ts) publish exactly what their ERP
+// route's requirePermissions checks.
+const OVERRIDES: Record<string, { module: string; actions: string[] }> = {
+  // x+/settings+/api-keys.tsx
+  settings_getApiKeys: { module: "users", actions: ["update"] },
+  // x+/settings+/custom-fields.$table.new.tsx and .$id.tsx
+  settings_upsertCustomField: { module: "settings", actions: ["create"] },
+  // x+/settings+/custom-fields.$table.tsx (reorder action)
+  settings_updateCustomFieldsSortOrder: {
+    module: "resources",
+    actions: ["update"]
+  },
+  // x+/inspection+/$id.sample.tsx, $id.measurement.tsx
+  quality_upsertInspectionSample: { module: "quality", actions: ["update"] },
+  quality_upsertInspectionMeasurement: {
+    module: "quality",
+    actions: ["update"]
+  }
+};
+const OVERRIDDEN = new Set(Object.keys(OVERRIDES));
 
 const tools = allTools.filter((t) => !OVERRIDDEN.has(t.name));
 
 const funcName = (t: Tool) => t.name.slice(t.module.length + 1).toLowerCase();
 
 describe("permission overrides", () => {
-  it("API-key management gates on users_update, matching its ERP routes", () => {
-    for (const name of OVERRIDDEN) {
+  it("each override publishes its route's requirePermissions", () => {
+    for (const [name, expected] of Object.entries(OVERRIDES)) {
       const t = allTools.find((t) => t.name === name);
       expect(t, name).toBeDefined();
-      expect(t?.permission, name).toEqual({
-        module: "users",
-        actions: ["update"]
-      });
+      expect(t?.permission, name).toEqual(expected);
+    }
+  });
+
+  // Companion tools whose verb-derived permission already equals the route's
+  // requirePermissions — pinned so a generator change cannot move them.
+  it("companion tools without an override gate like their routes", () => {
+    const expected: Record<string, { module: string; actions: string[] }> = {
+      // x+/settings+/custom-fields.$table.delete.$id.tsx
+      settings_deleteCustomField: { module: "settings", actions: ["delete"] },
+      // x+/inspection+/$id.accept.tsx, $id.partial.tsx
+      quality_dispositionInspection: { module: "quality", actions: ["update"] }
+    };
+    for (const [name, permission] of Object.entries(expected)) {
+      const t = allTools.find((t) => t.name === name);
+      expect(t, name).toBeDefined();
+      expect(t?.permission, name).toEqual(permission);
     }
   });
 });

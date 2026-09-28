@@ -35,6 +35,10 @@ const spies = vi.hoisted(() => ({
 vi.mock("~/modules/account/account.service", () => ({
   upsertNotificationPreference: spies.upsertNotificationPreference
 }));
+// Server-only companions (`{module}.mcp.server.ts`) are spread into the same
+// namespaces; none of the pinned cases resolve to one, so they are empty.
+vi.mock("~/modules/quality/quality.mcp.server", () => ({}));
+vi.mock("~/modules/settings/settings.mcp.server", () => ({}));
 vi.mock("~/modules/accounting/accounting.service", () => ({
   getAccountLedger: spies.getAccountLedger,
   getTrialBalance: spies.getTrialBalance,
