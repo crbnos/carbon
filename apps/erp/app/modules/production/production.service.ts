@@ -3271,6 +3271,48 @@ export async function upsertProductionEvent(
   }
 }
 
+/**
+ * Post a production event's labor/machine time to the general ledger through
+ * the `post-production-event` edge function (WIP debit / absorption credit;
+ * a no-op success when accounting is disabled). The ERP event routes call it
+ * after saving an event that has an `endTime`; the `upsertProductionEvent`
+ * tool does the same.
+ *
+ * `client` is whose authority the edge function runs under: it applies
+ * `requirePermissions({ update: "production" })` to that caller, as
+ * `deleteProductionEvent` relies on. A failed or refused posting comes back as
+ * `error.message` (the edge function's reason); it never undoes the event.
+ */
+export async function postProductionEvent(
+  client: SupabaseClient<Database>,
+  args: { productionEventId: string; companyId: string; userId: string }
+): Promise<
+  | { data: { id: string }; error: null }
+  | { data: null; error: { message: string } }
+> {
+  const posting = await client.functions.invoke<{
+    success: boolean;
+    reason?: string;
+    error?: string;
+  }>("post-production-event", {
+    body: {
+      productionEventId: args.productionEventId,
+      userId: args.userId,
+      companyId: args.companyId
+    }
+  });
+  if (posting.error) {
+    return { data: null, error: { message: posting.error.message } };
+  }
+  if (posting.data && posting.data.success === false) {
+    return {
+      data: null,
+      error: { message: posting.data.reason ?? "unknown reason" }
+    };
+  }
+  return { data: { id: args.productionEventId }, error: null };
+}
+
 export async function updateProductionQuantity(
   client: SupabaseClient<Database>,
   productionQuantity: z.infer<typeof productionQuantityValidator> & {

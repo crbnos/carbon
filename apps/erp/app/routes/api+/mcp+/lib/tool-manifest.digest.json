@@ -1,5 +1,5 @@
 {
-  "totalTools": 1558,
+  "totalTools": 1559,
   "modules": 15,
   "tools": [
     {"name":"account_deleteUserAttributeValue","classification":"DESTRUCTIVE","paramCount":2,"schema":"0d38e12233b4","response":"bcde375ebd4c","injectAuth":"companyId+userId","permission":"none","paginates":false},
@@ -800,6 +800,7 @@
     {"name":"production_planAssemblyStepMarkerRemap","classification":"WRITE","paramCount":2,"schema":"e8a18fd41775","response":"none","injectAuth":"companyId","permission":"production:update","paginates":false},
     {"name":"production_planAssemblyStepMarkerSync","classification":"WRITE","paramCount":2,"schema":"f32958f213ae","response":"ac83813d8c48","injectAuth":"companyId","permission":"production:update","paginates":false},
     {"name":"production_planOrphanStepAdoption","classification":"WRITE","paramCount":3,"schema":"aae2658d9922","response":"none","injectAuth":"companyId","permission":"production:update","paginates":false},
+    {"name":"production_postProductionEvent","classification":"WRITE","paramCount":1,"schema":"e749b308e49d","response":"3797626bd17e","injectAuth":"companyId+userId","permission":"production:update","paginates":false},
     {"name":"production_pullJobMaterialMakeMethod","classification":"WRITE","paramCount":2,"schema":"e27f48bbab4c","response":"bcde375ebd4c","injectAuth":"companyId+userId","permission":"production:update","paginates":false},
     {"name":"production_reassignAssemblyStepComponents","classification":"DESTRUCTIVE","paramCount":4,"schema":"99f3d689165d","response":"none","injectAuth":"companyId","permission":"production:update","paginates":false},
     {"name":"production_recalculateJobMakeMethodRequirements","classification":"WRITE","paramCount":1,"schema":"3797626bd17e","response":"none","injectAuth":"companyId+updatedBy+userId","permission":"production:update","paginates":false},

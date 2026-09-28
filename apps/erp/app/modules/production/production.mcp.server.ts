@@ -4,18 +4,24 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { z } from "zod";
 import { requireToolPermission } from "~/modules/shared/tool-permission.server";
 import { getDatabaseClient } from "~/services/database.server";
-import type { jobMaterialValidator } from "./production.models";
+import { ruleError } from "~/utils/supabase";
+import type {
+  jobMaterialValidator,
+  productionEventValidator
+} from "./production.models";
 import {
+  postProductionEvent,
   pullJobMaterialMakeMethod,
   recalculateJobMakeMethodRequirements,
   recalculateJobOperationDependencies,
-  upsertJobMaterial as upsertJobMaterialRow
+  upsertJobMaterial as upsertJobMaterialRow,
+  upsertProductionEvent as upsertProductionEventRow
 } from "./production.service";
 
 // MCP-exposed production writes that depend on server-only modules
 // (`@carbon/ee/rules.server`, Kysely via `getDatabaseClient`), plus wrappers
 // that shadow a bare service function with the orchestration its ERP routes
-// run (`upsertJobMaterial`). The former CANNOT
+// run (`upsertJobMaterial`, `upsertProductionEvent`). The former CANNOT
 // live in `production.service.ts`: that file is re-exported by the
 // `~/modules/production` barrel, which client components value-import, so it is
 // part of the client bundle and React Router's dot-server plugin rejects any
@@ -304,4 +310,51 @@ export async function upsertJobMaterial(
   }
 
   return upserted;
+}
+
+/**
+ * Create or update a production event (labor, setup or machine time on a job
+ * operation). When the saved event has an `endTime`, its time is posted to the
+ * general ledger (WIP debit / absorption credit), as the job's event screens
+ * do; with accounting disabled the posting is a no-op.
+ *
+ * Shadows `production.service.ts`'s `upsertProductionEvent` in the MCP/API
+ * registry, so the published tool keeps its name and schema; the ERP routes
+ * call the service and `postProductionEvent` themselves. The posting runs
+ * under the caller's client, so the edge function applies its own
+ * `{ update: "production" }` check. A posting failure does not undo the saved
+ * event: the call returns an error saying no journal entry was posted, the
+ * message the event screens flash.
+ */
+export async function upsertProductionEvent(
+  client: SupabaseClient<Database>,
+  productionEvent:
+    | (Omit<z.infer<typeof productionEventValidator>, "id"> & {
+        createdBy: string;
+        companyId: string;
+      })
+    | (Omit<z.infer<typeof productionEventValidator>, "id"> & {
+        id: string;
+        updatedBy: string;
+        companyId: string;
+      })
+) {
+  const isCreate = "createdBy" in productionEvent;
+  const saved = await upsertProductionEventRow(client, productionEvent);
+  if (saved.error || !saved.data || !productionEvent.endTime) return saved;
+
+  const posting = await postProductionEvent(client, {
+    productionEventId: saved.data.id,
+    companyId: productionEvent.companyId,
+    userId: isCreate ? productionEvent.createdBy : productionEvent.updatedBy
+  });
+  if (posting.error) {
+    return {
+      data: saved.data,
+      error: ruleError(
+        `Production event ${isCreate ? "created" : "updated"}, but no journal entry was posted: ${posting.error.message}`
+      )
+    };
+  }
+  return saved;
 }

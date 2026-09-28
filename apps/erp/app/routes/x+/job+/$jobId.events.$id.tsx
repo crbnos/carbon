@@ -8,6 +8,7 @@ import { data, redirect, useLoaderData } from "react-router";
 import {
   getJobOperations,
   getProductionEvent,
+  postProductionEvent,
   productionEventValidator,
   upsertProductionEvent
 } from "~/modules/production";
@@ -86,23 +87,12 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   let postingError: string | null = null;
   if (d.endTime) {
-    const serviceRole = await getCarbonServiceRole();
-    const posting = await serviceRole.functions.invoke<{
-      success: boolean;
-      reason?: string;
-      error?: string;
-    }>("post-production-event", {
-      body: {
-        productionEventId: id,
-        userId,
-        companyId
-      }
+    const posting = await postProductionEvent(await getCarbonServiceRole(), {
+      productionEventId: id,
+      userId,
+      companyId
     });
-    if (posting.error) {
-      postingError = posting.error.message;
-    } else if (posting.data && posting.data.success === false) {
-      postingError = posting.data.reason ?? "unknown reason";
-    }
+    postingError = posting.error?.message ?? null;
   }
 
   throw redirect(
