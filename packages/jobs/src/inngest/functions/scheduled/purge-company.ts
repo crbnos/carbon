@@ -105,10 +105,27 @@ export async function removeCompanyLeftovers(
   if (removed.error && !/not found/i.test(removed.error.message))
     failures.push({ part: "company bucket", error: removed.error });
 
-  // Each listing returns at most 1000 entries per folder, so drain in passes.
-  // Stops at 20 passes (~20k files) without an error, so the delete commits and
-  // a larger legacy folder keeps its remainder.
-  for (let pass = 0; pass < 20; pass++) {
+  const legacyError = await drainLegacyFolder(serviceRole, companyId);
+  if (legacyError) {
+    failures.push({ part: "legacy private files", error: legacyError });
+  }
+
+  return failures;
+}
+
+/** Deletion passes per run; each listing returns at most 1000 entries per folder. */
+const MAX_LEGACY_PASSES = 20;
+
+/**
+ * Empty `private/<companyId>/`. Returns the error that stopped it, including a
+ * folder still not empty after `MAX_LEGACY_PASSES`: the purge then rolls back,
+ * and the next run carries on from what this one already removed.
+ */
+async function drainLegacyFolder(
+  serviceRole: ReturnType<typeof getCarbonServiceRole>,
+  companyId: string
+): Promise<unknown> {
+  for (let pass = 0; ; pass++) {
     let files: { path: string }[];
     try {
       files = await listBucketFilesRecursive(
@@ -118,11 +135,15 @@ export async function removeCompanyLeftovers(
         { strict: true }
       );
     } catch (error) {
-      failures.push({ part: "legacy private files", error });
-      break;
+      return error;
     }
-    if (files.length === 0) break;
-    let failed = false;
+    if (files.length === 0) return null;
+    if (pass === MAX_LEGACY_PASSES) {
+      return new Error(
+        `${files.length}+ legacy files remain after ${MAX_LEGACY_PASSES} passes`
+      );
+    }
+
     for (const paths of chunkArray(
       files.map((f) => f.path),
       1000
@@ -130,14 +151,7 @@ export async function removeCompanyLeftovers(
       const { error } = await serviceRole.storage
         .from(STORAGE_BUCKET)
         .remove(paths);
-      if (error) {
-        failures.push({ part: "legacy private files", error });
-        failed = true;
-        break;
-      }
+      if (error) return error;
     }
-    if (failed) break;
   }
-
-  return failures;
 }
