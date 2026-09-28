@@ -14,6 +14,7 @@
 import * as accountFunctions from "~/modules/account/account.service";
 import * as accountingFunctions from "~/modules/accounting/accounting.service";
 import * as documentsFunctions from "~/modules/documents/documents.service";
+import * as inventoryMcpFunctions from "~/modules/inventory/inventory.mcp.server";
 import * as inventoryFunctions from "~/modules/inventory/inventory.service";
 import * as invoicingFunctions from "~/modules/invoicing/invoicing.service";
 import * as itemsMcpFunctions from "~/modules/items/items.mcp.server";
@@ -36,7 +37,7 @@ export const functionRegistry = {
   account: accountFunctions,
   accounting: accountingFunctions,
   documents: documentsFunctions,
-  inventory: inventoryFunctions,
+  inventory: { ...inventoryFunctions, ...inventoryMcpFunctions },
   invoicing: invoicingFunctions,
   items: { ...itemsFunctions, ...itemsMcpFunctions },
   people: peopleFunctions,

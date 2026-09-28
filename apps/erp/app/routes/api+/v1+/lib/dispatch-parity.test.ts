@@ -64,6 +64,7 @@ vi.mock("~/modules/items/items.mcp.server", () => ({
   setItemActive: spies.mcpSetItemActive,
   upsertSupplierPartPrices: spies.mcpUpsertSupplierPartPrices
 }));
+vi.mock("~/modules/inventory/inventory.mcp.server", () => ({}));
 vi.mock("~/modules/people/people.service", () => ({}));
 vi.mock("~/modules/production/production.mcp.server", () => ({}));
 vi.mock("~/modules/production/production.service", () => ({

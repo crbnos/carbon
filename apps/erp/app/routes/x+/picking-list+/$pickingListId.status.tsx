@@ -1,16 +1,10 @@
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { trackWorkEvent } from "@carbon/lib/telemetry";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
-import {
-  getUnresolvedPickingListLines,
-  isPickingListLocked,
-  pickingListStatusType,
-  updatePickingListStatus
-} from "~/modules/inventory";
-import { getCompanySettings } from "~/modules/settings";
+import { pickingListStatusType } from "~/modules/inventory";
+import { transitionPickingListStatus } from "~/modules/inventory/inventory-transitions.server";
 import { path } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
@@ -23,7 +17,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (!id) throw new Error("Could not find id");
 
   const formData = await request.formData();
-  let status = formData.get("status") as (typeof pickingListStatusType)[number];
+  const status = formData.get(
+    "status"
+  ) as (typeof pickingListStatusType)[number];
 
   if (!status || !pickingListStatusType.includes(status)) {
     throw redirect(
@@ -32,109 +28,28 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  // Reopening a closed (Completed/Cancelled) picking list requires the stronger
-  // inventory `delete` permission — it unlocks completed inventory moves.
-  const current = await client
-    .from("pickingList")
-    .select("status")
-    .eq("id", id)
-    .single();
-  const isReopen =
-    isPickingListLocked(current.data?.status) && !isPickingListLocked(status);
-  if (isReopen) {
-    await requirePermissions(request, { delete: "inventory" });
+  const result = await transitionPickingListStatus(client, {
+    id,
+    companyId,
+    userId,
+    status,
+    acknowledged: formData.get("acknowledged") === "true",
+    // Reopening a closed list unlocks completed inventory moves.
+    requireReopenPermission: async () => {
+      await requirePermissions(request, { delete: "inventory" });
+    }
+  });
+
+  if ("needsAcknowledgement" in result) {
+    return {
+      needsAcknowledgement: true,
+      unresolvedLines: result.unresolvedLines
+    };
   }
-
-  // Finishing must not silently complete a list with material still unpicked —
-  // same policy the MES Finish enforces. 'error' blocks; 'warn' requires an
-  // acknowledgement; any shortfall lands the list on Partial, not Completed.
-  if (status === "Completed") {
-    const [lineResult, settings] = await Promise.all([
-      getUnresolvedPickingListLines(client, id, companyId),
-      getCompanySettings(client, companyId)
-    ]);
-
-    if (lineResult.error) {
-      throw redirect(
-        path.to.pickingList(id),
-        await flash(
-          request,
-          error(lineResult.error, "Failed to check picking list lines")
-        )
-      );
-    }
-
-    // Fail closed: an unreadable policy must not fall back to the bypassable
-    // 'warn' default.
-    if (settings.error || !settings.data) {
-      throw redirect(
-        path.to.pickingList(id),
-        await flash(
-          request,
-          error(
-            settings.error,
-            "Failed to read the picking list completion policy"
-          )
-        )
-      );
-    }
-
-    const policy =
-      settings.data.incompletePickingListPolicy === "error" ? "error" : "warn";
-    const { unresolved, hasShort } = lineResult;
-    const acknowledged = formData.get("acknowledged") === "true";
-
-    if (unresolved.length > 0) {
-      if (policy === "error") {
-        throw redirect(
-          path.to.pickingList(id),
-          await flash(
-            request,
-            error(
-              null,
-              `Can't finish — still unpicked: ${unresolved.map((l) => l.itemName).join(", ")}`
-            )
-          )
-        );
-      }
-      if (!acknowledged) {
-        return { needsAcknowledgement: true, unresolvedLines: unresolved };
-      }
-    }
-
-    status = unresolved.length === 0 && !hasShort ? "Completed" : "Partial";
-  }
-
-  const update = await updatePickingListStatus(client, id, status, userId);
-
-  if (update.error) {
+  if (result.error) {
     throw redirect(
       path.to.pickingList(id),
-      await flash(
-        request,
-        error(update.error, "Failed to update picking list status")
-      )
-    );
-  }
-
-  if (status === "Completed" || status === "Partial") {
-    // Partial is the interesting one: it means a line could not be filled,
-    // which is the material-availability half of job cycle time.
-    //
-    // The status is the discriminator, not just a property: a list goes
-    // Partial and later Completed, and both are real occurrences. Keyed on the
-    // list alone the second collapses into the first and the completion is
-    // lost, while re-saving the same status still de-duplicates.
-    trackWorkEvent(
-      "picking_list_completed",
-      {
-        companyId,
-        userId,
-        pickingListId: id,
-        finalStatus: status,
-        source: "erp"
-      },
-      { discriminator: status }
+      await flash(request, error(result.cause, result.error.message))
     );
   }
 

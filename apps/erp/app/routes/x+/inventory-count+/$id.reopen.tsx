@@ -3,10 +3,7 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
-import {
-  getInventoryCount,
-  updateInventoryCountStatus
-} from "~/modules/inventory";
+import { transitionInventoryCountStatus } from "~/modules/inventory/inventory-transitions.server";
 import { path } from "~/utils/path";
 
 // Reopen (Pending -> Draft): returns the count to entry so lines can be edited
@@ -20,26 +17,19 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const { id } = params;
   if (!id) throw new Error("Could not find id");
 
-  const header = await getInventoryCount(client, id, companyId);
-  if (header.data?.status !== "Pending") {
-    throw redirect(
-      path.to.inventoryCount(id),
-      await flash(request, error(null, "Only a pending count can be reopened"))
-    );
-  }
-
-  const update = await updateInventoryCountStatus(client, {
+  const result = await transitionInventoryCountStatus(client, {
     id,
     companyId,
-    status: "Draft",
-    expectedStatus: "Pending",
-    updatedBy: userId
+    userId,
+    status: "Draft"
   });
 
-  if (update.error) {
+  if (result.error) {
     throw redirect(
-      path.to.inventoryCount(id),
-      await flash(request, error(update.error, "Failed to reopen count"))
+      result.error.message === "Inventory count not found"
+        ? path.to.inventoryCounts
+        : path.to.inventoryCount(id),
+      await flash(request, error(result.cause, result.error.message))
     );
   }
 

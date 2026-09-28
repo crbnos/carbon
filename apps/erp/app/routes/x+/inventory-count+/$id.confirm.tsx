@@ -3,10 +3,7 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
-import {
-  getInventoryCount,
-  updateInventoryCountStatus
-} from "~/modules/inventory";
+import { transitionInventoryCountStatus } from "~/modules/inventory/inventory-transitions.server";
 import { path } from "~/utils/path";
 
 // Confirm (Draft -> Pending): moves the count out of entry into review. The
@@ -20,33 +17,19 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const { id } = params;
   if (!id) throw new Error("Could not find id");
 
-  const header = await getInventoryCount(client, id, companyId);
-  if (header.error || !header.data) {
-    throw redirect(
-      path.to.inventoryCounts,
-      await flash(request, error(header.error, "Inventory count not found"))
-    );
-  }
-
-  if (header.data.status !== "Draft") {
-    throw redirect(
-      path.to.inventoryCount(id),
-      await flash(request, error(null, "Only a draft count can be confirmed"))
-    );
-  }
-
-  const update = await updateInventoryCountStatus(client, {
+  const result = await transitionInventoryCountStatus(client, {
     id,
     companyId,
-    status: "Pending",
-    expectedStatus: "Draft",
-    updatedBy: userId
+    userId,
+    status: "Pending"
   });
 
-  if (update.error) {
+  if (result.error) {
     throw redirect(
-      path.to.inventoryCount(id),
-      await flash(request, error(update.error, "Failed to confirm count"))
+      result.error.message === "Inventory count not found"
+        ? path.to.inventoryCounts
+        : path.to.inventoryCount(id),
+      await flash(request, error(result.cause, result.error.message))
     );
   }
 
