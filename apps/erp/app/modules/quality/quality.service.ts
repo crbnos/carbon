@@ -434,7 +434,7 @@ export async function getIssueWorkflow(
 
 export async function getIssueActionTasks(
   client: SupabaseClient<Database>,
-  id: string,
+  nonConformanceId: string,
   companyId: string,
   supplierId?: string
 ) {
@@ -443,7 +443,7 @@ export async function getIssueActionTasks(
     .select(
       "*, ...nonConformanceRequiredAction(name), nonConformanceActionProcess(processId, ...process(name)), supplier(name)"
     )
-    .eq("nonConformanceId", id)
+    .eq("nonConformanceId", nonConformanceId)
     .eq("companyId", companyId);
 
   if (supplierId) {
@@ -497,26 +497,26 @@ export async function getIssueActionTasks(
 
 export async function getIssueApprovalTasks(
   client: SupabaseClient<Database>,
-  id: string,
+  nonConformanceId: string,
   companyId: string
 ) {
   return client
     .from("nonConformanceApprovalTask")
     .select("*")
-    .eq("nonConformanceId", id)
+    .eq("nonConformanceId", nonConformanceId)
     .eq("companyId", companyId)
     .order("approvalType", { ascending: true });
 }
 
 export async function getIssueItems(
   client: SupabaseClient<Database>,
-  id: string,
+  nonConformanceId: string,
   companyId: string
 ) {
   return client
     .from("nonConformanceItem")
     .select("*, ...item(name)")
-    .eq("nonConformanceId", id)
+    .eq("nonConformanceId", nonConformanceId)
     .eq("companyId", companyId)
     .order("createdAt", { ascending: true });
 }
@@ -891,46 +891,46 @@ export async function getIssueAssociations(
 
 export async function getIssueReviewers(
   client: SupabaseClient<Database>,
-  id: string,
+  nonConformanceId: string,
   companyId: string
 ) {
   return client
     .from("nonConformanceReviewer")
     .select("*")
-    .eq("nonConformanceId", id)
+    .eq("nonConformanceId", nonConformanceId)
     .eq("companyId", companyId)
     .order("id", { ascending: true });
 }
 
 export async function getIssueSuppliers(
   client: SupabaseClient<Database>,
-  id: string,
+  nonConformanceId: string,
   companyId: string
 ) {
   return client
     .from("nonConformanceSupplier")
     .select("supplierId, externalLinkId")
-    .eq("nonConformanceId", id)
+    .eq("nonConformanceId", nonConformanceId)
     .eq("companyId", companyId)
     .order("id", { ascending: true });
 }
 
 export async function getIssueTasks(
   client: SupabaseClient<Database>,
-  id: string,
+  nonConformanceId: string,
   companyId: string
 ) {
   return Promise.all([
     client
       .from("nonConformanceActionTask")
       .select("*")
-      .eq("nonConformanceId", id)
+      .eq("nonConformanceId", nonConformanceId)
       .eq("companyId", companyId)
       .order("createdAt", { ascending: true }),
     client
       .from("nonConformanceApprovalTask")
       .select("*")
-      .eq("nonConformanceId", id)
+      .eq("nonConformanceId", nonConformanceId)
       .eq("companyId", companyId)
       .order("approvalType", { ascending: true })
   ]);

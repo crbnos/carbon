@@ -28,25 +28,25 @@ export async function deleteDocument(
 
 export async function deleteDocumentFavorite(
   client: SupabaseClient<Database>,
-  id: string,
+  documentId: string,
   userId: string
 ) {
   return client
     .from("documentFavorite")
     .delete()
-    .eq("documentId", id)
+    .eq("documentId", documentId)
     .eq("userId", userId);
 }
 
 export async function deleteDocumentLabel(
   client: SupabaseClient<Database>,
-  id: string,
+  documentId: string,
   label: string
 ) {
   return client
     .from("documentLabel")
     .delete()
-    .eq("documentId", id)
+    .eq("documentId", documentId)
     .eq("label", label);
 }
 

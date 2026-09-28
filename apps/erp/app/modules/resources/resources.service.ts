@@ -95,21 +95,22 @@ export async function deleteMaintenanceDispatchEvent(
   return client.from("maintenanceDispatchEvent").delete().eq("id", eventId);
 }
 
+/** Removes a spare-part line from a maintenance dispatch. */
 export async function deleteMaintenanceDispatchItem(
   client: SupabaseClient<Database>,
-  itemId: string
+  /** The maintenanceDispatchItem row's own id, not the part's item id. */
+  id: string
 ) {
-  return client.from("maintenanceDispatchItem").delete().eq("id", itemId);
+  return client.from("maintenanceDispatchItem").delete().eq("id", id);
 }
 
+/** Removes a work center from a maintenance dispatch. */
 export async function deleteMaintenanceDispatchWorkCenter(
   client: SupabaseClient<Database>,
-  workCenterId: string
+  /** The maintenanceDispatchWorkCenter row's own id, not the work center's id. */
+  id: string
 ) {
-  return client
-    .from("maintenanceDispatchWorkCenter")
-    .delete()
-    .eq("id", workCenterId);
+  return client.from("maintenanceDispatchWorkCenter").delete().eq("id", id);
 }
 
 export async function deleteMaintenanceSchedule(
@@ -119,11 +120,13 @@ export async function deleteMaintenanceSchedule(
   return client.from("maintenanceSchedule").delete().eq("id", scheduleId);
 }
 
+/** Removes a spare-part line from a maintenance schedule. */
 export async function deleteMaintenanceScheduleItem(
   client: SupabaseClient<Database>,
-  itemId: string
+  /** The maintenanceScheduleItem row's own id, not the part's item id. */
+  id: string
 ) {
-  return client.from("maintenanceScheduleItem").delete().eq("id", itemId);
+  return client.from("maintenanceScheduleItem").delete().eq("id", id);
 }
 
 export async function deletePartner(

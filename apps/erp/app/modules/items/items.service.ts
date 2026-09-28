@@ -862,13 +862,13 @@ export async function getItemPostingGroupsList(
 
 export async function getItemManufacturing(
   client: SupabaseClient<Database>,
-  id: string,
+  itemId: string,
   companyId: string
 ) {
   return client
     .from("itemReplenishment")
     .select("*")
-    .eq("itemId", id)
+    .eq("itemId", itemId)
     .eq("companyId", companyId)
     .single();
 }
@@ -1103,13 +1103,13 @@ export async function getItemSupply(
 
 export async function getItemUnitSalePrice(
   client: SupabaseClient<Database>,
-  id: string,
+  itemId: string,
   companyId: string
 ) {
   return client
     .from("itemUnitSalePrice")
     .select("*")
-    .eq("itemId", id)
+    .eq("itemId", itemId)
     .eq("companyId", companyId)
     .single();
 }
@@ -2246,16 +2246,17 @@ export async function getServicesList(
   );
 }
 
+/** Lists the active supplier parts of an item. */
 export async function getSupplierParts(
   client: SupabaseClient<Database>,
-  id: string,
+  itemId: string,
   companyId: string
 ) {
   return client
     .from("supplierPart")
     .select("*")
     .eq("active", true)
-    .eq("itemId", id)
+    .eq("itemId", itemId)
     .eq("companyId", companyId);
 }
 
@@ -2374,7 +2375,7 @@ export async function getUnitOfMeasuresList(
 ) {
   return client
     .from("unitOfMeasure")
-    .select("name, code")
+    .select("id, name, code")
     .eq("companyId", companyId)
     .order("name");
 }
