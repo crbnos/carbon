@@ -545,11 +545,6 @@ msgstr "90 dias"
 msgid "A \"must match\" rule on this process blocks these from sharing a batch"
 msgstr "Uma regra \"deve coincidir\" neste processo impede que estes compartilhem um lote de produção"
 
-msgid "A batch needs at least one operation. To break up the whole batch, use Dissolve instead."
-msgstr "Um lote de produção precisa de pelo menos uma operação. Para dividir o lote inteiro, use Dissolver."
-msgid "A 3D model the operator can turn around"
-msgstr ""
-
 msgid "A 4-digit PIN is generated when the operator is created."
 msgstr "Um PIN de 4 dígitos é gerado quando o operador é criado."
 

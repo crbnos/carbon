@@ -545,11 +545,6 @@ msgstr "90 дней"
 msgid "A \"must match\" rule on this process blocks these from sharing a batch"
 msgstr "Правило «должны совпадать» на этом процессе препятствует размещению в одной серии"
 
-msgid "A batch needs at least one operation. To break up the whole batch, use Dissolve instead."
-msgstr "Серия требует по крайней мере одной операции. Чтобы разделить всю серию, используйте вместо этого Растворить."
-msgid "A 3D model the operator can turn around"
-msgstr ""
-
 msgid "A 4-digit PIN is generated when the operator is created."
 msgstr "4-значный PIN создается при создании оператора."
 

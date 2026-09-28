@@ -545,11 +545,6 @@ msgstr "90G"
 msgid "A \"must match\" rule on this process blocks these from sharing a batch"
 msgstr "Bu operasyon üzerinde \"eşleşmeli\" kuralı bunların bir partide paylaşılmasını engeller"
 
-msgid "A batch needs at least one operation. To break up the whole batch, use Dissolve instead."
-msgstr "Bir parti en az bir operasyona ihtiyaç duyar. Tüm partiyi bölmek için, bunun yerine Çöz'ü kullanın."
-msgid "A 3D model the operator can turn around"
-msgstr ""
-
 msgid "A 4-digit PIN is generated when the operator is created."
 msgstr "Operatör oluşturulduğunda bir 4 haneli PIN oluşturulur."
 
@@ -14372,7 +14367,6 @@ msgstr "Kaldır {0}"
 
 #. placeholder {0}: selectedIds.size
 msgid "Remove {0} from batch"
-msgstr "Partiden {0} öğesini kaldır"
 msgstr "{0}'i partiden kaldır"
 
 #. placeholder {0}: removing.jobReadableId ?? "this operation"
@@ -14386,7 +14380,6 @@ msgstr ""
 #. placeholder {0}: selectedIds.size
 #. placeholder {1}: batch.readableId
 msgid "Remove {0} of {memberCount} operations from {1}?"
-msgstr "{1} adresinden {memberCount} operasyonun {0} tanesini kaldır?"
 msgstr "{1}'den {memberCount} operasyondan {0}'ını kaldırılsın mı?"
 
 msgid "Remove {label}"

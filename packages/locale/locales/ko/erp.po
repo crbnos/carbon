@@ -545,11 +545,6 @@ msgstr "90일"
 msgid "A \"must match\" rule on this process blocks these from sharing a batch"
 msgstr "이 공정의 \"일치해야 함\" 규칙이 이들을 배치 공유에서 차단합니다"
 
-msgid "A batch needs at least one operation. To break up the whole batch, use Dissolve instead."
-msgstr "배치는 최소한 하나의 공정이 필요합니다. 전체 배치를 분해하려면 대신 해산을 사용하세요."
-msgid "A 3D model the operator can turn around"
-msgstr ""
-
 msgid "A 4-digit PIN is generated when the operator is created."
 msgstr "작업자를 생성할 때 4자리 PIN이 생성됩니다."
 
@@ -14385,7 +14380,6 @@ msgstr ""
 #. placeholder {0}: selectedIds.size
 #. placeholder {1}: batch.readableId
 msgid "Remove {0} of {memberCount} operations from {1}?"
-msgstr "{1}에서 {memberCount} 공정 중 {0} 제거?"
 msgstr "{1}에서 {memberCount}개 공정 중 {0}개를 제거하시겠습니까?"
 
 msgid "Remove {label}"

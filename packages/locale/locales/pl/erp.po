@@ -548,13 +548,9 @@ msgstr "Reguła \"muszą się zgadzać\" w tym procesie blokuje wspólne tworzen
 msgid "A batch needs at least one operation. To break up the whole batch, use Dissolve instead."
 msgstr "Partia produkcyjna wymaga co najmniej jednej operacji. Aby podzielić całą partię produkcyjną, użyj opcji Rozpuść."
 msgid "A 3D model the operator can turn around"
-msgstr ""
 
 msgid "A 4-digit PIN is generated when the operator is created."
 msgstr "4-cyfrowy PIN jest generowany podczas tworzenia operatora."
-
-msgid "A batch needs at least one operation. To break up the whole batch, use Dissolve instead."
-msgstr "Partia produkcyjna wymaga co najmniej jednej operacji. Aby podzielić całą partię produkcyjną, użyj opcji Rozpuść."
 
 msgid "A Carbon-run data migration — you load your own data"
 msgstr "Migracja danych prowadzona przez Carbon — ty ładujesz swoje dane"
@@ -14372,7 +14368,6 @@ msgstr "Usuń z listy {0}"
 
 #. placeholder {0}: selectedIds.size
 msgid "Remove {0} from batch"
-msgstr "Usuń {0} z partii produkcyjnej"
 msgstr "Usuń z listy {0} z partii produkcyjnej"
 
 #. placeholder {0}: removing.jobReadableId ?? "this operation"
@@ -14386,7 +14381,6 @@ msgstr ""
 #. placeholder {0}: selectedIds.size
 #. placeholder {1}: batch.readableId
 msgid "Remove {0} of {memberCount} operations from {1}?"
-msgstr "Usunąć {0} z {memberCount} operacji z {1}?"
 msgstr "Usuń z listy {0} z {memberCount} operacji z {1}?"
 
 msgid "Remove {label}"

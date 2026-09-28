@@ -545,11 +545,6 @@ msgstr "90 Tage"
 msgid "A \"must match\" rule on this process blocks these from sharing a batch"
 msgstr "Eine «muss übereinstimmen»-Regel für diesen Verfahren blockiert diese vor dem Teilen eines Los"
 
-msgid "A batch needs at least one operation. To break up the whole batch, use Dissolve instead."
-msgstr "Ein Los benötigt mindestens einen Arbeitsgang. Um das gesamte Los aufzuteilen, verwenden Sie stattdessen Auflösen."
-msgid "A 3D model the operator can turn around"
-msgstr ""
-
 msgid "A 4-digit PIN is generated when the operator is created."
 msgstr "Eine 4-stellige PIN wird generiert, wenn ein Werker erstellt wird."
 
@@ -14372,7 +14367,6 @@ msgstr "Entfernen {0}"
 
 #. placeholder {0}: selectedIds.size
 msgid "Remove {0} from batch"
-msgstr "Entfernen {0} aus dem Los"
 msgstr "{0} aus Los entfernen"
 
 #. placeholder {0}: removing.jobReadableId ?? "this operation"
@@ -14386,7 +14380,6 @@ msgstr ""
 #. placeholder {0}: selectedIds.size
 #. placeholder {1}: batch.readableId
 msgid "Remove {0} of {memberCount} operations from {1}?"
-msgstr "Entfernen {0} von {memberCount} Arbeitsgängen aus {1}?"
 msgstr "{0} von {memberCount} Arbeitsgängen aus {1} entfernen?"
 
 msgid "Remove {label}"
