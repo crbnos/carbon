@@ -3614,6 +3614,7 @@ export type Database = {
           explode: Json | null
           fastener: Json | null
           fileTypes: string[] | null
+          hiddenComponentNodeIds: string[]
           id: string
           instructionText: string | null
           listValues: string[] | null
@@ -3647,6 +3648,7 @@ export type Database = {
           explode?: Json | null
           fastener?: Json | null
           fileTypes?: string[] | null
+          hiddenComponentNodeIds?: string[]
           id?: string
           instructionText?: string | null
           listValues?: string[] | null
@@ -3680,6 +3682,7 @@ export type Database = {
           explode?: Json | null
           fastener?: Json | null
           fileTypes?: string[] | null
+          hiddenComponentNodeIds?: string[]
           id?: string
           instructionText?: string | null
           listValues?: string[] | null

@@ -37,12 +37,12 @@ const AddressBlock = ({
   const stateAndPostal = [stateProvince, postalCode].filter(Boolean).join(" ");
   return (
     <>
-      {name && <Text style={tw("font-bold")}>{name}</Text>}
-      {addressLine1 && <Text>{addressLine1}</Text>}
-      {addressLine2 && <Text>{addressLine2}</Text>}
-      {city && <Text>{city}</Text>}
-      {stateAndPostal && <Text>{stateAndPostal}</Text>}
-      {country && <Text>{country}</Text>}
+      {name ? <Text style={tw("font-bold")}>{name}</Text> : null}
+      {addressLine1 ? <Text>{addressLine1}</Text> : null}
+      {addressLine2 ? <Text>{addressLine2}</Text> : null}
+      {city ? <Text>{city}</Text> : null}
+      {stateAndPostal ? <Text>{stateAndPostal}</Text> : null}
+      {country ? <Text>{country}</Text> : null}
     </>
   );
 };

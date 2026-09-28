@@ -112,7 +112,7 @@ export const JobTravelerPageContent = (props: PageContentProps) => {
         if (!render) return null;
         return <Fragment key={block.id}>{render({ block, data })}</Fragment>;
       })}
-      {data.includeMaterials && <MaterialsBlock data={data} />}
+      {data.includeMaterials ? <MaterialsBlock data={data} /> : null}
     </View>
   );
 };

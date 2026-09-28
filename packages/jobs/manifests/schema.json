@@ -2597,6 +2597,7 @@
       "name": "assemblyInstructionStep",
       "rows": 0,
       "columns": [
+        "hiddenComponentNodeIds",
         "sortOrder",
         "type",
         "description",

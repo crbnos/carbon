@@ -53107,6 +53107,9 @@ export default {
             $ref: "#/parameters/rowFilter.assemblyInstructionStep.rootStepId"
           },
           {
+            $ref: "#/parameters/rowFilter.assemblyInstructionStep.hiddenComponentNodeIds"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -53259,6 +53262,9 @@ export default {
             $ref: "#/parameters/rowFilter.assemblyInstructionStep.rootStepId"
           },
           {
+            $ref: "#/parameters/rowFilter.assemblyInstructionStep.hiddenComponentNodeIds"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -53363,6 +53369,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.assemblyInstructionStep.rootStepId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.assemblyInstructionStep.hiddenComponentNodeIds"
           },
           {
             $ref: "#/parameters/body.assemblyInstructionStep"
@@ -130986,7 +130995,8 @@ export default {
         "companyId",
         "createdBy",
         "createdAt",
-        "status"
+        "status",
+        "hiddenComponentNodeIds"
       ],
       properties: {
         id: {
@@ -131146,6 +131156,13 @@ export default {
             "Note:\nThis is a Foreign Key to `assemblyInstructionStep.id`.<fk table='assemblyInstructionStep' column='id'/>",
           format: "text",
           type: "string"
+        },
+        hiddenComponentNodeIds: {
+          format: "text[]",
+          items: {
+            type: "string"
+          },
+          type: "array"
         }
       },
       type: "object"
@@ -178612,6 +178629,12 @@ export default {
     },
     "rowFilter.assemblyInstructionStep.rootStepId": {
       name: "rootStepId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.assemblyInstructionStep.hiddenComponentNodeIds": {
+      name: "hiddenComponentNodeIds",
       required: false,
       in: "query",
       type: "string"

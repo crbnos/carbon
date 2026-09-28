@@ -13,6 +13,7 @@ import { classifyImportRow } from "./classify-import-row.ts";
 import { importConfigLookups } from "./config-lookup-import.ts";
 import { importMaterialProperties } from "./material-property-import.ts";
 import { importMethods } from "./method-import.ts";
+import { importStockQuantities } from "./stock-quantity-import.ts";
 
 const pool = getConnectionPool(1);
 const db = getDatabaseClient<DB>(pool);
@@ -47,6 +48,9 @@ const importCsvValidator = z.object({
     "materialGrade",
     "materialType",
     "materialDimension",
+    "inventoryQuantity",
+    "batchQuantity",
+    "serialQuantity",
   ]),
   filePath: z.string(),
   columnMappings: z.record(z.string(), z.string()),
@@ -91,7 +95,18 @@ const IMPORT_PERMISSIONS: Record<ImportTable, string> = {
   materialGrade: "parts",
   materialType: "parts",
   materialDimension: "parts",
+  inventoryQuantity: "inventory",
+  batchQuantity: "inventory",
+  serialQuantity: "inventory",
 };
+
+// Imports that post new records also need `create`, as the ERP's import route
+// demands (`importRequiresCreate` in `imports.models.ts`).
+const IMPORT_REQUIRES_CREATE = new Set<ImportTable>([
+  "inventoryQuantity",
+  "batchQuantity",
+  "serialQuantity",
+]);
 
 // The columns each importer may write from a CSV row. Kysely here runs as the
 // service role, so spreading a row into an INSERT/UPDATE would let a crafted
@@ -1195,6 +1210,9 @@ serve(async (req: Request) => {
 
     const client = await requirePermissions(req, companyId, userId, {
       update: IMPORT_PERMISSIONS[table],
+      ...(IMPORT_REQUIRES_CREATE.has(table)
+        ? { create: IMPORT_PERMISSIONS[table] }
+        : {}),
     });
 
     // The client is service-role and the legacy bucket is shared across
@@ -3206,6 +3224,18 @@ serve(async (req: Request) => {
       case "materialType":
       case "materialDimension": {
         await importMaterialProperties(db, {
+          table,
+          mappedRecords,
+          companyId,
+          userId,
+          summary,
+        });
+        break;
+      }
+      case "inventoryQuantity":
+      case "batchQuantity":
+      case "serialQuantity": {
+        await importStockQuantities(db, client, {
           table,
           mappedRecords,
           companyId,

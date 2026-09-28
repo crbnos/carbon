@@ -1,5 +1,5 @@
 {
-  "totalTools": 1549,
+  "totalTools": 1551,
   "modules": 15,
   "tools": [
     {"name":"account_deleteUserAttributeValue","classification":"DESTRUCTIVE","paramCount":2,"schema":"0d38e12233b4","response":"bcde375ebd4c","injectAuth":"companyId+userId","permission":"none","paginates":false},
@@ -679,7 +679,7 @@
     {"name":"production_getAssemblyInstructions","classification":"READ","paramCount":5,"schema":"902de08eaf06","response":"845b5a451089","injectAuth":"companyId","permission":"production:view","paginates":true},
     {"name":"production_getAssemblyInstructionsForItem","classification":"READ","paramCount":1,"schema":"623ca47a6c74","response":"c881f4ef7d23","injectAuth":"companyId","permission":"production:view","paginates":false},
     {"name":"production_getAssemblyInstructionStepMaterials","classification":"READ","paramCount":1,"schema":"0f56299d6859","response":"89a5f52bebf8","injectAuth":"companyId","permission":"production:view","paginates":false},
-    {"name":"production_getAssemblyInstructionSteps","classification":"READ","paramCount":1,"schema":"f9ddf194f67e","response":"9c00b1d03c95","injectAuth":"companyId","permission":"production:view","paginates":false},
+    {"name":"production_getAssemblyInstructionSteps","classification":"READ","paramCount":1,"schema":"f9ddf194f67e","response":"f380180c6600","injectAuth":"companyId","permission":"production:view","paginates":false},
     {"name":"production_getAssemblyInstructionStepSlides","classification":"READ","paramCount":1,"schema":"0f56299d6859","response":"60aa9b57a118","injectAuth":"companyId","permission":"production:view","paginates":false},
     {"name":"production_getAssemblyInstructionStepTools","classification":"READ","paramCount":1,"schema":"0f56299d6859","response":"d771814f7578","injectAuth":"companyId","permission":"production:view","paginates":false},
     {"name":"production_getAssemblyInstructionVersions","classification":"READ","paramCount":2,"schema":"0c21424ecd86","response":"81c6e04c54bd","injectAuth":"companyId","permission":"production:view","paginates":false},
@@ -816,7 +816,7 @@
     {"name":"production_setPeopleOvertimeBulk","classification":"WRITE","paramCount":6,"schema":"8f082483561d","response":"577d7088b794","injectAuth":"companyId+updatedBy","permission":"production:update","paginates":false},
     {"name":"production_syncAssemblyInstructionToOperation","classification":"DESTRUCTIVE","paramCount":2,"schema":"8160f8d92b1b","response":"4348d3bad80b","injectAuth":"companyId+updatedBy+userId","permission":"production:update","paginates":false},
     {"name":"production_syncAssemblyStepMaterialsFromMappings","classification":"WRITE","paramCount":4,"schema":"7f7346bb3bd0","response":"5815c4dbf43d","injectAuth":"companyId+updatedBy+userId","permission":"production:update","paginates":false},
-    {"name":"production_toViewerStep","classification":"WRITE","paramCount":1,"schema":"3f809a44cba0","response":"ecca5ca73c50","injectAuth":"companyId","permission":"production:update","paginates":false},
+    {"name":"production_toViewerStep","classification":"WRITE","paramCount":1,"schema":"3f809a44cba0","response":"fc07d477afea","injectAuth":"companyId","permission":"production:update","paginates":false},
     {"name":"production_unassignPeopleWeek","classification":"DESTRUCTIVE","paramCount":4,"schema":"06ead5d3d9ce","response":"9658926b2cd2","injectAuth":"companyId","permission":"production:update","paginates":false},
     {"name":"production_unreleaseJobOperationBatch","classification":"WRITE","paramCount":1,"schema":"979f64cb9229","response":"none","injectAuth":"companyId+userId","permission":"production:update","paginates":false},
     {"name":"production_updateAssemblyInstructionStatus","classification":"WRITE","paramCount":2,"schema":"e43955681d7c","response":"3797626bd17e","injectAuth":"companyId+updatedBy","permission":"production:update","paginates":false},
@@ -824,6 +824,8 @@
     {"name":"production_updateAssemblyInstructionStepOrder","classification":"WRITE","paramCount":2,"schema":"5a4d7dc208a5","response":"none","injectAuth":"companyId+updatedBy","permission":"production:update","paginates":false},
     {"name":"production_updateAssemblyInstructionStepStatus","classification":"WRITE","paramCount":2,"schema":"9291eed55a4a","response":"3797626bd17e","injectAuth":"companyId+updatedBy","permission":"production:update","paginates":false},
     {"name":"production_updateAssemblyStepComponents","classification":"WRITE","paramCount":2,"schema":"d7ea6b1800f7","response":"3797626bd17e","injectAuth":"companyId+updatedBy","permission":"production:update","paginates":false},
+    {"name":"production_updateAssemblyStepHiddenComponents","classification":"WRITE","paramCount":3,"schema":"3ac4e88c4df0","response":"3797626bd17e","injectAuth":"companyId+updatedBy","permission":"production:update","paginates":false},
+    {"name":"production_updateAssemblyStepJoin","classification":"WRITE","paramCount":3,"schema":"fe25857086d1","response":"3797626bd17e","injectAuth":"companyId+updatedBy","permission":"production:update","paginates":false},
     {"name":"production_updateAssemblyStepMotion","classification":"WRITE","paramCount":3,"schema":"6665a9b53a17","response":"3797626bd17e","injectAuth":"companyId+updatedBy","permission":"production:update","paginates":false},
     {"name":"production_updateInspectionDocumentSampling","classification":"WRITE","paramCount":7,"schema":"e85058fba971","response":"bcde375ebd4c","injectAuth":"companyId+updatedBy+userId","permission":"production:update","paginates":false},
     {"name":"production_updateJob","classification":"WRITE","paramCount":21,"schema":"e224c0a5aa29","response":"3797626bd17e","injectAuth":"companyId+updatedBy","permission":"production:update","paginates":false},

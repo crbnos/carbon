@@ -292,6 +292,9 @@ msgstr "प्राप्य राशि का {arOverduePct}%"
 msgid "{chainLabel}. Consider pointing this part directly at the final successor."
 msgstr "{chainLabel}. इस भाग को सीधे अंतिम उत्तराधिकारी की ओर इंगित करने पर विचार करें।"
 
+msgid "{componentCount, plural, one {# component} other {# components}}"
+msgstr ""
+
 msgid "{conflictCount} conflicts"
 msgstr "{conflictCount} विरोध"
 
@@ -542,6 +545,9 @@ msgstr "90 दिन"
 msgid "A \"must match\" rule on this process blocks these from sharing a batch"
 msgstr "इस प्रक्रिया पर एक \"मेल खाना चाहिए\" नियम इन्हें एक बैच साझा करने से रोकता है"
 
+msgid "A 3D model the operator can turn around"
+msgstr ""
+
 msgid "A 4-digit PIN is generated when the operator is created."
 msgstr "ऑपरेटर बनाए जाने पर एक 4-अंकीय PIN बनाया जाता है।"
 
@@ -748,6 +754,12 @@ msgstr "एक गैर-अनुरूपता कार्य जो सम�
 
 msgid "A part contains the information about a specific item that can be purchased or manufactured."
 msgstr "एक पार्ट में एक विशिष्ट आइटम की जानकारी होती है जिसे खरीदा या निर्मित किया जा सकता है।"
+
+msgid "A part in this step may tip once placed — consider a fixture or a second person."
+msgstr ""
+
+msgid "A photo or PDF the operator sees on this step"
+msgstr ""
 
 msgid "A physical pull signal — a printed card or QR code living with the stock — that raises a purchase order or a job the moment it's scanned to refill a bin."
 msgstr "एक भौतिक खींचने का संकेत — एक मुद्रित कार्ड या QR कोड जो स्टॉक के साथ रहता है — जो क्रय आदेश या जॉब बढ़ाता है जिस क्षण इसे बिन को भरने के लिए स्कैन किया जाता है।"
@@ -1387,6 +1399,9 @@ msgstr "खंड जोड़ें"
 msgid "Add Company"
 msgstr "कंपनी जोड़ें"
 
+msgid "Add components first"
+msgstr ""
+
 msgid "Add condition"
 msgstr "शर्त जोड़ें"
 
@@ -1443,6 +1458,9 @@ msgstr "मैन्युअल रूप से जोड़ें"
 
 msgid "Add match"
 msgstr "मिलान जोड़ें"
+
+msgid "Add Model"
+msgstr ""
 
 msgid "Add Note"
 msgstr "नोट जोड़ें"
@@ -1522,6 +1540,9 @@ msgstr "शिपमेंट जोड़ें"
 
 msgid "Add Shipping"
 msgstr "शिपिंग जोड़ें"
+
+msgid "Add Slide"
+msgstr ""
 
 msgid "Add slot"
 msgstr "स्लॉट जोड़ें"
@@ -2810,6 +2831,9 @@ msgstr "गुणवत्ता फ़्लैग और सूचनाओं
 msgid "Automate your business processes with event-driven workflows that trigger actions when things happen in Carbon."
 msgstr "कार्बन में चीजें होने पर कार्रवाई करने वाले इवेंट-संचालित वर्कफ़्लो के साथ अपनी व्यावसायिक प्रक्रियाओं को स्वचालित करें।"
 
+msgid "Automatic"
+msgstr ""
+
 msgid "Automatic Cost Updates"
 msgstr "स्वचालित लागत अपडेट"
 
@@ -2976,6 +3000,9 @@ msgstr "बैच नंबर"
 msgid "Batch Properties"
 msgstr "बैच प्रॉपर्टीज़"
 
+msgid "Batch Quantities"
+msgstr "बैच मात्राएं"
+
 msgid "Batch Size"
 msgstr "बैच आकार"
 
@@ -3079,6 +3106,7 @@ msgstr "ब्लॉक करें, ओवरराइड की अनुम�
 msgid "Blocked"
 msgstr "अवरुद्ध"
 
+#. placeholder {0}: blockers.join(", ")
 #. placeholder {0}: workCenter.blockingDispatchReadableId
 msgid "Blocked by {0}"
 msgstr "{0} द्वारा अवरुद्ध"
@@ -3100,6 +3128,9 @@ msgstr "निकाय"
 
 msgid "BoM"
 msgstr "BoM"
+
+msgid "BOM"
+msgstr ""
 
 msgid "BoM + BoP"
 msgstr "BoM + BoP"
@@ -3143,6 +3174,9 @@ msgstr "ब्रेडक्रम्ब"
 msgid "Bring in your parts, BOMs, Bill of Process, and costing — with Carbon's import tools, CSV, or LLM help."
 msgstr "अपने पार्ट्स, BOM, प्रक्रिया सूची, और लागत निर्धारण लाएं — Carbon के आयात उपकरण, CSV, या LLM सहायता के साथ।"
 
+msgid "Brings in steps"
+msgstr ""
+
 msgid "Browse library"
 msgstr "लाइब्रेरी ब्राउज़ करें"
 
@@ -3170,6 +3204,9 @@ msgstr "कोई भी नया काम बनाएं"
 msgid "Build integrations and customizations"
 msgstr "एकीकरण और अनुकूलन बनाएं"
 
+msgid "Build off to the side"
+msgstr ""
+
 msgid "Build quotes pulling live part, cost, and Bill of Process data"
 msgstr "लाइव पार्ट, लागत और प्रक्रिया सूची डेटा खींचकर कोटेशन बनाएँ"
 
@@ -3179,8 +3216,14 @@ msgstr "भूमिका-आधारित प्रशिक्षण सा
 msgid "Build tailored, role-based training materials"
 msgstr "अनुकूलित, भूमिका-आधारित प्रशिक्षण सामग्री बनाएं"
 
+msgid "Builds this step's components beside the model as a group, then carries the group in at a later join step."
+msgstr ""
+
 msgid "Built and costed as its own method"
 msgstr "अपनी स्वयं की विधि के रूप में निर्मित और लागत निर्धारित"
+
+msgid "Built off to the side, then carried in at its join step"
+msgstr ""
 
 msgid "Bulk Import"
 msgstr "बल्क आयात"
@@ -3280,6 +3323,9 @@ msgstr "बाहरी URL को कॉल करें"
 
 msgid "Called a method in Carbon — the components plus operations that produce a part."
 msgstr "Carbon में एक विधि कहा जाता है — घटक साथ ऑपरेशन जो एक पार्ट का उत्पादन करते हैं।"
+
+msgid "Camera"
+msgstr ""
 
 msgid "Can't be restored"
 msgstr "पुनः स्थापित नहीं किया जा सकता"
@@ -3709,6 +3755,9 @@ msgstr "डेमो डेटा साफ कर रहे हैं"
 msgid "Click again to disconnect"
 msgstr "डिस्कनेक्ट करने के लिए फिर से क्लिक करें"
 
+msgid "Click components in the viewer to add them. Shift-click adds several."
+msgstr ""
+
 msgid "Click to rename"
 msgstr "नाम बदलने के लिए क्लिक करें"
 
@@ -3775,6 +3824,11 @@ msgstr "कोड"
 msgid "Collapse"
 msgstr "संक्षिप्त करें"
 
+#. placeholder {0}: group.name
+#. placeholder {0}: unit.name
+msgid "Collapse {0}"
+msgstr ""
+
 msgid "Collapse all"
 msgstr "सभी को संक्षिप्त करें"
 
@@ -3789,6 +3843,9 @@ msgstr "श्रम को संक्षिप्त करें"
 
 msgid "Collapse Machine"
 msgstr "मशीन को संक्षिप्त करें"
+
+msgid "Collapse row"
+msgstr "पंक्ति संक्षिप्त करें"
 
 msgid "Collapse Setup"
 msgstr "सेटअप को संक्षिप्त करें"
@@ -3918,6 +3975,16 @@ msgstr "समापन प्रगति में है — शॉप फ्
 
 msgid "Completion Time"
 msgstr "पूर्ण होने का समय"
+
+#. placeholder {0}: group.name
+msgid "Component details: {0}"
+msgstr ""
+
+msgid "Components"
+msgstr ""
+
+msgid "Components hidden only while this step plays, such as a fixture in the way; use the eye in the Components tab to hide one."
+msgstr ""
 
 #. placeholder {0}: formatRelativeTime(tieOut.computedAt)
 msgid "computed {0}"
@@ -5742,6 +5809,9 @@ msgstr "शिपिंग विधि हटाएं"
 msgid "Delete step"
 msgstr "चरण हटाएं"
 
+msgid "Delete Step"
+msgstr ""
+
 msgid "Delete Stock Transfer"
 msgstr "स्टॉक ट्रांसफर हटाएं"
 
@@ -5750,6 +5820,10 @@ msgstr "स्टोरेज प्रकार हटाएं"
 
 msgid "Delete Storage Unit"
 msgstr "भंडारण इकाई हटाएँ"
+
+#. placeholder {0}: unit.name
+msgid "Delete subassembly {0}"
+msgstr ""
 
 msgid "Delete Substance"
 msgstr "पदार्थ हटाएं"
@@ -5919,6 +5993,9 @@ msgstr "विवरण"
 
 msgid "Details"
 msgstr "विवरण"
+
+msgid "Detected by the motion planner"
+msgstr ""
 
 msgid "Developer"
 msgstr "डेवलपर"
@@ -6137,8 +6214,17 @@ msgstr "हो गया"
 msgid "Done"
 msgstr "हो गया"
 
+msgid "Done Adding"
+msgstr ""
+
+msgid "Done Editing Path"
+msgstr ""
+
 msgid "Done when day-to-day runs without us in the room"
 msgstr "दिन-प्रतिदिन हमारे बिना कमरे में चले तब हो गया"
+
+msgid "Double-click to play this step"
+msgstr ""
 
 msgid "Download"
 msgstr "डाउनलोड करें"
@@ -6182,6 +6268,9 @@ msgstr "एक क्रय आदेश PDF को यहाँ खींचे
 
 msgid "Drag handle"
 msgstr "ड्रैग हैंडल"
+
+msgid "Drag the red waypoints in the viewer"
+msgstr ""
 
 msgid "Drag to assign"
 msgstr "असाइन करने के लिए ड्रैग करें"
@@ -6587,6 +6676,9 @@ msgstr "पार्टनर संपादित करें"
 msgid "Edit Passkey"
 msgstr "पासकी संपादित करें"
 
+msgid "Edit Path"
+msgstr ""
+
 msgid "Edit Payment"
 msgstr "भुगतान संपादित करें"
 
@@ -6685,6 +6777,10 @@ msgstr "स्टोरेज प्रकार संपादित करे
 
 msgid "Edit Storage Unit"
 msgstr "भंडारण इकाई संपादित करें"
+
+#. placeholder {0}: unit.name
+msgid "Edit subassembly {0}"
+msgstr ""
 
 msgid "Edit Substance"
 msgstr "पदार्थ संपादित करें"
@@ -7183,7 +7279,9 @@ msgstr "मौजूदा Stripe ग्राहक"
 msgid "Expand"
 msgstr "विस्तार करें"
 
+#. placeholder {0}: group.name
 #. placeholder {0}: item.label
+#. placeholder {0}: unit.name
 msgid "Expand {0}"
 msgstr "विस्तार करें {0}"
 
@@ -7201,6 +7299,9 @@ msgstr "श्रम विस्तृत करें"
 
 msgid "Expand Machine"
 msgstr "मशीन का विस्तार करें"
+
+msgid "Expand row"
+msgstr "पंक्ति का विस्तार करें"
 
 msgid "Expand Setup"
 msgstr "सेटअप विस्तृत करें"
@@ -8405,14 +8506,26 @@ msgstr "हेडर"
 msgid "Help"
 msgstr "मदद"
 
+msgid "Hidden on this step"
+msgstr ""
+
 msgid "Hide"
 msgstr "छिपाएं"
+
+msgid "Hide {label}"
+msgstr ""
 
 msgid "Hide account number"
 msgstr "खाता संख्या छिपाएँ"
 
+msgid "Hide Again"
+msgstr ""
+
 msgid "Hide raw"
 msgstr "कच्चे को छुपाएं"
+
+msgid "Hide selected on this step"
+msgstr ""
 
 msgid "Hide system quantities until the review step"
 msgstr "समीक्षा चरण तक सिस्टम मात्रा को छिपाएं"
@@ -8633,11 +8746,17 @@ msgstr "I (शिथिल)"
 msgid "I have a reasonable basis to believe this individual is a U.S. person as defined in 22 CFR 120.62"
 msgstr "मेरे पास यह मानने का उचित आधार है कि यह व्यक्ति 22 CFR 120.62 में परिभाषित अनुसार एक U.S. व्यक्ति है"
 
+msgid "I understand, replace my existing data with the new demo data"
+msgstr ""
+
 msgid "I'm Still Working"
 msgstr "मैं अभी भी काम कर रहा हूँ"
 
 msgid "IBAN"
 msgstr "IBAN"
+
+msgid "IC Transaction"
+msgstr "अंतरकंपनी लेनदेन"
 
 msgid "Id"
 msgstr "आईडी"
@@ -8783,6 +8902,9 @@ msgstr "स्टॉक में, शेष {substitute} के रूप म�
 
 msgid "In the loop together"
 msgstr "एक साथ लूप में"
+
+msgid "In this step"
+msgstr ""
 
 msgid "In use"
 msgstr "उपयोग में"
@@ -8949,6 +9071,12 @@ msgstr "इंस्टॉल करें"
 msgid "Installed"
 msgstr "स्थापित"
 
+msgid "Installed on this step, so it can't be hidden here."
+msgstr ""
+
+msgid "Instruction"
+msgstr ""
+
 msgid "Instructions"
 msgstr "निर्देश"
 
@@ -9059,6 +9187,9 @@ msgstr "इन्वेंटरी मूवमेंट्स"
 
 msgid "Inventory Qty"
 msgstr "इन्वेंटरी मात्रा"
+
+msgid "Inventory Quantities"
+msgstr "इन्वेंटरी मात्राएं"
 
 msgid "Inventory Tracking"
 msgstr "इन्वेंटरी ट्रैकिंग"
@@ -9400,6 +9531,13 @@ msgstr "जॉब जिनकी सामग्री सूची में �
 msgid "Join {0}"
 msgstr "{0} में शामिल हों"
 
+#. placeholder {0}: selected.number
+msgid "Joins step {0}"
+msgstr ""
+
+msgid "Joins step {number}: {title}"
+msgstr ""
+
 msgid "Journal"
 msgstr "जर्नल"
 
@@ -9441,6 +9579,12 @@ msgstr "रखें"
 
 msgid "Keep Current"
 msgstr "वर्तमान रखें"
+
+msgid "Keep demo data"
+msgstr ""
+
+msgid "Keep demo data and delete your previous data?"
+msgstr ""
 
 msgid "Keep editing"
 msgstr "संपादन जारी रखें"
@@ -10605,6 +10749,9 @@ msgstr "सबसे हाल ही की — अधिक खोजने �
 msgid "Most things get caught and resolved here. Name it plainly."
 msgstr "अधिकांश चीजें यहां पकड़ी जाती हैं और हल की जाती हैं। इसे स्पष्ट रूप से नाम दें।"
 
+msgid "Motion"
+msgstr ""
+
 msgid "Move"
 msgstr "स्थानांतरित करें"
 
@@ -11202,11 +11349,20 @@ msgstr "अभी तक कोई परिवर्तन नहीं।"
 msgid "No clauses yet. Use Add clause above."
 msgstr "अभी तक कोई खंड नहीं है। ऊपर ‟खंड जोड़ें„ का उपयोग करें।"
 
+msgid "No clear path"
+msgstr ""
+
+msgid "No collision-free path"
+msgstr ""
+
 msgid "No comments yet. Be the first to add a comment."
 msgstr "अभी कोई टिप्पणी नहीं है। पहली टिप्पणी जोड़ने वाले बनें।"
 
 msgid "No completed jobs within range"
 msgstr "रेंज में कोई पूर्ण जॉब नहीं"
+
+msgid "No components yet"
+msgstr ""
 
 msgid "No condition may match"
 msgstr "कोई भी शर्त मेल नहीं खा सकती"
@@ -11554,8 +11710,14 @@ msgstr "इस पृष्ठ पर कोई शॉर्टकट उपल�
 msgid "No single, trusted number for inventory or job status"
 msgstr "इन्वेंटरी या जॉब स्थिति के लिए कोई एकल, विश्वसनीय संख्या नहीं"
 
+msgid "No slides yet"
+msgstr ""
+
 msgid "No sorts applied to this view"
 msgstr "इस दृश्य पर कोई सॉर्ट लागू नहीं किया गया"
+
+msgid "No step selected"
+msgstr ""
 
 msgid "No stock"
 msgstr "स्टॉक नहीं"
@@ -11625,6 +11787,12 @@ msgstr "इस स्थान पर कोई वर्क सेंटर न
 
 msgid "No work centers exist"
 msgstr "कोई वर्क सेंटर मौजूद नहीं है"
+
+msgid "No, build in place"
+msgstr ""
+
+msgid "No, it's the base"
+msgstr ""
 
 msgid "Nom"
 msgstr "नाम"
@@ -12177,6 +12345,9 @@ msgstr "ऑपरेटर को एक चेतावनी मिलती �
 msgid "Operator must pick a different batch/serial."
 msgstr "ऑपरेटर को एक अलग बैच/सीरीज़ चुननी होगी।"
 
+msgid "Operator must record this step"
+msgstr ""
+
 msgid "Operator Pool"
 msgstr "ऑपरेटर पूल"
 
@@ -12723,6 +12894,9 @@ msgstr "पहले एक प्रॉपर्टी चुनें"
 msgid "Pick a record type…"
 msgstr "एक रिकॉर्ड प्रकार चुनें…"
 
+msgid "Pick a step from the list to edit its details, components, and materials."
+msgstr ""
+
 msgid "Pick a target date to compare."
 msgstr "तुलना के लिए एक लक्ष्य तारीख चुनें।"
 
@@ -12868,6 +13042,9 @@ msgstr "एकल सुझाए गए पुनः भरण पर योज
 
 msgid "Plants, warehouses"
 msgstr "संयंत्र, गोदाम"
+
+msgid "Playback"
+msgstr ""
 
 msgid "Please contact your administrator to enable audit logging."
 msgstr "कृपया ऑडिट लॉगिंग सक्षम करने के लिए अपने प्रशासक से संपर्क करें।"
@@ -14038,6 +14215,9 @@ msgstr "इस स्थान के लिए अभी शेड्यूल 
 msgid "Regenerate thumbnail from the 3D model"
 msgstr "3D मॉडल से थंबनेल पुनः उत्पन्न करें"
 
+msgid "Regenerating removes \"Build off to the side\" settings."
+msgstr ""
+
 msgid "Regenerating thumbnail…"
 msgstr "थंबनेल को पुनः उत्पन्न किया जा रहा है…"
 
@@ -14149,6 +14329,10 @@ msgstr "बैच से {0} निकालें"
 #. placeholder {0}: removing.jobReadableId ?? "this operation"
 msgid "Remove {0} from this batch? Its operation goes back to the schedule to run on its own."
 msgstr "इस बैच से {0} को निकालें? इसका ऑपरेशन अपने आप चलने के लिए शेड्यूल में वापस जाता है।"
+
+#. placeholder {0}: group.name
+msgid "Remove {0} from this step"
+msgstr ""
 
 #. placeholder {0}: selectedIds.size
 #. placeholder {1}: batch.readableId
@@ -15098,6 +15282,9 @@ msgstr "दृश्य सहेजें"
 msgid "Saved"
 msgstr "सहेजा गया"
 
+msgid "Saved view"
+msgstr ""
+
 msgid "Saved Views"
 msgstr "सहेजे गए दृश्य"
 
@@ -15405,6 +15592,9 @@ msgstr "उद्धरण क्यों नहीं बनाया गय�
 msgid "Select a shape first to see available options"
 msgstr "उपलब्ध विकल्प देखने के लिए पहले एक आकार चुनें"
 
+msgid "Select a step to hide parts on it."
+msgstr ""
+
 msgid "Select a substance and shape first to see available options"
 msgstr "उपलब्ध विकल्प देखने के लिए पहले एक पदार्थ और आकार चुनें"
 
@@ -15660,6 +15850,9 @@ msgstr "रिटर्न के लिए सीरियल नंबर"
 
 msgid "Serial or Batch Tracking Required"
 msgstr "सीरियल या बैच ट्रैकिंग आवश्यक है"
+
+msgid "Serial Quantities"
+msgstr "सीरियल नंबर मात्राएं"
 
 msgid "Serial tracking"
 msgstr "सीरियल ट्रैकिंग"
@@ -16018,15 +16211,28 @@ msgstr "शॉर्टकट"
 msgid "Show"
 msgstr "दिखाएँ"
 
+#. placeholder {0}: group.name
+msgid "Show {0}"
+msgstr ""
+
 #. placeholder {0}: overflow.length
 msgid "Show {0} more"
 msgstr "{0} और दिखाएं"
+
+msgid "Show {label}"
+msgstr ""
 
 msgid "Show a readable Customer ID column on the customer list, customer forms, and dropdowns. Customers are still identified internally either way."
 msgstr "ग्राहक सूची, ग्राहक फॉर्म और ड्रॉपडाउन पर एक पठनीय ग्राहक आईडी कॉलम दिखाएं। ग्राहकों की पहचान आंतरिक रूप से किसी भी तरह से की जाती है।"
 
 msgid "Show a readable Supplier ID column on the supplier list, supplier forms, and dropdowns. Suppliers are still identified internally either way."
 msgstr "आपूर्तिकर्ता सूची, आपूर्तिकर्ता फॉर्म और ड्रॉपडाउन पर एक पठनीय आपूर्तिकर्ता ID कॉलम दिखाएं। आपूर्तिकर्ता अभी भी किसी भी तरह से आंतरिक रूप से पहचाने जाते हैं।"
+
+msgid "Show All"
+msgstr ""
+
+msgid "Show all hidden on this step"
+msgstr ""
 
 msgid "Show available batch numbers"
 msgstr "उपलब्ध बैच नंबर दिखाएं"
@@ -16195,6 +16401,9 @@ msgstr "ग्राहक, ग्राहक प्रकार, या कि
 #. placeholder {0}: i + 1
 msgid "Slide {0}"
 msgstr "स्लाइड {0}"
+
+msgid "Slides"
+msgstr ""
 
 msgid "Smallest run worth batching. Leave empty for none."
 msgstr "बैचिंग के लायक सबसे छोटा रन। कोई नहीं के लिए खाली छोड़ें।"
@@ -16449,6 +16658,10 @@ msgstr "इस पृष्ठ पर रहें"
 msgid "Step"
 msgstr "चरण"
 
+#. placeholder {0}: stepIndex + 1
+msgid "Step {0} of {stepCount}"
+msgstr ""
+
 msgid "Step added"
 msgstr "चरण जोड़ा गया"
 
@@ -16460,6 +16673,12 @@ msgstr "चरण रिकॉर्ड"
 
 msgid "Step removed — pick a new value"
 msgstr "चरण हटाया गया — एक नया मान चुनें"
+
+msgid "Step status: {label}"
+msgstr ""
+
+msgid "Step status: {label}. Change status"
+msgstr ""
 
 msgid "steps"
 msgstr "चरण"
@@ -17651,6 +17870,9 @@ msgstr "जब माता-पिता जो इसकी आवश्यक�
 msgid "The part is taken from existing stock when its parent is built — no new job or purchase order."
 msgstr "पार्ट को मौजूदा स्टॉक से लिया जाता है जब इसका मूल आइटम बनाया जाता है — कोई नया जॉब या क्रय आदेश नहीं।"
 
+msgid "The path this step's components travel into place during playback; worked out from the model, or drawn by hand with Edit Path."
+msgstr ""
+
 msgid "The people on the Carbon side who will run your implementation, and how to reach them."
 msgstr "कार्बन की ओर से वे लोग जो आपके कार्यान्वयन को चलाएंगे, और उन तक कैसे पहुंचें।"
 
@@ -17939,6 +18161,9 @@ msgstr "इस दस्तावेज़ के लिए संस्कर�
 
 msgid "The version stamp for this procedure; new versions create a copy that supersedes the previous one without deleting it."
 msgstr "इस कार्यविधि के लिए संस्करण स्टैम्प; नए संस्करण एक कॉपी बनाते हैं जो पिछले को बिना हटाए बदल देती है।"
+
+msgid "The view a step plays from; without a saved view the step frames its own components."
+msgstr ""
 
 msgid "The warehouse goods on this order will ship from; the customer's Shipping Location is where they'll arrive."
 msgstr "गोदाम जिससे इस आदेश पर सामान भेज दिया जाएगा; ग्राहक का शिप स्थान वह जगह है जहां वे पहुंचेंगे।"
@@ -18430,6 +18655,9 @@ msgstr "आज"
 msgid "Today:"
 msgstr "आज:"
 
+msgid "Todo"
+msgstr ""
+
 msgid "Toggle"
 msgstr "टॉगल करें"
 
@@ -18745,6 +18973,9 @@ msgstr "एक variable के लिए '{' दर्ज करें"
 msgid "Type {TRIGGER} to insert a variable"
 msgstr "एक variable insert करने के लिए {TRIGGER} दर्ज करें"
 
+msgid "Type <0>\"{confirmPhrase}\"</0> to continue."
+msgstr ""
+
 msgid "Type a message..."
 msgstr "एक संदेश लिखें..."
 
@@ -18964,6 +19195,9 @@ msgstr "बिना शीर्षक वाला आरेख"
 msgid "Untitled line"
 msgstr "बिना शीर्षक की पंक्ति"
 
+msgid "Untitled step"
+msgstr ""
+
 msgid "Unused picked material flushed back from the work center to the warehouse."
 msgstr "अप्रयुक्त सामग्री को वर्क सेंटर से गोदाम में वापस भेजा गया।"
 
@@ -19153,6 +19387,9 @@ msgstr "एक अलग खाता उपयोग करें"
 
 msgid "Use a different email"
 msgstr "एक अलग ईमेल का उपयोग करें"
+
+msgid "Use Current View"
+msgstr ""
 
 msgid "Use metric system for default material dimensions."
 msgstr "डिफ़ॉल्ट सामग्री आयामों के लिए मीट्रिक सिस्टम का उपयोग करें।"
@@ -20318,6 +20555,9 @@ msgstr "आपकी ग्राहक सूची"
 
 msgid "Your customer-facing price lists"
 msgstr "आपकी ग्राहक-सामना करने वाली मूल्य सूचियाँ"
+
+msgid "Your data from before the demo data was applied will be permanently deleted. You won't be able to revert or recover it."
+msgstr ""
 
 msgid "Your data is accessible and reasonably clean"
 msgstr "आपका डेटा सुलभ है और उचित रूप से स्वच्छ है"

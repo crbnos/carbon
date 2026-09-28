@@ -1,3 +1,5 @@
+import type { AssemblyStep } from "./types";
+
 /** How components of steps after the active one are rendered. */
 export type FutureComponentsMode = "ghost" | "hidden" | "solid";
 
@@ -13,14 +15,16 @@ export type ComponentVisual = "solid" | "active" | "hidden" | "ghost";
  * wrong one for the screen (nine combinations, most meaningless). A view is a
  * named point in that space, so the UI keeps one concept and the renderer both.
  */
-export const ASSEMBLY_VIEWS = ["build", "focus", "isolate", "full"] as const;
+export const ASSEMBLY_VIEWS = ["build", "focus", "full"] as const;
 
 export type AssemblyView = (typeof ASSEMBLY_VIEWS)[number];
 
 /**
  * Ordered by how much context they strip: Build keeps what is already there,
- * Focus fades it, Isolate removes it, Full is the other extreme. The future
- * side is hidden in all but Full: parts not yet on the bench only add clutter.
+ * Focus fades it, Full is the other extreme. The future side is hidden in all
+ * but Full: parts not yet on the bench only add clutter. (An "Isolate" view that
+ * also hid the built side was dropped: Focus already shows the step in place,
+ * and per-step hidden parts cover removing clutter the author chooses.)
  */
 export const VIEW_MODES: Record<
   AssemblyView,
@@ -30,8 +34,6 @@ export const VIEW_MODES: Record<
   build: { installedMode: "solid", futureMode: "hidden" },
   /** This step, and where it mounts: what is built fades to a see-through shell. */
   focus: { installedMode: "ghost", futureMode: "hidden" },
-  /** This step alone: nothing else is drawn at all. */
-  isolate: { installedMode: "hidden", futureMode: "hidden" },
   /** The finished product: every component, solid. */
   full: { installedMode: "solid", futureMode: "solid" }
 };
@@ -119,4 +121,18 @@ export function occluderWeight(
     (isFuture && futureMode === "ghost") ||
     (isInstalled && installedMode === "ghost");
   return isGhosted ? GHOST_OCCLUDER_WEIGHT : 1;
+}
+
+/**
+ * The nodeIds to hide while `step` is active: its authored hidden list, never
+ * including the parts the step itself installs. The DB already strips those on
+ * write; this guards stale or hand-edited data, since a step must not animate an
+ * invisible part.
+ */
+export function stepHiddenNodeIds(
+  step: Pick<AssemblyStep, "componentNodeIds" | "hiddenComponentNodeIds"> | null
+): Set<string> {
+  const hidden = new Set(step?.hiddenComponentNodeIds ?? []);
+  for (const nodeId of step?.componentNodeIds ?? []) hidden.delete(nodeId);
+  return hidden;
 }

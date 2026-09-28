@@ -3,11 +3,13 @@ import { describe, expect, it, vi } from "vitest";
 import {
   getCompanyPrivateBucket,
   hasCompanyPrivateObjectPathPrefix,
+  isStorageNotFound,
   isUnsafeStoragePath,
   LEGACY_PRIVATE_BUCKET,
   normalizeStorageSegment,
   safeStorageFileName,
-  storage
+  storage,
+  storageErrorStatus
 } from "./storage";
 
 const ok = <T>(data: T) => Promise.resolve({ data, error: null });
@@ -495,5 +497,77 @@ describe("move falls back to a cross-bucket move out of the legacy bucket", () =
 
     expect(result.error).toBeTruthy();
     expect(companyMove).not.toHaveBeenCalled();
+  });
+});
+
+describe("storageErrorStatus", () => {
+  it("reads the status off a download's wrapped response", async () => {
+    const { StorageUnknownError } = await import("@supabase/storage-js");
+    const error = new StorageUnknownError(
+      "{}",
+      new Response(null, { status: 400 })
+    );
+    expect(storageErrorStatus(error)).toBe(400);
+  });
+
+  it("reads an API error's own status", async () => {
+    const { StorageApiError } = await import("@supabase/storage-js");
+    expect(storageErrorStatus(new StorageApiError("nope", 404, "404"))).toBe(
+      404
+    );
+  });
+
+  it("is undefined when there is no status", () => {
+    expect(storageErrorStatus(new Error("offline"))).toBeUndefined();
+    expect(storageErrorStatus(null)).toBeUndefined();
+  });
+});
+
+describe("isStorageNotFound", () => {
+  // The shapes local storage actually returns from download(): HTTP 400 with
+  // the real code in a body download() leaves unread.
+  const downloadError = async (status: number, body?: unknown) => {
+    const { StorageUnknownError } = await import("@supabase/storage-js");
+    return new StorageUnknownError(
+      "{}",
+      new Response(body === undefined ? null : JSON.stringify(body), {
+        status
+      })
+    );
+  };
+
+  it("treats a 400 whose body says 404 as a miss (object or bucket)", async () => {
+    for (const error of ["not_found", "Bucket not found"]) {
+      expect(
+        await isStorageNotFound(
+          await downloadError(400, { statusCode: "404", error })
+        )
+      ).toBe(true);
+    }
+  });
+
+  it("treats a plain 404 as a miss", async () => {
+    expect(await isStorageNotFound(await downloadError(404))).toBe(true);
+    const { StorageApiError } = await import("@supabase/storage-js");
+    expect(
+      await isStorageNotFound(new StorageApiError("gone", 400, "404"))
+    ).toBe(true);
+  });
+
+  it("does not treat an invalid key or request (400) as a miss", async () => {
+    expect(
+      await isStorageNotFound(
+        await downloadError(400, { statusCode: "400", error: "InvalidKey" })
+      )
+    ).toBe(false);
+    expect(await isStorageNotFound(await downloadError(400))).toBe(false);
+  });
+
+  it("does not treat server, auth or status-less errors as a miss", async () => {
+    for (const status of [401, 403, 500, 503]) {
+      expect(await isStorageNotFound(await downloadError(status))).toBe(false);
+    }
+    expect(await isStorageNotFound(new Error("offline"))).toBe(false);
+    expect(await isStorageNotFound(null)).toBe(false);
   });
 });

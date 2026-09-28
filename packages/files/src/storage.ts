@@ -155,6 +155,47 @@ export type CarbonStorage = {
   company(companyId: string): CompanyBucket;
 };
 
+/**
+ * The HTTP status behind a storage error. `download()` skips reading the
+ * error body, so a 400/404 arrives as `StorageUnknownError("{}")` with the
+ * status only on the raw response in `originalError`.
+ */
+export function storageErrorStatus(error: unknown): number | undefined {
+  if (!error || typeof error !== "object") return undefined;
+  const { status, originalError } = error as {
+    status?: unknown;
+    originalError?: { status?: unknown };
+  };
+  if (typeof status === "number") return status;
+  return typeof originalError?.status === "number"
+    ? originalError.status
+    : undefined;
+}
+
+/**
+ * Whether a storage error means the object (or bucket) is not there. Storage
+ * answers a miss with HTTP 400 and `"statusCode":"404"` in the body, the same
+ * status it uses for an invalid key or request — so a 400 counts only when
+ * its body says 404. `download()` never reads that body, so it is still
+ * unread on `originalError`.
+ */
+export async function isStorageNotFound(error: unknown): Promise<boolean> {
+  if (!error || typeof error !== "object") return false;
+  const { statusCode, originalError } = error as {
+    statusCode?: unknown;
+    originalError?: unknown;
+  };
+  if (statusCode === "404" || storageErrorStatus(error) === 404) return true;
+  if (!(originalError instanceof Response) || originalError.status !== 400) {
+    return false;
+  }
+  const body = await originalError
+    .clone()
+    .json()
+    .catch(() => null);
+  return body?.statusCode === "404";
+}
+
 export function storage(client: { storage: StorageClient }): CarbonStorage {
   return {
     from: (bucket) => client.storage.from(bucket),

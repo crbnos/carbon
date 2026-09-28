@@ -65,11 +65,12 @@ const Breadcrumbs = () => {
   const { i18n } = useLingui();
   const matches = useMatches();
 
+  // Only a `msg` descriptor is translatable; a plain string is data (an entity's
+  // readable id) and is shown as-is.
   const translateBreadcrumb = (value: unknown): ReactNode => {
     if (typeof value === "object" && value !== null && "id" in value) {
       return i18n._(value as { id: string; message?: string });
     }
-    if (typeof value === "string") return i18n._(value);
     return value as ReactNode;
   };
 

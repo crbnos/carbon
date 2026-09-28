@@ -203,6 +203,70 @@ const materialFormFetcher = async (
     .order("name");
 };
 
+const locationFetcher = async (
+  client: SupabaseClient<Database>,
+  companyId: string
+) => {
+  return client
+    .from("location")
+    .select("id, name")
+    .eq("companyId", companyId)
+    .order("name");
+};
+
+// Opening-stock imports (inventoryQuantity / batchQuantity / serialQuantity).
+// Additive only: every row posts one Positive Adjmt. for an existing item.
+const stockImportItemFields = {
+  readableId: {
+    label: "Part Number",
+    required: true,
+    type: "string"
+  },
+  revision: {
+    label: "Revision",
+    required: false,
+    type: "string",
+    default: "0"
+  }
+} as const;
+const stockImportPlacementFields = {
+  locationId: {
+    label: "Location",
+    required: true,
+    type: "enum",
+    enumData: {
+      description: "The location the stock is in — match by location name",
+      fetcher: locationFetcher
+    }
+  },
+  storageUnitName: {
+    label: "Storage Unit",
+    required: false,
+    type: "string"
+  }
+} as const;
+const stockImportQuantityField = {
+  quantity: {
+    label: "Quantity",
+    required: true,
+    type: "number"
+  }
+} as const;
+const stockImportExpirationField = {
+  expirationDate: {
+    label: "Expiration Date",
+    required: false,
+    type: "string"
+  }
+} as const;
+const stockImportCommentField = {
+  comment: {
+    label: "Comment",
+    required: false,
+    type: "string"
+  }
+} as const;
+
 // Row-type discriminator + explicit parent key. Spread into every method entry.
 const methodParentKeyFields = {
   rowType: {
@@ -1692,16 +1756,7 @@ export const fieldMappings = {
       enumData: {
         description:
           "The location this storage unit belongs to — match by location name",
-        fetcher: async (
-          client: SupabaseClient<Database>,
-          companyId: string
-        ) => {
-          return client
-            .from("location")
-            .select("id, name")
-            .eq("companyId", companyId)
-            .order("name");
-        }
+        fetcher: locationFetcher
       }
     },
     parentName: {
@@ -1967,6 +2022,35 @@ export const fieldMappings = {
       required: false,
       type: "boolean"
     }
+  },
+  inventoryQuantity: {
+    ...stockImportItemFields,
+    ...stockImportPlacementFields,
+    ...stockImportQuantityField,
+    ...stockImportCommentField
+  },
+  batchQuantity: {
+    ...stockImportItemFields,
+    ...stockImportPlacementFields,
+    batchNumber: {
+      label: "Batch Number",
+      required: true,
+      type: "string"
+    },
+    ...stockImportQuantityField,
+    ...stockImportExpirationField,
+    ...stockImportCommentField
+  },
+  serialQuantity: {
+    ...stockImportItemFields,
+    ...stockImportPlacementFields,
+    serialNumber: {
+      label: "Serial Number",
+      required: true,
+      type: "string"
+    },
+    ...stockImportExpirationField,
+    ...stockImportCommentField
   }
 } as const;
 
@@ -2001,8 +2085,18 @@ export const importPermissions: Record<keyof typeof fieldMappings, string> = {
   materialDimension: "parts",
   quote: "sales",
   quoteLine: "sales",
-  quoteWithLines: "sales"
+  quoteWithLines: "sales",
+  inventoryQuantity: "inventory",
+  batchQuantity: "inventory",
+  serialQuantity: "inventory"
 };
+
+// Imports that post stock also require `create` on their module: the
+// single-record inventory adjustment route requires `create: inventory`, and
+// its Save button requires `update: inventory`, so an import of the same rows
+// requires both.
+export const importRequiresCreate: ReadonlySet<keyof typeof fieldMappings> =
+  new Set(["inventoryQuantity", "batchQuantity", "serialQuantity"]);
 
 // Quote import validation is intentionally permissive at the mapping layer (every
 // cell an optional string); the app-side importer (`sales.import.server.ts`) does
@@ -2095,6 +2189,47 @@ const methodPartSchema = {
   conversionFactor: z.string().optional(),
   unitPrice: z.string().optional(),
   leadTime: z.string().optional()
+};
+
+// Zod fragments for the opening-stock imports. The mapping layer only checks a
+// column is mapped; the import-csv edge function does the per-row validation
+// (item resolution, tracking type, positive quantity, ISO dates, duplicates).
+const stockImportItemSchema = {
+  readableId: z
+    .string()
+    .min(1, { message: "Part Number is required" })
+    .describe("The part number of an existing item"),
+  revision: z.string().optional().describe("The item revision (defaults to 0)")
+};
+const stockImportPlacementSchema = {
+  locationId: z
+    .string()
+    .min(1, { message: "Location is required" })
+    .describe("The location the stock is in"),
+  storageUnitName: z
+    .string()
+    .optional()
+    .describe(
+      "The name of an existing storage unit in that location (optional)"
+    )
+};
+const stockImportQuantitySchema = {
+  quantity: z
+    .string()
+    .min(1, { message: "Quantity is required" })
+    .describe("The quantity to add — a positive number")
+};
+const stockImportExpirationSchema = {
+  expirationDate: z
+    .string()
+    .optional()
+    .describe("The expiration date as YYYY-MM-DD (optional)")
+};
+const stockImportCommentSchema = {
+  comment: z
+    .string()
+    .optional()
+    .describe("A comment stored on the inventory adjustment (optional)")
 };
 
 export const importSchemas: Record<
@@ -2904,5 +3039,32 @@ export const importSchemas: Record<
   }),
   quote: z.object(quoteImportSchemaFields),
   quoteLine: z.object(quoteImportSchemaFields),
-  quoteWithLines: z.object(quoteImportSchemaFields)
+  quoteWithLines: z.object(quoteImportSchemaFields),
+  inventoryQuantity: z.object({
+    ...stockImportItemSchema,
+    ...stockImportPlacementSchema,
+    ...stockImportQuantitySchema,
+    ...stockImportCommentSchema
+  }),
+  batchQuantity: z.object({
+    ...stockImportItemSchema,
+    ...stockImportPlacementSchema,
+    batchNumber: z
+      .string()
+      .min(1, { message: "Batch Number is required" })
+      .describe("The batch (lot) number the stock is received under"),
+    ...stockImportQuantitySchema,
+    ...stockImportExpirationSchema,
+    ...stockImportCommentSchema
+  }),
+  serialQuantity: z.object({
+    ...stockImportItemSchema,
+    ...stockImportPlacementSchema,
+    serialNumber: z
+      .string()
+      .min(1, { message: "Serial Number is required" })
+      .describe("The serial number of the unit; each row is one unit"),
+    ...stockImportExpirationSchema,
+    ...stockImportCommentSchema
+  })
 } as const;
