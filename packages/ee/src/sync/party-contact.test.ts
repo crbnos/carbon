@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { resolveCapabilities } from "./capabilities";
 import {
-  PARTY_CONTACT_SETTING_COLUMN,
+  applyPartyContactRequirements,
   partyContactSettingsToEnable
 } from "./party-contact";
 
@@ -65,17 +65,6 @@ describe("partyContactSettingsToEnable", () => {
     expect(resolved.requiresPartyContactAndLocation).toEqual([]);
     expect(partyContactSettingsToEnable(resolved)).toEqual([]);
   });
-
-  it("names the real companySettings columns", () => {
-    // These are column names in a live UPDATE — a typo is a runtime failure the
-    // type system cannot see.
-    expect(PARTY_CONTACT_SETTING_COLUMN.supplier).toBe(
-      "requireSupplierContactAndLocation"
-    );
-    expect(PARTY_CONTACT_SETTING_COLUMN.customer).toBe(
-      "requireCustomerContactAndLocation"
-    );
-  });
 });
 
 describe("Ramp declares the requirement in BOTH install modes", () => {
@@ -91,5 +80,129 @@ describe("Ramp declares the requirement in BOTH install modes", () => {
           .requiresPartyContactAndLocation
       ).toEqual(["supplier"]);
     }
+  });
+});
+
+/**
+ * Minimal chainable supabase-query mock — the same pattern
+ * `accounting/core/payment-tombstone.test.ts` uses. Only the HTTP boundary is
+ * faked; `applyPartyContactRequirements` itself runs real.
+ *
+ * `from("companySettings").select(...).eq(...).maybeSingle()` resolves the READ,
+ * and `from("companySettings").update(...).eq(...).select("id")` the WRITE.
+ */
+function makeClient(opts: {
+  read?: { data: Record<string, boolean | null> | null; error?: unknown };
+  write?: { data: Array<{ id: string }> | null; error?: unknown };
+}) {
+  const captured: { patch?: Record<string, unknown> } = {};
+  const client = {
+    from: () => {
+      const builder: any = {
+        select: () => builder,
+        update: (patch: Record<string, unknown>) => {
+          captured.patch = patch;
+          return writeBuilder;
+        },
+        eq: () => builder,
+        maybeSingle: () =>
+          Promise.resolve({
+            data: opts.read?.data ?? null,
+            error: opts.read?.error ?? null
+          })
+      };
+      const writeBuilder: any = {
+        eq: () => writeBuilder,
+        select: () =>
+          Promise.resolve({
+            data: opts.write?.data ?? [{ id: "comp_1" }],
+            error: opts.write?.error ?? null
+          })
+      };
+      return builder;
+    }
+  };
+  return { client: client as never, captured };
+}
+
+const needsSupplier = {
+  requiresPartyContactAndLocation: ["supplier" as const]
+};
+
+describe("applyPartyContactRequirements", () => {
+  /**
+   * The bug: the pre-read destructured only `{ data }`. A failed read (or a
+   * missing row) left it undefined, every column then read as "missing", the
+   * `UPDATE ... .eq("id", companyId)` matched zero rows and returned no error —
+   * so this returned both column names and the install hook logged "enabled
+   * requireSupplierContactAndLocation for company X" with nothing written. That
+   * log is the ONLY observable signal this gate has.
+   */
+  it("throws instead of reporting a write it could not verify, when the read fails", async () => {
+    const { client } = makeClient({
+      read: { data: null, error: { message: "permission denied" } }
+    });
+
+    await expect(
+      applyPartyContactRequirements(client, "comp_1", needsSupplier)
+    ).rejects.toThrow(/permission denied/);
+  });
+
+  it("throws when there is no companySettings row at all", async () => {
+    const { client } = makeClient({ read: { data: null } });
+
+    await expect(
+      applyPartyContactRequirements(client, "comp_1", needsSupplier)
+    ).rejects.toThrow(/No companySettings row/);
+  });
+
+  it("throws when the update matches no rows", async () => {
+    const { client } = makeClient({
+      read: { data: { requireSupplierContactAndLocation: false } },
+      write: { data: [] }
+    });
+
+    await expect(
+      applyPartyContactRequirements(client, "comp_1", needsSupplier)
+    ).rejects.toThrow(/matched no rows/);
+  });
+
+  it("enables the column and reports it when the write lands", async () => {
+    const { client, captured } = makeClient({
+      read: { data: { requireSupplierContactAndLocation: false } }
+    });
+
+    expect(
+      await applyPartyContactRequirements(client, "comp_1", needsSupplier)
+    ).toEqual(["requireSupplierContactAndLocation"]);
+    expect(captured.patch).toEqual({
+      requireSupplierContactAndLocation: true
+    });
+  });
+
+  it("reports nothing — and writes nothing — when it is already on", async () => {
+    // An install that re-converges must not claim it enabled something a human
+    // turned on months ago.
+    const { client, captured } = makeClient({
+      read: { data: { requireSupplierContactAndLocation: true } }
+    });
+
+    expect(
+      await applyPartyContactRequirements(client, "comp_1", needsSupplier)
+    ).toEqual([]);
+    expect(captured.patch).toBeUndefined();
+  });
+
+  it("never reads or writes for a provider that declares no requirement", async () => {
+    const { client, captured } = makeClient({
+      read: { data: null, error: { message: "should not be reached" } }
+    });
+
+    expect(
+      await applyPartyContactRequirements(client, "comp_1", {
+        requiresPartyContactAndLocation: []
+      })
+    ).toEqual([]);
+    expect(captured.patch).toBeUndefined();
   });
 });

@@ -1,5 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { describeMissingVendorFields, pickVendorContacts } from "./parties";
+import {
+  describeMissingVendorFields,
+  pickVendorAddresses,
+  pickVendorContacts,
+  resolveVendorContact
+} from "./parties";
 
 const party = (
   over: Partial<Parameters<typeof describeMissingVendorFields>[0]>
@@ -190,5 +195,169 @@ describe("describeMissingVendorFields — the US state rule", () => {
 
     expect(message).toContain("a country on one of its locations");
     expect(message).not.toContain("state");
+  });
+});
+
+describe("resolveVendorContact", () => {
+  const purchasing = {
+    email: null,
+    firstName: "Ama",
+    lastName: "Osei",
+    mobilePhone: "+1-555-0100",
+    homePhone: null,
+    workPhone: null
+  };
+  const emailable = {
+    email: "billing@dsrf.com",
+    firstName: "Kofi",
+    lastName: "Mensah",
+    mobilePhone: null,
+    homePhone: null,
+    workPhone: "+1-555-0199"
+  };
+
+  /**
+   * The bug: the fallback was applied PER FIELD, so a purchasing contact with a
+   * name but no email produced `email` from the fallback contact and
+   * `firstName`/`lastName` from the purchasing one. The Ramp vendor named Ama and
+   * mailed Kofi — permanently, because a spend vendor is create-once.
+   */
+  it("takes the WHOLE fallback contact, never a field from each", () => {
+    const contact = resolveVendorContact(purchasing, emailable);
+
+    expect(contact).toEqual({
+      email: "billing@dsrf.com",
+      firstName: "Kofi",
+      lastName: "Mensah",
+      phone: "+1-555-0199"
+    });
+  });
+
+  it("keeps the purchasing contact whole when it is emailable", () => {
+    const contact = resolveVendorContact(
+      { ...purchasing, email: "ama@dsrf.com" },
+      emailable
+    );
+
+    expect(contact).toEqual({
+      email: "ama@dsrf.com",
+      firstName: "Ama",
+      lastName: "Osei",
+      phone: "+1-555-0100"
+    });
+  });
+
+  it("keeps a name-only purchasing contact when there is no fallback", () => {
+    // It cannot create a vendor, but it can match one — and it is what
+    // describeMissingVendorFields reads to say which field is absent.
+    expect(resolveVendorContact(purchasing, undefined)).toEqual({
+      email: null,
+      firstName: "Ama",
+      lastName: "Osei",
+      phone: "+1-555-0100"
+    });
+  });
+
+  it("is null when neither row carries anything identifying", () => {
+    expect(
+      resolveVendorContact(
+        {
+          email: null,
+          firstName: null,
+          lastName: null,
+          mobilePhone: null,
+          homePhone: null,
+          workPhone: null
+        },
+        undefined
+      )
+    ).toBeNull();
+    expect(resolveVendorContact(null, undefined)).toBeNull();
+  });
+
+  it("prefers mobile, then work, then home — within ONE contact", () => {
+    expect(
+      resolveVendorContact(
+        { ...emailable, mobilePhone: "m", workPhone: "w", homePhone: "h" },
+        undefined
+      )?.phone
+    ).toBe("m");
+    expect(
+      resolveVendorContact(
+        { ...emailable, mobilePhone: null, workPhone: "w", homePhone: "h" },
+        undefined
+      )?.phone
+    ).toBe("w");
+    expect(
+      resolveVendorContact(
+        { ...emailable, mobilePhone: null, workPhone: null, homePhone: "h" },
+        undefined
+      )?.phone
+    ).toBe("h");
+  });
+});
+
+describe("pickVendorAddresses", () => {
+  const us = (stateProvince: string | null) => ({
+    supplierId: "sup_1",
+    countryCode: "US",
+    stateProvince
+  });
+
+  /**
+   * Two US locations, one with a state and one without. The old picker only
+   * upgraded an incumbent with NO country, so it kept whichever Postgres returned
+   * first — and `describeMissingVendorFields` then reported "needs a two-letter
+   * state on its US location" even though a complete location existed. With no
+   * ORDER BY on the read, the answer also flipped between runs.
+   */
+  it("prefers the US location that HAS a state, in either input order", () => {
+    expect(pickVendorAddresses([us(null), us("VA")]).get("sup_1")).toEqual(
+      us("VA")
+    );
+    expect(pickVendorAddresses([us("VA"), us(null)]).get("sup_1")).toEqual(
+      us("VA")
+    );
+  });
+
+  it("prefers a location with a country over one without", () => {
+    const none = {
+      supplierId: "sup_1",
+      countryCode: null,
+      stateProvince: null
+    };
+    const gb = { supplierId: "sup_1", countryCode: "GB", stateProvince: null };
+
+    expect(pickVendorAddresses([none, gb]).get("sup_1")).toEqual(gb);
+    expect(pickVendorAddresses([gb, none]).get("sup_1")).toEqual(gb);
+  });
+
+  it("does not demand a state outside the US, so the first GB location stands", () => {
+    const first = {
+      supplierId: "sup_1",
+      countryCode: "GB",
+      stateProvince: null
+    };
+    const second = {
+      supplierId: "sup_1",
+      countryCode: "GB",
+      stateProvince: "Greater London"
+    };
+
+    expect(pickVendorAddresses([first, second]).get("sup_1")).toEqual(first);
+  });
+
+  it("keeps suppliers independent", () => {
+    const picked = pickVendorAddresses([
+      us(null),
+      { supplierId: "sup_2", countryCode: "US", stateProvince: "TX" }
+    ]);
+
+    expect(picked.get("sup_1")).toEqual(us(null));
+    expect(picked.get("sup_2")?.stateProvince).toBe("TX");
+  });
+
+  it("yields nothing for a supplier with no locations", () => {
+    expect(pickVendorAddresses([]).size).toBe(0);
   });
 });

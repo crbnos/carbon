@@ -41,13 +41,14 @@ describe("spend push eligibility", () => {
 
   it("keeps a Completed order ALIVE on the platform, and retires only a Closed one", () => {
     // The bug this pins: Completed used to be settled, so the platform's copy
-    // was archived at the exact moment its bill arrived — and a platform
-    // matches bill to order on its own, which it can only do while the order
-    // still exists. Ramp offers no non-destructive "close" (a purchase order
-    // has `archived_at` and no state field) and no writable purchase-order
-    // field on a draft bill, so the order surviving is the only lever Carbon
-    // has over that match. Completed = received AND invoiced, which is exactly
-    // when the match matters; Closed = short-closed, no bill is coming.
+    // was archived at the exact moment its bill arrived — and a bill can only be
+    // matched to an order that still exists. Ramp offers no non-destructive
+    // "close" (a purchase order has `archived_at` and no state field), so the
+    // order surviving is the prerequisite for any match at all. Completed =
+    // received AND invoiced, which is exactly when the match matters; Closed =
+    // short-closed, no bill is coming. (Whether Ramp matches automatically is
+    // NOT established — see `SPEND_SETTLED_PURCHASE_ORDER_STATUSES` — and the
+    // writable `purchase_order_ids` link is a follow-up.)
     expect(isSettledPurchaseOrderStatus("Completed")).toBe(false);
     expect(isSettledPurchaseOrderStatus("Closed")).toBe(true);
 

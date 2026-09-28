@@ -56,20 +56,30 @@ export type RampBillRemote = {
 /**
  * What the bill says about itself beyond the supplier's invoice number.
  *
- * Two facts, one field, because Ramp gives us one field. `invoice_number` is
- * reserved for the SUPPLIER's reference, and a draft bill has no writable
- * purchase-order link — verified live 2026-09-27: `POST /bills/drafts` accepts
- * both `purchase_order_id` and `purchase_order_ids` with a 201 and stores
- * neither, and reading the draft back shows no purchase-related key at all.
- * Ramp performs that match itself, and only while the order still exists (which
- * is why a Completed order is no longer archived — see
- * `SPEND_SETTLED_PURCHASE_ORDER_STATUSES`).
+ * Two facts, one field, because `invoice_number` is reserved for the SUPPLIER's
+ * reference — that is the number an AP clerk matches against the paper, and
+ * Carbon's own id there would be wrong. Without the memo a bill in Ramp read
+ * only `CEX-Q-4471`, with nothing tying it back to `AP000008` or to the orders
+ * it settles. Bare ids rather than a sentence, so a Ramp search for either finds
+ * this bill.
  *
- * So the memo is not decoration and not a substitute for the match: it is the
- * only thing Carbon can put on the bill that tells a person reading it in Ramp
- * which Carbon invoice this is and which orders it settles. It is deliberately
- * bare ids rather than a sentence — someone searching Ramp for `AP000008` or
- * `PO000018` should find this bill.
+ * This is a HUMAN trace, and deliberately not Ramp's own bill↔order link. That
+ * link does exist and Carbon has simply not wired it up: `purchase_order_ids`
+ * (an array of Ramp PO uuids) is documented and writable on both
+ * `POST /developer/v1/bills/drafts` and `PATCH /developer/v1/bills/drafts/{id}`
+ * ("Unique identifiers of the purchase orders to match this bill to"), as are
+ * `line_items[].purchase_order_line_item_id` and
+ * `inventory_line_items[].purchase_order_line_item_id`. Sending them is a
+ * follow-up. An earlier probe reported the field absent and was wrong twice
+ * over: `purchase_order_id` SINGULAR is not a field on that endpoint at all (an
+ * unknown key, silently ignored), and `GET /developer/v1/bills/drafts/{id}`
+ * exposes no purchase-order key, so reading a draft back could never have
+ * detected storage either way — those fields are readable only on a SUBMITTED
+ * bill. Nor does Ramp demonstrably match by itself: sandbox PO000101 (unarchived,
+ * `billing_status: OPEN`, `bill_ids: []`) and draft AP000009 shared a vendor and
+ * a total and stayed unmatched. Either route needs the order to still EXIST,
+ * which is why a Completed order is no longer archived (see
+ * `SPEND_SETTLED_PURCHASE_ORDER_STATUSES`).
  */
 export function buildBillMemo(local: {
   readableId: string;
@@ -101,6 +111,7 @@ export class RampBillSyncer extends RampPushOnlyEntitySyncer<
   }
 
   protected async shouldSync(context: {
+    entityId: string;
     localEntity?: SpendBillSource;
   }): Promise<boolean | string> {
     const invoice = context.localEntity;
@@ -112,6 +123,23 @@ export class RampBillSyncer extends RampPushOnlyEntitySyncer<
 
     if (invoice.isEmployeeParty) {
       return "purchase invoice belongs to an Employee supplier — reimbursements are Ramp's own";
+    }
+
+    /**
+     * Already handed off — stop HERE, not in `upsertRemote`.
+     *
+     * The push is create-once (see the header), and `upsertRemote` short-circuits
+     * on the mapping. But the base class calls `mapToRemote` FIRST, and that
+     * resolves-or-creates a Ramp spend vendor and replays the posted journal — so
+     * any `updatedAt` bump on a bill Ramp already has re-ran all of it and could
+     * fail the operation with `UNMAPPED_ACCOUNTS` (or a vendor-create rejection)
+     * for a bill that needed no work at all, putting a red row in Sync Activity
+     * that no action can clear. `isFirstSync` cannot answer this: the BATCH path
+     * hard-codes it to `true` for performance, so the mapping is read here.
+     */
+    const existing = await this.getRemoteId(context.entityId);
+    if (existing) {
+      return `purchase invoice was already handed off to Ramp as draft bill ${existing} — a draft cannot be re-created or updated`;
     }
 
     return true;
@@ -165,8 +193,9 @@ export class RampBillSyncer extends RampPushOnlyEntitySyncer<
     // id in that field would be wrong. But then nothing on the Ramp bill named
     // the Carbon invoice at all: a bill showing only `CEX-Q-4471` could not be
     // traced back to `AP000008` without querying the database. `memo` carries
-    // it, alongside the orders the invoice bills, because Ramp does not expose a
-    // writable purchase-order field on a draft (see `buildBillMemo`).
+    // it, alongside the orders the invoice bills (see `buildBillMemo`) — a human
+    // trace, not Ramp's own `purchase_order_ids` link, which is writable and
+    // simply not wired up yet.
     const invoiceNumber =
       (local.supplierReference ?? "").trim() || local.readableId;
     const memo = buildBillMemo(local);
@@ -198,7 +227,9 @@ export class RampBillSyncer extends RampPushOnlyEntitySyncer<
     data: RampBillRemote,
     localId: string
   ): Promise<string> {
-    // Create-once — see the header.
+    // Create-once — see the header. `shouldSync` already refuses a mapped bill
+    // before `mapToRemote` runs; this stays as a belt-and-braces no-op for any
+    // caller that reaches `upsertRemote` by another route.
     const existing = await this.getRemoteId(localId);
     if (existing) return existing;
 

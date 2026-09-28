@@ -1,9 +1,12 @@
 import { createHash } from "node:crypto";
 import type { Database } from "@carbon/database";
+import { getLogger } from "@carbon/logger";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { buildRampIdempotencyKey } from "./client";
 import { getRampIntegration } from "./connection";
 import { rampOwnsCodingSurface } from "./modes";
+
+const logger = getLogger("ee", "ramp");
 
 // /********************************************************\
 // *                    Sync confirms                      *
@@ -79,6 +82,18 @@ export async function confirmSyncs(
       err instanceof Error &&
       /DEVELOPER_7005|Idempotency key already exists/i.test(err.message)
     ) {
+      // Still say so. Silence here means a family that never confirms — because
+      // the outcome hash matched a PREVIOUS run's — is indistinguishable from
+      // one that confirmed cleanly, and Ramp keeps showing the transactions as
+      // SYNC_READY with nothing in Carbon to explain it.
+      logger.warning("Ramp sync confirm already recorded — skipping", {
+        companyId,
+        syncType: args.syncType,
+        successful: args.successful.length,
+        failed: args.failed.length,
+        idempotencyKey,
+        error: err.message
+      });
       return;
     }
     throw err;

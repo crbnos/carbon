@@ -15,13 +15,23 @@
  * the requirement true, so connecting it is what turns the setting on.
  */
 
+import type { Database } from "@carbon/database";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import type { PartyContactKind, ResolvedCapabilities } from "./capabilities";
 
-/** The setting column that governs each party kind. */
+type CompanySettingsUpdate =
+  Database["public"]["Tables"]["companySettings"]["Update"];
+
+/**
+ * The setting column that governs each party kind.
+ *
+ * Constrained to real `companySettings` columns, so a typo is a compile error
+ * rather than an UPDATE that matches nothing at runtime.
+ */
 export const PARTY_CONTACT_SETTING_COLUMN = {
   supplier: "requireSupplierContactAndLocation",
   customer: "requireCustomerContactAndLocation"
-} as const satisfies Record<PartyContactKind, string>;
+} as const satisfies Record<PartyContactKind, keyof CompanySettingsUpdate>;
 
 export type PartyContactSettingColumn =
   (typeof PARTY_CONTACT_SETTING_COLUMN)[PartyContactKind];
@@ -52,14 +62,15 @@ export function partyContactSettingsToEnable(
  * else is the kind of change nobody attributes correctly. Uninstalling leaves
  * it on, and it stays a setting a human can turn off.
  *
- * Best-effort by contract: the caller is an install hook, and failing an
- * otherwise-good connection over a settings write would be the worse outcome.
- * Returns which columns it enabled so the caller can log it.
+ * Returns the columns it ACTUALLY enabled, so the caller can log them, and
+ * THROWS when it cannot tell — a failed read, a missing settings row, or an
+ * update that matched nothing. Best-effort lives in the CALLER: the install
+ * hook wraps this in a try/catch so a settings write cannot fail an
+ * otherwise-good connection. Swallowing here instead would report a write that
+ * never happened, and that log is the only observable signal this gate has.
  */
 export async function applyPartyContactRequirements(
-  client: {
-    from: (table: string) => any;
-  },
+  client: SupabaseClient<Database>,
   companyId: string,
   capabilities: Pick<ResolvedCapabilities, "requiresPartyContactAndLocation">
 ): Promise<PartyContactSettingColumn[]> {
@@ -69,21 +80,50 @@ export async function applyPartyContactRequirements(
   // Read first so the return value is what CHANGED, not what was asked for —
   // an install that re-converges every settings save would otherwise report
   // enabling something a human turned on months ago.
-  const { data } = await client
+  //
+  // The error is NOT discarded, and that is the point. A failed (or absent)
+  // read left `settings` undefined, every column then read as "missing", the
+  // UPDATE matched zero rows and returned no error — so this function reported
+  // enabling both columns and the install hook logged it, while nothing had
+  // been written. That log is the only observable signal this gate has. The
+  // caller is an install hook that already treats the whole call as
+  // best-effort inside a try/catch, so throwing is the honest answer.
+  const { data: settings, error: readError } = await client
     .from("companySettings")
     .select(columns.join(", "))
     .eq("id", companyId)
-    .single();
+    .maybeSingle<Record<PartyContactSettingColumn, boolean | null>>();
 
-  const missing = columns.filter((column) => data?.[column] !== true);
+  if (readError) {
+    throw new Error(
+      `Could not read companySettings for ${companyId}: ${readError.message}`
+    );
+  }
+  if (!settings) {
+    throw new Error(`No companySettings row for ${companyId}`);
+  }
+
+  const missing = columns.filter((column) => settings[column] !== true);
   if (missing.length === 0) return [];
 
-  const { error } = await client
+  const patch: CompanySettingsUpdate = {};
+  for (const column of missing) patch[column] = true;
+
+  // `.select("id")` so the return value reflects rows actually UPDATED. Without
+  // it an UPDATE matching nothing (wrong id, RLS) succeeds silently and this
+  // function still claims the columns were enabled.
+  const { data: updated, error } = await client
     .from("companySettings")
-    .update(Object.fromEntries(missing.map((column) => [column, true])))
-    .eq("id", companyId);
+    .update(patch)
+    .eq("id", companyId)
+    .select("id");
 
   if (error) throw new Error(error.message ?? String(error));
+  if (!updated || updated.length === 0) {
+    throw new Error(
+      `companySettings update for ${companyId} matched no rows; party-contact requirements were not enabled`
+    );
+  }
 
   return missing;
 }

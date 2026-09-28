@@ -46,16 +46,13 @@ export function emptySpendVendorParty(
  * require a country on a vendor create, and a location without one is useless
  * for that, so a location that HAS a country is preferred over the first.
  *
- * When no purchasing contact is set, the supplier's SOLE emailable contact is
- * used instead. A vendor create needs an email — Ramp rejects the whole request
- * with `business_vendor_contacts.email: "Missing data for required field"`,
- * verified live 2026-09-26 — so a supplier that plainly has one contact would
- * otherwise block every bill for want of a pointer field nobody knew to set.
- *
- * Exactly one, never a guess: with two or more emailable contacts there is no
- * unambiguous answer and the caller is told to set the purchasing contact. This
- * is the same rule the counterpart ladder uses — a single match links, ambiguity
- * refuses.
+ * When the purchasing contact has no email, the supplier's first emailable
+ * contact is used instead — WHOLE, never field-by-field (see
+ * {@link resolveVendorContact}). A vendor create needs an email — Ramp rejects
+ * the whole request with `business_vendor_contacts.email: "Missing data for
+ * required field"`, verified live 2026-09-26 — so a supplier that plainly has
+ * one contact would otherwise block every bill for want of a pointer field
+ * nobody knew to set.
  */
 export async function loadSpendVendorParties(
   db: Kysely<KyselyDatabase>,
@@ -153,40 +150,27 @@ export async function loadSpendVendorParties(
     ])
     .where("supplierLocation.companyId", "=", companyId)
     .where("supplierLocation.supplierId", "in", ids)
+    // Same reason as the contact read above: without an explicit order Postgres
+    // may hand back a supplier's locations differently between runs, so which
+    // one became the vendor's country/state flipped on an ordinary re-push (and
+    // so did the "needs a two-letter state" message it produced).
+    .orderBy("supplierLocation.id")
     .execute();
 
-  const addressBySupplier = new Map<string, (typeof locations)[number]>();
-  for (const location of locations) {
-    const current = addressBySupplier.get(location.supplierId);
-    if (!current || (!current.countryCode && location.countryCode)) {
-      addressBySupplier.set(location.supplierId, location);
-    }
-  }
+  const addressBySupplier = pickVendorAddresses(locations);
 
   for (const supplier of suppliers) {
     const address = addressBySupplier.get(supplier.id) ?? null;
-    const fallback = supplier.email
-      ? undefined
-      : soleContactBySupplier.get(supplier.id);
-    const email = supplier.email ?? fallback?.email ?? null;
-    const firstName = supplier.firstName ?? fallback?.firstName ?? null;
-    const lastName = supplier.lastName ?? fallback?.lastName ?? null;
-    const phone =
-      supplier.mobilePhone ??
-      supplier.workPhone ??
-      supplier.homePhone ??
-      fallback?.mobilePhone ??
-      fallback?.workPhone ??
-      fallback?.homePhone ??
-      null;
-    const hasContact = Boolean(email ?? firstName ?? lastName);
 
     map.set(supplier.id, {
       id: supplier.id,
       name: supplier.name,
       supplierTypeId: supplier.supplierTypeId ?? null,
       country: address?.countryCode ?? null,
-      contact: hasContact ? { email, firstName, lastName, phone } : null,
+      contact: resolveVendorContact(
+        supplier,
+        soleContactBySupplier.get(supplier.id)
+      ),
       address: address
         ? {
             line1: address.addressLine1 ?? null,
@@ -231,6 +215,98 @@ export function pickVendorContacts<
     chosen.set(candidate.supplierId, candidate);
   }
   return chosen;
+}
+
+/** The contact columns this module reads, whichever row they came from. */
+export type SpendContactRow = {
+  email: string | null;
+  firstName: string | null;
+  lastName: string | null;
+  mobilePhone: string | null;
+  homePhone: string | null;
+  workPhone: string | null;
+};
+
+/**
+ * The ONE contact that goes on the platform's vendor record.
+ *
+ * The purchasing contact wins whenever it is emailable; otherwise the fallback
+ * replaces it ENTIRELY. That "entirely" is the whole point: the fallback used to
+ * be applied per field (`supplier.firstName ?? fallback.firstName`, and so on
+ * independently), so a purchasing contact with a name but no email produced a
+ * vendor carrying one person's name and another person's email address. Nobody
+ * reading the record in Ramp could tell, and a spend vendor is create-once — the
+ * mixed identity is permanent.
+ *
+ * With no fallback the purchasing contact is kept as it is: a name with no email
+ * cannot create a vendor, but it can still MATCH one, and it is what
+ * `describeMissingVendorFields` needs to say which field is absent.
+ */
+export function resolveVendorContact(
+  primary: SpendContactRow | null | undefined,
+  fallback: SpendContactRow | null | undefined
+): SpendVendorParty["contact"] {
+  const chosen = primary?.email?.trim() ? primary : (fallback ?? primary);
+  if (!chosen) return null;
+
+  const email = chosen.email ?? null;
+  const firstName = chosen.firstName ?? null;
+  const lastName = chosen.lastName ?? null;
+  if (!(email || firstName || lastName)) return null;
+
+  return {
+    email,
+    firstName,
+    lastName,
+    phone: chosen.mobilePhone ?? chosen.workPhone ?? chosen.homePhone ?? null
+  };
+}
+
+/**
+ * The one location per supplier whose address goes on the vendor record.
+ *
+ * Preference, best first: an address that SATISFIES the vendor-create rule (a
+ * country, plus a state when the country is in
+ * {@link STATE_REQUIRED_VENDOR_COUNTRIES}), then any address with a country,
+ * then whatever came first.
+ *
+ * Both halves matter. The old picker only upgraded an incumbent that had no
+ * country at all, so a supplier with two US locations — one carrying a state,
+ * one not — kept whichever Postgres happened to return, and
+ * `describeMissingVendorFields` reported "needs a two-letter state on its US
+ * location" while a complete location sat right next to it. And because the read
+ * had no `ORDER BY`, the answer could differ between two runs over identical
+ * data. Callers must supply the rows in a stable order (the query orders by the
+ * `supplierLocation` id) — without it "first" means nothing here either.
+ */
+export function pickVendorAddresses<
+  T extends {
+    supplierId: string;
+    countryCode: string | null;
+    stateProvince: string | null;
+  }
+>(locations: readonly T[]): Map<string, T> {
+  const chosen = new Map<string, T>();
+  const scores = new Map<string, number>();
+  for (const location of locations) {
+    const score = vendorAddressScore(location);
+    const incumbent = scores.get(location.supplierId);
+    if (incumbent !== undefined && incumbent >= score) continue;
+    chosen.set(location.supplierId, location);
+    scores.set(location.supplierId, score);
+  }
+  return chosen;
+}
+
+/** 2 = creatable, 1 = has a country, 0 = useless for a vendor create. */
+function vendorAddressScore(location: {
+  countryCode: string | null;
+  stateProvince: string | null;
+}): number {
+  const country = location.countryCode?.trim();
+  if (!country) return 0;
+  if (!STATE_REQUIRED_VENDOR_COUNTRIES.has(country.toUpperCase())) return 2;
+  return location.stateProvince?.trim() ? 2 : 1;
 }
 
 /**

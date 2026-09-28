@@ -1,4 +1,5 @@
 import type { Database } from "@carbon/database";
+import { getLogger } from "@carbon/logger";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { resolveIntegrationSecrets } from "../../integrations/secrets";
 import { RAMP_ENVIRONMENT } from "../environment";
@@ -34,6 +35,8 @@ import {
  */
 
 export const RAMP = "ramp";
+
+const logger = getLogger("ee", "ramp");
 
 // /********************************************************\
 // *                 Metadata read/write                   *
@@ -266,9 +269,19 @@ export async function ensureRampConnection(
   let existing: RampConnection[] = [];
   try {
     existing = linkedConnections(await client.getAccountingConnections());
-  } catch {
+  } catch (err) {
     // Unreadable: fall through to the create, whose response is checked below.
     // A transient read failure must not block an otherwise valid install.
+    //
+    // But SAY so. This read IS the seat-conflict guard — without it the install
+    // proceeds behind only the weaker check on the create's response, and the
+    // failure mode it exists to prevent (adopting, then on uninstall DELETING,
+    // another system's accounting connection) has no other trace. A silent
+    // catch made "the strong check was skipped" unobservable.
+    logger.warning(
+      "Could not read Ramp accounting connections — creating without the seat-conflict check",
+      { companyId, error: err instanceof Error ? err.message : String(err) }
+    );
   }
 
   const incumbent = existing.find(
