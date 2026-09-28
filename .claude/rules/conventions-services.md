@@ -88,8 +88,8 @@ export async function getCustomers(
 
 The `GenericQueryFilters` param must be named `args`. The MCP/API generator reads
 it from the TypeScript checker and publishes it flat beside the function's other
-params: its own members (`search`, …) are never required, `limit`/`offset` default
-to the MCP page size, and `filters`/`sorts` are published only when `args` reaches
+params: its own members (`search`, …) are never required, `limit`/`offset` carry
+no schema default (the MCP server fills its page size; HTTP applies none), and `filters`/`sorts` are published only when `args` reaches
 `setGenericQueryFilters` (directly, spread, or through another service function).
 Read `args.search` with a truthiness check and flags with `?? false` — callers may
 omit them. `generate:mcp` fails when a list param breaks these rules.

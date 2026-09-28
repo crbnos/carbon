@@ -1,5 +1,7 @@
 import {
+  fillMcpListPaging,
   formatMcpResult,
+  MCP_DEFAULT_LIMIT,
   MCP_MAX_ROWS,
   pageMcpListResult,
   stripNulls
@@ -85,5 +87,51 @@ describe("pageMcpListResult", () => {
     expect(formatMcpResult(page, total)).toBe(
       '[{"id":0}]\n(showing 1 of 10 rows)'
     );
+  });
+});
+
+describe("fillMcpListPaging", () => {
+  it("fills limit/offset on an argless or flat paginating call", () => {
+    expect(fillMcpListPaging(undefined, true).args).toEqual({
+      limit: MCP_DEFAULT_LIMIT,
+      offset: 0
+    });
+    expect(fillMcpListPaging({ jobId: "j1" }, true).args).toEqual({
+      jobId: "j1",
+      limit: MCP_DEFAULT_LIMIT,
+      offset: 0
+    });
+  });
+
+  it("keeps the caller's limit", () => {
+    expect(fillMcpListPaging({ limit: 5 }, true).args).toEqual({
+      limit: 5,
+      offset: 0
+    });
+  });
+
+  it("carries a flat limit into a legacy envelope sent beside it", () => {
+    expect(
+      fillMcpListPaging({ jobId: "j1", limit: 5, args: { search: "x" } }, true)
+        .args
+    ).toEqual({
+      jobId: "j1",
+      limit: 5,
+      args: { search: "x", limit: 5, offset: 0 }
+    });
+  });
+
+  it("returns response paging for a fetchAll service", () => {
+    expect(fillMcpListPaging({ limit: 5 }, false).paging).toEqual({
+      limit: 5,
+      offset: 0
+    });
+    expect(
+      fillMcpListPaging({ limit: 5, args: { offset: 2 } }, false).paging
+    ).toEqual({ limit: 5, offset: 2 });
+    expect(fillMcpListPaging(undefined, false).paging).toEqual({
+      limit: MCP_DEFAULT_LIMIT,
+      offset: 0
+    });
   });
 });

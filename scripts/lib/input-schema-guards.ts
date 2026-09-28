@@ -17,7 +17,6 @@
  */
 
 import type { ManifestEntry } from "@carbon/api";
-import { MCP_DEFAULT_LIMIT } from "../../packages/ee/src/mcp/format-result";
 import type { JsonSchema } from "./response-schema";
 import type { CheckedParam, ParamSchemaIndex } from "./param-schema";
 
@@ -122,11 +121,18 @@ export function findInputSchemaViolations(
           fail(tool, `GenericQueryFilters member "${key}" is required`);
         }
       }
-      if (properties.limit?.default !== MCP_DEFAULT_LIMIT) {
-        fail(
-          tool,
-          `limit default is ${String(properties.limit?.default)}, not MCP_DEFAULT_LIMIT (${MCP_DEFAULT_LIMIT})`
-        );
+      // A schema default is injected by input validation for every caller;
+      // the list default belongs to the MCP layer alone (server.ts).
+      for (const key of ["limit", "offset"] as const) {
+        if (siblings.has(key)) continue;
+        if (!(key in properties)) {
+          fail(tool, `the schema omits ${key}`);
+        } else if (properties[key] && "default" in properties[key]) {
+          fail(
+            tool,
+            `${key} publishes a default; it would apply to every caller, not only MCP`
+          );
+        }
       }
       for (const key of ["filters", "sorts"] as const) {
         if (siblings.has(key)) continue;

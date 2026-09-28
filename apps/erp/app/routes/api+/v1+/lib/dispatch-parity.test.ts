@@ -889,11 +889,13 @@ describe("list operations with a flat GenericQueryFilters args param", () => {
     spies.getCustomers.mockReset();
   });
 
-  it("publishes args flat, with limit defaulting to MCP_DEFAULT_LIMIT", () => {
+  it("publishes args flat, with no limit/offset default (the MCP layer fills it)", () => {
     const meta = operationsByName.get("inventory_getInventoryItems");
     const properties = meta?.schema.properties as Record<string, any>;
     expect(properties.args).toBeUndefined();
-    expect(properties.limit?.default).toBe(25);
+    expect(properties.limit?.type).toBe("integer");
+    expect(properties.limit).not.toHaveProperty("default");
+    expect(properties.offset).not.toHaveProperty("default");
     expect(meta?.schema.required).toEqual(["locationId"]);
   });
 
@@ -929,12 +931,12 @@ describe("list operations with a flat GenericQueryFilters args param", () => {
     ]);
   });
 
-  it("f3. an argless call through validation gets the published limit/offset defaults", async () => {
+  it("f3. an argless call through validation gets no injected limit/offset", async () => {
     spies.getCustomers.mockResolvedValue({ data: [], error: null, count: 0 });
     const result = await callOperation("sales_getCustomers", ctx, {});
     expect(result.success).toBe(true);
     expect(spies.getCustomers.mock.calls).toEqual([
-      [spies.FAKE_CLIENT, "c1", { limit: 25, offset: 0, companyId: "c1" }]
+      [spies.FAKE_CLIENT, "c1", { companyId: "c1" }]
     ]);
   });
 
@@ -952,7 +954,6 @@ describe("list operations with a flat GenericQueryFilters args param", () => {
         "c1",
         {
           limit: 3,
-          offset: 0,
           filters: [{ column: "name", operator: "eq", value: "Acme" }],
           companyId: "c1"
         }
@@ -980,7 +981,6 @@ describe("list operations with a flat GenericQueryFilters args param", () => {
           locationId: "loc_1",
           search: "bolt",
           limit: 5,
-          offset: 0,
           companyId: "c1"
         }
       ]

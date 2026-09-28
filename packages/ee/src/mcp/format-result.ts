@@ -11,6 +11,57 @@ export const MCP_DEFAULT_LIMIT = 25;
 /** Backstop cap on serialized rows, for operations that cannot page. */
 export const MCP_MAX_ROWS = 100;
 
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+/**
+ * Apply the MCP list default to a list operation's call_tool arguments.
+ *
+ * - Paginating service (`paginates`): fill the PAIR — `.range()` applies only
+ *   when both limit and offset are integers. Returns the args to dispatch.
+ * - fetchAll service: limit/offset are inert in the service, so the caller's
+ *   paging is returned for the response to be sliced (`pageMcpListResult`).
+ *
+ * With a legacy envelope beside flat siblings (`{ jobId, limit, args: {…} }`),
+ * the envelope is spread over the siblings downstream, so a flat limit/offset
+ * is carried into the envelope rather than overridden by the default.
+ * Mutates `args` in place when it is an object.
+ */
+export function fillMcpListPaging(
+  args: unknown,
+  paginates: boolean | undefined
+): { args: unknown; paging: { limit: number; offset: number } | null } {
+  const body = isPlainObject(args) ? args : null;
+  const wrapped = body && isPlainObject(body.args) ? body.args : null;
+  if (paginates) {
+    // The argless call is the worst offender — no limit at all.
+    if (!body)
+      return { args: { limit: MCP_DEFAULT_LIMIT, offset: 0 }, paging: null };
+    const target = wrapped ?? body;
+    const flat = wrapped ? body : undefined;
+    if (target.limit === undefined)
+      target.limit = flat?.limit ?? MCP_DEFAULT_LIMIT;
+    if (target.offset === undefined) target.offset = flat?.offset ?? 0;
+    return { args, paging: null };
+  }
+  const limit = wrapped?.limit ?? body?.limit;
+  const offset = wrapped?.offset ?? body?.offset;
+  return {
+    args,
+    paging: {
+      limit:
+        Number.isInteger(limit) && (limit as number) > 0
+          ? (limit as number)
+          : MCP_DEFAULT_LIMIT,
+      offset:
+        Number.isInteger(offset) && (offset as number) >= 0
+          ? (offset as number)
+          : 0
+    }
+  };
+}
+
 /**
  * Drop null/undefined OBJECT ENTRIES recursively. Array elements are kept
  * positionally (a null element may be meaningful; a null field is just an

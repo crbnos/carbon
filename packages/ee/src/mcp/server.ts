@@ -10,8 +10,8 @@ import {
   paginatingSibling
 } from "./describe-format";
 import {
+  fillMcpListPaging,
   formatMcpResult,
-  MCP_DEFAULT_LIMIT,
   pageMcpListResult
 } from "./format-result";
 import { getServerInstructions } from "./instructions";
@@ -176,10 +176,9 @@ export async function createMcpServer<Ctx extends McpContext>(
       }
 
       // List reads apply no limit unless the caller passes one — an argless
-      // call returned up to PostgREST's 1000-row cap. The published schema
-      // now defaults limit/offset to the same values, and input validation
-      // applies those defaults for every caller; this fill also covers the
-      // list operations whose schema declares no limit (fetchAll reads).
+      // call returned up to PostgREST's 1000-row cap. MCP-only; the published
+      // schema declares no limit/offset default, so the other callOperation
+      // callers (HTTP, agent, workflows) are untouched.
       // Two kinds of list service (manifest `paginates`):
       // - paginating (setGenericQueryFilters/.range): inject the PAIR — its
       //   `.range()` applies only when BOTH limit and offset are integers, so
@@ -187,45 +186,10 @@ export async function createMcpServer<Ctx extends McpContext>(
       // - fetchAll (`get*List`): limit/offset are inert in the service, so the
       //   caller's paging is captured here and applied to the RESPONSE below —
       //   without this, `limit: 1` returned every row.
-      const fillPagination = (target: Record<string, unknown>) => {
-        if (target.limit === undefined) target.limit = MCP_DEFAULT_LIMIT;
-        if (target.offset === undefined) target.offset = 0;
-      };
       const meta = operationsByName.get(name);
       let mcpPaging: { limit: number; offset: number } | null = null;
       if (meta && isListOperation(meta)) {
-        const body =
-          args && typeof args === "object" && !Array.isArray(args)
-            ? (args as Record<string, unknown>)
-            : null;
-        const wrapped =
-          body?.args &&
-          typeof body.args === "object" &&
-          !Array.isArray(body.args)
-            ? (body.args as Record<string, unknown>)
-            : null;
-        if (meta.paginates) {
-          if (!body) {
-            // The argless call is the worst offender — no limit at all.
-            args = { limit: MCP_DEFAULT_LIMIT, offset: 0 };
-          } else {
-            fillPagination(wrapped ?? body);
-          }
-        } else {
-          const source = wrapped ?? body ?? {};
-          const limit = source.limit;
-          const offset = source.offset;
-          mcpPaging = {
-            limit:
-              Number.isInteger(limit) && (limit as number) > 0
-                ? (limit as number)
-                : MCP_DEFAULT_LIMIT,
-            offset:
-              Number.isInteger(offset) && (offset as number) >= 0
-                ? (offset as number)
-                : 0
-          };
-        }
+        ({ args, paging: mcpPaging } = fillMcpListPaging(args, meta.paginates));
       }
 
       // Runs through the canonical oRPC dispatch (gate middleware included); the

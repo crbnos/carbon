@@ -8,7 +8,6 @@ import * as path from "path";
 import { Project } from "ts-morph";
 import { beforeAll, describe, expect, it } from "vitest";
 import type { ManifestEntry } from "@carbon/api";
-import { MCP_DEFAULT_LIMIT } from "../../../packages/ee/src/mcp/format-result";
 import {
   findCheckerDisagreements,
   findInputSchemaViolations
@@ -144,7 +143,8 @@ describe("manifest pins for the reported tools", () => {
   it("a `{…} & GenericQueryFilters` param publishes its members, not one mis-typed field", () => {
     const p = props("production_getJobs");
     expect(p.search).toEqual({ type: ["string", "null"] });
-    expect(p.limit).toMatchObject({ type: "integer", default: MCP_DEFAULT_LIMIT });
+    expect(p.limit).toMatchObject({ type: "integer" });
+    expect(p.limit).not.toHaveProperty("default");
     expect(required("production_getJobs")).toEqual([]);
   });
 
@@ -171,7 +171,10 @@ describe("manifest pins for the reported tools", () => {
       for (const key of ["search", "limit", "offset", "filters", "sorts"]) {
         expect(required(name), name).not.toContain(key);
       }
-      expect(p.limit.default, name).toBe(MCP_DEFAULT_LIMIT);
+      // The list default is MCP-only (server.ts); a schema default would be
+      // injected for HTTP, agent and workflow callers too.
+      expect(p.limit, name).not.toHaveProperty("default");
+      expect(p.offset, name).not.toHaveProperty("default");
     }
   });
 
@@ -370,8 +373,8 @@ describe("findInputSchemaViolations", () => {
           type: "object",
           properties: {
             search: { type: ["string", "null"] },
-            limit: { type: "integer", default: MCP_DEFAULT_LIMIT },
-            offset: { type: "integer", default: 0 },
+            limit: { type: "integer" },
+            offset: { type: "integer" },
             filters: { type: "array", items: { type: "object" } },
             sorts: { type: "array", items: { type: "object" } },
             locationId: { type: "string" }
@@ -425,7 +428,7 @@ describe("findInputSchemaViolations", () => {
           type: "object",
           properties: {
             search: { type: ["string", "null"] },
-            limit: { type: "integer", default: MCP_DEFAULT_LIMIT },
+            limit: { type: "integer", default: 25 },
             filters: { type: "array", items: { type: "object" } }
           },
           required: ["search"]
@@ -439,10 +442,13 @@ describe("findInputSchemaViolations", () => {
       'demo_status: "assignee" is required but only accepts null',
       'demo_status: field "assignee" is optional in TypeScript but required',
       "demo_list: GenericQueryFilters param is published nested under args",
-      "demo_list: limit default is undefined, not MCP_DEFAULT_LIMIT (25)",
+      "demo_list: the schema omits limit",
+      "demo_list: the schema omits offset",
       "demo_list: the service honours filters but the schema omits it",
       "demo_list: the service honours sorts but the schema omits it",
       'demo_listIgnoringFilters: GenericQueryFilters member "search" is required',
+      "demo_listIgnoringFilters: limit publishes a default; it would apply to every caller, not only MCP",
+      "demo_listIgnoringFilters: the schema omits offset",
       "demo_listIgnoringFilters: the schema publishes filters but the service ignores it"
     ]);
   });

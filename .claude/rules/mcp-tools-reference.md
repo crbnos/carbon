@@ -497,8 +497,9 @@ the model context or the MCP dispatch.
   including dotted `@param update.assignee` for fields. Zod-typed params keep the
   validator path and take only param-level optionality. A `GenericQueryFilters`
   param (must be named `args`) is published FLAT: its members, none required;
-  `limit` with `default: MCP_DEFAULT_LIMIT` and `offset` with `default: 0`
-  (input validation applies these defaults for every caller); `filters` and
+  `limit` and `offset` with no schema `default`, since input validation would
+  inject it for every caller (HTTP, agent, workflows); the MCP server alone
+  fills `MCP_DEFAULT_LIMIT`; `filters` and
   `sorts` only when the param reaches `setGenericQueryFilters` (directly,
   `args ?? {}`, `{ ...args }`, or forwarded to another function that does) or
   is read field by field. The filter `operator` enum is read from

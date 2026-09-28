@@ -663,7 +663,7 @@ function typeToJsonSchema(
     const base: Record<string, unknown> = {
       type: "object",
       properties: {
-        limit: { type: "integer", default: MCP_DEFAULT_LIMIT },
+        limit: { type: "integer", default: 100 },
         offset: { type: "integer", default: 0 },
       },
     };
@@ -1536,8 +1536,8 @@ const SORTS_DESCRIPTION =
 
 /**
  * The flat schema of a list operation: its sibling params as usual, plus the
- * GenericQueryFilters param's members, `limit`/`offset` (defaults as the MCP
- * layer applies them), and `filters`/`sorts` when the service honours them.
+ * GenericQueryFilters param's members, `limit`/`offset` (no schema default;
+ * the MCP layer fills the limit), and `filters`/`sorts` when the service honours them.
  * Nothing contributed by the GenericQueryFilters param is required — services
  * read `search` with truthiness checks and flags with `?? false`.
  *
@@ -1573,15 +1573,16 @@ function buildListToolSchema(
     const unpaged = gqf.usage.paging
       ? ""
       : " The service reads every row: MCP pages the response, the HTTP API returns every row.";
+    // No schema `default`: input validation would inject it for every
+    // callOperation caller (HTTP, agent, workflows). Only the MCP server fills
+    // MCP_DEFAULT_LIMIT when the caller omits limit.
     properties.limit = {
       type: "integer",
-      default: MCP_DEFAULT_LIMIT,
-      description: `Maximum number of rows to return.${unpaged}`
+      description: `Maximum number of rows to return. MCP returns ${MCP_DEFAULT_LIMIT} rows when omitted; the HTTP API applies no limit.${unpaged}`
     };
     properties.offset = {
       type: "integer",
-      default: 0,
-      description: `Number of rows to skip.${unpaged}`
+      description: `Number of rows to skip. Defaults to 0.${unpaged}`
     };
     if (gqf.usage.filters) {
       const item = structuredClone(gqf.filterItem) as {
