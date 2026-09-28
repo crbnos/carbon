@@ -72,6 +72,10 @@ msgstr "{0, plural, one {# 行はこの会社の外部のデータにリンク�
 msgid "{0, plural, one {This item is on 1 open change notice} other {This item is on # open change notices}}"
 msgstr "{0, plural, one {このアイテムは1つの未完了の変更通知に含まれています} other {このアイテムは#つの未完了の変更通知に含まれています}}"
 
+#. placeholder {0}: rate.customerType.name
+msgid "{0} (type)"
+msgstr ""
+
 #. placeholder {0}: selectedAccountIds.length
 msgid "{0} accounts"
 msgstr "{0} 件のアカウント"
@@ -929,6 +933,9 @@ msgstr "レンタル契約により、シリアル化された機器ユニット
 msgid "A rental line is a sales-type lease when any ASC 842 test is met. These thresholds set tests (c) and (d); the discount rate is the default for new rental agreements."
 msgstr "リース明細は、いずれかのASC 842テストが満たされた場合にセールスタイプリースとなります。これらの閾値はテスト(c)および(d)を設定します。割引率は新規賃貸借契約のデフォルト値です。"
 
+msgid "A rental line uses the customer's rates, else its customer type's, else the item's. The rates can still be changed on each line."
+msgstr ""
+
 msgid "A rental that meets any of the five ASC 842 lease tests, booked as a sale when its agreement activates: the unit leaves the fleet, lease revenue and cost of goods sold post, and a net investment in the lease takes its place."
 msgstr "5つのASC 842リーステストのいずれかを満たし、その契約が開始する際に販売としてブックされたリース。資産はフリートから除外され、リース売上高および売上原価が転記され、そのリースに対する純投資がその場所に記入されます。"
 
@@ -1240,6 +1247,9 @@ msgid "Accounting Periods"
 msgstr "会計期間"
 
 msgid "Accounting treatment"
+msgstr ""
+
+msgid "Accounting Treatment"
 msgstr ""
 
 msgid "Accounting treatment inputs"
@@ -1978,6 +1988,9 @@ msgstr "アイテムの追跡タイプが変更されます"
 msgid "An item's unit of measure changes"
 msgstr "アイテムの計量単位が変更されます"
 
+msgid "An open-ended agreement is always a rental. Set an end date to use these."
+msgstr ""
+
 msgid "An open-ended agreement is always treated as a rental: a sale needs an end date."
 msgstr ""
 
@@ -2538,6 +2551,9 @@ msgstr "本当に「{0}」ビューを削除してもよろしいですか？"
 #. placeholder {0}: webhook.name
 msgid "Are you sure you want to delete the webhook: {0}? This cannot be undone."
 msgstr "Webhook: {0} を削除してもよろしいですか?これは元に戻せません。"
+
+msgid "Are you sure you want to delete these rental rates? Rental lines already added keep their rates. This cannot be undone."
+msgstr ""
 
 msgid "Are you sure you want to delete this approval rule? This cannot be undone."
 msgstr "このアプリケーション承認ルールを削除してもよろしいですか？この操作は取り消せません。"
@@ -3196,6 +3212,9 @@ msgstr "請求先"
 
 msgid "Billed Tier"
 msgstr "請求階層"
+
+msgid "Billed:"
+msgstr ""
 
 msgid "Billing"
 msgstr "請求"
@@ -4144,8 +4163,8 @@ msgstr "{0}で計算済み"
 msgid "Computed At"
 msgstr "計算日時"
 
-msgid "Computed from the saved terms and the item's current rates. Activation classifies the lease and stores the result."
-msgstr "保存された条件とその品目の現在のレートから計算されます。アクティベーションはリースを分類し、結果を保存します。"
+msgid "Computed from the saved terms and rates. Activation classifies the lease and stores the result."
+msgstr ""
 
 msgid "Condensed P&L with margins and key subtotals"
 msgstr "マージンと主要小計を含む圧縮P&L"
@@ -4504,6 +4523,9 @@ msgstr "AIコーディングツール用の段取りプロンプトをコピー�
 msgid "Copy"
 msgstr "コピー"
 
+msgid "Copy agreement number"
+msgstr ""
+
 msgid "Copy all items and pricing to another customer or type."
 msgstr "すべての品目と価格設定を別の得意先またはタイプにコピーします。"
 
@@ -4545,6 +4567,9 @@ msgstr "ジョブ番号をコピー"
 
 msgid "Copy link"
 msgstr "リンクをコピー"
+
+msgid "Copy link to agreement"
+msgstr ""
 
 msgid "Copy link to change notice"
 msgstr "変更通知へのリンクをコピー"
@@ -5337,6 +5362,9 @@ msgstr "得意先参照"
 
 msgid "Customer Reference"
 msgstr "得意先参照"
+
+msgid "Customer Rental Rates"
+msgstr ""
 
 msgid "Customer Revision"
 msgstr "得意先リビジョン"
@@ -6165,6 +6193,9 @@ msgstr "保証金"
 msgid "Deposit for"
 msgstr "保証金："
 
+msgid "Deposit:"
+msgstr ""
+
 msgid "Deposits"
 msgstr "前受金"
 
@@ -6789,6 +6820,9 @@ msgstr "カスタムフィールドを編集"
 
 msgid "Edit Customer Part"
 msgstr "得意先部品を編集"
+
+msgid "Edit Customer Rental Rates"
+msgstr ""
 
 msgid "Edit Customer Status"
 msgstr "得意先ステータスを編集"
@@ -7938,8 +7972,8 @@ msgstr "仕入先返品行の読み込みに失敗しました"
 msgid "Failed to load supplier returns"
 msgstr "仕入先返品の読み込みに失敗しました"
 
-msgid "Failed to load the item's rental rates"
-msgstr "品目のレンタルレートの読み込みに失敗しました"
+msgid "Failed to load the rental rates"
+msgstr ""
 
 msgid "Failed to load tracked entities"
 msgstr "追跡対象エンティティの読み込みに失敗しました"
@@ -8256,10 +8290,6 @@ msgstr "リリースする前にこれらの製造指図を修正してくださ
 msgid "Fixed"
 msgstr "固定"
 
-#. placeholder {0}: line.rateUnit
-msgid "Fixed · {0}"
-msgstr "固定 · {0}"
-
 msgid "Fixed asset"
 msgstr "固定資産"
 
@@ -8289,6 +8319,9 @@ msgstr "固定再注文"
 
 msgid "Fixed Shelf Life"
 msgstr "固定保存期間"
+
+msgid "Fixed when the agreement was activated."
+msgstr ""
 
 msgid "Fixture"
 msgstr "治具"
@@ -8395,8 +8428,14 @@ msgstr "前の週から"
 msgid "From Storage Unit"
 msgstr "保管ユニットから"
 
-msgid "From the item's rental rates. They are snapshotted onto the line when the agreement is activated."
-msgstr "品目のレンタルレートから取得されます。契約が有効化されるとこれらは明細にスナップショットとして保存されます。"
+msgid "From the customer type's rental rates for the item."
+msgstr ""
+
+msgid "From the item's rental rates."
+msgstr ""
+
+msgid "From this customer's rental rates for the item."
+msgstr ""
 
 msgid "From:"
 msgstr "開始："
@@ -10034,6 +10073,9 @@ msgstr "リース売上高"
 msgid "Lease Revenue (default)"
 msgstr "リース売上高（デフォルト）"
 
+msgid "Leave all three empty to use the customer's rental rates, else the customer type's, else the item's."
+msgstr ""
+
 msgid "Leave any related receipts untouched"
 msgstr "関連するすべての領収書はそのままにしておく"
 
@@ -10136,9 +10178,6 @@ msgstr "行"
 #. placeholder {0}: line.lineNumber
 msgid "Line {0}"
 msgstr "行 {0}"
-
-msgid "Line actions"
-msgstr "明細アクション"
 
 msgid "Line description (optional)"
 msgstr "行の説明 (オプション)"
@@ -11025,6 +11064,9 @@ msgstr "月次"
 msgid "Monthly Depreciation"
 msgstr "毎月減価償却"
 
+msgid "Monthly Rent:"
+msgstr ""
+
 msgid "Months over which this asset depreciates for tax purposes (when not using MACRS)."
 msgstr "このアセットが税務上償却される月数（MACRS使用時以外）。"
 
@@ -11269,6 +11311,9 @@ msgstr "新規得意先"
 
 msgid "New Customer Part"
 msgstr "新規得意先部品"
+
+msgid "New Customer Rental Rates"
+msgstr ""
 
 msgid "New Demand Forecast"
 msgstr "新しい所要量予測"
@@ -11549,6 +11594,9 @@ msgstr "次回期限"
 msgid "Next Due Date"
 msgstr "次の期日"
 
+msgid "Next Due:"
+msgstr ""
+
 msgid "Next Interest"
 msgstr "次回利息"
 
@@ -11699,6 +11747,9 @@ msgstr "原価の履歴が見つかりません"
 
 msgid "No credits yet"
 msgstr "クレジットはまだありません"
+
+msgid "No customer rental rates."
+msgstr ""
 
 msgid "No Data"
 msgstr "データなし"
@@ -11997,6 +12048,9 @@ msgstr "参照画像がありません"
 
 msgid "No remaining entities to inspect."
 msgstr "検査する残りのエンティティはありません。"
+
+msgid "No rental rates"
+msgstr ""
 
 msgid "No reports match your search."
 msgstr "検索に一致するレポートはありません。"
@@ -13179,8 +13233,20 @@ msgstr "人員"
 msgid "People"
 msgstr "人員"
 
+msgid "per 28 days"
+msgstr ""
+
+msgid "per day"
+msgstr ""
+
+msgid "per month"
+msgstr ""
+
 msgid "Per Unit"
 msgstr "単位あたり"
+
+msgid "per week"
+msgstr ""
 
 msgid "Per-line override of the order header's fulfillment Location; used for split shipments and drop-ships."
 msgstr "注文ヘッダーの出荷拠点を行ごとに上書き。分割出荷と直送に使用。"
@@ -14363,6 +14429,15 @@ msgstr "連結における純資産勘定の換算に使用されるレート（
 
 msgid "Rates a rental agreement line uses for this item. At least one is required."
 msgstr "当該品目のレンタル契約明細で使用する料金。最低1つは必須です。"
+
+msgid "Rates are the items' current rental rates. They are fixed on each unit when the agreement is activated."
+msgstr ""
+
+msgid "Rates for a single customer"
+msgstr ""
+
+msgid "Rates for all customers of a type"
+msgstr ""
 
 msgid "Ratio"
 msgstr "比率"
@@ -16937,9 +17012,6 @@ msgstr "バッチ処理に値する最小ラン。設定しない場合は空白
 msgid "Smoke-test the core daily flows end to end"
 msgstr "コアの毎日のワークフローをエンドツーエンドでスモークテストします"
 
-msgid "Snapshotted from the item when activated."
-msgstr "有効化時に品目からスナップショット取得。"
-
 msgid "so you can assign it here."
 msgstr "ここで割り当てることができます。"
 
@@ -17443,9 +17515,6 @@ msgstr "提案通知"
 msgid "Suggestions"
 msgstr "提案"
 
-msgid "Summary"
-msgstr ""
-
 msgid "Sunday"
 msgstr "日曜日"
 
@@ -17870,9 +17939,6 @@ msgstr "テンプレート"
 
 msgid "Temporary disposal-clearing account debited for an asset's net book value on shipment and credited for its net book value on invoicing, netting to zero over the sale cycle."
 msgstr "一時的な除却クリアリング勘定は、出荷時に資産の未償却残高で借記され、請求時に未償却残高でクレジットされ、販売サイクル全体でネットゼロになります。"
-
-msgid "Term"
-msgstr "条件"
 
 msgid "Term is at least {threshold} of a unit's economic life"
 msgstr ""
@@ -19679,6 +19745,9 @@ msgstr "未請求"
 msgid "Unbilled receivable for rent earned before it is invoiced"
 msgstr "請求済になる前に得られた賃料の売掛金"
 
+msgid "Unbilled:"
+msgstr ""
+
 msgid "Uncounted lines are left unchanged at post — they are not zeroed."
 msgstr "未計数行は投稿時に変更されないままです — ゼロにはなりません。"
 
@@ -20114,6 +20183,9 @@ msgstr "対象ドメインのユーザーは SAML SSO でのみサインイン�
 
 msgid "Users to Update"
 msgstr "更新するユーザー"
+
+msgid "Valid"
+msgstr ""
 
 msgid "Valid From"
 msgstr "有効期間開始"
@@ -20881,6 +20953,9 @@ msgstr "金額を明細価格に対する割合として解釈するか、固定
 
 msgid "Whether Carbon follows each unit (Serial), each lot (Batch), the quantity (Inventory), or no tracking (Non-Inventory)."
 msgstr "Carbonが各単位（Serial）、各ロット（バッチ）、数量（Inventory）、またはトラッキングなし（非在庫）のいずれを追跡するかどうか。"
+
+msgid "Whether each unit is treated as a rental or a sale is decided when the agreement is activated, from the terms and each unit's inputs."
+msgstr ""
 
 msgid "Whether each unit is treated as a rental or a sale is decided when the agreement is activated."
 msgstr ""

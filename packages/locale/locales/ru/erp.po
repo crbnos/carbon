@@ -72,6 +72,10 @@ msgstr "{0, plural, one {# строка связана с данными вне 
 msgid "{0, plural, one {This item is on 1 open change notice} other {This item is on # open change notices}}"
 msgstr "{0, plural, one {Эта номенклатура находится в 1 открытом извещении об изменении} other {Эта номенклатура находится в # открытых извещениях об изменении}}"
 
+#. placeholder {0}: rate.customerType.name
+msgid "{0} (type)"
+msgstr ""
+
 #. placeholder {0}: selectedAccountIds.length
 msgid "{0} accounts"
 msgstr "{0} счётов"
@@ -929,6 +933,9 @@ msgstr "Договор аренды размещает сериализован�
 msgid "A rental line is a sales-type lease when any ASC 842 test is met. These thresholds set tests (c) and (d); the discount rate is the default for new rental agreements."
 msgstr "Строка аренды является арендой типа продажи, когда выполнен любой тест ASC 842. Эти пороги устанавливают тесты (c) и (d); ставка скидки - это значение по умолчанию для новых договоров аренды."
 
+msgid "A rental line uses the customer's rates, else its customer type's, else the item's. The rates can still be changed on each line."
+msgstr ""
+
 msgid "A rental that meets any of the five ASC 842 lease tests, booked as a sale when its agreement activates: the unit leaves the fleet, lease revenue and cost of goods sold post, and a net investment in the lease takes its place."
 msgstr "Аренда, которая удовлетворяет любому из пяти тестов аренды ASC 842, учтена как продажа при активации её договора: единица покидает парк, выручка от аренды и себестоимость продаж проводятся, и чистые инвестиции в аренду занимают её место."
 
@@ -1240,6 +1247,9 @@ msgid "Accounting Periods"
 msgstr "Учетные периоды"
 
 msgid "Accounting treatment"
+msgstr ""
+
+msgid "Accounting Treatment"
 msgstr ""
 
 msgid "Accounting treatment inputs"
@@ -1978,6 +1988,9 @@ msgstr "Тип отслеживания элемента изменяется"
 msgid "An item's unit of measure changes"
 msgstr "Единица измерения элемента изменяется"
 
+msgid "An open-ended agreement is always a rental. Set an end date to use these."
+msgstr ""
+
 msgid "An open-ended agreement is always treated as a rental: a sale needs an end date."
 msgstr ""
 
@@ -2538,6 +2551,9 @@ msgstr "Вы уверены, что хотите удалить представ
 #. placeholder {0}: webhook.name
 msgid "Are you sure you want to delete the webhook: {0}? This cannot be undone."
 msgstr "Вы уверены, что хотите удалить вебхук: {0}? Это невозможно отменить."
+
+msgid "Are you sure you want to delete these rental rates? Rental lines already added keep their rates. This cannot be undone."
+msgstr ""
 
 msgid "Are you sure you want to delete this approval rule? This cannot be undone."
 msgstr "Вы уверены, что хотите удалить это правило утверждения? Это действие невозможно отменить."
@@ -3196,6 +3212,9 @@ msgstr "Счет для"
 
 msgid "Billed Tier"
 msgstr "Уровень выставления счета"
+
+msgid "Billed:"
+msgstr ""
 
 msgid "Billing"
 msgstr "Выставление счетов"
@@ -4144,8 +4163,8 @@ msgstr "вычислено {0}"
 msgid "Computed At"
 msgstr "Вычислено в"
 
-msgid "Computed from the saved terms and the item's current rates. Activation classifies the lease and stores the result."
-msgstr "Рассчитано на основе сохранённых условий и текущих ставок номенклатуры. Активация классифицирует аренду и сохраняет результат."
+msgid "Computed from the saved terms and rates. Activation classifies the lease and stores the result."
+msgstr ""
 
 msgid "Condensed P&L with margins and key subtotals"
 msgstr "Сокращенный отчет о прибылях и убытках с маржами и ключевыми промежуточными итогами"
@@ -4504,6 +4523,9 @@ msgstr "Копирует подсказку наладки для вашего �
 msgid "Copy"
 msgstr "Копировать"
 
+msgid "Copy agreement number"
+msgstr ""
+
 msgid "Copy all items and pricing to another customer or type."
 msgstr "Скопировать всю номенклатуру и ценообразование для другого покупателя или типа."
 
@@ -4545,6 +4567,9 @@ msgstr "Скопировать номер задания"
 
 msgid "Copy link"
 msgstr "Копировать ссылку"
+
+msgid "Copy link to agreement"
+msgstr ""
 
 msgid "Copy link to change notice"
 msgstr "Скопировать ссылку на извещение об изменении"
@@ -5337,6 +5362,9 @@ msgstr "Справка о покупателе"
 
 msgid "Customer Reference"
 msgstr "Справка о покупателе"
+
+msgid "Customer Rental Rates"
+msgstr ""
 
 msgid "Customer Revision"
 msgstr "Ревизия покупателя"
@@ -6165,6 +6193,9 @@ msgstr "Залог"
 msgid "Deposit for"
 msgstr "Залог для"
 
+msgid "Deposit:"
+msgstr ""
+
 msgid "Deposits"
 msgstr "Авансовые платежи"
 
@@ -6789,6 +6820,9 @@ msgstr "Изменить пользовательское поле"
 
 msgid "Edit Customer Part"
 msgstr "Изменить деталь покупателя"
+
+msgid "Edit Customer Rental Rates"
+msgstr ""
 
 msgid "Edit Customer Status"
 msgstr "Изменить статус покупателя"
@@ -7938,8 +7972,8 @@ msgstr "Не удалось загрузить строки возврата п�
 msgid "Failed to load supplier returns"
 msgstr "Не удалось загрузить возвраты поставщика"
 
-msgid "Failed to load the item's rental rates"
-msgstr "Не удалось загрузить тарифы аренды номенклатуры"
+msgid "Failed to load the rental rates"
+msgstr ""
 
 msgid "Failed to load tracked entities"
 msgstr "Не удалось загрузить отслеживаемые сущности"
@@ -8256,10 +8290,6 @@ msgstr "Исправьте эти производственные заказы 
 msgid "Fixed"
 msgstr "Фиксированный"
 
-#. placeholder {0}: line.rateUnit
-msgid "Fixed · {0}"
-msgstr "Фиксированный · {0}"
-
 msgid "Fixed asset"
 msgstr "Основное средство"
 
@@ -8289,6 +8319,9 @@ msgstr "Фиксированный заказ"
 
 msgid "Fixed Shelf Life"
 msgstr "Фиксированный срок хранения"
+
+msgid "Fixed when the agreement was activated."
+msgstr ""
 
 msgid "Fixture"
 msgstr "Приспособление"
@@ -8395,8 +8428,14 @@ msgstr "Из предыдущей недели"
 msgid "From Storage Unit"
 msgstr "Из единицы хранения"
 
-msgid "From the item's rental rates. They are snapshotted onto the line when the agreement is activated."
-msgstr "Из тарифов аренды номенклатуры. Они фиксируются на строке при активации соглашения."
+msgid "From the customer type's rental rates for the item."
+msgstr ""
+
+msgid "From the item's rental rates."
+msgstr ""
+
+msgid "From this customer's rental rates for the item."
+msgstr ""
 
 msgid "From:"
 msgstr "От:"
@@ -10034,6 +10073,9 @@ msgstr "Выручка от лизинга"
 msgid "Lease Revenue (default)"
 msgstr "Выручка от лизинга (по умолчанию)"
 
+msgid "Leave all three empty to use the customer's rental rates, else the customer type's, else the item's."
+msgstr ""
+
 msgid "Leave any related receipts untouched"
 msgstr "Оставить все связанные квитанции без изменений"
 
@@ -10136,9 +10178,6 @@ msgstr "Строка"
 #. placeholder {0}: line.lineNumber
 msgid "Line {0}"
 msgstr "Строка {0}"
-
-msgid "Line actions"
-msgstr "Действия строки"
 
 msgid "Line description (optional)"
 msgstr "Описание строки (необязательно)"
@@ -11025,6 +11064,9 @@ msgstr "Ежемесячно"
 msgid "Monthly Depreciation"
 msgstr "Ежемесячная амортизация"
 
+msgid "Monthly Rent:"
+msgstr ""
+
 msgid "Months over which this asset depreciates for tax purposes (when not using MACRS)."
 msgstr "Месяцы, в течение которых это имущество амортизируется в налоговых целях (при отсутствии MACRS)."
 
@@ -11269,6 +11311,9 @@ msgstr "Новый покупатель"
 
 msgid "New Customer Part"
 msgstr "Новая деталь покупателя"
+
+msgid "New Customer Rental Rates"
+msgstr ""
 
 msgid "New Demand Forecast"
 msgstr "Новый прогноз потребности"
@@ -11549,6 +11594,9 @@ msgstr "Следующий срок"
 msgid "Next Due Date"
 msgstr "Следующий Срок выполнения"
 
+msgid "Next Due:"
+msgstr ""
+
 msgid "Next Interest"
 msgstr "Следующие проценты"
 
@@ -11699,6 +11747,9 @@ msgstr "История себестоимости не найдена"
 
 msgid "No credits yet"
 msgstr "Никаких кредитов еще нет"
+
+msgid "No customer rental rates."
+msgstr ""
 
 msgid "No Data"
 msgstr "Нет данных"
@@ -11997,6 +12048,9 @@ msgstr "Нет эталонного изображения"
 
 msgid "No remaining entities to inspect."
 msgstr "Нет оставшихся объектов для проверки."
+
+msgid "No rental rates"
+msgstr ""
 
 msgid "No reports match your search."
 msgstr "Никакие отчеты не соответствуют вашему поиску."
@@ -13179,8 +13233,20 @@ msgstr "сотрудники"
 msgid "People"
 msgstr "Сотрудники"
 
+msgid "per 28 days"
+msgstr ""
+
+msgid "per day"
+msgstr ""
+
+msgid "per month"
+msgstr ""
+
 msgid "Per Unit"
 msgstr "За единицу"
+
+msgid "per week"
+msgstr ""
 
 msgid "Per-line override of the order header's fulfillment Location; used for split shipments and drop-ships."
 msgstr "Переопределение на уровне строки площадки отгрузки из заголовка заказа; используется для разделённых отгрузок и прямых поставок."
@@ -14363,6 +14429,15 @@ msgstr "Курс, используемый для пересчета счето�
 
 msgid "Rates a rental agreement line uses for this item. At least one is required."
 msgstr "Ставки, которые строка соглашения об аренде использует для этой номенклатуры. Требуется по крайней мере одна."
+
+msgid "Rates are the items' current rental rates. They are fixed on each unit when the agreement is activated."
+msgstr ""
+
+msgid "Rates for a single customer"
+msgstr ""
+
+msgid "Rates for all customers of a type"
+msgstr ""
 
 msgid "Ratio"
 msgstr "Коэффициент"
@@ -16937,9 +17012,6 @@ msgstr "Минимальный размер партии для комплект
 msgid "Smoke-test the core daily flows end to end"
 msgstr "Дымовое тестирование основных ежедневных процессов от начала до конца"
 
-msgid "Snapshotted from the item when activated."
-msgstr "Скопировано из номенклатуры при активации."
-
 msgid "so you can assign it here."
 msgstr "чтобы вы могли назначить его здесь."
 
@@ -17443,9 +17515,6 @@ msgstr "Уведомления о предложениях"
 msgid "Suggestions"
 msgstr "Предложения"
 
-msgid "Summary"
-msgstr ""
-
 msgid "Sunday"
 msgstr "Воскресенье"
 
@@ -17870,9 +17939,6 @@ msgstr "Шаблоны"
 
 msgid "Temporary disposal-clearing account debited for an asset's net book value on shipment and credited for its net book value on invoicing, netting to zero over the sale cycle."
 msgstr "Временный счет для списания активов, дебетуемый на остаточную стоимость активов при отгрузке и кредитуемый на остаточную стоимость при выставлении счетов, взаимозачитываемый до нуля в течение цикла продажи."
-
-msgid "Term"
-msgstr "Условие"
 
 msgid "Term is at least {threshold} of a unit's economic life"
 msgstr ""
@@ -19679,6 +19745,9 @@ msgstr "Невыставленный"
 msgid "Unbilled receivable for rent earned before it is invoiced"
 msgstr "Дебиторская задолженность по ренте, заработанной до выставления счета"
 
+msgid "Unbilled:"
+msgstr ""
+
 msgid "Uncounted lines are left unchanged at post — they are not zeroed."
 msgstr "Неучтённые строки остаются неизменными при отправке — они не обнуляются."
 
@@ -20114,6 +20183,9 @@ msgstr "Пользователи на охватываемых доменах м
 
 msgid "Users to Update"
 msgstr "Пользователи для обновления"
+
+msgid "Valid"
+msgstr ""
 
 msgid "Valid From"
 msgstr "Действительно с"
@@ -20881,6 +20953,9 @@ msgstr "Интерпретируется ли сумма как процент �
 
 msgid "Whether Carbon follows each unit (Serial), each lot (Batch), the quantity (Inventory), or no tracking (Non-Inventory)."
 msgstr "Отслеживает ли Carbon каждую единицу (Серийный номер), каждую серию (Серия), количество (Запасы) или без отслеживания (Нескладской)."
+
+msgid "Whether each unit is treated as a rental or a sale is decided when the agreement is activated, from the terms and each unit's inputs."
+msgstr ""
 
 msgid "Whether each unit is treated as a rental or a sale is decided when the agreement is activated."
 msgstr ""

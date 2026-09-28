@@ -72,6 +72,10 @@ msgstr "{0, plural, one {# riga si collega ai dati al di fuori di questa Azienda
 msgid "{0, plural, one {This item is on 1 open change notice} other {This item is on # open change notices}}"
 msgstr "{0, plural, one {Questo articolo è in 1 avviso di modifica aperto} other {Questo articolo è in # avvisi di modifica aperti}}"
 
+#. placeholder {0}: rate.customerType.name
+msgid "{0} (type)"
+msgstr ""
+
 #. placeholder {0}: selectedAccountIds.length
 msgid "{0} accounts"
 msgstr "{0} conti"
@@ -929,6 +933,9 @@ msgstr "Un contratto di noleggio assegna unità di flotta serializzate a un clie
 msgid "A rental line is a sales-type lease when any ASC 842 test is met. These thresholds set tests (c) and (d); the discount rate is the default for new rental agreements."
 msgstr "Una riga di noleggio è un leasing di tipo commerciale quando è soddisfatto un qualsiasi test ASC 842. Questi limiti impostano i test (c) e (d); il tasso di sconto è l'impostazione predefinita per i nuovi contratti di noleggio."
 
+msgid "A rental line uses the customer's rates, else its customer type's, else the item's. The rates can still be changed on each line."
+msgstr ""
+
 msgid "A rental that meets any of the five ASC 842 lease tests, booked as a sale when its agreement activates: the unit leaves the fleet, lease revenue and cost of goods sold post, and a net investment in the lease takes its place."
 msgstr "Un noleggio che soddisfa uno qualsiasi dei cinque test di leasing ASC 842, registrato come vendita quando il contratto si attiva: l'unità lascia la flotta, i ricavi del leasing e il costo del venduto vengono registrati, e un investimento netto nel leasing prende il loro posto."
 
@@ -1240,6 +1247,9 @@ msgid "Accounting Periods"
 msgstr "Periodi Contabili"
 
 msgid "Accounting treatment"
+msgstr ""
+
+msgid "Accounting Treatment"
 msgstr ""
 
 msgid "Accounting treatment inputs"
@@ -1978,6 +1988,9 @@ msgstr "Il tipo di tracciabilità di un articolo cambia"
 msgid "An item's unit of measure changes"
 msgstr "L'unità di misura di un elemento cambia"
 
+msgid "An open-ended agreement is always a rental. Set an end date to use these."
+msgstr ""
+
 msgid "An open-ended agreement is always treated as a rental: a sale needs an end date."
 msgstr ""
 
@@ -2538,6 +2551,9 @@ msgstr "Sei sicuro di voler eliminare la vista \"{0}\"?"
 #. placeholder {0}: webhook.name
 msgid "Are you sure you want to delete the webhook: {0}? This cannot be undone."
 msgstr "Sei sicuro di voler eliminare il webhook: {0}? Questa azione non può essere annullata."
+
+msgid "Are you sure you want to delete these rental rates? Rental lines already added keep their rates. This cannot be undone."
+msgstr ""
 
 msgid "Are you sure you want to delete this approval rule? This cannot be undone."
 msgstr "Sei sicuro di voler eliminare questa regola di approvazione? Questa azione non può essere annullata."
@@ -3196,6 +3212,9 @@ msgstr "Fattura a"
 
 msgid "Billed Tier"
 msgstr "Livello Fatturato"
+
+msgid "Billed:"
+msgstr ""
 
 msgid "Billing"
 msgstr "Fatturazione"
@@ -4144,8 +4163,8 @@ msgstr "calcolato {0}"
 msgid "Computed At"
 msgstr "Calcolato il"
 
-msgid "Computed from the saved terms and the item's current rates. Activation classifies the lease and stores the result."
-msgstr "Calcolato dai termini salvati e dalle tariffe attuali dell'articolo. L'attivazione classifica il leasing e memorizza il risultato."
+msgid "Computed from the saved terms and rates. Activation classifies the lease and stores the result."
+msgstr ""
 
 msgid "Condensed P&L with margins and key subtotals"
 msgstr "Conto economico condensato con margini e subtotali chiave"
@@ -4504,6 +4523,9 @@ msgstr "Copia un prompt di attrezzaggio per il tuo strumento di codifica AI"
 msgid "Copy"
 msgstr "Copia"
 
+msgid "Copy agreement number"
+msgstr ""
+
 msgid "Copy all items and pricing to another customer or type."
 msgstr "Copia tutti gli articoli e la determinazione dei prezzi a un altro cliente o tipo."
 
@@ -4545,6 +4567,9 @@ msgstr "Copia numero lavoro"
 
 msgid "Copy link"
 msgstr "Copia link"
+
+msgid "Copy link to agreement"
+msgstr ""
 
 msgid "Copy link to change notice"
 msgstr "Copia il collegamento all'avviso di modifica"
@@ -5337,6 +5362,9 @@ msgstr "Riferimento cliente"
 
 msgid "Customer Reference"
 msgstr "Riferimento Cliente"
+
+msgid "Customer Rental Rates"
+msgstr ""
 
 msgid "Customer Revision"
 msgstr "Revisione Cliente"
@@ -6165,6 +6193,9 @@ msgstr "Deposito"
 msgid "Deposit for"
 msgstr "Deposito per"
 
+msgid "Deposit:"
+msgstr ""
+
 msgid "Deposits"
 msgstr "Cauzioni"
 
@@ -6789,6 +6820,9 @@ msgstr "Modifica Campo Personalizzato"
 
 msgid "Edit Customer Part"
 msgstr "Modifica Parte Cliente"
+
+msgid "Edit Customer Rental Rates"
+msgstr ""
 
 msgid "Edit Customer Status"
 msgstr "Modifica Stato Cliente"
@@ -7938,8 +7972,8 @@ msgstr "Impossibile caricare le linee di reso del fornitore"
 msgid "Failed to load supplier returns"
 msgstr "Impossibile caricare i resi del fornitore"
 
-msgid "Failed to load the item's rental rates"
-msgstr "Impossibile caricare le tariffe di noleggio dell'articolo"
+msgid "Failed to load the rental rates"
+msgstr ""
 
 msgid "Failed to load tracked entities"
 msgstr "Impossibile caricare le entità tracciate"
@@ -8256,10 +8290,6 @@ msgstr "Correggi questi ordini di produzione prima di rilasciarli"
 msgid "Fixed"
 msgstr "Fisso"
 
-#. placeholder {0}: line.rateUnit
-msgid "Fixed · {0}"
-msgstr "Fisso · {0}"
-
 msgid "Fixed asset"
 msgstr "Cespite"
 
@@ -8289,6 +8319,9 @@ msgstr "Riordino Fisso"
 
 msgid "Fixed Shelf Life"
 msgstr "Durata di Conservazione Fissa"
+
+msgid "Fixed when the agreement was activated."
+msgstr ""
 
 msgid "Fixture"
 msgstr "Attrezzatura di fissaggio"
@@ -8395,8 +8428,14 @@ msgstr "Da settimana precedente"
 msgid "From Storage Unit"
 msgstr "Da Unità di Stoccaggio"
 
-msgid "From the item's rental rates. They are snapshotted onto the line when the agreement is activated."
-msgstr "Dalle tariffe di noleggio dell'articolo. Vengono acquisite sulla riga quando l'accordo viene attivato."
+msgid "From the customer type's rental rates for the item."
+msgstr ""
+
+msgid "From the item's rental rates."
+msgstr ""
+
+msgid "From this customer's rental rates for the item."
+msgstr ""
 
 msgid "From:"
 msgstr "Da:"
@@ -10034,6 +10073,9 @@ msgstr "Ricavi da noleggio"
 msgid "Lease Revenue (default)"
 msgstr "Ricavi da noleggio (predefinito)"
 
+msgid "Leave all three empty to use the customer's rental rates, else the customer type's, else the item's."
+msgstr ""
+
 msgid "Leave any related receipts untouched"
 msgstr "Lasciare le ricevute correlate intatte"
 
@@ -10136,9 +10178,6 @@ msgstr "Linea"
 #. placeholder {0}: line.lineNumber
 msgid "Line {0}"
 msgstr "Linea {0}"
-
-msgid "Line actions"
-msgstr "Azioni della riga"
 
 msgid "Line description (optional)"
 msgstr "Descrizione riga (facoltativa)"
@@ -11025,6 +11064,9 @@ msgstr "Mensile"
 msgid "Monthly Depreciation"
 msgstr "Ammortamento mensile"
 
+msgid "Monthly Rent:"
+msgstr ""
+
 msgid "Months over which this asset depreciates for tax purposes (when not using MACRS)."
 msgstr "Mesi in cui questo cespite si ammortizza a fini fiscali (quando non si utilizza MACRS)."
 
@@ -11269,6 +11311,9 @@ msgstr "Nuovo Cliente"
 
 msgid "New Customer Part"
 msgstr "Nuova Parte Cliente"
+
+msgid "New Customer Rental Rates"
+msgstr ""
 
 msgid "New Demand Forecast"
 msgstr "Nuova previsione di fabbisogno"
@@ -11549,6 +11594,9 @@ msgstr "Prossima Scadenza"
 msgid "Next Due Date"
 msgstr "Data di prossima scadenza"
 
+msgid "Next Due:"
+msgstr ""
+
 msgid "Next Interest"
 msgstr "Interesse successivo"
 
@@ -11699,6 +11747,9 @@ msgstr "Nessuna cronologia dei costi trovata"
 
 msgid "No credits yet"
 msgstr "Nessun accredito ancora"
+
+msgid "No customer rental rates."
+msgstr ""
 
 msgid "No Data"
 msgstr "Nessun dato"
@@ -11997,6 +12048,9 @@ msgstr "Nessuna immagine di riferimento"
 
 msgid "No remaining entities to inspect."
 msgstr "Nessuna entità rimanente da ispezionare."
+
+msgid "No rental rates"
+msgstr ""
 
 msgid "No reports match your search."
 msgstr "Nessun report corrisponde alla tua ricerca."
@@ -13179,8 +13233,20 @@ msgstr "personale"
 msgid "People"
 msgstr "Persone"
 
+msgid "per 28 days"
+msgstr ""
+
+msgid "per day"
+msgstr ""
+
+msgid "per month"
+msgstr ""
+
 msgid "Per Unit"
 msgstr "Per unità"
+
+msgid "per week"
+msgstr ""
 
 msgid "Per-line override of the order header's fulfillment Location; used for split shipments and drop-ships."
 msgstr "Forzatura per riga dell'ubicazione di spedizione dell'ordine; utilizzata per spedizioni suddivise e consegne dirette."
@@ -14363,6 +14429,15 @@ msgstr "Tasso utilizzato per la conversione dei conti di patrimonio netto nel co
 
 msgid "Rates a rental agreement line uses for this item. At least one is required."
 msgstr "I tariffari che una riga di contratto di noleggio utilizza per questo articolo. È richiesto almeno uno."
+
+msgid "Rates are the items' current rental rates. They are fixed on each unit when the agreement is activated."
+msgstr ""
+
+msgid "Rates for a single customer"
+msgstr ""
+
+msgid "Rates for all customers of a type"
+msgstr ""
 
 msgid "Ratio"
 msgstr "Rapporto"
@@ -16937,9 +17012,6 @@ msgstr "La corsa più piccola che vale la pena raggruppare in lotti. Lasciare vu
 msgid "Smoke-test the core daily flows end to end"
 msgstr "Smoke-test dei flussi giornalieri principali da inizio a fine"
 
-msgid "Snapshotted from the item when activated."
-msgstr "Acquisito dall'articolo quando attivato."
-
 msgid "so you can assign it here."
 msgstr "così puoi assegnarlo qui."
 
@@ -17443,9 +17515,6 @@ msgstr "Notifiche proposte"
 msgid "Suggestions"
 msgstr "Proposte"
 
-msgid "Summary"
-msgstr ""
-
 msgid "Sunday"
 msgstr "Domenica"
 
@@ -17870,9 +17939,6 @@ msgstr "Modelli"
 
 msgid "Temporary disposal-clearing account debited for an asset's net book value on shipment and credited for its net book value on invoicing, netting to zero over the sale cycle."
 msgstr "Conto GL temporaneo di compensazione dismissioni, addebitato per il valore netto contabile del cespite alla spedizione e accreditato per il valore netto contabile alla fatturazione, azzerandosi nel corso del ciclo di vendita."
-
-msgid "Term"
-msgstr "Condizione"
 
 msgid "Term is at least {threshold} of a unit's economic life"
 msgstr ""
@@ -19679,6 +19745,9 @@ msgstr "Non fatturato"
 msgid "Unbilled receivable for rent earned before it is invoiced"
 msgstr "Credito da affitto non ancora fatturato"
 
+msgid "Unbilled:"
+msgstr ""
+
 msgid "Uncounted lines are left unchanged at post — they are not zeroed."
 msgstr "Le righe non conteggiate rimangono invariate al post — non vengono azzerate."
 
@@ -20114,6 +20183,9 @@ msgstr "Gli utenti sui domini coperti possono accedere solo con SAML SSO; il col
 
 msgid "Users to Update"
 msgstr "Utenti da aggiornare"
+
+msgid "Valid"
+msgstr ""
 
 msgid "Valid From"
 msgstr "Valido da"
@@ -20881,6 +20953,9 @@ msgstr "Se l'importo viene interpretato come percentuale del prezzo di riga o co
 
 msgid "Whether Carbon follows each unit (Serial), each lot (Batch), the quantity (Inventory), or no tracking (Non-Inventory)."
 msgstr "Se Carbon segue ogni unità (Seriale), ogni lotto (Lotto di produzione), la quantità (Magazzino), o nessuna tracciabilità (Non a magazzino)."
+
+msgid "Whether each unit is treated as a rental or a sale is decided when the agreement is activated, from the terms and each unit's inputs."
+msgstr ""
 
 msgid "Whether each unit is treated as a rental or a sale is decided when the agreement is activated."
 msgstr ""

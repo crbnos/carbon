@@ -7,6 +7,7 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
+  DateTimePicker,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuIcon,
@@ -14,7 +15,6 @@ import {
   DropdownMenuTrigger,
   HStack,
   IconButton,
-  Input,
   Modal,
   ModalBody,
   ModalContent,
@@ -29,7 +29,9 @@ import {
   Thead,
   Tr
 } from "@carbon/react";
-import { datetime } from "@carbon/utils";
+import { datetime, fromLocalDateTime, toLocalDateTime } from "@carbon/utils";
+import type { CalendarDateTime } from "@internationalized/date";
+import { toCalendarDateTime } from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useLocale } from "@react-aria/i18n";
 import { useEffect, useState } from "react";
@@ -81,16 +83,6 @@ function formatDay(dateStr: string, locale: string) {
     month: "short",
     day: "numeric"
   });
-}
-
-function toLocalDatetimeInput(dateStr: string) {
-  const d = new Date(dateStr);
-  const year = d.getFullYear();
-  const month = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  const hours = String(d.getHours()).padStart(2, "0");
-  const minutes = String(d.getMinutes()).padStart(2, "0");
-  return `${year}-${month}-${day}T${hours}:${minutes}`;
 }
 
 export async function loader({ request }: LoaderFunctionArgs) {
@@ -182,8 +174,10 @@ export default function MESTimecardPage() {
     useLoaderData<typeof loader>();
   const fetcher = useFetcher<typeof action>();
   const [editingId, setEditingId] = useState<string | null>(null);
-  const [editClockIn, setEditClockIn] = useState("");
-  const [editClockOut, setEditClockOut] = useState("");
+  const [editClockIn, setEditClockIn] = useState<CalendarDateTime | null>(null);
+  const [editClockOut, setEditClockOut] = useState<CalendarDateTime | null>(
+    null
+  );
   const [, setTick] = useState(0);
   const { t } = useLingui();
   const { locale } = useLocale();
@@ -211,8 +205,8 @@ export default function MESTimecardPage() {
     clockOut: string | null;
   }) {
     setEditingId(entry.id);
-    setEditClockIn(toLocalDatetimeInput(entry.clockIn));
-    setEditClockOut(entry.clockOut ? toLocalDatetimeInput(entry.clockOut) : "");
+    setEditClockIn(toLocalDateTime(entry.clockIn));
+    setEditClockOut(entry.clockOut ? toLocalDateTime(entry.clockOut) : null);
   }
 
   return (
@@ -340,19 +334,27 @@ export default function MESTimecardPage() {
                           {formatDay(entry.clockIn, locale)}
                         </Td>
                         <Td>
-                          <Input
-                            type="datetime-local"
+                          <DateTimePicker
+                            aria-label={t`Clock In`}
+                            size="sm"
                             value={editClockIn}
-                            onChange={(e) => setEditClockIn(e.target.value)}
-                            className="h-8 text-xs w-full [&::-webkit-calendar-picker-indicator]:hidden"
+                            onChange={(value) =>
+                              setEditClockIn(
+                                value ? toCalendarDateTime(value) : null
+                              )
+                            }
                           />
                         </Td>
                         <Td>
-                          <Input
-                            type="datetime-local"
+                          <DateTimePicker
+                            aria-label={t`Clock Out`}
+                            size="sm"
                             value={editClockOut}
-                            onChange={(e) => setEditClockOut(e.target.value)}
-                            className="h-8 text-xs w-full [&::-webkit-calendar-picker-indicator]:hidden"
+                            onChange={(value) =>
+                              setEditClockOut(
+                                value ? toCalendarDateTime(value) : null
+                              )
+                            }
                           />
                         </Td>
                         <Td className="text-muted-foreground text-center">—</Td>
@@ -373,25 +375,22 @@ export default function MESTimecardPage() {
                                 type="hidden"
                                 name="clockIn"
                                 value={
-                                  isNaN(new Date(editClockIn).getTime())
-                                    ? ""
-                                    : new Date(editClockIn).toISOString()
+                                  editClockIn
+                                    ? fromLocalDateTime(editClockIn)
+                                    : ""
                                 }
                               />
-                              {editClockOut &&
-                                !isNaN(new Date(editClockOut).getTime()) && (
-                                  <input
-                                    type="hidden"
-                                    name="clockOut"
-                                    value={new Date(editClockOut).toISOString()}
-                                  />
-                                )}
+                              {editClockOut && (
+                                <input
+                                  type="hidden"
+                                  name="clockOut"
+                                  value={fromLocalDateTime(editClockOut)}
+                                />
+                              )}
                               <Button
                                 variant="secondary"
                                 type="submit"
-                                disabled={isNaN(
-                                  new Date(editClockIn).getTime()
-                                )}
+                                disabled={!editClockIn}
                               >
                                 <Trans>Save</Trans>
                               </Button>

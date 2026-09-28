@@ -72,6 +72,10 @@ msgstr "{0, plural, one {# पंक्ति इस कंपनी के ब�
 msgid "{0, plural, one {This item is on 1 open change notice} other {This item is on # open change notices}}"
 msgstr "{0, plural, one {यह आइटम 1 खुली परिवर्तन सूचना पर है} other {यह आइटम # खुली परिवर्तन सूचनाओं पर है}}"
 
+#. placeholder {0}: rate.customerType.name
+msgid "{0} (type)"
+msgstr ""
+
 #. placeholder {0}: selectedAccountIds.length
 msgid "{0} accounts"
 msgstr "{0} खाते"
@@ -929,6 +933,9 @@ msgstr "एक किराये की समझौता क्रमबद�
 msgid "A rental line is a sales-type lease when any ASC 842 test is met. These thresholds set tests (c) and (d); the discount rate is the default for new rental agreements."
 msgstr "एक किराये की पंक्ति एक बिक्रय-प्रकार लीज है जब कोई भी ASC 842 परीक्षण पूरा हो जाता है। ये थ्रेशहोल्ड परीक्षण (c) और (d) सेट करते हैं; छूट दर नए किराये के समझौतों के लिए डिफ़ॉल्ट है।"
 
+msgid "A rental line uses the customer's rates, else its customer type's, else the item's. The rates can still be changed on each line."
+msgstr ""
+
 msgid "A rental that meets any of the five ASC 842 lease tests, booked as a sale when its agreement activates: the unit leaves the fleet, lease revenue and cost of goods sold post, and a net investment in the lease takes its place."
 msgstr "एक किराया जो किसी भी पाँच ASC 842 लीज परीक्षण को पूरा करता है, बिक्रय के रूप में बुक किया जाता है जब इसका समझौता सक्रिय होता है: इकाई बेड़े को छोड़ देती है, लीज राजस्व और बेचे गए माल की लागत पोस्ट होती है, और लीज में शुद्ध निवेश इसकी जगह लेता है।"
 
@@ -1240,6 +1247,9 @@ msgid "Accounting Periods"
 msgstr "लेखांकन अवधि"
 
 msgid "Accounting treatment"
+msgstr ""
+
+msgid "Accounting Treatment"
 msgstr ""
 
 msgid "Accounting treatment inputs"
@@ -1978,6 +1988,9 @@ msgstr "किसी आइटम का ट्रैकिंग प्रक�
 msgid "An item's unit of measure changes"
 msgstr "किसी आइटम की माप की इकाई बदलती है"
 
+msgid "An open-ended agreement is always a rental. Set an end date to use these."
+msgstr ""
+
 msgid "An open-ended agreement is always treated as a rental: a sale needs an end date."
 msgstr ""
 
@@ -2538,6 +2551,9 @@ msgstr "क्या आप दृश्य \"{0}\" को हटाना च�
 #. placeholder {0}: webhook.name
 msgid "Are you sure you want to delete the webhook: {0}? This cannot be undone."
 msgstr "क्या आप वेबहुक {0} को हटाना चाहते हैं? इसे पूर्ववत नहीं किया जा सकता।"
+
+msgid "Are you sure you want to delete these rental rates? Rental lines already added keep their rates. This cannot be undone."
+msgstr ""
 
 msgid "Are you sure you want to delete this approval rule? This cannot be undone."
 msgstr "क्या आप इस अनुमोदन नियम को हटाना चाहते हैं? यह वापस नहीं किया जा सकता।"
@@ -3196,6 +3212,9 @@ msgstr "बिल प्राप्तकर्ता"
 
 msgid "Billed Tier"
 msgstr "बिल की गई परत"
+
+msgid "Billed:"
+msgstr ""
 
 msgid "Billing"
 msgstr "बिलिंग"
@@ -4144,8 +4163,8 @@ msgstr "की गणना {0}"
 msgid "Computed At"
 msgstr "गणना समय"
 
-msgid "Computed from the saved terms and the item's current rates. Activation classifies the lease and stores the result."
-msgstr "सहेजी गई शर्तों और आइटम की वर्तमान दरों से गणना की गई। सक्रियण लीज को वर्गीकृत करता है और परिणाम संग्रहीत करता है।"
+msgid "Computed from the saved terms and rates. Activation classifies the lease and stores the result."
+msgstr ""
 
 msgid "Condensed P&L with margins and key subtotals"
 msgstr "मार्जिन और मुख्य उप-योग के साथ संक्षिप्त P&L"
@@ -4504,6 +4523,9 @@ msgstr "आपकी AI कोडिंग टूल के लिए एक स
 msgid "Copy"
 msgstr "कॉपी करें"
 
+msgid "Copy agreement number"
+msgstr ""
+
 msgid "Copy all items and pricing to another customer or type."
 msgstr "सभी आइटम और मूल्य निर्धारण को किसी अन्य ग्राहक या प्रकार में कॉपी करें।"
 
@@ -4545,6 +4567,9 @@ msgstr "जॉब नंबर कॉपी करें"
 
 msgid "Copy link"
 msgstr "लिंक कॉपी करें"
+
+msgid "Copy link to agreement"
+msgstr ""
 
 msgid "Copy link to change notice"
 msgstr "परिवर्तन सूचना के लिंक की प्रतिलिपि बनाएं"
@@ -5337,6 +5362,9 @@ msgstr "ग्राहक संदर्भ"
 
 msgid "Customer Reference"
 msgstr "ग्राहक संदर्भ"
+
+msgid "Customer Rental Rates"
+msgstr ""
 
 msgid "Customer Revision"
 msgstr "ग्राहक रिवीजन"
@@ -6165,6 +6193,9 @@ msgstr "जमा"
 msgid "Deposit for"
 msgstr "के लिए जमा"
 
+msgid "Deposit:"
+msgstr ""
+
 msgid "Deposits"
 msgstr "जमा राशि"
 
@@ -6789,6 +6820,9 @@ msgstr "कस्टम फील्ड संपादित करें"
 
 msgid "Edit Customer Part"
 msgstr "ग्राहक भाग संपादित करें"
+
+msgid "Edit Customer Rental Rates"
+msgstr ""
 
 msgid "Edit Customer Status"
 msgstr "ग्राहक स्थिति संपादित करें"
@@ -7938,8 +7972,8 @@ msgstr "आपूर्तिकर्ता रिटर्न लाइने�
 msgid "Failed to load supplier returns"
 msgstr "आपूर्तिकर्ता रिटर्न लोड करने में विफल"
 
-msgid "Failed to load the item's rental rates"
-msgstr "आइटम की किराये की दरों को लोड करने में विफल रहा"
+msgid "Failed to load the rental rates"
+msgstr ""
 
 msgid "Failed to load tracked entities"
 msgstr "ट्रैक किए गए इकाइयों को लोड करने में विफल"
@@ -8256,10 +8290,6 @@ msgstr "जारी करने से पहले इन जॉब्स क
 msgid "Fixed"
 msgstr "निश्चित"
 
-#. placeholder {0}: line.rateUnit
-msgid "Fixed · {0}"
-msgstr "निर्धारित · {0}"
-
 msgid "Fixed asset"
 msgstr "अचल संपत्ति"
 
@@ -8289,6 +8319,9 @@ msgstr "निश्चित पुनः ऑर्डर"
 
 msgid "Fixed Shelf Life"
 msgstr "निर्धारित शेल्फ लाइफ"
+
+msgid "Fixed when the agreement was activated."
+msgstr ""
 
 msgid "Fixture"
 msgstr "फिक्सचर"
@@ -8395,8 +8428,14 @@ msgstr "पिछले सप्ताह से"
 msgid "From Storage Unit"
 msgstr "भंडारण इकाई से"
 
-msgid "From the item's rental rates. They are snapshotted onto the line when the agreement is activated."
-msgstr "आइटम की किराये की दरों से। जब समझौता सक्रिय होता है तो वे पंक्ति पर स्नैपशॉट किए जाते हैं।"
+msgid "From the customer type's rental rates for the item."
+msgstr ""
+
+msgid "From the item's rental rates."
+msgstr ""
+
+msgid "From this customer's rental rates for the item."
+msgstr ""
 
 msgid "From:"
 msgstr "से:"
@@ -10034,6 +10073,9 @@ msgstr "पट्टा राजस्व"
 msgid "Lease Revenue (default)"
 msgstr "पट्टा राजस्व (डिफ़ॉल्ट)"
 
+msgid "Leave all three empty to use the customer's rental rates, else the customer type's, else the item's."
+msgstr ""
+
 msgid "Leave any related receipts untouched"
 msgstr "किसी भी संबंधित रसीदों को अछूता छोड़ें"
 
@@ -10136,9 +10178,6 @@ msgstr "लाइन"
 #. placeholder {0}: line.lineNumber
 msgid "Line {0}"
 msgstr "लाइन {0}"
-
-msgid "Line actions"
-msgstr "पंक्ति क्रियाएं"
 
 msgid "Line description (optional)"
 msgstr "पंक्ति विवरण (वैकल्पिक)"
@@ -11025,6 +11064,9 @@ msgstr "मासिक"
 msgid "Monthly Depreciation"
 msgstr "मासिक मूल्यह्रास"
 
+msgid "Monthly Rent:"
+msgstr ""
+
 msgid "Months over which this asset depreciates for tax purposes (when not using MACRS)."
 msgstr "महीनों की संख्या जिसके दौरान यह संपत्ति कर उद्देश्यों के लिए मूल्यह्रास होती है (जब MACRS का उपयोग नहीं किया जा रहा है)।"
 
@@ -11269,6 +11311,9 @@ msgstr "नया ग्राहक"
 
 msgid "New Customer Part"
 msgstr "नया ग्राहक भाग"
+
+msgid "New Customer Rental Rates"
+msgstr ""
 
 msgid "New Demand Forecast"
 msgstr "नया मांग पूर्वानुमान"
@@ -11549,6 +11594,9 @@ msgstr "अगला देय"
 msgid "Next Due Date"
 msgstr "अगली नियत तिथि"
 
+msgid "Next Due:"
+msgstr ""
+
 msgid "Next Interest"
 msgstr "अगला ब्याज"
 
@@ -11699,6 +11747,9 @@ msgstr "कोई लागत इतिहास नहीं मिला"
 
 msgid "No credits yet"
 msgstr "अभी कोई क्रेडिट नहीं"
+
+msgid "No customer rental rates."
+msgstr ""
 
 msgid "No Data"
 msgstr "कोई डेटा नहीं"
@@ -11997,6 +12048,9 @@ msgstr "कोई संदर्भ छवि नहीं"
 
 msgid "No remaining entities to inspect."
 msgstr "निरीक्षण के लिए कोई शेष इकाई नहीं है।"
+
+msgid "No rental rates"
+msgstr ""
 
 msgid "No reports match your search."
 msgstr "कोई रिपोर्ट आपकी खोज से मेल नहीं खाती।"
@@ -13179,8 +13233,20 @@ msgstr "लोग"
 msgid "People"
 msgstr "लोग"
 
+msgid "per 28 days"
+msgstr ""
+
+msgid "per day"
+msgstr ""
+
+msgid "per month"
+msgstr ""
+
 msgid "Per Unit"
 msgstr "प्रति यूनिट"
+
+msgid "per week"
+msgstr ""
 
 msgid "Per-line override of the order header's fulfillment Location; used for split shipments and drop-ships."
 msgstr "ऑर्डर हेडर के पूर्ति स्थान का प्रति-पंक्ति ओवरराइड; विभाजित शिपमेंट और ड्रॉप-शिप के लिए उपयोग किया जाता है।"
@@ -14363,6 +14429,15 @@ msgstr "समेकन में इक्विटी खातों के �
 
 msgid "Rates a rental agreement line uses for this item. At least one is required."
 msgstr "यह आइटम किराया समझौता पंक्ति के लिए उपयोग की जाने वाली दरें हैं। कम से कम एक आवश्यक है।"
+
+msgid "Rates are the items' current rental rates. They are fixed on each unit when the agreement is activated."
+msgstr ""
+
+msgid "Rates for a single customer"
+msgstr ""
+
+msgid "Rates for all customers of a type"
+msgstr ""
 
 msgid "Ratio"
 msgstr "अनुपात"
@@ -16937,9 +17012,6 @@ msgstr "बैचिंग के लायक सबसे छोटा रन�
 msgid "Smoke-test the core daily flows end to end"
 msgstr "कोर दैनिक प्रवाह को अंत से अंत तक स्मोक-टेस्ट करें"
 
-msgid "Snapshotted from the item when activated."
-msgstr "सक्रिय होने पर आइटम से स्नैपशॉट लिया गया।"
-
 msgid "so you can assign it here."
 msgstr "तो आप इसे यहाँ असाइन कर सकते हैं।"
 
@@ -17443,9 +17515,6 @@ msgstr "सुझाव सूचनाएं"
 msgid "Suggestions"
 msgstr "सुझाव"
 
-msgid "Summary"
-msgstr ""
-
 msgid "Sunday"
 msgstr "रविवार"
 
@@ -17870,9 +17939,6 @@ msgstr "टेम्पलेट्स"
 
 msgid "Temporary disposal-clearing account debited for an asset's net book value on shipment and credited for its net book value on invoicing, netting to zero over the sale cycle."
 msgstr "अस्थायी निपटान-समाशोधन खाता जिसे शिपमेंट पर एक संपत्ति के शुद्ध बही मूल्य के लिए डेबिट किया जाता है और बिलिंग पर इसके शुद्ध बही मूल्य के लिए क्रेडिट किया जाता है, बिक्रय चक्र पर शून्य तक नेट किया जाता है।"
-
-msgid "Term"
-msgstr "अवधि"
 
 msgid "Term is at least {threshold} of a unit's economic life"
 msgstr ""
@@ -19679,6 +19745,9 @@ msgstr "अबिल"
 msgid "Unbilled receivable for rent earned before it is invoiced"
 msgstr "चालान किए जाने से पहले अर्जित किराये की अबिल प्राप्य"
 
+msgid "Unbilled:"
+msgstr ""
+
 msgid "Uncounted lines are left unchanged at post — they are not zeroed."
 msgstr "गिनती न किए गए लाइनें पोस्ट पर अपरिवर्तित रहती हैं — उन्हें शून्य नहीं किया जाता है।"
 
@@ -20114,6 +20183,9 @@ msgstr "कवर किए गए डोमेन पर उपयोगकर�
 
 msgid "Users to Update"
 msgstr "अपडेट करने के लिए उपयोगकर्ता"
+
+msgid "Valid"
+msgstr ""
 
 msgid "Valid From"
 msgstr "वैध से"
@@ -20881,6 +20953,9 @@ msgstr "क्या राशि को लाइन मूल्य के प
 
 msgid "Whether Carbon follows each unit (Serial), each lot (Batch), the quantity (Inventory), or no tracking (Non-Inventory)."
 msgstr "क्या Carbon प्रत्येक इकाई (Serial), प्रत्येक बैच (Batch), मात्रा (Inventory), या कोई ट्रैकिंग नहीं (गैर-इन्वेंटरी) का पालन करता है।"
+
+msgid "Whether each unit is treated as a rental or a sale is decided when the agreement is activated, from the terms and each unit's inputs."
+msgstr ""
 
 msgid "Whether each unit is treated as a rental or a sale is decided when the agreement is activated."
 msgstr ""

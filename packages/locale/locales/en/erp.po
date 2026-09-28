@@ -72,6 +72,10 @@ msgstr "{0, plural, one {# row links to data outside this company, so it can't b
 msgid "{0, plural, one {This item is on 1 open change notice} other {This item is on # open change notices}}"
 msgstr "{0, plural, one {This item is on 1 open change notice} other {This item is on # open change notices}}"
 
+#. placeholder {0}: rate.customerType.name
+msgid "{0} (type)"
+msgstr "{0} (type)"
+
 #. placeholder {0}: selectedAccountIds.length
 msgid "{0} accounts"
 msgstr "{0} accounts"
@@ -929,6 +933,9 @@ msgstr "A rental agreement puts serialized fleet units at a customer and bills t
 msgid "A rental line is a sales-type lease when any ASC 842 test is met. These thresholds set tests (c) and (d); the discount rate is the default for new rental agreements."
 msgstr "A rental line is a sales-type lease when any ASC 842 test is met. These thresholds set tests (c) and (d); the discount rate is the default for new rental agreements."
 
+msgid "A rental line uses the customer's rates, else its customer type's, else the item's. The rates can still be changed on each line."
+msgstr "A rental line uses the customer's rates, else its customer type's, else the item's. The rates can still be changed on each line."
+
 msgid "A rental that meets any of the five ASC 842 lease tests, booked as a sale when its agreement activates: the unit leaves the fleet, lease revenue and cost of goods sold post, and a net investment in the lease takes its place."
 msgstr "A rental that meets any of the five ASC 842 lease tests, booked as a sale when its agreement activates: the unit leaves the fleet, lease revenue and cost of goods sold post, and a net investment in the lease takes its place."
 
@@ -1241,6 +1248,9 @@ msgstr "Accounting Periods"
 
 msgid "Accounting treatment"
 msgstr "Accounting treatment"
+
+msgid "Accounting Treatment"
+msgstr "Accounting Treatment"
 
 msgid "Accounting treatment inputs"
 msgstr "Accounting treatment inputs"
@@ -1978,6 +1988,9 @@ msgstr "An item's tracking type changes"
 msgid "An item's unit of measure changes"
 msgstr "An item's unit of measure changes"
 
+msgid "An open-ended agreement is always a rental. Set an end date to use these."
+msgstr "An open-ended agreement is always a rental. Set an end date to use these."
+
 msgid "An open-ended agreement is always treated as a rental: a sale needs an end date."
 msgstr "An open-ended agreement is always treated as a rental: a sale needs an end date."
 
@@ -2538,6 +2551,9 @@ msgstr "Are you sure you want to delete the view \"{0}\"?"
 #. placeholder {0}: webhook.name
 msgid "Are you sure you want to delete the webhook: {0}? This cannot be undone."
 msgstr "Are you sure you want to delete the webhook: {0}? This cannot be undone."
+
+msgid "Are you sure you want to delete these rental rates? Rental lines already added keep their rates. This cannot be undone."
+msgstr "Are you sure you want to delete these rental rates? Rental lines already added keep their rates. This cannot be undone."
 
 msgid "Are you sure you want to delete this approval rule? This cannot be undone."
 msgstr "Are you sure you want to delete this approval rule? This cannot be undone."
@@ -3196,6 +3212,9 @@ msgstr "Bill To"
 
 msgid "Billed Tier"
 msgstr "Billed Tier"
+
+msgid "Billed:"
+msgstr "Billed:"
 
 msgid "Billing"
 msgstr "Billing"
@@ -4144,8 +4163,8 @@ msgstr "computed {0}"
 msgid "Computed At"
 msgstr "Computed At"
 
-msgid "Computed from the saved terms and the item's current rates. Activation classifies the lease and stores the result."
-msgstr "Computed from the saved terms and the item's current rates. Activation classifies the lease and stores the result."
+msgid "Computed from the saved terms and rates. Activation classifies the lease and stores the result."
+msgstr "Computed from the saved terms and rates. Activation classifies the lease and stores the result."
 
 msgid "Condensed P&L with margins and key subtotals"
 msgstr "Condensed P&L with margins and key subtotals"
@@ -4504,6 +4523,9 @@ msgstr "Copies a setup prompt for your AI coding tool"
 msgid "Copy"
 msgstr "Copy"
 
+msgid "Copy agreement number"
+msgstr "Copy agreement number"
+
 msgid "Copy all items and pricing to another customer or type."
 msgstr "Copy all items and pricing to another customer or type."
 
@@ -4545,6 +4567,9 @@ msgstr "Copy Job number"
 
 msgid "Copy link"
 msgstr "Copy link"
+
+msgid "Copy link to agreement"
+msgstr "Copy link to agreement"
 
 msgid "Copy link to change notice"
 msgstr "Copy link to change notice"
@@ -5337,6 +5362,9 @@ msgstr "Customer reference"
 
 msgid "Customer Reference"
 msgstr "Customer Reference"
+
+msgid "Customer Rental Rates"
+msgstr "Customer Rental Rates"
 
 msgid "Customer Revision"
 msgstr "Customer Revision"
@@ -6165,6 +6193,9 @@ msgstr "Deposit"
 msgid "Deposit for"
 msgstr "Deposit for"
 
+msgid "Deposit:"
+msgstr "Deposit:"
+
 msgid "Deposits"
 msgstr "Deposits"
 
@@ -6789,6 +6820,9 @@ msgstr "Edit Custom Field"
 
 msgid "Edit Customer Part"
 msgstr "Edit Customer Part"
+
+msgid "Edit Customer Rental Rates"
+msgstr "Edit Customer Rental Rates"
 
 msgid "Edit Customer Status"
 msgstr "Edit Customer Status"
@@ -7938,8 +7972,8 @@ msgstr "Failed to load supplier return lines"
 msgid "Failed to load supplier returns"
 msgstr "Failed to load supplier returns"
 
-msgid "Failed to load the item's rental rates"
-msgstr "Failed to load the item's rental rates"
+msgid "Failed to load the rental rates"
+msgstr "Failed to load the rental rates"
 
 msgid "Failed to load tracked entities"
 msgstr "Failed to load tracked entities"
@@ -8256,10 +8290,6 @@ msgstr "Fix these jobs before releasing"
 msgid "Fixed"
 msgstr "Fixed"
 
-#. placeholder {0}: line.rateUnit
-msgid "Fixed · {0}"
-msgstr "Fixed · {0}"
-
 msgid "Fixed asset"
 msgstr "Fixed asset"
 
@@ -8289,6 +8319,9 @@ msgstr "Fixed Reorder"
 
 msgid "Fixed Shelf Life"
 msgstr "Fixed Shelf Life"
+
+msgid "Fixed when the agreement was activated."
+msgstr "Fixed when the agreement was activated."
 
 msgid "Fixture"
 msgstr "Fixture"
@@ -8395,8 +8428,14 @@ msgstr "From previous week"
 msgid "From Storage Unit"
 msgstr "From Storage Unit"
 
-msgid "From the item's rental rates. They are snapshotted onto the line when the agreement is activated."
-msgstr "From the item's rental rates. They are snapshotted onto the line when the agreement is activated."
+msgid "From the customer type's rental rates for the item."
+msgstr "From the customer type's rental rates for the item."
+
+msgid "From the item's rental rates."
+msgstr "From the item's rental rates."
+
+msgid "From this customer's rental rates for the item."
+msgstr "From this customer's rental rates for the item."
 
 msgid "From:"
 msgstr "From:"
@@ -10034,6 +10073,9 @@ msgstr "Lease Revenue"
 msgid "Lease Revenue (default)"
 msgstr "Lease Revenue (default)"
 
+msgid "Leave all three empty to use the customer's rental rates, else the customer type's, else the item's."
+msgstr "Leave all three empty to use the customer's rental rates, else the customer type's, else the item's."
+
 msgid "Leave any related receipts untouched"
 msgstr "Leave any related receipts untouched"
 
@@ -10136,9 +10178,6 @@ msgstr "Line"
 #. placeholder {0}: line.lineNumber
 msgid "Line {0}"
 msgstr "Line {0}"
-
-msgid "Line actions"
-msgstr "Line actions"
 
 msgid "Line description (optional)"
 msgstr "Line description (optional)"
@@ -11025,6 +11064,9 @@ msgstr "Monthly"
 msgid "Monthly Depreciation"
 msgstr "Monthly Depreciation"
 
+msgid "Monthly Rent:"
+msgstr "Monthly Rent:"
+
 msgid "Months over which this asset depreciates for tax purposes (when not using MACRS)."
 msgstr "Months over which this asset depreciates for tax purposes (when not using MACRS)."
 
@@ -11269,6 +11311,9 @@ msgstr "New Customer"
 
 msgid "New Customer Part"
 msgstr "New Customer Part"
+
+msgid "New Customer Rental Rates"
+msgstr "New Customer Rental Rates"
 
 msgid "New Demand Forecast"
 msgstr "New Demand Forecast"
@@ -11549,6 +11594,9 @@ msgstr "Next Due"
 msgid "Next Due Date"
 msgstr "Next Due Date"
 
+msgid "Next Due:"
+msgstr "Next Due:"
+
 msgid "Next Interest"
 msgstr "Next Interest"
 
@@ -11699,6 +11747,9 @@ msgstr "No cost history found"
 
 msgid "No credits yet"
 msgstr "No credits yet"
+
+msgid "No customer rental rates."
+msgstr "No customer rental rates."
 
 msgid "No Data"
 msgstr "No Data"
@@ -11997,6 +12048,9 @@ msgstr "No reference image"
 
 msgid "No remaining entities to inspect."
 msgstr "No remaining entities to inspect."
+
+msgid "No rental rates"
+msgstr "No rental rates"
 
 msgid "No reports match your search."
 msgstr "No reports match your search."
@@ -13179,8 +13233,20 @@ msgstr "people"
 msgid "People"
 msgstr "People"
 
+msgid "per 28 days"
+msgstr "per 28 days"
+
+msgid "per day"
+msgstr "per day"
+
+msgid "per month"
+msgstr "per month"
+
 msgid "Per Unit"
 msgstr "Per Unit"
+
+msgid "per week"
+msgstr "per week"
 
 msgid "Per-line override of the order header's fulfillment Location; used for split shipments and drop-ships."
 msgstr "Per-line override of the order header's fulfillment Location; used for split shipments and drop-ships."
@@ -14363,6 +14429,15 @@ msgstr "Rate used for equity account translation in consolidation (IAS 21). Leav
 
 msgid "Rates a rental agreement line uses for this item. At least one is required."
 msgstr "Rates a rental agreement line uses for this item. At least one is required."
+
+msgid "Rates are the items' current rental rates. They are fixed on each unit when the agreement is activated."
+msgstr "Rates are the items' current rental rates. They are fixed on each unit when the agreement is activated."
+
+msgid "Rates for a single customer"
+msgstr "Rates for a single customer"
+
+msgid "Rates for all customers of a type"
+msgstr "Rates for all customers of a type"
 
 msgid "Ratio"
 msgstr "Ratio"
@@ -16937,9 +17012,6 @@ msgstr "Smallest run worth batching. Leave empty for none."
 msgid "Smoke-test the core daily flows end to end"
 msgstr "Smoke-test the core daily flows end to end"
 
-msgid "Snapshotted from the item when activated."
-msgstr "Snapshotted from the item when activated."
-
 msgid "so you can assign it here."
 msgstr "so you can assign it here."
 
@@ -17443,9 +17515,6 @@ msgstr "Suggestion Notifications"
 msgid "Suggestions"
 msgstr "Suggestions"
 
-msgid "Summary"
-msgstr "Summary"
-
 msgid "Sunday"
 msgstr "Sunday"
 
@@ -17870,9 +17939,6 @@ msgstr "Templates"
 
 msgid "Temporary disposal-clearing account debited for an asset's net book value on shipment and credited for its net book value on invoicing, netting to zero over the sale cycle."
 msgstr "Temporary disposal-clearing account debited for an asset's net book value on shipment and credited for its net book value on invoicing, netting to zero over the sale cycle."
-
-msgid "Term"
-msgstr "Term"
 
 msgid "Term is at least {threshold} of a unit's economic life"
 msgstr "Term is at least {threshold} of a unit's economic life"
@@ -19679,6 +19745,9 @@ msgstr "Unbilled"
 msgid "Unbilled receivable for rent earned before it is invoiced"
 msgstr "Unbilled receivable for rent earned before it is invoiced"
 
+msgid "Unbilled:"
+msgstr "Unbilled:"
+
 msgid "Uncounted lines are left unchanged at post — they are not zeroed."
 msgstr "Uncounted lines are left unchanged at post — they are not zeroed."
 
@@ -20114,6 +20183,9 @@ msgstr "Users on covered domains can sign in only with SAML SSO; magic link, Goo
 
 msgid "Users to Update"
 msgstr "Users to Update"
+
+msgid "Valid"
+msgstr "Valid"
 
 msgid "Valid From"
 msgstr "Valid From"
@@ -20881,6 +20953,9 @@ msgstr "Whether Amount is interpreted as a percentage of the line price or as a 
 
 msgid "Whether Carbon follows each unit (Serial), each lot (Batch), the quantity (Inventory), or no tracking (Non-Inventory)."
 msgstr "Whether Carbon follows each unit (Serial), each lot (Batch), the quantity (Inventory), or no tracking (Non-Inventory)."
+
+msgid "Whether each unit is treated as a rental or a sale is decided when the agreement is activated, from the terms and each unit's inputs."
+msgstr "Whether each unit is treated as a rental or a sale is decided when the agreement is activated, from the terms and each unit's inputs."
 
 msgid "Whether each unit is treated as a rental or a sale is decided when the agreement is activated."
 msgstr "Whether each unit is treated as a rental or a sale is decided when the agreement is activated."

@@ -72,6 +72,10 @@ msgstr "{0, plural, one {# satır bu şirketin dışındaki verilere bağlantı 
 msgid "{0, plural, one {This item is on 1 open change notice} other {This item is on # open change notices}}"
 msgstr "{0, plural, one {Bu ürün 1 açık değişiklik bildirisinde yer alıyor} other {Bu ürün # açık değişiklik bildirisinde yer alıyor}}"
 
+#. placeholder {0}: rate.customerType.name
+msgid "{0} (type)"
+msgstr ""
+
 #. placeholder {0}: selectedAccountIds.length
 msgid "{0} accounts"
 msgstr "{0} hesaplar"
@@ -929,6 +933,9 @@ msgstr "Bir kiralama sözleşmesi, seri numaralı filo birimlerini müşteriye t
 msgid "A rental line is a sales-type lease when any ASC 842 test is met. These thresholds set tests (c) and (d); the discount rate is the default for new rental agreements."
 msgstr "Bir kiralama satırı, herhangi bir ASC 842 testi karşılandığında satış tipi kiralama olur. Bu eşikler testleri (c) ve (d) ayarlar; iskonto oranı yeni kiralama sözleşmeleri için varsayılandır."
 
+msgid "A rental line uses the customer's rates, else its customer type's, else the item's. The rates can still be changed on each line."
+msgstr ""
+
 msgid "A rental that meets any of the five ASC 842 lease tests, booked as a sale when its agreement activates: the unit leaves the fleet, lease revenue and cost of goods sold post, and a net investment in the lease takes its place."
 msgstr "Beş ASC 842 kira testinden herhangi birini karşılayan bir kiralama, sözleşmesi etkinleştirildiğinde satış olarak muhasebeleştirilen: birim filo ayrılır, kira hasılatı ve satılan malın maliyeti muhasebeleştirilir ve kiralamada net yatırım yerini alır."
 
@@ -1240,6 +1247,9 @@ msgid "Accounting Periods"
 msgstr "Muhasebe Dönemleri"
 
 msgid "Accounting treatment"
+msgstr ""
+
+msgid "Accounting Treatment"
 msgstr ""
 
 msgid "Accounting treatment inputs"
@@ -1978,6 +1988,9 @@ msgstr "Bir stok kartının izleme türü değişir"
 msgid "An item's unit of measure changes"
 msgstr "Bir öğenin ölçü birimi değişir"
 
+msgid "An open-ended agreement is always a rental. Set an end date to use these."
+msgstr ""
+
 msgid "An open-ended agreement is always treated as a rental: a sale needs an end date."
 msgstr ""
 
@@ -2538,6 +2551,9 @@ msgstr "Görünümü \"{0}\" silmek istediğinizden emin misiniz?"
 #. placeholder {0}: webhook.name
 msgid "Are you sure you want to delete the webhook: {0}? This cannot be undone."
 msgstr "Webhook'u silmek istediğinizden emin misiniz: {0}? Bu geri alınamaz."
+
+msgid "Are you sure you want to delete these rental rates? Rental lines already added keep their rates. This cannot be undone."
+msgstr ""
 
 msgid "Are you sure you want to delete this approval rule? This cannot be undone."
 msgstr "Bu onay kuralını silmek istediğinizden emin misiniz? Bu geri alınamaz."
@@ -3196,6 +3212,9 @@ msgstr "Fatura Adresi"
 
 msgid "Billed Tier"
 msgstr "Faturalandırılan Katman"
+
+msgid "Billed:"
+msgstr ""
 
 msgid "Billing"
 msgstr "Faturalandırma"
@@ -4144,8 +4163,8 @@ msgstr "hesaplanan {0}"
 msgid "Computed At"
 msgstr "Hesaplama Tarihi"
 
-msgid "Computed from the saved terms and the item's current rates. Activation classifies the lease and stores the result."
-msgstr "Kaydedilen şartlardan ve stok kartının mevcut oranlarından hesaplanan. Etkinleştirme kiralamayı sınıflandırır ve sonucu depolar."
+msgid "Computed from the saved terms and rates. Activation classifies the lease and stores the result."
+msgstr ""
 
 msgid "Condensed P&L with margins and key subtotals"
 msgstr "Kenar boşluklarına ve anahtar ara toplamlarına sahip Sıkıştırılmış Kâr ve Zarar"
@@ -4504,6 +4523,9 @@ msgstr "AI kodlama aracınız için hazırlık talimatı kopyalar"
 msgid "Copy"
 msgstr "Kopyala"
 
+msgid "Copy agreement number"
+msgstr ""
+
 msgid "Copy all items and pricing to another customer or type."
 msgstr "Tüm öğeleri ve fiyatlandırmayı başka bir müşteriye veya türe kopyala."
 
@@ -4545,6 +4567,9 @@ msgstr "İş Numarasını Kopyala"
 
 msgid "Copy link"
 msgstr "Bağlantıyı kopyala"
+
+msgid "Copy link to agreement"
+msgstr ""
 
 msgid "Copy link to change notice"
 msgstr "Değişiklik bildirisi bağlantısını kopyala"
@@ -5337,6 +5362,9 @@ msgstr "Müşteri referansı"
 
 msgid "Customer Reference"
 msgstr "Müşteri Referansı"
+
+msgid "Customer Rental Rates"
+msgstr ""
 
 msgid "Customer Revision"
 msgstr "Müşteri Revizyonu"
@@ -6165,6 +6193,9 @@ msgstr "Depozito"
 msgid "Deposit for"
 msgstr "Şunun için depozito"
 
+msgid "Deposit:"
+msgstr ""
+
 msgid "Deposits"
 msgstr "Depozitolar"
 
@@ -6789,6 +6820,9 @@ msgstr "Özel Alan Düzenle"
 
 msgid "Edit Customer Part"
 msgstr "Müşteri Parçasını Düzenle"
+
+msgid "Edit Customer Rental Rates"
+msgstr ""
 
 msgid "Edit Customer Status"
 msgstr "Müşteri Durumunu Düzenle"
@@ -7938,8 +7972,8 @@ msgstr "Tedarikçi iade satırları yüklenemedi"
 msgid "Failed to load supplier returns"
 msgstr "Tedarikçi iadeleri yüklenemedi"
 
-msgid "Failed to load the item's rental rates"
-msgstr "Stok kartının kira oranları yüklenemedi"
+msgid "Failed to load the rental rates"
+msgstr ""
 
 msgid "Failed to load tracked entities"
 msgstr "Takip edilen varlıklar yüklenemedi"
@@ -8256,10 +8290,6 @@ msgstr "Serbest bırakmadan önce bu iş emirlerini düzeltin"
 msgid "Fixed"
 msgstr "Sabit"
 
-#. placeholder {0}: line.rateUnit
-msgid "Fixed · {0}"
-msgstr "Sabit · {0}"
-
 msgid "Fixed asset"
 msgstr "Sabit kıymet"
 
@@ -8289,6 +8319,9 @@ msgstr "Sabit Yeniden Sipariş"
 
 msgid "Fixed Shelf Life"
 msgstr "Sabit Raf Ömrü"
+
+msgid "Fixed when the agreement was activated."
+msgstr ""
 
 msgid "Fixture"
 msgstr "Bağlama aparatı"
@@ -8395,8 +8428,14 @@ msgstr "Önceki haftadan"
 msgid "From Storage Unit"
 msgstr "Depolama biriminden"
 
-msgid "From the item's rental rates. They are snapshotted onto the line when the agreement is activated."
-msgstr "Stok kartının kira oranlarından. Sözleşme etkinleştirildiğinde satıra anlık görüntüleri kaydedilir."
+msgid "From the customer type's rental rates for the item."
+msgstr ""
+
+msgid "From the item's rental rates."
+msgstr ""
+
+msgid "From this customer's rental rates for the item."
+msgstr ""
 
 msgid "From:"
 msgstr "Başlangıç:"
@@ -10034,6 +10073,9 @@ msgstr "Finansal Kiralama Hasılat"
 msgid "Lease Revenue (default)"
 msgstr "Finansal Kiralama Hasılat (varsayılan)"
 
+msgid "Leave all three empty to use the customer's rental rates, else the customer type's, else the item's."
+msgstr ""
+
 msgid "Leave any related receipts untouched"
 msgstr "İlgili tüm makbuzları dokunulmamış bırakır"
 
@@ -10136,9 +10178,6 @@ msgstr "Satır"
 #. placeholder {0}: line.lineNumber
 msgid "Line {0}"
 msgstr "Satır {0}"
-
-msgid "Line actions"
-msgstr "Satır İşlemleri"
 
 msgid "Line description (optional)"
 msgstr "Satır açıklaması (isteğe bağlı)"
@@ -11025,6 +11064,9 @@ msgstr "Aylık"
 msgid "Monthly Depreciation"
 msgstr "Aylık Amortisman"
 
+msgid "Monthly Rent:"
+msgstr ""
+
 msgid "Months over which this asset depreciates for tax purposes (when not using MACRS)."
 msgstr "Bu varlığın vergi amaçları için amorti edildiği aylar (MACRS kullanılmıyorsa)."
 
@@ -11269,6 +11311,9 @@ msgstr "Yeni Müşteri"
 
 msgid "New Customer Part"
 msgstr "Yeni Müşteri Parçası"
+
+msgid "New Customer Rental Rates"
+msgstr ""
 
 msgid "New Demand Forecast"
 msgstr "Yeni Talep Tahmini"
@@ -11549,6 +11594,9 @@ msgstr "Sonraki Teslim Tarihi"
 msgid "Next Due Date"
 msgstr "Sonraki Vade Tarihi"
 
+msgid "Next Due:"
+msgstr ""
+
 msgid "Next Interest"
 msgstr "Sonraki Faiz"
 
@@ -11699,6 +11747,9 @@ msgstr "Hiç maliyet geçmişi bulunamadı"
 
 msgid "No credits yet"
 msgstr "Henüz kredi yok"
+
+msgid "No customer rental rates."
+msgstr ""
 
 msgid "No Data"
 msgstr "Veri Yok"
@@ -11997,6 +12048,9 @@ msgstr "Referans resim yok"
 
 msgid "No remaining entities to inspect."
 msgstr "İncelenecek kalan varlık yok."
+
+msgid "No rental rates"
+msgstr ""
 
 msgid "No reports match your search."
 msgstr "Aramanızla eşleşen rapor yok."
@@ -13179,8 +13233,20 @@ msgstr "personel"
 msgid "People"
 msgstr "Personel"
 
+msgid "per 28 days"
+msgstr ""
+
+msgid "per day"
+msgstr ""
+
+msgid "per month"
+msgstr ""
+
 msgid "Per Unit"
 msgstr "Birim Başı"
+
+msgid "per week"
+msgstr ""
 
 msgid "Per-line override of the order header's fulfillment Location; used for split shipments and drop-ships."
 msgstr "Sipariş başlığındaki sevkiyat lokasyonunun satır başına geçersiz kılınması; bölünmüş sevkiyatlar ve doğrudan sevkiyatlar için kullanılır."
@@ -14363,6 +14429,15 @@ msgstr "Konsolidasyonda özkaynak hesaplarının çevrimi için kullanılan kur 
 
 msgid "Rates a rental agreement line uses for this item. At least one is required."
 msgstr "Bu stok kartı için kiralama sözleşmesi satırlarının kullandığı oranlar. En az bir tanesi gereklidir."
+
+msgid "Rates are the items' current rental rates. They are fixed on each unit when the agreement is activated."
+msgstr ""
+
+msgid "Rates for a single customer"
+msgstr ""
+
+msgid "Rates for all customers of a type"
+msgstr ""
 
 msgid "Ratio"
 msgstr "Oran"
@@ -16937,9 +17012,6 @@ msgstr "Partilemeye değer en küçük çalışma. Hiçbiri için boş bırakın
 msgid "Smoke-test the core daily flows end to end"
 msgstr "Temel günlük akışları uçtan uca test et"
 
-msgid "Snapshotted from the item when activated."
-msgstr "Etkinleştirilirken stok kartından anlık görüntü alındı."
-
 msgid "so you can assign it here."
 msgstr "burada atayabilmeniz için."
 
@@ -17443,9 +17515,6 @@ msgstr "Öneri Bildirimleri"
 msgid "Suggestions"
 msgstr "Öneriler"
 
-msgid "Summary"
-msgstr ""
-
 msgid "Sunday"
 msgstr "Pazar"
 
@@ -17870,9 +17939,6 @@ msgstr "Şablonlar"
 
 msgid "Temporary disposal-clearing account debited for an asset's net book value on shipment and credited for its net book value on invoicing, netting to zero over the sale cycle."
 msgstr "Sevkiyat sırasında bir varlığın net defter değeri için borçlandırılan ve faturalama sırasında net defter değeri için alacaklandırılan, satış döngüsü boyunca sıfıra netleşen geçici elden çıkarma mahsup hesabı."
-
-msgid "Term"
-msgstr "Vade"
 
 msgid "Term is at least {threshold} of a unit's economic life"
 msgstr ""
@@ -19679,6 +19745,9 @@ msgstr "Faturalandırılmamış"
 msgid "Unbilled receivable for rent earned before it is invoiced"
 msgstr "Faturasız kazanılan kiralama geliri alacağı"
 
+msgid "Unbilled:"
+msgstr ""
+
 msgid "Uncounted lines are left unchanged at post — they are not zeroed."
 msgstr "Sayılmayan satırlar gönderide değiştirilmeden bırakılır — sıfırlanmaz."
 
@@ -20114,6 +20183,9 @@ msgstr "Kapsanan etki alanlarındaki kullanıcılar yalnızca SAML SSO ile oturu
 
 msgid "Users to Update"
 msgstr "Güncellenecek Kullanıcılar"
+
+msgid "Valid"
+msgstr ""
 
 msgid "Valid From"
 msgstr "Geçerli Tarih"
@@ -20881,6 +20953,9 @@ msgstr "Tutarın, satır fiyatının yüzdesi olarak mı yoksa sabit bir para bi
 
 msgid "Whether Carbon follows each unit (Serial), each lot (Batch), the quantity (Inventory), or no tracking (Non-Inventory)."
 msgstr "Carbon'un takip şekli — her birim (Seri), her lot (Parti), miktar (Envanter), veya hiçbir takip (Stok dışı)"
+
+msgid "Whether each unit is treated as a rental or a sale is decided when the agreement is activated, from the terms and each unit's inputs."
+msgstr ""
 
 msgid "Whether each unit is treated as a rental or a sale is decided when the agreement is activated."
 msgstr ""

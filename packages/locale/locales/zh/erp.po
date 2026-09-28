@@ -72,6 +72,10 @@ msgstr "{0, plural, one {# 行链接到该公司外的数据，无法备份。�
 msgid "{0, plural, one {This item is on 1 open change notice} other {This item is on # open change notices}}"
 msgstr "{0, plural, one {此物料有1个未结的变更通知} other {此物料有#个未结的变更通知}}"
 
+#. placeholder {0}: rate.customerType.name
+msgid "{0} (type)"
+msgstr ""
+
 #. placeholder {0}: selectedAccountIds.length
 msgid "{0} accounts"
 msgstr "{0} 个账户"
@@ -929,6 +933,9 @@ msgstr "租赁协议将序列号物料件配置给客户，并按照循环周期
 msgid "A rental line is a sales-type lease when any ASC 842 test is met. These thresholds set tests (c) and (d); the discount rate is the default for new rental agreements."
 msgstr "当满足任何ASC 842测试时，租赁行是销售型租赁。这些阈值设置了测试(c)和(d)；折扣率是新租赁协议的默认值。"
 
+msgid "A rental line uses the customer's rates, else its customer type's, else the item's. The rates can still be changed on each line."
+msgstr ""
+
 msgid "A rental that meets any of the five ASC 842 lease tests, booked as a sale when its agreement activates: the unit leaves the fleet, lease revenue and cost of goods sold post, and a net investment in the lease takes its place."
 msgstr "满足五项ASC 842租赁测试之一的租赁，在其协议激活时作为销售入账：该件设备离开租赁队伍，租赁收入和销售成本过账，租赁净投资代替其位置。"
 
@@ -1240,6 +1247,9 @@ msgid "Accounting Periods"
 msgstr "会计期间"
 
 msgid "Accounting treatment"
+msgstr ""
+
+msgid "Accounting Treatment"
 msgstr ""
 
 msgid "Accounting treatment inputs"
@@ -1978,6 +1988,9 @@ msgstr "物料的追踪类型更改"
 msgid "An item's unit of measure changes"
 msgstr "物料的计量单位更改"
 
+msgid "An open-ended agreement is always a rental. Set an end date to use these."
+msgstr ""
+
 msgid "An open-ended agreement is always treated as a rental: a sale needs an end date."
 msgstr ""
 
@@ -2538,6 +2551,9 @@ msgstr "确定要删除查看\"{0}\"吗？"
 #. placeholder {0}: webhook.name
 msgid "Are you sure you want to delete the webhook: {0}? This cannot be undone."
 msgstr "您确定要删除webhook: {0}吗？此操作无法撤销。"
+
+msgid "Are you sure you want to delete these rental rates? Rental lines already added keep their rates. This cannot be undone."
+msgstr ""
 
 msgid "Are you sure you want to delete this approval rule? This cannot be undone."
 msgstr "你确定要删除此审批规则吗？此操作无法撤销。"
@@ -3196,6 +3212,9 @@ msgstr "账单收款人"
 
 msgid "Billed Tier"
 msgstr "计费 等级"
+
+msgid "Billed:"
+msgstr ""
 
 msgid "Billing"
 msgstr "账单"
@@ -4144,8 +4163,8 @@ msgstr "计算于 {0}"
 msgid "Computed At"
 msgstr "计算于"
 
-msgid "Computed from the saved terms and the item's current rates. Activation classifies the lease and stores the result."
-msgstr "从保存的条款和物料的当前费率计算。激活分类租赁并存储结果。"
+msgid "Computed from the saved terms and rates. Activation classifies the lease and stores the result."
+msgstr ""
 
 msgid "Condensed P&L with margins and key subtotals"
 msgstr "精简损益表，含利润率和关键小计"
@@ -4504,6 +4523,9 @@ msgstr "复制换型提示给您的AI编码工具"
 msgid "Copy"
 msgstr "复制"
 
+msgid "Copy agreement number"
+msgstr ""
+
 msgid "Copy all items and pricing to another customer or type."
 msgstr "将所有物料和定价复制到另一个客户或类型。"
 
@@ -4545,6 +4567,9 @@ msgstr "复制工作单号"
 
 msgid "Copy link"
 msgstr "复制链接"
+
+msgid "Copy link to agreement"
+msgstr ""
 
 msgid "Copy link to change notice"
 msgstr "复制变更通知链接"
@@ -5337,6 +5362,9 @@ msgstr "客户参考"
 
 msgid "Customer Reference"
 msgstr "客户参考"
+
+msgid "Customer Rental Rates"
+msgstr ""
 
 msgid "Customer Revision"
 msgstr "客户修订版"
@@ -6165,6 +6193,9 @@ msgstr "保证金"
 msgid "Deposit for"
 msgstr "保证金 用于"
 
+msgid "Deposit:"
+msgstr ""
+
 msgid "Deposits"
 msgstr "押金"
 
@@ -6789,6 +6820,9 @@ msgstr "编辑自定义字段"
 
 msgid "Edit Customer Part"
 msgstr "编辑客户零件"
+
+msgid "Edit Customer Rental Rates"
+msgstr ""
 
 msgid "Edit Customer Status"
 msgstr "编辑客户状态"
@@ -7938,8 +7972,8 @@ msgstr "加载供应商退货行失败"
 msgid "Failed to load supplier returns"
 msgstr "加载供应商退货失败"
 
-msgid "Failed to load the item's rental rates"
-msgstr "无法加载该物料的租赁费率"
+msgid "Failed to load the rental rates"
+msgstr ""
 
 msgid "Failed to load tracked entities"
 msgstr "加载跟踪实体失败"
@@ -8256,10 +8290,6 @@ msgstr "在下达前修复这些工单"
 msgid "Fixed"
 msgstr "固定"
 
-#. placeholder {0}: line.rateUnit
-msgid "Fixed · {0}"
-msgstr "固定 · {0}"
-
 msgid "Fixed asset"
 msgstr "固定资产"
 
@@ -8289,6 +8319,9 @@ msgstr "固定重新订购"
 
 msgid "Fixed Shelf Life"
 msgstr "固定保质期"
+
+msgid "Fixed when the agreement was activated."
+msgstr ""
 
 msgid "Fixture"
 msgstr "工装夹具"
@@ -8395,8 +8428,14 @@ msgstr "从上周"
 msgid "From Storage Unit"
 msgstr "从存储单元"
 
-msgid "From the item's rental rates. They are snapshotted onto the line when the agreement is activated."
-msgstr "来自该物料的租赁费率。协议激活时，它们被快照到该行。"
+msgid "From the customer type's rental rates for the item."
+msgstr ""
+
+msgid "From the item's rental rates."
+msgstr ""
+
+msgid "From this customer's rental rates for the item."
+msgstr ""
 
 msgid "From:"
 msgstr "来源："
@@ -10034,6 +10073,9 @@ msgstr "租赁收入"
 msgid "Lease Revenue (default)"
 msgstr "租赁收入（默认）"
 
+msgid "Leave all three empty to use the customer's rental rates, else the customer type's, else the item's."
+msgstr ""
+
 msgid "Leave any related receipts untouched"
 msgstr "保留任何相关收据不变"
 
@@ -10136,9 +10178,6 @@ msgstr "行"
 #. placeholder {0}: line.lineNumber
 msgid "Line {0}"
 msgstr "行 {0}"
-
-msgid "Line actions"
-msgstr "行操作"
 
 msgid "Line description (optional)"
 msgstr "行描述(可选)"
@@ -11025,6 +11064,9 @@ msgstr "每月"
 msgid "Monthly Depreciation"
 msgstr "每月折旧"
 
+msgid "Monthly Rent:"
+msgstr ""
+
 msgid "Months over which this asset depreciates for tax purposes (when not using MACRS)."
 msgstr "该资产按税务目的折旧的月数（不使用MACRS时）。"
 
@@ -11269,6 +11311,9 @@ msgstr "新客户"
 
 msgid "New Customer Part"
 msgstr "新客户零件"
+
+msgid "New Customer Rental Rates"
+msgstr ""
 
 msgid "New Demand Forecast"
 msgstr "新需求预测"
@@ -11549,6 +11594,9 @@ msgstr "下次到期"
 msgid "Next Due Date"
 msgstr "下次到期日期"
 
+msgid "Next Due:"
+msgstr ""
+
 msgid "Next Interest"
 msgstr "下一期利息"
 
@@ -11699,6 +11747,9 @@ msgstr "未找到成本历史记录"
 
 msgid "No credits yet"
 msgstr "尚无信用"
+
+msgid "No customer rental rates."
+msgstr ""
 
 msgid "No Data"
 msgstr "无数据"
@@ -11997,6 +12048,9 @@ msgstr "没有参考图像"
 
 msgid "No remaining entities to inspect."
 msgstr "没有剩余的实体可检查。"
+
+msgid "No rental rates"
+msgstr ""
 
 msgid "No reports match your search."
 msgstr "未找到与搜索条件匹配的报告。"
@@ -13179,8 +13233,20 @@ msgstr "人员"
 msgid "People"
 msgstr "人员"
 
+msgid "per 28 days"
+msgstr ""
+
+msgid "per day"
+msgstr ""
+
+msgid "per month"
+msgstr ""
+
 msgid "Per Unit"
 msgstr "每单位"
+
+msgid "per week"
+msgstr ""
 
 msgid "Per-line override of the order header's fulfillment Location; used for split shipments and drop-ships."
 msgstr "对订单标题的发货地点的按行覆盖；用于分批发货和直发。"
@@ -14363,6 +14429,15 @@ msgstr "合并时用于所有者权益账户折算的汇率（IAS 21）。留空
 
 msgid "Rates a rental agreement line uses for this item. At least one is required."
 msgstr "本物料租赁协议行使用的费率。至少需要一个。"
+
+msgid "Rates are the items' current rental rates. They are fixed on each unit when the agreement is activated."
+msgstr ""
+
+msgid "Rates for a single customer"
+msgstr ""
+
+msgid "Rates for all customers of a type"
+msgstr ""
 
 msgid "Ratio"
 msgstr "比率"
@@ -16937,9 +17012,6 @@ msgstr "最小分批数量。留空表示无。"
 msgid "Smoke-test the core daily flows end to end"
 msgstr "进行核心日常流程的端到端冒烟测试"
 
-msgid "Snapshotted from the item when activated."
-msgstr "激活时从物料获取的快照。"
-
 msgid "so you can assign it here."
 msgstr "这样你可以在这里分配它。"
 
@@ -17443,9 +17515,6 @@ msgstr "建议通知"
 msgid "Suggestions"
 msgstr "建议"
 
-msgid "Summary"
-msgstr ""
-
 msgid "Sunday"
 msgstr "星期日"
 
@@ -17870,9 +17939,6 @@ msgstr "模板"
 
 msgid "Temporary disposal-clearing account debited for an asset's net book value on shipment and credited for its net book value on invoicing, netting to zero over the sale cycle."
 msgstr "临时处置清算账户，在发货时按资产账面净值做借方记录，在开票时按其账面净值做贷方记录，在销售周期内结余为零。"
-
-msgid "Term"
-msgstr "期限"
 
 msgid "Term is at least {threshold} of a unit's economic life"
 msgstr ""
@@ -19679,6 +19745,9 @@ msgstr "未开票"
 msgid "Unbilled receivable for rent earned before it is invoiced"
 msgstr "租赁收入在开票前的未开票应收款"
 
+msgid "Unbilled:"
+msgstr ""
+
 msgid "Uncounted lines are left unchanged at post — they are not zeroed."
 msgstr "未计数的行在过账时保持不变——它们不会被清零。"
 
@@ -20114,6 +20183,9 @@ msgstr "覆盖域上的用户只能使用 SAML SSO 登录；magic link、Google 
 
 msgid "Users to Update"
 msgstr "要更新的用户"
+
+msgid "Valid"
+msgstr ""
 
 msgid "Valid From"
 msgstr "有效期开始"
@@ -20881,6 +20953,9 @@ msgstr "金额是按行价格的百分比解释，还是按固定货币金额解
 
 msgid "Whether Carbon follows each unit (Serial), each lot (Batch), the quantity (Inventory), or no tracking (Non-Inventory)."
 msgstr "Carbon 是否跟踪每个件(序列号)、每个生产批次(批次)、数量(库存管理)或不跟踪(非库存)。"
+
+msgid "Whether each unit is treated as a rental or a sale is decided when the agreement is activated, from the terms and each unit's inputs."
+msgstr ""
 
 msgid "Whether each unit is treated as a rental or a sale is decided when the agreement is activated."
 msgstr ""
