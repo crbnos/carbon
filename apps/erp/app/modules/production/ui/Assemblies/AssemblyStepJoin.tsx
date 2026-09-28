@@ -117,16 +117,26 @@ export default function AssemblyStepJoin({
             <LuChevronDown className="size-3 shrink-0 text-muted-foreground" />
           </button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="min-w-[16rem]">
+        <DropdownMenuContent
+          align="end"
+          className="min-w-[16rem] max-w-[20rem] max-h-72 overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent"
+        >
           <DropdownMenuRadioGroup value={value} onValueChange={onChange}>
             <DropdownMenuRadioItem value="">
               <Trans>No, build in place</Trans>
             </DropdownMenuRadioItem>
-            {options.map(({ step, number, title }) => (
-              <DropdownMenuRadioItem key={step.id} value={step.id}>
-                {t`Joins step ${number}: ${title}`}
-              </DropdownMenuRadioItem>
-            ))}
+            {options.map(({ step, number, title }) => {
+              const label = t`Joins step ${number}: ${title}`;
+              return (
+                <DropdownMenuRadioItem
+                  key={step.id}
+                  value={step.id}
+                  title={label}
+                >
+                  <span className="truncate">{label}</span>
+                </DropdownMenuRadioItem>
+              );
+            })}
           </DropdownMenuRadioGroup>
         </DropdownMenuContent>
       </DropdownMenu>

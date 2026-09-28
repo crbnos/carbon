@@ -5,9 +5,9 @@ import { forwardRef } from "react";
 
 import { cn } from "./utils/cn";
 
-// The serif headline face is for page-level titles only. h4 is the compact size
+// The headline face is for page-level titles only. h4 is the compact size
 // record headers (job, picking list, orders) and in-app cards use, so it stays
-// in the body sans alongside the UI chrome around it.
+// in the body font alongside the UI chrome around it.
 const headingVariants = cva(
   "font-medium leading-[1.1] tracking-tight text-foreground text-balance",
   {

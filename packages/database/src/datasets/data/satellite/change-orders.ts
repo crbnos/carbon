@@ -3,13 +3,13 @@ import type { ChangeOrderData, ChangeOrderSpec } from "../../types.ts";
 export const CHANGE_ORDERS: ChangeOrderSpec[] = [
   {
     ref: "co:draft",
-    name: "SAT-1000 Rev A — antenna pointing mechanism update",
+    name: "SAW-001 — cell string layout for higher-efficiency cells",
     type: "Engineering",
     status: "Draft",
     openDateOffset: -346,
     affectedItems: [
       {
-        item: "SAT-1000",
+        item: "SAW-001",
         changeType: "Version",
         sortOrder: 1
       }
@@ -17,13 +17,13 @@ export const CHANGE_ORDERS: ChangeOrderSpec[] = [
   },
   {
     ref: "co:impl",
-    name: "EPS-001 harness connector revision — short circuit mitigation",
+    name: "HARNESS-001 connector revision — short circuit mitigation",
     type: "Engineering",
     status: "Implementation",
     openDateOffset: -307,
     affectedItems: [
       {
-        item: "EPS-001",
+        item: "HARNESS-001",
         changeType: "Revision",
         sortOrder: 1,
         supersessionMode: "Consume First",
@@ -31,18 +31,18 @@ export const CHANGE_ORDERS: ChangeOrderSpec[] = [
         successorEffectivityOffset: 49,
         revision: {
           revision: "A",
-          unitSalePrice: 120000,
+          unitSalePrice: 12600,
           description:
-            "Rev A — potted connector backshells and a revised harness remove the short-circuit path",
+            "Rev A — potted connector backshells replace the screw-clamp strain relief and remove the short-circuit path",
           bomEdits: [
-            { op: "delete", component: "MAT-KAPTON" },
-            { op: "setQuantity", component: "BAT-LIION-48V", quantity: 2 },
-            { op: "add", component: "HARNESS-001", quantity: 1, order: 5 }
+            { op: "delete", component: "FST-M4-TI" },
+            { op: "setQuantity", component: "MAT-KAPTON", quantity: 6 },
+            { op: "add", component: "MAT-SYLGARD", quantity: 0.25, order: 3 }
           ],
           operationEdits: [
             {
               order: 2,
-              description: "EPS functional & hipot test",
+              description: "Continuity, insulation resistance & hipot test",
               laborTime: 3
             }
           ]
