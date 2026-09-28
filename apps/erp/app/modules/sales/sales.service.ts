@@ -3425,13 +3425,15 @@ export async function updateQuoteFavorite(
  *
  * @param update.assignee Omit to keep the current assignee; null clears it.
  *   The app sends null only for Closed.
+ * @param update.noQuoteReasonId Stored only when set; omitted or null leaves
+ *   the current reason unchanged.
  */
 export async function updateSalesRFQStatus(
   client: SupabaseClient<Database>,
   update: {
     id: string;
     status: (typeof salesRFQStatusType)[number];
-    noQuoteReasonId: string | null;
+    noQuoteReasonId?: string | null;
     assignee: null | undefined;
     updatedBy: string;
   }

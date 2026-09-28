@@ -133,7 +133,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     files: getJobDocumentsWithItemId(
       client,
       companyId,
-      job.data,
+      { ...job.data, id: jobId },
       rootMethod.data.itemId
     ),
     productionData: getProductionDataByOperations(

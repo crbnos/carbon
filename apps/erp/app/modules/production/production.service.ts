@@ -920,7 +920,7 @@ export async function getJobDocumentsWithItemId(
   client: SupabaseClient<Database>,
   companyId: string,
   job: {
-    id: Job["id"];
+    id: string;
     salesOrderLineId?: Job["salesOrderLineId"];
     quoteLineId?: Job["quoteLineId"];
   },

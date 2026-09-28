@@ -918,6 +918,12 @@ export async function updateCompanyWithBaseCurrencyChange(
   });
 }
 
+/**
+ * Set the company's shelf-life settings.
+ *
+ * @param settings.nearExpiryWarningDays Omitting it disables expiry badges
+ *   company-wide.
+ */
 export async function updateShelfLifeSettings(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1213,6 +1219,11 @@ export async function updateAccountsReceivableAddressSetting(
     .eq("id", companyId);
 }
 
+/**
+ * Set the company's accounts payable email.
+ *
+ * @param accountsPayableEmail Omitting it clears the stored email.
+ */
 export async function updateAccountsPayableEmail(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1224,6 +1235,11 @@ export async function updateAccountsPayableEmail(
     .eq("id", companyId);
 }
 
+/**
+ * Set the company's accounts receivable email.
+ *
+ * @param accountsReceivableEmail Omitting it clears the stored email.
+ */
 export async function updateAccountsReceivableEmail(
   client: SupabaseClient<Database>,
   companyId: string,
