@@ -24,9 +24,6 @@ catalogs:
     '@emoji-mart/react':
       specifier: 1.1.1
       version: 1.1.1
-    '@fontsource-variable/hedvig-letters-serif':
-      specifier: 5.3.0
-      version: 5.3.0
     '@internationalized/date':
       specifier: 3.12.0
       version: 3.12.0
@@ -744,9 +741,6 @@ importers:
       '@epic-web/remember':
         specifier: 1.1.0
         version: 1.1.0
-      '@fontsource-variable/hedvig-letters-serif':
-        specifier: 'catalog:'
-        version: 5.3.0
       '@internationalized/date':
         specifier: 'catalog:'
         version: 3.12.0
@@ -1210,9 +1204,6 @@ importers:
       '@emoji-mart/react':
         specifier: 'catalog:'
         version: 1.1.1(emoji-mart@5.6.0)(react@18.3.1)
-      '@fontsource-variable/hedvig-letters-serif':
-        specifier: 'catalog:'
-        version: 5.3.0
       '@internationalized/date':
         specifier: 'catalog:'
         version: 3.12.0
@@ -1478,9 +1469,6 @@ importers:
       '@carbon/utils':
         specifier: workspace:*
         version: link:../../packages/utils
-      '@fontsource-variable/hedvig-letters-serif':
-        specifier: 'catalog:'
-        version: 5.3.0
       '@internationalized/date':
         specifier: 'catalog:'
         version: 3.12.0
@@ -5224,9 +5212,6 @@ packages:
 
   '@floating-ui/utils@0.2.11':
     resolution: {integrity: sha512-RiB/yIh78pcIxl6lLMG0CgBXAZ2Y0eVHqMPYugu+9U0AeT6YBeiJpf7lbdJNIugFP5SIjwNRgo4DhR1Qxi26Gg==}
-
-  '@fontsource-variable/hedvig-letters-serif@5.3.0':
-    resolution: {integrity: sha512-MN6cYKUUb3o1tEECg02+IY6HK9fGHpZOnG+YhJaqU9TEp2FVo2dw8bFrwnxBVJCvnrC0F3xYF2OlXEZMWXZ0Jw==}
 
   '@fontsource/inter@5.2.8':
     resolution: {integrity: sha512-P6r5WnJoKiNVV+zvW2xM13gNdFhAEpQ9dQJHt3naLvfg+LkF2ldgSLiF4T41lf1SQCM9QmkqPTn4TH568IRagg==}
@@ -18262,8 +18247,6 @@ snapshots:
       react-dom: 18.3.1(react@18.3.1)
 
   '@floating-ui/utils@0.2.11': {}
-
-  '@fontsource-variable/hedvig-letters-serif@5.3.0': {}
 
   '@fontsource/inter@5.2.8': {}
 
