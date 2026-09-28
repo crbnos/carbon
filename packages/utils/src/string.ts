@@ -38,6 +38,7 @@ export function pluralize(
 }
 
 export function stripSpecialCharacters(inputString: string) {
-  // Keep only characters that are valid for S3 keys
-  return inputString?.replace(/[^a-zA-Z0-9/!_\-.*'() &$@=;:+,?]/g, "");
+  // Keep only characters that are valid for S3 keys. `?` is not: it ends the
+  // storage URL's path, so "what?.pdf" was stored as "what".
+  return inputString?.replace(/[^a-zA-Z0-9/!_\-.*'() &$@=;:+,]/g, "");
 }

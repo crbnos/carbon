@@ -69,7 +69,18 @@ export async function action({ request, params }: ActionFunctionArgs) {
     .eq("id", shipmentId)
     // Service-role read: companyId scope is not backstopped by RLS here.
     .eq("companyId", companyId)
-    .single();
+    .maybeSingle();
+
+  // Everything below reads through the service role by shipmentId (the
+  // packing slip included), so a shipment outside this company stops here.
+  if (!shipmentForSurface) {
+    logger.error("Shipment not found for company", { companyId, shipmentId });
+    throw redirect(
+      path.to.shipments,
+      await flash(request, error(null, "Shipment not found"))
+    );
+  }
+
   const surfaces: ("shipment" | "warehouseTransfer")[] = ["shipment"];
   if (shipmentForSurface?.sourceDocument === "Outbound Transfer") {
     surfaces.push("warehouseTransfer");
@@ -278,6 +289,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
       .from("shipment")
       .select("sourceDocument, sourceDocumentId, shipmentId")
       .eq("id", shipmentId)
+      .eq("companyId", companyId)
       .single();
 
     // If the shipment is related to a sales order, save the packing slip PDF
@@ -291,6 +303,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
           .from("salesOrder")
           .select("opportunityId")
           .eq("id", shipment.sourceDocumentId)
+          .eq("companyId", companyId)
           .single();
 
         if (salesOrder?.opportunityId) {
@@ -377,6 +390,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
         .from("shipment")
         .select("locationId")
         .eq("id", shipmentId)
+        .eq("companyId", companyId)
         .single();
       const locationId = shipmentForPrint?.locationId as string | undefined;
       if (locationId) {

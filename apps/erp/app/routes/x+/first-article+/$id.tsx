@@ -1,5 +1,6 @@
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
+import { isCrossSiteNavigation } from "@carbon/auth/middleware/security.server";
 import { flash } from "@carbon/auth/session.server";
 import { VStack } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
@@ -41,8 +42,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   // An FAI the MES auto-start generated has no Form 2: the lineage resolver
   // that seeds it lives here. Seed it once, the first time it is opened — the
   // seed re-checks emptiness under the FAI's row lock, so it is a no-op if
-  // rows appeared meanwhile.
+  // rows appeared meanwhile. A GET that writes must not be triggerable from
+  // another site, so a cross-site navigation shows the page without seeding.
   if (
+    !isCrossSiteNavigation(request.headers) &&
     detail.data &&
     detail.data.firstArticle.status === "Draft" &&
     detail.data.firstArticle.jobId &&

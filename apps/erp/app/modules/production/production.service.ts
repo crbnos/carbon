@@ -60,6 +60,7 @@ import type {
   operationToolValidator
 } from "../shared";
 import { normalizeOperationSourceIds } from "../shared";
+import { updateSortOrder } from "../shared/sort-order";
 import {
   listBalloons,
   listInspectionFeatures,
@@ -96,6 +97,7 @@ import {
   cameraSchema,
   fastenerSchema,
   getAssemblyModelState,
+  isJobLocked,
   isJobOrderStatusHidden,
   JOB_LOCKED_STATUSES,
   JOB_SUPPLY_STATUS_PRIORITY,
@@ -2735,6 +2737,7 @@ export async function runMRP(
 
 export async function updateJobBatchNumber(
   client: SupabaseClient<Database>,
+  companyId: string,
   trackedEntityId: string,
   value: string | null
 ) {
@@ -2744,6 +2747,7 @@ export async function updateJobBatchNumber(
       readableId: value
     })
     .eq("id", trackedEntityId)
+    .eq("companyId", companyId)
     .select("id, readableId");
 }
 
@@ -4023,15 +4027,27 @@ export async function upsertJobMaterial(
     | (z.infer<typeof jobMaterialValidator> & {
         jobId: string;
         jobOperationId?: string;
+        companyId: string;
         updatedBy: string;
         customFields?: Json;
       })
 ) {
   if ("updatedBy" in jobMaterial) {
+    // A material never moves between jobs, make methods or tenants — strip the
+    // parent columns so an update cannot re-parent the row, and scope it to
+    // the caller's company (callers may pass a service-role client).
+    const {
+      id,
+      companyId,
+      jobId: _jobId,
+      jobMakeMethodId: _jobMakeMethodId,
+      ...update
+    } = jobMaterial;
     return client
       .from("jobMaterial")
-      .update(sanitize(jobMaterial))
-      .eq("id", jobMaterial.id)
+      .update(sanitize(update))
+      .eq("id", id)
+      .eq("companyId", companyId)
       .select("id, methodType")
       .single();
   }
@@ -4060,10 +4076,20 @@ export async function upsertJobOperation(
 ) {
   const normalized = normalizeOperationSourceIds(jobOperation);
   if ("updatedBy" in normalized) {
+    // An operation never moves between jobs, make methods or tenants — strip
+    // the parent columns so an update cannot re-parent the row.
+    const {
+      id,
+      companyId,
+      jobId: _jobId,
+      jobMakeMethodId: _jobMakeMethodId,
+      ...update
+    } = normalized;
     return client
       .from("jobOperation")
-      .update(sanitize(normalized))
-      .eq("id", normalized.id)
+      .update(sanitize(update))
+      .eq("id", id)
+      .eq("companyId", companyId)
       .select("id")
       .single();
   }
@@ -5480,7 +5506,7 @@ export async function getActiveEmployeeAbilities(
  * `employeeShift`. The same ladder the boards' shift filter displays through,
  * so a row a filtered board shows is always a row its mutations can reach.
  */
-function whereEffectiveShift(shiftId: string) {
+function whereEffectiveShift(shiftId: string, companyId: string) {
   return (eb: ExpressionBuilder<KyselyDatabase, "peopleAssignment">) =>
     eb.or([
       eb("shiftId", "=", shiftId),
@@ -5493,9 +5519,76 @@ function whereEffectiveShift(shiftId: string) {
             .selectFrom("employeeShift")
             .select("employeeId")
             .where("shiftId", "=", shiftId)
+            .where("companyId", "=", companyId)
         )
       ])
     ]);
+}
+
+/**
+ * The people-board mutations write caller-supplied ids through Kysely (no
+ * RLS), and the API dispatcher reaches them without the board route's own
+ * check, so every referenced row must belong to `companyId` — the employee
+ * as an employee of the company. One query per table; absent refs are skipped.
+ * Throws, like the Kysely callers it guards.
+ */
+async function requirePeopleBoardRefs(
+  db: Kysely<KyselyDatabase>,
+  companyId: string,
+  refs: {
+    employeeId?: string;
+    locationId?: string;
+    shiftId?: string | null;
+    workCenterIds?: string[];
+  }
+) {
+  const workCenterIds = [...new Set(refs.workCenterIds ?? [])];
+  const [employee, location, shift, workCenters] = await Promise.all([
+    refs.employeeId
+      ? db
+          .selectFrom("employee")
+          .select("id")
+          .where("id", "=", refs.employeeId)
+          .where("companyId", "=", companyId)
+          .executeTakeFirst()
+      : null,
+    refs.locationId
+      ? db
+          .selectFrom("location")
+          .select("id")
+          .where("id", "=", refs.locationId)
+          .where("companyId", "=", companyId)
+          .executeTakeFirst()
+      : null,
+    refs.shiftId
+      ? db
+          .selectFrom("shift")
+          .select("id")
+          .where("id", "=", refs.shiftId)
+          .where("companyId", "=", companyId)
+          .executeTakeFirst()
+      : null,
+    workCenterIds.length > 0
+      ? db
+          .selectFrom("workCenter")
+          .select("id")
+          .where("id", "in", workCenterIds)
+          .where("companyId", "=", companyId)
+          .execute()
+      : []
+  ]);
+  if (
+    (refs.employeeId && !employee) ||
+    (refs.locationId && !location) ||
+    (refs.shiftId && !shift) ||
+    workCenters.length !== workCenterIds.length
+  ) {
+    logger.error("People board reference is not in the caller's company", {
+      companyId,
+      refs
+    });
+    throw new Error("Not found");
+  }
 }
 
 /**
@@ -5517,6 +5610,12 @@ export async function upsertPeopleAssignment(
     createdBy: string;
   }
 ) {
+  await requirePeopleBoardRefs(db, assignment.companyId, {
+    employeeId: assignment.employeeId,
+    locationId: assignment.locationId,
+    shiftId: assignment.shiftId,
+    workCenterIds: [assignment.workCenterId]
+  });
   if (assignment.hours !== undefined) {
     // remainder assignment: ADD hours at this station without touching the
     // person's other stations; same-station rows merge their hours
@@ -5529,7 +5628,9 @@ export async function upsertPeopleAssignment(
         .where("date", "=", assignment.date)
         .where("workCenterId", "=", assignment.workCenterId);
       existing = assignment.shiftId
-        ? existing.where(whereEffectiveShift(assignment.shiftId))
+        ? existing.where(
+            whereEffectiveShift(assignment.shiftId, assignment.companyId)
+          )
         : existing.where("shiftId", "is", null);
       const row = await existing.executeTakeFirst();
       if (row) {
@@ -5575,7 +5676,9 @@ export async function upsertPeopleAssignment(
       .where("employeeId", "=", assignment.employeeId)
       .where("date", "=", assignment.date);
     existing = assignment.shiftId
-      ? existing.where(whereEffectiveShift(assignment.shiftId))
+      ? existing.where(
+          whereEffectiveShift(assignment.shiftId, assignment.companyId)
+        )
       : existing.where("shiftId", "is", null);
     // moving stations keeps the person's authorized overtime for that day
     const carriedOvertime = (await existing.executeTakeFirst())?.overtimeHours;
@@ -5587,7 +5690,7 @@ export async function upsertPeopleAssignment(
       .where("employeeId", "=", assignment.employeeId)
       .where("date", "=", assignment.date);
     del = assignment.shiftId
-      ? del.where(whereEffectiveShift(assignment.shiftId))
+      ? del.where(whereEffectiveShift(assignment.shiftId, assignment.companyId))
       : del.where("shiftId", "is", null);
     await del.execute();
     return trx
@@ -5663,6 +5766,9 @@ export async function movePeopleAssignment(
   db: Kysely<KyselyDatabase>,
   args: { id: string; companyId: string; workCenterId: string }
 ) {
+  await requirePeopleBoardRefs(db, args.companyId, {
+    workCenterIds: [args.workCenterId]
+  });
   return db.transaction().execute(async (trx) => {
     const source = await trx
       .selectFrom("peopleAssignment")
@@ -5680,6 +5786,7 @@ export async function movePeopleAssignment(
           .selectFrom("employeeShift")
           .select("shiftId")
           .where("employeeId", "=", source.employeeId)
+          .where("companyId", "=", args.companyId)
           .executeTakeFirst()
       )?.shiftId ??
       null;
@@ -5691,7 +5798,7 @@ export async function movePeopleAssignment(
       .where("date", "=", source.date)
       .where("workCenterId", "=", args.workCenterId);
     targetQuery = effectiveShiftId
-      ? targetQuery.where(whereEffectiveShift(effectiveShiftId))
+      ? targetQuery.where(whereEffectiveShift(effectiveShiftId, args.companyId))
       : targetQuery.where("shiftId", "is", null);
     const target = await targetQuery.executeTakeFirst();
 
@@ -5737,6 +5844,8 @@ export async function movePeopleAssignment(
  */
 export async function setPeopleDay(
   db: Kysely<KyselyDatabase>,
+  /** the authenticated user — filled by the caller, never the payload */
+  userId: string,
   args: {
     companyId: string;
     locationId: string;
@@ -5755,9 +5864,14 @@ export async function setPeopleDay(
       workCenterId: string;
       hours: number | null;
     }[];
-    createdBy: string;
   }
 ) {
+  await requirePeopleBoardRefs(db, args.companyId, {
+    employeeId: args.employeeId,
+    locationId: args.locationId,
+    shiftId: args.shiftId,
+    workCenterIds: args.rows.map((row) => row.workCenterId)
+  });
   return db.transaction().execute(async (trx) => {
     // location-scoped: the rows this reconciliation may DELETE must be limited
     // to the board the edit was made on
@@ -5769,7 +5883,9 @@ export async function setPeopleDay(
       .where("employeeId", "=", args.employeeId)
       .where("date", "=", args.date);
     if (args.shiftId) {
-      existingQuery = existingQuery.where(whereEffectiveShift(args.shiftId));
+      existingQuery = existingQuery.where(
+        whereEffectiveShift(args.shiftId, args.companyId)
+      );
     }
     const existing = await existingQuery.execute();
     const existingByStation = new Map(
@@ -5786,7 +5902,7 @@ export async function setPeopleDay(
             hours: row.hours,
             overtimeHours: args.overtimeHours,
             note: args.note,
-            updatedBy: args.createdBy,
+            updatedBy: userId,
             updatedAt: new Date().toISOString()
           })
           .where("id", "=", id)
@@ -5805,7 +5921,7 @@ export async function setPeopleDay(
             hours: row.hours,
             overtimeHours: args.overtimeHours,
             note: args.note,
-            createdBy: args.createdBy
+            createdBy: userId
           })
           .execute();
       }
@@ -5886,7 +6002,7 @@ export async function setPeopleOvertimeBulk(
       ? query.where("date", ">=", args.date).where("date", "<=", args.toDate)
       : query.where("date", "=", args.date);
     if (args.shiftId) {
-      query = query.where(whereEffectiveShift(args.shiftId));
+      query = query.where(whereEffectiveShift(args.shiftId, args.companyId));
     }
     if (args.departmentId) {
       const departmentId = args.departmentId;
@@ -5940,7 +6056,9 @@ async function copyPeopleDayInTransaction(
     .where("locationId", "=", args.locationId)
     .where("date", "=", args.fromDate);
   if (args.shiftId) {
-    sourceQuery = sourceQuery.where(whereEffectiveShift(args.shiftId));
+    sourceQuery = sourceQuery.where(
+      whereEffectiveShift(args.shiftId, args.companyId)
+    );
   }
   const source = await sourceQuery.execute();
 
@@ -6007,6 +6125,8 @@ const toIsoDate = (value: unknown) => {
  */
 export async function assignPeopleWeek(
   db: Kysely<KyselyDatabase>,
+  /** the authenticated user — filled by the caller, never the payload */
+  userId: string,
   args: {
     companyId: string;
     locationId: string;
@@ -6014,9 +6134,14 @@ export async function assignPeopleWeek(
     workCenterId: string;
     weekStart: string;
     shiftId: string | null;
-    createdBy: string;
   }
 ) {
+  await requirePeopleBoardRefs(db, args.companyId, {
+    employeeId: args.employeeId,
+    locationId: args.locationId,
+    shiftId: args.shiftId,
+    workCenterIds: [args.workCenterId]
+  });
   return db.transaction().execute(async (trx) => {
     // working days: the chosen shift's weekdays → the person's own shift's
     // weekdays → Mon–Fri
@@ -6051,6 +6176,7 @@ export async function assignPeopleWeek(
           "shift.sunday"
         ])
         .where("employeeShift.employeeId", "=", args.employeeId)
+        .where("employeeShift.companyId", "=", args.companyId)
         .where("shift.companyId", "=", args.companyId)
         .executeTakeFirst();
     }
@@ -6103,7 +6229,7 @@ export async function assignPeopleWeek(
         employeeId: args.employeeId,
         date,
         shiftId: args.shiftId,
-        createdBy: args.createdBy
+        createdBy: userId
       });
     }
     if (rows.length > 0) {
@@ -6136,7 +6262,7 @@ export async function unassignPeopleWeek(
     .where("date", ">=", args.weekStart)
     .where("date", "<=", addIsoDays(args.weekStart, 6));
   if (args.shiftId) {
-    query = query.where(whereEffectiveShift(args.shiftId));
+    query = query.where(whereEffectiveShift(args.shiftId, args.companyId));
   }
   return query.execute();
 }
@@ -6157,6 +6283,9 @@ export async function movePeopleWeek(
     shiftId: string | null;
   }
 ) {
+  await requirePeopleBoardRefs(db, args.companyId, {
+    workCenterIds: [args.workCenterId]
+  });
   const weekEnd = addIsoDays(args.weekStart, 6);
   return db.transaction().execute(async (trx) => {
     let sourceQuery = trx
@@ -6168,7 +6297,9 @@ export async function movePeopleWeek(
       .where("date", ">=", args.weekStart)
       .where("date", "<=", weekEnd);
     if (args.shiftId) {
-      sourceQuery = sourceQuery.where(whereEffectiveShift(args.shiftId));
+      sourceQuery = sourceQuery.where(
+        whereEffectiveShift(args.shiftId, args.companyId)
+      );
     }
     const source = await sourceQuery.execute();
 
@@ -6250,6 +6381,8 @@ export async function copyPeopleWeek(
  */
 export async function setPeopleAbsenceRange(
   db: Kysely<KyselyDatabase>,
+  /** the authenticated user — filled by the caller, never the payload */
+  userId: string,
   args: {
     companyId: string;
     employeeId: string;
@@ -6257,9 +6390,12 @@ export async function setPeopleAbsenceRange(
     toDate: string;
     shiftId: string | null;
     note?: string;
-    createdBy: string;
   }
 ) {
+  await requirePeopleBoardRefs(db, args.companyId, {
+    employeeId: args.employeeId,
+    shiftId: args.shiftId
+  });
   return db.transaction().execute(async (trx) => {
     const existing = await trx
       .selectFrom("peopleAbsence")
@@ -6292,7 +6428,7 @@ export async function setPeopleAbsenceRange(
         date,
         shiftId: args.shiftId,
         note: args.note ?? null,
-        createdBy: args.createdBy
+        createdBy: userId
       });
     }
     if (rows.length > 0) {
@@ -7756,16 +7892,18 @@ export async function updateAssemblyInstructionStepStatus(
 
 export async function updateAssemblyInstructionStepOrder(
   db: Kysely<KyselyDatabase>,
-  updates: { id: string; sortOrder: number; updatedBy: string }[]
+  companyId: string,
+  userId: string,
+  assemblyInstructionId: string,
+  updates: { id: string; sortOrder: number }[]
 ) {
-  return db.transaction().execute(async (trx) => {
-    for (const { id, sortOrder, updatedBy } of updates) {
-      await trx
-        .updateTable("assemblyInstructionStep")
-        .set({ sortOrder, updatedBy, updatedAt: new Date().toISOString() })
-        .where("id", "=", id)
-        .execute();
-    }
+  return updateSortOrder(db, {
+    table: "assemblyInstructionStep",
+    column: "sortOrder",
+    companyId,
+    userId,
+    parent: { column: "assemblyInstructionId", id: assemblyInstructionId },
+    updates
   });
 }
 
@@ -7991,16 +8129,27 @@ async function getNextStepMaterialSortOrder(
 
 export async function updateAssemblyInstructionStepMaterialOrder(
   db: Kysely<KyselyDatabase>,
-  updates: { id: string; sortOrder: number; updatedBy: string }[]
+  companyId: string,
+  userId: string,
+  assemblyInstructionId: string,
+  updates: { id: string; sortOrder: number }[]
 ) {
-  return db.transaction().execute(async (trx) => {
-    for (const { id, sortOrder, updatedBy } of updates) {
-      await trx
-        .updateTable("assemblyInstructionStepMaterial")
-        .set({ sortOrder, updatedBy, updatedAt: new Date().toISOString() })
-        .where("id", "=", id)
-        .execute();
-    }
+  return updateSortOrder(db, {
+    table: "assemblyInstructionStepMaterial",
+    column: "sortOrder",
+    companyId,
+    userId,
+    // A material hangs off a step, so it is scoped to the instruction
+    // through that step.
+    parent: {
+      column: "stepId",
+      via: {
+        table: "assemblyInstructionStep",
+        column: "assemblyInstructionId",
+        id: assemblyInstructionId
+      }
+    },
+    updates
   });
 }
 
@@ -8849,6 +8998,25 @@ export async function syncAssemblyInstructionToOperation(
   const slideTable = "jobOperationStepSlide" as const;
 
   return db.transaction().execute(async (trx) => {
+    // The operation id comes from the caller and every write below is keyed on
+    // it, so it must belong to this company — and, since the API reaches this
+    // without the route's check, its job must not be locked.
+    const operation = await trx
+      .selectFrom("jobOperation")
+      .innerJoin("job", (join) =>
+        join
+          .onRef("job.id", "=", "jobOperation.jobId")
+          .onRef("job.companyId", "=", "jobOperation.companyId")
+      )
+      .select(["jobOperation.id", "job.status"])
+      .where("jobOperation.id", "=", operationId)
+      .where("jobOperation.companyId", "=", companyId)
+      .executeTakeFirst();
+    if (!operation) throw new Error("Operation not found");
+    if (isJobLocked(operation.status)) {
+      throw new Error("This job is locked — steps can't be synced to it");
+    }
+
     const instruction = await trx
       .selectFrom("assemblyInstruction")
       .select(["id", "itemId", "modelUploadId"])
@@ -9100,7 +9268,14 @@ export async function syncAssemblyInstructionToOperation(
     // Refresh part links on the synced steps only (hand-authored steps keep theirs).
     await trx
       .deleteFrom("jobMaterialStep")
-      .where("jobOperationStepId", "in", syncedTargetIds)
+      // No companyId column — scope through the step it links to.
+      .where("jobOperationStepId", "in", (eb) =>
+        eb
+          .selectFrom("jobOperationStep")
+          .select("id")
+          .where("id", "in", syncedTargetIds)
+          .where("companyId", "=", companyId)
+      )
       .execute();
     if (linkPairs.length > 0) {
       await trx
@@ -9122,6 +9297,7 @@ export async function syncAssemblyInstructionToOperation(
     await trx
       .deleteFrom(slideTable)
       .where("stepId", "in", syncedTargetIds)
+      .where("companyId", "=", companyId)
       .execute();
     const slideRows: {
       stepId: string;
@@ -9210,13 +9386,21 @@ export async function syncAssemblyInstructionToOperation(
             .updateTable("jobOperationTool")
             .set({ quantity, updatedBy: userId, updatedAt: now })
             .where("id", "=", existingId)
+            .where("companyId", "=", companyId)
             .execute();
         }
       }
     }
     await trx
       .deleteFrom("jobOperationToolStep")
-      .where("jobOperationStepId", "in", syncedTargetIds)
+      // No companyId column — scope through the step it links to.
+      .where("jobOperationStepId", "in", (eb) =>
+        eb
+          .selectFrom("jobOperationStep")
+          .select("id")
+          .where("id", "in", syncedTargetIds)
+          .where("companyId", "=", companyId)
+      )
       .execute();
     const toolLinkRows = buildAssemblyToolStepLinks(
       sourceSteps,
@@ -9279,10 +9463,13 @@ export async function generateAssemblyStepsFromPlan(
     mode?: "generate" | "regenerate";
   }
 ): Promise<GenerateStepsResult> {
+  // The route calls this with the service role (bypassRls) and a URL id, so
+  // every read and write is scoped to the caller's company.
   const instruction = await client
     .from("assemblyInstruction")
     .select("id, modelUploadId, modelUpload(graphPath)")
     .eq("id", args.assemblyInstructionId)
+    .eq("companyId", args.companyId)
     .single();
   if (instruction.error || !instruction.data.modelUploadId) {
     return { ok: false, reason: "no-model" };
@@ -9292,7 +9479,8 @@ export async function generateAssemblyStepsFromPlan(
   const existing = await client
     .from("assemblyInstructionStep")
     .select("id, planConfidence, status")
-    .eq("assemblyInstructionId", args.assemblyInstructionId);
+    .eq("assemblyInstructionId", args.assemblyInstructionId)
+    .eq("companyId", args.companyId);
   if ((existing.data ?? []).length > 0) {
     if (args.mode !== "regenerate") {
       return { ok: false, reason: "steps-exist", modelUploadId };
@@ -9313,7 +9501,8 @@ export async function generateAssemblyStepsFromPlan(
     const removed = await client
       .from("assemblyInstructionStep")
       .delete()
-      .eq("assemblyInstructionId", args.assemblyInstructionId);
+      .eq("assemblyInstructionId", args.assemblyInstructionId)
+      .eq("companyId", args.companyId);
     if (removed.error) {
       return { ok: false, reason: "error", message: removed.error.message };
     }

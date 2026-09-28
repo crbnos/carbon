@@ -2,6 +2,7 @@ import { assertIsPost } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { trackWorkEvent } from "@carbon/lib/telemetry";
+import { getLogger } from "@carbon/logger";
 import type { ActionFunctionArgs } from "react-router";
 import { userContext } from "~/context";
 import { getCompanySettings } from "~/services/inventory.service";
@@ -12,6 +13,8 @@ import {
 } from "~/services/picking.service";
 
 type PickingListStatus = (typeof pickingListStatus)[number];
+
+const logger = getLogger("mes", "picking-status");
 
 export async function action({ context, request, params }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -36,7 +39,15 @@ export async function action({ context, request, params }: ActionFunctionArgs) {
     .select("status")
     .eq("id", pickingListId)
     .eq("companyId", companyId)
-    .single();
+    .maybeSingle();
+  if (current.error || !current.data) {
+    logger.warn("Picking list not found for company", {
+      companyId,
+      pickingListId,
+      error: current.error
+    });
+    return { success: false, message: "Picking list not found" };
+  }
   if (
     isPickingListLocked(current.data?.status) &&
     !isPickingListLocked(status)

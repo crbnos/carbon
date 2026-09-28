@@ -1,3 +1,8 @@
+import { POSTHOG_API_HOST, SUPABASE_URL } from "@carbon/auth";
+import {
+  getNonce,
+  setStrictContentSecurityPolicy
+} from "@carbon/auth/middleware/security.server";
 import { ensureLoggingConfigured } from "@carbon/logger/config.server";
 import { handleRequest as vercelHandleRequest } from "@vercel/react-router/entry.server";
 import type { EntryContext, RouterContextProvider } from "react-router";
@@ -13,12 +18,18 @@ export default function handleRequest(
   routerContext: EntryContext,
   _loadContext: RouterContextProvider // RouterContextProvider when v8_middleware is turned on
 ) {
+  const nonce = getNonce(_loadContext);
+  setStrictContentSecurityPolicy(responseHeaders, nonce, {
+    supabaseUrl: SUPABASE_URL,
+    posthogHost: POSTHOG_API_HOST
+  });
   return vercelHandleRequest(
     request,
     responseStatusCode,
     responseHeaders,
     routerContext,
     // @ts-expect-error
-    _loadContext // Vercel's handler still expecting AppLoadContext type
+    _loadContext, // Vercel's handler still expecting AppLoadContext type
+    { nonce }
   );
 }

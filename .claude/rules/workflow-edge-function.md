@@ -183,7 +183,24 @@ was is what produced the cross-tenant write in
 `companyId`; it proves nothing about the RECORD IDS in the body, which usually come
 straight from the URL. When the invocation is service-role, RLS is not there to
 catch the mismatch either. So a function that takes a record id must re-read that
-record under `companyId` itself and 404 on a miss — `schedule` does this for `jobId`.
+record under `companyId` itself and 404 on a miss.
+
+The pattern is `functions/lib/company-records.ts`:
+
+- **Ids the function only writes as references** (a ledger's `locationId`, an
+  activity's `trackedEntityId`, a caller-chosen `purchaseOrderId`) — call
+  `assertCompanyRecords(db, table, ids, companyId, label)` once per table, right
+  after `requirePermissions`. It ignores null/undefined/duplicate ids (optional
+  fields stay optional), runs one query, and throws `RecordNotFoundError`. A table
+  must be on its `CompanyScopedTable` allow-list; add it there.
+- **The document the function acts on** (the receipt being posted, the invoice being
+  voided) — scope the EXISTING header read with `.eq("companyId", companyId)` and
+  `.maybeSingle()`, and 404 on a miss. Do not add a second pre-check query.
+- **Any other "X not found" miss** — throw `RecordNotFoundError`, not `Error`.
+
+`RecordNotFoundError` carries `status = 404`, and `errorResponse` (`lib/response.ts`)
+uses a numeric 4xx/5xx `err.status` over the status the catch block passes, so a
+catch block needs no `instanceof RecordNotFoundError` mapping.
 
 ## 6. Local dev
 

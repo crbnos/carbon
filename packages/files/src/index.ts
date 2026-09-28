@@ -4,6 +4,7 @@ export type { DocumentType, PreviewableDocumentType } from "./media/media";
 export {
   documentTypes,
   effectiveExtension,
+  fileResponseHeaders,
   getContentType,
   getDocumentType,
   getFileExtension,

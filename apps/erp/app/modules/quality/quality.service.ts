@@ -2577,16 +2577,20 @@ export async function insertIssue(
   }
 
   if (jobOperationId) {
+    // Callers pass the service role, so every lookup keyed on a caller id is
+    // scoped: a foreign id matches nothing and no link is written.
     const jobOperation = await client
       .from("jobOperation")
       .select("*")
       .eq("id", jobOperationId)
+      .eq("companyId", input.companyId)
       .single();
     if (jobOperation?.data) {
       const job = await client
         .from("job")
         .select("*")
         .eq("id", jobOperation.data.jobId)
+        .eq("companyId", input.companyId)
         .single();
       if (job.data) {
         const jobOperationInsert = await client
@@ -2631,6 +2635,7 @@ export async function insertIssue(
       .from("salesOrderLine")
       .select("*, salesOrder(salesOrderId)")
       .eq("id", salesOrderLineId)
+      .eq("companyId", input.companyId)
       .single();
     if (salesOrderLine.data) {
       const salesOrderLineInsert = await client
@@ -2658,6 +2663,7 @@ export async function insertIssue(
       .from("supplierProcess")
       .select("*")
       .eq("id", operationSupplierProcessId)
+      .eq("companyId", input.companyId)
       .single();
 
     if (operationSupplierProcess.data) {

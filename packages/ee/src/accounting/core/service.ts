@@ -87,21 +87,85 @@ export function resolveSyncConfig(metadata: unknown): GlobalSyncConfig {
 
 const logger = getLogger("ee", "accounting");
 
+type CompanyIntegrationRow =
+  Database["public"]["Tables"]["companyIntegration"]["Row"];
+
+// Credentials written before the providerMetadata shape kept tenantId at the
+// top level — match both paths so legacy rows stay resolvable.
+const TENANT_ID_PATHS = [
+  "metadata->credentials->>tenantId",
+  "metadata->credentials->providerMetadata->>tenantId"
+] as const;
+
+/**
+ * Resolve a provider's `companyIntegration` row by company id OR by the
+ * provider tenant id stored in its credentials. Each lookup is a separate,
+ * parameterised `.eq()` — the id is caller-supplied (a webhook's tenantId, a
+ * URL segment), so it must never be interpolated into a PostgREST filter
+ * string, where a `,` or `)` would add filter clauses of the caller's choosing.
+ *
+ * A company match wins (the PK is `(id, companyId)`, so it is unique).
+ * Otherwise exactly one row must match a tenant path — two companies
+ * connected to the same tenant is ambiguous and resolves to nothing, as the
+ * old single `.or().single()` query did.
+ */
+async function findIntegrationByCompanyOrTenant(
+  client: SupabaseClient<Database>,
+  companyOrTenantId: string,
+  provider: ProviderID
+): Promise<{ data: CompanyIntegrationRow | null; error: unknown }> {
+  const byCompany = await client
+    .from("companyIntegration")
+    .select("*")
+    .eq("id", provider)
+    .eq("companyId", companyOrTenantId)
+    .maybeSingle();
+
+  if (byCompany.error) return { data: null, error: byCompany.error };
+  if (byCompany.data) return { data: byCompany.data, error: null };
+
+  const byTenant = await Promise.all(
+    TENANT_ID_PATHS.map((path) =>
+      client
+        .from("companyIntegration")
+        .select("*")
+        .eq("id", provider)
+        .eq(path, companyOrTenantId)
+        .limit(2)
+    )
+  );
+
+  const failed = byTenant.find((result) => result.error);
+  if (failed) return { data: null, error: failed.error };
+
+  const matches = new Map<string, CompanyIntegrationRow>();
+  for (const result of byTenant) {
+    for (const row of result.data ?? []) matches.set(row.companyId, row);
+  }
+
+  if (matches.size !== 1) {
+    return {
+      data: null,
+      error:
+        matches.size === 0
+          ? "no matching integration"
+          : "tenant id matches more than one company"
+    };
+  }
+
+  return { data: [...matches.values()][0]!, error: null };
+}
+
 export const getAccountingIntegration = async <T extends ProviderID>(
   client: SupabaseClient<Database>,
   companyOrTenantId: string,
   provider: T
 ) => {
-  const integration = await client
-    .from("companyIntegration")
-    .select("*")
-    .eq("id", provider)
-    .or(
-      // Credentials written before the providerMetadata shape kept tenantId
-      // at the top level — match both paths so legacy rows stay resolvable
-      `companyId.eq.${companyOrTenantId},metadata->credentials->>tenantId.eq.${companyOrTenantId},metadata->credentials->providerMetadata->>tenantId.eq.${companyOrTenantId}`
-    )
-    .single();
+  const integration = await findIntegrationByCompanyOrTenant(
+    client,
+    companyOrTenantId,
+    provider
+  );
 
   logger.info("Fetched integration", {
     provider,
@@ -117,7 +181,7 @@ export const getAccountingIntegration = async <T extends ProviderID>(
 
   // Merge vaulted secret material (accessToken/refreshToken) back into the
   // metadata before parsing, so provider construction reads credentials the same
-  // as before. The tenantId/realmId used by the `.or(...)` filter above are NOT
+  // as before. The tenantId/realmId used by the tenant lookup above are NOT
   // secret and remain in the plaintext column, so that lookup is unaffected.
   // Vault RPCs require the service-role client.
   const { getCarbonServiceRole } = await import("@carbon/auth/client.server");

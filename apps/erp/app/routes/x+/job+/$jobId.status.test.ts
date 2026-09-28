@@ -36,6 +36,9 @@ vi.mock("~/utils/path", () => ({
   },
   requestReferrer: () => null
 }));
+vi.mock("~/modules/shared/shared.server", () => ({
+  requireCompanyRecord: vi.fn(async () => undefined)
+}));
 vi.mock("~/modules/inventory", () => ({
   cancelOpenPickingListsForJob: vi.fn()
 }));
@@ -86,6 +89,7 @@ import {
   returnPickedRemaindersForJob,
   updateJobStatus
 } from "~/modules/production";
+import { requireCompanyRecord } from "~/modules/shared/shared.server";
 import { action } from "./$jobId.status";
 
 type QueryResult = { data: unknown; error: unknown };
@@ -442,6 +446,30 @@ describe("Job plain Ready status action", () => {
     expect(getJobReleaseReadiness).not.toHaveBeenCalled();
     expect(events).toContain("updateJobStatus");
     expect(events).not.toContain("afterJobsReleased");
+  });
+});
+
+describe("Job status tenancy", () => {
+  it("refuses a job outside the caller's company before any side effect", async () => {
+    // The action runs MRP, scheduling and picking sweeps with the service role
+    // keyed on the URL id — a foreign job must stop at the ownership check.
+    vi.mocked(requireCompanyRecord).mockRejectedValueOnce(
+      new Response("Not found", { status: 404 })
+    );
+
+    const thrown = await runRelease().catch((e) => e);
+
+    expect(thrown).toBeInstanceOf(Response);
+    expect((thrown as Response).status).toBe(404);
+    expect(requireCompanyRecord).toHaveBeenCalledWith(
+      expect.anything(),
+      "job",
+      "company-1",
+      { id: "job-1" }
+    );
+    expect(updateJobStatus).not.toHaveBeenCalled();
+    expect(runLocationSchedule).not.toHaveBeenCalled();
+    expect(events).toEqual([]);
   });
 });
 

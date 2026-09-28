@@ -106,7 +106,12 @@ export async function acceptInvite(
     };
   }
 
-  if (email && invite.data.email !== email) {
+  // GoTrue stores auth emails lower-cased, while an invite keeps the address
+  // as it was typed, so compare the normalized forms.
+  if (
+    email &&
+    invite.data.email.trim().toLowerCase() !== email.trim().toLowerCase()
+  ) {
     throw new Error(
       "Invite code does not match email. Please logout and try again."
     );
@@ -339,13 +344,23 @@ export async function createCustomerAccount(
   | { success: false; message: string }
   | { success: true; code: string; userId: string; email: string }
 > {
-  const customerContact = await getCustomerContact(client, id);
+  // Both ids come from the form: the contact must be this company's and hang
+  // off the customer the account is being created for, or the account (and the
+  // contact's userId write below) would point at another tenant's rows.
+  const customerContact = await getCustomerContact(client, id, companyId);
   if (
     customerContact.error ||
     customerContact.data === null ||
+    customerContact.data.customerId !== customerId ||
     customerContact.data.contact === null ||
     !customerContact.data.contact.email
   ) {
+    logger.error("Failed to get customer contact for the company", {
+      companyId,
+      customerContactId: id,
+      customerId,
+      error: customerContact.error
+    });
     return { success: false, message: "Failed to get customer contact" };
   }
 
@@ -468,6 +483,40 @@ export async function createEmployeeAccount(
   | { success: false; message: string }
   | { success: true; code: string; userId: string }
 > {
+  // Both ids come from the invite form. The employee type's permission rows
+  // carry their own company ids, so a foreign type would put another
+  // company's grants into this invite; the location lands on employeeJob.
+  const [ownedEmployeeType, ownedLocation] = await Promise.all([
+    getCarbonServiceRole()
+      .from("employeeType")
+      .select("id")
+      .eq("id", employeeType)
+      .eq("companyId", companyId)
+      .maybeSingle(),
+    getCarbonServiceRole()
+      .from("location")
+      .select("id")
+      .eq("id", locationId)
+      .eq("companyId", companyId)
+      .maybeSingle()
+  ]);
+  if (ownedEmployeeType.error || !ownedEmployeeType.data) {
+    logger.error("Invite employee type is not in the company", {
+      companyId,
+      employeeType,
+      error: ownedEmployeeType.error
+    });
+    return { success: false, message: "Employee type not found" };
+  }
+  if (ownedLocation.error || !ownedLocation.data) {
+    logger.error("Invite location is not in the company", {
+      companyId,
+      locationId,
+      error: ownedLocation.error
+    });
+    return { success: false, message: "Location not found" };
+  }
+
   const employeeTypePermissions = await getPermissionsByEmployeeType(
     client,
     employeeType
@@ -599,13 +648,23 @@ export async function createSupplierAccount(
   | { success: false; message: string }
   | { success: true; code: string; userId: string; email: string }
 > {
-  const supplierContact = await getSupplierContact(client, id);
+  // Both ids come from the form: the contact must be this company's and hang
+  // off the supplier the account is being created for, or the account (and the
+  // contact's userId write below) would point at another tenant's rows.
+  const supplierContact = await getSupplierContact(client, id, companyId);
   if (
     supplierContact.error ||
     supplierContact.data === null ||
+    supplierContact.data.supplierId !== supplierId ||
     supplierContact.data.contact === null ||
     !supplierContact.data.contact.email
   ) {
+    logger.error("Failed to get supplier contact for the company", {
+      companyId,
+      supplierContactId: id,
+      supplierId,
+      error: supplierContact.error
+    });
     return { success: false, message: "Failed to get supplier contact" };
   }
 
@@ -1039,6 +1098,41 @@ export async function convertConsoleOperatorToUser(
   }
 ): Promise<{ success: false; message: string } | { success: true }> {
   const serviceRole = getCarbonServiceRole();
+
+  // userId comes from the URL and every write below is service-role, so prove
+  // the operator is an employee of THIS company — otherwise another company's
+  // operator could be given an auth login under an email the caller chose —
+  // and that the employee type is this company's.
+  const [membership, targetEmployeeType] = await Promise.all([
+    serviceRole
+      .from("employee")
+      .select("id")
+      .eq("id", userId)
+      .eq("companyId", companyId)
+      .maybeSingle(),
+    serviceRole
+      .from("employeeType")
+      .select("id")
+      .eq("id", employeeType)
+      .eq("companyId", companyId)
+      .maybeSingle()
+  ]);
+  if (membership.error || !membership.data) {
+    logger.error("Console operator is not an employee of the company", {
+      companyId,
+      userId,
+      error: membership.error
+    });
+    return { success: false, message: "User is not a console operator" };
+  }
+  if (targetEmployeeType.error || !targetEmployeeType.data) {
+    logger.error("Employee type is not in the company", {
+      companyId,
+      employeeType,
+      error: targetEmployeeType.error
+    });
+    return { success: false, message: "Employee type not found" };
+  }
 
   // Verify the user is a console operator
   // Note: isConsoleOperator field added by migration 20260319000000_console-mode.sql

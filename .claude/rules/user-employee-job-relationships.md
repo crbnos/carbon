@@ -52,7 +52,7 @@ is the separate `job` table from `20240909194622_jobs.sql`).
    `userToCompany` and `permissions` from `userPermission`, then returns
    `(jsonb_build_object('role', role) || permissions)`. Called through the API it answers only for
    the caller's own `uid`, or for someone in a company where the caller holds `users_view` or
-   `users_update`; service role and direct connections are unrestricted. RLS helpers like `has_company_permission`,
+   `users_update`; service role and direct connections are unrestricted. RLS helpers like
    `get_companies_with_employee_role()`, and `get_companies_with_employee_permission('<module>_<action>')`
    enforce this in policies (helpers re-defined in later migrations — read the newest).
 5. App layer (`packages/auth/src/services/`): `getUserClaims()` caches claims in Redis at

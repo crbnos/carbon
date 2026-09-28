@@ -303,61 +303,15 @@ CREATE INDEX IF NOT EXISTS "firstArticleInspectionProduct_certificateId_idx" ON 
 CREATE INDEX IF NOT EXISTS "firstArticleInspectionProduct_createdBy_idx" ON "firstArticleInspectionProduct" ("createdBy");
 
 -- ── 5f. RLS ───────────────────────────────────────────────────────────
--- Quality-owned tables
-DO $$
-DECLARE t TEXT;
-BEGIN
-  FOREACH t IN ARRAY ARRAY[
-    'complianceStatement',
-    'complianceStatementAssignment',
-    'firstArticleInspection',
-    'firstArticleInspectionProduct'
-  ]
-  LOOP
-    EXECUTE format('ALTER TABLE "public".%I ENABLE ROW LEVEL SECURITY', t);
-    EXECUTE format('DROP POLICY IF EXISTS "SELECT" ON "public".%I', t);
-    EXECUTE format('DROP POLICY IF EXISTS "INSERT" ON "public".%I', t);
-    EXECUTE format('DROP POLICY IF EXISTS "UPDATE" ON "public".%I', t);
-    EXECUTE format('DROP POLICY IF EXISTS "DELETE" ON "public".%I', t);
-    EXECUTE format('CREATE POLICY "SELECT" ON "public".%I FOR SELECT USING ("companyId" = ANY ((SELECT get_companies_with_employee_role())::text[]))', t);
-    EXECUTE format('CREATE POLICY "INSERT" ON "public".%I FOR INSERT WITH CHECK ("companyId" = ANY ((SELECT get_companies_with_employee_permission(''quality_create''))::text[]))', t);
-    EXECUTE format('CREATE POLICY "UPDATE" ON "public".%I FOR UPDATE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission(''quality_update''))::text[]))', t);
-    EXECUTE format('CREATE POLICY "DELETE" ON "public".%I FOR DELETE USING ("companyId" = ANY ((SELECT get_companies_with_employee_permission(''quality_delete''))::text[]))', t);
-  END LOOP;
-END $$;
-
--- certificateOfConformance: shipments are inventory
+-- Enabled here so the tables are closed until their policies land. The
+-- policies themselves are authored in packages/database/src/authz/manifest.ts
+-- and ship through a generated `authz migration`, never in a migration.
+ALTER TABLE "public"."complianceStatement" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "public"."complianceStatementAssignment" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "public"."firstArticleInspection" ENABLE ROW LEVEL SECURITY;
+ALTER TABLE "public"."firstArticleInspectionProduct" ENABLE ROW LEVEL SECURITY;
 ALTER TABLE "public"."certificateOfConformance" ENABLE ROW LEVEL SECURITY;
-DROP POLICY IF EXISTS "SELECT" ON "public"."certificateOfConformance";
-DROP POLICY IF EXISTS "INSERT" ON "public"."certificateOfConformance";
-DROP POLICY IF EXISTS "UPDATE" ON "public"."certificateOfConformance";
-DROP POLICY IF EXISTS "DELETE" ON "public"."certificateOfConformance";
-CREATE POLICY "SELECT" ON "public"."certificateOfConformance" FOR SELECT USING (
-  "companyId" = ANY ((SELECT get_companies_with_employee_role())::text[]));
-CREATE POLICY "INSERT" ON "public"."certificateOfConformance" FOR INSERT WITH CHECK (
-  "companyId" = ANY ((SELECT get_companies_with_employee_permission('inventory_update'))::text[]));
-CREATE POLICY "UPDATE" ON "public"."certificateOfConformance" FOR UPDATE USING (
-  "companyId" = ANY ((SELECT get_companies_with_employee_permission('inventory_update'))::text[]));
-CREATE POLICY "DELETE" ON "public"."certificateOfConformance" FOR DELETE USING (
-  "companyId" = ANY ((SELECT get_companies_with_employee_permission('inventory_delete'))::text[]));
-
--- certificate: receiving (inventory) or quality
 ALTER TABLE "public"."certificate" ENABLE ROW LEVEL SECURITY;
-DROP POLICY IF EXISTS "SELECT" ON "public"."certificate";
-DROP POLICY IF EXISTS "INSERT" ON "public"."certificate";
-DROP POLICY IF EXISTS "UPDATE" ON "public"."certificate";
-DROP POLICY IF EXISTS "DELETE" ON "public"."certificate";
-CREATE POLICY "SELECT" ON "public"."certificate" FOR SELECT USING (
-  "companyId" = ANY ((SELECT get_companies_with_employee_role())::text[]));
-CREATE POLICY "INSERT" ON "public"."certificate" FOR INSERT WITH CHECK (
-  "companyId" = ANY ((SELECT get_companies_with_employee_permission('inventory_create'))::text[])
-  OR "companyId" = ANY ((SELECT get_companies_with_employee_permission('quality_create'))::text[]));
-CREATE POLICY "UPDATE" ON "public"."certificate" FOR UPDATE USING (
-  "companyId" = ANY ((SELECT get_companies_with_employee_permission('inventory_update'))::text[])
-  OR "companyId" = ANY ((SELECT get_companies_with_employee_permission('quality_update'))::text[]));
-CREATE POLICY "DELETE" ON "public"."certificate" FOR DELETE USING (
-  "companyId" = ANY ((SELECT get_companies_with_employee_permission('inventory_delete'))::text[])
-  OR "companyId" = ANY ((SELECT get_companies_with_employee_permission('quality_delete'))::text[]));
 
 -- ── 6. Sequence for existing companies ────────────────────────────────
 INSERT INTO "sequence" ("table", "name", "prefix", "suffix", "next", "size", "step", "companyId")

@@ -69,6 +69,7 @@ IMPORTANT: Before any research or coding, match the task to this table. A single
 | Database conventions (tables, RLS, multi-tenancy) | `.claude/rules/conventions-database.md` |
 | Database access patterns (clients, Kysely, RPCs) | `.claude/rules/database-patterns.md` |
 | Migration SQL patterns (enums, views, triggers) | `.claude/rules/database-migration-patterns.md` |
+| RLS policies and RLS helpers (authz manifest) | `.claude/rules/authz-manifest.md` |
 | Working with the database package | `packages/database/AGENTS.md` |
 | **Server & Services** | |
 | Writing service functions | `.claude/rules/conventions-services.md` |

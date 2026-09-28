@@ -58,7 +58,7 @@ const sessionStorage = createCookieSessionStorage({
     path: "/",
     sameSite: isTestEdition ? "none" : "lax",
     secrets: [SESSION_SECRET!],
-    secure: !!cookieDomain,
+    secure: isTestEdition || !!cookieDomain,
     domain: cookieDomain
   }
 });

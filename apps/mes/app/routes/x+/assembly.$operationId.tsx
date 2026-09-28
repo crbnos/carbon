@@ -3,6 +3,7 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { getUserClaims } from "@carbon/auth/users.server";
+import { getLogger } from "@carbon/logger";
 import type { ComponentProps } from "react";
 import type { LoaderFunctionArgs } from "react-router";
 import { redirect, useLoaderData, useParams } from "react-router";
@@ -14,6 +15,7 @@ import {
   getJobMakeMethod,
   getJobMaterialsByOperationId,
   getJobOperationById,
+  getJobOperationForCompany,
   getJobOperationProcedure,
   getKanbanByJobId,
   getModelUploadsByIds,
@@ -32,6 +34,8 @@ import { resolveOperationView } from "~/utils/operationView";
 import { path } from "~/utils/path";
 
 type ExpiredEntityPolicy = "Warn" | "Block" | "BlockWithOverride";
+
+const logger = getLogger("mes", "assembly");
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { userId, companyId } = await requirePermissions(request, {});
@@ -52,6 +56,24 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const trackedEntityId = url.searchParams.get("trackedEntityId");
 
   const serviceRole = await getCarbonServiceRole();
+
+  // Every read below is service-role: verify the operation is this company's.
+  const ownedOperation = await getJobOperationForCompany(
+    serviceRole,
+    operationId,
+    companyId
+  );
+  if (!ownedOperation.data) {
+    logger.warn("Operation not found in company", {
+      companyId,
+      operationId,
+      error: ownedOperation.error
+    });
+    throw redirect(
+      path.to.operations,
+      await flash(request, error(null, "Operation not found"))
+    );
+  }
 
   const [job, operation] = await Promise.all([
     getJobByOperationId(serviceRole, operationId),

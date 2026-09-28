@@ -61,9 +61,12 @@ uploaded file) and exactly one target — CHECK `certificate_one_target`
   operation id comes from the client, so the route re-checks it belongs to the
   FAI's make method, then runs `refreshFirstArticleProducts`.
 
-RLS: `certificate` accepts `inventory_*` OR `quality_*`; `certificateOfConformance`
-is `inventory_*` (shipments are inventory); the compliance and FAI tables are
-`quality_*`.
+RLS lives in the authz manifest (`packages/database/src/authz/manifest.ts`,
+shipped by the generated `20260928012744_cofc-fai-rls.sql`), not in the feature
+migration: `certificate` accepts `inventory_*` OR `quality_*`;
+`certificateOfConformance` is `inventory_*` (shipments are inventory) and its
+INSERT takes `inventory_update` — issuing is an update of the posted shipment;
+the compliance and FAI tables are `quality_*`.
 
 `complianceStatement` (+ `complianceStatementAssignment`, one of `customerId` /
 `itemId`) holds the boilerplate a certificate prints. `upsertComplianceStatement`
@@ -277,7 +280,10 @@ concurrent seeds cannot both insert).
 **Lazy Form 2 seed.** An MES-generated FAI has no Form 2 rows. The ERP detail
 loader (`x+/first-article+/$id.tsx`) calls `seedFirstArticleProductsOnView`
 when the FAI is Draft, still has its job and make method, and has zero product
-rows, then reloads the detail if anything was inserted. Best-effort (logged;
+rows, then reloads the detail if anything was inserted. It is a GET that
+writes, so it is skipped on a cross-site navigation (`isCrossSiteNavigation`
+from `@carbon/auth/middleware/security.server`) — the page still renders,
+unseeded, rather than refusing a link from an email. Best-effort (logged;
 the page loads without rows and Refresh still works). Consequence: a user who
 deletes EVERY Form 2 row of a Draft FAI gets them re-seeded on the next view.
 

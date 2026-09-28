@@ -35,6 +35,21 @@ const MAX_DEPTH = 6;
 const MAX_PROPERTIES = 120;
 
 /**
+ * Collections `JSON.stringify` writes as `{}` — their members are methods and
+ * symbol-keyed slots, none of which reach the wire. Walking them emitted the
+ * checker's per-program symbol ids (`__@toStringTag@75448`) as property names,
+ * so an unrelated edit anywhere renumbered them and flipped the tool's digest.
+ */
+const JSON_OPAQUE_COLLECTIONS = new Set([
+  "Map",
+  "ReadonlyMap",
+  "WeakMap",
+  "Set",
+  "ReadonlySet",
+  "WeakSet"
+]);
+
+/**
  * Peel the layers between the declared return type and the payload a caller sees:
  * `Promise<PostgrestSingleResponse<T>>` and the hand-rolled
  * `Promise<{ data: T | null; error }>` both reduce to `T`.
@@ -116,6 +131,11 @@ export function typeToJsonSchema(
   if (type.isUnion()) return unionToJsonSchema(type, at, depth, seen);
 
   if (type.isObject()) {
+    const symbolName = type.getSymbol()?.getName();
+    if (symbolName && JSON_OPAQUE_COLLECTIONS.has(symbolName)) {
+      return { type: "object" };
+    }
+
     const key = type.getText();
     // Cycle: the type is already being expanded further up this branch.
     if (seen.has(key)) return { type: "object" };
@@ -142,7 +162,11 @@ export function typeToJsonSchema(
       };
     }
 
-    const properties = type.getProperties();
+    // Symbol-keyed members (`[Symbol.iterator]`, reported as `__@iterator@206`)
+    // are dropped by JSON.stringify, and their names carry unstable checker ids.
+    const properties = type
+      .getProperties()
+      .filter((property) => !property.getName().startsWith("__@"));
     if (properties.length === 0) return { type: "object" };
     if (properties.length > MAX_PROPERTIES) return { type: "object" };
 

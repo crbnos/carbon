@@ -6,7 +6,16 @@ vi.mock("../config/env", () => ({
   SESSION_SECRET: "test-session-secret"
 }));
 
-import { consumeOAuthState, issueOAuthState } from "./oauth-state.server";
+import {
+  consumeOAuthState,
+  issueOAuthState,
+  issueOAuthStates
+} from "./oauth-state.server";
+
+/** The cookie value (name=value) from a Set-Cookie header, as a browser sends it. */
+function cookieHeader(setCookie: string) {
+  return setCookie.split(";")[0]!;
+}
 
 function requestWithCookie(cookie: string) {
   return new Request("http://localhost/api/integrations/ramp/oauth", {
@@ -82,11 +91,98 @@ describe("OAuth state session", () => {
 
   it("rejects an expired state", async () => {
     const issued = await issueOAuthState(expected);
-    vi.advanceTimersByTime(10 * 60 * 1000 + 1);
+    vi.advanceTimersByTime(60 * 60 * 1000 + 1);
 
     const consumed = await consumeOAuthState(
       requestWithCookie(issued.cookie),
       issued.state,
+      expected
+    );
+
+    expect(consumed.valid).toBe(false);
+  });
+
+  it("keeps one pending state per integration", async () => {
+    const onshape = { ...expected, integrationId: "onshape" };
+    const ramp = await issueOAuthState(expected);
+    const both = await issueOAuthState(
+      onshape,
+      requestWithCookie(cookieHeader(ramp.cookie))
+    );
+
+    const onshapeConsumed = await consumeOAuthState(
+      requestWithCookie(cookieHeader(both.cookie)),
+      both.state,
+      onshape
+    );
+    const rampConsumed = await consumeOAuthState(
+      requestWithCookie(cookieHeader(onshapeConsumed.cookie)),
+      ramp.state,
+      expected
+    );
+
+    expect(onshapeConsumed.valid).toBe(true);
+    expect(rampConsumed.valid).toBe(true);
+  });
+
+  it("issues several states in one cookie", async () => {
+    const payloads = ["ramp", "xero", "jira"].map((integrationId) => ({
+      ...expected,
+      integrationId
+    }));
+    const issued = await issueOAuthStates(null, payloads);
+
+    for (const payload of payloads) {
+      const consumed = await consumeOAuthState(
+        requestWithCookie(cookieHeader(issued.cookie)),
+        issued.states[payload.integrationId]!,
+        payload
+      );
+      expect(consumed.valid).toBe(true);
+    }
+  });
+
+  it("does not accept one integration's state for another", async () => {
+    const issued = await issueOAuthStates(null, [
+      expected,
+      { ...expected, integrationId: "xero" }
+    ]);
+
+    const consumed = await consumeOAuthState(
+      requestWithCookie(cookieHeader(issued.cookie)),
+      issued.states.ramp!,
+      { ...expected, integrationId: "xero" }
+    );
+
+    expect(consumed.valid).toBe(false);
+  });
+
+  it("reuses a still-fresh state so a second page load does not invalidate the first", async () => {
+    const first = await issueOAuthState(expected);
+    vi.advanceTimersByTime(60 * 1000);
+    const second = await issueOAuthState(
+      expected,
+      requestWithCookie(cookieHeader(first.cookie))
+    );
+
+    expect(second.state).toBe(first.state);
+  });
+
+  it("replaces a state bound to a different user instead of reusing it", async () => {
+    const first = await issueOAuthState(expected);
+    const second = await issueOAuthState(
+      { ...expected, userId: "user-2" },
+      requestWithCookie(cookieHeader(first.cookie))
+    );
+
+    expect(second.state).not.toBe(first.state);
+  });
+
+  it("rejects an empty state even when one is stored", async () => {
+    const issued = await issueOAuthState(expected);
+    const consumed = await consumeOAuthState(
+      requestWithCookie(cookieHeader(issued.cookie)),
+      "",
       expected
     );
 

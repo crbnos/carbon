@@ -3,8 +3,10 @@ import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { CompanyBucket } from "@carbon/files";
 import {
   effectiveExtension,
+  fileResponseHeaders,
   getCompanyPrivateBucket,
   getContentType,
+  isUnsafeStoragePath,
   LEGACY_PRIVATE_BUCKET,
   storage,
   TEMP_STAGING_BUCKET
@@ -15,7 +17,10 @@ import type { LoaderFunctionArgs } from "react-router";
 const log = getLogger("mes");
 
 export let loader = async ({ request, params }: LoaderFunctionArgs) => {
-  const { companyId } = await requirePermissions(request, {});
+  // Employees only: the read below uses the service role, so this is the whole
+  // gate. A customer or supplier portal account is also a session in the company
+  // and would otherwise read every private file it has.
+  const { companyId } = await requirePermissions(request, { role: "employee" });
   const { bucket } = params;
   let path = params["*"];
 
@@ -40,16 +45,29 @@ export let loader = async ({ request, params }: LoaderFunctionArgs) => {
   // that bypass the app (API uploads): browsers outside Safari can't render
   // HEIC, so ask storage for the imgproxy JPEG rendition instead.
   const isHeicFile = effectiveType === "heic" || effectiveType === "heif";
-  let contentType = effectiveType ? getContentType(effectiveType) : undefined;
+  let contentType = getContentType(effectiveType);
 
   // Authorize against the companyId as a full path segment (prefix or
   // slash-bounded), not a loose substring — `.includes(companyId)` lets
   // `<otherCo>/.../<yourCompanyId>.pdf` serve another company's private file.
+  if (isUnsafeStoragePath(path)) {
+    log.warn("Refused a storage path that escapes its prefix", {
+      companyId,
+      bucket,
+      path
+    });
+    return new Response(null, { status: 400 });
+  }
   const decodedPath = decodeURIComponent(path);
   const ownsPath =
     decodedPath.startsWith(`${companyId}/`) ||
     decodedPath.includes(`/${companyId}/`);
   if (!ownsPath) {
+    log.warn("Refused file preview outside the caller's company", {
+      companyId,
+      bucket,
+      path
+    });
     return new Response(null, { status: 403 });
   }
 
@@ -66,6 +84,10 @@ export let loader = async ({ request, params }: LoaderFunctionArgs) => {
     bucket !== "public" &&
     bucket !== TEMP_STAGING_BUCKET
   ) {
+    log.warn("Refused file preview from another bucket", {
+      companyId,
+      bucket
+    });
     return new Response(null, { status: 403 });
   }
 
@@ -113,13 +135,10 @@ export let loader = async ({ request, params }: LoaderFunctionArgs) => {
     }
   }
 
-  const headers = new Headers({
-    "Cache-Control": "private, max-age=31536000, immutable"
-  });
-
-  if (contentType) {
-    headers.set("Content-Type", contentType);
-  }
+  const headers = fileResponseHeaders(
+    contentType,
+    "private, max-age=31536000, immutable"
+  );
 
   if (isZst) {
     // Stream the storage object through a zstd decompress transform (Node

@@ -74,8 +74,7 @@ export const itarUserCertificationValidator = z.object({
 export const createOperatorValidator = z.object({
   firstName: z.string().min(1, { message: "First name is required" }),
   lastName: z.string().min(1, { message: "Last name is required" }),
-  locationId: z.string().min(1, { message: "Location is required" }),
-  pin: z.string().regex(/^\d{4}$/, "PIN must be 4 digits")
+  locationId: z.string().min(1, { message: "Location is required" })
 });
 
 export const convertOperatorValidator = z.object({

@@ -20,7 +20,7 @@ import {
   AlertDescription,
   AlertTitle,
   Button,
-  LoadingBars,
+  CarbonPulse,
   VStack
 } from "@carbon/react";
 import { useEffect, useRef, useState } from "react";
@@ -141,33 +141,39 @@ export default function AuthCallback() {
   }, [fetcher]);
 
   return (
-    <div className="flex flex-col items-center justify-center">
-      <div className="flex justify-center mb-8">
-        <img src="/carbon-mark-light.svg" alt="Carbon Logo" className="w-24" />
-      </div>
+    <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-background">
       {error ? (
-        <div className="rounded-lg p-8 mt-8 w-[380px]">
-          <VStack spacing={4}>
-            <Alert variant="destructive">
-              <LuTriangleAlert className="h-4 w-4" />
-              <AlertTitle>Error</AlertTitle>
-              <AlertDescription>{error}</AlertDescription>
-            </Alert>
-            {error.includes("expired") && (
-              <>
-                <p className="text-sm text-muted-foreground">
-                  But don't worry. You can use the forgot password flow to
-                  request a new magic link.
-                </p>
-                <Button size="lg" asChild className="w-full">
-                  <Link to={path.to.login}>Login</Link>
-                </Button>
-              </>
-            )}
-          </VStack>
-        </div>
+        <>
+          <div className="flex justify-center mb-8">
+            <img
+              src="/carbon-mark-light.svg"
+              alt="Carbon Logo"
+              className="w-24"
+            />
+          </div>
+          <div className="rounded-lg p-8 mt-8 w-[380px]">
+            <VStack spacing={4}>
+              <Alert variant="destructive">
+                <LuTriangleAlert className="h-4 w-4" />
+                <AlertTitle>Error</AlertTitle>
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+              {error.includes("expired") && (
+                <>
+                  <p className="text-sm text-muted-foreground">
+                    But don't worry. You can use the forgot password flow to
+                    request a new magic link.
+                  </p>
+                  <Button size="lg" asChild className="w-full">
+                    <Link to={path.to.login}>Login</Link>
+                  </Button>
+                </>
+              )}
+            </VStack>
+          </div>
+        </>
       ) : (
-        <LoadingBars />
+        <CarbonPulse />
       )}
     </div>
   );

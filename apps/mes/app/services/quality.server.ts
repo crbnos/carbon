@@ -24,7 +24,7 @@ import {
 
 type ServiceRole = Awaited<ReturnType<typeof getCarbonServiceRole>>;
 
-const logger = getLogger("mes", "first-article");
+const logger = getLogger("mes", "quality");
 
 // -------------------------------------------------------------
 // First Article (AS9102) on the shop floor
@@ -172,6 +172,51 @@ export async function createQualityIssue(
 
   if (!context.ok) {
     return { data: null, error: context.error, message: context.message };
+  }
+
+  // Caller-supplied references written with the service role: each must
+  // belong to this company, or the issue would link another tenant's rows.
+  const [issueType, inspection] = await Promise.all([
+    args.nonConformanceTypeId
+      ? serviceRole
+          .from("nonConformanceType")
+          .select("id")
+          .eq("id", args.nonConformanceTypeId)
+          .eq("companyId", companyId)
+          .maybeSingle()
+      : null,
+    args.inspectionId
+      ? serviceRole
+          .from("inspection")
+          .select("id")
+          .eq("id", args.inspectionId)
+          .eq("companyId", companyId)
+          .maybeSingle()
+      : null
+  ]);
+  if (issueType && (issueType.error || !issueType.data)) {
+    logger.warn("Quality issue type not found for company", {
+      companyId,
+      nonConformanceTypeId: args.nonConformanceTypeId,
+      error: issueType.error
+    });
+    return {
+      data: null,
+      error: issueType.error,
+      message: "Quality issue type not found"
+    };
+  }
+  if (inspection && (inspection.error || !inspection.data)) {
+    logger.warn("Inspection not found for company", {
+      companyId,
+      inspectionId: args.inspectionId,
+      error: inspection.error
+    });
+    return {
+      data: null,
+      error: inspection.error,
+      message: "Inspection not found"
+    };
   }
 
   const nextSequence = await serviceRole.rpc("get_next_sequence", {
@@ -340,6 +385,18 @@ export async function getInspectionOutcomeState(
     };
   }
   const inspection = inspectionResult.data as any;
+  // getInspection reads with the service role by id alone.
+  if (inspection.companyId !== args.companyId) {
+    logger.warn("Inspection not found for company", {
+      companyId: args.companyId,
+      inspectionId: args.inspectionId
+    });
+    return {
+      data: null,
+      error: null,
+      message: "Failed to load inspection"
+    };
+  }
   const jobOperationId = inspection.sourceDocumentLineId as string | null;
   if (inspection.sourceDocument !== "Job Operation" || !jobOperationId) {
     return {

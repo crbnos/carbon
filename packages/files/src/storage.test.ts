@@ -3,8 +3,10 @@ import { describe, expect, it, vi } from "vitest";
 import {
   getCompanyPrivateBucket,
   hasCompanyPrivateObjectPathPrefix,
+  isUnsafeStoragePath,
   LEGACY_PRIVATE_BUCKET,
   normalizeStorageSegment,
+  safeStorageFileName,
   storage
 } from "./storage";
 
@@ -79,6 +81,89 @@ describe("hasCompanyPrivateObjectPathPrefix", () => {
   });
 });
 
+describe("isUnsafeStoragePath", () => {
+  it.each([
+    ["a plain key", "co1/parts/item1/drawing.pdf"],
+    ["an encoded key (spaces)", "co1/parts/item1/My%20Drawing.pdf"],
+    ["a decoded key with spaces", "co1/parts/item1/My Drawing.pdf"],
+    ["dots inside a segment", "co1/parts/item1/a..b.v2.step"],
+    ["a trailing slash (list prefix)", "co1/parts/"],
+    ["a CAD raw", "co1/models/abc123/raw.step.zst"]
+  ])("allows %s", (_, path) => {
+    expect(isUnsafeStoragePath(path)).toBe(false);
+  });
+
+  it.each([
+    ["a parent segment", "co1/../co2/a.pdf"],
+    ["a current segment", "co1/./a.pdf"],
+    ["a leading parent segment", "../co2/a.pdf"],
+    ["a trailing parent segment", "co1/.."],
+    ["encoded parent segment", "co1/%2e%2e/co2/a.pdf"],
+    ["encoded parent segment, upper case", "co1/%2E%2E/co2/a.pdf"],
+    ["half-encoded parent segment", "co1/.%2e/co2/a.pdf"],
+    ["encoded current segment", "co1/%2e/a.pdf"],
+    ["encoded slash forming a parent segment", "co1/..%2fco2/a.pdf"],
+    ["double-encoded parent segment", "co1/%252e%252e/co2/a.pdf"],
+    ["double-encoded slash", "co1/..%252fco2/a.pdf"],
+    ["triple-encoded parent segment", "co1/%25252e%25252e/co2/a.pdf"],
+    ["a backslash", "co1\\..\\co2\\a.pdf"],
+    ["an encoded backslash", "co1/..%5c..%5cco2/a.pdf"],
+    ["a double-encoded backslash", "co1/..%255cco2/a.pdf"],
+    ["a query", "co1/a.pdf?download=1"],
+    ["an encoded query", "co1/a.pdf%3Fx"],
+    ["a fragment", "co1/a.pdf#x"],
+    ["a double-encoded fragment", "co1/a.pdf%2523x"],
+    ["a tab", "co1/a\t.pdf"],
+    ["a newline", "co1/.\n./co2/a.pdf"],
+    ["a NUL", "co1/a\u0000.pdf"],
+    ["DEL", "co1/a\u007f.pdf"],
+    ["an encoded tab", "co1/.%09./co2/a.pdf"],
+    ["an encoded NUL", "co1/a%00.pdf"],
+    ["a double-encoded newline", "co1/a%250a.pdf"],
+    ["a malformed escape", "co1/a%zz.pdf"],
+    ["a malformed escape one layer down", "co1/a%25zz.pdf"]
+  ])("refuses %s", (_, path) => {
+    expect(isUnsafeStoragePath(path)).toBe(true);
+  });
+
+  it("refuses a key that keeps decoding past the pass limit", () => {
+    let path = "co1/../co2/a.pdf";
+    for (let i = 0; i < 8; i++) path = encodeURIComponent(path);
+    expect(isUnsafeStoragePath(path)).toBe(true);
+  });
+});
+
+describe("safeStorageFileName", () => {
+  it("keeps an ordinary file name", () => {
+    expect(safeStorageFileName("PO 1234.pdf")).toBe("PO 1234.pdf");
+    expect(safeStorageFileName("  spaced.pdf  ")).toBe("spaced.pdf");
+  });
+
+  it("keeps only the basename", () => {
+    expect(safeStorageFileName("../../co2/evil.pdf")).toBe("evil.pdf");
+    expect(safeStorageFileName("..\\..\\co2\\evil.pdf")).toBe("evil.pdf");
+  });
+
+  it.each([
+    ["a fragment", "Drawing #3.pdf", "Drawing 3.pdf"],
+    ["a query", "what?.pdf", "what.pdf"],
+    ["a percent sign", "50%.pdf", "50.pdf"],
+    ["an encoded dot-dot", "%2e%2e", "2e2e"]
+  ])("keeps a name with %s usable", (_, name, safe) => {
+    expect(safeStorageFileName(name)).toBe(safe);
+  });
+
+  it.each([
+    ["an empty name", ""],
+    ["a trailing slash", "dir/"],
+    ["a dot", "."],
+    ["a dot-dot", ".."],
+    ["a control character", "a\u0001.pdf"]
+  ])("refuses %s", (_, name) => {
+    expect(safeStorageFileName(name)).toBeNull();
+  });
+});
+
 describe("storage(client).from", () => {
   it("is the plain supabase bucket", () => {
     const client = makeClient({});
@@ -96,6 +181,11 @@ describe("storage(client).company", () => {
   describe("writes go to the company bucket only", () => {
     it.each([
       ["upload", (b: Bucket) => b.upload("co1/docs/a.pdf", new Blob())],
+      // A `#` only truncates the key inside the company prefix, as it always has.
+      [
+        "upload",
+        (b: Bucket) => b.upload("co1/docs/Drawing #3.pdf", new Blob())
+      ],
       ["update", (b: Bucket) => b.update("co1/docs/a.pdf", new Blob())],
       [
         "uploadToSignedUrl",
@@ -167,10 +257,31 @@ describe("storage(client).company", () => {
       ["list", () => bucket.list("co2/docs")],
       ["remove", () => bucket.remove(["co1/a.pdf", "co2/a.pdf"])],
       ["a prefix-lookalike", () => bucket.download("co12/a.pdf")],
-      ["an empty key", () => bucket.download("")]
+      ["an empty key", () => bucket.download("")],
+      ["a parent segment", () => bucket.download("co1/../co2/a.pdf")],
+      ["an encoded parent segment", () => bucket.download("co1/%2e%2e/co2/a")],
+      [
+        "a double-encoded parent segment",
+        () => bucket.upload("co1/%252e%252e/co2/a.pdf", new Blob())
+      ],
+      ["a backslash", () => bucket.remove(["co1\\..\\co2\\a.pdf"])],
+      ["a control character", () => bucket.createSignedUrl("co1/a\n.pdf", 60)],
+      ["a list prefix that climbs out", () => bucket.list("co1/..")]
     ])("%s", async (_, call) => {
       const result = await call();
       // `exists` answers false rather than null — supabase's own shape.
+      expect(result.data).toBeFalsy();
+      expect(result.error?.message).toMatch(
+        /outside the "co1\/" storage prefix/
+      );
+      expect(touched()).toBe(false);
+    });
+
+    it.each([
+      ["a traversal before a query", () => bucket.download("co1/../co2/a?x")],
+      ["a traversal before a fragment", () => bucket.download("co1/..#/a")]
+    ])("%s", async (_, call) => {
+      const result = await call();
       expect(result.data).toBeFalsy();
       expect(result.error?.message).toMatch(
         /outside the "co1\/" storage prefix/
