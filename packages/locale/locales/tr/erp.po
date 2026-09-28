@@ -3016,6 +3016,9 @@ msgstr "Lot Numarası"
 msgid "Batch Properties"
 msgstr "Toplu Özellikler"
 
+msgid "Batch Quantities"
+msgstr "Parti Miktarları"
+
 msgid "Batch Size"
 msgstr "Lot Boyutu"
 
@@ -9203,6 +9206,9 @@ msgstr "Envanter Hareketleri"
 
 msgid "Inventory Qty"
 msgstr "Stok Miktarı"
+
+msgid "Inventory Quantities"
+msgstr "Envanter Miktarları"
 
 msgid "Inventory Tracking"
 msgstr "Stok Takibi"
@@ -15896,6 +15902,9 @@ msgstr "İade edilecek seri numaraları"
 
 msgid "Serial or Batch Tracking Required"
 msgstr "Seri veya Parti Takibi Gerekli"
+
+msgid "Serial Quantities"
+msgstr "Seri Miktarları"
 
 msgid "Serial tracking"
 msgstr "Seri numarası takibi"

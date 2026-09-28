@@ -3016,6 +3016,9 @@ msgstr "バッチ番号"
 msgid "Batch Properties"
 msgstr "バッチプロパティ"
 
+msgid "Batch Quantities"
+msgstr "バッチ数量"
+
 msgid "Batch Size"
 msgstr "バッチサイズ"
 
@@ -9202,6 +9205,9 @@ msgid "Inventory Movements"
 msgstr "在庫移動"
 
 msgid "Inventory Qty"
+msgstr "在庫数量"
+
+msgid "Inventory Quantities"
 msgstr "在庫数量"
 
 msgid "Inventory Tracking"
@@ -15896,6 +15902,9 @@ msgstr "返品するシリアル番号"
 
 msgid "Serial or Batch Tracking Required"
 msgstr "シリアルまたはバッチ追跡が必要です"
+
+msgid "Serial Quantities"
+msgstr "シリアル数量"
 
 msgid "Serial tracking"
 msgstr "シリアルトラッキング"
