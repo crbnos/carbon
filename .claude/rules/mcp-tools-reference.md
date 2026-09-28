@@ -522,8 +522,13 @@ the model context or the MCP dispatch.
   module referenced by client"*. Put such MCP write functions in a server-only companion
   `{module}.mcp.server.ts` instead (never re-exported by the barrel). The generator parses it
   and `registry.server.ts` spreads its exports into the module namespace, so the tool names and
-  metadata are identical to a service-file function. Precedent: `production.mcp.server.ts`
-  holds `issueMaterial` / `completeJob`.
+  metadata are identical to a service-file function. Precedents: `production.mcp.server.ts`
+  holds `issueMaterial` / `completeJob`; `purchasing.mcp.server.ts` holds
+  `closePurchaseOrder`, which needs the service role for the approval cancel the
+  status route runs. The executor applies no per-tool permission check for OAuth
+  callers, so a companion that gates differently from its verb re-checks
+  `hasPermission` inline AND adds a `PERMISSION_OVERRIDES` entry
+  (`scripts/lib/service-metadata.ts`) so API-key scopes match.
 - **A same-named `{module}.mcp.server.ts` export SHADOWS the service function** —
   the generator dedupes by name (mcp wins, matching the runtime registry spread),
   so an orchestration wrapper can replace a bare service function without

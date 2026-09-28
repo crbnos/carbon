@@ -57,6 +57,7 @@ vi.mock("~/modules/production/production.service", () => ({
   insertJob: spies.insertJob,
   upsertJobMaterial: spies.upsertJobMaterial
 }));
+vi.mock("~/modules/purchasing/purchasing.mcp.server", () => ({}));
 vi.mock("~/modules/purchasing/purchasing.service", () => ({
   insertPurchaseOrder: spies.insertPurchaseOrder
 }));

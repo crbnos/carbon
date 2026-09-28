@@ -86,3 +86,36 @@ export async function getSupplierApprovalContext(
     decision
   };
 }
+
+/**
+ * Cancels the purchase order's pending approval requests, as closing it does:
+ * a closed order is terminal, so nothing may stay awaiting a decision.
+ * Approved and Rejected requests are kept as the audit trail. Returns how many
+ * requests were cancelled.
+ *
+ * `approvalRequest` has RLS on and no policies, so this needs the service
+ * role. The caller must first prove the order belongs to `companyId`
+ * (`requireCompanyRecord`); the write is keyed on `purchaseOrderId`.
+ */
+export async function cancelPendingPurchaseOrderApprovals(
+  serviceRole: SupabaseClient<Database>,
+  args: { purchaseOrderId: string; companyId: string; userId: string }
+) {
+  const result = await serviceRole
+    .from("approvalRequest")
+    .update({
+      status: "Cancelled",
+      updatedBy: args.userId,
+      updatedAt: new Date().toISOString()
+    })
+    .eq("documentType", "purchaseOrder")
+    .eq("documentId", args.purchaseOrderId)
+    .eq("companyId", args.companyId)
+    .eq("status", "Pending")
+    .select("id");
+
+  return {
+    cancelled: result.data?.length ?? 0,
+    error: result.error
+  };
+}

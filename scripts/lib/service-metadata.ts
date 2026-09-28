@@ -152,6 +152,9 @@ const PERMISSION_OVERRIDES: Record<string, ToolPermission> = {
   // requireEntitlement, so they are no longer scanned as MCP tools; only the
   // read remains here.
   settings_getApiKeys: { module: "users", actions: ["update"] },
+  // Closing a purchase order ("Cancel Order") is gated on purchasing DELETE by
+  // x+/purchase-order+/$orderId.status.tsx and the header button, not update.
+  purchasing_closePurchaseOrder: { module: "purchasing", actions: ["delete"] },
 };
 
 // ---------------------------------------------------------------------------

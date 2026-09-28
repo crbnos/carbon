@@ -22,7 +22,7 @@ Quotes (with cost rollup and pricing), sales orders, sales RFQs, customer manage
 - MUST scope customer queries by `companyId` — customers are company-scoped.
 
 ### Ask First
-- Closing sales orders — `closeSalesOrder` sets `closed`, `closedAt`, `closedBy` permanently.
+- Closing sales orders — the UI has no close action; `updateSalesOrderStatus` accepts `Closed` (and clears the assignee), but the order header only offers Cancel (`cancelSalesOrder`).
 - Deleting quotes linked to an opportunity — may orphan related orders.
 - Modifying pricing rules — affects all future `resolvePrice` calls.
 
@@ -66,7 +66,7 @@ cd apps/erp && pnpm exec vitest run app/modules/sales
 - `applyPriceRules` — applies matched discount/markup rules to a starting price
 - `resolvePrice` — full price resolution: base → overrides → rules → final
 - `resolvePriceList` — batch price list for a customer/type with quantity preview
-- `closeSalesOrder` / `releaseSalesOrder` / `finalizeQuote` — status transitions
+- `updateSalesOrderStatus` / `cancelSalesOrder` / `releaseSalesOrder` / `finalizeQuote` — status transitions
 - `getQuote` / `getQuoteLines` / `getQuoteLinePrices` / `getQuoteMaterials` / `getQuoteOperations` — quote reads
 - `getSalesOrder(s)` / `getSalesOrderLines` / `getExternalSalesOrderLines` — order reads
 - `getOpenSalesOrderLinesForItem` — sales order lines a job can link to (open orders, matching item); `isSalesOrderClosed` / `OPEN_SALES_ORDER_STATUSES` gate eligibility

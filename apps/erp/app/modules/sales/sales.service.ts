@@ -177,32 +177,6 @@ export function applyPriceRules(
   return { finalPrice, appendedTrace };
 }
 
-export async function closeSalesOrder(
-  client: SupabaseClient<Database>,
-  salesOrderId: string,
-  userId: string
-) {
-  const salesOrder = await client
-    .from("salesOrder")
-    .select("companyId")
-    .eq("id", salesOrderId)
-    .single();
-  const companyTz = await getCompanyTimeZone(
-    client,
-    salesOrder.data?.companyId ?? ""
-  );
-  return client
-    .from("salesOrder")
-    .update({
-      closed: true,
-      closedAt: datetime.today(companyTz).toString(),
-      closedBy: userId
-    })
-    .eq("id", salesOrderId)
-    .select("id")
-    .single();
-}
-
 export async function convertSalesRfqToQuote(
   client: SupabaseClient<Database>,
   payload: {

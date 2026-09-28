@@ -63,32 +63,6 @@ const PURCHASE_ORDERS_LIST_COLUMNS =
 
 const logger = getLogger("erp", "purchasing-service");
 
-export async function closePurchaseOrder(
-  client: SupabaseClient<Database>,
-  purchaseOrderId: string,
-  userId: string
-) {
-  const purchaseOrder = await client
-    .from("purchaseOrder")
-    .select("companyId")
-    .eq("id", purchaseOrderId)
-    .single();
-  const companyTz = await getCompanyTimeZone(
-    client,
-    purchaseOrder.data?.companyId ?? ""
-  );
-  return client
-    .from("purchaseOrder")
-    .update({
-      closed: true,
-      closedAt: datetime.today(companyTz).toString(),
-      closedBy: userId
-    })
-    .eq("id", purchaseOrderId)
-    .select("id")
-    .single();
-}
-
 export async function convertSupplierQuoteToOrder(
   client: SupabaseClient<Database>,
   payload: {

@@ -14,6 +14,7 @@ import {
   reopenPurchaseOrderAsRevision,
   updatePurchaseOrderStatus
 } from "~/modules/purchasing";
+import { cancelPendingPurchaseOrderApprovals } from "~/modules/purchasing/purchasing.server";
 import { requireCompanyRecord } from "~/modules/shared/shared.server";
 import { getDatabaseClient } from "~/services/database.server";
 import { path, requestReferrer } from "~/utils/path";
@@ -101,23 +102,14 @@ export async function action({ request, params }: ActionFunctionArgs) {
   // Note: Approved/Rejected requests are NOT cancelled - they serve as audit trail
   // Only "Pending" requests are cancelled since they're no longer actionable
   if (status === "Closed") {
-    // Find all pending approval requests for this PO and cancel them
-    const cancelResult = await serviceRole
-      .from("approvalRequest")
-      .update({
-        status: "Cancelled",
-        updatedBy: userId,
-        updatedAt: new Date().toISOString()
-      })
-      .eq("documentType", "purchaseOrder")
-      .eq("documentId", id)
-      .eq("companyId", companyId)
-      .eq("status", "Pending")
-      .select("id");
+    const { cancelled } = await cancelPendingPurchaseOrderApprovals(
+      serviceRole,
+      { purchaseOrderId: id, companyId, userId }
+    );
 
-    if (cancelResult.data && cancelResult.data.length > 0) {
+    if (cancelled > 0) {
       logger.info(
-        `Cancelled ${cancelResult.data.length} pending approval request(s) for PO ${id} when closing`
+        `Cancelled ${cancelled} pending approval request(s) for PO ${id} when closing`
       );
     }
   }
