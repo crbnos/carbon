@@ -4,19 +4,10 @@ import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { PurchaseOrderEmail } from "@carbon/documents/email";
 import { getPurchaseOrderDisplayId } from "@carbon/documents/pdf";
-import {
-  createApprovalRequest,
-  getApprovalRuleByAmount,
-  getApproverUserIdsForRule,
-  hasPendingApproval,
-  isApprovalRequired
-} from "@carbon/ee/approvals.server";
 import { storage } from "@carbon/files";
 import { validationError, validator } from "@carbon/form";
 import { trigger } from "@carbon/jobs";
-import { trackWorkEvent } from "@carbon/lib/telemetry";
 import { getLogger } from "@carbon/logger";
-import { NotificationEvent } from "@carbon/notifications";
 import { PO_EMAIL_ATTACHMENT_LIMIT_MB } from "@carbon/utils";
 import { renderAsync } from "@react-email/components";
 import { parseAcceptLanguage } from "intl-parse-accept-language";
@@ -25,18 +16,16 @@ import { redirect } from "react-router";
 import { getCurrencyByCode, getPaymentTermsList } from "~/modules/accounting";
 import { upsertDocument } from "~/modules/documents";
 import {
-  finalizePurchaseOrder,
   getDefaultAttachmentsForPO,
   getPurchaseOrder,
   getPurchaseOrderLines,
   getPurchaseOrderLocations,
-  getSupplier,
   getSupplierContact,
   getSupplierInteractionDocuments,
-  purchaseOrderFinalizeValidator,
-  updatePurchaseOrderStatus
+  purchaseOrderFinalizeValidator
 } from "~/modules/purchasing";
-import { getCompany, getCompanySettings } from "~/modules/settings";
+import { commitPurchaseOrderFinalize } from "~/modules/purchasing/purchasing.server";
+import { getCompany } from "~/modules/settings";
 import { getUser } from "~/modules/users/users.server";
 import { loader as pdfLoader } from "~/routes/file+/purchase-order+/$orderId[.]pdf";
 import { path, requestReferrer } from "~/utils/path";
@@ -84,147 +73,24 @@ export async function action(args: ActionFunctionArgs) {
     );
   }
 
-  // Check supplier approval status
-  const supplierApprovalRequired = await isApprovalRequired(
-    serviceRole,
-    "supplier",
-    companyId
-  );
-  if (supplierApprovalRequired && purchaseOrder.data.supplierId) {
-    const supplier = await getSupplier(
-      serviceRole,
-      purchaseOrder.data.supplierId
-    );
-    if (supplier.data?.status !== "Active") {
-      throw redirect(
-        path.to.purchaseOrder(orderId),
-        await flash(
-          request,
-          error("Cannot finalize: supplier is not approved (Active)")
-        )
-      );
-    }
-  }
-
-  const orderAmount = purchaseOrder.data.orderTotal ?? 0;
-  const approvalRequired = await isApprovalRequired(
-    serviceRole,
-    "purchaseOrder",
+  const committed = await commitPurchaseOrderFinalize(client, {
+    purchaseOrderId: orderId,
     companyId,
-    orderAmount
-  );
-
-  const finalize = await finalizePurchaseOrder(client, orderId, userId);
-  if (finalize.error) {
+    userId
+  });
+  if (committed.error) {
     throw redirect(
       path.to.purchaseOrder(orderId),
-      await flash(
-        request,
-        error(finalize.error, "Failed to finalize purchase order")
-      )
+      await flash(request, error(committed.cause, committed.error.message))
     );
   }
 
-  // Emitted here, not at the end of the route: the order is finalized as of
-  // this line, and five things below can redirect out first — a failed PDF
-  // upload, a failed document row, any PDF throw, the form validation (which
-  // runs after this), and a failed email. Every one of them leaves a finalized
-  // order behind, so anything further down under-counts.
-  trackWorkEvent(
-    "purchase_order_finalized",
-    {
-      companyId,
-      userId,
-      purchaseOrderId: orderId,
-      stage: approvalRequired ? "gated" : "committed"
-    },
-    { discriminator: approvalRequired ? "gated" : "committed" }
-  );
-
-  // If approval is required, create the request and return early
-  // PDF generation, email sending, and price updates happen after approval
-  if (approvalRequired) {
-    const hasPending = await hasPendingApproval(
-      serviceRole,
-      "purchaseOrder",
-      orderId
-    );
-
-    if (!hasPending) {
-      await createApprovalRequest(serviceRole, {
-        documentType: "purchaseOrder",
-        documentId: orderId,
-        companyId,
-        requestedBy: userId,
-        createdBy: userId,
-        amount: orderAmount
-      });
-
-      const rule = await getApprovalRuleByAmount(
-        serviceRole,
-        "purchaseOrder",
-        companyId,
-        orderAmount
-      );
-      const approverIds = rule.data
-        ? await getApproverUserIdsForRule(serviceRole, rule.data)
-        : [];
-
-      if (approverIds.length > 0) {
-        try {
-          await trigger("notify", {
-            event: NotificationEvent.ApprovalRequested,
-            companyId,
-            documentId: orderId,
-            documentType: "purchaseOrder",
-            recipient: { type: "users", userIds: approverIds },
-            from: userId
-          });
-        } catch (e) {
-          logger.error("Failed to trigger approval notification", { error: e });
-        }
-      }
-    }
-
-    await updatePurchaseOrderStatus(client, {
-      id: orderId,
-      status: "Needs Approval",
-      assignee: undefined,
-      updatedBy: userId
-    });
-
+  // PDF generation, email sending, and price updates happen after approval.
+  if (committed.data.approvalRequired) {
     throw redirect(
       requestReferrer(request) ?? path.to.purchaseOrder(orderId),
       await flash(request, success("Purchase order submitted for approval"))
     );
-  }
-
-  // Check if we should update prices on purchase order finalize
-  const companySettings = await getCompanySettings(serviceRole, companyId);
-  if (
-    companySettings.data?.purchasePriceUpdateTiming ===
-    "Purchase Order Finalize"
-  ) {
-    const priceUpdate = await serviceRole.functions.invoke(
-      "update-purchased-prices",
-      {
-        body: {
-          purchaseOrderId: orderId,
-          companyId,
-          userId,
-          source: "purchaseOrder",
-          updatePrices: true,
-          updateLeadTimes: false
-        }
-      }
-    );
-
-    if (priceUpdate.error) {
-      logger.error("Failed to update purchased prices", {
-        error: priceUpdate.error
-      });
-      // Don't fail the entire finalization, just log the error
-    }
   }
 
   const acceptLanguage = request.headers.get("accept-language");
