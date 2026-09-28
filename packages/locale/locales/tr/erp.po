@@ -2639,9 +2639,8 @@ msgstr "Bu iş emrini serbest bırakmak istediğinizden emin misiniz? Atölyede 
 msgid "Are you sure you want to remove {0} as a supplier for this item? This cannot be undone."
 msgstr "Bu öğe için {0} tedarikçi olarak kaldırmak istediğinizden emin misiniz? Bu işlem geri alınamaz."
 
-#. placeholder {0}: unitLabel(pending.line)
-msgid "Are you sure you want to remove {0} from this agreement?"
-msgstr "Gerçekten {0} öğesini bu sözleşmeden kaldırmak istiyor musunuz?"
+msgid "Are you sure you want to remove {label} from this agreement?"
+msgstr ""
 
 msgid "Are you sure you want to remove {supplierName} as a supplier for this item? This cannot be undone."
 msgstr "Bu öğe için {supplierName} tedarikçisini kaldırmak istediğinizden emin misiniz? Bu işlem geri alınamaz."
@@ -6070,6 +6069,9 @@ msgstr "Transfer Satırını Sil"
 msgid "Delete Type"
 msgstr "Türü Sil"
 
+msgid "Delete Unit"
+msgstr ""
+
 msgid "Delete Unit of Measure"
 msgstr "Ölçü Birimini Sil"
 
@@ -6091,9 +6093,8 @@ msgstr "İş Akışını Sil"
 msgid "Deliver"
 msgstr "Teslim Et"
 
-#. placeholder {0}: unitLabel(pending.line)
-msgid "Deliver {0}"
-msgstr "Teslim Et {0}"
+msgid "Deliver {label}"
+msgstr ""
 
 msgid "Delivered"
 msgstr "Teslim Edildi"
@@ -8300,6 +8301,9 @@ msgstr "Bayraklar"
 
 msgid "Fleet"
 msgstr "Filo"
+
+msgid "Fleet Asset"
+msgstr ""
 
 msgid "Fleet Days"
 msgstr "Filo Günleri"
@@ -12078,8 +12082,8 @@ msgstr "Atanan eğitim yok"
 msgid "No transactions in this period"
 msgstr "Bu dönemde işlem yok"
 
-msgid "No units yet. Add a fleet unit before activating the agreement."
-msgstr "Henüz birim yok. Sözleşmeyi etkinleştirmeden önce bir filo birimi ekleyin."
+msgid "No units yet. Add a fleet unit from the Units list before activating the agreement."
+msgstr ""
 
 msgid "No unmapped accounts match a provider code"
 msgstr "Haritalanmamış hesaplar sağlayıcı kodundan herhangi biriyle uyuşmıyor"
@@ -14829,6 +14833,9 @@ msgstr "Aracı kaldır"
 msgid "Remove two-factor authentication"
 msgstr "İki Faktörlü Kimlik Doğrulamayı Kaldır"
 
+msgid "Remove Unit"
+msgstr ""
+
 msgid "Removed"
 msgstr "Kaldırıldı"
 
@@ -16302,9 +16309,8 @@ msgstr "Kendi kendine hizmet"
 msgid "Self-serve reference at docs.carbon.ms"
 msgstr "Kendi kendine yardım referansı docs.carbon.ms adresinde"
 
-#. placeholder {0}: unitLabel(pending.line)
-msgid "Sell {0} to the customer"
-msgstr "{0}'yi müşteriye sat"
+msgid "Sell {label} to the customer"
+msgstr ""
 
 msgid "Sell to Customer"
 msgstr "Müşteriye Sat"
@@ -17437,6 +17443,9 @@ msgstr "Öneri Bildirimleri"
 msgid "Suggestions"
 msgstr "Öneriler"
 
+msgid "Summary"
+msgstr ""
+
 msgid "Sunday"
 msgstr "Pazar"
 
@@ -18046,8 +18055,9 @@ msgstr ""
 msgid "The customer effectively buys the units. They leave your fixed assets on activation, the sale is booked, and interest is earned over the term."
 msgstr ""
 
-msgid "The customer exercises the purchase option. A purchase option charge of {formatOptionAmount} is billed today and its invoice drafted; posting that invoice transfers the unit and marks it Sold."
-msgstr "Müşteri satın alma seçeneğini kullanır. {formatOptionAmount} tutarında satın alma seçeneği ücreti bugün faturalanır ve faturası hazırlanır; bu faturanın muhasebeleştirilmesi adeti transfer eder ve onu Satıldı olarak işaretler."
+#. placeholder {0}: currencyFormatter.format(purchaseOptionAmount)
+msgid "The customer exercises the purchase option. A purchase option charge of {0} is billed today and its invoice drafted; posting that invoice transfers the unit and marks it Sold."
+msgstr ""
 
 msgid "The customer is expected to buy the unit at the end of the term."
 msgstr ""
@@ -19698,6 +19708,9 @@ msgstr "Benzersiz, büyük harf, boşluksuz (en fazla 10 karakter)"
 
 msgid "Unit"
 msgstr "Birim"
+
+msgid "Unit actions"
+msgstr ""
 
 msgid "Unit Cost"
 msgstr "Birim Maliyeti"

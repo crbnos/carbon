@@ -2639,9 +2639,8 @@ msgstr "क्या आप निश्चित हैं कि आप इस
 msgid "Are you sure you want to remove {0} as a supplier for this item? This cannot be undone."
 msgstr "क्या आप इस आइटम के लिए {0} को आपूर्तिकर्ता के रूप में निकालना चाहते हैं? यह वापस नहीं किया जा सकता।"
 
-#. placeholder {0}: unitLabel(pending.line)
-msgid "Are you sure you want to remove {0} from this agreement?"
-msgstr "क्या आप सुनिश्चित हैं कि आप {0} को इस समझौते से निकालना चाहते हैं?"
+msgid "Are you sure you want to remove {label} from this agreement?"
+msgstr ""
 
 msgid "Are you sure you want to remove {supplierName} as a supplier for this item? This cannot be undone."
 msgstr "क्या आप इस आइटम के लिए {supplierName} को आपूर्तिकर्ता के रूप में निकालना चाहते हैं? यह वापस नहीं किया जा सकता।"
@@ -6070,6 +6069,9 @@ msgstr "स्थानांतरण पंक्ति हटाएँ"
 msgid "Delete Type"
 msgstr "प्रकार हटाएं"
 
+msgid "Delete Unit"
+msgstr ""
+
 msgid "Delete Unit of Measure"
 msgstr "माप की इकाई हटाएं"
 
@@ -6091,9 +6093,8 @@ msgstr "वर्कफ़्लो हटाएँ"
 msgid "Deliver"
 msgstr "डिलीवर करें"
 
-#. placeholder {0}: unitLabel(pending.line)
-msgid "Deliver {0}"
-msgstr "डिलीवर करें {0}"
+msgid "Deliver {label}"
+msgstr ""
 
 msgid "Delivered"
 msgstr "डिलीवर किया गया"
@@ -8300,6 +8301,9 @@ msgstr "झंडे"
 
 msgid "Fleet"
 msgstr "फ्लीट"
+
+msgid "Fleet Asset"
+msgstr ""
 
 msgid "Fleet Days"
 msgstr "बेड़े के दिन"
@@ -12078,8 +12082,8 @@ msgstr "कोई प्रशिक्षण निर्धारित नह
 msgid "No transactions in this period"
 msgstr "इस अवधि में कोई लेनदेन नहीं"
 
-msgid "No units yet. Add a fleet unit before activating the agreement."
-msgstr "अभी कोई इकाई नहीं है। समझौते को सक्रिय करने से पहले एक बेड़े की इकाई जोड़ें।"
+msgid "No units yet. Add a fleet unit from the Units list before activating the agreement."
+msgstr ""
 
 msgid "No unmapped accounts match a provider code"
 msgstr "कोई भी अनमैप किया गया खाता प्रदाता कोड से मेल नहीं खाता"
@@ -14829,6 +14833,9 @@ msgstr "टूल निकालें"
 msgid "Remove two-factor authentication"
 msgstr "दो-कारक प्रमाणीकरण निकालें"
 
+msgid "Remove Unit"
+msgstr ""
+
 msgid "Removed"
 msgstr "हटाया गया"
 
@@ -16302,9 +16309,8 @@ msgstr "स्व-सेवा"
 msgid "Self-serve reference at docs.carbon.ms"
 msgstr "docs.carbon.ms पर स्व-सेवा संदर्भ"
 
-#. placeholder {0}: unitLabel(pending.line)
-msgid "Sell {0} to the customer"
-msgstr "ग्राहक को {0} बेचें"
+msgid "Sell {label} to the customer"
+msgstr ""
 
 msgid "Sell to Customer"
 msgstr "ग्राहक को बेचें"
@@ -17437,6 +17443,9 @@ msgstr "सुझाव सूचनाएं"
 msgid "Suggestions"
 msgstr "सुझाव"
 
+msgid "Summary"
+msgstr ""
+
 msgid "Sunday"
 msgstr "रविवार"
 
@@ -18046,8 +18055,9 @@ msgstr ""
 msgid "The customer effectively buys the units. They leave your fixed assets on activation, the sale is booked, and interest is earned over the term."
 msgstr ""
 
-msgid "The customer exercises the purchase option. A purchase option charge of {formatOptionAmount} is billed today and its invoice drafted; posting that invoice transfers the unit and marks it Sold."
-msgstr "ग्राहक खरीद विकल्प का प्रयोग करता है। {formatOptionAmount} का एक खरीद विकल्प शुल्क आज बिल किया जाता है और इसका चालान तैयार किया जाता है; उस चालान को पोस्ट करने से इकाई स्थानांतरित होती है और इसे बेचा हुआ चिह्नित किया जाता है।"
+#. placeholder {0}: currencyFormatter.format(purchaseOptionAmount)
+msgid "The customer exercises the purchase option. A purchase option charge of {0} is billed today and its invoice drafted; posting that invoice transfers the unit and marks it Sold."
+msgstr ""
 
 msgid "The customer is expected to buy the unit at the end of the term."
 msgstr ""
@@ -19698,6 +19708,9 @@ msgstr "अद्वितीय, बड़े अक्षरों में, 
 
 msgid "Unit"
 msgstr "इकाई"
+
+msgid "Unit actions"
+msgstr ""
 
 msgid "Unit Cost"
 msgstr "इकाई लागत"

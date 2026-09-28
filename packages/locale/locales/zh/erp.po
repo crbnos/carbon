@@ -2639,9 +2639,8 @@ msgstr "确定要下达此工单吗？它将对车间可用，并驱动采购和
 msgid "Are you sure you want to remove {0} as a supplier for this item? This cannot be undone."
 msgstr "您确定要将 {0} 从此项目的供应商中移除吗？此操作无法撤销。"
 
-#. placeholder {0}: unitLabel(pending.line)
-msgid "Are you sure you want to remove {0} from this agreement?"
-msgstr "确定要从此协议中移除 {0} 吗？"
+msgid "Are you sure you want to remove {label} from this agreement?"
+msgstr ""
 
 msgid "Are you sure you want to remove {supplierName} as a supplier for this item? This cannot be undone."
 msgstr "您确定要将 {supplierName} 从此项目的供应商中移除吗？此操作无法撤销。"
@@ -6070,6 +6069,9 @@ msgstr "删除调拨行"
 msgid "Delete Type"
 msgstr "删除类型"
 
+msgid "Delete Unit"
+msgstr ""
+
 msgid "Delete Unit of Measure"
 msgstr "删除计量单位"
 
@@ -6091,9 +6093,8 @@ msgstr "删除工作流"
 msgid "Deliver"
 msgstr "交付"
 
-#. placeholder {0}: unitLabel(pending.line)
-msgid "Deliver {0}"
-msgstr "交付 {0}"
+msgid "Deliver {label}"
+msgstr ""
 
 msgid "Delivered"
 msgstr "已交付"
@@ -8300,6 +8301,9 @@ msgstr "标志"
 
 msgid "Fleet"
 msgstr "车队"
+
+msgid "Fleet Asset"
+msgstr ""
 
 msgid "Fleet Days"
 msgstr "车队天数"
@@ -12078,8 +12082,8 @@ msgstr "未分配培训"
 msgid "No transactions in this period"
 msgstr "此期间无交易"
 
-msgid "No units yet. Add a fleet unit before activating the agreement."
-msgstr "尚无单位。激活协议前请添加租赁单位。"
+msgid "No units yet. Add a fleet unit from the Units list before activating the agreement."
+msgstr ""
 
 msgid "No unmapped accounts match a provider code"
 msgstr "没有未映射的账户与提供商代码匹配"
@@ -14829,6 +14833,9 @@ msgstr "移除工具"
 msgid "Remove two-factor authentication"
 msgstr "移除双因素认证"
 
+msgid "Remove Unit"
+msgstr ""
+
 msgid "Removed"
 msgstr "已移除"
 
@@ -16302,9 +16309,8 @@ msgstr "自助服务"
 msgid "Self-serve reference at docs.carbon.ms"
 msgstr "自助参考文档，位于 docs.carbon.ms"
 
-#. placeholder {0}: unitLabel(pending.line)
-msgid "Sell {0} to the customer"
-msgstr "将{0}销售给客户"
+msgid "Sell {label} to the customer"
+msgstr ""
 
 msgid "Sell to Customer"
 msgstr "销售给客户"
@@ -17437,6 +17443,9 @@ msgstr "建议通知"
 msgid "Suggestions"
 msgstr "建议"
 
+msgid "Summary"
+msgstr ""
+
 msgid "Sunday"
 msgstr "星期日"
 
@@ -18046,8 +18055,9 @@ msgstr ""
 msgid "The customer effectively buys the units. They leave your fixed assets on activation, the sale is booked, and interest is earned over the term."
 msgstr ""
 
-msgid "The customer exercises the purchase option. A purchase option charge of {formatOptionAmount} is billed today and its invoice drafted; posting that invoice transfers the unit and marks it Sold."
-msgstr "客户行使购买选择权。购买选择权费用{formatOptionAmount}今天计费，其发票已起草；过账该发票会转移该件并将其标记为已售出。"
+#. placeholder {0}: currencyFormatter.format(purchaseOptionAmount)
+msgid "The customer exercises the purchase option. A purchase option charge of {0} is billed today and its invoice drafted; posting that invoice transfers the unit and marks it Sold."
+msgstr ""
 
 msgid "The customer is expected to buy the unit at the end of the term."
 msgstr ""
@@ -19698,6 +19708,9 @@ msgstr "唯一、大写、无空格（最多 10 个字符）"
 
 msgid "Unit"
 msgstr "单位"
+
+msgid "Unit actions"
+msgstr ""
 
 msgid "Unit Cost"
 msgstr "单位成本"

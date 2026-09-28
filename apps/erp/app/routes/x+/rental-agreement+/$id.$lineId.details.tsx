@@ -3,7 +3,7 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { redirect, useLoaderData, useNavigate } from "react-router";
+import { redirect, useLoaderData } from "react-router";
 import { useRouteData } from "~/hooks";
 import {
   getItemRentalRate,
@@ -14,7 +14,10 @@ import {
 } from "~/modules/sales";
 import type { RentalAgreementRouteData } from "~/modules/sales/ui/Rentals";
 import {
+  RentalAgreementCharges,
   RentalAgreementLineForm,
+  RentalAgreementLineSummary,
+  RentalBillingPeriods,
   resolveLineLeaseClassification
 } from "~/modules/sales/ui/Rentals";
 import { path } from "~/utils/path";
@@ -140,65 +143,79 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   throw redirect(
-    path.to.rentalAgreementDetails(id),
+    path.to.rentalAgreementLine(id, lineId),
     await flash(request, success("Updated unit"))
   );
 }
 
+/** One unit of the agreement: where it is in its rental and its actions,
+ *  its rates and accounting treatment, then its own charges and billing. */
 export default function RentalAgreementLineRoute() {
   const { line, rates, isSnapshot } = useLoaderData<typeof loader>();
-  const navigate = useNavigate();
 
   const routeData = useRouteData<RentalAgreementRouteData>(
     path.to.rentalAgreement(line.rentalAgreementId)
   );
-  const agreement = routeData?.rentalAgreement;
-  const status = agreement?.status;
-  const lease =
-    agreement && routeData
-      ? resolveLineLeaseClassification({
-          agreement,
-          line,
-          ladder: rates,
-          policy: routeData.leasePolicy
-        })
-      : null;
+  if (!routeData) return null;
+
+  const agreement = routeData.rentalAgreement;
+  const lease = resolveLineLeaseClassification({
+    agreement,
+    line,
+    ladder: rates,
+    policy: routeData.leasePolicy
+  });
 
   return (
-    <RentalAgreementLineForm
-      key={line.id}
-      initialValues={{
-        id: line.id,
-        rentalAgreementId: line.rentalAgreementId,
-        fixedAssetId: line.fixedAssetId ?? "",
-        itemId: line.itemId,
-        rateMode: line.rateMode,
-        rateUnit: line.rateUnit ?? undefined,
-        fairValue: line.fairValue ?? undefined,
-        economicLifeMonths: line.economicLifeMonths ?? undefined,
-        guaranteedResidualValue: line.guaranteedResidualValue ?? undefined,
-        unguaranteedResidualValue: line.unguaranteedResidualValue ?? undefined
-      }}
-      currencyCode={routeData?.rentalAgreement.currencyCode ?? ""}
-      rentableAssets={routeData?.rentableAssets ?? []}
-      currentAsset={
-        line.fixedAssetId
-          ? {
-              id: line.fixedAssetId,
-              itemId: line.itemId,
-              label: [line.fixedAsset?.fixedAssetId, line.fixedAsset?.name]
-                .filter(Boolean)
-                .join(" · ")
-            }
-          : undefined
-      }
-      rates={rates}
-      isSnapshot={isSnapshot}
-      lease={lease}
-      isLocked={status !== "Draft"}
-      onClose={() =>
-        navigate(path.to.rentalAgreementDetails(line.rentalAgreementId))
-      }
-    />
+    <>
+      <RentalAgreementLineSummary rentalAgreement={agreement} line={line} />
+      <RentalAgreementLineForm
+        key={`${line.id}-${line.updatedAt ?? ""}`}
+        type="card"
+        initialValues={{
+          id: line.id,
+          rentalAgreementId: line.rentalAgreementId,
+          fixedAssetId: line.fixedAssetId ?? "",
+          itemId: line.itemId,
+          rateMode: line.rateMode,
+          rateUnit: line.rateUnit ?? undefined,
+          fairValue: line.fairValue ?? undefined,
+          economicLifeMonths: line.economicLifeMonths ?? undefined,
+          guaranteedResidualValue: line.guaranteedResidualValue ?? undefined,
+          unguaranteedResidualValue: line.unguaranteedResidualValue ?? undefined
+        }}
+        currencyCode={agreement.currencyCode ?? ""}
+        rentableAssets={routeData.rentableAssets}
+        currentAsset={
+          line.fixedAssetId
+            ? {
+                id: line.fixedAssetId,
+                itemId: line.itemId,
+                label: [line.fixedAsset?.fixedAssetId, line.fixedAsset?.name]
+                  .filter(Boolean)
+                  .join(" · ")
+              }
+            : undefined
+        }
+        rates={rates}
+        isSnapshot={isSnapshot}
+        lease={lease}
+        isLocked={agreement.status !== "Draft"}
+      />
+      <RentalAgreementCharges
+        rentalAgreement={agreement}
+        charges={routeData.charges}
+        lines={routeData.lines}
+        invoiceLinks={routeData.invoiceLinks}
+        lineId={line.id}
+      />
+      <RentalBillingPeriods
+        rentalAgreement={agreement}
+        periods={routeData.periods.filter(
+          (period) => period.rentalAgreementLineId === line.id
+        )}
+        invoiceLinks={routeData.invoiceLinks}
+      />
+    </>
   );
 }

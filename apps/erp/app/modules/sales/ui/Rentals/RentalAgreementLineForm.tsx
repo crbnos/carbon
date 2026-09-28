@@ -18,7 +18,7 @@ import { INPUT_FORMAT, INPUT_STEP } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useMemo, useState } from "react";
 import { LuChevronDown, LuChevronRight } from "react-icons/lu";
-import { Link } from "react-router";
+import { Link, useFetcher } from "react-router";
 import type { z } from "zod";
 import { Combobox, Hidden, Number, Select, Submit } from "~/components/Form";
 import { useCurrencyDecimals, usePermissions, useUser } from "~/hooks";
@@ -59,7 +59,12 @@ type RentalAgreementLineFormProps = {
   lease?: LineLeaseClassification | null;
   /** Only a Draft agreement's lines can change. */
   isLocked?: boolean;
-  onClose: () => void;
+  /** A modal to add a unit, or a card on the unit's own page. */
+  type?: "card" | "modal";
+  /** Close the modal on submit — only when the modal is page state; as its
+   *  own route, closing navigates away and would cancel the post. */
+  closeOnSubmit?: boolean;
+  onClose?: () => void;
 };
 
 const RentalAgreementLineForm = ({
@@ -71,10 +76,13 @@ const RentalAgreementLineForm = ({
   isSnapshot = false,
   lease,
   isLocked = false,
+  type = "modal",
+  closeOnSubmit = false,
   onClose
 }: RentalAgreementLineFormProps) => {
   const { t } = useLingui();
   const permissions = usePermissions();
+  const fetcher = useFetcher<{}>();
   const { carbon } = useCarbon();
   const { company } = useUser();
   const currencyDecimals = useCurrencyDecimals(currencyCode);
@@ -153,7 +161,7 @@ const RentalAgreementLineForm = ({
   const moneyStep = INPUT_STEP.money(currencyDecimals);
 
   return (
-    <ModalCardProvider type="modal">
+    <ModalCardProvider type={type}>
       <ModalCard onClose={onClose}>
         <ModalCardContent size="xlarge">
           <ValidatedForm
@@ -170,8 +178,12 @@ const RentalAgreementLineForm = ({
                     initialValues.rentalAgreementId
                   )
             }
+            fetcher={fetcher}
             className="w-full"
             isDisabled={isLocked}
+            onSubmit={() => {
+              if (type === "modal" && closeOnSubmit) onClose?.();
+            }}
           >
             <ModalCardHeader>
               <ModalCardTitle>
@@ -343,18 +355,22 @@ const RentalAgreementLineForm = ({
                 </div>
               </VStack>
             </ModalCardBody>
-            <ModalCardFooter>
-              <HStack>
-                {!isLocked && (
-                  <Submit isDisabled={isDisabled}>
-                    <Trans>Save</Trans>
-                  </Submit>
-                )}
-                <Button size="md" variant="solid" onClick={onClose}>
-                  {isLocked ? <Trans>Close</Trans> : <Trans>Cancel</Trans>}
-                </Button>
-              </HStack>
-            </ModalCardFooter>
+            {(type === "modal" || !isLocked) && (
+              <ModalCardFooter>
+                <HStack>
+                  {!isLocked && (
+                    <Submit isDisabled={isDisabled}>
+                      <Trans>Save</Trans>
+                    </Submit>
+                  )}
+                  {type === "modal" && (
+                    <Button size="md" variant="solid" onClick={onClose}>
+                      {isLocked ? <Trans>Close</Trans> : <Trans>Cancel</Trans>}
+                    </Button>
+                  )}
+                </HStack>
+              </ModalCardFooter>
+            )}
           </ValidatedForm>
         </ModalCardContent>
       </ModalCard>

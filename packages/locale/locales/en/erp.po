@@ -2639,9 +2639,8 @@ msgstr "Are you sure you want to release this job? It will become available to t
 msgid "Are you sure you want to remove {0} as a supplier for this item? This cannot be undone."
 msgstr "Are you sure you want to remove {0} as a supplier for this item? This cannot be undone."
 
-#. placeholder {0}: unitLabel(pending.line)
-msgid "Are you sure you want to remove {0} from this agreement?"
-msgstr "Are you sure you want to remove {0} from this agreement?"
+msgid "Are you sure you want to remove {label} from this agreement?"
+msgstr "Are you sure you want to remove {label} from this agreement?"
 
 msgid "Are you sure you want to remove {supplierName} as a supplier for this item? This cannot be undone."
 msgstr "Are you sure you want to remove {supplierName} as a supplier for this item? This cannot be undone."
@@ -6070,6 +6069,9 @@ msgstr "Delete Transfer Line"
 msgid "Delete Type"
 msgstr "Delete Type"
 
+msgid "Delete Unit"
+msgstr "Delete Unit"
+
 msgid "Delete Unit of Measure"
 msgstr "Delete Unit of Measure"
 
@@ -6091,9 +6093,8 @@ msgstr "Delete Workflow"
 msgid "Deliver"
 msgstr "Deliver"
 
-#. placeholder {0}: unitLabel(pending.line)
-msgid "Deliver {0}"
-msgstr "Deliver {0}"
+msgid "Deliver {label}"
+msgstr "Deliver {label}"
 
 msgid "Delivered"
 msgstr "Delivered"
@@ -8300,6 +8301,9 @@ msgstr "Flags"
 
 msgid "Fleet"
 msgstr "Fleet"
+
+msgid "Fleet Asset"
+msgstr "Fleet Asset"
 
 msgid "Fleet Days"
 msgstr "Fleet Days"
@@ -12078,8 +12082,8 @@ msgstr "No trainings assigned"
 msgid "No transactions in this period"
 msgstr "No transactions in this period"
 
-msgid "No units yet. Add a fleet unit before activating the agreement."
-msgstr "No units yet. Add a fleet unit before activating the agreement."
+msgid "No units yet. Add a fleet unit from the Units list before activating the agreement."
+msgstr "No units yet. Add a fleet unit from the Units list before activating the agreement."
 
 msgid "No unmapped accounts match a provider code"
 msgstr "No unmapped accounts match a provider code"
@@ -14829,6 +14833,9 @@ msgstr "Remove tool"
 msgid "Remove two-factor authentication"
 msgstr "Remove two-factor authentication"
 
+msgid "Remove Unit"
+msgstr "Remove Unit"
+
 msgid "Removed"
 msgstr "Removed"
 
@@ -16302,9 +16309,8 @@ msgstr "Self-serve"
 msgid "Self-serve reference at docs.carbon.ms"
 msgstr "Self-serve reference at docs.carbon.ms"
 
-#. placeholder {0}: unitLabel(pending.line)
-msgid "Sell {0} to the customer"
-msgstr "Sell {0} to the customer"
+msgid "Sell {label} to the customer"
+msgstr "Sell {label} to the customer"
 
 msgid "Sell to Customer"
 msgstr "Sell to Customer"
@@ -17437,6 +17443,9 @@ msgstr "Suggestion Notifications"
 msgid "Suggestions"
 msgstr "Suggestions"
 
+msgid "Summary"
+msgstr "Summary"
+
 msgid "Sunday"
 msgstr "Sunday"
 
@@ -18046,8 +18055,9 @@ msgstr "The customer effectively buys the unit. It leaves your fixed assets at c
 msgid "The customer effectively buys the units. They leave your fixed assets on activation, the sale is booked, and interest is earned over the term."
 msgstr "The customer effectively buys the units. They leave your fixed assets on activation, the sale is booked, and interest is earned over the term."
 
-msgid "The customer exercises the purchase option. A purchase option charge of {formatOptionAmount} is billed today and its invoice drafted; posting that invoice transfers the unit and marks it Sold."
-msgstr "The customer exercises the purchase option. A purchase option charge of {formatOptionAmount} is billed today and its invoice drafted; posting that invoice transfers the unit and marks it Sold."
+#. placeholder {0}: currencyFormatter.format(purchaseOptionAmount)
+msgid "The customer exercises the purchase option. A purchase option charge of {0} is billed today and its invoice drafted; posting that invoice transfers the unit and marks it Sold."
+msgstr "The customer exercises the purchase option. A purchase option charge of {0} is billed today and its invoice drafted; posting that invoice transfers the unit and marks it Sold."
 
 msgid "The customer is expected to buy the unit at the end of the term."
 msgstr "The customer is expected to buy the unit at the end of the term."
@@ -19698,6 +19708,9 @@ msgstr "Unique, uppercase, without spaces (max 10 characters)"
 
 msgid "Unit"
 msgstr "Unit"
+
+msgid "Unit actions"
+msgstr "Unit actions"
 
 msgid "Unit Cost"
 msgstr "Unit Cost"

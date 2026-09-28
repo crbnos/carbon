@@ -8,7 +8,7 @@ import { getRentalAgreement } from "~/modules/sales";
 import { generateRentalInvoicesNow } from "~/modules/sales/sales.server";
 import { getCompanyTimeZone } from "~/modules/shared/timezone.server";
 import { getDatabaseClient } from "~/services/database.server";
-import { path } from "~/utils/path";
+import { path, requestReferrer } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -31,7 +31,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   if (agreement.data.status !== "Active") {
     throw redirect(
-      path.to.rentalAgreementDetails(id),
+      requestReferrer(request) ?? path.to.rentalAgreementDetails(id),
       await flash(
         request,
         error(null, "Only an active rental agreement can be invoiced")
@@ -51,7 +51,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     }));
   } catch (err) {
     throw redirect(
-      path.to.rentalAgreementDetails(id),
+      requestReferrer(request) ?? path.to.rentalAgreementDetails(id),
       await flash(
         request,
         error(
@@ -64,13 +64,13 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   if (invoiceIds.length === 0) {
     throw redirect(
-      path.to.rentalAgreementDetails(id),
+      requestReferrer(request) ?? path.to.rentalAgreementDetails(id),
       await flash(request, success("Nothing is due on this agreement yet"))
     );
   }
 
   throw redirect(
-    path.to.rentalAgreementDetails(id),
+    requestReferrer(request) ?? path.to.rentalAgreementDetails(id),
     await flash(
       request,
       success(

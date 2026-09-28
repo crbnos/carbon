@@ -2639,9 +2639,8 @@ msgstr "この製造指図をリリースしてもよろしいですか？これ
 msgid "Are you sure you want to remove {0} as a supplier for this item? This cannot be undone."
 msgstr "{0}をこの品目の仕入先として除去してもよろしいですか？これは取り消せません。"
 
-#. placeholder {0}: unitLabel(pending.line)
-msgid "Are you sure you want to remove {0} from this agreement?"
-msgstr "本当に{0}をこの契約から除去しますか？"
+msgid "Are you sure you want to remove {label} from this agreement?"
+msgstr ""
 
 msgid "Are you sure you want to remove {supplierName} as a supplier for this item? This cannot be undone."
 msgstr "{supplierName}をこの品目の仕入先として除去してもよろしいですか？これは取り消せません。"
@@ -6070,6 +6069,9 @@ msgstr "転送明細を削除"
 msgid "Delete Type"
 msgstr "タイプを削除"
 
+msgid "Delete Unit"
+msgstr ""
+
 msgid "Delete Unit of Measure"
 msgstr "測定単位を削除"
 
@@ -6091,9 +6093,8 @@ msgstr "ワークフローを削除"
 msgid "Deliver"
 msgstr "配送"
 
-#. placeholder {0}: unitLabel(pending.line)
-msgid "Deliver {0}"
-msgstr "{0}を配送"
+msgid "Deliver {label}"
+msgstr ""
 
 msgid "Delivered"
 msgstr "配送済"
@@ -8300,6 +8301,9 @@ msgstr "フラグ"
 
 msgid "Fleet"
 msgstr "フリート"
+
+msgid "Fleet Asset"
+msgstr ""
 
 msgid "Fleet Days"
 msgstr "フリート日数"
@@ -12078,8 +12082,8 @@ msgstr "割り当てられた教育訓練がありません"
 msgid "No transactions in this period"
 msgstr "この期間に取引がありません"
 
-msgid "No units yet. Add a fleet unit before activating the agreement."
-msgstr "ユニットがまだ追加されていません。契約を有効化する前にフリートユニットを追加してください。"
+msgid "No units yet. Add a fleet unit from the Units list before activating the agreement."
+msgstr ""
 
 msgid "No unmapped accounts match a provider code"
 msgstr "マップされていない勘定科目でプロバイダーコードと一致するものがありません"
@@ -14829,6 +14833,9 @@ msgstr "工具を除去"
 msgid "Remove two-factor authentication"
 msgstr "二要素認証を除去"
 
+msgid "Remove Unit"
+msgstr ""
+
 msgid "Removed"
 msgstr "削除済み"
 
@@ -16302,9 +16309,8 @@ msgstr "セルフサービス"
 msgid "Self-serve reference at docs.carbon.ms"
 msgstr "セルフサービスリファレンス（docs.carbon.ms）"
 
-#. placeholder {0}: unitLabel(pending.line)
-msgid "Sell {0} to the customer"
-msgstr "{0}を得意先に売却する"
+msgid "Sell {label} to the customer"
+msgstr ""
 
 msgid "Sell to Customer"
 msgstr "得意先に売却"
@@ -17437,6 +17443,9 @@ msgstr "提案通知"
 msgid "Suggestions"
 msgstr "提案"
 
+msgid "Summary"
+msgstr ""
+
 msgid "Sunday"
 msgstr "日曜日"
 
@@ -18046,8 +18055,9 @@ msgstr ""
 msgid "The customer effectively buys the units. They leave your fixed assets on activation, the sale is booked, and interest is earned over the term."
 msgstr ""
 
-msgid "The customer exercises the purchase option. A purchase option charge of {formatOptionAmount} is billed today and its invoice drafted; posting that invoice transfers the unit and marks it Sold."
-msgstr "得意先が購入オプションを実行します。購入オプション料{formatOptionAmount}は本日請求され、その請求書が作成されます。その請求書を転記すると、この個が譲渡され、売却済みとしてマークされます。"
+#. placeholder {0}: currencyFormatter.format(purchaseOptionAmount)
+msgid "The customer exercises the purchase option. A purchase option charge of {0} is billed today and its invoice drafted; posting that invoice transfers the unit and marks it Sold."
+msgstr ""
 
 msgid "The customer is expected to buy the unit at the end of the term."
 msgstr ""
@@ -19698,6 +19708,9 @@ msgstr "一意、大文字、スペースなし（最大10文字）"
 
 msgid "Unit"
 msgstr "単位"
+
+msgid "Unit actions"
+msgstr ""
 
 msgid "Unit Cost"
 msgstr "単位原価"

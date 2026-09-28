@@ -14,6 +14,7 @@ import {
 import { INPUT_FORMAT, INPUT_STEP } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useState } from "react";
+import { useFetcher } from "react-router";
 import type { z } from "zod";
 import {
   Boolean,
@@ -35,6 +36,9 @@ type RentalAgreementReturnFormProps = {
   isSalesType?: boolean;
   /** The agreement's end date — a sales-type unit comes back on or after it. */
   endDate?: string | null;
+  /** Where the form posts when it is opened from a page rather than as its
+   *  own route; it then also closes on submit. */
+  action?: string;
   onClose: () => void;
 };
 
@@ -43,10 +47,12 @@ const RentalAgreementReturnForm = ({
   unitLabel,
   isSalesType = false,
   endDate,
+  action,
   onClose
 }: RentalAgreementReturnFormProps) => {
   const { t } = useLingui();
   const permissions = usePermissions();
+  const fetcher = useFetcher<{}>();
   const { formatDate } = useDateFormatter();
   const [takeOutOfService, setTakeOutOfService] = useState(
     initialValues.takeOutOfService
@@ -64,8 +70,11 @@ const RentalAgreementReturnForm = ({
           <ValidatedForm
             validator={rentalAgreementReturnValidator}
             method="post"
+            action={action}
+            fetcher={action ? fetcher : undefined}
             defaultValues={initialValues}
             className="flex flex-col h-full"
+            onSubmit={action ? onClose : undefined}
           >
             <ModalDrawerHeader>
               <ModalDrawerTitle>

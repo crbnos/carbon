@@ -8205,7 +8205,7 @@ export async function getRentalAgreementLines(
   return client
     .from("rentalAgreementLine")
     .select(
-      "*, fixedAsset(id, fixedAssetId, name, serialNumber), item(readableIdWithRevision, name)"
+      "*, fixedAsset(id, fixedAssetId, name, serialNumber), item(readableIdWithRevision, name, thumbnailPath)"
     )
     .eq("rentalAgreementId", rentalAgreementId)
     .order("createdAt", { ascending: true });
@@ -8218,7 +8218,7 @@ export async function getRentalAgreementLine(
   return client
     .from("rentalAgreementLine")
     .select(
-      "*, fixedAsset(id, fixedAssetId, name, serialNumber), item(readableIdWithRevision, name)"
+      "*, fixedAsset(id, fixedAssetId, name, serialNumber), item(readableIdWithRevision, name, thumbnailPath)"
     )
     .eq("id", rentalAgreementLineId)
     .single();

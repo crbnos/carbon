@@ -1,9 +1,11 @@
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { VStack } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
-import { Outlet, redirect, useLoaderData } from "react-router";
+import { Outlet, redirect, useLoaderData, useParams } from "react-router";
+import { PanelProvider, ResizablePanels } from "~/components/Layout";
 import {
   getRentableFleetAssets,
   getRentalAgreement,
@@ -17,14 +19,9 @@ import type {
   RentalLeaseLineInputs
 } from "~/modules/sales/ui/Rentals";
 import {
-  RentalAgreementCharges,
-  RentalAgreementForm,
-  RentalAgreementHeader,
-  RentalAgreementLines,
-  RentalBillingPeriods,
-  RentalDeposits
+  RentalAgreementExplorer,
+  RentalAgreementHeader
 } from "~/modules/sales/ui/Rentals";
-import { getCustomFields } from "~/utils/form";
 import { detailBreadcrumb, type Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
@@ -182,48 +179,14 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 }
 
 export default function RentalAgreementRoute() {
-  const {
-    rentalAgreement,
-    lines,
-    charges,
-    periods,
-    deposits,
-    invoiceLinks,
-    leasePolicy,
-    leaseInputs
-  } = useLoaderData<typeof loader>();
-
-  const id = rentalAgreement.id!;
-
-  const initialValues = {
-    id,
-    rentalAgreementId: rentalAgreement.rentalAgreementId ?? undefined,
-    customerId: rentalAgreement.customerId ?? "",
-    customerLocationId: rentalAgreement.customerLocationId ?? undefined,
-    customerContactId: rentalAgreement.customerContactId ?? undefined,
-    salesPersonId: rentalAgreement.salesPersonId ?? undefined,
-    locationId: rentalAgreement.locationId ?? "",
-    startDate: rentalAgreement.startDate ?? "",
-    endDate: rentalAgreement.endDate ?? undefined,
-    billingCycle: rentalAgreement.billingCycle ?? ("Calendar Month" as const),
-    billingTiming: rentalAgreement.billingTiming ?? ("Advance" as const),
-    paymentTermId: rentalAgreement.paymentTermId ?? undefined,
-    currencyCode: rentalAgreement.currencyCode ?? "",
-    depositAmount: rentalAgreement.depositAmount ?? 0,
-    taxPercent: rentalAgreement.taxPercent ?? 0,
-    discountRate: rentalAgreement.discountRate ?? 0,
-    ownershipTransfers: rentalAgreement.ownershipTransfers ?? false,
-    specializedAsset: rentalAgreement.specializedAsset ?? false,
-    purchaseOptionAmount: rentalAgreement.purchaseOptionAmount ?? undefined,
-    purchaseOptionReasonablyCertain:
-      rentalAgreement.purchaseOptionReasonablyCertain ?? false,
-    notes: rentalAgreement.notes ?? undefined,
-    ...getCustomFields(rentalAgreement.customFields)
-  };
+  const { rentalAgreement, lines, periods, leasePolicy, leaseInputs } =
+    useLoaderData<typeof loader>();
+  const { id } = useParams();
+  if (!id) throw new Error("Could not find id");
 
   return (
-    <div className="flex h-[calc(100dvh-var(--topbar-height)-var(--content-inset))] overflow-y-auto scrollbar-hide w-full">
-      <div className="h-full p-4 pb-16 w-full max-w-6xl mx-auto space-y-4">
+    <PanelProvider>
+      <div className="flex flex-col h-[calc(100dvh-var(--topbar-height)-var(--content-inset))] overflow-hidden w-full">
         <RentalAgreementHeader
           rentalAgreement={rentalAgreement}
           lines={lines}
@@ -231,29 +194,21 @@ export default function RentalAgreementRoute() {
           leasePolicy={leasePolicy}
           leaseInputs={leaseInputs}
         />
-        <RentalAgreementLines rentalAgreement={rentalAgreement} lines={lines} />
-        <RentalAgreementCharges
-          rentalAgreement={rentalAgreement}
-          charges={charges}
-          hasLines={lines.length > 0}
-          invoiceLinks={invoiceLinks}
-        />
-        <RentalBillingPeriods
-          rentalAgreement={rentalAgreement}
-          periods={periods}
-          invoiceLinks={invoiceLinks}
-        />
-        <RentalDeposits rentalAgreement={rentalAgreement} deposits={deposits} />
-        <RentalAgreementForm
-          key={`${id}-${rentalAgreement.updatedAt ?? ""}`}
-          initialValues={initialValues}
-          isLocked={rentalAgreement.status !== "Draft"}
-          leasePolicy={leasePolicy}
-          lines={lines}
-          leaseInputs={leaseInputs}
-        />
-        <Outlet />
+        <div className="flex h-[calc(100dvh-var(--topbar-height)-var(--header-height)-var(--content-inset))] overflow-hidden w-full">
+          <div className="flex flex-grow overflow-hidden">
+            <ResizablePanels
+              explorer={<RentalAgreementExplorer key={id} />}
+              content={
+                <div className="bg-muted dark:bg-card h-[calc(100dvh-var(--topbar-height)-var(--header-height)-var(--content-inset))] overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent w-full">
+                  <VStack spacing={4} className="p-4">
+                    <Outlet />
+                  </VStack>
+                </div>
+              }
+            />
+          </div>
+        </div>
       </div>
-    </div>
+    </PanelProvider>
   );
 }

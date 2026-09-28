@@ -2639,9 +2639,8 @@ msgstr "Sind Sie sicher, dass Sie diesen Auftrag freigeben möchten? Er wird auf
 msgid "Are you sure you want to remove {0} as a supplier for this item? This cannot be undone."
 msgstr "Sind Sie sicher, dass Sie {0} als Lieferant für diesen Artikel entfernen möchten? Dies kann nicht rückgängig gemacht werden."
 
-#. placeholder {0}: unitLabel(pending.line)
-msgid "Are you sure you want to remove {0} from this agreement?"
-msgstr "Sind Sie sicher, dass Sie {0} aus diesem Vertrag entfernen möchten?"
+msgid "Are you sure you want to remove {label} from this agreement?"
+msgstr ""
 
 msgid "Are you sure you want to remove {supplierName} as a supplier for this item? This cannot be undone."
 msgstr "Sind Sie sicher, dass Sie {supplierName} als Lieferant für diesen Artikel entfernen möchten? Dies kann nicht rückgängig gemacht werden."
@@ -6070,6 +6069,9 @@ msgstr "Umlagerungsposition löschen"
 msgid "Delete Type"
 msgstr "Typ löschen"
 
+msgid "Delete Unit"
+msgstr ""
+
 msgid "Delete Unit of Measure"
 msgstr "Mengeneinheit löschen"
 
@@ -6091,9 +6093,8 @@ msgstr "Workflow löschen"
 msgid "Deliver"
 msgstr "Liefern"
 
-#. placeholder {0}: unitLabel(pending.line)
-msgid "Deliver {0}"
-msgstr "Liefern {0}"
+msgid "Deliver {label}"
+msgstr ""
 
 msgid "Delivered"
 msgstr "Geliefert"
@@ -8300,6 +8301,9 @@ msgstr "Flaggen"
 
 msgid "Fleet"
 msgstr "Flotte"
+
+msgid "Fleet Asset"
+msgstr ""
 
 msgid "Fleet Days"
 msgstr "Flottentage"
@@ -12078,8 +12082,8 @@ msgstr "Keine Schulungen zugewiesen"
 msgid "No transactions in this period"
 msgstr "Keine Transaktionen in diesem Zeitraum"
 
-msgid "No units yet. Add a fleet unit before activating the agreement."
-msgstr "Noch keine Einheiten. Fügen Sie eine Flotteneinheit hinzu, bevor Sie die Vereinbarung aktivieren."
+msgid "No units yet. Add a fleet unit from the Units list before activating the agreement."
+msgstr ""
 
 msgid "No unmapped accounts match a provider code"
 msgstr "Keine nicht zugeordneten Konten entsprechen einem Provider-Code"
@@ -14829,6 +14833,9 @@ msgstr "Werkzeug entfernen"
 msgid "Remove two-factor authentication"
 msgstr "Zwei-Faktor-Authentifizierung entfernen"
 
+msgid "Remove Unit"
+msgstr ""
+
 msgid "Removed"
 msgstr "Entfernt"
 
@@ -16302,9 +16309,8 @@ msgstr "Selbstbedienung"
 msgid "Self-serve reference at docs.carbon.ms"
 msgstr "Selbstbedienungs-Referenz unter docs.carbon.ms"
 
-#. placeholder {0}: unitLabel(pending.line)
-msgid "Sell {0} to the customer"
-msgstr "{0} an den Kunden verkaufen"
+msgid "Sell {label} to the customer"
+msgstr ""
 
 msgid "Sell to Customer"
 msgstr "Verkauf an Kunde"
@@ -17437,6 +17443,9 @@ msgstr "Benachrichtigungen für Vorschläge"
 msgid "Suggestions"
 msgstr "Vorschläge"
 
+msgid "Summary"
+msgstr ""
+
 msgid "Sunday"
 msgstr "Sonntag"
 
@@ -18046,8 +18055,9 @@ msgstr ""
 msgid "The customer effectively buys the units. They leave your fixed assets on activation, the sale is booked, and interest is earned over the term."
 msgstr ""
 
-msgid "The customer exercises the purchase option. A purchase option charge of {formatOptionAmount} is billed today and its invoice drafted; posting that invoice transfers the unit and marks it Sold."
-msgstr "Der Kunde übt die Kaufoption aus. Eine Kaufoptionsgebühr von {formatOptionAmount} wird heute berechnet und ihre Rechnung wird entworfen; das Buchen dieser Rechnung überträgt die Einheit und markiert sie als verkauft."
+#. placeholder {0}: currencyFormatter.format(purchaseOptionAmount)
+msgid "The customer exercises the purchase option. A purchase option charge of {0} is billed today and its invoice drafted; posting that invoice transfers the unit and marks it Sold."
+msgstr ""
 
 msgid "The customer is expected to buy the unit at the end of the term."
 msgstr ""
@@ -19698,6 +19708,9 @@ msgstr "Eindeutig, Großbuchstaben, ohne Leerzeichen (max. 10 Zeichen)"
 
 msgid "Unit"
 msgstr "Einheit"
+
+msgid "Unit actions"
+msgstr ""
 
 msgid "Unit Cost"
 msgstr "Stückkosten"

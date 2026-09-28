@@ -13,6 +13,7 @@ import {
 } from "@carbon/react";
 import { INPUT_FORMAT, INPUT_STEP } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
+import { useFetcher } from "react-router";
 import type { z } from "zod";
 import { DatePicker, Input, Number, Select, Submit } from "~/components/Form";
 import { useCurrencyDecimals, usePermissions } from "~/hooks";
@@ -23,6 +24,9 @@ type RentalAgreementChargeFormProps = {
   currencyCode: string;
   /** The agreement's lines — a charge belongs to one fleet unit. */
   lineOptions: { value: string; label: string }[];
+  /** Where the form posts when it is opened from a page rather than as its
+   *  own route; it then also closes on submit. */
+  action?: string;
   onClose: () => void;
 };
 
@@ -30,10 +34,12 @@ const RentalAgreementChargeForm = ({
   initialValues,
   currencyCode,
   lineOptions,
+  action,
   onClose
 }: RentalAgreementChargeFormProps) => {
   const { t } = useLingui();
   const permissions = usePermissions();
+  const fetcher = useFetcher<{}>();
   const currencyDecimals = useCurrencyDecimals(currencyCode);
 
   return (
@@ -48,8 +54,11 @@ const RentalAgreementChargeForm = ({
           <ValidatedForm
             validator={rentalAgreementChargeValidator}
             method="post"
+            action={action}
+            fetcher={action ? fetcher : undefined}
             defaultValues={initialValues}
             className="flex flex-col h-full"
+            onSubmit={action ? onClose : undefined}
           >
             <ModalDrawerHeader>
               <ModalDrawerTitle>

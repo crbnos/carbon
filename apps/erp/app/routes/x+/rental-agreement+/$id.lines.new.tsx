@@ -3,16 +3,13 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
-import { redirect, useNavigate, useParams } from "react-router";
-import { useRouteData } from "~/hooks";
+import { redirect } from "react-router";
 import {
   getRentalAgreement,
   rentalAgreementLineValidator,
   upsertRentalAgreementLine
 } from "~/modules/sales";
-import type { RentalAgreementRouteData } from "~/modules/sales/ui/Rentals";
-import { RentalAgreementLineForm } from "~/modules/sales/ui/Rentals";
-import { path } from "~/utils/path";
+import { path, requestReferrer } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -32,7 +29,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
   if (agreement.data.status !== "Draft") {
     throw redirect(
-      path.to.rentalAgreementDetails(id),
+      requestReferrer(request) ?? path.to.rentalAgreementDetails(id),
       await flash(
         request,
         error(null, "Units can only be added to a Draft rental agreement")
@@ -61,7 +58,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   if (insert.error) {
     throw redirect(
-      path.to.rentalAgreementDetails(id),
+      requestReferrer(request) ?? path.to.rentalAgreementDetails(id),
       await flash(
         request,
         error(insert.error, insert.error.message || "Failed to add unit")
@@ -70,30 +67,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   throw redirect(
-    path.to.rentalAgreementDetails(id),
+    requestReferrer(request) ?? path.to.rentalAgreementDetails(id),
     await flash(request, success("Added unit to the agreement"))
-  );
-}
-
-export default function NewRentalAgreementLineRoute() {
-  const { id } = useParams();
-  if (!id) throw new Error("Could not find id");
-  const navigate = useNavigate();
-
-  const routeData = useRouteData<RentalAgreementRouteData>(
-    path.to.rentalAgreement(id)
-  );
-
-  return (
-    <RentalAgreementLineForm
-      initialValues={{
-        rentalAgreementId: id,
-        fixedAssetId: "",
-        rateMode: "Best Rate"
-      }}
-      currencyCode={routeData?.rentalAgreement.currencyCode ?? ""}
-      rentableAssets={routeData?.rentableAssets ?? []}
-      onClose={() => navigate(path.to.rentalAgreementDetails(id))}
-    />
   );
 }

@@ -30,9 +30,11 @@ An agreement in a foreign currency can be saved as a draft but not activated: re
 
 ## Units and the fleet
 
+The agreement is laid out like a sales order. Its units are listed down the left; select one to open its own page, with its status and its **"Deliver"**, **"Return"** and **"Sell to Customer"** actions, its rates and accounting treatment, and its own charges and billing periods. The agreement's ID in the header opens the agreement as a whole: a summary of the deposit, what is unbilled and what falls due next, every unit, charge, billing period and deposit, and the terms.
+
 Each unit on the agreement moves through its own status: **"Pending"** until delivered, **"On Rent"** once delivered, then **"Returned"**, or **"Sold"** when the customer buys a unit treated as a sale on its purchase option. The Fleet register reflects the same thing from the asset's side: a unit on a draft or an undelivered line reads **Reserved**, a delivered one reads **<Term>On Rent</Term>**, and a unit can only be on one live agreement at a time.
 
-- **"Add Unit"** lists fleet units that are Available right now. Choose a **"Rate Mode"**: *Best Rate*, or *Fixed* with the **"Billed Tier"** it always bills.
+- **"Add Unit"**, at the foot of the units list while the agreement is a draft, lists fleet units that are Available right now. Choose a **"Rate Mode"**: *Best Rate*, or *Fixed* with the **"Billed Tier"** it always bills.
 - **"Deliver"** marks a pending unit on an active agreement as delivered today. It is refused while the unit is out of service.
 - **"Return"** records the **"Return Date"**, an optional **"Meter Reading"** and **"Return Notes"**, and re-cuts a rental unit's billing (below). The return date cannot be later than today. Tick **"Take out of service"** with a reason and the unit goes straight to In Maintenance instead of back to Available.
 

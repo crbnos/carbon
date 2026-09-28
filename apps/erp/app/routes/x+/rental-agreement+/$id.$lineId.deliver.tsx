@@ -7,7 +7,7 @@ import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
 import { getRentalAgreement, getRentalAgreementLine } from "~/modules/sales";
 import { getCompanyTimeZone } from "~/modules/shared/timezone.server";
-import { path } from "~/utils/path";
+import { path, requestReferrer } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -31,7 +31,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     line.data.rentalAgreementId !== id
   ) {
     throw redirect(
-      path.to.rentalAgreementDetails(id),
+      requestReferrer(request) ?? path.to.rentalAgreementDetails(id),
       await flash(
         request,
         error(null, "This unit does not belong to this rental agreement")
@@ -41,7 +41,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   if (agreement.data.status !== "Active" || line.data.status !== "Pending") {
     throw redirect(
-      path.to.rentalAgreementDetails(id),
+      requestReferrer(request) ?? path.to.rentalAgreementDetails(id),
       await flash(
         request,
         error(
@@ -66,13 +66,13 @@ export async function action({ request, params }: ActionFunctionArgs) {
       .maybeSingle();
     if (asset.error || !asset.data) {
       throw redirect(
-        path.to.rentalAgreementDetails(id),
+        requestReferrer(request) ?? path.to.rentalAgreementDetails(id),
         await flash(request, error(asset.error, "Failed to load the unit"))
       );
     }
     if (asset.data.fleetStatus === "In Maintenance") {
       throw redirect(
-        path.to.rentalAgreementDetails(id),
+        requestReferrer(request) ?? path.to.rentalAgreementDetails(id),
         await flash(
           request,
           error(
@@ -104,13 +104,13 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   if (update.error) {
     throw redirect(
-      path.to.rentalAgreementDetails(id),
+      requestReferrer(request) ?? path.to.rentalAgreementDetails(id),
       await flash(request, error(update.error, "Failed to deliver the unit"))
     );
   }
 
   throw redirect(
-    path.to.rentalAgreementDetails(id),
+    requestReferrer(request) ?? path.to.rentalAgreementDetails(id),
     await flash(request, success("Unit delivered"))
   );
 }

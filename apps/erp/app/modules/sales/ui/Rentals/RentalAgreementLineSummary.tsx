@@ -1,0 +1,147 @@
+import {
+  Button,
+  Card,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+  HStack
+} from "@carbon/react";
+import { Trans, useLingui } from "@lingui/react/macro";
+import type { ReactNode } from "react";
+import { LuBadgeDollarSign, LuTrash, LuTruck, LuUndo2 } from "react-icons/lu";
+import { Link } from "react-router";
+import { DateTime } from "~/components";
+import { path } from "~/utils/path";
+import { LeaseClassificationBadge } from "./RentalLeaseClassification";
+import RentalStatus from "./RentalStatus";
+import type { RentalAgreement, RentalAgreementLine } from "./types";
+import { rentalUnitLabel, useRentalLineActions } from "./useRentalLineActions";
+
+type RentalAgreementLineSummaryProps = {
+  rentalAgreement: RentalAgreement;
+  line: RentalAgreementLine;
+};
+
+/** The top of a unit's page: where the unit is in its rental and what can
+ *  happen to it next. */
+const RentalAgreementLineSummary = ({
+  rentalAgreement,
+  line
+}: RentalAgreementLineSummaryProps) => {
+  const { t } = useLingui();
+  const actions = useRentalLineActions(rentalAgreement);
+  const state = actions.stateOf(line);
+  const hasActions =
+    state.canDeliver || state.canReturn || state.canSell || state.canDelete;
+
+  return (
+    <>
+      <Card>
+        <CardHeader>
+          <HStack className="justify-between w-full">
+            <CardTitle>{rentalUnitLabel(line)}</CardTitle>
+            <HStack spacing={2}>
+              {line.lessorClassification && (
+                <LeaseClassificationBadge value={line.lessorClassification} />
+              )}
+              <RentalStatus status={line.status} />
+            </HStack>
+          </HStack>
+        </CardHeader>
+        <CardContent>
+          <div className="divide-y divide-border border-t border-border">
+            <DetailRow label={t`Fleet Asset`}>
+              {line.fixedAssetId ? (
+                <Link
+                  to={path.to.fixedAsset(line.fixedAssetId)}
+                  className="hover:underline"
+                >
+                  {line.fixedAsset?.fixedAssetId ?? line.fixedAssetId}
+                </Link>
+              ) : (
+                "—"
+              )}
+            </DetailRow>
+            <DetailRow label={t`Item`}>
+              {line.item?.readableIdWithRevision ?? "—"}
+            </DetailRow>
+            <DetailRow label={t`Serial Number`}>
+              {line.fixedAsset?.serialNumber || "—"}
+            </DetailRow>
+            <DetailRow label={t`Delivered`}>
+              <DateTime value={line.deliveredAt} variant="date" fallback="—" />
+            </DetailRow>
+            <DetailRow label={t`Returned`}>
+              <DateTime value={line.returnedAt} variant="date" fallback="—" />
+            </DetailRow>
+          </div>
+        </CardContent>
+        {hasActions && (
+          <CardFooter>
+            <HStack>
+              {state.canDeliver && (
+                <Button
+                  variant="primary"
+                  leftIcon={<LuTruck />}
+                  isDisabled={state.deliverDisabled}
+                  onClick={() => actions.open("deliver", line)}
+                >
+                  <Trans>Deliver</Trans>
+                </Button>
+              )}
+              {state.canReturn && (
+                <Button
+                  variant="primary"
+                  leftIcon={<LuUndo2 />}
+                  isDisabled={state.returnDisabled}
+                  onClick={() => actions.open("return", line)}
+                >
+                  <Trans>Return</Trans>
+                </Button>
+              )}
+              {state.canSell && (
+                <Button
+                  variant="secondary"
+                  leftIcon={<LuBadgeDollarSign />}
+                  isDisabled={state.sellDisabled}
+                  onClick={() => actions.open("sell", line)}
+                >
+                  <Trans>Sell to Customer</Trans>
+                </Button>
+              )}
+              {state.canDelete && (
+                <Button
+                  variant="secondary"
+                  leftIcon={<LuTrash />}
+                  isDisabled={state.deleteDisabled}
+                  onClick={() => actions.open("delete", line)}
+                >
+                  <Trans>Remove Unit</Trans>
+                </Button>
+              )}
+            </HStack>
+          </CardFooter>
+        )}
+      </Card>
+      {actions.modals}
+    </>
+  );
+};
+
+function DetailRow({
+  label,
+  children
+}: {
+  label: string;
+  children: ReactNode;
+}) {
+  return (
+    <div className="flex items-center justify-between py-3 text-base sm:text-sm">
+      <span className="text-muted-foreground">{label}</span>
+      <span className="font-medium">{children}</span>
+    </div>
+  );
+}
+
+export default RentalAgreementLineSummary;

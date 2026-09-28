@@ -11,7 +11,7 @@ import {
 } from "~/modules/sales/sales.server";
 import { getCompanyTimeZone } from "~/modules/shared/timezone.server";
 import { getDatabaseClient } from "~/services/database.server";
-import { path } from "~/utils/path";
+import { path, requestReferrer } from "~/utils/path";
 
 /**
  * "Sell to customer" — the purchase option on a Sale line (spec §4).
@@ -45,7 +45,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     line.data.rentalAgreementId !== id
   ) {
     throw redirect(
-      path.to.rentalAgreementDetails(id),
+      requestReferrer(request) ?? path.to.rentalAgreementDetails(id),
       await flash(
         request,
         error(null, "This unit does not belong to this rental agreement")
@@ -61,7 +61,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     !purchaseOptionAmount
   ) {
     throw redirect(
-      path.to.rentalAgreementDetails(id),
+      requestReferrer(request) ?? path.to.rentalAgreementDetails(id),
       await flash(
         request,
         error(
@@ -82,7 +82,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     .limit(1);
   if (existing.error) {
     throw redirect(
-      path.to.rentalAgreementDetails(id),
+      requestReferrer(request) ?? path.to.rentalAgreementDetails(id),
       await flash(
         request,
         error(existing.error, "Failed to check the purchase option")
@@ -91,7 +91,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
   if ((existing.data ?? []).length > 0) {
     throw redirect(
-      path.to.rentalAgreementDetails(id),
+      requestReferrer(request) ?? path.to.rentalAgreementDetails(id),
       await flash(
         request,
         error(null, "The purchase option has already been billed")
@@ -110,7 +110,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const endDate = agreement.data.endDate;
   if (endDate && today < endDate) {
     throw redirect(
-      path.to.rentalAgreementDetails(id),
+      requestReferrer(request) ?? path.to.rentalAgreementDetails(id),
       await flash(
         request,
         error(
@@ -133,7 +133,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   if (charge.error) {
     throw redirect(
-      path.to.rentalAgreementDetails(id),
+      requestReferrer(request) ?? path.to.rentalAgreementDetails(id),
       await flash(
         request,
         error(charge.error, "Failed to bill the purchase option")
@@ -150,7 +150,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     });
   } catch (err) {
     throw redirect(
-      path.to.rentalAgreementDetails(id),
+      requestReferrer(request) ?? path.to.rentalAgreementDetails(id),
       await flash(
         request,
         error(
@@ -164,7 +164,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   throw redirect(
-    path.to.rentalAgreementDetails(id),
+    requestReferrer(request) ?? path.to.rentalAgreementDetails(id),
     await flash(
       request,
       success(

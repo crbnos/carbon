@@ -4,7 +4,7 @@ import { flash } from "@carbon/auth/session.server";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
 import { deleteRentalAgreementCharge } from "~/modules/sales";
-import { path } from "~/utils/path";
+import { path, requestReferrer } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -29,7 +29,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   if (charge.error || !charge.data) {
     throw redirect(
-      path.to.rentalAgreementDetails(id),
+      requestReferrer(request) ?? path.to.rentalAgreementDetails(id),
       await flash(
         request,
         error(charge.error, "This charge does not belong to this agreement")
@@ -39,7 +39,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   if (charge.data.salesInvoiceLineId) {
     throw redirect(
-      path.to.rentalAgreementDetails(id),
+      requestReferrer(request) ?? path.to.rentalAgreementDetails(id),
       await flash(
         request,
         error(
@@ -53,13 +53,13 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const result = await deleteRentalAgreementCharge(client, chargeId);
   if (result.error) {
     throw redirect(
-      path.to.rentalAgreementDetails(id),
+      requestReferrer(request) ?? path.to.rentalAgreementDetails(id),
       await flash(request, error(result.error, "Failed to delete charge"))
     );
   }
 
   throw redirect(
-    path.to.rentalAgreementDetails(id),
+    requestReferrer(request) ?? path.to.rentalAgreementDetails(id),
     await flash(request, success("Deleted charge"))
   );
 }

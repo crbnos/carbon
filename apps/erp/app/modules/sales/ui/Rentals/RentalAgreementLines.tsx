@@ -1,8 +1,6 @@
 import {
-  Button,
   Card,
   CardContent,
-  CardFooter,
   CardHeader,
   CardTitle,
   DropdownMenu,
@@ -16,39 +14,30 @@ import {
   Td,
   Th,
   Thead,
-  Tr,
-  useDisclosure
+  Tr
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useState } from "react";
 import {
   LuBadgeDollarSign,
   LuEllipsisVertical,
   LuPencil,
-  LuPlus,
   LuTrash,
   LuTruck,
   LuUndo2
 } from "react-icons/lu";
-import { Link, useNavigate } from "react-router";
+import { useNavigate } from "react-router";
 import { DateTime, Hyperlink } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
-import { Confirm, ConfirmDelete } from "~/components/Modals";
-import { useCurrencyFormatter, usePermissions } from "~/hooks";
 import { path } from "~/utils/path";
 import { LeaseClassificationBadge } from "./RentalLeaseClassification";
 import RentalMoney from "./RentalMoney";
 import RentalStatus from "./RentalStatus";
 import type { RentalAgreement, RentalAgreementLine } from "./types";
+import { useRentalLineActions } from "./useRentalLineActions";
 
 type RentalAgreementLinesProps = {
   rentalAgreement: RentalAgreement;
   lines: RentalAgreementLine[];
-};
-
-type LineAction = {
-  kind: "deliver" | "delete" | "sell";
-  line: RentalAgreementLine;
 };
 
 const RentalAgreementLines = ({
@@ -56,25 +45,11 @@ const RentalAgreementLines = ({
   lines
 }: RentalAgreementLinesProps) => {
   const { t } = useLingui();
-  const permissions = usePermissions();
   const navigate = useNavigate();
-  const disclosure = useDisclosure();
-  const [pending, setPending] = useState<LineAction | null>(null);
+  const actions = useRentalLineActions(rentalAgreement);
 
   const id = rentalAgreement.id!;
   const isDraft = rentalAgreement.status === "Draft";
-  const isActive = rentalAgreement.status === "Active";
-  const canUpdate = permissions.can("update", "sales");
-  // Selling bills a charge and drafts its invoice.
-  const canSell =
-    canUpdate &&
-    permissions.can("create", "sales") &&
-    permissions.can("create", "invoicing");
-  const purchaseOptionAmount = rentalAgreement.purchaseOptionAmount ?? 0;
-  const currencyFormatter = useCurrencyFormatter({
-    currency: rentalAgreement.currencyCode ?? undefined
-  });
-  const formatOptionAmount = currencyFormatter.format(purchaseOptionAmount);
 
   const unitLabel = (line: RentalAgreementLine) =>
     line.fixedAsset?.fixedAssetId ?? line.fixedAsset?.name ?? "";
@@ -91,7 +66,8 @@ const RentalAgreementLines = ({
           {lines.length === 0 ? (
             <p className="text-sm text-muted-foreground">
               <Trans>
-                No units yet. Add a fleet unit before activating the agreement.
+                No units yet. Add a fleet unit from the Units list before
+                activating the agreement.
               </Trans>
             </p>
           ) : (
@@ -133,15 +109,7 @@ const RentalAgreementLines = ({
               </Thead>
               <Tbody>
                 {lines.map((line) => {
-                  const canDeliver = isActive && line.status === "Pending";
-                  // Returned and Sold lines are finished; only a unit on rent
-                  // comes back.
-                  const canReturn = isActive && line.status === "On Rent";
-                  // The purchase option ends a sales-type lease by sale.
-                  const canExerciseOption =
-                    canReturn &&
-                    line.lessorClassification === "Sale" &&
-                    purchaseOptionAmount > 0;
+                  const state = actions.stateOf(line);
                   return (
                     <Tr key={line.id}>
                       <Td>
@@ -247,41 +215,28 @@ const RentalAgreementLines = ({
                                 <Trans>View</Trans>
                               )}
                             </DropdownMenuItem>
-                            {canDeliver && (
+                            {state.canDeliver && (
                               <DropdownMenuItem
-                                disabled={!canUpdate}
-                                onClick={() => {
-                                  setPending({ kind: "deliver", line });
-                                  disclosure.onOpen();
-                                }}
+                                disabled={state.deliverDisabled}
+                                onClick={() => actions.open("deliver", line)}
                               >
                                 <DropdownMenuIcon icon={<LuTruck />} />
                                 <Trans>Deliver</Trans>
                               </DropdownMenuItem>
                             )}
-                            {canReturn && (
+                            {state.canReturn && (
                               <DropdownMenuItem
-                                disabled={!canUpdate}
-                                onClick={() =>
-                                  navigate(
-                                    path.to.rentalAgreementLineReturn(
-                                      id,
-                                      line.id
-                                    )
-                                  )
-                                }
+                                disabled={state.returnDisabled}
+                                onClick={() => actions.open("return", line)}
                               >
                                 <DropdownMenuIcon icon={<LuUndo2 />} />
                                 <Trans>Return</Trans>
                               </DropdownMenuItem>
                             )}
-                            {canExerciseOption && (
+                            {state.canSell && (
                               <DropdownMenuItem
-                                disabled={!canSell}
-                                onClick={() => {
-                                  setPending({ kind: "sell", line });
-                                  disclosure.onOpen();
-                                }}
+                                disabled={state.sellDisabled}
+                                onClick={() => actions.open("sell", line)}
                               >
                                 <DropdownMenuIcon
                                   icon={<LuBadgeDollarSign />}
@@ -289,14 +244,11 @@ const RentalAgreementLines = ({
                                 <Trans>Sell to Customer</Trans>
                               </DropdownMenuItem>
                             )}
-                            {isDraft && (
+                            {state.canDelete && (
                               <DropdownMenuItem
                                 destructive
-                                disabled={!permissions.can("delete", "sales")}
-                                onClick={() => {
-                                  setPending({ kind: "delete", line });
-                                  disclosure.onOpen();
-                                }}
+                                disabled={state.deleteDisabled}
+                                onClick={() => actions.open("delete", line)}
                               >
                                 <DropdownMenuIcon icon={<LuTrash />} />
                                 <Trans>Delete</Trans>
@@ -312,74 +264,9 @@ const RentalAgreementLines = ({
             </Table>
           )}
         </CardContent>
-        {isDraft && (
-          <CardFooter>
-            <Button
-              variant="secondary"
-              leftIcon={<LuPlus />}
-              isDisabled={!permissions.can("create", "sales")}
-              asChild
-            >
-              <Link to={path.to.newRentalAgreementLine(id)}>
-                <Trans>Add Unit</Trans>
-              </Link>
-            </Button>
-          </CardFooter>
-        )}
       </Card>
 
-      {pending?.kind === "deliver" && disclosure.isOpen && (
-        <Confirm
-          action={path.to.rentalAgreementLineDeliver(id, pending.line.id)}
-          title={t`Deliver ${unitLabel(pending.line)}`}
-          text={t`Mark the unit as delivered to the customer today. It goes on rent today; billing follows the agreement's start date and cycle.`}
-          confirmText={t`Deliver`}
-          confirmVariant="primary"
-          onCancel={() => {
-            disclosure.onClose();
-            setPending(null);
-          }}
-          onSubmit={() => {
-            disclosure.onClose();
-            setPending(null);
-          }}
-        />
-      )}
-
-      {pending?.kind === "sell" && disclosure.isOpen && (
-        <Confirm
-          action={path.to.rentalAgreementLineSell(id, pending.line.id)}
-          title={t`Sell ${unitLabel(pending.line)} to the customer`}
-          text={t`The customer exercises the purchase option. A purchase option charge of ${formatOptionAmount} is billed today and its invoice drafted; posting that invoice transfers the unit and marks it Sold.`}
-          confirmText={t`Sell to Customer`}
-          confirmVariant="primary"
-          onCancel={() => {
-            disclosure.onClose();
-            setPending(null);
-          }}
-          onSubmit={() => {
-            disclosure.onClose();
-            setPending(null);
-          }}
-        />
-      )}
-
-      {pending?.kind === "delete" && disclosure.isOpen && (
-        <ConfirmDelete
-          action={path.to.deleteRentalAgreementLine(id, pending.line.id)}
-          isOpen
-          name={unitLabel(pending.line)}
-          text={t`Are you sure you want to remove ${unitLabel(pending.line)} from this agreement?`}
-          onCancel={() => {
-            disclosure.onClose();
-            setPending(null);
-          }}
-          onSubmit={() => {
-            disclosure.onClose();
-            setPending(null);
-          }}
-        />
-      )}
+      {actions.modals}
     </>
   );
 };

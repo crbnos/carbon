@@ -9,7 +9,7 @@ import { datetime } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
 import { rentalAgreementLineClassificationValidator } from "~/modules/sales";
-import { path } from "~/utils/path";
+import { path, requestReferrer } from "~/utils/path";
 
 const logger = getLogger("erp", "rental-agreement-classification");
 
@@ -64,7 +64,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   if (agreement.error || !agreement.data || line.error || !line.data) {
     throw redirect(
-      path.to.rentalAgreementDetails(id),
+      requestReferrer(request) ?? path.to.rentalAgreementDetails(id),
       await flash(
         request,
         error(

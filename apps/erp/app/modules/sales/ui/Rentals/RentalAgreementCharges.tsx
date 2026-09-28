@@ -16,35 +16,51 @@ import {
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useState } from "react";
 import { LuPlus, LuTrash } from "react-icons/lu";
-import { Link } from "react-router";
 import { DateTime, Hyperlink } from "~/components";
 import { ConfirmDelete } from "~/components/Modals";
-import { usePercentFormatter, usePermissions } from "~/hooks";
+import { useCompanyToday, usePercentFormatter, usePermissions } from "~/hooks";
 import { path } from "~/utils/path";
+import RentalAgreementChargeForm from "./RentalAgreementChargeForm";
 import RentalMoney from "./RentalMoney";
 import type {
   RentalAgreement,
   RentalAgreementCharge,
+  RentalAgreementLine,
   RentalInvoiceLinks
 } from "./types";
+import { rentalUnitLabel } from "./useRentalLineActions";
 
 type RentalAgreementChargesProps = {
   rentalAgreement: RentalAgreement;
   charges: RentalAgreementCharge[];
-  hasLines: boolean;
+  lines: RentalAgreementLine[];
   invoiceLinks: RentalInvoiceLinks;
+  /** On a unit's page: only that unit's charges, and new ones are for it. */
+  lineId?: string;
 };
 
 const RentalAgreementCharges = ({
   rentalAgreement,
-  charges,
-  hasLines,
-  invoiceLinks
+  charges: allCharges,
+  lines,
+  invoiceLinks,
+  lineId
 }: RentalAgreementChargesProps) => {
   const { t } = useLingui();
   const permissions = usePermissions();
   const percentFormatter = usePercentFormatter();
+  const companyToday = useCompanyToday();
   const [deleting, setDeleting] = useState<RentalAgreementCharge | null>(null);
+  const [adding, setAdding] = useState(false);
+
+  const charges = lineId
+    ? allCharges.filter((charge) => charge.rentalAgreementLineId === lineId)
+    : allCharges;
+  const hasLines = lines.length > 0;
+  const lineOptions = lines.map((line) => ({
+    value: line.id,
+    label: rentalUnitLabel(line) || line.id
+  }));
 
   const id = rentalAgreement.id!;
   const isOpen =
@@ -155,15 +171,30 @@ const RentalAgreementCharges = ({
               variant="secondary"
               leftIcon={<LuPlus />}
               isDisabled={!hasLines || !permissions.can("create", "sales")}
-              asChild
+              onClick={() => setAdding(true)}
             >
-              <Link to={path.to.newRentalAgreementCharge(id)}>
-                <Trans>Add Charge</Trans>
-              </Link>
+              <Trans>Add Charge</Trans>
             </Button>
           </CardFooter>
         )}
       </Card>
+
+      {adding && (
+        <RentalAgreementChargeForm
+          action={path.to.newRentalAgreementCharge(id)}
+          initialValues={{
+            rentalAgreementLineId:
+              lineId ?? (lines.length === 1 ? lines[0].id : ""),
+            chargeDate: companyToday,
+            description: "",
+            amount: 0,
+            taxPercent: rentalAgreement.taxPercent ?? 0
+          }}
+          currencyCode={rentalAgreement.currencyCode ?? ""}
+          lineOptions={lineOptions}
+          onClose={() => setAdding(false)}
+        />
+      )}
 
       {deleting && (
         <ConfirmDelete

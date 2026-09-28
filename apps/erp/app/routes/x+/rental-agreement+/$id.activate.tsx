@@ -5,7 +5,7 @@ import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
 import { getRentalAgreement } from "~/modules/sales";
 import { getEdgeFunctionErrorMessage } from "~/utils/error";
-import { path } from "~/utils/path";
+import { path, requestReferrer } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -26,7 +26,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   if (agreement.data.status !== "Draft") {
     throw redirect(
-      path.to.rentalAgreementDetails(id),
+      requestReferrer(request) ?? path.to.rentalAgreementDetails(id),
       await flash(
         request,
         error(null, "Only a Draft rental agreement can be activated")
@@ -36,7 +36,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   if (!agreement.data.lineCount) {
     throw redirect(
-      path.to.rentalAgreementDetails(id),
+      requestReferrer(request) ?? path.to.rentalAgreementDetails(id),
       await flash(request, error(null, "Add a unit before activating"))
     );
   }
@@ -54,7 +54,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   if (result.error) {
     throw redirect(
-      path.to.rentalAgreementDetails(id),
+      requestReferrer(request) ?? path.to.rentalAgreementDetails(id),
       await flash(
         request,
         error(
@@ -69,7 +69,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   throw redirect(
-    path.to.rentalAgreementDetails(id),
+    requestReferrer(request) ?? path.to.rentalAgreementDetails(id),
     await flash(request, success("Rental agreement activated"))
   );
 }

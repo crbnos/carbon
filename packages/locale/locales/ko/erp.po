@@ -2639,9 +2639,8 @@ msgstr "이 작업 지시를 릴리스하시겠습니까? 현장에서 가용하
 msgid "Are you sure you want to remove {0} as a supplier for this item? This cannot be undone."
 msgstr "정말로 이 항목의 공급업체로 {0}을(를) 제거하시겠습니까? 이 작업은 취소할 수 없습니다."
 
-#. placeholder {0}: unitLabel(pending.line)
-msgid "Are you sure you want to remove {0} from this agreement?"
-msgstr "이 계약에서 {0}을(를) 제거하시겠습니까?"
+msgid "Are you sure you want to remove {label} from this agreement?"
+msgstr ""
 
 msgid "Are you sure you want to remove {supplierName} as a supplier for this item? This cannot be undone."
 msgstr "정말로 이 항목의 공급업체로 {supplierName}을(를) 제거하시겠습니까? 이 작업은 취소할 수 없습니다."
@@ -6070,6 +6069,9 @@ msgstr "이송 라인 삭제"
 msgid "Delete Type"
 msgstr "유형 삭제"
 
+msgid "Delete Unit"
+msgstr ""
+
 msgid "Delete Unit of Measure"
 msgstr "측정 단위 삭제"
 
@@ -6091,9 +6093,8 @@ msgstr "워크플로우 삭제"
 msgid "Deliver"
 msgstr "배송"
 
-#. placeholder {0}: unitLabel(pending.line)
-msgid "Deliver {0}"
-msgstr "{0} 배송"
+msgid "Deliver {label}"
+msgstr ""
 
 msgid "Delivered"
 msgstr "배송됨"
@@ -8300,6 +8301,9 @@ msgstr "플래그"
 
 msgid "Fleet"
 msgstr "플릿"
+
+msgid "Fleet Asset"
+msgstr ""
 
 msgid "Fleet Days"
 msgstr "플릿 일"
@@ -12078,8 +12082,8 @@ msgstr "할당된 교육 없음"
 msgid "No transactions in this period"
 msgstr "이 기간에 거래가 없습니다"
 
-msgid "No units yet. Add a fleet unit before activating the agreement."
-msgstr "아직 단위가 없습니다. 계약을 활성화하기 전에 플릿 단위를 추가하세요."
+msgid "No units yet. Add a fleet unit from the Units list before activating the agreement."
+msgstr ""
 
 msgid "No unmapped accounts match a provider code"
 msgstr "매핑되지 않은 계정이 공급자 코드와 일치하지 않음"
@@ -14829,6 +14833,9 @@ msgstr "도구 제거"
 msgid "Remove two-factor authentication"
 msgstr "2단계 인증 제거"
 
+msgid "Remove Unit"
+msgstr ""
+
 msgid "Removed"
 msgstr "제거됨"
 
@@ -16302,9 +16309,8 @@ msgstr "셀프서비스"
 msgid "Self-serve reference at docs.carbon.ms"
 msgstr "docs.carbon.ms에서 셀프서비스 참고자료 확인"
 
-#. placeholder {0}: unitLabel(pending.line)
-msgid "Sell {0} to the customer"
-msgstr "{0}을 고객에게 판매"
+msgid "Sell {label} to the customer"
+msgstr ""
 
 msgid "Sell to Customer"
 msgstr "고객에게 판매"
@@ -17437,6 +17443,9 @@ msgstr "제안 알림"
 msgid "Suggestions"
 msgstr "제안"
 
+msgid "Summary"
+msgstr ""
+
 msgid "Sunday"
 msgstr "일요일"
 
@@ -18046,8 +18055,9 @@ msgstr ""
 msgid "The customer effectively buys the units. They leave your fixed assets on activation, the sale is booked, and interest is earned over the term."
 msgstr ""
 
-msgid "The customer exercises the purchase option. A purchase option charge of {formatOptionAmount} is billed today and its invoice drafted; posting that invoice transfers the unit and marks it Sold."
-msgstr "고객이 구매선택권을 행사합니다. 구매선택권 비용 {formatOptionAmount}를 오늘 청구하며 송장이 작성됩니다; 그 송장을 전기하면 자산이 이송되고 판매됨으로 표시됩니다."
+#. placeholder {0}: currencyFormatter.format(purchaseOptionAmount)
+msgid "The customer exercises the purchase option. A purchase option charge of {0} is billed today and its invoice drafted; posting that invoice transfers the unit and marks it Sold."
+msgstr ""
 
 msgid "The customer is expected to buy the unit at the end of the term."
 msgstr ""
@@ -19698,6 +19708,9 @@ msgstr "고유하고 대문자이며 공백 없이(최대 10자)"
 
 msgid "Unit"
 msgstr "단위"
+
+msgid "Unit actions"
+msgstr ""
 
 msgid "Unit Cost"
 msgstr "단위원가"

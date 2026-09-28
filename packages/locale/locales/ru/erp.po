@@ -2639,9 +2639,8 @@ msgstr "Вы уверены, что хотите запустить в рабо�
 msgid "Are you sure you want to remove {0} as a supplier for this item? This cannot be undone."
 msgstr "Вы уверены, что хотите убрать {0} в качестве поставщика для этой номенклатуры? Это невозможно отменить."
 
-#. placeholder {0}: unitLabel(pending.line)
-msgid "Are you sure you want to remove {0} from this agreement?"
-msgstr "Вы уверены, что хотите убрать {0} из этого договора?"
+msgid "Are you sure you want to remove {label} from this agreement?"
+msgstr ""
 
 msgid "Are you sure you want to remove {supplierName} as a supplier for this item? This cannot be undone."
 msgstr "Вы уверены, что хотите убрать {supplierName} в качестве поставщика для этой номенклатуры? Это невозможно отменить."
@@ -6070,6 +6069,9 @@ msgstr "Удалить строку перемещения"
 msgid "Delete Type"
 msgstr "Удалить тип"
 
+msgid "Delete Unit"
+msgstr ""
+
 msgid "Delete Unit of Measure"
 msgstr "Удалить единицу измерения"
 
@@ -6091,9 +6093,8 @@ msgstr "Удалить рабочий процесс"
 msgid "Deliver"
 msgstr "Доставить"
 
-#. placeholder {0}: unitLabel(pending.line)
-msgid "Deliver {0}"
-msgstr "Доставить {0}"
+msgid "Deliver {label}"
+msgstr ""
 
 msgid "Delivered"
 msgstr "Доставлено"
@@ -8300,6 +8301,9 @@ msgstr "Флаги"
 
 msgid "Fleet"
 msgstr "Парк"
+
+msgid "Fleet Asset"
+msgstr ""
 
 msgid "Fleet Days"
 msgstr "Дни парка"
@@ -12078,8 +12082,8 @@ msgstr "Обучение не назначено"
 msgid "No transactions in this period"
 msgstr "Нет транзакций в этом периоде"
 
-msgid "No units yet. Add a fleet unit before activating the agreement."
-msgstr "Нет единиц. Добавьте единицу парка перед активацией соглашения."
+msgid "No units yet. Add a fleet unit from the Units list before activating the agreement."
+msgstr ""
 
 msgid "No unmapped accounts match a provider code"
 msgstr "Ни один несопоставленный счет не совпадает с кодом системы"
@@ -14829,6 +14833,9 @@ msgstr "Убрать инструмент"
 msgid "Remove two-factor authentication"
 msgstr "Убрать двухфакторную аутентификацию"
 
+msgid "Remove Unit"
+msgstr ""
+
 msgid "Removed"
 msgstr "Удалено"
 
@@ -16302,9 +16309,8 @@ msgstr "Самообслуживание"
 msgid "Self-serve reference at docs.carbon.ms"
 msgstr "Справочная информация для самостоятельного использования на docs.carbon.ms"
 
-#. placeholder {0}: unitLabel(pending.line)
-msgid "Sell {0} to the customer"
-msgstr "Продать {0} Покупателю"
+msgid "Sell {label} to the customer"
+msgstr ""
 
 msgid "Sell to Customer"
 msgstr "Продажа Покупателю"
@@ -17437,6 +17443,9 @@ msgstr "Уведомления о предложениях"
 msgid "Suggestions"
 msgstr "Предложения"
 
+msgid "Summary"
+msgstr ""
+
 msgid "Sunday"
 msgstr "Воскресенье"
 
@@ -18046,8 +18055,9 @@ msgstr ""
 msgid "The customer effectively buys the units. They leave your fixed assets on activation, the sale is booked, and interest is earned over the term."
 msgstr ""
 
-msgid "The customer exercises the purchase option. A purchase option charge of {formatOptionAmount} is billed today and its invoice drafted; posting that invoice transfers the unit and marks it Sold."
-msgstr "Покупатель реализует опцион покупки. Взимается плата за опцион в размере {formatOptionAmount}, при этом сегодня же составляется счет-фактура; проведение этого счета-фактуры передает единицу и помечает ее как Продано."
+#. placeholder {0}: currencyFormatter.format(purchaseOptionAmount)
+msgid "The customer exercises the purchase option. A purchase option charge of {0} is billed today and its invoice drafted; posting that invoice transfers the unit and marks it Sold."
+msgstr ""
 
 msgid "The customer is expected to buy the unit at the end of the term."
 msgstr ""
@@ -19698,6 +19708,9 @@ msgstr "Уникальный, заглавными буквами, без про
 
 msgid "Unit"
 msgstr "Единица"
+
+msgid "Unit actions"
+msgstr ""
 
 msgid "Unit Cost"
 msgstr "Себестоимость за единицу"

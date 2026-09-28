@@ -1,32 +1,37 @@
 import {
   Badge,
   Button,
-  Card,
-  CardContent,
+  Copy,
+  DropdownMenu,
+  DropdownMenuContent,
   DropdownMenuIcon,
   DropdownMenuItem,
+  DropdownMenuTrigger,
+  Heading,
+  HStack,
+  IconButton,
   Tooltip,
   TooltipContent,
   TooltipTrigger,
   useDisclosure
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
-import type { ReactNode } from "react";
 import { useState } from "react";
 import {
   LuCircleCheck,
   LuCircleStop,
   LuCreditCard,
+  LuEllipsisVertical,
+  LuPanelLeft,
   LuPlay,
   LuTrash
 } from "react-icons/lu";
 import { Link } from "react-router";
-import { DocumentHeader } from "~/components";
+import { usePanels } from "~/components/Layout";
 import { Confirm, ConfirmDelete } from "~/components/Modals";
-import { useCompanyToday, useDateFormatter, usePermissions } from "~/hooks";
+import { useCompanyToday, usePermissions } from "~/hooks";
 import { path } from "~/utils/path";
 import { RentalCommencementPreview } from "./RentalLeaseClassification";
-import RentalMoney from "./RentalMoney";
 import RentalStatus from "./RentalStatus";
 import type { RentalAgreementRouteData } from "./types";
 
@@ -46,7 +51,7 @@ const RentalAgreementHeader = ({
 }: RentalAgreementHeaderProps) => {
   const { t } = useLingui();
   const permissions = usePermissions();
-  const { formatDate } = useDateFormatter();
+  const { toggleExplorer } = usePanels();
   const today = useCompanyToday();
 
   const confirm = useDisclosure();
@@ -131,156 +136,115 @@ const RentalAgreementHeader = ({
 
   return (
     <>
-      <Card>
-        <DocumentHeader
-          title={readableId}
-          subtitle={rentalAgreement.customerName ?? undefined}
-          status={
-            <>
-              <RentalStatus status={status} />
-              {isPastEndDate && (
-                <Badge variant="orange">
-                  <Trans>Past end date</Trans>
-                </Badge>
-              )}
-            </>
-          }
-          menuItems={
-            <DropdownMenuItem
-              destructive
-              disabled={!isDraft || !permissions.can("delete", "sales")}
-              onClick={deleteDisclosure.onOpen}
-            >
-              <DropdownMenuIcon icon={<LuTrash />} />
-              <Trans>Delete Agreement</Trans>
-            </DropdownMenuItem>
-          }
-          actions={
-            <>
-              {isActive && (
-                <Button
-                  variant={allPeriodsBilled ? "secondary" : "primary"}
-                  leftIcon={<LuCreditCard />}
-                  isDisabled={!canUpdate}
-                  onClick={() => open("invoice")}
+      <div className="flex flex-shrink-0 items-center justify-between gap-x-4 p-2 bg-card border-b h-[var(--header-height)] overflow-x-auto scrollbar-hide">
+        <HStack className="w-full justify-between">
+          <HStack>
+            <IconButton
+              aria-label={t`Toggle Explorer`}
+              icon={<LuPanelLeft />}
+              onClick={toggleExplorer}
+              variant="ghost"
+            />
+            <Link to={path.to.rentalAgreementDetails(id)}>
+              <Heading size="h4" className="flex items-center gap-2">
+                <span>{readableId}</span>
+              </Heading>
+            </Link>
+            <Copy text={readableId} />
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <IconButton
+                  aria-label={t`More options`}
+                  icon={<LuEllipsisVertical />}
+                  variant="secondary"
+                  size="sm"
+                />
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
+                <DropdownMenuItem
+                  destructive
+                  disabled={!isDraft || !permissions.can("delete", "sales")}
+                  onClick={deleteDisclosure.onOpen}
                 >
-                  <Trans>Invoice</Trans>
-                </Button>
-              )}
-              {(isDraft || isActive) &&
-                (hasCommencedSalesTypeLine ? (
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      {/* A disabled button fires no pointer events, so the
+                  <DropdownMenuIcon icon={<LuTrash />} />
+                  <Trans>Delete Agreement</Trans>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            <RentalStatus status={status} />
+            {isPastEndDate && (
+              <Badge variant="orange">
+                <Trans>Past end date</Trans>
+              </Badge>
+            )}
+          </HStack>
+          <HStack>
+            {isActive && (
+              <Button
+                variant={allPeriodsBilled ? "secondary" : "primary"}
+                leftIcon={<LuCreditCard />}
+                isDisabled={!canUpdate}
+                onClick={() => open("invoice")}
+              >
+                <Trans>Invoice</Trans>
+              </Button>
+            )}
+            {(isDraft || isActive) &&
+              (hasCommencedSalesTypeLine ? (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    {/* A disabled button fires no pointer events, so the
                           span carries the tooltip. */}
-                      <span tabIndex={0}>
-                        <Button
-                          variant="secondary"
-                          leftIcon={<LuCircleStop />}
-                          isDisabled
-                        >
-                          <Trans>Cancel</Trans>
-                        </Button>
-                      </span>
-                    </TooltipTrigger>
-                    <TooltipContent>
-                      <Trans>
-                        Ending a rental treated as a sale early is a manual
-                        journal.
-                      </Trans>
-                    </TooltipContent>
-                  </Tooltip>
-                ) : (
-                  <Button
-                    variant="secondary"
-                    leftIcon={<LuCircleStop />}
-                    isDisabled={
-                      !canUpdate || hasUnitOnRent || hasInvoicedPeriod
-                    }
-                    onClick={() => open("cancel")}
-                  >
-                    <Trans>Cancel</Trans>
-                  </Button>
-                ))}
-              {isActive && (
-                <Button
-                  variant={allPeriodsBilled ? "primary" : "secondary"}
-                  leftIcon={<LuCircleCheck />}
-                  isDisabled={!canUpdate || !allLinesBack || !allPeriodsBilled}
-                  onClick={() => open("close")}
-                >
-                  <Trans>Close</Trans>
-                </Button>
-              )}
-              {isDraft && (
-                <Button
-                  variant="primary"
-                  leftIcon={<LuPlay />}
-                  isDisabled={!canUpdate || !hasLines}
-                  onClick={() => open("activate")}
-                >
-                  <Trans>Activate</Trans>
-                </Button>
-              )}
-            </>
-          }
-        />
-        <CardContent className="space-y-0">
-          <div className="grid grid-cols-1 gap-3 pb-4 sm:grid-cols-3 sm:gap-0">
-            <Stat label={t`Deposit`} className="sm:pr-6">
-              <RentalMoney
-                value={rentalAgreement.depositAmount}
-                currencyCode={rentalAgreement.currencyCode}
-              />
-            </Stat>
-            <Stat
-              label={t`Unbilled`}
-              className="sm:border-l sm:border-border sm:px-6"
-            >
-              <RentalMoney
-                value={rentalAgreement.unbilledAmount}
-                currencyCode={rentalAgreement.currencyCode}
-              />
-            </Stat>
-            <Stat
-              label={t`Next Due`}
-              className="sm:border-l sm:border-border sm:pl-6"
-            >
-              {rentalAgreement.nextDueOn
-                ? formatDate(rentalAgreement.nextDueOn)
-                : "—"}
-            </Stat>
-          </div>
-          <div className="divide-y divide-border border-t border-border">
-            <DetailRow label={t`Customer`}>
-              {rentalAgreement.customerId ? (
-                <Link
-                  to={path.to.customer(rentalAgreement.customerId)}
-                  className="hover:underline"
-                >
-                  {rentalAgreement.customerName}
-                </Link>
+                    <span tabIndex={0}>
+                      <Button
+                        variant="secondary"
+                        leftIcon={<LuCircleStop />}
+                        isDisabled
+                      >
+                        <Trans>Cancel</Trans>
+                      </Button>
+                    </span>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <Trans>
+                      Ending a rental treated as a sale early is a manual
+                      journal.
+                    </Trans>
+                  </TooltipContent>
+                </Tooltip>
               ) : (
-                "—"
-              )}
-            </DetailRow>
-            <DetailRow label={t`Term`}>
-              {formatDate(rentalAgreement.startDate)} –{" "}
-              {rentalAgreement.endDate ? (
-                formatDate(rentalAgreement.endDate)
-              ) : (
-                <Trans>Open-ended</Trans>
-              )}
-            </DetailRow>
-            <DetailRow label={t`Billing Cycle`}>
-              {rentalAgreement.billingCycle}
-            </DetailRow>
-            <DetailRow label={t`Billing Timing`}>
-              {rentalAgreement.billingTiming}
-            </DetailRow>
-          </div>
-        </CardContent>
-      </Card>
+                <Button
+                  variant="secondary"
+                  leftIcon={<LuCircleStop />}
+                  isDisabled={!canUpdate || hasUnitOnRent || hasInvoicedPeriod}
+                  onClick={() => open("cancel")}
+                >
+                  <Trans>Cancel</Trans>
+                </Button>
+              ))}
+            {isActive && (
+              <Button
+                variant={allPeriodsBilled ? "primary" : "secondary"}
+                leftIcon={<LuCircleCheck />}
+                isDisabled={!canUpdate || !allLinesBack || !allPeriodsBilled}
+                onClick={() => open("close")}
+              >
+                <Trans>Close</Trans>
+              </Button>
+            )}
+            {isDraft && (
+              <Button
+                variant="primary"
+                leftIcon={<LuPlay />}
+                isDisabled={!canUpdate || !hasLines}
+                onClick={() => open("activate")}
+              >
+                <Trans>Activate</Trans>
+              </Button>
+            )}
+          </HStack>
+        </HStack>
+      </div>
 
       {current && confirm.isOpen && (
         <Confirm
@@ -321,41 +285,5 @@ const RentalAgreementHeader = ({
     </>
   );
 };
-
-function Stat({
-  label,
-  className,
-  children
-}: {
-  label: string;
-  className?: string;
-  children: ReactNode;
-}) {
-  return (
-    <div className={className}>
-      <p className="text-base text-muted-foreground truncate sm:text-sm">
-        {label}
-      </p>
-      <p className="mt-1 text-2xl font-semibold tabular-nums tracking-tight">
-        {children}
-      </p>
-    </div>
-  );
-}
-
-function DetailRow({
-  label,
-  children
-}: {
-  label: string;
-  children: ReactNode;
-}) {
-  return (
-    <div className="flex items-center justify-between py-3 text-base sm:text-sm">
-      <span className="text-muted-foreground">{label}</span>
-      <span className="font-medium">{children}</span>
-    </div>
-  );
-}
 
 export default RentalAgreementHeader;
