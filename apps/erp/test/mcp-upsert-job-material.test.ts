@@ -44,6 +44,15 @@ vi.mock("@carbon/ee/rules.server", () => ({
   isBlocked: vi.fn()
 }));
 
+// The companion's other wrappers reach server-only command graphs; this test
+// pins only the job material orchestration.
+vi.mock("~/modules/production/production.server", () => ({}));
+vi.mock("~/modules/resources/resources.mcp.server", () => ({}));
+vi.mock("~/services/mcp-guards.server", () => ({
+  requireToolPermission: vi.fn(),
+  requireToolCompanyRecord: vi.fn()
+}));
+
 import { upsertJobMaterial } from "~/modules/production/production.mcp.server";
 
 /** A supabase client stub answering the wrapper's two reads. */

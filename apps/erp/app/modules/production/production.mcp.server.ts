@@ -4,13 +4,33 @@ import type { Database, Json } from "@carbon/database";
 import { evaluateLinesForSurface, isBlocked } from "@carbon/ee/rules.server";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { z } from "zod";
+import { deleteMaintenanceDispatchItem as deleteMaintenanceDispatchItemCommand } from "~/modules/resources/resources.mcp.server";
 import { getDatabaseClient } from "~/services/database.server";
-import type { jobMaterialValidator } from "./production.models";
+import { commandError } from "~/services/mcp-command-error";
+import {
+  requireToolCompanyRecord,
+  requireToolPermission
+} from "~/services/mcp-guards.server";
+import type {
+  jobMaterialValidator,
+  jobOperationStatus,
+  jobOperationValidator,
+  jobStatus
+} from "./production.models";
+import {
+  createJobOperation,
+  deleteJobOperationWithDependencies,
+  prepareAssemblyPlanRun,
+  setJobOperationStatus,
+  startAssemblyPlanRun,
+  transitionJobStatus
+} from "./production.server";
 import {
   pullJobMaterialMakeMethod,
   recalculateJobMakeMethodRequirements,
   recalculateJobOperationDependencies,
-  upsertJobMaterial as upsertJobMaterialRow
+  upsertJobMaterial as upsertJobMaterialRow,
+  upsertJobOperation as upsertJobOperationRow
 } from "./production.service";
 
 // MCP-exposed production writes that depend on server-only modules
@@ -303,4 +323,275 @@ export async function upsertJobMaterial(
   }
 
   return upserted;
+}
+
+/**
+ * Change a job's status as the job status buttons do; Completed is refused (use production_completeJob).
+ *
+ * Runs the same command as the job page (`transitionJobStatus`):
+ * - Ready refuses while manufacturing is blocked for the item. With
+ *   `schedule: true` it is the Release dialog: release readiness, then
+ *   requirements, MRP, purchase orders for outside operations, released date
+ *   and a schedule run for the job's location.
+ * - Planned or Ready recalculate requirements and run MRP first; Planned with
+ *   `schedule: true` also reschedules the location and creates the job's
+ *   purchase orders.
+ * - Cancelled returns picked material and cancels the job's open picking
+ *   lists first, and clears the assignee.
+ * - Closed posts the job's WIP variance.
+ *
+ * `purchaseOrdersBySupplierId` maps a supplier id to an existing Draft
+ * purchase order to add outside operations to (the dialog's choice);
+ * `supplierProcessByOperationId` maps a job operation id to the supplier
+ * process chosen for it. Both default to none. `id` is the job's uuid.
+ */
+export async function updateJobStatus(
+  client: SupabaseClient<Database>,
+  params: {
+    id: string;
+    companyId: string;
+    status: (typeof jobStatus)[number];
+    updatedBy: string;
+    schedule?: boolean;
+    purchaseOrdersBySupplierId?: Record<string, string>;
+    supplierProcessByOperationId?: Record<string, string>;
+  }
+) {
+  const { id, companyId, status, updatedBy: userId } = params;
+  await requireToolPermission(
+    userId,
+    companyId,
+    "production",
+    "update",
+    "change job status"
+  );
+  await requireToolCompanyRecord("job", companyId, { id }, "Job");
+  if (status === "Completed") {
+    throw new Error(
+      "Completing a job receives it into inventory and backflushes its materials; use production_completeJob instead of a status change."
+    );
+  }
+
+  const result = await transitionJobStatus(client, {
+    jobId: id,
+    companyId,
+    userId,
+    status,
+    schedule: params.schedule,
+    purchaseOrdersBySupplierId: params.purchaseOrdersBySupplierId,
+    supplierProcessByOperationId: params.supplierProcessByOperationId
+  });
+  if (result.error) {
+    return {
+      data: result.data,
+      error: commandError(result.error.message, result.cause)
+    };
+  }
+  return { data: result.data, error: null };
+}
+
+/**
+ * Create or update a job operation as the operation form does. Create also recalculates the make method's requirements and the job's operation dependencies.
+ *
+ * `createdBy` vs `updatedBy` picks create vs update. On create the job and
+ * `jobMakeMethodId` must belong to the company and the make method to the job.
+ * An update never moves the operation to another job or make method.
+ */
+export async function upsertJobOperation(
+  client: SupabaseClient<Database>,
+  jobOperation:
+    | (z.infer<typeof jobOperationValidator> & {
+        jobId: string;
+        companyId: string;
+        createdBy: string;
+        customFields?: Json;
+      })
+    | (z.infer<typeof jobOperationValidator> & {
+        jobId: string;
+        companyId: string;
+        updatedBy: string;
+        customFields?: Json;
+      })
+) {
+  const isUpdate = "updatedBy" in jobOperation;
+  const userId = isUpdate ? jobOperation.updatedBy : jobOperation.createdBy;
+  const { companyId, jobId } = jobOperation;
+  // Both operation routes gate on production create.
+  await requireToolPermission(
+    userId,
+    companyId,
+    "production",
+    "create",
+    isUpdate ? "update job operations" : "create job operations"
+  );
+
+  if (isUpdate) return upsertJobOperationRow(client, jobOperation);
+
+  await Promise.all([
+    requireToolCompanyRecord("job", companyId, { id: jobId }, "Job"),
+    requireToolCompanyRecord(
+      "jobMakeMethod",
+      companyId,
+      { id: jobOperation.jobMakeMethodId, jobId },
+      "Job make method"
+    )
+  ]);
+  const result = await createJobOperation(jobOperation);
+  if (result.error) {
+    return {
+      data: result.data,
+      error: commandError(
+        result.data
+          ? `Job operation ${result.data.id} was created, but ${lowerFirst(result.error.message)}`
+          : result.error.message,
+        result.cause
+      )
+    };
+  }
+  return { data: result.data, error: null };
+}
+
+/**
+ * Delete a job operation as the operation delete action does: refused while it has recorded production events, then the job's operation dependencies are recalculated.
+ *
+ * `jobOperationId` is the operation's uuid; an unknown id is an error.
+ */
+export async function deleteJobOperation(
+  client: SupabaseClient<Database>,
+  jobOperationId: string,
+  companyId: string,
+  userId: string
+) {
+  await requireToolPermission(
+    userId,
+    companyId,
+    "production",
+    "delete",
+    "delete job operations"
+  );
+  const result = await deleteJobOperationWithDependencies(client, {
+    id: jobOperationId,
+    companyId,
+    userId
+  });
+  if (result.error) {
+    return {
+      data: result.data,
+      error: commandError(result.error.message, result.cause)
+    };
+  }
+  return { data: result.data, error: null };
+}
+
+/**
+ * Remove a spare part from a maintenance dispatch and return it to inventory, as the dispatch's item delete action does.
+ *
+ * `maintenanceDispatchItemId` is the dispatch item's row id (the `id` from
+ * the dispatch's items), not the part's item id. Refused while the dispatch
+ * is locked; an unknown id is an error.
+ */
+export async function deleteMaintenanceDispatchItem(
+  client: SupabaseClient<Database>,
+  maintenanceDispatchItemId: string,
+  companyId: string,
+  userId: string
+) {
+  return deleteMaintenanceDispatchItemCommand(
+    client,
+    maintenanceDispatchItemId,
+    companyId,
+    userId
+  );
+}
+
+/**
+ * Start motion planning for a converted assembly model, as the assembly planning actions do: creates the plan job and sends the planning event.
+ *
+ * Refused until the model has finished converting, while the geometry
+ * service is unavailable, or while a plan run for the model is live. A stale
+ * Queued/Processing run is marked Failed first. Returns the new plan job's id
+ * (null when only the worker's own row will exist).
+ */
+export async function createAssemblyPlanJob(
+  client: SupabaseClient<Database>,
+  args: { modelUploadId: string; companyId: string; userId: string }
+) {
+  const { modelUploadId, companyId, userId } = args;
+  await requireToolPermission(
+    userId,
+    companyId,
+    "production",
+    "update",
+    "plan assemblies"
+  );
+  const model = await client
+    .from("modelUpload")
+    .select("processingStatus")
+    .eq("id", modelUploadId)
+    .eq("companyId", companyId)
+    .maybeSingle();
+  if (model.error || !model.data) throw new Error("Model not found.");
+
+  const ready = await prepareAssemblyPlanRun(client, {
+    modelUploadId,
+    companyId,
+    processingStatus: model.data.processingStatus
+  });
+  if (ready.error) {
+    return {
+      data: null,
+      error: commandError(ready.error.message, ready.cause)
+    };
+  }
+  const started = await startAssemblyPlanRun(client, {
+    modelUploadId,
+    companyId,
+    userId
+  });
+  return { data: { id: started.data?.planJobId ?? null }, error: null };
+}
+
+/**
+ * Set a job operation's status as the operation status control does; Done also returns picked material still staged at the line (the job may complete).
+ *
+ * `id` is the job operation's uuid. A failed material return is reported as
+ * an error after the status has changed.
+ */
+export async function updateJobOperationStatus(
+  client: SupabaseClient<Database>,
+  id: string,
+  status: (typeof jobOperationStatus)[number],
+  companyId: string,
+  userId: string
+) {
+  await requireToolPermission(
+    userId,
+    companyId,
+    "production",
+    "update",
+    "change job operation status"
+  );
+  await requireToolCompanyRecord(
+    "jobOperation",
+    companyId,
+    { id },
+    "Job operation"
+  );
+  const result = await setJobOperationStatus(client, {
+    id,
+    companyId,
+    userId,
+    status
+  });
+  if (result.error) {
+    return {
+      data: result.data,
+      error: commandError(result.error.message, result.cause)
+    };
+  }
+  return { data: result.data, error: null };
+}
+
+function lowerFirst(text: string): string {
+  return text.charAt(0).toLowerCase() + text.slice(1);
 }

@@ -1,15 +1,12 @@
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { trigger } from "@carbon/jobs";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import {
-  createAssemblyPlanJob,
-  getLatestAssemblyPlanJob,
-  isAssemblyPlanRunning
-} from "~/modules/production";
-import { isAssemblerServiceHealthy } from "~/modules/production/production.server";
+  prepareAssemblyPlanRun,
+  startAssemblyPlanRun
+} from "~/modules/production/production.server";
 
 /**
  * Re-runs motion planning over the instruction's converted model. When the
@@ -50,60 +47,16 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  if (instruction.data.modelUpload?.processingStatus !== "Success") {
+  const ready = await prepareAssemblyPlanRun(client, {
+    modelUploadId: instruction.data.modelUploadId,
+    companyId,
+    processingStatus: instruction.data.modelUpload?.processingStatus
+  });
+  if (ready.error) {
     return data(
       { success: false },
-      await flash(
-        request,
-        error(null, "The model must finish converting before planning")
-      )
+      await flash(request, error(null, ready.error.message))
     );
-  }
-
-  // Every path here triggers the planner, which needs the geometry service.
-  if (!(await isAssemblerServiceHealthy())) {
-    return data(
-      { success: false },
-      await flash(
-        request,
-        error(
-          null,
-          "The geometry service is unavailable — motion planning can't run right now."
-        )
-      )
-    );
-  }
-
-  const planJob = await getLatestAssemblyPlanJob(
-    client,
-    instruction.data.modelUploadId
-  );
-  if (isAssemblyPlanRunning(planJob.data)) {
-    return data(
-      { success: false },
-      await flash(request, error(null, "Motion planning is already running"))
-    );
-  }
-  if (
-    planJob.data?.status === "Queued" ||
-    planJob.data?.status === "Processing"
-  ) {
-    // Stale row the guard above already ruled non-live: a Queued event that
-    // was never picked up, or a Processing run whose worker is gone (crash,
-    // or the in-memory dev Inngest server restarting mid-run). Fail it so it
-    // can't shadow the run we're about to start.
-    await client
-      .from("assemblyPlanJob")
-      .update({
-        status: "Failed",
-        error:
-          planJob.data.status === "Queued"
-            ? "Planning never started — the job event was lost"
-            : "Planning run was lost (worker restarted mid-run)",
-        updatedAt: new Date().toISOString()
-      })
-      .eq("id", planJob.data.id)
-      .eq("companyId", companyId);
   }
 
   // Order-preserving re-motion when steps already exist; fresh (reordering)
@@ -154,17 +107,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
   // Create the job row before sending the event so the UI reflects the run
   // immediately (the worker adopts it via planJobId). Best-effort: planning
   // still works if the insert fails — the worker inserts its own row then.
-  const created = await createAssemblyPlanJob(client, {
-    modelUploadId: instruction.data.modelUploadId,
-    companyId,
-    userId
-  });
-
-  await trigger("assembly-plan", {
+  await startAssemblyPlanRun(client, {
     modelUploadId: instruction.data.modelUploadId,
     companyId,
     userId,
-    ...(created.data?.id ? { planJobId: created.data.id } : {}),
     ...(hasSteps ? { reMotionFor: id } : {}),
     ...(fresh ? { reDetectUnits: true } : {})
   });

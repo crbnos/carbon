@@ -5,14 +5,9 @@ import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
-import {
-  jobOperationValidator,
-  recalculateJobMakeMethodRequirements,
-  recalculateJobOperationDependencies,
-  upsertJobOperation
-} from "~/modules/production";
+import { jobOperationValidator } from "~/modules/production";
+import { createJobOperation } from "~/modules/production/production.server";
 import { requireCompanyRecord } from "~/modules/shared/shared.server";
-import { getDatabaseClient } from "~/services/database.server";
 import { setCustomFields } from "~/utils/form";
 
 export async function action({ request, params }: ActionFunctionArgs) {
@@ -46,74 +41,18 @@ export async function action({ request, params }: ActionFunctionArgs) {
     })
   ]);
 
-  const insertJobOperation = await upsertJobOperation(serviceRole, {
+  const created = await createJobOperation({
     ...operationData,
     jobId,
     companyId,
     createdBy: userId,
     customFields: setCustomFields(formData)
   });
-  if (insertJobOperation.error) {
-    return data(
-      {
-        id: null
-      },
-      await flash(
-        request,
-        error(insertJobOperation.error, "Failed to insert job operation")
-      )
-    );
-  }
-
-  const jobOperationId = insertJobOperation.data?.id;
-  if (!jobOperationId) {
-    return data(
-      {
-        id: null
-      },
-      await flash(
-        request,
-        error(insertJobOperation, "Failed to insert job operation")
-      )
-    );
-  }
-
-  const [recalculateResult, recalculateDependencies] = await Promise.all([
-    recalculateJobMakeMethodRequirements(serviceRole, {
-      id: validation.data.jobMakeMethodId,
-      companyId,
-      userId
-    }),
-    recalculateJobOperationDependencies(serviceRole, getDatabaseClient(), {
-      jobId,
-      companyId,
-      userId
-    })
-  ]);
-
-  if (recalculateResult.error) {
+  const jobOperationId = created.data?.id ?? null;
+  if (created.error) {
     return data(
       { id: jobOperationId },
-      await flash(
-        request,
-        error(
-          recalculateResult.error,
-          "Failed to recalculate job make method requirements"
-        )
-      )
-    );
-  }
-
-  if (recalculateDependencies?.error) {
-    return data(
-      { id: jobOperationId },
-      await flash(
-        request,
-        error(
-          recalculateDependencies.error,
-          "Failed to recalculate job operation dependencies"
-        )
-      )
+      await flash(request, error(created.cause, created.error.message))
     );
   }
 

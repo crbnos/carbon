@@ -1,10 +1,8 @@
 import { assertIsPost } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
-import { recalculateJobOperationDependencies } from "~/modules/production/production.service";
-import { getDatabaseClient } from "~/services/database.server";
+import { deleteJobOperationWithDependencies } from "~/modules/production/production.server";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -32,56 +30,15 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  const events = await client
-    .from("productionEvent")
-    .select("id", { count: "exact", head: true })
-    .eq("jobOperationId", id);
-  if (events.error) {
+  const result = await deleteJobOperationWithDependencies(client, {
+    id,
+    jobId,
+    companyId,
+    userId
+  });
+  if (result.error) {
     return data(
-      {
-        success: false,
-        error: "Failed to check for recorded production events"
-      },
-      { status: 500 }
-    );
-  }
-  if ((events.count ?? 0) > 0) {
-    return data(
-      {
-        success: false,
-        error: "Cannot delete an operation that has recorded production events"
-      },
-      { status: 400 }
-    );
-  }
-
-  const { error } = await client.from("jobOperation").delete().eq("id", id);
-
-  if (error) {
-    return data(
-      { success: false, error: error.message },
-      {
-        status: 400
-      }
-    );
-  }
-
-  const recalculateResult = await recalculateJobOperationDependencies(
-    getCarbonServiceRole(),
-    getDatabaseClient(),
-    {
-      jobId,
-      companyId,
-      userId
-    }
-  );
-
-  if (recalculateResult?.error) {
-    return data(
-      {
-        success: false,
-        error: "Failed to recalculate job operation dependencies"
-      },
+      { success: false, error: result.error.message },
       { status: 400 }
     );
   }

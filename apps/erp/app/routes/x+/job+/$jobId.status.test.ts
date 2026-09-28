@@ -39,7 +39,7 @@ vi.mock("~/utils/path", () => ({
 vi.mock("~/modules/shared/shared.server", () => ({
   requireCompanyRecord: vi.fn(async () => undefined)
 }));
-vi.mock("~/modules/inventory", () => ({
+vi.mock("~/modules/inventory/inventory.service", () => ({
   cancelOpenPickingListsForJob: vi.fn()
 }));
 vi.mock("~/modules/production", () => ({
@@ -52,38 +52,34 @@ vi.mock("~/modules/production", () => ({
     "Completed",
     "Closed",
     "Cancelled"
-  ],
+  ]
+}));
+// The route delegates to the real transitionJobStatus command
+// (production.server); only the primitives under it are mocked.
+vi.mock("~/modules/production/production.models", () => ({
+  isAssemblyPlanRunning: vi.fn()
+}));
+vi.mock("~/modules/production/production.service", () => ({
+  createAssemblyPlanJob: vi.fn(),
   getJobReleaseReadiness: vi.fn(),
+  getLatestAssemblyPlanJob: vi.fn(),
+  recalculateJobMakeMethodRequirements: vi.fn(),
+  recalculateJobOperationDependencies: vi.fn(),
   recalculateJobRequirements: vi.fn(async () => ({ data: null, error: null })),
   returnPickedRemaindersForJob: vi.fn(),
   runMRP: vi.fn(async () => ({ data: null, error: null })),
-  updateJobStatus: vi.fn()
+  updateJobStatus: vi.fn(),
+  upsertJobOperation: vi.fn()
 }));
-// The Release dialog goes through the shared releaseJobs path; delegate its
-// status flip to the mocked updateJobStatus so the ordering guard still sees it.
-vi.mock("~/modules/production/production.server", async () => {
-  const production = await import("~/modules/production");
-  return {
-    releaseJobs: vi.fn(async ({ jobIds, companyId, userId }) => {
-      for (const id of jobIds) {
-        await production.updateJobStatus({} as any, {
-          id,
-          companyId,
-          status: "Ready",
-          updatedBy: userId
-        });
-      }
-      return { error: null };
-    })
-  };
-});
+vi.mock("@carbon/jobs", () => ({ trigger: vi.fn() }));
+vi.mock("@carbon/env", () => ({ ASSEMBLER_SERVICE_URL: "" }));
 
-import { cancelOpenPickingListsForJob } from "~/modules/inventory";
+import { cancelOpenPickingListsForJob } from "~/modules/inventory/inventory.service";
 import {
   getJobReleaseReadiness,
   returnPickedRemaindersForJob,
   updateJobStatus
-} from "~/modules/production";
+} from "~/modules/production/production.service";
 import { requireCompanyRecord } from "~/modules/shared/shared.server";
 import { action } from "./$jobId.status";
 

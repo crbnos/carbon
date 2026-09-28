@@ -1,16 +1,17 @@
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { trigger } from "@carbon/jobs";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import {
-  createAssemblyPlanJob,
   generateAssemblyStepsFromPlan,
   getLatestAssemblyPlanJob,
   isAssemblyPlanRunning
 } from "~/modules/production";
-import { isAssemblerServiceHealthy } from "~/modules/production/production.server";
+import {
+  isAssemblerServiceHealthy,
+  startAssemblyPlanRun
+} from "~/modules/production/production.server";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -96,17 +97,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
       // Pre-create the job row so the run is visible to the very next loader
       // read; the worker adopts it via planJobId (falls back to inserting its
       // own row when the insert fails).
-      const created = await createAssemblyPlanJob(client, {
+      await startAssemblyPlanRun(client, {
         modelUploadId: result.modelUploadId,
         companyId,
         userId
-      });
-
-      await trigger("assembly-plan", {
-        modelUploadId: result.modelUploadId,
-        companyId,
-        userId,
-        ...(created.data?.id ? { planJobId: created.data.id } : {})
       });
     }
 

@@ -7,13 +7,15 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, redirect, useLoaderData, useNavigate } from "react-router";
 import {
   assemblyInstructionFromItemValidator,
-  createAssemblyPlanJob,
   getAssemblyModelState,
   getLatestAssemblyPlanJob,
   getModelForItem,
   upsertAssemblyInstruction
 } from "~/modules/production";
-import { isAssemblerServiceHealthy } from "~/modules/production/production.server";
+import {
+  isAssemblerServiceHealthy,
+  startAssemblyPlanRun
+} from "~/modules/production/production.server";
 import AssemblyInstructionForm from "~/modules/production/ui/Assemblies/AssemblyInstructionForm";
 import { path } from "~/utils/path";
 
@@ -151,17 +153,10 @@ export async function action({ request }: ActionFunctionArgs) {
     ) {
       // Pre-create the job row so the instruction page shows "planning" on
       // first load; the worker adopts it via planJobId
-      const created = await createAssemblyPlanJob(client, {
+      await startAssemblyPlanRun(client, {
         modelUploadId: model.id,
         companyId,
         userId
-      });
-
-      await trigger("assembly-plan", {
-        companyId,
-        modelUploadId: model.id,
-        userId,
-        ...(created.data?.id ? { planJobId: created.data.id } : {})
       });
     }
   }
