@@ -567,3 +567,24 @@ databaseTest("a reimbursement whose stored payable disagrees with its posted jou
     await f.cleanup();
   }
 });
+
+databaseTest("a reimbursement posted with accounting disabled cannot be paid out once accounting is on", async () => {
+  const f = await paymentFixture();
+  try {
+    // No journal at all — the shape a reimbursement has when it POSTED while
+    // `accountingEnabled` was false: its employee payable was never credited.
+    // Paying it out with accounting on would debit a liability that does not
+    // exist, so the missing-control guard must bite. Seeding
+    // `targetControlById` from the reimbursement ROW made that guard
+    // unreachable for a reimbursement, which is exactly the hole this pins.
+    const reimbursementId = await f.reimbursement({ withJournal: false });
+    const paymentId = await f.reimbursementPayment({ reimbursementId });
+    await assertRejects(
+      () => postPaymentTransaction(f.db, { ...f.args, paymentId }),
+      Error,
+      "Target is missing its original control account",
+    );
+  } finally {
+    await f.cleanup();
+  }
+});

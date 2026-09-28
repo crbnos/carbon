@@ -16,6 +16,32 @@ export async function voidReimbursement(
     today,
   } = context;
 
+  // A paid-out reimbursement cannot be voided. Without this the void wrote a
+  // second journal crediting the employee payable again, leaving that account
+  // negative with nothing that will ever clear it, the cash already gone, and a
+  // live `invoiceSettlement` row pointing at a Voided document. `post-memo`
+  // refuses the same shape ("Cannot void a consumed memo"); this is its
+  // counterpart, and the only reason it was missing is that reimbursements got
+  // their payout path after the void path was written.
+  const settlement = await trx.selectFrom("invoiceSettlement as s")
+    .leftJoin("payment as applying", "applying.id", "s.paymentId")
+    .select("s.id")
+    .where("s.companyId", "=", companyId)
+    .where("s.targetReimbursementId", "=", reimbursement.id)
+    .where((eb) =>
+      eb.or([
+        eb("s.paymentId", "is", null),
+        eb("applying.status", "=", "Posted"),
+      ])
+    )
+    .limit(1)
+    .executeTakeFirst();
+  if (settlement) {
+    throw new Error(
+      "Cannot void a paid reimbursement; void its payment first",
+    );
+  }
+
   if (reimbursement.journalId) {
     if (!accountingEnabled) {
       throw new Error(

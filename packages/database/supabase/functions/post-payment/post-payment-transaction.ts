@@ -474,12 +474,18 @@ export function postPaymentTransaction(
         );
       }
     }
-    // The reimbursement row's OWN `payableAccountId` is authoritative for the
-    // payout's debit — read by id off the row, never re-resolved from
-    // `accountDefault` (which may have moved since the document posted) and
-    // never matched by account number or name. The journal read above still
-    // supplies the booked CARRYING value, and disagreeing with it means the
-    // row and the ledger have diverged, which must not post silently.
+    // The reimbursement row's `payableAccountId` is checked AGAINST the booked
+    // journal, never used in place of it. The map is seeded by the journal read
+    // above and by nothing else — exactly as the AR/AP arms are — so the
+    // missing-control guard in the targets loop below can still bite: seeding
+    // it from the ROW made that guard unreachable for a reimbursement, and a
+    // reimbursement POSTED with accounting disabled (no journal, so its
+    // employee payable was never credited) then had its payout DEBIT that
+    // liability once accounting was turned on.
+    //
+    // The row is still what stops the payout re-resolving the account from
+    // today's `accountDefault`: a value that disagrees with the ledger means the
+    // two have diverged, which must not post silently.
     for (const reimbursement of reimbursements) {
       // A Draft reimbursement has no stored payable yet — it is refused by the
       // status check in the targets loop below, which says so far more usefully
@@ -496,7 +502,6 @@ export function postPaymentTransaction(
           "Reimbursement control account disagrees with its posted journal",
         );
       }
-      targetControlById.set(reimbursement.id, reimbursement.payableAccountId);
     }
     const targets = new Map<
       string,
@@ -876,7 +881,8 @@ export function postPaymentTransaction(
       const accounts = {
         // For a reimbursement this drives ONLY the new on-account remainder
         // (cash paid beyond what the payout applies) — every application
-        // carries its own `targetControlAccountId` from the reimbursement row.
+        // carries its own `targetControlAccountId` from the payable line of the
+        // reimbursement's own posted journal.
         // A brand-new employee credit has no prior document to read an account
         // off, so the default is the right source here, with the same AP
         // fallback post-reimbursement uses when the column is unset.

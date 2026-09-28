@@ -8,6 +8,7 @@ import {
   reimbursementFixture,
 } from "./post-reimbursement-test-fixture.ts";
 import { postReimbursementTransaction } from "./post-reimbursement-transaction.ts";
+import { sql } from "kysely";
 
 type Fixture = Awaited<ReturnType<typeof reimbursementFixture>>;
 
@@ -543,6 +544,69 @@ databaseTest(
           .where("sourceType", "=", "Reimbursement").execute(),
         [],
       );
+    } finally {
+      await f.cleanup();
+    }
+  },
+);
+
+// ---------------------------------------------------------------------------
+// A paid-out reimbursement cannot be voided.
+// ---------------------------------------------------------------------------
+
+databaseTest(
+  "void refuses a reimbursement that a posted payment has already settled",
+  async () => {
+    const f = await reimbursementFixture();
+    try {
+      const posted = await postReimbursementTransaction(f.db, f.args);
+      assertExists(posted.journalId);
+
+      // The payout: a Posted payment plus the settlement that consumes the
+      // reimbursement. `post-memo` refuses the same shape ("Cannot void a
+      // consumed memo"); without the counterpart guard this void wrote a second
+      // journal crediting the employee payable again, leaving that account
+      // negative with nothing to clear it and the cash already gone.
+      const paymentId = `${f.reimbursementId}-payout`;
+      await f.db.transaction().execute(async (trx) => {
+        await sql`SET LOCAL "app.sync_in_progress" = 'true'`.execute(trx);
+        await trx.insertInto("payment").values({
+          id: paymentId,
+          paymentId: `PAY-${paymentId}`,
+          paymentType: "Disbursement",
+          paymentDate: "2026-09-28",
+          currencyCode: "USD",
+          totalAmount: 100,
+          bankAccount: f.account("misc"),
+          status: "Posted",
+          employeeId: f.employeeId,
+          companyId: f.companyId,
+          createdBy: "system",
+        }).execute();
+        await trx.insertInto("invoiceSettlement").values({
+          paymentId,
+          targetReimbursementId: f.reimbursementId,
+          appliedAmount: 100,
+          sourceExchangeRate: 1,
+          targetExchangeRate: 1,
+          appliedDate: "2026-09-28",
+          companyId: f.companyId,
+          createdBy: "system",
+        }).execute();
+      });
+
+      await assertRejects(
+        () => postReimbursementTransaction(f.db, { ...f.args, type: "void" }),
+        Error,
+        "Cannot void a paid reimbursement",
+      );
+
+      // And the refusal left no reversal behind.
+      const journals = await f.db.selectFrom("journal").select(["id"])
+        .where("companyId", "=", f.companyId)
+        .where("sourceType", "=", "Reimbursement")
+        .execute();
+      assertEquals(journals.length, 1);
     } finally {
       await f.cleanup();
     }
