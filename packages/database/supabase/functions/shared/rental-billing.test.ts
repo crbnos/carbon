@@ -6,12 +6,15 @@ import { round } from "./precision.ts";
 import {
   bestRateCharge,
   calendarMonthCharge,
+  defaultRentalRates,
   type ExistingBillingPeriod,
   fixedRateCharge,
   generateRentalBillingPeriods,
   type PeriodSpec,
   type RateLadder,
   type RateUnit,
+  rentalLadderIsEmpty,
+  type ScopedRentalRate,
 } from "./rental-billing.ts";
 
 const RATES: RateLadder = { dayRate: 100, weekRate: 500, monthRate: 1500 };
@@ -605,5 +608,123 @@ Deno.test("refuses a return or end before the start, and a malformed date", () =
     () => generate({ startDate: "2026-02-30" }),
     Error,
     "calendar date",
+  );
+});
+
+const scoped = (
+  overrides: Partial<ScopedRentalRate>,
+): ScopedRentalRate => ({
+  customerId: null,
+  customerTypeId: null,
+  validFrom: null,
+  validTo: null,
+  dayRate: null,
+  weekRate: null,
+  monthRate: 1200,
+  ...overrides,
+});
+
+Deno.test("default rates: customer, then customer type, then the item", () => {
+  const item: RateLadder = { dayRate: 100, weekRate: 500, monthRate: 1500 };
+  const forCustomer = scoped({ customerId: "c1", monthRate: 1100 });
+  const forType = scoped({ customerTypeId: "t1", monthRate: 1300 });
+  const args = {
+    customerId: "c1",
+    customerTypeId: "t1",
+    asOf: "2026-10-01",
+    item,
+  };
+
+  assertEquals(
+    defaultRentalRates({ ...args, scoped: [forType, forCustomer] }),
+    {
+      rates: { dayRate: null, weekRate: null, monthRate: 1100 },
+      source: "Customer",
+    },
+  );
+  assertEquals(defaultRentalRates({ ...args, scoped: [forType] }), {
+    rates: { dayRate: null, weekRate: null, monthRate: 1300 },
+    source: "Customer Type",
+  });
+  assertEquals(defaultRentalRates({ ...args, scoped: [] }), {
+    rates: item,
+    source: "Item",
+  });
+  assertEquals(
+    defaultRentalRates({ ...args, scoped: [], item: null }),
+    null,
+  );
+});
+
+Deno.test("default rates: a row for another customer or type never applies", () => {
+  const result = defaultRentalRates({
+    customerId: "c1",
+    customerTypeId: "t1",
+    asOf: "2026-10-01",
+    scoped: [
+      scoped({ customerId: "c2", monthRate: 900 }),
+      scoped({ customerTypeId: "t2", monthRate: 950 }),
+    ],
+    item: null,
+  });
+  assertEquals(result, null);
+  // A customer with no type matches no type row.
+  assertEquals(
+    defaultRentalRates({
+      customerId: "c1",
+      customerTypeId: null,
+      asOf: "2026-10-01",
+      scoped: [scoped({ customerTypeId: "t1" })],
+      item: null,
+    }),
+    null,
+  );
+});
+
+Deno.test("default rates: a scoped row applies only inside its validity, inclusive", () => {
+  const item: RateLadder = { dayRate: null, weekRate: null, monthRate: 1500 };
+  const window = scoped({
+    customerId: "c1",
+    monthRate: 1100,
+    validFrom: "2026-10-01",
+    validTo: "2026-12-31",
+  });
+  const at = (asOf: string) =>
+    defaultRentalRates({
+      customerId: "c1",
+      customerTypeId: null,
+      asOf,
+      scoped: [window],
+      item,
+    })?.source;
+
+  assertEquals(at("2026-09-30"), "Item");
+  assertEquals(at("2026-10-01"), "Customer");
+  assertEquals(at("2026-12-31"), "Customer");
+  assertEquals(at("2027-01-01"), "Item");
+});
+
+Deno.test("default rates: an expired customer rate falls through to the type", () => {
+  const result = defaultRentalRates({
+    customerId: "c1",
+    customerTypeId: "t1",
+    asOf: "2026-10-01",
+    scoped: [
+      scoped({ customerId: "c1", monthRate: 1100, validTo: "2026-09-30" }),
+      scoped({ customerTypeId: "t1", monthRate: 1300 }),
+    ],
+    item: null,
+  });
+  assertEquals(result?.source, "Customer Type");
+});
+
+Deno.test("an empty ladder has no tier at all", () => {
+  assertEquals(
+    rentalLadderIsEmpty({ dayRate: null, weekRate: null, monthRate: null }),
+    true,
+  );
+  assertEquals(
+    rentalLadderIsEmpty({ dayRate: 0, weekRate: null, monthRate: null }),
+    false,
   );
 });

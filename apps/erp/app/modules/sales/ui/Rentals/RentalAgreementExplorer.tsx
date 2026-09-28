@@ -100,7 +100,9 @@ export default function RentalAgreementExplorer() {
             fixedAssetId: "",
             rateMode: "Best Rate"
           }}
+          customerId={rentalAgreement.customerId ?? ""}
           currencyCode={rentalAgreement.currencyCode ?? ""}
+          startDate={rentalAgreement.startDate ?? ""}
           rentableAssets={routeData?.rentableAssets ?? []}
           closeOnSubmit
           onClose={addDisclosure.onClose}

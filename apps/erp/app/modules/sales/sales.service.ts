@@ -5,11 +5,18 @@ import { storage } from "@carbon/files";
 import { trackWorkEvent } from "@carbon/lib/telemetry";
 import { raiseMoment } from "@carbon/lib/workflows";
 import { getLogger } from "@carbon/logger";
-import type { PickPartial } from "@carbon/utils";
+import type {
+  PickPartial,
+  RateLadder,
+  RentalRateSource,
+  ScopedRentalRate
+} from "@carbon/utils";
 import {
   datetime,
+  defaultRentalRates,
   EPSILON,
   getSalesReturnOrderStatus,
+  rentalLadderIsEmpty,
   round
 } from "@carbon/utils";
 import type { FileObject } from "@supabase/storage-js";
@@ -44,6 +51,7 @@ import type {
   customerAccountingValidator,
   customerBankAccountValidator,
   customerContactValidator,
+  customerItemRentalRateValidator,
   customerPaymentValidator,
   customerShippingValidator,
   customerStatusValidator,
@@ -8262,7 +8270,7 @@ export async function upsertRentalAgreementLine(
 
   const agreement = await client
     .from("rentalAgreement")
-    .select("status")
+    .select("status, customerId, currencyCode, startDate")
     .eq("id", line.rentalAgreementId)
     .eq("companyId", companyId)
     .single();
@@ -8285,8 +8293,28 @@ export async function upsertRentalAgreementLine(
     return rentalRefusal("RENTAL_ASSET_NO_ITEM", "The fleet unit has no item");
   }
 
-  // Picked, not spread: this writer is also an MCP tool, and `status`,
-  // the rate snapshot and the classification columns belong to activation.
+  // The line's agreed rates. None typed means the default ladder — the
+  // customer's, its type's, else the item's — so a line always shows what it
+  // will bill; activation still fills a line that has none.
+  let rates: RateLadder = {
+    dayRate: line.dayRate ?? null,
+    weekRate: line.weekRate ?? null,
+    monthRate: line.monthRate ?? null
+  };
+  if (rentalLadderIsEmpty(rates) && agreement.data.currencyCode) {
+    const defaults = await getDefaultRentalRates(client, {
+      companyId,
+      customerId: agreement.data.customerId,
+      currencyCode: agreement.data.currencyCode,
+      asOf: agreement.data.startDate,
+      itemIds: [asset.data.itemId]
+    });
+    if (defaults.error) return defaults;
+    rates = defaults.data[asset.data.itemId]?.rates ?? rates;
+  }
+
+  // Picked, not spread: this writer is also an MCP tool, and `status` and
+  // the classification columns belong to activation.
   const values = {
     rentalAgreementId: line.rentalAgreementId,
     fixedAssetId: line.fixedAssetId,
@@ -8294,6 +8322,7 @@ export async function upsertRentalAgreementLine(
     trackedEntityId: asset.data.trackedEntityId,
     rateMode: line.rateMode,
     rateUnit: line.rateMode === "Fixed" ? (line.rateUnit ?? null) : null,
+    ...rates,
     fairValue: line.fairValue ?? null,
     economicLifeMonths: line.economicLifeMonths ?? null,
     guaranteedResidualValue: line.guaranteedResidualValue ?? 0,
@@ -8533,6 +8562,178 @@ export async function deleteItemRentalRate(
   itemRentalRateId: string
 ) {
   return client.from("itemRentalRate").delete().eq("id", itemRentalRateId);
+}
+
+export type DefaultRentalRates = Record<
+  string,
+  { rates: RateLadder; source: RentalRateSource }
+>;
+
+/** The ladder each item defaults to on a rental line for this customer —
+ *  its own customer rates, else its customer type's, else the item's
+ *  (`defaultRentalRates`) — in effect on `asOf`, the agreement's start date.
+ *  Keyed by item id; an item with no rates at all is absent. One query per
+ *  table over every item. */
+export async function getDefaultRentalRates(
+  client: SupabaseClient<Database>,
+  args: {
+    companyId: string;
+    customerId: string;
+    currencyCode: string;
+    asOf: string;
+    itemIds: string[];
+  }
+): Promise<
+  | { data: DefaultRentalRates; error: null }
+  | { data: null; error: PostgrestError }
+> {
+  const { companyId, customerId, currencyCode, asOf } = args;
+  const itemIds = [...new Set(args.itemIds)];
+  if (itemIds.length === 0) return { data: {}, error: null };
+
+  const customer = await client
+    .from("customer")
+    .select("customerTypeId")
+    .eq("id", customerId)
+    .eq("companyId", companyId)
+    .maybeSingle();
+  if (customer.error) return { data: null, error: customer.error };
+  const customerTypeId = customer.data?.customerTypeId ?? null;
+
+  // Two plain `.eq` reads rather than one `.or()` string: `customerId` is a
+  // caller's value (this is an MCP tool) and never belongs in a filter string.
+  const scopedSelect =
+    "itemId, customerId, customerTypeId, dayRate, weekRate, monthRate, validFrom, validTo";
+  const [itemRates, customerRates, typeRates] = await Promise.all([
+    client
+      .from("itemRentalRate")
+      .select("itemId, dayRate, weekRate, monthRate")
+      .eq("companyId", companyId)
+      .eq("currencyCode", currencyCode)
+      .in("itemId", itemIds),
+    client
+      .from("customerItemRentalRate")
+      .select(scopedSelect)
+      .eq("companyId", companyId)
+      .eq("currencyCode", currencyCode)
+      .eq("customerId", customerId)
+      .in("itemId", itemIds),
+    customerTypeId
+      ? client
+          .from("customerItemRentalRate")
+          .select(scopedSelect)
+          .eq("companyId", companyId)
+          .eq("currencyCode", currencyCode)
+          .eq("customerTypeId", customerTypeId)
+          .in("itemId", itemIds)
+      : null
+  ]);
+  if (itemRates.error) return { data: null, error: itemRates.error };
+  if (customerRates.error) return { data: null, error: customerRates.error };
+  if (typeRates?.error) return { data: null, error: typeRates.error };
+  const scopedRates = [...customerRates.data, ...(typeRates?.data ?? [])];
+
+  const itemRateById = new Map(itemRates.data.map((row) => [row.itemId, row]));
+  const result: DefaultRentalRates = {};
+  for (const itemId of itemIds) {
+    const item = itemRateById.get(itemId);
+    const resolved = defaultRentalRates({
+      customerId,
+      customerTypeId,
+      asOf,
+      scoped: scopedRates.filter(
+        (row): boolean => row.itemId === itemId
+      ) satisfies ScopedRentalRate[],
+      item: item
+        ? {
+            dayRate: item.dayRate,
+            weekRate: item.weekRate,
+            monthRate: item.monthRate
+          }
+        : null
+    });
+    if (resolved) result[itemId] = resolved;
+  }
+  return { data: result, error: null };
+}
+
+export async function getCustomerItemRentalRates(
+  client: SupabaseClient<Database>,
+  itemId: string,
+  companyId: string
+) {
+  return client
+    .from("customerItemRentalRate")
+    .select("*, customer(id, name), customerType(id, name)")
+    .eq("itemId", itemId)
+    .eq("companyId", companyId)
+    .order("createdAt", { ascending: true });
+}
+
+export async function getCustomerItemRentalRate(
+  client: SupabaseClient<Database>,
+  customerItemRentalRateId: string,
+  companyId: string
+) {
+  return client
+    .from("customerItemRentalRate")
+    .select("*")
+    .eq("id", customerItemRentalRateId)
+    .eq("companyId", companyId)
+    .single();
+}
+
+/** One row per customer (or customer type), item and currency — a second
+ *  row for the same scope is refused by the unique index (23505). */
+export async function upsertCustomerItemRentalRate(
+  client: SupabaseClient<Database>,
+  rate: z.infer<typeof customerItemRentalRateValidator> & {
+    companyId: string;
+    userId: string;
+  }
+) {
+  const values = {
+    itemId: rate.itemId,
+    currencyCode: rate.currencyCode,
+    customerId: rate.customerId || null,
+    customerTypeId: rate.customerId ? null : rate.customerTypeId || null,
+    dayRate: rate.dayRate ?? null,
+    weekRate: rate.weekRate ?? null,
+    monthRate: rate.monthRate ?? null,
+    validFrom: rate.validFrom || null,
+    validTo: rate.validTo || null,
+    notes: rate.notes || null
+  };
+  if (rate.id) {
+    return client
+      .from("customerItemRentalRate")
+      .update({
+        ...values,
+        updatedBy: rate.userId,
+        updatedAt: datetime.timestamp()
+      })
+      .eq("id", rate.id)
+      .eq("companyId", rate.companyId)
+      .select("id")
+      .single();
+  }
+  return client
+    .from("customerItemRentalRate")
+    .insert([{ ...values, companyId: rate.companyId, createdBy: rate.userId }])
+    .select("id")
+    .single();
+}
+
+export async function deleteCustomerItemRentalRate(
+  client: SupabaseClient<Database>,
+  customerItemRentalRateId: string,
+  companyId: string
+) {
+  return client
+    .from("customerItemRentalRate")
+    .delete()
+    .eq("id", customerItemRentalRateId)
+    .eq("companyId", companyId);
 }
 
 /** The live rental line a fleet unit is on rent under, if any — a unit on

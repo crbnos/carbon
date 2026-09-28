@@ -2,11 +2,13 @@ import { assertIsPost, error, notFound, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
+import type { RentalRateSource } from "@carbon/utils";
+import { rentalLadderIsEmpty } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { redirect, useLoaderData } from "react-router";
 import { useRouteData } from "~/hooks";
 import {
-  getItemRentalRate,
+  getDefaultRentalRates,
   getRentalAgreement,
   getRentalAgreementLine,
   rentalAgreementLineValidator,
@@ -51,29 +53,37 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
-  // After activation the line carries its own snapshot of the ladder; before,
-  // show what activation would snapshot.
+  // The line's own rates. A Draft line without any shows the default ladder
+  // activation would fix (customer, customer type, else item).
   const isSnapshot = agreement.data.status !== "Draft";
   let rates = {
     dayRate: line.data.dayRate,
     weekRate: line.data.weekRate,
     monthRate: line.data.monthRate
   };
-  if (!isSnapshot && agreement.data.currencyCode) {
-    const ladder = await getItemRentalRate(
-      client,
-      line.data.itemId,
+  let rateSource: RentalRateSource | null = null;
+  if (
+    !isSnapshot &&
+    rentalLadderIsEmpty(rates) &&
+    agreement.data.customerId &&
+    agreement.data.currencyCode &&
+    agreement.data.startDate
+  ) {
+    const defaults = await getDefaultRentalRates(client, {
       companyId,
-      agreement.data.currencyCode
-    );
-    rates = {
-      dayRate: ladder.data?.dayRate ?? null,
-      weekRate: ladder.data?.weekRate ?? null,
-      monthRate: ladder.data?.monthRate ?? null
-    };
+      customerId: agreement.data.customerId,
+      currencyCode: agreement.data.currencyCode,
+      asOf: agreement.data.startDate,
+      itemIds: [line.data.itemId]
+    });
+    const resolved = defaults.data?.[line.data.itemId];
+    if (resolved) {
+      rates = resolved.rates;
+      rateSource = resolved.source;
+    }
   }
 
-  return { line: line.data, rates, isSnapshot };
+  return { line: line.data, rates, rateSource, isSnapshot };
 }
 
 export async function action({ request, params }: ActionFunctionArgs) {
@@ -151,7 +161,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
 /** One unit of the agreement: where it is in its rental and its actions,
  *  its rates and accounting treatment, then its own charges and billing. */
 export default function RentalAgreementLineRoute() {
-  const { line, rates, isSnapshot } = useLoaderData<typeof loader>();
+  const { line, rates, rateSource, isSnapshot } =
+    useLoaderData<typeof loader>();
 
   const routeData = useRouteData<RentalAgreementRouteData>(
     path.to.rentalAgreement(line.rentalAgreementId)
@@ -184,7 +195,9 @@ export default function RentalAgreementLineRoute() {
           guaranteedResidualValue: line.guaranteedResidualValue ?? undefined,
           unguaranteedResidualValue: line.unguaranteedResidualValue ?? undefined
         }}
+        customerId={agreement.customerId ?? ""}
         currencyCode={agreement.currencyCode ?? ""}
+        startDate={agreement.startDate ?? ""}
         rentableAssets={routeData.rentableAssets}
         currentAsset={
           line.fixedAssetId
@@ -198,6 +211,7 @@ export default function RentalAgreementLineRoute() {
             : undefined
         }
         rates={rates}
+        rateSource={rateSource}
         isSnapshot={isSnapshot}
         lease={lease}
         isLocked={agreement.status !== "Draft"}

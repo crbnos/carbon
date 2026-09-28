@@ -1411,6 +1411,11 @@ export const rentalAgreementLineValidator = z
     itemId: zfd.text(z.string().optional()),
     rateMode: z.enum(rentalRateModes, { error: "Rate mode is required" }),
     rateUnit: zfd.text(z.enum(rentalRateUnits).optional()),
+    /** The line's agreed rates. All three empty means "the default ladder"
+     *  (customer, customer type, item), filled in when the line is saved. */
+    dayRate: zfd.numeric(z.number().min(0).optional()),
+    weekRate: zfd.numeric(z.number().min(0).optional()),
+    monthRate: zfd.numeric(z.number().min(0).optional()),
     fairValue: zfd.numeric(z.number().min(0).optional()),
     economicLifeMonths: zfd.numeric(
       z
@@ -1495,6 +1500,42 @@ export const rentalAgreementLineClassificationValidator = z.object({
   }),
   reason: z.string().trim().min(1, { message: "A reason is required" })
 });
+
+/** One customer's (or customer type's) rental rates for an item — exactly
+ *  one scope, at least one tier. */
+export const customerItemRentalRateValidator = z
+  .object({
+    id: zfd.text(z.string().optional()),
+    itemId: z.string().min(1, { message: "Item is required" }),
+    currencyCode: z.string().min(1, { message: "Currency is required" }),
+    customerId: zfd.text(z.string().optional()),
+    customerTypeId: zfd.text(z.string().optional()),
+    dayRate: zfd.numeric(z.number().min(0).optional()),
+    weekRate: zfd.numeric(z.number().min(0).optional()),
+    monthRate: zfd.numeric(z.number().min(0).optional()),
+    validFrom: zfd.text(z.string().optional()),
+    validTo: zfd.text(z.string().optional()),
+    notes: zfd.text(z.string().optional())
+  })
+  .refine((data) => !!data.customerId !== !!data.customerTypeId, {
+    message: "Choose a customer or a customer type",
+    path: ["customerId"]
+  })
+  .refine(
+    (data) =>
+      [data.dayRate, data.weekRate, data.monthRate].some(
+        (rate) => rate !== undefined
+      ),
+    {
+      message: "At least one of day, week or month rate is required",
+      path: ["dayRate"]
+    }
+  )
+  .refine(
+    (data) =>
+      !data.validFrom || !data.validTo || data.validTo >= data.validFrom,
+    { message: "Valid To must be on or after Valid From", path: ["validTo"] }
+  );
 
 export const itemRentalRateValidator = z
   .object({

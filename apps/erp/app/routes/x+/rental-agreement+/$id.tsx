@@ -2,11 +2,14 @@ import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { VStack } from "@carbon/react";
+import { rentalLadderIsEmpty } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { Outlet, redirect, useLoaderData, useParams } from "react-router";
 import { PanelProvider, ResizablePanels } from "~/components/Layout";
+import type { DefaultRentalRates } from "~/modules/sales";
 import {
+  getDefaultRentalRates,
   getRentableFleetAssets,
   getRentalAgreement,
   getRentalAgreementCharges,
@@ -20,7 +23,8 @@ import type {
 } from "~/modules/sales/ui/Rentals";
 import {
   RentalAgreementExplorer,
-  RentalAgreementHeader
+  RentalAgreementHeader,
+  RentalAgreementProperties
 } from "~/modules/sales/ui/Rentals";
 import { detailBreadcrumb, type Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -86,13 +90,19 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       : null;
 
   // Lease classification (spec §4): the company's thresholds, and — while the
-  // agreement is Draft — what activation will price each line at (the item's
-  // current ladder) and derecognize it at (the fleet unit's net book value),
+  // agreement is Draft — what activation will price each line at (its own
+  // rates, else the default ladder) and derecognize it at (the fleet unit's net book value),
   // so the Activate confirmation can preview the commencement journal. One
   // query per table over the collected ids.
   const isDraft = rentalAgreement.data.status === "Draft";
   const draftLines = isDraft ? (lines.data ?? []) : [];
-  const itemIds = [...new Set(draftLines.map((line) => line.itemId))];
+  const itemIds = [
+    ...new Set(
+      draftLines
+        .filter((line) => rentalLadderIsEmpty(line))
+        .map((line) => line.itemId)
+    )
+  ];
   const assetIds = [
     ...new Set(
       draftLines
@@ -108,14 +118,18 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       )
       .eq("id", companyId)
       .maybeSingle(),
-    itemIds.length > 0 && rentalAgreement.data.currencyCode
-      ? client
-          .from("itemRentalRate")
-          .select("itemId, dayRate, weekRate, monthRate")
-          .eq("companyId", companyId)
-          .eq("currencyCode", rentalAgreement.data.currencyCode)
-          .in("itemId", itemIds)
-      : Promise.resolve({ data: [], error: null }),
+    itemIds.length > 0 &&
+    rentalAgreement.data.customerId &&
+    rentalAgreement.data.currencyCode &&
+    rentalAgreement.data.startDate
+      ? getDefaultRentalRates(client, {
+          companyId,
+          customerId: rentalAgreement.data.customerId,
+          currencyCode: rentalAgreement.data.currencyCode,
+          asOf: rentalAgreement.data.startDate,
+          itemIds
+        })
+      : Promise.resolve({ data: {} as DefaultRentalRates, error: null }),
     assetIds.length > 0
       ? client
           .from("fixedAsset")
@@ -125,24 +139,20 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       : Promise.resolve({ data: [], error: null })
   ]);
 
-  const ladderByItem = new Map(
-    (ladders.data ?? []).map((ladder) => [ladder.itemId, ladder])
-  );
   const assetById = new Map(
     (assets.data ?? []).map((asset) => [asset.id, asset])
   );
   const leaseInputs: Record<string, RentalLeaseLineInputs> = {};
   for (const line of draftLines) {
-    const ladder = ladderByItem.get(line.itemId);
     const asset = line.fixedAssetId ? assetById.get(line.fixedAssetId) : null;
     leaseInputs[line.id] = {
-      ladder: ladder
-        ? {
-            dayRate: ladder.dayRate,
-            weekRate: ladder.weekRate,
-            monthRate: ladder.monthRate
-          }
-        : null,
+      ladder: rentalLadderIsEmpty(line)
+        ? (ladders.data?.[line.itemId]?.rates ?? null)
+        : {
+            dayRate: line.dayRate,
+            weekRate: line.weekRate,
+            monthRate: line.monthRate
+          },
       carryingAmount: asset
         ? (asset.acquisitionCost ?? 0) - (asset.accumulatedDepreciation ?? 0)
         : null,
@@ -205,6 +215,7 @@ export default function RentalAgreementRoute() {
                   </VStack>
                 </div>
               }
+              properties={<RentalAgreementProperties key={id} />}
             />
           </div>
         </div>

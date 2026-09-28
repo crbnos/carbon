@@ -8,7 +8,7 @@ import {
 import { validationError, validator } from "@carbon/form";
 import { VStack } from "@carbon/react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { redirect, useLoaderData } from "react-router";
+import { Outlet, redirect, useLoaderData } from "react-router";
 import { useRouteData } from "~/hooks";
 import type { PartSummary } from "~/modules/items";
 import {
@@ -17,9 +17,14 @@ import {
   itemUnitSalePriceValidator,
   upsertItemUnitSalePrice
 } from "~/modules/items";
-import { ItemRentalRateForm, ItemSalePriceForm } from "~/modules/items/ui/Item";
+import {
+  CustomerRentalRates,
+  ItemRentalRateForm,
+  ItemSalePriceForm
+} from "~/modules/items/ui/Item";
 import CustomerParts from "~/modules/items/ui/Item/CustomerParts";
 import {
+  getCustomerItemRentalRates,
   getItemRentalRate,
   itemRentalRateValidator,
   upsertItemRentalRate
@@ -56,9 +61,12 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   // base-currency ladder. A user without sales access reads no row (RLS), which
   // renders as an empty ladder.
   const baseCurrencyCode = company.data?.baseCurrencyCode ?? "";
-  const rentalRate = baseCurrencyCode
-    ? await getItemRentalRate(client, itemId, companyId, baseCurrencyCode)
-    : null;
+  const [rentalRate, customerRentalRates] = await Promise.all([
+    baseCurrencyCode
+      ? getItemRentalRate(client, itemId, companyId, baseCurrencyCode)
+      : null,
+    getCustomerItemRentalRates(client, itemId, companyId)
+  ]);
 
   if (partUnitSalePrice.error) {
     throw redirect(
@@ -74,6 +82,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     partUnitSalePrice: partUnitSalePrice.data,
     customerParts: customerParts.data,
     rentalRate: rentalRate?.data ?? null,
+    customerRentalRates: customerRentalRates.data ?? [],
     baseCurrencyCode,
     salesRuleAssignments: salesRuleAssignments.data ?? [],
     salesRuleLibrary: salesRuleLibrary.data ?? [],
@@ -158,6 +167,7 @@ export default function PartSalesRoute() {
     customerParts,
     partUnitSalePrice,
     rentalRate,
+    customerRentalRates,
     baseCurrencyCode,
     salesRuleAssignments,
     salesRuleLibrary,
@@ -196,6 +206,9 @@ export default function PartSalesRoute() {
           }}
         />
       ) : null}
+      {isRentable && baseCurrencyCode ? (
+        <CustomerRentalRates itemId={itemId} rates={customerRentalRates} />
+      ) : null}
       {customerParts ? (
         <CustomerParts customerParts={customerParts} itemId={itemId} />
       ) : null}
@@ -204,6 +217,8 @@ export default function PartSalesRoute() {
         assignments={salesRuleAssignments as never}
         library={salesRuleLibrary as never}
       />
+      {/* The drawers of the customer part and rental rate child routes. */}
+      <Outlet />
     </VStack>
   );
 }

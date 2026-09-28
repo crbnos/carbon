@@ -594,6 +594,10 @@ export const path = {
     customerPortal: (id: string) =>
       generatePath(`${x}/sales/customer-portals/${id}`),
     customerPortals: `${x}/sales/customer-portals`,
+    customerRentalRate: (id: string, customerItemRentalRateId: string) =>
+      generatePath(
+        `${x}/part/${id}/sales/rental-rates/${customerItemRentalRateId}`
+      ),
     customerRisks: (id: string) => generatePath(`${x}/customer/${id}/risks`),
     customerRoot: `${x}/customer`,
     customerShipping: (id: string) =>
@@ -690,6 +694,10 @@ export const path = {
       ),
     deleteCustomerPortal: (id: string) =>
       generatePath(`${x}/sales/customer-portals/delete/${id}`),
+    deleteCustomerRentalRate: (id: string, customerItemRentalRateId: string) =>
+      generatePath(
+        `${x}/part/${id}/sales/rental-rates/delete/${customerItemRentalRateId}`
+      ),
     deleteCustomerStatus: (id: string) =>
       generatePath(`${x}/sales/customer-statuses/delete/${id}`),
     deleteCustomerType: (id: string) =>
@@ -1569,6 +1577,8 @@ export const path = {
     newCustomerPart: (id: string) =>
       generatePath(`${x}/part/${id}/sales/customer-parts/new`),
     newCustomerPortal: `${x}/sales/customer-portals/new`,
+    newCustomerRentalRate: (id: string) =>
+      generatePath(`${x}/part/${id}/sales/rental-rates/new`),
     newCustomerStatus: `${x}/sales/customer-statuses/new`,
     newCustomerType: `${x}/sales/customer-types/new`,
     newCustomField: (tableId: string) =>
@@ -2068,6 +2078,7 @@ export const path = {
     rentalAgreementStatus: (id: string) =>
       generatePath(`${x}/rental-agreement/${id}/status`),
     rentalAgreements: `${x}/sales/rental-agreements`,
+    rentalAgreementUpdate: `${x}/rental-agreement/update`,
     rentalUtilization: `${x}/reports/rental-utilization`,
     repeatDepreciationRun: (id: string) =>
       generatePath(`${x}/depreciation-run/${id}/repeat`),

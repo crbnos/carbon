@@ -14,13 +14,22 @@ import {
   toast,
   VStack
 } from "@carbon/react";
+import type { RentalRateSource } from "@carbon/utils";
 import { INPUT_FORMAT, INPUT_STEP } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useMemo, useState } from "react";
 import { LuChevronDown, LuChevronRight } from "react-icons/lu";
 import { Link, useFetcher } from "react-router";
 import type { z } from "zod";
-import { Combobox, Hidden, Number, Select, Submit } from "~/components/Form";
+import {
+  Combobox,
+  Hidden,
+  NumberControlled,
+  // Aliased: the global `Number` is needed for `Number.isNaN` below.
+  Number as NumberField,
+  Select,
+  Submit
+} from "~/components/Form";
 import { useCurrencyDecimals, usePermissions, useUser } from "~/hooks";
 import { path } from "~/utils/path";
 import {
@@ -28,6 +37,7 @@ import {
   rentalRateModes,
   rentalRateUnits
 } from "../../sales.models";
+import { getDefaultRentalRates } from "../../sales.service";
 import type { LineLeaseClassification } from "./RentalLeaseClassification";
 import {
   LeaseClassificationOverrideModal,
@@ -44,15 +54,21 @@ export type RentalRateLadder = {
 
 type RentalAgreementLineFormProps = {
   initialValues: z.infer<typeof rentalAgreementLineValidator>;
+  /** The agreement's customer, currency and start date pick the default
+   *  rates when a unit is chosen. */
+  customerId: string;
   currencyCode: string;
+  startDate: string;
   rentableAssets: RentableFleetAsset[];
   /** The line's own unit when editing — it is Reserved by this line, so the
    *  rentable list (Available units only) does not carry it. */
   currentAsset?: { id: string; itemId: string | null; label: string };
-  /** The day / week / month rates to show: the line's snapshot once the
-   *  agreement is active, else the item's current ladder. */
+  /** The line's day / week / month rates — its own, or while Draft the
+   *  default ladder when it has none yet. */
   rates?: RentalRateLadder | null;
-  /** Rates were snapshotted at activation and no longer follow the item. */
+  /** Where `rates` came from when they are the default ladder. */
+  rateSource?: RentalRateSource | null;
+  /** Rates were fixed at activation. */
   isSnapshot?: boolean;
   /** The line's lessor classification with its five tests — stored after
    *  activation, previewed before. Absent for a line not yet saved. */
@@ -69,10 +85,13 @@ type RentalAgreementLineFormProps = {
 
 const RentalAgreementLineForm = ({
   initialValues,
+  customerId,
   currencyCode,
+  startDate,
   rentableAssets,
   currentAsset,
   rates: initialRates,
+  rateSource: initialRateSource = null,
   isSnapshot = false,
   lease,
   isLocked = false,
@@ -89,8 +108,14 @@ const RentalAgreementLineForm = ({
 
   const isEditing = initialValues.id !== undefined;
   const [rateMode, setRateMode] = useState(initialValues.rateMode);
-  const [rates, setRates] = useState<RentalRateLadder | null>(
-    initialRates ?? null
+  const [rates, setRates] = useState<RentalRateLadder>(
+    initialRates ?? { dayRate: null, weekRate: null, monthRate: null }
+  );
+  const [rateSource, setRateSource] = useState<RentalRateSource | null>(
+    initialRateSource
+  );
+  const [rateItemId, setRateItemId] = useState<string | null>(
+    currentAsset?.itemId ?? null
   );
   const [showClassification, setShowClassification] = useState(false);
   const [showOverride, setShowOverride] = useState(false);
@@ -119,27 +144,39 @@ const RentalAgreementLineForm = ({
     return options;
   }, [rentableAssets, currentAsset]);
 
+  // A unit of another item takes that item's default rates; another unit of
+  // the same item keeps whatever was typed.
   const onAssetChange = async (assetId: string | undefined) => {
     if (isSnapshot) return;
     const itemId =
       rentableAssets.find((asset) => asset.id === assetId)?.itemId ??
       (currentAsset?.id === assetId ? currentAsset?.itemId : null);
-    if (!itemId || !carbon) {
-      setRates(null);
-      return;
-    }
-    const { data, error } = await carbon
-      .from("itemRentalRate")
-      .select("dayRate, weekRate, monthRate")
-      .eq("itemId", itemId)
-      .eq("companyId", company.id)
-      .eq("currencyCode", currencyCode)
-      .maybeSingle();
+    if (!itemId || !carbon || itemId === rateItemId) return;
+    setRateItemId(itemId);
+    const { data, error } = await getDefaultRentalRates(carbon, {
+      companyId: company.id,
+      customerId,
+      currencyCode,
+      asOf: startDate,
+      itemIds: [itemId]
+    });
     if (error) {
-      toast.error(t`Failed to load the item's rental rates`);
+      toast.error(t`Failed to load the rental rates`);
       return;
     }
-    setRates(data ?? null);
+    const resolved = data[itemId];
+    setRates(
+      resolved?.rates ?? { dayRate: null, weekRate: null, monthRate: null }
+    );
+    setRateSource(resolved?.source ?? null);
+  };
+
+  const onRateChange = (tier: keyof RentalRateLadder) => (value: number) => {
+    setRates((current) => ({
+      ...current,
+      [tier]: Number.isNaN(value) ? null : value
+    }));
+    setRateSource(null);
   };
 
   const rateModeOptions = rentalRateModes.map((mode) => ({
@@ -159,6 +196,17 @@ const RentalAgreementLineForm = ({
 
   const moneyFormat = INPUT_FORMAT.money(currencyCode, currencyDecimals);
   const moneyStep = INPUT_STEP.money(currencyDecimals);
+  const rateFormat = INPUT_FORMAT.rate(currencyCode, currencyDecimals);
+
+  const rateHint = isSnapshot
+    ? t`Fixed when the agreement was activated.`
+    : rateSource === "Customer"
+      ? t`From this customer's rental rates for the item.`
+      : rateSource === "Customer Type"
+        ? t`From the customer type's rental rates for the item.`
+        : rateSource === "Item"
+          ? t`From the item's rental rates.`
+          : t`Leave all three empty to use the customer's rental rates, else the customer type's, else the item's.`;
 
   return (
     <ModalCardProvider type={type}>
@@ -252,33 +300,58 @@ const RentalAgreementLineForm = ({
                   </p>
                 )}
 
-                <div className="grid w-full grid-cols-3 gap-4 rounded-lg border border-border p-4">
-                  <RateTier
-                    label={t`Day Rate`}
-                    value={rates?.dayRate}
-                    currencyCode={currencyCode}
-                  />
-                  <RateTier
-                    label={t`Week Rate`}
-                    value={rates?.weekRate}
-                    currencyCode={currencyCode}
-                  />
-                  <RateTier
-                    label={t`Month Rate`}
-                    value={rates?.monthRate}
-                    currencyCode={currencyCode}
-                  />
-                  <p className="col-span-3 text-xs text-muted-foreground">
-                    {isSnapshot ? (
-                      <Trans>Snapshotted from the item when activated.</Trans>
-                    ) : (
-                      <Trans>
-                        From the item's rental rates. They are snapshotted onto
-                        the line when the agreement is activated.
-                      </Trans>
-                    )}
-                  </p>
-                </div>
+                {isLocked ? (
+                  <div className="grid w-full grid-cols-3 gap-4 rounded-lg border border-border p-4">
+                    <RateTier
+                      label={t`Day Rate`}
+                      value={rates.dayRate}
+                      currencyCode={currencyCode}
+                    />
+                    <RateTier
+                      label={t`Week Rate`}
+                      value={rates.weekRate}
+                      currencyCode={currencyCode}
+                    />
+                    <RateTier
+                      label={t`Month Rate`}
+                      value={rates.monthRate}
+                      currencyCode={currencyCode}
+                    />
+                    <p className="col-span-3 text-xs text-muted-foreground">
+                      {rateHint}
+                    </p>
+                  </div>
+                ) : (
+                  <div className="flex w-full flex-col gap-2">
+                    <div className="grid w-full gap-x-8 gap-y-4 grid-cols-1 lg:grid-cols-3">
+                      <NumberControlled
+                        name="dayRate"
+                        label={t`Day Rate`}
+                        minValue={0}
+                        formatOptions={rateFormat}
+                        value={rates.dayRate ?? Number.NaN}
+                        onChange={onRateChange("dayRate")}
+                      />
+                      <NumberControlled
+                        name="weekRate"
+                        label={t`Week Rate`}
+                        minValue={0}
+                        formatOptions={rateFormat}
+                        value={rates.weekRate ?? Number.NaN}
+                        onChange={onRateChange("weekRate")}
+                      />
+                      <NumberControlled
+                        name="monthRate"
+                        label={t`Month Rate`}
+                        minValue={0}
+                        formatOptions={rateFormat}
+                        value={rates.monthRate ?? Number.NaN}
+                        onChange={onRateChange("monthRate")}
+                      />
+                    </div>
+                    <p className="text-xs text-muted-foreground">{rateHint}</p>
+                  </div>
+                )}
 
                 <div className="w-full">
                   <Button
@@ -305,26 +378,26 @@ const RentalAgreementLineForm = ({
                         : "hidden"
                     }
                   >
-                    <Number
+                    <NumberField
                       name="fairValue"
                       label={t`Fair Value`}
                       minValue={0}
                       step={moneyStep}
                       formatOptions={moneyFormat}
                     />
-                    <Number
+                    <NumberField
                       name="economicLifeMonths"
                       label={t`Economic Life (months)`}
                       minValue={1}
                     />
-                    <Number
+                    <NumberField
                       name="guaranteedResidualValue"
                       label={t`Guaranteed Residual Value`}
                       minValue={0}
                       step={moneyStep}
                       formatOptions={moneyFormat}
                     />
-                    <Number
+                    <NumberField
                       name="unguaranteedResidualValue"
                       label={t`Unguaranteed Residual Value`}
                       minValue={0}
@@ -344,9 +417,8 @@ const RentalAgreementLineForm = ({
                       {lease.isPreview && (
                         <p className="text-xs text-muted-foreground">
                           <Trans>
-                            Computed from the saved terms and the item's current
-                            rates. Activation classifies the lease and stores
-                            the result.
+                            Computed from the saved terms and rates. Activation
+                            classifies the lease and stores the result.
                           </Trans>
                         </p>
                       )}

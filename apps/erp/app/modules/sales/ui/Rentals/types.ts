@@ -47,7 +47,8 @@ export type RentalInvoiceLinks = Record<
 >;
 
 /** What a Draft line is priced and derecognized at, for the Activate
- *  preview: the item's current rate ladder and the fleet unit's book value. */
+ *  preview: its rates (its own, else the default ladder) and the fleet
+ *  unit's book value. */
 export type RentalLeaseLineInputs = {
   ladder: RateLadder | null;
   carryingAmount: number | null;

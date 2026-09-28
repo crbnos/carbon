@@ -318,6 +318,7 @@ export const manifest = {
   }),
   customerItemPriceOverride: company("sales"),
   customerItemPriceOverrideBreak: company("sales"),
+  customerItemRentalRate: company("sales", { read: "sales_view" }),
   customerLocation: policies({
     select: or(
       viaParent("customerId", "customer", "sales_view"),

@@ -110,7 +110,7 @@ export const RENTABLE_ASSET_STATUSES: ReadonlySet<
 export { billingHorizon as activationThrough } from "../shared/rental-billing.ts";
 
 /**
- * Why a line's snapshotted rates cannot bill its agreement's cycle, or null
+ * Why a line's rates cannot bill its agreement's cycle, or null
  * when they can. A Calendar Month agreement prices every period off the month
  * tier; a 28 Days agreement needs at least one tier; a Fixed line needs the
  * tier it bills.
@@ -141,7 +141,7 @@ export function rateLadderError(args: {
       ? rates.weekRate
       : rates.monthRate;
     if (tier === null) {
-      return `bills the ${rateUnit.toLowerCase()} rate but the item has none`;
+      return `bills the ${rateUnit.toLowerCase()} rate but the line has none`;
     }
   }
   return null;

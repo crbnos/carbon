@@ -16,7 +16,7 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
 import { useMemo } from "react";
 import { LuEllipsisVertical, LuPencil, LuTrash } from "react-icons/lu";
-import { Outlet, useNavigate } from "react-router";
+import { useNavigate } from "react-router";
 import { CustomerAvatar, New } from "~/components";
 import { EditableText } from "~/components/Editable";
 import Grid from "~/components/Grid";
@@ -105,34 +105,31 @@ const CustomerParts = ({ customerParts, itemId }: CustomerPartsProps) => {
   );
 
   return (
-    <>
-      <Card className="w-full">
-        <HStack className="justify-between items-start">
-          <CardHeader>
-            <CardTitle>
-              <Trans>Customer Parts</Trans>
-            </CardTitle>
-          </CardHeader>
-          <CardAction>
-            {canEdit && <New to={path.to.newCustomerPart(itemId)} />}
-          </CardAction>
-        </HStack>
-        <CardContent>
-          <Grid<CustomerPart>
-            data={customerParts}
-            columns={columns}
-            canEdit={canEdit}
-            editableComponents={editableComponents}
-            onNewRow={
-              canEdit
-                ? () => navigate(path.to.newCustomerPart(itemId))
-                : undefined
-            }
-          />
-        </CardContent>
-      </Card>
-      <Outlet />
-    </>
+    <Card className="w-full">
+      <HStack className="justify-between items-start">
+        <CardHeader>
+          <CardTitle>
+            <Trans>Customer Parts</Trans>
+          </CardTitle>
+        </CardHeader>
+        <CardAction>
+          {canEdit && <New to={path.to.newCustomerPart(itemId)} />}
+        </CardAction>
+      </HStack>
+      <CardContent>
+        <Grid<CustomerPart>
+          data={customerParts}
+          columns={columns}
+          canEdit={canEdit}
+          editableComponents={editableComponents}
+          onNewRow={
+            canEdit
+              ? () => navigate(path.to.newCustomerPart(itemId))
+              : undefined
+          }
+        />
+      </CardContent>
+    </Card>
   );
 };
 

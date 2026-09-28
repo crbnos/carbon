@@ -43146,6 +43146,240 @@ export default {
         tags: ["cardTransaction"]
       }
     },
+    "/customerItemRentalRate": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.customerItemRentalRate.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerItemRentalRate.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerItemRentalRate.customerId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerItemRentalRate.customerTypeId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerItemRentalRate.itemId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerItemRentalRate.currencyCode"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerItemRentalRate.dayRate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerItemRentalRate.weekRate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerItemRentalRate.monthRate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerItemRentalRate.validFrom"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerItemRentalRate.validTo"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerItemRentalRate.notes"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerItemRentalRate.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerItemRentalRate.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerItemRentalRate.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerItemRentalRate.updatedAt"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/customerItemRentalRate"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["customerItemRentalRate"]
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.customerItemRentalRate"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/preferPost"
+          }
+        ],
+        responses: {
+          "201": {
+            description: "Created"
+          }
+        },
+        tags: ["customerItemRentalRate"]
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.customerItemRentalRate.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerItemRentalRate.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerItemRentalRate.customerId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerItemRentalRate.customerTypeId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerItemRentalRate.itemId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerItemRentalRate.currencyCode"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerItemRentalRate.dayRate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerItemRentalRate.weekRate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerItemRentalRate.monthRate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerItemRentalRate.validFrom"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerItemRentalRate.validTo"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerItemRentalRate.notes"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerItemRentalRate.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerItemRentalRate.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerItemRentalRate.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerItemRentalRate.updatedAt"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["customerItemRentalRate"]
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.customerItemRentalRate.id"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerItemRentalRate.companyId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerItemRentalRate.customerId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerItemRentalRate.customerTypeId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerItemRentalRate.itemId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerItemRentalRate.currencyCode"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerItemRentalRate.dayRate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerItemRentalRate.weekRate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerItemRentalRate.monthRate"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerItemRentalRate.validFrom"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerItemRentalRate.validTo"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerItemRentalRate.notes"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerItemRentalRate.createdBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerItemRentalRate.createdAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerItemRentalRate.updatedBy"
+          },
+          {
+            $ref: "#/parameters/rowFilter.customerItemRentalRate.updatedAt"
+          },
+          {
+            $ref: "#/parameters/body.customerItemRentalRate"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["customerItemRentalRate"]
+      }
+    },
     "/documentFavorite": {
       get: {
         parameters: [
@@ -129856,6 +130090,98 @@ export default {
       },
       type: "object"
     },
+    customerItemRentalRate: {
+      required: [
+        "id",
+        "companyId",
+        "itemId",
+        "currencyCode",
+        "createdBy",
+        "createdAt"
+      ],
+      properties: {
+        id: {
+          default: "public.id('cirr'::text)",
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string"
+        },
+        companyId: {
+          description:
+            "Note:\nThis is a Primary Key.<pk/>\nThis is a Foreign Key to `company.id`.<fk table='company' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        customerId: {
+          description:
+            "Note:\nThis is a Foreign Key to `customer.id`.<fk table='customer' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        customerTypeId: {
+          description:
+            "Note:\nThis is a Foreign Key to `customerType.id`.<fk table='customerType' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        itemId: {
+          description:
+            "Note:\nThis is a Foreign Key to `item.id`.<fk table='item' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        currencyCode: {
+          format: "text",
+          type: "string"
+        },
+        dayRate: {
+          format: "numeric",
+          type: "number"
+        },
+        weekRate: {
+          format: "numeric",
+          type: "number"
+        },
+        monthRate: {
+          format: "numeric",
+          type: "number"
+        },
+        validFrom: {
+          format: "date",
+          type: "string"
+        },
+        validTo: {
+          format: "date",
+          type: "string"
+        },
+        notes: {
+          format: "text",
+          type: "string"
+        },
+        createdBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        createdAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        updatedBy: {
+          description:
+            "Note:\nThis is a Foreign Key to `user.id`.<fk table='user' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        updatedAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        }
+      },
+      type: "object"
+    },
     documentFavorite: {
       required: ["documentId", "userId"],
       properties: {
@@ -178553,6 +178879,111 @@ export default {
     },
     "rowFilter.cardTransaction.customFields": {
       name: "customFields",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "body.customerItemRentalRate": {
+      name: "customerItemRentalRate",
+      description: "customerItemRentalRate",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/customerItemRentalRate"
+      }
+    },
+    "rowFilter.customerItemRentalRate.id": {
+      name: "id",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.customerItemRentalRate.companyId": {
+      name: "companyId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.customerItemRentalRate.customerId": {
+      name: "customerId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.customerItemRentalRate.customerTypeId": {
+      name: "customerTypeId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.customerItemRentalRate.itemId": {
+      name: "itemId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.customerItemRentalRate.currencyCode": {
+      name: "currencyCode",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.customerItemRentalRate.dayRate": {
+      name: "dayRate",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.customerItemRentalRate.weekRate": {
+      name: "weekRate",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.customerItemRentalRate.monthRate": {
+      name: "monthRate",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.customerItemRentalRate.validFrom": {
+      name: "validFrom",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.customerItemRentalRate.validTo": {
+      name: "validTo",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.customerItemRentalRate.notes": {
+      name: "notes",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.customerItemRentalRate.createdBy": {
+      name: "createdBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.customerItemRentalRate.createdAt": {
+      name: "createdAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.customerItemRentalRate.updatedBy": {
+      name: "updatedBy",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.customerItemRentalRate.updatedAt": {
+      name: "updatedAt",
       required: false,
       in: "query",
       type: "string"

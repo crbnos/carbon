@@ -2,6 +2,14 @@ import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle
+} from "@carbon/react";
+import { Trans } from "@lingui/react/macro";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect, useParams } from "react-router";
 import { useRouteData } from "~/hooks";
@@ -12,14 +20,13 @@ import {
 } from "~/modules/sales";
 import type { RentalAgreementRouteData } from "~/modules/sales/ui/Rentals";
 import {
+  LeaseClassificationPreview,
   RentalAgreementCharges,
-  RentalAgreementForm,
-  RentalAgreementLines,
   RentalAgreementSummary,
   RentalBillingPeriods,
   RentalDeposits
 } from "~/modules/sales/ui/Rentals";
-import { getCustomFields, setCustomFields } from "~/utils/form";
+import { setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
@@ -89,8 +96,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
   );
 }
 
-/** The agreement as a whole: what it is owed, its units, charges, billing
- *  and deposits, then its terms. A unit's own page is `$lineId.details`. */
+/** The agreement as a whole: the summary of its units and what it is owed,
+ *  how it will be accounted for, then its charges, billing and deposits. The
+ *  terms are in the properties panel; a unit's own page is `$lineId.details`. */
 export default function RentalAgreementDetailsRoute() {
   const { id } = useParams();
   if (!id) throw new Error("Could not find id");
@@ -111,36 +119,51 @@ export default function RentalAgreementDetailsRoute() {
     leaseInputs
   } = routeData;
 
-  const initialValues = {
-    id,
-    rentalAgreementId: rentalAgreement.rentalAgreementId ?? undefined,
-    customerId: rentalAgreement.customerId ?? "",
-    customerLocationId: rentalAgreement.customerLocationId ?? undefined,
-    customerContactId: rentalAgreement.customerContactId ?? undefined,
-    salesPersonId: rentalAgreement.salesPersonId ?? undefined,
-    locationId: rentalAgreement.locationId ?? "",
-    startDate: rentalAgreement.startDate ?? "",
-    endDate: rentalAgreement.endDate ?? undefined,
-    billingCycle: rentalAgreement.billingCycle ?? ("Calendar Month" as const),
-    billingTiming: rentalAgreement.billingTiming ?? ("Advance" as const),
-    paymentTermId: rentalAgreement.paymentTermId ?? undefined,
-    currencyCode: rentalAgreement.currencyCode ?? "",
-    depositAmount: rentalAgreement.depositAmount ?? 0,
-    taxPercent: rentalAgreement.taxPercent ?? 0,
-    discountRate: rentalAgreement.discountRate ?? 0,
-    ownershipTransfers: rentalAgreement.ownershipTransfers ?? false,
-    specializedAsset: rentalAgreement.specializedAsset ?? false,
-    purchaseOptionAmount: rentalAgreement.purchaseOptionAmount ?? undefined,
-    purchaseOptionReasonablyCertain:
-      rentalAgreement.purchaseOptionReasonablyCertain ?? false,
-    notes: rentalAgreement.notes ?? undefined,
-    ...getCustomFields(rentalAgreement.customFields)
-  };
-
   return (
     <>
-      <RentalAgreementSummary rentalAgreement={rentalAgreement} />
-      <RentalAgreementLines rentalAgreement={rentalAgreement} lines={lines} />
+      <RentalAgreementSummary
+        rentalAgreement={rentalAgreement}
+        lines={lines}
+        periods={periods}
+        leaseInputs={leaseInputs}
+      />
+      {rentalAgreement.status === "Draft" && (
+        <Card>
+          <CardHeader>
+            <CardTitle>
+              <Trans>Accounting Treatment</Trans>
+            </CardTitle>
+            <CardDescription>
+              <Trans>
+                Whether each unit is treated as a rental or a sale is decided
+                when the agreement is activated, from the terms and each unit's
+                inputs.
+              </Trans>
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <LeaseClassificationPreview
+              terms={{
+                startDate: rentalAgreement.startDate ?? "",
+                endDate: rentalAgreement.endDate ?? null,
+                billingCycle: rentalAgreement.billingCycle ?? "Calendar Month",
+                billingTiming: rentalAgreement.billingTiming ?? "Advance",
+                discountRate: Number(rentalAgreement.discountRate ?? 0),
+                ownershipTransfers: rentalAgreement.ownershipTransfers ?? false,
+                specializedAsset: rentalAgreement.specializedAsset ?? false,
+                purchaseOptionAmount:
+                  rentalAgreement.purchaseOptionAmount ?? null,
+                purchaseOptionReasonablyCertain:
+                  !!rentalAgreement.purchaseOptionAmount &&
+                  (rentalAgreement.purchaseOptionReasonablyCertain ?? false)
+              }}
+              lines={lines}
+              leaseInputs={leaseInputs}
+              policy={leasePolicy}
+            />
+          </CardContent>
+        </Card>
+      )}
       <RentalAgreementCharges
         rentalAgreement={rentalAgreement}
         charges={charges}
@@ -153,14 +176,6 @@ export default function RentalAgreementDetailsRoute() {
         invoiceLinks={invoiceLinks}
       />
       <RentalDeposits rentalAgreement={rentalAgreement} deposits={deposits} />
-      <RentalAgreementForm
-        key={`${id}-${rentalAgreement.updatedAt ?? ""}`}
-        initialValues={initialValues}
-        isLocked={rentalAgreement.status !== "Draft"}
-        leasePolicy={leasePolicy}
-        lines={lines}
-        leaseInputs={leaseInputs}
-      />
     </>
   );
 }

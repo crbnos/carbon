@@ -129,8 +129,8 @@ const asClassification = (
   value === "Rental" || value === "Sale" ? value : null;
 
 /** One line's lessor classification: the record activation stored when there
- *  is one, else a preview from the agreement terms, the line's inputs and the
- *  item's current ladder. An override always wins. */
+ *  is one, else a preview from the agreement terms, the line's inputs and
+ *  its rates (its own, else the default ladder). An override always wins. */
 export function resolveLineLeaseClassification(args: {
   agreement: RentalAgreement;
   line: Pick<

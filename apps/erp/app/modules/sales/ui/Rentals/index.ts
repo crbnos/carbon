@@ -5,7 +5,7 @@ import RentalAgreementForm from "./RentalAgreementForm";
 import RentalAgreementHeader from "./RentalAgreementHeader";
 import RentalAgreementLineForm from "./RentalAgreementLineForm";
 import RentalAgreementLineSummary from "./RentalAgreementLineSummary";
-import RentalAgreementLines from "./RentalAgreementLines";
+import RentalAgreementProperties from "./RentalAgreementProperties";
 import RentalAgreementReturnForm from "./RentalAgreementReturnForm";
 import RentalAgreementSummary from "./RentalAgreementSummary";
 import RentalAgreementsTable from "./RentalAgreementsTable";
@@ -14,6 +14,7 @@ import RentalDeposits from "./RentalDeposits";
 import {
   LeaseClassificationOverrideModal,
   LeaseClassificationPanel,
+  LeaseClassificationPreview,
   RentalCommencementPreview,
   resolveLineLeaseClassification
 } from "./RentalLeaseClassification";
@@ -28,6 +29,7 @@ export type * from "./types";
 export {
   LeaseClassificationOverrideModal,
   LeaseClassificationPanel,
+  LeaseClassificationPreview,
   RentalAgreementChargeForm,
   RentalAgreementCharges,
   RentalAgreementExplorer,
@@ -35,7 +37,7 @@ export {
   RentalAgreementHeader,
   RentalAgreementLineForm,
   RentalAgreementLineSummary,
-  RentalAgreementLines,
+  RentalAgreementProperties,
   RentalAgreementReturnForm,
   RentalAgreementSummary,
   RentalAgreementsTable,

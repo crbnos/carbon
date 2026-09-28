@@ -1,6 +1,8 @@
 import BillOfMaterial from "./BillOfMaterial";
 import BillOfProcess from "./BillOfProcess";
 import BoMExplorer, { BoMActions } from "./BoMExplorer";
+import CustomerRentalRateForm from "./CustomerRentalRateForm";
+import CustomerRentalRates from "./CustomerRentalRates";
 import { FileBadge } from "./FileBadge";
 import ItemCostingForm from "./ItemCostingForm";
 import ItemDescription from "./ItemDescription";
@@ -28,6 +30,8 @@ export {
   BillOfProcess,
   BoMActions,
   BoMExplorer,
+  CustomerRentalRateForm,
+  CustomerRentalRates,
   FileBadge,
   ItemCostingForm,
   ItemDescription,

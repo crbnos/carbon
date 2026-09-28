@@ -20,10 +20,12 @@ import {
 } from "../shared/post-adjustment.ts";
 import { round } from "../shared/precision.ts";
 import {
+  defaultRentalRates,
   ExistingBillingPeriod,
   generateRentalBillingPeriods,
   PeriodSpec,
   RateLadder,
+  rentalLadderIsEmpty,
 } from "../shared/rental-billing.ts";
 import {
   activationBillingThrough,
@@ -66,8 +68,9 @@ const logger = getFunctionLogger("post-rental-agreement");
 // The lifecycle of a rental agreement (spec §3, §4). Four actions, each ONE
 // transaction that locks the agreement row first:
 //
-//   activate  Draft → Active: every unit Available, rates snapshotted from the
-//             item's ladder, each line classified (ASC 842, `lessor.ts`),
+//   activate  Draft → Active: every unit Available, rates fixed (the line's
+//             own, else the customer's / customer type's / item's ladder —
+//             `defaultRentalRates`), each line classified (ASC 842, `lessor.ts`),
 //             first billing periods cut. An operating line posts nothing — the
 //             unit simply stops being Available. A sales-type line commences:
 //             the fleet unit is derecognized (asset Disposed by Sale), the
@@ -446,6 +449,9 @@ async function activate(
         "trackedEntityId",
         "rateMode",
         "rateUnit",
+        "dayRate",
+        "weekRate",
+        "monthRate",
         "fairValue",
         "economicLifeMonths",
         "guaranteedResidualValue",
@@ -503,13 +509,48 @@ async function activate(
         units.map((unit) => unit.itemId).filter((id): id is string => !!id),
       ),
     ];
-    const rateRows = itemIds.length === 0 ? [] : await trx
-      .selectFrom("itemRentalRate")
-      .select(["itemId", "dayRate", "weekRate", "monthRate"])
+    // A line with no rate of its own takes the default ladder: the
+    // customer's, else its customer type's, else the item's.
+    const customer = await trx
+      .selectFrom("customer")
+      .select("customerTypeId")
+      .where("id", "=", agreement.customerId)
       .where("companyId", "=", companyId)
-      .where("currencyCode", "=", agreement.currencyCode)
-      .where("itemId", "in", itemIds)
-      .execute();
+      .executeTakeFirst();
+    const customerTypeId = customer?.customerTypeId ?? null;
+    const [rateRows, scopedRows] = itemIds.length === 0 ? [[], []] : await Promise.all([
+      trx
+        .selectFrom("itemRentalRate")
+        .select(["itemId", "dayRate", "weekRate", "monthRate"])
+        .where("companyId", "=", companyId)
+        .where("currencyCode", "=", agreement.currencyCode)
+        .where("itemId", "in", itemIds)
+        .execute(),
+      trx
+        .selectFrom("customerItemRentalRate")
+        .select([
+          "itemId",
+          "customerId",
+          "customerTypeId",
+          "dayRate",
+          "weekRate",
+          "monthRate",
+          sql<string | null>`"validFrom"::text`.as("validFrom"),
+          sql<string | null>`"validTo"::text`.as("validTo"),
+        ])
+        .where("companyId", "=", companyId)
+        .where("currencyCode", "=", agreement.currencyCode)
+        .where("itemId", "in", itemIds)
+        .where((eb) =>
+          customerTypeId
+            ? eb.or([
+              eb("customerId", "=", agreement.customerId),
+              eb("customerTypeId", "=", customerTypeId),
+            ])
+            : eb("customerId", "=", agreement.customerId)
+        )
+        .execute(),
+    ]);
     const ratesByItem = new Map(rateRows.map((row) => [row.itemId, row]));
 
     // Every problem at once, so a planner fixes the agreement in one pass.
@@ -537,19 +578,44 @@ async function activate(
         problems.push(unavailable);
         continue;
       }
-      const rateRow = ratesByItem.get(unit.itemId);
-      if (!rateRow) {
+      // The snapshot: a later price-list change never touches a live line.
+      const ownRates: RateLadder = {
+        dayRate: toRate(line.dayRate),
+        weekRate: toRate(line.weekRate),
+        monthRate: toRate(line.monthRate),
+      };
+      const itemRow = ratesByItem.get(unit.itemId);
+      const rates = rentalLadderIsEmpty(ownRates)
+        ? defaultRentalRates({
+          customerId: agreement.customerId,
+          customerTypeId,
+          asOf: agreement.startDate,
+          scoped: scopedRows
+            .filter((row) => row.itemId === unit.itemId)
+            .map((row) => ({
+              customerId: row.customerId,
+              customerTypeId: row.customerTypeId,
+              validFrom: row.validFrom,
+              validTo: row.validTo,
+              dayRate: toRate(row.dayRate),
+              weekRate: toRate(row.weekRate),
+              monthRate: toRate(row.monthRate),
+            })),
+          item: itemRow
+            ? {
+              dayRate: toRate(itemRow.dayRate),
+              weekRate: toRate(itemRow.weekRate),
+              monthRate: toRate(itemRow.monthRate),
+            }
+            : null,
+        })?.rates ?? null
+        : ownRates;
+      if (!rates) {
         problems.push(
           `${name} has no rental rates in ${agreement.currencyCode}`,
         );
         continue;
       }
-      // The snapshot: a later price-list change never touches a live line.
-      const rates: RateLadder = {
-        dayRate: toRate(rateRow.dayRate),
-        weekRate: toRate(rateRow.weekRate),
-        monthRate: toRate(rateRow.monthRate),
-      };
       const ladderProblem = rateLadderError({
         cycle: agreement.billingCycle,
         rateMode: line.rateMode,

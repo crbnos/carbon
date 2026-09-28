@@ -19,6 +19,57 @@ export type RateLadder = {
   monthRate: number | null;
 };
 
+/** A line with no tier set takes its rates from `defaultRentalRates`. */
+export const rentalLadderIsEmpty = (rates: RateLadder): boolean =>
+  rates.dayRate === null && rates.weekRate === null &&
+  rates.monthRate === null;
+
+/** Where a line's default ladder came from. */
+export type RentalRateSource = "Customer" | "Customer Type" | "Item";
+
+/** A `customerItemRentalRate` row: one customer's or one customer type's
+ *  ladder for an item, optionally bounded by dates. */
+export type ScopedRentalRate = RateLadder & {
+  customerId: string | null;
+  customerTypeId: string | null;
+  validFrom: string | null;
+  validTo: string | null;
+};
+
+/** The ladder a rental line defaults to: the customer's own rates, else its
+ *  customer type's, else the item's. A scoped row counts only while `asOf`
+ *  (the agreement's start date) falls inside its validity, both ends
+ *  inclusive — `YYYY-MM-DD` strings compare chronologically. `scoped` holds
+ *  the rows for this item and currency; rows for other customers are
+ *  ignored. Null when nothing applies. */
+export function defaultRentalRates(args: {
+  customerId: string;
+  customerTypeId: string | null;
+  asOf: string;
+  scoped: ScopedRentalRate[];
+  item: RateLadder | null;
+}): { rates: RateLadder; source: RentalRateSource } | null {
+  const { customerId, customerTypeId, asOf, scoped, item } = args;
+  const effective = scoped.filter(
+    (row) =>
+      (!row.validFrom || row.validFrom <= asOf) &&
+      (!row.validTo || row.validTo >= asOf),
+  );
+  const ladder = (row: RateLadder): RateLadder => ({
+    dayRate: row.dayRate,
+    weekRate: row.weekRate,
+    monthRate: row.monthRate,
+  });
+
+  const forCustomer = effective.find((row) => row.customerId === customerId);
+  if (forCustomer) return { rates: ladder(forCustomer), source: "Customer" };
+  const forType = customerTypeId
+    ? effective.find((row) => row.customerTypeId === customerTypeId)
+    : undefined;
+  if (forType) return { rates: ladder(forType), source: "Customer Type" };
+  return item ? { rates: ladder(item), source: "Item" } : null;
+}
+
 export type RateUnit = "Day" | "Week" | "Month";
 export type RentalBillingCycle = "Calendar Month" | "28 Days";
 export type RentalBillingTiming = "Advance" | "Arrears";

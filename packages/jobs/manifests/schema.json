@@ -1,11 +1,11 @@
 {
   "kind": "carbon-company-backup",
   "version": 1,
-  "schemaVersion": "20260928014618",
+  "schemaVersion": "20260928050748",
   "sourceCompanyId": "schema-baseline",
   "sourceCompanyGroupId": null,
   "sourceCompanyName": null,
-  "exportedAt": "2026-09-28T01:52:14.429Z",
+  "exportedAt": "2026-09-28T13:46:11.222Z",
   "exportedBy": "schema-baseline",
   "label": "schema baseline",
   "includeStorage": "none",
@@ -4022,6 +4022,28 @@
         "companyId",
         "updatedBy",
         "id"
+      ]
+    },
+    {
+      "name": "customerItemRentalRate",
+      "rows": 0,
+      "columns": [
+        "notes",
+        "itemId",
+        "updatedBy",
+        "customerTypeId",
+        "createdAt",
+        "customerId",
+        "dayRate",
+        "id",
+        "monthRate",
+        "validTo",
+        "currencyCode",
+        "updatedAt",
+        "companyId",
+        "createdBy",
+        "weekRate",
+        "validFrom"
       ]
     },
     {
