@@ -22,7 +22,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { z } from "zod";
 import type { plmReleaseControl as plmReleaseControlOptions } from "~/modules/items/items.models";
 import type { GenericQueryFilters } from "~/utils/query";
-import { setGenericQueryFilters } from "~/utils/query";
+import { setGenericQueryFilters, setSearchFilter } from "~/utils/query";
 import { interpolateSequenceDate } from "~/utils/string";
 import { sanitize } from "~/utils/supabase";
 import type {
@@ -462,14 +462,7 @@ export async function getItemSerialSequences(
     })
     .eq("companyId", companyId);
 
-  if (args.search) {
-    // Strip PostgREST filter-grammar characters so a search term can't alter the
-    // `or` expression or filter unintended columns (mirrors inventory.service.ts).
-    const search = args.search.replace(/[,()\\]/g, " ");
-    query = query.or(
-      `itemReadableId.ilike.%${search}%,itemName.ilike.%${search}%`
-    );
-  }
+  query = setSearchFilter(query, args.search, ["itemReadableId", "itemName"]);
 
   query = setGenericQueryFilters(query, args, [
     { column: "itemReadableId", ascending: true }

@@ -547,11 +547,10 @@ export async function getKanbans(
     .eq("companyId", companyId)
     .eq("locationId", locationId);
 
-  if (args.search) {
-    query = query.or(
-      `name.ilike.%${args.search}%,readableIdWithRevision.ilike.%${args.search}%`
-    );
-  }
+  query = setSearchFilter(query, args.search, [
+    "name",
+    "readableIdWithRevision"
+  ]);
 
   query = setGenericQueryFilters(query, args, [
     { column: "readableIdWithRevision", ascending: true }
@@ -701,11 +700,10 @@ export async function getReceipts(
     .eq("companyId", companyId)
     .neq("sourceDocumentId", "");
 
-  if (args.search) {
-    query = query.or(
-      `receiptId.ilike.%${args.search}%,sourceDocumentReadableId.ilike.%${args.search}%`
-    );
-  }
+  query = setSearchFilter(query, args.search, [
+    "receiptId",
+    "sourceDocumentReadableId"
+  ]);
 
   query = setGenericQueryFilters(query, args, [
     { column: "receiptId", ascending: false }
@@ -919,7 +917,6 @@ export async function getBatchNumbersForItem(
   args: {
     itemId: string;
     companyId: string;
-    isReadOnly?: boolean;
   }
 ) {
   return client
@@ -1194,15 +1191,13 @@ export async function getStockMovements(
     })
     .eq("companyId", companyId);
 
-  if (args.search) {
-    // Strip characters that are structural in a PostgREST `.or(...)` filter
-    // (comma separates conditions, parens group them) so the search value can't
-    // alter the filter shape.
-    const search = args.search.replace(/[,()\\]/g, " ");
-    query = query.or(
-      `itemReadableId.ilike.%${search}%,itemDescription.ilike.%${search}%,locationName.ilike.%${search}%,storageUnitName.ilike.%${search}%,trackedEntityReadableId.ilike.%${search}%`
-    );
-  }
+  query = setSearchFilter(query, args.search, [
+    "itemReadableId",
+    "itemDescription",
+    "locationName",
+    "storageUnitName",
+    "trackedEntityReadableId"
+  ]);
 
   query = setGenericQueryFilters(query, args, [
     { column: "createdAt", ascending: false },
@@ -1226,11 +1221,10 @@ export async function getShipments(
     .eq("companyId", companyId)
     .neq("sourceDocumentId", "");
 
-  if (args.search) {
-    query = query.or(
-      `shipmentId.ilike.%${args.search}%,sourceDocumentReadableId.ilike.%${args.search}%`
-    );
-  }
+  query = setSearchFilter(query, args.search, [
+    "shipmentId",
+    "sourceDocumentReadableId"
+  ]);
 
   query = setGenericQueryFilters(query, args, [
     { column: "shipmentId", ascending: false }
@@ -1371,11 +1365,7 @@ export async function getShippingMethods(
     .eq("companyId", companyId)
     .eq("active", true);
 
-  if (args.search) {
-    query = query.or(
-      `name.ilike.%${args.search}%,carrier.ilike.%${args.search}%`
-    );
-  }
+  query = setSearchFilter(query, args.search, ["name", "carrier"]);
 
   query = setGenericQueryFilters(query, args, [
     { column: "name", ascending: true }
@@ -1446,11 +1436,11 @@ export async function getTrackedEntities(
     .eq("companyId", companyId)
     .neq("status", "Reserved");
 
-  if (args.search) {
-    query = query.or(
-      `id.ilike.%${args.search}%,sourceDocumentReadableId.ilike.%${args.search}%,readableId.ilike.%${args.search}%`
-    );
-  }
+  query = setSearchFilter(query, args.search, [
+    "id",
+    "sourceDocumentReadableId",
+    "readableId"
+  ]);
 
   query = setGenericQueryFilters(query, args, [
     { column: "sourceDocumentReadableId", ascending: true }
@@ -1594,11 +1584,7 @@ export async function getWarehouseTransfers(
     )
     .eq("companyId", companyId);
 
-  if (args.search) {
-    query = query.or(
-      `transferId.ilike.%${args.search}%,reference.ilike.%${args.search}%`
-    );
-  }
+  query = setSearchFilter(query, args.search, ["transferId", "reference"]);
 
   query = setGenericQueryFilters(query, args, [
     { column: "transferId", ascending: false }
@@ -1829,16 +1815,12 @@ export async function getInventoryCountLines(
     .eq("inventoryCountId", inventoryCountId)
     .eq("companyId", companyId);
 
-  if (args.search) {
-    // Strip characters that are structural in a PostgREST `.or(...)` filter so
-    // the search value can't alter the filter shape.
-    const search = args.search.replace(/[,()\\]/g, " ");
-    // Search the item's identity (part number / name); the line's own readableId
-    // is only the batch/serial and is null for most rows.
-    query = query.or(
-      `itemName.ilike.%${search}%,itemReadableIdWithRevision.ilike.%${search}%`
-    );
-  }
+  // Search the item's identity (part number / name); the line's own readableId
+  // is only the batch/serial and is null for most rows.
+  query = setSearchFilter(query, args.search, [
+    "itemName",
+    "itemReadableIdWithRevision"
+  ]);
 
   // Snapshot lines all share one insert timestamp, so order by the item's part
   // number for a readable count sheet and fall back to the line id for a stable,

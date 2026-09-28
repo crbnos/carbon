@@ -21,7 +21,11 @@ import type { z } from "zod";
 import { createDocumentUploadUrl } from "~/modules/documents/documents.service";
 import { getEmployeeJob } from "~/modules/people";
 import type { GenericQueryFilters } from "~/utils/query";
-import { LIST_COUNT, setGenericQueryFilters } from "~/utils/query";
+import {
+  LIST_COUNT,
+  setGenericQueryFilters,
+  setSearchFilter
+} from "~/utils/query";
 import { sanitize } from "~/utils/supabase";
 import {
   getCurrencyByCode,
@@ -436,6 +440,10 @@ export async function finalizeSupplierQuote(
   return { data: null, error: null };
 }
 
+/**
+ * Lists purchase orders. `search` matches every word against the order number
+ * or the supplier reference; `status` and `supplierId` narrow the list.
+ */
 export async function getPurchaseOrders(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -450,9 +458,15 @@ export async function getPurchaseOrders(
     .select(PURCHASE_ORDERS_LIST_COLUMNS, { count: LIST_COUNT })
     .eq("companyId", companyId);
 
-  if (args.search) {
-    query = query.or(
-      `purchaseOrderId.ilike.%${args.search}%,supplierReference.ilike.%${args.search}%`
+  query = setSearchFilter(query, args.search, [
+    "purchaseOrderId",
+    "supplierReference"
+  ]);
+
+  if (args.status) {
+    query = query.eq(
+      "status",
+      args.status as (typeof purchaseOrderStatusType)[number]
     );
   }
 
@@ -596,11 +610,10 @@ export async function getPurchasingPlanning(
     }
   );
 
-  if (args?.search) {
-    query = query.or(
-      `name.ilike.%${args.search}%,readableIdWithRevision.ilike.%${args.search}%`
-    );
-  }
+  query = setSearchFilter(query, args?.search, [
+    "name",
+    "readableIdWithRevision"
+  ]);
 
   query = setGenericQueryFilters(query, args, [
     { column: "quantityToOrder", ascending: false }
@@ -851,11 +864,11 @@ export async function getSupplierQuotes(
     .select("*", { count: "exact" })
     .eq("companyId", companyId);
 
-  if (args.search) {
-    query = query.or(
-      `supplierQuoteId.ilike.%${args.search}%,name.ilike.%${args.search}%,supplierReference.ilike%${args.search}%`
-    );
-  }
+  query = setSearchFilter(query, args.search, [
+    "supplierQuoteId",
+    "name",
+    "supplierReference"
+  ]);
 
   query = setGenericQueryFilters(query, args, [
     { column: "supplierQuoteId", ascending: false }
@@ -3213,11 +3226,10 @@ export async function getPurchaseReturnOrders(
     .select("*", { count: LIST_COUNT })
     .eq("companyId", companyId);
 
-  if (args.search) {
-    query = query.or(
-      `purchaseReturnOrderId.ilike.%${args.search}%,supplierReference.ilike.%${args.search}%`
-    );
-  }
+  query = setSearchFilter(query, args.search, [
+    "purchaseReturnOrderId",
+    "supplierReference"
+  ]);
 
   if (args.status) {
     query = query.eq(

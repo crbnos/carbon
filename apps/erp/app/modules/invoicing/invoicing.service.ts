@@ -32,7 +32,11 @@ import {
   insertSupplierInteraction
 } from "~/modules/purchasing";
 import type { GenericQueryFilters } from "~/utils/query";
-import { LIST_COUNT, setGenericQueryFilters } from "~/utils/query";
+import {
+  LIST_COUNT,
+  setGenericQueryFilters,
+  setSearchFilter
+} from "~/utils/query";
 import { sanitize } from "~/utils/supabase";
 import { getExchangeRate } from "../accounting/accounting.service";
 import { getEmployeeJob } from "../people/people.service";
@@ -1500,11 +1504,10 @@ export async function getCardTransactions(
     .select("*", { count: "exact" })
     .eq("companyId", companyId);
 
-  if (args.search) {
-    query = query.or(
-      `cardTransactionId.ilike.%${args.search}%,merchantName.ilike.%${args.search}%`
-    );
-  }
+  query = setSearchFilter(query, args.search, [
+    "cardTransactionId",
+    "merchantName"
+  ]);
   if (args.type) {
     query = query.eq("type", args.type);
   }

@@ -7,7 +7,7 @@ import {
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { z } from "zod";
 import type { GenericQueryFilters } from "~/utils/query";
-import { setGenericQueryFilters } from "~/utils/query";
+import { setGenericQueryFilters, setSearchFilter } from "~/utils/query";
 import { sanitize } from "~/utils/supabase";
 import type {
   failureModeValidator,
@@ -446,11 +446,7 @@ export async function getContractors(
     .eq("companyId", companyId)
     .eq("active", true);
 
-  if (args?.search) {
-    query = query.or(
-      `fullName.ilike.%${args.search}%,email.ilike.%${args.search}%`
-    );
-  }
+  query = setSearchFilter(query, args?.search, ["fullName", "email"]);
 
   if (args) {
     query = setGenericQueryFilters(query, args, [
@@ -659,6 +655,13 @@ export async function getMaintenanceDispatches(
     query = query.ilike("maintenanceDispatchId", `%${args.search}%`);
   }
 
+  if (args?.status) {
+    query = query.eq(
+      "status",
+      args.status as (typeof maintenanceDispatchStatus)[number]
+    );
+  }
+
   if (args) {
     query = setGenericQueryFilters(query, args, [
       { column: "createdAt", ascending: false }
@@ -685,6 +688,13 @@ export async function getMaintenanceDispatchesByLocation(
 
   if (args?.search) {
     query = query.ilike("maintenanceDispatchId", `%${args.search}%`);
+  }
+
+  if (args?.status) {
+    query = query.eq(
+      "status",
+      args.status as (typeof maintenanceDispatchStatus)[number]
+    );
   }
 
   if (args) {

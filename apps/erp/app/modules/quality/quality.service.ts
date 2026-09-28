@@ -8,7 +8,7 @@ import { parseDate } from "@internationalized/date";
 import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
 import type { z } from "zod";
 import type { GenericQueryFilters } from "~/utils/query";
-import { setGenericQueryFilters } from "~/utils/query";
+import { setGenericQueryFilters, setSearchFilter } from "~/utils/query";
 import { sanitize } from "~/utils/supabase";
 
 const logger = getLogger("erp", "quality");
@@ -325,11 +325,12 @@ export async function getGauges(
     .select("*", { count: "exact" })
     .eq("companyId", companyId);
 
-  if (args?.search) {
-    query = query.or(
-      `gaugeId.ilike.%${args.search}%,description.ilike.%${args.search}%,modelNumber.ilike.%${args.search}%,serialNumber.ilike.%${args.search}%`
-    );
-  }
+  query = setSearchFilter(query, args?.search, [
+    "gaugeId",
+    "description",
+    "modelNumber",
+    "serialNumber"
+  ]);
 
   if (args) {
     query = setGenericQueryFilters(query, args, [
@@ -375,11 +376,12 @@ export async function getGaugeCalibrationRecords(
     .select("*", { count: "exact" })
     .eq("companyId", companyId);
 
-  if (args?.search) {
-    query = query.or(
-      `gaugeId.ilike.%${args.search}%,description.ilike.%${args.search}%,modelNumber.ilike.%${args.search}%,serialNumber.ilike.%${args.search}%`
-    );
-  }
+  query = setSearchFilter(query, args?.search, [
+    "gaugeId",
+    "description",
+    "modelNumber",
+    "serialNumber"
+  ]);
 
   if (args) {
     query = setGenericQueryFilters(query, args, [
@@ -464,11 +466,7 @@ export async function getIssues(
     .select("*", { count: "exact" })
     .eq("companyId", companyId);
 
-  if (args?.search) {
-    query = query.or(
-      `nonConformanceId.ilike.%${args.search}%,name.ilike.%${args.search}%`
-    );
-  }
+  query = setSearchFilter(query, args?.search, ["nonConformanceId", "name"]);
 
   if (args) {
     query = setGenericQueryFilters(query, args, [
@@ -1106,11 +1104,12 @@ export async function getQualityActions(
     .select("*", { count: "exact" })
     .eq("companyId", companyId);
 
-  if (args?.search) {
-    query = query.or(
-      `readableNonConformanceId.ilike.%${args.search}%,nonConformanceName.ilike.%${args.search}%,name.ilike.%${args.search}%,description.ilike.%${args.search}%`
-    );
-  }
+  query = setSearchFilter(query, args?.search, [
+    "readableNonConformanceId",
+    "nonConformanceName",
+    "name",
+    "description"
+  ]);
 
   if (args) {
     query = setGenericQueryFilters(query, args, [
@@ -1280,11 +1279,7 @@ export async function getRisks(
     })
     .eq("companyId", companyId);
 
-  if (args?.search) {
-    query = query.or(
-      `title.ilike.%${args.search}%,description.ilike.%${args.search}%`
-    );
-  }
+  query = setSearchFilter(query, args?.search, ["title", "description"]);
 
   if (args?.status && args.status.length > 0) {
     query = query.in("status", args.status);
@@ -2423,11 +2418,11 @@ export async function getInspections(
     )
     .eq("companyId", companyId);
 
-  if (args?.search) {
-    query = query.or(
-      `itemReadableId.ilike.%${args.search}%,sourceDocumentReadableId.ilike.%${args.search}%,notes.ilike.%${args.search}%`
-    );
-  }
+  query = setSearchFilter(query, args?.search, [
+    "itemReadableId",
+    "sourceDocumentReadableId",
+    "notes"
+  ]);
 
   if (args?.status) {
     // @ts-ignore - status is a valid enum value

@@ -5,7 +5,7 @@ import { trigger } from "@carbon/jobs";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { z } from "zod";
 import type { GenericQueryFilters } from "~/utils/query";
-import { setGenericQueryFilters } from "~/utils/query";
+import { setGenericQueryFilters, setSearchFilter } from "~/utils/query";
 import { sanitize } from "~/utils/supabase";
 import { getDocumentType } from "../shared/shared.service";
 import type {
@@ -57,6 +57,10 @@ export async function getDocument(
   return client.from("documents").select("*").eq("id", documentId).single();
 }
 
+/**
+ * Lists documents. `createdBy` limits the list to one user's documents;
+ * `search` matches every word against the name or description.
+ */
 export async function getDocuments(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -76,10 +80,10 @@ export async function getDocuments(
     .eq("companyId", companyId)
     .eq("active", args.active);
 
-  if (args?.search) {
-    query = query.or(
-      `name.ilike.%${args.search}%,description.ilike.%${args.search}%`
-    );
+  query = setSearchFilter(query, args?.search, ["name", "description"]);
+
+  if (args.createdBy) {
+    query = query.eq("createdBy", args.createdBy);
   }
 
   if (args?.favorite) {

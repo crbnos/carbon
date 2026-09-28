@@ -41,7 +41,8 @@ import type { GenericQueryFilters } from "~/utils/query";
 import {
   getGenericFilter,
   LIST_COUNT,
-  setGenericQueryFilters
+  setGenericQueryFilters,
+  setSearchFilter
 } from "~/utils/query";
 import { sanitize } from "~/utils/supabase";
 import { getDefaultStorageUnitForJob } from "../inventory";
@@ -75,6 +76,7 @@ import type {
   maintenanceDispatchCommentValidator,
   maintenanceDispatchEventValidator,
   maintenanceDispatchItemValidator,
+  maintenanceDispatchStatus,
   maintenanceDispatchValidator,
   maintenanceDispatchWorkCenterValidator,
   maintenanceScheduleItemValidator,
@@ -1324,11 +1326,11 @@ export async function getJobMaterialsWithQuantityOnHand(
     }
   );
 
-  if (args?.search) {
-    query = query.or(
-      `itemReadableId.ilike.%${args.search}%,name.ilike.%${args.search}%,description.ilike.%${args.search}%`
-    );
-  }
+  query = setSearchFilter(query, args?.search, [
+    "itemReadableId",
+    "name",
+    "description"
+  ]);
 
   // Pagination/sorting intentionally skipped — the page loads every material so
   // the stock-transfer session can pre-scan the full list. (orderStatus is
@@ -2034,11 +2036,7 @@ export async function getJobOperationStepRecords(
     p_job_id: jobId
   });
 
-  if (args.search) {
-    query = query.or(
-      `name.ilike.%${args.search}%,operationDescription.ilike.%${args.search}%`
-    );
-  }
+  query = setSearchFilter(query, args.search, ["name", "operationDescription"]);
 
   query = setGenericQueryFilters(query, args, [
     { column: "createdAt", ascending: false }
@@ -2167,7 +2165,7 @@ export async function getProductionEvents(
   let query = client
     .from("productionEvent")
     .select(
-      "*, jobOperation(description, jobMakeMethod(parentMaterialId, item(readableIdWithRevision)))",
+      "*, jobOperation!inner(description, jobMakeMethod(parentMaterialId, item(readableIdWithRevision)))",
       {
         count: "exact"
       }
@@ -2175,9 +2173,11 @@ export async function getProductionEvents(
     .in("jobOperationId", jobOperationIds)
     .order("startTime", { ascending: true });
 
-  if (args?.search) {
-    query = query.or(`jobOperation.description.ilike.%${args.search}%`);
-  }
+  // Search is on the embedded operation, so the embed is !inner: a row whose
+  // operation does not match is dropped, not returned with the embed nulled.
+  query = setSearchFilter(query, args?.search, ["description"], {
+    referencedTable: "jobOperation"
+  });
 
   if (args) {
     query = setGenericQueryFilters(query, args, [
@@ -2255,11 +2255,10 @@ export async function getProductionPlanning(
     }
   );
 
-  if (args?.search) {
-    query = query.or(
-      `name.ilike.%${args.search}%,readableIdWithRevision.ilike.%${args.search}%`
-    );
-  }
+  query = setSearchFilter(query, args?.search, [
+    "name",
+    "readableIdWithRevision"
+  ]);
 
   query = setGenericQueryFilters(query, args, [
     { column: "quantityToOrder", ascending: false }
@@ -2289,11 +2288,10 @@ export async function getProductionProjections(
     }
   );
 
-  if (args?.search) {
-    query = query.or(
-      `name.ilike.%${args.search}%,readableIdWithRevision.ilike.%${args.search}%`
-    );
-  }
+  query = setSearchFilter(query, args?.search, [
+    "name",
+    "readableIdWithRevision"
+  ]);
 
   query = setGenericQueryFilters(query, args, [
     { column: "readableIdWithRevision", ascending: true }
@@ -2321,16 +2319,18 @@ export async function getProductionQuantities(
   let query = client
     .from("productionQuantity")
     .select(
-      "*, jobOperation(description, jobMakeMethod(parentMaterialId, item(readableIdWithRevision)))",
+      "*, jobOperation!inner(description, jobMakeMethod(parentMaterialId, item(readableIdWithRevision)))",
       {
         count: "exact"
       }
     )
     .in("jobOperationId", jobOperationIds);
 
-  if (args?.search) {
-    query = query.or(`jobOperation.description.ilike.%${args.search}%`);
-  }
+  // Search is on the embedded operation, so the embed is !inner: a row whose
+  // operation does not match is dropped, not returned with the embed nulled.
+  query = setSearchFilter(query, args?.search, ["description"], {
+    referencedTable: "jobOperation"
+  });
 
   if (args) {
     query = setGenericQueryFilters(query, args, [
@@ -2490,6 +2490,13 @@ export async function getMaintenanceDispatches(
 
   if (args?.search) {
     query = query.ilike("maintenanceDispatchId", `%${args.search}%`);
+  }
+
+  if (args?.status) {
+    query = query.eq(
+      "status",
+      args.status as (typeof maintenanceDispatchStatus)[number]
+    );
   }
 
   if (args) {
@@ -9724,11 +9731,11 @@ export async function getInspectionDocuments(
     .select("*", { count: "exact" })
     .eq("companyId", companyId);
 
-  if (args?.search) {
-    query = query.or(
-      `drawingNumber.ilike.%${args.search}%,fileName.ilike.%${args.search}%,partReadableId.ilike.%${args.search}%`
-    );
-  }
+  query = setSearchFilter(query, args?.search, [
+    "drawingNumber",
+    "fileName",
+    "partReadableId"
+  ]);
 
   if (args) {
     query = setGenericQueryFilters(query, args, [

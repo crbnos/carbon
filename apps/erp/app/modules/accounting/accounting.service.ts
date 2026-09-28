@@ -20,7 +20,7 @@ import { sql } from "kysely";
 import type { z } from "zod";
 import { getNextSequence } from "~/modules/settings";
 import type { GenericQueryFilters } from "~/utils/query";
-import { setGenericQueryFilters } from "~/utils/query";
+import { setGenericQueryFilters, setSearchFilter } from "~/utils/query";
 import { ruleError, sanitize } from "~/utils/supabase";
 import type {
   AnalyticsAccountScope,
@@ -4213,11 +4213,7 @@ export async function getProjects(
     .eq("companyId", companyId)
     .eq("active", true);
 
-  if (args.search) {
-    query = query.or(
-      `name.ilike.%${args.search}%,description.ilike.%${args.search}%`
-    );
-  }
+  query = setSearchFilter(query, args.search, ["name", "description"]);
 
   query = setGenericQueryFilters(query, args, [
     { column: "name", ascending: true }
@@ -5277,11 +5273,10 @@ export async function getJournalEntries(
     .select("*", { count: "exact" })
     .eq("companyId", companyId);
 
-  if (args.search) {
-    query = query.or(
-      `journalEntryId.ilike.%${args.search}%,description.ilike.%${args.search}%`
-    );
-  }
+  query = setSearchFilter(query, args.search, [
+    "journalEntryId",
+    "description"
+  ]);
 
   if (args.status) {
     query = query.eq("status", args.status as "Draft" | "Posted" | "Reversed");
@@ -6079,11 +6074,11 @@ export async function getFixedAssets(
     )
     .eq("companyId", companyId);
 
-  if (args.search) {
-    query = query.or(
-      `name.ilike.%${args.search}%,fixedAssetId.ilike.%${args.search}%,serialNumber.ilike.%${args.search}%`
-    );
-  }
+  query = setSearchFilter(query, args.search, [
+    "name",
+    "fixedAssetId",
+    "serialNumber"
+  ]);
 
   if (args.status) {
     query = query.eq("status", args.status);

@@ -6,7 +6,7 @@ import type {
   SupabaseClient
 } from "@supabase/supabase-js";
 import type { GenericQueryFilters } from "~/utils/query";
-import { setGenericQueryFilters } from "~/utils/query";
+import { setGenericQueryFilters, setSearchFilter } from "~/utils/query";
 import type { PriceBreak, SupplierPriceMap } from "./shared.models";
 import type { ItemModelUpload } from "./types";
 
@@ -274,15 +274,18 @@ export async function getCustomerPortals(
   companyId: string,
   args?: GenericQueryFilters & { search: string | null }
 ) {
+  // Search is on the embedded customer's name, so the embed is !inner: a
+  // portal whose customer does not match is dropped. Every customer portal has
+  // a customer (customerPortalValidator requires one).
   let query = client
     .from("externalLink")
-    .select("*", { count: "exact" })
+    .select("*, customer!inner(name)", { count: "exact" })
     .eq("companyId", companyId)
     .eq("documentType", "Customer");
 
-  if (args?.search) {
-    query = query.ilike("customer.name", `%${args.search}%`);
-  }
+  query = setSearchFilter(query, args?.search, ["name"], {
+    referencedTable: "customer"
+  });
 
   if (args) {
     query = setGenericQueryFilters(query, args, [

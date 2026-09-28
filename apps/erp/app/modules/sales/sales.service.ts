@@ -24,7 +24,12 @@ import { createDocumentUploadUrl } from "~/modules/documents/documents.service";
 import { getSupplierPriceBreaksForItems } from "~/modules/items/items.service";
 import { getEmployeeJob } from "~/modules/people";
 import type { GenericQueryFilters } from "~/utils/query";
-import { LIST_COUNT, setGenericQueryFilters } from "~/utils/query";
+import {
+  LIST_COUNT,
+  searchCondition,
+  setGenericQueryFilters,
+  setSearchFilter
+} from "~/utils/query";
 import { sanitize } from "~/utils/supabase";
 import { getCurrencyByCode, getExchangeRate } from "../accounting";
 import type {
@@ -1121,11 +1126,11 @@ export async function getExternalSalesOrderLines(
     }
   );
 
-  if (args.search) {
-    query = query.or(
-      `readableId.ilike.%${args.search}%,customerReference.ilike.%${args.search}%,salesOrderId.ilike.%${args.search}%`
-    );
-  }
+  query = setSearchFilter(query, args.search, [
+    "readableId",
+    "customerReference",
+    "salesOrderId"
+  ]);
 
   if (args) {
     query = setGenericQueryFilters(query, args, [
@@ -1351,11 +1356,7 @@ export async function getQuotes(
     .select(QUOTES_LIST_COLUMNS, { count: LIST_COUNT })
     .eq("companyId", companyId);
 
-  if (args.search) {
-    query = query.or(
-      `quoteId.ilike.%${args.search}%,customerReference.ilike.%${args.search}%`
-    );
-  }
+  query = setSearchFilter(query, args.search, ["quoteId", "customerReference"]);
 
   query = setGenericQueryFilters(query, args, [
     { column: "quoteId", ascending: false }
@@ -1826,6 +1827,10 @@ export async function getSalesOrderRelatedItems(
   };
 }
 
+/**
+ * Lists sales orders. `search` matches every word against the order number or
+ * the customer reference; `status` and `customerId` narrow the list.
+ */
 export async function getSalesOrders(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1840,9 +1845,15 @@ export async function getSalesOrders(
     .select(SALES_ORDERS_LIST_COLUMNS, { count: LIST_COUNT })
     .eq("companyId", companyId);
 
-  if (args.search) {
-    query = query.or(
-      `salesOrderId.ilike.%${args.search}%,customerReference.ilike.%${args.search}%`
+  query = setSearchFilter(query, args.search, [
+    "salesOrderId",
+    "customerReference"
+  ]);
+
+  if (args.status) {
+    query = query.eq(
+      "status",
+      args.status as (typeof salesOrderStatusType)[number]
     );
   }
 
@@ -2052,11 +2063,7 @@ export async function getSalesRFQs(
     .select("*", { count: "exact" })
     .eq("companyId", companyId);
 
-  if (args.search) {
-    query = query.or(
-      `rfqId.ilike.%${args.search}%,customerReference.ilike.%${args.search}%`
-    );
-  }
+  query = setSearchFilter(query, args.search, ["rfqId", "customerReference"]);
 
   query = setGenericQueryFilters(query, args, [
     { column: "rfqId", ascending: false }
@@ -2531,11 +2538,7 @@ export async function resolvePriceList(
     .eq("active", true)
     .in("id", overriddenItemIds);
 
-  if (args.search) {
-    itemQuery = itemQuery.or(
-      `name.ilike.%${args.search}%,readableId.ilike.%${args.search}%`
-    );
-  }
+  itemQuery = setSearchFilter(itemQuery, args.search, ["name", "readableId"]);
 
   const { itemIds: postingGroupItemIds, filters: filtersWithoutPostingGroup } =
     await resolvePostingGroupFilter(client, companyId, args.filters);
@@ -2814,11 +2817,7 @@ export async function getBaseCatalog(
     .eq("companyId", companyId)
     .eq("active", true);
 
-  if (args.search) {
-    query = query.or(
-      `name.ilike.%${args.search}%,readableId.ilike.%${args.search}%`
-    );
-  }
+  query = setSearchFilter(query, args.search, ["name", "readableId"]);
 
   const { itemIds: postingGroupItemIds, filters: filtersWithoutPostingGroup } =
     await resolvePostingGroupFilter(client, companyId, args.filters);
@@ -3163,6 +3162,10 @@ export async function getCustomerItemPriceOverrideById(
     .single();
 }
 
+/**
+ * Lists customer item price overrides. `search` matches every word against the
+ * override's notes, the item's name or the customer's name.
+ */
 export async function getCustomerItemPriceOverridesList(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -3186,10 +3189,37 @@ export async function getCustomerItemPriceOverridesList(
     )
     .eq("companyId", companyId);
 
-  if (args.search) {
-    query = query.or(
-      `item.name.ilike.%${args.search}%,customer.name.ilike.%${args.search}%,notes.ilike.%${args.search}%`
-    );
+  const notesMatch = searchCondition(args.search, ["notes"]);
+  if (notesMatch) {
+    // The search spans the override's own notes and the names of its embedded
+    // item and customer. PostgREST cannot OR a parent column with an embedded
+    // one, so the name matches are resolved to ids first.
+    const [items, customers] = await Promise.all([
+      setSearchFilter(
+        client.from("item").select("id").eq("companyId", companyId),
+        args.search,
+        ["name"]
+      ),
+      setSearchFilter(
+        client.from("customer").select("id").eq("companyId", companyId),
+        args.search,
+        ["name"]
+      )
+    ]);
+    if (items.error) return { data: null, error: items.error, count: null };
+    if (customers.error) {
+      return { data: null, error: customers.error, count: null };
+    }
+    const idList = (rows: { id: string }[]) =>
+      rows.map((row) => `"${row.id}"`).join(",");
+    const conditions = [notesMatch];
+    if (items.data.length > 0) {
+      conditions.push(`itemId.in.(${idList(items.data)})`);
+    }
+    if (customers.data.length > 0) {
+      conditions.push(`customerId.in.(${idList(customers.data)})`);
+    }
+    query = query.or(conditions.join(","));
   }
 
   if (args.customerId) {
@@ -6702,11 +6732,10 @@ export async function getSalesReturnOrders(
     .select("*", { count: LIST_COUNT })
     .eq("companyId", companyId);
 
-  if (args.search) {
-    query = query.or(
-      `salesReturnOrderId.ilike.%${args.search}%,customerReference.ilike.%${args.search}%`
-    );
-  }
+  query = setSearchFilter(query, args.search, [
+    "salesReturnOrderId",
+    "customerReference"
+  ]);
 
   if (args.status) {
     query = query.eq(

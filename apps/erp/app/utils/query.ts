@@ -174,6 +174,40 @@ export function getSearchTokens(search: string): string[] {
     .filter(Boolean);
 }
 
+/**
+ * The same token-AND match as `setSearchFilter`, as one PostgREST condition
+ * (`and(or(a.ilike.%t1%,b.ilike.%t1%),or(…t2…))`) for a service that must OR
+ * it with other conditions, e.g. pre-resolved `fkId.in.(…)` lists for a search
+ * that spans parent and embedded columns. Null when the search has no tokens.
+ */
+export function searchCondition(
+  search: string | null | undefined,
+  columns: string[]
+): string | null {
+  const tokens = search ? getSearchTokens(search) : [];
+  if (tokens.length === 0) return null;
+  return `and(${tokens
+    .map(
+      (token) =>
+        `or(${columns.map((column) => `${column}.ilike.%${token}%`).join(",")})`
+    )
+    .join(",")})`;
+}
+
+/**
+ * The one way a list service applies free-text search: strips the characters
+ * that are structural in a PostgREST `.or(...)` filter, splits the rest into
+ * tokens, and requires every token to match at least one of `columns`. Never
+ * interpolate a search value into `.or(...)` by hand (the `no-raw-or-filter`
+ * conformance check fails it): a comma or parenthesis in it breaks the filter.
+ *
+ * `referencedTable` searches columns of ONE embedded resource instead of the
+ * parent's. The embed must be selected `!inner` (`"*, embed!inner(col)"`) or
+ * rows whose embed does not match come back with the embed nulled instead of
+ * being dropped. A search across a parent column AND an embedded column cannot
+ * be one `.or()`: use a view column, or resolve the embedded matches to ids
+ * first and OR `fkId.in.(ids)` with the parent columns.
+ */
 export function setSearchFilter<
   T extends GenericSchema,
   U extends Record<string, unknown>,
@@ -182,7 +216,8 @@ export function setSearchFilter<
   // @ts-expect-error TS2707 - TODO: fix type
   query: PostgrestFilterBuilder<T, U, V>,
   search: string | null | undefined,
-  columns: string[]
+  columns: string[],
+  options?: { referencedTable?: string }
   // @ts-expect-error TS2707 - TODO: fix type
 ): PostgrestFilterBuilder<T, U, V> {
   if (!search) return query;
@@ -190,9 +225,12 @@ export function setSearchFilter<
   // Each token must match at least one column, and all tokens must match, so
   // "M8 washer" finds "Washer, Flat, M8". Chained `.or(...)` calls are ANDed.
   for (const token of getSearchTokens(search)) {
-    query = query.or(
-      columns.map((column) => `${column}.ilike.%${token}%`).join(",")
-    );
+    const condition = columns
+      .map((column) => `${column}.ilike.%${token}%`)
+      .join(",");
+    query = options?.referencedTable
+      ? query.or(condition, { referencedTable: options.referencedTable })
+      : query.or(condition);
   }
 
   return query;

@@ -1685,6 +1685,10 @@ export async function getMethodMaterial(
     .single();
 }
 
+/**
+ * Lists bill-of-material lines. `search` matches every word against the line
+ * item's part number; lines that do not match are left out.
+ */
 export async function getMethodMaterials(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1693,16 +1697,19 @@ export async function getMethodMaterials(
   let query = client
     .from("methodMaterial")
     .select(
-      "*, item(name, readableIdWithRevision), makeMethod!makeMethodId(item(id, type, name, readableIdWithRevision))",
+      "*, item!inner(name, readableIdWithRevision), makeMethod!makeMethodId(item(id, type, name, readableIdWithRevision))",
       {
         count: "exact"
       }
     )
     .eq("companyId", companyId);
 
-  if (args?.search) {
-    query = query.ilike("item.readableIdWithRevision", `%${args.search}%`);
-  }
+  // Search is on the embedded item, so the embed is !inner (every method
+  // material has an item): a row whose item does not match is dropped rather
+  // than returned with the embed nulled.
+  query = setSearchFilter(query, args?.search, ["readableIdWithRevision"], {
+    referencedTable: "item"
+  });
 
   if (args) {
     query = setGenericQueryFilters(query, args, []);
@@ -2437,9 +2444,7 @@ export async function getUnitOfMeasures(
     })
     .eq("companyId", companyId);
 
-  if (args.search) {
-    query = query.or(`name.ilike.%${args.search}%,code.ilike.%${args.search}%`);
-  }
+  query = setSearchFilter(query, args.search, ["name", "code"]);
 
   query = setGenericQueryFilters(query, args, [
     { column: "name", ascending: true }
@@ -6424,11 +6429,7 @@ export async function getChangeNotices(
     .select("*", { count: "exact" })
     .eq("companyId", companyId);
 
-  if (args?.search) {
-    query = query.or(
-      `changeOrderId.ilike.%${args.search}%,name.ilike.%${args.search}%`
-    );
-  }
+  query = setSearchFilter(query, args?.search, ["changeOrderId", "name"]);
 
   if (args) {
     query = setGenericQueryFilters(query, args, [

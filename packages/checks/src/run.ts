@@ -8,6 +8,7 @@ import type {
   StructureCheck,
   Violation
 } from "./check";
+import { declaredArgUnused } from "./conformance/declared-arg-unused";
 import { edgeFunctionAuthorizesCaller } from "./conformance/edge-function-authorizes-caller";
 import { moduleShape } from "./conformance/module-shape";
 import { noAuthzDdlInMigrations } from "./conformance/no-authz-ddl-in-migrations";
@@ -19,6 +20,7 @@ import { noLegacyRls } from "./conformance/no-legacy-rls";
 import { noLocalTimezone } from "./conformance/no-local-timezone";
 import { noNumericPrecision } from "./conformance/no-numeric-precision";
 import { noRawForwardedHeaders } from "./conformance/no-raw-forwarded-headers";
+import { noRawOrFilter } from "./conformance/no-raw-or-filter";
 import { noRawRounding } from "./conformance/no-raw-rounding";
 import { noRequiredColumnWithoutDefault } from "./conformance/no-required-column-without-default";
 import { noUnconfirmedWrite } from "./conformance/no-unconfirmed-write";
@@ -57,7 +59,9 @@ export const TS_CHECKS: ConformanceCheck[] = [
   noDefaultOnEffects,
   noUnroundedTrackedQuantity,
   noUnscopedKyselyWrite,
-  noUnconfirmedWrite
+  noUnconfirmedWrite,
+  noRawOrFilter,
+  declaredArgUnused
 ];
 
 /** Checks that run once per edge function, over all of its .ts files. */

@@ -9,7 +9,7 @@ import type { DataType } from "~/modules/shared";
 import type { Employee } from "~/modules/users";
 import { getEmployees } from "~/modules/users/users.service";
 import type { GenericQueryFilters } from "~/utils/query";
-import { setGenericQueryFilters } from "~/utils/query";
+import { setGenericQueryFilters, setSearchFilter } from "~/utils/query";
 import { sanitize } from "~/utils/supabase";
 import type {
   departmentValidator,
@@ -395,11 +395,11 @@ export async function getContacts(
     .select("*", { count: "exact" })
     .eq("companyId", companyId);
 
-  if (args.search) {
-    query = query.or(
-      `firstName.ilike.%${args.search}%,lastName.ilike.%${args.search}%,email.ilike.%${args.search}%`
-    );
-  }
+  query = setSearchFilter(query, args.search, [
+    "firstName",
+    "lastName",
+    "email"
+  ]);
 
   query = setGenericQueryFilters(query, args, [
     { column: "lastName", ascending: true }
@@ -1027,11 +1027,7 @@ export async function getTimecardEntries(
     .select("*", { count: "exact" })
     .eq("companyId", companyId);
 
-  if (args.search) {
-    query = query.or(
-      `firstName.ilike.%${args.search}%,lastName.ilike.%${args.search}%`
-    );
-  }
+  query = setSearchFilter(query, args.search, ["firstName", "lastName"]);
 
   query = setGenericQueryFilters(query, args, [
     { column: "clockIn", ascending: false }

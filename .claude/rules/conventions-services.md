@@ -90,6 +90,29 @@ For an unpaginated full list (e.g. a select dropdown), use
 `fetchAllFromTable(client, table, columns, qb)` from `@carbon/database`, which pages
 through large result sets (`getCustomersList` in `sales.service.ts`).
 
+### Search and filters
+
+- A single-column search may use `.ilike(column, …)` as above. A search over several columns
+  goes through `setSearchFilter(query, search, columns)` (`~/utils/query`). It
+  strips `,()\`, splits the rest into tokens, and requires every token to match one of the
+  columns ("M8 washer" finds "Washer, Flat, M8"). Never interpolate a caller value into
+  `.or(...)` by hand: `.or()` takes one string in PostgREST's logic-tree grammar, so a comma in
+  the search splits it into a broken condition (PGRST100, reported as an unknown database error).
+- Search on ONE embedded resource: select the embed `!inner` and pass
+  `{ referencedTable: "embed" }` (`getProductionEvents`, `getMethodMaterials`). Without `!inner`
+  a filter on an embed nulls the embed and still returns the row.
+- A dotted embedded column (`embed.col.ilike…`) inside a top-level `.or()` is always rejected by
+  PostgREST. A search across a parent column AND an embedded column is a view column, or resolve
+  the embedded matches to ids first and OR `fkId.in.(…)` with `searchCondition(search, columns)`
+  (`getCustomerItemPriceOverridesList`).
+- Only values from an id list (`col.in.(…)`) or id-named variables may be interpolated into
+  `.or()`.
+- Every key in a READ function's args type is published as an API/MCP filter. Apply each one
+  (`if (args.status) query = query.eq("status", args.status)`) or remove it; an unread key is a
+  filter that silently returns every row.
+- Enforced by the `no-raw-or-filter` and `declared-arg-unused` conformance checks
+  (`@carbon/checks`).
+
 ## Upsert: the primary mutation
 
 The canonical write helper is `upsert{Thing}`, branching internally between insert and
@@ -259,6 +282,7 @@ route-wiring example is in [database-patterns.md](database-patterns.md#transacti
 - [ ] `.select(...)` + `.single()` after insert/update to return the row; `.select("id").single()`
       on every update/delete keyed on a unique key (not on multi-row writes).
 - [ ] Status-guarded writes pre-read and return `ruleError(...)`.
+- [ ] Search through `setSearchFilter`; every declared args key is applied.
 - [ ] Update payloads wrapped in `sanitize(...)`.
 - [ ] Multi-row writes use a Kysely transaction (`db.transaction().execute`).
 - [ ] Exported from the module barrel (ERP).
