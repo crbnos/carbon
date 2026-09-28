@@ -4,10 +4,7 @@ import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
-import {
-  deleteQuoteMaterial,
-  recalculateQuoteLinePrices
-} from "~/modules/sales";
+import { deleteQuoteMaterialWithPrices } from "~/modules/sales/sales.server";
 import { requireCompanyRecord } from "~/modules/shared/shared.server";
 
 export async function action({ request, params }: ActionFunctionArgs) {
@@ -41,26 +38,23 @@ export async function action({ request, params }: ActionFunctionArgs) {
     })
   ]);
 
-  const deleteMaterial = await deleteQuoteMaterial(client, id);
-  if (deleteMaterial.error) {
+  // The delete and the line reprice are one command — the same one
+  // `sales_deleteQuoteMaterial` runs over MCP.
+  const deleted = await deleteQuoteMaterialWithPrices(client, {
+    quoteMaterialId: id,
+    quoteId,
+    quoteLineId: lineId,
+    companyId,
+    userId
+  });
+  if (deleted.error && deleted.failedStep !== "recalculate") {
     return data(
       {
         id: null
       },
-      await flash(
-        request,
-        error(deleteMaterial.error, "Failed to delete quote material")
-      )
+      await flash(request, error(deleted.cause, deleted.error.message))
     );
   }
-
-  await recalculateQuoteLinePrices(
-    serviceRole,
-    companyId,
-    quoteId,
-    lineId,
-    userId
-  );
 
   return {};
 }

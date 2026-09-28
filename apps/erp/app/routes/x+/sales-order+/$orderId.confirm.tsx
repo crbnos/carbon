@@ -7,24 +7,18 @@ import {
   isBlocked
 } from "@carbon/ee/rules.server";
 import { validator } from "@carbon/form";
-import { trackWorkEvent } from "@carbon/lib/telemetry";
-import { datetime, getSalesOrderStatus } from "@carbon/utils";
 import { parseAcceptLanguage } from "intl-parse-accept-language";
 import type { ActionFunctionArgs } from "react-router";
-import { runMRP } from "~/modules/production/production.service";
+import { getSalesOrder, salesConfirmValidator } from "~/modules/sales";
 import {
-  getSalesOrder,
-  getSalesOrderLines,
-  salesConfirmValidator
-} from "~/modules/sales";
-import { recordSalesRuleOutcome } from "~/modules/sales/sales.server";
+  confirmSalesOrder,
+  recordSalesRuleOutcome
+} from "~/modules/sales/sales.server";
 import {
   generateAndAttachSalesOrderPdf,
   sendSalesOrderEmail
 } from "~/modules/shared/shared.server";
-import { getCompanyTimeZone } from "~/modules/shared/timezone.server";
 import { loader as pdfLoader } from "~/routes/file+/sales-order+/$id[.]pdf";
-import { getDatabaseClient } from "~/services/database.server";
 
 export async function action(args: ActionFunctionArgs) {
   const { request, params } = args;
@@ -189,22 +183,15 @@ export async function action(args: ActionFunctionArgs) {
         };
     }
 
-    const orderLines = await getSalesOrderLines(serviceRole, orderId);
-    const { status } = getSalesOrderStatus(orderLines.data || []);
-
-    const confirm = await client
-      .from("salesOrder")
-      .update({
-        status,
-        orderDate:
-          salesOrder.data.orderDate ??
-          datetime
-            .today(await getCompanyTimeZone(client, companyId))
-            .toString(),
-        updatedAt: datetime.timestamp(),
-        updatedBy: userId
-      })
-      .eq("id", orderId);
+    // Status from the lines, order date, MRP — one command, the same one
+    // `sales_releaseSalesOrder` runs over MCP. The write uses the caller's
+    // client, so RLS still applies to it.
+    const confirm = await confirmSalesOrder(client, {
+      salesOrderId: orderId,
+      companyId,
+      userId,
+      emailed: notification === "Email"
+    });
 
     if (confirm.error) {
       return {
@@ -227,24 +214,6 @@ export async function action(args: ActionFunctionArgs) {
         ruleNames
       });
     }
-
-    await runMRP(getCarbonServiceRole(), getDatabaseClient(), {
-      type: "salesOrder",
-      id: orderId,
-      companyId: companyId,
-      userId: userId
-    });
-
-    // Below every early return above, so a failed email or a failed status
-    // write never counts as a confirmed order.
-    trackWorkEvent("sales_order_confirmed", {
-      companyId,
-      userId,
-      salesOrderId: orderId,
-      lineCount: orderLines.data?.length ?? 0,
-      derivedStatus: status,
-      emailed: notification === "Email"
-    });
 
     return {
       success: true,

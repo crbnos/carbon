@@ -5,12 +5,8 @@ import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
-import {
-  quoteMaterialValidator,
-  recalculateQuoteLinePrices,
-  upsertQuoteMaterial,
-  upsertQuoteMaterialMakeMethod
-} from "~/modules/sales";
+import { quoteMaterialValidator } from "~/modules/sales";
+import { saveQuoteMaterialWithPrices } from "~/modules/sales/sales.server";
 import { requireCompanyRecord } from "~/modules/shared/shared.server";
 import { setCustomFields } from "~/utils/form";
 
@@ -55,7 +51,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
       : undefined
   ]);
 
-  const insertQuoteMaterial = await upsertQuoteMaterial(serviceRole, {
+  // The insert, the Make to Order method pull and the line reprice are one
+  // command — the same one `sales_upsertQuoteMaterial` runs over MCP.
+  const saved = await saveQuoteMaterialWithPrices(serviceRole, {
     ...validation.data,
     quoteId,
     quoteLineId: lineId,
@@ -63,76 +61,18 @@ export async function action({ request, params }: ActionFunctionArgs) {
     createdBy: userId,
     customFields: setCustomFields(formData)
   });
-  if (insertQuoteMaterial.error) {
+  // A failed reprice leaves the saved material in place; the route never
+  // surfaced it.
+  if (saved.error && saved.failedStep !== "recalculate") {
     return data(
       {
-        id: null
+        id: saved.data?.id ?? null
       },
-      await flash(
-        request,
-        error(insertQuoteMaterial.error, "Failed to insert quote material")
-      )
+      await flash(request, error(saved.cause, saved.error.message))
     );
   }
 
-  const quoteMaterialId = insertQuoteMaterial.data?.id;
-  if (!quoteMaterialId) {
-    return data(
-      {
-        id: null
-      },
-      await flash(
-        request,
-        error(insertQuoteMaterial, "Failed to insert quote material")
-      )
-    );
-  }
-
-  if (validation.data.methodType === "Make to Order") {
-    const materialMakeMethod = await serviceRole
-      .from("quoteMaterialWithMakeMethodId")
-      .select("*")
-      .eq("id", quoteMaterialId)
-      .eq("companyId", companyId)
-      .single();
-    if (materialMakeMethod.error) {
-      return data(
-        {
-          id: null
-        },
-        await flash(
-          request,
-          error(materialMakeMethod.error, "Failed to get material make method")
-        )
-      );
-    }
-    const makeMethod = await upsertQuoteMaterialMakeMethod(serviceRole, {
-      sourceId: validation.data.itemId,
-      targetId: materialMakeMethod.data?.quoteMaterialMakeMethodId!,
-      companyId,
-      userId
-    });
-
-    if (makeMethod.error) {
-      return data(
-        {
-          id: quoteMaterialId
-        },
-        await flash(
-          request,
-          error(makeMethod.error, "Failed to insert quote material make method")
-        )
-      );
-    }
-  }
-
-  await recalculateQuoteLinePrices(
-    serviceRole,
-    companyId,
-    quoteId,
-    lineId,
-    userId
-  );
+  const quoteMaterialId = saved.data!.id;
 
   return {
     id: quoteMaterialId,

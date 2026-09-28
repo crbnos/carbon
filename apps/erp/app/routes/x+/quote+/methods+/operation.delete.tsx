@@ -1,8 +1,7 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
-import { recalculateQuoteLinePrices } from "~/modules/sales";
+import { deleteQuoteOperationWithPrices } from "~/modules/sales/sales.server";
 
 export async function action({ request }: ActionFunctionArgs) {
   const { client, companyId, userId } = await requirePermissions(request, {
@@ -21,37 +20,20 @@ export async function action({ request }: ActionFunctionArgs) {
     );
   }
 
-  // Fetch the operation's quoteId/quoteLineId before deleting
-  const op = await client
-    .from("quoteOperation")
-    .select("quoteId, quoteLineId")
-    .eq("id", id)
-    .eq("companyId", companyId)
-    .single();
+  // The delete and the line reprice are one command — the same one
+  // `sales_deleteQuoteOperation` runs over MCP.
+  const deleted = await deleteQuoteOperationWithPrices(client, {
+    quoteOperationId: id,
+    companyId,
+    userId
+  });
 
-  const { error } = await client
-    .from("quoteOperation")
-    .delete()
-    .eq("id", id)
-    .eq("companyId", companyId);
-
-  if (error) {
+  if (deleted.error && deleted.failedStep !== "recalculate") {
     return data(
-      { success: false, error: error.message },
+      { success: false, error: deleted.error.message },
       {
         status: 400
       }
-    );
-  }
-
-  if (op.data) {
-    const serviceRole = getCarbonServiceRole();
-    await recalculateQuoteLinePrices(
-      serviceRole,
-      companyId,
-      op.data.quoteId,
-      op.data.quoteLineId,
-      userId
     );
   }
 

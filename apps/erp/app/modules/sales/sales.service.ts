@@ -203,6 +203,21 @@ export async function closeSalesOrder(
     .single();
 }
 
+/**
+ * Convert a sales RFQ into a quote and price every new quote line, as the Convert button does.
+ *
+ * The `convert` edge function mints the quote and its
+ * lines (and, for Make to Order, pulls each item's method); it writes no
+ * price rows, so each line is then seeded per method type: Make to Order via
+ * `calculatePricesForQuantities`, Pull from Inventory via
+ * `resolveQuoteLinePrices`, Purchase to Order via
+ * `resolvePurchaseToOrderPrices` — one row per quantity break. A pricing
+ * failure leaves the converted quote in place and is logged, never returned:
+ * the conversion itself succeeded.
+ *
+ * Sales rules are evaluated before it runs — by the route, and by the dispatch
+ * gate for API and MCP callers.
+ */
 export async function convertSalesRfqToQuote(
   client: SupabaseClient<Database>,
   payload: {
@@ -211,12 +226,74 @@ export async function convertSalesRfqToQuote(
     userId: string;
   }
 ) {
-  return client.functions.invoke<{ convertedId: string }>("convert", {
-    body: {
-      type: "salesRfqToQuote",
-      ...payload
+  const convert = await client.functions.invoke<{ convertedId: string }>(
+    "convert",
+    {
+      body: {
+        type: "salesRfqToQuote",
+        ...payload
+      }
     }
-  });
+  );
+
+  const quoteId = convert.data?.convertedId;
+  if (convert.error || !quoteId) return convert;
+
+  const newLines = await client
+    .from("quoteLine")
+    .select("id, methodType, quantity")
+    .eq("quoteId", quoteId)
+    .eq("companyId", payload.companyId);
+
+  if (!newLines.error && newLines.data) {
+    const results = await Promise.all(
+      newLines.data.map((line) => {
+        const quantities = line.quantity ?? [1];
+        if (quantities.length === 0) return null;
+
+        switch (line.methodType) {
+          case "Make to Order":
+            return calculatePricesForQuantities(
+              client,
+              quoteId,
+              line.id,
+              quantities,
+              payload.userId
+            );
+          case "Pull from Inventory":
+            return resolveQuoteLinePrices(
+              client,
+              payload.companyId,
+              quoteId,
+              line.id,
+              quantities,
+              payload.userId
+            );
+          case "Purchase to Order":
+            return resolvePurchaseToOrderPrices(
+              client,
+              payload.companyId,
+              quoteId,
+              line.id,
+              quantities,
+              payload.userId
+            );
+          default:
+            return null;
+        }
+      })
+    );
+    for (const result of results) {
+      if (result && "error" in result && result.error) {
+        logger.error("Failed to price a converted quote line", {
+          quoteId,
+          error: result.error
+        });
+      }
+    }
+  }
+
+  return convert;
 }
 
 export async function convertQuoteToOrder(
@@ -2104,12 +2181,70 @@ export async function insertSalesOrderLines(
   return client.from("salesOrderLine").insert(linesWithDefaults).select("id");
 }
 
+/**
+ * Send a quote as the Finalize button does, without the PDF or email: refresh the share link, set completedDate, mark it Sent and its lines Complete.
+ *
+ * The share link is refreshed with the quote's expiry and customer, and
+ * `completedDate` is stamped when a new link is issued. This is the whole
+ * state change the Finalize button makes;
+ * the route adds the PDF (stored as a Quote document) and the optional
+ * customer email around it, which this function does not do. Sales rules are
+ * evaluated before it runs — by the route, and by the dispatch gate for API
+ * and MCP callers, where an error-severity violation refuses the call.
+ *
+ * `quoteId` is the quote's uuid (not the readable Q-number); an id that is not
+ * a quote of `companyId` returns an error and writes nothing.
+ */
 export async function finalizeQuote(
   client: SupabaseClient<Database>,
   quoteId: string,
   userId: string,
   companyId: string
 ) {
+  const quote = await client
+    .from("quote")
+    .select("id, externalLinkId, customerId, expirationDate")
+    .eq("id", quoteId)
+    .eq("companyId", companyId)
+    .maybeSingle();
+  if (quote.error) return quote;
+  if (!quote.data) {
+    return {
+      data: null,
+      error: { message: `Quote ${quoteId} not found` } as PostgrestError
+    };
+  }
+
+  // The share link carries the quote's current expiry and customer. A failed
+  // link write never blocks the send (the Finalize route has always ignored
+  // it); completedDate is stamped only when a new link is issued.
+  const externalLink = await upsertExternalLink(client, {
+    id: quote.data.externalLinkId ?? undefined,
+    documentType: "Quote",
+    documentId: quoteId,
+    customerId: quote.data.customerId,
+    expiresAt: quote.data.expirationDate,
+    companyId
+  });
+  if (externalLink.error) {
+    logger.error("Failed to refresh the quote share link", {
+      quoteId,
+      error: externalLink.error
+    });
+  } else if (
+    externalLink.data &&
+    quote.data.externalLinkId !== externalLink.data.id
+  ) {
+    await client
+      .from("quote")
+      .update({
+        externalLinkId: externalLink.data.id,
+        completedDate: datetime.timestamp()
+      })
+      .eq("id", quoteId)
+      .eq("companyId", companyId);
+  }
+
   const quoteUpdate = await client
     .from("quote")
     .update({
@@ -2117,7 +2252,8 @@ export async function finalizeQuote(
       updatedAt: datetime.timestamp(),
       updatedBy: userId
     })
-    .eq("id", quoteId);
+    .eq("id", quoteId)
+    .eq("companyId", companyId);
 
   if (quoteUpdate.error) {
     return quoteUpdate;
@@ -2131,7 +2267,8 @@ export async function finalizeQuote(
       updatedBy: userId
     })
     .neq("status", "No Quote")
-    .eq("quoteId", quoteId);
+    .eq("quoteId", quoteId)
+    .eq("companyId", companyId);
 
   // Gated on the quote reaching 'Sent' (the early return above), not on the
   // line write — a zero-line quote is still sent.

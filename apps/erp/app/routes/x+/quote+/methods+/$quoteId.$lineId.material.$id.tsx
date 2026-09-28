@@ -5,11 +5,8 @@ import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
-import {
-  quoteMaterialValidator,
-  recalculateQuoteLinePrices,
-  upsertQuoteMaterial
-} from "~/modules/sales";
+import { quoteMaterialValidator } from "~/modules/sales";
+import { saveQuoteMaterialWithPrices } from "~/modules/sales/sales.server";
 import { requireCompanyRecord } from "~/modules/shared/shared.server";
 import { setCustomFields } from "~/utils/form";
 
@@ -57,7 +54,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
       : undefined
   ]);
 
-  const updateQuoteMaterial = await upsertQuoteMaterial(serviceRole, {
+  // The update and the line reprice are one command — the same one
+  // `sales_upsertQuoteMaterial` runs over MCP.
+  const saved = await saveQuoteMaterialWithPrices(serviceRole, {
     quoteId,
     quoteLineId: lineId,
     ...validation.data,
@@ -66,42 +65,22 @@ export async function action({ request, params }: ActionFunctionArgs) {
     updatedBy: userId,
     customFields: setCustomFields(formData)
   });
-  if (updateQuoteMaterial.error) {
+  // A failed reprice leaves the saved material in place; the route never
+  // surfaced it.
+  if (saved.error && saved.failedStep !== "recalculate") {
     return data(
       {
         id: null
       },
-      await flash(
-        request,
-        error(updateQuoteMaterial.error, "Failed to update quote material")
-      )
+      await flash(request, error(saved.cause, saved.error.message))
     );
   }
 
-  const quoteMaterialId = updateQuoteMaterial.data?.id;
-  if (!quoteMaterialId) {
-    return data(
-      {
-        id: null
-      },
-      await flash(
-        request,
-        error(updateQuoteMaterial, "Failed to update quote material")
-      )
-    );
-  }
-
-  await recalculateQuoteLinePrices(
-    serviceRole,
-    companyId,
-    quoteId,
-    lineId,
-    userId
-  );
+  const quoteMaterialId = saved.data!.id;
 
   return {
     id: quoteMaterialId,
-    methodType: updateQuoteMaterial.data.methodType,
+    methodType: saved.data!.methodType,
     success: true,
     message: "Material updated"
   };

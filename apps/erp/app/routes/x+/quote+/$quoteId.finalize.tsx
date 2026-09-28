@@ -14,7 +14,6 @@ import { validationError, validator } from "@carbon/form";
 import { trigger } from "@carbon/jobs";
 import { getLogger } from "@carbon/logger";
 import type { Violation } from "@carbon/utils";
-import { datetime } from "@carbon/utils";
 import { renderAsync } from "@react-email/components";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
@@ -28,7 +27,6 @@ import {
 } from "~/modules/sales";
 import { recordSalesRuleOutcome } from "~/modules/sales/sales.server";
 import { getCompany, getCompanySettings } from "~/modules/settings";
-import { upsertExternalLink } from "~/modules/shared";
 import { requireCompanyRecord } from "~/modules/shared/shared.server";
 import { getUser } from "~/modules/users/users.server";
 import { loader as pdfLoader } from "~/routes/file+/quote+/$id[.]pdf";
@@ -70,7 +68,7 @@ export async function action(args: ActionFunctionArgs) {
   // customer. Lines can arrive here from paths the per-line check never saw
   // (RFQ conversion, duplication, integrations, the API), and a line that
   // passed earlier may violate a rule authored since or a ship-to that changed.
-  // Runs before the external link + PDF so a blocked quote produces neither.
+  // Runs before the PDF and the share link so a blocked quote produces neither.
   const formData = await request.clone().formData();
   const acknowledged = formData.get("acknowledged") === "true";
   let violations: Violation[];
@@ -113,25 +111,6 @@ export async function action(args: ActionFunctionArgs) {
       ruleNames
     });
     return { violations: deduped, ruleNames };
-  }
-
-  const externalLink = await upsertExternalLink(client, {
-    id: quote.data.externalLinkId ?? undefined, // TODO
-    documentType: "Quote",
-    documentId: quoteId,
-    customerId: quote.data.customerId,
-    expiresAt: quote.data.expirationDate,
-    companyId
-  });
-
-  if (externalLink.data && quote.data.externalLinkId !== externalLink.data.id) {
-    await client
-      .from("quote")
-      .update({
-        externalLinkId: externalLink.data.id,
-        completedDate: datetime.timestamp()
-      })
-      .eq("id", quoteId);
   }
 
   try {
@@ -188,6 +167,8 @@ export async function action(args: ActionFunctionArgs) {
       );
     }
 
+    // finalizeQuote also refreshes the share link and stamps completedDate —
+    // the same call `sales_finalizeQuote` makes over MCP.
     const finalize = await finalizeQuote(client, quoteId, userId, companyId);
     if (finalize.error) {
       throw redirect(

@@ -69,6 +69,7 @@ vi.mock("~/modules/sales/sales.service", () => ({
   updateQuoteLineOrder: spies.updateQuoteLineOrder,
   insertSalesOrder: spies.insertSalesOrder
 }));
+vi.mock("~/modules/sales/sales.mcp.server", () => ({}));
 vi.mock("~/modules/settings/settings.service", () => ({}));
 // The sales-rule gate imports `~/modules/sales/sales.server` and
 // `@carbon/ee/rules.server` — both server-only graphs (glossary/lingui, env

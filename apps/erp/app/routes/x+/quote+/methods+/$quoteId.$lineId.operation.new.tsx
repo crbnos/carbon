@@ -5,11 +5,8 @@ import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
-import {
-  quoteOperationValidator,
-  recalculateQuoteLinePrices,
-  upsertQuoteOperation
-} from "~/modules/sales";
+import { quoteOperationValidator } from "~/modules/sales";
+import { saveQuoteOperationWithPrices } from "~/modules/sales/sales.server";
 import { requireCompanyRecord } from "~/modules/shared/shared.server";
 import { setCustomFields } from "~/utils/form";
 
@@ -50,7 +47,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
     })
   ]);
 
-  const insertQuoteOperation = await upsertQuoteOperation(client, {
+  // The insert and the line reprice are one command — the same one
+  // `sales_upsertQuoteOperation` runs over MCP.
+  const saved = await saveQuoteOperationWithPrices(client, {
     ...validation.data,
     quoteId,
     quoteLineId: lineId,
@@ -58,38 +57,16 @@ export async function action({ request, params }: ActionFunctionArgs) {
     createdBy: userId,
     customFields: setCustomFields(formData)
   });
-  if (insertQuoteOperation.error) {
+  if (saved.error && saved.failedStep !== "recalculate") {
     return data(
       {
         id: null
       },
-      await flash(
-        request,
-        error(insertQuoteOperation.error, "Failed to insert quote operation")
-      )
+      await flash(request, error(saved.cause, saved.error.message))
     );
   }
 
-  const quoteOperationId = insertQuoteOperation.data?.id;
-  if (!quoteOperationId) {
-    return data(
-      {
-        id: null
-      },
-      await flash(
-        request,
-        error(insertQuoteOperation, "Failed to insert quote operation")
-      )
-    );
-  }
-
-  await recalculateQuoteLinePrices(
-    serviceRole,
-    companyId,
-    quoteId,
-    lineId,
-    userId
-  );
+  const quoteOperationId = saved.data!.id;
 
   return {
     id: quoteOperationId,
