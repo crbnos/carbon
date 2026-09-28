@@ -12,6 +12,7 @@
 // the two drift.
 
 import * as accountFunctions from "~/modules/account/account.service";
+import * as accountingMcpFunctions from "~/modules/accounting/accounting.mcp.server";
 import * as accountingFunctions from "~/modules/accounting/accounting.service";
 import * as documentsFunctions from "~/modules/documents/documents.service";
 import * as inventoryFunctions from "~/modules/inventory/inventory.service";
@@ -33,7 +34,7 @@ import * as usersFunctions from "~/modules/users/users.service";
 // Combine all functions into a single registry.
 export const functionRegistry = {
   account: accountFunctions,
-  accounting: accountingFunctions,
+  accounting: { ...accountingFunctions, ...accountingMcpFunctions },
   documents: documentsFunctions,
   inventory: inventoryFunctions,
   invoicing: invoicingFunctions,

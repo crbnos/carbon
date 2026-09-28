@@ -6,10 +6,9 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { redirect, useLoaderData, useNavigate } from "react-router";
 import {
   fixedAssetDisposalValidator,
-  getFixedAsset,
-  getOrCreateAccountingPeriod
+  getFixedAsset
 } from "~/modules/accounting";
-import { postDisposal } from "~/modules/accounting/accounting.server";
+import { disposeFixedAsset } from "~/modules/accounting/accounting.server";
 import { FixedAssetDisposalForm } from "~/modules/accounting/ui/FixedAssets";
 import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
@@ -69,82 +68,18 @@ export async function action({ request, params }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
-  const { disposalDate } = validation.data;
-  const disposalMethod = "Scrapping";
-
-  const [asset, dimensionsResult] = await Promise.all([
-    client
-      .from("fixedAsset")
-      .select("*, fixedAssetClass:fixedAssetClassId(*)")
-      .eq("id", fixedAssetId)
-      .eq("companyId", companyId)
-      .single(),
-    client
-      .from("dimension")
-      .select("id, entityType")
-      .eq("companyGroupId", companyGroupId)
-      .eq("active", true)
-  ]);
-
-  if (asset.error) {
-    throw redirect(
-      path.to.fixedAsset(fixedAssetId),
-      await flash(request, error(asset.error, "Failed to get asset"))
-    );
-  }
-
-  const assetClass = asset.data.fixedAssetClass as any;
-  const acquisitionCost = Number(asset.data.acquisitionCost);
-  const accumulatedDepreciation = Number(asset.data.accumulatedDepreciation);
-
-  const accountingPeriod = await getOrCreateAccountingPeriod(
-    client,
+  const result = await disposeFixedAsset(client, getDatabaseClient(), {
+    fixedAssetId,
+    disposalDate: validation.data.disposalDate,
     companyId,
-    disposalDate,
-    "accounting"
-  );
-  if (accountingPeriod.error) {
+    companyGroupId,
+    userId
+  });
+
+  if (result.error) {
     throw redirect(
       path.to.fixedAsset(fixedAssetId),
-      await flash(
-        request,
-        error(accountingPeriod.error, "Failed to get accounting period")
-      )
-    );
-  }
-
-  const locationDimensionId = (dimensionsResult.data ?? []).find(
-    (d) => d.entityType === "Location"
-  )?.id;
-
-  const assetClassDimensionId = (dimensionsResult.data ?? []).find(
-    (d) => d.entityType === "FixedAssetClass"
-  )?.id;
-
-  try {
-    await postDisposal(getDatabaseClient(), {
-      fixedAssetId,
-      fixedAssetReadableId: asset.data.fixedAssetId,
-      disposalDate,
-      disposalMethod,
-      acquisitionCost,
-      accumulatedDepreciation,
-      locationId: asset.data.locationId,
-      fixedAssetClassId: asset.data.fixedAssetClassId,
-      assetAccountId: assetClass.assetAccountId,
-      accumulatedDepreciationAccountId:
-        assetClass.accumulatedDepreciationAccountId,
-      lossOnDisposalAccountId: assetClass.lossOnDisposalAccountId,
-      accountingPeriodId: accountingPeriod.data!,
-      locationDimensionId,
-      assetClassDimensionId,
-      companyId,
-      userId
-    });
-  } catch (err) {
-    throw redirect(
-      path.to.fixedAsset(fixedAssetId),
-      await flash(request, error(err, "Failed to post asset disposal"))
+      await flash(request, error(result.error.cause, result.error.flash))
     );
   }
 

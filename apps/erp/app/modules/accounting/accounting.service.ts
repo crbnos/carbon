@@ -6034,6 +6034,12 @@ export async function getFixedAssetsListForSale(
     .order("fixedAssetId");
 }
 
+/**
+ * Create a fixed asset. It always starts as Draft: registering it (Draft →
+ * Active, with the acquisition journal when accounting is enabled) is
+ * `accounting_registerFixedAsset`, never a status on create. Omit
+ * `fixedAssetId` to take the next number from the fixedAsset sequence.
+ */
 export async function insertFixedAsset(
   client: SupabaseClient<Database>,
   input: {
@@ -6049,7 +6055,6 @@ export async function insertFixedAsset(
     residualValuePercent: number;
     assetLifetimeUsage?: number | null;
     locationId?: string;
-    status?: string;
     taxDepreciationMethod?: string | null;
     taxUsefulLifeMonths?: number | null;
     taxResidualValuePercent?: number | null;
@@ -6095,7 +6100,7 @@ export async function insertFixedAsset(
       residualValuePercent: input.residualValuePercent,
       assetLifetimeUsage: input.assetLifetimeUsage ?? null,
       locationId: input.locationId ?? null,
-      status: (input.status as any) ?? "Draft",
+      status: "Draft",
       taxDepreciationMethod: (input.taxDepreciationMethod as any) ?? null,
       taxUsefulLifeMonths: input.taxUsefulLifeMonths ?? null,
       taxResidualValuePercent: input.taxResidualValuePercent ?? null,
@@ -6154,7 +6159,13 @@ export async function updateFixedAsset(
   return { data: { id: result.data.id }, error: null };
 }
 
-/** @deprecated Use insertFixedAsset for new assets, updateFixedAsset for existing assets */
+/**
+ * @deprecated Use insertFixedAsset for new assets, updateFixedAsset for existing assets.
+ *
+ * `status` is ignored: an asset is created Draft and changes status only
+ * through register, dispose and depreciation posting, which write the journal
+ * that goes with the change.
+ */
 export async function upsertFixedAsset(
   client: SupabaseClient<Database>,
   data:
@@ -6166,13 +6177,14 @@ export async function upsertFixedAsset(
     | (Record<string, any> & { id: string; updatedBy: string })
 ) {
   if ("createdBy" in data) {
+    const { status: _status, ...insert } = data;
     return client
       .from("fixedAsset")
-      .insert([data as any])
+      .insert([{ ...insert, status: "Draft" } as any])
       .select("id")
       .single();
   }
-  const { id, ...rest } = data;
+  const { id, status: _status, ...rest } = data;
   return client
     .from("fixedAsset")
     .update(sanitize(rest))

@@ -6,14 +6,28 @@ import { getNextSequence } from "@carbon/database/sequence";
 import type { ReportPeriodBucket } from "@carbon/utils";
 import { toStoredAmount } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { getCompanySettings } from "~/modules/settings";
+import {
+  type CommandResult,
+  commandError,
+  commandOk
+} from "~/utils/command-result";
 import {
   applyCtaToReportPeriodSeries,
   getAccountLedger,
   getAccountLedgerSummary,
+  getBaseCurrencyDecimalPlaces,
   getConsolidatedBalances,
-  getConsolidatedPeriodSeries
+  getConsolidatedPeriodSeries,
+  getDefaultAccounts,
+  getOrCreateAccountingPeriod,
+  insertDepreciationRun
 } from "./accounting.service";
-import { acquisitionLines } from "./accounting.utils";
+import {
+  acquisitionLines,
+  buildDepreciationLines,
+  getNextPeriodEnd
+} from "./accounting.utils";
 
 /** Resolve only the authorized group's root CTA configuration for reporting.
  * Operating-company balances continue to use the loader's RLS client.
@@ -481,7 +495,7 @@ type DepreciationRunLine = {
   };
 };
 
-export async function postDepreciationRun(
+export async function postDepreciationRunJournals(
   db: Kysely<KyselyDatabase>,
   args: {
     depreciationRunId: string;
@@ -804,4 +818,544 @@ export async function postDepreciationRun(
       .where("companyId", "=", companyId)
       .execute();
   });
+}
+
+// ---------------------------------------------------------------------------
+// Fixed-asset commands.
+//
+// Each one is the body of its ERP route action (register, dispose, post a
+// depreciation run): the derivation of period, dimensions and class accounts,
+// then the Kysely posting above. The routes reduce to parse + call + flash, and
+// `accounting.mcp.server.ts` exposes the same commands as tools, so the two
+// paths cannot drift. Errors carry the route's flash text (see
+// `~/utils/command-result`).
+// ---------------------------------------------------------------------------
+
+type FixedAssetCommandContext = {
+  companyId: string;
+  companyGroupId: string;
+  userId: string;
+};
+
+async function getActiveDimensionIds(
+  client: SupabaseClient<Database>,
+  companyGroupId: string
+) {
+  const dimensions = await client
+    .from("dimension")
+    .select("id, entityType")
+    .eq("companyGroupId", companyGroupId)
+    .eq("active", true);
+  return {
+    error: dimensions.error,
+    locationDimensionId: (dimensions.data ?? []).find(
+      (d) => d.entityType === "Location"
+    )?.id,
+    assetClassDimensionId: (dimensions.data ?? []).find(
+      (d) => d.entityType === "FixedAssetClass"
+    )?.id
+  };
+}
+
+/**
+ * Register a Draft fixed asset (Draft → Active). With accounting enabled it
+ * posts the acquisition journal (`postAssetRegistration`) and flips the status
+ * in one transaction; with accounting disabled it is a plain status flip that
+ * matches only a Draft row. Body of `x+/fixed-asset+/$fixedAssetId.register`.
+ */
+export async function registerFixedAsset(
+  client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
+  args: FixedAssetCommandContext & {
+    fixedAssetId: string;
+    registration: {
+      acquisitionCost: number;
+      acquisitionDate: string;
+      accumulatedDepreciation: number;
+      depreciationStartDate: string;
+    };
+  }
+): Promise<CommandResult<{ id: string; status: "Active" }>> {
+  const { fixedAssetId, registration, companyId, companyGroupId, userId } =
+    args;
+
+  const companySettings = await getCompanySettings(client, companyId);
+  if (companySettings.error) {
+    return commandError(
+      "Failed to load company settings",
+      companySettings.error
+    );
+  }
+  const accountingEnabled =
+    (companySettings.data as { accountingEnabled?: boolean } | null)
+      ?.accountingEnabled ?? false;
+
+  // With accounting on, capitalize the asset with a real GL entry
+  // (Dr asset / Cr owner equity) rather than a bare status flip, so no
+  // capitalized asset exists without a journal.
+  if (accountingEnabled) {
+    const [asset, defaults, dimensions, accountingPeriod] = await Promise.all([
+      client
+        .from("fixedAsset")
+        .select(
+          "fixedAssetId, locationId, fixedAssetClassId, fixedAssetClass:fixedAssetClassId(assetAccountId, accumulatedDepreciationAccountId)"
+        )
+        .eq("id", fixedAssetId)
+        .eq("companyId", companyId)
+        .single(),
+      getDefaultAccounts(client, companyId),
+      getActiveDimensionIds(client, companyGroupId),
+      getOrCreateAccountingPeriod(
+        client,
+        companyId,
+        registration.acquisitionDate,
+        "accounting"
+      )
+    ]);
+
+    if (asset.error || !asset.data) {
+      return commandError("Failed to get fixed asset", asset.error);
+    }
+    if (accountingPeriod.error || !accountingPeriod.data) {
+      return commandError(
+        "Failed to get accounting period",
+        accountingPeriod.error
+      );
+    }
+    if (dimensions.error) {
+      return commandError("Failed to resolve dimensions", dimensions.error);
+    }
+
+    const assetClass = asset.data.fixedAssetClass as {
+      assetAccountId: string;
+      accumulatedDepreciationAccountId: string;
+    } | null;
+    const assetAccountId = assetClass?.assetAccountId;
+    const accumulatedDepreciationAccountId =
+      assetClass?.accumulatedDepreciationAccountId;
+    const offsetAccountId = defaults.data?.retainedEarningsAccount;
+
+    if (
+      !assetAccountId ||
+      !accumulatedDepreciationAccountId ||
+      !offsetAccountId
+    ) {
+      return commandError(
+        "Missing GL accounts for asset registration. Configure the asset class and default accounts.",
+        defaults.error
+      );
+    }
+
+    const { locationDimensionId, assetClassDimensionId } = dimensions;
+    if (!locationDimensionId || !assetClassDimensionId) {
+      return commandError("Missing dimensions required for asset registration");
+    }
+
+    try {
+      await postAssetRegistration(db, {
+        fixedAssetId,
+        fixedAssetReadableId: asset.data.fixedAssetId,
+        registration,
+        locationId: asset.data.locationId,
+        fixedAssetClassId: asset.data.fixedAssetClassId,
+        assetAccountId,
+        accumulatedDepreciationAccountId,
+        offsetAccountId,
+        accountingPeriodId: accountingPeriod.data,
+        locationDimensionId,
+        assetClassDimensionId,
+        companyId,
+        userId
+      });
+    } catch (err) {
+      return commandError("Failed to register asset", err);
+    }
+
+    return commandOk({ id: fixedAssetId, status: "Active" as const });
+  }
+
+  // Accounting disabled — a plain status flip (no journal). Select the affected
+  // row back so a concurrent update that already moved the asset out of Draft
+  // (zero rows matched) is treated as a failure rather than a false success.
+  const result = await client
+    .from("fixedAsset")
+    .update({
+      ...registration,
+      status: "Active",
+      updatedBy: userId
+    })
+    .eq("id", fixedAssetId)
+    .eq("companyId", companyId)
+    .eq("status", "Draft")
+    .select("id");
+
+  if (result.error) {
+    return commandError("Failed to register asset", result.error);
+  }
+  if (!result.data || result.data.length === 0) {
+    return commandError("Only Draft assets can be registered");
+  }
+
+  return commandOk({ id: fixedAssetId, status: "Active" as const });
+}
+
+/**
+ * Scrap an Active or Fully Depreciated fixed asset (→ Disposed): posts the
+ * disposal journal, writes the `fixedAssetDisposal` row and flips the status in
+ * one transaction (`postDisposal`, method "Scrapping"). Body of
+ * `x+/fixed-asset+/$fixedAssetId.dispose`, including the status rule its loader
+ * enforces before the form opens.
+ */
+export async function disposeFixedAsset(
+  client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
+  args: FixedAssetCommandContext & {
+    fixedAssetId: string;
+    disposalDate: string;
+  }
+): Promise<CommandResult<{ id: string; status: "Disposed" }>> {
+  const { fixedAssetId, disposalDate, companyId, companyGroupId, userId } =
+    args;
+  const disposalMethod = "Scrapping";
+
+  const [asset, dimensions] = await Promise.all([
+    client
+      .from("fixedAsset")
+      .select("*, fixedAssetClass:fixedAssetClassId(*)")
+      .eq("id", fixedAssetId)
+      .eq("companyId", companyId)
+      .single(),
+    getActiveDimensionIds(client, companyGroupId)
+  ]);
+
+  if (asset.error) {
+    return commandError("Failed to get asset", asset.error);
+  }
+
+  if (
+    asset.data.status !== "Active" &&
+    asset.data.status !== "Fully Depreciated"
+  ) {
+    return commandError(
+      "Only Active or Fully Depreciated assets can be disposed"
+    );
+  }
+
+  const assetClass = asset.data.fixedAssetClass as {
+    assetAccountId: string;
+    accumulatedDepreciationAccountId: string;
+    lossOnDisposalAccountId: string;
+  };
+
+  const accountingPeriod = await getOrCreateAccountingPeriod(
+    client,
+    companyId,
+    disposalDate,
+    "accounting"
+  );
+  if (accountingPeriod.error) {
+    return commandError(
+      "Failed to get accounting period",
+      accountingPeriod.error
+    );
+  }
+
+  try {
+    await postDisposal(db, {
+      fixedAssetId,
+      fixedAssetReadableId: asset.data.fixedAssetId,
+      disposalDate,
+      disposalMethod,
+      acquisitionCost: Number(asset.data.acquisitionCost),
+      accumulatedDepreciation: Number(asset.data.accumulatedDepreciation),
+      locationId: asset.data.locationId,
+      fixedAssetClassId: asset.data.fixedAssetClassId,
+      assetAccountId: assetClass.assetAccountId,
+      accumulatedDepreciationAccountId:
+        assetClass.accumulatedDepreciationAccountId,
+      lossOnDisposalAccountId: assetClass.lossOnDisposalAccountId,
+      accountingPeriodId: accountingPeriod.data!,
+      locationDimensionId: dimensions.locationDimensionId,
+      assetClassDimensionId: dimensions.assetClassDimensionId,
+      companyId,
+      userId
+    });
+  } catch (err) {
+    return commandError("Failed to post asset disposal", err);
+  }
+
+  return commandOk({ id: fixedAssetId, status: "Disposed" as const });
+}
+
+/**
+ * Post a Draft depreciation run (→ Posted): one depreciation journal per line,
+ * the asset's accumulated depreciation advanced (Fully Depreciated at
+ * residual), and the deferred-tax entry when tax depreciation is enabled — all
+ * in one transaction (`postDepreciationRunJournals`). Body of
+ * `x+/depreciation-run+/$depreciationRunId.post`.
+ */
+export async function postDepreciationRun(
+  client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
+  args: FixedAssetCommandContext & { depreciationRunId: string }
+): Promise<CommandResult<{ id: string; status: "Posted" }>> {
+  const { depreciationRunId, companyId, companyGroupId, userId } = args;
+
+  const run = await client
+    .from("depreciationRun")
+    .select("*")
+    .eq("id", depreciationRunId)
+    .eq("companyId", companyId)
+    .single();
+
+  if (run.error || run.data.status !== "Draft") {
+    return commandError("Run is not in Draft status", run.error);
+  }
+
+  const [companySettingsResult, accountDefaultsResult] = await Promise.all([
+    client
+      .from("companySettings")
+      .select("assetTaxDepreciationEnabled, assetTaxRate")
+      .eq("id", companyId)
+      .single(),
+    client
+      .from("accountDefault")
+      .select("deferredTaxLiabilityAccountId, deferredTaxExpenseAccountId")
+      .eq("companyId", companyId)
+      .single()
+  ]);
+
+  const taxSettings = companySettingsResult.data as {
+    assetTaxDepreciationEnabled?: boolean | null;
+    assetTaxRate?: number | null;
+  } | null;
+  const taxEnabled = taxSettings?.assetTaxDepreciationEnabled ?? false;
+  const taxRate = taxSettings?.assetTaxRate
+    ? Number(taxSettings.assetTaxRate)
+    : null;
+  const taxAccounts = accountDefaultsResult.data as {
+    deferredTaxLiabilityAccountId?: string | null;
+    deferredTaxExpenseAccountId?: string | null;
+  } | null;
+  const dtlAccountId = taxAccounts?.deferredTaxLiabilityAccountId ?? null;
+  const dtExpenseAccountId = taxAccounts?.deferredTaxExpenseAccountId ?? null;
+
+  const [linesResult, dimensions] = await Promise.all([
+    client
+      .from("depreciationRunLine")
+      .select(
+        "id, fixedAssetId, amount, taxAmount, fixedAsset:fixedAssetId(id, fixedAssetId, locationId, fixedAssetClassId, acquisitionCost, accumulatedDepreciation, accumulatedTaxDepreciation, residualValuePercent, usefulLifeMonths, fixedAssetClass:fixedAssetClassId(depreciationExpenseAccountId, accumulatedDepreciationAccountId))"
+      )
+      .eq("depreciationRunId", depreciationRunId),
+    getActiveDimensionIds(client, companyGroupId)
+  ]);
+
+  if (linesResult.error) {
+    return commandError("Failed to fetch run lines", linesResult.error);
+  }
+
+  const postingDate = run.data.periodEnd;
+
+  const accountingPeriod = await getOrCreateAccountingPeriod(
+    client,
+    companyId,
+    postingDate,
+    "accounting"
+  );
+  if (accountingPeriod.error) {
+    return commandError(
+      "Failed to get accounting period",
+      accountingPeriod.error
+    );
+  }
+
+  type RunLineAsset = {
+    fixedAssetId: string;
+    locationId: string | null;
+    fixedAssetClassId: string;
+    acquisitionCost: number;
+    accumulatedDepreciation: number;
+    accumulatedTaxDepreciation: number | null;
+    residualValuePercent: number;
+    fixedAssetClass: {
+      depreciationExpenseAccountId: string | null;
+      accumulatedDepreciationAccountId: string | null;
+    } | null;
+  } | null;
+
+  // Validate all lines have required account configuration
+  for (const line of linesResult.data) {
+    const asset = line.fixedAsset as unknown as RunLineAsset;
+    const assetClass = asset?.fixedAssetClass;
+    if (
+      !assetClass?.depreciationExpenseAccountId ||
+      !assetClass?.accumulatedDepreciationAccountId
+    ) {
+      return commandError(
+        `Asset ${asset?.fixedAssetId ?? line.fixedAssetId} is missing depreciation account configuration`
+      );
+    }
+  }
+
+  const lines = linesResult.data.map((line) => {
+    const asset = line.fixedAsset as unknown as NonNullable<RunLineAsset>;
+    const assetClass = asset.fixedAssetClass!;
+    return {
+      id: line.id,
+      fixedAssetId: line.fixedAssetId,
+      amount: Number(line.amount),
+      taxAmount: Number(line.taxAmount ?? 0),
+      asset: {
+        fixedAssetId: asset.fixedAssetId,
+        locationId: asset.locationId,
+        fixedAssetClassId: asset.fixedAssetClassId,
+        acquisitionCost: Number(asset.acquisitionCost),
+        accumulatedDepreciation: Number(asset.accumulatedDepreciation),
+        accumulatedTaxDepreciation: Number(
+          asset.accumulatedTaxDepreciation ?? 0
+        ),
+        residualValuePercent: Number(asset.residualValuePercent),
+        depreciationExpenseAccountId: assetClass.depreciationExpenseAccountId!,
+        accumulatedDepreciationAccountId:
+          assetClass.accumulatedDepreciationAccountId!
+      }
+    };
+  });
+
+  try {
+    await postDepreciationRunJournals(db, {
+      depreciationRunId,
+      depreciationRunReadableId: run.data.depreciationRunId,
+      postingDate,
+      accountingPeriodId: accountingPeriod.data!,
+      lines,
+      locationDimensionId: dimensions.locationDimensionId,
+      assetClassDimensionId: dimensions.assetClassDimensionId,
+      taxEnabled,
+      taxRate,
+      dtlAccountId,
+      dtExpenseAccountId,
+      companyId,
+      userId
+    });
+  } catch (err) {
+    return commandError("Failed to post depreciation run", err);
+  }
+
+  return commandOk({ id: depreciationRunId, status: "Posted" as const });
+}
+
+/**
+ * Create the next period's Draft depreciation run: the period after the latest
+ * run (posted or draft), refused when a run already exists for it, with one
+ * line per Active asset computed by `buildDepreciationLines` against the last
+ * POSTED run and the period's usage logs. Body of
+ * `x+/accounting+/depreciation-runs.new`. Client writes only (RLS-bound).
+ */
+export async function createDepreciationRun(
+  client: SupabaseClient<Database>,
+  args: FixedAssetCommandContext
+): Promise<CommandResult<{ id: string; depreciationRunId: string }>> {
+  const { companyId, companyGroupId, userId } = args;
+
+  // Find the last run (posted or draft) to determine the next period
+  const lastRun = await client
+    .from("depreciationRun")
+    .select("periodEnd, status")
+    .eq("companyId", companyId)
+    .order("periodEnd", { ascending: false })
+    .limit(1);
+
+  const lastPeriodEnd =
+    lastRun.data && lastRun.data.length > 0 ? lastRun.data[0].periodEnd : null;
+
+  const periodEnd = getNextPeriodEnd(lastPeriodEnd);
+
+  // Check for existing run at this period
+  const existing = await client
+    .from("depreciationRun")
+    .select("id")
+    .eq("periodEnd", periodEnd)
+    .eq("companyId", companyId);
+
+  if (existing.data && existing.data.length > 0) {
+    return commandError("A depreciation run already exists for this period");
+  }
+
+  const companySettings = await client
+    .from("companySettings")
+    .select("assetTaxDepreciationEnabled")
+    .eq("id", companyId)
+    .single();
+
+  const taxEnabled =
+    (
+      companySettings.data as {
+        assetTaxDepreciationEnabled?: boolean | null;
+      } | null
+    )?.assetTaxDepreciationEnabled ?? false;
+
+  const assets = await client
+    .from("fixedAsset")
+    .select("*")
+    .eq("companyId", companyId)
+    .eq("status", "Active");
+
+  if (assets.error) {
+    return commandError("Failed to fetch assets", assets.error);
+  }
+
+  // For depreciation calculation, use last *posted* run
+  const lastPostedRun = await client
+    .from("depreciationRun")
+    .select("periodEnd")
+    .eq("companyId", companyId)
+    .eq("status", "Posted")
+    .order("periodEnd", { ascending: false })
+    .limit(1);
+
+  const lastPostedPeriodEnd =
+    lastPostedRun.data && lastPostedRun.data.length > 0
+      ? lastPostedRun.data[0].periodEnd
+      : null;
+
+  const usageLogs = await client
+    .from("fixedAssetUsageLog")
+    .select("fixedAssetId, unitsProduced")
+    .eq("periodEnd", periodEnd);
+
+  const usageMap = new Map(
+    (usageLogs.data ?? []).map((u) => [u.fixedAssetId, u])
+  );
+
+  const lines = buildDepreciationLines(
+    (assets.data ?? []).map((a) => ({
+      ...a,
+      accumulatedTaxDepreciation: Number(a.accumulatedTaxDepreciation ?? 0),
+      taxDepreciationMethod: a.taxDepreciationMethod ?? null,
+      taxUsefulLifeMonths: a.taxUsefulLifeMonths ?? null,
+      taxResidualValuePercent: a.taxResidualValuePercent ?? null,
+      macrsPropertyClass: a.macrsPropertyClass ?? null,
+      macrsConvention: a.macrsConvention ?? null,
+      bonusDepreciationPercent: a.bonusDepreciationPercent ?? null
+    })),
+    periodEnd,
+    lastPostedPeriodEnd,
+    taxEnabled,
+    usageMap,
+    await getBaseCurrencyDecimalPlaces(client, companyId, companyGroupId)
+  );
+
+  const result = await insertDepreciationRun(client, {
+    periodEnd,
+    lines,
+    companyId,
+    createdBy: userId
+  });
+
+  if (result.error || !result.data) {
+    return commandError("Failed to create depreciation run", result.error);
+  }
+
+  return commandOk(result.data);
 }

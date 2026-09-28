@@ -96,7 +96,8 @@ pnpm --dir apps/erp exec vitest run app/modules/accounting
 - `translateCompanyBalances` — balance translation for multi-currency consolidation
 - `getDimensions` / `getActiveDimensionsWithValues` / `saveJournalLineDimensions` — dimension management
 - `getCostCenters` / `getCostCentersTree` — cost center hierarchy
-- `getFixedAssets` / `insertFixedAsset` / `insertDepreciationRun` — fixed asset lifecycle
+- `getFixedAssets` / `insertFixedAsset` (always Draft) / `insertDepreciationRun` — fixed asset lifecycle
+- `registerFixedAsset` / `disposeFixedAsset` / `postDepreciationRun` / `createDepreciationRun` (`accounting.server.ts`) — the fixed-asset commands the register / dispose / post / new-run routes call; `accounting.mcp.server.ts` exposes them as MCP tools
 - `createIntercompanyTransaction` / `runIntercompanyMatching` / `generateEliminations` — IC processing
 
 ## Key Exports

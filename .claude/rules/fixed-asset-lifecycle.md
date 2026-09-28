@@ -79,9 +79,18 @@ enum value (CHECK: only Fixed Asset lines have non-NULL `assetId`). The
   `getFixedAssetsListForSale` (status Active/Fully Depreciated), class CRUD,
   `insert/getDepreciationRun(s)`, `getDepreciationRunLines`,
   `getAssetDepreciationHistory`, `getFixedAssetDisposal`, usage-log helpers.
-  Note `upsertFixedAsset` is deprecated — use insert/update.
-- Server transactions (Kysely): `accounting.server.ts` — `postDisposal()` (L37)
-  and `postDepreciationRun()` (L225) build journals and update asset rows.
+  `insertFixedAsset` always writes `Draft` (no status input). Note `upsertFixedAsset`
+  is deprecated — use insert/update; it ignores `status` and creates `Draft`.
+- Commands (`accounting.server.ts`): `registerFixedAsset`, `disposeFixedAsset`,
+  `postDepreciationRun`, `createDepreciationRun` hold the route bodies (period,
+  dimensions, class accounts, accounting-disabled branch, status rules) and return a
+  `CommandResult` whose `error.flash` is the route's toast. The register / dispose /
+  depreciation-run post / new-run routes are parse → command → flash, and
+  `accounting.mcp.server.ts` exposes the same commands as MCP tools (Kysely writers
+  re-check `{ update: "accounting" }` via `requireToolPermission`).
+- Server transactions (Kysely): `accounting.server.ts` — `postAssetRegistration()`,
+  `postDisposal()` and `postDepreciationRunJournals()` build journals and update asset
+  rows; only the commands above call them.
 - Calc utils: `accounting.utils.ts` — `buildDepreciationLines()` (L447),
   `getNextPeriodEnd()` (L252), MACRS data.
 - UI: `accounting/ui/FixedAssets/` — `FixedAssetForm`, `AssetClassForm`,
@@ -98,8 +107,9 @@ enum value (CHECK: only Fixed Asset lines have non-NULL `assetId`). The
 **Acquire (Draft → Active).** Two paths set `acquisitionCost`,
 `depreciationStartDate` (if unset), and flip `status` to `Active`:
 1. Manual: create asset (Draft), then `$fixedAssetId.register` action with
-   `fixedAssetRegisterValidator`. When `companySettings.accountingEnabled`, the
-   route posts an acquisition journal via `postAssetRegistration()` inside one
+   `fixedAssetRegisterValidator` → `registerFixedAsset`. When
+   `companySettings.accountingEnabled`, it posts an acquisition journal via
+   `postAssetRegistration()` inside one
    Kysely transaction (`sourceType` `'Manual'`, description
    `Asset Registration: <readableId>`) and only then flips the asset to `Active`
    (journal first, so no capitalized asset exists without a GL entry; the whole
@@ -121,10 +131,12 @@ enum value (CHECK: only Fixed Asset lines have non-NULL `assetId`). The
    payables.
 
 **Depreciate.** Manual, in two steps — **no scheduled/cron job exists**:
-1. `depreciation-runs.new` action fetches all `Active` assets, calls
+1. `depreciation-runs.new` → `createDepreciationRun`: refuses when a run already
+   exists for the next period, fetches all `Active` assets, calls
    `buildDepreciationLines()`, inserts a `depreciationRun` (Draft) +
    `depreciationRunLine` per asset.
-2. `$depreciationRunId.post` → `postDepreciationRun()`: per asset posts
+2. `$depreciationRunId.post` → `postDepreciationRun` (refuses a non-Draft run) →
+   `postDepreciationRunJournals()`: per asset posts
    Debit `depreciationExpenseAccountId` / Credit `accumulatedDepreciationAccountId`
    (`sourceType: 'Asset Depreciation'`), bumps `accumulatedDepreciation`
    (+ tax / deferred-tax lines when enabled via company settings), sets run
@@ -135,8 +147,9 @@ depreciation, recognize proceeds, and book the net **gain/(loss) = proceeds −
 NBV** to a distinct non-operating line — never comingled with revenue. Carbon
 uses `disposalAccountId` for that gain/loss and `writeOffAccountId` as a
 **disposal clearing / holding account** in the two-step (ship → invoice) flow.
-1. Manual scrap: `$fixedAssetId.dispose` → `postDisposal()` (hardcodes
-   `Scrapping`). NBV = `acquisitionCost − accumulatedDepreciation`; proceeds = 0,
+1. Manual scrap: `$fixedAssetId.dispose` → `disposeFixedAsset` (refuses anything
+   but Active / Fully Depreciated, the rule the dispose loader shows) →
+   `postDisposal()` (hardcodes `Scrapping`). NBV = `acquisitionCost − accumulatedDepreciation`; proceeds = 0,
    so the entire NBV is a loss. Posts Debit accumulated depreciation, **Debit
    `disposalAccountId` for the full NBV loss**, Credit asset at cost
    (`sourceType: 'Asset Disposal'`), applies location/class dimensions, writes

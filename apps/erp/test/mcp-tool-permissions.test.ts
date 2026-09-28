@@ -62,7 +62,26 @@ describe("permission overrides", () => {
       // x+/settings+/custom-fields.$table.delete.$id.tsx
       settings_deleteCustomField: { module: "settings", actions: ["delete"] },
       // x+/inspection+/$id.accept.tsx, $id.partial.tsx
-      quality_dispositionInspection: { module: "quality", actions: ["update"] }
+      quality_dispositionInspection: { module: "quality", actions: ["update"] },
+      // x+/fixed-asset+/$fixedAssetId.register.tsx, .dispose.tsx
+      accounting_registerFixedAsset: {
+        module: "accounting",
+        actions: ["update"]
+      },
+      accounting_disposeFixedAsset: {
+        module: "accounting",
+        actions: ["update"]
+      },
+      // x+/depreciation-run+/$depreciationRunId.post.tsx
+      accounting_postDepreciationRun: {
+        module: "accounting",
+        actions: ["update"]
+      },
+      // x+/accounting+/depreciation-runs.new.tsx
+      accounting_createDepreciationRun: {
+        module: "accounting",
+        actions: ["create"]
+      }
     };
     for (const [name, permission] of Object.entries(expected)) {
       const t = allTools.find((t) => t.name === name);

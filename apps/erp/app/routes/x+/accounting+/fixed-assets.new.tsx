@@ -25,7 +25,6 @@ export async function action({ request }: ActionFunctionArgs) {
 
   const result = await insertFixedAsset(client, {
     ...d,
-    status: "Draft",
     companyId,
     createdBy: userId
   });

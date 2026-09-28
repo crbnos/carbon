@@ -37,6 +37,7 @@ vi.mock("~/modules/account/account.service", () => ({
 }));
 // Server-only companions (`{module}.mcp.server.ts`) are spread into the same
 // namespaces; none of the pinned cases resolve to one, so they are empty.
+vi.mock("~/modules/accounting/accounting.mcp.server", () => ({}));
 vi.mock("~/modules/quality/quality.mcp.server", () => ({}));
 vi.mock("~/modules/settings/settings.mcp.server", () => ({}));
 vi.mock("~/modules/accounting/accounting.service", () => ({
