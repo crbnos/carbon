@@ -23,6 +23,7 @@ import * as productionMcpFunctions from "~/modules/production/production.mcp.ser
 import * as productionFunctions from "~/modules/production/production.service";
 import * as purchasingFunctions from "~/modules/purchasing/purchasing.service";
 import * as qualityFunctions from "~/modules/quality/quality.service";
+import * as resourcesMcpFunctions from "~/modules/resources/resources.mcp.server";
 import * as resourcesFunctions from "~/modules/resources/resources.service";
 import * as salesMcpFunctions from "~/modules/sales/sales.mcp.server";
 import * as salesFunctions from "~/modules/sales/sales.service";
@@ -42,7 +43,7 @@ export const functionRegistry = {
   production: { ...productionFunctions, ...productionMcpFunctions },
   purchasing: purchasingFunctions,
   quality: qualityFunctions,
-  resources: resourcesFunctions,
+  resources: { ...resourcesFunctions, ...resourcesMcpFunctions },
   sales: { ...salesFunctions, ...salesMcpFunctions },
   settings: settingsFunctions,
   shared: sharedFunctions,

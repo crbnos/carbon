@@ -76,6 +76,7 @@ vi.mock("~/modules/purchasing/purchasing.service", () => ({
 vi.mock("~/modules/quality/quality.service", () => ({
   insertIssue: spies.insertIssue
 }));
+vi.mock("~/modules/resources/resources.mcp.server", () => ({}));
 vi.mock("~/modules/resources/resources.service", () => ({}));
 vi.mock("~/modules/sales/sales.service", () => ({
   upsertQuoteLinePrices: spies.upsertQuoteLinePrices,
