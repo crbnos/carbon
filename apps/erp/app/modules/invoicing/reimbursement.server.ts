@@ -1,5 +1,6 @@
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { EPSILON } from "@carbon/utils";
+import { getEdgeFunctionErrorMessage } from "~/utils/error";
 
 /**
  * The ONE module the ERP invokes `post-reimbursement` from, so the Post action
@@ -26,16 +27,19 @@ async function invokePostReimbursement(
     });
     if (result.error) {
       // A Supabase edge function puts its useful text in the BODY, not in
-      // `error.message` — unwrap it so the flash names the real refusal.
+      // `error.message` — and on a non-2xx response `result.data` is ALWAYS
+      // null, so reading the message off it left every refusal showing the
+      // fixed "Edge Function returned a non-2xx status code" wrapper. The body
+      // lives on `FunctionsHttpError.context`, which is what
+      // `getEdgeFunctionErrorMessage` unwraps.
       return {
-        error:
-          (result.data as { message?: string } | undefined)?.message ??
-          result.error.message ??
-          fallbackMessage
+        error: await getEdgeFunctionErrorMessage(result.error, fallbackMessage)
       };
     }
   } catch (err) {
-    return { error: (err as Error).message ?? fallbackMessage };
+    // `invoke` can also throw (network/abort) — the same unwrap covers a thrown
+    // FunctionsHttpError, and falls back to `err.message` otherwise.
+    return { error: await getEdgeFunctionErrorMessage(err, fallbackMessage) };
   }
 
   return { error: null };

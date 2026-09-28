@@ -8,6 +8,7 @@ import { JournalEntrySyncError } from "../../../core/posting";
 import type { ShouldSyncContext } from "../../../core/types";
 import type { Rillet, RilletLocalPayment } from "../models";
 import { buildRilletIdempotencyKey, type RilletProvider } from "../provider";
+import { RILLET_LEGACY_REIMBURSEMENT_REMOTE_KIND } from "./bill";
 import {
   loadCompanyBaseCurrency,
   loadCurrencyDecimalPlaces,
@@ -477,11 +478,16 @@ export class RilletPaymentSyncer extends PaymentSyncerBase<RilletPayment> {
     context: PaymentPushContext
   ): Promise<{ remoteId: string; compositeEntityId: string }> {
     const documentLabel = PAYMENT_TARGET_LABELS[context.targetEntityType];
-    const documentRemoteId = await this.mappingService.getExternalId(
+    // `getByEntity`, not `getExternalId`: same row, same single query (it is a
+    // `selectAll` of the identical WHERE), and the legacy `remoteKind` stamp
+    // below is on that row. Reading the id without the metadata is what lost
+    // the legacy branch.
+    const documentMapping = await this.mappingService.getByEntity(
       context.targetEntityType,
       context.targetDocumentId,
       this.provider.id
     );
+    const documentRemoteId = documentMapping?.externalId;
     if (!documentRemoteId) {
       throw new JournalEntrySyncError({
         errorCode: "UNSYNCED_DOCUMENT",
@@ -491,7 +497,21 @@ export class RilletPaymentSyncer extends PaymentSyncerBase<RilletPayment> {
       });
     }
 
-    const paysReimbursement = context.targetEntityType === "reimbursement";
+    // A native `reimbursement` target — OR a LEGACY `bill` whose remote id
+    // lives in the `/reimbursements` id space. Between #1503 (2026-09-20) and
+    // the native reimbursement entity the bill syncer wrote an
+    // employee-supplier purchase invoice to `/reimbursements` and stamped
+    // `remoteKind: "reimbursement"` on the mapping; that stamp is the ONLY
+    // record of which id space the remote id belongs to, and
+    // `RilletBillSyncer.deleteRemote` reads the same one for the void.
+    // Without this the payout POSTs `/bills/{reimbursementId}/payments`,
+    // which 404s and throws (`writeEntity` → `throwRilletApiError`) — visible
+    // as a Failed ledger row, but a Failed payout is still a payout that
+    // never closed, and the endpoint to close it correctly now exists.
+    const paysReimbursement =
+      context.targetEntityType === "reimbursement" ||
+      documentMapping?.metadata?.remoteKind ===
+        RILLET_LEGACY_REIMBURSEMENT_REMOTE_KIND;
 
     const accountCode = (await this.getAccountCodesById()).get(
       context.bankAccountId

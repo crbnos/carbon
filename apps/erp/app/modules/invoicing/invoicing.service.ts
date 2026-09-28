@@ -1874,6 +1874,7 @@ export type MemoApplication = {
 
 export async function getMemoApplications(
   client: SupabaseClient<Database>,
+  companyId: string,
   memoId: string
 ): Promise<{ data: MemoApplication[] | null; error: unknown }> {
   // Embed the target documents' human-readable ids so the card can link out.
@@ -1906,6 +1907,13 @@ export async function getMemoApplications(
     "id, appliedAmount, appliedDate, appliedViaPaymentId, targetSalesInvoiceId, targetPurchaseInvoiceId, targetMemoId, targetReimbursementId, salesInvoice:targetSalesInvoiceId(invoiceId), purchaseInvoice:targetPurchaseInvoiceId(invoiceId), targetMemo:targetMemoId(memoId), targetReimbursement:targetReimbursementId(reimbursementId)",
     (query) =>
       query
+        // `memoId` is a bare xid from the URL, so the tenant filter is what
+        // decides which company's history a caller can read — exactly as
+        // getInvoiceSettlements / getInvoiceSettlementsForInvoice do it. RLS is
+        // the backstop, not the gate: it admits every company the caller is an
+        // employee of, so without this a multi-company user's memo page would
+        // happily render another company's applications.
+        .eq("companyId", companyId)
         .eq("memoId", memoId)
         .order("appliedDate", { ascending: false })
         .order("id")
@@ -1925,6 +1933,7 @@ export async function getMemoApplications(
       ? await client
           .from("payment")
           .select("id")
+          .eq("companyId", companyId)
           .in("id", viaPaymentIds)
           .eq("status", "Posted")
       : { data: [] as { id: string }[], error: null };

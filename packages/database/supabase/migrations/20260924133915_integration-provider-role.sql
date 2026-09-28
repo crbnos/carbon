@@ -51,6 +51,19 @@ UPDATE "integration" SET "providerRole" = 'spend'
 -- already holds two active integrations of one role is NOT retroactively
 -- invalidated; it simply cannot activate a third. Repairing existing data is a
 -- human decision, never a migration's.
+--
+-- A trigger rather than a UNIQUE partial index, for two independent reasons:
+--   1. `providerRole` lives on the GLOBAL `integration` registry, not on
+--      `companyIntegration`. A unique index can only span columns of its own
+--      table and IMMUTABLE expressions of them, so expressing "one active per
+--      (companyId, providerRole)" as an index would mean denormalizing
+--      `providerRole` onto every `companyIntegration` row and keeping the copy
+--      in sync — a strictly larger correctness problem than the one it solves.
+--   2. CREATE UNIQUE INDEX validates existing rows, so it would FAIL outright
+--      on any company that already holds two active integrations of one role —
+--      exactly the state the paragraph above deliberately grandfathers.
+-- The index's real advantage is that it makes the race structurally impossible;
+-- the advisory lock below buys that back for the trigger.
 CREATE OR REPLACE FUNCTION public.check_single_active_provider_role()
 RETURNS TRIGGER
 LANGUAGE plpgsql
@@ -73,6 +86,27 @@ BEGIN
   IF v_role IS NULL THEN
     RETURN NEW;
   END IF;
+
+  -- Serialize activations per (company, role) before the lookup. The check
+  -- below is a plain read, so under READ COMMITTED (what every write path runs
+  -- at) two concurrent activations — two OAuth callbacks, two
+  -- upsert_company_integration_patch calls — would each miss the other's
+  -- uncommitted row, both find no conflict, and both commit: two active
+  -- accounting integrations, the exact state this trigger exists to prevent.
+  -- Holding the lock makes the second transaction wait for the first to commit,
+  -- and its next statement then takes a fresh snapshot that sees that row.
+  --
+  -- The E'\x1f' separator and hashtextextended() match
+  -- upsert_company_integration_patch's own lock key; the 'providerRole' tag
+  -- keeps the two key spaces from ever colliding (that one keys on
+  -- companyId + integrationId, and an integration could one day be ID'd
+  -- 'accounting'). `companyId` is NOT NULL, so the key is never NULL — which
+  -- would silently acquire no lock at all.
+  PERFORM pg_advisory_xact_lock(
+    hashtextextended(
+      NEW."companyId" || E'\x1f' || 'providerRole' || E'\x1f' || v_role, 0
+    )
+  );
 
   SELECT ci."id" INTO v_conflict
   FROM "companyIntegration" ci

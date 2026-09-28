@@ -371,13 +371,16 @@ export async function paymentFixture() {
           }).returning("id").executeTakeFirstOrThrow();
           journalId = journal.id;
           // Natural-balance signed, exactly as build-reimbursement-journal
-          // emits: the expense coding line DEBITED (stored negative) and the
-          // payable CREDITED (stored positive).
+          // emits: the expense coding line DEBITED — `debit("expense", x)` is
+          // `+x`, since a POSITIVE amount on an Expense account is a debit —
+          // and the payable CREDITED, `credit("liability", x)` also `+x`.
+          // Both store positive here; the sign alone does not tell you the
+          // side, the account's class does.
           await trx.insertInto("journalLine").values([
             {
               accountId: account("travel"),
               description: "Travel",
-              amount: -(amount / rate),
+              amount: amount / rate,
             },
             {
               accountId: input.journalPayableAccountId ?? payableAccountId,

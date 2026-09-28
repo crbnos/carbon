@@ -238,20 +238,23 @@ function toClientLines(
       amount: Number(line.amount),
       costCenterId: line.costCenterId,
       projectId: line.projectId,
-      dimensions: (line.reimbursementLineDimension ?? []).flatMap((pair) => {
+      // Every stored pair is kept, INCLUDING one whose dimension is no longer
+      // active. `upsertReimbursementLines` replaces the lines wholesale — it
+      // deletes them and reinserts only what the editor submitted — so dropping
+      // an unresolvable pair here meant a plain Save silently erased coding the
+      // user was never shown. The ids are all the server needs; the names are
+      // only for rendering, so fall back to the raw ids.
+      dimensions: (line.reimbursementLineDimension ?? []).map((pair) => {
         const dimension = dimensions.find(
           (d) => d.dimensionId === pair.dimensionId
         );
-        if (!dimension) return [];
-        const value = dimension.values.find((v) => v.id === pair.valueId);
-        return [
-          {
-            dimensionId: pair.dimensionId,
-            dimensionName: dimension.dimensionName,
-            valueId: pair.valueId,
-            valueName: value?.name ?? pair.valueId
-          }
-        ];
+        const value = dimension?.values.find((v) => v.id === pair.valueId);
+        return {
+          dimensionId: pair.dimensionId,
+          dimensionName: dimension?.dimensionName ?? pair.dimensionId,
+          valueId: pair.valueId,
+          valueName: value?.name ?? pair.valueId
+        };
       })
     }));
 }

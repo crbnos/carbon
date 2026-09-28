@@ -56,9 +56,15 @@ import {
 /**
  * Mapping metadata marking a bill this syncer once wrote as a Rillet
  * reimbursement (the employee-supplier detour that predates the native
- * `reimbursement` entity). Read-only now — see `deleteRemote`.
+ * `reimbursement` entity). Read-only now — nothing writes it any more.
+ *
+ * Exported because BOTH halves of that legacy row have to honour it: the
+ * void here (`deleteRemote`) and the payout in `entities/payment.ts`, whose
+ * remote id also lives in the `/reimbursements` id space. Provider-prefixed
+ * so the `accounting/index.ts` star-export cannot collide with another
+ * provider's legacy marker.
  */
-const LEGACY_REIMBURSEMENT_REMOTE_KIND = "reimbursement";
+export const RILLET_LEGACY_REIMBURSEMENT_REMOTE_KIND = "reimbursement";
 
 // Only posted bills are pushed (Draft has no journal to replay) — mirrors the
 // Rillet invoice syncer's posted-status gate.
@@ -310,7 +316,7 @@ export class RilletBillSyncer extends RilletTransactionSyncer<
     remoteId: string,
     metadata?: Record<string, unknown>
   ): Promise<void> {
-    if (metadata?.remoteKind === LEGACY_REIMBURSEMENT_REMOTE_KIND) {
+    if (metadata?.remoteKind === RILLET_LEGACY_REIMBURSEMENT_REMOTE_KIND) {
       await this.rilletProvider.deleteReimbursement(remoteId);
       return;
     }

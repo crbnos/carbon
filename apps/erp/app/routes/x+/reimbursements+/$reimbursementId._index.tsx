@@ -75,14 +75,18 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
             data: null as { id: string; journalEntryId: string } | null,
             error: null
           }),
-      // Provider origin badge. Read via the user-scoped client — if RLS denies
-      // (or there is no mapping), fall back to null silently so the SOURCE
-      // badge degrades to the provider name rather than throwing.
+      // Provider origin badge. Keyed on the document's OWN provider
+      // (`reimbursement.integration`, the same value DocumentSourceBadge
+      // renders) — a hard-coded id finds no mapping for any spend provider
+      // other than that one, so the badge would silently lose its external id
+      // and deep link. Read via the user-scoped client — if RLS denies (or
+      // there is no mapping), fall back to null silently so the SOURCE badge
+      // degrades to the provider name rather than throwing.
       client
         .from("externalIntegrationMapping")
         .select("id, externalId, metadata")
         .eq("companyId", companyId)
-        .eq("integration", "ramp")
+        .eq("integration", reimbursement.data.integration)
         .eq("entityType", "reimbursement")
         .eq("entityId", reimbursementId)
         .maybeSingle(),

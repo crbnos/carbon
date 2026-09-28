@@ -45,6 +45,7 @@ import {
   type PostingSyncSettings,
   parseJournalEntrySyncEntityId,
   RatelimitError,
+  resolveMemoJournalPartyFromClient,
   resolvePostingSyncSettings,
   resolveSyncConfig,
   SYNC_OPERATION_STALE_IN_FLIGHT_MS,
@@ -290,50 +291,23 @@ export async function resolvePaymentJournalFamily(
  * (`family: "per-party"` in POSTING_POLICY), so a supplier memo in the Credit
  * direction is a supplier credit, not an AR document.
  *
- * Resolved through the journal LINES (`documentType = 'Memo'`,
- * `documentId = memo.id`), which the posting journal AND the VOID journal both
- * carry — the same link `loadChargePolicyInputs` uses, for the same reason.
+ * ONE definition, shared with the three provider `shouldSync` backstops
+ * (`@carbon/ee/accounting` → `core/memo-party.ts`): the memo is resolved through
+ * the journal LINES (`documentType = 'Memo'`, `documentId = memo.id`) — the same
+ * link `loadChargePolicyInputs` uses, for the same reason — with `memo.journalId`
+ * only as a fallback for a journal whose lines carry no document link.
+ *
  * Voiding a memo INSERTS A NEW journal (`post-memo-transaction.ts`) and leaves
- * `memo.journalId` on the original, so keying on `memo.journalId` resolved no
- * memo at all for a void: the party came back null, the policy parked a
- * spurious `MEMO_PARTY_UNRESOLVED` Warning, and the void never propagated.
- * `memo.journalId` is kept only as a fallback for a journal whose lines carry
- * no document link.
+ * `memo.journalId` on the original, so keying on `memo.journalId` alone resolved
+ * no memo at all for a void: the party came back null, the policy parked a
+ * spurious `MEMO_PARTY_UNRESOLVED` Warning, and the void never reached the
+ * provider. Kept under the local name the ledger paths already import.
  */
 export async function resolveMemoJournalParty(
   client: SupabaseClient<Database>,
   args: { companyId: string; journalId: string }
 ): Promise<"customer" | "supplier" | null> {
-  const line = await client
-    .from("journalLine")
-    .select("documentId")
-    .eq("companyId", args.companyId)
-    .eq("journalId", args.journalId)
-    .eq("documentType", "Memo")
-    .not("documentId", "is", null)
-    .limit(1)
-    .maybeSingle();
-
-  const memoId = line.error ? null : (line.data?.documentId ?? null);
-
-  const memo = memoId
-    ? await client
-        .from("memo")
-        .select("customerId, supplierId")
-        .eq("companyId", args.companyId)
-        .eq("id", memoId)
-        .maybeSingle()
-    : await client
-        .from("memo")
-        .select("customerId, supplierId")
-        .eq("companyId", args.companyId)
-        .eq("journalId", args.journalId)
-        .maybeSingle();
-
-  if (memo.error || !memo.data) return null;
-  if (memo.data.customerId) return "customer";
-  if (memo.data.supplierId) return "supplier";
-  return null;
+  return resolveMemoJournalPartyFromClient(client, args);
 }
 
 export type TerminalSyncOperationRequest = {

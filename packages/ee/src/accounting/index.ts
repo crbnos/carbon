@@ -6,6 +6,7 @@ export * from "./core/credit-reason-item";
 export * from "./core/dimension-mapping";
 export * from "./core/document-costing";
 export * from "./core/external-mapping";
+export * from "./core/memo-party";
 export * from "./core/memo-void";
 export * from "./core/models";
 export * from "./core/operations";
