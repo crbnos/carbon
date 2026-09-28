@@ -660,6 +660,9 @@ msgstr "Eine feste Kundenvereinbarung zum Liefern; der Erfüllungsstatus teilt s
 msgid "A firm order to a supplier; status moves through receive and invoice before Completed as goods and bills arrive."
 msgstr "Eine feste Bestellung bei einem Lieferanten; Der Status wird beim Empfang und bei der Rechnungsstellung durch \"Abgeschlossen\" verschoben, wenn Waren und Rechnungen ankommen."
 
+msgid "A fixed asset tied to a serialized item that you rent out; only units that read Available in the Fleet register can be added to a rental agreement."
+msgstr ""
+
 msgid "A fleet asset taken out of availability with a date and reason; it keeps depreciating, reads In Maintenance in the Fleet register, and comes back with Return to Service."
 msgstr "Ein Flottenelement, das mit Datum und Grund aus der Verfügbarkeit genommen wird; es wird weiterhin abgeschrieben, erscheint als In Instandhaltung im Flottenregister und wird durch Betriebswiederaufnahme zurückgebracht."
 
@@ -3204,6 +3207,9 @@ msgstr "Abrechnung einer Miete in festen Perioden, entweder Kalendermonate oder 
 msgid "Billing Address"
 msgstr "Rechnungsadresse"
 
+msgid "Billing cycle"
+msgstr ""
+
 msgid "Billing Cycle"
 msgstr "Abrechnungszyklus"
 
@@ -3212,6 +3218,9 @@ msgstr "Abrechnungsperioden"
 
 msgid "Billing periods are cut when the agreement is activated."
 msgstr "Abrechnungsperioden werden erstellt, wenn der Vertrag aktiviert wird."
+
+msgid "Billing timing"
+msgstr ""
 
 msgid "Billing Timing"
 msgstr "Abrechnungszeitpunkt"
@@ -8295,6 +8304,9 @@ msgstr "Flotte"
 msgid "Fleet Days"
 msgstr "Flottentage"
 
+msgid "Fleet unit"
+msgstr ""
+
 msgid "Fleet Unit"
 msgstr "Flotteneinheit"
 
@@ -8859,6 +8871,12 @@ msgstr "Stunden/Stück"
 
 msgid "How a batchable process runs its grouped work: Sequential runs parts one after another on one machine (a saw or laser table), while Simultaneous runs them together in a single load (a furnace, oven, or plating bath)."
 msgstr "Wie ein batchfähiger Verfahren die gruppierte Arbeit abläuft: Sequenziell führt Teile nacheinander auf einer Maschine aus (z. B. Säge oder Lasertisch), während Simultan sie zusammen in einer Charge ausführt (z. B. Ofen, Backofen oder Galvanisierbad)."
+
+msgid "How a rental agreement cuts billing periods from its start date: Calendar Month bills each calendar month at the month rate, prorated for a partial month, and 28 Days bills consecutive 28-day periods priced from the day, week, and month rates."
+msgstr ""
+
+msgid "How a rental unit is priced each billing period: Best Rate bills the cheapest of its day, week, and month rates, and Fixed always bills the one tier you choose."
+msgstr ""
 
 msgid "How an item is replenished overall (Buy, Make, or Buy and Make), set per item, unlike the per-line method type."
 msgstr "Wie ein Artikel insgesamt aufgefüllt wird (Fremdbeschaffung, Eigenfertigung oder Fremdbeschaffung und Eigenfertigung), pro Artikel festgelegt, anders als die Bereitstellungsart pro Position."
@@ -11759,6 +11777,9 @@ msgstr "Keine Dateien für dieses Element."
 msgid "No files uploaded"
 msgstr "Keine Dateien hochgeladen"
 
+msgid "No fleet units are available. A unit joins the fleet when a serialized item is capitalized from inventory or built for the fleet, on the <0>Fleet</0> page."
+msgstr ""
+
 msgid "No forecast available for this job."
 msgstr "Keine Prognose für diesen Auftrag verfügbar."
 
@@ -14326,6 +14347,9 @@ msgstr "Kurs"
 
 msgid "Rate Limit"
 msgstr "Ratenlimit"
+
+msgid "Rate mode"
+msgstr ""
 
 msgid "Rate Mode"
 msgstr "Tarifmodell"
@@ -20700,6 +20724,9 @@ msgstr "Wann Carbon sich verpflichtet hatte, die Waren ankommen zu lassen; kombi
 
 msgid "When deferred, accrued and lease-interest revenue will be recognized"
 msgstr "Wenn aufgeschobene, aufgelaufene und Mieterlöse erfasst werden"
+
+msgid "When each rental billing period falls due for invoicing: Advance on its first day, before the unit has been used, or Arrears on its last day, after the rent is earned."
+msgstr ""
 
 msgid "When expired stock is used"
 msgstr "Wenn abgelaufene Bestände verwendet werden"

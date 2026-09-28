@@ -660,6 +660,9 @@ msgstr "Твердое обязательство покупателя осущ�
 msgid "A firm order to a supplier; status moves through receive and invoice before Completed as goods and bills arrive."
 msgstr "Твердый заказ поставщику; статус переходит через поступление и счет-фактуру перед Завершено по мере поступления товаров и счетов."
 
+msgid "A fixed asset tied to a serialized item that you rent out; only units that read Available in the Fleet register can be added to a rental agreement."
+msgstr ""
+
 msgid "A fleet asset taken out of availability with a date and reason; it keeps depreciating, reads In Maintenance in the Fleet register, and comes back with Return to Service."
 msgstr "Основное средство парка, выведенное из обслуживания с датой и причиной; продолжает амортизироваться, отображается как «На техническом обслуживании» в реестре парка и возвращается через операцию «Возврат в эксплуатацию»."
 
@@ -3204,6 +3207,9 @@ msgstr "Выставление счетов за аренду в фиксиро�
 msgid "Billing Address"
 msgstr "Адрес выставления счета"
 
+msgid "Billing cycle"
+msgstr ""
+
 msgid "Billing Cycle"
 msgstr "Цикл выставления счетов"
 
@@ -3212,6 +3218,9 @@ msgstr "Периоды выставления счетов"
 
 msgid "Billing periods are cut when the agreement is activated."
 msgstr "Периоды выставления счетов создаются при активации договора."
+
+msgid "Billing timing"
+msgstr ""
 
 msgid "Billing Timing"
 msgstr "График выставления счетов"
@@ -8295,6 +8304,9 @@ msgstr "Парк"
 msgid "Fleet Days"
 msgstr "Дни парка"
 
+msgid "Fleet unit"
+msgstr ""
+
 msgid "Fleet Unit"
 msgstr "Единица парка"
 
@@ -8859,6 +8871,12 @@ msgstr "Часов/Деталь"
 
 msgid "How a batchable process runs its grouped work: Sequential runs parts one after another on one machine (a saw or laser table), while Simultaneous runs them together in a single load (a furnace, oven, or plating bath)."
 msgstr "Как процесс, допускающий батчинг, работает с сгруппированной работой: режим « Последовательный» запускает детали одну за другой на одном станке (пила или лазерный стол), а режим «Одновременный» запускает их вместе в одной загрузке (печь, духовка или гальваническая ванна)."
+
+msgid "How a rental agreement cuts billing periods from its start date: Calendar Month bills each calendar month at the month rate, prorated for a partial month, and 28 Days bills consecutive 28-day periods priced from the day, week, and month rates."
+msgstr ""
+
+msgid "How a rental unit is priced each billing period: Best Rate bills the cheapest of its day, week, and month rates, and Fixed always bills the one tier you choose."
+msgstr ""
 
 msgid "How an item is replenished overall (Buy, Make, or Buy and Make), set per item, unlike the per-line method type."
 msgstr "Как номенклатура пополняется в целом (Закупка, Производство или Закупка и производство), устанавливается на номенклатуру, в отличие от способа обеспечения по строкам."
@@ -11759,6 +11777,9 @@ msgstr "Нет файлов для этого элемента."
 msgid "No files uploaded"
 msgstr "Файлы не загружены"
 
+msgid "No fleet units are available. A unit joins the fleet when a serialized item is capitalized from inventory or built for the fleet, on the <0>Fleet</0> page."
+msgstr ""
+
 msgid "No forecast available for this job."
 msgstr "Прогноз недоступен для этой работы."
 
@@ -14326,6 +14347,9 @@ msgstr "Курс"
 
 msgid "Rate Limit"
 msgstr "Ограничение скорости"
+
+msgid "Rate mode"
+msgstr ""
 
 msgid "Rate Mode"
 msgstr "Режим ставок"
@@ -20700,6 +20724,9 @@ msgstr "Когда Carbon обязалась доставить товары; в
 
 msgid "When deferred, accrued and lease-interest revenue will be recognized"
 msgstr "Отложенная выручка, накопленная выручка и доход от процентов по аренде будут признаны"
+
+msgid "When each rental billing period falls due for invoicing: Advance on its first day, before the unit has been used, or Arrears on its last day, after the rent is earned."
+msgstr ""
 
 msgid "When expired stock is used"
 msgstr "Когда используется Запас с истекшим сроком"

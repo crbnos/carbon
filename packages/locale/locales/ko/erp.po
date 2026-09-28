@@ -660,6 +660,9 @@ msgstr "배송을 위한 확정된 고객 약정이며, 이행 상태는 완료�
 msgid "A firm order to a supplier; status moves through receive and invoice before Completed as goods and bills arrive."
 msgstr "공급업체에 대한 확정 발주이며, 상태는 완료됨에 도달하기 전에 수령 및 송장을 통해 진행되며 상품 및 청구서가 도착합니다."
 
+msgid "A fixed asset tied to a serialized item that you rent out; only units that read Available in the Fleet register can be added to a rental agreement."
+msgstr ""
+
 msgid "A fleet asset taken out of availability with a date and reason; it keeps depreciating, reads In Maintenance in the Fleet register, and comes back with Return to Service."
 msgstr "사용 불가 상태의 차량 자산으로, 날짜와 사유를 기록하며 계속 감가상각되고, 차량 대장에 유지보수 중으로 표시되며, 서비스 복귀와 함께 복구됩니다."
 
@@ -3204,6 +3207,9 @@ msgstr "임차를 역월 또는 연속 28일 기간과 같은 고정 기간으�
 msgid "Billing Address"
 msgstr "청구지 주소"
 
+msgid "Billing cycle"
+msgstr ""
+
 msgid "Billing Cycle"
 msgstr "청구 주기"
 
@@ -3212,6 +3218,9 @@ msgstr "청구 기간"
 
 msgid "Billing periods are cut when the agreement is activated."
 msgstr "청구 기간은 계약이 활성화될 때 생성됩니다."
+
+msgid "Billing timing"
+msgstr ""
 
 msgid "Billing Timing"
 msgstr "청구 시점"
@@ -8295,6 +8304,9 @@ msgstr "플릿"
 msgid "Fleet Days"
 msgstr "플릿 일"
 
+msgid "Fleet unit"
+msgstr ""
+
 msgid "Fleet Unit"
 msgstr "플릿 단위"
 
@@ -8859,6 +8871,12 @@ msgstr "시간/개"
 
 msgid "How a batchable process runs its grouped work: Sequential runs parts one after another on one machine (a saw or laser table), while Simultaneous runs them together in a single load (a furnace, oven, or plating bath)."
 msgstr "배치 가능한 공정이 그룹화된 작업을 실행하는 방식: 순차는 부품을 한 기계에서 차례대로 실행하고(톱 또는 레이저 테이블), 동시는 단일 로드에서 함께 실행합니다(용광로, 오븐 또는 도금 욕조)."
+
+msgid "How a rental agreement cuts billing periods from its start date: Calendar Month bills each calendar month at the month rate, prorated for a partial month, and 28 Days bills consecutive 28-day periods priced from the day, week, and month rates."
+msgstr ""
+
+msgid "How a rental unit is priced each billing period: Best Rate bills the cheapest of its day, week, and month rates, and Fixed always bills the one tier you choose."
+msgstr ""
 
 msgid "How an item is replenished overall (Buy, Make, or Buy and Make), set per item, unlike the per-line method type."
 msgstr "품목을 전체적으로 재보충하는 방법(구매, 사내 생산 또는 구매 및 사내 생산)입니다. 라인별 공급 방식과 달리 품목별로 설정됩니다."
@@ -11759,6 +11777,9 @@ msgstr "이 항목에 대한 파일이 없습니다."
 msgid "No files uploaded"
 msgstr "업로드된 파일이 없습니다"
 
+msgid "No fleet units are available. A unit joins the fleet when a serialized item is capitalized from inventory or built for the fleet, on the <0>Fleet</0> page."
+msgstr ""
+
 msgid "No forecast available for this job."
 msgstr "이 작업 지시에 대한 예측이 없습니다."
 
@@ -14326,6 +14347,9 @@ msgstr "환율"
 
 msgid "Rate Limit"
 msgstr "요청 제한"
+
+msgid "Rate mode"
+msgstr ""
 
 msgid "Rate Mode"
 msgstr "요금 모드"
@@ -20700,6 +20724,9 @@ msgstr "Carbon이 재화 도착을 약속한 시점으로, 배송 방법의 운�
 
 msgid "When deferred, accrued and lease-interest revenue will be recognized"
 msgstr "이연, 발생 및 임차료 이자 매출이 인식될 때"
+
+msgid "When each rental billing period falls due for invoicing: Advance on its first day, before the unit has been used, or Arrears on its last day, after the rent is earned."
+msgstr ""
 
 msgid "When expired stock is used"
 msgstr "만료된 재고가 사용될 때"

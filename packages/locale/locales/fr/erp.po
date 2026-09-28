@@ -660,6 +660,9 @@ msgstr "Un engagement ferme du client à livrer ; le statut d'exécution se divi
 msgid "A firm order to a supplier; status moves through receive and invoice before Completed as goods and bills arrive."
 msgstr "Une commande ferme auprès d'un fournisseur ; le statut passe par réception et facture avant Terminé au fur et à mesure que les marchandises et les factures arrivent."
 
+msgid "A fixed asset tied to a serialized item that you rent out; only units that read Available in the Fleet register can be added to a rental agreement."
+msgstr ""
+
 msgid "A fleet asset taken out of availability with a date and reason; it keeps depreciating, reads In Maintenance in the Fleet register, and comes back with Return to Service."
 msgstr "Un immobilisé de flotte retiré de la disponibilité avec une date et une raison; il continue de se déprécier, s'affiche En maintenance dans le registre de flotte, et revient avec Retour au service."
 
@@ -3204,6 +3207,9 @@ msgstr "Facturation d'une location en périodes fixes, soit des mois civils, soi
 msgid "Billing Address"
 msgstr "Adresse de facturation"
 
+msgid "Billing cycle"
+msgstr ""
+
 msgid "Billing Cycle"
 msgstr "Cycle de Facturation"
 
@@ -3212,6 +3218,9 @@ msgstr "Périodes de Facturation"
 
 msgid "Billing periods are cut when the agreement is activated."
 msgstr "Les périodes de facturation sont créées quand l'accord est activé."
+
+msgid "Billing timing"
+msgstr ""
 
 msgid "Billing Timing"
 msgstr "Calendrier de Facturation"
@@ -8295,6 +8304,9 @@ msgstr "Flotte"
 msgid "Fleet Days"
 msgstr "Jours de parc"
 
+msgid "Fleet unit"
+msgstr ""
+
 msgid "Fleet Unit"
 msgstr "Unité de parc"
 
@@ -8859,6 +8871,12 @@ msgstr "Heures/Pièce"
 
 msgid "How a batchable process runs its grouped work: Sequential runs parts one after another on one machine (a saw or laser table), while Simultaneous runs them together in a single load (a furnace, oven, or plating bath)."
 msgstr "Comment un procédé groupable exécute son travail groupé : L'exécution séquentielle lance les pièces l'une après l'autre sur une machine (une scie ou une table laser), tandis que l'exécution simultanée les lance ensemble dans une charge unique (un four, une étuve ou un bain de placage)."
+
+msgid "How a rental agreement cuts billing periods from its start date: Calendar Month bills each calendar month at the month rate, prorated for a partial month, and 28 Days bills consecutive 28-day periods priced from the day, week, and month rates."
+msgstr ""
+
+msgid "How a rental unit is priced each billing period: Best Rate bills the cheapest of its day, week, and month rates, and Fixed always bills the one tier you choose."
+msgstr ""
 
 msgid "How an item is replenished overall (Buy, Make, or Buy and Make), set per item, unlike the per-line method type."
 msgstr "Comment un article est approvisionné globalement (Achat, Fabrication ou Achat et fabrication), défini par article, contrairement au type d'approvisionnement par ligne."
@@ -11759,6 +11777,9 @@ msgstr "Aucun fichier pour cet article."
 msgid "No files uploaded"
 msgstr "Aucun fichier téléchargé"
 
+msgid "No fleet units are available. A unit joins the fleet when a serialized item is capitalized from inventory or built for the fleet, on the <0>Fleet</0> page."
+msgstr ""
+
 msgid "No forecast available for this job."
 msgstr "Aucune prévision disponible pour ce travail."
 
@@ -14326,6 +14347,9 @@ msgstr "Taux"
 
 msgid "Rate Limit"
 msgstr "Limite de débit"
+
+msgid "Rate mode"
+msgstr ""
 
 msgid "Rate Mode"
 msgstr "Mode de tarification"
@@ -20700,6 +20724,9 @@ msgstr "Quand Carbon s'est engagé à ce que les marchandises arrivent ; combin�
 
 msgid "When deferred, accrued and lease-interest revenue will be recognized"
 msgstr "Quand reportés, les revenus engagés et les revenus d'intérêts de location seront constatés"
+
+msgid "When each rental billing period falls due for invoicing: Advance on its first day, before the unit has been used, or Arrears on its last day, after the rent is earned."
+msgstr ""
 
 msgid "When expired stock is used"
 msgstr "Lorsque du stock expiré est utilisé"

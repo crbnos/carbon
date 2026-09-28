@@ -11,12 +11,14 @@ import {
   ModalCardHeader,
   ModalCardProvider,
   ModalCardTitle,
-  toast
+  toast,
+  VStack
 } from "@carbon/react";
 import { INPUT_FORMAT, INPUT_STEP } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useMemo, useState } from "react";
 import { LuChevronDown, LuChevronRight } from "react-icons/lu";
+import { Link } from "react-router";
 import type { z } from "zod";
 import { Combobox, Hidden, Number, Select, Submit } from "~/components/Form";
 import { useCurrencyDecimals, usePermissions, useUser } from "~/hooks";
@@ -191,133 +193,155 @@ const RentalAgreementLineForm = ({
             <ModalCardBody>
               <Hidden name="id" />
               <Hidden name="rentalAgreementId" />
-              <div className="grid w-full gap-x-8 gap-y-4 grid-cols-1 lg:grid-cols-3">
-                <Combobox
-                  name="fixedAssetId"
-                  label={t`Fleet Unit`}
-                  options={assetOptions}
-                  isReadOnly={isLocked}
-                  onChange={(value) => onAssetChange(value?.value)}
-                />
-                <Select
-                  name="rateMode"
-                  label={t`Rate Mode`}
-                  options={rateModeOptions}
-                  onChange={(value) => {
-                    if (
-                      value?.value === "Fixed" ||
-                      value?.value === "Best Rate"
-                    )
-                      setRateMode(value.value);
-                  }}
-                />
-                {rateMode === "Fixed" ? (
+              <VStack spacing={4}>
+                <div className="grid w-full gap-x-8 gap-y-4 grid-cols-1 lg:grid-cols-3">
+                  <Combobox
+                    name="fixedAssetId"
+                    label={t`Fleet Unit`}
+                    termId="fleet-unit"
+                    options={assetOptions}
+                    isReadOnly={isLocked}
+                    onChange={(value) => onAssetChange(value?.value)}
+                  />
                   <Select
-                    name="rateUnit"
-                    label={t`Billed Tier`}
-                    options={rateUnitOptions}
+                    name="rateMode"
+                    label={t`Rate Mode`}
+                    termId="rate-mode"
+                    options={rateModeOptions}
+                    onChange={(value) => {
+                      if (
+                        value?.value === "Fixed" ||
+                        value?.value === "Best Rate"
+                      )
+                        setRateMode(value.value);
+                    }}
                   />
-                ) : (
-                  <div />
-                )}
-              </div>
-
-              <div className="mt-6 grid w-full grid-cols-3 gap-4 rounded-lg border border-border p-4">
-                <RateTier
-                  label={t`Day Rate`}
-                  value={rates?.dayRate}
-                  currencyCode={currencyCode}
-                />
-                <RateTier
-                  label={t`Week Rate`}
-                  value={rates?.weekRate}
-                  currencyCode={currencyCode}
-                />
-                <RateTier
-                  label={t`Month Rate`}
-                  value={rates?.monthRate}
-                  currencyCode={currencyCode}
-                />
-                <p className="col-span-3 text-xs text-muted-foreground">
-                  {isSnapshot ? (
-                    <Trans>Snapshotted from the item when activated.</Trans>
-                  ) : (
-                    <Trans>
-                      From the item's rental rates. They are snapshotted onto
-                      the line when the agreement is activated.
-                    </Trans>
-                  )}
-                </p>
-              </div>
-
-              <div className="mt-6">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  leftIcon={
-                    showClassification ? <LuChevronDown /> : <LuChevronRight />
-                  }
-                  onClick={() => setShowClassification((open) => !open)}
-                >
-                  <Trans>Accounting treatment inputs</Trans>
-                </Button>
-                {/* Hidden rather than unmounted: the fields must still post,
-                    or saving with the section collapsed would clear them. */}
-                <div
-                  className={
-                    showClassification
-                      ? "mt-4 grid w-full gap-x-8 gap-y-4 grid-cols-1 lg:grid-cols-2"
-                      : "hidden"
-                  }
-                >
-                  <Number
-                    name="fairValue"
-                    label={t`Fair Value`}
-                    minValue={0}
-                    step={moneyStep}
-                    formatOptions={moneyFormat}
-                  />
-                  <Number
-                    name="economicLifeMonths"
-                    label={t`Economic Life (months)`}
-                    minValue={1}
-                  />
-                  <Number
-                    name="guaranteedResidualValue"
-                    label={t`Guaranteed Residual Value`}
-                    minValue={0}
-                    step={moneyStep}
-                    formatOptions={moneyFormat}
-                  />
-                  <Number
-                    name="unguaranteedResidualValue"
-                    label={t`Unguaranteed Residual Value`}
-                    minValue={0}
-                    step={moneyStep}
-                    formatOptions={moneyFormat}
-                  />
-                </div>
-                {lease && (
-                  <div className="mt-4 flex flex-col gap-2">
-                    <LeaseClassificationPanel
-                      {...lease}
-                      currencyCode={currencyCode}
-                      onOverride={
-                        canOverride ? () => setShowOverride(true) : undefined
-                      }
+                  {rateMode === "Fixed" ? (
+                    <Select
+                      name="rateUnit"
+                      label={t`Billed Tier`}
+                      options={rateUnitOptions}
                     />
-                    {lease.isPreview && (
-                      <p className="text-xs text-muted-foreground">
-                        <Trans>
-                          Computed from the saved terms and the item's current
-                          rates. Activation classifies the lease and stores the
-                          result.
-                        </Trans>
-                      </p>
-                    )}
-                  </div>
+                  ) : (
+                    <div />
+                  )}
+                </div>
+                {!isLocked && assetOptions.length === 0 && (
+                  <p className="text-sm text-muted-foreground">
+                    <Trans>
+                      No fleet units are available. A unit joins the fleet when
+                      a serialized item is capitalized from inventory or built
+                      for the fleet, on the{" "}
+                      <Link to={path.to.fleet} className="underline">
+                        Fleet
+                      </Link>{" "}
+                      page.
+                    </Trans>
+                  </p>
                 )}
-              </div>
+
+                <div className="grid w-full grid-cols-3 gap-4 rounded-lg border border-border p-4">
+                  <RateTier
+                    label={t`Day Rate`}
+                    value={rates?.dayRate}
+                    currencyCode={currencyCode}
+                  />
+                  <RateTier
+                    label={t`Week Rate`}
+                    value={rates?.weekRate}
+                    currencyCode={currencyCode}
+                  />
+                  <RateTier
+                    label={t`Month Rate`}
+                    value={rates?.monthRate}
+                    currencyCode={currencyCode}
+                  />
+                  <p className="col-span-3 text-xs text-muted-foreground">
+                    {isSnapshot ? (
+                      <Trans>Snapshotted from the item when activated.</Trans>
+                    ) : (
+                      <Trans>
+                        From the item's rental rates. They are snapshotted onto
+                        the line when the agreement is activated.
+                      </Trans>
+                    )}
+                  </p>
+                </div>
+
+                <div className="w-full">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="-ml-2"
+                    leftIcon={
+                      showClassification ? (
+                        <LuChevronDown />
+                      ) : (
+                        <LuChevronRight />
+                      )
+                    }
+                    onClick={() => setShowClassification((open) => !open)}
+                  >
+                    <Trans>Accounting treatment inputs</Trans>
+                  </Button>
+                  {/* Hidden rather than unmounted: the fields must still post,
+                    or saving with the section collapsed would clear them. */}
+                  <div
+                    className={
+                      showClassification
+                        ? "mt-4 grid w-full gap-x-8 gap-y-4 grid-cols-1 lg:grid-cols-2"
+                        : "hidden"
+                    }
+                  >
+                    <Number
+                      name="fairValue"
+                      label={t`Fair Value`}
+                      minValue={0}
+                      step={moneyStep}
+                      formatOptions={moneyFormat}
+                    />
+                    <Number
+                      name="economicLifeMonths"
+                      label={t`Economic Life (months)`}
+                      minValue={1}
+                    />
+                    <Number
+                      name="guaranteedResidualValue"
+                      label={t`Guaranteed Residual Value`}
+                      minValue={0}
+                      step={moneyStep}
+                      formatOptions={moneyFormat}
+                    />
+                    <Number
+                      name="unguaranteedResidualValue"
+                      label={t`Unguaranteed Residual Value`}
+                      minValue={0}
+                      step={moneyStep}
+                      formatOptions={moneyFormat}
+                    />
+                  </div>
+                  {lease && (
+                    <div className="mt-4 flex flex-col gap-2">
+                      <LeaseClassificationPanel
+                        {...lease}
+                        currencyCode={currencyCode}
+                        onOverride={
+                          canOverride ? () => setShowOverride(true) : undefined
+                        }
+                      />
+                      {lease.isPreview && (
+                        <p className="text-xs text-muted-foreground">
+                          <Trans>
+                            Computed from the saved terms and the item's current
+                            rates. Activation classifies the lease and stores
+                            the result.
+                          </Trans>
+                        </p>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </VStack>
             </ModalCardBody>
             <ModalCardFooter>
               <HStack>

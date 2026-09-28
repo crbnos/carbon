@@ -20,7 +20,8 @@ import {
   LuPlay,
   LuTrash
 } from "react-icons/lu";
-import { DocumentHeader, Hyperlink } from "~/components";
+import { Link } from "react-router";
+import { DocumentHeader } from "~/components";
 import { Confirm, ConfirmDelete } from "~/components/Modals";
 import { useCompanyToday, useDateFormatter, usePermissions } from "~/hooks";
 import { path } from "~/utils/path";
@@ -224,45 +225,59 @@ const RentalAgreementHeader = ({
             </>
           }
         />
-        <CardContent>
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-6">
-            <Metric label={t`Customer`}>
+        <CardContent className="space-y-0">
+          <div className="grid grid-cols-1 gap-3 pb-4 sm:grid-cols-3 sm:gap-0">
+            <Stat label={t`Deposit`} className="sm:pr-6">
+              <RentalMoney
+                value={rentalAgreement.depositAmount}
+                currencyCode={rentalAgreement.currencyCode}
+              />
+            </Stat>
+            <Stat
+              label={t`Unbilled`}
+              className="sm:border-l sm:border-border sm:px-6"
+            >
+              <RentalMoney
+                value={rentalAgreement.unbilledAmount}
+                currencyCode={rentalAgreement.currencyCode}
+              />
+            </Stat>
+            <Stat
+              label={t`Next Due`}
+              className="sm:border-l sm:border-border sm:pl-6"
+            >
+              {rentalAgreement.nextDueOn
+                ? formatDate(rentalAgreement.nextDueOn)
+                : "—"}
+            </Stat>
+          </div>
+          <div className="divide-y divide-border border-t border-border">
+            <DetailRow label={t`Customer`}>
               {rentalAgreement.customerId ? (
-                <Hyperlink to={path.to.customer(rentalAgreement.customerId)}>
+                <Link
+                  to={path.to.customer(rentalAgreement.customerId)}
+                  className="hover:underline"
+                >
                   {rentalAgreement.customerName}
-                </Hyperlink>
+                </Link>
               ) : (
                 "—"
               )}
-            </Metric>
-            <Metric label={t`Term`}>
+            </DetailRow>
+            <DetailRow label={t`Term`}>
               {formatDate(rentalAgreement.startDate)} –{" "}
               {rentalAgreement.endDate ? (
                 formatDate(rentalAgreement.endDate)
               ) : (
                 <Trans>Open-ended</Trans>
               )}
-            </Metric>
-            <Metric label={t`Billing`}>
-              {rentalAgreement.billingCycle} · {rentalAgreement.billingTiming}
-            </Metric>
-            <Metric label={t`Deposit`}>
-              <RentalMoney
-                value={rentalAgreement.depositAmount}
-                currencyCode={rentalAgreement.currencyCode}
-              />
-            </Metric>
-            <Metric label={t`Unbilled`}>
-              <RentalMoney
-                value={rentalAgreement.unbilledAmount}
-                currencyCode={rentalAgreement.currencyCode}
-              />
-            </Metric>
-            <Metric label={t`Next Due`}>
-              {rentalAgreement.nextDueOn
-                ? formatDate(rentalAgreement.nextDueOn)
-                : "—"}
-            </Metric>
+            </DetailRow>
+            <DetailRow label={t`Billing Cycle`}>
+              {rentalAgreement.billingCycle}
+            </DetailRow>
+            <DetailRow label={t`Billing Timing`}>
+              {rentalAgreement.billingTiming}
+            </DetailRow>
           </div>
         </CardContent>
       </Card>
@@ -307,11 +322,38 @@ const RentalAgreementHeader = ({
   );
 };
 
-function Metric({ label, children }: { label: string; children: ReactNode }) {
+function Stat({
+  label,
+  className,
+  children
+}: {
+  label: string;
+  className?: string;
+  children: ReactNode;
+}) {
   return (
-    <div className="min-w-0">
-      <p className="text-sm text-muted-foreground truncate">{label}</p>
-      <div className="mt-1 text-sm font-medium truncate">{children}</div>
+    <div className={className}>
+      <p className="text-base text-muted-foreground truncate sm:text-sm">
+        {label}
+      </p>
+      <p className="mt-1 text-2xl font-semibold tabular-nums tracking-tight">
+        {children}
+      </p>
+    </div>
+  );
+}
+
+function DetailRow({
+  label,
+  children
+}: {
+  label: string;
+  children: ReactNode;
+}) {
+  return (
+    <div className="flex items-center justify-between py-3 text-base sm:text-sm">
+      <span className="text-muted-foreground">{label}</span>
+      <span className="font-medium">{children}</span>
     </div>
   );
 }

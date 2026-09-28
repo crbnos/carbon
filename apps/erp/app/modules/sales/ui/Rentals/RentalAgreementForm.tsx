@@ -267,6 +267,7 @@ const RentalAgreementForm = ({
               <Select
                 name="billingCycle"
                 label={t`Billing Cycle`}
+                termId="billing-cycle"
                 options={billingCycleOptions}
                 onChange={(option) =>
                   option &&
@@ -279,6 +280,7 @@ const RentalAgreementForm = ({
               <Select
                 name="billingTiming"
                 label={t`Billing Timing`}
+                termId="billing-timing"
                 options={billingTimingOptions}
                 onChange={(option) =>
                   option &&

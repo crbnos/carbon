@@ -660,6 +660,9 @@ msgstr "A firm customer commitment to deliver; fulfillment status splits across 
 msgid "A firm order to a supplier; status moves through receive and invoice before Completed as goods and bills arrive."
 msgstr "A firm order to a supplier; status moves through receive and invoice before Completed as goods and bills arrive."
 
+msgid "A fixed asset tied to a serialized item that you rent out; only units that read Available in the Fleet register can be added to a rental agreement."
+msgstr "A fixed asset tied to a serialized item that you rent out; only units that read Available in the Fleet register can be added to a rental agreement."
+
 msgid "A fleet asset taken out of availability with a date and reason; it keeps depreciating, reads In Maintenance in the Fleet register, and comes back with Return to Service."
 msgstr "A fleet asset taken out of availability with a date and reason; it keeps depreciating, reads In Maintenance in the Fleet register, and comes back with Return to Service."
 
@@ -3204,6 +3207,9 @@ msgstr "Billing a rental in fixed periods, either calendar months or consecutive
 msgid "Billing Address"
 msgstr "Billing Address"
 
+msgid "Billing cycle"
+msgstr "Billing cycle"
+
 msgid "Billing Cycle"
 msgstr "Billing Cycle"
 
@@ -3212,6 +3218,9 @@ msgstr "Billing Periods"
 
 msgid "Billing periods are cut when the agreement is activated."
 msgstr "Billing periods are cut when the agreement is activated."
+
+msgid "Billing timing"
+msgstr "Billing timing"
 
 msgid "Billing Timing"
 msgstr "Billing Timing"
@@ -8295,6 +8304,9 @@ msgstr "Fleet"
 msgid "Fleet Days"
 msgstr "Fleet Days"
 
+msgid "Fleet unit"
+msgstr "Fleet unit"
+
 msgid "Fleet Unit"
 msgstr "Fleet Unit"
 
@@ -8859,6 +8871,12 @@ msgstr "Hours/Piece"
 
 msgid "How a batchable process runs its grouped work: Sequential runs parts one after another on one machine (a saw or laser table), while Simultaneous runs them together in a single load (a furnace, oven, or plating bath)."
 msgstr "How a batchable process runs its grouped work: Sequential runs parts one after another on one machine (a saw or laser table), while Simultaneous runs them together in a single load (a furnace, oven, or plating bath)."
+
+msgid "How a rental agreement cuts billing periods from its start date: Calendar Month bills each calendar month at the month rate, prorated for a partial month, and 28 Days bills consecutive 28-day periods priced from the day, week, and month rates."
+msgstr "How a rental agreement cuts billing periods from its start date: Calendar Month bills each calendar month at the month rate, prorated for a partial month, and 28 Days bills consecutive 28-day periods priced from the day, week, and month rates."
+
+msgid "How a rental unit is priced each billing period: Best Rate bills the cheapest of its day, week, and month rates, and Fixed always bills the one tier you choose."
+msgstr "How a rental unit is priced each billing period: Best Rate bills the cheapest of its day, week, and month rates, and Fixed always bills the one tier you choose."
 
 msgid "How an item is replenished overall (Buy, Make, or Buy and Make), set per item, unlike the per-line method type."
 msgstr "How an item is replenished overall (Buy, Make, or Buy and Make), set per item, unlike the per-line method type."
@@ -11759,6 +11777,9 @@ msgstr "No files for this item."
 msgid "No files uploaded"
 msgstr "No files uploaded"
 
+msgid "No fleet units are available. A unit joins the fleet when a serialized item is capitalized from inventory or built for the fleet, on the <0>Fleet</0> page."
+msgstr "No fleet units are available. A unit joins the fleet when a serialized item is capitalized from inventory or built for the fleet, on the <0>Fleet</0> page."
+
 msgid "No forecast available for this job."
 msgstr "No forecast available for this job."
 
@@ -14326,6 +14347,9 @@ msgstr "Rate"
 
 msgid "Rate Limit"
 msgstr "Rate Limit"
+
+msgid "Rate mode"
+msgstr "Rate mode"
 
 msgid "Rate Mode"
 msgstr "Rate Mode"
@@ -20700,6 +20724,9 @@ msgstr "When Carbon committed to having the goods arrive; combined with the ship
 
 msgid "When deferred, accrued and lease-interest revenue will be recognized"
 msgstr "When deferred, accrued and lease-interest revenue will be recognized"
+
+msgid "When each rental billing period falls due for invoicing: Advance on its first day, before the unit has been used, or Arrears on its last day, after the rent is earned."
+msgstr "When each rental billing period falls due for invoicing: Advance on its first day, before the unit has been used, or Arrears on its last day, after the rent is earned."
 
 msgid "When expired stock is used"
 msgstr "When expired stock is used"

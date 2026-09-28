@@ -660,6 +660,9 @@ msgstr "Stanowcze zobowiązanie klienta do dostarczenia; status spełnienia dzie
 msgid "A firm order to a supplier; status moves through receive and invoice before Completed as goods and bills arrive."
 msgstr "Stanowcze zamówienie u dostawcy; Status przechodzi przez odbiór i fakturę przed Ukończonym w miarę przybycia towarów i rachunków."
 
+msgid "A fixed asset tied to a serialized item that you rent out; only units that read Available in the Fleet register can be added to a rental agreement."
+msgstr ""
+
 msgid "A fleet asset taken out of availability with a date and reason; it keeps depreciating, reads In Maintenance in the Fleet register, and comes back with Return to Service."
 msgstr "Środek trwały floty wyjęty z dostępności z datą i przyczyną; nadal podlega amortyzacji, w rejestrze floty wyświetla się jako Utrzymanie ruchu i wraca po wznowieniu usługi."
 
@@ -3204,6 +3207,9 @@ msgstr "Rozliczanie wynajmu w ustalonych okresach, albo w miesiącach kalendarzo
 msgid "Billing Address"
 msgstr "Adres rozliczeniowy"
 
+msgid "Billing cycle"
+msgstr ""
+
 msgid "Billing Cycle"
 msgstr "Cykl Rozliczeniowy"
 
@@ -3212,6 +3218,9 @@ msgstr "Okresy Rozliczeniowe"
 
 msgid "Billing periods are cut when the agreement is activated."
 msgstr "Okresy rozliczeniowe są tworzone po aktywacji umowy."
+
+msgid "Billing timing"
+msgstr ""
 
 msgid "Billing Timing"
 msgstr "Czas Rozliczenia"
@@ -8295,6 +8304,9 @@ msgstr "Flota"
 msgid "Fleet Days"
 msgstr "Dni floty"
 
+msgid "Fleet unit"
+msgstr ""
+
 msgid "Fleet Unit"
 msgstr "Sztuka floty"
 
@@ -8859,6 +8871,12 @@ msgstr "Godziny/Sztuka"
 
 msgid "How a batchable process runs its grouped work: Sequential runs parts one after another on one machine (a saw or laser table), while Simultaneous runs them together in a single load (a furnace, oven, or plating bath)."
 msgstr "Jak proces, który można grupować, uruchamia swoją pracę zgrupowaną: Sekwencyjnie uruchamia części jedna po drugiej na jednej maszynie (piła lub stół laserowy), podczas gdy Jednocześnie uruchamia je razem w jednym ładunku (piec, piekarnik lub kąpiel galwaniczna)."
+
+msgid "How a rental agreement cuts billing periods from its start date: Calendar Month bills each calendar month at the month rate, prorated for a partial month, and 28 Days bills consecutive 28-day periods priced from the day, week, and month rates."
+msgstr ""
+
+msgid "How a rental unit is priced each billing period: Best Rate bills the cheapest of its day, week, and month rates, and Fixed always bills the one tier you choose."
+msgstr ""
 
 msgid "How an item is replenished overall (Buy, Make, or Buy and Make), set per item, unlike the per-line method type."
 msgstr "Jak artykuł jest uzupełniany ogółem (Zakup, Produkcja lub Zakup i produkcja), ustawione na artykuł, w odróżnieniu od typu zasilania dla każdej pozycji."
@@ -11759,6 +11777,9 @@ msgstr "Brak plików dla tego elementu."
 msgid "No files uploaded"
 msgstr "Brak przesłanych plików"
 
+msgid "No fleet units are available. A unit joins the fleet when a serialized item is capitalized from inventory or built for the fleet, on the <0>Fleet</0> page."
+msgstr ""
+
 msgid "No forecast available for this job."
 msgstr "Brak prognozy dostępnej dla tego zadania."
 
@@ -14326,6 +14347,9 @@ msgstr "Kurs"
 
 msgid "Rate Limit"
 msgstr "Limit Szybkości"
+
+msgid "Rate mode"
+msgstr ""
 
 msgid "Rate Mode"
 msgstr "Tryb stawek"
@@ -20700,6 +20724,9 @@ msgstr "Kiedy Carbon zobowiązał się na dostarczenie towaru; połączone z dni
 
 msgid "When deferred, accrued and lease-interest revenue will be recognized"
 msgstr "Gdy przychody opóźnione, naliczone i z odsetek leasingowych będą ujęte"
+
+msgid "When each rental billing period falls due for invoicing: Advance on its first day, before the unit has been used, or Arrears on its last day, after the rent is earned."
+msgstr ""
 
 msgid "When expired stock is used"
 msgstr "Gdy używany jest wygasły zapas"

@@ -660,6 +660,9 @@ msgstr "Müşterinin teslim etme konusunda kesin bir taahhüdü; yerine getirme 
 msgid "A firm order to a supplier; status moves through receive and invoice before Completed as goods and bills arrive."
 msgstr "Bir tedarikçiye kesin sipariş; mal ve faturalar geldikçe durum, Tamamlanan'dan önce alış ve fatura aracılığıyla hareket eder."
 
+msgid "A fixed asset tied to a serialized item that you rent out; only units that read Available in the Fleet register can be added to a rental agreement."
+msgstr ""
+
 msgid "A fleet asset taken out of availability with a date and reason; it keeps depreciating, reads In Maintenance in the Fleet register, and comes back with Return to Service."
 msgstr "Belirli bir tarih ve nedeni ile filo varlığı hizmet dışı çıkarılır; amortisman almaya devam eder, Filo kaydında Bakımda olarak gösterilir ve Servise Geri Dönüş ile tekrar kullanıma alınır."
 
@@ -3204,6 +3207,9 @@ msgstr "Kiralamayı sabit dönemlerde, takvim ayları veya ardışık 28 günlü
 msgid "Billing Address"
 msgstr "Faturalama Adresi"
 
+msgid "Billing cycle"
+msgstr ""
+
 msgid "Billing Cycle"
 msgstr "Faturalandırma Döngüsü"
 
@@ -3212,6 +3218,9 @@ msgstr "Faturalandırma Dönemleri"
 
 msgid "Billing periods are cut when the agreement is activated."
 msgstr "Faturalandırma dönemleri, sözleşme etkinleştirildiğinde oluşturulur."
+
+msgid "Billing timing"
+msgstr ""
 
 msgid "Billing Timing"
 msgstr "Faturalandırma Zamanlaması"
@@ -8295,6 +8304,9 @@ msgstr "Filo"
 msgid "Fleet Days"
 msgstr "Filo Günleri"
 
+msgid "Fleet unit"
+msgstr ""
+
 msgid "Fleet Unit"
 msgstr "Filo Birimi"
 
@@ -8859,6 +8871,12 @@ msgstr "Saat/Adet"
 
 msgid "How a batchable process runs its grouped work: Sequential runs parts one after another on one machine (a saw or laser table), while Simultaneous runs them together in a single load (a furnace, oven, or plating bath)."
 msgstr "Gruplanabilir bir işlemin çalışması: Ardışık, parçaları bir makine üzerinde birbir ardına çalıştırır (testere veya lazer masası gibi), Eşzamanlı ise bunları tek bir yükte birlikte çalıştırır (fırın, fırın veya elektroliz banyosu gibi)."
+
+msgid "How a rental agreement cuts billing periods from its start date: Calendar Month bills each calendar month at the month rate, prorated for a partial month, and 28 Days bills consecutive 28-day periods priced from the day, week, and month rates."
+msgstr ""
+
+msgid "How a rental unit is priced each billing period: Best Rate bills the cheapest of its day, week, and month rates, and Fixed always bills the one tier you choose."
+msgstr ""
 
 msgid "How an item is replenished overall (Buy, Make, or Buy and Make), set per item, unlike the per-line method type."
 msgstr "Bir stok kartının genel olarak nasıl tamamlandığı (Satın alma, Üretim veya Satın alma ve üretim), stok kartı başına ayarlanır, satır başına tedarik şeklinden farklı."
@@ -11759,6 +11777,9 @@ msgstr "Bu öğe için dosya yok."
 msgid "No files uploaded"
 msgstr "Yüklenmiş dosya yok"
 
+msgid "No fleet units are available. A unit joins the fleet when a serialized item is capitalized from inventory or built for the fleet, on the <0>Fleet</0> page."
+msgstr ""
+
 msgid "No forecast available for this job."
 msgstr "Bu İş emri için Tahmin mevcut değildir."
 
@@ -14326,6 +14347,9 @@ msgstr "Kur"
 
 msgid "Rate Limit"
 msgstr "Hız Sınırı"
+
+msgid "Rate mode"
+msgstr ""
 
 msgid "Rate Mode"
 msgstr "Oran Modu"
@@ -20700,6 +20724,9 @@ msgstr "Carbon'un malların teslim edilmesine taahhüt ettiği zaman; sevkiyat y
 
 msgid "When deferred, accrued and lease-interest revenue will be recognized"
 msgstr "Ertelenen, tahakkuk eden ve kira faiz hasılat muhasebeleştirilecek"
+
+msgid "When each rental billing period falls due for invoicing: Advance on its first day, before the unit has been used, or Arrears on its last day, after the rent is earned."
+msgstr ""
 
 msgid "When expired stock is used"
 msgstr "Süresi dolmuş Stok kullanıldığında"

@@ -480,9 +480,29 @@ export const terms = {
     definition: msg`A fleet unit delivered to the customer on an active rental agreement; before delivery it reads Reserved, and after its return it is Available again or In Maintenance.`,
     href: "/docs/reference/rental-agreements#units-and-the-fleet"
   },
+  "fleet-unit": {
+    term: msg`Fleet unit`,
+    definition: msg`A fixed asset tied to a serialized item that you rent out; only units that read Available in the Fleet register can be added to a rental agreement.`,
+    href: "/docs/reference/rental-agreements#units-and-the-fleet"
+  },
+  "rate-mode": {
+    term: msg`Rate mode`,
+    definition: msg`How a rental unit is priced each billing period: Best Rate bills the cheapest of its day, week, and month rates, and Fixed always bills the one tier you choose.`,
+    href: "/docs/reference/rental-agreements#rates"
+  },
   "cycle-billing": {
     term: msg`Cycle billing`,
     definition: msg`Billing a rental in fixed periods, either calendar months or consecutive 28-day periods, each invoiced on its first day (Advance) or its last day (Arrears).`,
+    href: "/docs/reference/rental-agreements#billing"
+  },
+  "billing-cycle": {
+    term: msg`Billing cycle`,
+    definition: msg`How a rental agreement cuts billing periods from its start date: Calendar Month bills each calendar month at the month rate, prorated for a partial month, and 28 Days bills consecutive 28-day periods priced from the day, week, and month rates.`,
+    href: "/docs/reference/rental-agreements#billing"
+  },
+  "billing-timing": {
+    term: msg`Billing timing`,
+    definition: msg`When each rental billing period falls due for invoicing: Advance on its first day, before the unit has been used, or Arrears on its last day, after the rent is earned.`,
     href: "/docs/reference/rental-agreements#billing"
   },
   "best-rate": {

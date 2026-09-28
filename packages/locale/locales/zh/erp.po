@@ -660,6 +660,9 @@ msgstr "客户的明确交货承诺；履行状态在装运和发票之间分摊
 msgid "A firm order to a supplier; status moves through receive and invoice before Completed as goods and bills arrive."
 msgstr "向供应商发送的明确订单；状态随着货物和账单的到达而通过收货和发票，最终达到已完成。"
 
+msgid "A fixed asset tied to a serialized item that you rent out; only units that read Available in the Fleet register can be added to a rental agreement."
+msgstr ""
+
 msgid "A fleet asset taken out of availability with a date and reason; it keeps depreciating, reads In Maintenance in the Fleet register, and comes back with Return to Service."
 msgstr "一项因日期和原因停用的舰队资产；它继续折旧，在舰队寄存器中显示为维护中，并通过恢复服务重新启用。"
 
@@ -3204,6 +3207,9 @@ msgstr "按固定周期对租赁进行计费，可以是日历月或连续28天�
 msgid "Billing Address"
 msgstr "账单地址"
 
+msgid "Billing cycle"
+msgstr ""
+
 msgid "Billing Cycle"
 msgstr "计费 周期"
 
@@ -3212,6 +3218,9 @@ msgstr "计费 期间"
 
 msgid "Billing periods are cut when the agreement is activated."
 msgstr "激活协议时，计费期间将被创建。"
+
+msgid "Billing timing"
+msgstr ""
 
 msgid "Billing Timing"
 msgstr "计费 时间"
@@ -8295,6 +8304,9 @@ msgstr "车队"
 msgid "Fleet Days"
 msgstr "车队天数"
 
+msgid "Fleet unit"
+msgstr ""
+
 msgid "Fleet Unit"
 msgstr "租赁单位"
 
@@ -8859,6 +8871,12 @@ msgstr "小时/件"
 
 msgid "How a batchable process runs its grouped work: Sequential runs parts one after another on one machine (a saw or laser table), while Simultaneous runs them together in a single load (a furnace, oven, or plating bath)."
 msgstr "可批处理工艺如何运行其分组工作：顺序在一台机器上将零件逐一运行（如锯床或激光台），同时在一个负荷中将它们一起运行（如炉、烤箱或电镀槽）。"
+
+msgid "How a rental agreement cuts billing periods from its start date: Calendar Month bills each calendar month at the month rate, prorated for a partial month, and 28 Days bills consecutive 28-day periods priced from the day, week, and month rates."
+msgstr ""
+
+msgid "How a rental unit is priced each billing period: Best Rate bills the cheapest of its day, week, and month rates, and Fixed always bills the one tier you choose."
+msgstr ""
 
 msgid "How an item is replenished overall (Buy, Make, or Buy and Make), set per item, unlike the per-line method type."
 msgstr "物料整体的补货方式（采购、自制或采购与自制），按物料设定，与按行的供料方式不同"
@@ -11759,6 +11777,9 @@ msgstr "此项目没有文件。"
 msgid "No files uploaded"
 msgstr "未上传任何文件"
 
+msgid "No fleet units are available. A unit joins the fleet when a serialized item is capitalized from inventory or built for the fleet, on the <0>Fleet</0> page."
+msgstr ""
+
 msgid "No forecast available for this job."
 msgstr "此任务没有可用预测。"
 
@@ -14326,6 +14347,9 @@ msgstr "汇率"
 
 msgid "Rate Limit"
 msgstr "速率限制"
+
+msgid "Rate mode"
+msgstr ""
 
 msgid "Rate Mode"
 msgstr "费率模式"
@@ -20700,6 +20724,9 @@ msgstr "货物的承诺到达日期；结合发货方式的运输天数，这驱
 
 msgid "When deferred, accrued and lease-interest revenue will be recognized"
 msgstr "当递延收入、应计收入和租赁利息收入被确认时"
+
+msgid "When each rental billing period falls due for invoicing: Advance on its first day, before the unit has been used, or Arrears on its last day, after the rent is earned."
+msgstr ""
 
 msgid "When expired stock is used"
 msgstr "当使用已过期库存时"

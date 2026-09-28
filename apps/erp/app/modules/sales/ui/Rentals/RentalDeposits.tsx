@@ -1,9 +1,9 @@
 import {
   Button,
   Card,
-  CardAction,
   CardContent,
   CardDescription,
+  CardFooter,
   CardHeader,
   CardTitle,
   Table,
@@ -63,20 +63,6 @@ const RentalDeposits = ({ rentalAgreement, deposits }: RentalDepositsProps) => {
             currencyCode={rentalAgreement.currencyCode}
           />
         </CardDescription>
-        {canRecord && (
-          <CardAction>
-            <Button
-              variant="secondary"
-              leftIcon={<LuPlus />}
-              isDisabled={!permissions.can("create", "invoicing")}
-              asChild
-            >
-              <Link to={recordDepositUrl}>
-                <Trans>Record Deposit</Trans>
-              </Link>
-            </Button>
-          </CardAction>
-        )}
       </CardHeader>
       <CardContent>
         {deposits.length === 0 ? (
@@ -131,6 +117,20 @@ const RentalDeposits = ({ rentalAgreement, deposits }: RentalDepositsProps) => {
           </Table>
         )}
       </CardContent>
+      {canRecord && (
+        <CardFooter>
+          <Button
+            variant="secondary"
+            leftIcon={<LuPlus />}
+            isDisabled={!permissions.can("create", "invoicing")}
+            asChild
+          >
+            <Link to={recordDepositUrl}>
+              <Trans>Record Deposit</Trans>
+            </Link>
+          </Button>
+        </CardFooter>
+      )}
     </Card>
   );
 };

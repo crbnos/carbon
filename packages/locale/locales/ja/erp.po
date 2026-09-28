@@ -660,6 +660,9 @@ msgstr "得意先からの確定的な納期承諾；充足状況は出荷と請
 msgid "A firm order to a supplier; status moves through receive and invoice before Completed as goods and bills arrive."
 msgstr "仕入先への確定注文；商品と請求書が到着するにつれて、ステータスは完了前に受け取りと請求を通じて移動します。"
 
+msgid "A fixed asset tied to a serialized item that you rent out; only units that read Available in the Fleet register can be added to a rental agreement."
+msgstr ""
+
 msgid "A fleet asset taken out of availability with a date and reason; it keeps depreciating, reads In Maintenance in the Fleet register, and comes back with Return to Service."
 msgstr "可用性から除外された固定資産。日付と理由を記録し、減価償却は継続され、フリートレジスターで「保全中」と表示され、Return to Serviceで復帰します。"
 
@@ -3204,6 +3207,9 @@ msgstr "固定期間でのレンタル請求。カレンダー月または連続
 msgid "Billing Address"
 msgstr "請求先住所"
 
+msgid "Billing cycle"
+msgstr ""
+
 msgid "Billing Cycle"
 msgstr "請求サイクル"
 
@@ -3212,6 +3218,9 @@ msgstr "請求期間"
 
 msgid "Billing periods are cut when the agreement is activated."
 msgstr "契約が有効化されると請求期間が作成されます。"
+
+msgid "Billing timing"
+msgstr ""
 
 msgid "Billing Timing"
 msgstr "請求タイミング"
@@ -8295,6 +8304,9 @@ msgstr "フリート"
 msgid "Fleet Days"
 msgstr "フリート日数"
 
+msgid "Fleet unit"
+msgstr ""
+
 msgid "Fleet Unit"
 msgstr "フリートユニット"
 
@@ -8859,6 +8871,12 @@ msgstr "時間/個"
 
 msgid "How a batchable process runs its grouped work: Sequential runs parts one after another on one machine (a saw or laser table), while Simultaneous runs them together in a single load (a furnace, oven, or plating bath)."
 msgstr "バッチ処理可能な工法がグループ化されたworkをどのように実行するかを示します：シーケンシャルは部品を1つの機械（のこぎりやレーザーテーブル）で次々と実行し、シミュルタネアスは1回の負荷でそれらを一緒に実行します（炉、オーブン、またはメッキ槽）。"
+
+msgid "How a rental agreement cuts billing periods from its start date: Calendar Month bills each calendar month at the month rate, prorated for a partial month, and 28 Days bills consecutive 28-day periods priced from the day, week, and month rates."
+msgstr ""
+
+msgid "How a rental unit is priced each billing period: Best Rate bills the cheapest of its day, week, and month rates, and Fixed always bills the one tier you choose."
+msgstr ""
 
 msgid "How an item is replenished overall (Buy, Make, or Buy and Make), set per item, unlike the per-line method type."
 msgstr "品目全体がどのように補充されるか(購入、内製、または購入・内製)。品目ごとに設定され、行ごとの供給方式とは異なります"
@@ -11759,6 +11777,9 @@ msgstr "このアイテムのファイルはありません。"
 msgid "No files uploaded"
 msgstr "ファイルがアップロードされていません"
 
+msgid "No fleet units are available. A unit joins the fleet when a serialized item is capitalized from inventory or built for the fleet, on the <0>Fleet</0> page."
+msgstr ""
+
 msgid "No forecast available for this job."
 msgstr "この製造指図に対して利用可能な予測はありません。"
 
@@ -14326,6 +14347,9 @@ msgstr "レート"
 
 msgid "Rate Limit"
 msgstr "レート制限"
+
+msgid "Rate mode"
+msgstr ""
 
 msgid "Rate Mode"
 msgstr "料金体系"
@@ -20700,6 +20724,9 @@ msgstr "Carbonが商品の到着を約束した日付。出荷方法の輸送日
 
 msgid "When deferred, accrued and lease-interest revenue will be recognized"
 msgstr "繰延収益、見越収益およびリース利息収益が認識される場合"
+
+msgid "When each rental billing period falls due for invoicing: Advance on its first day, before the unit has been used, or Arrears on its last day, after the rent is earned."
+msgstr ""
 
 msgid "When expired stock is used"
 msgstr "期限切れの在庫が使用される場合"
