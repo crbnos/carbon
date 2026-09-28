@@ -44,6 +44,7 @@ export type RampBillRemote = {
   invoice_currency: string;
   issued_at?: string;
   due_at?: string;
+  memo?: string;
   remote_id: string;
   line_items: Array<{
     memo?: string;
@@ -51,6 +52,34 @@ export type RampBillRemote = {
     accounting_field_selections: ReturnType<typeof buildLineCodingSelections>;
   }>;
 };
+
+/**
+ * What the bill says about itself beyond the supplier's invoice number.
+ *
+ * Two facts, one field, because Ramp gives us one field. `invoice_number` is
+ * reserved for the SUPPLIER's reference, and a draft bill has no writable
+ * purchase-order link — verified live 2026-09-27: `POST /bills/drafts` accepts
+ * both `purchase_order_id` and `purchase_order_ids` with a 201 and stores
+ * neither, and reading the draft back shows no purchase-related key at all.
+ * Ramp performs that match itself, and only while the order still exists (which
+ * is why a Completed order is no longer archived — see
+ * `SPEND_SETTLED_PURCHASE_ORDER_STATUSES`).
+ *
+ * So the memo is not decoration and not a substitute for the match: it is the
+ * only thing Carbon can put on the bill that tells a person reading it in Ramp
+ * which Carbon invoice this is and which orders it settles. It is deliberately
+ * bare ids rather than a sentence — someone searching Ramp for `AP000008` or
+ * `PO000018` should find this bill.
+ */
+export function buildBillMemo(local: {
+  readableId: string;
+  purchaseOrderReadableIds?: string[];
+}): string {
+  const orders = (local.purchaseOrderReadableIds ?? []).filter(Boolean);
+  return orders.length > 0
+    ? `${local.readableId} · ${orders.join(", ")}`
+    : local.readableId;
+}
 
 export class RampBillSyncer extends RampPushOnlyEntitySyncer<
   SpendBillSource,
@@ -131,8 +160,16 @@ export class RampBillSyncer extends RampPushOnlyEntitySyncer<
       pushed
     });
 
+    // `invoice_number` stays the SUPPLIER's reference whenever there is one —
+    // that is the number an AP clerk matches against the paper, and Carbon's own
+    // id in that field would be wrong. But then nothing on the Ramp bill named
+    // the Carbon invoice at all: a bill showing only `CEX-Q-4471` could not be
+    // traced back to `AP000008` without querying the database. `memo` carries
+    // it, alongside the orders the invoice bills, because Ramp does not expose a
+    // writable purchase-order field on a draft (see `buildBillMemo`).
     const invoiceNumber =
       (local.supplierReference ?? "").trim() || local.readableId;
+    const memo = buildBillMemo(local);
 
     return {
       vendor_id: vendorId,
@@ -140,6 +177,7 @@ export class RampBillSyncer extends RampPushOnlyEntitySyncer<
       invoice_currency: currencyCode,
       ...(local.dateIssued ? { issued_at: local.dateIssued } : {}),
       ...(local.dateDue ? { due_at: local.dateDue } : {}),
+      ...(memo ? { memo } : {}),
       remote_id: local.id,
       line_items: lines.map((line) => ({
         memo: line.memo,

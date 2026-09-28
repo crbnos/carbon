@@ -68,15 +68,42 @@ providers, which own the data and mirror it out.
 >   fallback a supplier with one perfectly good contact blocked every bill for want of
 >   a pointer field nobody knew to set.
 >   `describeMissingVendorFields` names the supplier and the specific missing field.
->   The PREVENTIVE half is the `requireSupplierContact` company setting
+>   **`business_vendor_contacts.email`, `country` AND (for US) `state` are ALL
+>   required** — verified field-by-field against the sandbox 2026-09-28:
+>   no `country` → `422 {"country": ["Missing data for required field."]}`;
+>   no `business_vendor_contacts` → `422 {"business_vendor_contacts": [...]}`;
+>   a contact carrying no email → `422 {"business_vendor_contacts": {"email": [...]}}`;
+>   `US` with no `state` → `400 DEVELOPER_7080 "State is required for US"`;
+>   email + `US` + `VA` → 200; email + `GB`, no state → 200. So the state rule is
+>   genuinely per-country, not address hygiene. `describeMissingVendorFields` names
+>   whichever is absent, the US state included (it was missing from that list until
+>   2026-09-28, so a US supplier with a country but no state fell through to the
+>   useless "see the provider error" branch).
+>   The PREVENTIVE half is the `requireSupplierContactAndLocation` company setting
 >   (`apps/erp/app/modules/settings/party-contact.ts`): when on, a supplier must have
->   an emailable contact before its supplier quote, purchase order or purchase invoice
->   can be issued or posted, so the gap is caught while the person who can fix it is
->   still looking at the document. Off by default and NOT flipped by the Ramp install
->   hook — silently changing a company-wide data-entry policy as a side effect of
->   installing an integration has no good uninstall answer. `requireCustomerContact`
->   is its sales-side mirror, also off; no accounting provider requires a customer
->   email (Rillet, Xero and QuickBooks all treat it as optional).
+>   an emailable contact AND a location whose address carries a country (plus a state
+>   when that country is US) before its supplier quote, purchase order or purchase
+>   invoice can be issued or posted, so the gap is caught while the person who can fix
+>   it is still looking at the document. ONE setting per party kind rather than two,
+>   because the platform needs all of it or none — a supplier with a contact but no
+>   location fails exactly as hard as one with neither. Enforced in the VALIDATORS
+>   (both the contact and location fields become required), so the error lands on the
+>   control instead of arriving as a toast after a failed submit, and every entry
+>   point — API, MCP, duplicate — is held to it by construction.
+>   Off by default, and **turned ON when Ramp is connected**. The mechanism is a
+>   CAPABILITY, not a line in the Ramp hook: `requiresPartyContactAndLocation:
+>   ["supplier"]` on both Ramp mode profiles (`ramp/lib/modes.ts`), applied by
+>   `applyPartyContactRequirements` (`sync/party-contact.ts`) from `convergeRamp`. A
+>   second spend provider declares the same capability and inherits the behaviour
+>   with no edit. **ON only, never off**: uninstalling leaves it set, because by then
+>   the company has been entering contacts for months and silently relaxing a
+>   data-quality rule as a side effect of removing something else is a change nobody
+>   attributes correctly. Idempotent — it reads before writing, so the re-converge on
+>   every settings save is a no-op. NOTE it only fires on install / settings-update,
+>   so an already-connected company does not flip until one of those happens.
+>   `requireCustomerContactAndLocation` is its sales-side mirror, still off and NOT
+>   auto-enabled; no accounting provider requires a customer email or address
+>   (Rillet, Xero and QuickBooks all treat them as optional).
 >   `loadRampVendorSuppliers` batches the
 >   supplier→purchasing-contact/address embed. Webhook signing encoding is the one thing the
 >   public docs don't cover.
@@ -663,7 +690,28 @@ keyset helpers and its two metadata cursors are gone.
 - **`vendor_id` is CREATE-only.** A PATCH carrying it is rejected whole with
   `422 DEVELOPER_7001 {"vendor_id": ["Unknown field."]}`, so the line items in the
   same request never land. PATCH sends `line_items` only.
-- **POs** (`pushPurchaseOrder`): Completed/Closed mapped POs are archived; released POs
+- **A Completed purchase order is NOT archived — only a Closed one is.** Archiving is
+  destructive (`GET` 404s, it leaves every list) and Ramp offers no non-destructive
+  alternative: a purchase order carries `archived_at` and no state/closed field. Ramp
+  matches a bill to an order ITSELF and can only do so while the order exists, and a
+  draft bill has no writable purchase-order field — `POST /bills/drafts` accepted both
+  `purchase_order_id` and `purchase_order_ids` with a **201** and stored neither, and
+  reading the draft back showed no purchase-related key at all (verified 2026-09-27).
+  So archiving on `Completed` destroyed the counterpart at the exact moment its bill
+  arrived, and "Matching Purchase Order" in Ramp could never populate. `Completed` =
+  received AND invoiced, which is when the match matters; `Closed` = short-closed, no
+  bill is coming. Pinned by `spend/gates.test.ts`. The cost of keeping them is that
+  Ramp's purchase-order list grows — Ramp tracks `billing_status` / `receipt_status`
+  per order, so a kept order does not read as "open", it is only one more row.
+- **A mapped purchase order Ramp no longer has recovers by recreating.** Every install
+  that ran the archive-on-Completed build has mappings pointing at archived orders, and
+  `PATCH` answers `404 DEVELOPER_7002` — without recovery the first push after the change
+  would fail permanently on a mapping nothing repairs. `upsertRemote` catches exactly a
+  404 and falls through to create, returning a new id (which rewrites the mapping). Safe
+  only because **archiving releases the purchase-order number**: re-creating `PO000018-1`
+  while the archived original still held it returned `201`, not `400 DEVELOPER_7063`
+  (verified live 2026-09-27, and end-to-end through the real drain on PO000018).
+- **POs** (`pushPurchaseOrder`): Closed mapped POs are archived; released POs
   ensure a Ramp vendor then create (carrying `external_id: po.id` for Ramp's
   bill-matching plus an entity-scoped idempotency key) or PATCH a mapped PO. Each local page
   preloads PO/vendor mappings in two reads and, only when named suppliers remain unmapped,
@@ -711,7 +759,24 @@ keyset helpers and its two metadata cursors are gone.
 - **No bill archive-on-settlement**: a Ramp draft has no delete endpoint
   (`DELETE /bills/drafts/{id}` → 405; `DELETE /bills/{id}` on a draft id → 404), so a
   handed-off draft is not retracted when its Carbon invoice settles — Ramp owns the bill's
-  lifecycle after handoff. (PO archive on Completed/Closed is separate and still runs.)
+  lifecycle after handoff. (PO archive is separate and now runs on `Closed` only — above.)
+- **A draft bill cannot be pushed twice.** A second create with the same `remote_id` is
+  refused `409 DEVELOPER_7153 "A draft bill with this remote ID already exists for this
+  accounting connection"` (verified live 2026-09-27). Duplicates are therefore impossible
+  even with the mapping lost — but so is re-sending a corrected payload, which is what
+  makes the create-once path the only shot at getting a draft right. **Never delete a
+  bill mapping to force a re-push**: the draft survives, the create 409s, and the invoice
+  is left permanently unsyncable with nothing pointing at its draft.
+- **`memo` carries the Carbon numbers, because nothing else can.** `invoice_number` is
+  the SUPPLIER's reference whenever there is one — that is what an AP clerk matches
+  against the paper — so a bill in Ramp showed only `CEX-Q-4471` with no way back to
+  `AP000008`. `buildBillMemo` (`ramp/entities/bill.ts`) writes `"<invoice> · <orders>"`
+  (`AP000004 · PO000011`, verified stored live 2026-09-27), bare ids so a Ramp search for
+  either finds the bill. The orders come from `SpendBillSource.purchaseOrderReadableIds`,
+  loaded from `purchaseInvoiceLine.purchaseOrderId` — the link is per LINE, so a
+  consolidated invoice names every order it settles. This is NOT a substitute for Ramp's
+  own match; it is the only thing Carbon can put ON the bill, given the draft has no
+  purchase-order field.
 
 If any family leaves failures, a final `ramp-notify-failures` step sends one in-app
 `NotificationEvent.IntegrationSync` to the integration's configurer (`updatedBy`, unless

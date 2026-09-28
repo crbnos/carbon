@@ -24,7 +24,7 @@ import {
   loadPurchaseOrderPushSource,
   type SpendPurchaseOrderSource
 } from "../../spend/purchase-order-source";
-import { buildRampIdempotencyKey } from "../lib/client";
+import { buildRampIdempotencyKey, RampApiError } from "../lib/client";
 import {
   prepareRampPurchaseOrderBatch,
   type RampPurchaseOrderBatch,
@@ -253,10 +253,33 @@ export class RampPurchaseOrderSyncer extends RampPushOnlyEntitySyncer<
       // search-before-create above, a purchase order Carbon had already pushed
       // but lost the mapping for could only ever take the create path — and fail
       // there on the duplicate number.
-      await this.ramp.patchPurchaseOrder(existing, {
-        line_items: payload.line_items
-      });
-      return existing;
+      try {
+        await this.ramp.patchPurchaseOrder(existing, {
+          line_items: payload.line_items
+        });
+        return existing;
+      } catch (err) {
+        /**
+         * The mapping points at a purchase order Ramp no longer has, so fall
+         * through and create it again — returning a new id, which rewrites the
+         * mapping.
+         *
+         * Every company that ran the earlier build is in exactly this state:
+         * it archived a purchase order the moment it reached `Completed`, and
+         * an archived Ramp purchase order is GONE — `PATCH` answers
+         * `404 DEVELOPER_7002` and it appears in no list. Without this, the
+         * first push after that change would fail permanently on a document
+         * whose mapping nothing will ever repair.
+         *
+         * Recreating is safe because archiving RELEASES the purchase-order
+         * number: re-creating `PO000018-1` while the archived original still
+         * held it returned `201`, not the `400 DEVELOPER_7063` duplicate
+         * (verified live 2026-09-27). Were that not true this branch could only
+         * trade one permanent failure for another.
+         */
+        if (!(err instanceof RampApiError) || err.status !== 404) throw err;
+        existing = null;
+      }
     }
 
     const created = (await this.ramp.createPurchaseOrder(

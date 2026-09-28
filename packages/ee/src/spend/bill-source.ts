@@ -43,6 +43,16 @@ export type SpendBillSource = {
   updatedAt: string | null;
   /** Its invoices belong to the platform already; never push them back. */
   isEmployeeParty: boolean;
+  /**
+   * The purchase orders this invoice bills, by readable id, in order.
+   *
+   * An invoice's lines may each name a different order, so this is a list and
+   * not a field — a consolidated invoice against three orders is ordinary. It
+   * exists so a pushed bill can SAY which orders it settles: a spend platform
+   * matches bill to order by its own rules, and when that match does not happen
+   * the person looking at the bill has nothing to go on otherwise.
+   */
+  purchaseOrderReadableIds: string[];
   supplier: SpendVendorParty;
 };
 
@@ -110,6 +120,14 @@ export async function loadBillPushSource(
       .filter((id): id is string => Boolean(id))
   );
 
+  const purchaseOrdersByInvoice = await loadBilledPurchaseOrderIds(
+    db,
+    companyId,
+    invoices
+      .map((invoice) => invoice.id)
+      .filter((id): id is string => Boolean(id))
+  );
+
   const typeIds = [
     ...new Set(
       [...partiesById.values()]
@@ -151,9 +169,56 @@ export async function loadBillPushSource(
       isEmployeeParty: Boolean(
         party?.supplierTypeId && employeeTypeIds.has(party.supplierTypeId)
       ),
+      purchaseOrderReadableIds: purchaseOrdersByInvoice.get(invoice.id) ?? [],
       supplier:
         party ?? emptySpendVendorParty(invoice.supplierId ?? invoice.id, null)
     });
+  }
+
+  return result;
+}
+
+/**
+ * The purchase orders each invoice bills, by readable id.
+ *
+ * The link lives on the LINE (`purchaseInvoiceLine.purchaseOrderId`), not the
+ * header, so one invoice can settle several orders and several lines can name
+ * the same one. One query for every invoice in the batch, de-duplicated per
+ * invoice, ordered so the value is stable between syncs.
+ */
+async function loadBilledPurchaseOrderIds(
+  db: Kysely<KyselyDatabase>,
+  companyId: string,
+  invoiceIds: string[]
+): Promise<Map<string, string[]>> {
+  const result = new Map<string, string[]>();
+  if (invoiceIds.length === 0) return result;
+
+  const rows = await db
+    .selectFrom("purchaseInvoiceLine")
+    .innerJoin("purchaseOrder", (join) =>
+      join
+        .onRef("purchaseOrder.id", "=", "purchaseInvoiceLine.purchaseOrderId")
+        .on("purchaseOrder.companyId", "=", companyId)
+    )
+    .select([
+      "purchaseInvoiceLine.invoiceId as invoiceId",
+      "purchaseOrder.purchaseOrderId as readableId"
+    ])
+    .where("purchaseInvoiceLine.companyId", "=", companyId)
+    .where("purchaseInvoiceLine.invoiceId", "in", invoiceIds)
+    .where("purchaseInvoiceLine.purchaseOrderId", "is not", null)
+    .orderBy("purchaseOrder.purchaseOrderId")
+    .execute();
+
+  for (const row of rows) {
+    if (!row.invoiceId || !row.readableId) continue;
+    const existing = result.get(row.invoiceId);
+    if (!existing) {
+      result.set(row.invoiceId, [row.readableId]);
+    } else if (!existing.includes(row.readableId)) {
+      existing.push(row.readableId);
+    }
   }
 
   return result;

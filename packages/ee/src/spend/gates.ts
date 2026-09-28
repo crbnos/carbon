@@ -24,9 +24,23 @@ export const SPEND_PUSHED_PURCHASE_ORDER_STATUSES: PurchaseOrderStatus[] = [
  * Settled statuses. The platform's counterpart is retired rather than updated —
  * HOW it is retired (archive, close, delete, or not at all) is the provider's
  * business; that it should no longer look open is Carbon's.
+ *
+ * `Completed` is deliberately NOT here, and the distinction is the whole point.
+ * A Completed order is fully received AND invoiced, so its bill is arriving at
+ * the platform at almost the same moment — and the platform matches a bill to an
+ * order on its own, which it can only do while the order still exists. Retiring
+ * it on Completed destroyed the counterpart exactly when it was about to be
+ * used: the bill landed with no matching order, and the three-way match the
+ * order was pushed for could never happen. (Verified against Ramp 2026-09-27:
+ * an archived purchase order 404s and is absent from every list, and a draft
+ * bill has no writable purchase-order field — Ramp accepted both
+ * `purchase_order_id` and `purchase_order_ids` with a 201 and stored neither —
+ * so the order EXISTING is the only lever Carbon has over the match.)
+ *
+ * `Closed` is short-closed or abandoned: no bill is coming, nothing will ever
+ * match it, and retiring it is the tidying it was always meant to be.
  */
 export const SPEND_SETTLED_PURCHASE_ORDER_STATUSES: PurchaseOrderStatus[] = [
-  "Completed",
   "Closed"
 ];
 

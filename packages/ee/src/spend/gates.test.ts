@@ -39,6 +39,24 @@ describe("spend push eligibility", () => {
     expect(isSettledPurchaseOrderStatus("To Invoice")).toBe(false);
   });
 
+  it("keeps a Completed order ALIVE on the platform, and retires only a Closed one", () => {
+    // The bug this pins: Completed used to be settled, so the platform's copy
+    // was archived at the exact moment its bill arrived — and a platform
+    // matches bill to order on its own, which it can only do while the order
+    // still exists. Ramp offers no non-destructive "close" (a purchase order
+    // has `archived_at` and no state field) and no writable purchase-order
+    // field on a draft bill, so the order surviving is the only lever Carbon
+    // has over that match. Completed = received AND invoiced, which is exactly
+    // when the match matters; Closed = short-closed, no bill is coming.
+    expect(isSettledPurchaseOrderStatus("Completed")).toBe(false);
+    expect(isSettledPurchaseOrderStatus("Closed")).toBe(true);
+
+    // Both stay pushable — Completed so its final state reaches the platform,
+    // Closed so the counterpart can be retired.
+    expect(isPushablePurchaseOrderStatus("Completed")).toBe(true);
+    expect(isPushablePurchaseOrderStatus("Closed")).toBe(true);
+  });
+
   it("pushes every payable status the invoice VIEW can derive", () => {
     // "Partially Paid" and "Overdue" exist ONLY in the view — the table still
     // stores "Open". Omitting either silently stops real payables from ever
