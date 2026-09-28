@@ -31,7 +31,7 @@ import { rentalAgreementReturnValidator } from "../../sales.models";
 type RentalAgreementReturnFormProps = {
   initialValues: z.infer<typeof rentalAgreementReturnValidator>;
   unitLabel: string;
-  /** A Sales-Type unit carries a net investment that must land somewhere. */
+  /** A Sale unit carries a net investment that must land somewhere. */
   isSalesType?: boolean;
   /** The agreement's end date — a sales-type unit comes back on or after it. */
   endDate?: string | null;
@@ -89,17 +89,17 @@ const RentalAgreementReturnForm = ({
                   <>
                     <p className="text-sm text-muted-foreground">
                       <Trans>
-                        This is a sales-type lease. The closing net investment
-                        comes back onto the balance sheet with the unit, and the
-                        unposted interest schedule is removed.
+                        This rental is treated as a sale. The closing net
+                        investment comes back onto the balance sheet with the
+                        unit, and the unposted interest schedule is removed.
                       </Trans>
                     </p>
                     {endDate && (
                       <p className="text-sm text-muted-foreground">
                         <Trans>
                           The unit can be returned on or after the end date,{" "}
-                          {formatDate(endDate)}. Early termination of a
-                          sales-type lease is a manual journal.
+                          {formatDate(endDate)}. Ending a rental treated as a
+                          sale early is a manual journal.
                         </Trans>
                       </p>
                     )}
@@ -133,6 +133,7 @@ const RentalAgreementReturnForm = ({
                   label={t`Take out of service`}
                   description={t`The unit goes to maintenance instead of back to available.`}
                   onChange={setTakeOutOfService}
+                  bordered
                 />
                 {takeOutOfService && (
                   <Input

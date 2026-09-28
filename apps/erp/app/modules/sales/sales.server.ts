@@ -333,7 +333,7 @@ export async function recordSalesRuleOutcome(
 
 /**
  * The `Purchase Option` charge Sell to Customer bills (`$id.$lineId.sell.tsx`,
- * which checks the agreement is Active, the line is a Sales-Type unit On Rent
+ * which checks the agreement is Active, the line is a Sale unit On Rent
  * and the option is not already billed). Server-only on purpose: the
  * `sales.service.ts` charge writer is an MCP tool and only ever writes a
  * `Charge`, so no caller can name this kind and skip those checks.

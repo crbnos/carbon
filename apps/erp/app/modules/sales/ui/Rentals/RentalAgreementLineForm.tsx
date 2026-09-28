@@ -259,7 +259,7 @@ const RentalAgreementLineForm = ({
                   }
                   onClick={() => setShowClassification((open) => !open)}
                 >
-                  <Trans>Lease classification inputs</Trans>
+                  <Trans>Accounting treatment inputs</Trans>
                 </Button>
                 {/* Hidden rather than unmounted: the fields must still post,
                     or saving with the section collapsed would clear them. */}

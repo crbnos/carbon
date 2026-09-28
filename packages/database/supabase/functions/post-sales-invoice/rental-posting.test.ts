@@ -28,7 +28,7 @@ const input = (
   overrides: Partial<RentalLinePlanInput> = {},
 ): RentalLinePlanInput => ({
   kind: "Rent",
-  classification: "Operating",
+  classification: "Rental",
   revenueBase: 1500,
   period: october,
   unbilledAccruals: [],
@@ -223,7 +223,7 @@ Deno.test("a charge is rental income when billed, with no schedule", () => {
 
 const salesType = (overrides: Partial<RentalLinePlanInput> = {}) =>
   input({
-    classification: "Sales-Type",
+    classification: "Sale",
     accounts: { ...accounts, netInvestmentInLeases: account("net-investment", "Asset") },
     ...overrides,
   });
@@ -272,17 +272,17 @@ Deno.test("sales-type credits, an unmapped net investment account and direct fin
   assertThrows(
     () => planRentalLine(salesType({ revenueBase: -1000 })),
     Error,
-    "Early-return credits do not apply to a sales-type lease",
+    "Early-return credits do not apply to a rental treated as a sale",
   );
   assertThrows(
-    () => planRentalLine(input({ classification: "Sales-Type" })),
+    () => planRentalLine(input({ classification: "Sale" })),
     Error,
     "Net Investment in Leases account",
   );
   assertThrows(
-    () => planRentalLine(input({ classification: "Direct Financing" })),
+    () => planRentalLine(input({ classification: "Financing" })),
     Error,
-    "Direct Financing",
+    "Financing",
   );
 });
 
@@ -290,12 +290,12 @@ Deno.test("purchase options on operating lines and rent without a period are ref
   assertThrows(
     () => planRentalLine(input({ kind: "Purchase Option" })),
     Error,
-    "Purchase option billing requires a sales-type line",
+    "Purchase option billing requires a line treated as a sale",
   );
   assertThrows(
     () => planRentalLine(input({ kind: "Purchase Option", classification: null })),
     Error,
-    "Purchase option billing requires a sales-type line",
+    "Purchase option billing requires a line treated as a sale",
   );
   assertThrows(
     () => planRentalLine(input({ period: null })),

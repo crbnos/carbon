@@ -31,6 +31,6 @@ BEGIN
     CREATE TYPE "rentalRateMode" AS ENUM ('Best Rate', 'Fixed');
   END IF;
   IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'lessorClassification') THEN
-    CREATE TYPE "lessorClassification" AS ENUM ('Operating', 'Sales-Type', 'Direct Financing');
+    CREATE TYPE "lessorClassification" AS ENUM ('Rental', 'Sale', 'Financing');
   END IF;
 END $rentenums$;

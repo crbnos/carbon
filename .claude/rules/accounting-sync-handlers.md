@@ -291,9 +291,9 @@ revenue, so it cannot mirror Carbon's posting. Spec:
   `invoiceLineType 'Rental'` with **no item** (`itemId` null;
   `rentalInvoiceLineKind` Rent / Charge / Purchase Option; an early-return credit
   is a Rent line with a NEGATIVE unit price). Carbon posts their revenue legs to
-  Contract Assets / Deferred Revenue (operating Rent), Rental Income (Charge) or
-  Net Investment in Leases, an ASSET (Rent and Purchase Option of a Sales-Type
-  line), NOT to the Sales default, and those legs carry `documentType 'Rental Agreement'` /
+  Contract Assets / Deferred Revenue (Rent of a `Rental` line), Rental Income (Charge) or
+  Net Investment in Leases, an ASSET (Rent and Purchase Option of a `Sale`
+  line, i.e. a sales-type lease), NOT to the Sales default, and those legs carry `documentType 'Rental Agreement'` /
   `documentId = rentalAgreement.id` — only the AR and tax legs keep
   `documentType 'Invoice'`. Anything that selects an invoice's journal lines by
   `documentType = 'Invoice'` (`sales-invoice-source.ts` shipping-account read,

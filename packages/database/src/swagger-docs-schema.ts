@@ -132802,7 +132802,7 @@ export default {
           type: "number"
         },
         lessorClassification: {
-          enum: ["Operating", "Sales-Type", "Direct Financing"],
+          enum: ["Rental", "Sale", "Financing"],
           format: 'public."lessorClassification"',
           type: "string"
         },

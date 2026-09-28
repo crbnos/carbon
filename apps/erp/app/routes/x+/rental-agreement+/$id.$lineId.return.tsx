@@ -52,7 +52,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   }
 
   const timeZone = await getCompanyTimeZone(client, companyId);
-  const isSalesType = line.data.lessorClassification === "Sales-Type";
+  const isSalesType = line.data.lessorClassification === "Sale";
 
   return {
     agreementId: id,
@@ -102,7 +102,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   } = validation.data;
 
   // The posted `isSalesType` only drives the form; the line decides. A
-  // Sales-Type line's closing net investment must land somewhere.
+  // Sale line's closing net investment must land somewhere.
   const line = await getRentalAgreementLine(client, lineId);
   if (line.error || line.data.rentalAgreementId !== id) {
     throw redirect(
@@ -113,7 +113,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
       )
     );
   }
-  const isSalesType = line.data.lessorClassification === "Sales-Type";
+  const isSalesType = line.data.lessorClassification === "Sale";
   if (isSalesType && !residualDestination) {
     return validationError({
       fieldErrors: {

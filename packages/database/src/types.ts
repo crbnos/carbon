@@ -88501,7 +88501,7 @@ export type Database = {
         | "Rental Agreement"
       kanbanOutput: "label" | "qrcode" | "url"
       kanbanReplenishmentSystem: "Buy" | "Make" | "Transfer"
-      lessorClassification: "Operating" | "Sales-Type" | "Direct Financing"
+      lessorClassification: "Rental" | "Sale" | "Financing"
       macrsConvention: "Half-Year" | "Mid-Quarter"
       macrsPropertyClass: "3" | "5" | "7" | "10" | "15" | "20" | "27.5" | "39"
       maintenanceDispatchPriority: "Low" | "Medium" | "High" | "Critical"
@@ -89969,7 +89969,7 @@ export const Constants = {
       ],
       kanbanOutput: ["label", "qrcode", "url"],
       kanbanReplenishmentSystem: ["Buy", "Make", "Transfer"],
-      lessorClassification: ["Operating", "Sales-Type", "Direct Financing"],
+      lessorClassification: ["Rental", "Sale", "Financing"],
       macrsConvention: ["Half-Year", "Mid-Quarter"],
       macrsPropertyClass: ["3", "5", "7", "10", "15", "20", "27.5", "39"],
       maintenanceDispatchPriority: ["Low", "Medium", "High", "Critical"],

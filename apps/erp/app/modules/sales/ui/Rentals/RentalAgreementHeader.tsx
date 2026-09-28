@@ -16,7 +16,7 @@ import { useState } from "react";
 import {
   LuCircleCheck,
   LuCircleStop,
-  LuFileText,
+  LuCreditCard,
   LuPlay,
   LuTrash
 } from "react-icons/lu";
@@ -73,8 +73,7 @@ const RentalAgreementHeader = ({
   // A commenced sales-type lease has already derecognized its unit; undoing
   // that is a manual journal in v1, so cancel is refused (spec §4).
   const hasCommencedSalesTypeLine =
-    !isDraft &&
-    lines.some((line) => line.lessorClassification === "Sales-Type");
+    !isDraft && lines.some((line) => line.lessorClassification === "Sale");
   // A unit still out past the end date keeps billing at the same rates.
   const isPastEndDate =
     isActive &&
@@ -159,12 +158,12 @@ const RentalAgreementHeader = ({
             <>
               {isActive && (
                 <Button
-                  variant="secondary"
-                  leftIcon={<LuFileText />}
+                  variant={allPeriodsBilled ? "secondary" : "primary"}
+                  leftIcon={<LuCreditCard />}
                   isDisabled={!canUpdate}
                   onClick={() => open("invoice")}
                 >
-                  <Trans>Generate Invoices</Trans>
+                  <Trans>Invoice</Trans>
                 </Button>
               )}
               {(isDraft || isActive) &&
@@ -185,7 +184,7 @@ const RentalAgreementHeader = ({
                     </TooltipTrigger>
                     <TooltipContent>
                       <Trans>
-                        Early termination of a sales-type lease is a manual
+                        Ending a rental treated as a sale early is a manual
                         journal.
                       </Trans>
                     </TooltipContent>
@@ -204,7 +203,7 @@ const RentalAgreementHeader = ({
                 ))}
               {isActive && (
                 <Button
-                  variant="primary"
+                  variant={allPeriodsBilled ? "primary" : "secondary"}
                   leftIcon={<LuCircleCheck />}
                   isDisabled={!canUpdate || !allLinesBack || !allPeriodsBilled}
                   onClick={() => open("close")}

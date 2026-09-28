@@ -12,8 +12,7 @@ import {
   Tr
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { Hyperlink } from "~/components";
-import { useDateFormatter } from "~/hooks";
+import { DateTime, Hyperlink } from "~/components";
 import { path } from "~/utils/path";
 import RentalMoney from "./RentalMoney";
 import RentalStatus from "./RentalStatus";
@@ -35,7 +34,6 @@ const RentalBillingPeriods = ({
   invoiceLinks
 }: RentalBillingPeriodsProps) => {
   const { t } = useLingui();
-  const { formatDate } = useDateFormatter();
 
   const tierLabel = (unit: RentalBillingPeriod["rateUnitApplied"]) => {
     switch (unit) {
@@ -111,8 +109,8 @@ const RentalBillingPeriods = ({
                     </Td>
                     <Td>
                       <span className="whitespace-nowrap">
-                        {formatDate(period.periodStart)} –{" "}
-                        {formatDate(period.periodEnd)}
+                        <DateTime value={period.periodStart} variant="date" /> –{" "}
+                        <DateTime value={period.periodEnd} variant="date" />
                       </span>
                       {period.isAdjustment && (
                         <Badge variant="orange" className="ml-2">
@@ -128,7 +126,9 @@ const RentalBillingPeriods = ({
                         currencyCode={rentalAgreement.currencyCode}
                       />
                     </Td>
-                    <Td>{formatDate(period.dueOn)}</Td>
+                    <Td>
+                      <DateTime value={period.dueOn} variant="date" />
+                    </Td>
                     <Td>
                       <RentalStatus status={period.status} />
                     </Td>

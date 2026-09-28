@@ -19,7 +19,7 @@ import type {
 } from "../shared/sales-posting-amounts.ts";
 
 export type RentalLineKind = "Rent" | "Charge" | "Purchase Option";
-export type RentalClassification = "Operating" | "Sales-Type" | "Direct Financing";
+export type RentalClassification = "Rental" | "Sale" | "Financing";
 
 /** A revenueRecognitionSchedule row of the agreement line, dates `YYYY-MM-DD`. */
 export type RentalScheduleFact = {
@@ -49,7 +49,7 @@ export type RentalLinePlanInput = {
     deferredRevenue: SalesPostingAccount;
     contractAsset: SalesPostingAccount;
     rentalIncome: SalesPostingAccount;
-    /** Required for a Sales-Type line's rent and purchase option only. */
+    /** Required for a Sale line's rent and purchase option only. */
     netInvestmentInLeases?: SalesPostingAccount | null;
   };
   /** The rental agreement's row id — the revenue legs reference it. */
@@ -83,10 +83,10 @@ const within = (
 export function planRentalLine(input: RentalLinePlanInput): RentalLinePlan {
   const { kind, classification, revenueBase, period, accounts } = input;
   // A line activated before classification existed carries no value and is
-  // operating by definition. Direct Financing has no input in v1.
+  // operating by definition. Financing has no input in v1.
   if (
-    classification !== null && classification !== "Operating" &&
-    classification !== "Sales-Type"
+    classification !== null && classification !== "Rental" &&
+    classification !== "Sale"
   ) {
     throw new Error(`${classification} rental lines cannot be invoiced yet`);
   }
@@ -116,17 +116,17 @@ export function planRentalLine(input: RentalLinePlanInput): RentalLinePlan {
     };
   }
 
-  if (classification === "Sales-Type") {
+  if (classification === "Sale") {
     // The lease revenue was recognized at commencement and the receivable
     // booked as the net investment; a rent payment or the exercised purchase
     // option collects part of it. Interest is posted by the recognition run
     // from the lease schedule, so nothing is deferred or accrued here.
     if (revenueBase < 0) {
-      throw new Error("Early-return credits do not apply to a sales-type lease");
+      throw new Error("Early-return credits do not apply to a rental treated as a sale");
     }
     if (!accounts.netInvestmentInLeases) {
       throw new Error(
-        "Sales-type rental invoices need the Net Investment in Leases account mapped in the accounting defaults",
+        "Rentals treated as a sale need the Net Investment in Leases account mapped in the accounting defaults",
       );
     }
     return {
@@ -142,7 +142,7 @@ export function planRentalLine(input: RentalLinePlanInput): RentalLinePlan {
   }
 
   if (kind === "Purchase Option") {
-    throw new Error("Purchase option billing requires a sales-type line");
+    throw new Error("Purchase option billing requires a line treated as a sale");
   }
 
   if (!period) throw new Error("A rent line needs its billing period");

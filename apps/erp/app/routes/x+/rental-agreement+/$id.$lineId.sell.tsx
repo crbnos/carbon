@@ -14,7 +14,7 @@ import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
 
 /**
- * "Sell to customer" — the purchase option on a Sales-Type line (spec §4).
+ * "Sell to customer" — the purchase option on a Sale line (spec §4).
  * Bills a `Purchase Option` charge for the agreement's option amount and
  * drafts its invoice right away; posting that invoice credits the net
  * investment and marks the line Sold. The charge is valid on its own, so a
@@ -56,7 +56,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const purchaseOptionAmount = agreement.data.purchaseOptionAmount;
   if (
     agreement.data.status !== "Active" ||
-    line.data.lessorClassification !== "Sales-Type" ||
+    line.data.lessorClassification !== "Sale" ||
     line.data.status !== "On Rent" ||
     !purchaseOptionAmount
   ) {
@@ -66,7 +66,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
         request,
         error(
           null,
-          "Only a sales-type unit on rent under an agreement with a purchase option can be sold"
+          "Only a unit treated as a sale, on rent under an agreement with a purchase option, can be sold"
         )
       )
     );
@@ -115,7 +115,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
         request,
         error(
           null,
-          `The purchase option is exercised at the end of the term (${endDate}); early termination of a sales-type lease is a manual journal`
+          `The purchase option is exercised at the end of the term (${endDate}); ending a rental treated as a sale early is a manual journal`
         )
       )
     );

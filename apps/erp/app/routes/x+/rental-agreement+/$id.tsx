@@ -248,6 +248,9 @@ export default function RentalAgreementRoute() {
           key={`${id}-${rentalAgreement.updatedAt ?? ""}`}
           initialValues={initialValues}
           isLocked={rentalAgreement.status !== "Draft"}
+          leasePolicy={leasePolicy}
+          lines={lines}
+          leaseInputs={leaseInputs}
         />
         <Outlet />
       </div>

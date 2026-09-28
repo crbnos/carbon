@@ -3052,11 +3052,11 @@ export async function getPeriodExternalGlSyncReadiness(
 const JOURNAL_BALANCE_TOLERANCE = 0.001;
 
 /**
- * Operating rental lines that earned rent inside [startDate, endDate] which no
+ * Rental-treated lines that earned rent inside [startDate, endDate] which no
  * posted invoice covers and no Accrual row for this period end accrues — the
  * accrual half of the "Recognize revenue for the period" close task. Mirrors
  * `synthesizeRentalAccruals` (`@carbon/database/revenue-recognition`): a
- * non-adjustment billing period of an Operating `On Rent` / `Returned` line,
+ * non-adjustment billing period of an Rental-treated `On Rent` / `Returned` line,
  * overlapping the period inside the line's `[deliveredAt, returnedAt]`, that is
  * `Pending` or `Invoiced` onto a Draft/Pending invoice. Usually one query: the
  * invoice and accrual reads only run when a candidate exists. A failed read
@@ -3088,7 +3088,7 @@ async function countUnaccruedRentalLines(
         .eq("isAdjustment", false)
         .lte("periodStart", endDate)
         .gte("periodEnd", startDate)
-        .eq("rentalAgreementLine.lessorClassification", "Operating")
+        .eq("rentalAgreementLine.lessorClassification", "Rental")
         .in("rentalAgreementLine.status", ["On Rent", "Returned"])
         .lte("rentalAgreementLine.deliveredAt", endDate)
         .order("id")
@@ -6959,7 +6959,7 @@ export type LeaseNetInvestment = {
 
 /**
  * The lessor's net investment in sales-type leases as of `asOf` (spec §4).
- * Per commenced Sales-Type line still live on that date (Pending / On Rent,
+ * Per commenced Sale line still live on that date (Pending / On Rent,
  * or returned after it): the net investment at commencement, less the
  * principal of every schedule line the recognition run has posted up to
  * `asOf`, the next interest the run will post, and the undiscounted payments
@@ -6996,7 +6996,7 @@ export async function getLeaseNetInvestment(
       (query: any) =>
         query
           .eq("companyId", companyId)
-          .eq("lessorClassification", "Sales-Type")
+          .eq("lessorClassification", "Sale")
           .not("initialNetInvestment", "is", null)
           .neq("status", "Sold")
           .order("id", { ascending: true })

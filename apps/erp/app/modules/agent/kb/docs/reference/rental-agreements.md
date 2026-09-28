@@ -1,10 +1,10 @@
 # Rental agreements
 
-> Renting serialized fleet units to a customer: rate ladders, billing periods, drafted invoices, deposits, and operating versus sales-type lease accounting.
+> Renting serialized fleet units to a customer: rate ladders, billing periods, drafted invoices, deposits, and whether each unit is accounted for as a rental or a sale.
 
 A **rental agreement** rents units of your rental fleet to a customer. The agreement cuts the rental into billing periods, prices each from the item's day, week, and month rates, and drafts the invoices as they fall due.
 
-Activation classifies each unit as an operating or a sales-type lease. An operating unit stays a fixed asset that keeps depreciating on your books while the customer has it. A sales-type unit is treated as sold: it leaves the fleet and becomes a net investment in leases.
+Activation decides each unit's **accounting treatment**: **Rental** or **Sale**, which ASC 842 calls an operating lease and a sales-type lease. A unit treated as a rental stays a fixed asset that keeps depreciating on your books while the customer has it. A unit treated as a sale is booked as sold: it leaves the fleet and becomes a net investment in leases.
 
 Rental agreements live under **Sales → Rental Agreements**, and the quickest way to start one is the **"Rent"** action on an available unit in the Fleet register.
 
@@ -17,19 +17,19 @@ Rental agreements live under **Sales → Rental Agreements**, and the quickest w
 
 **"Activate"** checks every unit and reports every problem in one message. Each unit must be available (or held by this agreement), in service, and an Active or Fully Depreciated asset, and its item needs rental rates in the agreement's currency.
 
-Activation then copies the item's rates onto each unit, so a later price change never touches a live agreement, cuts the billing periods, and [classifies each unit](#lease-classification). An operating unit posts nothing to the ledger; a sales-type unit books its [commencement](#commencement). The terms and units are fixed from here on.
+Activation then copies the item's rates onto each unit, so a later price change never touches a live agreement, cuts the billing periods, and [decides each unit's accounting treatment](#accounting-treatment). A unit treated as a rental posts nothing to the ledger; a unit treated as a sale books its [commencement](#commencement). The terms and units are fixed from here on.
 
 An agreement in a foreign currency can be saved as a draft but not activated: rent is accrued and deferred in base-currency amounts.
 
-**"Close"** needs every unit returned or sold and every billing period and charge invoiced. **"Cancel"** works on a draft, or on an active agreement while nothing is on rent, sold, invoiced, or recognized; it removes the undelivered units so they read Available again. An active agreement with a sales-type unit cannot be cancelled at all, because that unit was already derecognized at activation. Both buttons ask you to confirm with **"Close Agreement"** or **"Cancel Agreement"**. **"Delete Agreement"**, in the header menu, is for drafts only.
+**"Close"** needs every unit returned or sold and every billing period and charge invoiced. **"Cancel"** works on a draft, or on an active agreement while nothing is on rent, sold, invoiced, or recognized; it removes the undelivered units so they read Available again. An active agreement with a unit treated as a sale cannot be cancelled at all, because that unit was already derecognized at activation. Both buttons ask you to confirm with **"Close Agreement"** or **"Cancel Agreement"**. **"Delete Agreement"**, in the header menu, is for drafts only.
 
 ## Units and the fleet
 
-Each unit on the agreement moves through its own status: **"Pending"** until delivered, **"On Rent"** once delivered, then **"Returned"**, or **"Sold"** when the customer buys a sales-type unit on its purchase option. The Fleet register reflects the same thing from the asset's side: a unit on a draft or an undelivered line reads **Reserved**, a delivered one reads **On Rent**, and a unit can only be on one live agreement at a time.
+Each unit on the agreement moves through its own status: **"Pending"** until delivered, **"On Rent"** once delivered, then **"Returned"**, or **"Sold"** when the customer buys a unit treated as a sale on its purchase option. The Fleet register reflects the same thing from the asset's side: a unit on a draft or an undelivered line reads **Reserved**, a delivered one reads **On Rent**, and a unit can only be on one live agreement at a time.
 
 - **"Add Unit"** lists fleet units that are Available right now. Choose a **"Rate Mode"**: *Best Rate*, or *Fixed* with the **"Billed Tier"** it always bills.
 - **"Deliver"** marks a pending unit on an active agreement as delivered today. It is refused while the unit is out of service.
-- **"Return"** records the **"Return Date"**, an optional **"Meter Reading"** and **"Return Notes"**, and re-cuts an operating unit's billing (below). The return date cannot be later than today. Tick **"Take out of service"** with a reason and the unit goes straight to In Maintenance instead of back to Available.
+- **"Return"** records the **"Return Date"**, an optional **"Meter Reading"** and **"Return Notes"**, and re-cuts a rental unit's billing (below). The return date cannot be later than today. Tick **"Take out of service"** with a reason and the unit goes straight to In Maintenance instead of back to Available.
 
 A unit's billing periods begin on the agreement's **"Start Date"** whether or not it has been delivered. Delivery decides when rent is *earned* for accounting (accruals start on the delivery date), not when it is *billed*.
 
@@ -57,8 +57,8 @@ Billing periods follow the **"Billing Cycle"** from the start date, and the **"B
 
 - **Fixed term.** With an **"End Date"**, the whole term is cut at activation.
 - **Open-ended.** Leave the end date empty and periods roll forward. Every billing pass cuts the periods up to the end of next month (Calendar Month) or 28 days ahead (28 Days), plus one more period after that.
-- **Holdover.** An operating unit still out after the end date keeps billing at the same rates until it is returned. A sales-type unit never bills past its end date: activation cuts its periods only up to the end date, and the daily billing pass never rolls it forward.
-- **Return.** On an operating unit, the unbilled period the return falls inside is cut to the return date, and unbilled periods after it are dropped. A sales-type unit's billing is left alone.
+- **Holdover.** A unit treated as a rental that is still out after the end date keeps billing at the same rates until it is returned. A unit treated as a sale never bills past its end date: activation cuts its periods only up to the end date, and the daily billing pass never rolls it forward.
+- **Return.** On a unit treated as a rental, the unbilled period the return falls inside is cut to the return date, and unbilled periods after it are dropped. The billing of a unit treated as a sale is left alone.
 
 When a period was billed in advance and the unit comes back early, Carbon adds an adjustment period for what was billed less the charge for the days actually used. The used days are priced the way the unit bills: its best rate, its Fixed tier, or the prorated month on a Calendar Month agreement. On a best-rate unit billed 1,500 for 28 days and returned after 3, the credit is 1,200. Returned after 20 days there is no credit: 20 days already costs the month tier. An adjustment is never positive and never repeated.
 
@@ -70,7 +70,7 @@ Each period becomes a read-only **Rental** line, such as "2026-10-01 – 2026-10
 
 ## What posts to the ledger
 
-Posting a rental invoice books receivables and tax as usual. For an operating unit, the revenue side depends on the line (a sales-type unit posts [differently](#interest-and-invoicing)):
+Posting a rental invoice books receivables and tax as usual. For a unit treated as a rental, the revenue side depends on the line (a unit treated as a sale posts [differently](#interest-and-invoicing)):
 
 | Line | Posts to |
 | --- | --- |
@@ -92,9 +92,9 @@ On a **"Payment from Customer"**, **"Deposit for"** names the sales order or ren
 
 A **"Refund to Customer"** with **"Refund deposit for"** pays the balance back out of Customer Prepayments. That picker also lists closed agreements and orders that still hold a deposit.
 
-## Lease classification
+## Accounting treatment
 
-Activation books each unit as an operating or a sales-type lease under ASC 842. It runs five tests, and a unit that meets **any** of them is **Sales-Type**; a unit that meets none is **Operating**:
+Activation decides each unit's accounting treatment under ASC 842. It runs five tests, and a unit that meets **any** of them is treated as a **Sale** (a sales-type lease); a unit that meets none is treated as a **Rental** (an operating lease):
 
 | Test | Met when |
 | --- | --- |
@@ -106,19 +106,21 @@ Activation books each unit as an operating or a sales-type lease under ASC 842. 
 
 The two percentages come from the company's [lease policy](#lease-policy). The lease payments are the rent, discounted at the agreement's **"Discount Rate (%)"** in advance or in arrears as its billing timing says, plus the unit's **"Guaranteed Residual Value"** and the purchase option when its exercise is reasonably certain.
 
-The agreement's terms sit in its **"Lease classification inputs"** section, and each unit's fair value, economic life, and residual values sit in the section of the same name on the unit form. That form shows the classification with each test and the present values, marked **"Preview"** until activation stores the result.
+The agreement's terms sit in its **"Lease classification inputs"** section, and each unit's fair value, economic life, and residual values sit in the section of the same name on the unit form. The **"Accounting treatment"** panel shows the two treatments, *Rental* and *Sale*, with each test and the present values, marked **"Preview"** until activation stores the result.
 
-A sales-type lease needs a term to transfer the unit over, so an agreement with no **"End Date"** classifies every unit Operating even when a test is met. For the same reason, a reasonably certain purchase option cannot be saved without an end date.
+A third treatment, a direct financing lease, is not offered: it needs a third party to guarantee the residual value, which a rental agreement has no input for.
 
-**"Override"** on a draft agreement's unit sets the classification by hand with a required **"Reason"**. It needs accounting update permission and is kept by activation in place of the tests' answer. The unit keeps the reason, and the change is also recorded in the `docs/reference/audit-log` with the old and new values. Once the agreement is active the classification is fixed.
+A sale needs a term to transfer the unit over, so an agreement with no **"End Date"** treats every unit as a Rental even when a test is met. For the same reason, a reasonably certain purchase option cannot be saved without an end date.
+
+**"Override"** on a draft agreement's unit sets the treatment, *Rental* or *Sale*, by hand with a required **"Reason"**. It needs accounting update permission and is kept by activation in place of the tests' answer. The unit keeps the reason, and the change is also recorded in the `docs/reference/audit-log` with the old and new values. Once the agreement is active the treatment is fixed.
 
 ## Sales-type leases
 
-Take a unit rented for 36 months at 1,000 a month in arrears, with a 6% discount rate, a fair value of 38,000, and a 5,000 purchase option that is reasonably certain. At commencement the rent is worth 32,871.02 and the option 4,178.22, so the lease payments are worth 37,049.24, or 97.5% of fair value. The unit is sales-type twice over: on the purchase option test and on the present value test.
+A unit treated as a sale is a sales-type lease. Take a unit rented for 36 months at 1,000 a month in arrears, with a 6% discount rate, a fair value of 38,000, and a 5,000 purchase option that is reasonably certain. At commencement the rent is worth 32,871.02 and the option 4,178.22, so the lease payments are worth 37,049.24, or 97.5% of fair value. The unit is treated as a sale twice over: on the purchase option test and on the present value test.
 
 ### Commencement
 
-A sales-type unit is sold to the lease when the agreement activates, not when it is delivered. Activation refuses a sales-type unit without an end date or a fair value, and one whose term is not a whole number of billing periods:
+A unit treated as a sale is sold to the lease when the agreement activates, not when it is delivered. Activation refuses such a unit without an end date or a fair value, and one whose term is not a whole number of billing periods:
 
 - **Calendar Month**: the agreement starts on the first of a month and ends on the last day of a month.
 - **28 Days**: the term is a whole number of 28-day periods.
@@ -135,7 +137,7 @@ With accounting on, activation needs the **Net Investment in Leases**, **Lease R
 | Lease Revenue | | 37,049.24 |
 | The unit's class asset account, at cost | | 36,000.00 |
 
-Cost of goods sold is the unit's net book value less the present value of any unguaranteed residual. Lease revenue less that cost, 7,049.24 here, is the selling profit stored on the unit. The **"Activate"** confirmation previews this journal for every unit that would classify sales-type.
+Cost of goods sold is the unit's net book value less the present value of any unguaranteed residual. Lease revenue less that cost, 7,049.24 here, is the selling profit stored on the unit. The **"Activate"** confirmation previews this journal for every unit that would be treated as a sale.
 
 The unit leaves the fleet. Its asset is Disposed by sale with a disposal record at net book value, so the Fleet register reads **"Sold"** from activation on, while the unit keeps its own status on the agreement. Its serial is consumed into the lease and tagged with the agreement and the customer. With accounting off the unit leaves the fleet and the schedule below is written the same way, but nothing posts.
 
@@ -149,13 +151,13 @@ The monthly **Revenue Recognition** run posts each line's interest in its period
 | --- | --- |
 | Rent | Net Investment in Leases, with nothing deferred or accrued |
 | Purchase option | Net Investment in Leases |
-| Charge | Rental Income, as on an operating unit |
+| Charge | Rental Income, as on a unit treated as a rental |
 
-A sales-type unit's whole term is billed from the periods cut at activation, and nothing past the end date is ever billed. It never gets an early-return credit.
+The whole term of a unit treated as a sale is billed from the periods cut at activation, and nothing past the end date is ever billed. It never gets an early-return credit.
 
 ### End of the term
 
-- **"Sell to Customer"** appears in the row menu of a sales-type unit that is on rent when the agreement has a purchase option. It bills a purchase option charge dated today and drafts its invoice. Before the agreement's end date the action is refused: exercising earlier is an early termination, which is a manual journal. Posting that invoice marks the unit **"Sold"**; voiding it puts the unit back on rent. It needs sales create and update and invoicing create permission, and bills the option only once.
+- **"Sell to Customer"** appears in the row menu of a unit treated as a sale that is on rent when the agreement has a purchase option. It bills a purchase option charge dated today and drafts its invoice. Before the agreement's end date the action is refused: exercising earlier is an early termination, which is a manual journal. Posting that invoice marks the unit **"Sold"**; voiding it puts the unit back on rent. It needs sales create and update and invoicing create permission, and bills the option only once.
 - **"Return"** on or after the end date asks where the unit goes in **"Return To"**: *Rental fleet, as a new fleet asset* or *Inventory, as finished goods*. The closing net investment moves with it (Dr the Rental Fleet class asset account or inventory, Cr Net Investment in Leases), and the fleet option creates a new asset at that cost depreciating from today. A unit returned to inventory keeps that cost: under FIFO or LIFO costing it is later sold or consumed at the closing net investment, not at the cost of the oldest stock.
 
 The closing net investment is read off the lease schedule: the closing balance of the last schedule line dated on or before the return. On or after the end date that is the purchase option plus residuals, 5,000.00 in the example. Interest dated on or before the return stays on the schedule and still posts through recognition runs, which brings Net Investment in Leases to zero. Only schedule lines dated after the return are removed.
@@ -169,7 +171,7 @@ When the customer exercises the purchase option, its invoice also clears the res
 
 With accounting on, this needs the **Cost of Goods Sold** or **Lease Revenue** account default mapped, whichever the settlement uses. Voiding the invoice reverses the settlement with the rest of the line.
 
-Before the end date the net investment still carries unpaid rent, so a sales-type unit cannot be returned early and its agreement cannot be cancelled. Book an early termination as a manual journal.
+Before the end date the net investment still carries unpaid rent, so a unit treated as a sale cannot be returned early and its agreement cannot be cancelled. Book an early termination as a manual journal.
 
 ## Utilization
 
@@ -180,7 +182,7 @@ Before the end date the net investment still carries unpaid rent, so a sales-typ
 
 ## Net investment report
 
-**Accounting → Reports → Net Investment in Leases** lists every commenced sales-type unit still on lease on the **"As of"** date: its net investment at commencement, the principal collected, the net investment now, the next interest, the payments still to come by fiscal year, and the residual and option expected at the end. A sold unit drops out.
+**Accounting → Reports → Net Investment in Leases** lists every commenced unit treated as a sale still on lease on the **"As of"** date: its net investment at commencement, the principal collected, the net investment now, the next interest, the payments still to come by fiscal year, and the residual and option expected at the end. A sold unit drops out.
 
 A schedule line's principal counts as collected once the recognition run has posted its interest, or once its date passes for a line that earns no interest. The report ties to the Net Investment in Leases balance when both the run and the rent invoices for the same months are posted. The report needs accounting view permission, and sales view to read the agreements.
 
@@ -192,7 +194,7 @@ A schedule line's principal counts as collected once the recognition run has pos
 - **"Substantially All of Fair Value (%)"**: the present value test's threshold, 90 by default.
 - **"Default Discount Rate (%)"**: prefills **"Discount Rate (%)"** on a new agreement, 6 by default.
 
-A change applies to agreements activated afterwards. An active agreement keeps the classification it stored.
+A change applies to agreements activated afterwards. An active agreement keeps the treatment it stored.
 
 ## Related
 
@@ -200,7 +202,7 @@ A change applies to agreements activated afterwards. An active agreement keeps t
   - Invoices Where rental lines are posted, settled, and voided.
   - Payments Receipts, refunds, and how a deposit is applied.
   - Period close The checklist task that waits on the month's rental accruals.
-  - Audit log Where a lease classification override is recorded with its reason.
+  - Audit log Where an accounting treatment override is recorded with its reason.
 
 ## Troubleshooting
 
@@ -261,41 +263,41 @@ Voiding an invoice whose Deferral rows were already posted by a recognition run.
 ### "Set the Contract Assets and Rental Income account defaults before recognizing rental revenue"
 The recognition run's accrual synthesis needs both defaults.
 
-### "Purchase option billing requires a sales-type line"
-A Purchase Option charge cannot be invoiced on an operating unit. "Sell to Customer" is offered only on a Sales-Type line that is On Rent.
+### "Purchase option billing requires a line treated as a sale"
+A Purchase Option charge cannot be invoiced on a unit treated as a rental. "Sell to Customer" is offered only on a `Sale` line that is On Rent.
 
-### "Set the Net Investment in Leases, Lease Revenue and Lease Interest Income accounts in the account defaults before booking a sales-type lease"
-Activation (with accounting on) or a sales-type return found `accountDefault.netInvestmentInLeasesAccount`, `leaseRevenueAccount` or `leaseInterestIncomeAccount` empty. Seeded as 1160, 4070 and 4150; map them in the account defaults.
+### "Set the Net Investment in Leases, Lease Revenue and Lease Interest Income accounts in the account defaults before activating a rental treated as a sale"
+Activation (with accounting on) or the return of a unit treated as a sale found `accountDefault.netInvestmentInLeasesAccount`, `leaseRevenueAccount` or `leaseInterestIncomeAccount` empty. Seeded as 1160, 4070 and 4150; map them in the account defaults.
 
-### "UNIT is a sales-type lease, which needs an agreement end date" / "UNIT is a sales-type lease; enter the unit's fair value"
-Activation refuses a line that classifies (or is overridden to) Sales-Type without `rentalAgreement.endDate` or `rentalAgreementLine.fairValue` > 0. Set the end date on the agreement or the Fair Value on the unit, or override the classification to Operating.
+### "UNIT is treated as a sale, which needs an agreement end date" / "UNIT is treated as a sale; enter the unit's fair value"
+Activation refuses a line that classifies (or is overridden to) `Sale` without `rentalAgreement.endDate` or `rentalAgreementLine.fairValue` > 0. Set the end date on the agreement or the Fair Value on the unit, or override the treatment to Rental.
 
-### "UNIT is a sales-type lease, which runs whole billing periods: start on the first of a month and end on a month end" / "… the term must be a whole number of 28-day periods (it is N days)"
-A sales-type lease must bill exactly the rent stream it was valued on (`salesTypeRequirementError`, `shared/lessor-lease.ts`, re-exported by `@carbon/utils`). Calendar Month: start date on the 1st and end date on a month end. 28 Days: start to end inclusive is a multiple of 28 days. The Activate confirmation (`RentalCommencementPreview`) shows the same message per unit before activation refuses it. Fix the dates or override the classification to Operating.
+### "UNIT is treated as a sale, which runs whole billing periods: start on the first of a month and end on a month end" / "UNIT is treated as a sale, which runs whole billing periods: the term must be a whole number of 28-day periods (it is N days)"
+A unit treated as a sale (a sales-type lease) must bill exactly the rent stream it was valued on (`salesTypeRequirementError`, `shared/lessor-lease.ts`, re-exported by `@carbon/utils`). Calendar Month: start date on the 1st and end date on a month end. 28 Days: start to end inclusive is a multiple of 28 days. The Activate confirmation (`RentalCommencementPreview`) shows the same message per unit before activation refuses it. Fix the dates or override the treatment to Rental.
 
 ### "A purchase option that is reasonably certain needs an end date"
-Agreement form validation: "Purchase option reasonably certain" needs an End Date (an open-ended agreement is always Operating).
+Agreement form validation: "Purchase option reasonably certain" needs an End Date (an open-ended agreement is always treated as a Rental).
 
 ### "UNIT: The unit's accumulated depreciation must be between zero and its cost" / "UNIT changed status while the agreement was being activated"
 Commencement read an asset whose accumulated depreciation is negative or above cost, or the asset left Active / Fully Depreciated during activation. Fix the asset (or let the concurrent change finish) and activate again.
 
-### "UNIT is overridden to Direct Financing, which is not supported"
-A line carries a stored Direct Financing override; the override route only offers Operating and Sales-Type.
+### "UNIT is overridden to Financing, which is not supported"
+A line carries a stored `Financing` treatment (a direct financing lease); the override route only offers Rental and Sale.
 
 ### "The classification is fixed once the agreement is activated" / "A reason is required"
 The classification override (`update: accounting`) works only while the agreement is Draft and needs a reason.
 
-### "Early termination of a sales-type lease is a manual journal"
-Returned on a return dated before the agreement's End Date, and on Cancel for an agreement with a commenced sales-type line. Post the termination as a manual journal.
+### "Ending a rental treated as a sale early is a manual journal"
+Returned on a return dated before the agreement's End Date, and on Cancel for an agreement with a commenced `Sale` line. Post the termination as a manual journal.
 
 ### "Choose where the returned unit goes: back to the fleet or into inventory" / "Choose where the returned unit goes"
-A sales-type return needs Return To (Fleet or Inventory).
+Returning a unit treated as a sale needs Return To (Fleet or Inventory).
 
 ### "A unit returned to inventory cannot be taken out of service; return it to the fleet instead"
 Take out of service only applies to a unit returned to the fleet.
 
 ### "The return date cannot be in the future"
-A return records what has happened, so `returnedAt` must be on or before the company's today (operating and sales-type alike). Record the return on the day the unit comes back.
+A return records what has happened, so `returnedAt` must be on or before the company's today (rental and sale alike). Record the return on the day the unit comes back.
 
 ### "A draft revenue recognition run includes this lease's interest; post or delete the run before returning the unit"
 A Draft run has claimed Planned Interest rows of this line dated AFTER the return date; the return deletes those, so post or delete the run first. Interest rows dated on or before the return are kept (and keep posting through recognition runs), so a run holding only those does not block.
@@ -303,29 +305,29 @@ A Draft run has claimed Planned Interest rows of this line dated AFTER the retur
 ### "No Rental Fleet asset class to return the unit into; create one or return the unit to inventory"
 Return To Fleet looks for a non-CIP class named "Rental Fleet", then the class the unit left at commencement.
 
-### "This sales-type line has no commencement booked; it cannot be returned as a lease" / "The lease's closing net investment is negative (N)"
+### "This line is treated as a sale but has no commencement booked; it cannot be returned" / "The lease's closing net investment is negative (N)"
 Data problems on the line: no `initialNetInvestment`, or a negative closing balance on the lease schedule. The closing net investment is `netInvestmentAt`: the `closingNetInvestment` of the last `rentalLeaseScheduleLine` dated on or before the return (the initial NI when there is none).
 
-### "Only a sales-type unit on rent under an agreement with a purchase option can be sold" / "The purchase option has already been billed"
-Sell to Customer needs an Active agreement with a Purchase Option amount, a Sales-Type line On Rent, and today on or after the end date ("The purchase option is exercised at the end of the term (END); early termination of a sales-type lease is a manual journal"); it bills the option once per line. "The purchase option was billed but its invoice was not drafted: …" means the charge exists and the daily billing job will draft it.
+### "Only a unit treated as a sale, on rent under an agreement with a purchase option, can be sold" / "The purchase option has already been billed"
+Sell to Customer needs an Active agreement with a Purchase Option amount, a `Sale` line On Rent, and today on or after the end date ("The purchase option is exercised at the end of the term (END); ending a rental treated as a sale early is a manual journal"); it bills the option once per line. "The purchase option was billed but its invoice was not drafted: …" means the charge exists and the daily billing job will draft it.
 
-### "A purchase option can only be billed on a sales-type unit that is on rent"
-Posting the purchase option invoice found the line already Sold, Returned, or not Sales-Type.
+### "A purchase option can only be billed on a unit treated as a sale that is on rent"
+Posting the purchase option invoice found the line already Sold, Returned, or not treated as a sale.
 
-### "Sales-type rental invoices need the Net Investment in Leases account mapped in the accounting defaults" / "Net Investment in Leases account is invalid; expected an active Asset leaf in this company group"
-post-sales-invoice needs the Net Investment in Leases default for any invoice with a Sales-Type Rent or Purchase Option line.
+### "Rentals treated as a sale need the Net Investment in Leases account mapped in the accounting defaults" / "Net Investment in Leases account is invalid; expected an active Asset leaf in this company group"
+post-sales-invoice needs the Net Investment in Leases default for any invoice with a Rent or Purchase Option line on a `Sale` line.
 
 ### "Exercising a purchase option needs the Cost of Goods Sold account mapped in the accounting defaults as an active Expense leaf" / "… needs the Lease Revenue account mapped … as an active Revenue leaf"
 Posting a Purchase Option line settles the rest of the line's net investment against the schedule's closing balance (`purchaseOptionSettlement`, `post-sales-invoice/rental-posting.ts`): option below it → Dr `costOfGoodsSoldAccount` / Cr NI for the shortfall; option above it → Dr NI / Cr `leaseRevenueAccount` for the excess. Only the leg actually used needs its default. No leg when the option equals the closing balance.
 
 ### "Rental agreement line ID has no lease schedule to settle the purchase option against"
-The Sales-Type line has no `rentalLeaseScheduleLine` rows, so the purchase option settlement has no closing balance. The commencement was not booked normally.
+The `Sale` line has no `rentalLeaseScheduleLine` rows, so the purchase option settlement has no closing balance. The commencement was not booked normally.
 
-### "Early-return credits do not apply to a sales-type lease"
-A negative Rent line on a Sales-Type line is refused; a sales-type unit is never returned early.
+### "Early-return credits do not apply to a rental treated as a sale"
+A negative Rent line on a `Sale` line is refused; a unit treated as a sale is never returned early.
 
 ### Selling before the end date
-Refused: "The purchase option is exercised at the end of the term (END); early termination of a sales-type lease is a manual journal". The lease's schedule and remaining rent run to the end date, so an earlier exercise would keep billing rent on a unit the customer already owns.
+Refused: "The purchase option is exercised at the end of the term (END); ending a rental treated as a sale early is a manual journal". The lease's schedule and remaining rent run to the end date, so an earlier exercise would keep billing rent on a unit the customer already owns.
 
 ### The Fleet register shows a leased unit as Sold
 Expected: commencement disposes the asset (`disposalMethod` Sale), and `fleetAssets` reads any Disposed asset that was not returned to stock as Sold, even while the line is On Rent.
@@ -334,4 +336,4 @@ Expected: commencement disposes the asset (`disposalMethod` Sale), and `fleetAss
 The report subtracts principal for schedule lines dated on or before As of whose Interest row a recognition run has posted (`rentalLeaseScheduleLine.postedAt`), or that earn no interest and so have no Interest row (`earnsInterest`, `shared/lessor-lease.ts`: zero, or the one-unit drift an Advance lease closing on zero leaves on its last line); the ledger drops by the payment when the rent invoice posts. They agree once both the run and the invoices for the same months are posted. A return does not use this figure: it moves the schedule's balance on the return date, and interest rows dated on or before the return keep posting through recognition runs, which brings 1160 to zero for the line.
 
 ## Internals
-Tables: `itemRentalRate` (unique per item and currency), `rentalAgreement` (sequence `RA`), `rentalAgreementLine` (one fixed asset each, `quantity` = 1, unique live line per asset), `rentalAgreementCharge`, `rentalBillingPeriod` (`dueOn`, `isAdjustment`, `status` Pending / Invoiced). Views `rentalAgreements` and `fleetAssets` (fleet status precedence: Returned to Stock, Sold, Under Construction, On Rent, In Maintenance, Reserved, Available). Invoice lines: `invoiceLineType` `Rental` with `rentalInvoiceLineKind` Rent / Charge / Purchase Option. Payments: `payment.salesOrderId` / `payment.rentalAgreementId` (at most one); deposit journal lines carry the description "Customer Deposit". Edge function `post-rental-agreement` (`activate`, `return`, `close`, `cancel`); Inngest `rental-billing` (cron 05:00 UTC); invoice generation `createRentalInvoicesForDuePeriods` in `@carbon/database/rental-billing`. Routes: `/x/sales/rental-agreements`, `/x/rental-agreement/:id`, `/x/reports/rental-utilization`. Lease classification: `rentalAgreementLine.lessorClassification` (Operating / Sales-Type; Direct Financing exists in the enum but has no input), `classificationInputs` (JSON: inputs, thresholds, tests a–e, pvToFairValuePercent, termToLifePercent, pv, payment, periods, annualRate, timing), `classificationOverride` + `classificationOverrideReason`, `initialNetInvestment`, `sellingProfit`, `commencementJournalId`. Thresholds and default rate: `companySettings.leaseMajorPartThresholdPercent` (75), `leaseSubstantiallyAllThresholdPercent` (90), `leaseDefaultDiscountRate` (6). Math: `shared/lessor-lease.ts` (`presentValue`, `classifyLessorLease`, `buildLessorSchedule`, `wholeMonthsInTerm`, `leasePaymentTerms`, `classifyRentalLine`), re-exported through `@carbon/utils`; a 28 Days lease is valued over whole 28-day periods at annual × 28/365 per period, a Calendar Month lease over whole months of the term. Schedule table `rentalLeaseScheduleLine` (one row per payment; `journalId` / `postedAt` stamped when a recognition run posts its Interest row; a line that earns no interest gets no Interest row). A residual returned to inventory books a serial cost layer (`costLedger.trackedEntityId`) at the closing net investment, which `calculateCOGS` relieves first when that serial leaves. Commencement and residual-return journals use source type `Lease` (off by default in accounting sync); Interest posts in the `Revenue Recognition` journal. Commencement is fleet-only (activation already requires a fleet unit per line). Activation caps a Sales-Type line's billing at the end date (`activationBillingThrough`); the daily pass rolls only Operating or unclassified lines; a Sales-Type return does not re-cut billing. Purchase Option posting settles the remaining NI (shortfall Dr COGS, excess Cr Lease Revenue) on the option line's journal line reference, so VOID reverses it. Override audit entry: entityType `rentalAgreement`, tableName `rentalAgreementLine`. Routes: `/x/rental-agreement/:id/:lineId/classification`, `/x/rental-agreement/:id/:lineId/sell`, `/x/reports/lease-net-investment`; lease policy on `/x/settings/accounting` (intent `leasePolicy`).
+Tables: `itemRentalRate` (unique per item and currency), `rentalAgreement` (sequence `RA`), `rentalAgreementLine` (one fixed asset each, `quantity` = 1, unique live line per asset), `rentalAgreementCharge`, `rentalBillingPeriod` (`dueOn`, `isAdjustment`, `status` Pending / Invoiced). Views `rentalAgreements` and `fleetAssets` (fleet status precedence: Returned to Stock, Sold, Under Construction, On Rent, In Maintenance, Reserved, Available). Invoice lines: `invoiceLineType` `Rental` with `rentalInvoiceLineKind` Rent / Charge / Purchase Option. Payments: `payment.salesOrderId` / `payment.rentalAgreementId` (at most one); deposit journal lines carry the description "Customer Deposit". Edge function `post-rental-agreement` (`activate`, `return`, `close`, `cancel`); Inngest `rental-billing` (cron 05:00 UTC); invoice generation `createRentalInvoicesForDuePeriods` in `@carbon/database/rental-billing`. Routes: `/x/sales/rental-agreements`, `/x/rental-agreement/:id`, `/x/reports/rental-utilization`. Accounting treatment: `rentalAgreementLine.lessorClassification` (enum `Rental` / `Sale` / `Financing` = ASC 842 operating / sales-type / direct financing lease; `Financing` exists in the enum but has no input), `classificationInputs` (JSON: inputs, thresholds, tests a–e, pvToFairValuePercent, termToLifePercent, pv, payment, periods, annualRate, timing), `classificationOverride` + `classificationOverrideReason`, `initialNetInvestment`, `sellingProfit`, `commencementJournalId`. Thresholds and default rate: `companySettings.leaseMajorPartThresholdPercent` (75), `leaseSubstantiallyAllThresholdPercent` (90), `leaseDefaultDiscountRate` (6). Math: `shared/lessor-lease.ts` (`presentValue`, `classifyLessorLease`, `buildLessorSchedule`, `wholeMonthsInTerm`, `leasePaymentTerms`, `classifyRentalLine`), re-exported through `@carbon/utils`; a 28 Days lease is valued over whole 28-day periods at annual × 28/365 per period, a Calendar Month lease over whole months of the term. Schedule table `rentalLeaseScheduleLine` (one row per payment; `journalId` / `postedAt` stamped when a recognition run posts its Interest row; a line that earns no interest gets no Interest row). A residual returned to inventory books a serial cost layer (`costLedger.trackedEntityId`) at the closing net investment, which `calculateCOGS` relieves first when that serial leaves. Commencement and residual-return journals use source type `Lease` (off by default in accounting sync); Interest posts in the `Revenue Recognition` journal. Commencement is fleet-only (activation already requires a fleet unit per line). Activation caps a `Sale` line's billing at the end date (`activationBillingThrough`); the daily pass rolls only `Rental` or unclassified lines; a `Sale` return does not re-cut billing. Purchase Option posting settles the remaining NI (shortfall Dr COGS, excess Cr Lease Revenue) on the option line's journal line reference, so VOID reverses it. Override audit entry: entityType `rentalAgreement`, tableName `rentalAgreementLine`. Routes: `/x/rental-agreement/:id/:lineId/classification`, `/x/rental-agreement/:id/:lineId/sell`, `/x/reports/lease-net-investment`; lease policy on `/x/settings/accounting` (intent `leasePolicy`).

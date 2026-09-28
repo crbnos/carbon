@@ -31,7 +31,13 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   return {
     // Annual %, the rate lease classification discounts payments at.
-    defaultDiscountRate: companySettings.data?.leaseDefaultDiscountRate ?? 0
+    defaultDiscountRate: companySettings.data?.leaseDefaultDiscountRate ?? 0,
+    leasePolicy: {
+      majorPartPercent:
+        companySettings.data?.leaseMajorPartThresholdPercent ?? 75,
+      substantiallyAllPercent:
+        companySettings.data?.leaseSubstantiallyAllThresholdPercent ?? 90
+    }
   };
 }
 
@@ -113,7 +119,7 @@ export async function action({ request }: ActionFunctionArgs) {
 }
 
 export default function NewRentalAgreementRoute() {
-  const { defaultDiscountRate } = useLoaderData<typeof loader>();
+  const { defaultDiscountRate, leasePolicy } = useLoaderData<typeof loader>();
   const [params] = useUrlParams();
   const { company, defaults } = useUser();
   const companyToday = useCompanyToday();
@@ -141,6 +147,7 @@ export default function NewRentalAgreementRoute() {
       <RentalAgreementForm
         initialValues={initialValues}
         fixedAssetId={params.get("fixedAssetId") ?? undefined}
+        leasePolicy={leasePolicy}
       />
     </div>
   );

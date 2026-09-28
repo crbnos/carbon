@@ -224,7 +224,7 @@ async function loadLeaseAccounting(
     !leaseInterestIncomeAccount
   ) {
     throw new ValidationError(
-      "Set the Net Investment in Leases, Lease Revenue and Lease Interest Income accounts in the account defaults before booking a sales-type lease",
+      "Set the Net Investment in Leases, Lease Revenue and Lease Interest Income accounts in the account defaults before activating a rental treated as a sale",
     );
   }
 
@@ -378,7 +378,7 @@ type ActivationPlan = {
   rates: RateLadder;
   deliveredAt: string | null;
   periods: PeriodSpec[];
-  classification: "Operating" | "Sales-Type";
+  classification: "Rental" | "Sale";
   classificationInputs: ClassificationInputs;
   terms: LeasePaymentTerms;
   closingTarget: number;
@@ -566,9 +566,9 @@ async function activate(
       // stored; its inputs are still recorded.
       if (
         line.classificationOverride &&
-        line.lessorClassification === "Direct Financing"
+        line.lessorClassification === "Financing"
       ) {
-        problems.push(`${name} is overridden to Direct Financing, which is not supported`);
+        problems.push(`${name} is overridden to Financing, which is not supported`);
         continue;
       }
       const terms = leasePaymentTerms({
@@ -595,11 +595,11 @@ async function activate(
       });
       const classification = settledClassification(computed, {
         classificationOverride: line.classificationOverride,
-        lessorClassification: line.lessorClassification === "Direct Financing"
+        lessorClassification: line.lessorClassification === "Financing"
           ? null
           : line.lessorClassification,
       });
-      if (classification === "Sales-Type") {
+      if (classification === "Sale") {
         const requirement = salesTypeRequirementError({
           name,
           cycle: agreement.billingCycle,
@@ -662,7 +662,7 @@ async function activate(
       userId,
       today,
       accountingEnabled: settings.accountingEnabled,
-      plans: plans.filter((plan) => plan.classification === "Sales-Type"),
+      plans: plans.filter((plan) => plan.classification === "Sale"),
     });
 
     // One update per line: each carries its own snapshot, and an agreement
@@ -1102,10 +1102,10 @@ async function returnUnit(
       takeOutOfService: !!payload.takeOutOfService,
     });
     if (salesTypeProblem) throw new ValidationError(salesTypeProblem);
-    const salesType = line.lessorClassification === "Sales-Type";
+    const salesType = line.lessorClassification === "Sale";
     if (salesType && line.initialNetInvestment === null) {
       throw new ValidationError(
-        "This sales-type line has no commencement booked; it cannot be returned as a lease",
+        "This line is treated as a sale but has no commencement booked; it cannot be returned",
       );
     }
 
@@ -1791,7 +1791,7 @@ async function cancel(
       // Booked at activation: journal when accounting is on, the net
       // investment either way (the unit was disposed regardless).
       commencedSalesTypeLines: state.lines.filter((line) =>
-        line.lessorClassification === "Sales-Type" &&
+        line.lessorClassification === "Sale" &&
         (line.commencementJournalId !== null ||
           line.initialNetInvestment !== null)
       ).length,

@@ -163,7 +163,7 @@ export type LeaseClassificationRecord = {
   periods: number | null;
   annualRate: number;
   timing: Timing;
-  classification: "Operating" | "Sales-Type";
+  classification: "Rental" | "Sale";
 };
 
 export type LeasePolicy = {
@@ -292,7 +292,7 @@ const numberOrNull = (value: unknown): number | null =>
  *  classification itself lives on the line, so the caller supplies it. */
 export function readLeaseClassification(
   json: Json | null | undefined,
-  classification: "Operating" | "Sales-Type"
+  classification: "Rental" | "Sale"
 ): LeaseClassificationRecord | null {
   if (!isRecord(json) || !isRecord(json.tests) || !isRecord(json.inputs)) {
     return null;
@@ -350,7 +350,7 @@ export type LeaseCommencementPreview = {
   sellingProfit: number;
 };
 
-/** The commencement journal of a Sales-Type line (spec §4): Dr Net
+/** The commencement journal of a Sale line (spec §4): Dr Net
  *  Investment NI, Dr COGS C − PVres, Cr Lease Revenue PVpay, Cr the unit at
  *  its carrying amount C. Balanced by construction. */
 export function leaseCommencementPreview(

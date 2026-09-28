@@ -67,9 +67,9 @@ export function activationBillingThrough(args: {
   endDate: string | null;
 }): string {
   const horizon = billingHorizon(args.cycle, args.today);
-  if (args.classification !== "Sales-Type") return horizon;
+  if (args.classification !== "Sale") return horizon;
   if (args.endDate === null) {
-    throw new Error("A sales-type lease needs an end date");
+    throw new Error("A rental treated as a sale needs an end date");
   }
   return args.endDate < horizon ? args.endDate : horizon;
 }
@@ -385,12 +385,12 @@ export function salesTypeReturnError(args: {
   endDate: string | null;
   takeOutOfService: boolean;
 }): string | null {
-  if (args.classification !== "Sales-Type") return null;
+  if (args.classification !== "Sale") return null;
   if (!args.residualDestination) {
     return "Choose where the returned unit goes: back to the fleet or into inventory";
   }
   if (args.endDate !== null && args.returnedAt < args.endDate) {
-    return "Early termination of a sales-type lease is a manual journal";
+    return "Ending a rental treated as a sale early is a manual journal";
   }
   if (args.takeOutOfService && args.residualDestination === "Inventory") {
     return "A unit returned to inventory cannot be taken out of service; return it to the fleet instead";

@@ -378,7 +378,7 @@ async function rollBillingPeriodsForward(
     .where((eb) =>
       eb.or([
         eb("lessorClassification", "is", null),
-        eb("lessorClassification", "=", "Operating")
+        eb("lessorClassification", "=", "Rental")
       ])
     )
     .forUpdate()

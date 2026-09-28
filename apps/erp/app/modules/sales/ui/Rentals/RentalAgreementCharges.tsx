@@ -1,8 +1,8 @@
 import {
   Button,
   Card,
-  CardAction,
   CardContent,
+  CardFooter,
   CardHeader,
   CardTitle,
   IconButton,
@@ -17,9 +17,9 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import { useState } from "react";
 import { LuPlus, LuTrash } from "react-icons/lu";
 import { Link } from "react-router";
-import { Hyperlink } from "~/components";
+import { DateTime, Hyperlink } from "~/components";
 import { ConfirmDelete } from "~/components/Modals";
-import { useDateFormatter, usePercentFormatter, usePermissions } from "~/hooks";
+import { usePercentFormatter, usePermissions } from "~/hooks";
 import { path } from "~/utils/path";
 import RentalMoney from "./RentalMoney";
 import type {
@@ -43,7 +43,6 @@ const RentalAgreementCharges = ({
 }: RentalAgreementChargesProps) => {
   const { t } = useLingui();
   const permissions = usePermissions();
-  const { formatDate } = useDateFormatter();
   const percentFormatter = usePercentFormatter();
   const [deleting, setDeleting] = useState<RentalAgreementCharge | null>(null);
 
@@ -58,20 +57,6 @@ const RentalAgreementCharges = ({
           <CardTitle>
             <Trans>Charges</Trans>
           </CardTitle>
-          {isOpen && (
-            <CardAction>
-              <Button
-                variant="secondary"
-                leftIcon={<LuPlus />}
-                isDisabled={!hasLines || !permissions.can("create", "sales")}
-                asChild
-              >
-                <Link to={path.to.newRentalAgreementCharge(id)}>
-                  <Trans>Add Charge</Trans>
-                </Link>
-              </Button>
-            </CardAction>
-          )}
         </CardHeader>
         <CardContent>
           {charges.length === 0 ? (
@@ -113,7 +98,9 @@ const RentalAgreementCharges = ({
                     : undefined;
                   return (
                     <Tr key={charge.id}>
-                      <Td>{formatDate(charge.chargeDate)}</Td>
+                      <Td>
+                        <DateTime value={charge.chargeDate} variant="date" />
+                      </Td>
                       <Td>
                         {charge.rentalAgreementLine?.fixedAsset?.fixedAssetId ??
                           "—"}
@@ -162,6 +149,20 @@ const RentalAgreementCharges = ({
             </Table>
           )}
         </CardContent>
+        {isOpen && (
+          <CardFooter>
+            <Button
+              variant="secondary"
+              leftIcon={<LuPlus />}
+              isDisabled={!hasLines || !permissions.can("create", "sales")}
+              asChild
+            >
+              <Link to={path.to.newRentalAgreementCharge(id)}>
+                <Trans>Add Charge</Trans>
+              </Link>
+            </Button>
+          </CardFooter>
+        )}
       </Card>
 
       {deleting && (

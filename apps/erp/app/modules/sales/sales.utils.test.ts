@@ -228,7 +228,7 @@ describe("previewLeaseClassification", () => {
       ladder,
       policy
     });
-    expect(record.classification).toBe("Sales-Type");
+    expect(record.classification).toBe("Sale");
     expect(record.periods).toBe(36);
     expect(record.pv?.netInvestment).toBeCloseTo(37049.24, 2);
     expect(record.tests).toEqual({
@@ -247,7 +247,7 @@ describe("previewLeaseClassification", () => {
       ladder,
       policy
     });
-    expect(record.classification).toBe("Operating");
+    expect(record.classification).toBe("Rental");
   });
 
   it("values a 28 Days line over whole 28-day periods at a scaled rate", () => {
@@ -271,7 +271,7 @@ describe("previewLeaseClassification", () => {
       policy
     });
     expect(record.pv).toBeNull();
-    expect(record.classification).toBe("Operating");
+    expect(record.classification).toBe("Rental");
   });
 
   it("round-trips through the stored JSON shape", () => {
@@ -283,9 +283,9 @@ describe("previewLeaseClassification", () => {
     });
     const { classification: _, ...stored } = record;
     expect(
-      readLeaseClassification(JSON.parse(JSON.stringify(stored)), "Sales-Type")
+      readLeaseClassification(JSON.parse(JSON.stringify(stored)), "Sale")
     ).toEqual(record);
-    expect(readLeaseClassification(null, "Operating")).toBeNull();
+    expect(readLeaseClassification(null, "Rental")).toBeNull();
   });
 });
 

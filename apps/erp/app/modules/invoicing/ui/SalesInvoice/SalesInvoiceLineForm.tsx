@@ -38,6 +38,7 @@ import {
   taxableBase,
   taxPairFromPercent
 } from "@carbon/utils";
+import { parseDate } from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useLocale } from "@react-aria/i18n";
 import { useEffect, useState } from "react";
@@ -314,6 +315,10 @@ const SalesInvoiceItemLineForm = ({
 
   const [lineType, setLineType] = useState<ItemType>(
     initialValues.invoiceLineType as ItemType
+  );
+  // A service can run a single day, so its end may equal its start.
+  const [serviceStartDate, setServiceStartDate] = useState(
+    initialValues.serviceStartDate
   );
   const [locationId, setLocationId] = useState(defaults.locationId ?? "");
   const [itemData, setItemData] = useState<{
@@ -805,10 +810,18 @@ const SalesInvoiceItemLineForm = ({
                               <DatePicker
                                 name="serviceStartDate"
                                 label={t`Service start`}
+                                onChange={(date) =>
+                                  setServiceStartDate(date ?? undefined)
+                                }
                               />
                               <DatePicker
                                 name="serviceEndDate"
                                 label={t`Service end`}
+                                minValue={
+                                  serviceStartDate
+                                    ? parseDate(serviceStartDate)
+                                    : undefined
+                                }
                               />
                             </>
                           )}

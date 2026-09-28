@@ -1,8 +1,8 @@
 import {
   Button,
   Card,
-  CardAction,
   CardContent,
+  CardFooter,
   CardHeader,
   CardTitle,
   DropdownMenu,
@@ -31,15 +31,12 @@ import {
   LuUndo2
 } from "react-icons/lu";
 import { Link, useNavigate } from "react-router";
-import { Hyperlink } from "~/components";
+import { DateTime, Hyperlink } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { Confirm, ConfirmDelete } from "~/components/Modals";
-import {
-  useCurrencyFormatter,
-  useDateFormatter,
-  usePermissions
-} from "~/hooks";
+import { useCurrencyFormatter, usePermissions } from "~/hooks";
 import { path } from "~/utils/path";
+import { LeaseClassificationBadge } from "./RentalLeaseClassification";
 import RentalMoney from "./RentalMoney";
 import RentalStatus from "./RentalStatus";
 import type { RentalAgreement, RentalAgreementLine } from "./types";
@@ -61,7 +58,6 @@ const RentalAgreementLines = ({
   const { t } = useLingui();
   const permissions = usePermissions();
   const navigate = useNavigate();
-  const { formatDate } = useDateFormatter();
   const disclosure = useDisclosure();
   const [pending, setPending] = useState<LineAction | null>(null);
 
@@ -90,20 +86,6 @@ const RentalAgreementLines = ({
           <CardTitle>
             <Trans>Units</Trans>
           </CardTitle>
-          {isDraft && (
-            <CardAction>
-              <Button
-                variant="secondary"
-                leftIcon={<LuPlus />}
-                isDisabled={!permissions.can("create", "sales")}
-                asChild
-              >
-                <Link to={path.to.newRentalAgreementLine(id)}>
-                  <Trans>Add Unit</Trans>
-                </Link>
-              </Button>
-            </CardAction>
-          )}
         </CardHeader>
         <CardContent>
           {lines.length === 0 ? (
@@ -158,7 +140,7 @@ const RentalAgreementLines = ({
                   // The purchase option ends a sales-type lease by sale.
                   const canExerciseOption =
                     canReturn &&
-                    line.lessorClassification === "Sales-Type" &&
+                    line.lessorClassification === "Sale" &&
                     purchaseOptionAmount > 0;
                   return (
                     <Tr key={line.id}>
@@ -216,13 +198,27 @@ const RentalAgreementLines = ({
                       </Td>
                       <Td>
                         {line.lessorClassification ? (
-                          <Enumerable value={line.lessorClassification} />
+                          <LeaseClassificationBadge
+                            value={line.lessorClassification}
+                          />
                         ) : (
                           "—"
                         )}
                       </Td>
-                      <Td>{formatDate(line.deliveredAt) || "—"}</Td>
-                      <Td>{formatDate(line.returnedAt) || "—"}</Td>
+                      <Td>
+                        <DateTime
+                          value={line.deliveredAt}
+                          variant="date"
+                          fallback="—"
+                        />
+                      </Td>
+                      <Td>
+                        <DateTime
+                          value={line.returnedAt}
+                          variant="date"
+                          fallback="—"
+                        />
+                      </Td>
                       <Td>
                         <RentalStatus status={line.status} />
                       </Td>
@@ -316,6 +312,20 @@ const RentalAgreementLines = ({
             </Table>
           )}
         </CardContent>
+        {isDraft && (
+          <CardFooter>
+            <Button
+              variant="secondary"
+              leftIcon={<LuPlus />}
+              isDisabled={!permissions.can("create", "sales")}
+              asChild
+            >
+              <Link to={path.to.newRentalAgreementLine(id)}>
+                <Trans>Add Unit</Trans>
+              </Link>
+            </Button>
+          </CardFooter>
+        )}
       </Card>
 
       {pending?.kind === "deliver" && disclosure.isOpen && (

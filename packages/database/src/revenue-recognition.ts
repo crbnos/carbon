@@ -37,7 +37,7 @@ export type RunRowSynthesizer = (
  * `periodEnd` (Dr contract asset / Cr rental income), so the month's rental
  * revenue is right whenever the invoice for it posts. Spec §3, Decision 7.
  *
- * What is accrued: every non-adjustment billing period of an Operating line
+ * What is accrued: every non-adjustment billing period of a Rental-treated line
  * (`On Rent` or `Returned`) that no POSTED invoice covers yet — status
  * `Pending`, or `Invoiced` onto a Draft/Pending invoice. A drafted-but-unposted
  * invoice has written nothing to the ledger: the daily job drafts an Arrears
@@ -118,7 +118,7 @@ export async function synthesizeRentalAccruals(
         eb("si.status", "in", ["Draft", "Pending"])
       ])
     )
-    .where("l.lessorClassification", "=", "Operating")
+    .where("l.lessorClassification", "=", "Rental")
     .where("l.status", "in", ["On Rent", "Returned"])
     .where("l.deliveredAt", "is not", null)
     .where("l.deliveredAt", "<=", periodEnd)

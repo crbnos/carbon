@@ -135,17 +135,19 @@ export default function RevenueRecognitionRunsRoute() {
           confirmModal.onClose();
           navigate(path.to.revenueRecognitionRuns);
         }}
+        details={
+          <div className="flex flex-col gap-2 pt-4">
+            <span className="text-sm font-medium">{t`Period end`}</span>
+            <DatePicker
+              aria-label={t`Period end`}
+              value={parseDate(periodEnd)}
+              onChange={(value) => {
+                if (value) setPeriodEnd(value.toString());
+              }}
+            />
+          </div>
+        }
       >
-        <div className="flex flex-col gap-1 pb-2">
-          <span className="text-sm text-muted-foreground">{t`Period end`}</span>
-          <DatePicker
-            aria-label={t`Period end`}
-            value={parseDate(periodEnd)}
-            onChange={(value) => {
-              if (value) setPeriodEnd(value.toString());
-            }}
-          />
-        </div>
         <input type="hidden" name="periodEnd" value={periodEnd} />
       </Confirm>
 

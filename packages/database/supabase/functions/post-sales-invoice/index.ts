@@ -417,7 +417,7 @@ serve(async (req: Request) => {
           accountIds.add(rentalAccountIds.contractAsset);
           accountIds.add(rentalAccountIds.rentalIncome);
           // Read with the others, but only required (and validated) once the
-          // agreement lines show a Sales-Type line on this invoice.
+          // agreement lines show a Sale line on this invoice.
           if (accountDefaults?.data?.netInvestmentInLeasesAccount) {
             accountIds.add(accountDefaults.data.netInvestmentInLeasesAccount);
           }
@@ -552,10 +552,10 @@ serve(async (req: Request) => {
         // needs the account mapped.
         let netInvestmentInLeasesAccount: SalesPostingAccount | null = null;
         if ((rentalAgreementLines.data ?? []).some((line: RentalAgreementLineRecord) =>
-          line.lessorClassification === "Sales-Type")) {
+          line.lessorClassification === "Sale")) {
           const candidate = account(accountDefaults?.data?.netInvestmentInLeasesAccount);
           if (!accountDefaults?.data?.netInvestmentInLeasesAccount) {
-            throw new Error("Sales-type rental invoices need the Net Investment in Leases account mapped in the accounting defaults");
+            throw new Error("Rentals treated as a sale need the Net Investment in Leases account mapped in the accounting defaults");
           }
           if (!candidate || candidate.class !== "Asset" || !candidate.active || candidate.isGroup) {
             throw new Error("Net Investment in Leases account is invalid; expected an active Asset leaf in this company group");
@@ -864,7 +864,7 @@ serve(async (req: Request) => {
               // just credited goes to COGS (a shortfall) or Lease Revenue (a
               // gain), on the same journal line reference so a VOID reverses it.
               if (invoiceLine.rentalInvoiceLineKind === "Purchase Option" &&
-                agreementLine.lessorClassification === "Sales-Type" && netInvestmentInLeasesAccount) {
+                agreementLine.lessorClassification === "Sale" && netInvestmentInLeasesAccount) {
                 const closing = leaseClosingTargetByLine.get(agreementLine.id);
                 if (!closing) {
                   throw new Error(`Rental agreement line ${agreementLine.id} has no lease schedule to settle the purchase option against`);
@@ -1318,11 +1318,11 @@ serve(async (req: Request) => {
               .set({ status: "Sold", updatedBy: userId, updatedAt: datetime.timestamp() })
               .where("companyId", "=", companyId)
               .where("id", "in", soldAgreementLineIds)
-              .where("lessorClassification", "=", "Sales-Type")
+              .where("lessorClassification", "=", "Sale")
               .where("status", "=", "On Rent")
               .executeTakeFirst();
             if (Number(sold.numUpdatedRows) !== soldAgreementLineIds.length) {
-              throw new Error("A purchase option can only be billed on a sales-type unit that is on rent");
+              throw new Error("A purchase option can only be billed on a unit treated as a sale that is on rent");
             }
           }
 

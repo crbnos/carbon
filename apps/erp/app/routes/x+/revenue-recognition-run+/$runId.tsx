@@ -23,7 +23,6 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import { LuEllipsisVertical, LuRepeat, LuTrash } from "react-icons/lu";
 import type { LoaderFunctionArgs } from "react-router";
 import {
-  Link,
   Outlet,
   redirect,
   useFetcher,
@@ -31,7 +30,7 @@ import {
   useNavigate,
   useParams
 } from "react-router";
-import { DateTime } from "~/components";
+import { DateTime, Hyperlink } from "~/components";
 import { Confirm, ConfirmDelete } from "~/components/Modals";
 import { usePermissions, useUser } from "~/hooks";
 import { useCurrencyFormatter } from "~/hooks/useCurrencyFormatter";
@@ -57,7 +56,7 @@ export const handle: Handle = {
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  const { client, companyId } = await requirePermissions(request, {
     view: "accounting"
   });
 
@@ -79,27 +78,58 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
-  // Name the invoice behind each Deferral row (one lookup for the whole run).
+  // Name the document behind each row: the invoice for a Deferral, the rental
+  // agreement for an Accrual or Interest row (one lookup per source table).
+  const scheduleLines = (lines.data ?? []).map((line) => line.schedule);
   const invoiceLineIds = [
     ...new Set(
-      (lines.data ?? [])
-        .map((line) => line.schedule?.salesInvoiceLineId)
+      scheduleLines
+        .map((schedule) => schedule?.salesInvoiceLineId)
         .filter((id): id is string => Boolean(id))
     )
   ];
+  const rentalLineIds = [
+    ...new Set(
+      scheduleLines
+        .map((schedule) => schedule?.rentalAgreementLineId)
+        .filter((id): id is string => Boolean(id))
+    )
+  ];
+
+  const [invoiceLines, rentalLines] = await Promise.all([
+    invoiceLineIds.length > 0
+      ? client
+          .from("salesInvoiceLine")
+          .select("id, salesInvoice(id, invoiceId)")
+          .eq("companyId", companyId)
+          .in("id", invoiceLineIds)
+      : null,
+    rentalLineIds.length > 0
+      ? client
+          .from("rentalAgreementLine")
+          .select("id, rentalAgreement(id, rentalAgreementId)")
+          .eq("companyId", companyId)
+          .in("id", rentalLineIds)
+      : null
+  ]);
+
+  // Keyed by the schedule's source line id; invoice and rental line ids never
+  // collide (different id prefixes).
   const sources: Record<string, { label: string; to: string }> = {};
-  if (invoiceLineIds.length > 0) {
-    const invoiceLines = await client
-      .from("salesInvoiceLine")
-      .select("id, salesInvoice(id, invoiceId)")
-      .in("id", invoiceLineIds);
-    for (const row of invoiceLines.data ?? []) {
-      if (row.salesInvoice) {
-        sources[row.id] = {
-          label: row.salesInvoice.invoiceId,
-          to: path.to.salesInvoice(row.salesInvoice.id)
-        };
-      }
+  for (const row of invoiceLines?.data ?? []) {
+    if (row.salesInvoice) {
+      sources[row.id] = {
+        label: row.salesInvoice.invoiceId,
+        to: path.to.salesInvoice(row.salesInvoice.id)
+      };
+    }
+  }
+  for (const row of rentalLines?.data ?? []) {
+    if (row.rentalAgreement) {
+      sources[row.id] = {
+        label: row.rentalAgreement.rentalAgreementId,
+        to: path.to.rentalAgreement(row.rentalAgreement.id)
+      };
     }
   }
 
@@ -200,7 +230,7 @@ export default function RevenueRecognitionRunDetailRoute() {
                     type="submit"
                     isLoading={fetcher.state !== "idle"}
                   >
-                    <Trans>Post Run</Trans>
+                    <Trans>Post</Trans>
                   </Button>
                 </fetcher.Form>
               )}
@@ -233,12 +263,9 @@ export default function RevenueRecognitionRunDetailRoute() {
                     <Trans>Journal</Trans>
                   </p>
                   <p className="text-sm">
-                    <Link
-                      to={path.to.journalEntry(run.journalId)}
-                      className="text-foreground hover:underline"
-                    >
+                    <Hyperlink to={path.to.journalEntry(run.journalId)}>
                       <Trans>View journal entry</Trans>
-                    </Link>
+                    </Hyperlink>
                   </p>
                 </div>
               )}
@@ -291,34 +318,41 @@ export default function RevenueRecognitionRunDetailRoute() {
                               <div className="w-6 text-muted-foreground tabular-nums">
                                 {index + 1}
                               </div>
+                              <HStack spacing={1}>
+                                <DateTime
+                                  value={line.schedule?.periodStart}
+                                  variant="date"
+                                />
+                                <span className="text-muted-foreground">→</span>
+                                <DateTime
+                                  value={line.schedule?.periodEnd}
+                                  variant="date"
+                                />
+                              </HStack>
                               <div>
-                                {formatDate(line.schedule?.periodStart)} →{" "}
-                                {formatDate(line.schedule?.periodEnd)}
+                                <DateTime
+                                  value={line.schedule?.scheduledDate}
+                                  variant="date"
+                                />
                               </div>
                               <div>
-                                {formatDate(line.schedule?.scheduledDate)}
-                              </div>
-                              <div>
-                                {line.schedule?.salesInvoiceLineId &&
-                                sources[line.schedule.salesInvoiceLineId] ? (
-                                  <Link
-                                    to={
-                                      sources[line.schedule.salesInvoiceLineId]
-                                        .to
-                                    }
-                                    className="hover:underline"
-                                  >
-                                    {
-                                      sources[line.schedule.salesInvoiceLineId]
-                                        .label
-                                    }
-                                  </Link>
-                                ) : (
-                                  <span className="text-muted-foreground font-mono text-xs">
-                                    {line.schedule?.rentalAgreementLineId ??
-                                      "—"}
-                                  </span>
-                                )}
+                                {(() => {
+                                  const sourceLineId =
+                                    line.schedule?.salesInvoiceLineId ??
+                                    line.schedule?.rentalAgreementLineId;
+                                  const source = sourceLineId
+                                    ? sources[sourceLineId]
+                                    : undefined;
+                                  return source ? (
+                                    <Hyperlink to={source.to}>
+                                      {source.label}
+                                    </Hyperlink>
+                                  ) : (
+                                    <span className="text-muted-foreground">
+                                      —
+                                    </span>
+                                  );
+                                })()}
                               </div>
                               <div className="text-right tabular-nums font-medium">
                                 {currencyFormatter.format(Number(line.amount))}

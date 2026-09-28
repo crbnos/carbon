@@ -1,5 +1,5 @@
 -- Sales-type lease schedule: one effective-interest row per period of a
--- Sales-Type rental line; each spawns one Interest revenue recognition row.
+-- Sale rental line; each spawns one Interest revenue recognition row.
 -- Spec: .ai/specs/2026-09-22-revenue-recognition-and-rentals.md §4, Data Model §5
 
 CREATE TABLE IF NOT EXISTS "rentalLeaseScheduleLine" (

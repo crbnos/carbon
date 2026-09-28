@@ -425,7 +425,7 @@ Deno.test("a commenced sales-type line cannot be cancelled: early termination is
       recognizedRows: 36,
       commencedSalesTypeLines: 1,
     }),
-    "Early termination of a sales-type lease is a manual journal",
+    "Ending a rental treated as a sale early is a manual journal",
   );
   // A Draft has commenced nothing.
   assertEquals(

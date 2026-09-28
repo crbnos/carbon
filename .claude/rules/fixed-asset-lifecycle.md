@@ -387,8 +387,10 @@ with that unit as its first line), Take Out of Service / Return to Service,
 Return to Inventory (rows with an `itemId` that are on the books).
 
 **Rentals.** A rental agreement (`sales` module, documented in
-`apps/erp/app/modules/sales/AGENTS.md` → Rentals) rents fleet units. An
-**Operating** line posts no journal at activation, the asset stays `Active` and keeps
+`apps/erp/app/modules/sales/AGENTS.md` → Rentals) rents fleet units. Each
+line's accounting treatment (`lessorClassification`) is set at activation:
+`Rental` / `Sale` / `Financing` (ASC 842 operating / sales-type / direct
+financing lease; `Financing` has no input). A **`Rental`** line posts no journal at activation, the asset stays `Active` and keeps
 depreciating, and only the derived fleet status changes (Reserved → On Rent →
 Available again, or In Maintenance when the return form's out-of-service box is
 ticked — `post-rental-agreement` `return` sets `outOfServiceSince =
@@ -405,8 +407,8 @@ transaction and throws "Asset <id> is on rent|reserved on rental agreement
 Return to Inventory menu item for On Rent and Reserved rows, and Take Out of
 Service for On Rent rows; the edge function and the route stay the gates.
 
-**Sales-type leases dispose the fleet asset.** A line classified **Sales-Type**
-at activation (`post-rental-agreement` `commenceSalesTypeLines`) is sold to the
+**Sales-type leases dispose the fleet asset.** A line classified **`Sale`**
+(a sales-type lease) at activation (`post-rental-agreement` `commenceSalesTypeLines`) is sold to the
 lease at ACTIVATION, not delivery: the asset goes `Disposed`,
 `disposalMethod 'Sale'`, `disposalDate` = company today, `saleProceeds` = the
 net investment, guarded on `status IN ('Active','Fully Depreciated')` (a
@@ -427,7 +429,7 @@ refuses a line without a fleet unit, so the spec's from-stock commencement has
 no entry point in v1.
 
 **Residual return capitalizes a NEW Rental Fleet asset.** Returning a
-Sales-Type line at or after `endDate` with `residualDestination: "Fleet"`
+`Sale` line at or after `endDate` with `residualDestination: "Fleet"`
 (`returnResidual`) inserts a new `fixedAsset` (new `fixedAssetId` from the
 sequence) in the non-CIP class named "Rental Fleet" (else the class the unit
 left at commencement; neither → "No Rental Fleet asset class to return the
@@ -453,9 +455,9 @@ brings Net Investment in Leases to zero: initial NI + Σ interest − Σ rent �
 closing = 0); only unposted ones dated after the return are deleted, and only
 a Draft run holding Interest rows dated after the return blocks it. A return
 dated after company today is refused ("The return date cannot be in the
-future"), and a Sales-Type line's billing is not re-cut by a return.
+future"), and a `Sale` line's billing is not re-cut by a return.
 
-**Purchase option exercise derecognizes the rest.** Posting a Sales-Type
+**Purchase option exercise derecognizes the rest.** Posting a `Sale`
 line's `Purchase Option` invoice line (`post-sales-invoice`,
 `purchaseOptionSettlement` in `rental-posting.ts`) credits NI by the option
 and settles the difference to the schedule's closing balance (the last
@@ -558,7 +560,7 @@ two-step (ship → invoice) flow.
 - `Reserved` means "named on a live Pending line", which includes every line of
   a DRAFT agreement. Cancelling an agreement deletes its Pending lines (the
   line status enum has no Cancelled), which is what frees the unit.
-- An OPERATING rental never changes `fixedAsset.status` or `locationId`:
+- A `Rental` line (operating lease) never changes `fixedAsset.status` or `locationId`:
   custody is the agreement's `customerLocationId`, exposed on `fleetAssets`. A
-  SALES-TYPE line disposes the asset at activation (above), and a residual
+  `Sale` line (sales-type lease) disposes the asset at activation (above), and a residual
   return creates a different asset row rather than reviving the old one.

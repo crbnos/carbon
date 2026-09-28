@@ -11,6 +11,7 @@ import {
   VStack
 } from "@carbon/react";
 import { INPUT_FORMAT, INPUT_STEP } from "@carbon/utils";
+import { parseDate } from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useState } from "react";
 import { flushSync } from "react-dom";
@@ -38,6 +39,12 @@ import {
   rentalBillingCycles,
   rentalBillingTimings
 } from "../../sales.models";
+import type { LeasePolicy } from "../../sales.utils";
+import {
+  LeaseClassificationPreview,
+  type LeaseTermsDraft
+} from "./RentalLeaseClassification";
+import type { RentalAgreementLine, RentalLeaseLineInputs } from "./types";
 
 type RentalAgreementFormValues = z.infer<typeof rentalAgreementValidator>;
 
@@ -49,12 +56,20 @@ type RentalAgreementFormProps = {
   /** `?fixedAssetId=` from the fleet register's Rent action — the new route
    *  adds that unit as the first line. */
   fixedAssetId?: string;
+  /** Classification thresholds, for the live lease classification preview. */
+  leasePolicy: LeasePolicy;
+  /** The agreement's units, so the preview can run the per-unit tests. */
+  lines?: RentalAgreementLine[];
+  leaseInputs?: Record<string, RentalLeaseLineInputs>;
 };
 
 const RentalAgreementForm = ({
   initialValues,
   isLocked = false,
-  fixedAssetId
+  fixedAssetId,
+  leasePolicy,
+  lines,
+  leaseInputs
 }: RentalAgreementFormProps) => {
   const { t } = useLingui();
   const permissions = usePermissions();
@@ -73,6 +88,29 @@ const RentalAgreementForm = ({
     customerLocationId: initialValues.customerLocationId
   });
   const currencyCode = customer.currencyCode ?? initialValues.currencyCode;
+  // The unsaved terms that decide the lease classification, for the live
+  // preview and for which inputs show.
+  const [terms, setTerms] = useState<LeaseTermsDraft>({
+    startDate: initialValues.startDate,
+    endDate: initialValues.endDate ?? null,
+    billingCycle: initialValues.billingCycle,
+    billingTiming: initialValues.billingTiming,
+    discountRate: initialValues.discountRate,
+    ownershipTransfers: initialValues.ownershipTransfers,
+    specializedAsset: initialValues.specializedAsset,
+    purchaseOptionAmount: initialValues.purchaseOptionAmount ?? null,
+    purchaseOptionReasonablyCertain:
+      initialValues.purchaseOptionReasonablyCertain
+  });
+  const setTerm = <K extends keyof LeaseTermsDraft>(
+    key: K,
+    value: LeaseTermsDraft[K]
+  ) => setTerms((prev) => ({ ...prev, [key]: value }));
+  // An agreement with no end date is always an Operating lease, so the
+  // classification inputs only show once there is one; the reasonably-certain
+  // switch only means something once there is a purchase option to exercise.
+  const hasEndDate = !!terms.endDate;
+  const hasPurchaseOption = (terms.purchaseOptionAmount ?? 0) > 0;
   const currencyDecimals = useCurrencyDecimals(currencyCode);
 
   const onCustomerChange = async (
@@ -186,7 +224,6 @@ const RentalAgreementForm = ({
               <CustomerLocation
                 name="customerLocationId"
                 label={t`Rental Site`}
-                helperText={t`Where the units are while on rent`}
                 customer={customer.id}
                 value={customer.customerLocationId}
               />
@@ -196,18 +233,23 @@ const RentalAgreementForm = ({
                 customer={customer.id}
                 value={customer.customerContactId}
               />
-              <Location
-                name="locationId"
-                label={t`Home Location`}
-                helperText={t`The warehouse the units return to`}
-              />
+              <Location name="locationId" label={t`Shipping Location`} />
               <Employee name="salesPersonId" label={t`Sales Person`} />
               <PaymentTerm name="paymentTermId" label={t`Payment Terms`} />
-              <DatePicker name="startDate" label={t`Start Date`} />
+              <DatePicker
+                name="startDate"
+                label={t`Start Date`}
+                onChange={(date) => setTerm("startDate", date ?? "")}
+              />
               <DatePicker
                 name="endDate"
                 label={t`End Date`}
-                helperText={t`Leave empty for an open-ended agreement`}
+                minValue={
+                  terms.startDate
+                    ? parseDate(terms.startDate).add({ days: 1 })
+                    : undefined
+                }
+                onChange={(date) => setTerm("endDate", date || null)}
               />
               <Currency
                 name="currencyCode"
@@ -226,11 +268,25 @@ const RentalAgreementForm = ({
                 name="billingCycle"
                 label={t`Billing Cycle`}
                 options={billingCycleOptions}
+                onChange={(option) =>
+                  option &&
+                  setTerm(
+                    "billingCycle",
+                    option.value as LeaseTermsDraft["billingCycle"]
+                  )
+                }
               />
               <Select
                 name="billingTiming"
                 label={t`Billing Timing`}
                 options={billingTimingOptions}
+                onChange={(option) =>
+                  option &&
+                  setTerm(
+                    "billingTiming",
+                    option.value as LeaseTermsDraft["billingTiming"]
+                  )
+                }
               />
               <Number
                 name="depositAmount"
@@ -252,45 +308,96 @@ const RentalAgreementForm = ({
               />
             </div>
 
-            <div className="w-full border-t border-border pt-4">
-              <p className="text-sm font-medium mb-1">
-                <Trans>Lease classification inputs</Trans>
-              </p>
-              <p className="text-sm text-muted-foreground mb-4">
-                <Trans>
-                  Used when the agreement is activated to classify each line as
-                  an operating or sales-type lease.
-                </Trans>
-              </p>
-              <div className="grid w-full gap-x-8 gap-y-4 grid-cols-1 lg:grid-cols-3">
-                <Number
-                  name="discountRate"
-                  label={t`Discount Rate (%)`}
-                  minValue={0}
-                  step={INPUT_STEP.percent}
-                  formatOptions={INPUT_FORMAT.percentPoints}
-                />
-                <Number
-                  name="purchaseOptionAmount"
-                  label={t`Purchase Option`}
-                  minValue={0}
-                  step={INPUT_STEP.money(currencyDecimals)}
-                  formatOptions={INPUT_FORMAT.money(
-                    currencyCode,
-                    currencyDecimals
-                  )}
-                />
-                <div />
-                <Boolean
-                  name="purchaseOptionReasonablyCertain"
-                  label={t`Purchase option reasonably certain`}
-                />
-                <Boolean
-                  name="ownershipTransfers"
-                  label={t`Ownership transfers`}
-                />
-                <Boolean name="specializedAsset" label={t`Specialized asset`} />
+            <div className="w-full border-t border-border pt-4 flex flex-col gap-4">
+              <div>
+                <p className="text-sm font-medium mb-1">
+                  <Trans>Accounting treatment</Trans>
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  <Trans>
+                    Whether each unit is treated as a rental or a sale is
+                    decided when the agreement is activated.
+                  </Trans>
+                </p>
               </div>
+              {!isLocked && (
+                <LeaseClassificationPreview
+                  terms={{
+                    ...terms,
+                    purchaseOptionReasonablyCertain:
+                      hasPurchaseOption && terms.purchaseOptionReasonablyCertain
+                  }}
+                  lines={lines}
+                  leaseInputs={leaseInputs}
+                  policy={leasePolicy}
+                />
+              )}
+              {hasEndDate ? (
+                <div className="grid w-full gap-x-8 gap-y-4 grid-cols-1 lg:grid-cols-3">
+                  <Number
+                    name="discountRate"
+                    label={t`Discount Rate (%)`}
+                    onChange={(value) => setTerm("discountRate", value)}
+                    minValue={0}
+                    step={INPUT_STEP.percent}
+                    formatOptions={INPUT_FORMAT.percentPoints}
+                  />
+                  <Number
+                    name="purchaseOptionAmount"
+                    label={t`Purchase Option`}
+                    onChange={(value) =>
+                      // An emptied input commits NaN; NaN > 0 is false.
+                      setTerm("purchaseOptionAmount", value > 0 ? value : null)
+                    }
+                    minValue={0}
+                    step={INPUT_STEP.money(currencyDecimals)}
+                    formatOptions={INPUT_FORMAT.money(
+                      currencyCode,
+                      currencyDecimals
+                    )}
+                  />
+                  <div className="col-span-full flex flex-col gap-4">
+                    {hasPurchaseOption && (
+                      <Boolean
+                        name="purchaseOptionReasonablyCertain"
+                        label={t`Purchase option reasonably certain`}
+                        description={t`The customer is expected to buy the unit at the end of the term.`}
+                        onChange={(value) =>
+                          setTerm("purchaseOptionReasonablyCertain", value)
+                        }
+                        bordered
+                      />
+                    )}
+                    <Boolean
+                      name="ownershipTransfers"
+                      label={t`Ownership transfers`}
+                      description={t`Title passes to the customer when the term ends.`}
+                      onChange={(value) => setTerm("ownershipTransfers", value)}
+                      bordered
+                    />
+                    <Boolean
+                      name="specializedAsset"
+                      label={t`Specialized asset`}
+                      description={t`The unit has no other use to you once the term ends.`}
+                      onChange={(value) => setTerm("specializedAsset", value)}
+                      bordered
+                    />
+                  </div>
+                </div>
+              ) : (
+                // Hidden, but kept: removing the end date and saving must not
+                // wipe the inputs, so they come back if an end date is added.
+                <>
+                  <Hidden name="discountRate" />
+                  <Hidden name="purchaseOptionAmount" />
+                  {terms.ownershipTransfers && (
+                    <Hidden name="ownershipTransfers" value="on" />
+                  )}
+                  {terms.specializedAsset && (
+                    <Hidden name="specializedAsset" value="on" />
+                  )}
+                </>
+              )}
             </div>
 
             <TextArea name="notes" label={t`Notes`} />

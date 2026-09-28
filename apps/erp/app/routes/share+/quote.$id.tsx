@@ -431,6 +431,7 @@ const LineItems = ({
                     <Heading className="min-w-0">{line.itemReadableId}</Heading>
                     <HStack spacing={4} className="shrink-0">
                       <MotionMoney
+                        className="font-semibold text-xl whitespace-nowrap"
                         value={
                           (selectedLines[line.id!]?.convertedNetUnitPrice ??
                             0) *
@@ -899,7 +900,7 @@ const LinePricingOptions = ({
                 </Td>
               </Tr>
 
-              <Tr key="total" className="font-bold">
+              <Tr key="total" className="font-semibold">
                 <Td>
                   <Trans>Total</Trans>
                 </Td>
@@ -1222,7 +1223,7 @@ const Quote = ({ data }: { data: QuoteData }) => {
                     <Trans>Shipping Method</Trans>:
                   </span>
                 </HStack>
-                <span className="text-foreground font-bold">
+                <span className="text-foreground font-semibold">
                   {shippingMethod}
                 </span>
               </HStack>
@@ -1235,7 +1236,9 @@ const Quote = ({ data }: { data: QuoteData }) => {
                     <Trans>Payment Term</Trans>:
                   </span>
                 </HStack>
-                <span className="text-foreground font-bold">{paymentTerm}</span>
+                <span className="text-foreground font-semibold">
+                  {paymentTerm}
+                </span>
               </HStack>
             )}
             {(shippingMethod || paymentTerm) && <Separator />}
@@ -1285,7 +1288,7 @@ const Quote = ({ data }: { data: QuoteData }) => {
               </HStack>
             )}
             <Separator className="my-2" />
-            <HStack className="justify-between text-xl font-bold w-full">
+            <HStack className="justify-between text-xl font-semibold w-full">
               <span>
                 <Trans>Total</Trans>:
               </span>
@@ -1574,11 +1577,13 @@ export const ErrorMessage = ({
               damping: 10
             }}
           >
-            <span className="text-2xl font-bold text-muted-foreground">!</span>
+            <span className="text-2xl font-semibold text-muted-foreground">
+              !
+            </span>
           </motion.div>
         </motion.div>
         <motion.h1
-          className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl"
+          className="text-3xl font-semibold tracking-tight text-foreground sm:text-4xl"
           variants={itemVariants}
         >
           {title}

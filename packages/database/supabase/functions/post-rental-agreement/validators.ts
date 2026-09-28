@@ -253,7 +253,7 @@ export function cancelBlocker(args: {
     return `The agreement is ${args.status}`;
   }
   if (args.commencedSalesTypeLines > 0) {
-    return "Early termination of a sales-type lease is a manual journal";
+    return "Ending a rental treated as a sale early is a manual journal";
   }
   if (args.lineStatuses.includes("On Rent")) {
     return "A unit is on rent; return it before cancelling the agreement";

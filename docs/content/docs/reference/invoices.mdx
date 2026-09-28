@@ -48,9 +48,9 @@ A **Fixed Asset** line exists on both sides: on a sales invoice it bills a capit
 
 A **Rental** line is never added by hand: [rental agreement](/docs/reference/rental-agreements) billing writes one per billing period or charge, with no item, and it posts to lease accounts rather than to sales.
 
-On an operating unit, rent posts to contract assets and deferred revenue, and the recognition run releases it across its period. An early-return credit comes back off deferred revenue, and off rental income for any part already recognized.
+On a unit treated as a rental, rent posts to contract assets and deferred revenue, and the recognition run releases it across its period. An early-return credit comes back off deferred revenue, and off rental income for any part already recognized.
 
-On a sales-type unit, rent and the purchase option credit net investment in leases, and the purchase option also settles the rest of the unit's net investment: a shortfall to cost of goods sold, an excess to lease revenue. A charge posts to rental income either way.
+On a unit treated as a sale, rent and the purchase option credit net investment in leases, and the purchase option also settles the rest of the unit's net investment: a shortfall to cost of goods sold, an excess to lease revenue. A charge posts to rental income either way.
 
 ## Posting
 

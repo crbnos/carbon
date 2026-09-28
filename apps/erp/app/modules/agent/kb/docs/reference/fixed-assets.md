@@ -49,7 +49,7 @@ Attaching posts the WIP a job has accumulated to the asset immediately, so the b
 | **"On Rent"** | Delivered to a customer on an active rental agreement |
 | **"In Maintenance"** | Taken out of service |
 | **"Under Construction"** | Still collecting cost |
-| **"Sold"** | Disposed by sale or scrapping, including a unit leased out on a `docs/reference/rental-agreements` |
+| **"Sold"** | Disposed by sale or scrapping, including a rental unit `docs/reference/rental-agreements` |
 | **"Returned to Stock"** | Returned to inventory |
 
 Two actions manage whether a unit is out of service without touching its accounting. **"Take Out of Service"** records a reason and date, keeps the asset depreciating, and flips the register to In Maintenance; **"Return to Service"** clears it. Both live on the asset page and in the register's row menu. A unit on rent is taken out of service from its rental agreement instead: **"Return"** it with **"Take out of service"** ticked.

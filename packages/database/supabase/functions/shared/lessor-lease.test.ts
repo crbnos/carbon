@@ -78,7 +78,7 @@ Deno.test("present value refuses a partial term and a negative rate", () => {
   assertThrows(() => presentValue({ ...LEASE, annualRate: -1 }));
 });
 
-Deno.test("a reasonably certain purchase option makes it Sales-Type (97.5 % of fair value)", () => {
+Deno.test("a reasonably certain purchase option makes it Sale (97.5 % of fair value)", () => {
   const result = classifyLessorLease(
     {
       ownershipTransfers: false,
@@ -91,13 +91,13 @@ Deno.test("a reasonably certain purchase option makes it Sales-Type (97.5 % of f
     },
     THRESHOLDS,
   );
-  assertEquals(result.classification, "Sales-Type");
+  assertEquals(result.classification, "Sale");
   assertEquals(result.tests, { a: false, b: true, c: false, d: true, e: false });
   assertEquals(result.pvToFairValuePercent, 97.498);
   assertEquals(result.termToLifePercent, 30);
 });
 
-Deno.test("no test met is Operating (54.8 % of fair value, 30 % of life)", () => {
+Deno.test("no test met is Rental (54.8 % of fair value, 30 % of life)", () => {
   const result = classifyLessorLease(
     {
       ownershipTransfers: false,
@@ -110,12 +110,12 @@ Deno.test("no test met is Operating (54.8 % of fair value, 30 % of life)", () =>
     },
     THRESHOLDS,
   );
-  assertEquals(result.classification, "Operating");
+  assertEquals(result.classification, "Rental");
   assertEquals(result.pvToFairValuePercent, 54.78503);
   assertEquals(result.termToLifePercent, 30);
 });
 
-Deno.test("a term over the major-part threshold of the economic life is Sales-Type", () => {
+Deno.test("a term over the major-part threshold of the economic life is Sale", () => {
   const result = classifyLessorLease(
     {
       ownershipTransfers: false,
@@ -130,10 +130,10 @@ Deno.test("a term over the major-part threshold of the economic life is Sales-Ty
   );
   assertEquals(result.tests.c, true);
   assertEquals(result.termToLifePercent, 80);
-  assertEquals(result.classification, "Sales-Type");
+  assertEquals(result.classification, "Sale");
 });
 
-Deno.test("an open-ended agreement is Operating even when a test is met", () => {
+Deno.test("an open-ended agreement is Rental even when a test is met", () => {
   const result = classifyLessorLease(
     {
       ownershipTransfers: true,
@@ -146,7 +146,7 @@ Deno.test("an open-ended agreement is Operating even when a test is met", () => 
     },
     THRESHOLDS,
   );
-  assertEquals(result.classification, "Operating");
+  assertEquals(result.classification, "Rental");
   assertEquals(result.tests.a, true);
   assertEquals(result.tests.c, false);
   assertEquals(result.tests.d, false);

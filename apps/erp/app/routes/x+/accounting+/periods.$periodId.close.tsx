@@ -42,6 +42,7 @@ import {
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import {
   data,
+  Link,
   redirect,
   useFetcher,
   useLoaderData,
@@ -437,6 +438,26 @@ function PeriodCloseTaskRow({
                   </button>
                 </PeriodCloseUnpostedDocumentsPopover>
               )}
+            {status === "Open" && task.autoCheck?.failing && (
+              <>
+                {task.autoCheckKey === "draft-depreciation" && (
+                  <Link
+                    to={path.to.depreciationRuns}
+                    className="w-fit text-xs font-normal text-primary hover:underline"
+                  >
+                    <Trans>Go to depreciation runs</Trans>
+                  </Link>
+                )}
+                {task.autoCheckKey === "unposted-revenue-schedules" && (
+                  <Link
+                    to={path.to.revenueRecognitionRuns}
+                    className="w-fit text-xs font-normal text-primary hover:underline"
+                  >
+                    <Trans>Go to revenue recognition runs</Trans>
+                  </Link>
+                )}
+              </>
+            )}
           </div>
         </Td>
         <Td>{task.taskType}</Td>

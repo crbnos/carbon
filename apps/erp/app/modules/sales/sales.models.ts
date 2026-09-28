@@ -1442,7 +1442,7 @@ export const rentalAgreementChargeValidator = z.object({
   )
 });
 
-/** Where a Sales-Type unit's closing net investment goes when it comes back
+/** Where a Sale unit's closing net investment goes when it comes back
  *  (spec §4): a new asset in the Rental Fleet class, or finished goods. */
 export const rentalResidualDestinations = ["Fleet", "Inventory"] as const;
 
@@ -1456,7 +1456,7 @@ export const rentalAgreementReturnValidator = z
     returnNotes: zfd.text(z.string().optional()),
     takeOutOfService: zfd.checkbox(),
     outOfServiceReason: zfd.text(z.string().optional()),
-    /** Posted by the form for a Sales-Type line so the destination can be
+    /** Posted by the form for a Sale line so the destination can be
      *  required client-side; the route re-reads the line's classification. */
     isSalesType: zfd.checkbox({ trueValue: "true" }),
     residualDestination: zfd.text(z.enum(rentalResidualDestinations).optional())
@@ -1486,10 +1486,7 @@ export const rentalAgreementReturnValidator = z
     }
   );
 
-export const lessorClassificationOverrides = [
-  "Operating",
-  "Sales-Type"
-] as const;
+export const lessorClassificationOverrides = ["Rental", "Sale"] as const;
 
 /** A manual lessor classification (spec §4), audit-logged with its reason. */
 export const rentalAgreementLineClassificationValidator = z.object({

@@ -21,7 +21,7 @@ import {
 
 export type Timing = "Advance" | "Arrears";
 
-export type LessorClassification = "Operating" | "Sales-Type";
+export type LessorClassification = "Rental" | "Sale";
 
 /** Periodic rate from an annual percentage: 6 (%) → 0.005 per month. */
 const monthlyRate = (annualRate: number): number => annualRate / 100 / 12;
@@ -93,13 +93,13 @@ export function presentValue(args: {
   };
 }
 
-/** ASC 842-10-25-2: any test true ⇒ Sales-Type, else Operating.
+/** ASC 842-10-25-2: any test true ⇒ Sale, else Rental.
  *  (a) ownership transfers; (b) a purchase option reasonably certain;
  *  (c) term ≥ `majorPartPercent` of the economic life; (d) PV of the lease
  *  payments ≥ `substantiallyAllPercent` of fair value; (e) specialized asset.
  *  An open-ended agreement (`termMonths` null) has no lease term to transfer
- *  the asset over, so it is always Operating — Sales-Type requires an end
- *  date; its tests are still reported for the record. Direct Financing needs
+ *  the asset over, so it is always Rental — Sale requires an end
+ *  date; its tests are still reported for the record. Financing needs
  *  a third-party residual guarantee input that v1 does not have. */
 export function classifyLessorLease(
   inputs: {
@@ -140,7 +140,7 @@ export function classifyLessorLease(
 
   const anyTest = tests.a || tests.b || tests.c || tests.d || tests.e;
   return {
-    classification: termMonths !== null && anyTest ? "Sales-Type" : "Operating",
+    classification: termMonths !== null && anyTest ? "Sale" : "Rental",
     tests,
     pvToFairValuePercent,
     termToLifePercent,
@@ -156,7 +156,7 @@ export type LessorScheduleLine = {
   closingNetInvestment: number;
 };
 
-/** The effective-interest schedule of a Sales-Type line (spec §4). Arrears:
+/** The effective-interest schedule of a Sale line (spec §4). Arrears:
  *  interest accrues on the opening balance, then the payment lands. Advance:
  *  the payment lands first and interest accrues on what remains. Each line is
  *  rounded as it is cut and the next opens on that rounded close; the last
@@ -256,7 +256,7 @@ export type LeasePaymentTerms = {
  *   period is not part of the level-payment stream.
  *
  * An open-ended agreement, or a term shorter than one period, is valued over
- * one period (spec §4: open-ended ⇒ one month ⇒ always Operating) — the
+ * one period (spec §4: open-ended ⇒ one month ⇒ always Rental) — the
  * present value needs at least one payment.
  */
 export function leasePaymentTerms(args: {
@@ -433,20 +433,20 @@ export function salesTypeRequirementError(args: {
 }): string | null {
   const { name, startDate, endDate } = args;
   if (endDate === null) {
-    return `${name} is a sales-type lease, which needs an agreement end date`;
+    return `${name} is treated as a sale, which needs an agreement end date`;
   }
   if (args.fairValue === null || !(args.fairValue > 0)) {
-    return `${name} is a sales-type lease; enter the unit's fair value`;
+    return `${name} is treated as a sale; enter the unit's fair value`;
   }
   if (args.cycle === "Calendar Month") {
     if (parseIsoDate(startDate).day !== 1 || monthEnd(endDate) !== endDate) {
-      return `${name} is a sales-type lease, which runs whole billing periods: start on the first of a month and end on a month end`;
+      return `${name} is treated as a sale, which runs whole billing periods: start on the first of a month and end on a month end`;
     }
     return null;
   }
   const days = daysBetweenInclusive(startDate, endDate);
   if (days % DAYS_PER_28_DAY_PERIOD !== 0) {
-    return `${name} is a sales-type lease, which runs whole billing periods: the term must be a whole number of 28-day periods (it is ${days} days)`;
+    return `${name} is treated as a sale, which runs whole billing periods: the term must be a whole number of 28-day periods (it is ${days} days)`;
   }
   return null;
 }

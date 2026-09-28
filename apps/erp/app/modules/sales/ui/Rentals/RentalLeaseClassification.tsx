@@ -2,6 +2,7 @@ import { ValidatedForm } from "@carbon/form";
 import {
   Badge,
   Button,
+  cn,
   HStack,
   Modal,
   ModalBody,
@@ -16,6 +17,9 @@ import {
   Td,
   Th,
   Thead,
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
   Tr,
   VStack
 } from "@carbon/react";
@@ -48,7 +52,65 @@ import type {
   RentalLeaseLineInputs
 } from "./types";
 
-type LeaseClassificationValue = "Operating" | "Sales-Type";
+type LeaseClassificationValue = "Rental" | "Sale";
+
+/** The accounting treatment's name on screen. The stored values are the
+ *  labels themselves; `useLeaseStandardTerm` gives the ASC 842 / IFRS 16
+ *  name an accountant knows each one by. */
+export function useLeaseClassificationLabel() {
+  const { t } = useLingui();
+  return (value: string) => {
+    switch (value) {
+      case "Sale":
+        return t`Sale`;
+      case "Financing":
+        return t`Financing`;
+      default:
+        return t`Rental`;
+    }
+  };
+}
+
+export function useLeaseStandardTerm() {
+  const { t } = useLingui();
+  return (value: string) => {
+    switch (value) {
+      case "Sale":
+        return t`Sales-type lease`;
+      case "Financing":
+        return t`Direct financing lease`;
+      default:
+        return t`Operating lease`;
+    }
+  };
+}
+
+/** The classification badge, with a tooltip saying what it means. */
+export function LeaseClassificationBadge({ value }: { value: string }) {
+  const { t } = useLingui();
+  const label = useLeaseClassificationLabel();
+  const standardTerm = useLeaseStandardTerm();
+  const description =
+    value === "Rental"
+      ? t`You keep the unit on your books and depreciate it. Rent is revenue as it is earned.`
+      : t`The customer effectively buys the unit. It leaves your fixed assets at commencement, the sale is booked, and interest is earned on the receivable over the term.`;
+
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <span className="w-fit">
+          <Badge variant={value === "Rental" ? "secondary" : "orange"}>
+            {label(value)}
+          </Badge>
+        </span>
+      </TooltipTrigger>
+      <TooltipContent className="max-w-xs">
+        <p>{description}</p>
+        <p className="mt-1 text-muted-foreground">{standardTerm(value)}</p>
+      </TooltipContent>
+    </Tooltip>
+  );
+}
 
 export type LineLeaseClassification = {
   /** The classification that applies: the stored one once activated or
@@ -64,7 +126,7 @@ export type LineLeaseClassification = {
 const asClassification = (
   value: string | null | undefined
 ): LeaseClassificationValue | null =>
-  value === "Operating" || value === "Sales-Type" ? value : null;
+  value === "Rental" || value === "Sale" ? value : null;
 
 /** One line's lessor classification: the record activation stored when there
  *  is one, else a preview from the agreement terms, the line's inputs and the
@@ -129,7 +191,7 @@ export function resolveLineLeaseClassification(args: {
   const classification: LeaseClassificationValue =
     (overridden || agreement.status !== "Draft" ? stored : null) ??
     record?.classification ??
-    "Operating";
+    "Rental";
 
   return {
     classification,
@@ -141,6 +203,236 @@ export function resolveLineLeaseClassification(args: {
 }
 
 const TEST_KEYS: (keyof LeaseClassificationTests)[] = ["a", "b", "c", "d", "e"];
+
+/** The agreement terms as the form currently holds them (unsaved). */
+export type LeaseTermsDraft = {
+  startDate: string;
+  endDate: string | null;
+  billingCycle: "Calendar Month" | "28 Days";
+  billingTiming: "Advance" | "Arrears";
+  discountRate: number;
+  ownershipTransfers: boolean;
+  specializedAsset: boolean;
+  purchaseOptionAmount: number | null;
+  purchaseOptionReasonablyCertain: boolean;
+};
+
+type LeaseClassificationPreviewProps = {
+  terms: LeaseTermsDraft;
+  /** The agreement's units, when it has any: tests (c) and (d) are per unit. */
+  lines?: RentalAgreementLine[];
+  leaseInputs?: Record<string, RentalLeaseLineInputs>;
+  policy: LeasePolicy;
+};
+
+/** How the agreement would classify on activation, from the unsaved terms:
+ *  both classifications side by side (the one that applies solid, the other
+ *  faded) and the five ASC 842 tests that decide it. */
+export function LeaseClassificationPreview({
+  terms,
+  lines = [],
+  leaseInputs,
+  policy
+}: LeaseClassificationPreviewProps) {
+  const { t } = useLingui();
+  const { locale } = useLocale();
+  const standardTerm = useLeaseStandardTerm();
+  const percent = (value: number) => formatPercent(value / 100, locale);
+
+  const isOpenEnded = !terms.endDate;
+  const units = terms.startDate
+    ? lines.map((line) => {
+        const record = previewLeaseClassification({
+          agreement: terms,
+          line: {
+            rateMode: line.rateMode,
+            rateUnit: line.rateUnit,
+            fairValue: line.fairValue,
+            economicLifeMonths: line.economicLifeMonths,
+            guaranteedResidualValue: line.guaranteedResidualValue,
+            unguaranteedResidualValue: line.unguaranteedResidualValue
+          },
+          ladder: leaseInputs?.[line.id]?.ladder,
+          policy
+        });
+        // A manual override wins, exactly as on activation.
+        const classification: LeaseClassificationValue =
+          line.classificationOverride &&
+          (line.lessorClassification === "Rental" ||
+            line.lessorClassification === "Sale")
+            ? line.lessorClassification
+            : record.classification;
+        return { line, record, classification };
+      })
+    : [];
+
+  // Tests (a), (b) and (e) are agreement terms; (c) and (d) need each unit's
+  // fair value and economic life.
+  const agreementTests = {
+    a: terms.ownershipTransfers,
+    b: terms.purchaseOptionReasonablyCertain,
+    e: terms.specializedAsset
+  };
+  const passingUnits = (key: "c" | "d") =>
+    units.filter((unit) => unit.record.tests[key]);
+
+  const classifications = new Set<LeaseClassificationValue>(
+    isOpenEnded
+      ? ["Rental"]
+      : units.length > 0
+        ? units.map((unit) => unit.classification)
+        : [
+            agreementTests.a || agreementTests.b || agreementTests.e
+              ? "Sale"
+              : "Rental"
+          ]
+  );
+  const unitCount = (value: LeaseClassificationValue) =>
+    units.filter((unit) => unit.classification === value).length;
+
+  // Financing (a direct financing lease) is not offered: it needs a
+  // third-party residual value guarantee, which an agreement has no input
+  // for, so no terms can reach it.
+  const options: {
+    value: LeaseClassificationValue;
+    title: string;
+    description: string;
+  }[] = [
+    {
+      value: "Rental",
+      title: t`Rental`,
+      description: t`You keep the units on your books and depreciate them. Rent is revenue as it is earned.`
+    },
+    {
+      value: "Sale",
+      title: t`Sale`,
+      description: t`The customer effectively buys the units. They leave your fixed assets on activation, the sale is booked, and interest is earned over the term.`
+    }
+  ];
+
+  const testRow = (key: keyof LeaseClassificationTests) => {
+    let passed: boolean;
+    let label: ReactNode;
+    let detail: ReactNode = null;
+    switch (key) {
+      case "a":
+        passed = agreementTests.a;
+        label = t`Ownership transfers to the customer`;
+        break;
+      case "b":
+        passed = agreementTests.b;
+        label = t`Purchase option reasonably certain`;
+        break;
+      case "e":
+        passed = agreementTests.e;
+        label = t`Specialized asset with no alternative use`;
+        break;
+      case "c":
+      case "d": {
+        const threshold = percent(
+          key === "c" ? policy.majorPartPercent : policy.substantiallyAllPercent
+        );
+        label =
+          key === "c"
+            ? t`Term is at least ${threshold} of a unit's economic life`
+            : t`Present value of the rent is at least ${threshold} of a unit's fair value`;
+        const passing = passingUnits(key);
+        passed = passing.length > 0;
+        if (units.length === 0) {
+          detail = t`Checked for each unit once units are added`;
+        } else if (units.length === 1) {
+          const actual =
+            key === "c"
+              ? units[0].record.termToLifePercent
+              : units[0].record.pvToFairValuePercent;
+          detail = actual === null ? t`Not enough unit data` : percent(actual);
+        } else {
+          const count = passing.length;
+          const total = units.length;
+          detail = t`${count} of ${total} units`;
+        }
+        break;
+      }
+    }
+    return (
+      <li key={key} className="flex items-center gap-2">
+        {passed ? (
+          <LuCircleCheck className="text-emerald-500 shrink-0" />
+        ) : (
+          <LuCircleMinus className="text-muted-foreground shrink-0" />
+        )}
+        <span className={passed ? undefined : "text-muted-foreground"}>
+          {label}
+        </span>
+        {detail && (
+          <span className="text-xs text-muted-foreground">({detail})</span>
+        )}
+      </li>
+    );
+  };
+
+  return (
+    <div className="flex flex-col gap-4 w-full">
+      <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+        {options.map((option) => {
+          const applies = classifications.has(option.value);
+          const count = unitCount(option.value);
+          return (
+            <div
+              key={option.value}
+              className={cn(
+                "flex flex-col gap-1 rounded-lg border p-4 transition-opacity",
+                applies ? "border-foreground" : "border-border opacity-40"
+              )}
+            >
+              <HStack className="justify-between">
+                <div className="flex flex-col">
+                  <span className="text-sm font-medium">{option.title}</span>
+                  <span className="text-xs text-muted-foreground">
+                    {standardTerm(option.value)}
+                  </span>
+                </div>
+                {applies &&
+                  (units.length > 1 ? (
+                    <span className="text-xs text-muted-foreground">
+                      {count === 1 ? t`1 unit` : t`${count} units`}
+                    </span>
+                  ) : (
+                    <LuCircleCheck className="shrink-0" />
+                  ))}
+              </HStack>
+              <p className="text-sm text-muted-foreground">
+                {option.description}
+              </p>
+            </div>
+          );
+        })}
+      </div>
+
+      {isOpenEnded ? (
+        <p className="text-sm text-muted-foreground">
+          <Trans>
+            Without an end date this is always treated as a rental: a unit can
+            only pass to the customer over a fixed term. Add an end date to test
+            whether it is a sale.
+          </Trans>
+        </p>
+      ) : (
+        <div className="flex flex-col gap-2">
+          <p className="text-sm text-muted-foreground">
+            <Trans>
+              A unit is treated as a sale when any of these is true, and as a
+              rental otherwise.
+            </Trans>
+          </p>
+          <ul className="flex flex-col gap-1 text-sm">
+            {TEST_KEYS.map(testRow)}
+          </ul>
+        </div>
+      )}
+    </div>
+  );
+}
 
 type LeaseClassificationPanelProps = LineLeaseClassification & {
   currencyCode: string;
@@ -191,15 +483,7 @@ export function LeaseClassificationPanel({
     <div className="flex flex-col gap-3 rounded-lg border border-border p-4">
       <HStack className="justify-between">
         <HStack spacing={2}>
-          <Badge
-            variant={classification === "Sales-Type" ? "orange" : "secondary"}
-          >
-            {classification === "Sales-Type" ? (
-              <Trans>Sales-Type</Trans>
-            ) : (
-              <Trans>Operating</Trans>
-            )}
-          </Badge>
+          <LeaseClassificationBadge value={classification} />
           {isOverridden ? (
             <Badge variant="outline">
               <Trans>Overridden</Trans>
@@ -240,15 +524,17 @@ export function LeaseClassificationPanel({
         </ul>
       ) : (
         <p className="text-sm text-muted-foreground">
-          <Trans>Set the agreement's start date to classify the lease.</Trans>
+          <Trans>
+            Set the agreement's start date to see the accounting treatment.
+          </Trans>
         </p>
       )}
 
       {record && record.inputs.termMonths === null && (
         <p className="text-xs text-muted-foreground">
           <Trans>
-            An open-ended agreement is always an operating lease: a sales-type
-            lease needs an end date.
+            An open-ended agreement is always treated as a rental: a sale needs
+            an end date.
           </Trans>
         </p>
       )}
@@ -309,10 +595,11 @@ export function LeaseClassificationOverrideModal({
   onClose
 }: LeaseClassificationOverrideModalProps) {
   const { t } = useLingui();
+  const classificationLabel = useLeaseClassificationLabel();
 
   const options = lessorClassificationOverrides.map((value) => ({
     value,
-    label: value === "Sales-Type" ? t`Sales-Type` : t`Operating`
+    label: classificationLabel(value)
   }));
 
   return (
@@ -332,8 +619,7 @@ export function LeaseClassificationOverrideModal({
             lineId
           )}
           defaultValues={{
-            classification:
-              classification === "Sales-Type" ? "Operating" : "Sales-Type",
+            classification: classification === "Sale" ? "Rental" : "Sale",
             reason: ""
           }}
         >
@@ -380,8 +666,8 @@ type RentalCommencementPreviewProps = {
 };
 
 /** The Activate confirmation's commencement journal preview (spec §4), one
- *  per line that would classify Sales-Type. Nothing renders when every line
- *  is Operating. */
+ *  per line that would classify Sale. Nothing renders when every line
+ *  is Rental. */
 export function RentalCommencementPreview({
   rentalAgreement,
   lines,
@@ -403,7 +689,7 @@ export function RentalCommencementPreview({
         policy: leasePolicy
       })
     }))
-    .filter(({ lease }) => lease.classification === "Sales-Type");
+    .filter(({ lease }) => lease.classification === "Sale");
 
   if (salesType.length === 0) return null;
 
@@ -414,15 +700,15 @@ export function RentalCommencementPreview({
     <div className="mt-4 flex flex-col gap-4">
       <p className="text-sm">
         <Trans>
-          These units classify as sales-type leases. Activating derecognizes
-          each one and posts its commencement journal:
+          These units are treated as sales. Activating derecognizes each one and
+          posts its commencement journal:
         </Trans>
       </p>
       {isForeignCurrency && (
         <p className="text-sm text-destructive">
           <Trans>
-            A sales-type lease must be in the company's base currency. Change
-            the agreement currency or override the classification.
+            A rental treated as a sale must be in the company's base currency.
+            Change the agreement currency or override the treatment.
           </Trans>
         </p>
       )}

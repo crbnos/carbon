@@ -176,7 +176,7 @@ Deno.test("classification stores its inputs, thresholds, tests and present value
     line: LINE,
     thresholds: THRESHOLDS,
   });
-  assertEquals(classification, "Sales-Type");
+  assertEquals(classification, "Sale");
   assertEquals(record, {
     inputs: {
       ownershipTransfers: false,
@@ -204,7 +204,7 @@ Deno.test("classification stores its inputs, thresholds, tests and present value
   });
 });
 
-Deno.test("an uncertain option on a 60,000 unit is Operating", () => {
+Deno.test("an uncertain option on a 60,000 unit is Rental", () => {
   const { classification, record } = classifyRentalLine({
     terms: { termMonths: 36, payment: 1000, periods: 36, annualRate: 6 },
     timing: "Arrears",
@@ -212,7 +212,7 @@ Deno.test("an uncertain option on a 60,000 unit is Operating", () => {
     line: { ...LINE, fairValue: 60000 },
     thresholds: THRESHOLDS,
   });
-  assertEquals(classification, "Operating");
+  assertEquals(classification, "Rental");
   assertEquals(record.pv.pvPayments, 32871.01624);
 });
 
@@ -232,26 +232,26 @@ Deno.test("the net investment is the sum of the two rounded present values", () 
 
 Deno.test("an override keeps its stored classification; otherwise the tests decide", () => {
   assertEquals(
-    settledClassification("Sales-Type", {
+    settledClassification("Sale", {
       classificationOverride: true,
-      lessorClassification: "Operating",
+      lessorClassification: "Rental",
     }),
-    "Operating",
+    "Rental",
   );
   assertEquals(
-    settledClassification("Sales-Type", {
+    settledClassification("Sale", {
       classificationOverride: false,
-      lessorClassification: "Operating",
+      lessorClassification: "Rental",
     }),
-    "Sales-Type",
+    "Sale",
   );
   // An override with nothing stored falls back to the tests.
   assertEquals(
-    settledClassification("Operating", {
+    settledClassification("Rental", {
       classificationOverride: true,
       lessorClassification: null,
     }),
-    "Operating",
+    "Rental",
   );
 });
 
@@ -288,7 +288,7 @@ Deno.test("a Calendar Month sales-type lease starts on the first and ends on a m
     fairValue: 38000,
   };
   const message =
-    "FA-1 is a sales-type lease, which runs whole billing periods: start on the first of a month and end on a month end";
+    "FA-1 is treated as a sale, which runs whole billing periods: start on the first of a month and end on a month end";
   // A mid-month start bills a pro-rata first and last month the level
   // payment valuation does not contain.
   assertEquals(
@@ -339,7 +339,7 @@ Deno.test("a 28 Days sales-type lease runs a whole number of 28-day periods", ()
   );
   assertEquals(
     salesTypeRequirementError({ ...base, endDate: "2027-12-31" }),
-    "FA-1 is a sales-type lease, which runs whole billing periods: the term must be a whole number of 28-day periods (it is 365 days)",
+    "FA-1 is treated as a sale, which runs whole billing periods: the term must be a whole number of 28-day periods (it is 365 days)",
   );
   assert(
     salesTypeRequirementError({ ...base, endDate: "2027-12-29" })?.includes(
@@ -354,14 +354,14 @@ Deno.test("activation cuts an operating line to the horizon and a sales-type lin
     today: "2027-01-10",
     endDate: "2027-01-31",
   };
-  // Operating: the billing horizon (end of next month), holdover and all.
+  // Rental: the billing horizon (end of next month), holdover and all.
   assertEquals(
-    activationBillingThrough({ ...args, classification: "Operating" }),
+    activationBillingThrough({ ...args, classification: "Rental" }),
     "2027-02-28",
   );
-  // Sales-Type: capped at the end date.
+  // Sale: capped at the end date.
   assertEquals(
-    activationBillingThrough({ ...args, classification: "Sales-Type" }),
+    activationBillingThrough({ ...args, classification: "Sale" }),
     "2027-01-31",
   );
   // An end date beyond the horizon: the horizon, and the term is still cut
@@ -369,7 +369,7 @@ Deno.test("activation cuts an operating line to the horizon and a sales-type lin
   assertEquals(
     activationBillingThrough({
       ...args,
-      classification: "Sales-Type",
+      classification: "Sale",
       endDate: "2029-12-31",
     }),
     "2027-02-28",
@@ -377,14 +377,14 @@ Deno.test("activation cuts an operating line to the horizon and a sales-type lin
   assertThrows(() =>
     activationBillingThrough({
       ...args,
-      classification: "Sales-Type",
+      classification: "Sale",
       endDate: null,
     })
   );
 });
 
 Deno.test("a sales-type line whose term ends inside the horizon bills nothing past its end date", () => {
-  const generate = (classification: "Operating" | "Sales-Type") =>
+  const generate = (classification: "Rental" | "Sale") =>
     generateRentalBillingPeriods({
       cycle: "28 Days",
       timing: "Arrears",
@@ -404,13 +404,13 @@ Deno.test("a sales-type line whose term ends inside the horizon bills nothing pa
       existing: [],
     }).create;
 
-  const salesType = generate("Sales-Type");
+  const salesType = generate("Sale");
   assertEquals(salesType.map((period) => period.periodEnd), [
     "2027-01-28",
     "2027-02-25",
   ]);
   // The operating line keeps its holdover period, as before.
-  const operating = generate("Operating");
+  const operating = generate("Rental");
   assert(operating.length > salesType.length);
   assert(operating.some((period) => period.periodStart > "2027-02-25"));
 });
@@ -464,7 +464,7 @@ Deno.test("a whole-period sales-type lease bills exactly payment × periods", ()
         rates: LADDER,
         returnedAt: null,
         through: activationBillingThrough({
-          classification: "Sales-Type",
+          classification: "Sale",
           cycle: lease.cycle,
           today: lease.startDate,
           endDate: lease.endDate,
@@ -692,7 +692,7 @@ function workedExampleSchedule() {
     endDate: "2029-12-31",
     returnedAt: null,
     through: activationBillingThrough({
-      classification: "Sales-Type",
+      classification: "Sale",
       cycle: "Calendar Month",
       today: "2027-01-01",
       endDate: "2029-12-31",
@@ -835,7 +835,7 @@ Deno.test("a residual return debits where the unit went and credits the net inve
 
 Deno.test("a sales-type return needs a destination, the end of the term, and no maintenance from stock", () => {
   const base = {
-    classification: "Sales-Type",
+    classification: "Sale",
     residualDestination: "Fleet" as const,
     returnedAt: "2029-12-31",
     endDate: "2029-12-31",
@@ -848,7 +848,7 @@ Deno.test("a sales-type return needs a destination, the end of the term, and no 
   );
   assertEquals(
     salesTypeReturnError({ ...base, returnedAt: "2029-06-30" }),
-    "Early termination of a sales-type lease is a manual journal",
+    "Ending a rental treated as a sale early is a manual journal",
   );
   // A holdover past the end is still an end-of-term return.
   assertEquals(salesTypeReturnError({ ...base, returnedAt: "2030-01-15" }), null);
@@ -866,7 +866,7 @@ Deno.test("a sales-type return needs a destination, the end of the term, and no 
 });
 
 Deno.test("an operating return ignores the destination entirely", () => {
-  for (const classification of ["Operating", null]) {
+  for (const classification of ["Rental", null]) {
     assertEquals(
       salesTypeReturnError({
         classification,
