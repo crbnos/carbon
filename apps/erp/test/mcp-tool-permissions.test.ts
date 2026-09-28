@@ -81,6 +81,38 @@ describe("permission overrides", () => {
       accounting_createDepreciationRun: {
         module: "accounting",
         actions: ["create"]
+      },
+      // x+/receipt+/new.tsx, x+/shipment+/new.tsx,
+      // x+/sales-order+/$orderId.$lineId.shipment.tsx
+      inventory_createReceipt: { module: "inventory", actions: ["create"] },
+      inventory_createShipment: { module: "inventory", actions: ["create"] },
+      inventory_createSalesOrderLineShipment: {
+        module: "inventory",
+        actions: ["create"]
+      },
+      // x+/receipt+/$receiptId.{post,void}.tsx, x+/shipment+/$shipmentId.{post,void}.tsx
+      inventory_postReceipt: { module: "inventory", actions: ["update"] },
+      inventory_voidReceipt: { module: "inventory", actions: ["update"] },
+      inventory_postShipment: { module: "inventory", actions: ["update"] },
+      inventory_voidShipment: { module: "inventory", actions: ["update"] },
+      // x+/{receipt,shipment}+/lines.update.tsx
+      inventory_updateReceiptLines: {
+        module: "inventory",
+        actions: ["update"]
+      },
+      inventory_updateShipmentLines: {
+        module: "inventory",
+        actions: ["update"]
+      },
+      // x+/payments+/$paymentId.{post,void}.tsx, x+/credits+/$memoId.{post,void}.tsx,
+      // x+/invoicing+/card-transactions.$id.void.tsx
+      invoicing_postPayment: { module: "invoicing", actions: ["update"] },
+      invoicing_voidPayment: { module: "invoicing", actions: ["update"] },
+      invoicing_postMemo: { module: "invoicing", actions: ["update"] },
+      invoicing_voidMemo: { module: "invoicing", actions: ["update"] },
+      invoicing_voidCardTransaction: {
+        module: "invoicing",
+        actions: ["update"]
       }
     };
     for (const [name, permission] of Object.entries(expected)) {
