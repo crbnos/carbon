@@ -155,3 +155,78 @@ describe("upsertSupplierPartPrices (items_upsertSupplierPartPrices)", () => {
     );
   });
 });
+
+/** Resolves every read to one item row and records each write's payload. */
+function makeItemClient() {
+  const writes: { table: string; value: Record<string, unknown> }[] = [];
+  const row = { id: "i1", readableId: "P-100" };
+  return {
+    writes,
+    from(table: string) {
+      const q: Record<string, unknown> = {};
+      for (const k of ["select", "eq", "in", "is", "order", "limit"]) {
+        q[k] = () => q;
+      }
+      q.maybeSingle = () => Promise.resolve({ data: row, error: null });
+      q.single = () => Promise.resolve({ data: row, error: null });
+      q.update = (value: Record<string, unknown>) => {
+        writes.push({ table, value });
+        return q;
+      };
+      // biome-ignore lint/suspicious/noThenProperty: a thenable query builder
+      q.then = (resolve: (v: unknown) => void) =>
+        resolve({ data: [row], error: null });
+      return q;
+    }
+  };
+}
+
+describe("item edits never write active (setItemActive owns it)", () => {
+  it("updateItem writes only the item form's editable columns", async () => {
+    const { updateItem } = await import("~/modules/items/items.service");
+    const client = makeItemClient();
+    await updateItem(client as never, {
+      id: "i1",
+      companyId: "c1",
+      type: "Material",
+      readableId: "RENAMED",
+      name: "Bracket",
+      replenishmentSystem: "Buy",
+      defaultMethodType: "Purchase to Order",
+      itemTrackingType: "Inventory",
+      unitOfMeasureCode: "EA",
+      unitCost: 4,
+      postingGroupId: "pg1",
+      shelfLifeCalculateFromBom: false,
+      active: true,
+      updatedBy: "u1"
+    } as never);
+    const itemWrite = client.writes.find((w) => w.table === "item");
+    expect(Object.keys(itemWrite?.value ?? {}).sort()).toEqual([
+      "defaultMethodType",
+      "itemTrackingType",
+      "name",
+      "replenishmentSystem",
+      "unitOfMeasureCode",
+      "updatedBy"
+    ]);
+  });
+
+  it("upsertPart's update keeps the item's active flag", async () => {
+    const { upsertPart } = await import("~/modules/items/items.service");
+    const client = makeItemClient();
+    await upsertPart(client as never, {
+      id: "i1",
+      companyId: "c1",
+      updatedBy: "u1",
+      name: "Bracket",
+      replenishmentSystem: "Make",
+      defaultMethodType: "Make to Order",
+      itemTrackingType: "Inventory",
+      unitOfMeasureCode: "EA"
+    } as never);
+    const itemWrite = client.writes.find((w) => w.table === "item");
+    expect(itemWrite?.value.name).toBe("Bracket");
+    expect(itemWrite?.value).not.toHaveProperty("active");
+  });
+});

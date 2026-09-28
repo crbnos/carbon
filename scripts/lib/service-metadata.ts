@@ -61,9 +61,11 @@ export const MODULE_LIST = [
  * lists equal.
  */
 export function mcpServerCompanionModules(): string[] {
-  return MODULE_LIST.filter((mod) =>
-    fs.existsSync(path.join(MODULES_DIR, mod, `${mod}.mcp.server.ts`))
-  );
+  return MODULE_LIST.filter((mod) => fs.existsSync(mcpServerCompanionPath(mod)));
+}
+
+function mcpServerCompanionPath(mod: string): string {
+  return path.join(MODULES_DIR, mod, `${mod}.mcp.server.ts`);
 }
 
 const DESCRIPTION_OVERRIDES: Record<string, string> = {
@@ -1609,6 +1611,7 @@ export interface BuildOptions {
  */
 export function buildAllToolMetadata(opts: BuildOptions = {}): ManifestEntry[] {
   const allTools: ManifestEntry[] = [];
+  const companions = new Set(mcpServerCompanionModules());
 
   for (const mod of MODULE_LIST) {
     let serviceFile = path.join(MODULES_DIR, mod, `${mod}.service.ts`);
@@ -1631,9 +1634,11 @@ export function buildAllToolMetadata(opts: BuildOptions = {}): ManifestEntry[] {
     // A module may expose MCP tools from a server-only companion file
     // (`{mod}.mcp.server.ts`) when those functions must import `*.server`
     // modules and therefore cannot live in the client-reachable service file.
-    const mcpServerFile = path.join(MODULES_DIR, mod, `${mod}.mcp.server.ts`);
-    if (fs.existsSync(mcpServerFile)) {
-      const mcpServerContent = fs.readFileSync(mcpServerFile, "utf-8");
+    if (companions.has(mod)) {
+      const mcpServerContent = fs.readFileSync(
+        mcpServerCompanionPath(mod),
+        "utf-8"
+      );
       content = `${content}\n${mcpServerContent}`;
       // A same-named mcp.server export SHADOWS the service one — matching the
       // runtime registry, where the mcp.server spread wins — so an orchestration

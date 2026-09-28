@@ -62,7 +62,7 @@ import {
   type itemSupersessionValidator,
   type itemTrackingTypes,
   type itemUnitSalePriceValidator,
-  itemValidator,
+  type itemValidator,
   type MethodDiffEntry,
   type MethodDiffStatus,
   type makeMethodVersionValidator,
@@ -3409,7 +3409,8 @@ async function resolveTypedItemRevision(
  * The update half of upsertPart / upsertTool / upsertConsumable /
  * upsertService: resolves the item, then writes the item row and the typed
  * row. Each write selects its row back so a miss fails instead of reporting
- * success.
+ * success. Callers never pass `active`: an edit keeps the item's active flag,
+ * and activation goes through `setItemActive`.
  */
 async function updateTypedItem(
   client: SupabaseClient<Database>,
@@ -3562,8 +3563,7 @@ export async function upsertConsumable(
       replenishmentSystem: consumable.replenishmentSystem,
       defaultMethodType: consumable.defaultMethodType,
       itemTrackingType: consumable.itemTrackingType,
-      unitOfMeasureCode: consumable.unitOfMeasureCode,
-      active: true
+      unitOfMeasureCode: consumable.unitOfMeasureCode
     },
     typed: { customFields: consumable.customFields }
   });
@@ -3854,8 +3854,7 @@ export async function upsertPart(
       replenishmentSystem: part.replenishmentSystem,
       defaultMethodType: part.defaultMethodType,
       itemTrackingType: part.itemTrackingType,
-      unitOfMeasureCode: part.unitOfMeasureCode,
-      active: true
+      unitOfMeasureCode: part.unitOfMeasureCode
     },
     typed: { customFields: part.customFields }
   });
@@ -3885,11 +3884,11 @@ export async function upsertPart(
 }
 
 /**
- * Update an item's form fields (name, description, replenishment, default
- * method, tracking type, unit of measure, readable id). Only the item form's
- * fields are written: `active` and other item columns a caller adds are
- * ignored — activation goes through `setItemActive`, which refuses items an
- * unreleased change notice created.
+ * Update an item's form fields (name, description, mpn, replenishment, default
+ * method, tracking type, unit of measure). Only those columns are written:
+ * `readableId`, `type`, `active` and any other key a caller adds are ignored.
+ * Activation goes through `setItemActive`, which refuses items an unreleased
+ * change notice created.
  */
 export async function updateItem(
   client: SupabaseClient<Database>,
@@ -3899,10 +3898,18 @@ export async function updateItem(
   }
 ) {
   // The tool schema passes undeclared keys through, and this spread goes
-  // straight into the UPDATE — so the declared form fields are the allow-list.
+  // straight into the UPDATE — so the item form's editable item columns are
+  // the allow-list. `readableId` is read-only on the form and `type` is fixed;
+  // the validator's form-only fields (cost, posting group, storage unit, shelf
+  // life) are not item columns. `active` goes through setItemActive.
   const allowed = new Set<string>([
-    ...Object.keys(itemValidator.shape),
-    "type",
+    "name",
+    "description",
+    "mpn",
+    "replenishmentSystem",
+    "defaultMethodType",
+    "itemTrackingType",
+    "unitOfMeasureCode",
     "updatedBy"
   ]);
   const update = Object.fromEntries(
@@ -6038,8 +6045,7 @@ export async function upsertService(
       replenishmentSystem: service.replenishmentSystem,
       defaultMethodType: service.defaultMethodType,
       itemTrackingType: "Non-Inventory",
-      unitOfMeasureCode: service.unitOfMeasureCode,
-      active: true
+      unitOfMeasureCode: service.unitOfMeasureCode
     },
     typed: { customFields: service.customFields }
   });
@@ -6181,8 +6187,7 @@ export async function upsertTool(
       replenishmentSystem: tool.replenishmentSystem,
       defaultMethodType: tool.defaultMethodType,
       itemTrackingType: tool.itemTrackingType,
-      unitOfMeasureCode: tool.unitOfMeasureCode,
-      active: true
+      unitOfMeasureCode: tool.unitOfMeasureCode
     },
     typed: { customFields: tool.customFields }
   });
