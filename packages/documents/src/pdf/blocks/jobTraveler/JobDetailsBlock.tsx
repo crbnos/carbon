@@ -84,19 +84,19 @@ export function JobDetailsBlock({ data }: { data: JobTravelerData }) {
             </Text>
           </View>
 
-          {methodRevision && methodRevision !== "0" && (
+          {methodRevision && methodRevision !== "0" ? (
             <View style={jobHeaderStyles.infoRow}>
               <Text style={jobHeaderStyles.label}>Method Revision:</Text>
               <Text style={jobHeaderStyles.value}>V{methodRevision}</Text>
             </View>
-          )}
+          ) : null}
 
-          {getTrackingNumber() && (
+          {getTrackingNumber() ? (
             <View style={jobHeaderStyles.infoRow}>
               <Text style={jobHeaderStyles.label}>Tracking:</Text>
               <Text style={jobHeaderStyles.value}>{getTrackingNumber()}</Text>
             </View>
-          )}
+          ) : null}
 
           <View style={jobHeaderStyles.infoRow}>
             <Text style={jobHeaderStyles.label}>Item:</Text>
@@ -113,60 +113,60 @@ export function JobDetailsBlock({ data }: { data: JobTravelerData }) {
             </Text>
           </View>
 
-          {job.scrapQuantity && job.scrapQuantity > 0 && (
+          {job.scrapQuantity && job.scrapQuantity > 0 ? (
             <View style={jobHeaderStyles.infoRow}>
               <Text style={jobHeaderStyles.label}>Scrap Qty:</Text>
               <Text style={jobHeaderStyles.value}>
                 {job.scrapQuantity} {job.unitOfMeasureCode}
               </Text>
             </View>
-          )}
+          ) : null}
           <View style={jobHeaderStyles.infoRow}>
             <Text style={jobHeaderStyles.label}>Target:</Text>
             <Text style={jobHeaderStyles.value}>{getTargetInfo()}</Text>
           </View>
-          {customer && (
+          {customer ? (
             <View style={jobHeaderStyles.infoRow}>
               <Text style={jobHeaderStyles.label}>Customer:</Text>
               <Text style={jobHeaderStyles.value}>{customer.name}</Text>
             </View>
-          )}
+          ) : null}
 
-          {job.startDate && (
+          {job.startDate ? (
             <View style={jobHeaderStyles.infoRow}>
               <Text style={jobHeaderStyles.label}>Start Date:</Text>
               <Text style={jobHeaderStyles.value}>
                 {formatDate(job.startDate, undefined, locale)}
               </Text>
             </View>
-          )}
+          ) : null}
 
-          {job.dueDate && (
+          {job.dueDate ? (
             <View style={jobHeaderStyles.infoRow}>
               <Text style={jobHeaderStyles.label}>Due Date:</Text>
               <Text style={jobHeaderStyles.value}>
                 {formatDate(job.dueDate, undefined, locale)}
               </Text>
             </View>
-          )}
+          ) : null}
 
-          {job.deadlineType && (
+          {job.deadlineType ? (
             <View style={jobHeaderStyles.infoRow}>
               <Text style={jobHeaderStyles.label}>Deadline Type:</Text>
               <Text style={jobHeaderStyles.value}>{job.deadlineType}</Text>
             </View>
-          )}
+          ) : null}
         </View>
 
         <View style={jobHeaderStyles.rightSection}>
-          {thumbnail && (
+          {thumbnail ? (
             <View>
               <Image
                 src={thumbnail}
                 style={tw("w-full h-auto border rounded-lg border-gray-300")}
               />
             </View>
-          )}
+          ) : null}
         </View>
       </View>
     </View>

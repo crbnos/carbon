@@ -3784,6 +3784,9 @@ msgstr "Réduire la main-d'œuvre"
 msgid "Collapse Machine"
 msgstr "Réduire Machine"
 
+msgid "Collapse row"
+msgstr "Réduire la ligne"
+
 msgid "Collapse Setup"
 msgstr "Réduire la configuration"
 
@@ -7196,6 +7199,9 @@ msgstr "Développer Main-d'œuvre"
 msgid "Expand Machine"
 msgstr "Développer Machine"
 
+msgid "Expand row"
+msgstr "Développer la ligne"
+
 msgid "Expand Setup"
 msgstr "Développer Configuration"
 
@@ -8632,6 +8638,9 @@ msgstr "Je travaille toujours"
 
 msgid "IBAN"
 msgstr "IBAN"
+
+msgid "IC Transaction"
+msgstr "Transaction intercompany"
 
 msgid "Id"
 msgstr "Id"

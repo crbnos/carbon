@@ -3784,6 +3784,9 @@ msgstr "Comprimi manodopera"
 msgid "Collapse Machine"
 msgstr "Comprimi macchina"
 
+msgid "Collapse row"
+msgstr "Comprimi riga"
+
 msgid "Collapse Setup"
 msgstr "Comprimi preparazione"
 
@@ -7196,6 +7199,9 @@ msgstr "Espandi manodopera"
 msgid "Expand Machine"
 msgstr "Espandi macchina"
 
+msgid "Expand row"
+msgstr "Espandi riga"
+
 msgid "Expand Setup"
 msgstr "Espandi preparazione"
 
@@ -8632,6 +8638,9 @@ msgstr "Sto ancora lavorando"
 
 msgid "IBAN"
 msgstr "IBAN"
+
+msgid "IC Transaction"
+msgstr "Transazione interaziendale"
 
 msgid "Id"
 msgstr "ID"

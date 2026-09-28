@@ -3784,6 +3784,9 @@ msgstr "İşçilik Süresini Daralt"
 msgid "Collapse Machine"
 msgstr "Makineyi Daralt"
 
+msgid "Collapse row"
+msgstr "Satırı Daralt"
+
 msgid "Collapse Setup"
 msgstr "Kurulumu Daralt"
 
@@ -7196,6 +7199,9 @@ msgstr "İşçilik Genişlet"
 msgid "Expand Machine"
 msgstr "Makineyi Genişlet"
 
+msgid "Expand row"
+msgstr "Satırı Genişlet"
+
 msgid "Expand Setup"
 msgstr "Kurulumu Genişlet"
 
@@ -8632,6 +8638,9 @@ msgstr "Hala Çalışıyorum"
 
 msgid "IBAN"
 msgstr "IBAN"
+
+msgid "IC Transaction"
+msgstr "Şirketler Arası İşlem"
 
 msgid "Id"
 msgstr "Id"

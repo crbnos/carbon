@@ -19,15 +19,15 @@ export function IssueDetailsBlock({ data }: { data: IssueData }) {
             Issue Details
           </Text>
           <View style={tw("text-[10px] text-gray-800")}>
-            {nonConformance.name && (
+            {nonConformance.name ? (
               <Text style={tw("font-bold")}>{nonConformance.name}</Text>
-            )}
-            {ncType?.name && (
+            ) : null}
+            {ncType?.name ? (
               <Text style={tw("mt-1")}>Type: {ncType.name}</Text>
-            )}
-            {nonConformance.status && (
+            ) : null}
+            {nonConformance.status ? (
               <Text>Status: {nonConformance.status}</Text>
-            )}
+            ) : null}
             <Text>
               Initiated By: {assignees[nonConformance.createdBy] || "Unknown"}
             </Text>
@@ -38,18 +38,18 @@ export function IssueDetailsBlock({ data }: { data: IssueData }) {
             Dates
           </Text>
           <View style={tw("text-[10px] text-gray-800")}>
-            {nonConformance.openDate && (
+            {nonConformance.openDate ? (
               <Text>
                 Started:{" "}
                 {formatDate(nonConformance.openDate, undefined, locale)}
               </Text>
-            )}
-            {nonConformance.closeDate && (
+            ) : null}
+            {nonConformance.closeDate ? (
               <Text>
                 Completed:{" "}
                 {formatDate(nonConformance.closeDate, undefined, locale)}
               </Text>
-            )}
+            ) : null}
           </View>
         </View>
       </View>

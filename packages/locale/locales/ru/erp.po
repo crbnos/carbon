@@ -3784,6 +3784,9 @@ msgstr "Свернуть Труд"
 msgid "Collapse Machine"
 msgstr "Свернуть станок"
 
+msgid "Collapse row"
+msgstr "Свернуть строку"
+
 msgid "Collapse Setup"
 msgstr "Свернуть настройку"
 
@@ -7196,6 +7199,9 @@ msgstr "Развернуть Труд"
 msgid "Expand Machine"
 msgstr "Развернуть Станок"
 
+msgid "Expand row"
+msgstr "Развернуть строку"
+
 msgid "Expand Setup"
 msgstr "Развернуть Setup"
 
@@ -8632,6 +8638,9 @@ msgstr "Я всё ещё работаю"
 
 msgid "IBAN"
 msgstr "IBAN"
+
+msgid "IC Transaction"
+msgstr "Межкомпанийная операция"
 
 msgid "Id"
 msgstr "ID"

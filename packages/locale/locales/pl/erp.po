@@ -3784,6 +3784,9 @@ msgstr "Zwiń robociznę"
 msgid "Collapse Machine"
 msgstr "Zwiń maszynę"
 
+msgid "Collapse row"
+msgstr "Zwiń wiersz"
+
 msgid "Collapse Setup"
 msgstr "Zwiń Setup"
 
@@ -7196,6 +7199,9 @@ msgstr "Rozwiń Robociznę"
 msgid "Expand Machine"
 msgstr "Rozwiń Maszynę"
 
+msgid "Expand row"
+msgstr "Rozwiń wiersz"
+
 msgid "Expand Setup"
 msgstr "Rozwiń Setup"
 
@@ -8632,6 +8638,9 @@ msgstr "Wciąż pracuję"
 
 msgid "IBAN"
 msgstr "IBAN"
+
+msgid "IC Transaction"
+msgstr "Transakcja międzyfirmowa"
 
 msgid "Id"
 msgstr "Id"

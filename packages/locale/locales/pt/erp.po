@@ -3784,6 +3784,9 @@ msgstr "Recolher Mão de obra"
 msgid "Collapse Machine"
 msgstr "Recolher Máquina"
 
+msgid "Collapse row"
+msgstr "Recolher linha"
+
 msgid "Collapse Setup"
 msgstr "Recolher Configuração"
 
@@ -7196,6 +7199,9 @@ msgstr "Expandir Mão de obra"
 msgid "Expand Machine"
 msgstr "Expandir Máquina"
 
+msgid "Expand row"
+msgstr "Expandir linha"
+
 msgid "Expand Setup"
 msgstr "Expandir Configuração"
 
@@ -8632,6 +8638,9 @@ msgstr "Ainda estou trabalhando"
 
 msgid "IBAN"
 msgstr "IBAN"
+
+msgid "IC Transaction"
+msgstr "Transação intercompanhia"
 
 msgid "Id"
 msgstr "Id"

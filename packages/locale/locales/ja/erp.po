@@ -3784,6 +3784,9 @@ msgstr "労務を折りたたみ"
 msgid "Collapse Machine"
 msgstr "機械を折りたたむ"
 
+msgid "Collapse row"
+msgstr "行を折りたたむ"
+
 msgid "Collapse Setup"
 msgstr "段取りを折りたたむ"
 
@@ -7196,6 +7199,9 @@ msgstr "労務を展開"
 msgid "Expand Machine"
 msgstr "機械を展開"
 
+msgid "Expand row"
+msgstr "行を展開"
+
 msgid "Expand Setup"
 msgstr "段取りを展開"
 
@@ -8632,6 +8638,9 @@ msgstr "まだ働いています"
 
 msgid "IBAN"
 msgstr "IBAN"
+
+msgid "IC Transaction"
+msgstr "企業間取引"
 
 msgid "Id"
 msgstr "ID"

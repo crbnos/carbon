@@ -3784,6 +3784,9 @@ msgstr "श्रम को संक्षिप्त करें"
 msgid "Collapse Machine"
 msgstr "मशीन को संक्षिप्त करें"
 
+msgid "Collapse row"
+msgstr "पंक्ति संक्षिप्त करें"
+
 msgid "Collapse Setup"
 msgstr "सेटअप को संक्षिप्त करें"
 
@@ -7196,6 +7199,9 @@ msgstr "श्रम विस्तृत करें"
 msgid "Expand Machine"
 msgstr "मशीन का विस्तार करें"
 
+msgid "Expand row"
+msgstr "पंक्ति का विस्तार करें"
+
 msgid "Expand Setup"
 msgstr "सेटअप विस्तृत करें"
 
@@ -8632,6 +8638,9 @@ msgstr "मैं अभी भी काम कर रहा हूँ"
 
 msgid "IBAN"
 msgstr "IBAN"
+
+msgid "IC Transaction"
+msgstr "अंतरकंपनी लेनदेन"
 
 msgid "Id"
 msgstr "आईडी"

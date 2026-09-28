@@ -3784,6 +3784,9 @@ msgstr "노무 접기"
 msgid "Collapse Machine"
 msgstr "기계 접기"
 
+msgid "Collapse row"
+msgstr "행 접기"
+
 msgid "Collapse Setup"
 msgstr "셋업 접기"
 
@@ -7196,6 +7199,9 @@ msgstr "노무 펼치기"
 msgid "Expand Machine"
 msgstr "기계 펼치기"
 
+msgid "Expand row"
+msgstr "행 펼치기"
+
 msgid "Expand Setup"
 msgstr "셋업 펼치기"
 
@@ -8632,6 +8638,9 @@ msgstr "아직 작업 중입니다"
 
 msgid "IBAN"
 msgstr "IBAN"
+
+msgid "IC Transaction"
+msgstr "회사 간 거래"
 
 msgid "Id"
 msgstr "Id"

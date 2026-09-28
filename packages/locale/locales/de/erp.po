@@ -3784,6 +3784,9 @@ msgstr "Personal ausblenden"
 msgid "Collapse Machine"
 msgstr "Maschine einklappen"
 
+msgid "Collapse row"
+msgstr "Zeile einklappen"
+
 msgid "Collapse Setup"
 msgstr "Rüsten einklappen"
 
@@ -7196,6 +7199,9 @@ msgstr "Personal erweitern"
 msgid "Expand Machine"
 msgstr "Maschine ausklappen"
 
+msgid "Expand row"
+msgstr "Zeile ausklappen"
+
 msgid "Expand Setup"
 msgstr "Rüsten ausklappen"
 
@@ -8632,6 +8638,9 @@ msgstr "Ich arbeite noch"
 
 msgid "IBAN"
 msgstr "IBAN"
+
+msgid "IC Transaction"
+msgstr "Intercompany-Transaktion"
 
 msgid "Id"
 msgstr "ID"

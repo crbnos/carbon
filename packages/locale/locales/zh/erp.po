@@ -3784,6 +3784,9 @@ msgstr "折叠人工"
 msgid "Collapse Machine"
 msgstr "折叠机器"
 
+msgid "Collapse row"
+msgstr "折叠行"
+
 msgid "Collapse Setup"
 msgstr "收起换型"
 
@@ -7196,6 +7199,9 @@ msgstr "展开人工"
 msgid "Expand Machine"
 msgstr "展开机器"
 
+msgid "Expand row"
+msgstr "展开行"
+
 msgid "Expand Setup"
 msgstr "展开 换型"
 
@@ -8632,6 +8638,9 @@ msgstr "我仍在工作"
 
 msgid "IBAN"
 msgstr "IBAN"
+
+msgid "IC Transaction"
+msgstr "公司间交易"
 
 msgid "Id"
 msgstr "ID"

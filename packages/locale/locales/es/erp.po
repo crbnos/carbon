@@ -3784,6 +3784,9 @@ msgstr "Contraer mano de obra"
 msgid "Collapse Machine"
 msgstr "Contraer máquina"
 
+msgid "Collapse row"
+msgstr "Contraer fila"
+
 msgid "Collapse Setup"
 msgstr "Contraer preparación"
 
@@ -7196,6 +7199,9 @@ msgstr "Expandir mano de obra"
 msgid "Expand Machine"
 msgstr "Expandir máquina"
 
+msgid "Expand row"
+msgstr "Expandir fila"
+
 msgid "Expand Setup"
 msgstr "Expandir preparación"
 
@@ -8632,6 +8638,9 @@ msgstr "Todavía estoy trabajando"
 
 msgid "IBAN"
 msgstr "IBAN"
+
+msgid "IC Transaction"
+msgstr "Transacción intercompañía"
 
 msgid "Id"
 msgstr "Id"
