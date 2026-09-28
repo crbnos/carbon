@@ -1,9 +1,11 @@
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
+import { rejectCrossSiteNavigation } from "@carbon/auth/middleware/security.server";
 import { flash } from "@carbon/auth/session.server";
 import { activeJobStatuses } from "@carbon/database";
 import { evaluateLinesForSurface, isBlocked } from "@carbon/ee/rules.server";
+import { getLogger } from "@carbon/logger";
 import { datetime } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
 import { redirect } from "react-router";
@@ -16,7 +18,11 @@ import {
 } from "~/services/operations.service";
 import { path } from "~/utils/path";
 
+const logger = getLogger("mes", "start-operation");
+
 export async function loader({ request, params }: LoaderFunctionArgs) {
+  // Writes on GET: a link on another site must not trigger it.
+  rejectCrossSiteNavigation(request);
   const { userId, companyId } = await requirePermissions(request, {});
   const { operationId } = params;
   if (!operationId) throw new Error("Operation ID is required");
@@ -50,6 +56,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   }
 
   if (jobOperation.data?.companyId !== companyId) {
+    logger.warn("Job operation does not belong to company", {
+      companyId,
+      operationId
+    });
     throw redirect(
       path.to.operations,
       await flash(

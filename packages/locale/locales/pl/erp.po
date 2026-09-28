@@ -250,6 +250,10 @@ msgstr "{0} wartości"
 msgid "{0} values missing"
 msgstr "{0} brakujących wartości"
 
+#. placeholder {0}: file.name
+msgid "{0} will be saved as {name}"
+msgstr "{0} będzie zapisany jako {name}"
+
 #. placeholder {0}: item.days
 msgid "{0}d"
 msgstr "{0}d"
@@ -544,6 +548,9 @@ msgstr "90 dni"
 
 msgid "A \"must match\" rule on this process blocks these from sharing a batch"
 msgstr "Reguła \"muszą się zgadzać\" w tym procesie blokuje wspólne tworzenie partii produkcyjnej"
+
+msgid "A 4-digit PIN is generated when the operator is created."
+msgstr "4-cyfrowy PIN jest generowany podczas tworzenia operatora."
 
 msgid "A batch needs at least one operation. To break up the whole batch, use Dissolve instead."
 msgstr "Partia produkcyjna wymaga co najmniej jednej operacji. Aby podzielić całą partię produkcyjną, użyj opcji Rozpuść."
@@ -1395,6 +1402,9 @@ msgstr "Dodaj firmę"
 
 msgid "Add condition"
 msgstr "Dodaj warunek"
+
+msgid "Add Console Operator"
+msgstr "Dodaj operatora konsoli"
 
 msgid "Add Contractor"
 msgstr "Dodaj Pracownika zewnętrznego"
@@ -3312,6 +3322,10 @@ msgstr "Nie można wyłączyć jedynej aktywnej przerwy. Dodaj kolejną przerwę
 msgid "Can't download this file"
 msgstr "Nie można pobrać tego pliku."
 
+#. placeholder {0}: file.name
+msgid "Can't upload a file named {0}"
+msgstr "Nie można przesłać pliku o nazwie {0}"
+
 msgid "Cancel"
 msgstr "Anuluj"
 
@@ -4133,6 +4147,9 @@ msgstr "Tryb konsoli jest włączony"
 msgid "Console Operator"
 msgstr "Operator Konsoli"
 
+msgid "Console Operator Created"
+msgstr "Operator konsoli utworzony"
+
 msgid "consumable"
 msgstr "materiał eksploatacyjny"
 
@@ -4375,9 +4392,6 @@ msgstr "Skopiuj numer części"
 
 msgid "Copy part unique identifier"
 msgstr "Skopiuj unikalny identyfikator części"
-
-msgid "Copy PIN"
-msgstr "Skopiuj PIN"
 
 msgid "Copy previous day"
 msgstr "Skopiuj poprzedni dzień"
@@ -4699,6 +4713,9 @@ msgstr "Utwórz nowy"
 
 msgid "Create new rule"
 msgstr "Utwórz nową regułę"
+
+msgid "Create Operator"
+msgstr "Utwórz operatora"
 
 msgid "Create PO Revision"
 msgstr "Utwórz rewizję zamówienia zakupu"
@@ -5519,6 +5536,9 @@ msgstr "Usuń akcję"
 
 msgid "Delete Action"
 msgstr "Usuń akcję"
+
+msgid "Delete and apply"
+msgstr "Usuń i zastosuj"
 
 msgid "Delete and restore"
 msgstr "Usuń i przywróć"
@@ -6382,6 +6402,9 @@ msgstr "Każde zlecenie produkcyjne potrzebuje własnego numeru partii — lub p
 
 msgid "Each line is a link from this company's data to a row it doesn't own. A backup with these rows could never be restored."
 msgstr "Każdy wiersz to łącze z danych tej firmy do wiersza, którego nie jest właścicielem. Kopia bezpieczeństwa z tymi wierszami nigdy nie mogłaby być przywrócona."
+
+msgid "Each line is a link from this company's data to a row it doesn't own. Removing those rows lets the demo data apply."
+msgstr "Każda pozycja to połączenie danych z Twojej firmy z wierszem, którym nie dysponujesz. Usunięcie tych wierszy umożliwia zastosowanie danych demonstracyjnych."
 
 msgid "Each line is a link from this company's data to a row it doesn't own. Removing those rows lets the restore run."
 msgstr "Każdy wiersz to łącze z danych tej firmy do wiersza, którego nie jest właścicielem. Usunięcie tych wierszy umożliwia uruchomienie przywracania."
@@ -8122,8 +8145,8 @@ msgstr "Księga główna i zamknięcie na koniec miesiąca"
 msgid "Generate"
 msgstr "Generuj"
 
-msgid "Generate a new 4-digit PIN. Share it with the operator so they can pin in at MES terminals."
-msgstr "Wygeneruj nowy 4-cyfrowy PIN. Udostępnij go operatorowi, aby mógł się zalogować na terminalach MES."
+msgid "Generate a new 4-digit PIN. The operator's current PIN stops working immediately."
+msgstr "Wygeneruj nowy 4-cyfrowy PIN. Obecny PIN operatora przestaje działać natychmiast."
 
 msgid "Generate and send customer invoices"
 msgstr "Generuj i wysyłaj faktury dla klientów"
@@ -8136,9 +8159,6 @@ msgstr "Generuj Rok obrotowy"
 
 msgid "Generate material IDs and descriptions based on the properties of the material."
 msgstr "Generuj identyfikatory materiałów i opisy na podstawie właściwości materiału."
-
-msgid "Generate new PIN"
-msgstr "Wygeneruj nowy PIN"
 
 msgid "Generate Picking List"
 msgstr "Generuj Listę kompletacyjną"
@@ -10948,9 +10968,6 @@ msgstr "Nowe Warunki płatności"
 
 msgid "New Picking List"
 msgstr "Nowa Lista kompletacyjna"
-
-msgid "New PIN"
-msgstr "Nowy PIN"
 
 msgid "New PO"
 msgstr "Nowe ZO"
@@ -14201,9 +14218,6 @@ msgstr "Pozostało"
 msgid "Remaining after split stays on the original row."
 msgstr "Pozostała ilość po podziale pozostaje w oryginalnym wierszu."
 
-msgid "Remember this PIN. You will need it to exit console mode on MES terminals."
-msgstr "Zapamiętaj ten PIN. Będziesz go potrzebować, aby wyjść z trybu konsoli na terminalach MES."
-
 msgid "Remove"
 msgstr "Usuń z listy"
 
@@ -14213,7 +14227,7 @@ msgstr "Usuń z listy {0}"
 
 #. placeholder {0}: selectedIds.size
 msgid "Remove {0} from batch"
-msgstr "Usuń {0} z partii produkcyjnej"
+msgstr "Usuń z listy {0} z partii produkcyjnej"
 
 #. placeholder {0}: removing.jobReadableId ?? "this operation"
 msgid "Remove {0} from this batch? Its operation goes back to the schedule to run on its own."
@@ -14222,7 +14236,7 @@ msgstr "Usunąć {0} z tej partii produkcyjnej? Jej operacja wraca do harmonogra
 #. placeholder {0}: selectedIds.size
 #. placeholder {1}: batch.readableId
 msgid "Remove {0} of {memberCount} operations from {1}?"
-msgstr "Usunąć {0} z {memberCount} operacji z {1}?"
+msgstr "Usuń z listy {0} z {memberCount} operacji z {1}?"
 
 msgid "Remove {label}"
 msgstr "Usuń z listy {label}"
@@ -14235,6 +14249,9 @@ msgstr "Usuń z listy klauzulę"
 
 msgid "Remove condition"
 msgstr "Usuń z listy warunek"
+
+msgid "Remove corrupted data and apply"
+msgstr "Usuń uszkodzone dane i zastosuj"
 
 msgid "Remove corrupted data and restore"
 msgstr "Usuń uszkodzone dane i przywróć"
@@ -14646,6 +14663,9 @@ msgstr "Powód zwrotu"
 
 msgid "Return Reasons"
 msgstr "Powody zwrotu"
+
+msgid "Return to Integrations and connect Onshape again."
+msgstr "Wróć do Integracji i połącz Onshape ponownie."
 
 msgid "Return to Integrations and connect Ramp again."
 msgstr "Wróć do sekcji Integracje i ponownie połącz się z Ramp."
@@ -15084,9 +15104,6 @@ msgstr "Przychód ze sprzedaży"
 
 msgid "Sales Rule Violations"
 msgstr "Naruszenia reguł sprzedaży"
-
-msgid "Sales rules"
-msgstr "Reguły sprzedaży"
 
 msgid "Sales Rules"
 msgstr "Reguły sprzedaży"
@@ -15912,6 +15929,12 @@ msgstr "Udostępnij Link"
 
 msgid "Share Quote"
 msgstr "Udostępnij Ofertę"
+
+msgid "Share this PIN with {name} so they can pin in at MES terminals."
+msgstr "Udostępnij ten PIN użytkownikowi {name}, aby mógł zalogować się na terminalach MES."
+
+msgid "Share this PIN with the operator so they can pin in at MES terminals."
+msgstr "Udostępnij ten PIN operatorowi, aby mógł zalogować się na terminalach MES."
 
 msgid "Shared"
 msgstr "Udostępnione"
@@ -17699,6 +17722,9 @@ msgstr "Liczba miesięcy, w ciągu których ten składnik aktywów będzie amort
 msgid "The on-hand level that triggers a new replenishment order under the quantity-based policies."
 msgstr "Poziom zapasu w ręku, który wyzwala nowy porządek uzupełniania zgodnie z zasadami opartymi na ilości."
 
+msgid "The Onshape connection expired"
+msgstr "Połączenie Onshape wygasło"
+
 msgid "The operations and steps your parts move through"
 msgstr "Operacje i kroki, przez które przechodzą Twoje części"
 
@@ -18081,6 +18107,9 @@ msgstr "Te operacje korzystają z procesu z wieloma dostawcami. Wybierz dostawc�
 msgid "These parts are being replaced by this one. Each rule is set on the old part; open it to change the rule."
 msgstr "Te części są zastępowane przez ten artykuł. Każda reguła jest ustawiona na starej części; otwórz ją, aby zmienić regułę."
 
+msgid "These rows link to data outside this company, so a safety copy of your current data can't be made. Deleting them cannot be undone. If they turn out to be shared with other companies in this group, nothing is deleted and the demo data isn't applied."
+msgstr "Te wiersze łączą się z danymi spoza tej firmy, dlatego nie można wykonać bezpiecznej kopii bieżących danych. Usunięcie ich nie może być cofnięte. Jeśli okaże się, że są udostępniane innym firmom w tej grupie, nic nie zostanie usunięte i dane demonstracyjne nie zostaną zastosowane."
+
 msgid "These rows link to data outside this company, so a safety copy of your current data can't be made. Deleting them cannot be undone. If they turn out to be shared with other companies in this group, nothing is deleted and the restore doesn't start."
 msgstr "Te wiersze łączą się z danymi spoza tej firmy, dlatego nie można wykonać bezpiecznej kopii bieżących danych. Usunięcie ich nie może być cofnięte. Jeśli okaże się, że są współdzielone z innymi firmami w tej grupie, nic nie zostanie usunięte i przywracanie nie zostanie uruchomione."
 
@@ -18248,6 +18277,15 @@ msgstr "Ta ścieżka decyduje tylko o tym, co uruchomi się dalej"
 
 msgid "This period has no journal entries posted to it and can be permanently deleted. This cannot be undone."
 msgstr "Ten okres nie ma zaksięgowanych dowodów księgowych i może być trwale usunięty. Nie można tego cofnąć."
+
+msgid "This PIN will not be shown again."
+msgstr "Ten PIN nie będzie już więcej wyświetlany."
+
+msgid "This PIN will not be shown again. If it is lost, reset it from the operators list."
+msgstr "Ten PIN nie będzie już więcej wyświetlany. Jeśli zostanie utracony, zresetuj go z listy operatorów."
+
+msgid "This PIN will not be shown again. You will need it to exit console mode on MES terminals."
+msgstr "Ten PIN nie będzie już więcej wyświetlany. Będzie ci potrzebny do wyjścia z trybu konsoli na terminalach MES."
 
 msgid "this purchase order"
 msgstr "to zamówienie zakupu"
@@ -20148,6 +20186,9 @@ msgstr "Dlaczego zapas się zmienia — Pozytywnie (odnaleziono), Negatywnie (st
 
 msgid "Why this backup failed"
 msgstr "Dlaczego ta kopia zapasowa nie powiodła się"
+
+msgid "Why this failed"
+msgstr "Dlaczego to się nie powiodło"
 
 msgid "Why this line is being declined; surfaced on the printable quote and recorded for win-loss reporting."
 msgstr "Dlaczego ta linia jest odrzucana; wyświetlane na drukowanym cytacie i zarejestrowane do raportowania win-loss."

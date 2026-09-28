@@ -77,8 +77,19 @@ serve(async (req: Request) => {
 
     const [salesInvoice, salesInvoiceLines, salesInvoiceShipment] =
       await Promise.all([
-        client.from("salesInvoice").select("*").eq("id", invoiceId).single(),
-        client.from("salesInvoiceLine").select("*").eq("invoiceId", invoiceId),
+        // The client is service-role: requirePermissions proved the caller may
+        // act in companyId, not that invoiceId belongs to it.
+        client
+          .from("salesInvoice")
+          .select("*")
+          .eq("id", invoiceId)
+          .eq("companyId", companyId)
+          .maybeSingle(),
+        client
+          .from("salesInvoiceLine")
+          .select("*")
+          .eq("invoiceId", invoiceId)
+          .eq("companyId", companyId),
         client
           .from("salesInvoiceShipment")
           .select("shippingCost, shippingMethodId")
@@ -87,6 +98,7 @@ serve(async (req: Request) => {
       ]);
 
     if (salesInvoice.error) throw new Error("Failed to fetch salesInvoice");
+    if (!salesInvoice.data) return errorResponse("Sales invoice not found", 404);
     if (salesInvoiceLines.error)
       throw new Error("Failed to fetch shipment lines");
     if (salesInvoiceShipment.error)
@@ -1348,12 +1360,17 @@ serve(async (req: Request) => {
     logger.error("post-sales-invoice failed", {
       error: String((err as Error)?.stack ?? err),
     });
-    if ("invoiceId" in payload) {
+    // A failed VOID must not touch status: the invoice is still Posted and its
+    // ledger/journal rows still stand, so forcing it to Draft would contradict
+    // the books and let it be edited and posted a second time. Same guard
+    // post-receipt, post-shipment and post-purchase-invoice carry.
+    if (payload.type !== "void" && "invoiceId" in payload) {
       const client = await requirePermissions(req, payload.companyId, payload.userId, { update: "invoicing" });
       await client
         .from("salesInvoice")
         .update({ status: "Draft" })
-        .eq("id", payload.invoiceId);
+        .eq("id", payload.invoiceId)
+        .eq("companyId", payload.companyId);
     }
     return errorResponse(err, 500);
   }

@@ -11,6 +11,7 @@ import {
   syncAuditSubscriptions
 } from "@carbon/ee/audit.server";
 import { requireFeature } from "@carbon/ee/plan.server";
+import { getLogger } from "@carbon/logger";
 import { Button, Heading, ScrollArea, VStack } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
 import { Trans } from "@lingui/react/macro";
@@ -21,6 +22,8 @@ import { usePlanGate } from "~/hooks/usePlanGate";
 import { AuditLogSettings, AuditLogUpgradeOverlay } from "~/modules/settings";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
+
+const logger = getLogger("erp", "settings-audit-logs");
 
 export const handle: Handle = {
   breadcrumb: msg`Audit Log`,
@@ -40,12 +43,16 @@ export async function loader({ request }: LoaderFunctionArgs) {
     // Table might not exist yet, that's ok
   }
 
+  const serviceRole = getCarbonServiceRole();
+
   // Controlled environments (ITAR/CUI, NIST 800-171 3.3.1): audit logging is on
   // by default and cannot be turned off. Enable it on demand for any controlled
-  // company that isn't already capturing.
+  // company that isn't already capturing. This is mandatory, not the viewer's
+  // choice, so it runs as the service role: create_audit_log_table requires
+  // settings_update, and this loader only requires settings_view.
   if (CONTROLLED_ENVIRONMENT && !enabled) {
     try {
-      await enableAuditLog(client, companyId);
+      await enableAuditLog(serviceRole, companyId);
       enabled = true;
     } catch {
       // Best-effort; the write path degrades gracefully if it can't enable here.
@@ -65,7 +72,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
   let archives: Awaited<ReturnType<typeof getAuditLogArchives>> = [];
   if (enabled) {
     try {
-      const serviceRole = getCarbonServiceRole();
       archives = await getAuditLogArchives(serviceRole, companyId);
     } catch {
       // Archives table might not exist
@@ -153,10 +159,19 @@ export async function action({ request }: ActionFunctionArgs) {
 
       try {
         const serviceRole = getCarbonServiceRole();
-        const downloadUrl = await getArchiveDownloadUrl(serviceRole, archiveId);
+        const downloadUrl = await getArchiveDownloadUrl(
+          serviceRole,
+          archiveId,
+          companyId
+        );
         // Redirect to the signed URL for download
         return redirect(downloadUrl);
       } catch (err) {
+        logger.error("Failed to generate audit archive download URL", {
+          companyId,
+          archiveId,
+          error: err
+        });
         throw redirect(
           path.to.auditLog,
           await flash(request, error(err, "Failed to generate download URL"))

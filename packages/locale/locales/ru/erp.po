@@ -250,6 +250,10 @@ msgstr "{0} значений"
 msgid "{0} values missing"
 msgstr "{0} значений отсутствует"
 
+#. placeholder {0}: file.name
+msgid "{0} will be saved as {name}"
+msgstr "{0} будет сохранено как {name}"
+
 #. placeholder {0}: item.days
 msgid "{0}d"
 msgstr "{0}д"
@@ -545,8 +549,11 @@ msgstr "90 дней"
 msgid "A \"must match\" rule on this process blocks these from sharing a batch"
 msgstr "Правило «должны совпадать» на этом процессе препятствует размещению в одной серии"
 
+msgid "A 4-digit PIN is generated when the operator is created."
+msgstr "4-значный PIN создается при создании оператора."
+
 msgid "A batch needs at least one operation. To break up the whole batch, use Dissolve instead."
-msgstr "Серия требует по крайней мере одной операции. Чтобы разделить всю серию, используйте вместо этого Растворить."
+msgstr "Серия должна содержать по крайней мере одну операцию. Чтобы разделить всю серию, используйте вместо этого «Растворить»."
 
 msgid "A Carbon-run data migration — you load your own data"
 msgstr "Миграция данных, управляемая Carbon — вы загружаете свои собственные данные"
@@ -1395,6 +1402,9 @@ msgstr "Добавить организацию"
 
 msgid "Add condition"
 msgstr "Добавить условие"
+
+msgid "Add Console Operator"
+msgstr "Добавить оператора консоли"
 
 msgid "Add Contractor"
 msgstr "Добавить подрядчика"
@@ -3312,6 +3322,10 @@ msgstr "Невозможно отключить единственный акт�
 msgid "Can't download this file"
 msgstr "Невозможно скачать этот файл"
 
+#. placeholder {0}: file.name
+msgid "Can't upload a file named {0}"
+msgstr "Невозможно загрузить файл с именем {0}"
+
 msgid "Cancel"
 msgstr "Отмена"
 
@@ -4133,6 +4147,9 @@ msgstr "Режим консоли включен"
 msgid "Console Operator"
 msgstr "Оператор консоли"
 
+msgid "Console Operator Created"
+msgstr "Оператор консоли создан"
+
 msgid "consumable"
 msgstr "расходный материал"
 
@@ -4375,9 +4392,6 @@ msgstr "Скопировать номер детали"
 
 msgid "Copy part unique identifier"
 msgstr "Скопировать уникальный идентификатор детали"
-
-msgid "Copy PIN"
-msgstr "Копировать PIN"
 
 msgid "Copy previous day"
 msgstr "Скопировать предыдущий день"
@@ -4699,6 +4713,9 @@ msgstr "Создать"
 
 msgid "Create new rule"
 msgstr "Создать новое правило"
+
+msgid "Create Operator"
+msgstr "Создать оператора"
 
 msgid "Create PO Revision"
 msgstr "Создать ревизию PO"
@@ -5519,6 +5536,9 @@ msgstr "Удалить действие"
 
 msgid "Delete Action"
 msgstr "Удалить действие"
+
+msgid "Delete and apply"
+msgstr "Удалить и применить"
 
 msgid "Delete and restore"
 msgstr "Удалить и восстановить"
@@ -6382,6 +6402,9 @@ msgstr "Каждый производственный заказ требует 
 
 msgid "Each line is a link from this company's data to a row it doesn't own. A backup with these rows could never be restored."
 msgstr "Каждая строка — это связь данных этой организации со строкой, которой она не владеет. Резервную копию с этими строками никогда не удастся восстановить."
+
+msgid "Each line is a link from this company's data to a row it doesn't own. Removing those rows lets the demo data apply."
+msgstr "Каждая Строка — это ссылка из данных этой Организации на Строку, которой она не владеет. Убрание этих Строк позволяет применить демо-данные."
 
 msgid "Each line is a link from this company's data to a row it doesn't own. Removing those rows lets the restore run."
 msgstr "Каждая строка — это связь данных этой организации со строкой, которой она не владеет. Удаление этих строк позволяет выполнить восстановление."
@@ -8122,8 +8145,8 @@ msgstr "Главная книга и закрытие месяца"
 msgid "Generate"
 msgstr "Генерировать"
 
-msgid "Generate a new 4-digit PIN. Share it with the operator so they can pin in at MES terminals."
-msgstr "Создайте новый 4-значный PIN-код. Поделитесь им с оператором, чтобы он мог войти на терминалы MES."
+msgid "Generate a new 4-digit PIN. The operator's current PIN stops working immediately."
+msgstr "Создайте новый 4-значный PIN. Текущий PIN оператора перестанет работать немедленно."
 
 msgid "Generate and send customer invoices"
 msgstr "Создавать и отправлять счета-фактуры покупателей"
@@ -8136,9 +8159,6 @@ msgstr "Генерировать финансовый год"
 
 msgid "Generate material IDs and descriptions based on the properties of the material."
 msgstr "Генерируйте идентификаторы материалов и описания на основе свойств материала."
-
-msgid "Generate new PIN"
-msgstr "Создать новый PIN"
 
 msgid "Generate Picking List"
 msgstr "Создать лист отбора"
@@ -10948,9 +10968,6 @@ msgstr "Новые условия оплаты"
 
 msgid "New Picking List"
 msgstr "Новый лист отбора"
-
-msgid "New PIN"
-msgstr "Новый PIN"
 
 msgid "New PO"
 msgstr "Новый ПО"
@@ -14201,9 +14218,6 @@ msgstr "Остаток"
 msgid "Remaining after split stays on the original row."
 msgstr "Остаток после разделения остается в исходной строке."
 
-msgid "Remember this PIN. You will need it to exit console mode on MES terminals."
-msgstr "Запомните этот PIN-код. Он потребуется вам для выхода из режима консоли на терминалах MES."
-
 msgid "Remove"
 msgstr "Убрать"
 
@@ -14235,6 +14249,9 @@ msgstr "Убрать условие"
 
 msgid "Remove condition"
 msgstr "Убрать условие"
+
+msgid "Remove corrupted data and apply"
+msgstr "Убрать поврежденные данные и применить"
 
 msgid "Remove corrupted data and restore"
 msgstr "Убрать поврежденные данные и восстановить"
@@ -14646,6 +14663,9 @@ msgstr "Причина возврата"
 
 msgid "Return Reasons"
 msgstr "Причины возврата"
+
+msgid "Return to Integrations and connect Onshape again."
+msgstr "Вернитесь в раздел «Интеграции» и снова подключитесь к Onshape."
 
 msgid "Return to Integrations and connect Ramp again."
 msgstr "Вернитесь в раздел «Интеграции» и снова подключите Ramp."
@@ -15084,9 +15104,6 @@ msgstr "Выручка от продаж"
 
 msgid "Sales Rule Violations"
 msgstr "Нарушения правил продаж"
-
-msgid "Sales rules"
-msgstr "Правила продаж"
 
 msgid "Sales Rules"
 msgstr "Правила продаж"
@@ -15912,6 +15929,12 @@ msgstr "Поделиться ссылкой"
 
 msgid "Share Quote"
 msgstr "Поделиться предложением"
+
+msgid "Share this PIN with {name} so they can pin in at MES terminals."
+msgstr "Поделитесь этим PIN с {name}, чтобы они смогли войти на терминалы MES."
+
+msgid "Share this PIN with the operator so they can pin in at MES terminals."
+msgstr "Поделитесь этим PIN с оператором, чтобы он смог войти на терминалы MES."
 
 msgid "Shared"
 msgstr "Общий доступ"
@@ -17699,6 +17722,9 @@ msgstr "Количество месяцев, в течение которых б
 msgid "The on-hand level that triggers a new replenishment order under the quantity-based policies."
 msgstr "Уровень наличного запаса, который запускает новый заказ на пополнение в соответствии с политиками на основе количества."
 
+msgid "The Onshape connection expired"
+msgstr "Подключение Onshape истекло"
+
 msgid "The operations and steps your parts move through"
 msgstr "Операции и шаги, через которые переходят ваши детали"
 
@@ -18081,6 +18107,9 @@ msgstr "Эти операции выполняются по процессу с 
 msgid "These parts are being replaced by this one. Each rule is set on the old part; open it to change the rule."
 msgstr "Эти детали заменяются на эту. Каждое правило установлено на старой детали; откройте ее, чтобы изменить правило."
 
+msgid "These rows link to data outside this company, so a safety copy of your current data can't be made. Deleting them cannot be undone. If they turn out to be shared with other companies in this group, nothing is deleted and the demo data isn't applied."
+msgstr "Эти Строки ссылаются на данные вне этой Организации, поэтому невозможно создать резервную копию ваших текущих данных. Их удаление невозможно отменить. Если окажется, что они используются другими Организациями в этой группе, ничего не удаляется и демо-данные не применяются."
+
 msgid "These rows link to data outside this company, so a safety copy of your current data can't be made. Deleting them cannot be undone. If they turn out to be shared with other companies in this group, nothing is deleted and the restore doesn't start."
 msgstr "Эти строки связаны с данными вне этой организации, поэтому не удаётся создать резервную копию текущих данных. Удаление их не может быть отменено. Если окажется, что они используются другими организациями в этой группе, ничего не удаляется и восстановление не начинается."
 
@@ -18248,6 +18277,15 @@ msgstr "Этот путь решает только, что будет запу�
 
 msgid "This period has no journal entries posted to it and can be permanently deleted. This cannot be undone."
 msgstr "Этот период не имеет проведенных операций и может быть безвозвратно удален. Это невозможно отменить."
+
+msgid "This PIN will not be shown again."
+msgstr "Этот PIN больше не будет показан."
+
+msgid "This PIN will not be shown again. If it is lost, reset it from the operators list."
+msgstr "Этот PIN больше не будет показан. Если он потеряется, сбросьте его из списка операторов."
+
+msgid "This PIN will not be shown again. You will need it to exit console mode on MES terminals."
+msgstr "Этот PIN больше не будет показан. Он вам понадобится для выхода из режима консоли на терминалах MES."
 
 msgid "this purchase order"
 msgstr "этот заказ поставщику"
@@ -20148,6 +20186,9 @@ msgstr "Почему изменяется запас — Положительн�
 
 msgid "Why this backup failed"
 msgstr "Почему эта резервная копия не удалась"
+
+msgid "Why this failed"
+msgstr "Почему это не удалось"
 
 msgid "Why this line is being declined; surfaced on the printable quote and recorded for win-loss reporting."
 msgstr "Почему эта строка отклоняется; отображается в печатаемом предложении и записывается для отчетов по победам и потерям."

@@ -70,7 +70,10 @@ secret), `SUPABASE_JWT_SECRET` (optional), plus
 **Auth / session** — `SESSION_SECRET` (required; also signs the short-lived,
 single-use `carbon-oauth-state` cookie in `@carbon/auth/oauth-state.server`), `AUTH_PROVIDERS`
 (`email,google,azure,passkey,sso`; gate via `isAuthProviderEnabled`),
-`CLOUDFLARE_TURNSTILE_SITE_KEY` / `_SECRET_KEY`, `RATE_LIMIT`.
+`CLOUDFLARE_TURNSTILE_SITE_KEY` / `_SECRET_KEY`, `RATE_LIMIT`. `IS_VERCEL` reads
+Vercel's own `VERCEL=1`. `BOT_PROTECTION` (`botid` | `turnstile`, unset = BotID for
+Cloud on Vercel, else Turnstile if keyed) picks the login bot check (see
+`authentication-system.md`).
 `SAML_ENABLED` / `SAML_PRIVATE_KEY` are NOT `@carbon/env` vars — they live in
 root `.env` and reach GoTrue via docker-compose substitution (`GOTRUE_SAML_*`).
 Both `crbn up` and `crbn reload` preload `.env.local` then `.env` into
@@ -98,10 +101,17 @@ exchange/token refresh), Slack (`SLACK_BOT_TOKEN`, `SLACK_CLIENT_ID`,
 plus webhook/redirect/state secrets), `EXCHANGE_RATES_API_KEY`,
 `GOOGLE_PLACES_API_KEY`, AI keys `ANTHROPIC_API_KEY` / `OPENAI_API_KEY`.
 
-Ramp intentionally has no separate `RAMP_STATE_SECRET`. `issueOAuthState()` stores a
-random nonce plus `{integrationId,userId,companyId,expiresAt}` in a signed HttpOnly
-cookie backed by `SESSION_SECRET`; `consumeOAuthState()` validates all fields and
-destroys the cookie on every attempt. Managed deployment propagates both Ramp OAuth
+Ramp intentionally has no separate `RAMP_STATE_SECRET`. `issueOAuthState()` /
+`issueOAuthStates()` store a random nonce plus `{integrationId,userId,companyId,expiresAt}`
+per integration (keyed by `integrationId`, 1 h lifetime, a still-fresh one is reused) in
+one signed HttpOnly cookie backed by `SESSION_SECRET`; pass the request so other
+integrations' pending states survive. `consumeOAuthState()` validates all fields and
+removes that integration's entry on every attempt (the cookie is destroyed once empty).
+The integrations page loader issues one for every integration with an `oauth` config
+(Ramp, Xero, QuickBooks, Jira — IntegrationCard puts it on the authorize URL), Onshape's
+`api+/integrations.onshape.install.ts` issues its own, and each callback consumes it.
+Slack binds its state separately (`SLACK_STATE_SECRET`, `@slack/oauth` state store,
+checked against the caller's company and user). Managed deployment propagates both Ramp OAuth
 vars through `ci/src/deploy.ts` → `sst.config.ts` → the ERP service only.
 
 **Analytics / config** — `POSTHOG_API_HOST`, `POSTHOG_PROJECT_PUBLIC_KEY`

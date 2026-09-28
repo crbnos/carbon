@@ -1,5 +1,6 @@
 // import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
+import { isUnsafeStoragePath } from "@carbon/files";
 import { trigger } from "@carbon/jobs";
 import type { ActionFunctionArgs } from "react-router";
 import { isAssemblerServiceHealthy } from "~/modules/production/production.server";
@@ -33,7 +34,10 @@ export async function action({ request }: ActionFunctionArgs) {
   }
   // The path is client-supplied; never let it point outside this tenant's
   // storage prefix or escape via traversal.
-  if (!modelPath.startsWith(`${companyId}/`) || modelPath.includes("..")) {
+  if (
+    !modelPath.startsWith(`${companyId}/`) ||
+    isUnsafeStoragePath(modelPath)
+  ) {
     throw new Error("Invalid model path");
   }
 

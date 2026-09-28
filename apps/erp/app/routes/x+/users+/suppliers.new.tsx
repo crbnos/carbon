@@ -12,6 +12,7 @@ import { getSsoAwareInviteLink } from "@carbon/ee/sso.server";
 import { validationError, validator } from "@carbon/form";
 import { sendEmail } from "@carbon/lib/email.server";
 import { getLogger } from "@carbon/logger";
+import { getClientIp } from "@carbon/utils";
 import { render } from "@react-email/components";
 import { nanoid } from "nanoid";
 import type {
@@ -32,7 +33,7 @@ const logger = getLogger("erp", "suppliers-new");
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
   const { client, companyId, userId } = await requirePermissions(request, {
-    view: "users"
+    create: "users"
   });
 
   const validation = await validator(createSupplierAccountValidator).validate(
@@ -67,7 +68,7 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 
   const location = request.headers.get("x-vercel-ip-city") ?? "Unknown";
-  const ip = request.headers.get("x-forwarded-for") ?? "127.0.0.1";
+  const ip = getClientIp(request) ?? "127.0.0.1";
   const [company, user, invitee] = await Promise.all([
     client.from("company").select("name").eq("id", companyId).single(),
     client.from("user").select("email, fullName").eq("id", userId).single(),

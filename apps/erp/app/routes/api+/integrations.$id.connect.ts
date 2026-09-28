@@ -92,12 +92,18 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     scopes = [...chosen.scopes];
   }
 
-  const { state, cookie } = await issueOAuthState({
-    integrationId,
-    userId,
-    companyId,
-    mode
-  });
+  // Pass the request so any OTHER integration's pending state already in the
+  // cookie survives this Set-Cookie — the state cookie holds one entry per
+  // integration, so two connects can be in flight at once.
+  const { state, cookie } = await issueOAuthState(
+    {
+      integrationId,
+      userId,
+      companyId,
+      mode
+    },
+    request
+  );
 
   const authorizeUrl = buildIntegrationOAuthUrl(
     { ...oauth, scopes: [...scopes] },

@@ -1,14 +1,17 @@
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { companyHasFeature } from "@carbon/ee/plan.server";
 import {
+  fileResponseHeaders,
   getContentType,
   hasCompanyPrivateObjectPathPrefix,
+  isUnsafeStoragePath,
   MEDIA_CONTENT_TYPES,
   storage
 } from "@carbon/files";
 import { supportedModelTypes } from "@carbon/files/cad";
 import { Ratelimit, redis } from "@carbon/kv";
 import { getLogger } from "@carbon/logger";
+import { getClientIp } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
 import { getJobByOperationId } from "~/modules/production";
 import { getCustomerPortal } from "~/modules/shared/shared.service";
@@ -22,7 +25,7 @@ export let loader = async ({ params, request }: LoaderFunctionArgs) => {
     throw new Error("Customer ID is required");
   }
 
-  const ip = request.headers.get("x-forwarded-for") ?? "127.0.0.1";
+  const ip = getClientIp(request) ?? "127.0.0.1";
   const ratelimit = new Ratelimit({
     redis,
     limiter: Ratelimit.slidingWindow(10, "1 m"), // 10 downloads per minute
@@ -62,6 +65,14 @@ export let loader = async ({ params, request }: LoaderFunctionArgs) => {
   if (!path) throw new Error("Path not found");
 
   path = decodeURIComponent(path);
+
+  if (isUnsafeStoragePath(path)) {
+    logger.error("Refused a storage path that escapes its prefix", {
+      companyId: shareCompanyId,
+      path
+    });
+    return new Response(null, { status: 404 });
+  }
 
   // Private objects are keyed by companyId — a path outside the portal's
   // company must not resolve to another tenant's bucket.
@@ -123,9 +134,9 @@ export let loader = async ({ params, request }: LoaderFunctionArgs) => {
     }
   }
 
-  const headers = new Headers({
-    "Content-Type": contentType,
-    "Cache-Control": "private, max-age=31536000, immutable"
-  });
+  const headers = fileResponseHeaders(
+    contentType,
+    "private, max-age=31536000, immutable"
+  );
   return new Response(fileData, { status: 200, headers });
 };

@@ -1,6 +1,7 @@
 @import "tailwindcss";
 @import "non.geist";
 @import "non.geist/mono";
+@import "@fontsource-variable/hedvig-letters-serif";
 @import "../../../../packages/config/tailwind/theme.css";
 
 @layer base {

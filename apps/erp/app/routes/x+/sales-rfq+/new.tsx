@@ -1,5 +1,6 @@
 import { assertIsPost, error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
+import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { storage } from "@carbon/files";
 import { validationError, validator } from "@carbon/form";
@@ -17,6 +18,7 @@ import {
   upsertSalesRFQLine
 } from "~/modules/sales";
 import { SalesRFQForm } from "~/modules/sales/ui/SalesRFQ";
+import { requireCompanyRecord } from "~/modules/shared/shared.server";
 import { getDatabaseClient } from "~/services/database.server";
 import { setCustomFields } from "~/utils/form";
 import type { Handle } from "~/utils/handle";
@@ -40,6 +42,42 @@ export async function action({ request }: ActionFunctionArgs) {
   if (validation.error) {
     return validationError(validation.error);
   }
+
+  // insertSalesRFQ writes through Kysely, which bypasses RLS: every id the
+  // form references must belong to this company.
+  const serviceRole = getCarbonServiceRole();
+  const {
+    customerId,
+    customerContactId,
+    customerEngineeringContactId,
+    customerLocationId,
+    locationId
+  } = validation.data;
+  await Promise.all([
+    requireCompanyRecord(serviceRole, "customer", companyId, {
+      id: customerId
+    }),
+    customerContactId
+      ? requireCompanyRecord(serviceRole, "customerContact", companyId, {
+          id: customerContactId
+        })
+      : null,
+    customerEngineeringContactId
+      ? requireCompanyRecord(serviceRole, "customerContact", companyId, {
+          id: customerEngineeringContactId
+        })
+      : null,
+    customerLocationId
+      ? requireCompanyRecord(serviceRole, "customerLocation", companyId, {
+          id: customerLocationId
+        })
+      : null,
+    locationId
+      ? requireCompanyRecord(serviceRole, "location", companyId, {
+          id: locationId
+        })
+      : null
+  ]);
 
   const result = await insertSalesRFQ(client, getDatabaseClient(), {
     ...validation.data,

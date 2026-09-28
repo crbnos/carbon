@@ -4,6 +4,7 @@ import { sql, Transaction } from "kysely";
 import { z } from "npm:zod@^4.5.4";
 
 import { DB, getConnectionPool, getDatabaseClient } from "../lib/database.ts";
+import { assertCompanyRecords, RecordNotFoundError } from "../lib/company-records.ts";
 import { datetime, getCompanyTimeZone } from "../lib/datetime.ts";
 
 import { nanoid } from "https://deno.land/x/nanoid@v3.0.0/nanoid.ts";
@@ -152,6 +153,7 @@ async function issueJobOperationMaterials(
   const materialsToIssue = await trx
     .selectFrom("jobMaterial")
     .where("jobOperationId", "=", jobOperationId)
+    .where("companyId", "=", companyId)
     .where("itemType", "in", ["Material", "Part", "Consumable"])
     .where("methodType", "!=", "Make to Order")
     .where("estimatedQuantity", ">", 0)
@@ -163,6 +165,7 @@ async function issueJobOperationMaterials(
   const kittedChildren = await trx
     .selectFrom("jobMaterialWithMakeMethodId")
     .where("jobOperationId", "=", jobOperationId)
+    .where("companyId", "=", companyId)
     .where("itemType", "in", ["Material", "Part", "Consumable"])
     .where("methodType", "=", "Make to Order")
     .where("kit", "=", true)
@@ -1085,6 +1088,40 @@ const payloadValidator = z.discriminatedUnion("type", [
 ]);
 
 
+// The production-event and inspection links a completion/scrap payload carries
+// are written verbatim into productionQuantity, whose single-column FKs accept
+// any company's row — re-read them under companyId first (one query per table).
+async function assertProductionQuantityLinks(
+  companyId: string,
+  links: {
+    laborProductionEventId?: string;
+    machineProductionEventId?: string;
+    setupProductionEventId?: string;
+    inspectionId?: string;
+    inspectionSampleId?: string;
+  }
+) {
+  await assertCompanyRecords(
+    db,
+    "productionEvent",
+    [
+      links.laborProductionEventId,
+      links.machineProductionEventId,
+      links.setupProductionEventId,
+    ],
+    companyId,
+    "Production event"
+  );
+  await assertCompanyRecords(db, "inspection", [links.inspectionId], companyId, "Inspection");
+  await assertCompanyRecords(
+    db,
+    "inspectionSample",
+    [links.inspectionSampleId],
+    companyId,
+    "Inspection sample"
+  );
+}
+
 // Shared accounting context for the tracked-consumption paths (the per-op and
 // per-batch cases): whether accounting is enabled, the posting-group defaults,
 // and the active dimension map.
@@ -1192,6 +1229,7 @@ async function consumeTrackedEntitiesIntoOperation(
               "in",
               children.map((child) => child.trackedEntityId)
             )
+            .where("companyId", "=", companyId)
             .selectAll()
             .execute();
 
@@ -1243,6 +1281,7 @@ async function consumeTrackedEntitiesIntoOperation(
             jobMaterial = await trx
               .selectFrom("jobMaterial")
               .where("id", "=", materialId)
+              .where("companyId", "=", companyId)
               .selectAll()
               .executeTakeFirst();
 
@@ -1297,6 +1336,7 @@ async function consumeTrackedEntitiesIntoOperation(
             const jobOperation = await trx
               .selectFrom("jobOperation")
               .where("id", "=", jobOperationId)
+              .where("companyId", "=", companyId)
               .select(["jobId", "jobMakeMethodId"])
               .executeTakeFirst();
 
@@ -1307,6 +1347,7 @@ async function consumeTrackedEntitiesIntoOperation(
             const item = await trx
               .selectFrom("item")
               .where("id", "=", itemId)
+              .where("companyId", "=", companyId)
               .select(["name", "type", "itemTrackingType", "defaultMethodType"])
               .executeTakeFirst();
 
@@ -1389,6 +1430,7 @@ async function consumeTrackedEntitiesIntoOperation(
           const parentTrackedEntity = await trx
             .selectFrom("trackedEntity")
             .where("id", "=", parentTrackedEntityId)
+            .where("companyId", "=", companyId)
             .select([
               "id",
               "sourceDocumentId",
@@ -1838,17 +1880,20 @@ serve(async (req: Request) => {
       case "jobOperationBatchComplete": {
         const { trackedEntityId, companyId, userId, ...row } = validatedPayload;
         const client = await requirePermissions(req, companyId, userId, { update: "production" });
+        await assertProductionQuantityLinks(companyId, row);
 
         const [jobOperation, productionQuantities] = await Promise.all([
           client
             .from("jobOperation")
             .select("*")
             .eq("id", row.jobOperationId)
+            .eq("companyId", companyId)
             .single(),
           client
             .from("productionQuantity")
             .select("*")
             .eq("jobOperationId", row.jobOperationId)
+            .eq("companyId", companyId)
             .eq("type", "Production"),
         ]);
 
@@ -1922,6 +1967,7 @@ serve(async (req: Request) => {
             .from("productionQuantity")
             .select("quantity")
             .eq("jobOperationId", jobOperationId)
+            .eq("companyId", companyId)
             .eq("type", "Production"),
         ]);
         if (entity.error || !entity.data) {
@@ -1978,11 +2024,13 @@ serve(async (req: Request) => {
       case "jobOperationSerialComplete": {
         const { trackedEntityId, companyId, userId, ...row } = validatedPayload;
         const client = await requirePermissions(req, companyId, userId, { update: "production" });
+        await assertProductionQuantityLinks(companyId, row);
 
         const jobOperation = await client
           .from("jobOperation")
           .select("*")
           .eq("id", row.jobOperationId)
+          .eq("companyId", companyId)
           .single();
         if (!jobOperation.data || !jobOperation.data.jobMakeMethodId) {
           throw new Error("Job operation not found");
@@ -2053,6 +2101,7 @@ serve(async (req: Request) => {
           const trackedEntity = await trx
             .selectFrom("trackedEntity")
             .where("id", "=", trackedEntityId)
+            .where("companyId", "=", companyId)
             .selectAll()
             .executeTakeFirst();
 
@@ -2204,6 +2253,14 @@ serve(async (req: Request) => {
         } = validatedPayload;
         const client = await requirePermissions(req, companyId, userId, {
           update: "production",
+        });
+        // Lands on productionQuantity, the Scrap activity and the journal's
+        // ScrapReason dimension — all this company's rows.
+        await assertCompanyRecords(db, "scrapReason", [scrapReasonId], companyId, "Scrap reason");
+        await assertProductionQuantityLinks(companyId, {
+          laborProductionEventId,
+          machineProductionEventId,
+          setupProductionEventId,
         });
 
         const operationRes = await client
@@ -2676,6 +2733,14 @@ serve(async (req: Request) => {
         } = validatedPayload;
 
         const client = await requirePermissions(req, companyId, userId, { update: "production" });
+        // Written into jobMaterialStep for an unplanned part (no companyId there).
+        await assertCompanyRecords(
+          db,
+          "jobOperationStep",
+          [jobOperationStepId],
+          companyId,
+          "Job operation step"
+        );
 
         const [accountingSettings, companyRecord] = await Promise.all([
           client
@@ -2715,8 +2780,10 @@ serve(async (req: Request) => {
           const jobOperation = await trx
             .selectFrom("jobOperation")
             .where("id", "=", id)
+            .where("companyId", "=", companyId)
             .select(["jobId", "jobMakeMethodId"])
             .executeTakeFirst();
+          if (!jobOperation) throw new RecordNotFoundError("Job operation not found");
 
           const [job, item] = await Promise.all([
             trx
@@ -2727,6 +2794,7 @@ serve(async (req: Request) => {
             trx
               .selectFrom("item")
               .where("id", "=", itemId)
+              .where("companyId", "=", companyId)
               .select([
                 "id",
                 "itemTrackingType",
@@ -2741,8 +2809,10 @@ serve(async (req: Request) => {
             const material = await trx
               .selectFrom("jobMaterial")
               .where("id", "=", materialId)
+              .where("companyId", "=", companyId)
               .selectAll()
               .executeTakeFirst();
+            if (!material) throw new RecordNotFoundError("Job material not found");
 
             let storageUnitId: string | null | undefined;
             // Prioritize material.storageUnitId if available
@@ -3013,6 +3083,16 @@ serve(async (req: Request) => {
         const client = await requirePermissions(req, companyId, userId, {
           update: "production",
         });
+        // The parent lands in trackedActivityOutput and the reason on the ledger,
+        // the activity and the journal dimension — both must be this company's.
+        await assertCompanyRecords(
+          db,
+          "trackedEntity",
+          [parentTrackedEntityId],
+          companyId,
+          "Parent tracked entity"
+        );
+        await assertCompanyRecords(db, "scrapReason", [scrapReasonId], companyId, "Scrap reason");
 
         const [trackedEntity, jobMaterial] = await Promise.all([
           client
@@ -3541,6 +3621,14 @@ serve(async (req: Request) => {
         }
 
         const client = await requirePermissions(req, companyId, userId, { update: "production" });
+        // Stamped on the Consume activity and written into jobMaterialStep.
+        await assertCompanyRecords(
+          db,
+          "jobOperationStep",
+          [jobOperationStepId],
+          companyId,
+          "Job operation step"
+        );
         const companyToday = datetime.today(await getCompanyTimeZone(client, companyId));
         const accounting = await loadConsumeAccountingContext(client, companyId);
 
@@ -3989,6 +4077,7 @@ serve(async (req: Request) => {
               "in",
               children.map((child) => child.trackedEntityId)
             )
+            .where("companyId", "=", companyId)
             .selectAll()
             .execute();
 
@@ -4014,8 +4103,10 @@ serve(async (req: Request) => {
           const jobMaterial = await trx
             .selectFrom("jobMaterial")
             .where("id", "=", materialId)
+            .where("companyId", "=", companyId)
             .selectAll()
             .executeTakeFirst();
+          if (!jobMaterial) throw new RecordNotFoundError("Job material not found");
 
           // Get item details
           const item = await trx
@@ -4035,6 +4126,7 @@ serve(async (req: Request) => {
           const parentTrackedEntity = await trx
             .selectFrom("trackedEntity")
             .where("id", "=", parentTrackedEntityId)
+            .where("companyId", "=", companyId)
             .select([
               "id",
               "sourceDocumentId",
@@ -4205,10 +4297,14 @@ serve(async (req: Request) => {
         const { trackedEntityId, newRevision, quantity, companyId, userId } =
           validatedPayload;
 
+        // Kysely below bypasses RLS, so the caller must hold this permission in the company it names.
+        await requirePermissions(req, companyId, userId, { update: "inventory" });
+
         const convertedEntity = await db.transaction().execute(async (trx) => {
           const trackedEntity = await trx
             .selectFrom("trackedEntity")
             .where("id", "=", trackedEntityId)
+            .where("companyId", "=", companyId)
             .selectAll()
             .executeTakeFirstOrThrow();
 
@@ -4452,11 +4548,15 @@ serve(async (req: Request) => {
           userId,
         } = validatedPayload;
 
+        // Kysely below bypasses RLS, so the caller must hold this permission in the company it names.
+        await requirePermissions(req, companyId, userId, { update: "resources" });
+
         await db.transaction().execute(async (trx) => {
           // Get the maintenance dispatch to find the location
           const dispatch = await trx
             .selectFrom("maintenanceDispatch")
             .where("id", "=", maintenanceDispatchId)
+            .where("companyId", "=", companyId)
             .select(["id", "maintenanceDispatchId", "workCenterId", "locationId"])
             .executeTakeFirstOrThrow();
 
@@ -4466,6 +4566,7 @@ serve(async (req: Request) => {
           const item = await trx
             .selectFrom("item")
             .where("id", "=", itemId)
+            .where("companyId", "=", companyId)
             .select(["id", "itemTrackingType"])
             .executeTakeFirstOrThrow();
 
@@ -4541,6 +4642,9 @@ serve(async (req: Request) => {
           userId,
         } = validatedPayload;
 
+        // Kysely below bypasses RLS, so the caller must hold this permission in the company it names.
+        await requirePermissions(req, companyId, userId, { update: "resources" });
+
         if (children.length === 0) {
           throw new Error("At least one tracked entity is required");
         }
@@ -4553,6 +4657,7 @@ serve(async (req: Request) => {
           const dispatch = await trx
             .selectFrom("maintenanceDispatch")
             .where("id", "=", maintenanceDispatchId)
+            .where("companyId", "=", companyId)
             .select(["id", "maintenanceDispatchId", "workCenterId", "locationId"])
             .executeTakeFirstOrThrow();
 
@@ -4586,6 +4691,7 @@ serve(async (req: Request) => {
               "in",
               children.map((child) => child.trackedEntityId)
             )
+            .where("companyId", "=", companyId)
             .selectAll()
             .execute();
 
@@ -4631,6 +4737,7 @@ serve(async (req: Request) => {
           const item = await trx
             .selectFrom("item")
             .where("id", "=", itemId)
+            .where("companyId", "=", companyId)
             .select(["id", "readableIdWithRevision"])
             .executeTakeFirstOrThrow();
 
@@ -4873,6 +4980,9 @@ serve(async (req: Request) => {
         const { maintenanceDispatchItemId, children, companyId, userId } =
           validatedPayload;
 
+        // Kysely below bypasses RLS, so the caller must hold this permission in the company it names.
+        await requirePermissions(req, companyId, userId, { update: "resources" });
+
         if (children.length === 0) {
           throw new Error("At least one tracked entity is required");
         }
@@ -4882,6 +4992,7 @@ serve(async (req: Request) => {
           const dispatchItem = await trx
             .selectFrom("maintenanceDispatchItem")
             .where("id", "=", maintenanceDispatchItemId)
+            .where("companyId", "=", companyId)
             .selectAll()
             .executeTakeFirstOrThrow();
 
@@ -4902,6 +5013,7 @@ serve(async (req: Request) => {
               "in",
               children.map((child) => child.trackedEntityId)
             )
+            .where("companyId", "=", companyId)
             .selectAll()
             .execute();
 
@@ -5068,11 +5180,15 @@ serve(async (req: Request) => {
         const { maintenanceDispatchItemId, companyId, userId } =
           validatedPayload;
 
+        // Kysely below bypasses RLS, so the caller must hold this permission in the company it names.
+        await requirePermissions(req, companyId, userId, { update: "resources" });
+
         await db.transaction().execute(async (trx) => {
           // Get the maintenance dispatch item
           const dispatchItem = await trx
             .selectFrom("maintenanceDispatchItem")
             .where("id", "=", maintenanceDispatchItemId)
+            .where("companyId", "=", companyId)
             .selectAll()
             .executeTakeFirstOrThrow();
 

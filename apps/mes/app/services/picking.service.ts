@@ -322,6 +322,7 @@ export async function setPickingListLineTrackedEntity(
     quantity?: number;
     unpick?: boolean;
     userId: string;
+    companyId: string;
   }
 ) {
   const lineResult = await client
@@ -330,7 +331,8 @@ export async function setPickingListLineTrackedEntity(
       "*, pickingList(locationId, companyId, status), item(itemTrackingType)"
     )
     .eq("id", args.pickingListLineId)
-    .single();
+    .eq("companyId", args.companyId)
+    .maybeSingle();
 
   if (lineResult.error || !lineResult.data) {
     return { data: null, error: lineResult.error ?? "Line not found" };
@@ -381,7 +383,7 @@ export async function setPickingListLineTrackedEntity(
     trackedEntityId: args.trackedEntityId,
     locationId: pickingList.locationId,
     userId: args.userId,
-    companyId: pickingList.companyId
+    companyId: args.companyId
   };
   if (!args.unpick) {
     body.fromStorageUnitId = args.fromStorageUnitId ?? null;

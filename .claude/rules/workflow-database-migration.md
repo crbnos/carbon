@@ -70,16 +70,12 @@ newest migrations, e.g. `20260609143732_document-template.sql`):
   — the `*By` columns reference `"user"("id")` **inline** (no named constraints).
   `updatedAt` is set by the app, not a trigger.
 - **Indexes** on `companyId` and **every** FK (e.g. `createdBy`).
-- **RLS** — enable, then create exactly four policies named `SELECT` / `INSERT` /
-  `UPDATE` / `DELETE`, schema-qualified (`"public"."t"`) with the helper result
-  cast `::text[]`:
-  - `SELECT` → `get_companies_with_employee_role()` (any employee reads). Some
-    tables tighten read to a view permission — a valid variant.
-  - `INSERT`/`UPDATE`/`DELETE` →
-    `get_companies_with_employee_permission('<module>_<action>')`
-    (`<action>` ∈ `create` / `update` / `delete`).
-  - The old `has_role` / `has_company_permission` helpers are **deprecated** —
-    never use them. For tables without a `companyId`, reach the company through
+- **RLS** — not in the migration. Add the table's rule to
+  `packages/database/src/authz/manifest.ts` (usually `entityName: company("<module>")`),
+  then ship it with `pnpm --filter @carbon/database authz migration <name>`; CI's
+  `migration.test.ts` fails until you do. See `authz-manifest.md`.
+  - The old `has_role` / `has_company_permission` helpers no longer exist
+    (dropped in `20260927224314_retire-legacy-rls-helpers.sql` (they admitted customer and supplier portal accounts); `authz-fixes.test.sql` asserts they stay gone). For tables without a `companyId`, reach the company through
     the parent via `EXISTS` (see `database-migration-patterns.md`).
 - **Never**: an `itemReadableId` column, or a precision spec on `NUMERIC`.
 - **Views** use `WITH(SECURITY_INVOKER=true)`.
@@ -119,6 +115,20 @@ Applies pending migrations against the worktree's local DB and (only if new
 migrations were applied) regenerates DB types + swagger. To regenerate types
 alone, `pnpm db:types`. **Do NOT run `npm run db:build` — it does not exist.**
 
+### 6. Update the demo data
+
+The four demo datasets (`packages/database/src/datasets/`) must keep showing every
+screen. When a migration adds, renames or drops a table or column, or changes a status
+enum or CHECK constraint:
+
+- **New table or feature a user can see:** add realistic rows to all four datasets
+  (`data/<key>/`, plus the tier that inserts them), and a floor in `datasets/coverage.ts`.
+- **Renamed/dropped column or table:** update the tier and data that write it.
+- **New enum value a user can reach:** make it appear in the demo data.
+
+Then run `pnpm db:check:datasets` — it applies every dataset and rolls back, and the
+pre-commit hook runs it anyway. Details: `onboarding-company-templates.md`.
+
 ## Checklist
 
 - [ ] File created with `pnpm db:migrate:new <name>` (HHMMSS not `000000`)
@@ -126,10 +136,10 @@ alone, `pnpm db:types`. **Do NOT run `npm run db:build` — it does not exist.**
 - [ ] `companyId` + composite PK `("id", "companyId")` + FK `ON DELETE CASCADE`
 - [ ] Audit columns; `*By` reference `"user"("id")` inline
 - [ ] Indexes on `companyId` and every FK
-- [ ] RLS enabled with the four standardized policy names (SELECT via
-      `get_companies_with_employee_role()`, writes via
-      `get_companies_with_employee_permission('<module>_<action>')`)
+- [ ] Rule added to `packages/database/src/authz/manifest.ts` and shipped with
+      `pnpm --filter @carbon/database authz migration <name>` (no `CREATE POLICY` in migrations)
 - [ ] Renamed/dropped a tenant-scoped table? `TABLE_RENAMES` entry added
       (`packages/jobs/src/backups/renames.ts`) — new name, or `null` if dropped with its feature
 - [ ] Zod validators updated in `{module}.models.ts`
 - [ ] Applied locally with `pnpm db:migrate` (regenerates types) — never `db:build`
+- [ ] Demo data updated for the new/changed tables, and `pnpm db:check:datasets` ✓×4

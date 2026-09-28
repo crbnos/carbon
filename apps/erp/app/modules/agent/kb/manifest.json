@@ -192,16 +192,22 @@
         "The apply or revert looks stuck",
         "Can't apply a second template",
         "Applying failed with an error",
+        "Applying failed with \"Seed: this company trades with other companies in its group\"",
+        "Applying failed with \"Seed: this company has N posted or voided card transaction(s)\"",
+        "Material Planning, Scheduling or Priorities are empty right after applying",
+        "The Webhooks, API keys or Audit log screens are empty after applying",
+        "The Documents list is empty after applying a template",
         "The demo dates look recent — is that real activity?"
       ]
     },
     {
       "slug": "docs/platform/licensing",
       "title": "Licensing",
-      "description": "Carbon is dual-licensed: AGPLv3 for the Community edition, and a commercial license for Business features or for keeping your changes private.",
+      "description": "Carbon is dual-licensed: AGPLv3 for Community Edition (CE), and a commercial license for Business features or for keeping your changes private.",
       "keywords": ["licensing", "docs", "platform"],
       "headings": [
         "Editions",
+        "What each plan unlocks",
         "How to buy",
         "Carbon Cloud — we run it",
         "Self-hosted — you run it",
@@ -974,7 +980,8 @@
         "Maintenance dispatch",
         "Troubleshooting",
         "\"Incorrect PIN\"",
-        "\"No PIN set. Please set a PIN in your account settings.\"",
+        "\"Too many incorrect PINs. Please wait a few minutes and try again.\"",
+        "\"No PIN set. Ask an admin to set a console PIN for you.\"",
         "\"This picking list is closed. Reopen it from the ERP to continue.\"",
         "Finish is blocked or warns (\"Insufficient quantity\" / \"Steps are missing\")",
         "\"Forgot to Clock Out?\"",
@@ -1030,7 +1037,7 @@
         "Where to go next",
         "Internals and troubleshooting",
         "Stuck in the setup wizard / keeps redirecting to /onboarding",
-        "The Industry step isn't showing",
+        "\"Restore from a backup\" isn't offered on the Industry step",
         "The Plan step isn't showing"
       ]
     },
@@ -1122,8 +1129,8 @@
         "Where each piece lives",
         "Troubleshooting",
         "\"Incorrect PIN\"",
-        "\"No PIN set. Please set a PIN in your account settings.\"",
-        "\"PIN must be 4 digits\"",
+        "\"Too many incorrect PINs. Please wait a few minutes and try again.\"",
+        "\"No PIN set. Ask an admin to set a console PIN for you.\"",
         "\"Group members are required\"",
         "A user can sign in but sees nothing / can't open a module",
         "Editing an employee type didn't change existing people's access",

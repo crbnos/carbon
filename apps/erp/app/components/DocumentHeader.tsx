@@ -30,7 +30,7 @@ const DocumentHeader = ({
     <CardHeader className="flex-row items-center justify-between">
       <div>
         <HStack>
-          <Heading as="h1" size="h3">
+          <Heading as="h1" size="h3" className="font-sans">
             {title}
           </Heading>
           <Copy text={title} />

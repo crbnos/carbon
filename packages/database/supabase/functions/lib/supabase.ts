@@ -124,10 +124,17 @@ export const getSupabase = (authorizationHeader: string | null) => {
   );
 };
 
+/**
+ * Service-role client for a trusted server bearer or a company API key. Pass
+ * `requiredPermissions` whenever the function acts on company data: an API
+ * key is then held to the same scopes `requirePermissions` would demand, not
+ * just to belonging to the company.
+ */
 export const getSupabaseServiceRole = async (
   authorizationHeader: string | null,
   apiKeyHeader?: string | null,
-  companyId?: string
+  companyId?: string,
+  requiredPermissions?: RequiredPermissions
 ) => {
   if (!authorizationHeader && !apiKeyHeader) {
     throw new Error("Authorization header or API key header is required");
@@ -148,7 +155,7 @@ export const getSupabaseServiceRole = async (
     const keyHash = hashApiKey(apiKeyHeader);
     const { data, error } = await serviceRole
       .from("apiKey")
-      .select("id, companyId, rateLimit, rateLimitWindow, expiresAt")
+      .select("id, companyId, scopes, rateLimit, rateLimitWindow, expiresAt")
       .eq("keyHash" as any, keyHash)
       .eq("companyId", companyId)
       .single();
@@ -177,6 +184,10 @@ export const getSupabaseServiceRole = async (
     );
     if (!rl.success) {
       throw new Error("Rate limit exceeded");
+    }
+
+    if (requiredPermissions) {
+      assertApiKeyScopes(row.scopes ?? {}, requiredPermissions, companyId);
     }
 
     return serviceRole;
@@ -236,6 +247,24 @@ function parseClaimsPermissions(
   return { permissions, role };
 }
 
+/** An API key's scopes are `<module>_<action>` → company ids, like claims. */
+function assertApiKeyScopes(
+  scopes: Record<string, string[]>,
+  required: RequiredPermissions,
+  companyId: string
+): void {
+  for (const [action, modules] of Object.entries(required)) {
+    const moduleList =
+      typeof modules === "string" ? [modules] : (modules as string[]);
+    for (const mod of moduleList) {
+      const scopeKey = `${mod}_${action}`;
+      if (!(scopeKey in scopes) || !scopes[scopeKey]?.includes(companyId)) {
+        throw new Error("API key lacks required permissions");
+      }
+    }
+  }
+}
+
 function checkPermissions(
   claims: Record<string, Permission>,
   companyId: string,
@@ -252,6 +281,63 @@ function checkPermissions(
     }
   }
   return true;
+}
+
+/**
+ * For functions that touch no company's data, so requirePermissions has nothing
+ * to check, but that must still refuse the published anon key: accepts the
+ * service role, a signed-in user, or a valid, rate-limited API key. As in
+ * requirePermissions, the gateway (verify_jwt) has verified the signature.
+ * Throws; a rate-limited key's error carries `status: 429`, anything else is a 401.
+ */
+export async function requireCaller(req: Request): Promise<void> {
+  const authorizationHeader = req.headers.get("Authorization");
+  const apiKeyHeader = req.headers.get("carbon-key");
+
+  if (apiKeyHeader) {
+    const auth = await getAuthFromAPIKey(apiKeyHeader);
+    if (!auth) throw new Error("Invalid API key");
+    const serviceRole = createClient(
+      Deno.env.get("SUPABASE_URL") ?? "",
+      postgrestServiceKey(authorizationHeader),
+      { auth: { autoRefreshToken: false, persistSession: false } }
+    );
+    const rl = await checkApiKeyRateLimit(
+      serviceRole,
+      auth.apiKeyId,
+      auth.rateLimit,
+      auth.rateLimitWindow
+    );
+    if (!rl.success) {
+      throw Object.assign(new Error("Rate limit exceeded"), { status: 429 });
+    }
+    return;
+  }
+
+  if (isTrustedBearer(authorizationHeader)) return;
+
+  const token = authorizationHeader?.replace(/^Bearer\s+/i, "").trim() ?? "";
+  try {
+    const role = (JSON.parse(atob(token.split(".")[1] ?? "")) as {
+      role?: string;
+    }).role;
+    if (role === "authenticated") return;
+  } catch {
+    // fall through
+  }
+  throw new Error("Sign in or use an API key");
+}
+
+/** True when the request carries the service role key (jobs, other edge functions). */
+export function isServiceRoleRequest(req: Request): boolean {
+  return isTrustedBearer(req.headers.get("Authorization"));
+}
+
+/** For functions only servers call (jobs, other edge functions): the service role key or nothing. */
+export function requireServiceRole(req: Request): void {
+  if (!isServiceRoleRequest(req)) {
+    throw new Error("Service role only");
+  }
 }
 
 export async function requirePermissions(
@@ -304,18 +390,7 @@ export async function requirePermissions(
       throw new Error("Rate limit exceeded");
     }
 
-    // Check API key scopes against required permissions
-    const scopes: Record<string, string[]> = row.scopes ?? {};
-    for (const [action, modules] of Object.entries(permissions)) {
-      const moduleList =
-        typeof modules === "string" ? [modules] : (modules as string[]);
-      for (const mod of moduleList) {
-        const scopeKey = `${mod}_${action}`;
-        if (!(scopeKey in scopes) || !scopes[scopeKey]?.includes(companyId)) {
-          throw new Error("API key lacks required permissions");
-        }
-      }
-    }
+    assertApiKeyScopes(row.scopes ?? {}, permissions, companyId);
 
     return serviceRole;
   }

@@ -1,7 +1,7 @@
 import { ASSEMBLER_SERVICE_URL } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
-import { getCompanyPrivateBucket } from "@carbon/files";
+import { getCompanyPrivateBucket, TEMP_STAGING_BUCKET } from "@carbon/files";
 import type { LoaderFunctionArgs } from "react-router";
 
 // Resolves a model's optimised / preview artifact storage paths for the
@@ -55,7 +55,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   // session's own bucket is the right one — never derive it from the path.
   const companyBucket = getCompanyPrivateBucket(companyId);
   const exists = async (path: string) => {
-    for (const bucket of [companyBucket, "private", "temp-staging"]) {
+    for (const bucket of [companyBucket, "private", TEMP_STAGING_BUCKET]) {
       const info = await svc.storage
         .from(bucket)
         .info(path)

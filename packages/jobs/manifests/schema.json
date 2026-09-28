@@ -1,11 +1,11 @@
 {
   "kind": "carbon-company-backup",
   "version": 1,
-  "schemaVersion": "20260927200103",
+  "schemaVersion": "20260928013415",
   "sourceCompanyId": "schema-baseline",
   "sourceCompanyGroupId": null,
   "sourceCompanyName": null,
-  "exportedAt": "2026-09-27T02:26:32.046Z",
+  "exportedAt": "2026-09-28T01:35:33.697Z",
   "exportedBy": "schema-baseline",
   "label": "schema baseline",
   "includeStorage": "none",
@@ -748,7 +748,7 @@
     {
       "name": "employee",
       "rows": 0,
-      "columns": ["companyId", "id", "active", "employeeTypeId", "pin"]
+      "columns": ["companyId", "id", "active", "employeeTypeId"]
     },
     {
       "name": "employeeTypePermission",
@@ -6922,6 +6922,7 @@
     "apiKey",
     "apiKeyRateLimit",
     "companyIntegration",
+    "employeePin",
     "oauthClient",
     "oauthToken",
     "webhook"

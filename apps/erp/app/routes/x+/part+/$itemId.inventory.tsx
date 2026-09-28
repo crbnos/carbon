@@ -1,10 +1,6 @@
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import {
-  getSalesRuleAssignmentsForItem,
-  getSalesRulesList
-} from "@carbon/ee/rules";
 import { getStorageRulesDataForTarget } from "@carbon/ee/rules.server";
 import { validationError, validator } from "@carbon/form";
 import { VStack } from "@carbon/react";
@@ -32,7 +28,6 @@ import {
 } from "~/modules/items";
 import { PickMethodForm } from "~/modules/items/ui/Item";
 import { getLocationsList } from "~/modules/resources";
-import { SalesRuleAssignmentsList } from "~/modules/sales/ui/SalesRules";
 import { getUserDefaults } from "~/modules/users/users.server";
 import { getDatabaseClient } from "~/services/database.server";
 import { useItems } from "~/stores";
@@ -121,9 +116,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     itemStorageUnitQuantities,
     shelfLife,
     bomHasShelfLifeManagedInput,
-    rulesData,
-    salesRuleAssignments,
-    salesRuleLibrary
+    rulesData
   ] = await Promise.all([
     getItemQuantities(client, itemId, companyId, locationId),
     getItemStorageUnitQuantities(client, itemId, companyId, locationId),
@@ -133,9 +126,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       targetType: "item",
       targetId: itemId,
       companyId
-    }),
-    getSalesRuleAssignmentsForItem(client, { itemId, companyId }),
-    getSalesRulesList(client, companyId)
+    })
   ]);
   if (quantities.error) {
     throw redirect(
@@ -173,15 +164,13 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     itemId,
     locationId,
     ruleAssignments: rulesData.assignments,
-    ruleLibrary: rulesData.library,
-    salesRuleAssignments: salesRuleAssignments.data ?? [],
-    salesRuleLibrary: salesRuleLibrary.data ?? []
+    ruleLibrary: rulesData.library
   };
 }
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { userId } = await requirePermissions(request, {
+  const { companyId, userId } = await requirePermissions(request, {
     update: "parts"
   });
 
@@ -213,6 +202,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
       defaultStorageUnitId: pickMethodFields.defaultStorageUnitId,
       sortMethod: pickMethodFields.sortMethod,
       customFields: setCustomFields(formData),
+      companyId,
       userId,
       shelfLife: {
         mode: shelfLifeMode,
@@ -250,9 +240,7 @@ export default function PartInventoryRoute() {
     trackedEntityExpirations,
     itemId,
     ruleAssignments,
-    ruleLibrary,
-    salesRuleAssignments,
-    salesRuleLibrary
+    ruleLibrary
   } = useLoaderData<typeof loader>();
 
   const partData = useRouteData<{
@@ -308,11 +296,6 @@ export default function PartInventoryRoute() {
         targetId={itemId}
         assignments={ruleAssignments as never}
         library={ruleLibrary as never}
-      />
-      <SalesRuleAssignmentsList
-        itemId={itemId}
-        assignments={salesRuleAssignments as never}
-        library={salesRuleLibrary as never}
       />
     </VStack>
   );

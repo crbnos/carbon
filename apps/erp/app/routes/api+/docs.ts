@@ -1,5 +1,6 @@
 import swaggerDocsSchema from "@carbon/database/swagger-docs-schema";
 import { Ratelimit, redis } from "@carbon/kv";
+import { getClientIp } from "@carbon/utils";
 import {
   type ClientLoaderFunctionArgs,
   data,
@@ -8,7 +9,7 @@ import {
 import { docsQuery } from "~/utils/react-query";
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const ip = request.headers.get("x-forwarded-for") ?? "127.0.0.1";
+  const ip = getClientIp(request) ?? "127.0.0.1";
   const ratelimit = new Ratelimit({
     redis,
     limiter: Ratelimit.slidingWindow(20, "1 h"),
