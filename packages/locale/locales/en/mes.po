@@ -1211,6 +1211,9 @@ msgstr "Please select an item"
 msgid "PM schedule lapsed"
 msgstr "PM schedule lapsed"
 
+msgid "Press ? on any page to open this list. Shortcuts are ignored while you type in a field."
+msgstr "Press ? on any page to open this list. Shortcuts are ignored while you type in a field."
+
 msgid "Prev"
 msgstr "Prev"
 
@@ -1521,8 +1524,8 @@ msgstr "Short pick {itemName}"
 msgid "Show description"
 msgstr "Show description"
 
-msgid "Show this overlay"
-msgstr "Show this overlay"
+msgid "Show keyboard shortcuts"
+msgstr "Show keyboard shortcuts"
 
 msgid "Sign in with Google"
 msgstr "Sign in with Google"
@@ -1628,6 +1631,9 @@ msgstr "The lot will still be dispositioned, but an NCR cannot be created until 
 #. placeholder {0}: (batch.operations ?? []).length
 msgid "The timer and completion are shared by all {0} jobs. Steps, materials and files here are this job's own."
 msgstr "The timer and completion are shared by all {0} jobs. Steps, materials and files here are this job's own."
+
+msgid "then"
+msgstr "then"
 
 msgid "There are no available or consumed tracked parts for this material."
 msgstr "There are no available or consumed tracked parts for this material."

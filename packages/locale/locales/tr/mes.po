@@ -1211,6 +1211,9 @@ msgstr "Lütfen bir ürün seçin"
 msgid "PM schedule lapsed"
 msgstr "PM zamanlaması süresi doldu"
 
+msgid "Press ? on any page to open this list. Shortcuts are ignored while you type in a field."
+msgstr "Herhangi bir sayfada bu listeyi açmak için ? tuşuna basın. Bir alan içinde yazarken kısayollar yoksayılır."
+
 msgid "Prev"
 msgstr "Önceki"
 
@@ -1521,8 +1524,8 @@ msgstr "Kısmi toplama {itemName}"
 msgid "Show description"
 msgstr "Açıklamayı göster"
 
-msgid "Show this overlay"
-msgstr "Bu katmanı göster"
+msgid "Show keyboard shortcuts"
+msgstr "Klavye kısayollarını göster"
 
 msgid "Sign in with Google"
 msgstr "Google ile giriş yap"
@@ -1628,6 +1631,9 @@ msgstr "Lot yine de işleme tabi tutulacak, ancak en az bir Sorun Türü yapıla
 #. placeholder {0}: (batch.operations ?? []).length
 msgid "The timer and completion are shared by all {0} jobs. Steps, materials and files here are this job's own."
 msgstr "Zamanlayıcı ve tamamlama tüm {0} iş emirleri tarafından paylaşılır. Buradaki adımlar, malzemeler ve dosyalar bu iş emrinin kendisinindir."
+
+msgid "then"
+msgstr "sonra"
 
 msgid "There are no available or consumed tracked parts for this material."
 msgstr "Bu malzeme için hiçbir kullanılabilir veya tüketilmiş izlenmiş parça yoktur."

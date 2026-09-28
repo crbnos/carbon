@@ -44,7 +44,7 @@ ModalOverlay.displayName = DialogPrimitive.Overlay.displayName;
 const ModalContentVariants = cva(
   cn(
     "px-0 pt-6",
-    "relative z-50 flex flex-col max-h-dvh overflow-y-auto w-full border dark:border-none gap-4 shadow-md dark:shadow-sm duration-200",
+    "relative z-50 flex flex-col max-h-[calc(100dvh-4rem)] overflow-y-auto w-full border dark:border-none gap-4 shadow-md dark:shadow-sm duration-200",
     "[&>form]:flex [&>form]:flex-col [&>form]:min-h-0",
     "scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent",
     "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
@@ -124,7 +124,7 @@ ModalHeader.displayName = "ModalHeader";
 const ModalBody = ({ className, ...props }: HTMLAttributes<HTMLDivElement>) => (
   <div
     className={cn(
-      "w-full min-h-0 overflow-y-auto py-0 px-6 mb-4",
+      "relative w-full min-h-0 overflow-y-auto py-0 px-6 mb-4",
       "scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent",
       className
     )}

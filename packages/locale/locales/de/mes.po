@@ -1211,6 +1211,9 @@ msgstr "Bitte wählen Sie einen Artikel aus"
 msgid "PM schedule lapsed"
 msgstr "Wartungsplan abgelaufen"
 
+msgid "Press ? on any page to open this list. Shortcuts are ignored while you type in a field."
+msgstr "Drücken Sie ? auf jeder Seite, um diese Liste zu öffnen. Tastaturverknüpfungen werden ignoriert, während Sie in einem Feld tippen."
+
 msgid "Prev"
 msgstr "Zurück"
 
@@ -1521,8 +1524,8 @@ msgstr "Kurzkommissionierung {itemName}"
 msgid "Show description"
 msgstr "Beschreibung anzeigen"
 
-msgid "Show this overlay"
-msgstr "Dieses Overlay anzeigen"
+msgid "Show keyboard shortcuts"
+msgstr "Tastaturkürzel anzeigen"
 
 msgid "Sign in with Google"
 msgstr "Mit Google anmelden"
@@ -1628,6 +1631,9 @@ msgstr "Das Los wird weiterhin dispositioniert, aber ein NCR kann nicht erstellt
 #. placeholder {0}: (batch.operations ?? []).length
 msgid "The timer and completion are shared by all {0} jobs. Steps, materials and files here are this job's own."
 msgstr "Der Timer und die Fertigstellung werden von allen {0} Fertigungsaufträgen geteilt. Die Schritte, Materialien und Dateien hier gehören diesem Fertigungsauftrag."
+
+msgid "then"
+msgstr "dann"
 
 msgid "There are no available or consumed tracked parts for this material."
 msgstr "Es gibt keine verfügbaren oder verbrauchten verfolgten Teile für dieses Material."

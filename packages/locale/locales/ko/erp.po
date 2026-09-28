@@ -293,7 +293,7 @@ msgid "{chainLabel}. Consider pointing this part directly at the final successor
 msgstr "{chainLabel}. 이 품목을 최종 후속 품목으로 직접 연결하는 것을 고려하세요."
 
 msgid "{componentCount, plural, one {# component} other {# components}}"
-msgstr ""
+msgstr "{componentCount, plural, one {# 구성품} other {# 구성품}}"
 
 msgid "{conflictCount} conflicts"
 msgstr "{conflictCount}개 충돌"
@@ -546,7 +546,7 @@ msgid "A \"must match\" rule on this process blocks these from sharing a batch"
 msgstr "이 공정의 \"일치해야 함\" 규칙이 이들을 배치 공유에서 차단합니다"
 
 msgid "A 3D model the operator can turn around"
-msgstr ""
+msgstr "작업자가 회전할 수 있는 3D 모델"
 
 msgid "A 4-digit PIN is generated when the operator is created."
 msgstr "작업자를 생성할 때 4자리 PIN이 생성됩니다."
@@ -756,10 +756,10 @@ msgid "A part contains the information about a specific item that can be purchas
 msgstr "품목(Part)은 구매하거나 제조할 수 있는 특정 아이템에 대한 정보를 담고 있습니다."
 
 msgid "A part in this step may tip once placed — consider a fixture or a second person."
-msgstr ""
+msgstr "이 단계에서 부품이 배치되면 넘어질 수 있습니다. 지그나 추가 작업자를 고려하세요."
 
 msgid "A photo or PDF the operator sees on this step"
-msgstr ""
+msgstr "작업자가 이 단계에서 보는 사진 또는 PDF"
 
 msgid "A physical pull signal — a printed card or QR code living with the stock — that raises a purchase order or a job the moment it's scanned to refill a bin."
 msgstr "실제 풀 신호로 재고와 함께 있는 인쇄된 카드 또는 QR 코드로 스캔되는 순간 발주서 또는 작업 지시를 생성하여 빈을 보충합니다."
@@ -1333,14 +1333,14 @@ msgstr "수량, 가격, 배송, 리드타임 및 세금을 재정의하기 위�
 msgid "Add a domain"
 msgstr "도메인 추가"
 
-msgid "Add a line (in document explorers)"
-msgstr "라인 추가 (문서 탐색기에서)"
+msgid "Add a line to the document"
+msgstr "문서에 라인 추가"
 
 msgid "Add a materials section that lists each item on the bill of materials with its quantity."
 msgstr "자재 섹션을 추가하여 자재 명세서의 각 항목과 수량을 나열합니다."
 
-msgid "Add a parameter (in the procedure explorer)"
-msgstr "절차서 탐색기에서 매개변수 추가"
+msgid "Add a parameter (procedures only)"
+msgstr "매개변수 추가(절차서만 해당)"
 
 msgid "Add a printer in the printing settings to print labels directly."
 msgstr "라벨을 직접 출력하려면 인쇄 설정에서 프린터를 추가하세요."
@@ -1354,8 +1354,8 @@ msgstr "행 추가"
 msgid "Add a step"
 msgstr "단계 추가"
 
-msgid "Add a step or question (in procedure and training explorers)"
-msgstr "절차서 및 교육 탐색기에서 단계 또는 질문 추가"
+msgid "Add a step or question"
+msgstr "단계 또는 질문 추가"
 
 msgid "Add Ability"
 msgstr "역량 추가"
@@ -1400,7 +1400,7 @@ msgid "Add Company"
 msgstr "회사 추가"
 
 msgid "Add components first"
-msgstr ""
+msgstr "먼저 구성품 추가"
 
 msgid "Add condition"
 msgstr "조건 추가"
@@ -1460,7 +1460,7 @@ msgid "Add match"
 msgstr "일치 추가"
 
 msgid "Add Model"
-msgstr ""
+msgstr "모델 추가"
 
 msgid "Add Note"
 msgstr "메모 추가"
@@ -1542,7 +1542,7 @@ msgid "Add Shipping"
 msgstr "배송비 추가"
 
 msgid "Add Slide"
-msgstr ""
+msgstr "슬라이드 추가"
 
 msgid "Add slot"
 msgstr "슬롯 추가"
@@ -2832,7 +2832,7 @@ msgid "Automate your business processes with event-driven workflows that trigger
 msgstr "Carbon에서 발생하는 사건에 따라 작업을 트리거하는 이벤트 기반 워크플로우로 비즈니스 프로세스를 자동화합니다."
 
 msgid "Automatic"
-msgstr ""
+msgstr "자동"
 
 msgid "Automatic Cost Updates"
 msgstr "자동 원가 업데이트"
@@ -3130,7 +3130,7 @@ msgid "BoM"
 msgstr "BOM"
 
 msgid "BOM"
-msgstr ""
+msgstr "BOM"
 
 msgid "BoM + BoP"
 msgstr "BOM + BOP"
@@ -3175,7 +3175,7 @@ msgid "Bring in your parts, BOMs, Bill of Process, and costing — with Carbon's
 msgstr "부품, BOM, 공정 목록 및 원가 계산을 가져오기 — Carbon의 가져오기 도구, CSV 또는 LLM 도움을 사용합니다."
 
 msgid "Brings in steps"
-msgstr ""
+msgstr "단계를 포함"
 
 msgid "Browse library"
 msgstr "라이브러리 둘러보기"
@@ -3205,7 +3205,7 @@ msgid "Build integrations and customizations"
 msgstr "연동과 커스터마이징 구축"
 
 msgid "Build off to the side"
-msgstr ""
+msgstr "옆에서 구축"
 
 msgid "Build quotes pulling live part, cost, and Bill of Process data"
 msgstr "부품, 원가 및 공정 목록 데이터를 가져와서 견적서를 작성합니다"
@@ -3217,13 +3217,13 @@ msgid "Build tailored, role-based training materials"
 msgstr "맞춤형 역할 기반 교육 자료 제작"
 
 msgid "Builds this step's components beside the model as a group, then carries the group in at a later join step."
-msgstr ""
+msgstr "이 단계의 구성품을 모델 옆에 그룹으로 구축한 후 나중의 조립 단계에서 그룹을 반입합니다."
 
 msgid "Built and costed as its own method"
 msgstr "독립적인 방법으로 구성되고 원가가 산정됨"
 
 msgid "Built off to the side, then carried in at its join step"
-msgstr ""
+msgstr "옆에서 구축하고 조립 단계에서 반입됨"
 
 msgid "Bulk Import"
 msgstr "일괄 가져오기"
@@ -3325,7 +3325,7 @@ msgid "Called a method in Carbon — the components plus operations that produce
 msgstr "Carbon에서는 이를 방법(method)이라고 부릅니다 — 품목을 만드는 구성품과 공정작업의 조합입니다."
 
 msgid "Camera"
-msgstr ""
+msgstr "카메라"
 
 msgid "Can't be restored"
 msgstr "복원할 수 없습니다"
@@ -3750,7 +3750,7 @@ msgid "Click again to disconnect"
 msgstr "다시 클릭하여 연결 해제"
 
 msgid "Click components in the viewer to add them. Shift-click adds several."
-msgstr ""
+msgstr "뷰어에서 구성품을 클릭하여 추가합니다. Shift 클릭으로 여러 개를 추가합니다."
 
 msgid "Click to rename"
 msgstr "클릭하여 이름 바꾸기"
@@ -3821,7 +3821,7 @@ msgstr "접기"
 #. placeholder {0}: group.name
 #. placeholder {0}: unit.name
 msgid "Collapse {0}"
-msgstr ""
+msgstr "축소 {0}"
 
 msgid "Collapse all"
 msgstr "모두 접기"
@@ -3969,13 +3969,13 @@ msgstr "완료 시간"
 
 #. placeholder {0}: group.name
 msgid "Component details: {0}"
-msgstr ""
+msgstr "구성품 세부사항: {0}"
 
 msgid "Components"
-msgstr ""
+msgstr "구성품"
 
 msgid "Components hidden only while this step plays, such as a fixture in the way; use the eye in the Components tab to hide one."
-msgstr ""
+msgstr "지그와 같이 방해가 되는 구성품은 이 단계가 재생되는 동안만 숨김됩니다. 구성품 탭의 눈 아이콘을 사용하여 구성품을 숨길 수 있습니다."
 
 #. placeholder {0}: formatRelativeTime(tieOut.computedAt)
 msgid "computed {0}"
@@ -5076,6 +5076,9 @@ msgstr "고객"
 msgid "Customer Accounts"
 msgstr "고객 계정"
 
+msgid "Customer and supplier pages"
+msgstr "고객 및 공급업체 페이지"
+
 msgid "Customer contact"
 msgstr "고객 담당자"
 
@@ -5801,7 +5804,7 @@ msgid "Delete step"
 msgstr "단계 삭제"
 
 msgid "Delete Step"
-msgstr ""
+msgstr "단계 삭제"
 
 msgid "Delete Stock Transfer"
 msgstr "재고 이동 삭제"
@@ -5814,7 +5817,7 @@ msgstr "보관 단위 삭제"
 
 #. placeholder {0}: unit.name
 msgid "Delete subassembly {0}"
-msgstr ""
+msgstr "서브어셈블리 {0} 삭제"
 
 msgid "Delete Substance"
 msgstr "재질 삭제"
@@ -5986,7 +5989,7 @@ msgid "Details"
 msgstr "상세 정보"
 
 msgid "Detected by the motion planner"
-msgstr ""
+msgstr "모션 플래너가 감지함"
 
 msgid "Developer"
 msgstr "개발자"
@@ -6206,16 +6209,16 @@ msgid "Done"
 msgstr "완료"
 
 msgid "Done Adding"
-msgstr ""
+msgstr "추가 완료"
 
 msgid "Done Editing Path"
-msgstr ""
+msgstr "경로 편집 완료"
 
 msgid "Done when day-to-day runs without us in the room"
 msgstr "저희가 없어도 일상 업무가 원활하게 돌아가면 완료입니다"
 
 msgid "Double-click to play this step"
-msgstr ""
+msgstr "이 단계를 재생하려면 더블 클릭"
 
 msgid "Download"
 msgstr "다운로드"
@@ -6261,7 +6264,7 @@ msgid "Drag handle"
 msgstr "드래그 핸들"
 
 msgid "Drag the red waypoints in the viewer"
-msgstr ""
+msgstr "뷰어에서 빨간 경유점을 드래그합니다"
 
 msgid "Drag to assign"
 msgstr "드래그하여 할당"
@@ -6668,7 +6671,7 @@ msgid "Edit Passkey"
 msgstr "패스키 편집"
 
 msgid "Edit Path"
-msgstr ""
+msgstr "경로 편집"
 
 msgid "Edit Payment"
 msgstr "지불 편집"
@@ -6771,7 +6774,7 @@ msgstr "보관 단위 편집"
 
 #. placeholder {0}: unit.name
 msgid "Edit subassembly {0}"
-msgstr ""
+msgstr "서브어셈블리 {0} 편집"
 
 msgid "Edit Substance"
 msgstr "물질 편집"
@@ -8495,25 +8498,25 @@ msgid "Help"
 msgstr "도움말"
 
 msgid "Hidden on this step"
-msgstr ""
+msgstr "이 단계에서 숨김"
 
 msgid "Hide"
 msgstr "숨기기"
 
 msgid "Hide {label}"
-msgstr ""
+msgstr "{label} 숨기기"
 
 msgid "Hide account number"
 msgstr "계좌 번호 숨기기"
 
 msgid "Hide Again"
-msgstr ""
+msgstr "다시 숨기기"
 
 msgid "Hide raw"
 msgstr "원본 숨기기"
 
 msgid "Hide selected on this step"
-msgstr ""
+msgstr "이 단계에서 선택된 항목 숨기기"
 
 msgid "Hide system quantities until the review step"
 msgstr "검토 단계 전까지 시스템 수량 숨기기"
@@ -8735,7 +8738,7 @@ msgid "I have a reasonable basis to believe this individual is a U.S. person as 
 msgstr "나는 이 개인이 22 CFR 120.62에서 정의한 미국인이라고 합리적으로 믿을 이유가 있습니다"
 
 msgid "I understand, replace my existing data with the new demo data"
-msgstr ""
+msgstr "이해했습니다. 기존 데이터를 새 데모 데이터로 바꾸겠습니다"
 
 msgid "I'm Still Working"
 msgstr "아직 작업 중입니다"
@@ -8889,7 +8892,7 @@ msgid "In the loop together"
 msgstr "함께 정보 공유하기"
 
 msgid "In this step"
-msgstr ""
+msgstr "이 단계에서"
 
 msgid "In use"
 msgstr "사용 중"
@@ -9057,10 +9060,10 @@ msgid "Installed"
 msgstr "설치됨"
 
 msgid "Installed on this step, so it can't be hidden here."
-msgstr ""
+msgstr "이 단계에 설치되어 있어 여기서 숨길 수 없습니다."
 
 msgid "Instruction"
-msgstr ""
+msgstr "지시사항"
 
 msgid "Instructions"
 msgstr "지시사항"
@@ -9169,6 +9172,9 @@ msgstr "재고 작업 알림"
 
 msgid "Inventory Movements"
 msgstr "재고 이동"
+
+msgid "Inventory pages"
+msgstr "재고 관리 페이지"
 
 msgid "Inventory Qty"
 msgstr "재고 수량"
@@ -9431,6 +9437,9 @@ msgstr "품목은 선택한 유형 또는 선택한 그룹 중 하나를 충족�
 msgid "Item Name"
 msgstr "품목명"
 
+msgid "Item pages"
+msgstr "품목 페이지"
+
 msgid "Item Scope"
 msgstr "품목 범위"
 
@@ -9518,10 +9527,10 @@ msgstr "{0} 참여"
 
 #. placeholder {0}: selected.number
 msgid "Joins step {0}"
-msgstr ""
+msgstr "단계 {0}에 참여"
 
 msgid "Joins step {number}: {title}"
-msgstr ""
+msgstr "단계 {number}에 참여: {title}"
 
 msgid "Journal"
 msgstr "전표"
@@ -9540,9 +9549,6 @@ msgstr "전표 라인"
 
 msgid "Journals dated on or before this date are treated as locked. Merged with the provider-reported lock date when both exist."
 msgstr "이 날짜 또는 이전 날짜의 전표는 잠김으로 처리됩니다. 둘 다 존재할 때 공급자 보고 잠금 날짜와 병합됩니다."
-
-msgid "Jump to a section on detail pages (same modifiers + the section's letter)"
-msgstr "상세 페이지의 섹션으로 이동 (같은 수정자 + 섹션의 문자)"
 
 msgid "Just one"
 msgstr "정확히 하나"
@@ -9566,10 +9572,10 @@ msgid "Keep Current"
 msgstr "현재 값 유지"
 
 msgid "Keep demo data"
-msgstr ""
+msgstr "데모 데이터 유지"
 
 msgid "Keep demo data and delete your previous data?"
-msgstr ""
+msgstr "데모 데이터를 유지하고 이전 데이터를 삭제하시겠습니까?"
 
 msgid "Keep editing"
 msgstr "계속 편집"
@@ -9913,6 +9919,9 @@ msgstr "연결된 구매주문"
 
 msgid "List Options"
 msgstr "목록 옵션"
+
+msgid "List pages"
+msgstr "목록 페이지"
 
 msgid "List Parameters"
 msgstr "목록 파라미터"
@@ -10735,7 +10744,7 @@ msgid "Most things get caught and resolved here. Name it plainly."
 msgstr "대부분의 문제는 여기서 발견되고 해결됩니다. 명확하게 이름을 붙이세요."
 
 msgid "Motion"
-msgstr ""
+msgstr "모션"
 
 msgid "Move"
 msgstr "이동"
@@ -11084,8 +11093,8 @@ msgstr "새 견적 라인"
 msgid "New Receipt"
 msgstr "새 입고"
 
-msgid "New record (on list pages)"
-msgstr "새 레코드 (목록 페이지에서)"
+msgid "New record"
+msgstr "새 레코드"
 
 msgid "New record created"
 msgstr "새 레코드가 생성되었습니다"
@@ -11216,9 +11225,6 @@ msgstr "다음 마감일"
 msgid "Next page"
 msgstr "다음 페이지"
 
-msgid "Next page (in tables)"
-msgstr "다음 페이지 (표에서)"
-
 msgid "Next Sequence"
 msgstr "다음 채번 규칙"
 
@@ -11335,10 +11341,10 @@ msgid "No clauses yet. Use Add clause above."
 msgstr "아직 절이 없습니다. 위의 절 추가를 사용하세요."
 
 msgid "No clear path"
-msgstr ""
+msgstr "명확한 경로 없음"
 
 msgid "No collision-free path"
-msgstr ""
+msgstr "충돌 없는 경로 없음"
 
 msgid "No comments yet. Be the first to add a comment."
 msgstr "아직 댓글이 없습니다. 첫 번째 댓글을 추가하세요."
@@ -11347,7 +11353,7 @@ msgid "No completed jobs within range"
 msgstr "범위 내에 완료된 작업 지시가 없습니다"
 
 msgid "No components yet"
-msgstr ""
+msgstr "아직 구성 요소 없음"
 
 msgid "No condition may match"
 msgstr "조건이 하나도 일치하지 않을 수 있습니다"
@@ -11696,13 +11702,13 @@ msgid "No single, trusted number for inventory or job status"
 msgstr "재고나 작업 상태를 나타내는 신뢰할 수 있는 단일 수치가 없음"
 
 msgid "No slides yet"
-msgstr ""
+msgstr "아직 슬라이드 없음"
 
 msgid "No sorts applied to this view"
 msgstr "이 보기에는 정렬이 적용되지 않았습니다"
 
 msgid "No step selected"
-msgstr ""
+msgstr "선택한 단계 없음"
 
 msgid "No stock"
 msgstr "재고 없음"
@@ -11774,10 +11780,10 @@ msgid "No work centers exist"
 msgstr "존재하는 작업장이 없습니다"
 
 msgid "No, build in place"
-msgstr ""
+msgstr "아니요, 제자리에서 구축"
 
 msgid "No, it's the base"
-msgstr ""
+msgstr "아니요, 기본입니다"
 
 msgid "Nom"
 msgstr "명목"
@@ -12331,7 +12337,7 @@ msgid "Operator must pick a different batch/serial."
 msgstr "작업자는 다른 배치/일련번호를 선택해야 합니다."
 
 msgid "Operator must record this step"
-msgstr ""
+msgstr "작업자가 이 단계를 기록해야 합니다"
 
 msgid "Operator Pool"
 msgstr "작업자 풀"
@@ -12880,7 +12886,7 @@ msgid "Pick a record type…"
 msgstr "레코드 유형 선택…"
 
 msgid "Pick a step from the list to edit its details, components, and materials."
-msgstr ""
+msgstr "목록에서 단계를 선택하여 세부 사항, 구성 요소 및 자재를 편집하세요."
 
 msgid "Pick a target date to compare."
 msgstr "비교할 목표 날짜를 선택하세요."
@@ -13029,7 +13035,7 @@ msgid "Plants, warehouses"
 msgstr "공장, 창고"
 
 msgid "Playback"
-msgstr ""
+msgstr "재생"
 
 msgid "Please contact your administrator to enable audit logging."
 msgstr "감사 로깅을 활성화하려면 관리자에게 문의하십시오."
@@ -13169,6 +13175,9 @@ msgstr "선급금(기본값)"
 msgid "Present Week"
 msgstr "현재 주"
 
+msgid "Press ? on any page to open this list. Shortcuts are ignored while you type in a field."
+msgstr "모든 페이지에서 ? 를 누르면 이 목록이 열립니다. 입력 필드에 입력 중일 때는 단축키가 작동하지 않습니다."
+
 msgid "Prev"
 msgstr "이전"
 
@@ -13201,9 +13210,6 @@ msgstr "이전 날"
 
 msgid "Previous page"
 msgstr "이전 페이지"
-
-msgid "Previous page (in tables)"
-msgstr "이전 페이지 (표에서)"
 
 msgid "Previous step"
 msgstr "이전 단계"
@@ -13316,6 +13322,9 @@ msgstr "절차서"
 msgid "Procedures"
 msgstr "절차서"
 
+msgid "Procedures and training"
+msgstr "절차서 및 교육"
+
 msgid "process"
 msgstr "공정"
 
@@ -13333,6 +13342,9 @@ msgstr "공정"
 
 msgid "Processes"
 msgstr "공정"
+
+msgid "Processes (suppliers only)"
+msgstr "공법 (공급업체만)"
 
 msgid "Procurement status — needs ordering, planned, on order, or received. The same indicator shown in the BoM tree."
 msgstr "조달 상태 — 주문 필요, 계획됨, 주문됨, 입고됨 중 하나입니다. BOM 트리에 표시되는 것과 동일한 지표입니다."
@@ -13896,6 +13908,9 @@ msgstr "견적"
 msgid "Quotes with Lines"
 msgstr "라인이 포함된 견적"
 
+msgid "Quotes, orders, invoices and RFQs"
+msgstr "견적서, 주문, 송장 및 견적 요청"
+
 msgid "Quoting and sales orders"
 msgstr "견적서 작성 및 수주"
 
@@ -14201,7 +14216,7 @@ msgid "Regenerate thumbnail from the 3D model"
 msgstr "3D 모델에서 썸네일 재생성"
 
 msgid "Regenerating removes \"Build off to the side\" settings."
-msgstr ""
+msgstr "재생성하면 \"옆에서 구축\" 설정이 제거됩니다."
 
 msgid "Regenerating thumbnail…"
 msgstr "썸네일 재생성 중…"
@@ -14317,7 +14332,7 @@ msgstr "{0}을(를) 이 배치에서 제거하시겠습니까? 그 공정은 일
 
 #. placeholder {0}: group.name
 msgid "Remove {0} from this step"
-msgstr ""
+msgstr "{0}을(를) 이 단계에서 제거"
 
 #. placeholder {0}: selectedIds.size
 #. placeholder {1}: batch.readableId
@@ -15268,7 +15283,7 @@ msgid "Saved"
 msgstr "저장됨"
 
 msgid "Saved view"
-msgstr ""
+msgstr "저장된 보기"
 
 msgid "Saved Views"
 msgstr "저장된 보기"
@@ -15578,7 +15593,7 @@ msgid "Select a shape first to see available options"
 msgstr "먼저 형태를 선택하여 가용 옵션을 확인하세요."
 
 msgid "Select a step to hide parts on it."
-msgstr ""
+msgstr "부품을 숨길 단계를 선택하세요."
 
 msgid "Select a substance and shape first to see available options"
 msgstr "먼저 재질과 형태를 선택하여 가용 옵션을 확인하세요."
@@ -16198,14 +16213,14 @@ msgstr "표시"
 
 #. placeholder {0}: group.name
 msgid "Show {0}"
-msgstr ""
+msgstr "{0} 표시"
 
 #. placeholder {0}: overflow.length
 msgid "Show {0} more"
 msgstr "{0}개 더 표시"
 
 msgid "Show {label}"
-msgstr ""
+msgstr "{label} 표시"
 
 msgid "Show a readable Customer ID column on the customer list, customer forms, and dropdowns. Customers are still identified internally either way."
 msgstr "고객 목록, 고객 양식, 드롭다운에 읽기 쉬운 고객 ID 열을 표시합니다. 어느 쪽이든 고객은 내부적으로 동일하게 식별됩니다."
@@ -16214,10 +16229,10 @@ msgid "Show a readable Supplier ID column on the supplier list, supplier forms, 
 msgstr "공급업체 목록, 공급업체 양식, 드롭다운에 읽기 쉬운 공급업체 ID 열을 표시합니다. 어느 쪽이든 공급업체는 내부적으로 동일하게 식별됩니다."
 
 msgid "Show All"
-msgstr ""
+msgstr "모두 표시"
 
 msgid "Show all hidden on this step"
-msgstr ""
+msgstr "이 단계에서 모두 숨김 표시"
 
 msgid "Show available batch numbers"
 msgstr "가용 배치 번호 표시"
@@ -16230,6 +16245,9 @@ msgstr "고객 ID 표시"
 
 msgid "Show Durations"
 msgstr "소요 시간 표시"
+
+msgid "Show keyboard shortcuts"
+msgstr "키보드 단축키 표시"
 
 msgid "Show more"
 msgstr "더보기"
@@ -16251,9 +16269,6 @@ msgstr "공급업체 ID 표시"
 
 msgid "Show sync options"
 msgstr "동기화 옵션 표시"
-
-msgid "Show this overlay"
-msgstr "이 오버레이 표시"
 
 msgid "Show Trailing Zeros"
 msgstr "후행 0 표시"
@@ -16388,7 +16403,7 @@ msgid "Slide {0}"
 msgstr "슬라이드 {0}"
 
 msgid "Slides"
-msgstr ""
+msgstr "슬라이드"
 
 msgid "Smallest run worth batching. Leave empty for none."
 msgstr "배치할 가치가 있는 가장 작은 실행. 없으면 비워두세요."
@@ -16645,7 +16660,7 @@ msgstr "단계"
 
 #. placeholder {0}: stepIndex + 1
 msgid "Step {0} of {stepCount}"
-msgstr ""
+msgstr "단계 {0}/{stepCount}"
 
 msgid "Step added"
 msgstr "단계 추가됨"
@@ -16660,10 +16675,10 @@ msgid "Step removed — pick a new value"
 msgstr "단계 제거됨 - 새 값을 선택하세요"
 
 msgid "Step status: {label}"
-msgstr ""
+msgstr "단계 상태: {label}"
 
 msgid "Step status: {label}. Change status"
-msgstr ""
+msgstr "단계 상태: {label}. 상태 변경"
 
 msgid "steps"
 msgstr "단계"
@@ -17856,7 +17871,7 @@ msgid "The part is taken from existing stock when its parent is built — no new
 msgstr "부품은 상위 부품이 구축될 때 기존 재고에서 가져오므로, 새로운 작업 지시 또는 발주서가 없습니다."
 
 msgid "The path this step's components travel into place during playback; worked out from the model, or drawn by hand with Edit Path."
-msgstr ""
+msgstr "이 단계의 구성 요소가 재생 중에 제자리로 이동하는 경로; 모델에서 계산되거나 편집 경로를 사용하여 손으로 그려짐."
 
 msgid "The people on the Carbon side who will run your implementation, and how to reach them."
 msgstr "귀사의 실행을 담당할 Carbon 팀 인원 및 연락 방법입니다."
@@ -18148,7 +18163,7 @@ msgid "The version stamp for this procedure; new versions create a copy that sup
 msgstr "이 절차서의 버전 스탬프입니다. 새 버전은 이전 버전을 삭제하지 않고 대체하는 사본을 생성합니다."
 
 msgid "The view a step plays from; without a saved view the step frames its own components."
-msgstr ""
+msgstr "단계가 재생되는 보기; 저장된 보기가 없으면 단계가 자신의 구성 요소를 프레임합니다."
 
 msgid "The warehouse goods on this order will ship from; the customer's Shipping Location is where they'll arrive."
 msgstr "이 주문의 재화가 출하될 창고입니다. 고객의 배송지는 재화가 도착할 위치입니다."
@@ -18170,6 +18185,9 @@ msgstr "테마"
 
 msgid "Theme Color"
 msgstr "테마 색상"
+
+msgid "then"
+msgstr "그 다음"
 
 msgid "Then adjusted for"
 msgstr "다음으로 조정됨"
@@ -18641,7 +18659,7 @@ msgid "Today:"
 msgstr "오늘:"
 
 msgid "Todo"
-msgstr ""
+msgstr "할 일"
 
 msgid "Toggle"
 msgstr "전환"
@@ -18959,7 +18977,7 @@ msgid "Type {TRIGGER} to insert a variable"
 msgstr "변수를 삽입하려면 {TRIGGER}를 입력하세요."
 
 msgid "Type <0>\"{confirmPhrase}\"</0> to continue."
-msgstr ""
+msgstr "계속하려면 <0>\"{confirmPhrase}\"</0>를 입력하세요."
 
 msgid "Type a message..."
 msgstr "메시지를 입력하세요..."
@@ -19181,7 +19199,7 @@ msgid "Untitled line"
 msgstr "제목 없는 라인"
 
 msgid "Untitled step"
-msgstr ""
+msgstr "제목 없는 단계"
 
 msgid "Unused picked material flushed back from the work center to the warehouse."
 msgstr "작업장에서 창고로 반환된 미사용 선택 재료."
@@ -19374,7 +19392,7 @@ msgid "Use a different email"
 msgstr "다른 이메일 사용"
 
 msgid "Use Current View"
-msgstr ""
+msgstr "현재 보기 사용"
 
 msgid "Use metric system for default material dimensions."
 msgstr "기본 자재 치수에 미터법 시스템 사용"
@@ -20538,7 +20556,7 @@ msgid "Your customer-facing price lists"
 msgstr "고객 대상 가격표"
 
 msgid "Your data from before the demo data was applied will be permanently deleted. You won't be able to revert or recover it."
-msgstr ""
+msgstr "데모 데이터가 적용되기 전의 데이터는 영구적으로 삭제됩니다. 되돌리거나 복구할 수 없습니다."
 
 msgid "Your data is accessible and reasonably clean"
 msgstr "데이터에 접근 가능하고 어느 정도 정리되어 있음"
