@@ -189,16 +189,11 @@ export async function createRampReimbursement(
       // (it carries the FX snapshot of the payout that actually happened) and
       // is never overwritten by a later pass.
       if (args.payout && !hasRecordedPayout(mapped.metadata)) {
-        await tx
-          .updateTable("externalIntegrationMapping")
-          .set({
-            metadata: sql`coalesce("metadata", '{}'::jsonb) || ${JSON.stringify(
-              args.payout
-            )}::jsonb`
-          })
-          .where("id", "=", mapped.id)
-          .where("companyId", "=", args.companyId)
-          .execute();
+        await recordRampReimbursementPayout(tx, {
+          companyId: args.companyId,
+          mappingId: mapped.id,
+          payout: args.payout
+        });
       }
       return {
         reimbursementRowId: existing.id,
@@ -275,6 +270,35 @@ export async function createRampReimbursement(
       created: true
     };
   });
+}
+
+/**
+ * Merge a payout intent into a Ramp reimbursement mapping's metadata.
+ *
+ * Additive by construction (`||` over the existing object), and every caller
+ * must gate on `hasRecordedPayout` first: an intent already on the mapping
+ * carries the FX snapshot of the payout that actually happened and is never
+ * overwritten by a later pass. Takes a handle rather than a pool so it works
+ * inside the create transaction and on its own.
+ */
+export async function recordRampReimbursementPayout(
+  db: Kysely<KyselyDatabase>,
+  args: {
+    companyId: string;
+    mappingId: string;
+    payout: RampReimbursementPayout;
+  }
+): Promise<void> {
+  await db
+    .updateTable("externalIntegrationMapping")
+    .set({
+      metadata: sql`coalesce("metadata", '{}'::jsonb) || ${JSON.stringify(
+        args.payout
+      )}::jsonb`
+    })
+    .where("id", "=", args.mappingId)
+    .where("companyId", "=", args.companyId)
+    .execute();
 }
 
 export function reimbursementPaymentExternalId(
@@ -362,6 +386,63 @@ export function reimbursementHeaderAmount(
     reimbursement.original_reimbursement_amount ??
     reimbursement.amount
   );
+}
+
+/**
+ * The currency a reimbursement settles in. `entity_amount` first, matching
+ * `reimbursementHeaderAmount` — the two must agree about which amount is being
+ * read, or a payout would be stamped with the wrong currency's rate.
+ */
+export function reimbursementCurrency(
+  reimbursement: RampReimbursement,
+  baseCurrency: string
+): string {
+  return (
+    reimbursement.entity_amount?.currency ??
+    reimbursement.currency_code ??
+    reimbursement.currency ??
+    baseCurrency
+  );
+}
+
+/**
+ * The payout intent for a reimbursement Ramp has already paid, resolving the
+ * amount, currency and rate itself.
+ *
+ * Used by the already-mapped path, which has none of those in hand: the import
+ * pass computes them on its way to building the document, but a reimbursement
+ * that was imported while `APPROVED` and PAID afterwards reaches this file with
+ * nothing but the Ramp row.
+ */
+async function resolveRampReimbursementPayout(
+  deps: RampReimbursementDependencies,
+  reimbursement: RampReimbursement
+): Promise<{ value: RampReimbursementPayout } | { error: string }> {
+  const currencyCode = reimbursementCurrency(reimbursement, deps.baseCurrency);
+  const normalized = await deps.normalizeAmount(
+    reimbursementHeaderAmount(reimbursement),
+    currencyCode,
+    "Reimbursement amount"
+  );
+  if (!normalized.ok) return { error: normalized.error };
+  let exchangeRate: number;
+  try {
+    exchangeRate = await deps.getExchangeRate(currencyCode);
+  } catch (error) {
+    return {
+      error: error instanceof Error ? error.message : String(error)
+    };
+  }
+  const built = buildRampReimbursementPayout({
+    rampReimbursementId: reimbursement.id,
+    bankAccountId:
+      deps.reimbursementBankAccountId ?? deps.statementBankAccountId,
+    paidAt: reimbursement.approved_at ?? reimbursement.transaction_date,
+    amount: Math.abs(normalized.value),
+    currencyCode,
+    exchangeRate
+  });
+  return built.ok ? { value: built.value } : { error: built.error };
 }
 
 export function extractRampUser(reimbursement: RampReimbursement): {
@@ -650,14 +731,40 @@ export async function syncRampReimbursement(
   }
 
   const mapping = createMappingService(deps.db, deps.companyId);
-  const mappedId = await mapping.getEntityId(
+  const mapped = await mapping.getByExternalId(
     "ramp",
     reimbursement.id,
     RAMP_REIMBURSEMENT_ENTITY_TYPE
   );
-  if (mappedId) {
-    // Already imported. Carbon owns the document now — re-confirm only.
-    return observeRampReimbursement(deps, reimbursement, mappedId);
+  if (mapped) {
+    // Already imported. Carbon owns the DOCUMENT now — it is never refreshed
+    // (see `createRampReimbursement`), so this is a re-confirm.
+    //
+    // The mapping's payout intent is the ONE thing this pass may still add, and
+    // it is not a document re-write — "never re-write" protects a reviewer's
+    // coding, and nobody edits mapping bookkeeping. A reimbursement imported
+    // while APPROVED that Ramp later PAYS re-lists here: returning without
+    // recording the intent left it with a payout-less mapping forever, so the
+    // ERP's Post helper never created the `payment`/`invoiceSettlement` — money
+    // moved in Ramp and Carbon never settled it, permanently.
+    //
+    // A paid reimbursement whose intent cannot be built FAILS the item (a
+    // visible Warning in Sync Activity) rather than confirming silently: Ramp
+    // has already paid, so "we cannot record it" is the operator's problem to
+    // see. Nothing else about the mapped path can fail it — the document's
+    // amount and coding are never re-read.
+    if (isRampPaid && !hasRecordedPayout(mapped.metadata)) {
+      const payout = await resolveRampReimbursementPayout(deps, reimbursement);
+      if ("error" in payout) {
+        return { fail: { id: reimbursement.id, message: payout.error } };
+      }
+      await recordRampReimbursementPayout(deps.db, {
+        companyId: deps.companyId,
+        mappingId: mapped.id,
+        payout: payout.value
+      });
+    }
+    return observeRampReimbursement(deps, reimbursement, mapped.entityId);
   }
 
   const reimbursementDate = reimbursement.transaction_date?.slice(0, 10);
@@ -684,11 +791,7 @@ export async function syncRampReimbursement(
     return { fail: { id: reimbursement.id, message: employee.error } };
   }
 
-  const currencyCode =
-    reimbursement.entity_amount?.currency ??
-    reimbursement.currency_code ??
-    reimbursement.currency ??
-    deps.baseCurrency;
+  const currencyCode = reimbursementCurrency(reimbursement, deps.baseCurrency);
   const normalizedAmount = await deps.normalizeAmount(
     reimbursementHeaderAmount(reimbursement),
     currencyCode,

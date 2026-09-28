@@ -30,6 +30,7 @@ import {
   mergePullCursor,
   partitionConsolidationOperations,
   planJournalPostingOperation,
+  resolveMemoJournalParty,
   resolvePaymentJournalFamily,
   SWEEP_LOOKBACK_DAYS,
   shouldEnqueueMissingDocument,
@@ -1089,6 +1090,130 @@ describe("resolvePaymentJournalFamily", () => {
           lineAccounts: ["acc-ar", "acc-ap"]
         }),
         { companyId: "co_1", journalId: "je_1" }
+      )
+    ).toBeNull();
+  });
+});
+
+/**
+ * Minimal supabase stub for `resolveMemoJournalParty`: the journal's lines
+ * (which carry `documentType = 'Memo'` and the memo id) plus the memo rows.
+ */
+function stubMemoClient(rows: {
+  journalLines: Array<{ journalId: string; documentId: string }>;
+  memos: Array<{
+    id: string;
+    journalId: string | null;
+    customerId: string | null;
+    supplierId: string | null;
+  }>;
+}): SupabaseClient<Database> {
+  const build = (table: string) => {
+    const filters: Record<string, unknown> = {};
+    const builder = {
+      select: () => builder,
+      not: () => builder,
+      limit: () => builder,
+      eq: (column: string, value: unknown) => {
+        filters[column] = value;
+        return builder;
+      },
+      maybeSingle: async () => {
+        if (table === "journalLine") {
+          const line = rows.journalLines.find(
+            (row) =>
+              row.journalId === filters.journalId &&
+              filters.documentType === "Memo"
+          );
+          return {
+            data: line ? { documentId: line.documentId } : null,
+            error: null
+          };
+        }
+        const memo = rows.memos.find((row) =>
+          filters.id === undefined
+            ? row.journalId === filters.journalId
+            : row.id === filters.id
+        );
+        return {
+          data: memo
+            ? { customerId: memo.customerId, supplierId: memo.supplierId }
+            : null,
+          error: null
+        };
+      }
+    };
+    return builder;
+  };
+  return {
+    from: (table: string) => build(table)
+  } as unknown as SupabaseClient<Database>;
+}
+
+describe("resolveMemoJournalParty", () => {
+  const supplierMemo = {
+    id: "memo_1",
+    journalId: "je_post",
+    customerId: null,
+    supplierId: "sup_1"
+  };
+
+  it("resolves the party of a posted memo journal", async () => {
+    expect(
+      await resolveMemoJournalParty(
+        stubMemoClient({
+          journalLines: [{ journalId: "je_post", documentId: "memo_1" }],
+          memos: [supplierMemo]
+        }),
+        { companyId: "co_1", journalId: "je_post" }
+      )
+    ).toBe("supplier");
+  });
+
+  it("resolves the SAME party for the VOID journal", async () => {
+    // Voiding a memo INSERTS A NEW journal and leaves `memo.journalId` on the
+    // original, so keying on that column found no memo for a void: the party
+    // came back null, the policy parked a spurious MEMO_PARTY_UNRESOLVED
+    // Warning, and the void never propagated to the provider. The void journal's
+    // lines DO carry `documentType = 'Memo'` + the memo id.
+    expect(
+      await resolveMemoJournalParty(
+        stubMemoClient({
+          journalLines: [
+            { journalId: "je_post", documentId: "memo_1" },
+            { journalId: "je_void", documentId: "memo_1" }
+          ],
+          memos: [supplierMemo]
+        }),
+        { companyId: "co_1", journalId: "je_void" }
+      )
+    ).toBe("supplier");
+  });
+
+  it("falls back to the memo's own journalId when the lines carry no document link", async () => {
+    expect(
+      await resolveMemoJournalParty(
+        stubMemoClient({
+          journalLines: [],
+          memos: [
+            {
+              id: "memo_2",
+              journalId: "je_post",
+              customerId: "cust_1",
+              supplierId: null
+            }
+          ]
+        }),
+        { companyId: "co_1", journalId: "je_post" }
+      )
+    ).toBe("customer");
+  });
+
+  it("returns null when nothing links the journal to a memo", async () => {
+    expect(
+      await resolveMemoJournalParty(
+        stubMemoClient({ journalLines: [], memos: [supplierMemo] }),
+        { companyId: "co_1", journalId: "je_other" }
       )
     ).toBeNull();
   });

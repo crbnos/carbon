@@ -53,7 +53,10 @@ import {
   SWEPT_PAYMENT_STATUSES,
   SWEPT_REIMBURSEMENT_STATUSES
 } from "./accounting-sync-operations";
-import { MASTER_DATA_SWEEP_TARGETS } from "./master-data-targets";
+import {
+  isHourlyMasterDataPass,
+  MASTER_DATA_SWEEP_TARGETS
+} from "./master-data-targets";
 import type { ReconcileRef } from "./reconcile";
 import { type ReconcileSummary, reconcileEntities } from "./reconcile-executor";
 import { loadIntegrationTopology } from "./topology";
@@ -92,6 +95,14 @@ type SweepContext = {
   todayIso: string;
 };
 
+/**
+ * One page-walk for every candidate table: ascending from the window floor,
+ * offset-paged to `MAX_PAGES`, so the whole window is covered rather than the
+ * newest page re-read every pass.
+ *
+ * `statuses` is optional — master-data tables carry no `status` column, and
+ * they page through here too so they get the same walk.
+ */
 async function pageIds(args: {
   ctx: SweepContext;
   table:
@@ -101,8 +112,11 @@ async function pageIds(args: {
     | "payment"
     | "charge"
     | "reimbursement"
-    | "memo";
-  statuses: readonly string[];
+    | "memo"
+    | "customer"
+    | "supplier"
+    | "item";
+  statuses?: readonly string[];
   dateColumn: string;
   floor: string;
   extraFilter?: (query: any) => any;
@@ -110,12 +124,14 @@ async function pageIds(args: {
   const ids: string[] = [];
   let offset = 0;
   for (let page = 0; page < MAX_PAGES; page++) {
-    let query = args.ctx.client
+    let query: any = args.ctx.client
       .from(args.table)
       .select("id")
       .eq("companyId", args.ctx.companyId)
-      .in("status", args.statuses as unknown as ("Posted" | "Reversed")[])
       .gte(args.dateColumn, args.floor);
+    if (args.statuses) {
+      query = query.in("status", args.statuses);
+    }
     if (args.extraFilter) query = args.extraFilter(query);
 
     const result = await query
@@ -161,29 +177,23 @@ async function parkedBillIds(ctx: SweepContext): Promise<string[]> {
 }
 
 /**
- * Rows of a master-data table changed since the floor. Master tables carry no
- * `status`, so this cannot reuse `pageIds`.
+ * Rows of a master-data table changed since the floor.
+ *
+ * Pages through the shared `pageIds` walk. It used to be a single DESCENDING
+ * `.limit(n)`, which never advanced: a bulk edit of 3000 suppliers meant every
+ * pass re-read the same newest n and the older rows were swept never.
  */
 async function pageChangedMasterDataIds(args: {
   ctx: SweepContext;
   table: "customer" | "supplier" | "item";
   floor: string;
-  limit: number;
 }): Promise<string[]> {
-  const result = await args.ctx.client
-    .from(args.table)
-    .select("id")
-    .eq("companyId", args.ctx.companyId)
-    .gte("updatedAt", args.floor)
-    .order("updatedAt", { ascending: false })
-    .limit(args.limit);
-
-  if (result.error) {
-    throw new Error(
-      `Failed to page ${args.table} for sweep: ${result.error.message}`
-    );
-  }
-  return (result.data ?? []).map((row: { id: string }) => row.id);
+  return await pageIds({
+    ctx: args.ctx,
+    table: args.table,
+    dateColumn: "updatedAt",
+    floor: args.floor
+  });
 }
 
 async function sweepCompanyProvider(args: {
@@ -191,8 +201,13 @@ async function sweepCompanyProvider(args: {
   providerId: ProviderID;
   database: SyncContext["database"];
   scope: string;
+  /**
+   * Which cron slot this RUN is, resolved once by the handler before any
+   * per-company step — never re-read here (see `isHourlyMasterDataPass`).
+   */
+  isHourlyPass: boolean;
 }): Promise<SweepSummary> {
-  const { companyId, providerId, database, scope } = args;
+  const { companyId, providerId, database, scope, isHourlyPass } = args;
   const client = getCarbonServiceRole();
 
   const integration = await getAccountingIntegration(
@@ -506,11 +521,6 @@ async function sweepCompanyProvider(args: {
   //
   // Bounded by construction: the unmapped set drains to zero permanently, and
   // the changed set rides the same window floor the documents use.
-  // Which of the two cron slots this is. Deliberately getUTC Minutes, NOT
-  // getMinutes: the cron (`15,45 * * * *`) is defined in UTC, so this is not a
-  // business-calendar read and no company timezone applies — which is also why
-  // it is outside `no-local-timezone`'s ban on process-zone date parts.
-  const isHourlyPass = new Date().getUTCMinutes() < 30;
   const mappingService = createMappingService(database, companyId);
 
   for (const master of MASTER_DATA_SWEEP_TARGETS) {
@@ -539,8 +549,7 @@ async function sweepCompanyProvider(args: {
       pageChangedMasterDataIds({
         ctx,
         table: master.table,
-        floor,
-        limit: master.limit
+        floor
       })
     ]);
 
@@ -642,8 +651,14 @@ export const accountingOutboundSweepFunction = inngest.createFunction(
   // Offset from the inbound pull sweep (*/30) so the two never contend
   // for the same company's ledger claims
   { cron: "15,45 * * * *" },
-  async ({ step, runId }) => {
+  async ({ event, step, runId }) => {
     const client = getCarbonServiceRole();
+
+    // ONE slot for the whole run, resolved before any per-company step: the
+    // cron's own scheduled time, which is stable across a step retry too.
+    // (`event.ts` is the scheduled-timer payload's timestamp; the fallback only
+    // matters if a run arrives without one.)
+    const isHourlyPass = isHourlyMasterDataPass(event.ts ?? Date.now());
 
     const targets = await step.run("find-outbound-sweep-targets", async () => {
       const integrations = await client
@@ -691,7 +706,8 @@ export const accountingOutboundSweepFunction = inngest.createFunction(
             companyId: target.companyId,
             providerId: target.providerId,
             database,
-            scope: runId
+            scope: runId,
+            isHourlyPass
           });
         }
       });

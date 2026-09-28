@@ -18,10 +18,25 @@ import type { ReconcileRef } from "./reconcile";
 export const MASTER_DATA_UNMAPPED_LIMIT = 200;
 
 /**
- * An item master runs to six figures where a contact master runs to hundreds,
- * so items sweep once an hour (the :15 pass) rather than twice.
+ * Which of the outbound sweep's two cron slots (`15,45 * * * *`) a run is: the
+ * :15 pass is the hourly one, so a `hourlyOnly` target sweeps once an hour
+ * rather than twice.
+ *
+ * Takes the RUN's scheduled time rather than reading the wall clock, and the
+ * caller must resolve it ONCE per run, before the per-company steps. Read
+ * inside a per-company `step.run` it flips mid-run for a tenant list long
+ * enough to cross :30 — every tenant after the boundary silently skips the
+ * hourly targets — and it flips again on any step retry that lands in the
+ * other half hour.
+ *
+ * Deliberately `getUTCMinutes`, NOT `getMinutes`: the cron is defined in UTC,
+ * so this is not a business-calendar read and no company timezone applies —
+ * which is also why it is outside `no-local-timezone`'s ban on process-zone
+ * date parts.
  */
-export const MASTER_DATA_ITEM_UNMAPPED_LIMIT = 500;
+export function isHourlyMasterDataPass(scheduledAtMs: number): boolean {
+  return new Date(scheduledAtMs).getUTCMinutes() < 30;
+}
 
 /**
  * Master-data entity type → the table its rows live in.
@@ -42,9 +57,29 @@ export type MasterDataSweepTarget = {
   entityType: Extract<ReconcileRef["entityType"], MasterDataEntityType>;
   table: (typeof MASTER_DATA_TABLES)[MasterDataEntityType];
   limit: number;
+  /**
+   * Sweep on the :15 pass only (see `isHourlyMasterDataPass`). No target sets
+   * it today — the one that did was `item`, and it is gone — but the gate is a
+   * per-target property the sweep honours, so a future master too large for
+   * both passes stays expressible.
+   */
   hourlyOnly: boolean;
 };
 
+/**
+ * `item` is deliberately NOT a sweep target. Carbon's item master is a
+ * manufacturing parts catalog — tens of thousands of parts, materials, tools
+ * and consumables — and sweeping it mirrored every unmapped row into the
+ * provider's Products & Services list, which is exactly the catalog dump that
+ * removing the `item` event subscription
+ * (`packages/ee/src/accounting/core/subscriptions.ts`) was meant to stop.
+ *
+ * Items still reach a provider the two ways that are scoped to what a synced
+ * document actually references: JIT via `ensureDependencySynced("item")` from
+ * sales/purchase orders and inventory adjustments, and the deliberate one-shot
+ * "Push customers, vendors & items" action (`accounting-master-sync.ts`, which
+ * is why `MASTER_DATA_TABLES` still carries the `item` pairing).
+ */
 export const MASTER_DATA_SWEEP_TARGETS: readonly MasterDataSweepTarget[] = [
   {
     entityType: "customer",
@@ -57,11 +92,5 @@ export const MASTER_DATA_SWEEP_TARGETS: readonly MasterDataSweepTarget[] = [
     table: MASTER_DATA_TABLES.vendor,
     limit: MASTER_DATA_UNMAPPED_LIMIT,
     hourlyOnly: false
-  },
-  {
-    entityType: "item",
-    table: MASTER_DATA_TABLES.item,
-    limit: MASTER_DATA_ITEM_UNMAPPED_LIMIT,
-    hourlyOnly: true
   }
 ];

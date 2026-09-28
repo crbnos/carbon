@@ -1,6 +1,9 @@
 import type { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { resolveIntegrationTopology } from "@carbon/ee";
 import type { IntegrationTopology } from "@carbon/ee/sync";
+import { getLogger } from "@carbon/logger";
+
+const logger = getLogger("jobs", "integration-topology");
 
 /**
  * Read a company's integration topology.
@@ -20,6 +23,19 @@ export async function loadIntegrationTopology(
     // provider's capabilities — without it push-only resolves as provider.
     .select("id, active, metadata")
     .eq("companyId", companyId);
+
+  // "Carbon could not ask" is not "nobody owns it". An empty topology means no
+  // ledger delegation, so a failed read would let TWO providers push the same
+  // AP documents — fail the caller's step (Inngest retries it) instead.
+  if (rows.error) {
+    logger.error("Failed to read the company integration topology", {
+      companyId,
+      error: rows.error
+    });
+    throw new Error(
+      `Failed to read integration topology for company ${companyId}: ${rows.error.message}`
+    );
+  }
 
   return resolveIntegrationTopology(rows.data ?? []);
 }
