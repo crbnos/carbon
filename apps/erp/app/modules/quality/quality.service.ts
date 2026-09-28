@@ -1918,7 +1918,12 @@ export async function updateIssue(
   return { data: { id: result.data.id }, error: null };
 }
 
-/** @deprecated Use insertIssue for new issues, updateIssue for existing issues */
+/**
+ * @deprecated Use insertIssue for new issues, updateIssue for existing issues.
+ * `items`, `jobOperationId`, `customerId`, `salesOrderLineId` and
+ * `operationSupplierProcessId` are applied on create only; on update, change
+ * associations with the issue association tools.
+ */
 export async function upsertIssue(
   client: SupabaseClient<Database>,
   nonConformance:
@@ -2075,8 +2080,16 @@ export async function upsertIssue(
 
     return result;
   } else {
-    // biome-ignore lint/correctness/noUnusedVariables: suppressed due to migration
-    const { items, ...data } = nonConformance;
+    // Not nonConformance columns: items and the link keys are association
+    // rows, written only on create (as above).
+    const {
+      items: _items,
+      jobOperationId: _jobOperationId,
+      customerId: _customerId,
+      salesOrderLineId: _salesOrderLineId,
+      operationSupplierProcessId: _operationSupplierProcessId,
+      ...data
+    } = nonConformance;
     return client
       .from("nonConformance")
       .update(sanitize(data))

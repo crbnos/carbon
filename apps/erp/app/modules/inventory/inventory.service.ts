@@ -1,4 +1,4 @@
-import type { Database, Json } from "@carbon/database";
+import type { Database, Json, TablesUpdate } from "@carbon/database";
 import { fetchAllFromTable } from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import {
@@ -21,7 +21,7 @@ import {
   setGenericQueryFilters,
   setSearchFilter
 } from "~/utils/query";
-import { sanitize } from "~/utils/supabase";
+import { sanitize, withoutKeys } from "~/utils/supabase";
 import { getItemStorageUnitQuantities } from "../items/items.service";
 import type {
   batchPropertyOrderValidator,
@@ -2075,15 +2075,17 @@ export async function updateInventoryCountStatus(
 
 export async function updateBatchPropertyOrder(
   client: SupabaseClient<Database>,
-  data: Omit<
-    z.infer<typeof batchPropertyOrderValidator>,
-    "batchPropertyGroupId"
-  > & {
-    batchPropertyGroupId?: string | null;
+  data: z.infer<typeof batchPropertyOrderValidator> & {
     updatedBy: string;
   }
 ) {
-  return client.from("batchProperty").update(sanitize(data)).eq("id", data.id);
+  return client
+    .from("batchProperty")
+    .update({
+      sortOrder: data.sortOrder,
+      updatedBy: data.updatedBy
+    } satisfies TablesUpdate<"batchProperty">)
+    .eq("id", data.id);
 }
 
 export async function updateStockTransferStatus(
@@ -2110,12 +2112,19 @@ export async function updateStockTransferStatus(
 
 export async function upsertBatchProperty(
   client: SupabaseClient<Database>,
-  batchProperty: z.infer<typeof batchPropertyValidator> & {
+  batchProperty: Omit<
+    z.infer<typeof batchPropertyValidator>,
+    "configurationParameterGroupId"
+  > & {
     companyId: string;
     userId: string;
   }
 ) {
-  const { userId, ...data } = batchProperty;
+  // batchProperty has no configurationParameterGroupId column (the validator
+  // field is never posted by the batch property form).
+  const { userId, ...data } = withoutKeys(batchProperty, [
+    "configurationParameterGroupId"
+  ]);
   if (batchProperty.id) {
     return client
       .from("batchProperty")
@@ -2141,14 +2150,14 @@ export async function upsertKanban(
     | (Omit<z.infer<typeof kanbanValidator>, "id"> & {
         companyId: string;
         createdBy: string;
-        customFields?: Json;
       })
     | (Omit<z.infer<typeof kanbanValidator>, "id"> & {
         id: string;
         updatedBy: string;
-        customFields?: Json;
       })
 ) {
+  // kanban has no customFields column.
+  kanban = withoutKeys(kanban, ["customFields"]);
   if ("createdBy" in kanban) {
     return client
       .from("kanban")

@@ -19,7 +19,7 @@ import {
   setGenericQueryFilters,
   setSearchFilter
 } from "~/utils/query";
-import { ruleError, sanitize } from "~/utils/supabase";
+import { ruleError, sanitize, withoutKeys } from "~/utils/supabase";
 import type { nonConformancePriority } from "../quality/quality.models";
 import type {
   operationParameterValidator,
@@ -3884,16 +3884,44 @@ export async function upsertPart(
   return updated;
 }
 
+/** Item form fields stored outside the item table, each with its own tool. */
+const ITEM_FORM_NON_ITEM_KEYS = [
+  "postingGroupId",
+  "unitCost",
+  "defaultStorageUnitId",
+  "shelfLifeMode",
+  "shelfLifeDays",
+  "shelfLifeTriggerProcessId",
+  "shelfLifeTriggerTiming",
+  "shelfLifeCalculateFromBom"
+] as const;
+
+/**
+ * Update an item's own columns. Unit cost and posting group are set with
+ * `items_upsertItemCost`, the default storage unit with
+ * `items_upsertItemDefaultPickMethod`, and shelf life with
+ * `items_upsertItemShelfLife`.
+ */
 export async function updateItem(
   client: SupabaseClient<Database>,
-  item: z.infer<typeof itemValidator> & {
+  item: Omit<
+    z.infer<typeof itemValidator>,
+    | "postingGroupId"
+    | "unitCost"
+    | "defaultStorageUnitId"
+    | "shelfLifeMode"
+    | "shelfLifeDays"
+    | "shelfLifeTriggerProcessId"
+    | "shelfLifeTriggerTiming"
+    | "shelfLifeCalculateFromBom"
+  > & {
     companyId: string;
     type: Database["public"]["Enums"]["itemType"];
   }
 ) {
   return client
     .from("item")
-    .update(sanitize(item))
+    .update(sanitize(withoutKeys(item, ITEM_FORM_NON_ITEM_KEYS)))
     .eq("id", item.id)
     .eq("companyId", item.companyId);
 }
@@ -6596,16 +6624,16 @@ export async function upsertChangeNoticeType(
         name: string;
         companyId: string;
         createdBy: string;
-        customFields?: Json;
       }
     | {
         id: string;
         name: string;
         companyId: string;
         updatedBy: string;
-        customFields?: Json;
       }
 ) {
+  // changeOrderType has no customFields column.
+  changeNoticeType = withoutKeys(changeNoticeType, ["customFields"]);
   if ("createdBy" in changeNoticeType) {
     return client
       .from("changeOrderType")

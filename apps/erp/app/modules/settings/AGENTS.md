@@ -74,7 +74,7 @@ pnpm run lint
 - `getCustomField(s)` / `getCustomFieldsTables`, plus `upsertCustomField` / `deleteCustomField` / `updateCustomFieldsSortOrder` (`settings.server.ts`, cache-clearing)
 - `getIntegration(s)` / `getCompanyIntegrations` / `upsertCompanyIntegration` / `deactivateIntegration` / `getIntegrationsWithHealth`
 - Webhook + API-key READ helpers stay here (`getWebhook(s)` / `getWebhookTables`, `getApiKey(s)`); the commercial AUTHORING writers moved to `@carbon/ee` behind the entitlement lock — `upsertApiKey` / `deleteApiKey` (`@carbon/ee/api-keys.server`, `API_KEYS`) and `upsertWebhook` / `deleteWebhook` / `deactivateWebhooks` (`@carbon/ee/webhooks.server`, `WEBHOOKS`)
-- `insertCompany` / `insertSubsidiary` / `updateSubsidiary` / `deleteSubsidiary` / `seedCompany` / `updateCompany` / `updateCompanyPlan`
+- `insertCompany` / `updateSubsidiary` / `deleteSubsidiary` / `seedCompany` / `updateCompany` / `updateCompanyPlan`
 - `updateLogoLight|LightIcon|Dark|DarkIcon|Watermark` — store the storage path on `company`, not a URL (readers prefix it)
 - `exportCompanyBackup` / `listCompanyBackupFolders` / `deleteCompanyBackup` / `getCompanyRestoreRuns` / `getCompanyExportRun` (`backups.service.ts`); `getCompanyBackups` — the Backups loader's list, which computes each backup's live compatibility verdict via `@carbon/jobs/backups` — and the restore triggers live in `backups.server.ts`
 - `resolveLabelLogo` (`labelLogo.server.ts`) — binds `@carbon/documents/labels`' resolver to this app's `SUPABASE_URL`; used by every ERP `file+/**/$id.labels[.]pdf|zpl` route (MES keeps its own copy at `apps/mes/app/services/labelLogo.server.ts`)

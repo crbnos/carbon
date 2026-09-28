@@ -191,18 +191,27 @@ export async function action({ request, params }: ActionFunctionArgs) {
         })
         .eq("id", map.lineId);
 
-      // Upsert customerPartToItem
+      // Upsert customerPartToItem (the table has no audit columns; sending
+      // createdBy made PostgREST refuse the upsert, so the mapping was never
+      // saved).
       if (customerId && map.customerPartId) {
-        await serviceRole.from("customerPartToItem").upsert(
+        const mapping = await serviceRole.from("customerPartToItem").upsert(
           {
             customerId,
             customerPartId: map.customerPartId,
             itemId: finalItemId,
-            companyId,
-            createdBy: userId
+            companyId
           },
           { onConflict: "customerId, itemId" }
         );
+        if (mapping.error) {
+          logger.error("Failed to save customer part mapping", {
+            companyId,
+            customerId,
+            customerPartId: map.customerPartId,
+            error: mapping.error
+          });
+        }
       }
     }
   }

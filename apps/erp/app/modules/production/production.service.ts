@@ -43,7 +43,7 @@ import {
   LIST_COUNT,
   setGenericQueryFilters
 } from "~/utils/query";
-import { sanitize } from "~/utils/supabase";
+import { sanitize, withoutKeys } from "~/utils/supabase";
 import { getDefaultStorageUnitForJob } from "../inventory";
 import { getEmployeeJob } from "../people";
 import type {
@@ -3367,7 +3367,6 @@ export async function insertJob(
     salesOrderLineId?: string;
     quoteId?: string;
     quoteLineId?: string;
-    parentJobId?: string;
     modelUploadId?: string;
     notes?: string;
     customFields?: Json;
@@ -3489,7 +3488,6 @@ export async function insertJob(
       salesOrderLineId: input.salesOrderLineId,
       quoteId: input.quoteId,
       quoteLineId: input.quoteLineId,
-      parentJobId: input.parentJobId,
       modelUploadId: input.modelUploadId,
       notes: input.notes,
       customFields: input.customFields,
@@ -3636,7 +3634,6 @@ export async function updateJob(
     salesOrderLineId?: string | null;
     quoteId?: string | null;
     quoteLineId?: string | null;
-    parentJobId?: string | null;
     modelUploadId?: string | null;
     notes?: string | null;
     customFields?: Json;
@@ -3644,7 +3641,8 @@ export async function updateJob(
     itemId?: string;
   }
 ): Promise<{ data: { id: string } | null; error: PostgrestError | null }> {
-  const { id, updatedBy, ...updates } = input;
+  // job has no parentJobId column; this service used to publish one.
+  const { id, updatedBy, ...updates } = withoutKeys(input, ["parentJobId"]);
 
   let priority = updates.priority;
   if (
@@ -4738,14 +4736,14 @@ export async function upsertFailureMode(
     | (Omit<z.infer<typeof failureModeValidator>, "id"> & {
         companyId: string;
         createdBy: string;
-        customFields?: Json;
       })
     | (Omit<z.infer<typeof failureModeValidator>, "id"> & {
         id: string;
         updatedBy: string;
-        customFields?: Json;
       })
 ) {
+  // maintenanceFailureMode has no customFields column.
+  failureMode = withoutKeys(failureMode, ["customFields"]);
   if ("createdBy" in failureMode) {
     return client
       .from("maintenanceFailureMode")

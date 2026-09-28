@@ -33,7 +33,7 @@ import {
 } from "~/modules/purchasing";
 import type { GenericQueryFilters } from "~/utils/query";
 import { LIST_COUNT, setGenericQueryFilters } from "~/utils/query";
-import { sanitize } from "~/utils/supabase";
+import { sanitize, withoutKeys } from "~/utils/supabase";
 import { getExchangeRate } from "../accounting/accounting.service";
 import { getEmployeeJob } from "../people/people.service";
 import {
@@ -801,20 +801,28 @@ export async function updatePurchaseInvoice(
 export async function upsertPurchaseInvoice(
   client: SupabaseClient<Database>,
   purchaseInvoice:
-    | (Omit<z.infer<typeof purchaseInvoiceValidator>, "id" | "invoiceId"> & {
+    | (Omit<
+        z.infer<typeof purchaseInvoiceValidator>,
+        "id" | "invoiceId" | "supplierShippingCost"
+      > & {
         invoiceId: string;
         companyId: string;
         companyGroupId: string;
         createdBy: string;
         customFields?: Json;
       })
-    | (Omit<z.infer<typeof purchaseInvoiceValidator>, "id" | "invoiceId"> & {
+    | (Omit<
+        z.infer<typeof purchaseInvoiceValidator>,
+        "id" | "invoiceId" | "supplierShippingCost"
+      > & {
         id: string;
         invoiceId: string;
         updatedBy: string;
         customFields?: Json;
       })
 ) {
+  // Not a purchaseInvoice column.
+  purchaseInvoice = withoutKeys(purchaseInvoice, ["supplierShippingCost"]);
   if ("id" in purchaseInvoice) {
     return client
       .from("purchaseInvoice")
@@ -923,12 +931,15 @@ export async function upsertPurchaseInvoiceDelivery(
       })
 ) {
   if ("id" in purchaseInvoiceDelivery) {
-    return client
-      .from("purchaseInvoiceDelivery")
-      .update(sanitize(purchaseInvoiceDelivery))
-      .eq("id", purchaseInvoiceDelivery.id)
-      .select("id")
-      .single();
+    return (
+      client
+        .from("purchaseInvoiceDelivery")
+        // purchaseInvoiceDelivery has no createdBy column.
+        .update(sanitize(withoutKeys(purchaseInvoiceDelivery, ["createdBy"])))
+        .eq("id", purchaseInvoiceDelivery.id)
+        .select("id")
+        .single()
+    );
   }
   return client
     .from("purchaseInvoiceDelivery")
@@ -1179,20 +1190,28 @@ export async function updateSalesInvoice(
 export async function upsertSalesInvoice(
   client: SupabaseClient<Database>,
   salesInvoice:
-    | (Omit<z.infer<typeof salesInvoiceValidator>, "id" | "invoiceId"> & {
+    | (Omit<
+        z.infer<typeof salesInvoiceValidator>,
+        "id" | "invoiceId" | "supplierShippingCost"
+      > & {
         invoiceId: string;
         companyId: string;
         companyGroupId: string;
         createdBy: string;
         customFields?: Json;
       })
-    | (Omit<z.infer<typeof salesInvoiceValidator>, "id" | "invoiceId"> & {
+    | (Omit<
+        z.infer<typeof salesInvoiceValidator>,
+        "id" | "invoiceId" | "supplierShippingCost"
+      > & {
         id: string;
         invoiceId: string;
         updatedBy: string;
         customFields?: Json;
       })
 ) {
+  // Not a salesInvoice column.
+  salesInvoice = withoutKeys(salesInvoice, ["supplierShippingCost"]);
   if ("id" in salesInvoice) {
     return client
       .from("salesInvoice")
@@ -1318,17 +1337,28 @@ export async function upsertSalesInvoiceShipment(
 export async function upsertSalesInvoiceLine(
   client: SupabaseClient<Database>,
   salesInvoiceLine:
-    | (Omit<z.infer<typeof salesInvoiceLineValidator>, "id"> & {
+    | (Omit<
+        z.infer<typeof salesInvoiceLineValidator>,
+        "id" | "purchaseOrderId" | "purchaseOrderLineId"
+      > & {
         companyId: string;
         createdBy: string;
         customFields?: Json;
       })
-    | (Omit<z.infer<typeof salesInvoiceLineValidator>, "id"> & {
+    | (Omit<
+        z.infer<typeof salesInvoiceLineValidator>,
+        "id" | "purchaseOrderId" | "purchaseOrderLineId"
+      > & {
         id: string;
         updatedBy: string;
         customFields?: Json;
       })
 ) {
+  // Not salesInvoiceLine columns.
+  salesInvoiceLine = withoutKeys(salesInvoiceLine, [
+    "purchaseOrderId",
+    "purchaseOrderLineId"
+  ]);
   if ("id" in salesInvoiceLine) {
     return client
       .from("salesInvoiceLine")

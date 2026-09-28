@@ -802,18 +802,6 @@ export async function insertCompany(
     .single();
 }
 
-export async function insertSubsidiary(
-  client: SupabaseClient<Database>,
-  subsidiary: z.infer<typeof subsidiaryValidator> & {
-    companyGroupId: string;
-    createdBy: string;
-    isEliminationEntity?: boolean;
-  }
-) {
-  const { id: _, ...data } = subsidiary;
-  return client.from("company").insert(data).select("id").single();
-}
-
 export async function updateSubsidiary(
   client: SupabaseClient<Database>,
   id: string,

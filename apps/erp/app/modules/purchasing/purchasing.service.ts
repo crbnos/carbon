@@ -22,7 +22,7 @@ import { createDocumentUploadUrl } from "~/modules/documents/documents.service";
 import { getEmployeeJob } from "~/modules/people";
 import type { GenericQueryFilters } from "~/utils/query";
 import { LIST_COUNT, setGenericQueryFilters } from "~/utils/query";
-import { sanitize } from "~/utils/supabase";
+import { sanitize, withoutKeys } from "~/utils/supabase";
 import {
   getCurrencyByCode,
   getExchangeRate
@@ -1003,12 +1003,26 @@ export async function insertSupplier(
   return client.from("supplier").insert([supplier]).select("*").single();
 }
 
+/** Keys of the contact form that are not contact columns. */
+const CONTACT_FORM_ONLY_KEYS = [
+  "id",
+  "contactId",
+  "supplierLocationId"
+] as const;
+
+/**
+ * Create a contact and link it to a supplier. `contact` takes the contact's own
+ * fields; pass the location as the top-level `supplierLocationId`.
+ */
 export async function insertSupplierContact(
   client: SupabaseClient<Database>,
   supplierContact: {
     supplierId: string;
     companyId: string;
-    contact: z.infer<typeof supplierContactValidator>;
+    contact: Omit<
+      z.infer<typeof supplierContactValidator>,
+      "id" | "contactId" | "supplierLocationId"
+    >;
     supplierLocationId?: string;
     customFields?: Json;
   }
@@ -1017,7 +1031,9 @@ export async function insertSupplierContact(
     .from("contact")
     .insert([
       {
-        ...supplierContact.contact,
+        // The form's link-row keys are not contact columns; API input
+        // validation passes unknown keys through, so strip them here.
+        ...withoutKeys(supplierContact.contact, CONTACT_FORM_ONLY_KEYS),
         companyId: supplierContact.companyId,
         isCustomer: false
       }
@@ -1276,11 +1292,18 @@ export async function updateSupplierAccounting(
     .eq("id", supplierAccounting.id);
 }
 
+/**
+ * Update a supplier contact's own fields. The location and custom fields on
+ * the supplier-contact link are written only when `customFields` is sent.
+ */
 export async function updateSupplierContact(
   client: SupabaseClient<Database>,
   supplierContact: {
     contactId: string;
-    contact: z.infer<typeof supplierContactValidator>;
+    contact: Omit<
+      z.infer<typeof supplierContactValidator>,
+      "id" | "contactId" | "supplierLocationId"
+    >;
     supplierLocationId?: string;
     customFields?: Json;
   }
@@ -1300,7 +1323,9 @@ export async function updateSupplierContact(
   }
   return client
     .from("contact")
-    .update(sanitize(supplierContact.contact))
+    .update(
+      sanitize(withoutKeys(supplierContact.contact, CONTACT_FORM_ONLY_KEYS))
+    )
     .eq("id", supplierContact.contactId)
     .select("id")
     .single();
@@ -1652,7 +1677,12 @@ export async function updatePurchaseOrder(
     .single();
 }
 
-/** @deprecated Use insertPurchaseOrder for new orders, updatePurchaseOrder for existing orders */
+/**
+ * @deprecated Use insertPurchaseOrder for new orders, updatePurchaseOrder for existing orders.
+ * `notes` is stored as the order's internal notes. `locationId` is applied on
+ * create only (to the delivery); change it later with
+ * `purchasing_upsertPurchaseOrderDelivery`.
+ */
 export async function upsertPurchaseOrder(
   client: SupabaseClient<Database>,
   purchaseOrder:
@@ -1679,9 +1709,19 @@ export async function upsertPurchaseOrder(
   receiptRequestedDate?: string
 ) {
   if ("id" in purchaseOrder) {
+    // Not purchaseOrder columns: notes are stored as internalNotes (as
+    // updatePurchaseOrder does), and the location lives on the delivery.
+    const {
+      notes,
+      locationId: _locationId,
+      ...purchaseOrderUpdate
+    } = purchaseOrder;
     return client
       .from("purchaseOrder")
-      .update(sanitize(purchaseOrder))
+      .update({
+        ...sanitize(purchaseOrderUpdate),
+        ...(notes !== undefined && { internalNotes: notes })
+      })
       .eq("id", purchaseOrder.id)
       .select("id, purchaseOrderId");
   }
@@ -1731,10 +1771,12 @@ export async function upsertPurchaseOrder(
   const locationId =
     purchaseOrder.locationId ?? purchaser?.data?.locationId ?? null;
 
-  // locationId is not a column on purchaseOrder -- it belongs on the delivery record
+  // locationId is not a column on purchaseOrder -- it belongs on the delivery
+  // record; notes are stored as internalNotes.
   const {
     locationId: _locationId,
     companyGroupId: _companyGroupId,
+    notes,
     ...purchaseOrderData
   } = purchaseOrder;
 
@@ -1743,6 +1785,7 @@ export async function upsertPurchaseOrder(
     .insert([
       {
         ...purchaseOrderData,
+        ...(notes !== undefined && { internalNotes: notes }),
         supplierInteractionId: supplierInteraction.data?.id,
         status: purchaseOrder.status ?? "Draft"
       }
@@ -1805,12 +1848,15 @@ export async function upsertPurchaseOrderDelivery(
       })
 ) {
   if ("id" in purchaseOrderDelivery) {
-    return client
-      .from("purchaseOrderDelivery")
-      .update(sanitize(purchaseOrderDelivery))
-      .eq("id", purchaseOrderDelivery.id)
-      .select("id")
-      .single();
+    return (
+      client
+        .from("purchaseOrderDelivery")
+        // purchaseOrderDelivery has no createdBy column.
+        .update(sanitize(withoutKeys(purchaseOrderDelivery, ["createdBy"])))
+        .eq("id", purchaseOrderDelivery.id)
+        .select("id")
+        .single()
+    );
   }
   return client
     .from("purchaseOrderDelivery")
@@ -2017,12 +2063,15 @@ export async function upsertPurchaseOrderPayment(
       })
 ) {
   if ("id" in purchaseOrderPayment) {
-    return client
-      .from("purchaseOrderPayment")
-      .update(sanitize(purchaseOrderPayment))
-      .eq("id", purchaseOrderPayment.id)
-      .select("id")
-      .single();
+    return (
+      client
+        .from("purchaseOrderPayment")
+        // purchaseOrderPayment has no createdBy column.
+        .update(sanitize(withoutKeys(purchaseOrderPayment, ["createdBy"])))
+        .eq("id", purchaseOrderPayment.id)
+        .select("id")
+        .single()
+    );
   }
   return client
     .from("purchaseOrderPayment")
@@ -2315,13 +2364,19 @@ export async function upsertSupplierQuote(
 
     if (supplierInteraction.error) return supplierInteraction;
 
-    const { companyGroupId: _companyGroupId, ...supplierQuoteData } =
-      supplierQuote;
+    // supplierQuote has no notes column; they are stored as internalNotes,
+    // as insertSupplierQuote does.
+    const {
+      companyGroupId: _companyGroupId,
+      notes,
+      ...supplierQuoteData
+    } = supplierQuote;
     const insert = await client
       .from("supplierQuote")
       .insert([
         {
           ...supplierQuoteData,
+          ...(notes !== undefined && { internalNotes: notes }),
           status: supplierQuoteData.status ?? "Draft",
           supplierInteractionId: supplierInteraction.data?.id
         }
@@ -2388,13 +2443,17 @@ export async function upsertSupplierQuote(
       supplierQuote.exchangeRate = rate.data;
       supplierQuote.exchangeRateUpdatedAt = new Date().toISOString();
     }
-    const { companyGroupId: _companyGroupId2, ...supplierQuoteUpdateData } =
-      supplierQuote;
+    const {
+      companyGroupId: _companyGroupId2,
+      notes,
+      ...supplierQuoteUpdateData
+    } = supplierQuote;
     const companyTz = await getCompanyTimeZone(client, companyId);
     return client
       .from("supplierQuote")
       .update({
         ...sanitize(supplierQuoteUpdateData),
+        ...(notes !== undefined && { internalNotes: notes }),
         status:
           supplierQuote.expirationDate &&
           datetime.today(companyTz).toString() > supplierQuote.expirationDate

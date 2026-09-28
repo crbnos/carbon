@@ -8,7 +8,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { z } from "zod";
 import type { GenericQueryFilters } from "~/utils/query";
 import { setGenericQueryFilters } from "~/utils/query";
-import { sanitize } from "~/utils/supabase";
+import { sanitize, withoutKeys } from "~/utils/supabase";
 import type {
   failureModeValidator,
   locationValidator,
@@ -1252,18 +1252,24 @@ export async function getTrainingGrantedAbilityId(
   return training.data?.grantsAbilityId ?? null;
 }
 
+/**
+ * Update an ability's recertification cadence, the one editable field. An
+ * ability has no name of its own: it is the linked process's name, so rename
+ * the process to rename the ability.
+ */
 export async function updateAbility(
   client: SupabaseClient<Database>,
   id: string,
   ability: {
-    // Name is not stored — it derives from the linked process; it appears in
-    // the MCP schema for caller context only. The recertification cadence is
-    // the one editable field. Both are optional in the published schema.
-    name?: string;
     recertifyEveryDays?: number | null;
   }
 ) {
-  return client.from("ability").update(ability).eq("id", id);
+  // Only the one column: `ability` has no `name`, and a caller-sent key
+  // spread into the row would fail the whole update (PGRST204).
+  return client
+    .from("ability")
+    .update({ recertifyEveryDays: ability.recertifyEveryDays })
+    .eq("id", id);
 }
 
 /**
@@ -1452,14 +1458,14 @@ export async function upsertFailureMode(
     | (Omit<z.infer<typeof failureModeValidator>, "id"> & {
         companyId: string;
         createdBy: string;
-        customFields?: Json;
       })
     | (Omit<z.infer<typeof failureModeValidator>, "id"> & {
         id: string;
         updatedBy: string;
-        customFields?: Json;
       })
 ) {
+  // maintenanceFailureMode has no customFields column.
+  failureMode = withoutKeys(failureMode, ["customFields"]);
   if ("createdBy" in failureMode) {
     return client
       .from("maintenanceFailureMode")

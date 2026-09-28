@@ -6,7 +6,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { z } from "zod";
 import type { GenericQueryFilters } from "~/utils/query";
 import { setGenericQueryFilters } from "~/utils/query";
-import { sanitize } from "~/utils/supabase";
+import { sanitize, withoutKeys } from "~/utils/supabase";
 import { getDocumentType } from "../shared/shared.service";
 import type {
   documentLabelsValidator,
@@ -163,20 +163,26 @@ type SourceDocumentData = {
   sourceDocumentId?: string;
 };
 
+/**
+ * Create or update a document record. Labels are per user and are not stored
+ * on the document: set them with `documents_updateDocumentLabels`.
+ */
 export async function upsertDocument(
   client: SupabaseClient<Database>,
   document:
-    | (Omit<z.infer<typeof documentValidator>, "id"> & {
+    | (Omit<z.infer<typeof documentValidator>, "id" | "labels"> & {
         path: string;
         size: number;
         companyId: string;
         createdBy: string;
       } & SourceDocumentData)
-    | (Omit<z.infer<typeof documentValidator>, "id"> & {
+    | (Omit<z.infer<typeof documentValidator>, "id" | "labels"> & {
         id: string;
         updatedBy: string;
       })
 ) {
+  // document has no labels column (they live in documentLabel).
+  document = withoutKeys(document, ["labels"]);
   const type = getDocumentType(document.name ?? "");
   if ("createdBy" in document) {
     return (

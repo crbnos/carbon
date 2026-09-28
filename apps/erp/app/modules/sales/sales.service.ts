@@ -25,7 +25,7 @@ import { getSupplierPriceBreaksForItems } from "~/modules/items/items.service";
 import { getEmployeeJob } from "~/modules/people";
 import type { GenericQueryFilters } from "~/utils/query";
 import { LIST_COUNT, setGenericQueryFilters } from "~/utils/query";
-import { sanitize } from "~/utils/supabase";
+import { sanitize, withoutKeys } from "~/utils/supabase";
 import { getCurrencyByCode, getExchangeRate } from "../accounting";
 import type {
   operationParameterValidator,
@@ -1965,12 +1965,29 @@ export async function getSalesRFQLines(
     .order("customerPartId", { ascending: true });
 }
 
+/** Keys of the contact form that are not contact columns. */
+const CONTACT_FORM_ONLY_KEYS = [
+  "id",
+  "contactId",
+  "customerLocationId"
+] as const;
+
+/**
+ * Create a contact and link it to a customer. `contact` takes the contact's own
+ * fields; pass the location as the top-level `customerLocationId`.
+ */
 export async function insertCustomerContact(
   client: SupabaseClient<Database>,
   customerContact: {
     customerId: string;
     companyId: string;
-    contact: PickPartial<z.infer<typeof customerContactValidator>, "email">;
+    contact: PickPartial<
+      Omit<
+        z.infer<typeof customerContactValidator>,
+        "id" | "contactId" | "customerLocationId"
+      >,
+      "email"
+    >;
     customerLocationId?: string;
     customFields?: Json;
   }
@@ -1979,7 +1996,9 @@ export async function insertCustomerContact(
     .from("contact")
     .insert([
       {
-        ...customerContact.contact,
+        // The form's link-row keys are not contact columns; API input
+        // validation passes unknown keys through, so strip them here.
+        ...withoutKeys(customerContact.contact, CONTACT_FORM_ONLY_KEYS),
         isCustomer: true,
         companyId: customerContact.companyId
       }
@@ -2060,14 +2079,18 @@ export async function insertCustomerLocation(
 
 export async function insertSalesOrderLines(
   client: SupabaseClient<Database>,
-  salesOrderLines: (Omit<z.infer<typeof salesOrderLineValidator>, "id"> & {
+  salesOrderLines: (Omit<
+    z.infer<typeof salesOrderLineValidator>,
+    "id" | "serviceId"
+  > & {
     companyId: string;
     createdBy: string;
     customFields?: Json;
   })[]
 ) {
   const linesWithDefaults = salesOrderLines.map((line) => ({
-    ...line,
+    // salesOrderLine has no serviceId column; a service line uses itemId.
+    ...withoutKeys(line, ["serviceId"]),
     setupPrice: line.setupPrice ?? 0,
     unitPrice: line.unitPrice ?? 0,
     shippingCost: line.shippingCost ?? 0,
@@ -3099,11 +3122,18 @@ export async function updateCustomerAccounting(
     .eq("id", customerAccounting.id);
 }
 
+/**
+ * Update a customer contact's own fields. The location and custom fields on
+ * the customer-contact link are written only when `customFields` is sent.
+ */
 export async function updateCustomerContact(
   client: SupabaseClient<Database>,
   customerContact: {
     contactId: string;
-    contact: z.infer<typeof customerContactValidator>;
+    contact: Omit<
+      z.infer<typeof customerContactValidator>,
+      "id" | "contactId" | "customerLocationId"
+    >;
     customerLocationId?: string;
     customFields?: Json;
   }
@@ -3123,7 +3153,9 @@ export async function updateCustomerContact(
   }
   return client
     .from("contact")
-    .update(sanitize(customerContact.contact))
+    .update(
+      sanitize(withoutKeys(customerContact.contact, CONTACT_FORM_ONLY_KEYS))
+    )
     .eq("id", customerContact.contactId)
     .select("id")
     .single();
@@ -3785,7 +3817,10 @@ export async function updateQuote(
     .single();
 }
 
-/** @deprecated Use insertQuote for new quotes, updateQuote for existing quotes */
+/**
+ * @deprecated Use insertQuote for new quotes, updateQuote for existing quotes.
+ * `notes` is stored as the quote's internal notes; `name` is not stored.
+ */
 export async function upsertQuote(
   client: SupabaseClient<Database>,
   quote:
@@ -3852,12 +3887,20 @@ export async function upsertQuote(
     }
 
     const locationId = employee?.data?.locationId ?? null;
-    const { companyGroupId: _companyGroupId, ...quoteData } = quote;
+    // quote has no name or notes column: notes are stored as internalNotes,
+    // as insertQuote does, and name is not stored.
+    const {
+      companyGroupId: _companyGroupId,
+      name: _name,
+      notes,
+      ...quoteData
+    } = quote;
     const insert = await client
       .from("quote")
       .insert([
         {
           ...quoteData,
+          ...(notes !== undefined && { internalNotes: notes }),
           opportunityId: opportunity.data?.id
         }
       ])
@@ -3953,11 +3996,17 @@ export async function upsertQuote(
         .eq("id", opportunityId);
     }
 
-    const { companyGroupId: _cgId, ...quoteUpdateData } = quote;
+    const {
+      companyGroupId: _cgId,
+      name: _name,
+      notes,
+      ...quoteUpdateData
+    } = quote;
     return client
       .from("quote")
       .update({
         ...sanitize(quoteUpdateData),
+        ...(notes !== undefined && { internalNotes: notes }),
         updatedAt: datetime.timestamp()
       })
       .eq("id", quote.id);
@@ -5324,12 +5373,15 @@ export async function upsertQuotePayment(
       })
 ) {
   if ("id" in quotePayment) {
-    return client
-      .from("quotePayment")
-      .update(sanitize(quotePayment))
-      .eq("id", quotePayment.id)
-      .select("id")
-      .single();
+    return (
+      client
+        .from("quotePayment")
+        // quotePayment has no createdBy column.
+        .update(sanitize(withoutKeys(quotePayment, ["createdBy"])))
+        .eq("id", quotePayment.id)
+        .select("id")
+        .single()
+    );
   }
   return client
     .from("quotePayment")
@@ -5350,12 +5402,15 @@ export async function upsertQuoteShipment(
       })
 ) {
   if ("id" in quoteShipment) {
-    return client
-      .from("quoteShipment")
-      .update(sanitize(quoteShipment))
-      .eq("id", quoteShipment.id)
-      .select("id")
-      .single();
+    return (
+      client
+        .from("quoteShipment")
+        // quoteShipment has no createdBy column.
+        .update(sanitize(withoutKeys(quoteShipment, ["createdBy"])))
+        .eq("id", quoteShipment.id)
+        .select("id")
+        .single()
+    );
   }
   return client
     .from("quoteShipment")
@@ -5747,7 +5802,12 @@ export async function cancelSalesOrder(
   };
 }
 
-/** @deprecated Use insertSalesOrder for new orders, updateSalesOrder for existing orders */
+/**
+ * @deprecated Use insertSalesOrder for new orders, updateSalesOrder for existing orders.
+ * `notes` is stored as the order's internal notes. `requestedDate` and
+ * `promisedDate` are applied on create only (to the shipment); change them
+ * later with `sales_upsertSalesOrderShipment`. `quoteId` is not stored.
+ */
 export async function upsertSalesOrder(
   client: SupabaseClient<Database>,
   salesOrder:
@@ -5799,10 +5859,23 @@ export async function upsertSalesOrder(
         .eq("id", opportunityId);
     }
 
-    const { companyGroupId: _cgId, ...salesOrderUpdateData } = salesOrder;
+    // Not salesOrder columns: notes are stored as internalNotes (as
+    // updateSalesOrder does); the order is linked to its quote through the
+    // opportunity; requested and promised dates live on salesOrderShipment.
+    const {
+      companyGroupId: _cgId,
+      notes,
+      quoteId: _quoteId,
+      requestedDate: _requestedDate,
+      promisedDate: _promisedDate,
+      ...salesOrderUpdateData
+    } = salesOrder;
     return client
       .from("salesOrder")
-      .update(sanitize(salesOrderUpdateData))
+      .update({
+        ...sanitize(salesOrderUpdateData),
+        ...(notes !== undefined && { internalNotes: notes })
+      })
       .eq("id", salesOrder.id)
       .select("id, salesOrderId");
   }
@@ -5858,16 +5931,25 @@ export async function upsertSalesOrder(
     salesOrder.exchangeRateUpdatedAt = new Date().toISOString();
   }
 
+  // quoteId and notes are not salesOrder columns (see the update branch).
   const {
     requestedDate,
     promisedDate,
     companyGroupId: _companyGroupId,
+    notes,
+    quoteId: _quoteId,
     ...orderData
   } = salesOrder;
 
   const order = await client
     .from("salesOrder")
-    .insert([{ ...orderData, opportunityId: opportunity.data?.id }])
+    .insert([
+      {
+        ...orderData,
+        ...(notes !== undefined && { internalNotes: notes }),
+        opportunityId: opportunity.data?.id
+      }
+    ])
     .select("id, salesOrderId");
 
   if (order.error) {
@@ -5943,12 +6025,15 @@ export async function upsertSalesOrderShipment(
       })
 ) {
   if ("id" in salesOrderShipment) {
-    return client
-      .from("salesOrderShipment")
-      .update(sanitize(salesOrderShipment))
-      .eq("id", salesOrderShipment.id)
-      .select("id")
-      .single();
+    return (
+      client
+        .from("salesOrderShipment")
+        // salesOrderShipment has no createdBy column.
+        .update(sanitize(withoutKeys(salesOrderShipment, ["createdBy"])))
+        .eq("id", salesOrderShipment.id)
+        .select("id")
+        .single()
+    );
   }
   return client
     .from("salesOrderShipment")
@@ -5960,17 +6045,19 @@ export async function upsertSalesOrderShipment(
 export async function upsertSalesOrderLine(
   client: SupabaseClient<Database>,
   salesOrderLine:
-    | (Omit<z.infer<typeof salesOrderLineValidator>, "id"> & {
+    | (Omit<z.infer<typeof salesOrderLineValidator>, "id" | "serviceId"> & {
         companyId: string;
         createdBy: string;
         customFields?: Json;
       })
-    | (Omit<z.infer<typeof salesOrderLineValidator>, "id"> & {
+    | (Omit<z.infer<typeof salesOrderLineValidator>, "id" | "serviceId"> & {
         id: string;
         updatedBy: string;
         customFields?: Json;
       })
 ) {
+  // salesOrderLine has no serviceId column; a service line uses itemId.
+  salesOrderLine = withoutKeys(salesOrderLine, ["serviceId"]);
   if ("id" in salesOrderLine) {
     return client
       .from("salesOrderLine")
@@ -6048,27 +6135,35 @@ export async function updateSalesOrderLineOrder(
 export async function upsertSalesOrderPayment(
   client: SupabaseClient<Database>,
   salesOrderPayment:
-    | (z.infer<typeof salesOrderPaymentValidator> & {
+    | (Omit<z.infer<typeof salesOrderPaymentValidator>, "currencyCode"> & {
         createdBy: string;
         customFields?: Json;
       })
-    | (z.infer<typeof salesOrderPaymentValidator> & {
+    | (Omit<z.infer<typeof salesOrderPaymentValidator>, "currencyCode"> & {
         id: string;
         updatedBy: string;
         customFields?: Json;
       })
 ) {
   if ("id" in salesOrderPayment) {
-    return client
-      .from("salesOrderPayment")
-      .update(sanitize(salesOrderPayment))
-      .eq("id", salesOrderPayment.id)
-      .select("id")
-      .single();
+    return (
+      client
+        .from("salesOrderPayment")
+        // No createdBy or currencyCode column: the order's currency lives on
+        // salesOrder.
+        .update(
+          sanitize(
+            withoutKeys(salesOrderPayment, ["createdBy", "currencyCode"])
+          )
+        )
+        .eq("id", salesOrderPayment.id)
+        .select("id")
+        .single()
+    );
   }
   return client
     .from("salesOrderPayment")
-    .insert([salesOrderPayment])
+    .insert([withoutKeys(salesOrderPayment, ["currencyCode"])])
     .select("id")
     .single();
 }

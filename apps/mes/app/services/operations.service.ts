@@ -2373,7 +2373,12 @@ export async function insertReworkQuantity(
 
 export async function insertProductionQuantity(
   client: SupabaseClient<Database>,
-  data: z.infer<typeof nonScrapQuantityValidator> & {
+  // The form's tracking fields are not productionQuantity columns; callers
+  // destructure them out before calling.
+  data: Omit<
+    z.infer<typeof nonScrapQuantityValidator>,
+    "trackedEntityId" | "trackingType"
+  > & {
     companyId: string;
     createdBy: string;
     // Provenance links for inspection-driven completions (the partial UNIQUE
@@ -2411,7 +2416,11 @@ export async function insertProductionQuantity(
 
 export async function insertScrapQuantity(
   client: SupabaseClient<Database>,
-  data: z.infer<typeof scrapQuantityValidator> & {
+  // As insertProductionQuantity: the tracking fields are not columns.
+  data: Omit<
+    z.infer<typeof scrapQuantityValidator>,
+    "trackedEntityId" | "trackingType"
+  > & {
     companyId: string;
     createdBy: string;
     inspectionId?: string;
@@ -2606,9 +2615,16 @@ async function verifyProductionEventRefs(
 
 export async function startProductionEvent(
   client: SupabaseClient<Database>,
+  // trackedEntityId is the separate argument below and `exclusive` is a
+  // request flag; neither is a productionEvent column.
   data: Omit<
     z.infer<typeof productionEventValidator>,
-    "id" | "action" | "hasActiveEvents" | "unitIndex"
+    | "id"
+    | "action"
+    | "hasActiveEvents"
+    | "unitIndex"
+    | "trackedEntityId"
+    | "exclusive"
   > & {
     startTime: string;
     employeeId: string;

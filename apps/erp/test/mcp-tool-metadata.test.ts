@@ -102,8 +102,17 @@ describe("mcp tool-metadata generator", () => {
       expect(keys, name).toContain("workPhone");
       // The table has mobilePhone/homePhone/workPhone — never a bare `phone`.
       expect(keys, name).not.toContain("phone");
+      // The form's link-row keys are Omit-ted: they are not contact columns.
+      for (const formKey of [
+        "id",
+        "contactId",
+        "customerLocationId",
+        "supplierLocationId"
+      ]) {
+        expect(keys, name).not.toContain(formKey);
+      }
     }
-    // PickPartial<..., "email"> demotes email from required.
+    // PickPartial<Omit<...>, "email"> (nested) demotes email from required.
     const insertContact = props(get("sales_insertCustomerContact")).contact;
     expect(insertContact?.required ?? []).not.toContain("email");
   });
@@ -275,12 +284,13 @@ describe("mcp tool-metadata generator", () => {
       Object.keys(inputBranches[0]?.properties ?? {}).length
     ).toBeGreaterThan(0);
 
-    // updateAbility takes an optional `name` and an optional cadence, so the
-    // published schema has both fields and no required list.
+    // updateAbility takes only an optional cadence (an ability has no name of
+    // its own; a sent `name` failed the write), so the published schema has
+    // that one field and no required list.
     const ability = props(get("resources_updateAbility")).ability;
-    expect(Object.keys(ability?.properties ?? {})).toEqual(
-      expect.arrayContaining(["name", "recertifyEveryDays"])
-    );
+    expect(Object.keys(ability?.properties ?? {})).toEqual([
+      "recertifyEveryDays"
+    ]);
     expect(ability?.required).toBeUndefined();
   });
 
