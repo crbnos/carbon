@@ -189,7 +189,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     getThumbnailPathByItemId(serviceRole, operation.data?.[0].itemId),
     getTrackedEntitiesByMakeMethodId(
       serviceRole,
-      operation.data?.[0].jobMakeMethodId
+      operation.data?.[0].jobMakeMethodId,
+      companyId
     ),
     getJobMakeMethod(serviceRole, operation.data?.[0].jobMakeMethodId),
     getKanbanByJobId(serviceRole, job.data.id),

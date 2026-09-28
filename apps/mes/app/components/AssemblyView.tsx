@@ -195,6 +195,9 @@ type AssemblyPlayback = {
     title: string | null;
     instructionText: string | null;
     componentNodeIds: string[] | null;
+    hiddenComponentNodeIds: string[] | null;
+    /** The join step this step is built aside for (sub-assembly staging) */
+    parentStepId: string | null;
     motion: Json;
     camera: Json | null;
     fastener: Json | null;
@@ -214,6 +217,8 @@ function toViewerStep(step: AssemblyPlayback["steps"][number]): AssemblyStep {
     title: step.title,
     instructionText: step.instructionText,
     componentNodeIds: step.componentNodeIds ?? [],
+    hiddenComponentNodeIds: step.hiddenComponentNodeIds ?? [],
+    joinStepId: step.parentStepId ?? null,
     motion:
       motion &&
       typeof motion === "object" &&

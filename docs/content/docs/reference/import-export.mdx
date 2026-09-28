@@ -33,6 +33,7 @@ Bulk import is deliberately scoped. A **Bulk Import** menu appears in the table 
   <Field name="Parts, Materials, Tools, Consumables, Fixtures">From each item type's list. A single row can optionally create a supplier-part link, set purchasing lead time, and seed unit cost alongside the item.</Field>
   <Field name="Work Centers">From the work centers list, including labor, machine, and overhead rates and a location.</Field>
   <Field name="Processes">From the processes list.</Field>
+  <Field name="Inventory, Batch, and Serial Quantities">From **Inventory → Quantities**. Adds opening stock for items that already exist, one import per <Term id="item-tracking-type">tracking type</Term>. See [Opening stock](#opening-stock).</Field>
 </FieldTable>
 
 Beyond these table buttons, the importer also understands three **method** formats used to load bills of materials and operations against parts: a focused BOM file, a focused Operations file, and a combined part-with-method file that creates parts and their full BOM and routing together. These are richer, row-typed CSVs (each row is tagged `PART`, `BOM`, `BOP`, `STEP`, `TOOL`, or `PARAM`) driven from the method-building UI rather than a plain list screen.
@@ -81,6 +82,30 @@ Matching by Unique ID uses a shared external-mapping table keyed to the `csv` so
 Import writes the entity's standard fields plus its documented side-tables (address, payment, supplier-part, cost). It does **not** map into per-company custom fields. Set those in the app after importing, or via the record's own form.
 </Callout>
 
+## Opening stock
+
+The **Inventory → Quantities** table carries three imports that load on-hand stock, typically once during go-live. Each row is posted as a **Positive Adjmt.** through the same posting core as a manual inventory adjustment: an item ledger entry at the item's current cost, dated today, and, when accounting is enabled, a line pair on **one** inventory adjustment journal for the whole file. A row whose item has zero cost posts no journal lines. Inventory adjustment business rules are not evaluated on import. These imports only ever **add** stock; they never reduce or set a quantity.
+
+Pick the import that matches the item's tracking type. A row whose item is tracked differently is reported as an error naming the right import, and Non-Inventory items can't be stocked at all.
+
+<FieldTable>
+  <Field name="Inventory Quantities">For items tracked as **Inventory**. Columns: Part Number, Revision, Location, Storage Unit, Quantity, Comment.</Field>
+  <Field name="Batch Quantities">For items tracked as **Batch**. Columns: Part Number, Revision, Location, Storage Unit, Batch Number, Quantity, Expiration Date, Comment. Each row creates a new batch.</Field>
+  <Field name="Serial Quantities">For items tracked as **Serial**. Columns: Part Number, Revision, Location, Storage Unit, Serial Number, Expiration Date, Comment. There's no Quantity column: every row is one unit.</Field>
+</FieldTable>
+
+Rules shared by all three:
+
+- **Part Number + Revision** must match an existing item; a blank Revision means `0`. An unknown item is an error.
+- **Location** is mapped to one of your locations in the wizard. **Storage Unit** is optional and matched by name within that location, ignoring case. A named storage unit that doesn't exist there is an error; the import never creates one.
+- **Quantity** must be a positive number.
+- **Expiration Date** is optional and must be written `YYYY-MM-DD`. Left blank, an item with a fixed-duration shelf life gets its expiry calculated the same way a manual adjustment does.
+- There's no Unique ID column, so these imports don't record CSV id mappings.
+
+<Callout type="warn" title="Re-importing an Inventory Quantities file adds the stock again">
+Inventory-tracked rows have no natural key, so every valid row posts, every time. Importing the same file twice doubles the quantities. Batch and serial rows are protected: a batch or serial number that already exists on that item (in any status) is **skipped**, and a number repeated in the file is skipped after its first row. The same serial number on two different items is allowed.
+</Callout>
+
 ## Errors and partial failures
 
 Import is **row-level tolerant**. A bad row doesn't abort the whole file: it's collected and reported while the good rows still import. The results come back as four numbers plus two lists:
@@ -92,7 +117,7 @@ Import is **row-level tolerant**. A bad row doesn't abort the whole file: it's c
 Because the results carry each failed row's original cells, the wizard's results view shows you exactly which rows to fix without re-parsing your file. A hard failure (the file can't be downloaded, or an unexpected database error) is the only case that fails the whole import and returns an error message instead of a per-row report.
 
 <Callout type="warn" title="Import bypasses row-level security by design">
-The import function writes with a privileged database connection that bypasses RLS, so your **permission to import is checked once**, up front, when you submit: sales for customers, purchasing for suppliers, parts for items and methods, production for work centers and processes. If you lack that module's update permission, the import is refused before any write.
+The import function writes with a privileged database connection that bypasses RLS, so your **permission to import is checked once**, up front, when you submit: sales for customers, purchasing for suppliers, parts for items and methods, production for work centers and processes, inventory for storage units and opening stock. If you lack that module's update permission, the import is refused before any write. Opening stock imports also need inventory create permission, the same as a manual inventory adjustment.
 </Callout>
 
 ## Related
@@ -102,6 +127,7 @@ The import function writes with a privileged database connection that bypasses R
   <Card title="Methods" href="/docs/reference/methods">Bills of materials and routings, loaded by the BOM, Operations, and combined method imports.</Card>
   <Card title="Suppliers and customers" href="/docs/reference/suppliers-and-customers">The partner records the customer and supplier importers create, including their addresses and terms.</Card>
   <Card title="Work centers" href="/docs/reference/work-centers">The capacity records the work-center importer creates.</Card>
+  <Card title="Inventory" href="/docs/reference/inventory">On-hand quantities and the manual adjustments the opening-stock imports post.</Card>
 </Cards>
 
 <AgentContext>
@@ -113,7 +139,7 @@ The gates and quiet defaults that surprise people during an import.
 The import URL's `tableId` isn't a key of `importPermissions`, so the route rejects it before any work (`import.$tableId.tsx:16-17`). Import from the entity's own list-screen **Bulk Import** button, which only appears on supported tables, rather than hitting the route directly.
 
 ### The import is refused before any row is written
-The importer bypasses row-level security, so your **module update permission is checked once, up front** on submit (`import.$tableId.tsx:20-22`): sales for customers, purchasing for suppliers, parts for items and methods, production for work centers and processes. Without that module's update permission the whole import is refused. Get the permission, then re-submit.
+The importer bypasses row-level security, so your **module update permission is checked once, up front** on submit (`import.$tableId.tsx:20-22`): sales for customers, purchasing for suppliers, parts for items and methods, production for work centers and processes, inventory for storage units and opening stock. Opening stock also needs inventory create permission. Without the required permission the whole import is refused. Get the permission, then re-submit.
 
 ### A fixed-asset CSV is rejected
 `fixedAsset` has a models entry but is **not** in the import edge function's own table enum (`packages/database/supabase/functions/import-csv/index.ts:18-33`), so it's rejected. Create fixed assets in the app. Individual BOM material lines (`methodMaterial`) are likewise not wired up — use the BOM/method imports or the app.
@@ -123,6 +149,12 @@ When a CSV value has no mapping to a Carbon enum, the row imports with that fiel
 
 ### Re-importing created duplicates — or didn't update what I expected
 The importer matches by the CSV's Unique ID first (via a stored `csv`-source mapping), then falls back to Name. If neither matches an existing record, the row is inserted. Records created in the app with no CSV mapping are matched by **Name** — a name mismatch (or a blank Name, which errors) breaks the update and can create a new row instead.
+
+### Opening stock doubled after a second import
+The Inventory Quantities import has no natural key: every valid row posts a Positive Adjmt. each time the file is imported. Reverse the extra movements from the item's inventory page (a Negative Adjmt. or a correction) rather than re-importing. Batch and Serial Quantities skip numbers that already exist on the item, so re-importing those files is safe.
+
+### An opening-stock row says the item is tracked differently
+Each opening-stock import accepts one tracking type (Inventory, Batch, or Serial). The error names the import to use instead; move the row to that file.
 
 ### My custom fields are blank after import
 Import writes standard fields plus documented side-tables (address, payment, supplier-part, cost) only — it does **not** map into per-company custom fields. Set those on the record's form after importing.

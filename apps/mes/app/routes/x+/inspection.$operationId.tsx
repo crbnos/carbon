@@ -142,7 +142,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     getInspectionSamplingPlans(serviceRole, lot.data.id, companyId),
     getInspectionMeasurements(serviceRole, lot.data.id, companyId),
     getIssueTypesList(serviceRole, companyId),
-    getTrackedEntitiesByMakeMethodId(serviceRole, op.jobMakeMethodId),
+    getTrackedEntitiesByMakeMethodId(
+      serviceRole,
+      op.jobMakeMethodId,
+      companyId
+    ),
     getJobMakeMethod(serviceRole, op.jobMakeMethodId),
     getProductionEventsForJobOperation(serviceRole, { operationId, userId }),
     getProductionQuantitiesForJobOperation(serviceRole, operationId),
