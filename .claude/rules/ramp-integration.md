@@ -86,10 +86,21 @@ providers, which own the data and mirror it out.
 >   invoice can be issued or posted, so the gap is caught while the person who can fix
 >   it is still looking at the document. ONE setting per party kind rather than two,
 >   because the platform needs all of it or none — a supplier with a contact but no
->   location fails exactly as hard as one with neither. Enforced in the VALIDATORS
->   (both the contact and location fields become required), so the error lands on the
->   control instead of arriving as a toast after a failed submit, and every entry
->   point — API, MCP, duplicate — is held to it by construction.
+>   location fails exactly as hard as one with neither. Enforced ONCE, on the PARTY
+>   record, by `checkPartyContactRequirement` (`settings/party-contact.server.ts`) at
+>   the six release/post boundaries — PO and supplier-quote finalize, sales-order
+>   confirm, quote finalize, and both invoice posts — surfaced as a flash naming the
+>   party and the missing fact.
+>   It was briefly ALSO enforced as a document field requirement (`requiredContactField`
+>   plus six `make*Validator` factories, so `supplierContactId`/`supplierLocationId`
+>   became required). That was removed, and the reason is worth keeping: the document
+>   naming a contact is not what the platform needs — the SUPPLIER having an emailable
+>   contact is — so the field rule asked the wrong question, it blocked editing an
+>   existing draft whose optional location was null for reasons unrelated to the edit,
+>   and it was absent from all six CREATE actions anyway (they validated against the
+>   permissive base schema), so the "every entry point is held to it by construction"
+>   claim it shipped with was false. The party check has no such gap: a create is not a
+>   release.
 >   Off by default, and **turned ON when Ramp is connected**. The mechanism is a
 >   CAPABILITY, not a line in the Ramp hook: `requiresPartyContactAndLocation:
 >   ["supplier"]` on both Ramp mode profiles (`ramp/lib/modes.ts`), applied by
@@ -692,17 +703,36 @@ keyset helpers and its two metadata cursors are gone.
   same request never land. PATCH sends `line_items` only.
 - **A Completed purchase order is NOT archived — only a Closed one is.** Archiving is
   destructive (`GET` 404s, it leaves every list) and Ramp offers no non-destructive
-  alternative: a purchase order carries `archived_at` and no state/closed field. Ramp
-  matches a bill to an order ITSELF and can only do so while the order exists, and a
-  draft bill has no writable purchase-order field — `POST /bills/drafts` accepted both
-  `purchase_order_id` and `purchase_order_ids` with a **201** and stored neither, and
-  reading the draft back showed no purchase-related key at all (verified 2026-09-27).
-  So archiving on `Completed` destroyed the counterpart at the exact moment its bill
-  arrived, and "Matching Purchase Order" in Ramp could never populate. `Completed` =
-  received AND invoiced, which is when the match matters; `Closed` = short-closed, no
-  bill is coming. Pinned by `spend/gates.test.ts`. The cost of keeping them is that
-  Ramp's purchase-order list grows — Ramp tracks `billing_status` / `receipt_status`
-  per order, so a kept order does not read as "open", it is only one more row.
+  alternative: a purchase order carries `archived_at` and no state/closed field. A bill
+  can only be matched to an order that still EXISTS, so archiving on `Completed`
+  destroyed the counterpart at the exact moment its bill arrived, and "Matching Purchase
+  Order" in Ramp could never populate. `Completed` = received AND invoiced, which is when
+  the match matters; `Closed` = short-closed, no bill is coming. Pinned by
+  `spend/gates.test.ts`. The cost of keeping them is that Ramp's purchase-order list
+  grows — Ramp tracks `billing_status` / `receipt_status` per order, so a kept order does
+  not read as "open", it is only one more row.
+- **The bill↔order match: what is actually true.** Two earlier claims in this rule were
+  DISPROVEN and have been removed — do not reinstate them.
+  - **A draft bill DOES take a writable purchase-order link.** `purchase_order_ids` (an
+    array of Ramp PO uuids, "Unique identifiers of the purchase orders to match this bill
+    to") is documented and writable on BOTH `POST /developer/v1/bills/drafts` and
+    `PATCH /developer/v1/bills/drafts/{id}`, as are
+    `line_items[].purchase_order_line_item_id` and
+    `inventory_line_items[].purchase_order_line_item_id`. Carbon does not send any of them
+    yet — that is a **follow-up**, not a limitation.
+  - The probe that reported the field absent tested nothing. `purchase_order_id`
+    SINGULAR is not a field on that endpoint at all — an unknown key, silently ignored —
+    so half the test was a no-op; and `GET /developer/v1/bills/drafts/{id}` (and the list
+    endpoint) expose NO purchase-order key, so reading a draft back could never detect
+    storage either way. It was a false negative. Those fields are readable only on a
+    SUBMITTED bill: `GET /bills/{id}` returns `purchase_order_id` and
+    `line_items[].purchase_order_line_item_id`.
+  - **"Ramp performs the match itself" is unsupported.** Live sandbox state: PO000101
+    (`archived_at: null`, `billing_status: OPEN`, `bill_ids: []`) and its draft bill
+    AP000009 carried the same vendor and the same total, and Ramp had NOT matched them.
+  The conclusion above is unchanged — a Completed order must not be archived, because the
+  order existing is a prerequisite for ANY match — but it rests on that, not on automatic
+  matching. `buildBillMemo`'s `"<invoice> · <orders>"` is a HUMAN trace, not the link.
 - **A mapped purchase order Ramp no longer has recovers by recreating.** Every install
   that ran the archive-on-Completed build has mappings pointing at archived orders, and
   `PATCH` answers `404 DEVELOPER_7002` — without recovery the first push after the change
@@ -711,17 +741,20 @@ keyset helpers and its two metadata cursors are gone.
   only because **archiving releases the purchase-order number**: re-creating `PO000018-1`
   while the archived original still held it returned `201`, not `400 DEVELOPER_7063`
   (verified live 2026-09-27, and end-to-end through the real drain on PO000018).
-- **POs** (`pushPurchaseOrder`): Closed mapped POs are archived; released POs
+- **POs** (`RampPurchaseOrderSyncer`, `ramp/entities/purchase-order.ts`): Closed mapped POs are archived; released POs
   ensure a Ramp vendor then create (carrying `external_id: po.id` for Ramp's
   bill-matching plus an entity-scoped idempotency key) or PATCH a mapped PO. Each local page
   preloads PO/vendor mappings in two reads and, only when named suppliers remain unmapped,
   drains one paginated Ramp vendor snapshot. Successful creates update that page cache, so
   shared suppliers never repeat mapping or provider lookups inside the PO loop.
-- **Invoices** (`pushInvoiceDraftBill`): **DRAFT-ONLY, shipped + live-verified 2026-09-11**
+- **Invoices** (`RampBillSyncer`, `ramp/entities/bill.ts`): **DRAFT-ONLY, shipped + live-verified 2026-09-11**
   (the `RAMP_DRAFT_BILL_CONTRACT_VERIFIED` gate is gone). Targets unmapped Open/Partially
-  Paid invoices from non-Employee suppliers. Ensures the Ramp SPEND vendor, reads the
+  Paid invoices from non-Employee suppliers — `shouldSync` refuses an already-mapped bill
+  BEFORE `mapToRemote` runs, so an `updatedAt` bump on a handed-off bill never re-resolves
+  the vendor or replays the journal. Ensures the Ramp SPEND vendor, reads the
   invoice's POSTED "Purchase Invoice" journal for its account-costed lines via
-  `loadBillCostingLines` + `toTransactionCurrencyLines` (the SAME path QBO/Xero/Rillet use —
+  `loadBillPushLines` (`spend/bill-source.ts`, wrapping
+  `loadBillCostingLines` + `toTransactionCurrencyLines` — the SAME path QBO/Xero/Rillet use —
   NOT `purchaseInvoiceLine.accountId`, which is null for item/part lines since posting
   resolves the real inventory / GR-IR / variance / tax accounts), then `POST /bills/drafts`
   with `remote_id: invoice.id` (the echo guard + bill-match key — the inbound `ramp-bills`
@@ -774,9 +807,10 @@ keyset helpers and its two metadata cursors are gone.
   (`AP000004 · PO000011`, verified stored live 2026-09-27), bare ids so a Ramp search for
   either finds the bill. The orders come from `SpendBillSource.purchaseOrderReadableIds`,
   loaded from `purchaseInvoiceLine.purchaseOrderId` — the link is per LINE, so a
-  consolidated invoice names every order it settles. This is NOT a substitute for Ramp's
-  own match; it is the only thing Carbon can put ON the bill, given the draft has no
-  purchase-order field.
+  consolidated invoice names every order it settles. It is a HUMAN trace, NOT the machine
+  link: `purchase_order_ids` and the per-line `purchase_order_line_item_id` are writable
+  on a draft and are a follow-up Carbon has not wired up (see the bill↔order bullet
+  above).
 
 If any family leaves failures, a final `ramp-notify-failures` step sends one in-app
 `NotificationEvent.IntegrationSync` to the integration's configurer (`updatedBy`, unless

@@ -17,14 +17,14 @@ Design specs: `.ai/specs/2026-08-12-accounting-sync-reconciler-unification.md` (
 The sync engine lives in `packages/ee/src/accounting/` (package `@carbon/ee/accounting`):
 - `core/sync.ts` — `SyncFactory.getSyncer(context)` returns the right syncer by `providerId` + `entityType` from the registry.
 - `core/types.ts` — `BaseEntitySyncer<TLocal, TRemote, TOmit>` abstract base (~800 lines). Implements `pushToAccounting` / `pullFromAccounting` (+ `*Batch*`) with: mapping lookup, `shouldSync` gate, fast-bailout on unchanged timestamps, `mapToRemote`/`mapToLocal`, then `withTriggersDisabled` DB write + `linkEntities`. Also `SupportsIncrementalPull` (`listChanges({since}) → ProviderChange[]`) — the pull-sweep contract (QBO CDC, Rillet `updated.gt`, Xero `/Payments` `If-Modified-Since`).
-- `providers/{xero,quickbooks-online,rillet}/entities/*.ts` — concrete syncers. Xero `ContactSyncer` backs both `customer` AND `vendor`; QBO/Rillet have separate Customer + Vendor syncers. Each provider has item/bill/invoice(+PO/journalEntry) syncers, a **`PaymentSyncer`** (see Payment sync-back below), a `ChargeSyncer` and a `ReimbursementSyncer`. `employee` is not implemented.
+- `providers/{xero,quickbooks-online,rillet}/entities/*.ts` — concrete syncers. Xero `ContactSyncer` backs both `customer` AND `vendor`; QBO/Rillet have separate Customer + Vendor syncers. Each provider has item/bill/invoice(+PO/journalEntry) syncers, a **`PaymentSyncer`** (see Payment sync-back below), a `ChargeSyncer`, a `ReimbursementSyncer`, and the two memo syncers (`creditMemo` + `supplierCredit`). `employee` is not implemented.
 - `core/external-mapping.ts` — `ExternalIntegrationMappingService` / `createMappingService(db, companyId)`: all ID linking goes through the `externalIntegrationMapping` table.
 - `core/models.ts` — Zod schemas, `ProviderID`, `AccountingSyncSchema`, `ENTITY_DEFINITIONS`, `DEFAULT_SYNC_CONFIG`, `PostingSyncSettings` — four families (`ar`, `ap`, `creditMemo`, `supplierCredit`), each `documents|journals|none`. `creditMemo`/`supplierCredit` are party-scoped: a memo's family is resolved from its PARTY (customer → `creditMemo`, supplier → `supplierCredit`), never from the sign of its amount, via the `"per-party"` `PostingSourceFamily` that mirrors `Payment`'s existing `"per-line"`.
 - `core/service.ts` — `getAccountingIntegration()` (reads `companyIntegration` row) + `getProviderIntegration()` (instantiates the right provider; applies the merged per-company `syncConfig`).
 
 ## Entity types & directions
 
-`AccountingEntityType` = `customer | vendor | item | employee | purchaseOrder | bill | salesOrder | invoice | payment | inventoryAdjustment | journalEntry | charge | reimbursement`. `charge` is a Carbon charge (the `charge` table) pushed as the provider's native card-charge object (see "Card charges as provider objects"); `reimbursement` is a Carbon reimbursement pushed as the provider's native employee-reimbursement document (see "Reimbursements as provider documents"). Note `employee` remains DECLARED BUT UNIMPLEMENTED — it is reserved for a payroll master sync, and a reimbursement's employee-as-vendor link uses the separate `employeeVendor` mapping entityType instead. `payment` is `dependsOn: ['invoice','bill']` and **two-way** (Phase G): provider-recorded payments pull back (Phase F) and Carbon-born Posted payments push out as provider payment documents. Routing is per-record by origin (the `payment` mapping), not a static direction — see Payment sync-back.
+`AccountingEntityType` = `customer | vendor | item | employee | purchaseOrder | bill | salesOrder | invoice | payment | inventoryAdjustment | journalEntry | charge | reimbursement | creditMemo | supplierCredit`. `charge` is a Carbon charge (the `charge` table) pushed as the provider's native card-charge object (see "Card charges as provider objects"); `reimbursement` is a Carbon reimbursement pushed as the provider's native employee-reimbursement document (see "Reimbursements as provider documents"). Note `employee` remains DECLARED BUT UNIMPLEMENTED — it is reserved for a payroll master sync, and a reimbursement's employee-as-vendor link uses the separate `employeeVendor` mapping entityType instead. `payment` is `dependsOn: ['invoice','bill']` and **two-way** (Phase G): provider-recorded payments pull back (Phase F) and Carbon-born Posted payments push out as provider payment documents. Routing is per-record by origin (the `payment` mapping), not a static direction — see Payment sync-back.
 
 `SyncDirection` = `"two-way" | "push-to-accounting" | "pull-from-accounting"` (NOT the old `from-/to-/bi-directional`). Each entity has an `EntityConfig { enabled, direction, owner: "carbon" | "accounting", syncFromDate? }`. Per-entity defaults live in `DEFAULT_SYNC_CONFIG`, deep-merged with the company's stored `syncConfig`; providers then force an entity's config in their `build{Xero,Qbo,Rillet}SyncConfig`. **Carbon owns everything** is the standardized stance: every provider forces the master + document entities `customer`/`vendor`/`item`/`invoice`/`bill` to `push-to-accounting` / `owner: "carbon"` (`XERO_CARBON_OWNED_ENTITIES`, `QBO_CARBON_OWNED_ENTITIES`, Rillet's `RILLET_PUSH_ONLY_ENTITIES`) — the provider is a downstream mirror. `payment` is the one accounting-owned exception (forced `pull-from-accounting` / `owner: "accounting"`; Rillet two-way for Phase G push-back). There is **no** per-entity "Source of Truth" setting — it was removed; `owner` is provider-forced, not user-configurable. Rillet's `customer`/`vendor` are the one place a Carbon-owned entity has a working PULL path: the explicit contact import below enqueues `pull-from-accounting` operations by hand (see the Rillet contact import section) — the automatic direction is unchanged, and `owner: "carbon"` is exactly what keeps a re-import from overwriting a linked record. `owner` decides the winner on conflict: for a Carbon-owned entity, an inbound provider change to an already-linked record is skipped (`BaseEntitySyncer.pullBatchFromAccounting`, `core/types.ts`). Note the webhook path sends an explicit `pull-from-accounting` that overrides `direction`, so a net-new record created directly in the provider can still be ingested — `owner: "carbon"` only guards *linked* records; QBO's CDC pull-sweep (`listChanges`) does honor `direction` and skips push-only entities entirely.
 
@@ -76,9 +76,20 @@ Doctrine, mirroring the inbound pull sweep: **events are latency; the sweep is o
 
 1. **Subscription convergence** — `ensureProviderSubscriptions` (the self-healing invariant check; runs first so a repaired install's next events flow normally).
 2. **Candidate refs (scope, not decisions)** — pages posted journals (Posted/Reversed, `reversalOfId` null), posted documents (`SWEPT_BILL_STATUSES`/`SWEPT_INVOICE_STATUSES` — the posted set minus the transient mid-posting `Pending`), posted payments (Rillet only), and parked `Warning UNMAPPED_ACCOUNTS` bills regardless of window. Window floor: `getSweepFloorDate` = today − `SWEEP_LOOKBACK_DAYS` (7), raised to the entity's `syncFromDate` — deliberately short; history beyond it is the explicit backfill's job.
-3. **Reconcile** — every ref goes to `reconcileEntities` (the SAME executor the event path calls); the decisions (missing-remotely enqueue incl. the phantom Completed-without-mapping repair, policy exclusions, the capped `MAX_REDRIVE_ATTEMPTS` re-drive when a bill's posted "Purchase Invoice" journal now exists) all live in `computeReconcileDecision`.
-4. **Drain** — including what this run enqueued/re-drove. This is **Xero's only periodic drain** (it has no incremental pull), so UI retries stop rotting as Pending.
-5. **Alert (Pillar F)** — failed ops left after the drain fire one in-app `NotificationEvent.IntegrationSync` to the integration's configurer (`integration.updatedBy`), linking to the integration's settings page. A notification failure never fails the sweep.
+3. **Master data** — `MASTER_DATA_SWEEP_TARGETS` (`master-data-targets.ts`) is
+   `customer` + `vendor` ONLY. `item` was removed 2026-09-28: it mirrored up to 500
+   unmapped items an hour into the provider's product catalog, which is the same
+   catalog dump that removing the `item` SUBSCRIPTION was meant to stop — one route
+   closed while the other stayed open. Items reach a provider only JIT, via
+   `ensureDependencySynced("item", …)` from sales/purchase orders and inventory
+   adjustments, plus the deliberate one-shot **Push customers, vendors & items**
+   action. Which cron slot a reduced-cadence target runs in comes from the RUN's
+   scheduled time (`isHourlyMasterDataPass`), never `new Date()` inside a per-company
+   `step.run` — read in-step it flipped mid-run once enough tenants pushed the loop
+   past the half-hour, silently skipping every tenant after the boundary.
+4. **Reconcile** — every ref goes to `reconcileEntities` (the SAME executor the event path calls); the decisions (missing-remotely enqueue incl. the phantom Completed-without-mapping repair, policy exclusions, the capped `MAX_REDRIVE_ATTEMPTS` re-drive when a bill's posted "Purchase Invoice" journal now exists) all live in `computeReconcileDecision`.
+5. **Drain** — including what this run enqueued/re-drove. This is **Xero's only periodic drain** (it has no incremental pull), so UI retries stop rotting as Pending.
+6. **Alert (Pillar F)** — failed ops left after the drain fire one in-app `NotificationEvent.IntegrationSync` to the integration's configurer (`integration.updatedBy`), linking to the integration's settings page. A notification failure never fails the sweep.
 
 ## The v5 reconciler (one brain)
 
@@ -547,7 +558,59 @@ is dead config for Rillet only, left in place for the capped providers.
   charges implement provider-aware void/delete paths where supported; unsupported or
   unconfirmed deletes fail or park visibly and never receive a false tombstone.
 - Don't hand-edit generated DB types; read the newest migration for schema truth.
-</content>
+
+## Credit memos and supplier credits as provider documents
+
+A Carbon `memo` pushes as the provider's native credit document — Rillet credit memo /
+vendor credit, QBO `CreditMemo` / `VendorCredit`, Xero `ACCRECCREDIT` / `ACCPAYCREDIT`.
+Two entity types (`creditMemo`, `supplierCredit`) read the SAME `memo` table; the party is
+what separates them, resolved by the `"per-party"` `PostingSourceFamily` (customer →
+`creditMemo`, supplier → `supplierCredit`) and never by the sign of the amount.
+
+Direction is NOT derived from the party. `memoDirection` carries both `Credit` and `Debit`,
+`memo`'s only party constraint is customer-XOR-supplier, and both list routes filter on the
+party while offering direction as a separate filter — so all four combinations are legal and
+authorable. `MemoForm` briefly derived direction from the party and force-submitted it,
+which overwrote a stored direction on save; `invoicing.models.test.ts` pins the contract.
+
+Three things that are easy to get wrong, all of them shipped wrong once:
+
+- **`computeReconcileDecision` needs an explicit arm.** Both types were wired into the
+  entity union, `SNAPSHOT_TABLES`, `TABLE_TO_ENTITY_MAP`, `REQUIRED_SYNC_SUBSCRIPTIONS` and
+  the outbound sweep, but had no `case` — so every ref fell to `default` and returned
+  "not reconciled" while the memo's journal was simultaneously excluded as DOC_BACKED. The
+  credit reached neither the provider's GL nor its subledger, and nothing failed. They must
+  also be in the executor's `MAPPED_TYPES`, or `hasMappingWithExternalId` is always false
+  and every pass re-enqueues a duplicate push.
+- **The posted-status set is a lookup, not a ternary chain.** `DOCUMENT_POSTED_STATUSES`
+  (`reconcile.ts`) maps each document entity type to its swept statuses. The chain it
+  replaced fell through to the sales-invoice set, which never contains "Posted" — which is
+  how a type with no arm silently never enqueued. Memos use their own
+  `SWEPT_MEMO_STATUSES`, deliberately NOT a reuse of `SWEPT_CHARGE_STATUSES`: the values
+  coincide today and would otherwise follow any future change to charge statuses.
+- **Void support is per provider and must be declared.** Only Rillet has a memo void path;
+  `BaseEntitySyncer` has no `deleteRemote`, so the Xero and QBO memo syncers cannot retract
+  one. Voiding a Xero-synced credit memo therefore leaves AR permanently reduced in the
+  ledger of record with nothing failing. That hole is declared rather than hidden — see
+  `MEMO_NATIVE_VOID_PROVIDERS`, the counterpart of `CHARGE_NATIVE_VOID_PROVIDERS` and
+  `REIMBURSEMENT_NATIVE_VOID_PROVIDERS`.
+
+## Fixed-asset disposals are refused, not mirrored
+
+`post-sales-invoice` posts NO `"Sales Account"` line for a `Fixed Asset` invoice line
+(`sales-posting-amounts.ts`, `if (!isAsset)`) — the proceeds go to the asset's disposal
+gain/loss accounts. `SalesDocumentComponent` therefore carries `invoiceLineType`, and
+`isRevenueComponent` / `hasRevenueComponent` / `assertNoAssetDisposalComponents`
+(`core/sales-document-components.ts`) are the one place that decides.
+
+All three invoice mappers call `assertNoAssetDisposalComponents` and refuse a document
+carrying a disposal. Without it a mixed part + asset invoice bound BOTH components to the
+replayed sales-revenue account, so a $5,000 machine disposal appeared as $5,000 of sales
+revenue and $0 of disposal gain — in the customer's ledger of record, with nothing failing.
+Rillet used to refuse these incidentally (its preflight demanded an `itemId`, which an
+asset line has not); dropping that demand so manual-charge and service lines could pass
+removed the accidental guard, and this is the deliberate replacement. Replaying the
+disposal accounts is the real fix and needs its own posting-role classification.
 
 ## One-shot master data sync (`accounting-master-sync`)
 
