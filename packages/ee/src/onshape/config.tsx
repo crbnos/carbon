@@ -1,4 +1,4 @@
-import { ONSHAPE_CLIENT_ID } from "@carbon/auth";
+import { CONTROLLED_ENVIRONMENT, ONSHAPE_CLIENT_ID } from "@carbon/auth";
 import { type SVGProps, useEffect, useState } from "react";
 import { z } from "zod";
 import { defineIntegration } from "../fns";
@@ -117,13 +117,14 @@ const onshapeUrlSchema = z
  * a PRIVATE OAuth app inside their own Enterprise and enters its client here;
  * saving the settings then sends them through that app's consent screen.
  *
- * Active on every Carbon instance: unlike the public app it needs nothing from
- * this instance's environment.
+ * Offered only on a controlled (ITAR) Carbon instance — the only place a
+ * Government customer's data belongs. It needs nothing else from this
+ * instance's environment: the OAuth client is the customer's own.
  */
 export const OnshapeGovernment = defineIntegration({
   name: "Onshape Government",
   id: ONSHAPE_GOVERNMENT_INTEGRATION_ID,
-  active: true,
+  active: CONTROLLED_ENVIRONMENT,
   category: "CAD",
   logo: Logo,
   setupInstructions: GovernmentSetupInstructions,

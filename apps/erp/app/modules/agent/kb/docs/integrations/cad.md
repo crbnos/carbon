@@ -70,6 +70,9 @@ A private app's API calls count toward your Enterprise's **yearly Onshape API li
 a bill of materials take a few calls each. Released-asset sync takes several calls per released revision, so
 leave it off if your allowance is tight.
 
+Onshape Government is only offered on controlled (ITAR) Carbon instances — those running with
+`CONTROLLED_ENVIRONMENT=true`. See `docs/platform/self-hosting/environment-variables`.
+
 A company connects to one Onshape at a time. Uninstall Onshape before connecting Onshape Government, and the
 other way round.
 
