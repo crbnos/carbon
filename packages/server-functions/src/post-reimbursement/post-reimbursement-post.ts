@@ -1,16 +1,14 @@
 import type { KyselyDatabase } from "@carbon/database/client";
 import { resolveAccountingPeriod } from "@carbon/database/posting";
 import { getNextSequence } from "@carbon/database/sequence";
+import { type AccountClass, isAccountClass } from "@carbon/utils";
 import type { Selectable, Transaction } from "kysely";
 import { nanoid } from "nanoid";
 import { NotFoundError } from "../errors";
 // Already generic — allocating journal-line ids has nothing charge-specific
 // about it, so this is imported rather than copied.
 import { allocateJournalLineIds } from "../post-charge/journal-line-ids";
-import {
-  buildReimbursementJournal,
-  type GLAccountClass
-} from "./build-reimbursement-journal";
+import { buildReimbursementJournal } from "./build-reimbursement-journal";
 
 export type ReimbursementContext = {
   trx: Transaction<KyselyDatabase>;
@@ -38,16 +36,6 @@ export type ReimbursementContext = {
   timestamp: string;
   today: string;
 };
-
-function isAccountClass(value: string | null): value is GLAccountClass {
-  return (
-    value === "Asset" ||
-    value === "Liability" ||
-    value === "Equity" ||
-    value === "Revenue" ||
-    value === "Expense"
-  );
-}
 
 export async function postReimbursementJournal(
   context: ReimbursementContext
@@ -113,7 +101,7 @@ export async function postReimbursementJournal(
       "Reimbursement accounts must be active posting accounts in this company group"
     );
   }
-  const accounts: Record<string, { class: GLAccountClass }> = {};
+  const accounts: Record<string, { class: AccountClass }> = {};
   for (const account of postingAccounts) {
     if (!isAccountClass(account.class)) {
       throw new Error("Reimbursement account class is missing");

@@ -4,8 +4,6 @@ import { datetime, getCompanyTimeZone } from "@carbon/database/datetime";
 import {
   buildJournalLineDimensionInserts,
   calculateCOGS,
-  credit,
-  debit,
   getCurrentAccountingPeriod,
   getDefaultPostingGroup,
   type JournalDimensionMeta,
@@ -22,7 +20,7 @@ import {
 } from "@carbon/database/sampling";
 import { getNextSequence } from "@carbon/database/sequence";
 import { getLogger } from "@carbon/logger";
-import { round } from "@carbon/utils";
+import { credit, debit, round } from "@carbon/utils";
 import type { Insertable } from "kysely";
 import { nanoid } from "nanoid";
 import { z } from "zod";

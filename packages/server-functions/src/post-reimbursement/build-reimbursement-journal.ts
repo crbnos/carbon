@@ -23,26 +23,16 @@
 // default fail loudly instead of posting the wrong side.
 
 import {
-  credit,
-  debit,
-  REIMBURSEMENT_PAYABLE_POSTING_DESCRIPTION
-} from "@carbon/database/posting";
-import {
+  type AccountClass,
+  type AccountType,
   assertBalanced,
   assertExchangeRate,
+  credit,
+  debit,
   EPSILON,
+  REIMBURSEMENT_PAYABLE_POSTING_DESCRIPTION,
   toBaseAmount
 } from "@carbon/utils";
-
-export type GLAccountClass =
-  | "Asset"
-  | "Liability"
-  | "Equity"
-  | "Revenue"
-  | "Expense";
-
-// The lowercase form the credit()/debit() helpers accept.
-type AccountType = "asset" | "liability" | "equity" | "revenue" | "expense";
 
 export interface ReimbursementLineInput {
   accountId: string;
@@ -61,7 +51,7 @@ export interface BuildReimbursementJournalInput {
   };
   // Resolved account classes, keyed by accountId. Only the accounts this
   // reimbursement touches need be present.
-  accounts: Record<string, { class: GLAccountClass }>;
+  accounts: Record<string, { class: AccountClass }>;
   lines: ReimbursementLineInput[];
   // Internal reimbursement record id — becomes `documentId` on every line.
   documentId: string;

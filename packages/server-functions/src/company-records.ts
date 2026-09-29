@@ -19,7 +19,8 @@ type CompanyScopedTable =
   | "purchaseOrder"
   | "scrapReason"
   | "storageUnit"
-  | "trackedEntity";
+  | "trackedEntity"
+  | "workCenter";
 
 /**
  * Throws `NotFoundError` unless every provided id is a row of `table` in

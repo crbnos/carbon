@@ -8,66 +8,43 @@ import {
 } from "@carbon/database/posting";
 import { getLogger } from "@carbon/logger";
 import { buildBatchSplitRecords, isFullDraw, round } from "@carbon/utils";
-import { type CalendarDate, parseDate } from "@internationalized/date";
-import { type Insertable, type Kysely, sql } from "kysely";
+import type { CalendarDate } from "@internationalized/date";
+import { type Insertable, sql } from "kysely";
 import { nanoid } from "nanoid";
 import { z } from "zod";
 import { assertCompanyRecords } from "../company-records";
 import { defineServerFn } from "../define-server-fn";
 import { NotFoundError } from "../errors";
+import {
+  type ExpiredEntityPolicy,
+  type ExpiryOverride,
+  expiredEntities,
+  expiryVerdict,
+  getExpiredEntityPolicy
+} from "../shelf-life";
 
 const logger = getLogger("server-functions", "post-stock-transfer");
 
-type ExpiredEntityPolicy = "Warn" | "Block" | "BlockWithOverride";
-
-async function getExpiredEntityPolicy(
-  db: Kysely<KyselyDatabase>,
-  companyId: string
-): Promise<ExpiredEntityPolicy> {
-  const row = await db
-    .selectFrom("companySettings")
-    .select("inventoryShelfLife")
-    .where("id", "=", companyId)
-    .executeTakeFirst();
-  const blob = row?.inventoryShelfLife as {
-    expiredEntityPolicy?: ExpiredEntityPolicy;
-  } | null;
-  return blob?.expiredEntityPolicy ?? "Block";
-}
-
 /**
- * Reject expiry-violating consumption based on the company's policy.
- * Returns the warning message when policy is 'Warn' so callers can echo
- * it back in the response. Throws an Error in all reject cases so the
- * outer try/catch surfaces it as a 400.
+ * Applies the company's expired-entity policy to one entity about to be
+ * transferred: a warning under `Warn`, a throw when blocked. An override with
+ * a reason passes under `BlockWithOverride`.
  */
 function checkExpiredEntity(
   entity: { id: string; expirationDate: string | null },
   policy: ExpiredEntityPolicy,
-  override: { allowed: boolean; reason: string | null },
+  override: ExpiryOverride,
   today: CalendarDate
 ): { warning?: string } {
-  if (!entity.expirationDate) return {};
-  try {
-    if (parseDate(entity.expirationDate).compare(today) >= 0) return {};
-  } catch {
-    return {};
+  if (expiredEntities([entity], today).length === 0) return {};
+  switch (expiryVerdict(policy, override)) {
+    case "warn":
+      return { warning: `Transferred expired tracked entity: ${entity.id}` };
+    case "allow":
+      return {};
+    case "block":
+      throw new Error(`Cannot transfer expired tracked entity: ${entity.id}`);
   }
-
-  if (policy === "Warn") {
-    return { warning: `Transferred expired tracked entity: ${entity.id}` };
-  }
-
-  if (
-    policy === "BlockWithOverride" &&
-    override.allowed &&
-    override.reason &&
-    override.reason.trim().length > 0
-  ) {
-    return {};
-  }
-
-  throw new Error(`Cannot transfer expired tracked entity: ${entity.id}`);
 }
 
 export const postStockTransferInput = z.discriminatedUnion("type", [

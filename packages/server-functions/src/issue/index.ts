@@ -13,8 +13,6 @@ import {
 import {
   bookAdjustment,
   calculateCOGS,
-  credit,
-  debit,
   getCurrentAccountingPeriod,
   getDefaultPostingGroup,
   getStorageUnitWithHighestQuantity,
@@ -32,11 +30,13 @@ import { getLogger } from "@carbon/logger";
 import {
   buildBatchMergeRecords,
   buildBatchSplitRecords,
+  credit,
+  debit,
   isFullDraw,
   round,
   splitPickAcrossMembers
 } from "@carbon/utils";
-import { type CalendarDate, parseDate } from "@internationalized/date";
+import type { CalendarDate } from "@internationalized/date";
 import {
   type Insertable,
   type Kysely,
@@ -51,88 +51,46 @@ import { defineServerFn } from "../define-server-fn";
 import { NotFoundError } from "../errors";
 import { reschedule } from "../reschedule";
 import { ServerFnContext } from "../server-fn-context";
+import {
+  type ExpiredEntityPolicy,
+  type ExpiryOverride,
+  expiredEntities,
+  expiryVerdict,
+  getExpiredEntityPolicy
+} from "../shelf-life";
 import { applyScrapReplacement } from "./scrap-replacement";
 
-type ExpiredEntityPolicy = "Warn" | "Block" | "BlockWithOverride";
-
-type InventoryShelfLifeSettings = {
-  expiredEntityPolicy?: ExpiredEntityPolicy;
-};
-
 /**
- * Resolve the company's expired-entity policy from companySettings JSONB.
- * Defaults to 'Block' when the row or key is absent so the safe behavior
- * is the default.
- */
-async function getExpiredEntityPolicy(
-  trx: Transaction<KyselyDatabase>,
-  companyId: string
-): Promise<ExpiredEntityPolicy> {
-  const row = await trx
-    .selectFrom("companySettings")
-    .select("inventoryShelfLife")
-    .where("id", "=", companyId)
-    .executeTakeFirst();
-  const blob = (row?.inventoryShelfLife ??
-    null) as InventoryShelfLifeSettings | null;
-  return blob?.expiredEntityPolicy ?? "Block";
-}
-
-/**
- * Apply the policy to a list of trackedEntity rows about to be consumed.
- * Returns:
- *   { ok: true }                 - no expiries, or warn-only with no expired
- *   { ok: true, warning }        - warn-only, with expired ids in the message
- *   { ok: false, reason }        - block (or block-without-override), caller
- *                                  should raise an error and refuse the op
- *
- * Caller is responsible for the override flow:
- *   - In 'BlockWithOverride' mode, if the request payload supplies
- *     overrideExpired=true + overrideReason, treat the result as ok and
- *     emit an audit-log row.
+ * Applies the company's expired-entity policy to entities about to be
+ * consumed: `ok` with a warning under `Warn`, `ok: false` with the reason when
+ * blocked. An override with a reason passes under `BlockWithOverride`; the
+ * caller records it.
  */
 function checkExpiredEntities(
   entities: { id: string; expirationDate: string | null }[],
   policy: ExpiredEntityPolicy,
-  override: { allowed: boolean; reason: string | null },
+  override: ExpiryOverride,
   today: CalendarDate
 ): { ok: true; warning?: string } | { ok: false; reason: string } {
-  const expired = entities.filter((e) => {
-    if (!e.expirationDate) return false;
-    try {
-      return parseDate(e.expirationDate).compare(today) < 0;
-    } catch {
-      return false;
-    }
-  });
+  const expired = expiredEntities(entities, today);
   if (expired.length === 0) return { ok: true };
 
   const ids = expired.map((e) => e.id).join(", ");
-
-  if (policy === "Warn") {
-    return {
-      ok: true,
-      warning: `Consumed ${expired.length} expired tracked entit${
-        expired.length === 1 ? "y" : "ies"
-      }: ${ids}`
-    };
+  const noun = `entit${expired.length === 1 ? "y" : "ies"}`;
+  switch (expiryVerdict(policy, override)) {
+    case "warn":
+      return {
+        ok: true,
+        warning: `Consumed ${expired.length} expired tracked ${noun}: ${ids}`
+      };
+    case "allow":
+      return { ok: true };
+    case "block":
+      return {
+        ok: false,
+        reason: `Cannot consume expired tracked ${noun}: ${ids}`
+      };
   }
-
-  if (
-    policy === "BlockWithOverride" &&
-    override.allowed &&
-    override.reason &&
-    override.reason.trim().length > 0
-  ) {
-    return { ok: true };
-  }
-
-  return {
-    ok: false,
-    reason: `Cannot consume expired tracked entit${
-      expired.length === 1 ? "y" : "ies"
-    }: ${ids}`
-  };
 }
 
 async function issueJobOperationMaterials(

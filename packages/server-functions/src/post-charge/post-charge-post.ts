@@ -1,13 +1,11 @@
 import type { KyselyDatabase } from "@carbon/database/client";
 import { resolveAccountingPeriod } from "@carbon/database/posting";
 import { getNextSequence } from "@carbon/database/sequence";
+import { type AccountClass, isAccountClass } from "@carbon/utils";
 import type { Selectable, Transaction } from "kysely";
 import { nanoid } from "nanoid";
 import { NotFoundError } from "../errors";
-import {
-  buildChargeJournal,
-  type GLAccountClass
-} from "./build-charge-journal";
+import { buildChargeJournal } from "./build-charge-journal";
 import { allocateJournalLineIds } from "./journal-line-ids";
 
 export type ChargeContext = {
@@ -37,16 +35,6 @@ export type ChargeContext = {
   timestamp: string;
   today: string;
 };
-
-function isAccountClass(value: string | null): value is GLAccountClass {
-  return (
-    value === "Asset" ||
-    value === "Liability" ||
-    value === "Equity" ||
-    value === "Revenue" ||
-    value === "Expense"
-  );
-}
 
 export async function postChargeJournal(
   context: ChargeContext
@@ -93,7 +81,7 @@ export async function postChargeJournal(
       "Charge accounts must be active posting accounts in this company group"
     );
   }
-  const accounts: Record<string, { class: GLAccountClass }> = {};
+  const accounts: Record<string, { class: AccountClass }> = {};
   for (const account of postingAccounts) {
     if (!isAccountClass(account.class)) {
       throw new Error("Charge account class is missing");

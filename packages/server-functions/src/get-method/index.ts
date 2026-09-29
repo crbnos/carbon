@@ -1,4 +1,4 @@
-import type { Database } from "@carbon/database";
+import type { Database, Json } from "@carbon/database";
 import type { KyselyDatabase } from "@carbon/database/client";
 import { datetime, getCompanyTimeZone } from "@carbon/database/datetime";
 import { fetchAll } from "@carbon/database/fetch-all";
@@ -21,8 +21,7 @@ import {
 import {
   getStorageUnitId,
   toJson,
-  toJsonColumns,
-  toTiptapDoc
+  toJsonColumns
 } from "@carbon/database/posting";
 import {
   getNextRevisionSequence,
@@ -42,7 +41,7 @@ import {
   withoutStockedConsumeFirst
 } from "@carbon/database/supersession-pick";
 import { getLogger } from "@carbon/logger";
-import { scrapAllowance } from "@carbon/utils";
+import { scrapAllowance, textToTiptap } from "@carbon/utils";
 import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
 import type { Transaction } from "kysely";
 import { nanoid } from "nanoid";
@@ -52,6 +51,20 @@ import { NotFoundError } from "../errors";
 import { importTypeScript } from "./sandbox";
 
 const logger = getLogger("server-functions", "get-method");
+
+/**
+ * An operation-step `description` as a tiptap doc for a jsonb column. The
+ * Supabase client returns a jsonb scalar string as a JS string, and re-inserting
+ * a JS string makes node-pg send unquoted text that Postgres rejects: objects
+ * pass through, strings are wrapped, and null/empty become {}.
+ */
+function toTiptapDoc(value: unknown): Json {
+  if (value && typeof value === "object") return value as Json;
+  if (typeof value === "string" && value.length > 0) {
+    return textToTiptap(value) as Json;
+  }
+  return {};
+}
 
 // quoteLine's jsonb columns — run through toJsonColumns() in quoteToQuote's per-line copy.
 const QUOTE_LINE_JSON_COLUMNS = [

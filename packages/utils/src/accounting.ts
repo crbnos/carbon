@@ -2,8 +2,33 @@ import type { CalendarDate } from "@internationalized/date";
 import { endOfMonth, parseDate } from "@internationalized/date";
 import { formatDate } from "./date";
 
-type AccountType = "asset" | "liability" | "equity" | "revenue" | "expense";
-type AccountClass = "Asset" | "Liability" | "Equity" | "Revenue" | "Expense";
+/** The lowercase form `credit` / `debit` take. */
+export type AccountType =
+  | "asset"
+  | "liability"
+  | "equity"
+  | "revenue"
+  | "expense";
+
+/** An account's class (`account.class`, the `glAccountClass` enum). */
+export type AccountClass =
+  | "Asset"
+  | "Liability"
+  | "Equity"
+  | "Revenue"
+  | "Expense";
+
+const ACCOUNT_CLASSES: ReadonlySet<string> = new Set<AccountClass>([
+  "Asset",
+  "Liability",
+  "Equity",
+  "Revenue",
+  "Expense"
+]);
+
+export function isAccountClass(value: string | null): value is AccountClass {
+  return value !== null && ACCOUNT_CLASSES.has(value);
+}
 
 export const credit = (accountType: AccountType, amount: number) => {
   switch (accountType) {

@@ -1,3 +1,3 @@
-// Node-side re-export of the edge-runtime batch-merge module (same pattern as
+// Re-export of the shared batch-merge module under supabase/functions/shared (same pattern as
 // batch-pick-split.ts).
 export * from "../../database/supabase/functions/shared/batch-merge.ts";

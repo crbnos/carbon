@@ -1,8 +1,8 @@
+import type { AccountClass } from "@carbon/utils";
 import { expect, it } from "vitest";
 import {
   type BuildChargeJournalInput,
-  buildChargeJournal,
-  type GLAccountClass
+  buildChargeJournal
 } from "./build-charge-journal";
 
 // Golden-master tests for the GL journal a charge posts. Each asserts
@@ -11,7 +11,7 @@ import {
 // AND that the entry balances (debits == credits). One case per transaction
 // type, plus the imbalance-refusal path.
 
-const ACCOUNTS: Record<string, { class: GLAccountClass }> = {
+const ACCOUNTS: Record<string, { class: AccountClass }> = {
   card: { class: "Liability" },
   bank: { class: "Asset" },
   income: { class: "Revenue" },
@@ -310,7 +310,7 @@ it("Charge at exchangeRate 2: both the lines AND the card credit convert to base
 // ---------------------------------------------------------------------------
 
 it("Charge with three rounding lines: card side = Σ rounded lines, balances exactly", () => {
-  const accounts: Record<string, { class: GLAccountClass }> = {
+  const accounts: Record<string, { class: AccountClass }> = {
     card: { class: "Liability" },
     exp1: { class: "Expense" },
     exp2: { class: "Expense" },

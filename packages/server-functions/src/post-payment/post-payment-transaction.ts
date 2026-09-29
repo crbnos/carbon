@@ -2,23 +2,23 @@ import type { Database } from "@carbon/database";
 import type { KyselyDatabase } from "@carbon/database/client";
 import { datetime } from "@carbon/database/datetime";
 import {
-  allocatePaymentFunding,
   buildPaymentJournal,
-  type FundingRequest,
   getCurrentAccountingPeriod,
+  type PaymentJournalFeeInput
+} from "@carbon/database/posting";
+import { getNextSequence } from "@carbon/database/sequence";
+import {
+  allocatePaymentFunding,
+  assertCurrencyDecimals,
+  assertExchangeRate,
+  type FundingRequest,
   invoiceRemainingAmounts,
   isEffectiveSettlement,
   onAccountCreditDescription,
   PAYABLE_POSTING_DESCRIPTIONS,
-  type PaymentJournalFeeInput,
   RECEIVABLE_POSTING_DESCRIPTIONS,
   REIMBURSEMENT_PAYABLE_POSTING_DESCRIPTION,
-  remainingFundingSources
-} from "@carbon/database/posting";
-import { getNextSequence } from "@carbon/database/sequence";
-import {
-  assertCurrencyDecimals,
-  assertExchangeRate,
+  remainingFundingSources,
   round,
   toBaseAmount,
   toDocumentAmount

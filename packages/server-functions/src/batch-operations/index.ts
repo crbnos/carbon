@@ -18,6 +18,7 @@ import {
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { type Kysely, sql, type Transaction } from "kysely";
 import { z } from "zod";
+import { assertCompanyRecords } from "../company-records";
 import { defineServerFn } from "../define-server-fn";
 import { NotFoundError } from "../errors";
 import { issue } from "../issue";
@@ -235,22 +236,6 @@ async function assertEligible(
 // Re-read the record under companyId and refuse on a miss (the same rule the
 // composite FKs enforce at the schema level; this gives the caller a named
 // error instead of a constraint violation).
-async function assertCompanyRecord(
-  trx: Transaction<KyselyDatabase>,
-  table: "location" | "workCenter",
-  id: string,
-  companyId: string,
-  label: string
-) {
-  const row = await trx
-    .selectFrom(table)
-    .select("id")
-    .where("id", "=", id)
-    .where("companyId", "=", companyId)
-    .executeTakeFirst();
-  if (!row) throw new NotFoundError(`${label} not found`);
-}
-
 // Enforce the process's "must match" compatibility rules across the WHOLE batch
 // membership (create: the incoming set; add: existing members + incoming). Skips
 // entirely when the process has no "must" dimension. Uses ids where the client
@@ -860,22 +845,20 @@ export const batchOperations = defineServerFn({
             companyId,
             payload.jobOperationIds
           );
-          await assertCompanyRecord(
+          await assertCompanyRecords(
             trx,
             "location",
-            payload.locationId,
+            [payload.locationId],
             companyId,
             "Location"
           );
-          if (payload.workCenterId) {
-            await assertCompanyRecord(
-              trx,
-              "workCenter",
-              payload.workCenterId,
-              companyId,
-              "Work center"
-            );
-          }
+          await assertCompanyRecords(
+            trx,
+            "workCenter",
+            [payload.workCenterId],
+            companyId,
+            "Work center"
+          );
           await assertMaterialCompatible(
             trx,
             companyId,
@@ -1153,15 +1136,13 @@ export const batchOperations = defineServerFn({
             .where("companyId", "=", companyId)
             .executeTakeFirst();
           if (!batch) throw new NotFoundError("Batch not found");
-          if (nextWorkCenterId) {
-            await assertCompanyRecord(
-              trx,
-              "workCenter",
-              nextWorkCenterId,
-              companyId,
-              "Work center"
-            );
-          }
+          await assertCompanyRecords(
+            trx,
+            "workCenter",
+            [nextWorkCenterId],
+            companyId,
+            "Work center"
+          );
           // A Completed/Completing batch's events are already attributed to a
           // machine — re-pointing the work center would rewrite that history.
           assertBatchWorkCenterMutable(batch.status);

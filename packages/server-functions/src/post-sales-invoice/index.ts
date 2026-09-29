@@ -5,8 +5,6 @@ import {
   calculateCOGS,
   calculateDueDate,
   classifyIntercompanyPostingLines,
-  credit,
-  debit,
   getCurrentAccountingPeriod,
   getDefaultPostingGroup,
   journalReference,
@@ -20,6 +18,8 @@ import {
   assertExchangeRate,
   buildSalesPostingLines,
   calculateSalesIntercompanyAmount,
+  credit,
+  debit,
   round,
   type SalesPostingAccount,
   type SalesPostingMetadata

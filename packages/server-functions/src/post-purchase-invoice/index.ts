@@ -4,8 +4,6 @@ import {
   allocateVarianceAcrossLayers,
   calculateDueDate,
   classifyIntercompanyPostingLines,
-  credit,
-  debit,
   getBillableQuantity,
   getCurrentAccountingPeriod,
   getDefaultPostingGroup,
@@ -16,7 +14,7 @@ import {
 } from "@carbon/database/posting";
 import { getNextSequence } from "@carbon/database/sequence";
 import { getLogger } from "@carbon/logger";
-import { round } from "@carbon/utils";
+import { credit, debit, round } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { nanoid } from "nanoid";
 import { z } from "zod";

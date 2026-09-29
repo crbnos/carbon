@@ -3,11 +3,15 @@ import type { KyselyTx } from "@carbon/database/client";
 import { lockIssueDispositions } from "@carbon/database/quality";
 import { ServerFnContext } from "@carbon/server-functions";
 import { postNonConformance } from "@carbon/server-functions/post-nonconformance";
-import { datetime, EPSILON, round } from "@carbon/utils";
+import {
+  buildBatchSplitRecords,
+  datetime,
+  EPSILON,
+  round
+} from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { nanoid } from "nanoid";
 import { getDatabaseClient } from "~/services/database.server";
-import { buildBatchSplitRecords } from "../../../../../packages/database/supabase/functions/shared/batch-split.ts";
 import { isIssueLocked } from "./quality.models";
 import { errResult, type Result } from "./quality.server";
 
@@ -382,10 +386,9 @@ export async function linkEntitiesToIssueItemRow(
 // which leaves on-hand unchanged).
 //
 // NOTE: the split record contract (pointer attribute, edge shape, 2-row ledger
-// pair) is the shared builder at
-// packages/database/supabase/functions/shared/batch-split.ts, imported here
-// directly — the same one the issue/post-picking/post-stock-transfer/
-// post-shipment edge functions use. Don't hand-roll a divergent shape.
+// pair) is the shared builder `buildBatchSplitRecords` (@carbon/utils) — the
+// same one the issue/post-picking/post-stock-transfer/post-shipment server
+// functions use. Don't hand-roll a divergent shape.
 
 // The storage unit a tracked entity currently holds stock in, derived from its
 // item-ledger rows by net on-hand per bin. Batch-split ledger entries MUST be

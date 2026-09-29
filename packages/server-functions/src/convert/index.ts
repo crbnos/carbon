@@ -1,5 +1,6 @@
 import type { Database } from "@carbon/database";
 import { datetime, getCompanyTimeZone } from "@carbon/database/datetime";
+import { fetchAll } from "@carbon/database/fetch-all";
 import {
   getRemainingQuantityToInvoice,
   toJson
@@ -15,26 +16,6 @@ import { getMethod } from "../get-method";
 import { ServerFnContext } from "../server-fn-context";
 
 const logger = getLogger("server-functions", "convert");
-
-// Supabase/PostgREST caps a single response at 1000 rows. Page through with
-// .range() so large reads (e.g. a quote's lines × quantity-break prices) are
-// not silently truncated.
-async function fetchAllRows<T>(
-  makeQuery: (
-    from: number,
-    to: number
-  ) => PromiseLike<{ data: T[] | null; error: unknown }>
-): Promise<{ data: T[]; error: unknown }> {
-  const pageSize = 1000;
-  const all: T[] = [];
-  for (let from = 0; ; from += pageSize) {
-    const { data, error } = await makeQuery(from, from + pageSize - 1);
-    if (error) return { data: all, error };
-    if (data && data.length > 0) all.push(...data);
-    if (!data || data.length < pageSize) break;
-  }
-  return { data: all, error: null };
-}
 
 export const convertInput = z.discriminatedUnion("type", [
   z.object({
@@ -480,21 +461,19 @@ export const convert = defineServerFn({
             .eq("id", id)
             .eq("companyId", companyId)
             .single(),
-          fetchAllRows((from, to) =>
+          fetchAll<Database["public"]["Tables"]["quoteLine"]["Row"]>(() =>
             client
               .from("quoteLine")
               .select("*")
               .eq("quoteId", id)
               .eq("companyId", companyId)
-              .range(from, to)
           ),
-          fetchAllRows((from, to) =>
+          fetchAll<Database["public"]["Tables"]["quoteLinePrice"]["Row"]>(() =>
             client
               .from("quoteLinePrice")
               .select("*")
               .eq("quoteId", id)
               .eq("companyId", companyId)
-              .range(from, to)
           ),
           client
             .from("quotePayment")
@@ -513,10 +492,11 @@ export const convert = defineServerFn({
 
         if (quote.error)
           throw new NotFoundError(`Quote with id ${id} not found`);
-        if (quoteLines.error)
+        if (quoteLines.error || !quoteLines.data)
           throw new NotFoundError(`Quote Lines with id ${id} not found`);
-        if (quoteLinePrices.error)
+        if (quoteLinePrices.error || !quoteLinePrices.data)
           throw new NotFoundError(`Quote line prices with id ${id} not found`);
+        const quoteLineRows = quoteLines.data;
         if (quotePayment.error)
           throw new NotFoundError(`Quote payment with id ${id} not found`);
         if (quoteShipping.error)
@@ -571,7 +551,7 @@ export const convert = defineServerFn({
           );
 
           // Check if any selected lines have quantity 0
-          const hasZeroQuantityLines = quoteLines.data.some(
+          const hasZeroQuantityLines = quoteLineRows.some(
             (line) =>
               line.id &&
               selectedLines &&
@@ -580,7 +560,7 @@ export const convert = defineServerFn({
           );
 
           // Only the selected lines become sales order lines below.
-          const selectedQuoteLines = quoteLines.data.filter(
+          const selectedQuoteLines = quoteLineRows.filter(
             (line) =>
               line.id &&
               selectedLines &&
@@ -778,7 +758,7 @@ export const convert = defineServerFn({
           }
 
           const customerPartSeen = new Set<string>();
-          const customerPartToItemInserts = quoteLines.data
+          const customerPartToItemInserts = quoteLineRows
             .map((line) => ({
               companyId,
               customerId: quote.data?.customerId!,
@@ -806,7 +786,7 @@ export const convert = defineServerFn({
               .execute();
           }
 
-          const updatedItemModels = quoteLines.data
+          const updatedItemModels = quoteLineRows
             .filter((line) => !!line.modelUploadId && !!line.itemId)
             .map((line) => ({
               id: line.itemId!,

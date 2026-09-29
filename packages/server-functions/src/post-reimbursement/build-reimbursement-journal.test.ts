@@ -1,8 +1,8 @@
+import type { AccountClass } from "@carbon/utils";
 import { expect, it } from "vitest";
 import {
   type BuildReimbursementJournalInput,
-  buildReimbursementJournal,
-  type GLAccountClass
+  buildReimbursementJournal
 } from "./build-reimbursement-journal";
 
 // Golden-master tests for the GL journal an employee reimbursement posts. Each
@@ -10,7 +10,7 @@ import {
 // debits are +, liability credits are + — see lib/utils.ts) AND that the entry
 // balances (debits == credits), plus the refusal paths.
 
-const ACCOUNTS: Record<string, { class: GLAccountClass }> = {
+const ACCOUNTS: Record<string, { class: AccountClass }> = {
   payable: { class: "Liability" },
   ap: { class: "Liability" },
   bank: { class: "Asset" },

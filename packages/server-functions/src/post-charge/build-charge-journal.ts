@@ -19,23 +19,16 @@
 // per-line accounts take their class from the resolved `accounts` map — except
 // Cashback, whose offset is booked to Revenue by definition (a rebate is income).
 
-import { credit, debit } from "@carbon/database/posting";
 import {
+  type AccountClass,
+  type AccountType,
   assertBalanced,
   assertExchangeRate,
+  credit,
+  debit,
   EPSILON,
   toBaseAmount
 } from "@carbon/utils";
-
-export type GLAccountClass =
-  | "Asset"
-  | "Liability"
-  | "Equity"
-  | "Revenue"
-  | "Expense";
-
-// The lowercase form the credit()/debit() helpers accept.
-type AccountType = "asset" | "liability" | "equity" | "revenue" | "expense";
 
 export type ChargeType =
   | "Charge"
@@ -64,7 +57,7 @@ export interface BuildChargeJournalInput {
   lines: ChargeLineInput[];
   // Resolved account classes, keyed by accountId. Only the accounts this
   // transaction touches need be present.
-  accounts: Record<string, { class: GLAccountClass }>;
+  accounts: Record<string, { class: AccountClass }>;
   // Internal charge record id — becomes `documentId` on every line.
   documentId: string;
   // Human-readable id (chargeId) — used only in error messages.
