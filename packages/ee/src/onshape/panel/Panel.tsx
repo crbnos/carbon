@@ -5,6 +5,12 @@ import {
   Button,
   cn,
   HStack,
+  Label,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
   Skeleton,
   Spinner,
   Status,
@@ -17,6 +23,7 @@ import {
 import type { ReactNode } from "react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
+  LuArrowRight,
   LuChevronRight,
   LuCircleCheck,
   LuCircleDashed,
@@ -38,7 +45,12 @@ import type {
   ReleasePlan,
   ReleasePlanItem
 } from "./plan";
-import type { PlanCustomField } from "./properties";
+import type {
+  PlanCustomField,
+  PlanCustomFieldDefinition,
+  PropertyMapEntry
+} from "./properties";
+import { MAPPABLE_VALUE_TYPES, propertyMapEqual } from "./properties";
 import type { PanelRelease } from "./releases";
 import type {
   ApplyFieldError,
@@ -51,6 +63,7 @@ import type {
 import {
   applyCount,
   applyRequestBody,
+  clearFieldErrors,
   createReview,
   customFieldDisplayValue,
   describeMethod,
@@ -151,15 +164,94 @@ type PanelReleasesState =
 /**
  * The panel's pages. `push` is the current element — an assembly or a part
  * studio; `releases` is the whole document, which is why it survives on an
- * element that has nothing to push.
+ * element that has nothing to push; `fields` is the company's property map,
+ * edited from the current element's properties.
  */
-type PanelTab = "push" | "releases";
+type PanelTab = "push" | "releases" | "fields";
+
+/** A property of the current element as the fields route lists it. */
+type PanelFieldsProperty = {
+  propertyId: string;
+  name: string;
+  valueType: string;
+  /** Whether the value type has a Carbon type to map onto. */
+  mappable: boolean;
+};
+
+type PanelFieldsData = {
+  properties: PanelFieldsProperty[];
+  map: PropertyMapEntry[];
+  definitions: PlanCustomFieldDefinition[];
+};
+
+/** One entry of the draft map the Fields page posts. */
+type FieldsDraftEntry = {
+  onshapePropertyId: string;
+  onshapeName: string;
+  valueType: string;
+  carbonFieldId: string;
+};
+
+type PanelFieldsState =
+  | { status: "closed" }
+  | { status: "loading" }
+  | {
+      status: "ready";
+      data: PanelFieldsData;
+      /**
+       * The WHOLE next map, not just this element's rows: the save is a full
+       * replacement, so entries mapped from other elements must ride along
+       * untouched or saving here would silently unmap them.
+       */
+      entries: FieldsDraftEntry[];
+      saving: boolean;
+      /** A re-read is in flight; the rows on screen are the previous ones. */
+      refreshing?: boolean;
+      /** A re-read failed; the rows on screen are the previous ones. */
+      refreshFailure?: LoadFailure;
+      error: string | null;
+      /**
+       * The save landed but the field list could not be re-read. Not an
+       * error: the map is saved, and only the editor's options may be stale.
+       */
+      warning?: string;
+      /** Per-property 422 errors, keyed by onshapePropertyId. */
+      fieldErrors: Record<string, string[]>;
+    }
+  | { status: "error"; message: string; forbidden?: boolean };
+
+/** Radix Select refuses an empty item value, so "not mapped" is named. */
+const FIELDS_NOT_MAPPED = "__not-mapped__";
+
+/**
+ * The Carbon types an Onshape value type may map onto. MAPPABLE_VALUE_TYPES
+ * is a plain object, so a valueType of "constructor" would otherwise resolve
+ * to Object.prototype's and crash the render on `.includes`.
+ */
+function mappableTypesFor(valueType: string): readonly number[] {
+  if (!Object.hasOwn(MAPPABLE_VALUE_TYPES, valueType)) return [];
+  return MAPPABLE_VALUE_TYPES[valueType] ?? [];
+}
+
+/** The draft entries for a map, dropping the display-only mode. */
+function fieldsDraft(map: PropertyMapEntry[]): FieldsDraftEntry[] {
+  return map.map(
+    ({ onshapePropertyId, onshapeName, valueType, carbonFieldId }) => ({
+      onshapePropertyId,
+      onshapeName,
+      valueType,
+      carbonFieldId
+    })
+  );
+}
 
 export type OnshapePanelPaths = {
   /** Popup route that mints a panel session for the signed-in user. */
   auth: string;
   /** Returns who the token belongs to. */
   me: string;
+  /** GET: the element's Onshape properties, the map and the custom fields. POST: save the map. */
+  fields: string;
   /** DELETE revokes the token. */
   session: string;
   /** Carbon status for the current element's parts. */
@@ -184,6 +276,8 @@ export type OnshapePanelMe = {
   userId: string;
   email: string;
   company: { id: string; name: string } | null;
+  /** Settings update: the Fields page is shown only to users who hold it. */
+  canEditFields: boolean;
 };
 
 type SessionState =
@@ -699,6 +793,10 @@ export function OnshapePanel({
    */
   const [tab, setTab] = useState<PanelTab>("push");
 
+  // The Fields page: the company's property map, edited from the current
+  // element's properties. Loaded when the page is opened.
+  const [fields, setFields] = useState<PanelFieldsState>({ status: "closed" });
+
   // The plan under review, if any. Each section renders its review in place
   // of its list while one is open; a part or assembly review is scoped to the
   // element, a release review to the document.
@@ -725,6 +823,8 @@ export function OnshapePanel({
     setPartsOutcome(null);
     setPushOutcome({});
     setAssemblyTooLarge(null);
+    // The Fields page lists THIS element's properties.
+    setFields({ status: "closed" });
     setTab("push");
   }, [elementScope, documentScope]);
 
@@ -739,6 +839,7 @@ export function OnshapePanel({
        */
       setParts({ status: "idle" });
       setReleases({ status: "idle" });
+      setFields({ status: "closed" });
       setTab("push");
     }
   }, [session.status]);
@@ -1287,17 +1388,198 @@ export function OnshapePanel({
     }
   };
 
+  const loadFields = useCallback(
+    async (token: string) => {
+      if (!canLoadParts) return;
+      /*
+       * Every landing commits only while this read is still the one the page
+       * is waiting for: a move to another element leaves `closed` behind and
+       * must not be undone when the answer arrives. A Refresh keeps the
+       * previous rows on screen and so stays `ready` with `refreshing` set.
+       */
+      const fail = (message: string, forbidden: boolean) =>
+        setFields((current) =>
+          current.status === "ready" && current.refreshing
+            ? {
+                ...current,
+                refreshing: false,
+                refreshFailure: { message, forbidden }
+              }
+            : current.status === "loading"
+              ? { status: "error", message, forbidden }
+              : current
+        );
+      setFields((current) =>
+        current.status === "ready"
+          ? { ...current, refreshing: true, refreshFailure: undefined }
+          : { status: "loading" }
+      );
+      try {
+        const query = new URLSearchParams({
+          documentId: context.documentId as string,
+          wv: context.wv as string,
+          wvId: context.wvId as string,
+          elementId: context.elementId as string
+        });
+        const response = await panelFetch(token, `${paths.fields}?${query}`);
+        const body = (await response.json()) as
+          | PanelFieldsData
+          | { error: string };
+        if (!response.ok || "error" in body) {
+          fail(
+            "error" in body ? body.error : `Carbon answered ${response.status}`,
+            response.status === 403
+          );
+          return;
+        }
+        setFields((current) =>
+          current.status === "loading" ||
+          (current.status === "ready" && !!current.refreshing)
+            ? {
+                status: "ready",
+                data: body,
+                // A re-read is the company's map as it now stands, so it
+                // replaces the draft rather than merging with it.
+                entries: fieldsDraft(body.map),
+                saving: false,
+                error: null,
+                fieldErrors: {}
+              }
+            : current
+        );
+      } catch (error) {
+        if (error instanceof PanelUnauthorizedError) {
+          setSession({ status: "signed-out" });
+          return;
+        }
+        fail(thrownMessage(error), false);
+      }
+    },
+    [canLoadParts, context, paths.fields]
+  );
+
+  /**
+   * Save the property map: the whole entries list, a full replacement. A 422
+   * pins errors to properties; success re-seeds the draft from what the server
+   * now holds, so nothing is left to save.
+   */
+  const saveFields = useCallback(
+    async (token: string) => {
+      if (fields.status !== "ready" || fields.saving) return;
+      const current = fields;
+      setFields({
+        ...current,
+        saving: true,
+        error: null,
+        warning: undefined,
+        fieldErrors: {}
+      });
+      try {
+        const response = await panelFetch(token, paths.fields, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ entries: current.entries })
+        });
+        const body = (await response.json()) as
+          | {
+              map: PropertyMapEntry[];
+              definitions: PlanCustomFieldDefinition[] | null;
+              warning?: string;
+            }
+          | PanelErrorResponse;
+        if (!response.ok || "error" in body) {
+          setFields({
+            ...current,
+            saving: false,
+            error:
+              "error" in body
+                ? body.error
+                : `Carbon answered ${response.status}`,
+            fieldErrors:
+              response.status === 422 && "fieldErrors" in body
+                ? indexFieldErrors(body.fieldErrors)
+                : {}
+          });
+          return;
+        }
+        setFields({
+          ...current,
+          data: {
+            ...current.data,
+            map: body.map,
+            // Null when the save landed but the re-read failed: keep the
+            // definitions already on screen rather than emptying every select.
+            definitions: body.definitions ?? current.data.definitions
+          },
+          entries: fieldsDraft(body.map),
+          saving: false,
+          error: null,
+          warning: body.warning,
+          fieldErrors: {}
+        });
+      } catch (error) {
+        if (error instanceof PanelUnauthorizedError) {
+          setSession({ status: "signed-out" });
+          return;
+        }
+        setFields({ ...current, saving: false, error: thrownMessage(error) });
+      }
+    },
+    [fields, paths.fields]
+  );
+
+  /** Map one property to a field, or unmap it; every other entry survives. */
+  const mapFieldsProperty = (
+    property: PanelFieldsProperty,
+    selection: string
+  ) =>
+    setFields((current) => {
+      if (current.status !== "ready") return current;
+      const entries = current.entries.filter(
+        (entry) => entry.onshapePropertyId !== property.propertyId
+      );
+      if (selection !== FIELDS_NOT_MAPPED) {
+        entries.push({
+          onshapePropertyId: property.propertyId,
+          onshapeName: property.name,
+          valueType: property.valueType,
+          carbonFieldId: selection
+        });
+      }
+      return {
+        ...current,
+        entries,
+        error: null,
+        fieldErrors: clearFieldErrors(current.fieldErrors, property.propertyId)
+      };
+    });
+
   /*
    * Not every page applies to every element. A drawing has no parts, but it
-   * belongs to a document that has releases.
+   * belongs to a document that has releases. Fields needs an element with
+   * properties to list, and settings update to save.
    */
   const availableTabs = useMemo<PanelTab[]>(() => {
     if (session.status !== "signed-in") return [];
     const tabs: PanelTab[] = [];
     if (canLoadParts) tabs.push("push");
     if (context.documentId) tabs.push("releases");
+    if (
+      canLoadParts &&
+      session.me.canEditFields &&
+      (parts.status === "ready" || parts.status === "ready-assembly")
+    ) {
+      tabs.push("fields");
+    }
     return tabs;
-  }, [session.status, canLoadParts, context.documentId]);
+  }, [session, canLoadParts, context.documentId, parts.status]);
+
+  // Opening the Fields page is what loads it, so a panel that never opens it
+  // spends no Onshape reads on it.
+  useEffect(() => {
+    if (tab !== "fields" || session.status !== "signed-in") return;
+    if (fields.status === "closed") void loadFields(session.token);
+  }, [tab, session, fields.status, loadFields]);
 
   /*
    * Onshape moves the panel between elements, so a page can vanish under the
@@ -1368,7 +1650,8 @@ export function OnshapePanel({
     <Tabs
       value={tab}
       onValueChange={(value) =>
-        (value === "push" || value === "releases") && setTab(value)
+        (value === "push" || value === "releases" || value === "fields") &&
+        setTab(value)
       }
       className="flex h-full min-h-0 flex-col"
     >
@@ -1386,6 +1669,9 @@ export function OnshapePanel({
             ) : null}
             {availableTabs.includes("releases") ? (
               <TabsTrigger value="releases">Releases</TabsTrigger>
+            ) : null}
+            {availableTabs.includes("fields") ? (
+              <TabsTrigger value="fields">Fields</TabsTrigger>
             ) : null}
           </TabsList>
         ) : (
@@ -1548,6 +1834,17 @@ export function OnshapePanel({
                 onRefresh={() => loadReleases(session.token)}
               />
             )
+          ) : null}
+        </TabsContent>
+
+        <TabsContent value="fields" className="w-full">
+          {session.status === "signed-in" && fields.status !== "closed" ? (
+            <FieldsSection
+              state={fields}
+              onMap={mapFieldsProperty}
+              onRefresh={() => loadFields(session.token)}
+              onSave={() => saveFields(session.token)}
+            />
           ) : null}
         </TabsContent>
       </VStack>
@@ -2107,6 +2404,279 @@ function ReleasesSection({
         </ul>
       ) : null}
     </VStack>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Fields (Onshape properties → Carbon custom fields)
+// ---------------------------------------------------------------------------
+
+/**
+ * The company's property map, edited from the current element's properties.
+ * Onshape only lists properties from inside a document, which is why this
+ * page is the one setting the panel keeps.
+ */
+function FieldsSection({
+  state,
+  onMap,
+  onRefresh,
+  onSave
+}: {
+  state: Exclude<PanelFieldsState, { status: "closed" }>;
+  onMap: (property: PanelFieldsProperty, selection: string) => void;
+  onRefresh: () => void;
+  onSave: () => void;
+}) {
+  const header = (
+    <HStack className="w-full justify-between">
+      <span className="text-sm font-medium">Custom fields</span>
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={onRefresh}
+        isDisabled={
+          state.status === "loading" ||
+          (state.status === "ready" && state.saving)
+        }
+        isLoading={state.status === "ready" && !!state.refreshing}
+        leftIcon={<LuRefreshCw />}
+      >
+        Refresh
+      </Button>
+    </HStack>
+  );
+
+  if (state.status === "loading") {
+    return (
+      <VStack spacing={2} className="w-full">
+        {header}
+        <FieldsColumnLabels />
+        <PanelListSkeleton />
+      </VStack>
+    );
+  }
+  if (state.status === "error") {
+    return (
+      <VStack spacing={2} className="w-full">
+        {header}
+        <PanelLoadError
+          title="Couldn't load properties"
+          failure={{ message: state.message, forbidden: !!state.forbidden }}
+          onRetry={onRefresh}
+        />
+      </VStack>
+    );
+  }
+
+  const { data } = state;
+  const entryFor = (propertyId: string) =>
+    state.entries.find((entry) => entry.onshapePropertyId === propertyId);
+  /*
+   * Only what the user can act on: a USER, BLOB or computed property has no
+   * Carbon field it can coerce into. An already-mapped property stays listed
+   * even if its type is not mappable, since the save posts the whole map and
+   * hiding the entry would leave it riding along with no way to remove it.
+   */
+  const visibleProperties = data.properties.filter(
+    (property) => property.mappable || !!entryFor(property.propertyId)
+  );
+  // The save posts the whole map, so a 422 can name a property mapped from
+  // another element. It has no row here, so it renders on its own.
+  const rendered = new Set(
+    visibleProperties.map((property) => property.propertyId)
+  );
+  const otherElementErrors = Object.entries(state.fieldErrors)
+    .filter(([propertyId]) => !rendered.has(propertyId))
+    .map(([propertyId, messages]) => ({
+      propertyId,
+      name: entryFor(propertyId)?.onshapeName || propertyId,
+      messages
+    }));
+  const dirty = !propertyMapEqual(state.entries, data.map);
+  const busy = state.saving || !!state.refreshing;
+
+  return (
+    <VStack spacing={2} className="w-full">
+      {header}
+      <p className="text-xs text-muted-foreground">
+        Every push writes a mapped property into its Carbon field. Mappings are
+        for the whole company, not this element.
+      </p>
+      {state.refreshFailure ? (
+        <PanelLoadError
+          title="Couldn't refresh properties"
+          failure={state.refreshFailure}
+          stale
+          retrying={!!state.refreshing}
+          onRetry={onRefresh}
+        />
+      ) : null}
+      {state.warning ? (
+        <Alert variant="warning">
+          <LuTriangleAlert />
+          <AlertTitle>Custom field list may be out of date</AlertTitle>
+          <AlertDescription>{state.warning}</AlertDescription>
+        </Alert>
+      ) : null}
+      {state.error ? (
+        <Alert variant="destructive">
+          <LuTriangleAlert />
+          <AlertTitle>Couldn't save the map</AlertTitle>
+          <AlertDescription>{state.error}</AlertDescription>
+        </Alert>
+      ) : null}
+      {otherElementErrors.map(({ propertyId, name, messages }) =>
+        messages.map((message) => (
+          <p
+            key={`${propertyId}:${message}`}
+            className="w-full text-xs text-destructive"
+          >
+            {name}: {message}
+          </p>
+        ))
+      )}
+      {visibleProperties.length === 0 ? (
+        <PanelEmpty>No mappable properties</PanelEmpty>
+      ) : (
+        <>
+          <FieldsColumnLabels />
+          <div className="w-full rounded-lg border border-border">
+            <ul className="flex w-full flex-col divide-y divide-border">
+              {visibleProperties.map((property) => (
+                <FieldsRow
+                  key={property.propertyId}
+                  property={property}
+                  entry={entryFor(property.propertyId)}
+                  definitions={data.definitions}
+                  errors={state.fieldErrors[property.propertyId]}
+                  disabled={busy}
+                  onMap={onMap}
+                />
+              ))}
+            </ul>
+          </div>
+        </>
+      )}
+      {/* Pinned like a review's push button; see ReviewActionBar. */}
+      <div className="sticky -bottom-4 -mx-4 mt-1 w-[calc(100%+--spacing(8))] border-t border-border bg-card px-4 py-2">
+        <Button
+          className="w-full"
+          onClick={onSave}
+          isDisabled={!dirty || busy}
+          isLoading={state.saving}
+        >
+          {dirty ? "Save mappings" : "No changes"}
+        </Button>
+      </div>
+    </VStack>
+  );
+}
+
+/**
+ * Wide enough for a custom field name; the property names on the left vary
+ * far more in length than the fields do.
+ */
+const FIELDS_CONTROL_WIDTH = "w-[180px]";
+
+/**
+ * Which side is which is not guessable from the rows alone, since both halves
+ * are field names, so the columns are named over the columns they describe.
+ */
+function FieldsColumnLabels() {
+  return (
+    <div className="flex w-full items-center gap-3 px-3">
+      <Label className="min-w-0 flex-1">Onshape property</Label>
+      {/* Spacer for the rows' arrow, so the labels sit over their columns. */}
+      <span aria-hidden className="size-4 shrink-0" />
+      <Label className={cn("shrink-0", FIELDS_CONTROL_WIDTH)}>
+        Carbon custom field
+      </Label>
+    </div>
+  );
+}
+
+function FieldsRow({
+  property,
+  entry,
+  definitions,
+  errors,
+  disabled,
+  onMap
+}: {
+  property: PanelFieldsProperty;
+  entry: FieldsDraftEntry | undefined;
+  definitions: PlanCustomFieldDefinition[];
+  errors: string[] | undefined;
+  disabled: boolean;
+  onMap: (property: PanelFieldsProperty, selection: string) => void;
+}) {
+  // Only fields of a type the value can coerce into are offered; an already
+  // mapped field stays listed even when its type no longer matches, so the
+  // current mapping is visible rather than a blank select.
+  const allowed = mappableTypesFor(property.valueType);
+  const options = definitions.filter(
+    (definition) =>
+      allowed.includes(definition.dataTypeId) ||
+      definition.id === entry?.carbonFieldId
+  );
+  // A mapping whose Carbon field has since been deleted has no definition to
+  // name it, so it shows as a disabled option the user can map away from.
+  const deletedFieldId =
+    entry?.carbonFieldId &&
+    !options.some((definition) => definition.id === entry.carbonFieldId)
+      ? entry.carbonFieldId
+      : null;
+  return (
+    <li className="flex w-full flex-col gap-1 px-3 py-2">
+      <div className="flex w-full items-center gap-3">
+        <div className="flex min-w-0 flex-1 flex-col leading-tight">
+          <span className="truncate text-sm font-medium" title={property.name}>
+            {property.name}
+          </span>
+          <span className="truncate text-xs text-muted-foreground">
+            {property.valueType}
+            {property.mappable ? null : " · no Carbon type to map onto"}
+          </span>
+        </div>
+        <LuArrowRight
+          aria-hidden
+          className="size-4 shrink-0 text-muted-foreground"
+        />
+        <div className={cn("shrink-0", FIELDS_CONTROL_WIDTH)}>
+          <Select
+            value={entry?.carbonFieldId ?? FIELDS_NOT_MAPPED}
+            onValueChange={(value) => onMap(property, value)}
+            disabled={disabled}
+          >
+            <SelectTrigger
+              size="sm"
+              className="w-full"
+              aria-label={`Map ${property.name}`}
+            >
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={FIELDS_NOT_MAPPED}>Not mapped</SelectItem>
+              {options.map((definition) => (
+                <SelectItem key={definition.id} value={definition.id}>
+                  {definition.name}
+                </SelectItem>
+              ))}
+              {deletedFieldId ? (
+                <SelectItem value={deletedFieldId} disabled>
+                  Deleted field
+                </SelectItem>
+              ) : null}
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+      {errors?.map((message) => (
+        <p key={message} className="text-xs text-destructive">
+          {message}
+        </p>
+      ))}
+    </li>
   );
 }
 

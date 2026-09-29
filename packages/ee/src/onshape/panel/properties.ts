@@ -290,6 +290,39 @@ export function parsePropertyMap(metadata: unknown): PropertyMapEntry[] {
 }
 
 /**
+ * What a mapping decision is, for comparing two maps. Looser than
+ * `PropertyMapEntry`: `onshapeName` and `valueType` are display, re-read from
+ * Onshape on every load, and a change in either is not a decision the user
+ * made.
+ */
+type PropertyMapDecision = {
+  onshapePropertyId: string;
+  carbonFieldId?: string;
+};
+
+/**
+ * Whether two property maps say the same thing, order ignored. The Fields
+ * editor's Save posts the whole map, so it needs to know whether the draft
+ * differs from what the company holds. Order is ignored because editing one
+ * row moves it to the end of the draft.
+ */
+export function propertyMapEqual(
+  a: readonly PropertyMapDecision[],
+  b: readonly PropertyMapDecision[]
+): boolean {
+  if (a.length !== b.length) return false;
+  const index = new Map(a.map((entry) => [entry.onshapePropertyId, entry]));
+  for (const entry of b) {
+    const other = index.get(entry.onshapePropertyId);
+    if (!other) return false;
+    if (other.carbonFieldId !== entry.carbonFieldId) return false;
+  }
+  // Equal lengths plus every `b` key present in `a` leaves no room for a
+  // duplicate key to hide a difference.
+  return index.size === a.length;
+}
+
+/**
  * Resolve one object's properties through the map: the fields apply would
  * write (with coercion problems surfaced, not silently dropped) and the
  * valued properties nothing maps yet — the review shows those as "not

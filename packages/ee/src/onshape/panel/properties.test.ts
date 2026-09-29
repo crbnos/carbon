@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import type { PropertyMapEntry } from "./properties";
 import {
   CUSTOM_FIELD_DATA_TYPES,
   coerceOnshapeValue,
@@ -10,6 +11,7 @@ import {
   parsePropertyMap,
   partPropertiesFromElementMetadata,
   propertyDisplayValue,
+  propertyMapEqual,
   resolveMappedFields
 } from "./properties";
 
@@ -375,5 +377,72 @@ describe("MAPPABLE_VALUE_TYPES", () => {
   /* A List field a legacy map still points at keeps its option sync. */
   it("still fills a legacy List field's missing options", () => {
     expect(missingListOptions(listField, ["A", "C"])).toEqual(["C"]);
+  });
+});
+
+describe("propertyMapEqual", () => {
+  const entry = (onshapePropertyId: string, carbonFieldId: string) => ({
+    onshapePropertyId,
+    carbonFieldId
+  });
+
+  it("ignores the order the entries arrive in", () => {
+    // Editing one row moves it to the end of the draft, so a positional
+    // comparison would call every map dirty after a single click.
+    expect(
+      propertyMapEqual(
+        [entry("p1", "f1"), entry("p2", "f2")],
+        [entry("p2", "f2"), entry("p1", "f1")]
+      )
+    ).toBe(true);
+  });
+
+  it("notices a remapped field and a removed row", () => {
+    const base = [entry("p1", "f1"), entry("p2", "f2")];
+    expect(propertyMapEqual(base, [entry("p1", "f9"), entry("p2", "f2")])).toBe(
+      false
+    );
+    expect(propertyMapEqual(base, [entry("p1", "f1")])).toBe(false);
+  });
+
+  it("notices a row mapped to a different property id", () => {
+    expect(propertyMapEqual([entry("p1", "f1")], [entry("p2", "f1")])).toBe(
+      false
+    );
+  });
+
+  it("ignores the display fields a load refreshes from Onshape", () => {
+    // onshapeName and valueType are re-read on every load; a rename in
+    // Onshape is not an unsaved decision by the user.
+    const stored: PropertyMapEntry[] = [
+      {
+        ...entry("p1", "f1"),
+        onshapeName: "Vendor",
+        valueType: "STRING",
+        mode: "owned"
+      }
+    ];
+    const renamed: PropertyMapEntry[] = [
+      {
+        ...entry("p1", "f1"),
+        onshapeName: "Supplier",
+        valueType: "ENUM",
+        mode: "owned"
+      }
+    ];
+    expect(propertyMapEqual(stored, renamed)).toBe(true);
+  });
+
+  it("holds for two empty maps", () => {
+    expect(propertyMapEqual([], [])).toBe(true);
+  });
+
+  it("does not call a duplicated key equal to two distinct ones", () => {
+    expect(
+      propertyMapEqual(
+        [entry("p1", "f1"), entry("p1", "f1")],
+        [entry("p1", "f1"), entry("p2", "f1")]
+      )
+    ).toBe(false);
   });
 });
