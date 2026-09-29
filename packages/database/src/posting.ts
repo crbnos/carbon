@@ -1,8 +1,10 @@
-// Node-side re-export of the posting helpers the edge functions share (the same
-// bridge pattern as datetime.ts / sequence.ts), for @carbon/operations. One copy
-// lives under supabase/functions until the edge functions are gone.
+// Node-side re-export of the helpers the edge functions share (the same bridge
+// pattern as datetime.ts / sequence.ts), for @carbon/operations. Transitional:
+// one copy lives under supabase/functions until the edge functions are gone,
+// when these files move into the packages that use them.
 
-export { toJson } from "../supabase/functions/lib/json.ts";
+export { toJson, toJsonColumns } from "../supabase/functions/lib/json.ts";
+export * from "../supabase/functions/lib/storage-units.ts";
 export {
   credit,
   debit,
@@ -17,3 +19,4 @@ export {
   createAdjustmentJournal
 } from "../supabase/functions/shared/post-adjustment.ts";
 export { getRemainingQuantityToInvoice } from "../supabase/functions/shared/short-close.ts";
+export { toTiptapDoc } from "../supabase/functions/shared/tiptap.ts";

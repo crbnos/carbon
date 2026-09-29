@@ -16,6 +16,7 @@ import {
   type RequiredPermissions,
   serviceRoleClient
 } from "../context";
+import { getMethod } from "../get-method";
 import { runOperation } from "../result";
 
 const logger = getLogger("operations", "convert");
@@ -1396,15 +1397,14 @@ export function convert(
           insertedQuoteLines
             .filter((line) => line.methodType === "Make to Order")
             .map((line) =>
-              client.functions.invoke("get-method", {
-                body: {
+              getMethod(
+                { ...ctx, system: true },
+                {
                   type: "itemToQuoteLine",
-                  sourceId: line.itemId,
-                  targetId: `${insertedQuoteId}:${line.id}`,
-                  companyId: companyId,
-                  userId: userId
+                  sourceId: line.itemId!,
+                  targetId: `${insertedQuoteId}:${line.id}`
                 }
-              })
+              )
             )
         );
         break;

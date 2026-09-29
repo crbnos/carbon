@@ -28,7 +28,6 @@
   },
   "devDependencies": {
     "@carbon/config": "workspace:*",
-    "typescript": "catalog:",
     "vitest": "catalog:"
   }
 }

@@ -1,6 +1,6 @@
 paths:
   - "packages/database/supabase/functions/lib/supersession-pick.ts"
-  - "packages/database/supabase/functions/get-method/**"
+  - "packages/operations/src/get-method/**"
   - "packages/database/supabase/functions/mrp/**"
   - "apps/erp/app/modules/inventory/supersession-pick.ts"
   - "apps/erp/app/modules/items/ui/Item/ItemSupersessionForm.tsx"

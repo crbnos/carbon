@@ -132,6 +132,7 @@ export async function convertSalesOrderLinesToJobs(
     userId: string;
   }
 ) {
+  const { getMethodAs } = await import("@carbon/operations/get-method");
   const salesOrder = await client
     .from("salesOrder")
     .select("*")
@@ -328,14 +329,12 @@ export async function convertSalesOrderLinesToJobs(
         });
 
         if (quoteId) {
-          const upsertMethod = await client.functions.invoke("get-method", {
-            body: {
-              type: "quoteLineToJob",
-              sourceId: `${quoteId}:${line.id}`,
-              targetId: createJob.data.id,
-              companyId,
-              userId
-            }
+          const upsertMethod = await getMethodAs(client, db, {
+            type: "quoteLineToJob",
+            sourceId: `${quoteId}:${line.id}`,
+            targetId: createJob.data.id,
+            companyId,
+            userId
           });
 
           if (upsertMethod.error) {
@@ -345,14 +344,12 @@ export async function convertSalesOrderLinesToJobs(
             continue;
           }
         } else {
-          const upsertMethod = await client.functions.invoke("get-method", {
-            body: {
-              type: "itemToJob",
-              sourceId: data.itemId,
-              targetId: createJob.data.id,
-              companyId,
-              userId
-            }
+          const upsertMethod = await getMethodAs(client, db, {
+            type: "itemToJob",
+            sourceId: data.itemId,
+            targetId: createJob.data.id,
+            companyId,
+            userId
           });
 
           if (upsertMethod.error) {
@@ -3390,6 +3387,7 @@ export async function insertJob(
   data: { id: string; jobId: string } | null;
   error: PostgrestError | null;
 }> {
+  const { getMethodAs } = await import("@carbon/operations/get-method");
   let jobId: string;
   if (input.jobId) {
     jobId = input.jobId;
@@ -3534,28 +3532,26 @@ export async function insertJob(
       (input.quoteId && input.quoteLineId ? "quoteLine" : "item");
 
     if (methodSource === "quoteLine" && input.quoteId && input.quoteLineId) {
-      const body: Record<string, unknown> = {
+      const { error } = await getMethodAs(client, db, {
         type: "quoteLineToJob",
         sourceId: `${input.quoteId}:${input.quoteLineId}`,
         targetId: createdJobId,
         companyId: input.companyId,
-        userId: input.createdBy
-      };
-      if (input.configuration) body.configuration = input.configuration;
-      const { error } = await client.functions.invoke("get-method", { body });
+        userId: input.createdBy,
+        configuration: input.configuration || undefined
+      });
       if (error) {
         logger.error("Failed to copy method from quote line", { error });
       }
     } else {
-      const body: Record<string, unknown> = {
+      const { error } = await getMethodAs(client, db, {
         type: "itemToJob",
         sourceId: input.itemId,
         targetId: createdJobId,
         companyId: input.companyId,
-        userId: input.createdBy
-      };
-      if (input.configuration) body.configuration = input.configuration;
-      const { error } = await client.functions.invoke("get-method", { body });
+        userId: input.createdBy,
+        configuration: input.configuration || undefined
+      });
       if (error) {
         logger.error("Failed to copy method from item", { error });
       }
@@ -3780,6 +3776,7 @@ export async function upsertJobMaterial(
 
 export async function upsertJobOperation(
   client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   jobOperation:
     | (z.infer<typeof jobOperationValidator> & {
         jobId: string;
@@ -3794,6 +3791,7 @@ export async function upsertJobOperation(
         customFields?: Json;
       })
 ) {
+  const { getMethodAs } = await import("@carbon/operations/get-method");
   const normalized = normalizeOperationSourceIds(jobOperation);
   if ("updatedBy" in normalized) {
     // An operation never moves between jobs, make methods or tenants — strip
@@ -3826,14 +3824,12 @@ export async function upsertJobOperation(
   if (!operationId) return operationInsert;
 
   if (normalized.procedureId && "createdBy" in normalized) {
-    const { error } = await client.functions.invoke("get-method", {
-      body: {
-        type: "procedureToOperation",
-        sourceId: normalized.procedureId,
-        targetId: operationId,
-        companyId: normalized.companyId,
-        userId: normalized.createdBy
-      }
+    const { error } = await getMethodAs(client, db, {
+      type: "procedureToOperation",
+      sourceId: normalized.procedureId,
+      targetId: operationId,
+      companyId: normalized.companyId,
+      userId: normalized.createdBy
     });
     if (error) {
       return {
@@ -4305,6 +4301,7 @@ export async function setJobOperationToolStepLink(
 
 export async function upsertJobMethod(
   client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   type: "itemToJob" | "quoteLineToJob" | "jobToJob",
   jobMethod: {
     sourceId: string;
@@ -4323,6 +4320,7 @@ export async function upsertJobMethod(
     };
   }
 ) {
+  const { getMethodAs } = await import("@carbon/operations/get-method");
   const body: {
     type: "itemToJob" | "quoteLineToJob" | "jobToJob";
     sourceId: string;
@@ -4362,9 +4360,7 @@ export async function upsertJobMethod(
     body.parts = jobMethod.parts;
   }
 
-  const getMethodResult = await client.functions.invoke("get-method", {
-    body
-  });
+  const getMethodResult = await getMethodAs(client, db, body);
   if (getMethodResult.error) {
     return {
       data: null,
@@ -4385,6 +4381,7 @@ export async function upsertJobMethod(
 
 export async function upsertJobMaterialMakeMethod(
   client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   jobMaterial: {
     sourceId: string;
     targetId: string;
@@ -4402,6 +4399,7 @@ export async function upsertJobMaterialMakeMethod(
     };
   }
 ) {
+  const { getMethodAs } = await import("@carbon/operations/get-method");
   const body: {
     type: "itemToJobMakeMethod";
     sourceId: string;
@@ -4441,9 +4439,7 @@ export async function upsertJobMaterialMakeMethod(
     body.parts = jobMaterial.parts;
   }
 
-  const { error } = await client.functions.invoke("get-method", {
-    body
-  });
+  const { error } = await getMethodAs(client, db, body);
 
   if (error) {
     return {
@@ -4468,6 +4464,7 @@ export async function upsertJobMaterialMakeMethod(
  */
 export async function pullJobMaterialMakeMethod(
   client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   args: {
     jobMaterialId: string;
     itemId: string;
@@ -4494,7 +4491,7 @@ export async function pullJobMaterialMakeMethod(
     };
   }
 
-  return upsertJobMaterialMakeMethod(client, {
+  return upsertJobMaterialMakeMethod(client, db, {
     sourceId: args.itemId,
     targetId: materialMakeMethod.data.jobMaterialMakeMethodId,
     companyId: args.companyId,
@@ -4504,6 +4501,7 @@ export async function pullJobMaterialMakeMethod(
 
 export async function upsertMakeMethodFromJob(
   client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   jobMethod: {
     sourceId: string;
     targetId: string;
@@ -4519,20 +4517,20 @@ export async function upsertMakeMethodFromJob(
     };
   }
 ) {
-  return client.functions.invoke("get-method", {
-    body: {
-      type: "jobToItem",
-      sourceId: jobMethod.sourceId,
-      targetId: jobMethod.targetId,
-      companyId: jobMethod.companyId,
-      userId: jobMethod.userId,
-      parts: jobMethod.parts
-    }
+  const { getMethodAs } = await import("@carbon/operations/get-method");
+  return getMethodAs(client, db, {
+    type: "jobToItem",
+    sourceId: jobMethod.sourceId,
+    targetId: jobMethod.targetId,
+    companyId: jobMethod.companyId,
+    userId: jobMethod.userId,
+    parts: jobMethod.parts
   });
 }
 
 export async function upsertMakeMethodFromJobMethod(
   client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   jobMethod: {
     sourceId: string;
     targetId: string;
@@ -4548,15 +4546,14 @@ export async function upsertMakeMethodFromJobMethod(
     };
   }
 ) {
-  const { error } = await client.functions.invoke("get-method", {
-    body: {
-      type: "jobMakeMethodToItem",
-      sourceId: jobMethod.sourceId,
-      targetId: jobMethod.targetId,
-      companyId: jobMethod.companyId,
-      userId: jobMethod.userId,
-      parts: jobMethod.parts
-    }
+  const { getMethodAs } = await import("@carbon/operations/get-method");
+  const { error } = await getMethodAs(client, db, {
+    type: "jobMakeMethodToItem",
+    sourceId: jobMethod.sourceId,
+    targetId: jobMethod.targetId,
+    companyId: jobMethod.companyId,
+    userId: jobMethod.userId,
+    parts: jobMethod.parts
   });
 
   if (error) {

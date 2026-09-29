@@ -1,5 +1,5 @@
 import { Transaction } from "kysely";
-import { DB } from "../lib/database.ts";
+import type { KyselyDatabase as DB } from "./postgres/index.ts";
 
 export async function getStorageUnitId(
   trx: Transaction<DB>,

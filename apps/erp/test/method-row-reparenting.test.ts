@@ -176,7 +176,7 @@ describe("method row updates cannot re-parent a row", () => {
 
   it("upsertJobOperation strips parent ids and scopes to the company", async () => {
     const { client, calls } = recordingClient();
-    await upsertJobOperation(client, {
+    await upsertJobOperation(client, undefined as never, {
       id: "jo1",
       jobId: "victim-job",
       jobMakeMethodId: "victim-method",

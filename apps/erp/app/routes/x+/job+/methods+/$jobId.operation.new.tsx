@@ -46,13 +46,17 @@ export async function action({ request, params }: ActionFunctionArgs) {
     })
   ]);
 
-  const insertJobOperation = await upsertJobOperation(serviceRole, {
-    ...operationData,
-    jobId,
-    companyId,
-    createdBy: userId,
-    customFields: setCustomFields(formData)
-  });
+  const insertJobOperation = await upsertJobOperation(
+    serviceRole,
+    getDatabaseClient(),
+    {
+      ...operationData,
+      jobId,
+      companyId,
+      createdBy: userId,
+      customFields: setCustomFields(formData)
+    }
+  );
   if (insertJobOperation.error) {
     return data(
       {

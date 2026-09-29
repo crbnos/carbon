@@ -140,7 +140,7 @@ Change-order code follows the one-service/models/server-per-module convention �
 
 - **purchasing** — supplier parts pricing; PO lines reference items; `conversionFactor` on `supplierPart`; CO impact panel reads open PO lines (`openPurchaseOrderLines`) for deleted parts
 - **inventory** — quantities tracked per item/location; tracking type drives receipt/picking behavior
-- **production** — jobs manufacture items; make methods copied to jobs via `get-method` edge function
+- **production** — jobs manufacture items; make methods copied to jobs via the `get-method` operation (`@carbon/operations/get-method`)
 - **sales** — quote lines and sales order lines reference items; `itemUnitSalePrice` is base price
 - **accounting** — `itemPostingGroup` maps items to GL accounts
 - **quality** — inbound inspection is driven by the item's Receipt-usage inspection-document assignment (`itemInspectionDocumentAssignment`), configured on the item Quality tab; inspection documents reference parts

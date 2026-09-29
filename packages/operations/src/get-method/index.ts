@@ -1,61 +1,63 @@
-import { serve } from "https://deno.land/std@0.175.0/http/server.ts";
-import { nanoid } from "https://deno.land/x/nanoid@v3.0.0/mod.ts";
-import { z } from "npm:zod@^4.5.4";
-
-import type {
-    PostgrestError,
-    SupabaseClient,
-} from "@supabase/supabase-js";
-
-import { DB, getConnectionPool, getDatabaseClient } from "../lib/database.ts";
-import { datetime, getCompanyTimeZone } from "../lib/datetime.ts";
-import { fetchAll } from "../lib/fetch-all.ts";
-import { requirePermissions } from "../lib/supabase.ts";
-import type { Database } from "../lib/types.ts";
-
-import { Transaction } from "kysely";
-import { corsPreflight, errorResponse, jsonResponse } from "../lib/response.ts";
+import type { Database } from "@carbon/database";
+import type { KyselyDatabase } from "@carbon/database/client";
+import { datetime, getCompanyTimeZone } from "@carbon/database/datetime";
+import { fetchAll } from "@carbon/database/fetch-all";
 import {
-    calculateQuoteLinePrices,
-    getJobMethodTree,
-    getQuoteMethodTree,
-    getRatesFromSupplierProcesses,
-    getRatesFromWorkCenters,
-    JobMethodTreeItem,
-    QuoteMethodTreeItem,
-    traverseJobMethod,
-    traverseJobMethodAsync,
-    traverseQuoteMethod,
-} from "../lib/methods.ts";
-import { getFunctionLogger } from "../lib/logging.ts";
-import { toJson, toJsonColumns } from "../lib/json.ts";
-import { KyselyDatabase } from "../lib/postgres/index.ts";
-import { importTypeScript } from "../lib/sandbox.ts";
-import { getStorageUnitId } from "../lib/storage-units.ts";
-import { effectiveReplenishment } from "../lib/mrp-engine.ts";
+  calculateQuoteLinePrices,
+  getJobMethodTree,
+  getQuoteMethodTree,
+  getRatesFromSupplierProcesses,
+  getRatesFromWorkCenters,
+  type JobMethodTreeItem,
+  type QuoteMethodTreeItem,
+  traverseJobMethod,
+  traverseJobMethodAsync,
+  traverseQuoteMethod
+} from "@carbon/database/methods";
 import {
-  buildSupersessionRedirectMap,
-  type SupersessionRow,
-  pullBackQuantities,
+  effectiveReplenishment,
+  type ReplenishmentSystem
+} from "@carbon/database/mrp-engine";
+import {
+  getStorageUnitId,
+  toJson,
+  toJsonColumns,
+  toTiptapDoc
+} from "@carbon/database/posting";
+import {
+  getNextRevisionSequence,
+  getNextSequence
+} from "@carbon/database/sequence";
+import {
   buildConsumeFirstHops,
   buildConsumeFirstRules,
+  buildSupersessionRedirectMap,
   consumeFirstStockItems,
+  pullBackQuantities,
   reserveConsumeFirstStock,
   resolveMadeLinePull,
-  settleConsumeFirstLine,
   type SupersessionContext,
-  withoutStockedConsumeFirst,
-} from "../lib/supersession-pick.ts";
-import { toTiptapDoc } from "../shared/tiptap.ts";
+  type SupersessionRow,
+  settleConsumeFirstLine,
+  withoutStockedConsumeFirst
+} from "@carbon/database/supersession-pick";
+import { getLogger } from "@carbon/logger";
+import { scrapAllowance } from "@carbon/utils";
+import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
+import type { Kysely, Transaction } from "kysely";
+import { nanoid } from "nanoid";
+import { z } from "zod";
+import { RecordNotFoundError } from "../company-records";
 import {
-    getNextRevisionSequence,
-    getNextSequence,
-} from "../shared/get-next-sequence.ts";
-import { scrapAllowance } from "../shared/precision.ts";
+  assertOperationPermissions,
+  callerContext,
+  type OperationContext,
+  serviceRoleClient
+} from "../context";
+import { runOperation } from "../result";
+import { importTypeScript } from "./sandbox";
 
-const pool = getConnectionPool(1);
-const db = getDatabaseClient<DB>(pool);
-const logger = getFunctionLogger("get-method");
+const logger = getLogger("operations", "get-method");
 
 // quoteLine's jsonb columns — run through toJsonColumns() in quoteToQuote's per-line copy.
 const QUOTE_LINE_JSON_COLUMNS = [
@@ -64,7 +66,7 @@ const QUOTE_LINE_JSON_COLUMNS = [
   "customFields",
   "externalNotes",
   "internalNotes",
-  "priceTrace",
+  "priceTrace"
 ] as const satisfies readonly (keyof Database["public"]["Tables"]["quoteLine"]["Row"])[];
 
 // Stored configurator rules are user-authored JS that may still return legacy "Inside"/"Outside" operationType values.
@@ -81,7 +83,7 @@ const normalizeOperationType = (value: unknown) =>
 // Guarded: a no-op when there are no slides, so it can never break step copying.
 // See .ai/specs/2026-07-14-mes-execution-views.md §4.
 async function copyStepSlides(
-  trx: Transaction<DB>,
+  trx: Transaction<KyselyDatabase>,
   client: SupabaseClient<Database>,
   sourceSteps: Array<{ id?: string | null }>,
   insertedStepIds: Array<{ id: string }>,
@@ -94,7 +96,7 @@ async function copyStepSlides(
     | "jobOperationStepSlide"
     | "quoteOperationStepSlide",
   companyId: string,
-  userId: string,
+  userId: string
 ) {
   const sourceStepIds = sourceSteps
     .map((s) => s.id)
@@ -104,7 +106,7 @@ async function copyStepSlides(
   const { data: srcSlides } = await client
     .from(sourceTable)
     .select(
-      "stepId, imagePath, modelUploadId, caption, sortOrder, size, annotations",
+      "stepId, imagePath, modelUploadId, caption, sortOrder, size, annotations"
     )
     .in("stepId", sourceStepIds);
 
@@ -112,22 +114,27 @@ async function copyStepSlides(
     const idx = sourceSteps.findIndex((s) => s.id === sl.stepId);
     const newStepId = insertedStepIds[idx]?.id;
     if (!newStepId) return [];
-    return [{
-      stepId: newStepId,
-      imagePath: sl.imagePath,
-      modelUploadId: sl.modelUploadId,
-      caption: sl.caption,
-      sortOrder: sl.sortOrder,
-      size: sl.size,
-      annotations: sl.annotations,
-      companyId,
-      createdBy: userId,
-    }];
+    return [
+      {
+        stepId: newStepId,
+        imagePath: sl.imagePath,
+        modelUploadId: sl.modelUploadId,
+        caption: sl.caption,
+        sortOrder: sl.sortOrder,
+        size: sl.size,
+        annotations: sl.annotations,
+        companyId,
+        createdBy: userId
+      }
+    ];
   });
 
   if (inserts.length > 0) {
     // deno-lint-ignore no-explicit-any
-    await trx.insertInto(targetTable as any).values(inserts as any).execute();
+    await trx
+      .insertInto(targetTable as any)
+      .values(inserts as any)
+      .execute();
   }
 }
 
@@ -136,7 +143,7 @@ async function copyStepSlides(
 // the whole operation (no join rows, shown on every step in the MES).
 function remapStepIds(
   oldIds: Array<string | null | undefined> | null | undefined,
-  stepMap: Record<string, string>,
+  stepMap: Record<string, string>
 ): string[] {
   return (oldIds ?? []).flatMap((id) =>
     id && stepMap[id] ? [stepMap[id]] : []
@@ -151,14 +158,21 @@ function remapStepLinks(
     | Array<string | { id?: string | null; quantity?: number | null } | null>
     | null
     | undefined,
-  stepMap: Record<string, string>,
+  stepMap: Record<string, string>
 ): { stepId: string; quantity: number | null }[] {
   return (oldLinks ?? []).flatMap((link) => {
     const id = typeof link === "string" ? link : link?.id;
     const quantity =
-      typeof link === "object" && link !== null ? (link.quantity ?? null) : null;
+      typeof link === "object" && link !== null
+        ? (link.quantity ?? null)
+        : null;
     return id && stepMap[id]
-      ? [{ stepId: stepMap[id], quantity: quantity === null ? null : Number(quantity) }]
+      ? [
+          {
+            stepId: stepMap[id],
+            quantity: quantity === null ? null : Number(quantity)
+          }
+        ]
       : [];
   });
 }
@@ -175,18 +189,20 @@ function isZeroQuantity(quantity: unknown): boolean {
   return typeof quantity === "number" && quantity === 0;
 }
 
-const partsValidator = z.object({
-  billOfMaterial: z.boolean().default(true),
-  billOfProcess: z.boolean().default(true),
-  parameters: z.boolean().default(true),
-  tools: z.boolean().default(true),
-  steps: z.boolean().default(true),
-  workInstructions: z.boolean().default(true),
-  // prefault, not default: v4's .default() returns {} AS-IS on undefined input,
-  // which would skip every inner default and disable all six part flags.
-}).prefault({});
+const partsValidator = z
+  .object({
+    billOfMaterial: z.boolean().default(true),
+    billOfProcess: z.boolean().default(true),
+    parameters: z.boolean().default(true),
+    tools: z.boolean().default(true),
+    steps: z.boolean().default(true),
+    workInstructions: z.boolean().default(true)
+    // prefault, not default: v4's .default() returns {} AS-IS on undefined input,
+    // which would skip every inner default and disable all six part flags.
+  })
+  .prefault({});
 
-const payloadValidator = z.object({
+export const getMethodInput = z.object({
   type: z.enum([
     "itemToItem",
     "itemToJob",
@@ -202,48 +218,62 @@ const payloadValidator = z.object({
     "quoteLineToJob",
     "quoteLineToQuoteLine",
     "quoteMakeMethodToItem",
-    "quoteToQuote",
+    "quoteToQuote"
   ]),
   sourceId: z.string(),
   targetId: z.string(),
-  companyId: z.string(),
-  userId: z.string(),
   configuration: z.record(z.string(), z.unknown()).optional(),
   parts: partsValidator,
   // A specific source makeMethod version (itemToJob / itemToJobMakeMethod
   // only). Absent = the item's active method, as before.
-  versionId: z.string().optional(),
+  versionId: z.string().optional()
 });
 
-serve(async (req: Request) => {
-  const preflight = corsPreflight(req);
-  if (preflight) return preflight;
-  const payload = await req.json();
+/** `newQuoteId` is set by quoteToQuote. */
+export type GetMethodResult = { success: boolean; newQuoteId?: string };
 
-  try {
-    const {
+/**
+ * `getMethod` for app code that holds a Supabase client: a service-role client runs it
+ * as the system, any other client is permission-checked (`callerContext`).
+ */
+export async function getMethodAs(
+  client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
+  {
+    companyId,
+    userId,
+    ...input
+  }: z.input<typeof getMethodInput> & { companyId: string; userId: string }
+) {
+  return getMethod(
+    await callerContext(client, { db, companyId, userId }),
+    input
+  );
+}
+
+/** Copies a method (BOM + BOP) between items, quotes and jobs, per `type`. */
+export function getMethod(
+  ctx: OperationContext,
+  input: z.input<typeof getMethodInput>
+) {
+  return runOperation("get-method", async (): Promise<GetMethodResult> => {
+    const { type, sourceId, targetId, configuration, parts, versionId } =
+      getMethodInput.parse(input);
+    const { db, companyId, userId } = ctx;
+
+    logger.info("get-method", {
       type,
       sourceId,
       targetId,
       companyId,
       userId,
-      configuration,
-      parts,
-      versionId,
-    } = payloadValidator.parse(payload);
-
-    logger.info({
-      type,
-      sourceId,
-      targetId,
-      companyId,
-      userId,
       parts,
       configuration,
-      versionId,
+      versionId
     });
 
-    const client = await requirePermissions(req, companyId, userId, { update: "production" });
+    await assertOperationPermissions(ctx, { update: "production" });
+    const client = await serviceRoleClient();
 
     switch (type) {
       case "itemToItem": {
@@ -266,7 +296,7 @@ serve(async (req: Request) => {
               .select("*")
               .eq("itemId", targetId)
               .eq("companyId", companyId)
-              .single(),
+              .single()
           ]);
         if (sourceMakeMethod.error || targetMakeMethod.error) {
           throw new Error("Failed to get make methods");
@@ -303,7 +333,7 @@ serve(async (req: Request) => {
                 )
                 .eq("makeMethodId", sourceMakeMethod.data.id)
                 .eq("companyId", companyId)
-            : Promise.resolve({ data: [], error: null }),
+            : Promise.resolve({ data: [], error: null })
         ]);
 
         if (sourceMaterials.error || sourceOperations.error) {
@@ -317,14 +347,16 @@ serve(async (req: Request) => {
               ? trx
                   .deleteFrom("methodMaterial")
                   .where("makeMethodId", "=", targetMakeMethod.data.id)
+                  .where("companyId", "=", companyId)
                   .execute()
               : Promise.resolve(),
             parts.billOfProcess
               ? trx
                   .deleteFrom("methodOperation")
                   .where("makeMethodId", "=", targetMakeMethod.data.id)
+                  .where("companyId", "=", companyId)
                   .execute()
-              : Promise.resolve(),
+              : Promise.resolve()
           ]);
 
           // Copy materials from source to target, dropping any zero-quantity
@@ -342,14 +374,18 @@ serve(async (req: Request) => {
                   productionQuantity: undefined,
                   id: undefined, // Let the database generate a new ID
                   makeMethodId: targetMakeMethod.data.id!,
-                  createdBy: userId,
+                  createdBy: userId
                 }))
               )
               .execute();
           }
 
           // Copy operations from source to target
-          if (parts.billOfProcess && sourceOperations.data && sourceOperations.data.length > 0) {
+          if (
+            parts.billOfProcess &&
+            sourceOperations.data &&
+            sourceOperations.data.length > 0
+          ) {
             const operationIds = await trx
               .insertInto("methodOperation")
               .values(
@@ -364,7 +400,7 @@ serve(async (req: Request) => {
                       ...operation,
                       id: undefined, // Let the database generate a new ID
                       makeMethodId: targetMakeMethod.data.id!,
-                      createdBy: userId,
+                      createdBy: userId
                     };
                     if (!parts.workInstructions) {
                       insert.workInstruction = {};
@@ -378,15 +414,15 @@ serve(async (req: Request) => {
 
             for await (const [
               index,
-              operation,
+              operation
             ] of sourceOperations.data.entries()) {
               const {
                 methodOperationTool,
                 methodOperationParameter,
                 methodOperationStep,
-                procedureId,
+                procedureId
               } = operation;
-              const operationId = operationIds[index].id;
+              const operationId = operationIds[index]!.id;
 
               if (
                 parts.tools &&
@@ -402,7 +438,7 @@ serve(async (req: Request) => {
                       quantity: tool.quantity,
                       operationId,
                       companyId,
-                      createdBy: userId,
+                      createdBy: userId
                     }))
                   )
                   .execute();
@@ -422,7 +458,7 @@ serve(async (req: Request) => {
                         key: param.key,
                         value: param.value,
                         companyId,
-                        createdBy: userId,
+                        createdBy: userId
                       }))
                     )
                     .execute();
@@ -444,7 +480,7 @@ serve(async (req: Request) => {
                         description: toTiptapDoc(attribute.description),
                         operationId: operationId!,
                         companyId,
-                        createdBy: userId,
+                        createdBy: userId
                       }))
                     )
                     .returning(["id"])
@@ -458,7 +494,7 @@ serve(async (req: Request) => {
                     "methodOperationStepSlide",
                     "methodOperationStepSlide",
                     companyId,
-                    userId,
+                    userId
                   );
                 }
               }
@@ -519,7 +555,7 @@ serve(async (req: Request) => {
               .select("locationId, quantity, startDate, dueDate")
               .eq("id", jobId)
               .eq("companyId", companyId)
-              .single(),
+              .single()
           ]);
 
         if (makeMethod.error) {
@@ -565,7 +601,7 @@ serve(async (req: Request) => {
                 .select("*")
                 .eq("itemId", itemId)
                 .eq("companyId", companyId)
-            : Promise.resolve({ data: [] }),
+            : Promise.resolve({ data: [] })
         ]);
 
         if (methodTrees.error) {
@@ -616,7 +652,10 @@ serve(async (req: Request) => {
           Awaited<ReturnType<typeof selectMethodOperations>>["data"]
         >[number];
 
-        const operationsByMakeMethodId = new Map<string, MethodOperationRow[]>();
+        const operationsByMakeMethodId = new Map<
+          string,
+          MethodOperationRow[]
+        >();
 
         // "Already read for this id" — deliberately distinct from a map miss,
         // which legitimately means "read, no row" (an item with no
@@ -681,7 +720,7 @@ serve(async (req: Request) => {
               .select([
                 "itemId",
                 "storageUnitId",
-                (eb) => eb.fn.sum("quantity").as("totalQuantity"),
+                (eb) => eb.fn.sum("quantity").as("totalQuantity")
               ])
               .having((eb) => eb.fn.sum("quantity"), ">", 0)
               .execute();
@@ -797,11 +836,11 @@ serve(async (req: Request) => {
           await Promise.all([
             ensureItemsPrefetched(reader, [
               ...nodes.map((n) => n.data.itemId),
-              ...redirectTargets,
+              ...redirectTargets
             ]),
             ensureMakeMethodsPrefetched(
               nodes.map((n) => n.data.materialMakeMethodId)
-            ),
+            )
           ]);
         }
 
@@ -825,13 +864,15 @@ serve(async (req: Request) => {
         await db.transaction().execute(async (trx) => {
           const insertedJobMaterialIds: string[] = [];
           if (isConfigured) {
-            await trx.updateTable("job")
+            await trx
+              .updateTable("job")
               .set({
                 configuration: JSON.stringify(configuration),
-                updatedAt: new Date().toISOString(),
-                updatedBy: userId,
+                updatedAt: datetime.timestamp(),
+                updatedBy: userId
               })
               .where("id", "=", jobId)
+              .where("companyId", "=", companyId)
               .execute();
           }
 
@@ -843,29 +884,41 @@ serve(async (req: Request) => {
                   .where((eb) =>
                     eb.and([
                       eb("jobId", "=", jobId),
-                      eb("parentMaterialId", "is not", null),
+                      eb("parentMaterialId", "is not", null)
                     ])
                   )
+                  .where("companyId", "=", companyId)
                   .execute()
               : Promise.resolve(),
             parts.billOfMaterial
-              ? trx.deleteFrom("jobMaterial").where("jobId", "=", jobId).execute()
+              ? trx
+                  .deleteFrom("jobMaterial")
+                  .where("jobId", "=", jobId)
+                  .where("companyId", "=", companyId)
+                  .execute()
               : Promise.resolve(),
             // Prevent cascade deletion of materials when only replacing operations
             !parts.billOfMaterial && parts.billOfProcess
-              ? trx.updateTable("jobMaterial")
+              ? trx
+                  .updateTable("jobMaterial")
                   .set({ jobOperationId: null })
                   .where("jobId", "=", jobId)
+                  .where("companyId", "=", companyId)
                   .execute()
               : Promise.resolve(),
             parts.billOfProcess
-              ? trx.deleteFrom("jobOperation").where("jobId", "=", jobId).execute()
+              ? trx
+                  .deleteFrom("jobOperation")
+                  .where("jobId", "=", jobId)
+                  .where("companyId", "=", companyId)
+                  .execute()
               : Promise.resolve(),
             trx
               .updateTable("jobMakeMethod")
               .set({ version: makeMethod.data.version ?? 1 })
               .where("id", "=", jobMakeMethod.data.id!)
-              .execute(),
+              .where("companyId", "=", companyId)
+              .execute()
           ]);
 
           // Default storage units are read by ensureItemsPrefetched above, per
@@ -874,7 +927,7 @@ serve(async (req: Request) => {
           async function getConfiguredValue<T>({
             id,
             field,
-            defaultValue,
+            defaultValue
           }: {
             id: string;
             field: string;
@@ -892,7 +945,7 @@ serve(async (req: Request) => {
                 return (result ?? defaultValue) as T;
               } catch (err) {
                 logger.error("configuration field resolver failed", {
-                  error: String((err as Error)?.stack ?? err),
+                  error: String((err as Error)?.stack ?? err)
                 });
                 return defaultValue;
               }
@@ -942,8 +995,6 @@ serve(async (req: Request) => {
 
             // For Make: estimatedQuantity is the good quantity (without scrap)
             // For Buy/Pick: estimatedQuantity includes scrap since that's what we procure
-            const estimatedQuantity =
-              node.data.methodType === "Make to Order" ? targetQuantity : totalWithScrap;
             // operationQuantity is the total (including scrap); fractional
             // targets flow through — the scrap allowance is already whole
             const operationQuantity = totalWithScrap;
@@ -960,781 +1011,829 @@ serve(async (req: Request) => {
 
             // For child nodes, always include operations regardless of parts flags
             if (!node.data.isRoot || parts.billOfProcess) {
-            const relatedOperations = {
-              data:
-                operationsByMakeMethodId.get(
-                  node.data.materialMakeMethodId
-                ) ?? [],
-            };
+              const relatedOperations = {
+                data:
+                  operationsByMakeMethodId.get(
+                    node.data.materialMakeMethodId
+                  ) ?? []
+              };
 
-            let jobOperationsInserts: Database["public"]["Tables"]["jobOperation"]["Insert"][] =
-              [];
-            // The method operation each insert came from, kept index-aligned
-            // with jobOperationsInserts. The inserted ids come back in the
-            // order they were inserted, and that order matches neither the
-            // length nor the sequence of relatedOperations.data: a blank
-            // configured processId skips a row below, and a billOfProcess
-            // configuration reorders and filters them. Pairing the returned
-            // ids against the source array instead of this one attaches an
-            // operation's tools, parameters and steps to the wrong job
-            // operation — or reads past the end of the array and throws.
-            let sourceOperations: typeof relatedOperations.data = [];
-            for await (const op of relatedOperations?.data ?? []) {
-              const [
-                processId,
-                procedureId,
-                workCenterId,
-                description,
-                setupTime,
-                setupUnit,
-                laborTime,
-                laborUnit,
-                machineTime,
-                machineUnit,
-                operationOrder,
-                operationType,
-              ] = await Promise.all([
-                getConfiguredValue({
-                  id: op.id,
-                  field: "processId",
-                  defaultValue: op.processId,
-                }),
-                getConfiguredValue({
-                  id: op.id,
-                  field: "procedureId",
-                  defaultValue: op.procedureId,
-                }),
-                getConfiguredValue({
-                  id: op.id,
-                  field: "workCenterId",
-                  defaultValue: op.workCenterId,
-                }),
-                getConfiguredValue({
-                  id: op.id,
-                  field: "description",
-                  defaultValue: op.description,
-                }),
-                getConfiguredValue({
-                  id: op.id,
-                  field: "setupTime",
-                  defaultValue: op.setupTime,
-                }),
-                getConfiguredValue({
-                  id: op.id,
-                  field: "setupUnit",
-                  defaultValue: op.setupUnit,
-                }),
-                getConfiguredValue({
-                  id: op.id,
-                  field: "laborTime",
-                  defaultValue: op.laborTime,
-                }),
-                getConfiguredValue({
-                  id: op.id,
-                  field: "laborUnit",
-                  defaultValue: op.laborUnit,
-                }),
-                getConfiguredValue({
-                  id: op.id,
-                  field: "machineTime",
-                  defaultValue: op.machineTime,
-                }),
-                getConfiguredValue({
-                  id: op.id,
-                  field: "machineUnit",
-                  defaultValue: op.machineUnit,
-                }),
-                getConfiguredValue({
-                  id: op.id,
-                  field: "operationOrder",
-                  defaultValue: op.operationOrder,
-                }),
-                getConfiguredValue({
-                  id: op.id,
-                  field: "operationType",
-                  defaultValue: op.operationType,
-                }),
-              ]);
-
-              if (processId === "") continue;
-
-              sourceOperations.push(op);
-              jobOperationsInserts.push({
-                jobId,
-                jobMakeMethodId: parentJobMakeMethodId!,
-                processId,
-                procedureId,
-                workCenterId,
-                description,
-                setupTime,
-                setupUnit,
-                laborTime,
-                laborUnit,
-                machineTime,
-                machineUnit,
-                ...getLaborAndOverheadRates(processId, op.workCenterId),
-                order: op.order,
-                operationOrder,
-                operationType: normalizeOperationType(operationType),
-                // Carry the Assembly → BOP sync link so the MES can drive the
-                // animated instruction player on jobs made from a synced method.
-                assemblyInstructionId: op.assemblyInstructionId,
-                inspectionDocumentId: op.inspectionDocumentId,
-                operationSupplierProcessId: op.operationSupplierProcessId,
-                ...getOutsideOperationRates(
+              let jobOperationsInserts: Database["public"]["Tables"]["jobOperation"]["Insert"][] =
+                [];
+              // The method operation each insert came from, kept index-aligned
+              // with jobOperationsInserts. The inserted ids come back in the
+              // order they were inserted, and that order matches neither the
+              // length nor the sequence of relatedOperations.data: a blank
+              // configured processId skips a row below, and a billOfProcess
+              // configuration reorders and filters them. Pairing the returned
+              // ids against the source array instead of this one attaches an
+              // operation's tools, parameters and steps to the wrong job
+              // operation — or reads past the end of the array and throws.
+              let sourceOperations: typeof relatedOperations.data = [];
+              for await (const op of relatedOperations?.data ?? []) {
+                const [
                   processId,
-                  op.operationSupplierProcessId
-                ),
-                workInstruction: toJson((!node.data.isRoot || parts.workInstructions) ? op.workInstruction : {}),
-                targetQuantity,
-                operationQuantity,
-                companyId,
-                createdBy: userId,
-                customFields: {},
-              });
-            }
+                  procedureId,
+                  workCenterId,
+                  description,
+                  setupTime,
+                  setupUnit,
+                  laborTime,
+                  laborUnit,
+                  machineTime,
+                  machineUnit,
+                  operationOrder,
+                  operationType
+                ] = await Promise.all([
+                  getConfiguredValue({
+                    id: op.id,
+                    field: "processId",
+                    defaultValue: op.processId
+                  }),
+                  getConfiguredValue({
+                    id: op.id,
+                    field: "procedureId",
+                    defaultValue: op.procedureId
+                  }),
+                  getConfiguredValue({
+                    id: op.id,
+                    field: "workCenterId",
+                    defaultValue: op.workCenterId
+                  }),
+                  getConfiguredValue({
+                    id: op.id,
+                    field: "description",
+                    defaultValue: op.description
+                  }),
+                  getConfiguredValue({
+                    id: op.id,
+                    field: "setupTime",
+                    defaultValue: op.setupTime
+                  }),
+                  getConfiguredValue({
+                    id: op.id,
+                    field: "setupUnit",
+                    defaultValue: op.setupUnit
+                  }),
+                  getConfiguredValue({
+                    id: op.id,
+                    field: "laborTime",
+                    defaultValue: op.laborTime
+                  }),
+                  getConfiguredValue({
+                    id: op.id,
+                    field: "laborUnit",
+                    defaultValue: op.laborUnit
+                  }),
+                  getConfiguredValue({
+                    id: op.id,
+                    field: "machineTime",
+                    defaultValue: op.machineTime
+                  }),
+                  getConfiguredValue({
+                    id: op.id,
+                    field: "machineUnit",
+                    defaultValue: op.machineUnit
+                  }),
+                  getConfiguredValue({
+                    id: op.id,
+                    field: "operationOrder",
+                    defaultValue: op.operationOrder
+                  }),
+                  getConfiguredValue({
+                    id: op.id,
+                    field: "operationType",
+                    defaultValue: op.operationType
+                  })
+                ]);
 
-            const bopConfigurationKey = `billOfProcess:${nodeLevelConfigurationKey}`;
-            let bopConfiguration: string[] | null = null;
+                if (processId === "") continue;
 
-            if (configurationCodeByField?.[bopConfigurationKey]) {
-              const mod = await importTypeScript(
-                configurationCodeByField[bopConfigurationKey]
-              );
-              bopConfiguration = await mod.configure(hydratedConfiguration);
-            }
+                sourceOperations.push(op);
+                jobOperationsInserts.push({
+                  jobId,
+                  jobMakeMethodId: parentJobMakeMethodId!,
+                  processId,
+                  procedureId,
+                  workCenterId,
+                  description,
+                  setupTime,
+                  setupUnit,
+                  laborTime,
+                  laborUnit,
+                  machineTime,
+                  machineUnit,
+                  ...getLaborAndOverheadRates(processId, op.workCenterId),
+                  order: op.order,
+                  operationOrder,
+                  operationType: normalizeOperationType(operationType),
+                  // Carry the Assembly → BOP sync link so the MES can drive the
+                  // animated instruction player on jobs made from a synced method.
+                  assemblyInstructionId: op.assemblyInstructionId,
+                  inspectionDocumentId: op.inspectionDocumentId,
+                  operationSupplierProcessId: op.operationSupplierProcessId,
+                  ...getOutsideOperationRates(
+                    processId,
+                    op.operationSupplierProcessId
+                  ),
+                  workInstruction: toJson(
+                    !node.data.isRoot || parts.workInstructions
+                      ? op.workInstruction
+                      : {}
+                  ),
+                  targetQuantity,
+                  operationQuantity,
+                  companyId,
+                  createdBy: userId,
+                  customFields: {}
+                });
+              }
 
-            if (bopConfiguration) {
-              // Reorder and filter both arrays together so an insert and the
-              // method operation it came from stay at the same index.
-              // findIndex keeps the original `.find` semantics: with duplicate
-              // descriptions the first match wins.
-              const configuredInserts: typeof jobOperationsInserts = [];
-              const configuredSources: typeof sourceOperations = [];
-              bopConfiguration.forEach((description, index) => {
-                const position = jobOperationsInserts.findIndex(
-                  (operation) => operation.description === description
+              const bopConfigurationKey = `billOfProcess:${nodeLevelConfigurationKey}`;
+              let bopConfiguration: string[] | null = null;
+
+              if (configurationCodeByField?.[bopConfigurationKey]) {
+                const mod = await importTypeScript(
+                  configurationCodeByField[bopConfigurationKey]
                 );
-                if (position !== -1) {
-                  configuredInserts.push({
-                    ...jobOperationsInserts[position],
-                    order: index + 1,
-                  });
-                  configuredSources.push(sourceOperations[position]);
-                }
-              });
-              jobOperationsInserts = configuredInserts;
-              sourceOperations = configuredSources;
-            }
+                bopConfiguration = await mod.configure(hydratedConfiguration);
+              }
 
-            if (jobOperationsInserts?.length > 0) {
-              const operationIds = await trx
-                .insertInto("jobOperation")
-                .values(jobOperationsInserts)
-                .returning(["id"])
-                .execute();
-
-              for (const [index, operation] of sourceOperations.entries()) {
-                const operationId = operationIds[index]?.id;
-
-                if (operationId) {
-                  const {
-                    methodOperationTool,
-                    methodOperationParameter,
-                    methodOperationStep,
-                    procedureId,
-                  } = operation;
-
-                  // Tool ids already inserted by the assembly-instruction
-                  // copy — the method tool copy below must skip these or the
-                  // job gets the same tool twice (once step-linked, once
-                  // unlinked → the MES shows it on every step AND its step).
-                  let assemblyToolIds: Set<string> = new Set();
-
-                  if (procedureId) {
-                    await insertProcedureDataForJobOperation(trx, client, {
-                      operationId,
-                      procedureId,
-                      companyId,
-                      userId,
+              if (bopConfiguration) {
+                // Reorder and filter both arrays together so an insert and the
+                // method operation it came from stay at the same index.
+                // findIndex keeps the original `.find` semantics: with duplicate
+                // descriptions the first match wins.
+                const configuredInserts: typeof jobOperationsInserts = [];
+                const configuredSources: typeof sourceOperations = [];
+                bopConfiguration.forEach((description, index) => {
+                  const position = jobOperationsInserts.findIndex(
+                    (operation) => operation.description === description
+                  );
+                  if (position !== -1) {
+                    configuredInserts.push({
+                      ...jobOperationsInserts[position]!,
+                      order: index + 1
                     });
-                  } else {
-                    if (
-                      (!node.data.isRoot || parts.parameters) &&
-                      Array.isArray(methodOperationParameter) &&
-                      methodOperationParameter.length > 0
-                    ) {
-                      const parameters = await Promise.all(
-                        methodOperationParameter.map(async (param) => ({
-                          operationId,
-                          key: param.key,
-                          value: await getConfiguredValue({
-                            id: operation.id,
-                            field: `parameter:${param.id}:value`,
-                            defaultValue: param.value,
-                          }),
-                          companyId,
-                          createdBy: userId,
-                        }))
-                      );
+                    configuredSources.push(sourceOperations[position]!);
+                  }
+                });
+                jobOperationsInserts = configuredInserts;
+                sourceOperations = configuredSources;
+              }
 
-                      await trx
-                        .insertInto("jobOperationParameter")
-                        .values(parameters)
-                        .execute();
-                    }
+              if (jobOperationsInserts?.length > 0) {
+                const operationIds = await trx
+                  .insertInto("jobOperation")
+                  .values(jobOperationsInserts)
+                  .returning(["id"])
+                  .execute();
 
-                    if (operation.assemblyInstructionId) {
-                      // Assembly ops inherit their steps from the linked
-                      // instruction (the method only carries the pointer);
-                      // material ↔ step links are flushed after the
-                      // jobMaterial rows exist.
-                      assemblyToolIds = await insertAssemblyDataForJobOperation(
-                        trx,
-                        client,
-                        {
-                          operationId,
-                          assemblyInstructionId:
-                            operation.assemblyInstructionId,
-                          companyId,
-                          userId,
-                        }
-                      );
-                      assemblyOperationsToLink.push({
+                for (const [index, operation] of sourceOperations.entries()) {
+                  const operationId = operationIds[index]?.id;
+
+                  if (operationId) {
+                    const {
+                      methodOperationTool,
+                      methodOperationParameter,
+                      methodOperationStep,
+                      procedureId
+                    } = operation;
+
+                    // Tool ids already inserted by the assembly-instruction
+                    // copy — the method tool copy below must skip these or the
+                    // job gets the same tool twice (once step-linked, once
+                    // unlinked → the MES shows it on every step AND its step).
+                    let assemblyToolIds: Set<string> = new Set();
+
+                    if (procedureId) {
+                      await insertProcedureDataForJobOperation(trx, client, {
                         operationId,
-                        assemblyInstructionId: operation.assemblyInstructionId,
+                        procedureId,
+                        companyId,
+                        userId
                       });
-                    } else if (
-                      (!node.data.isRoot || parts.steps) &&
-                      Array.isArray(methodOperationStep) &&
-                      methodOperationStep.length > 0
-                    ) {
-                      const attributes = await Promise.all(
-                        methodOperationStep.map(
-                          async ({ id: _id, ...attribute }) => ({
-                            ...attribute,
-                            description: toTiptapDoc(attribute.description),
+                    } else {
+                      if (
+                        (!node.data.isRoot || parts.parameters) &&
+                        Array.isArray(methodOperationParameter) &&
+                        methodOperationParameter.length > 0
+                      ) {
+                        const parameters = await Promise.all(
+                          methodOperationParameter.map(async (param) => ({
                             operationId,
-                            minValue: await getConfiguredValue({
+                            key: param.key,
+                            value: await getConfiguredValue({
                               id: operation.id,
-                              field: `attribute:${_id}:minValue`,
-                              defaultValue: attribute.minValue,
-                            }),
-                            maxValue: await getConfiguredValue({
-                              id: operation.id,
-                              field: `attribute:${_id}:maxValue`,
-                              defaultValue: attribute.maxValue,
+                              field: `parameter:${param.id}:value`,
+                              defaultValue: param.value
                             }),
                             companyId,
-                            createdBy: userId,
-                          })
-                        )
-                      );
+                            createdBy: userId
+                          }))
+                        );
 
-                      const insertedSteps = await trx
-                        .insertInto("jobOperationStep")
-                        .values(attributes)
+                        await trx
+                          .insertInto("jobOperationParameter")
+                          .values(parameters)
+                          .execute();
+                      }
+
+                      if (operation.assemblyInstructionId) {
+                        // Assembly ops inherit their steps from the linked
+                        // instruction (the method only carries the pointer);
+                        // material ↔ step links are flushed after the
+                        // jobMaterial rows exist.
+                        assemblyToolIds =
+                          await insertAssemblyDataForJobOperation(trx, client, {
+                            operationId,
+                            assemblyInstructionId:
+                              operation.assemblyInstructionId,
+                            companyId,
+                            userId
+                          });
+                        assemblyOperationsToLink.push({
+                          operationId,
+                          assemblyInstructionId: operation.assemblyInstructionId
+                        });
+                      } else if (
+                        (!node.data.isRoot || parts.steps) &&
+                        Array.isArray(methodOperationStep) &&
+                        methodOperationStep.length > 0
+                      ) {
+                        const attributes = await Promise.all(
+                          methodOperationStep.map(
+                            async ({ id: _id, ...attribute }) => ({
+                              ...attribute,
+                              description: toTiptapDoc(attribute.description),
+                              operationId,
+                              minValue: await getConfiguredValue({
+                                id: operation.id,
+                                field: `attribute:${_id}:minValue`,
+                                defaultValue: attribute.minValue
+                              }),
+                              maxValue: await getConfiguredValue({
+                                id: operation.id,
+                                field: `attribute:${_id}:maxValue`,
+                                defaultValue: attribute.maxValue
+                              }),
+                              companyId,
+                              createdBy: userId
+                            })
+                          )
+                        );
+
+                        const insertedSteps = await trx
+                          .insertInto("jobOperationStep")
+                          .values(attributes)
+                          .returning(["id"])
+                          .execute();
+
+                        // Bulk insert preserves order, so insertedSteps[i] ↔
+                        // methodOperationStep[i]: record each method step -> new job step so
+                        // materials can carry the part ↔ step link onto the job (Phase 2).
+                        (methodOperationStep as Array<{ id?: string }>).forEach(
+                          (s, i) => {
+                            const newStepId = insertedSteps[i]?.id;
+                            if (s?.id && newStepId)
+                              methodStepsToJobSteps[s.id] = newStepId;
+                          }
+                        );
+                        await copyStepSlides(
+                          trx,
+                          client,
+                          methodOperationStep,
+                          insertedSteps,
+                          "methodOperationStepSlide",
+                          "jobOperationStepSlide",
+                          companyId,
+                          userId
+                        );
+                      }
+                    }
+
+                    // Tools after steps (Phase 2): the method-step -> job-step map is now
+                    // populated, so a tool scoped to steps carries those links onto the job via
+                    // jobOperationToolStep. Mirrors the material part ↔ step copy above. Tools
+                    // the assembly-instruction copy already inserted are skipped (see above).
+                    const toolsToCopy = (
+                      Array.isArray(methodOperationTool)
+                        ? methodOperationTool
+                        : []
+                    ).filter(
+                      (tool: { toolId: string }) =>
+                        !assemblyToolIds.has(tool.toolId)
+                    );
+                    if (
+                      (!node.data.isRoot || parts.tools) &&
+                      toolsToCopy.length > 0
+                    ) {
+                      const insertedTools = await trx
+                        .insertInto("jobOperationTool")
+                        .values(
+                          toolsToCopy.map((tool) => ({
+                            toolId: tool.toolId,
+                            quantity: tool.quantity,
+                            operationId,
+                            companyId,
+                            createdBy: userId
+                          }))
+                        )
                         .returning(["id"])
                         .execute();
 
-                      // Bulk insert preserves order, so insertedSteps[i] ↔
-                      // methodOperationStep[i]: record each method step -> new job step so
-                      // materials can carry the part ↔ step link onto the job (Phase 2).
-                      (methodOperationStep as Array<{ id?: string }>).forEach(
-                        (s, i) => {
-                          const newStepId = insertedSteps[i]?.id;
-                          if (s?.id && newStepId)
-                            methodStepsToJobSteps[s.id] = newStepId;
-                        }
-                      );
-                      await copyStepSlides(
-                        trx,
-                        client,
-                        methodOperationStep,
-                        insertedSteps,
-                        "methodOperationStepSlide",
-                        "jobOperationStepSlide",
-                        companyId,
-                        userId,
-                      );
-                    }
-                  }
-
-                  // Tools after steps (Phase 2): the method-step -> job-step map is now
-                  // populated, so a tool scoped to steps carries those links onto the job via
-                  // jobOperationToolStep. Mirrors the material part ↔ step copy above. Tools
-                  // the assembly-instruction copy already inserted are skipped (see above).
-                  const toolsToCopy = (
-                    Array.isArray(methodOperationTool) ? methodOperationTool : []
-                  ).filter((tool: { toolId: string }) => !assemblyToolIds.has(tool.toolId));
-                  if (
-                    (!node.data.isRoot || parts.tools) &&
-                    toolsToCopy.length > 0
-                  ) {
-                    const insertedTools = await trx
-                      .insertInto("jobOperationTool")
-                      .values(
-                        toolsToCopy.map((tool) => ({
-                          toolId: tool.toolId,
-                          quantity: tool.quantity,
-                          operationId,
-                          companyId,
-                          createdBy: userId,
-                        }))
-                      )
-                      .returning(["id"])
-                      .execute();
-
-                    // Tool ↔ step links (Phase 2, many-to-many). Bulk insert preserves order,
-                    // so insertedTools[i] ↔ toolsToCopy[i]. A tool with no links applies
-                    // to the whole operation (shown on every step in the MES).
-                    const toolStepRows = toolsToCopy.flatMap((tool, i) => {
-                      const jobOperationToolId = insertedTools[i]?.id;
-                      if (!jobOperationToolId) return [];
-                      const oldStepIds = (
-                        (tool.methodOperationToolStep ?? []) as Array<{
-                          methodOperationStepId: string | null;
-                        }>
-                      ).map((l) => l.methodOperationStepId);
-                      return remapStepIds(oldStepIds, methodStepsToJobSteps).map(
-                        (jobOperationStepId) => ({
+                      // Tool ↔ step links (Phase 2, many-to-many). Bulk insert preserves order,
+                      // so insertedTools[i] ↔ toolsToCopy[i]. A tool with no links applies
+                      // to the whole operation (shown on every step in the MES).
+                      const toolStepRows = toolsToCopy.flatMap((tool, i) => {
+                        const jobOperationToolId = insertedTools[i]?.id;
+                        if (!jobOperationToolId) return [];
+                        const oldStepIds = (
+                          (tool.methodOperationToolStep ?? []) as Array<{
+                            methodOperationStepId: string | null;
+                          }>
+                        ).map((l) => l.methodOperationStepId);
+                        return remapStepIds(
+                          oldStepIds,
+                          methodStepsToJobSteps
+                        ).map((jobOperationStepId) => ({
                           jobOperationToolId,
-                          jobOperationStepId,
-                        })
-                      );
-                    });
-                    if (toolStepRows.length > 0) {
-                      await trx
-                        .insertInto("jobOperationToolStep")
-                        .values(toolStepRows)
-                        .execute();
+                          jobOperationStepId
+                        }));
+                      });
+                      if (toolStepRows.length > 0) {
+                        await trx
+                          .insertInto("jobOperationToolStep")
+                          .values(toolStepRows)
+                          .execute();
+                      }
                     }
                   }
                 }
-              }
 
-              methodOperationsToJobOperations = sourceOperations.reduce<
-                Record<string, string>
-              >((acc, op, index) => {
-                const operationId = operationIds[index]?.id;
-                if (operationId) {
-                  acc[op.id!] = operationId;
-                }
-                return acc;
-              }, {});
-            }
+                methodOperationsToJobOperations = sourceOperations.reduce<
+                  Record<string, string>
+                >((acc, op, index) => {
+                  const operationId = operationIds[index]?.id;
+                  if (operationId) {
+                    acc[op.id!] = operationId;
+                  }
+                  return acc;
+                }, {});
+              }
             } // end if (parts.billOfProcess)
 
             if (parts.billOfMaterial) {
-            const locationId = job.data?.locationId;
+              const locationId = job.data?.locationId;
 
-            const mapMethodMaterialToJobMaterial = async (
-              child: MethodTreeItem
-            ) => {
-              let [
-                itemId,
-                description,
-                quantity,
-                methodType,
-                unitOfMeasureCode,
-              ] = await Promise.all([
-                getConfiguredValue({
-                  id: child.data.methodMaterialId,
-                  field: "itemId",
-                  defaultValue: child.data.itemId,
-                }),
-                getConfiguredValue({
-                  id: child.data.methodMaterialId,
-                  field: "description",
-                  defaultValue: child.data.description,
-                }),
-                getConfiguredValue({
-                  id: child.data.methodMaterialId,
-                  field: "quantity",
-                  defaultValue: child.data.quantity,
-                }),
-                getConfiguredValue({
-                  id: child.data.methodMaterialId,
-                  field: "methodType",
-                  defaultValue: child.data.methodType,
-                }),
-                getConfiguredValue({
-                  id: child.data.methodMaterialId,
-                  field: "unitOfMeasureCode",
-                  defaultValue: child.data.unitOfMeasureCode,
-                }),
-              ]);
-
-              if (itemId === "") return null;
-              // A configured (or authored) quantity of 0 removes the line from
-              // the BOM. Made sub-assemblies drop out of `configuredChildren`
-              // below with the row, so their sub-tree is never exploded either.
-              if (isZeroQuantity(quantity)) return null;
-
-              let itemType = child.data.itemType;
-              let unitCost = child.data.unitCost;
-              let requiresSerialTracking =
-                child.data.itemTrackingType === "Serial";
-              let requiresBatchTracking =
-                child.data.itemTrackingType === "Batch";
-
-              // Supersession swap (Buy/Pick lines only). A Make-to-Order line
-              // would need its successor's own sub-method re-exploded (a later
-              // layer), so we leave those on the old part. The re-derive block
-              // just below refreshes the successor's item fields automatically.
-              let substitutedFromItemId: string | null = null;
-              let substitutionFactor: number | null = null;
-              // Captured before the swap so the revert below can undo it whole.
-              const quantityBeforeSupersession = quantity;
-              const methodTypeBeforeSupersession = methodType;
-              // Post-configuration, pre-supersession. A configuration rule may
-              // already have moved this line off the BOM's item, and that choice
-              // has to survive a failed successor lookup — see the fallback chain
-              // below.
-              const configuredItemId = itemId;
-              if (methodType !== "Make to Order") {
-                const redirect = supersessionRedirect.get(itemId);
-                if (redirect) {
-                  substitutedFromItemId = itemId;
-                  substitutionFactor = redirect.factor;
-                  itemId = redirect.to;
-                  quantity = quantity * redirect.factor;
-                }
-              } else {
-                const pulledFrom = resolveMadeLinePull(
+              const mapMethodMaterialToJobMaterial = async (
+                child: MethodTreeItem
+              ) => {
+                let [
                   itemId,
+                  description,
                   quantity,
-                  supersessionContext
-                );
-                if (pulledFrom) {
-                  methodType = "Pull from Inventory";
-                  if (pulledFrom.itemId !== itemId) {
+                  methodType,
+                  unitOfMeasureCode
+                ] = await Promise.all([
+                  getConfiguredValue({
+                    id: child.data.methodMaterialId,
+                    field: "itemId",
+                    defaultValue: child.data.itemId
+                  }),
+                  getConfiguredValue({
+                    id: child.data.methodMaterialId,
+                    field: "description",
+                    defaultValue: child.data.description
+                  }),
+                  getConfiguredValue({
+                    id: child.data.methodMaterialId,
+                    field: "quantity",
+                    defaultValue: child.data.quantity
+                  }),
+                  getConfiguredValue({
+                    id: child.data.methodMaterialId,
+                    field: "methodType",
+                    defaultValue: child.data.methodType
+                  }),
+                  getConfiguredValue({
+                    id: child.data.methodMaterialId,
+                    field: "unitOfMeasureCode",
+                    defaultValue: child.data.unitOfMeasureCode
+                  })
+                ]);
+
+                if (itemId === "") return null;
+                // A configured (or authored) quantity of 0 removes the line from
+                // the BOM. Made sub-assemblies drop out of `configuredChildren`
+                // below with the row, so their sub-tree is never exploded either.
+                if (isZeroQuantity(quantity)) return null;
+
+                let itemType = child.data.itemType;
+                let unitCost = child.data.unitCost;
+                let requiresSerialTracking =
+                  child.data.itemTrackingType === "Serial";
+                let requiresBatchTracking =
+                  child.data.itemTrackingType === "Batch";
+
+                // Supersession swap (Buy/Pick lines only). A Make-to-Order line
+                // would need its successor's own sub-method re-exploded (a later
+                // layer), so we leave those on the old part. The re-derive block
+                // just below refreshes the successor's item fields automatically.
+                let substitutedFromItemId: string | null = null;
+                let substitutionFactor: number | null = null;
+                // Captured before the swap so the revert below can undo it whole.
+                const quantityBeforeSupersession = quantity;
+                const methodTypeBeforeSupersession = methodType;
+                // Post-configuration, pre-supersession. A configuration rule may
+                // already have moved this line off the BOM's item, and that choice
+                // has to survive a failed successor lookup — see the fallback chain
+                // below.
+                const configuredItemId = itemId;
+                if (methodType !== "Make to Order") {
+                  const redirect = supersessionRedirect.get(itemId);
+                  if (redirect) {
                     substitutedFromItemId = itemId;
-                    substitutionFactor = pulledFrom.factor;
-                    itemId = pulledFrom.itemId;
-                    quantity = quantity * pulledFrom.factor;
+                    substitutionFactor = redirect.factor;
+                    itemId = redirect.to;
+                    quantity = quantity * redirect.factor;
                   }
-                }
-              }
-
-              // Fall back in order of preference: the successor, then whatever a
-              // configuration rule chose, then the BOM's own item. Reverting
-              // straight to `child.data.itemId` discarded the configuration
-              // rule's decision, which the supersession never overrode — it only
-              // redirected the item that rule had already picked.
-              //
-              // Each candidate is READ before it is accepted, so `itemId` and the
-              // fields derived from it can never disagree. `child.data.itemId`
-              // needs no read: its fields are the defaults already in scope.
-              // What this row WOULD be for if every lookup succeeds.
-              const intendedItemId = itemId;
-              for (const candidate of [
-                ...new Set([itemId, configuredItemId, child.data.itemId]),
-              ]) {
-                itemId = candidate;
-                if (candidate === child.data.itemId) break;
-                const item = await client
-                  .from("item")
-                  .select(
-                    "readableId, readableIdWithRevision, type, name, itemTrackingType, itemCost(unitCost)"
-                  )
-                  .eq("id", candidate)
-                  .eq("companyId", companyId)
-                  .single();
-                if (item.data) {
-                  itemType = item.data.type;
-                  unitCost =
-                    item.data.itemCost[0]?.unitCost ?? child.data.unitCost;
-                  if (description === child.data.description) {
-                    description = item.data.name;
-                  }
-                  requiresSerialTracking =
-                    item.data.itemTrackingType === "Serial";
-                  requiresBatchTracking =
-                    item.data.itemTrackingType === "Batch";
-                  break;
-                }
-              }
-
-              if (itemId !== intendedItemId) {
-                // The swap could not be completed, so undo it WHOLLY. Reverting
-                // only `itemId` left the row on a different item while KEEPING
-                // the successor's factor-scaled quantity and a
-                // `substitutedFromItemId` that no longer described it — a
-                // plausible-looking but wrong quantity nothing downstream can
-                // detect or repair.
-                quantity = quantityBeforeSupersession;
-                methodType = methodTypeBeforeSupersession;
-                substitutedFromItemId = null;
-                substitutionFactor = null;
-              }
-
-              // `itemId` here is post-configuration and post-supersession, so
-              // it can be an item no tree node named — a configuration rule may
-              // return any item id. Cover it before reading, or its scrap
-              // percentage silently resolves to 0 and sticks.
-              await ensureItemsPrefetched(trx, [itemId]);
-
-              // Get scrap percentage for this item
-              const itemScrapPercentage =
-                scrapPercentageByItemId.get(itemId) ?? 0;
-
-              // Calculate scrap quantities for this material
-              // targetQuantity for this child = parent's total (including scrap) * quantity per parent
-              const childTargetQuantity = totalQuantityForChildren * quantity;
-              // scrapQuantity = portion attributable to scrap
-              const childScrapQuantity = scrapAllowance(
-                childTargetQuantity,
-                itemScrapPercentage
-              );
-              const childTotalWithScrap =
-                childTargetQuantity + childScrapQuantity;
-              // For Make: estimatedQuantity is the good quantity (without scrap)
-              // For Buy/Pick: estimatedQuantity includes scrap since that's what we procure
-              const childEstimatedQuantity =
-                methodType === "Make to Order" ? childTargetQuantity : childTotalWithScrap;
-
-              return {
-                jobId,
-                jobMakeMethodId: parentJobMakeMethodId!,
-                jobOperationId:
-                  methodOperationsToJobOperations[child.data.operationId],
-                // Transient (Phase 2, many-to-many): the part ↔ step links (with their
-                // per-step quantity), remapped onto the job's steps. Stripped before
-                // insert; used to build jobMaterialStep rows.
-                __stepLinks: remapStepLinks(
-                  (
-                    child.data as {
-                      methodOperationStepIds?:
-                        | Array<string | { id?: string | null; quantity?: number | null }>
-                        | null;
-                    }
-                  ).methodOperationStepIds,
-                  methodStepsToJobSteps
-                ),
-                itemId,
-                itemType,
-                kit: methodType === "Make to Order" && child.data.kit,
-                methodType,
-                order: child.data.order,
-                description,
-                quantity,
-                scrapQuantity: childScrapQuantity,
-                estimatedQuantity: childEstimatedQuantity,
-                storageUnitId: locationId
-                  ? // The bin explicitly set on the BOM line stays keyed on the
-                    // line, but the default bin belongs to the item this row is
-                    // actually for — `itemId`, after any supersession or
-                    // configuration swap. Keyed on child.data.itemId a swapped
-                    // line took the predecessor's bin, or none when only the
-                    // successor had one.
-                    // @ts-ignore
-                    (child.data.storageUnitIds?.[locationId] as string) ||
-                    defaultStorageUnitByItemId.get(itemId)
-                  : undefined,
-                requiresSerialTracking,
-                requiresBatchTracking,
-                unitOfMeasureCode,
-                unitCost: unitCost ?? 0,
-                itemScrapPercentage,
-                substitutedFromItemId,
-                substitutionFactor,
-                companyId,
-                createdBy: userId,
-                customFields: {},
-              };
-            };
-
-            const jobMaterialResults = await Promise.all(
-              node.children.map(mapMethodMaterialToJobMaterial)
-            );
-            const validJobMaterialIndices = jobMaterialResults.reduce<number[]>((acc, m, i) => {
-              if (m !== null) acc.push(i);
-              return acc;
-            }, []);
-            let materialsWithConfiguredFields = jobMaterialResults.filter(
-              (m): m is NonNullable<typeof m> => m !== null
-            );
-            let configuredChildren = validJobMaterialIndices.map(i => node.children[i]);
-
-            const bomConfigurationKey = `billOfMaterial:${nodeLevelConfigurationKey}`;
-            let bomConfiguration: string[] | null = null;
-
-            if (configurationCodeByField?.[bomConfigurationKey]) {
-              const mod = await importTypeScript(
-                configurationCodeByField[bomConfigurationKey]
-              );
-              bomConfiguration = await mod.configure(hydratedConfiguration);
-            }
-
-            if (bomConfiguration) {
-              const pairByReadableId = new Map<
-                string,
-                { material: (typeof materialsWithConfiguredFields)[number]; child: MethodTreeItem }
-              >();
-              configuredChildren.forEach((child, i) => {
-                const material = materialsWithConfiguredFields[i];
-                if (!material) return;
-                const data = child.data as {
-                  itemReadableId?: string | null;
-                  readableIdWithRevision?: string | null;
-                };
-                for (const key of [data.readableIdWithRevision, data.itemReadableId]) {
-                  if (key && !pairByReadableId.has(key)) {
-                    pairByReadableId.set(key, { material, child });
-                  }
-                }
-              });
-              const pairs = bomConfiguration.flatMap((readableId, index) => {
-                const pair = pairByReadableId.get(readableId);
-                return pair
-                  ? [{ material: { ...pair.material, order: index + 1 }, child: pair.child }]
-                  : [];
-              });
-              materialsWithConfiguredFields = pairs.map((pair) => pair.material);
-              configuredChildren = pairs.map((pair) => pair.child);
-            }
-
-            const madeMaterials = materialsWithConfiguredFields.filter(
-              (material) => material.methodType === "Make to Order"
-            );
-
-            const pickedOrBoughtMaterials =
-              materialsWithConfiguredFields.filter(
-                (material) => material.methodType !== "Make to Order"
-              );
-
-            const madeChildren = configuredChildren.filter(
-              (_, i) =>
-                materialsWithConfiguredFields[i]?.methodType === "Make to Order"
-            );
-
-            if (madeMaterials.length > 0) {
-              const madeMaterialsWithIds = madeMaterials.map((m) => ({
-                ...m,
-                id: nanoid(),
-              }));
-              insertedJobMaterialIds.push(...madeMaterialsWithIds.map((m) => m.id));
-
-              await trx
-                .insertInto("jobMaterial")
-                .values(
-                  madeMaterialsWithIds.map((m) => {
-                    const { __stepLinks, ...rest } = m as typeof m & {
-                      __stepLinks?: { stepId: string; quantity: number | null }[];
-                    };
-                    return rest;
-                  })
-                )
-                .execute();
-
-              // Part ↔ step links (Phase 2, many-to-many): the transient __stepLinks carried
-              // the remapped job step ids + per-step quantity; write them to jobMaterialStep
-              // now that the material id exists. No links = whole operation (shown on every
-              // step in the MES).
-              const madeStepRows = madeMaterialsWithIds.flatMap((m) =>
-                (
-                  (m as { __stepLinks?: { stepId: string; quantity: number | null }[] })
-                    .__stepLinks ?? []
-                ).map((link) => ({
-                  jobMaterialId: m.id,
-                  jobOperationStepId: link.stepId,
-                  quantity: link.quantity,
-                }))
-              );
-              if (madeStepRows.length > 0) {
-                await trx
-                  .insertInto("jobMaterialStep")
-                  .values(madeStepRows)
-                  .execute();
-              }
-
-              for (const [index, child] of madeChildren.entries()) {
-                const materialId = madeMaterialsWithIds[index].id;
-                const newMakeMethodId = nanoid();
-
-                await trx
-                  .updateTable("jobMakeMethod")
-                  .set({ id: newMakeMethodId })
-                  .where("parentMaterialId", "=", materialId)
-                  .execute();
-
-                // Get the total quantity (estimated + scrap) for this child material
-                // This is what we pass to children for the cascade
-                const material = madeMaterials[index];
-                const childTotalForCascade =
-                  (material?.estimatedQuantity ?? 0) +
-                  (material?.scrapQuantity ?? 0);
-
-                // Made sub-assembly supersession: if this made component has an
-                // effective successor that is ITSELF a made item, point the job
-                // material at the successor and explode the SUCCESSOR's method
-                // (not the old part's). A Make -> Buy successor is a structural
-                // flip we leave on the old part (handled/flagged elsewhere).
-                const madeSwapHandled = await swapMadeSubAssembly({
-                  client,
-                  trx,
-                  companyId,
-                  child,
-                  material,
-                  materialId,
-                  locationId: job.data?.locationId ?? "",
-                  supersessionRedirect,
-                  newMakeMethodId,
-                  traverseMethod,
-                });
-
-                // prevent an infinite loop
-                if (!madeSwapHandled && child.data.itemId !== itemId) {
-                  await traverseMethod(
-                    child,
-                    newMakeMethodId,
-                    childTotalForCascade || 1
+                } else {
+                  const pulledFrom = resolveMadeLinePull(
+                    itemId,
+                    quantity,
+                    supersessionContext
                   );
+                  if (pulledFrom) {
+                    methodType = "Pull from Inventory";
+                    if (pulledFrom.itemId !== itemId) {
+                      substitutedFromItemId = itemId;
+                      substitutionFactor = pulledFrom.factor;
+                      itemId = pulledFrom.itemId;
+                      quantity = quantity * pulledFrom.factor;
+                    }
+                  }
+                }
+
+                // Fall back in order of preference: the successor, then whatever a
+                // configuration rule chose, then the BOM's own item. Reverting
+                // straight to `child.data.itemId` discarded the configuration
+                // rule's decision, which the supersession never overrode — it only
+                // redirected the item that rule had already picked.
+                //
+                // Each candidate is READ before it is accepted, so `itemId` and the
+                // fields derived from it can never disagree. `child.data.itemId`
+                // needs no read: its fields are the defaults already in scope.
+                // What this row WOULD be for if every lookup succeeds.
+                const intendedItemId = itemId;
+                for (const candidate of [
+                  ...new Set([itemId, configuredItemId, child.data.itemId])
+                ]) {
+                  itemId = candidate;
+                  if (candidate === child.data.itemId) break;
+                  const item = await client
+                    .from("item")
+                    .select(
+                      "readableId, readableIdWithRevision, type, name, itemTrackingType, itemCost(unitCost)"
+                    )
+                    .eq("id", candidate)
+                    .eq("companyId", companyId)
+                    .single();
+                  if (item.data) {
+                    itemType = item.data.type;
+                    unitCost =
+                      item.data.itemCost[0]?.unitCost ?? child.data.unitCost;
+                    if (description === child.data.description) {
+                      description = item.data.name;
+                    }
+                    requiresSerialTracking =
+                      item.data.itemTrackingType === "Serial";
+                    requiresBatchTracking =
+                      item.data.itemTrackingType === "Batch";
+                    break;
+                  }
+                }
+
+                if (itemId !== intendedItemId) {
+                  // The swap could not be completed, so undo it WHOLLY. Reverting
+                  // only `itemId` left the row on a different item while KEEPING
+                  // the successor's factor-scaled quantity and a
+                  // `substitutedFromItemId` that no longer described it — a
+                  // plausible-looking but wrong quantity nothing downstream can
+                  // detect or repair.
+                  quantity = quantityBeforeSupersession;
+                  methodType = methodTypeBeforeSupersession;
+                  substitutedFromItemId = null;
+                  substitutionFactor = null;
+                }
+
+                // `itemId` here is post-configuration and post-supersession, so
+                // it can be an item no tree node named — a configuration rule may
+                // return any item id. Cover it before reading, or its scrap
+                // percentage silently resolves to 0 and sticks.
+                await ensureItemsPrefetched(trx, [itemId]);
+
+                // Get scrap percentage for this item
+                const itemScrapPercentage =
+                  scrapPercentageByItemId.get(itemId) ?? 0;
+
+                // Calculate scrap quantities for this material
+                // targetQuantity for this child = parent's total (including scrap) * quantity per parent
+                const childTargetQuantity = totalQuantityForChildren * quantity;
+                // scrapQuantity = portion attributable to scrap
+                const childScrapQuantity = scrapAllowance(
+                  childTargetQuantity,
+                  itemScrapPercentage
+                );
+                const childTotalWithScrap =
+                  childTargetQuantity + childScrapQuantity;
+                // For Make: estimatedQuantity is the good quantity (without scrap)
+                // For Buy/Pick: estimatedQuantity includes scrap since that's what we procure
+                const childEstimatedQuantity =
+                  methodType === "Make to Order"
+                    ? childTargetQuantity
+                    : childTotalWithScrap;
+
+                return {
+                  jobId,
+                  jobMakeMethodId: parentJobMakeMethodId!,
+                  jobOperationId:
+                    methodOperationsToJobOperations[child.data.operationId],
+                  // Transient (Phase 2, many-to-many): the part ↔ step links (with their
+                  // per-step quantity), remapped onto the job's steps. Stripped before
+                  // insert; used to build jobMaterialStep rows.
+                  __stepLinks: remapStepLinks(
+                    (
+                      child.data as {
+                        methodOperationStepIds?: Array<
+                          | string
+                          | { id?: string | null; quantity?: number | null }
+                        > | null;
+                      }
+                    ).methodOperationStepIds,
+                    methodStepsToJobSteps
+                  ),
+                  itemId,
+                  itemType,
+                  kit: methodType === "Make to Order" && child.data.kit,
+                  methodType,
+                  order: child.data.order,
+                  description,
+                  quantity,
+                  scrapQuantity: childScrapQuantity,
+                  estimatedQuantity: childEstimatedQuantity,
+                  storageUnitId: locationId
+                    ? // The bin explicitly set on the BOM line stays keyed on the
+                      // line, but the default bin belongs to the item this row is
+                      // actually for — `itemId`, after any supersession or
+                      // configuration swap. Keyed on child.data.itemId a swapped
+                      // line took the predecessor's bin, or none when only the
+                      // successor had one.
+                      // @ts-ignore
+                      (child.data.storageUnitIds?.[locationId] as string) ||
+                      defaultStorageUnitByItemId.get(itemId)
+                    : undefined,
+                  requiresSerialTracking,
+                  requiresBatchTracking,
+                  unitOfMeasureCode,
+                  unitCost: unitCost ?? 0,
+                  itemScrapPercentage,
+                  substitutedFromItemId,
+                  substitutionFactor,
+                  companyId,
+                  createdBy: userId,
+                  customFields: {}
+                };
+              };
+
+              const jobMaterialResults = await Promise.all(
+                node.children.map(mapMethodMaterialToJobMaterial)
+              );
+              const validJobMaterialIndices = jobMaterialResults.reduce<
+                number[]
+              >((acc, m, i) => {
+                if (m !== null) acc.push(i);
+                return acc;
+              }, []);
+              let materialsWithConfiguredFields = jobMaterialResults.filter(
+                (m): m is NonNullable<typeof m> => m !== null
+              );
+              let configuredChildren = validJobMaterialIndices.map(
+                (i) => node.children[i]!
+              );
+
+              const bomConfigurationKey = `billOfMaterial:${nodeLevelConfigurationKey}`;
+              let bomConfiguration: string[] | null = null;
+
+              if (configurationCodeByField?.[bomConfigurationKey]) {
+                const mod = await importTypeScript(
+                  configurationCodeByField[bomConfigurationKey]
+                );
+                bomConfiguration = await mod.configure(hydratedConfiguration);
+              }
+
+              if (bomConfiguration) {
+                const pairByReadableId = new Map<
+                  string,
+                  {
+                    material: (typeof materialsWithConfiguredFields)[number];
+                    child: MethodTreeItem;
+                  }
+                >();
+                configuredChildren.forEach((child, i) => {
+                  const material = materialsWithConfiguredFields[i];
+                  if (!material) return;
+                  const data = child!.data as {
+                    itemReadableId?: string | null;
+                    readableIdWithRevision?: string | null;
+                  };
+                  for (const key of [
+                    data.readableIdWithRevision,
+                    data.itemReadableId
+                  ]) {
+                    if (key && !pairByReadableId.has(key)) {
+                      pairByReadableId.set(key, { material, child });
+                    }
+                  }
+                });
+                const pairs = bomConfiguration.flatMap((readableId, index) => {
+                  const pair = pairByReadableId.get(readableId);
+                  return pair
+                    ? [
+                        {
+                          material: { ...pair.material, order: index + 1 },
+                          child: pair.child
+                        }
+                      ]
+                    : [];
+                });
+                materialsWithConfiguredFields = pairs.map(
+                  (pair) => pair.material
+                );
+                configuredChildren = pairs.map((pair) => pair.child);
+              }
+
+              const madeMaterials = materialsWithConfiguredFields.filter(
+                (material) => material.methodType === "Make to Order"
+              );
+
+              const pickedOrBoughtMaterials =
+                materialsWithConfiguredFields.filter(
+                  (material) => material.methodType !== "Make to Order"
+                );
+
+              const madeChildren = configuredChildren.filter(
+                (_, i) =>
+                  materialsWithConfiguredFields[i]?.methodType ===
+                  "Make to Order"
+              );
+
+              if (madeMaterials.length > 0) {
+                const madeMaterialsWithIds = madeMaterials.map((m) => ({
+                  ...m,
+                  id: nanoid()
+                }));
+                insertedJobMaterialIds.push(
+                  ...madeMaterialsWithIds.map((m) => m.id)
+                );
+
+                await trx
+                  .insertInto("jobMaterial")
+                  .values(
+                    madeMaterialsWithIds.map((m) => {
+                      const { __stepLinks, ...rest } = m as typeof m & {
+                        __stepLinks?: {
+                          stepId: string;
+                          quantity: number | null;
+                        }[];
+                      };
+                      return rest;
+                    })
+                  )
+                  .execute();
+
+                // Part ↔ step links (Phase 2, many-to-many): the transient __stepLinks carried
+                // the remapped job step ids + per-step quantity; write them to jobMaterialStep
+                // now that the material id exists. No links = whole operation (shown on every
+                // step in the MES).
+                const madeStepRows = madeMaterialsWithIds.flatMap((m) =>
+                  (
+                    (
+                      m as {
+                        __stepLinks?: {
+                          stepId: string;
+                          quantity: number | null;
+                        }[];
+                      }
+                    ).__stepLinks ?? []
+                  ).map((link) => ({
+                    jobMaterialId: m.id,
+                    jobOperationStepId: link.stepId,
+                    quantity: link.quantity
+                  }))
+                );
+                if (madeStepRows.length > 0) {
+                  await trx
+                    .insertInto("jobMaterialStep")
+                    .values(madeStepRows)
+                    .execute();
+                }
+
+                for (const [index, child] of madeChildren.entries()) {
+                  const materialId = madeMaterialsWithIds[index]!.id;
+                  const newMakeMethodId = nanoid();
+
+                  await trx
+                    .updateTable("jobMakeMethod")
+                    .set({ id: newMakeMethodId })
+                    .where("parentMaterialId", "=", materialId)
+                    .where("companyId", "=", companyId)
+                    .execute();
+
+                  // Get the total quantity (estimated + scrap) for this child material
+                  // This is what we pass to children for the cascade
+                  const material = madeMaterials[index];
+                  const childTotalForCascade =
+                    (material?.estimatedQuantity ?? 0) +
+                    (material?.scrapQuantity ?? 0);
+
+                  // Made sub-assembly supersession: if this made component has an
+                  // effective successor that is ITSELF a made item, point the job
+                  // material at the successor and explode the SUCCESSOR's method
+                  // (not the old part's). A Make -> Buy successor is a structural
+                  // flip we leave on the old part (handled/flagged elsewhere).
+                  const madeSwapHandled = await swapMadeSubAssembly({
+                    client,
+                    trx,
+                    companyId,
+                    child,
+                    material,
+                    materialId,
+                    locationId: job.data?.locationId ?? "",
+                    supersessionRedirect,
+                    newMakeMethodId,
+                    traverseMethod
+                  });
+
+                  // prevent an infinite loop
+                  if (!madeSwapHandled && child!.data.itemId !== itemId) {
+                    await traverseMethod(
+                      child,
+                      newMakeMethodId,
+                      childTotalForCascade || 1
+                    );
+                  }
                 }
               }
-            }
 
-            if (pickedOrBoughtMaterials.length > 0) {
-              // Assign ids up front so part ↔ step links (Phase 2, many-to-many) can reference
-              // each row; strip the transient __stepLinks before inserting the material.
-              const pickedWithIds = pickedOrBoughtMaterials.map((m) => ({
-                ...m,
-                id: (m as { id?: string }).id ?? nanoid(),
-              }));
-              insertedJobMaterialIds.push(...pickedWithIds.map((m) => m.id));
-              await trx
-                .insertInto("jobMaterial")
-                .values(
-                  pickedWithIds.map((m) => {
-                    const { __stepLinks, ...rest } = m as typeof m & {
-                      __stepLinks?: { stepId: string; quantity: number | null }[];
-                    };
-                    return rest;
-                  })
-                )
-                .execute();
-
-              const pickedStepRows = pickedWithIds.flatMap((m) =>
-                (
-                  (m as { __stepLinks?: { stepId: string; quantity: number | null }[] })
-                    .__stepLinks ?? []
-                ).map((link) => ({
-                  jobMaterialId: m.id,
-                  jobOperationStepId: link.stepId,
-                  quantity: link.quantity,
-                }))
-              );
-              if (pickedStepRows.length > 0) {
+              if (pickedOrBoughtMaterials.length > 0) {
+                // Assign ids up front so part ↔ step links (Phase 2, many-to-many) can reference
+                // each row; strip the transient __stepLinks before inserting the material.
+                const pickedWithIds = pickedOrBoughtMaterials.map((m) => ({
+                  ...m,
+                  id: (m as { id?: string }).id ?? nanoid()
+                }));
+                insertedJobMaterialIds.push(...pickedWithIds.map((m) => m.id));
                 await trx
-                  .insertInto("jobMaterialStep")
-                  .values(pickedStepRows)
+                  .insertInto("jobMaterial")
+                  .values(
+                    pickedWithIds.map((m) => {
+                      const { __stepLinks, ...rest } = m as typeof m & {
+                        __stepLinks?: {
+                          stepId: string;
+                          quantity: number | null;
+                        }[];
+                      };
+                      return rest;
+                    })
+                  )
                   .execute();
+
+                const pickedStepRows = pickedWithIds.flatMap((m) =>
+                  (
+                    (
+                      m as {
+                        __stepLinks?: {
+                          stepId: string;
+                          quantity: number | null;
+                        }[];
+                      }
+                    ).__stepLinks ?? []
+                  ).map((link) => ({
+                    jobMaterialId: m.id,
+                    jobOperationStepId: link.stepId,
+                    quantity: link.quantity
+                  }))
+                );
+                if (pickedStepRows.length > 0) {
+                  await trx
+                    .insertInto("jobMaterialStep")
+                    .values(pickedStepRows)
+                    .execute();
+                }
               }
-            }
             } // end if (parts.billOfMaterial)
           }
-
 
           // Start traversal with job quantity as the root's target/parent estimated quantity
           await traverseMethod(
@@ -1757,7 +1856,7 @@ serve(async (req: Request) => {
             jobId: jobId,
             jobMaterialIds: insertedJobMaterialIds,
             locationId: job.data?.locationId,
-            asOfDate: jobBuildDate(job.data),
+            asOfDate: jobBuildDate(job.data)
           });
         });
 
@@ -1808,7 +1907,7 @@ serve(async (req: Request) => {
             client
               .from("supplierProcess")
               .select("*")
-              .eq("companyId", companyId),
+              .eq("companyId", companyId)
           ]);
 
         if (makeMethod.error) {
@@ -1819,6 +1918,10 @@ serve(async (req: Request) => {
           throw new Error("Failed to get job make method");
         }
 
+        // FIXME: hydrated here but never applied — this make-method path does
+        // not run configuration rules (itemToJob does). Kept as it was in the
+        // edge function; applying them is a behavior change for its own PR.
+        // biome-ignore lint/correctness/noUnusedVariables: see FIXME above
         const hydratedConfiguration = await hydrateConfiguration(
           client,
           configuration,
@@ -1835,8 +1938,7 @@ serve(async (req: Request) => {
             .select("estimatedQuantity")
             .eq("id", jobMakeMethod.data.parentMaterialId)
             .single();
-          parentEstimatedQuantity =
-            parentMaterial.data?.estimatedQuantity ?? 1;
+          parentEstimatedQuantity = parentMaterial.data?.estimatedQuantity ?? 1;
         } else {
           // This is the root - get job's quantity
           const rootJob = await client
@@ -1861,7 +1963,7 @@ serve(async (req: Request) => {
                 .select("*")
                 .eq("itemId", itemId)
                 .eq("companyId", companyId)
-            : Promise.resolve({ data: [] }),
+            : Promise.resolve({ data: [] })
         ]);
 
         if (methodTrees.error) {
@@ -1892,6 +1994,7 @@ serve(async (req: Request) => {
         );
 
         // Get configuration code by field
+        // biome-ignore lint/correctness/noUnusedVariables: unapplied configuration, see FIXME above
         const configurationCodeByField = configurationRules.data?.reduce<
           Record<string, string>
         >((acc, rule) => {
@@ -1899,7 +2002,7 @@ serve(async (req: Request) => {
           return acc;
         }, {});
 
-        await db.transaction().execute(async (trx: Transaction) => {
+        await db.transaction().execute(async (trx) => {
           const insertedJobMaterialIds: string[] = [];
           // Delete existing jobMakeMethodOperation, jobMakeMethodMaterial
           await Promise.all([
@@ -1907,26 +2010,31 @@ serve(async (req: Request) => {
               ? trx
                   .deleteFrom("jobMaterial")
                   .where("jobMakeMethodId", "=", jobMakeMethodId)
+                  .where("companyId", "=", companyId)
                   .execute()
               : Promise.resolve(),
             // Prevent cascade deletion of materials when only replacing operations
             !parts.billOfMaterial && parts.billOfProcess
-              ? trx.updateTable("jobMaterial")
+              ? trx
+                  .updateTable("jobMaterial")
                   .set({ jobOperationId: null })
                   .where("jobMakeMethodId", "=", jobMakeMethodId)
+                  .where("companyId", "=", companyId)
                   .execute()
               : Promise.resolve(),
             parts.billOfProcess
               ? trx
                   .deleteFrom("jobOperation")
                   .where("jobMakeMethodId", "=", jobMakeMethodId)
+                  .where("companyId", "=", companyId)
                   .execute()
               : Promise.resolve(),
             trx
               .updateTable("jobMakeMethod")
               .set({ version: makeMethod.data.version ?? 1 })
               .where("id", "=", jobMakeMethodId)
-              .execute(),
+              .where("companyId", "=", companyId)
+              .execute()
           ]);
 
           // traverse method tree and create:
@@ -1961,8 +2069,6 @@ serve(async (req: Request) => {
               nodeScrapPercentage
             );
             const totalWithScrap = targetQuantity + nodeScrapQuantity;
-            const estimatedQuantity =
-              node.data.methodType === "Make to Order" ? targetQuantity : totalWithScrap;
             // operationQuantity is the total (including scrap); fractional
             // targets flow through — the scrap allowance is already whole
             const operationQuantity = totalWithScrap;
@@ -2004,12 +2110,14 @@ serve(async (req: Request) => {
                   op.operationSupplierProcessId
                 ),
                 tags: op.tags ?? [],
-                workInstruction: toJson(parts.workInstructions ? op.workInstruction : {}),
+                workInstruction: toJson(
+                  parts.workInstructions ? op.workInstruction : {}
+                ),
                 targetQuantity,
                 operationQuantity,
                 companyId,
                 createdBy: userId,
-                customFields: {},
+                customFields: {}
               })) ?? [];
 
             let methodOperationsToJobOperations: Record<string, string> = {};
@@ -2017,471 +2125,500 @@ serve(async (req: Request) => {
             const methodStepsToJobSteps: Record<string, string> = {};
 
             if (parts.billOfProcess) {
-            if (jobOperationsInserts?.length > 0) {
-              const operationIds = await trx
-                .insertInto("jobOperation")
-                .values(jobOperationsInserts)
-                .returning(["id"])
-                .execute();
+              if (jobOperationsInserts?.length > 0) {
+                const operationIds = await trx
+                  .insertInto("jobOperation")
+                  .values(jobOperationsInserts)
+                  .returning(["id"])
+                  .execute();
 
-              for (const [index, operation] of (
-                relatedOperations.data ?? []
-              ).entries()) {
-                const operationId = operationIds[index].id;
+                for (const [index, operation] of (
+                  relatedOperations.data ?? []
+                ).entries()) {
+                  const operationId = operationIds[index]!.id;
 
-                if (operationId) {
-                  const {
-                    methodOperationTool,
-                    methodOperationParameter,
-                    methodOperationStep,
-                    procedureId,
-                  } = operation;
+                  if (operationId) {
+                    const {
+                      methodOperationTool,
+                      methodOperationParameter,
+                      methodOperationStep,
+                      procedureId
+                    } = operation;
 
-                  // Tool ids already inserted by the assembly-instruction
-                  // copy — the method tool copy below must skip these or the
-                  // job gets the same tool twice (once step-linked, once
-                  // unlinked → the MES shows it on every step AND its step).
-                  let assemblyToolIds: Set<string> = new Set();
+                    // Tool ids already inserted by the assembly-instruction
+                    // copy — the method tool copy below must skip these or the
+                    // job gets the same tool twice (once step-linked, once
+                    // unlinked → the MES shows it on every step AND its step).
+                    let assemblyToolIds: Set<string> = new Set();
 
-                  if (procedureId) {
-                    await insertProcedureDataForJobOperation(trx, client, {
-                      operationId,
-                      procedureId,
-                      companyId,
-                      userId,
-                    });
-                  } else {
-                    if (
-                      parts.parameters &&
-                      Array.isArray(methodOperationParameter) &&
-                      methodOperationParameter.length > 0
-                    ) {
-                      await trx
-                        .insertInto("jobOperationParameter")
-                        .values(
-                          methodOperationParameter.map((param) => ({
+                    if (procedureId) {
+                      await insertProcedureDataForJobOperation(trx, client, {
+                        operationId,
+                        procedureId,
+                        companyId,
+                        userId
+                      });
+                    } else {
+                      if (
+                        parts.parameters &&
+                        Array.isArray(methodOperationParameter) &&
+                        methodOperationParameter.length > 0
+                      ) {
+                        await trx
+                          .insertInto("jobOperationParameter")
+                          .values(
+                            methodOperationParameter.map((param) => ({
+                              operationId,
+                              key: param.key,
+                              value: param.value,
+                              companyId,
+                              createdBy: userId
+                            }))
+                          )
+                          .execute();
+                      }
+
+                      if (operation.assemblyInstructionId) {
+                        // Assembly ops inherit their steps from the linked
+                        // instruction (the method only carries the pointer);
+                        // material ↔ step links are flushed after the
+                        // jobMaterial rows exist.
+                        assemblyToolIds =
+                          await insertAssemblyDataForJobOperation(trx, client, {
                             operationId,
-                            key: param.key,
-                            value: param.value,
+                            assemblyInstructionId:
+                              operation.assemblyInstructionId,
                             companyId,
-                            createdBy: userId,
-                          }))
-                        )
-                        .execute();
+                            userId
+                          });
+                        assemblyOperationsToLink.push({
+                          operationId,
+                          assemblyInstructionId: operation.assemblyInstructionId
+                        });
+                      } else if (
+                        parts.steps &&
+                        Array.isArray(methodOperationStep) &&
+                        methodOperationStep.length > 0
+                      ) {
+                        const insertedSteps = await trx
+                          .insertInto("jobOperationStep")
+                          .values(
+                            methodOperationStep.map(
+                              ({ id: _id, ...attribute }) => ({
+                                ...attribute,
+                                description: toTiptapDoc(attribute.description),
+                                operationId,
+                                companyId,
+                                createdBy: userId
+                              })
+                            )
+                          )
+                          .returning(["id"])
+                          .execute();
+
+                        // Bulk insert preserves order, so insertedSteps[i] ↔
+                        // methodOperationStep[i]: record each method step -> new job step so
+                        // materials can carry the part ↔ step link onto the job (Phase 2).
+                        (methodOperationStep as Array<{ id?: string }>).forEach(
+                          (s, i) => {
+                            const newStepId = insertedSteps[i]?.id;
+                            if (s?.id && newStepId)
+                              methodStepsToJobSteps[s.id] = newStepId;
+                          }
+                        );
+                        await copyStepSlides(
+                          trx,
+                          client,
+                          methodOperationStep,
+                          insertedSteps,
+                          "methodOperationStepSlide",
+                          "jobOperationStepSlide",
+                          companyId,
+                          userId
+                        );
+                      }
                     }
 
-                    if (operation.assemblyInstructionId) {
-                      // Assembly ops inherit their steps from the linked
-                      // instruction (the method only carries the pointer);
-                      // material ↔ step links are flushed after the
-                      // jobMaterial rows exist.
-                      assemblyToolIds = await insertAssemblyDataForJobOperation(
-                        trx,
-                        client,
-                        {
-                          operationId,
-                          assemblyInstructionId:
-                            operation.assemblyInstructionId,
-                          companyId,
-                          userId,
-                        }
-                      );
-                      assemblyOperationsToLink.push({
-                        operationId,
-                        assemblyInstructionId: operation.assemblyInstructionId,
-                      });
-                    } else if (
-                      parts.steps &&
-                      Array.isArray(methodOperationStep) &&
-                      methodOperationStep.length > 0
-                    ) {
-                      const insertedSteps = await trx
-                        .insertInto("jobOperationStep")
+                    // Tools after steps (Phase 2): the method-step -> job-step map is now
+                    // populated, so a tool scoped to steps carries those links onto the job via
+                    // jobOperationToolStep. Mirrors the material part ↔ step copy above. Tools
+                    // the assembly-instruction copy already inserted are skipped (see above).
+                    const toolsToCopy = (
+                      Array.isArray(methodOperationTool)
+                        ? methodOperationTool
+                        : []
+                    ).filter(
+                      (tool: { toolId: string }) =>
+                        !assemblyToolIds.has(tool.toolId)
+                    );
+                    if (parts.tools && toolsToCopy.length > 0) {
+                      const insertedTools = await trx
+                        .insertInto("jobOperationTool")
                         .values(
-                          methodOperationStep.map(
-                            ({ id: _id, ...attribute }) => ({
-                              ...attribute,
-                              description: toTiptapDoc(attribute.description),
-                              operationId,
-                              companyId,
-                              createdBy: userId,
-                            })
-                          )
+                          toolsToCopy.map((tool) => ({
+                            toolId: tool.toolId,
+                            quantity: tool.quantity,
+                            operationId,
+                            companyId,
+                            createdBy: userId
+                          }))
                         )
                         .returning(["id"])
                         .execute();
 
-                      // Bulk insert preserves order, so insertedSteps[i] ↔
-                      // methodOperationStep[i]: record each method step -> new job step so
-                      // materials can carry the part ↔ step link onto the job (Phase 2).
-                      (methodOperationStep as Array<{ id?: string }>).forEach(
-                        (s, i) => {
-                          const newStepId = insertedSteps[i]?.id;
-                          if (s?.id && newStepId)
-                            methodStepsToJobSteps[s.id] = newStepId;
-                        }
-                      );
-                      await copyStepSlides(
-                        trx,
-                        client,
-                        methodOperationStep,
-                        insertedSteps,
-                        "methodOperationStepSlide",
-                        "jobOperationStepSlide",
-                        companyId,
-                        userId,
-                      );
-                    }
-                  }
-
-                  // Tools after steps (Phase 2): the method-step -> job-step map is now
-                  // populated, so a tool scoped to steps carries those links onto the job via
-                  // jobOperationToolStep. Mirrors the material part ↔ step copy above. Tools
-                  // the assembly-instruction copy already inserted are skipped (see above).
-                  const toolsToCopy = (
-                    Array.isArray(methodOperationTool) ? methodOperationTool : []
-                  ).filter((tool: { toolId: string }) => !assemblyToolIds.has(tool.toolId));
-                  if (parts.tools && toolsToCopy.length > 0) {
-                    const insertedTools = await trx
-                      .insertInto("jobOperationTool")
-                      .values(
-                        toolsToCopy.map((tool) => ({
-                          toolId: tool.toolId,
-                          quantity: tool.quantity,
-                          operationId,
-                          companyId,
-                          createdBy: userId,
-                        }))
-                      )
-                      .returning(["id"])
-                      .execute();
-
-                    // Tool ↔ step links (Phase 2, many-to-many). Bulk insert preserves order,
-                    // so insertedTools[i] ↔ toolsToCopy[i]. A tool with no links applies
-                    // to the whole operation (shown on every step in the MES).
-                    const toolStepRows = toolsToCopy.flatMap((tool, i) => {
-                      const jobOperationToolId = insertedTools[i]?.id;
-                      if (!jobOperationToolId) return [];
-                      const oldStepIds = (
-                        (tool.methodOperationToolStep ?? []) as Array<{
-                          methodOperationStepId: string | null;
-                        }>
-                      ).map((l) => l.methodOperationStepId);
-                      return remapStepIds(oldStepIds, methodStepsToJobSteps).map(
-                        (jobOperationStepId) => ({
+                      // Tool ↔ step links (Phase 2, many-to-many). Bulk insert preserves order,
+                      // so insertedTools[i] ↔ toolsToCopy[i]. A tool with no links applies
+                      // to the whole operation (shown on every step in the MES).
+                      const toolStepRows = toolsToCopy.flatMap((tool, i) => {
+                        const jobOperationToolId = insertedTools[i]?.id;
+                        if (!jobOperationToolId) return [];
+                        const oldStepIds = (
+                          (tool.methodOperationToolStep ?? []) as Array<{
+                            methodOperationStepId: string | null;
+                          }>
+                        ).map((l) => l.methodOperationStepId);
+                        return remapStepIds(
+                          oldStepIds,
+                          methodStepsToJobSteps
+                        ).map((jobOperationStepId) => ({
                           jobOperationToolId,
-                          jobOperationStepId,
-                        })
-                      );
-                    });
-                    if (toolStepRows.length > 0) {
-                      await trx
-                        .insertInto("jobOperationToolStep")
-                        .values(toolStepRows)
-                        .execute();
+                          jobOperationStepId
+                        }));
+                      });
+                      if (toolStepRows.length > 0) {
+                        await trx
+                          .insertInto("jobOperationToolStep")
+                          .values(toolStepRows)
+                          .execute();
+                      }
                     }
                   }
                 }
-              }
 
-              methodOperationsToJobOperations =
-                relatedOperations.data?.reduce<Record<string, string>>(
-                  (acc, op, index) => {
-                    if (operationIds[index].id) {
-                      acc[op.id!] = operationIds[index].id!;
-                    }
-                    return acc;
-                  },
-                  {}
-                ) ?? {};
-            }
+                methodOperationsToJobOperations =
+                  relatedOperations.data?.reduce<Record<string, string>>(
+                    (acc, op, index) => {
+                      if (operationIds[index]!.id) {
+                        acc[op.id!] = operationIds[index]!.id!;
+                      }
+                      return acc;
+                    },
+                    {}
+                  ) ?? {};
+              }
             } // end if (parts.billOfProcess)
 
             if (parts.billOfMaterial) {
-            const mapMethodMaterialToJobMaterial = async (
-              child: MethodTreeItem
-            ) => {
-              // Resolve the supersession FIRST, so every field below derives
-              // from the item this row ENDS UP being for. This used to run as a
-              // second pass over the finished rows, which meant each new derived
-              // field silently inherited the predecessor's value unless someone
-              // remembered to add it to that pass's patch list — the scrap rate
-              // was read here from the OLD item and never revisited, so a swapped
-              // line costed the predecessor's scrap forever (the column is NOT
-              // NULL, and recalculate only re-derives from NULL). Swapping up
-              // front is what itemToJob already does, and it makes the whole
-              // class of bug unreachable rather than fixing one instance of it.
-              // Buy/Pick only — resolveJobMaterialSupersession returns null for
-              // Make to Order, which swapMadeSubAssembly handles during its own
-              // explosion.
-              const pulledFrom =
-                child.data.methodType === "Make to Order"
-                  ? resolveMadeLinePull(
-                      child.data.itemId,
-                      child.data.quantity ?? 1,
-                      supersessionContext
-                    )
-                  : null;
-              const methodType = pulledFrom
-                ? "Pull from Inventory"
-                : child.data.methodType;
-              const supersession =
-                pulledFrom && pulledFrom.itemId === child.data.itemId
-                  ? null
-                  : await resolveJobMaterialSupersession(
-                      client,
-                      companyId,
-                      pulledFrom
-                        ? new Map([
-                            [
-                              child.data.itemId,
-                              { to: pulledFrom.itemId, factor: pulledFrom.factor },
-                            ],
-                          ])
-                        : supersessionRedirect,
-                      { itemId: child.data.itemId, methodType }
-                    );
-              const itemId = supersession?.itemId ?? child.data.itemId;
-              // 1 old part = `factor` successors. The line's methodType and unit
-              // of measure are deliberately preserved; the factor translates the
-              // quantity.
-              const quantityPerParent =
-                (child.data.quantity ?? 1) * (supersession?.factor ?? 1);
+              const mapMethodMaterialToJobMaterial = async (
+                child: MethodTreeItem
+              ) => {
+                // Resolve the supersession FIRST, so every field below derives
+                // from the item this row ENDS UP being for. This used to run as a
+                // second pass over the finished rows, which meant each new derived
+                // field silently inherited the predecessor's value unless someone
+                // remembered to add it to that pass's patch list — the scrap rate
+                // was read here from the OLD item and never revisited, so a swapped
+                // line costed the predecessor's scrap forever (the column is NOT
+                // NULL, and recalculate only re-derives from NULL). Swapping up
+                // front is what itemToJob already does, and it makes the whole
+                // class of bug unreachable rather than fixing one instance of it.
+                // Buy/Pick only — resolveJobMaterialSupersession returns null for
+                // Make to Order, which swapMadeSubAssembly handles during its own
+                // explosion.
+                const pulledFrom =
+                  child.data.methodType === "Make to Order"
+                    ? resolveMadeLinePull(
+                        child.data.itemId,
+                        child.data.quantity ?? 1,
+                        supersessionContext
+                      )
+                    : null;
+                const methodType = pulledFrom
+                  ? "Pull from Inventory"
+                  : child.data.methodType;
+                const supersession =
+                  pulledFrom && pulledFrom.itemId === child.data.itemId
+                    ? null
+                    : await resolveJobMaterialSupersession(
+                        client,
+                        companyId,
+                        pulledFrom
+                          ? new Map([
+                              [
+                                child.data.itemId,
+                                {
+                                  to: pulledFrom.itemId,
+                                  factor: pulledFrom.factor
+                                }
+                              ]
+                            ])
+                          : supersessionRedirect,
+                        { itemId: child.data.itemId, methodType }
+                      );
+                const itemId = supersession?.itemId ?? child.data.itemId;
+                // 1 old part = `factor` successors. The line's methodType and unit
+                // of measure are deliberately preserved; the factor translates the
+                // quantity.
+                const quantityPerParent =
+                  (child.data.quantity ?? 1) * (supersession?.factor ?? 1);
 
-              // Get scrap percentage for this item
-              const itemReplenishment = await trx
-                .selectFrom("itemReplenishment")
-                .select("scrapPercentage")
-                .where("itemId", "=", itemId)
-                .where("companyId", "=", companyId)
-                .executeTakeFirst();
-              const itemScrapPercentage = Number(
-                itemReplenishment?.scrapPercentage ?? 0
-              );
+                // Get scrap percentage for this item
+                const itemReplenishment = await trx
+                  .selectFrom("itemReplenishment")
+                  .select("scrapPercentage")
+                  .where("itemId", "=", itemId)
+                  .where("companyId", "=", companyId)
+                  .executeTakeFirst();
+                const itemScrapPercentage = Number(
+                  itemReplenishment?.scrapPercentage ?? 0
+                );
 
-              // Calculate scrap quantities for this material
-              // Use totalQuantityForChildren (parent's total including scrap) for child calculations
-              const childTargetQuantity =
-                totalQuantityForChildren * quantityPerParent;
-              const childScrapQuantity = scrapAllowance(
-                childTargetQuantity,
-                itemScrapPercentage
-              );
-              const childTotalWithScrap =
-                childTargetQuantity + childScrapQuantity;
-              // For Make: estimatedQuantity is the good quantity (without scrap)
-              // For Buy/Pick: estimatedQuantity includes scrap since that's what we procure
-              const childEstimatedQuantity =
-                methodType === "Make to Order"
-                  ? childTargetQuantity
-                  : childTotalWithScrap;
+                // Calculate scrap quantities for this material
+                // Use totalQuantityForChildren (parent's total including scrap) for child calculations
+                const childTargetQuantity =
+                  totalQuantityForChildren * quantityPerParent;
+                const childScrapQuantity = scrapAllowance(
+                  childTargetQuantity,
+                  itemScrapPercentage
+                );
+                const childTotalWithScrap =
+                  childTargetQuantity + childScrapQuantity;
+                // For Make: estimatedQuantity is the good quantity (without scrap)
+                // For Buy/Pick: estimatedQuantity includes scrap since that's what we procure
+                const childEstimatedQuantity =
+                  methodType === "Make to Order"
+                    ? childTargetQuantity
+                    : childTotalWithScrap;
 
-              return {
-                jobId: jobMakeMethod.data?.jobId!,
-                jobMakeMethodId: parentJobMakeMethodId!,
-                jobOperationId:
-                  methodOperationsToJobOperations[child.data.operationId],
-                // Transient (Phase 2, many-to-many): the part ↔ step links (with their
-                // per-step quantity), remapped onto the job's steps. Stripped before
-                // insert; used to build jobMaterialStep rows.
-                __stepLinks: remapStepLinks(
-                  (
-                    child.data as {
-                      methodOperationStepIds?:
-                        | Array<string | { id?: string | null; quantity?: number | null }>
-                        | null;
-                    }
-                  ).methodOperationStepIds,
-                  methodStepsToJobSteps
-                ),
-                itemId,
-                kit: methodType === "Make to Order" && child.data.kit,
-                itemType: supersession?.itemType ?? child.data.itemType,
-                methodType,
-                order: child.data.order,
-                description:
-                  supersession?.description ?? child.data.description,
-                quantity: quantityPerParent,
-                scrapQuantity: childScrapQuantity,
-                estimatedQuantity: childEstimatedQuantity,
-                requiresBatchTracking:
-                  supersession?.requiresBatchTracking ??
-                  child.data.itemTrackingType === "Batch",
-                requiresSerialTracking:
-                  supersession?.requiresSerialTracking ??
-                  child.data.itemTrackingType === "Serial",
-                unitOfMeasureCode: child.data.unitOfMeasureCode,
-                // Branch on WHETHER a swap happened, not just on the successor
-                // having a cost. `supersession?.unitCost ?? child.data.unitCost`
-                // valued a successor row at the RETIRED part's cost whenever the
-                // successor had no itemCost row — a plausible number for the
-                // wrong item. 0 is at least visibly missing.
-                unitCost: supersession
-                  ? (supersession.unitCost ?? 0)
-                  : (child.data.unitCost ?? 0),
-                itemScrapPercentage,
-                substitutedFromItemId:
-                  supersession?.substitutedFromItemId ?? null,
-                substitutionFactor: supersession?.factor ?? null,
-                // The bin belongs to the item this row is actually for — the
-                // post-swap `itemId`. An explicit bin on the BOM line still wins.
-                storageUnitId: await getStorageUnitId(
-                  trx,
+                return {
+                  jobId: jobMakeMethod.data?.jobId!,
+                  jobMakeMethodId: parentJobMakeMethodId!,
+                  jobOperationId:
+                    methodOperationsToJobOperations[child.data.operationId],
+                  // Transient (Phase 2, many-to-many): the part ↔ step links (with their
+                  // per-step quantity), remapped onto the job's steps. Stripped before
+                  // insert; used to build jobMaterialStep rows.
+                  __stepLinks: remapStepLinks(
+                    (
+                      child.data as {
+                        methodOperationStepIds?: Array<
+                          | string
+                          | { id?: string | null; quantity?: number | null }
+                        > | null;
+                      }
+                    ).methodOperationStepIds,
+                    methodStepsToJobSteps
+                  ),
                   itemId,
-                  job.data?.locationId ?? "",
-                  // @ts-ignore: storageUnitIds is a dynamic field
-                  child.data.storageUnitIds?.[job.data.locationId] ?? undefined
-                ),
-                companyId,
-                createdBy: userId,
-                customFields: {},
-              };
-            };
-
-            const madeMaterials: Database["public"]["Tables"]["jobMaterial"]["Insert"][] =
-              [];
-            const madeChildren: MethodTreeItem[] = [];
-            const pickedOrBoughtMaterials: Database["public"]["Tables"]["jobMaterial"]["Insert"][] =
-              [];
-
-            for await (const child of node.children) {
-              if (isZeroQuantity(child.data.quantity)) continue;
-              const material = await mapMethodMaterialToJobMaterial(child);
-              if (material.methodType === "Make to Order") {
-                madeMaterials.push(material);
-                madeChildren.push(child);
-              } else {
-                pickedOrBoughtMaterials.push(material);
-              }
-            }
-
-            // The supersession swap happens inside mapMethodMaterialToJobMaterial,
-            // before any field derives from the item — there is deliberately no
-            // second pass here. Made materials are left for their own
-            // sub-explosion (swapMadeSubAssembly).
-
-            if (madeMaterials.length > 0) {
-              const madeMaterialsWithIds = madeMaterials.map((m) => ({
-                ...m,
-                id: nanoid(),
-              }));
-              insertedJobMaterialIds.push(...madeMaterialsWithIds.map((m) => m.id));
-
-              await trx
-                .insertInto("jobMaterial")
-                .values(
-                  madeMaterialsWithIds.map((m) => {
-                    const { __stepLinks, ...rest } = m as typeof m & {
-                      __stepLinks?: { stepId: string; quantity: number | null }[];
-                    };
-                    return rest;
-                  })
-                )
-                .execute();
-
-              // Part ↔ step links (Phase 2, many-to-many): the transient __stepLinks carried
-              // the remapped job step ids + per-step quantity; write them to jobMaterialStep
-              // now that the material id exists. No links = whole operation (shown on every
-              // step in the MES).
-              const madeStepRows = madeMaterialsWithIds.flatMap((m) =>
-                (
-                  (m as { __stepLinks?: { stepId: string; quantity: number | null }[] })
-                    .__stepLinks ?? []
-                ).map((link) => ({
-                  jobMaterialId: m.id,
-                  jobOperationStepId: link.stepId,
-                  quantity: link.quantity,
-                }))
-              );
-              if (madeStepRows.length > 0) {
-                await trx
-                  .insertInto("jobMaterialStep")
-                  .values(madeStepRows)
-                  .execute();
-              }
-
-              for (const [index, child] of madeChildren.entries()) {
-                const materialId = madeMaterialsWithIds[index].id;
-                const newMakeMethodId = nanoid();
-
-                await trx
-                  .updateTable("jobMakeMethod")
-                  .set({ id: newMakeMethodId })
-                  .where("parentMaterialId", "=", materialId)
-                  .execute();
-
-                // Get the total quantity (estimated + scrap) for this child material
-                // This is what we pass to children for the cascade
-                const material = madeMaterials[index];
-                const childTotalForCascade =
-                  (material?.estimatedQuantity ?? 0) +
-                  (material?.scrapQuantity ?? 0);
-
-                // Made sub-assembly supersession (see itemToJob for rationale):
-                // if a made component has an effective successor that is itself
-                // made, point the job material at the successor and explode the
-                // SUCCESSOR's method instead of the old part's.
-                const madeSwapHandled = await swapMadeSubAssembly({
-                  client,
-                  trx,
+                  kit: methodType === "Make to Order" && child.data.kit,
+                  itemType: supersession?.itemType ?? child.data.itemType,
+                  methodType,
+                  order: child.data.order,
+                  description:
+                    supersession?.description ?? child.data.description,
+                  quantity: quantityPerParent,
+                  scrapQuantity: childScrapQuantity,
+                  estimatedQuantity: childEstimatedQuantity,
+                  requiresBatchTracking:
+                    supersession?.requiresBatchTracking ??
+                    child.data.itemTrackingType === "Batch",
+                  requiresSerialTracking:
+                    supersession?.requiresSerialTracking ??
+                    child.data.itemTrackingType === "Serial",
+                  unitOfMeasureCode: child.data.unitOfMeasureCode,
+                  // Branch on WHETHER a swap happened, not just on the successor
+                  // having a cost. `supersession?.unitCost ?? child.data.unitCost`
+                  // valued a successor row at the RETIRED part's cost whenever the
+                  // successor had no itemCost row — a plausible number for the
+                  // wrong item. 0 is at least visibly missing.
+                  unitCost: supersession
+                    ? (supersession.unitCost ?? 0)
+                    : (child.data.unitCost ?? 0),
+                  itemScrapPercentage,
+                  substitutedFromItemId:
+                    supersession?.substitutedFromItemId ?? null,
+                  substitutionFactor: supersession?.factor ?? null,
+                  // The bin belongs to the item this row is actually for — the
+                  // post-swap `itemId`. An explicit bin on the BOM line still wins.
+                  storageUnitId: await getStorageUnitId(
+                    trx,
+                    itemId,
+                    job.data?.locationId ?? "",
+                    // @ts-ignore: storageUnitIds is a dynamic field
+                    child.data.storageUnitIds?.[job.data.locationId] ??
+                      undefined
+                  ),
                   companyId,
-                  child,
-                  material,
-                  materialId,
-                  locationId: job.data?.locationId ?? "",
-                  supersessionRedirect,
-                  newMakeMethodId,
-                  traverseMethod,
-                });
+                  createdBy: userId,
+                  customFields: {}
+                };
+              };
 
-                // prevent an infinite loop
-                if (!madeSwapHandled && child.data.itemId !== itemId) {
-                  await traverseMethod(
-                    child,
-                    newMakeMethodId,
-                    childTotalForCascade || 1
-                  );
+              const madeMaterials: Database["public"]["Tables"]["jobMaterial"]["Insert"][] =
+                [];
+              const madeChildren: MethodTreeItem[] = [];
+              const pickedOrBoughtMaterials: Database["public"]["Tables"]["jobMaterial"]["Insert"][] =
+                [];
+
+              for await (const child of node.children) {
+                if (isZeroQuantity(child.data.quantity)) continue;
+                const material = await mapMethodMaterialToJobMaterial(child);
+                if (material.methodType === "Make to Order") {
+                  madeMaterials.push(material);
+                  madeChildren.push(child);
+                } else {
+                  pickedOrBoughtMaterials.push(material);
                 }
               }
-            }
 
-            if (pickedOrBoughtMaterials.length > 0) {
-              // Assign ids up front so part ↔ step links (Phase 2, many-to-many) can reference
-              // each row; strip the transient __stepLinks before inserting the material.
-              const pickedWithIds = pickedOrBoughtMaterials.map((m) => ({
-                ...m,
-                id: (m as { id?: string }).id ?? nanoid(),
-              }));
-              insertedJobMaterialIds.push(...pickedWithIds.map((m) => m.id));
-              await trx
-                .insertInto("jobMaterial")
-                .values(
-                  pickedWithIds.map((m) => {
-                    const { __stepLinks, ...rest } = m as typeof m & {
-                      __stepLinks?: { stepId: string; quantity: number | null }[];
-                    };
-                    return rest;
-                  })
-                )
-                .execute();
+              // The supersession swap happens inside mapMethodMaterialToJobMaterial,
+              // before any field derives from the item — there is deliberately no
+              // second pass here. Made materials are left for their own
+              // sub-explosion (swapMadeSubAssembly).
 
-              const pickedStepRows = pickedWithIds.flatMap((m) =>
-                (
-                  (m as { __stepLinks?: { stepId: string; quantity: number | null }[] })
-                    .__stepLinks ?? []
-                ).map((link) => ({
-                  jobMaterialId: m.id,
-                  jobOperationStepId: link.stepId,
-                  quantity: link.quantity,
-                }))
-              );
-              if (pickedStepRows.length > 0) {
+              if (madeMaterials.length > 0) {
+                const madeMaterialsWithIds = madeMaterials.map((m) => ({
+                  ...m,
+                  id: nanoid()
+                }));
+                insertedJobMaterialIds.push(
+                  ...madeMaterialsWithIds.map((m) => m.id)
+                );
+
                 await trx
-                  .insertInto("jobMaterialStep")
-                  .values(pickedStepRows)
+                  .insertInto("jobMaterial")
+                  .values(
+                    madeMaterialsWithIds.map((m) => {
+                      const { __stepLinks, ...rest } = m as typeof m & {
+                        __stepLinks?: {
+                          stepId: string;
+                          quantity: number | null;
+                        }[];
+                      };
+                      return rest;
+                    })
+                  )
                   .execute();
+
+                // Part ↔ step links (Phase 2, many-to-many): the transient __stepLinks carried
+                // the remapped job step ids + per-step quantity; write them to jobMaterialStep
+                // now that the material id exists. No links = whole operation (shown on every
+                // step in the MES).
+                const madeStepRows = madeMaterialsWithIds.flatMap((m) =>
+                  (
+                    (
+                      m as {
+                        __stepLinks?: {
+                          stepId: string;
+                          quantity: number | null;
+                        }[];
+                      }
+                    ).__stepLinks ?? []
+                  ).map((link) => ({
+                    jobMaterialId: m.id,
+                    jobOperationStepId: link.stepId,
+                    quantity: link.quantity
+                  }))
+                );
+                if (madeStepRows.length > 0) {
+                  await trx
+                    .insertInto("jobMaterialStep")
+                    .values(madeStepRows)
+                    .execute();
+                }
+
+                for (const [index, child] of madeChildren.entries()) {
+                  const materialId = madeMaterialsWithIds[index]!.id;
+                  const newMakeMethodId = nanoid();
+
+                  await trx
+                    .updateTable("jobMakeMethod")
+                    .set({ id: newMakeMethodId })
+                    .where("parentMaterialId", "=", materialId)
+                    .where("companyId", "=", companyId)
+                    .execute();
+
+                  // Get the total quantity (estimated + scrap) for this child material
+                  // This is what we pass to children for the cascade
+                  const material = madeMaterials[index];
+                  const childTotalForCascade =
+                    (material?.estimatedQuantity ?? 0) +
+                    (material?.scrapQuantity ?? 0);
+
+                  // Made sub-assembly supersession (see itemToJob for rationale):
+                  // if a made component has an effective successor that is itself
+                  // made, point the job material at the successor and explode the
+                  // SUCCESSOR's method instead of the old part's.
+                  const madeSwapHandled = await swapMadeSubAssembly({
+                    client,
+                    trx,
+                    companyId,
+                    child,
+                    material,
+                    materialId,
+                    locationId: job.data?.locationId ?? "",
+                    supersessionRedirect,
+                    newMakeMethodId,
+                    traverseMethod
+                  });
+
+                  // prevent an infinite loop
+                  if (!madeSwapHandled && child.data.itemId !== itemId) {
+                    await traverseMethod(
+                      child,
+                      newMakeMethodId,
+                      childTotalForCascade || 1
+                    );
+                  }
+                }
               }
-            }
+
+              if (pickedOrBoughtMaterials.length > 0) {
+                // Assign ids up front so part ↔ step links (Phase 2, many-to-many) can reference
+                // each row; strip the transient __stepLinks before inserting the material.
+                const pickedWithIds = pickedOrBoughtMaterials.map((m) => ({
+                  ...m,
+                  id: (m as { id?: string }).id ?? nanoid()
+                }));
+                insertedJobMaterialIds.push(...pickedWithIds.map((m) => m.id));
+                await trx
+                  .insertInto("jobMaterial")
+                  .values(
+                    pickedWithIds.map((m) => {
+                      const { __stepLinks, ...rest } = m as typeof m & {
+                        __stepLinks?: {
+                          stepId: string;
+                          quantity: number | null;
+                        }[];
+                      };
+                      return rest;
+                    })
+                  )
+                  .execute();
+
+                const pickedStepRows = pickedWithIds.flatMap((m) =>
+                  (
+                    (
+                      m as {
+                        __stepLinks?: {
+                          stepId: string;
+                          quantity: number | null;
+                        }[];
+                      }
+                    ).__stepLinks ?? []
+                  ).map((link) => ({
+                    jobMaterialId: m.id,
+                    jobOperationStepId: link.stepId,
+                    quantity: link.quantity
+                  }))
+                );
+                if (pickedStepRows.length > 0) {
+                  await trx
+                    .insertInto("jobMaterialStep")
+                    .values(pickedStepRows)
+                    .execute();
+                }
+              }
             } // end if (parts.billOfMaterial)
           }
 
@@ -2506,13 +2643,15 @@ serve(async (req: Request) => {
             jobId: jobMakeMethod.data.jobId,
             jobMaterialIds: insertedJobMaterialIds,
             locationId: job.data?.locationId,
-            asOfDate: jobBuildDate(job.data),
+            asOfDate: jobBuildDate(job.data)
           });
         });
         break;
       }
       case "itemToQuoteLine": {
-        const [quoteId, quoteLineId] = (targetId as string).split(":");
+        const [quoteId = "", quoteLineId = ""] = (targetId as string).split(
+          ":"
+        );
         if (!quoteId || !quoteLineId) {
           throw new Error("Invalid targetId");
         }
@@ -2526,7 +2665,7 @@ serve(async (req: Request) => {
           supplierProcesses,
           configurationRules,
           quote,
-          ownedQuoteLine,
+          ownedQuoteLine
         ] = await Promise.all([
           client
             .from("activeMakeMethods")
@@ -2562,10 +2701,10 @@ serve(async (req: Request) => {
             .eq("id", quoteLineId)
             .eq("quoteId", quoteId)
             .eq("companyId", companyId)
-            .maybeSingle(),
+            .maybeSingle()
         ]);
 
-        // requirePermissions proved the CALLER may act in companyId; it proves
+        // The permission check proved the CALLER may act in companyId; it proves
         // nothing about the quote line in the body. The quoteMakeMethod lookup
         // is scoped, but a miss INSERTS one and then rewrites the line's
         // materials and operations by quoteLineId alone.
@@ -2573,7 +2712,7 @@ serve(async (req: Request) => {
           throw new Error("Failed to get quote line");
         }
         if (!ownedQuoteLine.data) {
-          return errorResponse("Quote line not found", 404);
+          throw new RecordNotFoundError("Quote line not found");
         }
 
         const configurationCodeByField = configurationRules?.data?.reduce<
@@ -2601,7 +2740,7 @@ serve(async (req: Request) => {
               quoteLineId,
               itemId,
               companyId,
-              createdBy: userId,
+              createdBy: userId
             })
             .select("*")
             .single();
@@ -2624,7 +2763,7 @@ serve(async (req: Request) => {
         );
 
         const [methodTrees] = await Promise.all([
-          getMethodTree(client, makeMethod.data.id!),
+          getMethodTree(client, makeMethod.data.id!)
         ]);
 
         if (methodTrees.error) {
@@ -2641,621 +2780,653 @@ serve(async (req: Request) => {
           supplierProcesses?.data
         );
 
-        await db.transaction().execute(async (trx: Transaction<KyselyDatabase>) => {
-          if (isConfigured) {
-            await trx.updateTable("quoteLine")
-              .set({
-                configuration: JSON.stringify(configuration),
-                updatedAt: new Date().toISOString(),
-                updatedBy: userId,
-              })
-              .where("id", "=", quoteLineId)
-              .execute();
-          }
-
-          // Delete existing quoteMakeMethod, quoteMakeMethodOperation, quoteMakeMethodMaterial
-          await Promise.all([
-            parts.billOfMaterial
-              ? trx
-                  .deleteFrom("quoteMakeMethod")
-                  .where((eb) =>
-                    eb.and([
-                      eb("quoteLineId", "=", quoteLineId),
-                      eb("parentMaterialId", "is not", null),
-                    ])
-                  )
-                  .execute()
-              : Promise.resolve(),
-            parts.billOfMaterial
-              ? trx
-                  .deleteFrom("quoteMaterial")
-                  .where("quoteLineId", "=", quoteLineId)
-                  .execute()
-              : Promise.resolve(),
-            // Prevent cascade deletion of materials when only replacing operations
-            !parts.billOfMaterial && parts.billOfProcess
-              ? trx.updateTable("quoteMaterial")
-                  .set({ quoteOperationId: null })
-                  .where("quoteLineId", "=", quoteLineId)
-                  .execute()
-              : Promise.resolve(),
-            parts.billOfProcess
-              ? trx
-                  .deleteFrom("quoteOperation")
-                  .where("quoteLineId", "=", quoteLineId)
-                  .execute()
-              : Promise.resolve(),
-            trx
-              .updateTable("quoteMakeMethod")
-              .set({ version: makeMethod.data.version ?? 1 })
-              .where("id", "=", quoteMakeMethod.data.id!)
-              .execute(),
-          ]);
-
-          async function getConfiguredValue<
-            T extends number | string | boolean | null
-          >({
-            id,
-            field,
-            defaultValue,
-          }: {
-            id: string;
-            field: string;
-            defaultValue: T;
-          }): Promise<T> {
-            if (!configurationCodeByField) return defaultValue;
-
-            const fieldKey = getFieldKey(field, id);
-
-            if (configurationCodeByField[fieldKey]) {
-              try {
-                const code = configurationCodeByField[fieldKey];
-                const mod = await importTypeScript(code);
-                const result = await mod.configure(hydratedConfiguration);
-
-                return (result ?? defaultValue) as T;
-              } catch (err) {
-                logger.error("configuration field resolver failed", {
-                  error: String((err as Error)?.stack ?? err),
-                });
-                return defaultValue;
-              }
-            }
-
-            return defaultValue;
-          }
-
-          // traverse method tree and create:
-          // - quoteMakeMethod
-          // - quoteMakeMethodOperation
-          // - quoteMakeMethodMaterial
-          async function traverseMethod(
-            node: MethodTreeItem,
-            parentQuoteMakeMethodId: string | null
-          ) {
-            logger.debug("[traverseMethod]", {
-              isRoot: node.data.isRoot,
-              itemId: node.data.itemId,
-              methodType: node.data.methodType,
-              materialMakeMethodId: node.data.materialMakeMethodId,
-              childCount: node.children.length,
-              childMethodTypes: node.children.map(c => ({
-                itemId: c.data.itemId,
-                methodType: c.data.methodType,
-              })),
-              parentQuoteMakeMethodId,
-            });
-
-            let methodOperationsToQuoteOperations: Record<string, string> = {};
-
-            const nodeLevelConfigurationKey = `${
-              node.data.materialMakeMethodId
-            }:${node.data.isRoot ? "undefined" : node.data.methodMaterialId}`;
-
-            // For child nodes, always include operations regardless of parts flags
-            if (!node.data.isRoot || parts.billOfProcess) {
-            const relatedOperations = await client
-              .from("methodOperation")
-              .select(
-                "*, methodOperationTool(*), methodOperationParameter(*), methodOperationStep(*)"
-              )
-              .eq("makeMethodId", node.data.materialMakeMethodId);
-
-            let quoteOperationsInserts: Database["public"]["Tables"]["quoteOperation"]["Insert"][] =
-              [];
-            for await (const op of relatedOperations?.data ?? []) {
-              const [
-                processId,
-                procedureId,
-                workCenterId,
-                description,
-                setupTime,
-                setupUnit,
-                laborTime,
-                laborUnit,
-                machineTime,
-                machineUnit,
-                operationOrder,
-                operationType,
-              ] = await Promise.all([
-                getConfiguredValue({
-                  id: op.id,
-                  field: "processId",
-                  defaultValue: op.processId,
-                }),
-                getConfiguredValue({
-                  id: op.id,
-                  field: "procedureId",
-                  defaultValue: op.procedureId,
-                }),
-                getConfiguredValue({
-                  id: op.id,
-                  field: "workCenterId",
-                  defaultValue: op.workCenterId,
-                }),
-                getConfiguredValue({
-                  id: op.id,
-                  field: "description",
-                  defaultValue: op.description,
-                }),
-                getConfiguredValue({
-                  id: op.id,
-                  field: "setupTime",
-                  defaultValue: op.setupTime,
-                }),
-                getConfiguredValue({
-                  id: op.id,
-                  field: "setupUnit",
-                  defaultValue: op.setupUnit,
-                }),
-                getConfiguredValue({
-                  id: op.id,
-                  field: "laborTime",
-                  defaultValue: op.laborTime,
-                }),
-                getConfiguredValue({
-                  id: op.id,
-                  field: "laborUnit",
-                  defaultValue: op.laborUnit,
-                }),
-                getConfiguredValue({
-                  id: op.id,
-                  field: "machineTime",
-                  defaultValue: op.machineTime,
-                }),
-                getConfiguredValue({
-                  id: op.id,
-                  field: "machineUnit",
-                  defaultValue: op.machineUnit,
-                }),
-                getConfiguredValue({
-                  id: op.id,
-                  field: "operationOrder",
-                  defaultValue: op.operationOrder,
-                }),
-                getConfiguredValue({
-                  id: op.id,
-                  field: "operationType",
-                  defaultValue: op.operationType,
-                }),
-              ]);
-
-              if (processId === "") continue;
-
-              const operationRates = getLaborAndOverheadRates(
-                processId,
-                op.workCenterId
-              );
-              logger.debug({
-                processId,
-                ...operationRates,
-              });
-
-              quoteOperationsInserts.push({
-                quoteId,
-                quoteLineId,
-                quoteMakeMethodId: parentQuoteMakeMethodId!,
-                processId,
-                procedureId,
-                assemblyInstructionId: op.assemblyInstructionId,
-                inspectionDocumentId: op.inspectionDocumentId,
-                workCenterId,
-                description,
-                setupTime,
-                setupUnit,
-                laborTime,
-                laborUnit,
-                machineTime,
-                machineUnit,
-                ...getLaborAndOverheadRates(processId, op.workCenterId),
-                order: op.order,
-                operationOrder,
-                operationType: normalizeOperationType(operationType),
-                operationSupplierProcessId: op.operationSupplierProcessId,
-                operationUnitCost: op.operationUnitCost ?? 0,
-                ...getOutsideOperationRates(
-                  processId,
-                  op.operationSupplierProcessId
-                ),
-                operationMinimumCost: op.operationMinimumCost ?? 0,
-                tags: op.tags ?? [],
-                workInstruction: toJson((!node.data.isRoot || parts.workInstructions) ? op.workInstruction : {}),
-                companyId,
-                createdBy: userId,
-                customFields: {},
-              });
-            }
-
-            const bopConfigurationKey = `billOfProcess:${nodeLevelConfigurationKey}`;
-            let bopConfiguration: string[] | null = null;
-
-            if (configurationCodeByField?.[bopConfigurationKey]) {
-              const mod = await importTypeScript(
-                configurationCodeByField[bopConfigurationKey]
-              );
-              bopConfiguration = await mod.configure(hydratedConfiguration);
-            }
-
-            if (bopConfiguration) {
-              // @ts-expect-error - we can't assign undefined to materialsWithConfiguredFields but we filter them in the next step
-              quoteOperationsInserts = bopConfiguration
-                .map((description, index) => {
-                  const operation = quoteOperationsInserts.find(
-                    (operation) => operation.description === description
-                  );
-                  if (operation) {
-                    return {
-                      ...operation,
-                      order: index + 1,
-                    };
-                  }
+        await db
+          .transaction()
+          .execute(async (trx: Transaction<KyselyDatabase>) => {
+            if (isConfigured) {
+              await trx
+                .updateTable("quoteLine")
+                .set({
+                  configuration: JSON.stringify(configuration),
+                  updatedAt: datetime.timestamp(),
+                  updatedBy: userId
                 })
-                .filter(Boolean);
+                .where("id", "=", quoteLineId)
+                .where("companyId", "=", companyId)
+                .execute();
             }
 
-            if (quoteOperationsInserts?.length > 0) {
-              const operationIds = await trx
-                .insertInto("quoteOperation")
-                .values(quoteOperationsInserts)
-                .returning(["id"])
-                .execute();
+            // Delete existing quoteMakeMethod, quoteMakeMethodOperation, quoteMakeMethodMaterial
+            await Promise.all([
+              parts.billOfMaterial
+                ? trx
+                    .deleteFrom("quoteMakeMethod")
+                    .where((eb) =>
+                      eb.and([
+                        eb("quoteLineId", "=", quoteLineId),
+                        eb("parentMaterialId", "is not", null)
+                      ])
+                    )
+                    .where("companyId", "=", companyId)
+                    .execute()
+                : Promise.resolve(),
+              parts.billOfMaterial
+                ? trx
+                    .deleteFrom("quoteMaterial")
+                    .where("quoteLineId", "=", quoteLineId)
+                    .where("companyId", "=", companyId)
+                    .execute()
+                : Promise.resolve(),
+              // Prevent cascade deletion of materials when only replacing operations
+              !parts.billOfMaterial && parts.billOfProcess
+                ? trx
+                    .updateTable("quoteMaterial")
+                    .set({ quoteOperationId: null })
+                    .where("quoteLineId", "=", quoteLineId)
+                    .where("companyId", "=", companyId)
+                    .execute()
+                : Promise.resolve(),
+              parts.billOfProcess
+                ? trx
+                    .deleteFrom("quoteOperation")
+                    .where("quoteLineId", "=", quoteLineId)
+                    .where("companyId", "=", companyId)
+                    .execute()
+                : Promise.resolve(),
+              trx
+                .updateTable("quoteMakeMethod")
+                .set({ version: makeMethod.data.version ?? 1 })
+                .where("id", "=", quoteMakeMethod.data!.id!)
+                .where("companyId", "=", companyId)
+                .execute()
+            ]);
 
-              for (const [index, operation] of (
-                relatedOperations.data ?? []
-              ).entries()) {
-                const operationId = operationIds[index].id;
+            async function getConfiguredValue<
+              T extends number | string | boolean | null
+            >({
+              id,
+              field,
+              defaultValue
+            }: {
+              id: string;
+              field: string;
+              defaultValue: T;
+            }): Promise<T> {
+              if (!configurationCodeByField) return defaultValue;
 
-                if (operationId) {
-                  const {
-                    methodOperationTool,
-                    methodOperationParameter,
-                    methodOperationStep,
-                    procedureId,
-                  } = operation;
+              const fieldKey = getFieldKey(field, id);
 
-                  if (
-                    (!node.data.isRoot || parts.tools) &&
-                    Array.isArray(methodOperationTool) &&
-                    methodOperationTool.length > 0
-                  ) {
-                    await trx
-                      .insertInto("quoteOperationTool")
-                      .values(
-                        methodOperationTool.map((tool) => ({
-                          toolId: tool.toolId,
-                          quantity: tool.quantity,
-                          operationId,
-                          companyId,
-                          createdBy: userId,
-                        }))
-                      )
-                      .execute();
-                  }
+              if (configurationCodeByField[fieldKey]) {
+                try {
+                  const code = configurationCodeByField[fieldKey];
+                  const mod = await importTypeScript(code);
+                  const result = await mod.configure(hydratedConfiguration);
 
-                  if (!procedureId) {
-                    if (
-                      (!node.data.isRoot || parts.parameters) &&
-                      Array.isArray(methodOperationParameter) &&
-                      methodOperationParameter.length > 0
-                    ) {
-                      const parameters = await Promise.all(
-                        methodOperationParameter.map(async (param) => ({
-                          operationId,
-                          key: param.key,
-                          value: await getConfiguredValue({
-                            id: operation.id,
-                            field: `parameter:${param.id}:value`,
-                            defaultValue: param.value,
-                          }),
-                          companyId,
-                          createdBy: userId,
-                        }))
-                      );
-
-                      await trx
-                        .insertInto("quoteOperationParameter")
-                        .values(parameters)
-                        .execute();
-                    }
-
-                    if (
-                      (!node.data.isRoot || parts.steps) &&
-                      Array.isArray(methodOperationStep) &&
-                      methodOperationStep.length > 0
-                    ) {
-                      const attributes = await Promise.all(
-                        methodOperationStep.map(
-                          async ({
-                            id,
-                            // quoteOperationStep has no provenance marker
-                            assemblyInstructionStepId: _assemblyInstructionStepId,
-                            ...attribute
-                          }) => ({
-                            ...attribute,
-                            description: toTiptapDoc(attribute.description),
-                            operationId,
-                            minValue: await getConfiguredValue({
-                              id: operation.id,
-                              field: `attribute:${id}:minValue`,
-                              defaultValue: attribute.minValue,
-                            }),
-                            maxValue: await getConfiguredValue({
-                              id: operation.id,
-                              field: `attribute:${id}:maxValue`,
-                              defaultValue: attribute.maxValue,
-                            }),
-                            companyId,
-                            createdBy: userId,
-                          })
-                        )
-                      );
-
-                      const insertedSteps = await trx
-                        .insertInto("quoteOperationStep")
-                        .values(attributes)
-                        .returning(["id"])
-                        .execute();
-
-                      await copyStepSlides(
-                        trx,
-                        client,
-                        methodOperationStep,
-                        insertedSteps,
-                        "methodOperationStepSlide",
-                        "quoteOperationStepSlide",
-                        companyId,
-                        userId,
-                      );
-                    }
-                  }
+                  return (result ?? defaultValue) as T;
+                } catch (err) {
+                  logger.error("configuration field resolver failed", {
+                    error: String((err as Error)?.stack ?? err)
+                  });
+                  return defaultValue;
                 }
               }
 
-              methodOperationsToQuoteOperations =
-                relatedOperations.data?.reduce<Record<string, string>>(
-                  (acc, op, index) => {
-                    if (operationIds[index].id) {
-                      acc[op.id!] = operationIds[index].id!;
-                    }
-                    return acc;
-                  },
-                  {}
-                ) ?? {};
+              return defaultValue;
             }
-            } // end if (parts.billOfProcess)
 
-            if (parts.billOfMaterial) {
-            const mapMethodMaterialToQuoteMaterial = async (
-              child: MethodTreeItem
-            ) => {
-              let [
-                itemId,
-                description,
-                quantity,
-                methodType,
-                unitOfMeasureCode,
-              ] = await Promise.all([
-                getConfiguredValue({
-                  id: child.data.methodMaterialId,
-                  field: "itemId",
-                  defaultValue: child.data.itemId,
-                }),
-                getConfiguredValue({
-                  id: child.data.methodMaterialId,
-                  field: "description",
-                  defaultValue: child.data.description,
-                }),
-                getConfiguredValue({
-                  id: child.data.methodMaterialId,
-                  field: "quantity",
-                  defaultValue: child.data.quantity,
-                }),
-                getConfiguredValue({
-                  id: child.data.methodMaterialId,
-                  field: "methodType",
-                  defaultValue: child.data.methodType,
-                }),
-                getConfiguredValue({
-                  id: child.data.methodMaterialId,
-                  field: "unitOfMeasureCode",
-                  defaultValue: child.data.unitOfMeasureCode,
-                }),
-              ]);
+            // traverse method tree and create:
+            // - quoteMakeMethod
+            // - quoteMakeMethodOperation
+            // - quoteMakeMethodMaterial
+            async function traverseMethod(
+              node: MethodTreeItem,
+              parentQuoteMakeMethodId: string | null
+            ) {
+              logger.debug("[traverseMethod]", {
+                isRoot: node.data.isRoot,
+                itemId: node.data.itemId,
+                methodType: node.data.methodType,
+                materialMakeMethodId: node.data.materialMakeMethodId,
+                childCount: node.children.length,
+                childMethodTypes: node.children.map((c) => ({
+                  itemId: c.data.itemId,
+                  methodType: c.data.methodType
+                })),
+                parentQuoteMakeMethodId
+              });
 
-              if (itemId === "") return null;
-              // A configured (or authored) quantity of 0 removes the line from
-              // the BOM (and its sub-tree, via configuredChildren below).
-              if (isZeroQuantity(quantity)) return null;
+              let methodOperationsToQuoteOperations: Record<string, string> =
+                {};
 
-              let itemType = child.data.itemType;
-              let unitCost = child.data.unitCost;
+              const nodeLevelConfigurationKey = `${
+                node.data.materialMakeMethodId
+              }:${node.data.isRoot ? "undefined" : node.data.methodMaterialId}`;
 
-              // TODO: if the methodType is Make and the default value is not Make, we need to do itemToQuoteMakeMethod for that material
-
-              if (itemId !== child.data.itemId) {
-                const item = await client
-                  .from("item")
+              // For child nodes, always include operations regardless of parts flags
+              if (!node.data.isRoot || parts.billOfProcess) {
+                const relatedOperations = await client
+                  .from("methodOperation")
                   .select(
-                    "readableIdWithRevision, readableId, type, name, itemCost(unitCost)"
+                    "*, methodOperationTool(*), methodOperationParameter(*), methodOperationStep(*)"
                   )
-                  .eq("id", itemId)
-                  .eq("companyId", companyId)
-                  .single();
-                if (item.data) {
-                  itemType = item.data.type;
-                  unitCost =
-                    item.data.itemCost[0]?.unitCost ?? child.data.unitCost;
-                  if (description === child.data.description) {
-                    description = item.data.name;
-                  }
-                } else {
-                  itemId = child.data.itemId;
-                }
-              }
+                  .eq("makeMethodId", node.data.materialMakeMethodId);
 
-              return {
-                quoteId,
-                quoteLineId,
-                quoteMakeMethodId: parentQuoteMakeMethodId!,
-                quoteOperationId:
-                  methodOperationsToQuoteOperations[child.data.operationId],
-                order: child.data.order,
-                itemId,
-                itemType,
-                kit: child.data.kit,
-                methodType,
-                description,
-                quantity,
-                storageUnitId: quoteLocationId
-                  ? // @ts-ignore: storageUnitIds is a dynamic object with location keys
-                    (child.data.storageUnitIds?.[quoteLocationId] as string) || null
-                  : null,
-                unitOfMeasureCode,
-                unitCost: unitCost ?? 0,
-                companyId,
-                createdBy: userId,
-                customFields: {},
-              };
-            };
+                let quoteOperationsInserts: Database["public"]["Tables"]["quoteOperation"]["Insert"][] =
+                  [];
+                for await (const op of relatedOperations?.data ?? []) {
+                  const [
+                    processId,
+                    procedureId,
+                    workCenterId,
+                    description,
+                    setupTime,
+                    setupUnit,
+                    laborTime,
+                    laborUnit,
+                    machineTime,
+                    machineUnit,
+                    operationOrder,
+                    operationType
+                  ] = await Promise.all([
+                    getConfiguredValue({
+                      id: op.id,
+                      field: "processId",
+                      defaultValue: op.processId
+                    }),
+                    getConfiguredValue({
+                      id: op.id,
+                      field: "procedureId",
+                      defaultValue: op.procedureId
+                    }),
+                    getConfiguredValue({
+                      id: op.id,
+                      field: "workCenterId",
+                      defaultValue: op.workCenterId
+                    }),
+                    getConfiguredValue({
+                      id: op.id,
+                      field: "description",
+                      defaultValue: op.description
+                    }),
+                    getConfiguredValue({
+                      id: op.id,
+                      field: "setupTime",
+                      defaultValue: op.setupTime
+                    }),
+                    getConfiguredValue({
+                      id: op.id,
+                      field: "setupUnit",
+                      defaultValue: op.setupUnit
+                    }),
+                    getConfiguredValue({
+                      id: op.id,
+                      field: "laborTime",
+                      defaultValue: op.laborTime
+                    }),
+                    getConfiguredValue({
+                      id: op.id,
+                      field: "laborUnit",
+                      defaultValue: op.laborUnit
+                    }),
+                    getConfiguredValue({
+                      id: op.id,
+                      field: "machineTime",
+                      defaultValue: op.machineTime
+                    }),
+                    getConfiguredValue({
+                      id: op.id,
+                      field: "machineUnit",
+                      defaultValue: op.machineUnit
+                    }),
+                    getConfiguredValue({
+                      id: op.id,
+                      field: "operationOrder",
+                      defaultValue: op.operationOrder
+                    }),
+                    getConfiguredValue({
+                      id: op.id,
+                      field: "operationType",
+                      defaultValue: op.operationType
+                    })
+                  ]);
 
-            const quoteMaterialResults = await Promise.all(
-              node.children.map(mapMethodMaterialToQuoteMaterial)
-            );
-            const validQuoteMaterialIndices = quoteMaterialResults.reduce<number[]>((acc, m, i) => {
-              if (m !== null) acc.push(i);
-              return acc;
-            }, []);
-            let materialsWithConfiguredFields = quoteMaterialResults.filter(
-              (m): m is NonNullable<typeof m> => m !== null
-            );
-            const configuredChildren = validQuoteMaterialIndices.map(i => node.children[i]);
+                  if (processId === "") continue;
 
-            const bomConfigurationKey = `billOfMaterial:${nodeLevelConfigurationKey}`;
-            let bomConfiguration: string[] | null = null;
-
-            if (configurationCodeByField?.[bomConfigurationKey]) {
-              const mod = await importTypeScript(
-                configurationCodeByField[bomConfigurationKey]
-              );
-              bomConfiguration = await mod.configure(hydratedConfiguration);
-            }
-
-            if (bomConfiguration) {
-              // @ts-expect-error - we can't assign undefined to materialsWithConfiguredFields but we filter them in the next step
-              materialsWithConfiguredFields = bomConfiguration
-                .map((readableIdWithRevision, index) => {
-                  const material = materialsWithConfiguredFields.find(
-                    (material) => material.itemId === itemId
+                  const operationRates = getLaborAndOverheadRates(
+                    processId,
+                    op.workCenterId
                   );
-                  if (material) {
-                    return {
-                      ...material,
-                      order: index + 1,
-                    };
+                  logger.debug("traverseMethod", {
+                    processId,
+                    ...operationRates
+                  });
+
+                  quoteOperationsInserts.push({
+                    quoteId,
+                    quoteLineId,
+                    quoteMakeMethodId: parentQuoteMakeMethodId!,
+                    processId,
+                    procedureId,
+                    assemblyInstructionId: op.assemblyInstructionId,
+                    inspectionDocumentId: op.inspectionDocumentId,
+                    workCenterId,
+                    description,
+                    setupTime,
+                    setupUnit,
+                    laborTime,
+                    laborUnit,
+                    machineTime,
+                    machineUnit,
+                    ...getLaborAndOverheadRates(processId, op.workCenterId),
+                    order: op.order,
+                    operationOrder,
+                    operationType: normalizeOperationType(operationType),
+                    operationSupplierProcessId: op.operationSupplierProcessId,
+                    operationUnitCost: op.operationUnitCost ?? 0,
+                    ...getOutsideOperationRates(
+                      processId,
+                      op.operationSupplierProcessId
+                    ),
+                    operationMinimumCost: op.operationMinimumCost ?? 0,
+                    tags: op.tags ?? [],
+                    workInstruction: toJson(
+                      !node.data.isRoot || parts.workInstructions
+                        ? op.workInstruction
+                        : {}
+                    ),
+                    companyId,
+                    createdBy: userId,
+                    customFields: {}
+                  });
+                }
+
+                const bopConfigurationKey = `billOfProcess:${nodeLevelConfigurationKey}`;
+                let bopConfiguration: string[] | null = null;
+
+                if (configurationCodeByField?.[bopConfigurationKey]) {
+                  const mod = await importTypeScript(
+                    configurationCodeByField[bopConfigurationKey]
+                  );
+                  bopConfiguration = await mod.configure(hydratedConfiguration);
+                }
+
+                if (bopConfiguration) {
+                  // @ts-expect-error - we can't assign undefined to materialsWithConfiguredFields but we filter them in the next step
+                  quoteOperationsInserts = bopConfiguration
+                    .map((description, index) => {
+                      const operation = quoteOperationsInserts.find(
+                        (operation) => operation.description === description
+                      );
+                      if (operation) {
+                        return {
+                          ...operation,
+                          order: index + 1
+                        };
+                      }
+                    })
+                    .filter(Boolean);
+                }
+
+                if (quoteOperationsInserts?.length > 0) {
+                  const operationIds = await trx
+                    .insertInto("quoteOperation")
+                    .values(quoteOperationsInserts)
+                    .returning(["id"])
+                    .execute();
+
+                  for (const [index, operation] of (
+                    relatedOperations.data ?? []
+                  ).entries()) {
+                    const operationId = operationIds[index]!.id;
+
+                    if (operationId) {
+                      const {
+                        methodOperationTool,
+                        methodOperationParameter,
+                        methodOperationStep,
+                        procedureId
+                      } = operation;
+
+                      if (
+                        (!node.data.isRoot || parts.tools) &&
+                        Array.isArray(methodOperationTool) &&
+                        methodOperationTool.length > 0
+                      ) {
+                        await trx
+                          .insertInto("quoteOperationTool")
+                          .values(
+                            methodOperationTool.map((tool) => ({
+                              toolId: tool.toolId,
+                              quantity: tool.quantity,
+                              operationId,
+                              companyId,
+                              createdBy: userId
+                            }))
+                          )
+                          .execute();
+                      }
+
+                      if (!procedureId) {
+                        if (
+                          (!node.data.isRoot || parts.parameters) &&
+                          Array.isArray(methodOperationParameter) &&
+                          methodOperationParameter.length > 0
+                        ) {
+                          const parameters = await Promise.all(
+                            methodOperationParameter.map(async (param) => ({
+                              operationId,
+                              key: param.key,
+                              value: await getConfiguredValue({
+                                id: operation.id,
+                                field: `parameter:${param.id}:value`,
+                                defaultValue: param.value
+                              }),
+                              companyId,
+                              createdBy: userId
+                            }))
+                          );
+
+                          await trx
+                            .insertInto("quoteOperationParameter")
+                            .values(parameters)
+                            .execute();
+                        }
+
+                        if (
+                          (!node.data.isRoot || parts.steps) &&
+                          Array.isArray(methodOperationStep) &&
+                          methodOperationStep.length > 0
+                        ) {
+                          const attributes = await Promise.all(
+                            methodOperationStep.map(
+                              async ({
+                                id,
+                                // quoteOperationStep has no provenance marker
+                                assemblyInstructionStepId:
+                                  _assemblyInstructionStepId,
+                                ...attribute
+                              }) => ({
+                                ...attribute,
+                                description: toTiptapDoc(attribute.description),
+                                operationId,
+                                minValue: await getConfiguredValue({
+                                  id: operation.id,
+                                  field: `attribute:${id}:minValue`,
+                                  defaultValue: attribute.minValue
+                                }),
+                                maxValue: await getConfiguredValue({
+                                  id: operation.id,
+                                  field: `attribute:${id}:maxValue`,
+                                  defaultValue: attribute.maxValue
+                                }),
+                                companyId,
+                                createdBy: userId
+                              })
+                            )
+                          );
+
+                          const insertedSteps = await trx
+                            .insertInto("quoteOperationStep")
+                            .values(attributes)
+                            .returning(["id"])
+                            .execute();
+
+                          await copyStepSlides(
+                            trx,
+                            client,
+                            methodOperationStep,
+                            insertedSteps,
+                            "methodOperationStepSlide",
+                            "quoteOperationStepSlide",
+                            companyId,
+                            userId
+                          );
+                        }
+                      }
+                    }
                   }
-                })
-                .filter(Boolean);
-            }
 
-            const madeMaterials = materialsWithConfiguredFields.filter(
-              (material) => material.methodType === "Make to Order"
-            );
+                  methodOperationsToQuoteOperations =
+                    relatedOperations.data?.reduce<Record<string, string>>(
+                      (acc, op, index) => {
+                        if (operationIds[index]!.id) {
+                          acc[op.id!] = operationIds[index]!.id!;
+                        }
+                        return acc;
+                      },
+                      {}
+                    ) ?? {};
+                }
+              } // end if (parts.billOfProcess)
 
-            const pickedOrBoughtMaterials =
-              materialsWithConfiguredFields.filter(
-                (material) => material.methodType !== "Make to Order"
-              );
+              if (parts.billOfMaterial) {
+                const mapMethodMaterialToQuoteMaterial = async (
+                  child: MethodTreeItem
+                ) => {
+                  let [
+                    itemId,
+                    description,
+                    quantity,
+                    methodType,
+                    unitOfMeasureCode
+                  ] = await Promise.all([
+                    getConfiguredValue({
+                      id: child.data.methodMaterialId,
+                      field: "itemId",
+                      defaultValue: child.data.itemId
+                    }),
+                    getConfiguredValue({
+                      id: child.data.methodMaterialId,
+                      field: "description",
+                      defaultValue: child.data.description
+                    }),
+                    getConfiguredValue({
+                      id: child.data.methodMaterialId,
+                      field: "quantity",
+                      defaultValue: child.data.quantity
+                    }),
+                    getConfiguredValue({
+                      id: child.data.methodMaterialId,
+                      field: "methodType",
+                      defaultValue: child.data.methodType
+                    }),
+                    getConfiguredValue({
+                      id: child.data.methodMaterialId,
+                      field: "unitOfMeasureCode",
+                      defaultValue: child.data.unitOfMeasureCode
+                    })
+                  ]);
 
-            const madeChildren = configuredChildren.filter(
-              (child) => child.data.methodType === "Make to Order"
-            );
+                  if (itemId === "") return null;
+                  // A configured (or authored) quantity of 0 removes the line from
+                  // the BOM (and its sub-tree, via configuredChildren below).
+                  if (isZeroQuantity(quantity)) return null;
 
-            logger.debug("[traverseMethod] materials", {
-              totalChildren: materialsWithConfiguredFields.length,
-              madeMaterialsCount: madeMaterials.length,
-              madeChildrenCount: madeChildren.length,
-              pickedOrBoughtCount: pickedOrBoughtMaterials.length,
-            });
+                  let itemType = child.data.itemType;
+                  let unitCost = child.data.unitCost;
 
-            if (madeMaterials.length > 0) {
-              const madeMaterialsWithIds = madeMaterials.map((m) => ({
-                ...m,
-                id: nanoid(),
-              }));
+                  // TODO: if the methodType is Make and the default value is not Make, we need to do itemToQuoteMakeMethod for that material
 
-              await trx
-                .insertInto("quoteMaterial")
-                .values(madeMaterialsWithIds)
-                .execute();
+                  if (itemId !== child.data.itemId) {
+                    const item = await client
+                      .from("item")
+                      .select(
+                        "readableIdWithRevision, readableId, type, name, itemCost(unitCost)"
+                      )
+                      .eq("id", itemId)
+                      .eq("companyId", companyId)
+                      .single();
+                    if (item.data) {
+                      itemType = item.data.type;
+                      unitCost =
+                        item.data.itemCost[0]?.unitCost ?? child.data.unitCost;
+                      if (description === child.data.description) {
+                        description = item.data.name;
+                      }
+                    } else {
+                      itemId = child.data.itemId;
+                    }
+                  }
 
-              for (const [index, child] of madeChildren.entries()) {
-                const materialId = madeMaterialsWithIds[index].id;
-                const newMakeMethodId = nanoid();
+                  return {
+                    quoteId,
+                    quoteLineId,
+                    quoteMakeMethodId: parentQuoteMakeMethodId!,
+                    quoteOperationId:
+                      methodOperationsToQuoteOperations[child.data.operationId],
+                    order: child.data.order,
+                    itemId,
+                    itemType,
+                    kit: child.data.kit,
+                    methodType,
+                    description,
+                    quantity,
+                    storageUnitId: quoteLocationId
+                      ? // @ts-ignore: storageUnitIds is a dynamic object with location keys
+                        (child.data.storageUnitIds?.[
+                          quoteLocationId
+                        ] as string) || null
+                      : null,
+                    unitOfMeasureCode,
+                    unitCost: unitCost ?? 0,
+                    companyId,
+                    createdBy: userId,
+                    customFields: {}
+                  };
+                };
 
-                const updateResult = await trx
-                  .updateTable("quoteMakeMethod")
-                  .set({ id: newMakeMethodId })
-                  .where("parentMaterialId", "=", materialId)
-                  .execute();
+                const quoteMaterialResults = await Promise.all(
+                  node.children.map(mapMethodMaterialToQuoteMaterial)
+                );
+                const validQuoteMaterialIndices = quoteMaterialResults.reduce<
+                  number[]
+                >((acc, m, i) => {
+                  if (m !== null) acc.push(i);
+                  return acc;
+                }, []);
+                let materialsWithConfiguredFields = quoteMaterialResults.filter(
+                  (m): m is NonNullable<typeof m> => m !== null
+                );
+                const configuredChildren = validQuoteMaterialIndices.map(
+                  (i) => node.children[i]!
+                );
 
-                logger.debug("[traverseMethod] processing made child", {
-                  index,
-                  materialId,
-                  newMakeMethodId,
-                  childItemId: child.data.itemId,
-                  parentItemId: itemId,
-                  willRecurse: child.data.itemId !== itemId,
-                  updateResult,
+                const bomConfigurationKey = `billOfMaterial:${nodeLevelConfigurationKey}`;
+                let bomConfiguration: string[] | null = null;
+
+                if (configurationCodeByField?.[bomConfigurationKey]) {
+                  const mod = await importTypeScript(
+                    configurationCodeByField[bomConfigurationKey]
+                  );
+                  bomConfiguration = await mod.configure(hydratedConfiguration);
+                }
+
+                if (bomConfiguration) {
+                  // @ts-expect-error - we can't assign undefined to materialsWithConfiguredFields but we filter them in the next step
+                  materialsWithConfiguredFields = bomConfiguration
+                    .map((readableIdWithRevision, index) => {
+                      const material = materialsWithConfiguredFields.find(
+                        (material) => material.itemId === itemId
+                      );
+                      if (material) {
+                        return {
+                          ...material,
+                          order: index + 1
+                        };
+                      }
+                    })
+                    .filter(Boolean);
+                }
+
+                const madeMaterials = materialsWithConfiguredFields.filter(
+                  (material) => material.methodType === "Make to Order"
+                );
+
+                const pickedOrBoughtMaterials =
+                  materialsWithConfiguredFields.filter(
+                    (material) => material.methodType !== "Make to Order"
+                  );
+
+                const madeChildren = configuredChildren.filter(
+                  (child) => child!.data.methodType === "Make to Order"
+                );
+
+                logger.debug("[traverseMethod] materials", {
+                  totalChildren: materialsWithConfiguredFields.length,
+                  madeMaterialsCount: madeMaterials.length,
+                  madeChildrenCount: madeChildren.length,
+                  pickedOrBoughtCount: pickedOrBoughtMaterials.length
                 });
 
-                // prevent an infinite loop
-                if (child.data.itemId !== itemId) {
-                  await traverseMethod(child, newMakeMethodId);
+                if (madeMaterials.length > 0) {
+                  const madeMaterialsWithIds = madeMaterials.map((m) => ({
+                    ...m,
+                    id: nanoid()
+                  }));
+
+                  await trx
+                    .insertInto("quoteMaterial")
+                    .values(madeMaterialsWithIds)
+                    .execute();
+
+                  for (const [index, child] of madeChildren.entries()) {
+                    const materialId = madeMaterialsWithIds[index]!.id;
+                    const newMakeMethodId = nanoid();
+
+                    const updateResult = await trx
+                      .updateTable("quoteMakeMethod")
+                      .set({ id: newMakeMethodId })
+                      .where("parentMaterialId", "=", materialId)
+                      .where("companyId", "=", companyId)
+                      .execute();
+
+                    logger.debug("[traverseMethod] processing made child", {
+                      index,
+                      materialId,
+                      newMakeMethodId,
+                      childItemId: child!.data.itemId,
+                      parentItemId: itemId,
+                      willRecurse: child!.data.itemId !== itemId,
+                      updateResult
+                    });
+
+                    // prevent an infinite loop
+                    if (child!.data.itemId !== itemId) {
+                      await traverseMethod(child, newMakeMethodId);
+                    }
+                  }
                 }
+
+                if (pickedOrBoughtMaterials.length > 0) {
+                  await trx
+                    .insertInto("quoteMaterial")
+                    .values(pickedOrBoughtMaterials)
+                    .execute();
+                }
+              } // end if (parts.billOfMaterial)
+            }
+
+            function logTree(node: MethodTreeItem, depth = 0) {
+              logger.debug(
+                "  ".repeat(depth) +
+                  `[tree] ${node.data.itemId} (${node.data.methodType}, isRoot=${node.data.isRoot}, children=${node.children.length})`
+              );
+              for (const child of node.children) {
+                logTree(child, depth + 1);
               }
             }
+            logTree(methodTree);
 
-            if (pickedOrBoughtMaterials.length > 0) {
-              await trx
-                .insertInto("quoteMaterial")
-                .values(pickedOrBoughtMaterials)
-                .execute();
-            }
-            } // end if (parts.billOfMaterial)
-          }
+            await traverseMethod(methodTree, quoteMakeMethod.data!.id);
+          });
 
-          function logTree(node: MethodTreeItem, depth = 0) {
-            logger.debug("  ".repeat(depth) + `[tree] ${node.data.itemId} (${node.data.methodType}, isRoot=${node.data.isRoot}, children=${node.children.length})`);
-            for (const child of node.children) {
-              logTree(child, depth + 1);
-            }
-          }
-          logTree(methodTree);
-
-          await traverseMethod(methodTree, quoteMakeMethod.data.id);
-        });
-
-        await calculateQuoteLinePrices(client, quoteId, quoteLineId, companyId, userId);
+        await calculateQuoteLinePrices(
+          client,
+          quoteId,
+          quoteLineId,
+          companyId,
+          userId
+        );
 
         break;
       }
@@ -3286,7 +3457,7 @@ serve(async (req: Request) => {
             client
               .from("supplierProcess")
               .select("*")
-              .eq("companyId", companyId),
+              .eq("companyId", companyId)
           ]);
 
         if (makeMethod.error) {
@@ -3312,7 +3483,7 @@ serve(async (req: Request) => {
                 .select("*")
                 .eq("itemId", itemId)
                 .eq("companyId", companyId)
-            : Promise.resolve({ data: [] }),
+            : Promise.resolve({ data: [] })
         ]);
 
         if (methodTrees.error) {
@@ -3344,36 +3515,44 @@ serve(async (req: Request) => {
               ? trx
                   .deleteFrom("quoteMaterial")
                   .where("quoteMakeMethodId", "=", quoteMakeMethodId)
+                  .where("companyId", "=", companyId)
                   .execute()
               : Promise.resolve(),
             // Prevent cascade deletion of materials when only replacing operations
             !parts.billOfMaterial && parts.billOfProcess
-              ? trx.updateTable("quoteMaterial")
+              ? trx
+                  .updateTable("quoteMaterial")
                   .set({ quoteOperationId: null })
                   .where("quoteMakeMethodId", "=", quoteMakeMethodId)
+                  .where("companyId", "=", companyId)
                   .execute()
               : Promise.resolve(),
             parts.billOfProcess
               ? trx
                   .deleteFrom("quoteOperation")
                   .where("quoteMakeMethodId", "=", quoteMakeMethodId)
+                  .where("companyId", "=", companyId)
                   .execute()
               : Promise.resolve(),
             trx
               .updateTable("quoteMakeMethod")
               .set({ version: makeMethod.data.version ?? 1 })
               .where("id", "=", quoteMakeMethodId)
-              .execute(),
+              .where("companyId", "=", companyId)
+              .execute()
           ]);
 
           function getFieldKey(field: string, id: string) {
             return `${field}:${id}`;
           }
 
+          // FIXME: never called — configuration rules are not applied on this
+          // make-method path. Kept as it was in the edge function.
+          // biome-ignore lint/correctness/noUnusedVariables: see FIXME above
           async function getConfiguredValue<T>({
             id,
             field,
-            defaultValue,
+            defaultValue
           }: {
             id: string;
             field: string;
@@ -3391,7 +3570,7 @@ serve(async (req: Request) => {
                 return (result ?? defaultValue) as T;
               } catch (err) {
                 logger.error("configuration field resolver failed", {
-                  error: String((err as Error)?.stack ?? err),
+                  error: String((err as Error)?.stack ?? err)
                 });
                 return defaultValue;
               }
@@ -3443,210 +3622,213 @@ serve(async (req: Request) => {
                   op.operationSupplierProcessId
                 ),
                 tags: op.tags ?? [],
-                workInstruction: toJson(parts.workInstructions ? op.workInstruction : {}),
+                workInstruction: toJson(
+                  parts.workInstructions ? op.workInstruction : {}
+                ),
                 companyId,
                 createdBy: userId,
-                customFields: {},
+                customFields: {}
               })) ?? [];
 
             let methodOperationsToQuoteOperations: Record<string, string> = {};
 
             if (parts.billOfProcess) {
-            if (quoteOperationInserts?.length > 0) {
-              const operationIds = await trx
-                .insertInto("quoteOperation")
-                .values(quoteOperationInserts)
-                .returning(["id"])
-                .execute();
+              if (quoteOperationInserts?.length > 0) {
+                const operationIds = await trx
+                  .insertInto("quoteOperation")
+                  .values(quoteOperationInserts)
+                  .returning(["id"])
+                  .execute();
 
-              for (const [index, operation] of (
-                relatedOperations.data ?? []
-              ).entries()) {
-                const operationId = operationIds[index].id;
+                for (const [index, operation] of (
+                  relatedOperations.data ?? []
+                ).entries()) {
+                  const operationId = operationIds[index]!.id;
 
-                if (operationId) {
-                  const {
-                    methodOperationTool,
-                    methodOperationParameter,
-                    methodOperationStep,
-                    procedureId,
-                  } = operation;
+                  if (operationId) {
+                    const {
+                      methodOperationTool,
+                      methodOperationParameter,
+                      methodOperationStep,
+                      procedureId
+                    } = operation;
 
-                  if (
-                    parts.tools &&
-                    Array.isArray(methodOperationTool) &&
-                    methodOperationTool.length > 0
-                  ) {
-                    await trx
-                      .insertInto("quoteOperationTool")
-                      .values(
-                        methodOperationTool.map((tool) => ({
-                          toolId: tool.toolId,
-                          quantity: tool.quantity,
-                          operationId,
-                          companyId,
-                          createdBy: userId,
-                        }))
-                      )
-                      .execute();
-                  }
-
-                  if (!procedureId) {
                     if (
-                      parts.parameters &&
-                      Array.isArray(methodOperationParameter) &&
-                      methodOperationParameter.length > 0
+                      parts.tools &&
+                      Array.isArray(methodOperationTool) &&
+                      methodOperationTool.length > 0
                     ) {
                       await trx
-                        .insertInto("quoteOperationParameter")
+                        .insertInto("quoteOperationTool")
                         .values(
-                          methodOperationParameter.map((param) => ({
+                          methodOperationTool.map((tool) => ({
+                            toolId: tool.toolId,
+                            quantity: tool.quantity,
                             operationId,
-                            key: param.key,
-                            value: param.value,
                             companyId,
-                            createdBy: userId,
+                            createdBy: userId
                           }))
                         )
                         .execute();
                     }
 
-                    if (
-                      parts.steps &&
-                      // Assembly ops inherit steps from the linked instruction —
-                      // never copy (possibly stale) template steps alongside it.
-                      !operation.assemblyInstructionId &&
-                      Array.isArray(methodOperationStep) &&
-                      methodOperationStep.length > 0
-                    ) {
-                      const insertedSteps = await trx
-                        .insertInto("quoteOperationStep")
-                        .values(
-                          methodOperationStep.map(
-                            ({
-                              id: _id,
-                              // quoteOperationStep has no provenance marker
-                              assemblyInstructionStepId:
-                                _assemblyInstructionStepId,
-                              ...attribute
-                            }) => ({
-                              ...attribute,
-                              description: toTiptapDoc(attribute.description),
+                    if (!procedureId) {
+                      if (
+                        parts.parameters &&
+                        Array.isArray(methodOperationParameter) &&
+                        methodOperationParameter.length > 0
+                      ) {
+                        await trx
+                          .insertInto("quoteOperationParameter")
+                          .values(
+                            methodOperationParameter.map((param) => ({
                               operationId,
+                              key: param.key,
+                              value: param.value,
                               companyId,
-                              createdBy: userId,
-                            })
+                              createdBy: userId
+                            }))
                           )
-                        )
-                        .returning(["id"])
-                        .execute();
+                          .execute();
+                      }
 
-                      await copyStepSlides(
-                        trx,
-                        client,
-                        methodOperationStep,
-                        insertedSteps,
-                        "methodOperationStepSlide",
-                        "quoteOperationStepSlide",
-                        companyId,
-                        userId,
-                      );
+                      if (
+                        parts.steps &&
+                        // Assembly ops inherit steps from the linked instruction —
+                        // never copy (possibly stale) template steps alongside it.
+                        !operation.assemblyInstructionId &&
+                        Array.isArray(methodOperationStep) &&
+                        methodOperationStep.length > 0
+                      ) {
+                        const insertedSteps = await trx
+                          .insertInto("quoteOperationStep")
+                          .values(
+                            methodOperationStep.map(
+                              ({
+                                id: _id,
+                                // quoteOperationStep has no provenance marker
+                                assemblyInstructionStepId:
+                                  _assemblyInstructionStepId,
+                                ...attribute
+                              }) => ({
+                                ...attribute,
+                                description: toTiptapDoc(attribute.description),
+                                operationId,
+                                companyId,
+                                createdBy: userId
+                              })
+                            )
+                          )
+                          .returning(["id"])
+                          .execute();
+
+                        await copyStepSlides(
+                          trx,
+                          client,
+                          methodOperationStep,
+                          insertedSteps,
+                          "methodOperationStepSlide",
+                          "quoteOperationStepSlide",
+                          companyId,
+                          userId
+                        );
+                      }
                     }
+                  }
+                }
+
+                methodOperationsToQuoteOperations =
+                  relatedOperations.data?.reduce<Record<string, string>>(
+                    (acc, op, index) => {
+                      if (operationIds[index]!.id) {
+                        acc[op.id!] = operationIds[index]!.id!;
+                      }
+                      return acc;
+                    },
+                    {}
+                  ) ?? {};
+              }
+            } // end if (parts.billOfProcess)
+
+            if (parts.billOfMaterial) {
+              const mapMethodMaterialToQuoteMaterial = (
+                child: MethodTreeItem
+              ) => ({
+                quoteId: quoteMakeMethod.data?.quoteId!,
+                quoteLineId: quoteMakeMethod.data?.quoteLineId!,
+                quoteMakeMethodId: parentQuoteMakeMethodId!,
+                quoteOperationId:
+                  methodOperationsToQuoteOperations[child.data.operationId],
+                itemId: child.data.itemId,
+                itemType: child.data.itemType,
+                kit: child.data.kit,
+                methodType: child.data.methodType,
+                order: child.data.order,
+                description: child.data.description,
+                quantity: child.data.quantity,
+                storageUnitId: (child.data as any).storageUnitId || null, // @ts-ignore: storageUnitId field exists in database but types may not be updated
+                unitOfMeasureCode: child.data.unitOfMeasureCode,
+                unitCost: child.data.unitCost ?? 0,
+                companyId,
+                createdBy: userId,
+                customFields: {}
+              });
+
+              // A zero-quantity BOM line is removed from the method. Filtering the
+              // children (not the mapped rows) keeps `madeChildren`/`madeMaterials`
+              // index-aligned and stops a made line's sub-tree from being exploded.
+              const madeChildren = node.children.filter(
+                (child) =>
+                  child.data.methodType === "Make to Order" &&
+                  !isZeroQuantity(child.data.quantity)
+              );
+              const unmadeChildren = node.children.filter(
+                (child) =>
+                  child.data.methodType !== "Make to Order" &&
+                  !isZeroQuantity(child.data.quantity)
+              );
+
+              const madeMaterials = madeChildren.map(
+                mapMethodMaterialToQuoteMaterial
+              );
+              const pickedOrBoughtMaterials = unmadeChildren.map(
+                mapMethodMaterialToQuoteMaterial
+              );
+              if (madeMaterials.length > 0) {
+                const madeMaterialsWithIds = madeMaterials.map((m) => ({
+                  ...m,
+                  id: nanoid()
+                }));
+
+                await trx
+                  .insertInto("quoteMaterial")
+                  .values(madeMaterialsWithIds)
+                  .execute();
+
+                for (const [index, child] of madeChildren.entries()) {
+                  const materialId = madeMaterialsWithIds[index]!.id;
+                  const newMakeMethodId = nanoid();
+
+                  await trx
+                    .updateTable("quoteMakeMethod")
+                    .set({ id: newMakeMethodId })
+                    .where("parentMaterialId", "=", materialId)
+                    .where("companyId", "=", companyId)
+                    .execute();
+
+                  // prevent an infinite loop
+                  if (child.data.itemId !== itemId) {
+                    await traverseMethod(child, newMakeMethodId);
                   }
                 }
               }
 
-              methodOperationsToQuoteOperations =
-                relatedOperations.data?.reduce<Record<string, string>>(
-                  (acc, op, index) => {
-                    if (operationIds[index].id) {
-                      acc[op.id!] = operationIds[index].id!;
-                    }
-                    return acc;
-                  },
-                  {}
-                ) ?? {};
-            }
-            } // end if (parts.billOfProcess)
-
-            if (parts.billOfMaterial) {
-            const mapMethodMaterialToQuoteMaterial = (
-              child: MethodTreeItem
-            ) => ({
-              quoteId: quoteMakeMethod.data?.quoteId!,
-              quoteLineId: quoteMakeMethod.data?.quoteLineId!,
-              quoteMakeMethodId: parentQuoteMakeMethodId!,
-              quoteOperationId:
-                methodOperationsToQuoteOperations[child.data.operationId],
-              itemId: child.data.itemId,
-              itemType: child.data.itemType,
-              kit: child.data.kit,
-              methodType: child.data.methodType,
-              order: child.data.order,
-              description: child.data.description,
-              quantity: child.data.quantity,
-              storageUnitId: (child.data as any).storageUnitId || null, // @ts-ignore: storageUnitId field exists in database but types may not be updated
-              unitOfMeasureCode: child.data.unitOfMeasureCode,
-              unitCost: child.data.unitCost ?? 0,
-              companyId,
-              createdBy: userId,
-              customFields: {},
-            });
-
-            // A zero-quantity BOM line is removed from the method. Filtering the
-            // children (not the mapped rows) keeps `madeChildren`/`madeMaterials`
-            // index-aligned and stops a made line's sub-tree from being exploded.
-            const madeChildren = node.children.filter(
-              (child) =>
-                child.data.methodType === "Make to Order" &&
-                !isZeroQuantity(child.data.quantity)
-            );
-            const unmadeChildren = node.children.filter(
-              (child) =>
-                child.data.methodType !== "Make to Order" &&
-                !isZeroQuantity(child.data.quantity)
-            );
-
-            const madeMaterials = madeChildren.map(
-              mapMethodMaterialToQuoteMaterial
-            );
-            const pickedOrBoughtMaterials = unmadeChildren.map(
-              mapMethodMaterialToQuoteMaterial
-            );
-            if (madeMaterials.length > 0) {
-              const madeMaterialsWithIds = madeMaterials.map((m) => ({
-                ...m,
-                id: nanoid(),
-              }));
-
-              await trx
-                .insertInto("quoteMaterial")
-                .values(madeMaterialsWithIds)
-                .execute();
-
-              for (const [index, child] of madeChildren.entries()) {
-                const materialId = madeMaterialsWithIds[index].id;
-                const newMakeMethodId = nanoid();
-
+              if (pickedOrBoughtMaterials.length > 0) {
                 await trx
-                  .updateTable("quoteMakeMethod")
-                  .set({ id: newMakeMethodId })
-                  .where("parentMaterialId", "=", materialId)
+                  .insertInto("quoteMaterial")
+                  .values(pickedOrBoughtMaterials)
                   .execute();
-
-                // prevent an infinite loop
-                if (child.data.itemId !== itemId) {
-                  await traverseMethod(child, newMakeMethodId);
-                }
               }
-            }
-
-            if (pickedOrBoughtMaterials.length > 0) {
-              await trx
-                .insertInto("quoteMaterial")
-                .values(pickedOrBoughtMaterials)
-                .execute();
-            }
             } // end if (parts.billOfMaterial)
           }
 
@@ -3670,7 +3852,7 @@ serve(async (req: Request) => {
             .select("*")
             .eq("id", jobMakeMethodId)
             .eq("companyId", companyId)
-            .single(),
+            .single()
         ]);
 
         if (makeMethod.error) {
@@ -3702,7 +3884,7 @@ serve(async (req: Request) => {
             .select("*")
             .eq("itemId", itemId)
             .eq("companyId", companyId)
-            .single(),
+            .single()
         ]);
 
         if (jobOperations.error) {
@@ -3722,7 +3904,7 @@ serve(async (req: Request) => {
             client,
             jobMakeMethodId,
             jobMakeMethod.data.parentMaterialId
-          ),
+          )
         ]);
 
         if (jobMethodTrees.error) {
@@ -3766,14 +3948,14 @@ serve(async (req: Request) => {
 
           traverseJobMethod(jobMethodTree!, (node: JobMethodTreeItem) => {
             if (node.data.itemId && node.data.methodType === "Make to Order") {
-              makeMethodsToDelete.push(makeMethodByItemId[node.data.itemId]);
+              makeMethodsToDelete.push(makeMethodByItemId[node.data.itemId]!);
             }
 
             node.children.forEach((child) => {
               // A zero-quantity BOM line is dropped from the saved method.
               if (isZeroQuantity(child.data.quantity)) return;
               materialInserts.push({
-                makeMethodId: makeMethodByItemId[node.data.itemId],
+                makeMethodId: makeMethodByItemId[node.data.itemId]!,
                 materialMakeMethodId: makeMethodByItemId[child.data.itemId],
                 itemId: child.data.itemId,
                 itemType: child.data.itemType,
@@ -3784,12 +3966,12 @@ serve(async (req: Request) => {
                 unitOfMeasureCode: child.data.unitOfMeasureCode,
                 storageUnitIds: job.data?.locationId
                   ? {
-                      [job.data.locationId]: child.data.storageUnitId || null,
+                      [job.data.locationId]: child.data.storageUnitId || null
                     }
                   : {},
                 companyId,
                 createdBy: userId,
-                customFields: {},
+                customFields: {}
               });
             });
           });
@@ -3805,14 +3987,16 @@ serve(async (req: Request) => {
                 ? trx
                     .deleteFrom("methodMaterial")
                     .where("makeMethodId", "in", makeMethodsToDelete)
+                    .where("companyId", "=", companyId)
                     .execute()
                 : Promise.resolve(),
               parts.billOfProcess
                 ? trx
                     .deleteFrom("methodOperation")
                     .where("makeMethodId", "in", makeMethodsToDelete)
+                    .where("companyId", "=", companyId)
                     .execute()
-                : Promise.resolve(),
+                : Promise.resolve()
             ]);
           }
 
@@ -3831,148 +4015,150 @@ serve(async (req: Request) => {
                   itemId:
                     insert.itemId === jobMakeMethod.data.itemId
                       ? itemId
-                      : insert.itemId,
+                      : insert.itemId
                 }))
               )
               .execute();
           }
 
           if (parts.billOfProcess) {
-          jobOperations.data?.forEach((op) => {
-            operationInserts.push({
-              makeMethodId: op.makeMethodId!,
-              processId: op.processId!,
-              procedureId: op.procedureId,
-              assemblyInstructionId: op.assemblyInstructionId,
-              inspectionDocumentId: op.inspectionDocumentId,
-              workCenterId: op.workCenterId,
-              description: op.description ?? "",
-              setupTime: op.setupTime ?? 0,
-              setupUnit: op.setupUnit ?? "Total Minutes",
-              laborTime: op.laborTime ?? 0,
-              laborUnit: op.laborUnit ?? "Minutes/Piece",
-              machineTime: op.machineTime ?? 0,
-              machineUnit: op.machineUnit ?? "Minutes/Piece",
-              order: op.order ?? 1,
-              operationOrder: op.operationOrder ?? "After Previous",
-              operationType: op.operationType ?? "Process",
-              operationMinimumCost: op.operationMinimumCost ?? 0,
-              operationLeadTime: op.operationLeadTime ?? 0,
-              operationUnitCost: op.operationUnitCost ?? 0,
-              tags: op.tags ?? [],
-              workInstruction: toJson(parts.workInstructions ? op.workInstruction : {}),
-              companyId,
-              createdBy: userId,
-              customFields: {},
+            jobOperations.data?.forEach((op) => {
+              operationInserts.push({
+                makeMethodId: op.makeMethodId!,
+                processId: op.processId!,
+                procedureId: op.procedureId,
+                assemblyInstructionId: op.assemblyInstructionId,
+                inspectionDocumentId: op.inspectionDocumentId,
+                workCenterId: op.workCenterId,
+                description: op.description ?? "",
+                setupTime: op.setupTime ?? 0,
+                setupUnit: op.setupUnit ?? "Total Minutes",
+                laborTime: op.laborTime ?? 0,
+                laborUnit: op.laborUnit ?? "Minutes/Piece",
+                machineTime: op.machineTime ?? 0,
+                machineUnit: op.machineUnit ?? "Minutes/Piece",
+                order: op.order ?? 1,
+                operationOrder: op.operationOrder ?? "After Previous",
+                operationType: op.operationType ?? "Process",
+                operationMinimumCost: op.operationMinimumCost ?? 0,
+                operationLeadTime: op.operationLeadTime ?? 0,
+                operationUnitCost: op.operationUnitCost ?? 0,
+                tags: op.tags ?? [],
+                workInstruction: toJson(
+                  parts.workInstructions ? op.workInstruction : {}
+                ),
+                companyId,
+                createdBy: userId,
+                customFields: {}
+              });
             });
-          });
 
-          if (operationInserts.length > 0) {
-            const operationIds = await trx
-              .insertInto("methodOperation")
-              .values(
-                operationInserts.map((insert) => ({
-                  ...insert,
-                  makeMethodId:
-                    insert.makeMethodId ===
-                    makeMethodByItemId[jobMakeMethod.data.itemId]
-                      ? makeMethod.data.id
-                      : insert.makeMethodId,
-                }))
-              )
-              .returning(["id"])
-              .execute();
+            if (operationInserts.length > 0) {
+              const operationIds = await trx
+                .insertInto("methodOperation")
+                .values(
+                  operationInserts.map((insert) => ({
+                    ...insert,
+                    makeMethodId:
+                      insert.makeMethodId ===
+                      makeMethodByItemId[jobMakeMethod.data.itemId]
+                        ? makeMethod.data.id
+                        : insert.makeMethodId
+                  }))
+                )
+                .returning(["id"])
+                .execute();
 
-            for (const [index, operation] of (
-              jobOperations.data ?? []
-            ).entries()) {
-              const operationId = operationIds[index].id;
-              if (operationId) {
-                const {
-                  jobOperationTool,
-                  jobOperationParameter,
-                  jobOperationStep,
-                  procedureId,
-                } = operation;
+              for (const [index, operation] of (
+                jobOperations.data ?? []
+              ).entries()) {
+                const operationId = operationIds[index]!.id;
+                if (operationId) {
+                  const {
+                    jobOperationTool,
+                    jobOperationParameter,
+                    jobOperationStep,
+                    procedureId
+                  } = operation;
 
-                if (
-                  parts.tools &&
-                  Array.isArray(jobOperationTool) &&
-                  jobOperationTool.length > 0
-                ) {
-                  await trx
-                    .insertInto("methodOperationTool")
-                    .values(
-                      jobOperationTool.map((tool) => ({
-                        toolId: tool.toolId,
-                        quantity: tool.quantity,
-                        operationId,
-                        companyId,
-                        createdBy: userId,
-                      }))
-                    )
-                    .execute();
-                }
-
-                if (!procedureId) {
                   if (
-                    parts.parameters &&
-                    Array.isArray(jobOperationParameter) &&
-                    jobOperationParameter.length > 0
+                    parts.tools &&
+                    Array.isArray(jobOperationTool) &&
+                    jobOperationTool.length > 0
                   ) {
                     await trx
-                      .insertInto("methodOperationParameter")
+                      .insertInto("methodOperationTool")
                       .values(
-                        jobOperationParameter.map((param) => ({
+                        jobOperationTool.map((tool) => ({
+                          toolId: tool.toolId,
+                          quantity: tool.quantity,
                           operationId,
-                          key: param.key,
-                          value: param.value,
                           companyId,
-                          createdBy: userId,
+                          createdBy: userId
                         }))
                       )
                       .execute();
                   }
 
-                  if (
-                    parts.steps &&
-                    // Assembly ops and inspection ops inherit their steps from
-                    // the linked instruction/document — never copy materialized
-                    // steps back onto a template.
-                    !operation.assemblyInstructionId &&
-                    !operation.inspectionDocumentId &&
-                    Array.isArray(jobOperationStep) &&
-                    jobOperationStep.length > 0
-                  ) {
-                    const insertedSteps = await trx
-                      .insertInto("jobOperationStep")
-                      .values(
-                        jobOperationStep.map(({ id: _id, ...attribute }) => ({
-                          ...attribute,
-                          description: toTiptapDoc(attribute.description),
-                          operationId,
-                          companyId,
-                          createdBy: userId,
-                        }))
-                      )
-                      .returning(["id"])
-                      .execute();
+                  if (!procedureId) {
+                    if (
+                      parts.parameters &&
+                      Array.isArray(jobOperationParameter) &&
+                      jobOperationParameter.length > 0
+                    ) {
+                      await trx
+                        .insertInto("methodOperationParameter")
+                        .values(
+                          jobOperationParameter.map((param) => ({
+                            operationId,
+                            key: param.key,
+                            value: param.value,
+                            companyId,
+                            createdBy: userId
+                          }))
+                        )
+                        .execute();
+                    }
 
-                    await copyStepSlides(
-                      trx,
-                      client,
-                      jobOperationStep,
-                      insertedSteps,
-                      "jobOperationStepSlide",
-                      "jobOperationStepSlide",
-                      companyId,
-                      userId,
-                    );
+                    if (
+                      parts.steps &&
+                      // Assembly ops and inspection ops inherit their steps from
+                      // the linked instruction/document — never copy materialized
+                      // steps back onto a template.
+                      !operation.assemblyInstructionId &&
+                      !operation.inspectionDocumentId &&
+                      Array.isArray(jobOperationStep) &&
+                      jobOperationStep.length > 0
+                    ) {
+                      const insertedSteps = await trx
+                        .insertInto("jobOperationStep")
+                        .values(
+                          jobOperationStep.map(({ id: _id, ...attribute }) => ({
+                            ...attribute,
+                            description: toTiptapDoc(attribute.description),
+                            operationId,
+                            companyId,
+                            createdBy: userId
+                          }))
+                        )
+                        .returning(["id"])
+                        .execute();
+
+                      await copyStepSlides(
+                        trx,
+                        client,
+                        jobOperationStep,
+                        insertedSteps,
+                        "jobOperationStepSlide",
+                        "jobOperationStepSlide",
+                        companyId,
+                        userId
+                      );
+                    }
                   }
                 }
               }
             }
-          }
           } // end if (parts.billOfProcess)
         });
 
@@ -4012,7 +4198,7 @@ serve(async (req: Request) => {
               .select("locationId")
               .eq("id", jobId)
               .eq("companyId", companyId)
-              .single(),
+              .single()
           ]);
 
         if (makeMethod.error) {
@@ -4036,7 +4222,7 @@ serve(async (req: Request) => {
             .select("*")
             .eq("itemId", itemId)
             .eq("companyId", companyId)
-            .single(),
+            .single()
         ]);
 
         if (itemReplenishment.error) {
@@ -4088,14 +4274,14 @@ serve(async (req: Request) => {
 
           traverseJobMethod(jobMethodTree, (node: JobMethodTreeItem) => {
             if (node.data.itemId && node.data.methodType === "Make to Order") {
-              makeMethodsToDelete.push(makeMethodByItemId[node.data.itemId]);
+              makeMethodsToDelete.push(makeMethodByItemId[node.data.itemId]!);
             }
 
             node.children.forEach((child) => {
               // A zero-quantity BOM line is dropped from the saved method.
               if (isZeroQuantity(child.data.quantity)) return;
               materialInserts.push({
-                makeMethodId: makeMethodByItemId[node.data.itemId],
+                makeMethodId: makeMethodByItemId[node.data.itemId]!,
                 materialMakeMethodId: makeMethodByItemId[child.data.itemId],
                 itemId: child.data.itemId,
                 itemType: child.data.itemType,
@@ -4106,12 +4292,12 @@ serve(async (req: Request) => {
                 unitOfMeasureCode: child.data.unitOfMeasureCode,
                 storageUnitIds: job.data?.locationId
                   ? {
-                      [job.data.locationId]: child.data.storageUnitId || null,
+                      [job.data.locationId]: child.data.storageUnitId || null
                     }
                   : {},
                 companyId,
                 createdBy: userId,
-                customFields: {},
+                customFields: {}
               });
             });
           });
@@ -4127,14 +4313,16 @@ serve(async (req: Request) => {
                 ? trx
                     .deleteFrom("methodMaterial")
                     .where("makeMethodId", "in", makeMethodsToDelete)
+                    .where("companyId", "=", companyId)
                     .execute()
                 : Promise.resolve(),
               parts.billOfProcess
                 ? trx
                     .deleteFrom("methodOperation")
                     .where("makeMethodId", "in", makeMethodsToDelete)
+                    .where("companyId", "=", companyId)
                     .execute()
-                : Promise.resolve(),
+                : Promise.resolve()
             ]);
           }
 
@@ -4153,157 +4341,159 @@ serve(async (req: Request) => {
                   itemId:
                     insert.itemId === jobMakeMethod.data.itemId
                       ? itemId
-                      : insert.itemId,
+                      : insert.itemId
                 }))
               )
               .execute();
           }
 
           if (parts.billOfProcess) {
-          jobOperations.data?.forEach((op) => {
-            operationInserts.push({
-              makeMethodId: op.makeMethodId!,
-              processId: op.processId!,
-              procedureId: op.procedureId,
-              assemblyInstructionId: op.assemblyInstructionId,
-              inspectionDocumentId: op.inspectionDocumentId,
-              // workCenterId: op.workCenterId,
-              description: op.description ?? "",
-              setupTime: op.setupTime ?? 0,
-              setupUnit: op.setupUnit ?? "Total Minutes",
-              laborTime: op.laborTime ?? 0,
-              laborUnit: op.laborUnit ?? "Minutes/Piece",
-              machineTime: op.machineTime ?? 0,
-              machineUnit: op.machineUnit ?? "Minutes/Piece",
-              order: op.order ?? 1,
-              operationOrder: op.operationOrder ?? "After Previous",
-              operationType: op.operationType ?? "Process",
-              operationMinimumCost: op.operationMinimumCost ?? 0,
-              operationLeadTime: op.operationLeadTime ?? 0,
-              operationUnitCost: op.operationUnitCost ?? 0,
-              operationSupplierProcessId: op.operationSupplierProcessId,
-              tags: op.tags ?? [],
-              workInstruction: toJson(parts.workInstructions ? op.workInstruction : {}),
-              companyId,
-              createdBy: userId,
-              customFields: {},
+            jobOperations.data?.forEach((op) => {
+              operationInserts.push({
+                makeMethodId: op.makeMethodId!,
+                processId: op.processId!,
+                procedureId: op.procedureId,
+                assemblyInstructionId: op.assemblyInstructionId,
+                inspectionDocumentId: op.inspectionDocumentId,
+                // workCenterId: op.workCenterId,
+                description: op.description ?? "",
+                setupTime: op.setupTime ?? 0,
+                setupUnit: op.setupUnit ?? "Total Minutes",
+                laborTime: op.laborTime ?? 0,
+                laborUnit: op.laborUnit ?? "Minutes/Piece",
+                machineTime: op.machineTime ?? 0,
+                machineUnit: op.machineUnit ?? "Minutes/Piece",
+                order: op.order ?? 1,
+                operationOrder: op.operationOrder ?? "After Previous",
+                operationType: op.operationType ?? "Process",
+                operationMinimumCost: op.operationMinimumCost ?? 0,
+                operationLeadTime: op.operationLeadTime ?? 0,
+                operationUnitCost: op.operationUnitCost ?? 0,
+                operationSupplierProcessId: op.operationSupplierProcessId,
+                tags: op.tags ?? [],
+                workInstruction: toJson(
+                  parts.workInstructions ? op.workInstruction : {}
+                ),
+                companyId,
+                createdBy: userId,
+                customFields: {}
+              });
             });
-          });
 
-          if (operationInserts.length > 0) {
-            const operationIds = await trx
-              .insertInto("methodOperation")
-              .values(
-                operationInserts.map((insert) => ({
-                  ...insert,
-                  makeMethodId:
-                    insert.makeMethodId ===
-                    makeMethodByItemId[jobMakeMethod.data.itemId]
-                      ? makeMethod.data.id
-                      : insert.makeMethodId,
-                }))
-              )
-              .returning(["id"])
-              .execute();
+            if (operationInserts.length > 0) {
+              const operationIds = await trx
+                .insertInto("methodOperation")
+                .values(
+                  operationInserts.map((insert) => ({
+                    ...insert,
+                    makeMethodId:
+                      insert.makeMethodId ===
+                      makeMethodByItemId[jobMakeMethod.data.itemId]
+                        ? makeMethod.data.id
+                        : insert.makeMethodId
+                  }))
+                )
+                .returning(["id"])
+                .execute();
 
-            for (const [index, operation] of (
-              jobOperations.data ?? []
-            ).entries()) {
-              const operationId = operationIds[index].id;
-              if (operationId) {
-                const {
-                  jobOperationTool,
-                  jobOperationParameter,
-                  jobOperationStep,
-                  procedureId,
-                } = operation;
+              for (const [index, operation] of (
+                jobOperations.data ?? []
+              ).entries()) {
+                const operationId = operationIds[index]!.id;
+                if (operationId) {
+                  const {
+                    jobOperationTool,
+                    jobOperationParameter,
+                    jobOperationStep,
+                    procedureId
+                  } = operation;
 
-                if (
-                  parts.tools &&
-                  Array.isArray(jobOperationTool) &&
-                  jobOperationTool.length > 0
-                ) {
-                  await trx
-                    .insertInto("methodOperationTool")
-                    .values(
-                      jobOperationTool.map((tool) => ({
-                        toolId: tool.toolId,
-                        quantity: tool.quantity,
-                        operationId,
-                        companyId,
-                        createdBy: userId,
-                      }))
-                    )
-                    .execute();
-                }
-
-                if (!procedureId) {
                   if (
-                    parts.parameters &&
-                    Array.isArray(jobOperationParameter) &&
-                    jobOperationParameter.length > 0
+                    parts.tools &&
+                    Array.isArray(jobOperationTool) &&
+                    jobOperationTool.length > 0
                   ) {
                     await trx
-                      .insertInto("methodOperationParameter")
+                      .insertInto("methodOperationTool")
                       .values(
-                        jobOperationParameter.map((param) => ({
+                        jobOperationTool.map((tool) => ({
+                          toolId: tool.toolId,
+                          quantity: tool.quantity,
                           operationId,
-                          key: param.key,
-                          value: param.value,
                           companyId,
-                          createdBy: userId,
+                          createdBy: userId
                         }))
                       )
                       .execute();
                   }
 
-                  if (
-                    parts.steps &&
-                    // Assembly ops and inspection ops inherit their steps from
-                    // the linked instruction/document — never copy materialized
-                    // steps back onto a template.
-                    !operation.assemblyInstructionId &&
-                    !operation.inspectionDocumentId &&
-                    Array.isArray(jobOperationStep) &&
-                    jobOperationStep.length > 0
-                  ) {
-                    const insertedSteps = await trx
-                      .insertInto("methodOperationStep")
-                      .values(
-                        jobOperationStep.map((step) => ({
-                          operationId,
-                          name: step.name,
-                          type: step.type,
-                          description: toTiptapDoc(step.description),
-                          required: step.required,
-                          sortOrder: step.sortOrder,
-                          unitOfMeasureCode: step.unitOfMeasureCode,
-                          minValue: step.minValue,
-                          maxValue: step.maxValue,
-                          listValues: step.listValues,
-                          fileTypes: step.fileTypes,
-                          companyId,
-                          createdBy: userId,
-                        }))
-                      )
-                      .returning(["id"])
-                      .execute();
+                  if (!procedureId) {
+                    if (
+                      parts.parameters &&
+                      Array.isArray(jobOperationParameter) &&
+                      jobOperationParameter.length > 0
+                    ) {
+                      await trx
+                        .insertInto("methodOperationParameter")
+                        .values(
+                          jobOperationParameter.map((param) => ({
+                            operationId,
+                            key: param.key,
+                            value: param.value,
+                            companyId,
+                            createdBy: userId
+                          }))
+                        )
+                        .execute();
+                    }
 
-                    await copyStepSlides(
-                      trx,
-                      client,
-                      jobOperationStep,
-                      insertedSteps,
-                      "jobOperationStepSlide",
-                      "methodOperationStepSlide",
-                      companyId,
-                      userId,
-                    );
+                    if (
+                      parts.steps &&
+                      // Assembly ops and inspection ops inherit their steps from
+                      // the linked instruction/document — never copy materialized
+                      // steps back onto a template.
+                      !operation.assemblyInstructionId &&
+                      !operation.inspectionDocumentId &&
+                      Array.isArray(jobOperationStep) &&
+                      jobOperationStep.length > 0
+                    ) {
+                      const insertedSteps = await trx
+                        .insertInto("methodOperationStep")
+                        .values(
+                          jobOperationStep.map((step) => ({
+                            operationId,
+                            name: step.name,
+                            type: step.type,
+                            description: toTiptapDoc(step.description),
+                            required: step.required,
+                            sortOrder: step.sortOrder,
+                            unitOfMeasureCode: step.unitOfMeasureCode,
+                            minValue: step.minValue,
+                            maxValue: step.maxValue,
+                            listValues: step.listValues,
+                            fileTypes: step.fileTypes,
+                            companyId,
+                            createdBy: userId
+                          }))
+                        )
+                        .returning(["id"])
+                        .execute();
+
+                      await copyStepSlides(
+                        trx,
+                        client,
+                        jobOperationStep,
+                        insertedSteps,
+                        "jobOperationStepSlide",
+                        "methodOperationStepSlide",
+                        companyId,
+                        userId
+                      );
+                    }
                   }
                 }
               }
             }
-          }
           } // end if (parts.billOfProcess)
         });
 
@@ -4368,45 +4558,41 @@ serve(async (req: Request) => {
             .order("id")
         );
 
-        const [
-          targetJob,
-          sourceJob,
-          targetJobMakeMethod,
-          sourceJobMakeMethod,
-        ] = await Promise.all([
-          client
-            .from("job")
-            .select("itemId, locationId, quantity, startDate, dueDate")
-            .eq("id", targetJobId)
-            .eq("companyId", companyId)
-            .single(),
-          // requirePermissions proved the CALLER may act in companyId; it proves
-          // nothing about the record ids in the body. Re-read the source job
-          // under companyId so a foreign job id can never be copied from.
-          client
-            .from("job")
-            .select("id")
-            .eq("id", sourceJobId)
-            .eq("companyId", companyId)
-            .single(),
-          client
-            .from("jobMakeMethod")
-            .select("*")
-            .eq("jobId", targetJobId)
-            .is("parentMaterialId", null)
-            .eq("companyId", companyId)
-            .single(),
-          client
-            .from("jobMakeMethod")
-            .select("*")
-            .eq("jobId", sourceJobId)
-            .is("parentMaterialId", null)
-            .eq("companyId", companyId)
-            .single(),
-        ]);
+        const [targetJob, sourceJob, targetJobMakeMethod, sourceJobMakeMethod] =
+          await Promise.all([
+            client
+              .from("job")
+              .select("itemId, locationId, quantity, startDate, dueDate")
+              .eq("id", targetJobId)
+              .eq("companyId", companyId)
+              .single(),
+            // The permission check proved the CALLER may act in companyId; it proves
+            // nothing about the record ids in the body. Re-read the source job
+            // under companyId so a foreign job id can never be copied from.
+            client
+              .from("job")
+              .select("id")
+              .eq("id", sourceJobId)
+              .eq("companyId", companyId)
+              .single(),
+            client
+              .from("jobMakeMethod")
+              .select("*")
+              .eq("jobId", targetJobId)
+              .is("parentMaterialId", null)
+              .eq("companyId", companyId)
+              .single(),
+            client
+              .from("jobMakeMethod")
+              .select("*")
+              .eq("jobId", sourceJobId)
+              .is("parentMaterialId", null)
+              .eq("companyId", companyId)
+              .single()
+          ]);
         const [sourceMaterials, sourceOperations] = await Promise.all([
           sourceMaterialsPromise,
-          sourceOperationsPromise,
+          sourceOperationsPromise
         ]);
 
         if (targetJob.error) {
@@ -4516,15 +4702,17 @@ serve(async (req: Request) => {
                   .where((eb) =>
                     eb.and([
                       eb("jobId", "=", targetJobId),
-                      eb("parentMaterialId", "is not", null),
+                      eb("parentMaterialId", "is not", null)
                     ])
                   )
+                  .where("companyId", "=", companyId)
                   .execute()
               : Promise.resolve(),
             parts.billOfMaterial
               ? trx
                   .deleteFrom("jobMaterial")
                   .where("jobId", "=", targetJobId)
+                  .where("companyId", "=", companyId)
                   .execute()
               : Promise.resolve(),
             // Prevent cascade deletion of materials when only replacing operations
@@ -4533,14 +4721,16 @@ serve(async (req: Request) => {
                   .updateTable("jobMaterial")
                   .set({ jobOperationId: null })
                   .where("jobId", "=", targetJobId)
+                  .where("companyId", "=", companyId)
                   .execute()
               : Promise.resolve(),
             parts.billOfProcess
               ? trx
                   .deleteFrom("jobOperation")
                   .where("jobId", "=", targetJobId)
+                  .where("companyId", "=", companyId)
                   .execute()
-              : Promise.resolve(),
+              : Promise.resolve()
           ]);
 
           const insertedJobMaterialIds: string[] = [];
@@ -4584,14 +4774,16 @@ serve(async (req: Request) => {
                 sourceMakeMethodIdToQuantities[sourceJobMakeMethod.data.id] = {
                   targetQuantity: rootTarget,
                   estimatedQuantity: rootEstimatedQuantity,
-                  totalWithScrap: rootTotalWithScrap,
+                  totalWithScrap: rootTotalWithScrap
                 };
               } else {
                 // Non-root: get from stored quantities using parent's source jobMakeMethodId
                 const parentSourceMakeMethodId =
                   node.data.jobMaterialMakeMethodId;
                 const parentQuantities =
-                  sourceMakeMethodIdToQuantities[parentSourceMakeMethodId ?? ""];
+                  sourceMakeMethodIdToQuantities[
+                    parentSourceMakeMethodId ?? ""
+                  ];
                 // Children receive parent's total (estimated + scrap) for cascade
                 nodeTotalForChildren = parentQuantities?.totalWithScrap ?? 1;
               }
@@ -4623,7 +4815,7 @@ serve(async (req: Request) => {
                   supersessionRedirect,
                   {
                     itemId: child.data.itemId,
-                    methodType: child.data.methodType,
+                    methodType: child.data.methodType
                   }
                 );
                 const itemId = supersession?.itemId ?? child.data.itemId;
@@ -4666,7 +4858,7 @@ serve(async (req: Request) => {
                   ] = {
                     targetQuantity: childTargetQuantity,
                     estimatedQuantity: childEstimatedQuantity,
-                    totalWithScrap: childTotalWithScrap,
+                    totalWithScrap: childTotalWithScrap
                   };
                 }
 
@@ -4685,7 +4877,7 @@ serve(async (req: Request) => {
                       ? targetJobMakeMethod.data.id
                       : sourceMakeMethodIdToJobMakeMethodId[
                           child.data.jobMakeMethodId
-                        ],
+                        ]!,
                   quantity: quantityPerParent,
                   scrapQuantity: childScrapQuantity,
                   estimatedQuantity: childEstimatedQuantity,
@@ -4718,7 +4910,7 @@ serve(async (req: Request) => {
                   unitOfMeasureCode: child.data.unitOfMeasureCode,
                   companyId,
                   createdBy: userId,
-                  customFields: {},
+                  customFields: {}
                 });
 
                 if (child.data.jobMaterialMakeMethodId) {
@@ -4733,7 +4925,7 @@ serve(async (req: Request) => {
                     itemId: child.data.itemId,
                     quantityPerParent: child.data.quantity,
                     companyId,
-                    createdBy: userId,
+                    createdBy: userId
                   });
                 }
               }
@@ -4757,10 +4949,11 @@ serve(async (req: Request) => {
                     .updateTable("jobMakeMethod")
                     .set({
                       id: insert.id,
-                      quantityPerParent: insert.quantityPerParent,
+                      quantityPerParent: insert.quantityPerParent
                     })
                     .where("jobId", "=", targetJobId)
                     .where("parentMaterialId", "=", insert.parentMaterialId!)
+                    .where("companyId", "=", companyId)
                     .execute();
                 }
               }
@@ -4821,7 +5014,7 @@ serve(async (req: Request) => {
                   operationQuantity: opQuantities.totalWithScrap,
                   companyId,
                   createdBy: userId,
-                  customFields: {},
+                  customFields: {}
                 };
               });
 
@@ -4833,7 +5026,7 @@ serve(async (req: Request) => {
                 .execute();
 
               for (const [index, operation] of sourceOperationRows.entries()) {
-                const operationId = operationIds[index].id;
+                const operationId = operationIds[index]!.id;
                 if (operationId) {
                   sourceOperationIdToJobOperationId[operation.id] = operationId;
 
@@ -4841,7 +5034,7 @@ serve(async (req: Request) => {
                     jobOperationTool,
                     jobOperationParameter,
                     jobOperationStep,
-                    procedureId,
+                    procedureId
                   } = operation;
 
                   // Tool ids the assembly-instruction copy inserts itself, so
@@ -4853,7 +5046,7 @@ serve(async (req: Request) => {
                       operationId,
                       procedureId,
                       companyId,
-                      userId,
+                      userId
                     });
                   } else {
                     if (
@@ -4869,7 +5062,7 @@ serve(async (req: Request) => {
                             key: param.key,
                             value: param.value,
                             companyId,
-                            createdBy: userId,
+                            createdBy: userId
                           }))
                         )
                         .execute();
@@ -4888,12 +5081,12 @@ serve(async (req: Request) => {
                           assemblyInstructionId:
                             operation.assemblyInstructionId,
                           companyId,
-                          userId,
+                          userId
                         }
                       );
                       assemblyOperationsToLink.push({
                         operationId,
-                        assemblyInstructionId: operation.assemblyInstructionId,
+                        assemblyInstructionId: operation.assemblyInstructionId
                       });
                     } else if (
                       parts.steps &&
@@ -4916,7 +5109,7 @@ serve(async (req: Request) => {
                             listValues: step.listValues,
                             fileTypes: step.fileTypes,
                             companyId,
-                            createdBy: userId,
+                            createdBy: userId
                           }))
                         )
                         .returning(["id"])
@@ -4940,7 +5133,7 @@ serve(async (req: Request) => {
                         "jobOperationStepSlide",
                         "jobOperationStepSlide",
                         companyId,
-                        userId,
+                        userId
                       );
                     }
                   }
@@ -4961,7 +5154,7 @@ serve(async (req: Request) => {
                           quantity: tool.quantity,
                           operationId,
                           companyId,
-                          createdBy: userId,
+                          createdBy: userId
                         }))
                       )
                       .returning(["id"])
@@ -4978,12 +5171,13 @@ serve(async (req: Request) => {
                           jobOperationStepId: string | null;
                         }>
                       ).map((l) => l.jobOperationStepId);
-                      return remapStepIds(oldStepIds, sourceStepsToJobSteps).map(
-                        (jobOperationStepId) => ({
-                          jobOperationToolId,
-                          jobOperationStepId,
-                        })
-                      );
+                      return remapStepIds(
+                        oldStepIds,
+                        sourceStepsToJobSteps
+                      ).map((jobOperationStepId) => ({
+                        jobOperationToolId,
+                        jobOperationStepId
+                      }));
                     });
                     if (toolStepRows.length > 0) {
                       await trx
@@ -5010,7 +5204,9 @@ serve(async (req: Request) => {
               const newMaterialId =
                 sourceMaterialIdToJobMaterialId[sourceMaterial.id];
               const newOperationId = sourceMaterial.jobOperationId
-                ? sourceOperationIdToJobOperationId[sourceMaterial.jobOperationId]
+                ? sourceOperationIdToJobOperationId[
+                    sourceMaterial.jobOperationId
+                  ]
                 : undefined;
               if (newMaterialId && newOperationId) {
                 const ids = materialIdsByOperationId.get(newOperationId) ?? [];
@@ -5023,6 +5219,7 @@ serve(async (req: Request) => {
                 .updateTable("jobMaterial")
                 .set({ jobOperationId: operationId })
                 .where("id", "in", materialIds)
+                .where("companyId", "=", companyId)
                 .execute();
             }
 
@@ -5035,20 +5232,22 @@ serve(async (req: Request) => {
                 const newMaterialId =
                   sourceMaterialIdToJobMaterialId[sourceMaterial.id];
                 if (!newMaterialId) return [];
-                return (sourceMaterial.jobMaterialStep ?? []).flatMap((link) => {
-                  const newStepId = link.jobOperationStepId
-                    ? sourceStepsToJobSteps[link.jobOperationStepId]
-                    : undefined;
-                  return newStepId
-                    ? [
-                        {
-                          jobMaterialId: newMaterialId,
-                          jobOperationStepId: newStepId,
-                          quantity: link.quantity,
-                        },
-                      ]
-                    : [];
-                });
+                return (sourceMaterial.jobMaterialStep ?? []).flatMap(
+                  (link) => {
+                    const newStepId = link.jobOperationStepId
+                      ? sourceStepsToJobSteps[link.jobOperationStepId]
+                      : undefined;
+                    return newStepId
+                      ? [
+                          {
+                            jobMaterialId: newMaterialId,
+                            jobOperationStepId: newStepId,
+                            quantity: link.quantity
+                          }
+                        ]
+                      : [];
+                  }
+                );
               }
             );
             if (materialStepRows.length > 0) {
@@ -5075,7 +5274,7 @@ serve(async (req: Request) => {
             jobId: targetJobId,
             jobMaterialIds: insertedJobMaterialIds,
             locationId: targetJob.data?.locationId,
-            asOfDate: jobBuildDate(targetJob.data),
+            asOfDate: jobBuildDate(targetJob.data)
           });
         });
 
@@ -5094,7 +5293,7 @@ serve(async (req: Request) => {
             .select("*")
             .eq("id", targetId)
             .eq("companyId", companyId)
-            .single(),
+            .single()
         ]);
         if (sourceMakeMethod.error || targetMakeMethod.error) {
           throw new Error("Failed to get make methods");
@@ -5116,7 +5315,7 @@ serve(async (req: Request) => {
                 )
                 .eq("makeMethodId", sourceMakeMethod.data.id)
                 .eq("companyId", companyId)
-            : Promise.resolve({ data: [], error: null }),
+            : Promise.resolve({ data: [], error: null })
         ]);
 
         if (sourceMaterials.error || sourceOperations.error) {
@@ -5130,14 +5329,16 @@ serve(async (req: Request) => {
               ? trx
                   .deleteFrom("methodMaterial")
                   .where("makeMethodId", "=", targetMakeMethod.data.id)
+                  .where("companyId", "=", companyId)
                   .execute()
               : Promise.resolve(),
             parts.billOfProcess
               ? trx
                   .deleteFrom("methodOperation")
                   .where("makeMethodId", "=", targetMakeMethod.data.id)
+                  .where("companyId", "=", companyId)
                   .execute()
-              : Promise.resolve(),
+              : Promise.resolve()
           ]);
 
           // Copy materials from source to target, dropping any zero-quantity
@@ -5155,14 +5356,18 @@ serve(async (req: Request) => {
                   productionQuantity: undefined,
                   id: undefined, // Let the database generate a new ID
                   makeMethodId: targetMakeMethod.data.id,
-                  createdBy: userId,
+                  createdBy: userId
                 }))
               )
               .execute();
           }
 
           // Copy operations from source to target
-          if (parts.billOfProcess && sourceOperations.data && sourceOperations.data.length > 0) {
+          if (
+            parts.billOfProcess &&
+            sourceOperations.data &&
+            sourceOperations.data.length > 0
+          ) {
             const operationIds = await trx
               .insertInto("methodOperation")
               .values(
@@ -5177,7 +5382,7 @@ serve(async (req: Request) => {
                       ...operation,
                       id: undefined, // Let the database generate a new ID
                       makeMethodId: targetMakeMethod.data.id,
-                      createdBy: userId,
+                      createdBy: userId
                     };
                     if (!parts.workInstructions) {
                       insert.workInstruction = {};
@@ -5191,15 +5396,15 @@ serve(async (req: Request) => {
 
             for await (const [
               index,
-              operation,
+              operation
             ] of sourceOperations.data.entries()) {
               const {
                 methodOperationTool,
                 methodOperationParameter,
                 methodOperationStep,
-                procedureId,
+                procedureId
               } = operation;
-              const operationId = operationIds[index].id;
+              const operationId = operationIds[index]!.id;
 
               if (
                 parts.tools &&
@@ -5215,7 +5420,7 @@ serve(async (req: Request) => {
                       quantity: tool.quantity,
                       operationId,
                       companyId,
-                      createdBy: userId,
+                      createdBy: userId
                     }))
                   )
                   .execute();
@@ -5235,7 +5440,7 @@ serve(async (req: Request) => {
                         key: param.key,
                         value: param.value,
                         companyId,
-                        createdBy: userId,
+                        createdBy: userId
                       }))
                     )
                     .execute();
@@ -5257,7 +5462,7 @@ serve(async (req: Request) => {
                         description: toTiptapDoc(attribute.description),
                         operationId: operationId!,
                         companyId,
-                        createdBy: userId,
+                        createdBy: userId
                       }))
                     )
                     .returning(["id"])
@@ -5271,7 +5476,7 @@ serve(async (req: Request) => {
                     "methodOperationStepSlide",
                     "methodOperationStepSlide",
                     companyId,
-                    userId,
+                    userId
                   );
                 }
               }
@@ -5303,7 +5508,7 @@ serve(async (req: Request) => {
             .select("*, jobOperationStep(*)")
             .eq("id", operationId)
             .eq("companyId", companyId)
-            .single(),
+            .single()
         ]);
 
         if (procedure.error) {
@@ -5332,16 +5537,18 @@ serve(async (req: Request) => {
                   description: matchingProcedureStep.description,
                   minValue: matchingProcedureStep.minValue,
                   maxValue: matchingProcedureStep.maxValue,
-                  updatedAt: new Date().toISOString(),
-                  updatedBy: userId,
+                  updatedAt: datetime.timestamp(),
+                  updatedBy: userId
                 })
                 .where("id", "=", existingStep.id)
+                .where("companyId", "=", companyId)
                 .execute();
             } else {
               // Delete non-matching attribute
               await trx
                 .deleteFrom("jobOperationStep")
                 .where("id", "=", existingStep.id)
+                .where("companyId", "=", companyId)
                 .execute();
             }
           }
@@ -5350,6 +5557,7 @@ serve(async (req: Request) => {
           await trx
             .deleteFrom("jobOperationParameter")
             .where("operationId", "=", operationId)
+            .where("companyId", "=", companyId)
             .execute();
 
           // Add new attributes that don't exist yet
@@ -5373,7 +5581,7 @@ serve(async (req: Request) => {
                   maxValue: attr.maxValue,
                   companyId,
                   createdBy: userId,
-                  updatedBy: userId,
+                  updatedBy: userId
                 }))
               )
               .execute();
@@ -5390,7 +5598,7 @@ serve(async (req: Request) => {
                   key: param.key,
                   value: param.value,
                   createdBy: userId,
-                  updatedBy: userId,
+                  updatedBy: userId
                 }))
               )
               .execute();
@@ -5401,9 +5609,10 @@ serve(async (req: Request) => {
             .updateTable("jobOperation")
             .set({
               workInstruction: toJson(procedure.data.content),
-              procedureId: procedureId,
+              procedureId: procedureId
             })
             .where("id", "=", operationId)
+            .where("companyId", "=", companyId)
             .execute();
         });
         break;
@@ -5436,7 +5645,7 @@ serve(async (req: Request) => {
                 "*, quoteOperationTool(*), quoteOperationParameter(*), quoteOperationStep(*)"
               )
               .eq("quoteLineId", quoteLineId)
-              .eq("companyId", companyId),
+              .eq("companyId", companyId)
           ]);
 
         if (makeMethod.error) {
@@ -5466,7 +5675,7 @@ serve(async (req: Request) => {
             .select("*")
             .eq("itemId", itemId)
             .eq("companyId", companyId)
-            .single(),
+            .single()
         ]);
 
         if (quoteMethodTrees.error) {
@@ -5523,15 +5732,18 @@ serve(async (req: Request) => {
           await traverseQuoteMethod(
             quoteMethodTree,
             (node: QuoteMethodTreeItem) => {
-              if (node.data.itemId && node.data.methodType === "Make to Order") {
-                makeMethodsToDelete.push(makeMethodByItemId[node.data.itemId]);
+              if (
+                node.data.itemId &&
+                node.data.methodType === "Make to Order"
+              ) {
+                makeMethodsToDelete.push(makeMethodByItemId[node.data.itemId]!);
               }
 
               node.children.forEach((child) => {
                 // A zero-quantity BOM line is dropped from the saved method.
                 if (isZeroQuantity(child.data.quantity)) return;
                 materialInserts.push({
-                  makeMethodId: makeMethodByItemId[node.data.itemId],
+                  makeMethodId: makeMethodByItemId[node.data.itemId]!,
                   materialMakeMethodId: makeMethodByItemId[child.data.itemId],
                   itemId: child.data.itemId,
                   itemType: child.data.itemType,
@@ -5541,12 +5753,15 @@ serve(async (req: Request) => {
                   quantity: child.data.quantity,
                   storageUnitIds: quote.data?.locationId
                     ? // @ts-ignore: storageUnitIds is a dynamic object with location keys
-                      { [quote.data.locationId]: child.data.storageUnitId || null }
+                      {
+                        [quote.data.locationId]:
+                          child.data.storageUnitId || null
+                      }
                     : {},
                   unitOfMeasureCode: child.data.unitOfMeasureCode,
                   companyId,
                   createdBy: userId,
-                  customFields: {},
+                  customFields: {}
                 });
               });
             }
@@ -5563,14 +5778,16 @@ serve(async (req: Request) => {
                 ? trx
                     .deleteFrom("methodMaterial")
                     .where("makeMethodId", "in", makeMethodsToDelete)
+                    .where("companyId", "=", companyId)
                     .execute()
                 : Promise.resolve(),
               parts.billOfProcess
                 ? trx
                     .deleteFrom("methodOperation")
                     .where("makeMethodId", "in", makeMethodsToDelete)
+                    .where("companyId", "=", companyId)
                     .execute()
-                : Promise.resolve(),
+                : Promise.resolve()
             ]);
           }
 
@@ -5589,146 +5806,150 @@ serve(async (req: Request) => {
                   itemId:
                     insert.itemId === quoteMakeMethod.data.itemId
                       ? itemId
-                      : insert.itemId,
+                      : insert.itemId
                 }))
               )
               .execute();
           }
 
           if (parts.billOfProcess) {
-          quoteOperations.data?.forEach((op) => {
-            operationInserts.push({
-              makeMethodId: op.makeMethodId!,
-              processId: op.processId!,
-              procedureId: op.procedureId,
-              assemblyInstructionId: op.assemblyInstructionId,
-              inspectionDocumentId: op.inspectionDocumentId,
-              workCenterId: op.workCenterId,
-              description: op.description ?? "",
-              setupTime: op.setupTime ?? 0,
-              setupUnit: op.setupUnit ?? "Total Minutes",
-              laborTime: op.laborTime ?? 0,
-              laborUnit: op.laborUnit ?? "Minutes/Piece",
-              machineTime: op.machineTime ?? 0,
-              machineUnit: op.machineUnit ?? "Minutes/Piece",
-              order: op.order ?? 1,
-              operationOrder: op.operationOrder ?? "After Previous",
-              operationType: op.operationType ?? "Process",
-              operationMinimumCost: op.operationMinimumCost ?? 0,
-              operationLeadTime: op.operationLeadTime ?? 0,
-              operationUnitCost: op.operationUnitCost ?? 0,
-              tags: op.tags ?? [],
-              workInstruction: toJson(parts.workInstructions ? op.workInstruction : {}),
-              companyId,
-              createdBy: userId,
-              customFields: {},
+            quoteOperations.data?.forEach((op) => {
+              operationInserts.push({
+                makeMethodId: op.makeMethodId!,
+                processId: op.processId!,
+                procedureId: op.procedureId,
+                assemblyInstructionId: op.assemblyInstructionId,
+                inspectionDocumentId: op.inspectionDocumentId,
+                workCenterId: op.workCenterId,
+                description: op.description ?? "",
+                setupTime: op.setupTime ?? 0,
+                setupUnit: op.setupUnit ?? "Total Minutes",
+                laborTime: op.laborTime ?? 0,
+                laborUnit: op.laborUnit ?? "Minutes/Piece",
+                machineTime: op.machineTime ?? 0,
+                machineUnit: op.machineUnit ?? "Minutes/Piece",
+                order: op.order ?? 1,
+                operationOrder: op.operationOrder ?? "After Previous",
+                operationType: op.operationType ?? "Process",
+                operationMinimumCost: op.operationMinimumCost ?? 0,
+                operationLeadTime: op.operationLeadTime ?? 0,
+                operationUnitCost: op.operationUnitCost ?? 0,
+                tags: op.tags ?? [],
+                workInstruction: toJson(
+                  parts.workInstructions ? op.workInstruction : {}
+                ),
+                companyId,
+                createdBy: userId,
+                customFields: {}
+              });
             });
-          });
 
-          if (operationInserts.length > 0) {
-            const operationIds = await trx
-              .insertInto("methodOperation")
-              .values(
-                operationInserts.map((insert) => ({
-                  ...insert,
-                  makeMethodId:
-                    insert.makeMethodId ===
-                    makeMethodByItemId[quoteMakeMethod.data.itemId]
-                      ? makeMethod.data.id
-                      : insert.makeMethodId,
-                }))
-              )
-              .returning(["id"])
-              .execute();
+            if (operationInserts.length > 0) {
+              const operationIds = await trx
+                .insertInto("methodOperation")
+                .values(
+                  operationInserts.map((insert) => ({
+                    ...insert,
+                    makeMethodId:
+                      insert.makeMethodId ===
+                      makeMethodByItemId[quoteMakeMethod.data.itemId]
+                        ? makeMethod.data.id
+                        : insert.makeMethodId
+                  }))
+                )
+                .returning(["id"])
+                .execute();
 
-            for (const [index, operation] of (
-              quoteOperations.data ?? []
-            ).entries()) {
-              const operationId = operationIds[index].id;
-              if (operationId) {
-                const {
-                  quoteOperationTool,
-                  quoteOperationParameter,
-                  quoteOperationStep,
-                  procedureId,
-                } = operation;
+              for (const [index, operation] of (
+                quoteOperations.data ?? []
+              ).entries()) {
+                const operationId = operationIds[index]!.id;
+                if (operationId) {
+                  const {
+                    quoteOperationTool,
+                    quoteOperationParameter,
+                    quoteOperationStep,
+                    procedureId
+                  } = operation;
 
-                if (
-                  parts.tools &&
-                  Array.isArray(quoteOperationTool) &&
-                  quoteOperationTool.length > 0
-                ) {
-                  await trx
-                    .insertInto("methodOperationTool")
-                    .values(
-                      quoteOperationTool.map((tool) => ({
-                        toolId: tool.toolId,
-                        quantity: tool.quantity,
-                        operationId,
-                        companyId,
-                        createdBy: userId,
-                      }))
-                    )
-                    .execute();
-                }
-
-                if (!procedureId) {
                   if (
-                    parts.parameters &&
-                    Array.isArray(quoteOperationParameter) &&
-                    quoteOperationParameter.length > 0
+                    parts.tools &&
+                    Array.isArray(quoteOperationTool) &&
+                    quoteOperationTool.length > 0
                   ) {
                     await trx
-                      .insertInto("methodOperationParameter")
+                      .insertInto("methodOperationTool")
                       .values(
-                        quoteOperationParameter.map((param) => ({
+                        quoteOperationTool.map((tool) => ({
+                          toolId: tool.toolId,
+                          quantity: tool.quantity,
                           operationId,
-                          key: param.key,
-                          value: param.value,
                           companyId,
-                          createdBy: userId,
+                          createdBy: userId
                         }))
                       )
                       .execute();
                   }
 
-                  if (
-                    parts.steps &&
-                    // Assembly ops inherit steps from the linked instruction —
-                    // never copy (possibly stale) quote steps alongside it.
-                    !operation.assemblyInstructionId &&
-                    Array.isArray(quoteOperationStep) &&
-                    quoteOperationStep.length > 0
-                  ) {
-                    const insertedSteps = await trx
-                      .insertInto("methodOperationStep")
-                      .values(
-                        quoteOperationStep.map(({ id: _id, ...attribute }) => ({
-                          ...attribute,
-                          description: toTiptapDoc(attribute.description),
-                          operationId,
-                          companyId,
-                          createdBy: userId,
-                        }))
-                      )
-                      .returning(["id"])
-                      .execute();
+                  if (!procedureId) {
+                    if (
+                      parts.parameters &&
+                      Array.isArray(quoteOperationParameter) &&
+                      quoteOperationParameter.length > 0
+                    ) {
+                      await trx
+                        .insertInto("methodOperationParameter")
+                        .values(
+                          quoteOperationParameter.map((param) => ({
+                            operationId,
+                            key: param.key,
+                            value: param.value,
+                            companyId,
+                            createdBy: userId
+                          }))
+                        )
+                        .execute();
+                    }
 
-                    await copyStepSlides(
-                      trx,
-                      client,
-                      quoteOperationStep,
-                      insertedSteps,
-                      "quoteOperationStepSlide",
-                      "methodOperationStepSlide",
-                      companyId,
-                      userId,
-                    );
+                    if (
+                      parts.steps &&
+                      // Assembly ops inherit steps from the linked instruction —
+                      // never copy (possibly stale) quote steps alongside it.
+                      !operation.assemblyInstructionId &&
+                      Array.isArray(quoteOperationStep) &&
+                      quoteOperationStep.length > 0
+                    ) {
+                      const insertedSteps = await trx
+                        .insertInto("methodOperationStep")
+                        .values(
+                          quoteOperationStep.map(
+                            ({ id: _id, ...attribute }) => ({
+                              ...attribute,
+                              description: toTiptapDoc(attribute.description),
+                              operationId,
+                              companyId,
+                              createdBy: userId
+                            })
+                          )
+                        )
+                        .returning(["id"])
+                        .execute();
+
+                      await copyStepSlides(
+                        trx,
+                        client,
+                        quoteOperationStep,
+                        insertedSteps,
+                        "quoteOperationStepSlide",
+                        "methodOperationStepSlide",
+                        companyId,
+                        userId
+                      );
+                    }
                   }
                 }
               }
             }
-          }
           } // end if (parts.billOfProcess)
         });
 
@@ -5750,7 +5971,7 @@ serve(async (req: Request) => {
             .select("*")
             .eq("id", quoteMakeMethodId)
             .eq("companyId", companyId)
-            .single(),
+            .single()
         ]);
 
         if (makeMethod.error) {
@@ -5776,7 +5997,7 @@ serve(async (req: Request) => {
             .select("*")
             .eq("itemId", itemId)
             .eq("companyId", companyId)
-            .single(),
+            .single()
         ]);
 
         if (quoteOperations.error) {
@@ -5796,7 +6017,7 @@ serve(async (req: Request) => {
             client,
             quoteMakeMethodId,
             quoteMakeMethod.data.parentMaterialId
-          ),
+          )
         ]);
 
         if (quoteMethodTrees.error) {
@@ -5846,15 +6067,18 @@ serve(async (req: Request) => {
           await traverseQuoteMethod(
             quoteMethodTree!,
             (node: QuoteMethodTreeItem) => {
-              if (node.data.itemId && node.data.methodType === "Make to Order") {
-                makeMethodsToDelete.push(makeMethodByItemId[node.data.itemId]);
+              if (
+                node.data.itemId &&
+                node.data.methodType === "Make to Order"
+              ) {
+                makeMethodsToDelete.push(makeMethodByItemId[node.data.itemId]!);
               }
 
               node.children.forEach((child) => {
                 // A zero-quantity BOM line is dropped from the saved method.
                 if (isZeroQuantity(child.data.quantity)) return;
                 materialInserts.push({
-                  makeMethodId: makeMethodByItemId[node.data.itemId],
+                  makeMethodId: makeMethodByItemId[node.data.itemId]!,
                   materialMakeMethodId: makeMethodByItemId[child.data.itemId],
                   itemId: child.data.itemId,
                   kit: child.data.kit,
@@ -5865,7 +6089,7 @@ serve(async (req: Request) => {
                   unitOfMeasureCode: child.data.unitOfMeasureCode,
                   companyId,
                   createdBy: userId,
-                  customFields: {},
+                  customFields: {}
                 });
               });
             }
@@ -5882,14 +6106,16 @@ serve(async (req: Request) => {
                 ? trx
                     .deleteFrom("methodMaterial")
                     .where("makeMethodId", "in", makeMethodsToDelete)
+                    .where("companyId", "=", companyId)
                     .execute()
                 : Promise.resolve(),
               parts.billOfProcess
                 ? trx
                     .deleteFrom("methodOperation")
                     .where("makeMethodId", "in", makeMethodsToDelete)
+                    .where("companyId", "=", companyId)
                     .execute()
-                : Promise.resolve(),
+                : Promise.resolve()
             ]);
           }
 
@@ -5908,146 +6134,150 @@ serve(async (req: Request) => {
                   itemId:
                     insert.itemId === quoteMakeMethod.data.itemId
                       ? itemId
-                      : insert.itemId,
+                      : insert.itemId
                 }))
               )
               .execute();
           }
 
           if (parts.billOfProcess) {
-          quoteOperations.data?.forEach((op) => {
-            operationInserts.push({
-              makeMethodId: op.makeMethodId!,
-              processId: op.processId!,
-              procedureId: op.procedureId,
-              assemblyInstructionId: op.assemblyInstructionId,
-              inspectionDocumentId: op.inspectionDocumentId,
-              workCenterId: op.workCenterId,
-              description: op.description ?? "",
-              setupTime: op.setupTime ?? 0,
-              setupUnit: op.setupUnit ?? "Total Minutes",
-              laborTime: op.laborTime ?? 0,
-              laborUnit: op.laborUnit ?? "Minutes/Piece",
-              machineTime: op.machineTime ?? 0,
-              machineUnit: op.machineUnit ?? "Minutes/Piece",
-              order: op.order ?? 1,
-              operationOrder: op.operationOrder ?? "After Previous",
-              operationType: op.operationType ?? "Process",
-              operationMinimumCost: op.operationMinimumCost ?? 0,
-              operationLeadTime: op.operationLeadTime ?? 0,
-              operationUnitCost: op.operationUnitCost ?? 0,
-              tags: op.tags ?? [],
-              workInstruction: toJson(parts.workInstructions ? op.workInstruction : {}),
-              companyId,
-              createdBy: userId,
-              customFields: {},
+            quoteOperations.data?.forEach((op) => {
+              operationInserts.push({
+                makeMethodId: op.makeMethodId!,
+                processId: op.processId!,
+                procedureId: op.procedureId,
+                assemblyInstructionId: op.assemblyInstructionId,
+                inspectionDocumentId: op.inspectionDocumentId,
+                workCenterId: op.workCenterId,
+                description: op.description ?? "",
+                setupTime: op.setupTime ?? 0,
+                setupUnit: op.setupUnit ?? "Total Minutes",
+                laborTime: op.laborTime ?? 0,
+                laborUnit: op.laborUnit ?? "Minutes/Piece",
+                machineTime: op.machineTime ?? 0,
+                machineUnit: op.machineUnit ?? "Minutes/Piece",
+                order: op.order ?? 1,
+                operationOrder: op.operationOrder ?? "After Previous",
+                operationType: op.operationType ?? "Process",
+                operationMinimumCost: op.operationMinimumCost ?? 0,
+                operationLeadTime: op.operationLeadTime ?? 0,
+                operationUnitCost: op.operationUnitCost ?? 0,
+                tags: op.tags ?? [],
+                workInstruction: toJson(
+                  parts.workInstructions ? op.workInstruction : {}
+                ),
+                companyId,
+                createdBy: userId,
+                customFields: {}
+              });
             });
-          });
 
-          if (operationInserts.length > 0) {
-            const operationIds = await trx
-              .insertInto("methodOperation")
-              .values(
-                operationInserts.map((insert) => ({
-                  ...insert,
-                  makeMethodId:
-                    insert.makeMethodId ===
-                    makeMethodByItemId[quoteMakeMethod.data.itemId]
-                      ? makeMethod.data.id
-                      : insert.makeMethodId,
-                }))
-              )
-              .returning(["id"])
-              .execute();
+            if (operationInserts.length > 0) {
+              const operationIds = await trx
+                .insertInto("methodOperation")
+                .values(
+                  operationInserts.map((insert) => ({
+                    ...insert,
+                    makeMethodId:
+                      insert.makeMethodId ===
+                      makeMethodByItemId[quoteMakeMethod.data.itemId]
+                        ? makeMethod.data.id
+                        : insert.makeMethodId
+                  }))
+                )
+                .returning(["id"])
+                .execute();
 
-            for (const [index, operation] of (
-              quoteOperations.data ?? []
-            ).entries()) {
-              const operationId = operationIds[index].id;
-              if (operationId) {
-                const {
-                  quoteOperationTool,
-                  quoteOperationParameter,
-                  quoteOperationStep,
-                  procedureId,
-                } = operation;
+              for (const [index, operation] of (
+                quoteOperations.data ?? []
+              ).entries()) {
+                const operationId = operationIds[index]!.id;
+                if (operationId) {
+                  const {
+                    quoteOperationTool,
+                    quoteOperationParameter,
+                    quoteOperationStep,
+                    procedureId
+                  } = operation;
 
-                if (
-                  parts.tools &&
-                  Array.isArray(quoteOperationTool) &&
-                  quoteOperationTool.length > 0
-                ) {
-                  await trx
-                    .insertInto("methodOperationTool")
-                    .values(
-                      quoteOperationTool.map((tool) => ({
-                        toolId: tool.toolId,
-                        quantity: tool.quantity,
-                        operationId,
-                        companyId,
-                        createdBy: userId,
-                      }))
-                    )
-                    .execute();
-                }
-
-                if (!procedureId) {
                   if (
-                    parts.parameters &&
-                    Array.isArray(quoteOperationParameter) &&
-                    quoteOperationParameter.length > 0
+                    parts.tools &&
+                    Array.isArray(quoteOperationTool) &&
+                    quoteOperationTool.length > 0
                   ) {
                     await trx
-                      .insertInto("methodOperationParameter")
+                      .insertInto("methodOperationTool")
                       .values(
-                        quoteOperationParameter.map((param) => ({
+                        quoteOperationTool.map((tool) => ({
+                          toolId: tool.toolId,
+                          quantity: tool.quantity,
                           operationId,
-                          key: param.key,
-                          value: param.value,
                           companyId,
-                          createdBy: userId,
+                          createdBy: userId
                         }))
                       )
                       .execute();
                   }
 
-                  if (
-                    parts.steps &&
-                    // Assembly ops inherit steps from the linked instruction —
-                    // never copy (possibly stale) quote steps alongside it.
-                    !operation.assemblyInstructionId &&
-                    Array.isArray(quoteOperationStep) &&
-                    quoteOperationStep.length > 0
-                  ) {
-                    const insertedSteps = await trx
-                      .insertInto("methodOperationStep")
-                      .values(
-                        quoteOperationStep.map(({ id: _id, ...attribute }) => ({
-                          ...attribute,
-                          description: toTiptapDoc(attribute.description),
-                          operationId,
-                          companyId,
-                          createdBy: userId,
-                        }))
-                      )
-                      .returning(["id"])
-                      .execute();
+                  if (!procedureId) {
+                    if (
+                      parts.parameters &&
+                      Array.isArray(quoteOperationParameter) &&
+                      quoteOperationParameter.length > 0
+                    ) {
+                      await trx
+                        .insertInto("methodOperationParameter")
+                        .values(
+                          quoteOperationParameter.map((param) => ({
+                            operationId,
+                            key: param.key,
+                            value: param.value,
+                            companyId,
+                            createdBy: userId
+                          }))
+                        )
+                        .execute();
+                    }
 
-                    await copyStepSlides(
-                      trx,
-                      client,
-                      quoteOperationStep,
-                      insertedSteps,
-                      "quoteOperationStepSlide",
-                      "methodOperationStepSlide",
-                      companyId,
-                      userId,
-                    );
+                    if (
+                      parts.steps &&
+                      // Assembly ops inherit steps from the linked instruction —
+                      // never copy (possibly stale) quote steps alongside it.
+                      !operation.assemblyInstructionId &&
+                      Array.isArray(quoteOperationStep) &&
+                      quoteOperationStep.length > 0
+                    ) {
+                      const insertedSteps = await trx
+                        .insertInto("methodOperationStep")
+                        .values(
+                          quoteOperationStep.map(
+                            ({ id: _id, ...attribute }) => ({
+                              ...attribute,
+                              description: toTiptapDoc(attribute.description),
+                              operationId,
+                              companyId,
+                              createdBy: userId
+                            })
+                          )
+                        )
+                        .returning(["id"])
+                        .execute();
+
+                      await copyStepSlides(
+                        trx,
+                        client,
+                        quoteOperationStep,
+                        insertedSteps,
+                        "quoteOperationStepSlide",
+                        "methodOperationStepSlide",
+                        companyId,
+                        userId
+                      );
+                    }
                   }
                 }
               }
             }
-          }
           } // end if (parts.billOfProcess)
         });
 
@@ -6075,7 +6305,7 @@ serve(async (req: Request) => {
           jobMakeMethod,
           quoteMakeMethod,
           quoteMaterials,
-          quoteOperations,
+          quoteOperations
         ] = await Promise.all([
           client
             .from("job")
@@ -6108,7 +6338,7 @@ serve(async (req: Request) => {
               "*, quoteOperationTool(*), quoteOperationParameter(*), quoteOperationStep(*)"
             )
             .eq("quoteLineId", quoteLineId)
-            .eq("companyId", companyId),
+            .eq("companyId", companyId)
         ]);
 
         if (job.error) {
@@ -6125,19 +6355,25 @@ serve(async (req: Request) => {
           quoteOperations.error
         ) {
           if (quoteMakeMethod.error) {
-            logger.error("quoteMakeMethodError", { error: quoteMakeMethod.error });
+            logger.error("quoteMakeMethodError", {
+              error: quoteMakeMethod.error
+            });
           }
           if (quoteMaterials.error) {
-            logger.error("quoteMaterialsError", { error: quoteMaterials.error });
+            logger.error("quoteMaterialsError", {
+              error: quoteMaterials.error
+            });
           }
           if (quoteOperations.error) {
-            logger.error("quoteOperationsError", { error: quoteOperations.error });
+            logger.error("quoteOperationsError", {
+              error: quoteOperations.error
+            });
           }
           throw new Error("Failed to fetch quote data");
         }
 
         const [quoteMethodTrees] = await Promise.all([
-          getQuoteMethodTree(client, quoteMakeMethod.data.id),
+          getQuoteMethodTree(client, quoteMakeMethod.data.id)
         ]);
 
         if (quoteMethodTrees.error) {
@@ -6178,24 +6414,35 @@ serve(async (req: Request) => {
                   .where((eb) =>
                     eb.and([
                       eb("jobId", "=", jobId),
-                      eb("parentMaterialId", "is not", null),
+                      eb("parentMaterialId", "is not", null)
                     ])
                   )
+                  .where("companyId", "=", companyId)
                   .execute()
               : Promise.resolve(),
             parts.billOfMaterial
-              ? trx.deleteFrom("jobMaterial").where("jobId", "=", jobId).execute()
+              ? trx
+                  .deleteFrom("jobMaterial")
+                  .where("jobId", "=", jobId)
+                  .where("companyId", "=", companyId)
+                  .execute()
               : Promise.resolve(),
             // Prevent cascade deletion of materials when only replacing operations
             !parts.billOfMaterial && parts.billOfProcess
-              ? trx.updateTable("jobMaterial")
+              ? trx
+                  .updateTable("jobMaterial")
                   .set({ jobOperationId: null })
                   .where("jobId", "=", jobId)
+                  .where("companyId", "=", companyId)
                   .execute()
               : Promise.resolve(),
             parts.billOfProcess
-              ? trx.deleteFrom("jobOperation").where("jobId", "=", jobId).execute()
-              : Promise.resolve(),
+              ? trx
+                  .deleteFrom("jobOperation")
+                  .where("jobId", "=", jobId)
+                  .where("companyId", "=", companyId)
+                  .execute()
+              : Promise.resolve()
           ]);
 
           const insertedJobMaterialIds: string[] = [];
@@ -6240,11 +6487,12 @@ serve(async (req: Request) => {
                 quoteMakeMethodIdToQuantities[quoteMakeMethod.data.id] = {
                   targetQuantity: rootTarget,
                   estimatedQuantity: rootEstimatedQuantity,
-                  totalWithScrap: rootTotalWithScrap,
+                  totalWithScrap: rootTotalWithScrap
                 };
               } else {
                 // Non-root: get from stored quantities using parent's quoteMakeMethodId
-                const parentQuoteMakeMethodId = node.data.quoteMaterialMakeMethodId;
+                const parentQuoteMakeMethodId =
+                  node.data.quoteMaterialMakeMethodId;
                 const parentQuantities =
                   quoteMakeMethodIdToQuantities[parentQuoteMakeMethodId ?? ""];
                 // Children receive parent's total (estimated + scrap) for cascade
@@ -6280,7 +6528,7 @@ serve(async (req: Request) => {
                   supersessionRedirect,
                   {
                     itemId: child.data.itemId,
-                    methodType: child.data.methodType,
+                    methodType: child.data.methodType
                   }
                 );
                 const itemId = supersession?.itemId ?? child.data.itemId;
@@ -6323,7 +6571,7 @@ serve(async (req: Request) => {
                   ] = {
                     targetQuantity: childTargetQuantity,
                     estimatedQuantity: childEstimatedQuantity,
-                    totalWithScrap: childTotalWithScrap,
+                    totalWithScrap: childTotalWithScrap
                   };
                 }
 
@@ -6342,7 +6590,7 @@ serve(async (req: Request) => {
                       ? jobMakeMethod.data.id
                       : quoteMakeMethodIdToJobMakeMethodId[
                           child.data.quoteMakeMethodId
-                        ],
+                        ]!,
                   quantity: quantityPerParent,
                   scrapQuantity: childScrapQuantity,
                   estimatedQuantity: childEstimatedQuantity,
@@ -6383,7 +6631,7 @@ serve(async (req: Request) => {
                   unitOfMeasureCode: child.data.unitOfMeasureCode,
                   companyId,
                   createdBy: userId,
-                  customFields: {},
+                  customFields: {}
                 });
 
                 if (child.data.quoteMaterialMakeMethodId) {
@@ -6398,7 +6646,7 @@ serve(async (req: Request) => {
                     itemId: child.data.itemId,
                     quantityPerParent: child.data.quantity,
                     companyId,
-                    createdBy: userId,
+                    createdBy: userId
                   });
                 }
               }
@@ -6422,10 +6670,11 @@ serve(async (req: Request) => {
                     .updateTable("jobMakeMethod")
                     .set({
                       id: insert.id,
-                      quantityPerParent: insert.quantityPerParent,
+                      quantityPerParent: insert.quantityPerParent
                     })
                     .where("jobId", "=", jobId)
-                    .where("parentMaterialId", "=", insert.parentMaterialId)
+                    .where("parentMaterialId", "=", insert.parentMaterialId!)
+                    .where("companyId", "=", companyId)
                     .execute();
                 }
               }
@@ -6433,174 +6682,180 @@ serve(async (req: Request) => {
           );
 
           if (parts.billOfProcess) {
-          const jobOperationInserts: Database["public"]["Tables"]["jobOperation"]["Insert"][] =
-            quoteOperations.data.map((op) => {
-              // Get quantities for this operation's make method
-              const opQuantities =
-                quoteMakeMethodIdToQuantities[op.quoteMakeMethodId ?? ""];
-              // The traversal stores quantities for every make method in the
-              // tree, so a miss means the operation references an orphaned
-              // make method. Fail the conversion (rolls back the transaction)
-              // instead of silently inserting a zero-quantity operation with
-              // a NULL jobMakeMethodId.
-              if (!opQuantities) {
-                throw new Error(
-                  `No quantities found for quote make method ${op.quoteMakeMethodId} referenced by operation ${op.id} — the quote method tree and its operations are out of sync`
-                );
-              }
-              return {
-                jobId,
-                jobMakeMethodId:
-                  op.quoteMakeMethodId === quoteMakeMethod.data.id
-                    ? jobMakeMethod.data.id
-                    : quoteMakeMethodIdToJobMakeMethodId[op.quoteMakeMethodId!],
-                processId: op.processId,
-                procedureId: op.procedureId,
-                workCenterId: op.workCenterId,
-                description: op.description,
-                setupTime: op.setupTime,
-                setupUnit: op.setupUnit,
-                laborTime: op.laborTime,
-                laborUnit: op.laborUnit,
-                machineTime: op.machineTime,
-                machineUnit: op.machineUnit,
-                order: op.order,
-                operationOrder: op.operationOrder,
-                operationType: op.operationType,
-                // Carry the Assembly → BOP sync link so the MES can drive the
-                // animated instruction player on jobs made from a synced method.
-                assemblyInstructionId: op.assemblyInstructionId,
-                inspectionDocumentId: op.inspectionDocumentId,
-                operationSupplierProcessId: op.operationSupplierProcessId,
-                operationMinimumCost: op.operationMinimumCost ?? 0,
-                operationLeadTime: op.operationLeadTime ?? 0,
-                operationUnitCost: op.operationUnitCost ?? 0,
-                tags: op.tags ?? [],
-                workInstruction: toJson(parts.workInstructions ? op.workInstruction : {}),
-                targetQuantity: opQuantities.targetQuantity,
-                // Fractional targets flow through; the scrap allowance is already whole
-                operationQuantity: opQuantities.totalWithScrap,
-                companyId,
-                createdBy: userId,
-                customFields: {},
-              };
-            });
-
-          if (jobOperationInserts.length > 0) {
-            const operationIds = await trx
-              .insertInto("jobOperation")
-              .values(jobOperationInserts)
-              .returning(["id"])
-              .execute();
-
-            for (const [index, operation] of (
-              quoteOperations.data ?? []
-            ).entries()) {
-              const operationId = operationIds[index].id;
-              if (operationId) {
-                const {
-                  quoteOperationTool,
-                  quoteOperationParameter,
-                  quoteOperationStep,
-                  procedureId,
-                } = operation;
-                // abilities are not copied on this path (no quoteOperationAbility table)
-
-                if (
-                  parts.tools &&
-                  Array.isArray(quoteOperationTool) &&
-                  quoteOperationTool.length > 0
-                ) {
-                  await trx
-                    .insertInto("jobOperationTool")
-                    .values(
-                      quoteOperationTool.map((tool) => ({
-                        toolId: tool.toolId,
-                        quantity: tool.quantity,
-                        operationId,
-                        companyId,
-                        createdBy: userId,
-                      }))
-                    )
-                    .execute();
+            const jobOperationInserts: Database["public"]["Tables"]["jobOperation"]["Insert"][] =
+              quoteOperations.data.map((op) => {
+                // Get quantities for this operation's make method
+                const opQuantities =
+                  quoteMakeMethodIdToQuantities[op.quoteMakeMethodId ?? ""];
+                // The traversal stores quantities for every make method in the
+                // tree, so a miss means the operation references an orphaned
+                // make method. Fail the conversion (rolls back the transaction)
+                // instead of silently inserting a zero-quantity operation with
+                // a NULL jobMakeMethodId.
+                if (!opQuantities) {
+                  throw new Error(
+                    `No quantities found for quote make method ${op.quoteMakeMethodId} referenced by operation ${op.id} — the quote method tree and its operations are out of sync`
+                  );
                 }
+                return {
+                  jobId,
+                  jobMakeMethodId:
+                    op.quoteMakeMethodId === quoteMakeMethod.data.id
+                      ? jobMakeMethod.data.id
+                      : quoteMakeMethodIdToJobMakeMethodId[
+                          op.quoteMakeMethodId!
+                        ],
+                  processId: op.processId,
+                  procedureId: op.procedureId,
+                  workCenterId: op.workCenterId,
+                  description: op.description,
+                  setupTime: op.setupTime,
+                  setupUnit: op.setupUnit,
+                  laborTime: op.laborTime,
+                  laborUnit: op.laborUnit,
+                  machineTime: op.machineTime,
+                  machineUnit: op.machineUnit,
+                  order: op.order,
+                  operationOrder: op.operationOrder,
+                  operationType: op.operationType,
+                  // Carry the Assembly → BOP sync link so the MES can drive the
+                  // animated instruction player on jobs made from a synced method.
+                  assemblyInstructionId: op.assemblyInstructionId,
+                  inspectionDocumentId: op.inspectionDocumentId,
+                  operationSupplierProcessId: op.operationSupplierProcessId,
+                  operationMinimumCost: op.operationMinimumCost ?? 0,
+                  operationLeadTime: op.operationLeadTime ?? 0,
+                  operationUnitCost: op.operationUnitCost ?? 0,
+                  tags: op.tags ?? [],
+                  workInstruction: toJson(
+                    parts.workInstructions ? op.workInstruction : {}
+                  ),
+                  targetQuantity: opQuantities.targetQuantity,
+                  // Fractional targets flow through; the scrap allowance is already whole
+                  operationQuantity: opQuantities.totalWithScrap,
+                  companyId,
+                  createdBy: userId,
+                  customFields: {}
+                };
+              });
 
-                if (procedureId) {
-                  await insertProcedureDataForJobOperation(trx, client, {
-                    operationId,
-                    procedureId,
-                    companyId,
-                    userId,
-                  });
-                } else {
+            if (jobOperationInserts.length > 0) {
+              const operationIds = await trx
+                .insertInto("jobOperation")
+                .values(jobOperationInserts)
+                .returning(["id"])
+                .execute();
+
+              for (const [index, operation] of (
+                quoteOperations.data ?? []
+              ).entries()) {
+                const operationId = operationIds[index]!.id;
+                if (operationId) {
+                  const {
+                    quoteOperationTool,
+                    quoteOperationParameter,
+                    quoteOperationStep,
+                    procedureId
+                  } = operation;
+                  // abilities are not copied on this path (no quoteOperationAbility table)
+
                   if (
-                    parts.parameters &&
-                    Array.isArray(quoteOperationParameter) &&
-                    quoteOperationParameter.length > 0
+                    parts.tools &&
+                    Array.isArray(quoteOperationTool) &&
+                    quoteOperationTool.length > 0
                   ) {
                     await trx
-                      .insertInto("jobOperationParameter")
+                      .insertInto("jobOperationTool")
                       .values(
-                        quoteOperationParameter.map((param) => ({
+                        quoteOperationTool.map((tool) => ({
+                          toolId: tool.toolId,
+                          quantity: tool.quantity,
                           operationId,
-                          key: param.key,
-                          value: param.value,
                           companyId,
-                          createdBy: userId,
+                          createdBy: userId
                         }))
                       )
                       .execute();
                   }
 
-                  if (operation.assemblyInstructionId) {
-                    // Assembly ops inherit their steps from the linked
-                    // instruction (the quote only carries the pointer);
-                    // material ↔ step links are flushed after the jobMaterial
-                    // rows exist.
-                    await insertAssemblyDataForJobOperation(trx, client, {
+                  if (procedureId) {
+                    await insertProcedureDataForJobOperation(trx, client, {
                       operationId,
-                      assemblyInstructionId: operation.assemblyInstructionId,
+                      procedureId,
                       companyId,
-                      userId,
+                      userId
                     });
-                    assemblyOperationsToLink.push({
-                      operationId,
-                      assemblyInstructionId: operation.assemblyInstructionId,
-                    });
-                  } else if (
-                    parts.steps &&
-                    Array.isArray(quoteOperationStep) &&
-                    quoteOperationStep.length > 0
-                  ) {
-                    const insertedSteps = await trx
-                      .insertInto("jobOperationStep")
-                      .values(
-                        quoteOperationStep.map(({ id: _id, ...attribute }) => ({
-                          ...attribute,
-                          description: toTiptapDoc(attribute.description),
-                          operationId,
-                          companyId,
-                          createdBy: userId,
-                        }))
-                      )
-                      .returning(["id"])
-                      .execute();
+                  } else {
+                    if (
+                      parts.parameters &&
+                      Array.isArray(quoteOperationParameter) &&
+                      quoteOperationParameter.length > 0
+                    ) {
+                      await trx
+                        .insertInto("jobOperationParameter")
+                        .values(
+                          quoteOperationParameter.map((param) => ({
+                            operationId,
+                            key: param.key,
+                            value: param.value,
+                            companyId,
+                            createdBy: userId
+                          }))
+                        )
+                        .execute();
+                    }
 
-                    await copyStepSlides(
-                      trx,
-                      client,
-                      quoteOperationStep,
-                      insertedSteps,
-                      "quoteOperationStepSlide",
-                      "jobOperationStepSlide",
-                      companyId,
-                      userId,
-                    );
+                    if (operation.assemblyInstructionId) {
+                      // Assembly ops inherit their steps from the linked
+                      // instruction (the quote only carries the pointer);
+                      // material ↔ step links are flushed after the jobMaterial
+                      // rows exist.
+                      await insertAssemblyDataForJobOperation(trx, client, {
+                        operationId,
+                        assemblyInstructionId: operation.assemblyInstructionId,
+                        companyId,
+                        userId
+                      });
+                      assemblyOperationsToLink.push({
+                        operationId,
+                        assemblyInstructionId: operation.assemblyInstructionId
+                      });
+                    } else if (
+                      parts.steps &&
+                      Array.isArray(quoteOperationStep) &&
+                      quoteOperationStep.length > 0
+                    ) {
+                      const insertedSteps = await trx
+                        .insertInto("jobOperationStep")
+                        .values(
+                          quoteOperationStep.map(
+                            ({ id: _id, ...attribute }) => ({
+                              ...attribute,
+                              description: toTiptapDoc(attribute.description),
+                              operationId,
+                              companyId,
+                              createdBy: userId
+                            })
+                          )
+                        )
+                        .returning(["id"])
+                        .execute();
+
+                      await copyStepSlides(
+                        trx,
+                        client,
+                        quoteOperationStep,
+                        insertedSteps,
+                        "quoteOperationStepSlide",
+                        "jobOperationStepSlide",
+                        companyId,
+                        userId
+                      );
+                    }
                   }
                 }
               }
             }
-          }
           } // end if (parts.billOfProcess)
 
           // Materials were inserted before operations in this direction, so the
@@ -6619,7 +6874,7 @@ serve(async (req: Request) => {
             jobId: jobId,
             jobMaterialIds: insertedJobMaterialIds,
             locationId: job.data?.locationId,
-            asOfDate: jobBuildDate(job.data),
+            asOfDate: jobBuildDate(job.data)
           });
         });
 
@@ -6630,12 +6885,15 @@ serve(async (req: Request) => {
         const [targetQuoteId, targetQuoteLineId] = (targetId as string).split(
           ":"
         );
+        if (!sourceQuoteLineId || !targetQuoteId || !targetQuoteLineId) {
+          throw new Error("Invalid sourceId or targetId");
+        }
 
         const [
           targetQuoteMakeMethod,
           sourceQuoteMakeMethod,
           sourceQuoteMaterials,
-          sourceQuoteOperations,
+          sourceQuoteOperations
         ] = await Promise.all([
           client
             .from("quoteMakeMethod")
@@ -6662,19 +6920,19 @@ serve(async (req: Request) => {
               "*, quoteOperationTool(*), quoteOperationParameter(*), quoteOperationStep(*)"
             )
             .eq("quoteLineId", sourceQuoteLineId)
-            .eq("companyId", companyId),
+            .eq("companyId", companyId)
         ]);
 
         if (targetQuoteMakeMethod.error || !targetQuoteMakeMethod.data) {
           logger.error("Failed to get target quote make method", {
-            error: targetQuoteMakeMethod.error,
+            error: targetQuoteMakeMethod.error
           });
           throw new Error("Failed to get target quote make method");
         }
         // targetQuoteId is written onto new rows and priced below; bind it to
         // the verified target line rather than trusting the body.
         if (targetQuoteMakeMethod.data.quoteId !== targetQuoteId) {
-          return errorResponse("Quote line not found", 404);
+          throw new RecordNotFoundError("Quote line not found");
         }
 
         if (
@@ -6686,7 +6944,7 @@ serve(async (req: Request) => {
         }
 
         const [quoteMethodTrees] = await Promise.all([
-          getQuoteMethodTree(client, sourceQuoteMakeMethod.data.id),
+          getQuoteMethodTree(client, sourceQuoteMakeMethod.data.id)
         ]);
 
         if (quoteMethodTrees.error) {
@@ -6709,30 +6967,35 @@ serve(async (req: Request) => {
                   .where((eb) =>
                     eb.and([
                       eb("quoteLineId", "=", targetQuoteLineId),
-                      eb("parentMaterialId", "is not", null),
+                      eb("parentMaterialId", "is not", null)
                     ])
                   )
+                  .where("companyId", "=", companyId)
                   .execute()
               : Promise.resolve(),
             parts.billOfMaterial
               ? trx
                   .deleteFrom("quoteMaterial")
                   .where("quoteLineId", "=", targetQuoteLineId)
+                  .where("companyId", "=", companyId)
                   .execute()
               : Promise.resolve(),
             // Prevent cascade deletion of materials when only replacing operations
             !parts.billOfMaterial && parts.billOfProcess
-              ? trx.updateTable("quoteMaterial")
+              ? trx
+                  .updateTable("quoteMaterial")
                   .set({ quoteOperationId: null })
                   .where("quoteLineId", "=", targetQuoteLineId)
+                  .where("companyId", "=", companyId)
                   .execute()
               : Promise.resolve(),
             parts.billOfProcess
               ? trx
                   .deleteFrom("quoteOperation")
                   .where("quoteLineId", "=", targetQuoteLineId)
+                  .where("companyId", "=", companyId)
                   .execute()
-              : Promise.resolve(),
+              : Promise.resolve()
           ]);
 
           await traverseQuoteMethod(
@@ -6773,7 +7036,7 @@ serve(async (req: Request) => {
                       ? targetQuoteMakeMethod.data.id
                       : quoteMakeMethodIdToQuoteMakeMethodId[
                           child.data.quoteMakeMethodId
-                        ],
+                        ]!,
                   quantity: child.data.quantity,
                   storageUnitId: child.data.storageUnitId,
                   unitOfMeasureCode: child.data.unitOfMeasureCode,
@@ -6781,7 +7044,7 @@ serve(async (req: Request) => {
                   unitCostSource: child.data.unitCostSource ?? "system",
                   companyId,
                   createdBy: userId,
-                  customFields: {},
+                  customFields: {}
                 });
 
                 if (child.data.quoteMaterialMakeMethodId) {
@@ -6798,7 +7061,7 @@ serve(async (req: Request) => {
                     itemId: child.data.itemId,
                     quantityPerParent: child.data.quantity,
                     companyId,
-                    createdBy: userId,
+                    createdBy: userId
                   });
                 }
               }
@@ -6816,10 +7079,11 @@ serve(async (req: Request) => {
                     .updateTable("quoteMakeMethod")
                     .set({
                       id: insert.id,
-                      quantityPerParent: insert.quantityPerParent,
+                      quantityPerParent: insert.quantityPerParent
                     })
                     .where("quoteLineId", "=", targetQuoteLineId)
-                    .where("parentMaterialId", "=", insert.parentMaterialId)
+                    .where("parentMaterialId", "=", insert.parentMaterialId!)
+                    .where("companyId", "=", companyId)
                     .execute();
                 }
               }
@@ -6827,136 +7091,146 @@ serve(async (req: Request) => {
           );
 
           if (parts.billOfProcess) {
-          const quoteOperationInserts: Database["public"]["Tables"]["quoteOperation"]["Insert"][] =
-            sourceQuoteOperations.data.map((op) => ({
-              quoteId: targetQuoteId,
-              quoteLineId: targetQuoteLineId,
-              quoteMakeMethodId:
-                op.quoteMakeMethodId === sourceQuoteMakeMethod.data.id
-                  ? targetQuoteMakeMethod.data.id
-                  : quoteMakeMethodIdToQuoteMakeMethodId[op.quoteMakeMethodId!],
-              processId: op.processId,
-              procedureId: op.procedureId,
-              assemblyInstructionId: op.assemblyInstructionId,
-              inspectionDocumentId: op.inspectionDocumentId,
-              workCenterId: op.workCenterId,
-              description: op.description,
-              setupTime: op.setupTime,
-              setupUnit: op.setupUnit,
-              laborTime: op.laborTime,
-              laborUnit: op.laborUnit,
-              laborRate: op.laborRate,
-              machineTime: op.machineTime,
-              machineUnit: op.machineUnit,
-              machineRate: op.machineRate,
-              order: op.order,
-              operationOrder: op.operationOrder,
-              operationType: op.operationType,
-              operationSupplierProcessId: op.operationSupplierProcessId,
-              operationMinimumCost: op.operationMinimumCost ?? 0,
-              operationLeadTime: op.operationLeadTime ?? 0,
-              operationUnitCost: op.operationUnitCost ?? 0,
-              overheadRate: op.overheadRate,
-              tags: op.tags ?? [],
-              workInstruction: toJson(parts.workInstructions ? op.workInstruction : {}),
-              companyId,
-              createdBy: userId,
-              customFields: {},
-            }));
+            const quoteOperationInserts: Database["public"]["Tables"]["quoteOperation"]["Insert"][] =
+              sourceQuoteOperations.data.map((op) => ({
+                quoteId: targetQuoteId,
+                quoteLineId: targetQuoteLineId,
+                quoteMakeMethodId:
+                  op.quoteMakeMethodId === sourceQuoteMakeMethod.data.id
+                    ? targetQuoteMakeMethod.data.id
+                    : quoteMakeMethodIdToQuoteMakeMethodId[
+                        op.quoteMakeMethodId!
+                      ],
+                processId: op.processId,
+                procedureId: op.procedureId,
+                assemblyInstructionId: op.assemblyInstructionId,
+                inspectionDocumentId: op.inspectionDocumentId,
+                workCenterId: op.workCenterId,
+                description: op.description,
+                setupTime: op.setupTime,
+                setupUnit: op.setupUnit,
+                laborTime: op.laborTime,
+                laborUnit: op.laborUnit,
+                laborRate: op.laborRate,
+                machineTime: op.machineTime,
+                machineUnit: op.machineUnit,
+                machineRate: op.machineRate,
+                order: op.order,
+                operationOrder: op.operationOrder,
+                operationType: op.operationType,
+                operationSupplierProcessId: op.operationSupplierProcessId,
+                operationMinimumCost: op.operationMinimumCost ?? 0,
+                operationLeadTime: op.operationLeadTime ?? 0,
+                operationUnitCost: op.operationUnitCost ?? 0,
+                overheadRate: op.overheadRate,
+                tags: op.tags ?? [],
+                workInstruction: toJson(
+                  parts.workInstructions ? op.workInstruction : {}
+                ),
+                companyId,
+                createdBy: userId,
+                customFields: {}
+              }));
 
-          if (quoteOperationInserts.length > 0) {
-            const operationIds = await trx
-              .insertInto("quoteOperation")
-              .values(quoteOperationInserts)
-              .returning(["id"])
-              .execute();
+            if (quoteOperationInserts.length > 0) {
+              const operationIds = await trx
+                .insertInto("quoteOperation")
+                .values(quoteOperationInserts)
+                .returning(["id"])
+                .execute();
 
-            for (const [index, operation] of (
-              sourceQuoteOperations.data ?? []
-            ).entries()) {
-              const operationId = operationIds[index].id;
-              if (operationId) {
-                const {
-                  quoteOperationTool,
-                  quoteOperationParameter,
-                  quoteOperationStep,
-                } = operation;
+              for (const [index, operation] of (
+                sourceQuoteOperations.data ?? []
+              ).entries()) {
+                const operationId = operationIds[index]!.id;
+                if (operationId) {
+                  const {
+                    quoteOperationTool,
+                    quoteOperationParameter,
+                    quoteOperationStep
+                  } = operation;
 
-                if (
-                  parts.tools &&
-                  Array.isArray(quoteOperationTool) &&
-                  quoteOperationTool.length > 0
-                ) {
-                  await trx
-                    .insertInto("quoteOperationTool")
-                    .values(
-                      quoteOperationTool.map((tool) => ({
-                        toolId: tool.toolId,
-                        quantity: tool.quantity,
-                        operationId,
-                        companyId,
-                        createdBy: userId,
-                      }))
-                    )
-                    .execute();
-                }
+                  if (
+                    parts.tools &&
+                    Array.isArray(quoteOperationTool) &&
+                    quoteOperationTool.length > 0
+                  ) {
+                    await trx
+                      .insertInto("quoteOperationTool")
+                      .values(
+                        quoteOperationTool.map((tool) => ({
+                          toolId: tool.toolId,
+                          quantity: tool.quantity,
+                          operationId,
+                          companyId,
+                          createdBy: userId
+                        }))
+                      )
+                      .execute();
+                  }
 
-                if (
-                  parts.parameters &&
-                  Array.isArray(quoteOperationParameter) &&
-                  quoteOperationParameter.length > 0
-                ) {
-                  await trx
-                    .insertInto("quoteOperationParameter")
-                    .values(
-                      quoteOperationParameter.map((param) => ({
-                        operationId,
-                        key: param.key,
-                        value: param.value,
-                        companyId,
-                        createdBy: userId,
-                      }))
-                    )
-                    .execute();
-                }
+                  if (
+                    parts.parameters &&
+                    Array.isArray(quoteOperationParameter) &&
+                    quoteOperationParameter.length > 0
+                  ) {
+                    await trx
+                      .insertInto("quoteOperationParameter")
+                      .values(
+                        quoteOperationParameter.map((param) => ({
+                          operationId,
+                          key: param.key,
+                          value: param.value,
+                          companyId,
+                          createdBy: userId
+                        }))
+                      )
+                      .execute();
+                  }
 
-                if (
-                  parts.steps &&
-                  Array.isArray(quoteOperationStep) &&
-                  quoteOperationStep.length > 0
-                ) {
-                  const insertedSteps = await trx
-                    .insertInto("quoteOperationStep")
-                    .values(
-                      quoteOperationStep.map(({ id: _id, ...attribute }) => ({
-                        ...attribute,
-                        description: toTiptapDoc(attribute.description),
-                        operationId,
-                        companyId,
-                        createdBy: userId,
-                      }))
-                    )
-                    .returning(["id"])
-                    .execute();
+                  if (
+                    parts.steps &&
+                    Array.isArray(quoteOperationStep) &&
+                    quoteOperationStep.length > 0
+                  ) {
+                    const insertedSteps = await trx
+                      .insertInto("quoteOperationStep")
+                      .values(
+                        quoteOperationStep.map(({ id: _id, ...attribute }) => ({
+                          ...attribute,
+                          description: toTiptapDoc(attribute.description),
+                          operationId,
+                          companyId,
+                          createdBy: userId
+                        }))
+                      )
+                      .returning(["id"])
+                      .execute();
 
-                  await copyStepSlides(
-                    trx,
-                    client,
-                    quoteOperationStep,
-                    insertedSteps,
-                    "quoteOperationStepSlide",
-                    "quoteOperationStepSlide",
-                    companyId,
-                    userId,
-                  );
+                    await copyStepSlides(
+                      trx,
+                      client,
+                      quoteOperationStep,
+                      insertedSteps,
+                      "quoteOperationStepSlide",
+                      "quoteOperationStepSlide",
+                      companyId,
+                      userId
+                    );
+                  }
                 }
               }
             }
-          }
           } // end if (parts.billOfProcess)
         });
 
-        await calculateQuoteLinePrices(client, targetQuoteId, targetQuoteLineId, companyId, userId);
+        await calculateQuoteLinePrices(
+          client,
+          targetQuoteId,
+          targetQuoteLineId,
+          companyId,
+          userId
+        );
 
         break;
       }
@@ -6972,7 +7246,7 @@ serve(async (req: Request) => {
           sourceQuote,
           sourceQuotePayment,
           sourceQuoteShipment,
-          sourceQuoteLines,
+          sourceQuoteLines
         ] = await Promise.all([
           client
             .from("quote")
@@ -6996,7 +7270,7 @@ serve(async (req: Request) => {
             .from("quoteLine")
             .select("*")
             .eq("quoteId", sourceQuoteId)
-            .eq("companyId", companyId),
+            .eq("companyId", companyId)
         ]);
 
         if (sourceQuote.error) {
@@ -7052,7 +7326,7 @@ serve(async (req: Request) => {
             .values({
               documentId: linkDocumentId,
               documentType: "Quote",
-              companyId,
+              companyId
             })
             .onConflict((oc) =>
               oc
@@ -7070,7 +7344,7 @@ serve(async (req: Request) => {
               .insertInto("opportunity")
               .values({
                 companyId,
-                customerId: sourceQuote.data?.customerId,
+                customerId: sourceQuote.data?.customerId
               })
               .returning(["id"])
               .executeTakeFirstOrThrow();
@@ -7089,21 +7363,22 @@ serve(async (req: Request) => {
                 customerLocationId: sourceQuote.data?.customerLocationId,
                 customerReference: sourceQuote.data?.customerReference,
                 locationId: sourceQuote.data?.locationId,
-                expirationDate: datetime.today(
-                  await getCompanyTimeZone(client, companyId)
-                ).add({ days: 30 }).toString(),
+                expirationDate: datetime
+                  .today(await getCompanyTimeZone(client, companyId))
+                  .add({ days: 30 })
+                  .toString(),
                 salesPersonId: sourceQuote.data?.salesPersonId ?? userId,
                 status: "Draft",
                 externalNotes: toJson(sourceQuote.data?.externalNotes),
                 internalNotes: toJson(sourceQuote.data?.internalNotes),
                 currencyCode: sourceQuote.data?.currencyCode,
                 exchangeRate: sourceQuote.data?.exchangeRate,
-                exchangeRateUpdatedAt: new Date().toISOString(),
+                exchangeRateUpdatedAt: datetime.timestamp(),
                 externalLinkId: externalLinkId.id,
                 opportunityId,
                 companyId,
-                createdBy: userId,
-              },
+                createdBy: userId
+              }
             ])
             .returning(["id"])
             .executeTakeFirstOrThrow();
@@ -7126,7 +7401,7 @@ serve(async (req: Request) => {
                 sourceQuotePayment.data?.invoiceCustomerLocationId,
               paymentTermId: sourceQuotePayment.data?.paymentTermId,
               companyId,
-              updatedBy: userId,
+              updatedBy: userId
             })
             .execute();
 
@@ -7142,7 +7417,7 @@ serve(async (req: Request) => {
               receiptRequestedDate:
                 sourceQuoteShipment.data?.receiptRequestedDate,
               companyId,
-              updatedBy: userId,
+              updatedBy: userId
             })
             .execute();
 
@@ -7153,7 +7428,7 @@ serve(async (req: Request) => {
                 ...line,
                 ...toJsonColumns(line, QUOTE_LINE_JSON_COLUMNS),
                 quoteId: quote.id,
-                companyId,
+                companyId
               })
               .returning(["id"])
               .executeTakeFirstOrThrow();
@@ -7197,7 +7472,7 @@ serve(async (req: Request) => {
                     // Copied prices keep their provenance so a manual price
                     // stays protected on the new quote/revision.
                     priceSource: l.priceSource ?? "system",
-                    createdBy: userId,
+                    createdBy: userId
                   }))
                 )
                 .execute();
@@ -7213,7 +7488,7 @@ serve(async (req: Request) => {
               targetQuoteMakeMethod,
               sourceQuoteMakeMethod,
               sourceQuoteMaterials,
-              sourceQuoteOperations,
+              sourceQuoteOperations
             ] = await Promise.all([
               client
                 .from("quoteMakeMethod")
@@ -7240,12 +7515,12 @@ serve(async (req: Request) => {
                   "*, quoteOperationTool(*), quoteOperationParameter(*), quoteOperationStep(*)"
                 )
                 .eq("quoteLineId", oldLineId)
-                .eq("companyId", companyId),
+                .eq("companyId", companyId)
             ]);
 
             if (targetQuoteMakeMethod.error) {
               logger.error("Failed to get target quote make method", {
-                error: targetQuoteMakeMethod.error,
+                error: targetQuoteMakeMethod.error
               });
               throw new Error("Failed to get target quote make method");
             }
@@ -7259,7 +7534,7 @@ serve(async (req: Request) => {
             }
 
             const [quoteMethodTrees] = await Promise.all([
-              getQuoteMethodTree(client, sourceQuoteMakeMethod.data.id),
+              getQuoteMethodTree(client, sourceQuoteMakeMethod.data.id)
             ]);
 
             if (quoteMethodTrees.error) {
@@ -7312,7 +7587,7 @@ serve(async (req: Request) => {
                         ? targetQuoteMakeMethod.data.id
                         : quoteMakeMethodIdToQuoteMakeMethodId[
                             child.data.quoteMakeMethodId
-                          ],
+                          ]!,
                     quantity: child.data.quantity,
                     storageUnitId: child.data.storageUnitId,
                     unitCost: child.data.unitCost ?? 0, // TODO: get real unit cost
@@ -7320,7 +7595,7 @@ serve(async (req: Request) => {
                     unitOfMeasureCode: child.data.unitOfMeasureCode,
                     companyId,
                     createdBy: userId,
-                    customFields: {},
+                    customFields: {}
                   });
 
                   if (child.data.quoteMaterialMakeMethodId) {
@@ -7337,7 +7612,7 @@ serve(async (req: Request) => {
                       itemId: child.data.itemId,
                       quantityPerParent: child.data.quantity,
                       companyId,
-                      createdBy: userId,
+                      createdBy: userId
                     });
                   }
                 }
@@ -7355,10 +7630,11 @@ serve(async (req: Request) => {
                       .updateTable("quoteMakeMethod")
                       .set({
                         id: insert.id,
-                        quantityPerParent: insert.quantityPerParent,
+                        quantityPerParent: insert.quantityPerParent
                       })
                       .where("quoteLineId", "=", newLineId)
-                      .where("parentMaterialId", "=", insert.parentMaterialId)
+                      .where("parentMaterialId", "=", insert.parentMaterialId!)
+                      .where("companyId", "=", companyId)
                       .execute();
                   }
                 }
@@ -7401,7 +7677,7 @@ serve(async (req: Request) => {
                 workInstruction: toJson(op.workInstruction),
                 companyId,
                 createdBy: userId,
-                customFields: {},
+                customFields: {}
               }));
 
             if (quoteOperationInserts.length > 0) {
@@ -7414,12 +7690,12 @@ serve(async (req: Request) => {
               for (const [index, operation] of (
                 sourceQuoteOperations.data ?? []
               ).entries()) {
-                const operationId = operationIds[index].id;
+                const operationId = operationIds[index]!.id;
                 if (operationId) {
                   const {
                     quoteOperationTool,
                     quoteOperationParameter,
-                    quoteOperationStep,
+                    quoteOperationStep
                   } = operation;
 
                   if (
@@ -7434,7 +7710,7 @@ serve(async (req: Request) => {
                           quantity: tool.quantity,
                           operationId,
                           companyId,
-                          createdBy: userId,
+                          createdBy: userId
                         }))
                       )
                       .execute();
@@ -7452,7 +7728,7 @@ serve(async (req: Request) => {
                           key: param.key,
                           value: param.value,
                           companyId,
-                          createdBy: userId,
+                          createdBy: userId
                         }))
                       )
                       .execute();
@@ -7470,7 +7746,7 @@ serve(async (req: Request) => {
                           description: toTiptapDoc(attribute.description),
                           operationId,
                           companyId,
-                          createdBy: userId,
+                          createdBy: userId
                         }))
                       )
                       .returning(["id"])
@@ -7484,7 +7760,7 @@ serve(async (req: Request) => {
                       "quoteOperationStepSlide",
                       "quoteOperationStepSlide",
                       companyId,
-                      userId,
+                      userId
                     );
                   }
                 }
@@ -7493,10 +7769,7 @@ serve(async (req: Request) => {
           }
         });
         if (newQuoteId) {
-          return jsonResponse({
-            success: true,
-            newQuoteId,
-          });
+          return { success: true, newQuoteId } as GetMethodResult;
         }
         break;
       }
@@ -7504,13 +7777,9 @@ serve(async (req: Request) => {
         throw new Error(`Invalid type  ${type}`);
     }
 
-    return jsonResponse({
-      success: true,
-    });
-  } catch (err) {
-    return errorResponse(err, 500);
-  }
-});
+    return { success: true };
+  });
+}
 
 type Method = NonNullable<
   Awaited<ReturnType<typeof getMethodTreeArray>>["data"]
@@ -7532,7 +7801,7 @@ export async function getMethodTree(
 
   return {
     data: tree,
-    error: null,
+    error: null
   };
 }
 
@@ -7541,7 +7810,7 @@ export function getMethodTreeArray(
   makeMethodId: string
 ) {
   return client.rpc("get_method_tree", {
-    uid: makeMethodId,
+    uid: makeMethodId
   });
 }
 
@@ -7551,7 +7820,9 @@ export function getMethodTreeArray(
 function jobBuildDate(
   job: { startDate?: string | null; dueDate?: string | null } | null | undefined
 ): string {
-  return job?.startDate ?? job?.dueDate ?? new Date().toISOString().slice(0, 10);
+  return (
+    job?.startDate ?? job?.dueDate ?? new Date().toISOString().slice(0, 10)
+  );
 }
 
 // Load every supersession for the company and collapse it into the redirect map
@@ -7615,14 +7886,15 @@ async function loadSupersessionRedirect(
           .in("itemId", consumeFirstItemIds)
           .order("itemId")
       ),
-      fetchAll<{ id: string; replenishmentSystem: string | null }>(() =>
-        client
-          .from("item")
-          .select("id, replenishmentSystem")
-          .eq("companyId", companyId)
-          .in("id", consumeFirstItemIds)
-          .order("id")
-      ),
+      fetchAll<{ id: string; replenishmentSystem: ReplenishmentSystem | null }>(
+        () =>
+          client
+            .from("item")
+            .select("id, replenishmentSystem")
+            .eq("companyId", companyId)
+            .in("id", consumeFirstItemIds)
+            .order("id")
+      )
     ]);
     if (stock.error) {
       throw new Error(
@@ -7643,7 +7915,11 @@ async function loadSupersessionRedirect(
     }
     const madeItemIds = new Set(
       (items.data ?? [])
-        .filter((i) => effectiveReplenishment(i.replenishmentSystem) === "Make")
+        .filter(
+          (i) =>
+            effectiveReplenishment(i.replenishmentSystem ?? undefined) ===
+            "Make"
+        )
         .map((i) => i.id)
     );
     for (const id of madeItemIds) {
@@ -7667,14 +7943,16 @@ async function loadSupersessionRedirect(
   const boughtSuccessors = new Set<string>();
   const successorIds = [...new Set([...redirect.values()].map((r) => r.to))];
   if (successorIds.length > 0) {
-    const successors = await fetchAll<{ id: string; replenishmentSystem: string | null }>(
-      () =>
-        client
-          .from("item")
-          .select("id, replenishmentSystem")
-          .eq("companyId", companyId)
-          .in("id", successorIds)
-          .order("id")
+    const successors = await fetchAll<{
+      id: string;
+      replenishmentSystem: ReplenishmentSystem | null;
+    }>(() =>
+      client
+        .from("item")
+        .select("id, replenishmentSystem")
+        .eq("companyId", companyId)
+        .in("id", successorIds)
+        .order("id")
     );
     if (successors.error) {
       throw new Error(
@@ -7682,7 +7960,9 @@ async function loadSupersessionRedirect(
       );
     }
     for (const i of successors.data ?? []) {
-      if (effectiveReplenishment(i.replenishmentSystem) !== "Make") {
+      if (
+        effectiveReplenishment(i.replenishmentSystem ?? undefined) !== "Make"
+      ) {
         boughtSuccessors.add(i.id);
       }
     }
@@ -7703,7 +7983,7 @@ async function loadSupersessionRedirect(
 // and lets the caller derive the allowance.
 async function itemDerivedJobMaterialFields(opts: {
   client: SupabaseClient<Database>;
-  trx: Transaction<DB>;
+  trx: Transaction<KyselyDatabase>;
   companyId: string;
   itemId: string;
   locationId: string;
@@ -7726,7 +8006,7 @@ async function itemDerivedJobMaterialFields(opts: {
       .where("itemId", "=", itemId)
       .where("companyId", "=", companyId)
       .executeTakeFirst(),
-    getStorageUnitId(trx, itemId, locationId, lineStorageUnitId),
+    getStorageUnitId(trx, itemId, locationId, lineStorageUnitId)
   ]);
 
   if (!item.data) return null;
@@ -7739,7 +8019,7 @@ async function itemDerivedJobMaterialFields(opts: {
     requiresSerialTracking: item.data.itemTrackingType === "Serial",
     requiresBatchTracking: item.data.itemTrackingType === "Batch",
     itemScrapPercentage: Number(replenishment?.scrapPercentage ?? 0),
-    storageUnitId,
+    storageUnitId
   };
 }
 
@@ -7751,7 +8031,7 @@ async function itemDerivedJobMaterialFields(opts: {
 // the swap was applied, so the caller can skip the default traversal.
 async function swapMadeSubAssembly(opts: {
   client: SupabaseClient<Database>;
-  trx: Transaction<DB>;
+  trx: Transaction<KyselyDatabase>;
   companyId: string;
   child: MethodTreeItem;
   material:
@@ -7782,7 +8062,7 @@ async function swapMadeSubAssembly(opts: {
     locationId,
     supersessionRedirect,
     newMakeMethodId,
-    traverseMethod,
+    traverseMethod
   } = opts;
 
   const madeRedirect = supersessionRedirect.get(child.data.itemId);
@@ -7808,7 +8088,7 @@ async function swapMadeSubAssembly(opts: {
     itemId: madeRedirect.to,
     locationId,
     // @ts-ignore: storageUnitIds is a dynamic field
-    lineStorageUnitId: child.data.storageUnitIds?.[locationId] ?? undefined,
+    lineStorageUnitId: child.data.storageUnitIds?.[locationId] ?? undefined
   });
   if (!itemFields) return false;
 
@@ -7833,12 +8113,16 @@ async function swapMadeSubAssembly(opts: {
       estimatedQuantity: targetQuantity,
       scrapQuantity,
       substitutedFromItemId: child.data.itemId,
-      substitutionFactor: madeRedirect.factor,
+      substitutionFactor: madeRedirect.factor
     })
     .where("id", "=", materialId)
+    .where("companyId", "=", companyId)
     .execute();
 
-  const successorTree = await getMethodTree(client, successorMakeMethod.data.id);
+  const successorTree = await getMethodTree(
+    client,
+    successorMakeMethod.data.id!
+  );
   const successorRoot = successorTree.data?.[0];
   if (successorRoot) {
     // The SAME total the row above was written with — not the predecessor's,
@@ -7852,15 +8136,22 @@ async function swapMadeSubAssembly(opts: {
 
 async function settleConsumeFirstLines(opts: {
   client: SupabaseClient<Database>;
-  trx: Transaction<DB>;
+  trx: Transaction<KyselyDatabase>;
   companyId: string;
   jobId: string;
   jobMaterialIds: string[];
   locationId: string | null | undefined;
   asOfDate: string;
 }) {
-  const { client, trx, companyId, jobId, jobMaterialIds, locationId, asOfDate } =
-    opts;
+  const {
+    client,
+    trx,
+    companyId,
+    jobId,
+    jobMaterialIds,
+    locationId,
+    asOfDate
+  } = opts;
   if (!locationId || jobMaterialIds.length === 0) return;
 
   const rules = await fetchAll<{
@@ -7895,23 +8186,20 @@ async function settleConsumeFirstLines(opts: {
       "estimatedQuantity",
       "scrapQuantity",
       "substitutedFromItemId",
-      "substitutionFactor",
+      "substitutionFactor"
     ])
     .where("jobId", "=", jobId)
     .where("companyId", "=", companyId)
     .where("id", "in", jobMaterialIds)
     .where("methodType", "!=", "Make to Order")
     .where((eb) =>
-      eb.or([
-        eb("quantityIssued", "is", null),
-        eb("quantityIssued", "<=", 0),
-      ])
+      eb.or([eb("quantityIssued", "is", null), eb("quantityIssued", "<=", 0)])
     )
     .where("itemId", "in", [
       ...new Set([
         ...successorByPredecessor.keys(),
-        ...predecessorsBySuccessor.keys(),
-      ]),
+        ...predecessorsBySuccessor.keys()
+      ])
     ])
     .execute();
   if (materials.length === 0) return;
@@ -7951,24 +8239,33 @@ async function settleConsumeFirstLines(opts: {
       trx,
       companyId,
       itemId: toItemId,
-      locationId,
+      locationId
     });
     if (!fields) return;
-    const quantities = pullBackQuantities(m, factor, fields.itemScrapPercentage);
+    const quantities = pullBackQuantities(
+      m,
+      factor,
+      fields.itemScrapPercentage
+    );
     await trx
       .updateTable("jobMaterial")
       .set({
         ...fields,
         ...quantities,
-        ...provenance,
+        ...provenance
       })
       .where("id", "=", m.id)
+      .where("companyId", "=", companyId)
       .execute();
   };
 
   materials.sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
   for (const m of materials) {
-    const settlement = settleConsumeFirstLine(m, consumeFirstRules, onHandByItem);
+    const settlement = settleConsumeFirstLine(
+      m,
+      consumeFirstRules,
+      onHandByItem
+    );
     reserveConsumeFirstStock(m, settlement, consumeFirstRules, onHandByItem);
     if (!settlement) continue;
     await swapLine(
@@ -7977,7 +8274,10 @@ async function settleConsumeFirstLines(opts: {
       settlement.factor,
       settlement.kind === "revert"
         ? { substitutedFromItemId: null, substitutionFactor: null }
-        : { substitutedFromItemId: m.itemId, substitutionFactor: settlement.factor }
+        : {
+            substitutedFromItemId: m.itemId,
+            substitutionFactor: settlement.factor
+          }
     );
   }
 }
@@ -8022,7 +8322,7 @@ async function resolveJobMaterialSupersession(
     description: successor.data.name,
     unitCost: successor.data.itemCost?.[0]?.unitCost ?? null,
     requiresSerialTracking: successor.data.itemTrackingType === "Serial",
-    requiresBatchTracking: successor.data.itemTrackingType === "Batch",
+    requiresBatchTracking: successor.data.itemTrackingType === "Batch"
   };
 }
 
@@ -8046,9 +8346,9 @@ function getMethodTreeArrayToTree(items: Method[]): MethodTreeItem[] {
       lookup[itemId] = { id: itemId, children: [] };
     }
 
-    lookup[itemId]["data"] = item;
+    lookup[itemId]!["data"] = item;
 
-    const treeItem = lookup[itemId];
+    const treeItem = lookup[itemId]!;
 
     if (parentId === null || parentId === undefined) {
       rootItems.push(treeItem);
@@ -8058,7 +8358,7 @@ function getMethodTreeArrayToTree(items: Method[]): MethodTreeItem[] {
         lookup[parentId] = { id: parentId, children: [] };
       }
 
-      lookup[parentId]["children"].push(treeItem);
+      lookup[parentId]!["children"].push(treeItem);
     }
   }
 
@@ -8070,7 +8370,7 @@ function getFieldKey(field: string, id: string) {
 }
 
 async function insertProcedureDataForJobOperation(
-  trx: Transaction<DB>,
+  trx: Transaction<KyselyDatabase>,
   client: SupabaseClient<Database>,
   args: {
     operationId: string;
@@ -8108,7 +8408,7 @@ async function insertProcedureDataForJobOperation(
             description: toTiptapDoc(rest.description),
             operationId,
             companyId,
-            createdBy: userId,
+            createdBy: userId
           };
         })
       )
@@ -8130,7 +8430,7 @@ async function insertProcedureDataForJobOperation(
             ...rest,
             operationId,
             companyId,
-            createdBy: userId,
+            createdBy: userId
           };
         })
       )
@@ -8140,9 +8440,10 @@ async function insertProcedureDataForJobOperation(
   await trx
     .updateTable("jobOperation")
     .set({
-      workInstruction: toJson(procedure?.data?.content ?? {}),
+      workInstruction: toJson(procedure?.data?.content ?? {})
     })
     .where("id", "=", operationId)
+    .where("companyId", "=", companyId)
     .execute();
 }
 
@@ -8157,7 +8458,7 @@ async function insertProcedureDataForJobOperation(
 // linkAssemblyStepMaterialsForJobOperations AFTER the direction's jobMaterial
 // rows exist (operations are inserted before materials in every direction).
 async function insertAssemblyDataForJobOperation(
-  trx: Transaction<DB>,
+  trx: Transaction<KyselyDatabase>,
   client: SupabaseClient<Database>,
   args: {
     operationId: string;
@@ -8195,12 +8496,9 @@ async function insertAssemblyDataForJobOperation(
       .from("assemblyInstructionStepTool")
       .select("stepId, itemId, quantity")
       .in("stepId", sourceStepIds)
-      .eq("companyId", companyId),
+      .eq("companyId", companyId)
   ]);
-  const slidesByStep = new Map<
-    string,
-    NonNullable<typeof sourceSlides.data>
-  >();
+  const slidesByStep = new Map<string, NonNullable<typeof sourceSlides.data>>();
   for (const slide of sourceSlides.data ?? []) {
     const list = slidesByStep.get(slide.stepId) ?? [];
     list.push(slide);
@@ -8232,7 +8530,7 @@ async function insertAssemblyDataForJobOperation(
         sortOrder: source.sortOrder ?? index + 1,
         assemblyInstructionStepId: source.id,
         companyId,
-        createdBy: userId,
+        createdBy: userId
       }))
     )
     .returning(["id", "assemblyInstructionStepId"])
@@ -8273,7 +8571,7 @@ async function insertAssemblyDataForJobOperation(
         size: "medium",
         annotations: JSON.stringify([]),
         companyId,
-        createdBy: userId,
+        createdBy: userId
       });
     }
     for (const slide of authored) {
@@ -8286,7 +8584,7 @@ async function insertAssemblyDataForJobOperation(
         size: slide.size ?? "medium",
         annotations: JSON.stringify(slide.annotations ?? []),
         companyId,
-        createdBy: userId,
+        createdBy: userId
       });
     }
   }
@@ -8329,7 +8627,7 @@ async function insertAssemblyDataForJobOperation(
             toolId: itemId,
             quantity,
             companyId,
-            createdBy: userId,
+            createdBy: userId
           }))
         )
         .returning(["id", "toolId"])
@@ -8350,7 +8648,7 @@ async function insertAssemblyDataForJobOperation(
         if (jobOperationToolId) {
           toolLinkRows.push({
             jobOperationToolId,
-            jobOperationStepId: targetStepId,
+            jobOperationStepId: targetStepId
           });
         }
       }
@@ -8374,7 +8672,7 @@ async function insertAssemblyDataForJobOperation(
 // Must read jobOperation/jobOperationStep/jobMaterial through the TRANSACTION —
 // those rows are uncommitted at this point.
 async function linkAssemblyStepMaterialsForJobOperations(
-  trx: Transaction<DB>,
+  trx: Transaction<KyselyDatabase>,
   client: SupabaseClient<Database>,
   operations: Array<{ operationId: string; assemblyInstructionId: string }>,
   companyId: string
@@ -8426,7 +8724,13 @@ async function linkAssemblyStepMaterialsForJobOperations(
         ? materialIdByItemId.get(link.itemId)
         : undefined;
       return jobOperationStepId && jobMaterialId
-        ? [{ jobMaterialId, jobOperationStepId, quantity: link.quantity ?? null }]
+        ? [
+            {
+              jobMaterialId,
+              jobOperationStepId,
+              quantity: link.quantity ?? null
+            }
+          ]
         : [];
     });
 
@@ -8520,7 +8824,7 @@ async function hydrateConfiguration(
             materialTypeId: material.materialTypeId ?? null,
             dimensionId: material.dimensionId ?? null,
             finishId: material.finishId ?? null,
-            gradeId: material.gradeId ?? null,
+            gradeId: material.gradeId ?? null
           };
         }
       }
@@ -8529,7 +8833,7 @@ async function hydrateConfiguration(
     return transformed;
   } catch (err) {
     logger.error("configuration transform failed", {
-      error: String((err as Error)?.stack ?? err),
+      error: String((err as Error)?.stack ?? err)
     });
     return configuration;
   }

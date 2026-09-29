@@ -255,12 +255,17 @@ export async function action({ request }: ActionFunctionArgs) {
                 continue;
               }
 
-              const upsertMethod = await upsertJobMethod(client, "itemToJob", {
-                sourceId: item.id,
-                targetId: id,
-                companyId,
-                userId
-              });
+              const upsertMethod = await upsertJobMethod(
+                client,
+                getDatabaseClient(),
+                "itemToJob",
+                {
+                  sourceId: item.id,
+                  targetId: id,
+                  companyId,
+                  userId
+                }
+              );
 
               if (upsertMethod.error) {
                 const errorMsg = `Failed to create job method for item ${item.id}: ${upsertMethod.error.message}`;

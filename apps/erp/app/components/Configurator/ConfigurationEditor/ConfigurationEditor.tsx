@@ -61,7 +61,6 @@ export default function Configurator({
   const mode = useMode();
 
   const [output, setOutput] = useState<string>("");
-  const [isScriptLoaded, setIsScriptLoaded] = useState(false);
   const [parameters, setParameters] = useState<Parameter[]>(
     defaultParameters.map((param) => ({
       name: param.key,
@@ -204,20 +203,6 @@ export default function Configurator({
     });
   };
 
-  useEffect(() => {
-    const head = document.querySelector("head")!;
-    const script = document.createElement("script");
-    script.setAttribute(
-      "src",
-      "https://unpkg.com/typescript@5.5.4/lib/typescript.js"
-    );
-    script.onload = () => setIsScriptLoaded(true);
-    head.appendChild(script);
-    return () => {
-      head.removeChild(script);
-    };
-  }, []);
-
   // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
   useEffect(() => {
     if (fetcher.data?.success === false) {
@@ -229,10 +214,12 @@ export default function Configurator({
     }
   }, [fetcher.data]);
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: getCodeToSave reads code and parameters
   const runCode = useCallback(async () => {
-    const jsCode = convertTypescriptToJavaScript(code);
-
     try {
+      // The stored body, transpiled exactly as get-method transpiles it.
+      const jsCode = await convertTypescriptToJavaScript(getCodeToSave());
+
       // Create parameters object from the panel
       const parametersObj = parameters.reduce(
         (acc, v) => {
@@ -389,7 +376,6 @@ export default function Configurator({
                   className="w-full"
                   leftIcon={<LuPlay />}
                   variant="secondary"
-                  isDisabled={!isScriptLoaded}
                 >
                   <Trans>Run Test</Trans>
                 </Button>

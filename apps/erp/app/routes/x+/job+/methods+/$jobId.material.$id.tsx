@@ -116,12 +116,16 @@ export async function action({ request, params }: ActionFunctionArgs) {
   // create route. Without this the material flips to Make to Order but stays empty.
   // `client` here is already service-role (requirePermissions bypassRls).
   if (validation.data.methodType === "Make to Order" && !wasMakeToOrder) {
-    const makeMethod = await pullJobMaterialMakeMethod(client, {
-      jobMaterialId,
-      itemId: validation.data.itemId,
-      companyId,
-      userId
-    });
+    const makeMethod = await pullJobMaterialMakeMethod(
+      client,
+      getDatabaseClient(),
+      {
+        jobMaterialId,
+        itemId: validation.data.itemId,
+        companyId,
+        userId
+      }
+    );
     if (makeMethod.error) {
       return data(
         { id: jobMaterialId },

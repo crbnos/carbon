@@ -12,6 +12,7 @@ import {
   upsertQuoteMaterialMakeMethod
 } from "~/modules/sales";
 import { requireCompanyRecord } from "~/modules/shared/shared.server";
+import { getDatabaseClient } from "~/services/database.server";
 import { setCustomFields } from "~/utils/form";
 
 export async function action({ request, params }: ActionFunctionArgs) {
@@ -106,12 +107,16 @@ export async function action({ request, params }: ActionFunctionArgs) {
         )
       );
     }
-    const makeMethod = await upsertQuoteMaterialMakeMethod(serviceRole, {
-      sourceId: validation.data.itemId,
-      targetId: materialMakeMethod.data?.quoteMaterialMakeMethodId!,
-      companyId,
-      userId
-    });
+    const makeMethod = await upsertQuoteMaterialMakeMethod(
+      serviceRole,
+      getDatabaseClient(),
+      {
+        sourceId: validation.data.itemId,
+        targetId: materialMakeMethod.data?.quoteMaterialMakeMethodId!,
+        companyId,
+        userId
+      }
+    );
 
     if (makeMethod.error) {
       return data(

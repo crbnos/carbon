@@ -80,6 +80,7 @@
     "quickjs-emscripten-core": "0.32.0",
     "react-pdf": "catalog:",
     "sst": "catalog:",
+    "sucrase": "3.35.1",
     "zod": "catalog:"
   }
 }

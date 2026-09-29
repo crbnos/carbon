@@ -252,12 +252,16 @@ export async function upsertJobMaterial(
   const jobMaterialId = upserted.data.id;
 
   if (jobMaterial.methodType === "Make to Order" && !wasMakeToOrder) {
-    const makeMethod = await pullJobMaterialMakeMethod(client, {
-      jobMaterialId,
-      itemId: jobMaterial.itemId,
-      companyId,
-      userId
-    });
+    const makeMethod = await pullJobMaterialMakeMethod(
+      client,
+      getDatabaseClient(),
+      {
+        jobMaterialId,
+        itemId: jobMaterial.itemId,
+        companyId,
+        userId
+      }
+    );
     if (makeMethod.error) {
       return { data: upserted.data, error: makeMethod.error };
     }

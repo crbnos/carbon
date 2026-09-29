@@ -58,8 +58,8 @@ the type-scoped `revisions` array.
   to the new revision's detail page by type. URL: `path.to.newRevision`.
 - Service: `createRevision` (`items.service.ts`) inserts a new `item` row copying
   the source's core fields (same `readableId`, new `revision`, `active: true`).
-  If `replenishmentSystem !== "Buy"`, it invokes the `get-method` edge function
-  (`type: "itemToItem"`) to copy the method/BOM from source to the new revision.
+  If `replenishmentSystem !== "Buy"`, it calls the `get-method` operation
+  (`@carbon/operations/get-method`, `type: "itemToItem"`) to copy the method/BOM from source to the new revision.
 - UI form: `RevisionForm.tsx`; version switcher menus ("Versions" submenu) live in
   the type tables (`PartsTable.tsx`, etc.), shown only when `revisions.length > 1`,
   linking each sibling by its item id. Badge component: `ItemWithRevision.tsx`.

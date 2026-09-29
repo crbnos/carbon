@@ -96,12 +96,16 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const isReleased = !["Draft", "Planned"].includes(job.data?.status ?? "");
 
   if (validation.data.methodType === "Make to Order") {
-    const makeMethod = await pullJobMaterialMakeMethod(serviceRole, {
-      jobMaterialId,
-      itemId: validation.data.itemId,
-      companyId,
-      userId
-    });
+    const makeMethod = await pullJobMaterialMakeMethod(
+      serviceRole,
+      getDatabaseClient(),
+      {
+        jobMaterialId,
+        itemId: validation.data.itemId,
+        companyId,
+        userId
+      }
+    );
 
     if (makeMethod.error) {
       return data(

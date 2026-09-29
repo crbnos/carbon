@@ -275,39 +275,39 @@ export async function convertQuoteToOrder(
 
 export async function copyQuoteLine(
   client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   payload: z.infer<typeof getMethodValidator> & {
     companyId: string;
     userId: string;
   }
 ) {
-  return client.functions.invoke<{ copiedId: string }>("get-method", {
-    body: {
-      ...payload,
-      type: "quoteLineToQuoteLine",
-      parts: {
-        billOfMaterial: payload.billOfMaterial,
-        billOfProcess: payload.billOfProcess,
-        parameters: payload.parameters,
-        tools: payload.tools,
-        steps: payload.steps,
-        workInstructions: payload.workInstructions
-      }
+  const { getMethodAs } = await import("@carbon/operations/get-method");
+  return getMethodAs(client, db, {
+    ...payload,
+    type: "quoteLineToQuoteLine",
+    parts: {
+      billOfMaterial: payload.billOfMaterial,
+      billOfProcess: payload.billOfProcess,
+      parameters: payload.parameters,
+      tools: payload.tools,
+      steps: payload.steps,
+      workInstructions: payload.workInstructions
     }
   });
 }
 
 export async function copyQuote(
   client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   payload: Omit<z.infer<typeof getMethodValidator>, "type"> & {
     companyId: string;
     userId: string;
   }
 ) {
-  return client.functions.invoke<{ newQuoteId: string }>("get-method", {
-    body: {
-      ...payload,
-      type: "quoteToQuote"
-    }
+  const { getMethodAs } = await import("@carbon/operations/get-method");
+  return getMethodAs(client, db, {
+    ...payload,
+    type: "quoteToQuote"
   });
 }
 
@@ -3501,6 +3501,7 @@ export async function updateQuoteStatus(
 
 export async function upsertMakeMethodFromQuoteLine(
   client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   lineMethod: {
     itemId: string;
     quoteId: string;
@@ -3517,20 +3518,20 @@ export async function upsertMakeMethodFromQuoteLine(
     };
   }
 ) {
-  return client.functions.invoke("get-method", {
-    body: {
-      type: "quoteLineToItem",
-      sourceId: `${lineMethod.quoteId}:${lineMethod.quoteLineId}`,
-      targetId: lineMethod.itemId,
-      companyId: lineMethod.companyId,
-      userId: lineMethod.userId,
-      parts: lineMethod.parts
-    }
+  const { getMethodAs } = await import("@carbon/operations/get-method");
+  return getMethodAs(client, db, {
+    type: "quoteLineToItem",
+    sourceId: `${lineMethod.quoteId}:${lineMethod.quoteLineId}`,
+    targetId: lineMethod.itemId,
+    companyId: lineMethod.companyId,
+    userId: lineMethod.userId,
+    parts: lineMethod.parts
   });
 }
 
 export async function upsertMakeMethodFromQuoteMethod(
   client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   quoteMethod: {
     sourceId: string;
     targetId: string;
@@ -3546,15 +3547,14 @@ export async function upsertMakeMethodFromQuoteMethod(
     };
   }
 ) {
-  const { error } = await client.functions.invoke("get-method", {
-    body: {
-      type: "quoteMakeMethodToItem",
-      sourceId: quoteMethod.sourceId,
-      targetId: quoteMethod.targetId,
-      companyId: quoteMethod.companyId,
-      userId: quoteMethod.userId,
-      parts: quoteMethod.parts
-    }
+  const { getMethodAs } = await import("@carbon/operations/get-method");
+  const { error } = await getMethodAs(client, db, {
+    type: "quoteMakeMethodToItem",
+    sourceId: quoteMethod.sourceId,
+    targetId: quoteMethod.targetId,
+    companyId: quoteMethod.companyId,
+    userId: quoteMethod.userId,
+    parts: quoteMethod.parts
   });
 
   if (error) {
@@ -5030,6 +5030,7 @@ export async function recalculateQuoteLinePrices(
 
 export async function upsertQuoteLineMethod(
   client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   lineMethod: {
     itemId: string;
     quoteId: string;
@@ -5047,6 +5048,7 @@ export async function upsertQuoteLineMethod(
     };
   }
 ) {
+  const { getMethodAs } = await import("@carbon/operations/get-method");
   const body: {
     type: "itemToQuoteLine";
     sourceId: string;
@@ -5080,9 +5082,7 @@ export async function upsertQuoteLineMethod(
     body.parts = lineMethod.parts;
   }
 
-  return client.functions.invoke("get-method", {
-    body
-  });
+  return getMethodAs(client, db, body);
 }
 
 export async function upsertQuoteMaterial(
@@ -5134,6 +5134,7 @@ export async function upsertQuoteMaterial(
 
 export async function upsertQuoteMaterialMakeMethod(
   client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   quoteMethod: {
     sourceId: string;
     targetId: string;
@@ -5150,6 +5151,7 @@ export async function upsertQuoteMaterialMakeMethod(
     };
   }
 ) {
+  const { getMethodAs } = await import("@carbon/operations/get-method");
   const body: {
     type: "itemToQuoteMakeMethod";
     sourceId: string;
@@ -5183,9 +5185,7 @@ export async function upsertQuoteMaterialMakeMethod(
     body.parts = quoteMethod.parts;
   }
 
-  const { error } = await client.functions.invoke("get-method", {
-    body
-  });
+  const { error } = await getMethodAs(client, db, body);
 
   if (error) {
     return {

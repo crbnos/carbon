@@ -141,52 +141,52 @@ export async function activateMethodVersion(
 
 export async function copyItem(
   client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   args: z.infer<typeof getMethodValidator> & {
     companyId: string;
     userId: string;
   }
 ) {
-  return client.functions.invoke("get-method", {
-    body: {
-      type: "itemToItem",
-      sourceId: args.sourceId,
-      targetId: args.targetId,
-      companyId: args.companyId,
-      userId: args.userId,
-      parts: {
-        billOfMaterial: args.billOfMaterial,
-        billOfProcess: args.billOfProcess,
-        parameters: args.parameters,
-        tools: args.tools,
-        steps: args.steps,
-        workInstructions: args.workInstructions
-      }
+  const { getMethodAs } = await import("@carbon/operations/get-method");
+  return getMethodAs(client, db, {
+    type: "itemToItem",
+    sourceId: args.sourceId,
+    targetId: args.targetId,
+    companyId: args.companyId,
+    userId: args.userId,
+    parts: {
+      billOfMaterial: args.billOfMaterial,
+      billOfProcess: args.billOfProcess,
+      parameters: args.parameters,
+      tools: args.tools,
+      steps: args.steps,
+      workInstructions: args.workInstructions
     }
   });
 }
 
 export async function copyMakeMethod(
   client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   args: z.infer<typeof getMethodValidator> & {
     companyId: string;
     userId: string;
   }
 ) {
-  return client.functions.invoke("get-method", {
-    body: {
-      type: "makeMethodToMakeMethod",
-      sourceId: args.sourceId,
-      targetId: args.targetId,
-      companyId: args.companyId,
-      userId: args.userId,
-      parts: {
-        billOfMaterial: args.billOfMaterial,
-        billOfProcess: args.billOfProcess,
-        parameters: args.parameters,
-        tools: args.tools,
-        steps: args.steps,
-        workInstructions: args.workInstructions
-      }
+  const { getMethodAs } = await import("@carbon/operations/get-method");
+  return getMethodAs(client, db, {
+    type: "makeMethodToMakeMethod",
+    sourceId: args.sourceId,
+    targetId: args.targetId,
+    companyId: args.companyId,
+    userId: args.userId,
+    parts: {
+      billOfMaterial: args.billOfMaterial,
+      billOfProcess: args.billOfProcess,
+      parameters: args.parameters,
+      tools: args.tools,
+      steps: args.steps,
+      workInstructions: args.workInstructions
     }
   });
 }
@@ -216,6 +216,7 @@ export async function copyItemPostingGroup(
 
 export async function createRevision(
   client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   args: {
     item: NonNullable<Awaited<ReturnType<typeof getItem>>["data"]>;
     revision: string;
@@ -265,14 +266,13 @@ export async function createRevision(
   });
 
   if (item.replenishmentSystem !== "Buy") {
-    await client.functions.invoke("get-method", {
-      body: {
-        type: "itemToItem",
-        sourceId: item.id,
-        targetId: itemInsert.data.id,
-        companyId: item.companyId,
-        userId: createdBy
-      }
+    const { getMethodAs } = await import("@carbon/operations/get-method");
+    await getMethodAs(client, db, {
+      type: "itemToItem",
+      sourceId: item.id,
+      targetId: itemInsert.data.id,
+      companyId: item.companyId!,
+      userId: createdBy
     });
   }
 
@@ -5589,7 +5589,7 @@ export async function upsertMaterial(
     const source = await getItem(client, itemId);
     if (source.error) return source;
     for (const size of newSizes) {
-      const revision = await createRevision(client, {
+      const revision = await createRevision(client, db, {
         item: source.data,
         revision: size,
         createdBy: updatedBy
@@ -6924,6 +6924,7 @@ type DraftMethodResult = {
 // Create the CO-owned Draft make method for an affected item per its change type.
 export async function createChangeNoticeDraftMethod(
   client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   input: {
     changeNoticeId: string;
     itemId: string;
@@ -6995,7 +6996,7 @@ export async function createChangeNoticeDraftMethod(
       };
     }
     // @ts-expect-error TS2345 - getMethodValidator flags default via edge fn
-    const copy = await copyMakeMethod(client, {
+    const copy = await copyMakeMethod(client, db, {
       sourceId: base.id,
       targetId: draftId,
       companyId,
@@ -7041,7 +7042,7 @@ export async function createChangeNoticeDraftMethod(
       nextRevision = getNextRevision(maxRevision);
     }
 
-    const created = await createRevision(client, {
+    const created = await createRevision(client, db, {
       item: source.data,
       revision: nextRevision,
       createdBy: userId,
@@ -7175,7 +7176,7 @@ export async function createChangeNoticeDraftMethod(
 
   // Copy the affected part's method into the new item's (trigger-created) draft.
   // @ts-expect-error TS2345 - getMethodValidator flags default via edge fn
-  const copy = await copyItem(client, {
+  const copy = await copyItem(client, db, {
     sourceId: itemId,
     targetId: newItemId,
     companyId,
@@ -7239,6 +7240,7 @@ async function discardChangeNoticeDraft(
 // back if draft creation fails (edge-fn calls can't share one txn — G2).
 export async function addChangeNoticeAffectedItem(
   client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   input: {
     changeNoticeId: string;
     // The existing affected item (Version / Revision / Replacement Part). Omitted
@@ -7361,7 +7363,7 @@ export async function addChangeNoticeAffectedItem(
   }
   const affectedItemId = inserted.data.id;
 
-  const draft = await createChangeNoticeDraftMethod(client, {
+  const draft = await createChangeNoticeDraftMethod(client, db, {
     changeNoticeId,
     itemId,
     changeType: effectiveChangeType,
@@ -7402,6 +7404,7 @@ export async function addChangeNoticeAffectedItem(
 // for the new type (Q2 — the editable surface differs per type, so edits reset).
 export async function updateChangeNoticeAffectedItemChangeType(
   client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   input: {
     id: string;
     changeType: ChangeNoticeChangeType;
@@ -7444,7 +7447,7 @@ export async function updateChangeNoticeAffectedItemChangeType(
     newItemId: affected.data.newItemId
   };
 
-  const draft = await createChangeNoticeDraftMethod(client, {
+  const draft = await createChangeNoticeDraftMethod(client, db, {
     changeNoticeId: affected.data.changeOrderId,
     itemId: affected.data.itemId,
     changeType,

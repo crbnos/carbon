@@ -283,16 +283,21 @@ class CarbonClient {
     quoteLineId: string;
     configuration?: Record<string, unknown>;
   }) {
-    return this.client.functions.invoke("get-method", {
-      body: {
-        type: "itemToQuoteLine",
-        sourceId: lineMethod.itemId,
-        targetId: `${lineMethod.quoteId}:${lineMethod.quoteLineId}`,
-        companyId: this.companyId,
-        configuration: lineMethod.configuration,
-        userId: "system"
+    const response = await fetch(
+      `${this.appUrl}/api/v1/sales/upsertQuoteLineMethod`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${CARBON_API_KEY}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(lineMethod)
       }
-    });
+    );
+    const body = await response.json().catch(() => null);
+    return response.ok
+      ? { data: body, error: null }
+      : { data: null, error: new Error(body?.message ?? response.statusText) };
   }
 
   sanitize<T extends Record<string, any>>(

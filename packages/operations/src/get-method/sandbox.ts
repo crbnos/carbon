@@ -1,13 +1,15 @@
-import { transpile } from "https://deno.land/x/ts_transpiler@v0.0.2/mod.ts";
-import { runConfigurationRule } from "../shared/configuration-rule.ts";
-import { getFunctionLogger } from "./logging.ts";
+import {
+  runConfigurationRule,
+  transpileRule
+} from "@carbon/database/configuration-rule";
+import { getLogger } from "@carbon/logger";
 
-const logger = getFunctionLogger("configuration-rule");
+const logger = getLogger("operations", "configuration-rule");
 
 /**
  * A stored configuration rule is the TypeScript body of `configure(params)`. It is
- * transpiled here and run in QuickJS (shared/configuration-rule.ts), never in this
- * function's own engine.
+ * transpiled by `transpileRule` — the same one the configurator editor runs — and run in
+ * QuickJS (`@carbon/database/configuration-rule`), never in this process's own engine.
  *
  * A rule that does not compile, throws, or exceeds a sandbox limit yields null, so one
  * broken rule never fails the whole method: a field keeps its default, and a bill of
@@ -18,9 +20,7 @@ export async function importTypeScript(code: string): Promise<{
 }> {
   let javascript: string | null = null;
   try {
-    javascript = await transpile(
-      `function configure(params: Params) {\n${code}\n}`
-    );
+    javascript = transpileRule(code);
   } catch (error) {
     logger.error("configuration rule does not compile", {
       error: String(error)

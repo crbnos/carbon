@@ -54,6 +54,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
     const jobMethod = await upsertJobMethod(
       serviceRole,
+      getDatabaseClient(),
       type === "item"
         ? "itemToJob"
         : type === "job"
@@ -116,6 +117,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
     const makeMethod = await upsertJobMaterialMakeMethod(
       serviceRole,
+      getDatabaseClient(),
       makeMethodPayload
     );
 

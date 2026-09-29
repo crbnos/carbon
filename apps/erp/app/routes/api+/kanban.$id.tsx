@@ -130,7 +130,7 @@ async function handleKanban({
     }
 
     const [upsertMethod, associateKanban] = await Promise.all([
-      upsertJobMethod(serviceRole, "itemToJob", {
+      upsertJobMethod(serviceRole, getDatabaseClient(), "itemToJob", {
         sourceId: kanban.data.itemId!,
         targetId: id,
         companyId,

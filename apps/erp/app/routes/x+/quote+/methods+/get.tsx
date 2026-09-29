@@ -9,6 +9,7 @@ import {
   upsertQuoteLineMethod,
   upsertQuoteMaterialMakeMethod
 } from "~/modules/sales";
+import { getDatabaseClient } from "~/services/database.server";
 import { path, requestReferrer } from "~/utils/path";
 
 export async function action({ request }: ActionFunctionArgs) {
@@ -56,6 +57,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
     const lineMethod = await upsertQuoteLineMethod(
       serviceRole,
+      getDatabaseClient(),
       lineMethodPayload
     );
 
@@ -70,7 +72,7 @@ export async function action({ request }: ActionFunctionArgs) {
       return validationError(validation.error);
     }
 
-    const copyLine = await copyQuoteLine(serviceRole, {
+    const copyLine = await copyQuoteLine(serviceRole, getDatabaseClient(), {
       ...validation.data,
       companyId,
       userId
@@ -108,6 +110,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
     const makeMethod = await upsertQuoteMaterialMakeMethod(
       serviceRole,
+      getDatabaseClient(),
       makeMethodPayload
     );
 
