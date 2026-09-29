@@ -74,13 +74,13 @@ const Template = ({
     >
       <Page size="A4" style={styles.body}>
         <DocStyleProvider value={docStyle}>
-          {hasHeader && (
+          {hasHeader ? (
             <View fixed style={{ marginBottom: 8 }}>
               <Note content={headerContent} />
             </View>
-          )}
+          ) : null}
           {children}
-          {showFooter && (
+          {showFooter ? (
             <Footer
               label={footerLabel}
               documentId={footerDocumentId}
@@ -89,7 +89,7 @@ const Template = ({
               pageNumberFormat={pageNumberFormat}
               showRegistrationLine={showRegistrationLine}
             />
-          )}
+          ) : null}
         </DocStyleProvider>
       </Page>
     </Document>

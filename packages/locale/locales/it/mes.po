@@ -1211,6 +1211,9 @@ msgstr "Selezionare un articolo"
 msgid "PM schedule lapsed"
 msgstr "Pianificazione PM scaduta"
 
+msgid "Press ? on any page to open this list. Shortcuts are ignored while you type in a field."
+msgstr "Premi ? su qualsiasi pagina per aprire questo elenco. Le scorciatoie vengono ignorate mentre digiti in un campo."
+
 msgid "Prev"
 msgstr "Precedente"
 
@@ -1521,8 +1524,8 @@ msgstr "Prelievo breve {itemName}"
 msgid "Show description"
 msgstr "Mostra descrizione"
 
-msgid "Show this overlay"
-msgstr "Mostra questo pannello"
+msgid "Show keyboard shortcuts"
+msgstr "Mostra i tasti di scelta rapida"
 
 msgid "Sign in with Google"
 msgstr "Accedi con Google"
@@ -1628,6 +1631,9 @@ msgstr "Il lotto sarà comunque disposizionato, ma non è possibile creare un NC
 #. placeholder {0}: (batch.operations ?? []).length
 msgid "The timer and completion are shared by all {0} jobs. Steps, materials and files here are this job's own."
 msgstr "Il timer e il completamento sono condivisi da tutti gli {0} ordini di produzione. I passi, i materiali e i file qui sono di questo ordine di produzione."
+
+msgid "then"
+msgstr "poi"
 
 msgid "There are no available or consumed tracked parts for this material."
 msgstr "Non ci sono componenti tracciati disponibili o consumati per questo materiale."

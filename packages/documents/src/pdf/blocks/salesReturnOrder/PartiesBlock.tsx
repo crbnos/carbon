@@ -44,16 +44,16 @@ export function PartiesBlock({ data }: { data: SalesReturnOrderData }) {
               Return Details
             </Text>
             <View style={tw("text-[9px] text-gray-800")}>
-              {salesReturnOrder?.salesReturnOrderId && (
+              {salesReturnOrder?.salesReturnOrderId ? (
                 <Text>RMA Number: {salesReturnOrder.salesReturnOrderId}</Text>
-              )}
-              {salesReturnOrder?.orderDate && (
+              ) : null}
+              {salesReturnOrder?.orderDate ? (
                 <Text>
                   Date:{" "}
                   {formatDate(salesReturnOrder.orderDate, undefined, locale)}
                 </Text>
-              )}
-              {salesReturnOrder?.expirationDate && (
+              ) : null}
+              {salesReturnOrder?.expirationDate ? (
                 <Text>
                   Expires:{" "}
                   {formatDate(
@@ -62,10 +62,10 @@ export function PartiesBlock({ data }: { data: SalesReturnOrderData }) {
                     locale
                   )}
                 </Text>
-              )}
-              {salesReturnOrder?.customerReference && (
+              ) : null}
+              {salesReturnOrder?.customerReference ? (
                 <Text>Customer Ref: {salesReturnOrder.customerReference}</Text>
-              )}
+              ) : null}
             </View>
           </View>
 

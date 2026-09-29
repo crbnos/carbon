@@ -32,18 +32,20 @@ export function PartiesBlock({ data }: { data: PackingSlipData }) {
             Ship To
           </Text>
           <View style={tw("text-[10px] text-gray-800")}>
-            {customer.name && (
+            {customer.name ? (
               <Text style={tw("font-bold")}>{customer.name}</Text>
-            )}
-            {addressLine1 && <Text style={tw("mt-1")}>{addressLine1}</Text>}
-            {addressLine2 && <Text>{addressLine2}</Text>}
-            {city && <Text>{city}</Text>}
-            {(stateProvince || postalCode) && (
+            ) : null}
+            {addressLine1 ? (
+              <Text style={tw("mt-1")}>{addressLine1}</Text>
+            ) : null}
+            {addressLine2 ? <Text>{addressLine2}</Text> : null}
+            {city ? <Text>{city}</Text> : null}
+            {stateProvince || postalCode ? (
               <Text>
                 {[stateProvince, postalCode].filter(Boolean).join(" ")}
               </Text>
-            )}
-            {countryCode && <Text>{countryCode}</Text>}
+            ) : null}
+            {countryCode ? <Text>{countryCode}</Text> : null}
           </View>
         </View>
         <View style={tw("w-1/2 p-3")}>
@@ -51,22 +53,22 @@ export function PartiesBlock({ data }: { data: PackingSlipData }) {
             Shipment Details
           </Text>
           <View style={tw("text-[10px] text-gray-800")}>
-            {shipment?.postingDate && (
+            {shipment?.postingDate ? (
               <Text>
                 Date: {formatDate(shipment.postingDate, undefined, locale)}
               </Text>
-            )}
-            {sourceDocument && sourceDocumentId && (
+            ) : null}
+            {sourceDocument && sourceDocumentId ? (
               <Text>
                 {sourceDocument}: {sourceDocumentId}
               </Text>
-            )}
-            {customerReference && (
+            ) : null}
+            {customerReference ? (
               <Text>Customer PO #: {customerReference}</Text>
-            )}
-            {shipment?.trackingNumber && (
+            ) : null}
+            {shipment?.trackingNumber ? (
               <Text>Tracking: {shipment.trackingNumber}</Text>
-            )}
+            ) : null}
           </View>
         </View>
       </View>

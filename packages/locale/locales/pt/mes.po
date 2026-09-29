@@ -1211,6 +1211,9 @@ msgstr "Por favor, selecione um item"
 msgid "PM schedule lapsed"
 msgstr "Cronograma de PM expirou"
 
+msgid "Press ? on any page to open this list. Shortcuts are ignored while you type in a field."
+msgstr "Pressione ? em qualquer página para abrir esta lista. Os atalhos são ignorados enquanto você digita em um campo."
+
 msgid "Prev"
 msgstr "Anterior"
 
@@ -1521,8 +1524,8 @@ msgstr "Colheita curta {itemName}"
 msgid "Show description"
 msgstr "Mostrar descrição"
 
-msgid "Show this overlay"
-msgstr "Mostrar esta sobreposição"
+msgid "Show keyboard shortcuts"
+msgstr "Mostrar atalhos de teclado"
 
 msgid "Sign in with Google"
 msgstr "Entrar com Google"
@@ -1628,6 +1631,9 @@ msgstr "O lote ainda será disposicionado, mas um NCR não pode ser criado até 
 #. placeholder {0}: (batch.operations ?? []).length
 msgid "The timer and completion are shared by all {0} jobs. Steps, materials and files here are this job's own."
 msgstr "O temporizador e a conclusão são compartilhados por todas as {0} ordens de produção. Etapas, materiais e arquivos aqui são próprios desta ordem de produção."
+
+msgid "then"
+msgstr "depois"
 
 msgid "There are no available or consumed tracked parts for this material."
 msgstr "Não há peças rastreadas disponíveis ou consumidas para este material."

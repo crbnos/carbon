@@ -14,6 +14,7 @@ import {
 import { invalidatePrinterCache } from "@carbon/printing/printing.server";
 import { Button, Heading, ScrollArea, VStack } from "@carbon/react";
 import { labelSizes } from "@carbon/utils";
+import { msg } from "@lingui/core/macro";
 import { Trans } from "@lingui/react/macro";
 import { LuPrinter } from "react-icons/lu";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
@@ -26,7 +27,7 @@ import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
 export const handle: Handle = {
-  breadcrumb: "Printing",
+  breadcrumb: msg`Printing`,
   to: path.to.printingSettings
 };
 

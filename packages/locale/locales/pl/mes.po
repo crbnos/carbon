@@ -1211,6 +1211,9 @@ msgstr "Wybierz pozycję"
 msgid "PM schedule lapsed"
 msgstr "Harmonogram PM wygasł"
 
+msgid "Press ? on any page to open this list. Shortcuts are ignored while you type in a field."
+msgstr "Naciśnij ? na dowolnej stronie, aby otworzyć tę listę. Skróty klawiszowe są ignorowane podczas wpisywania w polu."
+
 msgid "Prev"
 msgstr "Poprzedni"
 
@@ -1521,8 +1524,8 @@ msgstr "Krótki pick {itemName}"
 msgid "Show description"
 msgstr "Pokaż opis"
 
-msgid "Show this overlay"
-msgstr "Wyświetl to okno nakładki"
+msgid "Show keyboard shortcuts"
+msgstr "Pokaż skróty klawiaturowe"
 
 msgid "Sign in with Google"
 msgstr "Zaloguj się przez Google"
@@ -1628,6 +1631,9 @@ msgstr "Partia będzie nadal dyspozycjonowana, ale nie można utworzyć NCR, dop
 #. placeholder {0}: (batch.operations ?? []).length
 msgid "The timer and completion are shared by all {0} jobs. Steps, materials and files here are this job's own."
 msgstr "Czasomierz i zakończenie są wspólne dla wszystkich {0} zleceń produkcyjnych. Kroki, materiały i pliki tutaj należą do tego zlecenia produkcyjnego."
+
+msgid "then"
+msgstr "następnie"
 
 msgid "There are no available or consumed tracked parts for this material."
 msgstr "Brak dostępnych lub zużytych śledzonych części dla tego materiału."

@@ -1367,14 +1367,14 @@ msgstr "Add a custom pricing row to override quantity, price, shipping, lead tim
 msgid "Add a domain"
 msgstr "Add a domain"
 
-msgid "Add a line (in document explorers)"
-msgstr "Add a line (in document explorers)"
+msgid "Add a line to the document"
+msgstr "Add a line to the document"
 
 msgid "Add a materials section that lists each item on the bill of materials with its quantity."
 msgstr "Add a materials section that lists each item on the bill of materials with its quantity."
 
-msgid "Add a parameter (in the procedure explorer)"
-msgstr "Add a parameter (in the procedure explorer)"
+msgid "Add a parameter (procedures only)"
+msgstr "Add a parameter (procedures only)"
 
 msgid "Add a printer in the printing settings to print labels directly."
 msgstr "Add a printer in the printing settings to print labels directly."
@@ -1388,8 +1388,8 @@ msgstr "Add a row"
 msgid "Add a step"
 msgstr "Add a step"
 
-msgid "Add a step or question (in procedure and training explorers)"
-msgstr "Add a step or question (in procedure and training explorers)"
+msgid "Add a step or question"
+msgstr "Add a step or question"
 
 msgid "Add Ability"
 msgstr "Add Ability"
@@ -3909,6 +3909,9 @@ msgstr "Collapse line"
 msgid "Collapse Machine"
 msgstr "Collapse Machine"
 
+msgid "Collapse row"
+msgstr "Collapse row"
+
 msgid "Collapse Setup"
 msgstr "Collapse Setup"
 
@@ -5149,6 +5152,9 @@ msgstr "Customer"
 
 msgid "Customer Accounts"
 msgstr "Customer Accounts"
+
+msgid "Customer and supplier pages"
+msgstr "Customer and supplier pages"
 
 msgid "Customer contact"
 msgstr "Customer contact"
@@ -7407,6 +7413,9 @@ msgstr "Expand line"
 msgid "Expand Machine"
 msgstr "Expand Machine"
 
+msgid "Expand row"
+msgstr "Expand row"
+
 msgid "Expand Setup"
 msgstr "Expand Setup"
 
@@ -8865,6 +8874,9 @@ msgstr "I'm Still Working"
 msgid "IBAN"
 msgstr "IBAN"
 
+msgid "IC Transaction"
+msgstr "IC Transaction"
+
 msgid "Id"
 msgstr "Id"
 
@@ -9298,6 +9310,9 @@ msgstr "Inventory Job Notifications"
 msgid "Inventory Movements"
 msgstr "Inventory Movements"
 
+msgid "Inventory pages"
+msgstr "Inventory pages"
+
 msgid "Inventory Qty"
 msgstr "Inventory Qty"
 
@@ -9559,6 +9574,9 @@ msgstr "Item must match a selected type OR a selected group"
 msgid "Item Name"
 msgstr "Item Name"
 
+msgid "Item pages"
+msgstr "Item pages"
+
 msgid "Item Scope"
 msgstr "Item Scope"
 
@@ -9668,9 +9686,6 @@ msgstr "Journal lines"
 
 msgid "Journals dated on or before this date are treated as locked. Merged with the provider-reported lock date when both exist."
 msgstr "Journals dated on or before this date are treated as locked. Merged with the provider-reported lock date when both exist."
-
-msgid "Jump to a section on detail pages (same modifiers + the section's letter)"
-msgstr "Jump to a section on detail pages (same modifiers + the section's letter)"
 
 msgid "Just one"
 msgstr "Just one"
@@ -10053,6 +10068,9 @@ msgstr "Linked PO"
 
 msgid "List Options"
 msgstr "List Options"
+
+msgid "List pages"
+msgstr "List pages"
 
 msgid "List Parameters"
 msgstr "List Parameters"
@@ -11224,8 +11242,8 @@ msgstr "New Quote Line"
 msgid "New Receipt"
 msgstr "New Receipt"
 
-msgid "New record (on list pages)"
-msgstr "New record (on list pages)"
+msgid "New record"
+msgstr "New record"
 
 msgid "New record created"
 msgstr "New record created"
@@ -11358,9 +11376,6 @@ msgstr "Next Due Date"
 
 msgid "Next page"
 msgstr "Next page"
-
-msgid "Next page (in tables)"
-msgstr "Next page (in tables)"
 
 msgid "Next Sequence"
 msgstr "Next Sequence"
@@ -13324,6 +13339,9 @@ msgstr "Prepayments (default)"
 msgid "Present Week"
 msgstr "Present Week"
 
+msgid "Press ? on any page to open this list. Shortcuts are ignored while you type in a field."
+msgstr "Press ? on any page to open this list. Shortcuts are ignored while you type in a field."
+
 msgid "Prev"
 msgstr "Prev"
 
@@ -13356,9 +13374,6 @@ msgstr "Previous Day"
 
 msgid "Previous page"
 msgstr "Previous page"
-
-msgid "Previous page (in tables)"
-msgstr "Previous page (in tables)"
 
 msgid "Previous step"
 msgstr "Previous step"
@@ -13471,6 +13486,9 @@ msgstr "procedures"
 msgid "Procedures"
 msgstr "Procedures"
 
+msgid "Procedures and training"
+msgstr "Procedures and training"
+
 msgid "process"
 msgstr "process"
 
@@ -13488,6 +13506,9 @@ msgstr "processes"
 
 msgid "Processes"
 msgstr "Processes"
+
+msgid "Processes (suppliers only)"
+msgstr "Processes (suppliers only)"
 
 msgid "Procurement status — needs ordering, planned, on order, or received. The same indicator shown in the BoM tree."
 msgstr "Procurement status — needs ordering, planned, on order, or received. The same indicator shown in the BoM tree."
@@ -14056,6 +14077,9 @@ msgstr "Quotes, orders and invoices are blocked until the customer has a contact
 
 msgid "Quotes, orders and invoices are blocked until the supplier has a contact with an email address and a location with a country."
 msgstr "Quotes, orders and invoices are blocked until the supplier has a contact with an email address and a location with a country."
+
+msgid "Quotes, orders, invoices and RFQs"
+msgstr "Quotes, orders, invoices and RFQs"
 
 msgid "Quoting and sales orders"
 msgstr "Quoting and sales orders"
@@ -16425,6 +16449,9 @@ msgstr "Show Customer IDs"
 msgid "Show Durations"
 msgstr "Show Durations"
 
+msgid "Show keyboard shortcuts"
+msgstr "Show keyboard shortcuts"
+
 msgid "Show more"
 msgstr "Show more"
 
@@ -16445,9 +16472,6 @@ msgstr "Show Supplier IDs"
 
 msgid "Show sync options"
 msgstr "Show sync options"
-
-msgid "Show this overlay"
-msgstr "Show this overlay"
 
 msgid "Show Trailing Zeros"
 msgstr "Show Trailing Zeros"
@@ -18382,6 +18406,9 @@ msgstr "Theme"
 
 msgid "Theme Color"
 msgstr "Theme Color"
+
+msgid "then"
+msgstr "then"
 
 msgid "Then adjusted for"
 msgstr "Then adjusted for"

@@ -1211,6 +1211,9 @@ msgstr "कृपया एक आइटम चुनें"
 msgid "PM schedule lapsed"
 msgstr "PM शेड्यूल समाप्त"
 
+msgid "Press ? on any page to open this list. Shortcuts are ignored while you type in a field."
+msgstr "किसी भी पृष्ठ पर ? दबाएँ इस सूची को खोलने के लिए। जब आप किसी फील्ड में टाइप करते हैं, तो शॉर्टकट को अनदेखा किया जाता है।"
+
 msgid "Prev"
 msgstr "पिछला"
 
@@ -1521,8 +1524,8 @@ msgstr "Short pick {itemName}"
 msgid "Show description"
 msgstr "विवरण दिखाएं"
 
-msgid "Show this overlay"
-msgstr "यह ओवरले दिखाएं"
+msgid "Show keyboard shortcuts"
+msgstr "कीबोर्ड शॉर्टकट दिखाएं"
 
 msgid "Sign in with Google"
 msgstr "Google के साथ साइन इन करें"
@@ -1628,6 +1631,9 @@ msgstr "लॉट को अभी भी डिस्पोज़ किया 
 #. placeholder {0}: (batch.operations ?? []).length
 msgid "The timer and completion are shared by all {0} jobs. Steps, materials and files here are this job's own."
 msgstr "टाइमर और पूर्णता सभी {0} जॉब्स द्वारा साझा की जाती है। यहां चरण, सामग्री और फाइलें इस जॉब की अपनी हैं।"
+
+msgid "then"
+msgstr "फिर"
 
 msgid "There are no available or consumed tracked parts for this material."
 msgstr "इस सामग्री के लिए कोई उपलब्ध या उपयोग की गई ट्रैक की गई पार्ट नहीं है।"

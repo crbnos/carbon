@@ -1211,6 +1211,9 @@ msgstr "品目を選択してください"
 msgid "PM schedule lapsed"
 msgstr "PM スケジュール失効"
 
+msgid "Press ? on any page to open this list. Shortcuts are ignored while you type in a field."
+msgstr "任意のページで「?」を押すとこのリストが表示されます。フィールドへの入力中はショートカットが無視されます。"
+
 msgid "Prev"
 msgstr "前へ"
 
@@ -1521,8 +1524,8 @@ msgstr "短いピック {itemName}"
 msgid "Show description"
 msgstr "説明を表示"
 
-msgid "Show this overlay"
-msgstr "このオーバーレイを表示"
+msgid "Show keyboard shortcuts"
+msgstr "キーボードショートカットを表示"
 
 msgid "Sign in with Google"
 msgstr "Googleでサインイン"
@@ -1628,6 +1631,9 @@ msgstr "ロットは引き続き処分されますが、少なくとも1つの�
 #. placeholder {0}: (batch.operations ?? []).length
 msgid "The timer and completion are shared by all {0} jobs. Steps, materials and files here are this job's own."
 msgstr "タイマーと完了はすべての{0}製造指図で共有されます。ステップ、材料、ファイルはこの製造指図専用です。"
+
+msgid "then"
+msgstr "その後"
 
 msgid "There are no available or consumed tracked parts for this material."
 msgstr "このマテリアルについて、利用可能または消費済みの追跡部品がありません。"

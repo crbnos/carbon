@@ -1,6 +1,7 @@
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { redirect, useLoaderData } from "react-router";
 import { getMemos, MemosTable } from "~/modules/invoicing";
@@ -11,7 +12,7 @@ import { getGenericQueryFilters } from "~/utils/query";
 // Accounts Receivable — customer credit/debit memos. The supplier side lives in
 // supplier-credits.tsx; both read the same `memo` table, scoped by party.
 export const handle: Handle = {
-  breadcrumb: "Credit Memos",
+  breadcrumb: msg`Credit Memos`,
   to: path.to.creditMemos,
   module: "invoicing"
 };
