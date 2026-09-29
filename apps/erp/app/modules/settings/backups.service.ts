@@ -73,20 +73,6 @@ async function removeStoragePrefix(
   }
 }
 
-export async function exportCompanyBackup(
-  client: SupabaseClient<Database>,
-  args: {
-    companyId: string;
-    userId: string;
-    label?: string;
-    includeStorage?: "none" | "all";
-    /** Opt-in recovery: leave out rows whose links escape company scope. */
-    skipCorrupted?: boolean;
-  }
-) {
-  return client.functions.invoke("export-company", { body: args });
-}
-
 export type CompanyBackupSummary = {
   /** Backup folder name (also the restore `source` identifier). */
   name: string;

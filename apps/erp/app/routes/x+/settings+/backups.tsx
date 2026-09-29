@@ -47,7 +47,6 @@ import { Confirm } from "~/components/Modals";
 import type { CompanyBackupSummary } from "~/modules/settings";
 import {
   deleteCompanyBackup,
-  exportCompanyBackup,
   getCompanyExportRun,
   getCompanyRestoreRuns,
   totalScopeRows
@@ -55,6 +54,7 @@ import {
 import {
   canManageBackups,
   dismissCompanyExportFailure,
+  exportCompanyBackup,
   finalizeCompanyRestore,
   getCompanyBackups,
   purgeCorruptedRows,
@@ -187,7 +187,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
       const { label, includeStorage } = validation.data;
       await clearStaleExportFailure(client, companyId);
-      const result = await exportCompanyBackup(client, {
+      const result = await exportCompanyBackup({
         companyId,
         userId,
         label: label || undefined,
@@ -313,7 +313,7 @@ export async function action({ request }: ActionFunctionArgs) {
       const includeStorage =
         validation.data.includeStorage ?? run.data.includeStorage ?? "none";
       await clearStaleExportFailure(client, companyId);
-      const result = await exportCompanyBackup(client, {
+      const result = await exportCompanyBackup({
         companyId,
         userId,
         label,

@@ -29,8 +29,9 @@ is the replacement. Reader-facing docs: `docs/content/docs/platform/backups.mdx`
 (kept deliberately impl-free — keep internals here, not there).
 
 User-facing rules of the feature: backups require `settings` update permission
-(no owner gate — the old `group.ownerId === userId` check was removed from both the
-route and the `export-company` edge function), exclude secrets, and a restore is
+(no owner gate — the old `group.ownerId === userId` check was removed; the route
+sends `carbon/company-export` itself via `exportCompanyBackup` in
+`backups.server.ts`), exclude secrets, and a restore is
 reversible via an auto-snapshot.
 
 **Backups are a Business/Enterprise feature** (`BACKUPS` in `FEATURE_PLANS`), with
