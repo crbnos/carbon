@@ -74,6 +74,20 @@ export async function patchRampOAuthCredentials(
   args: {
     credentials: Extract<RampCredentials, { type: "oauth2" }>;
     updatedBy: string;
+    /**
+     * The install mode, read off the SIGNED OAuth state. Owned by this patch
+     * because it is settled at connect time and never again — it decides which
+     * scopes were requested, so a later settings save must not be able to move it.
+     */
+    syncMode?: string;
+    /** What the token response actually granted (RFC 6749 §3.3). */
+    grantedScopes?: string[];
+    /**
+     * Which system holds Ramp's accounting connection. UNDEFINED means unknown,
+     * not absent — Carbon may be unable to read it at all (see the open question
+     * in `.ai/plans/implemented/2026-09-23-spend-push-only-mode.md`).
+     */
+    accountingConnectionProvider?: string;
   }
 ) {
   const { credentials } = args;
@@ -84,6 +98,12 @@ export async function patchRampOAuthCredentials(
     "credentials.type": credentials.type,
     "credentials.environment": credentials.environment
   };
+  if (args.syncMode) metadata.syncMode = args.syncMode;
+  if (args.grantedScopes) metadata.grantedScopes = args.grantedScopes;
+  if (args.accountingConnectionProvider) {
+    metadata.accountingConnectionProvider = args.accountingConnectionProvider;
+  }
+
   const removeMetadata = ["credentials.clientId"];
   const removeSecrets = ["credentials.clientSecret"];
   if (credentials.expiresAt) {
@@ -138,6 +158,32 @@ export async function patchRampWebhook(
     metadata: { webhookId: webhook.webhookId },
     secrets: { webhookSecret: webhook.webhookSecret }
   });
+}
+
+/**
+ * Refresh which system Ramp reports as holding its accounting connection.
+ *
+ * Unlike the OAuth patch, this one CLEARS the field when nobody is connected.
+ * The value was written once at connect and never revisited, so a peer that
+ * later disconnected left the details drawer naming it forever — a stored
+ * snapshot presented as current fact. Passing `undefined` removes it, which is
+ * the honest rendering of "nobody holds the seat".
+ *
+ * Only call this when the answer is KNOWN. A failed read must leave the previous
+ * value alone rather than erase it (see `convergeRamp`).
+ */
+export async function patchRampAccountingConnectionProvider(
+  serviceRole: SupabaseClient<Database>,
+  companyId: string,
+  providerName: string | undefined
+) {
+  return providerName
+    ? patchRampState(serviceRole, companyId, {
+        metadata: { accountingConnectionProvider: providerName }
+      })
+    : patchRampState(serviceRole, companyId, {
+        removeMetadata: ["accountingConnectionProvider"]
+      });
 }
 
 export async function patchRampCursor(

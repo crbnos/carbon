@@ -1211,6 +1211,9 @@ msgstr "품목을 선택하세요"
 msgid "PM schedule lapsed"
 msgstr "PM 일정 만료됨"
 
+msgid "Press ? on any page to open this list. Shortcuts are ignored while you type in a field."
+msgstr "어느 페이지에서나 ?를 누르세요. 필드에 입력하는 동안 단축키가 무시됩니다."
+
 msgid "Prev"
 msgstr "이전"
 
@@ -1521,8 +1524,8 @@ msgstr "{itemName} 부족 피킹"
 msgid "Show description"
 msgstr "설명 표시"
 
-msgid "Show this overlay"
-msgstr "이 오버레이 표시"
+msgid "Show keyboard shortcuts"
+msgstr "키보드 바로가기 표시"
 
 msgid "Sign in with Google"
 msgstr "Google로 로그인"
@@ -1628,6 +1631,9 @@ msgstr "로트는 여전히 처리되지만 최소한 하나의 Issue Type이 �
 #. placeholder {0}: (batch.operations ?? []).length
 msgid "The timer and completion are shared by all {0} jobs. Steps, materials and files here are this job's own."
 msgstr "타이머와 완료는 모든 {0} 작업 지시에 공유됩니다. 여기의 단계, 자재 및 파일은 이 작업 지시의 것입니다."
+
+msgid "then"
+msgstr "그 다음"
 
 msgid "There are no available or consumed tracked parts for this material."
 msgstr "이 자재에 대해 가용 또는 소모된 추적 부품이 없습니다."

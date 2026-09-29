@@ -19,6 +19,22 @@ export enum ProviderID {
 }
 
 /**
+ * Spend-management platforms. A separate enum from `ProviderID` rather than a
+ * member of it: the two roles answer different questions, and every existing
+ * `ProviderID` consumer means "an accounting provider" — widening that enum
+ * would silently make each of them wrong.
+ */
+export enum SpendProviderID {
+  RAMP = "ramp"
+}
+
+/**
+ * Any provider the sync engine can dispatch for. `SyncFactory` is keyed on
+ * this; almost everything else should keep naming the role it actually means.
+ */
+export type SyncProviderID = ProviderID | SpendProviderID;
+
+/**
  * Schemas for shared provider entities and credentials.
  */
 
@@ -132,7 +148,7 @@ export const ENTITY_DEFINITIONS: Record<
     ]
   },
   vendor: {
-    label: "Vendors",
+    label: "Suppliers",
     type: "master",
     supportedDirections: [
       "two-way",
@@ -159,7 +175,24 @@ export const ENTITY_DEFINITIONS: Record<
   bill: {
     label: "Bills (Purchase Invoices)",
     type: "transaction",
-    dependsOn: ["vendor", "item"],
+    // NOT `item`. A bill is an account-costed replay of its posting journal —
+    // the item is a line label, never a GL driver — so no bill syncer references
+    // an item on the push: Xero passes `nonTrackedItemIds: undefined` (an
+    // `ItemCode` for a tracked item would double-post inventory), QBO and Rillet
+    // build account-coded lines, and none of the three calls
+    // `ensureDependencySynced("item", …)`. The `ItemRef`/`ItemCode` reads in
+    // those files are on the PULL path, mapping an inbound provider bill back to
+    // Carbon.
+    //
+    // This is load-bearing, not cosmetic: `validateSyncConfig` refuses to enable
+    // an entity while a declared dependency is disabled, so the stale `item` here
+    // made "bills on, items off" an invalid config — blocking the one thing a
+    // customer would most reasonably want. Purchase/sales ORDERS and sales
+    // INVOICES keep the dependency: they genuinely reference items (see
+    // `.ai/specs/implemented/2026-08-05-accounting-document-representation.md`
+    // — AP replays the journal, AR is item-referenced to the item's revenue
+    // account, and non-posting documents carry item detail as pure benefit).
+    dependsOn: ["vendor"],
     supportedDirections: ["two-way", "push-to-accounting"]
   },
   salesOrder: {
@@ -171,7 +204,19 @@ export const ENTITY_DEFINITIONS: Record<
   invoice: {
     label: "Sales Invoices",
     type: "transaction",
-    dependsOn: ["customer", "item"],
+    // NOT `item` — AR invoice lines no longer reference Carbon items. Each line
+    // carries a SYNTHETIC per-revenue-account item (Rillet product / QBO item)
+    // or none at all (Xero, whose lines are account-coded), replaying the
+    // account the ORIGINAL journal credited.
+    //
+    // The 2026-08-05 spec justified item-referenced AR on "the item's revenue
+    // account IS what the invoice should post". That premise no longer holds:
+    // Carbon has no per-item revenue account — `post-sales-invoice` credits
+    // `accountDefault.salesAccount` for ALL merchandise and
+    // `salesShippingRevenueAccount` for shipping — so the item reference bought
+    // subledger detail only, at the cost of mirroring a manufacturing parts
+    // catalog into the provider. The posted GL is byte-identical without it.
+    dependsOn: ["customer"],
     supportedDirections: ["two-way", "push-to-accounting"]
   },
   payment: {
@@ -201,6 +246,27 @@ export const ENTITY_DEFINITIONS: Record<
   charge: {
     label: "Card Charges",
     type: "transaction",
+    dependsOn: ["vendor"],
+    supportedDirections: ["push-to-accounting"]
+  },
+  creditMemo: {
+    label: "Credit Memos",
+    type: "transaction",
+    dependsOn: ["customer", "invoice"],
+    supportedDirections: ["push-to-accounting"]
+  },
+  supplierCredit: {
+    label: "Supplier Credits",
+    type: "transaction",
+    dependsOn: ["vendor", "bill"],
+    supportedDirections: ["push-to-accounting"]
+  },
+  reimbursement: {
+    label: "Reimbursements",
+    type: "transaction",
+    // The payee is a Carbon `employee`, but every provider represents it with
+    // a VENDOR-side counterparty (Rillet `vendor_id`, QBO Vendor, Xero
+    // Contact), so the vendor master must exist before the document.
     dependsOn: ["vendor"],
     supportedDirections: ["push-to-accounting"]
   }
@@ -255,11 +321,31 @@ export const DEFAULT_SYNC_CONFIG: GlobalSyncConfig = {
       owner: "carbon"
     },
     charge: {
-      // Card charges (Charge/Credit cardTransactions) push as the provider's
-      // native card-charge object; while enabled, their "Card Transaction"
+      // Card charges (Charge/Credit charges) push as the provider's
+      // native card-charge object; while enabled, their "Charge"
       // journals are DOC_BACKED-excluded per row (core/posting.ts) so the
       // same spend is never both a journal entry and a charge.
       enabled: true,
+      direction: "push-to-accounting",
+      owner: "carbon"
+    },
+    // Memo credits are opt-in (families default to "none"); see
+    // PostingSyncStoredSchema.families.
+    creditMemo: {
+      enabled: false,
+      direction: "push-to-accounting",
+      owner: "carbon"
+    },
+    supplierCredit: {
+      enabled: false,
+      direction: "push-to-accounting",
+      owner: "carbon"
+    },
+    // Employee reimbursements are opt-in: an upgrading integration must not
+    // start pushing a new AP document to the customer's ledger unasked. Spec
+    // `.ai/specs/implemented/2026-09-23-reimbursements-first-class.md`: defaultEnabled false.
+    reimbursement: {
+      enabled: false,
       direction: "push-to-accounting",
       owner: "carbon"
     }
@@ -283,7 +369,17 @@ export type PostingGranularity = "individual" | "daily-summary";
  * AR (invoice-side), AP (bill-side), or resolved per journal from its
  * control-account lines (Payment spans both sides).
  */
-export type PostingSourceFamily = "ar" | "ap" | "per-line";
+export type PostingSourceFamily =
+  | "ar"
+  | "ap"
+  | "per-line"
+  /**
+   * Resolved per journal from the MEMO'S PARTY, not its direction: a customer
+   * memo is gated by `creditMemo`, a supplier memo by `supplierCredit`, in both
+   * directions. Direction alone would misfile the two "crossing" combos
+   * (supplier+Credit, customer+Debit).
+   */
+  | "per-party";
 
 export type PostingPolicyEntry = {
   representation: JournalRepresentation;
@@ -295,7 +391,16 @@ export type PostingPolicyEntry = {
    * or null when no document representation exists yet (memos/returns) —
    * those park loudly in documents mode instead of excluding silently.
    */
-  backingEntityType?: "invoice" | "bill" | "payment" | null;
+  backingEntityType?:
+    | "invoice"
+    | "bill"
+    | "payment"
+    | "creditMemo"
+    | "supplierCredit"
+    | "reimbursement"
+    /** Resolved from the memo's party at decision time. */
+    | "per-party"
+    | null;
   /**
    * `false` ONLY for `Manual` — manual journals are NEVER synced in any engine.
    * They can touch arbitrary/unmapped accounts, and the external ledger owns
@@ -380,7 +485,7 @@ export const POSTING_POLICY: Record<
     defaultEnabled: true,
     defaultGranularity: "individual"
   },
-  "Card Transaction": {
+  Charge: {
     representation: "journal",
     defaultEnabled: true,
     defaultGranularity: "individual"
@@ -439,8 +544,10 @@ export const POSTING_POLICY: Record<
   },
   "Credit Memo": {
     representation: "document",
-    family: "ar",
-    backingEntityType: null,
+    // Party-resolved, NOT direction-resolved — a supplier memo in the Credit
+    // direction is a supplier credit, not an AR document.
+    family: "per-party",
+    backingEntityType: "per-party",
     defaultEnabled: false,
     defaultGranularity: "individual"
   },
@@ -460,8 +567,23 @@ export const POSTING_POLICY: Record<
   },
   "Debit Memo": {
     representation: "document",
+    // Party-resolved — see "Credit Memo".
+    family: "per-party",
+    backingEntityType: "per-party",
+    defaultEnabled: false,
+    defaultGranularity: "individual"
+  },
+  /**
+   * Employee reimbursement — backed by the `reimbursement` entity sync
+   * (Rillet native `/reimbursements`; an employee-vendor Bill on QBO and an
+   * employee-Contact ACCPAY invoice on Xero). The journal itself is
+   * DOC_BACKED-excluded whenever that entity is enabled, so a reimbursement
+   * reaches the provider as exactly one of the two, never both.
+   */
+  Reimbursement: {
+    representation: "document",
     family: "ap",
-    backingEntityType: null,
+    backingEntityType: "reimbursement",
     defaultEnabled: false,
     defaultGranularity: "individual"
   },
@@ -521,6 +643,16 @@ export const POSTING_SYNC_EXCLUDED_SOURCE_TYPES =
     (sourceType) => POSTING_POLICY[sourceType].representation === "document"
   );
 
+/**
+ * Why a balance-INCREASING memo (supplier+Credit, customer+Debit) is skipped.
+ *
+ * Canonical here because all three providers skip for the identical reason and
+ * `accounting/index.ts` star-exports both `core/*` and `providers/*` into one
+ * namespace — three independently-declared copies collided at typecheck.
+ */
+export const MEMO_INCREASER_SKIP_REASON =
+  "Balance-increasing memos are not supported in v1";
+
 export const PostingSyncFamilyModeSchema = z.enum([
   "documents",
   "journals",
@@ -559,7 +691,10 @@ const PostingSyncSourceTypeConfigSchema = z.object({
 
 /**
  * Upgrade a stored v2 posting-sync fragment (flat `sourceTypes: string[]`,
- * global `consolidation`, `includeManual`) to the v3 per-source-type shape.
+ * global `consolidation`, `includeManual`) to the v3 per-source-type shape,
+ * and carry the pre-rename `families.vendorCredit` key onto
+ * `families.supplierCredit`.
+ *
  * Behavior parity: the v2 enabled set carries over exactly, the global
  * consolidation becomes every type's granularity, and `includeManual` maps
  * to `sourceTypes.Manual.enabled`. v3 fragments pass through untouched.
@@ -567,7 +702,32 @@ const PostingSyncSourceTypeConfigSchema = z.object({
  */
 function normalizeStoredPostingSyncSettings(raw: unknown): unknown {
   if (typeof raw !== "object" || raw === null) return raw;
-  const record = raw as Record<string, unknown>;
+  let record = raw as Record<string, unknown>;
+
+  // `vendorCredit` → `supplierCredit` (Carbon says supplier; only the
+  // providers say vendor). The migration rewrites every stored row, so this
+  // only has to catch one written by an instance still running the old code
+  // during the deploy window. It matters because the key DEFAULTS to "none":
+  // a dropped value does not fail, it silently stops pushing supplier credits
+  // for a company that had turned them on.
+  const families = record.families;
+  if (
+    typeof families === "object" &&
+    families !== null &&
+    "vendorCredit" in families
+  ) {
+    const { vendorCredit, ...rest } = families as Record<string, unknown>;
+    record = {
+      ...record,
+      families: {
+        ...rest,
+        // A value already under the new key wins — it is the newer write.
+        supplierCredit:
+          (rest as { supplierCredit?: unknown }).supplierCredit ?? vendorCredit
+      }
+    };
+    raw = record;
+  }
 
   const isV2 =
     Array.isArray(record.sourceTypes) ||
@@ -620,9 +780,20 @@ const PostingSyncStoredSchema = z.object({
   families: z
     .object({
       ar: PostingSyncFamilyModeSchema.default("documents"),
-      ap: PostingSyncFamilyModeSchema.default("documents")
+      ap: PostingSyncFamilyModeSchema.default("documents"),
+      // Memo families default to "none" deliberately: a family that has never
+      // synced has no correct backlog — the accountant has already hand-booked
+      // those credits in the provider, so pushing history would double-count.
+      // Opt-in, go-forward (set syncFromDate on first enable).
+      creditMemo: PostingSyncFamilyModeSchema.default("none"),
+      supplierCredit: PostingSyncFamilyModeSchema.default("none")
     })
-    .default({ ar: "documents", ap: "documents" }),
+    .default({
+      ar: "documents",
+      ap: "documents",
+      creditMemo: "none",
+      supplierCredit: "none"
+    }),
   /** Partial per-source-type overrides; missing entries fill from POSTING_POLICY. */
   sourceTypes: z
     .record(z.string(), PostingSyncSourceTypeConfigSchema)
@@ -754,7 +925,10 @@ export const SyncConfigSchema = z
         payment: createEntityConfigSchema().optional(),
         inventoryAdjustment: createEntityConfigSchema().optional(),
         journalEntry: createEntityConfigSchema().optional(),
-        charge: createEntityConfigSchema().optional()
+        charge: createEntityConfigSchema().optional(),
+        creditMemo: createEntityConfigSchema().optional(),
+        supplierCredit: createEntityConfigSchema().optional(),
+        reimbursement: createEntityConfigSchema().optional()
       })
       .optional()
   })
@@ -1050,6 +1224,14 @@ export const SalesInvoiceSchema = z.object({
   headerShippingCost: z.number(),
   /** Original posted shipping account; null before posting or when no shipping. */
   shippingRevenueAccountId: z.string().nullable(),
+  /**
+   * The account the ORIGINAL journal credited for merchandise revenue. Replayed
+   * onto the provider document so a historical invoice keeps its own account
+   * rather than today's default — the same discipline as shipping above, and
+   * load-bearing since AR invoices stopped referencing items (the item used to
+   * carry the account implicitly through the provider item's own config).
+   */
+  salesRevenueAccountId: z.string().nullable(),
   exchangeRate: z.number(),
   postingDate: z.string().nullish(),
   dateIssued: withNullable(z.string()),

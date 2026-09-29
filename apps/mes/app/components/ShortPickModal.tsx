@@ -21,6 +21,7 @@ export function ShortPickModal({
   itemName,
   quantityToPick,
   quantityPicked,
+  unitOfMeasureCode,
   onClose
 }: {
   pickingListId: string;
@@ -28,6 +29,7 @@ export function ShortPickModal({
   itemName: string;
   quantityToPick: number;
   quantityPicked: number;
+  unitOfMeasureCode?: string | null;
   onClose: () => void;
 }) {
   const { t } = useLingui();
@@ -72,7 +74,11 @@ export function ShortPickModal({
             <Hidden name="markShort" value="true" />
             <NumberControlled
               name="quantity"
-              label={t`Picked quantity`}
+              label={
+                unitOfMeasureCode
+                  ? `${t`Picked quantity`} (${unitOfMeasureCode})`
+                  : t`Picked quantity`
+              }
               value={quantity}
               onChange={setQuantity}
               minValue={0}

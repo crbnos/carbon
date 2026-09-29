@@ -2040,6 +2040,7 @@ serve(async (req: Request) => {
           .from("trackedEntity")
           .select("*")
           .eq("attributes->>Job Make Method", jobOperation.data.jobMakeMethodId)
+          .eq("companyId", companyId)
           .order("createdAt", { ascending: true });
 
         if (!trackedEntities.data || trackedEntities.data.length === 0) {

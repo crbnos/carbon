@@ -1,14 +1,30 @@
 import type { SourceFile, Violation } from "./check";
 
+/**
+ * An optional `schema.` qualifier, discarded so `public.foo` and a bare `foo` key as the
+ * same object — they ARE the same object, `public` being the default search path. Without
+ * this the name group captured the SCHEMA, so every schema-qualified definition keyed as
+ * `function:public`: two migrations defining unrelated `public.` functions were reported as
+ * a clobber of each other, and two redefinitions of the SAME function were never keyed by
+ * its name at all.
+ */
+const QUALIFIER = String.raw`(?:"?[a-zA-Z0-9_]+"?\s*\.\s*)?`;
+
 /** Patterns that identify a FULL redefinition of a DB object. Add a row to grow coverage. */
 const OBJECT_PATTERNS: { kind: string; re: RegExp }[] = [
   {
     kind: "view",
-    re: /create\s+(?:or\s+replace\s+)?(?:materialized\s+)?view\s+(?:if\s+not\s+exists\s+)?"?([a-zA-Z0-9_]+)"?/gi
+    re: new RegExp(
+      String.raw`create\s+(?:or\s+replace\s+)?(?:materialized\s+)?view\s+(?:if\s+not\s+exists\s+)?${QUALIFIER}"?([a-zA-Z0-9_]+)"?`,
+      "gi"
+    )
   },
   {
     kind: "function",
-    re: /create\s+or\s+replace\s+function\s+"?([a-zA-Z0-9_]+)"?/gi
+    re: new RegExp(
+      String.raw`create\s+or\s+replace\s+function\s+${QUALIFIER}"?([a-zA-Z0-9_]+)"?`,
+      "gi"
+    )
   },
   {
     kind: "event-trigger",

@@ -1,15 +1,19 @@
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { companyHasFeature } from "@carbon/ee/plan.server";
 import {
+  fileResponseHeaders,
   getContentType,
   hasCompanyPrivateObjectPathPrefix,
+  isStorageNotFound,
   isUnsafeStoragePath,
   MEDIA_CONTENT_TYPES,
-  storage
+  storage,
+  storageErrorStatus
 } from "@carbon/files";
 import { supportedModelTypes } from "@carbon/files/cad";
 import { Ratelimit, redis } from "@carbon/kv";
 import { getLogger } from "@carbon/logger";
+import { getClientIp } from "@carbon/utils";
 import type { LoaderFunctionArgs } from "react-router";
 import { getJobByOperationId } from "~/modules/production";
 import { getCustomerPortal } from "~/modules/shared/shared.service";
@@ -23,7 +27,7 @@ export let loader = async ({ params, request }: LoaderFunctionArgs) => {
     throw new Error("Customer ID is required");
   }
 
-  const ip = request.headers.get("x-forwarded-for") ?? "127.0.0.1";
+  const ip = getClientIp(request) ?? "127.0.0.1";
   const ratelimit = new Ratelimit({
     redis,
     limiter: Ratelimit.slidingWindow(10, "1 m"), // 10 downloads per minute
@@ -111,30 +115,25 @@ export let loader = async ({ params, request }: LoaderFunctionArgs) => {
     throw new Error(`File type ${fileType} not supported`);
   const contentType = getContentType(fileType);
 
-  async function downloadFile() {
-    const result = await storage(serviceRole)
-      .company(shareCompanyId)
-      .download(`${path}`);
-    if (!result.data) {
-      logger.error("Failed to download file", { error: result.error });
-      return null;
-    }
-    return result.data;
+  // No retry here: the client's fetchWithRetry already retries 5xx and
+  // network failures.
+  const { data: fileData, error } = await storage(serviceRole)
+    .company(shareCompanyId)
+    .download(path);
+  if (error) {
+    logger.error("Failed to download file", {
+      path,
+      status: storageErrorStatus(error),
+      error
+    });
+    return new Response(null, {
+      status: (await isStorageNotFound(error)) ? 404 : 500
+    });
   }
 
-  let fileData = await downloadFile();
-  if (!fileData) {
-    // Wait for a second and try again
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    fileData = await downloadFile();
-    if (!fileData) {
-      throw new Error("Failed to download file after retry");
-    }
-  }
-
-  const headers = new Headers({
-    "Content-Type": contentType,
-    "Cache-Control": "private, max-age=31536000, immutable"
-  });
+  const headers = fileResponseHeaders(
+    contentType,
+    "private, max-age=31536000, immutable"
+  );
   return new Response(fileData, { status: 200, headers });
 };

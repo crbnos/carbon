@@ -72,53 +72,19 @@ ALTER TABLE "documentTemplate" ADD CONSTRAINT "documentTemplate_companyId_docume
 - Index `companyId` and every FK (e.g. `createdBy`).
 - Never add an `itemReadableId` column, and never specify decimal places in a `NUMERIC` — this applies everywhere: column definitions, `RETURNS TABLE` declarations, and `::NUMERIC` casts. Always use bare `NUMERIC`, never `NUMERIC(19,4)` or any precision form.
 
-## RLS (the only correct pattern)
+## RLS
 
-Enable RLS and create the four standardized policies named exactly `SELECT` / `INSERT` /
-`UPDATE` / `DELETE`. Schema-qualify the table (`"public"."t"`) on the `ALTER`/`CREATE POLICY`,
-and cast the helper result with `::text[]`.
-
-```sql
-ALTER TABLE "public"."documentTemplate" ENABLE ROW LEVEL SECURITY;
-
-CREATE POLICY "SELECT" ON "public"."documentTemplate"
-FOR SELECT USING (
-  "companyId" = ANY ((SELECT get_companies_with_employee_role())::text[])
-);
-
-CREATE POLICY "INSERT" ON "public"."documentTemplate"
-FOR INSERT WITH CHECK (
-  "companyId" = ANY ((SELECT get_companies_with_employee_permission('settings_create'))::text[])
-);
--- UPDATE → USING get_companies_with_employee_permission('<module>_update')
--- DELETE → USING get_companies_with_employee_permission('<module>_delete')
-```
-
-- **SELECT** uses `get_companies_with_employee_role()` (any employee of the company can read).
-- **INSERT/UPDATE/DELETE** use `get_companies_with_employee_permission('<module>_<action>')`
-  where `<action>` is `create` / `update` / `delete` (e.g. `settings_create`, `inventory_update`).
-- The old `has_role` / `has_company_permission` pattern is **deprecated** — never use it.
-
-### Tables without a `companyId` column
-
-Reach the company through the parent via `EXISTS`, gating on the same permission.
-From `20260614092317_picking-tracked-entity-rls.sql`:
-
-```sql
-CREATE POLICY "INSERT" ON "pickingListLineTrackedEntity"
-FOR INSERT WITH CHECK (
-  EXISTS (
-    SELECT 1 FROM "pickingListLine" pll
-    WHERE pll."id" = "pickingListLineId"
-      AND pll."companyId" = ANY (
-        (SELECT get_companies_with_employee_permission('inventory_create'))::text[]
-      )
-  )
-);
-```
+Policies are **not** written in migrations. Add the table's rule to
+`packages/database/src/authz/manifest.ts` — usually one line, `entityName: company("<module>")`,
+which renders the four standard policies (`SELECT` any employee via
+`get_companies_with_employee_role()`, writes via
+`get_companies_with_employee_permission('<module>_<action>')`) — then `pnpm db:migrate` syncs it
+locally and `pnpm --filter @carbon/database authz migration <name>` ships it to production.
+Full guide, including tables without a `companyId`: `authz-manifest.md`.
 
 Gate writes on the **write** permission, not just visibility — a SELECT-only predicate on
-INSERT/UPDATE/DELETE is a privilege-escalation bug (the reason that migration exists).
+INSERT/UPDATE/DELETE is a privilege-escalation bug (`20260614092317_picking-tracked-entity-rls.sql`
+exists because of one). `parent(table, fk, module)` gets this right for child tables.
 
 ## Views
 

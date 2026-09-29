@@ -16,6 +16,7 @@ export function CalendarRangeCell({
   state,
   date,
   currentMonth,
+  isMarked = false,
   ...props
 }: {
   state: RangeCalendarState;
@@ -23,6 +24,7 @@ export function CalendarRangeCell({
   currentMonth: CalendarDate;
   isRangeCalendar?: boolean;
   locale?: string;
+  isMarked?: boolean;
 }) {
   const ref = useRef<HTMLButtonElement>(null);
   const {
@@ -76,16 +78,25 @@ export function CalendarRangeCell({
       >
         {formattedDate}
       </Button>
-      {isToday && (
-        <span
-          className={clsx(
-            "absolute w-1 h-1 bottom-1 rounded-full left-1/2 transform -translate-x-1/2",
-            {
-              "bg-card": isSelected,
-              "bg-primary ": !isSelected
-            }
+      {(isToday || isMarked) && !isOutsideMonth && (
+        <span className="absolute bottom-1 left-1/2 flex -translate-x-1/2 gap-0.5 pointer-events-none">
+          {isToday && (
+            <span
+              className={clsx("w-1 h-1 rounded-full", {
+                "bg-card": isSelected,
+                "bg-primary": !isSelected
+              })}
+            />
           )}
-        />
+          {isMarked && (
+            <span
+              className={clsx("w-1 h-1 rounded-full", {
+                "bg-card/70": isSelected,
+                "bg-muted-foreground": !isSelected
+              })}
+            />
+          )}
+        </span>
       )}
     </td>
   );

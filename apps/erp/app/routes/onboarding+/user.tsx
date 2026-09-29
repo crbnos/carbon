@@ -34,7 +34,11 @@ import { path } from "~/utils/path";
 const logger = getLogger("erp", "user");
 
 export async function loader({ request }: ActionFunctionArgs) {
-  const { userId } = await requirePermissions(request, {});
+  const { userId } = await requirePermissions(request, {
+    // Onboarding acts on the user's own account: a portal-only user may still
+    // create a company of their own.
+    allowPortalAccounts: true
+  });
 
   const user = await getUser(getCarbonServiceRole(), userId);
   if (user.error || !user.data) {
@@ -46,7 +50,11 @@ export async function loader({ request }: ActionFunctionArgs) {
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { userId } = await requirePermissions(request, {});
+  const { userId } = await requirePermissions(request, {
+    // Onboarding acts on the user's own account: a portal-only user may still
+    // create a company of their own.
+    allowPortalAccounts: true
+  });
 
   const validation = await validator(onboardingUserValidator).validate(
     await request.formData()

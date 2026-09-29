@@ -4,6 +4,7 @@ import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { setConsolePinIn } from "@carbon/auth/console-pin.server";
 import { verifyEmployeePin } from "@carbon/ee/console.server";
 import { AccountLockout, Ratelimit, redis } from "@carbon/kv";
+import { getClientIp } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { userContext } from "~/context";
@@ -61,7 +62,7 @@ export async function action({ request, context }: ActionFunctionArgs) {
     return data({ error: "userId is required" }, { status: 400 });
   }
 
-  const ip = request.headers.get("x-forwarded-for") ?? undefined;
+  const ip = getClientIp(request) ?? undefined;
   const lockoutKey = `${companyId}:${userId}`;
   const terminalKey = `${companyId}:${sessionUserId}`;
 

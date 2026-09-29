@@ -1289,6 +1289,7 @@ function JobCompleteModal({
   onClose: () => void;
 }) {
   const { carbon } = useCarbon();
+  const { company } = useUser();
   const [loading, setLoading] = useState(true);
   const { t } = useLingui();
   const [defaultStorageUnitId, setDefaultStorageUnitId] = useState<
@@ -1345,6 +1346,7 @@ function JobCompleteModal({
         .from("jobMakeMethod")
         .select("*")
         .eq("jobId", job?.id!)
+        .eq("companyId", company.id)
         .is("parentMaterialId", null)
         .single(),
       getJobReceipts(job?.id!)
@@ -1368,6 +1370,7 @@ function JobCompleteModal({
         .from("trackedEntity")
         .select("*")
         .eq("attributes->>Job Make Method", makeMethod.data?.id!)
+        .eq("companyId", company.id)
         .order("createdAt", { ascending: true });
 
       if (trackedEntities.data?.length) {

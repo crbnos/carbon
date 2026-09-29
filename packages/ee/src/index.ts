@@ -1,7 +1,8 @@
 import { Email } from "./email/config";
 import { Jira } from "./jira/config";
 import { Linear } from "./linear/config";
-import { Onshape } from "./onshape/config";
+import { Mount } from "./mount/config";
+import { Onshape, OnshapeGovernment } from "./onshape/config";
 import { PaperlessParts } from "./paperless-parts/config";
 import { QuickBooks } from "./quickbooks/config";
 // import { Radan } from "./radan/config";
@@ -29,12 +30,32 @@ export type {
   QuickInstallConnector
 } from "./types";
 
+import type { SyncProviderCapabilities } from "./sync/capabilities";
+
+// Re-exported for the settings form, which resolves THIS install's capabilities to
+// decide whether a setting is reachable (`IntegrationSetting.availableWhen`).
+// Both are pure — no server env is touched by importing them.
+export {
+  CAPABILITY_DEFAULTS,
+  type ResolvedCapabilities,
+  resolveCapabilities,
+  type SyncProviderCapabilities
+} from "./sync/capabilities";
+
+import {
+  buildIntegrationTopology,
+  type CompanyIntegrationRow,
+  type ProviderDescriptor
+} from "./sync/topology";
+
 export const integrations = [
   // Radan,
   Email,
   Jira,
   Linear,
+  Mount,
   Onshape,
+  OnshapeGovernment,
   PaperlessParts,
   QuickBooks,
   Ramp,
@@ -48,7 +69,19 @@ export const integrations = [
 export type IntegrationID = (typeof integrations)[number]["id"];
 
 export { Jira } from "./jira/config";
-export { Logo as OnshapeLogo, Onshape } from "./onshape/config";
+export { Mount } from "./mount/config";
+export {
+  Logo as OnshapeLogo,
+  Onshape,
+  OnshapeGovernment
+} from "./onshape/config";
+// Client-safe (no client or env imports): lets UI ask "is Onshape connected?"
+// without naming either integration id.
+export {
+  hasOnshapeIntegration,
+  isOnshapeIntegrationId,
+  ONSHAPE_INTEGRATION_IDS
+} from "./onshape/lib/connection";
 // TODO: export as @carbon/ee/paperless
 export { PaperlessPartsClient } from "./paperless-parts/lib/client";
 export { QuickBooks } from "./quickbooks/config";
@@ -67,6 +100,67 @@ export { Xero } from "./xero/config";
 export const getIntegrationConfigById = (id: IntegrationID) => {
   return integrations.find((integration) => integration.id === id);
 };
+
+/**
+ * Every integration declaring a behavioural role (see `IntegrationConfig`).
+ *
+ * This is the replacement for the four hard-coded provider-id lists —
+ * `Object.values(ProviderID)` in the accounting sweeps,
+ * `ACCOUNTING_SYNC_INTEGRATION_IDS`, the inline `["xero","quickbooks","rillet"]`
+ * in the accounting layout, and `.eq("id","ramp")` in the Ramp sweep. A new
+ * provider joins by declaring its role, not by being added to a list.
+ */
+export type ProviderRole = "accounting" | "spend";
+
+/**
+ * `integrations` is a union of concrete descriptor types, and only the four
+ * providers that declare a role carry the property at all — so reading it off
+ * the union needs this widening rather than an `any`.
+ */
+const roleOf = (
+  integration: (typeof integrations)[number]
+): ProviderRole | undefined =>
+  (integration as { providerRole?: ProviderRole }).providerRole;
+
+export const getIntegrationsByRole = (role: ProviderRole) =>
+  integrations.filter((integration) => roleOf(integration) === role);
+
+/**
+ * The registry slice `buildIntegrationTopology` needs. Lives here because this
+ * is where the descriptors are; the topology core stays free of this import so
+ * it does not boot the server env.
+ */
+export const getProviderDescriptors = (): ProviderDescriptor[] =>
+  integrations.flatMap((integration) => {
+    const role = roleOf(integration);
+    return role
+      ? [
+          {
+            integrationId: integration.id,
+            role,
+            capabilities: (
+              integration as { capabilities?: SyncProviderCapabilities }
+            ).capabilities,
+            resolveInstallCapabilities: (
+              integration as {
+                resolveInstallCapabilities?: (
+                  metadata: unknown
+                ) => SyncProviderCapabilities | undefined;
+              }
+            ).resolveInstallCapabilities
+          }
+        ]
+      : [];
+  });
+
+/** Resolve a company's integration topology from its `companyIntegration` rows. */
+export const resolveIntegrationTopology = (
+  rows: readonly CompanyIntegrationRow[]
+) => buildIntegrationTopology(rows, getProviderDescriptors());
+
+/** The ids of every integration declaring `role`, for `.in("id", …)` filters. */
+export const getIntegrationIdsByRole = (role: ProviderRole) =>
+  getIntegrationsByRole(role).map((integration) => integration.id);
 
 export {
   IntegrationSecretUnavailableError,

@@ -6,7 +6,7 @@ DB types, Supabase/Kysely clients, audit config, event system types, rate limiti
 
 - Use `pnpm db:migrate:new <name>` to create migrations; `pnpm db:migrate` to apply (regenerates types). There is **no** `db:build`.
 - Tables: composite PK `("id", "companyId")`, `id` default `id()` or `id('prefix')` — never raw UUID. Audit columns (`createdBy`/`createdAt`/`updatedBy`/`updatedAt`) with inline `REFERENCES "user"("id")`.
-- RLS: four policies named exactly `SELECT`/`INSERT`/`UPDATE`/`DELETE`. SELECT uses `get_companies_with_employee_role()`, writes use `get_companies_with_employee_permission('<module>_<action>')`. Schema-qualify tables, cast `::text[]`.
+- RLS: every public table's policies are a rule in `src/authz/manifest.ts` (usually `company("<module>")` — the four standard policies) and the RLS helpers are `src/authz/helpers/<name>.sql`. `pnpm db:migrate` syncs them locally; `pnpm --filter @carbon/database authz migration <name>` ships them to production (`migration.test.ts` fails until it does). See `.claude/rules/authz-manifest.md`.
 - Import `Database` type from `@carbon/database`; `KyselyDatabase` / `Kysely` from `@carbon/database/client`. Never hand-edit `src/types.ts` — it's generated.
 - `scriptRun` is a deliberate exception to the table conventions above: no `companyId`, no
   composite PK, SELECT-only RLS. It is the per-database ledger of one-off scripts that
@@ -31,7 +31,8 @@ DB types, Supabase/Kysely clients, audit config, event system types, rate limiti
 
 - Specify decimal places in `NUMERIC` columns (use bare `NUMERIC`).
 - Use `000000` for the HHMMSS portion of migration timestamps (causes cross-branch collisions).
-- Use the deprecated `has_role` / `has_company_permission` RLS helpers.
+- Recreate or call the retired RLS helpers `has_role`, `has_company_permission`, `get_companies_with_permission`, `get_permission_companies` — dropped in `20260927224314_retire-legacy-rls-helpers.sql` (they admitted customer and supplier portal accounts); `authz-fixes.test.sql` asserts they stay gone.
+- Write `CREATE`/`ALTER POLICY` on a public table, or define a managed RLS helper, in a migration — and never hand-edit a generated authz migration or `src/authz/baseline.json`.
 - Write a `SECURITY DEFINER` function that trusts a company id from its caller without `PERFORM assert_company_access(company_id)` first — every `public` function is an API endpoint (see `.claude/rules/database-migration-patterns.md`).
 - `REVOKE EXECUTE` on a `public` function: on this Postgres image calling it then segfaults the backend. Guard inside the function, or make it `SECURITY INVOKER`.
 
@@ -43,6 +44,8 @@ pnpm db:types            # Regenerate types only
 pnpm db:check:datasets   # Validate + dry-run every demo dataset against the schema (writes nothing)
 pnpm --filter @carbon/database typecheck
 pnpm --filter @carbon/database test
+pnpm --filter @carbon/database authz check   # local DB vs manifest (exit 3 = drift)
+pnpm --filter @carbon/database authz migration <name>   # ship unshipped rules/helpers
 ```
 
 ## Key Exports
@@ -55,6 +58,7 @@ pnpm --filter @carbon/database test
 | `./methods` | Node re-export of `supabase/functions/lib/methods.ts` — shared make-method helpers |
 | `./logging` | Node re-export of `supabase/functions/lib/logging.ts` (`getFunctionLogger`) |
 | `./mrp-engine` | Node re-export of `supabase/functions/lib/mrp-engine.ts` (`explodeBom`, `makeKey`, `makeLocationItemKey`, `makeActualKey`, …) — the pure MRP compute engine consumed by `@carbon/planning`'s `runMrp` (the engine STAYS in the edge-lib; still used by the Deno `recalculate` function) |
+| `./configuration-rule` | Node/browser re-export of `supabase/functions/shared/configuration-rule.ts` (`runConfigurationRule`) — runs configurator rule code in QuickJS (WebAssembly) with no host access and time/memory limits; used by get-method's `lib/sandbox.ts` and the ERP rule editor. Its npm deps (`quickjs-emscripten-core`, `@jitl/quickjs-singlefile-browser-release-sync`) are pinned in BOTH this package.json and `functions/deno.json` — keep the versions identical. Never run rule code with `new Function`/`eval`/`import()` |
 | `./fetch-all` | Node re-export of `supabase/functions/lib/fetch-all.ts` (`fetchAll` — paginated PostgREST reads) |
 | `./supersession-pick` | Node re-export of `supabase/functions/lib/supersession-pick.ts` (`buildSupersessionRedirectMap`, `buildConsumeFirstHops`, `settleConsumeFirstLine`, `resolveMadeLinePull`, `consumableInWholeAssemblies`, …) |
 | `./picked-consumption` | Node re-export of `supabase/functions/lib/picked-consumption.ts` (`linesideCredit`, `getPickedBudgets`, `allocateAcrossBudgets`, …) — the one definition of usable lineside stock shared by the pick-list generator and the `issue` backflush |
@@ -118,6 +122,7 @@ Full feature context: `.claude/rules/onboarding-company-templates.md`.
 
 - `.claude/rules/conventions-database.md` — table template, column types, migration checklist
 - `.claude/rules/database-patterns.md` — client factories, services, Kysely transactions
+- `.claude/rules/authz-manifest.md` — RLS policies and helpers: manifest, sync, shipping
 - `.claude/rules/database-migration-patterns.md` — SQL conventions, enums, triggers, RLS for tables without `companyId`
 - `.claude/rules/event-system.md` — trigger dispatch, PGMQ queue, handler types
 - `packages/auth/` — Supabase client factories (`getCarbon`, `getCarbonServiceRole`)

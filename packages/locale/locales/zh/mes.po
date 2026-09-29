@@ -1211,6 +1211,9 @@ msgstr "请选择一个物料"
 msgid "PM schedule lapsed"
 msgstr "PM排程已逾期"
 
+msgid "Press ? on any page to open this list. Shortcuts are ignored while you type in a field."
+msgstr "在任何页面按 ? 打开此列表。在字段中输入时快捷键不可用。"
+
 msgid "Prev"
 msgstr "上一个"
 
@@ -1521,8 +1524,8 @@ msgstr "短缺拣货 {itemName}"
 msgid "Show description"
 msgstr "显示描述"
 
-msgid "Show this overlay"
-msgstr "显示此覆盖层"
+msgid "Show keyboard shortcuts"
+msgstr "显示键盘快捷键"
 
 msgid "Sign in with Google"
 msgstr "使用 Google 登录"
@@ -1628,6 +1631,9 @@ msgstr "该批次仍将进行处置，但在至少配置一个问题类型之前
 #. placeholder {0}: (batch.operations ?? []).length
 msgid "The timer and completion are shared by all {0} jobs. Steps, materials and files here are this job's own."
 msgstr "计时器和完成状态由所有 {0} 个工单共享。此处的步骤、物料和文件属于此工单。"
+
+msgid "then"
+msgstr "然后"
 
 msgid "There are no available or consumed tracked parts for this material."
 msgstr "此原材料没有可用或已消耗的受追踪零件。"

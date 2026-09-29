@@ -1,12 +1,13 @@
 import { notFound } from "@carbon/auth";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import {
+  fileResponseHeaders,
   getContentType,
+  isStorageNotFound,
   isUnsafeStoragePath,
-  MEDIA_CONTENT_TYPES,
-  storage
+  storage,
+  storageErrorStatus
 } from "@carbon/files";
-import { supportedModelTypes } from "@carbon/files/cad";
 import { getLogger } from "@carbon/logger";
 import type { LoaderFunctionArgs } from "react-router";
 
@@ -27,45 +28,39 @@ export async function loader({ params }: LoaderFunctionArgs) {
     throw notFound("Invalid path");
   }
 
-  const fileType = path.split(".").pop()?.toLowerCase();
-
-  if (
-    !fileType ||
-    (!(fileType in MEDIA_CONTENT_TYPES) &&
-      !supportedModelTypes.includes(fileType))
-  )
-    throw new Error(`File type ${fileType} not supported`);
-  const contentType = getContentType(fileType);
+  // Only the GLB the model viewer draws (`/file/model/$id`, rendered headless
+  // for thumbnails). Any other type here is a tenant-uploaded file served with
+  // no session — an SVG under models/ ran script on our origin.
+  if (path.split(".").pop()?.toLowerCase() !== "glb") {
+    logger.error("Refused a public model file type", { path });
+    throw notFound("Invalid path");
+  }
 
   // No auth session on this public route — the object path's first segment is
   // the companyId, which selects the per-company bucket (with legacy fallback).
   const companyId = path.split("/")[0];
 
-  async function downloadFile() {
-    const result = await storage(client).company(companyId).download(`${path}`);
-    if (!result.data) {
-      logger.error("Failed to download file", { error: result.error });
-      return null;
-    }
-    return result.data;
+  // No retry here: the client's fetchWithRetry already retries 5xx and
+  // network failures.
+  const { data: fileData, error } = await storage(client)
+    .company(companyId)
+    .download(path);
+  if (error) {
+    logger.error("Failed to download file", {
+      path,
+      status: storageErrorStatus(error),
+      error
+    });
+    if (await isStorageNotFound(error)) throw notFound("File not found");
+    throw new Response(null, { status: 500 });
   }
 
-  let fileData = await downloadFile();
-  if (!fileData) {
-    // Wait for a second and try again
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    fileData = await downloadFile();
-    if (!fileData) {
-      throw new Error("Failed to download file after retry");
-    }
-  }
-
-  const headers = new Headers({
-    "Content-Type": contentType,
-    "Cache-Control": "public, max-age=31536000, immutable",
-    "Access-Control-Allow-Origin": "*", // Allow cross-origin requests
-    "Access-Control-Allow-Methods": "GET", // Only allow GET requests
-    "Access-Control-Allow-Headers": "Content-Type" // Allow Content-Type header
-  });
+  const headers = fileResponseHeaders(
+    getContentType("glb"),
+    "public, max-age=31536000, immutable"
+  );
+  headers.set("Access-Control-Allow-Origin", "*");
+  headers.set("Access-Control-Allow-Methods", "GET");
+  headers.set("Access-Control-Allow-Headers", "Content-Type");
   return new Response(fileData, { status: 200, headers });
 }

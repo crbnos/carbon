@@ -188,7 +188,7 @@ name every screen and filter it checked.
 ## Known rough edges
 
 - `wipe.ts` `assertWipeable` refuses a company with intercompany customers/suppliers or a
-  non-Draft `cardTransaction` — no dataset can be applied there, by design.
+  non-Draft `charge` — no dataset can be applied there, by design.
 - `helpers/return-credit.ts`'s header says a Posted return memo has "no journal"; that is only
   its state at insert — tier 09's `postMemos` journals every Posted memo still without one.
 - `rule-fields.ts` `RULE_FIELDS` hand-mirrors `@carbon/utils`' rule field registry (this package

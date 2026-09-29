@@ -1,4 +1,5 @@
 import { PreviewCard } from "@base-ui-components/react/preview-card";
+import { hasOnshapeIntegration } from "@carbon/ee";
 import {
   Badge,
   Copy,
@@ -539,7 +540,10 @@ function BoMNodeText({ node }: { node: BoMNode }) {
 
 function BoMNodeData({ node }: { node: BoMNode }) {
   const integrations = useIntegrations();
-  const onShapeState = getOnshapeState(node, integrations.has("onshape"));
+  const onShapeState = getOnshapeState(
+    node,
+    hasOnshapeIntegration(integrations)
+  );
   // Display only — the exact quantity is unchanged everywhere else, and the
   // node's preview card still shows it at full precision.
   const formatQuantity = useQuantityFormatter();
@@ -562,7 +566,10 @@ function BoMNodeData({ node }: { node: BoMNode }) {
 function BoMNodePreview({ node }: { node: BoMNode }) {
   const { t } = useLingui();
   const integrations = useIntegrations();
-  const onShapeState = getOnshapeState(node, integrations.has("onshape"));
+  const onShapeState = getOnshapeState(
+    node,
+    hasOnshapeIntegration(integrations)
+  );
 
   return (
     <VStack className="w-full text-sm">

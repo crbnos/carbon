@@ -363,7 +363,8 @@ export async function getInspectionOutcomeState(
     requiresSerialTracking && operation.jobMakeMethodId
       ? await getTrackedEntitiesByMakeMethodId(
           serviceRole,
-          operation.jobMakeMethodId
+          operation.jobMakeMethodId,
+          args.companyId
         )
       : null;
 

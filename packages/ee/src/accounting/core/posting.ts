@@ -1,5 +1,9 @@
 import type z from "zod";
 import {
+  asCarbonOwnedSettings,
+  type EffectivePostingSyncSettings
+} from "../../sync/delegation";
+import {
   type JournalEntryLineDimensionSchema,
   type JournalEntrySourceType,
   POSTING_POLICY,
@@ -96,16 +100,28 @@ export function isPaymentSyncbackEnabled(
 export type PostingSyncDocumentSyncFlags = {
   invoiceEnabled: boolean;
   billEnabled: boolean;
-  /** The `charge` entity is enabled — Charge card transactions push as the
+  /** The `creditMemo` entity is enabled — customer memos push as the
+   * provider's native customer credit instead of a journal entry. */
+  creditMemoEnabled?: boolean;
+  /** The `supplierCredit` entity is enabled — supplier memos push as the
+   * provider's native vendor credit instead of a journal entry. */
+  supplierCreditEnabled?: boolean;
+  /** The `charge` entity is enabled — Charges push as the
    * provider's native card-charge object instead of a journal entry. */
   chargeEnabled?: boolean;
   /** The provider can represent a merchant REFUND (a `Credit` card
    * transaction) as a native object too (QBO `Credit: true`, Xero RECEIVE);
    * Rillet posts a Credit as a charge with negative items. */
   chargeCreditEnabled?: boolean;
+  /** The `reimbursement` entity is enabled — employee reimbursements push as
+   * the provider's native reimbursement (Rillet) or an employee-vendor bill
+   * (QBO/Xero) instead of a journal entry. Without this arm the family chain
+   * falls through to `false` and a Reimbursement journal would push as a
+   * plain journal entry ON TOP of the pushed document — a double-post. */
+  reimbursementEnabled?: boolean;
 };
 
-export type CardTransactionType =
+export type ChargeType =
   | "Charge"
   | "Credit"
   | "Payment"
@@ -113,21 +129,21 @@ export type CardTransactionType =
   | "Repayment";
 
 /**
- * What the journal policy needs to know about the cardTransaction behind a
- * "Card Transaction" journal — resolved by the caller with one query. A row
+ * What the journal policy needs to know about the charge behind a
+ * "Charge" journal — resolved by the caller with one query. A row
  * with no supplier cannot become a provider charge (every provider object
  * needs a vendor), so its journal keeps pushing: the policy and the charge
  * syncer's `shouldSync` must agree, or the spend reaches the provider as
  * neither.
  */
-export type CardTransactionPolicyInput = {
-  type: CardTransactionType;
+export type ChargePolicyInput = {
+  type: ChargeType;
   hasSupplier: boolean;
 };
 
 /**
  * Providers whose native card-charge object can represent a merchant REFUND
- * (a `Credit` cardTransaction): QBO `Purchase` with `Credit: true`, Xero a
+ * (a `Credit` charge): QBO `Purchase` with `Credit: true`, Xero a
  * `RECEIVE` bank transaction on the card account, Rillet a charge with
  * NEGATIVE items (its sandbox accepted, stored and returned a `-59.49` item
  * on 2026-09-10). Read by the reconcile executor / event planner
@@ -147,16 +163,29 @@ export const CHARGE_NATIVE_VOID_PROVIDERS: ReadonlySet<string> = new Set([
   "rillet"
 ]);
 
-/** Whether this card transaction's journal is replaced by a synced charge. */
-export function isChargeBackedCardTransaction(
-  cardTransaction: CardTransactionPolicyInput | null | undefined,
+/**
+ * Native reimbursement-document deletion, implemented by all three adapters:
+ * Rillet `DELETE /reimbursements/{id}`, QBO `POST /bill?operation=delete`, and
+ * Xero `Status: "VOIDED"` on the ACCPAY invoice.
+ *
+ * This set is the capability declaration the reconciler reads. It must stay in
+ * step with the syncers' `deleteRemote` — a provider missing here has its void
+ * silently suppressed as "no active native push mapping to void", with the
+ * remote document left live and nothing failing.
+ */
+export const REIMBURSEMENT_NATIVE_VOID_PROVIDERS: ReadonlySet<string> = new Set(
+  ["xero", "quickbooks", "rillet"]
+);
+
+/** Whether this charge's journal is replaced by a synced charge. */
+export function isDocBackedCharge(
+  charge: ChargePolicyInput | null | undefined,
   docSync: PostingSyncDocumentSyncFlags
 ): boolean {
-  if (!cardTransaction || !docSync.chargeEnabled) return false;
-  if (!cardTransaction.hasSupplier) return false;
-  if (cardTransaction.type === "Charge") return true;
-  if (cardTransaction.type === "Credit")
-    return docSync.chargeCreditEnabled === true;
+  if (!charge || !docSync.chargeEnabled) return false;
+  if (!charge.hasSupplier) return false;
+  if (charge.type === "Charge") return true;
+  if (charge.type === "Credit") return docSync.chargeCreditEnabled === true;
   return false;
 }
 
@@ -174,7 +203,8 @@ export type JournalPostingPolicyDecision =
       code:
         | "DOC_SYNC_DISABLED"
         | "DOUBLE_REPRESENTATION"
-        | "PAYMENT_FAMILY_UNRESOLVED";
+        | "PAYMENT_FAMILY_UNRESOLVED"
+        | "MEMO_PARTY_UNRESOLVED";
       message: string;
     };
 
@@ -201,20 +231,35 @@ export type JournalPostingPolicyDecision =
  */
 export function getJournalPostingPolicyDecision(args: {
   sourceType: string | null | undefined;
-  settings: PostingSyncSettings;
+  /**
+   * Settings that have been through `applyLedgerDelegation`.
+   *
+   * Required by TYPE rather than by convention: a family another system posts
+   * must be `"none"` here AND its backing entities disabled in the sync config,
+   * and the two together are the only correct state. Accepting raw
+   * `PostingSyncSettings` would let a caller reach a posting decision that
+   * silently double-posts a delegated family — so the compiler refuses instead.
+   */
+  settings: EffectivePostingSyncSettings;
   docSync: PostingSyncDocumentSyncFlags;
   /**
    * "ar" | "ap" for Payment journals, resolved from which control account
    * the lines touch; null when unresolved. Ignored for static-family types.
    */
   paymentFamily?: "ar" | "ap" | null;
+  /**
+   * "customer" | "supplier" for Credit Memo / Debit Memo journals, resolved
+   * from the backing `memo` row's party; null when unresolved. The PARTY, not
+   * the direction, decides the family. Ignored for static-family types.
+   */
+  memoParty?: "customer" | "supplier" | null;
   inventoryAdjustmentEntitySyncEnabled?: boolean;
   /**
-   * For "Card Transaction" journals: the backing cardTransaction, resolved by
-   * the caller (see {@link CardTransactionPolicyInput}). Null when unknown —
+   * For "Charge" journals: the backing charge, resolved by
+   * the caller (see {@link ChargePolicyInput}). Null when unknown —
    * treated as no charge backing, so the journal pushes.
    */
-  cardTransaction?: CardTransactionPolicyInput | null;
+  charge?: ChargePolicyInput | null;
 }): JournalPostingPolicyDecision {
   const { settings } = args;
 
@@ -251,20 +296,17 @@ export function getJournalPostingPolicyDecision(args: {
     };
   }
 
-  // Per ROW, not per source type: a "Card Transaction" journal is backed by a
+  // Per ROW, not per source type: a "Charge" journal is backed by a
   // provider charge object only when the charge entity is enabled AND the
-  // card transaction is a Charge/Credit (vendor-facing, carries lines). A
+  // charge is a Charge/Credit (vendor-facing, carries lines). A
   // statement Payment, Cashback or Repayment journal on the same source type
   // keeps pushing as a journal entry — Rillet/QBO/Xero have no charge object
   // for those money movements.
-  if (
-    sourceType === "Card Transaction" &&
-    isChargeBackedCardTransaction(args.cardTransaction, args.docSync)
-  ) {
+  if (sourceType === "Charge" && isDocBackedCharge(args.charge, args.docSync)) {
     return {
       kind: "exclude",
       reason: "DOC_BACKED",
-      message: `Card transaction (${args.cardTransaction?.type}) is document-backed and excluded from posting sync (the synced charge already books it)`,
+      message: `Charge (${args.charge?.type}) is document-backed and excluded from posting sync (the synced charge already books it)`,
       backingDocument: { entityType: "charge" }
     };
   }
@@ -296,6 +338,34 @@ export function getJournalPostingPolicyDecision(args: {
       };
     }
     return { kind: "push", granularity: config.granularity };
+  }
+
+  // Memo documents resolve their family from the memo's PARTY. Done before the
+  // generic resolution below because a null party is a memo-specific failure,
+  // not the Payment "diverging modes" case.
+  if (policy.family === "per-party") {
+    const memoFamily =
+      args.memoParty === "customer"
+        ? ("creditMemo" as const)
+        : args.memoParty === "supplier"
+          ? ("supplierCredit" as const)
+          : null;
+
+    if (!memoFamily) {
+      return {
+        kind: "warn",
+        code: "MEMO_PARTY_UNRESOLVED",
+        message: `Journal source type "${sourceType}" could not be resolved to a customer or supplier memo. The memo's party — not its direction — decides whether it is gated by the Credit Memos or Supplier Credits family.`
+      };
+    }
+
+    return decideDocumentFamily({
+      sourceType,
+      policy,
+      backingEntityType: memoFamily,
+      mode: settings.families[memoFamily],
+      docSync: args.docSync
+    });
   }
 
   // Document-represented: resolve the family, then the family mode.
@@ -331,18 +401,33 @@ export function getJournalPostingPolicyDecision(args: {
 function decideDocumentFamily(args: {
   sourceType: JournalEntrySourceType;
   policy: (typeof POSTING_POLICY)[JournalEntrySourceType];
+  /** Overrides the policy's value when it is resolved per record ("per-party"). */
+  backingEntityType?:
+    | "invoice"
+    | "bill"
+    | "payment"
+    | "creditMemo"
+    | "supplierCredit"
+    | "reimbursement";
   mode: PostingSyncSettings["families"]["ar"];
   docSync: PostingSyncDocumentSyncFlags;
 }): JournalPostingPolicyDecision {
-  const backingEntityType = args.policy.backingEntityType ?? null;
+  const backingEntityType =
+    args.backingEntityType ?? args.policy.backingEntityType ?? null;
   const documentSyncEnabled =
     backingEntityType === "invoice"
       ? args.docSync.invoiceEnabled
       : backingEntityType === "bill"
         ? args.docSync.billEnabled
-        : backingEntityType === "payment"
-          ? true // cash application is provider-native, not a Carbon-pushed document
-          : false; // memos/returns have no document representation yet
+        : backingEntityType === "creditMemo"
+          ? args.docSync.creditMemoEnabled === true
+          : backingEntityType === "supplierCredit"
+            ? args.docSync.supplierCreditEnabled === true
+            : backingEntityType === "reimbursement"
+              ? args.docSync.reimbursementEnabled === true
+              : backingEntityType === "payment"
+                ? true // cash application is provider-native, not a Carbon-pushed document
+                : false; // returns have no document representation yet
 
   if (args.mode === "none") {
     return {
@@ -445,19 +530,41 @@ export function toDebitSignedAmount(
   }
 }
 
+/**
+ * A provider syncer's own source-type gate.
+ *
+ * Deliberately takes RAW settings and treats nothing as delegated: this runs
+ * after the primary gate, and a delegated family never reaches a syncer (its
+ * backing entity is disabled, so nothing is enqueued). See
+ * `asCarbonOwnedSettings`.
+ */
 export function getPostingSyncSourceTypeSkipReason(
   sourceType: string | null | undefined,
   settings: PostingSyncSettings,
-  options?: { inventoryAdjustmentEntitySyncEnabled?: boolean }
+  options?: {
+    inventoryAdjustmentEntitySyncEnabled?: boolean;
+    /**
+     * The backing memo's party for a "Credit Memo" / "Debit Memo" journal
+     * (`family: "per-party"`), resolved by the caller from
+     * `memo.journalId`. Omitting it parks the journal as
+     * MEMO_PARTY_UNRESOLVED — which for a memo family in `journals` mode is a
+     * silent delivery hole: the enqueue decision said push, and the backstop
+     * would skip it.
+     */
+    memoParty?: "customer" | "supplier" | null;
+  }
 ): string | null {
   const decision = getJournalPostingPolicyDecision({
     sourceType,
-    settings,
+    settings: asCarbonOwnedSettings(settings),
     docSync: {
       invoiceEnabled: settings.families.ar === "documents",
-      billEnabled: settings.families.ap === "documents"
+      billEnabled: settings.families.ap === "documents",
+      creditMemoEnabled: settings.families.creditMemo === "documents",
+      supplierCreditEnabled: settings.families.supplierCredit === "documents"
     },
     paymentFamily: null,
+    memoParty: options?.memoParty ?? null,
     inventoryAdjustmentEntitySyncEnabled:
       options?.inventoryAdjustmentEntitySyncEnabled ?? false
   });
@@ -547,10 +654,12 @@ export const JOURNAL_ENTRY_SYNC_ERROR_CODES = [
   // (the outbound sweep / manual Retry re-drives the payment). Kept distinct
   // from UNMAPPED_ACCOUNTS so it stops masquerading as a missing account.
   "UNSYNCED_DOCUMENT",
-  // A Carbon payment settles a bill that was written to Rillet as a native
-  // REIMBURSEMENT, and Rillet publishes no reimbursement-payment endpoint —
-  // the document stays UNPAID there until it is marked paid in Rillet by hand.
-  // Retryable once Rillet ships the endpoint.
+  // RETIRED for new runs. It meant: a Carbon payment settles a document that
+  // was written to Rillet as a native REIMBURSEMENT, and Rillet published no
+  // reimbursement-payment endpoint. Rillet has since shipped
+  // `POST /reimbursements/{id}/payments`, which the Rillet payment syncer now
+  // calls, so nothing records this code any more. It stays in the union only
+  // so historical operation rows that carry it still render.
   "UNSUPPORTED_REIMBURSEMENT_PAYMENT"
 ] as const;
 

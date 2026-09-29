@@ -7,7 +7,8 @@ import { requireNumberEnv, tryConnect } from "../helpers.js";
 import { confirmRestore } from "../prompts.js";
 import {
   applyMigrations,
-  serviceSchemasReady
+  serviceSchemasReady,
+  syncAuthz
 } from "../services/migrations.js";
 import { getWorktreeRoot } from "../worktree.js";
 
@@ -167,6 +168,16 @@ async function runRestore(
               await execa("pnpm", ["db:types"], { cwd: root });
               return "types refreshed";
             }
+          }
+        ]
+      : []),
+    ...(shouldMigrate
+      ? [
+          {
+            // The snapshot carries the source environment's policies; the
+            // manifest is what this branch expects.
+            title: "Sync RLS policies with the authz manifest",
+            task: () => syncAuthz(root, portDb)
           }
         ]
       : [])

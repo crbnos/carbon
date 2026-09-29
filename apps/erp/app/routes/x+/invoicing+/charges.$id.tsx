@@ -1,0 +1,322 @@
+import { error } from "@carbon/auth";
+import { requirePermissions } from "@carbon/auth/auth.server";
+import { flash } from "@carbon/auth/session.server";
+import {
+  Button,
+  Drawer,
+  DrawerBody,
+  DrawerContent,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle,
+  HStack,
+  Table,
+  Tbody,
+  Td,
+  Th,
+  Thead,
+  Tr,
+  useDisclosure,
+  VStack
+} from "@carbon/react";
+import { formatDate } from "@carbon/utils";
+import { Trans, useLingui } from "@lingui/react/macro";
+import { useLocale } from "@react-aria/i18n";
+import type { LoaderFunctionArgs } from "react-router";
+import { redirect, useLoaderData, useNavigate } from "react-router";
+import { Hyperlink } from "~/components";
+import { Enumerable } from "~/components/Enumerable";
+import { Confirm } from "~/components/Modals";
+import { useCurrencyFormatter, usePermissions } from "~/hooks";
+import { ChargeStatus, getCharge } from "~/modules/invoicing";
+import { path } from "~/utils/path";
+
+export async function loader({ request, params }: LoaderFunctionArgs) {
+  const { client, companyId, companyGroupId } = await requirePermissions(
+    request,
+    {
+      view: "invoicing"
+    }
+  );
+
+  const { id } = params;
+  if (!id) throw new Error("Could not find id");
+
+  const charge = await getCharge(client, companyId, id);
+  if (charge.error || !charge.data) {
+    throw redirect(
+      path.to.charges,
+      await flash(request, error(charge.error, "Failed to load charge"))
+    );
+  }
+
+  const lines = charge.data.chargeLine ?? [];
+
+  // One query for every referenced account (header + lines) instead of N+1.
+  const accountIds = [
+    charge.data.cardAccountId,
+    charge.data.offsetAccountId,
+    ...lines.map((line) => line.accountId)
+  ].filter((value): value is string => Boolean(value));
+
+  const costCenterIds = [
+    ...new Set(
+      lines
+        .map((line) => line.costCenterId)
+        .filter((value): value is string => Boolean(value))
+    )
+  ];
+
+  const [accounts, costCenters, receipts, journal] = await Promise.all([
+    accountIds.length > 0
+      ? client
+          .from("account")
+          .select("id, number, name")
+          .eq("companyGroupId", companyGroupId)
+          .in("id", [...new Set(accountIds)])
+      : Promise.resolve({
+          data: [] as { id: string; number: string; name: string }[],
+          error: null
+        }),
+    costCenterIds.length > 0
+      ? client
+          .from("costCenter")
+          .select("id, name")
+          .eq("companyId", companyId)
+          .in("id", costCenterIds)
+      : Promise.resolve({
+          data: [] as { id: string; name: string }[],
+          error: null
+        }),
+    client
+      .from("document")
+      .select("id, name, path")
+      .eq("companyId", companyId)
+      .ilike("path", `${companyId}/charge/${id}/%`),
+    charge.data.journalId
+      ? client
+          .from("journal")
+          .select("id, journalEntryId")
+          .eq("id", charge.data.journalId)
+          .eq("companyId", companyId)
+          .maybeSingle()
+      : Promise.resolve({
+          data: null as { id: string; journalEntryId: string } | null,
+          error: null
+        })
+  ]);
+
+  const auxiliaryError =
+    accounts.error ?? costCenters.error ?? receipts.error ?? journal.error;
+  if (auxiliaryError) {
+    throw redirect(
+      path.to.charges,
+      await flash(request, error(auxiliaryError, "Failed to load charge"))
+    );
+  }
+
+  const accountsById = Object.fromEntries(
+    (accounts.data ?? []).map((account) => [account.id, account])
+  );
+
+  const costCentersById = Object.fromEntries(
+    (costCenters.data ?? []).map((costCenter) => [costCenter.id, costCenter])
+  );
+
+  return {
+    charge: charge.data,
+    lines,
+    accountsById,
+    costCentersById,
+    receipts: receipts.data ?? [],
+    journal: journal.data
+  };
+}
+
+export default function ChargeDetailRoute() {
+  const { charge, lines, accountsById, costCentersById, receipts, journal } =
+    useLoaderData<typeof loader>();
+  const { t } = useLingui();
+  const { locale } = useLocale();
+  const navigate = useNavigate();
+  const permissions = usePermissions();
+  const voidModal = useDisclosure();
+  const currencyFormatter = useCurrencyFormatter({
+    currency: charge.currencyCode
+  });
+
+  const accountLabel = (accountId: string | null) => {
+    if (!accountId) return null;
+    const account = accountsById[accountId];
+    return account ? `${account.number} ${account.name}` : accountId;
+  };
+
+  // `chargeLine.costCenterId` stores the id; a reader needs the name ("G&A"),
+  // not `daphdp4qs0g046qdc4qg`. Resolved in the LOADER alongside accounts
+  // rather than via the `useCostCenters` hook: that hook lives in the picker
+  // module, so importing it pulls `CostCenterForm` and its Lingui `msg` macro
+  // into this route's graph, which throws under vitest. It also avoids a
+  // client round-trip that would flash the raw id first.
+  const costCenterLabel = (costCenterId: string | null) => {
+    if (!costCenterId) return "—";
+    // An id we cannot resolve is still shown: a cost center deleted after the
+    // charge posted is information, and "—" would read as "never coded".
+    return costCentersById[costCenterId]?.name ?? costCenterId;
+  };
+
+  const canVoid =
+    charge.status === "Posted" && permissions.can("update", "invoicing");
+
+  return (
+    <Drawer
+      open
+      onOpenChange={(open) => {
+        if (!open) navigate(path.to.charges);
+      }}
+    >
+      <DrawerContent size="lg">
+        <DrawerHeader>
+          <DrawerTitle>{charge.chargeId}</DrawerTitle>
+        </DrawerHeader>
+        <DrawerBody>
+          <VStack spacing={4}>
+            <HStack spacing={2}>
+              <Enumerable value={charge.type} />
+              <ChargeStatus status={charge.status} />
+            </HStack>
+
+            <dl className="grid grid-cols-2 gap-x-8 gap-y-2 text-sm w-full">
+              <dt className="text-muted-foreground">
+                <Trans>Merchant</Trans>
+              </dt>
+              <dd>{charge.merchantName ?? "—"}</dd>
+
+              <dt className="text-muted-foreground">
+                <Trans>Card Holder</Trans>
+              </dt>
+              <dd>{charge.cardHolderName ?? "—"}</dd>
+
+              <dt className="text-muted-foreground">
+                <Trans>Transaction Date</Trans>
+              </dt>
+              <dd>{formatDate(charge.transactionDate, undefined, locale)}</dd>
+
+              <dt className="text-muted-foreground">
+                <Trans>Amount</Trans>
+              </dt>
+              <dd className="tabular-nums">
+                {currencyFormatter.format(Number(charge.amount))}
+              </dd>
+
+              {charge.journalId && (
+                <>
+                  <dt className="text-muted-foreground">
+                    <Trans>Journal</Trans>
+                  </dt>
+                  <dd>
+                    {journal ? (
+                      <Hyperlink to={path.to.journalEntryDetails(journal.id)}>
+                        {journal.journalEntryId}
+                      </Hyperlink>
+                    ) : (
+                      charge.journalId
+                    )}
+                  </dd>
+                </>
+              )}
+            </dl>
+
+            <div className="w-full">
+              <Table>
+                <Thead>
+                  <Tr>
+                    <Th>
+                      <Trans>Account</Trans>
+                    </Th>
+                    <Th>
+                      <Trans>Cost Center</Trans>
+                    </Th>
+                    <Th>
+                      <Trans>Description</Trans>
+                    </Th>
+                    <Th className="text-right">
+                      <Trans>Amount</Trans>
+                    </Th>
+                  </Tr>
+                </Thead>
+                <Tbody>
+                  {lines.length === 0 ? (
+                    <Tr>
+                      <Td
+                        colSpan={4}
+                        className="text-center text-muted-foreground"
+                      >
+                        <Trans>No lines</Trans>
+                      </Td>
+                    </Tr>
+                  ) : (
+                    lines.map((line) => (
+                      <Tr key={line.id}>
+                        <Td>{accountLabel(line.accountId)}</Td>
+                        <Td>{costCenterLabel(line.costCenterId)}</Td>
+                        <Td>{line.description ?? "—"}</Td>
+                        <Td className="text-right tabular-nums">
+                          {currencyFormatter.format(Number(line.amount))}
+                        </Td>
+                      </Tr>
+                    ))
+                  )}
+                </Tbody>
+              </Table>
+            </div>
+
+            {receipts.length > 0 && (
+              <VStack spacing={1} className="w-full">
+                <span className="text-sm text-muted-foreground">
+                  <Trans>Receipts</Trans>
+                </span>
+                {receipts.map((receipt) => (
+                  <a
+                    key={receipt.id}
+                    href={path.to.file.previewFile(`private/${receipt.path}`)}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-sm text-primary hover:underline"
+                  >
+                    {receipt.name}
+                  </a>
+                ))}
+              </VStack>
+            )}
+          </VStack>
+        </DrawerBody>
+        <DrawerFooter>
+          <HStack>
+            {canVoid && (
+              <Button variant="destructive" onClick={voidModal.onOpen}>
+                <Trans>Void</Trans>
+              </Button>
+            )}
+            <Button
+              variant="secondary"
+              onClick={() => navigate(path.to.charges)}
+            >
+              {t`Close`}
+            </Button>
+          </HStack>
+        </DrawerFooter>
+      </DrawerContent>
+      {canVoid && voidModal.isOpen && (
+        <Confirm
+          action={path.to.chargeVoid(charge.id)}
+          title={t`Void Charge`}
+          text={t`Are you sure you want to void ${charge.chargeId}? This posts a reversing journal entry and cannot be undone.`}
+          confirmText={t`Void`}
+          confirmVariant="destructive"
+          onCancel={voidModal.onClose}
+          onSubmit={voidModal.onClose}
+        />
+      )}
+    </Drawer>
+  );
+}

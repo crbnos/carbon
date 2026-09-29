@@ -1202,6 +1202,35 @@ export async function updateAccountsPayableAddressSetting(
     .eq("id", companyId);
 }
 
+/**
+ * Require a supplier to have a contact with an email before its documents issue.
+ *
+ * See `party-contact.ts` for why the requirement lives on the PARTY and why the
+ * bar is an email rather than merely a contact row.
+ */
+export async function updateRequireSupplierContactSetting(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  requireSupplierContactAndLocation: boolean
+) {
+  return client
+    .from("companySettings")
+    .update(sanitize({ requireSupplierContactAndLocation }))
+    .eq("id", companyId);
+}
+
+/** The customer-side mirror. Ships off; nothing downstream forces it today. */
+export async function updateRequireCustomerContactSetting(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  requireCustomerContactAndLocation: boolean
+) {
+  return client
+    .from("companySettings")
+    .update(sanitize({ requireCustomerContactAndLocation }))
+    .eq("id", companyId);
+}
+
 export async function updateAccountsReceivableAddressSetting(
   client: SupabaseClient<Database>,
   companyId: string,

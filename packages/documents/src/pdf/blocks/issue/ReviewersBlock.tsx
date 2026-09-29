@@ -34,11 +34,11 @@ export function ReviewersBlock({ data }: { data: IssueData }) {
               </Text>
             </View>
 
-            {Object.keys(reviewer.notes ?? {}).length > 0 && (
+            {Object.keys(reviewer.notes ?? {}).length > 0 ? (
               <View style={tw("mt-1")}>
                 <Note content={reviewer.notes as JSONContent} />
               </View>
-            )}
+            ) : null}
           </View>
         ))}
       </View>

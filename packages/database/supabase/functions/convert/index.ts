@@ -4,7 +4,6 @@ import { z } from "npm:zod@^4.5.4";
 import { DB, getConnectionPool, getDatabaseClient } from "../lib/database.ts";
 import { datetime, getCompanyTimeZone } from "../lib/datetime.ts";
 
-import { format } from "https://deno.land/std@0.205.0/datetime/format.ts";
 import { getFunctionLogger } from "../lib/logging.ts";
 import { toJson } from "../lib/json.ts";
 import { RecordNotFoundError } from "../lib/company-records.ts";
@@ -576,7 +575,10 @@ serve(async (req: Request) => {
 
         let insertedSalesOrderId = "";
         await db.transaction().execute(async (trx) => {
-          const today = datetime.today(await getCompanyTimeZone(client, companyId)).toString();
+          const todayDate = datetime.today(
+            await getCompanyTimeZone(client, companyId)
+          );
+          const today = todayDate.toString();
           const salesOrderId = await getNextSequence(
             trx,
             "salesOrder",
@@ -657,15 +659,6 @@ serve(async (req: Request) => {
             })
             .execute();
 
-          // Copy quoteShipment data to salesOrderShipment
-          await trx
-            .insertInto("salesOrderShipment")
-            .values({
-              ...quoteShipping.data,
-              id: insertedSalesOrderId,
-            })
-            .execute();
-
           const pickMethodDefaultsByLineId = new Map<string, string | null>();
           await Promise.all(
             selectedQuoteLines.map(async (line) => {
@@ -721,12 +714,9 @@ serve(async (req: Request) => {
                 status: "Ordered",
                 unitOfMeasureCode: line.unitOfMeasureCode,
                 unitPrice: price.netUnitPrice ?? 0,
-                promisedDate: format(
-                  new Date(
-                    Date.now() + (price.leadTime ?? 0) * 24 * 60 * 60 * 1000
-                  ),
-                  "yyyy-MM-dd"
-                ),
+                promisedDate: todayDate
+                  .add({ days: price.leadTime ?? 0 })
+                  .toString(),
                 createdBy: userId,
                 companyId,
                 exchangeRate: quote.data.exchangeRate ?? 1,
@@ -735,6 +725,28 @@ serve(async (req: Request) => {
                 sortOrder: line.sortOrder ?? 1,
               };
             });
+
+          // The order is promised when its last line is: the latest line
+          // promise (today + that line's quoted lead time). A requested date
+          // the quote already carries is the customer's and is kept.
+          const receiptPromisedDate =
+            salesOrderLineInserts
+              .map((insert) => insert.promisedDate)
+              .filter((date): date is string => !!date)
+              .sort()
+              .at(-1) ?? null;
+
+          // Copy quoteShipment data to salesOrderShipment
+          await trx
+            .insertInto("salesOrderShipment")
+            .values({
+              ...quoteShipping.data,
+              id: insertedSalesOrderId,
+              receiptRequestedDate:
+                quoteShipping.data.receiptRequestedDate ?? receiptPromisedDate,
+              receiptPromisedDate,
+            })
+            .execute();
 
           if (salesOrderLineInserts.length > 0) {
             await trx

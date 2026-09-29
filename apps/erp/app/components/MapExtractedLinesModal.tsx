@@ -129,7 +129,7 @@ export default function MapExtractedLinesModal({
             {title}
             <ModalClose />
           </ModalHeader>
-          <ModalBody className="max-h-[70vh] overflow-y-auto">
+          <ModalBody>
             <div className="mb-6 space-y-1">
               <p className="max-w-[70ch] text-pretty text-sm text-muted-foreground">
                 <Trans>

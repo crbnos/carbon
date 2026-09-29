@@ -66,7 +66,11 @@ export to `package.json`, and add a row above. Don't pre-create empty slots — 
   run picked files through `MediaUploader.prepareForUpload` first — never upload a
   picked `File` raw.
 - Serve files with `getContentType(effectiveExtension(path))` — never a local
-  MIME map.
+  MIME map — and build the response headers with `fileResponseHeaders(type,
+  cacheControl)`. Stored bytes are served from the app origin under a name the
+  uploader chose: without it an uploaded SVG ran script as whoever opened the
+  link (it adds `nosniff`, and for SVG/+xml/HTML `attachment` + a sandbox CSP).
+  The public `file/model/public` route serves `.glb` only — it has no session.
 - Read PDFs through `./pdf` only. Never import `pdfjs-dist` or `pdfjs` from
   `react-pdf` at a call site — `react-pdf`'s `<Document>`/`<Page>` are the only
   things app code takes from that package.

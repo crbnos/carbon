@@ -1,66 +1,41 @@
 import { transpile } from "https://deno.land/x/ts_transpiler@v0.0.2/mod.ts";
+import { runConfigurationRule } from "../shared/configuration-rule.ts";
+import { getFunctionLogger } from "./logging.ts";
 
-// Check for disallowed code patterns
-const disallowedPatterns = [
-  /\bfetch\b/, // fetch calls
-  /setTimeout|setInterval/, // timeouts
-  /\bimport\b/, // dynamic imports
-  /new Promise/, // promise construction
-  /Function\(/, // Function constructor
-];
+const logger = getFunctionLogger("configuration-rule");
 
 /**
- * Sandbox for executing user-provided TypeScript code safely
+ * A stored configuration rule is the TypeScript body of `configure(params)`. It is
+ * transpiled here and run in QuickJS (shared/configuration-rule.ts), never in this
+ * function's own engine.
  *
- * Usage:
- * ```ts
- * // Example code to execute
- * const code = `
- *   // Your configuration logic here
- *   if (parameters.value > 10) {
- *     return "high";
- *   }
- *   return "low";
- * `;
- *
- * // Parameters to pass to the code
- * const parameters = {
- *   value: 15
- * };
- *
- * // Import and execute the code
- * const mod = await importTypeScript(code);
- * const result = await mod.configure(parameters);
- * // result = "high"
- * ```
- *
- * The code will be executed in a sandboxed environment with the following restrictions:
- * - No loops (for, while, do)
- * - No fetch calls
- * - No timeouts or intervals
- * - No dynamic imports
- * - No promise construction
- * - No eval or Function constructor
- *
- * The code must export a `configure` function that takes a parameters object
- * and returns a value. The parameters object will be passed to the function
- * when executed.
+ * A rule that does not compile, throws, or exceeds a sandbox limit yields null, so one
+ * broken rule never fails the whole method: a field keeps its default, and a bill of
+ * materials or process keeps all of its lines.
  */
-
-export async function importTypeScript(code: string) {
+export async function importTypeScript(code: string): Promise<{
+  configure: <T>(params: unknown) => Promise<T | null>;
+}> {
+  let javascript: string | null = null;
   try {
-    // Transpile TypeScript to JavaScript
-    const jsCode = await transpile(
-      `export function configure(params: Params) {${
-        disallowedPatterns.some((pattern) => pattern.test(code))
-          ? `return null`
-          : code
-      }}`
+    javascript = await transpile(
+      `function configure(params: Params) {\n${code}\n}`
     );
-
-    return await import(`data:application/typescript;base64,${btoa(jsCode)}`);
-  } catch (err) {
-    console.error("Transpilation error:", err);
-    throw new Error(`Failed to transpile TypeScript: ${err.message}`);
+  } catch (error) {
+    logger.error("configuration rule does not compile", {
+      error: String(error)
+    });
   }
+
+  return {
+    configure: async <T>(params: unknown) => {
+      if (javascript === null) return null;
+      try {
+        return (await runConfigurationRule(javascript, params)) as T | null;
+      } catch (error) {
+        logger.error("configuration rule failed", { error: String(error) });
+        return null;
+      }
+    }
+  };
 }

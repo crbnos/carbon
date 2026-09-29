@@ -1,6 +1,7 @@
 import { notFound } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
+import { rejectCrossSiteNavigation } from "@carbon/auth/middleware/security.server";
 import type { Database } from "@carbon/database";
 import { trigger } from "@carbon/jobs";
 import { trackWorkEvent } from "@carbon/lib/telemetry";
@@ -429,6 +430,8 @@ async function handleKanban({
 }
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
+  // Writes on GET: a link on another site must not trigger it.
+  rejectCrossSiteNavigation(request);
   const { client, companyId, companyGroupId, userId } =
     await requirePermissions(request, {
       role: "employee"

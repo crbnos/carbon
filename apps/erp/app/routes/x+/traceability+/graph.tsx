@@ -93,6 +93,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
       const jobPayload = await fetchJobScopedLineage(
         client,
         associatedJobId,
+        companyId,
         depth
       );
       const jobReadableId = await getJobReadableId(client, associatedJobId);
@@ -118,7 +119,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   if (jobId) {
     const jobReadableId = await getJobReadableId(client, jobId);
     const payload = withJobNode(
-      await fetchJobScopedLineage(client, jobId, depth),
+      await fetchJobScopedLineage(client, jobId, companyId, depth),
       jobId,
       jobReadableId
     );

@@ -112,7 +112,7 @@ async function buildBillLines(
 
   // `account` (chart of accounts) is scoped by companyGroupId, NOT companyId —
   // it has no companyId column, so filtering by it errored and made every coded
-  // bill fail "Failed to verify accounts". Mirror the card-transaction builder:
+  // bill fail "Failed to verify accounts". Mirror the charge builder:
   // scope to the group (the ids are Carbon's pushed account.id, so group-scoping
   // is both correct and tenant-safe).
   const accountIds = [...new Set(lines.map((line) => line.accountId))];
@@ -439,7 +439,7 @@ export async function syncRampBills(
 ): Promise<FamilyResult> {
   const { client, companyId, metadata } = ctx;
   const result: FamilyResult = { created: 0, reconfirmed: 0, failed: 0 };
-  if (!isRampInboundFamilyEnabled("bills", metadata.sync)) return result;
+  if (!isRampInboundFamilyEnabled("bills", metadata)) return result;
 
   const successful: SyncItem[] = [];
   const failed: FailItem[] = [];
@@ -510,7 +510,7 @@ export async function syncRampBillPayments(
   const { client, companyId, metadata } = ctx;
   const result: FamilyResult = { created: 0, reconfirmed: 0, failed: 0 };
   // Bill payments ride the same gate as bills (no separate flag).
-  if (!isRampInboundFamilyEnabled("billPayments", metadata.sync)) {
+  if (!isRampInboundFamilyEnabled("billPayments", metadata)) {
     return result;
   }
   if (!metadata.statementBankAccountId) {

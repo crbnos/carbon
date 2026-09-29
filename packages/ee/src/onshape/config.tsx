@@ -1,11 +1,51 @@
-import { ONSHAPE_CLIENT_ID } from "@carbon/auth";
-import type { SVGProps } from "react";
+import { CONTROLLED_ENVIRONMENT, ONSHAPE_CLIENT_ID } from "@carbon/auth";
+import { type SVGProps, useEffect, useState } from "react";
 import { z } from "zod";
 import { defineIntegration } from "../fns";
+import {
+  normalizeOnshapeUrl,
+  ONSHAPE_GOVERNMENT_INTEGRATION_ID,
+  ONSHAPE_GOVERNMENT_OAUTH_CALLBACK_PATH,
+  ONSHAPE_INTEGRATION_ID
+} from "./lib/connection";
+
+// Both Onshape integrations (see ./lib/connection) run the same asset sync, so
+// they share its toggle, its validation and its backfill action.
+const assetSyncSetting = {
+  name: "assetSyncEnabled",
+  label: "Sync released assets",
+  description:
+    "Automatically pull released Onshape drawings and CAD models onto matching Carbon items (matched by part number). Off by default.",
+  type: "switch" as const,
+  required: false,
+  value: false
+};
+
+// SwitchField posts a literal "true"/"false" string; preprocess explicitly so
+// unchecking sticks (z.coerce.boolean would treat "false" as truthy).
+const assetSyncEnabledSchema = z
+  .preprocess((value) => {
+    if (typeof value === "boolean") return value;
+    if (value === "true") return true;
+    if (value === "false") return false;
+    return value;
+  }, z.boolean())
+  .default(false);
+
+const backfillAction = {
+  id: "backfill",
+  label: "Backfill released assets",
+  description:
+    "Pull released Onshape assets onto all matching Carbon items now (link-only). Requires asset sync enabled.",
+  endpoint: "/api/integrations/onshape/backfill",
+  // Only shown once asset sync is enabled (the backfill route is gated on it
+  // too, so hide the button rather than show one that errors).
+  enabledWhenSetting: "assetSyncEnabled"
+};
 
 export const Onshape = defineIntegration({
   name: "Onshape",
-  id: "onshape",
+  id: ONSHAPE_INTEGRATION_ID,
   active: !!ONSHAPE_CLIENT_ID,
   category: "CAD",
   logo: Logo,
@@ -13,47 +53,23 @@ export const Onshape = defineIntegration({
     "Onshape is a browser-based CAD/PLM software for modern engineering teams. This integration will sync data from Onshape to Carbon.",
   shortDescription: "Sync data from Onshape to Carbon.",
   images: [],
-  settings: [
-    {
-      name: "assetSyncEnabled",
-      label: "Sync released assets",
-      description:
-        "Automatically pull released Onshape drawings and CAD models onto matching Carbon items (matched by part number). Off by default.",
-      type: "switch",
-      required: false,
-      value: false
-    }
-  ],
+  settings: [assetSyncSetting],
   schema: z.object({
-    // SwitchField posts a literal "true"/"false" string; preprocess explicitly so
-    // unchecking sticks (z.coerce.boolean would treat "false" as truthy).
-    assetSyncEnabled: z
-      .preprocess((value) => {
-        if (typeof value === "boolean") return value;
-        if (value === "true") return true;
-        if (value === "false") return false;
-        return value;
-      }, z.boolean())
-      .default(false)
+    assetSyncEnabled: assetSyncEnabledSchema
   }),
-  actions: [
-    {
-      id: "backfill",
-      label: "Backfill released assets",
-      description:
-        "Pull released Onshape assets onto all matching Carbon items now (link-only). Requires asset sync enabled.",
-      endpoint: "/api/integrations/onshape/backfill",
-      // Only shown once asset sync is enabled (the backfill route is gated on it
-      // too, so hide the button rather than show one that errors).
-      enabledWhenSetting: "assetSyncEnabled"
-    }
-  ],
+  actions: [backfillAction],
   onClientInstall: async () => {
     const response = await fetch("/api/integrations/onshape/install").then(
       (res) => res.json()
     );
 
-    const { url } = response;
+    const { url, error } = response as { url?: string; error?: string };
+    if (!url) {
+      // The integrations page turns `?integration=&error=` into a toast — the
+      // same place a failed callback lands (see integration-errors.ts).
+      window.location.href = `/x/settings/integrations?integration=${ONSHAPE_INTEGRATION_ID}&error=${error ?? "unexpected"}`;
+      return;
+    }
 
     const width = 600;
     const height = 800;
@@ -82,6 +98,154 @@ export const Onshape = defineIntegration({
     window.addEventListener("message", listener);
   }
 });
+
+const onshapeUrlSchema = z
+  .string()
+  .trim()
+  .transform((value, ctx) => {
+    const url = normalizeOnshapeUrl(value);
+    if (!url) {
+      ctx.addIssue({ code: "custom", message: "Must be an https:// URL" });
+      return z.NEVER;
+    }
+    return url;
+  });
+
+/**
+ * Onshape Government (ITAR / FedRAMP) has no public App Store, so Carbon's
+ * public app cannot be installed there. The customer's Enterprise admin creates
+ * a PRIVATE OAuth app inside their own Enterprise and enters its client here;
+ * saving the settings then sends them through that app's consent screen.
+ *
+ * Offered only on a controlled (ITAR) Carbon instance — the only place a
+ * Government customer's data belongs. It needs nothing else from this
+ * instance's environment: the OAuth client is the customer's own.
+ */
+export const OnshapeGovernment = defineIntegration({
+  name: "Onshape Government",
+  id: ONSHAPE_GOVERNMENT_INTEGRATION_ID,
+  active: CONTROLLED_ENVIRONMENT,
+  category: "CAD",
+  logo: Logo,
+  setupInstructions: GovernmentSetupInstructions,
+  description:
+    "Onshape Government is the ITAR and FedRAMP edition of Onshape, hosted in AWS GovCloud. It has no public App Store, so this integration connects through a private OAuth app your Enterprise owns. It syncs the same data from Onshape to Carbon as the standard integration.",
+  shortDescription:
+    "Sync data from Onshape Government to Carbon through a private app.",
+  images: [],
+  settingGroups: [
+    {
+      name: "Connection",
+      description: "The private OAuth app created in your Onshape Enterprise"
+    },
+    {
+      name: "Sync",
+      description:
+        "Every API call counts toward your Enterprise's yearly Onshape API limit."
+    }
+  ],
+  settings: [
+    {
+      name: "baseUrl",
+      label: "Onshape URL",
+      description:
+        "The address your team signs in to Onshape Government at. Each Enterprise has its own.",
+      group: "Connection",
+      type: "text" as const,
+      required: true,
+      value: ""
+    },
+    {
+      name: "oauthUrl",
+      label: "OAuth URL",
+      description:
+        "The OAuth server for your Onshape Government environment, from your Onshape account team. Carbon appends /oauth/authorize and /oauth/token.",
+      group: "Connection",
+      type: "text" as const,
+      required: true,
+      value: ""
+    },
+    {
+      name: "clientId",
+      label: "Client ID",
+      description: "Shown on the private OAuth application in Onshape.",
+      group: "Connection",
+      type: "text" as const,
+      required: true,
+      value: ""
+    },
+    {
+      name: "clientSecret",
+      label: "Client secret",
+      description:
+        "Onshape shows it once, when the application is created. Stored encrypted; leave empty to keep the saved one.",
+      group: "Connection",
+      type: "secret" as const,
+      required: true,
+      value: ""
+    },
+    { ...assetSyncSetting, group: "Sync" }
+  ],
+  schema: z.object({
+    baseUrl: onshapeUrlSchema,
+    oauthUrl: onshapeUrlSchema,
+    clientId: z.string().trim().min(1),
+    // Empty keeps the vaulted secret; the settings save requires one on a
+    // fresh install.
+    clientSecret: z.string(),
+    assetSyncEnabled: assetSyncEnabledSchema
+  }),
+  actions: [backfillAction]
+});
+
+function GovernmentSetupInstructions() {
+  // The callback is this Carbon instance's own address. Read after mount so the
+  // server render and the first client render agree.
+  const [origin, setOrigin] = useState("");
+  useEffect(() => setOrigin(window.location.origin), []);
+  const callbackUrl = `${origin}${ONSHAPE_GOVERNMENT_OAUTH_CALLBACK_PATH}`;
+  const launchUrl = `${origin}/x/settings/integrations/${ONSHAPE_GOVERNMENT_INTEGRATION_ID}`;
+
+  return (
+    <>
+      <p className="text-sm text-muted-foreground">
+        1. An Enterprise admin signs in to Onshape Government and opens
+        Enterprise settings → Developer → OAuth applications → Create new OAuth
+        application. If you would rather not do this yourselves, give Carbon
+        support a seat in your Enterprise and we will build it with you.
+      </p>
+      <p className="mt-3 text-sm text-muted-foreground">
+        2. Name it <span className="font-mono">Carbon</span>, give it any unique
+        primary format such as <span className="font-mono">com.carbon.erp</span>
+        , and choose <strong>Connected Cloud App</strong> as the type.
+      </p>
+      <p className="mt-3 text-sm text-muted-foreground">
+        3. Set the redirect URL to{" "}
+        <span className="font-mono break-all">{callbackUrl}</span> and the OAuth
+        URL to <span className="font-mono break-all">{launchUrl}</span>.
+      </p>
+      <p className="mt-3 text-sm text-muted-foreground">
+        4. Grant <strong>Application can read your profile information</strong>,{" "}
+        <strong>Application can read your documents</strong> and{" "}
+        <strong>Application can write to your documents</strong>. Write access
+        is only used to export released drawings and models and to subscribe to
+        release notifications.
+      </p>
+      <p className="mt-3 text-sm text-muted-foreground">
+        5. Create the application and copy the client ID and secret straight
+        away — Onshape shows the secret once. Enter them below with your Onshape
+        URL and OAuth URL, then save: Carbon sends you to Onshape to approve the
+        connection.
+      </p>
+      <p className="mt-3 text-sm text-muted-foreground">
+        The app is private to your Enterprise, so its API calls count toward
+        your Enterprise's yearly Onshape API limit. Browsing documents and
+        importing a bill of materials use a few calls each; released asset sync
+        uses several per released revision.
+      </p>
+    </>
+  );
+}
 
 export function Logo(props: SVGProps<SVGSVGElement>) {
   return (

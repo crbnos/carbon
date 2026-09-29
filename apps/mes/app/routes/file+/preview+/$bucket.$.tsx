@@ -3,11 +3,14 @@ import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { CompanyBucket } from "@carbon/files";
 import {
   effectiveExtension,
+  fileResponseHeaders,
   getCompanyPrivateBucket,
   getContentType,
+  isStorageNotFound,
   isUnsafeStoragePath,
   LEGACY_PRIVATE_BUCKET,
   storage,
+  storageErrorStatus,
   TEMP_STAGING_BUCKET
 } from "@carbon/files";
 import { getLogger } from "@carbon/logger";
@@ -16,7 +19,10 @@ import type { LoaderFunctionArgs } from "react-router";
 const log = getLogger("mes");
 
 export let loader = async ({ request, params }: LoaderFunctionArgs) => {
-  const { companyId } = await requirePermissions(request, {});
+  // Employees only: the read below uses the service role, so this is the whole
+  // gate. A customer or supplier portal account is also a session in the company
+  // and would otherwise read every private file it has.
+  const { companyId } = await requirePermissions(request, { role: "employee" });
   const { bucket } = params;
   let path = params["*"];
 
@@ -41,7 +47,7 @@ export let loader = async ({ request, params }: LoaderFunctionArgs) => {
   // that bypass the app (API uploads): browsers outside Safari can't render
   // HEIC, so ask storage for the imgproxy JPEG rendition instead.
   const isHeicFile = effectiveType === "heic" || effectiveType === "heif";
-  let contentType = effectiveType ? getContentType(effectiveType) : undefined;
+  let contentType = getContentType(effectiveType);
 
   // Authorize against the companyId as a full path segment (prefix or
   // slash-bounded), not a loose substring — `.includes(companyId)` lets
@@ -103,41 +109,39 @@ export let loader = async ({ request, params }: LoaderFunctionArgs) => {
       if (!transformed.error) {
         // imgproxy may negotiate webp via Accept — trust the blob, not the path
         contentType = transformed.data.type || "image/jpeg";
-        return transformed.data;
+        return transformed;
       }
       // No imgproxy (stale self-host stack) — fall through to the raw bytes;
       // Safari can still render them.
       log.error("Failed to transform HEIC file", { error: transformed.error });
     }
     // Use the original encoded path for the storage API call
-    const result = await source.download(path);
-    if (result.error) {
-      log.error("Failed to download file", { error: result.error });
-      return null;
-    }
-    return result.data;
+    return source.download(path);
   }
 
-  let fileData = await downloadFile();
-  if (!fileData) {
-    // Wait for a second and try again
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    fileData = await downloadFile();
-    if (!fileData) {
-      // A missing object is a clean 404, not a 500 — consumers (e.g. the model
-      // download flow) branch on the status; an opaque error page body must
-      // never be saved to disk as if it were the file.
-      return new Response(null, { status: 404 });
-    }
+  // No retry here: the client's fetchWithRetry already retries 5xx and
+  // network failures.
+  const result = await downloadFile();
+  if (result.error) {
+    log.error("Failed to download file", {
+      path,
+      status: storageErrorStatus(result.error),
+      error: result.error
+    });
+    // A missing object is a clean 404, not a 500 — consumers (e.g. the model
+    // download flow) branch on the status; an opaque error page body must
+    // never be saved to disk as if it were the file.
+    // Anything else is a real failure and must not pass for a miss.
+    return new Response(null, {
+      status: (await isStorageNotFound(result.error)) ? 404 : 500
+    });
   }
+  const fileData = result.data;
 
-  const headers = new Headers({
-    "Cache-Control": "private, max-age=31536000, immutable"
-  });
-
-  if (contentType) {
-    headers.set("Content-Type", contentType);
-  }
+  const headers = fileResponseHeaders(
+    contentType,
+    "private, max-age=31536000, immutable"
+  );
 
   if (isZst) {
     // Stream the storage object through a zstd decompress transform (Node

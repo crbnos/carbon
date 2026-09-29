@@ -118,9 +118,9 @@
     {
       "slug": "docs/integrations/cad",
       "title": "CAD",
-      "description": "Sync CAD data from Onshape into Carbon.",
+      "description": "Sync CAD data from Onshape and Onshape Government into Carbon.",
       "keywords": ["cad", "docs", "integrations"],
-      "headings": ["Onshape", "Related"]
+      "headings": ["Onshape", "Onshape Government", "Related"]
     },
     {
       "slug": "docs/integrations/email",
@@ -353,6 +353,24 @@
         "Who can approve",
         "The decision",
         "Related"
+      ]
+    },
+    {
+      "slug": "docs/reference/assembly-instructions",
+      "title": "Assembly instructions",
+      "description": "Step-by-step 3D build guides for a made part, authored in the ERP from its CAD model and played to operators on the shop floor.",
+      "keywords": ["assembly", "instructions", "docs", "reference"],
+      "headings": [
+        "Versions and status",
+        "Steps",
+        "Step details",
+        "Components and hidden parts",
+        "Playback settings",
+        "Building a group off to the side",
+        "Materials, tools, and slides",
+        "On jobs and the shop floor",
+        "Related",
+        "Internals, exact strings, and troubleshooting"
       ]
     },
     {
@@ -713,6 +731,7 @@
         "What you can import",
         "The import flow",
         "Insert, update, or skip",
+        "Opening stock",
         "Errors and partial failures",
         "Related",
         "Troubleshooting",
@@ -721,6 +740,8 @@
         "A fixed-asset CSV is rejected",
         "An enum column imported as the wrong value",
         "Re-importing created duplicates — or didn't update what I expected",
+        "Opening stock doubled after a second import",
+        "An opening-stock row says the item is tracked differently",
         "My custom fields are blank after import"
       ]
     },

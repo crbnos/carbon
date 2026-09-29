@@ -1,5 +1,17 @@
 import { getAppUrl } from "@carbon/auth";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
+import { SpendProviderID } from "../accounting/core/models";
+import { ensureProviderSubscriptions } from "../accounting/core/subscriptions";
+import { resolveCapabilities } from "../sync/capabilities";
+import { applyPartyContactRequirements } from "../sync/party-contact";
+import {
+  extractConnections,
+  isCarbonConnection,
+  isConnectionLinked,
+  linkedConnections,
+  resolveConnectedProviderName
+} from "./lib/connection-status";
+import { rampOwnsCodingSurface, resolveRampModeProfile } from "./lib/modes";
 import {
   clearRampConnectionMetadata,
   ensureRampConnection,
@@ -9,6 +21,7 @@ import {
   pushCostCenters,
   pushProjects
 } from "./lib/service";
+import { patchRampAccountingConnectionProvider } from "./lib/state";
 
 /**
  * Ramp integration lifecycle hooks (server-only). Registered in
@@ -43,7 +56,76 @@ async function convergeRamp(
     );
   }
 
-  await ensureRampConnection(serviceRole, companyId);
+  const ownsCodingSurface = rampOwnsCodingSurface(metadata);
+
+  // Connecting a platform that cannot create a vendor without a reachable
+  // contact AND an identifiable location is what makes both mandatory, so
+  // connecting it turns the requirement on. Driven by the mode profile's
+  // declared capabilities, NOT by this being the Ramp hook — a second spend
+  // provider declares the same capability and gets the same behaviour with no
+  // edit here.
+  //
+  // Best-effort: a settings write must never fail an otherwise-good connection.
+  try {
+    const enabled = await applyPartyContactRequirements(
+      serviceRole,
+      companyId,
+      resolveCapabilities(resolveRampModeProfile(metadata).capabilities)
+    );
+    if (enabled.length > 0) {
+      console.log(
+        `[ramp] enabled ${enabled.join(", ")} for company ${companyId} — Ramp cannot create a vendor without a contact email and a country`
+      );
+    }
+  } catch (err) {
+    console.error(
+      `[ramp] could not enable party-contact requirements for company ${companyId}:`,
+      (err as Error).message
+    );
+  }
+
+  // Only the seat-holder may create the accounting connection. In push-only
+  // another system holds it, and claiming it is precisely what this mode exists
+  // to avoid.
+  if (ownsCodingSurface) {
+    await ensureRampConnection(serviceRole, companyId);
+  }
+
+  // Refresh which system Ramp reports as holding the accounting seat.
+  //
+  // Only meaningful when Carbon is NOT the seat-holder — in provider mode Carbon
+  // holds it and the field is noise. The value is otherwise written once at
+  // connect and never revisited, so a peer that later disconnected left the
+  // details drawer naming it indefinitely.
+  //
+  // A FAILED read leaves the previous value untouched: "Carbon could not ask" is
+  // not "nobody is connected", and erasing on error would flap the drawer on any
+  // transient Ramp outage. Confirmed 2026-09-26 that a push-only token (no
+  // `accounting:write`) may call this endpoint, so a refusal here is unexpected
+  // rather than routine.
+  if (!ownsCodingSurface) {
+    try {
+      await patchRampAccountingConnectionProvider(
+        serviceRole,
+        companyId,
+        resolveConnectedProviderName(await client.getAccountingConnections())
+      );
+    } catch (err) {
+      console.warn(
+        `[ramp] could not refresh the accounting connection owner for company ${companyId}; leaving the stored value`,
+        err
+      );
+    }
+  }
+
+  // Converge Ramp's SYNC event subscriptions, exactly as the accounting
+  // providers' hooks do. Purchase orders and open payables push through the
+  // shared event engine, so without these rows nothing is ever enqueued.
+  await ensureProviderSubscriptions(
+    serviceRole,
+    companyId,
+    SpendProviderID.RAMP
+  );
   // The webhook is latency, not correctness — the hourly `ramp-sweep` is the
   // correctness guarantee. Ramp can't reach a non-public dev host
   // (erp.<branch>.dev), so webhook registration will fail locally; that must not
@@ -64,7 +146,13 @@ async function convergeRamp(
   // only the offset for statement payments and transfers, and each of those
   // families self-gates on it (skipping when unset). Coupling it here blocked
   // card-charge sync on an account card charges never touch.
-  if (!metadata.cardLiabilityAccountId) {
+  //
+  // Scoped to the seat-holder: in push-only mode this account is not merely
+  // unset, it is irrelevant — Carbon posts no card journal, and the settings form
+  // does not even offer the field. Returning here would have skipped the sync
+  // enqueue below, so push-only would have pushed nothing until the next hourly
+  // sweep.
+  if (ownsCodingSurface && !metadata.cardLiabilityAccountId) {
     return;
   }
 
@@ -85,27 +173,36 @@ async function convergeRamp(
     }
   }
 
-  await pushChartOfAccounts(serviceRole, companyId);
-  // Converge the cost-center ("project") field + its options. It re-runs on
-  // every ramp-sync too, so a Ramp-side rejection here must not abort a valid
-  // connection — log and continue so the hourly sweep can retry it.
-  try {
-    await pushCostCenters(serviceRole, companyId);
-  } catch (err) {
-    console.warn(
-      `[ramp] cost-center push failed for company ${companyId}; continuing convergence`,
-      err
-    );
-  }
-  // Converge the Project field + its options — a second custom field, kept
-  // independent of the cost-center one. Same fail-soft stance: the sweep retries.
-  try {
-    await pushProjects(serviceRole, companyId);
-  } catch (err) {
-    console.warn(
-      `[ramp] project push failed for company ${companyId}; continuing convergence`,
-      err
-    );
+  // Coding masters belong to whoever holds the connection: every one of these is
+  // an `accounting:write` call, and in push-only the options Ramp offers are the
+  // OTHER system's to publish. One gate covers all three — nothing can push a
+  // coding master without the connection anyway.
+  //
+  // The sync still launches below: push-only has plenty to do (purchase orders,
+  // receipts, provisional bills, and pulling bill payments back).
+  if (ownsCodingSurface) {
+    await pushChartOfAccounts(serviceRole, companyId);
+    // Converge the cost-center ("project") field + its options. It re-runs on
+    // every ramp-sync too, so a Ramp-side rejection here must not abort a valid
+    // connection — log and continue so the hourly sweep can retry it.
+    try {
+      await pushCostCenters(serviceRole, companyId);
+    } catch (err) {
+      console.warn(
+        `[ramp] cost-center push failed for company ${companyId}; continuing convergence`,
+        err
+      );
+    }
+    // Converge the Project field + its options — a second custom field, kept
+    // independent of the cost-center one. Same fail-soft stance: the sweep retries.
+    try {
+      await pushProjects(serviceRole, companyId);
+    } catch (err) {
+      console.warn(
+        `[ramp] project push failed for company ${companyId}; continuing convergence`,
+        err
+      );
+    }
   }
 
   // `@carbon/jobs` is deliberately NOT an `@carbon/ee` dependency (jobs -> ee,
@@ -150,7 +247,12 @@ export async function rampOnUpdate(companyId: string): Promise<void> {
 
 export async function rampOnUninstall(companyId: string): Promise<void> {
   const serviceRole = getCarbonServiceRole();
-  const integration = await getRampIntegration(serviceRole, companyId);
+  // `includeInactive`: the uninstall route deactivates the row BEFORE calling
+  // this hook, so the default read returns null here and every remote teardown
+  // below silently never ran.
+  const integration = await getRampIntegration(serviceRole, companyId, {
+    includeInactive: true
+  });
 
   if (integration) {
     const { client, metadata } = integration;
@@ -169,7 +271,37 @@ export async function rampOnUninstall(companyId: string): Promise<void> {
     }
 
     try {
-      await client.deleteAccountingConnection();
+      // Only when Carbon owns it — and "owns" means the connection at Ramp is
+      // actually Carbon's, NOT merely that this install is in provider mode.
+      //
+      // The mode alone was not enough, and the gap was destructive rather than
+      // theoretical: a provider-mode install that had ADOPTED another system's
+      // connection (see `ensureRampConnection`) deleted that system's connection
+      // on uninstall. It happened here on 2026-09-26 and unlinked a live peer.
+      // `ensureRampConnection` now refuses to adopt, but an install created
+      // before that fix still carries the adopted id, so the delete re-checks
+      // whose connection it is against Ramp rather than trusting metadata.
+      //
+      // Note this does NOT revoke Carbon's OAuth grant: Ramp exposes no
+      // revocation endpoint (confirmed 2026-09-25 against `llms-api.txt` and the
+      // OpenAPI spec). A reinstall may therefore still hold `accounting:write`.
+      // The accepted position is that Carbon never USES it outside provider mode
+      // — see `rampOwnsCodingSurface`, which gates every write-scope call.
+      if (rampOwnsCodingSurface(metadata)) {
+        const live = linkedConnections(await client.getAccountingConnections());
+        // Nothing linked: nothing to tear down. A connection that is Carbon's is
+        // deleted; one belonging to anyone else is left alone and said so.
+        const foreign = live.find((c) => !isCarbonConnection(c));
+        if (live.some(isCarbonConnection)) {
+          await client.deleteAccountingConnection();
+        } else if (foreign) {
+          console.warn(
+            `[ramp] leaving the accounting connection in place for company ${companyId}: it is held by ${
+              foreign.remote_provider_name ?? "another system"
+            }, not Carbon`
+          );
+        }
+      }
     } catch (err) {
       // Tolerate — the connection may already be gone.
       console.error(
@@ -194,31 +326,6 @@ export async function rampOnUninstall(companyId: string): Promise<void> {
       }`
     );
   }
-}
-
-/** Ramp connection statuses that count as healthy/linked. */
-function isConnectionLinked(status: string | null | undefined): boolean {
-  if (!status) return false;
-  const normalized = status.toLowerCase();
-  return (
-    normalized === "linked" ||
-    normalized === "active" ||
-    normalized === "connected"
-  );
-}
-
-/** Extract a connection list from `{ connections: [...] }` (Ramp), `{ data: [...] }`, or a bare array. */
-function extractConnections(response: unknown): Array<{ status?: string }> {
-  if (Array.isArray(response)) return response as Array<{ status?: string }>;
-  if (response && typeof response === "object") {
-    // Ramp's GET /accounting/connections returns `{ connections: [...] }`.
-    // Tolerate `{ data: [...] }` too for resilience.
-    const obj = response as { connections?: unknown; data?: unknown };
-    if (Array.isArray(obj.connections))
-      return obj.connections as Array<{ status?: string }>;
-    if (Array.isArray(obj.data)) return obj.data as Array<{ status?: string }>;
-  }
-  return [];
 }
 
 /** Extract entity ids from Ramp's `{ data }`, `{ entities }`, or bare-array shape. */
@@ -259,13 +366,17 @@ export async function rampHealthcheck(
 
   // A connected Ramp with no card liability account is not functional:
   // convergeRamp returns early (no chart-of-accounts push, no sync) and the
-  // card-transaction sync gate skips every family without it. Report it as
+  // charge sync gate skips every family without it. Report it as
   // unhealthy rather than showing a green badge over a sync that silently does
   // nothing — the required-field gap was invisible in the UI otherwise.
   // statementBankAccountId is intentionally NOT checked: it is optional (only
   // statement-payment/transfer sync needs it), so its absence is a healthy
   // "that family is off", not a broken connection.
-  if (!integration.metadata.cardLiabilityAccountId) {
+  // Required only where card charges actually post. A push-only install never
+  // pulls a card charge, so demanding the account it credits would report an
+  // integration unhealthy for a family it does not run.
+  const ownsCodingSurface = rampOwnsCodingSurface(integration.metadata);
+  if (ownsCodingSurface && !integration.metadata.cardLiabilityAccountId) {
     return false;
   }
 
@@ -274,9 +385,27 @@ export async function rampHealthcheck(
     const connections = extractConnections(
       await integration.client.getAccountingConnections()
     );
-    return connections.some((connection) =>
+    const linked = connections.filter((connection) =>
       isConnectionLinked(connection.status)
     );
+
+    // What "healthy" means differs by mode, because what Carbon OWNS differs.
+    //
+    // Provider mode: Carbon holds the seat, so its own connection must be live.
+    // Checking `linked.length > 0` was too weak — it passed while another
+    // system held the seat and Carbon held nothing.
+    //
+    // Push-only: Carbon owns no connection, by design. Requiring one reported a
+    // perfectly functional install as broken whenever the customer had not yet
+    // connected their accounting system — a legitimate, ordinary state during
+    // onboarding, and one Carbon cannot act on. Carbon's own side is reachable
+    // and it can still push purchase orders and bills, so that is healthy.
+    //
+    // The cost is deliberate: an install whose peer never appears hands Ramp
+    // bills nobody will post, and this no longer surfaces that. The badge is a
+    // boolean with no room to say why, and "broken" is the more misleading of
+    // the two answers. See `.ai/runs/2026-09-26-ramp-push-only-verification.md`.
+    return ownsCodingSurface ? linked.some(isCarbonConnection) : true;
   } catch {
     return false;
   }

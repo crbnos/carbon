@@ -6,7 +6,7 @@ import {
 import { redis } from "@carbon/kv";
 import { getLogger } from "@carbon/logger";
 import { oncePerRequest } from "@carbon/logger/middleware.server";
-import { Edition, Plan } from "@carbon/utils";
+import { Edition, getClientIp, Plan } from "@carbon/utils";
 import type {
   AuthSession as SupabaseAuthSession,
   SupabaseClient
@@ -191,6 +191,12 @@ export async function requirePermissions(
     delete?: string | string[];
     role?: string;
     bypassRls?: boolean;
+    /**
+     * Also admit customer and supplier portal accounts. Only for routes that
+     * act on the signed-in user's own identity (onboarding); everything else
+     * holds company data they must not reach.
+     */
+    allowPortalAccounts?: boolean;
   }
 ): Promise<{
   client: SupabaseClient<Database>;
@@ -264,7 +270,12 @@ export async function requirePermissions(
       const scopes = apiKeyData.scopes ?? {};
       const scopeCheckPassed = Object.entries(requiredPermissions).every(
         ([action, permission]) => {
-          if (action === "bypassRls" || action === "role") return true;
+          if (
+            action === "bypassRls" ||
+            action === "role" ||
+            action === "allowPortalAccounts"
+          )
+            return true;
           if (typeof permission === "string") {
             const scopeKey = `${permission}_${action}`;
             return scopeKey in scopes && scopes[scopeKey]?.includes(companyId);
@@ -335,6 +346,27 @@ export async function requirePermissions(
 
   const myClaims = await getUserClaims(userId, companyId);
 
+  // A customer or supplier portal account is a member of the company too, and
+  // holds a few permissions (documents, parts, sales/purchasing view), but no
+  // route in the apps is theirs — portal pages are share links served with the
+  // service role. Before this check, `{}` and those permissions admitted them to
+  // every route that then reads with the service role (file previews, job
+  // travelers, order and quote pages). A 403, not a redirect: the MES shell calls
+  // requirePermissions itself, so a redirect to it would loop.
+  if (
+    (myClaims.role === "customer" || myClaims.role === "supplier") &&
+    !requiredPermissions.allowPortalAccounts
+  ) {
+    logAuthEvent("permission_denied", {
+      userId,
+      actor: email,
+      companyId,
+      ip: getClientIp(request) ?? undefined,
+      reason: `${myClaims.role} portal account`
+    });
+    throw new Response("Forbidden", { status: 403 });
+  }
+
   // early exit if no requiredPermissions are required
   if (Object.keys(requiredPermissions).length === 0) {
     return {
@@ -353,7 +385,8 @@ export async function requirePermissions(
 
   const hasRequiredPermissions = Object.entries(requiredPermissions).every(
     ([action, permission]) => {
-      if (action === "bypassRls") return true;
+      if (action === "bypassRls" || action === "allowPortalAccounts")
+        return true;
       if (typeof permission === "string") {
         if (action === "role") {
           return myClaims.role === permission;
@@ -383,7 +416,7 @@ export async function requirePermissions(
       userId,
       actor: email,
       companyId,
-      ip: request.headers.get("x-forwarded-for") ?? undefined,
+      ip: getClientIp(request) ?? undefined,
       reason: JSON.stringify(requiredPermissions)
     });
     if (myClaims.role === null) {

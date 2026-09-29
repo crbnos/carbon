@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { asCarbonOwnedSettings } from "../../sync/delegation";
 import {
   aggregateJournalEntriesForDate,
   collectUnmappedDimensionValues,
@@ -242,7 +243,7 @@ describe("getDailyConsolidationNarration", () => {
 // ── Source-type gate ─────────────────────────────────────────────────────────
 
 describe("getPostingSyncSourceTypeSkipReason", () => {
-  const settings = resolvePostingSyncSettings(null);
+  const settings = asCarbonOwnedSettings(resolvePostingSyncSettings(null));
 
   it("pushes the quality-scrap source types by default", () => {
     expect(
@@ -285,6 +286,80 @@ describe("getPostingSyncSourceTypeSkipReason", () => {
     expect(
       getPostingSyncSourceTypeSkipReason("Not A Source Type", settings)
     ).toContain("not enabled");
+  });
+
+  // The memo families are resolved per PARTY, so the backstop needs the party
+  // the enqueue decision already resolved from `memo.journalId`. Without it
+  // every memo journal parked as MEMO_PARTY_UNRESOLVED — and for a family in
+  // `journals` mode that is a delivery hole: the enqueue decision said push,
+  // and the drain-time backstop skipped it.
+  describe("memo journals (per-party families)", () => {
+    const memoJournalsMode = asCarbonOwnedSettings(
+      resolvePostingSyncSettings({
+        settings: {
+          postingSync: {
+            families: {
+              ar: "documents",
+              ap: "documents",
+              creditMemo: "journals",
+              vendorCredit: "journals"
+            }
+          }
+        }
+      })
+    );
+
+    it("pushes a memo journal whose family is in journals mode once the party is supplied", () => {
+      expect(
+        getPostingSyncSourceTypeSkipReason("Credit Memo", memoJournalsMode, {
+          memoParty: "customer"
+        })
+      ).toBeNull();
+      // The PARTY decides the family, not the direction: a supplier Credit
+      // memo is gated by Vendor Credits.
+      expect(
+        getPostingSyncSourceTypeSkipReason("Credit Memo", memoJournalsMode, {
+          memoParty: "supplier"
+        })
+      ).toBeNull();
+      expect(
+        getPostingSyncSourceTypeSkipReason("Debit Memo", memoJournalsMode, {
+          memoParty: "supplier"
+        })
+      ).toBeNull();
+    });
+
+    it("parks an unresolvable memo party instead of guessing a family", () => {
+      expect(
+        getPostingSyncSourceTypeSkipReason("Credit Memo", memoJournalsMode)
+      ).toContain("could not be resolved to a customer or supplier memo");
+    });
+
+    it("keeps a family-off memo journal excluded with the party supplied", () => {
+      // Memo families default to "none".
+      expect(
+        getPostingSyncSourceTypeSkipReason("Credit Memo", settings, {
+          memoParty: "customer"
+        })
+      ).toContain('set to "none"');
+    });
+
+    it("excludes a documents-mode memo journal as document-backed", () => {
+      const memoDocumentsMode = asCarbonOwnedSettings(
+        resolvePostingSyncSettings({
+          settings: {
+            postingSync: {
+              families: { creditMemo: "documents" }
+            }
+          }
+        })
+      );
+      expect(
+        getPostingSyncSourceTypeSkipReason("Credit Memo", memoDocumentsMode, {
+          memoParty: "customer"
+        })
+      ).toContain("document-backed");
+    });
   });
 });
 
@@ -329,15 +404,17 @@ const ATLANTA = { dimensionId: LOCATION_DIM, valueId: "loc_atl" };
 const BOSTON = { dimensionId: LOCATION_DIM, valueId: "loc_bos" };
 
 function dimensionSettings(onUnmapped: "warn" | "drop") {
-  return resolvePostingSyncSettings({
-    settings: {
-      postingSync: {
-        enabled: true,
-        dimensionSlots: [{ dimensionId: LOCATION_DIM, target: "class" }],
-        onUnmappedDimensionValue: onUnmapped
+  return asCarbonOwnedSettings(
+    resolvePostingSyncSettings({
+      settings: {
+        postingSync: {
+          enabled: true,
+          dimensionSlots: [{ dimensionId: LOCATION_DIM, target: "class" }],
+          onUnmappedDimensionValue: onUnmapped
+        }
       }
-    }
-  });
+    })
+  );
 }
 
 describe("collectUnmappedDimensionValues", () => {

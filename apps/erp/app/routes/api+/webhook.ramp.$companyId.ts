@@ -30,7 +30,7 @@ const logger = getLogger("erp", "webhook-ramp");
  * signed body carrying a `challenge` string, which we answer via
  * `completeWebhookVerification` and echo back. Query parameters are not signed
  * and cannot supply a challenge. If Task 1 shows a different header
- * name, encoding, or challenge shape, update the marked spots here and
+ * name, encoding, or challenge shape, update the header read below and
  * `packages/ee/src/ramp/lib/webhook.ts`.
  */
 
@@ -64,7 +64,17 @@ export async function action({ request, params }: ActionFunctionArgs) {
   // Every delivery, including an ownership challenge, requires a stored secret
   // and a valid signature before it can call Ramp or echo authenticated data.
   const signature = request.headers.get("x-ramp-signature");
+
+  // Rejections log a BOUNDED, server-derived reason only. An earlier diagnostic
+  // block echoed the full sorted list of request header names on every rejection,
+  // before any authentication — so an anonymous caller could drive log volume and
+  // log content by POSTing in a loop. Nothing attacker-controlled is recorded
+  // here; `companyId` comes from the URL the install registered.
   if (!signature || !metadata.webhookSecret) {
+    logger.warn("Ramp webhook rejected before signature check", {
+      companyId,
+      reason: !signature ? "no-signature-header" : "no-stored-secret"
+    });
     return data({ success: false }, { status: 401 });
   }
   const verified = verifyRampWebhookSignature({
@@ -73,6 +83,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     secret: metadata.webhookSecret
   });
   if (!verified) {
+    logger.warn("Ramp webhook signature mismatch", { companyId });
     return data({ success: false }, { status: 401 });
   }
 
@@ -121,12 +132,27 @@ function safeJsonParse(body: string): unknown {
  */
 function extractChallenge(body: string): string | null {
   const parsed = safeJsonParse(body);
+  if (!parsed || typeof parsed !== "object") return null;
+
+  // Activation must complete WITHOUT anyone clicking a button in Ramp, so this
+  // looks in both plausible places rather than betting on one. Ramp's
+  // `webhooks.verification` event is documented as carrying `challenge` at the
+  // top level, but its envelope is `{ id, type, data }` for every other event
+  // type and we have never seen a real one. Missing the challenge leaves the
+  // endpoint stuck on "Pending verification" forever with no deliveries and no
+  // error — the most silent failure available.
+  const root = parsed as { challenge?: unknown; data?: unknown };
+  if (typeof root.challenge === "string" && root.challenge) {
+    return root.challenge;
+  }
+  const nested = root.data as { challenge?: unknown } | undefined;
   if (
-    parsed &&
-    typeof parsed === "object" &&
-    typeof (parsed as { challenge?: unknown }).challenge === "string"
+    nested &&
+    typeof nested === "object" &&
+    typeof nested.challenge === "string" &&
+    nested.challenge
   ) {
-    return (parsed as { challenge: string }).challenge;
+    return nested.challenge;
   }
   return null;
 }

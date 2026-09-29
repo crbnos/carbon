@@ -1,4 +1,9 @@
 import { getLogger } from "@carbon/logger";
+import type {
+  CounterpartSearchKeys,
+  ExternalIdentityKind,
+  RemoteCandidate
+} from "../../core/counterpart-types";
 import { ProviderID } from "../../core/models";
 import type {
   AccountingEntityType,
@@ -27,37 +32,22 @@ import { parseDotnetDate, type Xero } from "./models";
 
 const logger = getLogger("ee", "accounting", "xero");
 
-export interface ListContactsOptions {
-  page?: number;
-  modifiedSince?: Date;
-  includeArchived?: boolean;
-  summaryOnly?: boolean;
-}
-
-export interface ListContactsResponse {
-  contacts: Xero.Contact[];
-  hasMore: boolean;
-  page: number;
-}
-
-export interface ListItemsOptions {
-  page?: number;
-  modifiedSince?: Date;
-}
-
-export interface ListItemsResponse {
-  items: Xero.Item[];
-  hasMore: boolean;
-  page: number;
-}
-
 /**
  * Xero's org-wide limit: at most 2 ACTIVE tracking categories, so at most
- * 2 dimension slots. Kept as an exported constant (not on `capabilities`)
- * because XeroProvider deliberately leaves `capabilities` undeclared —
- * absent capabilities = legacy REST provider for the drain.
+ * 2 dimension slots. Exported because the dimension settings read it directly;
+ * `XeroProvider.capabilities` now declares the same constant rather than
+ * repeating the literal.
  */
 export const XERO_MAX_JOURNAL_DIMENSION_SLOTS = 2;
+
+/** Xero returns 100 contacts per page; a short page is the last one. */
+const XERO_CONTACTS_PAGE_SIZE = 100;
+
+/**
+ * Page cap on the master-data import. 100 pages is 10,000 contacts — past that
+ * the import is the wrong tool and the ordinary push sync should carry it.
+ */
+const XERO_IMPORT_MAX_PAGES = 100;
 
 /** Dimension slot target prefix: `tracking:<TrackingCategoryID>`. */
 const XERO_TRACKING_TARGET_PREFIX = "tracking:";
@@ -111,7 +101,10 @@ export const XERO_CARBON_OWNED_ENTITIES = [
   "item",
   "invoice",
   "bill",
-  "charge"
+  "charge",
+  "creditMemo",
+  "supplierCredit",
+  "reimbursement"
 ] as const satisfies readonly AccountingEntityType[];
 
 /**
@@ -207,11 +200,26 @@ export class XeroProvider implements BaseProvider, SupportsIncrementalPull {
   static id = ProviderID.XERO;
 
   /**
-   * Undeclared on purpose: absent capabilities = legacy REST provider (the
-   * documented default in core/types.ts) — the drain treats Xero exactly
-   * as before the field existed.
+   * Xero declared nothing here until it joined the counterpart ladder, which
+   * reads `searchableCounterparts` off this object. Declaring one field means
+   * declaring them all honestly: every omitted field now reads as an assertion
+   * rather than as "undeclared". `maxJournalDimensionSlots` in particular MUST
+   * be present — omitting it from a declared object means "no cap", which is
+   * false for Xero.
+   *
+   * `externalAddressing` is left out deliberately: the resolver's documented
+   * default is `account: "code"`, which is exactly Xero's `AccountCode`.
    */
-  readonly capabilities?: ProviderCapabilities;
+  readonly capabilities: ProviderCapabilities = {
+    role: "accounting",
+    transport: "rest",
+    supportsWebhooks: true,
+    supportsJournalPush: true,
+    maxJournalDimensionSlots: XERO_MAX_JOURNAL_DIMENSION_SLOTS,
+    // One Xero Contact backs both, and ContactSyncer serves both entity types.
+    searchableCounterparts: ["customer", "vendor"],
+    importableEntities: ["customer", "vendor"]
+  };
 
   /**
    * No cap: `/Payments` with `If-Modified-Since` reaches arbitrarily far back,
@@ -265,6 +273,54 @@ export class XeroProvider implements BaseProvider, SupportsIncrementalPull {
     redirectUri: string
   ): Promise<ProviderCredentials> {
     return this.auth.exchangeCode(code, redirectUri);
+  }
+
+  /**
+   * Candidates for the counterpart ladder (`core/counterpart.ts`).
+   *
+   * Xero has a real search endpoint, so this queries by name instead of listing
+   * the org the way Rillet must. That makes **name the only rung it can
+   * answer**: the candidate set is already filtered to one name, so populating
+   * an email or tax number on these candidates could never change the outcome.
+   * Widening the ladder for Xero means widening this `where`, not adding fields
+   * below.
+   *
+   * Throws on a failed search rather than returning `[]`. The old private
+   * `findRemoteContactByName` swallowed the error and returned null, which the
+   * caller read as "no such contact" and created a duplicate — a transient 500
+   * permanently polluting the customer's contact list. A throw parks the
+   * operation and retries instead, matching Rillet and QBO.
+   */
+  async findRemoteCandidates(
+    kind: ExternalIdentityKind,
+    keys: CounterpartSearchKeys
+  ): Promise<RemoteCandidate[]> {
+    if (kind !== "customer" && kind !== "vendor") return [];
+
+    const name = keys.name?.trim();
+    if (!name) return [];
+
+    // Xero where filters double-quote string values and escape inner quotes —
+    // `JSON.stringify` does both — and the whole clause is then percent-encoded,
+    // the same shape `getCreditNoteByNumber` and the reimbursement contact
+    // lookup use. Encoding is not cosmetic here: an unencoded `&` in a name like
+    // "Smith & Sons" ends the `where` parameter early, so Xero searches for
+    // "Smith " and returns the wrong contact (or none), and an unencoded `#`
+    // never reaches Xero at all — `fetch` strips the fragment. Either way the
+    // caller reads "no such contact" and creates a duplicate.
+    const where = encodeURIComponent(`Name==${JSON.stringify(name)}`);
+    const result = await this.request<{ Contacts: Xero.Contact[] }>(
+      "GET",
+      `/Contacts?where=${where}`
+    );
+
+    if (result.error) throwXeroApiError("search contacts", result);
+
+    return (result.data?.Contacts ?? []).flatMap((contact) =>
+      contact.ContactID
+        ? [{ remoteId: contact.ContactID, name: contact.Name ?? null }]
+        : []
+    );
   }
 
   async request<T>(
@@ -520,80 +576,232 @@ export class XeroProvider implements BaseProvider, SupportsIncrementalPull {
     return created.PaymentID;
   }
 
+  // =================================================================
+  // Credit notes (memo external-GL representation)
+  // =================================================================
+
+  /**
+   * Create a credit note (POST /CreditNotes), ACCRECCREDIT (customer credit,
+   * reduces AR) or ACCPAYCREDIT (supplier credit, reduces AP).
+   *
+   * Created directly as **AUTHORISED**, forced here so no caller can weaken it:
+   * Xero will not allocate a DRAFT/SUBMITTED credit note, and it explicitly
+   * refuses create-and-allocate in one request — so the note has to land
+   * allocatable and the allocation is a second round-trip
+   * (`allocateCreditNote`).
+   *
+   * `Idempotency-Key` is a TRANSIENT-NETWORK guard only: Xero expires the key
+   * after six minutes, so it cannot be the job-level dedupe. That remains the
+   * `externalIntegrationMapping` row, backed by the deterministic
+   * `getCreditNoteByNumber` recovery read for the create-succeeded-but-mapping-
+   * failed window.
+   *
+   * Throws an AccountingApiError when Xero rejects the payload.
+   */
+  async createCreditNote(
+    creditNote: Omit<Xero.CreditNote, "CreditNoteID" | "UpdatedDateUTC">,
+    options?: { idempotencyKey?: string }
+  ): Promise<Xero.CreditNote> {
+    const response = await this.request<{ CreditNotes: Xero.CreditNote[] }>(
+      "POST",
+      "/CreditNotes?unitdp=4",
+      {
+        // Status last: a credit note MUST be AUTHORISED to be allocatable.
+        body: JSON.stringify({
+          CreditNotes: [{ ...creditNote, Status: "AUTHORISED" }]
+        }),
+        ...(options?.idempotencyKey
+          ? { headers: { "Idempotency-Key": options.idempotencyKey } }
+          : {})
+      }
+    );
+
+    if (response.error) {
+      throwXeroApiError("create credit note", response);
+    }
+
+    const created = response.data?.CreditNotes?.[0];
+    if (!created?.CreditNoteID) {
+      throw new Error(
+        "Xero API returned success but no CreditNoteID was returned"
+      );
+    }
+
+    return created;
+  }
+
+  /**
+   * Find a credit note by its `CreditNoteNumber` (the Carbon memo document
+   * number). This is the durable recovery path for the window where the remote
+   * create succeeded but the local mapping write did not — Xero's
+   * `Idempotency-Key` expires after six minutes and cannot cover it.
+   *
+   * Returns null when no credit note carries the number. Throws when more than
+   * one does (a real duplicate a human has to resolve; silently picking one
+   * would allocate against the wrong document).
+   */
+  async getCreditNoteByNumber(
+    creditNoteNumber: string
+  ): Promise<Xero.CreditNote | null> {
+    const where = encodeURIComponent(
+      `CreditNoteNumber==${JSON.stringify(creditNoteNumber)}`
+    );
+    const response = await this.request<{ CreditNotes: Xero.CreditNote[] }>(
+      "GET",
+      `/CreditNotes?where=${where}&page=1`
+    );
+
+    if (response.error) {
+      throwXeroApiError("find credit note by number", response);
+    }
+    if (!Array.isArray(response.data?.CreditNotes)) {
+      throw new Error("Xero credit note lookup returned no credit note list");
+    }
+
+    const matches = response.data.CreditNotes;
+    if (matches.length > 1) {
+      throw new Error(
+        `Multiple Xero credit notes carry CreditNoteNumber ${creditNoteNumber}; resolve the duplicates before retrying`
+      );
+    }
+
+    return matches[0] ?? null;
+  }
+
+  /**
+   * Allocate a credit note against one invoice
+   * (**PUT** /CreditNotes/{id}/Allocations).
+   *
+   * This is **ADDITIVE, not a reconcile** — Xero appends the allocation to
+   * whatever the credit note already carries, so the caller owns
+   * idempotency (re-sending double-allocates). Remove one with
+   * `deleteCreditNoteAllocation`.
+   *
+   * `Date` is sent even though the docs describe it as read-only: Xero's own
+   * OpenAPI spec marks it required on write.
+   */
+  async allocateCreditNote(
+    creditNoteId: string,
+    allocation: {
+      Invoice: { InvoiceID: string };
+      Amount: number;
+      Date: string;
+    }
+  ): Promise<Xero.CreditNoteAllocation> {
+    const response = await this.request<{
+      Allocations: Xero.CreditNoteAllocation[];
+    }>("PUT", `/CreditNotes/${encodeURIComponent(creditNoteId)}/Allocations`, {
+      body: JSON.stringify({ Allocations: [allocation] })
+    });
+
+    if (response.error) {
+      throwXeroApiError("allocate credit note", response);
+    }
+
+    const created = response.data?.Allocations?.[0];
+    if (!created) {
+      throw new Error(
+        "Xero API returned success but no Allocation was returned for the credit note"
+      );
+    }
+
+    return created;
+  }
+
+  /**
+   * Remove one allocation from a credit note
+   * (DELETE /CreditNotes/{id}/Allocations/{allocationId}) — the counterpart of
+   * the additive `allocateCreditNote`.
+   */
+  async deleteCreditNoteAllocation(
+    creditNoteId: string,
+    allocationId: string
+  ): Promise<void> {
+    const response = await this.request(
+      "DELETE",
+      `/CreditNotes/${encodeURIComponent(
+        creditNoteId
+      )}/Allocations/${encodeURIComponent(allocationId)}`
+    );
+
+    if (response.error) {
+      throwXeroApiError("delete credit note allocation", response);
+    }
+  }
+
   /**
    * List all contacts from Xero with pagination support.
    * Xero returns 100 contacts per page by default.
    */
-  async listContacts(
-    options?: ListContactsOptions
-  ): Promise<ListContactsResponse> {
-    const page = options?.page ?? 1;
-    const params = new URLSearchParams();
-    params.set("page", String(page));
-
-    if (options?.summaryOnly) {
-      params.set("summarizeErrors", "true");
-    }
-
-    if (options?.includeArchived) {
-      params.set("includeArchived", "true");
-    }
-
-    // Only fetch contacts that are customers or suppliers — skip
-    // contacts that are neither (e.g. plain address book entries)
-    params.set("where", "IsCustomer==true OR IsSupplier==true");
-
-    const headers: Record<string, string> = {};
-    if (options?.modifiedSince) {
-      headers["If-Modified-Since"] = options.modifiedSince.toUTCString();
-    }
-
-    const response = await this.request<{ Contacts: Xero.Contact[] }>(
-      "GET",
-      `/Contacts?${params.toString()}`,
-      { headers }
-    );
-
-    if (response.error || !response.data?.Contacts) {
-      return { contacts: [], hasMore: false, page };
-    }
-
-    const contacts = response.data.Contacts;
-    // Xero returns 100 contacts per page - if we get exactly 100, there may be more
-    const hasMore = contacts.length === 100;
-
-    return { contacts, hasMore, page };
-  }
-
   /**
-   * List all items from Xero with pagination support.
-   * Xero returns 100 items per page by default.
+   * Every remote id of a master-data kind, for the one-shot import.
+   *
+   * Deliberately NOT `listContacts`, whose filter is
+   * `IsCustomer==true OR IsSupplier==true`: importing "customers" through that
+   * would create Carbon customers out of supplier-only contacts. A Xero contact
+   * that is genuinely both appears under both kinds, which is correct — the
+   * mapping row is keyed by entity type, so one contact legitimately backs a
+   * Carbon customer and a Carbon supplier.
    */
-  async listItems(options?: ListItemsOptions): Promise<ListItemsResponse> {
-    const page = options?.page ?? 1;
-    const params = new URLSearchParams();
-    params.set("page", String(page));
+  async listRemoteEntityIds(kind: ExternalIdentityKind): Promise<string[]> {
+    const filter =
+      kind === "customer"
+        ? "IsCustomer==true"
+        : kind === "vendor"
+          ? "IsSupplier==true"
+          : null;
+    if (!filter) return [];
 
-    const headers: Record<string, string> = {};
-    if (options?.modifiedSince) {
-      headers["If-Modified-Since"] = options.modifiedSince.toUTCString();
+    const ids: string[] = [];
+    // A short page is the last one — the ONLY evidence the walk saw every
+    // contact. Running out of pages instead is not evidence of anything.
+    let complete = false;
+
+    for (let page = 1; page <= XERO_IMPORT_MAX_PAGES; page++) {
+      const params = new URLSearchParams();
+      params.set("page", String(page));
+      params.set("where", filter);
+
+      const response = await this.request<{ Contacts: Xero.Contact[] }>(
+        "GET",
+        `/Contacts?${params.toString()}`
+      );
+
+      // Throws rather than stopping short: a partial list read as complete
+      // silently imports a subset and reports success.
+      if (response.error) throwXeroApiError("list contacts", response);
+
+      const contacts = response.data?.Contacts ?? [];
+      for (const contact of contacts) {
+        if (contact.ContactID) ids.push(contact.ContactID);
+      }
+
+      if (contacts.length < XERO_CONTACTS_PAGE_SIZE) {
+        complete = true;
+        break;
+      }
     }
 
-    const response = await this.request<{ Items: Xero.Item[] }>(
-      "GET",
-      `/Items?${params.toString()}`,
-      { headers }
-    );
-
-    if (response.error || !response.data?.Items) {
-      return { items: [], hasMore: false, page };
+    // Exhausting the cap is the same failure as a failed page, and it must fail
+    // the same way: the caller (`accounting-master-sync`) pulls exactly the ids
+    // it is handed and then reports the import succeeded, so returning the first
+    // 10,000 would tell the customer every contact came across while the rest
+    // silently never arrived. "Carbon could not enumerate them all" is not
+    // "these are all of them".
+    if (!complete) {
+      logger.error("Xero contact enumeration exceeded the import page cap", {
+        kind,
+        maxPages: XERO_IMPORT_MAX_PAGES,
+        collected: ids.length
+      });
+      throw new Error(
+        `Xero has more than ${
+          XERO_IMPORT_MAX_PAGES * XERO_CONTACTS_PAGE_SIZE
+        } ${kind} contacts; refusing to import a partial list`
+      );
     }
 
-    const items = response.data.Items;
-    // Xero returns 100 items per page - if we get exactly 100, there may be more
-    const hasMore = items.length === 100;
-
-    return { items, hasMore, page };
+    return ids;
   }
 
   // =================================================================

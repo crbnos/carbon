@@ -252,11 +252,30 @@ export namespace Qbo {
     TxnDate: z.string().optional(),
     DueDate: z.string().optional(),
     VendorRef: RefSchema,
+    /**
+     * Which A/P account the bill is CREDITED to. Optional — most companies
+     * have one A/P account and QBO implies it — but Carbon sets it on an
+     * employee reimbursement so the segregated employee-payable control
+     * account survives the crossing.
+     *
+     * PRECONDITION (Intuit): the referenced account must be a Liability
+     * account whose sub-type is Payables. A Carbon employee-payable account
+     * mapped to anything else is rejected by QBO; the failure surfaces on the
+     * operation with Intuit's own message. VERIFY on a QBO sandbox.
+     */
+    APAccountRef: RefSchema.optional(),
     Line: z.array(ExpenseLineSchema),
     /** ISO-4217 currency ref (`{ value: "EUR" }`) — set on FX bills. */
     CurrencyRef: RefSchema.optional(),
     /** Foreign→home exchange rate — set on FX bills (omitted at rate 1). */
     ExchangeRate: z.number().optional(),
+    /**
+     * Transaction-level location/department (QBO location tracking). Optional,
+     * and only meaningful when `Preferences.AccountingInfoPrefs.TrackDepartments`
+     * is on. Transaction-level on a Bill, exactly as on a Purchase — only
+     * `ClassRef` is per line.
+     */
+    DepartmentRef: RefSchema.optional(),
     TotalAmt: z.number().optional(),
     Balance: z.number().optional(),
     PrivateNote: z.string().optional(),
@@ -325,6 +344,73 @@ export namespace Qbo {
   });
 
   export type Purchase = z.infer<typeof PurchaseSchema>;
+
+  /**
+   * QBO CreditMemo — a CUSTOMER credit (AR). Carbon writes one per posted
+   * customer + Credit `memo`.
+   *
+   * **`Line` accepts ONLY `SalesItemLine` / `GroupLine`**, and a
+   * `SalesItemLineDetail` line WITHOUT an `ItemRef` has its `Amount`
+   * SILENTLY IGNORED (no fault, a zero-total credit memo). `ItemAccountRef`
+   * is invoice-only, so the GL account comes from the item — which is why the
+   * credit-memo syncer resolves a provider-side Service item bound to the
+   * memo's reason account (`core/credit-reason-item.ts`) instead of coding the
+   * line to an account the way a Bill can.
+   *
+   * `TotalAmt` is read-only / system-calculated on QBO: it is the sum of the
+   * lines, never something Carbon may set (which is also why a
+   * balance-INCREASING memo has no safe representation here in v1).
+   */
+  export const CreditMemoSchema = z.object({
+    Id: z.string(),
+    SyncToken: z.string(),
+    /** QBO caps DocNumber at 21 characters. */
+    DocNumber: z.string().optional(),
+    TxnDate: z.string().optional(), // YYYY-MM-DD
+    CustomerRef: RefSchema,
+    Line: z.array(InvoiceLineSchema),
+    /** ISO-4217 currency ref (`{ value: "EUR" }`) — set on FX credit memos. */
+    CurrencyRef: RefSchema.optional(),
+    /** HOME per FOREIGN unit — the inverse of Carbon's rate (toQboExchangeRate). */
+    ExchangeRate: z.number().optional(),
+    TotalAmt: z.number().optional(),
+    /** Unapplied credit remaining. */
+    Balance: z.number().optional(),
+    PrivateNote: z.string().optional(),
+    MetaData: MetaDataSchema.optional()
+  });
+
+  export type CreditMemo = z.infer<typeof CreditMemoSchema>;
+
+  /**
+   * QBO VendorCredit — a SUPPLIER credit (AP). Carbon writes one per posted
+   * supplier + Debit `memo`.
+   *
+   * Unlike CreditMemo this takes an account-coded line
+   * (`AccountBasedExpenseLineDetail.AccountRef`), so the memo's reason account
+   * maps straight through and no provider-side item is needed.
+   * `APAccountRef` is set explicitly — Intuit recommends it to avoid errors
+   * when the credit is later related to a BillPayment.
+   */
+  export const VendorCreditSchema = z.object({
+    Id: z.string(),
+    SyncToken: z.string(),
+    DocNumber: z.string().optional(),
+    TxnDate: z.string().optional(),
+    VendorRef: RefSchema,
+    /** The A/P control account the credit lands on; omitted → QBO's default. */
+    APAccountRef: RefSchema.optional(),
+    Line: z.array(ExpenseLineSchema),
+    CurrencyRef: RefSchema.optional(),
+    /** HOME per FOREIGN unit — the inverse of Carbon's rate (toQboExchangeRate). */
+    ExchangeRate: z.number().optional(),
+    TotalAmt: z.number().optional(),
+    Balance: z.number().optional(),
+    PrivateNote: z.string().optional(),
+    MetaData: MetaDataSchema.optional()
+  });
+
+  export type VendorCredit = z.infer<typeof VendorCreditSchema>;
 
   /**
    * A settled transaction referenced by a payment line. QBO BillPayment lines

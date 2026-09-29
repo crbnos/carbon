@@ -1211,6 +1211,9 @@ msgstr "Veuillez sélectionner un article"
 msgid "PM schedule lapsed"
 msgstr "Calendrier PM dépassé"
 
+msgid "Press ? on any page to open this list. Shortcuts are ignored while you type in a field."
+msgstr "Appuyez sur ? n'importe où pour ouvrir cette liste. Les raccourcis sont ignorés lorsque vous tapez dans un champ."
+
 msgid "Prev"
 msgstr "Précédent"
 
@@ -1521,8 +1524,8 @@ msgstr "Prélèvement court {itemName}"
 msgid "Show description"
 msgstr "Afficher la description"
 
-msgid "Show this overlay"
-msgstr "Afficher cette superposition"
+msgid "Show keyboard shortcuts"
+msgstr "Afficher les raccourcis clavier"
 
 msgid "Sign in with Google"
 msgstr "Se connecter avec Google"
@@ -1628,6 +1631,9 @@ msgstr "Le lot sera toujours dispositionné, mais un NCR ne peut pas être cré�
 #. placeholder {0}: (batch.operations ?? []).length
 msgid "The timer and completion are shared by all {0} jobs. Steps, materials and files here are this job's own."
 msgstr "Le chronomètre et l'achèvement sont partagés par tous les {0} ordres de fabrication. Les étapes, matières et fichiers ici sont propres à cet ordre de fabrication."
+
+msgid "then"
+msgstr "puis"
 
 msgid "There are no available or consumed tracked parts for this material."
 msgstr "Il n'y a aucune pièce traçable disponible ou consommée pour cette matière."

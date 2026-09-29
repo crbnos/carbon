@@ -25,8 +25,12 @@
     "./jira.server": "./src/jira/lib/index.server.ts",
     "./linear": "./src/linear/lib/index.ts",
     "./linear.server": "./src/linear/lib/index.server.ts",
+    "./mount": "./src/mount/lib/index.ts",
+    "./mount.server": "./src/mount/lib/index.server.ts",
+    "./mount/hooks.server": "./src/mount/hooks.server.ts",
     "./notifications": "./src/notifications/index.ts",
     "./onshape": "./src/onshape/lib/index.ts",
+    "./onshape.server": "./src/onshape/oauth.server.ts",
     "./paperless-parts": "./src/paperless-parts/lib/index.ts",
     "./permissions.server": "./src/permissions.server.ts",
     "./plan": "./src/plan.ts",
@@ -37,6 +41,7 @@
     "./hooks.server": "./src/hooks.server.ts",
     "./quickbooks/hooks.server": "./src/quickbooks/hooks.server.ts",
     "./ramp.server": "./src/ramp/lib/index.ts",
+    "./ramp/entities": "./src/ramp/entities/index.ts",
     "./ramp/hooks.server": "./src/ramp/hooks.server.ts",
     "./rillet/hooks.server": "./src/rillet/hooks.server.ts",
     "./xero/hooks.server": "./src/xero/hooks.server.ts",
@@ -46,7 +51,8 @@
     "./workflows": "./src/workflows/index.ts",
     "./workflows.server": "./src/workflows.server.ts",
     "./workflows/help": "./src/workflows/catalog/help.generated.ts",
-    "./workflows/labels": "./src/workflows/catalog/labels.generated.ts"
+    "./workflows/labels": "./src/workflows/catalog/labels.generated.ts",
+    "./sync": "./src/sync/index.ts"
   },
   "private": true,
   "scripts": {

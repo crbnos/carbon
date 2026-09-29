@@ -4,6 +4,7 @@ import {
   getMESUrl,
   SUPABASE_URL
 } from "@carbon/auth";
+import { getRequestOrigin } from "@carbon/utils";
 import { generatePath } from "react-router";
 
 const x = "/x"; // from ~/routes/x+ folder
@@ -373,6 +374,10 @@ export const path = {
       generatePath(`${x}/assembly/${id}/steps/components/${stepId}`),
     assemblyInstructionStepComponentsReassign: (id: string) =>
       generatePath(`${x}/assembly/${id}/steps/components/reassign`),
+    assemblyInstructionStepHiddenComponents: (id: string, stepId: string) =>
+      generatePath(`${x}/assembly/${id}/steps/hidden/${stepId}`),
+    assemblyInstructionStepJoin: (id: string, stepId: string) =>
+      generatePath(`${x}/assembly/${id}/steps/join/${stepId}`),
     assemblyInstructionStepMotion: (id: string, stepId: string) =>
       generatePath(`${x}/assembly/${id}/steps/motion/${stepId}`),
     assemblyInstructionStepOrder: (id: string) =>
@@ -445,11 +450,6 @@ export const path = {
     calibrations: `${x}/quality/calibrations`,
     cancelPurchasingRfq: (id: string) =>
       generatePath(`${x}/purchasing-rfq/${id}/cancel`),
-    cardTransaction: (id: string) =>
-      generatePath(`${x}/invoicing/card-transactions/${id}`),
-    cardTransactions: `${x}/invoicing/card-transactions`,
-    cardTransactionVoid: (id: string) =>
-      generatePath(`${x}/invoicing/card-transactions/${id}/void`),
     changeNotice: (id: string) =>
       generatePath(`${x}/items/change-notice/${id}`),
     changeNoticeAction: (id: string) =>
@@ -505,6 +505,10 @@ export const path = {
     // Change Notice Types — a sibling of the CO list (not nested under it), so the
     // Items sidebar doesn't highlight both entries via prefix matching.
     changeNoticeTypes: `${x}/items/change-notice-types`,
+    charge: (id: string) => generatePath(`${x}/invoicing/charges/${id}`),
+    charges: `${x}/invoicing/charges`,
+    chargeVoid: (id: string) =>
+      generatePath(`${x}/invoicing/charges/${id}/void`),
     chartOfAccount: (id: string) =>
       generatePath(`${x}/accounting/charts/${id}`),
     chartOfAccounts: `${x}/accounting/charts`,
@@ -565,6 +569,7 @@ export const path = {
     costCenter: (id: string) =>
       generatePath(`${x}/accounting/cost-centers/${id}`),
     costCenters: `${x}/accounting/cost-centers`,
+    creditMemos: `${x}/invoicing/credit-memos`,
     customer: (id: string) => generatePath(`${x}/customer/${id}`),
     customerAccounting: (id: string) =>
       generatePath(`${x}/customer/${id}/accounting`),
@@ -1462,12 +1467,13 @@ export const path = {
     materialTypes: `${x}/items/types`,
     mcpDocs: withDocsHost("https://docs.carbon.ms/api/mcp"),
     // Credit / Debit memos — payment-shaped documents (the `memo` table). The
-    // list lives in the invoicing nav beside Payments; details mirror payments.
+    // detail/create/post/void routes live under `x/credits`; the LIST is split
+    // by party into two invoicing submodules — customer memos surface as
+    // `creditMemos` (AR), supplier memos as `supplierCredits` (AP).
     memo: (id: string) => generatePath(`${x}/credits/${id}`),
     memoDelete: (id: string) => generatePath(`${x}/credits/${id}/delete`),
     memoNew: `${x}/credits/new`,
     memoPost: (id: string) => generatePath(`${x}/credits/${id}/post`),
-    memos: `${x}/invoicing/credits`,
     memoVoid: (id: string) => generatePath(`${x}/credits/${id}/void`),
     methodMaterial: (id: string) =>
       generatePath(`${x}/items/methods/material/${id}`),
@@ -2019,6 +2025,21 @@ export const path = {
     receivables: `${x}/invoicing/receivables`,
     receivablesAdjust: `${x}/invoicing/receivables/adjust`,
     refreshSession: "/refresh-session",
+    // Reimbursements — employee expense payables imported from a spend tool.
+    // The list lives under invoicing (it is an AP nav entry); the document is a
+    // full page of its own, because the coding-line editor does not fit the
+    // Drawer detail convention (see
+    // .ai/specs/2026-09-23-editable-imported-spend-documents.md).
+    reimbursement: (id: string) => generatePath(`${x}/reimbursements/${id}`),
+    reimbursementEdit: (id: string) =>
+      generatePath(`${x}/reimbursements/${id}/edit`),
+    reimbursementPay: (id: string) =>
+      generatePath(`${x}/reimbursements/${id}/pay`),
+    reimbursementPost: (id: string) =>
+      generatePath(`${x}/reimbursements/${id}/post`),
+    reimbursements: `${x}/invoicing/reimbursements`,
+    reimbursementVoid: (id: string) =>
+      generatePath(`${x}/reimbursements/${id}/void`),
     releaseOperationBatches: `${x}/production/batches/release`,
     repeatDepreciationRun: (id: string) =>
       generatePath(`${x}/depreciation-run/${id}/repeat`),
@@ -2238,6 +2259,7 @@ export const path = {
       generatePath(`${x}/supplier/${supplierId}/contacts/${id}`),
     supplierContacts: (id: string) =>
       generatePath(`${x}/supplier/${id}/contacts`),
+    supplierCredits: `${x}/invoicing/supplier-credits`,
     supplierDefaultAttachments: (supplierId: string) =>
       generatePath(`${x}/supplier/${supplierId}/default-attachments`),
     supplierDetails: (id: string) =>
@@ -2399,26 +2421,17 @@ export const getStoragePath = (bucket: string, path: string) => {
  * cross-origin or unparsable referer yields null and callers fall back to
  * their fixed route.
  *
- * Behind a TLS-terminating load balancer `request.url` is `http://` (the
- * server does not trust proxy headers) while the browser's Referer is
- * `https://`, so the scheme comes from `X-Forwarded-Proto` when it names one.
- * Only the scheme is taken from it; the host still has to match.
+ * Compared with the origin the client addressed (`getRequestOrigin`), not
+ * `request.url`'s: behind the proxy that is the internal scheme and host, which
+ * never matches a real Referer.
  */
 export const requestReferrer = (request: Request, withParams = true) => {
   const referer = request.headers.get("referer");
   if (!referer) return null;
   try {
-    const requestUrl = new URL(request.url);
-    const forwardedProto = request.headers
-      .get("x-forwarded-proto")
-      ?.split(",")[0]
-      ?.trim()
-      .toLowerCase();
-    if (forwardedProto === "http" || forwardedProto === "https") {
-      requestUrl.protocol = `${forwardedProto}:`;
-    }
-    const url = new URL(referer, requestUrl.origin);
-    if (url.origin !== requestUrl.origin) return null;
+    const origin = getRequestOrigin(request) ?? new URL(request.url).origin;
+    const url = new URL(referer, origin);
+    if (url.origin !== origin) return null;
     return url.pathname + url.search + url.hash;
   } catch {
     return null;

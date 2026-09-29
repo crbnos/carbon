@@ -6,6 +6,7 @@ import { requireFeature } from "@carbon/ee/plan.server";
 import { validationError, validator } from "@carbon/form";
 import { batchTrigger } from "@carbon/jobs";
 import { getLogger } from "@carbon/logger";
+import { getClientIp } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
 import {
@@ -81,7 +82,7 @@ export async function action({ request }: ActionFunctionArgs) {
     );
   }
 
-  const ip = request.headers.get("x-forwarded-for") ?? undefined;
+  const ip = getClientIp(request) ?? undefined;
 
   const batchPayload = userIds.map((id) => ({
     payload: {

@@ -1,5 +1,8 @@
 import type { KyselyTx } from "@carbon/database/client";
+import { resolveOrCreateRemoteCounterpart } from "../../../core/counterpart";
+import { createMappingService } from "../../../core/external-mapping";
 import type { Accounting } from "../../../core/types";
+import { withTriggersDisabled } from "../../../core/utils";
 import type { Rillet, RilletCustomerWrite, RilletWriteOmit } from "../models";
 import { buildRilletIdempotencyKey } from "../provider";
 import {
@@ -18,17 +21,20 @@ import {
  *
  * Rillet keeps customers and vendors as separate objects (like QBO, not
  * Xero's dual-flag Contact), so this syncer reads the customer tables
- * only and mapping rows live under entityType "customer". No
- * name-matching lookup before create on the PUSH side (unlike QBO's smart
- * match) — the carbon external_reference plus the create Idempotency-Key
- * are the duplicate guards there.
+ * only and mapping rows live under entityType "customer". Before creating,
+ * the PUSH side resolves an existing remote counterpart through the shared
+ * ladder (`core/counterpart.ts`) — mapping row -> carbon external_reference ->
+ * email -> name (a Rillet customer carries no tax id), ambiguity creating
+ * rather than guessing. The external_reference and the create
+ * Idempotency-Key remain the guards against CARBON double-creating; the ladder
+ * is what stops it duplicating a customer someone else made.
  *
  * AUTOMATIC sync is push-only: buildRilletSyncConfig forces
  * `push-to-accounting` / `owner: "carbon"`, so no sweep or webhook ever
  * pulls a customer on its own. The PULL half exists for the explicit
  * "Import customers & vendors" action, which enqueues
  * `pull-from-accounting` ledger operations directly
- * (`rillet-import-contacts`). That is also why `owner: "carbon"` matters:
+ * (`accounting-master-sync`). That is also why `owner: "carbon"` matters:
  * `pullBatchFromAccounting` skips an ALREADY-LINKED record, so re-running
  * the import never lets Rillet overwrite a Carbon-owned customer.
  *
@@ -548,9 +554,51 @@ export class RilletCustomerSyncer extends RilletEntitySyncer<
     data: RilletCustomerWrite,
     localId: string
   ): Promise<string> {
-    const existingRemoteId = await this.getRemoteId(localId);
+    // Mapping first, then the shared ladder — see the vendor syncer. A Rillet
+    // customer has no tax id, so it resolves by carbon reference then name.
+    const { remoteId: existingRemoteId, decision } =
+      await resolveOrCreateRemoteCounterpart({
+        provider: this.rilletProvider,
+        kind: "customer",
+        keys: {
+          name: data.name,
+          email:
+            data.emails?.find((entry) => entry.type === "MAIN_SENDER")?.email ??
+            data.emails?.[0]?.email,
+          carbonReference: localId
+        },
+        existingRemoteId: await this.getRemoteId(localId),
+        localId,
+        // Two Carbon customers can share a name closely enough to match the same
+        // Rillet customer; adopting one another customer already owns and then
+        // updating it overwrites that customer's master while every invoice of
+        // theirs still points at it.
+        isClaimed: async (remoteId) => {
+          const owner = await this.mappingService.getEntityId(
+            this.provider.id,
+            remoteId,
+            this.entityType
+          );
+          return owner !== null && owner !== localId;
+        }
+      });
 
     if (existingRemoteId) {
+      // LINK BEFORE MUTATE on an ADOPTED record — same reasoning as the vendor
+      // syncer: `updateCustomer` overwrites name and email, and the mapping's
+      // partial unique index is the only thing that can refuse, so it has to
+      // refuse while the remote record is still intact.
+      if (decision?.action === "link") {
+        await withTriggersDisabled(this.database, async (tx) => {
+          await createMappingService(tx, this.companyId).link(
+            this.entityType,
+            localId,
+            this.provider.id,
+            existingRemoteId
+          );
+        });
+      }
+
       const updated = await writeDroppingUnregisteredReferences(
         data,
         (payload) =>

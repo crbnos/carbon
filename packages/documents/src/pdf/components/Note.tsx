@@ -18,11 +18,11 @@ function makeConvert(theme: DocumentTheme) {
       case "doc":
         return (
           <View style={{ fontSize: 9, width: "100%" }}>
-            {args?.title && (
+            {args?.title ? (
               <View style={[styles.thead, { color: theme.heading }]}>
                 <Text>{args.title}</Text>
               </View>
-            )}
+            ) : null}
             {node?.content?.map((child) => convert(child))}
           </View>
         );

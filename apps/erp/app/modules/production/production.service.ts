@@ -26,7 +26,8 @@ import {
   CURRENT_PLAN_VERSION,
   describeStep,
   groupComponentNodeIds,
-  indexAssemblyGraph
+  indexAssemblyGraph,
+  joinTargets
 } from "@carbon/viewer";
 import { parseDate } from "@internationalized/date";
 import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
@@ -7419,6 +7420,81 @@ export async function updateAssemblyStepComponents(
     .single();
 }
 
+// Replaces a step's hidden list. The step's own components are stripped (and the
+// list deduped) by the assembly_step_strip_own_hidden_components trigger.
+export async function updateAssemblyStepHiddenComponents(
+  client: SupabaseClient<Database>,
+  data: {
+    id: string;
+    assemblyInstructionId: string;
+    hiddenComponentNodeIds: string[];
+    updatedBy: string;
+  }
+) {
+  return client
+    .from("assemblyInstructionStep")
+    .update({
+      hiddenComponentNodeIds: data.hiddenComponentNodeIds,
+      updatedBy: data.updatedBy,
+      updatedAt: new Date().toISOString()
+    })
+    .eq("id", data.id)
+    .eq("assemblyInstructionId", data.assemblyInstructionId)
+    .select("id")
+    .single();
+}
+
+// Sub-assembly staging: `parentStepId` = the later JOIN step this step is built
+// aside for (NULL = built in place). Which links are allowed is `joinTargets`,
+// the one rule the select and playback share.
+export async function updateAssemblyStepJoin(
+  client: SupabaseClient<Database>,
+  data: {
+    assemblyInstructionId: string;
+    stepId: string;
+    joinStepId: string | null;
+    companyId: string;
+    updatedBy: string;
+  }
+) {
+  const steps = await client
+    .from("assemblyInstructionStep")
+    .select("id, parentStepId")
+    .eq("assemblyInstructionId", data.assemblyInstructionId)
+    .eq("companyId", data.companyId)
+    .order("sortOrder", { ascending: true });
+  if (steps.error) return { data: null, error: steps.error };
+
+  const rows = steps.data.map((row) => ({
+    id: row.id,
+    joinStepId: row.parentStepId
+  }));
+  if (!rows.some((row) => row.id === data.stepId)) {
+    return { data: null, error: { message: "Step not found" } };
+  }
+  if (
+    data.joinStepId &&
+    !joinTargets(rows, data.stepId).targets.includes(data.joinStepId)
+  ) {
+    return {
+      data: null,
+      error: { message: "That step can't be the join step for this one" }
+    };
+  }
+
+  return client
+    .from("assemblyInstructionStep")
+    .update({
+      parentStepId: data.joinStepId,
+      updatedBy: data.updatedBy,
+      updatedAt: new Date().toISOString()
+    })
+    .eq("id", data.stepId)
+    .eq("companyId", data.companyId)
+    .select("id")
+    .single();
+}
+
 // Assign a set of component instances to a target step. `duplicate` unions them
 // onto the target only (a component may live on several steps). `move` unions
 // them onto the target AND strips them from every other step, so the component
@@ -7614,7 +7690,26 @@ export async function updateAssemblyInstructionStepOrder(
     companyId,
     userId,
     parent: { column: "assemblyInstructionId", id: assemblyInstructionId },
-    updates
+    updates,
+    // A step built aside must still come before its join step; a reorder that
+    // breaks that turns it back into a built-in-place step.
+    afterUpdate: async (trx) => {
+      await trx
+        .updateTable("assemblyInstructionStep as s")
+        .set({ parentStepId: null })
+        .where("s.companyId", "=", companyId)
+        .where("s.assemblyInstructionId", "=", assemblyInstructionId)
+        .where("s.parentStepId", "is not", null)
+        .where(({ exists, selectFrom }) =>
+          exists(
+            selectFrom("assemblyInstructionStep as j")
+              .select("j.id")
+              .whereRef("j.id", "=", "s.parentStepId")
+              .whereRef("j.sortOrder", "<=", "s.sortOrder")
+          )
+        )
+        .execute();
+    }
   });
 }
 
@@ -9438,6 +9533,8 @@ export function toViewerStep(step: AssemblyInstructionStepRow): AssemblyStep {
     title: step.title,
     instructionText: step.instructionText,
     componentNodeIds: step.componentNodeIds ?? [],
+    hiddenComponentNodeIds: step.hiddenComponentNodeIds ?? [],
+    joinStepId: step.parentStepId ?? null,
     motion: motion.success ? motion.data : { type: "none" },
     camera: camera.success ? camera.data : null,
     fastener: fastener.success ? fastener.data : null,

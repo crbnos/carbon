@@ -27,6 +27,7 @@ const invoice = (): Accounting.SalesInvoice =>
     currencyDecimalPlaces: 2,
     headerShippingCost: 0,
     shippingRevenueAccountId: "acct_shipping",
+    salesRevenueAccountId: "acct_sales",
     exchangeRate: 1,
     dateIssued: "2026-08-04",
     dateDue: null,
@@ -139,8 +140,11 @@ describe("SalesInvoiceSyncer.mapToRemote (item revenue account)", () => {
     ).mapToRemote(invoice());
 
     expect(payload.LineItems[0]?.AccountCode).toBe("4000");
-    // Item still referenced; tax handling unchanged (Exclusive + NONE at 0 tax).
-    expect(payload.LineItems[0]?.ItemCode).toBe("WIDGET-1");
+    // NO ItemCode: Xero lines are already account-coded, so the item was pure
+    // subledger detail and carrying it mirrored Carbon's parts catalog into
+    // Xero Items. The item name stays in Description.
+    expect(payload.LineItems[0]?.ItemCode).toBeUndefined();
+    expect(payload.LineItems[0]?.Description).toContain("Widget");
     expect(payload.LineItems[0]?.TaxType).toBe("NONE");
     expect(payload.LineAmountTypes).toBe("Exclusive");
   });
@@ -284,6 +288,7 @@ function chargedInvoice(): Accounting.SalesInvoice {
     exchangeRate: 0.8,
     headerShippingCost: 5,
     shippingRevenueAccountId: "acct_shipping",
+    salesRevenueAccountId: "acct_sales",
     subtotal: 133,
     totalTax: 13,
     totalAmount: 151,
@@ -379,7 +384,8 @@ function reviewSyncer() {
 describe("Xero posted facts and monetary representation", () => {
   it("keeps the posted shipping account after changing defaults", async () => {
     const source = Object.assign(chargedInvoice(), {
-      shippingRevenueAccountId: "acct_shipping"
+      shippingRevenueAccountId: "acct_shipping",
+      salesRevenueAccountId: "acct_sales"
     });
     const payload = await reviewSyncer().mapToRemote(source);
     expect(
