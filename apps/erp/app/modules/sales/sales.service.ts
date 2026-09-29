@@ -194,9 +194,10 @@ export async function closeSalesOrder(
   return client
     .from("salesOrder")
     .update({
-      closed: true,
+      status: "Closed",
       closedAt: datetime.today(companyTz).toString(),
-      closedBy: userId
+      closedBy: userId,
+      updatedBy: userId
     })
     .eq("id", salesOrderId)
     .select("id")
