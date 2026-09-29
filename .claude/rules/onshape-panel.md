@@ -21,22 +21,32 @@ separate `companyIntegration` row, separate `externalIntegrationMapping`
 namespace; a company can run either, both, or neither. Intended to be
 temporary while v2 replaces v1.
 
-- Ids live in `packages/ee/src/onshape/lib/integration-id.ts`. Every panel read
-  and write passes one explicitly (`getOnshapeClient(id)` defaults to v1 for
-  the untouched v1 callers). A bare `"onshape"` literal in panel code is a bug.
+- The panel id is `ONSHAPE_V2_INTEGRATION_ID` in
+  `packages/ee/src/onshape/lib/integration-id.ts`. Every panel read and write
+  passes it explicitly: `getOnshapeClient(…, ONSHAPE_V2_INTEGRATION_ID)`;
+  omitted, `getOnshapeClient` resolves the company's sync connection. A bare
+  `"onshape"` literal in panel code is a bug.
+- `ONSHAPE_INTEGRATION_IDS`, `OnshapeIntegrationId` and `isOnshapeIntegrationId`
+  (`lib/connection.ts`) cover the two SYNC connections only, `onshape` and
+  `onshape-government`. The one-active-connection rule
+  (`getConflictingOnshapeIntegration`) is between those two and never involves
+  the panel. `OnshapeOAuthIntegrationId` is all three grants.
 - Reads that answer "is this already in Carbon?" (status, the item page's
-  `ExternalSourceCard`, `items.service.ts`) look in BOTH namespaces,
-  `ONSHAPE_INTEGRATION_IDS`, v2 first. Writes name exactly one.
+  `ExternalSourceCard`, `items.service.ts`, the detach route) look in both
+  mapping namespaces, `ONSHAPE_MAPPING_NAMESPACES`, v2 first. Both sync
+  connections write under `onshape`. Writes name exactly one.
 - Same Onshape OAuth app, same scopes (`OAuth2Read OAuth2Write`), two redirect
   URIs: `ONSHAPE_OAUTH_REDIRECT_URL` → `/api/integrations/onshape/oauth`,
   `ONSHAPE_V2_OAUTH_REDIRECT_URL` → `/api/integrations/onshape-v2/oauth`. Both
-  must be registered on the Onshape app. Install + callback for both ids are one
-  handler parameterised by id (`apps/erp/app/modules/settings/onshape-oauth.server.ts`);
-  each install route checks ITS OWN redirect var and answers "Onshape OAuth not
-  configured" (500) when missing. Install mints the OAuth `state` bound to
-  integration + user + company (Redis `onshape-oauth-state:<uuid>`, 15 min;
-  503 when Redis did not take it); the callback GETDELs it and refuses a
-  missing, expired, replayed or mismatched state as `invalid-response`.
+  must be registered on the Onshape app. Every Onshape grant shares one flow:
+  install routes call `beginOnshapeAuthorization` (`@carbon/ee/onshape.server`),
+  callbacks call `completeOnshapeAuthorization`
+  (`apps/erp/app/modules/settings/onshape-oauth.server.ts`), and
+  `getOnshapeOAuthConfig` picks the redirect URI per id; a missing client or
+  redirect var answers `not-configured`. The OAuth `state` is the cookie-bound
+  one from `@carbon/auth/oauth-state.server`. The callback renders
+  `oauthPopupResponse`: it posts the outcome to the opener and closes the popup,
+  or lands on the integrations page when there is no opener.
 - Migration `20260909174511_onshape-v2-integration.sql` seeds the `integration`
   row (FK target for `companyIntegration`); `credentials` required, `baseUrl`
   not — the integration settings form may write metadata before any grant exists.
