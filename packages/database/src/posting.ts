@@ -9,4 +9,8 @@ export {
 export { statusAfterQuantityChange } from "../supabase/functions/shared/entity-drain.ts";
 export * from "../supabase/functions/shared/get-accounting-period.ts";
 export * from "../supabase/functions/shared/get-posting-group.ts";
-export { bookAdjustment } from "../supabase/functions/shared/post-adjustment.ts";
+export {
+  type AdjustmentItemCost,
+  bookAdjustment,
+  createAdjustmentJournal
+} from "../supabase/functions/shared/post-adjustment.ts";

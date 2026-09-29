@@ -1,8 +1,9 @@
 import type { Database, Json } from "@carbon/database";
 import type { KyselyTx } from "@carbon/database/client";
 import { lockIssueDispositions } from "@carbon/database/quality";
+import { postNonConformance } from "@carbon/operations/post-nonconformance";
 import { datetime, EPSILON, round } from "@carbon/utils";
-import { FunctionRegion, type SupabaseClient } from "@supabase/supabase-js";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { nanoid } from "nanoid";
 import { getDatabaseClient } from "~/services/database.server";
 import { buildBatchSplitRecords } from "../../../../../packages/database/supabase/functions/shared/batch-split.ts";
@@ -836,7 +837,7 @@ export async function splitIssueItem(args: {
 // -------------------------------------------------------------
 // Validates disposition plan (qty sums, no Pending rows, no Consumed entities),
 // posts inventory value movements (Scrap/Return write-offs + non-tracked restores)
-// through the post-nonconformance edge function (itemLedger + cost relief + GL,
+// through the post-nonconformance operation (itemLedger + cost relief + GL,
 // idempotent per NCR), THEN in one transaction re-validates under a row lock,
 // writes disposition genealogy (trackedActivity + input), flips trackedEntity
 // status (Use As Is / Rework → Available; Scrap / Return to Supplier → Rejected),
@@ -1149,25 +1150,21 @@ export async function closeIssue(
   }
 
   // Post the inventory value movements (itemLedger + cost relief + GL) through
-  // the edge function BEFORE flipping statuses / closing. Idempotent per NCR, so
+  // the operation BEFORE flipping statuses / closing. Idempotent per NCR, so
   // a retry after a later failure is safe; a posting failure aborts the close.
   if (movements.length > 0) {
-    const post = await client.functions.invoke("post-nonconformance", {
-      body: {
-        companyId,
-        userId,
+    const post = await postNonConformance(
+      { db, companyId, userId },
+      {
         documentType: "Non-Conformance",
         documentId: nonConformanceId,
         description: `NC ${readableNc} disposition`,
         movements
-      },
-      region: FunctionRegion.UsEast1
-    });
+      }
+    );
     if (post.error) {
       return errResult(
-        post.error instanceof Error
-          ? post.error.message
-          : "Failed to post disposition to the ledger"
+        post.error.message || "Failed to post disposition to the ledger"
       );
     }
   }

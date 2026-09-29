@@ -571,7 +571,7 @@ export async function dispositionInspection(
       // received quantity sits in itemLedger with no per-row status to exclude
       // it from on-hand. Rejecting the lot posts a compensating write-off —
       // itemLedger Negative Adjmt. + cost relief + GL — through the
-      // post-nonconformance edge function, which the route invokes AFTER this
+      // post-nonconformance operation, which the route runs AFTER this
       // transaction commits (cost/GL logic is Deno-only). The `inspection.status
       // !== "Failed"` guard is intentionally dropped: post-nonconformance is
       // idempotent per (documentType, documentId), so a re-reject / retry is

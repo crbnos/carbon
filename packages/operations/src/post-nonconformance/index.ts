@@ -1,23 +1,20 @@
-import { serve } from "https://deno.land/std@0.175.0/http/server.ts";
-import { z } from "https://deno.land/x/zod@v3.21.4/mod.ts";
-import { DB, getConnectionPool, getDatabaseClient } from "../lib/database.ts";
-import { assertCompanyRecords } from "../lib/company-records.ts";
-import { datetime, getCompanyTimeZone } from "../lib/datetime.ts";
-import { corsPreflight, errorResponse, jsonResponse } from "../lib/response.ts";
-import { getFunctionLogger } from "../lib/logging.ts";
-import { requirePermissions } from "../lib/supabase.ts";
-import { Database } from "../lib/types.ts";
-import { getCurrentAccountingPeriod } from "../shared/get-accounting-period.ts";
-import { getDefaultPostingGroup } from "../shared/get-posting-group.ts";
+import type { Database } from "@carbon/database";
+import { datetime, getCompanyTimeZone } from "@carbon/database/datetime";
 import {
-  AdjustmentItemCost,
+  type AdjustmentItemCost,
   bookAdjustment,
   createAdjustmentJournal,
-} from "../shared/post-adjustment.ts";
-
-const pool = getConnectionPool(1);
-const db = getDatabaseClient<DB>(pool);
-const logger = getFunctionLogger("post-nonconformance");
+  getCurrentAccountingPeriod,
+  getDefaultPostingGroup
+} from "@carbon/database/posting";
+import { z } from "zod";
+import { assertCompanyRecords } from "../company-records";
+import {
+  assertOperationPermissions,
+  type OperationContext,
+  serviceRoleClient
+} from "../context";
+import { runOperation } from "../result";
 
 // The GL/cost posting path for inspection-reject and NCR-disposition inventory
 // write-offs. The caller (inspection reject route / closeIssue) owns the
@@ -28,9 +25,7 @@ const logger = getFunctionLogger("post-nonconformance");
 // scrapAccount (offset), one shared journal per call. Scrap / Return post a
 // Negative Adjmt. (Dr Scrap / Cr Inventory + relieve layers); a kept lot's
 // restore posts a Positive Adjmt. (Dr Inventory / Cr Scrap + create a layer).
-const payloadValidator = z.object({
-  companyId: z.string(),
-  userId: z.string(),
+export const postNonConformanceInput = z.object({
   // Drives both the itemLedger/costLedger documentType and the journal
   // sourceType — 'Non-Conformance' for a disposition close, 'Inbound Inspection'
   // for an inspection reject.
@@ -46,41 +41,39 @@ const payloadValidator = z.object({
         trackedEntityId: z.string().optional().nullable(),
         // SIGNED: < 0 removes value (scrap/return), > 0 restores value (kept).
         quantity: z.number(),
-        comment: z.string().optional().nullable(),
+        comment: z.string().optional().nullable()
       })
     )
-    .min(1),
+    .min(1)
 });
 
-serve(async (req: Request) => {
-  const preflight = corsPreflight(req);
-  if (preflight) return preflight;
-
-  try {
-    const payload = await req.json();
+export function postNonConformance(
+  ctx: OperationContext,
+  input: z.infer<typeof postNonConformanceInput>
+) {
+  return runOperation("post-nonconformance", async () => {
     const {
-      companyId,
-      userId,
       documentType,
       documentId,
       description,
       postingDate: providedPostingDate,
-      movements,
-    } = payloadValidator.parse(payload);
+      movements
+    } = postNonConformanceInput.parse(input);
+    const { db, companyId, userId } = ctx;
+    await assertOperationPermissions(ctx, { update: "quality" });
+    const client = await serviceRoleClient();
 
-    const client = await requirePermissions(req, companyId, userId, {
-      update: "quality",
-    });
-
-    const postingDate = providedPostingDate || datetime.today(await getCompanyTimeZone(client, companyId)).toString();
+    const postingDate =
+      providedPostingDate ||
+      datetime.today(await getCompanyTimeZone(client, companyId)).toString();
 
     // Only movements that actually move stock post anything.
     const effectiveMovements = movements.filter((m) => m.quantity !== 0);
     if (effectiveMovements.length === 0) {
-      return jsonResponse({ success: true, journalId: null });
+      return { journalId: null };
     }
 
-    // The service-role client proves the caller may act in companyId, not that
+    // The permission check proves the caller may act in companyId, not that
     // the document or the movements' location / tracked entity belong to it —
     // all three land on this company's ledger rows.
     await assertCompanyRecords(
@@ -116,14 +109,16 @@ serve(async (req: Request) => {
           .eq("companyId", companyId),
         client
           .from("itemCost")
-          .select("itemId, costingMethod, unitCost, standardCost, itemPostingGroupId")
+          .select(
+            "itemId, costingMethod, unitCost, standardCost, itemPostingGroupId"
+          )
           .in("itemId", itemIds)
           .eq("companyId", companyId),
         client
           .from("companySettings")
           .select("accountingEnabled")
           .eq("id", companyId)
-          .single(),
+          .single()
       ]);
 
     if (itemsResult.error) throw new Error("Failed to fetch items");
@@ -155,7 +150,7 @@ serve(async (req: Request) => {
     const costByItem = new Map<string, NcItemCostRow>(
       ((itemCostsResult.data ?? []) as NcItemCostRow[]).map((row) => [
         row.itemId,
-        row,
+        row
       ])
     );
 
@@ -184,15 +179,18 @@ serve(async (req: Request) => {
         .eq("id", companyId)
         .single();
       if (companyRecord.error) throw new Error("Failed to fetch company");
-      const dimensions = await client
-        .from("dimension")
-        .select("id, entityType")
-        .eq("companyGroupId", companyRecord.data.companyGroupId)
-        .eq("active", true)
-        .in("entityType", ["Item", "ItemPostingGroup", "Location"]);
-      if (dimensions.error) throw new Error("Failed to fetch dimensions");
-      for (const dim of dimensions.data ?? []) {
-        if (dim.entityType) dimensionMap[dim.entityType] = dim.id;
+      const companyGroupId = companyRecord.data.companyGroupId;
+      if (companyGroupId) {
+        const dimensions = await client
+          .from("dimension")
+          .select("id, entityType")
+          .eq("companyGroupId", companyGroupId)
+          .eq("active", true)
+          .in("entityType", ["Item", "ItemPostingGroup", "Location"]);
+        if (dimensions.error) throw new Error("Failed to fetch dimensions");
+        for (const dim of dimensions.data ?? []) {
+          if (dim.entityType) dimensionMap[dim.entityType] = dim.id;
+        }
       }
     }
 
@@ -236,7 +234,7 @@ serve(async (req: Request) => {
                 rawMaterialsAccount: accountDefaults.data.rawMaterialsAccount,
                 finishedGoodsAccount: accountDefaults.data.finishedGoodsAccount,
                 inventoryAdjustmentVarianceAccount:
-                  accountDefaults.data.inventoryAdjustmentVarianceAccount,
+                  accountDefaults.data.inventoryAdjustmentVarianceAccount
               },
               // Cost of quality: offset to scrapAccount, falling back to the
               // variance account for companies whose scrapAccount is unset.
@@ -256,11 +254,11 @@ serve(async (req: Request) => {
                     description: journalDescription,
                     postingDate,
                     userId,
-                    sourceType: documentType,
+                    sourceType: documentType
                   });
                 }
                 return journalId;
-              },
+              }
             }
           : null;
 
@@ -274,7 +272,7 @@ serve(async (req: Request) => {
           ? {
               costingMethod: costRow.costingMethod,
               unitCost: costRow.unitCost,
-              standardCost: costRow.standardCost,
+              standardCost: costRow.standardCost
             }
           : { costingMethod: "Average", unitCost: 0, standardCost: 0 };
 
@@ -292,24 +290,19 @@ serve(async (req: Request) => {
             documentId,
             comment: movement.comment ?? null,
             companyId,
-            createdBy: userId,
+            createdBy: userId
           },
           item: {
             itemTrackingType: itemRow.itemTrackingType,
             replenishmentSystem: itemRow.replenishmentSystem,
-            itemPostingGroupId: costRow?.itemPostingGroupId ?? null,
+            itemPostingGroupId: costRow?.itemPostingGroupId ?? null
           },
           itemCost,
-          accounting,
+          accounting
         });
       }
     });
 
-    return jsonResponse({ success: true, journalId });
-  } catch (err) {
-    logger.error("post-nonconformance failed", {
-      error: String((err as Error).stack ?? err),
-    });
-    return errorResponse(err, 500);
-  }
-});
+    return { journalId: journalId as string | null };
+  });
+}

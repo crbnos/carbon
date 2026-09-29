@@ -190,11 +190,6 @@ enabled = true
 verify_jwt = true
 entrypoint = "./functions/post-inventory-adjustment/index.ts"
 
-[functions.post-nonconformance]
-enabled = true
-verify_jwt = true
-entrypoint = "./functions/post-nonconformance/index.ts"
-
 [functions.post-charge]
 enabled = true
 verify_jwt = true
