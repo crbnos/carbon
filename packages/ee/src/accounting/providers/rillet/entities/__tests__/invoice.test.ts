@@ -24,6 +24,7 @@ function invoice(): Accounting.SalesInvoice {
     currencyDecimalPlaces: 2,
     headerShippingCost: 0,
     shippingRevenueAccountId: "acct-shipping",
+    salesRevenueAccountId: "acct-sales",
     exchangeRate: 1,
     dateIssued: "2026-08-12",
     dateDue: "2026-09-11",
@@ -62,7 +63,7 @@ describe("mapSalesInvoiceToRilletInvoice — external references", () => {
       shippingProductRemoteId: null,
       shippingAccountCode: null,
       customerRemoteId: "rillet-cust-1",
-      itemRemoteIds: new Map([["item-1", "rillet-prod-1"]]),
+      salesProductRemoteId: "rillet-prod-1",
       subsidiaryId: null,
       companyId: "company-1",
       documentUrl: "https://erp.example.test/x/sales-invoice/si_1"
@@ -122,7 +123,7 @@ function mapArguments(source = charges()) {
     invoice: source,
     document: buildSalesDocumentComponents(source),
     customerRemoteId: "customer-remote",
-    itemRemoteIds: new Map([["item-1", "product"]]),
+    salesProductRemoteId: "rillet-prod-1",
     shippingProductRemoteId: "shipping-product",
     shippingAccountCode: "4010",
     subsidiaryId: null,
@@ -140,9 +141,12 @@ describe("Rillet revenue recognition native sales components", () => {
         line.revenue?.account_code
       ])
     ).toEqual([
-      ["product", "80.00", undefined],
-      ["product", "16.00", undefined],
-      ["product", "2.40", undefined],
+      // Every merchandise line references the SAME synthetic sales product —
+      // Carbon posts all merchandise revenue to one account, so a per-item
+      // product carried no GL information and dragged in the parts catalog.
+      ["rillet-prod-1", "80.00", undefined],
+      ["rillet-prod-1", "16.00", undefined],
+      ["rillet-prod-1", "2.40", undefined],
       ["shipping-product", "8.00", "4010"],
       ["shipping-product", "4.00", "4010"]
     ]);
@@ -192,18 +196,26 @@ describe("Rillet revenue recognition native sales components", () => {
       decimals === 0 ? "80" : "80.000"
     );
   });
-  it("requires actual products for all nonshipping components and never uses the shipping product as fallback", () => {
+  it("does not need an item on a merchandise line, and never falls back to the shipping product", () => {
+    // A merchandise line used to REQUIRE `itemId` because it resolved a
+    // per-item Rillet product. It no longer does — the synthetic sales product
+    // stands for the posted revenue account — so an item-less line (a manual
+    // charge, a service line) must map cleanly rather than throwing.
     const source = charges();
     source.lines[0]!.itemId = null;
-    expect(() => mapSalesInvoiceToRilletInvoice(mapArguments(source))).toThrow(
-      /require.*product|no item/i
-    );
+    const payload = mapSalesInvoiceToRilletInvoice(mapArguments(source));
+    expect(payload.items[0]?.product_id).toBe("rillet-prod-1");
+    expect(payload.items[0]?.product_id).not.toBe("shipping-product");
+
+    // But an unresolved sales product still refuses: Rillet requires
+    // `product_id`, so shipping the line without one would be rejected remotely
+    // with nothing explaining why.
     expect(() =>
       mapSalesInvoiceToRilletInvoice({
         ...mapArguments(),
-        itemRemoteIds: new Map()
+        salesProductRemoteId: null
       })
-    ).toThrow(/not been synced|mapping/i);
+    ).toThrow();
   });
 });
 
@@ -274,6 +286,8 @@ function setupInvoice(missingShipping = false) {
   const itemSyncer = new RilletItemSyncer({ ...context, entityType: "item" });
   const ensureShippingProduct = vi.fn(async () => "shipping-product");
   itemSyncer.ensureShippingProduct = ensureShippingProduct;
+  const ensureSalesProduct = vi.fn(async () => "sales-product");
+  itemSyncer.ensureSalesProduct = ensureSalesProduct;
   const factory = vi
     .spyOn(SyncFactory, "getSyncer")
     .mockReturnValue(itemSyncer);
@@ -282,6 +296,7 @@ function setupInvoice(missingShipping = false) {
       (syncer as any).mapToRemote(source),
     ensureDependencySynced,
     ensureShippingProduct,
+    ensureSalesProduct,
     factory,
     provider
   };
@@ -307,22 +322,49 @@ describe("Rillet actual invoice preflight", () => {
     expect(test.ensureShippingProduct).not.toHaveBeenCalled();
     expect(test.provider.createInvoice).not.toHaveBeenCalled();
   });
-  it("preflights unsupported no-item components before provisioning anything", async () => {
-    const test = setupInvoice();
+  it.each([
+    "assetDisposal",
+    "missingSalesAccount"
+  ] as const)("refuses %s before the CUSTOMER is pushed to Rillet", async (option) => {
+    // Both refusals are PURE — they read the document and the local invoice
+    // only. Running them after `ensureDependencySynced("customer", …)` creates
+    // a Rillet counterparty in the customer's books for an invoice Rillet will
+    // never receive. Xero already ordered it this way; QBO had the same defect
+    // and was fixed in the same change as this.
     const source = charges();
-    source.lines[0]!.itemId = null;
+    if (option === "assetDisposal") {
+      source.lines[0]!.invoiceLineType = "Fixed Asset";
+    } else {
+      source.salesRevenueAccountId = null;
+    }
+    const test = setupInvoice();
+
     await expect(test.map(source)).rejects.toMatchObject({
       failure: { errorCode: "UNMAPPED_ACCOUNTS", warning: true }
     });
     expect(test.ensureDependencySynced).not.toHaveBeenCalled();
-    expect(test.ensureShippingProduct).not.toHaveBeenCalled();
+    expect(test.ensureSalesProduct).not.toHaveBeenCalled();
+    expect(test.provider.createInvoice).not.toHaveBeenCalled();
+  });
+  it("provisions ONE sales product for the whole invoice, whatever the items", async () => {
+    // The point of the change: three merchandise lines, one product call.
+    const test = setupInvoice();
+    await test.map(charges());
+    expect(test.ensureSalesProduct).toHaveBeenCalledTimes(1);
+    expect(test.ensureSalesProduct).toHaveBeenCalledWith({
+      revenueAccountId: "acct-sales",
+      baseCurrencyCode: "USD",
+      baseCurrencyDecimals: 2
+    });
   });
   it("does not create a shipping helper for an invoice without shipping", async () => {
     const test = setupInvoice();
     const payload = await test.map(invoice());
     expect(payload.items).toHaveLength(1);
-    expect(test.factory).not.toHaveBeenCalled();
     expect(test.ensureShippingProduct).not.toHaveBeenCalled();
+    // The SALES product is still provisioned — the invoice has merchandise, and
+    // Rillet requires a product on every line.
+    expect(test.ensureSalesProduct).toHaveBeenCalledTimes(1);
   });
 });
 

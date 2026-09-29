@@ -177,46 +177,46 @@ export const manifest = {
     delete: inCompany("companyId", anyOf("parts_delete", "inventory_delete"))
   }),
   capacityReservation: company("production"),
-  cardTransaction: policies({
+  charge: policies({
     select: inCompany("companyId", "employee"),
     insert: and(
-      where<"cardTransaction">((eb) => eb("status", "=", "Draft")),
+      where<"charge">((eb) => eb("status", "=", "Draft")),
       inCompany("companyId", "invoicing_create")
     ),
     update: and(
-      where<"cardTransaction">((eb) => eb("status", "=", "Draft")),
+      where<"charge">((eb) => eb("status", "=", "Draft")),
       inCompany("companyId", "invoicing_update")
     ),
     delete: and(
-      where<"cardTransaction">((eb) => eb("status", "=", "Draft")),
+      where<"charge">((eb) => eb("status", "=", "Draft")),
       inCompany("companyId", "invoicing_delete")
     )
   }),
-  cardTransactionLine: policies({
+  chargeLine: policies({
     select: inCompany("companyId", "employee"),
     insert: and(
       exists(
-        "cardTransaction",
-        "cardTransactionId",
-        where<"cardTransaction">((eb) => eb("status", "=", "Draft")),
+        "charge",
+        "chargeId",
+        where<"charge">((eb) => eb("status", "=", "Draft")),
         { sameCompany: true }
       ),
       inCompany("companyId", "invoicing_create")
     ),
     update: and(
       exists(
-        "cardTransaction",
-        "cardTransactionId",
-        where<"cardTransaction">((eb) => eb("status", "=", "Draft")),
+        "charge",
+        "chargeId",
+        where<"charge">((eb) => eb("status", "=", "Draft")),
         { sameCompany: true }
       ),
       inCompany("companyId", "invoicing_update")
     ),
     delete: and(
       exists(
-        "cardTransaction",
-        "cardTransactionId",
-        where<"cardTransaction">((eb) => eb("status", "=", "Draft")),
+        "charge",
+        "chargeId",
+        where<"charge">((eb) => eb("status", "=", "Draft")),
         { sameCompany: true }
       ),
       inCompany("companyId", "invoicing_delete")
@@ -1181,6 +1181,64 @@ export const manifest = {
   receipt: company("inventory", { read: "inventory_view" }),
   receiptFixedAssetLine: company("inventory", { read: "inventory_view" }),
   receiptLine: company("inventory", { read: "inventory_view" }),
+  reimbursement: policies({
+    select: inCompany("companyId", "employee"),
+    insert: and(
+      where<"reimbursement">((eb) => eb("status", "=", "Draft")),
+      inCompany("companyId", "invoicing_create")
+    ),
+    update: and(
+      where<"reimbursement">((eb) => eb("status", "=", "Draft")),
+      inCompany("companyId", "invoicing_update")
+    ),
+    delete: and(
+      where<"reimbursement">((eb) => eb("status", "=", "Draft")),
+      inCompany("companyId", "invoicing_delete")
+    )
+  }),
+  reimbursementLine: policies({
+    select: inCompany("companyId", "employee"),
+    insert: and(
+      exists(
+        "reimbursement",
+        "reimbursementId",
+        where<"reimbursement">((eb) => eb("status", "=", "Draft")),
+        { sameCompany: true }
+      ),
+      inCompany("companyId", "invoicing_create")
+    ),
+    update: and(
+      exists(
+        "reimbursement",
+        "reimbursementId",
+        where<"reimbursement">((eb) => eb("status", "=", "Draft")),
+        { sameCompany: true }
+      ),
+      inCompany("companyId", "invoicing_update")
+    ),
+    delete: and(
+      exists(
+        "reimbursement",
+        "reimbursementId",
+        where<"reimbursement">((eb) => eb("status", "=", "Draft")),
+        { sameCompany: true }
+      ),
+      inCompany("companyId", "invoicing_delete")
+    )
+  }),
+  // SELECT / INSERT / DELETE only — a line's dimensions are replaced by
+  // delete-then-insert, so nothing ever issues an UPDATE. `custom` because the
+  // Draft check is TWO hops away (dimension → line → reimbursement) and `exists`
+  // aliases its parent as `p`, so a nested `exists` cannot name the intermediate
+  // table. Mirrors reimbursementLine's rule one level deeper.
+  reimbursementLineDimension: custom(
+    "two-hop parent check: the dimension's line's reimbursement must still be Draft",
+    (t) => `
+    CREATE POLICY "SELECT" ON ${t} AS PERMISSIVE FOR SELECT TO public USING (("companyId" = ANY ((SELECT get_companies_with_employee_role())::text[])));
+    CREATE POLICY "INSERT" ON ${t} AS PERMISSIVE FOR INSERT TO public WITH CHECK ((EXISTS (SELECT 1 FROM public."reimbursementLine" l JOIN public."reimbursement" h ON ((h.id = l."reimbursementId") AND (h."companyId" = l."companyId")) WHERE ((l.id = ${t}."reimbursementLineId") AND (l."companyId" = ${t}."companyId") AND (h.status = 'Draft'::"reimbursementStatus"))) AND ("companyId" = ANY ((SELECT get_companies_with_employee_permission('invoicing_create'::text))::text[]))));
+    CREATE POLICY "DELETE" ON ${t} AS PERMISSIVE FOR DELETE TO public USING ((EXISTS (SELECT 1 FROM public."reimbursementLine" l JOIN public."reimbursement" h ON ((h.id = l."reimbursementId") AND (h."companyId" = l."companyId")) WHERE ((l.id = ${t}."reimbursementLineId") AND (l."companyId" = ${t}."companyId") AND (h.status = 'Draft'::"reimbursementStatus"))) AND ("companyId" = ANY ((SELECT get_companies_with_employee_permission('invoicing_delete'::text))::text[]))));
+  `
+  ),
   reportPin: policies({
     all: and(owner("userId"), inCompany("companyId", "employee"))
   }),

@@ -489,6 +489,14 @@ also used by `company-template.ts`: applying a demo template from Settings
 snapshots with `buildCompanyBackup`, and reverting it wipes-and-loads that
 snapshot through exactly this path. See `onboarding-company-templates.md`.
 
+**Third caller: company deletion.** `purgeCompany` (`packages/jobs/.../scheduled/purge-company.ts`,
+used by the weekly inactive-company cleanup) runs `wipeScopedData` over the WHOLE catalog in
+replica mode, secret and identity tables included, because nothing is reloaded after it. It
+then deletes the `company` row with triggers back on, so tables outside the catalog cascade.
+`canSetReplicationRole` decides whether it can wipe at all. See `billing-system.md`.
+`listBucketFilesRecursive` lives in `src/backups/storage.ts`, shared by the export and that
+cleanup.
+
 ### Known caveats in the committed code (not yet hardened)
 
 - **Storage restore is best-effort** — copy failures `console.warn` only; the

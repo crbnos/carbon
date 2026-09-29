@@ -1,4 +1,3 @@
-import type { KyselyTx } from "@carbon/database/client";
 import { buildDimensionValueMappingEntityId } from "../../../core/dimension-mapping";
 import {
   type CostingLine,
@@ -15,7 +14,6 @@ import type { Accounting, ShouldSyncContext } from "../../../core/types";
 import type {
   Rillet,
   RilletBillCreate,
-  RilletReimbursementCreate,
   RilletTransactionWriteOmit
 } from "../models";
 import { buildRilletIdempotencyKey } from "../provider";
@@ -54,6 +52,19 @@ import {
  * `due_date` is REQUIRED by Rillet; when Carbon has none it falls back to
  * the bill date (Rillet's own default for invoices).
  */
+
+/**
+ * Mapping metadata marking a bill this syncer once wrote as a Rillet
+ * reimbursement (the employee-supplier detour that predates the native
+ * `reimbursement` entity). Read-only now — nothing writes it any more.
+ *
+ * Exported because BOTH halves of that legacy row have to honour it: the
+ * void here (`deleteRemote`) and the payout in `entities/payment.ts`, whose
+ * remote id also lives in the `/reimbursements` id space. Provider-prefixed
+ * so the `accounting/index.ts` star-export cannot collide with another
+ * provider's legacy marker.
+ */
+export const RILLET_LEGACY_REIMBURSEMENT_REMOTE_KIND = "reimbursement";
 
 // Only posted bills are pushed (Draft has no journal to replay) — mirrors the
 // Rillet invoice syncer's posted-status gate.
@@ -261,48 +272,12 @@ export function mapBillToRilletBill(args: {
   };
 }
 
-/** The `supplierType` the Ramp sync tags auto-created employee suppliers with. */
-const EMPLOYEE_SUPPLIER_TYPE = "Employee";
-
-/** Mapping metadata marking a bill that was written as a Rillet reimbursement. */
-const REIMBURSEMENT_REMOTE_KIND = "reimbursement";
-
-/**
- * Re-shape a bill payload as a Rillet reimbursement: same vendor, items,
- * dates, FX and references; the bill date becomes the reimbursement date and
- * the caller supplies the payable account Rillet does not derive. Pure —
- * exported for tests.
- */
-export function toRilletReimbursement(
-  bill: RilletBillCreate,
-  payableAccountCode: string
-): RilletReimbursementCreate {
-  return {
-    vendor_id: bill.vendor_id,
-    items: bill.items,
-    reimbursement_date: bill.bill_date,
-    impact_date: bill.impact_date ?? bill.bill_date,
-    payable_account_code: payableAccountCode,
-    ...(bill.subsidiary_id ? { subsidiary_id: bill.subsidiary_id } : {}),
-    ...(bill.exchange_rate ? { exchange_rate: bill.exchange_rate } : {}),
-    ...(bill.external_references
-      ? { external_references: bill.external_references }
-      : {})
-  };
-}
-
 export class RilletBillSyncer extends RilletTransactionSyncer<
   Accounting.Bill,
   Rillet.Bill,
   RilletTransactionWriteOmit
 > {
   private accountCodesByIdPromise?: Promise<Map<string, string>>;
-  /** Suppliers already classified this drain: supplierId → is an Employee. */
-  private readonly employeeSupplierIds = new Map<string, boolean>();
-  /** Bills routed to `POST /reimbursements`: localId → payable account code. */
-  private readonly reimbursementPayableCodes = new Map<string, string>();
-  /** Remote ids created as reimbursements, so the mapping can say so. */
-  private readonly reimbursementRemoteIds = new Set<string>();
 
   protected get pushOnlyEntityLabel(): string {
     return "Bills";
@@ -318,46 +293,6 @@ export class RilletBillSyncer extends RilletTransactionSyncer<
     return this.accountCodesByIdPromise;
   }
 
-  /**
-   * An employee reimbursement is a purchase invoice to a supplier of the
-   * "Employee" type (what the Ramp reimbursement sync creates). It is always
-   * written as Rillet's native reimbursement object, never as a bill.
-   */
-  private async isReimbursement(local: Accounting.Bill): Promise<boolean> {
-    if (!local.supplierId) return false;
-    const cached = this.employeeSupplierIds.get(local.supplierId);
-    if (cached !== undefined) return cached;
-    const row = await this.database
-      .selectFrom("supplier")
-      .leftJoin("supplierType", "supplierType.id", "supplier.supplierTypeId")
-      .select("supplierType.name as supplierTypeName")
-      .where("supplier.id", "=", local.supplierId)
-      .where("supplier.companyId", "=", this.companyId)
-      .executeTakeFirst();
-    const isEmployee = row?.supplierTypeName === EMPLOYEE_SUPPLIER_TYPE;
-    this.employeeSupplierIds.set(local.supplierId, isEmployee);
-    return isEmployee;
-  }
-
-  /** Stamp the mapping with the remote object kind so a void deletes the right thing. */
-  protected async linkEntities(
-    tx: KyselyTx,
-    localId: string,
-    remoteId: string,
-    remoteUpdatedAt?: Date
-  ): Promise<void> {
-    await super.linkEntities(tx, localId, remoteId, remoteUpdatedAt);
-    if (this.reimbursementRemoteIds.has(remoteId)) {
-      await createMappingService(tx, this.companyId).link(
-        this.entityType,
-        localId,
-        this.provider.id,
-        remoteId,
-        { metadata: { remoteKind: REIMBURSEMENT_REMOTE_KIND } }
-      );
-    }
-  }
-
   // =================================================================
   // 1. LOCAL FETCH (Single + Batch)
   // =================================================================
@@ -366,11 +301,22 @@ export class RilletBillSyncer extends RilletTransactionSyncer<
     return local.status === "Voided";
   }
 
+  /**
+   * A bill's void deletes `/bills/{id}` — EXCEPT for a legacy mapping stamped
+   * `remoteKind: "reimbursement"`. Between 2026-09-20 (#1503) and the native
+   * `reimbursement` entity, this syncer wrote an employee-supplier purchase
+   * invoice as a Rillet reimbursement and stamped the kind on the mapping; the
+   * stamp is the only record that the remote id lives in the `/reimbursements`
+   * id space. `deleteEntity` swallows a 404 as "already gone", so sending such
+   * an id to `/bills` tombstones the mapping and reports success while the
+   * reimbursement stays live in Rillet — a silent divergence with no error to
+   * act on. Nothing writes the stamp any more; this only reads it.
+   */
   protected async deleteRemote(
     remoteId: string,
     metadata?: Record<string, unknown>
   ): Promise<void> {
-    if (metadata?.remoteKind === REIMBURSEMENT_REMOTE_KIND) {
+    if (metadata?.remoteKind === RILLET_LEGACY_REIMBURSEMENT_REMOTE_KIND) {
       await this.rilletProvider.deleteReimbursement(remoteId);
       return;
     }
@@ -587,7 +533,6 @@ export class RilletBillSyncer extends RilletTransactionSyncer<
 
     const {
       lines: costingLines,
-      payablesAccountId,
       documentTotal,
       decimalPlaces,
       baseCurrencyCode,
@@ -607,30 +552,6 @@ export class RilletBillSyncer extends RilletTransactionSyncer<
       await this.resolveLineDimensions(costingLines);
 
     const accountCodesById = await this.getAccountCodesById();
-
-    // An employee reimbursement is written to POST /reimbursements, which —
-    // unlike a bill — does not derive its payable: it takes the AP control
-    // account the posting credited. Resolve it now so upsertRemote can route.
-    if (await this.isReimbursement(local)) {
-      const payableAccountCode = payablesAccountId
-        ? accountCodesById.get(payablesAccountId)
-        : undefined;
-      if (!payableAccountCode) {
-        throw new JournalEntrySyncError({
-          errorCode: "UNMAPPED_ACCOUNTS",
-          warning: true,
-          message:
-            "Cannot sync reimbursement: its payables control account is not mapped to a Rillet account. Map it under the integration's Accounts tab, then retry.",
-          metadata: {
-            billId: local.id,
-            unmappedAccountIds: payablesAccountId ? [payablesAccountId] : []
-          }
-        });
-      }
-      this.reimbursementPayableCodes.set(local.id, payableAccountCode);
-    } else {
-      this.reimbursementPayableCodes.delete(local.id);
-    }
 
     return mapBillToRilletBill({
       bill: { ...local, currencyCode, exchangeRate },
@@ -656,24 +577,6 @@ export class RilletBillSyncer extends RilletTransactionSyncer<
     data: RilletBillCreate,
     localId: string
   ): Promise<string> {
-    const payableAccountCode = this.reimbursementPayableCodes.get(localId);
-    if (payableAccountCode) {
-      const created = await writeDroppingUnregisteredReferences(
-        toRilletReimbursement(data, payableAccountCode),
-        (payload) =>
-          this.rilletProvider.createReimbursement(
-            payload,
-            buildRilletIdempotencyKey({
-              companyId: this.companyId,
-              operation: "reimbursement",
-              localId
-            })
-          )
-      );
-      this.reimbursementRemoteIds.add(created.id);
-      return created.id;
-    }
-
     const created = await writeDroppingUnregisteredReferences(data, (payload) =>
       this.rilletProvider.createBill(
         payload,

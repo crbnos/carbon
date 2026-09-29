@@ -6,8 +6,25 @@ const getCarbonServiceRole = vi.hoisted(() =>
   vi.fn(() => ({ role: "service" }))
 );
 const exchangeRampOAuthCode = vi.hoisted(() => vi.fn());
+const getAccountingConnections = vi.hoisted(() => vi.fn());
+const buildRampClient = vi.hoisted(() =>
+  vi.fn(() => ({ getAccountingConnections }))
+);
 const patchRampOAuthCredentials = vi.hoisted(() => vi.fn());
+// The route no longer decides which connection counts — it delegates to the pure
+// `resolveConnectedProviderName`, whose status filtering (including the
+// `unlinked` tombstone `DELETE` leaves behind) is pinned by its own real-fixture
+// tests in `packages/ee/src/ramp/lib/connection-status.test.ts`. What is left to
+// assert HERE is the wiring: the resolver sees Ramp's response, and whatever it
+// returns is what gets stored.
+const resolveConnectedProviderName = vi.hoisted(() => vi.fn());
 const rampOnInstall = vi.hoisted(() => vi.fn());
+// Real predicate, not a stub: it is a two-line structural check and mocking it
+// would make the test pass on a shape the production code rejects.
+const isRampSeatConflict = vi.hoisted(
+  () => (error: unknown) =>
+    (error as { code?: string })?.code === "RAMP_SEAT_CONFLICT"
+);
 
 vi.mock("@carbon/auth", () => ({
   CARBON_API_URL: "https://api.example.com",
@@ -20,8 +37,11 @@ vi.mock("@carbon/auth/client.server", () => ({ getCarbonServiceRole }));
 vi.mock("@carbon/ee", () => ({ Ramp: { id: "ramp" } }));
 vi.mock("@carbon/ee/ramp/hooks.server", () => ({ rampOnInstall }));
 vi.mock("@carbon/ee/ramp.server", () => ({
+  buildRampClient,
   exchangeRampOAuthCode,
-  patchRampOAuthCredentials
+  isRampSeatConflict,
+  patchRampOAuthCredentials,
+  resolveConnectedProviderName
 }));
 vi.mock("@carbon/logger", () => ({
   getLogger: () => ({ error: vi.fn(), info: vi.fn(), warning: vi.fn() })
@@ -60,9 +80,11 @@ const credentials = {
 };
 
 async function callbackRequest(
-  overrides: { state?: string; cookie?: string } = {}
+  overrides: { state?: string; cookie?: string; mode?: string } = {}
 ) {
-  const issued = await issueOAuthState(identity);
+  // The REAL state module, so the mode genuinely round-trips through the signed,
+  // HttpOnly cookie rather than through a stub.
+  const issued = await issueOAuthState({ ...identity, mode: overrides.mode });
   const state = overrides.state ?? issued.state;
   return {
     issued,
@@ -85,12 +107,17 @@ describe("Ramp OAuth callback", () => {
       userId: identity.userId,
       companyId: identity.companyId
     });
-    exchangeRampOAuthCode.mockResolvedValue(credentials);
+    exchangeRampOAuthCode.mockResolvedValue({
+      credentials,
+      grantedScopes: ["accounting:read", "bills:write"]
+    });
     patchRampOAuthCredentials.mockResolvedValue({
       id: "ramp",
       metadata: {}
     });
     rampOnInstall.mockResolvedValue(undefined);
+    getAccountingConnections.mockResolvedValue({ connections: [] });
+    resolveConnectedProviderName.mockReturnValue(undefined);
   });
 
   it("rejects a forged state before exchanging the authorization code", async () => {
@@ -133,7 +160,112 @@ describe("Ramp OAuth callback", () => {
     expect(patchRampOAuthCredentials).toHaveBeenCalledWith(
       { role: "service" },
       identity.companyId,
-      { credentials, updatedBy: identity.userId }
+      {
+        credentials,
+        // What the token response GRANTED, not what was requested — RFC 6749 §3.3
+        // permits a narrower grant, and recording the request would make the UI
+        // claim capabilities the token may not carry.
+        grantedScopes: ["accounting:read", "bills:write"],
+        // Absent here: the fixture's state carries no mode, and a missing mode
+        // must stay missing rather than defaulting — `resolveRampMode` is the one
+        // place that decides an unstamped install is `provider`.
+        syncMode: undefined,
+        accountingConnectionProvider: undefined,
+        updatedBy: identity.userId
+      }
+    );
+  });
+
+  it("stamps the mode from the SIGNED state, never a query parameter", async () => {
+    // A user-editable mode would let someone consent to push-only's narrow scopes
+    // and have Carbon record a provider-mode install, or the reverse. The mode is
+    // in the cookie here and NOT in the URL — the assertion only passes if the
+    // callback reads the signed payload.
+    const { request } = await callbackRequest({ mode: "push-only" });
+    expect(new URL(request.url).searchParams.get("mode")).toBeNull();
+
+    await run(request);
+
+    expect(patchRampOAuthCredentials).toHaveBeenCalledWith(
+      { role: "service" },
+      identity.companyId,
+      expect.objectContaining({ syncMode: "push-only" })
+    );
+  });
+
+  it("ignores a mode supplied in the query string", async () => {
+    // Belt-and-braces on the same property: a forged `?mode=` must not reach the
+    // stored install when the signed state says nothing.
+    const { request } = await callbackRequest();
+    const forged = new URL(request.url);
+    forged.searchParams.set("mode", "provider");
+
+    await run(new Request(forged, { headers: request.headers }));
+
+    expect(patchRampOAuthCredentials).toHaveBeenCalledWith(
+      { role: "service" },
+      identity.companyId,
+      expect.objectContaining({ syncMode: undefined })
+    );
+  });
+
+  it("records the peer connection owner when Ramp reports one", async () => {
+    const response = {
+      connections: [{ remote_provider_name: "Rillet", status: "linked" }]
+    };
+    getAccountingConnections.mockResolvedValue(response);
+    resolveConnectedProviderName.mockReturnValue("Rillet");
+    const { request } = await callbackRequest();
+
+    await run(request);
+
+    // The resolver is handed Ramp's response verbatim — a route that pre-filtered
+    // or reshaped it would reintroduce the second, divergent reading this
+    // delegation removed.
+    expect(resolveConnectedProviderName).toHaveBeenCalledWith(response);
+    expect(patchRampOAuthCredentials).toHaveBeenCalledWith(
+      { role: "service" },
+      identity.companyId,
+      expect.objectContaining({ accountingConnectionProvider: "Rillet" })
+    );
+  });
+
+  it("records UNKNOWN when no connection is live", async () => {
+    // The reachable case after a disconnect: Ramp still returns the old
+    // connection as an `unlinked` tombstone carrying its provider name, and the
+    // resolver filters it out. Storing a name here would claim a ledger holder
+    // for a business that has none.
+    getAccountingConnections.mockResolvedValue({
+      connections: [{ remote_provider_name: "Carbon", status: "unlinked" }]
+    });
+    resolveConnectedProviderName.mockReturnValue(undefined);
+    const { request } = await callbackRequest();
+
+    await run(request);
+
+    expect(patchRampOAuthCredentials).toHaveBeenCalledWith(
+      { role: "service" },
+      identity.companyId,
+      expect.objectContaining({ accountingConnectionProvider: undefined })
+    );
+  });
+
+  it("completes the install when the peer read FAILS", async () => {
+    // Whether a token lacking `accounting:write` may call all-connections is an
+    // OPEN QUESTION. A 403 must leave the owner UNKNOWN and still install — the
+    // grant is already valid at this point, and failing here would strand it.
+    getAccountingConnections.mockRejectedValue(new Error("403 DEVELOPER_7100"));
+    const { request } = await callbackRequest();
+
+    const response = await run(request);
+
+    expect(patchRampOAuthCredentials).toHaveBeenCalledWith(
+      { role: "service" },
+      identity.companyId,
+      expect.objectContaining({ accountingConnectionProvider: undefined })
+    );
+    expect(response.headers.get("Location")).toBe(
+      "https://erp.example.com/x/settings/integrations"
     );
   });
 
@@ -165,5 +297,36 @@ describe("Ramp OAuth callback", () => {
       "provider-controlled"
     );
     expect(patchRampOAuthCredentials).not.toHaveBeenCalled();
+  });
+
+  it("names the seat conflict instead of a generic setup failure", async () => {
+    // Ramp permits ONE connected accounting system. "Try connecting again" is
+    // actively wrong here — a retry cannot succeed until the other system is
+    // disconnected or the customer picks push-only.
+    const conflict = Object.assign(
+      new Error("Ramp's accounting connection is held by Rillet."),
+      { code: "RAMP_SEAT_CONFLICT" }
+    );
+    rampOnInstall.mockRejectedValue(conflict);
+    const { request } = await callbackRequest();
+
+    const response = await run(request);
+
+    expect(response.headers.get("Location")).toBe(
+      "https://erp.example.com/x/settings/integrations?integration=ramp&error=seat-conflict"
+    );
+    // The provider-supplied holder name must not cross the URL.
+    expect(response.headers.get("Location")).not.toContain("Rillet");
+  });
+
+  it("still reports an ordinary install failure generically", async () => {
+    rampOnInstall.mockRejectedValue(new Error("webhook exploded"));
+    const { request } = await callbackRequest();
+
+    const response = await run(request);
+
+    expect(response.headers.get("Location")).toBe(
+      "https://erp.example.com/x/settings/integrations?integration=ramp&error=install-failed"
+    );
   });
 });

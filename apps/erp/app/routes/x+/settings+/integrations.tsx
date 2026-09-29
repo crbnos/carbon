@@ -1,9 +1,9 @@
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { issueOAuthStates } from "@carbon/auth/oauth-state.server";
 import { flash } from "@carbon/auth/session.server";
 import {
   integrations as availableIntegrations,
+  getIntegrationIdsByRole,
   quickInstallConnectors
 } from "@carbon/ee";
 import { toast } from "@carbon/react";
@@ -27,7 +27,7 @@ export const config = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId, userId } = await requirePermissions(request, {
+  const { client, companyId } = await requirePermissions(request, {
     view: "settings"
   });
 
@@ -42,33 +42,45 @@ export async function loader({ request }: LoaderFunctionArgs) {
     );
   }
 
-  const items = integrations.data.map((i) => ({
-    id: i.id!,
-    active: i.active!,
-    health: i.health
-  }));
+  const items = integrations.data.map((i) => {
+    // Resolve the install mode HERE, server-side, and send only its id. The
+    // card needs it to show copy that matches what this install actually does;
+    // shipping the whole `metadata` to the browser to achieve that would hand
+    // out credential-adjacent state for every integration.
+    const config = availableIntegrations.find((c) => c.id === i.id) as
+      | { resolveInstallMode?: (m: unknown) => { id: string } | undefined }
+      | undefined;
+    return {
+      id: i.id!,
+      active: i.active!,
+      health: i.health,
+      installMode: i.active
+        ? config?.resolveInstallMode?.(i.metadata)?.id
+        : undefined
+    };
+  });
 
-  // Every integration whose Connect button builds an authorize URL
-  // (IntegrationCard) gets a single-use state bound to this browser, user and
-  // company; its OAuth callback consumes it with `consumeOAuthState`.
-  const oauthStates = await issueOAuthStates(
-    request,
-    availableIntegrations
-      .filter((integration) => "oauth" in integration && !!integration.oauth)
-      .map((integration) => ({
-        integrationId: integration.id,
-        userId,
-        companyId
-      }))
-  );
+  // Which role slots are taken. The database refuses a second active
+  // integration of a role (migration 20260924133915); this is what stops a
+  // customer reaching that refusal through the UI.
+  const activeRoles: Record<string, string | null> = {
+    accounting: null,
+    spend: null
+  };
+  for (const role of ["accounting", "spend"] as const) {
+    const ids = new Set<string>(getIntegrationIdsByRole(role));
+    activeRoles[role] =
+      items.find((i) => i.active && ids.has(i.id))?.id ?? null;
+  }
 
-  return data(
-    {
-      integrations: items,
-      oauthStates: oauthStates.states
-    },
-    { headers: { "Set-Cookie": oauthStates.cookie } }
-  );
+  return data({
+    integrations: items,
+    activeRoles
+    // No OAuth state here. Every OAuth install now starts at
+    // `api+/integrations.$id.connect`, which issues a SIGNED, browser-bound,
+    // single-use state — strictly better than the unsigned correlation value this
+    // used to hand out, and the only place that can know the chosen mode.
+  });
 }
 
 export default function IntegrationsRoute() {

@@ -5,13 +5,16 @@ import type { AccountingProvider } from "../providers";
 import { qboSyncerRegistry } from "../providers/quickbooks-online";
 import { QboBillSyncer } from "../providers/quickbooks-online/entities/bill";
 import { QboChargeSyncer } from "../providers/quickbooks-online/entities/charge";
+import { QboCreditMemoSyncer } from "../providers/quickbooks-online/entities/credit-memo";
 import { QboCustomerSyncer } from "../providers/quickbooks-online/entities/customer";
 import { QboSalesInvoiceSyncer } from "../providers/quickbooks-online/entities/invoice";
 import { QboItemSyncer } from "../providers/quickbooks-online/entities/item";
 import { QboJournalEntrySyncer } from "../providers/quickbooks-online/entities/journal-entry";
 import { QboPaymentSyncer } from "../providers/quickbooks-online/entities/payment";
 import { QboPurchaseOrderSyncer } from "../providers/quickbooks-online/entities/purchase-order";
+import { QboReimbursementSyncer } from "../providers/quickbooks-online/entities/reimbursement";
 import { QboVendorSyncer } from "../providers/quickbooks-online/entities/vendor";
+import { QboVendorCreditSyncer } from "../providers/quickbooks-online/entities/vendor-credit";
 import { rilletSyncerRegistry } from "../providers/rillet";
 import { RilletBillSyncer } from "../providers/rillet/entities/bill";
 import { RilletCustomerSyncer } from "../providers/rillet/entities/customer";
@@ -19,18 +22,22 @@ import { RilletSalesInvoiceSyncer } from "../providers/rillet/entities/invoice";
 import { RilletItemSyncer } from "../providers/rillet/entities/item";
 import { RilletJournalEntrySyncer } from "../providers/rillet/entities/journal-entry";
 import { RilletPaymentSyncer } from "../providers/rillet/entities/payment";
+import { RilletReimbursementSyncer } from "../providers/rillet/entities/reimbursement";
 import { RilletVendorSyncer } from "../providers/rillet/entities/vendor";
 import { xeroSyncerRegistry } from "../providers/xero";
 import { BillSyncer } from "../providers/xero/entities/bill";
 import { XeroChargeSyncer } from "../providers/xero/entities/charge";
 import { ContactSyncer } from "../providers/xero/entities/contact";
+import { CreditMemoSyncer as XeroCreditMemoSyncer } from "../providers/xero/entities/credit-memo";
 import { InventoryAdjustmentSyncer } from "../providers/xero/entities/inventory-adjustment";
 import { SalesInvoiceSyncer } from "../providers/xero/entities/invoice";
 import { ItemSyncer } from "../providers/xero/entities/item";
 import { JournalEntrySyncer } from "../providers/xero/entities/journal-entry";
 import { XeroPaymentSyncer } from "../providers/xero/entities/payment";
 import { PurchaseOrderSyncer } from "../providers/xero/entities/purchase-order";
+import { XeroReimbursementSyncer } from "../providers/xero/entities/reimbursement";
 import { SalesOrderSyncer } from "../providers/xero/entities/sales-order";
+import { VendorCreditSyncer as XeroVendorCreditSyncer } from "../providers/xero/entities/vendor-credit";
 import { ProviderID } from "./models";
 import { SyncFactory } from "./sync";
 import type { AccountingEntityType, SyncContext } from "./types";
@@ -123,6 +130,9 @@ describe("SyncFactory", () => {
       salesOrder: SalesOrderSyncer,
       inventoryAdjustment: InventoryAdjustmentSyncer,
       journalEntry: JournalEntrySyncer,
+      creditMemo: XeroCreditMemoSyncer,
+      supplierCredit: XeroVendorCreditSyncer,
+      reimbursement: XeroReimbursementSyncer,
       // Phase 3: pull-only Xero payment sync-back (ACCREC → AR, ACCPAY → AP)
       payment: XeroPaymentSyncer
     });
@@ -165,6 +175,9 @@ describe("SyncFactory", () => {
       invoice: QboSalesInvoiceSyncer,
       purchaseOrder: QboPurchaseOrderSyncer,
       journalEntry: QboJournalEntrySyncer,
+      creditMemo: QboCreditMemoSyncer,
+      supplierCredit: QboVendorCreditSyncer,
+      reimbursement: QboReimbursementSyncer,
       payment: QboPaymentSyncer
     });
   });
@@ -196,12 +209,15 @@ describe("SyncFactory", () => {
       [
         "bill",
         "charge",
+        "creditMemo",
         "customer",
         "invoice",
         "item",
         "journalEntry",
         "payment",
-        "vendor"
+        "reimbursement",
+        "vendor",
+        "supplierCredit"
       ].sort()
     );
   });
@@ -229,6 +245,9 @@ describe("SyncFactory", () => {
     expect(
       SyncFactory.getSyncer(makeContext("payment", rillet))
     ).toBeInstanceOf(RilletPaymentSyncer);
+    expect(
+      SyncFactory.getSyncer(makeContext("reimbursement", rillet))
+    ).toBeInstanceOf(RilletReimbursementSyncer);
   });
 
   it("throws for entity types Rillet does not implement (no PO endpoint)", () => {

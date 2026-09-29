@@ -370,32 +370,54 @@ export default function Security() {
   const twoFactorCard = (
     <Card>
       <CardHeader>
+        <CardTitle>
+          <Trans>Two-Factor Authentication Enforcement</Trans>
+        </CardTitle>
+        <CardDescription>
+          {CONTROLLED_ENVIRONMENT ? (
+            <Trans>
+              This is a controlled environment, so two-factor authentication is
+              required for everyone and cannot be turned off.
+            </Trans>
+          ) : (
+            <Trans>
+              Require an authenticator app before anyone can open this company.
+              Their other companies are unaffected. Visit the{" "}
+              <Link
+                to={path.to.employeeAccounts}
+                className="text-primary underline"
+              >
+                employee accounts page
+              </Link>{" "}
+              to see each person's status.
+            </Trans>
+          )}
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
         <HStack className="justify-between items-center">
-          <div>
-            <CardTitle>
-              <Trans>Two-Factor Authentication Enforcement</Trans>
-            </CardTitle>
-            <CardDescription>
-              {CONTROLLED_ENVIRONMENT ? (
+          <VStack className="items-start" spacing={1}>
+            <span className="font-medium">
+              {CONTROLLED_ENVIRONMENT || requireMfa ? (
+                <Trans>Two-factor authentication is required</Trans>
+              ) : (
+                <Trans>Two-factor authentication is optional</Trans>
+              )}
+            </span>
+            <span className="text-sm text-muted-foreground">
+              {CONTROLLED_ENVIRONMENT || requireMfa ? (
                 <Trans>
-                  This is a controlled environment, so two-factor authentication
-                  is required for everyone and cannot be turned off.
+                  Everyone must set up an authenticator app before opening this
+                  company.
                 </Trans>
               ) : (
                 <Trans>
-                  Require an authenticator app before anyone can open this
-                  company. Their other companies are unaffected. Visit the{" "}
-                  <Link
-                    to={path.to.employeeAccounts}
-                    className="text-primary underline"
-                  >
-                    employee accounts page
-                  </Link>{" "}
-                  to see each person's status.
+                  Enable to require an authenticator app before anyone can open
+                  this company.
                 </Trans>
               )}
-            </CardDescription>
-          </div>
+            </span>
+          </VStack>
           <Switch
             checked={CONTROLLED_ENVIRONMENT || requireMfa}
             onCheckedChange={(checked) =>
@@ -410,7 +432,7 @@ export default function Security() {
             aria-label={t`Require two-factor authentication`}
           />
         </HStack>
-      </CardHeader>
+      </CardContent>
     </Card>
   );
 

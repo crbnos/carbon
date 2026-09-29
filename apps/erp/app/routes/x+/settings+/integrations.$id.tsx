@@ -2,7 +2,12 @@ import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import type { Database, Json } from "@carbon/database";
-import { integrations as availableIntegrations } from "@carbon/ee";
+import {
+  integrations as availableIntegrations,
+  getIntegrationConfigById,
+  type IntegrationID,
+  resolveIntegrationTopology
+} from "@carbon/ee";
 import {
   buildDimensionValueMappingEntityId,
   buildRilletFieldTarget,
@@ -53,6 +58,11 @@ import {
 } from "@carbon/ee/integrations/secrets";
 import { isIntegrationWhitelisted } from "@carbon/ee/plan";
 import { requireFeature } from "@carbon/ee/plan.server";
+import {
+  LEDGER_FAMILY_KEYS,
+  type LedgerFamilyKey,
+  resolveCapabilities
+} from "@carbon/ee/sync";
 import { STRIPE_SECRET_KEY } from "@carbon/env";
 import { validationError, validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
@@ -94,6 +104,7 @@ import {
   postingSyncSettingsValidator
 } from "~/modules/settings/settings.models";
 import {
+  getSyncOperationReadableIds,
   invalidateIntegrationHealthCache,
   upsertCompanyIntegration
 } from "~/modules/settings/settings.server";
@@ -383,7 +394,9 @@ async function getProviderDimensionTargets(
             .filter((value) => !value.deactivated)
             .map((value) => ({ id: value.id, name: value.name }))
         })),
-        maxSlots: provider.capabilities?.maxJournalDimensionSlots ?? null,
+        maxSlots:
+          resolveCapabilities(provider.capabilities).maxJournalDimensionSlots ??
+          null,
         targetsError: false
       };
     }
@@ -415,7 +428,9 @@ async function getProviderDimensionTargets(
       return {
         supported: true,
         targets,
-        maxSlots: qbo.capabilities?.maxJournalDimensionSlots ?? null,
+        maxSlots:
+          resolveCapabilities(qbo.capabilities).maxJournalDimensionSlots ??
+          null,
         targetsError: false
       };
     }
@@ -648,22 +663,33 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     };
   }
 
-  const isAccountingInstalled =
-    integration.category === "Accounting" && integrationData.data.active;
+  // The DECLARED role, not the display category and not an id literal.
+  const providerRole = (
+    integration as { providerRole?: "accounting" | "spend" }
+  ).providerRole;
 
-  // Ramp (Spend Management) also writes accountingSyncOperation rows for its
-  // inbound/outbound families, so it gets the same Sync Activity inbox — minus
-  // the accounting-only tie-out/reconciliation surfaces, which stay gated on
-  // isAccountingInstalled below.
+  const isAccountingInstalled =
+    providerRole === "accounting" && integrationData.data.active;
+
+  // Any provider-role integration writes accountingSyncOperation rows — a spend
+  // provider records its own inbound/outbound dispositions there — so it gets
+  // the same Sync Activity inbox. The accounting-only tie-out/reconciliation
+  // surfaces stay gated on isAccountingInstalled below.
   const producesSyncOperations =
-    isAccountingInstalled ||
-    (integration.id === "ramp" && integrationData.data.active);
+    providerRole !== undefined && integrationData.data.active;
 
   // Sync-operation inbox (RLS SELECT covers employees, so the user-scoped
   // client is enough). Params are prefixed (syncStatus/syncPage) to avoid
   // clashing with other search params.
   let syncActivity: {
     operations: SyncOperation[];
+    /**
+     * `entityType:entityId` -> the document number a human reads
+     * (`PO000001`) plus the Carbon row id to link to. Sparse: a pulled
+     * record that never landed a Carbon row is keyed by the provider's
+     * remote id, and the table falls back to it.
+     */
+    readableIds: Record<string, { label: string; recordId: string }>;
     count: number;
     status: SyncOperationStatus | null;
     page: number;
@@ -773,6 +799,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
     syncActivity = {
       operations: operations.data,
+      readableIds: await getSyncOperationReadableIds(
+        client,
+        companyId,
+        operations.data
+      ),
       count: operations.count ?? 0,
       status: statusFilter.success ? statusFilter.data : null,
       page,
@@ -994,11 +1025,49 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const resolvedPostingSettings = isAccountingInstalled
     ? resolvePostingSyncSettings(metadata)
     : null;
+
+  /**
+   * GL families another installed integration posts, so the Posting tab can stop
+   * offering a control that has no effect.
+   *
+   * Read from the topology rather than from this integration's own metadata: the
+   * delegation is declared by the SPEND install's mode (Ramp in push-only owns
+   * `ap`) while the select being locked belongs to the ACCOUNTING integration, so
+   * the two are never the same row. `applyLedgerDelegation` already overrides the
+   * stored value at the decision — without this the tab offers a setting the
+   * engine ignores.
+   *
+   * Keyed by family over `LEDGER_FAMILY_KEYS`, never a hard-coded "ap": a spend
+   * platform that delegates AR or a memo family needs no change here.
+   */
+  let delegatedFamilies: Partial<Record<LedgerFamilyKey, string>> = {};
+  if (isAccountingInstalled) {
+    const integrationRows = await client
+      .from("companyIntegration")
+      // `metadata` carries the install mode, which is what decides a spend
+      // provider's capabilities — without it push-only resolves as provider.
+      .select("id, active, metadata")
+      .eq("companyId", companyId);
+    const topology = resolveIntegrationTopology(integrationRows.data ?? []);
+    delegatedFamilies = Object.fromEntries(
+      LEDGER_FAMILY_KEYS.flatMap((family) => {
+        const owner = topology.ledgerOwnership[family];
+        if (owner.kind !== "external") return [];
+        // Name the owner the way the customer knows it, falling back to the id
+        // so an unregistered integration still explains the lock.
+        const name =
+          getIntegrationConfigById(owner.integrationId as IntegrationID)
+            ?.name ?? owner.integrationId;
+        return [[family, name] as const];
+      })
+    );
+  }
   const mappedAccountCount =
     accountMapping?.mappings.filter((mapping) => mapping.externalId).length ??
     0;
   const postingSync = resolvedPostingSettings
     ? {
+        delegatedFamilies,
         settings: {
           families: resolvedPostingSettings.families,
           sourceTypes: resolvedPostingSettings.sourceTypes,
@@ -1465,6 +1534,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
       sourceTypeConfigs,
       familyAr,
       familyAp,
+      familyCreditMemo,
+      familySupplierCredit,
       periodLockPolicy,
       lockDate
     } = validation.data;
@@ -1546,7 +1617,12 @@ export async function action({ request, params }: ActionFunctionArgs) {
         ...existingSettings,
         postingSync: {
           ...postingSyncWithoutEnabled,
-          families: { ar: familyAr, ap: familyAp },
+          families: {
+            ar: familyAr,
+            ap: familyAp,
+            creditMemo: familyCreditMemo,
+            supplierCredit: familySupplierCredit
+          },
           sourceTypes,
           periodLockPolicy,
           ...(lockDate ? { lockDate } : {})
@@ -1839,6 +1915,7 @@ export default function IntegrationRoute() {
           settings={postingSync.settings}
           policy={postingSync.policy}
           mappingReadiness={postingSync.mappingReadiness}
+          delegatedFamilies={postingSync.delegatedFamilies}
         />
       )
     });
@@ -1884,6 +1961,7 @@ export default function IntegrationRoute() {
           status={syncActivity.status}
           page={syncActivity.page}
           pageSize={syncActivity.pageSize}
+          readableIds={syncActivity.readableIds}
           lastReconciliation={syncActivity.lastReconciliation}
           tieOut={syncActivity.tieOut}
         />

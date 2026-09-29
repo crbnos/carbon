@@ -639,8 +639,11 @@ export const JournalEntrySourceTypeIcon = ({
       return <LuBuilding2 className={className} />;
     case "Payment":
       return <LuBanknote className={className} />;
-    case "Card Transaction":
+    case "Charge":
       return <LuCreditCard className={className} />;
+    case "Reimbursement":
+      // An employee payable, not a card charge — pair it with Payment's icon.
+      return <LuBanknote className={className} />;
     case "Credit Memo":
       return <LuCreditCard className={className} />;
     case "Debit Memo":

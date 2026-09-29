@@ -3,7 +3,6 @@ import {
   type RampClient,
   type RampReimbursement
 } from "@carbon/ee/ramp.server";
-import { postPurchaseInvoice } from "./ramp-sync-bill";
 import { recordRampFamilyError } from "./ramp-sync-observability";
 import {
   isRampEntityInScope,
@@ -15,10 +14,10 @@ import {
   type FamilyResult,
   getRampCurrencyDecimals,
   getRampExchangeRate,
-  invoiceDeepLinkUrl,
   normalizeVerifiedMinorAmount,
   type RampSyncContext,
   recordRampSyncFailures,
+  reimbursementDeepLinkUrl,
   resolveRampSyncOperations,
   type SyncItem
 } from "./ramp-sync-shared";
@@ -30,7 +29,7 @@ export async function syncRampReimbursements(
 ): Promise<FamilyResult> {
   const { client, companyId, metadata } = ctx;
   const result: FamilyResult = { created: 0, reconfirmed: 0, failed: 0 };
-  if (!isRampInboundFamilyEnabled("reimbursements", metadata.sync)) {
+  if (!isRampInboundFamilyEnabled("reimbursements", metadata)) {
     return result;
   }
 
@@ -61,9 +60,11 @@ export async function syncRampReimbursements(
               getRampExchangeRate(ctx, currencyCode),
             normalizeAmount: (value, currencyCode, label) =>
               normalizeVerifiedMinorAmount(ctx, value, currencyCode, label),
-            postInvoice: (invoiceRowId) =>
-              postPurchaseInvoice(ctx, invoiceRowId),
-            invoiceDeepLinkUrl
+            // There is deliberately no posting seam here. An imported spend
+            // document lands Draft and is posted by a human once its coding has
+            // been reviewed — see
+            // `.ai/specs/2026-09-23-editable-imported-spend-documents.md`.
+            reimbursementDeepLinkUrl
           },
           reimbursement
         );

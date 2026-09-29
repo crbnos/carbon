@@ -23,6 +23,7 @@ import {
   getPostgresConnectionPool
 } from "@carbon/database/client";
 import {
+  createMappingService,
   ensureProviderSubscriptions,
   getAccountingIntegration,
   getProviderIntegration,
@@ -49,10 +50,16 @@ import {
   SWEPT_BILL_STATUSES,
   SWEPT_CHARGE_STATUSES,
   SWEPT_INVOICE_STATUSES,
-  SWEPT_PAYMENT_STATUSES
+  SWEPT_PAYMENT_STATUSES,
+  SWEPT_REIMBURSEMENT_STATUSES
 } from "./accounting-sync-operations";
+import {
+  isHourlyMasterDataPass,
+  MASTER_DATA_SWEEP_TARGETS
+} from "./master-data-targets";
 import type { ReconcileRef } from "./reconcile";
 import { type ReconcileSummary, reconcileEntities } from "./reconcile-executor";
+import { loadIntegrationTopology } from "./topology";
 
 const PAGE_SIZE = 200;
 const MAX_PAGES = 25;
@@ -67,6 +74,8 @@ type SweepSummary = {
     invoices: number;
     payments: number;
     charges: number;
+    reimbursements: number;
+    memos: number;
     parkedBills: number;
   };
   skippedReasons: string[];
@@ -86,6 +95,14 @@ type SweepContext = {
   todayIso: string;
 };
 
+/**
+ * One page-walk for every candidate table: ascending from the window floor,
+ * offset-paged to `MAX_PAGES`, so the whole window is covered rather than the
+ * newest page re-read every pass.
+ *
+ * `statuses` is optional — master-data tables carry no `status` column, and
+ * they page through here too so they get the same walk.
+ */
 async function pageIds(args: {
   ctx: SweepContext;
   table:
@@ -93,8 +110,13 @@ async function pageIds(args: {
     | "purchaseInvoice"
     | "salesInvoice"
     | "payment"
-    | "cardTransaction";
-  statuses: readonly string[];
+    | "charge"
+    | "reimbursement"
+    | "memo"
+    | "customer"
+    | "supplier"
+    | "item";
+  statuses?: readonly string[];
   dateColumn: string;
   floor: string;
   extraFilter?: (query: any) => any;
@@ -102,12 +124,14 @@ async function pageIds(args: {
   const ids: string[] = [];
   let offset = 0;
   for (let page = 0; page < MAX_PAGES; page++) {
-    let query = args.ctx.client
+    let query: any = args.ctx.client
       .from(args.table)
       .select("id")
       .eq("companyId", args.ctx.companyId)
-      .in("status", args.statuses as unknown as ("Posted" | "Reversed")[])
       .gte(args.dateColumn, args.floor);
+    if (args.statuses) {
+      query = query.in("status", args.statuses);
+    }
     if (args.extraFilter) query = args.extraFilter(query);
 
     const result = await query
@@ -152,13 +176,38 @@ async function parkedBillIds(ctx: SweepContext): Promise<string[]> {
   return (parked.data ?? []).map((row) => row.entityId);
 }
 
+/**
+ * Rows of a master-data table changed since the floor.
+ *
+ * Pages through the shared `pageIds` walk. It used to be a single DESCENDING
+ * `.limit(n)`, which never advanced: a bulk edit of 3000 suppliers meant every
+ * pass re-read the same newest n and the older rows were swept never.
+ */
+async function pageChangedMasterDataIds(args: {
+  ctx: SweepContext;
+  table: "customer" | "supplier" | "item";
+  floor: string;
+}): Promise<string[]> {
+  return await pageIds({
+    ctx: args.ctx,
+    table: args.table,
+    dateColumn: "updatedAt",
+    floor: args.floor
+  });
+}
+
 async function sweepCompanyProvider(args: {
   companyId: string;
   providerId: ProviderID;
   database: SyncContext["database"];
   scope: string;
+  /**
+   * Which cron slot this RUN is, resolved once by the handler before any
+   * per-company step — never re-read here (see `isHourlyMasterDataPass`).
+   */
+  isHourlyPass: boolean;
 }): Promise<SweepSummary> {
-  const { companyId, providerId, database, scope } = args;
+  const { companyId, providerId, database, scope, isHourlyPass } = args;
   const client = getCarbonServiceRole();
 
   const integration = await getAccountingIntegration(
@@ -186,6 +235,8 @@ async function sweepCompanyProvider(args: {
     );
   }
 
+  const topology = await loadIntegrationTopology(client, companyId);
+
   const ctx: SweepContext = {
     client,
     companyId,
@@ -202,7 +253,10 @@ async function sweepCompanyProvider(args: {
     invoices: 0,
     payments: 0,
     charges: 0,
-    parkedBills: 0
+    reimbursements: 0,
+    memos: 0,
+    parkedBills: 0,
+    masterData: 0
   };
 
   // 2. Candidate refs. Paging filters are SCOPE (which rows are worth
@@ -323,7 +377,7 @@ async function sweepCompanyProvider(args: {
     skippedReasons.push("payments: provider has no outbound payment push");
   }
 
-  // Card charges (Charge/Credit cardTransactions) — the provider's native
+  // Card charges (Charge/Credit charges) — the provider's native
   // card-charge object. Same two-page shape as payments: `transactionDate`
   // for the window (postingDate is nullable) plus `voidedAt` for late voids.
   const chargeConfig = provider.getSyncConfig("charge");
@@ -338,7 +392,7 @@ async function sweepCompanyProvider(args: {
     const chargeTypes = (query: any) => query.in("type", ["Charge", "Credit"]);
     const chargeIds = await pageIds({
       ctx,
-      table: "cardTransaction",
+      table: "charge",
       statuses: SWEPT_CHARGE_STATUSES,
       dateColumn: "transactionDate",
       floor,
@@ -346,7 +400,7 @@ async function sweepCompanyProvider(args: {
     });
     const lateVoidedChargeIds = await pageIds({
       ctx,
-      table: "cardTransaction",
+      table: "charge",
       statuses: ["Voided"],
       dateColumn: "voidedAt",
       floor,
@@ -363,6 +417,151 @@ async function sweepCompanyProvider(args: {
     skippedReasons.push("charges: charge sync is disabled");
   }
 
+  // Employee reimbursements — the provider's native reimbursement object (or
+  // an employee-vendor bill where it has none). Same two-page shape as
+  // charges: `reimbursementDate` for the window (postingDate is nullable)
+  // plus `voidedAt` for late voids. There is deliberately NO `type` filter —
+  // unlike a charge, every reimbursement is document-shaped.
+  const reimbursementConfig = provider.getSyncConfig("reimbursement");
+  if (
+    reimbursementConfig?.enabled &&
+    reimbursementConfig.direction !== "pull-from-accounting"
+  ) {
+    const floor = getSweepFloorDate({
+      todayIso: ctx.todayIso,
+      syncFromDate: reimbursementConfig.syncFromDate
+    });
+    const reimbursementIds = await pageIds({
+      ctx,
+      table: "reimbursement",
+      statuses: SWEPT_REIMBURSEMENT_STATUSES,
+      dateColumn: "reimbursementDate",
+      floor
+    });
+    const lateVoidedReimbursementIds = await pageIds({
+      ctx,
+      table: "reimbursement",
+      statuses: ["Voided"],
+      dateColumn: "voidedAt",
+      floor
+    });
+    const sweptReimbursementIds = [
+      ...new Set([...reimbursementIds, ...lateVoidedReimbursementIds])
+    ];
+    scanned.reimbursements = sweptReimbursementIds.length;
+    refs.push(
+      ...sweptReimbursementIds.map(
+        (id): ReconcileRef => ({ entityType: "reimbursement", entityId: id })
+      )
+    );
+  } else {
+    skippedReasons.push("reimbursements: reimbursement sync is disabled");
+  }
+
+  // Credit memos / supplier credits — ONE table, TWO entity types. The memo's
+  // PARTY decides which, so each side is paged separately with a party filter
+  // and emits its own entity type. Same two-page shape as charges:
+  // `memoDate` for the window (postingDate is nullable) plus `voidedAt` for
+  // late voids.
+  for (const side of [
+    {
+      entityType: "creditMemo" as const,
+      label: "credit memos",
+      partyColumn: "customerId"
+    },
+    {
+      entityType: "supplierCredit" as const,
+      label: "supplier credits",
+      partyColumn: "supplierId"
+    }
+  ]) {
+    const memoConfig = provider.getSyncConfig(side.entityType);
+    if (
+      !memoConfig?.enabled ||
+      memoConfig.direction === "pull-from-accounting"
+    ) {
+      skippedReasons.push(`${side.label}: sync is disabled`);
+      continue;
+    }
+
+    const floor = getSweepFloorDate({
+      todayIso: ctx.todayIso,
+      syncFromDate: memoConfig.syncFromDate
+    });
+    const ofParty = (query: any) => query.not(side.partyColumn, "is", null);
+    const memoIds = await pageIds({
+      ctx,
+      table: "memo",
+      statuses: SWEPT_CHARGE_STATUSES,
+      dateColumn: "memoDate",
+      floor,
+      extraFilter: ofParty
+    });
+    const lateVoidedMemoIds = await pageIds({
+      ctx,
+      table: "memo",
+      statuses: ["Voided"],
+      dateColumn: "voidedAt",
+      floor,
+      extraFilter: ofParty
+    });
+    const sweptMemoIds = [...new Set([...memoIds, ...lateVoidedMemoIds])];
+    scanned.memos += sweptMemoIds.length;
+    refs.push(
+      ...sweptMemoIds.map(
+        (id): ReconcileRef => ({ entityType: side.entityType, entityId: id })
+      )
+    );
+  }
+
+  // 2b. Master data. Documents have had a sweep since v4; master data never
+  // did, so a supplier that predates the install — or whose row event was
+  // dropped — was NEVER pushed and nothing ever caught up. That gap is why a
+  // bill's JIT dependency sync was the only thing keeping vendors alive.
+  //
+  // Bounded by construction: the unmapped set drains to zero permanently, and
+  // the changed set rides the same window floor the documents use.
+  const mappingService = createMappingService(database, companyId);
+
+  for (const master of MASTER_DATA_SWEEP_TARGETS) {
+    const config = provider.getSyncConfig(master.entityType);
+    if (!config?.enabled || config.direction === "pull-from-accounting") {
+      skippedReasons.push(`${master.entityType}: push disabled`);
+      continue;
+    }
+    if (master.hourlyOnly && !isHourlyPass) {
+      skippedReasons.push(`${master.entityType}: hourly pass only`);
+      continue;
+    }
+
+    const floor = getSweepFloorDate({
+      todayIso: ctx.todayIso,
+      syncFromDate: config.syncFromDate
+    });
+
+    const [unmapped, changed] = await Promise.all([
+      mappingService.getUnsyncedEntityIds(
+        master.entityType,
+        master.table,
+        providerId,
+        master.limit
+      ),
+      pageChangedMasterDataIds({
+        ctx,
+        table: master.table,
+        floor
+      })
+    ]);
+
+    const ids = [...new Set([...unmapped, ...changed])];
+    scanned.masterData += ids.length;
+    refs.push(
+      ...ids.map(
+        (id): ReconcileRef => ({ entityType: master.entityType, entityId: id })
+      )
+    );
+  }
+
   // 3. Reconcile — the same executor the event path calls.
   const createdBy = getSyncOperationActor(integration);
   const reconcile: ReconcileSummary = {
@@ -376,6 +575,7 @@ async function sweepCompanyProvider(args: {
   for (let start = 0; start < refs.length; start += RECONCILE_BATCH_SIZE) {
     const batch = refs.slice(start, start + RECONCILE_BATCH_SIZE);
     const result = await reconcileEntities({
+      topology,
       client,
       database,
       companyId,
@@ -451,8 +651,14 @@ export const accountingOutboundSweepFunction = inngest.createFunction(
   // Offset from the inbound pull sweep (*/30) so the two never contend
   // for the same company's ledger claims
   { cron: "15,45 * * * *" },
-  async ({ step, runId }) => {
+  async ({ event, step, runId }) => {
     const client = getCarbonServiceRole();
+
+    // ONE slot for the whole run, resolved before any per-company step: the
+    // cron's own scheduled time, which is stable across a step retry too.
+    // (`event.ts` is the scheduled-timer payload's timestamp; the fallback only
+    // matters if a run arrives without one.)
+    const isHourlyPass = isHourlyMasterDataPass(event.ts ?? Date.now());
 
     const targets = await step.run("find-outbound-sweep-targets", async () => {
       const integrations = await client
@@ -500,7 +706,8 @@ export const accountingOutboundSweepFunction = inngest.createFunction(
             companyId: target.companyId,
             providerId: target.providerId,
             database,
-            scope: runId
+            scope: runId,
+            isHourlyPass
           });
         }
       });

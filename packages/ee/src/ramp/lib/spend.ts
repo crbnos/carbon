@@ -1,92 +1,19 @@
-import type { Database } from "@carbon/database";
-import type { Kysely, KyselyDatabase } from "@carbon/database/client";
-import {
-  loadBillCostingLines,
-  toTransactionCurrencyLines
-} from "../../accounting/core/document-costing";
 import type { ExternalIntegrationMappingService } from "../../accounting/core/external-mapping";
+import type { SpendVendorParty } from "../../spend/parties";
 import { buildRampIdempotencyKey, type RampClient } from "./client";
-import { buildLineCodingSelections } from "./coding";
 import { RAMP } from "./connection";
 import type { RampVendor } from "./models";
 
 // /********************************************************\
-// *          Outbound push (POs, draft bills)             *
+// *        Ramp spend-vendor resolution (outbound)        *
 // \********************************************************/
 
-/** A Carbon purchase-order line, shaped for a Ramp PO push. */
-export type RampPurchaseOrderPushLine = {
-  id: string;
-  description: string | null;
-  quantity: number | null;
-  unitPrice: number | null;
-};
-
-/** The Carbon purchase order the job hands to {@link pushPurchaseOrder}. */
-export type RampPurchaseOrderPush = {
-  /** Carbon `purchaseOrder.id` (the mapping's entityId + the PO `external_id`). */
-  id: string;
-  /** Human-readable `purchaseOrder.purchaseOrderId` → Ramp `purchase_order_number`. */
-  readableId: string;
-  status: Database["public"]["Enums"]["purchaseOrderStatus"];
-  supplier: RampVendorSupplier;
-  /** The PO currency → Ramp's required `currency` (job falls back to base). */
-  currencyCode: string | null;
-  /** Ramp's required `entity_id` — the job resolves it before the push. */
-  entityId?: string;
-  lines: RampPurchaseOrderPushLine[];
-};
-
 /**
- * The Carbon purchase invoice the job hands to {@link pushInvoiceDraftBill}.
- * The line amounts and GL/cost-center coding are NOT passed in — they are read
- * from the invoice's posted "Purchase Invoice" journal via `loadBillCostingLines`
- * (the same authoritative source the QBO/Xero/Rillet bill syncers use), because
- * an item/part invoice line carries no account of its own; posting resolves the
- * real GL accounts (inventory / GR-IR clearing / variance / tax).
+ * Alias of the shared `SpendVendorParty` — one definition of "the Carbon
+ * supplier identity a spend platform needs", loaded by `spend/parties.ts`. Kept
+ * under the Ramp name because it is this module's public contract.
  */
-export type RampInvoicePush = {
-  /** Carbon `purchaseInvoice.id` (the mapping's entityId + the bill `remote_id`). */
-  id: string;
-  /** Human-readable `purchaseInvoice.invoiceId` (the fallback invoice number). */
-  readableId: string;
-  supplierReference: string | null;
-  dateIssued: string | null;
-  dateDue: string | null;
-};
-
-/**
- * Ensure a Ramp accounting vendor exists for a Carbon supplier — OUTBOUND
- * direction, so the mapping is read Carbon→Ramp via `getExternalId("vendor", …)`
- * (NOT the inbound `getEntityId`). Reuses an existing mapping (including one an
- * inbound bill/reimbursement already linked); otherwise creates a Ramp vendor
- * from the supplier name and links it (`allowDuplicateExternalId` default).
- * Returns the Ramp vendor id, or `null` when the supplier has no usable name.
- */
-/**
- * A Carbon supplier resolved with the contact + address a Ramp SPEND vendor
- * needs. `country` (alpha-2, from the supplier's primary `address.countryCode`)
- * and a `contact.email` are what `POST /vendors` requires to CREATE one; without
- * both, only matching an existing Ramp vendor is possible.
- */
-export type RampVendorSupplier = {
-  id: string;
-  name: string | null;
-  country: string | null;
-  contact: {
-    email: string | null;
-    firstName: string | null;
-    lastName: string | null;
-    phone: string | null;
-  } | null;
-  address: {
-    line1: string | null;
-    line2: string | null;
-    city: string | null;
-    stateProvince: string | null;
-    postalCode: string | null;
-  } | null;
-};
+export type RampVendorSupplier = SpendVendorParty;
 
 export type RampPurchaseOrderBatch = {
   purchaseOrderIds: Map<string, string>;
@@ -216,7 +143,19 @@ export async function resolveOrCreateRampSpendVendor(
   client: RampClient,
   supplier: RampVendorSupplier,
   companyId?: string,
-  batch?: RampPurchaseOrderBatch
+  batch?: RampPurchaseOrderBatch,
+  opts?: {
+    /**
+     * Rethrow Ramp's rejection instead of returning null.
+     *
+     * A PO's `vendor_id` is OPTIONAL, so swallowing is right there — the PO
+     * still pushes. A BILL requires one, so swallowing turns Ramp's actual
+     * complaint ("state is required", "invalid email", …) into a generic
+     * "supplier has no Ramp spend vendor" that nobody can act on, with the real
+     * cause reaching only a server console.
+     */
+    surfaceCreateError?: boolean;
+  }
 ): Promise<string | null> {
   const existing = batch
     ? batch.vendorIds.get(supplier.id)
@@ -304,6 +243,7 @@ export async function resolveOrCreateRampSpendVendor(
       `[RAMP] failed to create Ramp spend vendor for supplier "${name}" (${supplier.id})`,
       createError
     );
+    if (opts?.surfaceCreateError) throw createError;
     return null;
   }
 
@@ -322,229 +262,4 @@ export async function resolveOrCreateRampSpendVendor(
     });
   }
   return rampVendorId;
-}
-
-/**
- * Push one Carbon purchase order to Ramp. Completed/Closed POs that already have
- * a Ramp mapping are archived; every other (released) PO resolves its Ramp SPEND
- * vendor (matched or created — best-effort, since `vendor_id` is optional), then
- * either PATCHes an existing Ramp PO or creates a new one carrying
- * `external_id: po.id` so Ramp's bill-matching flow can find the Carbon PO. The
- * new Ramp PO id is linked under `("purchaseOrder", po.id, "ramp")`.
- * Ramp requires `currency`, `entity_id`, and `three_way_match_enabled` on create.
- */
-export async function pushPurchaseOrder(
-  mapping: ExternalIntegrationMappingService,
-  client: RampClient,
-  po: RampPurchaseOrderPush,
-  companyId?: string,
-  batch?: RampPurchaseOrderBatch
-): Promise<"created" | "patched" | "archived" | "skipped"> {
-  const existingRampPoId = batch
-    ? batch.purchaseOrderIds.get(po.id)
-    : await mapping.getExternalId("purchaseOrder", po.id, RAMP);
-
-  // Completed / Closed POs with a mapping → archive; without one → nothing to do.
-  if (po.status === "Completed" || po.status === "Closed") {
-    if (existingRampPoId) {
-      await client.archivePurchaseOrder(existingRampPoId);
-      return "archived";
-    }
-    return "skipped";
-  }
-
-  // Best-effort: match/create the Ramp SPEND vendor. `vendor_id` is OPTIONAL on
-  // a PO (Ramp still matches its bill by `external_id`), so a supplier we can't
-  // resolve/create does not block the push.
-  const rampVendorId = await resolveOrCreateRampSpendVendor(
-    mapping,
-    client,
-    po.supplier,
-    companyId,
-    batch
-  );
-
-  const lineItems = po.lines.map((line) => ({
-    description: line.description ?? "",
-    unit_quantity: line.quantity ?? 0,
-    unit_price: line.unitPrice ?? 0,
-    external_id: line.id
-  }));
-
-  if (existingRampPoId) {
-    await client.patchPurchaseOrder(existingRampPoId, {
-      ...(rampVendorId ? { vendor_id: rampVendorId } : {}),
-      line_items: lineItems
-    });
-    return "patched";
-  }
-
-  const created = (await client.createPurchaseOrder(
-    {
-      purchase_order_number: po.readableId,
-      external_id: po.id,
-      three_way_match_enabled: false,
-      ...(po.currencyCode ? { currency: po.currencyCode } : {}),
-      ...(po.entityId ? { entity_id: po.entityId } : {}),
-      ...(rampVendorId ? { vendor_id: rampVendorId } : {}),
-      line_items: lineItems
-    },
-    // Entity-scoped idempotency key (keyed on the Carbon purchase-order id) so a
-    // retried push cannot create a duplicate Ramp PO. Only when the caller
-    // supplied a companyId (the helper needs it to derive the key).
-    companyId
-      ? buildRampIdempotencyKey({
-          companyId,
-          operation: "createPurchaseOrder",
-          scope: po.id
-        })
-      : undefined
-  )) as { id?: string } | null;
-  const rampPoId = created?.id ?? null;
-  if (!rampPoId) {
-    throw new Error(
-      `Ramp did not return a purchase order id for ${po.readableId}`
-    );
-  }
-
-  await mapping.link("purchaseOrder", po.id, RAMP, rampPoId, {
-    createdBy: "system"
-  });
-  batch?.purchaseOrderIds.set(po.id, rampPoId);
-  return "created";
-}
-
-/**
- * Push one posted Carbon purchase invoice to Ramp as a coded DRAFT bill — a
- * "provisional bill" the customer reviews, completes (payment method + payee
- * contact live in Ramp, not Carbon), and approves/pays inside Ramp. Carbon does
- * NOT submit it: submit (`POST /bills/drafts/{id}/submit`) requires per-vendor
- * Ramp bill-pay config Carbon does not own (verified live 2026-09-11 — submit
- * 400s `BILL_PAY_7145` without a payment method + payee contact). So Carbon owns
- * the DRAFT and hands off; Ramp owns the bill lifecycle after.
- *
- * Ensures the Ramp spend vendor, reads the invoice's posted "Purchase Invoice"
- * journal for its authoritative account-costed lines (`loadBillCostingLines` →
- * `toTransactionCurrencyLines`, the same path QBO/Xero/Rillet use), then creates
- * the draft with `remote_id: invoice.id` (Ramp bill↔Carbon matching),
- * `enable_accounting_sync: false` (the accounting provider IS Carbon, so a synced
- * bill would echo straight back through the inbound `ramp-bills` step), decimal
- * document-currency line amounts, and per-line GL/cost-center coding (see
- * {@link buildLineCodingSelections}). Links `("bill", invoice.id, "ramp", <draft id>)`.
- *
- * The GL account comes from the POSTED JOURNAL, never `purchaseInvoiceLine.accountId`
- * — an item/part line carries no account of its own (posting resolves inventory /
- * GR-IR / variance / tax accounts), so reading the line would leave item bills
- * uncoded. The cost center is the journal line dimension whose `valueId` is a
- * `costCenter.id` Carbon pushed (`pushedCostCenterIds`).
- *
- * The CALLER filters candidates (no existing `("bill")` mapping in either
- * direction, not an Employee-supplier reimbursement, view-status Open/Partially
- * Paid) and supplies the sets of accounts / cost centers Carbon has pushed to
- * Ramp so a line coded to an unpushed option degrades to uncoded instead of
- * 422-ing the whole bill. Returns `"pushed"` or `"skipped"` (vendor without a
- * name). Any throw retains the invoice's cursor position for a future retry —
- * including `loadBillCostingLines`'s `UNMAPPED_ACCOUNTS` when the invoice has no
- * posted journal (accounting was disabled at post time).
- *
- * Contract verified live against the Ramp sandbox 2026-09-11 (draft create +
- * coded read-back); see `.ai/runs/2026-09-11-ramp-draft-bill-push-verification.md`.
- */
-export async function pushInvoiceDraftBill(
-  db: Kysely<KyselyDatabase>,
-  companyId: string,
-  mapping: ExternalIntegrationMappingService,
-  client: RampClient,
-  invoice: RampInvoicePush & { supplier: RampVendorSupplier },
-  pushed: {
-    pushedAccountIds: ReadonlySet<string>;
-    pushedCostCenterIds: ReadonlySet<string>;
-    pushedProjectIds: ReadonlySet<string>;
-  }
-): Promise<"pushed" | "skipped"> {
-  // A bill REQUIRES a `vendor_id`, so a supplier we can't match/create a Ramp
-  // spend vendor for is skipped (needs a name, and to create: an email + country).
-  const rampVendorId = await resolveOrCreateRampSpendVendor(
-    mapping,
-    client,
-    invoice.supplier,
-    companyId
-  );
-  if (!rampVendorId) return "skipped";
-
-  // Authoritative account-costed lines from the posted journal, converted once
-  // to the invoice's document currency (base × rate, rounding reconciled).
-  const costing = await loadBillCostingLines(db, {
-    companyId,
-    billId: invoice.id
-  });
-  const documentLines = toTransactionCurrencyLines(costing.lines, {
-    exchangeRate: costing.exchangeRate,
-    documentTotal: costing.documentTotal,
-    decimalPlaces: costing.decimalPlaces
-  });
-
-  const invoiceNumber =
-    (invoice.supplierReference ?? "").trim() || invoice.readableId;
-
-  const created = (await client.createDraftBill(
-    {
-      vendor_id: rampVendorId,
-      invoice_number: invoiceNumber,
-      invoice_currency: costing.currencyCode,
-      ...(invoice.dateIssued ? { issued_at: invoice.dateIssued } : {}),
-      ...(invoice.dateDue ? { due_at: invoice.dateDue } : {}),
-      // `remote_id` is the echo guard AND the bill-match key: it marks the bill
-      // as originating from Carbon (the ERP), so the inbound `ramp-bills` step
-      // dedupes on it (`syncBill`) instead of re-creating the invoice. Do NOT
-      // also send `enable_accounting_sync: false` — Ramp 422s that combination
-      // ("enable_accounting_sync cannot be False if remote_id is provided",
-      // verified live 2026-09-11). A draft is not in Ramp's `/bills` feed, so it
-      // cannot echo before the customer submits it anyway.
-      remote_id: invoice.id,
-      // `amount` is a decimal in document currency (verified live: Ramp stores
-      // 12.34 as 1234 minor units). PDF attach (POST /bills/drafts/{id}/
-      // attachments) is a deferred follow-up — it is NOT a create-body field.
-      line_items: documentLines.map((line) => {
-        // The cost center is the journal-line dimension whose value is a
-        // costCenter Carbon pushed to Ramp; `valueId` = the costCenter.id.
-        const costCenterId =
-          line.dimensions?.find((dimension) =>
-            pushed.pushedCostCenterIds.has(dimension.valueId)
-          )?.valueId ?? null;
-        // The project is the journal-line dimension whose value is a project
-        // Carbon pushed to Ramp; `valueId` = the project.id.
-        const projectId =
-          line.dimensions?.find((dimension) =>
-            pushed.pushedProjectIds.has(dimension.valueId)
-          )?.valueId ?? null;
-        return {
-          memo: (line.sourceItem?.name ?? line.description) || undefined,
-          amount: line.amount,
-          accounting_field_selections: buildLineCodingSelections(
-            { accountId: line.accountId, costCenterId, projectId },
-            pushed
-          )
-        };
-      })
-    },
-    // Entity-scoped idempotency key (keyed on the Carbon purchase-invoice id) so a
-    // retried push cannot create a duplicate draft bill at Ramp.
-    buildRampIdempotencyKey({
-      companyId,
-      operation: "createDraftBill",
-      scope: invoice.id
-    })
-  )) as { id?: string } | null;
-  const draftId = created?.id ?? null;
-  if (!draftId) {
-    throw new Error(
-      `Ramp did not return a draft-bill id for invoice ${invoice.readableId}`
-    );
-  }
-
-  await mapping.link("bill", invoice.id, RAMP, draftId, {
-    createdBy: "system"
-  });
-  return "pushed";
 }

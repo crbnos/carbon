@@ -2,9 +2,13 @@ import type {
   IntegrationAction,
   IntegrationSetting,
   IntegrationSettingGroup,
-  IntegrationSettingOption
+  IntegrationSettingOption,
+  SyncProviderCapabilities
 } from "@carbon/ee";
-import { integrations as availableIntegrations } from "@carbon/ee";
+import {
+  integrations as availableIntegrations,
+  resolveCapabilities
+} from "@carbon/ee";
 import {
   ChoiceCardGroup,
   Array as FormArray,
@@ -39,7 +43,7 @@ import {
 } from "@carbon/react";
 import { SUPPORT_EMAIL } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
-import type { ReactNode } from "react";
+import type { ComponentType, ReactNode } from "react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router";
 import { Processes } from "~/components/Form";
@@ -617,6 +621,58 @@ export function IntegrationForm({
     credentialsRecord?.providerMetadata as Record<string, unknown> | undefined
   )?.tenantName ?? credentialsRecord?.tenantName) as string | undefined;
 
+  // What THIS install owns. An integration whose capabilities depend on how it
+  // was installed declares `resolveInstallCapabilities`; everything else
+  // resolves to the documented defaults, under which no setting is gated.
+  const capabilities = useMemo(
+    () =>
+      resolveCapabilities(
+        (
+          integration as {
+            resolveInstallCapabilities?: (
+              metadata: unknown
+            ) => SyncProviderCapabilities;
+          }
+        )?.resolveInstallCapabilities?.(metadata)
+      ),
+    [integration, metadata]
+  );
+
+  // How this install was set up. Read-only: the mode is fixed at consent, so the
+  // only way to change it is a reconnect — which the copy below says plainly
+  // rather than offering a control that would silently do nothing.
+  const installMode = useMemo(() => {
+    const descriptor = integration as {
+      modes?: Array<{ id: string; label: string; description?: string }>;
+      resolveInstallMode?: (
+        metadata: unknown
+      ) => { id: string; detail?: string } | undefined;
+    };
+    if (!descriptor?.modes?.length || !descriptor.resolveInstallMode) {
+      return undefined;
+    }
+    const resolved = descriptor.resolveInstallMode(metadata);
+    const declared = descriptor.modes.find((m) => m.id === resolved?.id);
+    return declared ? { ...declared, detail: resolved?.detail } : undefined;
+  }, [integration, metadata]);
+
+  // `integration` is a union of concrete descriptors and some members simply have
+  // no `setupInstructions`, so the property cannot be read off the union. This
+  // used to be two `@ts-expect-error`s at the render site, which is exactly how
+  // the component's prop list drifted from its declared type — the form was
+  // already passing `metadata` and `installed` that the type never mentioned.
+  // Narrowing here instead type-checks the props for real.
+  const SetupInstructions = (
+    integration as unknown as {
+      setupInstructions?: ComponentType<{
+        companyId: string;
+        metadata?: Record<string, unknown>;
+        installed?: boolean;
+        mode?: string;
+      }>;
+    }
+  )?.setupInstructions;
+
   // Group settings by their group property
   // Settings without a group appear first (ungrouped)
   // Also merges dynamic options into settings that have them
@@ -636,6 +692,10 @@ export function IntegrationForm({
 
       for (const rawSetting of integration.settings) {
         const baseSetting = rawSetting as IntegrationSetting;
+
+        // Unreachable for this install — drop it before grouping, so a group
+        // left with nothing never gets a key and its header never renders.
+        if (baseSetting.availableWhen?.(capabilities) === false) continue;
         // Fill runtime placeholders (webhook host + company ID) in help text,
         // then merge dynamic options if available for this setting.
         const setting: IntegrationSetting = {
@@ -673,7 +733,7 @@ export function IntegrationForm({
         groupNames: [...grouped.keys()],
         groupDescriptions: descriptions
       };
-    }, [integration, dynamicOptions, webhookHost, companyId]);
+    }, [integration, dynamicOptions, webhookHost, companyId, capabilities]);
 
   const initialValues = useMemo(() => {
     if (!integration) return {};
@@ -732,6 +792,31 @@ export function IntegrationForm({
           </span>
         </div>
       )}
+      {installed && installMode && (
+        <div className="flex flex-col gap-1 rounded-md border border-border bg-muted/40 px-3 py-2">
+          <div className="flex items-center gap-2">
+            <Badge variant="secondary">{installMode.label}</Badge>
+            {installMode.detail && (
+              // Named as the PROVIDER's report, not as a Carbon integration.
+              // "Ledger held by Rillet" reads as "your Rillet integration"; this
+              // is a free-text name the provider returns and routinely names a
+              // system Carbon has no integration for at all.
+              <span className="text-xs text-muted-foreground">
+                <Trans>{integration.name} reports the ledger is held by</Trans>{" "}
+                <span className="font-medium text-foreground">
+                  {installMode.detail}
+                </span>
+              </span>
+            )}
+          </div>
+          <p className="text-xs text-muted-foreground">
+            <Trans>
+              Chosen when you connected and fixed for this install. To change
+              it, uninstall and reconnect in a different mode.
+            </Trans>
+          </p>
+        </div>
+      )}
     </div>
   );
 
@@ -768,21 +853,26 @@ export function IntegrationForm({
           )}
         >
           <VStack spacing={4} className="px-2">
+            {/* An install with a mode describes THAT mode. The generic
+                description covers every mode at once, so it is wrong for each
+                of them — it told a push-only customer Carbon pulls their
+                charges and bills into the ledger, which is the opposite of
+                what this mode does. */}
             <p className="text-xs leading-relaxed text-muted-foreground">
-              {integration.description}
+              {(installed && installMode?.description) ||
+                integration.description}
             </p>
 
-            {/* @ts-expect-error TS2339 */}
-            {integration.setupInstructions && (
+            {SetupInstructions && (
               <div className="flex flex-col gap-2">
                 <Subheading variant="light" className="block">
                   <Trans>Setup instructions</Trans>
                 </Subheading>
-                {/* @ts-expect-error TS2339 */}
-                <integration.setupInstructions
+                <SetupInstructions
                   companyId={companyId}
                   metadata={metadata}
                   installed={installed}
+                  mode={installMode?.id}
                 />
               </div>
             )}

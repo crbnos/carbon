@@ -109,6 +109,41 @@ describe("applyTableRenames", () => {
     expect(out.data.b).toHaveLength(2);
   });
 
+  it("moves a renamed table's columns and row keys onto their current names", () => {
+    withRenames({ cardTransaction: "charge" });
+    const input: {
+      manifest: {
+        tables: Array<{ name: string; rows: number; columns: string[] }>;
+      };
+      data: Record<string, Record<string, unknown>[]>;
+    } = {
+      manifest: {
+        tables: [
+          {
+            name: "cardTransaction",
+            rows: 1,
+            columns: ["id", "companyId", "cardTransactionId"]
+          }
+        ]
+      },
+      data: {
+        cardTransaction: [
+          { id: "x", companyId: "c", cardTransactionId: "CARD-1" }
+        ]
+      }
+    };
+    const out = applyTableRenames(catalog("charge"), input);
+    expect(out.manifest.tables[0]!.columns).toEqual([
+      "id",
+      "companyId",
+      "chargeId"
+    ]);
+    expect(out.data.charge).toEqual([
+      { id: "x", companyId: "c", chargeId: "CARD-1" }
+    ]);
+    expect(input.data.cardTransaction?.[0]).toHaveProperty("cardTransactionId");
+  });
+
   it("does not mutate the backup it was given", () => {
     withRenames({ quoteLine: "quotationLine" });
     const input = backup({ quoteLine: 1 });

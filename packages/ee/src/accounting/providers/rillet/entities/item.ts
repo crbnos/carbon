@@ -168,41 +168,85 @@ export class RilletItemSyncer extends RilletPushOnlyEntitySyncer<
   Rillet.Product,
   RilletWriteOmit
 > {
-  private shippingProducts = new Map<string, Promise<string>>();
+  private helperProducts = new Map<string, Promise<string>>();
 
-  public async ensureShippingProduct(args: {
+  /**
+   * A Rillet product that stands in for a REVENUE ACCOUNT rather than a Carbon
+   * item.
+   *
+   * Rillet requires `product_id` on every invoice line (`InvoiceItemSchema`), so
+   * an invoice cannot be pushed without one. Referencing the real Carbon item
+   * meant mirroring the whole manufacturing parts catalog into Rillet Products
+   * — and it bought nothing, because Carbon has no per-item revenue account:
+   * `post-sales-invoice` credits `accountDefault.salesAccount` for ALL
+   * merchandise and `salesShippingRevenueAccount` for shipping. So one product
+   * per revenue account reproduces the same GL exactly, with two products per
+   * company instead of thousands.
+   *
+   * `kind` only distinguishes the two so their names read sensibly in Rillet;
+   * the ACCOUNT is what makes a product distinct. Keyed by account + currency
+   * because a product carries its own `price.amount.currency`.
+   */
+  public ensureShippingProduct(args: {
     shippingAccountId: string;
     baseCurrencyCode: string;
     baseCurrencyDecimals: number;
   }): Promise<string> {
-    const helperId = `${args.shippingAccountId}:${args.baseCurrencyCode}`;
-    let pending = this.shippingProducts.get(helperId);
+    return this.ensureHelperProduct({
+      kind: "shipping",
+      revenueAccountId: args.shippingAccountId,
+      baseCurrencyCode: args.baseCurrencyCode,
+      baseCurrencyDecimals: args.baseCurrencyDecimals
+    });
+  }
+
+  public ensureSalesProduct(args: {
+    revenueAccountId: string;
+    baseCurrencyCode: string;
+    baseCurrencyDecimals: number;
+  }): Promise<string> {
+    return this.ensureHelperProduct({ kind: "sales", ...args });
+  }
+
+  private async ensureHelperProduct(args: {
+    kind: "shipping" | "sales";
+    revenueAccountId: string;
+    baseCurrencyCode: string;
+    baseCurrencyDecimals: number;
+  }): Promise<string> {
+    const helperId = `${args.revenueAccountId}:${args.baseCurrencyCode}`;
+    const cacheKey = `${args.kind}:${helperId}`;
+    let pending = this.helperProducts.get(cacheKey);
     if (!pending) {
-      pending = this.resolveShippingProduct(args, helperId).catch((error) => {
-        this.shippingProducts.delete(helperId);
+      pending = this.resolveHelperProduct(args, helperId).catch((error) => {
+        this.helperProducts.delete(cacheKey);
         throw error;
       });
-      this.shippingProducts.set(helperId, pending);
+      this.helperProducts.set(cacheKey, pending);
     }
     return pending;
   }
 
-  private async resolveShippingProduct(
+  private async resolveHelperProduct(
     args: {
-      shippingAccountId: string;
+      kind: "shipping" | "sales";
+      revenueAccountId: string;
       baseCurrencyCode: string;
       baseCurrencyDecimals: number;
     },
     helperId: string
   ): Promise<string> {
+    const shipping = args.kind === "shipping";
+    const label = shipping ? "Shipping" : "Sales";
     if (!args.baseCurrencyCode.trim())
-      throw new Error("Missing shipping-product base currency");
+      throw new Error(`Missing ${args.kind}-product base currency`);
     const codes = await this.getAccountCodesById();
+    const description = shipping ? "Customer shipping charges" : "Sales";
     const item: Accounting.Item = {
       id: helperId,
-      code: `Carbon Shipping ${args.shippingAccountId} ${args.baseCurrencyCode}`,
-      name: "Customer shipping charges",
-      description: "Customer shipping charges",
+      code: `Carbon ${label} ${args.revenueAccountId} ${args.baseCurrencyCode}`,
+      name: description,
+      description,
       companyId: this.companyId,
       type: "Service",
       unitOfMeasureCode: "EA",
@@ -216,12 +260,13 @@ export class RilletItemSyncer extends RilletPushOnlyEntitySyncer<
     const payload = mapItemToRilletProduct({
       item,
       accountCodesById: codes,
-      revenueAccountId: args.shippingAccountId,
+      revenueAccountId: args.revenueAccountId,
       currency: args.baseCurrencyCode,
       decimalPlaces: args.baseCurrencyDecimals
     });
+    const mappingEntityType = shipping ? "shippingItem" : "salesItem";
     const mappedId = await this.mappingService.getExternalId(
-      "shippingItem",
+      mappingEntityType,
       helperId,
       this.provider.id
     );
@@ -231,9 +276,8 @@ export class RilletItemSyncer extends RilletPushOnlyEntitySyncer<
         throw new JournalEntrySyncError({
           errorCode: "UNMAPPED_ACCOUNTS",
           warning: true,
-          message:
-            "Cannot reuse Shipping Revenue product: its mapped product is missing or has an incompatible name",
-          metadata: { accountId: args.shippingAccountId, helperId }
+          message: `Cannot reuse ${label} Revenue product: its mapped product is missing or has an incompatible name`,
+          metadata: { accountId: args.revenueAccountId, helperId }
         });
       if (
         current.account_code === payload.account_code &&
@@ -257,17 +301,21 @@ export class RilletItemSyncer extends RilletPushOnlyEntitySyncer<
         buildRilletIdempotencyKey({
           companyId: this.companyId,
           operation: "product",
-          localId: helperId
+          // Shipping keeps its ORIGINAL unprefixed key so existing installs'
+          // in-flight retries still dedupe against Rillet's stored response;
+          // only the new sales kind is namespaced, so the two helper products
+          // for one account cannot collide on a single key.
+          localId: shipping ? helperId : `${args.kind}:${helperId}`
         })
       )
     );
     await withTriggersDisabled(this.database, async (tx) =>
       createMappingService(tx, this.companyId).link(
-        "shippingItem",
+        mappingEntityType,
         helperId,
         this.provider.id,
         created.id,
-        { metadata: { accountId: args.shippingAccountId, kind: "shipping" } }
+        { metadata: { accountId: args.revenueAccountId, kind: args.kind } }
       )
     );
     return created.id;

@@ -31,9 +31,7 @@ const makeLine = (
 
 describe("buildQboInvoiceLines (invoice mapping fixture)", () => {
   it("builds SalesItemLineDetail lines with ItemRef + Qty/UnitPrice and a rounded Amount", () => {
-    const lines = buildQboInvoiceLines(
-      lineArguments([makeLine()], new Map([["item-1", "77"]]))
-    );
+    const lines = buildQboInvoiceLines(lineArguments([makeLine()], "77"));
 
     expect(lines).toEqual([
       {
@@ -50,7 +48,7 @@ describe("buildQboInvoiceLines (invoice mapping fixture)", () => {
     ]);
   });
 
-  it("ships lines without an item without an ItemRef", () => {
+  it("gives a line with no Carbon item the synthetic sales item", () => {
     const lines = buildQboInvoiceLines(
       lineArguments(
         [
@@ -62,11 +60,16 @@ describe("buildQboInvoiceLines (invoice mapping fixture)", () => {
             unitPrice: 50
           })
         ],
-        new Map()
+        "qbo-sales-item"
       )
     );
 
-    expect(lines[0]?.SalesItemLineDetail?.ItemRef).toBeUndefined();
+    // A line with no Carbon item still gets the synthetic sales item: QBO has
+    // no per-line account override, so a revenue line without an ItemRef cannot
+    // direct its GL at all.
+    expect(lines[0]?.SalesItemLineDetail?.ItemRef).toEqual({
+      value: "qbo-sales-item"
+    });
     expect(lines[0]?.Amount).toBe(50);
   });
 });
@@ -131,6 +134,7 @@ function fullInvoice(): Accounting.SalesInvoice {
     currencyDecimalPlaces: 2,
     headerShippingCost: 5,
     shippingRevenueAccountId: "acct-shipping",
+    salesRevenueAccountId: "acct-sales",
     dateIssued: "2026-09-07",
     dateDue: null,
     datePaid: null,
@@ -225,6 +229,17 @@ function setupInvoice(
                   lastSyncedAt: null,
                   accountNumber: "4010",
                   accountName: "Shipping"
+                },
+                // Merchandise revenue needs its own mapping now that invoice
+                // lines carry a synthetic item per revenue account.
+                {
+                  id: "mapping-sales",
+                  accountId: "acct-sales",
+                  externalId: "sales-account",
+                  metadata: null,
+                  lastSyncedAt: null,
+                  accountNumber: "4000",
+                  accountName: "Sales"
                 }
               ]
       };
@@ -250,6 +265,8 @@ function setupInvoice(
   const itemSyncer = new QboItemSyncer({ ...context, entityType: "item" });
   const ensureShippingItem = vi.fn(async () => "shipping-item");
   itemSyncer.ensureShippingItem = ensureShippingItem;
+  const ensureSalesItem = vi.fn(async () => "sales-item");
+  itemSyncer.ensureSalesItem = ensureSalesItem;
   const factory = vi
     .spyOn(SyncFactory, "getSyncer")
     .mockReturnValue(itemSyncer);
@@ -259,6 +276,7 @@ function setupInvoice(
     provider,
     ensureDependencySynced,
     ensureShippingItem,
+    ensureSalesItem,
     factory
   };
 }
@@ -281,9 +299,11 @@ describe("QBO actual invoice component/tax preflight", () => {
         line.SalesItemLineDetail?.ItemRef?.value
       ])
     ).toEqual([
-      [80, "item-remote"],
-      [16, "item-remote"],
-      [2.4, "item-remote"],
+      // All three merchandise lines carry the SAME synthetic sales item —
+      // Carbon posts every merchandise line to one revenue account.
+      [80, "sales-item"],
+      [16, "sales-item"],
+      [2.4, "sales-item"],
       [8, "shipping-item"],
       [4, "shipping-item"]
     ]);
@@ -321,6 +341,30 @@ describe("QBO actual invoice component/tax preflight", () => {
     expect(test.provider.createInvoice).not.toHaveBeenCalled();
     expect(test.provider.updateInvoice).not.toHaveBeenCalled();
   });
+  it.each([
+    "assetDisposal",
+    "missingSalesAccount"
+  ] as const)("refuses %s before the CUSTOMER is pushed to QuickBooks", async (option) => {
+    // Both of these refusals are PURE — they read the document and the local
+    // invoice only. Running them after `ensureDependencySynced("customer", …)`
+    // creates a QBO Customer in the customer's books for an invoice QBO will
+    // never receive: a counterparty they did not ask for, from a push that
+    // failed.
+    const source = fullInvoice();
+    if (option === "assetDisposal") {
+      source.lines[0]!.invoiceLineType = "Fixed Asset";
+    } else {
+      source.salesRevenueAccountId = null;
+    }
+    const test = setupInvoice();
+
+    await expect(test.map(source)).rejects.toMatchObject({
+      failure: { errorCode: "UNMAPPED_ACCOUNTS", warning: true }
+    });
+    expect(test.ensureDependencySynced).not.toHaveBeenCalled();
+    expect(test.ensureSalesItem).not.toHaveBeenCalled();
+    expect(test.provider.createInvoice).not.toHaveBeenCalled();
+  });
   it("rejects a non-finite reciprocal FX rate before provisioning", async () => {
     const source = fullInvoice();
     source.exchangeRate = Number.MIN_VALUE;
@@ -341,13 +385,15 @@ describe("QBO actual invoice component/tax preflight", () => {
     const payload = await test.map(source);
     expect(payload.Line).toHaveLength(3);
     expect(test.ensureShippingItem).not.toHaveBeenCalled();
-    expect(test.factory).not.toHaveBeenCalled();
+    // The SALES item is still provisioned — the invoice has merchandise, and a
+    // QBO revenue line cannot direct its GL without an item.
+    expect(test.ensureSalesItem).toHaveBeenCalledOnce();
   });
 });
 
 function lineArguments(
   lines: Accounting.SalesInvoiceLine[],
-  itemRemoteIds: ReadonlyMap<string, string>
+  salesItemRemoteId: string | null
 ) {
   const source = fullInvoice();
   const subtotal = lines.reduce(
@@ -368,7 +414,7 @@ function lineArguments(
   });
   return {
     document,
-    itemRemoteIds,
+    salesItemRemoteId,
     shippingItemRemoteId: null,
     lineTaxCodeRefs: new Map(
       document.components.map((line) => [line.id, { value: "NON" }])

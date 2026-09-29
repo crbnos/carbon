@@ -509,3 +509,140 @@ Deno.test("an unknown discount account class is refused rather than guessed", ()
     }))
   );
 });
+
+// --- Employee reimbursement payouts -----------------------------------------
+// Structurally the AP arm (cash out, liability control debited) with
+// `targetReimbursementId` as the target column and the reimbursement's OWN
+// booked payable account as the control. Amounts are natural-balance signed, so
+// a balanced entry is `signedDebitTotal === 0`, NOT a zero sum of `amount`.
+
+const reimbursementPayout = (
+  input: Partial<BuildPaymentJournalInput> = {},
+): BuildPaymentJournalInput =>
+  payment({
+    isAR: false,
+    isReimbursement: true,
+    cashIn: false,
+    totalAmount: 620,
+    exchangeRate: 1,
+    newOnAccountBase: 0,
+    applications: [
+      app({
+        targetSalesInvoiceId: null,
+        targetReimbursementId: "reimbursement",
+        targetControlAccountId: "employee-payable",
+        sourceAmount: 620,
+        appliedAmount: 620,
+        sourceExchangeRate: 1,
+        targetExchangeRate: 1,
+      }),
+    ],
+    ...input,
+  });
+
+Deno.test("a reimbursement payout debits the employee payable and credits the bank", () => {
+  const result = buildPaymentJournal(reimbursementPayout());
+  // Natural-balance signing: credit("asset", 620) stores −620 and
+  // debit("liability", 620) ALSO stores −620 (paying down a liability reduces
+  // it). The entry balances in debit(+)/credit(−) space, not in stored `amount`
+  // — which is exactly why `signedDebitTotal` is the assertion that matters.
+  assertEquals(total(result, "bank"), -620);
+  assertEquals(total(result, "employee-payable"), -620);
+  assertEquals(total(result, "control"), 0);
+  assertEquals(result.signedDebitTotal, 0);
+  assertEquals(result.totalFxImpact, 0);
+  assertEquals(
+    result.lines.find((line) => line.accountId === "employee-payable")
+      ?.description,
+    "Employee Reimbursements Payable",
+  );
+  assertEquals(
+    result.lines.find((line) => line.accountId === "employee-payable")
+      ?.documentLineReference,
+    "reimbursement",
+  );
+});
+
+Deno.test("a partial reimbursement payout releases only the cash it paid", () => {
+  const result = buildPaymentJournal(
+    reimbursementPayout({
+      totalAmount: 200,
+      applications: [
+        app({
+          targetSalesInvoiceId: null,
+          targetReimbursementId: "reimbursement",
+          targetControlAccountId: "employee-payable",
+          sourceAmount: 200,
+          appliedAmount: 200,
+          sourceExchangeRate: 1,
+          targetExchangeRate: 1,
+        }),
+      ],
+    }),
+  );
+  assertEquals(total(result, "bank"), -200);
+  assertEquals(total(result, "employee-payable"), -200);
+  assertEquals(result.signedDebitTotal, 0);
+});
+
+Deno.test("a reimbursement payout refuses a discount, a write-off or a second target", () => {
+  for (
+    const invalid of [
+      { discountAmount: 20 },
+      { writeOffAmount: 20 },
+      { targetPurchaseInvoiceId: "invoice" },
+      { targetMemoId: "memo" },
+      { sourcePaymentId: "prior" },
+      { targetReimbursementId: null },
+    ]
+  ) {
+    assertThrows(
+      () =>
+        buildPaymentJournal(
+          reimbursementPayout({
+            applications: [
+              app({
+                targetSalesInvoiceId: null,
+                targetReimbursementId: "reimbursement",
+                targetControlAccountId: "employee-payable",
+                sourceAmount: 620,
+                appliedAmount: 620,
+                sourceExchangeRate: 1,
+                targetExchangeRate: 1,
+                ...invalid,
+              }),
+            ],
+          }),
+        ),
+      Error,
+      "Invalid payment application target",
+    );
+  }
+});
+
+Deno.test("an AP payment cannot smuggle a reimbursement target", () => {
+  assertThrows(
+    () =>
+      buildPaymentJournal(
+        payment({
+          isAR: false,
+          cashIn: false,
+          totalAmount: 100,
+          exchangeRate: 1,
+          applications: [
+            app({
+              targetSalesInvoiceId: null,
+              targetPurchaseInvoiceId: "invoice",
+              targetReimbursementId: "reimbursement",
+              sourceAmount: 100,
+              appliedAmount: 100,
+              sourceExchangeRate: 1,
+              targetExchangeRate: 1,
+            }),
+          ],
+        }),
+      ),
+    Error,
+    "Invalid payment application target",
+  );
+});

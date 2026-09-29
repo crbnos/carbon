@@ -2,6 +2,7 @@ import {
   buildDimensionValueMappingEntityId,
   loadJournalLineDimensions
 } from "../../../core/dimension-mapping";
+import { resolveMemoJournalPartyFromDatabase } from "../../../core/memo-party";
 import {
   getPostingSyncSourceTypeSkipReason,
   JournalEntrySyncError,
@@ -416,12 +417,42 @@ export class RilletJournalEntrySyncer extends RilletTransactionSyncer<
       settings,
       {
         inventoryAdjustmentEntitySyncEnabled:
-          this.provider.getSyncConfig("inventoryAdjustment")?.enabled ?? false
+          this.provider.getSyncConfig("inventoryAdjustment")?.enabled ?? false,
+        memoParty: await this.resolveMemoJournalParty(local)
       }
     );
     if (sourceTypeSkipReason) return sourceTypeSkipReason;
 
     return true;
+  }
+
+  /**
+   * The backing memo's PARTY for a "Credit Memo" / "Debit Memo" journal —
+   * the two `family: "per-party"` source types. Without it the backstop
+   * parks every memo journal as MEMO_PARTY_UNRESOLVED, so a memo family in
+   * `journals` mode would never reach Rillet even though the enqueue
+   * decision said push. Every other source type answers null without a query.
+   *
+   * The resolution itself is the shared `resolveMemoJournalPartyFromDatabase`
+   * — the SAME rule the enqueue decision uses (journal lines first,
+   * `memo.journalId` as a fallback), so this backstop and that decision
+   * cannot disagree. A VOID memo journal is exactly where they used to: a
+   * void is a NEW journal and `memo.journalId` still names the original.
+   */
+  private async resolveMemoJournalParty(
+    journal: Accounting.JournalEntry
+  ): Promise<"customer" | "supplier" | null> {
+    if (
+      journal.sourceType !== "Credit Memo" &&
+      journal.sourceType !== "Debit Memo"
+    ) {
+      return null;
+    }
+
+    return resolveMemoJournalPartyFromDatabase(this.database, {
+      companyId: this.companyId,
+      journalId: journal.id
+    });
   }
 
   // =================================================================

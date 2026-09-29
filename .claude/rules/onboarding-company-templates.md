@@ -77,7 +77,12 @@ Because the datasets now seed posted/paid documents, the dataset wipe does these
 around its generic FK-null + topological delete, all inside the apply transaction:
 
 0. **It refuses two company states before any write** (`assertWipeable`): intercompany
-   customers/suppliers (`intercompanyCompanyId` set) and non-Draft `cardTransaction` rows.
+   customers/suppliers (`intercompanyCompanyId` set), non-Draft `charge` rows, and
+   non-Draft `reimbursement` rows (`check_reimbursement_draft_mutation` refuses the
+   DELETE and does not honour `app.sync_in_progress`, and unlike an invoice a
+   reimbursement has no Posted→Draft transition to step back through, so refusing up
+   front is the only option). `DOCUMENT_JOURNAL_SOURCES` carries `Reimbursement` too,
+   so the two lists stay in step.
    Both are trigger-protected and FK-linked to rows the wipe must delete, so the apply
    throws a `Seed: this company trades with other companies in its group …` /
    `Seed: this company has N posted or voided card transaction(s) …` error, which the

@@ -1354,7 +1354,7 @@ any new `memo` writer.
 
 ---
 
-**Context:** Ramp integration live verification kept failing at every DB touch of the chart of accounts — post-card-transaction 500'd, pushChartOfAccounts pushed 0, every coded card charge failed "Failed to verify accounts" (2026-08-28).
+**Context:** Ramp integration live verification kept failing at every DB touch of the chart of accounts — post-charge 500'd, pushChartOfAccounts pushed 0, every coded card charge failed "Failed to verify accounts" (2026-08-28).
 
 **Problem:** The `account` (chart of accounts) table is scoped by **`companyGroupId`, not `companyId`** — it has **no `companyId` column** and its PK is `id` alone (globally unique). Four separate sites wrote `.from("account")…​.eq("companyId", companyId)`, which PostgREST rejects ("column companyId does not exist"). Each caller either 500'd or swallowed the error and behaved as if zero accounts existed. The bug was invisible to unit tests (they mock the data, never hit the query) and recurred because a well-meaning "add companyId scoping everywhere" self-review pass applied the standard multi-tenant pattern to a table that breaks it. Same class as `item` (single-column PK, globally unique).
 
@@ -1754,7 +1754,7 @@ full-screen ERP route.
 
 **Rule:** Identify a custom Ramp field by `category_info.external_id` (the `id` Carbon created it with), and keep that constant in one pure, unit-tested module (`packages/ee/src/ramp/lib/coding.ts`). Treat every Carbon → Ramp push as a converge (list, diff by fingerprint, create/PATCH/hide) and verify the *inbound* leg of a custom field on the sandbox separately from the native GL account. A tag the customer typed must fail loudly if it cannot be kept — never post a balanced journal that lost it.
 
-**Applies to:** `pushCostCenters` / `pushChartOfAccounts` and any future Ramp coding field (departments, locations); `codeSelections`; `post-card-transaction`'s dimension write; and, generally, any integration where a provider echoes an ERP-created object under a different classification than the ERP's own.
+**Applies to:** `pushCostCenters` / `pushChartOfAccounts` and any future Ramp coding field (departments, locations); `codeSelections`; `post-charge`'s dimension write; and, generally, any integration where a provider echoes an ERP-created object under a different classification than the ERP's own.
 
 ## A per-row document representation must be decided in ONE place the policy and the syncer both read
 
@@ -1762,7 +1762,7 @@ full-screen ERP route.
 
 **Problem:** If the two rules drift — the policy excludes the journal but the syncer skips the charge (no supplier, unsupported Credit), or the reverse — the spend reaches the provider as both a journal entry and a charge, or as neither. Neither failure is loud: DOC_BACKED is a terminal "handled" disposition and a syncer skip is a benign reason string.
 
-**Rule:** Put the eligibility rule in one pure function (`isChargeBackedCardTransaction(row, docSync)`) with explicit inputs (`type`, `hasSupplier`, provider capability set `CHARGE_CREDIT_PROVIDERS`), have the executor/planner resolve those inputs with one query per batch, and make every adapter's `shouldSync` restate the same conditions with the same constants. Pin both sides in tests (`posting-policy.test.ts`, the adapter's mapper tests, `reconcile-golden`).
+**Rule:** Put the eligibility rule in one pure function (`isDocBackedCharge(row, docSync)`) with explicit inputs (`type`, `hasSupplier`, provider capability set `CHARGE_CREDIT_PROVIDERS`), have the executor/planner resolve those inputs with one query per batch, and make every adapter's `shouldSync` restate the same conditions with the same constants. Pin both sides in tests (`posting-policy.test.ts`, the adapter's mapper tests, `reconcile-golden`).
 
 **Applies to:** any future "document instead of journal" family whose eligibility depends on the row rather than the source type (returns, memos, per-provider capabilities).
 
@@ -1778,23 +1778,23 @@ full-screen ERP route.
 
 ## A document-backed journal is found through its LINES' document link, never through the document's own journalId
 
-**Context:** Card charges as provider objects (2026-09-10). A `cardTransaction` books TWO journals over its life — the posting journal (`cardTransaction.journalId`) and, on void, a NEW Posted "VOID Card Transaction" journal with no `reversalOfId`. Both carry `journalLine.documentType = 'Card Transaction'` / `documentId = <card id>`.
+**Context:** Card charges as provider objects (2026-09-10). A `charge` books TWO journals over its life — the posting journal (`charge.journalId`) and, on void, a NEW Posted "VOID Charge" journal with no `reversalOfId`. Both carry `journalLine.documentType = 'Charge'` / `documentId = <card id>`.
 
-**Problem:** The reconciler resolved the backing card transaction by `cardTransaction.journalId`, so only the posting journal was DOC_BACKED. The void journal looked like a plain journal, pushed to Rillet as a journal entry on top of the charge DELETE, and Rillet netted to minus one charge — invisible in unit tests, found only by voiding on the live sandbox and reading Rillet's GL.
+**Problem:** The reconciler resolved the backing charge by `charge.journalId`, so only the posting journal was DOC_BACKED. The void journal looked like a plain journal, pushed to Rillet as a journal entry on top of the charge DELETE, and Rillet netted to minus one charge — invisible in unit tests, found only by voiding on the live sandbox and reading Rillet's GL.
 
 **Rule:** When a journal's disposition depends on a backing document, resolve journal → document through the journal lines' `documentType`/`documentId` (one batch query), which every journal the document produces shares; treat the document's own `journalId` column as a fallback for unlinked rows. And any DOC_BACKED carve-out must be exercised across the document's full lifecycle (post → void) on a real provider before it is called done.
 
-**Applies to:** `loadCardTransactionPolicyInputs`, every future DOC_BACKED source type, and the void/reversal audit still open in the always-on posting plan (Task 7).
+**Applies to:** `loadChargePolicyInputs`, every future DOC_BACKED source type, and the void/reversal audit still open in the always-on posting plan (Task 7).
 
 ## Integration money shapes are contracts, not interchangeable numbers
 
-**Context:** Ramp returns signed `{ value, currency }` and `{ amount, currency_code }` values in minor units, while its deprecated card-transaction `amount` fallback is a major-unit decimal. Several inbound families also still expose unverified bare-number fields.
+**Context:** Ramp returns signed `{ value, currency }` and `{ amount, currency_code }` values in minor units, while its deprecated transaction `amount` fallback is a major-unit decimal. Several inbound families also still expose unverified bare-number fields.
 
 **Problem:** One generic converter treated every number as minor units, understating a `$123.45` fallback to `$1.23`; missing values became zero, unknown currency precision became two decimals, and unresolved foreign exchange rates became one. Those defaults turned malformed or incomplete provider payloads into apparently valid financial documents.
 
 **Rule:** Normalize each provider money field through a helper tied to its verified wire shape. Reject missing, non-finite, fractional-minor, currency-mismatched, or unverified bare-number values per item. Currency precision and exchange rates are required accounting facts; never guess them or silently post foreign currency at par.
 
-**Applies to:** Ramp card transactions, transfers, cashbacks, bills, bill payments, reimbursements, repayments, and future provider payloads with multiple monetary representations.
+**Applies to:** Ramp charges, transfers, cashbacks, bills, bill payments, reimbursements, repayments, and future provider payloads with multiple monetary representations.
 
 ## An external mapping must be committed with the Draft it makes idempotent
 
@@ -1858,13 +1858,13 @@ full-screen ERP route.
 
 ## Idempotent mappings do not make mutable Drafts immutable
 
-**Context:** Ramp retries find an existing external mapping before staging and posting a card transaction.
+**Context:** Ramp retries find an existing external mapping before staging and posting a charge.
 
 **Problem:** Treating every mapping as completed caused a corrected provider record to post the stale Carbon Draft left by an earlier failed attempt. The mapping proved identity, not finalization.
 
 **Rule:** Branch retry behavior on the mapped entity's lifecycle state. Refresh a mutable Draft and its lines atomically under the same lock used for posting; only a finalized, observably Posted entity may bypass source normalization and be reconfirmed unchanged.
 
-**Applies to:** Ramp card transactions, transfers, cashback, and any mapped inbound document whose provider data can change before local finalization.
+**Applies to:** Ramp charges, transfers, cashback, and any mapped inbound document whose provider data can change before local finalization.
 
 ## Never correlate bulk-insert results by RETURNING position
 
@@ -1894,7 +1894,7 @@ full-screen ERP route.
 
 **Rule:** Validate every document coding amount as finite and strictly positive before applying debit/credit semantics. A balanced journal is necessary but does not prove the document's line-level meaning is valid.
 
-**Applies to:** Card transaction coding lines and other financial document builders that assign journal direction separately from stored line magnitude.
+**Applies to:** Charge coding lines and other financial document builders that assign journal direction separately from stored line magnitude.
 
 ## Unverified write contracts need a code-level release gate
 
@@ -1938,13 +1938,13 @@ full-screen ERP route.
 
 ## Lifecycle transitions need a stored state invariant
 
-**Context:** Card transactions use triggers to restrict Draft edits and the Draft→Posted→Voided transition sequence, while imports and test cleanup can intentionally bypass ordinary triggers.
+**Context:** Charges use triggers to restrict Draft edits and the Draft→Posted→Voided transition sequence, while imports and test cleanup can intentionally bypass ordinary triggers.
 
 **Problem:** Transition guards constrained how a row could change but did not guarantee that every stored status had its required audit shape. A status-only write could leave a Posted or Voided row without its actor and timestamp evidence.
 
 **Rule:** Pair lifecycle transition guards with a validated database CHECK that defines every legal stored state. Fail migration preflight with row identities when existing data violates the invariant; never fabricate missing audit actors or timestamps.
 
-**Applies to:** Card transactions and any auditable document lifecycle whose writers can bypass ordinary triggers or write status and audit fields independently.
+**Applies to:** Charges and any auditable document lifecycle whose writers can bypass ordinary triggers or write status and audit fields independently.
 
 ## A RAISE in a completion RPC aborts the UPDATE that triggered it
 
@@ -2249,6 +2249,126 @@ categories, e.g. Polish/Russian `few`/`many`, get the extra branches).
 with a count-dependent word; grep `? "` inside `` t` `` templates when reviewing
 i18n.
 
+## The root `.env` overrides `.env.local`, so a worktree's DB port is not the default
+
+**Context:** Running the `post-reimbursement` Deno tests with the
+`SUPABASE_DB_URL` I found first gave `16 passed | 12 failed`. Re-running the
+UNTOUCHED `post-charge` suite gave `19 passed | 16 failed` — the same shape,
+failing at the same fixture line. The connection string was wrong, not the code.
+
+**Problem:** Each `crbn` worktree gets its OWN Postgres container on a random
+host port (`docker ps` showed `0.0.0.0:49921->5432`), written to `.env.local`.
+The root `.env` still carries the stock `54322`, and it WINS — the same
+precedence trap that produced the `db:check:backups` fix in `c1c5e7c138`. Port
+54322 is often another worktree's live stack, so you don't get "connection
+refused"; you connect to a real database with the wrong schema and read the
+failures as a bug in your own change.
+
+**Rule:** Get the port from `docker ps --format '{{.Names}}\t{{.Ports}}' | grep
+postgres` (or this worktree's `.env.local`) and pass it explicitly. Before
+believing a Deno/DB test failure is yours, run a NEIGHBOURING suite you did not
+touch — `post-charge` next to `post-reimbursement`. Identical failure counts in
+untouched code means the environment, not the diff.
+
+**Applies to:** `packages/database/supabase/functions/**` Deno `test:db` runs;
+any `pnpm db:check:*` or psql work inside a Conductor worktree.
+
+## The `@carbon/ee` barrel boots the server env — four places that breaks
+
+**Context:** Adding `providerRole` + `IntegrationTopology` (`.ai/plans/implemented/2026-09-23-provider-roles-topology.md`).
+Consumers across `@carbon/jobs`, `apps/erp` and tests needed the registry lookup
+`getIntegrationIdsByRole` / `resolveIntegrationTopology`.
+
+**Problem:** `packages/ee/src/index.ts` imports every integration descriptor, and
+`ramp/config.tsx` imports `RAMP_CLIENT_ID` from `@carbon/auth`, which validates
+the FULL server env at import time. So a plain `import … from "@carbon/ee"`
+fails in four distinct ways, each with a different symptom:
+
+1. **In a `*.service.ts`** — these are re-exported through the module barrel that
+   client components import, so they are browser-bundled. The build fails with
+   "server-only module referenced by client". (`accounting.service.ts` cannot use
+   the registry at all; its id list stays hard-coded with a comment saying why.)
+2. **In a test** — `Error: INNGEST_SIGNING_KEY is not set` at import. Hit three
+   times: a test importing the barrel directly, a test importing a module that
+   imports it, and a jobs test importing a module whose sibling did.
+3. **As a lazy `await import("@carbon/ee")`** — moves the failure from module
+   load to CALL time, which looks fixed until a test actually exercises the path.
+4. **Via a `vi.mock("@carbon/ee", …)` fixture** — the mock lists exports
+   explicitly, so adding a registry call to a loader breaks any test mocking it
+   with `No "X" export is defined on the "@carbon/ee" mock`.
+
+**Rule:** Keep decision cores free of the barrel. Put shared logic in an
+import-light module (`packages/ee/src/sync/**` imports no `@carbon/auth`) and
+take the registry slice as an ARGUMENT — `buildIntegrationTopology(rows,
+descriptors)`, not `buildIntegrationTopology(rows)`. Only ENTRY POINTS (Inngest
+functions, route loaders/actions) import the barrel and inject what they read;
+give that import its own tiny module (`jobs/…/integrations/topology.ts`) so the
+blast radius is one file. When you add a registry call to a loader, grep for
+`vi.mock("@carbon/ee"` and extend those fixtures in the same change. Precedent
+for the same shape elsewhere: `events/sync-tables.ts` and
+`accounting/core/subscriptions.ts` are both deliberately import-light.
+
+**Applies to:** `packages/ee/src/index.ts` consumers; `packages/ee/src/sync/**`;
+`packages/jobs/src/inngest/functions/**`; any `apps/erp` `*.service.ts`; any test
+mocking `@carbon/ee`.
+
+## Kysely returns `date` columns as JS `Date`s; PostgREST returns strings
+
+**Context:** Porting Ramp's outbound draft-bill push from a Supabase-client job into a
+`BaseEntitySyncer` (which uses Kysely) — `.ai/plans/implemented/2026-09-23-spend-outbound-event-engine.md`.
+
+**Problem:** `purchaseInvoice.dateIssued` / `dateDue` are `date` columns. Read through
+PostgREST they arrive as `"2026-09-15"` strings; read through Kysely's pg driver they
+arrive as JS `Date` objects, which `JSON.stringify` renders as a full ISO timestamp.
+Ramp rejected every draft bill with `422 DEVELOPER_7001 "Not a valid date"`. Typecheck
+did not catch it — the syncer's local type declared `string | null` and the Kysely row
+was assigned straight in. Unit tests did not catch it either; only a live push did.
+
+**Rule:** FIXED AT THE SOURCE for `date` columns — both drivers now decode OID 1082 to
+the raw `YYYY-MM-DD` string, so a Kysely row matches the generated types
+(`functions/lib/postgres/index.ts`, pinned by
+`packages/database/src/postgres-type-parsers.test.ts`). `timestamp`/`timestamptz`
+(1114 / 1184) are deliberately still `Date`s — Postgres' wire text for those differs in
+SHAPE from PostgREST's (`… 16:36:52.677+00` vs `…T16:36:52.677+00:00`), so identity
+would make the two clients disagree. So: when moving a query from the Supabase client to
+Kysely, treat every TIMESTAMP column as a value whose runtime type just changed, and
+normalize with `toPostingDateString` before it reaches a wire payload or a `.slice`.
+
+**The deeper rule:** a runtime/type mismatch that the GENERATED types already paper over
+is invisible to typecheck by construction. Fix it at the driver, not with a helper at
+every call site — the helper is what 34 call sites and ~16 `instanceof Date` guards were.
+
+**Applies to:** any `packages/ee` syncer or `packages/jobs` function reading timestamp
+columns through Kysely and sending them to a provider API.
+
+## Comparing a Kysely timestamp against a PostgREST one is silently always-false
+
+**Context:** "Why does this one vendor resync every 30 minutes?" — the v5 reconciler's
+master-data change check (`reconcileMasterData`, `jobs/…/integrations/reconcile.ts`).
+
+**Problem:** `snapshot.updatedAt <= input.lastSyncedAt` compared an ISO string (loaded
+via supabase-js) against a JS `Date` (loaded via Kysely — see the `date` lesson above;
+timestamptz is still decoded as a `Date`). JS relational operators coerce both operands
+toward NUMBER: the `Date` becomes epoch ms, the ISO string becomes `NaN`, and every
+comparison with NaN is `false`. So the "unchanged since the last successful sync"
+short-circuit could never fire, and every master-data row edited inside the 7-day sweep
+window re-enqueued a no-op push twice an hour — ~336 green `Completed` rows per row.
+Nothing failed, nothing was written remotely (the provider's own bailout does the same
+comparison correctly, `Date <= Date`), so the only symptom was ledger noise. Both the
+declared type (`lastSyncedAt: string | null`) and the existing golden tests (two matching
+ISO strings) asserted the fiction.
+
+**Rule:** never use `<`/`<=` on two timestamps that came from DIFFERENT clients. Convert
+both to epoch ms first (`instantMs`). Where a value's runtime type disagrees with the
+generated types, WIDEN the declared type (`string | Date | null`) rather than leaving the
+lie in place — the widened type is what makes the next reader handle it. And write the
+test with the argument shapes the caller REALLY passes: a test that feeds two tidy ISO
+strings into a comparison bug passes forever.
+
+**Applies to:** any decision function fed by both a Supabase-client read and a Kysely
+read — `jobs/…/integrations/reconcile*.ts` above all; `packages/ee/src/accounting/core/**`
+syncers (`syncInstant` in `charge-syncer.ts` is the pattern that got it right).
+
 ---
 
 **Context:** A security report: any signed-in user could read, create, update and delete every
@@ -2368,3 +2488,82 @@ a row whose policy also covers the other rows the transaction writes.
 
 **Applies to:** any service that takes both `client` and `db` and writes with
 `db` on behalf of an API or MCP caller.
+
+---
+
+**Context:** Merging `origin/main` into a branch that had renamed `cardTransaction`
+→ `charge` and added three `reimbursement*` tables, after main moved RLS into the
+declarative manifest (`packages/database/src/authz/`).
+
+**Problem:** Nothing in the textual merge mentions the manifest, so the merge looks
+clean and the branch's own migrations still create correct policies. The breakage
+surfaces later and in three different places: `crbn migrate` aborts with `authz
+rules that do not apply: cardTransaction: relation "public.cardTransaction" does
+not exist` (the manifest still declares the OLD name), `authz check` reports the
+new tables as `unmanaged`, and `@carbon/database`'s `migration.test.ts` fails in CI
+on `unshipped` because production reaches RLS only through a generated migration —
+deploy does NOT run `authz sync` (nothing in `ci/src/migrations.ts` or
+`.github/workflows/` calls it). A branch that renames a table also strands its
+`baseline.json` entry, which must NOT be regenerated.
+
+**Rule:** When a branch renames or adds a table, treat `packages/database/src/authz/manifest.ts`
+as part of the schema change: rename/add the entry, then
+`pnpm --filter @carbon/database authz migration <name>` (it scopes itself to the
+unshipped set — it will not sweep up unrelated drift), then `authz check` until it
+reports 0 tables. Verify a hand-written policy and its manifest entry agree by
+rendering both rather than reading them: alias (`p` vs `h`), the enum cast Postgres
+adds, and an omitted `WITH CHECK` on UPDATE are all cosmetic, but a missing clause
+is not. A two-hop parent check needs `custom()` — nested `exists()` aliases its
+parent `p`, so the intermediate table has no name to reference.
+
+**Applies to:** every in-flight worktree that adds or renames a table and then
+merges main; `packages/database/src/authz/**`.
+
+---
+
+**Context:** The same merge: `pnpm --filter @carbon/checks clobbers` reported
+`function:public` redefined on both sides, naming two migrations whose functions
+were `check_charge_*` and `update_receipt_line_batch_tracking` — no overlap at all.
+
+**Problem:** `clobber.ts`'s patterns captured the first identifier after `FUNCTION`
+/ `VIEW`, so `public.foo` keyed as `function:public`. Two unrelated schema-qualified
+definitions therefore always collided, and — the half that actually matters — two
+redefinitions of the SAME qualified function were never keyed by its name, so a
+genuine clobber went unreported. A check that cries wolf on every merge is a check
+people learn to pass with `--no-verify`.
+
+**Rule:** Key a DB object by its OBJECT name with the `schema.` qualifier
+discarded (`public.foo` and a bare `foo` ARE the same object — `public` is the
+default search path). When a conformance check fires, confirm the two sides really
+do name the same object before rebasing; a vague key like `function:public` is
+evidence about the check, not about the migrations.
+
+**Applies to:** `packages/checks/src/clobber.ts` and any future `OBJECT_PATTERNS` row.
+
+---
+
+**Context:** Immediately after that merge, `crbn reset` failed with
+`relation "cardTransaction" does not exist` from `assertWipeable`
+(`datasets/wipe.ts`) — a function that did not exist at the merge-base and was
+added by main while this branch was renaming that table to `charge`.
+
+**Problem:** Neither side edited the other's lines, so git merged it with no
+conflict and every gate stayed green. `pnpm db:check:datasets` does NOT cover it:
+`verifyDataset` seeds a SCRATCH company with `wipeFirst: false`, so the wipe — and
+`assertWipeable` with it — never runs. Only a real `db:seed:dev` / `crbn reset`
+reaches that path, which is exactly the step nobody runs while resolving a merge.
+Typecheck cannot see it either: the table name is a string inside `client.query`.
+
+**Rule:** After merging main into a branch that RENAMED a database object, grep the
+files MAIN changed for the OLD identifier — `git diff --name-only <merge-base>
+origin/main` piped into a grep for the old name — instead of trusting a clean merge
+or a green `db:check:datasets`. Exclude `supabase/migrations/**` (history),
+`authz/baseline.json` (what production had, never regenerated) and
+`jobs/src/backups/renames.ts` (the old→new restore map): all three are SUPPOSED to
+keep the old name. Then run the seed itself. Docs count as hits too — main's new
+`assertWipeable` paragraphs in `datasets/AGENTS.md` and
+`.claude/rules/onboarding-company-templates.md` named the old table as well.
+
+**Applies to:** any branch that renames a table, column or enum value and then
+merges main; `packages/database/src/datasets/wipe.ts` above all, since no automated
+gate executes it.

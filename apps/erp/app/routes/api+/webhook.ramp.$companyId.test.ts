@@ -5,9 +5,18 @@ vi.mock("@carbon/auth/client.server", () => ({
   getCarbonServiceRole: () => ({})
 }));
 vi.mock("@carbon/jobs", () => ({ trigger: vi.fn() }));
-vi.mock("@carbon/logger", () => ({
-  getLogger: () => ({ info: vi.fn(), error: vi.fn() })
+// Mirror the real logger surface. A partial mock turns "this route logs a
+// rejection" into "this route throws", which is strictly worse than the 401 the
+// log exists to explain. Hoisted so the rejection payload can be inspected —
+// this endpoint is unauthenticated, so what it logs is part of its contract.
+const log = vi.hoisted(() => ({
+  debug: vi.fn(),
+  info: vi.fn(),
+  warn: vi.fn(),
+  warning: vi.fn(),
+  error: vi.fn()
 }));
+vi.mock("@carbon/logger", () => ({ getLogger: () => log }));
 vi.mock("@carbon/ee/ramp.server", async (original) => ({
   ...(await original<typeof import("@carbon/ee/ramp.server")>()),
   getRampIntegration: vi.fn(),
@@ -108,5 +117,42 @@ describe("Ramp webhook challenge authentication", () => {
       "company-1",
       challenge
     );
+  });
+});
+
+describe("Ramp webhook rejection logging", () => {
+  /**
+   * The route rejects before any signature check, on a PUBLIC URL. A diagnostic
+   * block here used to emit the full sorted list of request header names on every
+   * rejection, so an anonymous caller could choose both the volume and the
+   * content of the log by POSTing in a loop.
+   */
+  it("logs nothing the caller controls when rejecting an unsigned delivery", async () => {
+    const delivery = new Request(
+      "http://localhost/api/webhook/ramp/company-1",
+      {
+        method: "POST",
+        body: "{}",
+        headers: { "x-attacker-chosen-header": "a".repeat(2048) }
+      }
+    );
+
+    expect(await run(delivery)).toMatchObject({ init: { status: 401 } });
+    expect(log.warn).toHaveBeenCalledTimes(1);
+
+    const [, context] = log.warn.mock.calls[0] ?? [];
+    expect(context).toEqual({
+      companyId: "company-1",
+      reason: "no-signature-header"
+    });
+    expect(JSON.stringify(context)).not.toContain("x-attacker-chosen-header");
+  });
+
+  it("logs only the company when a signature does not verify", async () => {
+    expect(await run(request("{}", "invalid"))).toMatchObject({
+      init: { status: 401 }
+    });
+    expect(log.warn).toHaveBeenCalledTimes(1);
+    expect(log.warn.mock.calls[0]?.[1]).toEqual({ companyId: "company-1" });
   });
 });

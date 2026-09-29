@@ -28,6 +28,7 @@ import {
 } from "~/modules/sales";
 import { recordSalesRuleOutcome } from "~/modules/sales/sales.server";
 import { getCompany, getCompanySettings } from "~/modules/settings";
+import { checkPartyContactRequirement } from "~/modules/settings/party-contact.server";
 import { upsertExternalLink } from "~/modules/shared";
 import { requireCompanyRecord } from "~/modules/shared/shared.server";
 import { getUser } from "~/modules/users/users.server";
@@ -63,6 +64,22 @@ export async function action(args: ActionFunctionArgs) {
     throw redirect(
       path.to.quote(quoteId),
       await flash(request, error(quote.error, "Failed to get quote"))
+    );
+  }
+
+  // A customer with no reachable contact cannot be created as a vendor/customer at
+  // a connected platform, so its documents are rejected there long after anyone
+  // is watching. Gate at issue time, where the record can still be fixed. No-op
+  // unless the company has turned the setting on.
+  const customerContactError = await checkPartyContactRequirement(
+    client,
+    companyId,
+    { kind: "customer", id: quote.data.customerId }
+  );
+  if (customerContactError) {
+    throw redirect(
+      path.to.quote(quoteId),
+      await flash(request, error(null, customerContactError))
     );
   }
 

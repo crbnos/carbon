@@ -1,4 +1,8 @@
 import type { ZodType } from "zod";
+import type {
+  ResolvedCapabilities,
+  SyncProviderCapabilities
+} from "./sync/capabilities";
 
 export type IntegrationAction = {
   id: string;
@@ -72,6 +76,26 @@ export type IntegrationSetting = {
    * Used for provider-based form branching (e.g. show SMTP fields only when provider === "smtp").
    */
   visibleWhen?: { field: string; equals: string | string[] };
+  /**
+   * Hide this field when THIS INSTALL cannot reach what it configures.
+   *
+   * Distinct in kind from `visibleWhen`, which reacts live to another field's
+   * value in the same form. This is answered once from the install's resolved
+   * capabilities (via the descriptor's `resolveInstallCapabilities`), because
+   * the same integration installed two ways owns different things — and what it
+   * does not own, it must not appear to let the customer configure.
+   *
+   * A group whose every setting is gated out disappears with them: the form
+   * builds its group list from the surviving settings, so there is no separate
+   * group-level flag to keep in step.
+   *
+   * A gated-out setting's STORED value is preserved, not cleared — the form
+   * simply omits the field and the save merges over existing metadata. It stays
+   * inert because the runtime checks the capability ceiling before the toggle
+   * (see `isRampInboundFamilyEnabled`), so a value left over from another mode
+   * can never re-enable anything.
+   */
+  availableWhen?: (capabilities: ResolvedCapabilities) => boolean;
 };
 
 /**
@@ -167,6 +191,21 @@ export type IntegrationConfig = {
   active?: boolean;
   /** Category for grouping in the UI (e.g., "Accounting", "CAD", "Email") */
   category: string;
+  /**
+   * The BEHAVIOURAL role this integration plays, as opposed to `category`,
+   * which stays a display string for badges and grouping.
+   *
+   * It answers, in one declaration, what five different hard-coded lists answer
+   * today: which integrations are accounting providers, which are spend
+   * providers, which produce sync operations, and which pairs are mutually
+   * exclusive — the database enforces at most one ACTIVE integration per role
+   * per company (migration `20260924133915`).
+   *
+   * Absent = unconstrained. Slack, Jira, Linear, Onshape, Paperless Parts,
+   * Email and Stripe Connect declare no role and are never in conflict with
+   * anything.
+   */
+  providerRole?: "accounting" | "spend";
   /** Logo component for the integration */
   logo: React.FC<React.ComponentProps<"svg">>;
   /** Brief one-liner description */
@@ -174,7 +213,25 @@ export type IntegrationConfig = {
   /** Full description explaining the integration */
   description: string;
   /** Optional component rendering setup instructions */
-  setupInstructions?: React.FC<{ companyId: string }>;
+  /**
+   * Setup steps shown in the details drawer.
+   *
+   * `mode` is the resolved install mode (see `resolveInstallMode`), so an
+   * integration whose modes DO different things can tell the customer what THIS
+   * install actually does. Without it the steps describe one mode to every
+   * install — Ramp's told a push-only customer to map GL accounts on a tab that
+   * mode does not render, and promised inbound syncs it never performs.
+   *
+   * The other props were already passed by the form behind two
+   * `@ts-expect-error`s, which is how the type drifted out of step in the first
+   * place.
+   */
+  setupInstructions?: React.FC<{
+    companyId: string;
+    metadata?: Record<string, unknown>;
+    installed?: boolean;
+    mode?: string;
+  }>;
   /** Marketing/preview images */
   images: string[];
   /** Configurable settings fields */
@@ -185,8 +242,66 @@ export type IntegrationConfig = {
   schema: ZodType;
   /** OAuth configuration (if the integration uses OAuth) */
   oauth?: OAuthConfig;
+  /**
+   * Install modes offered BEFORE consent, each requesting its own scope set.
+   *
+   * Declared when the integration's shape — not merely its settings — depends on
+   * a choice the customer makes up front. A spend platform permits exactly one
+   * connected accounting provider, so whether Carbon takes that seat decides
+   * which scopes are requested and cannot be changed afterwards without
+   * reinstalling. An integration with no `modes` installs exactly as before.
+   */
+  modes?: IntegrationInstallMode[];
+  /**
+   * Which of `modes` this install chose, for read-only display.
+   *
+   * A sibling of `resolveInstallCapabilities` rather than a fixed metadata key,
+   * because the key is the integration's own (Ramp stores `syncMode`) and shared
+   * settings UI should not know it. The mode is fixed at consent — changing it
+   * means reinstalling — so the drawer shows it as a fact, not a control.
+   *
+   * `detail` is optional supporting context the customer needs to make sense of
+   * the mode: for a spend platform in push-only mode, WHICH system holds the
+   * accounting connection instead. Undefined means "not known", which is a real
+   * state (the read that discovers it is best-effort) and must not be rendered as
+   * "nobody".
+   */
+  resolveInstallMode?: (
+    metadata: unknown
+  ) => { id: string; detail?: string } | undefined;
+  /**
+   * Resolve THIS install's sync capabilities from its stored metadata.
+   *
+   * Declared alongside `modes`: when the mode decides what the integration owns,
+   * a static declaration cannot answer, because the same integration installed
+   * two ways must answer differently. Pure — it is read by the topology core,
+   * which imports no provider.
+   */
+  resolveInstallCapabilities?: (
+    metadata: unknown
+  ) => SyncProviderCapabilities | undefined;
   /** Available actions that can be triggered on an installed integration */
   actions?: IntegrationAction[];
+};
+
+/**
+ * One pre-consent install mode. `scopes` is what the connect route builds the
+ * authorize URL from — the descriptor is the single source of truth, so the URL
+ * is never assembled from a client-supplied list.
+ */
+export type IntegrationInstallMode = {
+  id: string;
+  label: string;
+  /**
+   * What this mode does. Shown BEFORE consent in the mode picker and, once
+   * installed in this mode, wherever the integration would otherwise show its
+   * generic description — the generic one describes every mode at once and is
+   * therefore wrong for each of them.
+   */
+  description: string;
+  /** Card-length version of `description`. Falls back to `description`. */
+  shortDescription?: string;
+  scopes: readonly string[];
 };
 
 /**

@@ -7,7 +7,8 @@ import { inngest } from "./inngest/client.ts";
  * to `trigger("notify", payload)` with minimal changes.
  */
 const taskToEvent = {
-  "accounting-backfill": "carbon/accounting-backfill",
+  "accounting-journal-backfill": "carbon/accounting-journal-backfill",
+  "accounting-master-sync": "carbon/accounting-master-sync",
   "assembly-convert": "carbon/assembly-convert",
   "assembly-plan": "carbon/assembly-plan",
   "company-export": "carbon/company-export",
@@ -31,7 +32,6 @@ const taskToEvent = {
   "ramp-sync": "carbon/ramp-sync",
   "print-job": "carbon/print-job",
   recalculate: "carbon/recalculate",
-  "rillet-import-contacts": "carbon/rillet-import-contacts",
   "schedule-inputs-changed": "carbon/schedule.inputs.changed",
   "send-email": "carbon/send-email",
   "send-slack": "carbon/send-slack",

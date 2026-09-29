@@ -3,9 +3,8 @@ import type { KyselyDatabase } from "@carbon/database/client";
 import { createMappingService } from "@carbon/ee/accounting";
 import { type Kysely, sql } from "kysely";
 
-type CardTransactionStatus =
-  Database["public"]["Enums"]["cardTransactionStatus"];
-type CardTransactionType = Database["public"]["Enums"]["cardTransactionType"];
+type ChargeStatus = Database["public"]["Enums"]["chargeStatus"];
+type ChargeType = Database["public"]["Enums"]["chargeType"];
 
 export type RampCardLineDraft = {
   accountId: string;
@@ -20,7 +19,7 @@ export type RampCardDraft = {
   companyId: string;
   actorId: string;
   readableId?: string;
-  type: CardTransactionType;
+  type: ChargeType;
   amount: number;
   currencyCode: string;
   exchangeRate: number;
@@ -35,10 +34,10 @@ export type RampCardDraft = {
   lines: RampCardLineDraft[];
 };
 
-export type StagedRampCardTransaction = {
-  cardTransactionId: string;
+export type StagedRampCharge = {
+  chargeId: string;
   readableId: string;
-  status: CardTransactionStatus;
+  status: ChargeStatus;
   created: boolean;
 };
 
@@ -47,15 +46,15 @@ export type StagedRampCardTransaction = {
  * The advisory lock prevents two workers from creating different local rows
  * before the mapping uniqueness constraint is reached.
  */
-export async function stageOrResumeRampCardTransaction(
+export async function stageOrResumeRampCharge(
   db: Kysely<KyselyDatabase>,
   args: RampCardDraft
-): Promise<StagedRampCardTransaction> {
+): Promise<StagedRampCharge> {
   return db.transaction().execute(async (tx) => {
     await sql`
       SELECT pg_advisory_xact_lock(
         hashtextextended(
-          ${`ramp:cardTransaction:${args.companyId}:${args.rampId}`},
+          ${`ramp:charge:${args.companyId}:${args.rampId}`},
           0
         )
       )
@@ -82,51 +81,47 @@ export async function stageOrResumeRampCardTransaction(
       sequence: index,
       createdBy: args.actorId
     }));
-    const mapped = await mapping.getByExternalId(
-      "ramp",
-      args.rampId,
-      "cardTransaction"
-    );
+    const mapped = await mapping.getByExternalId("ramp", args.rampId, "charge");
     if (mapped) {
       const existing = await tx
-        .selectFrom("cardTransaction")
-        .select(["id", "cardTransactionId", "status"])
+        .selectFrom("charge")
+        .select(["id", "chargeId", "status"])
         .where("id", "=", mapped.entityId)
         .where("companyId", "=", args.companyId)
         .forUpdate()
         .executeTakeFirst();
       if (!existing) {
-        throw new Error("Mapped Ramp card transaction no longer exists");
+        throw new Error("Mapped Ramp charge no longer exists");
       }
       // Coding belongs to Ramp until posting succeeds. Lock the same header
       // as the posting transaction so corrections cannot change a Posted row.
       if (existing.status === "Draft") {
         await tx
-          .updateTable("cardTransaction")
+          .updateTable("charge")
           .set({ ...headerValues, updatedBy: args.actorId })
           .where("id", "=", existing.id)
           .where("companyId", "=", args.companyId)
           .execute();
         await tx
-          .deleteFrom("cardTransactionLine")
-          .where("cardTransactionId", "=", existing.id)
+          .deleteFrom("chargeLine")
+          .where("chargeId", "=", existing.id)
           .where("companyId", "=", args.companyId)
           .execute();
         if (lineValues.length > 0) {
           await tx
-            .insertInto("cardTransactionLine")
+            .insertInto("chargeLine")
             .values(
               lineValues.map((line) => ({
                 ...line,
-                cardTransactionId: existing.id
+                chargeId: existing.id
               }))
             )
             .execute();
         }
       }
       return {
-        cardTransactionId: existing.id,
-        readableId: existing.cardTransactionId,
+        chargeId: existing.id,
+        readableId: existing.chargeId,
         status: existing.status,
         created: false
       };
@@ -136,17 +131,17 @@ export async function stageOrResumeRampCardTransaction(
       ? args.readableId
       : (
           await sql<{ get_next_sequence: string }>`
-            SELECT get_next_sequence('cardTransaction', ${args.companyId}) as get_next_sequence
+            SELECT get_next_sequence('charge', ${args.companyId}) as get_next_sequence
           `.execute(tx)
         ).rows[0]?.get_next_sequence;
     if (!sequence) {
-      throw new Error("Failed to generate card transaction number");
+      throw new Error("Failed to generate charge number");
     }
 
     const header = await tx
-      .insertInto("cardTransaction")
+      .insertInto("charge")
       .values({
-        cardTransactionId: sequence,
+        chargeId: sequence,
         ...headerValues,
         status: "Draft",
         integration: "ramp",
@@ -158,22 +153,22 @@ export async function stageOrResumeRampCardTransaction(
 
     if (args.lines.length > 0) {
       await tx
-        .insertInto("cardTransactionLine")
+        .insertInto("chargeLine")
         .values(
           lineValues.map((line) => ({
             ...line,
-            cardTransactionId: header.id
+            chargeId: header.id
           }))
         )
         .execute();
     }
 
-    await mapping.link("cardTransaction", header.id, "ramp", args.rampId, {
+    await mapping.link("charge", header.id, "ramp", args.rampId, {
       createdBy: args.actorId
     });
 
     return {
-      cardTransactionId: header.id,
+      chargeId: header.id,
       readableId: sequence,
       status: "Draft",
       created: true

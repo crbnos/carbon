@@ -37,6 +37,7 @@
     "./hooks.server": "./src/hooks.server.ts",
     "./quickbooks/hooks.server": "./src/quickbooks/hooks.server.ts",
     "./ramp.server": "./src/ramp/lib/index.ts",
+    "./ramp/entities": "./src/ramp/entities/index.ts",
     "./ramp/hooks.server": "./src/ramp/hooks.server.ts",
     "./rillet/hooks.server": "./src/rillet/hooks.server.ts",
     "./xero/hooks.server": "./src/xero/hooks.server.ts",
@@ -46,7 +47,8 @@
     "./workflows": "./src/workflows/index.ts",
     "./workflows.server": "./src/workflows.server.ts",
     "./workflows/help": "./src/workflows/catalog/help.generated.ts",
-    "./workflows/labels": "./src/workflows/catalog/labels.generated.ts"
+    "./workflows/labels": "./src/workflows/catalog/labels.generated.ts",
+    "./sync": "./src/sync/index.ts"
   },
   "private": true,
   "scripts": {

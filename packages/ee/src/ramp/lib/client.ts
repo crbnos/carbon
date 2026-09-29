@@ -135,6 +135,8 @@ export class RampClient {
     accessToken: string;
     refreshToken?: string;
     expiresAt?: string;
+    /** Present only when the server narrowed the grant (RFC 6749 §3.3). */
+    scope?: string;
   }> {
     const data = await this.oauthTokenRequest({
       grant_type: "authorization_code",
@@ -146,7 +148,8 @@ export class RampClient {
       refreshToken: data.refresh_token,
       expiresAt: data.expires_in
         ? new Date(Date.now() + data.expires_in * 1000).toISOString()
-        : undefined
+        : undefined,
+      scope: data.scope
     };
   }
 
@@ -155,6 +158,7 @@ export class RampClient {
     access_token: string;
     refresh_token?: string;
     expires_in?: number;
+    scope?: string;
   }> {
     const app = this.options.oauthApp;
     if (!app?.clientId || !app?.clientSecret) {
@@ -184,6 +188,7 @@ export class RampClient {
       access_token: string;
       refresh_token?: string;
       expires_in?: number;
+      scope?: string;
     };
   }
 
@@ -437,7 +442,9 @@ export class RampClient {
     });
   }
 
-  // TODO(task-1): confirm the all-connections path (`/accounting/all-connections`).
+  // Path CONFIRMED live 2026-09-25 (provider-mode token): the healthcheck calls
+  // this and the integration reads HEALTHY, which requires a linked connection
+  // back. Whether a token WITHOUT `accounting:write` may call it is still open.
   getAccountingConnections<T = unknown>(): Promise<T> {
     return this.request<T>("GET", "/developer/v1/accounting/all-connections");
   }
@@ -592,16 +599,58 @@ export class RampClient {
     });
   }
 
+  /**
+   * Find the Ramp purchase order Carbon created for a local one, by the
+   * `external_id` it stamped at creation.
+   *
+   * `external_id` is the identity; `purchase_order_number` is NOT — Ramp
+   * normalizes it (`"PO000002"` is stored as `"2"`, verified live 2026-09-26) and
+   * appends a dedup suffix to others, so it can never be used to recognise
+   * Carbon's own row.
+   *
+   * The filter is real: an unsupported query parameter is IGNORED by this
+   * endpoint and returns the full first page, whereas a miss on `external_id`
+   * returns zero rows — which is how it was confirmed.
+   */
+  async findPurchaseOrderByExternalId(
+    externalId: string
+  ): Promise<{ id: string } | null> {
+    const response = (await this.request<{
+      data?: Array<{ id?: string; external_id?: string | null }>;
+    }>(
+      "GET",
+      `/developer/v1/purchase-orders?external_id=${encodeURIComponent(externalId)}`
+    )) ?? { data: [] };
+
+    // Re-check the value rather than trusting the filter: if a future API version
+    // stopped honouring it, an unfiltered page would otherwise hand back an
+    // unrelated purchase order to adopt.
+    const match = (response.data ?? []).find(
+      (row) => row.external_id === externalId && row.id
+    );
+    return match?.id ? { id: match.id } : null;
+  }
+
   patchPurchaseOrder<T = unknown>(id: string, body: unknown): Promise<T> {
     return this.request<T>("PATCH", `/developer/v1/purchase-orders/${id}`, {
       body
     });
   }
 
+  /**
+   * Archive a Ramp purchase order.
+   *
+   * The empty object is REQUIRED, not decoration: Ramp answers a bodyless POST
+   * with `400 DEVELOPER_7011 "The request does not contain a JSON body"`
+   * (observed live 2026-09-25 against the sandbox). This call had no body until
+   * then — the archive path was unreachable from the old cursor sweep, so the
+   * failure had never surfaced.
+   */
   archivePurchaseOrder<T = unknown>(id: string): Promise<T> {
     return this.request<T>(
       "POST",
-      `/developer/v1/purchase-orders/${id}/archive`
+      `/developer/v1/purchase-orders/${id}/archive`,
+      { body: {} }
     );
   }
 

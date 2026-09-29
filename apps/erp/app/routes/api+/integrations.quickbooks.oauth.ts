@@ -83,9 +83,11 @@ export async function loader({ request }: LoaderFunctionArgs) {
     );
 
     // Exchange the authorization code for tokens. The redirect_uri must match
-    // the authorize-time one (IntegrationCard builds it from
-    // `window.location.origin`); `new URL(request.url).origin` is the internal
-    // proxy address behind a TLS-terminating proxy and fails as a mismatch.
+    // the authorize-time one, which the connect route
+    // (`api+/integrations.$id.connect`) also builds from `getAppUrl()` — so the
+    // two match BY CONSTRUCTION now. `new URL(request.url).origin` is the
+    // internal proxy address behind a TLS-terminating proxy and fails as a
+    // mismatch.
     const auth = await provider.authenticate(
       params.code,
       `${getAppUrl()}/api/integrations/quickbooks/oauth`
