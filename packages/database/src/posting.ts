@@ -23,6 +23,7 @@ export {
 export * from "../supabase/functions/shared/get-accounting-period.ts";
 export * from "../supabase/functions/shared/get-posting-group.ts";
 export * from "../supabase/functions/shared/intercompany-capture.ts";
+export * from "../supabase/functions/shared/journal-dimensions.ts";
 export * from "../supabase/functions/shared/payment-funding.ts";
 export * from "../supabase/functions/shared/pick-guards.ts";
 export {
@@ -31,6 +32,7 @@ export {
   createAdjustmentJournal
 } from "../supabase/functions/shared/post-adjustment.ts";
 export * from "../supabase/functions/shared/purchase-cost-adjustment.ts";
+export * from "../supabase/functions/shared/resolve-return-cost.ts";
 export { resolveTrackedEntityBin } from "../supabase/functions/shared/resolve-tracked-entity-bin.ts";
 export {
   getBillableQuantity,

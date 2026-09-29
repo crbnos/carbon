@@ -11,6 +11,7 @@ import { trigger } from "@carbon/jobs";
 import { trackWorkEvent } from "@carbon/lib/telemetry";
 import { raiseMoment } from "@carbon/lib/workflows";
 import { getLogger } from "@carbon/logger";
+import { postReceiptAs } from "@carbon/operations/post-receipt";
 import { updatePurchasedPrices } from "@carbon/operations/update-purchased-prices";
 import { getCachedPrinterConfig } from "@carbon/printing/printing.server";
 import { getOverReceiptViolations } from "@carbon/utils";
@@ -215,12 +216,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
       .eq("id", companyId)
       .single();
 
-    const postReceipt = await serviceRole.functions.invoke("post-receipt", {
-      body: {
-        receiptId: receiptId,
-        userId: userId,
-        companyId: companyId
-      }
+    const postReceipt = await postReceiptAs(serviceRole, getDatabaseClient(), {
+      receiptId: receiptId,
+      userId: userId,
+      companyId: companyId
     });
 
     if (postReceipt.error) {

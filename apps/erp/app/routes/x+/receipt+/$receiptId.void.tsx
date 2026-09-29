@@ -2,8 +2,10 @@ import { error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
+import { postReceiptAs } from "@carbon/operations/post-receipt";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
+import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
@@ -59,13 +61,11 @@ export async function action({ request, params }: ActionFunctionArgs) {
       );
     }
 
-    const voidReceipt = await serviceRole.functions.invoke("post-receipt", {
-      body: {
-        type: "void",
-        receiptId: receiptId,
-        userId: userId,
-        companyId: companyId
-      }
+    const voidReceipt = await postReceiptAs(serviceRole, getDatabaseClient(), {
+      type: "void",
+      receiptId: receiptId,
+      userId: userId,
+      companyId: companyId
     });
 
     if (voidReceipt.error) {
