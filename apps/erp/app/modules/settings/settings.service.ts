@@ -827,17 +827,17 @@ export async function updateSubsidiary(
 
 export async function seedCompany(
   client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   companyId: string,
   userId: string,
   opts?: { parentCompanyId?: string; identityOnly?: boolean }
 ) {
-  return client.functions.invoke("seed-company", {
-    body: {
-      companyId,
-      userId,
-      parentCompanyId: opts?.parentCompanyId,
-      identityOnly: opts?.identityOnly ?? false
-    }
+  const { seedCompanyAs } = await import("@carbon/operations/seed-company");
+  return seedCompanyAs(client, db, {
+    companyId,
+    userId,
+    parentCompanyId: opts?.parentCompanyId,
+    identityOnly: opts?.identityOnly ?? false
   });
 }
 

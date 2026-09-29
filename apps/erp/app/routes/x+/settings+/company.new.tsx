@@ -17,6 +17,7 @@ import {
   seedCompany
 } from "~/modules/settings";
 import { getPermissionCacheKey } from "~/modules/users/users.server";
+import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
 
 const logger = getLogger("erp", "settings", "company");
@@ -46,7 +47,12 @@ export async function action({ request }: ActionFunctionArgs) {
       throw new Error("Fatal: failed to get company ID");
     }
 
-    const seed = await seedCompany(client, companyId, userId);
+    const seed = await seedCompany(
+      client,
+      getDatabaseClient(),
+      companyId,
+      userId
+    );
     if (seed.error) {
       logger.error("Failed to seed company", { error: seed.error });
       throw new Error("Fatal: failed to seed company");

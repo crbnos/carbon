@@ -589,7 +589,6 @@ customer companies is a separate feature and is unaffected.
 ## Local development note
 
 The dev CLI path needs only Postgres, so it works whenever your local database is up. The
-browser onboarding flow additionally calls the `seed-company` **edge function** (for the
-chart of accounts and other reference data) before the template step ever runs — so if the
-local edge runtime is unhealthy, onboarding fails before reaching any of this, and the CLI
-remains the way to exercise a dataset.
+browser onboarding flow additionally runs the `seed-company` operation
+(`@carbon/operations/seed-company`, for the chart of accounts and other reference data)
+before the template step ever runs, in-process in the ERP.
