@@ -8,6 +8,7 @@ export * from "../supabase/functions/lib/storage-units.ts";
 export {
   credit,
   debit,
+  getReadableIdWithRevision,
   journalReference,
   type TrackedEntityAttributes
 } from "../supabase/functions/lib/utils.ts";
