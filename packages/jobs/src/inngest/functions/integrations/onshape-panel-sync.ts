@@ -10,14 +10,13 @@ import {
 /**
  * Panel push asset sync: the push route has already created/linked the Carbon
  * item and its Onshape mapping; this job does the slow part — GLTF export,
- * poll, download, thumbnail — with the same pipeline the release sync uses,
- * then hands the raw model to the assembler. Workspace-scoped exports are the
- * norm here (a push usually happens from the live workspace, not a version).
- * A release push sends version-scoped events, including `drawing` ones that
+ * poll, download, thumbnail — with the same pipeline the release sync uses.
+ * Workspace-scoped exports are the norm here (a push usually happens from the
+ * live workspace, not a version). A release push sends version-scoped events, including `drawing` ones that
  * attach the released PDF to the model item instead of exporting a model.
  *
- * Quota note: every execution spends live Onshape calls (translate + polls +
- * download + thumbnail), so retries are kept low and concurrency per item is 1.
+ * Every execution spends live Onshape calls, so retries are kept low and
+ * concurrency per item is 1.
  */
 const OnshapePanelSyncPayloadSchema = z.object({
   companyId: z.string(),
@@ -47,14 +46,12 @@ export const onshapePanelSyncFunction = inngest.createFunction(
     const { elementKind } = payload;
 
     if (elementKind === "drawing") {
-      // Release-only: export the released drawing as PDF and attach it to the
-      // model item the push route matched. No model, so no optimize/thumbnail.
+      // Release-only. No model, so no optimize/thumbnail.
       return step.run("sync-drawing-assets", () =>
         syncOnshapeDrawingAssetsToItem(carbon, {
           companyId: payload.companyId,
           userId: payload.userId,
-          // The panel pushes on its own connection; without this the export used the
-          // original integration and failed for a company that only uses the panel.
+          // The panel pushes on its own connection.
           integrationId: ONSHAPE_V2_INTEGRATION_ID,
           itemId: payload.itemId,
           sourceDocument: "Part",
@@ -71,8 +68,6 @@ export const onshapePanelSyncFunction = inngest.createFunction(
       syncOnshapeElementAssetsToItem(carbon, {
         companyId: payload.companyId,
         userId: payload.userId,
-        // The panel pushes on its own connection; without this the export used the
-        // original integration and failed for a company that only uses the panel.
         integrationId: ONSHAPE_V2_INTEGRATION_ID,
         itemId: payload.itemId,
         sourceDocument: "Part",

@@ -257,8 +257,7 @@ export const ONSHAPE_OAUTH_REDIRECT_URL = getEnv("ONSHAPE_OAUTH_REDIRECT_URL", {
 });
 // The panel integration (`onshape-v2`) holds its own OAuth grant, so it needs
 // its own callback. Register BOTH URLs on the same Onshape application in the
-// dev portal — Onshape allows several redirect URIs per app, and the two
-// integrations are otherwise identical to it.
+// dev portal.
 export const ONSHAPE_V2_OAUTH_REDIRECT_URL = getEnv(
   "ONSHAPE_V2_OAUTH_REDIRECT_URL",
   { isRequired: false }

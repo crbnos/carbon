@@ -32,10 +32,8 @@ interface OnshapeClientConfig {
    * Re-acquire an access token after Onshape rejects the current one, so a
    * single request can recover instead of surfacing a 401.
    *
-   * A stored expiry is a prediction, not a fact: it is written when a token is
-   * minted and cannot know about a revocation, a clock difference, or a token
-   * that dies between the expiry check and the call going out. Refreshing
-   * early narrows that window; only retrying on the actual 401 closes it.
+   * A stored expiry cannot know about a revocation, a clock difference, or a
+   * token that dies between the expiry check and the call going out.
    * Returns null when no new token could be obtained.
    */
   onUnauthorized?: () => Promise<string | null>;
@@ -85,9 +83,8 @@ const DEV_CACHEABLE_PATHS = [
   /^\/api\/v\d+\/documents\//,
   /^\/api\/v\d+\/assemblies\/.*\/bom/,
   /^\/api\/v\d+\/metadata\//,
-  // Document revisions: content changes only when a release happens. Dev
-  // caching means a fresh Onshape release can take up to the TTL (10 min) to
-  // show in a dev panel — flush the onshape-dev-cache:* keys to see it sooner.
+  // A fresh Onshape release can take up to the TTL to show in a dev panel;
+  // flush the onshape-dev-cache:* keys to see it sooner.
   /^\/api\/v\d+\/revisions\/d\//
 ];
 
@@ -229,12 +226,10 @@ export class OnshapeClient {
   ): Promise<T> {
     // Every Onshape call counts against an annual per-account quota (private
     // apps debit the app owner). In dev, ONSHAPE_DEV_CACHE=1 serves repeated
-    // GETs from Redis so panel reloads and test loops cost zero live calls.
+    // GETs from Redis.
     //
     // Allow-list, not "all GETs": polling endpoints (translation status) change
-    // between calls, and caching one poisons the poll loop — waitForTranslation
-    // then sees ACTIVE forever and spins to its attempt cap (hit live
-    // 2026-08-28). Only content reads keyed by document state are safe.
+    // between calls, and caching one poisons the poll loop.
     const cacheable =
       method === "GET" && DEV_CACHEABLE_PATHS.some((re) => re.test(path));
     const cacheKey =
@@ -247,7 +242,7 @@ export class OnshapeClient {
         const cached = await redis.get(cacheKey);
         if (cached) return JSON.parse(cached) as T;
       } catch {
-        // Cache is best-effort; fall through to the live call.
+        // Cache is best-effort.
       }
     }
 
@@ -274,10 +269,6 @@ export class OnshapeClient {
     } catch (error) {
       await this.countLiveCall(path);
 
-      // A 401 here means the token was dead when the call went out, which the
-      // expiry check cannot rule out on its own. Re-acquire once and retry:
-      // otherwise the caller surfaces "Onshape API error (401)" and the user
-      // has to press the button again, which is all a retry would have done.
       if (
         axios.isAxiosError(error) &&
         error.response?.status === 401 &&
@@ -489,10 +480,10 @@ export class OnshapeClient {
     >("GET", nextUrl);
   }
 
-  // Released revisions for ONE document — the panel's Releases list. Every
-  // item carries releaseId/releaseName plus the released versionId/elementId,
-  // so grouping by releaseId reconstructs the release packages without a
-  // per-package call (Onshape has no packages-by-document endpoint).
+  // Released revisions for ONE document. Every item carries
+  // releaseId/releaseName plus the released versionId/elementId, so grouping
+  // by releaseId reconstructs the release packages without a per-package call
+  // (Onshape has no packages-by-document endpoint).
   async getDocumentRevisions(
     documentId: string
   ): Promise<
@@ -554,7 +545,6 @@ export class OnshapeClient {
     );
   }
 
-  /** The element rows of a document at w/v/m — id, name and elementType. */
   async getElementsIn(
     document: OnshapeDocument,
     elementType?: OnshapeElementType
@@ -565,7 +555,6 @@ export class OnshapeClient {
     );
   }
 
-  /** Indented multi-level BOM of an assembly at w/v/m. One call. */
   async getBillOfMaterialsIn(
     document: OnshapeDocument,
     elementId: string,
@@ -579,7 +568,7 @@ export class OnshapeClient {
 
   /**
    * Element metadata (the properties panel: Part number, Name, ...) at w/v/m.
-   * One call; used for an assembly's own identity, which the BOM omits.
+   * Used for an assembly's own identity, which the BOM omits.
    */
   async getElementMetadata(
     document: OnshapeDocument,
@@ -595,9 +584,8 @@ export class OnshapeClient {
   /**
    * Element metadata with the element's parts nested (`depth=2`): for a Part
    * Studio the response carries `parts.items[].properties`, so every part's
-   * standard and custom property values arrive in one read. Verified live
-   * before first use — Onshape's metadata depth semantics are documented
-   * loosely.
+   * standard and custom property values arrive in one read. Onshape's metadata
+   * depth semantics are documented loosely.
    */
   async getElementMetadataWithParts(
     document: OnshapeDocument,
@@ -610,7 +598,6 @@ export class OnshapeClient {
     );
   }
 
-  /** One part's metadata (standard + custom properties with values). */
   async getPartMetadata(
     document: OnshapeDocument,
     elementId: string,
@@ -623,7 +610,6 @@ export class OnshapeClient {
     );
   }
 
-  /** Parts of one element at a workspace, version or microversion. One call. */
   async getPartsInElement(
     document: OnshapeDocument,
     elementId: string,
@@ -647,7 +633,6 @@ export class OnshapeClient {
       // FLAGGED: single-part export support unverified. Omit to export the whole
       // Part Studio; the reliable documented path is a whole-Part-Studio translation.
       partIds?: string;
-      /** Path segment: version ("v", default) or workspace ("w"). */
       wvm?: "w" | "v";
     } = {}
   ): Promise<OnshapeTranslation> {
@@ -678,7 +663,6 @@ export class OnshapeClient {
       storeInDocument?: boolean;
       configuration?: string;
       resolution?: OnshapeMeshResolution;
-      /** Path segment: version ("v", default) or workspace ("w"). */
       wvm?: "w" | "v";
     } = {}
   ): Promise<OnshapeTranslation> {
@@ -704,7 +688,6 @@ export class OnshapeClient {
     options: {
       formatName?: OnshapeDrawingTranslationFormat;
       storeInDocument?: boolean;
-      /** Path segment: version ("v", default) or workspace ("w"). */
       wvm?: "w" | "v";
     } = {}
   ): Promise<OnshapeTranslation> {
@@ -863,17 +846,14 @@ export async function getOnshapeClient(
   userId: string,
   /**
    * Which Onshape grant to authenticate as. The panel passes its own
-   * (`onshape-v2`). Omitted, or a sync id, it is the company's sync connection
-   * — the public app or a Government private app, whichever is connected — so
-   * existing callers are unchanged.
+   * (`onshape-v2`). Omitted, or a sync id, it is the company's sync connection.
    */
   requestedIntegrationId?: OnshapeOAuthIntegrationId
 ): Promise<
   { client: OnshapeClient; error: null } | { client: null; error: string }
 > {
   // Either sync connection — the public app or a Government private app.
-  // Past authorization they are the same API, just on a different host. The
-  // panel's grant is its own row.
+  // Past authorization they are the same API, just on a different host.
   const integration =
     requestedIntegrationId && !isOnshapeIntegrationId(requestedIntegrationId)
       ? await client
@@ -921,9 +901,8 @@ export async function getOnshapeClient(
 
   /**
    * Make a refreshed pair the one this request uses from now on. Onshape
-   * rotates refresh tokens, so after a proactive refresh the closed-over
-   * `credentials` still held the spent one, and the in-flight 401 recovery
-   * below sent it and was refused.
+   * rotates refresh tokens, so a later refresh in this request must spend the
+   * new one.
    */
   const adoptCredentials = (next: Record<string, any> | undefined) => {
     if (!next?.accessToken) return;
@@ -940,8 +919,7 @@ export async function getOnshapeClient(
    * Onshape rotates refresh tokens, so two callers refreshing the same
    * connection cannot both succeed — and the loser would persist a dead pair
    * over the winner's live one, breaking the integration until someone
-   * reconnects. The panel opens several requests at once, so this is the
-   * ordinary case, not a rare one.
+   * reconnects.
    */
   const refreshNow = async (): Promise<string | null> => {
     if (!credentials.refreshToken) return null;
@@ -958,18 +936,13 @@ export async function getOnshapeClient(
        * Someone else is refreshing. Wait for them and re-read what they stored
        * rather than spending our own (now stale) refresh token.
        *
-       * The wait follows the lock holder, not a fixed count of polls. It used
-       * to give up after about three seconds, which an Onshape token exchange
-       * plus a vault write can outlast — and the loser then reported the
-       * connection as missing. In practice that was the panel's first open
-       * after a token expired: two tabs read at once, and one showed "Onshape
-       * is not connected" while the other loaded, until Retry.
+       * The wait follows the lock holder, not a fixed count of polls: an
+       * Onshape token exchange plus a vault write can outlast a short wait.
        */
       /*
        * Re-read the ROW, not the copy loaded when this request started. The
        * resolver only reaches the database for vaulted secrets; given the old
-       * copy, anything still inline came back unchanged, so a waiter never saw
-       * the holder's new token and reported the connection as missing.
+       * copy, anything still inline comes back unchanged.
        */
       const readToken = async () => {
         const row = await serviceRole
@@ -988,9 +961,6 @@ export async function getOnshapeClient(
         ).catch(() => null)) as Record<string, any> | null;
         const token = current?.credentials?.accessToken;
         if (!token || token === accessToken) return null;
-        // Adopt the holder's whole pair, not just the access token: the
-        // refresh token rotated with it, and a later refresh in this request
-        // must spend the new one.
         adoptCredentials(current?.credentials);
         return token as string;
       };
@@ -1017,8 +987,6 @@ export async function getOnshapeClient(
         oauth,
         credentials.refreshToken
       );
-      // Onshape tells us how long the token is good for; assuming an hour is
-      // how a stored expiry ends up outliving the real credential.
       const lifetimeSeconds = refreshed.expires_in ?? 3600;
       const next = {
         ...credentials,
@@ -1041,9 +1009,8 @@ export async function getOnshapeClient(
     }
   };
 
-  // Refresh BEFORE the token expires, not at the instant it does: a token with
-  // seconds left dies mid-request, and a connection with no recorded expiry
-  // (an older install) would otherwise never refresh at all and 401 forever.
+  // A connection with no recorded expiry (an older install) would otherwise
+  // never refresh at all.
   const expiresAt = credentials.expiresAt
     ? new Date(credentials.expiresAt).getTime()
     : 0;
@@ -1062,9 +1029,6 @@ export async function getOnshapeClient(
     client: new OnshapeClient({
       baseUrl,
       accessToken,
-      // Last line of defence: the expiry above is a prediction, so a token can
-      // still be dead when the call lands. Recover in-flight instead of
-      // handing the user a 401 that a second click would have fixed.
       onUnauthorized: refreshNow
     }),
     error: null

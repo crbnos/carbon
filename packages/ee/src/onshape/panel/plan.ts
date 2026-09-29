@@ -14,7 +14,6 @@ import {
 /**
  * Plan / apply for the panel's pushes.
  *
- * A push used to read Onshape, decide and write in one request. It is now two:
  * PLAN reads Onshape and Carbon and returns what would happen — every item it
  * would create with the values it would use, every BOM line it would replace
  * or leave alone — and APPLY consumes that plan (stored server-side, plus the
@@ -23,10 +22,7 @@ import {
  *
  * Onshape owns identity (part number, revision) and, once an item is linked,
  * its name and description — an update never takes edits for those, so the
- * owned-field lock on the item page stays true. The three Carbon-side
- * manufacturing fields (replenishment, method, tracking) are NOT owned by
- * Onshape, so they are editable both at create (through the proposal) and on
- * an existing item (see `mergeExistingItemEdits` / `currentItemFields`).
+ * owned-field lock on the item page stays true.
  */
 
 // Enum literals from packages/database (item.replenishmentSystem,
@@ -75,7 +71,6 @@ export const ITEM_DESCRIPTION_MAX_LENGTH = 2000;
 export type PlanUnitOfMeasure = { code: string; name: string };
 export type PlanOptions = {
   unitsOfMeasure: PlanUnitOfMeasure[];
-  /** The company's configured push defaults; see `./preferences`. */
   defaults: OnshapePushDefaults;
 };
 
@@ -105,10 +100,7 @@ export const EDITABLE_ITEM_FIELDS = [
 export type ItemEdit = Partial<
   Pick<ProposedItem, (typeof EDITABLE_ITEM_FIELDS)[number]>
 > & {
-  /**
-   * Edits to mapped custom fields, keyed by Carbon field id. Only
-   * `default`-mode fields accept one (see panel/properties.ts).
-   */
+  /** Edits to mapped custom fields, keyed by Carbon field id. */
   customFields?: Record<string, unknown>;
 };
 
@@ -129,8 +121,7 @@ export type PlanItemRow = {
   type?: string | null;
   /**
    * The three Carbon-side manufacturing attributes the panel can edit on an
-   * existing item. Optional so a plan built before these were read still
-   * type-checks; `currentItemFields` coerces whatever is present.
+   * existing item. `currentItemFields` coerces whatever is present.
    */
   replenishmentSystem?: string | null;
   defaultMethodType?: string | null;
@@ -211,11 +202,7 @@ export function defaultUnitOfMeasureCode(options: PlanOptions): string {
   return codes[0] ?? "EA";
 }
 
-/**
- * The item a push would create for an Onshape part, assembly or BOM row, with
- * the defaults the routes used to hardcode: designed in-house → Make / Make to
- * Order; a purchased BOM row → Buy / Pull from Inventory.
- */
+/** The item a push would create for an Onshape part, assembly or BOM row. */
 export function proposeItem(
   input: {
     partNumber: string;
@@ -419,10 +406,9 @@ export function currentItemFields(row: {
  * Apply the panel's three manufacturing edits to an existing item's current
  * values, refusing an unknown enum or a method the replenishment system does
  * not allow (the same interlock `mergeItemEdits` enforces for creates). Name,
- * description, unit and custom fields on the edit are ignored — an existing
- * item's name and description stay Onshape-owned. Returns the merged values
- * and the subset that actually CHANGED, so an untouched edit writes nothing
- * and stamps no audit fields.
+ * description, unit and custom fields on the edit are ignored. Returns the
+ * merged values and the subset that actually CHANGED, so an untouched edit
+ * writes nothing and stamps no audit fields.
  */
 export function mergeExistingItemEdits(
   current: ItemFieldSnapshot,
@@ -516,7 +502,7 @@ export type PartPlanRow = {
    * holds and only send the ones the user changes.
    */
   current?: ItemFieldSnapshot | null;
-  /** Update only: Onshape-owned fields the push will overwrite. */
+  /** Onshape-owned fields the push will overwrite. */
   changes: Array<{
     field: "name" | "description";
     from: string | null;
@@ -538,8 +524,7 @@ export type PartPlan = {
   elementId: string;
   /**
    * The Part Studio configuration the parts were read in, null for the
-   * default. Part of every mapping key the apply writes. Optional so a plan
-   * stored before configurations were considered still applies as default.
+   * default. Part of every mapping key the apply writes.
    */
   configuration?: string | null;
   rows: PartPlanRow[];
@@ -713,7 +698,7 @@ export type AssemblyPlanItem = {
 export type AssemblyPlanMethodStatus =
   /** Existing Draft method: lines are applied. */
   | "draft"
-  /** Existing released method: refused, lines are not applied. */
+  /** Existing released method. */
   | "active"
   /** The parent item will be created, so the method will be too. */
   | "new"
@@ -732,7 +717,7 @@ export type AssemblyPlanMethod = {
     quantity: number;
     purchased: boolean;
   }>;
-  /** Existing Onshape-origin lines a previous push wrote: deleted first. */
+  /** Existing Onshape-origin lines a previous push wrote. */
   replaces: PlanLine[];
   /** Existing lines no push wrote (manual): left untouched. */
   keeps: PlanLine[];
@@ -766,11 +751,8 @@ export type AssemblyPlanRoot = {
  * item to create or reuse rather than a tree to explode. It exists because a
  * BOM line already points at its child's own make method
  * (`methodMaterial.materialMakeMethodId`), so a multi-level structure composes
- * from levels pushed separately, with no extra data model. Push each
- * sub-assembly from its own Onshape tab, push the top last, and the tree nests.
- *
- * That composition is also what makes a large assembly tractable: a push is
- * then bounded by one level's line count instead of by the whole tree.
+ * from levels pushed separately. A push is then bounded by one level's line
+ * count instead of by the whole tree.
  */
 export type AssemblyPlanDepth = "all" | "top";
 
@@ -790,10 +772,7 @@ export type AssemblyPlan = {
   skipped: string[];
   options: PlanOptions;
   depth: AssemblyPlanDepth;
-  /**
-   * Only on a `top` plan: what this push is NOT writing, so the panel can say
-   * so rather than leaving the user to notice the tree is missing.
-   */
+  /** Only on a `top` plan: what this push is NOT writing. */
   deeper?: {
     /** Sub-assemblies directly under the root, each pushable on its own. */
     subAssemblies: string[];
@@ -858,7 +837,6 @@ export function buildAssemblyPlan({
    * item is a conflict. Omitted, every reuse is one.
    */
   linkedItemIdByExternalId?: Map<string, string>;
-  /** The assembly configuration the BOM was read in. */
   configuration?: string | null;
 }): AssemblyPlan {
   // One row per part number: the latest revision, whatever order the rows
@@ -1075,8 +1053,7 @@ export function buildAssemblyPlan({
     root: planRoot,
     items: planItems,
     // One method: the root's. `addMethod` recursed into the children, so drop
-    // everything it added below the top rather than teaching it the depth —
-    // the recursion is what builds `writes` for the root in the first place.
+    // everything it added below the top.
     methods: methods.slice(0, 1),
     skipped,
     options,
@@ -1253,8 +1230,6 @@ export function buildReleasePlan({
         baseRevision: base.revision,
         existingItemId: null,
         proposed: null,
-        // A new revision inherits the base's manufacturing fields, so the base
-        // is what the editor seeds from and edits diff against.
         current: currentItemFields(base),
         methodStatus: isAssembly ? "new" : null
       });
@@ -1335,9 +1310,7 @@ export function buildReleasePlan({
     createdAt: release.createdAt,
     items: planItems,
     children,
-    // Always proposed, never forced: the review step decides whether the
-    // notice is written and what it is called. The engineer already named the
-    // release, so that name carries over rather than being prefixed.
+    // The engineer already named the release, so that name carries over.
     changeNotice: createsReleaseItems
       ? {
           name: release.releaseName ?? `Onshape release ${release.releaseId}`,

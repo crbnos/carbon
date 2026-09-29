@@ -199,11 +199,8 @@ function SettingField({ setting }: { setting: IntegrationSetting }) {
 /**
  * Whether this form marks optional fields at all.
  *
- * "Optional" earns its place only when a form mixes the two — email is seven
- * required fields and one optional, and the badge is what tells them apart.
- * A form whose every field is optional (Onshape, Xero, Stripe Connect) puts
- * the same badge on every row, which distinguishes nothing and just adds a
- * column of grey text to read past.
+ * A form whose every field is optional puts the same badge on every row,
+ * which distinguishes nothing.
  */
 const MarkOptionalFields = createContext(true);
 
@@ -307,10 +304,7 @@ function SettingFieldInner({ setting }: { setting: IntegrationSetting }) {
       // Small static enums render as Choice cards (the same affordance as
       // the explicit `cards` type). Long / dynamically-loaded lists keep
       // the dropdown so things like Xero account pickers stay usable.
-      //
-      // `select` opts out of that sizing rule and is always a dropdown, for a
-      // form whose fields should read like the rest of the app's forms rather
-      // than turning every short enum into a bank of cards.
+      // `select` opts out of that sizing rule and is always a dropdown.
       if (
         setting.type === "options" &&
         listOptions.length > 0 &&
@@ -806,8 +800,6 @@ export function IntegrationForm({
   }
 
   const hasTabs = tabs.length > 0;
-  // See `MarkOptionalFields`: a badge on every field is noise, so only a form
-  // that actually mixes required and optional fields marks them.
   const markOptionalFields = integration.settings.some(
     (setting) => (setting as IntegrationSetting).required
   );

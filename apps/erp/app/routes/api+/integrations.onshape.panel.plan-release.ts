@@ -38,12 +38,10 @@ const payloadSchema = z.object({
  * Every Onshape read the push needs happens here — the document's revisions
  * (one call) and each released assembly's BOM at its released version (one
  * call per assembly) — and the BOM lines ride along in the stored plan, so
- * the apply route never returns to Onshape. Quota is what the old
- * single-request push cost, spent at review time instead. Carbon's side is
- * two bulk reads: every revision row for the release's part numbers and the
- * BOMs' level-1 children, and the active make methods of assemblies already
- * at the released letter (a released method refuses its BOM, and the review
- * must say so up front).
+ * the apply route never returns to Onshape. Carbon's side is bulk reads:
+ * every revision row for the release's part numbers and the BOMs' level-1
+ * children, and the active make methods of assemblies already at the
+ * released letter.
  *
  * Permissions match the apply route so a user who could not push finds out
  * before editing a review, not after.
@@ -128,9 +126,7 @@ export async function action({ request }: ActionFunctionArgs) {
     return data({ error: "Failed to read Carbon items" }, { status: 500 });
   }
   // item.revision is nullable; the builder compares it to release letters as
-  // a string and reads a missing one as "0", as plan-assembly does. Cast
-  // straight through, a null default revision missed its own row and planned
-  // a revision on top of it.
+  // a string and reads a missing one as "0", as plan-assembly does.
   const toPlanRow = <T extends { revision: string | null }>(row: T) => ({
     ...row,
     revision: row.revision ?? "0"
@@ -138,8 +134,7 @@ export async function action({ request }: ActionFunctionArgs) {
   const items: PlanItemRow[] = releaseRows.data.map(toPlanRow);
 
   // Method status only matters for assemblies already at the released letter
-  // (the reuse case): a released method refuses the BOM, and the review shows
-  // that instead of discovering it at apply. Parts never consume it.
+  // (the reuse case). Parts never consume it.
   const letterAssemblyItemIds = modelItems
     .filter((item) => item.elementType === 1)
     .flatMap((item) =>
@@ -186,13 +181,13 @@ export async function action({ request }: ActionFunctionArgs) {
   );
 
   // ---- BOMs at the released versions --------------------------------------
-  // One read per released assembly the apply can act on, sequential as the
-  // push always was (a burst of parallel BOM reads is how Onshape rate limits
-  // bite). A BOM that will not read is a warning on the review, not a failed
-  // plan: the rest of the release still plans, and the assembly is stored
-  // with null lines, which the apply route treats as "leave the method
-  // alone" — a transient Onshape failure at review time can never erase a
-  // BOM at apply time. An empty array is a genuinely empty BOM.
+  // One read per released assembly the apply can act on, sequential (a burst
+  // of parallel BOM reads is how Onshape rate limits bite). A BOM that will
+  // not read is a warning on the review, not a failed plan: the rest of the
+  // release still plans, and the assembly is stored with null lines, which
+  // the apply route treats as "leave the method alone" — a transient Onshape
+  // failure at review time can never erase a BOM at apply time. An empty
+  // array is a genuinely empty BOM.
   const bomLinesByElementId: Record<string, OnshapeBomNode[] | null> = {};
   const warnings: string[] = [];
   for (const item of modelItems) {
@@ -212,8 +207,7 @@ export async function action({ request }: ActionFunctionArgs) {
       );
       const { lines, missingColumns } = parseBomTree(bom);
       if (missingColumns.length > 0) {
-        // Unreadable, so treated exactly like a failed read: null leaves the
-        // method alone at apply, where an empty tree would clear it.
+        // Unreadable, so treated exactly like a failed read.
         bomLinesByElementId[item.elementId] = null;
         warnings.push(
           `${item.partNumber} Rev ${item.revision}: ${missingBomColumnsMessage(

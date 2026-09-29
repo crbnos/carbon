@@ -311,7 +311,6 @@ export async function syncOnshapeElementAssetsToItem(
 export interface SyncOnshapeDrawingInput {
   companyId: string;
   userId: string; // Onshape integration installer (auth + audit)
-  // As on SyncOnshapeElementInput: the connection to export through.
   integrationId?: OnshapeOAuthIntegrationId;
   itemId: string; // resolved Carbon item (the model this drawing documents)
   sourceDocument: DocumentSourceType; // e.g. "Part"

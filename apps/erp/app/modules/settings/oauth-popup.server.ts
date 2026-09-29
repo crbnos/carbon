@@ -5,17 +5,14 @@ import { OAUTH_POPUP_MESSAGE } from "./oauth-popup";
  * The page an OAuth callback renders when the provider redirects the user's
  * browser back to Carbon.
  *
- * The authorize URL is opened in a popup (`openOAuthPopup` in @carbon/ee), so
- * the callback runs inside that popup. Redirecting it to the integrations page
- * left the whole settings UI open in a 600×800 window and the page behind it
- * unaware anything happened. Instead, post the result to the window that
- * opened the popup and close; `IntegrationCard` turns it into a revalidation
- * (success) or a toast (failure).
+ * The authorize URL is opened in a popup, so the callback runs inside that
+ * popup. Post the result to the window that opened the popup and close;
+ * `IntegrationCard` turns it into a revalidation (success) or a toast
+ * (failure).
  *
  * `fallbackUrl` covers the no-opener cases — popups blocked (the install hook
  * navigated the current window instead) or the callback opened directly. It is
- * the integrations page, with the error query string on failure, i.e. exactly
- * where the callback redirected before.
+ * the integrations page, with the error query string on failure.
  *
  * Only Carbon-authored values reach the page: the integration id and an error
  * code from `integration-errors`, never provider text.

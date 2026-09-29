@@ -6,10 +6,6 @@ import type { PanelItemRow, PanelMappingRow } from "./status";
  * status list uses, so the badge a user saw and the action they get can't
  * disagree.
  *
- * - `create`: no mapping, no part-number match → new Carbon item.
- * - `adopt`: no mapping, an item's readableId equals the part number → link it.
- * - `update`: mapping exists and the part changed since last push.
- * - `unchanged`: mapping exists and the microversion is the one already pushed.
  * - `skip-no-part-number`: unmapped part without an Onshape part number —
  *   Onshape owns identity, so the fix belongs there, not in Carbon.
  */

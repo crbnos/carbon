@@ -11,10 +11,8 @@
  *
  * Onshape always wins: every mapped field is written on every push, and a
  * property emptied in Onshape empties the Carbon field. There is one mode,
- * "owned". A stored "default" entry, from before the review stopped being
- * editable, is read as owned — the panel no longer offers a second place to
- * edit data Onshape already edits. The `mode` field stays on the types so the
- * merge helpers keep one shape.
+ * "owned". The `mode` field stays on the types so the merge helpers keep one
+ * shape.
  *
  * Everything here is pure so the plan a user reviewed is the plan that runs.
  */
@@ -81,20 +79,19 @@ export const CUSTOM_FIELD_DATA_TYPES = {
 } as const;
 
 /**
- * Which Carbon data types an Onshape value type may map onto. First entry is
- * what "Create field" provisions. Types absent here (USER, BLOB, computed
- * OBJECTs other than Material's display name) are not mappable.
+ * Which Carbon data types an Onshape value type may map onto. Types absent
+ * here (USER, BLOB, computed OBJECTs other than Material's display name) are
+ * not mappable.
  *
  * One target per value type, and every textual type lands on Text. A pushed
  * property is REFERENCE data: Onshape is where it is authored and validated,
- * and Carbon holds a copy for someone to read on the item. A List target
- * would constrain a value Carbon does not own — Onshape's option set can gain
- * a value mid-push, and a free-text property pointed at a dropdown turns the
- * list into a bin for its typos. Text keeps the copy faithful.
+ * and Carbon holds a copy. A List target would constrain a value Carbon does
+ * not own — Onshape's option set can gain a value mid-push, and a free-text
+ * property pointed at a dropdown turns the list into a bin for its typos.
  *
- * Numbers and dates keep their real types rather than becoming text, because
- * Carbon sorts, filters and renders those columns by type; a numeric shipped
- * as text sorts "10" before "9".
+ * Numbers and dates keep their real types because Carbon sorts, filters and
+ * renders those columns by type; a numeric shipped as text sorts "10" before
+ * "9".
  */
 export const MAPPABLE_VALUE_TYPES: Record<string, readonly number[]> = {
   STRING: [CUSTOM_FIELD_DATA_TYPES.text],
@@ -407,15 +404,14 @@ export function mergeCustomFieldEdits(
   const values: Record<string, string | number | boolean | null> = {};
   for (const field of fields) {
     // Owned fields carry their null through: mergeCustomFieldValues deletes
-    // the key, so emptying a property in Onshape empties it in Carbon. A
-    // default field with no value simply writes nothing.
+    // the key.
     if (field.mode === "owned" || field.value !== null) {
       values[field.fieldId] = field.value;
     }
   }
   for (const [fieldId, raw] of Object.entries(edits ?? {})) {
     const field = fields.find((f) => f.fieldId === fieldId);
-    if (!field) continue; // not part of the reviewed plan: ignored
+    if (!field) continue;
     if (field.mode === "owned") {
       errors.push(`${field.name}: Onshape owns this field`);
       continue;
@@ -437,8 +433,7 @@ export function mergeCustomFieldEdits(
 
 /**
  * Merge mapped values into a row's stored customFields JSON: only the given
- * keys change, everything Carbon owns survives. `modes` restricts which keys
- * an update may touch (owned only); creates pass every mapped key.
+ * keys change, everything Carbon owns survives.
  */
 export function mergeCustomFieldValues(
   current: unknown,
@@ -448,10 +443,8 @@ export function mergeCustomFieldValues(
   const out: Record<string, unknown> = isRecord(current) ? { ...current } : {};
   for (const [fieldId, value] of Object.entries(values)) {
     if (!allowedFieldIds.has(fieldId)) continue;
-    // An owned field emptied in Onshape empties in Carbon: "owned" means the
-    // ERP shows what CAD holds, exactly as name/description do. A field the
-    // caller does not list is untouched, so this only ever clears values the
-    // push is responsible for.
+    // A field the caller does not list is untouched, so this only ever clears
+    // values the push is responsible for.
     if (value === null) delete out[fieldId];
     else out[fieldId] = value;
   }
@@ -461,11 +454,10 @@ export function mergeCustomFieldValues(
 /**
  * List options a List field is missing for the values about to be written.
  *
- * No new mapping can target a List field — every textual type maps to Text
- * (see MAPPABLE_VALUE_TYPES) — so this only ever fires for a map written
- * before that narrowing. It stays because those maps still push: a value
- * written to a List field whose options do not include it renders blank in
- * every table that reads the field as a select.
+ * No new mapping can target a List field (see MAPPABLE_VALUE_TYPES), so this
+ * only fires for a map written before that narrowing. A value written to a
+ * List field whose options do not include it renders blank in every table
+ * that reads the field as a select.
  */
 export function missingListOptions(
   definition: PlanCustomFieldDefinition,

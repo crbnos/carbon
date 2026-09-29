@@ -20,16 +20,10 @@ import type { SupabaseClient } from "@supabase/supabase-js";
  * cross-site iframe. Instead, a popup on Carbon's own origin (which does have
  * the cookie) mints one of these: an opaque `cps_…` token whose `AuthSession`
  * lives in Redis for `PANEL_SESSION_TTL_SECONDS`. The iframe keeps the token in
- * `sessionStorage` and sends it as `Authorization: Bearer cps_…`;
- * `requireOnshapePanelPermissions` resolves it into the same
- * `{ client, companyId, userId, … }` shape `requirePermissions` returns —
- * same claims check, same RLS client — and refreshes the Supabase token in
- * place.
+ * `sessionStorage` and sends it as `Authorization: Bearer cps_…`.
  *
- * This lives entirely in `@carbon/ee` on purpose: it is an Onshape-integration
- * concern, not a core auth primitive, so `@carbon/auth`'s `requirePermissions`
- * knows nothing about panels. Opaque by design: nothing about the user is
- * decodable from the token, and deleting the Redis key revokes it immediately.
+ * Opaque by design: nothing about the user is decodable from the token, and
+ * deleting the Redis key revokes it immediately.
  */
 
 export const PANEL_SESSION_TTL_SECONDS = 12 * 60 * 60;
@@ -46,7 +40,6 @@ export function isPanelSessionToken(value: unknown): value is string {
   return typeof value === "string" && TOKEN_PATTERN.test(value);
 }
 
-/** The panel token on a request, or null when the request carries none. */
 export function panelSessionTokenFromRequest(request: Request): string | null {
   const header = request.headers.get("authorization");
   if (!header) return null;
@@ -98,9 +91,8 @@ export async function deletePanelSession(token: string): Promise<void> {
 /**
  * Supabase ROTATES refresh tokens, so two requests refreshing the same panel
  * session at once cannot both succeed — the second is told the token was
- * already used. The panel fires several requests together whenever it opens,
- * so that race is the normal case rather than a rare one, and this lock is
- * what makes exactly one of them do the refresh while the others wait for it.
+ * already used. This lock makes exactly one of them do the refresh while the
+ * others wait for it.
  *
  * The lease is short and renewed while the holder works. A fixed long TTL
  * could still run out under a slow refresh, letting a second request take the
@@ -157,7 +149,6 @@ export async function renewPanelRefreshLock(
   return result === 1;
 }
 
-/** Release the lock only if this owner still holds it. */
 export async function releasePanelRefreshLock(
   token: string,
   owner: string
@@ -166,9 +157,8 @@ export async function releasePanelRefreshLock(
 }
 
 /**
- * Run `work` while holding the lease, renewing it on an interval until the
- * work settles, then releasing it. Renewal failures are ignored: the worst
- * case is the lease lapsing, which the owner check makes safe.
+ * Renewal failures are ignored: the worst case is the lease lapsing, which the
+ * owner check makes safe.
  */
 export async function withPanelRefreshLock<T>(
   token: string,
@@ -214,9 +204,8 @@ async function refreshPanelSessionNow(
     stored.companyGroupId
   );
   // Deliberately NOT deleting the session here. A failed refresh is far more
-  // often a lost race than a revoked account, and deleting took the session
-  // away from the request that had just refreshed it successfully. Only
-  // `loadPanelSession` returning nothing proves the session is gone.
+  // often a lost race than a revoked account. Only `loadPanelSession`
+  // returning nothing proves the session is gone.
   if (!refreshed) return null;
 
   // Same carry-over as refreshAuthSession: a refresh is not a re-auth.
@@ -231,25 +220,12 @@ async function refreshPanelSessionNow(
 
 /**
  * Refresh a panel session's Supabase token exactly once across concurrent
- * requests.
+ * requests: one request holds the lock and refreshes; the others wait for it
+ * and read what it stored.
  *
- * The panel fires several requests together the moment it opens (part status
- * and releases in the same tick, plus the identity read), and Supabase rotates
- * refresh tokens. Left unserialized they all refresh with the same token: the
- * first succeeds, the rest are told it was already used, and each loser
- * answered 401 — which is why a panel opened after a period of inactivity
- * showed a 401 in one section and was fine again the moment anything
- * re-requested.
- *
- * So one request holds the lock and refreshes; the others wait for it and read
- * what it stored.
- *
- * Only the lock holder ever refreshes. A waiter that refreshed on its own
- * after a timeout spent the same rotating refresh token the holder was using,
- * and whichever lost answered 401 and sent the panel back through sign-in. A
- * waiter instead keeps trying to take the lock — a holder that died stops
- * renewing its lease, so the lock frees itself — and refreshes only once it
- * holds it, from the session as stored at that moment.
+ * Only the lock holder ever refreshes. A waiter keeps trying to take the lock —
+ * a holder that died stops renewing its lease, so the lock frees itself — and
+ * refreshes only once it holds it, from the session as stored at that moment.
  */
 async function refreshPanelSession(
   token: string,
@@ -283,8 +259,7 @@ async function refreshPanelSession(
 /**
  * Resolve a panel session token to a live `AuthSession`, refreshing the
  * Supabase token in place when it is about to expire. A missing, expired or
- * unrefreshable session is a 401 — the panel then asks the user to sign in
- * again through its popup.
+ * unrefreshable session is a 401.
  */
 async function requirePanelSession(token: string): Promise<AuthSession> {
   const stored = await loadPanelSession(token);
@@ -302,8 +277,7 @@ async function requirePanelSession(token: string): Promise<AuthSession> {
 
 // Ported from `@carbon/auth`'s `requirePermissions` so panel routes resolve the
 // console-mode effective user identically. Panel requests are cross-site, so the
-// `console-pin-*` cookie is not present in practice and this returns the session
-// user — but the logic is kept faithful rather than assumed away.
+// `console-pin-*` cookie is not present in practice.
 function getEffectiveUser(
   request: Request,
   companyId: string,
@@ -395,7 +369,6 @@ export async function requireOnshapePanelPermissions(
     consoleMode
   };
 
-  // No required permissions: authenticated is enough (e.g. the identity read).
   if (Object.keys(requiredPermissions).length === 0) {
     return result;
   }
