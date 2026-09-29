@@ -4,8 +4,10 @@ import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
+import { batchOperations } from "@carbon/operations/batch-operations";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
+import { getDatabaseClient } from "~/services/database.server";
 import { completeJobOperationBatchValidator } from "~/services/models";
 import {
   getJobOperationBatch,
@@ -117,15 +119,13 @@ export async function action({ request, params }: ActionFunctionArgs) {
     ? planned.data.outputLotNumber
     : null;
 
-  // The edge function owns the whole completion: slice events + record quantities
+  // The batch-operations operation owns the whole completion: slice events + record quantities
   // (phase 1, one txn), then issue each member's BOM + flip members Done + post GL
   // (phase 2, idempotent). A phase-2 failure leaves the batch 'Completing'; the
   // operator re-submitting this form re-invokes and resumes without double effects.
-  const completeResult = await serviceRole.functions.invoke<{
-    memberIds?: string[];
-    error?: string;
-  }>("batch-operations", {
-    body: {
+  const completeResult = await batchOperations(
+    { db: getDatabaseClient(), companyId, userId, system: true },
+    {
       type: "complete",
       batchId,
       // An excluded ("not in this run") member detaches back to the schedule;
@@ -141,11 +141,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
           batchNumber: plannedLotNumber,
           excluded
         };
-      }),
-      companyId,
-      userId
+      })
     }
-  });
+  );
 
   // "Already completed" is not a failure: a duplicate submit (double click,
   // a retry after a slow first attempt) means the work landed. Fall through to
@@ -153,24 +151,16 @@ export async function action({ request, params }: ActionFunctionArgs) {
   // then, so it finds no groups — and report success. Reporting this as
   // an error told the operator the completion failed when it had just
   // succeeded, with the lots and the merged lot already written.
-  const completionErrorMessage =
-    completeResult.data?.error ??
-    (completeResult.error ? String(completeResult.error.message ?? "") : "");
+  const completionErrorMessage = completeResult.error?.message ?? "";
   const alreadyCompleted = /already been completed|already completed/i.test(
     completionErrorMessage
   );
-  if (
-    (completeResult.error || completeResult.data?.error) &&
-    !alreadyCompleted
-  ) {
+  if (completeResult.error && !alreadyCompleted) {
     return data(
       {},
       await flash(
         request,
-        error(
-          completeResult.error ?? completeResult.data?.error,
-          "Failed to complete batch"
-        )
+        error(completeResult.error.message || null, "Failed to complete batch")
       )
     );
   }

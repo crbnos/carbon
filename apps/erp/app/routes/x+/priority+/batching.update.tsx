@@ -161,7 +161,7 @@ export async function action({ request }: ActionFunctionArgs) {
       }
     }
 
-    const result = await createJobOperationBatch(client, {
+    const result = await createJobOperationBatch(client, getDatabaseClient(), {
       ...validation.data,
       companyId,
       userId
@@ -244,11 +244,15 @@ export async function action({ request }: ActionFunctionArgs) {
         return { success: false, message: releasedJobs.error };
       }
 
-      const released = await releaseJobOperationBatch(client, {
-        batchId: rest.batchId,
-        companyId,
-        userId
-      });
+      const released = await releaseJobOperationBatch(
+        client,
+        getDatabaseClient(),
+        {
+          batchId: rest.batchId,
+          companyId,
+          userId
+        }
+      );
       if (released.error) {
         return {
           success: false,
@@ -259,11 +263,15 @@ export async function action({ request }: ActionFunctionArgs) {
         };
       }
     } else {
-      const unreleased = await unreleaseJobOperationBatch(client, {
-        batchId: rest.batchId,
-        companyId,
-        userId
-      });
+      const unreleased = await unreleaseJobOperationBatch(
+        client,
+        getDatabaseClient(),
+        {
+          batchId: rest.batchId,
+          companyId,
+          userId
+        }
+      );
       if (unreleased.error) {
         return {
           success: false,
@@ -285,7 +293,7 @@ export async function action({ request }: ActionFunctionArgs) {
     return { success: true };
   }
 
-  const result = await updateJobOperationBatch(client, {
+  const result = await updateJobOperationBatch(client, getDatabaseClient(), {
     type,
     ...rest,
     // "update" clears the work center when no value is submitted

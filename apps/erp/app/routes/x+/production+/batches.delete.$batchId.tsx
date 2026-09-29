@@ -6,6 +6,7 @@ import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { redirect, useLoaderData, useNavigate, useParams } from "react-router";
 import { ConfirmDelete } from "~/components/Modals";
 import { updateJobOperationBatch } from "~/modules/production";
+import { getDatabaseClient } from "~/services/database.server";
 import { getEdgeFunctionErrorMessage } from "~/utils/error";
 import { path } from "~/utils/path";
 
@@ -49,7 +50,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   // "Delete" is the edge fn's dissolve: members return to the schedule un-run
   // and the batch row is removed. It refuses once production has been recorded
   // — that refusal message surfaces here as the flash.
-  const result = await updateJobOperationBatch(client, {
+  const result = await updateJobOperationBatch(client, getDatabaseClient(), {
     type: "dissolve",
     batchId,
     companyId,

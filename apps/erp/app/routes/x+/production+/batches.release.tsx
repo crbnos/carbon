@@ -80,7 +80,7 @@ export async function action({ request }: ActionFunctionArgs) {
       continue;
     }
 
-    const result = await releaseJobOperationBatch(client, {
+    const result = await releaseJobOperationBatch(client, getDatabaseClient(), {
       batchId,
       companyId,
       userId

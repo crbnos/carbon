@@ -2,6 +2,7 @@ import { assertIsPost } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import type { ActionFunctionArgs } from "react-router";
 import { updateJobOperationBatch } from "~/modules/production";
+import { getDatabaseClient } from "~/services/database.server";
 import { getEdgeFunctionErrorMessage } from "~/utils/error";
 
 // Bulk dissolve — one edge-fn dissolve per selected batch. Each is independent:
@@ -33,7 +34,7 @@ export async function action({ request }: ActionFunctionArgs) {
   let dissolved = 0;
   const failed: { readableId: string; message: string }[] = [];
   for (const batchId of ids) {
-    const result = await updateJobOperationBatch(client, {
+    const result = await updateJobOperationBatch(client, getDatabaseClient(), {
       type: "dissolve",
       batchId,
       companyId,

@@ -6503,6 +6503,7 @@ export async function getBatchableProcesses(
 
 export async function createJobOperationBatch(
   client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   args: {
     jobOperationIds: string[];
     locationId: string;
@@ -6518,13 +6519,23 @@ export async function createJobOperationBatch(
     userId: string;
   }
 ) {
-  return client.functions.invoke("batch-operations", {
-    body: { type: "create", ...args }
-  });
+  const { companyId, userId, ...input } = args;
+  const [{ batchOperations }, { callerContext }] = await Promise.all([
+    import("@carbon/operations/batch-operations"),
+    import("@carbon/operations")
+  ]);
+  return batchOperations(
+    await callerContext(client, { db, companyId, userId }),
+    {
+      type: "create",
+      ...input
+    }
+  );
 }
 
 export async function updateJobOperationBatch(
   client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   args: {
     type: "add" | "remove" | "update" | "dissolve" | "release" | "unrelease";
     batchId: string;
@@ -6534,28 +6545,54 @@ export async function updateJobOperationBatch(
     userId: string;
   }
 ) {
-  const { type, ...rest } = args;
-  return client.functions.invoke("batch-operations", {
-    body: { type, ...rest }
-  });
+  const { companyId, userId, ...input } = args;
+  const [{ batchOperations }, { callerContext }] = await Promise.all([
+    import("@carbon/operations/batch-operations"),
+    import("@carbon/operations")
+  ]);
+  // add/remove need jobOperationIds; the operation re-validates the shape.
+  return batchOperations(
+    await callerContext(client, { db, companyId, userId }),
+    input as Parameters<typeof batchOperations>[1]
+  );
 }
 
 export async function releaseJobOperationBatch(
   client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   args: { batchId: string; companyId: string; userId: string }
 ) {
-  return client.functions.invoke("batch-operations", {
-    body: { type: "release", ...args }
-  });
+  const { companyId, userId, batchId } = args;
+  const [{ batchOperations }, { callerContext }] = await Promise.all([
+    import("@carbon/operations/batch-operations"),
+    import("@carbon/operations")
+  ]);
+  return batchOperations(
+    await callerContext(client, { db, companyId, userId }),
+    {
+      type: "release",
+      batchId
+    }
+  );
 }
 
 export async function unreleaseJobOperationBatch(
   client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   args: { batchId: string; companyId: string; userId: string }
 ) {
-  return client.functions.invoke("batch-operations", {
-    body: { type: "unrelease", ...args }
-  });
+  const { companyId, userId, batchId } = args;
+  const [{ batchOperations }, { callerContext }] = await Promise.all([
+    import("@carbon/operations/batch-operations"),
+    import("@carbon/operations")
+  ]);
+  return batchOperations(
+    await callerContext(client, { db, companyId, userId }),
+    {
+      type: "unrelease",
+      batchId
+    }
+  );
 }
 
 // --- Assembly Instructions ---------------------------------------------

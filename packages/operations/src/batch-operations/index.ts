@@ -1,33 +1,34 @@
-import { serve } from "https://deno.land/std@0.175.0/http/server.ts";
-import { sql, Transaction } from "kysely";
-import z from "npm:zod@^3.24.1";
-import { type DB, getConnectionPool, getDatabaseClient } from "../lib/database.ts";
-import { corsHeaders } from "../lib/headers.ts";
-import { Database } from "../lib/types.ts";
-import { requirePermissions } from "../lib/supabase.ts";
+import type { Database } from "@carbon/database";
+import type { KyselyDatabase } from "@carbon/database/client";
+import { datetime } from "@carbon/database/datetime";
+import { getNextSequence } from "@carbon/database/sequence";
 import {
   assertAllOperationsClaimed,
   assertBatchCompletionMembership,
   assertBatchWorkCenterMutable,
-  buildBatchCompletionPlan,
-  planBatchCompletion
-} from "../shared/batch-time-split.ts";
-import {
   BATCH_RULE_DIMENSIONS,
   type BatchRules,
+  buildBatchCompletionPlan,
   type MemberValueSets,
   mustViolations,
-  resolveBatchRules
-} from "../shared/batch-compatibility.ts";
-import { getNextSequence } from "../shared/get-next-sequence.ts";
-import { round } from "../shared/precision.ts";
-
-const pool = getConnectionPool(1);
-const db = getDatabaseClient<DB>(pool);
+  planBatchCompletion,
+  resolveBatchRules,
+  round
+} from "@carbon/utils";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import { type Kysely, sql, type Transaction } from "kysely";
+import { z } from "zod";
+import {
+  assertOperationPermissions,
+  type OperationContext,
+  serviceRoleClient
+} from "../context";
+import { postProductionEvent } from "../post-production-event";
+import { runOperation } from "../result";
 
 const NOT_STARTED = ["Todo", "Ready", "Waiting"];
 
-const payloadValidator = z.discriminatedUnion("type", [
+export const batchOperationsInput = z.discriminatedUnion("type", [
   z.object({
     type: z.literal("create"),
     jobOperationIds: z.array(z.string()).min(1),
@@ -48,48 +49,34 @@ const payloadValidator = z.discriminatedUnion("type", [
           lotNumber: z.string().trim().min(1)
         })
       )
-      .optional(),
-    companyId: z.string(),
-    userId: z.string()
+      .optional()
   }),
   z.object({
     type: z.literal("add"),
     batchId: z.string(),
-    jobOperationIds: z.array(z.string()).min(1),
-    companyId: z.string(),
-    userId: z.string()
+    jobOperationIds: z.array(z.string()).min(1)
   }),
   z.object({
     type: z.literal("remove"),
     batchId: z.string(),
-    jobOperationIds: z.array(z.string()).min(1),
-    companyId: z.string(),
-    userId: z.string()
+    jobOperationIds: z.array(z.string()).min(1)
   }),
   z.object({
     type: z.literal("update"),
     batchId: z.string(),
-    workCenterId: z.string().nullable().optional(),
-    companyId: z.string(),
-    userId: z.string()
+    workCenterId: z.string().nullable().optional()
   }),
   z.object({
     type: z.literal("release"),
-    batchId: z.string(),
-    companyId: z.string(),
-    userId: z.string()
+    batchId: z.string()
   }),
   z.object({
     type: z.literal("unrelease"),
-    batchId: z.string(),
-    companyId: z.string(),
-    userId: z.string()
+    batchId: z.string()
   }),
   z.object({
     type: z.literal("dissolve"),
-    batchId: z.string(),
-    companyId: z.string(),
-    userId: z.string()
+    batchId: z.string()
   }),
   z.object({
     type: z.literal("complete"),
@@ -101,7 +88,10 @@ const payloadValidator = z.discriminatedUnion("type", [
           // Decimal, matching the MES validator: productionQuantity.quantity is
           // NUMERIC. An `.int()` here rejected every fractional completion the
           // (already decimal) MES validator let through. Rounded at parse.
-          quantity: z.number().min(0).transform((v) => round(v)),
+          quantity: z
+            .number()
+            .min(0)
+            .transform((v) => round(v)),
           scrapQuantity: z
             .number()
             .min(0)
@@ -116,9 +106,7 @@ const payloadValidator = z.discriminatedUnion("type", [
           excluded: z.boolean().optional()
         })
       )
-      .min(1),
-    companyId: z.string(),
-    userId: z.string()
+      .min(1)
   })
 ]);
 
@@ -126,7 +114,7 @@ const payloadValidator = z.discriminatedUnion("type", [
 // entity a member's output lot is finalized from; its readableId is the lot
 // number).
 async function loadMemberOutputs(
-  trx: Transaction<DB>,
+  trx: Transaction<KyselyDatabase>,
   companyId: string,
   jobMakeMethodIds: string[]
 ) {
@@ -139,7 +127,11 @@ async function loadMemberOutputs(
     .execute();
   const entities = await trx
     .selectFrom("trackedEntity")
-    .select(["id", "createdAt", sql<string>`"attributes"->>'Job Make Method'`.as("jobMakeMethodId")])
+    .select([
+      "id",
+      "createdAt",
+      sql<string>`"attributes"->>'Job Make Method'`.as("jobMakeMethodId")
+    ])
     .where(sql`"attributes"->>'Job Make Method'`, "in", jobMakeMethodIds)
     .where("companyId", "=", companyId)
     .where("status", "not in", ["Consumed", "Scrapped", "Rejected"])
@@ -167,11 +159,16 @@ async function loadMemberOutputs(
 // different items can never merge, and an untracked item has no lot at all.
 function assertMergeable(
   operations: Array<{ jobMakeMethodId: string | null }>,
-  outputs: Map<string, { itemId: string | null; requiresBatchTracking: boolean }>
+  outputs: Map<
+    string,
+    { itemId: string | null; requiresBatchTracking: boolean }
+  >
 ) {
   const items = new Set<string>();
   for (const op of operations) {
-    const out = op.jobMakeMethodId ? outputs.get(op.jobMakeMethodId) : undefined;
+    const out = op.jobMakeMethodId
+      ? outputs.get(op.jobMakeMethodId)
+      : undefined;
     if (!out?.requiresBatchTracking || !out.itemId) {
       throw new Error(
         "Only operations that produce a batch-tracked item can combine into one lot"
@@ -185,7 +182,7 @@ function assertMergeable(
 }
 
 async function assertEligible(
-  trx: Transaction<DB>,
+  trx: Transaction<KyselyDatabase>,
   companyId: string,
   jobOperationIds: string[],
   expectedProcessId?: string
@@ -199,7 +196,7 @@ async function assertEligible(
   if (operations.length !== jobOperationIds.length) {
     throw new Error("One or more operations not found");
   }
-  const processId = expectedProcessId ?? operations[0].processId;
+  const processId = expectedProcessId ?? operations[0]!.processId;
   const process = await trx
     .selectFrom("process")
     .select(["id", "batchable"])
@@ -236,12 +233,12 @@ async function assertEligible(
 }
 
 // Record ids in the payload come straight from the caller and prove nothing
-// about tenancy — requirePermissions only authorizes the CALLER for companyId.
+// about tenancy — the permission check only authorizes the CALLER for companyId.
 // Re-read the record under companyId and refuse on a miss (the same rule the
 // composite FKs enforce at the schema level; this gives the caller a named
 // error instead of a constraint violation).
 async function assertCompanyRecord(
-  trx: Transaction<DB>,
+  trx: Transaction<KyselyDatabase>,
   table: "location" | "workCenter",
   id: string,
   companyId: string,
@@ -261,7 +258,7 @@ async function assertCompanyRecord(
 // entirely when the process has no "must" dimension. Uses ids where the client
 // (BatchBuilder) uses names — mustViolations is value-agnostic, so both agree.
 async function assertMaterialCompatible(
-  trx: Transaction<DB>,
+  trx: Transaction<KyselyDatabase>,
   companyId: string,
   processId: string,
   jobOperationIds: string[]
@@ -419,7 +416,8 @@ async function assertMaterialCompatible(
 // error left the batch Completed with unissued materials or unposted GL and no
 // recovery path.
 async function completeBatch(
-  client: Awaited<ReturnType<typeof requirePermissions>>,
+  client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   args: {
     companyId: string;
     userId: string;
@@ -455,7 +453,7 @@ async function completeBatch(
   }
   const memberIds = members.map((m) => m.jobOperationId);
   const excludedIds = excluded.map((m) => m.jobOperationId);
-  const now = new Date().toISOString();
+  const now = datetime.timestamp();
 
   // The per-member sliced events whose GL is posted AFTER the transaction commits.
   // postedToGL lets a resume skip events a prior attempt already posted. Populated
@@ -487,7 +485,6 @@ async function completeBatch(
         .where("jobOperationBatchId", "=", batchId)
         .where("companyId", "=", companyId)
         .execute();
-      // deno-lint-ignore no-explicit-any
       const currentIds = new Set(currentMembers.map((o: any) => o.id));
       // An exclusion that phase 1 already applied is a stale-form resubmission
       // and passes (the op is no longer a member). Excluding an op that IS still
@@ -515,7 +512,6 @@ async function completeBatch(
         .where("companyId", "=", companyId)
         .execute();
       const sums = new Map<string, { produced: number; scrap: number }>();
-      // deno-lint-ignore no-explicit-any
       for (const r of recordedQuantities as any[]) {
         const s = sums.get(r.jobOperationId) ?? { produced: 0, scrap: 0 };
         if (r.type === "Production") s.produced += Number(r.quantity);
@@ -546,7 +542,6 @@ async function completeBatch(
         .where("companyId", "=", companyId)
         .where("endTime", "is not", null)
         .execute();
-      // deno-lint-ignore no-explicit-any
       glEvents = existing.map((e: any) => ({
         id: e.id,
         postedToGL: e.postedToGL ?? false
@@ -568,7 +563,6 @@ async function completeBatch(
     // the membership exactly; the excluded ones then detach below.
     assertBatchCompletionMembership(
       [...memberIds, ...excludedIds],
-      // deno-lint-ignore no-explicit-any
       operations.map((o: any) => o.id)
     );
 
@@ -589,11 +583,9 @@ async function completeBatch(
     }
     const excludedIdSet = new Set(excludedIds);
     const runOperations = operations.filter(
-      // deno-lint-ignore no-explicit-any
       (o: any) => !excludedIdSet.has(o.id)
     );
 
-    // deno-lint-ignore no-explicit-any
     const opById = new Map(runOperations.map((o: any) => [o.id, o]));
 
     // Auto-stop any still-running batch timer, mirroring the single-operation
@@ -605,7 +597,7 @@ async function completeBatch(
     // deliberately skips post-production-event, so there is no double GL post.)
     await trx
       .updateTable("productionEvent")
-      .set({ endTime: new Date().toISOString() })
+      .set({ endTime: datetime.timestamp() })
       .where("jobOperationBatchId", "=", batchId)
       .where("companyId", "=", companyId)
       .where("endTime", "is", null)
@@ -613,7 +605,14 @@ async function completeBatch(
 
     const recorded = await trx
       .selectFrom("productionEvent")
-      .select(["id", "type", "startTime", "endTime", "workCenterId", "employeeId"])
+      .select([
+        "id",
+        "type",
+        "startTime",
+        "endTime",
+        "workCenterId",
+        "employeeId"
+      ])
       .where("jobOperationBatchId", "=", batchId)
       .where("companyId", "=", companyId)
       .where("endTime", "is not", null)
@@ -621,9 +620,7 @@ async function completeBatch(
 
     const plan = buildBatchCompletionPlan(
       recorded
-        // deno-lint-ignore no-explicit-any
         .filter((e: any) => e.endTime)
-        // deno-lint-ignore no-explicit-any
         .map((e: any) => ({
           id: e.id,
           type: e.type,
@@ -634,7 +631,9 @@ async function completeBatch(
         })),
       members.map((m) => ({
         jobOperationId: m.jobOperationId,
-        operationQuantity: Number(opById.get(m.jobOperationId)?.operationQuantity ?? 0),
+        operationQuantity: Number(
+          opById.get(m.jobOperationId)?.operationQuantity ?? 0
+        ),
         quantity: m.quantity,
         scrapQuantity: m.scrapQuantity
       }))
@@ -738,12 +737,13 @@ async function completeBatch(
     .in("id", memberIds)
     .eq("companyId", companyId);
   if (memberOpRows.error) {
-    throw new Error(`Failed to load member operations: ${memberOpRows.error.message}`);
+    throw new Error(
+      `Failed to load member operations: ${memberOpRows.error.message}`
+    );
   }
   const makeMethodIds = [
     ...new Set(
       (memberOpRows.data ?? [])
-        // deno-lint-ignore no-explicit-any
         .map((o: any) => o.jobMakeMethodId)
         .filter(Boolean) as string[]
     )
@@ -756,14 +756,14 @@ async function completeBatch(
         .eq("companyId", companyId)
     : { data: [], error: null };
   if (makeMethods.error) {
-    throw new Error(`Failed to load make methods: ${makeMethods.error.message}`);
+    throw new Error(
+      `Failed to load make methods: ${makeMethods.error.message}`
+    );
   }
   const requiresBatchByMakeMethod = new Map(
-    // deno-lint-ignore no-explicit-any
     (makeMethods.data ?? []).map((m: any) => [m.id, m.requiresBatchTracking])
   );
   const makeMethodByOp = new Map(
-    // deno-lint-ignore no-explicit-any
     (memberOpRows.data ?? []).map((o: any) => [o.id, o.jobMakeMethodId])
   );
 
@@ -816,9 +816,12 @@ async function completeBatch(
   // propagate errors so a GL failure keeps the batch resumable.
   for (const e of glEvents) {
     if (e.postedToGL) continue;
-    const posted = await client.functions.invoke("post-production-event", {
-      body: { productionEventId: e.id, userId, companyId }
-    });
+    // System, as the service-role invoke it replaces: the batch completion
+    // itself was authorized.
+    const posted = await postProductionEvent(
+      { db, companyId, userId, system: true },
+      { productionEventId: e.id }
+    );
     if (posted.error) {
       throw new Error(
         `Failed to post GL for production event ${e.id}: ${posted.error.message}`
@@ -848,18 +851,16 @@ async function completeBatch(
   };
 }
 
-serve(async (req: Request) => {
-  if (req.method === "OPTIONS") {
-    return new Response("ok", { headers: corsHeaders });
-  }
-
-  try {
-    const payload = payloadValidator.parse(await req.json());
-    const { companyId, userId } = payload;
-
-    const client = await requirePermissions(req, companyId, userId, {
-      update: "production"
-    });
+/** Job-operation batches: create, change membership, release, dissolve and complete. */
+export function batchOperations(
+  ctx: OperationContext,
+  input: z.infer<typeof batchOperationsInput>
+) {
+  return runOperation("batch-operations", async () => {
+    const payload = batchOperationsInput.parse(input);
+    const { db, companyId, userId } = ctx;
+    await assertOperationPermissions(ctx, { update: "production" });
+    const client = await serviceRoleClient();
 
     let result: Record<string, unknown> = {};
 
@@ -897,10 +898,7 @@ serve(async (req: Request) => {
           // drag) — but when every member already sits on the same one, that IS
           // the batch's work center; adopt it so the header isn't blank.
           const memberWorkCenters = new Set(
-            operations
-              // deno-lint-ignore no-explicit-any
-              .map((o: any) => o.workCenterId)
-              .filter(Boolean)
+            operations.map((o: any) => o.workCenterId).filter(Boolean)
           );
           const workCenterId =
             payload.workCenterId ??
@@ -914,7 +912,6 @@ serve(async (req: Request) => {
           const outputs = await loadMemberOutputs(
             trx,
             companyId,
-            // deno-lint-ignore no-explicit-any
             operations.map((o: any) => o.jobMakeMethodId).filter(Boolean)
           );
           const mergeOutput = payload.mergeOutput === true;
@@ -929,11 +926,12 @@ serve(async (req: Request) => {
           // merge option exists to remove.
           const lotNumbers = mergeOutput ? [] : (payload.lotNumbers ?? []);
           const seen = new Set<string>();
-          const lotWrites: Array<{ trackedEntityId: string; lotNumber: string }> =
-            [];
+          const lotWrites: Array<{
+            trackedEntityId: string;
+            lotNumber: string;
+          }> = [];
           for (const entry of lotNumbers) {
             const op = operations.find(
-              // deno-lint-ignore no-explicit-any
               (o: any) => o.id === entry.jobOperationId
             );
             const out = op?.jobMakeMethodId
@@ -992,7 +990,8 @@ serve(async (req: Request) => {
             jobOperationBatchId: batch.id,
             updatedBy: userId
           };
-          if (payload.workCenterId) memberUpdate.workCenterId = payload.workCenterId;
+          if (payload.workCenterId)
+            memberUpdate.workCenterId = payload.workCenterId;
           // Claim only ops still unbatched (IS NULL) and in this company: two
           // concurrent creates sharing an op both pass assertEligible's read, so
           // the IS NULL predicate + row-count assert is what actually serializes
@@ -1039,7 +1038,9 @@ serve(async (req: Request) => {
             .limit(1)
             .execute();
           if (batchEvents.length > 0) {
-            throw new Error("The batch has already started — complete it instead");
+            throw new Error(
+              "The batch has already started — complete it instead"
+            );
           }
 
           const { operations: incoming } = await assertEligible(
@@ -1065,13 +1066,11 @@ serve(async (req: Request) => {
             const outputs = await loadMemberOutputs(
               trx,
               companyId,
-              // deno-lint-ignore no-explicit-any
               all.map((o: any) => o.jobMakeMethodId).filter(Boolean)
             );
             assertMergeable(all, outputs);
           }
           await assertMaterialCompatible(trx, companyId, batch.processId, [
-            // deno-lint-ignore no-explicit-any
             ...existingMembers.map((m: any) => m.id as string),
             ...payload.jobOperationIds
           ]);
@@ -1080,7 +1079,8 @@ serve(async (req: Request) => {
             jobOperationBatchId: batch.id,
             updatedBy: userId
           };
-          if (batch.workCenterId) memberUpdate.workCenterId = batch.workCenterId;
+          if (batch.workCenterId)
+            memberUpdate.workCenterId = batch.workCenterId;
           const claimed = await trx
             .updateTable("jobOperation")
             .set(memberUpdate)
@@ -1196,7 +1196,7 @@ serve(async (req: Request) => {
             .set({
               workCenterId: nextWorkCenterId,
               updatedBy: userId,
-              updatedAt: new Date().toISOString()
+              updatedAt: datetime.timestamp()
             })
             .where("id", "=", payload.batchId)
             .where("companyId", "=", companyId)
@@ -1253,7 +1253,7 @@ serve(async (req: Request) => {
             .set({
               status: "Active",
               updatedBy: userId,
-              updatedAt: new Date().toISOString()
+              updatedAt: datetime.timestamp()
             })
             .where("id", "=", payload.batchId)
             .where("companyId", "=", companyId)
@@ -1302,7 +1302,7 @@ serve(async (req: Request) => {
             .set({
               status: "Planned",
               updatedBy: userId,
-              updatedAt: new Date().toISOString()
+              updatedAt: datetime.timestamp()
             })
             .where("id", "=", payload.batchId)
             .where("companyId", "=", companyId)
@@ -1349,7 +1349,7 @@ serve(async (req: Request) => {
       }
 
       case "complete": {
-        result = await completeBatch(client, {
+        result = await completeBatch(client, db, {
           companyId,
           userId,
           batchId: payload.batchId,
@@ -1367,18 +1367,6 @@ serve(async (req: Request) => {
       }
     }
 
-    return new Response(JSON.stringify({ success: true, ...result }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-      status: 200
-    });
-  } catch (err) {
-    console.error("Error in batch-operations:", err);
-    return new Response(
-      JSON.stringify({ success: false, message: (err as Error).message }),
-      {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 500
-      }
-    );
-  }
-});
+    return { success: true, ...result };
+  });
+}

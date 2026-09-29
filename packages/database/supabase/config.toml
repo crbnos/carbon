@@ -200,12 +200,6 @@ enabled = true
 verify_jwt = true
 entrypoint = "./functions/post-reimbursement/index.ts"
 
-[functions.batch-operations]
-enabled = true
-verify_jwt = true
-entrypoint = "./functions/batch-operations/index.ts"
-
-
 [functions.event-wake]
 enabled = true
 verify_jwt = true
