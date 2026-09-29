@@ -115,12 +115,11 @@ const EmployeePermissionsForm = ({
             method="post"
             action={path.to.employeeAccount(initialValues.id)}
             defaultValues={initialValues}
-            className="flex flex-col h-full"
           >
             <ModalHeader>
               <ModalTitle>{name}</ModalTitle>
             </ModalHeader>
-            <ModalBody className="max-h-[70dvh] overflow-y-auto">
+            <ModalBody>
               <VStack spacing={4}>
                 <Select
                   name="employeeType"

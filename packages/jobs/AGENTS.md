@@ -8,8 +8,8 @@ Server-only Inngest jobs for event draining, integrations, notifications, workfl
 - MUST dispatch from app code with `trigger()`/`batchTrigger()` from `@carbon/jobs`; event names and payloads come from `Events` in `@carbon/lib/events`.
 - MUST keep event handlers idempotent (`event.data.msgId`) and preserve their per-record/company concurrency keys.
 - MUST use `getJobDatabaseClient()` from `src/db.ts` in runtime jobs; the import-light backup compatibility CLI is the deliberate standalone exception.
-- MUST use `patchRampCursor()` for `cursors.*`; never read and replace the whole Ramp metadata object.
-- MUST keep `ramp-sync.ts` as the durable coordinator only. Family logic belongs in `ramp-sync-{card,bill,reimbursement-family,repayment,outbound}.ts`; shared tenant/currency helpers belong in `ramp-sync-shared.ts`; transactional staging belongs in `ramp-sync-{card-stage,bill-stage,payment,reimbursement}.ts`.
+- MUST use `patchRampCursor()` for `cursors.*`; never read and replace the whole Ramp metadata object. Only `repaymentsRepaidAt` remains — Ramp's outbound push is ledger-driven, not cursor-driven.
+- MUST keep `ramp-sync.ts` as the durable coordinator only. Family logic belongs in `ramp-sync-{card,bill,reimbursement-family,repayment}.ts` (the outbound PO/bill WIRE left this package for `@carbon/ee/ramp/entities` syncers on the event engine; the outbound candidate walk behind the `ramp-outbound-reconcile` step is `ramp-sync-outbound.ts`); shared tenant/currency helpers belong in `ramp-sync-shared.ts`; transactional staging belongs in `ramp-sync-{card-stage,bill-stage,payment,reimbursement}.ts`.
 - MUST keep workflow business reads/writes on the owner-scoped client from `getOwnerClient()`. The privileged DB is limited to the workflow run/step ledger.
 
 ## Ask First

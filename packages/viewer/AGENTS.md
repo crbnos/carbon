@@ -6,7 +6,8 @@
 
 - **graph.json** (`AssemblyGraph`) — assembly tree written by the geometry service `/convert`; leaf nodes carry a stable `nodeId` (also baked into GLB node extras as `userData.nodeId`). All joins between steps, plans, and scene objects are by `nodeId`.
 - **plan.json** (`AssemblyPlan`) — per-component insertion `Motion`, sequence, subassembly `groups`, and body-level `contacts`, written by the geometry service `/plan`. `CURRENT_PLAN_VERSION` (currently `3`) — stored plans below it are STALE and must be treated as absent so the pipeline re-plans.
-- **Step** (`AssemblyStep`) — one build instruction: `componentNodeIds`, a `Motion`, optional `camera`, `fastener`, and subassembly `phase`. Built from a plan by `buildAssemblyStepGroups`.
+- **Step** (`AssemblyStep`) — one build instruction: `componentNodeIds`, a `Motion`, optional `camera`, `fastener`, per-step `hiddenComponentNodeIds`, and `joinStepId`. Built from a plan by `buildAssemblyStepGroups`.
+- **Sub-assembly staging** (`staging.ts`) — a step with `joinStepId` (DB `parentStepId`) is built OFF TO THE SIDE: its parts sit at a computed staging spot (beside the model along +X or +Z — never above/below, Y is up — whichever is most side-on to the saved cameras of the steps involved, +X by default; one lane per group) until the later JOIN step, which glides the whole group in (`STAGING_GLIDE_SECONDS`, `buildStepClip`'s `glide`) and then plays its own insertion. The player's clip effect is the ONLY place that moves parked nodes (`parkNodes`), so park/unpark stay paired with the clip's save/restore. Picking and path editing always show parts seated. Invalid links (backwards, from the base step, nested chains, unknown ids) play as built in place.
 - **Motion** — discriminated union `linear | L | helix | path | none`. Insertion motion; the player derives removal (reverse) and start poses. `flagged`/`blockedBy` steps use `none` and fade in (no collision-free path exists — a synthesized path would clip through geometry).
 - **Artifact tiers** — a model renders from best-available: LOD GLB → optimised GLB → lossless GLB → raw WASM (in-browser occt-import-js) fallback.
 
@@ -18,7 +19,7 @@
 - MUST keep this package free of `@carbon/react` router/i18n peers in the pure/motion/plan modules — `cn` is re-implemented locally in `utils.ts` for that reason. (`ModelPreview.tsx` is the one component that does import `@carbon/react`.)
 - MUST prefer server artifacts over the raw tier — the raw WASM fallback renders only when there is no server GLB.
 - MUST keep `visualForComponent` and `occluderWeight` (`visibility.ts`) in agreement: anything the first renders `"hidden"` the second must score `null` (not an occluder). They are two views of the same timeline — what the operator sees, and what the camera's AABB view-direction scoring treats as in the way. When they drift, the camera frames around geometry it is not drawing. `visibility.test.ts` asserts the invariant across every mode combination; a component **no step installs** counts as future in BOTH (it is never "already there"), which is exactly where the two previously disagreed.
-- MUST expose visibility to the user as the named views in `ASSEMBLY_VIEWS` / `VIEW_MODES` (`visibility.ts`), not as the two raw axes. The axes are the renderer's model; nine combinations, most of them meaningless, is not a control anyone can read — an earlier two-icon-triplet toolbar was rejected for exactly that. A new view means a new entry in that table (and `VIEW_LABELS` in `AssemblyPlayer.tsx`), never a new axis or a fourth rendering mode. The table must always contain a view that renders the active step ALONE (`isolate` today: both sides hidden) — "how do I just see the part I am fitting?" is the question the viewer exists to answer, and a three-view table that ghosted rather than hid was shipped once and rejected for having no answer to it. `viewForModes` seats the initial view from the still-axis-shaped `default*Mode` props, falling back to `"build"` for an unnamed pair.
+- MUST expose visibility to the user as the named views in `ASSEMBLY_VIEWS` / `VIEW_MODES` (`visibility.ts`), not as the two raw axes. The axes are the renderer's model; nine combinations, most of them meaningless, is not a control anyone can read — an earlier two-icon-triplet toolbar was rejected for exactly that. A new view means a new entry in that table (and `VIEW_LABELS` in `AssemblyPlayer.tsx`), never a new axis or a fourth rendering mode. The table is Build / Focus / Full: an `isolate` view (both sides hidden) was dropped — Focus shows the step in place, and the author's per-step hidden parts (`hiddenComponentNodeIds`) remove the clutter they choose. `viewForModes` seats the initial view from the still-axis-shaped `default*Mode` props, falling back to `"build"` for an unnamed pair.
 
 ## Ask First
 
@@ -34,7 +35,7 @@
 ## Validation Commands
 
 ```bash
-pnpm --filter @carbon/viewer test        # vitest — camera, fallback, graph, motion, plan, visibility
+pnpm --filter @carbon/viewer test        # vitest — camera, fallback, graph, motion, plan, staging, visibility
 pnpm --filter @carbon/viewer typecheck   # tsgo --noEmit
 ```
 
@@ -49,7 +50,7 @@ pnpm --filter @carbon/viewer typecheck   # tsgo --noEmit
 | `./optimize-progress` | `OptimizeProgress` — optimise-status chip |
 | `./use-optimized-model` | `useOptimizedModel` — TanStack Query polling of the model optimise lifecycle (shared by ERP `CadModel` + MES model tab) |
 
-Key non-exported building blocks: `useAssembly` (loads meshopt GLB + graph.json, indexes nodes by nodeId), `motion.ts` (`buildStepClip`, `motionToKeyframes`, `naturalizeMotion`), `fallback.ts` (`synthesizeFallbackMotion` — AABB escape for legacy `none` motions), `camera.ts` (`fitFraming` — live frustum fit around the planner's baked view direction), `raw/` (WASM fallback tier: `loadRawModel` via occt-import-js).
+Key non-exported building blocks: `useAssembly` (loads meshopt GLB + graph.json, indexes nodes by nodeId), `motion.ts` (`buildStepClip`, `motionToKeyframes`, `naturalizeMotion`), `fallback.ts` (`synthesizeFallbackMotion` — AABB escape for legacy `none` motions), `staging.ts` (`buildStaging` / `parkedOffsetsAt` / `stagedGroupNodeIds` / `joinTargets` — sub-assemblies built aside; `joinTargets` is THE link rule the ERP service, the ERP select and playback share, and it and `stagedGroupNodeIds` are also on `./steps`), `camera.ts` (`fitFraming` — live frustum fit around the planner's baked view direction), `raw/` (WASM fallback tier: `loadRawModel` via occt-import-js).
 
 ## Cross-References
 

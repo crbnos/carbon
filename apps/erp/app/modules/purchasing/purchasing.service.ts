@@ -1466,8 +1466,9 @@ export async function updateSupplierTax(
 ) {
   return client
     .from("supplierTax")
-    .update(sanitize(supplierTax))
-    .eq("supplierId", supplierTax.supplierId);
+    .update(sanitize({ ...supplierTax, updatedAt: new Date().toISOString() }))
+    .eq("supplierId", supplierTax.supplierId)
+    .eq("companyId", supplierTax.companyId);
 }
 
 export async function insertPurchaseOrder(

@@ -8,7 +8,12 @@ import {
   importQuotes,
   isQuoteImportTable
 } from "~/modules/sales/sales.import.server";
-import { importCsv, importPermissions, importSchemas } from "~/modules/shared";
+import {
+  importCsv,
+  importPermissions,
+  importRequiresCreate,
+  importSchemas
+} from "~/modules/shared";
 import { getDatabaseClient } from "~/services/database.server";
 
 export async function action({ request, params }: ActionFunctionArgs) {
@@ -25,7 +30,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const { companyId, companyGroupId, userId } = await requirePermissions(
     request,
     {
-      update: importPermissions[table]
+      update: importPermissions[table],
+      ...(importRequiresCreate.has(table)
+        ? { create: importPermissions[table] }
+        : {})
     }
   );
 

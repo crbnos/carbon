@@ -3234,7 +3234,7 @@ export async function updateCustomerTax(
 ) {
   return client
     .from("customerTax")
-    .update(sanitize(customerTax))
+    .update(sanitize({ ...customerTax, updatedAt: new Date().toISOString() }))
     .eq("customerId", customerTax.customerId);
 }
 

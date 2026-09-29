@@ -4,11 +4,14 @@ import {
   toPostingDateString
 } from "../../../core/posting";
 import {
+  assertNoAssetDisposalComponents,
   buildSalesDocumentComponents,
+  hasRevenueComponent,
   type SalesDocumentComponents
 } from "../../../core/sales-document-components";
 import {
   loadSalesInvoices,
+  requirePostedSalesAccountId,
   requirePostedShippingAccountId
 } from "../../../core/sales-invoice-source";
 import type { Accounting, ShouldSyncContext } from "../../../core/types";
@@ -65,28 +68,32 @@ const SYNCABLE_STATUSES: Accounting.SalesInvoice["status"][] = [
 
 /**
  * Map a Carbon sales invoice to the Rillet revenue recognition create payload. Pure —
- * exported for tests. `itemRemoteIds` maps Carbon itemId → Rillet product
- * id (resolved by ensureDependencySynced before mapping).
+ * exported for tests.
  *
- * Throws the structured UNMAPPED_ACCOUNTS Warning when any line has no
- * item (REVENUE_RECOGNITION_ONLY items require product_id), and a plain Error when a
- * line's item was not resolved to a product (a dependency-sync bug, not
- * user-fixable).
+ * Every line references one of TWO synthetic products — `salesProductRemoteId`
+ * for merchandise, `shippingProductRemoteId` for shipping — each standing for
+ * the posted revenue ACCOUNT rather than a Carbon item. Rillet requires
+ * `product_id` on every line, but Carbon posts all merchandise revenue to a
+ * single account, so per-item products bought no GL fidelity and mirrored the
+ * whole parts catalog into Rillet.
+ *
+ * Throws the structured UNMAPPED_ACCOUNTS Warning when the product for a line's
+ * kind was not resolved.
  */
 function preflightRilletComponents(document: SalesDocumentComponents): void {
+  // Only QUANTITY is checked. A missing `itemId` used to fail here because each
+  // merchandise line resolved its own Rillet product; lines now reference the
+  // synthetic per-revenue-account product, so an item-less line (a manual
+  // charge, a service line) is ordinary and must not be refused.
   const unsupported = document.components.filter(
-    (line) =>
-      (line.kind !== "LineShipping" &&
-        line.kind !== "HeaderShipping" &&
-        !line.itemId) ||
-      line.quantity < 0.00001
+    (line) => line.quantity < 0.00001
   );
   if (unsupported.length > 0)
     throw new JournalEntrySyncError({
       errorCode: "UNMAPPED_ACCOUNTS",
       warning: true,
       message:
-        "Cannot sync invoice: Rillet revenue recognition lines require a product and positive quantity; some components have no item or unsupported quantities",
+        "Cannot sync invoice: Rillet revenue recognition lines require a positive quantity; some components have unsupported quantities",
       metadata: {
         invoiceId: document.invoiceId,
         componentIds: unsupported.map((line) => line.id)
@@ -100,7 +107,7 @@ export function mapSalesInvoiceToRilletInvoice(args: {
   shippingProductRemoteId: string | null;
   shippingAccountCode: string | null;
   customerRemoteId: string;
-  itemRemoteIds: ReadonlyMap<string, string>;
+  salesProductRemoteId: string | null;
   subsidiaryId: string | null;
   companyId: string;
   /** Link back to the Carbon invoice — REQUIRED by Rillet on
@@ -119,7 +126,7 @@ export function mapSalesInvoiceToRilletInvoice(args: {
       component.kind === "LineShipping" || component.kind === "HeaderShipping";
     const productId = shipping
       ? args.shippingProductRemoteId
-      : args.itemRemoteIds.get(component.itemId!);
+      : args.salesProductRemoteId;
     if (!productId || (shipping && !args.shippingAccountCode))
       throw new JournalEntrySyncError({
         errorCode: "UNMAPPED_ACCOUNTS",
@@ -329,28 +336,35 @@ export class RilletSalesInvoiceSyncer extends RilletTransactionSyncer<
     const shippingAccount = hasShipping
       ? await this.getShippingAccount(local)
       : null;
+    // A fixed-asset disposal has no sales-revenue posting to replay, so it is
+    // refused rather than bound to the sales product and reported as revenue.
+    // Both refusals are PURE and run before any dependency write: pushing the
+    // customer first left a counterparty in the customer's Rillet books for an
+    // invoice Rillet would never receive. Xero already ordered it this way; QBO
+    // had the same defect and was fixed alongside this.
+    assertNoAssetDisposalComponents(document);
+    const salesRevenueAccountId = hasRevenueComponent(document.components)
+      ? requirePostedSalesAccountId(local)
+      : null;
+
     const customerRemoteId = await this.ensureDependencySynced(
       "customer",
       local.customerId
     );
-    const itemRemoteIds = new Map<string, string>();
-    const itemIds = [
-      ...new Set(
-        document.components
-          .filter(
-            (line) =>
-              line.kind !== "LineShipping" &&
-              line.kind !== "HeaderShipping" &&
-              line.itemId
-          )
-          .map((line) => line.itemId!)
-      )
-    ];
-    for (const itemId of itemIds)
-      itemRemoteIds.set(
-        itemId,
-        await this.ensureDependencySynced("item", itemId)
-      );
+    // Merchandise lines reference ONE synthetic product standing for the
+    // invoice's posted revenue account — not the Carbon item. Rillet requires
+    // `product_id` on every line, but Carbon has no per-item revenue account
+    // (`post-sales-invoice` credits `accountDefault.salesAccount` for all
+    // merchandise), so the item bought no GL fidelity while dragging the entire
+    // parts catalog into Rillet Products. The account is replayed from the
+    // POSTED journal, so a historical invoice keeps its own account.
+    const salesProductRemoteId = salesRevenueAccountId
+      ? await (await this.getShippingItemSyncer()).ensureSalesProduct({
+          revenueAccountId: salesRevenueAccountId,
+          baseCurrencyCode: local.baseCurrencyCode,
+          baseCurrencyDecimals: local.baseCurrencyDecimalPlaces
+        })
+      : null;
     const shippingProductRemoteId = shippingAccount
       ? await (await this.getShippingItemSyncer()).ensureShippingProduct({
           shippingAccountId: shippingAccount.id,
@@ -368,9 +382,9 @@ export class RilletSalesInvoiceSyncer extends RilletTransactionSyncer<
       invoice: local,
       document,
       shippingProductRemoteId,
+      salesProductRemoteId,
       shippingAccountCode: shippingAccount?.code ?? null,
       customerRemoteId,
-      itemRemoteIds,
       subsidiaryId: this.rilletProvider.subsidiaryId,
       companyId: this.companyId,
       documentUrl: `${getAppUrl()}/x/sales-invoice/${local.id}`

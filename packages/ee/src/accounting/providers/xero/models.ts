@@ -197,6 +197,79 @@ export namespace Xero {
   export type InvoiceLineItem = z.infer<typeof InvoiceLineItemSchema>;
   export type InvoiceContact = z.infer<typeof InvoiceContactSchema>;
 
+  // Credit note schemas for the Xero Accounting API /CreditNotes endpoint.
+  // Type: ACCRECCREDIT = a credit issued TO a customer (reduces AR)
+  // Type: ACCPAYCREDIT = a credit received FROM a supplier (reduces AP)
+  //
+  // Three Xero rules this shape encodes:
+  //  1. A credit note must be AUTHORISED before Xero will allocate it, and Xero
+  //     forbids create-and-allocate in ONE request — allocation is always the
+  //     separate PUT /CreditNotes/{id}/Allocations round-trip.
+  //  2. ACCPAYCREDIT has NO `Reference` field (only ACCRECCREDIT does), so the
+  //     Carbon document number travels in `CreditNoteNumber` for BOTH types.
+  //  3. `Contact` must carry `ContactID` ONLY — sending other contact fields
+  //     mutates the contact record and deletes its ContactPersons.
+  //
+  // The line shape is identical to an invoice line (Xero shares it), so the
+  // schema is aliased rather than duplicated.
+  export const CreditNoteLineItemSchema = InvoiceLineItemSchema;
+
+  export const CreditNoteAllocationInvoiceSchema = z
+    .object({
+      InvoiceID: z.string(),
+      InvoiceNumber: z.string().optional()
+    })
+    .passthrough();
+
+  /**
+   * One allocation of a credit note against one invoice. `Date` is documented
+   * read-only but the OpenAPI spec marks it required on write, so it is sent.
+   * Lenient (passthrough, optional ids) — Xero does not guarantee AllocationID
+   * on every response shape and the caller has a deterministic fallback.
+   */
+  export const CreditNoteAllocationSchema = z
+    .object({
+      AllocationID: z.string().optional(),
+      Amount: z.number().optional(),
+      Date: z.string().optional(),
+      Invoice: CreditNoteAllocationInvoiceSchema.optional()
+    })
+    .passthrough();
+
+  export const CreditNoteSchema = z.object({
+    CreditNoteID: z.string().uuid(),
+    Type: z.enum(["ACCPAYCREDIT", "ACCRECCREDIT"]),
+    /** Carries the Carbon memo document number (ACCPAYCREDIT has no Reference). */
+    CreditNoteNumber: z.string().optional(),
+    /** ACCRECCREDIT only — Xero rejects it on an ACCPAYCREDIT. */
+    Reference: z.string().optional(),
+    Contact: InvoiceContactSchema,
+    Date: z.string().optional(), // YYYY-MM-DD
+    Status: z.enum([
+      "DRAFT",
+      "SUBMITTED",
+      "AUTHORISED",
+      "PAID",
+      "VOIDED",
+      "DELETED"
+    ]),
+    LineAmountTypes: z.enum(["Exclusive", "Inclusive", "NoTax"]).optional(),
+    LineItems: z.array(CreditNoteLineItemSchema),
+    SubTotal: z.number().optional(),
+    TotalTax: z.number().optional(),
+    Total: z.number().optional(),
+    /** Unallocated balance — what is still available to allocate. */
+    RemainingCredit: z.number().optional(),
+    Allocations: z.array(CreditNoteAllocationSchema).optional(),
+    CurrencyCode: z.string().optional(),
+    CurrencyRate: z.number().optional(),
+    UpdatedDateUTC: z.string()
+  });
+
+  export type CreditNote = z.infer<typeof CreditNoteSchema>;
+  export type CreditNoteLineItem = z.infer<typeof CreditNoteLineItemSchema>;
+  export type CreditNoteAllocation = z.infer<typeof CreditNoteAllocationSchema>;
+
   // Payment schemas for the Xero Accounting API /Payments endpoint.
   // A Payment settles exactly ONE invoice — `Invoice.Type` (ACCPAY = bill /
   // AP, ACCREC = sales invoice / AR) is the family discriminator; the settled

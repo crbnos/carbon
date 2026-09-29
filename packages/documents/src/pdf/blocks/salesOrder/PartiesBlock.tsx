@@ -58,11 +58,11 @@ export function PartiesBlock({ data }: { data: SalesOrderData }) {
               postalCode={customerPostalCode}
               country={customerCountryName}
             />
-            {customerTaxId && !isEoriCountry(customerCountryName) && (
+            {customerTaxId && !isEoriCountry(customerCountryName) ? (
               <Text>Tax ID: {customerTaxId}</Text>
-            )}
-            {customerVatNumber && <Text>VAT: {customerVatNumber}</Text>}
-            {customerEori && <Text>EORI: {customerEori}</Text>}
+            ) : null}
+            {customerVatNumber ? <Text>VAT: {customerVatNumber}</Text> : null}
+            {customerEori ? <Text>EORI: {customerEori}</Text> : null}
           </View>
         </View>
 
@@ -79,15 +79,15 @@ export function PartiesBlock({ data }: { data: SalesOrderData }) {
               Order Details
             </Text>
             <View style={tw("text-[9px] text-gray-800")}>
-              {salesOrder?.orderDate && (
+              {salesOrder?.orderDate ? (
                 <Text>
                   Date: {formatDate(salesOrder.orderDate, undefined, locale)}
                 </Text>
-              )}
-              {salesOrder?.customerReference && (
+              ) : null}
+              {salesOrder?.customerReference ? (
                 <Text>Customer Ref: {salesOrder.customerReference}</Text>
-              )}
-              {salesOrder?.receiptRequestedDate && (
+              ) : null}
+              {salesOrder?.receiptRequestedDate ? (
                 <Text>
                   Requested:{" "}
                   {formatDate(
@@ -96,8 +96,8 @@ export function PartiesBlock({ data }: { data: SalesOrderData }) {
                     locale
                   )}
                 </Text>
-              )}
-              {salesOrder?.receiptPromisedDate && (
+              ) : null}
+              {salesOrder?.receiptPromisedDate ? (
                 <Text>
                   Promised:{" "}
                   {formatDate(
@@ -106,24 +106,28 @@ export function PartiesBlock({ data }: { data: SalesOrderData }) {
                     locale
                   )}
                 </Text>
-              )}
-              {paymentTerm && <Text>Payment Terms: {paymentTerm.name}</Text>}
-              {shippingMethod && <Text>Shipping: {shippingMethod.name}</Text>}
-              {salesOrder?.shippingTermName && (
+              ) : null}
+              {paymentTerm ? (
+                <Text>Payment Terms: {paymentTerm.name}</Text>
+              ) : null}
+              {shippingMethod ? (
+                <Text>Shipping: {shippingMethod.name}</Text>
+              ) : null}
+              {salesOrder?.shippingTermName ? (
                 <Text>Shipping Terms: {salesOrder.shippingTermName}</Text>
-              )}
-              {salesOrder?.incoterm && (
+              ) : null}
+              {salesOrder?.incoterm ? (
                 <Text>
                   Incoterm: {salesOrder.incoterm}
                   {salesOrder.incotermLocation
                     ? ` — ${salesOrder.incotermLocation}`
                     : ""}
                 </Text>
-              )}
+              ) : null}
             </View>
           </View>
 
-          {paymentCustomerName && (
+          {paymentCustomerName ? (
             <View style={tw("p-3")}>
               <Text
                 style={tw("text-[9px] font-bold text-gray-600 mb-1 uppercase")}
@@ -142,7 +146,7 @@ export function PartiesBlock({ data }: { data: SalesOrderData }) {
                 />
               </View>
             </View>
-          )}
+          ) : null}
         </View>
       </View>
     </View>

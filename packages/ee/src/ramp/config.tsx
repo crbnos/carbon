@@ -5,7 +5,14 @@ import type { ComponentProps } from "react";
 import { z } from "zod";
 import { defineIntegration } from "../fns";
 import { RAMP_AUTHORIZE_URL, RAMP_TOKEN_URL } from "./environment";
-import { RAMP_OAUTH_SCOPES } from "./scopes";
+// Client-bundle safe: `modes` value-imports only the pure `spend/types` leaf;
+// everything else it touches is type-only and erased.
+import {
+  rampOwnsCodingSurface,
+  resolveRampMode,
+  resolveRampModeProfile
+} from "./lib/modes";
+import { RAMP_OAUTH_SCOPES, RAMP_PUSH_ONLY_OAUTH_SCOPES } from "./scopes";
 
 /**
  * OAuth "Connect to Ramp" authorization-code flow — the ONLY way to connect
@@ -26,9 +33,20 @@ import { RAMP_OAUTH_SCOPES } from "./scopes";
  */
 const RampSettingsSchema = z.object({
   entityId: z.string().optional(),
-  // Required non-empty (the card liability + statement bank accounts back every
-  // card journal); populated by the loader's dynamicOptions.
-  cardLiabilityAccountId: z.string().min(1),
+  /**
+   * Optional HERE only because requiredness depends on the install mode, which
+   * this schema cannot see: a push-only install posts no card journal, so the
+   * form does not render the field and nothing is there to validate. A
+   * `.min(1)` made the whole settings form unsaveable in that mode — a customer
+   * could not change a Sync toggle.
+   *
+   * It is still required for a provider-mode install, enforced where the mode IS
+   * known: `convergeRamp` refuses to push masters or launch finance without it,
+   * and `rampHealthcheck` reports the install unhealthy — both behind
+   * `rampOwnsCodingSurface`. The setting keeps `required: true` so provider mode
+   * still marks the field required in the UI.
+   */
+  cardLiabilityAccountId: z.string().optional(),
   statementBankAccountId: z.string().optional(),
   cashbackIncomeAccountId: z.string().optional(),
   reimbursementBankAccountId: z.string().optional(),
@@ -48,12 +66,21 @@ export const Ramp = defineIntegration({
   // empty client_id, so the card reads "Coming soon" until the app is set up.
   active: !!RAMP_CLIENT_ID,
   category: "Spend Management",
+  providerRole: "spend" as const,
   logo: Logo,
   setupInstructions: SetupInstructions,
+  /**
+   * Mode-NEUTRAL on purpose. This is what someone sees BEFORE choosing a mode,
+   * and the previous text ("pulls your charges, bills, and employee
+   * reimbursements into Carbon's general ledger…") described provider mode only
+   * — so it promised inbound posting to a reader who might be about to choose
+   * push-only, where none of it happens. Each mode's own copy says what that
+   * mode does; this says what the integration is.
+   */
   description:
-    "Integrating Carbon with Ramp pulls your card transactions, bills, and employee reimbursements into Carbon's general ledger, pushes your chart of accounts and cost centers to Ramp for coding, and keeps purchase orders and vendor bills in sync.",
+    "Connect Ramp to Carbon for spend management. Carbon keeps purchase orders and vendor bills in sync with Ramp, and you choose at connect time whether Carbon acts as Ramp's accounting system or another system posts your ledger.",
   shortDescription:
-    "Pull card transactions, bills, and reimbursements; push your chart of accounts.",
+    "Keep purchase orders, bills, and card spend in sync with Ramp.",
   images: [],
   // One-click "Connect to Ramp" (production OAuth). When present, Install opens
   // this authorize URL; the callback (`/api/integrations/ramp/oauth`) exchanges
@@ -62,9 +89,104 @@ export const Ramp = defineIntegration({
     authUrl: RAMP_AUTHORIZE_URL,
     clientId: RAMP_CLIENT_ID ?? "",
     redirectUri: "/api/integrations/ramp/oauth",
+    // The default set, used only when no mode is chosen. The connect route
+    // builds the real authorize URL from the selected mode's scopes below.
     scopes: [...RAMP_OAUTH_SCOPES],
     tokenUrl: RAMP_TOKEN_URL
   },
+  /**
+   * Chosen BEFORE consent and fixed for the life of the install — Ramp permits
+   * exactly one connected accounting provider, so this decides whether Carbon
+   * requests `accounting:write` at all. Changing it means uninstalling.
+   *
+   * Note Ramp does not name this role: Brex, BILL and Coupa all expose an
+   * explicit "spend without the ledger" posture and Ramp does not, so this is
+   * built on a well-evidenced affordance of Ramp's scope split rather than a
+   * documented product mode.
+   */
+  /**
+   * Ramp's capabilities are a property of the INSTALL, not the integration: in
+   * push-only mode another system holds the accounting seat, so Carbon owns
+   * neither the coding surface nor the AP ledger family. `resolveRampModeProfile`
+   * defaults an install with no stored mode to `provider` — today's behaviour.
+   */
+  /**
+   * The chosen mode, plus — only when it is meaningful — which system Ramp
+   * reports as holding the accounting connection.
+   *
+   * `detail` is deliberately omitted in PROVIDER mode. There, Carbon holds the
+   * seat, so naming a peer beside "Carbon is my accounting system" is at best
+   * noise and at worst a flat contradiction: the stored value is a snapshot that
+   * is only refreshed for a non-seat-holder, so a provider-mode install could
+   * show a name left over from a previous push-only install indefinitely. That
+   * is exactly what it did.
+   *
+   * In push-only, undefined still means "Carbon could not tell" — not "nobody" —
+   * and the drawer must not render it as the latter.
+   */
+  resolveInstallMode: (metadata: unknown) => {
+    const stored = (metadata ?? {}) as {
+      syncMode?: "provider" | "push-only";
+      accountingConnectionProvider?: string;
+    };
+    const id = resolveRampMode(stored);
+    return {
+      id,
+      detail: rampOwnsCodingSurface(stored)
+        ? undefined
+        : stored.accountingConnectionProvider
+    };
+  },
+  resolveInstallCapabilities: (metadata: unknown) =>
+    resolveRampModeProfile(
+      (metadata ?? {}) as { syncMode?: "provider" | "push-only" }
+    ).capabilities,
+  modes: [
+    {
+      id: "provider",
+      label: "Carbon is my accounting system",
+      description:
+        "Carbon connects as Ramp's accounting provider: it pulls card charges, bills and reimbursements into Carbon's ledger, and pushes your chart of accounts and cost centers to Ramp for coding.",
+      shortDescription:
+        "Pull charges, bills, and reimbursements; push your chart of accounts.",
+      scopes: [...RAMP_OAUTH_SCOPES]
+    },
+    {
+      id: "push-only",
+      label: "Another system posts my ledger",
+      description:
+        // Purchase orders and bills, and nothing else: the mode's
+        // `outboundCeiling` is `{ purchaseOrder: true, bill: true }` and
+        // `rampSyncerRegistry` registers exactly those two. Item-receipt push was
+        // designed and dropped (2026-09-25), so `RAMP_PUSH_ONLY_SCOPES` does not
+        // ask for `item_receipts:write` — and this copy is shown BEFORE consent,
+        // for a choice that cannot be changed without reinstalling.
+        "Carbon pushes purchase orders and provisional bills into Ramp but never claims Ramp's accounting connection — your other accounting system keeps it, and codes and posts the spend.",
+      shortDescription:
+        "Push purchase orders and bills to Ramp; another system posts the ledger.",
+      scopes: [...RAMP_PUSH_ONLY_OAUTH_SCOPES]
+    }
+  ],
+  /**
+   * Both the GL-account mapping and the inbound toggles exist to configure what
+   * Carbon does with activity Ramp SENDS it — and Ramp sends it to whichever
+   * system holds its accounting-connection seat. `ownsRemoteCodingSurface` is
+   * that seat (it is the single predicate behind all six `accounting:write`
+   * calls, see `rampOwnsCodingSurface`), so it is not a proxy for "does Carbon
+   * pull": it is the same fact. In push-only mode another system holds it, and
+   * offering a card-liability account or a "Charges" switch there would promise
+   * posting Carbon must not do.
+   *
+   * Note this hides the bill toggle too, which in push-only still gates the one
+   * inbound family that survives (bill payments — what tells a Carbon invoice it
+   * was paid). That is deliberate: `pullBills` is ONE stored toggle covering
+   * bills AND their payments, and its label describes the bills half, which
+   * push-only never does. Showing "Pull Ramp bills into Carbon as purchase
+   * invoices" to the customer who chose "another system posts my ledger" would
+   * read as the exact double-posting they installed this mode to avoid. The
+   * cost is that push-only's bill-payment pull is not customer-toggleable;
+   * splitting the toggle in two is the follow-up.
+   */
   settingGroups: [
     {
       name: "Connection",
@@ -76,7 +198,9 @@ export const Ramp = defineIntegration({
     },
     {
       name: "Sync",
-      description: "Which Ramp data flows into and out of Carbon"
+      // Deliberately direction-neutral: push-only renders this group with only
+      // the outbound toggles, so "flows into and out of Carbon" was false there.
+      description: "What Carbon keeps in sync with Ramp"
     }
   ],
   settings: [
@@ -91,9 +215,10 @@ export const Ramp = defineIntegration({
     },
     {
       name: "cardLiabilityAccountId",
+      availableWhen: (c) => c.ownsRemoteCodingSurface,
       label: "Card liability account",
       description:
-        "Pick the Liability account that tracks what you owe on your Ramp cards — your outstanding Ramp balance. Each card charge Carbon pulls in credits this account; paying a statement debits it back down. Required — no card transactions sync until this is set.",
+        "Pick the Liability account that tracks what you owe on your Ramp cards — your outstanding Ramp balance. Each card charge Carbon pulls in credits this account; paying a statement debits it back down. Required — no charges sync until this is set.",
       group: "Accounts",
       type: "options" as const,
       listOptions: [],
@@ -102,6 +227,7 @@ export const Ramp = defineIntegration({
     },
     {
       name: "statementBankAccountId",
+      availableWhen: (c) => c.ownsRemoteCodingSurface,
       label: "Statement bank account",
       description:
         "Optional. Only needed if you want Carbon to book Ramp statement payments and transfers: Carbon credits this bank (Asset) account and debits the card liability above. Leave blank to skip statement-payment and transfer sync — card charges sync without it.",
@@ -113,6 +239,7 @@ export const Ramp = defineIntegration({
     },
     {
       name: "cashbackIncomeAccountId",
+      availableWhen: (c) => c.ownsRemoteCodingSurface,
       label: "Cashback income account",
       description:
         "The revenue account Ramp cashback posts to. Leave blank to skip cashback sync.",
@@ -124,6 +251,7 @@ export const Ramp = defineIntegration({
     },
     {
       name: "reimbursementBankAccountId",
+      availableWhen: (c) => c.ownsRemoteCodingSurface,
       label: "Reimbursement bank account",
       description:
         "The bank/asset account employee reimbursements are paid from. Defaults to the statement bank account.",
@@ -135,8 +263,9 @@ export const Ramp = defineIntegration({
     },
     {
       name: "pullTransactions",
-      label: "Card transactions",
-      description: "Pull Ramp card transactions into Carbon.",
+      availableWhen: (c) => c.ownsRemoteCodingSurface,
+      label: "Charges",
+      description: "Pull Ramp charges into Carbon.",
       group: "Sync",
       type: "switch" as const,
       required: false,
@@ -144,6 +273,7 @@ export const Ramp = defineIntegration({
     },
     {
       name: "pullBills",
+      availableWhen: (c) => c.ownsRemoteCodingSurface,
       label: "Bills",
       description: "Pull Ramp bills into Carbon as purchase invoices.",
       group: "Sync",
@@ -153,6 +283,7 @@ export const Ramp = defineIntegration({
     },
     {
       name: "pullReimbursements",
+      availableWhen: (c) => c.ownsRemoteCodingSurface,
       label: "Reimbursements",
       description: "Pull Ramp employee reimbursements into Carbon.",
       group: "Sync",
@@ -182,9 +313,23 @@ export const Ramp = defineIntegration({
   schema: RampSettingsSchema
 });
 
-function SetupInstructions({ companyId }: { companyId: string }) {
+function SetupInstructions({
+  companyId,
+  mode
+}: {
+  companyId: string;
+  mode?: string;
+}) {
   const origin = isBrowser ? window.location.origin : "";
   const webhookUrl = origin ? `${origin}/api/webhook/ramp/${companyId}` : "";
+
+  // Steps 2 and 3 are the ones that differ. Before this, EVERY install was told
+  // to map GL accounts under Accounts and that charges/bills/reimbursements
+  // "flow in" — on a push-only install the Accounts tab does not exist and
+  // nothing flows in, so the instructions described the one thing this mode was
+  // built to avoid.
+  const pushOnly = mode === "push-only";
+
   return (
     <div className="text-sm text-muted-foreground">
       <ol className="list-decimal space-y-3 pl-4">
@@ -196,18 +341,42 @@ function SetupInstructions({ companyId }: { companyId: string }) {
           <span className="font-medium">Business Owner</span> to authorize the
           connection.
         </li>
-        <li>
-          <span className="font-medium text-foreground">
-            Map the GL accounts
-          </span>{" "}
-          under Accounts so card charges, statement payments, cashback, and
-          reimbursements post to the right places.
-        </li>
-        <li>
-          <span className="font-medium text-foreground">Choose what syncs</span>{" "}
-          under Sync — card transactions, bills, and reimbursements flow in;
-          purchase orders and invoices push out. All are on by default.
-        </li>
+        {pushOnly ? (
+          <li>
+            <span className="font-medium text-foreground">
+              Keep your accounting system connected in Ramp.
+            </span>{" "}
+            Carbon does not take Ramp's accounting connection in this mode —
+            your other accounting system keeps it, and codes and posts the
+            spend. Carbon never writes to Ramp's accounting surface.
+          </li>
+        ) : (
+          <li>
+            <span className="font-medium text-foreground">
+              Map the GL accounts
+            </span>{" "}
+            under Accounts so card charges, statement payments, cashback, and
+            reimbursements post to the right places.
+          </li>
+        )}
+        {pushOnly ? (
+          <li>
+            <span className="font-medium text-foreground">
+              Choose what pushes
+            </span>{" "}
+            under Sync — purchase orders and invoices go out to Ramp as draft
+            bills. Nothing is pulled into Carbon's ledger; your other accounting
+            system posts it.
+          </li>
+        ) : (
+          <li>
+            <span className="font-medium text-foreground">
+              Choose what syncs
+            </span>{" "}
+            under Sync — charges, bills, and reimbursements flow in; purchase
+            orders and invoices push out. All are on by default.
+          </li>
+        )}
         <li>
           <span className="font-medium text-foreground">
             Webhook (registered automatically).
@@ -241,10 +410,13 @@ function Logo(props: ComponentProps<"svg">) {
       // height; clamp to a modest height and let the width follow so it never
       // overflows the drawer's icon box. `currentColor` keeps it theme-aware.
       style={{
-        ...props.style,
         height: "1.25rem",
         width: "auto",
-        maxWidth: "100%"
+        maxWidth: "100%",
+        // Caller's style LAST: a render site that sizes the mark itself (the
+        // document SOURCE badge asks for 0.875rem) must win over this default,
+        // or every site is stuck at the drawer's size.
+        ...props.style
       }}
     >
       <g clipPath="url(#ramp-logo-clip)" fill="currentColor">

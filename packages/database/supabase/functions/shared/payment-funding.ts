@@ -235,6 +235,10 @@ export function isEffectiveSettlement(row: SettlementEffectiveness): boolean {
 export type SettlementBalanceRow = {
   targetSalesInvoiceId: string | null;
   targetPurchaseInvoiceId: string | null;
+  /** An employee reimbursement settled by a disbursement to that employee.
+   *  Nullable on every AR/AP row, so callers that never see one may pass
+   *  `null` (or omit the column and spread it in). */
+  targetReimbursementId?: string | null;
   sourceAmount: number | null;
   appliedAmount: number;
   discountAmount: number;
@@ -276,21 +280,38 @@ export function reduceInvoiceSettlements(
   return { document: toDocumentAmount(document, 1, decimals), base: round(base) };
 }
 
-/** Original controls use signed natural balances for both AR and AP. */
+/** Original controls use signed natural balances for both AR and AP.
+ *
+ *  `isReimbursement` selects the third target column. An employee
+ *  reimbursement is a TARGET exactly like a payable invoice — a liability with
+ *  a carrying value that prior settlements draw down — so it nets the same way;
+ *  only the column its settlements are keyed on differs. It is a separate flag
+ *  rather than a third `isAR` state because `isAR` still answers a different
+ *  question here (which side of the ledger), and a reimbursement is always the
+ *  payable side. */
 export function invoiceRemainingAmounts(
   invoice: { id: string | null; totalAmount: number | null; exchangeRate: number | null },
   rows: readonly SettlementBalanceRow[],
   controlAmounts: ReadonlyMap<string, number>,
   decimals: number,
-  isAR: boolean
+  isAR: boolean,
+  isReimbursement = false
 ): { remainingDocument: number; remainingBase: number } {
   if (!invoice.id || invoice.totalAmount == null || invoice.exchangeRate == null) {
     throw new Error("Invoice identity, total or exchange rate is missing");
   }
   const rate = Number(invoice.exchangeRate);
-  const consumed = reduceInvoiceSettlements(rows.filter((row) =>
-    (isAR ? row.targetSalesInvoiceId : row.targetPurchaseInvoiceId) === invoice.id
-  ), rate, decimals);
+  const targetOf = (row: SettlementBalanceRow): string | null | undefined =>
+    isReimbursement
+      ? row.targetReimbursementId
+      : isAR
+      ? row.targetSalesInvoiceId
+      : row.targetPurchaseInvoiceId;
+  const consumed = reduceInvoiceSettlements(
+    rows.filter((row) => targetOf(row) === invoice.id),
+    rate,
+    decimals
+  );
   const originalDocument = toDocumentAmount(Number(invoice.totalAmount), rate, decimals);
   const remainingDocument = toDocumentAmount(originalDocument - consumed.document, 1, decimals);
   const originalBase = controlAmounts.get(invoice.id) ?? round(Number(invoice.totalAmount));

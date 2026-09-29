@@ -1,6 +1,7 @@
 import { emailHealthcheck } from "./email/hooks.server";
 import { jiraHealthcheck } from "./jira/hooks.server";
 import { linearHealthcheck } from "./linear/hooks.server";
+import { mountHealthcheck } from "./mount/hooks.server";
 import { onshapeOnUninstall } from "./onshape/hooks.server";
 import {
   quickbooksOnInstall,
@@ -55,6 +56,9 @@ const serverHooks: Record<string, IntegrationServerHooks> = {
   },
   linear: {
     onHealthcheck: linearHealthcheck
+  },
+  mount: {
+    onHealthcheck: mountHealthcheck
   },
   onshape: {
     onUninstall: onshapeOnUninstall

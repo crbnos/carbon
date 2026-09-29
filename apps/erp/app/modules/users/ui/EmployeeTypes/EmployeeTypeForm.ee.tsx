@@ -82,7 +82,6 @@ const EmployeeTypeForm = ({ initialValues }: EmployeeTypeFormProps) => {
               : path.to.newEmployeeType
           }
           defaultValues={initialValues}
-          className="flex flex-col h-full"
         >
           <ModalHeader>
             <ModalTitle>
@@ -93,7 +92,7 @@ const EmployeeTypeForm = ({ initialValues }: EmployeeTypeFormProps) => {
               )}
             </ModalTitle>
           </ModalHeader>
-          <ModalBody className="max-h-[70dvh] overflow-y-auto">
+          <ModalBody>
             <Hidden name="id" />
             <VStack spacing={4}>
               <Input name="name" label={t`Employee Type`} />

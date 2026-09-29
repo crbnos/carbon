@@ -23,6 +23,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
  */
 export const SECRET_KEYS: Record<string, string[]> = {
   linear: ["apiKey", "webhookSigningSecret"],
+  mount: ["clientSecret"],
   slack: ["access_token"],
   jira: [
     "credentials.accessToken",

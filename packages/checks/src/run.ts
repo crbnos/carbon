@@ -15,6 +15,7 @@ import { noDbClientInService } from "./conformance/no-db-client-in-service";
 import { noDefaultOnEffects } from "./conformance/no-default-on-effects";
 import { noDerivedPercentColumn } from "./conformance/no-derived-percent-column";
 import { noInlineFractionDigits } from "./conformance/no-inline-fraction-digits";
+import { noIntegrationIdBranching } from "./conformance/no-integration-id-branching";
 import { noLegacyRls } from "./conformance/no-legacy-rls";
 import { noLocalTimezone } from "./conformance/no-local-timezone";
 import { noNumericPrecision } from "./conformance/no-numeric-precision";
@@ -55,6 +56,7 @@ export const TS_CHECKS: ConformanceCheck[] = [
   noDbClientInService,
   noDefaultOnEffects,
   noUnroundedTrackedQuantity,
+  noIntegrationIdBranching,
   noUnscopedKyselyWrite
 ];
 

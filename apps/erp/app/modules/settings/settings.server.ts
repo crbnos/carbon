@@ -624,3 +624,186 @@ export async function updateIntegrationMetadata(
     .eq("companyId", companyId)
     .eq("id", integrationId);
 }
+
+/**
+ * Where a sync operation's `entityId` resolves to a human-readable document
+ * number, per `entityType` (the keys of the accounting sync engine's
+ * `ENTITY_DEFINITIONS`). `employee` and `inventoryAdjustment` are absent on
+ * purpose: the first is a `user` id with no readable column of its own, the
+ * second an `itemLedger` row with no document number at all.
+ */
+const SYNC_ENTITY_READABLE_ID_SOURCES: Record<
+  string,
+  { table: string; column: string }
+> = {
+  customer: { table: "customer", column: "name" },
+  vendor: { table: "supplier", column: "name" },
+  item: { table: "item", column: "readableId" },
+  purchaseOrder: { table: "purchaseOrder", column: "purchaseOrderId" },
+  bill: { table: "purchaseInvoice", column: "invoiceId" },
+  salesOrder: { table: "salesOrder", column: "salesOrderId" },
+  invoice: { table: "salesInvoice", column: "invoiceId" },
+  payment: { table: "payment", column: "paymentId" },
+  charge: { table: "charge", column: "chargeId" },
+  reimbursement: { table: "reimbursement", column: "reimbursementId" },
+  journalEntry: { table: "journal", column: "journalEntryId" },
+  // One table, two entity types — the sweep splits `memo` by party.
+  creditMemo: { table: "memo", column: "memoId" },
+  supplierCredit: { table: "memo", column: "memoId" }
+};
+
+const JOURNAL_REVERSAL_SUFFIX = ":reversal";
+const DAILY_CONSOLIDATION_PREFIX = "daily:";
+
+/** The fields of a sync operation this resolver reads. */
+type SyncOperationReference = {
+  integration: string;
+  entityType: string;
+  entityId: string;
+  direction: string;
+};
+
+/**
+ * The lookup key, built identically here and in `SyncActivity`'s
+ * `getEntityReference`.
+ */
+function syncOperationReadableIdKey(operation: {
+  entityType: string;
+  entityId: string;
+}) {
+  return `${operation.entityType}:${operation.entityId}`;
+}
+
+/**
+ * A pulled operation is keyed by the PROVIDER's remote id, so it only
+ * reaches a Carbon row through `externalIntegrationMapping`. One query for
+ * the whole page, keyed back by `entityType:externalId`.
+ */
+async function getPulledEntityIds(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  operations: SyncOperationReference[]
+): Promise<Map<string, string>> {
+  const pulled = operations.filter(
+    (operation) =>
+      operation.direction === "pull-from-accounting" &&
+      operation.entityType in SYNC_ENTITY_READABLE_ID_SOURCES
+  );
+  if (pulled.length === 0) return new Map();
+
+  const { data, error } = await client
+    .from("externalIntegrationMapping")
+    .select("entityType, entityId, externalId")
+    .eq("companyId", companyId)
+    .in("integration", [
+      ...new Set(pulled.map((operation) => operation.integration))
+    ])
+    .in("entityType", [
+      ...new Set(pulled.map((operation) => operation.entityType))
+    ])
+    .in("externalId", [
+      ...new Set(pulled.map((operation) => operation.entityId))
+    ]);
+
+  if (error || !data) return new Map();
+
+  return new Map(
+    data.map((row) => [`${row.entityType}:${row.externalId}`, row.entityId])
+  );
+}
+
+/**
+ * Resolve one page of sync operations to the document numbers a human reads
+ * — `PO000001` rather than `po_6UyRfXggN6YrmCSauBaVf1`. One query per entity
+ * type on the page (plus one for pulled records' mappings), never one per
+ * row.
+ *
+ * Silently incomplete by design, and the caller falls back to the raw id: a
+ * pulled record that never landed a Carbon row has only the provider's
+ * remote id, a pulled payment's id is a composite of two remote ids, and a
+ * daily-consolidation journal marker backs no row at all.
+ *
+ * `recordId` is the CARBON row id — the same as `entityId` for a push, the
+ * mapped id for a pull — so the table's link goes somewhere real instead of
+ * to the provider's remote id.
+ */
+export async function getSyncOperationReadableIds(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  operations: SyncOperationReference[]
+): Promise<Record<string, { label: string; recordId: string }>> {
+  const pulledEntityIds = await getPulledEntityIds(
+    client,
+    companyId,
+    operations
+  );
+
+  // entityType -> the ids to look up, mapped back to the operation keys they
+  // came from (a journal reversal's id is the journal's id plus a suffix, so
+  // one row can answer two keys).
+  const byEntityType = new Map<string, Map<string, string[]>>();
+
+  for (const operation of operations) {
+    if (!(operation.entityType in SYNC_ENTITY_READABLE_ID_SOURCES)) continue;
+
+    let lookupId =
+      pulledEntityIds.get(syncOperationReadableIdKey(operation)) ??
+      operation.entityId;
+
+    if (operation.entityType === "journalEntry") {
+      if (lookupId.startsWith(DAILY_CONSOLIDATION_PREFIX)) continue;
+      if (lookupId.endsWith(JOURNAL_REVERSAL_SUFFIX)) {
+        lookupId = lookupId.slice(0, -JOURNAL_REVERSAL_SUFFIX.length);
+      }
+    } else if (lookupId.includes(":")) {
+      // A pulled payment's composite remote id — no Carbon row behind it.
+      continue;
+    }
+
+    const ids = byEntityType.get(operation.entityType) ?? new Map();
+    ids.set(lookupId, [
+      ...(ids.get(lookupId) ?? []),
+      syncOperationReadableIdKey(operation)
+    ]);
+    byEntityType.set(operation.entityType, ids);
+  }
+
+  if (byEntityType.size === 0) return {};
+
+  const results = await Promise.all(
+    Array.from(byEntityType.entries()).map(async ([entityType, ids]) => {
+      const source = SYNC_ENTITY_READABLE_ID_SOURCES[entityType]!;
+      // The table and column are chosen from the const map above, never from
+      // request input — but they are values, so the select string can't be
+      // typed. Cast, the same way the tie-out read in the route does.
+      const { data, error } = (await (client.from(source.table as any) as any)
+        .select(`id, ${source.column}`)
+        .eq("companyId", companyId)
+        .in("id", Array.from(ids.keys()))) as {
+        data: { id: string }[] | null;
+        error: unknown;
+      };
+
+      if (error || !data)
+        return [] as [string, { label: string; recordId: string }][];
+
+      return data.flatMap((row) => {
+        const value = (row as Record<string, unknown>)[source.column];
+        if (typeof value !== "string" || value.length === 0) return [];
+        return (ids.get(row.id) ?? []).map(
+          (key): [string, { label: string; recordId: string }] => [
+            key,
+            {
+              label: key.endsWith(JOURNAL_REVERSAL_SUFFIX)
+                ? `${value} (reversal)`
+                : value,
+              recordId: row.id
+            }
+          ]
+        );
+      });
+    })
+  );
+
+  return Object.fromEntries(results.flat());
+}

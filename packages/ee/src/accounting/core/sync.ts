@@ -1,4 +1,4 @@
-import type { ProviderID } from "./models";
+import type { SyncProviderID } from "./models";
 import type { AccountingEntityType, IEntitySyncer, SyncContext } from "./types";
 
 /**
@@ -18,8 +18,12 @@ export type SyncerRegistry = Partial<
  * Syncer registries keyed by provider. Populated at module scope by each
  * provider's barrel (e.g. providers/xero registers xeroSyncerRegistry), so
  * importing a provider is what makes its syncers resolvable.
+ *
+ * Keyed on `SyncProviderID`, not `ProviderID`: this is the one dispatch point
+ * that is genuinely role-agnostic, so a spend platform registers here exactly
+ * as an accounting provider does.
  */
-const registries: Partial<Record<ProviderID, SyncerRegistry>> = {};
+const registries: Partial<Record<SyncProviderID, SyncerRegistry>> = {};
 
 export const SyncFactory = {
   /**
@@ -27,7 +31,7 @@ export const SyncFactory = {
    * scope from the provider's barrel; registering the same provider twice
    * merges the registries.
    */
-  register(providerId: ProviderID, registry: SyncerRegistry): void {
+  register(providerId: SyncProviderID, registry: SyncerRegistry): void {
     registries[providerId] = { ...registries[providerId], ...registry };
   },
 

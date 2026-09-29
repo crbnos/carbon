@@ -71,11 +71,11 @@ export function PartiesBlock({ data }: { data: SalesInvoiceData }) {
               country={invoiceCountryName ?? customerCountryName}
             />
             {customerTaxId &&
-              !isEoriCountry(invoiceCountryName ?? customerCountryName) && (
-                <Text>Tax ID: {customerTaxId}</Text>
-              )}
-            {customerVatNumber && <Text>VAT: {customerVatNumber}</Text>}
-            {customerEori && <Text>EORI: {customerEori}</Text>}
+            !isEoriCountry(invoiceCountryName ?? customerCountryName) ? (
+              <Text>Tax ID: {customerTaxId}</Text>
+            ) : null}
+            {customerVatNumber ? <Text>VAT: {customerVatNumber}</Text> : null}
+            {customerEori ? <Text>EORI: {customerEori}</Text> : null}
           </View>
         </View>
 
@@ -93,49 +93,53 @@ export function PartiesBlock({ data }: { data: SalesInvoiceData }) {
               Invoice Details
             </Text>
             <View style={tw("text-[9px] text-gray-800")}>
-              {salesInvoice?.dateIssued && (
+              {salesInvoice?.dateIssued ? (
                 <Text>
                   Date Issued:{" "}
                   {formatDate(salesInvoice.dateIssued, undefined, locale)}
                 </Text>
-              )}
-              {salesInvoice?.dateDue && (
+              ) : null}
+              {salesInvoice?.dateDue ? (
                 <Text style={tw("font-bold")}>
                   Due Date:{" "}
                   {formatDate(salesInvoice.dateDue, undefined, locale)}
                 </Text>
-              )}
-              {salesInvoice?.customerReference && (
+              ) : null}
+              {salesInvoice?.customerReference ? (
                 <Text>Customer Ref: {salesInvoice.customerReference}</Text>
-              )}
-              {salesOrderIds && salesOrderIds.length > 0 && (
+              ) : null}
+              {salesOrderIds && salesOrderIds.length > 0 ? (
                 <Text>
                   {salesOrderIds.length > 1
                     ? "Sales Orders: "
                     : "Sales Order: "}
                   {salesOrderIds.join(", ")}
                 </Text>
-              )}
-              {paymentTerm && <Text>Payment Terms: {paymentTerm.name}</Text>}
-              {shippingMethod && <Text>Shipping: {shippingMethod.name}</Text>}
-              {salesInvoiceShipment?.shippingTermId && (
+              ) : null}
+              {paymentTerm ? (
+                <Text>Payment Terms: {paymentTerm.name}</Text>
+              ) : null}
+              {shippingMethod ? (
+                <Text>Shipping: {shippingMethod.name}</Text>
+              ) : null}
+              {salesInvoiceShipment?.shippingTermId ? (
                 <Text>
                   Shipping Terms: {salesInvoiceShipment.shippingTermId}
                 </Text>
-              )}
-              {salesInvoiceShipment?.incoterm && (
+              ) : null}
+              {salesInvoiceShipment?.incoterm ? (
                 <Text>
                   Incoterm: {salesInvoiceShipment.incoterm}
                   {salesInvoiceShipment.incotermLocation
                     ? ` — ${salesInvoiceShipment.incotermLocation}`
                     : ""}
                 </Text>
-              )}
+              ) : null}
             </View>
           </View>
 
           {/* Ship To — only when shipment has a distinct address (not falling back to customer's main address) */}
-          {shipmentCustomerName && (
+          {shipmentCustomerName ? (
             <View style={tw("p-3")}>
               <Text
                 style={tw("text-[9px] font-bold text-gray-600 mb-1 uppercase")}
@@ -154,7 +158,7 @@ export function PartiesBlock({ data }: { data: SalesInvoiceData }) {
                 />
               </View>
             </View>
-          )}
+          ) : null}
         </View>
       </View>
     </View>

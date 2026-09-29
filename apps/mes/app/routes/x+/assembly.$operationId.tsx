@@ -113,7 +113,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     assemblyPlayback
   ] = await Promise.all([
     getThumbnailPathByItemId(serviceRole, op.itemId),
-    getTrackedEntitiesByMakeMethodId(serviceRole, op.jobMakeMethodId),
+    getTrackedEntitiesByMakeMethodId(
+      serviceRole,
+      op.jobMakeMethodId,
+      companyId
+    ),
     getJobMakeMethod(serviceRole, op.jobMakeMethodId),
     getJobOperationProcedure(serviceRole, operationId),
     getToolsByOperationId(serviceRole, operationId),

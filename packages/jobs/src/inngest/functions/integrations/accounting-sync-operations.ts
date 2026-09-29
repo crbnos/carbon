@@ -30,10 +30,9 @@ import { type Database, fetchAllFromTable } from "@carbon/database";
 import {
   AccountingAuthError,
   type AccountingEntityType,
-  type AccountingProvider,
   type BatchSyncResult,
-  type CardTransactionPolicyInput,
   CHARGE_CREDIT_PROVIDERS,
+  type ChargePolicyInput,
   claimPendingOperations,
   completeOperation,
   enqueueSyncOperation,
@@ -46,6 +45,7 @@ import {
   type PostingSyncSettings,
   parseJournalEntrySyncEntityId,
   RatelimitError,
+  resolveMemoJournalPartyFromClient,
   resolvePostingSyncSettings,
   resolveSyncConfig,
   SYNC_OPERATION_STALE_IN_FLIGHT_MS,
@@ -54,9 +54,15 @@ import {
   type SyncOperation,
   type SyncOperationDirection,
   type SyncOperationTrigger,
+  type SyncProvider,
   type SyncResult,
   skipOperation
 } from "@carbon/ee/accounting";
+import {
+  applyLedgerDelegation,
+  type EffectivePostingSyncSettings,
+  type IntegrationTopology
+} from "@carbon/ee/sync";
 import { groupBy } from "@carbon/utils";
 import { parseDate } from "@internationalized/date";
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -279,6 +285,31 @@ export async function resolvePaymentJournalFamily(
   return null;
 }
 
+/**
+ * Which party a memo journal belongs to. The memo's PARTY — not its direction —
+ * decides whether it is gated by the Credit Memos or Supplier Credits family
+ * (`family: "per-party"` in POSTING_POLICY), so a supplier memo in the Credit
+ * direction is a supplier credit, not an AR document.
+ *
+ * ONE definition, shared with the three provider `shouldSync` backstops
+ * (`@carbon/ee/accounting` → `core/memo-party.ts`): the memo is resolved through
+ * the journal LINES (`documentType = 'Memo'`, `documentId = memo.id`) — the same
+ * link `loadChargePolicyInputs` uses, for the same reason — with `memo.journalId`
+ * only as a fallback for a journal whose lines carry no document link.
+ *
+ * Voiding a memo INSERTS A NEW journal (`post-memo-transaction.ts`) and leaves
+ * `memo.journalId` on the original, so keying on `memo.journalId` alone resolved
+ * no memo at all for a void: the party came back null, the policy parked a
+ * spurious `MEMO_PARTY_UNRESOLVED` Warning, and the void never reached the
+ * provider. Kept under the local name the ledger paths already import.
+ */
+export async function resolveMemoJournalParty(
+  client: SupabaseClient<Database>,
+  args: { companyId: string; journalId: string }
+): Promise<"customer" | "supplier" | null> {
+  return resolveMemoJournalPartyFromClient(client, args);
+}
+
 export type TerminalSyncOperationRequest = {
   entityType: string;
   entityId: string;
@@ -301,24 +332,24 @@ export type JournalPostingOperationPlan =
   | { action: "terminal"; request: TerminalSyncOperationRequest };
 
 /**
- * The backing `cardTransaction` for each "Card Transaction" journal, keyed by
- * journal id, shaped for the posting policy (`isChargeBackedCardTransaction`).
+ * The backing `charge` for each "Charge" journal, keyed by
+ * journal id, shaped for the posting policy (`isDocBackedCharge`).
  *
- * Resolved through the journal LINES (`documentType = 'Card Transaction'`,
- * `documentId = cardTransaction.id`), which both the posting journal and the
- * VOID journal carry — `cardTransaction.journalId` only ever names the
+ * Resolved through the journal LINES (`documentType = 'Charge'`,
+ * `documentId = charge.id`), which both the posting journal and the
+ * VOID journal carry — `charge.journalId` only ever names the
  * original, so keying on it left the void journal of a charge-backed card
  * transaction looking like a plain journal: it pushed to the provider as a
  * journal entry on top of the charge DELETE, netting to minus one charge
- * (found live on the Rillet sandbox, 2026-09-10). `cardTransaction.journalId`
+ * (found live on the Rillet sandbox, 2026-09-10). `charge.journalId`
  * is still honoured as a fallback for journals whose lines carry no document
  * link. One query per concern for the whole batch, never per row.
  */
-export async function loadCardTransactionPolicyInputs(
+export async function loadChargePolicyInputs(
   client: SupabaseClient<Database>,
   args: { companyId: string; journalIds: string[] }
-): Promise<Map<string, CardTransactionPolicyInput>> {
-  const result = new Map<string, CardTransactionPolicyInput>();
+): Promise<Map<string, ChargePolicyInput>> {
+  const result = new Map<string, ChargePolicyInput>();
   if (args.journalIds.length === 0) return result;
 
   const lines = await fetchAllFromTable<{
@@ -327,7 +358,7 @@ export async function loadCardTransactionPolicyInputs(
   }>(client, "journalLine", "journalId, documentId", (query) =>
     query
       .eq("companyId", args.companyId)
-      .eq("documentType", "Card Transaction")
+      .eq("documentType", "Charge")
       .in("journalId", args.journalIds)
       .not("documentId", "is", null)
   );
@@ -358,35 +389,31 @@ export async function loadCardTransactionPolicyInputs(
   }> = [];
   if (cardIds.length > 0) {
     const byId = await client
-      .from("cardTransaction")
+      .from("charge")
       .select("id, journalId, type, supplierId")
       .eq("companyId", args.companyId)
       .in("id", cardIds);
     if (byId.error) {
-      throw new Error(
-        `Failed to load card transactions: ${byId.error.message}`
-      );
+      throw new Error(`Failed to load charges: ${byId.error.message}`);
     }
     rows.push(...(byId.data ?? []));
   }
   if (unlinkedJournalIds.length > 0) {
     const byJournal = await client
-      .from("cardTransaction")
+      .from("charge")
       .select("id, journalId, type, supplierId")
       .eq("companyId", args.companyId)
       .in("journalId", unlinkedJournalIds);
     if (byJournal.error) {
-      throw new Error(
-        `Failed to load card transactions: ${byJournal.error.message}`
-      );
+      throw new Error(`Failed to load charges: ${byJournal.error.message}`);
     }
     rows.push(...(byJournal.data ?? []));
   }
 
-  const inputById = new Map<string, CardTransactionPolicyInput>();
+  const inputById = new Map<string, ChargePolicyInput>();
   for (const row of rows) {
     inputById.set(row.id, {
-      type: row.type as CardTransactionPolicyInput["type"],
+      type: row.type as ChargePolicyInput["type"],
       hasSupplier: row.supplierId != null
     });
   }
@@ -419,14 +446,19 @@ export async function planJournalPostingOperation(args: {
   /** The provider (ProviderID) — decides whether a card Credit has a native
    * refund object (`CHARGE_CREDIT_PROVIDERS`). Unknown → journal entry. */
   providerId?: string;
+  /** Settings + sync config with ledger delegation already applied. */
+  effective: EffectivePostingState;
 }): Promise<JournalPostingOperationPlan> {
   const transition = getJournalPostingDecision(args.event);
   if (transition.action === "skip") {
     return { action: "skip", reason: transition.reason };
   }
 
-  const settings = resolvePostingSyncSettings(args.integrationMetadata);
-  const syncConfig = resolveSyncConfig(args.integrationMetadata);
+  // Effective state comes from the CALLER. This function is deliberately
+  // client-free for the simple cases (pinned by a test that fails if it ever
+  // touches the client), and resolving delegation needs a `companyIntegration`
+  // read — so the caller, which already has one, does it.
+  const { settings, syncConfig } = args.effective;
 
   const sourceType =
     typeof args.event.new?.sourceType === "string"
@@ -441,15 +473,23 @@ export async function planJournalPostingOperation(args: {
         })
       : null;
 
-  // "Card Transaction" journals are DOC_BACKED per row (a Charge with a
-  // supplier only), so the policy needs the backing card transaction.
-  let cardTransaction: CardTransactionPolicyInput | null = null;
-  if (sourceType === "Card Transaction" && syncConfig.entities.charge.enabled) {
-    const byJournalId = await loadCardTransactionPolicyInputs(args.client, {
+  const memoParty =
+    sourceType === "Credit Memo" || sourceType === "Debit Memo"
+      ? await resolveMemoJournalParty(args.client, {
+          companyId: args.companyId,
+          journalId: args.event.recordId
+        })
+      : null;
+
+  // "Charge" journals are DOC_BACKED per row (a Charge with a
+  // supplier only), so the policy needs the backing charge.
+  let charge: ChargePolicyInput | null = null;
+  if (sourceType === "Charge" && syncConfig.entities.charge.enabled) {
+    const byJournalId = await loadChargePolicyInputs(args.client, {
       companyId: args.companyId,
       journalIds: [args.event.recordId]
     });
-    cardTransaction = byJournalId.get(args.event.recordId) ?? null;
+    charge = byJournalId.get(args.event.recordId) ?? null;
   }
 
   return planJournalPostingFromState({
@@ -463,12 +503,16 @@ export async function planJournalPostingOperation(args: {
       chargeEnabled: syncConfig.entities.charge.enabled,
       chargeCreditEnabled: args.providerId
         ? CHARGE_CREDIT_PROVIDERS.has(args.providerId)
-        : false
+        : false,
+      creditMemoEnabled: syncConfig.entities.creditMemo.enabled,
+      supplierCreditEnabled: syncConfig.entities.supplierCredit.enabled,
+      reimbursementEnabled: syncConfig.entities.reimbursement.enabled
     },
     paymentFamily,
+    memoParty,
     inventoryAdjustmentEntitySyncEnabled:
       syncConfig.entities.inventoryAdjustment.enabled,
-    cardTransaction
+    charge
   });
 }
 
@@ -479,23 +523,72 @@ export async function planJournalPostingOperation(args: {
  * `planJournalPostingOperation` (event path, backfill) and the reconcile
  * decision core both delegate here, so the policy routing can never diverge
  * between callers. Pure: `paymentFamily` is resolved by the caller when the
- * source type is Payment and the AR/AP family modes diverge.
+ * source type is Payment and the AR/AP family modes diverge; `memoParty` is
+ * resolved by the caller for Credit Memo / Debit Memo source types.
  */
+/**
+ * Resolve a company's posting settings and sync config WITH ledger delegation
+ * applied.
+ *
+ * One read of `companyIntegration` per call. When another system posts a GL
+ * family, this is what turns that into `families[x] = "none"` plus its backing
+ * entities disabled — the two halves that are only correct together.
+ */
+export type EffectivePostingState = {
+  settings: EffectivePostingSyncSettings;
+  syncConfig: ReturnType<typeof resolveSyncConfig>;
+};
+
+/**
+ * Posting settings + sync config with ledger delegation applied.
+ *
+ * PURE, and the topology is injected. Two earlier shapes were wrong and both
+ * broke tests: reading `companyIntegration` here made
+ * `planJournalPostingOperation` touch the client (a contract an existing test
+ * pins), and lazily importing the `@carbon/ee` barrel to get the registry booted
+ * the server env at call time. The entry points already know the company; they
+ * resolve the topology and pass it down.
+ */
+export function applyEffectivePostingState(
+  integrationMetadata: unknown,
+  topology: IntegrationTopology,
+  /** Whose config this is — a family's OWNER keeps it. See `applyLedgerDelegation`. */
+  integrationId?: string
+): EffectivePostingState {
+  const applied = applyLedgerDelegation({
+    settings: resolvePostingSyncSettings(integrationMetadata),
+    syncConfig: resolveSyncConfig(integrationMetadata),
+    topology,
+    integrationId
+  });
+  return { settings: applied.settings, syncConfig: applied.syncConfig };
+}
+
 export function planJournalPostingFromState(args: {
   journalId: string;
   sourceType: string | null;
   reversal: boolean;
-  settings: PostingSyncSettings;
+  /**
+   * Settings with ledger delegation applied — see `applyLedgerDelegation`.
+   * Required by type so a caller cannot reach a posting decision that would
+   * double-post a family another system already posts.
+   */
+  settings: EffectivePostingSyncSettings;
   docSync: {
     invoiceEnabled: boolean;
     billEnabled: boolean;
     chargeEnabled?: boolean;
     chargeCreditEnabled?: boolean;
+    creditMemoEnabled?: boolean;
+    supplierCreditEnabled?: boolean;
+    reimbursementEnabled?: boolean;
   };
   paymentFamily: "ar" | "ap" | null;
+  /** Memo source types only: the backing memo's party. */
+  memoParty?: "customer" | "supplier" | null;
   inventoryAdjustmentEntitySyncEnabled: boolean;
-  /** "Card Transaction" journals only: the backing cardTransaction. */
-  cardTransaction?: CardTransactionPolicyInput | null;
+  /** "Charge" journals only: the backing charge. */
+  charge?: ChargePolicyInput | null;
 }): JournalPostingOperationPlan {
   const entityId = getJournalEntrySyncEntityId(args.journalId, args.reversal);
 
@@ -504,9 +597,10 @@ export function planJournalPostingFromState(args: {
     settings: args.settings,
     docSync: args.docSync,
     paymentFamily: args.paymentFamily,
+    memoParty: args.memoParty ?? null,
     inventoryAdjustmentEntitySyncEnabled:
       args.inventoryAdjustmentEntitySyncEnabled,
-    cardTransaction: args.cardTransaction ?? null
+    charge: args.charge ?? null
   });
 
   const baseMetadata = {
@@ -844,7 +938,7 @@ export async function drainSyncOperations(args: {
   database: SyncContext["database"];
   companyId: string;
   integration: string;
-  provider: AccountingProvider;
+  provider: SyncProvider;
   /**
    * `metadata` of the companyIntegration row (already loaded by every
    * caller via getAccountingIntegration) — required so no drain path can
@@ -1544,6 +1638,12 @@ export const SWEPT_INVOICE_STATUSES = [
 export const SWEPT_PAYMENT_STATUSES = ["Posted", "Voided"] as const;
 /** Card charges: Posted pushes; Voided is the native-void path (Rillet). */
 export const SWEPT_CHARGE_STATUSES = ["Posted", "Voided"] as const;
+/**
+ * Employee reimbursements: Posted pushes; Voided is the native-void path.
+ * `Draft` is deliberately absent — an unposted reimbursement has no journal
+ * and nothing to push.
+ */
+export const SWEPT_REIMBURSEMENT_STATUSES = ["Posted", "Voided"] as const;
 
 /**
  * The sweep window's lower bound: `todayIso - SWEEP_LOOKBACK_DAYS`, raised

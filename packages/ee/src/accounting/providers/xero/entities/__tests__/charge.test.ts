@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { JournalEntrySyncError } from "../../../../core/posting";
 import {
-  mapCardTransactionToXeroBankTransaction,
+  mapChargeToXeroBankTransaction,
   type XeroCardCharge,
   type XeroChargeCosting,
   type XeroChargePostingJournalLine,
@@ -10,7 +10,7 @@ import {
 
 /**
  * Xero card charges are spend/receive-money bank transactions on the card
- * account: an account-costed replay of the posted Card Transaction journal
+ * account: an account-costed replay of the posted Charge journal
  * (AccountCode = the journal's mapped account, TaxType NONE), direction on
  * Type (SPEND for a Charge, RECEIVE for a Credit), transaction-currency
  * amounts with CurrencyRate pinned for foreign charges.
@@ -38,7 +38,7 @@ vi.mock("../../../../core/utils", async (importOriginal) => ({
 const charge = (overrides: Partial<XeroCardCharge> = {}): XeroCardCharge => ({
   id: "ct_1",
   companyId: "company-1",
-  cardTransactionId: "CARD-2026-09-0001",
+  chargeId: "CARD-2026-09-0001",
   type: "Charge",
   status: "Posted",
   supplierId: "sup_delta",
@@ -87,9 +87,9 @@ const base = {
 
 const TRACKING_CATEGORY_ID = "11111111-1111-1111-1111-111111111111";
 
-describe("mapCardTransactionToXeroBankTransaction", () => {
+describe("mapChargeToXeroBankTransaction", () => {
   it("builds a SPEND on the card account that Xero posts exactly like Carbon's journal", () => {
-    const payload = mapCardTransactionToXeroBankTransaction({
+    const payload = mapChargeToXeroBankTransaction({
       charge: charge(),
       costing: costing(),
       ...base
@@ -119,7 +119,7 @@ describe("mapCardTransactionToXeroBankTransaction", () => {
   });
 
   it("builds a RECEIVE with positive line amounts for a Credit (merchant refund)", () => {
-    const payload = mapCardTransactionToXeroBankTransaction({
+    const payload = mapChargeToXeroBankTransaction({
       charge: charge({ type: "Credit" }),
       costing: costing({
         lines: [{ ...lines[0]!, amount: -431.68 }],
@@ -142,7 +142,7 @@ describe("mapCardTransactionToXeroBankTransaction", () => {
   });
 
   it("attaches tracking from the dimension slots (cost center → tracking option)", () => {
-    const payload = mapCardTransactionToXeroBankTransaction({
+    const payload = mapChargeToXeroBankTransaction({
       charge: charge(),
       costing: costing(),
       ...base,
@@ -162,7 +162,7 @@ describe("mapCardTransactionToXeroBankTransaction", () => {
   });
 
   it("drops a slotted dimension whose tracking option is not mapped", () => {
-    const payload = mapCardTransactionToXeroBankTransaction({
+    const payload = mapChargeToXeroBankTransaction({
       charge: charge(),
       costing: costing(),
       ...base,
@@ -177,7 +177,7 @@ describe("mapCardTransactionToXeroBankTransaction", () => {
   });
 
   it("uses the merchant name on the line over the line label", () => {
-    const payload = mapCardTransactionToXeroBankTransaction({
+    const payload = mapChargeToXeroBankTransaction({
       charge: charge({ merchantName: "Acme Fuel" }),
       costing: costing(),
       ...base
@@ -186,7 +186,7 @@ describe("mapCardTransactionToXeroBankTransaction", () => {
   });
 
   it("falls back to the line label when there is no merchant name", () => {
-    const payload = mapCardTransactionToXeroBankTransaction({
+    const payload = mapChargeToXeroBankTransaction({
       charge: charge({ merchantName: null }),
       costing: costing(),
       ...base
@@ -195,7 +195,7 @@ describe("mapCardTransactionToXeroBankTransaction", () => {
   });
 
   it("falls back to the card memo when there is no merchant name or line description", () => {
-    const payload = mapCardTransactionToXeroBankTransaction({
+    const payload = mapChargeToXeroBankTransaction({
       charge: charge({ merchantName: null }),
       costing: costing({ lines: [{ ...lines[0]!, description: null }] }),
       ...base
@@ -207,7 +207,7 @@ describe("mapCardTransactionToXeroBankTransaction", () => {
 
   it("converts a foreign charge to its transaction currency and pins CurrencyRate", () => {
     // A CAD charge: base USD lines × 1.25 CAD per USD.
-    const payload = mapCardTransactionToXeroBankTransaction({
+    const payload = mapChargeToXeroBankTransaction({
       charge: charge(),
       costing: costing({
         lines: [{ ...lines[0]!, amount: 345.34 }],
@@ -223,7 +223,7 @@ describe("mapCardTransactionToXeroBankTransaction", () => {
   });
 
   it("pins a foreign identity rate instead of letting Xero choose a rate", () => {
-    const payload = mapCardTransactionToXeroBankTransaction({
+    const payload = mapChargeToXeroBankTransaction({
       charge: charge(),
       costing: costing({ currencyCode: "CAD", exchangeRate: 1 }),
       ...base
@@ -233,7 +233,7 @@ describe("mapCardTransactionToXeroBankTransaction", () => {
 
   it("fails as the UNMAPPED_ACCOUNTS Warning when a line account is unmapped", () => {
     try {
-      mapCardTransactionToXeroBankTransaction({
+      mapChargeToXeroBankTransaction({
         charge: charge(),
         costing: costing(),
         ...base,
@@ -246,7 +246,7 @@ describe("mapCardTransactionToXeroBankTransaction", () => {
         errorCode: "UNMAPPED_ACCOUNTS",
         warning: true,
         metadata: {
-          cardTransactionId: "ct_1",
+          chargeId: "ct_1",
           unmappedAccountIds: ["acct_travel"],
           lineIdsWithoutAccount: []
         }
@@ -256,7 +256,7 @@ describe("mapCardTransactionToXeroBankTransaction", () => {
 
   it("fails as the UNMAPPED_ACCOUNTS Warning when the card-liability account is unmapped", () => {
     try {
-      mapCardTransactionToXeroBankTransaction({
+      mapChargeToXeroBankTransaction({
         charge: charge(),
         costing: costing(),
         ...base,
@@ -273,7 +273,7 @@ describe("mapCardTransactionToXeroBankTransaction", () => {
 
   it("reports posting lines that carry no account", () => {
     try {
-      mapCardTransactionToXeroBankTransaction({
+      mapChargeToXeroBankTransaction({
         charge: charge(),
         costing: costing({ lines: [{ ...lines[0]!, accountId: null }] }),
         ...base
@@ -289,7 +289,7 @@ describe("mapCardTransactionToXeroBankTransaction", () => {
 
   it("fails as a Warning when there is no posted journal to replay", () => {
     expect(() =>
-      mapCardTransactionToXeroBankTransaction({
+      mapChargeToXeroBankTransaction({
         charge: charge(),
         costing: costing({ lines: [] }),
         ...base
@@ -301,7 +301,7 @@ describe("mapCardTransactionToXeroBankTransaction", () => {
     // A three-decimal currency (KWD) posts a legitimate 431.681 that Xero's
     // two-decimal monetary boundary cannot carry.
     expect(() =>
-      mapCardTransactionToXeroBankTransaction({
+      mapChargeToXeroBankTransaction({
         charge: charge(),
         costing: costing({
           lines: [{ ...lines[0]!, amount: 431.681 }],
@@ -346,7 +346,7 @@ function makeSyncer(args: {
   };
 }
 
-describe("XeroChargeSyncer.shouldSync (mirrors isChargeBackedCardTransaction)", () => {
+describe("XeroChargeSyncer.shouldSync (mirrors isDocBackedCharge)", () => {
   const push = (local: XeroCardCharge) =>
     makeSyncer({}).shouldSync({
       direction: "push",
@@ -363,7 +363,7 @@ describe("XeroChargeSyncer.shouldSync (mirrors isChargeBackedCardTransaction)", 
     expect(push(charge({ type: "Credit" }))).toBe(true);
   });
 
-  it("skips a Draft card transaction", () => {
+  it("skips a Draft charge", () => {
     expect(push(charge({ status: "Draft" }))).toContain("must be posted");
   });
 
@@ -406,7 +406,7 @@ describe("XeroChargeSyncer transport", () => {
         };
       }
     });
-    const payload = mapCardTransactionToXeroBankTransaction({
+    const payload = mapChargeToXeroBankTransaction({
       charge: charge(),
       costing: costing(),
       ...base
@@ -515,7 +515,7 @@ describe("XeroChargeSyncer transport", () => {
   });
 
   it("recovers an accepted create on retry without another PUT after the key expires", async () => {
-    const payload = mapCardTransactionToXeroBankTransaction({
+    const payload = mapChargeToXeroBankTransaction({
       charge: charge(),
       costing: costing(),
       ...base
@@ -540,7 +540,7 @@ describe("XeroChargeSyncer transport", () => {
   });
 
   it("refuses to create when recovery finds multiple transactions or the lookup fails", async () => {
-    const payload = mapCardTransactionToXeroBankTransaction({
+    const payload = mapChargeToXeroBankTransaction({
       charge: charge(),
       costing: costing(),
       ...base

@@ -3,16 +3,16 @@ paths:
   - packages/ee/src/ramp/**
   - packages/jobs/src/inngest/functions/integrations/ramp-sync*.ts
   - packages/jobs/src/inngest/functions/integrations/ramp-sweep.ts
-  - packages/database/supabase/functions/post-card-transaction/**
-  - apps/erp/app/modules/invoicing/ui/CardTransaction/**
-  - apps/erp/app/routes/x+/invoicing+/card-transactions*.tsx
+  - packages/database/supabase/functions/post-charge/**
+  - apps/erp/app/modules/invoicing/ui/Charge/**
+  - apps/erp/app/routes/x+/invoicing+/charges*.tsx
   - apps/erp/app/routes/api+/integrations.ramp.oauth.ts
   - apps/erp/app/routes/api+/webhook.ramp.$companyId.ts
 ---
 
 # Ramp Integration
 
-Carbon acts as Ramp's **accounting provider**. Ramp pushes card transactions, bills,
+Carbon acts as Ramp's **accounting provider**. Ramp pushes charges, bills,
 and reimbursements into Carbon's general ledger; Carbon pushes its chart of accounts and
 cost centers to Ramp so spend gets coded there, and pushes purchase orders + vendor bills
 back for matching. EE package `@carbon/ee`, subpath `@carbon/ee/ramp.server` (server-only
@@ -30,7 +30,7 @@ providers, which own the data and mirror it out.
 >   `entity_amount.value` (signed integer minor-units/cents) instead. The old code read
 >   `amount` as cents and understated every card charge 100×. `RampSignedAmount` =
 >   `{ currency, value }`; `parseVerifiedRampMinorAmount` accepts the verified integer-minor
->   object shapes, while `normalizeRampCardTransactionAmount` handles that preferred field
+>   object shapes, while `normalizeRampTransactionAmount` handles that preferred field
 >   and the deprecated major-unit card fallback without conflating their units.
 > - Transaction **coding lives on `line_items[].accounting_field_selections[]`** (mirrored
 >   in `accounting_categories`), NOT top-level `accounting_field_selections` (which is `[]`).
@@ -38,7 +38,7 @@ providers, which own the data and mirror it out.
 >   `external_id` is the pushed Carbon `account.id`.
 > - **`account` (chart of accounts) is companyGroup-scoped — NO `companyId` column** (PK is
 >   `id` alone). Four sites had `.eq("companyId")` on `account` and all failed hard
->   (post-card-transaction, pushChartOfAccounts, ramp-sync account verification) — fixed to
+>   (post-charge, pushChartOfAccounts, ramp-sync account verification) — fixed to
 >   `id`-only / `companyGroupId`.
 > - `getJobDatabaseClient(5)` was poisoned by the accounting sweeps' `pool.end()` on the
 >   shared pool ("Cannot use a pool after calling end on the pool") — fixed in `jobs/db.ts`.
@@ -54,7 +54,68 @@ providers, which own the data and mirror it out.
 >   (`POST /vendors`), NOT an accounting vendor — `resolveOrCreateRampSpendVendor` matches by
 >   `external_vendor_id`/name then CREATES one with the supplier's synced purchasing-contact
 >   email + `country` + `state` (US requires it) and `business_vendor_contacts` as a **single
->   object** (plural name, `allOf` of one). `loadRampVendorSuppliers` batches the
+>   object** (plural name, `allOf` of one). **`business_vendor_contacts` AND its `email`
+>   are both REQUIRED** — a create with no contact, and one whose contact carries no
+>   email, are each rejected `422 DEVELOPER_7001 "Missing data for required field"`
+>   (verified live 2026-09-26). So when `supplier.purchasingContactId` is unset,
+>   `loadSpendVendorParties` falls back to the supplier's FIRST emailable contact
+>   (`pickVendorContacts`). "First" is meaningful only because the query orders by the
+>   `supplierContact` id — without that, the contact on the Ramp vendor would flip
+>   between syncs. An earlier version demanded exactly ONE and refused when ambiguous;
+>   that blocked the push over a choice nobody had made and that a human would make
+>   arbitrarily anyway, so a vendor naming the wrong colleague beats a bill that never
+>   arrives. Setting `purchasingContactId` still overrides the fallback. Without any
+>   fallback a supplier with one perfectly good contact blocked every bill for want of
+>   a pointer field nobody knew to set.
+>   `describeMissingVendorFields` names the supplier and the specific missing field.
+>   **`business_vendor_contacts.email`, `country` AND (for US) `state` are ALL
+>   required** — verified field-by-field against the sandbox 2026-09-28:
+>   no `country` → `422 {"country": ["Missing data for required field."]}`;
+>   no `business_vendor_contacts` → `422 {"business_vendor_contacts": [...]}`;
+>   a contact carrying no email → `422 {"business_vendor_contacts": {"email": [...]}}`;
+>   `US` with no `state` → `400 DEVELOPER_7080 "State is required for US"`;
+>   email + `US` + `VA` → 200; email + `GB`, no state → 200. So the state rule is
+>   genuinely per-country, not address hygiene. `describeMissingVendorFields` names
+>   whichever is absent, the US state included (it was missing from that list until
+>   2026-09-28, so a US supplier with a country but no state fell through to the
+>   useless "see the provider error" branch).
+>   The PREVENTIVE half is the `requireSupplierContactAndLocation` company setting
+>   (`apps/erp/app/modules/settings/party-contact.ts`): when on, a supplier must have
+>   an emailable contact AND a location whose address carries a country (plus a state
+>   when that country is US) before its supplier quote, purchase order or purchase
+>   invoice can be issued or posted, so the gap is caught while the person who can fix
+>   it is still looking at the document. ONE setting per party kind rather than two,
+>   because the platform needs all of it or none — a supplier with a contact but no
+>   location fails exactly as hard as one with neither. Enforced ONCE, on the PARTY
+>   record, by `checkPartyContactRequirement` (`settings/party-contact.server.ts`) at
+>   the six release/post boundaries — PO and supplier-quote finalize, sales-order
+>   confirm, quote finalize, and both invoice posts — surfaced as a flash naming the
+>   party and the missing fact.
+>   It was briefly ALSO enforced as a document field requirement (`requiredContactField`
+>   plus six `make*Validator` factories, so `supplierContactId`/`supplierLocationId`
+>   became required). That was removed, and the reason is worth keeping: the document
+>   naming a contact is not what the platform needs — the SUPPLIER having an emailable
+>   contact is — so the field rule asked the wrong question, it blocked editing an
+>   existing draft whose optional location was null for reasons unrelated to the edit,
+>   and it was absent from all six CREATE actions anyway (they validated against the
+>   permissive base schema), so the "every entry point is held to it by construction"
+>   claim it shipped with was false. The party check has no such gap: a create is not a
+>   release.
+>   Off by default, and **turned ON when Ramp is connected**. The mechanism is a
+>   CAPABILITY, not a line in the Ramp hook: `requiresPartyContactAndLocation:
+>   ["supplier"]` on both Ramp mode profiles (`ramp/lib/modes.ts`), applied by
+>   `applyPartyContactRequirements` (`sync/party-contact.ts`) from `convergeRamp`. A
+>   second spend provider declares the same capability and inherits the behaviour
+>   with no edit. **ON only, never off**: uninstalling leaves it set, because by then
+>   the company has been entering contacts for months and silently relaxing a
+>   data-quality rule as a side effect of removing something else is a change nobody
+>   attributes correctly. Idempotent — it reads before writing, so the re-converge on
+>   every settings save is a no-op. NOTE it only fires on install / settings-update,
+>   so an already-connected company does not flip until one of those happens.
+>   `requireCustomerContactAndLocation` is its sales-side mirror, still off and NOT
+>   auto-enabled; no accounting provider requires a customer email or address
+>   (Rillet, Xero and QuickBooks all treat them as optional).
+>   `loadRampVendorSuppliers` batches the
 >   supplier→purchasing-contact/address embed. Webhook signing encoding is the one thing the
 >   public docs don't cover.
 > - **Outbound bill push (draft-only)** — SHIPPED + live-verified 2026-09-11 (the release
@@ -213,9 +274,9 @@ uses a lazy runtime `import("@carbon/jobs")` because `jobs → ee` is the depend
   active `Project` dimension (seeded by the slice-2 migration; it FINDS, rarely
   creates). Runs in `convergeRamp` and the `ramp-projects` step of every `ramp-sync`.
   Inbound: `codeSelections` decodes a `carbon-project` selection to `projectId`, the
-  card/bill/reimbursement staging writes it to `cardTransactionLine.projectId` /
+  card/bill/reimbursement staging writes it to `chargeLine.projectId` /
   `purchaseInvoiceLine.projectId` (verified by `verifyProjects`), and
-  `post-card-transaction` / `post-purchase-invoice` write a Project
+  `post-charge` / `post-purchase-invoice` write a Project
   `journalLineDimension` per line — the same round-trip cost centers use.
   `buildLineCodingSelections` emits the project on outbound draft bills.
 - Every purchase invoice the sync creates (bill AND reimbursement) gets its required
@@ -224,29 +285,158 @@ uses a lazy runtime `import("@carbon/jobs")` because `jobs → ee` is the depend
   Standalone invoices use a bare delivery; a single-PO bill preserves the mapped order's
   delivery metadata. The demo sandbox's bills and reimbursements were uncoded when this was
   implemented, so the complete inbound pull still needs live verification.
-- `ensureRampConnection` only CREATES (when `metadata.connectionId` is unset). A fresh Carbon
-  DB pointed at a Ramp business that already has a Carbon connection (a re-install, a new
-  worktree against the sandbox) fails the install hook — adopt the existing connection id
-  (`GET /accounting/connection`) into `metadata.connectionId` by hand until it self-heals.
+- `ensureRampConnection` reads the live connections before creating: it ADOPTS an
+  existing Carbon one (so the re-install / fresh-worktree case self-heals — this no
+  longer needs a manual metadata edit) and REFUSES a seat held by anyone else. See
+  "The single seat is contested" below.
 - `ensureRampWebhook` is idempotent (skips when `metadata.webhookId` set); on create it
   writes `webhookId` and the vaulted `webhookSecret` together through `patchRampWebhook`.
-- `rampOnUninstall` best-effort deletes the webhook and the accounting connection
-  (tolerating already-gone), then `clearRampConnectionState` removes connection/webhook
+- `rampOnUninstall` best-effort deletes the webhook, and the accounting connection
+  **only when `rampOwnsCodingSurface`** — in push-only that connection belongs to the
+  other accounting provider and deleting it would silently break THEIR sync. (It
+  reads with `{ includeInactive: true }`; see "Uninstall tears down the REMOTE side"
+  below for why that is required rather than defensive.) Then
+  `clearRampConnectionState` removes connection/webhook
   ids and the webhook secret without disturbing OAuth credentials/settings/cursors.
-  `rampHealthcheck` = `cardLiabilityAccountId` is set AND `getBusiness()` succeeds AND at
-  least one accounting connection is `linked`/`active`/`connected`. A connected-but-unmapped
+  `rampHealthcheck` = `getBusiness()` succeeds AND at least one accounting connection
+  is `linked`/`active`/`connected` — held by ANYONE, since in push-only the seat is
+  the other system's — AND, **only when Carbon owns the coding surface**,
+  `cardLiabilityAccountId` is set (push-only posts no card journal, and the settings
+  form does not even offer the field). A connected-but-unmapped
   Ramp reads **unhealthy** rather than a green badge over a sync that silently does nothing;
   `statementBankAccountId` is deliberately NOT checked (its absence is a healthy "that family
   is off", not a broken connection).
 
+## Install modes: `provider` vs `push-only`
+
+Ramp permits exactly ONE connected accounting system. So the customer chooses,
+BEFORE consent, whether Carbon takes that seat — and the choice decides which
+scopes are even requested, which is why it cannot be changed without reinstalling.
+
+`Ramp.modes` declares both (`packages/ee/src/ramp/config.tsx`); the profiles live
+in `lib/modes.ts` (`RAMP_MODE_PROFILES`) and are the CEILING — a settings toggle
+narrows them, never widens.
+
+| | `provider` (default, and what an install with no stored mode resolves to) | `push-only` |
+|---|---|---|
+| `ownsRemoteCodingSurface` | true | **false** |
+| `ownsLedgerFamilies` | `[]` | **`["ap"]`** → `ledgerOwnership.ap` is EXTERNAL |
+| inbound ceiling | all seven families | **`billPayments` only** |
+| outbound ceiling | PO + bill | PO + bill |
+| scopes | `RAMP_OAUTH_SCOPES` | `RAMP_PUSH_ONLY_OAUTH_SCOPES` — no `accounting:write`, no `item_receipts:write` |
+
+`rampOwnsCodingSurface(metadata)` is the ONE gate behind every `accounting:write`
+call; the list it must stay in step with is in its doc comment. `metadata.syncMode`
+is stamped from the SIGNED OAuth state by the connect route
+(`api+/integrations.$id.connect.ts`), never a query parameter.
+
+**Ramp has no token-revocation endpoint** (confirmed against `llms-api.txt` and the
+OpenAPI spec). A reinstall therefore cannot narrow a previously granted scope set,
+so a push-only install may still HOLD `accounting:write`. The accepted position is
+that Carbon never USES it — which is why the gate is a predicate over every call
+site rather than a reliance on Ramp refusing.
+
+### Verified live 2026-09-26 (`.ai/runs/2026-09-26-ramp-push-only-verification.md`)
+
+On a REAL push-only grant (10 scopes, no `accounting:write`):
+
+- `GET /accounting/all-connections` → **200**. A push-only token CAN read the
+  connection list, so peer detection and the healthcheck work without the write
+  scope. (This was an open question through the whole design.)
+- `DELETE /accounting/connection` → **403 `DEVELOPER_7100`**. The write half is
+  refused, so a push-only install cannot tear down the connection — correct, it is
+  not Carbon's, and what the uninstall guard already encodes.
+
+### The single seat is contested — `ensureRampConnection` must look first
+
+`POST /accounting/connection` **RETURNS THE INCUMBENT** when the seat is already
+taken; it does not refuse. Storing the returned id blind made a provider-mode
+install adopt ANOTHER system's connection (live, 2026-09-26): Carbon then believed
+it held the seat, and would have pushed masters into that connection, confirmed
+syncs against it, shown a green healthcheck, and DELETED it on uninstall.
+
+So `ensureRampConnection` now reads `all-connections` first:
+
+- a live connection whose `remote_provider_name` is **Carbon** → adopt it (this is
+  also the documented reinstall / fresh-database self-heal),
+- a live connection belonging to anyone else → throw `RampSeatConflictError`
+  (`RAMP_SEAT_CONFLICT_CODE`), which the OAuth callback maps to the
+  `seat-conflict` error copy naming the two real remedies,
+- the CREATE response is re-checked the same way, so a seat taken between the read
+  and the write is still caught.
+
+### Connection status is load-bearing — `lib/connection-status.ts`
+
+`DELETE /accounting/connection` returns 204 but does **not remove the record**. It
+leaves a tombstone that still carries the old provider's name:
+
+```json
+{ "status": "unlinked", "is_active": false, "settings": null,
+  "remote_provider_name": "Carbon" }
+```
+
+So any business that has ever connected keeps a named, dead row forever. One leaf
+module owns the reading of it — `isConnectionLinked`, `extractConnections`,
+`linkedConnections`, `resolveConnectedProviderName`, `isCarbonConnection`,
+`CARBON_PROVIDER_NAME` — shared by the healthcheck, the OAuth callback and
+`ensureRampConnection`, because two of them previously disagreed and the callback's
+unfiltered read reported a disconnected system as the current ledger holder.
+
+`metadata.accountingConnectionProvider` is refreshed by `convergeRamp` on every
+install and settings save, but ONLY when Carbon is not the seat-holder (in provider
+mode it is noise). A failed read leaves the stored value alone — "Carbon could not
+ask" is not "nobody is connected". `resolveInstallMode` omits it entirely in
+provider mode, where showing a peer contradicts the badge beside it.
+
+### Uninstall tears down the REMOTE side — and needs `includeInactive`
+
+`integrations.deactivate.$id.tsx` deactivates the row BEFORE calling `onUninstall`,
+and `readStoredRampMetadata` rejects an inactive row. The whole remote-teardown
+block in `rampOnUninstall` was therefore dead code: every uninstall left the Ramp
+webhook delivering and **left Carbon holding Ramp's accounting seat**. Both reads
+take `{ includeInactive: true }` on that path only; every other caller keeps the
+default, because an inactive integration must not sync, push, or report health.
+
+### Mode-dependent UI
+
+Nothing branches on `id === "ramp"`. Two declarative hooks on the descriptor do it:
+
+- **`IntegrationSetting.availableWhen(capabilities)`** — the settings form resolves
+  THIS install's capabilities via `resolveInstallCapabilities` and drops gated-out
+  settings before grouping, so a group left empty disappears with them. Ramp gates
+  the four GL-account settings and the three `pull*` toggles on
+  `ownsRemoteCodingSurface`. A gated-out setting's stored value is PRESERVED (the
+  save merges over existing metadata) and stays inert because the runtime checks
+  the ceiling before the toggle.
+- **`resolveInstallMode(metadata)`** → `{ id, detail? }` — drives the read-only
+  mode badge, and selects the MODE's own `description` / `shortDescription` for the
+  drawer and the card. The integration-level copy is mode-NEUTRAL on purpose; it
+  used to be provider-mode copy, which told a push-only customer Carbon pulls their
+  charges into the ledger and to map GL accounts on a tab that mode does not render.
+  `setupInstructions` receives the resolved `mode` for the same reason.
+
+`cardLiabilityAccountId` is `.optional()` in `RampSettingsSchema` because
+requiredness depends on the mode, which the schema cannot see; it is enforced in
+`convergeRamp` and `rampHealthcheck`, both behind `rampOwnsCodingSurface`.
+
+**Known gap:** gating `pullBills` also hides the toggle for the one inbound family
+push-only still runs (bill payments) — one stored toggle covers bills AND their
+payments, and its label describes the bills half. Splitting it needs a metadata
+migration.
+
 ## Metadata (`companyIntegration.metadata`, id `ramp`)
 
-`RampIntegrationMetadata`: `credentials` (access/refresh/client secrets vaulted and resolved on read),
+`RampIntegrationMetadata`: `syncMode` (the install mode — see above; absent
+resolves to `provider`), `grantedScopes` (what the token response ACTUALLY
+granted, RFC 6749 §3.3, never what was requested), `accountingConnectionProvider`
+(refreshed per the rules above), `credentials` (access/refresh/client secrets vaulted and resolved on read),
 `cardLiabilityAccountId`, `statementBankAccountId`, `cashbackIncomeAccountId`,
 `reimbursementBankAccountId`, `entityId`, `connectionId`, `webhookId`, `webhookSecret`,
 `sync` (the five flags), and **`cursors`**:
-`cursors.repaymentsRepaidAt`, `cursors.purchaseOrderPushUpdatedAt`,
-`cursors.invoicePushUpdatedAt`.
+`cursors.repaymentsRepaidAt` — the only one left. The outbound push cursors
+(`purchaseOrderPushUpdatedAt` / `invoicePushUpdatedAt`) were dropped when purchase
+orders and bills moved onto the event engine; the `accountingSyncOperation` ledger is
+the idempotency now. Values stored by earlier installs are ignored, not migrated.
 
 All Ramp writes go through `upsert_company_integration_patch`, exposed by
 `patchIntegrationState` and the operation-specific functions in `lib/state.ts`. The RPC is
@@ -264,7 +454,8 @@ reintroduce raw read/merge/write or a whole-object Vault replacement.
 `concurrency: { key companyId, limit 1 }`). It creates `RampSyncContext`, runs the fixed
 `step.run` sequence, totals failures, and notifies. Business workflows live in
 `ramp-sync-card.ts`, `ramp-sync-bill.ts`, `ramp-sync-reimbursement-family.ts`,
-`ramp-sync-repayment.ts`, and `ramp-sync-outbound.ts`; shared tenant/currency/file helpers
+and `ramp-sync-repayment.ts` (outbound no longer lives here — see below); shared
+tenant/currency/file helpers
 live in `ramp-sync-shared.ts`. Pure policy and cursor contracts remain in their dedicated
 files. Transactional staging/resume lives in `ramp-sync-card-stage.ts`,
 `ramp-sync-bill-stage.ts` (with PO-line policy in `ramp-sync-bill-po.ts`),
@@ -276,18 +467,36 @@ total. Durable steps remain, in order:
 
 | Step | Family | Becomes | syncType (confirm) |
 |------|--------|---------|--------------------|
-| `ramp-card-transactions` | transactions `sync_status=SYNC_READY` | `cardTransaction` Charge/Credit | `TRANSACTION_SYNC` |
-| `ramp-transfers` | transfers `SYNC_READY` | `cardTransaction` Payment | `TRANSFER_SYNC` |
-| `ramp-cashbacks` | cashbacks `SYNC_READY` | `cardTransaction` Cashback | `STATEMENT_CREDIT_SYNC` |
+| `ramp-charges` | transactions `sync_status=SYNC_READY` | `charge` Charge/Credit | `TRANSACTION_SYNC` |
+| `ramp-transfers` | transfers `SYNC_READY` | `charge` Payment | `TRANSFER_SYNC` |
+| `ramp-cashbacks` | cashbacks `SYNC_READY` | `charge` Cashback | `STATEMENT_CREDIT_SYNC` |
 | `ramp-bills` | bills (`sync_ready`, not-synced) | posted `purchaseInvoice` | `BILL_SYNC` |
 | `ramp-bill-payments` | paid bills' `payment` | AP `payment` + `invoiceSettlement` | `BILL_PAYMENT_SYNC` |
-| `ramp-reimbursements` | reimbursements `SYNC_READY` | `purchaseInvoice` (Employee supplier) | `REIMBURSEMENT_SYNC` |
-| `ramp-repayments` | repayments (`from_repaid_at` cursor) | `cardTransaction` Repayment | *(no Ramp confirm)* |
-| `ramp-outbound` | Carbon POs + posted invoices | Ramp POs (archived on Completed/Closed) + coded Ramp DRAFT bills (never submitted) | *(no confirm)* |
+| `ramp-reimbursements` | reimbursements `SYNC_READY` | Draft `reimbursement` (employee party) | `REIMBURSEMENT_SYNC` |
+| `ramp-repayments` | repayments (`from_repaid_at` cursor) | `charge` Repayment | *(no Ramp confirm)* |
+| `ramp-subscriptions` | — | converges Ramp's SYNC event subscriptions (self-healing, mirrors the accounting outbound sweep) | *(n/a)* |
+| `ramp-outbound-reconcile` | released POs + posted invoices in the sweep window | ledger operations, then a drain | *(n/a)* |
 
-Card families use `stageOrResumeRampCardTransaction` to advisory-lock the company/Ramp id
-and atomically create or resume the **Draft** `cardTransaction`, lines, and mapping before
-posting it through `post-card-transaction`. A missing or ambiguous edge response succeeds
+**Outbound pushes run on the shared event engine, not a bespoke cursor sweep.**
+Purchase orders and draft bills go through `event-handler-sync` →
+`reconcileEntities` → `drainSyncOperations` → `SyncFactory` — see "Outbound: on
+the event engine" below. `ramp-outbound-reconcile` is that path's **correctness
+guarantee**, and the other half of `ramp-subscriptions`: converging the
+subscriptions only fixes the NEXT event, so a purchase order released or an
+invoice posted while the rows were missing has no ledger operation and nothing
+would ever look for it (the accounting outbound sweep walks `ProviderID` only, so
+it never reaches Ramp). The step therefore repeats the accounting sweep's
+convergence-then-walk over the same `SWEEP_LOOKBACK_DAYS` window, gating each
+candidate walk on the PROVIDER's own config (`pushPurchaseOrders` /
+`pushInvoices` plus the mode ceiling) — `loadRampOutboundCandidates` in
+`ramp-sync-outbound.ts`. It runs after the coding-master pushes, because a bill
+pushed before its accounts and cost centers exist in Ramp arrives uncoded, and
+history older than the window stays a backfill's job rather than a silent
+mass-push.
+
+Card families use `stageOrResumeRampCharge` to advisory-lock the company/Ramp id
+and atomically create or resume the **Draft** `charge`, lines, and mapping before
+posting it through `post-charge`. A missing or ambiguous edge response succeeds
 only when a tenant-scoped reread observes `Posted`; Ramp receipts are then stored on the
 Carbon transaction best-effort. A mapped Draft is refreshed from the latest validated Ramp
 header and coding in that same transaction; a failed refresh rolls back, and Posted rows
@@ -298,16 +507,30 @@ before `post-purchase-invoice`; an ambiguous response is accepted only after obs
 `syncRampBillPayment` in `ramp-sync-payment.ts`: the Draft payment, settlement, and Ramp
 mapping are staged atomically, the stored source-FX snapshot is retained on resume, and
 success requires a tenant-scoped reread showing Posted. Reimbursements delegate to
-`syncRampReimbursement` in `ramp-sync-reimbursement.ts`: a company/Ramp-id advisory lock
-serializes the atomic supplier-interaction + Draft invoice + delivery + lines + mapping
-stage, and Ramp-paid rows also require their AP payment to be observably Posted before
-confirm. All writes attribute to `"system"`. Gating: `metadata.sync.pull*` flags;
+`createRampReimbursement` in `ramp-sync-reimbursement.ts`: a company/Ramp-id advisory lock
+serializes the atomic `reimbursement` header + lines + mapping stage. The document is its
+own Carbon type, NOT a purchase invoice to an "Employee" supplier, and it lands **Draft** —
+nothing auto-posts, so no settlement is written at import. The mapping entity type is
+`reimbursement` (`RAMP_REIMBURSEMENT_ENTITY_TYPE`), not `bill`.
+
+**Sync creates, and never re-writes.** An already-mapped reimbursement returns its existing
+row untouched, so a reviewer's edits survive a re-sync. The ONE exception is the payout
+intent on the mapping metadata, which is additive-only: a reimbursement imported while
+`APPROVED` that Ramp later PAYS would otherwise keep a payout-less mapping forever and
+Post would never create the `payment`/`invoiceSettlement`. Mapping bookkeeping is not a
+document re-write — nobody edits it — and an intent already recorded carries the FX
+snapshot of the payout that really happened and is never overwritten
+(`hasRecordedPayout`, keyed on `rampPaymentId`).
+
+Ramp line amounts are in MERCHANT currency while the header is the SETTLEMENT amount, so
+`scaleLinesToTotal` applies here as it does for cards; unscaled lines would not sum to the
+header and `requireLineSum` would block Post forever. All writes attribute to `"system"`. Gating: `metadata.sync.pull*` flags;
 `cardLiabilityAccountId` (required for
 every card family); `statementBankAccountId` (transfers, bill payments, repayments);
 `cashbackIncomeAccountId` (cashbacks). A configured `entityId` is enforced locally on
 every inbound row before mapping or writes; only endpoints with a verified query contract
 receive the remote `entity_id` filter. Amounts use their verified wire shape: signed and
-currency amounts are integer minor units, while the deprecated card-transaction fallback
+currency amounts are integer minor units, while the deprecated transaction `amount` fallback
 is a major-unit decimal. Missing, non-finite, fractional-minor, currency-mismatched, or
 ambiguous values fail that item instead of becoming zero. The currency's authoritative
 `decimalPlaces` is read once per code and cached.
@@ -317,7 +540,7 @@ ambiguous values fail that item instead of becoming zero. The currency's authori
 base → 1). A missing/invalid currency precision or exchange rate fails the affected
 item; Ramp sync never guesses two decimals or posts foreign currency at par. The card
 journal converts document→base by DIVIDING via the shared `toBaseAmount`
-(`build-card-transaction-journal.ts`) — NOT multiplying. Standalone inbound bill and
+(`build-charge-journal.ts`) — NOT multiplying. Standalone inbound bill and
 reimbursement lines use quantity one and write the document amount to
 `purchaseInvoiceLine.supplierUnitPrice`; a linked-PO bill preserves its covered quantity and
 stores `supplierUnitPrice = document amount / covered quantity`. Both forms store the
@@ -360,15 +583,15 @@ confirm 422'd on one of these and was only `console.error`'d, so synced transact
 the family's step output as `confirmError`. A family confirms whatever it managed to gather
 **even if its own drain threw partway** (the confirm is outside the drain's try/catch). An
 empty batch is skipped.
-**Repayments and the outbound families have no Ramp confirm** — their idempotency IS the
-`externalIntegrationMapping` / the cursor.
+**Repayments have no Ramp confirm** — their idempotency IS the
+`externalIntegrationMapping` / the cursor. The outbound families left this job entirely.
 
 ### Idempotency (mapping-guarded)
 
 An already-synced Ramp item is detected via its `externalIntegrationMapping` and
 re-confirmed only, never re-created. `mapping.link(...)` is written **before** the confirm,
 so a retry (SYNC_READY still lists the item until Ramp records the confirm) short-circuits
-on the mapping. Entity-type reuse per family: card families → `cardTransaction`
+on the mapping. Entity-type reuse per family: card families → `charge`
 (repayments key it as `repayment:<id>`); bills + reimbursements → `bill` (distinct id
 spaces); bill payments → `payment`.
 
@@ -383,24 +606,30 @@ spaces); bill payments → `payment`.
   invoices instead of guessing a conversion target.
 - **Bill payments** (`syncBillPayment`): a bill paid by a **Ramp card** (`payment_method`
   in `CARD_PAYMENT_METHODS`) is **confirmed WITHOUT posting an AP payment** — the card
-  spend already routes through the card-transaction sync, so posting a payment would
+  spend already routes through the charge sync, so posting a payment would
   double-count. Card methods include `ONE_TIME_CARD_DELIVERY`. Only the verified bank rails
   `ACH`, `CHECK`, `DIRECT_DEBIT`, `DOMESTIC_WIRE`, `FED_NOW`, `INTERNATIONAL`,
   `LOCAL_BANK_TRANSFER`, `RTP`, and `SWIFT` post an AP payment. Missing/unknown methods,
   `PAID_MANUALLY`, `VENDOR_CREDIT`, crypto, and `UNSPECIFIED` fail visibly rather than
   guessing the statement bank account.
-- **Reimbursements**: `REIMBURSED` and `REIMBURSED_VIA_PUSH` require a posted settlement.
-  `APPROVED`, `AWAITING_PAYMENT`, `AWAITING_PUSH_PAYMENT`, and `MANUALLY_REIMBURSED`
-  create/confirm the invoice without a Ramp bank payment. Other states fail before writes.
+- **Reimbursements**: every supported state now creates a **Draft** `reimbursement` and
+  confirms — nothing auto-posts, so confirmation no longer waits on a posted settlement.
+  `REIMBURSED` and `REIMBURSED_VIA_PUSH` additionally record a payout INTENT on the mapping
+  metadata, which the ERP's Post helper turns into the `payment` + `invoiceSettlement`.
+  `APPROVED`, `AWAITING_PAYMENT`, `AWAITING_PUSH_PAYMENT` and `MANUALLY_REIMBURSED` record
+  no intent. Other states fail before writes.
   Legacy adoption requires exactly one unposted, system-created Draft with the expected
   `RAMP-REIMB-<id>` reference, supplier interaction, complete delivery/lines, matching dates,
   currency, amounts and coding, valid preserved FX, zero tax/shipping, and no PO/item/asset
   provenance. Incomplete or ambiguous reference matches are rejected without repair;
   an existing mapping remains the authoritative resume identity.
 - **Suppliers** (`resolveRampSupplier`): mapping-first (`vendor` entityType) → case-
-  insensitive exact `supplier.name` match → auto-create. `resolveEmployeeSupplier`
-  (reimbursements/repayment users) does the same but ensures an "Employee" `supplierType`
-  and names the supplier `"<First> <Last> (<email>)"`.
+  insensitive exact `supplier.name` match → auto-create. Repayment users still resolve to an
+  "Employee" `supplierType` supplier this way. **Reimbursements no longer do**:
+  `resolveReimbursementEmployee` matches the Ramp user's email to an `employee` row and
+  writes the reimbursement's employee party directly. Zero matches fails with a named
+  error and more than one fails as ambiguous — it never auto-creates an employee, because
+  a wrong match pays the wrong person.
 
 ### Repayments (cursor-driven)
 
@@ -417,26 +646,130 @@ is a free string; only its documented lowercase `ach` value is supported, using 
 bank offset. Missing or unverified funding (including `STATEMENT_CREDIT`) fails visibly and
 holds the cursor before that item instead of selecting an account by fallback.
 
-### Outbound: the draft-bill-only rule
+### Outbound: on the event engine
 
-`ramp-outbound` (gated by `pushPurchaseOrders` / `pushInvoices`) is cursor-driven
-(`purchaseOrderPushUpdatedAt` / `invoicePushUpdatedAt`). These string metadata slots hold
-JSON-encoded `[updatedAt,id]` keysets; legacy timestamp-only values replay their boundary
-inclusively. Each page advances only across its contiguous successful prefix, so a failed
-row and every row after it remain eligible on the next run. Failed supplier or supplier-type
-lookups are failures, not missing/excluded suppliers, and cannot advance either cursor.
+Purchase orders and draft bills push through the SAME event engine, ledger, reconciler and
+drain as the accounting providers — `event-handler-sync` → `reconcileEntities` →
+`drainSyncOperations` → `SyncFactory`. The cursor-paged `ramp-sync-outbound` sweep, its
+keyset helpers and its two metadata cursors are gone.
 
-- **POs** (`pushPurchaseOrder`): Completed/Closed mapped POs are archived; released POs
+- **Ramp is a `SyncProvider`.** `RampProvider` (`ee/src/ramp/lib/provider.ts`) declares
+  `role: "spend"` capabilities and resolves its sync config through `buildSpendSyncConfig`
+  (`ee/src/spend/sync-config.ts`), which starts from everything disabled and enables only
+  what a ceiling AND the stored `pushPurchaseOrders` / `pushInvoices` toggles permit. The
+  ceiling always wins — that is what push-only mode will constrain.
+- **The Carbon-side half is provider-neutral and lives in `ee/src/spend/`** — the same
+  convention the accounting providers use (`document-costing.ts`,
+  `sales-invoice-source.ts`, `card-charge-source.ts` each feed three adapters):
+  `push-only-syncer.ts`, `parties.ts` (supplier / purchasing contact / address),
+  `purchase-order-source.ts`, `bill-source.ts`, `gates.ts` (eligibility) and
+  `sync-config.ts`. Adding a second spend platform means writing adapters, not
+  re-deriving any of this.
+- **The WIRE lives in `ee/src/ramp/entities/`** (`purchase-order.ts`, `bill.ts`),
+  registered with `SyncFactory` under `SpendProviderID.RAMP` by `entities/index.ts`.
+  `@carbon/jobs` side-effect-imports `@carbon/ee/ramp/entities` from `sync-provider.ts`
+  so the registration runs; without it the drain resolves a provider with no registry.
+  Rules that are genuinely Ramp's stay here and say so — the draft bill is create-once
+  BECAUSE a Ramp draft has no delete endpoint, so a platform that can retract one could
+  update instead.
+- **`resolveSyncProvider`** (`jobs/.../integrations/sync-provider.ts`) is the ONE place
+  that branches accounting vs spend. The event handler and drain call it instead of
+  assuming every provider id is an accounting provider.
+- **Subscriptions**: `REQUIRED_SYNC_SUBSCRIPTIONS[ramp]` = `purchaseOrder` +
+  `purchaseInvoice`, INSERT/UPDATE only. Converged by the install/update hooks and by the
+  `ramp-subscriptions` step of `ramp-sync`, so existing installs self-heal.
+- **A bill reads the `purchaseInvoices` VIEW, not the table** (`spend/bill-source.ts`).
+  The view derives status: a fully settled invoice reads `Paid` there while the table
+  still stores `Open`, and `Partially Paid`/`Overdue` exist only in the view. Reading the
+  table would hand Ramp bills that are already paid. Pinned by `spend/gates.test.ts`.
+- **A PO line pushes `supplierUnitPrice` (document currency), never the generated
+  `unitPrice`** (company base), and `currencyCode` falls back to the company's base
+  currency — it is NULL on an order raised in the company's own currency and Ramp
+  requires a currency on create. Both live-verified 2026-09-25.
+- A Carbon purchase invoice can carry both a `rillet`/`bill` and a `ramp`/`bill` operation
+  — the ledger key is `(companyId, integration, entityType, entityId)`.
+
+- **`purchase_order_number` is NOT an identity, and Ramp mutates it.** It stores
+  `"PO000002"` as `"2"` and suffixes a number with no numeric tail
+  (`"CARBONPROBE-ZZZ"` → `"CARBONPROBE-ZZZ-1"`), both verified live 2026-09-26.
+  `external_id` (the Carbon purchase-order id) is the identity, and
+  `findPurchaseOrderByExternalId` is how a purchase order Carbon already pushed is
+  recognised before creating a duplicate — without it a lost mapping made the
+  document PERMANENTLY unsyncable (`400 DEVELOPER_7063` on every retry, forever).
+  The `?external_id=` filter is honoured; an unsupported parameter on this endpoint
+  is IGNORED and returns the full first page, which is how the filter was confirmed.
+  The normalization is: a bare `<alpha-prefix><digits>` is reduced to the digits
+  (`PO-000004` too — a separator does not help), while anything with content AFTER
+  the digits is kept whole (`PO000004-1` verbatim, `PO000004-A` → `PO000004-A-1`).
+  Omitting the field lets Ramp assign from its own sequence. Uniqueness is on the
+  normalized value, and **archived purchase orders release their number**.
+  Because of that normalization a bare Carbon readable id collides with purchase
+  orders already in the customer's Ramp account (`PO000004` → `4`) and is refused on
+  a FIRST push, permanently. `toRampPurchaseOrderNumber` therefore appends `-1`
+  unconditionally — `PO000004-1` is stored verbatim and cannot collide, since its
+  uniqueness follows from the Carbon id's. Unconditional rather than a retry, so the
+  number a customer sees never depends on what else is in their Ramp account.
+  Caveats: the transform could not be reduced to a rule (`PO-2026-003` → `2026-3`
+  but `PO000004-1` untouched), so this is verified for the DEFAULT `PO`+6-digit
+  sequence and not guaranteed for a customized one; and purchase orders pushed
+  before the fix keep their reduced number, because PATCH does not resend it.
+- **`vendor_id` is CREATE-only.** A PATCH carrying it is rejected whole with
+  `422 DEVELOPER_7001 {"vendor_id": ["Unknown field."]}`, so the line items in the
+  same request never land. PATCH sends `line_items` only.
+- **A Completed purchase order is NOT archived — only a Closed one is.** Archiving is
+  destructive (`GET` 404s, it leaves every list) and Ramp offers no non-destructive
+  alternative: a purchase order carries `archived_at` and no state/closed field. A bill
+  can only be matched to an order that still EXISTS, so archiving on `Completed`
+  destroyed the counterpart at the exact moment its bill arrived, and "Matching Purchase
+  Order" in Ramp could never populate. `Completed` = received AND invoiced, which is when
+  the match matters; `Closed` = short-closed, no bill is coming. Pinned by
+  `spend/gates.test.ts`. The cost of keeping them is that Ramp's purchase-order list
+  grows — Ramp tracks `billing_status` / `receipt_status` per order, so a kept order does
+  not read as "open", it is only one more row.
+- **The bill↔order match: what is actually true.** Two earlier claims in this rule were
+  DISPROVEN and have been removed — do not reinstate them.
+  - **A draft bill DOES take a writable purchase-order link.** `purchase_order_ids` (an
+    array of Ramp PO uuids, "Unique identifiers of the purchase orders to match this bill
+    to") is documented and writable on BOTH `POST /developer/v1/bills/drafts` and
+    `PATCH /developer/v1/bills/drafts/{id}`, as are
+    `line_items[].purchase_order_line_item_id` and
+    `inventory_line_items[].purchase_order_line_item_id`. Carbon does not send any of them
+    yet — that is a **follow-up**, not a limitation.
+  - The probe that reported the field absent tested nothing. `purchase_order_id`
+    SINGULAR is not a field on that endpoint at all — an unknown key, silently ignored —
+    so half the test was a no-op; and `GET /developer/v1/bills/drafts/{id}` (and the list
+    endpoint) expose NO purchase-order key, so reading a draft back could never detect
+    storage either way. It was a false negative. Those fields are readable only on a
+    SUBMITTED bill: `GET /bills/{id}` returns `purchase_order_id` and
+    `line_items[].purchase_order_line_item_id`.
+  - **"Ramp performs the match itself" is unsupported.** Live sandbox state: PO000101
+    (`archived_at: null`, `billing_status: OPEN`, `bill_ids: []`) and its draft bill
+    AP000009 carried the same vendor and the same total, and Ramp had NOT matched them.
+  The conclusion above is unchanged — a Completed order must not be archived, because the
+  order existing is a prerequisite for ANY match — but it rests on that, not on automatic
+  matching. `buildBillMemo`'s `"<invoice> · <orders>"` is a HUMAN trace, not the link.
+- **A mapped purchase order Ramp no longer has recovers by recreating.** Every install
+  that ran the archive-on-Completed build has mappings pointing at archived orders, and
+  `PATCH` answers `404 DEVELOPER_7002` — without recovery the first push after the change
+  would fail permanently on a mapping nothing repairs. `upsertRemote` catches exactly a
+  404 and falls through to create, returning a new id (which rewrites the mapping). Safe
+  only because **archiving releases the purchase-order number**: re-creating `PO000018-1`
+  while the archived original still held it returned `201`, not `400 DEVELOPER_7063`
+  (verified live 2026-09-27, and end-to-end through the real drain on PO000018).
+- **POs** (`RampPurchaseOrderSyncer`, `ramp/entities/purchase-order.ts`): Closed mapped POs are archived; released POs
   ensure a Ramp vendor then create (carrying `external_id: po.id` for Ramp's
   bill-matching plus an entity-scoped idempotency key) or PATCH a mapped PO. Each local page
   preloads PO/vendor mappings in two reads and, only when named suppliers remain unmapped,
   drains one paginated Ramp vendor snapshot. Successful creates update that page cache, so
   shared suppliers never repeat mapping or provider lookups inside the PO loop.
-- **Invoices** (`pushInvoiceDraftBill`): **DRAFT-ONLY, shipped + live-verified 2026-09-11**
+- **Invoices** (`RampBillSyncer`, `ramp/entities/bill.ts`): **DRAFT-ONLY, shipped + live-verified 2026-09-11**
   (the `RAMP_DRAFT_BILL_CONTRACT_VERIFIED` gate is gone). Targets unmapped Open/Partially
-  Paid invoices from non-Employee suppliers. Ensures the Ramp SPEND vendor, reads the
+  Paid invoices from non-Employee suppliers — `shouldSync` refuses an already-mapped bill
+  BEFORE `mapToRemote` runs, so an `updatedAt` bump on a handed-off bill never re-resolves
+  the vendor or replays the journal. Ensures the Ramp SPEND vendor, reads the
   invoice's POSTED "Purchase Invoice" journal for its account-costed lines via
-  `loadBillCostingLines` + `toTransactionCurrencyLines` (the SAME path QBO/Xero/Rillet use —
+  `loadBillPushLines` (`spend/bill-source.ts`, wrapping
+  `loadBillCostingLines` + `toTransactionCurrencyLines` — the SAME path QBO/Xero/Rillet use —
   NOT `purchaseInvoiceLine.accountId`, which is null for item/part lines since posting
   resolves the real inventory / GR-IR / variance / tax accounts), then `POST /bills/drafts`
   with `remote_id: invoice.id` (the echo guard + bill-match key — the inbound `ramp-bills`
@@ -455,10 +788,44 @@ lookups are failures, not missing/excluded suppliers, and cannot advance either 
   `POST /bills/drafts/{id}/submit` needs payment method + payee contact (per-vendor Ramp
   bill-pay config Carbon doesn't own; verified `400 BILL_PAY_7145`). PDF attach
   (`POST /bills/drafts/{id}/attachments`) is a deferred follow-up, NOT a create-body field.
+- **Coding uses the SEAT-HOLDER's identifiers.** `field_option_external_id` is the
+  Carbon `account.id` only while Carbon holds Ramp's accounting seat and published
+  the options itself. When another system holds it, Ramp's options are THAT
+  system's — verified live 2026-09-26 with Rillet connected, where ZERO of Ramp's
+  147 GL options were keyed by a Carbon `acct_` id (Ramp exposes only the current
+  connection's accounts). `RampProvider.codingIdentityIntegrationId`, set from the
+  topology's `identityScope` in `resolveSyncProvider`, tells the bill syncer which
+  integration's mappings to read and to emit their `externalId`; `SpendPushedCoding`
+  is a `Carbon id -> wire id` MAP for this reason, not a membership set. A draft
+  pushed this way reads back with `provider_name: "RILLET"`.
+  `GET /developer/v1/bills/drafts/{id}` DOES exist and returns the stored coding,
+  which is how this was confirmed.
+- **A delegated family's OWNER keeps its own entities.** `applyLedgerDelegation`
+  takes the `integrationId` whose config is being resolved; without it, resolving
+  Ramp's config disabled Ramp's `bill` entity (Ramp owns `ap` in push-only), so the
+  spend platform never received the documents the delegation routes to it.
 - **No bill archive-on-settlement**: a Ramp draft has no delete endpoint
   (`DELETE /bills/drafts/{id}` → 405; `DELETE /bills/{id}` on a draft id → 404), so a
   handed-off draft is not retracted when its Carbon invoice settles — Ramp owns the bill's
-  lifecycle after handoff. (PO archive on Completed/Closed is separate and still runs.)
+  lifecycle after handoff. (PO archive is separate and now runs on `Closed` only — above.)
+- **A draft bill cannot be pushed twice.** A second create with the same `remote_id` is
+  refused `409 DEVELOPER_7153 "A draft bill with this remote ID already exists for this
+  accounting connection"` (verified live 2026-09-27). Duplicates are therefore impossible
+  even with the mapping lost — but so is re-sending a corrected payload, which is what
+  makes the create-once path the only shot at getting a draft right. **Never delete a
+  bill mapping to force a re-push**: the draft survives, the create 409s, and the invoice
+  is left permanently unsyncable with nothing pointing at its draft.
+- **`memo` carries the Carbon numbers, because nothing else can.** `invoice_number` is
+  the SUPPLIER's reference whenever there is one — that is what an AP clerk matches
+  against the paper — so a bill in Ramp showed only `CEX-Q-4471` with no way back to
+  `AP000008`. `buildBillMemo` (`ramp/entities/bill.ts`) writes `"<invoice> · <orders>"`
+  (`AP000004 · PO000011`, verified stored live 2026-09-27), bare ids so a Ramp search for
+  either finds the bill. The orders come from `SpendBillSource.purchaseOrderReadableIds`,
+  loaded from `purchaseInvoiceLine.purchaseOrderId` — the link is per LINE, so a
+  consolidated invoice names every order it settles. It is a HUMAN trace, NOT the machine
+  link: `purchase_order_ids` and the per-line `purchase_order_line_item_id` are writable
+  on a draft and are a follow-up Carbon has not wired up (see the bill↔order bullet
+  above).
 
 If any family leaves failures, a final `ramp-notify-failures` step sends one in-app
 `NotificationEvent.IntegrationSync` to the integration's configurer (`updatedBy`, unless
@@ -478,7 +845,7 @@ Every family records a **`Warning`** row on the shared `accountingSyncOperation`
 for each failed/skipped item, and clears it when that item later syncs — so a coded-but-
 unrecognized charge shows up in the integration's **Sync Activity** tab with its reason
 instead of vanishing into the Inngest logs. A successfully-synced item is NOT recorded (it
-already appears as a `cardTransaction`/`purchaseInvoice`/`payment` row); the tab is a
+already appears as a `charge`/`purchaseInvoice`/`payment` row); the tab is a
 "what didn't come through, and why" inbox, not a full audit log.
 
 - `recordRampSyncFailures(ctx, {entityType, direction, failures})` and
@@ -487,7 +854,7 @@ already appears as a `cardTransaction`/`purchaseInvoice`/`payment` row); the tab
   drain. Both are **strictly best-effort** — every error (thrown OR returned) is swallowed
   and logged; observability must never fail or pollute a family's sync result. `ctx` gained
   `createdBy` (`integration.updatedBy ?? "system"`) and `trigger` (`webhook` vs `event`).
-- entityType/direction per family: card charges `cardTransaction`, transfers `transfer`,
+- entityType/direction per family: card charges `charge`, transfers `transfer`,
   cashbacks `cashback`, bills `bill`, bill payments `billPayment`, reimbursements
   `reimbursement`, repayments `repayment` — all `pull-from-accounting`; PO push
   `purchaseOrder` and draft-bill push `purchaseInvoice` — `push-to-accounting`. entityId is
@@ -504,22 +871,22 @@ already appears as a `cardTransaction`/`purchaseInvoice`/`payment` row); the tab
   needs nothing new — Ramp rows live in the same `accountingSyncOperation` table the nightly
   passes already sweep.
 
-## cardTransaction schema (migration `20260919152233_ramp-integration.sql`)
+## Charge schema (migration `20260919152233_ramp-integration.sql`)
 
 The forward, retry-safe reconciliation migration supersedes the three branch-only Ramp
-schema migrations. Both `cardTransaction` and `cardTransactionLine` use composite
+schema migrations. Both `charge` and `chargeLine` use composite
 `(id, companyId)` primary keys with `id()` defaults. The parent, supplier, and cost-center
 relationships are tenant-composite; account triggers require header and line accounts to
 belong to the company's `companyGroupId`. It also converges the Ramp registry row, journal
 enum values, document enums, indexes, RLS, event trigger, and the per-company
-`CARD-%{yyyy}-%{mm}-` sequence.
+`CHG-%{yyyy}-%{mm}-` sequence.
 
-- `cardTransaction`: `cardTransactionId` (readable, unique per company), `type`, `status`,
+- `charge`: `chargeId` (readable, unique per company), `type`, `status`,
   `integration` (default `'ramp'`), `cardAccountId` (NOT NULL FK `account`), `offsetAccountId`
   (nullable FK), merchant/holder/last4/memo, `transactionDate`/`postingDate` (DATE),
   `currencyCode`, `exchangeRate`, `amount` (`>= 0`), `journalId`, posted/voided audit.
   CHECK: Payment/Cashback/Repayment require an `offsetAccountId`; Charge/Credit use lines.
-- `cardTransactionLine`: codes an `amount` to an `accountId` (+ optional tenant-composite
+- `chargeLine`: codes an `amount` to an `accountId` (+ optional tenant-composite
   `costCenterId`), `sequence`, and a same-company parent with `ON DELETE CASCADE`.
 - RLS on both is gated by **invoicing** permissions. The lifecycle trigger allows only
   Draft edits, Draft→Posted bookkeeping fields, and Posted→Voided audit fields. The line
@@ -531,11 +898,11 @@ enum values, document enums, indexes, RLS, event trigger, and the per-company
   Voided requires both posting and void audit fields. `journalId` remains optional for
   Posted/Voided because accounting-disabled companies do not create a journal.
 
-## Card transactions → the accounting provider
+## Charges → the accounting provider
 
-The forward reconciliation migration gives `cardTransaction` a tenant-composite
+The forward reconciliation migration gives `charge` a tenant-composite
 **`supplierId`** foreign key and an **event trigger**
-(`attach_event_trigger('cardTransaction', …)`). The card
+(`attach_event_trigger('charge', …)`). The card
 family resolves the Ramp merchant to a Carbon supplier before posting —
 `resolveMerchantSupplier` (`lib/suppliers.ts`) is **match-or-default, never one
 supplier per merchant** (that polluted the vendor master with hundreds of one-off
@@ -558,11 +925,11 @@ attached to the Carbon transaction; only the Rillet adapter currently uploads th
 provider. Full
 rules: `.claude/rules/accounting-sync-handlers.md` → "Card charges as provider objects".
 
-## post-card-transaction edge function
+## post-charge edge function
 
-`packages/database/supabase/functions/post-card-transaction/` (registered in
-`config.toml`, `verify_jwt = true`). `{ type: "post" | "void", cardTransactionId, userId,
-companyId }`. `postCardTransactionTransaction` opens one Kysely transaction and performs
+`packages/database/supabase/functions/post-charge/` (registered in
+`config.toml`, `verify_jwt = true`). `{ type: "post" | "void", chargeId, userId,
+companyId }`. `postChargeTransaction` opens one Kysely transaction and performs
 the tenant-scoped header `FOR UPDATE` as its first read; every settings, company, line,
 account, period, journal, dimension, and lifecycle write stays inside that transaction.
 Repeated post of Posted or void of Voided returns the stored journal id without another
@@ -578,25 +945,25 @@ permissions for that subject; a body-supplied privileged user cannot substitute 
   cashback offset, and company-scoped cost centers. Resolves the accounting period (shifts a Locked/Closed period
   forward to the next open period, writing the shifted `postingDate` back). When
   `companySettings.accountingEnabled`, builds the journal (`sourceType`/`documentType`
-  `'Card Transaction'`) and writes cost-center `journalLineDimension`s against the
+  `'Charge'`) and writes cost-center `journalLineDimension`s against the
   group's oldest active `CostCenter` `dimension` row; flips the row to Posted with
   `journalId`. Accounting-off = Posted with no journal. **A line carrying a
   `costCenterId` with no such dimension row REFUSES to post** ("Company group has no
   active Cost Center dimension") rather than posting a balanced journal that silently
   lost the tag — `pushCostCenters` creates the row for installed integrations, so this
-  only fires for a company posting card transactions without the Ramp converge.
+  only fires for a company posting charges without the Ramp converge.
   Payment/Cashback reject any coding lines; Charge/Credit/Repayment require finite,
   strictly positive line magnitudes summing to the header. Journal line ids are allocated
   before insertion and bound explicitly to dimensions, never inferred from RETURNING order.
 - **void**: only from Posted. When a journal exists, requires accounting enabled and proves
-  the original company-scoped journal is Posted, source type `Card Transaction`, and every
+  the original company-scoped journal is Posted, source type `Charge`, and every
   line points back to this document. It writes a new Posted reversal with negated amounts
   and copied dimensions, then flips the document to Voided. Documents posted while
   accounting was disabled have no journal and void without fabricating one.
   Reversal line ids are also allocated before insertion, preserving each original line's
   dimension identity even if a database returns inserted rows in another order.
 
-### The journal builder (`build-card-transaction-journal.ts`)
+### The journal builder (`build-charge-journal.ts`)
 
 Pure, unit-testable, golden-master-pinned. Amounts are **natural-balance-signed** via
 `credit()`/`debit()` (a balanced entry has debits == credits and does NOT sum to zero in
@@ -615,14 +982,14 @@ account is **always booked as a LIABILITY** (a credit card is money owed). The f
 
 ## ERP UI (invoicing module)
 
-- Routes: `card-transactions.tsx` (list, loader `getCardTransactions`, filters
-  search/type/status), `card-transactions.$id.tsx` (read-only Drawer detail with lines +
+- Routes: `charges.tsx` (list, loader `getCharges`, filters
+  search/type/status), `charges.$id.tsx` (read-only Drawer detail with lines +
   receipts + a **Void** action for Posted rows, `update: "invoicing"`),
-  `card-transactions.$id.void.tsx` (action → service-role `functions.invoke(
-  "post-card-transaction", { type: "void" })`).
-- Components: `apps/erp/app/modules/invoicing/ui/CardTransaction/` —
-  `CardTransactionsTable.tsx`, `CardTransactionStatus.tsx`, `index.ts`. Service:
-  `getCardTransaction(client, companyId, id)` / `getCardTransactions` in
+  `charges.$id.void.tsx` (action → service-role `functions.invoke(
+  "post-charge", { type: "void" })`).
+- Components: `apps/erp/app/modules/invoicing/ui/Charge/` —
+  `ChargesTable.tsx`, `ChargeStatus.tsx`, `index.ts`. Service:
+  `getCharge(client, companyId, id)` / `getCharges` in
   `invoicing.service.ts`. Detail, line, document, and cost-center reads are company-scoped;
   account labels are resolved only from the authenticated company's group.
 

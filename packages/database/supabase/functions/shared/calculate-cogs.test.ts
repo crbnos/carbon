@@ -1,8 +1,8 @@
 import { assertEquals } from "https://deno.land/std@0.175.0/testing/asserts.ts";
 import {
-  cardTransactionFixture,
+  chargeFixture,
   databaseTest,
-} from "../post-card-transaction/post-card-transaction-test-fixture.ts";
+} from "../post-charge/post-charge-test-fixture.ts";
 import { calculateCOGS } from "./calculate-cogs.ts";
 
 class Rollback extends Error {}
@@ -12,7 +12,7 @@ class Rollback extends Error {}
 databaseTest(
   "a serial unit returned to stock is relieved from its own cost layer",
   async () => {
-    const f = await cardTransactionFixture();
+    const f = await chargeFixture();
     try {
       await f.db.transaction().execute(async (trx) => {
         const item = await trx.insertInto("item").values({

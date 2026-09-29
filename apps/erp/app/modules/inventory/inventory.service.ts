@@ -1401,12 +1401,14 @@ export async function getTrackedEntities(
 
 export async function getTrackedEntitiesByMakeMethodId(
   client: SupabaseClient<Database>,
-  jobMakeMethodId: string
+  jobMakeMethodId: string,
+  companyId: string
 ) {
   return client
     .from("trackedEntity")
     .select("*")
     .eq("attributes->>Job Make Method", jobMakeMethodId)
+    .eq("companyId", companyId)
     .order("createdAt", { ascending: true });
 }
 
@@ -1496,12 +1498,14 @@ export async function updateTrackedEntityExpiry(
 
 export async function getTrackedEntitiesByOperationId(
   client: SupabaseClient<Database>,
-  operationId: string
+  operationId: string,
+  companyId: string
 ) {
   const jobOperation = await client
     .from("jobOperation")
     .select("jobMakeMethodId")
     .eq("id", operationId)
+    .eq("companyId", companyId)
     .single();
 
   if (jobOperation.error || !jobOperation.data.jobMakeMethodId)
@@ -1512,7 +1516,8 @@ export async function getTrackedEntitiesByOperationId(
 
   return getTrackedEntitiesByMakeMethodId(
     client,
-    jobOperation.data.jobMakeMethodId
+    jobOperation.data.jobMakeMethodId,
+    companyId
   );
 }
 
@@ -2811,7 +2816,7 @@ export async function getPickingListLines(
   return client
     .from("pickingListLine")
     .select(
-      "*, item(name, readableId, itemTrackingType), jobMaterial(itemId, quantity, substitutionFactor, item(readableId, itemSupersession!itemSupersession_itemId_fkey(conversionFactor))), job(jobId), jobOperation(order, processId, workCenterId, process:process(name), workCenter:workCenter(name)), storageUnit:storageUnit!pickingListLine_storageUnitId_fkey(name, locationId), toStorageUnit:storageUnit!pickingListLine_toStorageUnitId_fkey(name, locationId), trackedEntities:pickingListLineTrackedEntity(trackedEntityId, quantity, quantityPicked, trackedEntity(readableId))"
+      "*, item(name, readableId, itemTrackingType, unitOfMeasureCode), jobMaterial(itemId, quantity, substitutionFactor, item(readableId, itemSupersession!itemSupersession_itemId_fkey(conversionFactor))), job(jobId), jobOperation(order, processId, workCenterId, process:process(name), workCenter:workCenter(name)), storageUnit:storageUnit!pickingListLine_storageUnitId_fkey(name, locationId), toStorageUnit:storageUnit!pickingListLine_toStorageUnitId_fkey(name, locationId), trackedEntities:pickingListLineTrackedEntity(trackedEntityId, quantity, quantityPicked, trackedEntity(readableId))"
     )
     .eq("pickingListId", pickingListId)
     .order("jobOperationId")
@@ -3027,7 +3032,13 @@ export async function setPickingListLineTrackedEntity(
   };
   if (!args.unpick) {
     body.fromStorageUnitId = args.fromStorageUnitId ?? null;
-    if (isBatch) body.quantity = Math.max(1, args.quantity ?? 1);
+    // A batch pick may be fractional (0.5 kg): send the requested quantity as
+    // is and fall back to 1 only when none was given. Flooring at 1 turned
+    // every sub-1 remainder into an over-pick the edge function refused.
+    if (isBatch) {
+      body.quantity =
+        args.quantity !== undefined && args.quantity > 0 ? args.quantity : 1;
+    }
   }
 
   const result = await client.functions.invoke("post-picking", { body });

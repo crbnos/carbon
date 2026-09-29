@@ -146,43 +146,71 @@ export function mapItemToQboItem(args: {
 }
 
 export class QboItemSyncer extends QboEntitySyncer<Accounting.Item, Qbo.Item> {
-  private shippingItems = new Map<string, Promise<string>>();
+  private helperItems = new Map<string, Promise<string>>();
 
-  public async ensureShippingItem(args: {
+  /**
+   * A QBO Service item that stands for a REVENUE ACCOUNT, not a Carbon item.
+   *
+   * A QBO invoice revenue line is `SalesItemLineDetail` and an item's account is
+   * the item's own config — there is no per-line GL override — so an invoice
+   * cannot direct revenue without an item. Referencing the real Carbon item
+   * meant mirroring the manufacturing parts catalog into Products & Services,
+   * and it bought nothing: Carbon has no per-item revenue account
+   * (`post-sales-invoice` credits `accountDefault.salesAccount` for ALL
+   * merchandise). One item per revenue account reproduces the same GL exactly —
+   * two items per company instead of thousands.
+   */
+  public ensureShippingItem(args: {
     shippingAccountId: string;
   }): Promise<string> {
-    let pending = this.shippingItems.get(args.shippingAccountId);
+    return this.ensureHelperItem("shipping", args.shippingAccountId);
+  }
+
+  public ensureSalesItem(args: { revenueAccountId: string }): Promise<string> {
+    return this.ensureHelperItem("sales", args.revenueAccountId);
+  }
+
+  private async ensureHelperItem(
+    kind: "shipping" | "sales",
+    revenueAccountId: string
+  ): Promise<string> {
+    const cacheKey = `${kind}:${revenueAccountId}`;
+    let pending = this.helperItems.get(cacheKey);
     if (!pending) {
-      pending = this.resolveShippingItem(args.shippingAccountId).catch(
+      pending = this.resolveHelperItem(kind, revenueAccountId).catch(
         (error) => {
-          this.shippingItems.delete(args.shippingAccountId);
+          this.helperItems.delete(cacheKey);
           throw error;
         }
       );
-      this.shippingItems.set(args.shippingAccountId, pending);
+      this.helperItems.set(cacheKey, pending);
     }
     return pending;
   }
 
-  private async resolveShippingItem(
+  private async resolveHelperItem(
+    kind: "shipping" | "sales",
     shippingAccountId: string
   ): Promise<string> {
+    const shipping = kind === "shipping";
+    const label = shipping ? "Shipping" : "Sales";
+    const description = shipping ? "Customer shipping charges" : "Sales";
     const incomeRef = (await this.getAccountRefsById()).get(shippingAccountId);
     const fail = (reason: string): never => {
       throw new JournalEntrySyncError({
         errorCode: "UNMAPPED_ACCOUNTS",
         warning: true,
-        message: `Cannot provision Shipping Revenue item: ${reason}`,
-        metadata: { accountId: shippingAccountId, kind: "shipping" }
+        message: `Cannot provision ${label} Revenue item: ${reason}`,
+        metadata: { accountId: shippingAccountId, kind }
       });
     };
-    if (!incomeRef) fail("the shipping account has no QuickBooks mapping");
-    const name = `Carbon Shipping ${shippingAccountId}`;
+    if (!incomeRef) fail(`the ${kind} account has no QuickBooks mapping`);
+    const name = `Carbon ${label} ${shippingAccountId}`;
     if (name.length > QBO_NAME_MAX_LENGTH)
-      throw qboNameTooLongError({ entityLabel: "shipping item", name });
+      throw qboNameTooLongError({ entityLabel: `${kind} item`, name });
     const payload: QboCreatePayload<Qbo.Item> = {
       Name: name,
-      Description: "Customer shipping charges",
+      Description: description,
       Type: "Service",
       Active: true,
       UnitPrice: 0,
@@ -201,8 +229,9 @@ export class QboItemSyncer extends QboEntitySyncer<Accounting.Item, Qbo.Item> {
       }
       return item;
     };
+    const mappingEntityType = shipping ? "shippingItem" : "salesItem";
     const mappedId = await this.mappingService.getExternalId(
-      "shippingItem",
+      mappingEntityType,
       shippingAccountId,
       this.provider.id
     );
@@ -217,7 +246,7 @@ export class QboItemSyncer extends QboEntitySyncer<Accounting.Item, Qbo.Item> {
         // Only an explicitly owned mapping may be reconverged. An unowned name
         // match below is validated and never overwritten.
         const updated = await updateWithSyncTokenRetry({
-          entityLabel: "shipping item",
+          entityLabel: `${kind} item`,
           remoteId: mappedId,
           fetchCurrent: () => this.qboProvider.getItem(mappedId),
           update: (syncToken) =>
@@ -251,11 +280,11 @@ export class QboItemSyncer extends QboEntitySyncer<Accounting.Item, Qbo.Item> {
     }
     await withTriggersDisabled(this.database, async (tx) => {
       await createMappingService(tx, this.companyId).link(
-        "shippingItem",
+        mappingEntityType,
         shippingAccountId,
         this.provider.id,
         remote!.Id,
-        { metadata: { accountId: shippingAccountId, kind: "shipping" } }
+        { metadata: { accountId: shippingAccountId, kind } }
       );
     });
     return remote.Id;

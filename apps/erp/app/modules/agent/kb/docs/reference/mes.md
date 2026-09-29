@@ -58,12 +58,13 @@ Deep into a build this creates a problem. The parts already fitted sit between t
 
   - **Build**: The assembly as it stands on the bench right now: everything fitted so far is solid, and anything from a later step is not drawn. This is the default.
   - **Focus**: The already-fitted parts fade to see-through, so the current step's components are visible in place without losing the shape around them.
-  - **Isolate**: Only the current step's components are drawn. The "just show me the part I am fitting" view.
   - **Full**: Every component solid, the finished product.
 
 The view only changes what the operator sees. It never changes the step order, the components a step installs, or anything reported back.
 
-Picking a view that hides parts also stops the camera treating them as obstacles. On **Isolate** the view angle frames the current step's components directly, rather than angling around geometry that is no longer on screen.
+The author can also hide parts that get in the way on a particular step, and build a group of parts off to the side before it goes in as one piece. Both play here exactly as authored; see `docs/reference/assembly-instructions`.
+
+Picking a view that hides parts also stops the camera treating them as obstacles. On **Build** and **Focus**, parts from later steps are not drawn, so the view angle never angles around them.
 
 The same control appears in the ERP assembly editor, where an author checks that a step reads clearly before publishing. An author and an operator ask the model the same question, so the buttons mean the same thing on both screens.
 

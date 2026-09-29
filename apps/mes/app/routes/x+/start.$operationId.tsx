@@ -166,7 +166,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   if (!trackedEntityId && jobOperation.data.jobMakeMethodId) {
     const trackedEntities = await getTrackedEntitiesByMakeMethodId(
       serviceRole,
-      jobOperation.data.jobMakeMethodId
+      jobOperation.data.jobMakeMethodId,
+      companyId
     );
 
     // Start the next incomplete serial unit for this operation (createdAt asc),

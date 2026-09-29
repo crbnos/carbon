@@ -1,3 +1,4 @@
+import type { PostingSourceFamily } from "@carbon/ee/accounting";
 import {
   ChoiceCardGroup,
   DatePicker,
@@ -17,6 +18,7 @@ import {
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ReactNode } from "react";
 import { useState } from "react";
+import { LuLock } from "react-icons/lu";
 import { usePermissions } from "~/hooks";
 import { postingSyncSettingsValidator } from "~/modules/settings/settings.models";
 
@@ -33,7 +35,12 @@ import { postingSyncSettingsValidator } from "~/modules/settings/settings.models
 export type PostingSyncFamilyMode = "documents" | "journals" | "none";
 
 export type PostingSyncSettingsValues = {
-  families: { ar: PostingSyncFamilyMode; ap: PostingSyncFamilyMode };
+  families: {
+    ar: PostingSyncFamilyMode;
+    ap: PostingSyncFamilyMode;
+    creditMemo: PostingSyncFamilyMode;
+    supplierCredit: PostingSyncFamilyMode;
+  };
   sourceTypes: Record<
     string,
     { enabled: boolean; granularity: "individual" | "daily-summary" }
@@ -45,8 +52,13 @@ export type PostingSyncSettingsValues = {
 export type PostingSyncPolicyRow = {
   sourceType: string;
   representation: "journal" | "document";
-  family: "ar" | "ap" | "per-line" | null;
+  /** Derived from the engine's union so a new family can never silently drift
+   * out of sync with this page (it did: "per-party" was added for memos). */
+  family: PostingSourceFamily | null;
 };
+
+/** Local mirror of `LedgerFamilyKey` — same reason as the types above. */
+type LedgerFamily = keyof PostingSyncSettingsValues["families"];
 
 type PostingSyncSettingsProps = {
   /** Shared tab bar, rendered at the top of this tab's body card. */
@@ -56,6 +68,15 @@ type PostingSyncSettingsProps = {
   policy: PostingSyncPolicyRow[];
   /** Posting-account mapping coverage, from the account-mapping tab data. */
   mappingReadiness: { mapped: number; required: number } | null;
+  /**
+   * Families another installed integration posts, family → that integration's
+   * display name. Resolved from the topology by the loader.
+   *
+   * A delegated family's select is replaced by a read-only notice: the engine
+   * already overrides the stored value (`applyLedgerDelegation` forces the family
+   * to `"none"`), so leaving the control live offered a setting with no effect.
+   */
+  delegatedFamilies?: Partial<Record<LedgerFamily, string>>;
 };
 
 type SourceTypeRowState = {
@@ -104,11 +125,60 @@ function PeriodLockPolicyChoice() {
   );
 }
 
+/**
+ * One family's representation control.
+ *
+ * Delegated: renders a read-only notice plus a HIDDEN input carrying the stored
+ * value. Both halves matter — the form's validator requires the field, so
+ * omitting it would make the whole tab unsaveable, and posting `"none"` instead
+ * would quietly destroy the customer's real choice. Uninstalling the integration
+ * that holds the family restores exactly what they had.
+ */
+function FamilyRepresentationField({
+  family,
+  name,
+  label,
+  options,
+  settings,
+  delegatedTo
+}: {
+  family: LedgerFamily;
+  name: string;
+  label: string;
+  options: { label: string; value: string }[];
+  settings: PostingSyncSettingsValues;
+  delegatedTo?: string;
+}) {
+  const { t } = useLingui();
+
+  if (!delegatedTo) {
+    return <Select name={name} label={label} options={options} />;
+  }
+
+  return (
+    <div className="w-full">
+      <div className="text-sm font-medium text-foreground">{label}</div>
+      {/* Reads as a locked field rather than a status chip: the box occupies the
+          same slot the Select would, and the lock says "not yours to set" without
+          a badge competing with the live controls beside it. */}
+      <div className="mt-1.5 flex items-center gap-2 rounded-md border border-border bg-muted/40 px-3 py-2 text-sm text-muted-foreground">
+        <LuLock className="size-4 shrink-0" />
+        <span>{t`Handled by ${delegatedTo}`}</span>
+      </div>
+      <p className="mt-1.5 text-xs text-muted-foreground">
+        {t`${delegatedTo} posts this to your ledger, so Carbon doesn't push it. Your saved choice is kept in case that changes.`}
+      </p>
+      <input type="hidden" name={name} value={settings.families[family]} />
+    </div>
+  );
+}
+
 export function PostingSyncSettings({
   tabs,
   settings,
   policy,
-  mappingReadiness
+  mappingReadiness,
+  delegatedFamilies = {}
 }: PostingSyncSettingsProps) {
   const { t } = useLingui();
   const permissions = usePermissions();
@@ -119,9 +189,20 @@ export function PostingSyncSettings({
   const journalRows = policy.filter(
     (row) => row.representation === "journal" && row.sourceType !== "Manual"
   );
+  // Split by which SECTION's controls govern the row. A "per-party" row (Credit
+  // Memo / Debit Memo) is gated by the Credit Memos / Supplier Credits selects, NOT
+  // by Receivables/Payables — listing it under AR/AP reads as if those selects
+  // controlled it.
   const documentRows = policy.filter(
-    (row) => row.representation === "document"
+    (row) => row.representation === "document" && row.family !== "per-party"
   );
+  const memoDocumentRows = policy.filter(
+    (row) => row.representation === "document" && row.family === "per-party"
+  );
+
+  /** The select that actually governs a memo policy row, by its direction. */
+  const memoRowGovernedBy = (sourceType: string) =>
+    sourceType === "Debit Memo" ? t`Supplier Credits` : t`Credit Memos`;
 
   const [rowState, setRowState] = useState<Record<string, SourceTypeRowState>>(
     () =>
@@ -160,6 +241,8 @@ export function PostingSyncSettings({
     if (family === "ar") return t`AR`;
     if (family === "ap") return t`AP`;
     if (family === "per-line") return t`AR/AP`;
+    // Resolved per record from the memo's party, so the row can't name one side.
+    if (family === "per-party") return t`Credits`;
     return null;
   };
 
@@ -177,6 +260,10 @@ export function PostingSyncSettings({
           settings.families.ap === "journals"
             ? "documents"
             : settings.families.ap,
+        // Memo families are NOT coerced the way ar/ap are above: their default
+        // is "none" (opt-in, go-forward) and that must survive to the form.
+        familyCreditMemo: settings.families.creditMemo,
+        familySupplierCredit: settings.families.supplierCredit,
         periodLockPolicy: settings.periodLockPolicy,
         lockDate: settings.lockDate
       }}
@@ -282,15 +369,21 @@ export function PostingSyncSettings({
             </p>
           </div>
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-            <Select
+            <FamilyRepresentationField
+              family="ar"
               name="familyAr"
               label={t`Receivables (AR)`}
               options={familyOptions}
+              settings={settings}
+              delegatedTo={delegatedFamilies.ar}
             />
-            <Select
+            <FamilyRepresentationField
+              family="ap"
               name="familyAp"
               label={t`Payables (AP)`}
               options={familyOptions}
+              settings={settings}
+              delegatedTo={delegatedFamilies.ap}
             />
           </div>
           <div className="flex w-full flex-col divide-y divide-border rounded-lg border border-border">
@@ -301,6 +394,60 @@ export function PostingSyncSettings({
               >
                 <span className="flex-1 text-sm">{row.sourceType}</span>
                 <Badge variant="secondary">{familyLabel(row.family)}</Badge>
+                <Badge variant="outline">
+                  <Trans>Document</Trans>
+                </Badge>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section className="flex w-full flex-col gap-2 border-t border-border pt-4">
+          <div className="flex flex-col gap-0.5">
+            <Subheading variant="light">
+              <Trans>Credit representation</Trans>
+            </Subheading>
+            <p className="text-xs text-muted-foreground">
+              <Trans>
+                Credit memos and supplier credits are gated separately from
+                invoices and bills, so payables can be handled outside the sync
+                while credits still reach the ledger. Enabling one pushes
+                credits from the enable date forward — existing history is left
+                alone, and bringing it across needs an explicit backfill.
+              </Trans>
+            </p>
+          </div>
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+            <FamilyRepresentationField
+              family="creditMemo"
+              name="familyCreditMemo"
+              label={t`Credit Memos`}
+              options={familyOptions}
+              settings={settings}
+              delegatedTo={delegatedFamilies.creditMemo}
+            />
+            <FamilyRepresentationField
+              family="supplierCredit"
+              name="familySupplierCredit"
+              label={t`Supplier Credits`}
+              options={familyOptions}
+              settings={settings}
+              delegatedTo={delegatedFamilies.supplierCredit}
+            />
+          </div>
+          <div className="flex w-full flex-col divide-y divide-border rounded-lg border border-border">
+            {memoDocumentRows.map((row) => (
+              <div
+                key={row.sourceType}
+                className="flex items-center gap-3 px-3 py-2.5"
+              >
+                <span className="flex-1 text-sm">{row.sourceType}</span>
+                {/* The source type is named by DIRECTION ("Debit Memo") but the
+                    control is named by what it is ("Supplier Credits"); without
+                    this nothing on screen connects the two. */}
+                <Badge variant="secondary">
+                  {memoRowGovernedBy(row.sourceType)}
+                </Badge>
                 <Badge variant="outline">
                   <Trans>Document</Trans>
                 </Badge>

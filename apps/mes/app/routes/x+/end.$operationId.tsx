@@ -166,7 +166,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       if (!trackedEntityId) {
         const trackedEntities = await getTrackedEntitiesByMakeMethodId(
           serviceRole,
-          jobOperation.data.jobMakeMethodId
+          jobOperation.data.jobMakeMethodId,
+          companyId
         );
 
         // Complete the next incomplete serial unit for this operation (createdAt
@@ -236,7 +237,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         // "operation complete" redirect below.
         const remainingTrackedEntities = await getTrackedEntitiesByMakeMethodId(
           serviceRole,
-          jobOperation.data.jobMakeMethodId
+          jobOperation.data.jobMakeMethodId,
+          companyId
         );
         const nextTrackedEntity = (remainingTrackedEntities.data ?? []).find(
           (entity) => isSerialEntityIncompleteForOperation(entity, operationId)

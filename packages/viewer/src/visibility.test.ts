@@ -3,6 +3,7 @@ import {
   ASSEMBLY_VIEWS,
   GHOST_OCCLUDER_WEIGHT,
   occluderWeight,
+  stepHiddenNodeIds,
   VIEW_MODES,
   viewForModes,
   visualForComponent
@@ -174,42 +175,10 @@ describe("named views", () => {
     });
   });
 
-  it("hides everything but the active step in 'isolate'", () => {
-    // The whole point of the view: "how do I just see the part I am fitting?"
-    expect(VIEW_MODES.isolate).toEqual({
-      installedMode: "hidden",
-      futureMode: "hidden"
-    });
-  });
-
-  it("draws nothing but the active step's components in 'isolate'", () => {
-    const { installedMode, futureMode } = VIEW_MODES.isolate;
-    expect(visualForComponent(0, 2, futureMode, installedMode)).toBe("hidden");
-    expect(visualForComponent(1, 2, futureMode, installedMode)).toBe("hidden");
-    expect(visualForComponent(2, 2, futureMode, installedMode)).toBe("active");
-    expect(visualForComponent(4, 2, futureMode, installedMode)).toBe("hidden");
-    // A component no step installs must vanish too, or "isolate" still leaves
-    // stray geometry on screen.
-    expect(visualForComponent(undefined, 2, futureMode, installedMode)).toBe(
-      "hidden"
-    );
-  });
-
-  it("leaves the camera nothing to dodge in 'isolate'", () => {
-    // Every non-active component is invisible, so none may score as an
-    // occluder — otherwise the camera frames around geometry it is not drawing.
-    const { installedMode, futureMode } = VIEW_MODES.isolate;
-    for (const stepIndex of [undefined, 0, 1, 3, 4]) {
-      expect(
-        occluderWeight(stepIndex, 2, futureMode, installedMode)
-      ).toBeNull();
-    }
-  });
-
   it("hides the future side in every working view", () => {
-    // Build, Focus and Isolate are all "I am working this step" views; parts
-    // that are not on the bench yet only add clutter. Full is the exception.
-    for (const view of ["build", "focus", "isolate"] as const) {
+    // Build and Focus are "I am working this step" views; parts that are not
+    // on the bench yet only add clutter. Full is the exception.
+    for (const view of ["build", "focus"] as const) {
       expect(VIEW_MODES[view].futureMode).toBe("hidden");
     }
     expect(VIEW_MODES.full.futureMode).toBe("solid");
@@ -233,6 +202,8 @@ describe("named views", () => {
     // "hidden installed + solid future" is reachable from the props but is not
     // a named view; it must seat a real button rather than none.
     expect(viewForModes("hidden", "solid")).toBe("build");
+    // Nor is "hidden installed + hidden future" since the Isolate view went.
+    expect(viewForModes("hidden", "hidden")).toBe("build");
   });
 
   it("renders the active step untouched in every view", () => {
@@ -246,20 +217,34 @@ describe("named views", () => {
 
   it("ghosts rather than deletes the built side in 'focus'", () => {
     // Focus is about seeing PAST what is already fitted while keeping its
-    // shape as context — that shell is the difference from Isolate.
+    // shape as context.
     const { installedMode, futureMode } = VIEW_MODES.focus;
     expect(visualForComponent(0, 2, futureMode, installedMode)).toBe("ghost");
     expect(occluderWeight(0, 2, futureMode, installedMode)).toBe(
       GHOST_OCCLUDER_WEIGHT
     );
   });
+});
 
-  it("separates 'focus' from 'isolate' on the built side only", () => {
-    // The two views differ in exactly one axis. If that ever collapses, one of
-    // the two buttons has become a duplicate.
-    expect(VIEW_MODES.focus.futureMode).toBe(VIEW_MODES.isolate.futureMode);
-    expect(VIEW_MODES.focus.installedMode).not.toBe(
-      VIEW_MODES.isolate.installedMode
-    );
+describe("stepHiddenNodeIds", () => {
+  it("hides the active step's authored hidden list", () => {
+    const hidden = stepHiddenNodeIds({
+      componentNodeIds: ["bearing"],
+      hiddenComponentNodeIds: ["press-tool", "fixture"]
+    });
+    expect([...hidden].sort()).toEqual(["fixture", "press-tool"]);
+  });
+
+  it("never hides the parts the step itself installs", () => {
+    const hidden = stepHiddenNodeIds({
+      componentNodeIds: ["bearing"],
+      hiddenComponentNodeIds: ["bearing", "press-tool"]
+    });
+    expect([...hidden]).toEqual(["press-tool"]);
+  });
+
+  it("hides nothing when no step is active or none is authored", () => {
+    expect(stepHiddenNodeIds(null).size).toBe(0);
+    expect(stepHiddenNodeIds({ componentNodeIds: ["bearing"] }).size).toBe(0);
   });
 });

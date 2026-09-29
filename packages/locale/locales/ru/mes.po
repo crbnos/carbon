@@ -1211,6 +1211,9 @@ msgstr "Пожалуйста, выберите номенклатуру"
 msgid "PM schedule lapsed"
 msgstr "График обслуживания истек"
 
+msgid "Press ? on any page to open this list. Shortcuts are ignored while you type in a field."
+msgstr "Нажмите ? на любой странице, чтобы открыть этот список. Горячие клавиши отключены при вводе в поле."
+
 msgid "Prev"
 msgstr "Назад"
 
@@ -1521,8 +1524,8 @@ msgstr "Короткий отбор {itemName}"
 msgid "Show description"
 msgstr "Показать описание"
 
-msgid "Show this overlay"
-msgstr "Показать это окно"
+msgid "Show keyboard shortcuts"
+msgstr "Показать горячие клавиши"
 
 msgid "Sign in with Google"
 msgstr "Войти через Google"
@@ -1628,6 +1631,9 @@ msgstr "Партия все еще будет распределена, но NCR
 #. placeholder {0}: (batch.operations ?? []).length
 msgid "The timer and completion are shared by all {0} jobs. Steps, materials and files here are this job's own."
 msgstr "Таймер и завершение общие для всех {0} производственных заказов. Шаги, материалы и файлы здесь — собственность этого производственного заказа."
+
+msgid "then"
+msgstr "затем"
 
 msgid "There are no available or consumed tracked parts for this material."
 msgstr "Для этого материала нет доступных или израсходованных отслеживаемых деталей."
