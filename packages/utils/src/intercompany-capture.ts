@@ -19,7 +19,7 @@ export function classifyIntercompanyPostingLines(
     revenueAccountIds?: readonly string[];
     cogsAccountId?: string | null;
     capitalizationAccountIds?: readonly string[];
-  },
+  }
 ): Array<{
   journalLineId: string;
   accountId: string;
@@ -34,7 +34,7 @@ export function classifyIntercompanyPostingLines(
   const roles = new Map<string, IntercompanyPostingRole>();
   const register = (
     accountId: string | null | undefined,
-    role: IntercompanyPostingRole,
+    role: IntercompanyPostingRole
   ) => {
     if (!accountId) return;
     const existing = roles.get(accountId);
@@ -54,18 +54,20 @@ export function classifyIntercompanyPostingLines(
   return lines.flatMap((line, index) => {
     if (!line.id) {
       throw new Error(
-        "Missing returned journal line ID for intercompany capture",
+        "Missing returned journal line ID for intercompany capture"
       );
     }
     const role = line.accountId ? roles.get(line.accountId) : undefined;
     if (!role || !line.accountId) return [];
-    return [{
-      journalLineId: line.id,
-      accountId: line.accountId,
-      amount: line.amount ?? 0,
-      quantity: line.quantity ?? null,
-      itemId: metadata[index]?.itemId ?? null,
-      role,
-    }];
+    return [
+      {
+        journalLineId: line.id,
+        accountId: line.accountId,
+        amount: line.amount ?? 0,
+        quantity: line.quantity ?? null,
+        itemId: metadata[index]?.itemId ?? null,
+        role
+      }
+    ];
   });
 }

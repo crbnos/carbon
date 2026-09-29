@@ -1,5 +1,6 @@
 import type { KyselyDatabase, KyselyTx } from "@carbon/database/client";
-import { getRemainingQuantityToInvoice } from "@carbon/database/posting";
+import { getRemainingQuantityToInvoice } from "@carbon/utils";
+
 import type { Insertable } from "kysely";
 import type { RampBillDraft } from "./ramp-sync-bill-stage";
 

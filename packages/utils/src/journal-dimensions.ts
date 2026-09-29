@@ -1,7 +1,6 @@
 // Pure builder for automatic GL dimension rows on journal lines. Shared by the
 // return-flow posters (post-shipment, post-receipt) so every new journal entry
-// carries the same item / item-group / party / location dimensions. No Deno or
-// db imports — consumed from edge functions only.
+// carries the same item / item-group / party / location dimensions.
 //
 // A `journalLineDimension` row is (journalLineId, dimensionId, valueId). A
 // dimension only exists when the company group has configured that entityType
@@ -33,7 +32,7 @@ const DIMENSION_FIELDS: [string, keyof JournalDimensionMeta][] = [
   ["CustomerType", "customerTypeId"],
   ["Process", "processId"],
   ["FixedAssetClass", "fixedAssetClassId"],
-  ["CostCenter", "costCenterId"],
+  ["CostCenter", "costCenterId"]
 ];
 
 export type JournalLineDimensionInsert = {

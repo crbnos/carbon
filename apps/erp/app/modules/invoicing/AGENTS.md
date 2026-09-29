@@ -30,7 +30,7 @@ in `ui/index.ts`; `x+/sales-invoice+/` deep-imports it. Every other `ui/` folder
 - **Due date** — `computeInvoiceDateDue` anchors `paymentTerm.daysDue` by `calculationMethod`
   (`Net` / `End of Month` / `Day of Month`, clamped). A missing term falls back to
   `DEFAULT_PAYMENT_TERM` (Net 30); a term *query failure* throws so the caller aborts instead
-  of persisting a stale `dateDue`. Mirrors `functions/shared/calculate-due-date.ts`.
+  of persisting a stale `dateDue`. The date math is `calculateDueDate` (`@carbon/utils`).
 - **Memo** — ONE `memo` table, and `direction` (`Credit`/`Debit`) is **orthogonal to party**:
   all four combinations are legal (`memoDirection` carries both values; the table's only party
   constraint is customer-XOR-supplier). `credit-memos.tsx` / `supplier-credits.tsx` filter on
@@ -170,8 +170,9 @@ guarded by `requireUnlockedBulk`, not validators.
   not a bare INSERT.
 - `createSalesInvoiceFromSalesOrder` / `createSalesInvoiceFromShipment` /
   `createPurchaseInvoiceFromPurchaseOrder` — all three call the `convert` server function.
-- `computeInvoiceDateDue` / `computeEarlyPaymentDiscounts` / `DEFAULT_PAYMENT_TERM` — terms
-  math; discounts batch-load their terms in one query, never per invoice.
+- `computeInvoiceDateDue` / `computeEarlyPaymentDiscounts` — terms math (the due date itself is
+  `calculateDueDate` / `DEFAULT_PAYMENT_TERM` from `@carbon/utils`, shared with invoice posting);
+  discounts batch-load their terms in one query, never per invoice.
 - `replaceInvoiceSettlements` (Kysely) — replace-all for a Draft payment's applications; owns
   the AR / AP / refund / reimbursement arm rules and the balance ceilings.
 - `applyCreditsToInvoices` (Kysely) — additive memo-sourced settlements, GL-neutral (the memos

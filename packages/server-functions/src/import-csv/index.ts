@@ -1,9 +1,9 @@
 import type { Database } from "@carbon/database";
 import type { KyselyDatabase } from "@carbon/database/client";
 import { datetime } from "@carbon/database/datetime";
-import { getReadableIdWithRevision } from "@carbon/database/posting";
 import { parseCsv } from "@carbon/files/csv";
 import { getLogger } from "@carbon/logger";
+import { getReadableIdWithRevision } from "@carbon/utils";
 import { type Kysely, sql } from "kysely";
 import { nanoid } from "nanoid";
 import { z } from "zod";

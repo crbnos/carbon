@@ -1,9 +1,9 @@
 import type { Database, Json } from "@carbon/database";
 import { datetime, getCompanyTimeZone } from "@carbon/database/datetime";
-import { settleQuantity } from "@carbon/database/posting";
+
 import { getNextSequence } from "@carbon/database/sequence";
 import { getLogger } from "@carbon/logger";
-import { round } from "@carbon/utils";
+import { round, settleQuantity } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { nanoid } from "nanoid";
 import { z } from "zod";

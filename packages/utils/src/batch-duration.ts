@@ -1,7 +1,4 @@
-// Planned-duration model for a job operation batch. Dependency-free pure TS.
-//
-// Unlike batch-time-split.ts (a re-export of a module under
-// supabase/functions/shared), this lives directly in @carbon/utils. See
+// Planned-duration model for a job operation batch. See
 // .ai/specs/2026-09-04-batch-release-and-scheduling.md.
 
 import { clamp } from "./math";

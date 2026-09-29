@@ -29,7 +29,7 @@ export function allocateVarianceAcrossLayers(
     return {
       inventoryShare: 0,
       ppvShare: Math.abs(variance) > 0.005 ? variance : 0,
-      perLayer: [],
+      perLayer: []
     };
   }
   const perUnit = variance / matchedQuantity;
@@ -44,7 +44,7 @@ export function allocateVarianceAcrossLayers(
     perLayer.push({
       costLedgerId: layer.id,
       appliedQuantity: applied,
-      adjustmentCost,
+      adjustmentCost
     });
     inventoryShare += adjustmentCost;
     uncovered -= applied;

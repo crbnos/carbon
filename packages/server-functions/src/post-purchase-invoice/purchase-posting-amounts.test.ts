@@ -1,5 +1,4 @@
-import { allocateVarianceAcrossLayers } from "@carbon/database/posting";
-import { round } from "@carbon/utils";
+import { allocateVarianceAcrossLayers, round } from "@carbon/utils";
 import { expect, it } from "vitest";
 import {
   calculatePurchasePostingAmounts,

@@ -25,26 +25,6 @@ export type AnyPostgresClient = SupabaseClient<Database> | Kysely<DB>;
 export const isKysely = (db: AnyPostgresClient): db is Kysely<DB> =>
   typeof (db as Kysely<DB>).selectFrom === "function";
 
-export interface TrackedEntityAttributes {
-  "Batch Number"?: string;
-  Customer?: string;
-  "Job Operation"?: string;
-  "Job Operation Index"?: number;
-  "Purchase Order"?: string;
-  "Receipt Line Index"?: number;
-  "Receipt Line"?: string;
-  Receipt?: string;
-  Supplier?: string;
-  "Serial Number"?: string;
-  "Shipment Line Index"?: number;
-  "Shipment Line"?: string;
-  Shipment?: string;
-  "Split Entity ID"?: string;
-  "Split From Entity ID"?: string;
-  "Merged From Entity IDs"?: string[];
-  Shelf?: string;
-}
-
 // ISO 8601 week number (1-53). Week 1 is the week containing the year's first
 // Thursday. The one copy of the algorithm in the functions lib — datetime.ts
 // delegates here. Pure calendar arithmetic: en-GB is Monday-first, so
@@ -111,17 +91,6 @@ export const interpolateSerialNumber = (
   if (!withDates.includes("%{location}")) return withDates;
   const location = (context.locationCode ?? context.locationName ?? "").trim();
   return withDates.replace(/%{location}/g, location);
-};
-
-export const getReadableIdWithRevision = (
-  readableId: string,
-  revision?: string | null
-) => {
-  if (revision && revision !== "0") {
-    return `${readableId}.${revision}`;
-  }
-
-  return readableId;
 };
 
 type AccountType = "asset" | "liability" | "equity" | "revenue" | "expense";

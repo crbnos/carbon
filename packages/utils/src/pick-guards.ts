@@ -1,17 +1,15 @@
 // Pure idempotency guards for a pick against a document line — shared by
 // post-stock-transfer and post-picking, so both accumulate the same way.
-// Compares at internal scale
-// (round/equals from the shared precision module) so a float-residue draw never
-// reads as an over-pick, and a line that is already fully picked is refused
-// before any ledger row is written — a repeat scan would otherwise double-post
-// the transfer. Dependency-free aside from the sibling precision module.
+// Compares at internal scale (round/equals) so a float-residue draw never reads
+// as an over-pick, and a line that is already fully picked is refused before any
+// ledger row is written — a repeat scan would otherwise double-post the transfer.
 
-import { equals, EPSILON, round } from "./precision.ts";
+import { EPSILON, equals, round } from "./precision";
 
 export type PickGuardKind = "over-pick" | "already-picked" | "empty-pick";
 
 /** A guard refusal the caller turns into a 400 (never a 500). `kind` lets the
- *  edge function's outer catch distinguish it from a data-layer error. */
+ *  server function's outer catch distinguish it from a data-layer error. */
 export class PickGuardError extends Error {
   // A caller-input refusal, not a server fault: every caller answers it with a
   // 400 and its message.

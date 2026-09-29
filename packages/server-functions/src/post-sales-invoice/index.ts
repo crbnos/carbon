@@ -3,8 +3,6 @@ import { datetime, getCompanyTimeZone } from "@carbon/database/datetime";
 import { fetchAll } from "@carbon/database/fetch-all";
 import {
   calculateCOGS,
-  calculateDueDate,
-  classifyIntercompanyPostingLines,
   getCurrentAccountingPeriod,
   getDefaultPostingGroup,
   journalReference,
@@ -17,7 +15,9 @@ import {
   assertCurrencyDecimals,
   assertExchangeRate,
   buildSalesPostingLines,
+  calculateDueDate,
   calculateSalesIntercompanyAmount,
+  classifyIntercompanyPostingLines,
   credit,
   debit,
   round,

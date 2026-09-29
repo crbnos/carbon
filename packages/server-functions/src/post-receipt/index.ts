@@ -2,16 +2,11 @@ import type { Database } from "@carbon/database";
 import type { KyselyDatabase } from "@carbon/database/client";
 import { datetime, getCompanyTimeZone } from "@carbon/database/datetime";
 import {
-  buildJournalLineDimensionInserts,
   calculateCOGS,
   getCurrentAccountingPeriod,
   getDefaultPostingGroup,
-  type JournalDimensionMeta,
   journalReference,
-  resolveInventoryAccount,
-  resolveReturnUnitCost,
-  settleQuantity,
-  type TrackedEntityAttributes
+  resolveInventoryAccount
 } from "@carbon/database/posting";
 import {
   resolveFeatureSamplingPlan,
@@ -20,7 +15,16 @@ import {
 } from "@carbon/database/sampling";
 import { getNextSequence } from "@carbon/database/sequence";
 import { getLogger } from "@carbon/logger";
-import { credit, debit, round } from "@carbon/utils";
+import {
+  buildJournalLineDimensionInserts,
+  credit,
+  debit,
+  type JournalDimensionMeta,
+  resolveReturnUnitCost,
+  round,
+  settleQuantity,
+  type TrackedEntityAttributes
+} from "@carbon/utils";
 import type { Insertable } from "kysely";
 import { nanoid } from "nanoid";
 import { z } from "zod";

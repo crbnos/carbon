@@ -80,14 +80,3 @@ export const interpolateSequenceDate = (
 
   return result;
 };
-
-export const getReadableIdWithRevision = (
-  readableId: string,
-  revision?: string | null
-) => {
-  if (revision && revision !== "0") {
-    return `${readableId}.${revision}`;
-  }
-
-  return readableId;
-};

@@ -7,8 +7,7 @@
 // the best obtainable original cost. Returns null when the rows can't yield a
 // cost — the caller then falls back to current cost (flagged-variance path).
 // Same math as resolveUnscrapUnitCost (post-inventory-adjustment), kept as its
-// own named contract in shared/ because the two flows evolve independently.
-// No imports so `deno test` type-checks clean.
+// own named contract because the two flows evolve independently.
 
 export function resolveReturnUnitCost(
   rows: Array<{ quantity: number; cost: number }>

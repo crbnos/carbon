@@ -1,7 +1,7 @@
 import type { KyselyDatabase } from "@carbon/database/client";
 import { datetime } from "@carbon/database/datetime";
-import { getReadableIdWithRevision } from "@carbon/database/posting";
 import { getLogger } from "@carbon/logger";
+import { getReadableIdWithRevision } from "@carbon/utils";
 import type { Transaction } from "kysely";
 import { z } from "zod";
 import { defineServerFn } from "../define-server-fn";

@@ -1,20 +1,24 @@
 import type { Database } from "@carbon/database";
 import { datetime, getCompanyTimeZone } from "@carbon/database/datetime";
 import {
-  allocateVarianceAcrossLayers,
-  calculateDueDate,
-  classifyIntercompanyPostingLines,
-  getBillableQuantity,
   getCurrentAccountingPeriod,
   getDefaultPostingGroup,
-  getRemainingQuantityToInvoice,
   journalReference,
-  resolveInventoryAccount,
-  type VarianceAllocation
+  resolveInventoryAccount
 } from "@carbon/database/posting";
 import { getNextSequence } from "@carbon/database/sequence";
 import { getLogger } from "@carbon/logger";
-import { credit, debit, round } from "@carbon/utils";
+import {
+  allocateVarianceAcrossLayers,
+  calculateDueDate,
+  classifyIntercompanyPostingLines,
+  credit,
+  debit,
+  getBillableQuantity,
+  getRemainingQuantityToInvoice,
+  round,
+  type VarianceAllocation
+} from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { nanoid } from "nanoid";
 import { z } from "zod";

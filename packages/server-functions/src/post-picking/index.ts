@@ -5,17 +5,16 @@ import {
   getPickedBudgets,
   orderOldFirst
 } from "@carbon/database/picked-consumption";
+
 import {
   assertEntityCoversPick,
-  resolvePick,
-  resolveTrackedEntityBin,
-  settleQuantity
-} from "@carbon/database/posting";
-import {
   buildBatchSplitRecords,
   buildMergeRecords,
   isFullDraw,
-  round
+  resolvePick,
+  resolveTrackedEntityBin,
+  round,
+  settleQuantity
 } from "@carbon/utils";
 import type { Insertable } from "kysely";
 import { nanoid } from "nanoid";

@@ -109,7 +109,7 @@ the service-role client + Kysely `db.transaction()`, and branch on `sourceDocume
 attaches automatic `journalLineDimension` rows — item, item posting group
 (`itemCost.itemPostingGroupId`), party (supplier/customer + type), and location —
 built index-parallel to the journal lines and emitted through the shared pure
-`buildJournalLineDimensionInserts` (`functions/shared/journal-dimensions.ts`), gated
+`buildJournalLineDimensionInserts` (`@carbon/utils` `journal-dimensions.ts`), gated
 by the company group's configured `dimension` rows. The journalLine insert must
 `.returning(["id"])` so dimension #i binds to line #i. The **void** cases copy the
 original lines' dimensions onto the reversing lines (read `journalLineDimension` by

@@ -592,7 +592,7 @@ export const stockTransferLineScanValidator = z.object({
  * Decide what a stock-transfer scan forwards to the post-stock-transfer server
  * function, or refuse the pick before invoking it. Pure so the route's parsing
  * is testable without the server function or the client graph — the server function
- * re-checks the same limits under a row lock (see shared/pick-guards.ts).
+ * re-checks the same limits under a row lock (`resolvePick` in @carbon/utils).
  *   - A serial scan always moves one unit; a batch scan moves the picker's
  *     clamped quantity.
  *   - The bin the user chose wins; the highest-quantity bin is only a fallback.

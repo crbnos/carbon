@@ -4,10 +4,9 @@
 // applies the same drain inline on its Available-stock paths). A lot with no
 // quantity left is Consumed, not a husk that still reads Available and clutters
 // every on-hand list; a Scrapped lot stays Scrapped even at zero — it is a
-// historical record and unscrap is the only way back. Pure, dependency-free
-// aside from the sibling precision module.
+// historical record and unscrap is the only way back.
 
-import { round } from "./precision.ts";
+import { round } from "./precision";
 
 export function statusAfterQuantityChange<S extends string>(
   newQuantity: number,
@@ -44,6 +43,6 @@ export function settleQuantity<S extends string>(input: {
   }
   return {
     quantity,
-    status: statusAfterQuantityChange(quantity, input.status),
+    status: statusAfterQuantityChange(quantity, input.status)
   };
 }

@@ -1,6 +1,5 @@
 // The storage unit where a tracked entity currently holds stock, derived from
-// its item-ledger rows by net on-hand per bin. Pure — no DB, no I/O — so it is
-// unit-testable with `deno test`.
+// its item-ledger rows by net on-hand per bin.
 //
 // A picked entity has ledger rows in BOTH its source and lineside bins;
 // consumption/split entries must be booked against the bin that actually holds

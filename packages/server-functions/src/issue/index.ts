@@ -18,8 +18,6 @@ import {
   getStorageUnitWithHighestQuantity,
   journalReference,
   resolveInventoryAccount,
-  resolveTrackedEntityBin,
-  type TrackedEntityAttributes,
   updatePickMethodDefaultStorageUnitIfNeeded
 } from "@carbon/database/posting";
 import {
@@ -33,8 +31,10 @@ import {
   credit,
   debit,
   isFullDraw,
+  resolveTrackedEntityBin,
   round,
-  splitPickAcrossMembers
+  splitPickAcrossMembers,
+  type TrackedEntityAttributes
 } from "@carbon/utils";
 import type { CalendarDate } from "@internationalized/date";
 import {

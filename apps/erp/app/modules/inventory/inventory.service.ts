@@ -1349,7 +1349,7 @@ export async function getShippingTermsList(
 
 // Merge >=2 same-item Available lots into ONE new entity (fresh id, summed
 // quantity, earliest expiry) with genealogy back to every parent. The issue
-// server fn owns the writes; see shared/batch-merge.ts.
+// server fn owns the writes; see `buildBatchMergeRecords` (@carbon/utils).
 export async function mergeTrackedEntities(
   client: SupabaseClient<Database>,
   db: Kysely<KyselyDatabase>,

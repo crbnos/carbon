@@ -1,10 +1,9 @@
 import {
   bookAdjustment,
   getAccountingPeriodForDate,
-  getDefaultPostingGroup,
-  statusAfterQuantityChange
+  getDefaultPostingGroup
 } from "@carbon/database/posting";
-import { equals, round } from "@carbon/utils";
+import { equals, round, statusAfterQuantityChange } from "@carbon/utils";
 import { z } from "zod";
 import { defineServerFn } from "../define-server-fn";
 import { InvalidInputError, NotFoundError } from "../errors";

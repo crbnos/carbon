@@ -4,10 +4,14 @@ import { datetime, getCompanyTimeZone } from "@carbon/database/datetime";
 import {
   bookAdjustment,
   getCurrentAccountingPeriod,
-  getDefaultPostingGroup,
-  settleQuantity
+  getDefaultPostingGroup
 } from "@carbon/database/posting";
-import { buildBatchSplitRecords, isFullDraw, round } from "@carbon/utils";
+import {
+  buildBatchSplitRecords,
+  isFullDraw,
+  round,
+  settleQuantity
+} from "@carbon/utils";
 import { parseDate } from "@internationalized/date";
 import type { Transaction } from "kysely";
 import { nanoid } from "nanoid";
