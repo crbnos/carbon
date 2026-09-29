@@ -1,32 +1,28 @@
-import { serve } from "https://deno.land/std@0.175.0/http/server.ts";
-import { z } from "https://deno.land/x/zod@v3.21.4/mod.ts";
-import { DB, getConnectionPool, getDatabaseClient } from "../lib/database.ts";
-import { datetime, getCompanyTimeZone } from "../lib/datetime.ts";
-import { corsPreflight, errorResponse, jsonResponse } from "../lib/response.ts";
-import { getFunctionLogger } from "../lib/logging.ts";
-import { requirePermissions } from "../lib/supabase.ts";
-import type { Database } from "../lib/types.ts";
-import { getCurrentAccountingPeriod } from "../shared/get-accounting-period.ts";
-import { getDefaultPostingGroup } from "../shared/get-posting-group.ts";
-import { resolveCountedEntity } from "./count-guards.ts";
+import type { Database } from "@carbon/database";
+import { datetime, getCompanyTimeZone } from "@carbon/database/datetime";
 import {
   bookAdjustment,
-  createAdjustmentJournal
-} from "../shared/post-adjustment.ts";
-import { planInventoryCountPost } from "./plan-post.ts";
-
-const pool = getConnectionPool(1);
-const db = getDatabaseClient<DB>(pool);
-const logger = getFunctionLogger("post-inventory-count");
+  createAdjustmentJournal,
+  getCurrentAccountingPeriod,
+  getDefaultPostingGroup
+} from "@carbon/database/posting";
+import { z } from "zod";
+import {
+  assertOperationPermissions,
+  type OperationContext,
+  serviceRoleClient
+} from "../context";
+import { OperationError, runOperation } from "../result";
+import { resolveCountedEntity } from "./count-guards";
+import { planInventoryCountPost } from "./plan-post";
 
 // Base for post-blocking validation errors. Carries the offending line ids so
 // the response can hand them to the UI to highlight the rows.
-class InvalidLinesError extends Error {
-  lineIds: string[];
+// A 400 whose `body.invalidLineIds` the caller reads to highlight the rows.
+class InvalidLinesError extends OperationError {
   constructor(message: string, lineIds: string[]) {
-    super(message);
+    super(message, 400, { invalidLineIds: lineIds });
     this.name = "InvalidLinesError";
-    this.lineIds = lineIds;
   }
 }
 
@@ -53,29 +49,26 @@ class SerialQuantityError extends InvalidLinesError {
 // A count posts exactly once (Posted is terminal). Fixing a posted movement
 // happens per-movement via the correct-stock-movement edge function, which
 // links the fix through itemLedger.correctionOfItemLedgerId.
-const payloadValidator = z.object({
-  type: z.literal("post"),
-  inventoryCountId: z.string(),
-  userId: z.string(),
-  companyId: z.string()
+export const postInventoryCountInput = z.object({
+  inventoryCountId: z.string()
 });
 
-serve(async (req: Request) => {
-  const preflight = corsPreflight(req);
-  if (preflight) return preflight;
+/** Posts a Pending inventory count: one adjustment per counted variance, atomically. */
+export function postInventoryCount(
+  ctx: OperationContext,
+  input: z.input<typeof postInventoryCountInput>
+) {
+  return runOperation("post-inventory-count", async () => {
+    const { inventoryCountId } = postInventoryCountInput.parse(input);
+    const { db, companyId, userId } = ctx;
 
-  const payload = await req.json();
+    await assertOperationPermissions(ctx, { update: "inventory" });
+    const client = await serviceRoleClient();
 
-  try {
-    const { inventoryCountId, userId, companyId } =
-      payloadValidator.parse(payload);
-
-    const client = await requirePermissions(req, companyId, userId, {
-      update: "inventory"
-    });
-
-    const today = datetime.today(await getCompanyTimeZone(client, companyId)).toString();
-    const nowIso = new Date().toISOString();
+    const today = datetime
+      .today(await getCompanyTimeZone(client, companyId))
+      .toString();
+    const nowIso = datetime.timestamp();
 
     const inventoryCount = await client
       .from("inventoryCount")
@@ -208,7 +201,7 @@ serve(async (req: Request) => {
       const dimensions = await client
         .from("dimension")
         .select("id, entityType")
-        .eq("companyGroupId", companyRecord.data.companyGroupId)
+        .eq("companyGroupId", companyRecord.data.companyGroupId!)
         .eq("active", true)
         .in("entityType", ["Item", "ItemPostingGroup", "Location"]);
       // Fail closed: journal lines must not silently lose dimension tags.
@@ -325,7 +318,7 @@ serve(async (req: Request) => {
           const settled = resolveCountedEntity({
             currentQuantity: Number(entity?.quantity ?? 0),
             delta,
-            currentStatus: entity?.status ?? "Available",
+            currentStatus: entity?.status ?? "Available"
           });
           await trx
             .updateTable("trackedEntity")
@@ -367,26 +360,6 @@ serve(async (req: Request) => {
       }
     });
 
-    return jsonResponse({ success: true });
-  } catch (err) {
-    logger.error("post-inventory-count failed", {
-      error: String((err as Error).stack ?? err)
-    });
-    // The post is a single atomic transaction, so a failure has already rolled
-    // back any ledger writes and the status change — the count is left exactly
-    // as it was (Pending). We do NOT touch the status here: reverting a failed
-    // post to Draft would silently discard the user's confirmation. Pending is
-    // the correct retryable state.
-    // Body key is `message` so the route's `getEdgeFunctionErrorMessage` can pull
-    // the real reason (e.g. the snapshot-drift or serial text) out of the response
-    // body — supabase-js otherwise only exposes a generic FunctionsHttpError.message.
-    // For line-level validation errors we also return `invalidLineIds` so the UI
-    // can highlight the offending rows.
-    // Only line-level validation failures are client errors (400). Everything
-    // else — "not found", "no longer pending", DB/runtime failures — is a 500 so
-    // real outages surface in monitoring instead of hiding as a 400.
-    const isValidationError = err instanceof InvalidLinesError;
-    const invalidLineIds = isValidationError ? err.lineIds : undefined;
-    return errorResponse(err, isValidationError ? 400 : 500, { invalidLineIds });
-  }
-});
+    return { success: true };
+  });
+}

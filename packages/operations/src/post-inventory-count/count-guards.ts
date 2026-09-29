@@ -5,7 +5,7 @@
 // below zero the two have genuinely diverged, so we refuse (recount) rather than
 // clamp, which would desync the entity from the already-booked ledger delta.
 
-import { settleQuantity } from "../shared/entity-drain.ts";
+import { settleQuantity } from "@carbon/database/posting";
 
 export function resolveCountedEntity<S extends string>(input: {
   currentQuantity: number;
@@ -16,6 +16,6 @@ export function resolveCountedEntity<S extends string>(input: {
     quantity: input.currentQuantity + input.delta,
     status: input.currentStatus,
     refusal:
-      "Stock moved since the count was taken; recount this line before posting",
+      "Stock moved since the count was taken; recount this line before posting"
   });
 }
