@@ -8,6 +8,7 @@ import { raiseMoment } from "@carbon/lib/workflows";
 import { getLogger } from "@carbon/logger";
 import type { JSONContent } from "@carbon/react";
 import {
+  async,
   datetime,
   type FlatTree,
   flattenTree,
@@ -334,34 +335,45 @@ export async function finishJobOperation(
   }
 
   if (!result.error) {
-    client
-      .from("productionEvent")
-      .select("id")
-      .eq("jobOperationId", args.jobOperationId)
-      .not("endTime", "is", null)
-      .eq("postedToGL", false)
-      .then((unpostedEvents) => {
-        if (unpostedEvents.data?.length) {
-          // System: every caller passes the service role, which the edge
-          // function never permission-checked.
-          import("@carbon/operations/post-production-event").then(
-            ({ postProductionEvent }) =>
-              Promise.all(
-                unpostedEvents.data.map((event) =>
-                  postProductionEvent(
-                    {
-                      db,
-                      companyId: args.companyId,
-                      userId: args.userId,
-                      system: true
-                    },
-                    { productionEventId: event.id }
-                  )
-                )
-              )
-          );
-        }
-      });
+    // System: every caller passes the service role, which the edge function
+    // never permission-checked. An operation's own failure is logged inside it;
+    // onError catches anything that escapes (the query, the import).
+    async.background(
+      async () => {
+        const unposted = await client
+          .from("productionEvent")
+          .select("id")
+          .eq("jobOperationId", args.jobOperationId)
+          .not("endTime", "is", null)
+          .eq("postedToGL", false);
+        if (unposted.error) throw unposted.error;
+        if (unposted.data.length === 0) return;
+
+        const { postProductionEvent } = await import(
+          "@carbon/operations/post-production-event"
+        );
+        await async.map(
+          unposted.data,
+          (event) =>
+            postProductionEvent(
+              {
+                db,
+                companyId: args.companyId,
+                userId: args.userId,
+                system: true
+              },
+              { productionEventId: event.id }
+            ),
+          { concurrency: 4 }
+        );
+      },
+      (error) =>
+        log.error("finishJobOperation: posting production events failed", {
+          companyId: args.companyId,
+          jobOperationId: args.jobOperationId,
+          error
+        })
+    );
 
     // The status='Done' write fires the sync_finish_job_operation trigger, which
     // completes the job to inventory (job.status → 'Completed') when this was the

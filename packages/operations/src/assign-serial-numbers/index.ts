@@ -1,7 +1,7 @@
 import { getNextSerialNumbers } from "@carbon/database/sequence";
 import { sql } from "kysely";
 import { z } from "zod";
-import { assertSystemCaller, type OperationContext } from "../context";
+import { assertOperationPermissions, type OperationContext } from "../context";
 import { runOperation } from "../result";
 
 export const assignSerialNumbersInput = z.object({
@@ -18,17 +18,15 @@ export const assignSerialNumbersInput = z.object({
  * item's sequence (atomic counter) with %{...} date/week/location tokens.
  *
  * Idempotent: it no-ops when the seed is already numbered or already split.
- * System-only: the job it numbers was just created by an already-authorized
- * caller, some of them on the service role.
  */
 export function assignSerialNumbers(
   ctx: OperationContext,
-  input: z.infer<typeof assignSerialNumbersInput>
+  input: z.input<typeof assignSerialNumbersInput>
 ) {
   return runOperation("assign-serial-numbers", async () => {
     const { jobId } = assignSerialNumbersInput.parse(input);
     const { db, companyId } = ctx;
-    assertSystemCaller(ctx);
+    await assertOperationPermissions(ctx, { update: "production" });
 
     return db.transaction().execute(async (trx) => {
       // 1. The job

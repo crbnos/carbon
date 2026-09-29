@@ -490,10 +490,10 @@ export async function getPickedTrackedEntitiesForMaterial(
   return [...byEntity.values()];
 }
 
-// Thin wrapper over the post-inventory-adjustment edge function — the same
-// unified write path the ERP uses. The edge function books the item ledger,
-// cost layers, and (when companySettings.accountingEnabled) the GL journal in
-// one transaction, and owns the insufficient-quantity guard.
+// Thin wrapper over the post-inventory-adjustment operation — the same
+// unified write path the ERP uses. It books the item ledger, cost layers, and
+// (when companySettings.accountingEnabled) the GL journal in one transaction,
+// and owns the insufficient-quantity guard.
 export async function insertManualInventoryAdjustment(
   client: SupabaseClient<Database>,
   db: Kysely<KyselyDatabase>,
@@ -516,21 +516,14 @@ export async function insertManualInventoryAdjustment(
   });
 
   if (result.error) {
-    // Supabase wraps non-2xx edge-fn responses in FunctionsHttpError with the
-    // body on error.context — pull the real message out so the route's string
-    // match on "Insufficient quantity..." keeps working (same pattern as
-    // x+/issue-tracked-entity.tsx).
-    let message = "Failed to create manual inventory adjustment";
-    const ctx = (result.error as { context?: Response })?.context;
-    if (ctx && typeof ctx.clone === "function") {
-      try {
-        const body = await ctx.clone().json();
-        if (body && typeof body.message === "string") message = body.message;
-      } catch {
-        // body wasn't JSON — keep the fallback
+    // The route string-matches "Insufficient quantity..." on this message.
+    return {
+      data: null,
+      error: {
+        message:
+          result.error.message || "Failed to create manual inventory adjustment"
       }
-    }
-    return { data: null, error: { message } };
+    };
   }
 
   return { data: result.data?.itemLedger ?? null, error: null };

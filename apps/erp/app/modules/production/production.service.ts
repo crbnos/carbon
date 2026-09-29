@@ -3609,12 +3609,16 @@ async function assignJobSerialNumbers(
   }
   if (!serialSequence.data) return;
 
-  const { assignSerialNumbers } = await import(
-    "@carbon/operations/assign-serial-numbers"
-  );
-  // System: numbering a job the caller was just authorized to create.
+  const [{ assignSerialNumbers }, { callerContext }] = await Promise.all([
+    import("@carbon/operations/assign-serial-numbers"),
+    import("@carbon/operations")
+  ]);
   const { error } = await assignSerialNumbers(
-    { db, companyId: args.companyId, userId: args.userId, system: true },
+    await callerContext(client, {
+      db,
+      companyId: args.companyId,
+      userId: args.userId
+    }),
     { jobId: args.jobId }
   );
   if (error) {

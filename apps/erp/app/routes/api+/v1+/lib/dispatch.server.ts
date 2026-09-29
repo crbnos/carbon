@@ -8,6 +8,7 @@
 // callOperation reconstructs the { success:false, error } envelope.
 
 import type { AuthField, ManifestEntry } from "@carbon/api";
+import { OperationError } from "@carbon/operations";
 import { ORPCError } from "@orpc/server";
 import { getDatabaseClient } from "~/services/database.server";
 import type { AuthedContext } from "./base.server";
@@ -249,6 +250,21 @@ function addressesWholeParam(meta: ManifestEntry, paramName: string): boolean {
   return own.length === 1 && own[0] === paramName;
 }
 
+function operationErrorCode(status: number) {
+  switch (status) {
+    case 400:
+      return "BAD_REQUEST";
+    case 403:
+      return "FORBIDDEN";
+    case 404:
+      return "NOT_FOUND";
+    case 409:
+      return "CONFLICT";
+    default:
+      return "INTERNAL_SERVER_ERROR";
+  }
+}
+
 function supabaseErrorMessage(error: unknown): string {
   if (typeof error === "string") return error;
   if (error && typeof error === "object" && "message" in error) {
@@ -422,6 +438,13 @@ export async function dispatchOperation(
   // Supabase response shape { data, error, count } — unwrap, or throw on error.
   if (result && typeof result === "object" && "data" in result) {
     const r = result as { data: unknown; error?: unknown; count?: number };
+    // An operation's error is already sanitized (empty when it came from the
+    // data layer) and carries its own status.
+    if (r.error instanceof OperationError) {
+      throw new ORPCError(operationErrorCode(r.error.status), {
+        message: r.error.message || "The operation could not be completed."
+      });
+    }
     if (r.error) {
       throw new ORPCError("BAD_REQUEST", {
         message: supabaseErrorMessage(r.error),

@@ -1,4 +1,4 @@
-import { FunctionsHttpError, PostgrestError } from "@supabase/supabase-js";
+import { PostgrestError } from "@supabase/supabase-js";
 import { describe, expect, it } from "vitest";
 import { ruleError } from "~/utils/supabase";
 import {
@@ -20,8 +20,6 @@ function postgrestError(
   });
 }
 
-const edgeFunctionError = new FunctionsHttpError(new Response("{}"));
-
 describe("classifyDatabaseFailure", () => {
   it.each([
     ["23505", "conflict"],
@@ -33,10 +31,6 @@ describe("classifyDatabaseFailure", () => {
     expect(
       classifyDatabaseFailure(postgrestError({ code, message: "boom" }))
     ).toBe(kind);
-  });
-
-  it("maps an edge-function failure by its constructor name", () => {
-    expect(classifyDatabaseFailure(edgeFunctionError)).toBe("rule");
   });
 
   it("falls back to unknown for an unrecognized or absent code", () => {
@@ -71,7 +65,6 @@ describe("publicDatabaseError", () => {
         code: "42501",
         details: "user 48e8db84 lacks privilege on table employee"
       }),
-      edgeFunctionError,
       postgrestError({ code: "XX000" }),
       null
     ]) {
@@ -117,7 +110,6 @@ describe("isServiceRuleError", () => {
     for (const error of [
       postgrestError({ code: "23505", message: "duplicate key" }),
       postgrestError({ message: "boom" }),
-      edgeFunctionError,
       null,
       undefined
     ]) {
