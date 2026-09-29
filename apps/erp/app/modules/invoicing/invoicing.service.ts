@@ -261,49 +261,52 @@ export async function computeEarlyPaymentDiscounts(
 
 export async function createPurchaseInvoiceFromPurchaseOrder(
   client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   purchaseOrderId: string,
   companyId: string,
   userId: string
 ) {
-  return client.functions.invoke<{ id: string }>("convert", {
-    body: {
-      type: "purchaseOrderToPurchaseInvoice",
-      id: purchaseOrderId,
-      companyId,
-      userId
-    }
+  const [{ convert }, { callerContext }] = await Promise.all([
+    import("@carbon/operations/convert"),
+    import("@carbon/operations")
+  ]);
+  return convert(await callerContext(client, { db, companyId, userId }), {
+    type: "purchaseOrderToPurchaseInvoice",
+    id: purchaseOrderId
   });
 }
 
 export async function createSalesInvoiceFromSalesOrder(
   client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   salesOrderId: string,
   companyId: string,
   userId: string
 ) {
-  return client.functions.invoke<{ id: string }>("convert", {
-    body: {
-      type: "salesOrderToSalesInvoice",
-      id: salesOrderId,
-      companyId,
-      userId
-    }
+  const [{ convert }, { callerContext }] = await Promise.all([
+    import("@carbon/operations/convert"),
+    import("@carbon/operations")
+  ]);
+  return convert(await callerContext(client, { db, companyId, userId }), {
+    type: "salesOrderToSalesInvoice",
+    id: salesOrderId
   });
 }
 
 export async function createSalesInvoiceFromShipment(
   client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   shipmentId: string,
   companyId: string,
   userId: string
 ) {
-  return client.functions.invoke<{ id: string }>("convert", {
-    body: {
-      type: "shipmentToSalesInvoice",
-      id: shipmentId,
-      companyId,
-      userId
-    }
+  const [{ convert }, { callerContext }] = await Promise.all([
+    import("@carbon/operations/convert"),
+    import("@carbon/operations")
+  ]);
+  return convert(await callerContext(client, { db, companyId, userId }), {
+    type: "shipmentToSalesInvoice",
+    id: shipmentId
   });
 }
 

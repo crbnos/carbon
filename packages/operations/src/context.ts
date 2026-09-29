@@ -122,3 +122,40 @@ export async function serviceRoleClient(): Promise<SupabaseClient<Database>> {
     await Promise.all([import("@carbon/auth"), import("@carbon/env")]);
   return getCarbonClient(SUPABASE_SERVICE_ROLE_KEY!);
 }
+
+/** Whether `client` was built with `key` (supabase-js keeps it on the instance). */
+export function clientUsesKey(
+  client: SupabaseClient<Database>,
+  key: string | undefined
+): boolean {
+  return (
+    !!key && (client as unknown as { supabaseKey?: string }).supabaseKey === key
+  );
+}
+
+/**
+ * Whether `client` carries the service-role key. The edge functions decided
+ * "system" by the caller's bearer: the service role skipped the permission check,
+ * a user's or an API key's token did not. A service that received its caller's
+ * client and used to invoke with it keeps exactly that rule by passing
+ * `system: await isServiceRoleClient(client)`. Never replace this with a flag
+ * the service takes as a parameter: /api/v1 fills unknown parameters from the
+ * request body.
+ */
+export async function isServiceRoleClient(
+  client: SupabaseClient<Database>
+): Promise<boolean> {
+  const { SUPABASE_SERVICE_ROLE_KEY } = await import("@carbon/env");
+  return clientUsesKey(client, SUPABASE_SERVICE_ROLE_KEY);
+}
+
+/**
+ * The context for a service that received its caller's client: `system` follows
+ * the client's key, exactly as the edge function followed the invoke's bearer.
+ */
+export async function callerContext(
+  client: SupabaseClient<Database>,
+  base: Omit<OperationContext, "system">
+): Promise<OperationContext> {
+  return { ...base, system: await isServiceRoleClient(client) };
+}

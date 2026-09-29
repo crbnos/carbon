@@ -26,6 +26,7 @@ import {
   sendSalesOrderEmail
 } from "~/modules/shared/shared.server";
 import { loader as pdfLoader } from "~/routes/file+/sales-order+/$id[.]pdf";
+import { getDatabaseClient } from "~/services/database.server";
 import { getEdgeFunctionErrorMessage } from "~/utils/error";
 import { path } from "~/utils/path";
 
@@ -144,7 +145,7 @@ export async function action(args: ActionFunctionArgs) {
     return { violations: deduped, ruleNames };
   }
 
-  const convert = await convertQuoteToOrder(serviceRole, {
+  const convert = await convertQuoteToOrder(serviceRole, getDatabaseClient(), {
     id: quoteId,
     purchaseOrderNumber: poNumber ?? "",
     companyId,

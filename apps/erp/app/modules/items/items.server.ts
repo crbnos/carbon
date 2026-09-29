@@ -508,7 +508,7 @@ export async function applyChangeNotice(
   );
 
   for (const affected of ordered) {
-    const result = await releaseAffectedItem(client, {
+    const result = await releaseAffectedItem(client, db, {
       changeNoticeId,
       companyId,
       userId,
@@ -560,6 +560,7 @@ export async function applyChangeNotice(
 // -----------------------------------------------------------------------------
 async function releaseAffectedItem(
   client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   input: {
     changeNoticeId: string;
     companyId: string;
@@ -602,7 +603,7 @@ async function releaseAffectedItem(
   // Version simply appends a new Active version and archives the prior one — the
   // prior version's rows are preserved as method history, so there is nothing to
   // merge even if another CO released a newer version in the meantime.
-  const activated = await activateMethodVersion(client, {
+  const activated = await activateMethodVersion(client, db, {
     id: draftMakeMethodId,
     companyId,
     userId

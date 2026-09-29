@@ -12,6 +12,7 @@ import {
   getSupplierQuote,
   selectedLinesValidator
 } from "~/modules/purchasing";
+import { getDatabaseClient } from "~/services/database.server";
 import { getEdgeFunctionErrorMessage } from "~/utils/error";
 import { path } from "~/utils/path";
 
@@ -86,12 +87,16 @@ export async function action({ request, params }: ActionFunctionArgs) {
     }
   }
 
-  const convert = await convertSupplierQuoteToOrder(serviceRole, {
-    id: id,
-    companyId,
-    userId,
-    selectedLines
-  });
+  const convert = await convertSupplierQuoteToOrder(
+    serviceRole,
+    getDatabaseClient(),
+    {
+      id: id,
+      companyId,
+      userId,
+      selectedLines
+    }
+  );
 
   if (convert.error) {
     throw redirect(

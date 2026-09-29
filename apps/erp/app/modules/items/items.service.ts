@@ -121,17 +121,21 @@ const logger = getLogger("erp", "items");
 
 export async function activateMethodVersion(
   client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   payload: {
     id: string;
     companyId: string;
     userId: string;
   }
 ) {
-  return client.functions.invoke<{ convertedId: string }>("convert", {
-    body: {
-      type: "methodVersionToActive",
-      ...payload
-    }
+  const { companyId, userId, id } = payload;
+  const [{ convert }, { callerContext }] = await Promise.all([
+    import("@carbon/operations/convert"),
+    import("@carbon/operations")
+  ]);
+  return convert(await callerContext(client, { db, companyId, userId }), {
+    type: "methodVersionToActive",
+    id
   });
 }
 

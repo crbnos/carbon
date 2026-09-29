@@ -16,6 +16,7 @@ import {
   resolvePurchaseToOrderPrices,
   resolveQuoteLinePrices
 } from "~/modules/sales";
+import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
@@ -69,11 +70,15 @@ export async function action({ request, params }: ActionFunctionArgs) {
     return { violations: deduped, ruleNames };
   }
 
-  const convert = await convertSalesRfqToQuote(serviceRole, {
-    id,
-    companyId,
-    userId
-  });
+  const convert = await convertSalesRfqToQuote(
+    serviceRole,
+    getDatabaseClient(),
+    {
+      id,
+      companyId,
+      userId
+    }
+  );
 
   if (convert.error) {
     throw redirect(

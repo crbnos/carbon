@@ -205,22 +205,27 @@ export async function closeSalesOrder(
 
 export async function convertSalesRfqToQuote(
   client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   payload: {
     id: string;
     companyId: string;
     userId: string;
   }
 ) {
-  return client.functions.invoke<{ convertedId: string }>("convert", {
-    body: {
-      type: "salesRfqToQuote",
-      ...payload
-    }
+  const { companyId, userId, id } = payload;
+  const [{ convert }, { callerContext }] = await Promise.all([
+    import("@carbon/operations/convert"),
+    import("@carbon/operations")
+  ]);
+  return convert(await callerContext(client, { db, companyId, userId }), {
+    type: "salesRfqToQuote",
+    id
   });
 }
 
 export async function convertQuoteToOrder(
   client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   payload: {
     id: string;
     selectedLines: z.infer<typeof selectedLinesValidator>;
@@ -231,14 +236,14 @@ export async function convertQuoteToOrder(
     digitalQuoteAcceptedByEmail?: string;
   }
 ) {
-  const result = await client.functions.invoke<{ convertedId: string }>(
-    "convert",
-    {
-      body: {
-        type: "quoteToSalesOrder",
-        ...payload
-      }
-    }
+  const { companyId, userId, ...input } = payload;
+  const [{ convert }, { callerContext }] = await Promise.all([
+    import("@carbon/operations/convert"),
+    import("@carbon/operations")
+  ]);
+  const result = await convert(
+    await callerContext(client, { db, companyId, userId }),
+    { type: "quoteToSalesOrder", ...input }
   );
 
   if (!result.error && result.data?.convertedId) {

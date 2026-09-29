@@ -91,6 +91,7 @@ export async function closePurchaseOrder(
 
 export async function convertSupplierQuoteToOrder(
   client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   payload: {
     id: string;
     selectedLines: z.infer<typeof selectedLinesValidator>;
@@ -98,11 +99,14 @@ export async function convertSupplierQuoteToOrder(
     userId: string;
   }
 ) {
-  return client.functions.invoke<{ convertedId: string }>("convert", {
-    body: {
-      type: "supplierQuoteToPurchaseOrder",
-      ...payload
-    }
+  const { companyId, userId, ...input } = payload;
+  const [{ convert }, { callerContext }] = await Promise.all([
+    import("@carbon/operations/convert"),
+    import("@carbon/operations")
+  ]);
+  return convert(await callerContext(client, { db, companyId, userId }), {
+    type: "supplierQuoteToPurchaseOrder",
+    ...input
   });
 }
 

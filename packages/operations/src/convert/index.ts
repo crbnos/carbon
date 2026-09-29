@@ -1,22 +1,24 @@
-import { serve } from "https://deno.land/std@0.175.0/http/server.ts";
-import { z } from "npm:zod@^4.5.4";
+import type { Database } from "@carbon/database";
+import { datetime, getCompanyTimeZone } from "@carbon/database/datetime";
+import {
+  getRemainingQuantityToInvoice,
+  toJson
+} from "@carbon/database/posting";
+import { getNextSequence } from "@carbon/database/sequence";
+import { getLogger } from "@carbon/logger";
+import { deriveRate } from "@carbon/utils";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import { z } from "zod";
+import { RecordNotFoundError } from "../company-records";
+import {
+  assertOperationPermissions,
+  type OperationContext,
+  type RequiredPermissions,
+  serviceRoleClient
+} from "../context";
+import { runOperation } from "../result";
 
-import { DB, getConnectionPool, getDatabaseClient } from "../lib/database.ts";
-import { datetime, getCompanyTimeZone } from "../lib/datetime.ts";
-
-import { getFunctionLogger } from "../lib/logging.ts";
-import { toJson } from "../lib/json.ts";
-import { RecordNotFoundError } from "../lib/company-records.ts";
-import { corsPreflight, errorResponse, jsonResponse } from "../lib/response.ts";
-import { requirePermissions } from "../lib/supabase.ts";
-import { Database } from "../lib/types.ts";
-import { getNextSequence } from "../shared/get-next-sequence.ts";
-import { deriveRate } from "../shared/precision.ts";
-import { getRemainingQuantityToInvoice } from "../shared/short-close.ts";
-
-const pool = getConnectionPool(2);
-const db = getDatabaseClient<DB>(pool);
-const logger = getFunctionLogger("convert");
+const logger = getLogger("operations", "convert");
 
 // Supabase/PostgREST caps a single response at 1000 rows. Page through with
 // .range() so large reads (e.g. a quote's lines × quantity-break prices) are
@@ -38,24 +40,18 @@ async function fetchAllRows<T>(
   return { data: all, error: null };
 }
 
-const payloadValidator = z.discriminatedUnion("type", [
+export const convertInput = z.discriminatedUnion("type", [
   z.object({
     type: z.literal("methodVersionToActive"),
-    id: z.string(),
-    companyId: z.string(),
-    userId: z.string(),
+    id: z.string()
   }),
   z.object({
     type: z.literal("purchaseOrderToPurchaseInvoice"),
-    id: z.string(),
-    companyId: z.string(),
-    userId: z.string(),
+    id: z.string()
   }),
   z.object({
     type: z.literal("quoteToSalesOrder"),
     id: z.string(),
-    companyId: z.string(),
-    userId: z.string(),
     purchaseOrderNumber: z.string().optional(),
     // Only `quantity` is trusted (it selects a quantity break). Every financial
     // field is derived server-side from quoteLinePrice in the handler; the money
@@ -73,36 +69,28 @@ const payloadValidator = z.discriminatedUnion("type", [
         convertedTaxableAddOn: z.number().optional(),
         shippingCost: z.number().optional(),
         convertedShippingCost: z.number().optional(),
-        leadTime: z.number().optional(),
+        leadTime: z.number().optional()
       })
     ),
     digitalQuoteAcceptedBy: z.string().optional(),
-    digitalQuoteAcceptedByEmail: z.string().optional(),
+    digitalQuoteAcceptedByEmail: z.string().optional()
   }),
 
   z.object({
     type: z.literal("salesOrderToSalesInvoice"),
-    id: z.string(),
-    companyId: z.string(),
-    userId: z.string(),
+    id: z.string()
   }),
   z.object({
     type: z.literal("salesRfqToQuote"),
-    id: z.string(),
-    companyId: z.string(),
-    userId: z.string(),
+    id: z.string()
   }),
   z.object({
     type: z.literal("shipmentToSalesInvoice"),
-    id: z.string(),
-    companyId: z.string(),
-    userId: z.string(),
+    id: z.string()
   }),
   z.object({
     type: z.literal("supplierQuoteToPurchaseOrder"),
     id: z.string(),
-    companyId: z.string(),
-    userId: z.string(),
     selectedLines: z.record(
       z.string(),
       z.object({
@@ -116,22 +104,18 @@ const payloadValidator = z.discriminatedUnion("type", [
         // Left optional so existing clients keep working; resolveTaxPercent
         // derives it from the amount rather than storing 0 beside a real one.
         taxPercent: z.number().min(0).max(1).optional().default(0),
-        unitPrice: z.number(),
+        unitPrice: z.number()
       })
-    ),
+    )
   }),
   z.object({
     type: z.literal("warehouseTransferToShipment"),
-    id: z.string(),
-    companyId: z.string(),
-    userId: z.string(),
+    id: z.string()
   }),
   z.object({
     type: z.literal("warehouseTransferToReceipt"),
-    id: z.string(),
-    companyId: z.string(),
-    userId: z.string(),
-  }),
+    id: z.string()
+  })
 ]);
 
 /**
@@ -156,17 +140,23 @@ function resolveTaxPercent(line: {
   );
 }
 
-serve(async (req: Request) => {
-  const preflight = corsPreflight(req);
-  if (preflight) return preflight;
-  const payload = await req.json();
-  let convertedId = "";
-  try {
-    const { type, id, companyId, userId } = payloadValidator.parse(payload);
+/** `id` for the three document-to-invoice conversions, `convertedId` for the rest. */
+export type ConvertResult = { id?: string; convertedId?: string };
 
-    logger.info({ type, id, companyId, userId });
+/** Converts one document into the next (quote → order, order → invoice, …). */
+export function convert(
+  ctx: OperationContext,
+  input: z.infer<typeof convertInput>
+) {
+  return runOperation("convert", async (): Promise<ConvertResult> => {
+    const payload = convertInput.parse(input);
+    const { type, id } = payload;
+    const { db, companyId, userId } = ctx;
+    let convertedId = "";
 
-    const permissionsByType: Record<string, { view?: string | string[]; create?: string | string[]; update?: string | string[]; delete?: string | string[] }> = {
+    logger.info("convert", { type, id, companyId, userId });
+
+    const permissionsByType: Record<string, RequiredPermissions> = {
       methodVersionToActive: { update: "resources" },
       purchaseOrderToPurchaseInvoice: { update: "invoicing" },
       quoteToSalesOrder: { update: "sales" },
@@ -175,17 +165,16 @@ serve(async (req: Request) => {
       shipmentToSalesInvoice: { update: "invoicing" },
       supplierQuoteToPurchaseOrder: { update: "purchasing" },
       warehouseTransferToShipment: { update: "inventory" },
-      warehouseTransferToReceipt: { update: "inventory" },
+      warehouseTransferToReceipt: { update: "inventory" }
     };
 
-    const client = await requirePermissions(
-      req,
-      companyId,
-      userId,
+    await assertOperationPermissions(
+      ctx,
       permissionsByType[type] ?? { update: "settings" }
     );
+    const client = await serviceRoleClient();
 
-    switch (type) {
+    switch (payload.type) {
       case "methodVersionToActive": {
         const makeMethodId = id;
         const makeMethod = await client
@@ -195,7 +184,8 @@ serve(async (req: Request) => {
           .eq("companyId", companyId)
           .maybeSingle();
         if (makeMethod.error) throw new Error(makeMethod.error.message);
-        if (!makeMethod.data) throw new RecordNotFoundError("Make method not found");
+        if (!makeMethod.data)
+          throw new RecordNotFoundError("Make method not found");
 
         const [relatedMakeMethods, draftQuotes, draftJobs] = await Promise.all([
           client
@@ -212,7 +202,7 @@ serve(async (req: Request) => {
             .from("job")
             .select("*")
             .eq("companyId", companyId)
-            .eq("status", "Draft"),
+            .eq("status", "Draft")
         ]);
 
         if (relatedMakeMethods.error)
@@ -237,7 +227,7 @@ serve(async (req: Request) => {
 
         const relatedMakeMethodIds = [
           ...(draftMakeMethodIds ?? []),
-          ...(activeMakeMethodIds ?? []),
+          ...(activeMakeMethodIds ?? [])
         ];
 
         const [methodMaterials] = await Promise.all([
@@ -245,7 +235,7 @@ serve(async (req: Request) => {
             .from("methodMaterial")
             .select("*")
             .in("materialMakeMethodId", relatedMakeMethodIds)
-            .eq("companyId", companyId),
+            .eq("companyId", companyId)
         ]);
 
         if (methodMaterials.error)
@@ -257,6 +247,7 @@ serve(async (req: Request) => {
               .updateTable("makeMethod")
               .set({ status: "Archived" })
               .where("id", "in", activeMakeMethodIds)
+              .where("companyId", "=", companyId)
               .execute();
           }
 
@@ -264,6 +255,7 @@ serve(async (req: Request) => {
             .updateTable("makeMethod")
             .set({ status: "Active" })
             .where("id", "=", makeMethodId)
+            .where("companyId", "=", companyId)
             .execute();
 
           if (relatedMakeMethodIds.length > 0) {
@@ -271,6 +263,7 @@ serve(async (req: Request) => {
               .updateTable("methodMaterial")
               .set({ materialMakeMethodId: makeMethodId })
               .where("materialMakeMethodId", "in", relatedMakeMethodIds)
+              .where("companyId", "=", companyId)
               .execute();
           }
         });
@@ -283,7 +276,7 @@ serve(async (req: Request) => {
           purchaseOrder,
           purchaseOrderLines,
           purchaseOrderPayment,
-          purchaseOrderDelivery,
+          purchaseOrderDelivery
         ] = await Promise.all([
           client
             .from("purchaseOrder")
@@ -307,10 +300,11 @@ serve(async (req: Request) => {
             .select("*")
             .eq("id", purchaseOrderId)
             .eq("companyId", companyId)
-            .maybeSingle(),
+            .maybeSingle()
         ]);
 
-        if (!purchaseOrder.data) throw new RecordNotFoundError("Purchase order not found");
+        if (!purchaseOrder.data)
+          throw new RecordNotFoundError("Purchase order not found");
         if (purchaseOrderLines.error)
           throw new Error(purchaseOrderLines.error.message);
         if (!purchaseOrderPayment.data)
@@ -353,7 +347,9 @@ serve(async (req: Request) => {
         // when a PO is invoiced in multiple partial invoices: the header
         // shipping goes on the first (non-voided) invoice only, and flat
         // line amounts are prorated by the fraction being invoiced.
-        const priorInvoiceLines = await client
+        // Untyped client: this embedded select exceeds TypeScript's
+        // instantiation depth, and only the row count is read.
+        const priorInvoiceLines = await (client as unknown as SupabaseClient)
           .from("purchaseInvoiceLine")
           .select("id, purchaseInvoice!inner(status)")
           .eq("purchaseOrderId", purchaseOrderId)
@@ -387,25 +383,27 @@ serve(async (req: Request) => {
             .values({
               invoiceId: purchaseInvoiceId!,
               status: "Draft",
-              supplierId: purchaseOrder.data.supplierId,
-              supplierReference: purchaseOrder.data.supplierReference ?? "",
-              invoiceSupplierId: purchaseOrderPayment.data.invoiceSupplierId,
+              supplierId: purchaseOrder.data!.supplierId,
+              supplierReference: purchaseOrder.data!.supplierReference ?? "",
+              invoiceSupplierId: purchaseOrderPayment.data!.invoiceSupplierId,
               invoiceSupplierContactId:
-                purchaseOrderPayment.data.invoiceSupplierContactId,
+                purchaseOrderPayment.data!.invoiceSupplierContactId,
               invoiceSupplierLocationId:
-                purchaseOrderPayment.data.invoiceSupplierLocationId,
-              locationId: purchaseOrderDelivery.data.locationId,
-              paymentTermId: purchaseOrderPayment.data.paymentTermId,
-              currencyCode: purchaseOrder.data.currencyCode ?? "USD",
-              dateIssued: datetime.today(await getCompanyTimeZone(client, companyId)).toString(),
-              exchangeRate: purchaseOrder.data.exchangeRate ?? 1,
+                purchaseOrderPayment.data!.invoiceSupplierLocationId,
+              locationId: purchaseOrderDelivery.data!.locationId,
+              paymentTermId: purchaseOrderPayment.data!.paymentTermId,
+              currencyCode: purchaseOrder.data!.currencyCode ?? "USD",
+              dateIssued: datetime
+                .today(await getCompanyTimeZone(client, companyId))
+                .toString(),
+              exchangeRate: purchaseOrder.data!.exchangeRate ?? 1,
               subtotal: uninvoicedSubtotal ?? 0,
-              supplierInteractionId: purchaseOrder.data.supplierInteractionId,
+              supplierInteractionId: purchaseOrder.data!.supplierInteractionId,
               totalDiscount: 0,
               totalAmount: uninvoicedSubtotal ?? 0,
               totalTax: 0,
               companyId,
-              createdBy: userId,
+              createdBy: userId
             })
             .returning(["id"])
             .executeTakeFirstOrThrow();
@@ -418,16 +416,16 @@ serve(async (req: Request) => {
             .insertInto("purchaseInvoiceDelivery")
             .values({
               id: purchaseInvoiceId,
-              locationId: purchaseOrderDelivery.data.locationId,
+              locationId: purchaseOrderDelivery.data!.locationId,
               supplierShippingCost: hasPriorInvoice
                 ? 0
-                : purchaseOrderDelivery.data.supplierShippingCost ?? 0,
-              shippingMethodId: purchaseOrderDelivery.data.shippingMethodId,
-              shippingTermId: purchaseOrderDelivery.data.shippingTermId,
-              incoterm: purchaseOrderDelivery.data.incoterm,
-              incotermLocation: purchaseOrderDelivery.data.incotermLocation,
+                : (purchaseOrderDelivery.data!.supplierShippingCost ?? 0),
+              shippingMethodId: purchaseOrderDelivery.data!.shippingMethodId,
+              shippingTermId: purchaseOrderDelivery.data!.shippingTermId,
+              incoterm: purchaseOrderDelivery.data!.incoterm,
+              incotermLocation: purchaseOrderDelivery.data!.incotermLocation,
               companyId,
-              updatedBy: userId,
+              updatedBy: userId
             })
             .execute();
 
@@ -459,7 +457,7 @@ serve(async (req: Request) => {
               jobOperationId: line.jobOperationId,
               sortOrder: line.sortOrder ?? 1,
               companyId,
-              createdBy: userId,
+              createdBy: userId
             }));
 
           await trx
@@ -468,19 +466,14 @@ serve(async (req: Request) => {
             .execute();
         });
 
-        return jsonResponse(
-          {
-            id: purchaseInvoiceId,
-          },
-          201
-        );
+        return { id: purchaseInvoiceId };
       }
       case "quoteToSalesOrder": {
         const {
           selectedLines,
           purchaseOrderNumber,
           digitalQuoteAcceptedBy,
-          digitalQuoteAcceptedByEmail,
+          digitalQuoteAcceptedByEmail
         } = payload;
         const [
           quote,
@@ -488,7 +481,7 @@ serve(async (req: Request) => {
           quoteLinePrices,
           quotePayment,
           quoteShipping,
-          company,
+          company
         ] = await Promise.all([
           client
             .from("quote")
@@ -524,10 +517,11 @@ serve(async (req: Request) => {
             .eq("id", id)
             .eq("companyId", companyId)
             .single(),
-          client.from("company").select("*").eq("id", companyId).single(),
+          client.from("company").select("*").eq("id", companyId).single()
         ]);
 
-        if (quote.error) throw new RecordNotFoundError(`Quote with id ${id} not found`);
+        if (quote.error)
+          throw new RecordNotFoundError(`Quote with id ${id} not found`);
         if (quoteLines.error)
           throw new Error(`Quote Lines with id ${id} not found`);
         if (quoteLinePrices.error)
@@ -591,7 +585,7 @@ serve(async (req: Request) => {
               line.id &&
               selectedLines &&
               line.id in selectedLines &&
-              selectedLines[line.id].quantity === 0
+              selectedLines[line.id]!.quantity === 0
           );
 
           // Only the selected lines become sales order lines below.
@@ -600,7 +594,7 @@ serve(async (req: Request) => {
               line.id &&
               selectedLines &&
               line.id in selectedLines &&
-              selectedLines[line.id].quantity > 0
+              selectedLines[line.id]!.quantity > 0
           );
 
           // Services are never shipped — a service-only order goes straight to
@@ -638,9 +632,9 @@ serve(async (req: Request) => {
                 internalNotes: toJson(quote.data.internalNotes),
                 exchangeRate: quote.data.exchangeRate ?? 1,
                 exchangeRateUpdatedAt:
-                  quote.data.exchangeRateUpdatedAt ?? new Date().toISOString(),
-                opportunityId: quote.data.opportunityId,
-              },
+                  quote.data.exchangeRateUpdatedAt ?? datetime.timestamp(),
+                opportunityId: quote.data.opportunityId
+              }
             ])
             .returning(["id"])
             .executeTakeFirstOrThrow();
@@ -655,7 +649,7 @@ serve(async (req: Request) => {
             .insertInto("salesOrderPayment")
             .values({
               ...quotePayment.data,
-              id: insertedSalesOrderId,
+              id: insertedSalesOrderId
             })
             .execute();
 
@@ -684,7 +678,7 @@ serve(async (req: Request) => {
 
           const salesOrderLineInserts: Database["public"]["Tables"]["salesOrderLine"]["Insert"][] =
             selectedQuoteLines.map((line) => {
-              const selectedQuantity = selectedLines![line.id!].quantity;
+              const selectedQuantity = selectedLines![line.id!]!.quantity;
               const price = canonicalPriceByLineQty.get(
                 `${line.id}:${selectedQuantity}`
               );
@@ -722,7 +716,7 @@ serve(async (req: Request) => {
                 exchangeRate: quote.data.exchangeRate ?? 1,
                 taxPercent: line.taxPercent,
                 shippingCost: price.shippingCost ?? 0,
-                sortOrder: line.sortOrder ?? 1,
+                sortOrder: line.sortOrder ?? 1
               };
             });
 
@@ -744,7 +738,7 @@ serve(async (req: Request) => {
               id: insertedSalesOrderId,
               receiptRequestedDate:
                 quoteShipping.data.receiptRequestedDate ?? receiptPromisedDate,
-              receiptPromisedDate,
+              receiptPromisedDate
             })
             .execute();
 
@@ -760,8 +754,9 @@ serve(async (req: Request) => {
               .where(
                 "id",
                 "in",
-                salesOrderLineInserts.map((insert) => insert.itemId)
+                salesOrderLineInserts.map((insert) => insert.itemId as string)
               )
+              .where("companyId", "=", companyId)
               .execute();
           }
 
@@ -778,10 +773,11 @@ serve(async (req: Request) => {
             .set({
               status: newQuoteStatus,
               digitalQuoteAcceptedBy: digitalQuoteAcceptedBy ?? null,
-              digitalQuoteAcceptedByEmail: digitalQuoteAcceptedByEmail ?? null,
+              digitalQuoteAcceptedByEmail: digitalQuoteAcceptedByEmail ?? null
             })
             .where("id", "=", quote.data.id)
             .where("status", "=", "Sent")
+            .where("companyId", "=", companyId)
             .executeTakeFirst();
 
           if (Number(quoteStatusUpdate.numUpdatedRows ?? 0) === 0) {
@@ -797,7 +793,7 @@ serve(async (req: Request) => {
               customerId: quote.data?.customerId!,
               customerPartId: line.customerPartId!,
               customerPartRevision: line.customerPartRevision ?? "",
-              itemId: line.itemId!,
+              itemId: line.itemId!
             }))
             .filter((line) => {
               if (!line.itemId || !line.customerPartId) return false;
@@ -813,7 +809,7 @@ serve(async (req: Request) => {
               .onConflict((oc) =>
                 oc.columns(["customerId", "itemId"]).doUpdateSet((eb) => ({
                   customerPartId: eb.ref("excluded.customerPartId"),
-                  customerPartRevision: eb.ref("excluded.customerPartRevision"),
+                  customerPartRevision: eb.ref("excluded.customerPartRevision")
                 }))
               )
               .execute();
@@ -823,7 +819,7 @@ serve(async (req: Request) => {
             .filter((line) => !!line.modelUploadId && !!line.itemId)
             .map((line) => ({
               id: line.itemId!,
-              modelUploadId: line.modelUploadId!,
+              modelUploadId: line.modelUploadId!
             }));
 
           if (updatedItemModels.length > 0) {
@@ -832,6 +828,7 @@ serve(async (req: Request) => {
                 .updateTable("item")
                 .set(update)
                 .where("id", "=", update.id)
+                .where("companyId", "=", companyId)
                 .execute();
             }
           }
@@ -850,7 +847,7 @@ serve(async (req: Request) => {
           salesOrder,
           salesOrderLines,
           salesOrderPayment,
-          salesOrderShipment,
+          salesOrderShipment
         ] = await Promise.all([
           client
             .from("salesOrder")
@@ -874,17 +871,20 @@ serve(async (req: Request) => {
             .select("*")
             .eq("id", salesOrderId)
             .eq("companyId", companyId)
-            .maybeSingle(),
+            .maybeSingle()
         ]);
 
         if (salesOrder.error) throw new Error(salesOrder.error.message);
-        if (!salesOrder.data) throw new RecordNotFoundError("Sales order not found");
+        if (!salesOrder.data)
+          throw new RecordNotFoundError("Sales order not found");
         if (salesOrderLines.error)
           throw new Error(salesOrderLines.error.message);
-        if (salesOrderPayment.error) throw new Error(salesOrderPayment.error.message);
+        if (salesOrderPayment.error)
+          throw new Error(salesOrderPayment.error.message);
         if (!salesOrderPayment.data)
           throw new Error("Sales order payment details not found");
-        if (salesOrderShipment.error) throw new Error(salesOrderShipment.error.message);
+        if (salesOrderShipment.error)
+          throw new Error(salesOrderShipment.error.message);
         if (!salesOrderShipment.data)
           throw new Error("Sales order delivery details not found");
 
@@ -924,25 +924,27 @@ serve(async (req: Request) => {
             .values({
               invoiceId: salesInvoiceId!,
               status: "Draft",
-              customerId: salesOrder.data.customerId,
-              customerReference: salesOrder.data.customerReference ?? "",
-              invoiceCustomerId: salesOrderPayment.data.invoiceCustomerId,
+              customerId: salesOrder.data!.customerId,
+              customerReference: salesOrder.data!.customerReference ?? "",
+              invoiceCustomerId: salesOrderPayment.data!.invoiceCustomerId,
               invoiceCustomerContactId:
-                salesOrderPayment.data.invoiceCustomerContactId,
+                salesOrderPayment.data!.invoiceCustomerContactId,
               invoiceCustomerLocationId:
-                salesOrderPayment.data.invoiceCustomerLocationId,
-              locationId: salesOrderShipment.data.locationId,
-              paymentTermId: salesOrderPayment.data.paymentTermId,
-              currencyCode: salesOrder.data.currencyCode ?? "USD",
-              dateIssued: datetime.today(await getCompanyTimeZone(client, companyId)).toString(),
-              exchangeRate: salesOrder.data.exchangeRate ?? 1,
+                salesOrderPayment.data!.invoiceCustomerLocationId,
+              locationId: salesOrderShipment.data!.locationId,
+              paymentTermId: salesOrderPayment.data!.paymentTermId,
+              currencyCode: salesOrder.data!.currencyCode ?? "USD",
+              dateIssued: datetime
+                .today(await getCompanyTimeZone(client, companyId))
+                .toString(),
+              exchangeRate: salesOrder.data!.exchangeRate ?? 1,
               subtotal: uninvoicedSubtotal ?? 0,
-              opportunityId: salesOrder.data.opportunityId,
+              opportunityId: salesOrder.data!.opportunityId,
               totalDiscount: 0,
               totalAmount: uninvoicedSubtotal ?? 0,
               totalTax: 0,
               companyId,
-              createdBy: userId,
+              createdBy: userId
             })
             .returning(["id"])
             .executeTakeFirstOrThrow();
@@ -954,14 +956,14 @@ serve(async (req: Request) => {
             .insertInto("salesInvoiceShipment")
             .values({
               id: salesInvoiceId,
-              locationId: salesOrderShipment.data.locationId,
-              shippingCost: salesOrderShipment.data.shippingCost ?? 0,
-              shippingMethodId: salesOrderShipment.data.shippingMethodId,
-              shippingTermId: salesOrderShipment.data.shippingTermId,
-              incoterm: salesOrderShipment.data.incoterm,
-              incotermLocation: salesOrderShipment.data.incotermLocation,
+              locationId: salesOrderShipment.data!.locationId,
+              shippingCost: salesOrderShipment.data!.shippingCost ?? 0,
+              shippingMethodId: salesOrderShipment.data!.shippingMethodId,
+              shippingTermId: salesOrderShipment.data!.shippingTermId,
+              incoterm: salesOrderShipment.data!.incoterm,
+              incotermLocation: salesOrderShipment.data!.incotermLocation,
               companyId,
-              createdBy: userId,
+              createdBy: userId
             })
             .execute();
 
@@ -995,7 +997,7 @@ serve(async (req: Request) => {
                 exchangeRate: line.exchangeRate ?? 1,
                 sortOrder: line.sortOrder ?? 1,
                 companyId,
-                createdBy: userId,
+                createdBy: userId
               });
             }
             return acc;
@@ -1009,12 +1011,7 @@ serve(async (req: Request) => {
           }
         });
 
-        return jsonResponse(
-          {
-            id: salesInvoiceId,
-          },
-          201
-        );
+        return { id: salesInvoiceId };
       }
       case "salesRfqToQuote": {
         const [salesRfq, salesRfqLines] = await Promise.all([
@@ -1028,7 +1025,7 @@ serve(async (req: Request) => {
             .from("salesRfqLines")
             .select("*")
             .eq("salesRfqId", id)
-            .eq("companyId", companyId),
+            .eq("companyId", companyId)
         ]);
 
         if (salesRfq.error)
@@ -1094,7 +1091,7 @@ serve(async (req: Request) => {
                 defaultMethodType: "Make to Order" as const,
                 unitOfMeasureCode: "EA",
                 companyId: companyId,
-                createdBy: userId,
+                createdBy: userId
               };
             })
           );
@@ -1125,7 +1122,7 @@ serve(async (req: Request) => {
               .eq("id", salesRfq.data.customerId)
               .eq("companyId", companyId)
               .single(),
-            client.from("company").select("*").eq("id", companyId).single(),
+            client.from("company").select("*").eq("id", companyId).single()
           ]);
 
         if (customerPayment.error) throw customerPayment.error;
@@ -1142,7 +1139,7 @@ serve(async (req: Request) => {
         // missing rate -- a foreign-currency customer is never quoted at par.
         const exchangeRateResult = await client.rpc("get_exchange_rate", {
           p_company_id: companyId,
-          p_currency_code: currencyCode,
+          p_currency_code: currencyCode
         });
         if (exchangeRateResult.error) {
           throw new Error(exchangeRateResult.error.message);
@@ -1153,16 +1150,20 @@ serve(async (req: Request) => {
           paymentTermId,
           invoiceCustomerId,
           invoiceCustomerContactId,
-          invoiceCustomerLocationId,
+          invoiceCustomerLocationId
         } = customerPayment.data;
 
-        const { shippingMethodId, shippingTermId, incoterm, incotermLocation } = customerShipping.data;
+        const { shippingMethodId, shippingTermId, incoterm, incotermLocation } =
+          customerShipping.data;
 
         let insertedQuoteId = "";
         let insertedQuoteLines: {
           id?: string;
           itemId?: string;
-          methodType?: "Purchase to Order" | "Make to Order" | "Pull from Inventory";
+          methodType?:
+            | "Purchase to Order"
+            | "Make to Order"
+            | "Pull from Inventory";
         }[] = [];
 
         await db.transaction().execute(async (trx) => {
@@ -1178,15 +1179,15 @@ serve(async (req: Request) => {
               itemIds.map((item) => ({
                 id: item.readableId!,
                 companyId,
-                createdBy: userId,
+                createdBy: userId
               }));
             await trx
               .insertInto("part")
               .values(partInserts)
               .onConflict((oc) =>
                 oc.columns(["id", "companyId"]).doUpdateSet({
-                  updatedAt: new Date().toISOString(),
-                  updatedBy: userId,
+                  updatedAt: datetime.timestamp(),
+                  updatedBy: userId
                 })
               )
               .execute();
@@ -1194,13 +1195,14 @@ serve(async (req: Request) => {
             const salesRfqLineUpdates: Database["public"]["Tables"]["salesRfqLine"]["Update"][] =
               itemIds.map((item) => ({
                 itemId: item.id!,
-                id: readableIdToLineIdMapping.get(item.readableId!)!,
+                id: readableIdToLineIdMapping.get(item.readableId!)!
               }));
             for await (const update of salesRfqLineUpdates) {
               await trx
                 .updateTable("salesRfqLine")
                 .set({ itemId: update.itemId })
-                .where("id", "=", update.id)
+                .where("id", "=", update.id!)
+                .where("companyId", "=", companyId)
                 .execute();
             }
           }
@@ -1212,7 +1214,7 @@ serve(async (req: Request) => {
             .values({
               documentId: quoteId,
               documentType: "Quote",
-              companyId,
+              companyId
             })
             .returning(["id"])
             .executeTakeFirstOrThrow();
@@ -1233,9 +1235,10 @@ serve(async (req: Request) => {
                 customerLocationId: salesRfq.data?.customerLocationId,
                 customerReference: salesRfq.data?.customerReference,
                 locationId: salesRfq.data?.locationId,
-                expirationDate: datetime.today(
-                  await getCompanyTimeZone(client, companyId)
-                ).add({ days: 30 }).toString(),
+                expirationDate: datetime
+                  .today(await getCompanyTimeZone(client, companyId))
+                  .add({ days: 30 })
+                  .toString(),
                 salesPersonId: salesRfq.data?.salesPersonId ?? userId,
                 status: "Draft",
                 externalNotes: toJson(salesRfq.data?.externalNotes),
@@ -1244,10 +1247,10 @@ serve(async (req: Request) => {
                 createdBy: userId,
                 currencyCode,
                 exchangeRate,
-                exchangeRateUpdatedAt: new Date().toISOString(),
+                exchangeRateUpdatedAt: datetime.timestamp(),
                 externalLinkId: externalLinkId.id,
-                opportunityId: salesRfq.data.opportunityId,
-              },
+                opportunityId: salesRfq.data.opportunityId
+              }
             ])
             .returning(["id"])
             .executeTakeFirstOrThrow();
@@ -1265,7 +1268,7 @@ serve(async (req: Request) => {
               invoiceCustomerContactId: invoiceCustomerContactId,
               invoiceCustomerLocationId: invoiceCustomerLocationId,
               paymentTermId: paymentTermId,
-              companyId,
+              companyId
             })
             .execute();
 
@@ -1279,7 +1282,7 @@ serve(async (req: Request) => {
               shippingTermId: shippingTermId,
               incoterm: incoterm,
               incotermLocation: incotermLocation,
-              companyId,
+              companyId
             })
             .execute();
 
@@ -1309,7 +1312,7 @@ serve(async (req: Request) => {
               // Sales RFQ uses "order" column; map it to quoteLine.sortOrder
               sortOrder: line.order ?? 1,
               companyId,
-              createdBy: userId,
+              createdBy: userId
             }));
 
           if (quoteLineInserts.length > 0) {
@@ -1325,6 +1328,7 @@ serve(async (req: Request) => {
             .updateTable("salesRfq")
             .set({ status: "Ready for Quote" })
             .where("id", "=", id)
+            .where("companyId", "=", companyId)
             .execute();
 
           const rfqCustomerPartSeen = new Set<string>();
@@ -1334,7 +1338,7 @@ serve(async (req: Request) => {
               customerId: salesRfq.data?.customerId!,
               customerPartId: line.customerPartId!,
               customerPartRevision: line.customerPartRevision ?? "",
-              itemId: line.itemId!,
+              itemId: line.itemId!
             }))
             .filter((line) => {
               if (!line.itemId || !line.customerPartId) return false;
@@ -1350,7 +1354,7 @@ serve(async (req: Request) => {
               .onConflict((oc) =>
                 oc.columns(["customerId", "itemId"]).doUpdateSet((eb) => ({
                   customerPartId: eb.ref("excluded.customerPartId"),
-                  customerPartRevision: eb.ref("excluded.customerPartRevision"),
+                  customerPartRevision: eb.ref("excluded.customerPartRevision")
                 }))
               )
               .execute();
@@ -1359,16 +1363,17 @@ serve(async (req: Request) => {
           await trx
             .updateTable("salesRfq")
             .set({
-              status: "Quoted",
+              status: "Quoted"
             })
             .where("id", "=", id)
+            .where("companyId", "=", companyId)
             .execute();
 
           const updatedItemModels = salesRfqLinesWithItemIds
             .filter((line) => !!line.modelUploadId && !!line.itemId)
             .map((line) => ({
               id: line.itemId!,
-              modelUploadId: line.modelUploadId!,
+              modelUploadId: line.modelUploadId!
             }));
 
           if (updatedItemModels.length > 0) {
@@ -1377,6 +1382,7 @@ serve(async (req: Request) => {
                 .updateTable("item")
                 .set(update)
                 .where("id", "=", update.id)
+                .where("companyId", "=", companyId)
                 .execute();
             }
           }
@@ -1396,8 +1402,8 @@ serve(async (req: Request) => {
                   sourceId: line.itemId,
                   targetId: `${insertedQuoteId}:${line.id}`,
                   companyId: companyId,
-                  userId: userId,
-                },
+                  userId: userId
+                }
               })
             )
         );
@@ -1423,7 +1429,7 @@ serve(async (req: Request) => {
               .select("*")
               .eq("shipmentId", shipmentId)
               .eq("companyId", companyId)
-              .eq("shipped", true),
+              .eq("shipped", true)
           ]);
 
         if (shipment.error) throw shipment.error;
@@ -1461,7 +1467,7 @@ serve(async (req: Request) => {
           salesOrder,
           salesOrderLines,
           salesOrderPayment,
-          salesOrderShipment,
+          salesOrderShipment
         ] = await Promise.all([
           client
             .from("salesOrder")
@@ -1485,17 +1491,20 @@ serve(async (req: Request) => {
             .select("*")
             .eq("id", shipment.data?.sourceDocumentId)
             .eq("companyId", companyId)
-            .maybeSingle(),
+            .maybeSingle()
         ]);
 
         if (salesOrder.error) throw new Error(salesOrder.error.message);
-        if (!salesOrder.data) throw new RecordNotFoundError("Sales order not found");
+        if (!salesOrder.data)
+          throw new RecordNotFoundError("Sales order not found");
         if (salesOrderLines.error)
           throw new Error(salesOrderLines.error.message);
-        if (salesOrderPayment.error) throw new Error(salesOrderPayment.error.message);
+        if (salesOrderPayment.error)
+          throw new Error(salesOrderPayment.error.message);
         if (!salesOrderPayment.data)
           throw new Error("Sales order payment details not found");
-        if (salesOrderShipment.error) throw new Error(salesOrderShipment.error.message);
+        if (salesOrderShipment.error)
+          throw new Error(salesOrderShipment.error.message);
         if (!salesOrderShipment.data)
           throw new Error("Sales order delivery details not found");
 
@@ -1503,7 +1512,7 @@ serve(async (req: Request) => {
           (typeof salesOrderLines)["data"]
         >((acc, line) => {
           if (line.id in quantitiesByLine) {
-            const shippedInThisShipment = quantitiesByLine[line.id];
+            const shippedInThisShipment = quantitiesByLine[line.id]!;
             const remainingToInvoice = line.quantityToInvoice ?? 0;
             const quantityToInvoice = Math.min(
               shippedInThisShipment,
@@ -1513,7 +1522,7 @@ serve(async (req: Request) => {
             if (quantityToInvoice > 0) {
               acc.push({
                 ...line,
-                quantityToInvoice,
+                quantityToInvoice
               });
             }
           }
@@ -1547,26 +1556,28 @@ serve(async (req: Request) => {
             .values({
               invoiceId: salesInvoiceId!,
               status: "Draft",
-              customerId: salesOrder.data.customerId,
-              customerReference: salesOrder.data.customerReference ?? "",
-              invoiceCustomerId: salesOrderPayment.data.invoiceCustomerId,
+              customerId: salesOrder.data!.customerId,
+              customerReference: salesOrder.data!.customerReference ?? "",
+              invoiceCustomerId: salesOrderPayment.data!.invoiceCustomerId,
               invoiceCustomerContactId:
-                salesOrderPayment.data.invoiceCustomerContactId,
+                salesOrderPayment.data!.invoiceCustomerContactId,
               invoiceCustomerLocationId:
-                salesOrderPayment.data.invoiceCustomerLocationId,
-              locationId: salesOrderShipment.data.locationId,
-              paymentTermId: salesOrderPayment.data.paymentTermId,
-              currencyCode: salesOrder.data.currencyCode ?? "USD",
-              dateIssued: datetime.today(await getCompanyTimeZone(client, companyId)).toString(),
-              exchangeRate: salesOrder.data.exchangeRate ?? 1,
+                salesOrderPayment.data!.invoiceCustomerLocationId,
+              locationId: salesOrderShipment.data!.locationId,
+              paymentTermId: salesOrderPayment.data!.paymentTermId,
+              currencyCode: salesOrder.data!.currencyCode ?? "USD",
+              dateIssued: datetime
+                .today(await getCompanyTimeZone(client, companyId))
+                .toString(),
+              exchangeRate: salesOrder.data!.exchangeRate ?? 1,
               subtotal: uninvoicedSubtotal ?? 0,
-              opportunityId: salesOrder.data.opportunityId,
+              opportunityId: salesOrder.data!.opportunityId,
               shipmentId: shipmentId,
               totalDiscount: 0,
               totalAmount: uninvoicedSubtotal ?? 0,
               totalTax: 0,
               companyId,
-              createdBy: userId,
+              createdBy: userId
             })
             .returning(["id"])
             .executeTakeFirstOrThrow();
@@ -1578,14 +1589,14 @@ serve(async (req: Request) => {
             .insertInto("salesInvoiceShipment")
             .values({
               id: salesInvoiceId,
-              locationId: salesOrderShipment.data.locationId,
-              shippingCost: salesOrderShipment.data.shippingCost ?? 0,
-              shippingMethodId: salesOrderShipment.data.shippingMethodId,
-              shippingTermId: salesOrderShipment.data.shippingTermId,
-              incoterm: salesOrderShipment.data.incoterm,
-              incotermLocation: salesOrderShipment.data.incotermLocation,
+              locationId: salesOrderShipment.data!.locationId,
+              shippingCost: salesOrderShipment.data!.shippingCost ?? 0,
+              shippingMethodId: salesOrderShipment.data!.shippingMethodId,
+              shippingTermId: salesOrderShipment.data!.shippingTermId,
+              incoterm: salesOrderShipment.data!.incoterm,
+              incotermLocation: salesOrderShipment.data!.incotermLocation,
               companyId,
-              createdBy: userId,
+              createdBy: userId
             })
             .execute();
 
@@ -1619,7 +1630,7 @@ serve(async (req: Request) => {
                 exchangeRate: line.exchangeRate ?? 1,
                 sortOrder: line.sortOrder ?? 1,
                 companyId,
-                createdBy: userId,
+                createdBy: userId
               });
             }
             return acc;
@@ -1633,12 +1644,7 @@ serve(async (req: Request) => {
           }
         });
 
-        return jsonResponse(
-          {
-            id: salesInvoiceId,
-          },
-          201
-        );
+        return { id: salesInvoiceId };
       }
       case "supplierQuoteToPurchaseOrder": {
         const { selectedLines } = payload;
@@ -1661,10 +1667,11 @@ serve(async (req: Request) => {
             .select("*")
             .eq("id", userId)
             .eq("companyId", companyId)
-            .single(),
+            .single()
         ]);
 
-        if (quote.error) throw new RecordNotFoundError(`Quote with id ${id} not found`);
+        if (quote.error)
+          throw new RecordNotFoundError(`Quote with id ${id} not found`);
         if (quoteLines.error)
           throw new Error(`Quote Lines with id ${id} not found`);
 
@@ -1694,10 +1701,10 @@ serve(async (req: Request) => {
               .select("*")
               .in(
                 "itemId",
-                quoteLines.data.map((line) => line.itemId)
+                quoteLines.data.map((line) => line.itemId as string)
               )
               .eq("locationId", employeeJob.data?.locationId ?? "")
-              .eq("companyId", companyId),
+              .eq("companyId", companyId)
           ]);
 
         if (supplierPayment.error) throw supplierPayment.error;
@@ -1732,8 +1739,8 @@ serve(async (req: Request) => {
                   "USD",
                 exchangeRate: quote.data.exchangeRate ?? 1,
                 exchangeRateUpdatedAt:
-                  quote.data.exchangeRateUpdatedAt ?? new Date().toISOString(),
-              },
+                  quote.data.exchangeRateUpdatedAt ?? datetime.timestamp()
+              }
             ])
             .returning(["id"])
             .executeTakeFirstOrThrow();
@@ -1754,7 +1761,7 @@ serve(async (req: Request) => {
                 invoiceSupplierLocationId:
                   supplierPayment.data.invoiceSupplierLocationId,
                 paymentTermId: supplierPayment.data.paymentTermId,
-                companyId: companyId,
+                companyId: companyId
               })
               .execute(),
             trx
@@ -1766,9 +1773,9 @@ serve(async (req: Request) => {
                 shippingTermId: supplierShipping.data.shippingTermId,
                 incoterm: supplierShipping.data.incoterm,
                 incotermLocation: supplierShipping.data.incotermLocation,
-                companyId: companyId,
+                companyId: companyId
               })
-              .execute(),
+              .execute()
           ]);
 
           const purchaseOrderLineInserts: Database["public"]["Tables"]["purchaseOrderLine"]["Insert"][] =
@@ -1778,7 +1785,7 @@ serve(async (req: Request) => {
                   line.id &&
                   selectedLines &&
                   line.id in selectedLines &&
-                  selectedLines[line.id].quantity > 0
+                  selectedLines[line.id]!.quantity > 0
               )
               .map((line) => {
                 const isIndirect = line.supplierQuoteLineType === "G/L Account";
@@ -1800,17 +1807,19 @@ serve(async (req: Request) => {
                   conversionFactor: line.conversionFactor,
                   internalNotes: toJson(line.internalNotes),
                   externalNotes: toJson(line.externalNotes),
-                  purchaseQuantity: selectedLines![line.id!].quantity,
+                  purchaseQuantity: selectedLines![line.id!]!.quantity,
                   inventoryUnitOfMeasureCode: line.inventoryUnitOfMeasureCode,
                   purchaseUnitOfMeasureCode: line.purchaseUnitOfMeasureCode,
-                  supplierUnitPrice: selectedLines![line.id!].supplierUnitPrice,
+                  supplierUnitPrice:
+                    selectedLines![line.id!]!.supplierUnitPrice,
                   supplierShippingCost:
-                    selectedLines![line.id!].supplierShippingCost,
-                  supplierTaxAmount: selectedLines![line.id!].supplierTaxAmount,
-                  taxPercent: resolveTaxPercent(selectedLines![line.id!]),
+                    selectedLines![line.id!]!.supplierShippingCost,
+                  supplierTaxAmount:
+                    selectedLines![line.id!]!.supplierTaxAmount,
+                  taxPercent: resolveTaxPercent(selectedLines![line.id!]!),
                   sortOrder: line.sortOrder ?? 1,
                   createdBy: userId,
-                  companyId,
+                  companyId
                 };
               });
 
@@ -1828,6 +1837,7 @@ serve(async (req: Request) => {
                 .updateTable("item")
                 .set({ active: true })
                 .where("id", "in", itemIdsToActivate)
+                .where("companyId", "=", companyId)
                 .execute();
             }
           }
@@ -1848,8 +1858,8 @@ serve(async (req: Request) => {
               const selectedLine = selectedLines![line.id!];
               const exchangeRate = quote.data.exchangeRate ?? 1;
               const unitPriceInInventoryUnit =
-                (selectedLine.supplierUnitPrice /
-                  (exchangeRate === 0 ? 1 : exchangeRate)) /
+                selectedLine!.supplierUnitPrice /
+                (exchangeRate === 0 ? 1 : exchangeRate) /
                 (line.conversionFactor ?? 1);
               supplierPartMap.set(key, {
                 companyId,
@@ -1859,7 +1869,7 @@ serve(async (req: Request) => {
                 conversionFactor: line.conversionFactor,
                 itemId: line.itemId!,
                 createdBy: userId,
-                unitPrice: unitPriceInInventoryUnit,
+                unitPrice: unitPriceInInventoryUnit
               });
             });
 
@@ -1876,7 +1886,7 @@ serve(async (req: Request) => {
                   .columns(["itemId", "supplierId", "companyId"])
                   .doUpdateSet((eb) => ({
                     supplierPartId: eb.ref("excluded.supplierPartId"),
-                    unitPrice: eb.ref("excluded.unitPrice"),
+                    unitPrice: eb.ref("excluded.unitPrice")
                   }))
               )
               .execute();
@@ -1889,7 +1899,9 @@ serve(async (req: Request) => {
               .where(
                 "itemId",
                 "in",
-                supplierPartToItemInserts.map((i: { itemId: string }) => i.itemId)
+                supplierPartToItemInserts.map(
+                  (i: { itemId: string }) => i.itemId
+                )
               )
               .execute();
 
@@ -1899,35 +1911,32 @@ serve(async (req: Request) => {
 
             for (const line of quoteLines.data.filter(
               (l) =>
-                !!l.itemId &&
-                l.id &&
-                selectedLines &&
-                l.id in selectedLines
+                !!l.itemId && l.id && selectedLines && l.id in selectedLines
             )) {
-              const spId = supplierPartIdByItemId.get(line.itemId);
+              const spId = supplierPartIdByItemId.get(line.itemId!);
               if (!spId) continue;
 
               const selectedLine = selectedLines![line.id!];
               const exchangeRate = quote.data.exchangeRate ?? 1;
               const conversionFactor = line.conversionFactor ?? 1;
               const unitPriceInInventoryUnit =
-                (selectedLine.supplierUnitPrice /
-                  (exchangeRate === 0 ? 1 : exchangeRate)) /
+                selectedLine!.supplierUnitPrice /
+                (exchangeRate === 0 ? 1 : exchangeRate) /
                 conversionFactor;
 
               await trx
                 .insertInto("supplierPartPrice")
                 .values({
                   supplierPartId: spId,
-                  quantity: selectedLine.quantity,
+                  quantity: selectedLine!.quantity,
                   unitPrice: unitPriceInInventoryUnit,
-                  leadTime: selectedLine.leadTime ?? 0,
+                  leadTime: selectedLine!.leadTime ?? 0,
                   sourceType: "Purchase Order",
                   sourceDocumentId: insertedPurchaseOrderId,
                   companyId,
                   createdBy: userId,
                   updatedBy: userId,
-                  updatedAt: new Date().toISOString(),
+                  updatedAt: datetime.timestamp()
                 })
                 .onConflict((oc) =>
                   oc
@@ -1938,7 +1947,7 @@ serve(async (req: Request) => {
                       sourceType: eb.ref("excluded.sourceType"),
                       sourceDocumentId: eb.ref("excluded.sourceDocumentId"),
                       updatedBy: eb.ref("excluded.updatedBy"),
-                      updatedAt: eb.ref("excluded.updatedAt"),
+                      updatedAt: eb.ref("excluded.updatedAt")
                     }))
                 )
                 .execute();
@@ -1957,9 +1966,10 @@ serve(async (req: Request) => {
                   .updateTable("supplierPart")
                   .set({
                     unitPrice: Number(bestTier.unitPrice),
-                    minimumOrderQuantity: Number(bestTier.quantity),
+                    minimumOrderQuantity: Number(bestTier.quantity)
                   })
                   .where("id", "=", spId)
+                  .where("companyId", "=", companyId)
                   .execute();
               }
             }
@@ -1982,7 +1992,7 @@ serve(async (req: Request) => {
             linkedRfqs.map((rfq) => ({
               purchasingRfqId: rfq.purchasingRfqId,
               purchaseOrderId: insertedPurchaseOrderId,
-              companyId,
+              companyId
             }))
           );
         }
@@ -2005,7 +2015,7 @@ serve(async (req: Request) => {
             .from("warehouseTransferLine")
             .select("*")
             .eq("transferId", warehouseTransferId)
-            .eq("companyId", companyId),
+            .eq("companyId", companyId)
         ]);
 
         if (warehouseTransfer.error)
@@ -2028,10 +2038,10 @@ serve(async (req: Request) => {
               status: "Draft",
               sourceDocument: "Outbound Transfer",
               sourceDocumentId: warehouseTransferId,
-              sourceDocumentReadableId: warehouseTransfer.data.transferId,
-              locationId: warehouseTransfer.data.fromLocationId,
+              sourceDocumentReadableId: warehouseTransfer.data!.transferId,
+              locationId: warehouseTransfer.data!.fromLocationId,
               createdBy: userId,
-              companyId,
+              companyId
             })
             .returning(["id"])
             .executeTakeFirstOrThrow();
@@ -2052,7 +2062,7 @@ serve(async (req: Request) => {
               unitOfMeasure: line.unitOfMeasureCode || "EA",
               unitPrice: 0,
               companyId,
-              createdBy: userId,
+              createdBy: userId
             })
           );
 
@@ -2081,7 +2091,7 @@ serve(async (req: Request) => {
             .from("warehouseTransferLine")
             .select("*")
             .eq("transferId", warehouseTransferId)
-            .eq("companyId", companyId),
+            .eq("companyId", companyId)
         ]);
 
         if (warehouseTransfer.error)
@@ -2104,10 +2114,10 @@ serve(async (req: Request) => {
               status: "Draft",
               sourceDocument: "Inbound Transfer",
               sourceDocumentId: warehouseTransferId,
-              sourceDocumentReadableId: warehouseTransfer.data.transferId,
-              locationId: warehouseTransfer.data.toLocationId,
+              sourceDocumentReadableId: warehouseTransfer.data!.transferId,
+              locationId: warehouseTransfer.data!.toLocationId,
               createdBy: userId,
-              companyId,
+              companyId
             })
             .returning(["id"])
             .executeTakeFirstOrThrow();
@@ -2128,7 +2138,7 @@ serve(async (req: Request) => {
               unitOfMeasure: line.unitOfMeasureCode || "EA",
               unitPrice: 0,
               companyId,
-              createdBy: userId,
+              createdBy: userId
             })
           );
 
@@ -2148,10 +2158,6 @@ serve(async (req: Request) => {
         throw new Error(`Invalid type  ${type}`);
     }
 
-    return jsonResponse({
-      convertedId,
-    });
-  } catch (err) {
-    return errorResponse(err, 500);
-  }
-});
+    return { convertedId };
+  });
+}

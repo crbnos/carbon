@@ -1,7 +1,10 @@
+import type { Database } from "@carbon/database";
+import { createClient } from "@supabase/supabase-js";
 import { describe, expect, it } from "vitest";
 import {
   assertOperationPermissions,
   assertSystemCaller,
+  clientUsesKey,
   hasPermissions,
   type ModulePermissions,
   type OperationContext,
@@ -73,5 +76,24 @@ describe("permissionsFromClaims", () => {
         delete: []
       }
     });
+  });
+});
+
+describe("clientUsesKey", () => {
+  const client = (key: string) =>
+    createClient<Database>("http://localhost:54321", key);
+
+  it("recognizes the key a client was built with", () => {
+    expect(clientUsesKey(client("service-role-key"), "service-role-key")).toBe(
+      true
+    );
+  });
+
+  it("does not mistake another key (a user's or API key's client) for it", () => {
+    expect(clientUsesKey(client("anon-key"), "service-role-key")).toBe(false);
+  });
+
+  it("never matches an unset key", () => {
+    expect(clientUsesKey(client("anon-key"), undefined)).toBe(false);
   });
 });
