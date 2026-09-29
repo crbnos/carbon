@@ -2244,6 +2244,9 @@ importers:
       '@carbon/env':
         specifier: workspace:*
         version: link:../env
+      '@carbon/files':
+        specifier: workspace:*
+        version: link:../files
       '@carbon/notifications':
         specifier: workspace:*
         version: link:../notifications
@@ -2517,6 +2520,9 @@ importers:
       '@carbon/database':
         specifier: workspace:*
         version: link:../database
+      '@carbon/utils':
+        specifier: workspace:*
+        version: link:../utils
       '@jsquash/jpeg':
         specifier: 1.6.0
         version: 1.6.0

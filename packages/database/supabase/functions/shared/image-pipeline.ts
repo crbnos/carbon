@@ -7,7 +7,7 @@
 //   encode  — mozjpeg (photos), squoosh-png (graphics, keeps alpha)
 // Bare specifiers resolve via package.json in Node/browser and via the
 // functions/deno.json import map in the edge runtime (same pattern as "pg").
-// Node callers must run initNodeImageCodecs() from @carbon/utils/image-node
+// Node callers must run initNodeImageCodecs() from @carbon/files/media/node
 // first — Node's fetch cannot load the wasm from file: URLs.
 /// <reference path="./wasm-codecs.d.ts" />
 import { round, RoundingMode } from "./precision.ts";

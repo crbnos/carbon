@@ -58,7 +58,7 @@ verify_jwt = true                              # JWT required (the common case)
   Postgres calls them with the anon key from the `config` table (`util.invoke_edge_function`,
   `util.wake_event_queue`), so they cannot tell it from an anonymous
   caller until Postgres sends a server credential.
-- `verify_jwt = false` — only for genuinely public endpoints (`logo-resizer`).
+- `verify_jwt = false` — only for genuinely public endpoints (none today).
 
 ## 3. Function skeleton
 

@@ -13,12 +13,7 @@ const AUTH_CALL =
  * A function that SHOULD be gated but cannot be yet belongs in baseline.json,
  * not here — this list is for "correct as it is".
  */
-const ALLOWED = new Map<string, string>([
-  [
-    "logo-resizer",
-    "public by design (verify_jwt = false): resizes the company logo shown on unauthenticated pages"
-  ]
-]);
+const ALLOWED = new Map<string, string>();
 
 export const edgeFunctionAuthorizesCaller: ConformanceCheck = {
   id: "edge-function-authorizes-caller",

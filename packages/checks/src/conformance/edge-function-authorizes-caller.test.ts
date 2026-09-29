@@ -25,10 +25,4 @@ describe("edgeFunctionAuthorizesCaller", () => {
     const ts = 'import { requirePermissions } from "../lib/supabase.ts";';
     expect(edgeFunctionAuthorizesCaller.scan(`${DIR}/x`, ts)).toHaveLength(1);
   });
-
-  it("skips allowlisted functions", () => {
-    expect(
-      edgeFunctionAuthorizesCaller.scan(`${DIR}/logo-resizer`, "serve(f);")
-    ).toHaveLength(0);
-  });
 });

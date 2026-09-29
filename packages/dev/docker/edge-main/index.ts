@@ -14,9 +14,6 @@ if (VERIFY_JWT && !JWT_SECRET) {
   throw new Error("VERIFY_JWT is on but JWT_SECRET is empty");
 }
 
-// Mirrors `verify_jwt = false` in supabase/config.toml: public on purpose.
-const PUBLIC_FUNCTIONS = new Set(["logo-resizer"]);
-
 async function hasValidJwt(req: Request): Promise<boolean> {
   const token = req.headers.get("authorization")?.match(/^Bearer\s+(.+)$/i)?.[1];
   if (!token) return false;
@@ -39,7 +36,6 @@ Deno.serve(async (req: Request) => {
   if (
     VERIFY_JWT &&
     req.method !== "OPTIONS" &&
-    !PUBLIC_FUNCTIONS.has(fnName) &&
     !(await hasValidJwt(req))
   ) {
     return new Response(JSON.stringify({ msg: "Invalid JWT" }), {
