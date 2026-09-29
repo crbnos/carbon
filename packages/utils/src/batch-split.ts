@@ -10,7 +10,7 @@
 // exactly two net-zero Batch Split rows (−q parent, +q child) at the parent's
 // resolved bin. Returns MERGE quantity back into the parent (Merge activity).
 
-import { equals, round } from "./precision";
+import { equals, round } from "@carbon/database/precision";
 
 /**
  * The ONE split gate: is this draw the entity's whole quantity?

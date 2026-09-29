@@ -8,7 +8,7 @@
 // The merged quantity rounds once, at this persist boundary.
 // See .ai/specs/2026-09-16-batch-materials-and-output-lots.md.
 
-import { round } from "./precision";
+import { round } from "@carbon/database/precision";
 
 export type BatchMergeParent = {
   id: string;

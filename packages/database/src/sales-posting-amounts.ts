@@ -1,5 +1,5 @@
-import { credit, debit } from "../lib/utils.ts";
 import { toBaseAmount, toDocumentAmount } from "./accounting-currency.ts";
+import { credit, debit } from "./ledger.ts";
 import { assertBalanced, EPSILON, round, SCALE } from "./precision.ts";
 
 export type SalesPostingAmountsInput = {
@@ -55,19 +55,21 @@ type DisposalAccounts = {
   lossAccount?: SalesPostingAccount | null;
 };
 
-export type SalesPostingDisposal =
-  & DisposalAccounts
-  & ({
-    mode: "direct";
-    acquisitionCost: number;
-    accumulatedDepreciation: number;
-    assetAccount?: SalesPostingAccount | null;
-    accumulatedDepreciationAccount?: SalesPostingAccount | null;
-  } | {
-    mode: "shipment";
-    netBookValue: number;
-    clearingAccount?: SalesPostingAccount | null;
-  });
+export type SalesPostingDisposal = DisposalAccounts &
+  (
+    | {
+        mode: "direct";
+        acquisitionCost: number;
+        accumulatedDepreciation: number;
+        assetAccount?: SalesPostingAccount | null;
+        accumulatedDepreciationAccount?: SalesPostingAccount | null;
+      }
+    | {
+        mode: "shipment";
+        netBookValue: number;
+        clearingAccount?: SalesPostingAccount | null;
+      }
+  );
 
 export type BuildSalesPostingLinesInput = {
   line: SalesPostingAmountsInput & { invoiceLineType: string };
@@ -97,28 +99,29 @@ function finite(amount: number, label: string): number {
 
 /** Raw arithmetic shared by ledger and provider boundaries; prices are already base. */
 export function calculateSalesPostingAmounts(
-  input: SalesPostingAmountsInput,
+  input: SalesPostingAmountsInput
 ): SalesPostingAmounts {
-  const merchandise = finite(input.quantity, "Quantity") *
+  const merchandise =
+    finite(input.quantity, "Quantity") *
     finite(input.unitPrice ?? 0, "Unit price");
   const shipping = finite(input.shippingCost ?? 0, "Line shipping");
   const addOn = finite(input.addOnCost ?? 0, "Taxable add-on");
   const nonTaxableAddOn = finite(
     input.nonTaxableAddOnCost ?? 0,
-    "Non-taxable add-on",
+    "Non-taxable add-on"
   );
   const taxPercent = finite(input.taxPercent ?? 0, "Tax rate");
   const salesRevenueBase = finite(
     merchandise + addOn + nonTaxableAddOn,
-    "Sales revenue",
+    "Sales revenue"
   );
   const shippingRevenueBase = finite(
     shipping + finite(input.allocatedHeaderShipping ?? 0, "Header shipping"),
-    "Shipping revenue",
+    "Shipping revenue"
   );
   const salesTaxBase = finite(
     (merchandise + shipping + addOn) * taxPercent,
-    "Sales tax",
+    "Sales tax"
   );
   return {
     salesRevenueBase,
@@ -126,8 +129,8 @@ export function calculateSalesPostingAmounts(
     salesTaxBase,
     grossReceivableBase: finite(
       salesRevenueBase + shippingRevenueBase + salesTaxBase,
-      "Gross receivable",
-    ),
+      "Gross receivable"
+    )
   };
 }
 
@@ -135,54 +138,61 @@ export function allocateSalesHeaderShipping(
   lines: Array<
     SalesPostingAmountsInput & { id: string; invoiceLineType: string }
   >,
-  headerShipping: number,
+  headerShipping: number
 ): Map<string, number> {
   const header = toBaseAmount(headerShipping, 1);
-  const eligible = lines.filter((line) => line.invoiceLineType !== "Comment")
-    .sort((a, b) => a.id < b.id ? -1 : a.id > b.id ? 1 : 0);
+  const eligible = lines
+    .filter((line) => line.invoiceLineType !== "Comment")
+    .sort((a, b) => (a.id < b.id ? -1 : a.id > b.id ? 1 : 0));
   if (eligible.length === 0 && header !== 0) {
     throw new Error("Header shipping requires a postable invoice line");
   }
   const weights = eligible.map((line) =>
     finite(
       finite(line.quantity, "Quantity") *
-          finite(line.unitPrice ?? 0, "Unit price") +
+        finite(line.unitPrice ?? 0, "Unit price") +
         finite(line.shippingCost ?? 0, "Line shipping") +
         finite(line.addOnCost ?? 0, "Taxable add-on"),
-      "Header shipping weight",
+      "Header shipping weight"
     )
   );
   const totalWeight = finite(
     weights.reduce((sum, weight) => sum + weight, 0),
-    "Total shipping weight",
+    "Total shipping weight"
   );
   let allocated = 0;
-  return new Map(eligible.map((line, index) => {
-    const amount = index === eligible.length - 1
-      ? round(header - allocated)
-      : toBaseAmount(
-        header * (totalWeight === 0
-          ? 1 / eligible.length
-          : weights[index]! / totalWeight),
-        1,
-      );
-    allocated = round(allocated + amount);
-    return [line.id, amount];
-  }));
+  return new Map(
+    eligible.map((line, index) => {
+      const amount =
+        index === eligible.length - 1
+          ? round(header - allocated)
+          : toBaseAmount(
+              header *
+                (totalWeight === 0
+                  ? 1 / eligible.length
+                  : weights[index]! / totalWeight),
+              1
+            );
+      allocated = round(allocated + amount);
+      return [line.id, amount];
+    })
+  );
 }
 
 export function calculateSalesIntercompanyAmount(
   lines: Array<SalesPostingAmountsInput & { invoiceLineType: string }>,
-  exchangeRate: number,
+  exchangeRate: number
 ): number {
   // Preserve the buyer-compatible matching basis: exclude add-ons, tax and header shipping.
   const base = lines.reduce(
     (sum, line) =>
-      line.invoiceLineType === "Comment" ? sum : sum +
-        finite(line.quantity, "Quantity") *
-          finite(line.unitPrice ?? 0, "Unit price") +
-        finite(line.shippingCost ?? 0, "Line shipping"),
-    0,
+      line.invoiceLineType === "Comment"
+        ? sum
+        : sum +
+          finite(line.quantity, "Quantity") *
+            finite(line.unitPrice ?? 0, "Unit price") +
+          finite(line.shippingCost ?? 0, "Line shipping"),
+    0
   );
   // The buyer records its half with round() at internal SCALE
   // (post-purchase-invoice), and generate_intercompany_matches pairs the two
@@ -208,7 +218,7 @@ export function buildSalesPostingLines(input: BuildSalesPostingLinesInput): {
     salesRevenueBase: 0,
     shippingRevenueBase: 0,
     salesTaxBase: 0,
-    grossReceivableBase: 0,
+    grossReceivableBase: 0
   };
   if (line.invoiceLineType === "Comment") {
     return {
@@ -218,7 +228,7 @@ export function buildSalesPostingLines(input: BuildSalesPostingLinesInput): {
       saleProceeds: 0,
       netBookValue: null,
       gainLoss: null,
-      signedDebitTotal: 0,
+      signedDebitTotal: 0
     };
   }
   if (
@@ -229,7 +239,7 @@ export function buildSalesPostingLines(input: BuildSalesPostingLinesInput): {
       "Fixture",
       "Material",
       "Tool",
-      "Fixed Asset",
+      "Fixed Asset"
     ].includes(line.invoiceLineType)
   ) {
     throw new Error(`Unsupported invoice line type: ${line.invoiceLineType}`);
@@ -242,34 +252,35 @@ export function buildSalesPostingLines(input: BuildSalesPostingLinesInput): {
   const componentKeys = [
     "salesRevenueBase",
     "shippingRevenueBase",
-    "salesTaxBase",
+    "salesTaxBase"
   ] as const;
   const amounts: SalesPostingAmounts = {
     salesRevenueBase: toBaseAmount(raw.salesRevenueBase, 1),
     shippingRevenueBase: toBaseAmount(raw.shippingRevenueBase, 1),
     salesTaxBase: toBaseAmount(raw.salesTaxBase, 1),
-    grossReceivableBase: toBaseAmount(raw.grossReceivableBase, 1),
+    grossReceivableBase: toBaseAmount(raw.grossReceivableBase, 1)
   };
   const residual = round(
     amounts.grossReceivableBase -
-      componentKeys.reduce((sum, key) => sum + amounts[key], 0),
+      componentKeys.reduce((sum, key) => sum + amounts[key], 0)
   );
   // Only reconcile the rounding of these three components and their total.
   // No rounding account or arbitrary balancing entry can hide an economic mismatch.
-  const roundingEnvelope = (componentKeys.length + 1) / (2 * 10 ** SCALE) +
-    EPSILON;
+  const roundingEnvelope =
+    (componentKeys.length + 1) / (2 * 10 ** SCALE) + EPSILON;
   if (Math.abs(residual) > roundingEnvelope) {
     throw new Error("Sales component rounding exceeds its precision envelope");
   }
   if (residual !== 0) {
-    const recipient = [...componentKeys].sort((a, b) =>
-      Math.abs(raw[b]) - Math.abs(raw[a])
+    const recipient = [...componentKeys].sort(
+      (a, b) => Math.abs(raw[b]) - Math.abs(raw[a])
     )[0]!;
     amounts[recipient] = round(amounts[recipient] + residual);
   }
   if (
     amounts.shippingRevenueBase !== 0 &&
-    accounts.shipping?.id === accounts.sales?.id && accounts.shipping?.id
+    accounts.shipping?.id === accounts.sales?.id &&
+    accounts.shipping?.id
   ) {
     throw new Error("Shipping revenue and sales accounts must be distinct");
   }
@@ -284,16 +295,19 @@ export function buildSalesPostingLines(input: BuildSalesPostingLinesInput): {
     amount: number,
     description: string,
     isControl = false,
-    quantity = line.quantity,
+    quantity = line.quantity
   ) => {
     const baseAmount = toBaseAmount(amount, 1);
     if (baseAmount === 0) return;
     if (
-      !account || account.class !== accountClass || !account.active ||
-      account.isGroup || account.companyGroupId !== context.companyGroupId
+      !account ||
+      account.class !== accountClass ||
+      !account.active ||
+      account.isGroup ||
+      account.companyGroupId !== context.companyGroupId
     ) {
       throw new Error(
-        `Invalid or missing ${description} account; expected an active ${accountClass} leaf in this company group`,
+        `Invalid or missing ${description} account; expected an active ${accountClass} leaf in this company group`
       );
     }
     const naturalClass = accountClass.toLowerCase() as
@@ -304,9 +318,10 @@ export function buildSalesPostingLines(input: BuildSalesPostingLinesInput): {
     lines.push({
       accountId: account.id,
       description,
-      amount: side === "debit"
-        ? debit(naturalClass, baseAmount)
-        : credit(naturalClass, baseAmount),
+      amount:
+        side === "debit"
+          ? debit(naturalClass, baseAmount)
+          : credit(naturalClass, baseAmount),
       quantity: round(quantity),
       documentType: "Invoice",
       documentId: context.documentId,
@@ -316,7 +331,7 @@ export function buildSalesPostingLines(input: BuildSalesPostingLinesInput): {
       ...(isControl
         ? { intercompanyPartnerId: context.intercompanyPartnerId }
         : {}),
-      companyId: context.companyId,
+      companyId: context.companyId
     });
     metadata.push({ ...input.metadata });
     signedDebitTotal += side === "debit" ? baseAmount : -baseAmount;
@@ -327,7 +342,7 @@ export function buildSalesPostingLines(input: BuildSalesPostingLinesInput): {
       "Revenue",
       "credit",
       amounts.salesRevenueBase,
-      "Sales Account",
+      "Sales Account"
     );
   }
   push(
@@ -335,14 +350,14 @@ export function buildSalesPostingLines(input: BuildSalesPostingLinesInput): {
     "Revenue",
     "credit",
     amounts.shippingRevenueBase,
-    "Shipping Revenue",
+    "Shipping Revenue"
   );
   push(
     accounts.tax,
     "Liability",
     "credit",
     amounts.salesTaxBase,
-    "Sales Tax Payable",
+    "Sales Tax Payable"
   );
   push(
     accounts.receivables,
@@ -350,7 +365,7 @@ export function buildSalesPostingLines(input: BuildSalesPostingLinesInput): {
     "debit",
     amounts.grossReceivableBase,
     context.intercompanyPartnerId ? "IC Receivables" : "Accounts Receivable",
-    true,
+    true
   );
 
   let netBookValue: number | null = null;
@@ -367,7 +382,7 @@ export function buildSalesPostingLines(input: BuildSalesPostingLinesInput): {
         depreciation,
         "Clear accumulated depreciation",
         false,
-        1,
+        1
       );
       push(
         disposal.assetAccount,
@@ -376,7 +391,7 @@ export function buildSalesPostingLines(input: BuildSalesPostingLinesInput): {
         cost,
         "Remove asset at cost",
         false,
-        1,
+        1
       );
     } else {
       netBookValue = toBaseAmount(disposal.netBookValue, 1);
@@ -385,7 +400,7 @@ export function buildSalesPostingLines(input: BuildSalesPostingLinesInput): {
         "Expense",
         "credit",
         netBookValue,
-        "Clear disposal clearing",
+        "Clear disposal clearing"
       );
     }
     gainLoss = round(amounts.salesRevenueBase - netBookValue);
@@ -397,7 +412,7 @@ export function buildSalesPostingLines(input: BuildSalesPostingLinesInput): {
         gainLoss,
         "Gain on disposal",
         false,
-        disposal.mode === "direct" ? 1 : line.quantity,
+        disposal.mode === "direct" ? 1 : line.quantity
       );
     }
     if (gainLoss < 0) {
@@ -408,7 +423,7 @@ export function buildSalesPostingLines(input: BuildSalesPostingLinesInput): {
         -gainLoss,
         "Loss on disposal",
         false,
-        disposal.mode === "direct" ? 1 : line.quantity,
+        disposal.mode === "direct" ? 1 : line.quantity
       );
     }
   }
@@ -421,6 +436,6 @@ export function buildSalesPostingLines(input: BuildSalesPostingLinesInput): {
     saleProceeds: amounts.salesRevenueBase,
     netBookValue,
     gainLoss,
-    signedDebitTotal,
+    signedDebitTotal
   };
 }

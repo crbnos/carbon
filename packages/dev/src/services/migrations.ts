@@ -315,6 +315,12 @@ export async function ensureConfigRow(
       [anonKey]
     )
   );
+  // Postgres sends its Inngest events to the dev server on the compose network.
+  await withClient(dbPort, (c) =>
+    c.query(
+      `SELECT public.set_inngest_event_url('http://inngest:8288/e/NO_EVENT_KEY_SET')`
+    )
+  );
 }
 
 // ---------------------------------------------------------------------------

@@ -92425,9 +92425,6 @@ export default {
             $ref: "#/parameters/rowFilter.companySettings.returnPickedMaterialTiming"
           },
           {
-            $ref: "#/parameters/rowFilter.companySettings.salesRuleNotificationGroup"
-          },
-          {
             $ref: "#/parameters/rowFilter.companySettings.showCurrencyTrailingZeros"
           },
           {
@@ -92435,6 +92432,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.companySettings.allowLowercaseItemIds"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.salesRuleNotificationGroup"
           },
           {
             $ref: "#/parameters/rowFilter.companySettings.includeOperationsOnTraveler"
@@ -92640,9 +92640,6 @@ export default {
             $ref: "#/parameters/rowFilter.companySettings.returnPickedMaterialTiming"
           },
           {
-            $ref: "#/parameters/rowFilter.companySettings.salesRuleNotificationGroup"
-          },
-          {
             $ref: "#/parameters/rowFilter.companySettings.showCurrencyTrailingZeros"
           },
           {
@@ -92650,6 +92647,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.companySettings.allowLowercaseItemIds"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.salesRuleNotificationGroup"
           },
           {
             $ref: "#/parameters/rowFilter.companySettings.includeOperationsOnTraveler"
@@ -92809,9 +92809,6 @@ export default {
             $ref: "#/parameters/rowFilter.companySettings.returnPickedMaterialTiming"
           },
           {
-            $ref: "#/parameters/rowFilter.companySettings.salesRuleNotificationGroup"
-          },
-          {
             $ref: "#/parameters/rowFilter.companySettings.showCurrencyTrailingZeros"
           },
           {
@@ -92819,6 +92816,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.companySettings.allowLowercaseItemIds"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.salesRuleNotificationGroup"
           },
           {
             $ref: "#/parameters/rowFilter.companySettings.includeOperationsOnTraveler"
@@ -94762,6 +94762,10 @@ export default {
             required: true,
             schema: {
               properties: {
+                p_company_id: {
+                  format: "text",
+                  type: "string"
+                },
                 p_tracked_entity_ids: {
                   format: "text[]",
                   items: {
@@ -94770,7 +94774,7 @@ export default {
                   type: "array"
                 }
               },
-              required: ["p_tracked_entity_ids"],
+              required: ["p_tracked_entity_ids", "p_company_id"],
               type: "object"
             }
           },
@@ -97780,6 +97784,10 @@ export default {
             required: true,
             schema: {
               properties: {
+                p_company_id: {
+                  format: "text",
+                  type: "string"
+                },
                 p_tracked_entity_ids: {
                   format: "text[]",
                   items: {
@@ -97788,7 +97796,7 @@ export default {
                   type: "array"
                 }
               },
-              required: ["p_tracked_entity_ids"],
+              required: ["p_tracked_entity_ids", "p_company_id"],
               type: "object"
             }
           },
@@ -105828,6 +105836,41 @@ export default {
         tags: ["(rpc) get_maintenance_dispatches_by_location"]
       }
     },
+    "/rpc/set_inngest_event_url": {
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                p_url: {
+                  format: "text",
+                  type: "string"
+                }
+              },
+              required: ["p_url"],
+              type: "object"
+            }
+          },
+          {
+            $ref: "#/parameters/preferParams"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) set_inngest_event_url"]
+      }
+    },
     "/rpc/sync_on_maintenance_dispatch_complete": {
       post: {
         parameters: [
@@ -105955,12 +105998,16 @@ export default {
             required: true,
             schema: {
               properties: {
+                p_company_id: {
+                  format: "text",
+                  type: "string"
+                },
                 p_job_id: {
                   format: "text",
                   type: "string"
                 }
               },
-              required: ["p_job_id"],
+              required: ["p_job_id", "p_company_id"],
               type: "object"
             }
           },
@@ -150346,10 +150393,10 @@ export default {
         "incompletePickingListPolicy",
         "includeMaterialsOnTraveler",
         "returnPickedMaterialTiming",
-        "salesRuleNotificationGroup",
         "showCurrencyTrailingZeros",
         "requireMfa",
         "allowLowercaseItemIds",
+        "salesRuleNotificationGroup",
         "includeOperationsOnTraveler",
         "requireSupplierContactAndLocation",
         "requireCustomerContactAndLocation"
@@ -150599,13 +150646,6 @@ export default {
           format: "text",
           type: "string"
         },
-        salesRuleNotificationGroup: {
-          format: "text[]",
-          items: {
-            type: "string"
-          },
-          type: "array"
-        },
         showCurrencyTrailingZeros: {
           default: true,
           format: "boolean",
@@ -150620,6 +150660,13 @@ export default {
           default: false,
           format: "boolean",
           type: "boolean"
+        },
+        salesRuleNotificationGroup: {
+          format: "text[]",
+          items: {
+            type: "string"
+          },
+          type: "array"
         },
         includeOperationsOnTraveler: {
           default: true,
@@ -200386,12 +200433,6 @@ export default {
       in: "query",
       type: "string"
     },
-    "rowFilter.companySettings.salesRuleNotificationGroup": {
-      name: "salesRuleNotificationGroup",
-      required: false,
-      in: "query",
-      type: "string"
-    },
     "rowFilter.companySettings.showCurrencyTrailingZeros": {
       name: "showCurrencyTrailingZeros",
       required: false,
@@ -200406,6 +200447,12 @@ export default {
     },
     "rowFilter.companySettings.allowLowercaseItemIds": {
       name: "allowLowercaseItemIds",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.companySettings.salesRuleNotificationGroup": {
+      name: "salesRuleNotificationGroup",
       required: false,
       in: "query",
       type: "string"

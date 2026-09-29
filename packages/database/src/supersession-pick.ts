@@ -6,11 +6,7 @@
 // that format and equivalent to a calendar-date compare, so no date library is
 // needed (and the two callers stay byte-for-byte consistent).
 
-import {
-  RoundingMode,
-  round,
-  scrapAllowance
-} from "../supabase/functions/shared/precision.ts";
+import { RoundingMode, round, scrapAllowance } from "./precision.ts";
 import type { Database } from "./types.ts";
 
 export type SupersessionMode = Database["public"]["Enums"]["supersessionMode"];

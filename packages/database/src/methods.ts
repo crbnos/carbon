@@ -1,5 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { round } from "../supabase/functions/shared/precision.ts";
+import { round } from "./precision.ts";
 import type { Database } from "./types.ts";
 
 export type JobMethod = NonNullable<

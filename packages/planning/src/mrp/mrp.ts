@@ -1,7 +1,6 @@
 import { type Database, getCompanyTimeZone } from "@carbon/database";
 import type { DB } from "@carbon/database/client";
 import { fetchAll } from "@carbon/database/fetch-all";
-import { getFunctionLogger } from "@carbon/database/logging";
 import {
   type BomChild,
   type DemandContributor,
@@ -20,6 +19,7 @@ import {
   buildSupersessionRedirectMap,
   type Redirect
 } from "@carbon/database/supersession-pick";
+import { getLogger } from "@carbon/logger";
 import { datetime } from "@carbon/utils";
 import {
   type CalendarDate,
@@ -31,7 +31,7 @@ import type { Kysely } from "kysely";
 import { z } from "zod";
 import { toIsoDate } from "../scheduling/date-utils.ts";
 
-const logger = getFunctionLogger("mrp");
+const logger = getLogger("planning", "mrp");
 
 const WEEKS_TO_FORECAST = 18 * 4;
 

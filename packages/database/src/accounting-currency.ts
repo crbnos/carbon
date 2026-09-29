@@ -19,7 +19,9 @@ export function assertExchangeRate(rate: number): void {
 
 function requireRate(rate: number): void {
   if (!Number.isFinite(rate) || rate <= 0) {
-    throw new Error("Foreign-per-base exchange rate must be positive and finite");
+    throw new Error(
+      "Foreign-per-base exchange rate must be positive and finite"
+    );
   }
 }
 
@@ -42,7 +44,10 @@ export function toBaseAmount(
 ): number {
   requireFinite(documentAmount, "Document amount");
   requireRate(foreignPerBaseRate);
-  return requireFinite(round(documentAmount / foreignPerBaseRate), "Base amount");
+  return requireFinite(
+    round(documentAmount / foreignPerBaseRate),
+    "Base amount"
+  );
 }
 
 /** Round at the document boundary using that currency's configured decimals. */

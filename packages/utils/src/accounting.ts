@@ -1,62 +1,21 @@
+import {
+  type AccountClass,
+  type AccountType,
+  credit,
+  debit
+} from "@carbon/database/ledger";
 import type { CalendarDate } from "@internationalized/date";
 import { endOfMonth, parseDate } from "@internationalized/date";
 import { formatDate } from "./date";
 
-/** The lowercase form `credit` / `debit` take. */
-export type AccountType =
-  | "asset"
-  | "liability"
-  | "equity"
-  | "revenue"
-  | "expense";
-
-/** An account's class (`account.class`, the `glAccountClass` enum). */
-export type AccountClass =
-  | "Asset"
-  | "Liability"
-  | "Equity"
-  | "Revenue"
-  | "Expense";
-
-const ACCOUNT_CLASSES: ReadonlySet<string> = new Set<AccountClass>([
-  "Asset",
-  "Liability",
-  "Equity",
-  "Revenue",
-  "Expense"
-]);
-
-export function isAccountClass(value: string | null): value is AccountClass {
-  return value !== null && ACCOUNT_CLASSES.has(value);
-}
-
-export const credit = (accountType: AccountType, amount: number) => {
-  switch (accountType) {
-    case "asset":
-    case "expense":
-      return -amount;
-    case "liability":
-    case "equity":
-    case "revenue":
-      return amount;
-    default:
-      throw new Error(`Invalid account type: ${accountType}`);
-  }
-};
-
-export const debit = (accountType: AccountType, amount: number) => {
-  switch (accountType) {
-    case "asset":
-    case "expense":
-      return amount;
-    case "liability":
-    case "equity":
-    case "revenue":
-      return -amount;
-    default:
-      throw new Error(`Invalid account type: ${accountType}`);
-  }
-};
+export {
+  type AccountClass,
+  type AccountType,
+  accountTypeFromClass,
+  credit,
+  debit,
+  isAccountClass
+} from "@carbon/database/ledger";
 
 function isNaturalDebitAccount(cls: AccountClass): boolean {
   return cls === "Asset" || cls === "Expense";

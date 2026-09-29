@@ -1,6 +1,6 @@
 import type { Database } from "@carbon/database";
 import type { DB } from "@carbon/database/client";
-import { getFunctionLogger } from "@carbon/database/logging";
+import { getLogger } from "@carbon/logger";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Kysely } from "kysely";
 import type { BatchPlacement } from "./batch-scheduler.ts";
@@ -49,7 +49,7 @@ type BaseParams = {
   userId: string;
 };
 
-const log = getFunctionLogger("schedule");
+const log = getLogger("planning", "schedule");
 
 const deadlineRank = (deadlineType: string | null | undefined): number =>
   DEADLINE_PRIORITY[deadlineType ?? "No Deadline"] ?? 3;

@@ -2077,18 +2077,6 @@ importers:
       '@jitl/quickjs-singlefile-browser-release-sync':
         specifier: 0.32.0
         version: 0.32.0
-      '@jsquash/jpeg':
-        specifier: 1.6.0
-        version: 1.6.0
-      '@jsquash/png':
-        specifier: 3.1.1
-        version: 3.1.1
-      '@jsquash/resize':
-        specifier: 2.1.1
-        version: 2.1.1
-      '@jsquash/webp':
-        specifier: 1.5.0
-        version: 1.5.0
       '@logtape/logtape':
         specifier: 'catalog:'
         version: 2.2.3
@@ -2110,9 +2098,6 @@ importers:
       kysely-supabase:
         specifier: 0.2.1
         version: 0.2.1(kysely@0.28.17)(supabase@2.89.0(patch_hash=f278052dbb83b89896a8f742e486a879c8f00b1b22e188717aeb199b1f1a4b4c))
-      libheif-js:
-        specifier: 1.23.2
-        version: 1.23.2
       nanoid:
         specifier: 'catalog:'
         version: 5.1.16
@@ -3187,6 +3172,9 @@ importers:
       '@carbon/database':
         specifier: workspace:*
         version: link:../database
+      '@carbon/logger':
+        specifier: workspace:*
+        version: link:../logger
       '@carbon/utils':
         specifier: workspace:*
         version: link:../utils

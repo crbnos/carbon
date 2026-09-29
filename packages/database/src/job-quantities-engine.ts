@@ -5,7 +5,7 @@
 // (`cycleNodeIds`) instead of recursing forever — the same contract as
 // mrp-engine's `cycleItemIds`.
 
-import { scrapAllowance } from "../supabase/functions/shared/precision.ts";
+import { scrapAllowance } from "./precision.ts";
 
 export type JobQuantityTreeNode = {
   id: string;

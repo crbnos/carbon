@@ -1,4 +1,4 @@
-import { applyRate, deriveRate } from "./precision";
+import { applyRate, deriveRate } from "@carbon/database/precision";
 
 /** An EMPTIED number input commits NaN, not 0 — that is react-aria's empty
  *  state (`if (!newInputValue.length) setNumberValue(NaN)`). For a cost

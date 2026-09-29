@@ -1,6 +1,4 @@
-import { expect, it } from "vitest";
-import { classifyIntercompanyPostingLines } from "./intercompany-capture";
-import { round } from "./precision";
+import { round } from "@carbon/database/precision";
 import {
   allocateSalesHeaderShipping,
   type BuildSalesPostingLinesInput,
@@ -8,7 +6,9 @@ import {
   calculateSalesIntercompanyAmount,
   calculateSalesPostingAmounts,
   type SalesPostingAccount
-} from "./sales-posting-amounts";
+} from "@carbon/database/sales-posting-amounts";
+import { expect, it } from "vitest";
+import { classifyIntercompanyPostingLines } from "./intercompany-capture";
 
 const account = (id: string, accountClass: string): SalesPostingAccount => ({
   id,

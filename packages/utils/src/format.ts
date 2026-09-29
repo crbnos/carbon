@@ -1,4 +1,4 @@
-import { SCALE } from "./precision";
+import { SCALE } from "@carbon/database/precision";
 
 export type MoneyFormatOptions = {
   /** The ISO code. Present -> the symbol renders ("$300.00"); absent -> a bare

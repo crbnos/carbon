@@ -1,4 +1,4 @@
-import { EPSILON, round } from "./precision";
+import { EPSILON, round } from "@carbon/database/precision";
 import type { Violation } from "./rules";
 
 export type OverReceiptReceiptLine = {

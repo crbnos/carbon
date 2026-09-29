@@ -29,8 +29,7 @@ const clientCache = new Map<
  * the structurally-identical instance needs a cast for this package's copy. */
 export function getJobDatabaseClient(size = 1) {
   const cached = clientCache.get(size);
-  // `ending` is node-postgres only; undefined on Deno (pool always reused).
-  if (cached && !(cached.pool as { ending?: boolean }).ending) {
+  if (cached && !cached.pool.ending) {
     return cached.client;
   }
 

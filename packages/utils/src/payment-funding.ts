@@ -4,8 +4,8 @@ import {
   calculateSettlementFx,
   toBaseAmount,
   toDocumentAmount
-} from "./accounting-currency";
-import { round } from "./precision";
+} from "@carbon/database/accounting-currency";
+import { round } from "@carbon/database/precision";
 
 export type FundingSource = {
   paymentId: string;

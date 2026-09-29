@@ -8,7 +8,7 @@ import type { ConformanceCheck, Violation } from "../check";
  * 1. **Unrounded arithmetic reaching storage.** A lot left holding
  *    `0.020000000000000018` after an earlier split reads "0.02" in every UI and
  *    behaves like 0.02 nowhere. Round at the persist boundary — via `round()`
- *    from `functions/shared/precision.ts` / `@carbon/utils`, or (better) via
+ *    from `@carbon/utils`, or (better) via
  *    `settleQuantity()` from `@carbon/utils` (`entity-drain.ts`), which rounds,
  *    refuses a negative, and applies the drain-to-Consumed rule in one step.
  *
@@ -54,7 +54,7 @@ const SANCTIONED =
 
 /** The modules that IMPLEMENT the standard; they are where the rounding lives. */
 const EXCLUDED_FILES = new Set([
-  "packages/database/supabase/functions/shared/precision.ts",
+  "packages/database/src/precision.ts",
   "packages/utils/src/batch-split.ts",
   "packages/utils/src/batch-merge.ts",
   "packages/utils/src/entity-drain.ts"

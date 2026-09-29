@@ -98,7 +98,11 @@ export function distributeRoundingResidual(
     // becoming -0.01 against positive revenue, which is the negative-tax-on-
     // positive-revenue shape this whole helper exists to prevent. Skip such a
     // part and give the unit to the next-most-deserving one.
-    if (exactValues[index]! !== 0 && next !== 0 && Math.sign(next) !== Math.sign(exactValues[index]!)) {
+    if (
+      exactValues[index]! !== 0 &&
+      next !== 0 &&
+      Math.sign(next) !== Math.sign(exactValues[index]!)
+    ) {
       continue;
     }
     rounded[index] = next;
@@ -125,7 +129,11 @@ export function scrapAllowance(target: number, rate: number): number {
 }
 
 /** Tax/discount → settlement amount. `decimals` comes from currency.decimalPlaces — data, never a literal. */
-export function applyRate(base: number, rate: number, decimals: number): number {
+export function applyRate(
+  base: number,
+  rate: number,
+  decimals: number
+): number {
   return round(base * rate, decimals);
 }
 

@@ -21,6 +21,7 @@ export { inngest } from "./client.ts";
 import {
   auditFunction,
   embeddingFunction,
+  embeddingQueueFunction,
   eventQueueFunction,
   searchFunction,
   syncFunction,
@@ -114,6 +115,7 @@ export const functions = [
   webhookFunction,
   workflowFunction,
   embeddingFunction,
+  embeddingQueueFunction,
   // Workflows
   workflowMomentFunction,
   workflowRunFunction,

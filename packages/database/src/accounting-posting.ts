@@ -1,5 +1,11 @@
-export const RECEIVABLE_POSTING_DESCRIPTIONS = ["Accounts Receivable", "IC Receivables"] as const;
-export const PAYABLE_POSTING_DESCRIPTIONS = ["Accounts Payable", "IC Payables"] as const;
+export const RECEIVABLE_POSTING_DESCRIPTIONS = [
+  "Accounts Receivable",
+  "IC Receivables"
+] as const;
+export const PAYABLE_POSTING_DESCRIPTIONS = [
+  "Accounts Payable",
+  "IC Payables"
+] as const;
 
 /** The description a payment's NEW on-account credit control line is written
  *  with, and the exact string a later payment reads back to find which account
@@ -29,12 +35,19 @@ export function onAccountCreditDescription(isAR: boolean): string {
  *  READERS (`post-payment/post-payment-transaction.ts`, the ERP's
  *  `invoicing.service.ts`) all reference this constant, so the description can
  *  never drift on one side of the contract. */
-export const REIMBURSEMENT_PAYABLE_POSTING_DESCRIPTION = "Employee reimbursement payable";
+export const REIMBURSEMENT_PAYABLE_POSTING_DESCRIPTION =
+  "Employee reimbursement payable";
 
-export type AccountingPostingRole = "Receivables" | "Payables" | "ShippingRevenue" | "SalesRevenue";
+export type AccountingPostingRole =
+  | "Receivables"
+  | "Payables"
+  | "ShippingRevenue"
+  | "SalesRevenue";
 
 /** Roles come from the original journal, never a mutable account name or default. */
-export function classifyAccountingPostingRole(description: string | null): AccountingPostingRole | null {
+export function classifyAccountingPostingRole(
+  description: string | null
+): AccountingPostingRole | null {
   switch (description) {
     case "Accounts Receivable":
     case "IC Receivables":

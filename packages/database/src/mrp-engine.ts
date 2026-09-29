@@ -1,6 +1,6 @@
 // Pure MRP engine functions shared by MRP (@carbon/planning) and get-method.
 
-import { RoundingMode, round } from "../supabase/functions/shared/precision.ts";
+import { RoundingMode, round } from "./precision.ts";
 import {
   consumableInWholeAssemblies,
   type Redirect

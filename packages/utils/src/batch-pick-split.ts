@@ -3,7 +3,11 @@
 // pick sequence converges on exactly the per-member BOM quantities.
 // See .ai/specs/2026-09-16-batch-materials-and-output-lots.md.
 
-import { distributeRoundingResidual, EPSILON, round } from "./precision";
+import {
+  distributeRoundingResidual,
+  EPSILON,
+  round
+} from "@carbon/database/precision";
 
 export interface PickMember {
   jobOperationId: string;

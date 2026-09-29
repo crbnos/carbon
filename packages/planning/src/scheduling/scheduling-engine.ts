@@ -3,10 +3,8 @@ import {
   getCompanyTimeZone,
   getLocationTimeZone
 } from "@carbon/database";
-// DB comes from @carbon/database/client (postgres/index.ts, a type-only alias),
-// NOT supabase/functions/lib/database.ts, which pulls in a postgres driver.
 import type { DB } from "@carbon/database/client";
-import { getFunctionLogger } from "@carbon/database/logging";
+import { getLogger } from "@carbon/logger";
 import { datetime } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { type Kysely, sql } from "kysely";
@@ -67,7 +65,7 @@ import {
 
 export { SCHEDULING_HORIZON_DAYS } from "./finite-context.ts";
 
-const log = getFunctionLogger("schedule");
+const log = getLogger("planning", "schedule");
 
 /**
  * Unified Scheduling Engine

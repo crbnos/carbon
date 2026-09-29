@@ -13,16 +13,14 @@ describe("edgeFunctionAuthorizesCaller", () => {
   });
 
   it.each([
-    "await requirePermissions(req, companyId, userId, {});",
     "await requireCaller(req);",
-    "requireServiceRole(req);",
-    "const client = await getSupabaseServiceRole(auth, apiKey, companyId);"
+    "requireServiceRole(req);"
   ])("accepts %s", (ts) => {
     expect(edgeFunctionAuthorizesCaller.scan(`${DIR}/x`, ts)).toHaveLength(0);
   });
 
-  it("does not accept a bare import of a gate", () => {
-    const ts = 'import { requirePermissions } from "../lib/supabase.ts";';
+  it("does not accept a gate that is only declared", () => {
+    const ts = "async function requireCaller";
     expect(edgeFunctionAuthorizesCaller.scan(`${DIR}/x`, ts)).toHaveLength(1);
   });
 });

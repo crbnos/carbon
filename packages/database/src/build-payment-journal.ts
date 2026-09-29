@@ -1,13 +1,11 @@
 // Pure journal construction from authoritative, locked funding allocations.
 // Cash/sourceAmount are document currency. Control, relief, carrying remainders,
 // and the persisted per-application realized FX snapshots are company base.
-import { assertBalanced, EPSILON, round } from "./precision.ts";
-import {
-  assertExchangeRate,
-  toBaseAmount,
-} from "./accounting-currency.ts";
+
+import { assertExchangeRate, toBaseAmount } from "./accounting-currency.ts";
 import { onAccountCreditDescription } from "./accounting-posting.ts";
-import { accountTypeFromClass, credit, debit } from "../lib/utils.ts";
+import { accountTypeFromClass, credit, debit } from "./ledger.ts";
+import { assertBalanced, EPSILON, round } from "./precision.ts";
 
 export interface PaymentJournalLine {
   accountId: string;
@@ -107,7 +105,7 @@ function nonnegative(value: number, label: string): number {
 }
 
 export function buildPaymentJournal(
-  input: BuildPaymentJournalInput,
+  input: BuildPaymentJournalInput
 ): BuildPaymentJournalResult {
   const {
     paymentId,
@@ -121,25 +119,25 @@ export function buildPaymentJournal(
     journalLineReference,
     applications,
     accounts,
-    fee,
+    fee
   } = input;
   if (!accounts.controlAccountId) {
     throw new Error("Missing control account default");
   }
   const grossBase = toBaseAmount(
     nonnegative(totalAmount, "Payment amount"),
-    exchangeRate,
+    exchangeRate
   );
   const newOnAccountBase = toBaseAmount(
     nonnegative(input.newOnAccountBase, "New on-account carrying value"),
-    1,
+    1
   );
   if (
     fee &&
     (nonnegative(fee.amount, "Processor fee") > totalAmount || !fee.accountId)
   ) {
     throw new Error(
-      "Processor fee requires an account and cannot exceed gross cash",
+      "Processor fee requires an account and cannot exceed gross cash"
     );
   }
   const feeBase = fee ? toBaseAmount(fee.amount, exchangeRate) : 0;
@@ -151,7 +149,7 @@ export function buildPaymentJournal(
     magnitude: number,
     accountId: string | null,
     description: string,
-    target?: string,
+    target?: string
   ) => {
     magnitude = toBaseAmount(nonnegative(magnitude, "Journal magnitude"), 1);
     if (magnitude === 0) return;
@@ -162,15 +160,14 @@ export function buildPaymentJournal(
     lines.push({
       accountId,
       description,
-      amount: side === "debit"
-        ? debit(type, magnitude)
-        : credit(type, magnitude),
+      amount:
+        side === "debit" ? debit(type, magnitude) : credit(type, magnitude),
       quantity: 1,
       documentType: "Payment",
       documentId: paymentId,
       documentLineReference: target,
       journalLineReference,
-      companyId,
+      companyId
     });
   };
   push(
@@ -178,7 +175,7 @@ export function buildPaymentJournal(
     "asset",
     round(grossBase - feeBase),
     bankAccount,
-    "Bank / Cash",
+    "Bank / Cash"
   );
   if (fee) {
     push(
@@ -186,7 +183,7 @@ export function buildPaymentJournal(
       "expense",
       feeBase,
       fee.accountId,
-      fee.description ?? "Payment Processing Fee",
+      fee.description ?? "Payment Processing Fee"
     );
   }
   let totalFxImpact = 0;
@@ -198,25 +195,31 @@ export function buildPaymentJournal(
     const target = isReimbursement
       ? app.targetReimbursementId
       : isRefund
-      ? app.targetMemoId
-      : isAR
-      ? app.targetSalesInvoiceId
-      : app.targetPurchaseInvoiceId;
+        ? app.targetMemoId
+        : isAR
+          ? app.targetSalesInvoiceId
+          : app.targetPurchaseInvoiceId;
     if (
       !target ||
       (isReimbursement
-        // A reimbursement payout carries no other target, no prior-credit
-        // funding source, and no trade discount or write-off.
-        ? app.targetSalesInvoiceId || app.targetPurchaseInvoiceId ||
-          app.targetMemoId || app.sourcePaymentId ||
-          app.discountAmount !== 0 || app.writeOffAmount !== 0
-        : isRefund
-        ? app.targetSalesInvoiceId || app.targetPurchaseInvoiceId ||
-          app.targetReimbursementId ||
-          app.sourcePaymentId || app.discountAmount !== 0 ||
+        ? // A reimbursement payout carries no other target, no prior-credit
+          // funding source, and no trade discount or write-off.
+          app.targetSalesInvoiceId ||
+          app.targetPurchaseInvoiceId ||
+          app.targetMemoId ||
+          app.sourcePaymentId ||
+          app.discountAmount !== 0 ||
           app.writeOffAmount !== 0
-        : app.targetMemoId || app.targetReimbursementId ||
-          (isAR ? app.targetPurchaseInvoiceId : app.targetSalesInvoiceId))
+        : isRefund
+          ? app.targetSalesInvoiceId ||
+            app.targetPurchaseInvoiceId ||
+            app.targetReimbursementId ||
+            app.sourcePaymentId ||
+            app.discountAmount !== 0 ||
+            app.writeOffAmount !== 0
+          : app.targetMemoId ||
+            app.targetReimbursementId ||
+            (isAR ? app.targetPurchaseInvoiceId : app.targetSalesInvoiceId))
     ) {
       throw new Error("Invalid payment application target");
     }
@@ -230,7 +233,7 @@ export function buildPaymentJournal(
       throw new Error("Settlement FX must be finite");
     }
     const releasedBase = round(
-      applied + (cashIn ? app.fxGainLossAmount : -app.fxGainLossAmount),
+      applied + (cashIn ? app.fxGainLossAmount : -app.fxGainLossAmount)
     );
     nonnegative(releasedBase, "Released source carrying value");
     if (
@@ -238,15 +241,15 @@ export function buildPaymentJournal(
       (releasedBase !== 0 || applied !== 0 || app.fxGainLossAmount !== 0)
     ) {
       throw new Error(
-        "Zero source principal cannot release carrying value or realize FX",
+        "Zero source principal cannot release carrying value or realize FX"
       );
     }
     if (app.sourcePaymentId) {
-      const sourceAccount = app.sourceControlAccountId ??
-        accounts.controlAccountId;
+      const sourceAccount =
+        app.sourceControlAccountId ?? accounts.controlAccountId;
       priorCreditReleased.set(
         sourceAccount,
-        round((priorCreditReleased.get(sourceAccount) ?? 0) + releasedBase),
+        round((priorCreditReleased.get(sourceAccount) ?? 0) + releasedBase)
       );
     } else {
       if (app.sourceExchangeRate !== exchangeRate) {
@@ -263,9 +266,9 @@ export function buildPaymentJournal(
       isReimbursement
         ? "Employee Reimbursements Payable"
         : isAR
-        ? "Accounts Receivable"
-        : "Accounts Payable",
-      target,
+          ? "Accounts Receivable"
+          : "Accounts Payable",
+      target
     );
     push(
       cashIn ? "debit" : "credit",
@@ -275,7 +278,7 @@ export function buildPaymentJournal(
       discount,
       accounts.discountAccountId,
       isAR ? "Customer Payment Discount" : "Supplier Payment Discount",
-      target,
+      target
     );
     push(
       cashIn ? "debit" : "credit",
@@ -283,7 +286,7 @@ export function buildPaymentJournal(
       writeOff,
       accounts.writeOffAccountId,
       isAR ? "Bad Debt Expense" : "Vendor Write-Off Income",
-      target,
+      target
     );
     totalFxImpact += app.fxGainLossAmount;
   }
@@ -294,14 +297,14 @@ export function buildPaymentJournal(
     grossBase,
     round(currentCashReleased + newOnAccountBase),
     EPSILON,
-    "Current payment funding",
+    "Current payment funding"
   );
   push(
     cashIn ? "credit" : "debit",
     isAR ? "asset" : "liability",
     newOnAccountBase,
     accounts.controlAccountId,
-    onAccountCreditDescription(isAR),
+    onAccountCreditDescription(isAR)
   );
   for (const [accountId, amount] of priorCreditReleased) {
     push(
@@ -309,7 +312,7 @@ export function buildPaymentJournal(
       isAR ? "asset" : "liability",
       amount,
       accountId,
-      `${isAR ? "Accounts Receivable" : "Accounts Payable"} (credit applied)`,
+      `${isAR ? "Accounts Receivable" : "Accounts Payable"} (credit applied)`
     );
   }
   totalFxImpact = round(totalFxImpact);
@@ -319,7 +322,7 @@ export function buildPaymentJournal(
       "revenue",
       totalFxImpact,
       accounts.fxGainAccountId,
-      "Realized FX Gain",
+      "Realized FX Gain"
     );
   } else if (totalFxImpact < 0) {
     push(
@@ -327,14 +330,14 @@ export function buildPaymentJournal(
       "expense",
       -totalFxImpact,
       accounts.fxLossAccountId,
-      "Realized FX Loss",
+      "Realized FX Loss"
     );
   }
   assertBalanced(
     signedDebitTotal,
     0,
     EPSILON,
-    "Payment journal (base currency)",
+    "Payment journal (base currency)"
   );
   return { lines, signedDebitTotal, totalFxImpact };
 }

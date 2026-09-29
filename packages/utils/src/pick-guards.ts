@@ -4,7 +4,7 @@
 // as an over-pick, and a line that is already fully picked is refused before any
 // ledger row is written — a repeat scan would otherwise double-post the transfer.
 
-import { EPSILON, equals, round } from "./precision";
+import { EPSILON, equals, round } from "@carbon/database/precision";
 
 export type PickGuardKind = "over-pick" | "already-picked" | "empty-pick";
 

@@ -1,19 +1,52 @@
+// Screenshots a model in the viewer and returns a 300×300 PNG thumbnail.
+// Self-contained: nothing is imported from outside this directory.
 import { serve } from "https://deno.land/std@0.175.0/http/server.ts";
+import decodePng from "npm:@jsquash/png@3.1.1/decode.js";
+import encodePng from "npm:@jsquash/png@3.1.1/encode.js";
+import resize from "npm:@jsquash/resize@2.1.1";
 import puppeteer from "npm:puppeteer-core@16.2.0";
 import { z } from "npm:zod@^4.5.4";
 import { Buffer } from "node:buffer";
-import { corsHeaders } from "../lib/headers.ts";
-import { getFunctionLogger } from "../lib/logging.ts";
-import { corsPreflight, errorResponse } from "../lib/response.ts";
-import { requireServiceRole } from "../lib/supabase.ts";
+import { decodeJwt, jwtVerify } from "npm:jose@5.9.6";
 
-import {
-  decodeImage,
-  encodeImage,
-  resizeImage,
-} from "../shared/image-pipeline.ts";
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers":
+    "authorization, x-client-info, apikey, content-type",
+};
 
-const logger = getFunctionLogger("thumbnail");
+const errorResponse = (message: string, status: number) =>
+  new Response(JSON.stringify({ message }), {
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+    status,
+  });
+
+/** With JWT_SECRET set (self-host, local dev) the signature is verified here;
+ *  on Supabase Cloud the gateway already verified it. */
+async function isServiceRole(req: Request): Promise<boolean> {
+  const token = (req.headers.get("Authorization") ?? "")
+    .replace(/^Bearer\s+/i, "")
+    .trim();
+  if (!token) return false;
+  if (token === (Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "").trim()) {
+    return true;
+  }
+  if (token.split(".").length !== 3) return false;
+  try {
+    const secret = Deno.env.get("JWT_SECRET");
+    const claims = secret
+      ? (await jwtVerify(token, new TextEncoder().encode(secret))).payload
+      : decodeJwt(token);
+    return claims.role === "service_role";
+  } catch {
+    return false;
+  }
+}
+
+/** It drives a browser to whatever URL it is handed: the service role only. */
+async function requireServiceRole(req: Request): Promise<void> {
+  if (!(await isServiceRole(req))) throw new Error("Service role only");
+}
 
 const payloadSchema = z.object({
   url: z.string(),
@@ -26,14 +59,13 @@ const browserWSEndpoint =
   `ws://5.161.255.30?token=59ecf910-aaa8-4c7e-aedb-7c18b34e266e`;
 
 serve(async (req: Request) => {
-  const preflight = corsPreflight(req);
-  if (preflight) return preflight;
-
-  // It drives a browser to whatever URL it is handed: servers only.
+  if (req.method === "OPTIONS") {
+    return new Response("ok", { headers: corsHeaders });
+  }
   try {
     await requireServiceRole(req);
   } catch (err) {
-    return errorResponse(err, 401);
+    return errorResponse((err as Error).message, 401);
   }
 
   let browser;
@@ -41,7 +73,7 @@ serve(async (req: Request) => {
     const payload = await req.json();
     const { url } = payloadSchema.parse(payload);
 
-    logger.info({ url });
+    console.info("thumbnail", { url });
 
     browser = await puppeteer.connect({
       browserWSEndpoint,
@@ -49,18 +81,13 @@ serve(async (req: Request) => {
       // valid cert so this is a no-op there.
       ignoreHTTPSErrors: true,
     });
-    logger.debug("browser connected");
     const page = await browser.newPage();
-    logger.debug("page created");
     await page.setViewport({ width: 1000, height: 1000 });
-    logger.debug("viewport set");
     await page.goto(url);
-    logger.debug(`navigated to ${url}`);
     // Wait for the canvas with id=viewer to be visible, but no longer than 5 seconds
     await page.waitForSelector("#model-viewer-canvas", {
       timeout: 10000,
     });
-    logger.debug("model-viewer-canvas visible");
     // Capture just the center portion of the viewport to avoid the ring
     const screenshot = await page.screenshot({
       encoding: "binary",
@@ -73,7 +100,7 @@ serve(async (req: Request) => {
         : screenshot
     );
 
-    const image = await decodeImage(screenshotArray, "png");
+    const image = await decodePng(screenshotArray.slice().buffer);
     // Knock the white viewer background out to transparency, as magick's
     // `transparent(white)` did.
     for (let i = 0; i < image.data.length; i += 4) {
@@ -85,19 +112,23 @@ serve(async (req: Request) => {
         image.data[i + 3] = 0;
       }
     }
-    const resized = await resizeImage(image, 300, 300);
-    const result = await encodeImage(resized, "png");
+    const resized = await resize(image, {
+      width: 300,
+      height: 300,
+      fitMethod: "stretch",
+    });
+    const result = new Uint8Array(await encodePng(resized));
 
     return new Response(result as BodyInit, {
       headers: { ...corsHeaders, "Content-Type": "image/png" },
       status: 200,
     });
   } catch (err) {
-    return errorResponse(err, 400);
+    console.error("thumbnail failed", err);
+    return errorResponse(err instanceof Error ? err.message : "", 400);
   } finally {
     if (browser) {
       await browser.close();
-      logger.debug("browser closed");
     }
   }
 });

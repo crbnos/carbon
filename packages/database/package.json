@@ -24,7 +24,6 @@
     "./fetch-all": "./src/fetch-all.ts",
     "./job-quantities-engine": "./src/job-quantities-engine.ts",
     "./json": "./src/json.ts",
-    "./logging": "./src/logging.ts",
     "./methods": "./src/methods.ts",
     "./mrp-engine": "./src/mrp-engine.ts",
     "./supersession-pick": "./src/supersession-pick.ts",
@@ -42,7 +41,12 @@
     "./audit.types": "./src/audit.types.ts",
     "./swagger-docs-schema": "./src/swagger-docs-schema.ts",
     "./dataset-assets": "./src/datasets/assets.ts",
-    "./dataset-rule-fields": "./src/datasets/rule-fields.ts"
+    "./dataset-rule-fields": "./src/datasets/rule-fields.ts",
+    "./precision": "./src/precision.ts",
+    "./accounting-currency": "./src/accounting-currency.ts",
+    "./accounting-posting": "./src/accounting-posting.ts",
+    "./sales-posting-amounts": "./src/sales-posting-amounts.ts",
+    "./ledger": "./src/ledger.ts"
   },
   "private": true,
   "scripts": {
@@ -65,10 +69,6 @@
   "dependencies": {
     "@internationalized/date": "catalog:",
     "@jitl/quickjs-singlefile-browser-release-sync": "0.32.0",
-    "@jsquash/jpeg": "1.6.0",
-    "@jsquash/png": "3.1.1",
-    "@jsquash/resize": "2.1.1",
-    "@jsquash/webp": "1.5.0",
     "@logtape/logtape": "catalog:",
     "@logtape/redaction": "catalog:",
     "@supabase/postgrest-js": "catalog:",
@@ -76,7 +76,6 @@
     "dompurify": "catalog:",
     "kysely": "catalog:",
     "kysely-supabase": "0.2.1",
-    "libheif-js": "1.23.2",
     "nanoid": "catalog:",
     "pg": "8.20.0",
     "quickjs-emscripten-core": "0.32.0",

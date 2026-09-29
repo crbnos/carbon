@@ -1,16 +1,13 @@
 // The one image-processing pipeline for the whole codebase: browser upload
-// chokepoints, the process-image edge function, and Node consumers (paperless,
-// jobs) all run THIS code, so an image processed anywhere produces identical
-// bytes. Codecs are wasm, loaded lazily per format:
+// chokepoints and Node consumers (paperless, jobs) all run THIS code, so an
+// image processed anywhere produces identical bytes. Codecs are wasm, loaded lazily per format:
 //   decode  — libheif (HEIC/HEIF), mozjpeg, squoosh-png, libwebp (jSquash)
 //   resize  — squoosh resize (Lanczos)
 //   encode  — mozjpeg (photos), squoosh-png (graphics, keeps alpha)
-// Bare specifiers resolve via package.json in Node/browser and via the
-// functions/deno.json import map in the edge runtime (same pattern as "pg").
 // Node callers must run initNodeImageCodecs() from @carbon/files/media/node
 // first — Node's fetch cannot load the wasm from file: URLs.
 /// <reference path="./wasm-codecs.d.ts" />
-import { round, RoundingMode } from "./precision.ts";
+import { RoundingMode, round } from "@carbon/utils";
 
 export interface RawImage {
   data: Uint8ClampedArray;
@@ -98,22 +95,32 @@ export function readImageDimensions(
 ): { width: number; height: number } | null {
   const u16be = (i: number) => (bytes[i]! << 8) | bytes[i + 1]!;
   const u32be = (i: number) =>
-    ((bytes[i]! << 24) | (bytes[i + 1]! << 16) | (bytes[i + 2]! << 8) | bytes[i + 3]!) >>> 0;
+    ((bytes[i]! << 24) |
+      (bytes[i + 1]! << 16) |
+      (bytes[i + 2]! << 8) |
+      bytes[i + 3]!) >>>
+    0;
   switch (extension.toLowerCase()) {
     case "png": {
       // signature (8) + IHDR length/type (8), then width/height as u32be
-      if (bytes.length < 24 || bytes[0] !== 0x89 || bytes[1] !== 0x50) return null;
+      if (bytes.length < 24 || bytes[0] !== 0x89 || bytes[1] !== 0x50)
+        return null;
       return { width: u32be(16), height: u32be(20) };
     }
     case "jpg":
     case "jpeg": {
-      if (bytes.length < 4 || bytes[0] !== 0xff || bytes[1] !== 0xd8) return null;
+      if (bytes.length < 4 || bytes[0] !== 0xff || bytes[1] !== 0xd8)
+        return null;
       let i = 2;
       while (i + 9 < bytes.length) {
         if (bytes[i] !== 0xff) return null;
         const marker = bytes[i + 1]!;
         // SOF0–SOF15 carry the frame dimensions (C4/C8/CC are not SOFs)
-        if (marker >= 0xc0 && marker <= 0xcf && ![0xc4, 0xc8, 0xcc].includes(marker)) {
+        if (
+          marker >= 0xc0 &&
+          marker <= 0xcf &&
+          ![0xc4, 0xc8, 0xcc].includes(marker)
+        ) {
           return { width: u16be(i + 7), height: u16be(i + 5) };
         }
         if (marker === 0xd8 || (marker >= 0xd0 && marker <= 0xd9)) i += 2;
@@ -123,7 +130,12 @@ export function readImageDimensions(
     }
     case "webp": {
       if (bytes.length < 30) return null;
-      const fourCC = String.fromCharCode(bytes[12]!, bytes[13]!, bytes[14]!, bytes[15]!);
+      const fourCC = String.fromCharCode(
+        bytes[12]!,
+        bytes[13]!,
+        bytes[14]!,
+        bytes[15]!
+      );
       if (fourCC === "VP8 ") {
         // lossy: 3-byte frame tag + 9D 01 2A, then 14-bit width/height (LE)
         return {
@@ -142,7 +154,8 @@ export function readImageDimensions(
       if (fourCC === "VP8X") {
         // extended: canvas width-1 / height-1 as 24-bit LE
         const width = 1 + (bytes[24]! | (bytes[25]! << 8) | (bytes[26]! << 16));
-        const height = 1 + (bytes[27]! | (bytes[28]! << 8) | (bytes[29]! << 16));
+        const height =
+          1 + (bytes[27]! | (bytes[28]! << 8) | (bytes[29]! << 16));
         return { width, height };
       }
       return null;

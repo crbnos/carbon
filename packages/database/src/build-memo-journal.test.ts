@@ -1,11 +1,7 @@
+import { expect, it } from "vitest";
 import {
-  assert,
-  assertEquals,
-  assertThrows,
-} from "https://deno.land/std@0.175.0/testing/asserts.ts";
-import {
-  buildMemoJournal,
   type BuildMemoJournalInput,
+  buildMemoJournal
 } from "./build-memo-journal.ts";
 
 // Golden-master tests for the GL journal a credit/debit memo posts. A memo is a
@@ -15,7 +11,7 @@ import {
 // natural class. Every combo must balance (signedDebitTotal ~ 0).
 
 const base = (
-  overrides: Partial<BuildMemoJournalInput>,
+  overrides: Partial<BuildMemoJournalInput>
 ): BuildMemoJournalInput => ({
   memoId: "memo_1",
   companyId: "co_1",
@@ -27,7 +23,7 @@ const base = (
   controlAccountId: "acct_ar",
   reasonAccountId: "acct_reason",
   reasonAccountClass: "Revenue",
-  ...overrides,
+  ...overrides
 });
 
 // Helpers: stored `amount` is natural-balance signed. For an asset, a debit is
@@ -35,67 +31,61 @@ const base = (
 const line = (r: ReturnType<typeof buildMemoJournal>, accountId: string) =>
   r.lines.find((l) => l.accountId === accountId)!;
 
-Deno.test("customer Credit memo: CR AR (asset), DR reason; balances", () => {
+it("customer Credit memo: CR AR (asset), DR reason; balances", () => {
   const r = buildMemoJournal(base({ isAR: true, direction: "Credit" }));
-  assertEquals(r.lines.length, 2);
+  expect(r.lines.length).toEqual(2);
   // Control AR is an asset; a credit stores −magnitude.
-  assertEquals(line(r, "acct_ar").amount, -300);
+  expect(line(r, "acct_ar").amount).toEqual(-300);
   // Reason is Revenue; a debit stores −magnitude.
-  assertEquals(line(r, "acct_reason").amount, -300);
-  assert(Math.abs(r.signedDebitTotal) < 0.01);
+  expect(line(r, "acct_reason").amount).toEqual(-300);
+  expect(Math.abs(r.signedDebitTotal) < 0.01).toBeTruthy();
 });
 
-Deno.test("customer Debit memo: DR AR (asset), CR reason; balances", () => {
+it("customer Debit memo: DR AR (asset), CR reason; balances", () => {
   const r = buildMemoJournal(base({ isAR: true, direction: "Debit" }));
   // Control AR debit stores +magnitude.
-  assertEquals(line(r, "acct_ar").amount, 300);
+  expect(line(r, "acct_ar").amount).toEqual(300);
   // Reason Revenue credit stores +magnitude.
-  assertEquals(line(r, "acct_reason").amount, 300);
-  assert(Math.abs(r.signedDebitTotal) < 0.01);
+  expect(line(r, "acct_reason").amount).toEqual(300);
+  expect(Math.abs(r.signedDebitTotal) < 0.01).toBeTruthy();
 });
 
-Deno.test("supplier Credit memo: CR AP (liability), DR reason; balances", () => {
+it("supplier Credit memo: CR AP (liability), DR reason; balances", () => {
   const r = buildMemoJournal(
-    base({ isAR: false, direction: "Credit", reasonAccountClass: "Expense" }),
+    base({ isAR: false, direction: "Credit", reasonAccountClass: "Expense" })
   );
   // Control AP is a liability; a credit stores +magnitude.
-  assertEquals(line(r, "acct_ar").amount, 300);
+  expect(line(r, "acct_ar").amount).toEqual(300);
   // Reason Expense debit stores +magnitude.
-  assertEquals(line(r, "acct_reason").amount, 300);
-  assert(Math.abs(r.signedDebitTotal) < 0.01);
+  expect(line(r, "acct_reason").amount).toEqual(300);
+  expect(Math.abs(r.signedDebitTotal) < 0.01).toBeTruthy();
 });
 
-Deno.test("supplier Debit memo: DR AP (liability), CR reason; balances", () => {
+it("supplier Debit memo: DR AP (liability), CR reason; balances", () => {
   const r = buildMemoJournal(
-    base({ isAR: false, direction: "Debit", reasonAccountClass: "Expense" }),
+    base({ isAR: false, direction: "Debit", reasonAccountClass: "Expense" })
   );
   // Control AP debit (liability) stores −magnitude.
-  assertEquals(line(r, "acct_ar").amount, -300);
+  expect(line(r, "acct_ar").amount).toEqual(-300);
   // Reason Expense credit stores −magnitude.
-  assertEquals(line(r, "acct_reason").amount, -300);
-  assert(Math.abs(r.signedDebitTotal) < 0.01);
+  expect(line(r, "acct_reason").amount).toEqual(-300);
+  expect(Math.abs(r.signedDebitTotal) < 0.01).toBeTruthy();
 });
 
-Deno.test("rounds to internal scale and stays balanced on fractional amounts", () => {
+it("rounds to internal scale and stays balanced on fractional amounts", () => {
   const r = buildMemoJournal(base({ amount: 123.456789 }));
   // SCALE = 5: GL lines carry internal precision, not the old 4dp column clamp.
-  assertEquals(line(r, "acct_ar").amount, -123.45679);
-  assert(Math.abs(r.signedDebitTotal) < 0.01);
+  expect(line(r, "acct_ar").amount).toEqual(-123.45679);
+  expect(Math.abs(r.signedDebitTotal) < 0.01).toBeTruthy();
 });
 
-Deno.test("rejects a zero amount", () => {
-  assertThrows(
-    () => buildMemoJournal(base({ amount: 0 })),
-    Error,
-    "greater than 0",
-  );
+it("rejects a zero amount", () => {
+  expect(() => buildMemoJournal(base({ amount: 0 }))).toThrow("greater than 0");
 });
 
-Deno.test("rejects an unknown reason account class", () => {
-  assertThrows(
-    () => buildMemoJournal(base({ reasonAccountClass: "Bogus" })),
-    Error,
-    "Unknown GL account class",
+it("rejects an unknown reason account class", () => {
+  expect(() => buildMemoJournal(base({ reasonAccountClass: "Bogus" }))).toThrow(
+    "Unknown GL account class"
   );
 });
 
@@ -105,44 +95,44 @@ Deno.test("rejects an unknown reason account class", () => {
 // `createPurchaseReturnOrderCredit` shipped as "Credit" once, which increased
 // AP and left GRNI holding a permanent 2x debit. Both accounts are Liability,
 // so a debit stores −magnitude and a credit +magnitude.
-Deno.test("supplier RETURN debit memo: DR AP, CR GRNI (clears the shipment's GRNI debit)", () => {
+it("supplier RETURN debit memo: DR AP, CR GRNI (clears the shipment's GRNI debit)", () => {
   const r = buildMemoJournal(
     base({
       isAR: false,
       direction: "Debit",
       controlAccountId: "acct_ap",
       reasonAccountId: "acct_grni",
-      reasonAccountClass: "Liability",
+      reasonAccountClass: "Liability"
     })
   );
   // AP debited → we owe the supplier less.
-  assertEquals(line(r, "acct_ap").amount, -300);
+  expect(line(r, "acct_ap").amount).toEqual(-300);
   // GRNI credited → nets off the return shipment's DR GRNI.
-  assertEquals(line(r, "acct_grni").amount, 300);
-  assert(Math.abs(r.signedDebitTotal) < 0.01);
+  expect(line(r, "acct_grni").amount).toEqual(300);
+  expect(Math.abs(r.signedDebitTotal) < 0.01).toBeTruthy();
 });
 
 // The inverse, spelled out so the regression is unmistakable: a Credit
 // direction on the same supplier-return inputs moves BOTH legs the wrong way.
-Deno.test("supplier RETURN with Credit direction is backwards (increases AP, re-debits GRNI)", () => {
+it("supplier RETURN with Credit direction is backwards (increases AP, re-debits GRNI)", () => {
   const r = buildMemoJournal(
     base({
       isAR: false,
       direction: "Credit",
       controlAccountId: "acct_ap",
       reasonAccountId: "acct_grni",
-      reasonAccountClass: "Liability",
+      reasonAccountClass: "Liability"
     })
   );
-  assertEquals(line(r, "acct_ap").amount, 300); // AP credited = owe MORE
-  assertEquals(line(r, "acct_grni").amount, -300); // GRNI debited AGAIN
+  expect(line(r, "acct_ap").amount).toEqual(300); // AP credited = owe MORE
+  expect(line(r, "acct_grni").amount).toEqual(-300); // GRNI debited AGAIN
 });
 
 // --- Supplier return with a credit-vs-cost delta (spec: "credit-vs-cost delta
 // → purchaseVarianceAccount"). The shipment debited GRNI at carried cost; the
 // memo clears exactly that and books the difference as PPV, so GRNI nets to 0.
 
-Deno.test("supplier RETURN: credited LESS than carried cost → DR variance (a loss)", () => {
+it("supplier RETURN: credited LESS than carried cost → DR variance (a loss)", () => {
   // RTS000001 shape: shipment relieved 120 of stock, supplier credits only 60.
   const r = buildMemoJournal(
     base({
@@ -153,17 +143,17 @@ Deno.test("supplier RETURN: credited LESS than carried cost → DR variance (a l
       reasonAccountId: "acct_grni",
       reasonAccountClass: "Liability",
       reasonAmountBase: 120,
-      varianceAccountId: "acct_ppv",
+      varianceAccountId: "acct_ppv"
     })
   );
-  assertEquals(r.lines.length, 3);
-  assertEquals(line(r, "acct_ap").amount, -60); // DR AP by the credit
-  assertEquals(line(r, "acct_grni").amount, 120); // CR GRNI by carried cost
-  assertEquals(line(r, "acct_ppv").amount, 60); // DR expense = loss
-  assert(Math.abs(r.signedDebitTotal) < 0.01);
+  expect(r.lines.length).toEqual(3);
+  expect(line(r, "acct_ap").amount).toEqual(-60); // DR AP by the credit
+  expect(line(r, "acct_grni").amount).toEqual(120); // CR GRNI by carried cost
+  expect(line(r, "acct_ppv").amount).toEqual(60); // DR expense = loss
+  expect(Math.abs(r.signedDebitTotal) < 0.01).toBeTruthy();
 });
 
-Deno.test("supplier RETURN: credited MORE than carried cost → CR variance (a gain)", () => {
+it("supplier RETURN: credited MORE than carried cost → CR variance (a gain)", () => {
   // RTS000005 shape: shipment relieved 24 of stock, supplier credits 200.
   const r = buildMemoJournal(
     base({
@@ -174,17 +164,17 @@ Deno.test("supplier RETURN: credited MORE than carried cost → CR variance (a g
       reasonAccountId: "acct_grni",
       reasonAccountClass: "Liability",
       reasonAmountBase: 24,
-      varianceAccountId: "acct_ppv",
+      varianceAccountId: "acct_ppv"
     })
   );
-  assertEquals(r.lines.length, 3);
-  assertEquals(line(r, "acct_ap").amount, -200);
-  assertEquals(line(r, "acct_grni").amount, 24);
-  assertEquals(line(r, "acct_ppv").amount, -176); // CR expense = gain
-  assert(Math.abs(r.signedDebitTotal) < 0.01);
+  expect(r.lines.length).toEqual(3);
+  expect(line(r, "acct_ap").amount).toEqual(-200);
+  expect(line(r, "acct_grni").amount).toEqual(24);
+  expect(line(r, "acct_ppv").amount).toEqual(-176); // CR expense = gain
+  expect(Math.abs(r.signedDebitTotal) < 0.01).toBeTruthy();
 });
 
-Deno.test("supplier RETURN: credit equals carried cost → no variance leg at all", () => {
+it("supplier RETURN: credit equals carried cost → no variance leg at all", () => {
   const r = buildMemoJournal(
     base({
       isAR: false,
@@ -194,44 +184,41 @@ Deno.test("supplier RETURN: credit equals carried cost → no variance leg at al
       reasonAccountId: "acct_grni",
       reasonAccountClass: "Liability",
       reasonAmountBase: 290,
-      varianceAccountId: "acct_ppv",
+      varianceAccountId: "acct_ppv"
     })
   );
-  assertEquals(r.lines.length, 2);
-  assert(Math.abs(r.signedDebitTotal) < 0.01);
+  expect(r.lines.length).toEqual(2);
+  expect(Math.abs(r.signedDebitTotal) < 0.01).toBeTruthy();
 });
 
-Deno.test("refuses to post an unbalanced memo when no variance account is configured", () => {
-  assertThrows(
-    () =>
-      buildMemoJournal(
-        base({
-          isAR: false,
-          direction: "Debit",
-          amount: 60,
-          reasonAccountClass: "Liability",
-          reasonAmountBase: 120,
-          varianceAccountId: null,
-        })
-      ),
-    Error,
-    "no variance account"
-  );
+it("refuses to post an unbalanced memo when no variance account is configured", () => {
+  expect(() =>
+    buildMemoJournal(
+      base({
+        isAR: false,
+        direction: "Debit",
+        amount: 60,
+        reasonAccountClass: "Liability",
+        reasonAmountBase: 120,
+        varianceAccountId: null
+      })
+    )
+  ).toThrow("no variance account");
 });
 
-Deno.test("memo55 at rate1.1 posts base50 rather than60.5", () => {
+it("memo55 at rate1.1 posts base50 rather than60.5", () => {
   const result = buildMemoJournal(base({ amount: 55, exchangeRate: 1.1 }));
-  assertEquals(line(result, "acct_ar").amount, -50);
+  expect(line(result, "acct_ar").amount).toEqual(-50);
 });
-Deno.test("positive document principal remains postable below base dust thresholds", () => {
+it("positive document principal remains postable below base dust thresholds", () => {
   const result = buildMemoJournal(base({ amount: 0.01, exchangeRate: 16000 }));
-  assertEquals(line(result, "acct_ar").amount, 0);
+  expect(line(result, "acct_ar").amount).toBeCloseTo(0);
 });
-Deno.test("invalid memo snapshots are rejected before journal construction", () => {
+it("invalid memo snapshots are rejected before journal construction", () => {
   for (const exchangeRate of [0, -1, Number.NaN, Number.POSITIVE_INFINITY]) {
-    assertThrows(() => buildMemoJournal(base({ exchangeRate })));
+    expect(() => buildMemoJournal(base({ exchangeRate }))).toThrow();
   }
   for (const amount of [-1, Number.NaN, Number.POSITIVE_INFINITY]) {
-    assertThrows(() => buildMemoJournal(base({ amount })));
+    expect(() => buildMemoJournal(base({ amount }))).toThrow();
   }
 });

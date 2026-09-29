@@ -31,9 +31,9 @@
 // purchase price variance — emitted as a third leg. Without it the credit and
 // the cost never reconcile and GRNI keeps a permanent residual.
 
-import { assertBalanced, round } from "./precision.ts";
 import { toBaseAmount } from "./accounting-currency.ts";
-import { accountTypeFromClass, credit, debit } from "../lib/utils.ts";
+import { accountTypeFromClass, credit, debit } from "./ledger.ts";
+import { assertBalanced, round } from "./precision.ts";
 
 type AccountType = "asset" | "liability" | "equity" | "revenue" | "expense";
 
@@ -94,7 +94,7 @@ export interface BuildMemoJournalResult {
 const BALANCE_TOLERANCE = 0.01;
 
 export function buildMemoJournal(
-  input: BuildMemoJournalInput,
+  input: BuildMemoJournalInput
 ): BuildMemoJournalResult {
   const {
     memoId,
@@ -109,14 +109,14 @@ export function buildMemoJournal(
     reasonAccountClass,
     reasonAmountBase,
     varianceAccountId,
-    reasonDescription,
+    reasonDescription
   } = input;
 
   if (!controlAccountId) {
     throw new Error(
       `Missing ${
         isAR ? "receivables" : "payables"
-      } account default; cannot post memo to GL`,
+      } account default; cannot post memo to GL`
     );
   }
 
@@ -135,20 +135,21 @@ export function buildMemoJournal(
     description: string,
     // Defaults to the memo magnitude; only the reason and variance legs of a
     // supplier return pass their own.
-    lineMagnitude: number = magnitude,
+    lineMagnitude: number = magnitude
   ) => {
     signedDebitTotal += side === "debit" ? lineMagnitude : -lineMagnitude;
     lines.push({
       accountId,
       description,
-      amount: side === "debit"
-        ? debit(accountType, lineMagnitude)
-        : credit(accountType, lineMagnitude),
+      amount:
+        side === "debit"
+          ? debit(accountType, lineMagnitude)
+          : credit(accountType, lineMagnitude),
       quantity: 1,
       documentType: "Memo",
       documentId: memoId,
       journalLineReference,
-      companyId,
+      companyId
     });
   };
 
@@ -162,7 +163,7 @@ export function buildMemoJournal(
     controlIsDebit ? "debit" : "credit",
     controlType,
     controlAccountId,
-    isAR ? "Accounts Receivable" : "Accounts Payable",
+    isAR ? "Accounts Receivable" : "Accounts Payable"
   );
 
   // 2) Reason leg — always the inverse side of the control leg.
@@ -173,16 +174,17 @@ export function buildMemoJournal(
   // the control leg (AP) moves by what the supplier actually credited. When
   // those differ, the reason leg uses its own magnitude and the remainder
   // becomes leg 3.
-  const reasonMagnitude = reasonAmountBase === undefined
-    ? magnitude
-    : round(Math.abs(reasonAmountBase));
+  const reasonMagnitude =
+    reasonAmountBase === undefined
+      ? magnitude
+      : round(Math.abs(reasonAmountBase));
   pushLine(
     controlIsDebit ? "credit" : "debit",
     reasonType,
     reasonAccountId,
     reasonDescription ??
       (direction === "Credit" ? "Credit memo" : "Debit memo"),
-    reasonMagnitude,
+    reasonMagnitude
   );
 
   // 3) Variance leg — the plug that makes an unequal control/reason pair
@@ -193,7 +195,7 @@ export function buildMemoJournal(
   if (varianceMagnitude > 0.005) {
     if (!varianceAccountId) {
       throw new Error(
-        "Memo reason amount differs from the memo amount but no variance account was provided; cannot post an unbalanced memo",
+        "Memo reason amount differs from the memo amount but no variance account was provided; cannot post an unbalanced memo"
       );
     }
     // signedDebitTotal > 0 means debits currently exceed credits, so the plug
@@ -203,7 +205,7 @@ export function buildMemoJournal(
       "expense",
       varianceAccountId,
       "Purchase Price Variance",
-      varianceMagnitude,
+      varianceMagnitude
     );
   }
 
@@ -213,7 +215,7 @@ export function buildMemoJournal(
     signedDebitTotal,
     0,
     BALANCE_TOLERANCE,
-    "Memo journal (base currency)",
+    "Memo journal (base currency)"
   );
 
   return { lines, signedDebitTotal };

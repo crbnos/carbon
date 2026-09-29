@@ -1,4 +1,4 @@
-import { round } from "../../../supabase/functions/shared/precision.ts";
+import { round } from "../.././precision.ts";
 import { insertRow, maybeOne, one, quote, rows } from "../sql.ts";
 import type { Ctx, ReturnCreditSpec } from "../types.ts";
 import { insertMemo } from "./memo.ts";

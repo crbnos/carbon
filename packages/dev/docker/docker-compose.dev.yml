@@ -319,9 +319,9 @@ services:
       resources:
         limits:
           # The edge runtime compiles each function's TS module graph on worker
-          # boot (kysely/zod graphs take real CPU) and runs every privileged
-          # business function. Starved of CPU, worker boot outlives the isolate
-          # CPU budget and requests hang mid-kill — give it app-tier resources.
+          # boot and `thumbnail` decodes/encodes images in wasm. Starved of CPU,
+          # worker boot outlives the isolate CPU budget and requests hang
+          # mid-kill.
           memory: ${MEM_EDGE:-1g}
           cpus: ${CPU_EDGE:-3}
     depends_on:
@@ -333,21 +333,12 @@ services:
       SUPABASE_URL: http://kong:8000
       SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY}
       SUPABASE_SERVICE_ROLE_KEY: ${SUPABASE_SERVICE_ROLE_KEY}
-      SUPABASE_DB_URL: postgresql://postgres:postgres@postgres:5432/postgres
       VERIFY_JWT: "false"
-      # Backups edge fns (export/import/revert) send Inngest events. The edge
-      # runtime is a separate env from the ERP app, so without these its
-      # inngest.send() defaults to Inngest Cloud → 401. Point it at the local
-      # dev server via the compose-network alias (NOT localhost — that's the
-      # edge container itself).
-      INNGEST_DEV: "1"
-      INNGEST_BASE_URL: http://inngest:8288
       # Local Chromium for the `thumbnail` edge fn (the `chrome` profile below).
       # Prod reads no env → falls back to the remote browserless box.
       BROWSERLESS_WS_URL: ws://chrome:3000
     volumes:
       - ./packages/database/supabase/functions:/home/deno/functions:ro
-      - ./packages/database/src:/home/src:ro
       # Dev-only dispatcher; lives outside supabase/functions/ so prod
       # `supabase functions deploy --all` can't pick it up.
       - ./packages/dev/docker/edge-main:/home/deno/main:ro
