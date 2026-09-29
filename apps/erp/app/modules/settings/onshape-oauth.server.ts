@@ -13,9 +13,7 @@ import {
   exchangeOnshapeAuthorizationCode,
   getConflictingOnshapeIntegration,
   isOnshapeIntegrationId,
-  ONSHAPE_INTEGRATION_ID,
   ONSHAPE_OAUTH_SCOPES,
-  type OnshapeIntegrationId,
   type OnshapeOAuthIntegrationId
 } from "@carbon/ee/onshape";
 import { loadOnshapeOAuthConfig } from "@carbon/ee/onshape.server";
@@ -80,18 +78,14 @@ export async function completeOnshapeAuthorization({
     { integrationId, userId, companyId }
   );
 
-  // Both sync connections declare the same codes, each with its own copy. The
-  // panel authorizes against the public app, so its failures read as Onshape's.
-  const errorCopy: OnshapeIntegrationId = isOnshapeIntegrationId(integrationId)
-    ? integrationId
-    : ONSHAPE_INTEGRATION_ID;
+  // Every Onshape integration declares the same codes, each with its copy.
   const connectionFailed = (
-    reason: IntegrationErrorCode<OnshapeIntegrationId>
+    reason: IntegrationErrorCode<OnshapeOAuthIntegrationId>
   ) =>
     withCookie(
       oauthPopupResponse(
         { integration: integrationId, ok: false, error: reason },
-        `${integrationsUrl(request)}${integrationErrorSearch<OnshapeIntegrationId>(errorCopy, reason)}`
+        `${integrationsUrl(request)}${integrationErrorSearch<OnshapeOAuthIntegrationId>(integrationId, reason)}`
       ),
       consumedState.cookie
     );
