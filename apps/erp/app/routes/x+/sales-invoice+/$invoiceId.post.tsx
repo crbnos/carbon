@@ -15,6 +15,7 @@ import { trigger } from "@carbon/jobs";
 import { trackWorkEvent } from "@carbon/lib/telemetry";
 import { raiseMoment } from "@carbon/lib/workflows";
 import { getLogger } from "@carbon/logger";
+import { postSalesInvoice } from "@carbon/operations/post-sales-invoice";
 import type { ConnectInvoiceLineInput } from "@carbon/stripe/connect.server";
 import {
   createAndSendConnectInvoice,
@@ -687,18 +688,12 @@ export async function action(args: ActionFunctionArgs) {
   }
 
   try {
-    const postSalesInvoice = await serviceRole.functions.invoke(
-      "post-sales-invoice",
-      {
-        body: {
-          invoiceId: invoiceId,
-          userId: userId,
-          companyId: companyId
-        }
-      }
+    const posted = await postSalesInvoice(
+      { db: getDatabaseClient(), companyId, userId, system: true },
+      { invoiceId }
     );
 
-    if (postSalesInvoice.error) {
+    if (posted.error) {
       await client
         .from("salesInvoice")
         .update({

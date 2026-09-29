@@ -1,9 +1,10 @@
 import { error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
+import { postSalesInvoice } from "@carbon/operations/post-sales-invoice";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
+import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
@@ -15,8 +16,6 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (!invoiceId) throw new Error("invoiceId not found");
 
   try {
-    const serviceRole = getCarbonServiceRole();
-
     // Verify invoice is posted before allowing void
     const { data: salesInvoice } = await client
       .from("salesInvoice")
@@ -45,16 +44,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
       );
     }
 
-    const voidInvoice = await serviceRole.functions.invoke(
-      "post-sales-invoice",
-      {
-        body: {
-          type: "void",
-          invoiceId: invoiceId,
-          userId: userId,
-          companyId: companyId
-        }
-      }
+    const voidInvoice = await postSalesInvoice(
+      { db: getDatabaseClient(), companyId, userId, system: true },
+      { type: "void", invoiceId }
     );
 
     if (voidInvoice.error) {
