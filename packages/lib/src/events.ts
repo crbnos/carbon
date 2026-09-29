@@ -598,6 +598,15 @@ export type Events = {
     };
   };
 
+  // Mount publish sweep (the integration's "Push customers / suppliers /
+  // parts" actions): push Carbon records Mount is missing or holds stale
+  "carbon/mount-publish": {
+    data: {
+      companyId: string;
+      entityTypes?: Array<"customer" | "supplier" | "item">;
+    };
+  };
+
   // Onshape released-asset backfill / reconcile
   "carbon/onshape-backfill": {
     data: {

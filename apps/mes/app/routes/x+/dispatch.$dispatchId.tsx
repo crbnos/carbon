@@ -49,7 +49,7 @@ import { useItems } from "~/stores";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, userId } = await requirePermissions(request, {});
+  const { client, companyId, userId } = await requirePermissions(request, {});
   const { dispatchId } = params;
 
   if (!dispatchId) {
@@ -60,7 +60,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     getMaintenanceDispatch(client, dispatchId),
     getMaintenanceDispatchEvents(client, dispatchId),
     getMaintenanceDispatchItems(client, dispatchId),
-    getActiveMaintenanceEventByEmployee(client, userId)
+    getActiveMaintenanceEventByEmployee(client, {
+      dispatchId,
+      employeeId: userId,
+      companyId
+    })
   ]);
 
   // Fetch replacement parts for the work center if available

@@ -194,9 +194,10 @@ export async function closeSalesOrder(
   return client
     .from("salesOrder")
     .update({
-      closed: true,
+      status: "Closed",
       closedAt: datetime.today(companyTz).toString(),
-      closedBy: userId
+      closedBy: userId,
+      updatedBy: userId
     })
     .eq("id", salesOrderId)
     .select("id")
@@ -3231,7 +3232,7 @@ export async function updateCustomerTax(
 ) {
   return client
     .from("customerTax")
-    .update(sanitize(customerTax))
+    .update(sanitize({ ...customerTax, updatedAt: new Date().toISOString() }))
     .eq("customerId", customerTax.customerId);
 }
 

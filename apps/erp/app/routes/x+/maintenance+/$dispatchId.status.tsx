@@ -4,11 +4,12 @@ import { flash } from "@carbon/auth/session.server";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
 import { maintenanceDispatchStatus } from "~/modules/resources";
+import { postMaintenanceLabor } from "~/modules/resources/resources.server";
 import { path, requestReferrer } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId } = await requirePermissions(request, {
+  const { client, companyId, userId } = await requirePermissions(request, {
     update: "resources"
   });
 
@@ -48,8 +49,27 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
+  // Completing closes every open timecard (end_maintenance_events_on_complete)
+  // — post their labor.
+  const postingError =
+    status === "Completed"
+      ? await postMaintenanceLabor({
+          maintenanceDispatchIds: [dispatchId],
+          companyId,
+          userId
+        })
+      : null;
+
   throw redirect(
     requestReferrer(request) ?? path.to.maintenanceDispatch(dispatchId),
-    await flash(request, success("Updated dispatch status"))
+    await flash(
+      request,
+      postingError
+        ? error(
+            postingError,
+            "Updated dispatch status, but its labor cost did not post"
+          )
+        : success("Updated dispatch status")
+    )
   );
 }

@@ -43,9 +43,16 @@ import {
   resolveBatchRules,
   round
 } from "@carbon/utils";
-import { getLocalTimeZone, parseDate, today } from "@internationalized/date";
+import {
+  type CalendarDate,
+  getLocalTimeZone,
+  parseDate,
+  toCalendarDate,
+  today
+} from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useLocale } from "@react-aria/i18n";
+import type { DateRange } from "@react-types/datepicker";
 import type { ColumnDef } from "@tanstack/react-table";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -64,7 +71,7 @@ import {
   LuX
 } from "react-icons/lu";
 import { useFetcher, useNavigate } from "react-router";
-import { Enumerable, ItemThumbnail, Table } from "~/components";
+import { DateSelect, Enumerable, ItemThumbnail, Table } from "~/components";
 import { EnumerableGroup } from "~/components/EnumerableGroup";
 import { path } from "~/utils/path";
 import type { jobStatus } from "../../production.models";
@@ -86,9 +93,11 @@ import {
   computeLockedById,
   computeMemberMismatches,
   computeSelectionDimSets,
+  type DueFilter,
   deriveAddTargets,
   deriveFacetDimensions,
   dueDateOf,
+  dueDatesOf,
   type FacetDimension,
   filterAndSortCandidates,
   groupingKey,
@@ -330,7 +339,29 @@ export function BatchBuilder({
   );
   const [search, setSearch] = useState("");
   const [facets, setFacets] = useState<Record<string, string[]>>({});
-  const [dueWindow, setDueWindow] = useState<number | null>(null);
+  // The due filter as the standard DateSelect holds it: "all", a preset day
+  // count, or "custom" with the calendar's range.
+  const [dueSelect, setDueSelect] = useState("all");
+  const [dueRange, setDueRange] = useState<DateRange | null>(null);
+  const due = useMemo<DueFilter | null>(() => {
+    if (dueSelect === "custom") {
+      return dueRange
+        ? {
+            kind: "range",
+            start: toCalendarDate(dueRange.start),
+            end: toCalendarDate(dueRange.end)
+          }
+        : null;
+    }
+    const days = Number(dueSelect);
+    return Number.isInteger(days) && days > 0 ? { kind: "window", days } : null;
+  }, [dueSelect, dueRange]);
+  // Leaving "custom" drops its range, so coming back to it starts empty
+  // rather than silently re-applying a range picked earlier.
+  const onDueSelectChange = useCallback((value: string) => {
+    setDueSelect(value);
+    if (value !== "custom") setDueRange(null);
+  }, []);
   const [workCenterId, setWorkCenterId] = useState<string | null>(null);
   const [notes, setNotes] = useState("");
   const [outputLots, setOutputLots] =
@@ -398,7 +429,8 @@ export function BatchBuilder({
     setSelectedById(new Map());
     setSearch("");
     setFacets({});
-    setDueWindow(null);
+    setDueSelect("all");
+    setDueRange(null);
     setWorkCenterId(null);
   }, []);
 
@@ -596,7 +628,7 @@ export function BatchBuilder({
   );
 
   // A candidate matches if ANY BOM line satisfies ALL active facets, the search
-  // term matches its job/item/op text, and it falls inside the due window.
+  // term matches its job/item/op text, and it falls inside the due filter.
   // Sorted most-urgent first (due date asc, undated last).
   const filtered = useMemo(
     () =>
@@ -604,10 +636,26 @@ export function BatchBuilder({
         activeFacetKeys,
         facets,
         search,
-        dueWindow,
+        due,
         today: today(getLocalTimeZone())
       }),
-    [candidates, activeFacetKeys, facets, search, dueWindow]
+    [candidates, activeFacetKeys, facets, search, due]
+  );
+
+  // Days the calendar marks: where the operations matching every OTHER filter
+  // are due, so picking a day never lands on an empty list by surprise.
+  const dueDays = useMemo(
+    () =>
+      dueDatesOf(
+        filterAndSortCandidates(candidates, {
+          activeFacetKeys,
+          facets,
+          search,
+          due: null,
+          today: today(getLocalTimeZone())
+        })
+      ),
+    [candidates, activeFacetKeys, facets, search]
   );
 
   const visible = useMemo(() => filtered.slice(0, MAX_VISIBLE), [filtered]);
@@ -908,8 +956,12 @@ export function BatchBuilder({
                 onSearchChange={setSearch}
                 facets={facets}
                 dimensions={facetDimensions}
-                dueWindow={dueWindow}
-                onDueWindowChange={setDueWindow}
+                dueSelect={dueSelect}
+                onDueSelectChange={onDueSelectChange}
+                dueRange={dueRange}
+                onDueRangeChange={setDueRange}
+                isDueFiltered={due !== null}
+                dueDays={dueDays}
                 suggestions={suggestions}
                 onApplySuggestion={selectMany}
                 visible={visible}
@@ -1542,8 +1594,12 @@ function ComposePanel({
   onSearchChange,
   facets,
   dimensions,
-  dueWindow,
-  onDueWindowChange,
+  dueSelect,
+  onDueSelectChange,
+  dueRange,
+  onDueRangeChange,
+  isDueFiltered,
+  dueDays,
   suggestions,
   onApplySuggestion,
   visible,
@@ -1565,8 +1621,12 @@ function ComposePanel({
   onSearchChange: (v: string) => void;
   facets: Record<string, string[]>;
   dimensions: FacetDimension[];
-  dueWindow: number | null;
-  onDueWindowChange: (days: number | null) => void;
+  dueSelect: string;
+  onDueSelectChange: (value: string) => void;
+  dueRange: DateRange | null;
+  onDueRangeChange: (range: DateRange | null) => void;
+  isDueFiltered: boolean;
+  dueDays: Set<string>;
   suggestions: Suggestion[];
   onApplySuggestion: (members: BatchCandidate[]) => void;
   visible: BatchCandidate[];
@@ -1582,14 +1642,28 @@ function ComposePanel({
   compat: CompatInfo;
 }) {
   const { t } = useLingui();
+  const dueOptions = useMemo(
+    () => [
+      { value: "all", label: t`All` },
+      ...DUE_WINDOWS.map((days) => ({
+        value: String(days),
+        label: t`${days}d`
+      }))
+    ],
+    [t]
+  );
+  // Dots in the calendar: days with operations due (every other filter
+  // applied), so a planner sees where work falls before picking a range.
+  const isDueDay = useCallback(
+    (date: CalendarDate) => dueDays.has(date.toString()),
+    [dueDays]
+  );
 
   const activeDimensions = dimensions.filter(
     (d) => (facets[d.key]?.length ?? 0) > 0
   );
   const isFiltered =
-    search.trim().length > 0 ||
-    dueWindow !== null ||
-    activeDimensions.length > 0;
+    search.trim().length > 0 || isDueFiltered || activeDimensions.length > 0;
 
   return (
     <VStack spacing={0} className="h-full min-h-0 overflow-hidden bg-card">
@@ -1636,32 +1710,14 @@ function ComposePanel({
               className="text-sm"
             />
           </InputGroup>
-          <HStack
-            spacing={0}
-            className="items-center gap-0.5 rounded-md border p-0.5"
-            title={t`Due within`}
-          >
-            <LuCalendarClock className="size-3.5 text-muted-foreground mx-1.5 flex-shrink-0" />
-            <Button
-              size="sm"
-              variant={dueWindow === null ? "secondary" : "ghost"}
-              className="h-7 px-2"
-              onClick={() => onDueWindowChange(null)}
-            >
-              {t`All`}
-            </Button>
-            {DUE_WINDOWS.map((days) => (
-              <Button
-                key={days}
-                size="sm"
-                variant={dueWindow === days ? "secondary" : "ghost"}
-                className="h-7 px-2 tabular-nums"
-                onClick={() => onDueWindowChange(days)}
-              >
-                {t`${days}d`}
-              </Button>
-            ))}
-          </HStack>
+          <DateSelect
+            value={dueSelect}
+            onValueChange={onDueSelectChange}
+            options={dueOptions}
+            dateRange={dueRange}
+            onDateRangeChange={onDueRangeChange}
+            isDateMarked={isDueDay}
+          />
         </HStack>
         {view === "table" && suggestions.length > 0 && (
           <SuggestionsBanner

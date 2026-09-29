@@ -22,6 +22,7 @@ type CompanySettings = Partial<
     | "allowLowercaseItemIds"
     | "digitalQuoteEnabled"
     | "digitalQuoteIncludesPurchaseOrders"
+    | "showBomExplorerReadableId"
     | "showCurrencyTrailingZeros"
     | "showCustomerReadableId"
     | "showSupplierReadableId"

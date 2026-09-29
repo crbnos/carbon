@@ -950,7 +950,9 @@ export const postSalesInvoice = defineServerFn({
             }
 
             let journalLineResults: { id: string }[] = [];
-            if (accountingEnabled) {
+            // A zero-value invoice has no lines to post; an empty header would
+            // still consume a journal entry number.
+            if (accountingEnabled && journalLineInserts.length > 0) {
               const journalEntryId = await getNextSequence(
                 trx,
                 "journalEntry",
@@ -974,18 +976,16 @@ export const postSalesInvoice = defineServerFn({
                 .returning(["id"])
                 .executeTakeFirstOrThrow();
 
-              if (journalLineInserts.length > 0) {
-                journalLineResults = await trx
-                  .insertInto("journalLine")
-                  .values(
-                    journalLineInserts.map((line) => ({
-                      ...line,
-                      journalId: journalResult.id
-                    }))
-                  )
-                  .returning(["id"])
-                  .execute();
-              }
+              journalLineResults = await trx
+                .insertInto("journalLine")
+                .values(
+                  journalLineInserts.map((line) => ({
+                    ...line,
+                    journalId: journalResult.id
+                  }))
+                )
+                .returning(["id"])
+                .execute();
 
               if (dimensionMap.size > 0) {
                 const journalLineDimensionInserts: {
@@ -1524,7 +1524,8 @@ export const postSalesInvoice = defineServerFn({
                 .execute();
             }
 
-            if (accountingEnabled) {
+            // Nothing to reverse for a zero-value invoice — no empty VOID header.
+            if (accountingEnabled && reversingJournalEntries.length > 0) {
               const voidJournalEntryId = await getNextSequence(
                 trx,
                 "journalEntry",
@@ -1548,18 +1549,16 @@ export const postSalesInvoice = defineServerFn({
                 .returning(["id"])
                 .executeTakeFirstOrThrow();
 
-              if (reversingJournalEntries.length > 0) {
-                await trx
-                  .insertInto("journalLine")
-                  .values(
-                    reversingJournalEntries.map((line) => ({
-                      ...line,
-                      journalId: voidJournalResult.id
-                    }))
-                  )
-                  .returning(["id"])
-                  .execute();
-              }
+              await trx
+                .insertInto("journalLine")
+                .values(
+                  reversingJournalEntries.map((line) => ({
+                    ...line,
+                    journalId: voidJournalResult.id
+                  }))
+                )
+                .returning(["id"])
+                .execute();
             }
 
             // Insert reversing item ledger entries

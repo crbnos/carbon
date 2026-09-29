@@ -1,0 +1,35 @@
+import { getLogger } from "@carbon/logger";
+import { ServerFnContext } from "@carbon/server-functions";
+import { postMaintenanceEvent } from "@carbon/server-functions/post-maintenance-event";
+import { getDatabaseClient } from "~/services/database.server";
+
+const logger = getLogger("erp", "maintenance-labor");
+
+// Reconcile the dispatches' labor postings with their time entries (the
+// post-maintenance-event server function — idempotent, so call it after ANY
+// change to a dispatch's entries or its completion). Returns an error message
+// for the caller's flash, or null. System: the caller has already authorized
+// the change, and a delete-only user must still reverse its cost.
+export async function postMaintenanceLabor(args: {
+  maintenanceDispatchIds: string[];
+  companyId: string;
+  userId: string;
+}): Promise<string | null> {
+  if (args.maintenanceDispatchIds.length === 0) return null;
+
+  const { maintenanceDispatchIds, companyId, userId } = args;
+  const posting = await postMaintenanceEvent(
+    ServerFnContext.system({ db: getDatabaseClient(), companyId, userId }),
+    { maintenanceDispatchIds }
+  );
+
+  if (posting.error) {
+    logger.error("Failed to post maintenance labor", {
+      companyId,
+      maintenanceDispatchIds,
+      error: posting.error
+    });
+    return posting.error.message || "Failed to post maintenance labor";
+  }
+  return null;
+}

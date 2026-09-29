@@ -44,7 +44,9 @@ A dispatch marked **Down** or **Planned** blocks its work center: on the floor, 
 Parts used in maintenance are issued from inventory, drawing stock down through the <Term id="item-ledger">item ledger</Term> as a *Maintenance Consumption* movement.
 
 <Callout type="info">
-Maintenance material is an **inventory movement only**. It posts to the item ledger but writes **no** general-ledger entry, regardless of whether accounting is enabled. It reduces what's on hand; it doesn't hit the books.
+Maintenance material is an **expense**. Issuing it relieves the part's cost at its costing method. With accounting enabled, it posts a journal that debits the **Maintenance** default account and credits inventory, tagged with the dispatch's work center. Unissuing a part reverses it at the cost the dispatch booked. A part issued before maintenance consumption was valued comes back as a stock movement only, because nothing was expensed for it.
+
+Maintenance time is an expense too. Each timecard on a dispatch is costed at its work center's **labor rate** (no overhead), and with accounting enabled posts a journal that debits the **Maintenance** default account and credits **Labor Absorption**, tagged with the employee, work center and location. It posts when the timecard ends (pausing or completing in MES, or saving a timecard with an end time in the back office). Editing a timecard posts the difference and deleting one reverses it.
 </Callout>
 
 ## Related

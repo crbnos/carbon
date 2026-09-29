@@ -9,9 +9,10 @@ import {
   ToggleGroup,
   ToggleGroupItem
 } from "@carbon/react";
+import type { CalendarDate } from "@internationalized/date";
 import { useLingui } from "@lingui/react/macro";
 import type { DateRange } from "@react-types/datepicker";
-import { forwardRef, useMemo } from "react";
+import { forwardRef, useMemo, useState } from "react";
 import { LuCalendar } from "react-icons/lu";
 
 type DateSelectOption = {
@@ -26,6 +27,8 @@ interface DateSelectProps {
   showCustom?: boolean;
   dateRange?: DateRange | null;
   onDateRangeChange?: (dateRange: DateRange | null) => void;
+  /** Days to flag with a dot in the custom-range calendar. */
+  isDateMarked?: (date: CalendarDate) => boolean;
   className?: string;
 }
 
@@ -38,11 +41,19 @@ const DateSelect = forwardRef<HTMLDivElement, DateSelectProps>(
       showCustom = true,
       dateRange,
       onDateRangeChange,
+      isDateMarked,
       className
     },
     ref
   ) => {
     const { t } = useLingui();
+    // Picking "custom" opens the calendar straight away; a page that merely
+    // loads on "custom" (e.g. from the URL) leaves it closed.
+    const [openCalendar, setOpenCalendar] = useState(false);
+    const onChange = (next: string) => {
+      setOpenCalendar(next === "custom");
+      onValueChange(next);
+    };
     const resolvedOptions = useMemo(() => {
       if (options) return options;
       return [
@@ -64,7 +75,7 @@ const DateSelect = forwardRef<HTMLDivElement, DateSelectProps>(
         className={cn("inline-flex items-center gap-2", className)}
       >
         {/* Compact dropdown for small screens */}
-        <Select value={value} onValueChange={onValueChange}>
+        <Select value={value} onValueChange={onChange}>
           <SelectTrigger className="md:hidden w-auto h-8 text-xs">
             <SelectValue />
           </SelectTrigger>
@@ -82,7 +93,7 @@ const DateSelect = forwardRef<HTMLDivElement, DateSelectProps>(
           type="single"
           value={value}
           onValueChange={(v) => {
-            if (v) onValueChange(v);
+            if (v) onChange(v);
           }}
           className="hidden md:inline-flex gap-0 rounded-full border border-border bg-muted p-0.5 shadow-sm"
         >
@@ -122,6 +133,8 @@ const DateSelect = forwardRef<HTMLDivElement, DateSelectProps>(
             value={dateRange}
             onChange={onDateRangeChange}
             size="sm"
+            defaultOpen={openCalendar}
+            isDateMarked={isDateMarked}
           />
         )}
       </div>

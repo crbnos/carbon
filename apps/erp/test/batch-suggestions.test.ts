@@ -1,4 +1,5 @@
 import { resolveBatchRules } from "@carbon/utils";
+import { parseDate } from "@internationalized/date";
 import { describe, expect, it } from "vitest";
 // Import the logic module directly — the ERP barrels drag lingui macros vitest
 // does not transform (see batching-migration-guards.test.ts).
@@ -9,6 +10,8 @@ import {
   computeLockedById,
   computeMemberMismatches,
   computeSelectionDimSets,
+  dueDatesOf,
+  filterAndSortCandidates,
   groupingKey,
   materialSignature,
   rankSuggestions,
@@ -718,5 +721,75 @@ describe("computeMemberMismatches", () => {
 
   it("returns empty for fewer than two members", () => {
     expect(computeMemberMismatches([entry("solo", "Steel")], DEFAULT_RULES).size).toBe(0);
+  });
+});
+
+describe("filterAndSortCandidates due filter", () => {
+  const today = parseDate("2026-09-29");
+  const candidates = [
+    makeCandidate("overdue", { dueDate: "2026-09-20" }),
+    makeCandidate("today", { dueDate: "2026-09-29" }),
+    makeCandidate("thu", { dueDate: "2026-10-01" }),
+    makeCandidate("next-week", { dueDate: "2026-10-06" }),
+    makeCandidate("job-due", { jobDueDate: "2026-10-01" }),
+    makeCandidate("undated")
+  ];
+  const run = (due: Parameters<typeof filterAndSortCandidates>[1]["due"]) =>
+    filterAndSortCandidates(candidates, {
+      activeFacetKeys: [],
+      facets: {},
+      search: "",
+      due,
+      today
+    }).map((c) => c.id);
+
+  it("keeps everything, undated last, with no due filter", () => {
+    expect(run(null)).toEqual([
+      "overdue",
+      "today",
+      "thu",
+      "job-due",
+      "next-week",
+      "undated"
+    ]);
+  });
+
+  it("a window keeps everything due up to today + N days, overdue included", () => {
+    expect(run({ kind: "window", days: 7 })).toEqual([
+      "overdue",
+      "today",
+      "thu",
+      "job-due",
+      "next-week"
+    ]);
+  });
+
+  it("a range keeps only what is due inside it, both ends inclusive", () => {
+    expect(
+      run({
+        kind: "range",
+        start: parseDate("2026-09-29"),
+        end: parseDate("2026-10-01")
+      })
+    ).toEqual(["today", "thu", "job-due"]);
+  });
+
+  it("a one-day range keeps only that day", () => {
+    const day = parseDate("2026-10-06");
+    expect(run({ kind: "range", start: day, end: day })).toEqual([
+      "next-week"
+    ]);
+  });
+});
+
+describe("dueDatesOf", () => {
+  it("collects each distinct due day, falling back to the job due date", () => {
+    const days = dueDatesOf([
+      makeCandidate("a", { dueDate: "2026-10-01" }),
+      makeCandidate("b", { dueDate: "2026-10-01" }),
+      makeCandidate("c", { jobDueDate: "2026-10-03" }),
+      makeCandidate("d")
+    ]);
+    expect([...days].sort()).toEqual(["2026-10-01", "2026-10-03"]);
   });
 });

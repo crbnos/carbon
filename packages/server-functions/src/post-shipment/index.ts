@@ -236,6 +236,7 @@ export const postShipment = defineServerFn({
                 itemId: string | null;
                 itemPostingGroupId: string | null;
                 locationId: string | null;
+                // Always null: salesOrderLine has no cost center column.
                 costCenterId: string | null;
                 fixedAssetClassId: string | null;
               }[] = [];
@@ -458,10 +459,6 @@ export const postShipment = defineServerFn({
                       (cost) => cost.itemId === shipmentLine.itemId
                     )?.itemPostingGroupId ?? null;
 
-                  const salesOrderLine = salesOrderLines.data.find(
-                    (sol) => sol.id === shipmentLine.lineId
-                  );
-
                   const journalLineReference = nanoid();
 
                   journalLineInserts.push({
@@ -506,12 +503,7 @@ export const postShipment = defineServerFn({
                       itemId: shipmentLine.itemId ?? null,
                       itemPostingGroupId,
                       locationId: shipmentLine.locationId ?? locationId ?? null,
-                      costCenterId:
-                        (
-                          salesOrderLine as
-                            | { costCenterId?: string | null }
-                            | undefined
-                        )?.costCenterId ?? null,
+                      costCenterId: null,
                       fixedAssetClassId: null
                     });
                   }
@@ -651,9 +643,7 @@ export const postShipment = defineServerFn({
                       itemPostingGroupId: null,
                       locationId:
                         locationId ?? assetRecord.data.locationId ?? null,
-                      costCenterId:
-                        (faSoLine as { costCenterId?: string | null })
-                          .costCenterId ?? null,
+                      costCenterId: null,
                       fixedAssetClassId:
                         assetRecord.data.fixedAssetClassId ?? null
                     });
@@ -688,9 +678,7 @@ export const postShipment = defineServerFn({
                       itemPostingGroupId: null,
                       locationId:
                         locationId ?? assetRecord.data.locationId ?? null,
-                      costCenterId:
-                        (faSoLine as { costCenterId?: string | null })
-                          .costCenterId ?? null,
+                      costCenterId: null,
                       fixedAssetClassId:
                         assetRecord.data.fixedAssetClassId ?? null
                     });
@@ -719,9 +707,7 @@ export const postShipment = defineServerFn({
                     itemPostingGroupId: null,
                     locationId:
                       locationId ?? assetRecord.data.locationId ?? null,
-                    costCenterId:
-                      (faSoLine as { costCenterId?: string | null })
-                        .costCenterId ?? null,
+                    costCenterId: null,
                     fixedAssetClassId:
                       assetRecord.data.fixedAssetClassId ?? null
                   });

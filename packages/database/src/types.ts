@@ -7959,6 +7959,7 @@ export type Database = {
           salesRuleNotificationGroup: string[]
           samplingStandard: Database["public"]["Enums"]["samplingStandard"]
           shelfLabelSize: string | null
+          showBomExplorerReadableId: boolean
           showCurrencyTrailingZeros: boolean
           showCustomerReadableId: boolean
           showSupplierReadableId: boolean
@@ -8013,6 +8014,7 @@ export type Database = {
           salesRuleNotificationGroup?: string[]
           samplingStandard?: Database["public"]["Enums"]["samplingStandard"]
           shelfLabelSize?: string | null
+          showBomExplorerReadableId?: boolean
           showCurrencyTrailingZeros?: boolean
           showCustomerReadableId?: boolean
           showSupplierReadableId?: boolean
@@ -8067,6 +8069,7 @@ export type Database = {
           salesRuleNotificationGroup?: string[]
           samplingStandard?: Database["public"]["Enums"]["samplingStandard"]
           shelfLabelSize?: string | null
+          showBomExplorerReadableId?: boolean
           showCurrencyTrailingZeros?: boolean
           showCustomerReadableId?: boolean
           showSupplierReadableId?: boolean
@@ -87163,6 +87166,7 @@ export type Database = {
         | "Purchase Return Shipment"
         | "Charge"
         | "Reimbursement"
+        | "Maintenance Event"
       journalEntryStatus: "Draft" | "Posted" | "Reversed"
       journalLineDocumentType:
         | "Receipt"
@@ -87190,6 +87194,7 @@ export type Database = {
         | "Batch Merge"
         | "Charge"
         | "Reimbursement"
+        | "Maintenance Event"
       kanbanOutput: "label" | "qrcode" | "url"
       kanbanReplenishmentSystem: "Buy" | "Make" | "Transfer"
       macrsConvention: "Half-Year" | "Mid-Quarter"
@@ -88595,6 +88600,7 @@ export const Constants = {
         "Purchase Return Shipment",
         "Charge",
         "Reimbursement",
+        "Maintenance Event",
       ],
       journalEntryStatus: ["Draft", "Posted", "Reversed"],
       journalLineDocumentType: [
@@ -88623,6 +88629,7 @@ export const Constants = {
         "Batch Merge",
         "Charge",
         "Reimbursement",
+        "Maintenance Event",
       ],
       kanbanOutput: ["label", "qrcode", "url"],
       kanbanReplenishmentSystem: ["Buy", "Make", "Transfer"],

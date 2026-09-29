@@ -173,11 +173,21 @@ export const weeklyFunction = inngest.createFunction(
   async ({ step, logger }) => {
     const serviceRole = getCarbonServiceRole();
 
-    /** Email each company's group owner and record the warning (or the failure). */
+    /**
+     * Email each company's group owner and record the warning (or the failure).
+     * Returns what happened to each company, which is the step's output.
+     */
     async function warnInactiveCompanies(
       batch: CleanupTarget[],
       plannedAt: number
     ) {
+      const outcome = {
+        deleteAfter: "",
+        warned: [] as string[],
+        failed: [] as { id: string; error: string }[],
+        noOwner: [] as string[],
+        alreadyWarned: [] as string[]
+      };
       const owners = await getGroupOwners(
         batch.flatMap((c) => (c.companyGroupId ? [c.companyGroupId] : []))
       );
@@ -202,6 +212,7 @@ export const weeklyFunction = inngest.createFunction(
 
       // The email names this date, and the delete waits for it (isDueForDeletion).
       const deleteAfter = datetime.today("UTC").add({ days: 7 }).toString();
+      outcome.deleteAfter = deleteAfter;
       const deletionDate = formatDate(
         deleteAfter,
         { dateStyle: "long" },
@@ -210,17 +221,21 @@ export const weeklyFunction = inngest.createFunction(
       const billingUrl = `${getAppUrl()}/x/settings/billing`;
 
       for (const company of batch) {
-        if (warnedThisRun.has(company.id)) continue;
+        if (warnedThisRun.has(company.id)) {
+          outcome.alreadyWarned.push(company.id);
+          continue;
+        }
         const owner = company.companyGroupId
           ? owners.get(company.companyGroupId)
           : undefined;
         if (!owner) {
           // Never warned means never deleted, so a company nobody owns is kept.
           logger.warn("No owner to warn; company kept", company);
+          outcome.noOwner.push(company.id);
           continue;
         }
 
-        const { error } = await sendEmail({
+        const { data: sent, error: sendError } = await sendEmail({
           to: owner.email,
           subject: `${company.name} will be deleted on or after ${deletionDate}`,
           html: await render(
@@ -232,11 +247,19 @@ export const weeklyFunction = inngest.createFunction(
             })
           )
         });
+        // No error and no message id means email is not configured here: nothing
+        // was delivered, so it must not count as a warning (or delete later).
+        const error =
+          sendError ??
+          (sent ? null : new Error("Email not configured; nothing was sent"));
         if (error) {
           logger.error("Failed to send company deletion warning", {
             ...company,
             error
           });
+          outcome.failed.push({ id: company.id, error: error.message });
+        } else {
+          outcome.warned.push(company.id);
         }
 
         // A failed send is recorded too, so next week it queues behind the rest.
@@ -263,6 +286,7 @@ export const weeklyFunction = inngest.createFunction(
           });
         }
       }
+      return outcome;
     }
 
     // Cloud only. A canceled subscription keeps its plan row until Stripe ends it

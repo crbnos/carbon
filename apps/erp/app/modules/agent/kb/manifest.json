@@ -118,9 +118,9 @@
     {
       "slug": "docs/integrations/cad",
       "title": "CAD",
-      "description": "Sync CAD data from Onshape into Carbon.",
+      "description": "Sync CAD data from Onshape and Onshape Government into Carbon.",
       "keywords": ["cad", "docs", "integrations"],
-      "headings": ["Onshape", "Related"]
+      "headings": ["Onshape", "Onshape Government", "Related"]
     },
     {
       "slug": "docs/integrations/email",

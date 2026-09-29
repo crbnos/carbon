@@ -1124,6 +1124,17 @@ export async function updateAllowLowercaseItemIdsSetting(
     .eq("id", companyId);
 }
 
+export async function updateBomExplorerReadableIdSetting(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  showBomExplorerReadableId: boolean
+) {
+  return client
+    .from("companySettings")
+    .update(sanitize({ showBomExplorerReadableId }))
+    .eq("id", companyId);
+}
+
 export async function updatePlmReleaseControlSetting(
   client: SupabaseClient<Database>,
   companyId: string,

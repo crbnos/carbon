@@ -4,9 +4,10 @@ import {
   fetchLineageSubgraph,
   type LineageDirection
 } from "~/modules/inventory/lineage.server";
+import { requireCompanyRecord } from "~/modules/shared/shared.server";
 
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  const { client, companyId } = await requirePermissions(request, {
     view: "inventory",
     bypassRls: true
   });
@@ -23,6 +24,12 @@ export async function loader({ request }: LoaderFunctionArgs) {
     );
   }
 
+  // bypassRls makes `client` the service role and the lineage reads are not
+  // company-scoped, so the root id must be proven to be this company's first.
+  await requireCompanyRecord(client, "trackedEntity", companyId, {
+    id: trackedEntityId
+  });
+
   const direction: LineageDirection =
     directionParam === "up" || directionParam === "down"
       ? directionParam
@@ -32,6 +39,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const payload = await fetchLineageSubgraph(
     client,
     trackedEntityId,
+    companyId,
     depth,
     direction
   );

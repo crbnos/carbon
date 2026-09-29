@@ -515,6 +515,12 @@ export const POSTING_POLICY: Record<
     defaultEnabled: true,
     defaultGranularity: "individual"
   },
+  // Maintenance labor, like production time, posts often and in small amounts.
+  "Maintenance Event": {
+    representation: "journal",
+    defaultEnabled: true,
+    defaultGranularity: "daily-summary"
+  },
   "Asset Depreciation": {
     representation: "journal",
     defaultEnabled: true,

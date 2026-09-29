@@ -92446,6 +92446,9 @@ export default {
             $ref: "#/parameters/rowFilter.companySettings.requireCustomerContactAndLocation"
           },
           {
+            $ref: "#/parameters/rowFilter.companySettings.showBomExplorerReadableId"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -92661,6 +92664,9 @@ export default {
             $ref: "#/parameters/rowFilter.companySettings.requireCustomerContactAndLocation"
           },
           {
+            $ref: "#/parameters/rowFilter.companySettings.showBomExplorerReadableId"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -92828,6 +92834,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.companySettings.requireCustomerContactAndLocation"
+          },
+          {
+            $ref: "#/parameters/rowFilter.companySettings.showBomExplorerReadableId"
           },
           {
             $ref: "#/parameters/body.companySettings"
@@ -110938,7 +110947,8 @@ export default {
             "Sales Return Shipment",
             "Purchase Return Shipment",
             "Charge",
-            "Reimbursement"
+            "Reimbursement",
+            "Maintenance Event"
           ],
           format: 'public."journalEntrySourceType"',
           type: "string"
@@ -122969,7 +122979,8 @@ export default {
             "Scrap",
             "Batch Merge",
             "Charge",
-            "Reimbursement"
+            "Reimbursement",
+            "Maintenance Event"
           ],
           format: 'public."journalLineDocumentType"',
           type: "string"
@@ -123596,7 +123607,8 @@ export default {
             "Sales Return Shipment",
             "Purchase Return Shipment",
             "Charge",
-            "Reimbursement"
+            "Reimbursement",
+            "Maintenance Event"
           ],
           format: 'public."journalEntrySourceType"',
           type: "string"
@@ -136395,7 +136407,8 @@ export default {
             "Scrap",
             "Batch Merge",
             "Charge",
-            "Reimbursement"
+            "Reimbursement",
+            "Maintenance Event"
           ],
           format: 'public."journalLineDocumentType"',
           type: "string"
@@ -136509,7 +136522,8 @@ export default {
             "Sales Return Shipment",
             "Purchase Return Shipment",
             "Charge",
-            "Reimbursement"
+            "Reimbursement",
+            "Maintenance Event"
           ],
           format: 'public."journalEntrySourceType"',
           type: "string"
@@ -136584,7 +136598,8 @@ export default {
             "Scrap",
             "Batch Merge",
             "Charge",
-            "Reimbursement"
+            "Reimbursement",
+            "Maintenance Event"
           ],
           format: 'public."journalLineDocumentType"',
           type: "string"
@@ -150399,7 +150414,8 @@ export default {
         "salesRuleNotificationGroup",
         "includeOperationsOnTraveler",
         "requireSupplierContactAndLocation",
-        "requireCustomerContactAndLocation"
+        "requireCustomerContactAndLocation",
+        "showBomExplorerReadableId"
       ],
       properties: {
         id: {
@@ -150684,6 +150700,11 @@ export default {
           default: false,
           description:
             "When true, a customer must have at least one contact with an email address AND at least one location whose address carries a country (plus a state when that country is US) before its quotes, sales orders and sales invoices can be released or posted.",
+          format: "boolean",
+          type: "boolean"
+        },
+        showBomExplorerReadableId: {
+          default: false,
           format: "boolean",
           type: "boolean"
         }
@@ -200475,6 +200496,12 @@ export default {
       name: "requireCustomerContactAndLocation",
       description:
         "When true, a customer must have at least one contact with an email address AND at least one location whose address carries a country (plus a state when that country is US) before its quotes, sales orders and sales invoices can be released or posted.",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.companySettings.showBomExplorerReadableId": {
+      name: "showBomExplorerReadableId",
       required: false,
       in: "query",
       type: "string"

@@ -92,6 +92,52 @@ export const integrationErrors = {
     unexpected: {
       title: msg`Couldn't complete the Onshape connection`,
       description: msg`An unexpected error occurred while connecting to Onshape. Try connecting again.`
+    },
+    "connection-conflict": {
+      title: msg`Onshape Government is already connected`,
+      description: msg`A company connects to one Onshape at a time. Uninstall Onshape Government, then connect Onshape.`
+    }
+  },
+  // A Government customer's private OAuth app. Same codes as `onshape` — the two
+  // share one callback handler — but the fixes live in the customer's own
+  // Enterprise settings and in the Carbon integration settings, not in Carbon's
+  // environment.
+  "onshape-government": {
+    "write-permission": {
+      title: msg`Onshape Government denied the connection`,
+      description: msg`In your Enterprise settings under Developer, edit the private OAuth application's permissions to include "Application can write to your documents", then save the integration settings again.`
+    },
+    denied: {
+      title: msg`Onshape Government denied the connection`,
+      description: msg`The authorization was refused in Onshape. Save the integration settings to try again.`
+    },
+    "invalid-state": {
+      title: msg`The Onshape Government connection expired`,
+      description: msg`Open the Onshape Government integration and save its settings to connect again.`
+    },
+    "invalid-response": {
+      title: msg`Onshape Government didn't return an authorization code`,
+      description: msg`The response from Onshape was missing required parameters. Check the private app's redirect URL, then save the integration settings again.`
+    },
+    "not-configured": {
+      title: msg`Onshape Government isn't configured`,
+      description: msg`Enter the Onshape URL, client ID and client secret of your private OAuth application, then save.`
+    },
+    "token-exchange": {
+      title: msg`Onshape Government rejected the authorization`,
+      description: msg`Exchanging the authorization code failed. Check the Onshape URL and the client secret, then save the integration settings again.`
+    },
+    "save-failed": {
+      title: msg`Couldn't save the Onshape Government connection`,
+      description: msg`Onshape authorized the connection but saving it failed. Save the integration settings to try again.`
+    },
+    unexpected: {
+      title: msg`Couldn't complete the Onshape Government connection`,
+      description: msg`An unexpected error occurred while connecting to Onshape. Save the integration settings to try again.`
+    },
+    "connection-conflict": {
+      title: msg`Onshape is already connected`,
+      description: msg`A company connects to one Onshape at a time. Uninstall Onshape, then connect Onshape Government.`
     }
   }
 } satisfies Record<string, Record<string, IntegrationErrorMessage>>;

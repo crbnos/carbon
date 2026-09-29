@@ -2,6 +2,7 @@
 
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
+import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { convertKbToString } from "@carbon/files";
 import {
@@ -153,7 +154,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
   }
 
   const [backupsList, restoreRuns, exportRun] = await Promise.all([
-    getCompanyBackups(client, companyId),
+    // Backup objects are service-role only; the checks above gate this route.
+    getCompanyBackups(getCarbonServiceRole(), companyId),
     getCompanyRestoreRuns(client, companyId),
     getCompanyExportRun(client, companyId)
   ]);
@@ -405,7 +407,11 @@ export async function action({ request }: ActionFunctionArgs) {
       if (!name || name.includes("/"))
         return data({}, await flash(request, error(null, "Invalid backup")));
 
-      const result = await deleteCompanyBackup(client, companyId, name);
+      const result = await deleteCompanyBackup(
+        getCarbonServiceRole(),
+        companyId,
+        name
+      );
       if (result.error)
         return data(
           {},

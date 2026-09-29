@@ -1,4 +1,5 @@
 import { PreviewCard } from "@base-ui-components/react/preview-card";
+import { hasOnshapeIntegration } from "@carbon/ee";
 import {
   Badge,
   Copy,
@@ -31,6 +32,7 @@ import {
 } from "react-icons/lu";
 import { Link, useNavigate, useSearchParams } from "react-router";
 import { useOptimisticLocation, useQuantityFormatter } from "~/hooks";
+import { useCompanySettings } from "~/hooks/useCompanySettings";
 import { useIntegrations } from "~/hooks/useIntegrations";
 import { getLinkToItemDetails } from "~/modules/items/ui/Item/ItemForm";
 import { generateBomIds } from "~/utils/bom";
@@ -156,9 +158,11 @@ export function BoMExplorerProvider<T extends BoMExplorerNodeData>({
       value: { text: filterText },
       fn: (value, node) => {
         if (value.text === "") return true;
-        return node.data.description
-          .toLowerCase()
-          .includes(value.text.toLowerCase());
+        const text = value.text.toLowerCase();
+        return (
+          node.data.description.toLowerCase().includes(text) ||
+          (node.data.itemReadableId ?? "").toLowerCase().includes(text)
+        );
       }
     },
     isEager: true
@@ -528,10 +532,16 @@ function getOnshapeState(node: BoMNode, hasOnshape: boolean) {
 }
 
 function BoMNodeText({ node }: { node: BoMNode }) {
+  // One company setting (Settings > Items) labels every explorer's nodes.
+  const showReadableId =
+    useCompanySettings()?.showBomExplorerReadableId === true;
+
   return (
     <div className="flex min-w-0 items-center gap-1">
       <span className="font-medium text-sm truncate">
-        {node.data.description || node.data.itemReadableId}
+        {showReadableId
+          ? node.data.itemReadableId || node.data.description
+          : node.data.description || node.data.itemReadableId}
       </span>
     </div>
   );
@@ -539,7 +549,10 @@ function BoMNodeText({ node }: { node: BoMNode }) {
 
 function BoMNodeData({ node }: { node: BoMNode }) {
   const integrations = useIntegrations();
-  const onShapeState = getOnshapeState(node, integrations.has("onshape"));
+  const onShapeState = getOnshapeState(
+    node,
+    hasOnshapeIntegration(integrations)
+  );
   // Display only — the exact quantity is unchanged everywhere else, and the
   // node's preview card still shows it at full precision.
   const formatQuantity = useQuantityFormatter();
@@ -562,7 +575,10 @@ function BoMNodeData({ node }: { node: BoMNode }) {
 function BoMNodePreview({ node }: { node: BoMNode }) {
   const { t } = useLingui();
   const integrations = useIntegrations();
-  const onShapeState = getOnshapeState(node, integrations.has("onshape"));
+  const onShapeState = getOnshapeState(
+    node,
+    hasOnshapeIntegration(integrations)
+  );
 
   return (
     <VStack className="w-full text-sm">

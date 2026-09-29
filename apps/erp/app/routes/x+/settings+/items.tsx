@@ -27,6 +27,7 @@ import {
   getCompanySettings,
   plmReleaseControlValidator,
   updateAllowLowercaseItemIdsSetting,
+  updateBomExplorerReadableIdSetting,
   updateMaterialGeneratedIdsSetting,
   updateMetricSettings,
   updatePlmReleaseControlSetting
@@ -95,6 +96,17 @@ export async function action({ request }: ActionFunctionArgs) {
       if (result.error)
         return { success: false, message: result.error.message };
       return { success: true, message: "Item ID casing setting updated" };
+    }
+
+    case "bomExplorerReadableId": {
+      const result = await updateBomExplorerReadableIdSetting(
+        client,
+        companyId,
+        enabled
+      );
+      if (result.error)
+        return { success: false, message: result.error.message };
+      return { success: true, message: "BoM explorer setting updated" };
     }
 
     case "plmReleaseControl": {
@@ -169,6 +181,16 @@ export default function ItemsSettingsRoute() {
     (checked: boolean) => {
       fetcher.submit(
         { intent: "allowLowercaseItemIds", enabled: String(checked) },
+        { method: "POST" }
+      );
+    },
+    [fetcher]
+  );
+
+  const handleBomExplorerReadableIdToggle = useCallback(
+    (checked: boolean) => {
+      fetcher.submit(
+        { intent: "bomExplorerReadableId", enabled: String(checked) },
         { method: "POST" }
       );
     },
@@ -267,6 +289,52 @@ export default function ItemsSettingsRoute() {
               <Switch
                 checked={companySettings.allowLowercaseItemIds ?? false}
                 onCheckedChange={handleLowercaseItemIdsToggle}
+                disabled={isToggling}
+              />
+            </HStack>
+          </CardContent>
+        </Card>
+
+        <SettingsSectionHeader>
+          <Trans>Bill of Materials</Trans>
+        </SettingsSectionHeader>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>
+              <Trans>BoM Explorer</Trans>
+            </CardTitle>
+            <CardDescription>
+              <Trans>
+                Choose whether the bill of material explorer on items, quotes,
+                and jobs labels each line with its description or its item ID.
+              </Trans>
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <HStack className="justify-between items-center">
+              <VStack className="items-start" spacing={1}>
+                <span className="font-medium">
+                  {companySettings.showBomExplorerReadableId ? (
+                    <Trans>Lines show item IDs</Trans>
+                  ) : (
+                    <Trans>Lines show descriptions</Trans>
+                  )}
+                </span>
+                <span className="text-sm text-muted-foreground">
+                  {companySettings.showBomExplorerReadableId ? (
+                    <Trans>Each line shows its item ID and revision.</Trans>
+                  ) : (
+                    <Trans>
+                      Enable to show the item ID and revision instead of the
+                      description.
+                    </Trans>
+                  )}
+                </span>
+              </VStack>
+              <Switch
+                checked={companySettings.showBomExplorerReadableId ?? false}
+                onCheckedChange={handleBomExplorerReadableIdToggle}
                 disabled={isToggling}
               />
             </HStack>
