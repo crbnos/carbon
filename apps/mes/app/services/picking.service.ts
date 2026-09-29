@@ -1,5 +1,6 @@
 import type { Database } from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
+import { getErrorMessage } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { isPickingListLocked } from "~/services/models";
 
@@ -149,36 +150,6 @@ export async function getUnresolvedPickingListLines(
   return { unresolved, hasShort, error: null };
 }
 
-async function getPostPickingErrorMessage(error: unknown): Promise<string> {
-  // supabase-js wraps a non-2xx edge-function response in FunctionsHttpError,
-  // whose own `.message` is always the fixed "Edge Function returned a non-2xx
-  // status code". post-picking's pick guards ("This line is already fully
-  // picked") come back as a 400 with the reason in the body, so reading
-  // `.message` alone showed the kitter the wrapper text instead of the reason.
-  // Same pattern as x+/issue-tracked-entity.tsx and the ERP's
-  // getEdgeFunctionErrorMessage.
-  const ctx = (error as { context?: Response })?.context;
-  if (ctx && typeof ctx.clone === "function") {
-    try {
-      const body = await ctx.clone().json();
-      if (typeof body?.message === "string" && body.message !== "") {
-        return body.message;
-      }
-    } catch {
-      // body wasn't JSON or was already consumed — fall through
-    }
-  }
-  const message = (error as { message?: string })?.message;
-  if (
-    typeof message === "string" &&
-    message !== "" &&
-    message !== "Edge Function returned a non-2xx status code"
-  ) {
-    return message;
-  }
-  return "Failed to pick material";
-}
-
 /**
  * Set the picked quantity on a picking line (pick, short, or unpick).
  *
@@ -291,7 +262,7 @@ export async function setPickingListLineQuantity(
     if (result.error) {
       return {
         data: null,
-        error: await getPostPickingErrorMessage(result.error)
+        error: getErrorMessage(result.error, "Failed to pick material")
       };
     }
   }
@@ -407,7 +378,7 @@ export async function setPickingListLineTrackedEntity(
   if (result.error) {
     return {
       data: null,
-      error: await getPostPickingErrorMessage(result.error)
+      error: getErrorMessage(result.error, "Failed to pick material")
     };
   }
 

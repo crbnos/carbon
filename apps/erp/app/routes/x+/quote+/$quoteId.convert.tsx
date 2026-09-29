@@ -10,6 +10,7 @@ import {
 import { validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
 import type { Violation } from "@carbon/utils";
+import { getErrorMessage } from "@carbon/utils";
 import { parseAcceptLanguage } from "intl-parse-accept-language";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
@@ -27,7 +28,6 @@ import {
 } from "~/modules/shared/shared.server";
 import { loader as pdfLoader } from "~/routes/file+/sales-order+/$id[.]pdf";
 import { getDatabaseClient } from "~/services/database.server";
-import { getEdgeFunctionErrorMessage } from "~/utils/error";
 import { path } from "~/utils/path";
 
 const logger = getLogger("erp", "quoteid-convert");
@@ -160,10 +160,7 @@ export async function action(args: ActionFunctionArgs) {
         request,
         error(
           convert.error,
-          await getEdgeFunctionErrorMessage(
-            convert.error,
-            "Failed to convert quote to order"
-          )
+          getErrorMessage(convert.error, "Failed to convert quote to order")
         )
       )
     );

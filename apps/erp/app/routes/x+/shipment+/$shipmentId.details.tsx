@@ -7,6 +7,7 @@ import { getLogger } from "@carbon/logger";
 import type { JSONContent } from "@carbon/react";
 import type { ServerFnResult } from "@carbon/server-functions";
 import { create } from "@carbon/server-functions/create";
+import { getErrorMessage } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { data, redirect, useParams } from "react-router";
 import { useRouteData } from "~/hooks";
@@ -23,7 +24,6 @@ import {
 } from "~/modules/inventory/ui/Shipments";
 import type { Note } from "~/modules/shared";
 import { getDatabaseClient } from "~/services/database.server";
-import { getEdgeFunctionErrorMessage } from "~/utils/error";
 import { getCustomFields, setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
 
@@ -91,7 +91,7 @@ export async function action({ request }: ActionFunctionArgs) {
               request,
               error(
                 salesOrderShipment.error,
-                await getEdgeFunctionErrorMessage(
+                getErrorMessage(
                   salesOrderShipment.error,
                   "Failed to create shipment"
                 )
@@ -127,7 +127,7 @@ export async function action({ request }: ActionFunctionArgs) {
               request,
               error(
                 salesReturnShipment.error,
-                await getEdgeFunctionErrorMessage(
+                getErrorMessage(
                   salesReturnShipment.error,
                   "Failed to create shipment"
                 )
@@ -164,7 +164,7 @@ export async function action({ request }: ActionFunctionArgs) {
               request,
               error(
                 purchaseReturnShipment.error,
-                await getEdgeFunctionErrorMessage(
+                getErrorMessage(
                   purchaseReturnShipment.error,
                   "Failed to create shipment"
                 )
@@ -201,7 +201,7 @@ export async function action({ request }: ActionFunctionArgs) {
               request,
               error(
                 purchaseOrderShipment.error,
-                await getEdgeFunctionErrorMessage(
+                getErrorMessage(
                   purchaseOrderShipment.error,
                   "Failed to create shipment"
                 )
@@ -239,7 +239,7 @@ export async function action({ request }: ActionFunctionArgs) {
               request,
               error(
                 warehouseTransferShipment.error,
-                await getEdgeFunctionErrorMessage(
+                getErrorMessage(
                   warehouseTransferShipment.error,
                   "Failed to create shipment"
                 )

@@ -5,7 +5,7 @@ import { rejectCrossSiteNavigation } from "@carbon/auth/middleware/security.serv
 import { flash } from "@carbon/auth/session.server";
 import { storage } from "@carbon/files";
 import { validationError, validator } from "@carbon/form";
-import { deriveRate, taxableBase } from "@carbon/utils";
+import { deriveRate, getErrorMessage, taxableBase } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { redirect } from "react-router";
@@ -21,7 +21,6 @@ import {
 } from "~/modules/invoicing";
 import { resolveItemIdFromExtractedText } from "~/modules/items";
 import { getDatabaseClient } from "~/services/database.server";
-import { getEdgeFunctionErrorMessage } from "~/utils/error";
 import { setCustomFields } from "~/utils/form";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -67,10 +66,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
             request,
             error(
               result.error,
-              await getEdgeFunctionErrorMessage(
-                result.error,
-                "Failed to create purchase invoice"
-              )
+              getErrorMessage(result.error, "Failed to create purchase invoice")
             )
           )
         );

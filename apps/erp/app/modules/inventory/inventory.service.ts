@@ -8,13 +8,12 @@ import {
 import { consumableInWholeAssemblies } from "@carbon/database/supersession-pick";
 import { storage } from "@carbon/files";
 import type { TrackedEntityAttributes } from "@carbon/utils";
-import { datetime } from "@carbon/utils";
+import { datetime, getErrorMessage } from "@carbon/utils";
 import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
 import { nanoid } from "nanoid";
 import type { z } from "zod";
 import { getNextSequence } from "~/modules/settings";
 import type { StorageItem } from "~/types";
-import { getEdgeFunctionErrorMessage } from "~/utils/error";
 import type { GenericQueryFilters } from "~/utils/query";
 import {
   LIST_COUNT,
@@ -1620,7 +1619,7 @@ export async function insertManualInventoryAdjustment(
     // contract — the adjustment route compares `error === "<message>"`.
     return {
       data: null,
-      error: await getEdgeFunctionErrorMessage(
+      error: getErrorMessage(
         result.error,
         "Failed to create manual inventory adjustment"
       )
@@ -1712,10 +1711,7 @@ export async function correctStockMovement(
   if (result.error) {
     return {
       data: null,
-      error: await getEdgeFunctionErrorMessage(
-        result.error,
-        "Failed to correct stock movement"
-      )
+      error: getErrorMessage(result.error, "Failed to correct stock movement")
     };
   }
 
@@ -3046,10 +3042,7 @@ export async function setPickingListLineTrackedEntity(
   if (result.error) {
     return {
       data: null,
-      error: await getEdgeFunctionErrorMessage(
-        result.error,
-        "Failed to pick material"
-      )
+      error: getErrorMessage(result.error, "Failed to pick material")
     };
   }
 
@@ -4058,10 +4051,7 @@ export async function pickPickingListLine(
     if (result.error) {
       return {
         data: null,
-        error: await getEdgeFunctionErrorMessage(
-          result.error,
-          "Failed to pick material"
-        )
+        error: getErrorMessage(result.error, "Failed to pick material")
       };
     }
   }

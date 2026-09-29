@@ -4,10 +4,9 @@ import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import { ASSEMBLER_SERVICE_URL } from "@carbon/env";
 import type { ServerFnResult } from "@carbon/server-functions";
 import { create } from "@carbon/server-functions/create";
-import { datetime } from "@carbon/utils";
+import { datetime, getErrorMessage } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { getDatabaseClient } from "~/services/database.server";
-import { getEdgeFunctionErrorMessage } from "~/utils/error";
 import {
   getJobReleaseReadiness,
   recalculateJobRequirements,
@@ -130,7 +129,7 @@ export async function releaseJobs({
     >);
     if (purchaseOrder.error) {
       return {
-        error: await getEdgeFunctionErrorMessage(
+        error: getErrorMessage(
           purchaseOrder.error,
           `Failed to create purchase orders for job ${id}`
         )

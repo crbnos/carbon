@@ -10,6 +10,7 @@ import { raiseMoment } from "@carbon/lib/workflows";
 import { getLogger } from "@carbon/logger";
 import type { JSONContent } from "@carbon/react";
 import {
+  getErrorMessage,
   groupBy,
   nameSimilarity,
   scrapAllowance,
@@ -37,7 +38,6 @@ import { nanoid } from "nanoid";
 import type { z } from "zod";
 import { createDocumentUploadUrl } from "~/modules/documents/documents.service";
 import type { StorageItem } from "~/types";
-import { getEdgeFunctionErrorMessage } from "~/utils/error";
 import type { GenericQueryFilters } from "~/utils/query";
 import {
   getGenericFilter,
@@ -4334,7 +4334,7 @@ export async function upsertJobMethod(
     return {
       data: null,
       error: {
-        message: await getEdgeFunctionErrorMessage(
+        message: getErrorMessage(
           getMethodResult.error,
           "Failed to get job method"
         )
@@ -4414,10 +4414,7 @@ export async function upsertJobMaterialMakeMethod(
     return {
       data: null,
       error: {
-        message: await getEdgeFunctionErrorMessage(
-          error,
-          "Failed to pull method"
-        )
+        message: getErrorMessage(error, "Failed to pull method")
       } as PostgrestError
     };
   }

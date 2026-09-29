@@ -11,6 +11,7 @@ import {
   toast
 } from "@carbon/react";
 import { postStockTransfer } from "@carbon/server-functions/post-stock-transfer";
+import { getErrorMessage } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
 import { useEffect, useMemo } from "react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
@@ -33,7 +34,6 @@ import {
 import { getItemStorageUnitQuantities } from "~/modules/items";
 import { getCompanySettings } from "~/modules/settings";
 import { getDatabaseClient } from "~/services/database.server";
-import { getEdgeFunctionErrorMessage } from "~/utils/error";
 import { requireUnlocked } from "~/utils/lockedGuard.server";
 import { path } from "~/utils/path";
 
@@ -212,10 +212,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     // The edge function returns its guard failures (over-pick, already picked)
     // as a 400 with the real reason in the body; surface that, not the generic
     // "non-2xx" wrapper text.
-    const message = await getEdgeFunctionErrorMessage(
-      functionError,
-      "Failed to pick line"
-    );
+    const message = getErrorMessage(functionError, "Failed to pick line");
     return data(
       { success: false, message },
       await flash(request, error(functionError, message))

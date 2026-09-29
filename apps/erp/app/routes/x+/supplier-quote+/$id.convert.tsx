@@ -4,6 +4,7 @@ import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { isApprovalRequired } from "@carbon/ee/approvals.server";
 import { getLogger } from "@carbon/logger";
+import { getErrorMessage } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
 import {
@@ -13,7 +14,6 @@ import {
   selectedLinesValidator
 } from "~/modules/purchasing";
 import { getDatabaseClient } from "~/services/database.server";
-import { getEdgeFunctionErrorMessage } from "~/utils/error";
 import { path } from "~/utils/path";
 
 const logger = getLogger("erp", "id-convert");
@@ -105,10 +105,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
         request,
         error(
           convert.error,
-          await getEdgeFunctionErrorMessage(
-            convert.error,
-            "Failed to convert quote to order"
-          )
+          getErrorMessage(convert.error, "Failed to convert quote to order")
         )
       )
     );

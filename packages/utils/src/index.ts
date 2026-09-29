@@ -19,6 +19,7 @@ export * from "./country";
 export * from "./date";
 export * from "./datetime";
 export * from "./duration";
+export * from "./errors";
 export * from "./field-registry";
 export * from "./format";
 export * from "./geo";

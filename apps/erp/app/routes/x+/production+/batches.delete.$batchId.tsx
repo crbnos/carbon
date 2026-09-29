@@ -1,13 +1,13 @@
 import { assertIsPost, error, notFound, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { getErrorMessage } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { redirect, useLoaderData, useNavigate, useParams } from "react-router";
 import { ConfirmDelete } from "~/components/Modals";
 import { updateJobOperationBatch } from "~/modules/production";
 import { getDatabaseClient } from "~/services/database.server";
-import { getEdgeFunctionErrorMessage } from "~/utils/error";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
@@ -63,10 +63,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
         request,
         error(
           result.error,
-          await getEdgeFunctionErrorMessage(
-            result.error,
-            "Failed to dissolve batch"
-          )
+          getErrorMessage(result.error, "Failed to dissolve batch")
         )
       )
     );

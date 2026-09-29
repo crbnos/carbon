@@ -1,5 +1,6 @@
 import { assertIsPost } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
+import { getErrorMessage } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import {
   notifyScheduleInputsChanged,
@@ -7,7 +8,6 @@ import {
 } from "~/modules/production";
 import { releaseBatchMemberJobs } from "~/modules/production/production.server";
 import { getDatabaseClient } from "~/services/database.server";
-import { getEdgeFunctionErrorMessage } from "~/utils/error";
 
 // Bulk release — one release per selected Planned batch. Each is independent:
 // a batch the edge fn refuses (no members, already recorded production) is
@@ -88,10 +88,7 @@ export async function action({ request }: ActionFunctionArgs) {
     if (result.error) {
       failed.push({
         readableId: batch.readableId,
-        message: await getEdgeFunctionErrorMessage(
-          result.error,
-          "Failed to release"
-        )
+        message: getErrorMessage(result.error, "Failed to release")
       });
       continue;
     }

@@ -4,7 +4,7 @@ import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { postPayment } from "@carbon/server-functions/post-payment";
-import { toBaseAmount } from "@carbon/utils";
+import { getErrorMessage, toBaseAmount } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
 import {
@@ -17,7 +17,6 @@ import {
 } from "~/modules/invoicing";
 import { getNextSequence } from "~/modules/settings";
 import { getDatabaseClient } from "~/services/database.server";
-import { getEdgeFunctionErrorMessage } from "~/utils/error";
 import { path } from "~/utils/path";
 
 /**
@@ -198,7 +197,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
       }
     );
     if (result.error) {
-      const message = await getEdgeFunctionErrorMessage(
+      const message = getErrorMessage(
         result.error,
         "Failed to post the payment"
       );

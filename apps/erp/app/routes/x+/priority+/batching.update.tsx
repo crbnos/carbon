@@ -2,6 +2,7 @@ import { assertIsPost } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { validationError, validator } from "@carbon/form";
+import { getErrorMessage } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { mergeTrackedEntities } from "~/modules/inventory";
 import {
@@ -16,7 +17,6 @@ import {
 } from "~/modules/production";
 import { releaseBatchMemberJobs } from "~/modules/production/production.server";
 import { getDatabaseClient } from "~/services/database.server";
-import { getEdgeFunctionErrorMessage } from "~/utils/error";
 
 // Fetcher-driven board action (mirrors operations.update.tsx): return
 // { success, message } so BatchingBoard can toast the specific failure reason.
@@ -170,10 +170,7 @@ export async function action({ request }: ActionFunctionArgs) {
     if (result.error) {
       return {
         success: false,
-        message: await getEdgeFunctionErrorMessage(
-          result.error,
-          "Failed to create batch"
-        )
+        message: getErrorMessage(result.error, "Failed to create batch")
       };
     }
 
@@ -256,10 +253,7 @@ export async function action({ request }: ActionFunctionArgs) {
       if (released.error) {
         return {
           success: false,
-          message: await getEdgeFunctionErrorMessage(
-            released.error,
-            "Failed to release batch"
-          )
+          message: getErrorMessage(released.error, "Failed to release batch")
         };
       }
     } else {
@@ -275,7 +269,7 @@ export async function action({ request }: ActionFunctionArgs) {
       if (unreleased.error) {
         return {
           success: false,
-          message: await getEdgeFunctionErrorMessage(
+          message: getErrorMessage(
             unreleased.error,
             "Failed to unrelease batch"
           )
@@ -306,10 +300,7 @@ export async function action({ request }: ActionFunctionArgs) {
   if (result.error) {
     return {
       success: false,
-      message: await getEdgeFunctionErrorMessage(
-        result.error,
-        `Failed to ${type} batch`
-      )
+      message: getErrorMessage(result.error, `Failed to ${type} batch`)
     };
   }
   return { success: true };

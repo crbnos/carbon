@@ -1,4 +1,5 @@
 // Settings → Backups (company export / in-place restore).
+
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -28,6 +29,7 @@ import {
   useDisclosure,
   VStack
 } from "@carbon/react";
+import { getErrorMessage } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import { Plural, Trans, useLingui } from "@lingui/react/macro";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -77,7 +79,6 @@ import {
   RestoreIncludeChoice,
   RestoreReviewRow
 } from "~/modules/settings/ui/Backups";
-import { getEdgeFunctionErrorMessage } from "~/utils/error";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
@@ -196,10 +197,7 @@ export async function action({ request }: ActionFunctionArgs) {
       if (result.error)
         return {
           success: false,
-          message: await getEdgeFunctionErrorMessage(
-            result.error,
-            "Failed to start backup"
-          )
+          message: getErrorMessage(result.error, "Failed to start backup")
         };
       return {
         success: true,
@@ -323,10 +321,7 @@ export async function action({ request }: ActionFunctionArgs) {
       if (result.error)
         return {
           success: false,
-          message: await getEdgeFunctionErrorMessage(
-            result.error,
-            "Failed to start backup"
-          )
+          message: getErrorMessage(result.error, "Failed to start backup")
         };
       return {
         success: true,
