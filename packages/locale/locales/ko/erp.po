@@ -9358,6 +9358,9 @@ msgstr "재고 평가"
 msgid "Invite"
 msgstr "초대"
 
+msgid "Invite Employees"
+msgstr "직원 초대"
+
 msgid "Invite Expired"
 msgstr "초대권 만료됨"
 
@@ -14601,6 +14604,9 @@ msgstr "손상된 데이터 제거 및 적용"
 
 msgid "Remove corrupted data and restore"
 msgstr "손상된 데이터 제거 및 복원"
+
+msgid "Remove employee"
+msgstr "직원 제거"
 
 msgid "Remove Employee"
 msgstr "직원 제거"

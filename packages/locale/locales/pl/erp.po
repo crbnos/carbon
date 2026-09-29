@@ -9358,6 +9358,9 @@ msgstr "Wycena zapasów"
 msgid "Invite"
 msgstr "Zaproś"
 
+msgid "Invite Employees"
+msgstr "Zaproś pracowników"
+
 msgid "Invite Expired"
 msgstr "Zaproszenie wygasło"
 
@@ -14601,6 +14604,9 @@ msgstr "Usuń uszkodzone dane i zastosuj"
 
 msgid "Remove corrupted data and restore"
 msgstr "Usuń uszkodzone dane i przywróć"
+
+msgid "Remove employee"
+msgstr "Usuń pracownika"
 
 msgid "Remove Employee"
 msgstr "Usuń pracownika"

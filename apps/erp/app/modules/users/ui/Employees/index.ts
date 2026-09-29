@@ -1,11 +1,11 @@
 import BulkEditPermissionsForm from "./BulkEditPermissionsForm.ee";
-import CreateEmployeeModal from "./CreateEmployeeModal";
+import BulkInviteEmployeesModal from "./BulkInviteEmployeesModal";
 import EmployeePermissionsForm from "./EmployeePermissionsForm.ee";
 import EmployeesTable from "./EmployeesTable";
 
 export {
   BulkEditPermissionsForm,
-  CreateEmployeeModal,
+  BulkInviteEmployeesModal,
   EmployeePermissionsForm,
   EmployeesTable
 };
