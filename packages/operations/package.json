@@ -1,0 +1,31 @@
+{
+  "name": "@carbon/operations",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": "./src/index.ts",
+    "./*": "./src/*/index.ts"
+  },
+  "scripts": {
+    "clean": "rimraf .turbo node_modules",
+    "lint": "biome lint --write ",
+    "test": "vitest run",
+    "typecheck": "tsgo --noEmit"
+  },
+  "dependencies": {
+    "@carbon/auth": "workspace:*",
+    "@carbon/database": "workspace:*",
+    "@carbon/logger": "workspace:*",
+    "@carbon/utils": "workspace:*",
+    "@supabase/supabase-js": "catalog:",
+    "kysely": "catalog:",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@carbon/config": "workspace:*",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  }
+}

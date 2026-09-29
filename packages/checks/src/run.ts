@@ -26,7 +26,8 @@ import { noUnroundedTrackedQuantity } from "./conformance/no-unrounded-tracked-q
 import { noUnscopedKyselyWrite } from "./conformance/no-unscoped-kysely-write";
 import { noViewWithoutInvoker } from "./conformance/no-view-without-invoker";
 import { noZeroConcurrency } from "./conformance/no-zero-concurrency";
-import { loadEdgeFunctions } from "./sources/edge-functions";
+import { operationAuthorizesCaller } from "./conformance/operation-authorizes-caller";
+import { loadEdgeFunctions, loadOperations } from "./sources/edge-functions";
 import { loadSqlFiles, migrationsDir, repoRoot } from "./sources/migrations";
 import { loadModules, modulesDir } from "./sources/modules";
 import { loadServerFiles } from "./sources/server-files";
@@ -64,6 +65,9 @@ export const TS_CHECKS: ConformanceCheck[] = [
 export const EDGE_FUNCTION_CHECKS: ConformanceCheck[] = [
   edgeFunctionAuthorizesCaller
 ];
+
+/** Checks that run once per `@carbon/operations` entry point. */
+export const OPERATION_CHECKS: ConformanceCheck[] = [operationAuthorizesCaller];
 
 export const STRUCTURE_CHECKS: StructureCheck[] = [moduleShape];
 
@@ -119,7 +123,8 @@ export function collectFindings(root: string = repoRoot()): Finding[] {
     ...scanAll(loadTypescriptFiles(root, REQUEST_HANDLING_ROOTS), [
       noRawForwardedHeaders
     ]),
-    ...scanAll(loadEdgeFunctions(root), EDGE_FUNCTION_CHECKS)
+    ...scanAll(loadEdgeFunctions(root), EDGE_FUNCTION_CHECKS),
+    ...scanAll(loadOperations(root), OPERATION_CHECKS)
   ];
 }
 

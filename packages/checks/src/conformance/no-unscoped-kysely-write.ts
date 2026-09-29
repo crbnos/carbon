@@ -23,7 +23,8 @@ import type { ConformanceCheck, Violation } from "../check";
  * IS the tenant.
  *
  * Scope: Node code that holds the superuser `db` — the ERP's modules and
- * routes, the MES app, and `packages/jobs`. Edge functions are out of scope
+ * routes, the MES app, `packages/jobs` and `packages/operations` (the former
+ * edge functions, which join the scope as they are ported). Edge functions are out of scope
  * (their document-level reads are scoped per
  * `.claude/rules/workflow-edge-function.md`, and their follow-on writes key on
  * ids from those reads), as is `packages/ee`, whose sync providers write
@@ -43,7 +44,8 @@ const SCOPED_PREFIXES = [
   "apps/erp/app/modules/",
   "apps/erp/app/routes/",
   "apps/mes/app/",
-  "packages/jobs/src/"
+  "packages/jobs/src/",
+  "packages/operations/src/"
 ];
 
 /** Tables whose own `id` is the tenant key. */

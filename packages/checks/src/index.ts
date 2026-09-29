@@ -20,6 +20,7 @@ export { noRawForwardedHeaders } from "./conformance/no-raw-forwarded-headers";
 export { noRawRounding } from "./conformance/no-raw-rounding";
 export { noRequiredColumnWithoutDefault } from "./conformance/no-required-column-without-default";
 export { noZeroConcurrency } from "./conformance/no-zero-concurrency";
+export { operationAuthorizesCaller } from "./conformance/operation-authorizes-caller";
 export {
   type Invariant,
   type InvariantResult,
@@ -33,13 +34,14 @@ export {
   EDGE_FUNCTION_CHECKS,
   type Finding,
   newViolations,
+  OPERATION_CHECKS,
   SERVER_CHECKS,
   STRUCTURE_CHECKS,
   scanAll,
   scanModules,
   TS_CHECKS
 } from "./run";
-export { loadEdgeFunctions } from "./sources/edge-functions";
+export { loadEdgeFunctions, loadOperations } from "./sources/edge-functions";
 export { loadModules, modulesDir } from "./sources/modules";
 export { loadServerFiles } from "./sources/server-files";
 export { loadTypescriptFiles } from "./sources/typescript";

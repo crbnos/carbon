@@ -3,6 +3,7 @@ import { join, relative } from "node:path";
 import type { SourceFile } from "../check";
 
 const FUNCTIONS_ROOT = "packages/database/supabase/functions";
+const OPERATIONS_ROOT = "packages/operations/src";
 
 /** Shared code, not deployable functions. */
 const NOT_FUNCTIONS = new Set(["lib", "shared", "node_modules"]);
@@ -25,7 +26,19 @@ function collectTs(dir: string, out: string[]): void {
  * beside index.ts (post-card-transaction/handler.ts).
  */
 export function loadEdgeFunctions(root: string): SourceFile[] {
-  const base = join(root, FUNCTIONS_ROOT);
+  return loadFunctionDirs(root, FUNCTIONS_ROOT);
+}
+
+/**
+ * One SourceFile per `@carbon/operations` entry point — the Node home of the
+ * former edge functions, one directory per operation, same shape.
+ */
+export function loadOperations(root: string): SourceFile[] {
+  return loadFunctionDirs(root, OPERATIONS_ROOT);
+}
+
+function loadFunctionDirs(root: string, dir: string): SourceFile[] {
+  const base = join(root, dir);
   if (!existsSync(base)) return [];
   return readdirSync(base)
     .filter(
