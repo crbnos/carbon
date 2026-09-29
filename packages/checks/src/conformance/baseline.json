@@ -513,7 +513,7 @@
   "no-raw-rounding::packages/database/supabase/functions/shared/batch-time-split.ts::durationSeconds: Math.round((windowEndMs - windowStartMs) / 1000)",
   "no-raw-rounding::packages/database/supabase/functions/shared/sampling-engine.ts::const n = Math.max(1, Math.min(safeLot, Math.ceil((safeLot * pct) / 100)));",
   "no-raw-rounding::packages/database/supabase/functions/shared/sampling-engine.ts::const safeLot = Math.max(1, Math.floor(lotSize));",
-  "no-raw-rounding::packages/database/supabase/functions/update-purchased-prices/index.ts::itemReplenishmentUpdate.leadTime = Math.round(",
+  "no-raw-rounding::packages/operations/src/update-purchased-prices/index.ts::itemReplenishmentUpdate.leadTime = Math.round(",
   "no-raw-rounding::packages/documents/src/pdf/KanbanLabelPDF.tsx::const pageCount = Math.ceil(labels.length / labelsPerPage);",
   "no-raw-rounding::packages/documents/src/pdf/ProductLabelPDF.tsx::const pageCount = Math.ceil(items.length / labelsPerPage);",
   "no-raw-rounding::packages/documents/src/pdf/components/labelGeometry.ts::const qrModuleSize = Math.max(2, Math.min(8, Math.round(4 * scale)));",

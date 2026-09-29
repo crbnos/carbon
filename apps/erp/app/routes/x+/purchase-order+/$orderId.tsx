@@ -17,6 +17,7 @@ import { validationError, validator } from "@carbon/form";
 import { trigger } from "@carbon/jobs";
 import { getLogger } from "@carbon/logger";
 import { NotificationEvent } from "@carbon/notifications";
+import { updatePurchasedPrices } from "@carbon/operations/update-purchased-prices";
 import { VStack } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
 import { renderAsync } from "@react-email/components";
@@ -364,17 +365,13 @@ export async function action(args: ActionFunctionArgs) {
         companySettings.data?.purchasePriceUpdateTiming ===
         "Purchase Order Finalize"
       ) {
-        const priceUpdate = await serviceRole.functions.invoke(
-          "update-purchased-prices",
+        const priceUpdate = await updatePurchasedPrices(
+          { db: getDatabaseClient(), companyId, userId, system: true },
           {
-            body: {
-              purchaseOrderId: orderId,
-              companyId,
-              userId,
-              source: "purchaseOrder",
-              updatePrices: true,
-              updateLeadTimes: false
-            }
+            purchaseOrderId: orderId,
+            source: "purchaseOrder",
+            updatePrices: true,
+            updateLeadTimes: false
           }
         );
 

@@ -19,6 +19,7 @@
     "@carbon/database": "workspace:*",
     "@carbon/logger": "workspace:*",
     "@carbon/utils": "workspace:*",
+    "@internationalized/date": "catalog:",
     "@supabase/supabase-js": "catalog:",
     "kysely": "catalog:",
     "nanoid": "catalog:",

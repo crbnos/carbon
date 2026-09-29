@@ -2739,6 +2739,9 @@ importers:
       '@carbon/notifications':
         specifier: workspace:*
         version: link:../notifications
+      '@carbon/operations':
+        specifier: workspace:*
+        version: link:../operations
       '@carbon/planning':
         specifier: workspace:*
         version: link:../planning
@@ -3129,6 +3132,9 @@ importers:
       '@carbon/utils':
         specifier: workspace:*
         version: link:../utils
+      '@internationalized/date':
+        specifier: 'catalog:'
+        version: 3.12.0
       '@supabase/supabase-js':
         specifier: 'catalog:'
         version: 2.80.0
@@ -18505,20 +18511,20 @@ snapshots:
 
   '@internationalized/date@3.12.0':
     dependencies:
-      '@swc/helpers': 0.5.21
+      '@swc/helpers': 0.5.23
 
   '@internationalized/message@3.1.8':
     dependencies:
-      '@swc/helpers': 0.5.21
+      '@swc/helpers': 0.5.23
       intl-messageformat: 10.7.18
 
   '@internationalized/number@3.6.5':
     dependencies:
-      '@swc/helpers': 0.5.21
+      '@swc/helpers': 0.5.23
 
   '@internationalized/string@3.2.7':
     dependencies:
-      '@swc/helpers': 0.5.21
+      '@swc/helpers': 0.5.23
 
   '@ioredis/as-callback@3.0.0': {}
 
@@ -22106,7 +22112,7 @@ snapshots:
 
   '@react-aria/ssr@3.9.10(react@18.3.1)':
     dependencies:
-      '@swc/helpers': 0.5.21
+      '@swc/helpers': 0.5.23
       react: 18.3.1
 
   '@react-aria/switch@3.7.11(react-dom@18.3.1(react@18.3.1))(react@18.3.1)':
@@ -22256,7 +22262,7 @@ snapshots:
       '@react-stately/flags': 3.1.2
       '@react-stately/utils': 3.11.0(react@18.3.1)
       '@react-types/shared': 3.33.1(react@18.3.1)
-      '@swc/helpers': 0.5.21
+      '@swc/helpers': 0.5.23
       clsx: 2.1.1
       react: 18.3.1
       react-dom: 18.3.1(react@18.3.1)

@@ -1,4 +1,6 @@
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
+import { updatePurchasedPrices } from "@carbon/operations/update-purchased-prices";
+import { getJobDatabaseClient } from "../../../db";
 import { inngest } from "../../client";
 
 export const postTransactionFunction = inngest.createFunction(
@@ -71,21 +73,19 @@ export const postTransactionFunction = inngest.createFunction(
                 documentId: payload.documentId
               });
 
-              const priceUpdate = await serviceRole.functions.invoke(
-                "update-purchased-prices",
+              const priceUpdate = await updatePurchasedPrices(
                 {
-                  body: {
-                    invoiceId: payload.documentId,
-                    companyId: payload.companyId,
-                    userId: payload.userId,
-                    source: "purchaseInvoice"
-                  }
-                }
+                  db: getJobDatabaseClient(),
+                  companyId: payload.companyId,
+                  userId: payload.userId,
+                  system: true
+                },
+                { invoiceId: payload.documentId, source: "purchaseInvoice" }
               );
 
               result = {
                 success: priceUpdate.error === null,
-                message: priceUpdate.error?.message
+                message: priceUpdate.error?.message ?? ""
               };
             }
           }

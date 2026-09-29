@@ -3,9 +3,11 @@ import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { trackWorkEvent } from "@carbon/lib/telemetry";
 import { raiseMoment } from "@carbon/lib/workflows";
 import { getLogger } from "@carbon/logger";
+import { updatePurchasedPrices } from "@carbon/operations/update-purchased-prices";
 import type { ActionFunctionArgs } from "react-router";
 import { getCompanySettings } from "~/modules/settings";
 import { checkPartyContactRequirement } from "~/modules/settings/party-contact.server";
+import { getDatabaseClient } from "~/services/database.server";
 
 const logger = getLogger("erp", "purchase-invoice.post");
 
@@ -108,17 +110,13 @@ export async function action({ request, params }: ActionFunctionArgs) {
       !companySettings.data?.purchasePriceUpdateTiming ||
       companySettings.data.purchasePriceUpdateTiming === "Purchase Invoice Post"
     ) {
-      const priceUpdate = await serviceRole.functions.invoke(
-        "update-purchased-prices",
+      const priceUpdate = await updatePurchasedPrices(
+        { db: getDatabaseClient(), companyId, userId, system: true },
         {
-          body: {
-            invoiceId: invoiceId,
-            companyId: companyId,
-            userId: userId,
-            source: "purchaseInvoice",
-            updatePrices: true,
-            updateLeadTimes: false
-          }
+          invoiceId,
+          source: "purchaseInvoice",
+          updatePrices: true,
+          updateLeadTimes: false
         }
       );
 

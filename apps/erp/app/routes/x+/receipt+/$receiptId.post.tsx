@@ -11,11 +11,13 @@ import { trigger } from "@carbon/jobs";
 import { trackWorkEvent } from "@carbon/lib/telemetry";
 import { raiseMoment } from "@carbon/lib/workflows";
 import { getLogger } from "@carbon/logger";
+import { updatePurchasedPrices } from "@carbon/operations/update-purchased-prices";
 import { getCachedPrinterConfig } from "@carbon/printing/printing.server";
 import { getOverReceiptViolations } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
 import { reconcileReceiptSerialEntities } from "~/modules/inventory";
+import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
 
 const logger = getLogger("erp", "receiptid-post");
@@ -245,17 +247,14 @@ export async function action({ request, params }: ActionFunctionArgs) {
       receiptMetadata.data?.sourceDocument === "Purchase Order" &&
       receiptMetadata.data?.sourceDocumentId
     ) {
-      const leadTimeUpdate = await serviceRole.functions.invoke(
-        "update-purchased-prices",
+      // System: the poster needs no purchasing rights to refresh lead times.
+      const leadTimeUpdate = await updatePurchasedPrices(
+        { db: getDatabaseClient(), companyId, userId, system: true },
         {
-          body: {
-            source: "purchaseOrder",
-            purchaseOrderId: receiptMetadata.data.sourceDocumentId,
-            companyId,
-            userId,
-            updatePrices: false,
-            updateLeadTimes: true
-          }
+          source: "purchaseOrder",
+          purchaseOrderId: receiptMetadata.data.sourceDocumentId,
+          updatePrices: false,
+          updateLeadTimes: true
         }
       );
 

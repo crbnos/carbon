@@ -1,36 +1,32 @@
-import { serve } from "https://deno.land/std@0.175.0/http/server.ts";
-
+import type { Database } from "@carbon/database";
+import { datetime, getCompanyTimeZone } from "@carbon/database/datetime";
+import { getLogger } from "@carbon/logger";
+import { parseDate } from "@internationalized/date";
 import { sql } from "kysely";
-import z from "npm:zod@^4.5.4";
-import { DB, getConnectionPool, getDatabaseClient } from "../lib/database.ts";
-import { datetime, getCompanyTimeZone } from "../lib/datetime.ts";
-import { getFunctionLogger } from "../lib/logging.ts";
-import { RecordNotFoundError } from "../lib/company-records.ts";
-import { corsPreflight, errorResponse, jsonResponse } from "../lib/response.ts";
-import { requirePermissions } from "../lib/supabase.ts";
-import { Database } from "../lib/types.ts";
+import { z } from "zod";
+import { RecordNotFoundError } from "../company-records";
+import {
+  assertOperationPermissions,
+  type OperationContext,
+  serviceRoleClient
+} from "../context";
+import { runOperation } from "../result";
 
-const pool = getConnectionPool(1);
-const db = getDatabaseClient<DB>(pool);
-const logger = getFunctionLogger("update-purchased-prices");
+const logger = getLogger("operations", "update-purchased-prices");
 
-const payloadValidator = z.discriminatedUnion("source", [
+export const updatePurchasedPricesInput = z.discriminatedUnion("source", [
   z.object({
     source: z.literal("purchaseOrder"),
     purchaseOrderId: z.string(),
-    companyId: z.string(),
-    userId: z.string(),
     updatePrices: z.boolean().optional(),
-    updateLeadTimes: z.boolean().optional(),
+    updateLeadTimes: z.boolean().optional()
   }),
   z.object({
     source: z.literal("purchaseInvoice"),
     invoiceId: z.string(),
-    companyId: z.string(),
-    userId: z.string(),
     updatePrices: z.boolean().optional(),
-    updateLeadTimes: z.boolean().optional(),
-  }),
+    updateLeadTimes: z.boolean().optional()
+  })
 ]);
 
 interface PurchaseLineData {
@@ -42,34 +38,38 @@ interface PurchaseLineData {
   purchaseUnitOfMeasureCode: string | null;
 }
 
-const millisecondsInADay = 1000 * 60 * 60 * 24;
-
+/** Whole days from order to delivery (`YYYY-MM-DD` each); 0 when either is unparseable. */
 const calculateLeadTimeInDays = (
   orderDate: string,
   deliveryDate: string
 ): number => {
-  const orderDateTime = new Date(`${orderDate}T00:00:00Z`).getTime();
-  const deliveryDateTime = new Date(`${deliveryDate}T00:00:00Z`).getTime();
-
-  if (isNaN(orderDateTime) || isNaN(deliveryDateTime)) return 0;
-
-  return Math.max(0, (deliveryDateTime - orderDateTime) / millisecondsInADay);
+  try {
+    return Math.max(0, parseDate(deliveryDate).compare(parseDate(orderDate)));
+  } catch {
+    return 0;
+  }
 };
 
-serve(async (req: Request) => {
-  const preflight = corsPreflight(req);
-  if (preflight) return preflight;
+export function updatePurchasedPrices(
+  ctx: OperationContext,
+  input: z.infer<typeof updatePurchasedPricesInput>
+) {
+  return runOperation("update-purchased-prices", async () => {
+    const parsedPayload = updatePurchasedPricesInput.parse(input);
+    const { source } = parsedPayload;
+    const { db, companyId } = ctx;
+    const shouldUpdatePrices = parsedPayload.updatePrices ?? true;
+    const shouldUpdateLeadTimes = parsedPayload.updateLeadTimes ?? false;
 
-  const payload = await req.json();
-  const parsedPayload = payloadValidator.parse(payload);
-  const { source, companyId, userId } = parsedPayload;
-  const shouldUpdatePrices = parsedPayload.updatePrices ?? true;
-  const shouldUpdateLeadTimes = parsedPayload.updateLeadTimes ?? false;
+    logger.info("update-purchased-prices", {
+      source,
+      companyId,
+      shouldUpdatePrices,
+      shouldUpdateLeadTimes
+    });
 
-  logger.info({ source, companyId, shouldUpdatePrices, shouldUpdateLeadTimes });
-
-  try {
-    const client = await requirePermissions(req, companyId, userId, { update: "purchasing" });
+    await assertOperationPermissions(ctx, { update: "purchasing" });
+    const client = await serviceRoleClient();
 
     let supplierId: string;
     let lines: PurchaseLineData[];
@@ -78,7 +78,11 @@ serve(async (req: Request) => {
       case "purchaseOrder": {
         const { purchaseOrderId } = parsedPayload;
 
-        logger.info({ source, purchaseOrderId, companyId });
+        logger.info("update-purchased-prices", {
+          source,
+          purchaseOrderId,
+          companyId
+        });
 
         const [purchaseOrder, purchaseOrderLines] = await Promise.all([
           client
@@ -91,7 +95,7 @@ serve(async (req: Request) => {
             .from("purchaseOrderLine")
             .select("*")
             .eq("purchaseOrderId", purchaseOrderId)
-            .eq("companyId", companyId),
+            .eq("companyId", companyId)
         ]);
 
         if (purchaseOrder.error)
@@ -109,9 +113,10 @@ serve(async (req: Request) => {
             itemId: line.itemId,
             jobOperationId: null,
             unitPrice: line.unitPrice ?? 0,
-            quantity: (line.purchaseQuantity ?? 0) * (line.conversionFactor ?? 1),
+            quantity:
+              (line.purchaseQuantity ?? 0) * (line.conversionFactor ?? 1),
             conversionFactor: line.conversionFactor,
-            purchaseUnitOfMeasureCode: line.purchaseUnitOfMeasureCode,
+            purchaseUnitOfMeasureCode: line.purchaseUnitOfMeasureCode
           }))
           .filter((line) => line.quantity > 0);
 
@@ -147,11 +152,14 @@ serve(async (req: Request) => {
               remainingQuantity: 0,
               postingDate: today,
               supplierId,
-              companyId,
+              companyId
             }));
 
           if (costLedgerInserts.length > 0) {
-            await db.insertInto("costLedger").values(costLedgerInserts).execute();
+            await db
+              .insertInto("costLedger")
+              .values(costLedgerInserts)
+              .execute();
           }
         }
 
@@ -161,7 +169,11 @@ serve(async (req: Request) => {
       case "purchaseInvoice": {
         const { invoiceId } = parsedPayload;
 
-        logger.info({ source, invoiceId, companyId });
+        logger.info("update-purchased-prices", {
+          source,
+          invoiceId,
+          companyId
+        });
 
         const [purchaseInvoice, purchaseInvoiceLines] = await Promise.all([
           client
@@ -174,7 +186,7 @@ serve(async (req: Request) => {
             .from("purchaseInvoiceLine")
             .select("*")
             .eq("invoiceId", invoiceId)
-            .eq("companyId", companyId),
+            .eq("companyId", companyId)
         ]);
 
         if (purchaseInvoice.error)
@@ -194,7 +206,7 @@ serve(async (req: Request) => {
             unitPrice: line.unitPrice ?? 0,
             quantity: (line.quantity ?? 0) * (line.conversionFactor ?? 1),
             conversionFactor: line.conversionFactor,
-            purchaseUnitOfMeasureCode: line.purchaseUnitOfMeasureCode,
+            purchaseUnitOfMeasureCode: line.purchaseUnitOfMeasureCode
           }))
           .filter((line) => line.quantity > 0);
         break;
@@ -254,7 +266,7 @@ serve(async (req: Request) => {
             sql<number>`sum(case when "adjustment" then 0 else "quantity" end)`.as(
               "quantity"
             ),
-            fn.sum<number>("cost").as("cost"),
+            fn.sum<number>("cost").as("cost")
           ])
           .where("itemId", "in", itemIds)
           .where("companyId", "=", companyId)
@@ -266,7 +278,7 @@ serve(async (req: Request) => {
           .select("*")
           .eq("supplierId", supplierId)
           .in("itemId", itemIds)
-          .eq("companyId", companyId),
+          .eq("companyId", companyId)
       ]);
 
       if (supplierParts.error) {
@@ -279,7 +291,7 @@ serve(async (req: Request) => {
         if (row.itemId) {
           historicalPartCosts[row.itemId] = {
             quantity: Number(row.quantity ?? 0),
-            cost: Number(row.cost ?? 0),
+            cost: Number(row.cost ?? 0)
           };
         }
       });
@@ -319,7 +331,7 @@ serve(async (req: Request) => {
             .from("purchaseOrder")
             .select("id,orderDate")
             .in("id", purchaseOrderIds)
-            .eq("companyId", companyId),
+            .eq("companyId", companyId)
         ]);
 
         if (receiptLines.error) {
@@ -330,12 +342,15 @@ serve(async (req: Request) => {
         }
 
         const receiptsById = (receipts.data ?? []).reduce<
-          Record<string, { postingDate: string; sourceDocumentId: string | null }>
+          Record<
+            string,
+            { postingDate: string; sourceDocumentId: string | null }
+          >
         >((acc, receipt) => {
           if (receipt.postingDate) {
             acc[receipt.id] = {
               postingDate: receipt.postingDate,
-              sourceDocumentId: receipt.sourceDocumentId,
+              sourceDocumentId: receipt.sourceDocumentId
             };
           }
           return acc;
@@ -372,16 +387,13 @@ serve(async (req: Request) => {
             receipt.postingDate
           );
 
-          if (!historicalPartLeadTimes[line.itemId]) {
-            historicalPartLeadTimes[line.itemId] = {
-              quantity: 0,
-              weightedLeadTime: 0,
-            };
-          }
-
-          historicalPartLeadTimes[line.itemId].quantity += quantity;
-          historicalPartLeadTimes[line.itemId].weightedLeadTime +=
-            leadTimeInDays * quantity;
+          historicalPartLeadTimes[line.itemId] ??= {
+            quantity: 0,
+            weightedLeadTime: 0
+          };
+          const history = historicalPartLeadTimes[line.itemId]!;
+          history.quantity += quantity;
+          history.weightedLeadTime += leadTimeInDays * quantity;
         });
       }
     }
@@ -401,7 +413,7 @@ serve(async (req: Request) => {
           itemCostUpdates.push({
             itemId: line.itemId,
             unitCost: costHistory.cost / costHistory.quantity,
-            updatedBy: "system",
+            updatedBy: "system"
           });
 
           const supplierPart = supplierPartRows.find(
@@ -414,7 +426,7 @@ serve(async (req: Request) => {
               unitPrice: line.unitPrice,
               conversionFactor: line.conversionFactor ?? 1,
               supplierUnitOfMeasureCode: line.purchaseUnitOfMeasureCode,
-              updatedBy: "system",
+              updatedBy: "system"
             });
           } else {
             supplierPartInserts.push({
@@ -424,16 +436,19 @@ serve(async (req: Request) => {
               conversionFactor: line.conversionFactor ?? 1,
               supplierUnitOfMeasureCode: line.purchaseUnitOfMeasureCode,
               createdBy: "system",
-              companyId,
+              companyId
             });
           }
         }
 
-        if (shouldUpdatePrices || (shouldUpdateLeadTimes && hasLeadTimeHistory)) {
+        if (
+          shouldUpdatePrices ||
+          (shouldUpdateLeadTimes && hasLeadTimeHistory)
+        ) {
           const itemReplenishmentUpdate: Database["public"]["Tables"]["itemReplenishment"]["Update"] =
             {
               itemId: line.itemId,
-              updatedBy: "system",
+              updatedBy: "system"
             };
 
           if (shouldUpdatePrices) {
@@ -444,10 +459,10 @@ serve(async (req: Request) => {
               line.conversionFactor ?? 1;
           }
 
-          if (shouldUpdateLeadTimes && hasLeadTimeHistory) {
+          const history = historicalPartLeadTimes[line.itemId];
+          if (shouldUpdateLeadTimes && hasLeadTimeHistory && history) {
             itemReplenishmentUpdate.leadTime = Math.round(
-              historicalPartLeadTimes[line.itemId].weightedLeadTime /
-                historicalPartLeadTimes[line.itemId].quantity
+              history.weightedLeadTime / history.quantity
             );
           }
 
@@ -460,7 +475,7 @@ serve(async (req: Request) => {
           id: line.jobOperationId,
           operationMinimumCost: 0,
           operationUnitCost: line.unitPrice ?? 0,
-          updatedBy: "system",
+          updatedBy: "system"
         });
       }
     });
@@ -498,7 +513,7 @@ serve(async (req: Request) => {
               conversionFactor: (eb) => eb.ref("excluded.conversionFactor"),
               supplierUnitOfMeasureCode: (eb) =>
                 eb.ref("excluded.supplierUnitOfMeasureCode"),
-              updatedBy: "system",
+              updatedBy: "system"
             })
           )
           .execute();
@@ -527,10 +542,6 @@ serve(async (req: Request) => {
       }
     });
 
-    return jsonResponse({
-      success: true,
-    });
-  } catch (err) {
-    return errorResponse(err, 500);
-  }
-});
+    return { success: true };
+  });
+}
