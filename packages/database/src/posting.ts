@@ -22,6 +22,7 @@ export {
 export * from "../supabase/functions/shared/get-accounting-period.ts";
 export * from "../supabase/functions/shared/get-posting-group.ts";
 export * from "../supabase/functions/shared/payment-funding.ts";
+export * from "../supabase/functions/shared/pick-guards.ts";
 export {
   type AdjustmentItemCost,
   bookAdjustment,

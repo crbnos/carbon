@@ -5,6 +5,7 @@ import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { trigger } from "@carbon/jobs";
 import { getLogger } from "@carbon/logger";
+import { postStockTransferAs } from "@carbon/operations/post-stock-transfer";
 import {
   TrackedEntityPicker,
   type TrackedEntitySelection,
@@ -31,6 +32,7 @@ import {
 } from "~/modules/inventory";
 import { getItemStorageUnitQuantities } from "~/modules/items";
 import { getCompanySettings } from "~/modules/settings";
+import { getDatabaseClient } from "~/services/database.server";
 import { getEdgeFunctionErrorMessage } from "~/utils/error";
 import { requireUnlocked } from "~/utils/lockedGuard.server";
 import { path } from "~/utils/path";
@@ -198,11 +200,13 @@ export async function action({ request, params }: ActionFunctionArgs) {
   };
 
   // Service role: `userId` is the effective (console pin-in) user, not the
-  // token's subject, which the edge function's membership check compares.
+  // token's subject, which the operation's membership check compares.
   const { data: transferResult, error: functionError } =
-    await getCarbonServiceRole().functions.invoke("post-stock-transfer", {
-      body: JSON.stringify(functionPayload)
-    });
+    await postStockTransferAs(
+      getCarbonServiceRole(),
+      getDatabaseClient(),
+      functionPayload
+    );
 
   if (functionError) {
     // The edge function returns its guard failures (over-pick, already picked)

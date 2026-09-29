@@ -4,9 +4,11 @@ import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { trigger } from "@carbon/jobs";
 import { getLogger } from "@carbon/logger";
+import { postStockTransferAs } from "@carbon/operations/post-stock-transfer";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { getStockTransfer } from "~/modules/inventory";
+import { getDatabaseClient } from "~/services/database.server";
 import { requireUnlocked } from "~/utils/lockedGuard.server";
 import { path } from "~/utils/path";
 
@@ -66,7 +68,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  let type = "inventory";
+  let type: "inventory" | "unpickSerial" | "unpickBatch" | "unpickInventory" =
+    "inventory";
   if (pickedQuantity === 0) {
     if (stockTransferLine.data.requiresSerialTracking) {
       type = "unpickSerial";
@@ -95,20 +98,19 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   // Call the post-stock-transfer function for inventory items
   // Service role: `userId` is the effective (console pin-in) user, not the
-  // token's subject, which the edge function's membership check compares.
+  // token's subject, which the operation's membership check compares.
   const { data: transferResult, error: functionError } =
-    await getCarbonServiceRole().functions.invoke("post-stock-transfer", {
-      body: JSON.stringify({
-        type: type,
-        stockTransferId: stockTransferLine.data.stockTransferId,
-        stockTransferLineId: lineId,
-        quantity: pickedQuantity,
-        locationId: locationId,
-        trackedEntityId: trackedEntityId,
-        userId,
-        companyId
-      })
-    });
+    await postStockTransferAs(getCarbonServiceRole(), getDatabaseClient(), {
+      type: type,
+      stockTransferId: stockTransferLine.data.stockTransferId,
+      stockTransferLineId: lineId,
+      quantity: pickedQuantity,
+      locationId: locationId,
+      trackedEntityId: trackedEntityId,
+      userId,
+      companyId
+      // One body for four `type`s; the operation validates it per type.
+    } as Parameters<typeof postStockTransferAs>[2]);
 
   if (functionError) {
     return data(

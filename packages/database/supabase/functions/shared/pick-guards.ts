@@ -13,6 +13,9 @@ export type PickGuardKind = "over-pick" | "already-picked" | "empty-pick";
 /** A guard refusal the caller turns into a 400 (never a 500). `kind` lets the
  *  edge function's outer catch distinguish it from a data-layer error. */
 export class PickGuardError extends Error {
+  // A caller-input refusal, not a server fault: every caller answers it with a
+  // 400 and its message.
+  readonly status = 400;
   readonly kind: PickGuardKind;
   constructor(kind: PickGuardKind, message: string) {
     super(message);

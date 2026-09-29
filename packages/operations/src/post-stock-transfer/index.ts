@@ -1,36 +1,39 @@
-import { serve } from "https://deno.land/std@0.175.0/http/server.ts";
-import { type CalendarDate, parseDate } from "@internationalized/date";
-import { nanoid } from "https://deno.land/x/nanoid@v3.0.0/nanoid.ts";
-import { z } from "https://deno.land/x/zod@v3.21.4/mod.ts";
-import { sql } from "kysely";
-import { DB, getConnectionPool, getDatabaseClient } from "../lib/database.ts";
-import { assertCompanyRecords, RecordNotFoundError } from "../lib/company-records.ts";
-import { datetime, getCompanyTimeZone } from "../lib/datetime.ts";
-import { corsPreflight, errorResponse, jsonResponse } from "../lib/response.ts";
-import { requirePermissions } from "../lib/supabase.ts";
-import type { Database } from "../lib/types.ts";
-import { buildBatchSplitRecords, isFullDraw } from "../shared/batch-split.ts";
-import { round } from "../shared/precision.ts";
+import type { Database } from "@carbon/database";
+import type { KyselyDatabase } from "@carbon/database/client";
+import { datetime, getCompanyTimeZone } from "@carbon/database/datetime";
 import {
   assertEntityCoversPick,
   PickGuardError,
-  resolvePick,
-} from "../shared/pick-guards.ts";
-
-const pool = getConnectionPool(1);
-const db = getDatabaseClient<DB>(pool);
+  resolvePick
+} from "@carbon/database/posting";
+import { buildBatchSplitRecords, isFullDraw, round } from "@carbon/utils";
+import { type CalendarDate, parseDate } from "@internationalized/date";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import { type Insertable, type Kysely, sql } from "kysely";
+import { nanoid } from "nanoid";
+import { z } from "zod";
+import { assertCompanyRecords, RecordNotFoundError } from "../company-records";
+import {
+  assertOperationPermissions,
+  callerContext,
+  type OperationContext
+} from "../context";
+import { runOperation } from "../result";
 
 type ExpiredEntityPolicy = "Warn" | "Block" | "BlockWithOverride";
 
-async function getExpiredEntityPolicy(companyId: string): Promise<ExpiredEntityPolicy> {
+async function getExpiredEntityPolicy(
+  db: Kysely<KyselyDatabase>,
+  companyId: string
+): Promise<ExpiredEntityPolicy> {
   const row = await db
     .selectFrom("companySettings")
     .select("inventoryShelfLife")
     .where("id", "=", companyId)
     .executeTakeFirst();
-  const blob = row?.inventoryShelfLife as
-    | { expiredEntityPolicy?: ExpiredEntityPolicy }
-    | null;
+  const blob = row?.inventoryShelfLife as {
+    expiredEntityPolicy?: ExpiredEntityPolicy;
+  } | null;
   return blob?.expiredEntityPolicy ?? "Block";
 }
 
@@ -69,23 +72,19 @@ function checkExpiredEntity(
   throw new Error(`Cannot transfer expired tracked entity: ${entity.id}`);
 }
 
-const payloadValidator = z.discriminatedUnion("type", [
+export const postStockTransferInput = z.discriminatedUnion("type", [
   z.object({
     type: z.literal("inventory"),
     stockTransferId: z.string(),
     stockTransferLineId: z.string(),
     quantity: z.number().positive(),
-    locationId: z.string(),
-    userId: z.string(),
-    companyId: z.string(),
+    locationId: z.string()
   }),
   z.object({
     type: z.literal("unpickInventory"),
     stockTransferId: z.string(),
     stockTransferLineId: z.string(),
-    locationId: z.string(),
-    userId: z.string(),
-    companyId: z.string(),
+    locationId: z.string()
   }),
   z.object({
     type: z.literal("serial"),
@@ -93,9 +92,7 @@ const payloadValidator = z.discriminatedUnion("type", [
     stockTransferLineId: z.string(),
     trackedEntityId: z.string(),
     fromStorageUnitId: z.string().nullable(),
-    locationId: z.string(),
-    userId: z.string(),
-    companyId: z.string(),
+    locationId: z.string()
   }),
   z.object({
     type: z.literal("batch"),
@@ -106,47 +103,60 @@ const payloadValidator = z.discriminatedUnion("type", [
     quantity: z.number().positive(),
     overrideExpired: z.boolean().optional(),
     overrideReason: z.string().optional(),
-    locationId: z.string(),
-    userId: z.string(),
-    companyId: z.string(),
+    locationId: z.string()
   }),
   z.object({
     type: z.literal("unpickSerial"),
     stockTransferId: z.string(),
     stockTransferLineId: z.string(),
     trackedEntityId: z.string(),
-    locationId: z.string(),
-    userId: z.string(),
-    companyId: z.string(),
+    locationId: z.string()
   }),
   z.object({
     type: z.literal("unpickBatch"),
     stockTransferId: z.string(),
     stockTransferLineId: z.string(),
     trackedEntityId: z.string(),
-    locationId: z.string(),
-    userId: z.string(),
-    companyId: z.string(),
-  }),
+    locationId: z.string()
+  })
 ]);
 
-serve(async (req: Request) => {
-  const preflight = corsPreflight(req);
-  if (preflight) return preflight;
+/**
+ * `postStockTransfer` for app code that holds a Supabase client: a service-role
+ * client runs it as the system, any other client is permission-checked.
+ */
+export async function postStockTransferAs(
+  client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
+  input: z.input<typeof postStockTransferInput> & {
+    companyId: string;
+    userId: string;
+  }
+) {
+  const { companyId, userId } = input;
+  return postStockTransfer(
+    await callerContext(client, { db, companyId, userId }),
+    input
+  );
+}
 
-  const payload = await req.json();
-
-  try {
-    const validatedPayload = payloadValidator.parse(payload);
+/** Picks or un-picks stock-transfer lines (untracked, serial or batch), per `type`. */
+export function postStockTransfer(
+  ctx: OperationContext,
+  input: z.input<typeof postStockTransferInput>
+) {
+  return runOperation("post-stock-transfer", async () => {
+    const { db } = ctx;
+    const validatedPayload = {
+      ...postStockTransferInput.parse(input),
+      companyId: ctx.companyId,
+      userId: ctx.userId
+    };
 
     // Kysely below bypasses RLS: the caller must belong to the company it names.
-    try {
-      await requirePermissions(req, validatedPayload.companyId, validatedPayload.userId, {});
-    } catch (err) {
-      return errorResponse(err, 401);
-    }
+    await assertOperationPermissions(ctx, {});
 
-    // requirePermissions proves the caller may act in companyId, not that the
+    // The permission check proves the caller may act in companyId, not that the
     // body's ids belong to it. Every case writes stockTransferId as the
     // ledger/activity documentId and locationId / fromStorageUnitId onto this
     // company's ledger rows, so they are re-read under companyId — and the line
@@ -162,24 +172,36 @@ serve(async (req: Request) => {
         .where("companyId", "=", companyId)
         .executeTakeFirst();
       if (!line) throw new RecordNotFoundError("Stock transfer line not found");
-      await assertCompanyRecords(db, "location", [locationId], companyId, "Location");
+      await assertCompanyRecords(
+        db,
+        "location",
+        [locationId],
+        companyId,
+        "Location"
+      );
       await assertCompanyRecords(
         db,
         "storageUnit",
-        ["fromStorageUnitId" in validatedPayload ? validatedPayload.fromStorageUnitId : null],
+        [
+          "fromStorageUnitId" in validatedPayload
+            ? validatedPayload.fromStorageUnitId
+            : null
+        ],
         companyId,
         "Storage unit"
       );
     }
 
-    const companyToday = datetime.today(await getCompanyTimeZone(db, validatedPayload.companyId));
+    const companyToday = datetime.today(
+      await getCompanyTimeZone(db, validatedPayload.companyId)
+    );
     const today = companyToday.toString();
     let expiredWarning: string | undefined;
     let splitEntityId: string | undefined;
 
     console.log({
       function: "post-stock-transfer",
-      ...validatedPayload,
+      ...validatedPayload
     });
 
     switch (validatedPayload.type) {
@@ -190,7 +212,7 @@ serve(async (req: Request) => {
           quantity,
           locationId,
           userId,
-          companyId,
+          companyId
         } = validatedPayload;
 
         await db.transaction().execute(async (trx) => {
@@ -216,7 +238,7 @@ serve(async (req: Request) => {
             documentType: "Direct Transfer",
             documentId: stockTransferId,
             createdBy: userId,
-            companyId,
+            companyId
           });
 
           itemLedgerInserts.push({
@@ -229,7 +251,7 @@ serve(async (req: Request) => {
             documentType: "Direct Transfer",
             documentId: stockTransferId,
             createdBy: userId,
-            companyId,
+            companyId
           });
 
           // Insert item ledger entries
@@ -247,7 +269,7 @@ serve(async (req: Request) => {
               pickedQuantity:
                 (stockTransferLine.pickedQuantity ?? 0) + quantity,
               updatedBy: userId,
-              updatedAt: new Date().toISOString(),
+              updatedAt: datetime.timestamp()
             })
             .where("id", "=", stockTransferLineId)
             .where("companyId", "=", companyId)
@@ -263,7 +285,7 @@ serve(async (req: Request) => {
           stockTransferLineId,
           locationId,
           userId,
-          companyId,
+          companyId
         } = validatedPayload;
 
         await db.transaction().execute(async (trx) => {
@@ -292,7 +314,7 @@ serve(async (req: Request) => {
               documentType: "Direct Transfer",
               documentId: stockTransferId,
               createdBy: userId,
-              companyId,
+              companyId
             });
 
             itemLedgerInserts.push({
@@ -305,7 +327,7 @@ serve(async (req: Request) => {
               documentType: "Direct Transfer",
               documentId: stockTransferId,
               createdBy: userId,
-              companyId,
+              companyId
             });
 
             // Insert reverse item ledger entries
@@ -324,7 +346,7 @@ serve(async (req: Request) => {
               trackedEntityId: null,
               pickedQuantity: 0,
               updatedBy: userId,
-              updatedAt: new Date().toISOString(),
+              updatedAt: datetime.timestamp()
             })
             .where("id", "=", stockTransferLineId)
             .where("companyId", "=", companyId)
@@ -342,7 +364,7 @@ serve(async (req: Request) => {
           trackedEntityId,
           locationId,
           userId,
-          companyId,
+          companyId
         } = validatedPayload;
 
         await db.transaction().execute(async (trx) => {
@@ -360,7 +382,7 @@ serve(async (req: Request) => {
           const newPickedQuantity = resolvePick({
             lineQuantity: Number(stockTransferLine.quantity ?? 0),
             pickedQuantity: Number(stockTransferLine.pickedQuantity ?? 0),
-            transferQuantity: 1,
+            transferQuantity: 1
           });
 
           // Lock the serial itself BEFORE the repeat-scan query: the guard
@@ -381,7 +403,11 @@ serve(async (req: Request) => {
           // would let the ledger double; the guard is an explicit 400.
           const alreadyOnTransfer = await trx
             .selectFrom("trackedActivityInput as tai")
-            .innerJoin("trackedActivity as ta", "ta.id", "tai.trackedActivityId")
+            .innerJoin(
+              "trackedActivity as ta",
+              "ta.id",
+              "tai.trackedActivityId"
+            )
             .where("tai.trackedEntityId", "=", trackedEntityId)
             .where("tai.companyId", "=", companyId)
             .where("ta.type", "=", "Transfer")
@@ -416,10 +442,10 @@ serve(async (req: Request) => {
                 // The line's own column is overwritten with this same payload
                 // value later in the transaction — read the payload directly.
                 "From Shelf": fromStorageUnitId,
-                "To Shelf": stockTransferLine.toStorageUnitId,
+                "To Shelf": stockTransferLine.toStorageUnitId
               },
               companyId,
-              createdBy: userId,
+              createdBy: userId
             })
             .execute();
 
@@ -431,7 +457,7 @@ serve(async (req: Request) => {
               trackedEntityId: trackedEntityId,
               quantity: 1,
               companyId,
-              createdBy: userId,
+              createdBy: userId
             })
             .execute();
 
@@ -447,7 +473,7 @@ serve(async (req: Request) => {
             documentId: stockTransferId,
             trackedEntityId: trackedEntityId,
             createdBy: userId,
-            companyId,
+            companyId
           });
 
           itemLedgerInserts.push({
@@ -461,7 +487,7 @@ serve(async (req: Request) => {
             documentId: stockTransferId,
             trackedEntityId: trackedEntityId,
             createdBy: userId,
-            companyId,
+            companyId
           });
 
           // Insert item ledger entries
@@ -480,7 +506,7 @@ serve(async (req: Request) => {
               fromStorageUnitId: fromStorageUnitId,
               pickedQuantity: newPickedQuantity,
               updatedBy: userId,
-              updatedAt: new Date().toISOString(),
+              updatedAt: datetime.timestamp()
             })
             .where("id", "=", stockTransferLineId)
             .where("companyId", "=", companyId)
@@ -501,10 +527,10 @@ serve(async (req: Request) => {
           overrideReason,
           locationId,
           userId,
-          companyId,
+          companyId
         } = validatedPayload;
 
-        const policy = await getExpiredEntityPolicy(companyId);
+        const policy = await getExpiredEntityPolicy(db, companyId);
 
         await db.transaction().execute(async (trx) => {
           // Get stock transfer line details. Lock the row so two concurrent
@@ -533,16 +559,19 @@ serve(async (req: Request) => {
           const newPickedQuantity = resolvePick({
             lineQuantity: Number(stockTransferLine.quantity ?? 0),
             pickedQuantity: Number(stockTransferLine.pickedQuantity ?? 0),
-            transferQuantity: quantity,
+            transferQuantity: quantity
           });
           assertEntityCoversPick({
             entityQuantity: Number(trackedEntity.quantity),
-            transferQuantity: quantity,
+            transferQuantity: quantity
           });
 
           // Expiry policy gate (throws on hard reject; returns warning for 'Warn').
           const expiredCheck = checkExpiredEntity(
-            { id: trackedEntity.id, expirationDate: trackedEntity.expirationDate },
+            {
+              id: trackedEntity.id,
+              expirationDate: trackedEntity.expirationDate
+            },
             policy,
             { allowed: !!overrideExpired, reason: overrideReason ?? null },
             companyToday
@@ -583,7 +612,7 @@ serve(async (req: Request) => {
                 attributes: trackedEntity.attributes as Record<
                   string,
                   unknown
-                > | null,
+                > | null
               },
               drawQuantity: transferQuantity,
               childId,
@@ -595,17 +624,25 @@ serve(async (req: Request) => {
               companyId,
               userId,
               postingDate: today,
-              childStatus: "Available",
+              childStatus: "Available"
             });
 
             await trx
               .insertInto("trackedActivity")
-              .values(split.activityInsert)
+              .values(
+                split.activityInsert as Insertable<
+                  KyselyDatabase["trackedActivity"]
+                >
+              )
               .execute();
 
             await trx
               .insertInto("trackedEntity")
-              .values(split.childEntityInsert)
+              .values(
+                split.childEntityInsert as Insertable<
+                  KyselyDatabase["trackedEntity"]
+                >
+              )
               .execute();
 
             await trx
@@ -622,13 +659,14 @@ serve(async (req: Request) => {
               .updateTable("trackedEntity")
               .set(split.parentUpdate)
               .where("id", "=", trackedEntityId)
+              .where("companyId", "=", companyId)
               .execute();
 
             itemLedgerInserts.push(
-              ...split.ledgerInserts.map((ledgerRow) => ({
+              ...(split.ledgerInserts.map((ledgerRow) => ({
                 ...ledgerRow,
-                quantity: round(ledgerRow.quantity),
-              }))
+                quantity: round(ledgerRow.quantity)
+              })) as typeof itemLedgerInserts)
             );
           }
 
@@ -649,10 +687,10 @@ serve(async (req: Request) => {
                 // The line's own column is overwritten with this same payload
                 // value later in the transaction — read the payload directly.
                 "From Shelf": fromStorageUnitId,
-                "To Shelf": stockTransferLine.toStorageUnitId,
+                "To Shelf": stockTransferLine.toStorageUnitId
               },
               companyId,
-              createdBy: userId,
+              createdBy: userId
             })
             .execute();
 
@@ -665,7 +703,7 @@ serve(async (req: Request) => {
               trackedEntityId: transferredEntityId,
               quantity: transferQuantity,
               companyId,
-              createdBy: userId,
+              createdBy: userId
             })
             .execute();
 
@@ -685,7 +723,7 @@ serve(async (req: Request) => {
               documentId: stockTransferId,
               trackedEntityId: transferredEntityId,
               createdBy: userId,
-              companyId,
+              companyId
             },
             {
               postingDate: today,
@@ -698,7 +736,7 @@ serve(async (req: Request) => {
               documentId: stockTransferId,
               trackedEntityId: transferredEntityId,
               createdBy: userId,
-              companyId,
+              companyId
             }
           );
 
@@ -721,7 +759,7 @@ serve(async (req: Request) => {
               fromStorageUnitId: fromStorageUnitId,
               pickedQuantity: newPickedQuantity,
               updatedBy: userId,
-              updatedAt: new Date().toISOString(),
+              updatedAt: datetime.timestamp()
             })
             .where("id", "=", stockTransferLineId)
             .where("companyId", "=", companyId)
@@ -738,7 +776,7 @@ serve(async (req: Request) => {
           trackedEntityId,
           locationId,
           userId,
-          companyId,
+          companyId
         } = validatedPayload;
 
         await db.transaction().execute(async (trx) => {
@@ -795,7 +833,7 @@ serve(async (req: Request) => {
             documentId: stockTransferId,
             trackedEntityId: trackedEntityId,
             createdBy: userId,
-            companyId,
+            companyId
           });
 
           // Then, restore the entity to the source shelf (fromStorageUnitId)
@@ -810,7 +848,7 @@ serve(async (req: Request) => {
             documentId: stockTransferId,
             trackedEntityId: trackedEntityId,
             createdBy: userId,
-            companyId,
+            companyId
           });
 
           // Insert reverse item ledger entries
@@ -825,11 +863,13 @@ serve(async (req: Request) => {
           await trx
             .deleteFrom("trackedActivityInput")
             .where("trackedActivityId", "=", transferActivity.id!)
+            .where("companyId", "=", companyId)
             .execute();
 
           await trx
             .deleteFrom("trackedActivity")
             .where("id", "=", transferActivity.id!)
+            .where("companyId", "=", companyId)
             .execute();
 
           // Update tracked entity status back to available and restore shelf location
@@ -839,10 +879,11 @@ serve(async (req: Request) => {
               status: "Available",
               attributes: {
                 ...(trackedEntity.attributes as Record<string, unknown>),
-                Shelf: stockTransferLine.fromStorageUnitId,
-              },
+                Shelf: stockTransferLine.fromStorageUnitId
+              }
             })
             .where("id", "=", trackedEntityId)
+            .where("companyId", "=", companyId)
             .execute();
 
           // Update stock transfer line with reduced picked quantity
@@ -855,7 +896,7 @@ serve(async (req: Request) => {
                 (stockTransferLine.pickedQuantity ?? 0) - 1
               ),
               updatedBy: userId,
-              updatedAt: new Date().toISOString(),
+              updatedAt: datetime.timestamp()
             })
             .where("id", "=", stockTransferLineId)
             .where("companyId", "=", companyId)
@@ -872,7 +913,7 @@ serve(async (req: Request) => {
           trackedEntityId,
           locationId,
           userId,
-          companyId,
+          companyId
         } = validatedPayload;
 
         await db.transaction().execute(async (trx) => {
@@ -961,9 +1002,12 @@ serve(async (req: Request) => {
             await trx
               .updateTable("trackedEntity")
               .set({
-                quantity: round(round(Number(parent.quantity)) + transferQuantity),
+                quantity: round(
+                  round(Number(parent.quantity)) + transferQuantity
+                )
               })
               .where("id", "=", parent.id)
+              .where("companyId", "=", companyId)
               .execute();
 
             // Drain the child (don't delete it — ledger history keeps the FK).
@@ -971,9 +1015,10 @@ serve(async (req: Request) => {
               .updateTable("trackedEntity")
               .set({
                 status: "Consumed",
-                quantity: 0,
+                quantity: 0
               })
               .where("id", "=", trackedEntityId)
+              .where("companyId", "=", companyId)
               .execute();
 
             itemLedgerInserts.push(
@@ -988,7 +1033,7 @@ serve(async (req: Request) => {
                 documentId: stockTransferId!,
                 trackedEntityId: trackedEntityId,
                 createdBy: userId,
-                companyId,
+                companyId
               },
               {
                 postingDate: today,
@@ -1001,7 +1046,7 @@ serve(async (req: Request) => {
                 documentId: stockTransferId!,
                 trackedEntityId: parent.id,
                 createdBy: userId,
-                companyId,
+                companyId
               }
             );
 
@@ -1024,16 +1069,19 @@ serve(async (req: Request) => {
               await trx
                 .deleteFrom("trackedActivityOutput")
                 .where("trackedActivityId", "=", splitActivity.id!)
+                .where("companyId", "=", companyId)
                 .execute();
 
               await trx
                 .deleteFrom("trackedActivityInput")
                 .where("trackedActivityId", "=", splitActivity.id!)
+                .where("companyId", "=", companyId)
                 .execute();
 
               await trx
                 .deleteFrom("trackedActivity")
                 .where("id", "=", splitActivity.id!)
+                .where("companyId", "=", companyId)
                 .execute();
             }
           } else if (legacyRemainderId) {
@@ -1068,9 +1116,10 @@ serve(async (req: Request) => {
               .updateTable("trackedEntity")
               .set({
                 status: "Consumed",
-                quantity: 0,
+                quantity: 0
               })
               .where("id", "=", legacyRemainderId)
+              .where("companyId", "=", companyId)
               .execute();
 
             // Mark the split entity as consumed (don't delete it)
@@ -1078,9 +1127,10 @@ serve(async (req: Request) => {
               .updateTable("trackedEntity")
               .set({
                 status: "Available",
-                quantity: originalQuantity,
+                quantity: originalQuantity
               })
               .where("id", "=", trackedEntityId)
+              .where("companyId", "=", companyId)
               .execute();
 
             // Create item ledger entries for merge
@@ -1097,7 +1147,7 @@ serve(async (req: Request) => {
                 documentId: stockTransferId!,
                 trackedEntityId: trackedEntityId,
                 createdBy: userId,
-                companyId,
+                companyId
               },
               {
                 postingDate: today,
@@ -1110,7 +1160,7 @@ serve(async (req: Request) => {
                 documentId: stockTransferId!,
                 trackedEntityId: trackedEntityId,
                 createdBy: userId,
-                companyId,
+                companyId
               },
               {
                 postingDate: today,
@@ -1123,7 +1173,7 @@ serve(async (req: Request) => {
                 documentId: stockTransferId!,
                 trackedEntityId: legacyRemainderId,
                 createdBy: userId,
-                companyId,
+                companyId
               }
             );
 
@@ -1131,16 +1181,19 @@ serve(async (req: Request) => {
             await trx
               .deleteFrom("trackedActivityOutput")
               .where("trackedActivityId", "=", splitActivity.id!)
+              .where("companyId", "=", companyId)
               .execute();
 
             await trx
               .deleteFrom("trackedActivityInput")
               .where("trackedActivityId", "=", splitActivity.id!)
+              .where("companyId", "=", companyId)
               .execute();
 
             await trx
               .deleteFrom("trackedActivity")
               .where("id", "=", splitActivity.id!)
+              .where("companyId", "=", companyId)
               .execute();
           } else {
             // This was a direct transfer, just restore the entity and shelf location
@@ -1150,10 +1203,11 @@ serve(async (req: Request) => {
                 status: "Available",
                 attributes: {
                   ...(trackedEntity.attributes as Record<string, unknown>),
-                  Shelf: stockTransferLine.fromStorageUnitId,
-                },
+                  Shelf: stockTransferLine.fromStorageUnitId
+                }
               })
               .where("id", "=", trackedEntityId)
+              .where("companyId", "=", companyId)
               .execute();
 
             // Create reverse item ledger entries to undo the transfer
@@ -1168,7 +1222,7 @@ serve(async (req: Request) => {
               documentId: stockTransferId,
               trackedEntityId: trackedEntityId,
               createdBy: userId,
-              companyId,
+              companyId
             });
 
             itemLedgerInserts.push({
@@ -1182,7 +1236,7 @@ serve(async (req: Request) => {
               documentId: stockTransferId,
               trackedEntityId: trackedEntityId,
               createdBy: userId,
-              companyId,
+              companyId
             });
           }
 
@@ -1198,11 +1252,13 @@ serve(async (req: Request) => {
           await trx
             .deleteFrom("trackedActivityInput")
             .where("trackedActivityId", "=", transferActivity.id!)
+            .where("companyId", "=", companyId)
             .execute();
 
           await trx
             .deleteFrom("trackedActivity")
             .where("id", "=", transferActivity.id!)
+            .where("companyId", "=", companyId)
             .execute();
 
           // Update stock transfer line with reduced picked quantity
@@ -1212,10 +1268,13 @@ serve(async (req: Request) => {
               trackedEntityId: null,
               pickedQuantity: Math.max(
                 0,
-                round(round(stockTransferLine.pickedQuantity ?? 0) - transferQuantity)
+                round(
+                  round(stockTransferLine.pickedQuantity ?? 0) -
+                    transferQuantity
+                )
               ),
               updatedBy: userId,
-              updatedAt: new Date().toISOString(),
+              updatedAt: datetime.timestamp()
             })
             .where("id", "=", stockTransferLineId)
             .where("companyId", "=", companyId)
@@ -1226,16 +1285,10 @@ serve(async (req: Request) => {
       }
     }
 
-    return jsonResponse({
+    return {
       success: true,
       warning: expiredWarning,
-      splitEntityId,
-    });
-  } catch (err) {
-    // A pick guard is a caller-input refusal, not a server fault — surface it
-    // as a 400 with its message so the scan UI can show "already fully picked"
-    // instead of a generic failure.
-    const status = err instanceof PickGuardError ? 400 : 500;
-    return errorResponse(err, status);
-  }
-});
+      splitEntityId
+    };
+  });
+}
