@@ -77,18 +77,6 @@ const { object } = await generateObject({
 These run server-side (route actions / `.server.ts`). `OPENAI_API_KEY` is read from the
 environment by the provider.
 
-## Supabase edge-function OpenAI helper
-
-`packages/database/supabase/functions/lib/ai/openai.ts` builds a Deno-side OpenAI client:
-
-```ts
-import { createOpenAI } from "npm:@ai-sdk/openai@2.0.60";
-export const openai = createOpenAI({ /* apiKey from Deno.env */ });
-```
-
-This is the Deno/edge-function equivalent of the npm provider. Verify call sites before
-assuming it's wired into anything. <!-- UNVERIFIED: which edge functions consume this helper -->
-
 ## Gotchas
 
 - **Don't reach for `@ai-sdk/anthropic` / Claude.** No code uses it; adding Anthropic

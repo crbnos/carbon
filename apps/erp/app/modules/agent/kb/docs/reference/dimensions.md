@@ -25,9 +25,9 @@ Dimensions are stored in a join table, `journalLineDimension`, with one row per 
 
 The interesting part is that you rarely set these by hand. When accounting is enabled and a document posts, the posting path resolves them automatically:
 
-1. It loads every **active** dimension for the company group into a map keyed by entity type (`post-shipment/index.ts:171`).
+1. It loads every **active** dimension for the company group into a map keyed by entity type (`post-shipment/index.ts`).
 2. As it builds each journal line, it already knows the source facts — the customer, the item, the item posting group, the location, the cost center behind that line.
-3. For each of those facts, **if an active dimension exists for that entity type**, it attaches a `journalLineDimension` row pointing the `valueId` at that entity's id (`post-shipment/index.ts:1222`). No dimension defined for an axis means no tag on that axis — defining the dimension is what turns tagging on.
+3. For each of those facts, **if an active dimension exists for that entity type**, it attaches a `journalLineDimension` row pointing the `valueId` at that entity's id (`post-shipment/index.ts`). No dimension defined for an axis means no tag on that axis — defining the dimension is what turns tagging on.
 
 So a `Location` dimension isn't a field you fill in on the shipment. You define the dimension once, and from then on every shipment, receipt, invoice, and inventory posting carries its location automatically, because the posting already knew the location. The same pattern runs in `post-receipt`, `post-sales-invoice`, `post-purchase-invoice`, `post-inventory-adjustment`, `post-payment`, and the other posting functions.
 

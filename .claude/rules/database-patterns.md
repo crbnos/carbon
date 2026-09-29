@@ -23,7 +23,7 @@ All client factories live in `packages/auth/src/lib/supabase/`.
 | Factory | Source | RLS? | Use |
 | --- | --- | --- | --- |
 | `getCarbon(accessToken?)` | `client.ts` (anon key + user JWT) | Yes (acts as the user) | Default request-scoped client |
-| `getCarbonServiceRole()` | `client.server.ts` (service role key) | No (bypasses RLS) | Server-only privileged ops, jobs, edge functions |
+| `getCarbonServiceRole()` | `client.server.ts` (service role key) | No (bypasses RLS) | Server-only privileged ops, jobs, server functions, edge functions |
 | `getCarbonAPIKeyClient(apiKey)` | `client.ts` (`carbon-key` header) | Yes | Public API key auth |
 
 `createClient` is configured with `autoRefreshToken: false`, `persistSession: false`, and a

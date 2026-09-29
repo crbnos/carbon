@@ -195,7 +195,7 @@ function Doors() {
     { x: 16, label: "supabase-js", sub: "user scoped", rls: "rules ON", tone: "svc" as const, why: "the default" },
     { x: 196, label: "supabase-js", sub: "service role", rls: "rules OFF", tone: "async" as const, why: "needs to see everything" },
     { x: 376, label: "Kysely", sub: "direct SQL", rls: "rules OFF", tone: "async" as const, why: "needs a real transaction" },
-    { x: 556, label: "Edge function", sub: "Deno", rls: "rules OFF", tone: "async" as const, why: "heavy set-based work" },
+    { x: 556, label: "Server function", sub: "in-process", rls: "rules OFF", tone: "async" as const, why: "heavy multi-step writes" },
   ];
   const w = 168;
   return (

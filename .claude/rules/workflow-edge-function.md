@@ -3,17 +3,17 @@ paths: ["packages/database/supabase/functions/**"]
 # Workflow: Authoring a Supabase Edge Function
 
 How to add or extend a Carbon edge function. These are **Deno** functions in
-`packages/database/supabase/functions/<name>/index.ts`. They run privileged work
-that doesn't belong in a request handler (creating documents, posting ledger
-entries, MRP, CSV import, scheduling) and are called from app code via
-`client.functions.invoke("<name>", { body })`.
+`packages/database/supabase/functions/<name>/index.ts`, called over HTTP via
+`client.functions.invoke("<name>", { body })`. Five remain: `embed`, `embedding`,
+`event-wake`, `thumbnail`, `trigger`.
 
-Grounded against the real functions (`create`, `post-receipt`, `post-shipment`,
-`import-csv`, `mrp`, `schedule`) and the shared `lib/**`. Not Trigger.dev and not
-Inngest: edge functions are a distinct mechanism. Async/event-driven side effects
-go through the Inngest event system (`@carbon/jobs`, see `event-system.md`), NOT
-here. Reach for an edge function when the app needs a synchronous privileged
-call-and-wait (it gets `{ data, error }` back from `invoke`).
+Privileged, transactional writes shared by the apps, the API and jobs (posting,
+converting, issuing, CSV import) are **server functions** in Node, not edge
+functions — see `packages/server-functions/AGENTS.md`. MRP and scheduling are
+`@carbon/planning`. Async/event-driven side effects go through the Inngest event
+system (`@carbon/jobs`, see `event-system.md`). Reach for a new edge function only
+when the work must run in the Supabase edge runtime (e.g. it is called by Postgres
+over pg_net).
 
 ## 1. Scaffold
 
@@ -33,12 +33,10 @@ directory under `supabase/functions/` regardless of `config.toml`. The entry onl
 overrides per-function settings, `verify_jwt` above all.
 <!-- UNVERIFIED: verify_jwt default for an UNREGISTERED function (docs say true; not confirmed on a deployed Carbon fn) -->
 
-`schedule` and `trigger-rework` are both live today with no `config.toml` entry.
-That is the trap: an unregistered function looks unshipped in this file while being
-reachable in production, so its in-function authorization is the only gate it has —
-`trigger-rework` had none until
-`.ai/specs/2026-08-25-backup-durability.md` Part 3. Register the function anyway
-(it is where a future reader looks), but never treat absence as "not deployed".
+`embed`, `thumbnail` and `trigger` have no `config.toml` entry today and are
+deployed all the same, so in-function authorization is the only gate a function
+has. Register the function anyway (it is where a future reader looks), but never
+treat absence as "not deployed".
 
 ```toml
 [functions.<name>]
@@ -51,13 +49,11 @@ verify_jwt = true                              # JWT required (the common case)
   published in the apps' HTML IS a valid JWT, so this alone lets anyone in. The function must
   still authorize in-function: `requirePermissions` when it acts on a company's data, or
   `requireCaller` (`lib/supabase.ts` — service role, signed-in user, or valid API key) when it
-  touches none, or `requireServiceRole` when only servers call it (`thumbnail`). `embedding`,
-  `post-picking`, `post-stock-transfer`, `reschedule` and `thumbnail` all served the anon key
-  until they got one. The `edge-function-authorizes-caller` check (`@carbon/checks`) fails a
-  function that calls none of them. `embed`, `event-wake` and `trigger` are still open —
-  Postgres calls them with the anon key from the `config` table (`util.invoke_edge_function`,
-  `util.wake_event_queue`), so they cannot tell it from an anonymous
-  caller until Postgres sends a server credential.
+  touches none (`embedding`), or `requireServiceRole` when only servers call it
+  (`thumbnail`). The `edge-function-authorizes-caller` check (`@carbon/checks`) fails a
+  function that calls none of them. `embed`, `event-wake` and `trigger` are called by
+  Postgres with the key from the `config` table (`util.invoke_edge_function`,
+  `util.wake_event_queue`) and are baselined in that check.
 - `verify_jwt = false` — only for genuinely public endpoints (none today).
 
 ## 3. Function skeleton
@@ -75,7 +71,7 @@ import { Database } from "../lib/types.ts";
 const payloadValidator = z.object({
   companyId: z.string(),
   userId: z.string(),
-  // ...your fields. Use z.discriminatedUnion("type", [...]) for multi-op fns (see `create`).
+  // ...your fields. Use z.discriminatedUnion("type", [...]) for multi-op fns.
 });
 
 serve(async (req: Request) => {
@@ -122,7 +118,7 @@ exist in the same file but `requirePermissions` is the standard entry point.)
 ## 4. Database-heavy work — Kysely transactions
 
 For multi-row / multi-table writes, init the pool **once at module scope** and use
-a Kysely transaction (the `post-*` and `create` functions do this):
+a Kysely transaction (`embed` does this):
 
 ```typescript
 import { DB, getConnectionPool, getDatabaseClient } from "../lib/database.ts";
@@ -159,45 +155,24 @@ await db.transaction().execute(async (trx) => {
 
 ## 5. Invoke from app code
 
-App services call functions through the supabase client — do **not** hit a raw
+App code calls functions through the supabase client — do **not** hit a raw
 HTTP port. `body` is the JSON payload your validator expects; you get back
 `{ data, error }`.
 
 ```typescript
-// e.g. apps/erp/app/modules/.../*.service.ts (client is from requirePermissions)
-const { data, error } = await client.functions.invoke("post-receipt", {
-  body: { type: "post", receiptId, companyId, userId },
+const { data, error } = await client.functions.invoke("embedding", {
+  body: { text },
 });
 ```
 
-Real call sites: `serviceRole.functions.invoke("create", { body: {...} })`,
-`...invoke("mrp", { body: { ...params } })`, `...invoke("schedule", { body })`,
-`...invoke("import-csv", { body })`.
+Real call sites: `shared.service.ts` → `embedding`, `packages/jobs/.../events/embedding.ts`
+→ `embed`. `event-wake` and `trigger` are called by Postgres via pg_net.
 
-The route's `requirePermissions` is **not** sufficient on its own, and believing it
-was is what produced the cross-tenant write in
-`.ai/specs/2026-08-25-backup-durability.md` Part 3. It proves the CALLER may act in
-`companyId`; it proves nothing about the RECORD IDS in the body, which usually come
-straight from the URL. When the invocation is service-role, RLS is not there to
-catch the mismatch either. So a function that takes a record id must re-read that
-record under `companyId` itself and 404 on a miss.
-
-The pattern is `functions/lib/company-records.ts`:
-
-- **Ids the function only writes as references** (a ledger's `locationId`, an
-  activity's `trackedEntityId`, a caller-chosen `purchaseOrderId`) — call
-  `assertCompanyRecords(db, table, ids, companyId, label)` once per table, right
-  after `requirePermissions`. It ignores null/undefined/duplicate ids (optional
-  fields stay optional), runs one query, and throws `RecordNotFoundError`. A table
-  must be on its `CompanyScopedTable` allow-list; add it there.
-- **The document the function acts on** (the receipt being posted, the invoice being
-  voided) — scope the EXISTING header read with `.eq("companyId", companyId)` and
-  `.maybeSingle()`, and 404 on a miss. Do not add a second pre-check query.
-- **Any other "X not found" miss** — throw `RecordNotFoundError`, not `Error`.
-
-`RecordNotFoundError` carries `status = 404`, and `errorResponse` (`lib/response.ts`)
-uses a numeric 4xx/5xx `err.status` over the status the catch block passes, so a
-catch block needs no `instanceof RecordNotFoundError` mapping.
+A function that takes a record id must re-read that record under `companyId` itself
+and 404 on a miss — the caller's permission proves nothing about the ids in the body.
+Scope the read with `.eq("companyId", companyId)` + `.maybeSingle()`; `errorResponse`
+(`lib/response.ts`) uses a numeric 4xx/5xx `err.status` over the status the catch
+block passes.
 
 ## 6. Local dev
 
@@ -225,7 +200,7 @@ don't run a deploy manually; merging to `main` is what ships it.
       the settings and for discoverability, NOT because it gates the deploy
 - [ ] CORS `OPTIONS` short-circuit returning `corsHeaders`
 - [ ] zod `payloadValidator` (`companyId` + `userId` always; discriminated union for multi-op)
-- [ ] Auth via `requirePermissions(req, companyId, userId, { <action>: "<module>" })`
+- [ ] Auth via `requirePermissions(req, companyId, userId, { <action>: "<module>" })`, `requireCaller` or `requireServiceRole`
 - [ ] Kysely transaction for multi-row writes; pool created at module scope
 - [ ] `companyId` + audit fields on every write
 - [ ] `try/catch` returning `{ error }` with `corsHeaders` + status 500

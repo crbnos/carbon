@@ -25,7 +25,7 @@ DB types, Supabase/Kysely clients, audit config, event system types, rate limiti
 
 - Adding a new event system handler type to the `handlerType` CHECK constraint.
 - Changing `audit.config.ts` entity definitions (affects which tables get audited and how diffs are computed).
-- Modifying `src/client.ts` re-exports (the Kysely/Postgres client barrel shared with Supabase edge functions).
+- Modifying `src/client.ts` re-exports (the Kysely/Postgres client barrel shared by the apps, jobs, server functions and Supabase edge functions).
 
 ## Never
 
@@ -57,11 +57,14 @@ pnpm --filter @carbon/database authz migration <name>   # ship unshipped rules/h
 | `./datetime` | Node re-export of `supabase/functions/lib/datetime.ts` — the edge-runtime datetime helpers (`datetime`, `getCompanyTimeZone`, `getLocationTimeZone`) for Node consumers |
 | `./methods` | Node re-export of `supabase/functions/lib/methods.ts` — shared make-method helpers |
 | `./logging` | Node re-export of `supabase/functions/lib/logging.ts` (`getFunctionLogger`) |
-| `./mrp-engine` | Node re-export of `supabase/functions/lib/mrp-engine.ts` (`explodeBom`, `makeKey`, `makeLocationItemKey`, `makeActualKey`, …) — the pure MRP compute engine consumed by `@carbon/planning`'s `runMrp` (the engine STAYS in the edge-lib; still used by the Deno `recalculate` function) |
+| `./mrp-engine` | Node re-export of `supabase/functions/lib/mrp-engine.ts` (`explodeBom`, `makeKey`, `makeLocationItemKey`, `makeActualKey`, …) — the pure MRP compute engine consumed by `@carbon/planning`'s `runMrp` (the engine STAYS in the edge-lib; also used by get-method, `@carbon/server-functions`) |
 | `./configuration-rule` | Node/browser re-export of `supabase/functions/shared/configuration-rule.ts` (`runConfigurationRule`) — runs configurator rule code in QuickJS (WebAssembly) with no host access and time/memory limits — plus `transpileRule` (sucrase: wraps a stored rule body in `configure(params)` and strips its types, throws on a syntax error). Both are used by get-method (`@carbon/server-functions`, `get-method/sandbox.ts`) and the ERP rule editor, so a preview and a job run the same JavaScript. Its npm deps (`quickjs-emscripten-core`, `@jitl/quickjs-singlefile-browser-release-sync`) are pinned in BOTH this package.json and `functions/deno.json` — keep the versions identical. Never run rule code with `new Function`/`eval`/`import()` |
 | `./fetch-all` | Node re-export of `supabase/functions/lib/fetch-all.ts` (`fetchAll` — paginated PostgREST reads) |
 | `./supersession-pick` | Node re-export of `supabase/functions/lib/supersession-pick.ts` (`buildSupersessionRedirectMap`, `buildConsumeFirstHops`, `settleConsumeFirstLine`, `resolveMadeLinePull`, `consumableInWholeAssemblies`, …) |
 | `./picked-consumption` | Node re-export of `supabase/functions/lib/picked-consumption.ts` (`linesideCredit`, `getPickedBudgets`, `allocateAcrossBudgets`, …) — the one definition of usable lineside stock shared by the pick-list generator and the `issue` backflush |
+| `./posting` | Node re-export of the `supabase/functions/{lib,shared}` posting helpers (journal builders, COGS, posting groups, accounting periods, cost layers, pick guards) for `@carbon/server-functions`. `credit`/`debit`, `AccountType`/`AccountClass` and the accounting-posting / payment-funding helpers come from `@carbon/utils`, not here |
+| `./sequence` | Node re-export of `getNextSequence` / `getNextRevisionSequence` / `getNextSerialNumbers` — the one allocator for document numbers |
+| `./seed-data` | Node re-export of the company seed data (`supabase/functions/lib/seed.ts`) used by the `seed-company` server function |
 | *(no subpath)* | `supabase/functions/shared/image-pipeline.ts` — the codebase-wide image pipeline (decode HEIC/JPEG/PNG/WebP → shape → encode), re-exported by `@carbon/files/media` (NOT by this package). Unlike `precision.ts` it has npm deps (`libheif-js`, `@jsquash/*`) which are pinned in BOTH this package.json and `functions/deno.json` `imports` — keep the versions identical. Its `.d.ts` sits beside it (`wasm-codecs.d.ts`, triple-slash referenced). Consumed by `renderLabelLogo` (`@carbon/files/media`) and the `thumbnail` edge function |
 | `./event` | `QueueMessage`, `EventSchema`, `createEventSystemSubscription`, `deleteEventSystemSubscription` |
 | `./quality` | Inspection execution engine shared by ERP + MES (`upsertInspectionSample`, `upsertInspectionMeasurement`, `dispositionInspection` — optional one-shot `requireOpen`, `reconcileInspectionSamplingPlans`, `changeInspectionDocument`, `getOrCreateJobOperationInspection`, pure `valuateMeasurement`, re-exported from `supabase/functions/shared/inspection-verdict.ts`, which the dataset seed shares); Passed/Failed/Partial are all hard-terminal and samples linked from `productionQuantity.inspectionSampleId` are locked; every fn takes a `Kysely<KyselyDatabase>` first arg — authorize at the route, see `.claude/rules/inspection-system.md` |

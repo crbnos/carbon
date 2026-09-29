@@ -122,4 +122,4 @@ it.
 - `quoteLinePrice` has **no `id`** — PK is `(quoteLineId, quantity)`.
 - Sales orders/invoices: `salesOrderLine` now carries `pricingRuleId` + `priceTrace`
   (so rule provenance *does* propagate to orders), but invoice lines do not. Quote→order
-  conversion goes through the `convert` edge function (`convertQuoteToOrder`).
+  conversion goes through the `convert` server function (`convertQuoteToOrder`).

@@ -26,7 +26,7 @@ The gate lives in `getOrCreateAccountingPeriod`, which every posting path calls 
   - **Locked**: Operational documents are refused with *"Accounting period is locked. Post as an accounting adjustment or unlock the period first."* Accounting adjustments pass.
   - **Open**: Everything posts normally.
 
-A database trigger (`check_accounting_period_open`) is the hard backstop underneath the service check: it rejects any `INSERT`, `DELETE`, or period-move of a journal into or out of a **Closed** period, so even a service-role job or edge function can't slip a posting into a closed month. (Locked semantics need actor identity, so they're enforced at the service layer; the trigger only guards the Closed invariant.) The one exception the trigger allows: a `Posted → Reversed` status flip, since the offsetting reversal lands in an open period.
+A database trigger (`check_accounting_period_open`) is the hard backstop underneath the service check: it rejects any `INSERT`, `DELETE`, or period-move of a journal into or out of a **Closed** period, so even a service-role job or server function can't slip a posting into a closed month. (Locked semantics need actor identity, so they're enforced at the service layer; the trigger only guards the Closed invariant.) The one exception the trigger allows: a `Posted → Reversed` status flip, since the offsetting reversal lands in an open period.
 
 ## The close checklist
 

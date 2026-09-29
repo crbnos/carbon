@@ -49,9 +49,7 @@ fallback is `private/{companyId}/tmp/`.
 
 Fallback order in `prepareImageUpload`: wasm pipeline → (browser only) native
 `createImageBitmap` decode for formats the pipeline lacks (gif, avif) → imgproxy
-storage round-trip. On the edge function, `MAX_PIXELS` (25MP) guards the wasm decode
-(it materialises the full RGBA frame — ~200MB for a 48MP iPhone photo); over that
-it falls back to imgproxy, which decodes natively in bounded memory.
+storage round-trip.
 
 Adding a file class: create `src/<type>/` with an `index.ts`, add the `./<type>`
 export to `package.json`, and add a row above. Don't pre-create empty slots — `json`,

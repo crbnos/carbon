@@ -347,7 +347,7 @@ make parts. Keep it that way when authoring a new notice or a new dataset.
 
 Posted receipts and shipments, completed returns / transfers / picking lists / counts,
 Paid and Partially Paid invoices, disposed assets and Posted journals are all seeded. The
-posting edge functions cannot run inside the one seed transaction (and a post-commit call
+posting server functions cannot run inside the one seed transaction (and a post-commit call
 would break all-or-nothing apply and the drift check's rollback), so each posted state is
 **hand-authored together with the rows its posting path would have written** —
 `itemLedger`, `invoiceSettlement`, tracked entities/activities, receipt/shipment lines —
@@ -370,7 +370,7 @@ in the same tier. Conventions, each mirroring the real code path:
   shipment (a `costLedger` draw on those layers, else `itemCost.unitCost` = the item's
   `standardCost`) and scrapped lot (post-inventory-adjustment's `Inventory Adjustment`
   shape, CR inventory / DR `scrapAccount`), whether or not `accountingEnabled` is on,
-  through the edge functions'
+  through the server functions'
   own builders (`buildSalesPostingLines`, `buildPaymentJournal`, `buildMemoJournal`) or
   copies of their inline shapes (`helpers/posting-journals.ts`). Ids come from the
   `journalEntry` sequence, which the wipe never rewinds. Payments stay USD at rate 1,
@@ -589,6 +589,6 @@ customer companies is a separate feature and is unaffected.
 ## Local development note
 
 The dev CLI path needs only Postgres, so it works whenever your local database is up. The
-browser onboarding flow additionally runs the `seed-company` operation
+browser onboarding flow additionally runs the `seed-company` server function
 (`@carbon/server-functions/seed-company`, for the chart of accounts and other reference data)
 before the template step ever runs, in-process in the ERP.

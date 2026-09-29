@@ -63,7 +63,7 @@ RLS: SELECT/INSERT gated on `get_companies_with_employee_role()`; UPDATE/DELETE 
 
 ## How genealogy edges are written
 
-Edges are created in **Supabase edge functions** (`packages/database/supabase/functions/`)
+Edges are created in **server functions** (`packages/server-functions/src/`)
 and MES services — NOT a single `post-production`:
 
 - `post-picking`, `post-receipt`, `post-shipment`, `post-stock-transfer`, `issue`,
@@ -187,7 +187,8 @@ the entity — the CONSUMED portion becomes the NEW `child` (`status: 'Consumed'
 keeps its id at lineside. Consumption/split rows are booked against the entity's actual on-hand
 bin (`resolveTrackedEntityBin`), not an arbitrary ledger row. The **return** of the un-consumed
 remainder runs via `post-picking`'s sweep cases `returnJobRemainders` (at job complete — both
-policies) / `returnOperationRemainders` (at operation Done, only when
+policies) / `returnOperationRemainders` (at operation Done: the whole job's remainder when
+that operation completed the job, otherwise only when
 `companySettings.returnPickedMaterialTiming = 'operation'`): the tracked path walks the picked
 entity's split lineage and, for each lineage entity with lineside on-hand, **merges** it back
 into its `"Split From Entity ID"` parent when the parent is Available/same-lot/same-bin (a
@@ -247,19 +248,17 @@ with the lot it just emptied.
 **4. A pick accumulates under a lock.** `resolvePick` in
 `functions/shared/pick-guards.ts` returns the NEW running total (never a
 replacement) or throws a typed `PickGuardError` — `already-picked`,
-`over-pick`, or `empty-pick` (a quantity that rounds to zero). The caller turns
-it into a **400**, never a 500, and both apps read the reason out of the
-response BODY (`getEdgeFunctionErrorMessage` in the ERP,
-`getPostPickingErrorMessage` in MES) because supabase-js's own
-`FunctionsHttpError.message` is always the fixed "Edge Function returned a
-non-2xx status code". It is only correct under a row lock: `post-picking` locks
+`over-pick`, or `empty-pick` (a quantity that rounds to zero). Its `status = 400`
+survives `defineServerFn`'s error mapping, so the caller gets a **400**, never a
+500, and both apps show its message with `getErrorMessage(error, fallback)`
+(`@carbon/utils`). It is only correct under a row lock: `post-picking` locks
 the `pickingListLine` in every handler and the source lot in the batch pick,
 `post-stock-transfer` locks the line plus the entity (and, in the serial case,
 the entity BEFORE its repeat-scan guard — two concurrent scans would otherwise
 both read "not on this transfer" and both post a Transfer pair).
 `resolveStockTransferPickForward` (`inventory.models.ts`) is the route-side
 pre-check that mirrors the same rounding so the two cannot disagree; the lock
-is what makes the edge function authoritative.
+is what makes the server function authoritative.
 
 **The drain rule is not only a TypeScript concern.** `update_receipt_line_batch_tracking`
 upserted a receipt lot with `ON CONFLICT … DO UPDATE SET "quantity" = EXCLUDED."quantity"`

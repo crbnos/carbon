@@ -26,8 +26,8 @@ Key service functions (verified):
   (args `{ location_id, company_id }`, `count: "exact"`); supports search + generic filters.
 - `getItemLedgerPage` — paginated item-ledger history for an item at a location.
 - `insertManualInventoryAdjustment` — thin wrapper over the **`post-inventory-adjustment`
-  edge function** (MES has a matching wrapper in `apps/mes/app/services/inventory.service.ts`).
-  The edge function owns positive/negative/set-quantity **plus Scrap/Unscrap**
+  server function** (MES has a matching wrapper in `apps/mes/app/services/inventory.service.ts`).
+  The server function owns positive/negative/set-quantity **plus Scrap/Unscrap**
   (`.ai/specs/2026-08-06-scrap-unscrap-flow.md`) resolution, tracked-entity storage-unit
   transfers, expiry override, batch/serial assignment — and, in one Kysely transaction, maintains
   `costLedger` layers (consume via `calculateCOGS` on decreases, new layer at current cost on
@@ -60,7 +60,7 @@ Key service functions (verified):
   A tag is only written when the entity type has an **active** `dimension` row — a scrap
   posting's ScrapReason `extraDimension` is dropped in `post-adjustment.ts` if the dimension
   was deleted/deactivated for that company group.
-- `correctStockMovement` — wraps the **`correct-stock-movement` edge function**: fixes any
+- `correctStockMovement` — wraps the **`correct-stock-movement` server function**: fixes any
   posted `itemLedger` row by booking ONE opposite (delta) movement linked to the original's
   correction root via `itemLedger.correctionOfItemLedgerId`, carrying the ORIGINAL's
   `postingDate` and (when accounting is on) posting its journal into the period containing
@@ -113,7 +113,7 @@ Validators in `inventory.models.ts`: `inventoryAdjustmentValidator`, `receiptVal
   longer an approximate matview. Excludes `Rejected` tracked stock; exact, with a
   nightly `reconcile-item-stock-quantities` cron as drift backstop. Read by
   RealtimeDataProvider (with realtime push), the workflow engine's
-  `item.quantityOnHand` operation, and the MRP edge function's on-hand input.
+  `item.quantityOnHand` operation, and MRP's on-hand input.
   The old `itemInventory` rollup table is DEAD — its maintaining trigger was dropped in
   `20250209170952_shipment.sql`; don't read or write it.
 - **`storageUnit`** — bins/locations. Renamed from `shelf` (`20260417000100`); supports nesting via

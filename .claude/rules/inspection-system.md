@@ -7,7 +7,7 @@ paths:
   - "apps/mes/app/routes/x+/inspection*.tsx"
   - "packages/database/src/quality.ts"
   - "packages/database/supabase/migrations/*inspection*.sql"
-  - "packages/database/supabase/functions/post-receipt/index.ts"
+  - "packages/server-functions/src/post-receipt/index.ts"
 ---
 
 # Inspection System
@@ -140,9 +140,9 @@ Execution-layer tables (`20260722040401_inbound-inspection-execution.sql`):
 
 RLS on all tables: standard SELECT/INSERT/UPDATE/DELETE gated by `quality_view/create/update/delete`.
 
-## Receipt → inspection flow (`post-receipt/index.ts`, Supabase edge fn)
+## Receipt → inspection flow (`post-receipt/index.ts`, server function)
 
-`packages/database/supabase/functions/post-receipt/index.ts` (inserts ~line 700):
+`packages/server-functions/src/post-receipt/index.ts`:
 1. Loads items (`id, itemTrackingType, replenishmentSystem`), company `samplingStandard`,
    Receipt-usage `itemInspectionDocumentAssignment` rows (`assignmentByItemId`), and the
    assigned documents' `inspectionFeature` rows + default sampling columns.
@@ -259,7 +259,7 @@ discrete entity per sample; non-serial (Batch/Inventory/Non-Inventory) record pa
 status to flip, so a Reject posts a compensating write-off instead (see disposition).
 
 **Reject / disposition GL posting.** A non-tracked `Inventory` reject and every NCR disposition
-route their inventory value through the **`post-nonconformance` edge function** (`itemLedger` +
+route their inventory value through the **`post-nonconformance` server function** (`itemLedger` +
 `costLedger` relief + a `journal` offset to `accountDefault.scrapAccount`, gated on
 `accountingEnabled`; idempotent per `(documentType, documentId)`). The reject route
 (`$id.reject.tsx`) invokes it with the lot write-off (`documentType 'Inbound Inspection'`,
@@ -309,7 +309,7 @@ GL/cost posting and `.ai/plans/2026-07-25-inspection-disposition-gl-posting.md`.
   `quality.server.ts` is thin wrappers currying `getDatabaseClient()` (names and
   signatures unchanged — ERP routes/tests untouched). `packages/database/src/sampling.ts`
   re-exports the pure Deno `shared/sampling-engine.ts` node-side (client.ts
-  pattern); the engine consumes it, so package + edge share ONE resolver copy
+  pattern); the engine and `post-receipt` both consume it, so they share ONE resolver copy
   (ERP's `samplingStandards.ts` client copy remains for UI previews).
   - **Closed guards + linked-sample locks (2026-07-27):** all three terminal
     statuses (Passed/Failed/**Partial**) block `upsertInspectionSample` (guard

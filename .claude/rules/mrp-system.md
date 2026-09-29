@@ -51,7 +51,7 @@ Phase-7 write) and throws on failure.
    empty, so "no work" can never again look like "worked fine".
 
    Both reads go through `fetchAllFromTable` with a stable `.order("id")` — the
-   same reason the edge function pages (below): `max_rows = 1000` truncates a
+   same reason every engine read pages (below): `max_rows = 1000` truncates a
    bare select, and the dev stack does not enforce the cap, so a dropped tail is
    invisible locally. A failed `company` read **throws**; returning would make
    the step succeed having planned for nobody, which is this function's whole
@@ -76,8 +76,7 @@ Phase-7 write) and throws on failure.
    "salesOrder"`, `id?` (required for non-company), `companyId`, `userId`.
    Computation engine is
    `packages/database/supabase/functions/lib/mrp-engine.ts` (`explodeBom(...)`),
-   which STAYS in the edge-lib (still used by the Deno `recalculate` function +
-   job-quantities-engine) and is reached from Node via the
+   which STAYS in the edge-lib (also used by get-method, `@carbon/server-functions`) and is reached from Node via the
    `@carbon/database/mrp-engine` barrel.
 
    - **Periods**: generates/fetches weekly `period` rows ~18 weeks (126 days)

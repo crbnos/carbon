@@ -247,7 +247,7 @@ dispatcher (`apps/erp/app/routes/api+/inngest.ts`). There is no separate
   service whose param is `db` is handed `getDatabaseClient()`; payload params are
   stamped with auth fields via `enrichWithAuthContext` (now in
   `dispatch.server.ts`) — including `userId` when the payload itself declares one
-  (the edge-function wrappers), which the manifest marks via `injectAuth` and the
+  (the server-function wrappers), which the manifest marks via `injectAuth` and the
   generator derives from the signature. Without it the service runs with no acting
   user; `apps/erp/test/mcp-tool-auth-injection.test.ts` guards the pairing.
   A param literally named `args` is stamped too, and which wire shape it takes
@@ -351,11 +351,7 @@ dispatcher (`apps/erp/app/routes/api+/inngest.ts`). There is no separate
     in it.
   - The **full detail is logged** instead (`logger.error("Operation failed", …)` in
     `call.server.ts`) with the operation name, the classification, the raw Supabase
-    error, and — for an edge function — the message read off the unread `Response`
-    on `error.context` by `edgeFunctionMessage`. Without that read the log would
-    hold an empty `{"name":"FunctionsHttpError","context":{}}` rather than the rule
-    that fired ("The process is not batchable"), so a business-rule rejection and a
-    malformed payload would be indistinguishable in the log too.
+    error.
   - **HTTP is a separate path and is unchanged**: a 400 body is serialized from the
     `ORPCError` by the oRPC handler, never from `CallResult`, so HTTP callers still
     receive the Postgres `code`/`details`/`hint`. Narrowing that is a separate
@@ -364,7 +360,7 @@ dispatcher (`apps/erp/app/routes/api+/inngest.ts`). There is no separate
   The consequence is deliberate and worth knowing when debugging an agent: a
   business rule an agent could act on ("already in a batch") now reads as the
   generic `rule` message, and the specific cause is in the server log. An
-  enumerated code returned by the edge functions themselves, mapped to public
+  enumerated code returned by the server functions themselves, mapped to public
   strings here, is the way to give that back without echoing server text.
 - The dispatch behavior is pinned by
   `api+/v1+/lib/dispatch-parity.test.ts` (golden cases carried over from the

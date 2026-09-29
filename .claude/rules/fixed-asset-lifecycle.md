@@ -89,7 +89,7 @@ enum value (CHECK: only Fixed Asset lines have non-NULL `assetId`). The
 - Routes: `routes/x+/fixed-asset+/$fixedAssetId.{tsx,register,dispose,sell,purchase,details,delete}`;
   `routes/x+/depreciation-run+/$depreciationRunId.{tsx,post,repeat,delete}`;
   list/new at `routes/x+/accounting+/{fixed-assets,asset-classes,depreciation-runs}*`.
-- Edge functions (`packages/database/supabase/functions/`): `post-receipt`,
+- Server functions (`packages/server-functions/src/`): `post-receipt`,
   `post-purchase-invoice` (acquisition), `post-shipment`, `post-sales-invoice`
   (disposal).
 

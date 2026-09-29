@@ -50,7 +50,7 @@ A List field with no options or an empty option fails the validator's refine (`s
 By design: the form sets `isReadOnly` on the type select and shows "Data type cannot be changed" (`CustomFieldForm.tsx:110-116`). Delete and re-create to switch types.
 
 ### Custom-field values missing from CSV import/export
-Expected — the `import-csv` edge function maps only built-in fields and the download omits the JSONB. Use the form or the API.
+Expected — the `import-csv` server function maps only built-in fields and the download omits the JSONB. Use the form or the API.
 
 ### The entity I want has no Custom Fields row
 Only entities in the code-managed `customFieldTable` catalog are eligible; there's no way to add one from the UI.

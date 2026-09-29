@@ -419,34 +419,41 @@ the row ids come from the request. Without the parent filter, a request sent thr
 quote's URL could reorder the lines of any other quote in the company, including one
 that is already closed. Write one statement for the whole set rather than a query per row
 inside a loop. And the pool it
-draws from is small (edge functions ask for exactly one connection,
-`getConnectionPool(1)`): if code inside a transaction reaches for a second connection from
+draws from is small (the ERP opens ten connections,
+`getPostgresConnectionPool(10)`, shared by every request): if code inside a transaction reaches for a second connection from
 the same pool, that second request queues behind a transaction that cannot finish until it
 is served, and the whole thing hangs until the timeout. Do all the work of a transaction
 on the `trx` handle you were given, never on `db`.
 
-**4. Edge functions** are small programs written for Deno [[2]](#g2), deployed next to the
-database and called over HTTP [[4]](#g4). There are about forty in
-`packages/database/supabase/functions/`, and they own the genuinely heavy work:
-MRP [[11]](#g11), production scheduling, posting a shipment or an invoice to the general
-ledger, CSV import, exporting a whole company. Call one and wait for its answer:
+**4. Server functions** are the privileged, multi-step writes shared by the ERP, the
+MES, the public API and background jobs. There are about thirty in
+`packages/server-functions/src/`, one directory each, and they own the genuinely heavy
+writes: posting a shipment or an invoice to the general ledger, issuing material,
+converting a quote, CSV import. Each is built with `defineServerFn`, which validates the
+input, checks the caller's permission, runs, and returns `{ data, error }` instead of
+throwing. Call one like any other function:
 
 ```ts
-const { data, error } = await client.functions.invoke("post-shipment", {
-  body: { type: "post", shipmentId, userId, companyId },
+import { postShipment } from "@carbon/server-functions/post-shipment";
+
+const { data, error } = await postShipment.withClient(serviceRole, getDatabaseClient(), {
+  type: "post", shipmentId, userId, companyId,
 });
 ```
 
-They exist for two reasons: they can hold a database connection and run a big
-multi-thousand-row transaction properly, and they are callable from anywhere (the ERP,
-the MES, a background job, the public API), not just from a route handler.
+They exist for two reasons: they run a big multi-thousand-row Kysely transaction
+properly, and they are callable from anywhere on the server (a route action, the MES, a
+background job, the public API), not just from one route handler.
 
-"Heavy" here means heavy in SQL, not heavy in the function. Supabase caps an edge function
-tightly, a couple of hundred megabytes of memory and a short processor-time budget, far
-below a normal server or an ordinary Lambda, so the useful pattern is to let Postgres do
-the lifting and keep the function itself thin. Work that is heavy in JavaScript, or that
-runs for minutes, belongs in an Inngest job instead; work that needs real computing power,
-like CAD geometry, belongs in the Rust service.
+"Heavy" here means heavy in SQL, not heavy in the function: let Postgres do the lifting
+and keep the function itself thin. Work that runs for minutes belongs in an Inngest job
+instead; work that needs real computing power, like CAD geometry, belongs in the Rust
+service. MRP [[11]](#g11) and production scheduling live in their own package,
+`@carbon/planning`, and run in Node the same way.
+
+A handful of small edge functions [[4]](#g4), written for Deno [[2]](#g2), remain in
+`packages/database/supabase/functions/`: embeddings, thumbnails and the event-queue
+wake-up. They are called over HTTP with `client.functions.invoke("<name>", { body })`.
 
 There is also a fifth, narrower door: **RPCs**, plain Postgres functions called with
 `client.rpc("name", args)`. About 85 call sites. `get_next_sequence` from [Part 2](#part-2-follow-one-click-all-the-way-down) is one.
@@ -510,7 +517,7 @@ type PurchaseOrderRow = Database["public"]["Tables"]["purchaseOrder"]["Row"];
 typecheck.** Half of all "this property doesn't exist" errors are a stale types file.
 
 **Logic that lives in Postgres.** We push logic into the database when it must hold true
-for _every_ writer: the ERP, the MES, an edge function, a background job, the public
+for _every_ writer: the ERP, the MES, a server function, a background job, the public
 API, or someone running SQL by hand. Two examples:
 
 - `update_picking_list_status()` is a trigger that recomputes a picking list's header
@@ -644,6 +651,8 @@ refuses to start without it.
 | --------------- | ---------------------------------------------------------------------------------------------------------------- |
 | `react`         | The design system. **Check here before writing any UI.**                                                         |
 | `database`      | Generated types, migrations, edge functions, database clients.                                                   |
+| `server-functions` | Privileged, transactional writes (posting, issuing, converting) shared by the apps, the API and jobs.         |
+| `planning`      | MRP and the finite scheduler.                                                                                    |
 | `auth`          | Login, sessions, `requirePermissions`, API keys, permission caching.                                             |
 | `form`          | `ValidatedForm`, field components, zod helpers.                                                                  |
 | `jobs`          | Every Inngest background function, plus the workflow runtime.                                                    |
@@ -847,8 +856,8 @@ Numbered so the body can point at them. Alphabetical.
 Runs on the server only, never shipped to the browser.
 
 <a id="g2"></a>
-**2. Deno:** an alternative JavaScript runtime to Node.js. Our edge functions
-are written for it, which is why they use `https://` imports instead of
+**2. Deno:** an alternative JavaScript runtime to Node.js. Our few remaining edge
+functions are written for it, which is why they use `https://` imports instead of
 `node_modules`.
 
 <a id="g3"></a>
@@ -886,7 +895,7 @@ libraries that are versioned and released together.
 
 <a id="g11"></a>
 **11. MRP:** Material Requirements Planning. Works out what to buy and make, and
-when, given demand and current stock. Runs as an edge function.
+when, given demand and current stock. Runs in Node, from `@carbon/planning`.
 
 <a id="g12"></a>
 **12. Multi-tenancy:** one database and one running application serving many
