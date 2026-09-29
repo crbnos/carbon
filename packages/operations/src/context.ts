@@ -4,14 +4,12 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Kysely } from "kysely";
 
 /**
- * Everything an operation runs with. The caller builds it: the DB client comes
+ * Everything an operation runs with. The caller builds it; the DB client comes
  * from `getDatabaseClient()` (ERP/MES) or `getJobDatabaseClient()` (jobs) and is
- * never constructed here, and `client` is the service role, as the edge function
- * it replaces had.
+ * never constructed here.
  */
 export type OperationContext = {
   db: Kysely<KyselyDatabase>;
-  client: SupabaseClient<Database>;
   companyId: string;
   userId: string;
   /**
@@ -84,4 +82,15 @@ export function assertSystemCaller(ctx: OperationContext): void {
   if (!ctx.system) {
     throw new OperationForbiddenError("Only server-side callers may run this");
   }
+}
+
+/**
+ * The service-role client, which every edge function read and wrote with once
+ * its permission check passed. Fetched here rather than passed in: callers
+ * include browser-bundled `*.service.ts` files, which cannot import it, and a
+ * caller's own RLS client would change what the operation can see.
+ */
+export async function serviceRoleClient(): Promise<SupabaseClient<Database>> {
+  const { getCarbonServiceRole } = await import("@carbon/auth/client.server");
+  return getCarbonServiceRole();
 }

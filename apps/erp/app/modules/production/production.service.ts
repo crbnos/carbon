@@ -3614,13 +3614,7 @@ async function assignJobSerialNumbers(
   );
   // System: numbering a job the caller was just authorized to create.
   const { error } = await assignSerialNumbers(
-    {
-      db,
-      client,
-      companyId: args.companyId,
-      userId: args.userId,
-      system: true
-    },
+    { db, companyId: args.companyId, userId: args.userId, system: true },
     { jobId: args.jobId }
   );
   if (error) {

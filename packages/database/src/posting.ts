@@ -6,5 +6,7 @@ export {
   debit,
   journalReference
 } from "../supabase/functions/lib/utils.ts";
+export { statusAfterQuantityChange } from "../supabase/functions/shared/entity-drain.ts";
 export * from "../supabase/functions/shared/get-accounting-period.ts";
 export * from "../supabase/functions/shared/get-posting-group.ts";
+export { bookAdjustment } from "../supabase/functions/shared/post-adjustment.ts";

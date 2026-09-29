@@ -10,7 +10,11 @@ import { getNextSequence } from "@carbon/database/sequence";
 import { round } from "@carbon/utils";
 import { nanoid } from "nanoid";
 import { z } from "zod";
-import { assertOperationPermissions, type OperationContext } from "../context";
+import {
+  assertOperationPermissions,
+  type OperationContext,
+  serviceRoleClient
+} from "../context";
 import { runOperation } from "../result";
 
 export const closeJobInput = z.object({
@@ -28,8 +32,9 @@ export function closeJob(
 ) {
   return runOperation("close-job", async () => {
     const { jobId } = closeJobInput.parse(input);
-    const { client, db, companyId, userId } = ctx;
+    const { db, companyId, userId } = ctx;
     await assertOperationPermissions(ctx, { update: "production" });
+    const client = await serviceRoleClient();
 
     const today = datetime
       .today(await getCompanyTimeZone(client, companyId))

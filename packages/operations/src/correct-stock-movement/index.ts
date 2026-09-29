@@ -1,18 +1,17 @@
-import { serve } from "https://deno.land/std@0.175.0/http/server.ts";
-import { z } from "https://deno.land/x/zod@v3.21.4/mod.ts";
-import { DB, getConnectionPool, getDatabaseClient } from "../lib/database.ts";
-import { corsPreflight, errorResponse, jsonResponse } from "../lib/response.ts";
-import { getFunctionLogger } from "../lib/logging.ts";
-import { requirePermissions } from "../lib/supabase.ts";
-import { getAccountingPeriodForDate } from "../shared/get-accounting-period.ts";
-import { getDefaultPostingGroup } from "../shared/get-posting-group.ts";
-import { bookAdjustment } from "../shared/post-adjustment.ts";
-import { statusAfterQuantityChange } from "../shared/entity-drain.ts";
-import { equals, round } from "../shared/precision.ts";
-
-const pool = getConnectionPool(1);
-const db = getDatabaseClient<DB>(pool);
-const logger = getFunctionLogger("correct-stock-movement");
+import {
+  bookAdjustment,
+  getAccountingPeriodForDate,
+  getDefaultPostingGroup,
+  statusAfterQuantityChange
+} from "@carbon/database/posting";
+import { equals, round } from "@carbon/utils";
+import { z } from "zod";
+import {
+  assertOperationPermissions,
+  type OperationContext,
+  serviceRoleClient
+} from "../context";
+import { runOperation } from "../result";
 
 // Corrects a posted stock movement by inserting ONE opposite (delta) movement
 // linked to the original via itemLedger.correctionOfItemLedgerId. The caller
@@ -25,32 +24,31 @@ const logger = getFunctionLogger("correct-stock-movement");
 // period is Locked/Closed). entryNumber is a SERIAL and cannot be
 // retro-inserted — "next to the original" is delivered by the postingDate and
 // by the stock-movements UI, which nests corrections under their original.
-const payloadValidator = z.object({
+export const correctStockMovementInput = z.object({
   itemLedgerId: z.string(),
   // SIGNED corrected quantity, matching the ledger's sign convention
   // (a shipment of -5 that should have been -3 → correctedQuantity: -3).
   correctedQuantity: z.number(),
-  comment: z.string().optional().nullable(),
-  companyId: z.string(),
-  userId: z.string(),
+  comment: z.string().optional().nullable()
 });
 
-class ValidationError extends Error {}
+/** The caller's mistake, not a failure: surfaced with a 400. */
+class ValidationError extends Error {
+  readonly status = 400;
+}
 
 const MAX_CORRECTION_CHAIN_DEPTH = 100;
 
-serve(async (req: Request) => {
-  const preflight = corsPreflight(req);
-  if (preflight) return preflight;
-
-  try {
-    const payload = await req.json();
-    const { itemLedgerId, correctedQuantity, comment, companyId, userId } =
-      payloadValidator.parse(payload);
-
-    const client = await requirePermissions(req, companyId, userId, {
-      update: "inventory",
-    });
+export function correctStockMovement(
+  ctx: OperationContext,
+  input: z.infer<typeof correctStockMovementInput>
+) {
+  return runOperation("correct-stock-movement", async () => {
+    const { itemLedgerId, correctedQuantity, comment } =
+      correctStockMovementInput.parse(input);
+    const { db, companyId, userId } = ctx;
+    await assertOperationPermissions(ctx, { update: "inventory" });
+    const client = await serviceRoleClient();
 
     const ledgerColumns =
       "id, itemId, locationId, storageUnitId, trackedEntityId, quantity, postingDate, entryType, documentType, documentId, correctionOfItemLedgerId";
@@ -149,9 +147,9 @@ serve(async (req: Request) => {
           ? client.rpc("get_item_quantities_by_tracking_id", {
               item_id: root.itemId,
               company_id: companyId,
-              location_id: root.locationId,
+              location_id: root.locationId
             })
-          : Promise.resolve({ data: null, error: null }),
+          : Promise.resolve({ data: null, error: null })
       ]);
 
     if (itemResult.error) throw new Error("Failed to fetch item");
@@ -167,7 +165,7 @@ serve(async (req: Request) => {
     const item = {
       itemTrackingType: itemResult.data.itemTrackingType,
       replenishmentSystem: itemResult.data.replenishmentSystem,
-      itemPostingGroupId: itemCostResult.data.itemPostingGroupId,
+      itemPostingGroupId: itemCostResult.data.itemPostingGroupId
     };
 
     const isSerial = item.itemTrackingType === "Serial";
@@ -243,7 +241,10 @@ serve(async (req: Request) => {
     const accountDefaults = accountingEnabled
       ? await getDefaultPostingGroup(client, companyId)
       : null;
-    if (accountingEnabled && (accountDefaults?.error || !accountDefaults?.data)) {
+    if (
+      accountingEnabled &&
+      (accountDefaults?.error || !accountDefaults?.data)
+    ) {
       throw new Error("Error getting account defaults");
     }
 
@@ -255,15 +256,18 @@ serve(async (req: Request) => {
         .eq("id", companyId)
         .single();
       if (companyRecord.error) throw new Error("Failed to fetch company");
-      const dimensions = await client
-        .from("dimension")
-        .select("id, entityType")
-        .eq("companyGroupId", companyRecord.data.companyGroupId)
-        .eq("active", true)
-        .in("entityType", ["Item", "ItemPostingGroup", "Location"]);
-      if (dimensions.error) throw new Error("Failed to fetch dimensions");
-      for (const dim of dimensions.data ?? []) {
-        if (dim.entityType) dimensionMap[dim.entityType] = dim.id;
+      const companyGroupId = companyRecord.data.companyGroupId;
+      if (companyGroupId) {
+        const dimensions = await client
+          .from("dimension")
+          .select("id, entityType")
+          .eq("companyGroupId", companyGroupId)
+          .eq("active", true)
+          .in("entityType", ["Item", "ItemPostingGroup", "Location"]);
+        if (dimensions.error) throw new Error("Failed to fetch dimensions");
+        for (const dim of dimensions.data ?? []) {
+          if (dim.entityType) dimensionMap[dim.entityType] = dim.id;
+        }
       }
     }
 
@@ -287,11 +291,11 @@ serve(async (req: Request) => {
               rawMaterialsAccount: accountDefaults.data.rawMaterialsAccount,
               finishedGoodsAccount: accountDefaults.data.finishedGoodsAccount,
               inventoryAdjustmentVarianceAccount:
-                accountDefaults.data.inventoryAdjustmentVarianceAccount,
+                accountDefaults.data.inventoryAdjustmentVarianceAccount
             },
             description: `Stock Movement Correction — ${resolvedComment}`,
             userId,
-            dimensions: dimensionMap,
+            dimensions: dimensionMap
           }
         : null;
 
@@ -307,7 +311,9 @@ serve(async (req: Request) => {
           .where("status", "!=", "Consumed")
           .where((eb) => eb("quantity", ">=", -delta))
           // Serial ceiling re-checked atomically: resulting quantity ≤ 1.
-          .$if(isSerial, (qb) => qb.where((eb) => eb("quantity", "<=", 1 - delta)))
+          .$if(isSerial, (qb) =>
+            qb.where((eb) => eb("quantity", "<=", 1 - delta))
+          )
           .returning(["id", "quantity", "status"])
           .executeTakeFirst();
         if (!updated) {
@@ -345,24 +351,15 @@ serve(async (req: Request) => {
           correctionOfItemLedgerId: root.id,
           comment: resolvedComment,
           companyId,
-          createdBy: userId,
+          createdBy: userId
         },
         item,
         itemCost: itemCostResult.data,
-        accounting,
+        accounting
       });
       resultLedgerId = booked.itemLedgerId;
     });
 
-    return jsonResponse({
-      success: true,
-      itemLedger: resultLedgerId ? { id: resultLedgerId } : null,
-    });
-  } catch (err) {
-    logger.error("correct-stock-movement failed", {
-      error: String((err as Error).stack ?? err),
-    });
-    const isValidationError = err instanceof ValidationError;
-    return errorResponse(err, isValidationError ? 400 : 500);
-  }
-});
+    return { itemLedger: resultLedgerId ? { id: resultLedgerId } : null };
+  });
+}

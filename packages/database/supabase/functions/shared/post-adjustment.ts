@@ -1,6 +1,6 @@
-import { nanoid } from "https://deno.land/x/nanoid@v3.0.0/mod.ts";
+import { nanoid } from "nanoid";
 import { Transaction } from "kysely";
-import { DB } from "../lib/database.ts";
+import type { KyselyDatabase as DB } from "../lib/postgres/index.ts";
 import { Database } from "../lib/types.ts";
 import { calculateCOGS } from "./calculate-cogs.ts";
 import { getNextSequence } from "./get-next-sequence.ts";

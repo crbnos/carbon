@@ -7,10 +7,12 @@ is tracked in `.ai/plans/2026-09-28-remove-edge-functions.md`.
 
 ## Always
 
-- MUST take an `OperationContext` (`{ db, client, companyId, userId, system? }`)
-  as the first argument. The caller builds it: `db` from `getDatabaseClient()`
-  (ERP/MES `~/services/database.server`) or `getJobDatabaseClient()` (jobs),
-  `client` the service role. Never construct a pool or client in this package.
+- MUST take an `OperationContext` (`{ db, companyId, userId, system? }`) as the
+  first argument. The caller builds it: `db` from `getDatabaseClient()` (ERP/MES
+  `~/services/database.server`) or `getJobDatabaseClient()` (jobs), passed down
+  through services as a `db` argument. Never construct a pool in this package.
+- MUST read and write through `serviceRoleClient()` (after the permission check),
+  as the edge functions did — never through a caller's RLS client.
 - MUST check the caller first thing: `assertOperationPermissions(ctx, { <action>:
   "<module>" })` with the same permissions the edge function passed to
   `requirePermissions`, or `assertSystemCaller(ctx)` when only servers call it.
@@ -42,5 +44,5 @@ pnpm --filter @carbon/checks test
 
 | Subpath | Provides |
 |---|---|
-| `.` | `OperationContext`, `assertOperationPermissions`, `assertSystemCaller`, `hasPermissions`, `runOperation`, `OperationError`, `assertCompanyRecords`, `RecordNotFoundError` |
+| `.` | `OperationContext`, `assertOperationPermissions`, `assertSystemCaller`, `serviceRoleClient`, `hasPermissions`, `runOperation`, `OperationError`, `assertCompanyRecords`, `RecordNotFoundError` |
 | `./<name>` | one operation (`src/<name>/index.ts`) |

@@ -1,5 +1,5 @@
 import { Transaction } from "kysely";
-import { DB } from "../lib/database.ts";
+import type { KyselyDatabase as DB } from "../lib/postgres/index.ts";
 
 export interface CostLayer {
   costLedgerId: string;

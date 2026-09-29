@@ -1687,12 +1687,12 @@ export async function getStockMovementEffectiveQuantity(
   return { data: { rootId: root.id, effectiveQuantity }, error: null };
 }
 
-// Thin wrapper over the correct-stock-movement edge function: books ONE
-// opposite (delta) movement linked to the corrected movement via
+// Books ONE opposite (delta) movement linked to the corrected movement via
 // correctionOfItemLedgerId, dated with the original's postingDate and posted
-// into the original's accounting period.
+// into the original's accounting period (the correct-stock-movement operation).
 export async function correctStockMovement(
   client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   correction: z.infer<typeof stockMovementCorrectionValidator> & {
     itemLedgerId: string;
     companyId: string;
@@ -1700,13 +1700,11 @@ export async function correctStockMovement(
   }
 ) {
   const { companyId, createdBy, ...rest } = correction;
+  const { correctStockMovement: correct } = await import(
+    "@carbon/operations/correct-stock-movement"
+  );
 
-  const result = await client.functions.invoke<{
-    success: boolean;
-    itemLedger: { id: string } | null;
-  }>("correct-stock-movement", {
-    body: { ...rest, companyId, userId: createdBy }
-  });
+  const result = await correct({ db, companyId, userId: createdBy }, rest);
 
   if (result.error) {
     return {
@@ -1718,7 +1716,7 @@ export async function correctStockMovement(
     };
   }
 
-  return { data: result.data?.itemLedger ?? null, error: null };
+  return { data: result.data.itemLedger, error: null };
 }
 
 // ===========================================================================

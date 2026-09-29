@@ -246,12 +246,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   if (status === "Closed") {
     const closed = await closeJob(
-      {
-        db: getDatabaseClient(),
-        client: getCarbonServiceRole(),
-        companyId,
-        userId
-      },
+      { db: getDatabaseClient(), companyId, userId },
       { jobId: id }
     );
     if (closed.error) {

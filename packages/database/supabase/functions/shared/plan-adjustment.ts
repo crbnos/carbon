@@ -207,7 +207,7 @@ export function buildJournalLineDimensions(args: {
       .filter(([entityType, valueId]) => args.dimensions[entityType] && valueId)
       .map(([entityType, valueId]) => ({
         journalLineId,
-        dimensionId: args.dimensions[entityType],
+        dimensionId: args.dimensions[entityType]!,
         valueId: valueId as string,
         companyId: args.companyId,
       }))
@@ -337,7 +337,7 @@ export function planStockRows(args: {
 
   const rowIndexesByItem = new Map<string, number[]>();
   args.rows.forEach((row, rowIndex) => {
-    if (!plans[rowIndex].carriesValue) return;
+    if (!plans[rowIndex]!.carriesValue) return;
     const indexes = rowIndexesByItem.get(row.itemId) ?? [];
     indexes.push(rowIndex);
     rowIndexesByItem.set(row.itemId, indexes);
@@ -351,14 +351,14 @@ export function planStockRows(args: {
     const increases = planIncreaseUnitCosts(
       itemCost,
       args.openLayersByItem.get(itemId) ?? [],
-      rowIndexes.map((rowIndex) => args.rows[rowIndex].quantity)
+      rowIndexes.map((rowIndex) => args.rows[rowIndex]!.quantity)
     );
     rowIndexes.forEach((rowIndex, n) => {
-      const cost = increases[n].cost;
-      plans[rowIndex].cost = cost;
+      const cost = increases[n]!.cost;
+      plans[rowIndex]!.cost = cost;
       // A zero-value movement posts no journal — `bookAdjustment`'s
       // `!accounting || cost === 0` guard, per row.
-      plans[rowIndex].postsJournal = args.hasAccounting && cost !== 0;
+      plans[rowIndex]!.postsJournal = args.hasAccounting && cost !== 0;
     });
   }
 
