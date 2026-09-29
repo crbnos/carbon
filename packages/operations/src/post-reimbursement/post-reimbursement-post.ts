@@ -1,20 +1,20 @@
-import { nanoid } from "https://deno.land/x/nanoid@v3.0.0/mod.ts";
+import type { KyselyDatabase } from "@carbon/database/client";
+import { resolveAccountingPeriod } from "@carbon/database/posting";
+import { getNextSequence } from "@carbon/database/sequence";
 import type { Selectable, Transaction } from "kysely";
-import type { DB } from "../lib/database.ts";
-import { getNextSequence } from "../shared/get-next-sequence.ts";
-import { resolveAccountingPeriod } from "../shared/get-accounting-period.ts";
-import {
-  buildReimbursementJournal,
-  type GLAccountClass,
-} from "./build-reimbursement-journal.ts";
+import { nanoid } from "nanoid";
 // Already generic — allocating journal-line ids has nothing charge-specific
 // about it, so this is imported rather than copied.
-import { allocateJournalLineIds } from "../post-charge/journal-line-ids.ts";
+import { allocateJournalLineIds } from "../post-charge/journal-line-ids";
+import {
+  buildReimbursementJournal,
+  type GLAccountClass
+} from "./build-reimbursement-journal";
 
 export type ReimbursementContext = {
-  trx: Transaction<DB>;
+  trx: Transaction<KyselyDatabase>;
   reimbursement: Pick<
-    Selectable<DB["reimbursement"]>,
+    Selectable<KyselyDatabase["reimbursement"]>,
     | "id"
     | "reimbursementId"
     | "employeeId"
@@ -28,7 +28,7 @@ export type ReimbursementContext = {
     | "journalId"
   >;
   company: Pick<
-    Selectable<DB["company"]>,
+    Selectable<KyselyDatabase["company"]>,
     "companyGroupId" | "baseCurrencyCode" | "timezone"
   >;
   accountingEnabled: boolean;
@@ -39,12 +39,17 @@ export type ReimbursementContext = {
 };
 
 function isAccountClass(value: string | null): value is GLAccountClass {
-  return value === "Asset" || value === "Liability" || value === "Equity" ||
-    value === "Revenue" || value === "Expense";
+  return (
+    value === "Asset" ||
+    value === "Liability" ||
+    value === "Equity" ||
+    value === "Revenue" ||
+    value === "Expense"
+  );
 }
 
 export async function postReimbursement(
-  context: ReimbursementContext,
+  context: ReimbursementContext
 ): Promise<{ journalId: string | null }> {
   const {
     trx,
@@ -53,11 +58,13 @@ export async function postReimbursement(
     accountingEnabled,
     companyId,
     userId,
-    timestamp,
+    timestamp
   } = context;
   // The parent lock serializes line writes. Locking line tuples too would
   // deadlock with an UPDATE whose BEFORE trigger is waiting for that parent.
-  const lines = await trx.selectFrom("reimbursementLine").selectAll()
+  const lines = await trx
+    .selectFrom("reimbursementLine")
+    .selectAll()
     .where("reimbursementId", "=", reimbursement.id)
     .where("companyId", "=", companyId)
     .orderBy("sequence")
@@ -70,30 +77,29 @@ export async function postReimbursement(
   // `employeeReimbursementsPayableAccount` column is nullable by design: an
   // upgrading company that has never configured it must still be able to post,
   // so the AP trade account is the documented fallback.
-  const defaults = await trx.selectFrom("accountDefault")
+  const defaults = await trx
+    .selectFrom("accountDefault")
     .select(["employeeReimbursementsPayableAccount", "payablesAccount"])
     .where("companyId", "=", companyId)
     .executeTakeFirst();
-  const payableAccountId = reimbursement.payableAccountId ??
+  const payableAccountId =
+    reimbursement.payableAccountId ??
     defaults?.employeeReimbursementsPayableAccount ??
     defaults?.payablesAccount ??
     null;
   if (!payableAccountId) {
     throw new Error(
-      "No employee reimbursements payable account and no payables account is configured",
+      "No employee reimbursements payable account and no payables account is configured"
     );
   }
 
   const accountIds = [
-    ...new Set([
-      payableAccountId,
-      ...lines.map((line) => line.accountId),
-    ]),
+    ...new Set([payableAccountId, ...lines.map((line) => line.accountId)])
   ];
-  const postingAccounts = await trx.selectFrom("account").select([
-    "id",
-    "class",
-  ]).where("id", "in", accountIds)
+  const postingAccounts = await trx
+    .selectFrom("account")
+    .select(["id", "class"])
+    .where("id", "in", accountIds)
     .where("companyGroupId", "=", company.companyGroupId)
     .where("active", "=", true)
     .where("isGroup", "=", false)
@@ -103,7 +109,7 @@ export async function postReimbursement(
     postingAccounts.some((account) => !isAccountClass(account.class))
   ) {
     throw new Error(
-      "Reimbursement accounts must be active posting accounts in this company group",
+      "Reimbursement accounts must be active posting accounts in this company group"
     );
   }
   const accounts: Record<string, { class: GLAccountClass }> = {};
@@ -117,17 +123,19 @@ export async function postReimbursement(
   // column) fails loudly instead of crediting the wrong side of the ledger.
   if (accounts[payableAccountId]?.class !== "Liability") {
     throw new Error(
-      "Reimbursement payable account must be a Liability account",
+      "Reimbursement payable account must be a Liability account"
     );
   }
 
   const costCenterIds = [
     ...new Set(
-      lines.flatMap((line) => line.costCenterId ? [line.costCenterId] : []),
-    ),
+      lines.flatMap((line) => (line.costCenterId ? [line.costCenterId] : []))
+    )
   ];
   if (costCenterIds.length) {
-    const costCenters = await trx.selectFrom("costCenter").select("id")
+    const costCenters = await trx
+      .selectFrom("costCenter")
+      .select("id")
       .where("companyId", "=", companyId)
       .where("id", "in", costCenterIds)
       .execute();
@@ -138,11 +146,13 @@ export async function postReimbursement(
 
   const projectIds = [
     ...new Set(
-      lines.flatMap((line) => line.projectId ? [line.projectId] : []),
-    ),
+      lines.flatMap((line) => (line.projectId ? [line.projectId] : []))
+    )
   ];
   if (projectIds.length) {
-    const projects = await trx.selectFrom("project").select("id")
+    const projects = await trx
+      .selectFrom("project")
+      .select("id")
       .where("companyId", "=", companyId)
       .where("id", "in", projectIds)
       .execute();
@@ -151,15 +161,15 @@ export async function postReimbursement(
     }
   }
 
-  let postingDate = reimbursement.postingDate ??
-    reimbursement.reimbursementDate;
+  let postingDate =
+    reimbursement.postingDate ?? reimbursement.reimbursementDate;
   let journalId: string | null = null;
   if (accountingEnabled) {
     const period = await resolveAccountingPeriod(
       trx,
       companyId,
       postingDate,
-      "historical-with-shift",
+      "historical-with-shift"
     );
     postingDate = period.postingDate;
     const built = buildReimbursementJournal({
@@ -167,54 +177,58 @@ export async function postReimbursement(
         amount: Number(reimbursement.amount),
         payableAccountId,
         currencyCode: reimbursement.currencyCode,
-        exchangeRate: Number(reimbursement.exchangeRate),
+        exchangeRate: Number(reimbursement.exchangeRate)
       },
       lines: lines.map((line) => ({
         accountId: line.accountId,
         amount: Number(line.amount),
         costCenterId: line.costCenterId,
         projectId: line.projectId,
-        description: line.description,
+        description: line.description
       })),
       accounts,
       documentId: reimbursement.id,
-      documentReadableId: reimbursement.reimbursementId,
+      documentReadableId: reimbursement.reimbursementId
     });
     // The builder emits one debit per coding line IN ORDER, then the payable
     // credit. The dimension pass below pairs `built.journalLines[i]` with
     // `lines[i]` on that contract, so assert it rather than trusting it.
     if (
       built.journalLines.length !== lines.length + 1 ||
-      lines.some((line, index) =>
-        built.journalLines[index]?.accountId !== line.accountId
+      lines.some(
+        (line, index) => built.journalLines[index]?.accountId !== line.accountId
       )
     ) {
       throw new Error("Reimbursement journal lines do not match coding lines");
     }
 
     const dimensions = costCenterIds.length
-      ? await trx.selectFrom("dimension").select("id")
-        .where("companyGroupId", "=", company.companyGroupId)
-        .where("active", "=", true)
-        .where("entityType", "=", "CostCenter")
-        .orderBy("createdAt")
-        .orderBy("id")
-        .limit(1)
-        .execute()
+      ? await trx
+          .selectFrom("dimension")
+          .select("id")
+          .where("companyGroupId", "=", company.companyGroupId)
+          .where("active", "=", true)
+          .where("entityType", "=", "CostCenter")
+          .orderBy("createdAt")
+          .orderBy("id")
+          .limit(1)
+          .execute()
       : [];
     const costCenterDimensionId = dimensions[0]?.id ?? null;
     if (costCenterIds.length && !costCenterDimensionId) {
       throw new Error("Company group has no active Cost Center dimension");
     }
     const projectDimensions = projectIds.length
-      ? await trx.selectFrom("dimension").select("id")
-        .where("companyGroupId", "=", company.companyGroupId)
-        .where("active", "=", true)
-        .where("entityType", "=", "Project")
-        .orderBy("createdAt")
-        .orderBy("id")
-        .limit(1)
-        .execute()
+      ? await trx
+          .selectFrom("dimension")
+          .select("id")
+          .where("companyGroupId", "=", company.companyGroupId)
+          .where("active", "=", true)
+          .where("entityType", "=", "Project")
+          .orderBy("createdAt")
+          .orderBy("id")
+          .limit(1)
+          .execute()
       : [];
     const projectDimensionId = projectDimensions[0]?.id ?? null;
     if (projectIds.length && !projectDimensionId) {
@@ -225,28 +239,28 @@ export async function postReimbursement(
     // editor lands.
     const lineIds = lines.map((line) => line.id);
     const genericDimensions = lineIds.length
-      ? await trx.selectFrom("reimbursementLineDimension").select([
-        "reimbursementLineId",
-        "dimensionId",
-        "valueId",
-      ])
-        .where("companyId", "=", companyId)
-        .where("reimbursementLineId", "in", lineIds)
-        .orderBy("dimensionId")
-        .execute()
+      ? await trx
+          .selectFrom("reimbursementLineDimension")
+          .select(["reimbursementLineId", "dimensionId", "valueId"])
+          .where("companyId", "=", companyId)
+          .where("reimbursementLineId", "in", lineIds)
+          .orderBy("dimensionId")
+          .execute()
       : [];
     const genericDimensionIds = [
-      ...new Set(genericDimensions.map((row) => row.dimensionId)),
+      ...new Set(genericDimensions.map((row) => row.dimensionId))
     ];
     if (genericDimensionIds.length) {
-      const activeDimensions = await trx.selectFrom("dimension").select("id")
+      const activeDimensions = await trx
+        .selectFrom("dimension")
+        .select("id")
         .where("companyGroupId", "=", company.companyGroupId)
         .where("active", "=", true)
         .where("id", "in", genericDimensionIds)
         .execute();
       if (activeDimensions.length !== genericDimensionIds.length) {
         throw new Error(
-          "Reimbursement line dimension is not an active dimension in this company group",
+          "Reimbursement line dimension is not an active dimension in this company group"
         );
       }
     }
@@ -260,39 +274,46 @@ export async function postReimbursement(
       else genericByLineId.set(row.reimbursementLineId, [row]);
     }
 
-    const journal = await trx.insertInto("journal").values({
-      journalEntryId: await getNextSequence(trx, "journalEntry", companyId),
-      accountingPeriodId: period.id,
-      description: `Reimbursement ${reimbursement.reimbursementId}`,
-      postingDate,
-      companyId,
-      sourceType: "Reimbursement",
-      status: "Posted",
-      postedAt: timestamp,
-      postedBy: userId,
-      createdBy: userId,
-    }).returning("id").executeTakeFirstOrThrow();
+    const journal = await trx
+      .insertInto("journal")
+      .values({
+        journalEntryId: await getNextSequence(trx, "journalEntry", companyId),
+        accountingPeriodId: period.id,
+        description: `Reimbursement ${reimbursement.reimbursementId}`,
+        postingDate,
+        companyId,
+        sourceType: "Reimbursement",
+        status: "Posted",
+        postedAt: timestamp,
+        postedBy: userId,
+        createdBy: userId
+      })
+      .returning("id")
+      .executeTakeFirstOrThrow();
     const createdJournalId = journal.id;
     journalId = createdJournalId;
     const journalLineReference = nanoid();
     const journalLineIds = await allocateJournalLineIds(
       trx,
-      built.journalLines.length,
+      built.journalLines.length
     );
-    await trx.insertInto("journalLine").values(
-      built.journalLines.map((line, index) => ({
-        id: journalLineIds[index],
-        journalId: createdJournalId,
-        accountId: line.accountId,
-        amount: line.amount,
-        quantity: 1,
-        description: line.description,
-        documentType: "Reimbursement" as const,
-        documentId: line.documentId,
-        journalLineReference,
-        companyId,
-      })),
-    ).execute();
+    await trx
+      .insertInto("journalLine")
+      .values(
+        built.journalLines.map((line, index) => ({
+          id: journalLineIds[index],
+          journalId: createdJournalId,
+          accountId: line.accountId,
+          amount: line.amount,
+          quantity: 1,
+          description: line.description,
+          documentType: "Reimbursement" as const,
+          documentId: line.documentId,
+          journalLineReference,
+          companyId
+        }))
+      )
+      .execute();
 
     // Two sources feed one destination. `journalLineDimension` is UNIQUE on
     // (journalLineId, dimensionId) — one value per dimension per line — so the
@@ -334,26 +355,31 @@ export async function postReimbursement(
           journalLineId,
           dimensionId,
           valueId,
-          companyId,
+          companyId
         });
       }
     });
     if (dimensionRows.length) {
-      await trx.insertInto("journalLineDimension").values(dimensionRows)
+      await trx
+        .insertInto("journalLineDimension")
+        .values(dimensionRows)
         .execute();
     }
   }
 
-  await trx.updateTable("reimbursement").set({
-    status: "Posted",
-    journalId,
-    postingDate,
-    payableAccountId,
-    postedAt: timestamp,
-    postedBy: userId,
-    updatedAt: timestamp,
-    updatedBy: userId,
-  }).where("id", "=", reimbursement.id)
+  await trx
+    .updateTable("reimbursement")
+    .set({
+      status: "Posted",
+      journalId,
+      postingDate,
+      payableAccountId,
+      postedAt: timestamp,
+      postedBy: userId,
+      updatedAt: timestamp,
+      updatedBy: userId
+    })
+    .where("id", "=", reimbursement.id)
     .where("companyId", "=", companyId)
     .execute();
   return { journalId };

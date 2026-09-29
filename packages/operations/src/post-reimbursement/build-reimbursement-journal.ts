@@ -22,13 +22,17 @@
 // taking the class from the resolved account is what makes a mis-classed
 // default fail loudly instead of posting the wrong side.
 
-import { REIMBURSEMENT_PAYABLE_POSTING_DESCRIPTION } from "../shared/accounting-posting.ts";
-import { assertBalanced, EPSILON } from "../shared/precision.ts";
 import {
+  credit,
+  debit,
+  REIMBURSEMENT_PAYABLE_POSTING_DESCRIPTION
+} from "@carbon/database/posting";
+import {
+  assertBalanced,
   assertExchangeRate,
-  toBaseAmount,
-} from "../shared/accounting-currency.ts";
-import { credit, debit } from "../lib/utils.ts";
+  EPSILON,
+  toBaseAmount
+} from "@carbon/utils";
 
 export type GLAccountClass =
   | "Asset"
@@ -91,7 +95,7 @@ export interface BuildReimbursementJournalResult {
 const BALANCE_TOLERANCE = 0.01;
 
 export function buildReimbursementJournal(
-  input: BuildReimbursementJournalInput,
+  input: BuildReimbursementJournalInput
 ): BuildReimbursementJournalResult {
   const { reimbursement, lines, accounts, documentId, documentReadableId } =
     input;
@@ -113,7 +117,7 @@ export function buildReimbursementJournal(
     const account = accounts[accountId];
     if (!account) {
       throw new Error(
-        `Reimbursement ${documentReadableId}: missing account class for ${accountId}`,
+        `Reimbursement ${documentReadableId}: missing account class for ${accountId}`
       );
     }
     return account.class.toLowerCase() as AccountType;
@@ -132,19 +136,20 @@ export function buildReimbursementJournal(
       description: string;
       costCenterId?: string | null;
       projectId?: string | null;
-    },
+    }
   ) => {
     signedDebitTotal += side === "debit" ? magnitude : -magnitude;
     journalLines.push({
       accountId: fields.accountId,
-      amount: side === "debit"
-        ? debit(accountType, magnitude)
-        : credit(accountType, magnitude),
+      amount:
+        side === "debit"
+          ? debit(accountType, magnitude)
+          : credit(accountType, magnitude),
       description: fields.description,
       documentType: "Reimbursement",
       documentId,
       costCenterId: fields.costCenterId ?? null,
-      projectId: fields.projectId ?? null,
+      projectId: fields.projectId ?? null
     });
   };
 
@@ -155,20 +160,20 @@ export function buildReimbursementJournal(
   const requireLineSum = () => {
     if (lines.length === 0) {
       throw new Error(
-        `Reimbursement ${documentReadableId}: requires at least one line`,
+        `Reimbursement ${documentReadableId}: requires at least one line`
       );
     }
     if (
       lines.some((line) => !Number.isFinite(line.amount) || line.amount <= 0)
     ) {
       throw new Error(
-        `Reimbursement ${documentReadableId}: coding line amounts must be finite and greater than zero`,
+        `Reimbursement ${documentReadableId}: coding line amounts must be finite and greater than zero`
       );
     }
     const lineSum = lines.reduce((sum, l) => sum + l.amount, 0);
     if (Math.abs(lineSum - amount) > EPSILON) {
       throw new Error(
-        `Reimbursement ${documentReadableId}: line sum ${lineSum} does not equal header amount ${amount}`,
+        `Reimbursement ${documentReadableId}: line sum ${lineSum} does not equal header amount ${amount}`
       );
     }
   };
@@ -185,7 +190,7 @@ export function buildReimbursementJournal(
       accountId: line.accountId,
       description: line.description ?? "Employee reimbursement",
       costCenterId: line.costCenterId,
-      projectId: line.projectId,
+      projectId: line.projectId
     });
   }
   pushLine("credit", classOf(payableAccountId), payableMagnitude, {
@@ -193,7 +198,7 @@ export function buildReimbursementJournal(
     // The payout reader (`post-payment`) finds this line BY DESCRIPTION to
     // recover the reimbursement's booked carrying value. Editing the literal
     // here would silently stop it matching — so both sides share the constant.
-    description: REIMBURSEMENT_PAYABLE_POSTING_DESCRIPTION,
+    description: REIMBURSEMENT_PAYABLE_POSTING_DESCRIPTION
   });
 
   // Defensive backstop: assert the entry balances in true debit/credit space.
@@ -207,7 +212,7 @@ export function buildReimbursementJournal(
     signedDebitTotal,
     0,
     BALANCE_TOLERANCE,
-    "Reimbursement journal",
+    "Reimbursement journal"
   );
 
   return { journalLines };

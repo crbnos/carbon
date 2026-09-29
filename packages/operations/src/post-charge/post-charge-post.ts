@@ -1,18 +1,18 @@
-import { nanoid } from "https://deno.land/x/nanoid@v3.0.0/mod.ts";
+import type { KyselyDatabase } from "@carbon/database/client";
+import { resolveAccountingPeriod } from "@carbon/database/posting";
+import { getNextSequence } from "@carbon/database/sequence";
 import type { Selectable, Transaction } from "kysely";
-import type { DB } from "../lib/database.ts";
-import { getNextSequence } from "../shared/get-next-sequence.ts";
-import { resolveAccountingPeriod } from "../shared/get-accounting-period.ts";
+import { nanoid } from "nanoid";
 import {
   buildChargeJournal,
-  type GLAccountClass,
-} from "./build-charge-journal.ts";
-import { allocateJournalLineIds } from "./journal-line-ids.ts";
+  type GLAccountClass
+} from "./build-charge-journal";
+import { allocateJournalLineIds } from "./journal-line-ids";
 
 export type ChargeContext = {
-  trx: Transaction<DB>;
+  trx: Transaction<KyselyDatabase>;
   charge: Pick<
-    Selectable<DB["charge"]>,
+    Selectable<KyselyDatabase["charge"]>,
     | "id"
     | "chargeId"
     | "type"
@@ -27,7 +27,7 @@ export type ChargeContext = {
     | "journalId"
   >;
   company: Pick<
-    Selectable<DB["company"]>,
+    Selectable<KyselyDatabase["company"]>,
     "companyGroupId" | "baseCurrencyCode" | "timezone"
   >;
   accountingEnabled: boolean;
@@ -38,12 +38,17 @@ export type ChargeContext = {
 };
 
 function isAccountClass(value: string | null): value is GLAccountClass {
-  return value === "Asset" || value === "Liability" || value === "Equity" ||
-    value === "Revenue" || value === "Expense";
+  return (
+    value === "Asset" ||
+    value === "Liability" ||
+    value === "Equity" ||
+    value === "Revenue" ||
+    value === "Expense"
+  );
 }
 
 export async function postCharge(
-  context: ChargeContext,
+  context: ChargeContext
 ): Promise<{ journalId: string | null }> {
   const {
     trx,
@@ -52,11 +57,13 @@ export async function postCharge(
     accountingEnabled,
     companyId,
     userId,
-    timestamp,
+    timestamp
   } = context;
   // The parent lock serializes line writes. Locking line tuples too would
   // deadlock with an UPDATE whose BEFORE trigger is waiting for that parent.
-  const lines = await trx.selectFrom("chargeLine").selectAll()
+  const lines = await trx
+    .selectFrom("chargeLine")
+    .selectAll()
     .where("chargeId", "=", charge.id)
     .where("companyId", "=", companyId)
     .orderBy("sequence")
@@ -65,16 +72,14 @@ export async function postCharge(
   const accountIds = [
     ...new Set([
       charge.cardAccountId,
-      ...(charge.offsetAccountId
-        ? [charge.offsetAccountId]
-        : []),
-      ...lines.map((line) => line.accountId),
-    ]),
+      ...(charge.offsetAccountId ? [charge.offsetAccountId] : []),
+      ...lines.map((line) => line.accountId)
+    ])
   ];
-  const postingAccounts = await trx.selectFrom("account").select([
-    "id",
-    "class",
-  ]).where("id", "in", accountIds)
+  const postingAccounts = await trx
+    .selectFrom("account")
+    .select(["id", "class"])
+    .where("id", "in", accountIds)
     .where("companyGroupId", "=", company.companyGroupId)
     .where("active", "=", true)
     .where("isGroup", "=", false)
@@ -84,7 +89,7 @@ export async function postCharge(
     postingAccounts.some((account) => !isAccountClass(account.class))
   ) {
     throw new Error(
-      "Charge accounts must be active posting accounts in this company group",
+      "Charge accounts must be active posting accounts in this company group"
     );
   }
   const accounts: Record<string, { class: GLAccountClass }> = {};
@@ -95,18 +100,18 @@ export async function postCharge(
     accounts[account.id] = { class: account.class };
   }
   if (accounts[charge.cardAccountId]?.class !== "Liability") {
-    throw new Error(
-      "Charge card account must be a Liability account",
-    );
+    throw new Error("Charge card account must be a Liability account");
   }
   if (
-    charge.type === "Payment" && charge.offsetAccountId &&
+    charge.type === "Payment" &&
+    charge.offsetAccountId &&
     accounts[charge.offsetAccountId]?.class !== "Asset"
   ) {
     throw new Error("Card payment offset account must be an Asset account");
   }
   if (
-    charge.type === "Cashback" && charge.offsetAccountId &&
+    charge.type === "Cashback" &&
+    charge.offsetAccountId &&
     accounts[charge.offsetAccountId]?.class !== "Revenue"
   ) {
     throw new Error("Card cashback offset account must be a Revenue account");
@@ -114,11 +119,13 @@ export async function postCharge(
 
   const costCenterIds = [
     ...new Set(
-      lines.flatMap((line) => line.costCenterId ? [line.costCenterId] : []),
-    ),
+      lines.flatMap((line) => (line.costCenterId ? [line.costCenterId] : []))
+    )
   ];
   if (costCenterIds.length) {
-    const costCenters = await trx.selectFrom("costCenter").select("id")
+    const costCenters = await trx
+      .selectFrom("costCenter")
+      .select("id")
       .where("companyId", "=", companyId)
       .where("id", "in", costCenterIds)
       .execute();
@@ -129,11 +136,13 @@ export async function postCharge(
 
   const projectIds = [
     ...new Set(
-      lines.flatMap((line) => line.projectId ? [line.projectId] : []),
-    ),
+      lines.flatMap((line) => (line.projectId ? [line.projectId] : []))
+    )
   ];
   if (projectIds.length) {
-    const projects = await trx.selectFrom("project").select("id")
+    const projects = await trx
+      .selectFrom("project")
+      .select("id")
       .where("companyId", "=", companyId)
       .where("id", "in", projectIds)
       .execute();
@@ -142,15 +151,14 @@ export async function postCharge(
     }
   }
 
-  let postingDate = charge.postingDate ??
-    charge.transactionDate;
+  let postingDate = charge.postingDate ?? charge.transactionDate;
   let journalId: string | null = null;
   if (accountingEnabled) {
     const period = await resolveAccountingPeriod(
       trx,
       companyId,
       postingDate,
-      "historical-with-shift",
+      "historical-with-shift"
     );
     postingDate = period.postingDate;
     const built = buildChargeJournal({
@@ -160,95 +168,110 @@ export async function postCharge(
         cardAccountId: charge.cardAccountId,
         offsetAccountId: charge.offsetAccountId,
         currencyCode: charge.currencyCode,
-        exchangeRate: Number(charge.exchangeRate),
+        exchangeRate: Number(charge.exchangeRate)
       },
       lines: lines.map((line) => ({
         accountId: line.accountId,
         amount: Number(line.amount),
         costCenterId: line.costCenterId,
         projectId: line.projectId,
-        description: line.description,
+        description: line.description
       })),
       accounts,
       documentId: charge.id,
-      documentReadableId: charge.chargeId,
+      documentReadableId: charge.chargeId
     });
     const dimensions = costCenterIds.length
-      ? await trx.selectFrom("dimension").select("id")
-        .where("companyGroupId", "=", company.companyGroupId)
-        .where("active", "=", true)
-        .where("entityType", "=", "CostCenter")
-        .orderBy("createdAt")
-        .orderBy("id")
-        .limit(1)
-        .execute()
+      ? await trx
+          .selectFrom("dimension")
+          .select("id")
+          .where("companyGroupId", "=", company.companyGroupId)
+          .where("active", "=", true)
+          .where("entityType", "=", "CostCenter")
+          .orderBy("createdAt")
+          .orderBy("id")
+          .limit(1)
+          .execute()
       : [];
     const costCenterDimensionId = dimensions[0]?.id ?? null;
     if (costCenterIds.length && !costCenterDimensionId) {
       throw new Error("Company group has no active Cost Center dimension");
     }
     const projectDimensions = projectIds.length
-      ? await trx.selectFrom("dimension").select("id")
-        .where("companyGroupId", "=", company.companyGroupId)
-        .where("active", "=", true)
-        .where("entityType", "=", "Project")
-        .orderBy("createdAt")
-        .orderBy("id")
-        .limit(1)
-        .execute()
+      ? await trx
+          .selectFrom("dimension")
+          .select("id")
+          .where("companyGroupId", "=", company.companyGroupId)
+          .where("active", "=", true)
+          .where("entityType", "=", "Project")
+          .orderBy("createdAt")
+          .orderBy("id")
+          .limit(1)
+          .execute()
       : [];
     const projectDimensionId = projectDimensions[0]?.id ?? null;
     if (projectIds.length && !projectDimensionId) {
       throw new Error("Company group has no active Project dimension");
     }
 
-    const journal = await trx.insertInto("journal").values({
-      journalEntryId: await getNextSequence(trx, "journalEntry", companyId),
-      accountingPeriodId: period.id,
-      description: `Charge ${charge.chargeId}`,
-      postingDate,
-      companyId,
-      sourceType: "Charge",
-      status: "Posted",
-      postedAt: timestamp,
-      postedBy: userId,
-      createdBy: userId,
-    }).returning("id").executeTakeFirstOrThrow();
+    const journal = await trx
+      .insertInto("journal")
+      .values({
+        journalEntryId: await getNextSequence(trx, "journalEntry", companyId),
+        accountingPeriodId: period.id,
+        description: `Charge ${charge.chargeId}`,
+        postingDate,
+        companyId,
+        sourceType: "Charge",
+        status: "Posted",
+        postedAt: timestamp,
+        postedBy: userId,
+        createdBy: userId
+      })
+      .returning("id")
+      .executeTakeFirstOrThrow();
     const createdJournalId = journal.id;
     journalId = createdJournalId;
     const journalLineReference = nanoid();
     const journalLineIds = await allocateJournalLineIds(
       trx,
-      built.journalLines.length,
+      built.journalLines.length
     );
-    await trx.insertInto("journalLine").values(
-      built.journalLines.map((line, index) => ({
-        id: journalLineIds[index],
-        journalId: createdJournalId,
-        accountId: line.accountId,
-        amount: line.amount,
-        quantity: 1,
-        description: line.description,
-        documentType: "Charge" as const,
-        documentId: line.documentId,
-        journalLineReference,
-        companyId,
-      })),
-    ).execute();
+    await trx
+      .insertInto("journalLine")
+      .values(
+        built.journalLines.map((line, index) => ({
+          id: journalLineIds[index],
+          journalId: createdJournalId,
+          accountId: line.accountId,
+          amount: line.amount,
+          quantity: 1,
+          description: line.description,
+          documentType: "Charge" as const,
+          documentId: line.documentId,
+          journalLineReference,
+          companyId
+        }))
+      )
+      .execute();
     if (costCenterDimensionId) {
       const dimensionValues = built.journalLines.flatMap((line, index) => {
         const journalLineId = journalLineIds[index];
         if (!line.costCenterId) return [];
         if (!journalLineId) throw new Error("Failed to map card journal line");
-        return [{
-          journalLineId,
-          dimensionId: costCenterDimensionId,
-          valueId: line.costCenterId,
-          companyId,
-        }];
+        return [
+          {
+            journalLineId,
+            dimensionId: costCenterDimensionId,
+            valueId: line.costCenterId,
+            companyId
+          }
+        ];
       });
       if (dimensionValues.length) {
-        await trx.insertInto("journalLineDimension").values(dimensionValues)
+        await trx
+          .insertInto("journalLineDimension")
+          .values(dimensionValues)
           .execute();
       }
     }
@@ -257,32 +280,39 @@ export async function postCharge(
         (line, index) => {
           const journalLineId = journalLineIds[index];
           if (!line.projectId) return [];
-          if (!journalLineId) throw new Error("Failed to map card journal line");
-          return [{
-            journalLineId,
-            dimensionId: projectDimensionId,
-            valueId: line.projectId,
-            companyId,
-          }];
-        },
+          if (!journalLineId)
+            throw new Error("Failed to map card journal line");
+          return [
+            {
+              journalLineId,
+              dimensionId: projectDimensionId,
+              valueId: line.projectId,
+              companyId
+            }
+          ];
+        }
       );
       if (projectDimensionValues.length) {
-        await trx.insertInto("journalLineDimension").values(
-          projectDimensionValues,
-        ).execute();
+        await trx
+          .insertInto("journalLineDimension")
+          .values(projectDimensionValues)
+          .execute();
       }
     }
   }
 
-  await trx.updateTable("charge").set({
-    status: "Posted",
-    journalId,
-    postingDate,
-    postedAt: timestamp,
-    postedBy: userId,
-    updatedAt: timestamp,
-    updatedBy: userId,
-  }).where("id", "=", charge.id)
+  await trx
+    .updateTable("charge")
+    .set({
+      status: "Posted",
+      journalId,
+      postingDate,
+      postedAt: timestamp,
+      postedBy: userId,
+      updatedAt: timestamp,
+      updatedBy: userId
+    })
+    .where("id", "=", charge.id)
     .where("companyId", "=", companyId)
     .execute();
   return { journalId };

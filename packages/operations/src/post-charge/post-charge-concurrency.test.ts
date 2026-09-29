@@ -1,14 +1,7 @@
-import {
-  assert,
-  assertEquals,
-  assertRejects,
-} from "https://deno.land/std@0.175.0/testing/asserts.ts";
 import { sql } from "kysely";
-import {
-  chargeFixture,
-  databaseTest,
-} from "./post-charge-test-fixture.ts";
-import { postChargeTransaction } from "./post-charge-transaction.ts";
+import { expect } from "vitest";
+import { chargeFixture, databaseTest } from "./post-charge-test-fixture";
+import { postChargeTransaction } from "./post-charge-transaction";
 
 databaseTest(
   "an edit started after posting's parent lock waits and then refuses",
@@ -16,14 +9,12 @@ databaseTest(
     const f = await chargeFixture();
     const poster = await f.connect();
     const writer = await f.connect();
-    const posterPid =
-      (await sql<{ pid: number }>`SELECT pg_backend_pid() AS pid`.execute(
-        poster,
-      )).rows[0]!.pid;
-    const writerPid =
-      (await sql<{ pid: number }>`SELECT pg_backend_pid() AS pid`.execute(
-        writer,
-      )).rows[0]!.pid;
+    const posterPid = (
+      await sql<{ pid: number }>`SELECT pg_backend_pid() AS pid`.execute(poster)
+    ).rows[0]!.pid;
+    const writerPid = (
+      await sql<{ pid: number }>`SELECT pg_backend_pid() AS pid`.execute(writer)
+    ).rows[0]!.pid;
     const headerLocked = Promise.withResolvers<void>();
     const resumePosting = Promise.withResolvers<void>();
     let paused = false;
@@ -32,8 +23,8 @@ databaseTest(
       async transformResult({ result }) {
         if (
           !paused &&
-          result.rows.some((row) =>
-            row.id === f.chargeId && row.status === "Draft"
+          result.rows.some(
+            (row) => row.id === f.chargeId && row.status === "Draft"
           )
         ) {
           paused = true;
@@ -41,7 +32,7 @@ databaseTest(
           await resumePosting.promise;
         }
         return result;
-      },
+      }
     });
     let posting:
       | Promise<PromiseSettledResult<{ journalId: string | null }>>
@@ -52,52 +43,51 @@ databaseTest(
       await sql`SET statement_timeout = '5s'`.execute(writer);
       posting = postChargeTransaction(postingDb, f.args).then(
         (value) => ({ status: "fulfilled" as const, value }),
-        (reason) => ({ status: "rejected" as const, reason }),
+        (reason) => ({ status: "rejected" as const, reason })
       );
       await Promise.race([
         headerLocked.promise,
         posting.then((result) => {
           if (result.status === "rejected") throw result.reason;
           throw new Error(
-            "Posting completed without acquiring the header lock",
+            "Posting completed without acquiring the header lock"
           );
-        }),
+        })
       ]);
-      edit = writer.updateTable("chargeLine").set({
-        description: "Too late",
-      })
-        .where("id", "=", f.lineId).where("companyId", "=", f.companyId)
-        .execute().then(
+      edit = writer
+        .updateTable("chargeLine")
+        .set({
+          description: "Too late"
+        })
+        .where("id", "=", f.lineId)
+        .where("companyId", "=", f.companyId)
+        .execute()
+        .then(
           (value) => ({ status: "fulfilled" as const, value }),
-          (reason) => ({ status: "rejected" as const, reason }),
+          (reason) => ({ status: "rejected" as const, reason })
         );
       // Observe the actual lock wait before allowing posting to read its lines.
       let blocked = false;
       for (let attempt = 0; attempt < 100; attempt++) {
-        const observed = await sql<
-          { blocked: boolean }
-        >`SELECT ${posterPid} = ANY(pg_blocking_pids(${writerPid})) AS blocked`
-          .execute(f.db);
+        const observed = await sql<{
+          blocked: boolean;
+        }>`SELECT ${posterPid} = ANY(pg_blocking_pids(${writerPid})) AS blocked`.execute(
+          f.db
+        );
         if (observed.rows[0]?.blocked) {
           blocked = true;
           break;
         }
         await new Promise((resolve) => setTimeout(resolve, 10));
       }
-      assert(
-        blocked,
-        "The edit must reach the parent lock before posting resumes",
-      );
+      expect(blocked).toBeTruthy();
       resumePosting.resolve();
       const result = await posting;
-      assertEquals(result.status, "fulfilled");
+      expect(result.status).toEqual("fulfilled");
       const mutation = await edit;
-      assertEquals(mutation.status, "rejected");
+      expect(mutation.status).toEqual("rejected");
       if (mutation.status === "rejected") {
-        assert(
-          String(mutation.reason).includes("immutable"),
-          String(mutation.reason),
-        );
+        expect(String(mutation.reason).includes("immutable")).toBeTruthy();
       }
     } finally {
       resumePosting.resolve();
@@ -107,7 +97,7 @@ databaseTest(
       await poster.destroy();
       await f.cleanup();
     }
-  },
+  }
 );
 
 databaseTest("concurrent posting retries create one journal", async () => {
@@ -117,17 +107,19 @@ databaseTest("concurrent posting retries create one journal", async () => {
   try {
     const results = await Promise.all([
       postChargeTransaction(left, f.args),
-      postChargeTransaction(right, f.args),
+      postChargeTransaction(right, f.args)
     ]);
-    assertEquals(results[0], results[1]);
-    assertEquals(
-      (await f.db.selectFrom("journal").select("id").where(
-        "companyId",
-        "=",
-        f.companyId,
-      ).where("sourceType", "=", "Charge").execute()).length,
-      1,
-    );
+    expect(results[0]).toEqual(results[1]);
+    expect(
+      (
+        await f.db
+          .selectFrom("journal")
+          .select("id")
+          .where("companyId", "=", f.companyId)
+          .where("sourceType", "=", "Charge")
+          .execute()
+      ).length
+    ).toEqual(1);
   } finally {
     await left.destroy();
     await right.destroy();
@@ -146,32 +138,35 @@ databaseTest(
       const args = { ...f.args, type: "void" as const };
       const results = await Promise.all([
         postChargeTransaction(left, args),
-        postChargeTransaction(right, args),
+        postChargeTransaction(right, args)
       ]);
-      assertEquals(results, [posted, posted]);
-      assertEquals(
-        (await f.db.selectFrom("journal").select("id").where(
-          "companyId",
-          "=",
-          f.companyId,
-        ).where("sourceType", "=", "Charge").execute()).length,
-        2,
-      );
-      assertEquals(
-        (await f.db.selectFrom("charge").select("status").where(
-          "id",
-          "=",
-          f.chargeId,
-        ).where("companyId", "=", f.companyId).executeTakeFirstOrThrow())
-          .status,
-        "Voided",
-      );
+      expect(results).toEqual([posted, posted]);
+      expect(
+        (
+          await f.db
+            .selectFrom("journal")
+            .select("id")
+            .where("companyId", "=", f.companyId)
+            .where("sourceType", "=", "Charge")
+            .execute()
+        ).length
+      ).toEqual(2);
+      expect(
+        (
+          await f.db
+            .selectFrom("charge")
+            .select("status")
+            .where("id", "=", f.chargeId)
+            .where("companyId", "=", f.companyId)
+            .executeTakeFirstOrThrow()
+        ).status
+      ).toEqual("Voided");
     } finally {
       await left.destroy();
       await right.destroy();
       await f.cleanup();
     }
-  },
+  }
 );
 
 databaseTest("a line mutation holds the parent lock until commit", async () => {
@@ -189,36 +184,36 @@ databaseTest("a line mutation holds the parent lock until commit", async () => {
   let heldMutation: Promise<void> | undefined;
   try {
     heldMutation = writer.transaction().execute(async (trx) => {
-      await trx.updateTable("chargeLine").set({
-        description: "Committed before posting",
-      }).where("id", "=", f.lineId).where(
-        "companyId",
-        "=",
-        f.companyId,
-      ).execute();
+      await trx
+        .updateTable("chargeLine")
+        .set({
+          description: "Committed before posting"
+        })
+        .where("id", "=", f.lineId)
+        .where("companyId", "=", f.companyId)
+        .execute();
       reportWriterReady();
       await writerRelease;
     });
     await writerReady;
     await sql`SET lock_timeout = '250ms'`.execute(poster);
-    await assertRejects(
-      () => postChargeTransaction(poster, f.args),
-      Error,
-      "lock timeout",
-    );
+    await expect(
+      (() => postChargeTransaction(poster, f.args))()
+    ).rejects.toThrow("lock timeout");
     releaseWriter();
     await heldMutation;
     await sql`SET lock_timeout = '0'`.execute(poster);
     const result = await postChargeTransaction(poster, f.args);
-    const descriptions = await f.db.selectFrom("journalLine").select(
-      "description",
-    ).where("journalId", "=", result.journalId!).execute();
-    assertEquals(
-      descriptions.some((line) =>
-        line.description === "Committed before posting"
-      ),
-      true,
-    );
+    const descriptions = await f.db
+      .selectFrom("journalLine")
+      .select("description")
+      .where("journalId", "=", result.journalId!)
+      .execute();
+    expect(
+      descriptions.some(
+        (line) => line.description === "Committed before posting"
+      )
+    ).toEqual(true);
   } finally {
     releaseWriter?.();
     await heldMutation?.catch(() => undefined);

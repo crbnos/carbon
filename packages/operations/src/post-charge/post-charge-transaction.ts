@@ -1,8 +1,8 @@
+import type { KyselyDatabase } from "@carbon/database/client";
+import { datetime } from "@carbon/database/datetime";
 import { type Kysely, sql } from "kysely";
-import type { DB } from "../lib/database.ts";
-import { datetime } from "../lib/datetime.ts";
-import { postCharge } from "./post-charge-post.ts";
-import { voidCharge } from "./post-charge-void.ts";
+import { postCharge } from "./post-charge-post";
+import { voidCharge } from "./post-charge-void";
 
 export type PostChargeArgs = {
   type: "post" | "void";
@@ -12,14 +12,15 @@ export type PostChargeArgs = {
 };
 
 export function postChargeTransaction(
-  db: Kysely<DB>,
-  args: PostChargeArgs,
+  db: Kysely<KyselyDatabase>,
+  args: PostChargeArgs
 ): Promise<{ journalId: string | null }> {
   const { type, chargeId, companyId, userId } = args;
   return db.transaction().execute(async (trx) => {
     // This is deliberately the first database read. The line mutation trigger
     // takes the same parent lock, so every snapshot below is stable.
-    const charge = await trx.selectFrom("charge")
+    const charge = await trx
+      .selectFrom("charge")
       .select([
         "id",
         "chargeId",
@@ -32,7 +33,7 @@ export function postChargeTransaction(
         "exchangeRate",
         "journalId",
         sql<string>`"transactionDate"::text`.as("transactionDate"),
-        sql<string | null>`"postingDate"::text`.as("postingDate"),
+        sql<string | null>`"postingDate"::text`.as("postingDate")
       ])
       .where("id", "=", chargeId)
       .where("companyId", "=", companyId)
@@ -48,23 +49,23 @@ export function postChargeTransaction(
     }
     const expectedStatus = type === "post" ? "Draft" : "Posted";
     if (charge.status !== expectedStatus) {
-      throw new Error(
-        `Cannot ${type} charge in status ${charge.status}`,
-      );
+      throw new Error(`Cannot ${type} charge in status ${charge.status}`);
     }
 
-    const settings = await trx.selectFrom("companySettings").select(
-      "accountingEnabled",
-    ).where("id", "=", companyId).executeTakeFirst();
+    const settings = await trx
+      .selectFrom("companySettings")
+      .select("accountingEnabled")
+      .where("id", "=", companyId)
+      .executeTakeFirst();
     if (!settings) {
       throw new Error("Charge company settings not found");
     }
 
-    const company = await trx.selectFrom("company").select([
-      "companyGroupId",
-      "baseCurrencyCode",
-      "timezone",
-    ]).where("id", "=", companyId).executeTakeFirst();
+    const company = await trx
+      .selectFrom("company")
+      .select(["companyGroupId", "baseCurrencyCode", "timezone"])
+      .where("id", "=", companyId)
+      .executeTakeFirst();
     if (!company?.companyGroupId) {
       throw new Error("Charge company configuration not found");
     }
@@ -79,7 +80,7 @@ export function postChargeTransaction(
       companyId,
       userId,
       timestamp,
-      today,
+      today
     };
 
     return type === "post"

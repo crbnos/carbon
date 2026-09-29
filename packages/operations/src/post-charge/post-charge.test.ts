@@ -1,13 +1,9 @@
+import { expect, it } from "vitest";
 import {
-  assert,
-  assertEquals,
-  assertThrows,
-} from "https://deno.land/std@0.175.0/testing/asserts.ts";
-import {
-  buildChargeJournal,
   type BuildChargeJournalInput,
-  type GLAccountClass,
-} from "./build-charge-journal.ts";
+  buildChargeJournal,
+  type GLAccountClass
+} from "./build-charge-journal";
 
 // Golden-master tests for the GL journal a charge posts. Each asserts
 // the exact natural-balance-signed `amount` on each line (asset/expense debits
@@ -20,32 +16,27 @@ const ACCOUNTS: Record<string, { class: GLAccountClass }> = {
   bank: { class: "Asset" },
   income: { class: "Revenue" },
   exp1: { class: "Expense" },
-  exp2: { class: "Expense" },
+  exp2: { class: "Expense" }
 };
 
-const line = <T extends { accountId: string }>(
-  lines: T[],
-  accountId: string,
-) => lines.find((l) => l.accountId === accountId);
+const line = <T extends { accountId: string }>(lines: T[], accountId: string) =>
+  lines.find((l) => l.accountId === accountId);
 
 // A journal balances in debit/credit space when the natural-signed amounts,
 // re-projected to debit(+)/credit(−) by account class, sum to ~0. Simpler here:
 // re-derive from the known account classes.
-const debitCreditBalance = (
-  lines: { accountId: string; amount: number }[],
-) =>
+const debitCreditBalance = (lines: { accountId: string; amount: number }[]) =>
   lines.reduce((sum, l) => {
-    const cls = ACCOUNTS[l.accountId].class;
+    const cls = ACCOUNTS[l.accountId]!.class;
     // Asset/Expense: stored amount already equals its debit-signed value.
     // Liability/Equity/Revenue: stored amount is the negation of debit-signed.
-    const debitSigned = cls === "Asset" || cls === "Expense"
-      ? l.amount
-      : -l.amount;
+    const debitSigned =
+      cls === "Asset" || cls === "Expense" ? l.amount : -l.amount;
     return sum + debitSigned;
   }, 0);
 
 const base = (
-  over: Partial<BuildChargeJournalInput> = {},
+  over: Partial<BuildChargeJournalInput> = {}
 ): BuildChargeJournalInput => ({
   transaction: {
     type: "Charge",
@@ -54,19 +45,19 @@ const base = (
     offsetAccountId: null,
     currencyCode: "USD",
     exchangeRate: 1,
-    ...(over.transaction ?? {}),
+    ...(over.transaction ?? {})
   },
   lines: over.lines ?? [],
   accounts: over.accounts ?? ACCOUNTS,
   documentId: over.documentId ?? "ct_1",
-  documentReadableId: over.documentReadableId ?? "CT000001",
+  documentReadableId: over.documentReadableId ?? "CT000001"
 });
 
 // ---------------------------------------------------------------------------
 // Charge — expense lines debited, card liability credited.
 // ---------------------------------------------------------------------------
 
-Deno.test("Charge with two split lines: DR each expense / CR card liability", () => {
+it("Charge with two split lines: DR each expense / CR card liability", () => {
   const { journalLines } = buildChargeJournal(
     base({
       transaction: {
@@ -75,31 +66,31 @@ Deno.test("Charge with two split lines: DR each expense / CR card liability", ()
         cardAccountId: "card",
         offsetAccountId: null,
         currencyCode: "USD",
-        exchangeRate: 1,
+        exchangeRate: 1
       },
       lines: [
         { accountId: "exp1", amount: 60, costCenterId: "cc_1" },
-        { accountId: "exp2", amount: 40 },
-      ],
-    }),
+        { accountId: "exp2", amount: 40 }
+      ]
+    })
   );
 
-  assertEquals(journalLines.length, 3);
-  assertEquals(line(journalLines, "exp1")!.amount, 60); // debit expense
-  assertEquals(line(journalLines, "exp1")!.costCenterId, "cc_1");
-  assertEquals(line(journalLines, "exp1")!.documentType, "Charge");
-  assertEquals(line(journalLines, "exp1")!.documentId, "ct_1");
-  assertEquals(line(journalLines, "exp2")!.amount, 40); // debit expense
-  assertEquals(line(journalLines, "exp2")!.costCenterId, null);
-  assertEquals(line(journalLines, "card")!.amount, 100); // credit liability → +
-  assert(Math.abs(debitCreditBalance(journalLines)) < 1e-9);
+  expect(journalLines.length).toEqual(3);
+  expect(line(journalLines, "exp1")!.amount).toEqual(60); // debit expense
+  expect(line(journalLines, "exp1")!.costCenterId).toEqual("cc_1");
+  expect(line(journalLines, "exp1")!.documentType).toEqual("Charge");
+  expect(line(journalLines, "exp1")!.documentId).toEqual("ct_1");
+  expect(line(journalLines, "exp2")!.amount).toEqual(40); // debit expense
+  expect(line(journalLines, "exp2")!.costCenterId).toEqual(null);
+  expect(line(journalLines, "card")!.amount).toEqual(100); // credit liability → +
+  expect(Math.abs(debitCreditBalance(journalLines)) < 1e-9).toBeTruthy();
 });
 
 // ---------------------------------------------------------------------------
 // Credit — mirror image of a Charge.
 // ---------------------------------------------------------------------------
 
-Deno.test("Credit: CR expense line / DR card liability", () => {
+it("Credit: CR expense line / DR card liability", () => {
   const { journalLines } = buildChargeJournal(
     base({
       transaction: {
@@ -108,23 +99,23 @@ Deno.test("Credit: CR expense line / DR card liability", () => {
         cardAccountId: "card",
         offsetAccountId: null,
         currencyCode: "USD",
-        exchangeRate: 1,
+        exchangeRate: 1
       },
-      lines: [{ accountId: "exp1", amount: 100 }],
-    }),
+      lines: [{ accountId: "exp1", amount: 100 }]
+    })
   );
 
-  assertEquals(journalLines.length, 2);
-  assertEquals(line(journalLines, "exp1")!.amount, -100); // credit expense → −
-  assertEquals(line(journalLines, "card")!.amount, -100); // debit liability → −
-  assert(Math.abs(debitCreditBalance(journalLines)) < 1e-9);
+  expect(journalLines.length).toEqual(2);
+  expect(line(journalLines, "exp1")!.amount).toEqual(-100); // credit expense → −
+  expect(line(journalLines, "card")!.amount).toEqual(-100); // debit liability → −
+  expect(Math.abs(debitCreditBalance(journalLines)) < 1e-9).toBeTruthy();
 });
 
 // ---------------------------------------------------------------------------
 // Payment — pay down the card liability from the bank asset.
 // ---------------------------------------------------------------------------
 
-Deno.test("Payment: DR card liability / CR bank asset", () => {
+it("Payment: DR card liability / CR bank asset", () => {
   const { journalLines } = buildChargeJournal(
     base({
       transaction: {
@@ -133,43 +124,40 @@ Deno.test("Payment: DR card liability / CR bank asset", () => {
         cardAccountId: "card",
         offsetAccountId: "bank",
         currencyCode: "USD",
-        exchangeRate: 1,
-      },
-    }),
+        exchangeRate: 1
+      }
+    })
   );
 
-  assertEquals(journalLines.length, 2);
-  assertEquals(line(journalLines, "card")!.amount, -500); // debit liability → −
-  assertEquals(line(journalLines, "bank")!.amount, -500); // credit asset → −
-  assert(Math.abs(debitCreditBalance(journalLines)) < 1e-9);
+  expect(journalLines.length).toEqual(2);
+  expect(line(journalLines, "card")!.amount).toEqual(-500); // debit liability → −
+  expect(line(journalLines, "bank")!.amount).toEqual(-500); // credit asset → −
+  expect(Math.abs(debitCreditBalance(journalLines)) < 1e-9).toBeTruthy();
 });
 
-Deno.test("Payment rejects stored coding lines that would be ignored", () => {
-  assertThrows(
-    () =>
-      buildChargeJournal(
-        base({
-          transaction: {
-            type: "Payment",
-            amount: 500,
-            cardAccountId: "card",
-            offsetAccountId: "bank",
-            currencyCode: "USD",
-            exchangeRate: 1,
-          },
-          lines: [{ accountId: "exp1", amount: 500 }],
-        }),
-      ),
-    Error,
-    "Payment cannot have coding lines",
-  );
+it("Payment rejects stored coding lines that would be ignored", () => {
+  expect(() =>
+    buildChargeJournal(
+      base({
+        transaction: {
+          type: "Payment",
+          amount: 500,
+          cardAccountId: "card",
+          offsetAccountId: "bank",
+          currencyCode: "USD",
+          exchangeRate: 1
+        },
+        lines: [{ accountId: "exp1", amount: 500 }]
+      })
+    )
+  ).toThrow("Payment cannot have coding lines");
 });
 
 // ---------------------------------------------------------------------------
 // Cashback — reduce the card liability, book the offset as income.
 // ---------------------------------------------------------------------------
 
-Deno.test("Cashback: DR card liability / CR revenue", () => {
+it("Cashback: DR card liability / CR revenue", () => {
   const { journalLines } = buildChargeJournal(
     base({
       transaction: {
@@ -178,43 +166,40 @@ Deno.test("Cashback: DR card liability / CR revenue", () => {
         cardAccountId: "card",
         offsetAccountId: "income",
         currencyCode: "USD",
-        exchangeRate: 1,
-      },
-    }),
+        exchangeRate: 1
+      }
+    })
   );
 
-  assertEquals(journalLines.length, 2);
-  assertEquals(line(journalLines, "card")!.amount, -25); // debit liability → −
-  assertEquals(line(journalLines, "income")!.amount, 25); // credit revenue → +
-  assert(Math.abs(debitCreditBalance(journalLines)) < 1e-9);
+  expect(journalLines.length).toEqual(2);
+  expect(line(journalLines, "card")!.amount).toEqual(-25); // debit liability → −
+  expect(line(journalLines, "income")!.amount).toEqual(25); // credit revenue → +
+  expect(Math.abs(debitCreditBalance(journalLines)) < 1e-9).toBeTruthy();
 });
 
-Deno.test("Cashback rejects stored coding lines that would be ignored", () => {
-  assertThrows(
-    () =>
-      buildChargeJournal(
-        base({
-          transaction: {
-            type: "Cashback",
-            amount: 25,
-            cardAccountId: "card",
-            offsetAccountId: "income",
-            currencyCode: "USD",
-            exchangeRate: 1,
-          },
-          lines: [{ accountId: "exp1", amount: 25 }],
-        }),
-      ),
-    Error,
-    "Cashback cannot have coding lines",
-  );
+it("Cashback rejects stored coding lines that would be ignored", () => {
+  expect(() =>
+    buildChargeJournal(
+      base({
+        transaction: {
+          type: "Cashback",
+          amount: 25,
+          cardAccountId: "card",
+          offsetAccountId: "income",
+          currencyCode: "USD",
+          exchangeRate: 1
+        },
+        lines: [{ accountId: "exp1", amount: 25 }]
+      })
+    )
+  ).toThrow("Cashback cannot have coding lines");
 });
 
 // ---------------------------------------------------------------------------
 // Repayment — offset debited for the total, each line credited.
 // ---------------------------------------------------------------------------
 
-Deno.test("Repayment: DR bank offset / CR card liability line", () => {
+it("Repayment: DR bank offset / CR card liability line", () => {
   const { journalLines } = buildChargeJournal(
     base({
       transaction: {
@@ -223,25 +208,46 @@ Deno.test("Repayment: DR bank offset / CR card liability line", () => {
         cardAccountId: "card",
         offsetAccountId: "bank",
         currencyCode: "USD",
-        exchangeRate: 1,
+        exchangeRate: 1
       },
-      lines: [{ accountId: "card", amount: 300 }],
-    }),
+      lines: [{ accountId: "card", amount: 300 }]
+    })
   );
 
-  assertEquals(journalLines.length, 2);
-  assertEquals(line(journalLines, "bank")!.amount, 300); // debit asset → +
-  assertEquals(line(journalLines, "card")!.amount, 300); // credit liability → +
-  assert(Math.abs(debitCreditBalance(journalLines)) < 1e-9);
+  expect(journalLines.length).toEqual(2);
+  expect(line(journalLines, "bank")!.amount).toEqual(300); // debit asset → +
+  expect(line(journalLines, "card")!.amount).toEqual(300); // credit liability → +
+  expect(Math.abs(debitCreditBalance(journalLines)) < 1e-9).toBeTruthy();
 });
 
 // ---------------------------------------------------------------------------
 // Imbalance refusal — line sum must equal the header amount.
 // ---------------------------------------------------------------------------
 
-Deno.test("throws when the line sum does not equal the header amount", () => {
-  assertThrows(
-    () =>
+it("throws when the line sum does not equal the header amount", () => {
+  expect(() =>
+    buildChargeJournal(
+      base({
+        transaction: {
+          type: "Charge",
+          amount: 100,
+          cardAccountId: "card",
+          offsetAccountId: null,
+          currencyCode: "USD",
+          exchangeRate: 1
+        },
+        lines: [
+          { accountId: "exp1", amount: 60 },
+          { accountId: "exp2", amount: 30 } // 90 ≠ 100
+        ]
+      })
+    )
+  ).toThrow("does not equal header amount");
+});
+
+for (const invalidAmount of [0, -10, Number.NaN, Number.POSITIVE_INFINITY]) {
+  it(`rejects invalid coding line amount ${invalidAmount}`, () => {
+    expect(() =>
       buildChargeJournal(
         base({
           transaction: {
@@ -250,42 +256,15 @@ Deno.test("throws when the line sum does not equal the header amount", () => {
             cardAccountId: "card",
             offsetAccountId: null,
             currencyCode: "USD",
-            exchangeRate: 1,
+            exchangeRate: 1
           },
           lines: [
-            { accountId: "exp1", amount: 60 },
-            { accountId: "exp2", amount: 30 }, // 90 ≠ 100
-          ],
-        }),
-      ),
-    Error,
-    "does not equal header amount",
-  );
-});
-
-for (const invalidAmount of [0, -10, Number.NaN, Number.POSITIVE_INFINITY]) {
-  Deno.test(`rejects invalid coding line amount ${invalidAmount}`, () => {
-    assertThrows(
-      () =>
-        buildChargeJournal(
-          base({
-            transaction: {
-              type: "Charge",
-              amount: 100,
-              cardAccountId: "card",
-              offsetAccountId: null,
-              currencyCode: "USD",
-              exchangeRate: 1,
-            },
-            lines: [
-              { accountId: "exp1", amount: invalidAmount },
-              { accountId: "exp2", amount: 100 - invalidAmount },
-            ],
-          }),
-        ),
-      Error,
-      "coding line amounts must be finite and greater than zero",
-    );
+            { accountId: "exp1", amount: invalidAmount },
+            { accountId: "exp2", amount: 100 - invalidAmount }
+          ]
+        })
+      )
+    ).toThrow("coding line amounts must be finite and greater than zero");
   });
 }
 
@@ -298,7 +277,7 @@ for (const invalidAmount of [0, -10, Number.NaN, Number.POSITIVE_INFINITY]) {
 // only the coding lines or only the card side, fails here.
 // ---------------------------------------------------------------------------
 
-Deno.test("Charge at exchangeRate 2: both the lines AND the card credit convert to base (÷ rate)", () => {
+it("Charge at exchangeRate 2: both the lines AND the card credit convert to base (÷ rate)", () => {
   const { journalLines } = buildChargeJournal(
     base({
       transaction: {
@@ -307,20 +286,20 @@ Deno.test("Charge at exchangeRate 2: both the lines AND the card credit convert 
         cardAccountId: "card",
         offsetAccountId: null,
         currencyCode: "EUR",
-        exchangeRate: 2,
+        exchangeRate: 2
       },
       lines: [
         { accountId: "exp1", amount: 60 },
-        { accountId: "exp2", amount: 40 },
-      ],
-    }),
+        { accountId: "exp2", amount: 40 }
+      ]
+    })
   );
 
-  assertEquals(journalLines.length, 3);
-  assertEquals(line(journalLines, "exp1")!.amount, 30); // 60 ÷ 2 → base debit
-  assertEquals(line(journalLines, "exp2")!.amount, 20); // 40 ÷ 2 → base debit
-  assertEquals(line(journalLines, "card")!.amount, 50); // 100 ÷ 2 → base credit
-  assert(Math.abs(debitCreditBalance(journalLines)) < 1e-9);
+  expect(journalLines.length).toEqual(3);
+  expect(line(journalLines, "exp1")!.amount).toEqual(30); // 60 ÷ 2 → base debit
+  expect(line(journalLines, "exp2")!.amount).toEqual(20); // 40 ÷ 2 → base debit
+  expect(line(journalLines, "card")!.amount).toEqual(50); // 100 ÷ 2 → base credit
+  expect(Math.abs(debitCreditBalance(journalLines)) < 1e-9).toBeTruthy();
 });
 
 // ---------------------------------------------------------------------------
@@ -330,12 +309,12 @@ Deno.test("Charge at exchangeRate 2: both the lines AND the card credit convert 
 // the card side from round(header) would post 1.0 here and this pins it.
 // ---------------------------------------------------------------------------
 
-Deno.test("Charge with three rounding lines: card side = Σ rounded lines, balances exactly", () => {
+it("Charge with three rounding lines: card side = Σ rounded lines, balances exactly", () => {
   const accounts: Record<string, { class: GLAccountClass }> = {
     card: { class: "Liability" },
     exp1: { class: "Expense" },
     exp2: { class: "Expense" },
-    exp3: { class: "Expense" },
+    exp3: { class: "Expense" }
   };
   const { journalLines } = buildChargeJournal(
     base({
@@ -345,27 +324,27 @@ Deno.test("Charge with three rounding lines: card side = Σ rounded lines, balan
         cardAccountId: "card",
         offsetAccountId: null,
         currencyCode: "USD",
-        exchangeRate: 1,
+        exchangeRate: 1
       },
       lines: [
         { accountId: "exp1", amount: 0.333333 },
         { accountId: "exp2", amount: 0.333333 },
-        { accountId: "exp3", amount: 0.333334 },
+        { accountId: "exp3", amount: 0.333334 }
       ],
-      accounts,
-    }),
+      accounts
+    })
   );
 
   // Each line rounds to 0.33333 at internal scale; the card credit is their sum
   // (0.99999), NOT round(header) = 1.0 — so the split balances exactly.
-  assertEquals(line(journalLines, "exp1")!.amount, 0.33333);
-  assertEquals(line(journalLines, "exp2")!.amount, 0.33333);
-  assertEquals(line(journalLines, "exp3")!.amount, 0.33333);
-  assertEquals(line(journalLines, "card")!.amount, 0.99999);
+  expect(line(journalLines, "exp1")!.amount).toEqual(0.33333);
+  expect(line(journalLines, "exp2")!.amount).toEqual(0.33333);
+  expect(line(journalLines, "exp3")!.amount).toEqual(0.33333);
+  expect(line(journalLines, "card")!.amount).toEqual(0.99999);
   // Re-derive balance against this test's own account map.
   const balance = journalLines.reduce((sum, l) => {
-    const cls = accounts[l.accountId].class;
+    const cls = accounts[l.accountId]!.class;
     return sum + (cls === "Expense" ? l.amount : -l.amount);
   }, 0);
-  assert(Math.abs(balance) < 1e-9);
+  expect(Math.abs(balance) < 1e-9).toBeTruthy();
 });

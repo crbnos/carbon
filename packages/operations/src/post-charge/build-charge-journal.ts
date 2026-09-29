@@ -19,12 +19,13 @@
 // per-line accounts take their class from the resolved `accounts` map — except
 // Cashback, whose offset is booked to Revenue by definition (a rebate is income).
 
-import { assertBalanced, EPSILON } from "../shared/precision.ts";
+import { credit, debit } from "@carbon/database/posting";
 import {
+  assertBalanced,
   assertExchangeRate,
-  toBaseAmount,
-} from "../shared/accounting-currency.ts";
-import { credit, debit } from "../lib/utils.ts";
+  EPSILON,
+  toBaseAmount
+} from "@carbon/utils";
 
 export type GLAccountClass =
   | "Asset"
@@ -95,7 +96,7 @@ export interface BuildChargeJournalResult {
 const BALANCE_TOLERANCE = 0.01;
 
 export function buildChargeJournal(
-  input: BuildChargeJournalInput,
+  input: BuildChargeJournalInput
 ): BuildChargeJournalResult {
   const { transaction, lines, accounts, documentId, documentReadableId } =
     input;
@@ -118,7 +119,7 @@ export function buildChargeJournal(
     const account = accounts[accountId];
     if (!account) {
       throw new Error(
-        `Charge ${documentReadableId}: missing account class for ${accountId}`,
+        `Charge ${documentReadableId}: missing account class for ${accountId}`
       );
     }
     return account.class.toLowerCase() as AccountType;
@@ -137,19 +138,20 @@ export function buildChargeJournal(
       description: string;
       costCenterId?: string | null;
       projectId?: string | null;
-    },
+    }
   ) => {
     signedDebitTotal += side === "debit" ? magnitude : -magnitude;
     journalLines.push({
       accountId: fields.accountId,
-      amount: side === "debit"
-        ? debit(accountType, magnitude)
-        : credit(accountType, magnitude),
+      amount:
+        side === "debit"
+          ? debit(accountType, magnitude)
+          : credit(accountType, magnitude),
       description: fields.description,
       documentType: "Charge",
       documentId,
       costCenterId: fields.costCenterId ?? null,
-      projectId: fields.projectId ?? null,
+      projectId: fields.projectId ?? null
     });
   };
 
@@ -158,18 +160,20 @@ export function buildChargeJournal(
   const requireLineSum = () => {
     if (lines.length === 0) {
       throw new Error(
-        `Charge ${documentReadableId}: ${type} requires at least one line`,
+        `Charge ${documentReadableId}: ${type} requires at least one line`
       );
     }
-    if (lines.some((line) => !Number.isFinite(line.amount) || line.amount <= 0)) {
+    if (
+      lines.some((line) => !Number.isFinite(line.amount) || line.amount <= 0)
+    ) {
       throw new Error(
-        `Charge ${documentReadableId}: coding line amounts must be finite and greater than zero`,
+        `Charge ${documentReadableId}: coding line amounts must be finite and greater than zero`
       );
     }
     const lineSum = lines.reduce((sum, l) => sum + l.amount, 0);
     if (Math.abs(lineSum - amount) > EPSILON) {
       throw new Error(
-        `Charge ${documentReadableId}: line sum ${lineSum} does not equal header amount ${amount}`,
+        `Charge ${documentReadableId}: line sum ${lineSum} does not equal header amount ${amount}`
       );
     }
   };
@@ -180,7 +184,7 @@ export function buildChargeJournal(
   const requireNoLines = () => {
     if (lines.length > 0) {
       throw new Error(
-        `Charge ${documentReadableId}: ${type} cannot have coding lines`,
+        `Charge ${documentReadableId}: ${type} cannot have coding lines`
       );
     }
   };
@@ -188,7 +192,7 @@ export function buildChargeJournal(
   const requireOffset = (): string => {
     if (!offsetAccountId) {
       throw new Error(
-        `Charge ${documentReadableId}: ${type} requires an offset account`,
+        `Charge ${documentReadableId}: ${type} requires an offset account`
       );
     }
     return offsetAccountId;
@@ -207,12 +211,12 @@ export function buildChargeJournal(
           accountId: line.accountId,
           description: line.description ?? "Card charge",
           costCenterId: line.costCenterId,
-          projectId: line.projectId,
+          projectId: line.projectId
         });
       }
       pushLine("credit", "liability", cardMagnitude, {
         accountId: cardAccountId,
-        description: "Card liability",
+        description: "Card liability"
       });
       break;
     }
@@ -228,12 +232,12 @@ export function buildChargeJournal(
           accountId: line.accountId,
           description: line.description ?? "Card credit",
           costCenterId: line.costCenterId,
-          projectId: line.projectId,
+          projectId: line.projectId
         });
       }
       pushLine("debit", "liability", cardMagnitude, {
         accountId: cardAccountId,
-        description: "Card liability",
+        description: "Card liability"
       });
       break;
     }
@@ -245,11 +249,11 @@ export function buildChargeJournal(
       const magnitude = toBase(amount);
       pushLine("debit", "liability", magnitude, {
         accountId: cardAccountId,
-        description: "Card liability",
+        description: "Card liability"
       });
       pushLine("credit", classOf(offset), magnitude, {
         accountId: offset,
-        description: "Card payment",
+        description: "Card payment"
       });
       break;
     }
@@ -261,11 +265,11 @@ export function buildChargeJournal(
       const magnitude = toBase(amount);
       pushLine("debit", "liability", magnitude, {
         accountId: cardAccountId,
-        description: "Card liability",
+        description: "Card liability"
       });
       pushLine("credit", "revenue", magnitude, {
         accountId: offset,
-        description: "Card cashback",
+        description: "Card cashback"
       });
       break;
     }
@@ -279,14 +283,14 @@ export function buildChargeJournal(
       const offsetMagnitude = lineMagnitudes.reduce((sum, m) => sum + m, 0);
       pushLine("debit", classOf(offset), offsetMagnitude, {
         accountId: offset,
-        description: "Card repayment",
+        description: "Card repayment"
       });
       lines.forEach((line, index) => {
-        pushLine("credit", classOf(line.accountId), lineMagnitudes[index], {
+        pushLine("credit", classOf(line.accountId), lineMagnitudes[index]!, {
           accountId: line.accountId,
           description: line.description ?? "Card repayment",
           costCenterId: line.costCenterId,
-          projectId: line.projectId,
+          projectId: line.projectId
         });
       });
       break;
@@ -295,7 +299,7 @@ export function buildChargeJournal(
     default: {
       // Exhaustiveness guard — a new chargeType must add a branch here.
       throw new Error(
-        `Charge ${documentReadableId}: unsupported type ${type as string}`,
+        `Charge ${documentReadableId}: unsupported type ${type as string}`
       );
     }
   }
@@ -308,12 +312,7 @@ export function buildChargeJournal(
   // `requireLineSum` (the subledger must equal the header). This assert exists so
   // a future edit that breaks the matched-legs invariant fails loudly here rather
   // than writing an unbalanced journal to the GL.
-  assertBalanced(
-    signedDebitTotal,
-    0,
-    BALANCE_TOLERANCE,
-    "Charge journal",
-  );
+  assertBalanced(signedDebitTotal, 0, BALANCE_TOLERANCE, "Charge journal");
 
   return { journalLines };
 }

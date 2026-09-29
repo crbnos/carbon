@@ -1,5 +1,5 @@
+import type { KyselyDatabase } from "@carbon/database/client";
 import { sql, type Transaction } from "kysely";
-import type { DB } from "../lib/database.ts";
 
 /**
  * Allocate native journal-line ids before a bulk insert. Callers can then keep
@@ -7,8 +7,8 @@ import type { DB } from "../lib/database.ts";
  * unspecified INSERT ... RETURNING row order.
  */
 export async function allocateJournalLineIds(
-  trx: Transaction<DB>,
-  count: number,
+  trx: Transaction<KyselyDatabase>,
+  count: number
 ): Promise<string[]> {
   if (!Number.isSafeInteger(count) || count < 0) {
     throw new Error("Journal line id count must be a non-negative integer");

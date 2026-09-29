@@ -1,9 +1,9 @@
-import { getCarbonServiceRole } from "@carbon/auth/client.server";
+import { postReimbursement as postReimbursementOperation } from "@carbon/operations/post-reimbursement";
 import { EPSILON } from "@carbon/utils";
-import { getEdgeFunctionErrorMessage } from "~/utils/error";
+import { getDatabaseClient } from "~/services/database.server";
 
 /**
- * The ONE module the ERP invokes `post-reimbursement` from, so the Post action
+ * The ONE module the ERP runs `post-reimbursement` from, so the Post action
  * route and the edit page's `save-and-post` intent cannot drift apart.
  *
  * Deliberately NOT re-exported from `apps/erp/app/modules/invoicing/index.ts`:
@@ -15,34 +15,19 @@ async function invokePostReimbursement(
   args: { reimbursementId: string; companyId: string; userId: string },
   fallbackMessage: string
 ): Promise<{ error: string | null }> {
-  const serviceRole = getCarbonServiceRole();
-  try {
-    const result = await serviceRole.functions.invoke("post-reimbursement", {
-      body: {
-        type,
-        reimbursementId: args.reimbursementId,
-        userId: args.userId,
-        companyId: args.companyId
-      }
-    });
-    if (result.error) {
-      // A Supabase edge function puts its useful text in the BODY, not in
-      // `error.message` — and on a non-2xx response `result.data` is ALWAYS
-      // null, so reading the message off it left every refusal showing the
-      // fixed "Edge Function returned a non-2xx status code" wrapper. The body
-      // lives on `FunctionsHttpError.context`, which is what
-      // `getEdgeFunctionErrorMessage` unwraps.
-      return {
-        error: await getEdgeFunctionErrorMessage(result.error, fallbackMessage)
-      };
-    }
-  } catch (err) {
-    // `invoke` can also throw (network/abort) — the same unwrap covers a thrown
-    // FunctionsHttpError, and falls back to `err.message` otherwise.
-    return { error: await getEdgeFunctionErrorMessage(err, fallbackMessage) };
-  }
-
-  return { error: null };
+  // The caller's route already checked `update: invoicing`.
+  const result = await postReimbursementOperation(
+    {
+      db: getDatabaseClient(),
+      companyId: args.companyId,
+      userId: args.userId,
+      system: true
+    },
+    { type, reimbursementId: args.reimbursementId }
+  );
+  return {
+    error: result.error ? result.error.message || fallbackMessage : null
+  };
 }
 
 export function postReimbursement(args: {
