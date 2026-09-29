@@ -3,8 +3,8 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { lockIssueDispositions } from "@carbon/database/quality";
+import { createAs } from "@carbon/operations/create";
 import { datetime } from "@carbon/utils";
-import { FunctionRegion } from "@supabase/supabase-js";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
 import { deleteIssue, getIssueTypesList, insertIssue } from "~/modules/quality";
@@ -342,14 +342,11 @@ export async function action({ request, params }: ActionFunctionArgs) {
     throw await failWithRollback(err, "Failed to set the Issue's item");
   }
 
-  const tasks = await serviceRole.functions.invoke("create", {
-    body: {
-      type: "nonConformanceTasks",
-      id: ncrId,
-      companyId,
-      userId
-    },
-    region: FunctionRegion.UsEast1
+  const tasks = await createAs(serviceRole, getDatabaseClient(), {
+    type: "nonConformanceTasks",
+    id: ncrId,
+    companyId,
+    userId
   });
   if (tasks.error) {
     await deleteIssue(serviceRole, ncrId);

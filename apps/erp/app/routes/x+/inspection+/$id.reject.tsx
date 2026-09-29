@@ -5,9 +5,9 @@ import { flash } from "@carbon/auth/session.server";
 import { lockIssueDispositions } from "@carbon/database/quality";
 import { notifyIssueCreated } from "@carbon/ee/notifications";
 import { getLogger } from "@carbon/logger";
+import { createAs } from "@carbon/operations/create";
 import { postNonConformance } from "@carbon/operations/post-nonconformance";
 import { datetime } from "@carbon/utils";
-import { FunctionRegion } from "@supabase/supabase-js";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
 import invariant from "tiny-invariant";
@@ -385,14 +385,11 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  const tasks = await serviceRole.functions.invoke("create", {
-    body: {
-      type: "nonConformanceTasks",
-      id: ncrId,
-      companyId,
-      userId
-    },
-    region: FunctionRegion.UsEast1
+  const tasks = await createAs(serviceRole, getDatabaseClient(), {
+    type: "nonConformanceTasks",
+    id: ncrId,
+    companyId,
+    userId
   });
   if (tasks.error) {
     await deleteIssue(serviceRole, ncrId);

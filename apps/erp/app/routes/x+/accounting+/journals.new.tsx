@@ -3,9 +3,10 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { getLogger } from "@carbon/logger";
-import { FunctionRegion } from "@supabase/supabase-js";
+import { createAs } from "@carbon/operations/create";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
+import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
 
 const logger = getLogger("erp", "journals-new");
@@ -17,15 +18,12 @@ export async function action({ request }: ActionFunctionArgs) {
 
   const serviceRole = getCarbonServiceRole();
 
-  const journalEntry = await serviceRole.functions.invoke<{
+  const journalEntry = await createAs<{
     id: string;
-  }>("create", {
-    body: {
-      type: "journalEntry",
-      companyId,
-      userId
-    },
-    region: FunctionRegion.UsEast1
+  }>(serviceRole, getDatabaseClient(), {
+    type: "journalEntry",
+    companyId,
+    userId
   });
 
   if (!journalEntry.data || journalEntry.error) {

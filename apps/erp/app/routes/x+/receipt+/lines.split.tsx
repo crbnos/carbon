@@ -2,8 +2,10 @@ import { assertIsPost } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { validator } from "@carbon/form";
+import { createAs } from "@carbon/operations/create";
 import type { ActionFunctionArgs } from "react-router";
 import { splitValidator } from "~/modules/inventory";
+import { getDatabaseClient } from "~/services/database.server";
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
@@ -42,18 +44,16 @@ export async function action({ request }: ActionFunctionArgs) {
 
   const serviceRole = getCarbonServiceRole();
 
-  const salesOrderShipment = await serviceRole.functions.invoke<{
+  const salesOrderShipment = await createAs<{
     id: string;
-  }>("create", {
-    body: {
-      type: "receiptLineSplit",
-      companyId,
-      locationId,
-      receiptId: documentId,
-      receiptLineId: documentLineId,
-      quantity,
-      userId: userId
-    }
+  }>(serviceRole, getDatabaseClient(), {
+    type: "receiptLineSplit",
+    companyId,
+    locationId,
+    receiptId: documentId,
+    receiptLineId: documentLineId,
+    quantity,
+    userId: userId
   });
 
   if (salesOrderShipment.error) {

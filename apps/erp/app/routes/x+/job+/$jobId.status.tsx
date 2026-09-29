@@ -4,6 +4,7 @@ import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { getLogger } from "@carbon/logger";
 import { closeJob } from "@carbon/operations/close-job";
+import { createAs } from "@carbon/operations/create";
 import { runLocationSchedule } from "@carbon/planning";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
@@ -229,14 +230,12 @@ export async function action({ request, params }: ActionFunctionArgs) {
       // Regenerate the whole location in parallel with PO creation.
       await Promise.all([
         scheduleJobLocation({ id, companyId, userId }),
-        getCarbonServiceRole().functions.invoke("create", {
-          body: {
-            type: "purchaseOrderFromJob",
-            jobId: id,
-            purchaseOrdersBySupplierId,
-            companyId,
-            userId
-          }
+        createAs(getCarbonServiceRole(), getDatabaseClient(), {
+          type: "purchaseOrderFromJob",
+          jobId: id,
+          purchaseOrdersBySupplierId,
+          companyId,
+          userId
         })
       ]);
     } catch (err) {

@@ -2,11 +2,13 @@ import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
+import { createAs } from "@carbon/operations/create";
 import { msg } from "@lingui/core/macro";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
 import type { ReceiptSourceDocument } from "~/modules/inventory";
 import { getUserDefaults } from "~/modules/users/users.server";
+import { getDatabaseClient } from "~/services/database.server";
 import { getEdgeFunctionErrorMessage } from "~/utils/error";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -31,17 +33,15 @@ export async function action({ request }: ActionFunctionArgs) {
 
   switch (sourceDocument) {
     case "Purchase Order":
-      const purchaseOrderReceipt = await serviceRole.functions.invoke<{
+      const purchaseOrderReceipt = await createAs<{
         id: string;
-      }>("create", {
-        body: {
-          type: "receiptFromPurchaseOrder",
-          companyId,
-          locationId: defaults.data?.locationId,
-          purchaseOrderId: sourceDocumentId,
-          receiptId: undefined,
-          userId: userId
-        }
+      }>(serviceRole, getDatabaseClient(), {
+        type: "receiptFromPurchaseOrder",
+        companyId,
+        locationId: defaults.data?.locationId as string | undefined,
+        purchaseOrderId: sourceDocumentId,
+        receiptId: undefined,
+        userId: userId
       });
       if (!purchaseOrderReceipt.data || purchaseOrderReceipt.error) {
         throw redirect(
@@ -85,17 +85,15 @@ export async function action({ request }: ActionFunctionArgs) {
 
       // No default-location guard: the create edge function falls back to
       // the return order's own location and errors specifically otherwise.
-      const salesReturnOrderReceipt = await serviceRole.functions.invoke<{
+      const salesReturnOrderReceipt = await createAs<{
         id: string;
-      }>("create", {
-        body: {
-          type: "receiptFromSalesReturnOrder",
-          companyId,
-          locationId: defaults.data?.locationId,
-          salesReturnOrderId: sourceDocumentId,
-          receiptId: undefined,
-          userId: userId
-        }
+      }>(serviceRole, getDatabaseClient(), {
+        type: "receiptFromSalesReturnOrder",
+        companyId,
+        locationId: defaults.data?.locationId as string | undefined,
+        salesReturnOrderId: sourceDocumentId,
+        receiptId: undefined,
+        userId: userId
       });
       if (!salesReturnOrderReceipt.data || salesReturnOrderReceipt.error) {
         throw redirect(
@@ -115,16 +113,14 @@ export async function action({ request }: ActionFunctionArgs) {
 
       throw redirect(path.to.receiptDetails(salesReturnOrderReceipt.data.id));
     case "Inbound Transfer":
-      const warehouseTransferReceipt = await serviceRole.functions.invoke<{
+      const warehouseTransferReceipt = await createAs<{
         id: string;
-      }>("create", {
-        body: {
-          type: "receiptFromInboundTransfer",
-          companyId,
-          warehouseTransferId: sourceDocumentId,
-          receiptId: undefined,
-          userId: userId
-        }
+      }>(serviceRole, getDatabaseClient(), {
+        type: "receiptFromInboundTransfer",
+        companyId,
+        warehouseTransferId: sourceDocumentId,
+        receiptId: undefined,
+        userId: userId
       });
       if (!warehouseTransferReceipt.data || warehouseTransferReceipt.error) {
         throw redirect(
@@ -138,15 +134,13 @@ export async function action({ request }: ActionFunctionArgs) {
 
       throw redirect(path.to.receiptDetails(warehouseTransferReceipt.data.id));
     default:
-      const defaultReceipt = await serviceRole.functions.invoke<{
+      const defaultReceipt = await createAs<{
         id: string;
-      }>("create", {
-        body: {
-          type: "receiptDefault",
-          companyId,
-          locationId: defaults.data?.locationId,
-          userId: userId
-        }
+      }>(serviceRole, getDatabaseClient(), {
+        type: "receiptDefault",
+        companyId,
+        locationId: defaults.data?.locationId as string,
+        userId: userId
       });
 
       if (!defaultReceipt.data || defaultReceipt.error) {

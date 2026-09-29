@@ -3,11 +3,13 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { getLogger } from "@carbon/logger";
+import { createAs } from "@carbon/operations/create";
 import { msg } from "@lingui/core/macro";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
 import type { ShipmentSourceDocument } from "~/modules/inventory";
 import { getUserDefaults } from "~/modules/users/users.server";
+import { getDatabaseClient } from "~/services/database.server";
 import { getEdgeFunctionErrorMessage } from "~/utils/error";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -46,17 +48,15 @@ export async function action({ request }: ActionFunctionArgs) {
           )
         );
       }
-      const salesOrderShipment = await serviceRole.functions.invoke<{
+      const salesOrderShipment = await createAs<{
         id: string;
-      }>("create", {
-        body: {
-          type: "shipmentFromSalesOrder",
-          companyId,
-          locationId: defaults.data?.locationId,
-          salesOrderId: sourceDocumentId,
-          shipmentId: undefined,
-          userId: userId
-        }
+      }>(serviceRole, getDatabaseClient(), {
+        type: "shipmentFromSalesOrder",
+        companyId,
+        locationId: defaults.data?.locationId,
+        salesOrderId: sourceDocumentId,
+        shipmentId: undefined,
+        userId: userId
       });
       if (!salesOrderShipment.data || salesOrderShipment.error) {
         logger.error("Failed to create shipment", {
@@ -109,17 +109,15 @@ export async function action({ request }: ActionFunctionArgs) {
         );
       }
 
-      const salesReturnShipment = await serviceRole.functions.invoke<{
+      const salesReturnShipment = await createAs<{
         id: string;
-      }>("create", {
-        body: {
-          type: "shipmentFromSalesReturnOrder",
-          companyId,
-          locationId: defaults.data?.locationId,
-          salesReturnOrderId: sourceDocumentId,
-          shipmentId: undefined,
-          userId: userId
-        }
+      }>(serviceRole, getDatabaseClient(), {
+        type: "shipmentFromSalesReturnOrder",
+        companyId,
+        locationId: defaults.data?.locationId as string | undefined,
+        salesReturnOrderId: sourceDocumentId,
+        shipmentId: undefined,
+        userId: userId
       });
       if (!salesReturnShipment.data || salesReturnShipment.error) {
         logger.error("Failed to create shipment", {
@@ -173,17 +171,15 @@ export async function action({ request }: ActionFunctionArgs) {
         );
       }
 
-      const purchaseReturnShipment = await serviceRole.functions.invoke<{
+      const purchaseReturnShipment = await createAs<{
         id: string;
-      }>("create", {
-        body: {
-          type: "shipmentFromPurchaseReturnOrder",
-          companyId,
-          locationId: defaults.data?.locationId,
-          purchaseReturnOrderId: sourceDocumentId,
-          shipmentId: undefined,
-          userId: userId
-        }
+      }>(serviceRole, getDatabaseClient(), {
+        type: "shipmentFromPurchaseReturnOrder",
+        companyId,
+        locationId: defaults.data?.locationId as string | undefined,
+        purchaseReturnOrderId: sourceDocumentId,
+        shipmentId: undefined,
+        userId: userId
       });
       if (!purchaseReturnShipment.data || purchaseReturnShipment.error) {
         logger.error("Failed to create shipment", {
@@ -219,17 +215,15 @@ export async function action({ request }: ActionFunctionArgs) {
           )
         );
       }
-      const purchaseOrderShipment = await serviceRole.functions.invoke<{
+      const purchaseOrderShipment = await createAs<{
         id: string;
-      }>("create", {
-        body: {
-          type: "shipmentFromPurchaseOrder",
-          companyId,
-          locationId: defaults.data?.locationId,
-          purchaseOrderId: sourceDocumentId,
-          shipmentId: undefined,
-          userId: userId
-        }
+      }>(serviceRole, getDatabaseClient(), {
+        type: "shipmentFromPurchaseOrder",
+        companyId,
+        locationId: defaults.data?.locationId,
+        purchaseOrderId: sourceDocumentId,
+        shipmentId: undefined,
+        userId: userId
       });
       if (!purchaseOrderShipment.data || purchaseOrderShipment.error) {
         logger.error("Failed to create shipment", {
@@ -252,16 +246,14 @@ export async function action({ request }: ActionFunctionArgs) {
 
       throw redirect(path.to.shipmentDetails(purchaseOrderShipment.data.id));
     case "Outbound Transfer":
-      const warehouseTransferShipment = await serviceRole.functions.invoke<{
+      const warehouseTransferShipment = await createAs<{
         id: string;
-      }>("create", {
-        body: {
-          type: "shipmentFromWarehouseTransfer",
-          companyId,
-          warehouseTransferId: sourceDocumentId,
-          shipmentId: undefined,
-          userId: userId
-        }
+      }>(serviceRole, getDatabaseClient(), {
+        type: "shipmentFromWarehouseTransfer",
+        companyId,
+        warehouseTransferId: sourceDocumentId,
+        shipmentId: undefined,
+        userId: userId
       });
       if (!warehouseTransferShipment.data || warehouseTransferShipment.error) {
         logger.error("Failed to create shipment", {
@@ -286,15 +278,13 @@ export async function action({ request }: ActionFunctionArgs) {
         path.to.shipmentDetails(warehouseTransferShipment.data.id)
       );
     default:
-      const defaultShipment = await serviceRole.functions.invoke<{
+      const defaultShipment = await createAs<{
         id: string;
-      }>("create", {
-        body: {
-          type: "shipmentDefault",
-          companyId,
-          locationId: defaults.data?.locationId,
-          userId: userId
-        }
+      }>(serviceRole, getDatabaseClient(), {
+        type: "shipmentDefault",
+        companyId,
+        locationId: defaults.data?.locationId as string | undefined,
+        userId: userId
       });
 
       if (!defaultShipment.data || defaultShipment.error) {

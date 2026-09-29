@@ -3,6 +3,7 @@ import type { Database } from "@carbon/database";
 import { getLocationTimeZone } from "@carbon/database";
 import { lockIssueDispositions } from "@carbon/database/quality";
 import { getLogger } from "@carbon/logger";
+import { createAs } from "@carbon/operations/create";
 import { issueAs } from "@carbon/operations/issue";
 import { datetime } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -225,13 +226,11 @@ export async function createQualityIssue(
     };
   }
 
-  const tasks = await serviceRole.functions.invoke("create", {
-    body: {
-      type: "nonConformanceTasks",
-      id: nonConformanceId,
-      companyId,
-      userId
-    }
+  const tasks = await createAs(serviceRole, getDatabaseClient(), {
+    type: "nonConformanceTasks",
+    id: nonConformanceId,
+    companyId,
+    userId
   });
 
   if (tasks.error) {
