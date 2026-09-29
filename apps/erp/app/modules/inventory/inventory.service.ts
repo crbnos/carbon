@@ -1593,6 +1593,7 @@ export async function getWarehouseTransferLines(
 // companySettings.accountingEnabled) in one transaction.
 export async function insertManualInventoryAdjustment(
   client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   // `requiresSerialTracking` is a form-only flag for the validator's serial
   // quantity guard — the route strips it before calling this.
   inventoryAdjustment: Omit<
@@ -1603,13 +1604,15 @@ export async function insertManualInventoryAdjustment(
     createdBy: string;
   }
 ) {
+  const { postInventoryAdjustmentAs } = await import(
+    "@carbon/operations/post-inventory-adjustment"
+  );
   const { companyId, createdBy, ...adjustment } = inventoryAdjustment;
 
-  const result = await client.functions.invoke<{
-    success: boolean;
-    itemLedger: { id: string } | null;
-  }>("post-inventory-adjustment", {
-    body: { ...adjustment, companyId, userId: createdBy }
+  const result = await postInventoryAdjustmentAs(client, db, {
+    ...adjustment,
+    companyId,
+    userId: createdBy
   });
 
   if (result.error) {

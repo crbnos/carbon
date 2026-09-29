@@ -1,25 +1,27 @@
-import { format } from "https://deno.land/std@0.205.0/datetime/mod.ts";
-import { serve } from "https://deno.land/std@0.175.0/http/server.ts";
-import { nanoid } from "https://deno.land/x/nanoid@v3.0.0/mod.ts";
-import { z } from "https://deno.land/x/zod@v3.21.4/mod.ts";
-import { Transaction } from "kysely";
-import { buildBatchSplitRecords, isFullDraw } from "../shared/batch-split.ts";
-import { DB, getConnectionPool, getDatabaseClient } from "../lib/database.ts";
+import type { Database, Json } from "@carbon/database";
+import type { KyselyDatabase } from "@carbon/database/client";
+import { datetime, getCompanyTimeZone } from "@carbon/database/datetime";
 import {
-  assertCompanyRecords,
-  RecordNotFoundError,
-} from "../lib/company-records.ts";
-import { datetime, getCompanyTimeZone } from "../lib/datetime.ts";
-import { corsPreflight, errorResponse, jsonResponse } from "../lib/response.ts";
-import { getFunctionLogger } from "../lib/logging.ts";
-import { requirePermissions } from "../lib/supabase.ts";
-import type { Database, Json } from "../lib/types.ts";
-import { getCurrentAccountingPeriod } from "../shared/get-accounting-period.ts";
-import { getDefaultPostingGroup } from "../shared/get-posting-group.ts";
-import { bookAdjustment } from "../shared/post-adjustment.ts";
-import { settleQuantity } from "../shared/entity-drain.ts";
-import { round } from "../shared/precision.ts";
-import { resolveUnscrapUnitCost } from "./resolve-unscrap-cost.ts";
+  bookAdjustment,
+  getCurrentAccountingPeriod,
+  getDefaultPostingGroup,
+  settleQuantity
+} from "@carbon/database/posting";
+import { buildBatchSplitRecords, isFullDraw, round } from "@carbon/utils";
+import { parseDate } from "@internationalized/date";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import type { Kysely, Transaction } from "kysely";
+import { nanoid } from "nanoid";
+import { z } from "zod";
+import { assertCompanyRecords, RecordNotFoundError } from "../company-records";
+import {
+  assertOperationPermissions,
+  callerContext,
+  type OperationContext,
+  serviceRoleClient
+} from "../context";
+import { OperationError, runOperation } from "../result";
+import { resolveUnscrapUnitCost } from "./resolve-unscrap-cost";
 
 // settleQuantity needs the lot's CURRENT status to know whether to preserve it
 // (a Scrapped lot stays Scrapped at zero). get_item_quantities_by_tracking_id
@@ -31,7 +33,7 @@ import { resolveUnscrapUnitCost } from "./resolve-unscrap-cost.ts";
 // concurrent transaction that Scraps the lot between our read and our update is
 // silently overwritten with the stale `Available` we read.
 async function currentEntityStatus(
-  trx: Transaction<DB>,
+  trx: Transaction<KyselyDatabase>,
   trackedEntityId: string,
   companyId: string
 ): Promise<Database["public"]["Enums"]["trackedEntityStatus"]> {
@@ -45,10 +47,6 @@ async function currentEntityStatus(
   return row.status;
 }
 
-const pool = getConnectionPool(1);
-const db = getDatabaseClient<DB>(pool);
-const logger = getFunctionLogger("post-inventory-adjustment");
-
 // The single write path for manual inventory adjustments (ERP quantities page,
 // MES shop floor). Ports the former app-side insertManualInventoryAdjustment
 // semantics — Set Quantity resolution, storage-unit transfers, serial/batch
@@ -57,14 +55,14 @@ const logger = getFunctionLogger("post-inventory-adjustment");
 // cost layers + (when companySettings.accountingEnabled) a balanced journal
 // against the inventory adjustment variance account. Storage-unit transfers
 // move value-neutral stock and never post to the GL.
-const payloadValidator = z
+export const postInventoryAdjustmentInput = z
   .object({
     adjustmentType: z.enum([
       "Positive Adjmt.",
       "Negative Adjmt.",
       "Set Quantity",
       "Scrap",
-      "Unscrap",
+      "Unscrap"
     ]),
     itemId: z.string(),
     // Optional for Unscrap (resolved from the original scrap movement);
@@ -86,16 +84,14 @@ const payloadValidator = z
     scrapReasonId: z.string().optional().nullable(),
     // Unscrap: the original scrap itemLedger row to reverse against. Optional —
     // resolved server-side from the tracked entity's newest Scrap movement.
-    unscrapOfItemLedgerId: z.string().optional().nullable(),
-    companyId: z.string(),
-    userId: z.string(),
+    unscrapOfItemLedgerId: z.string().optional().nullable()
   })
   .superRefine((data, ctx) => {
     if (data.adjustmentType === "Scrap" && !data.scrapReasonId) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         path: ["scrapReasonId"],
-        message: "Scrap reason is required",
+        message: "Scrap reason is required"
       });
     }
   });
@@ -104,14 +100,42 @@ const payloadValidator = z
 // string-match on; everything else is a 500 so real outages surface in
 // monitoring. Body key is `message` so getEdgeFunctionErrorMessage can pull
 // the real reason out of the response body.
-class ValidationError extends Error {}
+class ValidationError extends OperationError {
+  constructor(message: string) {
+    super(message, 400);
+  }
+}
 
-serve(async (req: Request) => {
-  const preflight = corsPreflight(req);
-  if (preflight) return preflight;
+/**
+ * `postInventoryAdjustment` for app code that holds a Supabase client: a
+ * service-role client runs it as the system, any other client is
+ * permission-checked (`callerContext`).
+ */
+export async function postInventoryAdjustmentAs(
+  client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
+  input: z.input<typeof postInventoryAdjustmentInput> & {
+    companyId: string;
+    userId: string;
+  }
+) {
+  const { companyId, userId } = input;
+  return postInventoryAdjustment(
+    await callerContext(client, { db, companyId, userId }),
+    input
+  );
+}
 
-  try {
-    const payload = await req.json();
+/** The single write path for manual inventory adjustments; see the note above. */
+export function postInventoryAdjustment(
+  ctx: OperationContext,
+  input: z.input<typeof postInventoryAdjustmentInput>
+) {
+  return runOperation("post-inventory-adjustment", async () => {
+    const { db, companyId, userId } = ctx;
+    const parsed = postInventoryAdjustmentInput.safeParse(input);
+    // A payload that fails validation is the caller's contract, a 400.
+    if (!parsed.success) throw Object.assign(parsed.error, { status: 400 });
     const {
       adjustmentType,
       itemId,
@@ -124,23 +148,26 @@ serve(async (req: Request) => {
       expirationDate: providedExpirationDate,
       comment,
       scrapReasonId,
-      unscrapOfItemLedgerId,
-      companyId,
-      userId,
-    } = payloadValidator.parse(payload);
+      unscrapOfItemLedgerId
+    } = parsed.data;
 
     // Unscrap sends no location (resolved from the scrap movement); every
     // other type carries one (app-layer validator enforces it).
     const locationId: string | null = payloadLocationId ?? null;
 
-    const client = await requirePermissions(req, companyId, userId, {
-      update: "inventory",
-    });
+    await assertOperationPermissions(ctx, { update: "inventory" });
+    const client = await serviceRoleClient();
 
     // The service-role client proves the caller may act in companyId, not that
     // the ids below belong to it — each lands on this company's ledger rows or
     // journal dimensions, and their single-column FKs accept any company's row.
-    await assertCompanyRecords(db, "location", [locationId], companyId, "Location");
+    await assertCompanyRecords(
+      db,
+      "location",
+      [locationId],
+      companyId,
+      "Location"
+    );
     await assertCompanyRecords(
       db,
       "storageUnit",
@@ -170,24 +197,28 @@ serve(async (req: Request) => {
       }
     }
 
-    const today = datetime.today(await getCompanyTimeZone(client, companyId)).toString();
-    const nowIso = new Date().toISOString();
+    const today = datetime
+      .today(await getCompanyTimeZone(client, companyId))
+      .toString();
+    const nowIso = datetime.timestamp();
 
     const [
       storageUnitQuantities,
       itemResult,
       itemCostResult,
       accountingSettings,
-      shelfLife,
+      shelfLife
     ] = await Promise.all([
       client.rpc("get_item_quantities_by_tracking_id", {
         item_id: itemId,
         company_id: companyId,
-        location_id: locationId ?? "",
+        location_id: locationId ?? ""
       }),
       client
         .from("item")
-        .select("id, itemTrackingType, replenishmentSystem, readableIdWithRevision")
+        .select(
+          "id, itemTrackingType, replenishmentSystem, readableIdWithRevision"
+        )
         .eq("id", itemId)
         .eq("companyId", companyId)
         .single(),
@@ -207,7 +238,7 @@ serve(async (req: Request) => {
         .select("mode, days")
         .eq("itemId", itemId)
         .eq("companyId", companyId)
-        .maybeSingle(),
+        .maybeSingle()
     ]);
 
     if (itemResult.error) throw new Error("Failed to fetch item");
@@ -222,7 +253,7 @@ serve(async (req: Request) => {
     const item = {
       itemTrackingType: itemResult.data.itemTrackingType,
       replenishmentSystem: itemResult.data.replenishmentSystem,
-      itemPostingGroupId: itemCostResult.data.itemPostingGroupId,
+      itemPostingGroupId: itemCostResult.data.itemPostingGroupId
     };
     const itemCost = itemCostResult.data;
 
@@ -237,7 +268,10 @@ serve(async (req: Request) => {
     const accountDefaults = accountingEnabled
       ? await getDefaultPostingGroup(client, companyId)
       : null;
-    if (accountingEnabled && (accountDefaults?.error || !accountDefaults?.data)) {
+    if (
+      accountingEnabled &&
+      (accountDefaults?.error || !accountDefaults?.data)
+    ) {
       throw new Error("Error getting account defaults");
     }
 
@@ -254,7 +288,7 @@ serve(async (req: Request) => {
       const dimensions = await client
         .from("dimension")
         .select("id, entityType")
-        .eq("companyGroupId", companyRecord.data.companyGroupId)
+        .eq("companyGroupId", companyRecord.data.companyGroupId!)
         .eq("active", true)
         .in("entityType", [
           "Item",
@@ -262,7 +296,7 @@ serve(async (req: Request) => {
           "Location",
           "ScrapReason",
           "WorkCenter",
-          "Employee",
+          "Employee"
         ]);
       // Fail closed: journal lines must not silently lose dimension tags.
       if (dimensions.error) throw new Error("Failed to fetch dimensions");
@@ -284,13 +318,13 @@ serve(async (req: Request) => {
               rawMaterialsAccount: accountDefaults.data.rawMaterialsAccount,
               finishedGoodsAccount: accountDefaults.data.finishedGoodsAccount,
               inventoryAdjustmentVarianceAccount:
-                accountDefaults.data.inventoryAdjustmentVarianceAccount,
+                accountDefaults.data.inventoryAdjustmentVarianceAccount
             },
             description: comment?.trim()
               ? `Inventory Adjustment — ${comment.trim()}`
               : "Inventory Adjustment",
             userId,
-            dimensions: dimensionMap,
+            dimensions: dimensionMap
           }
         : null;
 
@@ -315,7 +349,7 @@ serve(async (req: Request) => {
       documentId: null,
       comment: comment || null,
       companyId,
-      createdBy: userId,
+      createdBy: userId
     };
 
     // null == undefined — loose equality is deliberate (ported behavior).
@@ -334,10 +368,9 @@ serve(async (req: Request) => {
         shelfLife.data?.mode === "Fixed Duration" &&
         shelfLife.data.days
       ) {
-        return format(
-          new Date(Date.now() + Number(shelfLife.data.days) * 86_400_000),
-          "yyyy-MM-dd"
-        );
+        return parseDate(today)
+          .add({ days: Number(shelfLife.data.days) })
+          .toString();
       }
       return null;
     };
@@ -346,7 +379,7 @@ serve(async (req: Request) => {
     // that differs from the current one. Ports updateTrackedEntityExpiry —
     // appends to attributes.expiryOverrides so the override is traceable.
     const applyExpirationOverride = async (
-      trx: Transaction<DB>,
+      trx: Transaction<KyselyDatabase>,
       targetEntityId: string
     ) => {
       if (!providedExpirationDate) return;
@@ -378,17 +411,18 @@ serve(async (req: Request) => {
             reason: comment?.trim() || "Updated via inventory adjustment",
             source: "Inventory Adjustment",
             userId,
-            at: nowIso,
-          },
-        ],
+            at: nowIso
+          }
+        ]
       };
       await trx
         .updateTable("trackedEntity")
         .set({
           expirationDate: providedExpirationDate,
-          attributes: nextAttrs as unknown as Json,
+          attributes: nextAttrs as unknown as Json
         })
         .where("id", "=", targetEntityId)
+        .where("companyId", "=", companyId)
         .execute();
     };
 
@@ -416,8 +450,8 @@ serve(async (req: Request) => {
             ...(scrapReasonId
               ? [{ entityType: "ScrapReason", valueId: scrapReasonId }]
               : []),
-            { entityType: "Employee", valueId: userId },
-          ],
+            { entityType: "Employee", valueId: userId }
+          ]
         }
       : null;
 
@@ -427,14 +461,14 @@ serve(async (req: Request) => {
           ...ledgerBase,
           documentType: "Scrap" as const,
           scrapReasonId,
-          entryType: "Negative Adjmt." as const,
+          entryType: "Negative Adjmt." as const
         };
         const accountingForScrap = scrapAccounting
           ? {
               ...scrapAccounting,
               description: comment?.trim()
                 ? `Scrap — ${comment.trim()}`
-                : "Scrap",
+                : "Scrap"
             }
           : null;
 
@@ -451,7 +485,7 @@ serve(async (req: Request) => {
               "sourceDocumentReadableId",
               "itemId",
               "expirationDate",
-              "attributes",
+              "attributes"
             ])
             .where("id", "=", trackedEntityId)
             .where("companyId", "=", companyId)
@@ -468,8 +502,7 @@ serve(async (req: Request) => {
           if (scrapQuantity > entityQuantity) {
             throw new ValidationError("Insufficient quantity for scrap");
           }
-          const bin =
-            currentQuantity?.storageUnitId ?? storageUnitId ?? null;
+          const bin = currentQuantity?.storageUnitId ?? storageUnitId ?? null;
 
           let scrappedEntityId = trackedEntityId;
           if (!isFullDraw(entityQuantity, scrapQuantity)) {
@@ -489,7 +522,7 @@ serve(async (req: Request) => {
                   ? String(entity.expirationDate)
                   : null,
                 attributes:
-                  (entity.attributes as Record<string, unknown> | null) ?? null,
+                  (entity.attributes as Record<string, unknown> | null) ?? null
               },
               drawQuantity: scrapQuantity,
               childId: nanoid(),
@@ -501,7 +534,7 @@ serve(async (req: Request) => {
               companyId,
               userId,
               postingDate: today,
-              childStatus: "Scrapped",
+              childStatus: "Scrapped"
             });
             await trx
               .insertInto("trackedEntity")
@@ -512,7 +545,7 @@ serve(async (req: Request) => {
                 sourceDocumentId:
                   split.childEntityInsert.sourceDocumentId ?? itemId,
                 attributes: split.childEntityInsert
-                  .attributes as unknown as Json,
+                  .attributes as unknown as Json
               })
               .execute();
             await trx
@@ -525,8 +558,7 @@ serve(async (req: Request) => {
               .insertInto("trackedActivity")
               .values({
                 ...split.activityInsert,
-                attributes: split.activityInsert
-                  .attributes as unknown as Json,
+                attributes: split.activityInsert.attributes as unknown as Json
               })
               .execute();
             await trx
@@ -543,7 +575,7 @@ serve(async (req: Request) => {
                 split.ledgerInserts.map((ledgerRow) => ({
                   ...ledgerRow,
                   itemId: ledgerRow.itemId ?? itemId,
-                  quantity: round(ledgerRow.quantity),
+                  quantity: round(ledgerRow.quantity)
                 }))
               )
               .execute();
@@ -571,10 +603,10 @@ serve(async (req: Request) => {
               attributes: {
                 "Scrap Reason": scrapReasonId,
                 Employee: userId,
-                ...(comment?.trim() ? { Notes: comment.trim() } : {}),
+                ...(comment?.trim() ? { Notes: comment.trim() } : {})
               },
               companyId,
-              createdBy: userId,
+              createdBy: userId
             })
             .execute();
           await trx
@@ -584,7 +616,7 @@ serve(async (req: Request) => {
               trackedEntityId: scrappedEntityId,
               quantity: scrapQuantity,
               companyId,
-              createdBy: userId,
+              createdBy: userId
             })
             .execute();
 
@@ -593,11 +625,11 @@ serve(async (req: Request) => {
               ...scrapLedgerBase,
               trackedEntityId: scrappedEntityId,
               storageUnitId: bin,
-              quantity: -Math.abs(scrapQuantity),
+              quantity: -Math.abs(scrapQuantity)
             },
             item,
             itemCost,
-            accounting: accountingForScrap,
+            accounting: accountingForScrap
           });
           resultLedgerId = booked.itemLedgerId;
           return;
@@ -617,11 +649,11 @@ serve(async (req: Request) => {
           ledger: {
             ...scrapLedgerBase,
             trackedEntityId: null,
-            quantity: -Math.abs(quantity),
+            quantity: -Math.abs(quantity)
           },
           item,
           itemCost,
-          accounting: accountingForScrap,
+          accounting: accountingForScrap
         });
         resultLedgerId = booked.itemLedgerId;
         return;
@@ -632,14 +664,14 @@ serve(async (req: Request) => {
           ...ledgerBase,
           documentType: "Scrap" as const,
           scrapReasonId,
-          entryType: "Positive Adjmt." as const,
+          entryType: "Positive Adjmt." as const
         };
         const accountingForUnscrap = scrapAccounting
           ? {
               ...scrapAccounting,
               description: comment?.trim()
                 ? `Unscrap — ${comment.trim()}`
-                : "Unscrap",
+                : "Unscrap"
             }
           : null;
 
@@ -658,7 +690,9 @@ serve(async (req: Request) => {
           }
           const entityQuantity = Number(entity.quantity) || 0;
           if (entityQuantity <= 0) {
-            throw new ValidationError("Tracked entity has no quantity to restore");
+            throw new ValidationError(
+              "Tracked entity has no quantity to restore"
+            );
           }
 
           // The original scrap movement: explicit id from the payload, else
@@ -702,12 +736,12 @@ serve(async (req: Request) => {
                     ? [
                         {
                           entityType: "ScrapReason",
-                          valueId: resolvedScrapReasonId,
-                        },
+                          valueId: resolvedScrapReasonId
+                        }
                       ]
                     : []),
-                  { entityType: "Employee", valueId: userId },
-                ],
+                  { entityType: "Employee", valueId: userId }
+                ]
               }
             : null;
 
@@ -725,7 +759,7 @@ serve(async (req: Request) => {
             const resolved = resolveUnscrapUnitCost(
               costRows.map((r) => ({
                 quantity: Number(r.quantity),
-                cost: Number(r.cost),
+                cost: Number(r.cost)
               }))
             );
             if (resolved != null) fixedUnitCost = resolved;
@@ -749,10 +783,10 @@ serve(async (req: Request) => {
               attributes: {
                 "Scrap Reason": resolvedScrapReasonId,
                 Employee: userId,
-                ...(comment?.trim() ? { Notes: comment.trim() } : {}),
+                ...(comment?.trim() ? { Notes: comment.trim() } : {})
               },
               companyId,
-              createdBy: userId,
+              createdBy: userId
             })
             .execute();
           await trx
@@ -762,7 +796,7 @@ serve(async (req: Request) => {
               trackedEntityId,
               quantity: entityQuantity,
               companyId,
-              createdBy: userId,
+              createdBy: userId
             })
             .execute();
 
@@ -777,12 +811,12 @@ serve(async (req: Request) => {
               storageUnitId:
                 scrapMovement?.storageUnitId ?? storageUnitId ?? null,
               correctionOfItemLedgerId: scrapMovement?.id ?? null,
-              quantity: entityQuantity,
+              quantity: entityQuantity
             },
             item,
             itemCost,
             accounting: accountingForTrackedUnscrap,
-            fixedUnitCost,
+            fixedUnitCost
           });
           resultLedgerId = booked.itemLedgerId;
           return;
@@ -808,11 +842,11 @@ serve(async (req: Request) => {
           ledger: {
             ...unscrapLedgerBase,
             trackedEntityId: null,
-            quantity,
+            quantity
           },
           item,
           itemCost,
-          accounting: accountingForUnscrap,
+          accounting: accountingForUnscrap
         });
         resultLedgerId = booked.itemLedgerId;
         return;
@@ -834,23 +868,23 @@ serve(async (req: Request) => {
             ...ledgerBase,
             storageUnitId: originalStorageUnitId!,
             entryType: "Negative Adjmt.",
-            quantity: -currentQuantityOnHand,
+            quantity: -currentQuantityOnHand
           },
           item,
           itemCost,
           accounting,
-          skipValuation: true,
+          skipValuation: true
         });
         const positive = await bookAdjustment(trx, {
           ledger: {
             ...ledgerBase,
             entryType: "Positive Adjmt.",
-            quantity: currentQuantityOnHand,
+            quantity: currentQuantityOnHand
           },
           item,
           itemCost,
           accounting,
-          skipValuation: true,
+          skipValuation: true
         });
         resultLedgerId = positive.itemLedgerId;
         return;
@@ -870,7 +904,11 @@ serve(async (req: Request) => {
           adjustmentQuantity = Math.abs(quantityDifference);
         } else {
           // No quantity change — readableId / expirationDate may still change.
-          if (trackedEntityId && readableId !== undefined && readableId !== null) {
+          if (
+            trackedEntityId &&
+            readableId !== undefined &&
+            readableId !== null
+          ) {
             await trx
               .updateTable("trackedEntity")
               .set({ readableId })
@@ -906,32 +944,32 @@ serve(async (req: Request) => {
               "Insufficient quantity for negative adjustment"
             );
           }
-            // A negative adjustment draws down Available stock; when it lands
-            // on zero the lot is Consumed, not a zero-quantity Available husk.
-            // settleQuantity is the shared rule, so this path also preserves a
-            // Scrapped lot — which the inline flip it replaces did not.
-            await trx
-              .updateTable("trackedEntity")
-              .set({
-                ...settleQuantity({
-                  quantity: resolvedQty - adjustmentQuantity,
-                  status: await currentEntityStatus(trx, resolvedId, companyId),
-                }),
-                readableId,
-              })
-              .where("id", "=", resolvedId)
-              .where("companyId", "=", companyId)
-              .execute();
+          // A negative adjustment draws down Available stock; when it lands
+          // on zero the lot is Consumed, not a zero-quantity Available husk.
+          // settleQuantity is the shared rule, so this path also preserves a
+          // Scrapped lot — which the inline flip it replaces did not.
+          await trx
+            .updateTable("trackedEntity")
+            .set({
+              ...settleQuantity({
+                quantity: resolvedQty - adjustmentQuantity,
+                status: await currentEntityStatus(trx, resolvedId, companyId)
+              }),
+              readableId
+            })
+            .where("id", "=", resolvedId)
+            .where("companyId", "=", companyId)
+            .execute();
           const booked = await bookAdjustment(trx, {
             ledger: {
               ...ledgerBase,
               trackedEntityId: resolvedId,
               entryType,
-              quantity: -Math.abs(adjustmentQuantity),
+              quantity: -Math.abs(adjustmentQuantity)
             },
             item,
             itemCost,
-            accounting,
+            accounting
           });
           resultLedgerId = booked.itemLedgerId;
           return;
@@ -953,11 +991,11 @@ serve(async (req: Request) => {
               ...ledgerBase,
               trackedEntityId: null,
               entryType,
-              quantity: -Math.abs(adjustmentQuantity),
+              quantity: -Math.abs(adjustmentQuantity)
             },
             item,
             itemCost,
-            accounting,
+            accounting
           });
           resultLedgerId = booked.itemLedgerId;
           return;
@@ -981,7 +1019,7 @@ serve(async (req: Request) => {
             "Multiple tracked entities in this storage unit — select a specific row to adjust"
           );
         }
-        const targetRow = trackedRowsInUnit[0];
+        const targetRow = trackedRowsInUnit[0]!;
         const targetQty = round(targetRow.quantity ?? 0);
         if (round(adjustmentQuantity) > targetQty) {
           throw new ValidationError(
@@ -994,7 +1032,7 @@ serve(async (req: Request) => {
           .set(
             settleQuantity({
               quantity: targetQty - adjustmentQuantity,
-              status: await currentEntityStatus(trx, targetId, companyId),
+              status: await currentEntityStatus(trx, targetId, companyId)
             })
           )
           .where("id", "=", targetId)
@@ -1005,11 +1043,11 @@ serve(async (req: Request) => {
             ...ledgerBase,
             trackedEntityId: targetId,
             entryType,
-            quantity: -Math.abs(adjustmentQuantity),
+            quantity: -Math.abs(adjustmentQuantity)
           },
           item,
           itemCost,
-          accounting,
+          accounting
         });
         resultLedgerId = booked.itemLedgerId;
         return;
@@ -1033,7 +1071,7 @@ serve(async (req: Request) => {
           // one that can land on a Scrapped lot — settleQuantity preserves it.
           const entityUpdate: Record<string, unknown> = settleQuantity({
             quantity: signedQuantity + currentQuantityOnHand,
-            status: await currentEntityStatus(trx, trackedEntityId, companyId),
+            status: await currentEntityStatus(trx, trackedEntityId, companyId)
           });
           if (readableId !== undefined && readableId !== null) {
             entityUpdate.readableId = readableId;
@@ -1058,7 +1096,7 @@ serve(async (req: Request) => {
           const adjustmentStamp = {
             userId,
             at: nowIso,
-            reason: comment?.trim() || "Created via inventory adjustment",
+            reason: comment?.trim() || "Created via inventory adjustment"
           };
           const attributes: Record<string, unknown> = {
             "Inventory Adjustment": adjustmentStamp,
@@ -1071,11 +1109,11 @@ serve(async (req: Request) => {
                       reason: adjustmentStamp.reason,
                       source: "Inventory Adjustment",
                       userId: adjustmentStamp.userId,
-                      at: adjustmentStamp.at,
-                    },
-                  ],
+                      at: adjustmentStamp.at
+                    }
+                  ]
                 }
-              : {}),
+              : {})
           };
           await trx
             .insertInto("trackedEntity")
@@ -1094,7 +1132,7 @@ serve(async (req: Request) => {
               expirationDate,
               attributes: attributes as unknown as Json,
               companyId,
-              createdBy: userId,
+              createdBy: userId
             })
             .execute();
         }
@@ -1104,27 +1142,18 @@ serve(async (req: Request) => {
         ledger: {
           ...ledgerBase,
           entryType,
-          quantity: signedQuantity,
+          quantity: signedQuantity
         },
         item,
         itemCost,
-        accounting,
+        accounting
       });
       resultLedgerId = booked.itemLedgerId;
     });
 
-    return jsonResponse({
+    return {
       success: true,
-      itemLedger: resultLedgerId ? { id: resultLedgerId } : null,
-    });
-  } catch (err) {
-    logger.error("post-inventory-adjustment failed", {
-      error: String((err as Error).stack ?? err),
-    });
-    // A payload ZodError is the caller's input contract failing, same as our
-    // own ValidationError — a 400, not an outage.
-    const isValidationError =
-      err instanceof ValidationError || err instanceof z.ZodError;
-    return errorResponse(err, isValidationError ? 400 : 500);
-  }
-});
+      itemLedger: resultLedgerId ? { id: resultLedgerId } : null
+    };
+  });
+}
