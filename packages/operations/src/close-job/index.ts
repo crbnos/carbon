@@ -1,36 +1,39 @@
-import { serve } from "https://deno.land/std@0.175.0/http/server.ts";
-import { nanoid } from "https://deno.land/x/nanoid@v3.0.0/mod.ts";
-import z from "npm:zod@^4.5.4";
-import { DB, getConnectionPool, getDatabaseClient } from "../lib/database.ts";
-import { datetime, getCompanyTimeZone } from "../lib/datetime.ts";
-import { corsPreflight, errorResponse, jsonResponse } from "../lib/response.ts";
-import { requirePermissions } from "../lib/supabase.ts";
-import { credit, debit, journalReference } from "../lib/utils.ts";
-import { getCurrentAccountingPeriod } from "../shared/get-accounting-period.ts";
-import { getNextSequence } from "../shared/get-next-sequence.ts";
-import { getDefaultPostingGroup } from "../shared/get-posting-group.ts";
-import { round } from "../shared/precision.ts";
+import { datetime, getCompanyTimeZone } from "@carbon/database/datetime";
+import {
+  credit,
+  debit,
+  getCurrentAccountingPeriod,
+  getDefaultPostingGroup,
+  journalReference
+} from "@carbon/database/posting";
+import { getNextSequence } from "@carbon/database/sequence";
+import { round } from "@carbon/utils";
+import { nanoid } from "nanoid";
+import { z } from "zod";
+import { assertOperationPermissions, type OperationContext } from "../context";
+import { runOperation } from "../result";
 
-const pool = getConnectionPool(1);
-const db = getDatabaseClient<DB>(pool);
-
-const payloadValidator = z.object({
-  jobId: z.string(),
-  userId: z.string(),
-  companyId: z.string(),
+export const closeJobInput = z.object({
+  jobId: z.string()
 });
 
-serve(async (req: Request) => {
-  const preflight = corsPreflight(req);
-  if (preflight) return preflight;
+/**
+ * Closing a job writes off whatever is left in WIP for it as production
+ * variance, so the job's WIP nets to zero. Nothing to do when accounting is off
+ * or the residual is under a cent.
+ */
+export function closeJob(
+  ctx: OperationContext,
+  input: z.infer<typeof closeJobInput>
+) {
+  return runOperation("close-job", async () => {
+    const { jobId } = closeJobInput.parse(input);
+    const { client, db, companyId, userId } = ctx;
+    await assertOperationPermissions(ctx, { update: "production" });
 
-  const payload = await req.json();
-
-  try {
-    const { jobId, userId, companyId } = payloadValidator.parse(payload);
-
-    const client = await requirePermissions(req, companyId, userId, { update: "production" });
-    const today = datetime.today(await getCompanyTimeZone(client, companyId)).toString();
+    const today = datetime
+      .today(await getCompanyTimeZone(client, companyId))
+      .toString();
 
     const [accountingSettings, companyRecord] = await Promise.all([
       client
@@ -42,13 +45,14 @@ serve(async (req: Request) => {
         .from("company")
         .select("companyGroupId")
         .eq("id", companyId)
-        .single(),
+        .single()
     ]);
 
-    const accountingEnabled = accountingSettings.data?.accountingEnabled ?? false;
+    const accountingEnabled =
+      accountingSettings.data?.accountingEnabled ?? false;
 
     if (!accountingEnabled) {
-      return jsonResponse({ success: true });
+      return { success: true };
     }
 
     if (companyRecord.error) throw new Error("Failed to fetch company");
@@ -119,23 +123,23 @@ serve(async (req: Request) => {
           // negative (over-credited) residual reverses — always zeroing WIP.
           amount: round(debit("expense", remainingWip)),
           quantity: 0,
-          documentType: "Job Close",
+          documentType: "Job Close" as const,
           documentId: jobId,
           documentLineReference: journalReference.to.job(jobId),
           journalLineReference,
-          companyId,
+          companyId
         },
         {
           accountId: accountDefaults.data!.workInProgressAccount,
           description: "WIP Account",
           amount: round(credit("asset", remainingWip)),
           quantity: 0,
-          documentType: "Job Close",
+          documentType: "Job Close" as const,
           documentId: jobId,
           documentLineReference: journalReference.to.job(jobId),
           journalLineReference,
-          companyId,
-        },
+          companyId
+        }
       ];
 
       const accountingPeriodId = await getCurrentAccountingPeriod(
@@ -161,9 +165,9 @@ serve(async (req: Request) => {
           companyId,
           sourceType: "Job Close",
           status: "Posted",
-          postedAt: new Date().toISOString(),
+          postedAt: datetime.timestamp(),
           postedBy: userId,
-          createdBy: userId,
+          createdBy: userId
         })
         .returning(["id"])
         .executeTakeFirstOrThrow();
@@ -173,7 +177,7 @@ serve(async (req: Request) => {
         .values(
           journalLineInserts.map((line) => ({
             ...line,
-            journalId: journalResult.id,
+            journalId: journalResult.id
           }))
         )
         .returning(["id"])
@@ -187,13 +191,13 @@ serve(async (req: Request) => {
           companyId: string;
         }[] = [];
 
-        journalLineResults.forEach((jl) => {
+        for (const jl of journalLineResults) {
           if (job.itemId && dimensionMap.has("Item")) {
             dimensionInserts.push({
               journalLineId: jl.id,
               dimensionId: dimensionMap.get("Item")!,
               valueId: job.itemId,
-              companyId,
+              companyId
             });
           }
           if (
@@ -204,7 +208,7 @@ serve(async (req: Request) => {
               journalLineId: jl.id,
               dimensionId: dimensionMap.get("ItemPostingGroup")!,
               valueId: finishedItemCost.itemPostingGroupId,
-              companyId,
+              companyId
             });
           }
           if (job.locationId && dimensionMap.has("Location")) {
@@ -212,10 +216,10 @@ serve(async (req: Request) => {
               journalLineId: jl.id,
               dimensionId: dimensionMap.get("Location")!,
               valueId: job.locationId,
-              companyId,
+              companyId
             });
           }
-        });
+        }
 
         if (dimensionInserts.length > 0) {
           await trx
@@ -226,8 +230,6 @@ serve(async (req: Request) => {
       }
     });
 
-    return jsonResponse({ success: true });
-  } catch (err) {
-    return errorResponse(err, 500);
-  }
-});
+    return { success: true };
+  });
+}

@@ -702,6 +702,9 @@ importers:
       '@carbon/onboarding':
         specifier: workspace:*
         version: link:../../packages/onboarding
+      '@carbon/operations':
+        specifier: workspace:*
+        version: link:../../packages/operations
       '@carbon/planning':
         specifier: workspace:*
         version: link:../../packages/planning
@@ -3132,6 +3135,9 @@ importers:
       kysely:
         specifier: 'catalog:'
         version: 0.28.17
+      nanoid:
+        specifier: 'catalog:'
+        version: 5.1.16
       zod:
         specifier: 'catalog:'
         version: 4.5.4

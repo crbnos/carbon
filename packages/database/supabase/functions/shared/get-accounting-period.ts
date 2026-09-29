@@ -1,7 +1,7 @@
 import { endOfMonth, parseDate, startOfMonth } from "@internationalized/date";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { type Kysely, sql } from "kysely";
-import type { DB } from "../lib/database.ts";
+import type { KyselyDatabase as DB } from "../lib/postgres/index.ts";
 import { datetime, getCompanyTimeZone } from "../lib/datetime.ts";
 import type { Database } from "../lib/types.ts";
 

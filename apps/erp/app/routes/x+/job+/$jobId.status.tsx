@@ -3,6 +3,7 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { getLogger } from "@carbon/logger";
+import { closeJob } from "@carbon/operations/close-job";
 import { runLocationSchedule } from "@carbon/planning";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
@@ -244,10 +245,23 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   if (status === "Closed") {
-    const serviceRole = await getCarbonServiceRole();
-    await serviceRole.functions.invoke("close-job", {
-      body: { jobId: id, userId, companyId }
-    });
+    const closed = await closeJob(
+      {
+        db: getDatabaseClient(),
+        client: getCarbonServiceRole(),
+        companyId,
+        userId
+      },
+      { jobId: id }
+    );
+    if (closed.error) {
+      // The status change stands; only the WIP write-off failed, as before.
+      logger.error("Failed to write off WIP for closed job", {
+        jobId: id,
+        companyId,
+        error: closed.error
+      });
+    }
   }
 
   if (status === "Planned") {

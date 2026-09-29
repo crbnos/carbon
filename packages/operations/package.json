@@ -21,6 +21,7 @@
     "@carbon/utils": "workspace:*",
     "@supabase/supabase-js": "catalog:",
     "kysely": "catalog:",
+    "nanoid": "catalog:",
     "zod": "catalog:"
   },
   "devDependencies": {
