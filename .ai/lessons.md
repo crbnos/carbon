@@ -139,7 +139,7 @@ Format: `Context → Problem → Rule → Applies to`
 
 **Rule:** In migrations that insert `account` rows, resolve the parent group by `"isGroup" = TRUE AND name = '<Group Name>'` (optionally + class), never by number — and treat a NULL parent as an error or explicit fallback, never insert silently orphaned. `20260630093809_ar-ap-payments.sql` is the correct precedent. When a past migration did orphan accounts, ship a follow-up UPDATE re-parenting `parentId IS NULL` rows to the group `seed.data.ts` assigns (see `20260702192816`).
 
-**Applies to:** `packages/database/supabase/migrations/` touching `account`; `packages/database/supabase/functions/lib/seed.data.ts`; anything walking the chart-of-accounts tree.
+**Applies to:** `packages/database/supabase/migrations/` touching `account`; `packages/database/src/seed-data.ts`; anything walking the chart-of-accounts tree.
 
 ## Never fabricate a "best-effort" motion through geometry
 
@@ -285,7 +285,7 @@ Format: `Context → Problem → Rule → Applies to`
 
 **Problem:** For a tracked entity that has moved between bins (pick/transfer), "which bin holds the stock" is NOT the first ledger row — it's the bin whose net on-hand is positive. Picking any row's `storageUnitId` silently misplaces consumption and breaks any downstream feature that reasons about physical location (e.g. returning lineside remainder to source).
 
-**Rule:** When booking a consumption/split/movement ledger row for a tracked entity, resolve the storage unit from **net on-hand per bin** (the bin with the highest positive net), never `.find(...)?.storageUnitId` over an unordered/`createdBy`-ordered list. See `resolveTrackedEntityBin` (`packages/database/supabase/functions/shared/resolve-tracked-entity-bin.ts`, pure + test-covered; `@carbon/database/posting` in Node). Scope such a fix to the path you can verify — the same `.find` pattern exists in other cases (e.g. `unconsumeTrackedEntities`); don't blanket-replace untested paths.
+**Rule:** When booking a consumption/split/movement ledger row for a tracked entity, resolve the storage unit from **net on-hand per bin** (the bin with the highest positive net), never `.find(...)?.storageUnitId` over an unordered/`createdBy`-ordered list. See `resolveTrackedEntityBin` (`packages/utils/src/resolve-tracked-entity-bin.ts`, pure + test-covered; exported by `@carbon/utils`). Scope such a fix to the path you can verify — the same `.find` pattern exists in other cases (e.g. `unconsumeTrackedEntities`); don't blanket-replace untested paths.
 
 **Applies to:** `packages/server-functions/src/issue/index.ts` and any server function inserting `itemLedger` rows for a tracked entity that may hold stock in multiple bins.
 
@@ -347,7 +347,7 @@ Format: `Context → Problem → Rule → Applies to`
 
 **Rule:** When you change seeded per-company template rows (`periodCloseTaskDefinition`, `paymentTerm`, `accountDefault`, …) in `seed.data.ts`, also write an idempotent **reconciling migration** for existing companies (`INSERT … FROM company … ON CONFLICT DO UPDATE`, plus deletes for removed rows), guarded on the `system` user for the `createdBy` FK. Validate it in a rolled-back psql txn that simulates the old state. Deleting instance rows to force re-instantiation is fine when no real data depends on them (confirm first).
 
-**Applies to:** any change to `packages/database/supabase/functions/lib/seed.data.ts` per-company templates; `packages/server-functions/src/seed-company/index.ts`, `seed-dev.ts`.
+**Applies to:** any change to `packages/database/src/seed-data.ts` per-company templates; `packages/server-functions/src/seed-company/index.ts`, `seed-dev.ts`.
 
 ## meshopt vertex codec requires a stride that is a multiple of 4 — i16 VEC3 normals break it
 
@@ -434,7 +434,7 @@ Format: `Context → Problem → Rule → Applies to`
 
 **Problem:** `deno check` on ANY edge function fails with ~10–20 pre-existing errors from the shared dependency graph (TS2589 in `shared/get-next-sequence.ts`, kysely pool-config type skew, supabase-js generic inference collapsing to implicit-any callbacks). CI never runs `deno check`, so committed, working functions fail it — a red exit code proves nothing about the change, and chasing those errors means rewriting shared files out of scope.
 
-**Rule:** Gate edge-function changes on the DELTA of errors attributed to the touched file: `deno check <file> 2>&1 | sed 's/\x1b\[[0-9;]*m//g' | grep -c "<file>:"` must not exceed the committed baseline (copy the HEAD version beside it to measure, e.g. `git show HEAD:<path> > <dir>/index.orig.ts`, check, delete). New code should contribute zero; annotate supabase-js callbacks with explicit row types instead of leaving implicit-any. Pure logic goes in a small module importing only `lib/types.ts` so `deno test` type-checks clean.
+**Rule:** Obsolete: the two remaining edge functions (`embedding`, `thumbnail`) are self-contained and `deno check`-clean, and CI's `edge-functions` job runs `deno check` on both — keep them clean; a red exit code is now a real failure.
 
 **Applies to:** `packages/database/supabase/functions/**` verification; `.claude/skills/check-and-commit` runs touching edge functions.
 
@@ -578,9 +578,9 @@ still reads `authenticated` inside the nested call. Make those `SECURITY INVOKER
 
 **Problem:** Turbo builds dependency packages first, and a `@carbon/database` build step regenerated `src/types.ts` (nondeterministic FK-relationship ordering), `src/swagger-docs-schema.ts`, and `supabase/functions/lib/types.ts` — none of which the task touched. Committing them would mix generated-file drift into an unrelated PR; the drift can also reflect whatever local DB happens to be running, not migrations.
 
-**Rule:** After any turbo run, check `git status` for modified generated files under `packages/database/` before committing. If you didn't intentionally run `pnpm run generate:types`, revert them (`git checkout -- packages/database/src/... packages/database/supabase/functions/lib/types.ts`). Regenerate deliberately and separately when schema actually changed.
+**Rule:** After any turbo run, check `git status` for modified generated files under `packages/database/` before committing. If you didn't intentionally run `pnpm run generate:types`, revert them (`git checkout -- packages/database/src/...`). Regenerate deliberately and separately when schema actually changed.
 
-**Applies to:** `packages/database/src/types.ts`, `packages/database/src/swagger-docs-schema.ts`, `packages/database/supabase/functions/lib/types.ts`; any branch running turbo tasks that build `@carbon/database`.
+**Applies to:** `packages/database/src/types.ts`, `packages/database/src/swagger-docs-schema.ts`; any branch running turbo tasks that build `@carbon/database`.
 
 ## Storage keys built from raw filenames break silently — always sanitize, and the portal share route regex is a hidden contract with every upload path shape
 
@@ -618,9 +618,9 @@ still reads `authenticated` inside the nested call. Make those `SECURITY INVOKER
 
 **Problem:** `lib/database.ts` imports `./driver.ts` — the Deno-postgres driver whose types (`queryObject`, deno `Pool`) don't typecheck under the node tsconfig. Pulling any `shared/*.ts` helper that touches `lib/database.ts` into a `src/*` file breaks `pnpm --filter @carbon/database typecheck`, even though the runtime graph would have been fine.
 
-**Rule:** When making a Deno-tree helper importable from `packages/database/src/*`, its type-only imports must come from `../lib/postgres/index.ts` (node-clean, already the `src/client.ts` re-export source), never `../lib/database.ts`. `import type { KyselyDatabase as DB } from "../lib/postgres/index.ts"` is behavior-neutral for Deno. Check the full import chain (`lib/utils.ts` is safe; `lib/database.ts`/`lib/driver.ts` are not) before re-exporting.
+**Rule:** Obsolete: `src/client.ts` is now the Node-only implementation and nothing in `packages/database/src` imports the Deno tree. Original rule: when making a Deno-tree helper importable from `packages/database/src/*`, its type-only imports must come from `../lib/postgres/index.ts` (node-clean, already the `src/client.ts` re-export source), never `../lib/database.ts`. `import type { KyselyDatabase as DB } from "../lib/postgres/index.ts"` is behavior-neutral for Deno. Check the full import chain (`lib/utils.ts` is safe; `lib/database.ts`/`lib/driver.ts` are not) before re-exporting.
 
-**Applies to:** `packages/database/src/{client,sampling,quality}.ts`; any future node-side re-export of `packages/database/supabase/functions/{shared,lib}/*`.
+**Applies to:** `packages/database/src/{client,sampling,quality}.ts`.
 
 ## A zod `.refine` that returns an object instead of a boolean silently disables the check
 
@@ -904,9 +904,9 @@ canvas hosting Radix popovers/selects.
 
 **Problem:** Git auto-combined most of the generated output but left one view's relationship list conflicting. Hand-picking a side drops one branch's relationships (the view genuinely has all the columns); union-merging risks duplicating entries; either way the result may not match what the real generator emits from the COMBINED schema. Generated files are outputs, not source — resolving their conflict markers by hand is guessing at the generator.
 
-**Rule:** For a conflict in a generated file, regenerate instead of editing markers. For `@carbon/database` types: start the postgres container, apply BOTH branches' pending migrations (`pnpm db:migrate`), then `pnpm run generate:types` — it overwrites `types.ts` + `functions/lib/types.ts` from the live schema, connects via `SUPABASE_DB_URL`, and needs only postgres (not the full stack; the chained swagger step needs PostgREST and can fail harmlessly). `git add` the regenerated files to resolve. For build-time artifacts that regenerate on `pnpm dev`/build (`swagger-docs-schema.ts`, `tool-metadata.json`), take the superset side (usually `main`'s) as a placeholder — it self-corrects on next build. `generate:types` FK ordering is non-deterministic, so ignore ordering-only churn afterward (see the turbo-regen lesson above). Applying pending migrations forward is NOT a DB rebuild — that is the normal path; a full reset still needs the user.
+**Rule:** For a conflict in a generated file, regenerate instead of editing markers. For `@carbon/database` types: start the postgres container, apply BOTH branches' pending migrations (`pnpm db:migrate`), then `pnpm run generate:types` — it overwrites `types.ts` from the live schema, connects via `SUPABASE_DB_URL`, and needs only postgres (not the full stack; the chained swagger step needs PostgREST and can fail harmlessly). `git add` the regenerated files to resolve. For build-time artifacts that regenerate on `pnpm dev`/build (`swagger-docs-schema.ts`, `tool-metadata.json`), take the superset side (usually `main`'s) as a placeholder — it self-corrects on next build. `generate:types` FK ordering is non-deterministic, so ignore ordering-only churn afterward (see the turbo-regen lesson above). Applying pending migrations forward is NOT a DB rebuild — that is the normal path; a full reset still needs the user.
 
-**Applies to:** merging `main` into any branch with migrations on both sides; conflicts in `packages/database/src/types.ts`, `functions/lib/types.ts`, `swagger-docs-schema.ts`, `apps/erp/app/routes/api+/mcp+/lib/tool-metadata.json`, and any committed generated artifact.
+**Applies to:** merging `main` into any branch with migrations on both sides; conflicts in `packages/database/src/types.ts`, `swagger-docs-schema.ts`, `apps/erp/app/routes/api+/mcp+/lib/tool-metadata.json`, and any committed generated artifact.
 
 ## A flip/refactor must not add ledger rows to a code path that deliberately posted none
 
@@ -926,7 +926,7 @@ canvas hosting Radix popovers/selects.
   consolidation, all provider journal mappers) assumed `journalLine.amount`
   is debit-signed (positive = debit, negative = credit, sum = 0). Carbon's
   post-* edge functions actually sign by the account's NATURAL balance
-  (`credit("liability", x)` stores +x — functions/lib/utils.ts), so real
+  (`credit("liability", x)` stores +x — packages/database/src/ledger.ts), so real
   journals balance as debits == credits, not signed-sum-zero. Also:
   Kysely/pg returns DATE columns as JS Date objects — `postingDate.slice`
   crashes; and disabled-config skip results without `localId` make the
@@ -1016,9 +1016,9 @@ canvas hosting Radix popovers/selects.
 
 **Problem:** A production snapshot carries whatever the source environment accumulated outside the migration stream, so types generated from it describe *that* database rather than the schema the migrations define. The diff added a `v_readable_id` relation absent from `main` — not a schema object at all, but a plpgsql local (`v_readable_id TEXT;` … `SELECT … INTO v_readable_id, v_company_id`) that ran somewhere in a plain-SQL context, where `SELECT … INTO` is CREATE-TABLE-AS. An accidental artifact table exists in the snapshot, and regenerating baked it into the repo's public type surface, alongside `procedureStep`→`procedureAttribute` FK-name churn.
 
-**Rule:** Never commit `packages/database/src/types.ts` (or `supabase/functions/lib/types.ts`) generated after a `crbn restore` — regenerate against a migration-built database first. `crbn restore` now warns about this. Stage generated types explicitly rather than with `git add -A`, and diff them before committing: any relation appearing that no migration defines is drift from the source environment, not a schema change. Separately, `SELECT … INTO <name>` in a SQL (non-plpgsql) context silently creates a table — a real hazard when copying plpgsql bodies into migrations.
+**Rule:** Never commit `packages/database/src/types.ts` generated after a `crbn restore` — regenerate against a migration-built database first. `crbn restore` now warns about this. Stage generated types explicitly rather than with `git add -A`, and diff them before committing: any relation appearing that no migration defines is drift from the source environment, not a schema change. Separately, `SELECT … INTO <name>` in a SQL (non-plpgsql) context silently creates a table — a real hazard when copying plpgsql bodies into migrations.
 
-**Applies to:** `packages/dev/src/commands/restore.ts`, `packages/database/src/types.ts`, `packages/database/supabase/functions/lib/types.ts`.
+**Applies to:** `packages/dev/src/commands/restore.ts`, `packages/database/src/types.ts`.
 
 ## Kysely returns NUMERIC as a string; supabase-js returns it as a number
 
@@ -1026,9 +1026,9 @@ canvas hosting Radix popovers/selects.
 
 **Problem:** The function keys the snapshot of existing rows by quantity and looks each one up while building the reinsert. Through PostgREST a `NUMERIC` column arrives as a JS `number`, so `pricesByQuantity[10]` matched. Through node-postgres — which Kysely uses — the same column arrives as the string `"10.00000"`, because pg does not parse `NUMERIC` (oid 1700) to float and this repo sets no `setTypeParser` anywhere. Every `Map.get(10)` therefore missed, `existing` was always `undefined`, and each preserved field fell back to the caller's value: shipping to the column default `0`, discount and lead time to the zeros the recalculate route passes. The generated types say `number` on both paths, so `tsgo` cannot see it — the mismatch exists only at runtime.
 
-**Rule (updated by the numeric-precision standard):** NUMERIC (oid 1700) now decodes to a JS number in BOTH runtimes — node-postgres via `setTypeParser` and deno-postgres via `controls.decoders`, registered once in `lib/postgres/index.ts` — so runtime finally matches the generated types for numerics. The caution below still applies to `BIGINT` and float8 (still strings), to any pool NOT built through the shared factory, and as history for why `Number(...)` coercions litter Kysely call sites (they are now harmless no-ops). Original rule: when porting a query from supabase-js to Kysely, treat every `NUMERIC`/`DECIMAL`/`BIGINT` read as a **string** regardless of what the generated type claims. Normalize with `Number(...)` only where the value has to be a number — an object/`Map` key, a `===` comparison, arithmetic — and only for bounded fields like a quantity or a precision. Do **not** normalize a whole row for tidiness: `Number()` on a `BIGINT` or a wide `NUMERIC` silently loses precision past `Number.MAX_SAFE_INTEGER`, and money is exactly where that matters. Writing values back untouched is both safe and preferable — pg accepts the canonical string for a numeric param, and passing it straight through preserves the stored value exactly. More generally: a client swap can change runtime value types without changing a single TypeScript type, so a typecheck is not evidence that a port behaves identically — exercise it against a real database.
+**Rule (updated by the numeric-precision standard):** NUMERIC (oid 1700) now decodes to a JS number — node-postgres via `setTypeParser`, registered once in `packages/database/src/client.ts` — so runtime finally matches the generated types for numerics. The caution below still applies to `BIGINT` and float8 (still strings), to any pool NOT built through the shared factory, and as history for why `Number(...)` coercions litter Kysely call sites (they are now harmless no-ops). Original rule: when porting a query from supabase-js to Kysely, treat every `NUMERIC`/`DECIMAL`/`BIGINT` read as a **string** regardless of what the generated type claims. Normalize with `Number(...)` only where the value has to be a number — an object/`Map` key, a `===` comparison, arithmetic — and only for bounded fields like a quantity or a precision. Do **not** normalize a whole row for tidiness: `Number()` on a `BIGINT` or a wide `NUMERIC` silently loses precision past `Number.MAX_SAFE_INTEGER`, and money is exactly where that matters. Writing values back untouched is both safe and preferable — pg accepts the canonical string for a numeric param, and passing it straight through preserves the stored value exactly. More generally: a client swap can change runtime value types without changing a single TypeScript type, so a typecheck is not evidence that a port behaves identically — exercise it against a real database.
 
-**Applies to:** `apps/erp/app/modules/sales/sales.service.ts` (`upsertQuoteLinePrices`), any `Kysely<KyselyDatabase>` service in `apps/erp/app/modules/**`, `packages/server-functions/src/**` or `packages/database/supabase/functions/**`, and the `getPostgresClient` pool in `packages/database/supabase/functions/lib/postgres/index.ts`.
+**Applies to:** `apps/erp/app/modules/sales/sales.service.ts` (`upsertQuoteLinePrices`), any `Kysely<KyselyDatabase>` service in `apps/erp/app/modules/**`, or `packages/server-functions/src/**`, and the `getPostgresClient` pool in `packages/database/src/client.ts`.
 
 ## The migration ledger must travel with the schema it describes
 
@@ -1084,9 +1084,9 @@ canvas hosting Radix popovers/selects.
 
 **Problem:** `packages/database/supabase/config.toml` sets `max_rows = 1000`, so PostgREST truncates responses in production. The crbn dev stack runs its own `postgrest` container without `PGRST_DB_MAX_ROWS`, so locally the same query returns everything — verified: a view with 2,497 rows returned all 2,497 locally. Two production tenants exceeded the cap on `openJobMaterialLines` (2,497 and 1,495 rows) and a third on `demandActual` (9,391), so MRP silently planned on truncated demand and its zeroing pass missed stale actuals. The bug is structurally invisible to local testing.
 
-**Rule:** Any PostgREST read that can exceed 1000 rows must paginate — `fetchAllFromTable`/`fetchAllRecords` from `@carbon/database` in app code, `fetchAll` (`@carbon/database/fetch-all`, source `supabase/functions/lib/fetch-all.ts`) in server functions, `@carbon/planning` and edge functions — and must carry a stable `.order()` so pages don't shift between requests. Do not conclude "it returns everything" from a local run; check the row count against `max_rows` in `config.toml` instead.
+**Rule:** Any PostgREST read that can exceed 1000 rows must paginate — `fetchAllFromTable`/`fetchAllRecords` from `@carbon/database` in app code, `fetchAll` (`@carbon/database/fetch-all`, source `packages/database/src/fetch-all.ts`) in server functions, `@carbon/planning` and edge functions — and must carry a stable `.order()` so pages don't shift between requests. Do not conclude "it returns everything" from a local run; check the row count against `max_rows` in `config.toml` instead.
 
-**Applies to:** `packages/planning/src/mrp/mrp.ts`, `packages/database/supabase/functions/lib/fetch-all.ts`, `packages/database/supabase/config.toml`, any `.select()` in `packages/server-functions/src/**`, `packages/planning/src/**` or `apps/erp/app/modules/**`.
+**Applies to:** `packages/planning/src/mrp/mrp.ts`, `packages/database/src/fetch-all.ts`, `packages/database/supabase/config.toml`, any `.select()` in `packages/server-functions/src/**`, `packages/planning/src/**` or `apps/erp/app/modules/**`.
 
 ## `sum(DISTINCT expr)` is not a fan-out dedup — it collapses equal values from different rows
 
@@ -1215,7 +1215,7 @@ canvas hosting Radix popovers/selects.
 
 **Rule:** Wire a safety `assert*` into its call site in the same change that introduces it, or don't write it yet. When reviewing, grep every exported `assert*`/guard for a real importer — an unused one is a finding, not dead weight to leave. Duplicated cross-runtime logic (Node + Deno copies) should re-export one source (`precision.ts` / `batch-time-split.ts` pattern) rather than rely on "keep in sync" comments.
 
-**Applies to:** `packages/utils/src/**`, `packages/database/supabase/functions/shared/**`, any exported guard/assert helper.
+**Applies to:** `packages/utils/src/**`, `packages/database/src/**`, any exported guard/assert helper.
 ## Browser code must import `@carbon/documents/utils`, never `@carbon/documents/pdf`
 
 **Context:** Adding a shared `getQuoteDisplayId` / `getPurchaseOrderDisplayId` helper for showing the revision suffix on documents. The natural home looked like the `./pdf` barrel, which already re-exported it for the server-side PDF routes.
@@ -1704,7 +1704,7 @@ full-screen ERP route.
 
 **Rule:** Use `distributeRoundingResidual` (`@carbon/utils`) whenever a total is apportioned across parts — largest remainder, at most one minor unit moved per part. Never hand-roll "assign the difference to the biggest line". Order the parts by a stable business key (component id) before distributing, because the distributor's own tie-break is positional and the same invoice must allocate identically whatever order its lines arrive in. Where a derived value must reproduce the reconciled amount (a unit price times its quantity), derive it and then VERIFY — refuse when no representable value works, rather than emitting an inconsistent one.
 
-**Applies to:** `packages/ee/src/accounting/core/sales-document-components.ts`, `packages/database/supabase/functions/shared/sales-posting-amounts.ts`, `packages/ee/src/accounting/core/document-costing.ts`, Ramp card/repayment allocation, and any future provider document mapper.
+**Applies to:** `packages/ee/src/accounting/core/sales-document-components.ts`, `packages/database/src/sales-posting-amounts.ts`, `packages/ee/src/accounting/core/document-costing.ts`, Ramp card/repayment allocation, and any future provider document mapper.
 
 ## Two halves of an intercompany trade must round at the same scale
 
@@ -1971,7 +1971,7 @@ full-screen ERP route.
 
 **Problem:** deno-postgres encodes query parameters by JS type, not by column type: an object is `JSON.stringify`ed, but a string is sent as raw text and an array as a Postgres array literal. A JSON string scalar therefore round-trips as unquoted text and Postgres rejects the insert with `invalid input syntax for type json`. The route sanitised the body, so Vercel only showed "Edge Function returned a non-2xx status code"; the real line was only in the Supabase function log. Every retry failed identically, and the same latent fault sat in RFQ → quote, supplier quote → PO, and quote revision copies.
 
-**Rule:** Two layers, both required. (1) Any `json`/`jsonb` value written through Kysely in a server function goes through `toJson()` (`@carbon/database/posting`, source `lib/json.ts`), which pre-serialises every non-null shape so the wire value is valid JSON text. (2) A validator for a rich-text column is never `z.any()`; use the shared `optionalTiptapDoc` / `toTiptapDoc` in `shared.models.ts`, which turns text, a JSON-encoded doc, or a doc object into a tiptap document and rejects the rest. Put `.optional()` AFTER the transform or zod infers a required key. When an edge function fails opaquely, read the function's own log (Supabase management API `function_logs`), not the caller's.
+**Rule:** Two layers, both required. (1) Any `json`/`jsonb` value written through Kysely in a server function goes through `toJson()` (`@carbon/database/json`, source `packages/database/src/json.ts`), which pre-serialises every non-null shape so the wire value is valid JSON text. (2) A validator for a rich-text column is never `z.any()`; use the shared `optionalTiptapDoc` / `toTiptapDoc` in `shared.models.ts`, which turns text, a JSON-encoded doc, or a doc object into a tiptap document and rejects the rest. Put `.optional()` AFTER the transform or zod infers a required key. When an edge function fails opaquely, read the function's own log (Supabase management API `function_logs`), not the caller's.
 
 **Applies to:** `packages/server-functions/src/**` Kysely inserts of `internalNotes`, `externalNotes`, `customFields`, `priceTrace`, `configuration`, `additionalCharges`; every `*.models.ts` field that feeds a rich-text column (the purchasing `notes: z.any()` fields still need this).
 
@@ -2034,7 +2034,7 @@ full-screen ERP route.
 
 **Rule:** Normalize at the boundary: wrap as a plain view over the same memory — `new Uint8Array(data.buffer, data.byteOffset, data.byteLength)` — before handing bytes to a wasm codec or pdfjs. `@carbon/files` does this in its `toBytes` helpers; new entry points must too.
 
-**Applies to:** `packages/files/src/pdf/pdf.ts`, `packages/database/supabase/functions/shared/image-pipeline.ts`, any future wasm codec wrapper.
+**Applies to:** `packages/files/src/pdf/pdf.ts`, `packages/files/src/media/image-pipeline.ts`, any future wasm codec wrapper.
 
 ## A functions/shared source with npm deps must register them twice
 
@@ -2042,9 +2042,9 @@ full-screen ERP route.
 
 **Problem:** Module resolution follows the FILE's location, not the importer's. Deno resolves the bare specifiers via `functions/deno.json` `imports`; Node/Vite resolve them from `packages/database/node_modules` — not from the re-exporting package. Registering the dep in only one place typechecks in one world and crashes in the other, and the versions can silently drift.
 
-**Rule:** A shared `functions/` source with npm deps registers each dep in BOTH `functions/deno.json` `imports` (pinned `npm:` specifier) and `packages/database/package.json` `dependencies`, at the same version. Type declarations it needs must sit next to it (triple-slash reference), not in a consuming package — ambient `.d.ts` files only load for programs that include them.
+**Rule:** Obsolete: the pipeline moved to `@carbon/files` (`packages/files/src/media/image-pipeline.ts`, its deps in that package.json) and `functions/deno.json` no longer pins any deps. Still true: type declarations a module needs sit next to it (triple-slash reference) — ambient `.d.ts` files only load for programs that include them.
 
-**Applies to:** `packages/database/supabase/functions/shared/**` and every `@carbon/*` re-export of it.
+**Applies to:** `packages/files/src/media/image-pipeline.ts`.
 
 ## unpdf ships a dead 1.5 MB engine chunk unless aliased away
 
@@ -2270,8 +2270,7 @@ believing a Deno/DB test failure is yours, run a NEIGHBOURING suite you did not
 touch — `post-charge` next to `post-reimbursement`. Identical failure counts in
 untouched code means the environment, not the diff.
 
-**Applies to:** DB-backed tests (`packages/server-functions/src/**` fixtures,
-`packages/database/supabase/functions/**`); any `pnpm db:check:*` or psql work inside
+**Applies to:** DB-backed tests (`packages/server-functions/src/**` fixtures); any `pnpm db:check:*` or psql work inside
 a Conductor worktree.
 
 ## The `@carbon/ee` barrel boots the server env — four places that breaks
@@ -2325,9 +2324,9 @@ Ramp rejected every draft bill with `422 DEVELOPER_7001 "Not a valid date"`. Typ
 did not catch it — the syncer's local type declared `string | null` and the Kysely row
 was assigned straight in. Unit tests did not catch it either; only a live push did.
 
-**Rule:** FIXED AT THE SOURCE for `date` columns — both drivers now decode OID 1082 to
+**Rule:** FIXED AT THE SOURCE for `date` columns — node-postgres now decodes OID 1082 to
 the raw `YYYY-MM-DD` string, so a Kysely row matches the generated types
-(`functions/lib/postgres/index.ts`, pinned by
+(`packages/database/src/client.ts`, pinned by
 `packages/database/src/postgres-type-parsers.test.ts`). `timestamp`/`timestamptz`
 (1114 / 1184) are deliberately still `Date`s — Postgres' wire text for those differs in
 SHAPE from PostgREST's (`… 16:36:52.677+00` vs `…T16:36:52.677+00:00`), so identity
@@ -2412,7 +2411,7 @@ company id calls `assert_company_access` first; one that only servers call raise
 `current_setting('role')`; everything internal (helpers, event interceptors) is SECURITY INVOKER.
 Never trust a user id parameter without relating it to `auth.uid()`. Test a guard by CALLING the
 function as `anon` and as another company's user, not by reading the catalog. Edge functions:
-`verify_jwt` accepts the anon key, so authorize in-function (`requirePermissions` / `requireCaller`).
+`verify_jwt` accepts the anon key, so authorize in-function (`requireCaller` / `requireServiceRole`).
 
 **Applies to:** every `CREATE FUNCTION` in `packages/database/supabase/migrations/**`,
 `packages/database/supabase/functions/*/index.ts`; enforced by the

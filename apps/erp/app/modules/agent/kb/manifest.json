@@ -17,7 +17,7 @@
         "403 on every call despite correct scopes",
         "\"Rate limit exceeded\"",
         "\"API key has expired\"",
-        "\"API key not found\"",
+        "\"Invalid API key\"",
         "I lost the key / can't see it again"
       ]
     },

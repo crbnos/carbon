@@ -25,7 +25,7 @@ DB types, Supabase/Kysely clients, audit config, event system types, rate limiti
 
 - Adding a new event system handler type to the `handlerType` CHECK constraint.
 - Changing `audit.config.ts` entity definitions (affects which tables get audited and how diffs are computed).
-- Modifying `src/client.ts` re-exports (the Kysely/Postgres client barrel shared by the apps, jobs, server functions and Supabase edge functions).
+- Modifying `src/client.ts` (the Node-only Kysely/node-postgres client shared by the apps, jobs and server functions, including its NUMERIC/DATE type parsers).
 
 ## Never
 
@@ -53,20 +53,19 @@ pnpm --filter @carbon/database authz migration <name>   # ship unshipped rules/h
 | Subpath | Provides |
 |---------|----------|
 | `.` (index) | `Database` type, `fetchAllFromTable`, `fetchAllRecords` (takes a query factory), `fetchRecordsInBatches`, `journalReference` (`journalLine.documentLineReference` values). The `datetime` derivation API lives in `@carbon/utils` |
-| `./client` | `Kysely`, `KyselyDatabase`, Postgres pool factories (`getPostgresClient`, `getPostgresConnectionPool`) |
+| `./client` | Node-only. `Kysely`, `KyselyDatabase`, node-postgres pool factories (`getPostgresClient`, `getPostgresConnectionPool`); registers the NUMERIC → `Number` and DATE → `YYYY-MM-DD` type parsers at module load (see `.claude/rules/numeric-precision.md`) |
 | `./methods` | Make-method helpers shared by get-method and `@carbon/planning` (`getJobMethodTree`, `getQuoteMethodTree`, `traverseJobMethod`, `calculateQuoteLinePrices`, …) |
 | `./job-quantities-engine` | `computeJobQuantities` / `flattenJobQuantityTree` — the pure job-quantity cascade behind the `recalculate` server function |
-| `./logging` | Node re-export of `supabase/functions/lib/logging.ts` (`getFunctionLogger`) |
 | `./mrp-engine` | `explodeBom`, `makeKey`, `makeLocationItemKey`, `makeActualKey`, … — the pure MRP compute engine consumed by `@carbon/planning`'s `runMrp` and by get-method (`@carbon/server-functions`) |
 | `./configuration-rule` | `runConfigurationRule` — runs configurator rule code in QuickJS (WebAssembly) with no host access and time/memory limits — plus `transpileRule` (sucrase: wraps a stored rule body in `configure(params)` and strips its types, throws on a syntax error). Both are used by get-method (`@carbon/server-functions`, `get-method/sandbox.ts`) and the ERP rule editor, so a preview and a job run the same JavaScript. Never run rule code with `new Function`/`eval`/`import()` |
 | `./fetch-all` | `fetchAll` — serial paginated PostgREST reads from a query factory (the root's `fetchAllRecords` is the concurrent, strictly typed variant) |
 | `./json` | `toJson` / `toJsonColumns` — pre-serialise `json`/`jsonb` values written through Kysely (the driver sends strings and arrays unquoted) |
 | `./supersession-pick` | The supersession rules shared by MRP, get-method and picking (`buildSupersessionRedirectMap`, `buildConsumeFirstHops`, `settleConsumeFirstLine`, `resolveMadeLinePull`, `consumableInWholeAssemblies`, …) |
 | `./picked-consumption` | Consumption follows what was picked (`linesideCredit`, `getPickedBudgets`, `allocateAcrossBudgets`, …) — the one definition of usable lineside stock shared by the pick-list generator and the `issue` backflush |
-| `./posting` | `buildPaymentJournal` / `buildMemoJournal` — re-exported from `supabase/functions/shared/` for the `post-payment` / `post-memo` server functions. They stay there with `accounting-currency` / `accounting-posting` / `sales-posting-amounts` and the functions-lib `credit`/`debit` because the dataset tiers post through them too and this package cannot import `@carbon/utils` (turbo cycle) |
+| `./posting` | `buildPaymentJournal` / `buildMemoJournal` (`src/build-payment-journal.ts`, `src/build-memo-journal.ts`) for the `post-payment` / `post-memo` server functions and the dataset tiers |
+| `./precision` / `./accounting-currency` / `./accounting-posting` / `./sales-posting-amounts` / `./ledger` | The pure numeric-precision API, FX conversion, journal role vocabulary, sales posting amounts, and ledger helpers (`AccountType`, `AccountClass`, `isAccountClass`, `credit`, `debit`, `accountTypeFromClass`). They live here, not in `@carbon/utils`, because the posting builders need them and this package cannot import `@carbon/utils` (turbo cycle); `@carbon/utils` re-exports them, so app code imports them from there. Keep them free of imports outside each other |
 | `./sequence` | `getNextSequence` / `getNextRevisionSequence` / `getNextSerialNumbers` — the one allocator for document and serial numbers (date tokens in the company timezone) |
 | `./seed-data` | The company seed data (accounts, sequences, groups + `getGroupId`, …) used by the `seed-company` server function and the dataset tooling |
-| *(no subpath)* | `supabase/functions/shared/image-pipeline.ts` — the codebase-wide image pipeline (decode HEIC/JPEG/PNG/WebP → shape → encode), re-exported by `@carbon/files/media` (NOT by this package). Unlike `precision.ts` it has npm deps (`libheif-js`, `@jsquash/*`) which are pinned in BOTH this package.json and `functions/deno.json` `imports` — keep the versions identical. Its `.d.ts` sits beside it (`wasm-codecs.d.ts`, triple-slash referenced). Consumed by `renderLabelLogo` (`@carbon/files/media`) and the `thumbnail` edge function |
 | `./event` | `QueueMessage`, `EventSchema`, `createEventSystemSubscription`, `deleteEventSystemSubscription` |
 | `./quality` | Inspection execution engine shared by ERP + MES (`upsertInspectionSample`, `upsertInspectionMeasurement`, `dispositionInspection` — optional one-shot `requireOpen`, `reconcileInspectionSamplingPlans`, `changeInspectionDocument`, `getOrCreateJobOperationInspection`, pure `valuateMeasurement`, from `src/inspection-verdict.ts`, which the dataset seed shares); Passed/Failed/Partial are all hard-terminal and samples linked from `productionQuantity.inspectionSampleId` are locked; every fn takes a `Kysely<KyselyDatabase>` first arg — authorize at the route, see `.claude/rules/inspection-system.md` |
 | `./sampling` | Z1.4 / ISO 2859-1 sampling resolvers (`resolveSamplingPlan`, `resolveFeatureSamplingPlan`) used by post-receipt and the inspection engine |
@@ -131,4 +130,3 @@ Full feature context: `.claude/rules/onboarding-company-templates.md`.
 - `.claude/rules/event-system.md` — trigger dispatch, PGMQ queue, handler types
 - `packages/auth/` — Supabase client factories (`getCarbon`, `getCarbonServiceRole`)
 - `packages/jobs/` — Inngest event handlers that consume the event queue
-- `supabase/functions/lib/logging.ts` — Deno-native logger (`getFunctionLogger`) mirroring `@carbon/logger`; use it instead of `console.*` in edge functions (`@logtape/*` via `deno.json` jsr imports)

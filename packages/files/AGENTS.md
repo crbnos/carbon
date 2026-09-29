@@ -2,7 +2,7 @@
 
 File handling, one subpath per file class. The goal is that "what is this file,
 can we store it, what does it become, how do we serve it" has exactly ONE answer
-in the codebase, shared by the browser, Node, and the Supabase edge runtime.
+in the codebase, shared by the browser and Node.
 
 | Subpath | Provides |
 |---------|----------|
@@ -16,16 +16,14 @@ in the codebase, shared by the browser, Node, and the Supabase edge runtime.
 
 ## The image pipeline
 
-The implementation lives in `packages/database/supabase/functions/shared/image-pipeline.ts`
-(the edge runtime only mounts `supabase/functions/`); `./media/image.ts` re-exports it
-by relative path — the same deliberate pattern as `@carbon/utils` `precision.ts`. Do
-not "fix" that import and do not duplicate the code.
+The implementation lives in `src/media/image-pipeline.ts` (its wasm module
+declarations in `wasm-codecs.d.ts`, triple-slash referenced); `./media/image.ts`
+re-exports it. Rounding comes from `@carbon/utils` `round`. Do not duplicate the code.
 
 Codecs are wasm, lazy-loaded per format and identical in every runtime:
 libheif-js (HEIC/HEIF decode), jSquash mozjpeg / png / webp (decode + encode),
 jSquash resize. No ImageMagick anywhere. Node cannot load wasm over `fetch(file:)`,
-hence `./media/node`. Bare specifiers resolve via `package.json` in Node/browser and
-via `functions/deno.json` `imports` in Deno — add BOTH when adding a codec.
+hence `./media/node`. Codec packages are dependencies in this package's `package.json`.
 
 Shape modes (`ImageShapeOptions`): default = center-crop 300×300 (avatars),
 `contained` = fit + 10% pad to 300×300 (item thumbnails), `height: n` = proportional
@@ -105,13 +103,13 @@ app that consumes `./pdf` in the browser needs the same alias.
 ```bash
 pnpm --filter @carbon/files test        # vitest (includes a real HEIC fixture)
 pnpm --filter @carbon/files typecheck
-cd packages/database/supabase/functions && deno check --no-lock shared/image-pipeline.ts
 ```
 
 ## Cross-References
 
-- `src/media/label-logo.ts` and `packages/database/supabase/functions/thumbnail/` — consumers of the
-  pipeline primitives (`decodeImage` / `resizeImage` / `encodeImage`)
+- `src/media/label-logo.ts` — consumer of the pipeline primitives (`decodeImage` /
+  `resizeImage` / `encodeImage`). The `thumbnail` edge function is self-contained and
+  calls `npm:@jsquash/*` directly.
 - `packages/dev/docker/docker-compose.dev.yml`,
   `contrib/deploying/simple-docker-caddy/docker-compose.prod.yml` — imgproxy service
 - `apps/{erp,mes}/app/routes/file+/preview+/$bucket.$.tsx` — read-side serving

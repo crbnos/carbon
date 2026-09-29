@@ -17,7 +17,7 @@ Pure utility functions shared across all Carbon packages and apps. Covers accoun
 
 ## Never
 
-- Import server-only packages (`@carbon/auth`, `@carbon/database`, `@carbon/kv`) at runtime from here — `@carbon/utils` must remain client-safe (type-only `@carbon/database` imports for the generated `Database` types are fine). `@carbon/database` cannot import this package (the two would form a turbo cycle), which is why `precision.ts`, `accounting-currency.ts`, `accounting-posting.ts` and `sales-posting-amounts.ts` are still re-exports of their namesakes under `packages/database/supabase/functions/shared/`: the posting journal builders there are reached by `@carbon/database`'s dataset tiers. Keep their dependency graphs pure.
+- Import server-only packages (`@carbon/auth`, `@carbon/database`, `@carbon/kv`) at runtime from here — `@carbon/utils` must remain client-safe (type-only `@carbon/database` imports for the generated `Database` types are fine). The one exception is the pure `@carbon/database` subpaths `./precision`, `./accounting-currency`, `./accounting-posting`, `./sales-posting-amounts` and `./ledger`, which the index re-exports: they live in `@carbon/database` because its posting journal builders need them and `@carbon/database` cannot import this package (the two would form a turbo cycle). Keep their dependency graphs pure.
 - Add async/IO operations — utilities should be synchronous pure functions (the one exception is `supabase.ts` helpers which are typed wrappers). File/image handling lives in `@carbon/files`, not here.
 - Duplicate what already exists — check the barrel export (`src/index.ts`) before adding a new utility.
 
@@ -32,11 +32,11 @@ pnpm --filter @carbon/utils typecheck
 
 | Module | Provides |
 |--------|----------|
-| `accounting` | Currency formatting, financial calculations |
-| `accounting-currency` | Explicit foreign-per-base conversion and settlement FX |
-| `accounting-posting` | Original journal role vocabulary: `classifyAccountingPostingRole` maps a journal line's description by EXACT match — `Accounts Receivable`/`IC Receivables` → Receivables, `Accounts Payable`/`IC Payables` → Payables, `Shipping Revenue`, `Sales Account` — and returns `null` for anything else, which is how a `VOID: …` reversal line falls out (there is no explicit void branch) |
+| `accounting` | Currency formatting, financial calculations; re-exports the ledger helpers (`AccountType`, `credit`, `debit`, …) from `@carbon/database/ledger` |
+| `accounting-currency` | Explicit foreign-per-base conversion and settlement FX (re-exported from `@carbon/database/accounting-currency`) |
+| `accounting-posting` | (Re-exported from `@carbon/database/accounting-posting`.) Original journal role vocabulary: `classifyAccountingPostingRole` maps a journal line's description by EXACT match — `Accounts Receivable`/`IC Receivables` → Receivables, `Accounts Payable`/`IC Payables` → Payables, `Shipping Revenue`, `Sales Account` — and returns `null` for anything else, which is how a `VOID: …` reversal line falls out (there is no explicit void branch) |
 | `payment-funding` | Shared effective-settlement, invoice/funding balance reducers and exact document-principal allocation; callers own tenant/status/reservation queries |
-| `sales-posting-amounts` | Pure sales component normalization and posting calculations |
+| `sales-posting-amounts` | Pure sales component normalization and posting calculations (re-exported from `@carbon/database/sales-posting-amounts`) |
 | `batch-compatibility` / `batch-time-split` / `batch-pick-split` | Job-operation batching: per-process compatibility rules, proportional time split + completion planning, pro-rata material pick split across members |
 | `batch-split` / `batch-merge` | Tracked-entity record builders: `buildBatchSplitRecords` / `buildMergeRecords` and the one split gate `isFullDraw`; `buildBatchMergeRecords` for a deliberate lot merge (see `.claude/rules/traceability-model.md`) |
 | `entity-drain` | `settleQuantity` / `statusAfterQuantityChange` — round, refuse a negative, and flip a drained lot to `Consumed` |
@@ -53,7 +53,7 @@ pnpm --filter @carbon/utils typecheck
 | `headers` | Request facts from the proxy in front of the app: `getClientIp` (LAST `X-Forwarded-For` entry — the one a caller cannot forge; the ALB appends to a caller's header), `getRequestProtocol`, `getRequestHost`, `getRequestOrigin` (the public origin — `request.url` is the internal one behind the proxy). The host is caller-influenced behind the ALB: compare with it, never build a link someone else opens from it (use `getAppUrl()`). Raw reads are refused by `no-raw-forwarded-headers`. Also `getPreferenceHeaders` (locale, platform) |
 | `hash` | The repo's stable content hashes — `fnv1a32`/`fnv1a64` (cache and idempotency keys) and `getBucket`. Browser-safe; never add `node:crypto` here |
 | `math` | `clamp`/`lerp`/`inverseLerp` only — it re-exports nothing |
-| `precision` | The whole numeric-precision API (re-exported from `packages/database/supabase/functions/shared/precision.ts`, which the remaining edge functions still import): `SCALE`, `EPSILON`, `RoundingMode`, `round`, `distributeRoundingResidual`, `scrapAllowance`, `applyRate`, `deriveRate`, `isBalanced`, `assertBalanced` |
+| `precision` | The whole numeric-precision API (re-exported from `@carbon/database/precision`): `SCALE`, `EPSILON`, `RoundingMode`, `round`, `distributeRoundingResidual`, `scrapAllowance`, `applyRate`, `deriveRate`, `isBalanced`, `assertBalanced` |
 | `format` | The ONLY place display/input digit counts are chosen: `moneyFormatOptions` (settlement — the currency's decimals are floor AND ceiling), `rateFormatOptions` (per-unit RATE — those decimals are only the floor, ceiling is `SCALE`), the `PERCENT_FORMAT` / `PERCENT_POINTS_FORMAT` / `SCALE_FORMAT` constants, `cldrCurrencyDecimals`, their `format*` helpers, and `INPUT_FORMAT` / `INPUT_STEP` for editable fields. Call sites pick a KIND, never a digit count |
 | `string` | Slugify, truncate, camelCase/titleCase conversions |
 | `items` | Item lookups and `getReadableIdWithRevision` (`readableId.revision`) |

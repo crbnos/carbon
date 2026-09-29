@@ -434,7 +434,7 @@ This project uses [Biome](https://biomejs.dev/) for code formatting and linting.
 | `pnpm run tool:new <name>`     | Add an AI tool                                                     |
 | `crbn down`                    | Stop the stack (keeps volumes — data preserved)                    |
 | `crbn reset`                   | Wipe the stack and start clean (destroys Postgres volume + flushes the redis db for this worktree) |
-| `pnpm db:types`                | Regenerate types → `packages/database/src/types.ts` + `functions/lib/types.ts` (normally `crbn up` does this after applying migrations) |
+| `pnpm db:types`                | Regenerate types → `packages/database/src/types.ts` (normally `crbn up` does this after applying migrations) |
 | `pnpm generate:swagger`        | Regenerate swagger → `packages/database/src/swagger-docs-schema.ts` |
 | `pnpm --filter <pkg> <cmd>`    | Run a command against a single workspace, e.g. `pnpm --filter @carbon/react test` |
 

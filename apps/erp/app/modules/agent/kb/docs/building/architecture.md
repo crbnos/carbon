@@ -451,9 +451,9 @@ instead; work that needs real computing power, like CAD geometry, belongs in the
 service. MRP [[11]](#g11) and production scheduling live in their own package,
 `@carbon/planning`, and run in Node the same way.
 
-A handful of small edge functions [[4]](#g4), written for Deno [[2]](#g2), remain in
-`packages/database/supabase/functions/`: embeddings, thumbnails and the event-queue
-wake-up. They are called over HTTP with `client.functions.invoke("<name>", { body })`.
+Two small edge functions [[4]](#g4), written for Deno [[2]](#g2), remain in
+`packages/database/supabase/functions/`: `embedding` and `thumbnail`. Each is
+self-contained, and they are called over HTTP with `client.functions.invoke("<name>", { body })`.
 
 There is also a fifth, narrower door: **RPCs**, plain Postgres functions called with
 `client.rpc("name", args)`. About 85 call sites. `get_next_sequence` from [Part 2](#part-2-follow-one-click-all-the-way-down) is one.
@@ -911,8 +911,8 @@ database. Used for cache refreshes and queue sweeping.
 
 <a id="g15"></a>
 **15. pg_net:** a Postgres extension that lets the database make outbound HTTP
-calls. We use it for exactly one thing: pinging the event queue awake after a
-commit.
+calls. We use it to post events straight to Inngest after a commit, above all
+the ping that wakes the event queue.
 
 <a id="g16"></a>
 **16. PGMQ:** a message queue implemented in ordinary Postgres tables. Lets a

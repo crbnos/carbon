@@ -23,7 +23,7 @@ All client factories live in `packages/auth/src/lib/supabase/`.
 | Factory | Source | RLS? | Use |
 | --- | --- | --- | --- |
 | `getCarbon(accessToken?)` | `client.ts` (anon key + user JWT) | Yes (acts as the user) | Default request-scoped client |
-| `getCarbonServiceRole()` | `client.server.ts` (service role key) | No (bypasses RLS) | Server-only privileged ops, jobs, server functions, edge functions |
+| `getCarbonServiceRole()` | `client.server.ts` (service role key) | No (bypasses RLS) | Server-only privileged ops, jobs, server functions |
 | `getCarbonAPIKeyClient(apiKey)` | `client.ts` (`carbon-key` header) | Yes | Public API key auth |
 
 `createClient` is configured with `autoRefreshToken: false`, `persistSession: false`, and a
@@ -138,7 +138,7 @@ Two real options, in order of preference:
 For **multi-row / multi-table writes** where partial failure is a bug, use Kysely. The route passes
 `getDatabaseClient()` (`apps/erp/app/services/database.server.ts` — a cached singleton over a 10-conn
 `pg` pool built by `getPostgresClient`/`getPostgresConnectionPool` in
-`packages/database/supabase/functions/lib/postgres/index.ts`). Kysely opens one PG transaction, runs
+`packages/database/src/client.ts`, `@carbon/database/client`, Node-only). Kysely opens one PG transaction, runs
 every write inside it, and rolls everything back on any error.
 
 **Use transactions when:**
@@ -254,8 +254,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
 ## Generated types
 
-- `packages/database/src/types.ts` (and `supabase/functions/lib/postgres/index.ts` consumes it as
-  `SupabaseDatabase`) are **generated — never hand-edit**.
+- `packages/database/src/types.ts` (`src/client.ts` consumes it as `SupabaseDatabase`) is
+  **generated — never hand-edit**.
 - `Database` is re-exported from `@carbon/database`; the Kysely shape is `KyselyDatabase`
   (`KyselifyDatabase<SupabaseDatabase>`) from `@carbon/database/client`.
 - Row/Insert/Update types: `Database["public"]["Tables"]["customer"]["Row" | "Insert" | "Update"]`.

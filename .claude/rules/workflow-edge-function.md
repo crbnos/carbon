@@ -1,163 +1,102 @@
+---
 paths: ["packages/database/supabase/functions/**"]
+---
 
 # Workflow: Authoring a Supabase Edge Function
 
 How to add or extend a Carbon edge function. These are **Deno** functions in
 `packages/database/supabase/functions/<name>/index.ts`, called over HTTP via
-`client.functions.invoke("<name>", { body })`. Five remain: `embed`, `embedding`,
-`event-wake`, `thumbnail`, `trigger`.
+`client.functions.invoke("<name>", { body })`. Two remain:
 
-Privileged, transactional writes shared by the apps, the API and jobs (posting,
-converting, issuing, CSV import) are **server functions** in Node, not edge
-functions — see `packages/server-functions/AGENTS.md`. MRP and scheduling are
+| Function | Contract | Caller check | Called from |
+|---|---|---|---|
+| `embedding` | `{ text }` → `{ embedding }`; `{ texts }` (≤ 100) → `{ embeddings }` — gte-small (384 dims) via `Supabase.ai.Session` | `requireCaller`: the service role key, a `service_role`/`authenticated` JWT (signature verified with `JWT_SECRET` when set), or a `carbon-key` API key checked against `apiKey` + `check_api_key_rate_limit` | ERP `shared.service.ts` (search), `@carbon/jobs` `events/embedding.ts` (`embedRecords`) |
+| `thumbnail` | `{ url }` → 300×300 PNG (puppeteer screenshot, resized with `npm:@jsquash/*`) | `requireServiceRole` — it drives a browser to any URL it is handed | `@carbon/jobs` `tasks/model-thumbnail.ts` |
+
+Everything else is Node. Privileged, transactional writes shared by the apps, the
+API and jobs (posting, converting, issuing, CSV import) are **server functions** —
+see `packages/server-functions/AGENTS.md`. MRP and scheduling are
 `@carbon/planning`. Async/event-driven side effects go through the Inngest event
-system (`@carbon/jobs`, see `event-system.md`). Reach for a new edge function only
-when the work must run in the Supabase edge runtime (e.g. it is called by Postgres
-over pg_net).
+system (`@carbon/jobs`, see `event-system.md`); Postgres sends its own Inngest
+events with `util.send_inngest_event` and never calls an edge function. Reach for a
+new edge function only when the work needs the edge runtime itself (e.g. its
+built-in model API).
 
-## 1. Scaffold
+## 1. Self-contained, always
+
+A function imports nothing outside its own directory. There is no `functions/lib/`
+or `functions/shared/`, and `functions/deno.json` is just `{ "lock": false }` — no
+import map. Use inline `npm:` / `jsr:` / `node:` specifiers with pinned versions,
+and copy the few lines of helper (CORS headers, JSON response, caller check) into
+the function rather than sharing them. Workspace packages (`@carbon/*`) cannot be
+imported; logic that needs them belongs in Node.
+
+## 2. Scaffold and register
 
 ```bash
 pnpm db:function:new <name>     # → supabase functions new (root script)
 ```
 
-Creates `packages/database/supabase/functions/<name>/index.ts`.
-
-## 2. Register in config.toml (settings, NOT a deploy gate)
-
-Add an entry to `packages/database/supabase/config.toml`.
-
-**A missing entry does not stop the function from deploying.** `ci/src/migrations.ts`
-runs `supabase functions deploy` with **no function name**, and that deploys every
-directory under `supabase/functions/` regardless of `config.toml`. The entry only
-overrides per-function settings, `verify_jwt` above all.
-<!-- UNVERIFIED: verify_jwt default for an UNREGISTERED function (docs say true; not confirmed on a deployed Carbon fn) -->
-
-`embed`, `thumbnail` and `trigger` have no `config.toml` entry today and are
-deployed all the same, so in-function authorization is the only gate a function
-has. Register the function anyway (it is where a future reader looks), but never
-treat absence as "not deployed".
+Add an entry to `packages/database/supabase/config.toml`:
 
 ```toml
 [functions.<name>]
 enabled = true
-verify_jwt = true                              # JWT required (the common case)
-# entrypoint = "./functions/<name>/index.ts"   # optional; only if not default index.ts
+verify_jwt = true
 ```
 
-- `verify_jwt = true` — the gateway checks the JWT's signature, nothing more. The anon key
-  published in the apps' HTML IS a valid JWT, so this alone lets anyone in. The function must
-  still authorize in-function: `requirePermissions` when it acts on a company's data, or
-  `requireCaller` (`lib/supabase.ts` — service role, signed-in user, or valid API key) when it
-  touches none (`embedding`), or `requireServiceRole` when only servers call it
-  (`thumbnail`). The `edge-function-authorizes-caller` check (`@carbon/checks`) fails a
-  function that calls none of them. `embed`, `event-wake` and `trigger` are called by
-  Postgres with the key from the `config` table (`util.invoke_edge_function`,
-  `util.wake_event_queue`) and are baselined in that check.
-- `verify_jwt = false` — only for genuinely public endpoints (none today).
+**A missing entry does not stop the function from deploying.** `ci/src/migrations.ts`
+runs `supabase functions deploy` with no function name, which deploys every
+directory under `supabase/functions/`. The entry only overrides per-function
+settings, `verify_jwt` above all. Register it anyway; never treat absence as "not
+deployed".
 
-## 3. Function skeleton
+## 3. Authorize in-function
 
-Real imports (note: `serve` from deno.land std, **default** `z` import, lib paths
-relative to the function dir):
+`verify_jwt = true` only checks the JWT's signature, and the anon key published in
+the apps' HTML IS a valid JWT, so the gateway alone lets anyone in. Every function
+defines and calls its own `requireCaller` (signed-in users, API keys, servers) or
+`requireServiceRole` (servers only) — copy the one from `embedding` or `thumbnail`.
+The `edge-function-authorizes-caller` check (`@carbon/checks`) fails a function
+whose files call neither.
+
+A function that takes a record id must re-read that record under `companyId` itself
+and 404 on a miss — the caller's credentials prove nothing about the ids in the body.
+
+## 4. Skeleton
 
 ```typescript
-import { serve } from "https://deno.land/std@0.175.0/http/server.ts";
-import z from "npm:zod@^4.5.4";
-import { corsHeaders } from "../lib/headers.ts";
-import { requirePermissions } from "../lib/supabase.ts";
-import { Database } from "../lib/types.ts";
+import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 
-const payloadValidator = z.object({
-  companyId: z.string(),
-  userId: z.string(),
-  // ...your fields. Use z.discriminatedUnion("type", [...]) for multi-op fns.
-});
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers":
+    "authorization, x-client-info, apikey, content-type",
+};
 
-serve(async (req: Request) => {
+const json = (body: unknown, status = 200) =>
+  new Response(JSON.stringify(body), {
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+    status,
+  });
+
+Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
-
   try {
-    const payload = await req.json();
-    const { companyId, userId, ...data } = payloadValidator.parse(payload);
-
-    // Auth + privileged client. Throws on missing/insufficient permission.
-    const client = await requirePermissions(req, companyId, userId, {
-      update: "inventory", // <module>_<action> the caller must hold; create/view/delete also valid
-    });
-
-    // ...work using `client` (service-role supabase, RLS bypassed)...
-
-    return new Response(JSON.stringify({ success: true }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-      status: 200,
-    });
+    await requireServiceRole(req); // or requireCaller — defined in this file
+    const body = await req.json();
+    // ...validate body, do the work...
+    return json({ success: true });
   } catch (err) {
-    console.error(`Error in <name>:`, err);
-    return new Response(JSON.stringify({ error: (err as Error).message }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-      status: 500,
-    });
+    console.error("<name> failed", err);
+    return json({ message: (err as Error).message }, 500);
   }
 });
 ```
 
-### Auth: `requirePermissions` (NOT ad-hoc client construction)
-
-`requirePermissions(req, companyId, userId, permissions)` from `../lib/supabase.ts`
-is the gate. It handles **both** auth paths — `Authorization: Bearer <jwt>` and the
-`carbon-key` API-key header (with rate-limit + scope checks) — verifies the
-`<module>_<action>` permission via `get_claims`, and returns a **service-role**
-`SupabaseClient<Database>` (RLS bypassed). It **throws** on denial; let the throw
-hit the `catch`. `companyId`/`userId` come from the validated payload, not headers.
-(Lower-level helpers `getSupabase` / `getSupabaseServiceRole` / `getAuthFromAPIKey`
-exist in the same file but `requirePermissions` is the standard entry point.)
-
-## 4. Database-heavy work — Kysely transactions
-
-For multi-row / multi-table writes, init the pool **once at module scope** and use
-a Kysely transaction (`embed` does this):
-
-```typescript
-import { DB, getConnectionPool, getDatabaseClient } from "../lib/database.ts";
-import { nanoid } from "https://deno.land/x/nanoid@v3.0.0/mod.ts";
-
-const pool = getConnectionPool(1);            // module scope, not per-request
-const db = getDatabaseClient<DB>(pool);
-
-await db.transaction().execute(async (trx) => {
-  await trx.insertInto("tableName").values({
-    id: nanoid(),
-    companyId,
-    createdBy: userId,
-    createdAt: new Date().toISOString(),
-    ...data,
-  }).execute();
-});
-```
-
-- `getConnectionPool` / `getDatabaseClient` / `DB` come from `../lib/database.ts`
-  (it re-exports `getPostgresConnectionPool` / `getPostgresClient` from
-  `lib/postgres/index.ts`; `DB` = `KyselyDatabase`).
-- Kysely **bypasses RLS and throws on rollback** — authorize first with
-  `requirePermissions`, wrap in `try/catch`.
-- Multi-tenancy: always include `companyId`; always set audit fields
-  (`createdBy`/`createdAt`, `updatedBy`/`updatedAt`).
-
-### Shared helpers (real paths)
-
-- Business logic (sequences, COGS, accounting periods, sampling, …) is Node-only
-  now — it lives in `@carbon/database` / `@carbon/server-functions` and cannot be
-  imported here; a function that needs it belongs in `@carbon/server-functions`.
-  Generic DB/auth helpers live in `../lib/`.
-
 ## 5. Invoke from app code
-
-App code calls functions through the supabase client — do **not** hit a raw
-HTTP port. `body` is the JSON payload your validator expects; you get back
-`{ data, error }`.
 
 ```typescript
 const { data, error } = await client.functions.invoke("embedding", {
@@ -165,43 +104,30 @@ const { data, error } = await client.functions.invoke("embedding", {
 });
 ```
 
-Real call sites: `shared.service.ts` → `embedding`, `packages/jobs/.../events/embedding.ts`
-→ `embed`. `event-wake` and `trigger` are called by Postgres via pg_net.
-
-A function that takes a record id must re-read that record under `companyId` itself
-and 404 on a miss — the caller's permission proves nothing about the ids in the body.
-Scope the read with `.eq("companyId", companyId)` + `.maybeSingle()`; `errorResponse`
-(`lib/response.ts`) uses a numeric 4xx/5xx `err.status` over the status the catch
-block passes.
-
-## 6. Local dev
+## 6. Local dev and CI
 
 Functions are served by the Docker `edge-runtime` container (`pnpm dev` / `crbn up`),
 which live-mounts `packages/database/supabase/functions/` — no per-edit deploy step.
-Locally `VERIFY_JWT` is `false`. Exercise the function by triggering the app path
-that calls `client.functions.invoke("<name>", ...)`.
-<!-- UNVERIFIED: invoking a local function directly via curl to the edge-runtime/Kong port — not a documented Carbon path; prefer driving it through the app's invoke() call site. -->
+Exercise a function through the app or job path that invokes it.
+
+CI (`.github/workflows/check.yml`, job `edge-functions`, Deno v2) runs
+`deno check --no-lock embedding/index.ts thumbnail/index.ts` from the functions
+directory. Add a new function's `index.ts` to that command.
 
 ## 7. Deploy
 
-Deployment is **all-at-once**, not per-function. On push to `main` touching
-`packages/database/supabase/**`, CI runs `supabase functions deploy`
-(`ci/src/migrations.ts`), which deploys every `[functions.*]` with `enabled = true`
-(`supabase functions deploy`, no arguments → every directory under
-`supabase/functions/`, `config.toml` entry or not). There is **no
-`npm run db:deploy` / `db:deploy` script** — that was stale. Self-hosted instances
-sync separately via a server-side script (`.github/workflows/functions.yml`). You
-don't run a deploy manually; merging to `main` is what ships it.
+Deployment is all-at-once. On push to `main` touching `packages/database/supabase/**`,
+CI runs `supabase functions deploy` (`ci/src/migrations.ts`) with no arguments.
+Self-hosted instances sync separately (`.github/workflows/functions.yml`). Merging to
+`main` is what ships it.
 
 ## Checklist
 
-- [ ] `pnpm db:function:new <name>` (file at `functions/<name>/index.ts`)
-- [ ] `[functions.<name>]` added to `config.toml` (`enabled`, `verify_jwt`) — for
-      the settings and for discoverability, NOT because it gates the deploy
-- [ ] CORS `OPTIONS` short-circuit returning `corsHeaders`
-- [ ] zod `payloadValidator` (`companyId` + `userId` always; discriminated union for multi-op)
-- [ ] Auth via `requirePermissions(req, companyId, userId, { <action>: "<module>" })`, `requireCaller` or `requireServiceRole`
-- [ ] Kysely transaction for multi-row writes; pool created at module scope
-- [ ] `companyId` + audit fields on every write
-- [ ] `try/catch` returning `{ error }` with `corsHeaders` + status 500
-- [ ] Called from app code via `client.functions.invoke("<name>", { body })`
+- [ ] `pnpm db:function:new <name>`; nothing imported from outside `functions/<name>/`
+- [ ] `[functions.<name>]` in `config.toml` (`enabled`, `verify_jwt = true`)
+- [ ] CORS `OPTIONS` short-circuit
+- [ ] Payload validated
+- [ ] `requireCaller` or `requireServiceRole` defined and called in the function
+- [ ] Any record id re-read under `companyId`
+- [ ] Added to the `deno check` command in `check.yml`
+- [ ] Called via `client.functions.invoke("<name>", { body })`

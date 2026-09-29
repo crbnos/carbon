@@ -4,7 +4,6 @@ paths:
   - "apps/erp/app/routes/api+/ai+/**"
   - "apps/erp/app/modules/quality/inspectionBalloonAnalyze.*"
   - "packages/utils/src/llm.ts"
-  - "packages/database/supabase/functions/lib/ai/**"
 ---
 
 # AI SDK Usage in Carbon

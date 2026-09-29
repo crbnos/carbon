@@ -76,7 +76,7 @@ IMPORTANT: Before any research or coding, match the task to this table. A single
 | Authentication, RBAC, permissions | `.claude/rules/authentication-system.md` + `packages/auth/AGENTS.md` |
 | Background jobs and events (Inngest) | `.claude/rules/event-system.md` + `packages/jobs/AGENTS.md` |
 | Server functions (privileged/transactional writes shared by apps and jobs) | `packages/server-functions/AGENTS.md` |
-| Adding a Deno edge function (embed, embedding, event-wake, thumbnail, trigger only) | `.claude/rules/workflow-edge-function.md` |
+| Adding a Deno edge function (embedding, thumbnail only) | `.claude/rules/workflow-edge-function.md` |
 | Adding event handlers | `.claude/rules/workflow-event-system.md` |
 | **UI & Forms** | |
 | Building forms (ValidatedForm + zod) | `.claude/rules/conventions-forms.md` + `packages/form/AGENTS.md` |
@@ -194,7 +194,7 @@ IMPORTANT: Before any research or coding, match the task to this table. A single
 - **Multi-tenancy**: every table has `companyId` + composite PK `("id", "companyId")`
 - **IDs**: `id('prefix')` default in SQL
 - **Imports**: `~/*` → app code; `@carbon/*` → workspace packages
-- **Precision**: `packages/utils/src/math.ts` re-exports `functions/shared/precision.ts` by design (the edge runtime only mounts `supabase/functions/`) — not an import to "fix"
+- **Precision**: `@carbon/utils` re-exports `@carbon/database/precision` (and the accounting-currency, posting and ledger helpers) by design — `@carbon/utils` depends on `@carbon/database`, never the reverse
 
 ## ERP Module Layout
 
