@@ -1,6 +1,5 @@
-import type { Database } from "@carbon/database";
+import { type Database, getCompanyTimeZone } from "@carbon/database";
 import type { DB } from "@carbon/database/client";
-import { datetime, getCompanyTimeZone } from "@carbon/database/datetime";
 import { fetchAll } from "@carbon/database/fetch-all";
 import { getFunctionLogger } from "@carbon/database/logging";
 import {
@@ -21,6 +20,7 @@ import {
   buildSupersessionRedirectMap,
   type Redirect
 } from "@carbon/database/supersession-pick";
+import { datetime } from "@carbon/utils";
 import {
   type CalendarDate,
   parseDate,
@@ -252,7 +252,7 @@ export async function runMrp(
 
     // Resolve which superseded items currently redirect to a successor (effective
     // phase-out modes), collapsing multi-hop chains with the cumulative conversion
-    // factor. Shared with job creation (get-method) via lib/supersession-pick so the
+    // factor. Shared with job creation (get-method) via @carbon/database/supersession-pick so the
     // two can never diverge — MRP gates on `today`, get-method gates on the job's
     // build date. (supersessionByItem above is kept for the Consume-First on-hand
     // draw-down below.)

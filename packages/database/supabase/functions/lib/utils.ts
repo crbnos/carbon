@@ -1,12 +1,6 @@
-// Bare specifier on purpose: Deno resolves it through the deno.json import map
-// (like kysely), and the node-side @carbon/database build — which reaches this
-// file via shared/get-next-sequence.ts — resolves it from node_modules.
-import { CalendarDate, getDayOfWeek, now } from "@internationalized/date";
+import { CalendarDate, getDayOfWeek } from "@internationalized/date";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Kysely } from "kysely";
-// Type-only import from postgres/index.ts (not lib/database.ts) keeps the
-// Deno-only driver out of the graph — this file is reached from the node-side
-// @carbon/database build via shared/get-next-sequence.ts.
 import type { KyselyDatabase as DB } from "./postgres/index.ts";
 import type { Database } from "./types.ts";
 
@@ -42,55 +36,6 @@ export const isoWeekFromYmd = (
       thursday.compare(new CalendarDate(thursday.year, 1, 1)) / 7
     ) + 1
   );
-};
-
-// used to generate sequences — date tokens derive in the company's business
-// timezone so document prefixes roll over at the company's midnight, not the
-// process's
-export const interpolateSequenceDate = (
-  value?: string | null,
-  timezone = "UTC"
-) => {
-  // replace all instances of %{year} with the current year
-  if (!value) return "";
-  let result = value;
-
-  if (result.includes("%{")) {
-    const {
-      year,
-      month,
-      day,
-      hour: hours,
-      second: seconds
-    } = now(timezone);
-    const week = isoWeekFromYmd(year, month, day);
-
-    result = result.replace(/%{yyyy}/g, year.toString());
-    result = result.replace(/%{yy}/g, year.toString().slice(-2));
-    result = result.replace(/%{mm}/g, month.toString().padStart(2, "0"));
-    result = result.replace(/%{ww}/g, week.toString().padStart(2, "0"));
-    result = result.replace(/%{dd}/g, day.toString().padStart(2, "0"));
-    result = result.replace(/%{hh}/g, hours.toString().padStart(2, "0"));
-    result = result.replace(/%{ss}/g, seconds.toString().padStart(2, "0"));
-  }
-
-  return result;
-};
-
-// Serial-number segment interpolation: the date/week tokens above, plus the
-// job-context %{location} token (location.code, falling back to location.name).
-export const interpolateSerialNumber = (
-  value: string | null | undefined,
-  context: {
-    locationCode?: string | null;
-    locationName?: string | null;
-    timezone?: string;
-  }
-) => {
-  const withDates = interpolateSequenceDate(value, context.timezone);
-  if (!withDates.includes("%{location}")) return withDates;
-  const location = (context.locationCode ?? context.locationName ?? "").trim();
-  return withDates.replace(/%{location}/g, location);
 };
 
 type AccountType = "asset" | "liability" | "equity" | "revenue" | "expense";

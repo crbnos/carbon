@@ -8,7 +8,7 @@
 // correct, not merely inspected.
 //
 // Amounts are NATURAL-BALANCE-SIGNED via the `credit()`/`debit()` helpers from
-// `../lib/utils.ts` (lessons.md: Carbon journal amounts are natural-signed, not
+// `@carbon/utils` (lessons.md: Carbon journal amounts are natural-signed, not
 // debit-signed — `credit("liability", x)` stores `+x`, `credit("asset", x)`
 // stores `−x`). A balanced entry therefore has debits == credits, and does NOT
 // sum to zero in the stored `amount`; we track a separate debit(+)/credit(−)

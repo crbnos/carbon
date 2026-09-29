@@ -1,6 +1,5 @@
 import type { Database } from "@carbon/database";
 import type { KyselyDatabase } from "@carbon/database/client";
-import { datetime } from "@carbon/database/datetime";
 import { getNextSequence } from "@carbon/database/sequence";
 import {
   assertAllOperationsClaimed,
@@ -9,6 +8,7 @@ import {
   BATCH_RULE_DIMENSIONS,
   type BatchRules,
   buildBatchCompletionPlan,
+  datetime,
   type MemberValueSets,
   mustViolations,
   planBatchCompletion,

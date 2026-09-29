@@ -1,6 +1,5 @@
 import type { Kysely, KyselyDatabase, KyselyTx } from "@carbon/database/client";
-import { datetime } from "@carbon/database/datetime";
-import { classifyAccountingPostingRole } from "@carbon/utils";
+import { classifyAccountingPostingRole, datetime } from "@carbon/utils";
 import { JournalEntrySyncError } from "./posting";
 import type { Accounting } from "./types";
 

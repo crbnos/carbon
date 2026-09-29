@@ -2,7 +2,9 @@ import type { KyselyDatabase } from "@carbon/database/client";
 import {
   type ComputedJobQuantityNode,
   computeJobQuantities,
-  flattenJobQuantityTree,
+  flattenJobQuantityTree
+} from "@carbon/database/job-quantities-engine";
+import {
   getJobMethodTree,
   type JobMethodTreeItem
 } from "@carbon/database/methods";
@@ -192,7 +194,7 @@ const updateJobQuantities = async (
   parentEstimatedQuantity: number = 1
 ) => {
   // The tree is already fully loaded, so compute every node's quantities in
-  // memory (lib/job-quantities-engine.ts, mirroring the mrp-engine pattern)
+  // memory (@carbon/database/job-quantities-engine, mirroring the mrp-engine pattern)
   // and write them set-based. The previous per-node recursion issued 2–4
   // statements per node on one transaction connection — O(tree) sequential
   // roundtrips, which on a large BOM exceeded the request timeout.

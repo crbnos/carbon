@@ -219,7 +219,7 @@ export const oAuthCallbackSchema = z.object({
  * Kysely (quote → sales order, RFQ → quote, quote → revision, method copies)
  * the Postgres driver sends that string as raw text and Postgres rejects it
  * with `invalid input syntax for type json`. The server functions serialise on
- * their side too (`lib/json.ts`), but the write side must never store the
+ * their side too (`@carbon/database/json`), but the write side must never store the
  * scalar in the first place. Never drops content to `{}`.
  *
  * Returns `any`: the doc is consumed both as a DB Json value and as editor

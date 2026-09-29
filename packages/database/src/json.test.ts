@@ -1,4 +1,4 @@
-import { assertEquals } from "https://deno.land/std@0.175.0/testing/asserts.ts";
+import { expect, it } from "vitest";
 import { toJson, toJsonColumns } from "./json.ts";
 
 // deno-postgres encodes a string parameter as raw text and an array as a
@@ -6,39 +6,38 @@ import { toJson, toJsonColumns } from "./json.ts";
 // `toJson` must hand the driver valid JSON TEXT for every shape a json/jsonb
 // column can legitimately hold — that is the whole contract.
 
-Deno.test("toJson: object is serialised as JSON text", () => {
-  assertEquals(
-    toJson({ type: "doc", content: [] }),
+it("toJson: object is serialised as JSON text", () => {
+  expect(toJson({ type: "doc", content: [] })).toEqual(
     '{"type":"doc","content":[]}'
   );
 });
 
-Deno.test("toJson: a JSON string scalar is quoted, not sent raw", () => {
+it("toJson: a JSON string scalar is quoted, not sent raw", () => {
   // Raw `some text` is what deno-postgres would otherwise send; Postgres
   // rejects it with `invalid input syntax for type json`.
-  assertEquals(toJson("some text"), '"some text"');
-  assertEquals(toJson(""), '""');
+  expect(toJson("some text")).toEqual('"some text"');
+  expect(toJson("")).toEqual('""');
 });
 
-Deno.test("toJson: an array is JSON, not a Postgres array literal", () => {
-  assertEquals(toJson(["a", "b"]), '["a","b"]');
+it("toJson: an array is JSON, not a Postgres array literal", () => {
+  expect(toJson(["a", "b"])).toEqual('["a","b"]');
 });
 
-Deno.test("toJson: numbers and booleans are JSON scalars", () => {
-  assertEquals(toJson(1.5), "1.5");
-  assertEquals(toJson(false), "false");
+it("toJson: numbers and booleans are JSON scalars", () => {
+  expect(toJson(1.5)).toEqual("1.5");
+  expect(toJson(false)).toEqual("false");
 });
 
-Deno.test("toJson: null and undefined pass through untouched", () => {
+it("toJson: null and undefined pass through untouched", () => {
   // null must stay NULL (not the JSON text "null"), and undefined must stay
   // absent so Kysely omits the column and the DEFAULT applies.
-  assertEquals(toJson(null), null);
-  assertEquals(toJson(undefined), undefined);
+  expect(toJson(null)).toEqual(null);
+  expect(toJson(undefined)).toEqual(undefined);
 });
 
-Deno.test("toJson: output always parses back to the input", () => {
+it("toJson: output always parses back to the input", () => {
   for (const value of [{ a: 1 }, "x", ["y"], 0, true]) {
-    assertEquals(JSON.parse(toJson(value) as string), value);
+    expect(JSON.parse(toJson(value) as string)).toEqual(value);
   }
 });
 
@@ -48,7 +47,7 @@ Deno.test("toJson: output always parses back to the input", () => {
 // jsonb columns were ever written as a bare string/array (legacy data, or an
 // API path typed `z.any()`) must still copy cleanly instead of failing the
 // whole quote duplication with "invalid input syntax for type json".
-Deno.test("toJsonColumns: serialises only the named columns, leaving the rest of the row untouched", () => {
+it("toJsonColumns: serialises only the named columns, leaving the rest of the row untouched", () => {
   const line = {
     id: "qtl_1",
     quoteId: "qt_1",
@@ -72,24 +71,23 @@ Deno.test("toJsonColumns: serialises only the named columns, leaving the rest of
 
   // Every named column comes back as valid JSON TEXT, regardless of the
   // shape it was stored in — an array, a bare string, an object, or null.
-  assertEquals(result.additionalCharges, '["legacy-array-instead-of-object"]');
-  assertEquals(result.configuration, '"legacy-string-instead-of-object"');
-  assertEquals(result.customFields, '{"color":"red"}');
-  assertEquals(result.externalNotes, '"a plain string note"');
-  assertEquals(result.internalNotes, null);
-  assertEquals(
-    JSON.parse(result.priceTrace as string),
-    line.priceTrace
+  expect(result.additionalCharges).toEqual(
+    '["legacy-array-instead-of-object"]'
   );
+  expect(result.configuration).toEqual('"legacy-string-instead-of-object"');
+  expect(result.customFields).toEqual('{"color":"red"}');
+  expect(result.externalNotes).toEqual('"a plain string note"');
+  expect(result.internalNotes).toEqual(null);
+  expect(JSON.parse(result.priceTrace as string)).toEqual(line.priceTrace);
 
   // Columns not named in the list are untouched by the call, so spreading
   // `{ ...line, ...toJsonColumns(line, [...]) }` only overrides what's named.
-  assertEquals("id" in result, false);
-  assertEquals("description" in result, false);
+  expect("id" in result).toEqual(false);
+  expect("description" in result).toEqual(false);
 });
 
-Deno.test("toJsonColumns: an already-clean object column round-trips unchanged in meaning", () => {
+it("toJsonColumns: an already-clean object column round-trips unchanged in meaning", () => {
   const line = { customFields: { a: 1, b: [2, 3] } };
   const result = toJsonColumns(line, ["customFields"] as const);
-  assertEquals(JSON.parse(result.customFields as string), line.customFields);
+  expect(JSON.parse(result.customFields as string)).toEqual(line.customFields);
 });

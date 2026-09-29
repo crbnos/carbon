@@ -12,6 +12,7 @@ const TYPESCRIPT_ROOTS = [
   "apps/erp/app/routes",
   "apps/mes/app",
   "packages/database/supabase/functions",
+  "packages/database/src",
   "packages/server-functions/src",
   "packages/ee/src",
   "packages/jobs/src",

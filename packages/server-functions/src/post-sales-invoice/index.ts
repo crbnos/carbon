@@ -1,5 +1,4 @@
-import type { Database } from "@carbon/database";
-import { datetime, getCompanyTimeZone } from "@carbon/database/datetime";
+import { type Database, getCompanyTimeZone } from "@carbon/database";
 import { fetchAll } from "@carbon/database/fetch-all";
 import {
   calculateCOGS,
@@ -19,6 +18,7 @@ import {
   calculateSalesIntercompanyAmount,
   classifyIntercompanyPostingLines,
   credit,
+  datetime,
   debit,
   round,
   type SalesPostingAccount,

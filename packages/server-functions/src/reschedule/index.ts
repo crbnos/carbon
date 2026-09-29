@@ -1,6 +1,6 @@
 import type { KyselyDatabase } from "@carbon/database/client";
-import { datetime } from "@carbon/database/datetime";
 import { getLogger } from "@carbon/logger";
+import { datetime } from "@carbon/utils";
 import type { Transaction } from "kysely";
 import { z } from "zod";
 import { defineServerFn } from "../define-server-fn";

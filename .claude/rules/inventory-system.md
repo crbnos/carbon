@@ -52,7 +52,7 @@ Key service functions (verified):
   Scrap journals carry ScrapReason/WorkCenter/Employee dimensions; the single
   `scrapAccount` + dimensions replaces per-reason account mapping by design.
   The **ScrapReason** dimension is seeded active by default (a `dimension` row per
-  company group, from `functions/lib/seed.data.ts`; backfilled to existing groups by
+  company group, from `packages/database/src/seed-data.ts`; backfilled to existing groups by
   `20260808114732_backfill-scrap-reason-dimension.sql`). Like CustomerType/ItemPostingGroup
   it is entity-backed — its values resolve live from the `scrapReason` table via
   `getEntityDimensionValues`/`getEntityValuesByIds` (accounting.service.ts), so adding a
@@ -84,7 +84,7 @@ Key service functions (verified):
   (× `conversionFactor`); `Consume First` redirects only when the predecessor is out of warehouse
   stock; `No Stock` (and `Stock Only` without an effective successor) is dropped from the schedule
   and skipped in generation. Note picking's redirect rules differ from the MRP/job-creation map
-  (`functions/lib/supersession-pick.ts`, which redirects only `Consume First`/`Prefer New`) —
+  (`packages/database/src/supersession-pick.ts`, which redirects only `Consume First`/`Prefer New`) —
   for picking, `Stock Only` must not be picked for production. A substituted line's `itemId`
   differs from its `jobMaterial.itemId` (no new column); the availability RPC reports the
   line's OWN pick item's warehouse on-hand with NO successor fold-in — a substituted line

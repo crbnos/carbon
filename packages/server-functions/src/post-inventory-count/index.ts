@@ -1,11 +1,11 @@
-import type { Database } from "@carbon/database";
-import { datetime, getCompanyTimeZone } from "@carbon/database/datetime";
+import { type Database, getCompanyTimeZone } from "@carbon/database";
 import {
   bookAdjustment,
   createAdjustmentJournal,
   getCurrentAccountingPeriod,
   getDefaultPostingGroup
 } from "@carbon/database/posting";
+import { datetime } from "@carbon/utils";
 import { z } from "zod";
 import { defineServerFn } from "../define-server-fn";
 import { InvalidInputError, NotFoundError } from "../errors";

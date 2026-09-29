@@ -10,16 +10,15 @@
  */
 import type { Transaction } from "kysely";
 import { sql } from "kysely";
-
-import { getNextSequence } from "../supabase/functions/shared/get-next-sequence.ts";
+import type { Kysely, KyselyDatabase } from "./client.ts";
 import {
   computeLotStatus,
   deriveSampleStatus,
   valuateMeasurement
-} from "../supabase/functions/shared/inspection-verdict.ts";
-import type { Kysely, KyselyDatabase } from "./client.ts";
+} from "./inspection-verdict.ts";
 import type { SamplingPlanInput, SamplingStandard } from "./sampling.ts";
 import { resolveFeatureSamplingPlan, resolveSamplingPlan } from "./sampling.ts";
+import { getNextSequence } from "./sequence.ts";
 
 type Ok<T> = { data: T; error: null };
 type Err = { data: null; error: { message: string; blockers?: unknown } };

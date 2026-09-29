@@ -1,4 +1,4 @@
-import { datetime } from "@carbon/database/datetime";
+import { datetime } from "@carbon/utils";
 import {
   JournalEntrySyncError,
   toPostingDateString

@@ -149,7 +149,7 @@ RLS on all tables: standard SELECT/INSERT/UPDATE/DELETE gated by `quality_view/c
 2. Per receipt line whose item **has a Receipt-usage assignment** (`assignmentByItemId.get(itemId)`)
    and `receivedQuantity > 0`: the assigned document is the plan gate — no assignment, no lot.
    Resolves the lot plan via `resolveSamplingPlan(plan, lotSize, standard)` from
-   `packages/database/supabase/functions/shared/sampling-engine.ts` (ANSI Z1.4 / ISO 2859-1
+   `packages/database/src/sampling.ts` (ANSI Z1.4 / ISO 2859-1
    tables; returns `{ sampleSize, acceptance, rejection, codeLetter }`). Document with no
    default rule → `type: "All"`, level `II`, `Normal`. Always resolves **each feature** via
    `resolveFeatureSamplingPlan(feature, documentDefault, lotSize, standard)` (feature rule →
@@ -308,8 +308,7 @@ GL/cost posting and `.ai/plans/2026-07-25-inspection-disposition-gl-posting.md`.
   engine). Every function takes a `Kysely<KyselyDatabase>` first param; ERP's
   `quality.server.ts` is thin wrappers currying `getDatabaseClient()` (names and
   signatures unchanged — ERP routes/tests untouched). `packages/database/src/sampling.ts`
-  re-exports the pure Deno `shared/sampling-engine.ts` node-side (client.ts
-  pattern); the engine and `post-receipt` both consume it, so they share ONE resolver copy
+  is the pure resolver; the engine and `post-receipt` both consume it, so they share ONE resolver copy
   (ERP's `samplingStandards.ts` client copy remains for UI previews).
   - **Closed guards + linked-sample locks (2026-07-27):** all three terminal
     statuses (Passed/Failed/**Partial**) block `upsertInspectionSample` (guard
@@ -364,7 +363,7 @@ GL/cost posting and `.ai/plans/2026-07-25-inspection-disposition-gl-posting.md`.
   `inspectionDocumentUsages` const.
 - **Sampling engines** (kept in sync manually): `resolveSamplingPlan` +
   `resolveFeatureSamplingPlan` in both `apps/erp/app/modules/quality/samplingStandards.ts` and
-  `packages/database/supabase/functions/shared/sampling-engine.ts`.
+  `packages/database/src/sampling.ts`.
 
 ## Gotchas
 

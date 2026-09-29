@@ -1,9 +1,7 @@
-// Node-side re-export of the shared posting helpers under supabase/functions
-// (the same bridge pattern as datetime.ts / sequence.ts), for
-// @carbon/server-functions. Transitional: one copy lives under
-// supabase/functions until these files move into the packages that use them.
+// Node-side re-export of the posting helpers still under supabase/functions,
+// for @carbon/server-functions. Transitional: they move into the packages that
+// use them.
 
-export { toJson, toJsonColumns } from "../supabase/functions/lib/json.ts";
 export * from "../supabase/functions/lib/storage-units.ts";
 export { journalReference } from "../supabase/functions/lib/utils.ts";
 export * from "../supabase/functions/shared/build-memo-journal.ts";

@@ -11,6 +11,7 @@ const SERVER_ROOTS = [
   "apps/mes/app/services",
   "packages/jobs/src",
   "packages/database/supabase/functions",
+  "packages/database/src",
   "packages/server-functions/src"
 ];
 

@@ -3,7 +3,7 @@ import { Transaction } from "kysely";
 import type { KyselyDatabase as DB } from "../lib/postgres/index.ts";
 import { Database } from "../lib/types.ts";
 import { calculateCOGS } from "./calculate-cogs.ts";
-import { getNextSequence } from "./get-next-sequence.ts";
+import { getNextSequence } from "../../../src/sequence.ts";
 import {
   buildAdjustmentJournalLines,
   buildCostLedgerRow,

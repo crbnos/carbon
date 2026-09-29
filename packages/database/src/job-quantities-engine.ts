@@ -1,11 +1,11 @@
-// Pure job-quantity cascade shared by the recalculate edge function.
+// Pure job-quantity cascade behind the recalculate server function.
 // Mirrors the mrp-engine pattern: the caller batch-reads its inputs into
 // Maps, this module computes the whole tree in memory with no I/O, and the
 // caller batch-writes the output. Cycles in the tree data are reported
 // (`cycleNodeIds`) instead of recursing forever — the same contract as
 // mrp-engine's `cycleItemIds`.
 
-import { scrapAllowance } from "../shared/precision.ts";
+import { scrapAllowance } from "../supabase/functions/shared/precision.ts";
 
 export type JobQuantityTreeNode = {
   id: string;
@@ -101,11 +101,13 @@ export function computeJobQuantities(
     const scrapPercentage =
       stored != null
         ? Number(stored)
-        : input.replenishmentScrapByItemId.get(node.data.itemId) ?? 0;
+        : (input.replenishmentScrapByItemId.get(node.data.itemId) ?? 0);
     const scrapQuantity = scrapAllowance(targetQuantity, scrapPercentage);
     const totalWithScrap = targetQuantity + scrapQuantity;
     const estimatedQuantity =
-      node.data.methodType === "Make to Order" ? targetQuantity : totalWithScrap;
+      node.data.methodType === "Make to Order"
+        ? targetQuantity
+        : totalWithScrap;
 
     computed.push({
       id: node.id,
@@ -115,7 +117,7 @@ export function computeJobQuantities(
       targetQuantity,
       scrapQuantity,
       estimatedQuantity,
-      totalWithScrap,
+      totalWithScrap
     });
 
     for (const child of node.children ?? []) {

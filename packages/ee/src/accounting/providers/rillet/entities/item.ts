@@ -1,4 +1,4 @@
-import { datetime } from "@carbon/database/datetime";
+import { datetime } from "@carbon/utils";
 import { createMappingService } from "../../../core/external-mapping";
 import { JournalEntrySyncError } from "../../../core/posting";
 import type { Accounting } from "../../../core/types";

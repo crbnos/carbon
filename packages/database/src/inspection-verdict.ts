@@ -75,5 +75,7 @@ export function deriveSampleStatus(
 export function computeLotStatus(
   samples: readonly { status: string }[]
 ): "Pending" | "In Progress" {
-  return samples.some((s) => s.status !== "Pending") ? "In Progress" : "Pending";
+  return samples.some((s) => s.status !== "Pending")
+    ? "In Progress"
+    : "Pending";
 }

@@ -458,7 +458,7 @@ export function lookupBuyPriceFromMap(
  * bought-to-order cost must go through this — reaching for
  * lookupBuyPriceFromMap directly silently ignores a typed cost.
  *
- * Mirrored in `functions/lib/methods.ts`.
+ * Mirrored in `packages/database/src/methods.ts`.
  */
 export function resolveBuyUnitCost(
   material: {

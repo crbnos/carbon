@@ -1,5 +1,4 @@
-import type { Database } from "@carbon/database";
-import { datetime, getCompanyTimeZone } from "@carbon/database/datetime";
+import { type Database, getCompanyTimeZone } from "@carbon/database";
 import {
   getCurrentAccountingPeriod,
   getDefaultPostingGroup,
@@ -13,6 +12,7 @@ import {
   calculateDueDate,
   classifyIntercompanyPostingLines,
   credit,
+  datetime,
   debit,
   getBillableQuantity,
   getRemainingQuantityToInvoice,

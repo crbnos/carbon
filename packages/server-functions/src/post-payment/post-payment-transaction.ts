@@ -1,6 +1,5 @@
 import type { Database } from "@carbon/database";
 import type { KyselyDatabase } from "@carbon/database/client";
-import { datetime } from "@carbon/database/datetime";
 import {
   buildPaymentJournal,
   getCurrentAccountingPeriod,
@@ -11,6 +10,7 @@ import {
   allocatePaymentFunding,
   assertCurrencyDecimals,
   assertExchangeRate,
+  datetime,
   type FundingRequest,
   invoiceRemainingAmounts,
   isEffectiveSettlement,

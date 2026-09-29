@@ -7,7 +7,7 @@ import {
 
 // Golden-master tests for the GL journal an employee reimbursement posts. Each
 // asserts the exact natural-balance-signed `amount` on each line (expense
-// debits are +, liability credits are + — see lib/utils.ts) AND that the entry
+// debits are +, liability credits are + — see `credit`/`debit` in @carbon/utils) AND that the entry
 // balances (debits == credits), plus the refusal paths.
 
 const ACCOUNTS: Record<string, { class: AccountClass }> = {

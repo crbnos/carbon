@@ -1,12 +1,11 @@
 import type { Database } from "@carbon/database";
 import type { KyselyDatabase } from "@carbon/database/client";
-import { datetime } from "@carbon/database/datetime";
 import {
   buildMemoJournal,
   getCurrentAccountingPeriod
 } from "@carbon/database/posting";
 import { getNextSequence } from "@carbon/database/sequence";
-import { toBaseAmount, toDocumentAmount } from "@carbon/utils";
+import { datetime, toBaseAmount, toDocumentAmount } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Kysely } from "kysely";
 import { nanoid } from "nanoid";

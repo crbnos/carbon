@@ -1,5 +1,5 @@
 import type { KyselyDatabase } from "@carbon/database/client";
-import { datetime } from "@carbon/database/datetime";
+import { datetime } from "@carbon/utils";
 import { type Kysely, sql } from "kysely";
 import { NotFoundError } from "../errors";
 import { postReimbursementJournal } from "./post-reimbursement-post";

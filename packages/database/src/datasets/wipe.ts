@@ -1,5 +1,5 @@
 import type { PoolClient } from "pg";
-import { getGroupId, groups } from "../../supabase/functions/lib/seed.data.ts";
+import { getGroupId, groups } from "../seed-data.ts";
 import { resolveDate } from "./dates.ts";
 import { insertId, nextJournalEntryId, quote, resetSequences } from "./sql.ts";
 import type { Ctx } from "./types.ts";

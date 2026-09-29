@@ -1,7 +1,6 @@
 import type { DB } from "@carbon/database/client";
-import { datetime } from "@carbon/database/datetime";
 import type { BatchType } from "@carbon/utils";
-import { batchDuration } from "@carbon/utils";
+import { batchDuration, datetime } from "@carbon/utils";
 import type { Kysely } from "kysely";
 import type { CalendarWindow } from "./calendar-utils.ts";
 import { nextWorkingInstant } from "./calendar-utils.ts";

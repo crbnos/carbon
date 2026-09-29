@@ -7,7 +7,7 @@ import {
 
 // Golden-master tests for the GL journal a charge posts. Each asserts
 // the exact natural-balance-signed `amount` on each line (asset/expense debits
-// are +, credits −; liability/revenue/equity are the mirror — see lib/utils.ts)
+// are +, credits −; liability/revenue/equity are the mirror — see `credit`/`debit` in @carbon/utils)
 // AND that the entry balances (debits == credits). One case per transaction
 // type, plus the imbalance-refusal path.
 

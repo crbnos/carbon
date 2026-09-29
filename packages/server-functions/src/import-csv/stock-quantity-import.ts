@@ -21,9 +21,8 @@
 // Row validation / dedup lives in the pure `classify-stock-row.ts`. No
 // externalIntegrationMapping writes: there is no Unique ID column.
 
-import type { Database, Json } from "@carbon/database";
+import { type Database, getCompanyTimeZone, type Json } from "@carbon/database";
 import type { KyselyDatabase } from "@carbon/database/client";
-import { datetime, getCompanyTimeZone } from "@carbon/database/datetime";
 import {
   buildAdjustmentJournalLines,
   buildCostLedgerRow,
@@ -37,6 +36,7 @@ import {
   planStockRows
 } from "@carbon/database/posting";
 import { getLogger } from "@carbon/logger";
+import { datetime } from "@carbon/utils";
 import { parseDate } from "@internationalized/date";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Kysely } from "kysely";

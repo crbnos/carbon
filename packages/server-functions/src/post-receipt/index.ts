@@ -1,6 +1,5 @@
-import type { Database } from "@carbon/database";
+import { type Database, getCompanyTimeZone } from "@carbon/database";
 import type { KyselyDatabase } from "@carbon/database/client";
-import { datetime, getCompanyTimeZone } from "@carbon/database/datetime";
 import {
   calculateCOGS,
   getCurrentAccountingPeriod,
@@ -18,6 +17,7 @@ import { getLogger } from "@carbon/logger";
 import {
   buildJournalLineDimensionInserts,
   credit,
+  datetime,
   debit,
   type JournalDimensionMeta,
   resolveReturnUnitCost,

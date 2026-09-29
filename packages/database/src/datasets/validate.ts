@@ -5,6 +5,7 @@
 import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { EPSILON, round } from "../../supabase/functions/shared/precision.ts";
 import {
   accounts,
   changeOrderRequiredActions,
@@ -20,8 +21,7 @@ import {
   returnReasons,
   scrapReasons,
   unitOfMeasures
-} from "../../supabase/functions/lib/seed.data.ts";
-import { EPSILON, round } from "../../supabase/functions/shared/precision.ts";
+} from "../seed-data.ts";
 import { Constants } from "../types.ts";
 import { NOT_CLOSED_MIN_OFFSET, OPEN_PERIOD_MIN_OFFSET } from "./dates.ts";
 import {

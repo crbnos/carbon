@@ -1,8 +1,7 @@
 /**
- * Encodes a value for a `json` / `jsonb` column written through Kysely on the
- * deno-postgres driver.
+ * Encodes a value for a `json` / `jsonb` column written through Kysely.
  *
- * deno-postgres (`query/encode.ts`) serialises query parameters by JS type, not
+ * The Postgres driver serialises query parameters by JS type, not
  * by column type: an object becomes `JSON.stringify(value)`, but a string is
  * sent as raw text and an array as a Postgres array literal (`{a,b}`). For a
  * JSON column that means a stored JSON string scalar (`"some text"`) is read
@@ -32,10 +31,10 @@ export function toJson(value: unknown): string | null | undefined {
  * future column addition has to be checked against, and something a test can
  * assert against directly.
  */
-export function toJsonColumns<T extends Record<string, unknown>, K extends keyof T>(
-  row: T,
-  keys: readonly K[]
-): { [P in K]: string | null | undefined } {
+export function toJsonColumns<
+  T extends Record<string, unknown>,
+  K extends keyof T
+>(row: T, keys: readonly K[]): { [P in K]: string | null | undefined } {
   const out = {} as { [P in K]: string | null | undefined };
   for (const key of keys) {
     out[key] = toJson(row[key]);

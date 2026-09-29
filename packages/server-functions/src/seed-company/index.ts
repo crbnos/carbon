@@ -12,7 +12,7 @@ import {
   fiscalYearSettings,
   fixedAssetClasses,
   gaugeTypes,
-  groupCompanyTemplate,
+  getGroupId,
   groups,
   nonConformanceRequiredActions,
   nonConformanceTypes,
@@ -158,15 +158,9 @@ export const seedCompany = defineServerFn({
       await trx
         .insertInto("group")
         .values(
-          groups.map((g) => ({
+          groups.map(({ idPrefix, ...g }) => ({
             ...g,
-            id: g.id.replace(
-              groupCompanyTemplate,
-              `${companyId.substring(0, 4)}-${companyId.substring(
-                4,
-                8
-              )}-${companyId.substring(8, 20)}`
-            ),
+            id: getGroupId(idPrefix, companyId),
             companyId
           }))
         )

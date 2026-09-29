@@ -148,10 +148,10 @@ await db.transaction().execute(async (trx) => {
 
 ### Shared helpers (real paths)
 
-- Sequence numbers: `import { getNextSequence } from "../shared/get-next-sequence.ts";`
-- Other shared business logic lives in `../shared/` (`calculate-cogs.ts`,
-  `get-accounting-period.ts`, `sampling-engine.ts`, …). Generic DB/auth helpers
-  live in `../lib/`.
+- Business logic (sequences, COGS, accounting periods, sampling, …) is Node-only
+  now — it lives in `@carbon/database` / `@carbon/server-functions` and cannot be
+  imported here; a function that needs it belongs in `@carbon/server-functions`.
+  Generic DB/auth helpers live in `../lib/`.
 
 ## 5. Invoke from app code
 
