@@ -6468,9 +6468,6 @@ msgstr "fällig in 1 Tag"
 msgid "due now"
 msgstr "fällig sofort"
 
-msgid "Due within"
-msgstr "Fällig innerhalb"
-
 msgid "Duplicate"
 msgstr "Duplizieren"
 

@@ -2,7 +2,7 @@
 
 > Track fixed assets, every PDF redesigned, reorder your sidebar, and keep a shelf-life history.
 
-Fixed assets arrive in accounting. Every PDF has been redesigned, with further improvements to the purchasing documents. The sidebar can be customized — reorder modules and hide the ones you don't use.
+Fixed assets arrive in accounting. Every PDF has been redesigned, with further improvements to the purchasing documents. The sidebar can be customized, so you can reorder modules and hide the ones you don't use.
 
 - Shelf-life history and an inventory history menu.
 - Reorder line items on documents.

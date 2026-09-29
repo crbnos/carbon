@@ -1,8 +1,7 @@
 import { render } from "@react-email/components";
 import { describe, expect, it, vi } from "vitest";
 
-// @carbon/env validates required vars at module scope; the template reaches it
-// through Logo's getAppUrl(). vi.mock hoists above the import below.
+// @carbon/env validates required vars at import; the template reaches it via Logo.
 vi.mock("@carbon/env", () => ({
   getAppUrl: () => "https://app.carbon.ms",
   NODE_ENV: "test",
@@ -11,8 +10,7 @@ vi.mock("@carbon/env", () => ({
 
 import { ChangelogEntryEmail } from "@carbon/documents/email";
 
-// Lives in @carbon/jobs rather than @carbon/documents because of that env
-// dependency — documents' vitest setup does not provide it.
+// Here rather than in @carbon/documents, whose test setup has no env.
 describe("ChangelogEntryEmail", () => {
   it("renders the notification card with escaped title and the unsubscribe link", async () => {
     const html = await render(

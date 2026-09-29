@@ -6468,9 +6468,6 @@ msgstr "1 दिन में देय"
 msgid "due now"
 msgstr "अभी देय"
 
-msgid "Due within"
-msgstr "के भीतर देय"
-
 msgid "Duplicate"
 msgstr "डुप्लिकेट करें"
 

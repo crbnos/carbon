@@ -6468,9 +6468,6 @@ msgstr "1 日後が納期"
 msgid "due now"
 msgstr "本日が納期"
 
-msgid "Due within"
-msgstr "期限内"
-
 msgid "Duplicate"
 msgstr "複製"
 

@@ -3,7 +3,7 @@ import { ChangelogFeed } from "@/components/changelog-feed";
 import { pageSeo } from "@/lib/seo";
 
 const DESCRIPTION =
-  "What's new in Carbon. Every entry ships the moment it merges — dated, not versioned.";
+  "What's new in Carbon. Every entry is dated, not versioned, and ships the moment it merges.";
 
 export const metadata: Metadata = {
   ...pageSeo({
@@ -19,7 +19,6 @@ export const metadata: Metadata = {
   },
 };
 
-/** Page 1 of the feed; older pages are `/changelog/page/[n]`. */
 export default function ChangelogPage() {
   return <ChangelogFeed page={1} />;
 }

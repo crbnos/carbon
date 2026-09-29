@@ -186,7 +186,7 @@
     {
       "slug": "changelog/2026-08-18-accounting-sync-engine",
       "title": "Automation workflows",
-      "description": "Build automations on a canvas — a trigger, conditions, and steps that notify people, update records, or call an outside service. Plus accounting sync for Xero, QuickBooks Online, and Rillet, financial reports, and scrap.",
+      "description": "Build automations on a canvas from a trigger, conditions, and steps that notify people, update records, or call an outside service. Plus accounting sync for Xero, QuickBooks Online, and Rillet, financial reports, and scrap.",
       "keywords": [
         "automation",
         "workflows",

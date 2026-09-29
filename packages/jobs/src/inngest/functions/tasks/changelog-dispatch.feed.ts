@@ -1,13 +1,7 @@
-/**
- * Parsing + rendering for the changelog subscription pipeline. Pure — no
- * Inngest, no DB, no env — so it is unit-tested directly (feed.test.ts).
- *
- * The XML it parses is OUR OWN feed (docs/app/changelog/rss.xml/route.ts), so
- * this is a targeted parser for that exact, fully-escaped shape — not a general
- * RSS reader. If the feed route ever changes shape, change this with it.
- */
+// Parses our own changelog feed (docs/app/changelog/rss.xml/route.ts), not RSS
+// in general: change this with that route.
 
-export type ChangelogFeedEntry = {
+type ChangelogFeedEntry = {
   guid: string;
   title: string;
   link: string;
@@ -34,8 +28,8 @@ function tagText(block: string, tag: string): string | null {
   return text !== undefined ? unescapeXml(text.trim()) : null;
 }
 
-/** Feed order is preserved (our feed is newest-first). Items missing a guid,
- *  title, or link are skipped — they cannot be dispatched or ledgered. */
+// Keeps feed order (newest first). Items without a guid, title or link are
+// skipped: they cannot be dispatched or ledgered.
 export function parseChangelogFeed(xml: string): ChangelogFeedEntry[] {
   const items = xml.match(/<item>[\s\S]*?<\/item>/g) ?? [];
   const entries: ChangelogFeedEntry[] = [];
@@ -59,13 +53,8 @@ export function parseChangelogFeed(xml: string): ChangelogFeedEntry[] {
   return entries;
 }
 
-/**
- * Decide what a dispatcher run does with the feed. An EMPTY ledger means the
- * pipeline has never run — the right move is to record every existing entry as
- * already-dispatched WITHOUT sending, or the first run after deploy would mail
- * the whole back-catalogue to every subscriber. Only once the ledger is seeded
- * does "in the feed but not in the ledger" mean "new".
- */
+// An empty ledger means the dispatcher has never run: record every entry
+// without sending, or the first run would mail the whole back-catalogue.
 export function planDispatch(
   entries: ChangelogFeedEntry[],
   ledgeredGuids: Set<string>,
@@ -78,19 +67,15 @@ export function planDispatch(
   };
 }
 
-/** "04 Sep 2026 00:00:00 GMT" → "04 Sep 2026" — the feed's RFC 822 pubDate, trimmed
- *  for display. Pure string work; never a JS Date. */
+// "04 Sep 2026 00:00:00 GMT" → "04 Sep 2026".
 export function displayDate(pubDate: string | null): string | undefined {
   if (!pubDate) return undefined;
   const day = pubDate.slice(0, 11).trim();
   return day.length > 0 ? day : undefined;
 }
 
-/**
- * Subject + plain-text alternative for an entry email. The HTML is the
- * `ChangelogEntryEmail` template in `@carbon/documents/email` (rendered in the
- * dispatcher); this is the text part every send carries alongside it.
- */
+// Subject and plain-text part of an entry email; the HTML part is
+// ChangelogEntryEmail.
 export function entryEmailContent(
   entry: ChangelogFeedEntry,
   manageUrl: string

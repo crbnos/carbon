@@ -7,8 +7,7 @@ import { getChangelogEntries } from "@/lib/source";
 
 type Params = { params: Promise<{ n: string }> };
 
-/** Parse `/changelog/page/N`. Page 1 lives at `/changelog` and is not
- *  duplicated here; anything else out of range is a 404. */
+// Page 1 is /changelog, so it is a 404 here like any out-of-range page.
 function pageNumber(n: string): number | null {
   if (!/^\d+$/.test(n)) return null;
   const page = Number(n);

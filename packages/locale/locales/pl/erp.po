@@ -6468,9 +6468,6 @@ msgstr "termin za 1 dzień"
 msgid "due now"
 msgstr "termin teraz"
 
-msgid "Due within"
-msgstr "Termin w ciągu"
-
 msgid "Duplicate"
 msgstr "Duplikuj"
 

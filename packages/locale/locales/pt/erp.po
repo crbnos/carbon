@@ -6468,9 +6468,6 @@ msgstr "vencimento em 1 dia"
 msgid "due now"
 msgstr "vencimento agora"
 
-msgid "Due within"
-msgstr "Vencimento em"
-
 msgid "Duplicate"
 msgstr "Duplicar"
 

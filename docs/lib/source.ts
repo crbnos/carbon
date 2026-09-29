@@ -16,8 +16,7 @@ export const changelogSource = loader({
   source: changelog.toFumadocsSource(),
 });
 
-/** Changelog entries, newest first. `date` (frontmatter, YYYY-MM-DD) is the ordering
- *  key — filename order is only a tiebreaker via the stable sort. */
+// Newest first by frontmatter `date`; filename order breaks ties.
 export function getChangelogEntries() {
   return [...changelogSource.getPages()].sort((a, b) =>
     b.data.date.localeCompare(a.data.date)

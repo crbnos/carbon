@@ -167,16 +167,13 @@ export const validUserFlags = [
   "training:quality"
 ] as const;
 
-// Dismissing the in-app "What's new" card writes `changelog:<entry slug>` =
-// true, one flag per dismissed entry — the same shape as the training flags,
-// but open-ended because entries keep being published.
-export const CHANGELOG_FLAG_PREFIX = "changelog:";
+// Dismissing the What's new panel sets `changelog:<entry slug>`; open-ended
+// because entries keep being published.
+const CHANGELOG_FLAG_PREFIX = "changelog:";
 export const changelogFlagKey = (slug: string) =>
   `${CHANGELOG_FLAG_PREFIX}${slug}`;
 
-export type UserFlagKey =
-  | (typeof validUserFlags)[number]
-  | `changelog:${string}`;
+export type UserFlagKey = (typeof validUserFlags)[number];
 
 const userFlagKeyValidator = z.union([
   z.enum(validUserFlags),

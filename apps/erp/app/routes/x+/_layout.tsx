@@ -203,8 +203,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     getImplementationCheckStates(client, companyId),
     implementationSignalsPromise,
     itarCertificationPromise,
-    // Bottom-right "What's new" panel: the latest ledger entry (one indexed
-    // read). Whether THIS user dismissed it is a user flag, read client-side.
+    // Whether this user dismissed it is a user flag, read client-side.
     getChangelogPanelEntry(getCarbonServiceRole()).catch(() => null)
   ]);
 
@@ -517,8 +516,7 @@ export default function AuthenticatedRoute() {
                   isOpen={isOpen}
                   onDismiss={dismiss}
                 />
-                {/* Same corner as the training panel — the training video wins
-                    while it is open; the changelog shows once it is dismissed. */}
+                {/* Shares the training panel's corner; training wins while open. */}
                 <ChangelogPanel
                   entry={changelogPanel.entry}
                   isOpen={changelogPanel.isOpen && !isOpen}

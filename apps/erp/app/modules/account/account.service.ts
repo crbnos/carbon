@@ -7,22 +7,16 @@ export type ChangelogPanelEntry = {
   slug: string;
   title: string;
   description: string | null;
-  dispatchedAt: string;
 };
 
-/**
- * The newest published changelog entry for the in-app "What's new" panel.
- * From the `changelogDispatch` ledger the newsletter dispatcher maintains
- * (platform table, service-role only). The guid IS the entry's permalink on
- * docs.carbon.ms; `slug` is its last path segment, the key of the user flag
- * (`changelog:<slug>`) that records a dismissal — see useChangelogPanel.
- */
+// The newest entry in the dispatch ledger (service-role only). `slug` is the
+// last segment of the guid permalink and keys the dismissal flag.
 export async function getChangelogPanelEntry(
   serviceRole: SupabaseClient<Database>
 ): Promise<ChangelogPanelEntry | null> {
   const latest = await serviceRole
     .from("changelogDispatch")
-    .select("guid, title, description, dispatchedAt")
+    .select("guid, title, description")
     .order("dispatchedAt", { ascending: false })
     .limit(1)
     .maybeSingle();
@@ -33,8 +27,7 @@ export async function getChangelogPanelEntry(
     guid: latest.data.guid,
     slug,
     title: latest.data.title,
-    description: latest.data.description,
-    dispatchedAt: latest.data.dispatchedAt
+    description: latest.data.description
   };
 }
 

@@ -16,18 +16,14 @@ import { EmailThemeProvider, getEmailThemeClasses } from "./components/Theme";
 interface Props {
   title: string;
   description?: string;
-  // Already-formatted display date ("04 Sep 2026"); the feed's pubDate, never a JS Date.
+  // Display date ("04 Sep 2026").
   date?: string;
   readUrl: string;
-  // Account → Notifications in the ERP — the only place the newsletter can be
-  // turned off (a signed-in page: only the user may change their preference).
+  // Account → Notifications, where the newsletter is turned off.
   manageUrl: string;
 }
 
-// One changelog entry, sent to every confirmed subscriber the moment the entry
-// is live on docs.carbon.ms (see packages/jobs changelog-dispatch). Same card as
-// NotificationEmail — see .claude/rules/email-design.md. No greeting: a
-// subscriber is an email address, not a Carbon user with a name.
+// No greeting: a subscriber is only an email address here.
 export const ChangelogEntryEmail = ({
   title,
   description,
@@ -68,8 +64,6 @@ export const ChangelogEntryEmail = ({
             {title}
           </Heading>
 
-          {/* The description reads as prose, not a boxed record callout — this
-              is an announcement, not a notification about a document. */}
           {description && (
             <Section>
               <Text

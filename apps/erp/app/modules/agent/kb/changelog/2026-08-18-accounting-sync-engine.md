@@ -1,8 +1,8 @@
 # Automation workflows
 
-> Build automations on a canvas — a trigger, conditions, and steps that notify people, update records, or call an outside service. Plus accounting sync for Xero, QuickBooks Online, and Rillet, financial reports, and scrap.
+> Build automations on a canvas from a trigger, conditions, and steps that notify people, update records, or call an outside service. Plus accounting sync for Xero, QuickBooks Online, and Rillet, financial reports, and scrap.
 
-A `docs/reference/workflows` watches for something happening in Carbon and then does something about it: notify the account manager when a sales order changes hands, open an issue when a job is put on hold, or call your own service when a shipment is posted. You build one on a canvas under Automate → Workflows — steps are cards you connect by their handles, so one trigger can fan out into branches — and press Publish. Every run is recorded step by step in `docs/reference/workflow-runs`.
+A `docs/reference/workflows` watches for something happening in Carbon and then does something about it: notify the account manager when a sales order changes hands, open an issue when a job is put on hold, or call your own service when a shipment is posted. You build one on a canvas under Automate → Workflows and press Publish. Steps are cards you connect by their handles, so one trigger can fan out into branches. Every run is recorded step by step in `docs/reference/workflow-runs`.
 
 ## Accounting sync and financial reports
 
@@ -17,7 +17,7 @@ Scrap serials and subcomponents from MES or stock from the ERP, with a scrap-rea
 - Business dates follow the company and location timezones, with a shared date-time control and a searchable timezone picker.
 - Picked-material return timing (at job or operation), and batch splits keep the parent's identity.
 - An ITAR certification system covers entity and user certifications, with hardened invites.
-- A platform-wide numeric precision and formatting standard — per-unit prices keep the digits they were typed with.
+- A platform-wide numeric precision and formatting standard. Per-unit prices keep the digits they were typed with.
 - Search modal filter chips are ordered by likely use.
 - The guides carry real product screenshots.
 

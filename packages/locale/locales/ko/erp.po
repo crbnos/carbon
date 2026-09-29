@@ -6468,9 +6468,6 @@ msgstr "1일 후 예정"
 msgid "due now"
 msgstr "즉시"
 
-msgid "Due within"
-msgstr "다음 기간 이내"
-
 msgid "Duplicate"
 msgstr "복제"
 

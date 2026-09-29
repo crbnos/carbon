@@ -232,6 +232,7 @@ export const manifest = {
   changeOrderRequiredAction: company("parts"),
   changeOrderSupersession: company("parts", { read: "parts_view" }),
   changeOrderType: company("parts"),
+  changelogDispatch: serviceOnly(),
   company: policies({
     select: and(
       isNotNull("companyGroupId"),

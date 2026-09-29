@@ -6468,9 +6468,6 @@ msgstr "dovuto tra 1 giorno"
 msgid "due now"
 msgstr "dovuto ora"
 
-msgid "Due within"
-msgstr "Scadenza entro"
-
 msgid "Duplicate"
 msgstr "Duplica"
 

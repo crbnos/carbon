@@ -11,13 +11,8 @@ type ChangelogPanelProps = {
   onDismiss: () => void;
 };
 
-/**
- * Linear-style "What's new" card, shown bottom-right like the training panel:
- * NEW pill, the newest changelog entry's title and description, Dismiss, and a
- * link to the entry on the docs feed. The link goes to the feed's anchor for the
- * entry (`#<slug>`) rather than the guid permalink: `path.to.changelog` carries
- * the instance hint, and the feed page is where the Subscribe popover reads it.
- */
+// The link opens the docs feed at the entry's anchor, not its permalink:
+// path.to.changelog carries the instance hint the feed's Subscribe popover reads.
 export default function ChangelogPanel({
   entry,
   isOpen,

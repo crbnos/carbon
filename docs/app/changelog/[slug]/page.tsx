@@ -8,8 +8,6 @@ import { changelogSource, getChangelogEntries } from "@/lib/source";
 
 type Params = { params: Promise<{ slug: string }> };
 
-/** Permalink page for one changelog entry — the shareable, canonical URL.
- *  Same anatomy as a feed entry: date + tags, big title, optional hero, prose. */
 export default async function ChangelogEntryPage(props: Params) {
   const { slug } = await props.params;
   const page = changelogSource.getPage([slug]);

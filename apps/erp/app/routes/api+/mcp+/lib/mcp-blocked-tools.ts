@@ -3,9 +3,7 @@
  * Keep this list small; add only operations that must never run via /api/mcp.
  */
 export const MCP_BLOCKED_TOOL_NAMES: readonly string[] = [
-  // Reads the service-role-only changelog ledger for the ERP shell's What's new
-  // panel. Its one argument is that service-role client, which no API or MCP
-  // caller supplies, and the data is public on docs.carbon.ms anyway.
+  // Needs a service-role client as its argument, which no API or MCP caller has.
   "account_getChangelogPanelEntry",
   "settings_seedCompany",
   // Creating a company is an account-level operation that must not be exposed

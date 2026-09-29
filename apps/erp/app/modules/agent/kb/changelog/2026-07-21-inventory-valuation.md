@@ -2,7 +2,7 @@
 
 > Draft an engineering change against real methods, review it as a diff, and release it so planning supersedes the versions it replaces. Plus inventory valuation, Service items, and assembly instructions.
 
-A `docs/reference/change-orders` groups the parts whose designs are changing, revises each one on a hidden draft, and releases them together — answering what changed, who owns it, and what the new version supersedes, without touching a live method until release. You pick the affected items, edit each one's real bill of materials and bill of process inside the notice, review it as a diff with new part properties highlighted, and link issues to it. Change notices live under Items → Change notices.
+A `docs/reference/change-orders` groups the parts whose designs are changing, revises each one on a hidden draft, and releases them together. It answers what changed, who owns it, and what the new version supersedes, without touching a live method until release. You pick the affected items, edit each one's real bill of materials and bill of process inside the notice, review it as a diff with new part properties highlighted, and link issues to it. Change notices live under Items → Change notices.
 
 ## Inventory valuation and Service items
 

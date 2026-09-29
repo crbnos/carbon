@@ -449,8 +449,7 @@ export const path = {
     calibrations: `${x}/quality/calibrations`,
     cancelPurchasingRfq: (id: string) =>
       generatePath(`${x}/purchasing-rfq/${id}/cancel`),
-    // The docs' Subscribe popover links back to Account → Notifications on the
-    // reader's OWN instance, which it learns from the `?app=` hint.
+    // The `?app=` hint lets the docs' Subscribe popover link to this instance.
     changelog: withDocsHost("https://docs.carbon.ms/changelog"),
     changeNotice: (id: string) =>
       generatePath(`${x}/items/change-notice/${id}`),

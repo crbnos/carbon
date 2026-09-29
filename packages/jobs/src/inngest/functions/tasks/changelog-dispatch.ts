@@ -13,51 +13,32 @@ import {
 } from "./changelog-dispatch.feed";
 
 /**
- * Changelog subscription pipeline (.ai/plans/2026-09-05-changelog-subscriptions.md).
- *
- * The docs site's RSS feed is the source of truth for "published": an entry is
- * live once its MDX merges and Vercel deploys. The dispatcher reads that feed,
- * diffs its GUIDs against the `changelogDispatch` ledger, and fans anything new
- * out to confirmed subscribers.
- *
- * It runs ON DEMAND only — send `carbon/changelog-dispatch` (Inngest dashboard
- * or event API) after an entry is published. There is no cron and no
- * merge-triggered workflow. The ledger row is what makes a repeated send safe.
+ * Emails new changelog entries to newsletter subscribers. Runs when
+ * `carbon/changelog-dispatch` is sent after an entry is published; the
+ * `changelogDispatch` ledger makes sending it again safe.
  */
 
-/** Explicit env wins; the local dev marker (INNGEST_DEV) points at the local
- *  docs server, production at docs.carbon.ms. */
 const CHANGELOG_FEED_URL =
   process.env.CHANGELOG_FEED_URL ??
   (process.env.INNGEST_DEV
     ? "http://localhost:3002/changelog/rss.xml"
     : "https://docs.carbon.ms/changelog/rss.xml");
 
-/** A run sent right after a merge races the Vercel deploy — the feed only
- *  updates when the deploy finishes. So a run re-checks a few times before
- *  giving up; send the event again once the entry is visible. */
+// A run sent right after a merge can beat the docs deploy, so the feed is
+// re-checked a few times before giving up.
 const FEED_ATTEMPTS = 5;
 
-/** Recipients per durable send step. Email goes through the shared SMTP
- *  transport (`@carbon/lib/email.server`), one message per recipient — there
- *  is no batch API — so a big list is split into steps: each is one short
- *  invocation of the Inngest route, and a retry after a failure resumes at
- *  the chunk that failed instead of re-sending the ones that finished. */
+// One durable step per chunk of recipients: a retry resumes at the failed
+// chunk instead of re-sending the ones before it.
 const SEND_CHUNK_SIZE = 50;
 
-/** Where a reader turns the newsletter off: Account → Notifications in the ERP
- *  (path.to.notificationSettings — a signed-in page, since only the user may
- *  change their own preference). Same URL for every recipient. */
+// Account → Notifications, where a reader turns the newsletter off.
 const MANAGE_URL = `${ERP_URL.replace(/\/$/, "")}/x/account/notifications`;
 
-/**
- * Newsletter recipients: every user with an enabled (topic changelog, channel
- * email) preference. The preference is per company, the newsletter is not —
- * a user in two companies who opted in from either gets ONE email, so the
- * rows are collapsed by user.
- */
 type DispatchPlan = ReturnType<typeof planDispatch>;
 
+// The preference is per company but the newsletter is not, so a user opted in
+// from two companies still gets one email.
 async function getNewsletterRecipients(): Promise<string[]> {
   const db = getJobDatabaseClient();
   const rows = await db
@@ -74,16 +55,13 @@ async function getNewsletterRecipients(): Promise<string[]> {
   return rows.map((row) => row.email).filter((email) => email.length > 0);
 }
 
-/** Sends one entry to one chunk of recipients; returns how many were sent.
- *  Zero with no error means the transport is not configured (email disabled). */
+// Returns how many were sent; 0 with no error means email is not configured.
 async function sendEntryToRecipients(
   entry: DispatchPlan["send"][number],
   recipients: string[]
 ): Promise<number> {
-  // One render per chunk — nothing in the email is per-recipient.
-  // List-Unsubscribe points at the signed-in settings page; there is
-  // deliberately no List-Unsubscribe-Post (one-click needs an
-  // unauthenticated endpoint, which this design does not have).
+  // No List-Unsubscribe-Post: one-click unsubscribe needs an unauthenticated
+  // endpoint, and the preference lives behind sign-in.
   const { subject, text } = entryEmailContent(entry, MANAGE_URL);
   const html = await render(
     ChangelogEntryEmail({
@@ -96,8 +74,7 @@ async function sendEntryToRecipients(
   );
 
   let sent = 0;
-  // Sequential on purpose: the relay rate-limits, and a throttled send fails
-  // the step, which would re-send the whole chunk on retry.
+  // Sequential: the mail relay rate-limits.
   for (const to of recipients) {
     const response = await sendEmail({
       from: DEFAULT_FROM,
@@ -110,7 +87,6 @@ async function sendEntryToRecipients(
     if (response.error) {
       throw new Error(`Email error: ${response.error.message}`);
     }
-    // data is null when SMTP is not configured — email is disabled.
     if (response.data) sent += 1;
   }
   return sent;
@@ -169,7 +145,8 @@ export const changelogDispatchFunction = inngest.createFunction(
     }
 
     if (plan.bootstrap.length > 0) {
-      // First run ever: seed the ledger with the current feed, send nothing.
+      // First run: record the current feed without sending, so launch does
+      // not mail the whole back-catalogue.
       await step.run("bootstrap-ledger", async () => {
         const db = getJobDatabaseClient();
         await db
@@ -179,10 +156,8 @@ export const changelogDispatchFunction = inngest.createFunction(
               guid: entry.guid,
               title: entry.title,
               description: entry.description,
-              // One statement seeds every row, so the NOW() default would give
-              // them all the same timestamp and leave "latest" arbitrary for
-              // the What's new panel. Stamp the feed's publication date instead
-              // — Postgres parses the RFC 822 pubDate directly, no JS Date.
+              // NOW() would give every row the same time and make the What's new
+              // panel's "latest" arbitrary. Postgres parses the RFC 822 date.
               ...(entry.pubDate ? { dispatchedAt: entry.pubDate } : {}),
               emailsSent: 0
             }))
@@ -205,16 +180,12 @@ export const changelogDispatchFunction = inngest.createFunction(
     // Feed is newest-first; send oldest-first so a backlog arrives in order.
     let dispatched = 0;
     for (const entry of [...newEntries].reverse()) {
-      // The recipient list is memoised as a step so every chunk of this entry
-      // — and every retry — works from the same list.
+      // A step, so every chunk and retry works from the same list.
       const subscribers = await step.run(
         `recipients-${entry.guid}`,
         getNewsletterRecipients
       );
 
-      // One durable step per chunk: a failed chunk is retried on its own, and
-      // the chunks before it are never re-sent. The ledger row (below) still
-      // guards against re-dispatching a finished entry.
       let emailsSent = 0;
       for (let i = 0; i < subscribers.length; i += SEND_CHUNK_SIZE) {
         const chunk = subscribers.slice(i, i + SEND_CHUNK_SIZE);
@@ -224,9 +195,8 @@ export const changelogDispatchFunction = inngest.createFunction(
         );
       }
       if (subscribers.length > 0 && emailsSent === 0) {
-        // sendEmail returns data: null with no error when no transport is
-        // configured. Ledgering the entry now would mark it dispatched for
-        // good, and nobody would ever get it once mail is configured.
+        // Ledgering it now would mark it sent for good, and nobody would get
+        // it once mail is configured.
         throw new Error(
           `No changelog email was delivered for ${entry.guid} — mail transport not configured; refusing to ledger the dispatch`
         );
@@ -234,8 +204,6 @@ export const changelogDispatchFunction = inngest.createFunction(
 
       await step.run(`ledger-${entry.guid}`, async () => {
         const db = getJobDatabaseClient();
-        // Conflict-tolerant: a concurrent run that already ledgered this guid
-        // (shouldn't happen under concurrency 1, but cheap to be safe).
         await db
           .insertInto("changelogDispatch")
           .values({

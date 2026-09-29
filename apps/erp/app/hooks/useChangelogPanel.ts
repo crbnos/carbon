@@ -5,14 +5,8 @@ import { changelogFlagKey } from "~/modules/users";
 import { path } from "~/utils/path";
 import { useUser } from "./useUser";
 
-/**
- * The bottom-right "What's new" panel — same mechanics as useTrainingPanel.
- * The entry comes from the app-shell loader (`changelog`); a dismissal is the
- * user flag `changelog:<slug>` = true, written through /x/acknowledge's
- * generic `flag` intent, so it holds per account on every device. The panel
- * hides optimistically while that write is in flight, and a newer entry has
- * a different slug, so it shows again.
- */
+// Dismissing sets the user flag `changelog:<slug>`, so it holds on every device;
+// a newer entry has a new slug and shows again.
 export function useChangelogPanel(): {
   entry: ChangelogPanelEntry | null;
   isOpen: boolean;

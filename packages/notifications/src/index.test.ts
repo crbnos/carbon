@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { renderInlineLinks, renderSlackMrkdwn } from "./index";
+import {
+  getNotificationTopicChannels,
+  isNotificationTopicEnabledByDefault,
+  NotificationTopic,
+  renderInlineLinks,
+  renderSlackMrkdwn,
+  USER_FACING_NOTIFICATION_TOPICS
+} from "./index";
 
 const ORIGIN = "https://app.carbon.ms";
 const HREF = `${ORIGIN}/api/link?event=workflow&documentId=so_1`;
@@ -84,5 +91,33 @@ describe("renderSlackMrkdwn", () => {
 
   it("returns an empty string for an empty message", () => {
     expect(renderSlackMrkdwn("", ORIGIN)).toBe("");
+  });
+});
+
+describe("notification topic settings", () => {
+  it("lists the changelog newsletter on the settings page", () => {
+    expect(USER_FACING_NOTIFICATION_TOPICS).toContain(
+      NotificationTopic.Changelog
+    );
+  });
+
+  it("offers only email for the changelog newsletter", () => {
+    expect(getNotificationTopicChannels(NotificationTopic.Changelog)).toEqual([
+      "email"
+    ]);
+    expect(getNotificationTopicChannels(NotificationTopic.Job)).toEqual([
+      "email",
+      "slack"
+    ]);
+  });
+
+  it("treats a missing preference as off only for the opt-in newsletter", () => {
+    expect(
+      isNotificationTopicEnabledByDefault(NotificationTopic.Changelog)
+    ).toBe(false);
+    for (const topic of USER_FACING_NOTIFICATION_TOPICS) {
+      if (topic === NotificationTopic.Changelog) continue;
+      expect(isNotificationTopicEnabledByDefault(topic)).toBe(true);
+    }
   });
 });

@@ -1,9 +1,6 @@
 import type { ReactNode } from "react";
 
-/** A Linear-style disclosure for a changelog entry's secondary lists
- *  ("Improvements", "Fixes") — the headline feature stays in open prose and the
- *  long tail collapses behind a click. Native <details>, so it works with no JS
- *  and stays open-able from a find-in-page. Warm-paper chrome. */
+// Native <details>: works without JS and stays open-able from find-in-page.
 export function Accordion({
   title,
   children,

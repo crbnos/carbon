@@ -6468,9 +6468,6 @@ msgstr "dû dans 1 jour"
 msgid "due now"
 msgstr "dû maintenant"
 
-msgid "Due within"
-msgstr "Échéance dans"
-
 msgid "Duplicate"
 msgstr "Dupliquer"
 

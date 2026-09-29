@@ -1,12 +1,6 @@
 "use client";
 
-/**
- * The changelog's Subscribe popover — email, RSS, Slack — the three channels
- * Linear offers. Email is managed from the reader's Carbon account (Account →
- * Notifications → "Changelog newsletter"), the way Linear does it: the
- * account's verified sign-in email is what gets subscribed, so there is no
- * form here and no double opt-in. RSS and Slack are copy-to-clipboard rows.
- */
+// Email is managed from the reader's Carbon account, so there is no form here.
 
 import { useEffect, useRef, useState } from "react";
 import { DEFAULT_APP_ORIGIN } from "./api/config-constants";
@@ -14,13 +8,10 @@ import { ApiConfigProvider, appOrigin, useApiConfig } from "./api/config-context
 
 const FEED_URL = "https://docs.carbon.ms/changelog/rss.xml";
 const SLACK_COMMAND = `/feed subscribe ${FEED_URL}`;
-// path.to.notificationSettings in the ERP.
 const NEWSLETTER_SETTINGS_PATH = "/x/account/notifications";
 
-/** The settings page on the reader's OWN instance when it is known — the region
- *  they picked on the API pages, or the `?app=` hint a referring ERP adds to its
- *  docs links — and Carbon Cloud US otherwise. A hardcoded app.carbon.ms sent EU,
- *  ITAR and self-hosted readers to an account they cannot sign in to. */
+// The reader's own instance when known (API-page region or the ERP's `?app=`
+// hint), else Carbon Cloud US.
 function useNewsletterSettingsUrl(): string {
   const { base, appBase } = useApiConfig();
   return `${appOrigin(base, appBase) ?? DEFAULT_APP_ORIGIN}${NEWSLETTER_SETTINGS_PATH}`;
@@ -53,8 +44,7 @@ function CopyRow({ label, value }: { label: string; value: string }) {
   );
 }
 
-/** The popover reads the reader's instance through the same provider the API
- *  pages use; the changelog is outside that layout, so it mounts its own. */
+// The changelog sits outside the API layout, so it mounts its own provider.
 export function ChangelogSubscribe() {
   return (
     <ApiConfigProvider>

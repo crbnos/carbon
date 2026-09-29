@@ -31,17 +31,14 @@ export const guide = defineDocs({
   },
 });
 
-// The changelog. One file per dated entry (content/changelog/YYYY-MM-DD-slug.mdx);
-// Carbon deploys continuously with no versions, so `date` — not a version — is the
-// ordering key. `tags` label the affected areas (e.g. "accounting", "mes").
+// One file per dated entry. Carbon has no versions, so `date` is the ordering key.
 export const changelog = defineDocs({
   dir: "content/changelog",
   docs: {
     schema: pageSchema.extend({
       date: z.string().date(),
       tags: z.array(z.string()).default([]),
-      // Optional hero image (a path under /public, e.g. "/changelog/gantt.png"),
-      // rendered above the entry body like a Linear changelog card.
+      // Optional hero image, a path under /public.
       image: z.string().optional(),
     }),
   },

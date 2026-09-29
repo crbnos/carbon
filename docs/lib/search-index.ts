@@ -175,7 +175,7 @@ export function buildSearchIndexes(): AdvancedIndex[] {
     ...mdxIndexes(otherDocs, "docs", "Reference"),
     ...(glossaryPage ? [glossaryIndex(glossaryPage)] : []),
     ...mdxIndexes(guideSource.getPages(), "guide", "Guide"),
-    // No surface pill of its own — entries surface under "All" (tag undefined).
+    // No pill of its own; entries show under All.
     ...mdxIndexes(changelogSource.getPages(), "changelog", "Changelog"),
     ...resourceIndexes(),
     ...toolIndexes(),

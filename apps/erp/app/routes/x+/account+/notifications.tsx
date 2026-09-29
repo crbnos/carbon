@@ -5,6 +5,9 @@ import { flash } from "@carbon/auth/session.server";
 import { companyHasFeature } from "@carbon/ee/plan.server";
 import { validationError, validator } from "@carbon/form";
 import {
+  getNotificationTopicChannels,
+  isNotificationTopicEnabledByDefault,
+  type NotificationPreferenceChannel,
   NotificationTopic,
   USER_FACING_NOTIFICATION_TOPICS
 } from "@carbon/notifications";
@@ -34,7 +37,7 @@ export const handle: Handle = {
   to: path.to.notificationSettings
 };
 
-type Channel = "email" | "slack";
+type Channel = NotificationPreferenceChannel;
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, userId, companyId } = await requirePermissions(request, {});
@@ -102,7 +105,7 @@ export default function AccountNotifications() {
   // Labels live here rather than @carbon/notifications so Lingui extracts them.
   const topicLabels: Record<NotificationTopic, string> = {
     [NotificationTopic.Approval]: t`Approvals`,
-    [NotificationTopic.Changelog]: t`Changelog`,
+    [NotificationTopic.Changelog]: t`Changelog newsletter`,
     [NotificationTopic.General]: t`General`,
     [NotificationTopic.Inventory]: t`Inventory`,
     [NotificationTopic.Items]: t`Items`,
@@ -116,13 +119,8 @@ export default function AccountNotifications() {
     [NotificationTopic.Training]: t`Training`
   };
 
-  // Absence of a row = `fallback` (enabled, except the opt-in newsletter);
-  // in-flight toggles win over loader data.
-  const isEnabled = (
-    topic: NotificationTopic,
-    channel: Channel,
-    fallback = true
-  ) => {
+  // No row means the topic's default; in-flight toggles win over loader data.
+  const isEnabled = (topic: NotificationTopic, channel: Channel) => {
     let pending: boolean | undefined;
     for (const fetcher of fetchers) {
       if (
@@ -136,7 +134,7 @@ export default function AccountNotifications() {
     const row = preferences.find(
       (p) => p.topic === topic && p.channel === channel
     );
-    return row ? row.enabled : fallback;
+    return row ? row.enabled : isNotificationTopicEnabledByDefault(topic);
   };
 
   // A cell with a submission in flight is disabled: overlapping upserts for
@@ -207,64 +205,35 @@ export default function AccountNotifications() {
               </tr>
             </thead>
             <tbody>
-              {USER_FACING_NOTIFICATION_TOPICS.map((topic) => (
-                <tr
-                  key={topic}
-                  className="border-b border-border last:border-0"
-                >
-                  <td className="text-sm py-3">{topicLabels[topic]}</td>
+              {USER_FACING_NOTIFICATION_TOPICS.map((topic) => {
+                const channels = getNotificationTopicChannels(topic);
+                const cell = (channel: Channel, label: string) => (
                   <td className="py-3 w-24">
-                    <div className="flex justify-center">
-                      <Switch
-                        checked={isEnabled(topic, "email")}
-                        disabled={isPending(topic, "email")}
-                        onCheckedChange={(checked) =>
-                          toggle(topic, "email", checked)
-                        }
-                        aria-label={`${topicLabels[topic]} ${t`email`}`}
-                      />
-                    </div>
-                  </td>
-                  {slackActive && (
-                    <td className="py-3 w-24">
+                    {channels.includes(channel) && (
                       <div className="flex justify-center">
                         <Switch
-                          checked={isEnabled(topic, "slack")}
-                          disabled={isPending(topic, "slack")}
+                          checked={isEnabled(topic, channel)}
+                          disabled={isPending(topic, channel)}
                           onCheckedChange={(checked) =>
-                            toggle(topic, "slack", checked)
+                            toggle(topic, channel, checked)
                           }
-                          aria-label={`${topicLabels[topic]} ${t`Slack`}`}
+                          aria-label={`${topicLabels[topic]} ${label}`}
                         />
                       </div>
-                    </td>
-                  )}
-                </tr>
-              ))}
-              {/* The changelog newsletter is a row like any topic, but opt-in
-                  (no row = off) and email-only — there is no Slack delivery. */}
-              <tr className="border-b border-border last:border-0">
-                <td className="text-sm py-3">
-                  <Trans>Changelog newsletter</Trans>
-                </td>
-                <td className="py-3 w-24">
-                  <div className="flex justify-center">
-                    <Switch
-                      checked={isEnabled(
-                        NotificationTopic.Changelog,
-                        "email",
-                        false
-                      )}
-                      disabled={isPending(NotificationTopic.Changelog, "email")}
-                      onCheckedChange={(checked) =>
-                        toggle(NotificationTopic.Changelog, "email", checked)
-                      }
-                      aria-label={t`Changelog newsletter`}
-                    />
-                  </div>
-                </td>
-                {slackActive && <td className="py-3 w-24" />}
-              </tr>
+                    )}
+                  </td>
+                );
+                return (
+                  <tr
+                    key={topic}
+                    className="border-b border-border last:border-0"
+                  >
+                    <td className="text-sm py-3">{topicLabels[topic]}</td>
+                    {cell("email", t`email`)}
+                    {slackActive && cell("slack", t`Slack`)}
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </CardContent>
