@@ -362,6 +362,17 @@ export function indexFieldErrors(
   return out;
 }
 
+/** Errors for `key` are stale once the user edits that row again. */
+export function clearFieldErrors(
+  fieldErrors: Record<string, string[]>,
+  key: string
+): Record<string, string[]> {
+  if (!(key in fieldErrors)) return fieldErrors;
+  const out = { ...fieldErrors };
+  delete out[key];
+  return out;
+}
+
 /**
  * plan-release reports assemblies whose BOM could not be read (their lines
  * are stored empty rather than failing the plan). The panel renders them as

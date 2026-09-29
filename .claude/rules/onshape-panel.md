@@ -222,10 +222,18 @@ company, `companyIntegration.metadata.propertyMap`. Entry:
 `{ onshapePropertyId, onshapeName, valueType, carbonFieldId, mode }`.
 Pure logic in `packages/ee/src/onshape/panel/properties.ts` (tested).
 
-- THERE IS NO EDITOR. The panel's Fields editor and its route were removed; an
-  existing map keeps working. Where editing should live is undecided: the
-  editor listed the open document's properties, and Carbon's settings page has
-  no document and the client has no company property-schema call.
+- The editor is the panel's **Fields** page, the one setting the panel keeps:
+  Onshape lists properties only from inside a document (the metadata API has no
+  company property-schema call), so Carbon's integration page has nothing to
+  offer. `api+/integrations.onshape.panel.fields.ts`: GET lists the current
+  element's properties (a part studio's as the union across its parts, hidden
+  ones included; an assembly's from element metadata), the map and the part
+  custom field definitions; POST replaces the whole map. Both take settings
+  update; `panel.me` returns `canEditFields` and the panel shows the page only
+  then. The page loads when opened and posts every entry, including ones mapped
+  from other elements, so saving here never unmaps them. A mapping needs an
+  existing Carbon field; the save refuses unmappable types, two properties on
+  one field, and deleted fields (422, pinned per property).
 - ONE mode: `parsePropertyMap` reads every entry as `owned` — Onshape writes the
   field on every push. A stored `"default"` is treated as owned. Nothing on the
   item page locks mapped custom fields; they stay editable until the next push
