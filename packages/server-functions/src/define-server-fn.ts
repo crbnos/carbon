@@ -27,6 +27,8 @@ export type ServerFn<S extends z.ZodType, R> = {
     input: z.input<S> & { companyId: string; userId: string }
   ): Promise<ServerFnResult<R>>;
   readonly serverFnName: string;
+  /** What the caller needs, as declared (see `PermissionRule`). */
+  readonly permissions: PermissionRule<z.output<S>>;
 };
 
 /**
@@ -90,6 +92,7 @@ export function defineServerFn<S extends z.ZodType, R>({
 
   return Object.assign(call, {
     serverFnName: name,
+    permissions,
     withClient: async (
       client: SupabaseClient<Database>,
       db: Kysely<KyselyDatabase>,

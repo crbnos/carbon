@@ -14,7 +14,7 @@
 --
 -- The event URL carries the event key (`<base>/e/<key>`), so it lives in Vault,
 -- not in "config" (which has a SELECT policy). CI writes it on every deploy and
--- `crbn up` / `crbn migrate` locally, through util.set_inngest_event_url().
+-- `crbn up` / `crbn migrate` locally, through public.set_inngest_event_url().
 
 CREATE SCHEMA IF NOT EXISTS util;
 
@@ -98,8 +98,8 @@ COMMENT ON FUNCTION util.wake_event_queue() IS 'Sends carbon/event-queue.process
 
 -- ----------------------------------------------------------------------------
 -- 4. Job-completed notification
---    (body copied forward from 20260414000000_fix-sync-finish-job-operation.sql;
---     only the notify call changed)
+--    (body copied forward from 20260410031803_job-interceptors.sql, SECURITY
+--     INVOKER since 20260925121735; only the notify call changed)
 -- ----------------------------------------------------------------------------
 CREATE OR REPLACE FUNCTION public.sync_job_complete_or_canceled(
   p_table TEXT,
@@ -184,3 +184,4 @@ REVOKE ALL ON FUNCTION util.process_embeddings() FROM PUBLIC;
 -- ----------------------------------------------------------------------------
 DROP FUNCTION IF EXISTS util.invoke_edge_function(TEXT, JSONB, INTEGER);
 DROP FUNCTION IF EXISTS util.api_url();
+DROP FUNCTION IF EXISTS util.anon_key();

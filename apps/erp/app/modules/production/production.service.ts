@@ -341,7 +341,7 @@ export async function convertSalesOrderLinesToJobs(
 
           if (upsertMethod.error) {
             errors.push(
-              `Failed to create method for job ${nextSequence.data} (Line item ${line.itemReadableId}): ${upsertMethod.error.message}`
+              `Failed to create method for job ${nextSequence.data} (Line item ${line.itemReadableId}): ${upsertMethod.error.message || "unknown error"}`
             );
             continue;
           }
@@ -356,7 +356,7 @@ export async function convertSalesOrderLinesToJobs(
 
           if (upsertMethod.error) {
             errors.push(
-              `Failed to create method for job ${nextSequence.data} (Line item ${line.itemReadableId}): ${upsertMethod.error.message}`
+              `Failed to create method for job ${nextSequence.data} (Line item ${line.itemReadableId}): ${upsertMethod.error.message || "unknown error"}`
             );
             continue;
           }

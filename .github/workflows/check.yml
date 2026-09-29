@@ -189,11 +189,18 @@ jobs:
       - uses: denoland/setup-deno@v2
         with:
           deno-version: v2.x
-      # Typecheck only: each function is self-contained and imports nothing
-      # from outside its own directory, so this needs no permissions.
+      # Each function is self-contained: it imports nothing from outside its
+      # own directory, so this needs no permissions.
+      - name: Self-contained
+        working-directory: packages/database/supabase/functions
+        run: |
+          if grep -rnE "from ['\"]\.\./" --include='*.ts' .; then
+            echo "Edge functions must not import from outside their own directory" >&2
+            exit 1
+          fi
       - name: Check
         working-directory: packages/database/supabase/functions
-        run: deno check --no-lock embedding/index.ts thumbnail/index.ts
+        run: deno check --no-lock */index.ts
 
   audit:
     name: Audit

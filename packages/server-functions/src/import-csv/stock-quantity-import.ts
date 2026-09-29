@@ -247,7 +247,7 @@ export async function importStockQuantities(
   const today = datetime
     .today(await getCompanyTimeZone(client, companyId))
     .toString();
-  const nowIso = new Date().toISOString();
+  const nowIso = datetime.timestamp();
 
   const accountingSettings = await client
     .from("companySettings")

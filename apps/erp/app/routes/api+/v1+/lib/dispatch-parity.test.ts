@@ -664,6 +664,22 @@ describe("dispatchOperation service-call contract (golden, ex-executeFunction pa
     expect(orpcError.message).toBe("The operation could not be completed.");
   });
 
+  it("k4. an authored refusal from a 500-default operation is the caller's (BAD_REQUEST)", async () => {
+    spies.getAccountLedger.mockReset();
+    spies.getAccountLedger.mockResolvedValue({
+      data: null,
+      error: new ServerFnError("Receipt is already posted")
+    });
+    const r = await runDispatch(
+      "accounting_getAccountLedger",
+      spies.getAccountLedger,
+      {}
+    );
+    const orpcError = r.dispatchError as ORPCError<string, unknown>;
+    expect(orpcError.code).toBe("BAD_REQUEST");
+    expect(orpcError.message).toBe("Receipt is already posted");
+  });
+
   it("l. a single-key payload whose key matches no param is unwrapped positionally", async () => {
     const r = await runDispatch(
       "account_upsertNotificationPreference",

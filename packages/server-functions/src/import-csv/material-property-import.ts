@@ -1,5 +1,6 @@
 import type { KyselyDatabase } from "@carbon/database/client";
 import { getLogger } from "@carbon/logger";
+import { datetime } from "@carbon/utils";
 import type { Kysely, Transaction } from "kysely";
 import { inChunks } from "./chunks";
 
@@ -108,7 +109,7 @@ const CONFIGS: Record<MaterialPropertyTable, TableConfig> = {
       return new Set(rows.map((x) => `c:${norm(x.code ?? "")}`));
     },
     insert: async (trx, rows, companyId, userId) => {
-      const now = new Date().toISOString();
+      const now = datetime.timestamp();
       const inserted = await inChunks(
         rows.map(
           (r) =>
@@ -150,7 +151,7 @@ const CONFIGS: Record<MaterialPropertyTable, TableConfig> = {
       return new Set(rows.map((x) => `c:${norm(x.code ?? "")}`));
     },
     insert: async (trx, rows, companyId, userId) => {
-      const now = new Date().toISOString();
+      const now = datetime.timestamp();
       const inserted = await inChunks(
         rows.map(
           (r) =>

@@ -1,4 +1,5 @@
 import type { KyselyDatabase } from "@carbon/database/client";
+import { datetime } from "@carbon/utils";
 import type { Transaction } from "kysely";
 
 // Reopen + capacity top-up after scrapping units of a make method, so the
@@ -57,7 +58,7 @@ export async function applyScrapReplacement(
     .set({
       status: "Ready",
       updatedBy: userId,
-      updatedAt: new Date().toISOString()
+      updatedAt: datetime.timestamp()
     })
     .where("jobMakeMethodId", "=", jobMakeMethodId)
     .where("companyId", "=", companyId)
@@ -78,7 +79,7 @@ export async function applyScrapReplacement(
       .set({
         operationQuantity: needed,
         updatedBy: userId,
-        updatedAt: new Date().toISOString()
+        updatedAt: datetime.timestamp()
       })
       .where("id", "=", operation.id)
       .where("companyId", "=", companyId)
@@ -107,7 +108,7 @@ export async function applyScrapReplacement(
           .set({
             scrapQuantity: totalScrapped,
             updatedBy: userId,
-            updatedAt: new Date().toISOString()
+            updatedAt: datetime.timestamp()
           })
           .where("id", "=", jobId)
           .where("companyId", "=", companyId)

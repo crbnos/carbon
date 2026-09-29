@@ -1115,7 +1115,8 @@ export const postPicking = defineServerFn({
             .where("companyId", "=", companyId)
             .select(["id", "jobId", "quantityComplete"])
             .executeTakeFirst();
-          if (!op?.jobId) return;
+          if (!op) throw new NotFoundError("Job operation not found");
+          if (!op.jobId) return;
 
           const job = await trx
             .selectFrom("job")
@@ -1123,7 +1124,8 @@ export const postPicking = defineServerFn({
             .where("companyId", "=", companyId)
             .select(["id", "quantity", "locationId", "status"])
             .executeTakeFirst();
-          if (!job?.locationId) return;
+          if (!job) throw new NotFoundError("Job not found");
+          if (!job.locationId) return;
           const sweepJob = {
             id: job.id,
             quantity: job.quantity,

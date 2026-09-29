@@ -197,13 +197,13 @@ export async function action({ request, params }: ActionFunctionArgs) {
         userId
       }
     );
-    if (mergeResult.error || mergeResult.data?.error) {
+    if (mergeResult.error) {
       return data(
         { completed: true },
         await flash(
           request,
           error(
-            mergeResult.error ?? mergeResult.data?.error,
+            mergeResult.error,
             `Batch completed, but combining lots into ${plannedLotNumber} failed — use "Merge output lots" on the batch`
           )
         )

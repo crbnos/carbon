@@ -1,6 +1,7 @@
 import type { Database } from "@carbon/database";
 import type { KyselyDatabase as DB } from "@carbon/database/client";
 import { getNextSequence } from "@carbon/database/sequence";
+import { datetime } from "@carbon/utils";
 import type { Transaction } from "kysely";
 import { nanoid } from "nanoid";
 import { calculateCOGS } from "./calculate-cogs";
@@ -135,7 +136,7 @@ export async function createAdjustmentJournal(
       companyId: args.companyId,
       sourceType: args.sourceType ?? "Inventory Adjustment",
       status: "Posted",
-      postedAt: new Date().toISOString(),
+      postedAt: datetime.timestamp(),
       postedBy: args.userId,
       createdBy: args.userId
     })

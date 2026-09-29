@@ -18,12 +18,15 @@ let serviceRole: Promise<SupabaseClient<Database>> | undefined;
  * at import when a required variable is unset.
  */
 function serviceRoleClient(): Promise<SupabaseClient<Database>> {
-  serviceRole ??= Promise.all([
-    import("@carbon/auth"),
-    import("@carbon/env")
-  ]).then(([{ getCarbonClient }, { SUPABASE_SERVICE_ROLE_KEY }]) =>
-    getCarbonClient(SUPABASE_SERVICE_ROLE_KEY!)
-  );
+  serviceRole ??= Promise.all([import("@carbon/auth"), import("@carbon/env")])
+    .then(([{ getCarbonClient }, { SUPABASE_SERVICE_ROLE_KEY }]) =>
+      getCarbonClient(SUPABASE_SERVICE_ROLE_KEY!)
+    )
+    .catch((err) => {
+      // A failed first build must not poison every later call.
+      serviceRole = undefined;
+      throw err;
+    });
   return serviceRole;
 }
 

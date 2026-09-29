@@ -1,5 +1,5 @@
 // Pure construction of the GL journal for posting a credit/debit memo. No DB, no
-// I/O, no clock — so it is unit-testable with `deno test`. The driver
+// I/O, no clock — so it is unit-testable. The driver
 // (`post-memo-transaction.ts`) resolves the control + reason account ids, the
 // reason account's class, the accounting period and `journalLineReference` (all
 // impure), then hands them here to compute the balanced double-entry.

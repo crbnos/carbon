@@ -18,7 +18,7 @@ import {
 
 // `buildSupersessionRedirectMap` is the single source of truth for "should this
 // component be swapped for its successor", shared by the MRP engine (planning)
-// and the get-method edge function (job creation) so the two can never disagree.
+// and the get-method server function (job creation) so the two can never disagree.
 // A divergence between them is invisible in the app — the plan and the job it
 // produces simply disagree about which part to consume — so the contract is
 // pinned here rather than by running either caller.

@@ -116,11 +116,10 @@ export async function action({ request }: ActionFunctionArgs) {
       companyId,
       userId
     });
-    if (merge.error || merge.data?.error) {
+    if (merge.error) {
       return {
         success: false,
-        message:
-          (merge.data?.error as string | undefined) ?? "Failed to merge lots"
+        message: getErrorMessage(merge.error, "Failed to merge lots")
       };
     }
     return {

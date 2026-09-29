@@ -3,8 +3,7 @@ import { join } from "node:path";
 import type { SourceFile } from "../check";
 
 // Directories the numeric-precision checks cover: everywhere app code does
-// arithmetic or builds number formatters. The two image functions are pure
-// binary plumbing and the resizers' `Math.round` is pixel geometry.
+// arithmetic or builds number formatters.
 const TYPESCRIPT_ROOTS = [
   "apps/erp/app/components",
   "apps/erp/app/hooks",

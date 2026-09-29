@@ -29,8 +29,9 @@ const logger = getLogger("ee", "stripe-connect", "payments");
 const INTEGRATION = "stripe-connect";
 const SYSTEM_USER = "system";
 
-// Module-level Kysely pool — one connection is enough; we only use it for the
-// replaceInvoiceSettlements transaction path.
+// Module-level Kysely pool, one connection: settlement replacement and the
+// post-payment / void server functions run their transactions on it, so this
+// module's posting is serialized per process.
 const _pool = getPostgresConnectionPool(1);
 const _db = getPostgresClient<KyselyDatabase>(_pool, PostgresDriver);
 

@@ -219,7 +219,15 @@ async function migrate(): Promise<void> {
 
       // Postgres posts its Inngest events (util.send_inngest_event) to this
       // URL; written every deploy so a rotated event key reaches the database.
-      if (workspace.inngest_event_key && database_url && service_role_key) {
+      // Without it the event queue, embeddings and job notifications never
+      // run, so a gap fails the run — after seeding and scripts, which do not
+      // depend on it.
+      if (!workspace.inngest_event_key || !service_role_key) {
+        console.error(
+          `🔴 📨 ${workspace.id} has no Inngest event key or service role key: database events will not be delivered`
+        );
+        hasErrors = true;
+      } else {
         const eventUrl = new URL(
           `e/${workspace.inngest_event_key}`,
           workspace.inngest_base_url ?? "https://inn.gs/"
@@ -229,9 +237,10 @@ async function migrate(): Promise<void> {
           service_role_key
         ).rpc("set_inngest_event_url", { p_url: eventUrl });
         if (eventUrlError) {
-          throw new Error(
-            `Failed to set the Inngest event URL: ${eventUrlError.message}`
+          console.error(
+            `🔴 📨 Failed to set the Inngest event URL for ${workspace.id}: ${eventUrlError.message}`
           );
+          hasErrors = true;
         }
       }
 

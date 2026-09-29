@@ -441,7 +441,14 @@ export async function dispatchOperation(
     // An operation's error is already sanitized (empty when it came from the
     // data layer) and carries its own status.
     if (r.error instanceof ServerFnError) {
-      throw new ORPCError(operationErrorCode(r.error.status), {
+      // A function whose thrown refusals default to 500 still reports its own
+      // message; that is the caller's to fix (as the edge path reported it),
+      // so only a data-layer failure — empty message — stays a server error.
+      const code =
+        r.error.status >= 500 && r.error.message
+          ? "BAD_REQUEST"
+          : operationErrorCode(r.error.status);
+      throw new ORPCError(code, {
         message: r.error.message || "The operation could not be completed."
       });
     }

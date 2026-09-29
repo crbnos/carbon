@@ -1,4 +1,4 @@
-import { assertBalanced, EPSILON, round } from "../.././precision.ts";
+import { assertBalanced, EPSILON, round } from "../../precision.ts";
 import { insertId, insertRow, nextJournalEntryId, rows } from "../sql.ts";
 import type { AccountClass, Ctx } from "../types.ts";
 import {

@@ -69,8 +69,6 @@
   "dependencies": {
     "@internationalized/date": "catalog:",
     "@jitl/quickjs-singlefile-browser-release-sync": "0.32.0",
-    "@logtape/logtape": "catalog:",
-    "@logtape/redaction": "catalog:",
     "@supabase/postgrest-js": "catalog:",
     "cookie": "catalog:",
     "dompurify": "catalog:",

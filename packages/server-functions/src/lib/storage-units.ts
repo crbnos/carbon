@@ -1,4 +1,5 @@
 import type { KyselyDatabase as DB } from "@carbon/database/client";
+import { datetime } from "@carbon/utils";
 import type { Transaction } from "kysely";
 
 export async function getStorageUnitId(
@@ -86,7 +87,7 @@ export async function updatePickMethodDefaultStorageUnitIfNeeded(
         .set({
           defaultStorageUnitId: storageUnitId,
           updatedBy: userId,
-          updatedAt: new Date().toISOString()
+          updatedAt: datetime.timestamp()
         })
         .where("itemId", "=", itemId)
         .where("locationId", "=", locationId)
@@ -102,7 +103,7 @@ export async function updatePickMethodDefaultStorageUnitIfNeeded(
           defaultStorageUnitId: storageUnitId,
           companyId,
           createdBy: userId,
-          createdAt: new Date().toISOString()
+          createdAt: datetime.timestamp()
         })
         .execute();
     }

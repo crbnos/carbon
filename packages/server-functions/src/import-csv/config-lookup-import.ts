@@ -1,5 +1,6 @@
 import type { KyselyDatabase } from "@carbon/database/client";
 import { getLogger } from "@carbon/logger";
+import { datetime } from "@carbon/utils";
 import type { Kysely, Transaction } from "kysely";
 import { inChunks } from "./chunks";
 
@@ -252,7 +253,7 @@ export async function importConfigLookups(
     });
 
     if (accepted.length > 0) {
-      const now = new Date().toISOString();
+      const now = datetime.timestamp();
       const inserted = await inChunks(
         accepted.map(
           (r) =>

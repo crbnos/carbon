@@ -24,6 +24,22 @@ vi.mock("@carbon/planning", () => ({
 vi.mock("@carbon/logger", () => ({
   getLogger: () => ({ error: vi.fn() })
 }));
+// The operations are the edge functions' successors: stub them, as the
+// invoke they replaced was, so the route's own ordering is what is tested.
+vi.mock("@carbon/server-functions/create", () => ({
+  create: {
+    withClient: vi.fn(async () => {
+      events.push("create");
+      return { data: null, error: null };
+    })
+  }
+}));
+vi.mock("@carbon/server-functions/close-job", () => ({
+  closeJob: vi.fn(async () => {
+    events.push("closeJob");
+    return { data: null, error: null };
+  })
+}));
 vi.mock("~/services/database.server", () => ({
   getDatabaseClient: vi.fn(() => ({}))
 }));

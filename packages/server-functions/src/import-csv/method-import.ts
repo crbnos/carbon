@@ -9,6 +9,7 @@
 // component item) is replicated here.
 
 import type { KyselyDatabase } from "@carbon/database/client";
+import { datetime } from "@carbon/utils";
 import type { Kysely, Transaction } from "kysely";
 
 type Rec = Record<string, string>;
@@ -630,7 +631,7 @@ async function writeGroup(
   }
 ): Promise<{ filledAny: boolean; skippedExisting: boolean }> {
   const { companyId, userId } = ctx;
-  const now = () => new Date().toISOString();
+  const now = () => datetime.timestamp();
 
   return await db.transaction().execute(async (trx) => {
     let filledAny = false;
@@ -996,7 +997,7 @@ async function ensureMakeMethod(
           version: 1,
           status: "Draft",
           createdBy: userId,
-          createdAt: new Date().toISOString()
+          createdAt: datetime.timestamp()
         } as never
       ])
       .returning(["id"])
@@ -1024,7 +1025,7 @@ async function ensureMakeMethod(
         version: versionNumber,
         status: "Draft",
         createdBy: userId,
-        createdAt: new Date().toISOString()
+        createdAt: datetime.timestamp()
       } as never
     ])
     .returning(["id"])

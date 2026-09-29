@@ -4,6 +4,7 @@ import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
+import { async } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { getDatabaseClient } from "~/services/database.server";
@@ -45,8 +46,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   // One backflush per recorded step, as if each job had recorded its own.
-  const backflushes = await Promise.all(
-    validation.data.records.map((record) =>
+  // Each backflush is its own transaction on the shared pool: bound them.
+  const backflushes = await async.map(
+    validation.data.records,
+    (record) =>
       backflushUntrackedMaterialsOnStepRecord(
         serviceRole,
         getDatabaseClient(),
@@ -55,8 +58,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
           companyId,
           userId
         }
-      )
-    )
+      ),
+    { concurrency: 4 }
   );
   for (const [i, backflush] of backflushes.entries()) {
     if (backflush.error) {

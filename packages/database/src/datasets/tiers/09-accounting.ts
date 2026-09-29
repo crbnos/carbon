@@ -1,4 +1,4 @@
-import { round } from "../.././precision.ts";
+import { round } from "../../precision.ts";
 import {
   CLOSED_PERIOD_MONTHS_BACK,
   LOCKED_PERIOD_MONTHS_BACK,

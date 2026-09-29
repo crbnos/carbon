@@ -1,11 +1,11 @@
-import { buildMemoJournal } from "../.././build-memo-journal.ts";
-import { buildPaymentJournal } from "../.././build-payment-journal.ts";
+import { buildMemoJournal } from "../../build-memo-journal.ts";
+import { buildPaymentJournal } from "../../build-payment-journal.ts";
 import { accountTypeFromClass, credit, debit } from "../../ledger.ts";
-import { EPSILON, round } from "../.././precision.ts";
+import { EPSILON, round } from "../../precision.ts";
 import {
   buildSalesPostingLines,
   type SalesPostingAccount
-} from "../.././sales-posting-amounts.ts";
+} from "../../sales-posting-amounts.ts";
 import { journalReference } from "../../utils.ts";
 import type { AccountClass } from "../types.ts";
 

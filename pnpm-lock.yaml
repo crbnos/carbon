@@ -2077,12 +2077,6 @@ importers:
       '@jitl/quickjs-singlefile-browser-release-sync':
         specifier: 0.32.0
         version: 0.32.0
-      '@logtape/logtape':
-        specifier: 'catalog:'
-        version: 2.2.3
-      '@logtape/redaction':
-        specifier: 'catalog:'
-        version: 2.2.3(@logtape/logtape@2.2.3)
       '@supabase/postgrest-js':
         specifier: 'catalog:'
         version: 2.80.0
@@ -3798,6 +3792,9 @@ importers:
 
   packages/utils:
     dependencies:
+      '@carbon/database':
+        specifier: workspace:*
+        version: link:../database
       '@internationalized/date':
         specifier: 'catalog:'
         version: 3.12.0
@@ -3829,9 +3826,6 @@ importers:
       '@carbon/config':
         specifier: workspace:*
         version: link:../config
-      '@carbon/database':
-        specifier: workspace:*
-        version: link:../database
       '@types/lodash.template':
         specifier: 4.5.3
         version: 4.5.3
