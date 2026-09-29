@@ -1,4 +1,5 @@
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
+import { postPurchaseInvoice as postPurchaseInvoiceOperation } from "@carbon/operations/post-purchase-invoice";
 import { updatePurchasedPrices } from "@carbon/operations/update-purchased-prices";
 import { getJobDatabaseClient } from "../../../db";
 import { inngest } from "../../client";
@@ -40,20 +41,19 @@ export const postTransactionFunction = inngest.createFunction(
           break;
         case "purchase-invoice":
           logger.info("Posting purchase invoice", { payload });
-          const postPurchaseInvoice = await serviceRole.functions.invoke(
-            "post-purchase-invoice",
+          const postPurchaseInvoice = await postPurchaseInvoiceOperation(
             {
-              body: {
-                invoiceId: payload.documentId,
-                userId: payload.userId,
-                companyId: payload.companyId
-              }
-            }
+              db: getJobDatabaseClient(),
+              companyId: payload.companyId,
+              userId: payload.userId,
+              system: true
+            },
+            { invoiceId: payload.documentId }
           );
 
           result = {
             success: postPurchaseInvoice.error === null,
-            message: postPurchaseInvoice.error?.message
+            message: postPurchaseInvoice.error?.message ?? ""
           };
 
           if (result.success) {

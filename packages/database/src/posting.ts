@@ -30,6 +30,10 @@ export {
   bookAdjustment,
   createAdjustmentJournal
 } from "../supabase/functions/shared/post-adjustment.ts";
+export * from "../supabase/functions/shared/purchase-cost-adjustment.ts";
 export { resolveTrackedEntityBin } from "../supabase/functions/shared/resolve-tracked-entity-bin.ts";
-export { getRemainingQuantityToInvoice } from "../supabase/functions/shared/short-close.ts";
+export {
+  getBillableQuantity,
+  getRemainingQuantityToInvoice
+} from "../supabase/functions/shared/short-close.ts";
 export { toTiptapDoc } from "../supabase/functions/shared/tiptap.ts";

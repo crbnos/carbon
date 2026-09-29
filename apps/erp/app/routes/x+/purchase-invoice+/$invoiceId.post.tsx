@@ -3,6 +3,7 @@ import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { trackWorkEvent } from "@carbon/lib/telemetry";
 import { raiseMoment } from "@carbon/lib/workflows";
 import { getLogger } from "@carbon/logger";
+import { postPurchaseInvoiceAs } from "@carbon/operations/post-purchase-invoice";
 import { updatePurchasedPrices } from "@carbon/operations/update-purchased-prices";
 import type { ActionFunctionArgs } from "react-router";
 import { getCompanySettings } from "~/modules/settings";
@@ -77,16 +78,16 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   try {
     const serviceRole = await getCarbonServiceRole();
-    const postPurchaseInvoice = await serviceRole.functions.invoke<{
-      receiptIds?: string[];
-    }>("post-purchase-invoice", {
-      body: {
+    const postPurchaseInvoice = await postPurchaseInvoiceAs(
+      serviceRole,
+      getDatabaseClient(),
+      {
         invoiceId: invoiceId,
         userId: userId,
         companyId: companyId,
         skipReceiptPost: skipReceiptPost
       }
-    });
+    );
 
     if (postPurchaseInvoice.error) {
       await client

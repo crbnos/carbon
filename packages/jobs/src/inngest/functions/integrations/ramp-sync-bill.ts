@@ -6,6 +6,7 @@ import {
   resolveRampSupplier
 } from "@carbon/ee/ramp.server";
 import { storage } from "@carbon/files";
+import { postPurchaseInvoiceAs } from "@carbon/operations/post-purchase-invoice";
 import { round } from "@carbon/utils";
 import {
   isPostedRampBill,
@@ -187,12 +188,10 @@ export async function postPurchaseInvoice(
 
   let postError: string | undefined;
   try {
-    const posted = await ctx.client.functions.invoke("post-purchase-invoice", {
-      body: {
-        invoiceId: invoiceRowId,
-        userId: "system",
-        companyId: ctx.companyId
-      }
+    const posted = await postPurchaseInvoiceAs(ctx.client, ctx.db, {
+      invoiceId: invoiceRowId,
+      userId: "system",
+      companyId: ctx.companyId
     });
     postError = posted.error?.message;
   } catch (error) {

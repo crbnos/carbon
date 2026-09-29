@@ -4,6 +4,16 @@ import type { RampSyncContext } from "./ramp-sync-shared";
 
 vi.mock("@carbon/env", () => ({ getAppUrl: () => "http://localhost" }));
 
+// The posting operation is the boundary; each fixture installs its own stand-in.
+const posting = vi.hoisted(() => ({
+  invoke: (() => Promise.resolve({ data: null, error: null })) as (
+    ...args: unknown[]
+  ) => Promise<{ data: unknown; error: Error | null }>
+}));
+vi.mock("@carbon/operations/post-purchase-invoice", () => ({
+  postPurchaseInvoiceAs: (...args: unknown[]) => posting.invoke(...args)
+}));
+
 function postingFixture(
   initialStatus: string,
   finalStatus: string,
@@ -19,6 +29,7 @@ function postingFixture(
     row.status = finalStatus;
     return { data: null, error: error ? new Error("response lost") : null };
   });
+  posting.invoke = invoke;
   const client = {
     from: () => {
       let update: Record<string, unknown> | undefined;
@@ -44,8 +55,7 @@ function postingFixture(
           Promise.resolve(execute()).then(resolve)
       };
       return query;
-    },
-    functions: { invoke }
+    }
   };
   return {
     ctx: { client, companyId: "company-1" } as unknown as RampSyncContext,

@@ -1,5 +1,4 @@
-import { toBaseAmount } from "../shared/accounting-currency.ts";
-import { round } from "../shared/precision.ts";
+import { round, toBaseAmount } from "@carbon/utils";
 
 export type PurchasePostingLine = {
   id: string;
@@ -29,7 +28,7 @@ export type PurchasePostingAmounts = {
 /** Both the PO counter and invoice quantity are in purchase units. */
 export function getInvoicedPurchaseQuantityAfterVoid(
   quantityInvoiced: number | null,
-  invoicePurchaseQuantity: number,
+  invoicePurchaseQuantity: number
 ): number {
   return Math.max(0, (quantityInvoiced ?? 0) - invoicePurchaseQuantity);
 }
@@ -39,18 +38,18 @@ export function calculatePurchasePostingAmounts(input: {
   exchangeRate: number;
   supplierShippingCost: number;
 }): PurchasePostingAmounts[] {
-  const lines = input.lines.filter((line) =>
-    line.invoiceLineType !== "Comment"
+  const lines = input.lines.filter(
+    (line) => line.invoiceLineType !== "Comment"
   );
   const headerBase = toBaseAmount(
     input.supplierShippingCost,
-    input.exchangeRate,
+    input.exchangeRate
   );
   const costs = lines.map((line) => {
     const factor = line.conversionFactor ?? 1;
     if (!Number.isFinite(factor) || factor <= 0) {
       throw new Error(
-        `Purchase line ${line.id} conversion factor must be positive and finite`,
+        `Purchase line ${line.id} conversion factor must be positive and finite`
       );
     }
     const nominal = line.quantity * (line.unitPrice ?? 0);
@@ -61,7 +60,7 @@ export function calculatePurchasePostingAmounts(input: {
       (line.supplierShippingCost ?? 0);
     if (
       ![nominal, cost, inventoryQuantity, intercompanyDocumentAmount].every(
-        Number.isFinite,
+        Number.isFinite
       )
     ) {
       throw new Error(`Purchase line ${line.id} amounts must be finite`);
@@ -72,16 +71,15 @@ export function calculatePurchasePostingAmounts(input: {
   let allocatedHeader = 0;
   return lines.map((line, index) => {
     const { nominal, cost, inventoryQuantity, intercompanyDocumentAmount } =
-      costs[index];
-    const weight = totalLinesCost === 0
-      ? 1 / lines.length
-      : cost / totalLinesCost;
+      costs[index]!;
+    const weight =
+      totalLinesCost === 0 ? 1 / lines.length : cost / totalLinesCost;
     // Reconcile the final share to the converted header, so all posted shares
     // retain the total even when an equal allocation crosses internal precision.
     const headerShippingBase = round(
       index === lines.length - 1
         ? headerBase - allocatedHeader
-        : headerBase * weight,
+        : headerBase * weight
     );
     allocatedHeader += headerShippingBase;
     // Generated line fields are already base; only supplier header freight is
@@ -93,10 +91,9 @@ export function calculatePurchasePostingAmounts(input: {
       nominalBaseCost: round(nominal),
       headerShippingBase,
       totalBaseCost,
-      inventoryUnitCost: inventoryQuantity === 0
-        ? 0
-        : totalBaseCost / inventoryQuantity,
-      intercompanyDocumentAmount,
+      inventoryUnitCost:
+        inventoryQuantity === 0 ? 0 : totalBaseCost / inventoryQuantity,
+      intercompanyDocumentAmount
     };
   });
 }
