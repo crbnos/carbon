@@ -83239,7 +83239,7 @@ export type Database = {
         Returns: string[]
       }
       get_direct_ancestors_of_tracked_entities_strict: {
-        Args: { p_tracked_entity_ids: string[] }
+        Args: { p_company_id: string; p_tracked_entity_ids: string[] }
         Returns: {
           activityAttributes: Json
           attributes: Json
@@ -83285,7 +83285,7 @@ export type Database = {
         }[]
       }
       get_direct_descendants_of_tracked_entities_strict: {
-        Args: { p_tracked_entity_ids: string[] }
+        Args: { p_company_id: string; p_tracked_entity_ids: string[] }
         Returns: {
           activityAttributes: Json
           attributes: Json
@@ -83621,7 +83621,7 @@ export type Database = {
         }[]
       }
       get_job_operation_step_records: {
-        Args: { p_job_id: string }
+        Args: { p_company_id: string; p_job_id: string }
         Returns: {
           booleanValue: boolean
           companyId: string

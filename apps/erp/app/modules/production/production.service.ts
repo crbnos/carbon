@@ -1942,12 +1942,14 @@ export async function getJobOperationsByMethodId(
 export async function getJobOperationStepRecords(
   client: SupabaseClient<Database>,
   jobId: string,
+  companyId: string,
   args: GenericQueryFilters & {
     search: string | null;
   }
 ) {
   let query = client.rpc("get_job_operation_step_records", {
-    p_job_id: jobId
+    p_job_id: jobId,
+    p_company_id: companyId
   });
 
   if (args.search) {

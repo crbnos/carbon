@@ -65,7 +65,11 @@ describe("traceability sidebar loader", () => {
     expect(activityQuery.eq).toHaveBeenCalledWith("companyId", "company-1");
     expect(jobQuery.eq).toHaveBeenCalledWith("id", "job-1");
     expect(jobQuery.eq).toHaveBeenCalledWith("companyId", "company-1");
-    expect(fetchJobStepRecords).toHaveBeenCalledWith(client, "job-1");
+    expect(fetchJobStepRecords).toHaveBeenCalledWith(
+      client,
+      "job-1",
+      "company-1"
+    );
   });
 
   it("returns no step records for another company's activity", async () => {

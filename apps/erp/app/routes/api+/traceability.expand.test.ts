@@ -44,6 +44,7 @@ describe("traceability expand loader", () => {
     expect(fetchLineageSubgraph).toHaveBeenCalledWith(
       client,
       "entity-1",
+      "company-1",
       2,
       "both"
     );

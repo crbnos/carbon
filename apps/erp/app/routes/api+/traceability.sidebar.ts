@@ -43,6 +43,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
     return Response.json({ stepRecords: [] as StepRecord[] });
   }
 
-  const stepRecords = await fetchJobStepRecords(client, jobId);
+  const stepRecords = await fetchJobStepRecords(client, jobId, companyId);
   return Response.json({ stepRecords });
 }

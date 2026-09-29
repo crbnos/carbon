@@ -39,6 +39,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const payload = await fetchLineageSubgraph(
     client,
     trackedEntityId,
+    companyId,
     depth,
     direction
   );
