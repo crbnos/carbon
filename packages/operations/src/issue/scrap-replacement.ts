@@ -1,5 +1,5 @@
-import { Transaction } from "kysely";
-import { DB } from "../lib/database.ts";
+import type { KyselyDatabase } from "@carbon/database/client";
+import type { Transaction } from "kysely";
 
 // Reopen + capacity top-up after scrapping units of a make method, so the
 // replacement units can run the FULL routing (spec
@@ -19,7 +19,7 @@ import { DB } from "../lib/database.ts";
 //   replacement units. Make-to-Order children are excluded (their capacity
 //   is their own make method's).
 export async function applyScrapReplacement(
-  trx: Transaction<DB>,
+  trx: Transaction<KyselyDatabase>,
   args: {
     jobMakeMethodId: string;
     jobId: string;
@@ -57,7 +57,7 @@ export async function applyScrapReplacement(
     .set({
       status: "Ready",
       updatedBy: userId,
-      updatedAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
     })
     .where("jobMakeMethodId", "=", jobMakeMethodId)
     .where("companyId", "=", companyId)
@@ -78,9 +78,10 @@ export async function applyScrapReplacement(
       .set({
         operationQuantity: needed,
         updatedBy: userId,
-        updatedAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
       })
       .where("id", "=", operation.id)
+      .where("companyId", "=", companyId)
       .execute();
   }
 
@@ -106,7 +107,7 @@ export async function applyScrapReplacement(
           .set({
             scrapQuantity: totalScrapped,
             updatedBy: userId,
-            updatedAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
           })
           .where("id", "=", jobId)
           .where("companyId", "=", companyId)
@@ -131,10 +132,10 @@ export async function applyScrapReplacement(
         .updateTable("jobMaterial")
         .set({
           estimatedQuantity:
-            Number(material.estimatedQuantity ?? 0) +
-            perParent * addedQuantity,
+            Number(material.estimatedQuantity ?? 0) + perParent * addedQuantity
         })
         .where("id", "=", material.id)
+        .where("companyId", "=", companyId)
         .execute();
     }
   }

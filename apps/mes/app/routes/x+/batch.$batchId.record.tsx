@@ -6,6 +6,7 @@ import { validationError, validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
+import { getDatabaseClient } from "~/services/database.server";
 import { batchStepRecordsValidator } from "~/services/models";
 import {
   backflushUntrackedMaterialsOnStepRecord,
@@ -46,11 +47,15 @@ export async function action({ request, params }: ActionFunctionArgs) {
   // One backflush per recorded step, as if each job had recorded its own.
   const backflushes = await Promise.all(
     validation.data.records.map((record) =>
-      backflushUntrackedMaterialsOnStepRecord(serviceRole, {
-        jobOperationStepId: record.jobOperationStepId,
-        companyId,
-        userId
-      })
+      backflushUntrackedMaterialsOnStepRecord(
+        serviceRole,
+        getDatabaseClient(),
+        {
+          jobOperationStepId: record.jobOperationStepId,
+          companyId,
+          userId
+        }
+      )
     )
   );
   for (const [i, backflush] of backflushes.entries()) {

@@ -3,12 +3,14 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { getLogger } from "@carbon/logger";
+import { issueAs } from "@carbon/operations/issue";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
 import {
   getMaintenanceDispatch,
   isMaintenanceDispatchLocked
 } from "~/modules/resources";
+import { getDatabaseClient } from "~/services/database.server";
 import { requireUnlocked } from "~/utils/lockedGuard.server";
 import { path, requestReferrer } from "~/utils/path";
 
@@ -37,13 +39,11 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   const serviceRole = await getCarbonServiceRole();
 
-  const result = await serviceRole.functions.invoke("issue", {
-    body: {
-      type: "maintenanceDispatchUnissue",
-      maintenanceDispatchItemId: itemId,
-      companyId,
-      userId
-    }
+  const result = await issueAs(serviceRole, getDatabaseClient(), {
+    type: "maintenanceDispatchUnissue",
+    maintenanceDispatchItemId: itemId,
+    companyId,
+    userId
   });
 
   if (result.error) {

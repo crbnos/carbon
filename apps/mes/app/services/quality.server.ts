@@ -3,6 +3,7 @@ import type { Database } from "@carbon/database";
 import { getLocationTimeZone } from "@carbon/database";
 import { lockIssueDispositions } from "@carbon/database/quality";
 import { getLogger } from "@carbon/logger";
+import { issueAs } from "@carbon/operations/issue";
 import { datetime } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { getDatabaseClient } from "~/services/database.server";
@@ -509,20 +510,18 @@ export async function postSerialCompletions(
 ): Promise<{ completed: number; error: unknown | null }> {
   let completed = 0;
   for (const candidate of args.candidates) {
-    const response = await serviceRole.functions.invoke("issue", {
-      body: {
-        type: "jobOperationSerialComplete",
-        trackedEntityId: candidate.trackedEntityId,
-        quantity: 1,
-        jobOperationId: args.jobOperationId,
-        inspectionId: args.inspectionId,
-        ...(candidate.inspectionSampleId
-          ? { inspectionSampleId: candidate.inspectionSampleId }
-          : {}),
-        ...args.eventIds,
-        companyId: args.companyId,
-        userId: args.userId
-      }
+    const response = await issueAs(serviceRole, getDatabaseClient(), {
+      type: "jobOperationSerialComplete",
+      trackedEntityId: candidate.trackedEntityId,
+      quantity: 1,
+      jobOperationId: args.jobOperationId,
+      inspectionId: args.inspectionId,
+      ...(candidate.inspectionSampleId
+        ? { inspectionSampleId: candidate.inspectionSampleId }
+        : {}),
+      ...args.eventIds,
+      companyId: args.companyId,
+      userId: args.userId
     });
     if (response.error) return { completed, error: response.error };
     completed += 1;
@@ -551,18 +550,16 @@ export async function postBulkCompletion(
   );
 
   if (state.requiresBatchTracking && state.batchTrackedEntityId) {
-    const response = await serviceRole.functions.invoke("issue", {
-      body: {
-        type: "jobOperationBatchComplete",
-        trackedEntityId: state.batchTrackedEntityId,
-        quantity: args.quantity,
-        jobOperationId: state.jobOperationId,
-        inspectionId: state.inspection.id,
-        ...(watermark ? { inspectionSampleId: watermark.id } : {}),
-        ...args.eventIds,
-        companyId: args.companyId,
-        userId: args.userId
-      }
+    const response = await issueAs(serviceRole, getDatabaseClient(), {
+      type: "jobOperationBatchComplete",
+      trackedEntityId: state.batchTrackedEntityId,
+      quantity: args.quantity,
+      jobOperationId: state.jobOperationId,
+      inspectionId: state.inspection.id,
+      ...(watermark ? { inspectionSampleId: watermark.id } : {}),
+      ...args.eventIds,
+      companyId: args.companyId,
+      userId: args.userId
     });
     if (response.error) {
       return { error: response.error, message: "Failed to complete units" };
@@ -586,14 +583,12 @@ export async function postBulkCompletion(
     };
   }
 
-  const issue = await serviceRole.functions.invoke("issue", {
-    body: {
-      id: state.jobOperationId,
-      type: "jobOperation",
-      quantity: args.quantity,
-      companyId: args.companyId,
-      userId: args.userId
-    }
+  const issue = await issueAs(serviceRole, getDatabaseClient(), {
+    id: state.jobOperationId,
+    type: "jobOperation",
+    quantity: args.quantity,
+    companyId: args.companyId,
+    userId: args.userId
   });
   if (issue.error) {
     return {

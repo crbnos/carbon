@@ -23,6 +23,7 @@ import {
   type OperationContext,
   serviceRoleClient
 } from "../context";
+import { issueAs } from "../issue";
 import { postProductionEvent } from "../post-production-event";
 import { runOperation } from "../result";
 
@@ -708,14 +709,12 @@ async function completeBatch(
   // retry re-runs these steps alone.
   for (const m of members) {
     if (m.quantity <= 0) continue;
-    const issue = await client.functions.invoke("issue", {
-      body: {
-        id: m.jobOperationId,
-        type: "jobOperation",
-        quantity: m.quantity,
-        companyId,
-        userId
-      }
+    const issue = await issueAs(client, db, {
+      id: m.jobOperationId,
+      type: "jobOperation",
+      quantity: m.quantity,
+      companyId,
+      userId
     });
     if (issue.error) {
       throw new Error(
@@ -780,16 +779,14 @@ async function completeBatch(
         `Operation ${m.jobOperationId} produces a batch-tracked item — its output lot is required`
       );
     }
-    const output = await client.functions.invoke("issue", {
-      body: {
-        type: "jobOperationBatchOutput",
-        jobOperationId: m.jobOperationId,
-        trackedEntityId: m.trackedEntityId,
-        quantity: m.quantity,
-        readableId: m.batchNumber ?? null,
-        companyId,
-        userId
-      }
+    const output = await issueAs(client, db, {
+      type: "jobOperationBatchOutput",
+      jobOperationId: m.jobOperationId,
+      trackedEntityId: m.trackedEntityId,
+      quantity: m.quantity,
+      readableId: m.batchNumber ?? null,
+      companyId,
+      userId
     });
     if (output.error) {
       throw new Error(

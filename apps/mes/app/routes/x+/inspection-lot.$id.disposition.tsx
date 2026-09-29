@@ -4,6 +4,7 @@ import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { dispositionInspection } from "@carbon/database/quality";
 import { validationError, validator } from "@carbon/form";
+import { issueAs } from "@carbon/operations/issue";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
 import { getDatabaseClient } from "~/services/database.server";
@@ -287,14 +288,12 @@ export async function action({ request, params }: ActionFunctionArgs) {
       }
     }
 
-    const backflush = await serviceRole.functions.invoke("issue", {
-      body: {
-        id: state.jobOperationId,
-        type: "jobOperation",
-        quantity: scrapTotal,
-        companyId,
-        userId
-      }
+    const backflush = await issueAs(serviceRole, getDatabaseClient(), {
+      id: state.jobOperationId,
+      type: "jobOperation",
+      quantity: scrapTotal,
+      companyId,
+      userId
     });
     if (backflush.error) {
       warnings.push("failed to issue materials for scrap");

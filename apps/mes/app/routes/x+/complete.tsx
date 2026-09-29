@@ -5,6 +5,7 @@ import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { trigger } from "@carbon/jobs";
 import { getLogger } from "@carbon/logger";
+import { issueAs } from "@carbon/operations/issue";
 import { getCachedPrinterConfig } from "@carbon/printing/printing.server";
 import type { ActionFunctionArgs } from "react-router";
 import { data, redirect } from "react-router";
@@ -170,16 +171,17 @@ export async function action({ request }: ActionFunctionArgs) {
       0);
 
   if (validation.data.trackingType === "Serial") {
-    const response = await serviceRole.functions.invoke("issue", {
-      body: {
-        type: "jobOperationSerialComplete",
-        ...validation.data,
-        companyId,
-        userId
-      }
+    const response = await issueAs(serviceRole, getDatabaseClient(), {
+      type: "jobOperationSerialComplete",
+      ...validation.data,
+      trackedEntityId: validation.data.trackedEntityId!,
+      companyId,
+      userId
     });
 
-    const newTrackedEntityId = response.data?.newTrackedEntityId;
+    const newTrackedEntityId = response.data?.newTrackedEntityId as
+      | string
+      | undefined;
     // Print the entity that was just completed (from form), not the new reserved one
     const completedEntityId = validation.data.trackedEntityId;
 
@@ -251,13 +253,12 @@ export async function action({ request }: ActionFunctionArgs) {
       })
     );
   } else if (validation.data.trackingType === "Batch") {
-    const response = await serviceRole.functions.invoke("issue", {
-      body: {
-        type: "jobOperationBatchComplete",
-        ...validation.data,
-        companyId,
-        userId
-      }
+    const response = await issueAs(serviceRole, getDatabaseClient(), {
+      type: "jobOperationBatchComplete",
+      ...validation.data,
+      trackedEntityId: validation.data.trackedEntityId!,
+      companyId,
+      userId
     });
 
     if (response.error) {
@@ -334,14 +335,12 @@ export async function action({ request }: ActionFunctionArgs) {
       );
     }
 
-    const issue = await serviceRole.functions.invoke("issue", {
-      body: {
-        id: validation.data.jobOperationId,
-        type: "jobOperation",
-        quantity: validation.data.quantity,
-        companyId,
-        userId
-      }
+    const issue = await issueAs(serviceRole, getDatabaseClient(), {
+      id: validation.data.jobOperationId,
+      type: "jobOperation",
+      quantity: validation.data.quantity,
+      companyId,
+      userId
     });
 
     if (issue.error) {

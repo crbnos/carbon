@@ -8,7 +8,7 @@ import { datetime, getCompanyTimeZone } from "../lib/datetime.ts";
 import { corsPreflight, errorResponse, jsonResponse } from "../lib/response.ts";
 import { requirePermissions } from "../lib/supabase.ts";
 import type { Database } from "../lib/types.ts";
-import { resolveTrackedEntityBin } from "../issue/resolve-tracked-entity-bin.ts";
+import { resolveTrackedEntityBin } from "../shared/resolve-tracked-entity-bin.ts";
 import {
   buildBatchSplitRecords,
   buildMergeRecords,

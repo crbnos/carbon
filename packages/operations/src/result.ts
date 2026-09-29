@@ -70,7 +70,8 @@ function zodIssueSummary(err: unknown): string | null {
 /** The failure a caller receives for a thrown value: logged in full, surfaced sanitized. */
 export function toOperationError(
   operation: string,
-  err: unknown
+  err: unknown,
+  defaultStatus = 500
 ): OperationError {
   logger.error(`${operation} failed`, { error: err });
 
@@ -81,7 +82,7 @@ export function toOperationError(
     errStatus >= 400 &&
     errStatus <= 599
       ? errStatus
-      : 500;
+      : defaultStatus;
   const body =
     err instanceof OperationError ? err.body : ({} as Record<string, unknown>);
 
@@ -97,14 +98,21 @@ export function toOperationError(
   return new OperationError(message, status, body);
 }
 
-/** Runs an operation body and turns a throw into `{ data: null, error }`. */
+/**
+ * Runs an operation body and turns a throw into `{ data: null, error }`. A throw
+ * without its own 4xx/5xx `status` gets `defaultStatus`.
+ */
 export async function runOperation<T>(
   operation: string,
-  body: () => Promise<T>
+  body: () => Promise<T>,
+  defaultStatus = 500
 ): Promise<OperationResult<T>> {
   try {
     return { data: await body(), error: null };
   } catch (err) {
-    return { data: null, error: toOperationError(operation, err) };
+    return {
+      data: null,
+      error: toOperationError(operation, err, defaultStatus)
+    };
   }
 }

@@ -111,7 +111,7 @@ export async function action({ request }: ActionFunctionArgs) {
       return { success: false, message: "No mergeable output lots" };
     }
     const serviceRole = await getCarbonServiceRole();
-    const merge = await mergeTrackedEntities(serviceRole, {
+    const merge = await mergeTrackedEntities(serviceRole, getDatabaseClient(), {
       trackedEntityIds: lots.map((lot) => lot.id),
       companyId,
       userId

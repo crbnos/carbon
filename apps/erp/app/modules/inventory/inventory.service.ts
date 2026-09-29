@@ -1353,6 +1353,7 @@ export async function getShippingTermsList(
 // edge fn owns the writes; see shared/batch-merge.ts.
 export async function mergeTrackedEntities(
   client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   args: {
     trackedEntityIds: string[];
     readableId?: string | null;
@@ -1360,15 +1361,10 @@ export async function mergeTrackedEntities(
     userId: string;
   }
 ) {
-  return client.functions.invoke<{
-    trackedEntityId?: string;
-    readableId?: string | null;
-    error?: string;
-  }>("issue", {
-    body: {
-      type: "mergeTrackedEntities",
-      ...args
-    }
+  const { issueAs } = await import("@carbon/operations/issue");
+  return issueAs(client, db, {
+    type: "mergeTrackedEntities",
+    ...args
   });
 }
 

@@ -2,8 +2,10 @@ import { assertIsPost } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { getLogger } from "@carbon/logger";
+import { issueAs } from "@carbon/operations/issue";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
+import { getDatabaseClient } from "~/services/database.server";
 import { issueTrackedEntityValidator } from "~/services/models";
 
 const log = getLogger("mes");
@@ -46,12 +48,14 @@ export async function action({ request }: ActionFunctionArgs) {
   // Batch mode: one pick for the whole operation batch. The edge fn splits the
   // picked lots pro-rata by each member's remaining requirement and records
   // per-member consumption, so costing and genealogy stay per job.
-  const issue = await serviceRole.functions.invoke("issue", {
-    body: batchId
+  const issue = await issueAs(
+    serviceRole,
+    getDatabaseClient(),
+    batchId
       ? {
           type: "trackedEntitiesToBatch",
           batchId,
-          itemId,
+          itemId: itemId!,
           children,
           overrideExpired,
           overrideReason,
@@ -63,7 +67,7 @@ export async function action({ request }: ActionFunctionArgs) {
           materialId,
           jobOperationId,
           itemId,
-          parentTrackedEntityId,
+          parentTrackedEntityId: parentTrackedEntityId!,
           children,
           jobOperationStepId,
           unitNumber,
@@ -72,27 +76,11 @@ export async function action({ request }: ActionFunctionArgs) {
           companyId,
           userId
         }
-  });
+  );
 
   if (issue.error) {
     log.error("Failed to issue material", { error: issue.error });
-    // Supabase wraps non-2xx edge-fn responses in FunctionsHttpError where
-    // the actual body lives on `context`. Try to pull our { message } out;
-    // fall back to the wrapper's own message if parsing fails.
-    let message = "Failed to issue material";
-    const ctx = (issue.error as { context?: Response })?.context;
-    if (ctx && typeof ctx.json === "function") {
-      try {
-        const body = await ctx.clone().json();
-        if (body && typeof body.message === "string") {
-          message = body.message;
-        }
-      } catch {
-        /* fall through to default */
-      }
-    } else if ((issue.error as { message?: string }).message) {
-      message = (issue.error as { message: string }).message;
-    }
+    const message = issue.error.message || "Failed to issue material";
     return data({ success: false, message }, { status: 400 });
   }
 

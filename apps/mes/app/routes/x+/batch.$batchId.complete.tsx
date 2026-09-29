@@ -5,6 +5,7 @@ import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
 import { batchOperations } from "@carbon/operations/batch-operations";
+import { issueAs } from "@carbon/operations/issue";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { getDatabaseClient } from "~/services/database.server";
@@ -184,18 +185,13 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
   if (mergeLots && mergeLots.length >= 2) {
-    const mergeResult = await serviceRole.functions.invoke<{ error?: string }>(
-      "issue",
-      {
-        body: {
-          type: "mergeTrackedEntities",
-          trackedEntityIds: mergeLots,
-          readableId: plannedLotNumber,
-          companyId,
-          userId
-        }
-      }
-    );
+    const mergeResult = await issueAs(serviceRole, getDatabaseClient(), {
+      type: "mergeTrackedEntities",
+      trackedEntityIds: mergeLots,
+      readableId: plannedLotNumber,
+      companyId,
+      userId
+    });
     if (mergeResult.error || mergeResult.data?.error) {
       return data(
         { completed: true },

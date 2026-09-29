@@ -2,6 +2,7 @@ import { hasPermission } from "@carbon/auth";
 import { getUserClaims } from "@carbon/auth/users.server";
 import type { Database, Json } from "@carbon/database";
 import { evaluateLinesForSurface, isBlocked } from "@carbon/ee/rules.server";
+import { issueAs } from "@carbon/operations/issue";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { z } from "zod";
 import { getDatabaseClient } from "~/services/database.server";
@@ -95,18 +96,19 @@ export async function issueMaterial(
     }
   }
 
-  return client.functions.invoke("issue", {
-    body: {
-      id: args.operationId,
-      type: "partToOperation",
-      itemId: args.itemId,
-      materialId: args.materialId,
-      jobOperationStepId: args.jobOperationStepId,
-      quantity: args.quantity,
-      adjustmentType: args.adjustmentType,
-      companyId,
-      userId
-    }
+  return issueAs(client, getDatabaseClient(), {
+    id: args.operationId,
+    type: "partToOperation",
+    itemId: args.itemId,
+    materialId: args.materialId,
+    jobOperationStepId: args.jobOperationStepId,
+    quantity: args.quantity,
+    adjustmentType: args.adjustmentType as
+      | "Negative Adjmt."
+      | "Positive Adjmt."
+      | "Set Quantity",
+    companyId,
+    userId
   });
 }
 

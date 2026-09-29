@@ -2,9 +2,11 @@ import { assertIsPost } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { getLogger } from "@carbon/logger";
+import { issueAs } from "@carbon/operations/issue";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { z } from "zod";
+import { getDatabaseClient } from "~/services/database.server";
 
 const log = getLogger("mes");
 
@@ -64,16 +66,14 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   if (children && children.length > 0) {
     // Tracked entities (serial/batch)
-    const issue = await serviceRole.functions.invoke("issue", {
-      body: {
-        type: "maintenanceDispatchTrackedEntities",
-        maintenanceDispatchId: dispatchId,
-        itemId,
-        unitOfMeasureCode,
-        children,
-        companyId,
-        userId
-      }
+    const issue = await issueAs(serviceRole, getDatabaseClient(), {
+      type: "maintenanceDispatchTrackedEntities",
+      maintenanceDispatchId: dispatchId,
+      itemId,
+      unitOfMeasureCode,
+      children,
+      companyId,
+      userId
     });
 
     if (issue.error) {
@@ -87,16 +87,14 @@ export async function action({ request, params }: ActionFunctionArgs) {
     }
   } else {
     // Inventory item
-    const issue = await serviceRole.functions.invoke("issue", {
-      body: {
-        type: "maintenanceDispatchInventory",
-        maintenanceDispatchId: dispatchId,
-        itemId,
-        unitOfMeasureCode,
-        quantity: totalQuantity,
-        companyId,
-        userId
-      }
+    const issue = await issueAs(serviceRole, getDatabaseClient(), {
+      type: "maintenanceDispatchInventory",
+      maintenanceDispatchId: dispatchId,
+      itemId,
+      unitOfMeasureCode,
+      quantity: totalQuantity,
+      companyId,
+      userId
     });
 
     if (issue.error) {

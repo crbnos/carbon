@@ -3,8 +3,10 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { evaluateLinesForSurface, isBlocked } from "@carbon/ee/rules.server";
 import { getLogger } from "@carbon/logger";
+import { issueAs } from "@carbon/operations/issue";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
+import { getDatabaseClient } from "~/services/database.server";
 import { issueTrackedEntityValidator } from "~/services/models";
 
 const log = getLogger("mes", "unconsume");
@@ -109,15 +111,13 @@ export async function action({ request }: ActionFunctionArgs) {
     }
   }
 
-  const issue = await serviceRole.functions.invoke("issue", {
-    body: {
-      type: "unconsumeTrackedEntities",
-      materialId,
-      parentTrackedEntityId,
-      children,
-      companyId,
-      userId
-    }
+  const issue = await issueAs(serviceRole, getDatabaseClient(), {
+    type: "unconsumeTrackedEntities",
+    materialId,
+    parentTrackedEntityId: parentTrackedEntityId!,
+    children,
+    companyId,
+    userId
   });
 
   if (issue.error) {

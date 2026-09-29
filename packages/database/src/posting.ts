@@ -8,8 +8,10 @@ export * from "../supabase/functions/lib/storage-units.ts";
 export {
   credit,
   debit,
-  journalReference
+  journalReference,
+  type TrackedEntityAttributes
 } from "../supabase/functions/lib/utils.ts";
+export { calculateCOGS } from "../supabase/functions/shared/calculate-cogs.ts";
 export { statusAfterQuantityChange } from "../supabase/functions/shared/entity-drain.ts";
 export * from "../supabase/functions/shared/get-accounting-period.ts";
 export * from "../supabase/functions/shared/get-posting-group.ts";
@@ -18,5 +20,6 @@ export {
   bookAdjustment,
   createAdjustmentJournal
 } from "../supabase/functions/shared/post-adjustment.ts";
+export { resolveTrackedEntityBin } from "../supabase/functions/shared/resolve-tracked-entity-bin.ts";
 export { getRemainingQuantityToInvoice } from "../supabase/functions/shared/short-close.ts";
 export { toTiptapDoc } from "../supabase/functions/shared/tiptap.ts";

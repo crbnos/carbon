@@ -5,8 +5,10 @@ import { flash } from "@carbon/auth/session.server";
 import { evaluateLinesForSurface, isBlocked } from "@carbon/ee/rules.server";
 import { validationError, validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
+import { issueAs } from "@carbon/operations/issue";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
+import { getDatabaseClient } from "~/services/database.server";
 import { issueValidator } from "~/services/models";
 import { path, requestReferrer } from "~/utils/path";
 
@@ -95,18 +97,16 @@ export async function action({ request }: ActionFunctionArgs) {
     }
   }
 
-  const issue = await serviceRole.functions.invoke("issue", {
-    body: {
-      id: jobOperationId,
-      type: "partToOperation",
-      itemId,
-      materialId,
-      jobOperationStepId,
-      quantity,
-      adjustmentType,
-      companyId,
-      userId
-    }
+  const issue = await issueAs(serviceRole, getDatabaseClient(), {
+    id: jobOperationId,
+    type: "partToOperation",
+    itemId,
+    materialId,
+    jobOperationStepId,
+    quantity,
+    adjustmentType,
+    companyId,
+    userId
   });
 
   if (issue.error) {

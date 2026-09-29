@@ -1418,8 +1418,10 @@ export async function getJobMaterialsByOperationId(
  */
 export async function backflushUntrackedMaterialsOnStepRecord(
   client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   args: { jobOperationStepId: string; companyId: string; userId: string }
 ) {
+  const { issueAs } = await import("@carbon/operations/issue");
   const step = await client
     .from("jobOperationStep")
     .select("id, operationId")
@@ -1555,17 +1557,15 @@ export async function backflushUntrackedMaterialsOnStepRecord(
     }
     const delta = target - (material.quantityIssued ?? 0);
     if (delta <= 0) continue;
-    const issue = await client.functions.invoke("issue", {
-      body: {
-        id: operationId,
-        type: "partToOperation",
-        itemId: material.itemId,
-        materialId: material.id,
-        quantity: delta,
-        adjustmentType: "Negative Adjmt.",
-        companyId: args.companyId,
-        userId: args.userId
-      }
+    const issue = await issueAs(client, db, {
+      id: operationId,
+      type: "partToOperation",
+      itemId: material.itemId,
+      materialId: material.id,
+      quantity: delta,
+      adjustmentType: "Negative Adjmt.",
+      companyId: args.companyId,
+      userId: args.userId
     });
     if (issue.error) failures.push(material.itemId);
   }
@@ -2304,6 +2304,7 @@ export async function insertBatchStepRecords(
 // operator data. Gated at the route on the Production DELETE permission.
 export async function completeAllStepsForUnit(
   client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   args: {
     operationId: string;
     index: number;
@@ -2349,7 +2350,7 @@ export async function completeAllStepsForUnit(
   // operation-wide, so one call after the inserts tops up this unit's shortfall.
   // Non-blocking: a failure (e.g. insufficient stock) leaves parts manually
   // issuable, matching the per-step record path.
-  const backflush = await backflushUntrackedMaterialsOnStepRecord(client, {
+  const backflush = await backflushUntrackedMaterialsOnStepRecord(client, db, {
     jobOperationStepId: missing[0].id,
     companyId: args.companyId,
     userId: args.createdBy

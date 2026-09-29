@@ -10294,6 +10294,7 @@ export async function completeOperation(
     quantity: number;
   }
 ) {
+  const { issueAs } = await import("@carbon/operations/issue");
   const operation = await client
     .from("jobOperation")
     .select(
@@ -10350,14 +10351,12 @@ export async function completeOperation(
   }
 
   // 2. Backflush consumed material.
-  const issue = await client.functions.invoke("issue", {
-    body: {
-      id: args.operationId,
-      type: "jobOperation",
-      quantity: args.quantity,
-      companyId,
-      userId
-    }
+  const issue = await issueAs(client, db, {
+    id: args.operationId,
+    type: "jobOperation",
+    quantity: args.quantity,
+    companyId,
+    userId
   });
   if (issue.error) return { data: null, error: issue.error };
 
