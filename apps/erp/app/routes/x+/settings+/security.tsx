@@ -7,7 +7,7 @@ import {
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
-import { requirePlan } from "@carbon/ee/plan.server";
+import { requireFeature } from "@carbon/ee/plan.server";
 import {
   getSamlSpUrls,
   getSsoConnection,
@@ -15,6 +15,7 @@ import {
   getTxtRecord,
   isSsoEnabled
 } from "@carbon/ee/sso.server";
+import { updateRequireMfaSetting } from "@carbon/ee/two-factor.server";
 import { ValidatedForm } from "@carbon/form";
 import {
   Button,
@@ -50,11 +51,7 @@ import { UpgradeOverlaySection } from "~/components/UpgradeOverlay";
 import { usePermissions } from "~/hooks";
 import { usePlanGate } from "~/hooks/usePlanGate";
 import { useSettings } from "~/hooks/useSettings";
-import {
-  ssoConnectionValidator,
-  ssoDomainValidator,
-  updateRequireMfaSetting
-} from "~/modules/settings";
+import { ssoConnectionValidator, ssoDomainValidator } from "~/modules/settings";
 import { sendMfaRequiredEmails } from "~/services/mfa-email.server";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -156,7 +153,7 @@ export async function action({ request }: ActionFunctionArgs) {
   const requireMfa = formData.get("enabled") === "true";
 
   if (requireMfa) {
-    await requirePlan({
+    await requireFeature({
       request,
       client,
       companyId,
@@ -373,32 +370,54 @@ export default function Security() {
   const twoFactorCard = (
     <Card>
       <CardHeader>
+        <CardTitle>
+          <Trans>Two-Factor Authentication Enforcement</Trans>
+        </CardTitle>
+        <CardDescription>
+          {CONTROLLED_ENVIRONMENT ? (
+            <Trans>
+              This is a controlled environment, so two-factor authentication is
+              required for everyone and cannot be turned off.
+            </Trans>
+          ) : (
+            <Trans>
+              Require an authenticator app before anyone can open this company.
+              Their other companies are unaffected. Visit the{" "}
+              <Link
+                to={path.to.employeeAccounts}
+                className="text-primary underline"
+              >
+                employee accounts page
+              </Link>{" "}
+              to see each person's status.
+            </Trans>
+          )}
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
         <HStack className="justify-between items-center">
-          <div>
-            <CardTitle>
-              <Trans>Two-Factor Authentication Enforcement</Trans>
-            </CardTitle>
-            <CardDescription>
-              {CONTROLLED_ENVIRONMENT ? (
+          <VStack className="items-start" spacing={1}>
+            <span className="font-medium">
+              {CONTROLLED_ENVIRONMENT || requireMfa ? (
+                <Trans>Two-factor authentication is required</Trans>
+              ) : (
+                <Trans>Two-factor authentication is optional</Trans>
+              )}
+            </span>
+            <span className="text-sm text-muted-foreground">
+              {CONTROLLED_ENVIRONMENT || requireMfa ? (
                 <Trans>
-                  This is a controlled environment, so two-factor authentication
-                  is required for everyone and cannot be turned off.
+                  Everyone must set up an authenticator app before opening this
+                  company.
                 </Trans>
               ) : (
                 <Trans>
-                  Require an authenticator app before anyone can open this
-                  company. Their other companies are unaffected. Visit the{" "}
-                  <Link
-                    to={path.to.employeeAccounts}
-                    className="text-primary underline"
-                  >
-                    employee accounts page
-                  </Link>{" "}
-                  to see each person's status.
+                  Enable to require an authenticator app before anyone can open
+                  this company.
                 </Trans>
               )}
-            </CardDescription>
-          </div>
+            </span>
+          </VStack>
           <Switch
             checked={CONTROLLED_ENVIRONMENT || requireMfa}
             onCheckedChange={(checked) =>
@@ -413,7 +432,7 @@ export default function Security() {
             aria-label={t`Require two-factor authentication`}
           />
         </HStack>
-      </CardHeader>
+      </CardContent>
     </Card>
   );
 
@@ -434,16 +453,6 @@ export default function Security() {
           </p>
         </div>
 
-        <div className="flex flex-col gap-1 w-full">
-          <Heading size="h3">
-            <Trans>MFA</Trans>
-          </Heading>
-          <p className="text-sm text-muted-foreground text-pretty max-w-xl">
-            <Trans>
-              Require a second factor when members sign in to this company.
-            </Trans>
-          </p>
-        </div>
         {mfaGated ? (
           <UpgradeOverlaySection
             icon={<LuShieldCheck className="size-6 text-muted-foreground" />}

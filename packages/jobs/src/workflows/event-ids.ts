@@ -4,7 +4,7 @@ import {
   customFieldEventId,
   ENTITY_BY_TABLE,
   WORKFLOW_EVENTS
-} from "@carbon/workflows";
+} from "@carbon/ee/workflows";
 import { computeDiff } from "../inngest/functions/events/diff";
 
 // A facade over module-load maps; building it once here keeps the hot path allocation-free.

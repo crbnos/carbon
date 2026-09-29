@@ -1,5 +1,6 @@
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { Database } from "@carbon/database";
+import { companyHasFeature } from "@carbon/ee/plan.server";
 import { trigger } from "@carbon/jobs";
 import {
   compatibilityStatus,
@@ -12,8 +13,23 @@ import { getLogger } from "@carbon/logger";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { nanoid } from "nanoid";
 import { getDatabaseClient } from "~/services/database.server";
+import { canAccessBackups } from "~/utils/backups";
 
 const log = getLogger("erp", "backups");
+
+/**
+ * Backups are a Business/Enterprise feature (`BACKUPS`), plus an escape hatch for
+ * internal staff and local dev (`canAccessBackups`). Community/Starter cannot
+ * reach them. Shared by every backup route gate so they can never diverge.
+ */
+export async function canManageBackups(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  email: string | null | undefined
+): Promise<boolean> {
+  if (canAccessBackups(email)) return true;
+  return companyHasFeature(client, companyId, { feature: "BACKUPS" });
+}
 
 import {
   type CompanyBackupSummary,

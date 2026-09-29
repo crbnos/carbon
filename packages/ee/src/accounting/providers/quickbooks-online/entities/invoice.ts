@@ -7,11 +7,14 @@ import {
   toPostingDateString
 } from "../../../core/posting";
 import {
+  assertNoAssetDisposalComponents,
   buildSalesDocumentComponents,
+  hasRevenueComponent,
   type SalesDocumentComponents
 } from "../../../core/sales-document-components";
 import {
   loadSalesInvoices,
+  requirePostedSalesAccountId,
   requirePostedShippingAccountId
 } from "../../../core/sales-invoice-source";
 import {
@@ -79,25 +82,27 @@ export function deriveCarbonInvoiceStatus(
 
 /**
  * Build QBO SalesItemLineDetail lines from Carbon invoice lines. Pure —
- * exported for tests. `itemRemoteIds` maps Carbon itemId → QBO item id
+ * exported for tests. Lines reference the synthetic per-revenue-account items
  * (resolved by ensureDependencySynced before mapping); lines without an
  * item ship without an ItemRef.
  */
 export function buildQboInvoiceLines(args: {
   document: SalesDocumentComponents;
-  itemRemoteIds: ReadonlyMap<string, string>;
+  salesItemRemoteId: string | null;
   shippingItemRemoteId: string | null;
   lineTaxCodeRefs: ReadonlyMap<string, Qbo.Ref>;
 }): Array<Omit<Qbo.InvoiceLine, "Id">> {
   return args.document.components.map((component) => {
     const shipping =
       component.kind === "LineShipping" || component.kind === "HeaderShipping";
+    // Every line references one of TWO synthetic items standing for the posted
+    // revenue ACCOUNT, not the Carbon item — a QBO item's account IS the line's
+    // account (no per-line override), and Carbon posts all merchandise revenue
+    // to one account, so per-item items bought no GL fidelity.
     const itemId = shipping
       ? args.shippingItemRemoteId
-      : component.itemId
-        ? args.itemRemoteIds.get(component.itemId)
-        : null;
-    if ((shipping || component.itemId) && !itemId)
+      : args.salesItemRemoteId;
+    if (!itemId)
       throw new JournalEntrySyncError({
         errorCode: "UNMAPPED_ACCOUNTS",
         warning: true,
@@ -342,29 +347,26 @@ export class QboSalesInvoiceSyncer extends BaseEntitySyncer<
     const shippingAccountId = hasShipping
       ? await this.getShippingAccountId(local)
       : null;
-    // Tax, account and currency preflight finishes before any dependency writes.
+    // A fixed-asset disposal has no sales-revenue posting to replay, so it is
+    // refused rather than bound to the sales item and reported as revenue.
+    // Both of these are PURE refusals, so they belong ABOVE the dependency
+    // write: a QBO Customer created for an invoice that is then refused is a
+    // counterparty in the customer's books that nothing in Carbon asked for.
+    assertNoAssetDisposalComponents(document);
+    const salesRevenueAccountId = hasRevenueComponent(document.components)
+      ? requirePostedSalesAccountId(local)
+      : null;
+    // Tax, account, component and currency preflight finishes before any
+    // dependency writes.
     const customerRemoteId = await this.ensureDependencySynced(
       "customer",
       local.customerId
     );
-    const itemRemoteIds = new Map<string, string>();
-    const itemIds = [
-      ...new Set(
-        document.components
-          .filter(
-            (line) =>
-              line.kind !== "LineShipping" &&
-              line.kind !== "HeaderShipping" &&
-              line.itemId
-          )
-          .map((line) => line.itemId!)
-      )
-    ];
-    for (const itemId of itemIds)
-      itemRemoteIds.set(
-        itemId,
-        await this.ensureDependencySynced("item", itemId)
-      );
+    const salesItemRemoteId = salesRevenueAccountId
+      ? await (await this.getShippingItemSyncer()).ensureSalesItem({
+          revenueAccountId: salesRevenueAccountId
+        })
+      : null;
     const shippingItemRemoteId = shippingAccountId
       ? await (await this.getShippingItemSyncer()).ensureShippingItem({
           shippingAccountId
@@ -393,7 +395,7 @@ export class QboSalesInvoiceSyncer extends BaseEntitySyncer<
       TxnTaxDetail: tax.txnTaxDetail,
       Line: buildQboInvoiceLines({
         document,
-        itemRemoteIds,
+        salesItemRemoteId,
         shippingItemRemoteId,
         lineTaxCodeRefs: tax.lineTaxCodeRefs
       })

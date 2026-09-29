@@ -1,6 +1,7 @@
 import { ASSEMBLER_SERVICE_URL } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
+import { getCompanyPrivateBucket, TEMP_STAGING_BUCKET } from "@carbon/files";
 import type { LoaderFunctionArgs } from "react-router";
 
 // Resolves a model's optimised / preview artifact storage paths for the
@@ -48,8 +49,13 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     model.data?.originalPath ??
     (modelPath && !modelPath.toLowerCase().endsWith(".zst") ? modelPath : null);
   const svc = getCarbonServiceRole();
+  // Durable raws live in the company's own bucket since the per-company
+  // bucket migration; pre-migration raws in legacy `private`; just-uploaded
+  // ones briefly in `temp-staging`. The row is companyId-scoped, so the
+  // session's own bucket is the right one — never derive it from the path.
+  const companyBucket = getCompanyPrivateBucket(companyId);
   const exists = async (path: string) => {
-    for (const bucket of ["private", "temp-staging"] as const) {
+    for (const bucket of [companyBucket, "private", TEMP_STAGING_BUCKET]) {
       const info = await svc.storage
         .from(bucket)
         .info(path)

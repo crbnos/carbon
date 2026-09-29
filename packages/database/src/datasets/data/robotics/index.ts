@@ -4,6 +4,7 @@ import { roboticsChangeOrders } from "./change-orders.ts";
 import { roboticsFoundation } from "./foundation.ts";
 import { roboticsInventory } from "./inventory.ts";
 import { roboticsItems } from "./items.ts";
+import { roboticsOps } from "./ops.ts";
 import { roboticsPlanning } from "./planning.ts";
 import { roboticsProduction } from "./production.ts";
 import { roboticsPurchasing } from "./purchasing.ts";
@@ -27,6 +28,7 @@ export const robotics: Dataset = {
   quality: roboticsQuality,
   changeOrders: roboticsChangeOrders,
   accounting: roboticsAccounting,
+  ops: roboticsOps,
   workflows: roboticsWorkflows,
   planning: roboticsPlanning
 };

@@ -15,6 +15,7 @@ import {
 import { useNavigate } from "react-router";
 import { DateTime, EmployeeAvatar, Hyperlink, Table } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
+import { EnumerableGroup } from "~/components/EnumerableGroup";
 import { usePermissions } from "~/hooks";
 import { useItems } from "~/stores";
 import { usePeople } from "~/stores/people";
@@ -114,17 +115,16 @@ const ActionsTable = memo(
           id: "items",
           header: t`Items`,
           cell: ({ row }) => (
-            <span className="flex gap-2 items-center flex-wrap py-2">
-              {((row.original.items ?? []) as Array<string>).map((i) => {
-                const item = items.find((x) => x.id === i);
-                if (!item) return null;
-                return (
-                  <Badge variant="outline" key={item?.id}>
-                    {item?.readableIdWithRevision}
-                  </Badge>
-                );
-              })}
-            </span>
+            <EnumerableGroup
+              chip="outline"
+              items={((row.original.items ?? []) as Array<string>).flatMap(
+                (i) => {
+                  const item = items.find((x) => x.id === i);
+                  if (!item) return [];
+                  return { label: item.readableIdWithRevision ?? item.id };
+                }
+              )}
+            />
           ),
           meta: {
             icon: <LuBlocks />,

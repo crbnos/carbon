@@ -1,4 +1,6 @@
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
+import { requireBackupsEntitlement } from "@carbon/ee/backups.server";
+import { getLogger } from "@carbon/logger";
 import { chunkArray } from "@carbon/utils";
 import { NonRetriableError } from "inngest";
 import { sql } from "kysely";
@@ -14,6 +16,7 @@ import {
   backupNameFromSource,
   bindValue,
   canSetReplicationRole,
+  deleteDanglingRows,
   ExportScopeViolationError,
   getCompanyTableCatalog,
   isUserScopedIdentityTable,
@@ -36,6 +39,8 @@ import {
 import { buildCompanyBackup } from "./company-export";
 
 const INSERT_CHUNK_SIZE = 200;
+
+const log = getLogger("jobs", "company-restore");
 
 type ServiceRole = ReturnType<typeof getCarbonServiceRole>;
 
@@ -202,6 +207,26 @@ export async function wipeAndLoad(
         done: t + 1,
         total: loadTables.length
       });
+    }
+
+    // Kept identity rows whose parent the wipe removed (replica mode skipped the
+    // cascade) would fail every later export. A foreign restore already wiped them.
+    if (!remap) {
+      const dangling = await deleteDanglingRows(
+        trx,
+        catalog.tables.filter(
+          (t) => isUserScopedIdentityTable(t) && t.scopeColumn === "companyId"
+        ),
+        byName,
+        companyId,
+        targetGroupId
+      );
+      if (dangling.length > 0) {
+        log.warn("Restore: removed identity rows left dangling by the wipe", {
+          companyId,
+          deleted: dangling
+        });
+      }
     }
   });
 
@@ -391,6 +416,8 @@ export const companyRestoreFunction = inngest.createFunction(
   async ({ event, step, logger }) => {
     const { companyId, userId, filePath, restoreRunId, label, includeStorage } =
       event.data;
+
+    await requireBackupsEntitlement(companyId);
 
     return await step.run("restore-company", async () => {
       const client = getCarbonServiceRole();
@@ -622,6 +649,10 @@ export const companyRestoreFinalizeFunction = inngest.createFunction(
   async ({ event, step, logger }) => {
     const { companyId, restoreRunId } = event.data;
 
+    // No entitlement gate here: finalize only RESOLVES an already-started (and
+    // already-gated) restore. If BACKUPS lapsed while the restore sat "ready",
+    // gating this would strand it — marker stuck "ready", snapshot orphaned,
+    // with no recovery path (retries: 1). The lock is on companyRestoreFunction.
     return await step.run("finalize-restore", async () => {
       const client = getCarbonServiceRole();
       const marker = await readRestoreMarker(client, companyId, restoreRunId);
@@ -655,6 +686,10 @@ export const companyRestoreRevertFunction = inngest.createFunction(
   async ({ event, step, logger }) => {
     const { companyId, restoreRunId } = event.data;
 
+    // No entitlement gate here (see finalize): revert must always be able to
+    // undo a pending restore and return the pre-restore snapshot, even if
+    // BACKUPS lapsed while it sat "ready" — blocking it would strand the company
+    // mid-restore. The lock is on companyRestoreFunction (the start).
     return await step.run("revert-restore", async () => {
       const client = getCarbonServiceRole();
       const db = getJobDatabaseClient(1);

@@ -1,6 +1,7 @@
 import type { Database, Json } from "@carbon/database";
 import type { KyselyTx } from "@carbon/database/client";
-import { EPSILON } from "@carbon/utils";
+import { lockIssueDispositions } from "@carbon/database/quality";
+import { datetime, EPSILON, round } from "@carbon/utils";
 import { FunctionRegion, type SupabaseClient } from "@supabase/supabase-js";
 import { nanoid } from "nanoid";
 import { getDatabaseClient } from "~/services/database.server";
@@ -43,6 +44,25 @@ export async function assignEntitiesToIssueItem(args: {
 
   try {
     const result = await db.transaction().execute(async (trx) => {
+      // Lock the issue before reading any quantity, so a concurrent quantity
+      // edit or link writer on the same issue waits for this move.
+      const owner = await trx
+        .selectFrom("nonConformanceItem")
+        .select(["nonConformanceId"])
+        .where("id", "=", nonConformanceItemId)
+        .where("companyId", "=", companyId)
+        .executeTakeFirst();
+      if (!owner) throw new Error("Source item association not found");
+      // Re-check the closed lock inside the transaction: the route check is a
+      // separate read and could race with a concurrent close.
+      const { status } = await lockIssueDispositions(trx, {
+        nonConformanceId: owner.nonConformanceId,
+        companyId
+      });
+      if (isIssueLocked(status)) {
+        throw new Error("Cannot modify a closed issue. Reopen it first.");
+      }
+
       const source = await trx
         .selectFrom("nonConformanceItem")
         .select(["id", "nonConformanceId", "quantity"])
@@ -63,18 +83,6 @@ export async function assignEntitiesToIssueItem(args: {
         throw new Error("Cannot move entities between different NCRs");
       }
 
-      // Re-check the lock inside the transaction: the route check is a separate
-      // read and could race with a concurrent close.
-      const parent = await trx
-        .selectFrom("nonConformance")
-        .select(["status"])
-        .where("id", "=", source.nonConformanceId)
-        .where("companyId", "=", companyId)
-        .executeTakeFirst();
-      if (isIssueLocked(parent?.status)) {
-        throw new Error("Cannot modify a closed issue. Reopen it first.");
-      }
-
       const existingLinks = await trx
         .selectFrom("nonConformanceItemTrackedEntity")
         .select(["quantity"])
@@ -83,13 +91,17 @@ export async function assignEntitiesToIssueItem(args: {
         .where("companyId", "=", companyId)
         .execute();
 
-      const existingQty = existingLinks.reduce(
-        (acc, l) => acc + Number(l.quantity ?? 0),
-        0
+      // Round PER LINK, then round the sum: each link quantity is itself a
+      // persisted value, so the row totals below must net exactly against the
+      // link rows rather than against their raw float sum.
+      const existingQty = round(
+        existingLinks.reduce(
+          (acc, l) => acc + round(Number(l.quantity ?? 0)),
+          0
+        )
       );
-      const movingQty = assignments.reduce(
-        (acc, a) => acc + Number(a.quantity),
-        0
+      const movingQty = round(
+        assignments.reduce((acc, a) => acc + round(Number(a.quantity)), 0)
       );
 
       await trx
@@ -106,7 +118,7 @@ export async function assignEntitiesToIssueItem(args: {
             nonConformanceItemId: targetItemId,
             nonConformanceId: target.nonConformanceId,
             trackedEntityId: a.trackedEntityId,
-            quantity: Number(a.quantity),
+            quantity: round(Number(a.quantity)),
             companyId,
             createdBy: userId
           }))
@@ -116,7 +128,10 @@ export async function assignEntitiesToIssueItem(args: {
       await trx
         .updateTable("nonConformanceItem")
         .set({
-          quantity: Math.max(0, Number(source.quantity ?? 0) - existingQty),
+          quantity: Math.max(
+            0,
+            round(round(Number(source.quantity ?? 0)) - existingQty)
+          ),
           updatedBy: userId,
           updatedAt: nowIso
         })
@@ -127,7 +142,7 @@ export async function assignEntitiesToIssueItem(args: {
       await trx
         .updateTable("nonConformanceItem")
         .set({
-          quantity: Number(target.quantity ?? 0) + movingQty,
+          quantity: round(round(Number(target.quantity ?? 0)) + movingQty),
           updatedBy: userId,
           updatedAt: nowIso
         })
@@ -147,6 +162,210 @@ export async function assignEntitiesToIssueItem(args: {
 }
 
 // -------------------------------------------------------------
+// updateIssueItemQuantity
+// -------------------------------------------------------------
+// Writes:
+//   - nonConformanceItem.quantity (compare-and-set on expectedQuantity)
+//
+// Only link-less rows on issues without an inspection link are editable: a
+// tracked row's quantity is the sum of its links, and an inspection-originated
+// issue already wrote off the lot, which closeIssue restores as row.quantity
+// on Use As Is / Rework. The checks and the update run under the issue lock,
+// which every link and inspection writer also takes, so a link cannot land
+// between the check and the write.
+
+export async function updateIssueItemQuantity(args: {
+  id: string;
+  companyId: string;
+  userId: string;
+  quantity: number;
+  expectedQuantity: number;
+}): Promise<Result<{ id: string }>> {
+  const { id, companyId, userId, quantity, expectedQuantity } = args;
+  const db = getDatabaseClient();
+
+  try {
+    return await db.transaction().execute(async (trx) => {
+      const owner = await trx
+        .selectFrom("nonConformanceItem")
+        .select(["nonConformanceId"])
+        .where("id", "=", id)
+        .where("companyId", "=", companyId)
+        .executeTakeFirst();
+      if (!owner) return errResult("Issue item not found");
+
+      const { status } = await lockIssueDispositions(trx, {
+        nonConformanceId: owner.nonConformanceId,
+        companyId
+      });
+      if (isIssueLocked(status)) {
+        return errResult("Cannot modify a closed issue. Reopen it first.");
+      }
+
+      const link = await trx
+        .selectFrom("nonConformanceItemTrackedEntity")
+        .select(["id"])
+        .where("nonConformanceItemId", "=", id)
+        .where("companyId", "=", companyId)
+        .executeTakeFirst();
+      if (link) {
+        return errResult(
+          "This row's quantity comes from its linked tracked entities. Split or move entities instead."
+        );
+      }
+
+      const inspection = await trx
+        .selectFrom("nonConformanceInspection")
+        .select(["id"])
+        .where("nonConformanceId", "=", owner.nonConformanceId)
+        .where("companyId", "=", companyId)
+        .executeTakeFirst();
+      if (inspection) {
+        return errResult(
+          "Quantity is set by the rejected inspection lot and cannot be edited."
+        );
+      }
+
+      // Compare-and-set: a stale save (an older request finishing after a
+      // newer one) matches no row instead of overwriting it.
+      const updated = await trx
+        .updateTable("nonConformanceItem")
+        .set({
+          quantity: round(quantity),
+          updatedBy: userId,
+          updatedAt: datetime.timestamp()
+        })
+        .where("id", "=", id)
+        .where("companyId", "=", companyId)
+        .where("quantity", "=", expectedQuantity)
+        .returning(["id"])
+        .executeTakeFirst();
+      if (!updated) {
+        return errResult(
+          "This quantity changed since the page loaded. Refresh and try again."
+        );
+      }
+      return { data: { id: updated.id }, error: null };
+    });
+  } catch (err) {
+    return errResult(
+      err instanceof Error ? err.message : "Failed to update quantity"
+    );
+  }
+}
+
+// -------------------------------------------------------------
+// linkEntitiesToIssueItemRow
+// -------------------------------------------------------------
+// Writes:
+//   - nonConformanceItem (find-or-create the item's row, grow its quantity)
+//   - nonConformanceItemTrackedEntity (one link per entity not yet on a row)
+//
+// The caller must hold lockIssueDispositions for the issue. Entities already
+// linked to any row of the issue are skipped (an entity sits on at most one
+// disposition row per issue). The row quantity grows by the linked entities'
+// quantities, so it stays equal to the link sum. With no entities at all, a
+// row still at 0 takes `fallbackQuantity` (e.g. an untracked inspection lot
+// size); entities that are all already linked change nothing.
+
+export async function linkEntitiesToIssueItemRow(
+  trx: KyselyTx,
+  args: {
+    nonConformanceId: string;
+    companyId: string;
+    userId: string;
+    itemId: string;
+    entities: { id: string; quantity: number }[];
+    fallbackQuantity?: number;
+  }
+): Promise<void> {
+  const { nonConformanceId, companyId, userId, itemId, entities } = args;
+  const nowIso = datetime.timestamp();
+
+  // splitIssueItem drops the old (nonConformanceId, itemId) unique constraint's
+  // guarantee: a split item has several rows. Link onto the oldest — the row the
+  // split shrank, which still holds the un-dispositioned remainder — rather than
+  // whichever row Postgres happens to return first.
+  let row = await trx
+    .selectFrom("nonConformanceItem")
+    .select(["id", "quantity"])
+    .where("nonConformanceId", "=", nonConformanceId)
+    .where("itemId", "=", itemId)
+    .where("companyId", "=", companyId)
+    .orderBy("createdAt")
+    .orderBy("id")
+    .executeTakeFirst();
+  if (!row) {
+    row = await trx
+      .insertInto("nonConformanceItem")
+      .values({
+        nonConformanceId,
+        itemId,
+        quantity: 0,
+        companyId,
+        createdBy: userId
+      })
+      .returning(["id", "quantity"])
+      .executeTakeFirstOrThrow();
+  }
+  const currentQty = Number(row.quantity ?? 0);
+
+  if (entities.length === 0) {
+    const fallback = args.fallbackQuantity ?? 0;
+    if (currentQty === 0 && fallback > 0) {
+      await trx
+        .updateTable("nonConformanceItem")
+        .set({ quantity: fallback, updatedBy: userId, updatedAt: nowIso })
+        .where("id", "=", row.id)
+        .where("companyId", "=", companyId)
+        .execute();
+    }
+    return;
+  }
+
+  const alreadyLinked = await trx
+    .selectFrom("nonConformanceItemTrackedEntity")
+    .select(["trackedEntityId"])
+    .where("nonConformanceId", "=", nonConformanceId)
+    .where(
+      "trackedEntityId",
+      "in",
+      entities.map((e) => e.id)
+    )
+    .where("companyId", "=", companyId)
+    .execute();
+  const alreadyLinkedIds = new Set(alreadyLinked.map((l) => l.trackedEntityId));
+  const toLink = entities.filter((e) => !alreadyLinkedIds.has(e.id));
+  if (toLink.length === 0) return;
+
+  await trx
+    .insertInto("nonConformanceItemTrackedEntity")
+    .values(
+      toLink.map((e) => ({
+        nonConformanceItemId: row.id,
+        nonConformanceId,
+        trackedEntityId: e.id,
+        quantity: round(e.quantity),
+        companyId,
+        createdBy: userId
+      }))
+    )
+    .execute();
+
+  const addedQty = round(toLink.reduce((acc, e) => acc + round(e.quantity), 0));
+  await trx
+    .updateTable("nonConformanceItem")
+    .set({
+      quantity: round(round(currentQty) + addedQty),
+      updatedBy: userId,
+      updatedAt: nowIso
+    })
+    .where("id", "=", row.id)
+    .where("companyId", "=", companyId)
+    .execute();
+}
+
+// -------------------------------------------------------------
 // splitIssueItem
 // -------------------------------------------------------------
 // Splits a disposition row into a new row so portions can get different
@@ -155,7 +374,8 @@ export async function assignEntitiesToIssueItem(args: {
 
 // Physically subdivides a batch tracked entity, mirroring the MES issue split:
 // creates a new lot for `moveQty` linked to `newRowId`, decrements the original
-// lot to `keepQty` (kept on its existing row), and writes split genealogy
+// lot to the builder's remaining quantity (kept on its existing row), and
+// writes split genealogy
 // (trackedActivity "Split" + input/output + net-zero "Batch Split" itemLedger,
 // which leaves on-hand unchanged).
 //
@@ -217,7 +437,6 @@ async function subdivideBatchEntity(
     locationId: string | null;
     entityQty: number;
     moveQty: number;
-    keepQty: number;
     companyId: string;
     userId: string;
     nowIso: string;
@@ -233,7 +452,6 @@ async function subdivideBatchEntity(
     locationId,
     entityQty,
     moveQty,
-    keepQty,
     companyId,
     userId,
     nowIso
@@ -292,17 +510,23 @@ async function subdivideBatchEntity(
     .execute();
 
   // The retained lot is only decremented — no pointer is written on it; the
-  // child carries "Split From Entity ID" instead.
+  // child carries "Split From Entity ID" instead. The remaining quantity comes
+  // from the builder (rounded at the persist boundary), never from a separately
+  // derived entityQty − moveQty that could round differently.
   await trx
     .updateTable("trackedEntity")
-    .set({ quantity: keepQty })
+    .set(split.parentUpdate)
     .where("id", "=", source.id)
     .where("companyId", "=", companyId)
     .execute();
 
   await trx
     .updateTable("nonConformanceItemTrackedEntity")
-    .set({ quantity: keepQty, updatedBy: userId, updatedAt: nowIso })
+    .set({
+      quantity: split.parentUpdate.quantity,
+      updatedBy: userId,
+      updatedAt: nowIso
+    })
     .where("id", "=", linkId)
     .where("companyId", "=", companyId)
     .execute();
@@ -313,7 +537,7 @@ async function subdivideBatchEntity(
       nonConformanceItemId: newRowId,
       nonConformanceId,
       trackedEntityId: newEntityId,
-      quantity: moveQty,
+      quantity: split.childEntityInsert.quantity,
       companyId,
       createdBy: userId
     })
@@ -368,6 +592,25 @@ export async function splitIssueItem(args: {
 
   try {
     const result = await db.transaction().execute(async (trx) => {
+      // Lock the issue before reading the row quantity, so a concurrent
+      // quantity edit or link writer on the same issue waits for this split.
+      const owner = await trx
+        .selectFrom("nonConformanceItem")
+        .select(["nonConformanceId"])
+        .where("id", "=", id)
+        .where("companyId", "=", companyId)
+        .executeTakeFirst();
+      if (!owner) throw new Error("Item association not found");
+      // Re-check inside the transaction: the route lock check is a separate read
+      // and could race with a concurrent close.
+      const { status } = await lockIssueDispositions(trx, {
+        nonConformanceId: owner.nonConformanceId,
+        companyId
+      });
+      if (isIssueLocked(status)) {
+        throw new Error("Cannot modify a closed issue. Reopen it first.");
+      }
+
       const item = await trx
         .selectFrom("nonConformanceItem")
         .select(["id", "nonConformanceId", "itemId", "quantity"])
@@ -378,15 +621,10 @@ export async function splitIssueItem(args: {
 
       const issue = await trx
         .selectFrom("nonConformance")
-        .select(["nonConformanceId", "status", "locationId"])
+        .select(["nonConformanceId", "locationId"])
         .where("id", "=", item.nonConformanceId)
         .where("companyId", "=", companyId)
         .executeTakeFirst();
-      // Re-check inside the transaction: the route lock check is a separate read
-      // and could race with a concurrent close.
-      if (isIssueLocked(issue?.status)) {
-        throw new Error("Cannot modify a closed issue. Reopen it first.");
-      }
       const readableNc = issue?.nonConformanceId ?? item.nonConformanceId;
       const locationId = issue?.locationId ?? null;
 
@@ -418,9 +656,13 @@ export async function splitIssueItem(args: {
       // (e.g. scrap N, use-as-is the rest). Create a new Pending row for the
       // split-off quantity and shrink the original — no entity subdivision.
       if (links.length === 0) {
-        const current = Number(item.quantity ?? 0);
-        const splitQty =
-          typeof splitQuantity === "number" ? splitQuantity : NaN;
+        // Compare at the SAME scale the writes below persist at. Raw operands
+        // let a 0.999996 split of a 1 pass this gate and then round to a full
+        // draw: the new row takes 1 and the original is set to 0.
+        const current = round(Number(item.quantity ?? 0));
+        const splitQty = round(
+          typeof splitQuantity === "number" ? splitQuantity : NaN
+        );
         if (!(splitQty > 0)) {
           throw new Error("Missing split parameters");
         }
@@ -435,7 +677,7 @@ export async function splitIssueItem(args: {
           .values({
             nonConformanceId: item.nonConformanceId,
             itemId: item.itemId,
-            quantity: splitQty,
+            quantity: round(splitQty),
             disposition: "Pending",
             companyId,
             createdBy: userId
@@ -446,7 +688,7 @@ export async function splitIssueItem(args: {
         await trx
           .updateTable("nonConformanceItem")
           .set({
-            quantity: current - splitQty,
+            quantity: round(round(current) - round(splitQty)),
             updatedBy: userId,
             updatedAt: nowIso
           })
@@ -499,8 +741,10 @@ export async function splitIssueItem(args: {
         throw new Error("Missing split parameters");
       }
 
-      const effectiveSplitQty = moves.reduce((acc, m) => acc + m.moveQty, 0);
-      const current = Number(item.quantity ?? 0);
+      const effectiveSplitQty = round(
+        moves.reduce((acc, m) => acc + round(m.moveQty), 0)
+      );
+      const current = round(Number(item.quantity ?? 0));
       if (effectiveSplitQty >= current) {
         throw new Error(
           `Split quantity (${effectiveSplitQty}) must be less than the current quantity (${current})`
@@ -558,7 +802,6 @@ export async function splitIssueItem(args: {
           locationId,
           entityQty,
           moveQty,
-          keepQty: entityQty - moveQty,
           companyId,
           userId,
           nowIso
@@ -569,7 +812,7 @@ export async function splitIssueItem(args: {
       await trx
         .updateTable("nonConformanceItem")
         .set({
-          quantity: current - effectiveSplitQty,
+          quantity: round(round(current) - effectiveSplitQty),
           updatedBy: userId,
           updatedAt: nowIso
         })

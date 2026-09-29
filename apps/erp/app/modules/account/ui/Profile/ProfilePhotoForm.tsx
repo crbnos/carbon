@@ -1,4 +1,6 @@
-import { SUPABASE_URL, useCarbon } from "@carbon/auth";
+import { useCarbon } from "@carbon/auth";
+import { getCompanyPrivateBucket } from "@carbon/files";
+import { prepareImageUpload } from "@carbon/files/media";
 import { getLogger } from "@carbon/logger";
 import {
   Badge,
@@ -11,6 +13,7 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import type { ChangeEvent } from "react";
 import { useSubmit } from "react-router";
 import { Avatar } from "~/components";
+import { useUser } from "~/hooks";
 import { path } from "~/utils/path";
 import type { Account } from "../../types";
 
@@ -25,57 +28,24 @@ type ProfilePhotoFormProps = {
 const ProfilePhotoForm = ({ user }: ProfilePhotoFormProps) => {
   const { t } = useLingui();
   const { carbon } = useCarbon();
+  const { company } = useUser();
   const submit = useSubmit();
 
   const uploadImage = async (e: ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && carbon) {
       let avatarFile = e.target.files[0];
       toast.info(t`Uploading ${avatarFile.name}`);
-      const fileExtension = avatarFile.name.substring(
-        avatarFile.name.lastIndexOf(".") + 1
-      );
-      const formData = new FormData();
-      formData.append("file", avatarFile);
 
       try {
-        const response = await fetch(
-          `${SUPABASE_URL}/functions/v1/image-resizer`,
-          {
-            method: "POST",
-            body: formData
-          }
-        );
-
-        if (!response.ok) {
-          let errorMessage = "Failed to resize image";
-          const contentType = response.headers.get("Content-Type");
-
-          // Try to parse error response if it's JSON
-          if (contentType?.includes("application/json")) {
-            try {
-              const errorData = await response.json();
-              if (errorData.error) {
-                errorMessage = errorData.error;
-              }
-            } catch {
-              // If JSON parsing fails, use generic message
-            }
-          }
-
-          throw new Error(errorMessage);
-        }
-
-        // Get content type from response to determine if it's JPG or PNG
-        const contentType = response.headers.get("Content-Type") || "image/png";
-        const isJpg = contentType.includes("image/jpeg");
-        const outputExtension = isJpg ? "jpg" : "png";
-
-        const blob = await response.blob();
-        const resizedFile = new File([blob], `${user.id}.${outputExtension}`, {
-          type: contentType
+        const processed = await prepareImageUpload(carbon, {
+          bucket: getCompanyPrivateBucket(company.id),
+          directory: `${company.id}/tmp`,
+          file: avatarFile
         });
-
-        avatarFile = resizedFile;
+        const outputExtension = processed.name.split(".").pop();
+        avatarFile = new File([processed], `${user.id}.${outputExtension}`, {
+          type: processed.type
+        });
       } catch (error) {
         logger.error("Error", { error: error });
         const errorMessage =
@@ -86,7 +56,7 @@ const ProfilePhotoForm = ({ user }: ProfilePhotoFormProps) => {
 
       const imageUpload = await carbon.storage
         .from("avatars")
-        .upload(`${user.id}.${fileExtension}`, avatarFile, {
+        .upload(avatarFile.name, avatarFile, {
           cacheControl: "0",
           upsert: true
         });

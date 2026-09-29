@@ -99,7 +99,6 @@ const QuoteEmail = ({
                 : "please see the attached quote and let me know if you have any questions."}
             </Text>
           </Section>
-          <ExternalNotes content={quote.externalNotes} />
           {digitalQuoteUrl ? (
             <Section>
               <Button href={digitalQuoteUrl} className="mb-4">
@@ -107,6 +106,7 @@ const QuoteEmail = ({
               </Button>
             </Section>
           ) : null}
+          <ExternalNotes content={quote.externalNotes} />
           <Section className="bg-gray-50 rounded-lg text-xs">
             <Row>
               <Column className="p-5" colSpan={2}>

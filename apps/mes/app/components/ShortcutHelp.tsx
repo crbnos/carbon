@@ -34,7 +34,7 @@ const ShortcutHelp = () => {
       },
       {
         shortcut: SHORTCUTS.help,
-        description: t`Show this overlay`,
+        description: t`Show keyboard shortcuts`,
         group: general
       },
       {
@@ -95,6 +95,7 @@ const ShortcutHelp = () => {
   return (
     <ShortcutHelpOverlay
       title={t`Keyboard shortcuts`}
+      description={t`Press ? on any page to open this list. Shortcuts are ignored while you type in a field.`}
       entries={entries}
       emptyLabel={t`No shortcuts available on this page.`}
     />

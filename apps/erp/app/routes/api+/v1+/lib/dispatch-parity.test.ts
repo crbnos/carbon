@@ -14,7 +14,9 @@ const spies = vi.hoisted(() => ({
   getTrialBalance: vi.fn(),
   upsertAccount: vi.fn(),
   upsertJobMaterial: vi.fn(),
+  upsertMethodMaterial: vi.fn(),
   upsertQuoteLinePrices: vi.fn(),
+  updateQuoteLineOrder: vi.fn(),
   generateInventoryCountLines: vi.fn(),
   upsertNotificationPreference: vi.fn(),
   insertJob: vi.fn(),
@@ -33,7 +35,7 @@ const spies = vi.hoisted(() => ({
 vi.mock("~/modules/account/account.service", () => ({
   upsertNotificationPreference: spies.upsertNotificationPreference
 }));
-vi.mock("~/modules/accounting/accounting.ee.service", () => ({
+vi.mock("~/modules/accounting/accounting.service", () => ({
   getAccountLedger: spies.getAccountLedger,
   getTrialBalance: spies.getTrialBalance,
   upsertAccount: spies.upsertAccount
@@ -46,7 +48,9 @@ vi.mock("~/modules/invoicing/invoicing.service", () => ({
   replaceInvoiceSettlements: spies.replaceInvoiceSettlements,
   applyCreditsToInvoices: spies.applyCreditsToInvoices
 }));
-vi.mock("~/modules/items/items.service", () => ({}));
+vi.mock("~/modules/items/items.service", () => ({
+  upsertMethodMaterial: spies.upsertMethodMaterial
+}));
 vi.mock("~/modules/people/people.service", () => ({}));
 vi.mock("~/modules/production/production.mcp.server", () => ({}));
 vi.mock("~/modules/production/production.service", () => ({
@@ -62,9 +66,17 @@ vi.mock("~/modules/quality/quality.service", () => ({
 vi.mock("~/modules/resources/resources.service", () => ({}));
 vi.mock("~/modules/sales/sales.service", () => ({
   upsertQuoteLinePrices: spies.upsertQuoteLinePrices,
+  updateQuoteLineOrder: spies.updateQuoteLineOrder,
   insertSalesOrder: spies.insertSalesOrder
 }));
 vi.mock("~/modules/settings/settings.service", () => ({}));
+// The sales-rule gate imports `~/modules/sales/sales.server` and
+// `@carbon/ee/rules.server` — both server-only graphs (glossary/lingui, env
+// validation at import). Dispatch behavior under a gate block is not what
+// these golden tests pin, so stub it as "no block".
+vi.mock("./sales-rules-gate.server", () => ({
+  checkSalesRulesForOperation: vi.fn(async () => null)
+}));
 vi.mock("~/modules/shared/shared.service", () => ({}));
 vi.mock("~/modules/users/users.service", () => ({}));
 vi.mock("~/services/database.server", () => ({
@@ -82,6 +94,7 @@ vi.mock("@carbon/logger", () => ({
 import { MCP_BLOCKED_TOOL_NAMES } from "../../mcp+/lib/mcp-blocked-tools";
 import type { AuthedContext } from "./base.server";
 import { callOperation } from "./call.server";
+import { DATABASE_ERROR_MESSAGES } from "./database-errors";
 import {
   type DispatchResult,
   dispatchOperation,
@@ -132,7 +145,9 @@ const allSpies = [
   spies.getTrialBalance,
   spies.upsertAccount,
   spies.upsertJobMaterial,
+  spies.upsertMethodMaterial,
   spies.upsertQuoteLinePrices,
+  spies.updateQuoteLineOrder,
   spies.generateInventoryCountLines,
   spies.upsertNotificationPreference,
   spies.insertJob,
@@ -151,6 +166,68 @@ beforeEach(() => {
 });
 
 describe("dispatchOperation service-call contract (golden, ex-executeFunction parity)", () => {
+  // items_upsertMethodMaterial exposes storageUnitIds as a proper object map. The
+  // MCP path (unlike the web form) does NOT run the zod transform, so the object
+  // must reach the service verbatim — the old required-string-enum schema made a
+  // caller send "false", which the service spread into {"0":"f",…}.
+  const methodMaterialFields = {
+    id: "mm1",
+    makeMethodId: "mk1",
+    order: 1,
+    itemType: "Part",
+    methodType: "Pull from Inventory",
+    sourcingType: "Specified",
+    quantity: 2,
+    unitOfMeasureCode: "EA"
+  };
+
+  it("passes an object storageUnitIds map straight through on create", async () => {
+    const result = await runDispatch(
+      "items_upsertMethodMaterial",
+      spies.upsertMethodMaterial,
+      {
+        ...methodMaterialFields,
+        storageUnitIds: { loc1: "su1" },
+        _operation: "create"
+      }
+    );
+    expect(result.dispatchError).toBeUndefined();
+    expect(result.calls).toEqual([
+      [
+        spies.FAKE_CLIENT,
+        {
+          ...methodMaterialFields,
+          storageUnitIds: { loc1: "su1" },
+          companyId: "c1",
+          createdBy: "u1"
+        }
+      ]
+    ]);
+  });
+
+  it("omits storageUnitIds from the service payload when the caller omits it (update preserves)", async () => {
+    const result = await runDispatch(
+      "items_upsertMethodMaterial",
+      spies.upsertMethodMaterial,
+      { ...methodMaterialFields, _operation: "update" }
+    );
+    expect(result.dispatchError).toBeUndefined();
+    const [, payload] = result.calls[0] as [unknown, Record<string, unknown>];
+    expect("storageUnitIds" in payload).toBe(false);
+    expect(payload).toMatchObject({ companyId: "c1", updatedBy: "u1" });
+  });
+
+  it("forwards an explicit null storageUnitIds to clear on update", async () => {
+    const result = await runDispatch(
+      "items_upsertMethodMaterial",
+      spies.upsertMethodMaterial,
+      { ...methodMaterialFields, storageUnitIds: null, _operation: "update" }
+    );
+    expect(result.dispatchError).toBeUndefined();
+    const [, payload] = result.calls[0] as [unknown, Record<string, unknown>];
+    expect(payload.storageUnitIds).toBeNull();
+  });
+
   it.each([
     undefined,
     "forged-user"
@@ -354,18 +431,145 @@ describe("dispatchOperation service-call contract (golden, ex-executeFunction pa
     expect("updatedBy" in rows[0]).toBe(false);
   });
 
-  it("h. array payload on an update passes through untouched", () => {
+  it("h. array payload on an update adds nothing, but overwrites caller-supplied identity keys", () => {
     // No manifest op combines `_operation` with an array payload, so this pins the
     // enrichment helper directly.
-    const rows = [{ id: "p1", createdBy: "orig" }];
+    const rows = [
+      { id: "p1", sortOrder: 1 },
+      {
+        id: "p2",
+        createdBy: "forged",
+        updatedBy: "forged",
+        companyId: "other-company",
+        userId: "employee-7"
+      },
+      42
+    ];
     const out = enrichWithAuthContext(
       rows,
       ctx,
       ["companyId", "createdBy", "updatedBy"],
       "update"
     );
-    expect(out).toBe(rows);
-    expect(rows[0]).toEqual({ id: "p1", createdBy: "orig" });
+    expect(out).toEqual([
+      { id: "p1", sortOrder: 1 },
+      {
+        id: "p2",
+        createdBy: "u1",
+        updatedBy: "u1",
+        companyId: "c1",
+        // A row's userId is data (e.g. the assigned employee), never stamped.
+        userId: "employee-7"
+      },
+      42
+    ]);
+    // The caller's array is not mutated.
+    expect(rows[1]).toMatchObject({ createdBy: "forged" });
+  });
+
+  it("h2. a Kysely reorder gets the AUTHENTICATED companyId/userId positionally, never the body's", async () => {
+    // The service's companyId predicate is the only tenant boundary on a Kysely
+    // write, so it must come from context even when the body forges one.
+    const r = await runDispatch(
+      "sales_updateQuoteLineOrder",
+      spies.updateQuoteLineOrder,
+      {
+        companyId: "other-company",
+        userId: "forged",
+        quoteId: "q1",
+        updates: [
+          { id: "ql1", sortOrder: 2, updatedBy: "forged" },
+          { id: "ql2", sortOrder: 1 }
+        ]
+      }
+    );
+    // The parent quote id is the caller's (the service scopes every row to it);
+    // the identity fields never are.
+    expect(r.calls).toEqual([
+      [
+        spies.FAKE_DB,
+        "c1",
+        "u1",
+        "q1",
+        [
+          { id: "ql1", sortOrder: 2, updatedBy: "u1" },
+          { id: "ql2", sortOrder: 1 }
+        ]
+      ]
+    ]);
+  });
+
+  it("h3. a tenant key the caller nested one level down is overwritten, never added", () => {
+    // A `db` service may spread a nested object into `.set()`
+    // (updateItemMethodAndSourcing spreads `itemUpdate`), so a nested companyId
+    // would move the caller's rows into another company.
+    const out = enrichWithAuthContext(
+      {
+        itemIds: ["i1"],
+        itemUpdate: { sourcingType: "Buy", companyId: "other-company" },
+        cascade: { methodType: "Buy" },
+        rows: [{ id: "r1", companyGroupId: "other-group" }, { id: "r2" }]
+      },
+      ctx,
+      ["companyId", "updatedBy", "userId"],
+      "update"
+    );
+    expect(out).toEqual({
+      itemIds: ["i1"],
+      itemUpdate: { sourcingType: "Buy", companyId: "c1" },
+      cascade: { methodType: "Buy" },
+      rows: [{ id: "r1", companyGroupId: "g1" }, { id: "r2" }],
+      companyId: "c1",
+      updatedBy: "u1",
+      userId: "u1"
+    });
+  });
+
+  it("h3b. nested audit keys follow the top-level array rule: overwritten when supplied, never added", () => {
+    const out = enrichWithAuthContext(
+      {
+        lines: [
+          { id: "l1", createdBy: "forged", updatedBy: "forged" },
+          { id: "l2" }
+        ],
+        header: { updatedBy: "forged", userId: "employee-7" },
+        plain: { note: "untouched" }
+      },
+      ctx,
+      ["companyId"],
+      "update"
+    );
+    expect(out).toEqual({
+      lines: [{ id: "l1", createdBy: "u1", updatedBy: "u1" }, { id: "l2" }],
+      // A nested userId is data (e.g. an assignee), exactly as in an array row.
+      header: { updatedBy: "u1", userId: "employee-7" },
+      plain: { note: "untouched" },
+      companyId: "c1"
+    });
+  });
+
+  it("h4. a READ tool's nested identity keys are overwritten harmlessly — the read can only narrow to the caller's own company", async () => {
+    const r = await runDispatch(
+      "accounting_getAccountLedger",
+      spies.getAccountLedger,
+      {
+        accountNumber: "1000",
+        scope: { companyId: "other-company" },
+        filters: [{ column: "accountNumber", operator: "eq", value: "1000" }]
+      }
+    );
+    expect(r.calls).toEqual([
+      [
+        spies.FAKE_CLIENT,
+        {
+          accountNumber: "1000",
+          scope: { companyId: "c1" },
+          // Rows with no identity key pass through unchanged — nothing added.
+          filters: [{ column: "accountNumber", operator: "eq", value: "1000" }],
+          companyId: "c1"
+        }
+      ]
+    ]);
   });
 
   it("i. a `db` service param receives the Kysely client from getDatabaseClient()", async () => {
@@ -421,8 +625,6 @@ describe("dispatchOperation service-call contract (golden, ex-executeFunction pa
     expect(r.dispatchError).toBeInstanceOf(ORPCError);
     const orpcError = r.dispatchError as ORPCError<string, unknown>;
     expect(orpcError.message).toBe("duplicate key value");
-    // The raw error rides on the ORPCError so callOperation can reconstruct MCP's
-    // byte-identical `Database error: ${JSON.stringify(error)}` text.
     expect(
       (orpcError.data as { supabase?: unknown } | undefined)?.supabase
     ).toEqual(supabaseError);
@@ -435,7 +637,10 @@ describe("dispatchOperation service-call contract (golden, ex-executeFunction pa
       { args: { channel: "email", enabled: true } }
     );
     expect(r.calls).toEqual([
-      [spies.FAKE_CLIENT, { channel: "email", enabled: true, companyId: "c1" }]
+      [
+        spies.FAKE_CLIENT,
+        { channel: "email", enabled: true, companyId: "c1", userId: "u1" }
+      ]
     ]);
   });
 
@@ -538,7 +743,7 @@ describe("dispatchOperation service-call contract (golden, ex-executeFunction pa
 });
 
 // The exact ids the workflow engine's create actions dispatch
-// (packages/workflows/src/catalog/actions.ts). Their results must stay readable by
+// (packages/ee/src/workflows/catalog/actions.ts). Their results must stay readable by
 // create.ts's idIn(): an `id` on the returned object, or on an element of a list.
 //
 // The payloads are the ones runCreateAction actually builds — the catalog's
@@ -605,7 +810,7 @@ describe("callOperation (the MCP/agent/workflow entry point)", () => {
     expect(idIn((asList as { data: unknown }).data)).toBe("rec_2");
   });
 
-  it("maps a Supabase error to the errorKind:database envelope with MCP's exact text", async () => {
+  it("maps a Supabase error to the errorKind:database envelope with a closed-set message", async () => {
     const supabaseError = { message: "boom", code: "XX000" };
     spies.getAccountLedger.mockResolvedValue({
       data: null,
@@ -619,7 +824,30 @@ describe("callOperation (the MCP/agent/workflow entry point)", () => {
     expect(result).toEqual({
       success: false,
       errorKind: "database",
-      error: `Database error: ${JSON.stringify(supabaseError)}`
+      error: DATABASE_ERROR_MESSAGES.unknown
+    });
+    expect(result).not.toMatchObject({
+      error: expect.stringContaining("boom")
+    });
+  });
+
+  it("classifies a recognized failure without echoing the error", async () => {
+    spies.getAccountLedger.mockResolvedValue({
+      data: null,
+      error: {
+        code: "23505",
+        message: 'duplicate key value violates unique constraint "ledger_pkey"'
+      }
+    });
+    const result = await callOperation(
+      "accounting_getAccountLedger",
+      ctx,
+      LEDGER_ARGS
+    );
+    expect(result).toEqual({
+      success: false,
+      errorKind: "database",
+      error: DATABASE_ERROR_MESSAGES.conflict
     });
   });
 

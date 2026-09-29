@@ -512,3 +512,89 @@ describe("diffMethod — attributes", () => {
     expect(attributes[0].after).toEqual(target);
   });
 });
+
+describe("getItemDemand", () => {
+  function mockClient(rowsByTable: Record<string, unknown[]>) {
+    const reads: Array<{
+      table: string;
+      filters: Array<[string, string, unknown]>;
+    }> = [];
+    const client: any = {
+      from: (table: string) => {
+        const read = { table, filters: [] as Array<[string, string, unknown]> };
+        reads.push(read);
+        const builder: any = {
+          select: () => builder,
+          eq: (column: string, value: unknown) => {
+            read.filters.push(["eq", column, value]);
+            return builder;
+          },
+          in: (column: string, value: unknown) => {
+            read.filters.push(["in", column, value]);
+            return builder;
+          },
+          order: () => builder,
+          then: (resolve: (v: unknown) => void) =>
+            resolve({ data: rowsByTable[table] ?? [], error: null })
+        };
+        return builder;
+      }
+    };
+    return { client, reads };
+  }
+
+  const args = {
+    itemId: "item_1",
+    locationId: "loc_1",
+    companyId: "co_1",
+    periods: ["p1", "p2"]
+  };
+
+  it("reads demandProjection alongside demandActual and demandForecast", async () => {
+    const { getItemDemand } = await import("./items.service");
+    const { client, reads } = mockClient({});
+
+    await getItemDemand(client, args);
+
+    expect(reads.map((r) => r.table).sort()).toEqual([
+      "demandActual",
+      "demandForecast",
+      "demandProjection"
+    ]);
+  });
+
+  it("scopes the projection read to the item, location, company and periods", async () => {
+    const { getItemDemand } = await import("./items.service");
+    const { client, reads } = mockClient({});
+
+    await getItemDemand(client, args);
+
+    const projectionRead = reads.find((r) => r.table === "demandProjection");
+    expect(projectionRead?.filters).toEqual([
+      ["eq", "itemId", "item_1"],
+      ["eq", "locationId", "loc_1"],
+      ["eq", "companyId", "co_1"],
+      ["in", "periodId", ["p1", "p2"]]
+    ]);
+  });
+
+  it("returns the projection rows as `projections`, defaulting every series to []", async () => {
+    const { getItemDemand } = await import("./items.service");
+    const projectionRow = {
+      id: "dp_1",
+      itemId: "item_1",
+      locationId: "loc_1",
+      periodId: "p1",
+      forecastQuantity: 40
+    };
+    const { client } = mockClient({ demandProjection: [projectionRow] });
+
+    const demand = await getItemDemand(client, args);
+
+    expect(demand).toEqual({
+      actuals: [],
+      forecasts: [],
+      projections: [projectionRow]
+    });
+  });
+});

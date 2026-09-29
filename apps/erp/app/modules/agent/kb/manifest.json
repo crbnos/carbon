@@ -118,9 +118,9 @@
     {
       "slug": "docs/integrations/cad",
       "title": "CAD",
-      "description": "Sync CAD data from Onshape into Carbon.",
+      "description": "Sync CAD data from Onshape and Onshape Government into Carbon.",
       "keywords": ["cad", "docs", "integrations"],
-      "headings": ["Onshape", "Related"]
+      "headings": ["Onshape", "Onshape Government", "Related"]
     },
     {
       "slug": "docs/integrations/email",
@@ -192,21 +192,26 @@
         "The apply or revert looks stuck",
         "Can't apply a second template",
         "Applying failed with an error",
+        "Applying failed with \"Seed: this company trades with other companies in its group\"",
+        "Applying failed with \"Seed: this company has N posted or voided card transaction(s)\"",
+        "Material Planning, Scheduling or Priorities are empty right after applying",
+        "The Webhooks, API keys or Audit log screens are empty after applying",
+        "The Documents list is empty after applying a template",
         "The demo dates look recent — is that real activity?"
       ]
     },
     {
       "slug": "docs/platform/licensing",
       "title": "Licensing",
-      "description": "Carbon is dual-licensed: AGPLv3 for the open core, a commercial license for Enterprise features and for production or hosted use.",
+      "description": "Carbon is dual-licensed: AGPLv3 for Community Edition (CE), and a commercial license for Business features or for keeping your changes private.",
       "keywords": ["licensing", "docs", "platform"],
       "headings": [
         "Editions",
+        "What each plan unlocks",
         "How to buy",
         "Carbon Cloud — we run it",
         "Self-hosted — you run it",
         "The AGPL obligation",
-        "You can't resell Carbon as a service",
         "How the agreements fit together",
         "When you need a commercial license"
       ]
@@ -351,6 +356,24 @@
       ]
     },
     {
+      "slug": "docs/reference/assembly-instructions",
+      "title": "Assembly instructions",
+      "description": "Step-by-step 3D build guides for a made part, authored in the ERP from its CAD model and played to operators on the shop floor.",
+      "keywords": ["assembly", "instructions", "docs", "reference"],
+      "headings": [
+        "Versions and status",
+        "Steps",
+        "Step details",
+        "Components and hidden parts",
+        "Playback settings",
+        "Building a group off to the side",
+        "Materials, tools, and slides",
+        "On jobs and the shop floor",
+        "Related",
+        "Internals, exact strings, and troubleshooting"
+      ]
+    },
+    {
       "slug": "docs/reference/audit-log",
       "title": "Audit log",
       "description": "A per-company change history for key business entities. What gets recorded, how to view and filter it, and how old entries are archived.",
@@ -382,6 +405,8 @@
         "Lifecycle",
         "On the schedule",
         "On the shop floor",
+        "Picking materials",
+        "Completing the batch",
         "Related",
         "Internals, exact strings, and troubleshooting",
         "The batch card is missing from the operations board / MES",
@@ -389,6 +414,9 @@
         "An operator sees a job that was never released",
         "Retry Completion rejects my corrected quantities",
         "The builder hides some operations on the process",
+        "The pick modal says a batch number is not available",
+        "A shared pick left every member short",
+        "Completed the batch but the lots did not merge",
         "Suggested batches look wrong / too small"
       ]
     },
@@ -703,6 +731,7 @@
         "What you can import",
         "The import flow",
         "Insert, update, or skip",
+        "Opening stock",
         "Errors and partial failures",
         "Related",
         "Troubleshooting",
@@ -711,6 +740,8 @@
         "A fixed-asset CSV is rejected",
         "An enum column imported as the wrong value",
         "Re-importing created duplicates — or didn't update what I expected",
+        "Opening stock doubled after a second import",
+        "An opening-stock row says the item is tracked differently",
         "My custom fields are blank after import"
       ]
     },
@@ -960,6 +991,7 @@
         "Focused lists",
         "Open Jobs",
         "Running an operation",
+        "The guided assembly view",
         "Reporting quantities",
         "Issuing material",
         "Clocking in and out",
@@ -969,7 +1001,8 @@
         "Maintenance dispatch",
         "Troubleshooting",
         "\"Incorrect PIN\"",
-        "\"No PIN set. Please set a PIN in your account settings.\"",
+        "\"Too many incorrect PINs. Please wait a few minutes and try again.\"",
+        "\"No PIN set. Ask an admin to set a console PIN for you.\"",
         "\"This picking list is closed. Reopen it from the ERP to continue.\"",
         "Finish is blocked or warns (\"Insufficient quantity\" / \"Steps are missing\")",
         "\"Forgot to Clock Out?\"",
@@ -1025,7 +1058,7 @@
         "Where to go next",
         "Internals and troubleshooting",
         "Stuck in the setup wizard / keeps redirecting to /onboarding",
-        "The Industry step isn't showing",
+        "\"Restore from a backup\" isn't offered on the Industry step",
         "The Plan step isn't showing"
       ]
     },
@@ -1117,8 +1150,8 @@
         "Where each piece lives",
         "Troubleshooting",
         "\"Incorrect PIN\"",
-        "\"No PIN set. Please set a PIN in your account settings.\"",
-        "\"PIN must be 4 digits\"",
+        "\"Too many incorrect PINs. Please wait a few minutes and try again.\"",
+        "\"No PIN set. Ask an admin to set a console PIN for you.\"",
         "\"Group members are required\"",
         "A user can sign in but sees nothing / can't open a module",
         "Editing an employee type didn't change existing people's access",
@@ -1391,6 +1424,22 @@
       ]
     },
     {
+      "slug": "docs/reference/sales-rules",
+      "title": "Sales rules",
+      "description": "Predicate guards on sales documents: block a restricted item with an error, or warn and let the user acknowledge and continue.",
+      "keywords": ["sales", "rules", "docs", "reference"],
+      "headings": [
+        "What a rule checks",
+        "Where rules fire",
+        "Block or warn",
+        "Scope and assignment",
+        "Rule fields",
+        "Where to manage them",
+        "Related",
+        "Troubleshooting"
+      ]
+    },
+    {
       "slug": "docs/reference/scheduling",
       "title": "Scheduling",
       "description": "Finite-capacity scheduling — how jobs are placed onto real work-center and operator calendars, and the boards that show and steer the result.",
@@ -1585,6 +1634,8 @@
         "Suppliers",
         "Customers",
         "What they share",
+        "Bank accounts",
+        "Documents",
         "Related",
         "Troubleshooting",
         "\"Cannot edit a protected customer type\" / \"Cannot edit a protected supplier type\"",

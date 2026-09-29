@@ -73,7 +73,7 @@ export default function ChangeNoticeReleaseMerge({
 
   return (
     <Modal open={open} onOpenChange={(v) => releaseDialogOpenAtom.set(v)}>
-      <ModalContent className="flex h-[90vh] w-[90vw] flex-col p-0 sm:max-w-3xl">
+      <ModalContent className="w-[90vw] p-0 sm:max-w-3xl">
         <ModalHeader className="px-6 pt-6">
           <ModalTitle>
             <Trans>Release change notice</Trans>
@@ -86,7 +86,7 @@ export default function ChangeNoticeReleaseMerge({
           </ModalDescription>
         </ModalHeader>
 
-        <ModalBody className="flex-1 overflow-y-auto px-6 scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent">
+        <ModalBody>
           <VStack spacing={4} className="w-full">
             {changes.length === 0 ? (
               <span className="text-sm italic text-muted-foreground">

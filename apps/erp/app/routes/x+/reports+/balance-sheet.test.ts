@@ -10,7 +10,7 @@ import {
   getFinancialStatementPeriodSeries,
   getFiscalYearSettings
 } from "~/modules/accounting";
-import { getConsolidatedPeriodSeriesForReport } from "~/modules/accounting/accounting.ee.server";
+import { getConsolidatedPeriodSeriesForReport } from "~/modules/accounting/accounting.server";
 import type { ChartPeriodSeries } from "~/modules/accounting/types";
 import { NET_INCOME_ACCOUNT_ID } from "~/modules/accounting/types";
 import { exportPeriodReport } from "~/modules/accounting/ui/Reports/exportReport";
@@ -68,15 +68,15 @@ vi.mock("~/modules/shared/timezone.server", () => ({
   getCompanyTimeZone: vi.fn(async () => "America/New_York")
 }));
 vi.mock("~/modules/accounting", async () => ({
-  ...(await import("~/modules/accounting/accounting.ee.service")),
+  ...(await import("~/modules/accounting/accounting.service")),
   ...(await import("~/modules/accounting/accounting.models")),
   getCompaniesInGroup: vi.fn(),
   getFinancialStatementPeriodSeries: vi.fn(),
   getFinancialStatementBalances: vi.fn(),
   getFiscalYearSettings: vi.fn()
 }));
-vi.mock("~/modules/accounting/accounting.ee.server", async () => ({
-  ...(await vi.importActual("~/modules/accounting/accounting.ee.server")),
+vi.mock("~/modules/accounting/accounting.server", async () => ({
+  ...(await vi.importActual("~/modules/accounting/accounting.server")),
   getConsolidatedPeriodSeriesForReport: vi.fn()
 }));
 vi.mock("@carbon/auth/client.server", () => ({
@@ -516,14 +516,13 @@ describe("balance sheet configured CTA", () => {
   it("exports the corrected leaf, intermediate equity group, and root values", async () => {
     const result = await runLoader();
     let downloaded: Blob | undefined;
-    vi.stubGlobal("window", {
-      URL: {
-        createObjectURL: (blob: Blob) => {
-          downloaded = blob;
-          return "blob:report";
-        },
-        revokeObjectURL: vi.fn()
-      }
+    // downloadBlob (@carbon/files) uses the bare URL global, not window.URL.
+    vi.stubGlobal("URL", {
+      createObjectURL: (blob: Blob) => {
+        downloaded = blob;
+        return "blob:report";
+      },
+      revokeObjectURL: vi.fn()
     });
     vi.stubGlobal("document", {
       createElement: () => ({ click: vi.fn() }),

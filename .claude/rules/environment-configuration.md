@@ -50,7 +50,7 @@ keys listed in `getBrowserEnv()` are exposed client-side.
   which crbn never writes). Use it to point a local stack at a remote service.
 - Self-hosting? The Swarm stack does **not** use a prod `.env` for secrets — it
   uses Docker Swarm secrets + non-secret `contrib/deploying/simple-docker-caddy/.env`.
-  See [contrib-deployment-swarm.md](contrib-deployment-swarm.md).
+  See [the self-host deployment README](../../contrib/deploying/simple-docker-caddy/README.md).
 - `scripts/setup-env-files.ts` symlinks the root `.env` (and `.env.local` if
   present) into `apps/*` and packages `database`, `jobs`, `kv`.
 
@@ -67,9 +67,13 @@ secret), `SUPABASE_JWT_SECRET` (optional), plus
 `INNGEST_DEV` is set). Dev also uses `INNGEST_DEV`, `INNGEST_BASE_URL`,
 `INNGEST_SERVE_HOST`, `INNGEST_TLS_HOST`.
 
-**Auth / session** — `SESSION_SECRET` (required), `AUTH_PROVIDERS`
+**Auth / session** — `SESSION_SECRET` (required; also signs the short-lived,
+single-use `carbon-oauth-state` cookie in `@carbon/auth/oauth-state.server`), `AUTH_PROVIDERS`
 (`email,google,azure,passkey,sso`; gate via `isAuthProviderEnabled`),
-`CLOUDFLARE_TURNSTILE_SITE_KEY` / `_SECRET_KEY`, `RATE_LIMIT`.
+`CLOUDFLARE_TURNSTILE_SITE_KEY` / `_SECRET_KEY`, `RATE_LIMIT`. `IS_VERCEL` reads
+Vercel's own `VERCEL=1`. `BOT_PROTECTION` (`botid` | `turnstile`, unset = BotID for
+Cloud on Vercel, else Turnstile if keyed) picks the login bot check (see
+`authentication-system.md`).
 `SAML_ENABLED` / `SAML_PRIVATE_KEY` are NOT `@carbon/env` vars — they live in
 root `.env` and reach GoTrue via docker-compose substitution (`GOTRUE_SAML_*`).
 Both `crbn up` and `crbn reload` preload `.env.local` then `.env` into
@@ -82,15 +86,36 @@ process.env before invoking compose so these survive a recreate; see the
 endpoint (`/api/webhook/stripe`, billing) and the Connect endpoint
 (`/api/webhook/stripe-connect`, connected-account events) are signed separately.
 
-**Email** — `RESEND_API_KEY`, `RESEND_DOMAIN` (default `carbon.ms`),
-`DISABLE_RESEND` (short-circuits sends), optional `RESEND_AUDIENCE_ID`.
+**Email** — `SMTP_HOST`, `SMTP_PORT` (465 = implicit TLS, 587 = STARTTLS,
+default 587), `SMTP_USER`, `SMTP_PASSWORD`, `SMTP_FROM` (default
+`Carbon <no-reply@carbon.ms>`). All optional — unset disables email sending.
+Optional `RESEND_API_KEY` (marketing contacts; also a legacy SMTP fallback via
+smtp.resend.com when `SMTP_*` is unset) and `RESEND_AUDIENCE_ID`.
 
-**Integrations (all optional)** — Slack (`SLACK_BOT_TOKEN`, `SLACK_CLIENT_ID`,
+**Integrations (all optional)** — Ramp (`RAMP_CLIENT_ID`, public and exposed by
+`getBrowserEnv()` for the authorize URL; `RAMP_CLIENT_SECRET`, server-only for code
+exchange/token refresh), Slack (`SLACK_BOT_TOKEN`, `SLACK_CLIENT_ID`,
 `SLACK_CLIENT_SECRET`, `SLACK_SIGNING_SECRET`, `SLACK_STATE_SECRET`,
 `SLACK_OAUTH_REDIRECT_URL`), OnShape (`ONSHAPE_CLIENT_ID/SECRET`,
 `ONSHAPE_OAUTH_REDIRECT_URL`), Xero, QuickBooks, Jira (each `*_CLIENT_ID/SECRET`,
 plus webhook/redirect/state secrets), `EXCHANGE_RATES_API_KEY`,
 `GOOGLE_PLACES_API_KEY`, AI keys `ANTHROPIC_API_KEY` / `OPENAI_API_KEY`.
+
+Ramp intentionally has no separate `RAMP_STATE_SECRET`. `issueOAuthState()` /
+`issueOAuthStates()` store a random nonce plus `{integrationId,userId,companyId,expiresAt}`
+per integration (keyed by `integrationId`, 1 h lifetime, a still-fresh one is reused) in
+one signed HttpOnly cookie backed by `SESSION_SECRET`; pass the request so other
+integrations' pending states survive. `consumeOAuthState()` validates all fields and
+removes that integration's entry on every attempt (the cookie is destroyed once empty).
+The integrations page loader issues one for every integration with an `oauth` config
+(Ramp, Xero, QuickBooks, Jira — IntegrationCard puts it on the authorize URL), Onshape's
+`api+/integrations.onshape.install.ts` issues its own (via `beginOnshapeAuthorization`,
+`@carbon/ee/onshape.server`), Onshape Government's is issued by the integration settings
+save — its OAuth client is the customer's private app, not an env var — and each callback
+consumes it.
+Slack binds its state separately (`SLACK_STATE_SECRET`, `@slack/oauth` state store,
+checked against the caller's company and user). Managed deployment propagates both Ramp OAuth
+vars through `ci/src/deploy.ts` → `sst.config.ts` → the ERP service only.
 
 **Analytics / config** — `POSTHOG_API_HOST`, `POSTHOG_PROJECT_PUBLIC_KEY`
 (required, public), `CARBON_EDITION` (`community|cloud|enterprise|test` →
@@ -114,9 +139,9 @@ set to `production` in prod compose), `VERCEL_ENV`, `NODE_ENV`. `ERP_URL` /
 - Required-var validation runs at **module load** — a missing `SUPABASE_URL`,
   `SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_DB_URL`, `REDIS_URL`, `SESSION_SECRET`,
   `POSTHOG_*`, or `VERCEL_URL` crashes boot, not lazily at first use.
-- `packages/lib/src/resend.server.ts` does `new Resend(process.env.RESEND_API_KEY!)`
-  at module load, so ERP needs a non-empty `RESEND_API_KEY` to boot even if you
-  don't send email (use any placeholder, e.g. `re_placeholder`).
+- Email is deliberately lazy: `packages/lib/src/email.server.ts` builds the
+  SMTP transport on first send, never at import, so a deployment with no mail
+  config boots fine and `sendEmail` no-ops.
 - Only keys in `getBrowserEnv()` reach the client; adding a public var means
   adding it there AND to the `Window.env` interface declaration.
 - Don't put ports/URLs/Supabase/Redis/Inngest dev values in `.env` — `crbn up`

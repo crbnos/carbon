@@ -28,8 +28,7 @@ type NewProps = {
 };
 
 const New = ({ label, to, variant = "primary" }: NewProps) => {
-  const { i18n, t } = useLingui();
-  const translatedLabel = label ? i18n._(label) : undefined;
+  const { t } = useLingui();
 
   useEffect(() => {
     mountedCount++;
@@ -53,9 +52,7 @@ const New = ({ label, to, variant = "primary" }: NewProps) => {
       variant={variant}
       shortcut={isSoleNew ? SHORTCUTS.newRecord : undefined}
     >
-      <Link to={to}>
-        {translatedLabel ? `${t`Add`} ${translatedLabel}` : t`Add`}
-      </Link>
+      <Link to={to}>{label ? `${t`Add`} ${label}` : t`Add`}</Link>
     </Button>
   );
 };

@@ -72,6 +72,12 @@ describe("greedyFillAllocation", () => {
     const picks = greedyFillAllocation([lot("B", 1), lot("A", 1)], 2);
     expect(picks.map((p) => p.trackedEntityId)).toEqual(["B", "A"]);
   });
+
+  it("rounds the spilled remainder at the persist boundary (0.98 + 0.02)", () => {
+    // Raw float would spill round(1 - 0.98) = 0.020000000000000018 onto B.
+    const picks = greedyFillAllocation([lot("A", 0.98), lot("B", 5)], 1);
+    expect(picks.map((p) => p.quantity)).toEqual([0.98, 0.02]);
+  });
 });
 
 describe("sortLotsByPickMethod", () => {

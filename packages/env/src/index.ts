@@ -9,7 +9,6 @@ declare global {
       CARBON_API_URL: string;
       CARBON_SLACK_ENABLED: string;
       STRIPE_CONNECT_ENABLED: string;
-      CLOUDFLARE_TURNSTILE_SITE_KEY: string;
       CONTROLLED_ENVIRONMENT: string;
       ERP_URL: string;
       JIRA_CLIENT_ID: string;
@@ -19,6 +18,7 @@ declare global {
       ONSHAPE_CLIENT_ID: string;
       POSTHOG_API_HOST: string;
       POSTHOG_PROJECT_PUBLIC_KEY: string;
+      RAMP_CLIENT_ID: string;
       SUPABASE_URL: string;
       SUPABASE_ANON_KEY: string;
       VERCEL_URL: string;
@@ -54,7 +54,6 @@ declare global {
       QUICKBOOKS_ENVIRONMENT: string;
       QUICKBOOKS_WEBHOOK_SECRET: string;
       RESEND_API_KEY: string;
-      RESEND_DOMAIN: string;
       SESSION_SECRET: string;
       SESSION_KEY: string;
       SESSION_ERROR_KEY: string;
@@ -63,6 +62,11 @@ declare global {
       SLACK_OAUTH_REDIRECT_URL: string;
       SLACK_SIGNING_SECRET: string;
       SLACK_STATE_SECRET: string;
+      SMTP_FROM: string;
+      SMTP_HOST: string;
+      SMTP_PASSWORD: string;
+      SMTP_PORT: string;
+      SMTP_USER: string;
       STRIPE_SECRET_KEY: string;
       STRIPE_WEBHOOK_SECRET: string;
       STRIPE_CONNECT_WEBHOOK_SECRET: string;
@@ -157,15 +161,6 @@ export const CARBON_API_URL =
     isRequired: false,
     isSecret: false
   }) ?? getEnv("SUPABASE_URL", { isSecret: false });
-
-export const CLOUDFLARE_TURNSTILE_SITE_KEY = getEnv(
-  "CLOUDFLARE_TURNSTILE_SITE_KEY",
-  { isRequired: false, isSecret: false }
-);
-export const CLOUDFLARE_TURNSTILE_SECRET_KEY = getEnv(
-  "CLOUDFLARE_TURNSTILE_SECRET_KEY",
-  { isRequired: false }
-);
 
 export const DOMAIN = getEnv("DOMAIN", { isRequired: false }); // preview environments need no domain
 
@@ -285,15 +280,44 @@ export const QUICKBOOKS_ENVIRONMENT =
     isSecret: false
   }) ?? "production";
 
+/**
+ * Carbon's own Ramp OAuth application (the "Connect to Ramp" authorization-code
+ * flow). Distinct from any single customer's client-credentials pair — this is
+ * the one app Carbon registers with Ramp. The client id is public (it appears in
+ * the authorize URL); the secret is server-only (code exchange + token refresh).
+ */
+export const RAMP_CLIENT_ID = getEnv("RAMP_CLIENT_ID", {
+  isRequired: false
+});
+
+export const RAMP_CLIENT_SECRET = getEnv("RAMP_CLIENT_SECRET", {
+  isRequired: false,
+  isSecret: true
+});
+
 export const QUICKBOOKS_WEBHOOK_SECRET = getEnv("QUICKBOOKS_WEBHOOK_SECRET", {
   isRequired: false,
   isSecret: true
 });
 
-export const RESEND_DOMAIN =
-  getEnv("RESEND_DOMAIN", {
+export const SMTP_FROM = getEnv("SMTP_FROM", {
+  isRequired: false
+});
+export const SMTP_HOST = getEnv("SMTP_HOST", {
+  isRequired: false
+});
+export const SMTP_PASSWORD = getEnv("SMTP_PASSWORD", {
+  isRequired: false,
+  isSecret: true
+});
+export const SMTP_PORT = Number(
+  getEnv("SMTP_PORT", {
     isRequired: false
-  }) ?? "carbon.ms";
+  }) || 587
+);
+export const SMTP_USER = getEnv("SMTP_USER", {
+  isRequired: false
+});
 
 export const SLACK_BOT_TOKEN = getEnv("SLACK_BOT_TOKEN", {
   isRequired: false
@@ -342,15 +366,6 @@ export const SUPABASE_AUTH_EXTERNAL_GOOGLE_CLIENT_ID = getEnv(
     isRequired: false,
     isSecret: true
   }
-);
-// True once Supabase Auth captcha (Attack Protection) is enabled — login
-// actions then forward Turnstile tokens to GoTrue instead of verifying in-app.
-export const SUPABASE_AUTH_CAPTCHA_ENABLED = parseBoolean(
-  getEnv("SUPABASE_AUTH_CAPTCHA_ENABLED", {
-    isRequired: false,
-    isSecret: false
-  }),
-  false
 );
 export const SESSION_SECRET = getEnv("SESSION_SECRET");
 export const SESSION_KEY = "auth";
@@ -459,6 +474,35 @@ export const IS_LOCAL_DEV =
   VERCEL_ENV !== "production" &&
   VERCEL_ENV !== "preview";
 
+// Turnstile guards login wherever BotID can't run (anything not on Vercel).
+// Both keys or neither: a site key alone would render a widget nobody checks.
+// A local stack always uses Cloudflare's always-pass test pair, so login works
+// with no Turnstile account; the two only pass together.
+// https://developers.cloudflare.com/turnstile/troubleshooting/testing/
+export const CLOUDFLARE_TURNSTILE_SITE_KEY = IS_LOCAL_DEV
+  ? "1x00000000000000000000AA"
+  : getEnv("CLOUDFLARE_TURNSTILE_SITE_KEY", {
+      isRequired: false,
+      isSecret: false
+    });
+export const CLOUDFLARE_TURNSTILE_SECRET_KEY = IS_LOCAL_DEV
+  ? "1x0000000000000000000000000000000AA"
+  : getEnv("CLOUDFLARE_TURNSTILE_SECRET_KEY", { isRequired: false });
+
+// Set to "1" by Vercel itself on every build and function — never by SST,
+// Docker, or a local stack, which all set VERCEL_ENV by hand. Server-only.
+export const IS_VERCEL =
+  getEnv("VERCEL", { isRequired: false, isSecret: true }) === "1";
+
+// Which check guards login: "botid" or "turnstile". Unset picks one — BotID
+// for the Cloud edition on Vercel, else Turnstile when its keys are set. Set it
+// when the keys are there for something else (GoTrue, another form) and login
+// should still use BotID. Vercel exposes no variable of its own for BotID.
+export const BOT_PROTECTION = getEnv("BOT_PROTECTION", {
+  isRequired: false,
+  isSecret: false
+});
+
 export const POSTHOG_API_HOST = getEnv("POSTHOG_API_HOST", {
   isSecret: false
 });
@@ -469,6 +513,18 @@ export const SUPABASE_URL = getEnv("SUPABASE_URL", { isSecret: false });
 export const SUPABASE_ANON_KEY = getEnv("SUPABASE_ANON_KEY", {
   isSecret: false
 });
+
+// Server-only. In a BYOC/self-hosted k8s deployment, the server's own calls to
+// Supabase can be pointed at an in-cluster address (bypassing the ingress hop
+// that some clusters — k3s's load balancer refusing pod-to-own-LB traffic in
+// particular — cannot route) while the browser keeps the public SUPABASE_URL.
+// Falls back to SUPABASE_URL so every existing deployment (Vercel included) is
+// unaffected when unset. Same pattern as INNGEST_BASE_URL: read directly, never
+// added to getBrowserEnv() or the Window.env interface, so it cannot leak to
+// the browser by construction.
+export const SUPABASE_INTERNAL_URL =
+  getEnv("SUPABASE_INTERNAL_URL", { isRequired: false, isSecret: false }) ||
+  SUPABASE_URL;
 
 export const DEFAULT_LANGUAGE =
   getEnv("DEFAULT_LANGUAGE", {
@@ -534,7 +590,6 @@ export function getBrowserEnv() {
     CARBON_EDITION,
     CARBON_SLACK_ENABLED: CARBON_SLACK_ENABLED ? "true" : "",
     STRIPE_CONNECT_ENABLED: STRIPE_CONNECT_ENABLED ? "true" : "",
-    CLOUDFLARE_TURNSTILE_SITE_KEY,
     CONTROLLED_ENVIRONMENT,
     DEFAULT_LANGUAGE,
     ERP_URL,
@@ -547,6 +602,7 @@ export function getBrowserEnv() {
     POSTHOG_API_HOST,
     POSTHOG_PROJECT_PUBLIC_KEY,
     QUICKBOOKS_CLIENT_ID,
+    RAMP_CLIENT_ID,
     SUPABASE_ANON_KEY,
     SUPABASE_URL,
     VERCEL_ENV,

@@ -1,4 +1,4 @@
-import type { PairEntry, ValueOrRef } from "@carbon/workflows";
+import type { PairEntry, ValueOrRef } from "@carbon/ee/workflows";
 import { describe, expect, it } from "vitest";
 import {
   addRow,

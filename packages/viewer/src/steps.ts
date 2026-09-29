@@ -9,12 +9,15 @@ import {
   buildAssemblyStepGroups,
   CURRENT_PLAN_VERSION
 } from "./plan";
+import { joinTargets, stagedGroupNodeIds } from "./staging";
 
 export {
   assignStepPhases,
   buildAssemblyStepGroups,
   CURRENT_PLAN_VERSION,
-  indexAssemblyGraph
+  indexAssemblyGraph,
+  joinTargets,
+  stagedGroupNodeIds
 };
 export type { AssemblyGraphIndex } from "./graph";
 export type { AssemblyPlan, AssemblyStepGroup, StepPhase } from "./plan";

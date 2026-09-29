@@ -6,18 +6,20 @@ import type {
   KyselyDatabase,
   KyselyTx
 } from "@carbon/database/client";
+import { storage } from "@carbon/files";
 import { getLogger } from "@carbon/logger";
 import { datetime } from "@carbon/utils";
 import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
 import { nanoid } from "nanoid";
 import type { z } from "zod";
+import { createDocumentUploadUrl } from "~/modules/documents/documents.service";
 import type { GenericQueryFilters } from "~/utils/query";
 import {
   LIST_COUNT,
   setGenericQueryFilters,
   setSearchFilter
 } from "~/utils/query";
-import { sanitize } from "~/utils/supabase";
+import { ruleError, sanitize } from "~/utils/supabase";
 import type { nonConformancePriority } from "../quality/quality.models";
 import type {
   operationParameterValidator,
@@ -33,6 +35,7 @@ import {
   type SourcingType,
   type SupplierPriceMap
 } from "../shared";
+import { updateSortOrder } from "../shared/sort-order";
 import {
   type ChangeNoticeChangeType,
   type ChangeNoticeError,
@@ -84,6 +87,19 @@ import {
   type toolValidator,
   type unitOfMeasureValidator
 } from "./items.models";
+import {
+  checkMaterialProperties,
+  clearsSubstanceOrShape,
+  generatedIdsNeedSubstanceAndShape,
+  generateMaterialIdentity,
+  type MaterialPropertyLookups,
+  type MaterialPropertyValues,
+  materialItemUpdateFields,
+  noMaterialProperties,
+  resolveMaterialProperties,
+  sentFields,
+  sentMaterialProperties
+} from "./material-properties";
 import type { InventoryItemType } from "./types";
 
 const PARTS_LIST_COLUMNS =
@@ -658,7 +674,7 @@ export async function getItemDemand(
     companyId: string;
   }
 ) {
-  const [actuals, forecasts] = await Promise.all([
+  const [actuals, forecasts, projections] = await Promise.all([
     client
       .from("demandActual")
       .select("*")
@@ -673,12 +689,20 @@ export async function getItemDemand(
       .eq("locationId", locationId)
       .eq("companyId", companyId)
       .in("periodId", periods)
-      .order("periodId")
+      .order("periodId"),
+    client
+      .from("demandProjection")
+      .select("*")
+      .eq("itemId", itemId)
+      .eq("locationId", locationId)
+      .eq("companyId", companyId)
+      .in("periodId", periods)
   ]);
 
   return {
     actuals: actuals.data ?? [],
-    forecasts: forecasts.data ?? []
+    forecasts: forecasts.data ?? [],
+    projections: projections.data ?? []
   };
 }
 
@@ -787,10 +811,10 @@ export async function getItemFiles(
   itemId: string,
   companyId: string
 ) {
-  const result = await client.storage
-    .from("private")
+  const result = await storage(client)
+    .company(companyId)
     .list(`${companyId}/parts/${itemId}`);
-  return result.data || [];
+  return result.data ?? [];
 }
 
 export async function getItemPostingGroup(
@@ -884,6 +908,47 @@ export async function getItemQuantities(
     .maybeSingle();
 }
 
+/**
+ * On-hand quantity per item for the Item picker's badge, as a plain map.
+ *
+ * `locationId` of "all" totals every location (including the '' bucket for
+ * ledger rows with no location), matching what the picker shows when no
+ * location is in play. Zero rows are dropped — the picker renders no badge for
+ * an item it has no row for, so they carry no information and are the bulk of
+ * the table on a tenant with history.
+ */
+export async function getItemStockQuantitiesByLocation(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  locationId: string
+) {
+  const { data, error } = await fetchAllFromTable<{
+    itemId: string;
+    quantityOnHand: number;
+  }>(client, "itemStockQuantities", "itemId, quantityOnHand", (query) => {
+    const scoped = query
+      .eq("companyId", companyId)
+      .neq("quantityOnHand", 0)
+      // Total order across the whole key: fetchAllFromTable pages, and without
+      // one a concurrent write can shift a row across a page boundary.
+      .order("itemId")
+      .order("locationId");
+
+    return locationId === "all" ? scoped : scoped.eq("locationId", locationId);
+  });
+
+  if (error) return { data: null, error };
+
+  const quantities: Record<string, number> = {};
+  for (const row of data ?? []) {
+    if (!row.itemId) continue;
+    quantities[row.itemId] =
+      (quantities[row.itemId] ?? 0) + (Number(row.quantityOnHand) || 0);
+  }
+
+  return { data: quantities, error: null };
+}
+
 export async function getItemReplenishment(
   client: SupabaseClient<Database>,
   itemId: string,
@@ -911,6 +976,21 @@ export async function getItemSupersession(
     .eq("itemId", itemId)
     .eq("companyId", companyId)
     .maybeSingle();
+}
+
+export async function getItemSupersessionsForItems(
+  client: SupabaseClient<Database>,
+  itemIds: string[],
+  companyId: string
+) {
+  if (itemIds.length === 0) return { data: [], error: null };
+  return client
+    .from("itemSupersession")
+    .select(
+      "itemId, supersessionMode, successorItemId, successorEffectivityDate, conversionFactor, successor:item!itemSupersession_successorItemId_fkey(readableIdWithRevision)"
+    )
+    .in("itemId", itemIds)
+    .eq("companyId", companyId);
 }
 
 // Parts that point to this item as their successor (the "Supersedes" back-ref).
@@ -1774,7 +1854,7 @@ export async function getOpenJobMaterials(
   return client
     .from("openJobMaterialLines")
     .select(
-      "id, parentMaterialId, jobMakeMethodId, jobId, quantity:quantityToIssue, documentReadableId:jobReadableId, documentId:jobId, dueDate"
+      "id, parentMaterialId, jobMakeMethodId, jobId, quantity:quantityToIssue, quantityPerParent, documentReadableId:jobReadableId, documentId:jobId, dueDate"
     )
     .eq("itemId", itemId)
     .eq("locationId", locationId)
@@ -2252,6 +2332,18 @@ export async function getUnitOfMeasure(
     .eq("id", id)
     .eq("companyId", companyId)
     .single();
+}
+
+/**
+ * Which tables still reference a unit of measure, and how many rows each;
+ * empty means safe to delete (or id not visible to the caller). RPC-backed so
+ * the answer doesn't depend on the caller's module permissions.
+ */
+export async function getUnitOfMeasureUsage(
+  client: SupabaseClient<Database>,
+  id: string
+) {
+  return client.rpc("get_unit_of_measure_usage", { p_id: id });
 }
 
 export async function getUnitOfMeasures(
@@ -2818,6 +2910,7 @@ export async function upsertPickMethodWithShelfLife(
     defaultStorageUnitId?: string | null;
     sortMethod?: (typeof pickMethodSortMethods)[number];
     customFields?: Json;
+    companyId: string;
     userId: string;
     shelfLife: {
       mode?: (typeof shelfLifeModes)[number];
@@ -2831,6 +2924,18 @@ export async function upsertPickMethodWithShelfLife(
   const updatedAt = datetime.timestamp();
 
   return db.transaction().execute(async (trx) => {
+    // Kysely bypasses RLS and itemId comes from the URL, so prove the item is
+    // this company's before any write — every statement below is also scoped.
+    const item = await trx
+      .selectFrom("item")
+      .select("id")
+      .where("id", "=", args.itemId)
+      .where("companyId", "=", args.companyId)
+      .executeTakeFirst();
+    if (!item) {
+      throw new Error(`Item ${args.itemId} not found`);
+    }
+
     await trx
       .updateTable("pickMethod")
       .set({
@@ -2844,6 +2949,7 @@ export async function upsertPickMethodWithShelfLife(
       })
       .where("itemId", "=", args.itemId)
       .where("locationId", "=", args.locationId)
+      .where("companyId", "=", args.companyId)
       .execute();
 
     const { mode, days, triggerProcessId, triggerTiming, calculateFromBom } =
@@ -2857,6 +2963,7 @@ export async function upsertPickMethodWithShelfLife(
       await trx
         .deleteFrom("itemShelfLife")
         .where("itemId", "=", args.itemId)
+        .where("companyId", "=", args.companyId)
         .execute();
       return;
     }
@@ -2879,6 +2986,7 @@ export async function upsertPickMethodWithShelfLife(
         .innerJoin("activeMakeMethods as amm", "amm.id", "mo.makeMethodId")
         .select("mo.processId")
         .where("amm.itemId", "=", args.itemId)
+        .where("amm.companyId", "=", args.companyId)
         .where("mo.processId", "is not", null)
         .execute();
       const allowed = new Set(
@@ -2897,6 +3005,7 @@ export async function upsertPickMethodWithShelfLife(
       .selectFrom("itemShelfLife")
       .select("itemId")
       .where("itemId", "=", args.itemId)
+      .where("companyId", "=", args.companyId)
       .executeTakeFirst();
 
     if (existing) {
@@ -2912,18 +3021,9 @@ export async function upsertPickMethodWithShelfLife(
           updatedAt
         })
         .where("itemId", "=", args.itemId)
+        .where("companyId", "=", args.companyId)
         .execute();
       return;
-    }
-
-    const itemRow = await trx
-      .selectFrom("item")
-      .select("companyId")
-      .where("id", "=", args.itemId)
-      .executeTakeFirstOrThrow();
-
-    if (!itemRow.companyId) {
-      throw new Error(`Item ${args.itemId} has no companyId`);
     }
 
     await trx
@@ -2935,7 +3035,7 @@ export async function upsertPickMethodWithShelfLife(
         triggerProcessId: normalizedTriggerProcess,
         triggerTiming: normalizedTriggerTiming,
         calculateFromBom: normalizedCalcFromBom,
-        companyId: itemRow.companyId,
+        companyId: args.companyId,
         createdBy: args.userId
       })
       .execute();
@@ -3114,10 +3214,22 @@ export async function updateItemMethodAndSourcing(
 
   const updatedAt = datetime.timestamp();
 
+  // An explicit allow-list, never a spread: `itemUpdate` reaches this from the
+  // API with whatever keys the caller sent, and Kysely bypasses RLS — a spread
+  // would let `{ companyId }` (or any other column) through to the UPDATE.
+  const { replenishmentSystem, defaultMethodType, sourcingType } =
+    args.itemUpdate;
+
   return db.transaction().execute(async (trx) => {
     await trx
       .updateTable("item")
-      .set({ ...args.itemUpdate, updatedBy: args.userId, updatedAt })
+      .set({
+        ...(replenishmentSystem !== undefined && { replenishmentSystem }),
+        ...(defaultMethodType !== undefined && { defaultMethodType }),
+        ...(sourcingType !== undefined && { sourcingType }),
+        updatedBy: args.userId,
+        updatedAt
+      })
       .where("id", "in", args.itemIds)
       .where("companyId", "=", args.companyId)
       .execute();
@@ -3209,6 +3321,149 @@ async function cascadeSourcingAndMethodTypeToMethodMaterials(
     .execute();
 }
 
+type ServiceError = PostgrestError | { message: string; code?: string };
+
+/**
+ * Resolves the typed item (part, material, tool, consumable, service) an
+ * update addresses. `item` is keyed by uuid while the typed tables are keyed
+ * by the item's readable id plus companyId, so writing the pair needs both
+ * keys. Accepts either one: the uuid every read tool and route hands out, or
+ * the readable id a person types. A uuid names one revision; a readable id
+ * names every revision that shares it.
+ */
+async function resolveTypedItem(
+  client: SupabaseClient<Database>,
+  args: {
+    id: string;
+    companyId: string;
+    type: Database["public"]["Enums"]["itemType"];
+  }
+): Promise<
+  | { data: { readableId: string; itemIds: string[] }; error: null }
+  | { data: null; error: ServiceError }
+> {
+  const byId = await client
+    .from("item")
+    .select("id, readableId")
+    .eq("id", args.id)
+    .eq("companyId", args.companyId)
+    .eq("type", args.type)
+    .maybeSingle();
+  if (byId.error) return { data: null, error: byId.error };
+  if (byId.data) {
+    return {
+      data: { readableId: byId.data.readableId, itemIds: [byId.data.id] },
+      error: null
+    };
+  }
+
+  const byReadableId = await client
+    .from("item")
+    .select("id")
+    .eq("readableId", args.id)
+    .eq("companyId", args.companyId)
+    .eq("type", args.type);
+  if (byReadableId.error) return { data: null, error: byReadableId.error };
+  if (byReadableId.data.length === 0) {
+    return {
+      data: null,
+      error: ruleError(`${args.type} ${args.id} not found`)
+    };
+  }
+  return {
+    data: {
+      readableId: args.id,
+      itemIds: byReadableId.data.map((item) => item.id)
+    },
+    error: null
+  };
+}
+
+/** resolveTypedItem for a write to one revision's item row. */
+async function resolveTypedItemRevision(
+  client: SupabaseClient<Database>,
+  args: {
+    id: string;
+    companyId: string;
+    type: Database["public"]["Enums"]["itemType"];
+  }
+): Promise<
+  | { data: { id: string; readableId: string }; error: null }
+  | { data: null; error: ServiceError }
+> {
+  const item = await resolveTypedItem(client, args);
+  if (item.error) return item;
+  const { readableId, itemIds } = item.data;
+  if (itemIds.length > 1) {
+    return {
+      data: null,
+      error: ruleError(
+        `${args.type} ${args.id} has ${itemIds.length} revisions; pass the item id of the revision to update`
+      )
+    };
+  }
+  return { data: { id: itemIds[0], readableId }, error: null };
+}
+
+/**
+ * The update half of upsertPart / upsertTool / upsertConsumable /
+ * upsertService: resolves the item, then writes the item row and the typed
+ * row. Each write selects its row back so a miss fails instead of reporting
+ * success.
+ */
+async function updateTypedItem(
+  client: SupabaseClient<Database>,
+  args: {
+    id: string;
+    companyId: string;
+    updatedBy: string;
+    type: "Part" | "Tool" | "Consumable" | "Service";
+    item: Database["public"]["Tables"]["item"]["Update"];
+    typed: { customFields?: Json };
+  }
+): Promise<
+  | { data: { id: string; readableId: string }; error: null }
+  | { data: null; error: ServiceError }
+> {
+  const resolved = await resolveTypedItemRevision(client, args);
+  if (resolved.error) return resolved;
+  const { id: itemId, readableId } = resolved.data;
+
+  const table = typedItemTables[args.type];
+  const audit = { updatedBy: args.updatedBy, updatedAt: datetime.timestamp() };
+  const [itemWrite, typedWrite] = await Promise.all([
+    client
+      .from("item")
+      .update({ ...sanitize(args.item), ...audit })
+      .eq("id", itemId)
+      .eq("companyId", args.companyId)
+      .select("id")
+      .single(),
+    client
+      .from(table)
+      .update({ ...sanitize(args.typed), ...audit })
+      .eq("id", readableId)
+      .eq("companyId", args.companyId)
+      .select("id")
+      .single()
+  ]);
+  if (itemWrite.error) return { data: null, error: itemWrite.error };
+  if (typedWrite.error) return { data: null, error: typedWrite.error };
+  return resolved;
+}
+
+const typedItemTables = {
+  Part: "part",
+  Tool: "tool",
+  Consumable: "consumable",
+  Service: "service"
+} as const;
+
+/**
+ * Creates a consumable (item row and consumable row) or updates one; on update
+ * `id` is the item id (uuid) or the consumable's readable id and the write is
+ * a full replace, so omitted optional fields are cleared.
+ */
 export async function upsertConsumable(
   client: SupabaseClient<Database>,
   consumable:
@@ -3218,6 +3473,7 @@ export async function upsertConsumable(
         customFields?: Json;
       })
     | (z.infer<typeof consumableValidator> & {
+        companyId: string;
         updatedBy: string;
         customFields?: Json;
       })
@@ -3295,50 +3551,36 @@ export async function upsertConsumable(
     return newConsumable;
   }
 
-  const itemUpdate = {
+  const updated = await updateTypedItem(client, {
     id: consumable.id,
-    name: consumable.name,
-    description: consumable.description,
-    replenishmentSystem: consumable.replenishmentSystem,
-    defaultMethodType: consumable.defaultMethodType,
-    itemTrackingType: consumable.itemTrackingType,
-    unitOfMeasureCode: consumable.unitOfMeasureCode,
-    active: true
-  };
-
-  const consumableUpdate = {
-    customFields: consumable.customFields
-  };
-
-  const [updateItem, updateConsumable] = await Promise.all([
-    client
-      .from("item")
-      .update({
-        ...sanitize(itemUpdate),
-        updatedAt: datetime.timestamp()
-      })
-      .eq("id", consumable.id),
-    client
-      .from("consumable")
-      .update({
-        ...sanitize(consumableUpdate),
-        updatedAt: datetime.timestamp()
-      })
-      .eq("id", consumable.id)
-  ]);
-
-  if (updateItem.error) return updateItem;
+    companyId: consumable.companyId,
+    updatedBy: consumable.updatedBy,
+    type: "Consumable",
+    item: {
+      name: consumable.name,
+      description: consumable.description,
+      replenishmentSystem: consumable.replenishmentSystem,
+      defaultMethodType: consumable.defaultMethodType,
+      itemTrackingType: consumable.itemTrackingType,
+      unitOfMeasureCode: consumable.unitOfMeasureCode,
+      active: true
+    },
+    typed: { customFields: consumable.customFields }
+  });
+  if (updated.error) return updated;
+  const itemId = updated.data.id;
 
   const pickMethod = await upsertItemDefaultPickMethod(client, {
-    itemId: consumable.id,
+    itemId,
     userId: consumable.updatedBy,
     storageUnitId: consumable.defaultStorageUnitId
   });
   if (pickMethod.error) return pickMethod;
 
   const shelfLife = await upsertItemShelfLife(client, {
-    itemId: consumable.id,
+    itemId,
     userId: consumable.updatedBy,
+    companyId: consumable.companyId,
     mode: consumable.shelfLifeMode,
     days: consumable.shelfLifeDays,
     triggerProcessId: consumable.shelfLifeTriggerProcessId,
@@ -3347,7 +3589,7 @@ export async function upsertConsumable(
   });
   if (shelfLife.error) return shelfLife;
 
-  return updateConsumable;
+  return updated;
 }
 
 /**
@@ -3493,6 +3735,11 @@ export async function resolveItemIdFromExtractedText(
   return matchItemIdByText(client, companyId, candidates);
 }
 
+/**
+ * Creates a part (item row and part row) or updates one; on update `id` is the
+ * item id (uuid) or the part's readable id and the write is a full replace, so
+ * omitted optional fields are cleared.
+ */
 export async function upsertPart(
   client: SupabaseClient<Database>,
   part:
@@ -3502,6 +3749,7 @@ export async function upsertPart(
         customFields?: Json;
       })
     | (z.infer<typeof partValidator> & {
+        companyId: string;
         updatedBy: string;
         customFields?: Json;
       })
@@ -3595,50 +3843,36 @@ export async function upsertPart(
     return newPart;
   }
 
-  const itemUpdate = {
+  const updated = await updateTypedItem(client, {
     id: part.id,
-    name: part.name,
-    description: part.description,
-    replenishmentSystem: part.replenishmentSystem,
-    defaultMethodType: part.defaultMethodType,
-    itemTrackingType: part.itemTrackingType,
-    unitOfMeasureCode: part.unitOfMeasureCode,
-    active: true
-  };
-
-  const partUpdate = {
-    customFields: part.customFields
-  };
-
-  const [updateItem, updatePart] = await Promise.all([
-    client
-      .from("item")
-      .update({
-        ...sanitize(itemUpdate),
-        updatedAt: datetime.timestamp()
-      })
-      .eq("id", part.id),
-    client
-      .from("part")
-      .update({
-        ...sanitize(partUpdate),
-        updatedAt: datetime.timestamp()
-      })
-      .eq("id", part.id)
-  ]);
-
-  if (updateItem.error) return updateItem;
+    companyId: part.companyId,
+    updatedBy: part.updatedBy,
+    type: "Part",
+    item: {
+      name: part.name,
+      description: part.description,
+      replenishmentSystem: part.replenishmentSystem,
+      defaultMethodType: part.defaultMethodType,
+      itemTrackingType: part.itemTrackingType,
+      unitOfMeasureCode: part.unitOfMeasureCode,
+      active: true
+    },
+    typed: { customFields: part.customFields }
+  });
+  if (updated.error) return updated;
+  const itemId = updated.data.id;
 
   const pickMethod = await upsertItemDefaultPickMethod(client, {
-    itemId: part.id,
+    itemId,
     userId: part.updatedBy,
     storageUnitId: part.defaultStorageUnitId
   });
   if (pickMethod.error) return pickMethod;
 
   const shelfLife = await upsertItemShelfLife(client, {
-    itemId: part.id,
+    itemId,
     userId: part.updatedBy,
+    companyId: part.companyId,
     mode: part.shelfLifeMode,
     days: part.shelfLifeDays,
     triggerProcessId: part.shelfLifeTriggerProcessId,
@@ -3647,7 +3881,7 @@ export async function upsertPart(
   });
   if (shelfLife.error) return shelfLife;
 
-  return updatePart;
+  return updated;
 }
 
 export async function updateItem(
@@ -3780,6 +4014,57 @@ export async function upsertItemPurchasing(
     .eq("itemId", update.itemId);
 }
 
+export const SUPERSESSION_CYCLE_CODE = "SUPERSESSION_CYCLE";
+
+const SUPERSESSION_CHAIN_LIMIT = 10;
+
+async function findSupersessionCycle(
+  client: SupabaseClient<Database>,
+  itemId: string,
+  successorItemId: string,
+  companyId: string
+): Promise<
+  | { kind: "ok" }
+  | { kind: "cycle"; path: string[] }
+  | { kind: "tooLong" }
+  | { kind: "error"; error: PostgrestError }
+> {
+  const path = [itemId, successorItemId];
+  const visited = new Set(path);
+  let currentId = successorItemId;
+  let closed = false;
+  for (let hop = 0; hop < SUPERSESSION_CHAIN_LIMIT; hop++) {
+    const link = await client
+      .from("itemSupersession")
+      .select("successorItemId")
+      .eq("itemId", currentId)
+      .eq("companyId", companyId)
+      .maybeSingle();
+    if (link.error) return { kind: "error", error: link.error };
+    const next = link.data?.successorItemId;
+    if (!next) return { kind: "ok" };
+    path.push(next);
+    if (visited.has(next)) {
+      closed = true;
+      break;
+    }
+    visited.add(next);
+    currentId = next;
+  }
+  if (!closed) return { kind: "tooLong" };
+
+  const items = await client
+    .from("item")
+    .select("id, readableIdWithRevision")
+    .in("id", Array.from(new Set(path)))
+    .eq("companyId", companyId);
+  if (items.error) return { kind: "error", error: items.error };
+  const readable = new Map(
+    (items.data ?? []).map((i) => [i.id, i.readableIdWithRevision ?? i.id])
+  );
+  return { kind: "cycle", path: path.map((id) => readable.get(id) ?? id) };
+}
+
 export async function upsertItemSupersession(
   client: SupabaseClient<Database>,
   itemSupersession: z.infer<typeof itemSupersessionValidator> & {
@@ -3824,6 +4109,35 @@ export async function upsertItemSupersession(
   }
 
   const isNoStock = supersessionMode === "No Stock";
+
+  if (!isNoStock && successorItemId) {
+    const check = await findSupersessionCycle(
+      client,
+      itemId,
+      successorItemId,
+      companyId
+    );
+    if (check.kind === "error") return { data: null, error: check.error };
+    if (check.kind === "tooLong") {
+      return {
+        data: null,
+        error: {
+          code: SUPERSESSION_CYCLE_CODE,
+          message: `Supersession chains longer than ${SUPERSESSION_CHAIN_LIMIT} hops are not allowed`
+        }
+      };
+    }
+    if (check.kind === "cycle") {
+      return {
+        data: null,
+        error: {
+          code: SUPERSESSION_CYCLE_CODE,
+          message: `This would create a supersession loop: ${check.path.join(" → ")}`
+        }
+      };
+    }
+  }
+
   const row = {
     supersessionMode,
     // No Stock has no successor (nothing takes over the demand).
@@ -4009,6 +4323,42 @@ export async function upsertMakeMethodVersion(
  * where an item can be stocked across multiple locations, each with its
  * own preferred bin.
  */
+/**
+ * Coerce whatever a caller supplied for `storageUnitIds` into the
+ * location → storageUnitId map the column stores. The web form pre-parses its
+ * JSON string through `methodMaterialValidator`, but the MCP/API dispatch path
+ * bypasses that validator and hands the service the raw value, so normalize
+ * defensively here too: an object map is kept (string values only), a JSON
+ * string is parsed, and null/undefined/anything-else collapses to `{}`. A bare
+ * string used to be spread character-by-character into the JSONB column
+ * (`"false"` → `{"0":"f","1":"a",…}`) — this is where that is stopped.
+ */
+function normalizeStorageUnitIds(value: unknown): Record<string, string> {
+  const fromObject = (obj: Record<string, unknown>): Record<string, string> => {
+    const out: Record<string, string> = {};
+    for (const [key, v] of Object.entries(obj)) {
+      if (typeof v === "string") out[key] = v;
+    }
+    return out;
+  };
+
+  if (value == null) return {};
+  if (typeof value === "string") {
+    try {
+      const parsed = JSON.parse(value);
+      return parsed && typeof parsed === "object" && !Array.isArray(parsed)
+        ? fromObject(parsed as Record<string, unknown>)
+        : {};
+    } catch {
+      return {};
+    }
+  }
+  if (typeof value === "object" && !Array.isArray(value)) {
+    return fromObject(value as Record<string, unknown>);
+  }
+  return {};
+}
+
 async function resolveMethodMaterialStorageUnitIds(
   client: SupabaseClient<Database>,
   args: {
@@ -4082,16 +4432,14 @@ export async function upsertMethodMaterial(
   }
 
   if ("createdBy" in methodMaterial) {
-    // Seed storageUnitIds from the child item's default location/storage-unit
-    // if the caller didn't already provide one for that location. Respects
-    // the form value when supplied, adds a sensible default otherwise.
+    // On create, an omitted / null storageUnitIds normalizes to `{}`, then the
+    // child item's default location/storage-unit picks seed any locations the
+    // caller didn't specify. Respects supplied values; adds sensible defaults.
     const seededStorageUnitIds = await resolveMethodMaterialStorageUnitIds(
       client,
       {
         itemId: methodMaterial.itemId,
-        current: methodMaterial.storageUnitIds as
-          | Record<string, string>
-          | undefined
+        current: normalizeStorageUnitIds(methodMaterial.storageUnitIds)
       }
     );
     return client
@@ -4107,9 +4455,28 @@ export async function upsertMethodMaterial(
       .select("id")
       .single();
   }
+  // On update, an OMITTED storageUnitIds preserves the stored value (drop the key
+  // so `sanitize` can't null it), while an explicit null / {} / map is written —
+  // null and {} both clear it. The web form always submits the field, so its
+  // behavior is unchanged; only the MCP/API caller can omit it.
+  if (methodMaterial.storageUnitIds === undefined) {
+    const { storageUnitIds: _omitted, ...preserved } = methodMaterial;
+    return client
+      .from("methodMaterial")
+      .update(sanitize({ ...preserved, materialMakeMethodId }))
+      .eq("id", methodMaterial.id)
+      .select("id")
+      .single();
+  }
   return client
     .from("methodMaterial")
-    .update(sanitize({ ...methodMaterial, materialMakeMethodId }))
+    .update(
+      sanitize({
+        ...methodMaterial,
+        materialMakeMethodId,
+        storageUnitIds: normalizeStorageUnitIds(methodMaterial.storageUnitIds)
+      })
+    )
     .eq("id", methodMaterial.id)
     .select("id")
     .single();
@@ -4560,8 +4927,347 @@ export async function setMethodOperationToolStepLink(
     .eq("methodOperationStepId", args.methodOperationStepId);
 }
 
+type MaterialPropertyPlan = {
+  next: MaterialPropertyValues;
+  changed: Partial<MaterialPropertyValues>;
+  generated: { readableId: string; name: string } | null;
+};
+
+async function materialIdsAreGenerated(
+  client: SupabaseClient<Database>,
+  companyId: string
+): Promise<
+  { data: boolean; error: null } | { data: null; error: ServiceError }
+> {
+  const settings = await client
+    .from("companySettings")
+    .select("materialGeneratedIds")
+    .eq("id", companyId)
+    .single();
+  if (settings.error) return { data: null, error: settings.error };
+  return { data: settings.data.materialGeneratedIds === true, error: null };
+}
+
+async function getMaterialPropertyValues(
+  client: SupabaseClient<Database>,
+  readableId: string,
+  companyId: string
+): Promise<
+  | { data: MaterialPropertyValues; error: null }
+  | { data: null; error: ServiceError }
+> {
+  const material = await client
+    .from("material")
+    .select(
+      "materialSubstanceId, materialFormId, materialTypeId, finishId, gradeId, dimensionId"
+    )
+    .eq("id", readableId)
+    .eq("companyId", companyId)
+    .maybeSingle();
+  if (material.error) return { data: null, error: material.error };
+  if (!material.data) {
+    return { data: null, error: ruleError(`Material ${readableId} not found`) };
+  }
+  return { data: material.data, error: null };
+}
+
+async function getMaterialPropertyLookups(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  values: MaterialPropertyValues
+): Promise<
+  | { data: MaterialPropertyLookups; error: null }
+  | { data: null; error: ServiceError }
+> {
+  const visible = `companyId.eq.${companyId},companyId.is.null`;
+  const none = { data: null, error: null };
+  const [substance, form, type, finish, grade, dimension] = await Promise.all([
+    values.materialSubstanceId
+      ? client
+          .from("materialSubstance")
+          .select("name, code")
+          .eq("id", values.materialSubstanceId)
+          .or(visible)
+          .maybeSingle()
+      : none,
+    values.materialFormId
+      ? client
+          .from("materialForm")
+          .select("name, code")
+          .eq("id", values.materialFormId)
+          .or(visible)
+          .maybeSingle()
+      : none,
+    values.materialTypeId
+      ? client
+          .from("materialType")
+          .select("name, code, materialSubstanceId, materialFormId")
+          .eq("id", values.materialTypeId)
+          .or(visible)
+          .maybeSingle()
+      : none,
+    values.finishId
+      ? client
+          .from("materialFinish")
+          .select("name, materialSubstanceId")
+          .eq("id", values.finishId)
+          .or(visible)
+          .maybeSingle()
+      : none,
+    values.gradeId
+      ? client
+          .from("materialGrade")
+          .select("name, materialSubstanceId")
+          .eq("id", values.gradeId)
+          .or(visible)
+          .maybeSingle()
+      : none,
+    values.dimensionId
+      ? client
+          .from("materialDimension")
+          .select("name, materialFormId")
+          .eq("id", values.dimensionId)
+          .or(visible)
+          .maybeSingle()
+      : none
+  ]);
+
+  const error = [substance, form, type, finish, grade, dimension].find(
+    (result) => result.error
+  )?.error;
+  if (error) return { data: null, error };
+
+  return {
+    data: {
+      substance: substance.data,
+      form: form.data,
+      type: type.data,
+      finish: finish.data,
+      grade: grade.data,
+      dimension: dimension.data
+    },
+    error: null
+  };
+}
+
+async function planMaterialPropertyChanges(
+  client: SupabaseClient<Database>,
+  args: {
+    companyId: string;
+    current: MaterialPropertyValues;
+    changes: Partial<MaterialPropertyValues>;
+    generatedIds: boolean;
+  }
+): Promise<
+  | { data: MaterialPropertyPlan; error: null }
+  | { data: null; error: ServiceError }
+> {
+  const { next, changed } = resolveMaterialProperties(
+    args.current,
+    args.changes
+  );
+  if (Object.keys(changed).length === 0) {
+    return { data: { next, changed, generated: null }, error: null };
+  }
+  if (args.generatedIds && clearsSubstanceOrShape(args.current, next)) {
+    return { data: null, error: ruleError(generatedIdsNeedSubstanceAndShape) };
+  }
+
+  const lookups = await getMaterialPropertyLookups(
+    client,
+    args.companyId,
+    next
+  );
+  if (lookups.error) return { data: null, error: lookups.error };
+
+  const invalid = checkMaterialProperties(args.current, next, lookups.data);
+  if (invalid) return { data: null, error: ruleError(invalid) };
+
+  return {
+    data: {
+      next,
+      changed,
+      generated: args.generatedIds
+        ? generateMaterialIdentity(next, lookups.data)
+        : null
+    },
+    error: null
+  };
+}
+
+async function materialIdIsTaken(
+  client: SupabaseClient<Database>,
+  readableId: string,
+  companyId: string
+): Promise<
+  { data: boolean; error: null } | { data: null; error: ServiceError }
+> {
+  const taken = await client
+    .from("item")
+    .select("id")
+    .eq("readableId", readableId)
+    .eq("companyId", companyId)
+    .eq("type", "Material")
+    .limit(1);
+  if (taken.error) return { data: null, error: taken.error };
+  return { data: taken.data.length > 0, error: null };
+}
+
+// Kysely bypasses RLS, so the caller's client must be able to update the
+// material row first. Its policy (parts_update) also covers item and itemCost.
+async function requireMaterialUpdatable(
+  client: SupabaseClient<Database>,
+  args: { readableId: string; companyId: string; updatedBy: string }
+): Promise<{ error: ServiceError | null }> {
+  const probe = await client
+    .from("material")
+    .update({ updatedBy: args.updatedBy, updatedAt: datetime.timestamp() })
+    .eq("id", args.readableId)
+    .eq("companyId", args.companyId)
+    .select("id")
+    .single();
+  return { error: probe.error };
+}
+
+class MaterialRuleViolation extends Error {}
+
+function materialWriteError(error: unknown): ServiceError {
+  if (error instanceof MaterialRuleViolation) return ruleError(error.message);
+  const code =
+    error && typeof error === "object" && "code" in error
+      ? String((error as { code: unknown }).code)
+      : undefined;
+  const message = error instanceof Error ? error.message : String(error);
+  return code ? { code, message } : { message };
+}
+
+async function writeMaterialIdentity(
+  trx: KyselyTx,
+  args: {
+    readableId: string;
+    newReadableId?: string;
+    name?: string;
+    companyId: string;
+    updatedBy: string;
+    changes: Partial<MaterialPropertyValues>;
+  }
+): Promise<string> {
+  const { readableId, companyId, updatedBy, changes } = args;
+  const newReadableId = args.newReadableId ?? readableId;
+  const renamed = newReadableId !== readableId;
+  if (!newReadableId) {
+    throw new MaterialRuleViolation("Material ID cannot be empty");
+  }
+  if (!renamed && args.name === undefined && !Object.keys(changes).length) {
+    return readableId;
+  }
+
+  const updatedAt = datetime.timestamp();
+  if (renamed) {
+    const taken = await trx
+      .selectFrom("item")
+      .select("id")
+      .where("readableId", "=", newReadableId)
+      .where("companyId", "=", companyId)
+      .where("type", "=", "Material")
+      .executeTakeFirst();
+    if (taken) {
+      throw new MaterialRuleViolation(
+        `Material ${newReadableId} already exists`
+      );
+    }
+  }
+
+  const material = await trx
+    .updateTable("material")
+    .set({ ...changes, id: newReadableId, updatedBy, updatedAt })
+    .where("id", "=", readableId)
+    .where("companyId", "=", companyId)
+    .executeTakeFirst();
+  if (Number(material.numUpdatedRows) !== 1) {
+    throw new MaterialRuleViolation(`Material ${readableId} not found`);
+  }
+
+  if (renamed || args.name !== undefined) {
+    await trx
+      .updateTable("item")
+      .set({
+        readableId: newReadableId,
+        ...(args.name !== undefined ? { name: args.name } : {}),
+        updatedBy,
+        updatedAt
+      })
+      .where("readableId", "=", readableId)
+      .where("companyId", "=", companyId)
+      .where("type", "=", "Material")
+      .execute();
+  }
+  return newReadableId;
+}
+
+/** Refused while the material is open in a change notice, as New Revision is. */
+async function getNewMaterialSizes(
+  client: SupabaseClient<Database>,
+  args: {
+    itemId: string;
+    readableId: string;
+    companyId: string;
+    sizes: string[];
+  }
+): Promise<
+  { data: string[]; error: null } | { data: null; error: ServiceError }
+> {
+  const existing = await client
+    .from("item")
+    .select("revision")
+    .eq("readableId", args.readableId)
+    .eq("companyId", args.companyId)
+    .eq("type", "Material");
+  if (existing.error) return { data: null, error: existing.error };
+
+  const revisions = new Set(existing.data.map((item) => item.revision));
+  const sizes = [...new Set(args.sizes)].filter(
+    (size) => size && !revisions.has(size)
+  );
+  if (sizes.length === 0) return { data: [], error: null };
+
+  const open = await findChangeNoticesForItem(client, {
+    itemId: args.itemId,
+    companyId: args.companyId,
+    statuses: changeNoticeOpenStatuses
+  });
+  if (open.error) {
+    return {
+      data: null,
+      error: { message: "Could not check open change notices for this item" }
+    };
+  }
+  if (open.data.length > 0) {
+    const ids = open.data.map((co) => co.changeOrderId).join(", ");
+    return {
+      data: null,
+      error: ruleError(
+        `This item is open in change notice ${ids}. Release it to create new revisions.`
+      )
+    };
+  }
+  return { data: sizes, error: null };
+}
+
+/**
+ * Creates a material or updates one by item id or readable id; an update keeps
+ * any optional field it leaves out, and `sizes` adds a revision per new size.
+ * Property changes follow updateMaterialProperties: dependents reset, picks
+ * are checked against their substance and shape, and with generated material
+ * IDs on the readable id and name are derived from the properties (any `id`
+ * or `name` sent for them is ignored). `readableId` renames a material when
+ * IDs are typed by hand. An update's material, item and item cost writes land
+ * together or not at all; the pick method, shelf life and new sizes are
+ * written after them.
+ */
 export async function upsertMaterial(
   client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   material:
     | (z.infer<typeof materialValidator> & {
         companyId: string;
@@ -4570,11 +5276,49 @@ export async function upsertMaterial(
         sizes?: string[];
       })
     | (z.infer<typeof materialValidator> & {
+        companyId: string;
         updatedBy: string;
         customFields?: Json;
       })
 ) {
+  const generatedIds = await materialIdsAreGenerated(
+    client,
+    material.companyId
+  );
+  if (generatedIds.error) return generatedIds;
+
   if ("createdBy" in material) {
+    const plan = await planMaterialPropertyChanges(client, {
+      companyId: material.companyId,
+      current: noMaterialProperties,
+      changes: sentMaterialProperties(material),
+      generatedIds: generatedIds.data
+    });
+    if (plan.error) return plan;
+    if (generatedIds.data && !plan.data.generated) {
+      return {
+        data: null,
+        error: ruleError(generatedIdsNeedSubstanceAndShape)
+      };
+    }
+    const readableId = plan.data.generated?.readableId ?? material.id;
+    const name = plan.data.generated?.name ?? material.name;
+
+    // An existing id would take the new item rows as extra revisions and
+    // overwrite its material row; sizes on an update add revisions instead.
+    const taken = await materialIdIsTaken(
+      client,
+      readableId,
+      material.companyId
+    );
+    if (taken.error) return taken;
+    if (taken.data) {
+      return {
+        data: null,
+        error: ruleError(`Material ${readableId} already exists`)
+      };
+    }
+
     // Collect every newly-created item id across the sizes / no-sizes
     // branches so the shelf-life policy can be applied uniformly.
     const newItemIds: string[] = [];
@@ -4585,9 +5329,10 @@ export async function upsertMaterial(
           client
             .from("item")
             .insert({
-              readableId: material.id,
-              name: material.name,
+              readableId,
+              name,
               description: material.description,
+              mpn: material.mpn,
               type: "Material",
               replenishmentSystem: material.replenishmentSystem,
               defaultMethodType: material.defaultMethodType,
@@ -4633,9 +5378,10 @@ export async function upsertMaterial(
       const itemInsert = await client
         .from("item")
         .insert({
-          readableId: material.id,
-          name: material.name,
+          readableId,
+          name,
           description: material.description,
+          mpn: material.mpn,
           type: "Material",
           replenishmentSystem: material.replenishmentSystem,
           defaultMethodType: material.defaultMethodType,
@@ -4688,13 +5434,8 @@ export async function upsertMaterial(
     }
 
     const materialInsert = await client.from("material").upsert({
-      id: material.id,
-      materialFormId: material.materialFormId,
-      materialSubstanceId: material.materialSubstanceId,
-      finishId: material.finishId,
-      gradeId: material.gradeId,
-      dimensionId: material.dimensionId,
-      materialTypeId: material.materialTypeId,
+      id: readableId,
+      ...plan.data.next,
       companyId: material.companyId,
       createdBy: material.createdBy,
       customFields: material.customFields
@@ -4705,7 +5446,7 @@ export async function upsertMaterial(
     const newMaterial = await client
       .from("materials")
       .select("*")
-      .eq("readableId", material.id)
+      .eq("readableId", readableId)
       .eq("companyId", material.companyId);
 
     return {
@@ -4714,56 +5455,124 @@ export async function upsertMaterial(
     };
   }
 
-  const itemUpdate = {
+  const { companyId, updatedBy } = material;
+  const item = await resolveTypedItemRevision(client, {
     id: material.id,
-    name: material.name,
-    description: material.description,
-    replenishmentSystem: material.replenishmentSystem,
-    defaultMethodType: material.defaultMethodType,
-    itemTrackingType: material.itemTrackingType,
-    unitOfMeasureCode: material.unitOfMeasureCode,
-    active: true
-  };
+    companyId,
+    type: "Material"
+  });
+  if (item.error) return item;
+  const itemId = item.data.id;
+  let readableId = item.data.readableId;
 
-  const materialUpdate = {
-    materialFormId: material.materialFormId,
-    materialSubstanceId: material.materialSubstanceId,
-    finishId: material.finishId,
-    gradeId: material.gradeId,
-    dimensionId: material.dimensionId,
-    materialTypeId: material.materialTypeId,
-    customFields: material.customFields
-  };
+  // Everything that can be refused is checked before the first write.
+  const current = await getMaterialPropertyValues(
+    client,
+    readableId,
+    companyId
+  );
+  if (current.error) return current;
 
-  const [updateItem, updateMaterial] = await Promise.all([
-    client
-      .from("item")
-      .update({
-        ...sanitize(itemUpdate),
-        updatedAt: datetime.timestamp()
-      })
-      .eq("id", material.id),
-    client
-      .from("material")
-      .update({
-        ...sanitize(materialUpdate),
-        updatedAt: datetime.timestamp()
-      })
-      .eq("id", material.id)
-  ]);
+  const plan = await planMaterialPropertyChanges(client, {
+    companyId,
+    current: current.data,
+    changes: sentMaterialProperties(material),
+    generatedIds: generatedIds.data
+  });
+  if (plan.error) return plan;
 
-  if (updateItem.error) return updateItem;
+  let newSizes: string[] = [];
+  if (material.sizes?.length) {
+    const sizes = await getNewMaterialSizes(client, {
+      itemId,
+      readableId,
+      companyId,
+      sizes: material.sizes
+    });
+    if (sizes.error) return sizes;
+    newSizes = sizes.data;
+  }
+
+  const itemUpdate = sentFields(
+    material,
+    materialItemUpdateFields(generatedIds.data)
+  );
+
+  const costUpdate: { itemPostingGroupId?: string | null; unitCost?: number } =
+    {};
+  if ("postingGroupId" in material) {
+    costUpdate.itemPostingGroupId = material.postingGroupId || null;
+  }
+  if (typeof material.unitCost === "number") {
+    costUpdate.unitCost = material.unitCost;
+  }
+
+  const permitted = await requireMaterialUpdatable(client, {
+    readableId,
+    companyId,
+    updatedBy
+  });
+  if (permitted.error) return { data: null, error: permitted.error };
+
+  const updatedAt = datetime.timestamp();
+  try {
+    readableId = await db.transaction().execute(async (trx) => {
+      const saved = await writeMaterialIdentity(trx, {
+        readableId,
+        newReadableId: generatedIds.data
+          ? plan.data.generated?.readableId
+          : material.readableId || undefined,
+        name: plan.data.generated?.name,
+        companyId,
+        updatedBy,
+        changes: plan.data.changed
+      });
+
+      await trx
+        .updateTable("item")
+        .set({ ...itemUpdate, updatedBy, updatedAt })
+        .where("id", "=", itemId)
+        .where("companyId", "=", companyId)
+        .execute();
+
+      if ("customFields" in material) {
+        await trx
+          .updateTable("material")
+          .set({ customFields: material.customFields ?? null, updatedAt })
+          .where("id", "=", saved)
+          .where("companyId", "=", companyId)
+          .execute();
+      }
+
+      // The item insert trigger creates the itemCost row, so this updates it.
+      if (Object.keys(costUpdate).length > 0) {
+        const cost = await trx
+          .updateTable("itemCost")
+          .set({ ...costUpdate, updatedBy, updatedAt })
+          .where("itemId", "=", itemId)
+          .where("companyId", "=", companyId)
+          .executeTakeFirst();
+        if (Number(cost.numUpdatedRows) !== 1) {
+          throw new MaterialRuleViolation(`Item cost for ${itemId} not found`);
+        }
+      }
+      return saved;
+    });
+  } catch (error) {
+    return { data: null, error: materialWriteError(error) };
+  }
 
   const pickMethod = await upsertItemDefaultPickMethod(client, {
-    itemId: material.id,
-    userId: material.updatedBy,
+    itemId,
+    userId: updatedBy,
     storageUnitId: material.defaultStorageUnitId
   });
   if (pickMethod.error) return pickMethod;
 
   const shelfLife = await upsertItemShelfLife(client, {
-    itemId: material.id,
-    userId: material.updatedBy,
+    itemId,
+    userId: updatedBy,
+    companyId,
     mode: material.shelfLifeMode,
     days: material.shelfLifeDays,
     triggerProcessId: material.shelfLifeTriggerProcessId,
@@ -4772,9 +5581,115 @@ export async function upsertMaterial(
   });
   if (shelfLife.error) return shelfLife;
 
-  return updateMaterial;
+  if (newSizes.length > 0) {
+    const source = await getItem(client, itemId);
+    if (source.error) return source;
+    for (const size of newSizes) {
+      const revision = await createRevision(client, {
+        item: source.data,
+        revision: size,
+        createdBy: updatedBy
+      });
+      if (revision.error) return revision;
+    }
+  }
+
+  return client
+    .from("item")
+    .select("id, readableId, readableIdWithRevision, revision, name")
+    .eq("id", itemId)
+    .single();
 }
 
+/**
+ * Changes a material's substance, shape, type, finish, grade or dimension by
+ * item id or readable id, as the item properties panel does. Omitted
+ * properties keep their value; null or an empty string clears one. A new
+ * substance clears finish, grade and type, and a new shape clears dimension
+ * and type, unless the same call sets them. Grade and finish must belong to
+ * the substance, dimension to the shape, and type to both. With generated
+ * material IDs on, every revision's readable id and name are regenerated once
+ * the material has a substance and a shape.
+ */
+export async function updateMaterialProperties(
+  client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
+  material: {
+    id: string;
+    companyId: string;
+    updatedBy: string;
+    materialSubstanceId?: string | null;
+    materialFormId?: string | null;
+    materialTypeId?: string | null;
+    finishId?: string | null;
+    gradeId?: string | null;
+    dimensionId?: string | null;
+  }
+) {
+  const { companyId, updatedBy } = material;
+
+  const item = await resolveTypedItem(client, {
+    id: material.id,
+    companyId,
+    type: "Material"
+  });
+  if (item.error) return item;
+  let readableId = item.data.readableId;
+
+  const [current, generatedIds] = await Promise.all([
+    getMaterialPropertyValues(client, readableId, companyId),
+    materialIdsAreGenerated(client, companyId)
+  ]);
+  if (current.error) return current;
+  if (generatedIds.error) return generatedIds;
+
+  const plan = await planMaterialPropertyChanges(client, {
+    companyId,
+    current: current.data,
+    changes: sentMaterialProperties(material),
+    generatedIds: generatedIds.data
+  });
+  if (plan.error) return plan;
+
+  if (Object.keys(plan.data.changed).length > 0) {
+    const permitted = await requireMaterialUpdatable(client, {
+      readableId,
+      companyId,
+      updatedBy
+    });
+    if (permitted.error) return { data: null, error: permitted.error };
+
+    try {
+      readableId = await db.transaction().execute((trx) =>
+        writeMaterialIdentity(trx, {
+          readableId,
+          newReadableId: plan.data.generated?.readableId,
+          name: plan.data.generated?.name,
+          companyId,
+          updatedBy,
+          changes: plan.data.changed
+        })
+      );
+    } catch (error) {
+      return { data: null, error: materialWriteError(error) };
+    }
+  }
+
+  const row = await client
+    .from("materials")
+    .select("*")
+    .eq("readableId", readableId)
+    .eq("companyId", companyId)
+    .single();
+  if (row.error) return row;
+  // The view names finish, grade, dimension and type but has no ids for them.
+  return { data: { ...row.data, ...plan.data.next }, error: null };
+}
+
+/**
+ * Creates a dimension (a named size) for a material shape, or updates the one
+ * whose `id` is sent; a new dimension's id is generated.
+ */
 export async function upsertMaterialDimension(
   client: SupabaseClient<Database>,
   materialDimension:
@@ -4784,18 +5699,18 @@ export async function upsertMaterialDimension(
       })
     | (Omit<z.infer<typeof materialDimensionValidator>, "id"> & {
         id: string;
+        companyId?: string;
       })
 ) {
   if ("id" in materialDimension) {
-    return (
-      client
-        .from("materialDimension")
-        .update(sanitize(materialDimension))
-        // @ts-ignore
-        .eq("id", materialDimension.id)
-        .select("id")
-        .single()
-    );
+    // companyId narrows the match; it must never move the row.
+    const { id, companyId, ...update } = materialDimension;
+    let query = client
+      .from("materialDimension")
+      .update(sanitize(update))
+      .eq("id", id);
+    if (companyId) query = query.eq("companyId", companyId);
+    return query.select("id").single();
   }
 
   return client
@@ -4805,6 +5720,10 @@ export async function upsertMaterialDimension(
     .single();
 }
 
+/**
+ * Creates a finish for a material substance, or updates the one whose `id` is
+ * sent; a new finish's id is generated.
+ */
 export async function upsertMaterialFinish(
   client: SupabaseClient<Database>,
   materialFinish:
@@ -4813,18 +5732,18 @@ export async function upsertMaterialFinish(
       })
     | (Omit<z.infer<typeof materialFinishValidator>, "id"> & {
         id: string;
+        companyId?: string;
       })
 ) {
   if ("id" in materialFinish) {
-    return (
-      client
-        .from("materialFinish")
-        .update(sanitize(materialFinish))
-        // @ts-ignore
-        .eq("id", materialFinish.id)
-        .select("id")
-        .single()
-    );
+    // companyId narrows the match; it must never move the row.
+    const { id, companyId, ...update } = materialFinish;
+    let query = client
+      .from("materialFinish")
+      .update(sanitize(update))
+      .eq("id", id);
+    if (companyId) query = query.eq("companyId", companyId);
+    return query.select("id").single();
   }
   return client
     .from("materialFinish")
@@ -4865,6 +5784,10 @@ export async function upsertMaterialForm(
   );
 }
 
+/**
+ * Creates a grade for a material substance, or updates the one whose `id` is
+ * sent; a new grade's id is generated.
+ */
 export async function upsertMaterialGrade(
   client: SupabaseClient<Database>,
   materialGrade:
@@ -4873,18 +5796,18 @@ export async function upsertMaterialGrade(
       })
     | (Omit<z.infer<typeof materialGradeValidator>, "id"> & {
         id: string;
+        companyId?: string;
       })
 ) {
   if ("id" in materialGrade) {
-    return (
-      client
-        .from("materialGrade")
-        .update(sanitize(materialGrade))
-        // @ts-ignore
-        .eq("id", materialGrade.id)
-        .select("id")
-        .single()
-    );
+    // companyId narrows the match; it must never move the row.
+    const { id, companyId, ...update } = materialGrade;
+    let query = client
+      .from("materialGrade")
+      .update(sanitize(update))
+      .eq("id", id);
+    if (companyId) query = query.eq("companyId", companyId);
+    return query.select("id").single();
   }
   return client
     .from("materialGrade")
@@ -4946,6 +5869,10 @@ export async function getMaterialTypeList(
     .or(`companyId.eq.${companyId},companyId.is.null`);
 }
 
+/**
+ * Creates a material type for a substance and shape pair, or updates the one
+ * whose `id` is sent; a new type's id is generated.
+ */
 export async function upsertMaterialType(
   client: SupabaseClient<Database>,
   materialType:
@@ -4954,18 +5881,18 @@ export async function upsertMaterialType(
       })
     | (Omit<z.infer<typeof materialTypeValidator>, "id"> & {
         id: string;
+        companyId?: string;
       })
 ) {
   if ("id" in materialType) {
-    return (
-      client
-        .from("materialType")
-        .update(sanitize(materialType))
-        // @ts-ignore
-        .eq("id", materialType.id)
-        .select("id")
-        .single()
-    );
+    // companyId narrows the match; it must never move the row.
+    const { id, companyId, ...update } = materialType;
+    let query = client
+      .from("materialType")
+      .update(sanitize(update))
+      .eq("id", id);
+    if (companyId) query = query.eq("companyId", companyId);
+    return query.select("id").single();
   }
   return client
     .from("materialType")
@@ -5006,6 +5933,11 @@ export async function upsertMaterialSubstance(
   );
 }
 
+/**
+ * Creates a service (item row and service row) or updates one; on update `id`
+ * is the item id (uuid) or the service's readable id and the write is a full
+ * replace, so omitted optional fields are cleared.
+ */
 export async function upsertService(
   client: SupabaseClient<Database>,
   service:
@@ -5015,6 +5947,7 @@ export async function upsertService(
         customFields?: Json;
       })
     | (z.infer<typeof serviceValidator> & {
+        companyId: string;
         updatedBy: string;
         customFields?: Json;
       })
@@ -5077,49 +6010,23 @@ export async function upsertService(
     return newService;
   }
 
-  const item = await client
-    .from("item")
-    .select("readableId, companyId")
-    .eq("id", service.id)
-    .single();
-  if (item.error) return item;
-
-  const itemUpdate = {
+  const updated = await updateTypedItem(client, {
     id: service.id,
-    name: service.name,
-    description: service.description,
-    replenishmentSystem: service.replenishmentSystem,
-    defaultMethodType: service.defaultMethodType,
-    itemTrackingType: "Non-Inventory" as const,
-    unitOfMeasureCode: service.unitOfMeasureCode,
-    active: true
-  };
-
-  const serviceUpdate = {
-    customFields: service.customFields
-  };
-
-  const [updateItem, updateService] = await Promise.all([
-    client
-      .from("item")
-      .update({
-        ...sanitize(itemUpdate),
-        updatedAt: datetime.timestamp()
-      })
-      .eq("id", service.id),
-    // service.id is the item uuid; the service row is keyed by readableId
-    client
-      .from("service")
-      .update({
-        ...sanitize(serviceUpdate),
-        updatedAt: datetime.timestamp()
-      })
-      .eq("id", item.data.readableId ?? "")
-      .eq("companyId", item.data.companyId ?? "")
-  ]);
-
-  if (updateItem.error) return updateItem;
-  return updateService;
+    companyId: service.companyId,
+    updatedBy: service.updatedBy,
+    type: "Service",
+    item: {
+      name: service.name,
+      description: service.description,
+      replenishmentSystem: service.replenishmentSystem,
+      defaultMethodType: service.defaultMethodType,
+      itemTrackingType: "Non-Inventory",
+      unitOfMeasureCode: service.unitOfMeasureCode,
+      active: true
+    },
+    typed: { customFields: service.customFields }
+  });
+  return updated;
 }
 
 export async function upsertUnitOfMeasure(
@@ -5152,6 +6059,11 @@ export async function upsertUnitOfMeasure(
     .single();
 }
 
+/**
+ * Creates a tool (item row and tool row) or updates one; on update `id` is the
+ * item id (uuid) or the tool's readable id and the write is a full replace, so
+ * omitted optional fields are cleared.
+ */
 export async function upsertTool(
   client: SupabaseClient<Database>,
   tool:
@@ -5161,6 +6073,7 @@ export async function upsertTool(
         customFields?: Json;
       })
     | (z.infer<typeof toolValidator> & {
+        companyId: string;
         updatedBy: string;
         customFields?: Json;
       })
@@ -5240,50 +6153,36 @@ export async function upsertTool(
     return newTool;
   }
 
-  const itemUpdate = {
+  const updated = await updateTypedItem(client, {
     id: tool.id,
-    name: tool.name,
-    description: tool.description,
-    replenishmentSystem: tool.replenishmentSystem,
-    defaultMethodType: tool.defaultMethodType,
-    itemTrackingType: tool.itemTrackingType,
-    unitOfMeasureCode: tool.unitOfMeasureCode,
-    active: true
-  };
-
-  const toolUpdate = {
-    customFields: tool.customFields
-  };
-
-  const [updateItem, updateTool] = await Promise.all([
-    client
-      .from("item")
-      .update({
-        ...sanitize(itemUpdate),
-        updatedAt: datetime.timestamp()
-      })
-      .eq("id", tool.id),
-    client
-      .from("tool")
-      .update({
-        ...sanitize(toolUpdate),
-        updatedAt: datetime.timestamp()
-      })
-      .eq("id", tool.id)
-  ]);
-
-  if (updateItem.error) return updateItem;
+    companyId: tool.companyId,
+    updatedBy: tool.updatedBy,
+    type: "Tool",
+    item: {
+      name: tool.name,
+      description: tool.description,
+      replenishmentSystem: tool.replenishmentSystem,
+      defaultMethodType: tool.defaultMethodType,
+      itemTrackingType: tool.itemTrackingType,
+      unitOfMeasureCode: tool.unitOfMeasureCode,
+      active: true
+    },
+    typed: { customFields: tool.customFields }
+  });
+  if (updated.error) return updated;
+  const itemId = updated.data.id;
 
   const pickMethod = await upsertItemDefaultPickMethod(client, {
-    itemId: tool.id,
+    itemId,
     userId: tool.updatedBy,
     storageUnitId: tool.defaultStorageUnitId
   });
   if (pickMethod.error) return pickMethod;
 
   const shelfLife = await upsertItemShelfLife(client, {
-    itemId: tool.id,
+    itemId,
     userId: tool.updatedBy,
+    companyId: tool.companyId,
     mode: tool.shelfLifeMode,
     days: tool.shelfLifeDays,
     triggerProcessId: tool.shelfLifeTriggerProcessId,
@@ -5292,7 +6191,7 @@ export async function upsertTool(
   });
   if (shelfLife.error) return shelfLife;
 
-  return updateTool;
+  return updated;
 }
 
 /**
@@ -6977,28 +7876,20 @@ export async function deleteChangeNoticeAction(
   return client.from("changeOrderActionTask").delete().eq("id", id);
 }
 
-// Bulk reorder (drag-sort) — a multi-row write, so Kysely (route passes
-// getDatabaseClient()). Kysely bypasses RLS and the ids come from the request
-// body, so every update is scoped to the owning change notice + company.
 export async function updateChangeNoticeActionOrder(
   db: Kysely<KyselyDatabase>,
-  args: {
-    changeNoticeId: string;
-    companyId: string;
-    updates: { id: string; sortOrder: number; updatedBy: string }[];
-  }
+  companyId: string,
+  userId: string,
+  changeNoticeId: string,
+  updates: { id: string; sortOrder: number }[]
 ) {
-  const { changeNoticeId, companyId, updates } = args;
-  return db.transaction().execute(async (trx) => {
-    for (const { id, sortOrder, updatedBy } of updates) {
-      await trx
-        .updateTable("changeOrderActionTask")
-        .set({ sortOrder, updatedBy })
-        .where("id", "=", id)
-        .where("changeOrderId", "=", changeNoticeId)
-        .where("companyId", "=", companyId)
-        .execute();
-    }
+  return updateSortOrder(db, {
+    table: "changeOrderActionTask",
+    column: "sortOrder",
+    companyId,
+    userId,
+    parent: { column: "changeOrderId", id: changeNoticeId },
+    updates
   });
 }
 
@@ -8075,4 +8966,23 @@ export async function getChangeNoticeDiff(
   }
 
   return { data: { items }, error: null };
+}
+
+/**
+ * Create a presigned upload URL for an item (part/material/tool/consumable/service)
+ * document. First step of the two-step upload flow: PUT the file bytes to the
+ * returned `signedUrl`, then call `documents_insertUploadedDocument` with the
+ * returned `path`, the item's type as `sourceDocument`, and
+ * `sourceDocumentId: itemId`.
+ */
+export async function createItemDocumentUploadUrl(
+  client: SupabaseClient<Database>,
+  args: { companyId: string; itemId: string; name: string }
+) {
+  return createDocumentUploadUrl(client, {
+    companyId: args.companyId,
+    folder: "parts",
+    entityId: args.itemId,
+    name: args.name
+  });
 }

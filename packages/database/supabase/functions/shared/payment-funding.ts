@@ -235,6 +235,10 @@ export function isEffectiveSettlement(row: SettlementEffectiveness): boolean {
 export type SettlementBalanceRow = {
   targetSalesInvoiceId: string | null;
   targetPurchaseInvoiceId: string | null;
+  /** An employee reimbursement settled by a disbursement to that employee.
+   *  Nullable on every AR/AP row, so callers that never see one may pass
+   *  `null` (or omit the column and spread it in). */
+  targetReimbursementId?: string | null;
   sourceAmount: number | null;
   appliedAmount: number;
   discountAmount: number;
@@ -244,6 +248,19 @@ export type SettlementBalanceRow = {
 function sourcePrincipal(value: number | null): number {
   if (value === null) throw new Error("Settlement is missing its document principal");
   return nonnegativeAmount(Number(value), "Settlement document principal");
+}
+
+function settlementPrincipal(
+  row: { sourceAmount: number | null; appliedAmount: number },
+  exchangeRate: number,
+  decimals: number
+): number {
+  if (row.sourceAmount !== null) return sourcePrincipal(row.sourceAmount);
+  return toDocumentAmount(
+    nonnegativeAmount(Number(row.appliedAmount), "Settlement applied amount"),
+    exchangeRate,
+    decimals
+  );
 }
 
 /** Accumulate first; each adjustment is rounded at its document boundary. */
@@ -257,27 +274,44 @@ export function reduceInvoiceSettlements(
   for (const row of rows) {
     const adjustments = nonnegativeAmount(Number(row.discountAmount), "Settlement discount") +
       nonnegativeAmount(Number(row.writeOffAmount), "Settlement write-off");
-    document += sourcePrincipal(row.sourceAmount) + toDocumentAmount(adjustments, exchangeRate, decimals);
+    document += settlementPrincipal(row, exchangeRate, decimals) + toDocumentAmount(adjustments, exchangeRate, decimals);
     base += nonnegativeAmount(Number(row.appliedAmount), "Settlement applied amount") + adjustments;
   }
   return { document: toDocumentAmount(document, 1, decimals), base: round(base) };
 }
 
-/** Original controls use signed natural balances for both AR and AP. */
+/** Original controls use signed natural balances for both AR and AP.
+ *
+ *  `isReimbursement` selects the third target column. An employee
+ *  reimbursement is a TARGET exactly like a payable invoice — a liability with
+ *  a carrying value that prior settlements draw down — so it nets the same way;
+ *  only the column its settlements are keyed on differs. It is a separate flag
+ *  rather than a third `isAR` state because `isAR` still answers a different
+ *  question here (which side of the ledger), and a reimbursement is always the
+ *  payable side. */
 export function invoiceRemainingAmounts(
   invoice: { id: string | null; totalAmount: number | null; exchangeRate: number | null },
   rows: readonly SettlementBalanceRow[],
   controlAmounts: ReadonlyMap<string, number>,
   decimals: number,
-  isAR: boolean
+  isAR: boolean,
+  isReimbursement = false
 ): { remainingDocument: number; remainingBase: number } {
   if (!invoice.id || invoice.totalAmount == null || invoice.exchangeRate == null) {
     throw new Error("Invoice identity, total or exchange rate is missing");
   }
   const rate = Number(invoice.exchangeRate);
-  const consumed = reduceInvoiceSettlements(rows.filter((row) =>
-    (isAR ? row.targetSalesInvoiceId : row.targetPurchaseInvoiceId) === invoice.id
-  ), rate, decimals);
+  const targetOf = (row: SettlementBalanceRow): string | null | undefined =>
+    isReimbursement
+      ? row.targetReimbursementId
+      : isAR
+      ? row.targetSalesInvoiceId
+      : row.targetPurchaseInvoiceId;
+  const consumed = reduceInvoiceSettlements(
+    rows.filter((row) => targetOf(row) === invoice.id),
+    rate,
+    decimals
+  );
   const originalDocument = toDocumentAmount(Number(invoice.totalAmount), rate, decimals);
   const remainingDocument = toDocumentAmount(originalDocument - consumed.document, 1, decimals);
   const originalBase = controlAmounts.get(invoice.id) ?? round(Number(invoice.totalAmount));
@@ -311,20 +345,31 @@ export function remainingFundingSources(
   decimals: ReadonlyMap<string, number>,
   isAR: boolean
 ): FundingSource[] {
+  const precisionFor = (payment: FundingPaymentRow): number => {
+    const precision = decimals.get(payment.currencyCode);
+    if (precision == null) throw new Error(`Currency ${payment.currencyCode} requires configured decimal places`);
+    return precision;
+  };
+  const paymentsById = new Map(payments.map((payment) => [payment.id, payment]));
   const consumed = new Map<string, { document: number; base: number }>();
   for (const row of consumption) {
     const sourceId = row.sourcePaymentId ?? row.paymentId;
     if (!sourceId) continue;
     const current = consumed.get(sourceId) ?? { document: 0, base: 0 };
-    current.document += sourcePrincipal(row.sourceAmount);
+    if (row.sourceAmount === null && row.sourcePaymentId === null) {
+      const payment = paymentsById.get(sourceId);
+      if (!payment) continue;
+      current.document += settlementPrincipal(row, Number(payment.exchangeRate), precisionFor(payment));
+    } else {
+      current.document += sourcePrincipal(row.sourceAmount);
+    }
     const fx = Number(row.fxGainLossAmount ?? 0);
     if (!Number.isFinite(fx)) throw new Error("Settlement FX must be finite");
     current.base += nonnegativeAmount(Number(row.appliedAmount), "Settlement applied amount") + (isAR ? 1 : -1) * fx;
     consumed.set(sourceId, current);
   }
   return payments.map((payment) => {
-    const precision = decimals.get(payment.currencyCode);
-    if (precision == null) throw new Error(`Currency ${payment.currencyCode} requires configured decimal places`);
+    const precision = precisionFor(payment);
     const use = consumed.get(payment.id);
     const total = nonnegativeAmount(Number(payment.totalAmount), "Funding document total");
     const remainingDocument = toDocumentAmount(total - (use?.document ?? 0), 1, precision);

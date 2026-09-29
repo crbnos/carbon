@@ -160,8 +160,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   } catch (err) {
     logger.error("Paperless Parts webhook failed", {
       companyId,
-      error: err instanceof Error ? err.message : String(err),
-      stack: err instanceof Error ? err.stack : undefined
+      error: err
     });
     return data({ success: false }, { status: 500 });
   }

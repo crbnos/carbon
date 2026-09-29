@@ -1,4 +1,4 @@
-import { REFERENCE_ISSUE_CODES } from "@carbon/workflows";
+import { REFERENCE_ISSUE_CODES } from "@carbon/ee/workflows";
 import type { BuilderState } from "./store";
 
 // Primitives and stable references only: `nodes` is replaced on every drag frame,

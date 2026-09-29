@@ -65,6 +65,9 @@ export type CostingLine = {
 export type BillCostingResult = {
   /** Costing lines (AP control line excluded), base-currency, debit-signed. */
   lines: CostingLine[];
+  /** The AP control account the posting credited — what a provider
+   * reimbursement (which does not derive its own payable) is booked against. */
+  payablesAccountId?: string;
   /** The invoice's transaction currency (ISO-4217). */
   currencyCode: string;
   /** Document currency per company-base currency. */
@@ -285,12 +288,179 @@ export async function loadBillCostingLines(
 
   return {
     lines,
+    payablesAccountId: controls[0]?.accountId ?? undefined,
     currencyCode,
     exchangeRate,
     documentTotal,
     decimalPlaces,
     baseCurrencyCode,
     postingDate: toPostingDateString(invoice.postingDate)
+  };
+}
+
+export type ChargeCostingResult = BillCostingResult & {
+  /** The card-liability account the charge is settled against. */
+  cardAccountId: string;
+  /** Charge (spend) or Credit (merchant refund). */
+  type: "Charge" | "Credit";
+  /** The date the card was charged (the provider's charge date). */
+  transactionDate: string;
+};
+
+/**
+ * Load a charge's account-costed replay lines from its posted
+ * "Charge" journal — the same contract as {@link loadBillCostingLines}
+ * with a simpler control rule: the card-liability line is identified by the
+ * header's `cardAccountId`, not by a description role. Everything else the
+ * journal booked (the expense lines, with their cost-center dimensions) IS the
+ * charge's items, base-currency and debit-signed; a Credit's lines come out
+ * credit-signed (negative), which the provider adapters turn into their native
+ * refund shape. `postingDate` falls back to `transactionDate` (nullable on the
+ * header). No item labels: card lines have no item.
+ */
+export async function loadChargeCostingLines(
+  db: Db,
+  args: { companyId: string; chargeId: string }
+): Promise<ChargeCostingResult> {
+  const charge = await db
+    .selectFrom("charge")
+    .select([
+      "type",
+      "currencyCode",
+      "exchangeRate",
+      "postingDate",
+      "transactionDate",
+      "cardAccountId",
+      "amount"
+    ])
+    .where("id", "=", args.chargeId)
+    .where("companyId", "=", args.companyId)
+    .executeTakeFirst();
+
+  const company = await db
+    .selectFrom("company")
+    .select(["baseCurrencyCode", "companyGroupId"])
+    .where("id", "=", args.companyId)
+    .executeTakeFirst();
+  if (
+    !charge?.currencyCode ||
+    !charge.transactionDate ||
+    !company?.baseCurrencyCode ||
+    !company.companyGroupId
+  ) {
+    throw new Error(
+      "Charge currency, transaction date and company base currency are required"
+    );
+  }
+  if (charge.type !== "Charge" && charge.type !== "Credit") {
+    throw new Error(`Charge type ${charge.type} has no charge representation`);
+  }
+  const currencyCode = charge.currencyCode;
+  const baseCurrencyCode = company.baseCurrencyCode;
+  const exchangeRate = Number(charge.exchangeRate);
+  const currency = await db
+    .selectFrom("currency")
+    .select("decimalPlaces")
+    .where("code", "=", currencyCode)
+    .where("companyGroupId", "=", company.companyGroupId)
+    .executeTakeFirst();
+  if (!currency || currency.decimalPlaces == null)
+    throw new Error("Charge currency precision is required");
+  const decimalPlaces = currency.decimalPlaces;
+  assertExchangeRate(exchangeRate);
+  assertCurrencyDecimals(decimalPlaces);
+  if (currencyCode === baseCurrencyCode && exchangeRate !== 1)
+    throw new Error("Base-currency charge requires identity exchange rate");
+  // The header amount is the authoritative document total (post-card-
+  // transaction asserts the lines sum to it); a Credit's total is negative in
+  // charge terms.
+  const documentTotal = round(
+    Number(charge.amount) * (charge.type === "Credit" ? -1 : 1),
+    decimalPlaces
+  );
+  if (!Number.isFinite(documentTotal))
+    throw new Error("Charge document total must be finite");
+
+  const rows = await db
+    .selectFrom("journalLine")
+    .innerJoin("journal", (join) =>
+      join
+        .onRef("journal.id", "=", "journalLine.journalId")
+        .onRef("journal.companyId", "=", "journalLine.companyId")
+    )
+    .leftJoin("account", "account.id", "journalLine.accountId")
+    .select([
+      "journalLine.id",
+      "journalLine.accountId",
+      "journalLine.amount",
+      "journalLine.description",
+      "account.class as accountClass"
+    ])
+    .where("journalLine.documentType", "=", "Charge")
+    .where("journalLine.documentId", "=", args.chargeId)
+    .where("journalLine.companyId", "=", args.companyId)
+    .where("journal.sourceType", "=", "Charge")
+    .where("journal.status", "=", "Posted")
+    .where("journal.companyId", "=", args.companyId)
+    .orderBy("journalLine.journalLineReference", "asc")
+    .execute();
+
+  if (!rows.length) {
+    throw new JournalEntrySyncError({
+      errorCode: "UNMAPPED_ACCOUNTS",
+      warning: true,
+      message:
+        "Cannot sync card charge: no posted Charge journal found. Post the charge with accounting enabled, then retry.",
+      metadata: { chargeId: args.chargeId }
+    });
+  }
+  // The provider books the card liability itself from `credit_card_account_code`
+  // (or its equivalent); only the coded lines become items.
+  const costingRows = rows.filter(
+    (row) => row.accountId !== charge.cardAccountId
+  );
+  const missingAccountLines = costingRows.filter((row) => !row.accountId);
+  if (!costingRows.length || missingAccountLines.length)
+    throw new JournalEntrySyncError({
+      errorCode: "UNMAPPED_ACCOUNTS",
+      warning: true,
+      message:
+        "Cannot sync card charge: its posted lines have no account. Correct the posting, then retry.",
+      metadata: {
+        chargeId: args.chargeId,
+        lineIdsWithoutAccount: missingAccountLines.map((row) => row.id)
+      }
+    });
+
+  const dimensionsByLine = await loadJournalLineDimensions(db, {
+    companyId: args.companyId,
+    journalLineIds: costingRows.map((row) => row.id)
+  });
+
+  const lines: CostingLine[] = costingRows.map((row) => {
+    const dimensions = dimensionsByLine.get(row.id);
+    return {
+      id: row.id,
+      accountId: row.accountId ?? null,
+      amount: toDebitSignedAmount(row.accountClass, Number(row.amount)),
+      description: row.description ?? null,
+      ...(dimensions ? { dimensions } : {})
+    };
+  });
+
+  return {
+    lines,
+    currencyCode,
+    exchangeRate,
+    documentTotal,
+    decimalPlaces,
+    baseCurrencyCode,
+    postingDate: toPostingDateString(
+      charge.postingDate ?? charge.transactionDate
+    ),
+    transactionDate: toPostingDateString(charge.transactionDate),
+    cardAccountId: charge.cardAccountId,
+    type: charge.type
   };
 }
 

@@ -4,12 +4,28 @@ import { loader as orderLoader } from "~/routes/x+/purchase-order+/$orderId";
 import { loader as salesLoader } from "~/routes/x+/sales-invoice+/$invoiceId";
 import { getInvoicePaidAmounts } from "./invoicing.service";
 
-vi.mock("@carbon/auth", () => ({
+const client = vi.hoisted(() => {
+  const query = {
+    select() {
+      return this;
+    },
+    eq() {
+      return this;
+    },
+    async maybeSingle() {
+      return { data: null, error: null };
+    }
+  };
+  return { from: () => query };
+});
+
+vi.mock("@carbon/auth", async () => ({
+  ...(await import("@carbon/env")),
   error: (_: unknown, message: string) => message
 }));
 vi.mock("@carbon/auth/auth.server", () => ({
   requirePermissions: vi.fn(async () => ({
-    client: {},
+    client,
     companyId: "co",
     companyGroupId: "group"
   }))
@@ -128,7 +144,7 @@ describe("invoice summary loader cash totals", () => {
       context: {}
     } as unknown as Parameters<typeof loader>[0]);
     expect(result.invoicePaidAmount).toBe(0);
-    expect(getInvoicePaidAmounts).toHaveBeenCalledWith({}, "co", side, [
+    expect(getInvoicePaidAmounts).toHaveBeenCalledWith(client, "co", side, [
       "invoice"
     ]);
   });
@@ -144,9 +160,12 @@ describe("invoice summary loader cash totals", () => {
       balanceRemaining: 0,
       currencyMismatchCount: 0
     });
-    expect(getInvoicePaidAmounts).toHaveBeenCalledWith({}, "co", "purchase", [
-      "invoice"
-    ]);
+    expect(getInvoicePaidAmounts).toHaveBeenCalledWith(
+      client,
+      "co",
+      "purchase",
+      ["invoice"]
+    );
   });
 });
 

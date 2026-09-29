@@ -66,7 +66,7 @@ Navigate via the typed `path.to.*` helpers (`shipmentDetails`, `shipment`, `ship
 - **Status** (`ShipmentStatus.tsx`, `ReceiptStatus.tsx`): `Draft`(gray) `Pending`(orange)
   `Posted`(green) `Voided`(red). Shipment additionally shows `Invoiced`(blue) when `invoiced` and not voided.
 - **Modals**: `ReceiptPostModal` (validates lines on mount — batch lines need a batch number,
-  serials reconciled across indices `0..receivedQuantity`; uses `useStorageRuleViolations`),
+  serials reconciled across indices `0..receivedQuantity`; uses `useRuleViolations`),
   `ShipmentVoidModal` / `ReceiptVoidModal` (destructive `Alert` + bulleted consequences, submit
   via `fetcher.Form` to the void route). Shipment posting is gated by `ShipmentPostModal.tsx`.
   **Both post modals are source-aware for return flows**, and must stay in step with
@@ -79,7 +79,7 @@ Navigate via the typed `path.to.*` helpers (`shipmentDetails`, `shipment`, `ship
 
 ## Posting flow (`$id.post.tsx` → edge fn)
 
-The route action: evaluates storage/item rules (`@carbon/ee/storage-rules.server`) over the
+The route action: evaluates storage/sales rules (`@carbon/ee/rules.server`) over the
 relevant surfaces, optimistically sets `status: "Pending"`, then
 `serviceRole.functions.invoke("post-shipment" | "post-receipt", { body: { type: "post", id, userId, companyId } })`.
 On error it reverts status to `Draft`. May then auto-print and (sales shipment) generate a packing

@@ -1,7 +1,9 @@
 import { assertIsPost, error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
+import { rejectCrossSiteNavigation } from "@carbon/auth/middleware/security.server";
 import { flash } from "@carbon/auth/session.server";
+import { storage } from "@carbon/files";
 import { validationError, validator } from "@carbon/form";
 import { deriveRate, taxableBase } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
@@ -32,6 +34,8 @@ export const handle: Handle = {
 };
 
 export async function loader({ request }: LoaderFunctionArgs) {
+  // Writes on GET: a link on another site must not trigger it.
+  rejectCrossSiteNavigation(request);
   // we don't use the client here -- if they have this permission, we'll upgrade to a service role if needed
   const { companyId, userId } = await requirePermissions(request, {
     create: "invoicing"
@@ -203,8 +207,8 @@ export async function action({ request }: ActionFunctionArgs) {
           const safeFilename = stripSpecialCharacters(originalFilename);
           const newStoragePath = `${companyId}/supplier-interaction/${interactionId}/${safeFilename}`;
 
-          const copyResult = await client.storage
-            .from("private")
+          const copyResult = await storage(client)
+            .company(companyId)
             .copy(extractedStoragePath, newStoragePath);
 
           if (!copyResult.error) {

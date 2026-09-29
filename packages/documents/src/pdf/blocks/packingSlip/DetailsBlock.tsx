@@ -15,7 +15,9 @@ export function DetailsBlock({ data }: { data: PackingSlipData }) {
             Shipping
           </Text>
           <View style={tw("text-[10px] text-gray-800")}>
-            {shippingMethod?.name && <Text>Method: {shippingMethod.name}</Text>}
+            {shippingMethod?.name ? (
+              <Text>Method: {shippingMethod.name}</Text>
+            ) : null}
           </View>
         </View>
         <View style={tw("w-1/2 p-3")}>
@@ -23,7 +25,7 @@ export function DetailsBlock({ data }: { data: PackingSlipData }) {
             Payment
           </Text>
           <View style={tw("text-[10px] text-gray-800")}>
-            {paymentTerm?.name && <Text>Terms: {paymentTerm.name}</Text>}
+            {paymentTerm?.name ? <Text>Terms: {paymentTerm.name}</Text> : null}
           </View>
         </View>
       </View>

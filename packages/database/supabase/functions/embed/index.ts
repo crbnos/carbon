@@ -5,6 +5,7 @@ import z from "npm:zod@^4.5.4";
 import { generateEmbedding } from "../lib/ai/embedding.ts";
 import { DB, getConnectionPool, getDatabaseClient } from "../lib/database.ts";
 import { getFunctionLogger } from "../lib/logging.ts";
+import { isServiceRoleRequest } from "../lib/supabase.ts";
 
 const pool = getConnectionPool(1);
 const db = getDatabaseClient<DB>(pool);
@@ -71,13 +72,40 @@ serve(async (req: Request) => {
     });
   }
 
-  const pendingJobs = parseResult.data;
-
   // Track jobs that completed successfully
   const completedJobs: Job[] = [];
 
   // Track jobs that failed due to an error
   const failedJobs: FailedJob[] = [];
+
+  // Postgres (pg_net) calls this function with the anon key, so anyone can
+  // send it a body. From such a caller, act only on jobs still queued for
+  // exactly that row: that stops a caller deleting other queue messages or
+  // buying embeddings for rows nothing asked to embed. The service role (the
+  // Inngest embedding handler) is trusted and sends synthetic negative jobIds
+  // that were never queued, so it skips the check.
+  let pendingJobs = parseResult.data;
+  if (!isServiceRoleRequest(req)) {
+    let queued: Awaited<ReturnType<typeof getQueuedJobs>>;
+    try {
+      queued = await getQueuedJobs(db, pendingJobs);
+    } catch (error) {
+      const described = describeError(error);
+      logger.error("queue lookup failed", { error: described.detail });
+      queued = new Map();
+    }
+    pendingJobs = pendingJobs.filter((job) => {
+      const message = queued.get(job.jobId);
+      if (message && message.id === job.id && message.table === job.table) {
+        return true;
+      }
+      failedJobs.push({
+        ...job,
+        error: `Job ${job.jobId} is not a queued embedding of ${job.table} ${job.id}`,
+      });
+      return false;
+    });
+  }
 
   async function processJobs() {
     let currentJob: Job | undefined;
@@ -133,6 +161,30 @@ serve(async (req: Request) => {
     },
   });
 });
+
+/** The queued message for each of the jobs' ids, in one query. */
+async function getQueuedJobs(
+  db: Kysely<DB>,
+  jobs: Job[]
+): Promise<Map<number, { id: string | null; table: string | null }>> {
+  const jobIds = [...new Set(jobs.map((job) => job.jobId))];
+  const queued = new Map<number, { id: string | null; table: string | null }>();
+  if (jobIds.length === 0) return queued;
+
+  const result = await sql<{
+    msgId: string;
+    id: string | null;
+    table: string | null;
+  }>`
+    select msg_id::text as "msgId", message->>'id' as id, message->>'table' as "table"
+    from ${sql.table(`pgmq.q_${QUEUE_NAME}`)}
+    where msg_id = any(${jobIds}::bigint[])
+  `.execute(db);
+  for (const row of result.rows) {
+    queued.set(Number(row.msgId), { id: row.id, table: row.table });
+  }
+  return queued;
+}
 
 /**
  * Processes an embedding job.
@@ -264,10 +316,15 @@ async function processJob(db: Kysely<DB>, job: Job) {
     logger.debug("Customer update result", { result });
   }
 
-  logger.debug(`Deleting job ${jobId} from queue...`);
-  const deleteResult =
-    await sql`select pgmq.delete(${QUEUE_NAME}, ${jobId}::bigint)`.execute(db);
-  logger.debug("Queue delete result", { deleteResult });
+  // Synthetic (non-positive) jobIds from the Inngest handler were never queued.
+  if (jobId > 0) {
+    logger.debug(`Deleting job ${jobId} from queue...`);
+    const deleteResult =
+      await sql`select pgmq.delete(${QUEUE_NAME}, ${jobId}::bigint)`.execute(
+        db
+      );
+    logger.debug("Queue delete result", { deleteResult });
+  }
 
   logger.debug(`Job ${jobId} processing completed successfully`);
 }

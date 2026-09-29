@@ -1,7 +1,17 @@
 import { useCarbon } from "@carbon/auth";
 import type { Database } from "@carbon/database";
-import { Button, cn, IconButton, Label, VStack } from "@carbon/react";
-import { supportedModelTypes } from "@carbon/utils";
+import { storage } from "@carbon/files";
+import { supportedModelTypes } from "@carbon/files/cad";
+import {
+  Button,
+  cn,
+  IconButton,
+  Label,
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+  VStack
+} from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { nanoid } from "nanoid";
@@ -33,8 +43,8 @@ export async function uploadStepSlideModel(
 ): Promise<string | null> {
   const modelUploadId = nanoid();
   const ext = file.name.split(".").pop();
-  const upload = await carbon.storage
-    .from("private")
+  const upload = await storage(carbon)
+    .company(companyId)
     .upload(`${companyId}/models/${modelUploadId}.${ext}`, file, {
       upsert: true
     });
@@ -76,7 +86,7 @@ type SlideModelMeta = {
 // client-side so the editors don't have to thread a modelUpload join through their
 // loaders. Re-polls while a STEP → GLB conversion is in flight so the "Converting…"
 // badge resolves without a reload.
-function useSlideModels(slides: EditorSlide[]) {
+export function useSlideModels(slides: EditorSlide[]) {
   const { carbon } = useCarbon();
   const [models, setModels] = useState<Record<string, SlideModelMeta>>({});
 
@@ -123,6 +133,25 @@ function useSlideModels(slides: EditorSlide[]) {
   }, [carbon, idsKey, hasPending]);
 
   return models;
+}
+
+// Read-only numbered pin overlay for an annotated image slide. Absolutely
+// positioned, so the caller must be a `relative` container sized to the image.
+// Shared by the slide cards below and the Bill of Process preview.
+export function SlidePinOverlay({ pins }: { pins: SlideAnnotation[] }) {
+  return pins.map((pin, i) => (
+    <span
+      key={pin.id}
+      className="pointer-events-none absolute flex size-4 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-white text-[8px] font-semibold text-white shadow"
+      style={{
+        left: `${pin.x * 100}%`,
+        top: `${pin.y * 100}%`,
+        backgroundColor: pin.color ?? "#ef4444"
+      }}
+    >
+      {i + 1}
+    </span>
+  ));
 }
 
 // Presentational slides grid — header + "Add slide" / "Add model" + cards. An image
@@ -187,33 +216,49 @@ export function SlidesEditor({
                 onChange={onModelFileChange}
               />
             )}
-            <Button
-              variant="secondary"
-              size="sm"
-              leftIcon={<LuCirclePlus />}
-              isLoading={busy}
-              isDisabled={busy}
-              onClick={() => fileInputRef.current?.click()}
-            >
-              Add slide
-            </Button>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  leftIcon={<LuCirclePlus />}
+                  isLoading={busy}
+                  isDisabled={busy}
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  {t`Add Slide`}
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                {t`A photo or PDF the operator sees on this step`}
+              </TooltipContent>
+            </Tooltip>
             {withModels && (
-              <Button
-                variant="secondary"
-                size="sm"
-                leftIcon={<LuBox />}
-                isLoading={busy}
-                isDisabled={busy}
-                onClick={() => modelInputRef?.current?.click()}
-              >
-                Add model
-              </Button>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    leftIcon={<LuBox />}
+                    isLoading={busy}
+                    isDisabled={busy}
+                    onClick={() => modelInputRef?.current?.click()}
+                  >
+                    {t`Add Model`}
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  {t`A 3D model the operator can turn around`}
+                </TooltipContent>
+              </Tooltip>
             )}
           </div>
         )}
       </div>
       {slides.length === 0 ? (
-        <p className="w-full text-xs text-muted-foreground">No slides</p>
+        <p className="w-full text-xs text-muted-foreground">
+          {t`No slides yet`}
+        </p>
       ) : (
         <div className="flex w-full flex-wrap items-start gap-3">
           {slides.map((slide, index) => {
@@ -271,19 +316,7 @@ export function SlidesEditor({
                         )}
                       />
                       {/* Read-only pin preview so an annotated slide reads at a glance. */}
-                      {pins.map((pin, i) => (
-                        <span
-                          key={pin.id}
-                          className="pointer-events-none absolute flex size-4 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-white text-[8px] font-semibold text-white shadow"
-                          style={{
-                            left: `${pin.x * 100}%`,
-                            top: `${pin.y * 100}%`,
-                            backgroundColor: pin.color ?? "#ef4444"
-                          }}
-                        >
-                          {i + 1}
-                        </span>
-                      ))}
+                      <SlidePinOverlay pins={pins} />
                     </>
                   )}
                   {!isDisabled && (

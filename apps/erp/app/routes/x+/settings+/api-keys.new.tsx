@@ -1,13 +1,14 @@
 import { assertIsPost, error } from "@carbon/auth";
 import { hashApiKey, requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { requirePlan } from "@carbon/ee/plan.server";
+import { upsertApiKey } from "@carbon/ee/api-keys.server";
+import { requireFeature } from "@carbon/ee/plan.server";
 import { validationError, validator } from "@carbon/form";
 import { nanoid } from "nanoid";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, useNavigate } from "react-router";
 import { useRouteData } from "~/hooks";
-import { ApiKeyForm, apiKeyValidator, upsertApiKey } from "~/modules/settings";
+import { ApiKeyForm, apiKeyValidator } from "~/modules/settings";
 import { path } from "~/utils/path";
 
 export async function loader({ request }: LoaderFunctionArgs) {
@@ -24,7 +25,7 @@ export async function action({ request }: ActionFunctionArgs) {
     update: "users"
   });
 
-  await requirePlan({
+  await requireFeature({
     request,
     client,
     companyId,

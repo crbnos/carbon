@@ -1,3 +1,4 @@
+import type { ApprovalDecision } from "@carbon/ee/approvals";
 import { Hidden, TextArea, ValidatedForm } from "@carbon/form";
 import {
   Button,
@@ -11,7 +12,6 @@ import {
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { FetcherWithComponents } from "react-router";
 import { useParams } from "react-router";
-import type { ApprovalDecision } from "~/modules/shared/types";
 import { path } from "~/utils/path";
 import { qualityDocumentApprovalValidator } from "../../quality.models";
 import type { QualityDocument } from "../../types";

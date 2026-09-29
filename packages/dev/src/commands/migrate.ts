@@ -14,6 +14,7 @@ import {
 import {
   applyMigrations,
   ensureConfigRow,
+  syncAuthz,
   waitForPostgres
 } from "../services/migrations.js";
 import { branchToPrefix } from "../services/portless.js";
@@ -109,7 +110,11 @@ async function migrateAgainstRunningDb(
             }
           }
         ]
-      : [])
+      : []),
+    {
+      title: "Sync RLS policies with the authz manifest",
+      task: () => syncAuthz(root, portDb)
+    }
   ]);
   outro("done");
 }
@@ -190,7 +195,11 @@ async function migrateStandalone(
               }
             }
           ]
-        : [])
+        : []),
+      {
+        title: "Sync RLS policies with the authz manifest",
+        task: () => syncAuthz(root, portDb)
+      }
     ]);
 
     if (shouldRegen) {

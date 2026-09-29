@@ -2,7 +2,7 @@ import type {
   WorkflowIssue,
   WorkflowNode,
   WorkflowNodeType
-} from "@carbon/workflows";
+} from "@carbon/ee/workflows";
 import type { ComponentType } from "react";
 import type { BuilderNode } from "../../../../types";
 import { ActionForm } from "./ActionForm";

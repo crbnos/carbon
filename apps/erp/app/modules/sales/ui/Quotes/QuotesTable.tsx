@@ -318,6 +318,20 @@ const QuotesTable = memo(({ data, count }: QuotesTableProps) => {
           updatedAt: false,
           updatedBy: false
         }}
+        importCSV={
+          // The import action gates on `sales_update` (see import.$tableId.tsx),
+          // so match that here rather than `create`.
+          permissions.can("update", "sales")
+            ? [
+                {
+                  table: "quoteWithLines" as const,
+                  label: t`Quotes with Lines`
+                },
+                { table: "quote" as const, label: t`Quotes` },
+                { table: "quoteLine" as const, label: t`Quote Lines` }
+              ]
+            : undefined
+        }
         primaryAction={
           permissions.can("create", "sales") && (
             <New label={t`Quote`} to={path.to.newQuote} />

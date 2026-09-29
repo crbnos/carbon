@@ -13,6 +13,7 @@ import {
   TrackedEntityAttributes,
 } from "../lib/utils.ts";
 import { calculateCOGS } from "../shared/calculate-cogs.ts";
+import { settleQuantity } from "../shared/entity-drain.ts";
 import { getCurrentAccountingPeriod } from "../shared/get-accounting-period.ts";
 import { getNextSequence } from "../shared/get-next-sequence.ts";
 import {
@@ -80,12 +81,24 @@ serve(async (req: Request) => {
 
     const [receipt, receiptLines, receiptLineTracking, dimensions] =
       await Promise.all([
-        client.from("receipt").select("*").eq("id", receiptId).single(),
-        client.from("receiptLine").select("*").eq("receiptId", receiptId),
+        // The client is service-role: requirePermissions proved the caller may
+        // act in companyId, not that receiptId belongs to it.
+        client
+          .from("receipt")
+          .select("*")
+          .eq("id", receiptId)
+          .eq("companyId", companyId)
+          .maybeSingle(),
+        client
+          .from("receiptLine")
+          .select("*")
+          .eq("receiptId", receiptId)
+          .eq("companyId", companyId),
         client
           .from("trackedEntity")
           .select("*")
-          .eq("attributes->> Receipt", receiptId),
+          .eq("attributes->> Receipt", receiptId)
+          .eq("companyId", companyId),
         client
           .from("dimension")
           .select("id, entityType")
@@ -95,6 +108,7 @@ serve(async (req: Request) => {
       ]);
 
     if (receipt.error) throw new Error("Failed to fetch receipt");
+    if (!receipt.data) return errorResponse("Receipt not found", 404);
     if (receiptLines.error) throw new Error("Failed to fetch receipt lines");
     if (dimensions.error) {
       console.error("Failed to fetch dimensions", dimensions.error);
@@ -730,10 +744,19 @@ serve(async (req: Request) => {
             Database["public"]["Tables"]["trackedEntity"]["Update"]
           >
         >((acc, trackedEntity) => {
-          acc[trackedEntity.id] = {
-            status: "Available",
-            quantity: trackedEntity.quantity,
-          };
+          // Voiding restores the lot, but a lot with nothing in it must not
+          // come back Available — that is the zero-quantity husk the drain
+          // rule forbids. Scrapped/Rejected are terminal quality states and
+          // must survive a void, so keep them; everything else returns to
+          // Available (the helper then drains a zero-quantity lot to Consumed).
+          acc[trackedEntity.id] = settleQuantity({
+            quantity: Number(trackedEntity.quantity ?? 0),
+            status:
+              trackedEntity.status === "Scrapped" ||
+              trackedEntity.status === "Rejected"
+                ? trackedEntity.status
+                : ("Available" as const),
+          });
           return acc;
         }, {}) ?? {};
 
@@ -3188,7 +3211,8 @@ serve(async (req: Request) => {
       await client
         .from("receipt")
         .update({ status: "Draft" })
-        .eq("id", payload.receiptId);
+        .eq("id", payload.receiptId)
+        .eq("companyId", payload.companyId);
     }
     return errorResponse(err, 500);
   }

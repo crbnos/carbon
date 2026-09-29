@@ -18,11 +18,13 @@ import {
   upsertDimensionValueMapping
 } from "../../../core/dimension-mapping";
 import { createMappingService } from "../../../core/external-mapping";
+import { MEMO_INCREASER_SKIP_REASON } from "../../../core/models";
 import {
   JournalEntrySyncError,
   type JournalLineDimensionRef,
   type PostingSyncSettings,
-  resolvePostingSyncSettings
+  resolvePostingSyncSettings,
+  toPostingDateString
 } from "../../../core/posting";
 import {
   type Accounting,
@@ -54,25 +56,35 @@ import {
  *   for tests.
  */
 
-/** external_references entries Carbon writes always use this type. */
-export const RILLET_CARBON_REFERENCE_TYPE = "carbon";
+// The external-reference contract now lives in the leaf `../references` so
+// `provider.ts` can read it without importing this file (which imports
+// `../provider`). Re-exported here so existing import paths keep resolving.
+export {
+  carbonCompanyExternalReference,
+  carbonExternalReference,
+  RILLET_CARBON_COMPANY_REFERENCE_TYPE,
+  RILLET_CARBON_REFERENCE_TYPE,
+  readCarbonExternalReference
+} from "../references";
 
 /**
- * Origin tag for multi-instance deployments: several self-hosted Carbon
- * instances can write to one Rillet organization (one subsidiary each),
- * and Carbon entity ids are only unique within one database. The company
- * reference makes every pushed document's origin auditable from Rillet.
+ * Rillet carries one flat contact `name`, Carbon a first/last pair. Split
+ * on the LAST space so "Acme Industrial Supply" keeps everything but the
+ * final word in `firstName` rather than inventing a middle name; a
+ * single-word name leaves `lastName` empty. Both apps render `fullName`
+ * (a generated column), so the join is what the user actually sees.
  */
-export const RILLET_CARBON_COMPANY_REFERENCE_TYPE = "carbon-company";
-
-export function carbonExternalReference(id: string): Rillet.ExternalReference {
-  return { type: RILLET_CARBON_REFERENCE_TYPE, id };
-}
-
-export function carbonCompanyExternalReference(
-  companyId: string
-): Rillet.ExternalReference {
-  return { type: RILLET_CARBON_COMPANY_REFERENCE_TYPE, id: companyId };
+export function splitRilletContactName(name: string): {
+  firstName: string;
+  lastName: string;
+} {
+  const trimmed = name.trim().replace(/\s+/g, " ");
+  const lastSpace = trimmed.lastIndexOf(" ");
+  if (lastSpace === -1) return { firstName: trimmed, lastName: "" };
+  return {
+    firstName: trimmed.slice(0, lastSpace),
+    lastName: trimmed.slice(lastSpace + 1)
+  };
 }
 
 /**
@@ -122,9 +134,6 @@ export async function writeDroppingUnregisteredReferences<
     ) {
       throw error;
     }
-    console.warn(
-      `[Rillet] external-reference type slugs are not registered for this organization (Rillet Settings → External References: add "${RILLET_CARBON_REFERENCE_TYPE}" and "${RILLET_CARBON_COMPANY_REFERENCE_TYPE}"); retrying without references`
-    );
     const { external_references: _dropped, ...stripped } = payload;
     return await write(stripped as TPayload);
   }
@@ -307,20 +316,313 @@ export async function loadCurrencyDecimalPlaces(
   return currency.decimalPlaces;
 }
 
+/**
+ * One `invoiceSettlement` row sourced from a memo: how much of the credit
+ * settles which open document. `amount` is in the MEMO's document currency —
+ * `invoiceSettlement.appliedAmount` is BASE by the precision standard, while
+ * `sourceAmount` is the exact source-document principal, so the source amount
+ * wins and the base amount is converted only as a fallback.
+ */
+export type RilletMemoApplication = {
+  id: string;
+  /** Carbon sales invoice the credit settles (customer memos). */
+  targetSalesInvoiceId: string | null;
+  /** Carbon purchase invoice the credit settles (supplier memos). */
+  targetPurchaseInvoiceId: string | null;
+  /** Applied amount in the memo's document currency. */
+  amount: number;
+  /** YYYY-MM-DD. */
+  appliedDate: string;
+};
+
+/**
+ * The Carbon `memo` header as the credit-memo / vendor-credit syncers read
+ * it, plus its provider party mapping and its applications.
+ *
+ * `amount` is in `currencyCode` (document currency): `post-memo` validates it
+ * against that currency's own precision and converts to base with
+ * `exchangeRate`, so the credit document is pushed in document currency with
+ * the rate pinned, exactly like a bill.
+ */
+export type RilletMemoSource = {
+  id: string;
+  companyId: string;
+  /** Carbon's readable memo id. */
+  memoId: string;
+  direction: "Credit" | "Debit";
+  status: "Draft" | "Posted" | "Voided";
+  customerId: string | null;
+  supplierId: string | null;
+  /** Rillet customer/vendor id for whichever party is set. */
+  partyExternalId: string | null;
+  /** YYYY-MM-DD. */
+  memoDate: string;
+  /** YYYY-MM-DD; null while Draft. */
+  postingDate: string | null;
+  currencyCode: string;
+  exchangeRate: number;
+  amount: number;
+  /** Carbon `account.id` derived at posting; null while Draft. */
+  reasonAccount: string | null;
+  reference: string | null;
+  notes: string | null;
+  applications: RilletMemoApplication[];
+  updatedAt: string | null;
+};
+
+/**
+ * Batch-load memo headers with their provider party mapping and their
+ * applications. One query per concern, never one per memo.
+ *
+ * The party join is party-dependent — a memo carries EITHER `customerId` or
+ * `supplierId` (DB CHECK) — so the customer and vendor mappings are joined
+ * separately and coalesced; a single join on one entity type would leave
+ * every supplier memo unmapped.
+ */
+export async function loadRilletMemoSources(
+  database: Kysely<KyselyDatabase>,
+  args: { ids: string[]; companyId: string; integration: string }
+): Promise<Map<string, RilletMemoSource>> {
+  if (args.ids.length === 0) return new Map();
+
+  const rows = await database
+    .selectFrom("memo")
+    .leftJoin("externalIntegrationMapping as customerMapping", (join) =>
+      join
+        .onRef("customerMapping.entityId", "=", "memo.customerId")
+        .onRef("customerMapping.companyId", "=", "memo.companyId")
+        .on("customerMapping.integration", "=", args.integration)
+        .on("customerMapping.entityType", "=", "customer")
+    )
+    .leftJoin("externalIntegrationMapping as vendorMapping", (join) =>
+      join
+        .onRef("vendorMapping.entityId", "=", "memo.supplierId")
+        .onRef("vendorMapping.companyId", "=", "memo.companyId")
+        .on("vendorMapping.integration", "=", args.integration)
+        .on("vendorMapping.entityType", "=", "vendor")
+    )
+    .select([
+      "memo.id",
+      "memo.companyId",
+      "memo.memoId",
+      "memo.direction",
+      "memo.status",
+      "memo.customerId",
+      "memo.supplierId",
+      "memo.memoDate",
+      "memo.postingDate",
+      "memo.currencyCode",
+      "memo.exchangeRate",
+      "memo.amount",
+      "memo.reasonAccount",
+      "memo.reference",
+      "memo.notes",
+      "memo.updatedAt",
+      "customerMapping.externalId as customerExternalId",
+      "vendorMapping.externalId as vendorExternalId"
+    ])
+    .where("memo.id", "in", args.ids)
+    .where("memo.companyId", "=", args.companyId)
+    .execute();
+
+  if (rows.length === 0) return new Map();
+
+  const settlements = await database
+    .selectFrom("invoiceSettlement")
+    .select([
+      "id",
+      "memoId",
+      "targetSalesInvoiceId",
+      "targetPurchaseInvoiceId",
+      "appliedAmount",
+      "sourceAmount",
+      "sourceExchangeRate",
+      "appliedDate"
+    ])
+    .where(
+      "memoId",
+      "in",
+      rows.map((row) => row.id)
+    )
+    .where("companyId", "=", args.companyId)
+    .execute();
+
+  const applicationsByMemo = new Map<string, RilletMemoApplication[]>();
+  for (const settlement of settlements) {
+    if (!settlement.memoId) continue;
+    // sourceAmount is the exact source-document principal; appliedAmount is
+    // base, so it needs the source rate to become document units again.
+    const documentAmount =
+      settlement.sourceAmount != null
+        ? Number(settlement.sourceAmount)
+        : Number(settlement.appliedAmount) *
+          (Number(settlement.sourceExchangeRate) || 1);
+    const existing = applicationsByMemo.get(settlement.memoId) ?? [];
+    existing.push({
+      id: settlement.id,
+      targetSalesInvoiceId: settlement.targetSalesInvoiceId,
+      targetPurchaseInvoiceId: settlement.targetPurchaseInvoiceId,
+      amount: documentAmount,
+      appliedDate: toPostingDateString(settlement.appliedDate)
+    });
+    applicationsByMemo.set(settlement.memoId, existing);
+  }
+
+  return new Map(
+    rows.map((row) => [
+      row.id,
+      {
+        id: row.id,
+        companyId: row.companyId,
+        memoId: row.memoId,
+        direction: row.direction as RilletMemoSource["direction"],
+        status: row.status as RilletMemoSource["status"],
+        customerId: row.customerId,
+        supplierId: row.supplierId,
+        partyExternalId: row.customerId
+          ? (row.customerExternalId ?? null)
+          : (row.vendorExternalId ?? null),
+        memoDate: toPostingDateString(row.memoDate),
+        postingDate: row.postingDate
+          ? toPostingDateString(row.postingDate)
+          : null,
+        currencyCode: row.currencyCode,
+        exchangeRate: Number(row.exchangeRate) || 1,
+        amount: Number(row.amount) || 0,
+        reasonAccount: row.reasonAccount,
+        reference: row.reference,
+        notes: row.notes,
+        applications: applicationsByMemo.get(row.id) ?? [],
+        updatedAt: rilletSourceTimestamp(row.updatedAt)
+      }
+    ])
+  );
+}
+
+/** node-postgres returns Date objects although the generated DB types say string. */
+function rilletSourceTimestamp(value: string | Date | null): string | null {
+  return value instanceof Date ? value.toISOString() : value;
+}
+
+/**
+ * A memo that INCREASES the party's balance (customer + Debit, supplier +
+ * Credit) has no safe provider representation in v1 — QBO's `TotalAmt` is
+ * read-only, Rillet's quantities are non-negative, Xero's negative credit
+ * notes are unverified. Those memos close `Skipped` carrying this reason
+ * (truthful ledger: a skip WITHOUT a remoteId is Skipped, never Completed),
+ * so the limitation is visible instead of a silent drop or a malformed push.
+ */
+export const RILLET_MEMO_INCREASER_SKIP_REASON = MEMO_INCREASER_SKIP_REASON;
+
+/**
+ * A memo DECREASES its party's balance when it is a customer Credit or a
+ * supplier Debit. Those two are the credit documents v1 pushes; the other two
+ * combos are increasers (see MEMO_INCREASER_SKIP_REASON).
+ */
+export function isBalanceDecreasingMemo(
+  memo: Pick<RilletMemoSource, "customerId" | "direction">
+): boolean {
+  return memo.customerId
+    ? memo.direction === "Credit"
+    : memo.direction === "Debit";
+}
+
+/**
+ * The shared `shouldSync` gate for both memo syncers: `true` when this memo
+ * is the credit document THIS syncer owns, else the reason it is skipped.
+ * Each syncer asserts its OWN party — `memo` serves two entity types, and a
+ * gate that accepted either would push a supplier credit as a credit memo.
+ */
+export function resolveMemoSyncGate(
+  memo: RilletMemoSource,
+  party: "customer" | "supplier"
+): true | string {
+  const memoParty = memo.customerId ? "customer" : "supplier";
+  if (memoParty !== party) {
+    return `Memo ${memo.memoId} is a ${memoParty} memo — it syncs as the other credit entity`;
+  }
+  // Posted is REQUIRED, not "anything but Draft". A Voided memo whose first
+  // push never landed (an unmapped reason account, say) has no mapping row, so
+  // `pushToAccounting`'s void branch — which only fires on an EXISTING mapping
+  // — is skipped and the sweep would otherwise CREATE a live Rillet credit
+  // memo, with its full application set, for a memo Carbon has voided. QBO and
+  // Xero both gate on `Posted` for the same reason.
+  if (memo.status !== "Posted") {
+    return `Memo must be posted before syncing (current status: ${memo.status})`;
+  }
+  if (!isBalanceDecreasingMemo(memo)) {
+    return `${MEMO_INCREASER_SKIP_REASON} (memo ${memo.memoId} is a ${memoParty} ${memo.direction} memo, which increases the balance)`;
+  }
+  return true;
+}
+
+/**
+ * The reason account a memo's credit line is coded to, with the name the
+ * provider-side credit-reason product is named after. Throws the structured
+ * UNMAPPED_ACCOUNTS Warning rather than guessing an account — a misclassed
+ * credit in the ledger of record is worse than a parked operation.
+ */
+export async function loadRilletMemoReasonAccount(
+  database: Kysely<KyselyDatabase>,
+  args: {
+    companyId: string;
+    memo: Pick<RilletMemoSource, "id" | "memoId" | "reasonAccount">;
+  }
+): Promise<{ accountId: string; name: string; number: string | null }> {
+  const { memo } = args;
+  if (!memo.reasonAccount) {
+    throw new JournalEntrySyncError({
+      errorCode: "UNMAPPED_ACCOUNTS",
+      warning: true,
+      message: `Cannot sync memo ${memo.memoId}: it has no reason account. Post the memo (with accounting enabled), then retry.`,
+      metadata: { memoId: memo.id }
+    });
+  }
+
+  // `account` is scoped by companyGroupId, not companyId — resolve the
+  // company's group inline so the read can never reach another tenant's
+  // chart of accounts.
+  const account = await database
+    .selectFrom("account")
+    .select(["id", "name", "number"])
+    .where("id", "=", memo.reasonAccount)
+    .where("companyGroupId", "=", (eb) =>
+      eb
+        .selectFrom("company")
+        .select("company.companyGroupId")
+        .where("company.id", "=", args.companyId)
+    )
+    .executeTakeFirst();
+
+  if (!account) {
+    throw new JournalEntrySyncError({
+      errorCode: "UNMAPPED_ACCOUNTS",
+      warning: true,
+      message: `Cannot sync memo ${memo.memoId}: its reason account was not found.`,
+      metadata: { memoId: memo.id, unmappedAccountIds: [memo.reasonAccount] }
+    });
+  }
+
+  return { accountId: account.id, name: account.name, number: account.number };
+}
+
 /** Every Rillet read shape carries an optional updated_at timestamp. */
 export type RilletTimestamped = { updated_at?: string };
 
 /**
- * Base class for the push-only Rillet master-data syncers (customer,
- * vendor, item).
+ * Base class for the Rillet master-data syncers (customer, vendor, item).
  *
  * Reimplements the push workflow with the SAME behavior as
  * BaseEntitySyncer.pushToAccounting (mapping check, shouldSync gate,
  * lastSyncedAt fast bailout, map → upsert → link) so that a thrown
  * JournalEntrySyncError reaches the caller as the structured failure
  * object on `SyncResult.error` — the base catch flattens every throw to a
- * string, which would lose errorCode/warning/metadata. Also centralizes
- * the push-only pull rejections (v1 forces push for these entities).
+ * string, which would lose errorCode/warning/metadata.
+ *
+ * The PULL half is inherited from BaseEntitySyncer, so a subclass that
+ * implements `mapToLocal` + `upsertLocal` is pullable (customer and vendor,
+ * for the Rillet contact import). Subclasses with no inbound mapping extend
+ * `RilletPushOnlyEntitySyncer` below instead.
  */
 export abstract class RilletEntitySyncer<
   TLocal,
@@ -330,9 +632,6 @@ export abstract class RilletEntitySyncer<
   protected get rilletProvider(): RilletProvider {
     return this.provider as RilletProvider;
   }
-
-  /** Plural label used in push-only rejection messages, e.g. "Customers". */
-  protected abstract get pushOnlyEntityLabel(): string;
 
   protected getRemoteUpdatedAt(remote: TRemote): Date | null {
     return parseRilletDate(remote.updated_at);
@@ -432,14 +731,6 @@ export abstract class RilletEntitySyncer<
         await this.linkEntities(tx, entityId, remoteId);
       });
 
-      console.log("[SyncLog]", {
-        direction: "PUSH",
-        entity: this.entityType,
-        localId: entityId,
-        remoteId,
-        status: "success"
-      });
-
       return {
         status: "success",
         action: existingMapping ? "updated" : "created",
@@ -448,10 +739,6 @@ export abstract class RilletEntitySyncer<
       };
     } catch (err) {
       if (err instanceof JournalEntrySyncError) {
-        console.error(`[${this.constructor.name}] structured push failure`, {
-          entityId,
-          ...err.failure
-        });
         return {
           status: "error",
           action: "none",
@@ -459,11 +746,6 @@ export abstract class RilletEntitySyncer<
           error: err.failure
         };
       }
-
-      console.error(`[${this.constructor.name}] push failed`, {
-        entityId,
-        err
-      });
       return {
         status: "error",
         action: "none",
@@ -494,6 +776,22 @@ export abstract class RilletEntitySyncer<
       skippedCount: results.filter((r) => r.status === "skipped").length
     };
   }
+}
+
+/**
+ * Base class for the Rillet syncers with no inbound mapping: Rillet is a
+ * downstream mirror for them, so a pull is refused rather than silently
+ * doing nothing. Splitting this out of `RilletEntitySyncer` is what lets
+ * customer and vendor keep the base pull workflow for the contact import
+ * while item and every transaction syncer stay push-only.
+ */
+export abstract class RilletPushOnlyEntitySyncer<
+  TLocal,
+  TRemote extends RilletTimestamped,
+  TOmit extends string | symbol | number
+> extends RilletEntitySyncer<TLocal, TRemote, TOmit> {
+  /** Plural label used in push-only rejection messages, e.g. "Items". */
+  protected abstract get pushOnlyEntityLabel(): string;
 
   // =================================================================
   // PULL WORKFLOW - Not supported (v1 forces push for these entities)
@@ -550,12 +848,20 @@ export abstract class RilletTransactionSyncer<
   TLocal,
   TRemote extends RilletTimestamped,
   TOmit extends string | symbol | number
-> extends RilletEntitySyncer<TLocal, TRemote, TOmit> {
+> extends RilletPushOnlyEntitySyncer<TLocal, TRemote, TOmit> {
   protected isVoided(_local: TLocal): boolean {
     return false;
   }
 
-  protected async deleteRemote(_remoteId: string): Promise<void> {
+  /**
+   * Delete the remote document on a local void. `metadata` is the push
+   * mapping's metadata — a syncer that writes one Carbon entity to more than
+   * one Rillet object kind (bills vs reimbursements) reads the kind from it.
+   */
+  protected async deleteRemote(
+    _remoteId: string,
+    _metadata?: Record<string, unknown>
+  ): Promise<void> {
     throw new Error("This Rillet transaction does not support native voids");
   }
 
@@ -805,7 +1111,10 @@ export abstract class RilletTransactionSyncer<
 
       if (existingMapping?.externalId && this.isVoided(localEntity)) {
         if (existingMapping.metadata?.voided !== true) {
-          await this.deleteRemote(existingMapping.externalId);
+          await this.deleteRemote(
+            existingMapping.externalId,
+            existingMapping.metadata ?? undefined
+          );
           await withTriggersDisabled(this.database, async (tx) => {
             await createMappingService(tx, this.companyId).link(
               this.entityType,
@@ -870,10 +1179,6 @@ export abstract class RilletTransactionSyncer<
       };
     } catch (err) {
       if (err instanceof JournalEntrySyncError) {
-        console.error(`[${this.constructor.name}] pre-flight failure`, {
-          entityId,
-          ...err.failure
-        });
         return {
           status: "error",
           action: "none",
@@ -881,11 +1186,6 @@ export abstract class RilletTransactionSyncer<
           error: err.failure
         };
       }
-
-      console.error(`[${this.constructor.name}] push failed`, {
-        entityId,
-        err
-      });
       return {
         status: "error",
         action: "none",

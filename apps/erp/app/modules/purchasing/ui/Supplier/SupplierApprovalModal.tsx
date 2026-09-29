@@ -1,3 +1,4 @@
+import type { ApprovalDecision } from "@carbon/ee/approvals";
 import { Hidden, TextArea, ValidatedForm } from "@carbon/form";
 import {
   Button,
@@ -11,7 +12,6 @@ import {
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useParams } from "react-router";
 import { supplierApprovalDecisionValidator } from "~/modules/purchasing";
-import type { ApprovalDecision } from "~/modules/shared/types";
 import { path } from "~/utils/path";
 
 type SupplierApprovalModalProps = {

@@ -1,7 +1,5 @@
-import {
-  MODEL_RAW_KEEP_MAX_BYTES,
-  modelPathOptimizeFormat
-} from "@carbon/utils";
+import { modelPathOptimizeFormat } from "@carbon/files/cad";
+import { MODEL_RAW_KEEP_MAX_BYTES } from "@carbon/utils";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { isRawRenderable } from "./raw/formats";

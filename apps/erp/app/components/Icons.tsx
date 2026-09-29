@@ -39,6 +39,7 @@ import {
   LuExternalLink,
   LuEye,
   LuFlaskConical,
+  LuFolderKanban,
   LuGroup,
   LuHammer,
   LuHandCoins,
@@ -638,6 +639,11 @@ export const JournalEntrySourceTypeIcon = ({
       return <LuBuilding2 className={className} />;
     case "Payment":
       return <LuBanknote className={className} />;
+    case "Charge":
+      return <LuCreditCard className={className} />;
+    case "Reimbursement":
+      // An employee payable, not a card charge — pair it with Payment's icon.
+      return <LuBanknote className={className} />;
     case "Credit Memo":
       return <LuCreditCard className={className} />;
     case "Debit Memo":
@@ -687,6 +693,8 @@ export const DimensionEntityTypeIcon = ({
       return <LuLocateFixed className={className} />;
     case "Process":
       return <LuRedoDot className={className} />;
+    case "Project":
+      return <LuFolderKanban className={className} />;
     case "ScrapReason":
       return <LuTriangleAlert className={className} />;
   }

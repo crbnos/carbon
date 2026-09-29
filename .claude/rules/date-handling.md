@@ -109,6 +109,17 @@ where DST bites. The stress suite pinning all of this lives in
   job must ever fire at an exact local wall time, compute the next-run instant
   via `toZoned(...)` per zone — don't fake it with a fixed UTC cron.
 
+## Kysely reads: DATE is a string, timestamps are still `Date`s
+
+`date` columns (OID 1082) are decoded to the raw `YYYY-MM-DD` string by both
+drivers, so a Kysely row matches the generated types and needs no conversion.
+`timestamp`/`timestamptz` (1114 / 1184) are still handed over as JS `Date`s while
+the types say `string` — so a value read through Kysely and sent to an external
+API, sliced, or compared against an ISO string must be normalized first
+(`toPostingDateString` in `accounting/core/posting.ts`). Full rationale and why
+the timestamp OIDs were left alone: `numeric-precision.md` → "Runtime type
+decoding".
+
 ## Narrow exception
 
 A raw `new Date()`/epoch-ms is only acceptable for comparing **absolute instants**

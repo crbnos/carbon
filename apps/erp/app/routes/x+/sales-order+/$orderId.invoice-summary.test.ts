@@ -5,7 +5,8 @@ import * as sales from "~/modules/sales";
 import { getCompanySettings } from "~/modules/settings";
 import { loader } from "./$orderId";
 
-vi.mock("@carbon/auth", () => ({
+vi.mock("@carbon/auth", async () => ({
+  ...(await import("@carbon/env")),
   error: (cause: unknown, message: string) => ({ cause, message })
 }));
 vi.mock("@carbon/auth/auth.server", () => ({ requirePermissions: vi.fn() }));

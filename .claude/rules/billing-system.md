@@ -5,6 +5,9 @@ paths:
   - packages/ee/src/plan*.ts
   - packages/database/supabase/migrations/*billing*.sql
   - apps/erp/app/routes/api+/webhook.stripe.ts
+  - packages/jobs/src/inngest/functions/scheduled/weekly.ts
+  - packages/jobs/src/inngest/functions/scheduled/inactive-companies.ts
+  - packages/jobs/src/inngest/functions/scheduled/purge-company.ts
 ---
 
 # Billing System
@@ -82,9 +85,38 @@ several `invoice.*` events are forwarded to GTM.
 ## Plan gating (`packages/ee/src/plan.ts` + `plan.server.ts`)
 
 `FEATURE_PLANS` (`plan.ts`) is the source of truth — both client and server read it:
-`API_KEYS, WEBHOOKS, INTEGRATIONS, ITEM_RULES, AUDIT_LOG, EMAIL_NOTIFICATIONS, STORAGE_RULES,
-CUSTOMER_PORTALS` → each `[Plan.Business, Plan.Partner]`. `INTEGRATION_WHITELIST`
-(`email`) bypasses the `INTEGRATIONS` gate.
+`API_KEYS, WEBHOOKS, MCP, INTEGRATIONS, SALES_RULES, AUDIT_LOG, EMAIL_NOTIFICATIONS, STORAGE_RULES,
+CUSTOMER_PORTALS, AI_AGENT, WORKFLOWS, FORECAST, TWO_FACTOR, PERMISSIONS, APPROVAL_RULES,
+BACKUPS` → each `[Plan.Business, Plan.Partner]`. `INTEGRATION_WHITELIST` (`email`) bypasses
+the `INTEGRATIONS` gate. `MCP` gates the MCP server (`POST /api/mcp`) via
+`companyHasFeature` at the route choke point — off on Community/Starter across both the
+OAuth-connector and `carbon-key` auth paths (`api+/mcp+/_index.ts`).
+
+`APPROVAL_RULES` gates the `x+/settings+/approval-rules.*` routes (via `requireFeature`
++ hidden nav); the runtime approval engine (`$supplierId.approval`, request/approve/reject)
+stays ungated — a Community company just has no rules to trigger it. `BACKUPS` gates the
+company backup/restore feature, but through `canManageBackups`
+(`~/modules/settings/backups.server`) = `canAccessBackups(email) ||
+companyHasFeature(BACKUPS)` — i.e. Business/Enterprise customers get it AND internal staff
+/ local dev keep the escape hatch. Demo Data (`x+/settings+/demo-data`) stays internal /
+local-dev only via the plain `canAccessBackups`.
+
+`PERMISSIONS` gates authoring RBAC — creating/editing employee types
+(`x+/users+/employee-types*`), editing an individual user's permissions
+(`employees.$employeeId`, `bulk-edit-permissions`), and console/kiosk mode
+(`x+/settings+/people.tsx`). The licensed logic — the flattened-permission-object
+builder `updatePermissions`, `updateEmployee`, the employee-type CRUD, and the
+claims/employee-type translators — lives once in **`@carbon/ee/permissions.server`**
+(consumed by the ERP authoring routes AND the `@carbon/jobs` bulk-edit task, which
+no longer carries its own copy). Console-operator provisioning is `@carbon/ee/console.server`
+(`updateConsoleSetting`); the authoring UI is `.ee.tsx` in the app (it can't move
+to the package — it imports `~/components/Form` etc.).
+The community primitives it does NOT include — `setUserPermissions` (invite merge)
+and `makePermissionsFromEmployeeType` (invite snapshot) — stay in the app's
+`users.server.ts`. Community/Starter ships "everyone is an admin": you can add
+users (every invite defaults to the seeded `Admin` employee type) but not author
+roles. Enforcement (`requirePermissions`, RLS, `get_claims`) is unaffected and
+stays in every edition.
 
 Server checks (`plan.server.ts`) read `companyPlan.planId` (`.eq("id", companyId)`):
 
@@ -101,7 +133,19 @@ Server checks (`plan.server.ts`) read `companyPlan.planId` (`.eq("id", companyId
   path — reading `companyPlan` directly — still accepted the keys).
 
 **All three short-circuit when `CarbonEdition !== Edition.Cloud` or the company is
-bypass-listed** — gating only bites on Cloud.
+bypass-listed** — plan gating only bites on Cloud. This is a **self-hosted feature
+toggle**: Enterprise AND Community self-hosted both pass `companyHasPlan`.
+
+### `companyHasFeature` / `requireFeature` — Community is blocked, not toggled
+
+For features that must be OFF on the **Community** edition (not merely paywalled on
+Cloud) — RBAC authoring (`PERMISSIONS`), console/kiosk mode — use
+`companyHasFeature(client, companyId, spec)` / `requireFeature({...})` instead.
+They are identical to `companyHasPlan`/`requirePlan` EXCEPT they return
+`false`/throw when `CarbonEdition === Edition.Community`. So: Community → blocked,
+Enterprise/Test self-hosted → allowed (licensed), Cloud → plan-based,
+bypass/carbon-owned → allowed. `requirePlan`'s off-Cloud no-op is wrong for these
+— it would let a self-hosted Community instance author roles.
 
 `spec` is a `GateSpec`: either `{ feature: Feature }` or `{ plan: Plan | Plan[] }`.
 
@@ -119,6 +163,67 @@ Env: `STRIPE_BYPASS_COMPANY_IDS`, `STRIPE_BYPASS_USER_IDS` (comma-separated, ser
 - In gating: `isBypassCompany(companyId)` makes `companyHasPlan`/`requirePlan` pass.
 - In `getStripeCustomerByCompanyId`: bypass returns a synthetic active subscription with
   `planId: Plan.Partner` (highest tier, ~1-year period) — no real Stripe call.
+
+## Inactive-company cleanup (Cloud only)
+
+The weekly job (`packages/jobs/.../scheduled/weekly.ts`, Sunday 21:00 UTC) deletes
+companies that stopped paying. Until 2026-09 it never deleted anything: it fetched its
+bypass list from a scheme-less `VERCEL_URL` and failed. Each run logs whom it warned and
+whom it deleted.
+
+- **Warned first, always.** A company that has never been warned gets a
+  `CompanyDeletionWarningEmail` (`@carbon/documents/email`) sent to its group owner, naming
+  the deletion date, and a marker row in `externalIntegrationMapping`
+  (`integration = "inactive-company-warning"`, `metadata.warnedAt`).
+  - The marker also stores `deleteAfter`, the UTC date the email names (today + 7). The
+    company is deleted at the first run on or after that date, never before
+    (`isDueForDeletion`, tested). A warning retried after UTC midnight therefore names,
+    and waits for, the later date.
+  - A company with no group owner is never warned, so it is never deleted. It is also
+    left out of the capped lists, where it would otherwise hold a slot every week.
+  - A failed send is recorded as `metadata.failedAt`, and that company queues behind
+    the never-tried ones next week, so a bad address cannot starve the rest.
+  - A warning expires after 30 days, and the company is warned again. A marker whose
+    company is no longer inactive (it bought a plan) is cleared, so a later lapse starts
+    a fresh warning. The purge deletes the marker along with the company.
+  - Right before each purge, `isStillDueForDeletion` re-reads, inside the purge's own
+    transaction, the company, the group's plan rows, the bypass list, the group owner and
+    the warning. The marker stores the warned owner's id (`ownerId`); the purge requires
+    the group's current owner to be that same person. A plan bought, or an owner cleared
+    or changed, after the warning stops the delete.
+  - Each warn or delete batch that still fails after its retries is logged and skipped.
+    It never ends the run, so the training reminders after it still go out.
+
+- **The group is the unit** (`selectInactiveCompanies`, `inactive-companies.ts`, tested).
+  A company goes when it has no `companyPlan` row, no company in its group has one, it is
+  over 7 days old, and it is not protected. `companyPlan` rows are written only by Stripe
+  checkout/sync. A paying customer's second company (Settings → New Company) has no row of
+  its own, and bypass and Carbon-owned access is served without one.
+- **Protected:** `STRIPE_BYPASS_COMPANY_IDS`, plus any group whose owner is in
+  `STRIPE_BYPASS_USER_IDS` or has an internal email (the `isCarbonOwnedCompany` rule).
+- **`Canceled` is not deleted.** It is set when the customer cancels at period end, while
+  the period is still paid. `customer.subscription.deleted` removes the plan row when the
+  subscription actually ends, and the company becomes a candidate then.
+- **Deletion** (`purgeCompany`, `purge-company.ts`):
+  - Posted journals and invoices are trigger-immutable, so a plain `DELETE FROM company`
+    fails for any company that ever posted. The purge instead wipes every catalog table in
+    `session_replication_role = 'replica'`, as a restore does, then deletes the company.
+    The group and its shared data go only when no other company is left in it.
+  - Without replica permission it falls back to the plain cascade. A company with posted
+    documents then fails, and is logged and skipped. So does the last company in a group,
+    because its group's system accounts refuse deletion and the group would be stranded.
+  - Inside the same transaction, after the wipe and before the commit,
+    `removeCompanyLeftovers` removes the Vault `integration:<companyId>:*` secrets, the
+    per-company bucket (already missing counts as done), and legacy files under
+    `private/<companyId>/` (listed strictly, so a listing error is a failure). Any failure
+    rolls the delete back, so the company row stays as the retry target and nothing is
+    orphaned once a delete commits. A company whose cleanup failed part-way may have
+    lost some files; it is still warned and due, so the next run finishes it. The search
+    index is dropped after the commit, and a failure there is only logged. Provider
+    tokens are not revoked at the provider.
+- At most 100 companies per run (Inngest's per-run step limit), 10 per step. Oldest go first.
+- A company with live intercompany history (`intercompanyTransaction` is NO ACTION) fails
+  its delete, is logged, and is retried every week.
 
 ## Env vars (`packages/env/src/index.ts`, server-only / secret)
 

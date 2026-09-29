@@ -1,8 +1,14 @@
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
+import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import type { Database, Json } from "@carbon/database";
-import { integrations as availableIntegrations } from "@carbon/ee";
+import {
+  integrations as availableIntegrations,
+  getIntegrationConfigById,
+  type IntegrationID,
+  resolveIntegrationTopology
+} from "@carbon/ee";
 import {
   buildDimensionValueMappingEntityId,
   buildRilletFieldTarget,
@@ -46,9 +52,25 @@ import {
   getIntegrationServerHooks,
   onshapeConnectionHasWriteScope
 } from "@carbon/ee/hooks.server";
-import { getPath, SECRET_KEYS } from "@carbon/ee/integrations/secrets";
+import {
+  getPath,
+  patchIntegrationState,
+  SECRET_KEYS,
+  WEBHOOK_SIGNING_SECRET_KEY
+} from "@carbon/ee/integrations/secrets";
+import {
+  getConflictingOnshapeIntegration,
+  isOnshapeIntegrationId,
+  ONSHAPE_GOVERNMENT_INTEGRATION_ID
+} from "@carbon/ee/onshape";
+import { beginOnshapeAuthorization } from "@carbon/ee/onshape.server";
 import { isIntegrationWhitelisted } from "@carbon/ee/plan";
-import { requirePlan } from "@carbon/ee/plan.server";
+import { requireFeature } from "@carbon/ee/plan.server";
+import {
+  LEDGER_FAMILY_KEYS,
+  type LedgerFamilyKey,
+  resolveCapabilities
+} from "@carbon/ee/sync";
 import { STRIPE_SECRET_KEY } from "@carbon/env";
 import { validationError, validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
@@ -65,12 +87,16 @@ import {
   redirect,
   useLoaderData,
   useNavigate,
+  useParams,
   useSearchParams
 } from "react-router";
 // Deep service import (not the ~/modules/accounting barrel) to keep this
 // route's type graph light — see the TS2589 note in
 // ~/modules/settings/ui/Integrations/index.ts.
-import { getActiveDimensionsWithValues } from "~/modules/accounting/accounting.ee.service";
+import {
+  getAccountsList,
+  getActiveDimensionsWithValues
+} from "~/modules/accounting/accounting.service";
 import {
   getIntegration,
   IntegrationForm,
@@ -87,6 +113,7 @@ import {
   postingSyncSettingsValidator
 } from "~/modules/settings/settings.models";
 import {
+  getSyncOperationReadableIds,
   invalidateIntegrationHealthCache,
   upsertCompanyIntegration
 } from "~/modules/settings/settings.server";
@@ -172,6 +199,63 @@ function unfoldRilletCredentials(
       typeof providerMetadata.webhookToken === "string"
         ? providerMetadata.webhookToken
         : ""
+  };
+}
+
+/**
+ * Ramp authenticates with an OAuth client-credentials pair
+ * (clientId/clientSecret) entered flat on the standard install form. The
+ * engine reads credentials exclusively from `metadata.credentials`, so fold
+ * the flat form fields into the canonical client_credentials variant. The
+ * account-mapping and sync-toggle fields stay flat at the metadata root. Like
+ * Rillet, an empty clientSecret means "keep the existing vaulted value": the
+ * folded credentials carry an empty secret and splitSecrets' anti-overwrite
+ * (D4a) preserves what's in the vault; a non-empty value replaces it.
+ */
+function foldRampCredentials(
+  metadata: Record<string, unknown>
+): Record<string, unknown> {
+  const { clientId, clientSecret, environment, ...rest } = metadata;
+  if (typeof clientId !== "string" || clientId.length === 0) return metadata;
+
+  return {
+    ...rest,
+    credentials: {
+      type: "client_credentials",
+      clientId,
+      clientSecret: typeof clientSecret === "string" ? clientSecret : "",
+      environment: environment === "sandbox" ? "sandbox" : "production"
+    }
+  };
+}
+
+/**
+ * Inverse of `foldRampCredentials`: unfold the stored
+ * `metadata.credentials` back into the flat clientId/clientSecret/environment
+ * fields the settings form binds to, so the drawer prefills instead of showing
+ * blanks (which a re-save would then persist over the real stored connection).
+ * The clientSecret is vaulted and stripped from the plaintext metadata, so it
+ * reads back empty — the masked field left blank means "keep the vaulted value".
+ */
+function unfoldRampCredentials(
+  metadata: Record<string, unknown>
+): Record<string, unknown> {
+  const credentials = metadata.credentials as
+    | Record<string, unknown>
+    | undefined;
+  if (!credentials || credentials.type !== "client_credentials")
+    return metadata;
+
+  return {
+    ...metadata,
+    clientId:
+      typeof credentials.clientId === "string" ? credentials.clientId : "",
+    clientSecret:
+      typeof credentials.clientSecret === "string"
+        ? credentials.clientSecret
+        : "",
+    environment:
+      credentials.environment === "sandbox" ? "sandbox" : "production"
   };
 }
 
@@ -319,7 +403,9 @@ async function getProviderDimensionTargets(
             .filter((value) => !value.deactivated)
             .map((value) => ({ id: value.id, name: value.name }))
         })),
-        maxSlots: provider.capabilities?.maxJournalDimensionSlots ?? null,
+        maxSlots:
+          resolveCapabilities(provider.capabilities).maxJournalDimensionSlots ??
+          null,
         targetsError: false
       };
     }
@@ -351,7 +437,9 @@ async function getProviderDimensionTargets(
       return {
         supported: true,
         targets,
-        maxSlots: qbo.capabilities?.maxJournalDimensionSlots ?? null,
+        maxSlots:
+          resolveCapabilities(qbo.capabilities).maxJournalDimensionSlots ??
+          null,
         targetsError: false
       };
     }
@@ -532,6 +620,40 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const integration = availableIntegrations.find((i) => i.id === integrationId);
   if (!integration) throw new Error("Integration not found");
 
+  // Server-fetched options for "options"-type settings fields. Ramp populates
+  // its Account-group selects from the chart of accounts. These are needed on
+  // the INSTALL form (before any companyIntegration row exists), so they must be
+  // computed BEFORE the not-installed early return below — otherwise the account
+  // pickers render "No options available" for a brand-new install.
+  const dynamicOptions: Record<
+    string,
+    Array<{ value: string; label: string; description?: string }>
+  > = {};
+
+  // Ramp's account-mapping fields choose from the company's leaf accounts,
+  // partitioned by account class. Options over CHOICE_CARD_MAX_OPTIONS render
+  // as a Select automatically.
+  if (integrationId === "ramp") {
+    const accountsResult = await getAccountsList(client, companyGroupId, {
+      isGroup: false
+    });
+    const accounts = accountsResult.data ?? [];
+    const optionsForClass = (
+      accountClass: Database["public"]["Enums"]["glAccountClass"]
+    ) =>
+      accounts
+        .filter((account) => account.class === accountClass)
+        .map((account) => ({
+          value: account.id,
+          label: `${account.number} ${account.name}`
+        }));
+    const assetOptions = optionsForClass("Asset");
+    dynamicOptions.cardLiabilityAccountId = optionsForClass("Liability");
+    dynamicOptions.statementBankAccountId = assetOptions;
+    dynamicOptions.cashbackIncomeAccountId = optionsForClass("Revenue");
+    dynamicOptions.reimbursementBankAccountId = assetOptions;
+  }
+
   const integrationData = await getIntegration(
     client,
     integrationId,
@@ -542,7 +664,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     return {
       installed: false,
       metadata: {},
-      dynamicOptions: {},
+      dynamicOptions,
       syncActivity: null,
       accountMapping: null,
       postingSync: null,
@@ -550,14 +672,33 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     };
   }
 
-  const isAccountingInstalled =
-    integration.category === "Accounting" && integrationData.data.active;
+  // The DECLARED role, not the display category and not an id literal.
+  const providerRole = (
+    integration as { providerRole?: "accounting" | "spend" }
+  ).providerRole;
 
-  // Sync-operation inbox for accounting integrations (RLS SELECT covers
-  // employees, so the user-scoped client is enough). Params are prefixed
-  // (syncStatus/syncPage) to avoid clashing with other search params.
+  const isAccountingInstalled =
+    providerRole === "accounting" && integrationData.data.active;
+
+  // Any provider-role integration writes accountingSyncOperation rows — a spend
+  // provider records its own inbound/outbound dispositions there — so it gets
+  // the same Sync Activity inbox. The accounting-only tie-out/reconciliation
+  // surfaces stay gated on isAccountingInstalled below.
+  const producesSyncOperations =
+    providerRole !== undefined && integrationData.data.active;
+
+  // Sync-operation inbox (RLS SELECT covers employees, so the user-scoped
+  // client is enough). Params are prefixed (syncStatus/syncPage) to avoid
+  // clashing with other search params.
   let syncActivity: {
     operations: SyncOperation[];
+    /**
+     * `entityType:entityId` -> the document number a human reads
+     * (`PO000001`) plus the Carbon row id to link to. Sparse: a pulled
+     * record that never landed a Carbon row is keyed by the provider's
+     * remote id, and the table falls back to it.
+     */
+    readableIds: Record<string, { label: string; recordId: string }>;
     count: number;
     status: SyncOperationStatus | null;
     page: number;
@@ -578,7 +719,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     } | null;
   } | null = null;
 
-  if (isAccountingInstalled) {
+  if (producesSyncOperations) {
     const url = new URL(request.url);
     const statusFilter = SyncOperationStatusSchema.safeParse(
       url.searchParams.get("syncStatus")
@@ -605,13 +746,15 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         status: ["Failed", "Warning"],
         limit: 1
       }),
-      // Tie-out cells for this integration. The table is not in the
-      // generated DB types yet — cast, same pattern as
-      // @carbon/ee/accounting core/operations.ts.
-      (client.from("accountingSyncTieOut" as any) as any)
-        .select("internalDelta, externalDelta, computedAt")
-        .eq("companyId", companyId)
-        .eq("integration", integrationId)
+      // Tie-out cells for this integration — accounting-only (Ramp has no
+      // reconciliation tie-out). The table is not in the generated DB types
+      // yet — cast, same pattern as @carbon/ee/accounting core/operations.ts.
+      isAccountingInstalled
+        ? (client.from("accountingSyncTieOut" as any) as any)
+            .select("internalDelta, externalDelta, computedAt")
+            .eq("companyId", companyId)
+            .eq("integration", integrationId)
+        : Promise.resolve({ data: [], error: null })
     ]);
 
     if (operations.error) {
@@ -665,6 +808,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
     syncActivity = {
       operations: operations.data,
+      readableIds: await getSyncOperationReadableIds(
+        client,
+        companyId,
+        operations.data
+      ),
       count: operations.count ?? 0,
       status: statusFilter.success ? statusFilter.data : null,
       page,
@@ -687,14 +835,14 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   if (integrationId === "rillet") {
     flattenedMetadata = unfoldRilletCredentials(flattenedMetadata);
   }
+  // Ramp keeps its client-credentials pair under metadata.credentials; unfold
+  // them into the flat form fields so the drawer prefills.
+  if (integrationId === "ramp") {
+    flattenedMetadata = unfoldRampCredentials(flattenedMetadata);
+  }
 
-  // Server-fetched options for "options"-type settings fields. No current
-  // integration config populates this, but IntegrationForm still accepts it
-  // generically for a future provider-fetched choice list.
-  const dynamicOptions: Record<
-    string,
-    Array<{ value: string; label: string; description?: string }>
-  > = {};
+  // (Ramp's account-mapping `dynamicOptions` are computed above, before the
+  // not-installed early return, so the install form has them too.)
 
   // Provider chart of accounts for the Account Mapping tab. Xero manual
   // journals reference accounts by code, so only coded accounts are
@@ -886,11 +1034,49 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const resolvedPostingSettings = isAccountingInstalled
     ? resolvePostingSyncSettings(metadata)
     : null;
+
+  /**
+   * GL families another installed integration posts, so the Posting tab can stop
+   * offering a control that has no effect.
+   *
+   * Read from the topology rather than from this integration's own metadata: the
+   * delegation is declared by the SPEND install's mode (Ramp in push-only owns
+   * `ap`) while the select being locked belongs to the ACCOUNTING integration, so
+   * the two are never the same row. `applyLedgerDelegation` already overrides the
+   * stored value at the decision — without this the tab offers a setting the
+   * engine ignores.
+   *
+   * Keyed by family over `LEDGER_FAMILY_KEYS`, never a hard-coded "ap": a spend
+   * platform that delegates AR or a memo family needs no change here.
+   */
+  let delegatedFamilies: Partial<Record<LedgerFamilyKey, string>> = {};
+  if (isAccountingInstalled) {
+    const integrationRows = await client
+      .from("companyIntegration")
+      // `metadata` carries the install mode, which is what decides a spend
+      // provider's capabilities — without it push-only resolves as provider.
+      .select("id, active, metadata")
+      .eq("companyId", companyId);
+    const topology = resolveIntegrationTopology(integrationRows.data ?? []);
+    delegatedFamilies = Object.fromEntries(
+      LEDGER_FAMILY_KEYS.flatMap((family) => {
+        const owner = topology.ledgerOwnership[family];
+        if (owner.kind !== "external") return [];
+        // Name the owner the way the customer knows it, falling back to the id
+        // so an unregistered integration still explains the lock.
+        const name =
+          getIntegrationConfigById(owner.integrationId as IntegrationID)
+            ?.name ?? owner.integrationId;
+        return [[family, name] as const];
+      })
+    );
+  }
   const mappedAccountCount =
     accountMapping?.mappings.filter((mapping) => mapping.externalId).length ??
     0;
   const postingSync = resolvedPostingSettings
     ? {
+        delegatedFamilies,
         settings: {
           families: resolvedPostingSettings.families,
           sourceTypes: resolvedPostingSettings.sourceTypes,
@@ -1357,6 +1543,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
       sourceTypeConfigs,
       familyAr,
       familyAp,
+      familyCreditMemo,
+      familySupplierCredit,
       periodLockPolicy,
       lockDate
     } = validation.data;
@@ -1438,7 +1626,12 @@ export async function action({ request, params }: ActionFunctionArgs) {
         ...existingSettings,
         postingSync: {
           ...postingSyncWithoutEnabled,
-          families: { ar: familyAr, ap: familyAp },
+          families: {
+            ar: familyAr,
+            ap: familyAp,
+            creditMemo: familyCreditMemo,
+            supplierCredit: familySupplierCredit
+          },
           sourceTypes,
           periodLockPolicy,
           ...(lockDate ? { lockDate } : {})
@@ -1473,7 +1666,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   if (!isIntegrationWhitelisted(integrationId)) {
-    await requirePlan({
+    await requireFeature({
       request,
       client,
       companyId,
@@ -1510,14 +1703,59 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (integrationId === "rillet") {
     metadata = foldRilletCredentials(metadata);
   }
+  if (integrationId === "ramp") {
+    metadata = foldRampCredentials(metadata);
+  }
+
+  // Onshape Government is configured BEFORE it is authorized: the admin enters
+  // their private OAuth app here, and the save then sends them through that
+  // app's consent screen (below). Re-authorize whenever there is no token yet or
+  // the app it was issued by changed — a token is only good for the client and
+  // tenant that issued it.
+  const onshapeAppChanged =
+    integrationId === ONSHAPE_GOVERNMENT_INTEGRATION_ID &&
+    (["baseUrl", "oauthUrl", "clientId"] as const).some(
+      (key) => metadata[key] !== existingMetadata[key]
+    );
+  const onshapeNeedsAuthorization =
+    integrationId === ONSHAPE_GOVERNMENT_INTEGRATION_ID &&
+    (!existingMetadata.credentials ||
+      onshapeAppChanged ||
+      (typeof metadata.clientSecret === "string" &&
+        metadata.clientSecret.trim().length > 0));
+
+  // A company holds one Onshape connection at a time; two would leave every
+  // background job guessing which tenant to talk to.
+  if (isOnshapeIntegrationId(integrationId) && !existing.data?.active) {
+    const conflict = await getConflictingOnshapeIntegration(
+      client,
+      companyId,
+      integrationId
+    );
+    if (conflict) {
+      return data(
+        {},
+        await flash(
+          request,
+          error(
+            null,
+            "Another Onshape integration is already connected. Uninstall it before connecting this one."
+          )
+        )
+      );
+    }
+  }
 
   // Onshape asset sync needs the OAuth2Write scope (export jobs + webhook). A
   // connection authorized read-only can't run it, and a refresh can't widen the
   // scope — only a reconnect can. If a read-only user is turning the feature ON,
   // don't persist an on-but-non-functional toggle: force it back off here and
-  // tell them to reconnect first (below). Leaving it off imposes nothing.
+  // tell them to reconnect first (below). Leaving it off imposes nothing. A
+  // connection about to be (re)authorized is judged by the callback instead,
+  // against the scope it is actually granted.
   const onshapeActivatingWithoutWrite =
-    integrationId === "onshape" &&
+    isOnshapeIntegrationId(integrationId) &&
+    !onshapeNeedsAuthorization &&
     (metadata as Record<string, unknown>).assetSyncEnabled === true &&
     !onshapeConnectionHasWriteScope(existingMetadata);
   if (onshapeActivatingWithoutWrite) {
@@ -1534,16 +1772,25 @@ export async function action({ request, params }: ActionFunctionArgs) {
   // callback, so they are never blocked here.
   const FORM_SECRET_INTEGRATIONS = new Set([
     "linear",
+    "mount",
     "paperless-parts",
     "email",
+    "ramp",
     "rillet"
   ]);
-  if (FORM_SECRET_INTEGRATIONS.has(integrationId)) {
+  if (
+    FORM_SECRET_INTEGRATIONS.has(integrationId) ||
+    integrationId === ONSHAPE_GOVERNMENT_INTEGRATION_ID
+  ) {
     const alreadyVaulted = existing.data?.secretRef != null;
-    const providedSecret = (SECRET_KEYS[integrationId] ?? []).some((p) => {
-      const v = getPath(metadata, p);
-      return typeof v === "string" && v.trim().length > 0;
-    });
+    // The optional webhook signing secret is not a credential: it must not
+    // satisfy the "a credential is required" check on its own.
+    const providedSecret = (SECRET_KEYS[integrationId] ?? [])
+      .filter((p) => p !== WEBHOOK_SIGNING_SECRET_KEY)
+      .some((p) => {
+        const v = getPath(metadata, p);
+        return typeof v === "string" && v.trim().length > 0;
+      });
     if (!alreadyVaulted && !providedSecret) {
       return data(
         {},
@@ -1556,6 +1803,53 @@ export async function action({ request, params }: ActionFunctionArgs) {
         )
       );
     }
+  }
+
+  // A connected Government app whose tenant or client changed: its tokens were
+  // issued by the OLD app for the OLD host. Clear them now rather than when
+  // consent completes — an abandoned or failed consent would otherwise leave
+  // them live, sent to the new host by every job. The upsert below only drops
+  // plaintext fields; vaulted secrets merge, so they are removed explicitly.
+  if (onshapeAppChanged && existingMetadata.credentials) {
+    // Unsubscribe the old tenant's release webhook while its token still works.
+    if (existingMetadata.assetSyncEnabled === true) {
+      const unsubscribed = await ensureOnshapeReleaseWebhook(companyId, false);
+      if (!unsubscribed.ok) {
+        logger.error("Could not remove the previous Onshape release webhook", {
+          companyId,
+          error: unsubscribed.error
+        });
+      }
+    }
+    try {
+      await patchIntegrationState(
+        getCarbonServiceRole(),
+        companyId,
+        integrationId,
+        {
+          removeMetadata: ["credentials", "scope", "onshapeCompanyId"],
+          removeSecrets: ["credentials.accessToken", "credentials.refreshToken"]
+        }
+      );
+    } catch (clearError) {
+      logger.error("Could not clear the previous Onshape credentials", {
+        companyId,
+        error: clearError
+      });
+      return data(
+        {},
+        await flash(
+          request,
+          error(
+            clearError,
+            `Couldn't disconnect the previous ${integration.name} app. Try saving again.`
+          )
+        )
+      );
+    }
+    delete metadata.credentials;
+    delete metadata.scope;
+    delete metadata.onshapeCompanyId;
   }
 
   const update = await upsertCompanyIntegration(client, {
@@ -1629,7 +1923,42 @@ export async function action({ request, params }: ActionFunctionArgs) {
   // and need a reconnect, so surface a registration failure instead of flashing
   // success while the sync silently never fires. The settings themselves are
   // already saved either way.
-  if (integrationId === "onshape") {
+  if (onshapeNeedsAuthorization) {
+    const started = await beginOnshapeAuthorization(request, {
+      integrationId: ONSHAPE_GOVERNMENT_INTEGRATION_ID,
+      userId,
+      companyId
+    });
+    await invalidateIntegrationHealthCache(integrationId, companyId);
+    if (!started.ok) {
+      logger.error("Could not start Onshape Government authorization", {
+        companyId,
+        reason: started.reason
+      });
+      throw redirect(
+        path.to.integrations,
+        await flash(
+          request,
+          error(
+            started.reason,
+            "Saved Onshape Government settings, but couldn't start the connection. Check the Onshape URL, OAuth URL, client ID and client secret."
+          )
+        )
+      );
+    }
+    // Off to the tenant's consent screen; its callback finishes the install
+    // (and registers the release webhook if asset sync is on).
+    throw redirect(started.url, { headers: { "Set-Cookie": started.cookie } });
+  }
+
+  if (isOnshapeIntegrationId(integrationId)) {
+    // The public app reconnects from the integrations list; a Government
+    // private app reconnects by saving its client secret again.
+    const reconnect =
+      integrationId === ONSHAPE_GOVERNMENT_INTEGRATION_ID
+        ? "Grant the private app write access in Onshape, then enter its client secret again and save to reconnect"
+        : "Reconnect Onshape to grant write access";
+
     // Read-only connection trying to turn asset sync on: we already forced the
     // toggle back off above, so just tell them exactly what to do. Explicit and
     // scope-accurate — not inferred from a downstream webhook failure.
@@ -1641,7 +1970,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
           request,
           error(
             "onshape connection is read-only",
-            "Onshape is connected with read-only access. Reconnect Onshape to grant write access, then enable asset sync."
+            `${integration.name} is connected with read-only access. ${reconnect}, then enable asset sync.`
           )
         )
       );
@@ -1661,7 +1990,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
           request,
           error(
             webhookResult.error,
-            "Saved Onshape settings, but couldn't register the release webhook. Reconnect Onshape to grant write access, then save again."
+            `Saved ${integration.name} settings, but couldn't register the release webhook. ${reconnect}, then save again.`
           )
         )
       );
@@ -1689,6 +2018,9 @@ export default function IntegrationRoute() {
 
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const { id: integrationId } = useParams();
+
+  const collapseSettings = integrationId === "mount" && installed;
 
   // Accounting-category integrations get Account Mapping, Posting, Dimensions
   // and Sync Activity tabs next to the Settings form (deep-linkable via
@@ -1723,6 +2055,7 @@ export default function IntegrationRoute() {
           settings={postingSync.settings}
           policy={postingSync.policy}
           mappingReadiness={postingSync.mappingReadiness}
+          delegatedFamilies={postingSync.delegatedFamilies}
         />
       )
     });
@@ -1768,6 +2101,7 @@ export default function IntegrationRoute() {
           status={syncActivity.status}
           page={syncActivity.page}
           pageSize={syncActivity.pageSize}
+          readableIds={syncActivity.readableIds}
           lastReconciliation={syncActivity.lastReconciliation}
           tieOut={syncActivity.tieOut}
         />
@@ -1784,6 +2118,10 @@ export default function IntegrationRoute() {
     <IntegrationForm
       installed={installed}
       metadata={metadata}
+      collapseSettings={collapseSettings}
+      settingsLabel={
+        collapseSettings ? <Trans>Integration credentials</Trans> : undefined
+      }
       dynamicOptions={dynamicOptions}
       tabs={tabs.length > 0 ? tabs : undefined}
       defaultTab={defaultTab}

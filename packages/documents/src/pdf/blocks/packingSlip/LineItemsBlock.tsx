@@ -51,9 +51,9 @@ export function LineItemsBlock({
           Description
         </Text>
         <Text style={tw("w-2/12 text-right")}>Qty</Text>
-        {hasTrackedEntities && (
+        {hasTrackedEntities ? (
           <Text style={tw("w-5/12 text-right")}>Serial/Batch</Text>
-        )}
+        ) : null}
       </View>
 
       {shipmentLines
@@ -93,17 +93,17 @@ export function LineItemsBlock({
                   {line.description}
                 </Text>
                 {opts.showThumbnails &&
-                  thumbnails &&
-                  line.id != null &&
-                  line.id in thumbnails &&
-                  thumbnails[line.id] && (
-                    <View style={tw("mt-1 w-16")}>
-                      <Image
-                        src={thumbnails[line.id]!}
-                        style={tw("w-full h-auto")}
-                      />
-                    </View>
-                  )}
+                thumbnails &&
+                line.id != null &&
+                line.id in thumbnails &&
+                thumbnails[line.id] ? (
+                  <View style={tw("mt-1 w-16")}>
+                    <Image
+                      src={thumbnails[line.id]!}
+                      style={tw("w-full h-auto")}
+                    />
+                  </View>
+                ) : null}
                 <View style={tw("mt-1")}>
                   <Image src={barcodeDataUrl} style={tw("max-w-[50%]")} />
                 </View>
@@ -111,7 +111,7 @@ export function LineItemsBlock({
               <Text style={tw("w-2/12 text-right text-gray-600")}>
                 {`${line.shippedQuantity} / ${line.orderQuantity} ${line.unitOfMeasure}`}
               </Text>
-              {hasTrackedEntities && (
+              {hasTrackedEntities ? (
                 <View style={tw("w-5/12 flex flex-col gap-1 items-end")}>
                   {trackedEntitiesForLine.map((entity) => {
                     const qrCodeDataUrl = generateQRCode(entity.id, 8);
@@ -131,7 +131,7 @@ export function LineItemsBlock({
                     );
                   })}
                 </View>
-              )}
+              ) : null}
             </View>
           );
         })}

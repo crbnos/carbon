@@ -24,7 +24,12 @@ import {
   MethodIcon,
   TrackingTypeIcon
 } from "~/components";
-import { Boolean, ItemPostingGroup, Tags } from "~/components/Form";
+import {
+  Boolean,
+  ItemPostingGroup,
+  Tags,
+  UnitOfMeasure
+} from "~/components/Form";
 import CustomFormInlineFields from "~/components/Form/CustomFormInlineFields";
 import { ReplenishmentSystemIcon } from "~/components/Icons";
 import { ItemThumbnailUpload } from "~/components/ItemThumnailUpload";
@@ -139,7 +144,8 @@ const ToolProperties = ({ data }: ToolPropertiesProps) => {
         | "itemPostingGroupId"
         | "toolId"
         | "active"
-        | "mpn",
+        | "mpn"
+        | "unitOfMeasureCode",
       value: string | null
     ) => {
       const formData = new FormData();
@@ -511,16 +517,27 @@ const ToolProperties = ({ data }: ToolPropertiesProps) => {
         onChange={(value) => onUpdate("sourcingType", value)}
       />
 
-      <VStack spacing={2}>
-        <h3 className="text-xs text-muted-foreground">
-          <Trans>Unit of Measure</Trans>
-        </h3>
-        {routeData?.toolSummary?.unitOfMeasure && (
-          <Badge variant="secondary">
-            {routeData.toolSummary.unitOfMeasure}
-          </Badge>
-        )}
-      </VStack>
+      <ValidatedForm
+        defaultValues={{
+          unitOfMeasureCode:
+            routeData?.toolSummary?.unitOfMeasureCode ?? undefined
+        }}
+        validator={z.object({
+          unitOfMeasureCode: z
+            .string()
+            .min(1, { message: "Unit of Measure is required" })
+        })}
+        className="w-full"
+      >
+        <UnitOfMeasure
+          label={t`Unit of Measure`}
+          name="unitOfMeasureCode"
+          inline
+          onChange={(value) => {
+            onUpdate("unitOfMeasureCode", value?.value ?? null);
+          }}
+        />
+      </ValidatedForm>
 
       <ItemDescription
         value={routeData?.toolSummary?.description ?? ""}

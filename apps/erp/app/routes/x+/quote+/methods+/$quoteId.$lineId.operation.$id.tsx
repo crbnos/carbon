@@ -10,6 +10,7 @@ import {
   recalculateQuoteLinePrices,
   upsertQuoteOperation
 } from "~/modules/sales";
+import { requireCompanyRecord } from "~/modules/shared/shared.server";
 import { setCustomFields } from "~/utils/form";
 
 export async function action({ request, params }: ActionFunctionArgs) {
@@ -37,6 +38,20 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (validation.error) {
     return validationError(validation.error);
   }
+
+  // The recalculation below uses the service role: the operation and its line
+  // must belong to this company.
+  const serviceRole = getCarbonServiceRole();
+  await Promise.all([
+    requireCompanyRecord(serviceRole, "quoteLine", companyId, {
+      id: lineId,
+      quoteId
+    }),
+    requireCompanyRecord(serviceRole, "quoteOperation", companyId, {
+      id,
+      quoteLineId: lineId
+    })
+  ]);
 
   const updateQuoteOperation = await upsertQuoteOperation(client, {
     quoteId,
@@ -72,8 +87,13 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  const serviceRole = getCarbonServiceRole();
-  await recalculateQuoteLinePrices(serviceRole, quoteId, lineId, userId);
+  await recalculateQuoteLinePrices(
+    serviceRole,
+    companyId,
+    quoteId,
+    lineId,
+    userId
+  );
 
   return {
     id: quoteOperationId,

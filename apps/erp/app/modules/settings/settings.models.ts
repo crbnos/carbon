@@ -346,6 +346,12 @@ export const rfqReadyValidator = z.object({
     .optional()
 });
 
+export const salesRuleNotificationValidator = z.object({
+  salesRuleNotificationGroup: z
+    .array(z.string().min(1, { message: "Invalid selection" }))
+    .optional()
+});
+
 export const suggestionNotificationValidator = z.object({
   suggestionNotificationGroup: z
     .array(z.string().min(1, { message: "Invalid selection" }))
@@ -599,6 +605,8 @@ export const postingSyncSettingsValidator = z.object({
   ),
   familyAr: z.enum(["documents", "journals", "none"]),
   familyAp: z.enum(["documents", "journals", "none"]),
+  familyCreditMemo: z.enum(["documents", "journals", "none"]),
+  familySupplierCredit: z.enum(["documents", "journals", "none"]),
   periodLockPolicy: z.enum(["park", "redate"]),
   lockDate: zfd.text(z.string().optional())
 });

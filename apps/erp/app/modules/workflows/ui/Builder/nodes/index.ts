@@ -1,4 +1,4 @@
-import type { WorkflowNodeType } from "@carbon/workflows";
+import type { WorkflowNodeType } from "@carbon/ee/workflows";
 import type { NodeProps } from "@xyflow/react";
 import type { ComponentType } from "react";
 import { WorkflowNodeCard } from "./WorkflowNodeCard";

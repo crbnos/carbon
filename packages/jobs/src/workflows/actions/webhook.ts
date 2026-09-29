@@ -4,7 +4,7 @@ import {
   isNull,
   primitiveValue,
   type RuntimeValue
-} from "@carbon/workflows";
+} from "@carbon/ee/workflows";
 import type { SupabaseClient } from "@supabase/supabase-js";
 // undici's own fetch, not the global one: the global is whatever undici Node bundled,
 // and a dispatcher from a different major is rejected at request time.

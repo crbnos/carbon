@@ -3,18 +3,47 @@ import { serve } from "https://deno.land/std@0.175.0/http/server.ts";
 import { nanoid } from "https://deno.land/x/nanoid@v3.0.0/mod.ts";
 import { z } from "https://deno.land/x/zod@v3.21.4/mod.ts";
 import { Transaction } from "kysely";
-import { buildBatchSplitRecords } from "../shared/batch-split.ts";
+import { buildBatchSplitRecords, isFullDraw } from "../shared/batch-split.ts";
 import { DB, getConnectionPool, getDatabaseClient } from "../lib/database.ts";
+import {
+  assertCompanyRecords,
+  RecordNotFoundError,
+} from "../lib/company-records.ts";
 import { datetime, getCompanyTimeZone } from "../lib/datetime.ts";
 import { corsPreflight, errorResponse, jsonResponse } from "../lib/response.ts";
 import { getFunctionLogger } from "../lib/logging.ts";
 import { requirePermissions } from "../lib/supabase.ts";
-import type { Json } from "../lib/types.ts";
+import type { Database, Json } from "../lib/types.ts";
 import { getCurrentAccountingPeriod } from "../shared/get-accounting-period.ts";
 import { getDefaultPostingGroup } from "../shared/get-posting-group.ts";
 import { bookAdjustment } from "../shared/post-adjustment.ts";
+import { settleQuantity } from "../shared/entity-drain.ts";
 import { round } from "../shared/precision.ts";
 import { resolveUnscrapUnitCost } from "./resolve-unscrap-cost.ts";
+
+// settleQuantity needs the lot's CURRENT status to know whether to preserve it
+// (a Scrapped lot stays Scrapped at zero). get_item_quantities_by_tracking_id
+// doesn't carry status, so read it off the row — one PK lookup inside the open
+// transaction, next to the write it informs.
+//
+// LOCKED: the caller feeds this status straight back through settleQuantity, so
+// an unlocked read is a read-modify-write on `status`. Without the lock a
+// concurrent transaction that Scraps the lot between our read and our update is
+// silently overwritten with the stale `Available` we read.
+async function currentEntityStatus(
+  trx: Transaction<DB>,
+  trackedEntityId: string,
+  companyId: string
+): Promise<Database["public"]["Enums"]["trackedEntityStatus"]> {
+  const row = await trx
+    .selectFrom("trackedEntity")
+    .select("status")
+    .where("id", "=", trackedEntityId)
+    .where("companyId", "=", companyId)
+    .forUpdate()
+    .executeTakeFirstOrThrow();
+  return row.status;
+}
 
 const pool = getConnectionPool(1);
 const db = getDatabaseClient<DB>(pool);
@@ -107,6 +136,39 @@ serve(async (req: Request) => {
     const client = await requirePermissions(req, companyId, userId, {
       update: "inventory",
     });
+
+    // The service-role client proves the caller may act in companyId, not that
+    // the ids below belong to it — each lands on this company's ledger rows or
+    // journal dimensions, and their single-column FKs accept any company's row.
+    await assertCompanyRecords(db, "location", [locationId], companyId, "Location");
+    await assertCompanyRecords(
+      db,
+      "storageUnit",
+      [storageUnitId, originalStorageUnitId],
+      companyId,
+      "Storage unit"
+    );
+    await assertCompanyRecords(
+      db,
+      "scrapReason",
+      [scrapReasonId],
+      companyId,
+      "Scrap reason"
+    );
+    // A trackedEntityId that exists nowhere is legitimate: the app mints the id
+    // (nanoid) for a NEW serial/batch and this function inserts it. One that
+    // belongs to another company is not — the paths below would write ledger
+    // rows pointing at it (the insert only fails by accident of the id-only PK).
+    if (trackedEntityId) {
+      const existing = await db
+        .selectFrom("trackedEntity")
+        .select("companyId")
+        .where("id", "=", trackedEntityId)
+        .executeTakeFirst();
+      if (existing && existing.companyId !== companyId) {
+        throw new RecordNotFoundError("Tracked entity not found");
+      }
+    }
 
     const today = datetime.today(await getCompanyTimeZone(client, companyId)).toString();
     const nowIso = new Date().toISOString();
@@ -400,9 +462,9 @@ serve(async (req: Request) => {
               "Only available tracked entities can be scrapped"
             );
           }
-          const entityQuantity = Number(entity.quantity) || 0;
+          const entityQuantity = round(Number(entity.quantity) || 0);
           // quantity 0 ⇒ scrap the whole entity (serial UIs don't send a qty)
-          const scrapQuantity = quantity > 0 ? quantity : entityQuantity;
+          const scrapQuantity = quantity > 0 ? round(quantity) : entityQuantity;
           if (scrapQuantity > entityQuantity) {
             throw new ValidationError("Insufficient quantity for scrap");
           }
@@ -410,7 +472,7 @@ serve(async (req: Request) => {
             currentQuantity?.storageUnitId ?? storageUnitId ?? null;
 
           let scrappedEntityId = trackedEntityId;
-          if (scrapQuantity < entityQuantity) {
+          if (!isFullDraw(entityQuantity, scrapQuantity)) {
             // Partial batch scrap: identity-flip split — the parent keeps its
             // id and is decremented; the departing child is the Scrapped
             // record of what left.
@@ -838,18 +900,28 @@ serve(async (req: Request) => {
             throw new ValidationError("Serial number not found");
           }
           const resolvedId = resolvedQtyRow.trackedEntityId as string;
-          const resolvedQty = resolvedQtyRow.quantity ?? 0;
-          if (adjustmentQuantity > resolvedQty) {
+          const resolvedQty = round(resolvedQtyRow.quantity ?? 0);
+          if (round(adjustmentQuantity) > resolvedQty) {
             throw new ValidationError(
               "Insufficient quantity for negative adjustment"
             );
           }
-          await trx
-            .updateTable("trackedEntity")
-            .set({ quantity: resolvedQty - adjustmentQuantity, readableId })
-            .where("id", "=", resolvedId)
-            .where("companyId", "=", companyId)
-            .execute();
+            // A negative adjustment draws down Available stock; when it lands
+            // on zero the lot is Consumed, not a zero-quantity Available husk.
+            // settleQuantity is the shared rule, so this path also preserves a
+            // Scrapped lot — which the inline flip it replaces did not.
+            await trx
+              .updateTable("trackedEntity")
+              .set({
+                ...settleQuantity({
+                  quantity: resolvedQty - adjustmentQuantity,
+                  status: await currentEntityStatus(trx, resolvedId, companyId),
+                }),
+                readableId,
+              })
+              .where("id", "=", resolvedId)
+              .where("companyId", "=", companyId)
+              .execute();
           const booked = await bookAdjustment(trx, {
             ledger: {
               ...ledgerBase,
@@ -910,8 +982,8 @@ serve(async (req: Request) => {
           );
         }
         const targetRow = trackedRowsInUnit[0];
-        const targetQty = targetRow.quantity ?? 0;
-        if (adjustmentQuantity > targetQty) {
+        const targetQty = round(targetRow.quantity ?? 0);
+        if (round(adjustmentQuantity) > targetQty) {
           throw new ValidationError(
             "Insufficient quantity for negative adjustment"
           );
@@ -919,7 +991,12 @@ serve(async (req: Request) => {
         const targetId = targetRow.trackedEntityId as string;
         await trx
           .updateTable("trackedEntity")
-          .set({ quantity: targetQty - adjustmentQuantity })
+          .set(
+            settleQuantity({
+              quantity: targetQty - adjustmentQuantity,
+              status: await currentEntityStatus(trx, targetId, companyId),
+            })
+          )
           .where("id", "=", targetId)
           .where("companyId", "=", companyId)
           .execute();
@@ -950,9 +1027,14 @@ serve(async (req: Request) => {
 
       if (trackedEntityId) {
         if (currentQuantity) {
-          const entityUpdate: Record<string, unknown> = {
+          // Draining a lot to zero Consumes it (a Set Quantity to 0 or a full
+          // negative adjustment); above zero its status is untouched. This path
+          // takes an arbitrary trackedEntityId from the payload, so it is the
+          // one that can land on a Scrapped lot — settleQuantity preserves it.
+          const entityUpdate: Record<string, unknown> = settleQuantity({
             quantity: signedQuantity + currentQuantityOnHand,
-          };
+            status: await currentEntityStatus(trx, trackedEntityId, companyId),
+          });
           if (readableId !== undefined && readableId !== null) {
             entityUpdate.readableId = readableId;
           }
@@ -964,6 +1046,12 @@ serve(async (req: Request) => {
             .execute();
           await applyExpirationOverride(trx, trackedEntityId);
         } else {
+          // Nothing to create for a zero-quantity new entity: the physical
+          // state is already zero, so skip the insert AND the ledger row and
+          // return a success no-op (keeps repeated scanners idempotent).
+          if (round(signedQuantity) === 0) {
+            return;
+          }
           const expirationDate = resolveExpirationForNewEntity();
           // Stamp the trace blob so the popover Source / Override steps can
           // show the entity originated from a manual inventory adjustment.
@@ -1001,7 +1089,7 @@ serve(async (req: Request) => {
               // sales-return picker); omitting it made this stock unreturnable.
               itemId,
               readableId: readableId ?? null,
-              quantity: signedQuantity,
+              quantity: round(signedQuantity),
               status: "Available",
               expirationDate,
               attributes: attributes as unknown as Json,

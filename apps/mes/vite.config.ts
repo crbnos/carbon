@@ -6,7 +6,7 @@ import path from "node:path";
 import { defineConfig, PluginOption } from "vite";
 import babelMacros from "vite-plugin-babel-macros";
 
-export default defineConfig(({ mode, isSsrBuild }) => {
+export default defineConfig(({ command, mode, isSsrBuild }) => {
   applyDotenvToProcessEnv(mode, __dirname);
 
   /**
@@ -25,6 +25,14 @@ export default defineConfig(({ mode, isSsrBuild }) => {
    */
   const ssrNoExternal = [
     "react-dropzone",
+    /**
+     * sonner's stylesheet is imported as `dist/styles.css?url` from root.tsx.
+     * Externalized, the dev SSR module runner hands the resolved path with
+     * its query straight to Node, which cannot load it ("Cannot find module
+     * ...styles.css?url"). Inlined, the ?url import goes through Vite's
+     * asset pipeline. The production build is unaffected either way.
+     */
+    "sonner",
     "react-icons",
     "react-phone-number-input",
     "tailwind-merge",
@@ -39,6 +47,14 @@ export default defineConfig(({ mode, isSsrBuild }) => {
   ];
 
   return {
+    // ASSETS_URL bakes a CDN asset base into the client build (Dockerfile
+    // build arg). Vite's base is build-time only, so an image built without
+    // it serves assets same-origin — that IS the controlled/air-gapped
+    // variant, not a fallback. Normalized: Vite requires the trailing slash.
+    base:
+      command === "build" && process.env.ASSETS_URL
+        ? process.env.ASSETS_URL.replace(/\/*$/, "/")
+        : undefined,
     build: {
       minify: true,
       rolldownOptions: {
@@ -93,6 +109,12 @@ export default defineConfig(({ mode, isSsrBuild }) => {
          * not. Nothing here uses `ws` — stub it like `canvas` above.
          */
         ws: path.resolve(__dirname, "app/ssr-shims/ws-stub.cjs"),
+        // unpdf's bundled PDF.js engine is a dead lazy chunk here — the browser
+        // runs react-pdf's pdfjs-dist (see @carbon/files/pdf). Keep it out.
+        "unpdf/pdfjs": path.resolve(
+          __dirname,
+          "app/ssr-shims/unpdf-pdfjs-stub.mjs"
+        ),
         // Directory (not index.ts) so subpath imports like
         // `@carbon/utils/favicon` resolve to `src/favicon.ts`.
         "@carbon/utils": path.resolve(__dirname, "../../packages/utils/src"),

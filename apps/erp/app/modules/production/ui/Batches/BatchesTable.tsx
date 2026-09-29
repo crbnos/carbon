@@ -12,7 +12,7 @@ import {
 import { BATCH_STATUS_COLOR_MAP } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
-import { memo, useCallback, useEffect, useMemo, useRef } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   LuCalendar,
   LuCirclePlay,
@@ -32,6 +32,7 @@ import { usePermissions } from "~/hooks";
 import { useCustomColumns } from "~/hooks/useCustomColumns";
 import { path } from "~/utils/path";
 import type { JobOperationBatch } from "../../types";
+import { BatchReleaseModal } from "./BatchReleaseModal";
 
 type BatchesTableProps = {
   data: JobOperationBatch[];
@@ -95,14 +96,32 @@ const BatchesTable = memo(({ data, count }: BatchesTableProps) => {
   }, [releaseFetcher.state, releaseFetcher.data]);
 
   const submitBatchIntent = useCallback(
-    (intent: "release" | "unrelease", batchId: string) => {
+    (
+      intent: "release" | "unrelease",
+      batchId: string,
+      purchaseOrdersBySupplierId?: Record<string, string>
+    ) => {
       releaseFetcher.submit(
-        { intent, batchId },
+        {
+          intent,
+          batchId,
+          ...(purchaseOrdersBySupplierId && {
+            purchaseOrdersBySupplierId: JSON.stringify(
+              purchaseOrdersBySupplierId
+            )
+          })
+        },
         { method: "post", action: path.to.priorityBatchingUpdate }
       );
     },
     [releaseFetcher]
   );
+  // The row action opens the Release dialog (member-job checks + PO choice)
+  // instead of releasing straight away.
+  const [releaseTarget, setReleaseTarget] = useState<{
+    id: string;
+    readableId: string;
+  } | null>(null);
 
   // "Delete" is the edge fn's dissolve — offered while the batch is Planned or
   // Active (a started batch must be completed; Completed batches are history).
@@ -119,7 +138,9 @@ const BatchesTable = memo(({ data, count }: BatchesTableProps) => {
           // that lacks it.
           <MenuItem
             disabled={!canUpdate}
-            onClick={() => submitBatchIntent("release", row.id)}
+            onClick={() =>
+              setReleaseTarget({ id: row.id, readableId: row.readableId })
+            }
           >
             <MenuIcon icon={<LuCirclePlay />} />
             {t`Release Batch`}
@@ -432,23 +453,37 @@ const BatchesTable = memo(({ data, count }: BatchesTableProps) => {
   );
 
   return (
-    <Table<JobOperationBatch>
-      data={data}
-      columns={columns}
-      count={count}
-      primaryAction={
-        permissions.can("create", "production") && (
-          <New label={t`Batch`} to={path.to.newOperationBatch} />
-        )
-      }
-      renderActions={renderActions}
-      renderContextMenu={renderContextMenu}
-      renderExpandedRow={renderExpandedRow}
-      canExpandRow={canExpandRow}
-      withSelectableRows={canUpdate}
-      getRowId={(row) => row.id}
-      title={t`Batches`}
-    />
+    <>
+      <Table<JobOperationBatch>
+        data={data}
+        columns={columns}
+        count={count}
+        primaryAction={
+          permissions.can("create", "production") && (
+            <New label={t`Batch`} to={path.to.newOperationBatch} />
+          )
+        }
+        renderActions={renderActions}
+        renderContextMenu={renderContextMenu}
+        renderExpandedRow={renderExpandedRow}
+        canExpandRow={canExpandRow}
+        withSelectableRows={canUpdate}
+        getRowId={(row) => row.id}
+        title={t`Batches`}
+      />
+      {releaseTarget && (
+        <BatchReleaseModal
+          target={{ batchId: releaseTarget.id }}
+          title={t`Release batch ${releaseTarget.readableId}`}
+          confirmLabel={t`Release Batch`}
+          onClose={() => setReleaseTarget(null)}
+          onConfirm={(purchaseOrders) => {
+            submitBatchIntent("release", releaseTarget.id, purchaseOrders);
+            setReleaseTarget(null);
+          }}
+        />
+      )}
+    </>
   );
 });
 

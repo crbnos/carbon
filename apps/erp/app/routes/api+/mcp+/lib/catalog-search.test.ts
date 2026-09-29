@@ -1,11 +1,11 @@
 import type { ManifestEntry } from "@carbon/api";
-import { describe, expect, test } from "vitest";
 import {
   collectFieldNames,
   createCatalogSearch,
   expandQueryTerm,
   splitWords
-} from "./catalog-search";
+} from "@carbon/ee/mcp";
+import { describe, expect, test } from "vitest";
 import toolMetadata from "./tool-metadata.json";
 
 const tools = toolMetadata.tools as unknown as ManifestEntry[];

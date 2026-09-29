@@ -4,8 +4,9 @@ import { z } from "npm:zod@^4.5.4";
 import { DB, getConnectionPool, getDatabaseClient } from "../lib/database.ts";
 import { datetime, getCompanyTimeZone } from "../lib/datetime.ts";
 
-import { format } from "https://deno.land/std@0.205.0/datetime/format.ts";
 import { getFunctionLogger } from "../lib/logging.ts";
+import { toJson } from "../lib/json.ts";
+import { RecordNotFoundError } from "../lib/company-records.ts";
 import { corsPreflight, errorResponse, jsonResponse } from "../lib/response.ts";
 import { requirePermissions } from "../lib/supabase.ts";
 import { Database } from "../lib/types.ts";
@@ -191,8 +192,10 @@ serve(async (req: Request) => {
           .from("makeMethod")
           .select("*")
           .eq("id", makeMethodId)
-          .single();
+          .eq("companyId", companyId)
+          .maybeSingle();
         if (makeMethod.error) throw new Error(makeMethod.error.message);
+        if (!makeMethod.data) throw new RecordNotFoundError("Make method not found");
 
         const [relatedMakeMethods, draftQuotes, draftJobs] = await Promise.all([
           client
@@ -286,24 +289,28 @@ serve(async (req: Request) => {
             .from("purchaseOrder")
             .select("*")
             .eq("id", purchaseOrderId)
-            .single(),
+            .eq("companyId", companyId)
+            .maybeSingle(),
           client
             .from("purchaseOrderLine")
             .select("*")
-            .eq("purchaseOrderId", purchaseOrderId),
+            .eq("purchaseOrderId", purchaseOrderId)
+            .eq("companyId", companyId),
           client
             .from("purchaseOrderPayment")
             .select("*")
             .eq("id", purchaseOrderId)
-            .single(),
+            .eq("companyId", companyId)
+            .maybeSingle(),
           client
             .from("purchaseOrderDelivery")
             .select("*")
             .eq("id", purchaseOrderId)
-            .single(),
+            .eq("companyId", companyId)
+            .maybeSingle(),
         ]);
 
-        if (!purchaseOrder.data) throw new Error("Purchase order not found");
+        if (!purchaseOrder.data) throw new RecordNotFoundError("Purchase order not found");
         if (purchaseOrderLines.error)
           throw new Error(purchaseOrderLines.error.message);
         if (!purchaseOrderPayment.data)
@@ -483,23 +490,44 @@ serve(async (req: Request) => {
           quoteShipping,
           company,
         ] = await Promise.all([
-          client.from("quote").select("*").eq("id", id).single(),
+          client
+            .from("quote")
+            .select("*")
+            .eq("id", id)
+            .eq("companyId", companyId)
+            .single(),
           fetchAllRows((from, to) =>
-            client.from("quoteLine").select("*").eq("quoteId", id).range(from, to)
+            client
+              .from("quoteLine")
+              .select("*")
+              .eq("quoteId", id)
+              .eq("companyId", companyId)
+              .range(from, to)
           ),
           fetchAllRows((from, to) =>
             client
               .from("quoteLinePrice")
               .select("*")
               .eq("quoteId", id)
+              .eq("companyId", companyId)
               .range(from, to)
           ),
-          client.from("quotePayment").select("*").eq("id", id).single(),
-          client.from("quoteShipment").select("*").eq("id", id).single(),
+          client
+            .from("quotePayment")
+            .select("*")
+            .eq("id", id)
+            .eq("companyId", companyId)
+            .single(),
+          client
+            .from("quoteShipment")
+            .select("*")
+            .eq("id", id)
+            .eq("companyId", companyId)
+            .single(),
           client.from("company").select("*").eq("id", companyId).single(),
         ]);
 
-        if (quote.error) throw new Error(`Quote with id ${id} not found`);
+        if (quote.error) throw new RecordNotFoundError(`Quote with id ${id} not found`);
         if (quoteLines.error)
           throw new Error(`Quote Lines with id ${id} not found`);
         if (quoteLinePrices.error)
@@ -547,7 +575,10 @@ serve(async (req: Request) => {
 
         let insertedSalesOrderId = "";
         await db.transaction().execute(async (trx) => {
-          const today = datetime.today(await getCompanyTimeZone(client, companyId)).toString();
+          const todayDate = datetime.today(
+            await getCompanyTimeZone(client, companyId)
+          );
+          const today = todayDate.toString();
           const salesOrderId = await getNextSequence(
             trx,
             "salesOrder",
@@ -603,8 +634,8 @@ serve(async (req: Request) => {
                   quote.data.currencyCode ??
                   company.data?.baseCurrencyCode ??
                   "USD",
-                externalNotes: quote.data.externalNotes,
-                internalNotes: quote.data.internalNotes,
+                externalNotes: toJson(quote.data.externalNotes),
+                internalNotes: toJson(quote.data.internalNotes),
                 exchangeRate: quote.data.exchangeRate ?? 1,
                 exchangeRateUpdatedAt:
                   quote.data.exchangeRateUpdatedAt ?? new Date().toISOString(),
@@ -624,15 +655,6 @@ serve(async (req: Request) => {
             .insertInto("salesOrderPayment")
             .values({
               ...quotePayment.data,
-              id: insertedSalesOrderId,
-            })
-            .execute();
-
-          // Copy quoteShipment data to salesOrderShipment
-          await trx
-            .insertInto("salesOrderShipment")
-            .values({
-              ...quoteShipping.data,
               id: insertedSalesOrderId,
             })
             .execute();
@@ -686,18 +708,15 @@ serve(async (req: Request) => {
                 locationId: line.locationId ?? quote.data.locationId,
                 methodType: line.methodType,
                 storageUnitId: pickMethodDefaultsByLineId.get(line.id!) ?? null,
-                internalNotes: line.internalNotes,
-                externalNotes: line.externalNotes,
+                internalNotes: toJson(line.internalNotes),
+                externalNotes: toJson(line.externalNotes),
                 saleQuantity: price.quantity,
                 status: "Ordered",
                 unitOfMeasureCode: line.unitOfMeasureCode,
                 unitPrice: price.netUnitPrice ?? 0,
-                promisedDate: format(
-                  new Date(
-                    Date.now() + (price.leadTime ?? 0) * 24 * 60 * 60 * 1000
-                  ),
-                  "yyyy-MM-dd"
-                ),
+                promisedDate: todayDate
+                  .add({ days: price.leadTime ?? 0 })
+                  .toString(),
                 createdBy: userId,
                 companyId,
                 exchangeRate: quote.data.exchangeRate ?? 1,
@@ -706,6 +725,28 @@ serve(async (req: Request) => {
                 sortOrder: line.sortOrder ?? 1,
               };
             });
+
+          // The order is promised when its last line is: the latest line
+          // promise (today + that line's quoted lead time). A requested date
+          // the quote already carries is the customer's and is kept.
+          const receiptPromisedDate =
+            salesOrderLineInserts
+              .map((insert) => insert.promisedDate)
+              .filter((date): date is string => !!date)
+              .sort()
+              .at(-1) ?? null;
+
+          // Copy quoteShipment data to salesOrderShipment
+          await trx
+            .insertInto("salesOrderShipment")
+            .values({
+              ...quoteShipping.data,
+              id: insertedSalesOrderId,
+              receiptRequestedDate:
+                quoteShipping.data.receiptRequestedDate ?? receiptPromisedDate,
+              receiptPromisedDate,
+            })
+            .execute();
 
           if (salesOrderLineInserts.length > 0) {
             await trx
@@ -811,25 +852,33 @@ serve(async (req: Request) => {
           salesOrderPayment,
           salesOrderShipment,
         ] = await Promise.all([
-          client.from("salesOrder").select("*").eq("id", salesOrderId).single(),
+          client
+            .from("salesOrder")
+            .select("*")
+            .eq("id", salesOrderId)
+            .eq("companyId", companyId)
+            .maybeSingle(),
           client
             .from("salesOrderLine")
             .select("*")
-            .eq("salesOrderId", salesOrderId),
+            .eq("salesOrderId", salesOrderId)
+            .eq("companyId", companyId),
           client
             .from("salesOrderPayment")
             .select("*")
             .eq("id", salesOrderId)
-            .single(),
+            .eq("companyId", companyId)
+            .maybeSingle(),
           client
             .from("salesOrderShipment")
             .select("*")
             .eq("id", salesOrderId)
-            .single(),
+            .eq("companyId", companyId)
+            .maybeSingle(),
         ]);
 
         if (salesOrder.error) throw new Error(salesOrder.error.message);
-        if (!salesOrder.data) throw new Error("Sales order not found");
+        if (!salesOrder.data) throw new RecordNotFoundError("Sales order not found");
         if (salesOrderLines.error)
           throw new Error(salesOrderLines.error.message);
         if (salesOrderPayment.error) throw new Error(salesOrderPayment.error.message);
@@ -969,12 +1018,21 @@ serve(async (req: Request) => {
       }
       case "salesRfqToQuote": {
         const [salesRfq, salesRfqLines] = await Promise.all([
-          client.from("salesRfq").select("*").eq("id", id).single(),
-          client.from("salesRfqLines").select("*").eq("salesRfqId", id),
+          client
+            .from("salesRfq")
+            .select("*")
+            .eq("id", id)
+            .eq("companyId", companyId)
+            .single(),
+          client
+            .from("salesRfqLines")
+            .select("*")
+            .eq("salesRfqId", id)
+            .eq("companyId", companyId),
         ]);
 
         if (salesRfq.error)
-          throw new Error(`Sales RFQ with id ${id} not found`);
+          throw new RecordNotFoundError(`Sales RFQ with id ${id} not found`);
         if (salesRfq.data?.status !== "Ready for Quote")
           throw new Error(
             `Sales RFQ with id ${id} is not in Ready for Quote status`
@@ -1053,16 +1111,19 @@ serve(async (req: Request) => {
               .from("customerPayment")
               .select("*")
               .eq("customerId", salesRfq.data.customerId)
+              .eq("companyId", companyId)
               .single(),
             client
               .from("customerShipping")
               .select("*")
               .eq("customerId", salesRfq.data.customerId)
+              .eq("companyId", companyId)
               .single(),
             client
               .from("customer")
               .select("*")
               .eq("id", salesRfq.data.customerId)
+              .eq("companyId", companyId)
               .single(),
             client.from("company").select("*").eq("id", companyId).single(),
           ]);
@@ -1177,8 +1238,8 @@ serve(async (req: Request) => {
                 ).add({ days: 30 }).toString(),
                 salesPersonId: salesRfq.data?.salesPersonId ?? userId,
                 status: "Draft",
-                externalNotes: salesRfq.data?.externalNotes,
-                internalNotes: salesRfq.data?.internalNotes,
+                externalNotes: toJson(salesRfq.data?.externalNotes),
+                internalNotes: toJson(salesRfq.data?.internalNotes),
                 companyId,
                 createdBy: userId,
                 currencyCode,
@@ -1240,8 +1301,8 @@ serve(async (req: Request) => {
               locationId: salesRfq.data?.locationId,
               methodType: line.methodType!,
               modelUploadId: line.modelUploadId,
-              internalNotes: line.internalNotes,
-              externalNotes: line.externalNotes,
+              internalNotes: toJson(line.internalNotes),
+              externalNotes: toJson(line.externalNotes),
               quantity: line.quantity,
               status: "Not Started",
               unitOfMeasureCode: line.unitOfMeasureCode,
@@ -1346,16 +1407,27 @@ serve(async (req: Request) => {
         const shipmentId = id;
         const [shipment, shipmentLines, shipmentFixedAssetLines] =
           await Promise.all([
-            client.from("shipment").select("*").eq("id", shipmentId).single(),
-            client.from("shipmentLine").select("*").eq("shipmentId", shipmentId),
+            client
+              .from("shipment")
+              .select("*")
+              .eq("id", shipmentId)
+              .eq("companyId", companyId)
+              .maybeSingle(),
+            client
+              .from("shipmentLine")
+              .select("*")
+              .eq("shipmentId", shipmentId)
+              .eq("companyId", companyId),
             client
               .from("shipmentFixedAssetLine")
               .select("*")
               .eq("shipmentId", shipmentId)
+              .eq("companyId", companyId)
               .eq("shipped", true),
           ]);
 
         if (shipment.error) throw shipment.error;
+        if (!shipment.data) throw new RecordNotFoundError("Shipment not found");
         if (shipmentLines.error) throw shipmentLines.error;
         if (shipmentFixedAssetLines.error) throw shipmentFixedAssetLines.error;
 
@@ -1395,22 +1467,29 @@ serve(async (req: Request) => {
             .from("salesOrder")
             .select("*")
             .eq("id", shipment.data?.sourceDocumentId)
-            .single(),
-          client.from("salesOrderLine").select("*").in("id", salesOrderLineIds),
+            .eq("companyId", companyId)
+            .maybeSingle(),
+          client
+            .from("salesOrderLine")
+            .select("*")
+            .in("id", salesOrderLineIds)
+            .eq("companyId", companyId),
           client
             .from("salesOrderPayment")
             .select("*")
             .eq("id", shipment.data?.sourceDocumentId)
-            .single(),
+            .eq("companyId", companyId)
+            .maybeSingle(),
           client
             .from("salesOrderShipment")
             .select("*")
             .eq("id", shipment.data?.sourceDocumentId)
-            .single(),
+            .eq("companyId", companyId)
+            .maybeSingle(),
         ]);
 
         if (salesOrder.error) throw new Error(salesOrder.error.message);
-        if (!salesOrder.data) throw new Error("Sales order not found");
+        if (!salesOrder.data) throw new RecordNotFoundError("Sales order not found");
         if (salesOrderLines.error)
           throw new Error(salesOrderLines.error.message);
         if (salesOrderPayment.error) throw new Error(salesOrderPayment.error.message);
@@ -1565,11 +1644,17 @@ serve(async (req: Request) => {
         const { selectedLines } = payload;
 
         const [quote, quoteLines, company, employeeJob] = await Promise.all([
-          client.from("supplierQuote").select("*").eq("id", id).single(),
+          client
+            .from("supplierQuote")
+            .select("*")
+            .eq("id", id)
+            .eq("companyId", companyId)
+            .single(),
           client
             .from("supplierQuoteLine")
             .select("*, item(type)")
-            .eq("supplierQuoteId", id),
+            .eq("supplierQuoteId", id)
+            .eq("companyId", companyId),
           client.from("company").select("*").eq("id", companyId).single(),
           client
             .from("employeeJob")
@@ -1579,7 +1664,7 @@ serve(async (req: Request) => {
             .single(),
         ]);
 
-        if (quote.error) throw new Error(`Quote with id ${id} not found`);
+        if (quote.error) throw new RecordNotFoundError(`Quote with id ${id} not found`);
         if (quoteLines.error)
           throw new Error(`Quote Lines with id ${id} not found`);
 
@@ -1589,16 +1674,19 @@ serve(async (req: Request) => {
               .from("supplierPayment")
               .select("*")
               .eq("supplierId", quote.data.supplierId)
+              .eq("companyId", companyId)
               .single(),
             client
               .from("supplierShipping")
               .select("*")
               .eq("supplierId", quote.data.supplierId)
+              .eq("companyId", companyId)
               .single(),
             client
               .from("supplier")
               .select("*")
               .eq("id", quote.data.supplierId)
+              .eq("companyId", companyId)
               .single(),
 
             client
@@ -1608,7 +1696,8 @@ serve(async (req: Request) => {
                 "itemId",
                 quoteLines.data.map((line) => line.itemId)
               )
-              .eq("locationId", employeeJob.data?.locationId ?? ""),
+              .eq("locationId", employeeJob.data?.locationId ?? "")
+              .eq("companyId", companyId),
           ]);
 
         if (supplierPayment.error) throw supplierPayment.error;
@@ -1709,8 +1798,8 @@ serve(async (req: Request) => {
                     )?.defaultStorageUnitId ?? null,
                   exchangeRate: quote.data.exchangeRate ?? 1,
                   conversionFactor: line.conversionFactor,
-                  internalNotes: line.internalNotes,
-                  externalNotes: line.externalNotes,
+                  internalNotes: toJson(line.internalNotes),
+                  externalNotes: toJson(line.externalNotes),
                   purchaseQuantity: selectedLines![line.id!].quantity,
                   inventoryUnitOfMeasureCode: line.inventoryUnitOfMeasureCode,
                   purchaseUnitOfMeasureCode: line.purchaseUnitOfMeasureCode,
@@ -1885,7 +1974,8 @@ serve(async (req: Request) => {
         const { data: linkedRfqs } = await client
           .from("purchasingRfqToSupplierQuote")
           .select("purchasingRfqId")
-          .eq("supplierQuoteId", id);
+          .eq("supplierQuoteId", id)
+          .eq("companyId", companyId);
 
         if (linkedRfqs && linkedRfqs.length > 0) {
           await client.from("purchasingRfqToPurchaseOrder").insert(
@@ -1909,15 +1999,19 @@ serve(async (req: Request) => {
             .from("warehouseTransfer")
             .select("*")
             .eq("id", warehouseTransferId)
-            .single(),
+            .eq("companyId", companyId)
+            .maybeSingle(),
           client
             .from("warehouseTransferLine")
             .select("*")
-            .eq("transferId", warehouseTransferId),
+            .eq("transferId", warehouseTransferId)
+            .eq("companyId", companyId),
         ]);
 
         if (warehouseTransfer.error)
           throw new Error(warehouseTransfer.error.message);
+        if (!warehouseTransfer.data)
+          throw new RecordNotFoundError("Warehouse transfer not found");
         if (warehouseTransferLines.error)
           throw new Error(warehouseTransferLines.error.message);
 
@@ -1981,15 +2075,19 @@ serve(async (req: Request) => {
             .from("warehouseTransfer")
             .select("*")
             .eq("id", warehouseTransferId)
-            .single(),
+            .eq("companyId", companyId)
+            .maybeSingle(),
           client
             .from("warehouseTransferLine")
             .select("*")
-            .eq("transferId", warehouseTransferId),
+            .eq("transferId", warehouseTransferId)
+            .eq("companyId", companyId),
         ]);
 
         if (warehouseTransfer.error)
           throw new Error(warehouseTransfer.error.message);
+        if (!warehouseTransfer.data)
+          throw new RecordNotFoundError("Warehouse transfer not found");
         if (warehouseTransferLines.error)
           throw new Error(warehouseTransferLines.error.message);
 

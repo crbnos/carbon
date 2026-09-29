@@ -1,6 +1,6 @@
+import type { ValueOrRef, ValueType } from "@carbon/ee/workflows";
 import type { TermId } from "@carbon/glossary";
 import { ChoiceSelect, type ChoiceSelectOption } from "@carbon/react";
-import type { ValueOrRef, ValueType } from "@carbon/workflows";
 import { useLingui } from "@lingui/react/macro";
 import { Field } from "./Field";
 import { choiceState, writeChoices } from "./multiChoice";

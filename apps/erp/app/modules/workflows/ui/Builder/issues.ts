@@ -1,4 +1,4 @@
-import type { WorkflowIssue } from "@carbon/workflows";
+import type { WorkflowIssue } from "@carbon/ee/workflows";
 
 /**
  * The message for the first issue that names one of these field paths. A bad

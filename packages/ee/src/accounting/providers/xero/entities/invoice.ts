@@ -9,11 +9,14 @@ import {
   toPostingDateString
 } from "../../../core/posting";
 import {
+  assertNoAssetDisposalComponents,
   buildSalesDocumentComponents,
+  hasRevenueComponent,
   type SalesDocumentComponents
 } from "../../../core/sales-document-components";
 import {
   loadSalesInvoices,
+  requirePostedSalesAccountId,
   requirePostedShippingAccountId
 } from "../../../core/sales-invoice-source";
 import {
@@ -113,10 +116,11 @@ export function buildXeroSalesInvoiceLines(args: {
       LineAmount: component.netAmount,
       TaxAmount: component.taxAmount,
       TaxType: component.taxPercent !== 0 ? "OUTPUT" : "NONE",
-      AccountCode: accountCode,
-      ...(component.kind === "Merchandise" && component.itemCode
-        ? { ItemCode: component.itemCode.slice(0, 30) }
-        : {})
+      // No `ItemCode`. Xero lines are already account-coded, so the item was
+      // pure subledger detail — and carrying it meant mirroring Carbon's whole
+      // manufacturing parts catalog into Xero Items. The item name stays in
+      // Description, which is where a person reads it anyway.
+      AccountCode: accountCode
     };
   });
 }
@@ -126,75 +130,58 @@ export class SalesInvoiceSyncer extends BaseEntitySyncer<
   Xero.Invoice,
   "UpdatedDateUTC"
 > {
-  private salesAccountCodePromise?: Promise<string>;
-  private shippingAccountCodesPromise?: ReturnType<typeof loadAccountCodesById>;
+  private accountCodesPromise?: ReturnType<typeof loadAccountCodesById>;
 
   private get xeroProvider(): XeroProvider {
     return this.provider as XeroProvider;
   }
 
   /**
-   * The Xero AccountCode item-referenced AR invoice lines post to: the item's
-   * mapped REVENUE account (`accountDefault.salesAccount` → the account-mapping
-   * externalCode) — the same resolution that feeds Rillet's product
-   * `account_code` and QBO's `IncomeAccountRef`. No blunt default-account-code
-   * fallback: when the company default is unset or unmapped, throws the
-   * structured UNMAPPED_ACCOUNTS Warning (same contract as the Rillet/QBO item
-   * syncers' revenue-account check) so the gap is surfaced and fixed rather
-   * than silently posted to the wrong account. Per-company defaults are
-   * resolved once.
+   * The Xero AccountCode merchandise lines post to: the account the ORIGINAL
+   * journal credited, resolved through the account mapping.
+   *
+   * Replayed from the posted journal rather than read from
+   * `accountDefault.salesAccount`, for the same reason shipping already did:
+   * changing the default after posting must not change the account a retry
+   * uses. No blunt default-account-code fallback — an unmapped account throws
+   * the structured UNMAPPED_ACCOUNTS Warning so the gap is surfaced and fixed
+   * rather than silently posted somewhere wrong.
    */
-  private getSalesAccountCode(): Promise<string> {
-    if (!this.salesAccountCodePromise) {
-      this.salesAccountCodePromise = (async () => {
-        const defaults = await this.database
-          .selectFrom("accountDefault")
-          .select("salesAccount")
-          .where("companyId", "=", this.companyId)
-          .executeTakeFirst();
-
-        if (!defaults?.salesAccount) {
-          throw new JournalEntrySyncError({
-            errorCode: "UNMAPPED_ACCOUNTS",
-            message:
-              "Cannot sync invoice: the company account defaults are missing salesAccount — Xero invoice lines require a revenue account code. Map the account on the integration settings page, then retry.",
-            warning: true,
-            metadata: { missingDefaults: ["salesAccount"] }
-          });
-        }
-
-        const codesById = await loadAccountCodesById(this.database, {
-          companyId: this.companyId,
-          integration: this.provider.id
-        });
-        const code = codesById.get(defaults.salesAccount);
-        if (!code) {
-          throw new JournalEntrySyncError({
-            errorCode: "UNMAPPED_ACCOUNTS",
-            message:
-              "Cannot sync invoice: the default sales account has no Xero account mapping. Map the account on the integration settings page, then retry.",
-            warning: true,
-            metadata: { unmappedAccountIds: [defaults.salesAccount] }
-          });
-        }
-        return code;
-      })();
-    }
-    return this.salesAccountCodePromise;
+  private async getSalesAccountCode(
+    local: Accounting.SalesInvoice
+  ): Promise<string> {
+    const id = requirePostedSalesAccountId(local);
+    this.accountCodesPromise ??= loadAccountCodesById(this.database, {
+      companyId: this.companyId,
+      integration: this.provider.id
+    }).catch((error) => {
+      this.accountCodesPromise = undefined;
+      throw error;
+    });
+    const code = (await this.accountCodesPromise).get(id);
+    if (!code)
+      throw new JournalEntrySyncError({
+        errorCode: "UNMAPPED_ACCOUNTS",
+        warning: true,
+        message:
+          "Cannot sync invoice: original Sales Revenue account has no Xero mapping",
+        metadata: { invoiceId: local.id, unmappedAccountIds: [id] }
+      });
+    return code;
   }
 
   private async getShippingAccountCode(
     local: Accounting.SalesInvoice
   ): Promise<string> {
     const id = requirePostedShippingAccountId(local);
-    this.shippingAccountCodesPromise ??= loadAccountCodesById(this.database, {
+    this.accountCodesPromise ??= loadAccountCodesById(this.database, {
       companyId: this.companyId,
       integration: this.provider.id
     }).catch((error) => {
-      this.shippingAccountCodesPromise = undefined;
+      this.accountCodesPromise = undefined;
       throw error;
     });
-    const code = (await this.shippingAccountCodesPromise).get(id);
+    const code = (await this.accountCodesPromise).get(id);
     if (!code)
       throw new JournalEntrySyncError({
         errorCode: "UNMAPPED_ACCOUNTS",
@@ -314,10 +301,12 @@ export class SalesInvoiceSyncer extends BaseEntitySyncer<
     const hasShipping = document.components.some(
       (line) => line.kind === "LineShipping" || line.kind === "HeaderShipping"
     );
-    const hasSales = document.components.some(
-      (line) => line.kind !== "LineShipping" && line.kind !== "HeaderShipping"
-    );
-    const salesAccountCode = hasSales ? await this.getSalesAccountCode() : "";
+    // A fixed-asset disposal has no sales-revenue posting to replay, so it is
+    // refused rather than coded to the sales account and reported as revenue.
+    assertNoAssetDisposalComponents(document);
+    const salesAccountCode = hasRevenueComponent(document.components)
+      ? await this.getSalesAccountCode(local)
+      : "";
     const shippingAccountCode = hasShipping
       ? await this.getShippingAccountCode(local)
       : null;
@@ -332,15 +321,6 @@ export class SalesInvoiceSyncer extends BaseEntitySyncer<
       "customer",
       local.customerId
     );
-    const itemIds = [
-      ...new Set(
-        document.components
-          .filter((line) => line.kind === "Merchandise" && line.itemId)
-          .map((line) => line.itemId!)
-      )
-    ];
-    for (const itemId of itemIds)
-      await this.ensureDependencySynced("item", itemId);
     const dueDate =
       local.dateDue ??
       parseDate(toPostingDateString(local.dateIssued ?? datetime.timestamp()))

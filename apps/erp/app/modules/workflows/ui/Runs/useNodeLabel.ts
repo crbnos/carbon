@@ -1,4 +1,4 @@
-import type { WorkflowNode } from "@carbon/workflows";
+import type { WorkflowNode } from "@carbon/ee/workflows";
 import { useWorkflowLabel } from "../Builder/catalog";
 import { nodeTitle } from "../Builder/labelKeys";
 import { NODE_KIND_META } from "../Builder/nodes/meta";

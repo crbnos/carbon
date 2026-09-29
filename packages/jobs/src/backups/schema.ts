@@ -1,7 +1,7 @@
 import type { TableName } from "@carbon/database/audit.config";
 import type { KyselyDatabase } from "@carbon/database/client";
 import { type Kysely, sql } from "kysely";
-import { TABLE_RENAMES } from "./renames";
+import { renameColumns, TABLE_RENAMES } from "./renames";
 
 /**
  * Schema introspection + backup-compatibility logic, shared by the backup jobs
@@ -21,12 +21,16 @@ export const BACKUP_VERSION = 1;
  * Tables whose contents must never travel in a backup — credentials,
  * integration tokens and webhook targets stay with the source company.
  * (`apiKeyRateLimit` dangles without its stripped `apiKey` and is an UNLOGGED
- * operational counter, never user data.)
+ * operational counter, never user data. `employeePin` holds console PIN
+ * hashes — a 4-digit PIN's bcrypt hash is brute-forced offline in minutes, so
+ * it is a credential; being secret also keeps an in-place restore from wiping
+ * every operator's PIN.)
  */
 export const SECRET_TABLES = [
   "apiKey",
   "apiKeyRateLimit",
   "companyIntegration",
+  "employeePin",
   "webhook",
   "oauthClient",
   "oauthToken"
@@ -539,7 +543,12 @@ export function reportBackupCompatibility(
       }
     }
 
-    const backupCols = new Set(backupTable.columns);
+    // A renamed table's columns are compared under their CURRENT names, so a
+    // column that moved with the table is not reported as both added and removed.
+    const backupColumnNames = liveByName.has(backupTable.name)
+      ? backupTable.columns
+      : renameColumns(backupTable.name, backupTable.columns);
+    const backupCols = new Set(backupColumnNames);
     for (const c of live.columns) {
       if (backupCols.has(c.name) || c.isGenerated || c.isNullable) continue;
       if (c.hasDefault) {
@@ -561,7 +570,7 @@ export function reportBackupCompatibility(
     }
 
     const liveCols = new Set(live.columns.map((c) => c.name));
-    for (const name of backupTable.columns) {
+    for (const name of backupColumnNames) {
       if (liveCols.has(name)) continue;
       findings.push({
         kind: "discarded",

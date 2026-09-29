@@ -2,10 +2,13 @@ import {
   DEFAULT_HANDLE,
   entityValue,
   type RuntimeValue
-} from "@carbon/workflows";
+} from "@carbon/ee/workflows";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { EngineStep, RunPayload } from "./execute";
 
+vi.mock("@carbon/ee/workflows.server", () => ({
+  workflowsEnabledForCompany: vi.fn(async () => true)
+}));
 vi.mock("../../db", () => ({ getJobDatabaseClient: () => ({}) }));
 vi.mock("./log", () => ({
   loadRunContext: vi.fn(),

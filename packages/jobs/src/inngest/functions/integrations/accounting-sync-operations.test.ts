@@ -1,4 +1,9 @@
 import type { Database } from "@carbon/database";
+import {
+  resolvePostingSyncSettings,
+  resolveSyncConfig
+} from "@carbon/ee/accounting";
+import { asCarbonOwnedSettings } from "@carbon/ee/sync";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { describe, expect, it } from "vitest";
 import {
@@ -19,11 +24,13 @@ import {
   isDailyConsolidationMarker,
   isJournalEntryPostingEnabled,
   type JournalPostingEventInput,
+  loadChargePolicyInputs,
   MAX_RECONCILIATION_DRIFT_ENTRIES,
   mergePostingSyncReconciliation,
   mergePullCursor,
   partitionConsolidationOperations,
   planJournalPostingOperation,
+  resolveMemoJournalParty,
   resolvePaymentJournalFamily,
   SWEEP_LOOKBACK_DAYS,
   shouldEnqueueMissingDocument,
@@ -1088,10 +1095,147 @@ describe("resolvePaymentJournalFamily", () => {
   });
 });
 
+/**
+ * Minimal supabase stub for `resolveMemoJournalParty`: the journal's lines
+ * (which carry `documentType = 'Memo'` and the memo id) plus the memo rows.
+ */
+function stubMemoClient(rows: {
+  journalLines: Array<{ journalId: string; documentId: string }>;
+  memos: Array<{
+    id: string;
+    journalId: string | null;
+    customerId: string | null;
+    supplierId: string | null;
+  }>;
+}): SupabaseClient<Database> {
+  const build = (table: string) => {
+    const filters: Record<string, unknown> = {};
+    const builder = {
+      select: () => builder,
+      not: () => builder,
+      limit: () => builder,
+      eq: (column: string, value: unknown) => {
+        filters[column] = value;
+        return builder;
+      },
+      maybeSingle: async () => {
+        if (table === "journalLine") {
+          const line = rows.journalLines.find(
+            (row) =>
+              row.journalId === filters.journalId &&
+              filters.documentType === "Memo"
+          );
+          return {
+            data: line ? { documentId: line.documentId } : null,
+            error: null
+          };
+        }
+        const memo = rows.memos.find((row) =>
+          filters.id === undefined
+            ? row.journalId === filters.journalId
+            : row.id === filters.id
+        );
+        return {
+          data: memo
+            ? { customerId: memo.customerId, supplierId: memo.supplierId }
+            : null,
+          error: null
+        };
+      }
+    };
+    return builder;
+  };
+  return {
+    from: (table: string) => build(table)
+  } as unknown as SupabaseClient<Database>;
+}
+
+describe("resolveMemoJournalParty", () => {
+  const supplierMemo = {
+    id: "memo_1",
+    journalId: "je_post",
+    customerId: null,
+    supplierId: "sup_1"
+  };
+
+  it("resolves the party of a posted memo journal", async () => {
+    expect(
+      await resolveMemoJournalParty(
+        stubMemoClient({
+          journalLines: [{ journalId: "je_post", documentId: "memo_1" }],
+          memos: [supplierMemo]
+        }),
+        { companyId: "co_1", journalId: "je_post" }
+      )
+    ).toBe("supplier");
+  });
+
+  it("resolves the SAME party for the VOID journal", async () => {
+    // Voiding a memo INSERTS A NEW journal and leaves `memo.journalId` on the
+    // original, so keying on that column found no memo for a void: the party
+    // came back null, the policy parked a spurious MEMO_PARTY_UNRESOLVED
+    // Warning, and the void never propagated to the provider. The void journal's
+    // lines DO carry `documentType = 'Memo'` + the memo id.
+    expect(
+      await resolveMemoJournalParty(
+        stubMemoClient({
+          journalLines: [
+            { journalId: "je_post", documentId: "memo_1" },
+            { journalId: "je_void", documentId: "memo_1" }
+          ],
+          memos: [supplierMemo]
+        }),
+        { companyId: "co_1", journalId: "je_void" }
+      )
+    ).toBe("supplier");
+  });
+
+  it("falls back to the memo's own journalId when the lines carry no document link", async () => {
+    expect(
+      await resolveMemoJournalParty(
+        stubMemoClient({
+          journalLines: [],
+          memos: [
+            {
+              id: "memo_2",
+              journalId: "je_post",
+              customerId: "cust_1",
+              supplierId: null
+            }
+          ]
+        }),
+        { companyId: "co_1", journalId: "je_post" }
+      )
+    ).toBe("customer");
+  });
+
+  it("returns null when nothing links the journal to a memo", async () => {
+    expect(
+      await resolveMemoJournalParty(
+        stubMemoClient({ journalLines: [], memos: [supplierMemo] }),
+        { companyId: "co_1", journalId: "je_other" }
+      )
+    ).toBeNull();
+  });
+});
+
+/**
+ * Delegation is resolved by the CALLER, so these tests supply the
+ * carbon-owned state directly — which is also what keeps
+ * planJournalPostingOperation client-free (pinned by `untouchableClient`).
+ */
+const carbonOwnedState = (metadata: unknown) => ({
+  settings: asCarbonOwnedSettings(resolvePostingSyncSettings(metadata)),
+  syncConfig: resolveSyncConfig(metadata)
+});
+
+const CARBON_OWNED = carbonOwnedState(null);
+
 describe("planJournalPostingOperation", () => {
   it("skips non-posting events without touching the policy", async () => {
     const plan = await planJournalPostingOperation({
       client: untouchableClient,
+      effective: CARBON_OWNED,
       companyId: "co_1",
       event: {
         operation: "INSERT",
@@ -1107,6 +1251,7 @@ describe("planJournalPostingOperation", () => {
   it("plans a push with granularity + sourceType metadata for enabled journal types", async () => {
     const plan = await planJournalPostingOperation({
       client: untouchableClient,
+      effective: CARBON_OWNED,
       companyId: "co_1",
       event: {
         operation: "INSERT",
@@ -1139,6 +1284,7 @@ describe("planJournalPostingOperation", () => {
   it("records DOC_BACKED exclusions with the backing document entity", async () => {
     const plan = await planJournalPostingOperation({
       client: untouchableClient,
+      effective: CARBON_OWNED,
       companyId: "co_1",
       event: {
         operation: "INSERT",
@@ -1165,8 +1311,12 @@ describe("planJournalPostingOperation", () => {
   });
 
   it("parks DOC_SYNC_DISABLED as a Warning when the backing document sync is off", async () => {
+    const metadata = postingEnabledMetadata({
+      entities: { invoice: { enabled: false } }
+    });
     const plan = await planJournalPostingOperation({
       client: untouchableClient,
+      effective: carbonOwnedState(metadata),
       companyId: "co_1",
       event: {
         operation: "INSERT",
@@ -1179,9 +1329,7 @@ describe("planJournalPostingOperation", () => {
         },
         old: null
       },
-      integrationMetadata: postingEnabledMetadata({
-        entities: { invoice: { enabled: false } }
-      })
+      integrationMetadata: metadata
     });
 
     expect(plan.action).toBe("terminal");
@@ -1193,6 +1341,7 @@ describe("planJournalPostingOperation", () => {
   it("suffixes reversal pushes and stamps reversal metadata", async () => {
     const plan = await planJournalPostingOperation({
       client: untouchableClient,
+      effective: CARBON_OWNED,
       companyId: "co_1",
       event: {
         operation: "UPDATE",
@@ -1227,6 +1376,10 @@ describe("planJournalPostingOperation", () => {
     });
 
     const arPlan = await planJournalPostingOperation({
+      effective: {
+        settings: asCarbonOwnedSettings(resolvePostingSyncSettings(metadata)),
+        syncConfig: resolveSyncConfig(metadata)
+      },
       client: stubPaymentClient({
         receivables: "acc-ar",
         payables: "acc-ap",
@@ -1249,6 +1402,10 @@ describe("planJournalPostingOperation", () => {
     expect(arPlan.action).toBe("push");
 
     const unresolvedPlan = await planJournalPostingOperation({
+      effective: {
+        settings: asCarbonOwnedSettings(resolvePostingSyncSettings(metadata)),
+        syncConfig: resolveSyncConfig(metadata)
+      },
       client: stubPaymentClient({
         receivables: "acc-ar",
         payables: "acc-ap",
@@ -1446,5 +1603,200 @@ describe("shouldEnqueueMissingDocument", () => {
         `latest ${status} must not re-enqueue`
       ).toBe(false);
     }
+  });
+});
+
+// ── loadChargePolicyInputs ─────────────────────────────────────────
+// The backing charge resolves through the journal LINES' document
+// link, which the posting journal AND the void journal both carry.
+// `charge.journalId` only names the posting journal, so keying on it
+// let the void journal of a charge-backed charge push as a plain
+// journal entry on top of the charge DELETE (live on the Rillet sandbox).
+
+function stubCardClient(args: {
+  lines: Array<{ journalId: string; documentId: string }>;
+  charges: Array<{
+    id: string;
+    journalId: string | null;
+    type: string;
+    supplierId: string | null;
+  }>;
+}): {
+  client: SupabaseClient<Database>;
+  queries: string[];
+  ranges: Array<[number, number]>;
+} {
+  const queries: string[] = [];
+  const ranges: Array<[number, number]> = [];
+  const client = {
+    from(table: string) {
+      if (table === "journalLine") {
+        return {
+          select: () => ({
+            eq: () => ({
+              eq: () => ({
+                in: (_column: string, journalIds: string[]) => ({
+                  not: () => {
+                    queries.push(`journalLine:${journalIds.join(",")}`);
+                    const matching = args.lines.filter((line) =>
+                      journalIds.includes(line.journalId)
+                    );
+                    const page = (from = 0, to = 999) => ({
+                      data: matching.slice(from, to + 1),
+                      error: null,
+                      count: matching.length
+                    });
+                    return {
+                      range: async (from: number, to: number) => {
+                        ranges.push([from, to]);
+                        return page(from, to);
+                      },
+                      then: (
+                        resolve: (value: ReturnType<typeof page>) => unknown,
+                        reject: (reason: unknown) => unknown
+                      ) => Promise.resolve(page()).then(resolve, reject)
+                    };
+                  }
+                })
+              })
+            })
+          })
+        };
+      }
+      if (table === "charge") {
+        return {
+          select: () => ({
+            eq: () => ({
+              in: async (column: string, values: string[]) => {
+                queries.push(`charge.${column}:${values.join(",")}`);
+                return {
+                  data: args.charges.filter((row) =>
+                    column === "id"
+                      ? values.includes(row.id)
+                      : row.journalId !== null && values.includes(row.journalId)
+                  ),
+                  error: null
+                };
+              }
+            })
+          })
+        };
+      }
+      throw new Error(`unexpected table ${table}`);
+    }
+  } as unknown as SupabaseClient<Database>;
+  return { client, queries, ranges };
+}
+
+describe("loadChargePolicyInputs", () => {
+  const hertz = {
+    id: "ct_hertz",
+    journalId: "je_post",
+    type: "Charge",
+    supplierId: "sup_hertz"
+  };
+
+  it("resolves the VOID journal to the same charge as the posting journal", async () => {
+    const { client, queries } = stubCardClient({
+      lines: [
+        { journalId: "je_post", documentId: "ct_hertz" },
+        { journalId: "je_void", documentId: "ct_hertz" }
+      ],
+      charges: [hertz]
+    });
+    const result = await loadChargePolicyInputs(client, {
+      companyId: "co_1",
+      journalIds: ["je_post", "je_void"]
+    });
+    expect(result.get("je_post")).toEqual({
+      type: "Charge",
+      hasSupplier: true
+    });
+    expect(result.get("je_void")).toEqual({
+      type: "Charge",
+      hasSupplier: true
+    });
+    // One line query + one card query for the batch — never per row, and no
+    // journalId fallback query when every journal carries the link.
+    expect(queries).toEqual([
+      "journalLine:je_post,je_void",
+      "charge.id:ct_hertz"
+    ]);
+  });
+
+  it("falls back to charge.journalId for a journal whose lines carry no link", async () => {
+    const { client, queries } = stubCardClient({
+      lines: [],
+      charges: [{ ...hertz, supplierId: null }]
+    });
+    const result = await loadChargePolicyInputs(client, {
+      companyId: "co_1",
+      journalIds: ["je_post", "je_other"]
+    });
+    expect(result.get("je_post")).toEqual({
+      type: "Charge",
+      hasSupplier: false
+    });
+    expect(result.has("je_other")).toBe(false);
+    expect(queries).toEqual([
+      "journalLine:je_post,je_other",
+      "charge.journalId:je_post,je_other"
+    ]);
+  });
+
+  it("loads card-document links beyond the PostgREST row cap", async () => {
+    const padding = Array.from({ length: 1000 }, (_, index) => ({
+      journalId: "je_padding",
+      documentId: `ct_padding_${index}`
+    }));
+    const { client, ranges } = stubCardClient({
+      lines: [...padding, { journalId: "je_tail", documentId: "ct_tail" }],
+      charges: [
+        {
+          id: "ct_padding_0",
+          journalId: "je_padding",
+          type: "Charge",
+          supplierId: "sup_padding"
+        },
+        {
+          id: "ct_tail",
+          journalId: null,
+          type: "Charge",
+          supplierId: "sup_tail"
+        }
+      ]
+    });
+
+    const result = await loadChargePolicyInputs(client, {
+      companyId: "co_1",
+      journalIds: ["je_padding", "je_tail"]
+    });
+
+    expect(result.get("je_tail")).toEqual({
+      type: "Charge",
+      hasSupplier: true
+    });
+    // The tail row lives on the second page, so pagination must reach past the
+    // 1000-row cap. `fetchAllRecords` fetches pages speculatively in concurrent
+    // waves (PAGE_CONCURRENCY) and returns on the first short page, so it may
+    // issue extra out-of-range reads after [1000, 1999]; assert only the two
+    // data-bearing pages rather than coupling to the concurrency window.
+    expect(ranges.slice(0, 2)).toEqual([
+      [0, 999],
+      [1000, 1999]
+    ]);
+  });
+
+  it("issues no queries for an empty batch", async () => {
+    const { client, queries } = stubCardClient({
+      lines: [],
+      charges: []
+    });
+    const result = await loadChargePolicyInputs(client, {
+      companyId: "co_1",
+      journalIds: []
+    });
+    expect(result.size).toBe(0);
+    expect(queries).toEqual([]);
   });
 });

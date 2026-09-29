@@ -1,4 +1,6 @@
 import { useCarbon } from "@carbon/auth";
+import { convertKbToString, TEMP_STAGING_BUCKET } from "@carbon/files";
+import { supportedModelTypes } from "@carbon/files/cad";
 import { ValidatedForm } from "@carbon/form";
 import {
   Button,
@@ -15,12 +17,7 @@ import {
   toast,
   VStack
 } from "@carbon/react";
-import {
-  convertKbToString,
-  getFileSizeLimit,
-  INPUT_FORMAT,
-  supportedModelTypes
-} from "@carbon/utils";
+import { getFileSizeLimit, INPUT_FORMAT } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { PostgrestResponse } from "@supabase/supabase-js";
 import { nanoid } from "nanoid";
@@ -104,7 +101,7 @@ const PartForm = ({ initialValues, type = "card", onClose }: PartFormProps) => {
     // Resumable (TUS) upload — a standard buffered upload times out on multi-GB
     // CAD files. Runs in parallel with the record insert.
     const [{ error: uploadError }, recordInsert] = await Promise.all([
-      runUpload({ bucket: "temp-staging", path: fileName, file }),
+      runUpload({ bucket: TEMP_STAGING_BUCKET, path: fileName, file }),
       carbon.from("modelUpload").insert({
         id: modelId,
         modelPath: fileName,

@@ -109,7 +109,7 @@ export const analyticsReportKeys = [
 export type AnalyticsReportKey = (typeof analyticsReportKeys)[number];
 
 // Account scope: exactly one selector. "scrapAccounts" resolves at runtime to
-// accountDefault.scrapAccount (getScrapAccountIds in accounting.ee.service.ts).
+// accountDefault.scrapAccount (getScrapAccountIds in accounting.service.ts).
 export type AnalyticsAccountScope =
   | { classes: (typeof accountClassTypes)[number][] }
   | { types: (typeof accountTypes)[number][] }
@@ -457,6 +457,10 @@ export const defaultBalanceSheetAccountValidator = z.object({
   payablesAccount: z.string().min(1, {
     message: "Payables account is required"
   }),
+  // Optional BY DESIGN: the column is nullable with a runtime fallback to
+  // `payablesAccount`, and a required field would break saves on every company
+  // whose chart has no Employee Reimbursements Payable account.
+  employeeReimbursementsPayableAccount: z.string().optional(),
   salesTaxPayableAccount: z.string().min(1, {
     message: "Sales tax payable account is required"
   }),
@@ -621,6 +625,12 @@ export const costCenterValidator = z.object({
   ownerId: z.string().min(1, { message: "Owner is required" })
 });
 
+export const projectValidator = z.object({
+  id: zfd.text(z.string().optional()),
+  name: z.string().trim().min(1, { message: "Name is required" }),
+  description: zfd.text(z.string().trim().optional())
+});
+
 export const intercompanyTransactionStatuses = [
   "Unmatched",
   "Matched",
@@ -749,7 +759,9 @@ export const journalEntrySourceTypes = [
   "Credit Memo",
   "Debit Memo",
   "Non-Conformance",
-  "Inbound Inspection"
+  "Inbound Inspection",
+  "Charge",
+  "Reimbursement"
 ] as const;
 
 export const journalEntryStatuses = ["Draft", "Posted", "Reversed"] as const;
@@ -852,6 +864,7 @@ export const dimensionEntityTypes = [
   "ItemPostingGroup",
   "Location",
   "Process",
+  "Project",
   "ScrapReason",
   "Supplier",
   "SupplierType",

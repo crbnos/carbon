@@ -56,7 +56,14 @@ export function materialSignature(
     const s = lineSignature(m, rules);
     if (s) sigs.add(s);
   }
-  return [...sigs].sort().join(" + ");
+  const parts = [...sigs].sort();
+  // Candidate-level dimension: when the process cares about the produced item,
+  // it splits groups (and shows in the mixed warning) like any other dimension.
+  // Default is "ignore", so an unconfigured process's signature is unchanged.
+  if (rules.producedItem !== "ignore" && candidate.itemReadableId) {
+    parts.push(`→ ${candidate.itemReadableId}`);
+  }
+  return parts.join(" + ");
 }
 
 // The GROUPING key: the material signature, falling back to the produced item
@@ -87,7 +94,10 @@ export function candidateValueSets(candidate: BatchCandidate): MemberValueSets {
     if (m.formName) form.push(m.formName);
     if (m.finishName) finish.push(m.finishName);
   }
-  return { item, substance, grade, dimension, form, finish };
+  const producedItem = candidate.itemReadableId
+    ? [candidate.itemReadableId]
+    : [];
+  return { item, substance, grade, dimension, form, finish, producedItem };
 }
 
 export function setupDurationOf(candidate: BatchCandidate): number {
@@ -443,23 +453,46 @@ export function deriveFacetDimensions(
   return dims;
 }
 
+// The due-date filter: a rolling window ("due within N days", overdue
+// included) or a calendar range picked day to day, both ends inclusive.
+export type DueFilter =
+  | { kind: "window"; days: number }
+  | { kind: "range"; start: CalendarDate; end: CalendarDate };
+
+// Every distinct day (YYYY-MM-DD) the candidates are due on — the calendar
+// marks these days so a planner can see where work falls before picking.
+export function dueDatesOf(candidates: BatchCandidate[]): Set<string> {
+  const days = new Set<string>();
+  for (const c of candidates) {
+    const due = dueDateOf(c);
+    if (due) days.add(due);
+  }
+  return days;
+}
+
 // A candidate matches if ANY BOM line satisfies ALL active facets, the search
-// term matches its job/item/op text, and it falls inside the due window. Sorted
-// most-urgent first (due date asc, undated last). `today` is injected so this
-// stays pure and testable.
+// term matches its job/item/op text, and it falls inside the due filter.
+// Sorted most-urgent first (due date asc, undated last). `today` is injected
+// so this stays pure and testable.
 export function filterAndSortCandidates(
   candidates: BatchCandidate[],
   opts: {
     activeFacetKeys: string[];
     facets: Record<string, string[]>;
     search: string;
-    dueWindow: number | null;
+    due: DueFilter | null;
     today: CalendarDate;
   }
 ): BatchCandidate[] {
-  const { activeFacetKeys, facets, search, dueWindow, today } = opts;
+  const { activeFacetKeys, facets, search, due: dueFilter, today } = opts;
   const term = search.trim().toLowerCase();
-  const dueLimit = dueWindow !== null ? today.add({ days: dueWindow }) : null;
+  const dueStart = dueFilter?.kind === "range" ? dueFilter.start : null;
+  const dueEnd =
+    dueFilter?.kind === "range"
+      ? dueFilter.end
+      : dueFilter?.kind === "window"
+        ? today.add({ days: dueFilter.days })
+        : null;
   const matches = candidates.filter((c) => {
     if (activeFacetKeys.length > 0) {
       const anyLineMatches = (c.materials ?? []).some((m) =>
@@ -467,9 +500,12 @@ export function filterAndSortCandidates(
       );
       if (!anyLineMatches) return false;
     }
-    if (dueLimit) {
+    if (dueEnd) {
       const due = dueDateOf(c);
-      if (!due || parseDate(due).compare(dueLimit) > 0) return false;
+      if (!due) return false;
+      const dueDay = parseDate(due);
+      if (dueDay.compare(dueEnd) > 0) return false;
+      if (dueStart && dueDay.compare(dueStart) < 0) return false;
     }
     if (term) {
       const haystack = [

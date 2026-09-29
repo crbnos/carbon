@@ -15,7 +15,7 @@ import {
   getFiscalYearSettings,
   translateCompanyBalances
 } from "~/modules/accounting";
-import { getConsolidatedBalancesForReport } from "~/modules/accounting/accounting.ee.server";
+import { getConsolidatedBalancesForReport } from "~/modules/accounting/accounting.server";
 import {
   exportTrialBalance,
   ReportFilters,

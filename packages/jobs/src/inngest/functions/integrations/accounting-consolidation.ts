@@ -73,6 +73,10 @@ import {
 import { PostgresDriver } from "kysely";
 import { inngest } from "../../client";
 import {
+  type IsolatedStepOutcome,
+  runIsolatedCompanyStep
+} from "./accounting-auth-failure";
+import {
   type ConsolidationGroup,
   getSyncOperationActor,
   getSyncOperationFailureRecord,
@@ -718,7 +722,7 @@ export const accountingConsolidationFunction = inngest.createFunction(
         // per-provider consolidation push.
         const integrations = await client
           .from("companyIntegration")
-          .select("id, companyId, metadata")
+          .select("id, companyId, metadata, updatedBy")
           .eq("id", ProviderID.XERO)
           .eq("active", true);
 
@@ -736,7 +740,11 @@ export const accountingConsolidationFunction = inngest.createFunction(
               hasDailySummarySourceTypes(settings)
             );
           })
-          .map((row) => ({ companyId: row.companyId, providerId: row.id }));
+          .map((row) => ({
+            companyId: row.companyId,
+            providerId: row.id,
+            updatedBy: row.updatedBy
+          }));
       }
     );
 
@@ -745,26 +753,30 @@ export const accountingConsolidationFunction = inngest.createFunction(
     }
 
     const results: Array<
-      { companyId: string; providerId: string } & ConsolidationSummary
+      {
+        companyId: string;
+        providerId: string;
+      } & IsolatedStepOutcome<ConsolidationSummary>
     > = [];
 
     for (const target of targets) {
-      const result = await step.run(
-        `consolidate-${target.companyId}-${target.providerId}`,
-        async () => {
+      const result = await runIsolatedCompanyStep({
+        step,
+        client,
+        id: `consolidate-${target.companyId}-${target.providerId}`,
+        target,
+        fn: async () => {
+          // Process-lifetime cached pool shared with events/sync.ts and the
+          // pull sweep — never end it here (see accounting-pull-sweep.ts).
           const pool = getPostgresConnectionPool(5);
           const database = getPostgresClient(pool, PostgresDriver);
-          try {
-            return await consolidateCompany({
-              companyId: target.companyId,
-              providerId: target.providerId as ProviderID,
-              database
-            });
-          } finally {
-            await pool.end();
-          }
+          return await consolidateCompany({
+            companyId: target.companyId,
+            providerId: target.providerId as ProviderID,
+            database
+          });
         }
-      );
+      });
 
       results.push({
         companyId: target.companyId,

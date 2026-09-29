@@ -8,7 +8,27 @@
  * routes stay thin and the thresholds are unit-testable without a database.
  */
 
+import { SCALE } from "@carbon/utils";
 import { fromDate, getLocalTimeZone } from "@internationalized/date";
+
+/**
+ * Sanitize a numeric text input for a bare (non-react-aria) cell: keep digits
+ * and a single leading decimal point, drop everything else and any extra dots,
+ * and truncate the fraction to SCALE (5) places — the internal storage
+ * precision, so a typed value never carries more decimals than the database can
+ * hold. `decimalInput("1.2.3") === "1.23"`, `decimalInput("1.1234567") === "1.12345"`.
+ */
+export function decimalInput(value: string): string {
+  const cleaned = value.replace(/[^0-9.]/g, "");
+  const dot = cleaned.indexOf(".");
+  if (dot === -1) return cleaned;
+  const whole = cleaned.slice(0, dot);
+  const fraction = cleaned
+    .slice(dot + 1)
+    .replace(/\./g, "")
+    .slice(0, SCALE);
+  return `${whole}.${fraction}`;
+}
 
 export type DisplayStatus = "ok" | "alert";
 

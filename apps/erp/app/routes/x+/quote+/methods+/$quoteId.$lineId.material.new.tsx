@@ -11,6 +11,7 @@ import {
   upsertQuoteMaterial,
   upsertQuoteMaterialMakeMethod
 } from "~/modules/sales";
+import { requireCompanyRecord } from "~/modules/shared/shared.server";
 import { setCustomFields } from "~/utils/form";
 
 export async function action({ request, params }: ActionFunctionArgs) {
@@ -34,7 +35,26 @@ export async function action({ request, params }: ActionFunctionArgs) {
     return validationError(validation.error);
   }
 
+  // The writes below use the service role, which bypasses RLS: every id from
+  // the URL and the form must belong to this company and this quote line.
   const serviceRole = getCarbonServiceRole();
+  await Promise.all([
+    requireCompanyRecord(serviceRole, "quoteLine", companyId, {
+      id: lineId,
+      quoteId
+    }),
+    requireCompanyRecord(serviceRole, "quoteMakeMethod", companyId, {
+      id: validation.data.quoteMakeMethodId,
+      quoteLineId: lineId
+    }),
+    validation.data.quoteOperationId
+      ? requireCompanyRecord(serviceRole, "quoteOperation", companyId, {
+          id: validation.data.quoteOperationId,
+          quoteLineId: lineId
+        })
+      : undefined
+  ]);
+
   const insertQuoteMaterial = await upsertQuoteMaterial(serviceRole, {
     ...validation.data,
     quoteId,
@@ -73,6 +93,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
       .from("quoteMaterialWithMakeMethodId")
       .select("*")
       .eq("id", quoteMaterialId)
+      .eq("companyId", companyId)
       .single();
     if (materialMakeMethod.error) {
       return data(
@@ -105,7 +126,13 @@ export async function action({ request, params }: ActionFunctionArgs) {
     }
   }
 
-  await recalculateQuoteLinePrices(serviceRole, quoteId, lineId, userId);
+  await recalculateQuoteLinePrices(
+    serviceRole,
+    companyId,
+    quoteId,
+    lineId,
+    userId
+  );
 
   return {
     id: quoteMaterialId,

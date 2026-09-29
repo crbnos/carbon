@@ -29,7 +29,7 @@ pnpm + Turborepo monorepo of `apps/*` and `packages/*`.
   types, and a typed Kysely client.
 - **jobs** — Inngest-powered background job orchestration (events, email/PDF
   rendering, printing, webhooks). `inngest-cli dev` for local.
-- **lib** — Shared backend utilities: Inngest client, Resend email, Slack helpers,
+- **lib** — Shared backend utilities: Inngest client, SMTP email, Slack helpers,
   event definitions.
 - **react** — Shared UI component library (Radix UI, TanStack Table/Virtual,
   Recharts, rich-text/editor). Grep here before writing UI.
@@ -40,6 +40,8 @@ pnpm + Turborepo monorepo of `apps/*` and `packages/*`.
 - **kv** — Redis client (ioredis) with a `Ratelimit` class (sliding-window /
   fixed-window / token-bucket); rate limiting and caching.
 - **locale** — i18n via Lingui v5 (multiple language catalogs, locale provider).
+- **files** — File handling by type (`.` MIME/classification/downloads, `./csv`,
+  `./media` incl. the shared image pipeline + HEIC conversion, `./cad`, `./pdf`).
 - **env** — Centralized environment-variable loading and validation.
 - **config** — Shared build/test config (tsconfig, vitest, tailwind theme).
 - **dev** — Local dev CLI (`crbn`) for environment setup and Docker / Supabase /

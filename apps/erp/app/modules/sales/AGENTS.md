@@ -7,7 +7,7 @@ Quotes (with cost rollup and pricing), sales orders, sales RFQs, customer manage
 - **Opportunity** — deal container linking RFQs, quotes, and sales orders for one customer engagement.
 - **Quote** — detailed cost estimate with line items, each having a make method (BOM + routing) and quantity-break pricing. Statuses: Draft → Pending → Sent → Ordered / Lost / Cancelled.
 - **Quote Revision** — `quote.revisionId`. Unlike a PO (amended in place), a quote revision is a **new `quote` row** created by `copyQuote` → the `get-method` edge function (`quoteToQuote`, `asRevision: true`), keeping the same `quoteId` with `revisionId = max + 1`, sharing the source `opportunityId`. Each revision gets its **own `externalLink`** row, whose `documentId` is revision-qualified (`Q000001-1`) because `externalLink` is UNIQUE on `(documentId, documentType, companyId)` — an unqualified id collides with the original's link. `deleteQuote` does not remove the link row, so that insert uses `onConflict … doUpdateSet` to reuse the orphan a deleted revision left behind. Displayed as `Q000001-1` when > 0 via `getQuoteDisplayId` (`@carbon/documents/utils`) on the PDF, email, share page, and filenames; two-tone in-app rendering uses `<RevisionSuffix>` (`~/components`).
-- **Quote Line Pricing** — per-quantity-break pricing. PK is `(quoteLineId, quantity)` — no `id` column. `discountPercent` is a **fraction 0–1** (not 0–100). Generated columns compute net/converted prices.
+- **Quote Line Pricing** — per-quantity-break pricing. PK is `(quoteLineId, quantity)` — no `id` column. `discountPercent` is a **fraction 0–1** (not 0–100). Generated columns compute net/converted prices. **Lead time can be PREDICTED from the shop schedule** rather than typed: the calendar-clock button on the Lead Time row opens `QuoteLeadTimeModal`, which POSTs `$quoteId.$lineId.lead-time.tsx` → `runQuoteLeadTimeWhatIf` (`@carbon/planning`) and applies one constraint's value to every break at once. The write goes through the grid's `onUpdateLeadTimes` (`quoteLinePrice.leadTime`, one state update for every break — never a loop over `onUpdatePrice`, which snapshots state per call; a failed row is rolled back and the modal stays open) — no new persistence, so `resolvePreservedQuoteLinePriceFields` is untouched.
 - **Pricing Rules** — company-scoped Discount/Markup rules. Discounts are non-stacking (highest-priority wins); Markups stack and compound in priority order.
 - **Price Overrides** — customer-specific or type-specific price overrides with quantity breaks via `customerItemPriceOverride` / `customerItemPriceOverrideBreak`. Precedence: customer > customer-type > all-customers > base price.
 - **Sales Order** — confirmed order from a quote. Lines carry `methodType` (Make to Order, Make to Stock, etc.) that determines production handling.
@@ -60,6 +60,7 @@ cd apps/erp && pnpm exec vitest run app/modules/sales
 
 ## Key Service Functions
 
+- `importQuotes` (`sales.import.server.ts`) — app-side bulk CSV quote importer (modes `quote` / `quoteLine` / `quoteWithLines`); reuses `insertQuote` / `upsertQuoteLine` / `upsertQuoteLinePrices` so quote side effects are preserved. Wired from `routes/x+/shared+/import.$tableId.tsx`; config in `modules/shared/imports.models.ts`. Create-only idempotency via `externalIntegrationMapping` (integration `csv`).
 - `convertQuoteToOrder` / `convertSalesRfqToQuote` — lifecycle conversions via edge function
 - `copyQuoteLine` / `copyQuote` — duplication via `get-method` edge function
 - `applyPriceRules` — applies matched discount/markup rules to a starting price
@@ -76,12 +77,44 @@ cd apps/erp && pnpm exec vitest run app/modules/sales
 - `getReturnableLinesForCustomer` (posted shipment lines minus already-authorized) — RMA line picker; `getShippedTrackedEntitiesForCustomer` — receipt-side serial/batch candidates (entities of the item currently with the customer via posted shipments)
 - `createSalesReturnOrderCredit` (Kysely, row-locked creditable cap, THROWS) / `getCreditableQuantities` / `createReplacementSalesOrder` (resolvePrice-priced draft SO)
 - `setSalesReturnOrderLineDisposition` — Use As Is releases returned entities; Scrap/Rework escalate to a quality Issue via the line's issue route
+- `createOpportunityDocumentUploadUrl` / `createOpportunityLineDocumentUploadUrl` — MCP file upload (step 1): presigned URLs for opportunity (`opportunity/{opportunityId}`) and opportunity-line documents; pair with `documents_insertUploadedDocument`. See `.claude/rules/mcp-tools-reference.md` → "File uploads"
 
 ## Key Exports
 
 ```typescript
 import { resolvePrice, applyPriceRules, getCustomer } from "~/modules/sales";
 ```
+
+## Sales Rules (sub-area)
+
+Configurable if-condition-then-error/warn rules evaluated when an item is added to a **sales document** (quote line, sales order line, sales invoice line) — e.g. "if item type is X and the customer's ship-to country is Y → block". Lives **inside** this module: validators in `sales.models.ts`, UI in `ui/SalesRules/`; the admin CRUD is the family-parametrized implementation in `~/modules/shared` (see "Service functions" below). There is no `modules/sales-rules` directory — a rule feature is not its own domain.
+
+Distinct from **storage rules** (`~/modules/inventory`, warehouse/MES surfaces) and **configurator rules** (`configurationRule`, `x+/part+/$itemId.rule*.tsx`) — storage and sales rules now share ONE table, `enforcementRule`, discriminated by `family` ('storage' | 'sales'); the configurator's `configurationRule` is unrelated. Every read/write in this module MUST filter `family = 'sales'`.
+
+- **Rule** — `enforcementRule` row (`family = 'sales'`): `conditionAst` JSONB (`{kind: all|any|none, conditions:[{field,op,value}]}`), `severity` (`error` blocks; `warn` requires acknowledgment), `message` with `{token}` interpolation, `surfaces` (`enforcementRuleSurface` enum; the sales-legal subset `quoteLine` | `salesOrderLine` | `salesInvoiceLine` is enforced by the `enforcementRule_sales_surfaces` CHECK), item scoping via `filteredItemTypes`/`filteredItemGroupIds`/`filteredItemMatchAll` (empty = all items) or explicit `enforcementRuleItemAssignment` pins (shared with the storage family — always resolve pins against a family-filtered rule set, never a PostgREST embed).
+- **Shared engine** — the AST compiler/evaluator lives in `@carbon/utils` (`rules.ts` + `field-registry.ts`, with the zod AST mirror in `rules-schema.ts`): `compileSalesRuleWithCache`, `evaluateRules`, `SALES_RULE_SURFACES`, `getFieldsForSalesRuleSurfaces`, `SALES_RULE_FIELD_REGISTRY` (customer type/status/country + synthesized `customer.customFields.*`). Countries are **alpha-2** codes.
+- **Evaluator** — `@carbon/ee/rules.server` `evaluateSalesRuleLines` (service-role client; plan-gated on `SALES_RULES`). Missing ship-to → the engine's required-field semantics emit "Customer location is required" at the rule's severity.
+- **Fail loud, never silently permissive.** A failed rule load, item load, or ship-to resolution THROWS. Each of those returns "nothing to enforce" if swallowed, which turns a compliance control off with no signal.
+- **Drop-ship ship-to** — `resolveSalesOrderShipTo` returns the shipment's `customerLocationId`, never the header's, when `dropShipment` is set. If the drop-ship location is missing it returns null rather than falling back: the header is a DIFFERENT address, so a fallback would clear a country rule that should have blocked.
+- **Invoice ship-to** — a sales invoice has NO customer ship-to (`invoiceCustomerLocationId` is the bill-to; the `locationId` columns are Carbon's own warehouses). An order-derived line (`salesInvoiceLine.salesOrderId`) resolves through `resolveSalesOrderShipTo`; a standalone line passes `customerLocationId: null` and fails closed via required-field semantics. NEVER substitute the bill-to — pinned by `packages/ee/src/rules/sales/invoice-shipto.test.ts`.
+- **One modal** — enforcement actions return `{ violations, ruleNames }`; forms submit via `useRuleViolations` and render the shared `RuleViolationModal` (`@carbon/ee/rules`). Do not add a second violation UI.
+- **Acknowledgment log** — `enforcementRuleAcknowledgment` (append-only): one row per deduped violation on blocked attempts and acknowledged overrides.
+
+### Sales Rules safety
+
+- MUST evaluate with the **service role** client in route actions AFTER `requirePermissions` — the check must see full truth regardless of the acting user's read permissions.
+- MUST gate write routes with `requireFeature({ feature: "SALES_RULES" })` (key in `packages/ee/src/plan.ts`) — community-blocked, not merely Cloud-paywalled. The ee write functions also embed `requireEntitlement("SALES_RULES")` as the un-strippable lock.
+- The shared rule-builder components (`RuleBuilder`, `SurfacesField`, `MessageWithTokens`, `SeveritySelect`, `ItemFilterSelector`) live in `~/modules/inventory/ui/StorageRules/` and are imported by **deep path**. Keep any parameterization **additive** (defaults preserve storage behavior), and never import a module *barrel* from these components — keep the dependency a one-way deep import from `sales` into the inventory UI folder to avoid a barrel cycle. The shared zod AST schema lives in `@carbon/utils` for the same reason.
+- Never widen the `enforcementRule_sales_surfaces` CHECK to admit storage surfaces — that CHECK is what replaced the old per-family enum typing.
+- Never duplicate `isBlocked`/`dedupeViolations`/the violation modal — import from `@carbon/ee/rules(.server)`.
+
+| Table | Purpose |
+|---|---|
+| `enforcementRule` (`family='sales'`) | Rule definitions (house PK `("id","companyId")`; RLS writes `sales_*` for sales-family rows) |
+| `enforcementRuleItemAssignment` | Explicit per-item pins, PK `(itemId, ruleId)` — SHARED with storage rules |
+| `enforcementRuleAcknowledgment` | Append-only override/block evidence (INSERT via `sales_create`) |
+
+Service functions: the admin CRUD is NOT in `sales.service.ts`. The read helpers (`getEnforcementRules` / `getEnforcementRule` / `getEnforcementRuleAssignmentCounts`) share one parametrized implementation in `~/modules/shared`, called with `"sales"` as the family. The entitlement-gated WRITES (`upsertEnforcementRule` / `deleteEnforcementRule`) moved to `@carbon/ee/rules.server` (`packages/ee/src/rules/service.server.ts`) — they embed `requireEntitlement("SALES_RULES")`. Cross-app READ queries `getActiveSalesRulesForItems` / `getSalesRuleAssignmentsForItem` / `getSalesRulesList` are imported from `@carbon/ee/rules` DIRECTLY at the call site; the gated writes `assignSalesRule` / `unassignSalesRule` are imported from `@carbon/ee/rules.server` — this module's barrel deliberately does not re-export any of them. Routes: `x+/sales+/sales-rules*` (list/new/edit/delete/assign/unassign), sidebar entry in `useSalesSubmodules`, per-item "Sales rules" card on `x+/part+/$itemId.inventory.tsx`. Enforcement: the quote, sales-order, and sales-invoice line create + edit actions, plus document gates (quote finalize/convert, RFQ convert, order confirm, shipment post, invoice post — the invoice-post gate runs in `x+/sales-invoice+/$invoiceId.post.tsx` BEFORE the optimistic `Pending` write). Every blocked or acknowledged outcome (line checks, gates, and the MCP backstops' blocks) is recorded through `recordSalesRuleOutcome` in `sales.server.ts` — one `enforcementRuleAcknowledgment` row per violation plus the `sales-rule-violation` notification; the RFQ-convert gate is the one exception (the table's documentType CHECK has no `salesRfq`; the minted quote re-records downstream).
 
 ## Related Modules
 

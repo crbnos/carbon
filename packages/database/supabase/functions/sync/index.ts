@@ -186,7 +186,39 @@ serve(async (req: Request) => {
         .from("makeMethod")
         .select("id, itemId, version, status")
         .eq("id", makeMethodId)
-        .single();
+        .eq("companyId", companyId)
+        .maybeSingle();
+
+      // Service-role client: a make method outside companyId is a 404.
+      if (!topLevelMakeMethod.data) {
+        return errorResponse("Make method not found", 404);
+      }
+
+      const existingItemIds = new Set(
+        data.map((item: { id?: string }) => item.id).filter(Boolean)
+      );
+
+      const existingItems = await client
+        .from("item")
+        .select(
+          "id, readableId, readableIdWithRevision, unitOfMeasureCode, type, revision"
+        )
+        .eq("companyId", companyId)
+        .in("id", Array.from(existingItemIds));
+      if (existingItems.error) return errorResponse("Failed to fetch items", 500);
+
+      const existingItemsByItemId = new Map(
+        existingItems.data?.map((item) => [item.id, item]) ?? []
+      );
+
+      // Every item id in the body is updated by id alone below, so each must
+      // have come back from the companyId-scoped read above. Checked before
+      // anything is written (the Draft make method below).
+      for (const itemId of existingItemIds) {
+        if (!existingItemsByItemId.has(itemId as string)) {
+          return errorResponse("Item not found", 404);
+        }
+      }
 
       let activeMakeMethodId = makeMethodId;
       let topLevelSourceMakeMethodId: string | null = null;
@@ -246,24 +278,15 @@ serve(async (req: Request) => {
         }
       }
 
-      const existingItemIds = new Set(
-        data.map((item: { id?: string }) => item.id).filter(Boolean)
-      );
-
-      const [existingMakeMethods, existingItems] = await Promise.all([
-        client
-          .from("activeMakeMethods")
-          .select("id, itemId, version, status")
-          .eq("companyId", companyId)
-          .in("itemId", Array.from(existingItemIds)),
-        client
-          .from("item")
-          .select(
-            "id, readableId, readableIdWithRevision, unitOfMeasureCode, type, revision"
-          )
-          .eq("companyId", companyId)
-          .in("id", Array.from(existingItemIds)),
-      ]);
+      // Read after the Draft above may have been created, as before.
+      const existingMakeMethods = await client
+        .from("activeMakeMethods")
+        .select("id, itemId, version, status")
+        .eq("companyId", companyId)
+        .in("itemId", Array.from(existingItemIds));
+      if (existingMakeMethods.error) {
+        return errorResponse("Failed to fetch make methods", 500);
+      }
 
       logger.info({
         action: "fetched_active_make_methods",
@@ -281,10 +304,6 @@ serve(async (req: Request) => {
             status: makeMethod.status as "Draft" | "Active" | "Archived",
           },
         ]) ?? []
-      );
-
-      const existingItemsByItemId = new Map(
-        existingItems.data?.map((item) => [item.id, item]) ?? []
       );
 
       try {

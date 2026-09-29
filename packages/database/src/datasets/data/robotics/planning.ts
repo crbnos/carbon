@@ -1,6 +1,7 @@
 import type {
   DemandOrderSpec,
   DemandProjectionSpec,
+  HqPlanningSpec,
   PlanningData
 } from "../../types.ts";
 
@@ -62,9 +63,15 @@ export const DEMAND_ORDER: DemandOrderSpec = {
   ]
 };
 
+export const HQ_PLANNING: HqPlanningSpec = {
+  reorderItemIds: ["CTRL-100", "DRV-SRV-400"],
+  demandProjections: [{ readableId: "CTRL-100", quantities: [1, 1, 1, 2] }]
+};
+
 export const roboticsPlanning: PlanningData = {
   buyItemIds: BUY_ITEM_IDS,
   makeItemIds: MAKE_ITEM_IDS,
   demandProjections: DEMAND_PROJECTIONS,
-  demandOrder: DEMAND_ORDER
+  demandOrder: DEMAND_ORDER,
+  hq: HQ_PLANNING
 };

@@ -139,8 +139,13 @@ export async function seedCompanyReferenceData(
     [companyId, companyName, companyGroupId]
   );
 
+  // The AFTER INSERT trigger on company (20260917163108) already provisions
+  // the bucket; keep this explicit insert as a no-op safety net for databases
+  // where that migration hasn't applied yet.
   await client.query(
-    `INSERT INTO storage.buckets (id, name, public) VALUES ($1, $2, false)`,
+    `INSERT INTO storage.buckets (id, name, public, file_size_limit)
+     VALUES ($1, $2, false, 52428800)
+     ON CONFLICT (id) DO NOTHING`,
     [companyId, companyId]
   );
 

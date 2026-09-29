@@ -5,6 +5,7 @@ import {
   DatePicker as DatePickerBase,
   FormControl,
   FormErrorMessage,
+  FormHelperText,
   FormLabel,
   LabelWithHelp
 } from "@carbon/react";
@@ -86,16 +87,15 @@ const DatePicker = ({
   );
 
   useEffect(() => {
-    if (value) {
+    if (value !== undefined) {
       setDate(safeParseDate(value));
     }
   }, [value]);
 
   const handleChange = async (newDate: CalendarDate | null) => {
-    if (!newDate) return;
     const formattedDate = newDate ? newDate.toString() : null;
     flushSync(() => {
-      setDate(newDate);
+      setDate(newDate ?? undefined);
     });
     if (inline) {
       const result = await validate();
@@ -136,10 +136,14 @@ const DatePicker = ({
         maxValue={maxValue}
         onChange={handleChange as any}
         inline={inline ? DatePickerPreview : undefined}
-        helperText={helperText}
+        helperText={inline ? helperText : undefined}
         label={label}
       />
-      {error && <FormErrorMessage>{error}</FormErrorMessage>}
+      {error ? (
+        <FormErrorMessage>{error}</FormErrorMessage>
+      ) : (
+        !inline && helperText && <FormHelperText>{helperText}</FormHelperText>
+      )}
     </FormControl>
   );
 };

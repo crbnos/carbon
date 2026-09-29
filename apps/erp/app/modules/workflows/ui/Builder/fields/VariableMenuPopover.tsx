@@ -1,5 +1,5 @@
+import type { ItemRef, ValueType, VariableRef } from "@carbon/ee/workflows";
 import { Popover, PopoverAnchor, PopoverContent } from "@carbon/react";
-import type { ItemRef, ValueType, VariableRef } from "@carbon/workflows";
 import { useLingui } from "@lingui/react/macro";
 import type { ReactNode } from "react";
 import { useEffect, useRef, useState } from "react";

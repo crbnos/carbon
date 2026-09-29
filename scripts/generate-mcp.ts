@@ -14,7 +14,10 @@ import {
   buildManifestDigest,
   serializeManifestDigest
 } from "./lib/manifest-digest";
-import { buildAllToolMetadataWithValidators } from "./lib/service-metadata";
+import {
+  buildAllToolMetadataWithValidators,
+  MODULE_LIST
+} from "./lib/service-metadata";
 
 const ROOT = path.resolve(__dirname, "..");
 const METADATA_FILE = path.join(
@@ -38,8 +41,9 @@ export async function generateToolMetadata(): Promise<void> {
       onModule: (mod, count) => console.log(`  ✓ ${mod}: ${count} tools`),
     });
 
+  // No timestamp: the file must be a pure function of the sources so repeated
+  // runs on an unchanged tree are byte-identical.
   const metadata = {
-    generated: new Date().toISOString(),
     totalTools: allTools.length,
     modules: [...new Set(allTools.map((t) => t.module))].length,
     tools: allTools,
@@ -61,7 +65,7 @@ export async function generateToolMetadata(): Promise<void> {
   // silently — that fallback is the only path that can publish a lossy schema.
   const fallbacks = resolutions.filter((r) => r.how !== "native");
   console.log(
-    `  Schemas: ${registryStats.validatorsConverted} validators converted from ${registryStats.modulesLoaded}/15 modules`
+    `  Schemas: ${registryStats.validatorsConverted} validators converted from ${registryStats.modulesLoaded}/${MODULE_LIST.length} modules`
   );
   console.log(
     `  Responses: ${responseStats.derived}/${responseStats.functions} reflected from return types (${responseStats.empty} yielded nothing usable)`

@@ -1,18 +1,13 @@
+export { parseJobFilePath } from "@carbon/files/media";
 export { sanitize } from "@carbon/utils";
 
 /**
- * Parses a private-bucket job file path. Supports both layouts:
- * - legacy flat:   {companyId}/job/{operationId}/{file}
- * - step records:  {companyId}/job/{operationId}/{stepId}/{nanoid}/{file}
+ * The code on an error a service writes itself: a refused business rule, not
+ * a database failure. API and MCP callers see its message as written, while a
+ * database failure is reduced to a fixed public message.
  */
-export function parseJobFilePath(
-  path: string | undefined
-): { companyId: string; operationId: string } | null {
-  if (!path) return null;
-  const [companyId, kind, operationId, ...rest] = path.split("/");
-  if (kind !== "job" || !companyId || !operationId) return null;
-  if (rest.length !== 1 && rest.length !== 3) return null;
-  if (rest.some((segment) => !segment || segment === "." || segment === ".."))
-    return null;
-  return { companyId, operationId };
+export const SERVICE_RULE_ERROR_CODE = "CARBON_RULE";
+
+export function ruleError(message: string) {
+  return { code: SERVICE_RULE_ERROR_CODE, message };
 }

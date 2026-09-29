@@ -4,6 +4,12 @@ import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { Json } from "@carbon/database";
 import { SalesInvoiceEmail } from "@carbon/documents/email";
 import { createMappingService } from "@carbon/ee/accounting";
+import {
+  dedupeViolations,
+  evaluateSalesRulesForSalesDocument,
+  isBlocked
+} from "@carbon/ee/rules.server";
+import { storage } from "@carbon/files";
 import { validator } from "@carbon/form";
 import { trigger } from "@carbon/jobs";
 import { trackWorkEvent } from "@carbon/lib/telemetry";
@@ -36,7 +42,10 @@ import {
   STRIPE_CONNECT_INTEGRATION
 } from "~/modules/invoicing/stripe-customer.server";
 import { getCustomerContact, updateCustomerContact } from "~/modules/sales";
+import { recordSalesRuleOutcome } from "~/modules/sales/sales.server";
 import { getCompany } from "~/modules/settings";
+import { checkPartyContactRequirement } from "~/modules/settings/party-contact.server";
+import { requireCompanyRecord } from "~/modules/shared/shared.server";
 import { getCompanyTimeZone } from "~/modules/shared/timezone.server";
 import { getUser } from "~/modules/users/users.server";
 import { loader as pdfLoader } from "~/routes/file+/sales-invoice+/$id[.]pdf";
@@ -86,8 +95,8 @@ async function storeStripeInvoicePdf({
   );
   const filePath = `${companyId}/opportunity/${opportunityId}/${fileName}`;
 
-  const upload = await serviceRole.storage
-    .from("private")
+  const upload = await storage(serviceRole)
+    .company(companyId)
     .upload(filePath, file, {
       cacheControl: `${12 * 60 * 60}`,
       contentType: "application/pdf",
@@ -310,7 +319,13 @@ async function preflightStripeSend({
   }
 
   if (stripeContactEmail) {
-    const contact = await getCustomerContact(serviceRole, customerContact);
+    // customerContact comes from the form and the service role bypasses RLS:
+    // scope it so another company's contact is never read or rewritten.
+    const contact = await getCustomerContact(
+      serviceRole,
+      customerContact,
+      companyId
+    );
     if (contact.data && !contact.data.contact?.email) {
       const update = await updateCustomerContact(serviceRole, {
         contactId: contact.data.contactId,
@@ -497,20 +512,116 @@ export async function action(args: ActionFunctionArgs) {
     };
   }
 
+  // Mirror of the supplier gate on the purchasing side. Off by default and
+  // nothing downstream forces it today — Rillet, Xero and QuickBooks all treat a
+  // customer email as optional — so this only fires for a company that has asked
+  // for the policy. It exists so the two sides behave the same when they do.
+  const invoiceCustomer = await client
+    .from("salesInvoice")
+    .select("customerId")
+    .eq("id", invoiceId)
+    .eq("companyId", companyId)
+    .maybeSingle();
+
+  // Fail CLOSED — see the supplier gate on the purchasing side. An unchecked
+  // error left `customerId` undefined, and a party with no id is not checked at
+  // all, so the read failing silently disabled the gate.
+  if (invoiceCustomer.error || !invoiceCustomer.data) {
+    logger.error("Could not read the invoice customer before posting", {
+      companyId,
+      invoiceId,
+      error: invoiceCustomer.error
+    });
+    return { success: false, message: "Failed to post sales invoice" };
+  }
+
+  const customerContactError = await checkPartyContactRequirement(
+    client,
+    companyId,
+    { kind: "customer", id: invoiceCustomer.data.customerId }
+  );
+  if (customerContactError) {
+    return { success: false, message: customerContactError };
+  }
+
   let file: ArrayBuffer;
   let fileName: string;
   let documentFilePath: string;
 
   const serviceRole = getCarbonServiceRole();
 
+  // Everything below reads and writes through the service role (and the
+  // Stripe preflight runs before the edge function re-checks the invoice), so
+  // the URL's invoiceId must belong to this company before anything happens.
+  await requireCompanyRecord(serviceRole, "salesInvoice", companyId, {
+    id: invoiceId
+  });
+
+  const formData = await request.formData();
   const validation = await validator(salesInvoicePostValidator).validate(
-    await request.formData()
+    formData
   );
 
   if (validation.error) {
     return {
       success: false,
       message: "Invalid notification type"
+    };
+  }
+
+  // Sales-rule terminal gate. Posting is the revenue checkpoint and the only
+  // gate an invoice raised with no upstream document ever passes — lines can
+  // arrive from the convert edge function, the API, or MCP without the
+  // per-line check. Re-reads the whole document, so it also catches
+  // staleness (a rule authored after the lines were written). Must run
+  // BEFORE the optimistic `Pending` write below, or a blocked post strands
+  // the invoice in `Pending`; running first also prevents the Stripe send
+  // and the customer email.
+  const acknowledged = formData.get("acknowledged") === "true";
+  // An evaluator throw (failed rule/item/ship-to load) must fail closed but
+  // not as a raw 500 — surface it like the Stripe preflight below.
+  let salesRuleResult: Awaited<
+    ReturnType<typeof evaluateSalesRulesForSalesDocument>
+  >;
+  try {
+    salesRuleResult = await evaluateSalesRulesForSalesDocument({
+      client: serviceRole,
+      companyId,
+      userId,
+      documentType: "salesInvoice",
+      documentId: invoiceId
+    });
+  } catch (err) {
+    logger.error("Sales rule evaluation failed", { error: err, invoiceId });
+    return {
+      success: false,
+      message: `Invoice not posted — ${
+        err instanceof Error ? err.message : "sales rule evaluation failed"
+      }`
+    };
+  }
+  const { ruleNames: salesRuleNames } = salesRuleResult;
+  const salesRuleViolations = dedupeViolations(salesRuleResult.violations);
+  if (
+    salesRuleViolations.length > 0 &&
+    isBlocked(salesRuleViolations, acknowledged)
+  ) {
+    // Record the same evidence + notification the per-line checks write —
+    // posting is the revenue checkpoint, the strongest override there is.
+    await recordSalesRuleOutcome(serviceRole, {
+      companyId,
+      userId,
+      documentType: "salesInvoice",
+      documentId: invoiceId,
+      outcome: "blocked",
+      violations: salesRuleViolations,
+      ruleNames: salesRuleNames
+    });
+    return {
+      success: false,
+      message: "Sales rules blocked posting this invoice",
+      violations: salesRuleViolations,
+      ruleNames: salesRuleNames
     };
   }
 
@@ -615,6 +726,21 @@ export async function action(args: ActionFunctionArgs) {
     };
   }
 
+  // Acknowledged-override evidence only once the post has committed — a
+  // trail (and notification) for a post that then failed would be false, and
+  // a retry would duplicate it.
+  if (salesRuleViolations.length > 0) {
+    await recordSalesRuleOutcome(serviceRole, {
+      companyId,
+      userId,
+      documentType: "salesInvoice",
+      documentId: invoiceId,
+      outcome: "acknowledged",
+      violations: salesRuleViolations,
+      ruleNames: salesRuleNames
+    });
+  }
+
   const salesInvoice = await getSalesInvoice(serviceRole, invoiceId);
   if (salesInvoice.error) {
     return {
@@ -671,8 +797,8 @@ export async function action(args: ActionFunctionArgs) {
 
     documentFilePath = `${companyId}/opportunity/${salesInvoice.data.opportunityId}/${fileName}`;
 
-    const documentFileUpload = await serviceRole.storage
-      .from("private")
+    const documentFileUpload = await storage(serviceRole)
+      .company(companyId)
       .upload(documentFilePath, file, {
         cacheControl: `${12 * 60 * 60}`,
         contentType: "application/pdf",
@@ -733,7 +859,7 @@ export async function action(args: ActionFunctionArgs) {
           paymentTerms
         ] = await Promise.all([
           getCompany(serviceRole, companyId),
-          getCustomerContact(serviceRole, customerContact),
+          getCustomerContact(serviceRole, customerContact, companyId),
           getSalesInvoice(serviceRole, invoiceId),
           getSalesInvoiceLines(serviceRole, invoiceId),
           getSalesInvoiceCustomerDetails(serviceRole, invoiceId),
@@ -819,9 +945,15 @@ export async function action(args: ActionFunctionArgs) {
 
         const html = await renderAsync(emailTemplate);
         const text = await renderAsync(emailTemplate, { plainText: true });
-        const { data: signedUrlData } = await serviceRole.storage
-          .from("private")
+        const signed = await storage(serviceRole)
+          .company(companyId)
           .createSignedUrl(documentFilePath, 3600);
+        if (signed.error) {
+          logger.error("Failed to create signed URL for attachment", {
+            storagePath: documentFilePath,
+            error: signed.error
+          });
+        }
 
         await trigger("send-email", {
           to: [seller.data.email, customer.data.contact.email!],
@@ -830,10 +962,10 @@ export async function action(args: ActionFunctionArgs) {
           subject: `Invoice ${salesInvoice.data.invoiceId} from ${company.data.name}`,
           html,
           text,
-          attachments: signedUrlData?.signedUrl
+          attachments: signed.data
             ? [
                 {
-                  path: signedUrlData.signedUrl,
+                  path: signed.data.signedUrl,
                   filename: fileName
                 }
               ]

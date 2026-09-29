@@ -1,4 +1,4 @@
-import { assertIsPost } from "@carbon/auth";
+import { assertIsPost, safeRedirect } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { destroyAuthSession } from "@carbon/auth/session.server";
@@ -28,11 +28,17 @@ import {
   updatePublicAccount
 } from "~/modules/account";
 import { getUser } from "~/modules/users/users.server";
+import { ONBOARDING_SHORTCUTS } from "~/shortcuts";
+import { path } from "~/utils/path";
 
 const logger = getLogger("erp", "user");
 
 export async function loader({ request }: ActionFunctionArgs) {
-  const { userId } = await requirePermissions(request, {});
+  const { userId } = await requirePermissions(request, {
+    // Onboarding acts on the user's own account: a portal-only user may still
+    // create a company of their own.
+    allowPortalAccounts: true
+  });
 
   const user = await getUser(getCarbonServiceRole(), userId);
   if (user.error || !user.data) {
@@ -44,7 +50,11 @@ export async function loader({ request }: ActionFunctionArgs) {
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { userId } = await requirePermissions(request, {});
+  const { userId } = await requirePermissions(request, {
+    // Onboarding acts on the user's own account: a portal-only user may still
+    // create a company of their own.
+    allowPortalAccounts: true
+  });
 
   const validation = await validator(onboardingUserValidator).validate(
     await request.formData()
@@ -68,7 +78,7 @@ export async function action({ request }: ActionFunctionArgs) {
     throw new Error("Fatal: failed to update account");
   }
 
-  throw redirect(next);
+  throw redirect(safeRedirect(next, path.to.onboarding.root));
 }
 
 export default function OnboardingUser() {
@@ -124,7 +134,7 @@ export default function OnboardingUser() {
                 <Trans>Previous</Trans>
               </Link>
             </Button>
-            <Submit>
+            <Submit shortcut={ONBOARDING_SHORTCUTS.continue}>
               <Trans>Next</Trans>
             </Submit>
           </HStack>

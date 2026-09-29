@@ -314,25 +314,45 @@ export default function QualitySettingsRoute() {
 
         <Card>
           <CardHeader>
+            <CardTitle>
+              <Trans>Inspections: Require Different Inspector</Trans>
+            </CardTitle>
+            <CardDescription>
+              <Trans>
+                Warn when the person inspecting an inbound item is the same
+                person who received it.
+              </Trans>
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
             <HStack className="justify-between items-center">
-              <div>
-                <CardTitle>
-                  <Trans>Inspections: Require Different Inspector</Trans>
-                </CardTitle>
-                <CardDescription>
-                  <Trans>
-                    Warn when the person inspecting an inbound item is the same
-                    person who received it.
-                  </Trans>
-                </CardDescription>
-              </div>
+              <VStack className="items-start" spacing={1}>
+                <span className="font-medium">
+                  {fourEyesEnabled ? (
+                    <Trans>A different inspector is required</Trans>
+                  ) : (
+                    <Trans>The same person may inspect</Trans>
+                  )}
+                </span>
+                <span className="text-sm text-muted-foreground">
+                  {fourEyesEnabled ? (
+                    <Trans>
+                      Inspecting an item you received shows a warning.
+                    </Trans>
+                  ) : (
+                    <Trans>
+                      Enable to warn when the inspector also received the item.
+                    </Trans>
+                  )}
+                </span>
+              </VStack>
               <Switch
                 checked={fourEyesEnabled}
                 onCheckedChange={handleFourEyesToggle}
                 disabled={toggleFetcher.state !== "idle"}
               />
             </HStack>
-          </CardHeader>
+          </CardContent>
         </Card>
         <Card>
           <ValidatedForm

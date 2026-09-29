@@ -136,7 +136,10 @@ export default function IssueDetailsRoute() {
   const routeData = useRouteData<{
     files: Promise<StorageItem[]>;
     suppliers: { supplierId: string; externalLinkId: string | null }[];
-    associations: Promise<{ items: IssueAssociationNode["children"] }>;
+    associations: Promise<{
+      items: IssueAssociationNode["children"];
+      inspections: IssueAssociationNode["children"];
+    }>;
   }>(path.to.issue(id));
 
   if (!routeData) throw new Error("Could not find issue data");
@@ -165,6 +168,9 @@ export default function IssueDetailsRoute() {
               <AssociatedItemsList
                 associatedItems={resolvedAssociations?.items ?? []}
                 isDisabled={isIssueLocked(nonConformance?.status)}
+                isQuantityReadOnly={
+                  (resolvedAssociations?.inspections ?? []).length > 0
+                }
               />
               <CreateSupplierReturn
                 issueId={id}

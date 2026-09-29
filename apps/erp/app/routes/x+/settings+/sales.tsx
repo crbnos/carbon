@@ -43,12 +43,15 @@ import {
   getCompanySettings,
   quoteLineCategoryMarkupsSettingsValidator,
   rfqReadyValidator,
+  salesRuleNotificationValidator,
   updateAccountsReceivableAddressSetting,
   updateAccountsReceivableBillingAddress,
   updateDefaultCustomerCc,
   updateDigitalQuoteSetting,
   updateQuoteLineCategoryMarkups,
+  updateRequireCustomerContactSetting,
   updateRfqReadySetting,
+  updateSalesRuleNotificationSetting,
   updateShowCustomerReadableIdSetting
 } from "~/modules/settings";
 import type { Handle } from "~/utils/handle";
@@ -91,6 +94,22 @@ export async function action({ request }: ActionFunctionArgs) {
   const intent = formData.get("intent");
 
   switch (intent) {
+    case "requireCustomerContactAndLocationToggle": {
+      const enabled = formData.get("enabled") === "true";
+      const result = await updateRequireCustomerContactSetting(
+        client,
+        companyId,
+        enabled
+      );
+      if (result.error) {
+        return { success: false, message: result.error.message };
+      }
+      return {
+        success: true,
+        message: `Customer contact requirement ${enabled ? "enabled" : "disabled"}`
+      };
+    }
+
     case "accountsReceivableAddressToggle":
       const arToggleEnabled = formData.get("enabled") === "true";
       const arToggleResult = await updateAccountsReceivableAddressSetting(
@@ -164,6 +183,29 @@ export async function action({ request }: ActionFunctionArgs) {
         return { success: false, message: rfqSettings.error.message };
 
       return { success: true, message: "RFQ setting updated" };
+
+    case "salesRuleViolations":
+      const salesRuleValidation = await validator(
+        salesRuleNotificationValidator
+      ).validate(formData);
+
+      if (salesRuleValidation.error) {
+        return { success: false, message: "Invalid form data" };
+      }
+
+      const salesRuleSettings = await updateSalesRuleNotificationSetting(
+        client,
+        companyId,
+        salesRuleValidation.data.salesRuleNotificationGroup ?? []
+      );
+
+      if (salesRuleSettings.error)
+        return { success: false, message: salesRuleSettings.error.message };
+
+      return {
+        success: true,
+        message: "Sales rule notification settings updated"
+      };
 
     case "categoryMarkups":
       const categoryMarkupsValidation = await validator(
@@ -254,6 +296,26 @@ export default function SalesSettingsRoute() {
   const toggleFetcher = useFetcher<typeof action>();
   const [arAddressEnabled, setArAddressEnabled] = useState(
     companySettings.accountsReceivableAddress ?? false
+  );
+
+  const [requireCustomerContactAndLocation, setRequireCustomerContact] =
+    useState(
+      (companySettings as { requireCustomerContactAndLocation?: boolean })
+        .requireCustomerContactAndLocation ?? false
+    );
+
+  const handleRequireCustomerContactToggle = useCallback(
+    (checked: boolean) => {
+      setRequireCustomerContact(checked);
+      toggleFetcher.submit(
+        {
+          intent: "requireCustomerContactAndLocationToggle",
+          enabled: checked.toString()
+        },
+        { method: "POST" }
+      );
+    },
+    [toggleFetcher]
   );
 
   const handleArAddressToggle = useCallback(
@@ -365,25 +427,94 @@ export default function SalesSettingsRoute() {
         </Card>
         <Card>
           <CardHeader>
+            <CardTitle>
+              <Trans>Require a Customer Contact and Location</Trans>
+            </CardTitle>
+            <CardDescription>
+              <Trans>
+                A customer must have at least one contact with an email address
+                and at least one location with a country — plus a state, for US
+                addresses — before its quotes, orders and invoices can be issued
+                or posted. The mirror of the supplier requirement under
+                Purchasing; no integration requires it today.
+              </Trans>
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
             <HStack className="justify-between items-center">
-              <div>
-                <CardTitle>
-                  <Trans>Centralized Billing Address</Trans>
-                </CardTitle>
-                <CardDescription>
-                  <Trans>
-                    Route all AR invoices to one address (e.g. corporate
-                    headquarters) instead of individual locations.
-                  </Trans>
-                </CardDescription>
-              </div>
+              <VStack className="items-start" spacing={1}>
+                <span className="font-medium">
+                  {requireCustomerContactAndLocation ? (
+                    <Trans>A customer contact and location are required</Trans>
+                  ) : (
+                    <Trans>A customer contact and location are optional</Trans>
+                  )}
+                </span>
+                <span className="text-sm text-muted-foreground">
+                  {requireCustomerContactAndLocation ? (
+                    <Trans>
+                      Quotes, orders and invoices are blocked until the customer
+                      has a contact with an email address and a location with a
+                      country.
+                    </Trans>
+                  ) : (
+                    <Trans>
+                      Enable to block issuing or posting for a customer with no
+                      contact or no location.
+                    </Trans>
+                  )}
+                </span>
+              </VStack>
+              <Switch
+                checked={requireCustomerContactAndLocation}
+                onCheckedChange={handleRequireCustomerContactToggle}
+                disabled={toggleFetcher.state !== "idle"}
+              />
+            </HStack>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle>
+              <Trans>Centralized Billing Address</Trans>
+            </CardTitle>
+            <CardDescription>
+              <Trans>
+                Route all AR invoices to one address (e.g. corporate
+                headquarters) instead of individual locations.
+              </Trans>
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <HStack className="justify-between items-center">
+              <VStack className="items-start" spacing={1}>
+                <span className="font-medium">
+                  {arAddressEnabled ? (
+                    <Trans>Centralized billing is enabled</Trans>
+                  ) : (
+                    <Trans>Centralized billing is disabled</Trans>
+                  )}
+                </span>
+                <span className="text-sm text-muted-foreground">
+                  {arAddressEnabled ? (
+                    <Trans>
+                      AR invoices are routed to a single billing address.
+                    </Trans>
+                  ) : (
+                    <Trans>
+                      Enable to route all AR invoices to a single billing
+                      address.
+                    </Trans>
+                  )}
+                </span>
+              </VStack>
               <Switch
                 checked={arAddressEnabled}
                 onCheckedChange={handleArAddressToggle}
                 disabled={toggleFetcher.state !== "idle"}
               />
             </HStack>
-          </CardHeader>
+          </CardContent>
         </Card>
         {arAddressEnabled && (
           <Card>
@@ -449,26 +580,48 @@ export default function SalesSettingsRoute() {
 
         <Card>
           <CardHeader>
+            <CardTitle>
+              <Trans>Show Customer IDs</Trans>
+            </CardTitle>
+            <CardDescription>
+              <Trans>
+                Show a readable Customer ID column on the customer list,
+                customer forms, and dropdowns. Customers are still identified
+                internally either way.
+              </Trans>
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
             <HStack className="justify-between items-center">
-              <div>
-                <CardTitle>
-                  <Trans>Show Customer IDs</Trans>
-                </CardTitle>
-                <CardDescription>
-                  <Trans>
-                    Show a readable Customer ID column on the customer list,
-                    customer forms, and dropdowns. Customers are still
-                    identified internally either way.
-                  </Trans>
-                </CardDescription>
-              </div>
+              <VStack className="items-start" spacing={1}>
+                <span className="font-medium">
+                  {showCustomerReadableIdEnabled ? (
+                    <Trans>Customer IDs are shown</Trans>
+                  ) : (
+                    <Trans>Customer IDs are hidden</Trans>
+                  )}
+                </span>
+                <span className="text-sm text-muted-foreground">
+                  {showCustomerReadableIdEnabled ? (
+                    <Trans>
+                      A readable Customer ID appears on lists, forms and
+                      dropdowns.
+                    </Trans>
+                  ) : (
+                    <Trans>
+                      Enable to show a readable Customer ID on lists, forms and
+                      dropdowns.
+                    </Trans>
+                  )}
+                </span>
+              </VStack>
               <Switch
                 checked={showCustomerReadableIdEnabled}
                 onCheckedChange={handleShowCustomerReadableIdToggle}
                 disabled={toggleFetcher.state !== "idle"}
               />
             </HStack>
-          </CardHeader>
+          </CardContent>
         </Card>
 
         <SettingsSectionHeader>
@@ -593,6 +746,55 @@ export default function SalesSettingsRoute() {
                 isLoading={
                   fetcher.state !== "idle" &&
                   fetcher.formData?.get("intent") === "rfq"
+                }
+              >
+                <Trans>Save</Trans>
+              </Submit>
+            </CardFooter>
+          </ValidatedForm>
+        </Card>
+        <Card>
+          <ValidatedForm
+            method="post"
+            validator={salesRuleNotificationValidator}
+            defaultValues={{
+              salesRuleNotificationGroup:
+                companySettings.salesRuleNotificationGroup ?? []
+            }}
+            fetcher={fetcher}
+          >
+            <input type="hidden" name="intent" value="salesRuleViolations" />
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Trans>Sales Rule Violations</Trans>
+              </CardTitle>
+              <CardDescription>
+                <Trans>
+                  Enable notifications when a sales rule violation is blocked or
+                  acknowledged on a quote, sales order, or sales invoice.
+                </Trans>
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-col gap-8 max-w-[400px]">
+                <div className="flex flex-col gap-2">
+                  <Label>
+                    <Trans>Notifications</Trans>
+                  </Label>
+                  <Users
+                    name="salesRuleNotificationGroup"
+                    label={t`Who should receive notifications when a sales rule violation is blocked or acknowledged?`}
+                    type="employee"
+                  />
+                </div>
+              </div>
+            </CardContent>
+            <CardFooter>
+              <Submit
+                isDisabled={fetcher.state !== "idle"}
+                isLoading={
+                  fetcher.state !== "idle" &&
+                  fetcher.formData?.get("intent") === "salesRuleViolations"
                 }
               >
                 <Trans>Save</Trans>

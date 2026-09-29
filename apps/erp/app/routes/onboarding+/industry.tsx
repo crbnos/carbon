@@ -1,4 +1,4 @@
-import { assertIsPost } from "@carbon/auth";
+import { assertIsPost, safeRedirect } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { setCompanyId } from "@carbon/auth/company.server";
@@ -92,13 +92,15 @@ function appendDraftCompany(
 }
 
 export async function loader({ request }: ActionFunctionArgs) {
-  const { client, companyId, email } = await requirePermissions(request, {});
+  const { client, companyId, email } = await requirePermissions(request, {
+    // Onboarding acts on the user's own account: a portal-only user may still
+    // create a company of their own.
+    allowPortalAccounts: true
+  });
 
-  // The data-choice step is internal-only; public signups create their company
-  // in the company step. Guard direct navigation to this route.
-  if (!isInternalEmail(email)) {
-    throw redirect(path.to.onboarding.company);
-  }
+  // Restoring from a backup stays internal-only; the demo template and a clean
+  // start are open to every signup.
+  const canRestoreBackup = isInternalEmail(email);
 
   const company = await getCompany(client, companyId);
   const draft = await getOnboardingDraft(request);
@@ -110,20 +112,19 @@ export async function loader({ request }: ActionFunctionArgs) {
   const industries = allIndustries.filter((i) => datasetForIndustry(i.id));
 
   if (company.error || !company.data) {
-    return { company: null, draft, industries };
+    return { company: null, draft, industries, canRestoreBackup };
   }
 
-  return { company: company.data, draft, industries };
+  return { company: company.data, draft, industries, canRestoreBackup };
 }
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, userId, email } = await requirePermissions(request, {});
-
-  // Internal-only step — reject direct POSTs from public signups.
-  if (!isInternalEmail(email)) {
-    throw redirect(path.to.onboarding.company);
-  }
+  const { client, userId, email } = await requirePermissions(request, {
+    // Onboarding acts on the user's own account: a portal-only user may still
+    // create a company of their own.
+    allowPortalAccounts: true
+  });
 
   // Get draft data from previous step (company)
   const draft = await getOnboardingDraft(request);
@@ -140,6 +141,11 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 
   const { dataChoice } = industryValidation.data;
+
+  // Backup restore is internal-only — reject direct POSTs from public signups.
+  if (dataChoice === "import" && !isInternalEmail(email)) {
+    throw redirect(path.to.onboarding.industry);
+  }
 
   // Carry forward the company data captured in the previous (company) step.
   if (draft?.company) appendDraftCompany(formData, draft.company);
@@ -202,7 +208,7 @@ export async function action({ request }: ActionFunctionArgs) {
   const companyIdCookie = setCompanyId(companyId);
   const clearDraftCookie = await clearOnboardingDraft(request);
 
-  throw redirect(next, {
+  throw redirect(safeRedirect(next, path.to.onboarding.root), {
     headers: [
       ["Set-Cookie", sessionCookie],
       ["Set-Cookie", companyIdCookie],
@@ -214,7 +220,8 @@ export async function action({ request }: ActionFunctionArgs) {
 type Step = "data-question" | "industry-selection" | "import-upload";
 
 export default function OnboardingIndustry() {
-  const { company, industries } = useLoaderData<typeof loader>();
+  const { company, industries, canRestoreBackup } =
+    useLoaderData<typeof loader>();
   const { next, previous } = useOnboarding();
 
   // Determine initial step based on existing company data
@@ -274,12 +281,17 @@ export default function OnboardingIndustry() {
           }
         ]
       : []),
-    {
-      value: "import" as const,
-      title: "Restore from a backup",
-      description: "Set up from a Carbon backup of another company",
-      icon: <LuUpload className="h-5 w-5" />
-    },
+    ...(canRestoreBackup
+      ? [
+          {
+            value: "import" as const,
+            title: "Restore from a backup",
+            description:
+              "Set up from a backup of another Carbon company environment",
+            icon: <LuUpload className="h-5 w-5" />
+          }
+        ]
+      : []),
     {
       value: "none",
       title: "I don't need data",

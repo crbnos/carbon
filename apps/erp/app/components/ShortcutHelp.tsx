@@ -24,7 +24,12 @@ const ShortcutHelp = () => {
 
   const entries = useMemo<ShortcutHelpEntry[]>(() => {
     const general = t`General`;
-    const navigation = t`Navigation`;
+    const listPages = t`List pages`;
+    const itemPages = t`Item pages`;
+    const partnerPages = t`Customer and supplier pages`;
+    const inventoryPages = t`Inventory pages`;
+    const documentLines = t`Quotes, orders, invoices and RFQs`;
+    const procedures = t`Procedures and training`;
     const goTo = t`Go to module`;
 
     const moduleEntries: ShortcutHelpEntry[] = (
@@ -55,49 +60,124 @@ const ShortcutHelp = () => {
         group: general
       },
       {
-        shortcut: SHORTCUTS.newRecord,
-        description: t`New record (on list pages)`,
-        group: general
-      },
-      {
         shortcut: SHORTCUTS.sidebarToggle,
         description: t`Toggle the sidebar`,
         group: general
       },
       {
         shortcut: SHORTCUTS.help,
-        description: t`Show this overlay`,
+        description: t`Show keyboard shortcuts`,
         group: general
       },
       {
+        shortcut: SHORTCUTS.newRecord,
+        description: t`New record`,
+        group: listPages
+      },
+      {
         shortcut: PAGINATION_SHORTCUTS.previous,
-        description: t`Previous page (in tables)`,
-        group: navigation
+        description: t`Previous page`,
+        group: listPages
       },
       {
         shortcut: PAGINATION_SHORTCUTS.next,
-        description: t`Next page (in tables)`,
-        group: navigation
+        description: t`Next page`,
+        group: listPages
       },
       {
         shortcut: DETAIL_TAB_SHORTCUTS.details,
-        description: t`Jump to a section on detail pages (same modifiers + the section's letter)`,
-        group: navigation
+        description: t`Details`,
+        group: itemPages
+      },
+      {
+        shortcut: DETAIL_TAB_SHORTCUTS.purchasing,
+        description: t`Purchasing`,
+        group: itemPages
+      },
+      {
+        shortcut: DETAIL_TAB_SHORTCUTS.planning,
+        description: t`Planning`,
+        group: itemPages
+      },
+      {
+        shortcut: DETAIL_TAB_SHORTCUTS.inventory,
+        description: t`Inventory`,
+        group: itemPages
+      },
+      {
+        shortcut: DETAIL_TAB_SHORTCUTS.sales,
+        description: t`Sales`,
+        group: itemPages
+      },
+      {
+        shortcut: DETAIL_TAB_SHORTCUTS.quality,
+        description: t`Quality`,
+        group: itemPages
+      },
+      {
+        shortcut: DETAIL_TAB_SHORTCUTS.accounting,
+        description: t`Accounting`,
+        group: itemPages
+      },
+      {
+        shortcut: DETAIL_TAB_SHORTCUTS.details,
+        description: t`Details`,
+        group: partnerPages
+      },
+      {
+        shortcut: DETAIL_TAB_SHORTCUTS.contacts,
+        description: t`Contacts`,
+        group: partnerPages
+      },
+      {
+        shortcut: DETAIL_TAB_SHORTCUTS.locations,
+        description: t`Locations`,
+        group: partnerPages
+      },
+      {
+        shortcut: DETAIL_TAB_SHORTCUTS.payment,
+        description: t`Payment`,
+        group: partnerPages
+      },
+      {
+        shortcut: DETAIL_TAB_SHORTCUTS.tax,
+        description: t`Tax`,
+        group: partnerPages
+      },
+      {
+        shortcut: DETAIL_TAB_SHORTCUTS.shipping,
+        description: t`Shipping`,
+        group: partnerPages
+      },
+      {
+        shortcut: DETAIL_TAB_SHORTCUTS.processes,
+        description: t`Processes (suppliers only)`,
+        group: partnerPages
+      },
+      {
+        shortcut: DETAIL_TAB_SHORTCUTS.details,
+        description: t`Details`,
+        group: inventoryPages
+      },
+      {
+        shortcut: DETAIL_TAB_SHORTCUTS.activity,
+        description: t`Activity`,
+        group: inventoryPages
       },
       {
         shortcut: EXPLORER_SHORTCUTS.addLine,
-        description: t`Add a line (in document explorers)`,
-        group: navigation
+        description: t`Add a line to the document`,
+        group: documentLines
       },
       {
         shortcut: EXPLORER_SHORTCUTS.addAttribute,
-        description: t`Add a step or question (in procedure and training explorers)`,
-        group: navigation
+        description: t`Add a step or question`,
+        group: procedures
       },
       {
         shortcut: EXPLORER_SHORTCUTS.addParameter,
-        description: t`Add a parameter (in the procedure explorer)`,
-        group: navigation
+        description: t`Add a parameter (procedures only)`,
+        group: procedures
       },
       ...moduleEntries
     ];
@@ -106,6 +186,7 @@ const ShortcutHelp = () => {
   return (
     <ShortcutHelpOverlay
       title={t`Keyboard shortcuts`}
+      description={t`Press ? on any page to open this list. Shortcuts are ignored while you type in a field.`}
       entries={entries}
       emptyLabel={t`No shortcuts available on this page.`}
     />

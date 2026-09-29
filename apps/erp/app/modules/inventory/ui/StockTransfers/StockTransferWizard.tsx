@@ -1,6 +1,6 @@
 import type { Result } from "@carbon/auth";
 import { useCarbon } from "@carbon/auth";
-import { useStorageRuleViolations } from "@carbon/ee/storage-rules";
+import { useRuleViolations } from "@carbon/ee/rules";
 import { getLogger } from "@carbon/logger";
 import {
   Badge,
@@ -26,6 +26,7 @@ import {
   Popover,
   PopoverContent,
   PopoverTrigger,
+  PulsingDot,
   ResizableHandle,
   ResizablePanel,
   ResizablePanelGroup,
@@ -487,6 +488,11 @@ function DestinationTable({
               line.toStorageUnitId === row.original.storageUnitId &&
               (line.quantity ?? 0) > 0
           ).length;
+          // A bin in negative stock is the one that most needs a transfer;
+          // mark its button with the same pulsing dot the planning tables
+          // use, until it is selected or has a line.
+          const isNegative =
+            row.original.quantityOnHand < 0 && !isActive && lineCount === 0;
 
           return (
             <HStack spacing={2} className="justify-end">
@@ -505,7 +511,14 @@ function DestinationTable({
                   )
                 }
               >
-                {t`Select`}
+                {isNegative ? (
+                  <HStack>
+                    <PulsingDot />
+                    <span>{t`Select`}</span>
+                  </HStack>
+                ) : (
+                  t`Select`
+                )}
               </Button>
             </HStack>
           );
@@ -913,9 +926,9 @@ function WizardFooter({ locationId }: { locationId: string }) {
   const linesCount = useStockTransferWizardLinesCount();
   const totalQuantity = useStockTransferWizardTotalQuantity();
 
-  // Item Rule pre-flight on Create Transfer (auto-released → the stock-commit
+  // Storage Rule pre-flight on Create Transfer (auto-released → the stock-commit
   // gate sits here). The modal surfaces violations before the transfer exists.
-  const createRules = useStorageRuleViolations<Result>({
+  const createRules = useRuleViolations<Result>({
     action: path.to.newStockTransfer,
     onSuccess: () => clearStockTransferWizard()
   });

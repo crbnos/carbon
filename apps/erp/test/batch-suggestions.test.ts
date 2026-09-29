@@ -1,4 +1,5 @@
 import { resolveBatchRules } from "@carbon/utils";
+import { parseDate } from "@internationalized/date";
 import { describe, expect, it } from "vitest";
 // Import the logic module directly — the ERP barrels drag lingui macros vitest
 // does not transform (see batching-migration-guards.test.ts).
@@ -9,6 +10,8 @@ import {
   computeLockedById,
   computeMemberMismatches,
   computeSelectionDimSets,
+  dueDatesOf,
+  filterAndSortCandidates,
   groupingKey,
   materialSignature,
   rankSuggestions,
@@ -48,6 +51,10 @@ function makeCandidate(
     id,
     jobId: `job-${id}`,
     jobReadableId: `J-${id}`,
+    itemId: null,
+    requiresBatchTracking: false,
+    trackedEntityId: null,
+    lotNumber: null,
     jobDueDate: null,
     jobStatus: "Ready",
     itemReadableId: "SAT-1000",
@@ -100,6 +107,36 @@ describe("materialSignature vs groupingKey", () => {
     expect(materialSignature(a)).toBe("");
     expect(materialSignature(b)).toBe("");
     expect(groupingKey(a)).not.toBe(groupingKey(b));
+  });
+
+  it("producedItem at guide splits signatures by produced item; default ignores it", () => {
+    const steel = makeMaterial({ substanceName: "Steel" });
+    const a = makeCandidate("a", {
+      itemReadableId: "SALAD-01",
+      materials: [steel]
+    });
+    const b = makeCandidate("b", {
+      itemReadableId: "SALAD-02",
+      materials: [steel]
+    });
+    // Default rules: produced item plays no part — same signature.
+    expect(materialSignature(a)).toBe(materialSignature(b));
+    expect(groupingKey(a)).toBe(groupingKey(b));
+    // Opted in: same materials, different produced items → different groups.
+    const rules = resolveBatchRules({ producedItem: "guide" });
+    expect(materialSignature(a, rules)).not.toBe(materialSignature(b, rules));
+    expect(groupingKey(a, rules)).not.toBe(groupingKey(b, rules));
+    // Same produced item still groups.
+    const a2 = makeCandidate("a2", {
+      itemReadableId: "SALAD-01",
+      materials: [steel]
+    });
+    expect(groupingKey(a, rules)).toBe(groupingKey(a2, rules));
+  });
+
+  it("candidateValueSets carries the produced item for must gating", () => {
+    const a = makeCandidate("a", { itemReadableId: "SALAD-01" });
+    expect(candidateValueSets(a).producedItem).toEqual(["SALAD-01"]);
   });
 
   it("ops with real materials group by properties, not by item", () => {
@@ -684,5 +721,75 @@ describe("computeMemberMismatches", () => {
 
   it("returns empty for fewer than two members", () => {
     expect(computeMemberMismatches([entry("solo", "Steel")], DEFAULT_RULES).size).toBe(0);
+  });
+});
+
+describe("filterAndSortCandidates due filter", () => {
+  const today = parseDate("2026-09-29");
+  const candidates = [
+    makeCandidate("overdue", { dueDate: "2026-09-20" }),
+    makeCandidate("today", { dueDate: "2026-09-29" }),
+    makeCandidate("thu", { dueDate: "2026-10-01" }),
+    makeCandidate("next-week", { dueDate: "2026-10-06" }),
+    makeCandidate("job-due", { jobDueDate: "2026-10-01" }),
+    makeCandidate("undated")
+  ];
+  const run = (due: Parameters<typeof filterAndSortCandidates>[1]["due"]) =>
+    filterAndSortCandidates(candidates, {
+      activeFacetKeys: [],
+      facets: {},
+      search: "",
+      due,
+      today
+    }).map((c) => c.id);
+
+  it("keeps everything, undated last, with no due filter", () => {
+    expect(run(null)).toEqual([
+      "overdue",
+      "today",
+      "thu",
+      "job-due",
+      "next-week",
+      "undated"
+    ]);
+  });
+
+  it("a window keeps everything due up to today + N days, overdue included", () => {
+    expect(run({ kind: "window", days: 7 })).toEqual([
+      "overdue",
+      "today",
+      "thu",
+      "job-due",
+      "next-week"
+    ]);
+  });
+
+  it("a range keeps only what is due inside it, both ends inclusive", () => {
+    expect(
+      run({
+        kind: "range",
+        start: parseDate("2026-09-29"),
+        end: parseDate("2026-10-01")
+      })
+    ).toEqual(["today", "thu", "job-due"]);
+  });
+
+  it("a one-day range keeps only that day", () => {
+    const day = parseDate("2026-10-06");
+    expect(run({ kind: "range", start: day, end: day })).toEqual([
+      "next-week"
+    ]);
+  });
+});
+
+describe("dueDatesOf", () => {
+  it("collects each distinct due day, falling back to the job due date", () => {
+    const days = dueDatesOf([
+      makeCandidate("a", { dueDate: "2026-10-01" }),
+      makeCandidate("b", { dueDate: "2026-10-01" }),
+      makeCandidate("c", { jobDueDate: "2026-10-03" }),
+      makeCandidate("d")
+    ]);
+    expect([...days].sort()).toEqual(["2026-10-01", "2026-10-03"]);
   });
 });

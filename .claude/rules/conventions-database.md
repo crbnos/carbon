@@ -101,45 +101,20 @@ ALTER TABLE "entityName" ADD CONSTRAINT "entityName_companyId_name_key"
 | `JSONB` | Custom fields / structured config |
 | `TEXT[]` | Tags / arrays of ids |
 
-## RLS Policies (the only correct pattern)
+## RLS Policies
 
-Enable RLS and create the four policies named **exactly** `SELECT` / `INSERT` /
-`UPDATE` / `DELETE`. Schema-qualify the table (`"public"."t"`) and cast the helper
-result `::text[]`. From `20260609143732_document-template.sql`:
+Policies are **not** written in migrations. Add the table's rule to
+`packages/database/src/authz/manifest.ts` — usually one line, `entityName: company("<module>")`,
+which renders the four standard policies (`SELECT` any employee via
+`get_companies_with_employee_role()`, writes via
+`get_companies_with_employee_permission('<module>_<action>')`) — then `pnpm db:migrate` syncs it
+locally and `pnpm --filter @carbon/database authz migration <name>` ships it to production.
+Full guide, including tables without a `companyId`: `authz-manifest.md`.
 
-```sql
-ALTER TABLE "public"."entityName" ENABLE ROW LEVEL SECURITY;
-
-CREATE POLICY "SELECT" ON "public"."entityName"
-FOR SELECT USING (
-  "companyId" = ANY ((SELECT get_companies_with_employee_role())::text[])
-);
-
-CREATE POLICY "INSERT" ON "public"."entityName"
-FOR INSERT WITH CHECK (
-  "companyId" = ANY ((SELECT get_companies_with_employee_permission('module_create'))::text[])
-);
-
-CREATE POLICY "UPDATE" ON "public"."entityName"
-FOR UPDATE USING (
-  "companyId" = ANY ((SELECT get_companies_with_employee_permission('module_update'))::text[])
-);
-
-CREATE POLICY "DELETE" ON "public"."entityName"
-FOR DELETE USING (
-  "companyId" = ANY ((SELECT get_companies_with_employee_permission('module_delete'))::text[])
-);
-```
-
-- **SELECT** → `get_companies_with_employee_role()` (any employee of the company can read).
-  Some tables tighten read to a view permission instead (e.g. picking lists use
-  `get_companies_with_employee_permission('inventory_view')`) — that's a valid variant.
-- **INSERT / UPDATE / DELETE** → `get_companies_with_employee_permission('<module>_<action>')`,
-  `<action>` ∈ `create` / `update` / `delete` (e.g. `settings_create`, `inventory_update`).
-- The old `has_role` / `has_company_permission` pattern is **deprecated** — never use it.
+- The old `has_role` / `has_company_permission` / `get_companies_with_permission` /
+  `get_permission_companies` helpers are gone — dropped in `20260927224314_retire-legacy-rls-helpers.sql` (they admitted customer and supplier portal accounts); `authz-fixes.test.sql` asserts they stay gone.
 - For tables **without a `companyId` column**, reach the company through the parent
-  via `EXISTS`, gating writes on the **write** permission (not just visibility). See
-  `database-migration-patterns.md` ("Tables without a companyId column").
+  (`parent(...)`, `viaParent`, `exists`), gating writes on the **write** permission.
 
 ## Views
 
@@ -189,8 +164,7 @@ Validate in route actions with `validator(schema).validate(formData)` from
 - [ ] `companyId` present with composite PK `("id", "companyId")` + FK `ON DELETE CASCADE`
 - [ ] Audit columns; `*By` reference `"user"("id")` inline
 - [ ] Indexes on `companyId` and every FK
-- [ ] RLS enabled with the four standardized policy names; SELECT via
-      `get_companies_with_employee_role()`, writes via
-      `get_companies_with_employee_permission('<module>_<action>')`
+- [ ] No `CREATE POLICY` in the migration; the table's rule is in `authz/manifest.ts`
+      and shipped with `pnpm --filter @carbon/database authz migration <name>`
 - [ ] Zod validators in `{module}.models.ts`
 - [ ] Applied locally with `pnpm db:migrate` (regenerates types) — never `db:build`

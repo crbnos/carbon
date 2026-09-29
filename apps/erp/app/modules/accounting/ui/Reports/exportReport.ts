@@ -1,5 +1,5 @@
+import { downloadCsv } from "@carbon/files/csv";
 import type { ReportPeriodBucket } from "@carbon/utils";
-import { json2csv } from "json-2-csv";
 import type { Chart, ChartPeriodSeries } from "../../types";
 import { computeExecutivePnl, type ExecutivePnlRowKey } from "./executivePnl";
 import {
@@ -7,22 +7,6 @@ import {
   filterAccounts,
   getDebitCredit
 } from "./reportTree";
-
-// Standalone CSV download (ExchangeRateForm pattern) — the report trees are
-// not built on the shared Table component, so they get no free export button.
-function downloadCsv(rows: Record<string, unknown>[], filename: string) {
-  if (rows.length === 0) return;
-  const csvData = json2csv(rows, { emptyFieldValue: "" });
-  const blob = new Blob([csvData], { type: "text/csv" });
-  const url = window.URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  window.URL.revokeObjectURL(url);
-  document.body.removeChild(a);
-}
 
 // Export the multi-period statement in flat-tree display order (the FULL tree,
 // honoring the current search filter — never the virtualizer's window).

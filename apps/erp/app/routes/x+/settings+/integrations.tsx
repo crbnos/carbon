@@ -3,13 +3,20 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import {
   integrations as availableIntegrations,
+  getIntegrationIdsByRole,
   quickInstallConnectors
 } from "@carbon/ee";
 import { toast } from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
 import { useEffect } from "react";
 import type { LoaderFunctionArgs } from "react-router";
-import { Outlet, redirect, useLoaderData, useSearchParams } from "react-router";
+import {
+  data,
+  Outlet,
+  redirect,
+  useLoaderData,
+  useSearchParams
+} from "react-router";
 import { IntegrationsList } from "~/modules/settings";
 import { getIntegrationError } from "~/modules/settings/integration-errors";
 import { getIntegrationsWithHealth } from "~/modules/settings/settings.server";
@@ -35,16 +42,45 @@ export async function loader({ request }: LoaderFunctionArgs) {
     );
   }
 
-  const items = integrations.data.map((i) => ({
-    id: i.id!,
-    active: i.active!,
-    health: i.health
-  }));
+  const items = integrations.data.map((i) => {
+    // Resolve the install mode HERE, server-side, and send only its id. The
+    // card needs it to show copy that matches what this install actually does;
+    // shipping the whole `metadata` to the browser to achieve that would hand
+    // out credential-adjacent state for every integration.
+    const config = availableIntegrations.find((c) => c.id === i.id) as
+      | { resolveInstallMode?: (m: unknown) => { id: string } | undefined }
+      | undefined;
+    return {
+      id: i.id!,
+      active: i.active!,
+      health: i.health,
+      installMode: i.active
+        ? config?.resolveInstallMode?.(i.metadata)?.id
+        : undefined
+    };
+  });
 
-  return {
-    integrations: items,
-    state: crypto.randomUUID()
+  // Which role slots are taken. The database refuses a second active
+  // integration of a role (migration 20260924133915); this is what stops a
+  // customer reaching that refusal through the UI.
+  const activeRoles: Record<string, string | null> = {
+    accounting: null,
+    spend: null
   };
+  for (const role of ["accounting", "spend"] as const) {
+    const ids = new Set<string>(getIntegrationIdsByRole(role));
+    activeRoles[role] =
+      items.find((i) => i.active && ids.has(i.id))?.id ?? null;
+  }
+
+  return data({
+    integrations: items,
+    activeRoles
+    // No OAuth state here. Every OAuth install now starts at
+    // `api+/integrations.$id.connect`, which issues a SIGNED, browser-bound,
+    // single-use state — strictly better than the unsigned correlation value this
+    // used to hand out, and the only place that can know the chosen mode.
+  });
 }
 
 export default function IntegrationsRoute() {

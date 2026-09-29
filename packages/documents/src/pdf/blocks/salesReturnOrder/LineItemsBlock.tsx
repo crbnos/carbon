@@ -68,7 +68,7 @@ export function LineItemsBlock({
             <Text style={{ ...tw("text-gray-800"), ...overflow }}>
               {line.item?.readableIdWithRevision ?? ""}
             </Text>
-            {line.item?.name && (
+            {line.item?.name ? (
               <Text
                 style={{
                   ...tw("text-[9px] text-gray-600 mt-0.5"),
@@ -77,7 +77,7 @@ export function LineItemsBlock({
               >
                 {line.item.name}
               </Text>
-            )}
+            ) : null}
           </View>
           <Text style={tw("w-[16%] text-center text-gray-600")}>
             {`${line.quantity ?? 0} ${line.unitOfMeasureCode ?? "EA"}`}
@@ -91,7 +91,7 @@ export function LineItemsBlock({
         </View>
       ))}
 
-      {total > 0 && (
+      {total > 0 ? (
         <View style={tw("flex flex-row py-2 px-3 text-[9px]")}>
           <Text style={tw("w-[62%] text-right pr-3 text-gray-800 font-bold")}>
             {currencyCode ? `Total (${currencyCode})` : "Total"}
@@ -101,7 +101,7 @@ export function LineItemsBlock({
           </Text>
           <Text style={tw("w-[20%]")} />
         </View>
-      )}
+      ) : null}
     </View>
   );
 }

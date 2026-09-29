@@ -101,9 +101,12 @@ export default function QuoteExplorer({ methods }: QuoteExplorerProps) {
     taxPercent: quoteData?.customer?.taxPercent ?? 0
   };
 
+  const modelPaths = (quoteData?.lines ?? [])
+    .map((d) => d.modelPath)
+    .filter(Boolean);
   useRealtime(
     "modelUpload",
-    `modelPath=in.(${quoteData?.lines.map((d) => d.modelPath).join(",")})`
+    modelPaths.length ? `modelPath=in.(${modelPaths.join(",")})` : undefined
   );
 
   const newQuoteLineDisclosure = useDisclosure();

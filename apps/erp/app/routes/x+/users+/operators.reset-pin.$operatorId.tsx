@@ -1,16 +1,12 @@
-import { assertIsPost, error, success } from "@carbon/auth";
+import { assertIsPost, error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
+import { generateConsolePin, setEmployeePin } from "@carbon/ee/console.server";
+import { getLogger } from "@carbon/logger";
 import {
   Button,
   Copy,
   HStack,
-  IconButton,
-  InputOTP,
-  InputOTPGroup,
-  InputOTPSlot,
-  Label,
   Modal,
   ModalBody,
   ModalContent,
@@ -20,27 +16,28 @@ import {
   ModalTitle,
   VStack
 } from "@carbon/react";
-import { Trans, useLingui } from "@lingui/react/macro";
-import { useState } from "react";
-import { LuRefreshCw } from "react-icons/lu";
+import { Trans } from "@lingui/react/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { redirect, useFetcher, useLoaderData, useNavigate } from "react-router";
-import type { Result } from "~/types";
+import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
 
-function generatePin(): string {
-  return Math.floor(1000 + Math.random() * 9000).toString();
-}
+const logger = getLogger("erp", "operators-reset-pin");
 
-export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, { update: "users" });
-
-  const { operatorId } = params;
-  if (!operatorId) throw new Error("Operator ID is required");
+/**
+ * A PIN pins in as that person at any MES console, so resetting one hands over
+ * their shop-floor identity. `users_update` covers console operators (PIN-only
+ * accounts made for exactly this); anyone else — an admin included — also
+ * needs `settings_update`, the permission that turns console mode on.
+ */
+async function requireResetPinPermission(request: Request, operatorId: string) {
+  const { client, companyId, userId } = await requirePermissions(request, {
+    update: "users"
+  });
 
   const user = await client
     .from("user")
-    .select("id, firstName, lastName")
+    .select("id, firstName, lastName, isConsoleOperator")
     .eq("id", operatorId)
     .single();
 
@@ -51,54 +48,76 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
-  return { operator: user.data };
+  if (!user.data.isConsoleOperator) {
+    await requirePermissions(request, { update: "settings" });
+  }
+
+  return { companyId, userId, operator: user.data };
+}
+
+export async function loader({ request, params }: LoaderFunctionArgs) {
+  const { operatorId } = params;
+  if (!operatorId) throw new Error("Operator ID is required");
+
+  const { operator } = await requireResetPinPermission(request, operatorId);
+  return {
+    operator: {
+      id: operator.id,
+      firstName: operator.firstName,
+      lastName: operator.lastName
+    }
+  };
 }
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { companyId } = await requirePermissions(request, {
-    update: "users"
-  });
-
   const { operatorId } = params;
   if (!operatorId) throw new Error("Operator ID is required");
 
-  const formData = await request.formData();
-  const newPin = formData.get("pin") as string;
-
-  if (!newPin || !/^\d{4}$/.test(newPin)) {
-    return { success: false, message: "PIN must be 4 digits" };
-  }
-
-  const serviceRole = getCarbonServiceRole();
-  const update = await serviceRole
-    .from("employee")
-    .update({ pin: newPin } as any)
-    .eq("id", operatorId)
-    .eq("companyId", companyId);
-
-  if (update.error) {
-    return { success: false, message: update.error.message };
-  }
-
-  throw redirect(
-    path.to.operators,
-    await flash(request, success("PIN reset successfully"))
+  const { companyId, userId } = await requireResetPinPermission(
+    request,
+    operatorId
   );
+
+  // Generated on the server and stored only as a hash (the (employee, company)
+  // FK refuses an operator outside this company). Returned so the modal can
+  // show it once — it cannot be read back later.
+  const pin = generateConsolePin();
+  try {
+    await setEmployeePin(getDatabaseClient(), {
+      employeeId: operatorId,
+      companyId,
+      pin,
+      updatedBy: userId
+    });
+  } catch (err) {
+    logger.error("Failed to reset operator PIN", {
+      companyId,
+      operatorId,
+      error: err
+    });
+    return { success: false as const, message: "Failed to reset PIN" };
+  }
+
+  return { success: true as const, pin };
 }
 
 export default function ResetPinRoute() {
   const { operator } = useLoaderData<typeof loader>();
   const navigate = useNavigate();
-  const formFetcher = useFetcher<Result>();
-  const [pinValue, setPinValue] = useState(generatePin);
-  const { t } = useLingui();
+  const formFetcher = useFetcher<typeof action>();
+  const newPin =
+    formFetcher.data?.success === true ? formFetcher.data.pin : null;
+  const failure =
+    formFetcher.data?.success === false ? formFetcher.data.message : null;
 
   return (
     <Modal
       open
       onOpenChange={(open) => {
-        if (!open) navigate(-1);
+        if (open) return;
+        if (newPin) navigate(path.to.operators);
+        else navigate(-1);
       }}
     >
       <ModalOverlay />
@@ -113,57 +132,56 @@ export default function ResetPinRoute() {
           </ModalHeader>
 
           <ModalBody>
-            <VStack spacing={4}>
-              <p className="text-sm text-muted-foreground">
-                <Trans>
-                  Generate a new 4-digit PIN. Share it with the operator so they
-                  can pin in at MES terminals.
-                </Trans>
-              </p>
-              <div className="space-y-2 w-full">
-                <Label>
-                  <Trans>New PIN</Trans>
-                </Label>
-                <div className="flex items-center justify-center gap-3">
-                  <input type="hidden" name="pin" value={pinValue} />
-                  <InputOTP
-                    maxLength={4}
-                    value={pinValue}
-                    onChange={(value) => setPinValue(value)}
-                    autoFocus={false}
-                  >
-                    <InputOTPGroup>
-                      <InputOTPSlot index={0} />
-                      <InputOTPSlot index={1} />
-                      <InputOTPSlot index={2} />
-                      <InputOTPSlot index={3} />
-                    </InputOTPGroup>
-                  </InputOTP>
-                  <Copy text={pinValue} size="sm" />
-                  <IconButton
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    aria-label={t`Generate new PIN`}
-                    icon={<LuRefreshCw />}
-                    onClick={() => {
-                      const newPin = generatePin();
-                      setPinValue(newPin);
-                    }}
-                  />
+            {newPin ? (
+              <VStack spacing={4}>
+                <p className="text-sm text-muted-foreground">
+                  <Trans>
+                    Share this PIN with the operator so they can pin in at MES
+                    terminals.
+                  </Trans>
+                </p>
+                <div className="flex items-center justify-center gap-3 w-full">
+                  <span className="font-mono text-3xl tracking-[0.4em]">
+                    {newPin}
+                  </span>
+                  <Copy text={newPin} />
                 </div>
-              </div>
-            </VStack>
+                <p className="text-xs text-muted-foreground text-center w-full">
+                  <Trans>This PIN will not be shown again.</Trans>
+                </p>
+              </VStack>
+            ) : (
+              <VStack spacing={4}>
+                <p className="text-sm text-muted-foreground">
+                  <Trans>
+                    Generate a new 4-digit PIN. The operator's current PIN stops
+                    working immediately.
+                  </Trans>
+                </p>
+                {failure && (
+                  <p className="text-sm text-destructive">{failure}</p>
+                )}
+              </VStack>
+            )}
           </ModalBody>
           <ModalFooter>
             <HStack>
-              <Button
-                type="submit"
-                isLoading={formFetcher.state !== "idle"}
-                isDisabled={formFetcher.state !== "idle" || pinValue.length < 4}
-              >
-                <Trans>Reset PIN</Trans>
-              </Button>
+              {newPin ? (
+                <Button
+                  type="button"
+                  onClick={() => navigate(path.to.operators)}
+                >
+                  <Trans>Done</Trans>
+                </Button>
+              ) : (
+                <Button
+                  type="submit"
+                  isLoading={formFetcher.state !== "idle"}
+                  isDisabled={formFetcher.state !== "idle"}
+                >
+                  <Trans>Reset PIN</Trans>
+                </Button>
+              )}
             </HStack>
           </ModalFooter>
         </formFetcher.Form>
