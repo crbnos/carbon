@@ -47,7 +47,7 @@ temporary while v2 replaces v1.
   one from `@carbon/auth/oauth-state.server`. The callback renders
   `oauthPopupResponse`: it posts the outcome to the opener and closes the popup,
   or lands on the integrations page when there is no opener.
-- Migration `20260909174511_onshape-v2-integration.sql` seeds the `integration`
+- Migration `20260929185557_onshape-v2-integration.sql` seeds the `integration`
   row (FK target for `companyIntegration`); `credentials` required, `baseUrl`
   not — the integration settings form may write metadata before any grant exists.
 - The V2 integration form holds the five push defaults (`config-v2.tsx`,
@@ -56,7 +56,7 @@ temporary while v2 replaces v1.
   save spreads existing metadata under the form values, so `propertyMap`,
   `credentials` and the vaulted tokens survive a save.
 - `onshape-v2` is in `SECRET_KEYS`: its tokens live in Supabase Vault
-  (migration `20260914101621_onshape-v2-vault-secrets.sql` moved existing ones).
+  (migration `20260929185558_onshape-v2-vault-secrets.sql` moved existing ones).
 - `beginOAuthPopup` (`packages/ee/src/oauth-popup.ts`) opens the popup inside
   the click, before the install fetch — opening after the await was silently
   blocked.
