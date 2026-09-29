@@ -54,8 +54,19 @@ const NumberField = ({
   );
 };
 
-const NumberInputGroup = (props: ReactAria.GroupProps) => {
-  return <ReactAria.Group {...props} />;
+// `relative` anchors the absolutely positioned NumberInputStepper to the input;
+// without it the arrows attach to the nearest positioned ancestor (e.g. a modal).
+const NumberInputGroup = ({ className, ...props }: ReactAria.GroupProps) => {
+  return (
+    <ReactAria.Group
+      className={
+        typeof className === "function"
+          ? (values) => cn("relative", className(values))
+          : cn("relative", className)
+      }
+      {...props}
+    />
+  );
 };
 
 const NumberInputStepper = ({

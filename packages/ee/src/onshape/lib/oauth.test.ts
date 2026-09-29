@@ -17,7 +17,6 @@ import { getOnshapeAuthorizeUrl, getOnshapeOAuthConfig } from "./oauth";
 
 const government = {
   baseUrl: "https://acme.onshape.example",
-  oauthUrl: "https://oauth.onshape.example",
   clientId: "gov-client",
   clientSecret: "gov-secret"
 };
@@ -58,8 +57,8 @@ describe("getOnshapeOAuthConfig", () => {
       redirectUri:
         "https://itar.carbon.ms/api/integrations/onshape-government/oauth",
       baseUrl: "https://acme.onshape.example",
-      authorizeUrl: "https://oauth.onshape.example/oauth/authorize",
-      tokenUrl: "https://oauth.onshape.example/oauth/token"
+      authorizeUrl: "https://acme.onshape.example/oauth/authorize",
+      tokenUrl: "https://acme.onshape.example/oauth/token"
     });
   });
 
@@ -76,11 +75,11 @@ describe("getOnshapeOAuthConfig", () => {
 });
 
 describe("getOnshapeAuthorizeUrl", () => {
-  it("targets the connection's own OAuth server with space-delimited scopes", () => {
+  it("targets the Government tenant's own address with space-delimited scopes", () => {
     const config = getOnshapeOAuthConfig("onshape-government", government)!;
     const url = new URL(getOnshapeAuthorizeUrl(config, "state-123"));
     expect(url.origin + url.pathname).toBe(
-      "https://oauth.onshape.example/oauth/authorize"
+      "https://acme.onshape.example/oauth/authorize"
     );
     expect(url.searchParams.get("client_id")).toBe("gov-client");
     expect(url.searchParams.get("state")).toBe("state-123");

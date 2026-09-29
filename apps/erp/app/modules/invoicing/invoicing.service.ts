@@ -1669,7 +1669,7 @@ export async function getInvoiceSettlements(
   return fetchAllFromTable<Settlement>(
     client,
     "invoiceSettlement",
-    "*, salesInvoice:targetSalesInvoiceId(invoiceId), purchaseInvoice:targetPurchaseInvoiceId(invoiceId), targetMemo:targetMemoId(memoId), targetReimbursement:targetReimbursementId(reimbursementId)",
+    "*, salesInvoice:targetSalesInvoiceId(invoiceId), purchaseInvoice:targetPurchaseInvoiceId(invoiceId), targetMemo:targetMemoId(memoId), targetReimbursement:reimbursement!invoiceSettlement_targetReimbursementId_fkey(reimbursementId)",
     (query) =>
       query
         .eq("companyId", companyId)
@@ -1904,7 +1904,7 @@ export async function getMemoApplications(
   const settlements = await fetchAllFromTable<SettlementRow>(
     client,
     "invoiceSettlement",
-    "id, appliedAmount, appliedDate, appliedViaPaymentId, targetSalesInvoiceId, targetPurchaseInvoiceId, targetMemoId, targetReimbursementId, salesInvoice:targetSalesInvoiceId(invoiceId), purchaseInvoice:targetPurchaseInvoiceId(invoiceId), targetMemo:targetMemoId(memoId), targetReimbursement:targetReimbursementId(reimbursementId)",
+    "id, appliedAmount, appliedDate, appliedViaPaymentId, targetSalesInvoiceId, targetPurchaseInvoiceId, targetMemoId, targetReimbursementId, salesInvoice:targetSalesInvoiceId(invoiceId), purchaseInvoice:targetPurchaseInvoiceId(invoiceId), targetMemo:targetMemoId(memoId), targetReimbursement:reimbursement!invoiceSettlement_targetReimbursementId_fkey(reimbursementId)",
     (query) =>
       query
         // `memoId` is a bare xid from the URL, so the tenant filter is what

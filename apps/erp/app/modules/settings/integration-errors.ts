@@ -121,11 +121,11 @@ export const integrationErrors = {
     },
     "not-configured": {
       title: msg`Onshape Government isn't configured`,
-      description: msg`Enter the Onshape URL, OAuth URL, client ID and client secret of your private OAuth application, then save.`
+      description: msg`Enter the Onshape URL, client ID and client secret of your private OAuth application, then save.`
     },
     "token-exchange": {
       title: msg`Onshape Government rejected the authorization`,
-      description: msg`Exchanging the authorization code failed. Check the OAuth URL and the client secret, then save the integration settings again.`
+      description: msg`Exchanging the authorization code failed. Check the Onshape URL and the client secret, then save the integration settings again.`
     },
     "save-failed": {
       title: msg`Couldn't save the Onshape Government connection`,

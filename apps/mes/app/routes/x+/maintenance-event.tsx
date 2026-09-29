@@ -8,6 +8,8 @@ import type { ActionFunctionArgs } from "react-router";
 import { data, redirect } from "react-router";
 import {
   endMaintenanceEvent,
+  getActiveMaintenanceEventByEmployee,
+  postMaintenanceLabor,
   startMaintenanceEvent,
   updateMaintenanceDispatchStatus
 } from "~/services/maintenance.service";
@@ -24,7 +26,6 @@ export async function action({ request }: ActionFunctionArgs) {
   const action = formData.get("action") as "Start" | "End" | "Complete";
   const dispatchId = formData.get("dispatchId") as string;
   const workCenterId = formData.get("workCenterId") as string;
-  const eventId = formData.get("eventId") as string | undefined;
 
   if (!dispatchId) {
     return data({}, await flash(request, error("Dispatch ID is required")));
@@ -85,6 +86,20 @@ export async function action({ request }: ActionFunctionArgs) {
   };
 
   if (action === "Start") {
+    // A stale page or a double click can submit Start while an event is
+    // already open here — don't stack a second one.
+    const existing = await getActiveMaintenanceEventByEmployee(serviceRole, {
+      dispatchId,
+      employeeId: userId,
+      companyId
+    });
+    if (existing.data) {
+      return data(
+        { eventId: existing.data.id },
+        await flash(request, success("Maintenance started"))
+      );
+    }
+
     // Start a new maintenance event
     const startEvent = await startMaintenanceEvent(serviceRole, {
       maintenanceDispatchId: dispatchId,
@@ -123,15 +138,9 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 
   if (action === "End") {
-    if (!eventId) {
-      return data(
-        {},
-        await flash(request, error("Event ID is required to end"))
-      );
-    }
-
     const endEvent = await endMaintenanceEvent(serviceRole, {
-      eventId,
+      dispatchId,
+      employeeId: userId,
       endTime: currentTime,
       updatedBy: userId,
       companyId
@@ -147,19 +156,41 @@ export async function action({ request }: ActionFunctionArgs) {
       );
     }
 
+    const posting = await postMaintenanceLabor(serviceRole, {
+      maintenanceDispatchIds: [dispatchId],
+      companyId,
+      userId
+    });
+    if (posting.error) {
+      logger.error("Failed to post maintenance labor", {
+        companyId,
+        dispatchId,
+        error: posting.error
+      });
+      return data(
+        {},
+        await flash(
+          request,
+          error(
+            posting.error,
+            "Maintenance paused, but its labor cost did not post"
+          )
+        )
+      );
+    }
+
     return data({}, await flash(request, success("Maintenance paused")));
   }
 
   if (action === "Complete") {
     // End any active event first
-    if (eventId) {
-      await endMaintenanceEvent(serviceRole, {
-        eventId,
-        endTime: currentTime,
-        updatedBy: userId,
-        companyId
-      });
-    }
+    await endMaintenanceEvent(serviceRole, {
+      dispatchId,
+      employeeId: userId,
+      endTime: currentTime,
+      updatedBy: userId,
+      companyId
+    });
 
     // Update dispatch status to Completed
     const updateStatus = await updateMaintenanceDispatchStatus(serviceRole, {
@@ -183,9 +214,31 @@ export async function action({ request }: ActionFunctionArgs) {
 
     await stampScheduleIfOffline();
 
+    // Completion closed every open event on the dispatch — post their labor.
+    const posting = await postMaintenanceLabor(serviceRole, {
+      maintenanceDispatchIds: [dispatchId],
+      companyId,
+      userId
+    });
+    if (posting.error) {
+      logger.error("Failed to post maintenance labor", {
+        companyId,
+        dispatchId,
+        error: posting.error
+      });
+    }
+
     throw redirect(
       path.to.maintenance,
-      await flash(request, success("Maintenance completed"))
+      await flash(
+        request,
+        posting.error
+          ? error(
+              posting.error,
+              "Maintenance completed, but its labor cost did not post"
+            )
+          : success("Maintenance completed")
+      )
     );
   }
 

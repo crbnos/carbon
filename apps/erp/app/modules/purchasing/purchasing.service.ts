@@ -80,9 +80,10 @@ export async function closePurchaseOrder(
   return client
     .from("purchaseOrder")
     .update({
-      closed: true,
+      status: "Closed",
       closedAt: datetime.today(companyTz).toString(),
-      closedBy: userId
+      closedBy: userId,
+      updatedBy: userId
     })
     .eq("id", purchaseOrderId)
     .select("id")

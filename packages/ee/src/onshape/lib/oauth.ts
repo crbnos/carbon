@@ -62,14 +62,12 @@ export function getOnshapeOAuthConfig(
     const clientId = metadata?.clientId;
     const clientSecret = metadata?.clientSecret;
     const baseUrl = normalizeOnshapeUrl(metadata?.baseUrl);
-    const oauthUrl = normalizeOnshapeUrl(metadata?.oauthUrl);
     if (
       typeof clientId !== "string" ||
       !clientId.trim() ||
       typeof clientSecret !== "string" ||
       !clientSecret.trim() ||
-      !baseUrl ||
-      !oauthUrl
+      !baseUrl
     ) {
       return null;
     }
@@ -78,7 +76,8 @@ export function getOnshapeOAuthConfig(
       clientSecret: clientSecret.trim(),
       redirectUri: getOnshapeGovernmentRedirectUri(),
       baseUrl,
-      ...oauthEndpoints(oauthUrl)
+      // A Government tenant serves OAuth from its own address.
+      ...oauthEndpoints(baseUrl)
     };
   }
 

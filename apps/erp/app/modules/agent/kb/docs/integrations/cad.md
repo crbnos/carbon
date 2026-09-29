@@ -49,7 +49,7 @@ bill of materials, and syncing released assets.
   
   ### Enter it in Carbon
 
-  Open **Onshape Government** under **Settings → Integrations**. Enter your Onshape URL, the OAuth URL, and the
+  Open **Onshape Government** under **Settings → Integrations**. Enter your Onshape URL and the
   app's client ID and client secret. The integration drawer shows the exact redirect URL for your Carbon
   address.
   
@@ -62,16 +62,12 @@ bill of materials, and syncing released assets.
 | Setting | What it controls |
 | --- | --- |
 | Onshape URL | The address your team signs in to Onshape Government at. Each Enterprise has its own. |
-| OAuth URL | The OAuth server for your Onshape Government environment, from your Onshape account team. |
 | Client ID / Client secret | The private OAuth app from your Enterprise. The secret is stored encrypted. Leave it empty to keep the saved one, or enter it again to reconnect. |
 | Sync released assets | Same as on Onshape: pulls released drawings and models onto matching items. |
 
 A private app's API calls count toward your Enterprise's **yearly Onshape API limit**. Browsing and importing
 a bill of materials take a few calls each. Released-asset sync takes several calls per released revision, so
 leave it off if your allowance is tight.
-
-Onshape Government is only offered on controlled (ITAR) Carbon instances — those running with
-`CONTROLLED_ENVIRONMENT=true`. See `docs/platform/self-hosting/environment-variables`.
 
 A company connects to one Onshape at a time. Uninstall Onshape before connecting Onshape Government, and the
 other way round.

@@ -1,4 +1,4 @@
-import { CONTROLLED_ENVIRONMENT, ONSHAPE_CLIENT_ID } from "@carbon/auth";
+import { ONSHAPE_CLIENT_ID } from "@carbon/auth";
 import { type SVGProps, useEffect, useState } from "react";
 import { z } from "zod";
 import { defineIntegration } from "../fns";
@@ -117,14 +117,13 @@ const onshapeUrlSchema = z
  * a PRIVATE OAuth app inside their own Enterprise and enters its client here;
  * saving the settings then sends them through that app's consent screen.
  *
- * Offered only on a controlled (ITAR) Carbon instance — the only place a
- * Government customer's data belongs. It needs nothing else from this
- * instance's environment: the OAuth client is the customer's own.
+ * Always offered: it needs nothing from this instance's environment, since the
+ * OAuth client is the customer's own.
  */
 export const OnshapeGovernment = defineIntegration({
   name: "Onshape Government",
   id: ONSHAPE_GOVERNMENT_INTEGRATION_ID,
-  active: CONTROLLED_ENVIRONMENT,
+  active: true,
   category: "CAD",
   logo: Logo,
   setupInstructions: GovernmentSetupInstructions,
@@ -156,16 +155,6 @@ export const OnshapeGovernment = defineIntegration({
       value: ""
     },
     {
-      name: "oauthUrl",
-      label: "OAuth URL",
-      description:
-        "The OAuth server for your Onshape Government environment, from your Onshape account team. Carbon appends /oauth/authorize and /oauth/token.",
-      group: "Connection",
-      type: "text" as const,
-      required: true,
-      value: ""
-    },
-    {
       name: "clientId",
       label: "Client ID",
       description: "Shown on the private OAuth application in Onshape.",
@@ -188,7 +177,6 @@ export const OnshapeGovernment = defineIntegration({
   ],
   schema: z.object({
     baseUrl: onshapeUrlSchema,
-    oauthUrl: onshapeUrlSchema,
     clientId: z.string().trim().min(1),
     // Empty keeps the vaulted secret; the settings save requires one on a
     // fresh install.
@@ -234,8 +222,7 @@ function GovernmentSetupInstructions() {
       <p className="mt-3 text-sm text-muted-foreground">
         5. Create the application and copy the client ID and secret straight
         away — Onshape shows the secret once. Enter them below with your Onshape
-        URL and OAuth URL, then save: Carbon sends you to Onshape to approve the
-        connection.
+        URL, then save: Carbon sends you to Onshape to approve the connection.
       </p>
       <p className="mt-3 text-sm text-muted-foreground">
         The app is private to your Enterprise, so its API calls count toward

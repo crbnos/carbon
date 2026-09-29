@@ -32,6 +32,7 @@ import {
 } from "react-icons/lu";
 import { Link, useNavigate, useSearchParams } from "react-router";
 import { useOptimisticLocation, useQuantityFormatter } from "~/hooks";
+import { useCompanySettings } from "~/hooks/useCompanySettings";
 import { useIntegrations } from "~/hooks/useIntegrations";
 import { getLinkToItemDetails } from "~/modules/items/ui/Item/ItemForm";
 import { generateBomIds } from "~/utils/bom";
@@ -157,9 +158,11 @@ export function BoMExplorerProvider<T extends BoMExplorerNodeData>({
       value: { text: filterText },
       fn: (value, node) => {
         if (value.text === "") return true;
-        return node.data.description
-          .toLowerCase()
-          .includes(value.text.toLowerCase());
+        const text = value.text.toLowerCase();
+        return (
+          node.data.description.toLowerCase().includes(text) ||
+          (node.data.itemReadableId ?? "").toLowerCase().includes(text)
+        );
       }
     },
     isEager: true
@@ -529,10 +532,16 @@ function getOnshapeState(node: BoMNode, hasOnshape: boolean) {
 }
 
 function BoMNodeText({ node }: { node: BoMNode }) {
+  // One company setting (Settings > Items) labels every explorer's nodes.
+  const showReadableId =
+    useCompanySettings()?.showBomExplorerReadableId === true;
+
   return (
     <div className="flex min-w-0 items-center gap-1">
       <span className="font-medium text-sm truncate">
-        {node.data.description || node.data.itemReadableId}
+        {showReadableId
+          ? node.data.itemReadableId || node.data.description
+          : node.data.description || node.data.itemReadableId}
       </span>
     </div>
   );
