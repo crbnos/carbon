@@ -344,9 +344,6 @@ export const ItemPlanningChart = ({
     safetyStockValue
   ]);
 
-  // The Y range covers only the series that are shown, so hiding a large one
-  // (a demand spike, say) rescales the axis to what is left. Hiding a series
-  // never changes the projection itself — it is computed from all of them.
   const axis = useMemo(() => {
     const show = (key: SeriesKey) => !hiddenSeries.has(key);
     const onHand = forecastFetcher.data?.quantityOnHand ?? 0;
@@ -918,8 +915,6 @@ export const ItemPlanningChart = ({
 
 // Legend that distinguishes line series (Projected on hand, Safety stock) from
 // bar series with a line vs. square glyph, so "the line" maps to something.
-// Each entry is a toggle: a hidden series keeps its entry, drawn as a hollow
-// glyph with struck-through text, so it can be clicked back on.
 function PlanningChartLegend({
   payload,
   config,
