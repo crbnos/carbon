@@ -16,6 +16,7 @@ const INTEGRATION_IDS = [
   "jira",
   "linear",
   "onshape",
+  "onshape-government",
   "paperless-parts",
   "email",
   "sage",

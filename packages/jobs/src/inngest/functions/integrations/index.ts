@@ -6,6 +6,7 @@ export { accountingPullSweepFunction } from "./accounting-pull-sweep";
 export { accountingReconciliationFunction } from "./accounting-reconciliation";
 export { jiraSyncFunction, syncIssueFromJiraSchema } from "./jira";
 export { linearSyncFunction, syncIssueFromLinearSchema } from "./linear";
+export { mountPublishFunction } from "./mount-publish";
 export { onshapeBackfillFunction } from "./onshape-backfill";
 export { onshapeRevisionSyncFunction } from "./onshape-revision-sync";
 export { paperlessPartsFunction } from "./paperless-parts";

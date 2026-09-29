@@ -1,7 +1,8 @@
 import { Email } from "./email/config";
 import { Jira } from "./jira/config";
 import { Linear } from "./linear/config";
-import { Onshape } from "./onshape/config";
+import { Mount } from "./mount/config";
+import { Onshape, OnshapeGovernment } from "./onshape/config";
 import { PaperlessParts } from "./paperless-parts/config";
 import { QuickBooks } from "./quickbooks/config";
 // import { Radan } from "./radan/config";
@@ -52,7 +53,9 @@ export const integrations = [
   Email,
   Jira,
   Linear,
+  Mount,
   Onshape,
+  OnshapeGovernment,
   PaperlessParts,
   QuickBooks,
   Ramp,
@@ -66,7 +69,19 @@ export const integrations = [
 export type IntegrationID = (typeof integrations)[number]["id"];
 
 export { Jira } from "./jira/config";
-export { Logo as OnshapeLogo, Onshape } from "./onshape/config";
+export { Mount } from "./mount/config";
+export {
+  Logo as OnshapeLogo,
+  Onshape,
+  OnshapeGovernment
+} from "./onshape/config";
+// Client-safe (no client or env imports): lets UI ask "is Onshape connected?"
+// without naming either integration id.
+export {
+  hasOnshapeIntegration,
+  isOnshapeIntegrationId,
+  ONSHAPE_INTEGRATION_IDS
+} from "./onshape/lib/connection";
 // TODO: export as @carbon/ee/paperless
 export { PaperlessPartsClient } from "./paperless-parts/lib/client";
 export { QuickBooks } from "./quickbooks/config";

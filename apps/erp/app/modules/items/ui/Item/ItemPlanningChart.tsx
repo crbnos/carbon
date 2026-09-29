@@ -95,6 +95,14 @@ const chartColors = {
   zero: "hsl(var(--muted-foreground))"
 } as const;
 
+type SeriesKey =
+  | "projection"
+  | "safety"
+  | "supply"
+  | "planned"
+  | "demand"
+  | "demandForecast";
+
 // Round a value to a "nice" number (1/2/5 × 10^n) so axis steps land on
 // human-friendly intervals instead of arbitrary fractions of the data range.
 function niceNum(value: number, round: boolean) {
@@ -156,6 +164,17 @@ export const ItemPlanningChart = ({
   const forecastFetcher = useFetcher<typeof forecastLoader>();
   const isFetching = forecastFetcher.state !== "idle" || !forecastFetcher.data;
   const [searchTerm, setSearchTerm] = useState("");
+  const [hiddenSeries, setHiddenSeries] = useState<Set<SeriesKey>>(
+    () => new Set()
+  );
+  const isShown = (key: SeriesKey) => !hiddenSeries.has(key);
+  const toggleSeries = (key: SeriesKey) =>
+    setHiddenSeries((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
 
   const dateFormatter = useDateFormatter({
     month: "short",
@@ -175,10 +194,7 @@ export const ItemPlanningChart = ({
     const empty = {
       data: [] as ChartDataPoint[],
       stockoutDate: null as string | null,
-      belowSafetyDate: null as string | null,
-      domainMin: 0,
-      domainMax: 0,
-      ticks: [] as number[]
+      belowSafetyDate: null as string | null
     };
     if (
       !forecastFetcher.data?.demand ||
@@ -291,13 +307,10 @@ export const ItemPlanningChart = ({
         new Date(a.startDate).getTime() - new Date(b.startDate).getTime()
     );
 
-    // Track the first period the projection breaches each threshold, plus the
-    // Y range, so the chart can highlight "when do we run short" and the axis
-    // can leave headroom around the line.
+    // Track the first period the projection breaches each threshold so the
+    // chart can highlight "when do we run short".
     let stockoutDate: string | null = null;
     let belowSafetyDate: string | null = null;
-    let domainMin = Math.min(0, currentQuantity);
-    let domainMax = Math.max(0, currentQuantity, safetyStockValue);
 
     const data = sortedData.map((period) => {
       // Add supply (positive), then subtract demand (already stored negative).
@@ -319,27 +332,49 @@ export const ItemPlanningChart = ({
       )
         belowSafetyDate = period.startDate;
 
-      domainMax = Math.max(domainMax, runningProjection, supplyUp);
-      domainMin = Math.min(domainMin, runningProjection, demandDown);
       return period;
     });
 
-    // Snap the axis to round, evenly-spaced ticks (0 always included) so the
-    // Y labels read cleanly instead of arbitrary fractions of the data range.
-    const { niceMin, niceMax, ticks } = niceAxis(domainMin, domainMax, 6);
-    return {
-      data,
-      stockoutDate,
-      belowSafetyDate,
-      domainMin: niceMin,
-      domainMax: niceMax,
-      ticks
-    };
+    return { data, stockoutDate, belowSafetyDate };
   }, [
     forecastFetcher.data,
     plannedOrders,
     conversionFactor,
     hasSafetyStock,
+    safetyStockValue
+  ]);
+
+  const axis = useMemo(() => {
+    const show = (key: SeriesKey) => !hiddenSeries.has(key);
+    const onHand = forecastFetcher.data?.quantityOnHand ?? 0;
+    let domainMin = show("projection") ? Math.min(0, onHand) : 0;
+    let domainMax = show("projection") ? Math.max(0, onHand) : 0;
+    if (show("safety")) domainMax = Math.max(domainMax, safetyStockValue);
+
+    for (const period of chartData.data) {
+      const supplyUp =
+        (show("supply")
+          ? period["Purchase Order"] + period["Production Order"]
+          : 0) + (show("planned") ? period.Planned : 0);
+      const demandDown =
+        (show("demand") ? period["Sales Order"] + period["Job Material"] : 0) +
+        (show("demandForecast") ? period["Demand Forecast"] : 0);
+      domainMax = Math.max(domainMax, supplyUp);
+      domainMin = Math.min(domainMin, demandDown);
+      if (show("projection")) {
+        domainMax = Math.max(domainMax, period.Projection);
+        domainMin = Math.min(domainMin, period.Projection);
+      }
+    }
+
+    // Snap the axis to round, evenly-spaced ticks (0 always included) so the
+    // Y labels read cleanly instead of arbitrary fractions of the data range.
+    const { niceMin, niceMax, ticks } = niceAxis(domainMin, domainMax, 6);
+    return { domainMin: niceMin, domainMax: niceMax, ticks };
+  }, [
+    chartData.data,
+    hiddenSeries,
+    forecastFetcher.data?.quantityOnHand,
     safetyStockValue
   ]);
 
@@ -574,8 +609,8 @@ export const ItemPlanningChart = ({
                     tickLine={false}
                     axisLine={false}
                     width={48}
-                    domain={[chartData.domainMin, chartData.domainMax]}
-                    ticks={chartData.ticks}
+                    domain={[axis.domainMin, axis.domainMax]}
+                    ticks={axis.ticks}
                     allowDecimals={false}
                     label={{
                       value: t`Qty`,
@@ -589,16 +624,16 @@ export const ItemPlanningChart = ({
                   />
                   {/* Danger bands: red below zero (stockout), amber between zero
                       and safety stock (buffer). Background tint, behind series. */}
-                  {chartData.domainMin < 0 && (
+                  {axis.domainMin < 0 && (
                     <ReferenceArea
-                      y1={chartData.domainMin}
+                      y1={axis.domainMin}
                       y2={0}
                       fill={chartColors.demand}
                       fillOpacity={0.06}
                       ifOverflow="hidden"
                     />
                   )}
-                  {hasSafetyStock && (
+                  {hasSafetyStock && isShown("safety") && (
                     <ReferenceArea
                       y1={0}
                       y2={safetyStockValue}
@@ -607,54 +642,62 @@ export const ItemPlanningChart = ({
                       ifOverflow="hidden"
                     />
                   )}
-                  {demandSourceTypes.map((sourceType) => (
+                  {isShown("demand") &&
+                    demandSourceTypes.map((sourceType) => (
+                      <Bar
+                        key={sourceType}
+                        dataKey={sourceType}
+                        stackId="stack"
+                        fill={chartColors.demand}
+                        fillOpacity={0.5}
+                      />
+                    ))}
+                  {isShown("demandForecast") && (
                     <Bar
-                      key={sourceType}
-                      dataKey={sourceType}
+                      dataKey="Demand Forecast"
                       stackId="stack"
-                      fill={chartColors.demand}
+                      fill={chartColors.demandForecast}
                       fillOpacity={0.5}
                     />
-                  ))}
-                  <Bar
-                    dataKey="Demand Forecast"
-                    stackId="stack"
-                    fill={chartColors.demandForecast}
-                    fillOpacity={0.5}
-                  />
-                  {supplySourceTypes.map((sourceType) => (
+                  )}
+                  {isShown("supply") &&
+                    supplySourceTypes.map((sourceType) => (
+                      <Bar
+                        key={sourceType}
+                        dataKey={sourceType}
+                        stackId="stack"
+                        fill={chartColors.supply}
+                        fillOpacity={0.5}
+                      />
+                    ))}
+                  {isShown("planned") && (
                     <Bar
-                      key={sourceType}
-                      dataKey={sourceType}
+                      dataKey="Planned"
                       stackId="stack"
-                      fill={chartColors.supply}
+                      fill={chartColors.planned}
                       fillOpacity={0.5}
                     />
-                  ))}
-                  <Bar
-                    dataKey="Planned"
-                    stackId="stack"
-                    fill={chartColors.planned}
-                    fillOpacity={0.5}
-                  />
+                  )}
                   {/* Hero: projected on-hand line. Rendered after the bars so it
                       sits on top; faint gradient instead of a flooded fill. */}
-                  <Area
-                    type="monotone"
-                    dataKey="Projection"
-                    xAxisId="full"
-                    strokeWidth={2.5}
-                    dot={false}
-                    stroke={chartColors.projection}
-                    fill="url(#projectionFill)"
-                    isAnimationActive={false}
-                  />
+                  {isShown("projection") && (
+                    <Area
+                      type="monotone"
+                      dataKey="Projection"
+                      xAxisId="full"
+                      strokeWidth={2.5}
+                      dot={false}
+                      stroke={chartColors.projection}
+                      fill="url(#projectionFill)"
+                      isAnimationActive={false}
+                    />
+                  )}
                   <ReferenceLine
                     y={0}
                     stroke={chartColors.zero}
                     strokeDasharray="3 3"
                   />
-                  {hasSafetyStock && (
+                  {hasSafetyStock && isShown("safety") && (
                     <ReferenceLine
                       y={safetyStockValue}
                       stroke={chartColors.safety}
@@ -670,7 +713,7 @@ export const ItemPlanningChart = ({
                       }}
                     />
                   )}
-                  {chartData.stockoutDate && (
+                  {chartData.stockoutDate && isShown("projection") && (
                     <ReferenceDot
                       x={chartData.stockoutDate}
                       y={0}
@@ -695,11 +738,19 @@ export const ItemPlanningChart = ({
                         safetyStock={
                           hasSafetyStock ? safetyStockValue : undefined
                         }
+                        hiddenSeries={hiddenSeries}
                       />
                     }
                   />
                   <ChartLegend
-                    content={<PlanningChartLegend config={chartConfig} />}
+                    content={
+                      <PlanningChartLegend
+                        config={chartConfig}
+                        hiddenSeries={hiddenSeries}
+                        onToggle={toggleSeries}
+                        disabledSeries={hasSafetyStock ? [] : ["safety"]}
+                      />
+                    }
                     payload={legendPayload as never}
                   />
                 </ComposedChart>
@@ -866,30 +917,57 @@ export const ItemPlanningChart = ({
 // bar series with a line vs. square glyph, so "the line" maps to something.
 function PlanningChartLegend({
   payload,
-  config
+  config,
+  hiddenSeries,
+  onToggle,
+  disabledSeries
 }: {
-  payload?: Array<{ dataKey: string; type?: string; color?: string }>;
+  payload?: Array<{ dataKey: SeriesKey; type?: string; color?: string }>;
   config: ChartConfig;
+  hiddenSeries: Set<SeriesKey>;
+  onToggle: (key: SeriesKey) => void;
+  disabledSeries: SeriesKey[];
 }) {
   if (!payload?.length) return null;
   return (
-    <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 pt-3 text-xs text-muted-foreground">
-      {payload.map((item) => (
-        <div key={item.dataKey} className="flex items-center gap-1.5">
-          {item.type === "line" ? (
-            <span
-              className="h-[3px] w-3.5 shrink-0 rounded-full"
-              style={{ backgroundColor: item.color }}
-            />
-          ) : (
-            <span
-              className="size-2.5 shrink-0 rounded-[2px]"
-              style={{ backgroundColor: item.color }}
-            />
-          )}
-          <span>{config[item.dataKey]?.label}</span>
-        </div>
-      ))}
+    <div className="flex flex-wrap items-center justify-center gap-x-1 gap-y-1 pt-3 text-xs text-muted-foreground">
+      {payload.map((item) => {
+        const shown = !hiddenSeries.has(item.dataKey);
+        return (
+          <button
+            key={item.dataKey}
+            type="button"
+            aria-pressed={shown}
+            disabled={disabledSeries.includes(item.dataKey)}
+            onClick={() => onToggle(item.dataKey)}
+            className={cn(
+              "flex items-center gap-1.5 rounded-md px-1.5 py-0.5 transition-colors",
+              "hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+              "disabled:pointer-events-none disabled:opacity-50",
+              !shown && "text-muted-foreground/60 line-through"
+            )}
+          >
+            {item.type === "line" ? (
+              <span
+                className="h-[3px] w-3.5 shrink-0 rounded-full border"
+                style={{
+                  borderColor: item.color,
+                  backgroundColor: shown ? item.color : "transparent"
+                }}
+              />
+            ) : (
+              <span
+                className="size-2.5 shrink-0 rounded-[2px] border"
+                style={{
+                  borderColor: item.color,
+                  backgroundColor: shown ? item.color : "transparent"
+                }}
+              />
+            )}
+            <span>{config[item.dataKey]?.label}</span>
+          </button>
+        );
+      })}
     </div>
   );
 }
@@ -1096,11 +1174,13 @@ function TooltipRow({
 function PlanningChartTooltip({
   active,
   payload,
-  safetyStock
+  safetyStock,
+  hiddenSeries
 }: {
   active?: boolean;
   payload?: Array<{ payload: ChartDataPoint }>;
   safetyStock?: number;
+  hiddenSeries: Set<SeriesKey>;
 }) {
   const { t } = useLingui();
   const dateFormatter = useDateFormatter({ month: "short", day: "numeric" });
@@ -1132,35 +1212,37 @@ function PlanningChartTooltip({
         {t`Week of ${dateFormatter.format(parseDate(d.startDate).toDate(getLocalTimeZone()))}`}
       </div>
       <div className="grid gap-1.5">
-        <TooltipRow
-          color={chartColors.projection}
-          label={t`Projected on hand`}
-          value={numberFormatter.format(projection)}
-          valueStyle={{ color: projectionColor }}
-          bold
-        />
-        {supply !== 0 && (
+        {!hiddenSeries.has("projection") && (
+          <TooltipRow
+            color={chartColors.projection}
+            label={t`Projected on hand`}
+            value={numberFormatter.format(projection)}
+            valueStyle={{ color: projectionColor }}
+            bold
+          />
+        )}
+        {supply !== 0 && !hiddenSeries.has("supply") && (
           <TooltipRow
             color={chartColors.supply}
             label={t`Supply`}
             value={`+${numberFormatter.format(supply)}`}
           />
         )}
-        {planned !== 0 && (
+        {planned !== 0 && !hiddenSeries.has("planned") && (
           <TooltipRow
             color={chartColors.planned}
             label={t`Planned`}
             value={`+${numberFormatter.format(planned)}`}
           />
         )}
-        {demand !== 0 && (
+        {demand !== 0 && !hiddenSeries.has("demand") && (
           <TooltipRow
             color={chartColors.demand}
             label={t`Demand`}
             value={`−${numberFormatter.format(demand)}`}
           />
         )}
-        {demandForecast !== 0 && (
+        {demandForecast !== 0 && !hiddenSeries.has("demandForecast") && (
           <TooltipRow
             color={chartColors.demandForecast}
             label={t`Demand Forecast`}
