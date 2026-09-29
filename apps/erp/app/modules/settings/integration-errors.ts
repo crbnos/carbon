@@ -24,8 +24,7 @@ type IntegrationErrorMessage = {
 /**
  * Onshape's public-app copy. The panel's own grant (`onshape-v2`) authorizes
  * against the same OAuth application through the same callback handler, so its
- * failures read the same. It never answers `connection-conflict`: the panel is
- * not one of the sync connections that rule is about.
+ * failures read the same. It never answers `connection-conflict`.
  */
 const onshapeErrors = {
   // `invalid_scope` means the OAuth application isn't granted a scope we asked

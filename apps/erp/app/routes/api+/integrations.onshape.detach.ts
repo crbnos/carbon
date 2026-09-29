@@ -14,9 +14,8 @@ export const config = {
  * of its identity fields, and the panel shows the part as unlinked again.
  *
  * The card names the integration whose link it shows. Either one can own an
- * item, and the owned-field lock honours both, so a detach that always removed
- * the `onshape-v2` row left an `onshape` link — and the lock — in place while
- * the card disappeared. The delete still names exactly one integration.
+ * item, and the owned-field lock honours both. The delete names exactly one
+ * integration.
  */
 export async function action({ request }: ActionFunctionArgs) {
   const { companyId } = await requirePermissions(request, {

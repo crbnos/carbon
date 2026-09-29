@@ -34,11 +34,11 @@ export function openOAuthPopup(url: string) {
  *
  * `window.open` is only honoured while the browser holds transient user
  * activation — roughly five seconds from the click. An install handler that
- * awaits a fetch first can outlive that (a cold dev route compiling is enough),
- * and Chrome then blocks the popup while still handing back a window object,
- * so a `if (!popup)` fallback never fires and the click looks like it did
- * nothing at all. Opening synchronously and setting `location` afterwards keeps
- * the popup inside the gesture, however slow the fetch is.
+ * awaits a fetch first can outlive that, and Chrome then blocks the popup while
+ * still handing back a window object, so a `if (!popup)` fallback never fires
+ * and the click looks like it did nothing at all. Opening synchronously and
+ * setting `location` afterwards keeps the popup inside the gesture, however
+ * slow the fetch is.
  */
 export type OAuthPopupHandle = {
   /** Send the popup to the provider, or the current window if it was blocked. */

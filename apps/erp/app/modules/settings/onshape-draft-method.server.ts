@@ -12,14 +12,10 @@ type Client = SupabaseClient<Database>;
  *
  * Carbon never edits a live method in place: a change is a new Draft version
  * that supersedes the Active one when it is released (the `Version` change
- * type does exactly this). The panel used to refuse instead — "make method is
- * released" — which dead-ended anyone updating a released assembly's BOM and
- * made a whole-tree push of any shipped product a wall of errors, since most
- * of its sub-assemblies are released.
+ * type does exactly this).
  *
  * Creating a Draft changes nothing live. The new version sits beside the
- * Active one until a person releases it, so the cutover is still Carbon's
- * decision and the push is still only authoring.
+ * Active one until a person releases it.
  *
  * Idempotent by construction: a second push finds the Draft the first one made
  * and writes into it, because `activeMakeMethods` always prefers the Active
@@ -131,8 +127,7 @@ export async function ensureDraftMakeMethod(
  * Ownership is what stops a push replacing a line somebody added by hand, and
  * it lives in `externalIntegrationMapping` keyed on the line id. The copy has
  * new ids, so without this every Onshape-owned line in the draft reads as
- * manual and the next push inserts a duplicate beside each — the compounding
- * the apply's own comments warn about.
+ * manual and the next push inserts a duplicate beside each.
  *
  * Returns an error message, or null when the ownership carried across.
  */
@@ -155,7 +150,7 @@ async function carryLineOwnership(
     .eq("entityType", "methodMaterial")
     .eq("metadata->>makeMethodId", sourceMethodId);
   if (mappings.error) return mappings.error.message;
-  if ((mappings.data ?? []).length === 0) return null; // nothing pushed here yet
+  if ((mappings.data ?? []).length === 0) return null;
 
   const [sourceLines, targetLines] = await Promise.all([
     client

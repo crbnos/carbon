@@ -112,21 +112,18 @@ export type PanelAssemblyStatus = {
 /*
  * `refreshing` is what separates a re-read from a first read. A refresh keeps
  * the rows it already has on screen and says so on the Refresh button, so
- * nothing moves: the section keeps its title, its buttons stay where the
- * cursor left them, and the list does not collapse and reflow. Only a first
- * read has nothing to show, and that is the one case that draws a skeleton.
+ * nothing moves. Only a first read has nothing to show, and that is the one
+ * case that draws a skeleton.
  */
 /**
- * Why a read failed. `forbidden` is the one failure a Retry cannot fix and the
- * one that is not an error in anything: it renders as a warning naming the
- * permission problem, with no Retry to press.
+ * Why a read failed. `forbidden` is the one failure a Retry cannot fix: it
+ * renders as a warning naming the permission problem, with no Retry to press.
  */
 type LoadFailure = { message: string; forbidden: boolean };
 
 /*
  * `refreshFailure` is a Refresh that failed while rows were already on screen.
- * The rows stay: a transient blip used to replace a hundred-row BOM with an
- * error, destroying exactly the thing the user was reading.
+ * The rows stay.
  */
 type PanelStatusState =
   | { status: "idle" }
@@ -205,9 +202,7 @@ type PanelFieldsState =
        */
       entries: FieldsDraftEntry[];
       saving: boolean;
-      /** A re-read is in flight; the rows on screen are the previous ones. */
       refreshing?: boolean;
-      /** A re-read failed; the rows on screen are the previous ones. */
       refreshFailure?: LoadFailure;
       error: string | null;
       /**
@@ -285,8 +280,7 @@ type SessionState =
   /**
    * `popupBlocked`: the browser refused the sign-in window. That is still the
    * signed-out state — the way forward is the same button — not a Carbon
-   * error; it used to render as "Carbon is not reachable" with a Retry that
-   * did nothing, since there was no token to retry with.
+   * error.
    */
   | { status: "signed-out"; popupBlocked?: boolean }
   | { status: "loading"; token: string }
@@ -337,14 +331,7 @@ type ReleasePushSummary = {
   errors: string[];
 };
 
-/**
- * What happened to one part, with its severity carried alongside the words.
- *
- * It used to be a bare string rendered in muted grey whatever it said, so
- * "Created" and "Item saved but the Onshape link failed; push again" looked
- * identical. The assembly and release pushes had already been moved off that
- * shape; the part push had not.
- */
+/** What happened to one part, with its severity carried alongside the words. */
 type PartRowOutcome = { kind: "ok" | "skipped" | "error"; text: string };
 
 function partOutcome(result: PartApplyResult): PartRowOutcome {
@@ -401,8 +388,7 @@ function partsOutcomeText(
 /**
  * What a push did. `text` is the counts, `skipped` the deliberate omissions,
  * `errors` the things that did not go through. They are kept apart because a
- * joined string renders a partial failure exactly like a clean push — the
- * unlinked-item case reported success in muted grey for a whole release.
+ * joined string renders a partial failure exactly like a clean push.
  */
 type PushOutcome = {
   text: string;
@@ -416,8 +402,7 @@ type PushOutcome = {
   /**
    * Things that went through but the user has to know about — a released
    * method superseded by a Draft version, which takes effect only once
-   * somebody releases it. Not an error, and too consequential to bury in the
-   * counts.
+   * somebody releases it.
    */
   notes?: string[];
 };
@@ -448,8 +433,7 @@ function assemblyOutcomeText(s: AssemblyPushSummary): PushOutcome {
 
 function releaseOutcomeText(s: ReleasePushSummary): PushOutcome {
   // Skipped items are not appended to this line: it becomes the title of a
-  // success alert, and "PN-77: drawing has no matching model item" read as a
-  // clause of the success. They render as their own warning.
+  // success alert. They render as their own warning.
   const text = s.alreadyPushed
     ? "Revisions already in Carbon — BOMs refreshed"
     : `${s.revisionsCreated} revisions + ${s.itemsCreated} new items, ` +
@@ -458,20 +442,13 @@ function releaseOutcomeText(s: ReleasePushSummary): PushOutcome {
   return { text, skipped: s.skipped, errors: s.errors };
 }
 
-/**
- * The counts, then anything that failed. Errors are an alert rather than a
- * clause on the end of the success line: a push that created items but could
- * not link them to Onshape is repairable, and only if the user notices.
- */
 function failedOutcome(message: string): PushOutcome {
   return { text: "", skipped: [], errors: [message] };
 }
 
 /**
  * A push that finished is as much news as a push that failed, so it gets the
- * same weight: the counts used to render as muted grey text beside a
- * destructive alert, which made a clean run the quietest thing on screen.
- * Success and information are Alert variants the component already has.
+ * same weight.
  */
 function PushOutcomeView({ outcome }: { outcome: PushOutcome }) {
   const failed = outcome.errors.length > 0;
@@ -555,12 +532,6 @@ function PushOutcomeView({ outcome }: { outcome: PushOutcome }) {
   );
 }
 
-/**
- * The panel's loading and empty states, so the four sections cannot each
- * invent their own. A spinner rather than a sentence is the app's convention
- * (`OnshapeSync`, `AttachmentsList`); the dashed circle is the ERP's `Empty`.
- * Both stay on one line — the panel has about twenty.
- */
 function PanelLoading({ children }: { children: ReactNode }) {
   return (
     <HStack spacing={2} className="w-full text-sm text-muted-foreground">
@@ -570,15 +541,7 @@ function PanelLoading({ children }: { children: ReactNode }) {
   );
 }
 
-/**
- * A list being read for the first time, in the shape it will take.
- *
- * Carbon's `Skeleton` (animate-pulse on `bg-muted`), laid out as the real
- * rows are — two lines of text and a badge inside the same bordered card —
- * so the list does not jump when the read lands. A refresh never shows this:
- * it has rows already, and replacing them with grey bars would be a step
- * backwards from what the user is looking at.
- */
+/** A list being read for the first time, in the shape it will take. */
 function PanelListSkeleton({ rows = 5 }: { rows?: number }) {
   return (
     <ul className="w-full divide-y divide-border rounded-md border border-border">
@@ -621,11 +584,9 @@ function thrownMessage(error: unknown): string {
  * A warning listing things, bounded.
  *
  * Skipped BOM components arrive one per occurrence, so a real assembly lists
- * the same fastener dozens of times: a 300-line assembly produced a 314-item
- * alert several screens tall, burying the Push bar it was meant to inform.
- * Identical lines fold into one with a count, and only the first few show
- * until asked. The title counts occurrences, since that is what the push
- * leaves out.
+ * the same fastener dozens of times. Identical lines fold into one with a
+ * count, and only the first few show until asked. The title counts
+ * occurrences, since that is what the push leaves out.
  */
 const CAPPED_WARNING_VISIBLE = 6;
 
@@ -678,12 +639,9 @@ function CappedWarningList({
 }
 
 /**
- * A read that failed, in the one shape every section uses.
- *
- * A permission denial is a warning with no Retry — nothing is broken, and
- * retrying cannot help. Anything else is destructive with a Retry in the alert
- * itself, beside the message it answers. `stale` marks a failed Refresh over
- * rows that are still on screen, which must say those rows are the old ones.
+ * A read that failed, in the one shape every section uses. `stale` marks a
+ * failed Refresh over rows that are still on screen, which must say those rows
+ * are the old ones.
  */
 function PanelLoadError({
   title,
@@ -713,7 +671,6 @@ function PanelLoadError({
       <AlertTitle>{title}</AlertTitle>
       <AlertDescription>
         {failure.message}
-        {/* Its own line: a message without a full stop ran straight into it. */}
         {stale ? (
           <span className="mt-1 block">Showing what was loaded before.</span>
         ) : null}
@@ -747,14 +704,7 @@ function PanelEmpty({ children }: { children: ReactNode }) {
   );
 }
 
-/**
- * The Carbon panel Onshape embeds in its element right panel.
- *
- * Phase 1 M1: proves the three legs — Onshape context arrives on the URL,
- * Onshape's SELECTION messages arrive over postMessage, and a Carbon user can
- * sign in from inside the iframe through a same-origin popup. Later milestones
- * replace the selection debug block with part status and push controls.
- */
+/** The Carbon panel Onshape embeds in its element right panel. */
 export function OnshapePanel({
   context,
   serverOrigin,
@@ -787,14 +737,9 @@ export function OnshapePanel({
   /** The part push's section-level result: counts, problems, warnings. */
   const [partsOutcome, setPartsOutcome] = useState<PushOutcome | null>(null);
 
-  /*
-   * Two pages, not two sections of one: the element's BOM is the daily job and
-   * releases are occasional. Stacked, one stood between the user and the other.
-   */
   const [tab, setTab] = useState<PanelTab>("push");
 
-  // The Fields page: the company's property map, edited from the current
-  // element's properties. Loaded when the page is opened.
+  // Loaded when the page is opened.
   const [fields, setFields] = useState<PanelFieldsState>({ status: "closed" });
 
   // The plan under review, if any. Each section renders its review in place
@@ -988,7 +933,7 @@ export function OnshapePanel({
   );
 
   // Boot: tell Onshape we are ready, restore a stored token, and listen for
-  // both Onshape (selection) and our own popup (session token).
+  // our own popup (session token).
   useEffect(() => {
     if (serverOrigin) postApplicationInit(context, serverOrigin);
 
@@ -1002,9 +947,8 @@ export function OnshapePanel({
     const onMessage = (event: MessageEvent) => {
       /*
        * Onshape's own messages are ignored. The context the panel works from
-       * arrives as query parameters, and the client events on this channel
-       * (SELECTION and friends) drive nothing yet — the branch exists so an
-       * Onshape message can never be read as a session token below.
+       * arrives as query parameters. The branch exists so an Onshape message
+       * can never be read as a session token below.
        */
       if (serverOrigin && event.origin === serverOrigin) return;
       if (
@@ -1022,9 +966,7 @@ export function OnshapePanel({
 
   /**
    * Plan a part push: Onshape is read once, nothing is written, and the plan
-   * opens the review. The push buttons show busy meanwhile, as they did when
-   * the write itself ran here; a failed plan reports on the rows the way a
-   * failed push did, with no review left open to hide it.
+   * opens the review.
    */
   const planParts = useCallback(
     async (token: string, partIds: string[]) => {
@@ -1048,8 +990,7 @@ export function OnshapePanel({
           | PlanResponse<PartPlan>
           | PanelErrorResponse;
         if (!response.ok || "error" in body) {
-          // One failure, so one alert. Copying the message onto every selected
-          // row said the same sentence fourteen times in grey.
+          // One failure, so one alert.
           setReview(null);
           setPartsOutcome(
             failedOutcome(
@@ -1088,14 +1029,9 @@ export function OnshapePanel({
   /** The plan route refused the whole tree as too large; holds its message. */
   const [assemblyTooLarge, setAssemblyTooLarge] = useState<string | null>(null);
   /*
-   * The whole tree by default. Choosing a depth per push was a question the
-   * panel could not help anyone answer: the cost it trades away (one request's
-   * size) is invisible until the push is too big, and the result it trades away
-   * (a real BOM below the top level) is the thing the user came for.
-   *
-   * So `top` is offered only at the moment it is the answer — when the route
-   * refuses the whole tree as too large. The refusal counts distinct part
-   * numbers across the WHOLE tree whatever is already in Carbon, so pushing
+   * The whole tree by default. `top` is offered only when the route refuses
+   * the whole tree as too large. The refusal counts distinct part numbers
+   * across the WHOLE tree whatever is already in Carbon, so pushing
    * sub-assemblies first never lowers it; a level-only push is the one way out.
    */
   const planAssembly = useCallback(
@@ -1210,10 +1146,9 @@ export function OnshapePanel({
   /**
    * Apply the reviewed plan. The server takes the stored plan once, merges
    * the edits and writes; nothing is read from Onshape. A 422 pins errors to
-   * rows, a 410 means the plan expired and only a new review can continue,
-   * and success renders the outcome lines a direct push rendered. A part
-   * apply patches the list from the results instead of re-reading Onshape;
-   * assembly and release reload as before.
+   * rows; a 410 means the plan expired and only a new review can continue. A
+   * part apply patches the list from the results instead of re-reading
+   * Onshape; assembly and release reload.
    */
   const applyReview = useCallback(
     async (token: string) => {
@@ -1261,8 +1196,7 @@ export function OnshapePanel({
               results.map((r) => [r.partId, partOutcome(r)])
             )
           }));
-          // The route computes `warnings` and says they must NOT be silent;
-          // they were never read here, so they were.
+          // The route computes `warnings` and says they must NOT be silent.
           setPartsOutcome(
             partsOutcomeText(
               results,
@@ -1459,9 +1393,8 @@ export function OnshapePanel({
   );
 
   /**
-   * Save the property map: the whole entries list, a full replacement. A 422
-   * pins errors to properties; success re-seeds the draft from what the server
-   * now holds, so nothing is left to save.
+   * Save the property map. A 422 pins errors to properties; success re-seeds
+   * the draft from what the server now holds, so nothing is left to save.
    */
   const saveFields = useCallback(
     async (token: string) => {
@@ -1602,11 +1535,8 @@ export function OnshapePanel({
 
   /*
    * Before sign-in the panel IS the sign-in: `availableTabs` is empty until
-   * there is a session, every pane renders null, and the only thing to say is
-   * who is asking and how to answer. Returning here rather than threading the
-   * empty Tabs shell around it is what lets the block own the full height —
-   * inside the scrolling body it centred within its own content box, which
-   * left it stranded near the top of a tall, empty panel.
+   * there is a session. Returning here rather than threading the empty Tabs
+   * shell around it is what lets the block own the full height.
    *
    * Every hook has already run above; this is the last branch before render.
    */
@@ -1656,10 +1586,8 @@ export function OnshapePanel({
       className="flex h-full min-h-0 flex-col"
     >
       {/*
-       * The top band: the pages, and which Carbon company this panel writes
-       * into with the way out. The company is not cosmetic — a user in more
-       * than one has no other way to tell where a push will land. Pinned, not
-       * scrolled with the pane: the push view is a long list.
+       * The company is not cosmetic — a user in more than one has no other
+       * way to tell where a push will land.
        */}
       <HStack className="w-full shrink-0 justify-between gap-2 border-b border-border px-4 py-2">
         {availableTabs.length > 1 ? (
@@ -1693,8 +1621,6 @@ export function OnshapePanel({
       </HStack>
 
       <VStack spacing={4} className="min-h-0 flex-1 overflow-y-auto p-4">
-        {/* Not broken, just opened outside its host: a warning, as on the
-            sign-in screen. */}
         {!serverOrigin ? (
           <Alert variant="warning">
             <LuTriangleAlert />
@@ -1716,7 +1642,6 @@ export function OnshapePanel({
                 size="sm"
                 variant="secondary"
                 onClick={() => session.token && loadMe(session.token)}
-                // Never render a button that does nothing.
                 isDisabled={!session.token}
               >
                 Retry
@@ -1732,9 +1657,7 @@ export function OnshapePanel({
           <VStack spacing={4} className="w-full">
             {/* A first read does not yet know whether this element is an
                 assembly or a part studio, so it claims neither: a skeleton
-                where the title will be, and the list's own shape below it.
-                Naming it "Parts in this element" was wrong half the time and
-                moved every row when the truth arrived. */}
+                where the title will be, and the list's own shape below it. */}
             {session.status === "signed-in" &&
             canLoadParts &&
             !review &&
@@ -1868,14 +1791,11 @@ function AssemblySection({
   assembly: PanelAssemblyStatus;
   canPush: boolean;
   busy: boolean;
-  /** A re-read is in flight; the rows on screen are the previous ones. */
   refreshing: boolean;
   /** A review is open elsewhere: a second push would replace it unseen. */
   locked: boolean;
   outcome: PushOutcome | null;
-  /** The whole-tree push was refused as too large: the route's message. */
   tooLarge: string | null;
-  /** A Refresh failed; the BOM on screen is the one loaded before it. */
   refreshFailure?: LoadFailure;
   onPush: () => void;
   /** Plan the root's own BOM only — the way out of a too-large refusal. */
@@ -1917,8 +1837,6 @@ function AssemblySection({
         </HStack>
       </HStack>
 
-      {/* Two different causes, two different fixes: one is in Onshape, the
-          other is a read that will probably succeed on Refresh. */}
       {!assembly.root.partNumber ? (
         assembly.root.identityUnavailable ? (
           <Alert variant="warning">
@@ -1949,8 +1867,6 @@ function AssemblySection({
         />
       ) : null}
 
-      {/* A refusal, not a failure: nothing is broken, and it carries the one
-          action that gets the user past it. */}
       {tooLarge ? (
         <Alert variant="warning">
           <LuTriangleAlert />
@@ -1984,14 +1900,11 @@ function AssemblySection({
 /**
  * The current assembly's BOM, as Onshape's structured BOM table shows it.
  *
- * Structured opens at the top level only. The rows are the assembly's own
- * children, and a sub-assembly says how many lines it is hiding so the choice
- * to open it is an informed one — a deep tree is hundreds of rows in a panel
- * about twenty tall, and the old view rendered all of them at once.
+ * Structured opens at the top level only, and a sub-assembly says how many
+ * lines it is hiding.
  *
  * Open sub-assemblies are tracked rather than collapsed ones, the opposite of
- * the ERP's `TreeView`. There the default is to show the tree; here the default
- * is to bound it, and a set of open indexes is what survives a refresh
+ * the ERP's `TreeView`: a set of open indexes is what survives a refresh
  * cleanly — a BOM that changed underneath keeps whatever indexes still exist
  * and silently drops the rest.
  */
@@ -2000,10 +1913,7 @@ function AssemblyBomList({
   disabled
 }: {
   lines: PanelAssemblyLine[];
-  /*
-   * A re-read is in flight, so the rows on screen are about to be replaced.
-   * Expanding a list while it is being refetched only means doing it twice.
-   */
+  /* A re-read is in flight, so the rows on screen are about to be replaced. */
   disabled: boolean;
 }) {
   const [open, setOpen] = useState<Set<string>>(new Set());
@@ -2064,7 +1974,7 @@ function AssemblyBomList({
                   </button>
                 ) : (
                   /* Leaves keep the chevron's width so part numbers stay on
-                     one column instead of stepping in and out. */
+                     one column. */
                   <span className="size-3.5 shrink-0" aria-hidden />
                 )}
                 <BomLineText
@@ -2086,14 +1996,13 @@ function AssemblyBomList({
   );
 }
 
-/** A BOM line's two lines of text. */
 function BomLineText({
   line,
   quantity,
   note
 }: {
   line: PanelAssemblyLine;
-  /** Per-parent in the structured view, rolled up in the flat one. */
+  /** Per-parent. */
   quantity: number;
   note: string | null;
 }) {
@@ -2140,7 +2049,6 @@ function PartsSection({
     | { status: "error"; message: string; forbidden?: boolean };
   canPush: boolean;
   pushing: Set<string> | null;
-  /** A review is open elsewhere: a second push would replace it unseen. */
   locked: boolean;
   pushOutcome: Record<string, PartRowOutcome>;
   outcome: PushOutcome | null;
@@ -2291,7 +2199,6 @@ function ReleasesSection({
 }: {
   releases: PanelReleasesState;
   pushingReleaseId: string | null;
-  /** A review is open elsewhere: a second push would replace it unseen. */
   locked: boolean;
   outcome: Record<string, PushOutcome>;
   onPush: (releaseId: string) => void;
@@ -2572,16 +2479,8 @@ function FieldsSection({
   );
 }
 
-/**
- * Wide enough for a custom field name; the property names on the left vary
- * far more in length than the fields do.
- */
 const FIELDS_CONTROL_WIDTH = "w-[180px]";
 
-/**
- * Which side is which is not guessable from the rows alone, since both halves
- * are field names, so the columns are named over the columns they describe.
- */
 function FieldsColumnLabels() {
   return (
     <div className="flex w-full items-center gap-3 px-3">
@@ -2689,15 +2588,13 @@ type ReviewSectionProps<R extends ReviewState> = {
   onCancel: () => void;
   onApply: () => void;
   onReplan: () => void;
-  /** Record a manufacturing-field edit for one row, keyed as the plan is. */
   onEditItem: (key: string, patch: Partial<ItemFieldSnapshot>) => void;
   /** A plan request after expiry is in flight. */
   replanning: boolean;
 };
 
 /**
- * The push button, pinned to the bottom of the scrolling body, so the number
- * of items about to be written stays in view however long the summary runs.
+ * The push button, pinned to the bottom of the scrolling body.
  *
  * `-bottom-4` cancels the body's `p-4`: sticky pins to the scrollport inset by
  * its padding, so `bottom-0` left a 16px strip below the bar where rows
@@ -2761,7 +2658,6 @@ function ReviewError({
   );
 }
 
-/** Title and Cancel, shared by every review. */
 function ReviewHeader({
   busy,
   onCancel
@@ -2779,14 +2675,7 @@ function ReviewHeader({
   );
 }
 
-/**
- * What the push will do, in one line of counts.
- *
- * The review is a summary, not a form. Every value it shows comes from
- * Onshape or from the company's push defaults, and the way to change one is
- * to change it there and review again — the panel does not keep a second
- * editor for data Onshape already edits.
- */
+/** What the push will do, in one line of counts. */
 function ReviewSummary({ counts }: { counts: Array<[number, string]> }) {
   const parts = counts
     .filter(([n]) => n > 0)
@@ -3054,10 +2943,6 @@ function AssemblyReviewSection({
     plan.items.filter((item) => item.action === "reuse" && !item.conflict)
       .length + (plan.root.action === "reuse" && !plan.root.conflict ? 1 : 0);
 
-  /*
-   * What the push will NOT write, and what it writes somewhere that is not
-   * live, are both decided before Push — so they sit above it.
-   */
   const described = plan.methods.map((method) =>
     describeMethod(method, review.excluded)
   );
@@ -3161,7 +3046,6 @@ function AssemblyReviewSection({
       ) : null}
 
       <ul className="w-full divide-y divide-border rounded-md border border-border">
-        {/* The root first: it is what is being pushed. */}
         <li className="bg-card px-3 py-2">
           <div className="flex items-start justify-between gap-2">
             <div className="min-w-0">
@@ -3177,9 +3061,7 @@ function AssemblyReviewSection({
                 {" · this assembly"}
               </p>
             </div>
-            {/* Create/Reuse is not actionable, so it is not shown. A conflict
-                is: the part number clashes with an item this push would write
-                into, and the way out is to renumber in Onshape. */}
+            {/* Create/Reuse is not actionable, so it is not shown. */}
             {plan.root.conflict ? (
               <div className="shrink-0">
                 <ItemActionBadge action="reuse" conflict />
@@ -3220,8 +3102,6 @@ function AssemblyReviewSection({
                   {item.isAssembly ? " · assembly" : ""}
                 </p>
               </div>
-              {/* Only a conflict is actionable (renumber in Onshape); plain
-                  Create/Reuse is not shown. */}
               {item.conflict ? (
                 <div className="shrink-0">
                   <ItemActionBadge action="reuse" conflict />
@@ -3491,14 +3371,12 @@ function ReleaseReviewSection({
 }
 
 /**
- * Every state pill in the panel is a `Status`, the app's own state badge —
- * a Badge carrying the state's icon — rather than a bare Badge, so a part's
- * state reads the same here as on the item page it links to.
+ * Every state pill in the panel is a `Status`, so a part's state reads the
+ * same here as on the item page it links to.
  *
  * `disableTooltip` throughout: `Status` otherwise wraps each badge in a Radix
  * Tooltip whose content is the label already on screen, and a review can run
- * to hundreds of rows. The panel keeps per-row cost to a checkbox, two lines
- * of text and a badge.
+ * to hundreds of rows.
  */
 function ReleaseStateBadge({ state }: { state: PanelRelease["state"] }) {
   if (state === "pushed")
@@ -3576,17 +3454,11 @@ function ItemActionBadge({
 }
 
 /**
- * The whole panel before sign-in: the Carbon mark and the way in, centred.
+ * The whole panel before sign-in: the Carbon mark and the way in.
  *
- * Nothing else belongs here. A lone button in the top-left of an otherwise
- * blank column read as a half-loaded page rather than a deliberate state; the
- * caller centres this in the panel.
- *
- * The mark, the light/dark pair and the `w-24` are lifted from Carbon's own
- * sign-in surfaces (`_oauth+/authorize.tsx`, `_public+/invite.$code.tsx`,
- * `_public+/verify.tsx`) so this reads as the same product asking. It is
- * served from the app's own origin, which the panel is framed from, so the
- * absolute path resolves without the panel bundling an asset of its own.
+ * The mark is served from the app's own origin, which the panel is framed
+ * from, so the absolute path resolves without the panel bundling an asset of
+ * its own.
  */
 function PanelSignIn({
   onSignIn,

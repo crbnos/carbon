@@ -81,17 +81,12 @@ type ApplyResult = {
  * now has a Part row adopts it instead — `upsertPart` reads the new id back
  * from the `parts` view by readableId, which is the wrong row once another
  * revision of the number exists — and an adopt/update whose target item is
- * gone becomes a create. The user's edits apply to creates only; adopt and
- * update refresh the Onshape-owned fields from the plan, never from edits,
- * so the owned-field lock on the item page stays true.
- *
- * Mapped custom fields ride the same rails: a create writes every mapped
- * value (default-mode edits included), an adopt/update merges only
- * owned-mode values into the part row's stored JSON, and List options a
- * written value is missing are appended (add-only) right before the writes.
+ * gone becomes a create. Adopt and update refresh the Onshape-owned fields
+ * from the plan, never from edits, so the owned-field lock on the item page
+ * stays true.
  *
  * Each part is written on its own: a failure is reported in its result and
- * the next part still runs, as the single-request push did.
+ * the next part still runs.
  */
 export async function action({ request }: ActionFunctionArgs) {
   const { client, companyId, userId } = await requireOnshapePanelPermissions(
@@ -102,8 +97,6 @@ export async function action({ request }: ActionFunctionArgs) {
     }
   );
 
-  // The body is validated before the plan is taken: a malformed request must
-  // not burn a one-shot plan.
   const parsed = payloadSchema.safeParse(
     await request.json().catch(() => null)
   );
@@ -112,8 +105,6 @@ export async function action({ request }: ActionFunctionArgs) {
   }
   const { planId } = parsed.data;
   const selected = [...new Set(parsed.data.selected)];
-  // Enum-typed fields arrive as plain strings; `mergeItemEdits` rejects any
-  // value outside the enum before it is applied.
   const edits = parsed.data.edits as Record<string, ItemEdit>;
 
   // Peek first: a 422 on the edits must leave the plan in place so the user
@@ -131,7 +122,6 @@ export async function action({ request }: ActionFunctionArgs) {
   }
   const plan: PartPlan = stored.plan;
   const { documentId, wv, wvId, elementId, options } = plan;
-  // Absent on a plan stored before configurations were considered: default.
   const configuration = plan.configuration ?? null;
 
   const rowByPartId = new Map(plan.rows.map((row) => [row.partId, row]));
@@ -147,10 +137,8 @@ export async function action({ request }: ActionFunctionArgs) {
     edits,
     options
   );
-  // Custom-field edits are validated the same way, per create row, while the
-  // plan is still peeked: a bad value 422s and the review stays applyable.
-  // Adopt/update rows take no custom-field edits — like item edits — and
-  // only their owned-mode plan values are applied below.
+  // Custom-field edits are validated per create row, while the plan is still
+  // peeked. Adopt/update rows take no custom-field edits.
   const customFieldValues = new Map<
     string,
     Record<string, string | number | boolean | null>
@@ -182,11 +170,9 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 
   // The definitions the list-option sync needs are read while the plan is
-  // still peeked: nothing the take produces feeds them, so a failed read
-  // must not burn a one-shot review. They are re-read here rather than taken
-  // from the plan, so an option edited between review and apply is unioned,
-  // never clobbered. Rows apply never writes carry no value, so a push with
-  // no mapped field still pays nothing.
+  // still peeked: a failed read must not burn a one-shot review. They are
+  // re-read here rather than taken from the plan, so an option edited between
+  // review and apply is unioned, never clobbered.
   const writesMappedFields = selectedRows.some(
     (row) =>
       row.action !== "unchanged" &&
@@ -267,10 +253,6 @@ export async function action({ request }: ActionFunctionArgs) {
 
   const serviceRole = getCarbonServiceRole();
 
-  // What a row writes against, given what Carbon holds now: the plan's target
-  // when it still exists, else any row at this part number, else nothing —
-  // and then the row creates. `rowsByReadableId` grows as the loop writes, so
-  // a later row at a number this apply just created sees it.
   const resolveTarget = (row: PartPlanRow): PlanItemRow | undefined => {
     let target: PlanItemRow | undefined;
     if (row.action === "adopt" || row.action === "update") {
@@ -286,15 +268,13 @@ export async function action({ request }: ActionFunctionArgs) {
   };
 
   // Plan-level problems that belong to no single part — currently only a
-  // failed list-option append, which leaves parts carrying a value the field
-  // does not list.
+  // failed list-option append.
   const warnings: string[] = [];
 
   // ---- Custom fields: list options + current part values, before the loop -
-  // Every value this apply could write, per field. An adopt/update writes
-  // only its owned-mode values, so a default-mode value must not append an
-  // option no row will use; a row with no target left creates and writes them
-  // all. The loop can only gain targets from here, so this never under-counts.
+  // Every value this apply could write, per field. A row with no target left
+  // creates and writes them all. The loop can only gain targets from here, so
+  // this never under-counts.
   const writtenValuesByFieldId = new Map<
     string,
     Array<string | number | boolean | null>
@@ -318,13 +298,10 @@ export async function action({ request }: ActionFunctionArgs) {
       if (!values) continue;
       const missing = missingListOptions(definition, values);
       if (missing.length === 0) continue;
-      // Add-only: append after the existing options, order kept. The user
-      // holds parts permissions, not settings, so the append needs the
-      // service role. A failure is deliberately non-fatal — the plan is
-      // already taken, the value is written regardless, and the next push
-      // of the same value retries the append. It is NOT silent, though: the
-      // value lands in a List field that does not contain it, and the ERP
-      // renders that as an unknown option with nothing to explain it.
+      // Add-only, order kept. The user holds parts permissions, not settings,
+      // so the append needs the service role. A failure is non-fatal — the
+      // plan is already taken, the value is written regardless, and the next
+      // push of the same value retries the append.
       const appended = await serviceRole
         .from("customField")
         .update({
@@ -347,9 +324,9 @@ export async function action({ request }: ActionFunctionArgs) {
   // Owned-mode fields merge into the target part rows' stored JSON. part.id
   // is the item's readableId (one part row per part number, shared across
   // revisions), so the candidates are every readableId a selected row can
-  // resolve to. One bulk read; the map is kept current as the loop writes,
-  // so a later row merging into a part this apply just created cannot
-  // clobber what the create wrote.
+  // resolve to. The map is kept current as the loop writes, so a later row
+  // merging into a part this apply just created cannot clobber what the
+  // create wrote.
   const partCustomFieldsByReadableId = new Map<string, unknown>();
   const ownedReadableIds = [
     ...new Set(
@@ -448,7 +425,6 @@ export async function action({ request }: ActionFunctionArgs) {
       continue;
     }
 
-    // What the row does now, given what Carbon holds at apply time.
     const target = resolveTarget(row);
     const resolved: "create" | "adopt" | "update" = target
       ? row.action === "update" && target.id === row.itemId
@@ -460,9 +436,9 @@ export async function action({ request }: ActionFunctionArgs) {
     let readableId: string;
     if (resolved === "create") {
       const item = merged.items.get(row.partId) ?? proposedFor(row, plan);
-      // A create writes every mapped value, defaults included — they were
-      // editable in the review. The fallback covers an adopt/update whose
-      // target vanished (no peek-phase merge ran for it): plan values as-is.
+      // A create writes every mapped value. The fallback covers an
+      // adopt/update whose target vanished (no peek-phase merge ran for it):
+      // plan values as-is.
       const fieldValues =
         customFieldValues.get(row.partId) ?? planCustomFieldValues(row);
       const created = await upsertPart(client, {
@@ -509,11 +485,9 @@ export async function action({ request }: ActionFunctionArgs) {
     } else {
       itemId = (target as PlanItemRow).id;
       readableId = (target as PlanItemRow).readableId;
-      // Onshape owns name/description; refresh them on the linked item from
-      // the plan's Onshape values, never from edits. The three manufacturing
-      // fields are NOT Onshape-owned, so the reviewer's changes to them ride
-      // the same update — only the ones actually changed, so an untouched push
-      // writes exactly what it did before.
+      // The three manufacturing fields are NOT Onshape-owned, so the
+      // reviewer's changes to them ride the same update — only the ones
+      // actually changed.
       const mfg = row.current
         ? mergeExistingItemEdits(row.current, edits[partId])
         : null;
@@ -542,10 +516,8 @@ export async function action({ request }: ActionFunctionArgs) {
         });
         continue;
       }
-      // Owned-mode custom fields follow every push exactly like name and
-      // description. The merge touches only the owned keys, so everything
-      // Carbon owns — default-mode fields, unmapped custom fields — stays.
-      // Rows with no valued owned field write nothing at all.
+      // The merge touches only the owned keys, so everything Carbon owns —
+      // unmapped custom fields — stays.
       const owned = ownedCustomFieldValues(row);
       if (owned) {
         const mergedFields = mergeCustomFieldValues(
@@ -584,10 +556,8 @@ export async function action({ request }: ActionFunctionArgs) {
       configuration
     );
     const now = datetime.timestamp();
-    // Both deletes must land before the insert. A second row for the same
-    // item makes the owned-field lock's `.maybeSingle()` error, which
-    // silently unlocks name and description on the item page — so a failure
-    // here stops this part rather than inserting alongside.
+    // Both deletes must land before the insert, so a failure here stops this
+    // part rather than inserting alongside.
     const clearedByItem = await serviceRole
       .from("externalIntegrationMapping")
       .delete()
@@ -641,7 +611,6 @@ export async function action({ request }: ActionFunctionArgs) {
         companyId,
         createdBy: userId
       })
-      // The id is what a rollback deletes by; see the trigger failure below.
       .select("id")
       .single();
     if (inserted.error || !inserted.data) {
@@ -654,10 +623,7 @@ export async function action({ request }: ActionFunctionArgs) {
     }
 
     // One event id per plan × item × element: a retried apply of the same
-    // plan cannot queue the export twice. If the event cannot be sent, the
-    // mapping just written is removed again: it carries this microversion,
-    // and leaving it would make the next plan read "unchanged" and never
-    // queue the export at all.
+    // plan cannot queue the export twice.
     try {
       await trigger(
         "onshape-panel-sync",
@@ -678,9 +644,8 @@ export async function action({ request }: ActionFunctionArgs) {
       );
     } catch (error) {
       // Roll the mapping back so the next plan does not read "unchanged" and
-      // skip the export forever. If the rollback itself fails, say so — the
-      // advice to "push again" would otherwise be wrong, since the stale
-      // mapping makes the next push a no-op.
+      // skip the export forever. If the rollback itself fails, say so: the
+      // stale mapping makes the next push a no-op.
       //
       // By the id this push inserted, not by externalId: a concurrent push of
       // the same part may already have replaced this row with its own, and
@@ -724,9 +689,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
 /**
  * The item a create writes for a row: the plan's proposal when it has one,
- * else one built from the row (an adopt/update whose target vanished). The
- * row carries no Onshape description of its own, so that fallback takes the
- * description from the recorded owned-field change when there is one.
+ * else one built from the row (an adopt/update whose target vanished).
  */
 function proposedFor(row: PartPlanRow, plan: PartPlan): ProposedItem {
   if (row.proposed) return row.proposed;
@@ -769,7 +732,7 @@ function planCustomFieldValues(
 
 /**
  * The owned-mode values an adopt/update writes, or null when the row has no
- * valued owned field — the part row is then left untouched.
+ * owned field — the part row is then left untouched.
  */
 function ownedCustomFieldValues(row: PartPlanRow): {
   values: Record<string, string | number | boolean | null>;
@@ -780,7 +743,7 @@ function ownedCustomFieldValues(row: PartPlanRow): {
   for (const field of row.customFields ?? []) {
     if (field.mode !== "owned") continue;
     // A null rides along: mergeCustomFieldValues deletes the key, so a
-    // property emptied in Onshape empties in Carbon (owned means CAD wins).
+    // property emptied in Onshape empties in Carbon.
     values[field.fieldId] = field.value;
     fieldIds.add(field.fieldId);
   }

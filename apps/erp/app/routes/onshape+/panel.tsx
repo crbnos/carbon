@@ -14,8 +14,7 @@ export const config = {
 export const meta: MetaFunction = () => [{ title: "Carbon for Onshape" }];
 
 /**
- * The one route Carbon allows to be framed, and only by Onshape. Nothing else
- * in the app sets a CSP, so nothing else can be embedded.
+ * The one route Carbon allows to be framed, and only by Onshape.
  */
 export const headers: HeadersFunction = () => ({
   "Content-Security-Policy":

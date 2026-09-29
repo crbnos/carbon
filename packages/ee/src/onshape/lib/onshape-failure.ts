@@ -8,18 +8,13 @@ const logger = getLogger("ee", "onshape", "panel");
  *
  * The client keeps axios's own text on a transport failure — "Onshape request
  * failed: timeout of 60000ms exceeded" — which is right for a log and wrong for
- * a person. Every panel route used to forward that string verbatim, so the most
- * common failure in the product, a cold BOM read, reached the user as a raw
- * timeout when the true cause is Onshape building the BOM on demand and the
- * fix is to press Refresh. This maps each cause to a sentence that says what
- * happened and what to do — worded to fit whichever button sits beside it,
- * Retry in a load failure or Refresh in a header. The original text is logged here, so a translated
- * message never costs the detail someone debugging needs.
+ * a person. This maps each cause to a sentence that says what happened and
+ * what to do. The original text is logged here.
  *
- * Status codes are chosen for the panel, not echoed from Onshape. In
- * particular Onshape's own 401/403 must never reach the panel as a 401: the
- * panel reads a 401 as "your Carbon session is gone" and signs the user out,
- * when the thing actually rejected is Carbon's stored Onshape grant.
+ * Status codes are chosen for the panel, not echoed from Onshape. Onshape's own
+ * 401/403 must never reach the panel as a 401: the panel reads a 401 as "your
+ * Carbon session is gone" and signs the user out, when the thing actually
+ * rejected is Carbon's stored Onshape grant.
  */
 export type OnshapeFailure = {
   status: 404 | 422 | 429 | 502 | 504;

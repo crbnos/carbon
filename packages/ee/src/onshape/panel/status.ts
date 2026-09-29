@@ -31,10 +31,9 @@ export type PanelPartStatus = {
  * default one.
  *
  * A configured part is ONE Onshape part (one partId) whose variants can carry
- * different part numbers — a door in Large and in Default is two Carbon items.
- * So the configuration is part of what identifies a Carbon item's Onshape
- * source; without it two items claim the same key and the unique mapping index
- * rejects the second.
+ * different part numbers. So the configuration is part of what identifies a
+ * Carbon item's Onshape source; without it two items claim the same key and
+ * the unique mapping index rejects the second.
  *
  * The default configuration is null so every key written before configurations
  * were considered still matches: Onshape reports it as "default" (the BOM's
@@ -72,7 +71,6 @@ export function externalIdForAssembly(
   );
 }
 
-/** The one mapping key every panel write uses. */
 export function externalIdForPart(
   documentId: string,
   elementId: string,

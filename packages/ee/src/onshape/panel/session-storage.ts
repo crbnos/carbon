@@ -67,14 +67,9 @@ export const PANEL_FORBIDDEN_MESSAGE =
 
 /**
  * Every caller reads a failed response as `{ error }` JSON, and two kinds of
- * failure are not JSON: a permission denial (`requirePermissions` throws a
- * plain-text "Forbidden") and anything a gateway or the framework answers with
- * an HTML page. `response.json()` then threw, the catch rendered the parser's
- * own message, and a user without a permission saw
- * `Unexpected token 'F', "Forbidden" is not valid JSON` in every section.
- *
- * Normalising here fixes all eleven call sites at once instead of teaching each
- * to parse defensively. A successful response is never touched.
+ * failure are not JSON: a permission denial (plain-text "Forbidden") and
+ * anything a gateway or the framework answers with an HTML page. A successful
+ * response is never touched.
  */
 async function normalizeErrorBody(response: Response): Promise<Response> {
   if (response.ok) return response;

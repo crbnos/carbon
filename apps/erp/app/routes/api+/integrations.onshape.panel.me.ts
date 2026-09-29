@@ -19,7 +19,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     await requireOnshapePanelPermissions(request, {});
 
   // `requireOnshapePanelPermissions` cannot be probed a second time for a
-  // yes/no, so the claims check is re-run directly, as the MCP endpoints do.
+  // yes/no, so the claims check is re-run directly.
   // Claims belong to the session user, matching what the Fields route enforces.
   const [company, claims] = await Promise.all([
     client.from("company").select("id, name").eq("id", companyId).maybeSingle(),

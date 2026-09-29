@@ -14,13 +14,11 @@
  * against Supabase's Kong + PostgREST: an encoded request line of 3,821 bytes
  * succeeds and one of 4,001 fails, so the ceiling is 4 KB. Above ~6 KB Kong
  * answers 414 itself; between the two it forwards and PostgREST rejects the
- * request line, which Kong reports as a 502 "invalid response from upstream" —
- * a confusing way to be told a list was too long.
+ * request line, which Kong reports as a 502 "invalid response from upstream".
  *
  * The limit is BYTES, not values. A batch of 200 nine-character part numbers
  * fits; 60 fifty-eight-character external ids does not. Chunking on a fixed
- * count is therefore not safe on its own — it is exactly how a list of long
- * ids slips past a limit tuned for short ones.
+ * count is therefore not safe on its own.
  */
 
 /** Bytes left for everything else on the line: path, select, other filters. */
@@ -32,7 +30,6 @@ const SEPARATOR_BYTES = 3;
 /** Two encoded quotes, added by supabase-js when a value contains , ( or ). */
 const QUOTE_BYTES = 6;
 
-/** What one value costs in the encoded query string, exactly. */
 function filterValueBytes(value: string): number {
   // `v=` is two characters of the serialization, not of the value.
   const encoded = new URLSearchParams({ v: value }).toString().length - 2;
@@ -73,10 +70,8 @@ export function chunkFilterValues(
 /**
  * Run a PostgREST query once per batch of `values` and concatenate the rows.
  *
- * The caller supplies the query for one batch, so every filter, select and
- * ordering stays where it is legible — this only decides how many times to
- * ask. The first error wins and stops the run: a partial result read as a
- * whole one is how a sync decides a row is missing and deletes it.
+ * The first error wins and stops the run: a partial result read as a whole
+ * one is how a sync decides a row is missing and deletes it.
  */
 export async function selectInBatches<Row, Err>(
   values: string[],

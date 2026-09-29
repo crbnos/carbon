@@ -19,10 +19,8 @@ import type { PanelPartStatus } from "./status";
  * React. Panel.tsx owns the fetches; this file owns the shape of what they
  * send and receive.
  *
- * Edits are sparse — `edits[key]` holds only the fields that differ from the
- * plan's proposal — so the apply body says exactly what the user changed and
- * an untouched row sends nothing. The key is the plan's own: partId for
- * parts, part number for assemblies and releases.
+ * Edits are sparse, so an untouched row sends nothing. The key is the plan's
+ * own: partId for parts, part number for assemblies and releases.
  */
 
 type ReviewBase = {
@@ -190,7 +188,7 @@ export type ReleaseApplyBody = {
   edits: Record<string, ItemEdit>;
   changeNotice: ChangeNoticeEdit | null;
   /**
-   * Sent only when the plan proposed a notice, so there was a choice to make.
+   * Sent only when the plan proposed a notice.
    * Omitted otherwise: the apply then records one if the push creates
    * something the plan did not foresee (a row that vanished since review).
    */
@@ -205,9 +203,6 @@ function scopeEdit(
 ): ItemEdit | undefined {
   if (!edit) return undefined;
   if (isCreate) return edit;
-  // An existing item's name, description, unit and custom fields are
-  // Onshape-owned or create-only; keep only the three manufacturing fields so
-  // a push can never carry the rest, whatever the editor put in the edit map.
   const out: ItemEdit = {};
   if (edit.replenishmentSystem !== undefined) {
     out.replenishmentSystem = edit.replenishmentSystem;
@@ -221,10 +216,6 @@ function scopeEdit(
   return Object.keys(out).length > 0 ? out : undefined;
 }
 
-/**
- * Collect the edits to send, keyed as the plan is. Each entry says whether the
- * row is a create; existing rows are scoped to their manufacturing fields.
- */
 function collectEdits(
   edits: Record<string, ItemEdit>,
   entries: Array<{ key: string; isCreate: boolean }>
@@ -238,10 +229,7 @@ function collectEdits(
 }
 
 /**
- * The apply request for a review. A create carries its whole edit (name,
- * description, unit, custom fields and the three manufacturing fields); an
- * existing item carries only the three manufacturing fields — its name and
- * description stay Onshape-owned. A row the user edited then deselected or
+ * The apply request for a review. A row the user edited then deselected or
  * excluded sends nothing, and the server recomputes what actually changed, so
  * an edit that matches the current value writes nothing.
  */
@@ -435,9 +423,7 @@ export function describeMethod(
     `${added} added, ${method.replaces.length} replaced, ` +
     `${method.keeps.length} manual kept`;
   // A released method is not skipped: the push writes a new Draft version of
-  // it (see `ensureDraftMakeMethod`). This used to say "lines will not be
-  // applied", which stopped being true when that landed — and told reviewers
-  // to expect a no-op from a push that does write.
+  // it (see `ensureDraftMakeMethod`).
   if (method.status === "active") {
     return {
       text: `${parent} · released in Carbon — new Draft version: ${counts}`,

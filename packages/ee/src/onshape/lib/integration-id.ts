@@ -9,21 +9,18 @@ import {
  *
  * `onshape` (or `onshape-government`) is the pull-shaped one: Carbon lists
  * documents, pulls models, and a webhook attaches assets when Onshape releases.
- * `onshape-v2` is the panel — push-only, driven from inside Onshape by the
- * person who decides when CAD data should land in Carbon.
+ * `onshape-v2` is the panel — push-only, driven from inside Onshape.
  *
  * They are separate integrations rather than two modes of one because they own
  * separate state: each has its own OAuth grant and credential row, and each
- * writes its own `externalIntegrationMapping` namespace. A company can install
- * either, both, or neither, and uninstalling one never disturbs the other. The
+ * writes its own `externalIntegrationMapping` namespace. The
  * one-connection-at-a-time rule in `./connection` is between the two sync
- * connections only; the panel is not one of them.
+ * connections only.
  *
- * The pair is expected to be temporary — v2 is intended to replace v1 — but
- * while both are installable, every read that answers "does Carbon know about
+ * While both are installable, every read that answers "does Carbon know about
  * this Onshape thing?" has to consider both namespaces, and every write has to
  * name exactly one. An `"onshape"` string literal in panel code is almost
- * always a bug now.
+ * always a bug.
  */
 export const ONSHAPE_V2_INTEGRATION_ID = "onshape-v2";
 

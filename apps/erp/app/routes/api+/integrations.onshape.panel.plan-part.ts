@@ -49,8 +49,7 @@ const ITEM_COLUMNS =
  * everything it needs, including each part's microversion, which is the only
  * "unchanged since last push" signal. When the company has mapped Onshape
  * properties to custom fields, one more metadata read resolves per-part
- * values into the plan — still zero Onshape reads at apply, and companies
- * with no map pay nothing. Carbon is read in bulk: the element's
+ * values into the plan. Carbon is read in bulk: the element's
  * mappings, every revision of the requested part numbers, and the items those
  * mappings point at (entityId has no foreign key, so a mapping can outlive its
  * item and must not read as a link).
@@ -247,8 +246,6 @@ export async function action({ request }: ActionFunctionArgs) {
         map: propertyMap,
         definitions
       });
-      // Keys are set only when non-empty: rows the map does not touch look
-      // exactly as they did before this feature, in store and response.
       if (resolved.fields.length > 0) row.customFields = resolved.fields;
       if (resolved.unmapped.length > 0) {
         row.unmappedProperties = resolved.unmapped;

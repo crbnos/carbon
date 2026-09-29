@@ -41,10 +41,9 @@ import {
  * ERP's own (`apps/erp/app/components/Icons.tsx`) — replicated here from
  * `react-icons` because `@carbon/ee` cannot import app code.
  *
- * The editor is seeded from `baseline` — the proposal for a created item, the
- * item's current values for an existing one — and reports only what the user
- * changes through `onChange`; the apply routes diff against the live value, so
- * an untouched control writes nothing.
+ * The editor is seeded from `baseline` and reports only what the user changes
+ * through `onChange`; the apply routes diff against the live value, so an
+ * untouched control writes nothing.
  */
 
 function replenishmentIcon(value: string): ReactNode {
@@ -109,8 +108,6 @@ function FieldSelect<T extends string>({
       onValueChange={(next) => onChange(next as T)}
       disabled={disabled}
     >
-      {/* Icon-only trigger: the value's meaning is in the title/aria-label and
-          in the open list, so a row of three stays narrow. */}
       <SelectTrigger
         size="sm"
         hideIcon
@@ -142,10 +139,8 @@ export function ItemFieldSelects({
 }: {
   /** Proposal (create) or the item's current values (existing). */
   baseline: ItemFieldSnapshot;
-  /** The user's edit for this row so far, if any. */
   edit: ItemEdit | undefined;
   disabled?: boolean;
-  /** Called with the field(s) the user changed. */
   onChange: (patch: Partial<ItemFieldSnapshot>) => void;
 }) {
   const replenishmentSystem =

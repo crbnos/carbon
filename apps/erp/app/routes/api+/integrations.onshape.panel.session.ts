@@ -9,7 +9,6 @@ export const config = {
   runtime: "nodejs"
 };
 
-/** DELETE revokes the panel session named by the bearer token. */
 export async function action({ request }: ActionFunctionArgs) {
   if (request.method !== "DELETE") {
     return data({ error: "Method not allowed" }, { status: 405 });

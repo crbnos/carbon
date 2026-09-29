@@ -40,7 +40,6 @@ const payloadSchema = z.object({
   wv: z.enum(["w", "v"]),
   wvId: z.string().min(1),
   elementId: z.string().min(1),
-  /** Omitted by older panels, which only ever pushed the whole tree. */
   depth: z.enum(["all", "top"]).default("all"),
   /** The assembly configuration the panel was opened in; absent = default. */
   configuration: z.string().nullish()
@@ -50,10 +49,8 @@ const payloadSchema = z.object({
  * The most distinct part numbers one push will plan.
  *
  * Not a technical limit — the reads are batched and the writes are bulk — but
- * a push is one HTTP request with no rollback, so a very large one is a long
- * wait that can be cut off by a gateway halfway through, leaving a partly
- * written BOM. Refusing with a number, and naming the level-by-level route
- * out, beats a timeout the user cannot interpret.
+ * a push is one HTTP request with no rollback, so a very large one can be cut
+ * off by a gateway halfway through, leaving a partly written BOM.
  *
  * A `top` push is bounded by one level and is never refused.
  */
@@ -66,11 +63,7 @@ const MAX_PLAN_PARTS = 1500;
  * method it would touch and the lines each would gain, lose or keep — without
  * writing anything. The plan is stored server-side with the parsed BOM so the
  * apply never reads Onshape again: the two live calls here (BOM + element
- * metadata, usually the dev cache) are the push's whole quota cost.
- *
- * When the company maps Onshape properties to custom fields, the ROOT item's
- * fields resolve here from the element metadata payload already read for
- * identity — the map costs zero extra Onshape calls, whatever its size.
+ * metadata) are the push's whole quota cost.
  *
  * Permissions match the apply so a user who could not push fails here,
  * before reviewing.
@@ -139,8 +132,6 @@ export async function action({ request }: ActionFunctionArgs) {
   let rootName = bomRoot?.name ?? null;
   let rootDescription = bomRoot?.description ?? null;
   const rootRevision = bomRoot?.revision ?? null;
-  // Kept for the property-map resolution below: the root's custom fields
-  // come from this same payload, so mapping costs no extra Onshape call.
   let elementMetadata: unknown = null;
   // A failed read is kept, not swallowed: identity may still come from the
   // BOM root, but the mapped fields cannot, and the property-map block below
@@ -189,11 +180,10 @@ export async function action({ request }: ActionFunctionArgs) {
       (node) => node.children.length > 0
     ).length;
     /*
-     * The advice has to be something the panel can actually do. It used to say
-     * "push the sub-assemblies first, then this one", which could not work:
-     * this count is over the WHOLE tree regardless of what is already in
-     * Carbon, so the parent is refused just the same afterwards. A level-only
-     * push is the real way out, and `code` lets the panel offer it as a button.
+     * "Push the sub-assemblies first" cannot work: this count is over the
+     * WHOLE tree regardless of what is already in Carbon, so the parent is
+     * refused just the same afterwards. A level-only push is the way out, and
+     * `code` lets the panel offer it as a button.
      */
     return data(
       {
@@ -208,8 +198,6 @@ export async function action({ request }: ActionFunctionArgs) {
     );
   }
 
-  // Every revision row, revision ascending, so the builder's pick per part
-  // number is deterministic and apply can re-resolve the same way.
   const existing = await selectInBatches(partNumbers, (batch) =>
     client
       .from("item")
@@ -223,11 +211,9 @@ export async function action({ request }: ActionFunctionArgs) {
   if (existing.error) {
     return data({ error: "Failed to read Carbon items" }, { status: 500 });
   }
-  // Each batch is sorted within itself, so the concatenation is not. Re-sorted
-  // to preserve the ascending order this read has always had — no consumer
-  // depends on it today (every pick below compares revisions directly rather
-  // than taking a position), but the reads document themselves as ordered and
-  // a future reader should be able to rely on that.
+  // Each batch is sorted within itself, so the concatenation is not. No
+  // consumer depends on it today (every pick below compares revisions
+  // directly).
   existing.data.sort((a, b) =>
     (a.revision ?? "").localeCompare(b.revision ?? "")
   );
@@ -353,11 +339,11 @@ export async function action({ request }: ActionFunctionArgs) {
 
   // ---- Root custom fields (property map) ---------------------------------
   // The Onshape→custom-field map lives on the integration's settings
-  // metadata (non-secret; getOnshapeClient read the same row but returns
-  // only a client, so this is one more RLS-scoped select). Only the ROOT
-  // item resolves fields — child items get theirs when their own part
-  // studio is pushed — and only from the element metadata already fetched
-  // above, so an unmapped company costs no extra Onshape call.
+  // metadata (getOnshapeClient read the same row but returns only a client,
+  // so this is one more RLS-scoped select). Only the ROOT item resolves
+  // fields — child items get theirs when their own part studio is pushed —
+  // and only from the element metadata already fetched above, so the map
+  // costs no extra Onshape call.
   if (elementMetadata !== null || metadataError !== null) {
     const integration = await client
       .from("companyIntegration")
@@ -374,8 +360,6 @@ export async function action({ request }: ActionFunctionArgs) {
       );
     }
     const propertyMap = parsePropertyMap(integration.data?.metadata);
-    // The same rule for the metadata read itself: identity came from the BOM
-    // root, but the mapped values live only in the payload that failed.
     if (propertyMap.length > 0 && elementMetadata === null) {
       const failure = onshapeFailure(metadataError);
       return data(failure.body, { status: failure.status });
@@ -404,8 +388,6 @@ export async function action({ request }: ActionFunctionArgs) {
         map: propertyMap,
         definitions
       });
-      // Optional keys ride along only when non-empty so a plan under an
-      // empty map is byte-identical to one from before the feature.
       if (resolved.fields.length > 0) {
         plan.root.customFields = resolved.fields;
       }

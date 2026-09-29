@@ -28,9 +28,9 @@ export const config = {
 /**
  * Carbon status for the current Onshape element.
  *
- * Part Studio: the part list joined to mappings/items (one live call, cached).
- * Assembly: the indented BOM joined to items by part number (one live call,
- * cached) plus the assembly's own mapping. Everything else is Carbon's DB.
+ * Part Studio: the part list joined to mappings/items.
+ * Assembly: the indented BOM joined to items by part number plus the
+ * assembly's own mapping.
  */
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId, userId } = await requireOnshapePanelPermissions(
@@ -124,13 +124,10 @@ export async function loader({ request }: LoaderFunctionArgs) {
       );
     }
     // The BOM omits the assembly's own row; its identity lives in element
-    // metadata (one cached call).
+    // metadata.
     let rootPartNumber = bomRoot?.partNumber ?? null;
     let rootName = bomRoot?.name ?? null;
-    // Kept non-fatal — the BOM itself read fine — but no longer silent. A null
-    // part number used to mean either "Onshape has none" or "we never managed
-    // to ask", and the panel answered both by telling the user to fix their
-    // Onshape data.
+    // Kept non-fatal — the BOM itself read fine.
     let rootIdentityUnavailable = false;
     try {
       const metadata = await onshape.client.getElementMetadata(
@@ -209,10 +206,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
     ]);
 
     /*
-     * Every read is checked, not just the mappings. `selectInBatches` returns
-     * `{ data: [], error }` on a failure, which is indistinguishable from "no
-     * rows" — so an unchecked item read rendered every line "Not in Carbon",
-     * and the user's reasonable next step was to push parts that already exist.
+     * `selectInBatches` returns `{ data: [], error }` on a failure, which is
+     * indistinguishable from "no rows".
      */
     if (lineMappings.error || rootMapping.error || items.error) {
       return data(
@@ -327,7 +322,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
     })()
   ]);
 
-  // As on the assembly path: a failed batch read looks like "no rows".
   if (mappings.error || matches.error) {
     return data(
       {

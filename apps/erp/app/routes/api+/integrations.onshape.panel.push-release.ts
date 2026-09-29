@@ -45,8 +45,7 @@ export const config = {
   runtime: "nodejs"
 };
 
-// Edits arrive as free strings. `mergeItemEdits` is the validator — an
-// unknown enum value, a unit the company lacks or an empty name comes back
+// `mergeItemEdits` is the validator — an unknown enum value, a unit the company lacks or an empty name comes back
 // as a 422 naming the row, not a blanket 400 — so the schema pins only the
 // shape and the cast to ItemEdit below is safe.
 const itemEditSchema = z.object({
@@ -103,7 +102,6 @@ type CreatedEntry = {
   baseItemId: string | null;
 };
 
-/** The `upsertPart` create payload for a reviewed proposal. */
 function partInsert(proposed: ProposedItem, companyId: string, userId: string) {
   return {
     id: proposed.readableId,
@@ -125,11 +123,10 @@ function partInsert(proposed: ProposedItem, companyId: string, userId: string) {
  * The plan (`plan-release`) holds every Onshape read the push needs — the
  * release's items and each released assembly's BOM at its version — so this
  * route reads nothing from Onshape: it takes the plan (once; the store hands
- * it out with GETDEL), merges the user's edits for the items it will create,
- * and writes. Carbon's state at apply time outranks the plan's pins: a letter
- * that appeared since the review is reused, a base that vanished falls back
- * to the first remaining revision, a part number that gained a row is
- * revised rather than created twice.
+ * it out with GETDEL), merges the user's edits, and writes. Carbon's state at
+ * apply time outranks the plan's pins: a letter that appeared since the
+ * review is reused, a part number that gained a row is revised rather than
+ * created twice.
  *
  * Per released part/assembly: ensure a Carbon item AT the released letter —
  * `createRevision` from the base item (active; made the default when the
@@ -140,8 +137,7 @@ function partInsert(proposed: ProposedItem, companyId: string, userId: string) {
  * the base method's mapping rows) and any lines a previous release push
  * wrote are replaced, manual lines survive. One Draft change notice, named
  * and described from the review, records what was created; asset exports
- * (models + thumbnails, released drawings as PDF) run as background jobs
- * keyed by plan + item + element so a retried apply cannot queue them twice.
+ * (models + thumbnails, released drawings as PDF) run as background jobs.
  * Re-applying a release that is already in Carbon re-applies BOMs and assets
  * and creates nothing (idempotent on the release's part number + letter
  * pairs).
@@ -298,8 +294,8 @@ export async function action({ request }: ActionFunctionArgs) {
 
   // ---- Re-resolve Carbon rows for every part number (all revisions) -------
   // The plan may be minutes old. Every release part number and every level-1
-  // BOM child is read again in one query so the decisions below rest on what
-  // Carbon holds now, not on what it held at review time.
+  // BOM child is read again so the decisions below rest on what Carbon holds
+  // now, not on what it held at review time.
   const partNumbers = [
     ...new Set([
       ...modelItems.map((item) => item.partNumber),
@@ -321,11 +317,9 @@ export async function action({ request }: ActionFunctionArgs) {
   if (existing.error) {
     return data({ error: "Failed to read Carbon items" }, { status: 500 });
   }
-  // Each batch is sorted within itself, so the concatenation is not. Re-sorted
-  // to preserve the ascending order this read has always had — no consumer
-  // depends on it today (every pick below compares revisions directly rather
-  // than taking a position), but the reads document themselves as ordered and
-  // a future reader should be able to rely on that.
+  // Each batch is sorted within itself, so the concatenation is not. No
+  // consumer depends on the order today: every pick below compares revisions
+  // directly.
   existing.data.sort((a, b) =>
     (a.revision ?? "").localeCompare(b.revision ?? "")
   );
@@ -343,9 +337,8 @@ export async function action({ request }: ActionFunctionArgs) {
   const created: CreatedEntry[] = [];
   const revisionItemByPartNumber = new Map<string, ItemRow>();
 
-  // Decide first, then read every base in one query, then write. The plan
-  // pinned the base it showed ("Rev B from Rev A"); it is honoured while the
-  // row exists, else the first remaining revision stands in, as before plans.
+  // Decide first, then read every base, then write. The plan pinned the base
+  // it showed ("Rev B from Rev A"); it is honoured while the row exists.
   type Decision =
     | { item: ReleasePlanItem; kind: "reuse"; row: ItemRow }
     | { item: ReleasePlanItem; kind: "revision"; base: ItemRow }
@@ -407,8 +400,8 @@ export async function action({ request }: ActionFunctionArgs) {
   const bases = await selectInBatches(baseIds, (batch) =>
     client.from("item").select("*").eq("companyId", companyId).in("id", batch)
   );
-  // A failed batch reads as "no base", which skipped every revision while
-  // the rest of the release was written: a partial push.
+  // A failed batch would read as "no base" and skip every revision while the
+  // rest of the release was written: a partial push.
   if (bases.error) {
     return data(
       { error: "Failed to read the base revisions" },
@@ -591,9 +584,8 @@ export async function action({ request }: ActionFunctionArgs) {
 
     revisionItemByPartNumber.set(item.partNumber, row);
     rememberRow(row);
-    // A new revision inherits the base's manufacturing fields; apply the
-    // reviewer's edits on top. A no-op for a fresh create — it has no `current`
-    // snapshot and already took its edits through the proposal.
+    // A no-op for a fresh create — it has no `current` snapshot and already
+    // took its edits through the proposal.
     await applyItemFieldEdit(item.partNumber, row.id);
   }
 
@@ -629,7 +621,7 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 
   // 2a — which assemblies take their BOM. Status is re-checked here: a method
-  // released between review and apply is refused, as it always was.
+  // released between review and apply is refused.
   type BomTarget = {
     item: ReleasePlanItem;
     label: string;
@@ -706,8 +698,6 @@ export async function action({ request }: ActionFunctionArgs) {
         pickLatestRow(byReadable.get(child.partNumber) ?? []);
       if (existingChild) {
         childItemByPartNumber.set(child.partNumber, existingChild);
-        // A reused BOM child takes its manufacturing edits too (guarded, so a
-        // child that is also a release item is not written twice).
         await applyItemFieldEdit(child.partNumber, existingChild.id);
         continue;
       }
@@ -752,7 +742,7 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 
   // Methods of children that are themselves made (sub-assemblies): a line
-  // points at the child's method. One query over the ones not already known.
+  // points at the child's method.
   const madeChildItemIds = [
     ...new Set(
       bomTargets.flatMap((target) =>
@@ -784,10 +774,9 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 
   // 2c — the reads that decide what the release replaces, then the deletes.
-  // First the revision copies: `createRevision` carried the base method's
-  // lines over, and the ones a panel push wrote to the BASE method (keyed
-  // before any write, above) would duplicate the released BOM below; manual
-  // lines stay. Then the lines a previous release push wrote to the targets.
+  // First the revision copies of the base method's Onshape lines (keyed
+  // before any write, above); manual lines stay. Then the lines a previous
+  // release push wrote to the targets.
   const baseMethodIdByTargetMethodId = new Map<string, string>(
     bomTargets.flatMap(
       (target): Array<[string, string]> =>
@@ -1006,9 +995,6 @@ export async function action({ request }: ActionFunctionArgs) {
           .eq("entityType", "item")
           .eq("externalId", externalId);
     if (clearedByItem.error || clearedByExternal?.error) {
-      // Inserting anyway would leave two rows for one item, which makes the
-      // owned-field lock's `.maybeSingle()` error and silently unlocks
-      // name and description on the item page.
       summary.errors.push(
         `${item.partNumber} Rev ${item.revision}: revision written but its previous Onshape link could not be cleared (${
           (clearedByItem.error ?? clearedByExternal?.error)?.message ??
@@ -1051,7 +1037,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
   // New revisions become the default their consumers resolve to (the
   // product's own Make Default semantics: methodMaterial lines of sibling
-  // revisions are repointed here) — only when the review asked for it.
+  // revisions are repointed here).
   if (makeDefault) {
     for (const entry of created) {
       if (!entry.baseItemId) continue; // brand-new item: it is the only revision
@@ -1070,8 +1056,6 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 
   // ---- Pass 4: one Draft change notice for what this push created ---------
-  // An explicit choice from the review stands; without one, creating anything
-  // records a notice — including creates the plan did not propose.
   if (created.length > 0 && (createChangeNoticeChoice ?? true)) {
     const description = changeNoticeDescriptionJson(
       changeNoticeValues.description
@@ -1139,7 +1123,7 @@ export async function action({ request }: ActionFunctionArgs) {
   }
   for (const drawing of drawingItems) {
     // v1 drawing match: the released drawing shares its part number with a
-    // model item in the same release. Anything else is skipped with a note.
+    // model item in the same release.
     const target = revisionItemByPartNumber.get(drawing.partNumber);
     if (!target) {
       summary.skipped.push(
@@ -1153,9 +1137,9 @@ export async function action({ request }: ActionFunctionArgs) {
     // The event id makes a retried apply idempotent per item + element: the
     // job spends live quota on every execution.
     //
-    // Guarded per target, for the reason push-assembly gives: the writes have
-    // landed, so a queue failure is a partial success, not a failed push —
-    // and one target failing must not stop the rest being queued.
+    // Guarded per target: the writes have landed, so a queue failure is a
+    // partial success, not a failed push — and one target failing must not
+    // stop the rest being queued.
     try {
       await trigger(
         "onshape-panel-sync",

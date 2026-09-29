@@ -151,7 +151,6 @@ export function parseBomTree(payload: unknown): {
   return { root, lines, missingColumns };
 }
 
-/** The refusal for a BOM that lacks required columns, naming them. */
 export function missingBomColumnsMessage(missingColumns: string[]): string {
   const names = missingColumns.map((name) => `"${name}"`).join(" and ");
   return `Onshape's BOM for this assembly has no ${names} column. Add ${

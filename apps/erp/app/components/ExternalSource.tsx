@@ -34,8 +34,7 @@ type ExternalSourceMapping = {
 /**
  * The one item-page footprint of the Onshape integration: a self-contained
  * card that loads its own mapping row and renders nothing when the item was
- * never pushed. No loader changes, no form fields — see the items-UI
- * footprint rule in the repo docs.
+ * never pushed. No loader changes, no form fields.
  */
 export function ExternalSourceCard({
   itemId,
@@ -56,11 +55,9 @@ export function ExternalSourceCard({
       .select("integration, externalId, lastSyncedAt, metadata")
       .eq("entityType", "item")
       .eq("entityId", itemId)
-      // Either Onshape integration may own this item while both are
-      // installable, so the card matches on both namespaces. An item holds at
-      // most one row per integration, and the database returns them in no
-      // particular order, so the pick is made here: v2 first, the order of
-      // ONSHAPE_MAPPING_NAMESPACES.
+      // An item holds at most one row per integration, and the database
+      // returns them in no particular order, so the pick is made here: v2
+      // first, the order of ONSHAPE_MAPPING_NAMESPACES.
       .in("integration", [...ONSHAPE_MAPPING_NAMESPACES])
       .then(({ data }) => {
         if (cancelled) return;
@@ -75,7 +72,6 @@ export function ExternalSourceCard({
     };
   }, [carbon, itemId]);
 
-  // Optimistically drop the card once a detach is in flight/succeeded.
   if (detacher.state !== "idle" || detacher.data?.ok) return null;
   if (!mapping) return null;
 
