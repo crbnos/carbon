@@ -571,10 +571,10 @@ msgid "A clearing account holding the value of goods received but not yet billed
 msgstr "एक क्लीयरिंग खाता जो प्राप्त किए गए लेकिन अभी तक चालान नहीं किए गए सामान का मूल्य रखता है; आपूर्तिकर्ता चालान इसे साफ करता है।"
 
 msgid "A company connects to one Onshape at a time. Uninstall Onshape Government, then connect Onshape."
-msgstr ""
+msgstr "एक कंपनी एक बार में एक Onshape से जुड़ती है। Onshape Government को अनइंस्टॉल करें, फिर Onshape को कनेक्ट करें।"
 
 msgid "A company connects to one Onshape at a time. Uninstall Onshape, then connect Onshape Government."
-msgstr ""
+msgstr "एक कंपनी एक बार में एक Onshape से जुड़ती है। Onshape को अनइंस्टॉल करें, फिर Onshape Government को कनेक्ट करें।"
 
 msgid "A company that designs and builds its own finished products end to end (here, the shop building humanoid robots) rather than making parts to another company's specification."
 msgstr "एक कंपनी जो अपने स्वयं के तैयार उत्पादों को अंत तक डिजाइन और निर्मित करती है (यहां, मानवीय रोबोट बनाने वाली दुकान) बजाय किसी अन्य कंपनी के विनिर्देश के अनुसार पार्ट्स बनाने के।"
@@ -1956,7 +1956,7 @@ msgid "An operation's position in its work center's queue — the order the floo
 msgstr "एक ऑपरेशन की वर्क सेंटर की कतार में स्थिति — वह क्रम जिसमें फ्लोर काम लेता है। इंजन इसे प्लेसमेंट क्रम से संख्या देता है (सबसे पहली अनुमानित शुरुआत पहले); वर्क सेंटर बोर्ड पर कार्ड्स को पुनः क्रमित करना तारीख बदले बिना इसे निरस्त करता है।"
 
 msgid "An unexpected error occurred while connecting to Onshape. Save the integration settings to try again."
-msgstr ""
+msgstr "Onshape से कनेक्ट करते समय एक अप्रत्याशित त्रुटि हुई। एकीकरण सेटिंग्स को सहेजें और फिर से कोशिश करें।"
 
 msgid "An unexpected error occurred while connecting to Onshape. Try connecting again."
 msgstr "Onshape से कनेक्ट करते समय एक अनपेक्षित त्रुटि हुई। दोबारा कनेक्ट करने का प्रयास करें।"
@@ -3203,6 +3203,9 @@ msgstr "BOM"
 msgid "BoM + BoP"
 msgstr "BoM + BoP"
 
+msgid "BoM Explorer"
+msgstr "BoM Explorer"
+
 msgid "BOM synced successfully"
 msgstr "BOM सफलतापूर्वक सिंक हो गया"
 
@@ -3771,6 +3774,9 @@ msgstr "इस रिटर्न में पंक्तियाँ कै�
 
 msgid "Choose what appears on the printed job traveler."
 msgstr "मुद्रित जॉब ट्रैवलर पर क्या दिखाई दे, इसे चुनें।"
+
+msgid "Choose whether the bill of material explorer on items, quotes, and jobs labels each line with its description or its item ID."
+msgstr "चुनें कि आइटम, कोटेशन और जॉब पर बिल ऑफ मैटेरियल एक्सप्लोरर प्रत्येक पंक्ति को इसके विवरण या आइटम ID के साथ दिखाएगा।"
 
 msgid "Choose your style"
 msgstr "अपनी शैली चुनें"
@@ -4686,7 +4692,7 @@ msgid "Couldn't complete the Onshape connection"
 msgstr "Onshape कनेक्शन पूरा नहीं हो सका"
 
 msgid "Couldn't complete the Onshape Government connection"
-msgstr ""
+msgstr "Onshape Government कनेक्शन को पूर्ण नहीं किया जा सका"
 
 msgid "Couldn't load documents"
 msgstr "दस्तावेज़ लोड नहीं हो सके"
@@ -4704,7 +4710,7 @@ msgid "Couldn't save the Onshape connection"
 msgstr "Onshape कनेक्शन सहेजा नहीं जा सका"
 
 msgid "Couldn't save the Onshape Government connection"
-msgstr ""
+msgstr "Onshape Government कनेक्शन को सहेजा नहीं जा सका"
 
 msgid "Couldn't save the Ramp connection"
 msgstr "Ramp कनेक्शन को सहेजा नहीं जा सका"
@@ -6462,9 +6468,6 @@ msgstr "1 दिन में देय"
 msgid "due now"
 msgstr "अभी देय"
 
-msgid "Due within"
-msgstr "के भीतर देय"
-
 msgid "Duplicate"
 msgstr "डुप्लिकेट करें"
 
@@ -6560,6 +6563,9 @@ msgstr "प्रत्येक पंक्ति इस कंपनी क�
 
 msgid "Each line is a link from this company's data to a row it doesn't own. Removing those rows lets the restore run."
 msgstr "प्रत्येक पंक्ति इस कंपनी के डेटा से एक ऐसी पंक्ति के लिए एक लिंक है जिसका यह मालिक नहीं है। उन पंक्तियों को हटाने से पुनः स्थापन चल जाता है।"
+
+msgid "Each line shows its item ID and revision."
+msgstr "प्रत्येक पंक्ति अपना आइटम ID और रिवीजन दिखाती है।"
 
 msgid "Each operation's unused material returns as soon as the operation is done."
 msgstr "प्रत्येक ऑपरेशन की अप्रयुक्त सामग्री जैसे ही ऑपरेशन हो जाता है तुरंत वापस आती है।"
@@ -7057,6 +7063,9 @@ msgstr "सूचियों, फॉर्म और ड्रॉपडाउ�
 msgid "Enable to show a readable Supplier ID on lists, forms and dropdowns."
 msgstr "सूचियों, फॉर्म और ड्रॉपडाउन पर एक पठनीय आपूर्तिकर्ता ID दिखाने के लिए सक्षम करें।"
 
+msgid "Enable to show the item ID and revision instead of the description."
+msgstr "विवरण के बजाय आइटम ID और रिवीजन दिखाने के लिए सक्षम करें।"
+
 msgid "Enable to start tracking changes to your data."
 msgstr "अपने डेटा में परिवर्तन ट्रैक करना शुरू करने के लिए सक्षम करें।"
 
@@ -7161,8 +7170,8 @@ msgstr "अपने प्रमाणकर्ता ऐप से 6-अंक
 msgid "Enter the 6-digit code from your authenticator app to resume."
 msgstr "पुनः शुरू करने के लिए अपने ऑथेंटिकेटर ऐप से 6-अंकीय कोड दर्ज करें।"
 
-msgid "Enter the Onshape URL, OAuth URL, client ID and client secret of your private OAuth application, then save."
-msgstr ""
+msgid "Enter the Onshape URL, client ID and client secret of your private OAuth application, then save."
+msgstr "अपने निजी OAuth एप्लिकेशन का Onshape URL, क्लाइंट ID और क्लाइंट सीक्रेट दर्ज करें, फिर सहेजें।"
 
 msgid "Enter the quantity this movement should have been. An opposite movement for the difference is posted next to the original, in the original's time period."
 msgstr "वह मात्रा दर्ज करें जो यह आंदोलन होना चाहिए था। अंतर के लिए एक विपरीत आंदोलन मूल के बगल में, मूल की समय अवधि में पोस्ट किया जाता है।"
@@ -7380,8 +7389,8 @@ msgstr "विनिमय दर अपडेट किया गया"
 msgid "Exchange Rates"
 msgstr "विनिमय दरें"
 
-msgid "Exchanging the authorization code failed. Check the OAuth URL and the client secret, then save the integration settings again."
-msgstr ""
+msgid "Exchanging the authorization code failed. Check the Onshape URL and the client secret, then save the integration settings again."
+msgstr "प्राधिकरण कोड का आदान-प्रदान विफल रहा। Onshape URL और क्लाइंट सीक्रेट की जाँच करें, फिर एकीकरण सेटिंग्स को फिर से सहेजें।"
 
 msgid "Exchanging the authorization code for access failed. Try connecting again."
 msgstr "पहुँच के लिए प्राधिकरण कोड का विनिमय विफल रहा। दोबारा कनेक्ट करने का प्रयास करें।"
@@ -9050,7 +9059,7 @@ msgid "In use"
 msgstr "उपयोग में"
 
 msgid "In your Enterprise settings under Developer, edit the private OAuth application's permissions to include \"Application can write to your documents\", then save the integration settings again."
-msgstr ""
+msgstr "अपनी Enterprise सेटिंग्स में Developer के अंतर्गत, निजी OAuth एप्लिकेशन की अनुमतियों को संपादित करें ताकि « Application can write to your documents » को शामिल किया जा सके, फिर एकीकरण सेटिंग्स को फिर से सहेजें।"
 
 msgid "In-app"
 msgstr "ऐप में"
@@ -9236,7 +9245,7 @@ msgid "Integration"
 msgstr "एकीकरण"
 
 msgid "Integration credentials"
-msgstr ""
+msgstr "एकीकरण प्रमाणपत्र"
 
 msgid "Integration not found"
 msgstr "एकीकरण नहीं मिला"
@@ -10051,6 +10060,12 @@ msgstr "लाइनों को आंतरिक भाग संख्य�
 
 msgid "Lines need prices or lead times"
 msgstr "पंक्तियों को मूल्य या लीड टाइम की आवश्यकता है"
+
+msgid "Lines show descriptions"
+msgstr "पंक्तियां विवरण दिखाती हैं"
+
+msgid "Lines show item IDs"
+msgstr "पंक्तियां आइटम ID दिखाती हैं"
 
 msgid "Lineside"
 msgstr "लाइनसाइड"
@@ -12296,7 +12311,7 @@ msgid "Only qualified employees can be scheduled for and run this process"
 msgstr "केवल योग्य कर्मचारी ही इस प्रक्रिया के लिए अनुसूचित और चलाए जा सकते हैं"
 
 msgid "Onshape authorized the connection but saving it failed. Save the integration settings to try again."
-msgstr ""
+msgstr "Onshape ने कनेक्शन को अधिकृत किया लेकिन इसे सहेजना विफल रहा। एकीकरण सेटिंग्स को सहेजने का प्रयास करें।"
 
 msgid "Onshape authorized the connection but saving it failed. Try connecting again."
 msgstr "Onshape ने कनेक्शन को अधिकृत किया, लेकिन उसे सहेजना विफल रहा। दोबारा कनेक्ट करने का प्रयास करें।"
@@ -12308,22 +12323,22 @@ msgid "Onshape didn't return an authorization code"
 msgstr "Onshape ने प्राधिकरण कोड नहीं लौटाया"
 
 msgid "Onshape Government denied the connection"
-msgstr ""
+msgstr "Onshape Government ने कनेक्शन को अस्वीकार किया"
 
 msgid "Onshape Government didn't return an authorization code"
-msgstr ""
+msgstr "Onshape Government ने प्राधिकरण कोड नहीं लौटाया"
 
 msgid "Onshape Government is already connected"
-msgstr ""
+msgstr "Onshape Government पहले से कनेक्ट है"
 
 msgid "Onshape Government isn't configured"
-msgstr ""
+msgstr "Onshape Government कॉन्फ़िगर नहीं है"
 
 msgid "Onshape Government rejected the authorization"
-msgstr ""
+msgstr "Onshape Government ने प्राधिकरण को अस्वीकार किया"
 
 msgid "Onshape is already connected"
-msgstr ""
+msgstr "Onshape पहले से कनेक्ट है"
 
 msgid "Onshape isn't configured"
 msgstr "Onshape कॉन्फ़िगर नहीं है"
@@ -12440,7 +12455,7 @@ msgid "Open task details"
 msgstr "कार्य विवरण खोलें"
 
 msgid "Open the Onshape Government integration and save its settings to connect again."
-msgstr ""
+msgstr "Onshape Government एकीकरण को खोलें और फिर से कनेक्ट करने के लिए इसकी सेटिंग्स को सहेजें।"
 
 msgid "Open the Ramp integration and try connecting again to finish setup."
 msgstr "Ramp एकीकरण खोलें और कॉन्फ़िगरेशन पूरा करने के लिए दोबारा कनेक्ट करने का प्रयास करें।"
@@ -17661,7 +17676,7 @@ msgid "The append-only record of every stock movement; on-hand is the sum of its
 msgstr "प्रत्येक स्टॉक आंदोलन का केवल-परिशिष्ट रिकॉर्ड; हाथ में राशि इसकी हस्ताक्षरित प्रविष्टियों का योग है और सत्य का स्रोत है।"
 
 msgid "The authorization was refused in Onshape. Save the integration settings to try again."
-msgstr ""
+msgstr "Onshape में प्राधिकरण को अस्वीकार कर दिया गया था। एकीकरण सेटिंग्स को सहेजने का प्रयास करें।"
 
 msgid "The authorization was refused in Onshape. Try connecting again."
 msgstr "Onshape में प्राधिकरण अस्वीकार कर दिया गया। दोबारा कनेक्ट करने का प्रयास करें।"
@@ -18116,7 +18131,7 @@ msgid "The Onshape connection expired"
 msgstr "Onshape कनेक्शन समाप्त हो गया"
 
 msgid "The Onshape Government connection expired"
-msgstr ""
+msgstr "Onshape Government कनेक्शन समाप्त हो गया"
 
 msgid "The operations and steps your parts move through"
 msgstr "ऑपरेशन और चरण जिनके माध्यम से आपके पार्ट्स आगे बढ़ते हैं"
@@ -18243,7 +18258,7 @@ msgid "The residual WIP a job has left at close, swept to a Production Variance 
 msgstr "अवशिष्ट WIP जो एक जॉब के पास बंद करते समय बचा है, एक उत्पादन विचलन खाते में स्वीप किया गया — एक जॉब के लिए कार्बन बुक का एकमात्र विचलन।"
 
 msgid "The response from Onshape was missing required parameters. Check the private app's redirect URL, then save the integration settings again."
-msgstr ""
+msgstr "Onshape से प्रतिक्रिया में आवश्यक पैरामीटर नहीं थे। निजी ऐप के पुनः निर्देशन URL की जाँच करें, फिर एकीकरण सेटिंग्स को फिर से सहेजें।"
 
 msgid "The response from Onshape was missing required parameters. Try connecting again."
 msgstr "Onshape की प्रतिक्रिया में आवश्यक पैरामीटर नहीं थे। दोबारा कनेक्ट करने का प्रयास करें।"

@@ -3203,6 +3203,9 @@ msgstr "BOM"
 msgid "BoM + BoP"
 msgstr "BoM + BoP"
 
+msgid "BoM Explorer"
+msgstr "BoM Explorer"
+
 msgid "BOM synced successfully"
 msgstr "BOM synced successfully"
 
@@ -3771,6 +3774,9 @@ msgstr "Choose how to add lines to this return."
 
 msgid "Choose what appears on the printed job traveler."
 msgstr "Choose what appears on the printed job traveler."
+
+msgid "Choose whether the bill of material explorer on items, quotes, and jobs labels each line with its description or its item ID."
+msgstr "Choose whether the bill of material explorer on items, quotes, and jobs labels each line with its description or its item ID."
 
 msgid "Choose your style"
 msgstr "Choose your style"
@@ -6462,9 +6468,6 @@ msgstr "due in 1 day"
 msgid "due now"
 msgstr "due now"
 
-msgid "Due within"
-msgstr "Due within"
-
 msgid "Duplicate"
 msgstr "Duplicate"
 
@@ -6560,6 +6563,9 @@ msgstr "Each line is a link from this company's data to a row it doesn't own. Re
 
 msgid "Each line is a link from this company's data to a row it doesn't own. Removing those rows lets the restore run."
 msgstr "Each line is a link from this company's data to a row it doesn't own. Removing those rows lets the restore run."
+
+msgid "Each line shows its item ID and revision."
+msgstr "Each line shows its item ID and revision."
 
 msgid "Each operation's unused material returns as soon as the operation is done."
 msgstr "Each operation's unused material returns as soon as the operation is done."
@@ -7057,6 +7063,9 @@ msgstr "Enable to show a readable Customer ID on lists, forms and dropdowns."
 msgid "Enable to show a readable Supplier ID on lists, forms and dropdowns."
 msgstr "Enable to show a readable Supplier ID on lists, forms and dropdowns."
 
+msgid "Enable to show the item ID and revision instead of the description."
+msgstr "Enable to show the item ID and revision instead of the description."
+
 msgid "Enable to start tracking changes to your data."
 msgstr "Enable to start tracking changes to your data."
 
@@ -7161,8 +7170,8 @@ msgstr "Enter the 6-digit code from your authenticator app"
 msgid "Enter the 6-digit code from your authenticator app to resume."
 msgstr "Enter the 6-digit code from your authenticator app to resume."
 
-msgid "Enter the Onshape URL, OAuth URL, client ID and client secret of your private OAuth application, then save."
-msgstr "Enter the Onshape URL, OAuth URL, client ID and client secret of your private OAuth application, then save."
+msgid "Enter the Onshape URL, client ID and client secret of your private OAuth application, then save."
+msgstr "Enter the Onshape URL, client ID and client secret of your private OAuth application, then save."
 
 msgid "Enter the quantity this movement should have been. An opposite movement for the difference is posted next to the original, in the original's time period."
 msgstr "Enter the quantity this movement should have been. An opposite movement for the difference is posted next to the original, in the original's time period."
@@ -7380,8 +7389,8 @@ msgstr "Exchange rate updated at"
 msgid "Exchange Rates"
 msgstr "Exchange Rates"
 
-msgid "Exchanging the authorization code failed. Check the OAuth URL and the client secret, then save the integration settings again."
-msgstr "Exchanging the authorization code failed. Check the OAuth URL and the client secret, then save the integration settings again."
+msgid "Exchanging the authorization code failed. Check the Onshape URL and the client secret, then save the integration settings again."
+msgstr "Exchanging the authorization code failed. Check the Onshape URL and the client secret, then save the integration settings again."
 
 msgid "Exchanging the authorization code for access failed. Try connecting again."
 msgstr "Exchanging the authorization code for access failed. Try connecting again."
@@ -10051,6 +10060,12 @@ msgstr "Lines need internal part numbers"
 
 msgid "Lines need prices or lead times"
 msgstr "Lines need prices or lead times"
+
+msgid "Lines show descriptions"
+msgstr "Lines show descriptions"
+
+msgid "Lines show item IDs"
+msgstr "Lines show item IDs"
 
 msgid "Lineside"
 msgstr "Lineside"

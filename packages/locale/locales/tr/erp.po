@@ -571,10 +571,10 @@ msgid "A clearing account holding the value of goods received but not yet billed
 msgstr "Alınan ancak henüz faturalanmayan malların değerini tutan bir takas hesabı; tedarikçi faturası bunu temizler."
 
 msgid "A company connects to one Onshape at a time. Uninstall Onshape Government, then connect Onshape."
-msgstr ""
+msgstr "Bir şirket aynı anda bir Onshape'e bağlanabilir. Onshape Government'ı kaldırın, ardından Onshape'e bağlanın."
 
 msgid "A company connects to one Onshape at a time. Uninstall Onshape, then connect Onshape Government."
-msgstr ""
+msgstr "Bir şirket aynı anda bir Onshape'e bağlanabilir. Onshape'i kaldırın, ardından Onshape Government'a bağlanın."
 
 msgid "A company that designs and builds its own finished products end to end (here, the shop building humanoid robots) rather than making parts to another company's specification."
 msgstr "Başka bir şirketin spesifikasyonuna göre parça üretmek yerine, kendi bitmiş ürünlerini uçtan uca tasarlayan ve inşa eden bir şirket (burada insansı robotlar inşa eden mağaza)."
@@ -1956,7 +1956,7 @@ msgid "An operation's position in its work center's queue — the order the floo
 msgstr "Bir operasyon'un iş merkezi'nin kuyruğundaki konumu — atölyenin işleri aldığı sıra. Motor, yerleştirme sırasından numaralandırır (en erken öngörülen başlangıç ilk); İş merkezleri panosundaki kartları yeniden sıralamak, tarihleri değiştirmeden bunu geçersiz kılar."
 
 msgid "An unexpected error occurred while connecting to Onshape. Save the integration settings to try again."
-msgstr ""
+msgstr "Onshape'e bağlanırken beklenmedik bir hata oluştu. Tekrar denemek için entegrasyon ayarlarını kaydedin."
 
 msgid "An unexpected error occurred while connecting to Onshape. Try connecting again."
 msgstr "Onshape'e bağlanırken beklenmeyen bir hata oluştu. Yeniden bağlanmayı deneyin."
@@ -3203,6 +3203,9 @@ msgstr "BOM"
 msgid "BoM + BoP"
 msgstr "BOM + BOP"
 
+msgid "BoM Explorer"
+msgstr "BoM Gezgini"
+
 msgid "BOM synced successfully"
 msgstr "BOM başarıyla senkronize edildi"
 
@@ -3771,6 +3774,9 @@ msgstr "Bu iade için satırları nasıl ekleyeceğinizi seçin."
 
 msgid "Choose what appears on the printed job traveler."
 msgstr "Yazdırılan İş takip kartında neyin görüneceğini seçin."
+
+msgid "Choose whether the bill of material explorer on items, quotes, and jobs labels each line with its description or its item ID."
+msgstr "Stok kartları, teklifler ve iş emirlerindeki malzeme ağacı gezgininin her satırı açıklama veya stok kartı kimliğiyle etiketleyip etiketlemeyeceğini seçin."
 
 msgid "Choose your style"
 msgstr "Stilini seçin"
@@ -4686,7 +4692,7 @@ msgid "Couldn't complete the Onshape connection"
 msgstr "Onshape bağlantısı tamamlanamadı"
 
 msgid "Couldn't complete the Onshape Government connection"
-msgstr ""
+msgstr "Onshape Government bağlantısı tamamlanamadı"
 
 msgid "Couldn't load documents"
 msgstr "Belgeler yüklenemedi"
@@ -4704,7 +4710,7 @@ msgid "Couldn't save the Onshape connection"
 msgstr "Onshape bağlantısı kaydedilemedi"
 
 msgid "Couldn't save the Onshape Government connection"
-msgstr ""
+msgstr "Onshape Government bağlantısı kaydedilemedi"
 
 msgid "Couldn't save the Ramp connection"
 msgstr "Ramp bağlantısı kaydedilemedi"
@@ -6462,9 +6468,6 @@ msgstr "1 gün içinde teslim"
 msgid "due now"
 msgstr "hemen teslim"
 
-msgid "Due within"
-msgstr "Süresi içinde"
-
 msgid "Duplicate"
 msgstr "Çoğalt"
 
@@ -6560,6 +6563,9 @@ msgstr "Her satır, bu şirketin verilerine ait olmayan bir satıra bağlantıd�
 
 msgid "Each line is a link from this company's data to a row it doesn't own. Removing those rows lets the restore run."
 msgstr "Her satır, bu şirketin verilerinden sahibi olmadığı bir satıra bir bağlantıdır. Bu satırları kaldırmak geri yüklemenin çalışmasını sağlar."
+
+msgid "Each line shows its item ID and revision."
+msgstr "Her satır stok kartı kimliğini ve revizyonunu gösterir."
 
 msgid "Each operation's unused material returns as soon as the operation is done."
 msgstr "Her operasyonun kullanılmayan malzemesi operasyon tamamlandıktan hemen sonra geri döner."
@@ -7057,6 +7063,9 @@ msgstr "Listeler, formlar ve açılır listelerde okunabilir bir Müşteri ID'si
 msgid "Enable to show a readable Supplier ID on lists, forms and dropdowns."
 msgstr "Listeler, formlar ve açılır listelerde okunabilir bir Tedarikçi ID'si göstermek için etkinleştirin."
 
+msgid "Enable to show the item ID and revision instead of the description."
+msgstr "Açıklama yerine stok kartı kimliğini ve revizyonunu göstermek için etkinleştirin."
+
 msgid "Enable to start tracking changes to your data."
 msgstr "Verilerinizi izlemeye başlamak için etkinleştirin."
 
@@ -7161,8 +7170,8 @@ msgstr "Doğrulayıcı uygulamanızdaki 6 haneli kodu girin"
 msgid "Enter the 6-digit code from your authenticator app to resume."
 msgstr "Devam etmek için kimlik doğrulayıcı uygulamanızdan 6 haneli kodu girin."
 
-msgid "Enter the Onshape URL, OAuth URL, client ID and client secret of your private OAuth application, then save."
-msgstr ""
+msgid "Enter the Onshape URL, client ID and client secret of your private OAuth application, then save."
+msgstr "Özel OAuth uygulamanızın Onshape URL'sini, istemci ID'sini ve istemci gizli anahtarını girin, ardından kaydedin."
 
 msgid "Enter the quantity this movement should have been. An opposite movement for the difference is posted next to the original, in the original's time period."
 msgstr "Bu hareketin olması gereken miktarı girin. Farktaki ters hareket, orijinalin zaman döneminde orijinalin yanında deftere kaydedilir."
@@ -7380,8 +7389,8 @@ msgstr "Döviz kuru güncelleme tarihi"
 msgid "Exchange Rates"
 msgstr "Döviz kurları"
 
-msgid "Exchanging the authorization code failed. Check the OAuth URL and the client secret, then save the integration settings again."
-msgstr ""
+msgid "Exchanging the authorization code failed. Check the Onshape URL and the client secret, then save the integration settings again."
+msgstr "Yetkilendirme kodu değişimi başarısız oldu. Onshape URL'sini ve istemci gizli anahtarını kontrol edin, ardından entegrasyon ayarlarını yeniden kaydedin."
 
 msgid "Exchanging the authorization code for access failed. Try connecting again."
 msgstr "Yetkilendirme kodunun erişim için değiştirilmesi başarısız oldu. Yeniden bağlanmayı deneyin."
@@ -9050,7 +9059,7 @@ msgid "In use"
 msgstr "Kullanımda"
 
 msgid "In your Enterprise settings under Developer, edit the private OAuth application's permissions to include \"Application can write to your documents\", then save the integration settings again."
-msgstr ""
+msgstr "Enterprise ayarlarınızın Geliştirici bölümünde, özel OAuth uygulamasının izinlerini «Uygulama belgelerinize yazabilir» izni dahil etmek için düzenleyin ve ardından entegrasyon ayarlarını yeniden kaydedin."
 
 msgid "In-app"
 msgstr "Uygulama içi"
@@ -9236,7 +9245,7 @@ msgid "Integration"
 msgstr "Entegrasyon"
 
 msgid "Integration credentials"
-msgstr ""
+msgstr "Entegrasyon kimlik bilgileri"
 
 msgid "Integration not found"
 msgstr "Entegrasyon bulunamadı"
@@ -10051,6 +10060,12 @@ msgstr "Satırlar dahili parça numaralarına ihtiyaç duyuyor"
 
 msgid "Lines need prices or lead times"
 msgstr "Satırlar fiyat veya tedarik süresi gerektirir"
+
+msgid "Lines show descriptions"
+msgstr "Satırlar açıklamaları gösterir"
+
+msgid "Lines show item IDs"
+msgstr "Satırlar stok kartı kimliklerini gösterir"
 
 msgid "Lineside"
 msgstr "Üretim Hattı Yanı"
@@ -12296,7 +12311,7 @@ msgid "Only qualified employees can be scheduled for and run this process"
 msgstr "Yalnızca nitelikli çalışanlar bu işlem için planlanabilir ve çalıştırılabilir"
 
 msgid "Onshape authorized the connection but saving it failed. Save the integration settings to try again."
-msgstr ""
+msgstr "Onshape bağlantıyı yetkilendirdi ancak kaydedilemedi. Tekrar denemek için entegrasyon ayarlarını kaydedin."
 
 msgid "Onshape authorized the connection but saving it failed. Try connecting again."
 msgstr "Onshape bağlantıyı yetkilendirdi ancak kaydetme başarısız oldu. Yeniden bağlanmayı deneyin."
@@ -12308,22 +12323,22 @@ msgid "Onshape didn't return an authorization code"
 msgstr "Onshape bir yetkilendirme kodu döndürmedi"
 
 msgid "Onshape Government denied the connection"
-msgstr ""
+msgstr "Onshape Government bağlantıyı reddetti"
 
 msgid "Onshape Government didn't return an authorization code"
-msgstr ""
+msgstr "Onshape Government yetkilendirme kodu döndürmedi"
 
 msgid "Onshape Government is already connected"
-msgstr ""
+msgstr "Onshape Government zaten bağlı"
 
 msgid "Onshape Government isn't configured"
-msgstr ""
+msgstr "Onshape Government yapılandırılmadı"
 
 msgid "Onshape Government rejected the authorization"
-msgstr ""
+msgstr "Onshape Government yetkilendirmeyi reddetti"
 
 msgid "Onshape is already connected"
-msgstr ""
+msgstr "Onshape zaten bağlı"
 
 msgid "Onshape isn't configured"
 msgstr "Onshape yapılandırılmamış"
@@ -12440,7 +12455,7 @@ msgid "Open task details"
 msgstr "Görev ayrıntılarını aç"
 
 msgid "Open the Onshape Government integration and save its settings to connect again."
-msgstr ""
+msgstr "Onshape Government entegrasyonunu açın ve yeniden bağlanmak için ayarlarını kaydedin."
 
 msgid "Open the Ramp integration and try connecting again to finish setup."
 msgstr "Ramp entegrasyonunu açın ve kurulumu tamamlamak için yeniden bağlanmayı deneyin."
@@ -17661,7 +17676,7 @@ msgid "The append-only record of every stock movement; on-hand is the sum of its
 msgstr "Her stok hareketinin yalnızca ekleme kaydı; eldeki tutar, imzalı girdilerinin toplamı ve gerçeğin kaynağıdır."
 
 msgid "The authorization was refused in Onshape. Save the integration settings to try again."
-msgstr ""
+msgstr "Yetkilendirme Onshape'te reddedildi. Tekrar denemek için entegrasyon ayarlarını kaydedin."
 
 msgid "The authorization was refused in Onshape. Try connecting again."
 msgstr "Yetkilendirme Onshape'te reddedildi. Yeniden bağlanmayı deneyin."
@@ -18116,7 +18131,7 @@ msgid "The Onshape connection expired"
 msgstr "Onshape bağlantısının süresi doldu"
 
 msgid "The Onshape Government connection expired"
-msgstr ""
+msgstr "Onshape Government bağlantısının süresi doldu"
 
 msgid "The operations and steps your parts move through"
 msgstr "Parçalarınızın geçtiği operasyonlar ve adımlar"
@@ -18243,7 +18258,7 @@ msgid "The residual WIP a job has left at close, swept to a Production Variance 
 msgstr "Bir iş emrinin kapatıldığında bıraktığı artık yarı mamul, Üretim Sapması hesabına aktarılan — Carbon'un bir iş emri için kaydedebileceği tek sapma."
 
 msgid "The response from Onshape was missing required parameters. Check the private app's redirect URL, then save the integration settings again."
-msgstr ""
+msgstr "Onshape'ten gelen yanıt gerekli parametreleri içermiyordu. Özel uygulamanın yeniden yönlendirme URL'sini kontrol edin, ardından entegrasyon ayarlarını yeniden kaydedin."
 
 msgid "The response from Onshape was missing required parameters. Try connecting again."
 msgstr "Onshape'ten gelen yanıtta gerekli parametreler eksikti. Yeniden bağlanmayı deneyin."

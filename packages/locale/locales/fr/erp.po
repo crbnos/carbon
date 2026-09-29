@@ -571,10 +571,10 @@ msgid "A clearing account holding the value of goods received but not yet billed
 msgstr "Un compte de compensation tenant la valeur des marchandises reçues mais non encore facturées ; la facture du fournisseur l'apure."
 
 msgid "A company connects to one Onshape at a time. Uninstall Onshape Government, then connect Onshape."
-msgstr ""
+msgstr "Une société ne peut se connecter qu'à un Onshape à la fois. Désinstallez Onshape Government, puis connectez Onshape."
 
 msgid "A company connects to one Onshape at a time. Uninstall Onshape, then connect Onshape Government."
-msgstr ""
+msgstr "Une société ne peut se connecter qu'à un Onshape à la fois. Désinstallez Onshape, puis connectez Onshape Government."
 
 msgid "A company that designs and builds its own finished products end to end (here, the shop building humanoid robots) rather than making parts to another company's specification."
 msgstr "Une société qui conçoit et fabrique ses propres produits finis de bout en bout (ici, l'atelier construisant des robots humanoïdes) plutôt que de fabriquer des pièces selon les spécifications d'une autre société."
@@ -1956,7 +1956,7 @@ msgid "An operation's position in its work center's queue — the order the floo
 msgstr "La position d'une opération dans la file d'attente de son poste de travail — l'ordre dans lequel l'atelier exécute le travail. Le moteur la numérote d'après l'ordre de placement (le démarrage projeté le plus tôt d'abord) ; le réordonnancement des cartes sur le Tableau des postes de travail la remplace sans modifier les dates."
 
 msgid "An unexpected error occurred while connecting to Onshape. Save the integration settings to try again."
-msgstr ""
+msgstr "Une erreur inattendue s'est produite lors de la connexion à Onshape. Enregistrez les paramètres d'intégration pour réessayer."
 
 msgid "An unexpected error occurred while connecting to Onshape. Try connecting again."
 msgstr "Une erreur inattendue s'est produite lors de la connexion à Onshape. Réessayez de vous connecter."
@@ -3203,6 +3203,9 @@ msgstr "BOM"
 msgid "BoM + BoP"
 msgstr "BoM + BoP"
 
+msgid "BoM Explorer"
+msgstr "Explorateur BoM"
+
 msgid "BOM synced successfully"
 msgstr "BOM synchronisé avec succès"
 
@@ -3771,6 +3774,9 @@ msgstr "Choisissez comment ajouter des lignes à ce retour."
 
 msgid "Choose what appears on the printed job traveler."
 msgstr "Choisir ce qui apparaît sur la fiche suiveuse d'ordre de fabrication imprimée."
+
+msgid "Choose whether the bill of material explorer on items, quotes, and jobs labels each line with its description or its item ID."
+msgstr "Choisissez si l'explorateur de nomenclature sur les articles, les devis et les ordres de fabrication étiquette chaque ligne avec sa description ou son ID article."
 
 msgid "Choose your style"
 msgstr "Choisissez votre style"
@@ -4686,7 +4692,7 @@ msgid "Couldn't complete the Onshape connection"
 msgstr "Impossible d'établir la connexion Onshape"
 
 msgid "Couldn't complete the Onshape Government connection"
-msgstr ""
+msgstr "Impossible de terminer la connexion à Onshape Government"
 
 msgid "Couldn't load documents"
 msgstr "Impossible de charger les documents"
@@ -4704,7 +4710,7 @@ msgid "Couldn't save the Onshape connection"
 msgstr "Impossible d'enregistrer la connexion Onshape"
 
 msgid "Couldn't save the Onshape Government connection"
-msgstr ""
+msgstr "Impossible d'enregistrer la connexion à Onshape Government"
 
 msgid "Couldn't save the Ramp connection"
 msgstr "Impossible d’enregistrer la connexion Ramp"
@@ -6462,9 +6468,6 @@ msgstr "dû dans 1 jour"
 msgid "due now"
 msgstr "dû maintenant"
 
-msgid "Due within"
-msgstr "Échéance dans"
-
 msgid "Duplicate"
 msgstr "Dupliquer"
 
@@ -6560,6 +6563,9 @@ msgstr "Chaque ligne est un lien entre les données de cette société et une li
 
 msgid "Each line is a link from this company's data to a row it doesn't own. Removing those rows lets the restore run."
 msgstr "Chaque ligne est un lien entre les données de cette Société et une ligne qu'elle ne possède pas. Supprimer ces lignes permet à la restauration de s'exécuter."
+
+msgid "Each line shows its item ID and revision."
+msgstr "Chaque ligne affiche son ID article et sa révision."
 
 msgid "Each operation's unused material returns as soon as the operation is done."
 msgstr "La matière inutilisée de chaque opération est restituée dès que l'opération est terminée."
@@ -7057,6 +7063,9 @@ msgstr "Activez pour afficher un ID Client lisible sur les listes, formulaires e
 msgid "Enable to show a readable Supplier ID on lists, forms and dropdowns."
 msgstr "Activez pour afficher un ID Fournisseur lisible sur les listes, formulaires et listes déroulantes."
 
+msgid "Enable to show the item ID and revision instead of the description."
+msgstr "Activez pour afficher l'ID article et la révision au lieu de la description."
+
 msgid "Enable to start tracking changes to your data."
 msgstr "Activez pour commencer à suivre les modifications de vos données."
 
@@ -7161,8 +7170,8 @@ msgstr "Entrez le code à 6 chiffres de votre application d'authentification"
 msgid "Enter the 6-digit code from your authenticator app to resume."
 msgstr "Entrez le code à 6 chiffres de votre application d'authentification pour continuer."
 
-msgid "Enter the Onshape URL, OAuth URL, client ID and client secret of your private OAuth application, then save."
-msgstr ""
+msgid "Enter the Onshape URL, client ID and client secret of your private OAuth application, then save."
+msgstr "Entrez l'URL Onshape, l'ID client et le secret client de votre application OAuth privée, puis enregistrez."
 
 msgid "Enter the quantity this movement should have been. An opposite movement for the difference is posted next to the original, in the original's time period."
 msgstr "Entrez la quantité que ce mouvement aurait dû avoir. Un mouvement opposé pour la différence est posté à côté de l'original, dans la période de l'original."
@@ -7380,8 +7389,8 @@ msgstr "Taux de change mis à jour à"
 msgid "Exchange Rates"
 msgstr "Taux de change"
 
-msgid "Exchanging the authorization code failed. Check the OAuth URL and the client secret, then save the integration settings again."
-msgstr ""
+msgid "Exchanging the authorization code failed. Check the Onshape URL and the client secret, then save the integration settings again."
+msgstr "L'échange du code d'autorisation a échoué. Vérifiez l'URL Onshape et le secret client, puis enregistrez à nouveau les paramètres d'intégration."
 
 msgid "Exchanging the authorization code for access failed. Try connecting again."
 msgstr "L’échange du code d’autorisation pour obtenir l’accès a échoué. Essayez de vous reconnecter."
@@ -9050,7 +9059,7 @@ msgid "In use"
 msgstr "En cours d'utilisation"
 
 msgid "In your Enterprise settings under Developer, edit the private OAuth application's permissions to include \"Application can write to your documents\", then save the integration settings again."
-msgstr ""
+msgstr "Dans vos paramètres Enterprise sous Développeur, modifiez les autorisations de l'application OAuth privée pour inclure « L'application peut écrire dans vos documents », puis enregistrez à nouveau les paramètres d'intégration."
 
 msgid "In-app"
 msgstr "In-app"
@@ -9236,7 +9245,7 @@ msgid "Integration"
 msgstr "Intégration"
 
 msgid "Integration credentials"
-msgstr ""
+msgstr "Identifiants d'intégration"
 
 msgid "Integration not found"
 msgstr "Intégration introuvable"
@@ -10051,6 +10060,12 @@ msgstr "Les lignes ont besoin de numéros de pièces internes"
 
 msgid "Lines need prices or lead times"
 msgstr "Les lignes ont besoin de prix ou de délais d'approvisionnement"
+
+msgid "Lines show descriptions"
+msgstr "Les lignes affichent les descriptions"
+
+msgid "Lines show item IDs"
+msgstr "Les lignes affichent les ID articles"
 
 msgid "Lineside"
 msgstr "Bord de ligne"
@@ -12296,7 +12311,7 @@ msgid "Only qualified employees can be scheduled for and run this process"
 msgstr "Seuls les employés qualifiés peuvent être planifiés pour et exécuter ce processus"
 
 msgid "Onshape authorized the connection but saving it failed. Save the integration settings to try again."
-msgstr ""
+msgstr "Onshape a autorisé la connexion mais l'enregistrement a échoué. Enregistrez les paramètres d'intégration pour réessayer."
 
 msgid "Onshape authorized the connection but saving it failed. Try connecting again."
 msgstr "Onshape a autorisé la connexion, mais son enregistrement a échoué. Réessayez de vous connecter."
@@ -12308,22 +12323,22 @@ msgid "Onshape didn't return an authorization code"
 msgstr "Onshape n'a pas renvoyé de code d'autorisation"
 
 msgid "Onshape Government denied the connection"
-msgstr ""
+msgstr "Onshape Government a refusé la connexion"
 
 msgid "Onshape Government didn't return an authorization code"
-msgstr ""
+msgstr "Onshape Government n'a pas retourné de code d'autorisation"
 
 msgid "Onshape Government is already connected"
-msgstr ""
+msgstr "Onshape Government est déjà connecté"
 
 msgid "Onshape Government isn't configured"
-msgstr ""
+msgstr "Onshape Government n'est pas configuré"
 
 msgid "Onshape Government rejected the authorization"
-msgstr ""
+msgstr "Onshape Government a rejeté l'autorisation"
 
 msgid "Onshape is already connected"
-msgstr ""
+msgstr "Onshape est déjà connecté"
 
 msgid "Onshape isn't configured"
 msgstr "Onshape n'est pas configuré"
@@ -12440,7 +12455,7 @@ msgid "Open task details"
 msgstr "Ouvrir les détails de la tâche"
 
 msgid "Open the Onshape Government integration and save its settings to connect again."
-msgstr ""
+msgstr "Ouvrez l'intégration Onshape Government et enregistrez ses paramètres pour vous reconnecter."
 
 msgid "Open the Ramp integration and try connecting again to finish setup."
 msgstr "Ouvrez l’intégration Ramp et essayez de vous reconnecter pour terminer la configuration."
@@ -17661,7 +17676,7 @@ msgid "The append-only record of every stock movement; on-hand is the sum of its
 msgstr "L'enregistrement d'ajout seul de tout mouvement de stock; le stock disponible est la somme de ses entrées signées et la source unique de référence."
 
 msgid "The authorization was refused in Onshape. Save the integration settings to try again."
-msgstr ""
+msgstr "L'autorisation a été refusée dans Onshape. Enregistrez les paramètres d'intégration pour réessayer."
 
 msgid "The authorization was refused in Onshape. Try connecting again."
 msgstr "L'autorisation a été refusée dans Onshape. Réessayez de vous connecter."
@@ -18116,7 +18131,7 @@ msgid "The Onshape connection expired"
 msgstr "La connexion Onshape a expiré"
 
 msgid "The Onshape Government connection expired"
-msgstr ""
+msgstr "La connexion à Onshape Government a expiré"
 
 msgid "The operations and steps your parts move through"
 msgstr "Les opérations et les étapes par lesquelles vos pièces passent"
@@ -18243,7 +18258,7 @@ msgid "The residual WIP a job has left at close, swept to a Production Variance 
 msgstr "L'en-cours résiduel qu'un ordre de fabrication a laissé à la clôture, transféré à un compte Écart de production — le seul écart que Carbon comptabilise pour un ordre de fabrication."
 
 msgid "The response from Onshape was missing required parameters. Check the private app's redirect URL, then save the integration settings again."
-msgstr ""
+msgstr "La réponse d'Onshape manquait les paramètres requis. Vérifiez l'URL de redirection de l'application privée, puis enregistrez à nouveau les paramètres d'intégration."
 
 msgid "The response from Onshape was missing required parameters. Try connecting again."
 msgstr "La réponse d'Onshape ne contenait pas les paramètres requis. Réessayez de vous connecter."

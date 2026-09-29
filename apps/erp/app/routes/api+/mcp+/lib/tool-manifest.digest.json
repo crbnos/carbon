@@ -1,5 +1,5 @@
 {
-  "totalTools": 1557,
+  "totalTools": 1558,
   "modules": 15,
   "tools": [
     {"name":"account_deleteUserAttributeValue","classification":"DESTRUCTIVE","paramCount":2,"schema":"0d38e12233b4","response":"bcde375ebd4c","injectAuth":"companyId+userId","permission":"none","paginates":false},
@@ -1418,7 +1418,7 @@
     {"name":"settings_getCompany","classification":"READ","paramCount":0,"schema":"efddc7bd8bbc","response":"8abc93835023","injectAuth":"companyId","permission":"settings:view","paginates":false},
     {"name":"settings_getCompanyIntegrations","classification":"READ","paramCount":0,"schema":"efddc7bd8bbc","response":"3a98b34db51d","injectAuth":"companyId","permission":"settings:view","paginates":false},
     {"name":"settings_getCompanyPlan","classification":"READ","paramCount":0,"schema":"efddc7bd8bbc","response":"none","injectAuth":"companyId","permission":"settings:view","paginates":false},
-    {"name":"settings_getCompanySettings","classification":"READ","paramCount":0,"schema":"efddc7bd8bbc","response":"41ad5b689e64","injectAuth":"companyId","permission":"settings:view","paginates":false},
+    {"name":"settings_getCompanySettings","classification":"READ","paramCount":0,"schema":"efddc7bd8bbc","response":"d401a021a6d8","injectAuth":"companyId","permission":"settings:view","paginates":false},
     {"name":"settings_getConfig","classification":"READ","paramCount":0,"schema":"efddc7bd8bbc","response":"aa1021ff34cf","injectAuth":"companyId","permission":"settings:view","paginates":false},
     {"name":"settings_getCurrentSequence","classification":"READ","paramCount":1,"schema":"f55836d6d401","response":"00404e686415","injectAuth":"companyId","permission":"settings:view","paginates":false},
     {"name":"settings_getCustomField","classification":"READ","paramCount":1,"schema":"3797626bd17e","response":"a533a796c094","injectAuth":"companyId","permission":"settings:view","paginates":false},
@@ -1461,6 +1461,7 @@
     {"name":"settings_updateAllowLowercaseItemIdsSetting","classification":"WRITE","paramCount":1,"schema":"4bfa8b2e5538","response":"bcde375ebd4c","injectAuth":"companyId+updatedBy","permission":"settings:update","paginates":false},
     {"name":"settings_updateAssetTaxDepreciationSettings","classification":"WRITE","paramCount":2,"schema":"6decaad55e9c","response":"bcde375ebd4c","injectAuth":"companyId+updatedBy","permission":"settings:update","paginates":false},
     {"name":"settings_updateAutoSelectMaterialWithoutPickingListSetting","classification":"WRITE","paramCount":1,"schema":"c8c780d1ee3a","response":"bcde375ebd4c","injectAuth":"companyId+updatedBy","permission":"settings:update","paginates":false},
+    {"name":"settings_updateBomExplorerReadableIdSetting","classification":"WRITE","paramCount":1,"schema":"f58f54c509a0","response":"bcde375ebd4c","injectAuth":"companyId+updatedBy","permission":"settings:update","paginates":false},
     {"name":"settings_updateCompany","classification":"WRITE","paramCount":17,"schema":"51b47fb4a6bd","response":"bcde375ebd4c","injectAuth":"companyId+updatedBy","permission":"settings:update","paginates":false},
     {"name":"settings_updateCompanyPlan","classification":"WRITE","paramCount":4,"schema":"dc5417676df7","response":"bcde375ebd4c","injectAuth":"companyId+updatedBy","permission":"settings:update","paginates":false},
     {"name":"settings_updateCompanyWithBaseCurrencyChange","classification":"DESTRUCTIVE","paramCount":17,"schema":"51b47fb4a6bd","response":"none","injectAuth":"companyId+updatedBy","permission":"settings:update","paginates":false},
