@@ -1,44 +1,36 @@
-import { serve } from "https://deno.land/std@0.175.0/http/server.ts";
+import { getNextSerialNumbers } from "@carbon/database/sequence";
 import { sql } from "kysely";
-import { z } from "npm:zod@^4.5.4";
+import { z } from "zod";
+import { assertSystemCaller, type OperationContext } from "../context";
+import { runOperation } from "../result";
 
-import { DB, getConnectionPool, getDatabaseClient } from "../lib/database.ts";
-import { corsPreflight, errorResponse, jsonResponse } from "../lib/response.ts";
-import { requirePermissions } from "../lib/supabase.ts";
-import { getNextSerialNumbers } from "../shared/get-next-serial-number.ts";
-
-const pool = getConnectionPool(1);
-const db = getDatabaseClient<DB>(pool);
-
-const payloadValidator = z.object({
-  jobId: z.string(),
-  companyId: z.string(),
-  userId: z.string(),
+export const assignSerialNumbersInput = z.object({
+  jobId: z.string()
 });
 
 /**
  * Assigns configured serial numbers to a job's tracked entities at creation time.
  *
- * Invoked (best-effort) from `insertJob` only when the job's item has an
+ * Run (best-effort) by `insertJob` only when the job's item has an
  * `itemSerialSequence`. For a Batch item it stamps one number on the single
  * whole-quantity seed entity; for a Serial item it splits the seed into N
  * quantity-1 entities and stamps one number on each. Numbers come from the
  * item's sequence (atomic counter) with %{...} date/week/location tokens.
  *
  * Idempotent: it no-ops when the seed is already numbered or already split.
+ * System-only: the job it numbers was just created by an already-authorized
+ * caller, some of them on the service role.
  */
-serve(async (req: Request) => {
-  const preflight = corsPreflight(req);
-  if (preflight) return preflight;
+export function assignSerialNumbers(
+  ctx: OperationContext,
+  input: z.infer<typeof assignSerialNumbersInput>
+) {
+  return runOperation("assign-serial-numbers", async () => {
+    const { jobId } = assignSerialNumbersInput.parse(input);
+    const { db, companyId } = ctx;
+    assertSystemCaller(ctx);
 
-  try {
-    const payload = await req.json();
-    const { jobId, companyId, userId } = payloadValidator.parse(payload);
-
-    // Auth gate (throws on denial). Service-role invocations from insertJob pass.
-    await requirePermissions(req, companyId, userId, { update: "production" });
-
-    const result = await db.transaction().execute(async (trx) => {
+    return db.transaction().execute(async (trx) => {
       // 1. The job
       const job = await trx
         .selectFrom("job")
@@ -99,15 +91,15 @@ serve(async (req: Request) => {
         .where(sql<boolean>`attributes->>'Split From Entity ID' IS NULL`)
         .orderBy("createdAt", "asc")
         // Lock the seed row for the duration of the transaction so concurrent
-        // invocations for the same job serialize here: the second waits, then
-        // sees the readableId the first assigned and no-ops the idempotency guard
+        // runs for the same job serialize here: the second waits, then sees
+        // the readableId the first assigned and no-ops the idempotency guard
         // below instead of reserving a duplicate range and inserting duplicates.
         .forUpdate()
         .execute();
 
       // Idempotency: already split into many, or already numbered → do nothing.
-      if (seeds.length !== 1) return { assigned: 0 };
       const seed = seeds[0];
+      if (seeds.length !== 1 || !seed) return { assigned: 0 };
       if (seed.readableId) return { assigned: 0 };
 
       // 6. How many numbers to reserve. Serial → one per unit; Batch → one.
@@ -121,7 +113,7 @@ serve(async (req: Request) => {
         companyId,
         count,
         locationCode,
-        locationName,
+        locationName
       });
       if (serials.length === 0) return { assigned: 0 };
 
@@ -132,12 +124,14 @@ serve(async (req: Request) => {
           .updateTable("trackedEntity")
           .set({ readableId: serials[0] })
           .where("id", "=", seed.id)
+          .where("companyId", "=", companyId)
           .execute();
       } else {
         await trx
           .updateTable("trackedEntity")
           .set({ readableId: serials[0], quantity: 1 })
           .where("id", "=", seed.id)
+          .where("companyId", "=", companyId)
           .execute();
 
         if (count > 1) {
@@ -152,7 +146,7 @@ serve(async (req: Request) => {
             expirationDate: seed.expirationDate ?? null,
             readableId,
             companyId,
-            createdBy: seed.createdBy,
+            createdBy: seed.createdBy
           }));
           await trx.insertInto("trackedEntity").values(rows).execute();
         }
@@ -160,9 +154,5 @@ serve(async (req: Request) => {
 
       return { assigned: count };
     });
-
-    return jsonResponse({ success: true, ...result });
-  } catch (err) {
-    return errorResponse(err);
-  }
-});
+  });
+}

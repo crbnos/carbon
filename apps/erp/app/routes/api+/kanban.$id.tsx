@@ -104,6 +104,7 @@ async function handleKanban({
 
     const createdJob = await insertJob(
       serviceRole,
+      getDatabaseClient(),
       {
         itemId: kanban.data.itemId!,
         quantity: kanban.data.quantity!,

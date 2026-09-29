@@ -502,7 +502,7 @@
   "no-raw-rounding::apps/mes/app/utils/display.ts::return `${Math.floor(days / 7)}w`;",
   "no-raw-rounding::apps/mes/app/utils/units.ts::*                 existing `Math.max(1, Math.round(operationQuantity))` behavior).",
   "no-raw-rounding::apps/mes/app/utils/units.ts::const total = Math.max(1, Math.round(Number.isFinite(count) ? count : 1));",
-  "no-raw-rounding::packages/database/supabase/functions/assign-serial-numbers/index.ts::trackingType === \"Batch\" ? 1 : Math.round(Number(job.quantity));",
+  "no-raw-rounding::packages/operations/src/assign-serial-numbers/index.ts::trackingType === \"Batch\" ? 1 : Math.round(Number(job.quantity));",
   "no-raw-rounding::packages/database/supabase/functions/lib/mrp-engine.ts::const childLeadTimeWeeks = Math.ceil(childLeadTimeDays / 7);",
   "no-raw-rounding::packages/database/supabase/functions/lib/utils.ts::Math.floor(",
   "no-raw-rounding::packages/database/supabase/functions/reschedule/index.ts::return Math.max(Math.ceil(days), 1);",

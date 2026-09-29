@@ -121,6 +121,7 @@ const logger = getLogger("erp", "production");
 
 export async function convertSalesOrderLinesToJobs(
   client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   {
     orderId,
     companyId,
@@ -371,7 +372,7 @@ export async function convertSalesOrderLinesToJobs(
           }
         });
 
-        await assignJobSerialNumbers(client, {
+        await assignJobSerialNumbers(client, db, {
           jobId: createJob.data.id,
           itemId: data.itemId,
           companyId,
@@ -3349,6 +3350,7 @@ export async function upsertProductionQuantity(
  */
 export async function insertJob(
   client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   input: {
     itemId: string;
     quantity: number;
@@ -3557,7 +3559,7 @@ export async function insertJob(
   }
 
   // Assign configured serial numbers to the job's tracked entities (best-effort).
-  await assignJobSerialNumbers(client, {
+  await assignJobSerialNumbers(client, db, {
     jobId: createdJobId,
     itemId: input.itemId,
     companyId: input.companyId,
@@ -3580,12 +3582,13 @@ export async function insertJob(
 
 /**
  * Assign configured serial numbers to a freshly-created job's tracked entities.
- * Best-effort and cheap: it skips the edge function entirely unless the item has
+ * Best-effort and cheap: it skips the operation entirely unless the item has
  * an `itemSerialSequence` configured. Shared by every job-creation path so serial
  * numbering is applied consistently (insertJob, sales-order conversion, ...).
  */
 async function assignJobSerialNumbers(
   client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   args: { jobId: string; itemId: string; companyId: string; userId: string }
 ) {
   const serialSequence = await client
@@ -3606,13 +3609,20 @@ async function assignJobSerialNumbers(
   }
   if (!serialSequence.data) return;
 
-  const { error } = await client.functions.invoke("assign-serial-numbers", {
-    body: {
-      jobId: args.jobId,
+  const { assignSerialNumbers } = await import(
+    "@carbon/operations/assign-serial-numbers"
+  );
+  // System: numbering a job the caller was just authorized to create.
+  const { error } = await assignSerialNumbers(
+    {
+      db,
+      client,
       companyId: args.companyId,
-      userId: args.userId
-    }
-  });
+      userId: args.userId,
+      system: true
+    },
+    { jobId: args.jobId }
+  );
   if (error) {
     logger.error("Failed to assign serial numbers", { error });
   }

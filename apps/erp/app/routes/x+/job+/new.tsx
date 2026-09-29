@@ -12,6 +12,7 @@ import { insertJob, jobValidator } from "~/modules/production";
 import { JobForm } from "~/modules/production/ui/Jobs";
 import type { MethodItemType } from "~/modules/shared";
 import { requireCompanyRecord } from "~/modules/shared/shared.server";
+import { getDatabaseClient } from "~/services/database.server";
 import { setCustomFields } from "~/utils/form";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -87,6 +88,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
   const result = await insertJob(
     serviceRole,
+    getDatabaseClient(),
     {
       ...data,
       jobId: data.jobId || undefined,

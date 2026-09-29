@@ -10,6 +10,7 @@ import {
   recalculateJobRequirements,
   upsertJobMethod
 } from "~/modules/production";
+import { getDatabaseClient } from "~/services/database.server";
 
 const logger = getLogger("erp", "production", "planning");
 
@@ -222,6 +223,7 @@ export async function action({ request }: ActionFunctionArgs) {
               // Create new job
               const createJob = await insertJob(
                 client,
+                getDatabaseClient(),
                 {
                   itemId: item.id,
                   quantity: order.quantity,
