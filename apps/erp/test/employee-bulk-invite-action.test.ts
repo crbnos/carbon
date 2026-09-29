@@ -44,7 +44,8 @@ vi.mock("@carbon/form", () => ({
 }));
 vi.mock("@carbon/lib/email.server", () => ({ sendEmail: mocks.sendEmail }));
 vi.mock("@carbon/logger", () => ({ getLogger: () => ({ error: vi.fn() }) }));
-vi.mock("@carbon/utils", () => ({
+vi.mock("@carbon/utils", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@carbon/utils")>()),
   datetime: { timestamp: () => "2026-09-27T00:00:00Z" }
 }));
 vi.mock("@react-email/components", () => ({ render: async () => "email" }));
