@@ -933,9 +933,6 @@ msgstr "レンタル契約により、シリアル化された機器ユニット
 msgid "A rental line is a sales-type lease when any ASC 842 test is met. These thresholds set tests (c) and (d); the discount rate is the default for new rental agreements."
 msgstr "リース明細は、いずれかのASC 842テストが満たされた場合にセールスタイプリースとなります。これらの閾値はテスト(c)および(d)を設定します。割引率は新規賃貸借契約のデフォルト値です。"
 
-msgid "A rental line uses the customer's rates, else its customer type's, else the item's. The rates can still be changed on each line."
-msgstr ""
-
 msgid "A rental that meets any of the five ASC 842 lease tests, booked as a sale when its agreement activates: the unit leaves the fleet, lease revenue and cost of goods sold post, and a net investment in the lease takes its place."
 msgstr "5つのASC 842リーステストのいずれかを満たし、その契約が開始する際に販売としてブックされたリース。資産はフリートから除外され、リース売上高および売上原価が転記され、そのリースに対する純投資がその場所に記入されます。"
 
@@ -3180,12 +3177,6 @@ msgstr "最良ケース予測"
 msgid "Best case…"
 msgstr "最良ケース…"
 
-msgid "Best rate"
-msgstr "最適レート"
-
-msgid "Best Rate"
-msgstr "最優遇レート"
-
 msgid "Best-case finish"
 msgstr "ベストケース完了"
 
@@ -3209,9 +3200,6 @@ msgstr "工程表"
 
 msgid "Bill To"
 msgstr "請求先"
-
-msgid "Billed Tier"
-msgstr "請求階層"
 
 msgid "Billed:"
 msgstr ""
@@ -8320,9 +8308,6 @@ msgstr "固定再注文"
 msgid "Fixed Shelf Life"
 msgstr "固定保存期間"
 
-msgid "Fixed when the agreement was activated."
-msgstr ""
-
 msgid "Fixture"
 msgstr "治具"
 
@@ -8427,15 +8412,6 @@ msgstr "前の週から"
 
 msgid "From Storage Unit"
 msgstr "保管ユニットから"
-
-msgid "From the customer type's rental rates for the item."
-msgstr ""
-
-msgid "From the item's rental rates."
-msgstr ""
-
-msgid "From this customer's rental rates for the item."
-msgstr ""
 
 msgid "From:"
 msgstr "開始："
@@ -8916,9 +8892,6 @@ msgid "How a batchable process runs its grouped work: Sequential runs parts one 
 msgstr "バッチ処理可能な工法がグループ化されたworkをどのように実行するかを示します：シーケンシャルは部品を1つの機械（のこぎりやレーザーテーブル）で次々と実行し、シミュルタネアスは1回の負荷でそれらを一緒に実行します（炉、オーブン、またはメッキ槽）。"
 
 msgid "How a rental agreement cuts billing periods from its start date: Calendar Month bills each calendar month at the month rate, prorated for a partial month, and 28 Days bills consecutive 28-day periods priced from the day, week, and month rates."
-msgstr ""
-
-msgid "How a rental unit is priced each billing period: Best Rate bills the cheapest of its day, week, and month rates, and Fixed always bills the one tier you choose."
 msgstr ""
 
 msgid "How an item is replenished overall (Buy, Make, or Buy and Make), set per item, unlike the per-line method type."
@@ -10072,9 +10045,6 @@ msgstr "リース売上高"
 
 msgid "Lease Revenue (default)"
 msgstr "リース売上高（デフォルト）"
-
-msgid "Leave all three empty to use the customer's rental rates, else the customer type's, else the item's."
-msgstr ""
 
 msgid "Leave any related receipts untouched"
 msgstr "関連するすべての領収書はそのままにしておく"
@@ -12049,9 +12019,6 @@ msgstr "参照画像がありません"
 msgid "No remaining entities to inspect."
 msgstr "検査する残りのエンティティはありません。"
 
-msgid "No rental rates"
-msgstr ""
-
 msgid "No reports match your search."
 msgstr "検索に一致するレポートはありません。"
 
@@ -13233,9 +13200,6 @@ msgstr "人員"
 msgid "People"
 msgstr "人員"
 
-msgid "per 28 days"
-msgstr ""
-
 msgid "per day"
 msgstr ""
 
@@ -13709,9 +13673,6 @@ msgstr "価格"
 
 msgid "Pricing"
 msgstr "価格設定"
-
-msgid "Pricing a 28-day rental period at the cheapest of its day, week, and month rates in whole units, with ties going to the larger unit."
-msgstr "28日間のレンタル期間に対して、日単位、週単位、月単位のレートの中から最安値を個単位で価格設定し、同一レートの場合はより大きな単位を選択します。"
 
 msgid "Pricing rule"
 msgstr "価格設定ルール"
@@ -14415,22 +14376,19 @@ msgstr "Ramp が認可を拒否しました"
 msgid "Rate"
 msgstr "レート"
 
-msgid "Rate Limit"
-msgstr "レート制限"
-
-msgid "Rate mode"
+msgid "Rate frequency"
 msgstr ""
 
-msgid "Rate Mode"
-msgstr "料金体系"
+msgid "Rate Frequency"
+msgstr ""
+
+msgid "Rate Limit"
+msgstr "レート制限"
 
 msgid "Rate used for equity account translation in consolidation (IAS 21). Leave blank to use the current exchange rate."
 msgstr "連結における純資産勘定の換算に使用されるレート（IAS 21）。空欄の場合は現在の為替レートが使用されます。"
 
-msgid "Rates a rental agreement line uses for this item. At least one is required."
-msgstr "当該品目のレンタル契約明細で使用する料金。最低1つは必須です。"
-
-msgid "Rates are the items' current rental rates. They are fixed on each unit when the agreement is activated."
+msgid "Rates agreed with a customer, or with every customer of a type. They are the starting rate when this part is rented to them."
 msgstr ""
 
 msgid "Rates for a single customer"
@@ -18335,6 +18293,9 @@ msgstr "MACRS（3、5、7、10、15、20、27.5、39年）に基づくこのア�
 msgid "The item each job produces — require it to match to merge output lots"
 msgstr "各製造指図が生産する品目 — 出力ロットをマージするには一致する必要があります"
 
+msgid "The item's rental rate"
+msgstr ""
+
 msgid "the job hours due that day (a due-date basis, not the day the work runs), with overdue work in Past due."
 msgstr "その日に期限切れになるジョブの時間（作業が実行される日ではなく、期限日ベース）、期限超過の作業は「期限超過」に表示されます。"
 
@@ -18692,6 +18653,9 @@ msgstr "この作業区の工程がデフォルトで測定される標準係数
 msgid "The standard factor used to measure this process — hours, minutes, pieces, square feet — when its operations are estimated and costed."
 msgstr "この工法の工程が見積もられて原価計算される場合に使用される標準係数（時間、分、個数、平方フィート）。"
 
+msgid "The starting rate when this part is rented, for each rate frequency. At least one is required."
+msgstr ""
+
 msgid "The state of this quote line — Draft, No Quote, Complete; No Quote reveals the Reason field and excludes the line from the quote total."
 msgstr "この見積明細の状態 — 下書き、見積辞退、完了。見積辞退は理由フィールドを表示し、当該明細を見積合計から除外します。"
 
@@ -18955,6 +18919,12 @@ msgstr "この担当者はメールアドレスを持っていません。"
 
 msgid "This counterparty has nothing outstanding — the payment will be recorded on-account."
 msgstr "この取引先には未払い金がありません。支払いは掛け金として記録されます。"
+
+msgid "This customer type's rate"
+msgstr ""
+
+msgid "This customer's rate"
+msgstr ""
 
 msgid "This download link is invalid or has been tampered with."
 msgstr "このダウンロードリンクは無効であるか、改ざんされています。"
@@ -20710,6 +20680,9 @@ msgstr "ようこそ、{companyName}"
 
 msgid "What a backup contains"
 msgstr "バックアップに含まれる内容"
+
+msgid "What a rental unit's rate is charged per: a day, a week, or a month. Each billing period bills the whole days, weeks, or months it covers, except a monthly rate on a calendar-month agreement, which is prorated for a partial month."
+msgstr ""
 
 msgid "What category of failure this is — Mechanical, Electrical, Software, Operator, Material, etc.; rolls up into the failure-mode pareto report so the category breakdown is meaningful."
 msgstr "障害のカテゴリー（機械的、電気的、ソフトウェア、作業者、材料など）を指定します。障害モードパレート報告書に集計されるため、カテゴリー分類が意味のあるものになります。"

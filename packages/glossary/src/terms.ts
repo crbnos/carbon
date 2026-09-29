@@ -485,9 +485,9 @@ export const terms = {
     definition: msg`A fixed asset tied to a serialized item that you rent out; only units that read Available in the Fleet register can be added to a rental agreement.`,
     href: "/docs/reference/rental-agreements#units-and-the-fleet"
   },
-  "rate-mode": {
-    term: msg`Rate mode`,
-    definition: msg`How a rental unit is priced each billing period: Best Rate bills the cheapest of its day, week, and month rates, and Fixed always bills the one tier you choose.`,
+  "rate-frequency": {
+    term: msg`Rate frequency`,
+    definition: msg`What a rental unit's rate is charged per: a day, a week, or a month. Each billing period bills the whole days, weeks, or months it covers, except a monthly rate on a calendar-month agreement, which is prorated for a partial month.`,
     href: "/docs/reference/rental-agreements#rates"
   },
   "cycle-billing": {
@@ -504,11 +504,6 @@ export const terms = {
     term: msg`Billing timing`,
     definition: msg`When each rental billing period falls due for invoicing: Advance on its first day, before the unit has been used, or Arrears on its last day, after the rent is earned.`,
     href: "/docs/reference/rental-agreements#billing"
-  },
-  "best-rate": {
-    term: msg`Best rate`,
-    definition: msg`Pricing a 28-day rental period at the cheapest of its day, week, and month rates in whole units, with ties going to the larger unit.`,
-    href: "/docs/reference/rental-agreements#rates"
   },
   "customer-deposit": {
     term: msg`Customer deposit`,

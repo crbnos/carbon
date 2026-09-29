@@ -933,9 +933,6 @@ msgstr "租赁协议将序列号物料件配置给客户，并按照循环周期
 msgid "A rental line is a sales-type lease when any ASC 842 test is met. These thresholds set tests (c) and (d); the discount rate is the default for new rental agreements."
 msgstr "当满足任何ASC 842测试时，租赁行是销售型租赁。这些阈值设置了测试(c)和(d)；折扣率是新租赁协议的默认值。"
 
-msgid "A rental line uses the customer's rates, else its customer type's, else the item's. The rates can still be changed on each line."
-msgstr ""
-
 msgid "A rental that meets any of the five ASC 842 lease tests, booked as a sale when its agreement activates: the unit leaves the fleet, lease revenue and cost of goods sold post, and a net investment in the lease takes its place."
 msgstr "满足五项ASC 842租赁测试之一的租赁，在其协议激活时作为销售入账：该件设备离开租赁队伍，租赁收入和销售成本过账，租赁净投资代替其位置。"
 
@@ -3180,12 +3177,6 @@ msgstr "最佳情况预测"
 msgid "Best case…"
 msgstr "最佳情况…"
 
-msgid "Best rate"
-msgstr "最优费率"
-
-msgid "Best Rate"
-msgstr "最优 费率"
-
 msgid "Best-case finish"
 msgstr "最佳情况完成日期"
 
@@ -3209,9 +3200,6 @@ msgstr "工序清单"
 
 msgid "Bill To"
 msgstr "账单收款人"
-
-msgid "Billed Tier"
-msgstr "计费 等级"
 
 msgid "Billed:"
 msgstr ""
@@ -8320,9 +8308,6 @@ msgstr "固定重新订购"
 msgid "Fixed Shelf Life"
 msgstr "固定保质期"
 
-msgid "Fixed when the agreement was activated."
-msgstr ""
-
 msgid "Fixture"
 msgstr "工装夹具"
 
@@ -8427,15 +8412,6 @@ msgstr "从上周"
 
 msgid "From Storage Unit"
 msgstr "从存储单元"
-
-msgid "From the customer type's rental rates for the item."
-msgstr ""
-
-msgid "From the item's rental rates."
-msgstr ""
-
-msgid "From this customer's rental rates for the item."
-msgstr ""
 
 msgid "From:"
 msgstr "来源："
@@ -8916,9 +8892,6 @@ msgid "How a batchable process runs its grouped work: Sequential runs parts one 
 msgstr "可批处理工艺如何运行其分组工作：顺序在一台机器上将零件逐一运行（如锯床或激光台），同时在一个负荷中将它们一起运行（如炉、烤箱或电镀槽）。"
 
 msgid "How a rental agreement cuts billing periods from its start date: Calendar Month bills each calendar month at the month rate, prorated for a partial month, and 28 Days bills consecutive 28-day periods priced from the day, week, and month rates."
-msgstr ""
-
-msgid "How a rental unit is priced each billing period: Best Rate bills the cheapest of its day, week, and month rates, and Fixed always bills the one tier you choose."
 msgstr ""
 
 msgid "How an item is replenished overall (Buy, Make, or Buy and Make), set per item, unlike the per-line method type."
@@ -10072,9 +10045,6 @@ msgstr "租赁收入"
 
 msgid "Lease Revenue (default)"
 msgstr "租赁收入（默认）"
-
-msgid "Leave all three empty to use the customer's rental rates, else the customer type's, else the item's."
-msgstr ""
 
 msgid "Leave any related receipts untouched"
 msgstr "保留任何相关收据不变"
@@ -12049,9 +12019,6 @@ msgstr "没有参考图像"
 msgid "No remaining entities to inspect."
 msgstr "没有剩余的实体可检查。"
 
-msgid "No rental rates"
-msgstr ""
-
 msgid "No reports match your search."
 msgstr "未找到与搜索条件匹配的报告。"
 
@@ -13233,9 +13200,6 @@ msgstr "人员"
 msgid "People"
 msgstr "人员"
 
-msgid "per 28 days"
-msgstr ""
-
 msgid "per day"
 msgstr ""
 
@@ -13709,9 +13673,6 @@ msgstr "价格"
 
 msgid "Pricing"
 msgstr "定价"
-
-msgid "Pricing a 28-day rental period at the cheapest of its day, week, and month rates in whole units, with ties going to the larger unit."
-msgstr "按整个单位对28天租赁期进行定价，选择其日费率、周费率和月费率中最低的，平局时选择较大单位。"
 
 msgid "Pricing rule"
 msgstr "定价规则"
@@ -14415,22 +14376,19 @@ msgstr "Ramp 拒绝了授权"
 msgid "Rate"
 msgstr "汇率"
 
-msgid "Rate Limit"
-msgstr "速率限制"
-
-msgid "Rate mode"
+msgid "Rate frequency"
 msgstr ""
 
-msgid "Rate Mode"
-msgstr "费率模式"
+msgid "Rate Frequency"
+msgstr ""
+
+msgid "Rate Limit"
+msgstr "速率限制"
 
 msgid "Rate used for equity account translation in consolidation (IAS 21). Leave blank to use the current exchange rate."
 msgstr "合并时用于所有者权益账户折算的汇率（IAS 21）。留空则使用当前汇率。"
 
-msgid "Rates a rental agreement line uses for this item. At least one is required."
-msgstr "本物料租赁协议行使用的费率。至少需要一个。"
-
-msgid "Rates are the items' current rental rates. They are fixed on each unit when the agreement is activated."
+msgid "Rates agreed with a customer, or with every customer of a type. They are the starting rate when this part is rented to them."
 msgstr ""
 
 msgid "Rates for a single customer"
@@ -18335,6 +18293,9 @@ msgstr "根据MACRS，该资产的国税局回收期类别（3、5、7、10、15
 msgid "The item each job produces — require it to match to merge output lots"
 msgstr "每个工单生产的物料 — 要求其匹配以合并输出批次"
 
+msgid "The item's rental rate"
+msgstr ""
+
 msgid "the job hours due that day (a due-date basis, not the day the work runs), with overdue work in Past due."
 msgstr "该天到期的任务小时数（以截止日期为基础，而不是工作运行的日期），逾期工作在逾期中。"
 
@@ -18692,6 +18653,9 @@ msgstr "此工作中心上的工序默认测量的标准系数(小时、分钟�
 msgid "The standard factor used to measure this process — hours, minutes, pieces, square feet — when its operations are estimated and costed."
 msgstr "用于测量此工艺的标准系数——小时、分钟、件数、平方英尺——当其工序被估计和成本计算时。"
 
+msgid "The starting rate when this part is rented, for each rate frequency. At least one is required."
+msgstr ""
+
 msgid "The state of this quote line — Draft, No Quote, Complete; No Quote reveals the Reason field and excludes the line from the quote total."
 msgstr "报价行的状态 — 草稿、不报价、完成；不报价时显示原因字段并将该行从报价总计中排除。"
 
@@ -18955,6 +18919,12 @@ msgstr "此联系人没有电子邮件地址"
 
 msgid "This counterparty has nothing outstanding — the payment will be recorded on-account."
 msgstr "该交易对手没有未结余额——该付款将记录为应收账款。"
+
+msgid "This customer type's rate"
+msgstr ""
+
+msgid "This customer's rate"
+msgstr ""
 
 msgid "This download link is invalid or has been tampered with."
 msgstr "此下载链接无效或已被篡改。"
@@ -20710,6 +20680,9 @@ msgstr "欢迎，{companyName}"
 
 msgid "What a backup contains"
 msgstr "备份包含的内容"
+
+msgid "What a rental unit's rate is charged per: a day, a week, or a month. Each billing period bills the whole days, weeks, or months it covers, except a monthly rate on a calendar-month agreement, which is prorated for a partial month."
+msgstr ""
 
 msgid "What category of failure this is — Mechanical, Electrical, Software, Operator, Material, etc.; rolls up into the failure-mode pareto report so the category breakdown is meaningful."
 msgstr "这是什么类别的故障 — 机械、电气、软件、操作员、原材料等；汇总到故障模式帕累托报告中，以便类别细分有意义。"

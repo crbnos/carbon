@@ -1319,9 +1319,8 @@ export const rentalBillingCycles = ["Calendar Month", "28 Days"] as const;
 
 export const rentalBillingTimings = ["Advance", "Arrears"] as const;
 
+/** A rental unit's rate frequency: what one unit of its `rate` buys. */
 export const rentalRateUnits = ["Day", "Week", "Month"] as const;
-
-export const rentalRateModes = ["Best Rate", "Fixed"] as const;
 
 export const rentalInvoiceLineKinds = [
   "Rent",
@@ -1401,36 +1400,30 @@ export const rentalAgreementValidator = z
     }
   );
 
-export const rentalAgreementLineValidator = z
-  .object({
-    id: zfd.text(z.string().optional()),
-    rentalAgreementId: z
-      .string()
-      .min(1, { message: "Rental agreement is required" }),
-    fixedAssetId: z.string().min(1, { message: "Fleet unit is required" }),
-    itemId: zfd.text(z.string().optional()),
-    rateMode: z.enum(rentalRateModes, { error: "Rate mode is required" }),
-    rateUnit: zfd.text(z.enum(rentalRateUnits).optional()),
-    /** The line's agreed rates. All three empty means "the default ladder"
-     *  (customer, customer type, item), filled in when the line is saved. */
-    dayRate: zfd.numeric(z.number().min(0).optional()),
-    weekRate: zfd.numeric(z.number().min(0).optional()),
-    monthRate: zfd.numeric(z.number().min(0).optional()),
-    fairValue: zfd.numeric(z.number().min(0).optional()),
-    economicLifeMonths: zfd.numeric(
-      z
-        .number()
-        .int()
-        .positive({ message: "Economic life must be positive" })
-        .optional()
-    ),
-    guaranteedResidualValue: zfd.numeric(z.number().min(0).optional()),
-    unguaranteedResidualValue: zfd.numeric(z.number().min(0).optional())
-  })
-  .refine((data) => (data.rateMode === "Fixed" ? !!data.rateUnit : true), {
-    message: "A fixed rate needs the tier it bills",
-    path: ["rateUnit"]
-  });
+export const rentalAgreementLineValidator = z.object({
+  id: zfd.text(z.string().optional()),
+  rentalAgreementId: z
+    .string()
+    .min(1, { message: "Rental agreement is required" }),
+  fixedAssetId: z.string().min(1, { message: "Fleet unit is required" }),
+  itemId: zfd.text(z.string().optional()),
+  rateUnit: z.enum(rentalRateUnits, { error: "Rate frequency is required" }),
+  /** Omitted by an API caller: the customer's, customer type's or item's
+   *  rate for the frequency is used. The form always sends one. */
+  rate: zfd.numeric(
+    z.number().min(0, { message: "Rate cannot be negative" }).optional()
+  ),
+  fairValue: zfd.numeric(z.number().min(0).optional()),
+  economicLifeMonths: zfd.numeric(
+    z
+      .number()
+      .int()
+      .positive({ message: "Economic life must be positive" })
+      .optional()
+  ),
+  guaranteedResidualValue: zfd.numeric(z.number().min(0).optional()),
+  unguaranteedResidualValue: zfd.numeric(z.number().min(0).optional())
+});
 
 /** No `kind`: the form only ever adds a `Charge`. `Rent` comes from the
  *  schedule and `Purchase Option` from Sell to Customer, both server-side. */

@@ -1,5 +1,4 @@
 import {
-  Badge,
   Button,
   Card,
   CardContent,
@@ -13,15 +12,14 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import { LuImage } from "react-icons/lu";
 import { Link } from "react-router";
 import { CustomerAvatar, DateTime, MotionMoney } from "~/components";
-import { useCurrencyDecimals, useCurrencyFormatter } from "~/hooks";
+import { useCurrencyDecimals } from "~/hooks";
 import { getPrivateUrl, path } from "~/utils/path";
 import { LeaseClassificationBadge } from "./RentalLeaseClassification";
 import RentalStatus from "./RentalStatus";
 import type {
   RentalAgreement,
   RentalAgreementLine,
-  RentalBillingPeriod,
-  RentalLeaseLineInputs
+  RentalBillingPeriod
 } from "./types";
 import { rentalUnitLabel } from "./useRentalLineActions";
 
@@ -29,14 +27,6 @@ type RentalAgreementSummaryProps = {
   rentalAgreement: RentalAgreement;
   lines: RentalAgreementLine[];
   periods: RentalBillingPeriod[];
-  /** Draft only: the default ladder for a line with no rates of its own. */
-  leaseInputs: Record<string, RentalLeaseLineInputs>;
-};
-
-type Ladder = {
-  dayRate: number | null;
-  weekRate: number | null;
-  monthRate: number | null;
 };
 
 /** The agreement at a glance, laid out like the sales order summary: its
@@ -45,34 +35,19 @@ type Ladder = {
 const RentalAgreementSummary = ({
   rentalAgreement,
   lines,
-  periods,
-  leaseInputs
+  periods
 }: RentalAgreementSummaryProps) => {
   const currencyCode = rentalAgreement.currencyCode ?? "USD";
   const currencyDecimals = useCurrencyDecimals(currencyCode);
 
-  // A line's own rates; a Draft line without any bills the default ladder
-  // (customer, customer type, else item) that activation will fix.
-  const ladderOf = (line: RentalAgreementLine): Ladder =>
-    line.dayRate !== null || line.weekRate !== null || line.monthRate !== null
-      ? {
-          dayRate: line.dayRate,
-          weekRate: line.weekRate,
-          monthRate: line.monthRate
-        }
-      : (leaseInputs[line.id]?.ladder ?? {
-          dayRate: null,
-          weekRate: null,
-          monthRate: null
-        });
-
   const billed = periods
     .filter((period) => period.status === "Invoiced")
     .reduce((sum, period) => sum + Number(period.amount ?? 0), 0);
-  const monthlyRates = lines.map((line) => ladderOf(line).monthRate);
-  const monthlyRent = monthlyRates.every((rate) => rate !== null)
-    ? monthlyRates.reduce<number>((sum, rate) => sum + Number(rate), 0)
-    : null;
+  // Only a sum of like rates means anything: shown when every unit is Monthly.
+  const monthlyRent =
+    lines.length > 0 && lines.every((line) => line.rateUnit === "Month")
+      ? lines.reduce((sum, line) => sum + Number(line.rate), 0)
+      : null;
 
   return (
     <Card>
@@ -109,10 +84,8 @@ const RentalAgreementSummary = ({
               <SummaryLine
                 key={line.id}
                 agreementId={rentalAgreement.id!}
-                billingCycle={rentalAgreement.billingCycle}
                 currencyCode={currencyCode}
                 line={line}
-                ladder={ladderOf(line)}
               />
             ))}
           </VStack>
@@ -175,14 +148,6 @@ const RentalAgreementSummary = ({
             </span>
           </HStack>
         </VStack>
-        {rentalAgreement.status === "Draft" && lines.length > 0 && (
-          <p className="mt-4 text-xs text-muted-foreground">
-            <Trans>
-              Rates are the items' current rental rates. They are fixed on each
-              unit when the agreement is activated.
-            </Trans>
-          </p>
-        )}
       </CardContent>
     </Card>
   );
@@ -190,46 +155,21 @@ const RentalAgreementSummary = ({
 
 function SummaryLine({
   agreementId,
-  billingCycle,
   currencyCode,
-  line,
-  ladder
+  line
 }: {
   agreementId: string;
-  billingCycle: RentalAgreement["billingCycle"];
   currencyCode: string;
   line: RentalAgreementLine;
-  ladder: Ladder;
 }) {
   const { t } = useLingui();
   const currencyDecimals = useCurrencyDecimals(currencyCode);
-  const rateFormatter = useCurrencyFormatter({
-    currency: currencyCode,
-    rate: true
-  });
-
-  // The headline is what the unit bills per cycle: the month rate on a
-  // Calendar Month agreement or a best-rate 28-day unit, else its fixed tier.
-  const headline =
-    line.rateMode === "Fixed" && line.rateUnit === "Day"
-      ? ladder.dayRate
-      : line.rateMode === "Fixed" && line.rateUnit === "Week"
-        ? ladder.weekRate
-        : ladder.monthRate;
-  const headlineUnit =
-    line.rateMode === "Fixed" && line.rateUnit === "Day"
+  const per =
+    line.rateUnit === "Day"
       ? t`per day`
-      : line.rateMode === "Fixed" && line.rateUnit === "Week"
+      : line.rateUnit === "Week"
         ? t`per week`
-        : billingCycle === "28 Days"
-          ? t`per 28 days`
-          : t`per month`;
-
-  const tiers = [
-    { label: t`Day`, value: ladder.dayRate },
-    { label: t`Week`, value: ladder.weekRate },
-    { label: t`Month`, value: ladder.monthRate }
-  ].filter((tier) => tier.value !== null);
+        : t`per month`;
 
   return (
     <div className="border-b border-input py-6 w-full">
@@ -278,31 +218,15 @@ function SummaryLine({
             </HStack>
           </VStack>
           <VStack spacing={2} className="flex-shrink-0 items-end w-auto">
-            {headline !== null ? (
-              <VStack spacing={0} className="items-end">
-                <MotionMoney
-                  className="font-semibold text-xl whitespace-nowrap"
-                  value={Number(headline)}
-                  currency={currencyCode}
-                  decimalPlaces={currencyDecimals}
-                />
-                <span className="text-xs text-muted-foreground">
-                  {headlineUnit}
-                </span>
-              </VStack>
-            ) : (
-              <span className="text-sm text-muted-foreground">
-                <Trans>No rental rates</Trans>
-              </span>
-            )}
-            <div className="flex items-center gap-2">
-              <Badge variant="outline">{line.rateMode}</Badge>
-              {tiers.map((tier) => (
-                <Badge key={tier.label} variant="green">
-                  {rateFormatter.format(Number(tier.value))} / {tier.label}
-                </Badge>
-              ))}
-            </div>
+            <VStack spacing={0} className="items-end">
+              <MotionMoney
+                className="font-semibold text-xl whitespace-nowrap"
+                value={Number(line.rate)}
+                currency={currencyCode}
+                decimalPlaces={currencyDecimals}
+              />
+              <span className="text-xs text-muted-foreground">{per}</span>
+            </VStack>
           </VStack>
         </div>
       </HStack>

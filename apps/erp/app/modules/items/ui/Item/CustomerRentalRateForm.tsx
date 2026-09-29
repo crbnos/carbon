@@ -36,9 +36,8 @@ type CustomerRentalRateFormProps = {
   initialValues: z.infer<typeof customerItemRentalRateValidator>;
 };
 
-/** A day / week / month ladder agreed with one customer, or with every
- *  customer of a type. A rental line defaults to it ahead of the item's own
- *  rates. */
+/** Day / week / month rates agreed with one customer, or with every customer
+ *  of a type. A rental unit's rate starts from it ahead of the item's own. */
 const CustomerRentalRateForm = ({
   initialValues
 }: CustomerRentalRateFormProps) => {

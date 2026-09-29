@@ -1348,7 +1348,7 @@
     {
       "slug": "docs/reference/rental-agreements",
       "title": "Rental agreements",
-      "description": "Renting serialized fleet units to a customer: rate ladders, billing periods, drafted invoices, deposits, and whether each unit is accounted for as a rental or a sale.",
+      "description": "Renting serialized fleet units to a customer: rates, billing periods, drafted invoices, deposits, and whether each unit is accounted for as a rental or a sale.",
       "keywords": ["rental", "agreements", "docs", "reference"],
       "headings": [
         "Lifecycle",
@@ -1372,8 +1372,8 @@
         "\"UNIT is Reserved on rental agreement RA…\" / \"UNIT is On Rent on rental agreement RA…\"",
         "\"UNIT is out of service: REASON\"",
         "\"UNIT is STATUS; only an Active or Fully Depreciated asset can go on rent\"",
-        "\"UNIT has no rental rates in CURRENCY\"",
-        "\"UNIT needs a month rate for a Calendar Month agreement\" / \"needs at least one rental rate\" / \"is Fixed but names no rate unit\" / \"bills the week rate but the line has none\"",
+        "\"No week rate is set for this item; enter the rate\"",
+        "\"UNIT is treated as a sale, which on a Calendar Month agreement needs a monthly rate\"",
         "\"Add at least one fleet unit before activating the agreement\" / \"Every line needs a fleet unit\"",
         "\"Every unit must be returned or sold before the agreement closes\" / \"Every billing period must be invoiced before the agreement closes\" / \"Every charge must be invoiced before the agreement closes\"",
         "\"A unit is on rent; return it before cancelling the agreement\" / \"The agreement has been invoiced; it can be closed, not cancelled\" / \"Rental income has been recognized on this agreement; it can be closed, not cancelled\" / \"A unit on this agreement was sold\"",

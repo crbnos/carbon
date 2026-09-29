@@ -1,5 +1,5 @@
 import type { Json } from "@carbon/database";
-import type { LeasePaymentTerms, RateLadder, Timing } from "@carbon/utils";
+import type { LeasePaymentTerms, RateUnit, Timing } from "@carbon/utils";
 import {
   classifyLessorLease,
   classifyRentalLine,
@@ -180,21 +180,19 @@ export function leaseTermMonths(
 }
 
 /** `leasePaymentTerms` from @carbon/utils — the same function activation
- *  prices a line with — or null when the ladder cannot price it yet (a
- *  Draft line may still be missing its tier). */
+ *  prices a line with — or null when the line cannot be priced (a rate that
+ *  is not a finite number). */
 export function draftLeasePaymentTerms(args: {
   cycle: "Calendar Month" | "28 Days";
-  rateMode: "Best Rate" | "Fixed";
-  rateUnit: "Day" | "Week" | "Month" | null;
-  ladder: RateLadder | null | undefined;
+  rateUnit: RateUnit;
+  rate: number;
   discountRate: number;
   startDate: string;
   endDate: string | null;
 }): LeasePaymentTerms | null {
-  const { ladder, ...terms } = args;
-  if (!ladder) return null;
+  if (!Number.isFinite(args.rate)) return null;
   try {
-    return leasePaymentTerms({ ...terms, rates: ladder });
+    return leasePaymentTerms(args);
   } catch {
     return null;
   }
@@ -217,22 +215,20 @@ export function previewLeaseClassification(args: {
     purchaseOptionReasonablyCertain: boolean;
   };
   line: {
-    rateMode: "Best Rate" | "Fixed";
-    rateUnit: "Day" | "Week" | "Month" | null;
+    rateUnit: RateUnit;
+    rate: number;
     fairValue: number | null;
     economicLifeMonths: number | null;
     guaranteedResidualValue: number | null;
     unguaranteedResidualValue: number | null;
   };
-  ladder: RateLadder | null | undefined;
   policy: LeasePolicy;
 }): LeaseClassificationRecord {
   const { agreement, line, policy } = args;
   const terms = draftLeasePaymentTerms({
     cycle: agreement.billingCycle,
-    rateMode: line.rateMode,
     rateUnit: line.rateUnit,
-    ladder: args.ladder,
+    rate: line.rate,
     discountRate: agreement.discountRate ?? 0,
     startDate: agreement.startDate,
     endDate: agreement.endDate

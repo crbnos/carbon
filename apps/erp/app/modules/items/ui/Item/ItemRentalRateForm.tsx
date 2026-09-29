@@ -18,9 +18,9 @@ type ItemRentalRateFormProps = {
   initialValues: z.infer<typeof itemRentalRateValidator>;
 };
 
-// The item's day / week / month rate ladder in one currency. A rental
-// agreement line snapshots these tiers at activation, so editing them never
-// touches a live agreement.
+// The item's day / week / month rates in one currency: what a rental unit's
+// rate starts at for its frequency when no customer rate applies. A unit
+// keeps its own rate, so editing these never touches an agreement.
 const ItemRentalRateForm = ({ initialValues }: ItemRentalRateFormProps) => {
   const permissions = usePermissions();
   const { t } = useLingui();
@@ -43,8 +43,8 @@ const ItemRentalRateForm = ({ initialValues }: ItemRentalRateFormProps) => {
           </CardTitle>
           <CardDescription>
             <Trans>
-              Rates a rental agreement line uses for this item. At least one is
-              required.
+              The starting rate when this part is rented, for each rate
+              frequency. At least one is required.
             </Trans>
           </CardDescription>
         </CardHeader>

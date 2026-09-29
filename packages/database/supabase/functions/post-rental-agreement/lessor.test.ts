@@ -25,7 +25,7 @@ import {
 } from "./lessor.ts";
 
 const THRESHOLDS = { majorPartPercent: 75, substantiallyAllPercent: 90 };
-const LADDER = { dayRate: 50, weekRate: 300, monthRate: 1000 };
+const MONTHLY = { rateUnit: "Month", rate: 1000 } as const;
 // The plan's worked example: 36 × 1,000 in arrears at 6 %, a reasonably
 // certain 5,000 purchase option, fair value 38,000.
 const AGREEMENT = {
@@ -60,9 +60,7 @@ Deno.test("a Calendar Month line pays the month rate once per whole month at the
   assertEquals(
     leasePaymentTerms({
       cycle: "Calendar Month",
-      rateMode: "Best Rate",
-      rateUnit: null,
-      rates: LADDER,
+      ...MONTHLY,
       discountRate: 6,
       startDate: "2027-01-01",
       endDate: "2029-12-31",
@@ -74,9 +72,7 @@ Deno.test("a Calendar Month line pays the month rate once per whole month at the
 Deno.test("an open-ended or sub-month line is valued over one period", () => {
   const openEnded = leasePaymentTerms({
     cycle: "Calendar Month",
-    rateMode: "Best Rate",
-    rateUnit: null,
-    rates: LADDER,
+    ...MONTHLY,
     discountRate: 6,
     startDate: "2027-01-01",
     endDate: null,
@@ -86,9 +82,7 @@ Deno.test("an open-ended or sub-month line is valued over one period", () => {
 
   const short = leasePaymentTerms({
     cycle: "28 Days",
-    rateMode: "Best Rate",
-    rateUnit: null,
-    rates: LADDER,
+    ...MONTHLY,
     discountRate: 6,
     startDate: "2027-01-01",
     endDate: "2027-01-20",
@@ -100,15 +94,13 @@ Deno.test("an open-ended or sub-month line is valued over one period", () => {
 Deno.test("a 28 Days line pays the 28-day charge per whole 28 days, at the rate scaled to 28/365 a period", () => {
   const terms = leasePaymentTerms({
     cycle: "28 Days",
-    rateMode: "Best Rate",
-    rateUnit: null,
-    rates: LADDER,
+    ...MONTHLY,
     discountRate: 6,
     startDate: "2027-01-01",
     // 364 days: thirteen 28-day periods
     endDate: "2027-12-30",
   });
-  // Best rate for 28 days: one month tier (1,000) beats 4 weeks (1,200).
+  // A Monthly unit pays one month per 28-day period.
   assertEquals(terms.payment, 1000);
   assertEquals(terms.periods, 13);
   assertEquals(terms.termMonths, 11);
@@ -121,9 +113,7 @@ Deno.test("a 28 Days line pays the 28-day charge per whole 28 days, at the rate 
   assertEquals(
     leasePaymentTerms({
       cycle: "28 Days",
-      rateMode: "Best Rate",
-      rateUnit: null,
-      rates: LADDER,
+      ...MONTHLY,
       discountRate: 6,
       startDate: "2027-01-01",
       endDate: "2027-12-29",
@@ -132,18 +122,37 @@ Deno.test("a 28 Days line pays the 28-day charge per whole 28 days, at the rate 
   );
 });
 
-Deno.test("a Fixed 28 Days line pays its own tier over 28 days", () => {
+Deno.test("a Weekly 28 Days line pays four weeks a period", () => {
   assertEquals(
     leasePaymentTerms({
       cycle: "28 Days",
-      rateMode: "Fixed",
       rateUnit: "Week",
-      rates: LADDER,
+      rate: 300,
       discountRate: 6,
       startDate: "2027-01-01",
       endDate: "2027-12-30",
     }).payment,
     1200,
+  );
+});
+
+Deno.test("a Daily or Weekly unit on a Calendar Month agreement is valued at its average month", () => {
+  const terms = {
+    cycle: "Calendar Month" as const,
+    discountRate: 6,
+    startDate: "2027-01-01",
+    endDate: "2029-12-31",
+  };
+  // 365 days a year at 50, over twelve months.
+  assertEquals(
+    leasePaymentTerms({ ...terms, rateUnit: "Day", rate: 50 }).payment,
+    1520.83333,
+  );
+  // Whole weeks per month: five in every month but February's four — 59 a
+  // year at 300, over twelve months.
+  assertEquals(
+    leasePaymentTerms({ ...terms, rateUnit: "Week", rate: 300 }).payment,
+    1475,
   );
 });
 
@@ -259,6 +268,7 @@ Deno.test("a sales-type line needs an end date and a fair value", () => {
   const base = {
     name: "FA-1",
     cycle: "Calendar Month" as const,
+    rateUnit: "Month" as const,
     startDate: "2027-01-01",
     endDate: "2029-12-31",
     fairValue: 38000,
@@ -283,6 +293,7 @@ Deno.test("a Calendar Month sales-type lease starts on the first and ends on a m
   const base = {
     name: "FA-1",
     cycle: "Calendar Month" as const,
+    rateUnit: "Month" as const,
     startDate: "2027-01-01",
     endDate: "2029-12-31",
     fairValue: 38000,
@@ -316,17 +327,25 @@ Deno.test("a Calendar Month sales-type lease starts on the first and ends on a m
     salesTypeRequirementError({ ...base, endDate: "2027-02-28" }),
     null,
   );
+  // A Daily or Weekly unit bills a different amount each month, which a
+  // level-payment sale cannot match.
+  assertEquals(
+    salesTypeRequirementError({ ...base, rateUnit: "Week" }),
+    "FA-1 is treated as a sale, which on a Calendar Month agreement needs a monthly rate",
+  );
 });
 
 Deno.test("a 28 Days sales-type lease runs a whole number of 28-day periods", () => {
   const base = {
     name: "FA-1",
     cycle: "28 Days" as const,
+    rateUnit: "Week" as const,
     startDate: "2027-01-01",
     // 364 days: thirteen periods
     endDate: "2027-12-30",
     fairValue: 38000,
   };
+  // Any frequency bills the same amount every 28 days.
   assertEquals(salesTypeRequirementError(base), null);
   // A 28 Days term need not start on the first.
   assertEquals(
@@ -388,9 +407,7 @@ Deno.test("a sales-type line whose term ends inside the horizon bills nothing pa
     generateRentalBillingPeriods({
       cycle: "28 Days",
       timing: "Arrears",
-      rateMode: "Best Rate",
-      rateUnit: null,
-      rates: LADDER,
+      ...MONTHLY,
       startDate: "2027-01-01",
       // Two whole 28-day periods, ending before today + 28.
       endDate: "2027-02-25",
@@ -419,30 +436,27 @@ Deno.test("a whole-period sales-type lease bills exactly payment × periods", ()
   const cases = [
     {
       cycle: "Calendar Month" as const,
-      rateMode: "Best Rate" as const,
-      rateUnit: null,
+      ...MONTHLY,
       startDate: "2027-01-01",
       endDate: "2029-12-31",
     },
     {
       cycle: "Calendar Month" as const,
-      rateMode: "Best Rate" as const,
-      rateUnit: null,
+      ...MONTHLY,
       // Through two Februaries, one of them a leap year.
       startDate: "2027-02-01",
       endDate: "2028-03-31",
     },
     {
       cycle: "28 Days" as const,
-      rateMode: "Best Rate" as const,
-      rateUnit: null,
+      ...MONTHLY,
       startDate: "2027-01-01",
       endDate: "2027-12-30",
     },
     {
       cycle: "28 Days" as const,
-      rateMode: "Fixed" as const,
       rateUnit: "Week" as const,
+      rate: 300,
       startDate: "2027-03-17",
       endDate: "2027-06-08",
     },
@@ -452,16 +466,11 @@ Deno.test("a whole-period sales-type lease bills exactly payment × periods", ()
       salesTypeRequirementError({ name: "FA-1", fairValue: 38000, ...lease }),
       null,
     );
-    const terms = leasePaymentTerms({
-      ...lease,
-      rates: LADDER,
-      discountRate: 6,
-    });
+    const terms = leasePaymentTerms({ ...lease, discountRate: 6 });
     for (const timing of ["Advance", "Arrears"] as const) {
       const { create } = generateRentalBillingPeriods({
         ...lease,
         timing,
-        rates: LADDER,
         returnedAt: null,
         through: activationBillingThrough({
           classification: "Sale",
@@ -501,9 +510,7 @@ Deno.test("schedule periods are the first regular billing periods, in date order
   const { create } = generateRentalBillingPeriods({
     cycle: "Calendar Month",
     timing: "Arrears",
-    rateMode: "Best Rate",
-    rateUnit: null,
-    rates: LADDER,
+    ...MONTHLY,
     startDate: "2027-01-15",
     endDate: "2028-01-14",
     returnedAt: null,
@@ -685,9 +692,7 @@ function workedExampleSchedule() {
   const { create } = generateRentalBillingPeriods({
     cycle: "Calendar Month",
     timing: "Arrears",
-    rateMode: "Best Rate",
-    rateUnit: null,
-    rates: LADDER,
+    ...MONTHLY,
     startDate: "2027-01-01",
     endDate: "2029-12-31",
     returnedAt: null,

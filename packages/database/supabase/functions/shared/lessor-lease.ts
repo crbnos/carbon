@@ -1,11 +1,8 @@
 import { round, RoundingMode, SCALE } from "./precision.ts";
 import {
-  bestRateCharge,
-  fixedRateCharge,
-  type RateLadder,
+  rateCharge,
   type RateUnit,
   type RentalBillingCycle,
-  type RentalRateMode,
 } from "./rental-billing.ts";
 import {
   addDays,
@@ -214,6 +211,9 @@ export function buildLessorSchedule(args: {
 const DAYS_PER_28_DAY_PERIOD = 28;
 const DAYS_PER_YEAR = 365;
 const MONTHS_PER_YEAR = 12;
+/** The calendar months of a 365-day year, for a Daily or Weekly unit's
+ *  average month on a Calendar Month agreement. */
+const MONTH_LENGTHS = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
 
 /** Whole calendar months from `startDate` through `endDate` (both inclusive:
  *  `endDate` is the last day of the term). 2027-01-01 → 2029-12-31 is 36;
@@ -247,11 +247,15 @@ export type LeasePaymentTerms = {
  * What a line pays, over how many periods, at what rate — the inputs of the
  * present value and of the schedule, derived one way for both.
  *
- * - Calendar Month: the month rate snapshot per period, one period per whole
- *   month of the term. Billing prices a partial first / last calendar month
- *   pro rata, so a mid-month start bills the same total rent over one more
- *   (partial) period than the lease is valued over.
- * - 28 Days: the 28-day charge (best rate or the Fixed tier over 28 days)
+ * - Calendar Month: one period per whole month of the term. A Monthly unit
+ *   pays its month rate; billing prices a partial first / last calendar
+ *   month pro rata, so a mid-month start bills the same total rent over one
+ *   more (partial) period than the lease is valued over. A Daily or Weekly
+ *   unit bills a different amount each month (the days, or whole weeks, the
+ *   month covers), so it is valued at its average month over a 365-day year
+ *   — the classification tests need a level payment; a unit treated as a
+ *   sale must be Monthly (`salesTypeRequirementError`).
+ * - 28 Days: the unit's charge for 28 days (whole units of its frequency)
  *   per period, one period per WHOLE 28 days of the term; a trailing partial
  *   period is not part of the level-payment stream.
  *
@@ -261,39 +265,34 @@ export type LeasePaymentTerms = {
  */
 export function leasePaymentTerms(args: {
   cycle: RentalBillingCycle;
-  rateMode: RentalRateMode;
-  rateUnit: RateUnit | null;
-  rates: RateLadder;
+  rateUnit: RateUnit;
+  rate: number;
   /** `rentalAgreement.discountRate`, annual %. */
   discountRate: number;
   startDate: string;
   endDate: string | null;
 }): LeasePaymentTerms {
-  const { cycle, rates, startDate, endDate } = args;
+  const { cycle, rateUnit, rate, startDate, endDate } = args;
   const termMonths = endDate === null
     ? null
     : wholeMonthsInTerm(startDate, endDate);
 
   if (cycle === "Calendar Month") {
-    if (rates.monthRate === null) {
-      throw new Error("A Calendar Month agreement needs a month rate");
-    }
+    const payment = rateUnit === "Month" ? rate : round(
+      MONTH_LENGTHS.reduce(
+        (sum, days) => sum + rateCharge(days, rateUnit, rate).amount,
+        0,
+      ) / MONTHS_PER_YEAR,
+    );
     return {
       termMonths,
-      payment: rates.monthRate,
+      payment,
       periods: Math.max(1, termMonths ?? 1),
       annualRate: args.discountRate,
     };
   }
 
-  const charge = args.rateMode === "Fixed"
-    ? (() => {
-      if (args.rateUnit === null) {
-        throw new Error("A Fixed line needs the rate unit it bills");
-      }
-      return fixedRateCharge(DAYS_PER_28_DAY_PERIOD, args.rateUnit, rates);
-    })()
-    : bestRateCharge(DAYS_PER_28_DAY_PERIOD, rates);
+  const charge = rateCharge(DAYS_PER_28_DAY_PERIOD, rateUnit, rate);
   const wholePeriods = endDate === null ? 1 : round(
     daysBetweenInclusive(startDate, endDate) / DAYS_PER_28_DAY_PERIOD,
     0,
@@ -427,6 +426,7 @@ export function classifyRentalLine(args: {
 export function salesTypeRequirementError(args: {
   name: string;
   cycle: RentalBillingCycle;
+  rateUnit: RateUnit;
   startDate: string;
   endDate: string | null;
   fairValue: number | null;
@@ -439,6 +439,11 @@ export function salesTypeRequirementError(args: {
     return `${name} is treated as a sale; enter the unit's fair value`;
   }
   if (args.cycle === "Calendar Month") {
+    // A Daily or Weekly unit bills a different amount each month, and a sale
+    // is valued as a level payment that the invoices must match.
+    if (args.rateUnit !== "Month") {
+      return `${name} is treated as a sale, which on a Calendar Month agreement needs a monthly rate`;
+    }
     if (parseIsoDate(startDate).day !== 1 || monthEnd(endDate) !== endDate) {
       return `${name} is treated as a sale, which runs whole billing periods: start on the first of a month and end on a month end`;
     }

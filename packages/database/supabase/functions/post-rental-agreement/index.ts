@@ -20,12 +20,9 @@ import {
 } from "../shared/post-adjustment.ts";
 import { round } from "../shared/precision.ts";
 import {
-  defaultRentalRates,
   ExistingBillingPeriod,
   generateRentalBillingPeriods,
   PeriodSpec,
-  RateLadder,
-  rentalLadderIsEmpty,
 } from "../shared/rental-billing.ts";
 import {
   activationBillingThrough,
@@ -52,12 +49,10 @@ import {
   futureReturnError,
   LIVE_LINE_STATUSES,
   payloadValidator,
-  rateLadderError,
   RENTABLE_ASSET_STATUSES,
   RentalAgreementPayload,
   ResidualDestination,
   RETURNABLE_LINE_STATUSES,
-  toRate,
   unitAvailabilityError,
 } from "./validators.ts";
 
@@ -68,9 +63,8 @@ const logger = getFunctionLogger("post-rental-agreement");
 // The lifecycle of a rental agreement (spec §3, §4). Four actions, each ONE
 // transaction that locks the agreement row first:
 //
-//   activate  Draft → Active: every unit Available, rates fixed (the line's
-//             own, else the customer's / customer type's / item's ladder —
-//             `defaultRentalRates`), each line classified (ASC 842, `lessor.ts`),
+//   activate  Draft → Active: every unit Available and priced (its own
+//             frequency and rate, already on the line), each line classified (ASC 842, `lessor.ts`),
 //             first billing periods cut. An operating line posts nothing — the
 //             unit simply stops being Available. A sales-type line commences:
 //             the fleet unit is derecognized (asset Disposed by Sale), the
@@ -378,7 +372,6 @@ type ActivationPlan = {
   itemId: string;
   fixedAssetId: string;
   trackedEntityId: string | null;
-  rates: RateLadder;
   deliveredAt: string | null;
   periods: PeriodSpec[];
   classification: "Rental" | "Sale";
@@ -447,11 +440,8 @@ async function activate(
         "fixedAssetId",
         "itemId",
         "trackedEntityId",
-        "rateMode",
         "rateUnit",
-        "dayRate",
-        "weekRate",
-        "monthRate",
+        "rate",
         "fairValue",
         "economicLifeMonths",
         "guaranteedResidualValue",
@@ -504,55 +494,6 @@ async function activate(
       .execute();
     const unitById = new Map(units.map((unit) => [unit.id, unit]));
 
-    const itemIds = [
-      ...new Set(
-        units.map((unit) => unit.itemId).filter((id): id is string => !!id),
-      ),
-    ];
-    // A line with no rate of its own takes the default ladder: the
-    // customer's, else its customer type's, else the item's.
-    const customer = await trx
-      .selectFrom("customer")
-      .select("customerTypeId")
-      .where("id", "=", agreement.customerId)
-      .where("companyId", "=", companyId)
-      .executeTakeFirst();
-    const customerTypeId = customer?.customerTypeId ?? null;
-    const [rateRows, scopedRows] = itemIds.length === 0 ? [[], []] : await Promise.all([
-      trx
-        .selectFrom("itemRentalRate")
-        .select(["itemId", "dayRate", "weekRate", "monthRate"])
-        .where("companyId", "=", companyId)
-        .where("currencyCode", "=", agreement.currencyCode)
-        .where("itemId", "in", itemIds)
-        .execute(),
-      trx
-        .selectFrom("customerItemRentalRate")
-        .select([
-          "itemId",
-          "customerId",
-          "customerTypeId",
-          "dayRate",
-          "weekRate",
-          "monthRate",
-          sql<string | null>`"validFrom"::text`.as("validFrom"),
-          sql<string | null>`"validTo"::text`.as("validTo"),
-        ])
-        .where("companyId", "=", companyId)
-        .where("currencyCode", "=", agreement.currencyCode)
-        .where("itemId", "in", itemIds)
-        .where((eb) =>
-          customerTypeId
-            ? eb.or([
-              eb("customerId", "=", agreement.customerId),
-              eb("customerTypeId", "=", customerTypeId),
-            ])
-            : eb("customerId", "=", agreement.customerId)
-        )
-        .execute(),
-    ]);
-    const ratesByItem = new Map(rateRows.map((row) => [row.itemId, row]));
-
     // Every problem at once, so a planner fixes the agreement in one pass.
     const problems: string[] = [];
     const plans: ActivationPlan[] = [];
@@ -578,56 +519,12 @@ async function activate(
         problems.push(unavailable);
         continue;
       }
-      // The snapshot: a later price-list change never touches a live line.
-      const ownRates: RateLadder = {
-        dayRate: toRate(line.dayRate),
-        weekRate: toRate(line.weekRate),
-        monthRate: toRate(line.monthRate),
-      };
-      const itemRow = ratesByItem.get(unit.itemId);
-      const rates = rentalLadderIsEmpty(ownRates)
-        ? defaultRentalRates({
-          customerId: agreement.customerId,
-          customerTypeId,
-          asOf: agreement.startDate,
-          scoped: scopedRows
-            .filter((row) => row.itemId === unit.itemId)
-            .map((row) => ({
-              customerId: row.customerId,
-              customerTypeId: row.customerTypeId,
-              validFrom: row.validFrom,
-              validTo: row.validTo,
-              dayRate: toRate(row.dayRate),
-              weekRate: toRate(row.weekRate),
-              monthRate: toRate(row.monthRate),
-            })),
-          item: itemRow
-            ? {
-              dayRate: toRate(itemRow.dayRate),
-              weekRate: toRate(itemRow.weekRate),
-              monthRate: toRate(itemRow.monthRate),
-            }
-            : null,
-        })?.rates ?? null
-        : ownRates;
-      if (!rates) {
-        problems.push(
-          `${name} has no rental rates in ${agreement.currencyCode}`,
-        );
-        continue;
-      }
-      const ladderProblem = rateLadderError({
-        cycle: agreement.billingCycle,
-        rateMode: line.rateMode,
-        rateUnit: line.rateUnit,
-        rates,
-      });
-      if (ladderProblem) {
-        problems.push(`${name} ${ladderProblem}`);
-        continue;
-      }
+      // The unit's own frequency and rate, fixed from here on: a later change
+      // to the rate cards never touches a live line.
+      const rate = Number(line.rate);
+      const rateUnit = line.rateUnit;
 
-      // ASC 842 classification, from the snapshot rates and the agreement's
+      // ASC 842 classification, from the unit's rate and the agreement's
       // terms. An overridden line keeps the classification the override
       // stored; its inputs are still recorded.
       if (
@@ -639,9 +536,8 @@ async function activate(
       }
       const terms = leasePaymentTerms({
         cycle: agreement.billingCycle,
-        rateMode: line.rateMode,
-        rateUnit: line.rateUnit,
-        rates,
+        rateUnit,
+        rate,
         discountRate: agreement.discountRate,
         startDate: agreement.startDate,
         endDate: agreement.endDate,
@@ -669,6 +565,7 @@ async function activate(
         const requirement = salesTypeRequirementError({
           name,
           cycle: agreement.billingCycle,
+          rateUnit,
           startDate: agreement.startDate,
           endDate: agreement.endDate,
           fairValue: lineTerms.fairValue,
@@ -682,9 +579,8 @@ async function activate(
       const { create } = generateRentalBillingPeriods({
         cycle: agreement.billingCycle,
         timing: agreement.billingTiming,
-        rateMode: line.rateMode,
-        rateUnit: line.rateUnit,
-        rates,
+        rateUnit,
+        rate,
         startDate: agreement.startDate,
         endDate: agreement.endDate,
         returnedAt: null,
@@ -703,7 +599,6 @@ async function activate(
         itemId: unit.itemId,
         fixedAssetId: unit.id as string,
         trackedEntityId: line.trackedEntityId,
-        rates,
         deliveredAt: line.deliveredAt,
         periods: create,
         classification,
@@ -731,16 +626,13 @@ async function activate(
       plans: plans.filter((plan) => plan.classification === "Sale"),
     });
 
-    // One update per line: each carries its own snapshot, and an agreement
-    // holds a handful of units.
+    // One update per line: each carries its own classification, and an
+    // agreement holds a handful of units.
     for (const plan of plans) {
       const commencement = commenced.get(plan.lineId);
       await trx
         .updateTable("rentalAgreementLine")
         .set({
-          dayRate: plan.rates.dayRate,
-          weekRate: plan.rates.weekRate,
-          monthRate: plan.rates.monthRate,
           lessorClassification: plan.classification,
           classificationInputs: toJson(plan.classificationInputs),
           ...(commencement
@@ -1126,11 +1018,8 @@ async function returnUnit(
         "fixedAssetId",
         "itemId",
         "trackedEntityId",
-        "rateMode",
         "rateUnit",
-        "dayRate",
-        "weekRate",
-        "monthRate",
+        "rate",
         "lessorClassification",
         "initialNetInvestment",
         sql<string | null>`"deliveredAt"::text`.as("deliveredAt"),
@@ -1206,13 +1095,8 @@ async function returnUnit(
       const plan = generateRentalBillingPeriods({
         cycle: agreement.billingCycle,
         timing: agreement.billingTiming,
-        rateMode: line.rateMode,
         rateUnit: line.rateUnit,
-        rates: {
-          dayRate: toRate(line.dayRate),
-          weekRate: toRate(line.weekRate),
-          monthRate: toRate(line.monthRate),
-        },
+        rate: Number(line.rate),
         startDate: agreement.startDate,
         endDate: agreement.endDate,
         returnedAt,

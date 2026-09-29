@@ -98,7 +98,7 @@ export default function RentalAgreementExplorer() {
           initialValues={{
             rentalAgreementId: id,
             fixedAssetId: "",
-            rateMode: "Best Rate"
+            rateUnit: "Month"
           }}
           customerId={rentalAgreement.customerId ?? ""}
           currencyCode={rentalAgreement.currencyCode ?? ""}

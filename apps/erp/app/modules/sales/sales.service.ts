@@ -6,9 +6,8 @@ import { trackWorkEvent } from "@carbon/lib/telemetry";
 import { raiseMoment } from "@carbon/lib/workflows";
 import { getLogger } from "@carbon/logger";
 import type {
+  DefaultRentalRates,
   PickPartial,
-  RateLadder,
-  RentalRateSource,
   ScopedRentalRate
 } from "@carbon/utils";
 import {
@@ -16,7 +15,6 @@ import {
   defaultRentalRates,
   EPSILON,
   getSalesReturnOrderStatus,
-  rentalLadderIsEmpty,
   round
 } from "@carbon/utils";
 import type { FileObject } from "@supabase/storage-js";
@@ -8293,15 +8291,11 @@ export async function upsertRentalAgreementLine(
     return rentalRefusal("RENTAL_ASSET_NO_ITEM", "The fleet unit has no item");
   }
 
-  // The line's agreed rates. None typed means the default ladder — the
-  // customer's, its type's, else the item's — so a line always shows what it
-  // will bill; activation still fills a line that has none.
-  let rates: RateLadder = {
-    dayRate: line.dayRate ?? null,
-    weekRate: line.weekRate ?? null,
-    monthRate: line.monthRate ?? null
-  };
-  if (rentalLadderIsEmpty(rates) && agreement.data.currencyCode) {
+  // The unit's own rate. An API caller may leave it out and get the rate
+  // the form would have started from: the customer's, its type's, else the
+  // item's, for this frequency.
+  let rate = line.rate;
+  if (rate === undefined) {
     const defaults = await getDefaultRentalRates(client, {
       companyId,
       customerId: agreement.data.customerId,
@@ -8310,7 +8304,13 @@ export async function upsertRentalAgreementLine(
       itemIds: [asset.data.itemId]
     });
     if (defaults.error) return defaults;
-    rates = defaults.data[asset.data.itemId]?.rates ?? rates;
+    rate = defaults.data[asset.data.itemId]?.[line.rateUnit]?.rate;
+    if (rate === undefined) {
+      return rentalRefusal(
+        "RENTAL_LINE_NO_RATE",
+        `No ${line.rateUnit.toLowerCase()} rate is set for this item; enter the rate`
+      );
+    }
   }
 
   // Picked, not spread: this writer is also an MCP tool, and `status` and
@@ -8320,9 +8320,8 @@ export async function upsertRentalAgreementLine(
     fixedAssetId: line.fixedAssetId,
     itemId: asset.data.itemId,
     trackedEntityId: asset.data.trackedEntityId,
-    rateMode: line.rateMode,
-    rateUnit: line.rateMode === "Fixed" ? (line.rateUnit ?? null) : null,
-    ...rates,
+    rateUnit: line.rateUnit,
+    rate,
     fairValue: line.fairValue ?? null,
     economicLifeMonths: line.economicLifeMonths ?? null,
     guaranteedResidualValue: line.guaranteedResidualValue ?? 0,
@@ -8564,16 +8563,13 @@ export async function deleteItemRentalRate(
   return client.from("itemRentalRate").delete().eq("id", itemRentalRateId);
 }
 
-export type DefaultRentalRates = Record<
-  string,
-  { rates: RateLadder; source: RentalRateSource }
->;
+/** Per item: the rate a rental unit starts at for each frequency. */
+export type DefaultRentalRatesByItem = Record<string, DefaultRentalRates>;
 
-/** The ladder each item defaults to on a rental line for this customer —
- *  its own customer rates, else its customer type's, else the item's
- *  (`defaultRentalRates`) — in effect on `asOf`, the agreement's start date.
- *  Keyed by item id; an item with no rates at all is absent. One query per
- *  table over every item. */
+/** The rate each item starts at on a rental line for this customer, per
+ *  frequency — the customer's own rate, else its customer type's, else the
+ *  item's (`defaultRentalRates`) — in effect on `asOf`, the agreement's start
+ *  date. Keyed by item id. One query per table over every item. */
 export async function getDefaultRentalRates(
   client: SupabaseClient<Database>,
   args: {
@@ -8584,7 +8580,7 @@ export async function getDefaultRentalRates(
     itemIds: string[];
   }
 ): Promise<
-  | { data: DefaultRentalRates; error: null }
+  | { data: DefaultRentalRatesByItem; error: null }
   | { data: null; error: PostgrestError }
 > {
   const { companyId, customerId, currencyCode, asOf } = args;
@@ -8634,10 +8630,10 @@ export async function getDefaultRentalRates(
   const scopedRates = [...customerRates.data, ...(typeRates?.data ?? [])];
 
   const itemRateById = new Map(itemRates.data.map((row) => [row.itemId, row]));
-  const result: DefaultRentalRates = {};
+  const result: DefaultRentalRatesByItem = {};
   for (const itemId of itemIds) {
     const item = itemRateById.get(itemId);
-    const resolved = defaultRentalRates({
+    result[itemId] = defaultRentalRates({
       customerId,
       customerTypeId,
       asOf,
@@ -8652,7 +8648,6 @@ export async function getDefaultRentalRates(
           }
         : null
     });
-    if (resolved) result[itemId] = resolved;
   }
   return { data: result, error: null };
 }

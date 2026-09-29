@@ -10,7 +10,6 @@ import {
   FleetUnit,
   futureReturnError,
   payloadValidator,
-  rateLadderError,
   toRate,
   unitAvailabilityError,
 } from "./validators.ts";
@@ -119,84 +118,6 @@ Deno.test("activation generates through one cycle past today", () => {
   assertEquals(activationThrough("Calendar Month", "2027-01-31"), "2027-02-28");
   assertEquals(activationThrough("28 Days", "2026-09-22"), "2026-10-20");
   assertEquals(activationThrough("28 Days", "2026-12-20"), "2027-01-17");
-});
-
-const ladder = (
-  dayRate: number | null,
-  weekRate: number | null,
-  monthRate: number | null,
-) => ({ dayRate, weekRate, monthRate });
-
-Deno.test("a Calendar Month agreement needs the month tier", () => {
-  assertStringIncludes(
-    rateLadderError({
-      cycle: "Calendar Month",
-      rateMode: "Best Rate",
-      rateUnit: null,
-      rates: ladder(100, 500, null),
-    }) ?? "",
-    "month rate",
-  );
-  assertEquals(
-    rateLadderError({
-      cycle: "Calendar Month",
-      rateMode: "Best Rate",
-      rateUnit: null,
-      rates: ladder(null, null, 1500),
-    }),
-    null,
-  );
-});
-
-Deno.test("a 28 Days agreement needs at least one tier", () => {
-  assertStringIncludes(
-    rateLadderError({
-      cycle: "28 Days",
-      rateMode: "Best Rate",
-      rateUnit: null,
-      rates: ladder(null, null, null),
-    }) ?? "",
-    "at least one",
-  );
-  assertEquals(
-    rateLadderError({
-      cycle: "28 Days",
-      rateMode: "Best Rate",
-      rateUnit: null,
-      rates: ladder(100, null, null),
-    }),
-    null,
-  );
-});
-
-Deno.test("a Fixed line needs the tier it bills", () => {
-  assertStringIncludes(
-    rateLadderError({
-      cycle: "28 Days",
-      rateMode: "Fixed",
-      rateUnit: "Week",
-      rates: ladder(100, null, 1500),
-    }) ?? "",
-    "week rate",
-  );
-  assertStringIncludes(
-    rateLadderError({
-      cycle: "28 Days",
-      rateMode: "Fixed",
-      rateUnit: null,
-      rates: ladder(100, 500, 1500),
-    }) ?? "",
-    "no rate unit",
-  );
-  assertEquals(
-    rateLadderError({
-      cycle: "28 Days",
-      rateMode: "Fixed",
-      rateUnit: "Day",
-      rates: ladder(100, null, null),
-    }),
-    null,
-  );
 });
 
 Deno.test("NUMERIC rates decode to numbers and null stays null", () => {

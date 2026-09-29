@@ -1,9 +1,9 @@
 ---
 title: Rental agreements
-description: "Renting serialized fleet units to a customer: rate ladders, billing periods, drafted invoices, deposits, and whether each unit is accounted for as a rental or a sale."
+description: "Renting serialized fleet units to a customer: rates, billing periods, drafted invoices, deposits, and whether each unit is accounted for as a rental or a sale."
 ---
 
-A **<Term>rental agreement</Term>** rents units of your <Term id="rental-fleet">rental fleet</Term> to a customer. The agreement cuts the rental into billing periods, prices each from the unit's day, week, and month rates, and drafts the invoices as they fall due.
+A **<Term>rental agreement</Term>** rents units of your <Term id="rental-fleet">rental fleet</Term> to a customer. The agreement cuts the rental into billing periods, prices each from the unit's rate, and drafts the invoices as they fall due.
 
 Activation decides each unit's **accounting treatment**: **Rental** or **Sale**, which ASC 842 calls an operating lease and a <Term id="sales-type-lease">sales-type lease</Term>. A unit treated as a rental stays a fixed asset that keeps depreciating on your books while the customer has it. A unit treated as a sale is booked as sold: it leaves the fleet and becomes a <Term id="net-investment-in-leases">net investment in leases</Term>.
 
@@ -18,9 +18,9 @@ Rental agreements live under **Sales → Rental Agreements**, and the quickest w
   <Status name="Cancelled" terminal>Abandoned before anything was billed; units are released.</Status>
 </StatusFlow>
 
-**"Activate"** checks every unit and reports every problem in one message. Each unit must be available (or held by this agreement), in service, and an Active or Fully Depreciated asset, and it needs [rates](#rates): its own, or rental rates for its item in the agreement's currency.
+**"Activate"** checks every unit and reports every problem in one message. Each unit must be available (or held by this agreement), in service, and an Active or Fully Depreciated asset, and it needs a [rate](#rates).
 
-Activation then fixes each unit's rates, so a later price change never touches a live agreement, cuts the billing periods, and [decides each unit's accounting treatment](#accounting-treatment). A unit treated as a rental posts nothing to the ledger; a unit treated as a sale books its [commencement](#commencement). The terms and units are fixed from here on.
+Activation then fixes each unit's rate, so a later price change never touches a live agreement, cuts the billing periods, and [decides each unit's accounting treatment](#accounting-treatment). A unit treated as a rental posts nothing to the ledger; a unit treated as a sale books its [commencement](#commencement). The terms and units are fixed from here on.
 
 <Callout type="warn" title="Rental agreements bill in your base currency only">
 An agreement in a foreign currency can be saved as a draft but not activated: rent is accrued and deferred in base-currency amounts.
@@ -34,7 +34,7 @@ The agreement is laid out like a sales order. Its units are listed down the left
 
 Each unit on the agreement moves through its own status: **"Pending"** until delivered, **"On Rent"** once delivered, then **"Returned"**, or **"Sold"** when the customer buys a unit treated as a sale on its purchase option. The Fleet register reflects the same thing from the asset's side: a unit on a draft or an undelivered line reads **Reserved**, a delivered one reads **<Term>On Rent</Term>**, and a unit can only be on one live agreement at a time.
 
-- **"Add Unit"**, at the foot of the units list while the agreement is a draft, lists fleet units that are Available right now. Choose a **"Rate Mode"**: *Best Rate*, or *Fixed* with the **"Billed Tier"** it always bills. The unit's **"Day Rate"**, **"Week Rate"** and **"Month Rate"** fill in from its [default rates](#rates) and can be changed.
+- **"Add Unit"**, at the foot of the units list while the agreement is a draft, lists fleet units that are Available right now. Choose its **"Rate Frequency"** (*Daily*, *Weekly* or *Monthly*); its **"Rate"** fills in from the [rates on file](#rates) and can be changed.
 - **"Deliver"** marks a pending unit on an active agreement as delivered today. It is refused while the unit is out of service.
 - **"Return"** records the **"Return Date"**, an optional **"Meter Reading"** and **"Return Notes"**, and re-cuts a rental unit's billing (below). The return date cannot be later than today. Tick **"Take out of service"** with a reason and the unit goes straight to In Maintenance instead of back to Available.
 
@@ -48,41 +48,39 @@ While a unit is reserved or on rent, **"Return to Inventory"** on the asset is r
 
 ## Rates
 
-Each unit on an agreement carries its own **"Day Rate"**, **"Week Rate"**, and **"Month Rate"**, at least one of them. They are what was agreed for that unit on that agreement, so two units of the same item can rent at different rates, and they can be changed on the unit's page while the agreement is a draft.
+Each unit on an agreement has one <Term id="rate-frequency">rate frequency</Term>, *Daily*, *Weekly* or *Monthly*, and one **"Rate"** for it. That rate is what the unit bills, and what its [accounting treatment](#accounting-treatment) is valued on. It belongs to the unit on that agreement, so two units of the same item can rent at different rates, and it can be changed on the unit's page while the agreement is a draft.
 
-A unit's rates default from the first of these that has rates for its item, in effect on the agreement's **"Start Date"**:
+When you choose a unit or change its frequency, the rate starts from the first of these that has a rate for that frequency, in effect on the agreement's **"Start Date"**:
 
 1. **The customer's rates.** On the part's **Sales** tab, the **"Customer Rental Rates"** card holds rates agreed with one customer, or with every customer of a **"Customer Type"**, each with an optional **"Valid From"** and **"Valid To"**.
 2. **The customer type's rates**, from the same card.
 3. **The item's rates**, in the **"Rental Rates"** card on the same tab.
 
-Both cards appear for serial-tracked parts and hold rates in your base currency. Leave all three rates empty on a unit and it takes the default again when it is saved. A unit that still has none at activation takes the default then. Changing a card never touches a unit that already has rates.
+A note under the rate says which one it came from while it still matches. Each frequency is looked up on its own: a customer who agreed only a month rate still starts a weekly unit at the item's week rate. Both cards appear for serial-tracked parts and hold rates in your base currency. Changing a card never touches a unit already on an agreement.
 
 Rental rates are separate from [pricing rules](/docs/reference/pricing) and price overrides, which price what you sell.
 
-With a <Term id="best-rate">best rate</Term> unit on a **28 Days** agreement, each period bills the cheapest of its tiers in whole units, and a tie goes to the larger unit. With rates of 100 a day, 500 a week, and 1,500 a month:
+Each billing period bills the whole days, weeks, or months it covers at the unit's rate. On a **28 Days** agreement a month is 28 days, so a year on rent is thirteen periods. At 100 a day, 500 a week, or 1,500 a month:
 
-| Days in the period | Billed as | Amount |
-| --- | --- | --- |
-| 3 | 3 days | 300 |
-| 10 | 2 weeks (ties with 10 days) | 1,000 |
-| 20 | 1 month (ties with 3 weeks) | 1,500 |
+| Days in the period | Daily | Weekly | Monthly |
+| --- | --- | --- | --- |
+| 3 | 3 days, 300 | 1 week, 500 | 1 month, 1,500 |
+| 10 | 10 days, 1,000 | 2 weeks, 1,000 | 1 month, 1,500 |
+| 28 | 28 days, 2,800 | 4 weeks, 2,000 | 1 month, 1,500 |
 
-A month here is 28 days, so a year on rent is thirteen periods. A *Fixed* unit bills its tier for the whole units the period covers even when another tier is cheaper: ten days on a Fixed Week unit is two weeks.
-
-A **Calendar Month** agreement ignores rate mode and needs a month rate. Each period is a calendar month, priced as the month rate times the days used divided by the days in that month. At 1,500 a month, a start on October 15 bills 17 of 31 days, 822.58, and a full month bills 1,500.
+On a **Calendar Month** agreement each period is a calendar month. A Monthly unit bills its rate times the days used divided by the days in that month: at 1,500 a month, a start on October 15 bills 17 of 31 days, 822.58, and a full month bills 1,500. A Daily unit bills the days in the period, and a Weekly unit the whole weeks: at 500 a week, a 31-day month is five weeks, 2,500.
 
 ## Billing
 
-<Term id="cycle-billing">Billing periods</Term> follow the **"Billing Cycle"** from the start date, and the **"Billing Timing"** decides when each one falls due: *Advance* on its first day, *Arrears* on its last. The **Billing Periods** section of the agreement shows every period with its days, tier, amount, and invoice.
+<Term id="cycle-billing">Billing periods</Term> follow the **"Billing Cycle"** from the start date, and the **"Billing Timing"** decides when each one falls due: *Advance* on its first day, *Arrears* on its last. The **Billing Periods** section of the agreement shows every period with its days, frequency, amount, and invoice.
 
 - **Fixed term.** With an **"End Date"**, the whole term is cut at activation.
 - **Open-ended.** Leave the end date empty and periods roll forward. Every billing pass cuts the periods up to the end of next month (Calendar Month) or 28 days ahead (28 Days), plus one more period after that.
-- **Holdover.** A unit treated as a rental that is still out after the end date keeps billing at the same rates until it is returned. A unit treated as a sale never bills past its end date: activation cuts its periods only up to the end date, and the daily billing pass never rolls it forward.
+- **Holdover.** A unit treated as a rental that is still out after the end date keeps billing at the same rate until it is returned. A unit treated as a sale never bills past its end date: activation cuts its periods only up to the end date, and the daily billing pass never rolls it forward.
 - **Return.** On a unit treated as a rental, the unbilled period the return falls inside is cut to the return date, and unbilled periods after it are dropped. The billing of a unit treated as a sale is left alone.
 
 <Callout type="info" title="An early return credits only what was not earned">
-When a period was billed in advance and the unit comes back early, Carbon adds an adjustment period for what was billed less the charge for the days actually used. The used days are priced the way the unit bills: its best rate, its Fixed tier, or the prorated month on a Calendar Month agreement. On a best-rate unit billed 1,500 for 28 days and returned after 3, the credit is 1,200. Returned after 20 days there is no credit: 20 days already costs the month tier. An adjustment is never positive and never repeated.
+When a period was billed in advance and the unit comes back early, Carbon adds an adjustment period for what was billed less the charge for the days actually used. The used days are priced the way the unit bills. On a Weekly unit billed 2,000 for 28 days and returned after 3, the credit is 1,500: three days is one week. On a Monthly unit returned after 20 days there is no credit, because 20 days is still the month. An adjustment is never positive and never repeated.
 </Callout>
 
 ## Invoicing
@@ -262,11 +260,11 @@ The fleet unit is In Maintenance. Return it to service from the asset page or th
 ### "UNIT is STATUS; only an Active or Fully Depreciated asset can go on rent"
 The asset is Draft, Under Construction, or Disposed.
 
-### "UNIT has no rental rates in CURRENCY"
-The unit has no rates of its own, and neither the customer, the customer type, nor the item has rental rates in the agreement currency. Enter rates on the unit, or set them on the part's Sales tab.
+### "No week rate is set for this item; enter the rate"
+A unit was added without a rate (from the Fleet register's **"Rent"** action, or through the API) and no customer, customer type, or item rate is on file for its frequency. Enter the rate on the unit, or set one on the part's Sales tab.
 
-### "UNIT needs a month rate for a Calendar Month agreement" / "needs at least one rental rate" / "is Fixed but names no rate unit" / "bills the week rate but the line has none"
-Rate ladder problems found at activation. Add the missing tier on the unit, or change its rate mode or billed tier.
+### "UNIT is treated as a sale, which on a Calendar Month agreement needs a monthly rate"
+A Daily or Weekly unit bills a different amount each calendar month, and a sale is valued as a level monthly payment that its invoices must match. Make the unit Monthly, or use a 28 Days agreement.
 
 ### "Add at least one fleet unit before activating the agreement" / "Every line needs a fleet unit"
 The agreement has no units, or a line has no fleet unit.
@@ -380,5 +378,5 @@ Expected: commencement disposes the asset (`disposalMethod` Sale), and `fleetAss
 The report subtracts principal for schedule lines dated on or before As of whose Interest row a recognition run has posted (`rentalLeaseScheduleLine.postedAt`), or that earn no interest and so have no Interest row (`earnsInterest`, `shared/lessor-lease.ts`: zero, or the one-unit drift an Advance lease closing on zero leaves on its last line); the ledger drops by the payment when the rent invoice posts. They agree once both the run and the invoices for the same months are posted. A return does not use this figure: it moves the schedule's balance on the return date, and interest rows dated on or before the return keep posting through recognition runs, which brings 1160 to zero for the line.
 
 ## Internals
-Tables: `itemRentalRate` (unique per item and currency), `customerItemRentalRate` (one customer or one customer type, unique per scope, item and currency, optional `validFrom` / `validTo`; a line's default ladder is customer, then customer type, then item, effective on the agreement start date: `defaultRentalRates` in `shared/rental-billing.ts`), `rentalAgreement` (sequence `RA`), `rentalAgreementLine` (one fixed asset each, `quantity` = 1, unique live line per asset), `rentalAgreementCharge`, `rentalBillingPeriod` (`dueOn`, `isAdjustment`, `status` Pending / Invoiced). Views `rentalAgreements` and `fleetAssets` (fleet status precedence: Returned to Stock, Sold, Under Construction, On Rent, In Maintenance, Reserved, Available). Invoice lines: `invoiceLineType` `Rental` with `rentalInvoiceLineKind` Rent / Charge / Purchase Option. Payments: `payment.salesOrderId` / `payment.rentalAgreementId` (at most one); deposit journal lines carry the description "Customer Deposit". Edge function `post-rental-agreement` (`activate`, `return`, `close`, `cancel`); Inngest `rental-billing` (cron 05:00 UTC); invoice generation `createRentalInvoicesForDuePeriods` in `@carbon/database/rental-billing`. Routes: `/x/sales/rental-agreements`, `/x/rental-agreement/:id`, `/x/reports/rental-utilization`. Accounting treatment: `rentalAgreementLine.lessorClassification` (enum `Rental` / `Sale` / `Financing` = ASC 842 operating / sales-type / direct financing lease; `Financing` exists in the enum but has no input), `classificationInputs` (JSON: inputs, thresholds, tests a–e, pvToFairValuePercent, termToLifePercent, pv, payment, periods, annualRate, timing), `classificationOverride` + `classificationOverrideReason`, `initialNetInvestment`, `sellingProfit`, `commencementJournalId`. Thresholds and default rate: `companySettings.leaseMajorPartThresholdPercent` (75), `leaseSubstantiallyAllThresholdPercent` (90), `leaseDefaultDiscountRate` (6). Math: `shared/lessor-lease.ts` (`presentValue`, `classifyLessorLease`, `buildLessorSchedule`, `wholeMonthsInTerm`, `leasePaymentTerms`, `classifyRentalLine`), re-exported through `@carbon/utils`; a 28 Days lease is valued over whole 28-day periods at annual × 28/365 per period, a Calendar Month lease over whole months of the term. Schedule table `rentalLeaseScheduleLine` (one row per payment; `journalId` / `postedAt` stamped when a recognition run posts its Interest row; a line that earns no interest gets no Interest row). A residual returned to inventory books a serial cost layer (`costLedger.trackedEntityId`) at the closing net investment, which `calculateCOGS` relieves first when that serial leaves. Commencement and residual-return journals use source type `Lease` (off by default in accounting sync); Interest posts in the `Revenue Recognition` journal. Commencement is fleet-only (activation already requires a fleet unit per line). Activation caps a `Sale` line's billing at the end date (`activationBillingThrough`); the daily pass rolls only `Rental` or unclassified lines; a `Sale` return does not re-cut billing. Purchase Option posting settles the remaining NI (shortfall Dr COGS, excess Cr Lease Revenue) on the option line's journal line reference, so VOID reverses it. Override audit entry: entityType `rentalAgreement`, tableName `rentalAgreementLine`. Routes: `/x/rental-agreement/:id/:lineId/classification`, `/x/rental-agreement/:id/:lineId/sell`, `/x/reports/lease-net-investment`; lease policy on `/x/settings/accounting` (intent `leasePolicy`).
+Tables: `itemRentalRate` (unique per item and currency), `customerItemRentalRate` (one customer or one customer type, unique per scope, item and currency, optional `validFrom` / `validTo`; a line's starting rate, per frequency, is the customer's, then the customer type's, then the item's, effective on the agreement start date: `defaultRentalRates` in `shared/rental-billing.ts`), `rentalAgreement` (sequence `RA`), `rentalAgreementLine` (one fixed asset each, `quantity` = 1, unique live line per asset; `rateUnit` Day / Week / Month and `rate`, which billing and classification read), `rentalAgreementCharge`, `rentalBillingPeriod` (`dueOn`, `isAdjustment`, `status` Pending / Invoiced). Views `rentalAgreements` and `fleetAssets` (fleet status precedence: Returned to Stock, Sold, Under Construction, On Rent, In Maintenance, Reserved, Available). Invoice lines: `invoiceLineType` `Rental` with `rentalInvoiceLineKind` Rent / Charge / Purchase Option. Payments: `payment.salesOrderId` / `payment.rentalAgreementId` (at most one); deposit journal lines carry the description "Customer Deposit". Edge function `post-rental-agreement` (`activate`, `return`, `close`, `cancel`); Inngest `rental-billing` (cron 05:00 UTC); invoice generation `createRentalInvoicesForDuePeriods` in `@carbon/database/rental-billing`. Routes: `/x/sales/rental-agreements`, `/x/rental-agreement/:id`, `/x/reports/rental-utilization`. Accounting treatment: `rentalAgreementLine.lessorClassification` (enum `Rental` / `Sale` / `Financing` = ASC 842 operating / sales-type / direct financing lease; `Financing` exists in the enum but has no input), `classificationInputs` (JSON: inputs, thresholds, tests a–e, pvToFairValuePercent, termToLifePercent, pv, payment, periods, annualRate, timing), `classificationOverride` + `classificationOverrideReason`, `initialNetInvestment`, `sellingProfit`, `commencementJournalId`. Thresholds and default rate: `companySettings.leaseMajorPartThresholdPercent` (75), `leaseSubstantiallyAllThresholdPercent` (90), `leaseDefaultDiscountRate` (6). Math: `shared/lessor-lease.ts` (`presentValue`, `classifyLessorLease`, `buildLessorSchedule`, `wholeMonthsInTerm`, `leasePaymentTerms`, `classifyRentalLine`), re-exported through `@carbon/utils`; a 28 Days lease is valued over whole 28-day periods at annual × 28/365 per period, a Calendar Month lease over whole months of the term (a Daily or Weekly unit at its average month over a 365-day year; a sale needs a Monthly unit). Schedule table `rentalLeaseScheduleLine` (one row per payment; `journalId` / `postedAt` stamped when a recognition run posts its Interest row; a line that earns no interest gets no Interest row). A residual returned to inventory books a serial cost layer (`costLedger.trackedEntityId`) at the closing net investment, which `calculateCOGS` relieves first when that serial leaves. Commencement and residual-return journals use source type `Lease` (off by default in accounting sync); Interest posts in the `Revenue Recognition` journal. Commencement is fleet-only (activation already requires a fleet unit per line). Activation caps a `Sale` line's billing at the end date (`activationBillingThrough`); the daily pass rolls only `Rental` or unclassified lines; a `Sale` return does not re-cut billing. Purchase Option posting settles the remaining NI (shortfall Dr COGS, excess Cr Lease Revenue) on the option line's journal line reference, so VOID reverses it. Override audit entry: entityType `rentalAgreement`, tableName `rentalAgreementLine`. Routes: `/x/rental-agreement/:id/:lineId/classification`, `/x/rental-agreement/:id/:lineId/sell`, `/x/reports/lease-net-investment`; lease policy on `/x/settings/accounting` (intent `leasePolicy`).
 </AgentContext>

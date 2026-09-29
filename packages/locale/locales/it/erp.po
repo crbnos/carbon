@@ -933,9 +933,6 @@ msgstr "Un contratto di noleggio assegna unità di flotta serializzate a un clie
 msgid "A rental line is a sales-type lease when any ASC 842 test is met. These thresholds set tests (c) and (d); the discount rate is the default for new rental agreements."
 msgstr "Una riga di noleggio è un leasing di tipo commerciale quando è soddisfatto un qualsiasi test ASC 842. Questi limiti impostano i test (c) e (d); il tasso di sconto è l'impostazione predefinita per i nuovi contratti di noleggio."
 
-msgid "A rental line uses the customer's rates, else its customer type's, else the item's. The rates can still be changed on each line."
-msgstr ""
-
 msgid "A rental that meets any of the five ASC 842 lease tests, booked as a sale when its agreement activates: the unit leaves the fleet, lease revenue and cost of goods sold post, and a net investment in the lease takes its place."
 msgstr "Un noleggio che soddisfa uno qualsiasi dei cinque test di leasing ASC 842, registrato come vendita quando il contratto si attiva: l'unità lascia la flotta, i ricavi del leasing e il costo del venduto vengono registrati, e un investimento netto nel leasing prende il loro posto."
 
@@ -3180,12 +3177,6 @@ msgstr "Proiezione migliore"
 msgid "Best case…"
 msgstr "Caso migliore…"
 
-msgid "Best rate"
-msgstr "Migliore tariffa"
-
-msgid "Best Rate"
-msgstr "Tariffa Migliore"
-
 msgid "Best-case finish"
 msgstr "Completamento nel caso migliore"
 
@@ -3209,9 +3200,6 @@ msgstr "Lista delle operazioni"
 
 msgid "Bill To"
 msgstr "Fattura a"
-
-msgid "Billed Tier"
-msgstr "Livello Fatturato"
 
 msgid "Billed:"
 msgstr ""
@@ -8320,9 +8308,6 @@ msgstr "Riordino Fisso"
 msgid "Fixed Shelf Life"
 msgstr "Durata di Conservazione Fissa"
 
-msgid "Fixed when the agreement was activated."
-msgstr ""
-
 msgid "Fixture"
 msgstr "Attrezzatura di fissaggio"
 
@@ -8427,15 +8412,6 @@ msgstr "Da settimana precedente"
 
 msgid "From Storage Unit"
 msgstr "Da Unità di Stoccaggio"
-
-msgid "From the customer type's rental rates for the item."
-msgstr ""
-
-msgid "From the item's rental rates."
-msgstr ""
-
-msgid "From this customer's rental rates for the item."
-msgstr ""
 
 msgid "From:"
 msgstr "Da:"
@@ -8916,9 +8892,6 @@ msgid "How a batchable process runs its grouped work: Sequential runs parts one 
 msgstr "Come un processo raggruppabile esegue il suo lavoro aggregato: Sequenziale esegue i componenti uno dopo l'altro su una macchina (una sega o un tavolo laser), mentre Simultaneo li esegue insieme in un unico carico (un forno, una stufa o un bagno di galvanica)."
 
 msgid "How a rental agreement cuts billing periods from its start date: Calendar Month bills each calendar month at the month rate, prorated for a partial month, and 28 Days bills consecutive 28-day periods priced from the day, week, and month rates."
-msgstr ""
-
-msgid "How a rental unit is priced each billing period: Best Rate bills the cheapest of its day, week, and month rates, and Fixed always bills the one tier you choose."
 msgstr ""
 
 msgid "How an item is replenished overall (Buy, Make, or Buy and Make), set per item, unlike the per-line method type."
@@ -10072,9 +10045,6 @@ msgstr "Ricavi da noleggio"
 
 msgid "Lease Revenue (default)"
 msgstr "Ricavi da noleggio (predefinito)"
-
-msgid "Leave all three empty to use the customer's rental rates, else the customer type's, else the item's."
-msgstr ""
 
 msgid "Leave any related receipts untouched"
 msgstr "Lasciare le ricevute correlate intatte"
@@ -12049,9 +12019,6 @@ msgstr "Nessuna immagine di riferimento"
 msgid "No remaining entities to inspect."
 msgstr "Nessuna entità rimanente da ispezionare."
 
-msgid "No rental rates"
-msgstr ""
-
 msgid "No reports match your search."
 msgstr "Nessun report corrisponde alla tua ricerca."
 
@@ -13233,9 +13200,6 @@ msgstr "personale"
 msgid "People"
 msgstr "Persone"
 
-msgid "per 28 days"
-msgstr ""
-
 msgid "per day"
 msgstr ""
 
@@ -13709,9 +13673,6 @@ msgstr "Prezzi"
 
 msgid "Pricing"
 msgstr "Determinazione dei prezzi"
-
-msgid "Pricing a 28-day rental period at the cheapest of its day, week, and month rates in whole units, with ties going to the larger unit."
-msgstr "Determinazione del prezzo di un periodo di noleggio di 28 giorni alla tariffa più economica tra quelle giornaliere, settimanali e mensili in unità intere, con i pareggi assegnati all'unità più grande."
 
 msgid "Pricing rule"
 msgstr "Regola di determinazione del prezzo"
@@ -14415,22 +14376,19 @@ msgstr "Ramp ha rifiutato l'autorizzazione"
 msgid "Rate"
 msgstr "Tasso"
 
-msgid "Rate Limit"
-msgstr "Limite di Velocità"
-
-msgid "Rate mode"
+msgid "Rate frequency"
 msgstr ""
 
-msgid "Rate Mode"
-msgstr "Modalità tariffa"
+msgid "Rate Frequency"
+msgstr ""
+
+msgid "Rate Limit"
+msgstr "Limite di Velocità"
 
 msgid "Rate used for equity account translation in consolidation (IAS 21). Leave blank to use the current exchange rate."
 msgstr "Tasso utilizzato per la conversione dei conti di patrimonio netto nel consolidamento (IAS 21). Lasciare vuoto per usare il tasso di cambio corrente."
 
-msgid "Rates a rental agreement line uses for this item. At least one is required."
-msgstr "I tariffari che una riga di contratto di noleggio utilizza per questo articolo. È richiesto almeno uno."
-
-msgid "Rates are the items' current rental rates. They are fixed on each unit when the agreement is activated."
+msgid "Rates agreed with a customer, or with every customer of a type. They are the starting rate when this part is rented to them."
 msgstr ""
 
 msgid "Rates for a single customer"
@@ -18335,6 +18293,9 @@ msgstr "La classe di periodo di recupero IRS per questo bene secondo MACRS (3, 5
 msgid "The item each job produces — require it to match to merge output lots"
 msgstr "L'articolo che ogni ordine di produzione produce — richiedi che corrisponda per unire i lotti"
 
+msgid "The item's rental rate"
+msgstr ""
+
 msgid "the job hours due that day (a due-date basis, not the day the work runs), with overdue work in Past due."
 msgstr "le ore di ordine di produzione dovute quel giorno (sulla base della scadenza, non il giorno in cui il lavoro viene eseguito), con il lavoro in ritardo in Scaduto."
 
@@ -18692,6 +18653,9 @@ msgstr "Il fattore normale (ore, minuti, pezzi) con il quale le operazioni su qu
 msgid "The standard factor used to measure this process — hours, minutes, pieces, square feet — when its operations are estimated and costed."
 msgstr "Il fattore standard utilizzato per misurare questo processo - ore, minuti, pezzi, piedi quadrati - quando le sue operazioni vengono stimate e quotate."
 
+msgid "The starting rate when this part is rented, for each rate frequency. At least one is required."
+msgstr ""
+
 msgid "The state of this quote line — Draft, No Quote, Complete; No Quote reveals the Reason field and excludes the line from the quote total."
 msgstr "Lo stato di questa riga offerta — Bozza, Nessuna offerta, Completa; Nessuna offerta rivela il campo Motivo e esclude la riga dal totale dell'offerta."
 
@@ -18955,6 +18919,12 @@ msgstr "Questo contatto non ha un indirizzo email"
 
 msgid "This counterparty has nothing outstanding — the payment will be recorded on-account."
 msgstr "Questa controparte non ha nulla in sospeso — il pagamento verrà registrato come credito in conto."
+
+msgid "This customer type's rate"
+msgstr ""
+
+msgid "This customer's rate"
+msgstr ""
 
 msgid "This download link is invalid or has been tampered with."
 msgstr "Questo link di scaricamento non è valido o è stato manomesso."
@@ -20710,6 +20680,9 @@ msgstr "Benvenuto, {companyName}"
 
 msgid "What a backup contains"
 msgstr "Cosa contiene un backup"
+
+msgid "What a rental unit's rate is charged per: a day, a week, or a month. Each billing period bills the whole days, weeks, or months it covers, except a monthly rate on a calendar-month agreement, which is prorated for a partial month."
+msgstr ""
 
 msgid "What category of failure this is — Mechanical, Electrical, Software, Operator, Material, etc.; rolls up into the failure-mode pareto report so the category breakdown is meaningful."
 msgstr "Quale categoria di guasto è questa — Meccanico, Elettrico, Software, Operatore, Materiale, ecc.; si riassume nel rapporto di pareto della modalità di guasto in modo che la ripartizione per categoria sia significativa."

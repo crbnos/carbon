@@ -2,8 +2,6 @@ import { assertIsPost, error, notFound, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
-import type { RentalRateSource } from "@carbon/utils";
-import { rentalLadderIsEmpty } from "@carbon/utils";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { redirect, useLoaderData } from "react-router";
 import { useRouteData } from "~/hooks";
@@ -53,37 +51,26 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
-  // The line's own rates. A Draft line without any shows the default ladder
-  // activation would fix (customer, customer type, else item).
-  const isSnapshot = agreement.data.status !== "Draft";
-  let rates = {
-    dayRate: line.data.dayRate,
-    weekRate: line.data.weekRate,
-    monthRate: line.data.monthRate
-  };
-  let rateSource: RentalRateSource | null = null;
-  if (
-    !isSnapshot &&
-    rentalLadderIsEmpty(rates) &&
+  // While Draft, the rates on file for the line's item: where its rate came
+  // from, and what it starts at if the frequency changes.
+  const defaults =
+    agreement.data.status === "Draft" &&
     agreement.data.customerId &&
     agreement.data.currencyCode &&
     agreement.data.startDate
-  ) {
-    const defaults = await getDefaultRentalRates(client, {
-      companyId,
-      customerId: agreement.data.customerId,
-      currencyCode: agreement.data.currencyCode,
-      asOf: agreement.data.startDate,
-      itemIds: [line.data.itemId]
-    });
-    const resolved = defaults.data?.[line.data.itemId];
-    if (resolved) {
-      rates = resolved.rates;
-      rateSource = resolved.source;
-    }
-  }
+      ? await getDefaultRentalRates(client, {
+          companyId,
+          customerId: agreement.data.customerId,
+          currencyCode: agreement.data.currencyCode,
+          asOf: agreement.data.startDate,
+          itemIds: [line.data.itemId]
+        })
+      : null;
 
-  return { line: line.data, rates, rateSource, isSnapshot };
+  return {
+    line: line.data,
+    defaultRates: defaults?.data?.[line.data.itemId] ?? null
+  };
 }
 
 export async function action({ request, params }: ActionFunctionArgs) {
@@ -161,8 +148,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 /** One unit of the agreement: where it is in its rental and its actions,
  *  its rates and accounting treatment, then its own charges and billing. */
 export default function RentalAgreementLineRoute() {
-  const { line, rates, rateSource, isSnapshot } =
-    useLoaderData<typeof loader>();
+  const { line, defaultRates } = useLoaderData<typeof loader>();
 
   const routeData = useRouteData<RentalAgreementRouteData>(
     path.to.rentalAgreement(line.rentalAgreementId)
@@ -173,7 +159,6 @@ export default function RentalAgreementLineRoute() {
   const lease = resolveLineLeaseClassification({
     agreement,
     line,
-    ladder: rates,
     policy: routeData.leasePolicy
   });
 
@@ -188,8 +173,8 @@ export default function RentalAgreementLineRoute() {
           rentalAgreementId: line.rentalAgreementId,
           fixedAssetId: line.fixedAssetId ?? "",
           itemId: line.itemId,
-          rateMode: line.rateMode,
-          rateUnit: line.rateUnit ?? undefined,
+          rateUnit: line.rateUnit,
+          rate: line.rate,
           fairValue: line.fairValue ?? undefined,
           economicLifeMonths: line.economicLifeMonths ?? undefined,
           guaranteedResidualValue: line.guaranteedResidualValue ?? undefined,
@@ -210,9 +195,7 @@ export default function RentalAgreementLineRoute() {
               }
             : undefined
         }
-        rates={rates}
-        rateSource={rateSource}
-        isSnapshot={isSnapshot}
+        defaultRates={defaultRates}
         lease={lease}
         isLocked={agreement.status !== "Draft"}
       />

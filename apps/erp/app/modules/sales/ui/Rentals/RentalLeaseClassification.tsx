@@ -139,14 +139,13 @@ export function resolveLineLeaseClassification(args: {
     | "classificationOverride"
     | "classificationOverrideReason"
     | "lessorClassification"
-    | "rateMode"
     | "rateUnit"
+    | "rate"
     | "fairValue"
     | "economicLifeMonths"
     | "guaranteedResidualValue"
     | "unguaranteedResidualValue"
   >;
-  ladder: RentalLeaseLineInputs["ladder"] | undefined;
   policy: LeasePolicy;
 }): LineLeaseClassification {
   const { agreement, line, policy } = args;
@@ -174,14 +173,13 @@ export function resolveLineLeaseClassification(args: {
               agreement.purchaseOptionReasonablyCertain ?? false
           },
           line: {
-            rateMode: line.rateMode,
             rateUnit: line.rateUnit,
+            rate: line.rate,
             fairValue: line.fairValue,
             economicLifeMonths: line.economicLifeMonths,
             guaranteedResidualValue: line.guaranteedResidualValue,
             unguaranteedResidualValue: line.unguaranteedResidualValue
           },
-          ladder: args.ladder,
           policy
         })
       : null);
@@ -245,14 +243,13 @@ export function LeaseClassificationPreview({
         const record = previewLeaseClassification({
           agreement: terms,
           line: {
-            rateMode: line.rateMode,
             rateUnit: line.rateUnit,
+            rate: line.rate,
             fairValue: line.fairValue,
             economicLifeMonths: line.economicLifeMonths,
             guaranteedResidualValue: line.guaranteedResidualValue,
             unguaranteedResidualValue: line.unguaranteedResidualValue
           },
-          ladder: leaseInputs?.[line.id]?.ladder,
           policy
         });
         // A manual override wins, exactly as on activation.
@@ -685,7 +682,6 @@ export function RentalCommencementPreview({
       lease: resolveLineLeaseClassification({
         agreement: rentalAgreement,
         line,
-        ladder: leaseInputs[line.id]?.ladder,
         policy: leasePolicy
       })
     }))
@@ -727,6 +723,7 @@ export function RentalCommencementPreview({
           ? salesTypeRequirementError({
               name: label,
               cycle: rentalAgreement.billingCycle ?? "Calendar Month",
+              rateUnit: line.rateUnit,
               startDate: rentalAgreement.startDate,
               endDate: rentalAgreement.endDate ?? null,
               fairValue: line.fairValue ?? null

@@ -1,6 +1,5 @@
 import z from "npm:zod@^4.5.4";
 import type { Database } from "../lib/types.ts";
-import type { RateLadder } from "../shared/rental-billing.ts";
 
 /**
  * Payload contract and pure helpers for `post-rental-agreement`. No I/O and
@@ -109,46 +108,8 @@ export const RENTABLE_ASSET_STATUSES: ReadonlySet<
  *  rolls forward to (`billingHorizon`, shared/rental-billing.ts). */
 export { billingHorizon as activationThrough } from "../shared/rental-billing.ts";
 
-/**
- * Why a line's rates cannot bill its agreement's cycle, or null
- * when they can. A Calendar Month agreement prices every period off the month
- * tier; a 28 Days agreement needs at least one tier; a Fixed line needs the
- * tier it bills.
- */
-export function rateLadderError(args: {
-  cycle: Enums["rentalBillingCycle"];
-  rateMode: Enums["rentalRateMode"];
-  rateUnit: Enums["rentalRateUnit"] | null;
-  rates: RateLadder;
-}): string | null {
-  const { cycle, rateMode, rateUnit, rates } = args;
-  if (cycle === "Calendar Month" && rates.monthRate === null) {
-    return "needs a month rate for a Calendar Month agreement";
-  }
-  if (
-    cycle === "28 Days" &&
-    rates.dayRate === null &&
-    rates.weekRate === null &&
-    rates.monthRate === null
-  ) {
-    return "needs at least one rental rate";
-  }
-  if (rateMode === "Fixed") {
-    if (rateUnit === null) return "is Fixed but names no rate unit";
-    const tier = rateUnit === "Day"
-      ? rates.dayRate
-      : rateUnit === "Week"
-      ? rates.weekRate
-      : rates.monthRate;
-    if (tier === null) {
-      return `bills the ${rateUnit.toLowerCase()} rate but the line has none`;
-    }
-  }
-  return null;
-}
-
-/** A NUMERIC rate as the billing math reads it: null stays "tier not
- *  offered", anything else is a number. */
+/** A NUMERIC rate as the billing math reads it: null stays null (no rate),
+ *  anything else is a number. */
 export function toRate(value: number | string | null | undefined): number | null {
   return value === null || value === undefined ? null : Number(value);
 }

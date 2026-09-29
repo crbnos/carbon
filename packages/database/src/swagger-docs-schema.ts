@@ -49033,19 +49033,7 @@ export default {
             $ref: "#/parameters/rowFilter.rentalAgreementLine.quantity"
           },
           {
-            $ref: "#/parameters/rowFilter.rentalAgreementLine.rateMode"
-          },
-          {
             $ref: "#/parameters/rowFilter.rentalAgreementLine.rateUnit"
-          },
-          {
-            $ref: "#/parameters/rowFilter.rentalAgreementLine.dayRate"
-          },
-          {
-            $ref: "#/parameters/rowFilter.rentalAgreementLine.weekRate"
-          },
-          {
-            $ref: "#/parameters/rowFilter.rentalAgreementLine.monthRate"
           },
           {
             $ref: "#/parameters/rowFilter.rentalAgreementLine.fairValue"
@@ -49106,6 +49094,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.rentalAgreementLine.updatedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.rentalAgreementLine.rate"
           },
           {
             $ref: "#/parameters/select"
@@ -49191,19 +49182,7 @@ export default {
             $ref: "#/parameters/rowFilter.rentalAgreementLine.quantity"
           },
           {
-            $ref: "#/parameters/rowFilter.rentalAgreementLine.rateMode"
-          },
-          {
             $ref: "#/parameters/rowFilter.rentalAgreementLine.rateUnit"
-          },
-          {
-            $ref: "#/parameters/rowFilter.rentalAgreementLine.dayRate"
-          },
-          {
-            $ref: "#/parameters/rowFilter.rentalAgreementLine.weekRate"
-          },
-          {
-            $ref: "#/parameters/rowFilter.rentalAgreementLine.monthRate"
           },
           {
             $ref: "#/parameters/rowFilter.rentalAgreementLine.fairValue"
@@ -49264,6 +49243,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.rentalAgreementLine.updatedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.rentalAgreementLine.rate"
           },
           {
             $ref: "#/parameters/preferReturn"
@@ -49303,19 +49285,7 @@ export default {
             $ref: "#/parameters/rowFilter.rentalAgreementLine.quantity"
           },
           {
-            $ref: "#/parameters/rowFilter.rentalAgreementLine.rateMode"
-          },
-          {
             $ref: "#/parameters/rowFilter.rentalAgreementLine.rateUnit"
-          },
-          {
-            $ref: "#/parameters/rowFilter.rentalAgreementLine.dayRate"
-          },
-          {
-            $ref: "#/parameters/rowFilter.rentalAgreementLine.weekRate"
-          },
-          {
-            $ref: "#/parameters/rowFilter.rentalAgreementLine.monthRate"
           },
           {
             $ref: "#/parameters/rowFilter.rentalAgreementLine.fairValue"
@@ -49376,6 +49346,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.rentalAgreementLine.updatedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.rentalAgreementLine.rate"
           },
           {
             $ref: "#/parameters/body.rentalAgreementLine"
@@ -132807,12 +132780,13 @@ export default {
         "status",
         "itemId",
         "quantity",
-        "rateMode",
+        "rateUnit",
         "guaranteedResidualValue",
         "unguaranteedResidualValue",
         "classificationOverride",
         "createdBy",
-        "createdAt"
+        "createdAt",
+        "rate"
       ],
       properties: {
         id: {
@@ -132860,28 +132834,11 @@ export default {
           format: "numeric",
           type: "number"
         },
-        rateMode: {
-          default: "Best Rate",
-          enum: ["Best Rate", "Fixed"],
-          format: 'public."rentalRateMode"',
-          type: "string"
-        },
         rateUnit: {
+          default: "Month",
           enum: ["Day", "Week", "Month"],
           format: 'public."rentalRateUnit"',
           type: "string"
-        },
-        dayRate: {
-          format: "numeric",
-          type: "number"
-        },
-        weekRate: {
-          format: "numeric",
-          type: "number"
-        },
-        monthRate: {
-          format: "numeric",
-          type: "number"
         },
         fairValue: {
           format: "numeric",
@@ -132972,6 +132929,10 @@ export default {
         updatedAt: {
           format: "timestamp with time zone",
           type: "string"
+        },
+        rate: {
+          format: "numeric",
+          type: "number"
         }
       },
       type: "object"
@@ -181853,32 +181814,8 @@ export default {
       in: "query",
       type: "string"
     },
-    "rowFilter.rentalAgreementLine.rateMode": {
-      name: "rateMode",
-      required: false,
-      in: "query",
-      type: "string"
-    },
     "rowFilter.rentalAgreementLine.rateUnit": {
       name: "rateUnit",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.rentalAgreementLine.dayRate": {
-      name: "dayRate",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.rentalAgreementLine.weekRate": {
-      name: "weekRate",
-      required: false,
-      in: "query",
-      type: "string"
-    },
-    "rowFilter.rentalAgreementLine.monthRate": {
-      name: "monthRate",
       required: false,
       in: "query",
       type: "string"
@@ -181999,6 +181936,12 @@ export default {
     },
     "rowFilter.rentalAgreementLine.updatedAt": {
       name: "updatedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.rentalAgreementLine.rate": {
+      name: "rate",
       required: false,
       in: "query",
       type: "string"

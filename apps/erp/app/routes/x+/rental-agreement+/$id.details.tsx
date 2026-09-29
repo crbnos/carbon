@@ -125,7 +125,6 @@ export default function RentalAgreementDetailsRoute() {
         rentalAgreement={rentalAgreement}
         lines={lines}
         periods={periods}
-        leaseInputs={leaseInputs}
       />
       {rentalAgreement.status === "Draft" && (
         <Card>

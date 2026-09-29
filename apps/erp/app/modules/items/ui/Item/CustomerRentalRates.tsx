@@ -57,8 +57,8 @@ const CustomerRentalRates = ({ itemId, rates }: CustomerRentalRatesProps) => {
           </CardTitle>
           <CardDescription>
             <Trans>
-              A rental line uses the customer's rates, else its customer type's,
-              else the item's. The rates can still be changed on each line.
+              Rates agreed with a customer, or with every customer of a type.
+              They are the starting rate when this part is rented to them.
             </Trans>
           </CardDescription>
         </CardHeader>

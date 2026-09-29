@@ -51005,7 +51005,6 @@ export type Database = {
           companyId: string
           createdAt: string
           createdBy: string
-          dayRate: number | null
           deliveredAt: string | null
           economicLifeMonths: number | null
           fairValue: number | null
@@ -51019,10 +51018,9 @@ export type Database = {
             | null
           meterIn: number | null
           meterOut: number | null
-          monthRate: number | null
           quantity: number
-          rateMode: Database["public"]["Enums"]["rentalRateMode"]
-          rateUnit: Database["public"]["Enums"]["rentalRateUnit"] | null
+          rate: number
+          rateUnit: Database["public"]["Enums"]["rentalRateUnit"]
           rentalAgreementId: string
           returnedAt: string | null
           returnNotes: string | null
@@ -51032,7 +51030,6 @@ export type Database = {
           unguaranteedResidualValue: number
           updatedAt: string | null
           updatedBy: string | null
-          weekRate: number | null
         }
         Insert: {
           classificationInputs?: Json | null
@@ -51042,7 +51039,6 @@ export type Database = {
           companyId: string
           createdAt?: string
           createdBy: string
-          dayRate?: number | null
           deliveredAt?: string | null
           economicLifeMonths?: number | null
           fairValue?: number | null
@@ -51056,10 +51052,9 @@ export type Database = {
             | null
           meterIn?: number | null
           meterOut?: number | null
-          monthRate?: number | null
           quantity?: number
-          rateMode?: Database["public"]["Enums"]["rentalRateMode"]
-          rateUnit?: Database["public"]["Enums"]["rentalRateUnit"] | null
+          rate: number
+          rateUnit?: Database["public"]["Enums"]["rentalRateUnit"]
           rentalAgreementId: string
           returnedAt?: string | null
           returnNotes?: string | null
@@ -51069,7 +51064,6 @@ export type Database = {
           unguaranteedResidualValue?: number
           updatedAt?: string | null
           updatedBy?: string | null
-          weekRate?: number | null
         }
         Update: {
           classificationInputs?: Json | null
@@ -51079,7 +51073,6 @@ export type Database = {
           companyId?: string
           createdAt?: string
           createdBy?: string
-          dayRate?: number | null
           deliveredAt?: string | null
           economicLifeMonths?: number | null
           fairValue?: number | null
@@ -51093,10 +51086,9 @@ export type Database = {
             | null
           meterIn?: number | null
           meterOut?: number | null
-          monthRate?: number | null
           quantity?: number
-          rateMode?: Database["public"]["Enums"]["rentalRateMode"]
-          rateUnit?: Database["public"]["Enums"]["rentalRateUnit"] | null
+          rate?: number
+          rateUnit?: Database["public"]["Enums"]["rentalRateUnit"]
           rentalAgreementId?: string
           returnedAt?: string | null
           returnNotes?: string | null
@@ -51106,7 +51098,6 @@ export type Database = {
           unguaranteedResidualValue?: number
           updatedAt?: string | null
           updatedBy?: string | null
-          weekRate?: number | null
         }
         Relationships: [
           {
@@ -88977,7 +88968,6 @@ export type Database = {
       rentalBillingPeriodStatus: "Pending" | "Invoiced"
       rentalBillingTiming: "Advance" | "Arrears"
       rentalInvoiceLineKind: "Rent" | "Charge" | "Purchase Option"
-      rentalRateMode: "Best Rate" | "Fixed"
       rentalRateUnit: "Day" | "Week" | "Month"
       reportViewVisibility: "Private" | "Company"
       revenueScheduleStatus: "Planned" | "Posted"
@@ -90465,7 +90455,6 @@ export const Constants = {
       rentalBillingPeriodStatus: ["Pending", "Invoiced"],
       rentalBillingTiming: ["Advance", "Arrears"],
       rentalInvoiceLineKind: ["Rent", "Charge", "Purchase Option"],
-      rentalRateMode: ["Best Rate", "Fixed"],
       rentalRateUnit: ["Day", "Week", "Month"],
       reportViewVisibility: ["Private", "Company"],
       revenueScheduleStatus: ["Planned", "Posted"],

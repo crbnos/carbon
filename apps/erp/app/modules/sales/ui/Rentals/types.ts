@@ -1,5 +1,4 @@
 import type { Database } from "@carbon/database";
-import type { RateLadder } from "@carbon/utils";
 import type {
   getRentableFleetAssets,
   getRentalAgreementCharges,
@@ -46,11 +45,9 @@ export type RentalInvoiceLinks = Record<
   { id: string; invoiceId: string | null }
 >;
 
-/** What a Draft line is priced and derecognized at, for the Activate
- *  preview: its rates (its own, else the default ladder) and the fleet
- *  unit's book value. */
+/** What a Draft line is derecognized at, for the Activate preview: the
+ *  fleet unit's book value. (It is priced at its own rate, on the line.) */
 export type RentalLeaseLineInputs = {
-  ladder: RateLadder | null;
   carryingAmount: number | null;
   acquisitionCost: number | null;
   accumulatedDepreciation: number | null;

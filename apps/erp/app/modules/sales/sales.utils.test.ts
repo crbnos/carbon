@@ -211,21 +211,19 @@ describe("previewLeaseClassification", () => {
     purchaseOptionReasonablyCertain: true
   };
   const line = {
-    rateMode: "Best Rate" as const,
-    rateUnit: null,
+    rateUnit: "Month" as const,
+    rate: 1000,
     fairValue: 38000,
     economicLifeMonths: 120,
     guaranteedResidualValue: 0,
     unguaranteedResidualValue: 0
   };
-  const ladder = { dayRate: 100, weekRate: 400, monthRate: 1000 };
   const policy = { majorPartPercent: 75, substantiallyAllPercent: 90 };
 
   it("matches the shared math's pinned sales-type case", () => {
     const record = previewLeaseClassification({
       agreement,
       line,
-      ladder,
       policy
     });
     expect(record.classification).toBe("Sale");
@@ -244,7 +242,6 @@ describe("previewLeaseClassification", () => {
     const record = previewLeaseClassification({
       agreement: { ...agreement, purchaseOptionReasonablyCertain: false },
       line: { ...line, fairValue: 60000 },
-      ladder,
       policy
     });
     expect(record.classification).toBe("Rental");
@@ -254,20 +251,18 @@ describe("previewLeaseClassification", () => {
     const record = previewLeaseClassification({
       agreement: { ...agreement, billingCycle: "28 Days" },
       line,
-      ladder,
       policy
     });
-    // 1,096 days → 39 whole periods; 28 days bill a month tier (1,000).
+    // 1,096 days → 39 whole periods; 28 days bill one month (1,000).
     expect(record.periods).toBe(39);
     expect(record.payment).toBe(1000);
     expect(record.annualRate).toBeCloseTo((6 * 12 * 28) / 365, 5);
   });
 
-  it("cannot price a line with no rates, and stays operating", () => {
+  it("cannot price a rate that is not a number, and stays operating", () => {
     const record = previewLeaseClassification({
       agreement: { ...agreement, purchaseOptionReasonablyCertain: false },
-      line,
-      ladder: null,
+      line: { ...line, rate: Number.NaN },
       policy
     });
     expect(record.pv).toBeNull();
@@ -278,7 +273,6 @@ describe("previewLeaseClassification", () => {
     const record = previewLeaseClassification({
       agreement,
       line,
-      ladder,
       policy
     });
     const { classification: _, ...stored } = record;

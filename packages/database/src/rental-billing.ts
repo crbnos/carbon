@@ -368,7 +368,7 @@ async function rollBillingPeriodsForward(
 
   const lines = await trx
     .selectFrom("rentalAgreementLine")
-    .select(["id", "rateMode", "rateUnit", "dayRate", "weekRate", "monthRate"])
+    .select(["id", "rateUnit", "rate"])
     .where("rentalAgreementId", "=", agreementId)
     .where("companyId", "=", companyId)
     .where("status", "in", ["Pending", "On Rent"])
@@ -408,13 +408,8 @@ async function rollBillingPeriodsForward(
     const { create } = generateRentalBillingPeriods({
       cycle,
       timing,
-      rateMode: line.rateMode,
       rateUnit: line.rateUnit,
-      rates: {
-        dayRate: line.dayRate === null ? null : Number(line.dayRate),
-        weekRate: line.weekRate === null ? null : Number(line.weekRate),
-        monthRate: line.monthRate === null ? null : Number(line.monthRate)
-      },
+      rate: Number(line.rate),
       startDate: dates.startDate,
       endDate: dates.endDate,
       returnedAt: null,
@@ -450,8 +445,8 @@ async function rollBillingPeriodsForward(
 }
 
 /** "2026-10-01 – 2026-10-28 · 28 days · 1 × Month rate — Skid Steer 4
- *  SN-1001" (a 28 Days cycle), "… · 31 days · Month rate — …" (a Calendar
- *  Month period is the month tier prorated by days, so it names no unit
+ *  SN-1001", "… · 31 days · Month rate — …" (a Monthly unit on a Calendar
+ *  Month agreement is its month rate prorated by days, so it names no unit
  *  count), or for an early-return credit "Early return credit — 3 days used". */
 function rentLineDescription(period: {
   cycle: Database["public"]["Enums"]["rentalBillingCycle"];
@@ -472,7 +467,7 @@ function rentLineDescription(period: {
   const tier =
     period.rateUnitApplied === null
       ? ""
-      : period.cycle === "Calendar Month"
+      : period.cycle === "Calendar Month" && period.rateUnitApplied === "Month"
         ? " · Month rate"
         : ` · ${wholeRateUnits(period.days, period.rateUnitApplied)} × ${period.rateUnitApplied} rate`;
   return `${period.periodStart} – ${period.periodEnd} · ${period.days} days${tier}${unit ? ` — ${unit}` : ""}`;

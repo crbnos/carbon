@@ -22,7 +22,6 @@ import RentalMoney from "./RentalMoney";
 import RentalStatus from "./RentalStatus";
 import { rentalUnitLabel, useRentalLineActions } from "./useRentalLineActions";
 
-export type { RentalRateLadder } from "./RentalAgreementLineForm";
 export type { LineLeaseClassification } from "./RentalLeaseClassification";
 export type * from "./types";
 

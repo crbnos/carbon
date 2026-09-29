@@ -14,7 +14,7 @@ import {
   toast,
   VStack
 } from "@carbon/react";
-import type { RentalRateSource } from "@carbon/utils";
+import type { DefaultRentalRates, RateUnit } from "@carbon/utils";
 import { INPUT_FORMAT, INPUT_STEP } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useMemo, useState } from "react";
@@ -34,7 +34,6 @@ import { useCurrencyDecimals, usePermissions, useUser } from "~/hooks";
 import { path } from "~/utils/path";
 import {
   rentalAgreementLineValidator,
-  rentalRateModes,
   rentalRateUnits
 } from "../../sales.models";
 import { getDefaultRentalRates } from "../../sales.service";
@@ -43,14 +42,7 @@ import {
   LeaseClassificationOverrideModal,
   LeaseClassificationPanel
 } from "./RentalLeaseClassification";
-import RentalMoney from "./RentalMoney";
 import type { RentableFleetAsset } from "./types";
-
-export type RentalRateLadder = {
-  dayRate: number | null;
-  weekRate: number | null;
-  monthRate: number | null;
-};
 
 type RentalAgreementLineFormProps = {
   initialValues: z.infer<typeof rentalAgreementLineValidator>;
@@ -63,13 +55,9 @@ type RentalAgreementLineFormProps = {
   /** The line's own unit when editing — it is Reserved by this line, so the
    *  rentable list (Available units only) does not carry it. */
   currentAsset?: { id: string; itemId: string | null; label: string };
-  /** The line's day / week / month rates — its own, or while Draft the
-   *  default ladder when it has none yet. */
-  rates?: RentalRateLadder | null;
-  /** Where `rates` came from when they are the default ladder. */
-  rateSource?: RentalRateSource | null;
-  /** Rates were fixed at activation. */
-  isSnapshot?: boolean;
+  /** The customer's, customer type's or item's rate for each frequency, for
+   *  the line's item — what the rate starts at when the frequency changes. */
+  defaultRates?: DefaultRentalRates | null;
   /** The line's lessor classification with its five tests — stored after
    *  activation, previewed before. Absent for a line not yet saved. */
   lease?: LineLeaseClassification | null;
@@ -90,9 +78,7 @@ const RentalAgreementLineForm = ({
   startDate,
   rentableAssets,
   currentAsset,
-  rates: initialRates,
-  rateSource: initialRateSource = null,
-  isSnapshot = false,
+  defaultRates: initialDefaultRates = null,
   lease,
   isLocked = false,
   type = "modal",
@@ -107,12 +93,10 @@ const RentalAgreementLineForm = ({
   const currencyDecimals = useCurrencyDecimals(currencyCode);
 
   const isEditing = initialValues.id !== undefined;
-  const [rateMode, setRateMode] = useState(initialValues.rateMode);
-  const [rates, setRates] = useState<RentalRateLadder>(
-    initialRates ?? { dayRate: null, weekRate: null, monthRate: null }
-  );
-  const [rateSource, setRateSource] = useState<RentalRateSource | null>(
-    initialRateSource
+  const [rateUnit, setRateUnit] = useState<RateUnit>(initialValues.rateUnit);
+  const [rate, setRate] = useState<number | null>(initialValues.rate ?? null);
+  const [defaultRates, setDefaultRates] = useState<DefaultRentalRates | null>(
+    initialDefaultRates
   );
   const [rateItemId, setRateItemId] = useState<string | null>(
     currentAsset?.itemId ?? null
@@ -144,10 +128,10 @@ const RentalAgreementLineForm = ({
     return options;
   }, [rentableAssets, currentAsset]);
 
-  // A unit of another item takes that item's default rates; another unit of
-  // the same item keeps whatever was typed.
+  // A unit of another item starts at that item's rate for the frequency;
+  // another unit of the same item keeps whatever was typed.
   const onAssetChange = async (assetId: string | undefined) => {
-    if (isSnapshot) return;
+    if (isLocked) return;
     const itemId =
       rentableAssets.find((asset) => asset.id === assetId)?.itemId ??
       (currentAsset?.id === assetId ? currentAsset?.itemId : null);
@@ -164,29 +148,33 @@ const RentalAgreementLineForm = ({
       toast.error(t`Failed to load the rental rates`);
       return;
     }
-    const resolved = data[itemId];
-    setRates(
-      resolved?.rates ?? { dayRate: null, weekRate: null, monthRate: null }
-    );
-    setRateSource(resolved?.source ?? null);
+    const defaults = data[itemId] ?? null;
+    setDefaultRates(defaults);
+    setRate(defaults?.[rateUnit]?.rate ?? null);
   };
 
-  const onRateChange = (tier: keyof RentalRateLadder) => (value: number) => {
-    setRates((current) => ({
-      ...current,
-      [tier]: Number.isNaN(value) ? null : value
-    }));
-    setRateSource(null);
+  // A rate belongs to its frequency, so a new frequency starts from its own
+  // rate on file rather than keeping a figure meant for another one.
+  const onRateUnitChange = (unit: RateUnit) => {
+    setRateUnit(unit);
+    setRate(defaultRates?.[unit]?.rate ?? null);
   };
 
-  const rateModeOptions = rentalRateModes.map((mode) => ({
-    value: mode,
-    label: mode === "Best Rate" ? t`Best Rate` : t`Fixed`
-  }));
   const rateUnitOptions = rentalRateUnits.map((unit) => ({
     value: unit,
-    label: unit === "Day" ? t`Day` : unit === "Week" ? t`Week` : t`Month`
+    label: unit === "Day" ? t`Daily` : unit === "Week" ? t`Weekly` : t`Monthly`
   }));
+
+  // Where the rate came from, while it is still the value on file.
+  const onFile = defaultRates?.[rateUnit] ?? null;
+  const rateHint =
+    onFile && rate === onFile.rate
+      ? onFile.source === "Customer"
+        ? t`This customer's rate`
+        : onFile.source === "Customer Type"
+          ? t`This customer type's rate`
+          : t`The item's rental rate`
+      : undefined;
 
   const isDisabled =
     isLocked ||
@@ -197,16 +185,6 @@ const RentalAgreementLineForm = ({
   const moneyFormat = INPUT_FORMAT.money(currencyCode, currencyDecimals);
   const moneyStep = INPUT_STEP.money(currencyDecimals);
   const rateFormat = INPUT_FORMAT.rate(currencyCode, currencyDecimals);
-
-  const rateHint = isSnapshot
-    ? t`Fixed when the agreement was activated.`
-    : rateSource === "Customer"
-      ? t`From this customer's rental rates for the item.`
-      : rateSource === "Customer Type"
-        ? t`From the customer type's rental rates for the item.`
-        : rateSource === "Item"
-          ? t`From the item's rental rates.`
-          : t`Leave all three empty to use the customer's rental rates, else the customer type's, else the item's.`;
 
   return (
     <ModalCardProvider type={type}>
@@ -264,27 +242,28 @@ const RentalAgreementLineForm = ({
                     onChange={(value) => onAssetChange(value?.value)}
                   />
                   <Select
-                    name="rateMode"
-                    label={t`Rate Mode`}
-                    termId="rate-mode"
-                    options={rateModeOptions}
+                    name="rateUnit"
+                    label={t`Rate Frequency`}
+                    termId="rate-frequency"
+                    options={rateUnitOptions}
                     onChange={(value) => {
-                      if (
-                        value?.value === "Fixed" ||
-                        value?.value === "Best Rate"
-                      )
-                        setRateMode(value.value);
+                      const unit = rentalRateUnits.find(
+                        (option) => option === value?.value
+                      );
+                      if (unit) onRateUnitChange(unit);
                     }}
                   />
-                  {rateMode === "Fixed" ? (
-                    <Select
-                      name="rateUnit"
-                      label={t`Billed Tier`}
-                      options={rateUnitOptions}
-                    />
-                  ) : (
-                    <div />
-                  )}
+                  <NumberControlled
+                    name="rate"
+                    label={t`Rate`}
+                    minValue={0}
+                    formatOptions={rateFormat}
+                    value={rate ?? Number.NaN}
+                    onChange={(value) =>
+                      setRate(Number.isNaN(value) ? null : value)
+                    }
+                    helperText={rateHint}
+                  />
                 </div>
                 {!isLocked && assetOptions.length === 0 && (
                   <p className="text-sm text-muted-foreground">
@@ -298,59 +277,6 @@ const RentalAgreementLineForm = ({
                       page.
                     </Trans>
                   </p>
-                )}
-
-                {isLocked ? (
-                  <div className="grid w-full grid-cols-3 gap-4 rounded-lg border border-border p-4">
-                    <RateTier
-                      label={t`Day Rate`}
-                      value={rates.dayRate}
-                      currencyCode={currencyCode}
-                    />
-                    <RateTier
-                      label={t`Week Rate`}
-                      value={rates.weekRate}
-                      currencyCode={currencyCode}
-                    />
-                    <RateTier
-                      label={t`Month Rate`}
-                      value={rates.monthRate}
-                      currencyCode={currencyCode}
-                    />
-                    <p className="col-span-3 text-xs text-muted-foreground">
-                      {rateHint}
-                    </p>
-                  </div>
-                ) : (
-                  <div className="flex w-full flex-col gap-2">
-                    <div className="grid w-full gap-x-8 gap-y-4 grid-cols-1 lg:grid-cols-3">
-                      <NumberControlled
-                        name="dayRate"
-                        label={t`Day Rate`}
-                        minValue={0}
-                        formatOptions={rateFormat}
-                        value={rates.dayRate ?? Number.NaN}
-                        onChange={onRateChange("dayRate")}
-                      />
-                      <NumberControlled
-                        name="weekRate"
-                        label={t`Week Rate`}
-                        minValue={0}
-                        formatOptions={rateFormat}
-                        value={rates.weekRate ?? Number.NaN}
-                        onChange={onRateChange("weekRate")}
-                      />
-                      <NumberControlled
-                        name="monthRate"
-                        label={t`Month Rate`}
-                        minValue={0}
-                        formatOptions={rateFormat}
-                        value={rates.monthRate ?? Number.NaN}
-                        onChange={onRateChange("monthRate")}
-                      />
-                    </div>
-                    <p className="text-xs text-muted-foreground">{rateHint}</p>
-                  </div>
                 )}
 
                 <div className="w-full">
@@ -459,24 +385,5 @@ const RentalAgreementLineForm = ({
     </ModalCardProvider>
   );
 };
-
-function RateTier({
-  label,
-  value,
-  currencyCode
-}: {
-  label: string;
-  value: number | null | undefined;
-  currencyCode: string;
-}) {
-  return (
-    <div>
-      <p className="text-sm text-muted-foreground">{label}</p>
-      <p className="mt-1 text-base font-medium">
-        <RentalMoney value={value} currencyCode={currencyCode} rate />
-      </p>
-    </div>
-  );
-}
 
 export default RentalAgreementLineForm;

@@ -933,9 +933,6 @@ msgstr "렌탈 계약은 일련번호가 있는 함대 개를 고객에게 배�
 msgid "A rental line is a sales-type lease when any ASC 842 test is met. These thresholds set tests (c) and (d); the discount rate is the default for new rental agreements."
 msgstr "임차 라인은 ASC 842 테스트 중 하나라도 충족되면 판매-유형 리스입니다. 이 임계값들은 테스트 (c)와 (d)를 설정합니다. 할인율은 새로운 임차료 계약의 기본값입니다."
 
-msgid "A rental line uses the customer's rates, else its customer type's, else the item's. The rates can still be changed on each line."
-msgstr ""
-
 msgid "A rental that meets any of the five ASC 842 lease tests, booked as a sale when its agreement activates: the unit leaves the fleet, lease revenue and cost of goods sold post, and a net investment in the lease takes its place."
 msgstr "5개의 ASC 842 리스 테스트 중 하나라도 충족하는 임차로, 계약이 발효될 때 판매로 기록됩니다. 장비가 함대를 떠나고, 임차 매출과 매출원가가 전기되며, 리스에 대한 순투자가 그 자리를 차지합니다."
 
@@ -3180,12 +3177,6 @@ msgstr "최선의 경우 예측"
 msgid "Best case…"
 msgstr "최선의 경우…"
 
-msgid "Best rate"
-msgstr "최저 요금"
-
-msgid "Best Rate"
-msgstr "최저 요금"
-
 msgid "Best-case finish"
 msgstr "최단 완료"
 
@@ -3209,9 +3200,6 @@ msgstr "공정 목록"
 
 msgid "Bill To"
 msgstr "청구 대상"
-
-msgid "Billed Tier"
-msgstr "청구 등급"
 
 msgid "Billed:"
 msgstr ""
@@ -8320,9 +8308,6 @@ msgstr "고정 재주문"
 msgid "Fixed Shelf Life"
 msgstr "고정 보존 기간"
 
-msgid "Fixed when the agreement was activated."
-msgstr ""
-
 msgid "Fixture"
 msgstr "지그"
 
@@ -8427,15 +8412,6 @@ msgstr "이전 주에서"
 
 msgid "From Storage Unit"
 msgstr "보관 단위에서"
-
-msgid "From the customer type's rental rates for the item."
-msgstr ""
-
-msgid "From the item's rental rates."
-msgstr ""
-
-msgid "From this customer's rental rates for the item."
-msgstr ""
 
 msgid "From:"
 msgstr "시작:"
@@ -8916,9 +8892,6 @@ msgid "How a batchable process runs its grouped work: Sequential runs parts one 
 msgstr "배치 가능한 공정이 그룹화된 작업을 실행하는 방식: 순차는 부품을 한 기계에서 차례대로 실행하고(톱 또는 레이저 테이블), 동시는 단일 로드에서 함께 실행합니다(용광로, 오븐 또는 도금 욕조)."
 
 msgid "How a rental agreement cuts billing periods from its start date: Calendar Month bills each calendar month at the month rate, prorated for a partial month, and 28 Days bills consecutive 28-day periods priced from the day, week, and month rates."
-msgstr ""
-
-msgid "How a rental unit is priced each billing period: Best Rate bills the cheapest of its day, week, and month rates, and Fixed always bills the one tier you choose."
 msgstr ""
 
 msgid "How an item is replenished overall (Buy, Make, or Buy and Make), set per item, unlike the per-line method type."
@@ -10072,9 +10045,6 @@ msgstr "리스 매출"
 
 msgid "Lease Revenue (default)"
 msgstr "리스 매출 (기본값)"
-
-msgid "Leave all three empty to use the customer's rental rates, else the customer type's, else the item's."
-msgstr ""
 
 msgid "Leave any related receipts untouched"
 msgstr "관련 입고는 그대로 둡니다"
@@ -12049,9 +12019,6 @@ msgstr "참조 이미지 없음"
 msgid "No remaining entities to inspect."
 msgstr "검사할 개체가 남아 있지 않습니다."
 
-msgid "No rental rates"
-msgstr ""
-
 msgid "No reports match your search."
 msgstr "검색 결과와 일치하는 보고서가 없습니다."
 
@@ -13233,9 +13200,6 @@ msgstr "인원"
 msgid "People"
 msgstr "인원"
 
-msgid "per 28 days"
-msgstr ""
-
 msgid "per day"
 msgstr ""
 
@@ -13709,9 +13673,6 @@ msgstr "가격"
 
 msgid "Pricing"
 msgstr "가격 책정"
-
-msgid "Pricing a 28-day rental period at the cheapest of its day, week, and month rates in whole units, with ties going to the larger unit."
-msgstr "28일 임차 기간을 일일, 주간, 월간 요금 중 가장 저렴한 가격으로 책정하며, 동일할 경우 더 큰 단위를 선택합니다."
 
 msgid "Pricing rule"
 msgstr "가격 규칙"
@@ -14415,22 +14376,19 @@ msgstr "Ramp에서 인증을 거부했습니다"
 msgid "Rate"
 msgstr "환율"
 
-msgid "Rate Limit"
-msgstr "요청 제한"
-
-msgid "Rate mode"
+msgid "Rate frequency"
 msgstr ""
 
-msgid "Rate Mode"
-msgstr "요금 모드"
+msgid "Rate Frequency"
+msgstr ""
+
+msgid "Rate Limit"
+msgstr "요청 제한"
 
 msgid "Rate used for equity account translation in consolidation (IAS 21). Leave blank to use the current exchange rate."
 msgstr "연결 시 자본 계정 환산에 사용되는 환율(IAS 21)입니다. 비워 두면 현재 환율이 사용됩니다."
 
-msgid "Rates a rental agreement line uses for this item. At least one is required."
-msgstr "이 품목에 대해 임차 계약 라인이 사용하는 요금입니다. 최소 1개는 필수입니다."
-
-msgid "Rates are the items' current rental rates. They are fixed on each unit when the agreement is activated."
+msgid "Rates agreed with a customer, or with every customer of a type. They are the starting rate when this part is rented to them."
 msgstr ""
 
 msgid "Rates for a single customer"
@@ -18335,6 +18293,9 @@ msgstr "MACRS(수정가속상각법)에 따른 이 자산의 IRS 내용연수 �
 msgid "The item each job produces — require it to match to merge output lots"
 msgstr "각 작업 지시가 생산하는 품목 — 출력 로트를 병합하기 위해 일치 필수"
 
+msgid "The item's rental rate"
+msgstr ""
+
 msgid "the job hours due that day (a due-date basis, not the day the work runs), with overdue work in Past due."
 msgstr "그 날에 마감될 작업 지시 시간(작업이 실행되는 날이 아닌 마감일 기준)이며, 기한 초과 작업은 기한 초과 섹션에 표시됩니다."
 
@@ -18692,6 +18653,9 @@ msgstr "이 작업장의 공정작업이 기본적으로 측정되는 표준 단
 msgid "The standard factor used to measure this process — hours, minutes, pieces, square feet — when its operations are estimated and costed."
 msgstr "이 공정을 측정하는 데 사용되는 표준 단위(시간, 분, 개수, 제곱피트)로, 공정작업의 견적 및 원가 산정에 사용됩니다."
 
+msgid "The starting rate when this part is rented, for each rate frequency. At least one is required."
+msgstr ""
+
 msgid "The state of this quote line — Draft, No Quote, Complete; No Quote reveals the Reason field and excludes the line from the quote total."
 msgstr "이 견적 라인의 상태 — 초안, 견적 거절, 완료됨. 견적 거절은 사유 필드를 표시하고 라인을 견적 합계에서 제외합니다."
 
@@ -18955,6 +18919,12 @@ msgstr "이 담당자는 이메일 주소가 없습니다."
 
 msgid "This counterparty has nothing outstanding — the payment will be recorded on-account."
 msgstr "이 거래처는 미결 항목이 없으므로 지불이 외상으로 기록됩니다."
+
+msgid "This customer type's rate"
+msgstr ""
+
+msgid "This customer's rate"
+msgstr ""
 
 msgid "This download link is invalid or has been tampered with."
 msgstr "이 다운로드 링크가 유효하지 않거나 변조되었습니다."
@@ -20710,6 +20680,9 @@ msgstr "환영합니다, {companyName}님"
 
 msgid "What a backup contains"
 msgstr "백업에 포함된 내용"
+
+msgid "What a rental unit's rate is charged per: a day, a week, or a month. Each billing period bills the whole days, weeks, or months it covers, except a monthly rate on a calendar-month agreement, which is prorated for a partial month."
+msgstr ""
 
 msgid "What category of failure this is — Mechanical, Electrical, Software, Operator, Material, etc.; rolls up into the failure-mode pareto report so the category breakdown is meaningful."
 msgstr "이 고장의 범주(기계적, 전기적, 소프트웨어, 작업자, 자재 등)로, 고장 모드 파레토 보고서에 집계되어 범주별 분석이 의미를 갖도록 합니다."

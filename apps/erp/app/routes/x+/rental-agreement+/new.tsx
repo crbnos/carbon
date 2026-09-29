@@ -97,7 +97,9 @@ export async function action({ request }: ActionFunctionArgs) {
     const line = await upsertRentalAgreementLine(client, {
       rentalAgreementId: agreement.data.id,
       fixedAssetId,
-      rateMode: "Best Rate",
+      // The rate starts from the customer's, customer type's or item's
+      // monthly rate; the planner can change it on the unit.
+      rateUnit: "Month",
       companyId,
       createdBy: userId
     });
