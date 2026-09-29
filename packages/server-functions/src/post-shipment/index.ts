@@ -74,6 +74,7 @@ export const postShipment = defineServerFn({
 
       if (shipment.error) throw new Error("Failed to fetch shipment");
       if (!shipment.data) throw new NotFoundError("Shipment not found");
+      const shipmentHeader = shipment.data;
       if (shipmentLines.error)
         throw new Error("Failed to fetch shipment lines");
 
@@ -129,9 +130,9 @@ export const postShipment = defineServerFn({
 
       switch (type) {
         case "post": {
-          switch (shipment.data?.sourceDocument) {
+          switch (shipmentHeader.sourceDocument) {
             case "Sales Order": {
-              if (!shipment.data.sourceDocumentId)
+              if (!shipmentHeader.sourceDocumentId)
                 throw new Error("Shipment has no sourceDocumentId");
 
               const [salesOrder, salesOrderLines, salesOrderDelivery] =
@@ -139,16 +140,16 @@ export const postShipment = defineServerFn({
                   client
                     .from("salesOrder")
                     .select("*")
-                    .eq("id", shipment.data.sourceDocumentId)
+                    .eq("id", shipmentHeader.sourceDocumentId)
                     .single(),
                   client
                     .from("salesOrderLine")
                     .select("*")
-                    .eq("salesOrderId", shipment.data.sourceDocumentId),
+                    .eq("salesOrderId", shipmentHeader.sourceDocumentId),
                   client
                     .from("salesOrderShipment")
                     .select("shippingCost")
-                    .eq("id", shipment.data.sourceDocumentId)
+                    .eq("id", shipmentHeader.sourceDocumentId)
                     .single()
                 ]);
               if (salesOrder.error)
@@ -242,7 +243,7 @@ export const postShipment = defineServerFn({
 
               const serialNumbersConsumed: string[] = [];
 
-              const locationId = shipment.data.locationId;
+              const locationId = shipmentHeader.locationId;
               for await (const shipmentLine of shipmentLines.data) {
                 if (
                   shipmentLine.fulfillment?.type === "Job" &&
@@ -377,7 +378,7 @@ export const postShipment = defineServerFn({
                     storageUnitId: shipmentLine.storageUnitId,
                     entryType: "Negative Adjmt.",
                     documentType: "Sales Shipment",
-                    documentId: shipment.data?.id ?? undefined,
+                    documentId: shipmentHeader.id ?? undefined,
                     externalDocumentId: undefined,
                     createdBy: userId,
                     companyId
@@ -393,7 +394,7 @@ export const postShipment = defineServerFn({
                     storageUnitId: shipmentLine.storageUnitId,
                     entryType: "Negative Adjmt.",
                     documentType: "Sales Shipment",
-                    documentId: shipment.data?.id ?? undefined,
+                    documentId: shipmentHeader.id ?? undefined,
                     trackedEntityId: shipmentLineTracking.data?.find(
                       (tracking) =>
                         (
@@ -427,7 +428,7 @@ export const postShipment = defineServerFn({
                       storageUnitId: shipmentLine.storageUnitId,
                       entryType: "Negative Adjmt.",
                       documentType: "Sales Shipment",
-                      documentId: shipment.data?.id ?? undefined,
+                      documentId: shipmentHeader.id ?? undefined,
                       trackedEntityId: tracking.id,
                       externalDocumentId: undefined,
                       createdBy: userId,
@@ -465,7 +466,7 @@ export const postShipment = defineServerFn({
                     amount: 0,
                     quantity: round(shippedQuantity),
                     documentType: "Sales Shipment",
-                    documentId: shipment.data?.id,
+                    documentId: shipmentHeader.id,
                     externalDocumentId:
                       salesOrder.data?.customerReference ?? undefined,
                     documentLineReference: journalReference.to.shipment(
@@ -485,7 +486,7 @@ export const postShipment = defineServerFn({
                     amount: 0,
                     quantity: round(shippedQuantity),
                     documentType: "Sales Shipment",
-                    documentId: shipment.data?.id,
+                    documentId: shipmentHeader.id,
                     externalDocumentId:
                       salesOrder.data?.customerReference ?? undefined,
                     documentLineReference: journalReference.to.shipment(
@@ -630,7 +631,7 @@ export const postShipment = defineServerFn({
                       amount: round(debit("asset", accumulatedDepreciation)),
                       quantity: 1,
                       documentType: "Sales Shipment",
-                      documentId: shipment.data?.id,
+                      documentId: shipmentHeader.id,
                       externalDocumentId:
                         salesOrder.data?.customerReference ?? undefined,
                       documentLineReference: journalReference.to.shipment(
@@ -667,7 +668,7 @@ export const postShipment = defineServerFn({
                       amount: round(debit("expense", nbv)),
                       quantity: 1,
                       documentType: "Sales Shipment",
-                      documentId: shipment.data?.id,
+                      documentId: shipmentHeader.id,
                       externalDocumentId:
                         salesOrder.data?.customerReference ?? undefined,
                       documentLineReference: journalReference.to.shipment(
@@ -698,7 +699,7 @@ export const postShipment = defineServerFn({
                     amount: round(credit("asset", acquisitionCost)),
                     quantity: 1,
                     documentType: "Sales Shipment",
-                    documentId: shipment.data?.id,
+                    documentId: shipmentHeader.id,
                     externalDocumentId:
                       salesOrder.data?.customerReference ?? undefined,
                     documentLineReference: journalReference.to.shipment(
@@ -930,7 +931,7 @@ export const postShipment = defineServerFn({
                       type: "Shipment",
                       sourceDocument: "Shipment",
                       sourceDocumentId: shipmentId,
-                      sourceDocumentReadableId: shipment.data!.shipmentId,
+                      sourceDocumentReadableId: shipmentHeader.shipmentId,
                       attributes: {
                         Shipment: shipmentId,
                         "Sales Order": salesOrder.data.id
@@ -997,7 +998,7 @@ export const postShipment = defineServerFn({
                         ...split.activityInsert,
                         attributes: split.activityInsert
                           .attributes as unknown as Json,
-                        sourceDocumentReadableId: shipment.data!.shipmentId,
+                        sourceDocumentReadableId: shipmentHeader.shipmentId,
                         createdAt: today
                       })
                       .execute();
@@ -1194,7 +1195,7 @@ export const postShipment = defineServerFn({
                         costLedgerType: "Direct Cost",
                         adjustment: false,
                         documentType: "Sales Shipment",
-                        documentId: shipment.data?.id ?? "",
+                        documentId: shipmentHeader.id ?? "",
                         itemId,
                         quantity: round(-info.totalQuantity),
                         cost: round(-cogsResult.totalCost),
@@ -1216,7 +1217,7 @@ export const postShipment = defineServerFn({
                     .values({
                       journalEntryId,
                       accountingPeriodId,
-                      description: `Sales Shipment ${shipment.data!.shipmentId}`,
+                      description: `Sales Shipment ${shipmentHeader.shipmentId}`,
                       postingDate: today,
                       companyId,
                       sourceType: "Sales Shipment",
@@ -1333,19 +1334,19 @@ export const postShipment = defineServerFn({
               break;
             }
             case "Purchase Order": {
-              if (!shipment.data.sourceDocumentId)
+              if (!shipmentHeader.sourceDocumentId)
                 throw new Error("Shipment has no sourceDocumentId");
 
               const [purchaseOrder, purchaseOrderLines] = await Promise.all([
                 client
                   .from("purchaseOrder")
                   .select("*")
-                  .eq("id", shipment.data.sourceDocumentId)
+                  .eq("id", shipmentHeader.sourceDocumentId)
                   .single(),
                 client
                   .from("purchaseOrderLine")
                   .select("*")
-                  .eq("purchaseOrderId", shipment.data.sourceDocumentId)
+                  .eq("purchaseOrderId", shipmentHeader.sourceDocumentId)
               ]);
               if (purchaseOrder.error)
                 throw new Error("Failed to fetch purchase order");
@@ -1566,7 +1567,7 @@ export const postShipment = defineServerFn({
                       type: "Shipment",
                       sourceDocument: "Shipment",
                       sourceDocumentId: shipmentId,
-                      sourceDocumentReadableId: shipment.data!.shipmentId,
+                      sourceDocumentReadableId: shipmentHeader.shipmentId,
                       attributes: {
                         Shipment: shipmentId,
                         "Purchase Order": purchaseOrder.data.id
@@ -1621,7 +1622,7 @@ export const postShipment = defineServerFn({
                       activitySourceDocumentId: shipmentId,
                       bin: {
                         storageUnitId: shipmentLine?.storageUnitId ?? null,
-                        locationId: shipment.data!.locationId
+                        locationId: shipmentHeader.locationId
                       },
                       itemLedgerItemId: shipmentLine?.itemId ?? null,
                       companyId: splitInfo.companyId,
@@ -1636,7 +1637,7 @@ export const postShipment = defineServerFn({
                         ...split.activityInsert,
                         attributes: split.activityInsert
                           .attributes as unknown as Json,
-                        sourceDocumentReadableId: shipment.data!.shipmentId,
+                        sourceDocumentReadableId: shipmentHeader.shipmentId,
                         createdAt: today
                       })
                       .execute();
@@ -1754,7 +1755,7 @@ export const postShipment = defineServerFn({
               break;
             }
             case "Outbound Transfer": {
-              if (!shipment.data.sourceDocumentId)
+              if (!shipmentHeader.sourceDocumentId)
                 throw new Error("Shipment has no sourceDocumentId");
 
               const [warehouseTransfer, warehouseTransferLines] =
@@ -1762,12 +1763,12 @@ export const postShipment = defineServerFn({
                   client
                     .from("warehouseTransfer")
                     .select("*")
-                    .eq("id", shipment.data.sourceDocumentId)
+                    .eq("id", shipmentHeader.sourceDocumentId)
                     .single(),
                   client
                     .from("warehouseTransferLine")
                     .select("*")
-                    .eq("transferId", shipment.data.sourceDocumentId)
+                    .eq("transferId", shipmentHeader.sourceDocumentId)
                 ]);
 
               if (warehouseTransfer.error)
@@ -1817,7 +1818,7 @@ export const postShipment = defineServerFn({
                     documentType: "Transfer Shipment",
                     documentId: warehouseTransfer.data?.transferId,
                     externalDocumentId:
-                      shipment.data?.externalDocumentId ?? undefined,
+                      shipmentHeader.externalDocumentId ?? undefined,
                     createdBy: userId,
                     companyId
                   });
@@ -1907,9 +1908,9 @@ export const postShipment = defineServerFn({
               // Return-to-customer: ships rejected-claim goods back out of the
               // returned (On Hold) stock at carried cost. Dr COGS / Cr Inventory.
               // No RMA quantity bumps — dispositions carry the line state.
-              if (!shipment.data.sourceDocumentId)
+              if (!shipmentHeader.sourceDocumentId)
                 throw new Error("Shipment has no sourceDocumentId");
-              const salesReturnOrderId = shipment.data.sourceDocumentId;
+              const salesReturnOrderId = shipmentHeader.sourceDocumentId;
 
               const salesReturnOrder = await client
                 .from("salesReturnOrder")
@@ -2029,9 +2030,9 @@ export const postShipment = defineServerFn({
                     storageUnitId: shipmentLine.storageUnitId,
                     entryType: "Negative Adjmt.",
                     documentType: "Sales Return Shipment",
-                    documentId: shipment.data?.id ?? undefined,
+                    documentId: shipmentHeader.id ?? undefined,
                     externalDocumentId:
-                      shipment.data?.externalDocumentId ?? undefined,
+                      shipmentHeader.externalDocumentId ?? undefined,
                     createdBy: userId,
                     companyId
                   });
@@ -2062,10 +2063,10 @@ export const postShipment = defineServerFn({
                       storageUnitId: shipmentLine.storageUnitId,
                       entryType: "Negative Adjmt.",
                       documentType: "Sales Return Shipment",
-                      documentId: shipment.data?.id ?? undefined,
+                      documentId: shipmentHeader.id ?? undefined,
                       trackedEntityId: entity.id,
                       externalDocumentId:
-                        shipment.data?.externalDocumentId ?? undefined,
+                        shipmentHeader.externalDocumentId ?? undefined,
                       createdBy: userId,
                       companyId
                     });
@@ -2124,9 +2125,9 @@ export const postShipment = defineServerFn({
                       costLedgerType: "Direct Cost",
                       adjustment: false,
                       documentType: "Sales Return Shipment",
-                      documentId: shipment.data?.id ?? undefined,
+                      documentId: shipmentHeader.id ?? undefined,
                       externalDocumentId:
-                        shipment.data?.externalDocumentId ?? undefined,
+                        shipmentHeader.externalDocumentId ?? undefined,
                       itemId,
                       quantity: round(-quantity),
                       cost: round(-cogsResult.totalCost),
@@ -2154,9 +2155,9 @@ export const postShipment = defineServerFn({
                       amount: round(debit("expense", cogsResult.totalCost)),
                       quantity: round(quantity),
                       documentType: "Return Order",
-                      documentId: shipment.data?.id ?? undefined,
+                      documentId: shipmentHeader.id ?? undefined,
                       documentLineReference: journalReference.to.shipment(
-                        shipment.data?.id ?? ""
+                        shipmentHeader.id ?? ""
                       ),
                       journalLineReference,
                       companyId
@@ -2167,9 +2168,9 @@ export const postShipment = defineServerFn({
                       amount: round(credit("asset", cogsResult.totalCost)),
                       quantity: round(quantity),
                       documentType: "Return Order",
-                      documentId: shipment.data?.id ?? undefined,
+                      documentId: shipmentHeader.id ?? undefined,
                       documentLineReference: journalReference.to.shipment(
-                        shipment.data?.id ?? ""
+                        shipmentHeader.id ?? ""
                       ),
                       journalLineReference,
                       companyId
@@ -2181,7 +2182,7 @@ export const postShipment = defineServerFn({
                       itemPostingGroupId:
                         itemCosts.data.find((c) => c.itemId === itemId)
                           ?.itemPostingGroupId ?? null,
-                      locationId: shipment.data!.locationId,
+                      locationId: shipmentHeader.locationId,
                       customerId: salesReturnOrder.data.customerId,
                       customerTypeId
                     };
@@ -2204,7 +2205,7 @@ export const postShipment = defineServerFn({
                     .values({
                       journalEntryId,
                       accountingPeriodId,
-                      description: `Return Shipment ${shipment.data!.shipmentId}`,
+                      description: `Return Shipment ${shipmentHeader.shipmentId}`,
                       postingDate: today,
                       companyId,
                       // Distinct source type: these are NOT sales shipments —
@@ -2260,7 +2261,7 @@ export const postShipment = defineServerFn({
                       type: "Return Shipment",
                       sourceDocument: "Shipment",
                       sourceDocumentId: shipmentId,
-                      sourceDocumentReadableId: shipment.data!.shipmentId,
+                      sourceDocumentReadableId: shipmentHeader.shipmentId,
                       attributes: {
                         "Sales Return Order": salesReturnOrderId,
                         Shipment: shipmentId,
@@ -2316,9 +2317,9 @@ export const postShipment = defineServerFn({
             case "Purchase Return Order": {
               // Supplier return: relieves inventory at carried cost against
               // GRNI (reverses the receipt posting). Cr Inventory / Dr GRNI.
-              if (!shipment.data.sourceDocumentId)
+              if (!shipmentHeader.sourceDocumentId)
                 throw new Error("Shipment has no sourceDocumentId");
-              const purchaseReturnOrderId = shipment.data.sourceDocumentId;
+              const purchaseReturnOrderId = shipmentHeader.sourceDocumentId;
 
               const [purchaseReturnOrder, purchaseReturnOrderLines] =
                 await Promise.all([
@@ -2476,9 +2477,9 @@ export const postShipment = defineServerFn({
                     storageUnitId: shipmentLine.storageUnitId,
                     entryType: "Negative Adjmt.",
                     documentType: "Purchase Return Shipment",
-                    documentId: shipment.data?.id ?? undefined,
+                    documentId: shipmentHeader.id ?? undefined,
                     externalDocumentId:
-                      shipment.data?.externalDocumentId ?? undefined,
+                      shipmentHeader.externalDocumentId ?? undefined,
                     createdBy: userId,
                     companyId
                   });
@@ -2513,10 +2514,10 @@ export const postShipment = defineServerFn({
                       storageUnitId: shipmentLine.storageUnitId,
                       entryType: "Negative Adjmt.",
                       documentType: "Purchase Return Shipment",
-                      documentId: shipment.data?.id ?? undefined,
+                      documentId: shipmentHeader.id ?? undefined,
                       trackedEntityId: entity.id,
                       externalDocumentId:
-                        shipment.data?.externalDocumentId ?? undefined,
+                        shipmentHeader.externalDocumentId ?? undefined,
                       createdBy: userId,
                       companyId
                     });
@@ -2606,7 +2607,7 @@ export const postShipment = defineServerFn({
                     activitySourceDocumentId: shipmentId,
                     bin: {
                       storageUnitId: split.storageUnitId,
-                      locationId: shipment.data!.locationId
+                      locationId: shipmentHeader.locationId
                     },
                     itemLedgerItemId: split.itemId,
                     companyId,
@@ -2619,7 +2620,7 @@ export const postShipment = defineServerFn({
                     .insertInto("trackedActivity")
                     .values({
                       ...built.activityInsert,
-                      sourceDocumentReadableId: shipment.data!.shipmentId,
+                      sourceDocumentReadableId: shipmentHeader.shipmentId,
                       createdAt: today
                     } as Insertable<KyselyDatabase["trackedActivity"]>)
                     .execute();
@@ -2694,9 +2695,9 @@ export const postShipment = defineServerFn({
                       costLedgerType: "Direct Cost",
                       adjustment: false,
                       documentType: "Purchase Return Shipment",
-                      documentId: shipment.data?.id ?? undefined,
+                      documentId: shipmentHeader.id ?? undefined,
                       externalDocumentId:
-                        shipment.data?.externalDocumentId ?? undefined,
+                        shipmentHeader.externalDocumentId ?? undefined,
                       itemId,
                       quantity: round(-quantity),
                       cost: round(-cogsResult.totalCost),
@@ -2725,9 +2726,9 @@ export const postShipment = defineServerFn({
                       amount: round(debit("liability", cogsResult.totalCost)),
                       quantity: round(quantity),
                       documentType: "Return Order",
-                      documentId: shipment.data?.id ?? undefined,
+                      documentId: shipmentHeader.id ?? undefined,
                       documentLineReference: journalReference.to.shipment(
-                        shipment.data?.id ?? ""
+                        shipmentHeader.id ?? ""
                       ),
                       journalLineReference,
                       companyId
@@ -2738,9 +2739,9 @@ export const postShipment = defineServerFn({
                       amount: round(credit("asset", cogsResult.totalCost)),
                       quantity: round(quantity),
                       documentType: "Return Order",
-                      documentId: shipment.data?.id ?? undefined,
+                      documentId: shipmentHeader.id ?? undefined,
                       documentLineReference: journalReference.to.shipment(
-                        shipment.data?.id ?? ""
+                        shipmentHeader.id ?? ""
                       ),
                       journalLineReference,
                       companyId
@@ -2752,7 +2753,7 @@ export const postShipment = defineServerFn({
                       itemPostingGroupId:
                         itemCosts.data.find((c) => c.itemId === itemId)
                           ?.itemPostingGroupId ?? null,
-                      locationId: shipment.data!.locationId,
+                      locationId: shipmentHeader.locationId,
                       supplierId: purchaseReturnOrder.data.supplierId,
                       supplierTypeId
                     };
@@ -2775,7 +2776,7 @@ export const postShipment = defineServerFn({
                     .values({
                       journalEntryId,
                       accountingPeriodId,
-                      description: `Purchase Return Shipment ${shipment.data!.shipmentId}`,
+                      description: `Purchase Return Shipment ${shipmentHeader.shipmentId}`,
                       postingDate: today,
                       companyId,
                       sourceType: "Purchase Return Shipment",
@@ -2865,7 +2866,7 @@ export const postShipment = defineServerFn({
                       type: "Return Shipment",
                       sourceDocument: "Shipment",
                       sourceDocumentId: shipmentId,
-                      sourceDocumentReadableId: shipment.data!.shipmentId,
+                      sourceDocumentReadableId: shipmentHeader.shipmentId,
                       attributes: {
                         "Purchase Return Order": purchaseReturnOrderId,
                         Shipment: shipmentId,
@@ -2937,7 +2938,7 @@ export const postShipment = defineServerFn({
 
             default: {
               throw new Error(
-                `Invalid source document type: ${shipment.data.sourceDocument}`
+                `Invalid source document type: ${shipmentHeader.sourceDocument}`
               );
             }
           }
@@ -2946,14 +2947,14 @@ export const postShipment = defineServerFn({
         case "void": {
           // A void replays quantity rollbacks — voiding a shipment that is not
           // Posted (e.g. already Voided) would subtract them a second time.
-          if (shipment.data?.status !== "Posted") {
+          if (shipmentHeader.status !== "Posted") {
             throw new Error(
-              `Cannot void a shipment in ${shipment.data?.status} status`
+              `Cannot void a shipment in ${shipmentHeader.status} status`
             );
           }
-          switch (shipment.data?.sourceDocument) {
+          switch (shipmentHeader.sourceDocument) {
             case "Sales Order": {
-              if (!shipment.data.sourceDocumentId)
+              if (!shipmentHeader.sourceDocumentId)
                 throw new Error("Shipment has no sourceDocumentId");
 
               const [
@@ -2965,12 +2966,12 @@ export const postShipment = defineServerFn({
                 client
                   .from("salesOrder")
                   .select("*")
-                  .eq("id", shipment.data.sourceDocumentId)
+                  .eq("id", shipmentHeader.sourceDocumentId)
                   .single(),
                 client
                   .from("salesOrderLine")
                   .select("*")
-                  .eq("salesOrderId", shipment.data.sourceDocumentId),
+                  .eq("salesOrderId", shipmentHeader.sourceDocumentId),
                 client
                   .from("journalLine")
                   .select("*")
@@ -3030,7 +3031,7 @@ export const postShipment = defineServerFn({
                 Database["public"]["Tables"]["job"]["Update"]
               > = {};
 
-              const locationId = shipment.data.locationId;
+              const locationId = shipmentHeader.locationId;
               for await (const shipmentLine of shipmentLines.data) {
                 if (
                   shipmentLine.fulfillment?.type === "Job" &&
@@ -3122,7 +3123,7 @@ export const postShipment = defineServerFn({
                     storageUnitId: shipmentLine.storageUnitId,
                     entryType: "Positive Adjmt.",
                     documentType: "Sales Shipment",
-                    documentId: shipment.data?.id ?? undefined,
+                    documentId: shipmentHeader.id ?? undefined,
                     externalDocumentId: undefined,
                     createdBy: userId,
                     companyId
@@ -3138,7 +3139,7 @@ export const postShipment = defineServerFn({
                     storageUnitId: shipmentLine.storageUnitId,
                     entryType: "Positive Adjmt.",
                     documentType: "Sales Shipment",
-                    documentId: shipment.data?.id ?? undefined,
+                    documentId: shipmentHeader.id ?? undefined,
                     trackedEntityId: shipmentLineTracking.data?.find(
                       (tracking) =>
                         (
@@ -3172,7 +3173,7 @@ export const postShipment = defineServerFn({
                       storageUnitId: shipmentLine.storageUnitId,
                       entryType: "Positive Adjmt.",
                       documentType: "Sales Shipment",
-                      documentId: shipment.data?.id ?? undefined,
+                      documentId: shipmentHeader.id ?? undefined,
                       trackedEntityId: tracking.id,
                       externalDocumentId: undefined,
                       createdBy: userId,
@@ -3398,7 +3399,7 @@ export const postShipment = defineServerFn({
                       type: "Void Shipment",
                       sourceDocument: "Shipment",
                       sourceDocumentId: shipmentId,
-                      sourceDocumentReadableId: shipment.data!.shipmentId,
+                      sourceDocumentReadableId: shipmentHeader.shipmentId,
                       attributes: {
                         Shipment: shipmentId,
                         "Sales Order": salesOrder.data.id
@@ -3484,7 +3485,7 @@ export const postShipment = defineServerFn({
                     .values({
                       journalEntryId: voidJournalEntryId,
                       accountingPeriodId,
-                      description: `VOID: Sales Shipment ${shipment.data!.shipmentId}`,
+                      description: `VOID: Sales Shipment ${shipmentHeader.shipmentId}`,
                       postingDate: today,
                       companyId,
                       sourceType: "Sales Shipment",
@@ -3510,19 +3511,19 @@ export const postShipment = defineServerFn({
               break;
             }
             case "Purchase Order": {
-              if (!shipment.data.sourceDocumentId)
+              if (!shipmentHeader.sourceDocumentId)
                 throw new Error("Shipment has no sourceDocumentId");
 
               const [purchaseOrder, purchaseOrderLines] = await Promise.all([
                 client
                   .from("purchaseOrder")
                   .select("*")
-                  .eq("id", shipment.data.sourceDocumentId)
+                  .eq("id", shipmentHeader.sourceDocumentId)
                   .single(),
                 client
                   .from("purchaseOrderLine")
                   .select("*")
-                  .eq("purchaseOrderId", shipment.data.sourceDocumentId)
+                  .eq("purchaseOrderId", shipmentHeader.sourceDocumentId)
               ]);
               if (purchaseOrder.error)
                 throw new Error("Failed to fetch purchase order");
@@ -3645,7 +3646,7 @@ export const postShipment = defineServerFn({
 
               const itemLedgerInserts: Database["public"]["Tables"]["itemLedger"]["Insert"][] =
                 [];
-              const locationId = shipment.data.locationId;
+              const locationId = shipmentHeader.locationId;
 
               // Create reversing item ledger entries for purchase order void
               for await (const shipmentLine of shipmentLines.data) {
@@ -3669,7 +3670,7 @@ export const postShipment = defineServerFn({
                     storageUnitId: shipmentLine.storageUnitId,
                     entryType: "Negative Adjmt.",
                     documentType: "Purchase Receipt",
-                    documentId: shipment.data?.id ?? undefined,
+                    documentId: shipmentHeader.id ?? undefined,
                     externalDocumentId: undefined,
                     createdBy: userId,
                     companyId
@@ -3685,7 +3686,7 @@ export const postShipment = defineServerFn({
                     storageUnitId: shipmentLine.storageUnitId,
                     entryType: "Negative Adjmt.",
                     documentType: "Purchase Receipt",
-                    documentId: shipment.data?.id ?? undefined,
+                    documentId: shipmentHeader.id ?? undefined,
                     trackedEntityId: shipmentLineTracking.data?.find(
                       (tracking) =>
                         (
@@ -3719,7 +3720,7 @@ export const postShipment = defineServerFn({
                       storageUnitId: shipmentLine.storageUnitId,
                       entryType: "Negative Adjmt.",
                       documentType: "Purchase Receipt",
-                      documentId: shipment.data?.id ?? undefined,
+                      documentId: shipmentHeader.id ?? undefined,
                       trackedEntityId: tracking.id,
                       externalDocumentId: undefined,
                       createdBy: userId,
@@ -3772,7 +3773,7 @@ export const postShipment = defineServerFn({
                       type: "Void Shipment",
                       sourceDocument: "Shipment",
                       sourceDocumentId: shipmentId,
-                      sourceDocumentReadableId: shipment.data!.shipmentId,
+                      sourceDocumentReadableId: shipmentHeader.shipmentId,
                       attributes: {
                         Shipment: shipmentId,
                         "Purchase Order": purchaseOrder.data.id
@@ -3838,7 +3839,7 @@ export const postShipment = defineServerFn({
               break;
             }
             case "Outbound Transfer": {
-              if (!shipment.data.sourceDocumentId)
+              if (!shipmentHeader.sourceDocumentId)
                 throw new Error("Shipment has no sourceDocumentId");
 
               const [warehouseTransfer, warehouseTransferLines] =
@@ -3846,12 +3847,12 @@ export const postShipment = defineServerFn({
                   client
                     .from("warehouseTransfer")
                     .select("*")
-                    .eq("id", shipment.data.sourceDocumentId)
+                    .eq("id", shipmentHeader.sourceDocumentId)
                     .single(),
                   client
                     .from("warehouseTransferLine")
                     .select("*")
-                    .eq("transferId", shipment.data.sourceDocumentId)
+                    .eq("transferId", shipmentHeader.sourceDocumentId)
                 ]);
 
               if (warehouseTransfer.error)
@@ -3902,7 +3903,7 @@ export const postShipment = defineServerFn({
                     documentType: "Transfer Shipment",
                     documentId: warehouseTransfer.data?.transferId,
                     externalDocumentId:
-                      shipment.data?.externalDocumentId ?? undefined,
+                      shipmentHeader.externalDocumentId ?? undefined,
                     createdBy: userId,
                     companyId
                   });
@@ -3993,7 +3994,7 @@ export const postShipment = defineServerFn({
             case "Sales Return Order": {
               // Void a return-to-customer shipment: rebuild positive ledger,
               // sign-flip journal, entities back On Hold (their RMA state).
-              if (!shipment.data.sourceDocumentId)
+              if (!shipmentHeader.sourceDocumentId)
                 throw new Error("Shipment has no sourceDocumentId");
 
               const accountingSettings = await client
@@ -4139,7 +4140,7 @@ export const postShipment = defineServerFn({
                     .values({
                       journalEntryId,
                       accountingPeriodId,
-                      description: `VOID Return Shipment ${shipment.data?.shipmentId}`,
+                      description: `VOID Return Shipment ${shipmentHeader.shipmentId}`,
                       postingDate: today,
                       companyId,
                       sourceType: "Sales Return Shipment",
@@ -4205,9 +4206,9 @@ export const postShipment = defineServerFn({
                     type: "Void Shipment",
                     sourceDocument: "Shipment",
                     sourceDocumentId: shipmentId,
-                    sourceDocumentReadableId: shipment.data?.shipmentId,
+                    sourceDocumentReadableId: shipmentHeader.shipmentId,
                     attributes: {
-                      "Sales Return Order": shipment.data?.sourceDocumentId,
+                      "Sales Return Order": shipmentHeader.sourceDocumentId,
                       Shipment: shipmentId,
                       Employee: userId
                     },
@@ -4260,9 +4261,9 @@ export const postShipment = defineServerFn({
               // Void a supplier-return shipment: rebuild positive ledger,
               // sign-flip journal, roll back quantityShipped + ladder,
               // entities back to Available (their pre-shipment state).
-              if (!shipment.data.sourceDocumentId)
+              if (!shipmentHeader.sourceDocumentId)
                 throw new Error("Shipment has no sourceDocumentId");
-              const purchaseReturnOrderId = shipment.data.sourceDocumentId;
+              const purchaseReturnOrderId = shipmentHeader.sourceDocumentId;
 
               // Mirror of the sales-side guard in post-receipt: voiding after a
               // debit memo exists would leave quantityCredited > quantityShipped
@@ -4445,7 +4446,7 @@ export const postShipment = defineServerFn({
                     .values({
                       journalEntryId,
                       accountingPeriodId,
-                      description: `VOID Purchase Return Shipment ${shipment.data?.shipmentId}`,
+                      description: `VOID Purchase Return Shipment ${shipmentHeader.shipmentId}`,
                       postingDate: today,
                       companyId,
                       sourceType: "Purchase Return Shipment",
@@ -4555,7 +4556,7 @@ export const postShipment = defineServerFn({
                     type: "Void Shipment",
                     sourceDocument: "Shipment",
                     sourceDocumentId: shipmentId,
-                    sourceDocumentReadableId: shipment.data?.shipmentId,
+                    sourceDocumentReadableId: shipmentHeader.shipmentId,
                     attributes: {
                       "Purchase Return Order": purchaseReturnOrderId,
                       Shipment: shipmentId,
@@ -4608,7 +4609,7 @@ export const postShipment = defineServerFn({
 
             default: {
               throw new Error(
-                `Invalid source document type: ${shipment.data.sourceDocument}`
+                `Invalid source document type: ${shipmentHeader.sourceDocument}`
               );
             }
           }

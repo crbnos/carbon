@@ -107,6 +107,7 @@ export const postReceipt = defineServerFn({
 
       if (receipt.error) throw new Error("Failed to fetch receipt");
       if (!receipt.data) throw new NotFoundError("Receipt not found");
+      const receiptHeader = receipt.data;
       if (receiptLines.error) throw new Error("Failed to fetch receipt lines");
       if (dimensions.error) {
         logger.error("Failed to fetch dimensions", { error: dimensions.error });
@@ -214,36 +215,36 @@ export const postReceipt = defineServerFn({
       }
 
       if (type === "void") {
-        if (receipt.data?.status !== "Posted") {
+        if (receiptHeader.status !== "Posted") {
           throw new Error("Can only void posted receipts");
         }
 
-        if (receipt.data.invoiced) {
+        if (receiptHeader.invoiced) {
           throw new Error(
             "Cannot void a receipt created by a purchase invoice. Void the invoice instead."
           );
         }
 
         if (
-          receipt.data.sourceDocument !== "Purchase Order" &&
-          receipt.data.sourceDocument !== "Sales Return Order"
+          receiptHeader.sourceDocument !== "Purchase Order" &&
+          receiptHeader.sourceDocument !== "Sales Return Order"
         ) {
           throw new Error(
             `Void is only supported for receipts with source document "Purchase Order" or "Sales Return Order"`
           );
         }
 
-        if (!receipt.data.sourceDocumentId) {
+        if (!receiptHeader.sourceDocumentId) {
           throw new Error("Receipt has no sourceDocumentId");
         }
 
-        if (receipt.data.sourceDocument === "Sales Return Order") {
+        if (receiptHeader.sourceDocument === "Sales Return Order") {
           // Reverse a posted sales-return receipt: sign-flip the ledger +
           // journal, roll back the RMA quantities and status ladder, flip the
           // reactivated entities back to Consumed (their pre-receipt state), and
           // zero this receipt's own cost layers so FIFO can never consume voided
           // return stock.
-          const salesReturnOrderId = receipt.data.sourceDocumentId;
+          const salesReturnOrderId = receiptHeader.sourceDocumentId;
 
           // The PO void path blocks voiding an invoiced receipt; the analogous
           // hazard here is a credit memo. Voiding after crediting would leave
@@ -382,7 +383,7 @@ export const postReceipt = defineServerFn({
                 .values({
                   journalEntryId,
                   accountingPeriodId,
-                  description: `VOID Sales Return Receipt ${receipt.data?.receiptId}`,
+                  description: `VOID Sales Return Receipt ${receiptHeader.receiptId}`,
                   postingDate: today,
                   companyId,
                   sourceType: "Sales Return Receipt",
@@ -461,7 +462,7 @@ export const postReceipt = defineServerFn({
                 type: "Void Receipt",
                 sourceDocument: "Receipt",
                 sourceDocumentId: receiptId,
-                sourceDocumentReadableId: receipt.data?.receiptId,
+                sourceDocumentReadableId: receiptHeader.receiptId,
                 attributes: {
                   "Sales Return Order": salesReturnOrderId,
                   Receipt: receiptId,
@@ -533,7 +534,7 @@ export const postReceipt = defineServerFn({
           client
             .from("purchaseOrderLine")
             .select("*")
-            .eq("purchaseOrderId", receipt.data.sourceDocumentId)
+            .eq("purchaseOrderId", receiptHeader.sourceDocumentId)
         ]);
 
         if (originalItemLedger.error)
@@ -790,7 +791,7 @@ export const postReceipt = defineServerFn({
           await trx
             .updateTable("purchaseOrder")
             .set({ status: purchaseOrderStatusVoid })
-            .where("id", "=", receipt.data!.sourceDocumentId!)
+            .where("id", "=", receiptHeader.sourceDocumentId!)
             .where("companyId", "=", companyId)
             .execute();
 
@@ -806,7 +807,7 @@ export const postReceipt = defineServerFn({
               .values({
                 journalEntryId: voidJournalEntryId,
                 accountingPeriodId,
-                description: `VOID Purchase Receipt ${receipt.data!.receiptId}`,
+                description: `VOID Purchase Receipt ${receiptHeader.receiptId}`,
                 postingDate: today,
                 companyId,
                 sourceType: "Purchase Receipt",
@@ -846,9 +847,9 @@ export const postReceipt = defineServerFn({
                 type: "Void Receipt",
                 sourceDocument: "Receipt",
                 sourceDocumentId: receiptId,
-                sourceDocumentReadableId: receipt.data!.receiptId,
+                sourceDocumentReadableId: receiptHeader.receiptId,
                 attributes: {
-                  "Purchase Order": receipt.data!.sourceDocumentId,
+                  "Purchase Order": receiptHeader.sourceDocumentId,
                   Receipt: receiptId,
                   Employee: userId
                 },
@@ -902,13 +903,13 @@ export const postReceipt = defineServerFn({
         return { success: true };
       }
 
-      if (receipt.data?.status === "Voided") {
+      if (receiptHeader.status === "Voided") {
         throw new Error("Cannot post a voided receipt");
       }
 
-      switch (receipt.data?.sourceDocument) {
+      switch (receiptHeader.sourceDocument) {
         case "Purchase Order": {
-          if (!receipt.data.sourceDocumentId)
+          if (!receiptHeader.sourceDocumentId)
             throw new Error("Receipt has no sourceDocumentId");
 
           const [purchaseOrder, purchaseOrderLines, purchaseOrderDelivery] =
@@ -916,16 +917,16 @@ export const postReceipt = defineServerFn({
               client
                 .from("purchaseOrder")
                 .select("*")
-                .eq("id", receipt.data.sourceDocumentId)
+                .eq("id", receiptHeader.sourceDocumentId)
                 .single(),
               client
                 .from("purchaseOrderLine")
                 .select("*")
-                .eq("purchaseOrderId", receipt.data.sourceDocumentId),
+                .eq("purchaseOrderId", receiptHeader.sourceDocumentId),
               client
                 .from("purchaseOrderDelivery")
                 .select("supplierShippingCost")
-                .eq("id", receipt.data.sourceDocumentId)
+                .eq("id", receiptHeader.sourceDocumentId)
                 .single()
             ]);
           if (purchaseOrder.error)
@@ -1122,7 +1123,7 @@ export const postReceipt = defineServerFn({
               sourceDocument: "Receipt",
               sourceDocumentId: receiptId,
               sourceDocumentLineId: receiptLine.id,
-              sourceDocumentReadableId: receipt.data.receiptId ?? null,
+              sourceDocumentReadableId: receiptHeader.receiptId ?? null,
               itemId: receiptLine.itemId,
               supplierId: purchaseOrder.data.supplierId ?? null,
               lotSize: safeReceivedQuantity,
@@ -1486,7 +1487,7 @@ export const postReceipt = defineServerFn({
                   amount: round(debit("liability", cost)),
                   quantity: round(absReceivedQuantity),
                   documentType: "Receipt",
-                  documentId: receipt.data?.id ?? undefined,
+                  documentId: receiptHeader.id ?? undefined,
                   externalDocumentId:
                     purchaseOrder.data?.supplierReference ?? undefined,
                   documentLineReference: journalReference.to.receipt(
@@ -1503,7 +1504,7 @@ export const postReceipt = defineServerFn({
                   amount: round(credit("asset", cost)),
                   quantity: round(absReceivedQuantity),
                   documentType: "Receipt",
-                  documentId: receipt.data?.id ?? undefined,
+                  documentId: receiptHeader.id ?? undefined,
                   externalDocumentId:
                     purchaseOrder.data?.supplierReference ?? undefined,
                   documentLineReference: journalReference.to.receipt(
@@ -1531,7 +1532,7 @@ export const postReceipt = defineServerFn({
                   amount: round(debit("asset", glCost)),
                   quantity: round(absReceivedQuantity),
                   documentType: "Receipt",
-                  documentId: receipt.data?.id ?? undefined,
+                  documentId: receiptHeader.id ?? undefined,
                   externalDocumentId:
                     purchaseOrder.data?.supplierReference ?? undefined,
                   documentLineReference: journalReference.to.receipt(
@@ -1548,7 +1549,7 @@ export const postReceipt = defineServerFn({
                   amount: round(credit("liability", glCost)),
                   quantity: round(absReceivedQuantity),
                   documentType: "Receipt",
-                  documentId: receipt.data?.id ?? undefined,
+                  documentId: receiptHeader.id ?? undefined,
                   externalDocumentId:
                     purchaseOrder.data?.supplierReference ?? undefined,
                   documentLineReference: journalReference.to.receipt(
@@ -1578,9 +1579,9 @@ export const postReceipt = defineServerFn({
                   costLedgerType: "Direct Cost",
                   adjustment: false,
                   documentType: "Purchase Receipt",
-                  documentId: receipt.data?.id ?? undefined,
+                  documentId: receiptHeader.id ?? undefined,
                   externalDocumentId:
-                    receipt.data?.externalDocumentId ?? undefined,
+                    receiptHeader.externalDocumentId ?? undefined,
                   itemId: receiptLine.itemId,
                   quantity: round(invoiceFirstQty),
                   nominalCost: round(
@@ -1601,9 +1602,9 @@ export const postReceipt = defineServerFn({
                   costLedgerType: "Direct Cost",
                   adjustment: false,
                   documentType: "Purchase Receipt",
-                  documentId: receipt.data?.id ?? undefined,
+                  documentId: receiptHeader.id ?? undefined,
                   externalDocumentId:
-                    receipt.data?.externalDocumentId ?? undefined,
+                    receiptHeader.externalDocumentId ?? undefined,
                   itemId: receiptLine.itemId,
                   quantity: round(normalQty),
                   nominalCost: round(normalQty * (receiptLine.unitPrice ?? 0)),
@@ -1629,9 +1630,9 @@ export const postReceipt = defineServerFn({
                 storageUnitId: receiptLine.storageUnitId,
                 entryType,
                 documentType: "Purchase Receipt",
-                documentId: receipt.data?.id ?? undefined,
+                documentId: receiptHeader.id ?? undefined,
                 externalDocumentId:
-                  receipt.data?.externalDocumentId ?? undefined,
+                  receiptHeader.externalDocumentId ?? undefined,
                 createdBy: userId,
                 companyId
               });
@@ -1649,7 +1650,7 @@ export const postReceipt = defineServerFn({
                 storageUnitId: receiptLine.storageUnitId,
                 entryType,
                 documentType: "Purchase Receipt",
-                documentId: receipt.data?.id ?? undefined,
+                documentId: receiptHeader.id ?? undefined,
                 trackedEntityId: receiptLineTracking.data?.find(
                   (tracking) =>
                     (
@@ -1657,7 +1658,7 @@ export const postReceipt = defineServerFn({
                     )?.["Receipt Line"] === receiptLine.id
                 )?.id,
                 externalDocumentId:
-                  receipt.data?.externalDocumentId ?? undefined,
+                  receiptHeader.externalDocumentId ?? undefined,
                 createdBy: userId,
                 companyId
               });
@@ -1697,10 +1698,10 @@ export const postReceipt = defineServerFn({
                   storageUnitId: receiptLine.storageUnitId,
                   entryType,
                   documentType: "Purchase Receipt",
-                  documentId: receipt.data?.id ?? undefined,
+                  documentId: receiptHeader.id ?? undefined,
                   trackedEntityId: trackingWithIndex?.id,
                   externalDocumentId:
-                    receipt.data?.externalDocumentId ?? undefined,
+                    receiptHeader.externalDocumentId ?? undefined,
                   createdBy: userId,
                   companyId
                 });
@@ -1785,7 +1786,7 @@ export const postReceipt = defineServerFn({
                 amount: round(debit("asset", cost)),
                 quantity: round(quantity),
                 documentType: "Receipt",
-                documentId: receipt.data?.id ?? undefined,
+                documentId: receiptHeader.id ?? undefined,
                 externalDocumentId:
                   purchaseOrder.data?.supplierReference ?? undefined,
                 documentLineReference: journalReference.to.receipt(
@@ -1801,7 +1802,7 @@ export const postReceipt = defineServerFn({
                 amount: round(credit("liability", cost)),
                 quantity: round(quantity),
                 documentType: "Receipt",
-                documentId: receipt.data?.id ?? undefined,
+                documentId: receiptHeader.id ?? undefined,
                 externalDocumentId:
                   purchaseOrder.data?.supplierReference ?? undefined,
                 documentLineReference: journalReference.to.receipt(
@@ -1818,7 +1819,7 @@ export const postReceipt = defineServerFn({
                   itemId: null,
                   locationId:
                     faPoLine.locationId ??
-                    receipt.data.locationId ??
+                    receiptHeader.locationId ??
                     assetRecord.data.locationId ??
                     null,
                   processId: null,
@@ -1847,7 +1848,7 @@ export const postReceipt = defineServerFn({
               }
 
               const faLineLocationId =
-                faPoLine.locationId ?? receipt.data.locationId;
+                faPoLine.locationId ?? receiptHeader.locationId;
               if (faLineLocationId) {
                 updateData.locationId = faLineLocationId;
               }
@@ -1902,7 +1903,7 @@ export const postReceipt = defineServerFn({
                 costLedgerType: "Direct Cost",
                 adjustment: false,
                 documentType: "Purchase Receipt",
-                documentId: receipt.data?.id ?? undefined,
+                documentId: receiptHeader.id ?? undefined,
                 itemId: consumption.itemId,
                 quantity: round(-consumption.quantity),
                 cost: round(-consumedCost),
@@ -2104,9 +2105,9 @@ export const postReceipt = defineServerFn({
               .updateTable("purchaseOrderDelivery")
               .set({
                 deliveryDate: today,
-                locationId: receipt.data!.locationId
+                locationId: receiptHeader.locationId
               })
-              .where("id", "=", receipt.data!.sourceDocumentId)
+              .where("id", "=", receiptHeader.sourceDocumentId)
               .where("companyId", "=", companyId)
               .execute();
 
@@ -2122,7 +2123,7 @@ export const postReceipt = defineServerFn({
                 .values({
                   journalEntryId,
                   accountingPeriodId,
-                  description: `Purchase Receipt ${receipt.data!.receiptId}`,
+                  description: `Purchase Receipt ${receiptHeader.receiptId}`,
                   postingDate: today,
                   companyId,
                   sourceType: "Purchase Receipt",
@@ -2260,9 +2261,9 @@ export const postReceipt = defineServerFn({
                   type: "Receive",
                   sourceDocument: "Receipt",
                   sourceDocumentId: receiptId,
-                  sourceDocumentReadableId: receipt.data!.receiptId,
+                  sourceDocumentReadableId: receiptHeader.receiptId,
                   attributes: {
-                    "Purchase Order": receipt.data!.sourceDocumentId,
+                    "Purchase Order": receiptHeader.sourceDocumentId,
                     Receipt: receiptId,
                     Employee: userId
                   },
@@ -2352,9 +2353,9 @@ export const postReceipt = defineServerFn({
           // at current cost for blind returns, and at ZERO when the line's
           // return reason flags inventoryValueZero. Entities re-enter On Hold —
           // disposition is the only path to Available.
-          if (!receipt.data.sourceDocumentId)
+          if (!receiptHeader.sourceDocumentId)
             throw new Error("Receipt has no sourceDocumentId");
-          const salesReturnOrderId = receipt.data.sourceDocumentId;
+          const salesReturnOrderId = receiptHeader.sourceDocumentId;
 
           const [salesReturnOrder, salesReturnOrderLines, itemCostDetails] =
             await Promise.all([
@@ -2566,9 +2567,9 @@ export const postReceipt = defineServerFn({
                 storageUnitId: receiptLine.storageUnitId,
                 entryType: "Positive Adjmt.",
                 documentType: "Sales Return Receipt",
-                documentId: receipt.data?.id ?? undefined,
+                documentId: receiptHeader.id ?? undefined,
                 externalDocumentId:
-                  receipt.data?.externalDocumentId ?? undefined,
+                  receiptHeader.externalDocumentId ?? undefined,
                 createdBy: userId,
                 companyId
               });
@@ -2589,10 +2590,10 @@ export const postReceipt = defineServerFn({
                 storageUnitId: receiptLine.storageUnitId,
                 entryType: "Positive Adjmt.",
                 documentType: "Sales Return Receipt",
-                documentId: receipt.data?.id ?? undefined,
+                documentId: receiptHeader.id ?? undefined,
                 trackedEntityId: entity?.id,
                 externalDocumentId:
-                  receipt.data?.externalDocumentId ?? undefined,
+                  receiptHeader.externalDocumentId ?? undefined,
                 createdBy: userId,
                 companyId
               });
@@ -2626,10 +2627,10 @@ export const postReceipt = defineServerFn({
                   storageUnitId: receiptLine.storageUnitId,
                   entryType: "Positive Adjmt.",
                   documentType: "Sales Return Receipt",
-                  documentId: receipt.data?.id ?? undefined,
+                  documentId: receiptHeader.id ?? undefined,
                   trackedEntityId: trackingWithIndex?.id,
                   externalDocumentId:
-                    receipt.data?.externalDocumentId ?? undefined,
+                    receiptHeader.externalDocumentId ?? undefined,
                   createdBy: userId,
                   companyId
                 });
@@ -2651,9 +2652,9 @@ export const postReceipt = defineServerFn({
                 costLedgerType: "Direct Cost",
                 adjustment: false,
                 documentType: "Sales Return Receipt",
-                documentId: receipt.data?.id ?? undefined,
+                documentId: receiptHeader.id ?? undefined,
                 externalDocumentId:
-                  receipt.data?.externalDocumentId ?? undefined,
+                  receiptHeader.externalDocumentId ?? undefined,
                 itemId: receiptLine.itemId,
                 quantity: round(receivedQuantity),
                 nominalCost: round(cost),
@@ -2679,9 +2680,9 @@ export const postReceipt = defineServerFn({
                 amount: round(debit("asset", cost)),
                 quantity: round(receivedQuantity),
                 documentType: "Receipt",
-                documentId: receipt.data?.id ?? undefined,
+                documentId: receiptHeader.id ?? undefined,
                 externalDocumentId:
-                  receipt.data?.externalDocumentId ?? undefined,
+                  receiptHeader.externalDocumentId ?? undefined,
                 documentLineReference: journalReference.to.receipt(
                   receiptLine.lineId
                 ),
@@ -2695,9 +2696,9 @@ export const postReceipt = defineServerFn({
                 amount: round(credit("expense", cost)),
                 quantity: round(receivedQuantity),
                 documentType: "Receipt",
-                documentId: receipt.data?.id ?? undefined,
+                documentId: receiptHeader.id ?? undefined,
                 externalDocumentId:
-                  receipt.data?.externalDocumentId ?? undefined,
+                  receiptHeader.externalDocumentId ?? undefined,
                 documentLineReference: journalReference.to.receipt(
                   receiptLine.lineId
                 ),
@@ -2824,7 +2825,7 @@ export const postReceipt = defineServerFn({
                 .values({
                   journalEntryId,
                   accountingPeriodId,
-                  description: `Sales Return Receipt ${receipt.data!.receiptId}`,
+                  description: `Sales Return Receipt ${receiptHeader.receiptId}`,
                   postingDate: today,
                   companyId,
                   sourceType: "Sales Return Receipt",
@@ -2887,7 +2888,7 @@ export const postReceipt = defineServerFn({
                   type: "Return Receipt",
                   sourceDocument: "Receipt",
                   sourceDocumentId: receiptId,
-                  sourceDocumentReadableId: receipt.data!.receiptId,
+                  sourceDocumentReadableId: receiptHeader.receiptId,
                   attributes: {
                     "Sales Return Order": salesReturnOrderId,
                     Receipt: receiptId,
@@ -2931,7 +2932,7 @@ export const postReceipt = defineServerFn({
           break;
         }
         case "Inbound Transfer": {
-          if (!receipt.data.sourceDocumentId)
+          if (!receiptHeader.sourceDocumentId)
             throw new Error("Receipt has no sourceDocumentId");
 
           const [warehouseTransfer, warehouseTransferLines] = await Promise.all(
@@ -2939,12 +2940,12 @@ export const postReceipt = defineServerFn({
               client
                 .from("warehouseTransfer")
                 .select("*")
-                .eq("id", receipt.data.sourceDocumentId)
+                .eq("id", receiptHeader.sourceDocumentId)
                 .single(),
               client
                 .from("warehouseTransferLine")
                 .select("*")
-                .eq("transferId", receipt.data.sourceDocumentId)
+                .eq("transferId", receiptHeader.sourceDocumentId)
             ]
           );
 
@@ -3046,7 +3047,7 @@ export const postReceipt = defineServerFn({
               entryType: "Transfer",
               documentType: "Transfer Receipt",
               documentId: warehouseTransfer.data?.transferId,
-              externalDocumentId: receipt.data?.externalDocumentId ?? undefined,
+              externalDocumentId: receiptHeader.externalDocumentId ?? undefined,
               createdBy: userId,
               companyId
             });
@@ -3069,7 +3070,7 @@ export const postReceipt = defineServerFn({
                 amount: round(credit("asset", totalValue)),
                 quantity: round(Math.abs(receivedQuantity)),
                 documentType: "Receipt",
-                documentId: receipt.data?.id,
+                documentId: receiptHeader.id,
                 externalDocumentId: warehouseTransfer.data?.transferId,
                 documentLineReference: `transfer-receipt:${receiptLine.lineId}`,
                 journalLineReference,
@@ -3082,7 +3083,7 @@ export const postReceipt = defineServerFn({
                 amount: round(debit("asset", totalValue)),
                 quantity: round(Math.abs(receivedQuantity)),
                 documentType: "Receipt",
-                documentId: receipt.data?.id,
+                documentId: receiptHeader.id,
                 externalDocumentId: warehouseTransfer.data?.transferId,
                 documentLineReference: `transfer-receipt:${receiptLine.lineId}`,
                 journalLineReference,
@@ -3175,7 +3176,7 @@ export const postReceipt = defineServerFn({
                 .values({
                   journalEntryId: transferJournalEntryId,
                   accountingPeriodId,
-                  description: `Transfer Receipt ${receipt.data!.receiptId}`,
+                  description: `Transfer Receipt ${receiptHeader.receiptId}`,
                   postingDate: today,
                   companyId,
                   sourceType: "Transfer Receipt",

@@ -847,6 +847,7 @@ export const convert = defineServerFn({
 
         if (salesOrder.error) throw new Error(salesOrder.error.message);
         if (!salesOrder.data) throw new NotFoundError("Sales order not found");
+        const order = salesOrder.data;
         if (salesOrderLines.error)
           throw new Error(salesOrderLines.error.message);
         if (salesOrderPayment.error)
@@ -857,6 +858,7 @@ export const convert = defineServerFn({
           throw new Error(salesOrderShipment.error.message);
         if (!salesOrderShipment.data)
           throw new NotFoundError("Sales order delivery details not found");
+        const orderShipment = salesOrderShipment.data;
 
         const uninvoicedLines = salesOrderLines?.data?.reduce<
           (typeof salesOrderLines)["data"]
@@ -894,22 +896,22 @@ export const convert = defineServerFn({
             .values({
               invoiceId: salesInvoiceId!,
               status: "Draft",
-              customerId: salesOrder.data!.customerId,
-              customerReference: salesOrder.data!.customerReference ?? "",
+              customerId: order.customerId,
+              customerReference: order.customerReference ?? "",
               invoiceCustomerId: salesOrderPayment.data!.invoiceCustomerId,
               invoiceCustomerContactId:
                 salesOrderPayment.data!.invoiceCustomerContactId,
               invoiceCustomerLocationId:
                 salesOrderPayment.data!.invoiceCustomerLocationId,
-              locationId: salesOrderShipment.data!.locationId,
+              locationId: orderShipment.locationId,
               paymentTermId: salesOrderPayment.data!.paymentTermId,
-              currencyCode: salesOrder.data!.currencyCode ?? "USD",
+              currencyCode: order.currencyCode ?? "USD",
               dateIssued: datetime
                 .today(await getCompanyTimeZone(client, companyId))
                 .toString(),
-              exchangeRate: salesOrder.data!.exchangeRate ?? 1,
+              exchangeRate: order.exchangeRate ?? 1,
               subtotal: uninvoicedSubtotal ?? 0,
-              opportunityId: salesOrder.data!.opportunityId,
+              opportunityId: order.opportunityId,
               totalDiscount: 0,
               totalAmount: uninvoicedSubtotal ?? 0,
               totalTax: 0,
@@ -926,12 +928,12 @@ export const convert = defineServerFn({
             .insertInto("salesInvoiceShipment")
             .values({
               id: salesInvoiceId,
-              locationId: salesOrderShipment.data!.locationId,
-              shippingCost: salesOrderShipment.data!.shippingCost ?? 0,
-              shippingMethodId: salesOrderShipment.data!.shippingMethodId,
-              shippingTermId: salesOrderShipment.data!.shippingTermId,
-              incoterm: salesOrderShipment.data!.incoterm,
-              incotermLocation: salesOrderShipment.data!.incotermLocation,
+              locationId: orderShipment.locationId,
+              shippingCost: orderShipment.shippingCost ?? 0,
+              shippingMethodId: orderShipment.shippingMethodId,
+              shippingTermId: orderShipment.shippingTermId,
+              incoterm: orderShipment.incoterm,
+              incotermLocation: orderShipment.incotermLocation,
               companyId,
               createdBy: userId
             })
@@ -1465,6 +1467,7 @@ export const convert = defineServerFn({
 
         if (salesOrder.error) throw new Error(salesOrder.error.message);
         if (!salesOrder.data) throw new NotFoundError("Sales order not found");
+        const order = salesOrder.data;
         if (salesOrderLines.error)
           throw new Error(salesOrderLines.error.message);
         if (salesOrderPayment.error)
@@ -1475,6 +1478,7 @@ export const convert = defineServerFn({
           throw new Error(salesOrderShipment.error.message);
         if (!salesOrderShipment.data)
           throw new NotFoundError("Sales order delivery details not found");
+        const orderShipment = salesOrderShipment.data;
 
         const uninvoicedLines = salesOrderLines?.data?.reduce<
           (typeof salesOrderLines)["data"]
@@ -1524,22 +1528,22 @@ export const convert = defineServerFn({
             .values({
               invoiceId: salesInvoiceId!,
               status: "Draft",
-              customerId: salesOrder.data!.customerId,
-              customerReference: salesOrder.data!.customerReference ?? "",
+              customerId: order.customerId,
+              customerReference: order.customerReference ?? "",
               invoiceCustomerId: salesOrderPayment.data!.invoiceCustomerId,
               invoiceCustomerContactId:
                 salesOrderPayment.data!.invoiceCustomerContactId,
               invoiceCustomerLocationId:
                 salesOrderPayment.data!.invoiceCustomerLocationId,
-              locationId: salesOrderShipment.data!.locationId,
+              locationId: orderShipment.locationId,
               paymentTermId: salesOrderPayment.data!.paymentTermId,
-              currencyCode: salesOrder.data!.currencyCode ?? "USD",
+              currencyCode: order.currencyCode ?? "USD",
               dateIssued: datetime
                 .today(await getCompanyTimeZone(client, companyId))
                 .toString(),
-              exchangeRate: salesOrder.data!.exchangeRate ?? 1,
+              exchangeRate: order.exchangeRate ?? 1,
               subtotal: uninvoicedSubtotal ?? 0,
-              opportunityId: salesOrder.data!.opportunityId,
+              opportunityId: order.opportunityId,
               shipmentId: shipmentId,
               totalDiscount: 0,
               totalAmount: uninvoicedSubtotal ?? 0,
@@ -1557,12 +1561,12 @@ export const convert = defineServerFn({
             .insertInto("salesInvoiceShipment")
             .values({
               id: salesInvoiceId,
-              locationId: salesOrderShipment.data!.locationId,
-              shippingCost: salesOrderShipment.data!.shippingCost ?? 0,
-              shippingMethodId: salesOrderShipment.data!.shippingMethodId,
-              shippingTermId: salesOrderShipment.data!.shippingTermId,
-              incoterm: salesOrderShipment.data!.incoterm,
-              incotermLocation: salesOrderShipment.data!.incotermLocation,
+              locationId: orderShipment.locationId,
+              shippingCost: orderShipment.shippingCost ?? 0,
+              shippingMethodId: orderShipment.shippingMethodId,
+              shippingTermId: orderShipment.shippingTermId,
+              incoterm: orderShipment.incoterm,
+              incotermLocation: orderShipment.incotermLocation,
               companyId,
               createdBy: userId
             })

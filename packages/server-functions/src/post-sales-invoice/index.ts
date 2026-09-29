@@ -95,6 +95,7 @@ export const postSalesInvoice = defineServerFn({
       if (salesInvoice.error) throw new Error("Failed to fetch salesInvoice");
       if (!salesInvoice.data)
         throw new NotFoundError("Sales invoice not found");
+      const invoiceHeader = salesInvoice.data;
       if (salesInvoiceLines.error)
         throw new Error("Failed to fetch shipment lines");
       if (salesInvoiceShipment.error)
@@ -154,7 +155,7 @@ export const postSalesInvoice = defineServerFn({
             client
               .from("customer")
               .select("*")
-              .eq("id", salesInvoice.data.customerId ?? "")
+              .eq("id", invoiceHeader.customerId ?? "")
               .eq("companyId", companyId)
               .single()
           ]);
@@ -318,10 +319,9 @@ export const postSalesInvoice = defineServerFn({
               : accountDefaults?.data?.receivablesAccount;
 
           const invoiceCurrencyCode =
-            salesInvoice.data.currencyCode ??
-            companyRecord.data.baseCurrencyCode;
+            invoiceHeader.currencyCode ?? companyRecord.data.baseCurrencyCode;
           const invoiceExchangeRate =
-            salesInvoice.data.exchangeRate ??
+            invoiceHeader.exchangeRate ??
             (invoiceCurrencyCode === companyRecord.data.baseCurrencyCode
               ? 1
               : Number.NaN);
@@ -493,8 +493,8 @@ export const postSalesInvoice = defineServerFn({
             const postingContext = {
               companyId,
               companyGroupId: companyGroupId!,
-              documentId: salesInvoice.data.id,
-              externalDocumentId: salesInvoice.data.customerReference,
+              documentId: invoiceHeader.id,
+              externalDocumentId: invoiceHeader.customerReference,
               documentLineReference: invoiceLine.salesOrderLineId
                 ? journalReference.to.salesInvoice(invoiceLine.salesOrderLineId)
                 : null,
@@ -576,9 +576,9 @@ export const postSalesInvoice = defineServerFn({
                         storageUnitId: invoiceLine.storageUnitId,
                         entryType: "Negative Adjmt.",
                         documentType: "Sales Shipment",
-                        documentId: salesInvoice.data?.id ?? undefined,
+                        documentId: invoiceHeader.id ?? undefined,
                         externalDocumentId:
-                          salesInvoice.data?.customerReference ?? undefined,
+                          invoiceHeader.customerReference ?? undefined,
                         createdBy: userId,
                         companyId
                       });
@@ -602,9 +602,8 @@ export const postSalesInvoice = defineServerFn({
                           amount: 0,
                           quantity: round(invoiceLineQuantityInInventoryUnit),
                           documentType: "Invoice",
-                          documentId: salesInvoice.data?.id,
-                          externalDocumentId:
-                            salesInvoice.data?.customerReference,
+                          documentId: invoiceHeader.id,
+                          externalDocumentId: invoiceHeader.customerReference,
                           journalLineReference: cogsJournalLineReference,
                           companyId
                         });
@@ -619,9 +618,8 @@ export const postSalesInvoice = defineServerFn({
                           amount: 0,
                           quantity: round(invoiceLineQuantityInInventoryUnit),
                           documentType: "Invoice",
-                          documentId: salesInvoice.data?.id,
-                          externalDocumentId:
-                            salesInvoice.data?.customerReference,
+                          documentId: invoiceHeader.id,
+                          externalDocumentId: invoiceHeader.customerReference,
                           journalLineReference: cogsJournalLineReference,
                           companyId
                         });
@@ -786,19 +784,19 @@ export const postSalesInvoice = defineServerFn({
                     shipmentId: readableShipmentId ?? "x",
                     locationId,
                     sourceDocument: "Sales Invoice",
-                    sourceDocumentId: salesInvoice.data!.id,
-                    sourceDocumentReadableId: salesInvoice.data!.invoiceId,
+                    sourceDocumentId: invoiceHeader.id,
+                    sourceDocumentReadableId: invoiceHeader.invoiceId,
                     shippingMethodId:
                       salesInvoiceShipment.data?.shippingMethodId,
-                    customerId: salesInvoice.data!.customerId,
-                    externalDocumentId: salesInvoice.data!.customerReference,
+                    customerId: invoiceHeader.customerId,
+                    externalDocumentId: invoiceHeader.customerReference,
                     status: "Posted",
                     postingDate: today,
                     postedBy: userId,
                     invoiced: true,
-                    opportunityId: salesInvoice.data!.opportunityId,
+                    opportunityId: invoiceHeader.opportunityId,
                     companyId,
-                    createdBy: salesInvoice.data!.createdBy
+                    createdBy: invoiceHeader.createdBy
                   })
                   .returning(["id"])
                   .execute();
@@ -933,7 +931,7 @@ export const postSalesInvoice = defineServerFn({
                       costLedgerType: "Direct Cost",
                       adjustment: false,
                       documentType: "Sales Shipment",
-                      documentId: salesInvoice.data?.id ?? "",
+                      documentId: invoiceHeader.id ?? "",
                       itemId: directLine.itemId,
                       quantity: round(-directLine.quantity),
                       cost: round(-cogsResult.totalCost),
@@ -961,7 +959,7 @@ export const postSalesInvoice = defineServerFn({
                 .values({
                   journalEntryId,
                   accountingPeriodId,
-                  description: `Sales Invoice ${salesInvoice.data?.invoiceId}`,
+                  description: `Sales Invoice ${invoiceHeader.invoiceId}`,
                   postingDate: today,
                   companyId,
                   sourceType: "Sales Invoice",
@@ -1053,13 +1051,13 @@ export const postSalesInvoice = defineServerFn({
                     });
                   }
                   if (
-                    salesInvoice.data?.customerId &&
+                    invoiceHeader.customerId &&
                     dimensionMap.has("Customer")
                   ) {
                     journalLineDimensionInserts.push({
                       journalLineId: jl.id,
                       dimensionId: dimensionMap.get("Customer")!,
-                      valueId: salesInvoice.data.customerId,
+                      valueId: invoiceHeader.customerId,
                       companyId
                     });
                   }
@@ -1082,13 +1080,13 @@ export const postSalesInvoice = defineServerFn({
                 .execute();
             }
 
-            if (salesInvoice.data!.shipmentId) {
+            if (invoiceHeader.shipmentId) {
               await trx
                 .updateTable("shipment")
                 .set({
                   invoiced: true
                 })
-                .where("id", "=", salesInvoice.data!.shipmentId)
+                .where("id", "=", invoiceHeader.shipmentId)
                 .where("companyId", "=", companyId)
                 .execute();
             }
@@ -1131,9 +1129,9 @@ export const postSalesInvoice = defineServerFn({
                     sourceJournalLineId: icJournalLineId,
                     amount: intercompanyAmount,
                     currencyCode: invoiceCurrencyCode,
-                    description: `Sales Invoice ${salesInvoice.data?.invoiceId}`,
+                    description: `Sales Invoice ${invoiceHeader.invoiceId}`,
                     documentType: "Invoice",
-                    documentId: salesInvoice.data?.id,
+                    documentId: invoiceHeader.id,
                     status: "Unmatched"
                   })
                   .returning(["id"])
@@ -1298,11 +1296,11 @@ export const postSalesInvoice = defineServerFn({
             // Posting stamps dateIssued with today, so recompute dateDue from
             // the payment term to keep it consistent with the new issue date.
             // With no payment term the invoice still gets one, via Net 30.
-            const paymentTerm = salesInvoice.data?.paymentTermId
+            const paymentTerm = invoiceHeader.paymentTermId
               ? await trx
                   .selectFrom("paymentTerm")
                   .select(["daysDue", "calculationMethod"])
-                  .where("id", "=", salesInvoice.data.paymentTermId)
+                  .where("id", "=", invoiceHeader.paymentTermId)
                   .where("companyId", "=", companyId)
                   .executeTakeFirst()
               : undefined;
@@ -1404,7 +1402,7 @@ export const postSalesInvoice = defineServerFn({
                 amount: -entry.amount,
                 quantity: -entry.quantity,
                 documentType: "Invoice" as const,
-                documentId: salesInvoice.data?.id,
+                documentId: invoiceHeader.id,
                 externalDocumentId: entry.externalDocumentId,
                 documentLineReference: entry.documentLineReference,
                 journalLineReference: entry.journalLineReference,
@@ -1435,7 +1433,7 @@ export const postSalesInvoice = defineServerFn({
                     ? "Positive Adjmt."
                     : "Negative Adjmt.",
                 documentType: "Sales Shipment",
-                documentId: salesInvoice.data?.id ?? undefined,
+                documentId: invoiceHeader.id ?? undefined,
                 externalDocumentId: entry.externalDocumentId,
                 createdBy: userId,
                 companyId
@@ -1535,7 +1533,7 @@ export const postSalesInvoice = defineServerFn({
                 .values({
                   journalEntryId: voidJournalEntryId,
                   accountingPeriodId,
-                  description: `VOID Sales Invoice ${salesInvoice.data?.invoiceId}`,
+                  description: `VOID Sales Invoice ${invoiceHeader.invoiceId}`,
                   postingDate: today,
                   companyId,
                   sourceType: "Sales Invoice",
@@ -1588,13 +1586,13 @@ export const postSalesInvoice = defineServerFn({
             }
 
             // Remove invoiced flag from related shipment if it exists
-            if (salesInvoice.data!.shipmentId) {
+            if (invoiceHeader.shipmentId) {
               await trx
                 .updateTable("shipment")
                 .set({
                   invoiced: false
                 })
-                .where("id", "=", salesInvoice.data!.shipmentId)
+                .where("id", "=", invoiceHeader.shipmentId)
                 .where("companyId", "=", companyId)
                 .execute();
             }
