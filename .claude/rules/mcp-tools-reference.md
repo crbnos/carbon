@@ -337,12 +337,11 @@ dispatcher (`apps/erp/app/routes/api+/inngest.ts`). There is no separate
   - `CallResult.error` (MCP, the in-app agent, workflows) carries a **fixed
     message from the closed set** in `api+/v1+/lib/database-errors.ts` —
     `conflict`, `reference`, `required`, `permission`, `notFound`, `rule`,
-    `unknown`. `classifyDatabaseFailure` picks one from STRUCTURED fields only
-    (a Postgres SQLSTATE, or the `FunctionsHttpError` name); message text is never
-    parsed, since parsing it would make the public string a function of the private
-    one. It used to interpolate `JSON.stringify(error)`, which handed a caller the
-    column, constraint and value out of the PostgREST body, and later an edge
-    function's own text — CWE-209 either way.
+    `unknown`. `classifyDatabaseFailure` picks one from the Postgres/PostgREST
+    `code` only; message text is never parsed, since parsing it would make the
+    public string a function of the private one. It used to interpolate
+    `JSON.stringify(error)`, which handed a caller the column, constraint and value
+    out of the PostgREST body — CWE-209.
   - The one exception is a service's own refusal: an error built with
     `ruleError(message)` (`~/utils/supabase`, code `CARBON_RULE`) is written for
     the caller, so `isServiceRuleError` lets `callOperation` return its message
@@ -357,11 +356,14 @@ dispatcher (`apps/erp/app/routes/api+/inngest.ts`). There is no separate
     receive the Postgres `code`/`details`/`hint`. Narrowing that is a separate
     decision about the public API.
 
-  The consequence is deliberate and worth knowing when debugging an agent: a
-  business rule an agent could act on ("already in a batch") now reads as the
-  generic `rule` message, and the specific cause is in the server log. An
-  enumerated code returned by the server functions themselves, mapped to public
-  strings here, is the way to give that back without echoing server text.
+  - A **server function's** failure (`ServerFnError`, from a service that calls
+    `@carbon/server-functions`) never reaches that classifier: `dispatch.server.ts`
+    throws it as an `ORPCError` carrying the function's own message, so
+    `CallResult` returns it as an `execution` error. The HTTP code comes from its
+    status — 400/403/404/409 map to BAD_REQUEST/FORBIDDEN/NOT_FOUND/CONFLICT; a
+    status ≥ 500 with a non-empty message (a refusal thrown at the default status)
+    is BAD_REQUEST; an empty message (a data-layer failure) stays
+    INTERNAL_SERVER_ERROR with a generic message.
 - The dispatch behavior is pinned by
   `api+/v1+/lib/dispatch-parity.test.ts` (golden cases carried over from the
   deleted `executeFunction`) — a change there is a behavior change for MCP,

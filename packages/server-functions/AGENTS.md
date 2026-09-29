@@ -24,7 +24,19 @@ await postCharge.withClient(client, db, { companyId, userId, ...input });
 ```
 
 `defineServerFn` validates the input (a zod failure is a 400 naming the fields),
-authorizes, runs, and returns `{ data, error }` — it never throws.
+authorizes, runs, and returns `{ data, error }` — it never throws. `withClient` builds
+its context inside a try as well, so a refused client also comes back as `{ error }`.
+
+The context's `actor` decides how `authorize` checks the caller:
+
+| Actor | Built by | Checked against |
+|---|---|---|
+| `system` | `ServerFnContext.system`, or `fromClient` on a service-role client | nothing — passes every rule, and is the only actor a `"system"` rule admits |
+| `user` | `ServerFnContext.user`, or `fromClient` on a user's client | the user's claims (`get_claims` over `ctx.db`). `fromClient` requires the client's bearer JWT `sub` to equal `userId`, else `ForbiddenError` — `withClient` binds the client's user to the input's `userId` |
+| `apiKey` | `fromClient` on a client carrying a `carbon-key` header | the key's own `scopes`: the key must belong to `companyId` and be unexpired. Never its creator's claims. Rate limiting stays with the route that authenticated the key |
+
+The service-role client (`ctx.supabase()`) is built once per process and the cache
+resets after a failed build, so one bad start does not poison later calls.
 
 ## Always
 
@@ -33,10 +45,17 @@ authorizes, runs, and returns `{ data, error }` — it never throws.
   only), or `{ by: "<field>", rules: { <value>: <permissions> } }` keyed on a string
   field of the input (a value with no rule is refused). `server-fn-authorizes-caller`
   (`@carbon/checks`) fails an entry point not built with it.
+- MUST review `src/__snapshots__/permissions-manifest.test.ts.snap` when changing a
+  function's `permissions`: `permissions-manifest.test.ts` snapshots every function's
+  declared rule (exposed as `fn.permissions`), so a change to who may run a function is a
+  snapshot diff. Update it with `vitest -u` only after reviewing that diff.
 - MUST build contexts with `ServerFnContext.system(...)`, `.user(...)` or
   `.fromClient(client, ...)` — never an object literal. `db` comes from
   `getDatabaseClient()` (ERP/MES `~/services/database.server`) or
-  `getJobDatabaseClient()` (jobs). Never construct a pool in this package.
+  `getJobDatabaseClient()` (jobs). Never construct a pool in this package — the one
+  exception is `src/local-database-test-fixture.ts`, the live-database test gate
+  (`hasLocalDatabase`, `databaseTest`), which opens a one-connection pool for the
+  regressions that need real transactions.
 - MUST read and write through `ctx.supabase()` (the service-role client) or `ctx.db`,
   never a caller's RLS client.
 - MUST re-read record ids from the input under `companyId` before writing
@@ -72,7 +91,13 @@ pnpm --filter @carbon/checks test
 
 | Subpath | Provides |
 |---|---|
-| `.` | `defineServerFn`, `ServerFn`, `ServerFnResult`, `ServerFnContext`, `authorize`, `ServerFnError`, `InvalidInputError`, `ForbiddenError`, `NotFoundError`, `assertCompanyRecords`, `hasPermissions` |
+| `.` | `defineServerFn`, `ServerFn`, `ServerFnResult`, `PermissionRule`; `ServerFnContext`, `Actor`, `Permissions`, `authorize`, `clientUsesKey`; `ServerFnError`, `InvalidInputError`, `ForbiddenError`, `NotFoundError`, `isDataLayerError`, `toServerFnError`; `assertCompanyRecords`; `hasPermissions`, `permissionsFromClaims`, `RequiredPermissions`, `ModulePermissions` |
 | `./<name>` | one server function (`src/<name>/index.ts`) |
 
 Shared posting internals live in `src/lib/` (not exported): `get-accounting-period` (`resolveAccountingPeriod`, `getCurrentAccountingPeriod`, `getAccountingPeriodForDate`), `get-posting-group` (`getDefaultPostingGroup`, `resolveInventoryAccount`), `calculate-cogs`, `storage-units`, and the inventory-adjustment core — `post-adjustment` (`bookAdjustment`, `createAdjustmentJournal`, `loadOpenCostLayers`), the pure row builders in `plan-adjustment` and `post-adjustment-cost` (`computeCurrentUnitCost`). Pure logic that the apps also need goes to `@carbon/utils` / `@carbon/database`, not here.
+
+Two more internal helpers sit at the `src/` root (not exported): `shelf-life.ts`
+(the company's expired-entity policy and expiry checks, used by `issue` and
+`post-stock-transfer`) and `tracked-entity-attributes.ts` (`attributesContain`, the
+`"attributes" @> …` form the `trackedEntity` GIN index serves, used by
+`assign-serial-numbers`, `post-picking` and `post-stock-transfer`).

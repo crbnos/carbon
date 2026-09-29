@@ -131,7 +131,7 @@ Two real options, in order of preference:
 1. **A Kysely transaction** — one real PG transaction over a direct `pg` connection. The default:
    logic stays in TypeScript, so it is typed, unit-testable, and reviewable in the diff.
 2. **A Postgres function called via `client.rpc(...)`** — when the same atomic write must also be
-   callable from somewhere Kysely cannot go (an edge function, the public API), or when the work is
+   callable through PostgREST, where Kysely cannot go (the public API), or when the work is
    genuinely set-based and belongs next to the data. The cost is real: SQL is harder to test and
    review, and ships through a migration. Do not push app logic into SQL just to get atomicity.
 

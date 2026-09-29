@@ -67,7 +67,7 @@ The **holy source of truth is the actual source code + the LATEST database migra
 
 - **Verify before you write.** Every entity, status enum *value*, and transition named in docs must exist
   in real code. Confirm exact strings (`"To Ship and Invoice"`, `"Fully Depreciated"`), the actions that
-  drive them (service fns, routes, edge functions in `packages/database/supabase/functions/`), and what
+  drive them (service fns, routes, server functions in `packages/server-functions/src/`), and what
   posts/gates (e.g. `companySettings.accountingEnabled`).
 - **Read the newest migration, not the first.** Timestamps order them; a 2026 refactor may have rebuilt a
   subsystem the cache still describes the old way.
@@ -95,7 +95,7 @@ Guide for the story. (Guide chapters were given 12 cross-flow links — interlin
 
 1. **Research (grounded) → a fact sheet.** Dispatch a research subagent per feature. It must return a
    structured **fact sheet**, not prose: entities/tables/columns; exact status strings and which entity
-   owns each; transitions with the action that drives them (service fn / route / edge function) as
+   owns each; transitions with the action that drives them (service fn / route / server function) as
    `file:line`; gates and settings (`companySettings.*`, plan features); the real UI labels for every
    where-to-click; the gotchas a generic description would get wrong; and an explicit "could not verify"
    list — a gap on that list is more research work, never a writing improvisation. The writer then works

@@ -60,10 +60,13 @@ pnpm --filter @carbon/jobs plan:company -- --company <id> --user <id>   # MRP + 
 | `ramp-sweep` | `0 * * * *` | Dispatch Ramp sync for every active install |
 | `workflow-run` | `carbon/workflow-run.queued` | Execute one owner-scoped workflow graph |
 | `workflows-scheduler` | `carbon/workflow-scheduler.wake` | Self-chaining scheduled-workflow dispatcher |
+| `embedding-queue` | `carbon/embedding-queue.process` (sent by the 10 s `process-embeddings` pg_cron doorbell while visible messages wait) | Drain the pgmq `embedding_jobs` queue and write embeddings |
 
 ## Safety Notes
 
 - `src/inngest/functions/events/queue.ts` archives unknown handler types to `pgmq.a_event_system`; a poison message must not wedge the drain.
+- `src/inngest/functions/events/embedding.ts` (`embedding-queue`) deletes embedded messages and archives (`pgmq.archive`) permanent failures (unknown table, no text) and any message read `MAX_READS` (5) times; other failures become visible again after the 300 s visibility timeout.
+- Jobs that post or recalculate (`tasks/post-transaction.ts`, `tasks/recalculate.ts`, the Ramp families) call `@carbon/server-functions` directly, in-process — not over HTTP.
 - `src/inngest/functions/events/sync-tables.ts` is the import-light table→accounting-entity map. `subscriptions-mapping.test.ts` pins it to provider subscriptions/syncers.
 - `src/inngest/functions/integrations/ramp-sync.ts` owns step ids, ordering, result aggregation, and notification only; changing a family module must preserve that durable public shape.
 - `src/workflows/actions/dispatcher.ts` is filled by `apps/erp/app/routes/api+/inngest.ts` with the canonical `callOperation` seam. Missing registration fails cleanly.

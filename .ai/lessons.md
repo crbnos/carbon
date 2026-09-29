@@ -426,7 +426,7 @@ Format: `Context → Problem → Rule → Applies to`
 
 **Rule:** Before using a `documentType` string, check WHICH enum the target column uses (`\dT+` or grep the migration) — never assume the journal and ledger enums share values. When adding GL posting to an existing subledger flow, keep the subledger rows' shape unchanged (documentType stays whatever it was, usually NULL) and put the new linkage value on the journal lines only.
 
-**Applies to:** `packages/database/supabase/migrations/` enum additions; `functions/shared/post-adjustment.ts`; any `post-*` function writing both `itemLedger`/`costLedger` and `journalLine`.
+**Applies to:** `packages/database/supabase/migrations/` enum additions; `packages/server-functions/src/lib/post-adjustment.ts`; any `post-*` function writing both `itemLedger`/`costLedger` and `journalLine`.
 
 ## Deno edge functions are not deno-check-clean — gate on own-file error deltas, not exit code
 
@@ -1126,7 +1126,7 @@ canvas hosting Radix popovers/selects.
 
 **Rule:** In any service-role or Kysely path, confirm which column actually scopes the table before writing the predicate — `companyId` for most, `companyGroupId` for `account` and its children. A `LIMIT 1` with no tenancy predicate in RLS-bypassing code is a cross-tenant bug even when it "works" locally, because a single-tenant dev database cannot show it.
 
-**Applies to:** `packages/database/src/datasets/tiers/09-accounting.ts`; any `account` lookup in `packages/jobs/**`, `supabase/functions/**`, or a Kysely transaction.
+**Applies to:** `packages/database/src/datasets/tiers/09-accounting.ts`; any `account` lookup in `packages/jobs/**`, `packages/server-functions/src/**`, or a Kysely transaction.
 ## Appending SQL to an already-applied migration silently does nothing
 
 **Context:** A migration adding `companySettings.requireMfa` was written and applied. Later, a `users_with_verified_mfa` RPC was appended to that SAME file and `pnpm db:migrate` was re-run. The function was never created. The employees page then showed "Not set up" for every user — including one with a verified factor — because the missing RPC returned an error that the loader discarded as an empty result.
@@ -1197,7 +1197,7 @@ canvas hosting Radix popovers/selects.
 
 **Applies to:** `packages/server-functions/src/**` batch reads; any `.in(...)` over tree-collected or list-collected ids.
 
-## Kysely writes in an edge function bypass RLS — every one needs an explicit companyId, even when it looks batch-scoped
+## Kysely writes in a server function bypass RLS — every one needs an explicit companyId, even when it looks batch-scoped
 
 **Context:** The `batch-operations` edge function's `remove`/`update`/`dissolve` cases updated `jobOperation` rows filtered only by `jobOperationBatchId` (from the caller's payload). `requirePermissions` proved the caller held `production_update` in *their own* company; the following batch-scoped update carried no `companyId`.
 
@@ -1824,7 +1824,7 @@ full-screen ERP route.
 
 **Rule:** For an `authenticated` JWT, require a non-empty `sub`, require it to match the requested actor id, and use that subject for permission lookup. Treat body actor ids as attribution inputs only for trusted service-role/API-key flows; they are never authentication evidence.
 
-**Applies to:** Supabase edge functions using `requirePermissions` and any endpoint that accepts a caller/actor id alongside a bearer token.
+**Applies to:** server functions' `authorize` / `ServerFnContext.fromClient` and any endpoint that accepts a caller/actor id alongside a bearer token.
 
 ## Header-only financial documents must reject persisted detail
 
@@ -1965,7 +1965,7 @@ full-screen ERP route.
 
 **Applies to:** `payment-funding.ts` reducers, any future column added to `invoiceSettlement`, `journalLine`, or other high-volume tables where a backfill is skipped.
 
-## A JSON column copied through Kysely on deno-postgres only survives as an object
+## A JSON column copied through Kysely on node-postgres only survives as an object
 
 **Context:** Quote → sales order conversion (`convert` edge function) reads the quote with supabase-js and re-inserts its `internalNotes` / `externalNotes` into `salesOrder` through Kysely inside the transaction. One quote had `internalNotes` stored as a JSON string scalar rather than a tiptap document, written through an API path whose validator typed `notes` as `z.any()`.
 
@@ -2023,7 +2023,7 @@ full-screen ERP route.
 
 **Problem:** `getCarbonServiceRole()` (and every other Supabase client) goes through `fetchWithRetry` (`packages/auth/src/lib/supabase/client.ts`), which blindly retries ANY 5xx response — including `client.functions.invoke(...)` calls into Edge Functions — up to `MAX_RETRIES` (2) more times. `quoteToQuote` is not idempotent (it always creates a brand-new quote/opportunity/externalLink) and runs across two separate Kysely transactions, so a deterministic failure partway through the second transaction lets the first transaction's insert commit on EVERY retry attempt before failing again — one incoming request, N internal retries, N duplicate quotes, and the client still reports failure because the last attempt also failed. This is a structural flaw independent of whatever is actually throwing: fixing one root cause (the jsonb bug) only stops the retries from being triggered by THAT cause — any other exception in the same code path reproduces the identical multiply-duplicate symptom, which is exactly what happened on the two later incidents.
 
-**Rule:** A retry wrapper must never blindly retry a write with real side effects and no idempotency key. `fetchWithRetry` already carved out `isStorageUpload` for this exact reason ("re-sending a multi-GB PUT ... is wasteful"); the same reasoning applies even harder to Edge Function invocations, which routinely do multi-table, multi-transaction writes (`get-method`, `convert`, every `post-*` function). Added `isEdgeFunctionInvoke` (matches `/functions/v1/`) alongside it — one attempt only, honoring the caller's own signal, no retry on status or network error. When debugging "op failed but extra copies appeared," check for exactly this shape (one incoming request, several committed results) before assuming a client-side double-submit or a browser retry.
+**Rule:** Obsolete for `get-method`, `convert` and the `post-*` functions: they are server functions now, called in-process, so no HTTP retry sits in front of them. Still true: the `isEdgeFunctionInvoke` carve-out in `fetchWithRetry` stays for the remaining edge functions, and a retry wrapper must never blindly retry a write with real side effects and no idempotency key. Original rule: A retry wrapper must never blindly retry a write with real side effects and no idempotency key. `fetchWithRetry` already carved out `isStorageUpload` for this exact reason ("re-sending a multi-GB PUT ... is wasteful"); the same reasoning applies even harder to Edge Function invocations, which routinely do multi-table, multi-transaction writes (`get-method`, `convert`, every `post-*` function). Added `isEdgeFunctionInvoke` (matches `/functions/v1/`) alongside it — one attempt only, honoring the caller's own signal, no retry on status or network error. When debugging "op failed but extra copies appeared," check for exactly this shape (one incoming request, several committed results) before assuming a client-side double-submit or a browser retry.
 
 **Applies to:** `packages/auth/src/lib/supabase/client.ts` (`fetchWithRetry`, `isEdgeFunctionInvoke`); any future retry/timeout wrapper placed in front of `client.functions.invoke`. Also: `$quoteId.duplicate.tsx` and similar routes that discard the real error into a generic message — add `logger.error` there so a recurrence is diagnosable from Vercel logs alone, without needing Supabase edge-function log access.
 ## pdfjs rejects Node Buffer by constructor check
@@ -2115,16 +2115,6 @@ full-screen ERP route.
 **Rule:** Any signup/identity gate must cover OAuth, not just the email path, and OAuth is enforced in the auth callback's non-SSO branch (both ERP and MES). Gate on a GENUINE self-signup only — no company membership AND no pending invite — so existing members and invited contractors pass. Prefer *not minting a session* over deleting the account: a membership-less `user` row can access nothing and is reused by `createEmployeeAccount` if the address is later invited, so no teardown is needed and the email stays invitable. Keep the check + domain list in one shared home (`@carbon/auth/self-signup.server`) so every entry point (ERP login/verify/callback + MES callback) shares one copy.
 
 **Applies to:** `apps/{erp,mes}/app/routes/_public+/callback.tsx` (non-SSO branch), `packages/auth/src/services/self-signup.server.ts`, and any future email/domain restriction — check the OAuth callback, not only the email/password flow.
-
-## Retrying a 5xx from a non-idempotent Edge Function multiplies its side effects
-
-**Context:** Duplicating a quote (`quoteToQuote` in `get-method`) kept failing with a generic toast while silently leaving 3-4 duplicate quotes behind — recurring across three separate production incidents, including twice AFTER the underlying jsonb-serialisation bug (see the lesson above) had already been fixed and deployed. Vercel logs showed exactly ONE incoming `POST .../duplicate.data` per incident, always HTTP 200 (the route swallows `copy.error` into a generic `{success:false}` and never throws, so the response code tells you nothing), with zero attached application logs.
-
-**Problem:** `getCarbonServiceRole()` (and every other Supabase client) goes through `fetchWithRetry` (`packages/auth/src/lib/supabase/client.ts`), which blindly retries ANY 5xx response — including `client.functions.invoke(...)` calls into Edge Functions — up to `MAX_RETRIES` (2) more times. `quoteToQuote` is not idempotent (it always creates a brand-new quote/opportunity/externalLink) and runs across two separate Kysely transactions, so a deterministic failure partway through the second transaction lets the first transaction's insert commit on EVERY retry attempt before failing again — one incoming request, N internal retries, N duplicate quotes, and the client still reports failure because the last attempt also failed. This is a structural flaw independent of whatever is actually throwing: fixing one root cause (the jsonb bug) only stops the retries from being triggered by THAT cause — any other exception in the same code path reproduces the identical multiply-duplicate symptom, which is exactly what happened on the two later incidents.
-
-**Rule:** A retry wrapper must never blindly retry a write with real side effects and no idempotency key. `fetchWithRetry` already carved out `isStorageUpload` for this exact reason ("re-sending a multi-GB PUT ... is wasteful"); the same reasoning applies even harder to Edge Function invocations, which routinely do multi-table, multi-transaction writes (`get-method`, `convert`, every `post-*` function). Added `isEdgeFunctionInvoke` (matches `/functions/v1/`) alongside it — one attempt only, honoring the caller's own signal, no retry on status or network error. When debugging "op failed but extra copies appeared," check for exactly this shape (one incoming request, several committed results) before assuming a client-side double-submit or a browser retry.
-
-**Applies to:** `packages/auth/src/lib/supabase/client.ts` (`fetchWithRetry`, `isEdgeFunctionInvoke`); any future retry/timeout wrapper placed in front of `client.functions.invoke`. Also: `$quoteId.duplicate.tsx` and similar routes that discard the real error into a generic message — add `logger.error` there so a recurrence is diagnosable from Vercel logs alone, without needing Supabase edge-function log access.
 
 ## A fetcher's redirect is dropped when anything revalidates during the action
 

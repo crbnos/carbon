@@ -67,8 +67,8 @@ the stack deploys; ERP crashes on boot with an empty RESEND key).
 - **Single-node only.** Config files + edge functions are bind-mounted from
   `${CARBON_REPO}` (the repo must be on the host; images also built from it). The
   stack bind-mounts repo paths it doesn't duplicate: `packages/dev/docker/kong.yml`,
-  `packages/dev/docker/edge-main`, `packages/database/supabase/functions`,
-  `packages/database/src`. Multi-node → registry images + Swarm `configs` + shared storage.
+  `packages/dev/docker/edge-main`, `packages/database/supabase/functions`.
+  Multi-node → registry images + Swarm `configs` + shared storage.
 - **Image launch argv is preserved** when overriding `entrypoint` to the shim — each
   service's `command:` is the image's real ENTRYPOINT+CMD (captured via
   `docker image inspect`), e.g. realtime = `/usr/bin/tini -s -g -- /app/run.sh /app/bin/server`,
@@ -87,6 +87,10 @@ the stack deploys; ERP crashes on boot with an empty RESEND key).
   waits for postgres+storage healthy, runs `migrate` as an ephemeral
   `--mode replicated-job` service on `${STACK_NAME}_internal` (reads the password
   from `/run/secrets/postgres_password`, `PGSSLMODE=disable`), then `--force` rolls erp/mes.
+  `migrate` finishes with `set_inngest_event_url`: it reads `inngest_event_key` from
+  the running erp task and calls `public.set_inngest_event_url(...)`, which is what
+  lets Postgres deliver its events to Inngest. It only warns when erp/postgres is not
+  up yet — re-run `migrate` then, and after rotating the key.
 - **Postgres has no TLS** → `SUPABASE_DB_URL` keeps `?sslmode=disable`; migrate sets `PGSSLMODE=disable`.
 - **Only caddy publishes** (80/443 + 443/udp for HTTP/3), in **`mode: host`** (NOT
   ingress) with `update_config.order: stop-first`. ingress-mesh (IPVS) convergence

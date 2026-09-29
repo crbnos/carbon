@@ -7,7 +7,7 @@ Pure utility functions shared across all Carbon packages and apps. Covers accoun
 - Import utilities from `@carbon/utils` — never duplicate utility logic in app code.
 - Use `sanitize(obj)` to strip empty values before Supabase insert/update operations.
 - Use domain-specific helpers where they exist: `formatCurrency()` for money, `getStatus()` for status resolution, `getBomLevel()` for BOM traversal.
-- Keep utilities **pure** — no side effects, no database calls, no env access (except `isBrowser` check). Only `@internationalized/date`, `zod`, and `lodash.template` (plus `nanoid` and `@supabase/supabase-js` for the typed `supabase.ts` wrappers) are allowed runtime deps.
+- Keep utilities **pure** — no side effects, no database calls, no env access (except `isBrowser` check). Runtime deps are the ones in `package.json`; `@carbon/database` is among them only for the pure subpaths listed under Never.
 
 ## Ask First
 
@@ -18,7 +18,7 @@ Pure utility functions shared across all Carbon packages and apps. Covers accoun
 ## Never
 
 - Import server-only packages (`@carbon/auth`, `@carbon/database`, `@carbon/kv`) at runtime from here — `@carbon/utils` must remain client-safe (type-only `@carbon/database` imports for the generated `Database` types are fine). The one exception is the pure `@carbon/database` subpaths `./precision`, `./accounting-currency`, `./accounting-posting`, `./sales-posting-amounts` and `./ledger`, which the index re-exports: they live in `@carbon/database` because its posting journal builders need them and `@carbon/database` cannot import this package (the two would form a turbo cycle). Keep their dependency graphs pure.
-- Add async/IO operations — utilities should be synchronous pure functions (the one exception is `supabase.ts` helpers which are typed wrappers). File/image handling lives in `@carbon/files`, not here.
+- Add IO — no network, file, or database access (the one exception is `supabase.ts`, typed wrappers around a client the caller passes in). The `async` helpers orchestrate promises the caller supplies; they perform no IO themselves. File/image handling lives in `@carbon/files`, not here.
 - Duplicate what already exists — check the barrel export (`src/index.ts`) before adding a new utility.
 
 ## Validation Commands
@@ -46,6 +46,8 @@ pnpm --filter @carbon/utils typecheck
 | `journal-dimensions` / `intercompany-capture` | Automatic `journalLineDimension` rows for posted journal lines; intercompany posting-line classification |
 | `short-close` | Short-close-aware billable / remaining-to-invoice PO line quantities |
 | `calculate-due-date` | `calculateDueDate` / `DEFAULT_PAYMENT_TERM` — an invoice's due date from its payment term (shared by the ERP and invoice posting) |
+| `async` | Promise helpers used as a namespace (`import { async } from "@carbon/utils"`): `async.map` (bounded `concurrency`, input order kept), `async.all`, `async.allSettled`, `async.background(task, onError)` (fire-and-forget with a mandatory error handler) — use these over bare `Promise.all` over rows, void async IIFEs, or unhandled `.then` chains |
+| `errors` | `getErrorMessage(error, fallback)` — the error's own message, else the caller's copy (server functions leave `message` empty for data-layer failures so the fallback wins) |
 | `arrays` | Array manipulation, grouping, deduplication |
 | `bom` | Bill of Materials traversal and level computation |
 | `date` | Date formatting, parsing, range helpers (uses `@internationalized/date`); `HOUR_MS`/`DAY_MS` millisecond constants for instant arithmetic |

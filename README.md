@@ -158,7 +158,9 @@ carbon
 | `@carbon/config`    | Shared configuration (vitest, tsconfig, tailwind) across apps and packages  |
 | `@carbon/jobs`      | Background jobs and workers                                                 |
 | `@carbon/logger`    | Shared logger used across apps                                              |
+| `@carbon/planning`  | MRP and finite scheduling engines, run in-process                           |
 | `@carbon/react`     | Shared web-based UI components                                              |
+| `@carbon/server-functions` | Transactional writes shared by the apps and jobs (posting, issuing, converting) |
 | `@carbon/kv`        | Redis cache client                                                          |
 | `@carbon/lib`       | Third-party client libraries (slack, resend)                                |
 | `@carbon/stripe`    | Stripe integration                                                          |
