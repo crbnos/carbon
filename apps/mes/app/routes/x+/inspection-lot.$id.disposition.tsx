@@ -5,6 +5,8 @@ import { flash } from "@carbon/auth/session.server";
 import { dispositionInspection } from "@carbon/database/quality";
 import { validationError, validator } from "@carbon/form";
 import { issueAs } from "@carbon/operations/issue";
+import { recalculateAs } from "@carbon/operations/recalculate";
+import { triggerReworkAs } from "@carbon/operations/trigger-rework";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
 import { getDatabaseClient } from "~/services/database.server";
@@ -301,20 +303,18 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   if (reworkTotal > 0 && targetOperationId && reworkReason) {
-    const rework = await serviceRole.functions.invoke("trigger-rework", {
-      body: {
-        jobId: state.jobId,
-        triggeredAtJobOperationId: state.jobOperationId,
-        targetJobOperationId: targetOperationId,
-        reason: reworkReason,
-        quantity: reworkTotal,
-        trackedEntityIds: state.requiresSerialTracking
-          ? reworkEntityIds
-          : undefined,
-        inspectionId: id,
-        companyId,
-        userId
-      }
+    const rework = await triggerReworkAs(serviceRole, getDatabaseClient(), {
+      jobId: state.jobId,
+      triggeredAtJobOperationId: state.jobOperationId,
+      targetJobOperationId: targetOperationId,
+      reason: reworkReason,
+      quantity: reworkTotal,
+      trackedEntityIds: state.requiresSerialTracking
+        ? reworkEntityIds
+        : undefined,
+      inspectionId: id,
+      companyId,
+      userId
     });
     if (rework.error) {
       return fail(
@@ -323,13 +323,11 @@ export async function action({ request, params }: ActionFunctionArgs) {
       );
     }
 
-    const recalculate = await serviceRole.functions.invoke("recalculate", {
-      body: {
-        type: "jobRequirements",
-        id: state.jobId,
-        companyId,
-        userId
-      }
+    const recalculate = await recalculateAs(serviceRole, getDatabaseClient(), {
+      type: "jobRequirements",
+      id: state.jobId,
+      companyId,
+      userId
     });
     if (recalculate.error) {
       warnings.push("failed to recalculate job requirements");

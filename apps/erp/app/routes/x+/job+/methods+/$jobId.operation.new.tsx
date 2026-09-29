@@ -83,7 +83,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   const [recalculateResult, recalculateDependencies] = await Promise.all([
-    recalculateJobMakeMethodRequirements(serviceRole, {
+    recalculateJobMakeMethodRequirements(serviceRole, getDatabaseClient(), {
       id: validation.data.jobMakeMethodId,
       companyId,
       userId

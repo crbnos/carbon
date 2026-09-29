@@ -64,7 +64,7 @@ export async function action({ request }: ActionFunctionArgs) {
     );
 
     const [calculateQuantities, calculateDependencies] = await Promise.all([
-      recalculateJobRequirements(serviceRole, {
+      recalculateJobRequirements(serviceRole, getDatabaseClient(), {
         id: validation.data.targetId,
         companyId: companyId,
         userId: userId

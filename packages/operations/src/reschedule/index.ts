@@ -1,12 +1,15 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import type { KyselyDatabase } from "@carbon/database/client";
+import { datetime } from "@carbon/database/datetime";
+import { getLogger } from "@carbon/logger";
 import type { Transaction } from "kysely";
-import { getConnectionPool, getDatabaseClient } from "../lib/database.ts";
-import { corsPreflight, errorResponse, jsonResponse } from "../lib/response.ts";
-import { requirePermissions } from "../lib/supabase.ts";
-import type { DB } from "../lib/types.ts";
+import { z } from "zod";
+import { RecordNotFoundError } from "../company-records";
+import { assertOperationPermissions, type OperationContext } from "../context";
+import { runOperation } from "../result";
 
-const pool = getConnectionPool(1);
-const db = getDatabaseClient<DB>(pool);
+const logger = getLogger("operations", "reschedule");
+
+export const rescheduleInput = z.object({ jobId: z.string() });
 
 // Types
 type JobOperation = {
@@ -24,13 +27,6 @@ type JobOperation = {
   laborUnit: string | null;
   machineUnit: string | null;
   operationQuantity: number | null;
-};
-
-type Job = {
-  id: string;
-  dueDate: string | null;
-  priority: number | null;
-  deadlineType: string | null;
 };
 
 type JobOperationDependency = {
@@ -62,7 +58,10 @@ type OperationWithJobInfo = {
 };
 
 // Helper: Get job with operations and dependencies
-async function getJobWithOperations(trx: Transaction<DB>, jobId: string) {
+async function getJobWithOperations(
+  trx: Transaction<KyselyDatabase>,
+  jobId: string
+) {
   const job = await trx
     .selectFrom("job")
     .select(["id", "dueDate", "priority", "deadlineType"])
@@ -171,22 +170,18 @@ function calculateOperationDuration(op: JobOperation): number {
 
   if (op.setupTime) {
     setupHours =
-      op.setupUnit === "Hours/Piece"
-        ? (op.setupTime * quantity)
-        : op.setupTime;
+      op.setupUnit === "Hours/Piece" ? op.setupTime * quantity : op.setupTime;
   }
 
   if (op.laborTime) {
     laborHours =
-      op.laborUnit === "Hours/Piece"
-        ? (op.laborTime * quantity)
-        : op.laborTime;
+      op.laborUnit === "Hours/Piece" ? op.laborTime * quantity : op.laborTime;
   }
 
   if (op.machineTime) {
     machineHours =
       op.machineUnit === "Hours/Piece"
-        ? (op.machineTime * quantity)
+        ? op.machineTime * quantity
         : op.machineTime;
   }
 
@@ -207,7 +202,7 @@ function backwardScheduleOperations(
   jobDueDate: string | null
 ): ScheduledOperation[] {
   const scheduled = new Map<string, ScheduledOperation>();
-  const today = new Date().toISOString().split("T")[0];
+  const today = new Date().toISOString().split("T")[0]!;
 
   // Default to today if no due date
   const finalDueDate = jobDueDate || today;
@@ -240,14 +235,14 @@ function backwardScheduleOperations(
           Math.min(...dependentStartDates.map((d) => new Date(d).getTime()))
         );
         minDate.setDate(minDate.getDate() - 1);
-        dueDate = minDate.toISOString().split("T")[0];
+        dueDate = minDate.toISOString().split("T")[0]!;
       }
     }
 
     // Calculate start date
     const dueDateObj = new Date(dueDate);
     dueDateObj.setDate(dueDateObj.getDate() - totalDuration);
-    const startDate = dueDateObj.toISOString().split("T")[0];
+    const startDate = dueDateObj.toISOString().split("T")[0]!;
 
     // Check for conflicts
     const hasConflict = startDate < today;
@@ -260,7 +255,7 @@ function backwardScheduleOperations(
       startDate,
       dueDate,
       hasConflict,
-      conflictReason,
+      conflictReason
     });
   }
 
@@ -275,7 +270,7 @@ function sortOperationsByPriority(
     ASAP: 0,
     "Hard Deadline": 1,
     "Soft Deadline": 2,
-    "No Deadline": 3,
+    "No Deadline": 3
   };
 
   return operations.sort((a, b) => {
@@ -283,7 +278,7 @@ function sortOperationsByPriority(
     const aDeadline = a.deadlineType || "No Deadline";
     const bDeadline = b.deadlineType || "No Deadline";
     if (aDeadline !== bDeadline) {
-      return deadlineOrder[aDeadline] - deadlineOrder[bDeadline];
+      return deadlineOrder[aDeadline]! - deadlineOrder[bDeadline]!;
     }
 
     // 2. Due date (earliest first, nulls last)
@@ -312,7 +307,7 @@ function applyFractionalPriorities(
     if (index === 0) {
       op.priority = 0;
     } else {
-      const prevPriority = sorted[index - 1].priority || 0;
+      const prevPriority = sorted[index - 1]!.priority || 0;
       op.priority = prevPriority + 1;
     }
     return op;
@@ -321,7 +316,7 @@ function applyFractionalPriorities(
 
 // Helper: Recalculate priorities by work center
 async function recalculatePriorities(
-  trx: Transaction<DB>,
+  trx: Transaction<KyselyDatabase>,
   scheduledOps: ScheduledOperation[],
   workCenterIds: string[]
 ): Promise<ScheduledOperation[]> {
@@ -340,7 +335,7 @@ async function recalculatePriorities(
         "jo.priority",
         "j.deadlineType",
         "j.priority as jobPriority",
-        "jo.workCenterId",
+        "jo.workCenterId"
       ])
       .where("jo.workCenterId", "=", wcId)
       .where("jo.status", "not in", ["Done", "Canceled"])
@@ -356,7 +351,7 @@ async function recalculatePriorities(
           priority: scheduled.priority,
           deadlineType: wcOp.deadlineType,
           jobPriority: wcOp.jobPriority,
-          workCenterId: wcOp.workCenterId,
+          workCenterId: wcOp.workCenterId
         };
       }
       return wcOp;
@@ -372,7 +367,7 @@ async function recalculatePriorities(
     for (const op of prioritized) {
       const idx = prioritizedOps.findIndex((p) => p.id === op.id);
       if (idx >= 0) {
-        prioritizedOps[idx].priority = op.priority;
+        prioritizedOps[idx]!.priority = op.priority;
       }
     }
   }
@@ -380,19 +375,18 @@ async function recalculatePriorities(
   return prioritizedOps;
 }
 
-// Main handler
-serve(async (req) => {
-  const preflight = corsPreflight(req);
-  if (preflight) return preflight;
-
-  try {
-    const { jobId, companyId, userId } = await req.json();
-
-    try {
-      await requirePermissions(req, companyId, userId, { update: "production" });
-    } catch (err) {
-      return errorResponse(err, 401);
-    }
+/**
+ * Re-plans a job's operations: backward-schedules their dates from the job's due
+ * date, flags conflicts, and recalculates priorities on the affected work centers.
+ */
+export function reschedule(
+  ctx: OperationContext,
+  input: z.input<typeof rescheduleInput>
+) {
+  return runOperation("reschedule", async () => {
+    const { jobId } = rescheduleInput.parse(input);
+    const { db, companyId, userId } = ctx;
+    await assertOperationPermissions(ctx, { update: "production" });
 
     const owned = await db
       .selectFrom("job")
@@ -400,9 +394,9 @@ serve(async (req) => {
       .where("id", "=", jobId)
       .where("companyId", "=", companyId)
       .executeTakeFirst();
-    if (!owned) return errorResponse("Job not found", 404);
+    if (!owned) throw new RecordNotFoundError("Job not found");
 
-    console.info(`🔰 Starting reschedule for job ${jobId}`);
+    logger.info(`🔰 Starting reschedule for job ${jobId}`);
 
     const result = await db.transaction().execute(async (trx) => {
       // 1. Get job and all its operations with dependencies
@@ -411,7 +405,7 @@ serve(async (req) => {
         jobId
       );
 
-      console.info(
+      logger.info(
         `📊 Job has ${operations.length} operations, ${dependencies.length} dependencies`
       );
 
@@ -426,7 +420,7 @@ serve(async (req) => {
       );
 
       const conflicts = scheduledOps.filter((op) => op.hasConflict);
-      console.info(`⚠️  Detected ${conflicts.length} scheduling conflicts`);
+      logger.info(`⚠️  Detected ${conflicts.length} scheduling conflicts`);
 
       // 4. Get affected work centers
       const workCenterIds = [
@@ -434,10 +428,10 @@ serve(async (req) => {
           scheduledOps
             .map((op) => op.workCenterId)
             .filter((id): id is string => id !== null)
-        ),
+        )
       ];
 
-      console.info(`🏭 Affected work centers: ${workCenterIds.length}`);
+      logger.info(`🏭 Affected work centers: ${workCenterIds.length}`);
 
       // 5. Recalculate priorities for each work center
       const prioritizedOps = await recalculatePriorities(
@@ -453,32 +447,26 @@ serve(async (req) => {
           .set({
             startDate: op.startDate,
             dueDate: op.dueDate,
-            priority: op.priority,
+            priority: op.priority!,
             hasConflict: op.hasConflict,
             conflictReason: op.conflictReason,
-            updatedAt: new Date().toISOString(),
-            updatedBy: userId,
+            updatedAt: datetime.timestamp(),
+            updatedBy: userId
           })
           .where("id", "=", op.id)
+          .where("companyId", "=", companyId)
           .execute();
       }
 
-      console.info(`✅ Updated ${prioritizedOps.length} operations`);
+      logger.info(`✅ Updated ${prioritizedOps.length} operations`);
 
       return {
         operationsUpdated: prioritizedOps.length,
         conflictsDetected: conflicts.length,
-        workCentersAffected: workCenterIds.length,
+        workCentersAffected: workCenterIds.length
       };
     });
 
-    return jsonResponse({ success: true, ...result });
-  } catch (error) {
-    console.error(
-      `❌ Reschedule failed: ${
-        error instanceof Error ? error.message : String(error)
-      }`
-    );
-    return errorResponse(error, 500);
-  }
-});
+    return { success: true, ...result };
+  });
+}

@@ -237,11 +237,15 @@ export async function action({ request }: ActionFunctionArgs) {
       }
 
       for await (const id of ids) {
-        const recalculate = await recalculateJobRequirements(serviceRole, {
-          id: id as string,
-          companyId,
-          userId
-        });
+        const recalculate = await recalculateJobRequirements(
+          serviceRole,
+          getDatabaseClient(),
+          {
+            id: id as string,
+            companyId,
+            userId
+          }
+        );
         if (recalculate.error) {
           logger.error(recalculate.error);
           return recalculate;

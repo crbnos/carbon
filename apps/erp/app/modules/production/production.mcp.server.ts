@@ -288,11 +288,15 @@ export async function upsertJobMaterial(
   }
 
   if (recalcRequirements) {
-    const requirements = await recalculateJobMakeMethodRequirements(client, {
-      id: jobMaterial.jobMakeMethodId,
-      companyId,
-      userId
-    });
+    const requirements = await recalculateJobMakeMethodRequirements(
+      client,
+      getDatabaseClient(),
+      {
+        id: jobMaterial.jobMakeMethodId,
+        companyId,
+        userId
+      }
+    );
     if (requirements.error) {
       return { data: upserted.data, error: requirements.error };
     }

@@ -1,41 +1,64 @@
-import { serve } from "https://deno.land/std@0.175.0/http/server.ts";
-import { z } from "npm:zod@^4.5.4";
-
-import { DB, getConnectionPool, getDatabaseClient } from "../lib/database.ts";
-
-import { sql, Transaction } from "kysely";
-import { getFunctionLogger } from "../lib/logging.ts";
-import { corsPreflight, errorResponse, jsonResponse } from "../lib/response.ts";
+import type { Database } from "@carbon/database";
+import type { KyselyDatabase } from "@carbon/database/client";
 import {
-  computeJobQuantities,
   type ComputedJobQuantityNode,
+  computeJobQuantities,
   flattenJobQuantityTree,
-} from "../lib/job-quantities-engine.ts";
-import { getJobMethodTree, JobMethodTreeItem } from "../lib/methods.ts";
-import { requirePermissions } from "../lib/supabase.ts";
+  getJobMethodTree,
+  type JobMethodTreeItem
+} from "@carbon/database/methods";
+import { getLogger } from "@carbon/logger";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import { type Kysely, sql, type Transaction } from "kysely";
+import { z } from "zod";
+import { RecordNotFoundError } from "../company-records";
+import {
+  assertOperationPermissions,
+  callerContext,
+  type OperationContext,
+  serviceRoleClient
+} from "../context";
+import { runOperation } from "../result";
 
-const pool = getConnectionPool(1);
-const db = getDatabaseClient<DB>(pool);
-const logger = getFunctionLogger("recalculate");
+const logger = getLogger("operations", "recalculate");
 
-const payloadValidator = z.object({
+export const recalculateInput = z.object({
   type: z.enum(["jobMakeMethodRequirements", "jobRequirements"]),
-  id: z.string(),
-  companyId: z.string(),
-  userId: z.string(),
+  id: z.string()
 });
 
-serve(async (req: Request) => {
-  const preflight = corsPreflight(req);
-  if (preflight) return preflight;
-  const payload = await req.json();
+/**
+ * `recalculate` for app code that holds a Supabase client: a service-role client runs
+ * it as the system, any other client is permission-checked (`callerContext`).
+ */
+export async function recalculateAs(
+  client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
+  input: z.input<typeof recalculateInput> & {
+    companyId: string;
+    userId: string;
+  }
+) {
+  const { companyId, userId } = input;
+  return recalculate(
+    await callerContext(client, { db, companyId, userId }),
+    input
+  );
+}
 
-  try {
-    const { type, id, companyId, userId } = payloadValidator.parse(payload);
+/** Re-derives a job's (or one make method's) material and operation quantities. */
+export function recalculate(
+  ctx: OperationContext,
+  input: z.input<typeof recalculateInput>
+) {
+  return runOperation("recalculate", async () => {
+    const { type, id } = recalculateInput.parse(input);
+    const { db, companyId, userId } = ctx;
 
     logger.info({ type, id, companyId, userId });
 
-    const client = await requirePermissions(req, companyId, userId, { update: "production" });
+    await assertOperationPermissions(ctx, { update: "production" });
+    const client = await serviceRoleClient();
 
     switch (type) {
       case "jobMakeMethodRequirements": {
@@ -47,7 +70,7 @@ serve(async (req: Request) => {
             .select("*")
             .eq("id", jobMakeMethodId)
             .eq("companyId", companyId)
-            .maybeSingle(),
+            .maybeSingle()
         ]);
 
         if (jobMakeMethod.error) {
@@ -57,7 +80,7 @@ serve(async (req: Request) => {
         }
         // Service-role client: a make method outside companyId is a 404.
         if (!jobMakeMethod.data) {
-          return errorResponse("Job make method not found", 404);
+          throw new RecordNotFoundError("Job make method not found");
         }
 
         let parentQuantity = 1;
@@ -68,7 +91,7 @@ serve(async (req: Request) => {
             .eq("id", jobMakeMethod.data.parentMaterialId)
             .single();
           if (jobMaterial.data?.methodType !== "Make to Order") {
-            return jsonResponse({ success: true });
+            return { success: true };
           }
 
           if (jobMaterial.error) {
@@ -87,7 +110,7 @@ serve(async (req: Request) => {
             logger.info(
               `Job material ${jobMakeMethod.data.parentMaterialId} is not a 'Make' type. Skipping recalculation.`
             );
-            return jsonResponse({ success: true });
+            return { success: true };
           }
 
           parentQuantity =
@@ -144,11 +167,11 @@ serve(async (req: Request) => {
             .eq("jobId", jobId)
             .eq("companyId", companyId)
             .is("parentMaterialId", null)
-            .single(),
+            .single()
         ]);
 
         // Service-role client: a job outside companyId is a 404.
-        if (!job.data) return errorResponse("Job not found", 404);
+        if (!job.data) throw new RecordNotFoundError("Job not found");
 
         if (jobMakeMethod.error) {
           throw new Error(
@@ -157,7 +180,7 @@ serve(async (req: Request) => {
         }
 
         const [jobMethodTrees] = await Promise.all([
-          getJobMethodTree(client, jobMakeMethod.data.id),
+          getJobMethodTree(client, jobMakeMethod.data.id)
         ]);
 
         if (jobMethodTrees.error) {
@@ -188,16 +211,12 @@ serve(async (req: Request) => {
         throw new Error(`Invalid type  ${type}`);
     }
 
-    return jsonResponse({
-      success: true,
-    });
-  } catch (err) {
-    return errorResponse(err, 500);
-  }
-});
+    return { success: true };
+  });
+}
 
 const updateJobQuantities = async (
-  trx: Transaction<DB>,
+  trx: Transaction<KyselyDatabase>,
   tree: JobMethodTreeItem,
   parentEstimatedQuantity: number = 1
 ) => {
@@ -226,7 +245,7 @@ const updateJobQuantities = async (
       nodes
         .filter((n) => storedScrapById.get(n.id) == null)
         .map((n) => n.data.itemId)
-    ),
+    )
   ];
   const replenishmentScrapByItemId = new Map<string, number>();
   if (fallbackItemIds.length > 0) {
@@ -247,13 +266,13 @@ const updateJobQuantities = async (
     tree,
     parentEstimatedQuantity,
     storedScrapById,
-    replenishmentScrapByItemId,
+    replenishmentScrapByItemId
   });
   const allCycleNodeIds = new Set([...flattenCycles, ...cycleNodeIds]);
   if (allCycleNodeIds.size > 0) {
     // Corrupt tree data — the nodes were skipped rather than looped on.
     logger.error("recalculate: cyclic job method tree; skipped nodes", {
-      skippedNodeIds: [...allCycleNodeIds],
+      skippedNodeIds: [...allCycleNodeIds]
     });
   }
 
@@ -327,7 +346,7 @@ const updateJobQuantities = async (
               sql`(${m.trackedEntityId}, ${
                 m.requiresSerialTracking
                   ? 1
-                  : totalByMakeMethodId.get(m.id) ?? 1
+                  : (totalByMakeMethodId.get(m.id) ?? 1)
               })`
           )
         )}) AS v(id, quantity)

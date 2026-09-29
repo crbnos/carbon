@@ -138,8 +138,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   if (validation.data.methodType === "Make to Order") {
-    const promises = [
-      recalculateJobMakeMethodRequirements(client, {
+    const promises: Promise<{ error: Error | null }>[] = [
+      recalculateJobMakeMethodRequirements(client, getDatabaseClient(), {
         id: validation.data.jobMakeMethodId,
         companyId,
         userId
@@ -187,6 +187,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   } else {
     const recalculateResult = await recalculateJobMakeMethodRequirements(
       client,
+      getDatabaseClient(),
       {
         id: validation.data.jobMakeMethodId,
         companyId,

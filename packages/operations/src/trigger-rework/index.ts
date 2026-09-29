@@ -1,17 +1,20 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import type { Transaction } from "kysely";
-import { nanoid } from "https://deno.land/x/nanoid@v3.0.0/nanoid.ts";
-import z from "npm:zod@^4.5.4";
-import { assertCompanyRecords } from "../lib/company-records.ts";
-import { getConnectionPool, getDatabaseClient } from "../lib/database.ts";
-import { getFunctionLogger } from "../lib/logging.ts";
-import { corsPreflight, errorResponse, jsonResponse } from "../lib/response.ts";
-import { requirePermissions } from "../lib/supabase.ts";
-import type { DB } from "../lib/types.ts";
+import type { Database } from "@carbon/database";
+import type { KyselyDatabase } from "@carbon/database/client";
+import { getLogger } from "@carbon/logger";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import type { Kysely, Transaction } from "kysely";
+import { nanoid } from "nanoid";
+import { z } from "zod";
+import { assertCompanyRecords, RecordNotFoundError } from "../company-records";
+import {
+  assertOperationPermissions,
+  callerContext,
+  type OperationContext
+} from "../context";
+import { reschedule } from "../reschedule";
+import { OperationError, runOperation } from "../result";
 
-const pool = getConnectionPool(1);
-const db = getDatabaseClient<DB>(pool);
-const logger = getFunctionLogger("trigger-rework");
+const logger = getLogger("operations", "trigger-rework");
 
 interface TriggerReworkRequest {
   jobId: string;
@@ -33,7 +36,7 @@ interface TriggerReworkRequest {
  * Returns operations in forward order (target → ... → triggeredAt).
  */
 async function findReworkPath(
-  trx: Transaction<DB>,
+  trx: Transaction<KyselyDatabase>,
   jobId: string,
   targetOperationId: string,
   triggeredAtOperationId: string
@@ -89,8 +92,8 @@ async function findReworkPath(
   return path;
 }
 
-async function triggerRework(
-  trx: Transaction<DB>,
+async function cloneReworkOperations(
+  trx: Transaction<KyselyDatabase>,
   body: TriggerReworkRequest
 ) {
   const {
@@ -102,7 +105,7 @@ async function triggerRework(
     trackedEntityIds,
     inspectionId,
     companyId,
-    userId,
+    userId
   } = body;
 
   // 1. Find the path of operations to clone
@@ -113,12 +116,9 @@ async function triggerRework(
     triggeredAtJobOperationId
   );
 
-  logger.info(
-    `📋 Rework path: ${operationPath.length} operations to clone`
-  );
+  logger.info(`📋 Rework path: ${operationPath.length} operations to clone`);
 
   // 2. Create the rework record
-  // @ts-expect-error - rework table not in generated types until migration is applied
   const [rework] = await trx
     .insertInto("rework")
     .values({
@@ -128,7 +128,7 @@ async function triggerRework(
       reason,
       quantity,
       requestedById: userId,
-      companyId,
+      companyId
     })
     .returning(["id"])
     .execute();
@@ -142,16 +142,16 @@ async function triggerRework(
         id: activityId,
         type: "Rework",
         sourceDocument: "Rework",
-        sourceDocumentId: rework.id,
+        sourceDocumentId: rework!.id,
         attributes: {
           Job: jobId,
           "Triggered At": triggeredAtJobOperationId,
           Target: targetJobOperationId,
           Reason: reason,
-          Quantity: quantity,
+          Quantity: quantity
         },
         companyId,
-        createdBy: userId,
+        createdBy: userId
       })
       .execute();
 
@@ -164,7 +164,7 @@ async function triggerRework(
           trackedEntityId: entityId,
           quantity: isSerial ? 1 : quantity,
           companyId,
-          createdBy: userId,
+          createdBy: userId
         })
         .execute();
     }
@@ -205,7 +205,7 @@ async function triggerRework(
           .where("id", "=", triggeredAtJobOperationId)
       )
       .orderBy("order", "asc")
-      .executeTakeFirst(),
+      .executeTakeFirst()
   ]);
 
   const triggerOrder = Number(triggerOp.order);
@@ -251,10 +251,9 @@ async function triggerRework(
         tags: sourceOp.tags,
         companyId,
         createdBy: userId,
-        // @ts-expect-error - reworkId not in generated types until migration is applied
-        reworkId: rework.id,
+        reworkId: rework!.id,
         status: i === 0 ? "Ready" : "Waiting",
-        customFields: sourceOp.customFields,
+        customFields: sourceOp.customFields
       }))
     )
     .returning(["id"])
@@ -263,7 +262,7 @@ async function triggerRework(
   const clonedOperationIds = clonedOps.map((op) => op.id);
   const sourceToCloneMap = new Map<string, string>();
   sourceOperations.forEach((sourceOp, i) => {
-    sourceToCloneMap.set(sourceOp.id, clonedOps[i].id);
+    sourceToCloneMap.set(sourceOp.id, clonedOps[i]!.id);
   });
 
   logger.info(`🔧 Cloned ${clonedOperationIds.length} operations`);
@@ -284,7 +283,7 @@ async function triggerRework(
       .selectFrom("jobOperationParameter")
       .selectAll()
       .where("operationId", "in", operationPath)
-      .execute(),
+      .execute()
   ]);
 
   const stepValues = allSteps.map(
@@ -298,7 +297,7 @@ async function triggerRework(
     }) => ({
       ...step,
       operationId: sourceToCloneMap.get(operationId)!,
-      createdBy: userId,
+      createdBy: userId
     })
   );
 
@@ -307,7 +306,7 @@ async function triggerRework(
     quantity: tool.quantity,
     operationId: sourceToCloneMap.get(tool.operationId)!,
     companyId,
-    createdBy: userId,
+    createdBy: userId
   }));
 
   const paramValues = allParams.map((param) => ({
@@ -315,7 +314,7 @@ async function triggerRework(
     value: param.value,
     operationId: sourceToCloneMap.get(param.operationId)!,
     companyId,
-    createdBy: userId,
+    createdBy: userId
   }));
 
   await Promise.all([
@@ -327,7 +326,7 @@ async function triggerRework(
       : null,
     paramValues.length > 0
       ? trx.insertInto("jobOperationParameter").values(paramValues).execute()
-      : null,
+      : null
   ]);
 
   // 7. Wire the rework operations into the DAG
@@ -343,10 +342,10 @@ async function triggerRework(
   // 7a. Each subsequent rework op depends on the previous
   for (let i = 1; i < clonedOperationIds.length; i++) {
     dagEdges.push({
-      operationId: clonedOperationIds[i],
-      dependsOnId: clonedOperationIds[i - 1],
+      operationId: clonedOperationIds[i]!,
+      dependsOnId: clonedOperationIds[i - 1]!,
       jobId,
-      companyId,
+      companyId
     });
   }
 
@@ -365,25 +364,24 @@ async function triggerRework(
     .where("operationId", "not in", clonedOperationIds)
     .execute();
 
-  const lastReworkOpId = clonedOperationIds[clonedOperationIds.length - 1];
+  const lastReworkOpId = clonedOperationIds[clonedOperationIds.length - 1]!;
 
   for (const dep of downstreamDeps) {
     dagEdges.push({
       operationId: dep.operationId,
       dependsOnId: lastReworkOpId,
       jobId,
-      companyId,
+      companyId
     });
   }
 
   if (dagEdges.length > 0) {
-    await trx
-      .insertInto("jobOperationDependency")
-      .values(dagEdges)
-      .execute();
+    await trx.insertInto("jobOperationDependency").values(dagEdges).execute();
   }
 
-  logger.info(`🔗 DAG wired with ${downstreamDeps.length} downstream deps rewired`);
+  logger.info(
+    `🔗 DAG wired with ${downstreamDeps.length} downstream deps rewired`
+  );
 
   // 8. Record a productionQuantity entry for the rework
   await trx
@@ -394,46 +392,69 @@ async function triggerRework(
       quantity,
       inspectionId: inspectionId ?? null,
       companyId,
-      createdBy: userId,
+      createdBy: userId
     })
     .execute();
 
   return {
-    reworkId: rework.id,
+    reworkId: rework!.id,
     clonedOperationIds,
-    operationsCloned: clonedOperationIds.length,
+    operationsCloned: clonedOperationIds.length
   };
 }
 
-// Main handler
-serve(async (req) => {
-  const preflight = corsPreflight(req);
-  if (preflight) return preflight;
+export const triggerReworkInput = z.object({
+  jobId: z.string().min(1),
+  triggeredAtJobOperationId: z.string().min(1),
+  targetJobOperationId: z.string().min(1),
+  reason: z.string().min(1),
+  quantity: z.number().positive(),
+  trackedEntityIds: z.array(z.string()).optional(),
+  inspectionId: z.string().optional()
+});
 
-  try {
-    const raw = await req.json();
-    const parsed = z
-      .object({
-        jobId: z.string().min(1),
-        triggeredAtJobOperationId: z.string().min(1),
-        targetJobOperationId: z.string().min(1),
-        reason: z.string().min(1),
-        quantity: z.number().positive(),
-        trackedEntityIds: z.array(z.string()).optional(),
-        inspectionId: z.string().optional(),
-        companyId: z.string().min(1),
-        userId: z.string().min(1),
-      })
-      .safeParse(raw);
+/**
+ * `triggerRework` for app code that holds a Supabase client: a service-role client runs
+ * it as the system, any other client is permission-checked (`callerContext`).
+ */
+export async function triggerReworkAs(
+  client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
+  input: z.input<typeof triggerReworkInput> & {
+    companyId: string;
+    userId: string;
+  }
+) {
+  const { companyId, userId } = input;
+  return triggerRework(
+    await callerContext(client, { db, companyId, userId }),
+    input
+  );
+}
 
+/**
+ * Sends a job back to an earlier operation: clones the operations from the
+ * target up to where the problem was found, then reschedules the job.
+ */
+export function triggerRework(
+  ctx: OperationContext,
+  input: z.input<typeof triggerReworkInput>
+) {
+  return runOperation("trigger-rework", async () => {
+    const { db } = ctx;
+    const parsed = triggerReworkInput.safeParse(input);
     if (!parsed.success) {
-      return errorResponse(
+      throw new OperationError(
         `Invalid request: ${parsed.error.issues.map((i) => i.message).join(", ")}`,
         400
       );
     }
 
-    const body = parsed.data;
+    const body: TriggerReworkRequest = {
+      ...parsed.data,
+      companyId: ctx.companyId,
+      userId: ctx.userId
+    };
 
     // This function had NO authorization gate at all. It writes rework
     // operations, dependency edges and productionQuantity rows, so it needs the
@@ -441,9 +462,7 @@ serve(async (req) => {
     // short-circuits for a service_role caller (the two MES callers), which is
     // exactly why the ownership check below — not this call — is what protects
     // those paths.
-    await requirePermissions(req, body.companyId, body.userId, {
-      update: "production",
-    });
+    await assertOperationPermissions(ctx, { update: "production" });
 
     // `jobId` and `companyId` both arrive in the payload, and nothing proved
     // they belong together. Without this, a request pairing one company's id
@@ -458,14 +477,14 @@ serve(async (req) => {
     // 404, not 403: a job in another company must be indistinguishable from a
     // job that does not exist.
     if (!job || job.companyId !== body.companyId) {
-      return errorResponse("Job not found in this company", 404);
+      throw new RecordNotFoundError("Job not found in this company");
     }
 
     // The same holds for the two operation ids: triggerRework reads, clones and
     // writes productionQuantity against them by id alone, so both must be
     // operations of this job (the job is already proven to be this company's).
     const operationIds = [
-      ...new Set([body.triggeredAtJobOperationId, body.targetJobOperationId]),
+      ...new Set([body.triggeredAtJobOperationId, body.targetJobOperationId])
     ];
     const operations = await db
       .selectFrom("jobOperation")
@@ -475,7 +494,7 @@ serve(async (req) => {
       .where("companyId", "=", body.companyId)
       .execute();
     if (operations.length !== operationIds.length) {
-      return errorResponse("Job operation not found in this company", 404);
+      throw new RecordNotFoundError("Job operation not found in this company");
     }
 
     await assertCompanyRecords(
@@ -501,38 +520,21 @@ serve(async (req) => {
     );
 
     const result = await db.transaction().execute(async (trx) => {
-      return await triggerRework(trx, body);
+      return await cloneReworkOperations(trx, body);
     });
 
-    // Trigger reschedule for date/priority recalculation (after transaction)
-    try {
-      const supabaseUrl = Deno.env.get("SUPABASE_URL");
-      const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-      await fetch(`${supabaseUrl}/functions/v1/reschedule`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${serviceRoleKey}`,
-        },
-        body: JSON.stringify({
-          jobId: body.jobId,
-          companyId: body.companyId,
-          userId: body.userId,
-        }),
-      });
-    } catch (err) {
+    // Reschedule for date/priority recalculation (after the transaction). A
+    // failure is logged, not raised: the rework itself has committed.
+    const rescheduled = await reschedule(
+      { ...ctx, system: true },
+      { jobId: body.jobId }
+    );
+    if (rescheduled.error) {
       logger.error("Failed to trigger reschedule after rework", {
-        error: String((err as Error)?.stack ?? err),
+        error: rescheduled.error
       });
     }
 
-    return jsonResponse({ success: true, ...result });
-  } catch (error) {
-    logger.error(
-      `❌ Rework failed: ${
-        error instanceof Error ? error.message : String(error)
-      }`
-    );
-    return errorResponse(error, 500);
-  }
-});
+    return { success: true, ...result };
+  });
+}

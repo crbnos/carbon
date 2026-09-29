@@ -54,6 +54,7 @@ import {
   type OperationContext,
   serviceRoleClient
 } from "../context";
+import { reschedule } from "../reschedule";
 import { runOperation } from "../result";
 import { applyScrapReplacement } from "./scrap-replacement";
 
@@ -2782,18 +2783,14 @@ export function issue(
 
           // Reschedule outside the transaction (trigger-rework precedent):
           // reopened/topped-up operations need fresh dates and priorities.
-          try {
-            await (await serviceRoleClient()).functions.invoke("reschedule", {
-              body: { jobId: job.id, companyId, userId },
-              // The scrap transaction already committed; don't let a stalled
-              // reschedule hold the request open until the platform kills it.
-              signal: AbortSignal.timeout(10_000)
-            });
-          } catch (rescheduleError) {
+          // The scrap transaction already committed; a failed reschedule is logged, not raised.
+          const rescheduled = await reschedule(
+            { ...ctx, system: true },
+            { jobId: job.id }
+          );
+          if (rescheduled.error) {
             logger.error("Failed to trigger reschedule after scrap", {
-              error: String(
-                (rescheduleError as Error)?.stack ?? rescheduleError
-              )
+              error: rescheduled.error
             });
           }
 
@@ -3687,22 +3684,14 @@ export function issue(
 
           // Reschedule outside the transaction when the routing was reopened.
           if (didReplace) {
-            try {
-              await (await serviceRoleClient()).functions.invoke("reschedule", {
-                body: {
-                  jobId: jobMaterial.data.jobId,
-                  companyId,
-                  userId
-                },
-                // The scrap transaction already committed; don't let a stalled
-                // reschedule hold the request open until the platform kills it.
-                signal: AbortSignal.timeout(10_000)
-              });
-            } catch (rescheduleError) {
+            // The scrap transaction already committed; a failed reschedule is logged, not raised.
+            const rescheduled = await reschedule(
+              { ...ctx, system: true },
+              { jobId: jobMaterial.data.jobId }
+            );
+            if (rescheduled.error) {
               logger.error("Failed to trigger reschedule after scrap", {
-                error: String(
-                  (rescheduleError as Error)?.stack ?? rescheduleError
-                )
+                error: rescheduled.error
               });
             }
           }

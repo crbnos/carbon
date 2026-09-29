@@ -141,7 +141,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   if (["Planned", "Ready"].includes(status)) {
     const serviceRole = getCarbonServiceRole();
-    await recalculateJobRequirements(serviceRole, {
+    await recalculateJobRequirements(serviceRole, getDatabaseClient(), {
       id,
       companyId,
       userId

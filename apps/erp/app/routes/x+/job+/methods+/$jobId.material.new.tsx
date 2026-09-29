@@ -122,8 +122,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   // Recalculate for ALL material types if job is released
   if (isReleased) {
-    const promises = [
-      recalculateJobMakeMethodRequirements(serviceRole, {
+    const promises: Promise<{ error: Error | null }>[] = [
+      recalculateJobMakeMethodRequirements(serviceRole, getDatabaseClient(), {
         id: validation.data.jobMakeMethodId,
         companyId,
         userId

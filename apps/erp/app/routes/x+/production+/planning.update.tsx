@@ -381,7 +381,7 @@ export async function action({ request }: ActionFunctionArgs) {
         // Trigger recalculation for all jobs
         if (allJobIds.length > 0) {
           for (const jobId of allJobIds) {
-            await recalculateJobRequirements(client, {
+            await recalculateJobRequirements(client, getDatabaseClient(), {
               id: jobId,
               companyId,
               userId

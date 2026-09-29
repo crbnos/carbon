@@ -4,6 +4,7 @@ import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import { ASSEMBLER_SERVICE_URL } from "@carbon/env";
 import { datetime } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { getDatabaseClient } from "~/services/database.server";
 import { getEdgeFunctionErrorMessage } from "~/utils/error";
 import {
   getJobReleaseReadiness,
@@ -89,11 +90,15 @@ export async function releaseJobs({
   const purchaseOrders = { ...purchaseOrdersBySupplierId };
 
   for (const id of jobIds) {
-    const recalc = await recalculateJobRequirements(serviceRole, {
-      id,
-      companyId,
-      userId
-    });
+    const recalc = await recalculateJobRequirements(
+      serviceRole,
+      getDatabaseClient(),
+      {
+        id,
+        companyId,
+        userId
+      }
+    );
     if (recalc.error) return { error: `Failed to recalculate job ${id}` };
 
     await runMRP(serviceRole, db, { type: "job", id, companyId, userId });

@@ -132,6 +132,7 @@ export async function convertSalesOrderLinesToJobs(
     userId: string;
   }
 ) {
+  const { recalculateAs } = await import("@carbon/operations/recalculate");
   const { getMethodAs } = await import("@carbon/operations/get-method");
   const salesOrder = await client
     .from("salesOrder")
@@ -360,13 +361,11 @@ export async function convertSalesOrderLinesToJobs(
           }
         }
 
-        await client.functions.invoke("recalculate", {
-          body: {
-            type: "jobRequirements",
-            id: createJob.data.id,
-            companyId,
-            userId
-          }
+        await recalculateAs(client, db, {
+          type: "jobRequirements",
+          id: createJob.data.id,
+          companyId,
+          userId
         });
 
         await assignJobSerialNumbers(client, db, {
@@ -2670,33 +2669,33 @@ export async function recalculateJobOperationDependencies(
 }
 export async function recalculateJobRequirements(
   client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   params: {
     id: string; // job id
     companyId: string;
     userId: string;
   }
 ) {
-  return client.functions.invoke("recalculate", {
-    body: {
-      type: "jobRequirements",
-      ...params
-    }
+  const { recalculateAs } = await import("@carbon/operations/recalculate");
+  return recalculateAs(client, db, {
+    type: "jobRequirements",
+    ...params
   });
 }
 
 export async function recalculateJobMakeMethodRequirements(
   client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   params: {
     id: string; // job make method id
     companyId: string;
     userId: string;
   }
 ) {
-  return client.functions.invoke("recalculate", {
-    body: {
-      type: "jobMakeMethodRequirements",
-      ...params
-    }
+  const { recalculateAs } = await import("@carbon/operations/recalculate");
+  return recalculateAs(client, db, {
+    type: "jobMakeMethodRequirements",
+    ...params
   });
 }
 
@@ -3388,6 +3387,7 @@ export async function insertJob(
   error: PostgrestError | null;
 }> {
   const { getMethodAs } = await import("@carbon/operations/get-method");
+  const { recalculateAs } = await import("@carbon/operations/recalculate");
   let jobId: string;
   if (input.jobId) {
     jobId = input.jobId;
@@ -3567,13 +3567,11 @@ export async function insertJob(
   });
 
   if (!options?.skipRecalculate) {
-    await client.functions.invoke("recalculate", {
-      body: {
-        type: "jobRequirements",
-        id: createdJobId,
-        companyId: input.companyId,
-        userId: input.createdBy
-      }
+    await recalculateAs(client, db, {
+      type: "jobRequirements",
+      id: createdJobId,
+      companyId: input.companyId,
+      userId: input.createdBy
     });
   }
 
@@ -4372,7 +4370,7 @@ export async function upsertJobMethod(
       } as PostgrestError
     };
   }
-  return recalculateJobRequirements(client, {
+  return recalculateJobRequirements(client, db, {
     id: jobMethod.targetId,
     companyId: jobMethod.companyId,
     userId: jobMethod.userId
