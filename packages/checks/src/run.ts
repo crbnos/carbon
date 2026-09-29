@@ -26,8 +26,11 @@ import { noUnroundedTrackedQuantity } from "./conformance/no-unrounded-tracked-q
 import { noUnscopedKyselyWrite } from "./conformance/no-unscoped-kysely-write";
 import { noViewWithoutInvoker } from "./conformance/no-view-without-invoker";
 import { noZeroConcurrency } from "./conformance/no-zero-concurrency";
-import { operationAuthorizesCaller } from "./conformance/operation-authorizes-caller";
-import { loadEdgeFunctions, loadOperations } from "./sources/edge-functions";
+import { serverFnAuthorizesCaller } from "./conformance/server-fn-authorizes-caller";
+import {
+  loadEdgeFunctions,
+  loadServerFunctions
+} from "./sources/edge-functions";
 import { loadSqlFiles, migrationsDir, repoRoot } from "./sources/migrations";
 import { loadModules, modulesDir } from "./sources/modules";
 import { loadServerFiles } from "./sources/server-files";
@@ -66,8 +69,8 @@ export const EDGE_FUNCTION_CHECKS: ConformanceCheck[] = [
   edgeFunctionAuthorizesCaller
 ];
 
-/** Checks that run once per `@carbon/operations` entry point. */
-export const OPERATION_CHECKS: ConformanceCheck[] = [operationAuthorizesCaller];
+/** Checks that run once per `@carbon/server-functions` entry point. */
+export const SERVER_FN_CHECKS: ConformanceCheck[] = [serverFnAuthorizesCaller];
 
 export const STRUCTURE_CHECKS: StructureCheck[] = [moduleShape];
 
@@ -124,7 +127,7 @@ export function collectFindings(root: string = repoRoot()): Finding[] {
       noRawForwardedHeaders
     ]),
     ...scanAll(loadEdgeFunctions(root), EDGE_FUNCTION_CHECKS),
-    ...scanAll(loadOperations(root), OPERATION_CHECKS)
+    ...scanAll(loadServerFunctions(root), SERVER_FN_CHECKS)
   ];
 }
 

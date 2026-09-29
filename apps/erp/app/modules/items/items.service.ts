@@ -129,11 +129,10 @@ export async function activateMethodVersion(
   }
 ) {
   const { companyId, userId, id } = payload;
-  const [{ convert }, { callerContext }] = await Promise.all([
-    import("@carbon/operations/convert"),
-    import("@carbon/operations")
-  ]);
-  return convert(await callerContext(client, { db, companyId, userId }), {
+  const { convert } = await import("@carbon/server-functions/convert");
+  return convert.withClient(client, db, {
+    companyId,
+    userId,
     type: "methodVersionToActive",
     id
   });
@@ -147,8 +146,8 @@ export async function copyItem(
     userId: string;
   }
 ) {
-  const { getMethodAs } = await import("@carbon/operations/get-method");
-  return getMethodAs(client, db, {
+  const { getMethod } = await import("@carbon/server-functions/get-method");
+  return getMethod.withClient(client, db, {
     type: "itemToItem",
     sourceId: args.sourceId,
     targetId: args.targetId,
@@ -173,8 +172,8 @@ export async function copyMakeMethod(
     userId: string;
   }
 ) {
-  const { getMethodAs } = await import("@carbon/operations/get-method");
-  return getMethodAs(client, db, {
+  const { getMethod } = await import("@carbon/server-functions/get-method");
+  return getMethod.withClient(client, db, {
     type: "makeMethodToMakeMethod",
     sourceId: args.sourceId,
     targetId: args.targetId,
@@ -266,8 +265,8 @@ export async function createRevision(
   });
 
   if (item.replenishmentSystem !== "Buy") {
-    const { getMethodAs } = await import("@carbon/operations/get-method");
-    await getMethodAs(client, db, {
+    const { getMethod } = await import("@carbon/server-functions/get-method");
+    await getMethod.withClient(client, db, {
       type: "itemToItem",
       sourceId: item.id,
       targetId: itemInsert.data.id,

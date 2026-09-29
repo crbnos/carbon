@@ -17,8 +17,9 @@ import { validationError, validator } from "@carbon/form";
 import { trigger } from "@carbon/jobs";
 import { getLogger } from "@carbon/logger";
 import { NotificationEvent } from "@carbon/notifications";
-import { updatePurchasedPrices } from "@carbon/operations/update-purchased-prices";
 import { VStack } from "@carbon/react";
+import { ServerFnContext } from "@carbon/server-functions";
+import { updatePurchasedPrices } from "@carbon/server-functions/update-purchased-prices";
 import { msg } from "@lingui/core/macro";
 import { renderAsync } from "@react-email/components";
 import { parseAcceptLanguage } from "intl-parse-accept-language";
@@ -366,7 +367,11 @@ export async function action(args: ActionFunctionArgs) {
         "Purchase Order Finalize"
       ) {
         const priceUpdate = await updatePurchasedPrices(
-          { db: getDatabaseClient(), companyId, userId, system: true },
+          ServerFnContext.system({
+            db: getDatabaseClient(),
+            companyId,
+            userId
+          }),
           {
             purchaseOrderId: orderId,
             source: "purchaseOrder",

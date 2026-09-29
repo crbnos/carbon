@@ -5,7 +5,7 @@ import { flash } from "@carbon/auth/session.server";
 import { evaluateLinesForSurface, isBlocked } from "@carbon/ee/rules.server";
 import { validationError, validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
-import { issueAs } from "@carbon/operations/issue";
+import { issue } from "@carbon/server-functions/issue";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
 import { getDatabaseClient } from "~/services/database.server";
@@ -97,7 +97,7 @@ export async function action({ request }: ActionFunctionArgs) {
     }
   }
 
-  const issue = await issueAs(serviceRole, getDatabaseClient(), {
+  const issued = await issue.withClient(serviceRole, getDatabaseClient(), {
     id: jobOperationId,
     type: "partToOperation",
     itemId,
@@ -109,10 +109,10 @@ export async function action({ request }: ActionFunctionArgs) {
     userId
   });
 
-  if (issue.error) {
+  if (issued.error) {
     throw redirect(
       requestReferrer(request) ?? path.to.operations,
-      await flash(request, error(issue.error, "Failed to issue material"))
+      await flash(request, error(issued.error, "Failed to issue material"))
     );
   }
 

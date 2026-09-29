@@ -2,7 +2,8 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { onShapeDataValidator } from "@carbon/ee/onshape";
 import { getLogger } from "@carbon/logger";
-import { sync } from "@carbon/operations/sync";
+import { ServerFnContext } from "@carbon/server-functions";
+import { sync } from "@carbon/server-functions/sync";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { getDatabaseClient } from "~/services/database.server";
@@ -47,7 +48,7 @@ export async function action({ request }: ActionFunctionArgs) {
     const serviceRole = await getCarbonServiceRole();
 
     const synced = await sync(
-      { db: getDatabaseClient(), companyId, userId, system: true },
+      ServerFnContext.system({ db: getDatabaseClient(), companyId, userId }),
       { type: "onshape", makeMethodId: makeMethodId as string, data: parsed }
     );
 

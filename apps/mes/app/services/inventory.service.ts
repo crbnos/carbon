@@ -502,13 +502,13 @@ export async function insertManualInventoryAdjustment(
     createdBy: string;
   }
 ) {
-  const { postInventoryAdjustmentAs } = await import(
-    "@carbon/operations/post-inventory-adjustment"
+  const { postInventoryAdjustment } = await import(
+    "@carbon/server-functions/post-inventory-adjustment"
   );
   const { companyId, createdBy, entryType, ...adjustment } =
     inventoryAdjustment;
 
-  const result = await postInventoryAdjustmentAs(client, db, {
+  const result = await postInventoryAdjustment.withClient(client, db, {
     ...adjustment,
     adjustmentType: entryType,
     companyId,

@@ -1,7 +1,7 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { validationError, validator } from "@carbon/form";
-import { issueAs } from "@carbon/operations/issue";
+import { issue } from "@carbon/server-functions/issue";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { getDatabaseClient } from "~/services/database.server";
@@ -36,7 +36,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   const serviceRole = await getCarbonServiceRole();
-  const issue = await issueAs(serviceRole, getDatabaseClient(), {
+  const issued = await issue.withClient(serviceRole, getDatabaseClient(), {
     trackedEntityId,
     materialId,
     parentTrackedEntityId: parentTrackedEntityId!,
@@ -47,7 +47,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     userId
   });
 
-  if (issue.error) {
+  if (issued.error) {
     return data(
       { success: false, message: "Failed to scrap entity" },
       { status: 400 }

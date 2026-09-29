@@ -200,7 +200,7 @@ export async function setPickingListLineQuantity(
     companyId: string;
   }
 ) {
-  const { postPickingAs } = await import("@carbon/operations/post-picking");
+  const { postPicking } = await import("@carbon/server-functions/post-picking");
   const lineResult = await client
     .from("pickingListLine")
     .select(
@@ -282,10 +282,10 @@ export async function setPickingListLineQuantity(
             companyId: pickingList.companyId
           };
 
-    const result = await postPickingAs(
+    const result = await postPicking.withClient(
       client,
       db,
-      body as Parameters<typeof postPickingAs>[2]
+      body as Parameters<typeof postPicking.withClient>[2]
     );
 
     if (result.error) {
@@ -333,7 +333,7 @@ export async function setPickingListLineTrackedEntity(
     companyId: string;
   }
 ) {
-  const { postPickingAs } = await import("@carbon/operations/post-picking");
+  const { postPicking } = await import("@carbon/server-functions/post-picking");
   const lineResult = await client
     .from("pickingListLine")
     .select(
@@ -399,10 +399,10 @@ export async function setPickingListLineTrackedEntity(
     if (isBatch) body.quantity = Math.max(1, args.quantity ?? 1);
   }
 
-  const result = await postPickingAs(
+  const result = await postPicking.withClient(
     client,
     db,
-    body as Parameters<typeof postPickingAs>[2]
+    body as Parameters<typeof postPicking.withClient>[2]
   );
   if (result.error) {
     return {

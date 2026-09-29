@@ -3,7 +3,7 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { lockIssueDispositions } from "@carbon/database/quality";
-import { createAs } from "@carbon/operations/create";
+import { create } from "@carbon/server-functions/create";
 import { datetime } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
@@ -342,7 +342,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     throw await failWithRollback(err, "Failed to set the Issue's item");
   }
 
-  const tasks = await createAs(serviceRole, getDatabaseClient(), {
+  const tasks = await create.withClient(serviceRole, getDatabaseClient(), {
     type: "nonConformanceTasks",
     id: ncrId,
     companyId,

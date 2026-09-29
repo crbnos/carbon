@@ -14,8 +14,8 @@ import { trigger } from "@carbon/jobs";
 import { trackWorkEvent } from "@carbon/lib/telemetry";
 import { raiseMoment } from "@carbon/lib/workflows";
 import { getLogger } from "@carbon/logger";
-import { postShipmentAs } from "@carbon/operations/post-shipment";
 import { getCachedPrinterConfig } from "@carbon/printing/printing.server";
+import { postShipment } from "@carbon/server-functions/post-shipment";
 import { datetime } from "@carbon/utils";
 import { parseDate } from "@internationalized/date";
 import type { ActionFunctionArgs } from "react-router";
@@ -353,7 +353,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
       }
     }
 
-    const postShipment = await postShipmentAs(
+    const posted = await postShipment.withClient(
       serviceRole,
       getDatabaseClient(),
       {
@@ -364,7 +364,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
       }
     );
 
-    if (postShipment.error) {
+    if (posted.error) {
       await client
         .from("shipment")
         .update({
@@ -374,10 +374,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
       throw redirect(
         path.to.shipmentDetails(shipmentId),
-        await flash(
-          request,
-          error(postShipment.error, "Failed to post shipment")
-        )
+        await flash(request, error(posted.error, "Failed to post shipment"))
       );
     }
 
@@ -415,7 +412,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     // RETAINED shelf lots (their quantity changed in the split) — existing
     // entities being reprinted, hence sourceDocument "Entity". The shipped
     // child departed Consumed and gets no label.
-    const splitEntityIds = postShipment.data?.splitEntityIds || [];
+    const splitEntityIds = posted.data?.splitEntityIds || [];
     if (splitEntityIds.length > 0) {
       try {
         for (const entityId of splitEntityIds) {

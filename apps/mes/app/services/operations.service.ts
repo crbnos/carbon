@@ -349,19 +349,20 @@ export async function finishJobOperation(
         if (unposted.error) throw unposted.error;
         if (unposted.data.length === 0) return;
 
-        const { postProductionEvent } = await import(
-          "@carbon/operations/post-production-event"
-        );
+        const [{ postProductionEvent }, { ServerFnContext }] =
+          await Promise.all([
+            import("@carbon/server-functions/post-production-event"),
+            import("@carbon/server-functions")
+          ]);
         await async.map(
           unposted.data,
           (event) =>
             postProductionEvent(
-              {
+              ServerFnContext.system({
                 db,
                 companyId: args.companyId,
-                userId: args.userId,
-                system: true
-              },
+                userId: args.userId
+              }),
               { productionEventId: event.id }
             ),
           { concurrency: 4 }
@@ -453,7 +454,7 @@ export async function returnPickedRemainders(
     companyId: string;
   }
 ): Promise<{ jobId: string | undefined }> {
-  const { postPickingAs } = await import("@carbon/operations/post-picking");
+  const { postPicking } = await import("@carbon/server-functions/post-picking");
   const op = await client
     .from("jobOperation")
     .select("jobId")
@@ -488,7 +489,7 @@ export async function returnPickedRemainders(
 
   // `functions.invoke` resolves to `{ data, error }` rather than rejecting —
   // inspect and log, otherwise a stranded lineside remainder is lost silently.
-  const { error } = await postPickingAs(client, db, body);
+  const { error } = await postPicking.withClient(client, db, body);
   if (error) {
     log.error("picked-material return sweep failed", {
       error,
@@ -1435,7 +1436,7 @@ export async function backflushUntrackedMaterialsOnStepRecord(
   db: Kysely<KyselyDatabase>,
   args: { jobOperationStepId: string; companyId: string; userId: string }
 ) {
-  const { issueAs } = await import("@carbon/operations/issue");
+  const { issue } = await import("@carbon/server-functions/issue");
   const step = await client
     .from("jobOperationStep")
     .select("id, operationId")
@@ -1571,7 +1572,7 @@ export async function backflushUntrackedMaterialsOnStepRecord(
     }
     const delta = target - (material.quantityIssued ?? 0);
     if (delta <= 0) continue;
-    const issue = await issueAs(client, db, {
+    const issued = await issue.withClient(client, db, {
       id: operationId,
       type: "partToOperation",
       itemId: material.itemId,
@@ -1581,7 +1582,7 @@ export async function backflushUntrackedMaterialsOnStepRecord(
       companyId: args.companyId,
       userId: args.userId
     });
-    if (issue.error) failures.push(material.itemId);
+    if (issued.error) failures.push(material.itemId);
   }
 
   return {

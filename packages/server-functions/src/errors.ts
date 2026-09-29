@@ -1,0 +1,126 @@
+import { getLogger } from "@carbon/logger";
+
+const logger = getLogger("server-functions");
+
+/**
+ * A failure a caller may show the user. `message` is empty when the failure
+ * came from the data layer: raw text such as `duplicate key value violates
+ * unique constraint "receiptLine_pkey"` must never reach a toast, so the
+ * caller's own fallback copy wins. `body` carries structured extras a caller
+ * reads, e.g. `invalidLineIds`.
+ */
+export class ServerFnError extends Error {
+  readonly status: number;
+  readonly body: Record<string, unknown>;
+
+  constructor(
+    message: string,
+    status = 500,
+    body: Record<string, unknown> = {}
+  ) {
+    super(message);
+    this.name = new.target.name;
+    this.status = status;
+    this.body = body;
+  }
+}
+
+export class InvalidInputError extends ServerFnError {
+  constructor(message: string, body?: Record<string, unknown>) {
+    super(message, 400, body);
+  }
+}
+
+export class ForbiddenError extends ServerFnError {
+  constructor(message = "Insufficient permissions") {
+    super(message, 403);
+  }
+}
+
+export class NotFoundError extends ServerFnError {
+  constructor(message: string) {
+    super(message, 404);
+  }
+}
+
+/**
+ * True when `err` came from the data layer rather than from our own `throw`.
+ * Structural only: it never reads message text, so an authored message that
+ * mentions a table or a constraint is still shown.
+ */
+export function isDataLayerError(err: unknown): boolean {
+  if (err === null || typeof err !== "object") return false;
+  const e = err as Record<string, unknown>;
+  // supabase-js PostgrestError: exactly these documented keys.
+  if (
+    typeof e.code === "string" &&
+    "details" in e &&
+    "hint" in e &&
+    "message" in e
+  ) {
+    return true;
+  }
+  // node-postgres DatabaseError (SQLSTATE plus protocol fields), thrown by Kysely.
+  return typeof e.code === "string" && typeof e.severity === "string";
+}
+
+type ZodLikeError = {
+  name: "ZodError";
+  issues: Array<{ path?: unknown[]; message?: unknown }>;
+};
+
+function isZodError(err: unknown): err is ZodLikeError {
+  const e = err as { name?: unknown; issues?: unknown } | null;
+  return e?.name === "ZodError" && Array.isArray(e.issues);
+}
+
+/**
+ * A payload that fails validation is the caller's input contract, not a data
+ * leak, so its issues are summarised (`path: message; …`).
+ */
+function summarizeIssues({ issues }: ZodLikeError): string {
+  const shown = issues.slice(0, 5).map(({ path, message }) => {
+    const text = typeof message === "string" ? message : "invalid";
+    return Array.isArray(path) && path.length > 0
+      ? `${path.join(".")}: ${text}`
+      : text;
+  });
+  const more = issues.length - shown.length;
+  return `Invalid input — ${shown.join("; ")}${more > 0 ? `; +${more} more` : ""}`;
+}
+
+/**
+ * The error a caller receives for anything a server function throws: logged in
+ * full, surfaced sanitized. A `ServerFnError` passes through; invalid input is
+ * a 400; anything else gets `defaultStatus` (or its own 4xx/5xx `status`) and
+ * keeps its message only when it did not come from the data layer.
+ */
+export function toServerFnError(
+  name: string,
+  err: unknown,
+  defaultStatus = 500
+): ServerFnError {
+  logger.error(`${name} failed`, { error: err });
+
+  if (err instanceof ServerFnError) return err;
+  if (isZodError(err)) return new InvalidInputError(summarizeIssues(err));
+
+  const { status, message } = (err ?? {}) as {
+    status?: unknown;
+    message?: unknown;
+  };
+  const text = typeof err === "string" ? err : message;
+  return new ServerFnError(
+    typeof text === "string" && !isDataLayerError(err) ? text : "",
+    isHttpErrorStatus(status) ? status : defaultStatus
+  );
+}
+
+function isHttpErrorStatus(status: unknown): status is number {
+  return (
+    typeof status === "number" &&
+    Number.isInteger(status) &&
+    status >= 400 &&
+    status <= 599
+  );
+}

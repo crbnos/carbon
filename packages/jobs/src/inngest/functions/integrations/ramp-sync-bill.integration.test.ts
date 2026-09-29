@@ -4,7 +4,7 @@ import {
   type RampBill,
   type RampClient
 } from "@carbon/ee/ramp.server";
-import { OperationError } from "@carbon/operations";
+import { ServerFnError } from "@carbon/server-functions";
 import { sql } from "kysely";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { getJobDatabaseClient } from "../../../db";
@@ -17,8 +17,8 @@ import type { RampSyncContext } from "./ramp-sync-shared";
 // Only the posting operation is substituted. All staging, status transitions,
 // queries, mappings, FKs and rollback use real Postgres.
 const { post } = vi.hoisted(() => ({ post: vi.fn() }));
-vi.mock("@carbon/operations/post-purchase-invoice", () => ({
-  postPurchaseInvoiceAs: post
+vi.mock("@carbon/server-functions/post-purchase-invoice", () => ({
+  postPurchaseInvoice: { withClient: post }
 }));
 
 vi.mock("@carbon/ee/ramp.server", async (original) => ({
@@ -160,7 +160,7 @@ describe.skipIf(process.env.RUN_RAMP_DB_TESTS !== "true")(
             .execute();
           return {
             data: null,
-            error: new OperationError("simulated posting failure")
+            error: new ServerFnError("simulated posting failure")
           };
         }
       );
@@ -380,7 +380,7 @@ describe.skipIf(process.env.RUN_RAMP_DB_TESTS !== "true")(
           .execute();
         return {
           data: null,
-          error: new OperationError("response lost after commit")
+          error: new ServerFnError("response lost after commit")
         };
       });
       vi.mocked(confirmSyncs).mockClear();

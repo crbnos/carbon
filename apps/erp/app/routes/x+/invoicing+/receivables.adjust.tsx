@@ -2,7 +2,8 @@ import { assertIsPost, error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
-import { createAs } from "@carbon/operations/create";
+import type { ServerFnResult } from "@carbon/server-functions";
+import { create } from "@carbon/server-functions/create";
 import { datetime } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
@@ -62,11 +63,11 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 
   const serviceRole = getCarbonServiceRole();
-  const journalEntry = await createAs<{ id: string }>(
+  const journalEntry = await (create.withClient(
     serviceRole,
     getDatabaseClient(),
     { type: "journalEntry", companyId, userId }
-  );
+  ) as Promise<ServerFnResult<{ id: string }>>);
 
   if (!journalEntry.data || journalEntry.error) {
     throw redirect(

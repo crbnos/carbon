@@ -1361,8 +1361,8 @@ export async function mergeTrackedEntities(
     userId: string;
   }
 ) {
-  const { issueAs } = await import("@carbon/operations/issue");
-  return issueAs(client, db, {
+  const { issue } = await import("@carbon/server-functions/issue");
+  return issue.withClient(client, db, {
     type: "mergeTrackedEntities",
     ...args
   });
@@ -1604,12 +1604,12 @@ export async function insertManualInventoryAdjustment(
     createdBy: string;
   }
 ) {
-  const { postInventoryAdjustmentAs } = await import(
-    "@carbon/operations/post-inventory-adjustment"
+  const { postInventoryAdjustment } = await import(
+    "@carbon/server-functions/post-inventory-adjustment"
   );
   const { companyId, createdBy, ...adjustment } = inventoryAdjustment;
 
-  const result = await postInventoryAdjustmentAs(client, db, {
+  const result = await postInventoryAdjustment.withClient(client, db, {
     ...adjustment,
     companyId,
     userId: createdBy
@@ -1699,11 +1699,15 @@ export async function correctStockMovement(
   }
 ) {
   const { companyId, createdBy, ...rest } = correction;
-  const { correctStockMovement: correct } = await import(
-    "@carbon/operations/correct-stock-movement"
-  );
+  const [{ correctStockMovement }, { ServerFnContext }] = await Promise.all([
+    import("@carbon/server-functions/correct-stock-movement"),
+    import("@carbon/server-functions")
+  ]);
 
-  const result = await correct({ db, companyId, userId: createdBy }, rest);
+  const result = await correctStockMovement(
+    ServerFnContext.user({ db, companyId, userId: createdBy }),
+    rest
+  );
 
   if (result.error) {
     return {
@@ -2966,7 +2970,7 @@ export async function setPickingListLineTrackedEntity(
     companyId: string;
   }
 ) {
-  const { postPickingAs } = await import("@carbon/operations/post-picking");
+  const { postPicking } = await import("@carbon/server-functions/post-picking");
   const lineResult = await client
     .from("pickingListLine")
     .select(
@@ -3034,10 +3038,10 @@ export async function setPickingListLineTrackedEntity(
     if (isBatch) body.quantity = Math.max(1, args.quantity ?? 1);
   }
 
-  const result = await postPickingAs(
+  const result = await postPicking.withClient(
     client,
     db,
-    body as Parameters<typeof postPickingAs>[2]
+    body as Parameters<typeof postPicking.withClient>[2]
   );
   if (result.error) {
     return {
@@ -3964,7 +3968,7 @@ export async function pickPickingListLine(
     companyId: string;
   }
 ) {
-  const { postPickingAs } = await import("@carbon/operations/post-picking");
+  const { postPicking } = await import("@carbon/server-functions/post-picking");
   const lineResult = await client
     .from("pickingListLine")
     .select(
@@ -4045,10 +4049,10 @@ export async function pickPickingListLine(
             companyId: args.companyId
           };
 
-    const result = await postPickingAs(
+    const result = await postPicking.withClient(
       client,
       db,
-      body as Parameters<typeof postPickingAs>[2]
+      body as Parameters<typeof postPicking.withClient>[2]
     );
 
     if (result.error) {

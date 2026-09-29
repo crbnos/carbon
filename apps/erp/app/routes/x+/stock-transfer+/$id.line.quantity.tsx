@@ -4,7 +4,7 @@ import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { trigger } from "@carbon/jobs";
 import { getLogger } from "@carbon/logger";
-import { postStockTransferAs } from "@carbon/operations/post-stock-transfer";
+import { postStockTransfer } from "@carbon/server-functions/post-stock-transfer";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { getStockTransfer } from "~/modules/inventory";
@@ -100,17 +100,21 @@ export async function action({ request, params }: ActionFunctionArgs) {
   // Service role: `userId` is the effective (console pin-in) user, not the
   // token's subject, which the operation's membership check compares.
   const { data: transferResult, error: functionError } =
-    await postStockTransferAs(getCarbonServiceRole(), getDatabaseClient(), {
-      type: type,
-      stockTransferId: stockTransferLine.data.stockTransferId,
-      stockTransferLineId: lineId,
-      quantity: pickedQuantity,
-      locationId: locationId,
-      trackedEntityId: trackedEntityId,
-      userId,
-      companyId
-      // One body for four `type`s; the operation validates it per type.
-    } as Parameters<typeof postStockTransferAs>[2]);
+    await postStockTransfer.withClient(
+      getCarbonServiceRole(),
+      getDatabaseClient(),
+      {
+        type: type,
+        stockTransferId: stockTransferLine.data.stockTransferId,
+        stockTransferLineId: lineId,
+        quantity: pickedQuantity,
+        locationId: locationId,
+        trackedEntityId: trackedEntityId,
+        userId,
+        companyId
+        // One body for four `type`s; the operation validates it per type.
+      } as Parameters<typeof postStockTransfer.withClient>[2]
+    );
 
   if (functionError) {
     return data(

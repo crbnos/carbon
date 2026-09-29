@@ -1,7 +1,8 @@
 import type { Database, Json } from "@carbon/database";
 import type { KyselyTx } from "@carbon/database/client";
 import { lockIssueDispositions } from "@carbon/database/quality";
-import { postNonConformance } from "@carbon/operations/post-nonconformance";
+import { ServerFnContext } from "@carbon/server-functions";
+import { postNonConformance } from "@carbon/server-functions/post-nonconformance";
 import { datetime, EPSILON, round } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { nanoid } from "nanoid";
@@ -1154,7 +1155,7 @@ export async function closeIssue(
   // a retry after a later failure is safe; a posting failure aborts the close.
   if (movements.length > 0) {
     const post = await postNonConformance(
-      { db, companyId, userId },
+      ServerFnContext.user({ db, companyId, userId }),
       {
         documentType: "Non-Conformance",
         documentId: nonConformanceId,

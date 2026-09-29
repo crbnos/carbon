@@ -3,7 +3,8 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { getLogger } from "@carbon/logger";
-import { createAs } from "@carbon/operations/create";
+import type { ServerFnResult } from "@carbon/server-functions";
+import { create } from "@carbon/server-functions/create";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
 import { getDatabaseClient } from "~/services/database.server";
@@ -18,13 +19,19 @@ export async function action({ request }: ActionFunctionArgs) {
 
   const serviceRole = getCarbonServiceRole();
 
-  const journalEntry = await createAs<{
-    id: string;
-  }>(serviceRole, getDatabaseClient(), {
-    type: "journalEntry",
-    companyId,
-    userId
-  });
+  const journalEntry = await (create.withClient(
+    serviceRole,
+    getDatabaseClient(),
+    {
+      type: "journalEntry",
+      companyId,
+      userId
+    }
+  ) as Promise<
+    ServerFnResult<{
+      id: string;
+    }>
+  >);
 
   if (!journalEntry.data || journalEntry.error) {
     logger.error(journalEntry.error);

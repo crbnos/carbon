@@ -6,7 +6,7 @@
 // values stand as golden literals: they ARE executeFunction's behavior, and a change
 // here is a behavior change for MCP, the agent, the workflow engine and HTTP at once.
 
-import { OperationError } from "@carbon/operations";
+import { ServerFnError } from "@carbon/server-functions";
 import { ORPCError } from "@orpc/server";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -635,7 +635,7 @@ describe("dispatchOperation service-call contract (golden, ex-executeFunction pa
     spies.getAccountLedger.mockReset();
     spies.getAccountLedger.mockResolvedValue({
       data: null,
-      error: new OperationError("Receipt not found", 404)
+      error: new ServerFnError("Receipt not found", 404)
     });
     const r = await runDispatch(
       "accounting_getAccountLedger",
@@ -652,7 +652,7 @@ describe("dispatchOperation service-call contract (golden, ex-executeFunction pa
     spies.getAccountLedger.mockReset();
     spies.getAccountLedger.mockResolvedValue({
       data: null,
-      error: new OperationError("")
+      error: new ServerFnError("")
     });
     const r = await runDispatch(
       "accounting_getAccountLedger",
@@ -888,7 +888,7 @@ describe("callOperation (the MCP/agent/workflow entry point)", () => {
   it("passes an operation's own message through as an execution error", async () => {
     spies.getAccountLedger.mockResolvedValue({
       data: null,
-      error: new OperationError("Insufficient quantity", 400)
+      error: new ServerFnError("Insufficient quantity", 400)
     });
     const result = await callOperation(
       "accounting_getAccountLedger",

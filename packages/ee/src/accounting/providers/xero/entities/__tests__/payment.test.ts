@@ -15,7 +15,9 @@ import {
 
 // Posting imports the post-payment operation lazily; stub it so these tests
 // never reach the database or server env.
-vi.mock("@carbon/operations/post-payment", () => ({ postPayment: vi.fn() }));
+vi.mock("@carbon/server-functions/post-payment", () => ({
+  postPayment: vi.fn()
+}));
 
 describe("composite payment sync entity id (Xero)", () => {
   it("round-trips invoice + payment ids as a prefix-less AR id", () => {

@@ -590,5 +590,5 @@ customer companies is a separate feature and is unaffected.
 
 The dev CLI path needs only Postgres, so it works whenever your local database is up. The
 browser onboarding flow additionally runs the `seed-company` operation
-(`@carbon/operations/seed-company`, for the chart of accounts and other reference data)
+(`@carbon/server-functions/seed-company`, for the chart of accounts and other reference data)
 before the template step ever runs, in-process in the ERP.

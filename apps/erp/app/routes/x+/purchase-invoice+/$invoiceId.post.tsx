@@ -3,8 +3,9 @@ import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { trackWorkEvent } from "@carbon/lib/telemetry";
 import { raiseMoment } from "@carbon/lib/workflows";
 import { getLogger } from "@carbon/logger";
-import { postPurchaseInvoiceAs } from "@carbon/operations/post-purchase-invoice";
-import { updatePurchasedPrices } from "@carbon/operations/update-purchased-prices";
+import { ServerFnContext } from "@carbon/server-functions";
+import { postPurchaseInvoice } from "@carbon/server-functions/post-purchase-invoice";
+import { updatePurchasedPrices } from "@carbon/server-functions/update-purchased-prices";
 import type { ActionFunctionArgs } from "react-router";
 import { getCompanySettings } from "~/modules/settings";
 import { checkPartyContactRequirement } from "~/modules/settings/party-contact.server";
@@ -78,7 +79,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   try {
     const serviceRole = await getCarbonServiceRole();
-    const postPurchaseInvoice = await postPurchaseInvoiceAs(
+    const posted = await postPurchaseInvoice.withClient(
       serviceRole,
       getDatabaseClient(),
       {
@@ -89,7 +90,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
       }
     );
 
-    if (postPurchaseInvoice.error) {
+    if (posted.error) {
       await client
         .from("purchaseInvoice")
         .update({
@@ -103,7 +104,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
       };
     }
 
-    receiptIds = postPurchaseInvoice.data?.receiptIds;
+    receiptIds = posted.data?.receiptIds;
 
     // Check if we should update prices on invoice post
     const companySettings = await getCompanySettings(serviceRole, companyId);
@@ -112,7 +113,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
       companySettings.data.purchasePriceUpdateTiming === "Purchase Invoice Post"
     ) {
       const priceUpdate = await updatePurchasedPrices(
-        { db: getDatabaseClient(), companyId, userId, system: true },
+        ServerFnContext.system({ db: getDatabaseClient(), companyId, userId }),
         {
           invoiceId,
           source: "purchaseInvoice",

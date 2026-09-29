@@ -205,13 +205,13 @@ export async function importCsv(
     userId: string;
   }
 ) {
-  const { importCsvAs } = await import("@carbon/operations/import-csv");
+  const { importCsv } = await import("@carbon/server-functions/import-csv");
   // The operation validates `table` and the enum mappings' real shape
   // (field → { value → mapped }).
-  return importCsvAs(
+  return importCsv.withClient(
     client,
     db,
-    args as unknown as Parameters<typeof importCsvAs>[2]
+    args as unknown as Parameters<typeof importCsv.withClient>[2]
   );
 }
 

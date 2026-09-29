@@ -1,7 +1,8 @@
 import { assertIsPost, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { postInventoryCount } from "@carbon/operations/post-inventory-count";
+import { ServerFnContext } from "@carbon/server-functions";
+import { postInventoryCount } from "@carbon/server-functions/post-inventory-count";
 import type { ActionFunctionArgs } from "react-router";
 import { data, redirect } from "react-router";
 import { getInventoryCount } from "~/modules/inventory";
@@ -32,7 +33,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   const post = await postInventoryCount(
-    { db: getDatabaseClient(), companyId, userId, system: true },
+    ServerFnContext.system({ db: getDatabaseClient(), companyId, userId }),
     { inventoryCountId: id }
   );
 

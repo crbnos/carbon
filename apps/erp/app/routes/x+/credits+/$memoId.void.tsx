@@ -2,7 +2,7 @@ import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
-import { postMemoAs } from "@carbon/operations/post-memo";
+import { postMemo } from "@carbon/server-functions/post-memo";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
 import { getDatabaseClient } from "~/services/database.server";
@@ -20,7 +20,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   const serviceRole = getCarbonServiceRole();
   try {
-    const result = await postMemoAs(serviceRole, getDatabaseClient(), {
+    const result = await postMemo.withClient(serviceRole, getDatabaseClient(), {
       type: "void",
       memoId,
       userId,

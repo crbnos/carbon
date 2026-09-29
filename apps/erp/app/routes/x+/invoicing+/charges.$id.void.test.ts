@@ -17,7 +17,9 @@ vi.mock("@carbon/auth/auth.server", () => ({
   requirePermissions: () =>
     Promise.resolve({ companyId: "company-1", userId: "user-1" })
 }));
-vi.mock("@carbon/operations/post-charge", () => ({ postCharge: postCharge }));
+vi.mock("@carbon/server-functions/post-charge", () => ({
+  postCharge: postCharge
+}));
 vi.mock("~/services/database.server", () => ({
   getDatabaseClient: () => ({})
 }));

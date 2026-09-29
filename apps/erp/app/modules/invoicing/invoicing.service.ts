@@ -266,11 +266,10 @@ export async function createPurchaseInvoiceFromPurchaseOrder(
   companyId: string,
   userId: string
 ) {
-  const [{ convert }, { callerContext }] = await Promise.all([
-    import("@carbon/operations/convert"),
-    import("@carbon/operations")
-  ]);
-  return convert(await callerContext(client, { db, companyId, userId }), {
+  const { convert } = await import("@carbon/server-functions/convert");
+  return convert.withClient(client, db, {
+    companyId,
+    userId,
     type: "purchaseOrderToPurchaseInvoice",
     id: purchaseOrderId
   });
@@ -283,11 +282,10 @@ export async function createSalesInvoiceFromSalesOrder(
   companyId: string,
   userId: string
 ) {
-  const [{ convert }, { callerContext }] = await Promise.all([
-    import("@carbon/operations/convert"),
-    import("@carbon/operations")
-  ]);
-  return convert(await callerContext(client, { db, companyId, userId }), {
+  const { convert } = await import("@carbon/server-functions/convert");
+  return convert.withClient(client, db, {
+    companyId,
+    userId,
     type: "salesOrderToSalesInvoice",
     id: salesOrderId
   });
@@ -300,11 +298,10 @@ export async function createSalesInvoiceFromShipment(
   companyId: string,
   userId: string
 ) {
-  const [{ convert }, { callerContext }] = await Promise.all([
-    import("@carbon/operations/convert"),
-    import("@carbon/operations")
-  ]);
-  return convert(await callerContext(client, { db, companyId, userId }), {
+  const { convert } = await import("@carbon/server-functions/convert");
+  return convert.withClient(client, db, {
+    companyId,
+    userId,
     type: "shipmentToSalesInvoice",
     id: shipmentId
   });

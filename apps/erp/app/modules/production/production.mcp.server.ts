@@ -2,7 +2,7 @@ import { hasPermission } from "@carbon/auth";
 import { getUserClaims } from "@carbon/auth/users.server";
 import type { Database, Json } from "@carbon/database";
 import { evaluateLinesForSurface, isBlocked } from "@carbon/ee/rules.server";
-import { issueAs } from "@carbon/operations/issue";
+import { issue } from "@carbon/server-functions/issue";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { z } from "zod";
 import { getDatabaseClient } from "~/services/database.server";
@@ -96,7 +96,7 @@ export async function issueMaterial(
     }
   }
 
-  return issueAs(client, getDatabaseClient(), {
+  return issue.withClient(client, getDatabaseClient(), {
     id: args.operationId,
     type: "partToOperation",
     itemId: args.itemId,

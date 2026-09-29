@@ -2,7 +2,7 @@ import { assertIsPost } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { getLogger } from "@carbon/logger";
-import { issueAs } from "@carbon/operations/issue";
+import { issue } from "@carbon/server-functions/issue";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { getDatabaseClient } from "~/services/database.server";
@@ -41,7 +41,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   } = validation.data;
 
   const serviceRole = await getCarbonServiceRole();
-  const convert = await issueAs(serviceRole, getDatabaseClient(), {
+  const convert = await issue.withClient(serviceRole, getDatabaseClient(), {
     type: "convertEntity",
     trackedEntityId,
     newRevision: revision,

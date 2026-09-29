@@ -3,7 +3,7 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
-import { postPaymentAs } from "@carbon/operations/post-payment";
+import { postPayment } from "@carbon/server-functions/post-payment";
 import { toBaseAmount } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
@@ -187,12 +187,16 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   const serviceRole = getCarbonServiceRole();
   try {
-    const result = await postPaymentAs(serviceRole, getDatabaseClient(), {
-      type: "post",
-      paymentId: payment.data.id,
-      userId,
-      companyId
-    });
+    const result = await postPayment.withClient(
+      serviceRole,
+      getDatabaseClient(),
+      {
+        type: "post",
+        paymentId: payment.data.id,
+        userId,
+        companyId
+      }
+    );
     if (result.error) {
       const message = await getEdgeFunctionErrorMessage(
         result.error,

@@ -6,7 +6,7 @@ import { lockIssueDispositions } from "@carbon/database/quality";
 import { notifyIssueCreated } from "@carbon/ee/notifications";
 import { validationError, validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
-import { createAs } from "@carbon/operations/create";
+import { create } from "@carbon/server-functions/create";
 import { getLocalTimeZone, today } from "@internationalized/date";
 import { msg } from "@lingui/core/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
@@ -173,7 +173,7 @@ export async function action({ request }: ActionFunctionArgs) {
     });
   }
 
-  const tasks = await createAs(serviceRole, getDatabaseClient(), {
+  const tasks = await create.withClient(serviceRole, getDatabaseClient(), {
     type: "nonConformanceTasks",
     id: ncrId,
     companyId,

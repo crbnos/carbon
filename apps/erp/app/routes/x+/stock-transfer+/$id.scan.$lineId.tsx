@@ -5,12 +5,12 @@ import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { trigger } from "@carbon/jobs";
 import { getLogger } from "@carbon/logger";
-import { postStockTransferAs } from "@carbon/operations/post-stock-transfer";
 import {
   TrackedEntityPicker,
   type TrackedEntitySelection,
   toast
 } from "@carbon/react";
+import { postStockTransfer } from "@carbon/server-functions/post-stock-transfer";
 import { useLingui } from "@lingui/react/macro";
 import { useEffect, useMemo } from "react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
@@ -202,7 +202,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   // Service role: `userId` is the effective (console pin-in) user, not the
   // token's subject, which the operation's membership check compares.
   const { data: transferResult, error: functionError } =
-    await postStockTransferAs(
+    await postStockTransfer.withClient(
       getCarbonServiceRole(),
       getDatabaseClient(),
       functionPayload

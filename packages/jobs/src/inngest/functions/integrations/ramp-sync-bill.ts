@@ -6,7 +6,7 @@ import {
   resolveRampSupplier
 } from "@carbon/ee/ramp.server";
 import { storage } from "@carbon/files";
-import { postPurchaseInvoiceAs } from "@carbon/operations/post-purchase-invoice";
+import { postPurchaseInvoice } from "@carbon/server-functions/post-purchase-invoice";
 import { round } from "@carbon/utils";
 import {
   isPostedRampBill,
@@ -147,7 +147,7 @@ async function buildBillLines(
  * function owns rollback; an ambiguous response must never re-draft a posted
  * invoice or start a second invocation while the first is still Pending.
  */
-export async function postPurchaseInvoice(
+export async function postRampInvoice(
   ctx: RampSyncContext,
   invoiceRowId: string
 ): Promise<{ readableId: string } | { fail: string }> {
@@ -188,7 +188,7 @@ export async function postPurchaseInvoice(
 
   let postError: string | undefined;
   try {
-    const posted = await postPurchaseInvoiceAs(ctx.client, ctx.db, {
+    const posted = await postPurchaseInvoice.withClient(ctx.client, ctx.db, {
       invoiceId: invoiceRowId,
       userId: "system",
       companyId: ctx.companyId
@@ -407,7 +407,7 @@ async function syncBill(
           }
         : {})
     });
-    const posted = await postPurchaseInvoice(ctx, staged.invoiceRowId);
+    const posted = await postRampInvoice(ctx, staged.invoiceRowId);
     if ("fail" in posted) throw new Error(posted.fail);
     if (staged.status === "Draft") {
       await attachBillDocuments(ctx, {

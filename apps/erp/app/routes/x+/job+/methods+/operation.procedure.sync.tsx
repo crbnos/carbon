@@ -2,7 +2,8 @@ import { assertIsPost, error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { validator } from "@carbon/form";
-import { getMethod } from "@carbon/operations/get-method";
+import { ServerFnContext } from "@carbon/server-functions";
+import { getMethod } from "@carbon/server-functions/get-method";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { procedureSyncValidator } from "~/modules/production";
@@ -25,7 +26,7 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 
   const sync = await getMethod(
-    { db: getDatabaseClient(), companyId, userId, system: true },
+    ServerFnContext.system({ db: getDatabaseClient(), companyId, userId }),
     {
       type: "procedureToOperation",
       sourceId: validation.data.procedureId,

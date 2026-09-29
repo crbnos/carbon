@@ -1,13 +1,13 @@
 import { describe, expect, it, vi } from "vitest";
-import { postPurchaseInvoice } from "./ramp-sync-bill";
+import { postRampInvoice } from "./ramp-sync-bill";
 import type { RampSyncContext } from "./ramp-sync-shared";
 
 vi.mock("@carbon/env", () => ({ getAppUrl: () => "http://localhost" }));
 
 // The posting operation is the boundary; each fixture installs its own behavior.
 const { post } = vi.hoisted(() => ({ post: vi.fn() }));
-vi.mock("@carbon/operations/post-purchase-invoice", () => ({
-  postPurchaseInvoiceAs: post
+vi.mock("@carbon/server-functions/post-purchase-invoice", () => ({
+  postPurchaseInvoice: { withClient: post }
 }));
 
 function postingFixture(
@@ -62,14 +62,14 @@ function postingFixture(
 describe("Ramp invoice posting observation", () => {
   it("does not confirm a successful HTTP response while the invoice remains Pending", async () => {
     const { ctx } = postingFixture("Draft", "Pending");
-    expect(await postPurchaseInvoice(ctx, "invoice-1")).toEqual({
+    expect(await postRampInvoice(ctx, "invoice-1")).toEqual({
       fail: expect.stringContaining("Pending")
     });
   });
 
   it("accepts a lost post response only when the stored invoice is posted", async () => {
     const { ctx, row } = postingFixture("Draft", "Open", true);
-    expect(await postPurchaseInvoice(ctx, "invoice-1")).toEqual({
+    expect(await postRampInvoice(ctx, "invoice-1")).toEqual({
       readableId: "PI-1"
     });
     expect(row.status).toBe("Open");
@@ -80,7 +80,7 @@ describe("Ramp invoice posting observation", () => {
     "Voided"
   ])("does not restart an invoice already %s", async (status) => {
     const { ctx, row } = postingFixture(status, "Open");
-    expect(await postPurchaseInvoice(ctx, "invoice-1")).toEqual({
+    expect(await postRampInvoice(ctx, "invoice-1")).toEqual({
       fail: expect.stringContaining(status)
     });
     expect(post).not.toHaveBeenCalled();

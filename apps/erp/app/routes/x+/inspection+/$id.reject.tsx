@@ -5,8 +5,9 @@ import { flash } from "@carbon/auth/session.server";
 import { lockIssueDispositions } from "@carbon/database/quality";
 import { notifyIssueCreated } from "@carbon/ee/notifications";
 import { getLogger } from "@carbon/logger";
-import { createAs } from "@carbon/operations/create";
-import { postNonConformance } from "@carbon/operations/post-nonconformance";
+import { ServerFnContext } from "@carbon/server-functions";
+import { create } from "@carbon/server-functions/create";
+import { postNonConformance } from "@carbon/server-functions/post-nonconformance";
 import { datetime } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
@@ -76,7 +77,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const writeOff = dispositionResult.data?.writeOff;
   if (writeOff) {
     const post = await postNonConformance(
-      { db: getDatabaseClient(), companyId, userId },
+      ServerFnContext.user({ db: getDatabaseClient(), companyId, userId }),
       {
         documentType: "Inbound Inspection",
         documentId: id,
@@ -385,7 +386,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  const tasks = await createAs(serviceRole, getDatabaseClient(), {
+  const tasks = await create.withClient(serviceRole, getDatabaseClient(), {
     type: "nonConformanceTasks",
     id: ncrId,
     companyId,

@@ -832,8 +832,8 @@ export async function seedCompany(
   userId: string,
   opts?: { parentCompanyId?: string; identityOnly?: boolean }
 ) {
-  const { seedCompanyAs } = await import("@carbon/operations/seed-company");
-  return seedCompanyAs(client, db, {
+  const { seedCompany } = await import("@carbon/server-functions/seed-company");
+  return seedCompany.withClient(client, db, {
     companyId,
     userId,
     parentCompanyId: opts?.parentCompanyId,

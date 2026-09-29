@@ -3,8 +3,8 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
-import { recalculateAs } from "@carbon/operations/recalculate";
-import { triggerReworkAs } from "@carbon/operations/trigger-rework";
+import { recalculate } from "@carbon/server-functions/recalculate";
+import { triggerRework } from "@carbon/server-functions/trigger-rework";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { getDatabaseClient } from "~/services/database.server";
@@ -29,12 +29,16 @@ export async function action({ request }: ActionFunctionArgs) {
     ? JSON.parse(trackedEntityIdsJson)
     : undefined;
 
-  const result = await triggerReworkAs(serviceRole, getDatabaseClient(), {
-    ...reworkData,
-    trackedEntityIds,
-    companyId,
-    userId
-  });
+  const result = await triggerRework.withClient(
+    serviceRole,
+    getDatabaseClient(),
+    {
+      ...reworkData,
+      trackedEntityIds,
+      companyId,
+      userId
+    }
+  );
 
   if (result.error) {
     return data(
@@ -44,7 +48,7 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 
   // Trigger quantity recalculation
-  await recalculateAs(serviceRole, getDatabaseClient(), {
+  await recalculate.withClient(serviceRole, getDatabaseClient(), {
     type: "jobRequirements",
     id: validation.data.jobId,
     companyId,

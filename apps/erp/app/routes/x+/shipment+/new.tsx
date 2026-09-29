@@ -3,7 +3,8 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { getLogger } from "@carbon/logger";
-import { createAs } from "@carbon/operations/create";
+import type { ServerFnResult } from "@carbon/server-functions";
+import { create } from "@carbon/server-functions/create";
 import { msg } from "@lingui/core/macro";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
@@ -48,16 +49,22 @@ export async function action({ request }: ActionFunctionArgs) {
           )
         );
       }
-      const salesOrderShipment = await createAs<{
-        id: string;
-      }>(serviceRole, getDatabaseClient(), {
-        type: "shipmentFromSalesOrder",
-        companyId,
-        locationId: defaults.data?.locationId,
-        salesOrderId: sourceDocumentId,
-        shipmentId: undefined,
-        userId: userId
-      });
+      const salesOrderShipment = await (create.withClient(
+        serviceRole,
+        getDatabaseClient(),
+        {
+          type: "shipmentFromSalesOrder",
+          companyId,
+          locationId: defaults.data?.locationId,
+          salesOrderId: sourceDocumentId,
+          shipmentId: undefined,
+          userId: userId
+        }
+      ) as Promise<
+        ServerFnResult<{
+          id: string;
+        }>
+      >);
       if (!salesOrderShipment.data || salesOrderShipment.error) {
         logger.error("Failed to create shipment", {
           error: salesOrderShipment.error
@@ -109,16 +116,22 @@ export async function action({ request }: ActionFunctionArgs) {
         );
       }
 
-      const salesReturnShipment = await createAs<{
-        id: string;
-      }>(serviceRole, getDatabaseClient(), {
-        type: "shipmentFromSalesReturnOrder",
-        companyId,
-        locationId: defaults.data?.locationId as string | undefined,
-        salesReturnOrderId: sourceDocumentId,
-        shipmentId: undefined,
-        userId: userId
-      });
+      const salesReturnShipment = await (create.withClient(
+        serviceRole,
+        getDatabaseClient(),
+        {
+          type: "shipmentFromSalesReturnOrder",
+          companyId,
+          locationId: defaults.data?.locationId as string | undefined,
+          salesReturnOrderId: sourceDocumentId,
+          shipmentId: undefined,
+          userId: userId
+        }
+      ) as Promise<
+        ServerFnResult<{
+          id: string;
+        }>
+      >);
       if (!salesReturnShipment.data || salesReturnShipment.error) {
         logger.error("Failed to create shipment", {
           error: salesReturnShipment.error
@@ -171,16 +184,22 @@ export async function action({ request }: ActionFunctionArgs) {
         );
       }
 
-      const purchaseReturnShipment = await createAs<{
-        id: string;
-      }>(serviceRole, getDatabaseClient(), {
-        type: "shipmentFromPurchaseReturnOrder",
-        companyId,
-        locationId: defaults.data?.locationId as string | undefined,
-        purchaseReturnOrderId: sourceDocumentId,
-        shipmentId: undefined,
-        userId: userId
-      });
+      const purchaseReturnShipment = await (create.withClient(
+        serviceRole,
+        getDatabaseClient(),
+        {
+          type: "shipmentFromPurchaseReturnOrder",
+          companyId,
+          locationId: defaults.data?.locationId as string | undefined,
+          purchaseReturnOrderId: sourceDocumentId,
+          shipmentId: undefined,
+          userId: userId
+        }
+      ) as Promise<
+        ServerFnResult<{
+          id: string;
+        }>
+      >);
       if (!purchaseReturnShipment.data || purchaseReturnShipment.error) {
         logger.error("Failed to create shipment", {
           error: purchaseReturnShipment.error
@@ -215,16 +234,22 @@ export async function action({ request }: ActionFunctionArgs) {
           )
         );
       }
-      const purchaseOrderShipment = await createAs<{
-        id: string;
-      }>(serviceRole, getDatabaseClient(), {
-        type: "shipmentFromPurchaseOrder",
-        companyId,
-        locationId: defaults.data?.locationId,
-        purchaseOrderId: sourceDocumentId,
-        shipmentId: undefined,
-        userId: userId
-      });
+      const purchaseOrderShipment = await (create.withClient(
+        serviceRole,
+        getDatabaseClient(),
+        {
+          type: "shipmentFromPurchaseOrder",
+          companyId,
+          locationId: defaults.data?.locationId,
+          purchaseOrderId: sourceDocumentId,
+          shipmentId: undefined,
+          userId: userId
+        }
+      ) as Promise<
+        ServerFnResult<{
+          id: string;
+        }>
+      >);
       if (!purchaseOrderShipment.data || purchaseOrderShipment.error) {
         logger.error("Failed to create shipment", {
           error: purchaseOrderShipment.error
@@ -246,15 +271,21 @@ export async function action({ request }: ActionFunctionArgs) {
 
       throw redirect(path.to.shipmentDetails(purchaseOrderShipment.data.id));
     case "Outbound Transfer":
-      const warehouseTransferShipment = await createAs<{
-        id: string;
-      }>(serviceRole, getDatabaseClient(), {
-        type: "shipmentFromWarehouseTransfer",
-        companyId,
-        warehouseTransferId: sourceDocumentId,
-        shipmentId: undefined,
-        userId: userId
-      });
+      const warehouseTransferShipment = await (create.withClient(
+        serviceRole,
+        getDatabaseClient(),
+        {
+          type: "shipmentFromWarehouseTransfer",
+          companyId,
+          warehouseTransferId: sourceDocumentId,
+          shipmentId: undefined,
+          userId: userId
+        }
+      ) as Promise<
+        ServerFnResult<{
+          id: string;
+        }>
+      >);
       if (!warehouseTransferShipment.data || warehouseTransferShipment.error) {
         logger.error("Failed to create shipment", {
           error: warehouseTransferShipment.error
@@ -278,14 +309,20 @@ export async function action({ request }: ActionFunctionArgs) {
         path.to.shipmentDetails(warehouseTransferShipment.data.id)
       );
     default:
-      const defaultShipment = await createAs<{
-        id: string;
-      }>(serviceRole, getDatabaseClient(), {
-        type: "shipmentDefault",
-        companyId,
-        locationId: defaults.data?.locationId as string | undefined,
-        userId: userId
-      });
+      const defaultShipment = await (create.withClient(
+        serviceRole,
+        getDatabaseClient(),
+        {
+          type: "shipmentDefault",
+          companyId,
+          locationId: defaults.data?.locationId as string | undefined,
+          userId: userId
+        }
+      ) as Promise<
+        ServerFnResult<{
+          id: string;
+        }>
+      >);
 
       if (!defaultShipment.data || defaultShipment.error) {
         logger.error("Failed to create shipment", {

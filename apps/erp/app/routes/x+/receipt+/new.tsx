@@ -2,7 +2,8 @@ import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
-import { createAs } from "@carbon/operations/create";
+import type { ServerFnResult } from "@carbon/server-functions";
+import { create } from "@carbon/server-functions/create";
 import { msg } from "@lingui/core/macro";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
@@ -33,16 +34,22 @@ export async function action({ request }: ActionFunctionArgs) {
 
   switch (sourceDocument) {
     case "Purchase Order":
-      const purchaseOrderReceipt = await createAs<{
-        id: string;
-      }>(serviceRole, getDatabaseClient(), {
-        type: "receiptFromPurchaseOrder",
-        companyId,
-        locationId: defaults.data?.locationId as string | undefined,
-        purchaseOrderId: sourceDocumentId,
-        receiptId: undefined,
-        userId: userId
-      });
+      const purchaseOrderReceipt = await (create.withClient(
+        serviceRole,
+        getDatabaseClient(),
+        {
+          type: "receiptFromPurchaseOrder",
+          companyId,
+          locationId: defaults.data?.locationId as string | undefined,
+          purchaseOrderId: sourceDocumentId,
+          receiptId: undefined,
+          userId: userId
+        }
+      ) as Promise<
+        ServerFnResult<{
+          id: string;
+        }>
+      >);
       if (!purchaseOrderReceipt.data || purchaseOrderReceipt.error) {
         throw redirect(
           path.to.purchaseOrder(sourceDocumentId),
@@ -85,16 +92,22 @@ export async function action({ request }: ActionFunctionArgs) {
 
       // No default-location guard: the create edge function falls back to
       // the return order's own location and errors specifically otherwise.
-      const salesReturnOrderReceipt = await createAs<{
-        id: string;
-      }>(serviceRole, getDatabaseClient(), {
-        type: "receiptFromSalesReturnOrder",
-        companyId,
-        locationId: defaults.data?.locationId as string | undefined,
-        salesReturnOrderId: sourceDocumentId,
-        receiptId: undefined,
-        userId: userId
-      });
+      const salesReturnOrderReceipt = await (create.withClient(
+        serviceRole,
+        getDatabaseClient(),
+        {
+          type: "receiptFromSalesReturnOrder",
+          companyId,
+          locationId: defaults.data?.locationId as string | undefined,
+          salesReturnOrderId: sourceDocumentId,
+          receiptId: undefined,
+          userId: userId
+        }
+      ) as Promise<
+        ServerFnResult<{
+          id: string;
+        }>
+      >);
       if (!salesReturnOrderReceipt.data || salesReturnOrderReceipt.error) {
         throw redirect(
           path.to.salesReturnOrderDetails(sourceDocumentId),
@@ -113,15 +126,21 @@ export async function action({ request }: ActionFunctionArgs) {
 
       throw redirect(path.to.receiptDetails(salesReturnOrderReceipt.data.id));
     case "Inbound Transfer":
-      const warehouseTransferReceipt = await createAs<{
-        id: string;
-      }>(serviceRole, getDatabaseClient(), {
-        type: "receiptFromInboundTransfer",
-        companyId,
-        warehouseTransferId: sourceDocumentId,
-        receiptId: undefined,
-        userId: userId
-      });
+      const warehouseTransferReceipt = await (create.withClient(
+        serviceRole,
+        getDatabaseClient(),
+        {
+          type: "receiptFromInboundTransfer",
+          companyId,
+          warehouseTransferId: sourceDocumentId,
+          receiptId: undefined,
+          userId: userId
+        }
+      ) as Promise<
+        ServerFnResult<{
+          id: string;
+        }>
+      >);
       if (!warehouseTransferReceipt.data || warehouseTransferReceipt.error) {
         throw redirect(
           path.to.warehouseTransfer(sourceDocumentId),
@@ -134,14 +153,20 @@ export async function action({ request }: ActionFunctionArgs) {
 
       throw redirect(path.to.receiptDetails(warehouseTransferReceipt.data.id));
     default:
-      const defaultReceipt = await createAs<{
-        id: string;
-      }>(serviceRole, getDatabaseClient(), {
-        type: "receiptDefault",
-        companyId,
-        locationId: defaults.data?.locationId as string,
-        userId: userId
-      });
+      const defaultReceipt = await (create.withClient(
+        serviceRole,
+        getDatabaseClient(),
+        {
+          type: "receiptDefault",
+          companyId,
+          locationId: defaults.data?.locationId as string,
+          userId: userId
+        }
+      ) as Promise<
+        ServerFnResult<{
+          id: string;
+        }>
+      >);
 
       if (!defaultReceipt.data || defaultReceipt.error) {
         throw redirect(

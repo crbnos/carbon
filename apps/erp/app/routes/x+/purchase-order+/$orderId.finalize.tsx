@@ -17,7 +17,8 @@ import { trigger } from "@carbon/jobs";
 import { trackWorkEvent } from "@carbon/lib/telemetry";
 import { getLogger } from "@carbon/logger";
 import { NotificationEvent } from "@carbon/notifications";
-import { updatePurchasedPrices } from "@carbon/operations/update-purchased-prices";
+import { ServerFnContext } from "@carbon/server-functions";
+import { updatePurchasedPrices } from "@carbon/server-functions/update-purchased-prices";
 import { PO_EMAIL_ATTACHMENT_LIMIT_MB } from "@carbon/utils";
 import { renderAsync } from "@react-email/components";
 import { parseAcceptLanguage } from "intl-parse-accept-language";
@@ -225,7 +226,7 @@ export async function action(args: ActionFunctionArgs) {
     "Purchase Order Finalize"
   ) {
     const priceUpdate = await updatePurchasedPrices(
-      { db: getDatabaseClient(), companyId, userId, system: true },
+      ServerFnContext.system({ db: getDatabaseClient(), companyId, userId }),
       {
         purchaseOrderId: orderId,
         source: "purchaseOrder",

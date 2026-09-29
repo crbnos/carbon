@@ -11,7 +11,8 @@ import {
   getPostgresConnectionPool
 } from "@carbon/database/client";
 import { getLogger } from "@carbon/logger";
-import { postPayment } from "@carbon/operations/post-payment";
+import { ServerFnContext } from "@carbon/server-functions";
+import { postPayment } from "@carbon/server-functions/post-payment";
 import type { ConnectInvoice } from "@carbon/stripe/connect.server";
 import {
   fromStripeAmount,
@@ -543,7 +544,7 @@ export async function recordStripeConnectPayment({
   }
 
   const posted = await postPayment(
-    { db: _db, companyId, userId: SYSTEM_USER, system: true },
+    ServerFnContext.system({ db: _db, companyId, userId: SYSTEM_USER }),
     { type: "post", paymentId, fee: journalFee }
   );
 
@@ -651,7 +652,7 @@ export async function voidStripeConnectPayment({
   const voidedIds: string[] = [];
   for (const payment of voidable) {
     const voided = await postPayment(
-      { db: _db, companyId, userId: SYSTEM_USER, system: true },
+      ServerFnContext.system({ db: _db, companyId, userId: SYSTEM_USER }),
       { type: "void", paymentId: payment.id }
     );
 

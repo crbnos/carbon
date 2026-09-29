@@ -15,7 +15,8 @@ import { trigger } from "@carbon/jobs";
 import { trackWorkEvent } from "@carbon/lib/telemetry";
 import { raiseMoment } from "@carbon/lib/workflows";
 import { getLogger } from "@carbon/logger";
-import { postSalesInvoice } from "@carbon/operations/post-sales-invoice";
+import { ServerFnContext } from "@carbon/server-functions";
+import { postSalesInvoice } from "@carbon/server-functions/post-sales-invoice";
 import type { ConnectInvoiceLineInput } from "@carbon/stripe/connect.server";
 import {
   createAndSendConnectInvoice,
@@ -689,7 +690,7 @@ export async function action(args: ActionFunctionArgs) {
 
   try {
     const posted = await postSalesInvoice(
-      { db: getDatabaseClient(), companyId, userId, system: true },
+      ServerFnContext.system({ db: getDatabaseClient(), companyId, userId }),
       { invoiceId }
     );
 

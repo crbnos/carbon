@@ -2,7 +2,7 @@ import { assertIsPost } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { getLogger } from "@carbon/logger";
-import { issueAs } from "@carbon/operations/issue";
+import { issue } from "@carbon/server-functions/issue";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { z } from "zod";
@@ -102,7 +102,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   if (children && children.length > 0) {
     // Tracked entities (serial/batch)
-    const issue = await issueAs(serviceRole, getDatabaseClient(), {
+    const issued = await issue.withClient(serviceRole, getDatabaseClient(), {
       type: "maintenanceDispatchTrackedEntities",
       maintenanceDispatchId: dispatchId,
       itemId,
@@ -112,8 +112,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
       userId
     });
 
-    if (issue.error) {
-      logger.error("Failed to issue tracked items", { error: issue.error });
+    if (issued.error) {
+      logger.error("Failed to issue tracked items", { error: issued.error });
       return data(
         { success: false, message: "Failed to issue tracked items" },
         { status: 400 }
@@ -125,7 +125,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     // its existing label.
   } else {
     // Inventory item
-    const issue = await issueAs(serviceRole, getDatabaseClient(), {
+    const issued = await issue.withClient(serviceRole, getDatabaseClient(), {
       type: "maintenanceDispatchInventory",
       maintenanceDispatchId: dispatchId,
       itemId,
@@ -135,8 +135,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
       userId
     });
 
-    if (issue.error) {
-      logger.error("Failed to issue from inventory", { error: issue.error });
+    if (issued.error) {
+      logger.error("Failed to issue from inventory", { error: issued.error });
       return data(
         { success: false, message: "Failed to issue from inventory" },
         { status: 400 }

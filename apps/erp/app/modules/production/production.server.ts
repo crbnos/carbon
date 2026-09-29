@@ -2,7 +2,8 @@ import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { Database } from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import { ASSEMBLER_SERVICE_URL } from "@carbon/env";
-import { createAs } from "@carbon/operations/create";
+import type { ServerFnResult } from "@carbon/server-functions";
+import { create } from "@carbon/server-functions/create";
 import { datetime } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { getDatabaseClient } from "~/services/database.server";
@@ -112,15 +113,21 @@ export async function releaseJobs({
     });
     if (update.error) return { error: `Failed to release job ${id}` };
 
-    const purchaseOrder = await createAs<{
-      purchaseOrderIdsBySupplierId?: Record<string, string>;
-    }>(serviceRole, getDatabaseClient(), {
-      type: "purchaseOrderFromJob",
-      jobId: id,
-      purchaseOrdersBySupplierId: purchaseOrders,
-      companyId,
-      userId
-    });
+    const purchaseOrder = await (create.withClient(
+      serviceRole,
+      getDatabaseClient(),
+      {
+        type: "purchaseOrderFromJob",
+        jobId: id,
+        purchaseOrdersBySupplierId: purchaseOrders,
+        companyId,
+        userId
+      }
+    ) as Promise<
+      ServerFnResult<{
+        purchaseOrderIdsBySupplierId?: Record<string, string>;
+      }>
+    >);
     if (purchaseOrder.error) {
       return {
         error: await getEdgeFunctionErrorMessage(

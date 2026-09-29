@@ -1,8 +1,9 @@
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
-import { postPurchaseInvoice as postPurchaseInvoiceOperation } from "@carbon/operations/post-purchase-invoice";
-import { postReceipt as postReceiptOperation } from "@carbon/operations/post-receipt";
-import { postShipment as postShipmentOperation } from "@carbon/operations/post-shipment";
-import { updatePurchasedPrices } from "@carbon/operations/update-purchased-prices";
+import { ServerFnContext } from "@carbon/server-functions";
+import { postPurchaseInvoice as postPurchaseInvoiceOperation } from "@carbon/server-functions/post-purchase-invoice";
+import { postReceipt as postReceiptOperation } from "@carbon/server-functions/post-receipt";
+import { postShipment as postShipmentOperation } from "@carbon/server-functions/post-shipment";
+import { updatePurchasedPrices } from "@carbon/server-functions/update-purchased-prices";
 import { getJobDatabaseClient } from "../../../db";
 import { inngest } from "../../client";
 
@@ -25,12 +26,11 @@ export const postTransactionFunction = inngest.createFunction(
         case "receipt":
           logger.info("Posting receipt", { payload });
           const postReceipt = await postReceiptOperation(
-            {
+            ServerFnContext.system({
               db: getJobDatabaseClient(),
               companyId: payload.companyId,
-              userId: payload.userId,
-              system: true
-            },
+              userId: payload.userId
+            }),
             { receiptId: payload.documentId }
           );
 
@@ -43,12 +43,11 @@ export const postTransactionFunction = inngest.createFunction(
         case "purchase-invoice":
           logger.info("Posting purchase invoice", { payload });
           const postPurchaseInvoice = await postPurchaseInvoiceOperation(
-            {
+            ServerFnContext.system({
               db: getJobDatabaseClient(),
               companyId: payload.companyId,
-              userId: payload.userId,
-              system: true
-            },
+              userId: payload.userId
+            }),
             { invoiceId: payload.documentId }
           );
 
@@ -75,12 +74,11 @@ export const postTransactionFunction = inngest.createFunction(
               });
 
               const priceUpdate = await updatePurchasedPrices(
-                {
+                ServerFnContext.system({
                   db: getJobDatabaseClient(),
                   companyId: payload.companyId,
-                  userId: payload.userId,
-                  system: true
-                },
+                  userId: payload.userId
+                }),
                 { invoiceId: payload.documentId, source: "purchaseInvoice" }
               );
 
@@ -96,12 +94,11 @@ export const postTransactionFunction = inngest.createFunction(
           logger.info("Posting shipment", { payload });
 
           const postShipment = await postShipmentOperation(
-            {
+            ServerFnContext.system({
               db: getJobDatabaseClient(),
               companyId: payload.companyId,
-              userId: payload.userId,
-              system: true
-            },
+              userId: payload.userId
+            }),
             { type: "post", shipmentId: payload.documentId }
           );
 

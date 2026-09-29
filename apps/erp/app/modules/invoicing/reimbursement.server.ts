@@ -1,4 +1,5 @@
-import { postReimbursement as postReimbursementOperation } from "@carbon/operations/post-reimbursement";
+import { ServerFnContext } from "@carbon/server-functions";
+import { postReimbursement as postReimbursementOperation } from "@carbon/server-functions/post-reimbursement";
 import { EPSILON } from "@carbon/utils";
 import { getDatabaseClient } from "~/services/database.server";
 
@@ -17,12 +18,11 @@ async function invokePostReimbursement(
 ): Promise<{ error: string | null }> {
   // The caller's route already checked `update: invoicing`.
   const result = await postReimbursementOperation(
-    {
+    ServerFnContext.system({
       db: getDatabaseClient(),
       companyId: args.companyId,
-      userId: args.userId,
-      system: true
-    },
+      userId: args.userId
+    }),
     { type, reimbursementId: args.reimbursementId }
   );
   return {

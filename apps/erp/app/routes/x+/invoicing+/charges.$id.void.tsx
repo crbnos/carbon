@@ -1,7 +1,8 @@
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import { postCharge } from "@carbon/operations/post-charge";
+import { ServerFnContext } from "@carbon/server-functions";
+import { postCharge } from "@carbon/server-functions/post-charge";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
 import { getDatabaseClient } from "~/services/database.server";
@@ -19,7 +20,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   try {
     const result = await postCharge(
-      { db: getDatabaseClient(), companyId, userId, system: true },
+      ServerFnContext.system({ db: getDatabaseClient(), companyId, userId }),
       { type: "void", chargeId: id }
     );
     if (result.error) {

@@ -3,7 +3,7 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { evaluateLinesForSurface, isBlocked } from "@carbon/ee/rules.server";
 import { getLogger } from "@carbon/logger";
-import { issueAs } from "@carbon/operations/issue";
+import { issue } from "@carbon/server-functions/issue";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { getDatabaseClient } from "~/services/database.server";
@@ -111,7 +111,7 @@ export async function action({ request }: ActionFunctionArgs) {
     }
   }
 
-  const issue = await issueAs(serviceRole, getDatabaseClient(), {
+  const issued = await issue.withClient(serviceRole, getDatabaseClient(), {
     type: "unconsumeTrackedEntities",
     materialId,
     parentTrackedEntityId: parentTrackedEntityId!,
@@ -120,8 +120,8 @@ export async function action({ request }: ActionFunctionArgs) {
     userId
   });
 
-  if (issue.error) {
-    log.error("Failed to issue material", { error: issue.error });
+  if (issued.error) {
+    log.error("Failed to issue material", { error: issued.error });
     return data(
       { success: false, message: "Failed to issue material" },
       { status: 400 }

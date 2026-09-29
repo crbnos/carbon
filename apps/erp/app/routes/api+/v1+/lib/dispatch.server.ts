@@ -8,7 +8,7 @@
 // callOperation reconstructs the { success:false, error } envelope.
 
 import type { AuthField, ManifestEntry } from "@carbon/api";
-import { OperationError } from "@carbon/operations";
+import { ServerFnError } from "@carbon/server-functions";
 import { ORPCError } from "@orpc/server";
 import { getDatabaseClient } from "~/services/database.server";
 import type { AuthedContext } from "./base.server";
@@ -440,7 +440,7 @@ export async function dispatchOperation(
     const r = result as { data: unknown; error?: unknown; count?: number };
     // An operation's error is already sanitized (empty when it came from the
     // data layer) and carries its own status.
-    if (r.error instanceof OperationError) {
+    if (r.error instanceof ServerFnError) {
       throw new ORPCError(operationErrorCode(r.error.status), {
         message: r.error.message || "The operation could not be completed."
       });

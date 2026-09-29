@@ -1,7 +1,7 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { getLogger } from "@carbon/logger";
-import { createAs } from "@carbon/operations/create";
+import { create } from "@carbon/server-functions/create";
 import type { ActionFunctionArgs } from "react-router";
 import { isIssueLocked } from "~/modules/quality";
 import { getDatabaseClient } from "~/services/database.server";
@@ -67,7 +67,7 @@ export async function action({ request }: ActionFunctionArgs) {
       // Only the issues the scoped read above found are this company's.
       const reconciled = await Promise.all(
         (issues.data ?? []).map(({ id }) =>
-          createAs(serviceRole, getDatabaseClient(), {
+          create.withClient(serviceRole, getDatabaseClient(), {
             type: "nonConformanceTasks",
             id,
             companyId,

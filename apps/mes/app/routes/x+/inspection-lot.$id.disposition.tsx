@@ -4,9 +4,9 @@ import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { dispositionInspection } from "@carbon/database/quality";
 import { validationError, validator } from "@carbon/form";
-import { issueAs } from "@carbon/operations/issue";
-import { recalculateAs } from "@carbon/operations/recalculate";
-import { triggerReworkAs } from "@carbon/operations/trigger-rework";
+import { issue } from "@carbon/server-functions/issue";
+import { recalculate } from "@carbon/server-functions/recalculate";
+import { triggerRework } from "@carbon/server-functions/trigger-rework";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
 import { getDatabaseClient } from "~/services/database.server";
@@ -290,7 +290,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
       }
     }
 
-    const backflush = await issueAs(serviceRole, getDatabaseClient(), {
+    const backflush = await issue.withClient(serviceRole, getDatabaseClient(), {
       id: state.jobOperationId,
       type: "jobOperation",
       quantity: scrapTotal,
@@ -303,19 +303,23 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   if (reworkTotal > 0 && targetOperationId && reworkReason) {
-    const rework = await triggerReworkAs(serviceRole, getDatabaseClient(), {
-      jobId: state.jobId,
-      triggeredAtJobOperationId: state.jobOperationId,
-      targetJobOperationId: targetOperationId,
-      reason: reworkReason,
-      quantity: reworkTotal,
-      trackedEntityIds: state.requiresSerialTracking
-        ? reworkEntityIds
-        : undefined,
-      inspectionId: id,
-      companyId,
-      userId
-    });
+    const rework = await triggerRework.withClient(
+      serviceRole,
+      getDatabaseClient(),
+      {
+        jobId: state.jobId,
+        triggeredAtJobOperationId: state.jobOperationId,
+        targetJobOperationId: targetOperationId,
+        reason: reworkReason,
+        quantity: reworkTotal,
+        trackedEntityIds: state.requiresSerialTracking
+          ? reworkEntityIds
+          : undefined,
+        inspectionId: id,
+        companyId,
+        userId
+      }
+    );
     if (rework.error) {
       return fail(
         rework.error,
@@ -323,13 +327,17 @@ export async function action({ request, params }: ActionFunctionArgs) {
       );
     }
 
-    const recalculate = await recalculateAs(serviceRole, getDatabaseClient(), {
-      type: "jobRequirements",
-      id: state.jobId,
-      companyId,
-      userId
-    });
-    if (recalculate.error) {
+    const recalculated = await recalculate.withClient(
+      serviceRole,
+      getDatabaseClient(),
+      {
+        type: "jobRequirements",
+        id: state.jobId,
+        companyId,
+        userId
+      }
+    );
+    if (recalculated.error) {
       warnings.push("failed to recalculate job requirements");
     }
   }

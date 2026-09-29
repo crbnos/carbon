@@ -3,7 +3,7 @@ import { join, relative } from "node:path";
 import type { SourceFile } from "../check";
 
 const FUNCTIONS_ROOT = "packages/database/supabase/functions";
-const OPERATIONS_ROOT = "packages/operations/src";
+const SERVER_FUNCTIONS_ROOT = "packages/server-functions/src";
 
 /** Shared code, not deployable functions. */
 const NOT_FUNCTIONS = new Set(["lib", "shared", "node_modules"]);
@@ -29,12 +29,9 @@ export function loadEdgeFunctions(root: string): SourceFile[] {
   return loadFunctionDirs(root, FUNCTIONS_ROOT);
 }
 
-/**
- * One SourceFile per `@carbon/operations` entry point — the Node home of the
- * former edge functions, one directory per operation, same shape.
- */
-export function loadOperations(root: string): SourceFile[] {
-  return loadFunctionDirs(root, OPERATIONS_ROOT);
+/** One SourceFile per `@carbon/server-functions` entry point (one directory each). */
+export function loadServerFunctions(root: string): SourceFile[] {
+  return loadFunctionDirs(root, SERVER_FUNCTIONS_ROOT);
 }
 
 function loadFunctionDirs(root: string, dir: string): SourceFile[] {

@@ -15,7 +15,7 @@ import {
 } from "../payment";
 
 const { invokeMock } = vi.hoisted(() => ({ invokeMock: vi.fn() }));
-vi.mock("@carbon/operations/post-payment", () => ({
+vi.mock("@carbon/server-functions/post-payment", () => ({
   postPayment: invokeMock
 }));
 
@@ -999,7 +999,7 @@ describe("PaymentSyncerBase post-payment dispatch", () => {
       expect.objectContaining({
         companyId: "company-1",
         userId: "user-1",
-        system: true
+        actor: "system"
       }),
       { type: "post", paymentId: "payment-row-1" }
     );
@@ -1019,7 +1019,7 @@ describe("PaymentSyncerBase post-payment dispatch", () => {
       expect.objectContaining({
         companyId: "company-1",
         userId: "user-1",
-        system: true
+        actor: "system"
       }),
       { type: "void", paymentId: "payment-row-1" }
     );

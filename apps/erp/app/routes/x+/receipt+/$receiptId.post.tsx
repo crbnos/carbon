@@ -11,9 +11,10 @@ import { trigger } from "@carbon/jobs";
 import { trackWorkEvent } from "@carbon/lib/telemetry";
 import { raiseMoment } from "@carbon/lib/workflows";
 import { getLogger } from "@carbon/logger";
-import { postReceiptAs } from "@carbon/operations/post-receipt";
-import { updatePurchasedPrices } from "@carbon/operations/update-purchased-prices";
 import { getCachedPrinterConfig } from "@carbon/printing/printing.server";
+import { ServerFnContext } from "@carbon/server-functions";
+import { postReceipt } from "@carbon/server-functions/post-receipt";
+import { updatePurchasedPrices } from "@carbon/server-functions/update-purchased-prices";
 import { getOverReceiptViolations } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
@@ -216,13 +217,17 @@ export async function action({ request, params }: ActionFunctionArgs) {
       .eq("id", companyId)
       .single();
 
-    const postReceipt = await postReceiptAs(serviceRole, getDatabaseClient(), {
-      receiptId: receiptId,
-      userId: userId,
-      companyId: companyId
-    });
+    const posted = await postReceipt.withClient(
+      serviceRole,
+      getDatabaseClient(),
+      {
+        receiptId: receiptId,
+        userId: userId,
+        companyId: companyId
+      }
+    );
 
-    if (postReceipt.error) {
+    if (posted.error) {
       await client
         .from("receipt")
         .update({
@@ -232,7 +237,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
       throw redirect(
         path.to.receipt(receiptId),
-        await flash(request, error(postReceipt.error, "Failed to post receipt"))
+        await flash(request, error(posted.error, "Failed to post receipt"))
       );
     }
 
@@ -248,7 +253,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     ) {
       // System: the poster needs no purchasing rights to refresh lead times.
       const leadTimeUpdate = await updatePurchasedPrices(
-        { db: getDatabaseClient(), companyId, userId, system: true },
+        ServerFnContext.system({ db: getDatabaseClient(), companyId, userId }),
         {
           source: "purchaseOrder",
           purchaseOrderId: receiptMetadata.data.sourceDocumentId,

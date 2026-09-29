@@ -2,7 +2,7 @@ import { assertIsPost } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { getLogger } from "@carbon/logger";
-import { issueAs } from "@carbon/operations/issue";
+import { issue } from "@carbon/server-functions/issue";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { getDatabaseClient } from "~/services/database.server";
@@ -48,7 +48,7 @@ export async function action({ request }: ActionFunctionArgs) {
   // Batch mode: one pick for the whole operation batch. The edge fn splits the
   // picked lots pro-rata by each member's remaining requirement and records
   // per-member consumption, so costing and genealogy stay per job.
-  const issue = await issueAs(
+  const issued = await issue.withClient(
     serviceRole,
     getDatabaseClient(),
     batchId
@@ -78,14 +78,14 @@ export async function action({ request }: ActionFunctionArgs) {
         }
   );
 
-  if (issue.error) {
-    log.error("Failed to issue material", { error: issue.error });
-    const message = issue.error.message || "Failed to issue material";
+  if (issued.error) {
+    log.error("Failed to issue material", { error: issued.error });
+    const message = issued.error.message || "Failed to issue material";
     return data({ success: false, message }, { status: 400 });
   }
 
-  const splitEntities = issue.data?.splitEntities || [];
-  const warning = issue.data?.warning as string | undefined;
+  const splitEntities = issued.data?.splitEntities || [];
+  const warning = issued.data?.warning as string | undefined;
 
   // No label print on issue: the split child is CONSUMED (it departed into the
   // job) and consumed portions get no label; the surviving lineside entity

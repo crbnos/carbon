@@ -3,9 +3,10 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { getLogger } from "@carbon/logger";
-import { closeJob } from "@carbon/operations/close-job";
-import { createAs } from "@carbon/operations/create";
 import { runLocationSchedule } from "@carbon/planning";
+import { ServerFnContext } from "@carbon/server-functions";
+import { closeJob } from "@carbon/server-functions/close-job";
+import { create } from "@carbon/server-functions/create";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
 import { cancelOpenPickingListsForJob } from "~/modules/inventory";
@@ -230,7 +231,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
       // Regenerate the whole location in parallel with PO creation.
       await Promise.all([
         scheduleJobLocation({ id, companyId, userId }),
-        createAs(getCarbonServiceRole(), getDatabaseClient(), {
+        create.withClient(getCarbonServiceRole(), getDatabaseClient(), {
           type: "purchaseOrderFromJob",
           jobId: id,
           purchaseOrdersBySupplierId,
@@ -249,7 +250,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   if (status === "Closed") {
     const closed = await closeJob(
-      { db: getDatabaseClient(), companyId, userId },
+      ServerFnContext.user({ db: getDatabaseClient(), companyId, userId }),
       { jobId: id }
     );
     if (closed.error) {

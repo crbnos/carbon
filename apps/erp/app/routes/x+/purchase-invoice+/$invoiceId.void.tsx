@@ -2,7 +2,7 @@ import { error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
-import { postPurchaseInvoiceAs } from "@carbon/operations/post-purchase-invoice";
+import { postPurchaseInvoice } from "@carbon/server-functions/post-purchase-invoice";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
 import { getDatabaseClient } from "~/services/database.server";
@@ -80,7 +80,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
       );
     }
 
-    const voidInvoice = await postPurchaseInvoiceAs(
+    const voidInvoice = await postPurchaseInvoice.withClient(
       serviceRole,
       getDatabaseClient(),
       {

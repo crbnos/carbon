@@ -3,8 +3,8 @@ import type { Database } from "@carbon/database";
 import { getLocationTimeZone } from "@carbon/database";
 import { lockIssueDispositions } from "@carbon/database/quality";
 import { getLogger } from "@carbon/logger";
-import { createAs } from "@carbon/operations/create";
-import { issueAs } from "@carbon/operations/issue";
+import { create } from "@carbon/server-functions/create";
+import { issue } from "@carbon/server-functions/issue";
 import { datetime } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { getDatabaseClient } from "~/services/database.server";
@@ -226,7 +226,7 @@ export async function createQualityIssue(
     };
   }
 
-  const tasks = await createAs(serviceRole, getDatabaseClient(), {
+  const tasks = await create.withClient(serviceRole, getDatabaseClient(), {
     type: "nonConformanceTasks",
     id: nonConformanceId,
     companyId,
@@ -509,7 +509,7 @@ export async function postSerialCompletions(
 ): Promise<{ completed: number; error: unknown | null }> {
   let completed = 0;
   for (const candidate of args.candidates) {
-    const response = await issueAs(serviceRole, getDatabaseClient(), {
+    const response = await issue.withClient(serviceRole, getDatabaseClient(), {
       type: "jobOperationSerialComplete",
       trackedEntityId: candidate.trackedEntityId,
       quantity: 1,
@@ -549,7 +549,7 @@ export async function postBulkCompletion(
   );
 
   if (state.requiresBatchTracking && state.batchTrackedEntityId) {
-    const response = await issueAs(serviceRole, getDatabaseClient(), {
+    const response = await issue.withClient(serviceRole, getDatabaseClient(), {
       type: "jobOperationBatchComplete",
       trackedEntityId: state.batchTrackedEntityId,
       quantity: args.quantity,
@@ -582,16 +582,16 @@ export async function postBulkCompletion(
     };
   }
 
-  const issue = await issueAs(serviceRole, getDatabaseClient(), {
+  const issued = await issue.withClient(serviceRole, getDatabaseClient(), {
     id: state.jobOperationId,
     type: "jobOperation",
     quantity: args.quantity,
     companyId: args.companyId,
     userId: args.userId
   });
-  if (issue.error) {
+  if (issued.error) {
     return {
-      error: issue.error,
+      error: issued.error,
       message: "Units completed, but failed to issue materials"
     };
   }

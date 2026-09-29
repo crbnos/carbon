@@ -3,7 +3,8 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
-import { postProductionEvent } from "@carbon/operations/post-production-event";
+import { ServerFnContext } from "@carbon/server-functions";
+import { postProductionEvent } from "@carbon/server-functions/post-production-event";
 import { datetime } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
@@ -81,7 +82,11 @@ export async function action({ request }: ActionFunctionArgs) {
           });
           if (ended.data && ended.data.length > 0) {
             await postProductionEvent(
-              { db: getDatabaseClient(), companyId, userId, system: true },
+              ServerFnContext.system({
+                db: getDatabaseClient(),
+                companyId,
+                userId
+              }),
               { productionEventId: ended.data[0].id }
             );
           }
@@ -133,7 +138,11 @@ export async function action({ request }: ActionFunctionArgs) {
       // double-book the cost, so skip post-production-event for a batch event.
       if (!endEvent.data[0].jobOperationBatchId) {
         await postProductionEvent(
-          { db: getDatabaseClient(), companyId, userId, system: true },
+          ServerFnContext.system({
+            db: getDatabaseClient(),
+            companyId,
+            userId
+          }),
           { productionEventId: endEvent.data[0].id }
         );
       }

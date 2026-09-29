@@ -213,11 +213,10 @@ export async function convertSalesRfqToQuote(
   }
 ) {
   const { companyId, userId, id } = payload;
-  const [{ convert }, { callerContext }] = await Promise.all([
-    import("@carbon/operations/convert"),
-    import("@carbon/operations")
-  ]);
-  return convert(await callerContext(client, { db, companyId, userId }), {
+  const { convert } = await import("@carbon/server-functions/convert");
+  return convert.withClient(client, db, {
+    companyId,
+    userId,
     type: "salesRfqToQuote",
     id
   });
@@ -237,14 +236,13 @@ export async function convertQuoteToOrder(
   }
 ) {
   const { companyId, userId, ...input } = payload;
-  const [{ convert }, { callerContext }] = await Promise.all([
-    import("@carbon/operations/convert"),
-    import("@carbon/operations")
-  ]);
-  const result = await convert(
-    await callerContext(client, { db, companyId, userId }),
-    { type: "quoteToSalesOrder", ...input }
-  );
+  const { convert } = await import("@carbon/server-functions/convert");
+  const result = await convert.withClient(client, db, {
+    companyId,
+    userId,
+    type: "quoteToSalesOrder",
+    ...input
+  });
 
   if (!result.error && result.data?.convertedId) {
     await raiseMoment("sales.quoteAccepted", {
@@ -281,8 +279,8 @@ export async function copyQuoteLine(
     userId: string;
   }
 ) {
-  const { getMethodAs } = await import("@carbon/operations/get-method");
-  return getMethodAs(client, db, {
+  const { getMethod } = await import("@carbon/server-functions/get-method");
+  return getMethod.withClient(client, db, {
     ...payload,
     type: "quoteLineToQuoteLine",
     parts: {
@@ -304,8 +302,8 @@ export async function copyQuote(
     userId: string;
   }
 ) {
-  const { getMethodAs } = await import("@carbon/operations/get-method");
-  return getMethodAs(client, db, {
+  const { getMethod } = await import("@carbon/server-functions/get-method");
+  return getMethod.withClient(client, db, {
     ...payload,
     type: "quoteToQuote"
   });
@@ -3518,8 +3516,8 @@ export async function upsertMakeMethodFromQuoteLine(
     };
   }
 ) {
-  const { getMethodAs } = await import("@carbon/operations/get-method");
-  return getMethodAs(client, db, {
+  const { getMethod } = await import("@carbon/server-functions/get-method");
+  return getMethod.withClient(client, db, {
     type: "quoteLineToItem",
     sourceId: `${lineMethod.quoteId}:${lineMethod.quoteLineId}`,
     targetId: lineMethod.itemId,
@@ -3547,8 +3545,8 @@ export async function upsertMakeMethodFromQuoteMethod(
     };
   }
 ) {
-  const { getMethodAs } = await import("@carbon/operations/get-method");
-  const { error } = await getMethodAs(client, db, {
+  const { getMethod } = await import("@carbon/server-functions/get-method");
+  const { error } = await getMethod.withClient(client, db, {
     type: "quoteMakeMethodToItem",
     sourceId: quoteMethod.sourceId,
     targetId: quoteMethod.targetId,
@@ -5048,7 +5046,7 @@ export async function upsertQuoteLineMethod(
     };
   }
 ) {
-  const { getMethodAs } = await import("@carbon/operations/get-method");
+  const { getMethod } = await import("@carbon/server-functions/get-method");
   const body: {
     type: "itemToQuoteLine";
     sourceId: string;
@@ -5082,7 +5080,7 @@ export async function upsertQuoteLineMethod(
     body.parts = lineMethod.parts;
   }
 
-  return getMethodAs(client, db, body);
+  return getMethod.withClient(client, db, body);
 }
 
 export async function upsertQuoteMaterial(
@@ -5151,7 +5149,7 @@ export async function upsertQuoteMaterialMakeMethod(
     };
   }
 ) {
-  const { getMethodAs } = await import("@carbon/operations/get-method");
+  const { getMethod } = await import("@carbon/server-functions/get-method");
   const body: {
     type: "itemToQuoteMakeMethod";
     sourceId: string;
@@ -5185,7 +5183,7 @@ export async function upsertQuoteMaterialMakeMethod(
     body.parts = quoteMethod.parts;
   }
 
-  const { error } = await getMethodAs(client, db, body);
+  const { error } = await getMethod.withClient(client, db, body);
 
   if (error) {
     return {

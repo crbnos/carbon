@@ -5,8 +5,8 @@ import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { trigger } from "@carbon/jobs";
 import { getLogger } from "@carbon/logger";
-import { issueAs } from "@carbon/operations/issue";
 import { getCachedPrinterConfig } from "@carbon/printing/printing.server";
+import { issue } from "@carbon/server-functions/issue";
 import type { ActionFunctionArgs } from "react-router";
 import { data, redirect } from "react-router";
 import { getDatabaseClient } from "~/services/database.server";
@@ -171,7 +171,7 @@ export async function action({ request }: ActionFunctionArgs) {
       0);
 
   if (validation.data.trackingType === "Serial") {
-    const response = await issueAs(serviceRole, getDatabaseClient(), {
+    const response = await issue.withClient(serviceRole, getDatabaseClient(), {
       type: "jobOperationSerialComplete",
       ...validation.data,
       trackedEntityId: validation.data.trackedEntityId!,
@@ -253,7 +253,7 @@ export async function action({ request }: ActionFunctionArgs) {
       })
     );
   } else if (validation.data.trackingType === "Batch") {
-    const response = await issueAs(serviceRole, getDatabaseClient(), {
+    const response = await issue.withClient(serviceRole, getDatabaseClient(), {
       type: "jobOperationBatchComplete",
       ...validation.data,
       trackedEntityId: validation.data.trackedEntityId!,
@@ -335,7 +335,7 @@ export async function action({ request }: ActionFunctionArgs) {
       );
     }
 
-    const issue = await issueAs(serviceRole, getDatabaseClient(), {
+    const issued = await issue.withClient(serviceRole, getDatabaseClient(), {
       id: validation.data.jobOperationId,
       type: "jobOperation",
       quantity: validation.data.quantity,
@@ -343,11 +343,11 @@ export async function action({ request }: ActionFunctionArgs) {
       userId
     });
 
-    if (issue.error) {
+    if (issued.error) {
       return data(
         {},
         await flash(request, {
-          ...error(issue.error, "Failed to issue materials"),
+          ...error(issued.error, "Failed to issue materials"),
           flash: "error"
         })
       );

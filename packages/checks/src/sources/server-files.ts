@@ -11,7 +11,7 @@ const SERVER_ROOTS = [
   "apps/mes/app/services",
   "packages/jobs/src",
   "packages/database/supabase/functions",
-  "packages/operations/src"
+  "packages/server-functions/src"
 ];
 
 /** ERP module server files are matched by suffix inside apps/erp/app/modules. */

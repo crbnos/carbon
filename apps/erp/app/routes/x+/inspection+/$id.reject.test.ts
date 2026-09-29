@@ -1,6 +1,6 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { OperationError } from "@carbon/operations";
-import { postNonConformance } from "@carbon/operations/post-nonconformance";
+import { ServerFnError } from "@carbon/server-functions";
+import { postNonConformance } from "@carbon/server-functions/post-nonconformance";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { getInspection } from "~/modules/quality";
 import { dispositionInspection } from "~/modules/quality/quality.server";
@@ -32,7 +32,7 @@ vi.mock("@carbon/auth/client.server", () => ({
   getCarbonServiceRole: vi.fn(async () => ({ from: vi.fn() }))
 }));
 vi.mock("@carbon/ee/notifications", () => ({ notifyIssueCreated: vi.fn() }));
-vi.mock("@carbon/operations/post-nonconformance", () => ({
+vi.mock("@carbon/server-functions/post-nonconformance", () => ({
   postNonConformance: vi.fn()
 }));
 vi.mock("~/services/database.server", () => ({
@@ -175,7 +175,7 @@ describe("inspection reject route — inventory write-off", () => {
     // swallowed, because closeIssue's Use-As-Is restore assumes it succeeded.
     vi.mocked(postNonConformance).mockResolvedValue({
       data: null,
-      error: new OperationError("boom")
+      error: new ServerFnError("boom")
     });
     // If the route proceeds anyway, this is where NCR creation starts.
     vi.mocked(getInspection).mockResolvedValue({

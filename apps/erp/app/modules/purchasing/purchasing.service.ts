@@ -100,11 +100,10 @@ export async function convertSupplierQuoteToOrder(
   }
 ) {
   const { companyId, userId, ...input } = payload;
-  const [{ convert }, { callerContext }] = await Promise.all([
-    import("@carbon/operations/convert"),
-    import("@carbon/operations")
-  ]);
-  return convert(await callerContext(client, { db, companyId, userId }), {
+  const { convert } = await import("@carbon/server-functions/convert");
+  return convert.withClient(client, db, {
+    companyId,
+    userId,
     type: "supplierQuoteToPurchaseOrder",
     ...input
   });

@@ -2,7 +2,7 @@ import type { Database } from "@carbon/database";
 import type { KyselyDatabase } from "@carbon/database/client";
 import { createMappingService } from "@carbon/ee/accounting";
 import type { RampClient, RampTransaction } from "@carbon/ee/ramp.server";
-import { OperationError } from "@carbon/operations";
+import { ServerFnError } from "@carbon/server-functions";
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { type Kysely, sql } from "kysely";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
@@ -14,7 +14,9 @@ const runDatabaseTests = process.env.RUN_RAMP_DB_TESTS === "true";
 
 // Only the posting operation is substituted; everything else is real Postgres.
 const { post } = vi.hoisted(() => ({ post: vi.fn() }));
-vi.mock("@carbon/operations/post-charge", () => ({ postChargeAs: post }));
+vi.mock("@carbon/server-functions/post-charge", () => ({
+  postCharge: { withClient: post }
+}));
 
 vi.mock("@carbon/ee/ramp.server", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@carbon/ee/ramp.server")>()),
@@ -289,7 +291,7 @@ describe.skipIf(!runDatabaseTests)("Ramp card staging (Postgres)", () => {
       ) {
         return {
           data: null,
-          error: new OperationError("Account must be recoded")
+          error: new ServerFnError("Account must be recoded")
         };
       }
       await db
@@ -303,7 +305,7 @@ describe.skipIf(!runDatabaseTests)("Ramp card staging (Postgres)", () => {
         .where("id", "=", staged.chargeId)
         .where("companyId", "=", fixture.companyId)
         .execute();
-      return { data: null, error: new OperationError("response lost") };
+      return { data: null, error: new ServerFnError("response lost") };
     });
     const ctx: RampSyncContext = {
       client,
@@ -423,7 +425,7 @@ describe.skipIf(!runDatabaseTests)("Ramp card staging (Postgres)", () => {
           .where("id", "=", input.chargeId)
           .where("companyId", "=", fixture.companyId)
           .execute();
-        return { data: null, error: new OperationError("response lost") };
+        return { data: null, error: new ServerFnError("response lost") };
       }
     );
     const ambiguousClient = {

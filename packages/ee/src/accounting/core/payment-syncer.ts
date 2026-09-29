@@ -254,14 +254,16 @@ export abstract class PaymentSyncerBase<TRemote> extends BaseEntitySyncer<
     // Dynamic import: keeps the operation graph out of consumers (and tests)
     // that never post a payment (mirrors the base's dynamic import of the
     // SyncFactory).
-    const { postPayment } = await import("@carbon/operations/post-payment");
+    const [{ postPayment }, { ServerFnContext }] = await Promise.all([
+      import("@carbon/server-functions/post-payment"),
+      import("@carbon/server-functions")
+    ]);
     const posted = await postPayment(
-      {
+      ServerFnContext.system({
         db: this.database,
         companyId: this.companyId,
-        userId,
-        system: true
-      },
+        userId
+      }),
       { type, paymentId }
     );
 
