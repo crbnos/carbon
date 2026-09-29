@@ -1174,6 +1174,9 @@ importers:
       '@carbon/notifications':
         specifier: workspace:*
         version: link:../../packages/notifications
+      '@carbon/operations':
+        specifier: workspace:*
+        version: link:../../packages/operations
       '@carbon/printing':
         specifier: workspace:*
         version: link:../../packages/printing

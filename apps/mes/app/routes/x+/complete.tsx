@@ -8,6 +8,7 @@ import { getLogger } from "@carbon/logger";
 import { getCachedPrinterConfig } from "@carbon/printing/printing.server";
 import type { ActionFunctionArgs } from "react-router";
 import { data, redirect } from "react-router";
+import { getDatabaseClient } from "~/services/database.server";
 import { nonScrapQuantityValidator } from "~/services/models";
 import {
   finishJobOperation,
@@ -205,11 +206,15 @@ export async function action({ request }: ActionFunctionArgs) {
     }
 
     if (willBeFinished) {
-      const finishOperation = await finishJobOperation(serviceRole, {
-        jobOperationId: jobOperation.data.id,
-        userId,
-        companyId
-      });
+      const finishOperation = await finishJobOperation(
+        serviceRole,
+        getDatabaseClient(),
+        {
+          jobOperationId: jobOperation.data.id,
+          userId,
+          companyId
+        }
+      );
 
       if (finishOperation.error) {
         return data(
@@ -277,11 +282,15 @@ export async function action({ request }: ActionFunctionArgs) {
     }
 
     if (willBeFinished) {
-      const finishOperation = await finishJobOperation(serviceRole, {
-        jobOperationId: jobOperation.data.id,
-        userId,
-        companyId
-      });
+      const finishOperation = await finishJobOperation(
+        serviceRole,
+        getDatabaseClient(),
+        {
+          jobOperationId: jobOperation.data.id,
+          userId,
+          companyId
+        }
+      );
 
       if (finishOperation.error) {
         return data(
@@ -346,11 +355,15 @@ export async function action({ request }: ActionFunctionArgs) {
     }
 
     if (willBeFinished) {
-      const finishOperation = await finishJobOperation(serviceRole, {
-        jobOperationId: jobOperation.data.id,
-        userId,
-        companyId
-      });
+      const finishOperation = await finishJobOperation(
+        serviceRole,
+        getDatabaseClient(),
+        {
+          jobOperationId: jobOperation.data.id,
+          userId,
+          companyId
+        }
+      );
 
       if (finishOperation.error) {
         return data(

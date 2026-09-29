@@ -360,11 +360,15 @@ export async function action({ request, params }: ActionFunctionArgs) {
         state.operation.operationQuantity ??
         0);
   if (willBeFinished) {
-    const finishResult = await finishJobOperation(serviceRole, {
-      jobOperationId: state.jobOperationId,
-      userId,
-      companyId
-    });
+    const finishResult = await finishJobOperation(
+      serviceRole,
+      getDatabaseClient(),
+      {
+        jobOperationId: state.jobOperationId,
+        userId,
+        companyId
+      }
+    );
     if (finishResult.error) {
       warnings.push("failed to finish the operation");
     }

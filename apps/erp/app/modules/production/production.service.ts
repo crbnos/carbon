@@ -591,6 +591,7 @@ export async function deleteProcedureParameter(
 
 export async function deleteProductionEvent(
   client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   productionEventId: string,
   companyId: string,
   userId: string
@@ -606,17 +607,20 @@ export async function deleteProductionEvent(
   // A posted event's journal entry must be reversed before the row goes
   // away, otherwise WIP keeps the orphaned absorption.
   if (event.data.postedToGL) {
-    const reversal = await client.functions.invoke<{
-      success: boolean;
-      reason?: string;
-    }>("post-production-event", {
-      body: { productionEventId, companyId, userId, reverse: true }
-    });
+    const { postProductionEvent } = await import(
+      "@carbon/operations/post-production-event"
+    );
+    const reversal = await postProductionEvent(
+      { db, companyId, userId },
+      { productionEventId, reverse: true }
+    );
     if (reversal.error) {
       return {
         data: null,
         error: {
-          message: `Failed to reverse the event's journal entry: ${reversal.error.message}`
+          message: `Failed to reverse the event's journal entry: ${
+            reversal.error.message || "unknown error"
+          }`
         }
       };
     }
@@ -10248,6 +10252,7 @@ export async function saveInspectionDocumentAtomic(
  */
 export async function completeOperation(
   client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   companyId: string,
   userId: string,
   args: {
@@ -10347,11 +10352,15 @@ export async function completeOperation(
       .not("endTime", "is", null)
       .eq("postedToGL", false);
     if (unposted.data?.length) {
+      const { postProductionEvent } = await import(
+        "@carbon/operations/post-production-event"
+      );
       await Promise.all(
         unposted.data.map((event) =>
-          client.functions.invoke("post-production-event", {
-            body: { productionEventId: event.id, userId, companyId }
-          })
+          postProductionEvent(
+            { db, companyId, userId },
+            { productionEventId: event.id }
+          )
         )
       );
     }

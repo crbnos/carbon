@@ -1,5 +1,6 @@
 import type { Database, Json } from "@carbon/database";
 import { activeJobStatuses, getCompanyTimeZone } from "@carbon/database";
+import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import { storage } from "@carbon/files";
 import type { WorkSource } from "@carbon/lib/telemetry";
 import { trackWorkEvent } from "@carbon/lib/telemetry";
@@ -304,6 +305,7 @@ export async function deleteAttributeRecord(
 
 export async function finishJobOperation(
   client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   args: {
     jobOperationId: string;
     userId: string;
@@ -340,16 +342,23 @@ export async function finishJobOperation(
       .eq("postedToGL", false)
       .then((unpostedEvents) => {
         if (unpostedEvents.data?.length) {
-          Promise.all(
-            unpostedEvents.data.map((event) =>
-              client.functions.invoke("post-production-event", {
-                body: {
-                  productionEventId: event.id,
-                  userId: args.userId,
-                  companyId: args.companyId
-                }
-              })
-            )
+          // System: every caller passes the service role, which the edge
+          // function never permission-checked.
+          import("@carbon/operations/post-production-event").then(
+            ({ postProductionEvent }) =>
+              Promise.all(
+                unpostedEvents.data.map((event) =>
+                  postProductionEvent(
+                    {
+                      db,
+                      companyId: args.companyId,
+                      userId: args.userId,
+                      system: true
+                    },
+                    { productionEventId: event.id }
+                  )
+                )
+              )
           );
         }
       });

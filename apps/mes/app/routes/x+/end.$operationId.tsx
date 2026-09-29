@@ -7,6 +7,7 @@ import { evaluateLinesForSurface, isBlocked } from "@carbon/ee/rules.server";
 import { getLogger } from "@carbon/logger";
 import type { LoaderFunctionArgs } from "react-router";
 import { redirect } from "react-router";
+import { getDatabaseClient } from "~/services/database.server";
 import {
   finishJobOperation,
   getNextIncompleteSerialEntity,
@@ -206,11 +207,15 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
         }
 
         if (willBeFinished) {
-          const finishOperation = await finishJobOperation(serviceRole, {
-            jobOperationId: jobOperation.data.id,
-            userId,
-            companyId
-          });
+          const finishOperation = await finishJobOperation(
+            serviceRole,
+            getDatabaseClient(),
+            {
+              jobOperationId: jobOperation.data.id,
+              userId,
+              companyId
+            }
+          );
 
           if (finishOperation.error) {
             return redirect(
@@ -323,11 +328,15 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   }
 
   if (willBeFinished) {
-    const finishOperation = await finishJobOperation(serviceRole, {
-      jobOperationId: jobOperation.data.id,
-      userId,
-      companyId
-    });
+    const finishOperation = await finishJobOperation(
+      serviceRole,
+      getDatabaseClient(),
+      {
+        jobOperationId: jobOperation.data.id,
+        userId,
+        companyId
+      }
+    );
 
     if (finishOperation.error) {
       return redirect(
