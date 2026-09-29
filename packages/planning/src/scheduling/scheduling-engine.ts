@@ -1,7 +1,6 @@
 import type { Database } from "@carbon/database";
-// DB comes from postgres/index.ts (a type-only alias), NOT ../database.ts —
-// database.ts pulls in the Deno-only postgres driver, which fails the Node
-// typecheck reached via src/scheduling.ts re-exporting this engine in-process.
+// DB comes from @carbon/database/client (postgres/index.ts, a type-only alias),
+// NOT supabase/functions/lib/database.ts, which pulls in a postgres driver.
 import type { DB } from "@carbon/database/client";
 import {
   datetime,
@@ -428,7 +427,7 @@ export class SchedulingEngine {
     //
     // Rebuild atomically with a per-job advisory lock: two schedule runs for
     // the same job can overlap (an Inngest retry racing a still-running
-    // invocation, or a direct functions.invoke alongside the queued one);
+    // invocation, or a direct in-process run alongside the queued one);
     // interleaved delete/insert then violates jobOperationDependency_pk. The
     // lock serializes the rebuild per job, and onConflict absorbs any edge that
     // survives a race with trigger-rework's inserts.

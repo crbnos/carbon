@@ -184,7 +184,7 @@ export async function action({ request }: ActionFunctionArgs) {
         validation.data.workCenterId ?? undefined
       );
     }
-    // The edge fn returns { id, readableId }; the batch builder navigates to the
+    // The server fn returns { id, readableId }; the batch builder navigates to the
     // created batch on success. Additive — the schedule board ignores them.
     return {
       success: true,

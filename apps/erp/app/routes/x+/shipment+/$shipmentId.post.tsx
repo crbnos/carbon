@@ -200,7 +200,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     }
   }
 
-  // Expired-batch policy check. Mirrors post-stock-transfer / issue edge
+  // Expired-batch policy check. Mirrors post-stock-transfer / issue server
   // functions: pulls inventoryShelfLife.expiredEntityPolicy from
   // companySettings and refuses to post when any tracked entity attached to
   // the shipment is past its expirationDate (unless policy is "Warn").

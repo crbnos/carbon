@@ -1,8 +1,7 @@
 // Planned-duration model for a job operation batch. Dependency-free pure TS.
 //
-// Unlike batch-time-split.ts (a re-export of the Deno edge-runtime module),
-// this lives directly in @carbon/utils: no edge function consumes it, so there
-// is no Deno mirror to keep in sync. See
+// Unlike batch-time-split.ts (a re-export of a module under
+// supabase/functions/shared), this lives directly in @carbon/utils. See
 // .ai/specs/2026-09-04-batch-release-and-scheduling.md.
 
 import { clamp } from "./math";

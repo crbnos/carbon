@@ -48,14 +48,14 @@ export function voidReimbursement(args: {
 
 /**
  * The line sum must equal the header amount before a reimbursement may post.
- * The edge function's `requireLineSum` enforces the same invariant, but the
+ * The server function's `requireLineSum` enforces the same invariant, but the
  * shared spec requires the UI to refuse FIRST, with a readable message and
- * without an edge-function round trip.
+ * without a server-function round trip.
  *
  * The threshold is `EPSILON`, matching what `requireLineSum` actually uses —
- * NOT the edge function's BALANCE_TOLERANCE of 0.01, which governs the
+ * NOT the server function's BALANCE_TOLERANCE of 0.01, which governs the
  * journal's debit/credit residual and is a different question. `DocumentLineEditor`
- * uses the same EPSILON, so the editor, this guard and the edge function
+ * uses the same EPSILON, so the editor, this guard and the server function
  * cannot disagree about what "balanced" means.
  */
 export function linesBalanceHeader(

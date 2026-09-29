@@ -68,7 +68,7 @@ export type CreateQualityIssueArgs = {
 
 // MES-owned NCR creation for a job operation: sequence, nonConformance insert,
 // the nonConformanceJobOperation / item / tracked-entity links, and the
-// follow-up tasks edge function — with compensating deletes on failure.
+// follow-up tasks server function — with compensating deletes on failure.
 // Extracted from the quality-issue.new route so the inspection reject route
 // can create the same job-operation-aware issue.
 export async function createQualityIssue(
@@ -529,7 +529,7 @@ export async function postSerialCompletions(
 }
 
 // Non-serial completion: one bulk Production posting (batch entities
-// accumulate via the issue edge fn; untracked inserts + backflushes here).
+// accumulate via the issue server fn; untracked inserts + backflushes here).
 // The row links the inspection plus the lowest unlinked passed sample as a
 // serializing representative — concurrent posts collide on the sample link's
 // UNIQUE index instead of double-counting.

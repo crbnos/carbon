@@ -489,7 +489,7 @@ function decideDocumentFamily(args: {
  * Convert a Carbon journalLine amount to the engine's debit-signed
  * convention (positive = debit, negative = credit).
  *
- * Carbon's post-* edge functions sign amounts by the account's NATURAL
+ * Carbon's post-* server functions sign amounts by the account's NATURAL
  * balance (`credit("liability", x)` stores +x; `debit("liability", x)`
  * stores -x — see functions/lib/utils.ts), so a Carbon journal balances
  * as debits == credits, not as a signed sum of zero. The engine's

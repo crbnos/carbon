@@ -30,9 +30,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   const serviceRole = getCarbonServiceRole();
 
-  // Terminal gate before the `convert` edge function mints quote lines. Gating
-  // here rather than inside the edge function keeps the evaluator in one place
-  // (it is Deno and cannot import the ERP server runtime the plan gate needs).
+  // Terminal gate before the `convert` server function mints quote lines. Gating
+  // here rather than inside the server function keeps the evaluator in one place
+  // (the plan gate needs the ERP server runtime).
   const acknowledged =
     (await request.formData()).get("acknowledged") === "true";
   let violations: Violation[];

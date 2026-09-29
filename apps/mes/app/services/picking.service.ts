@@ -154,7 +154,7 @@ export async function getUnresolvedPickingListLines(
  * Set the picked quantity on a picking line (pick, short, or unpick).
  *
  * A pick TRANSFERS the material from its warehouse source shelf to the work
- * center's lineside shelf via the `post-picking` edge function (consumption
+ * center's lineside shelf via the `post-picking` server function (consumption
  * happens later at production). `quantity <= 0` reverses a prior pick. "Short"
  * just records the status with no inventory movement — the kitter couldn't
  * fully pick it, and production handles the shortfall. The picking list header
@@ -267,7 +267,7 @@ export async function setPickingListLineQuantity(
     }
   }
 
-  // Short overrides the status the edge function derived from quantities.
+  // Short overrides the status the server function derived from quantities.
   if (args.markShort) {
     const update = await client
       .from("pickingListLine")

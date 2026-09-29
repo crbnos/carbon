@@ -458,7 +458,7 @@ export function lookupBuyPriceFromMap(
  * bought-to-order cost must go through this — reaching for
  * lookupBuyPriceFromMap directly silently ignores a typed cost.
  *
- * Mirrored in the Deno edge runtime (`functions/lib/methods.ts`).
+ * Mirrored in `functions/lib/methods.ts`.
  */
 export function resolveBuyUnitCost(
   material: {

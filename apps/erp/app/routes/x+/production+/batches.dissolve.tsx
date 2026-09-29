@@ -5,8 +5,8 @@ import type { ActionFunctionArgs } from "react-router";
 import { updateJobOperationBatch } from "~/modules/production";
 import { getDatabaseClient } from "~/services/database.server";
 
-// Bulk dissolve — one edge-fn dissolve per selected batch. Each is independent:
-// a batch that has recorded production is refused (the edge fn's own guard) and
+// Bulk dissolve — one server-fn dissolve per selected batch. Each is independent:
+// a batch that has recorded production is refused (the server fn's own guard) and
 // reported in `failed` while the rest still dissolve. Fetcher-driven; the table
 // toasts the summary and the loader revalidates.
 export async function action({ request }: ActionFunctionArgs) {

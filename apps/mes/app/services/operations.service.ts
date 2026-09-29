@@ -335,9 +335,9 @@ export async function finishJobOperation(
   }
 
   if (!result.error) {
-    // System: every caller passes the service role, which the edge function
-    // never permission-checked. An operation's own failure is logged inside it;
-    // onError catches anything that escapes (the query, the import).
+    // System: every caller passes the service role. An operation's own
+    // failure is logged inside it; onError catches anything that escapes (the
+    // query, the import).
     async.background(
       async () => {
         const unposted = await client
@@ -1932,7 +1932,7 @@ export function isSerialEntityIncompleteForOperation(
  * when every entity is already complete it falls back to the last entity, which
  * preserves the prior end-state behavior. This unifies both the pre-split flow
  * (all N `quantity=1` entities exist up front) and the old lazy-split flow (the
- * `issue` edge function spawns the next entity on each completion).
+ * `issue` server function spawns the next entity on each completion).
  */
 export function getNextIncompleteSerialEntity<
   T extends SerialEntityForSelection

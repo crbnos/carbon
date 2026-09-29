@@ -69,7 +69,7 @@ type PageQuery<T extends object> = PostgrestFilterBuilder<
  *
  * Takes a FACTORY, not a query: supabase-js builders are mutable — `.range()`
  * sets `this.url.searchParams` and returns `this` — so concurrent awaits on one
- * builder would all fetch whichever range was set last. Mirrors the Deno sibling
+ * builder would all fetch whichever range was set last. Mirrors
  * `supabase/functions/lib/fetch-all.ts`.
  */
 export async function fetchAllRecords<T extends object>(

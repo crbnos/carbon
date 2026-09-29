@@ -32,8 +32,6 @@ import { path } from "~/utils/path";
 
 const logger = getLogger("erp", "quoteid-convert");
 
-// the edge function grows larger than 2MB - so this is a workaround to avoid the edge function limit
-
 export async function action(args: ActionFunctionArgs) {
   const { request, params } = args;
   assertIsPost(request);
@@ -85,11 +83,10 @@ export async function action(args: ActionFunctionArgs) {
   const serviceRole = getCarbonServiceRole();
   await requireCompanyRecord(serviceRole, "quote", companyId, { id: quoteId });
 
-  // Terminal gate, in the route rather than inside the `convert` edge function:
-  // the edge function writes salesOrderLine rows directly and cannot run the
-  // evaluator (it is Deno, and the evaluator's plan gate pulls in the ERP
-  // server runtime). Gating here covers this path without duplicating the
-  // evaluator into a tree CI never typechecks or tests.
+  // Terminal gate, in the route rather than inside the `convert` server function:
+  // the server function writes salesOrderLine rows directly and cannot run the
+  // evaluator (the evaluator's plan gate pulls in the ERP server runtime).
+  // Gating here covers this path without duplicating the evaluator.
   const acknowledged = formData.get("acknowledged") === "true";
   let violations: Violation[];
   let ruleNames: Record<string, string>;

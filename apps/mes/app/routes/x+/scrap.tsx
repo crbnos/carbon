@@ -32,7 +32,7 @@ export async function action({ request }: ActionFunctionArgs) {
     machineProductionEventId
   } = validation.data;
 
-  // One transactional edge-function call: Scrap productionQuantity row, BOM
+  // One transactional server-function call: Scrap productionQuantity row, BOM
   // backflush, tracked-entity terminal status + replacement serial spawn
   // (serial parents), Done-operation reopen / capacity top-up beyond the
   // planned allowance, and the WIP→scrap journal.

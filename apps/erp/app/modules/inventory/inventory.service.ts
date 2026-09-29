@@ -1349,7 +1349,7 @@ export async function getShippingTermsList(
 
 // Merge >=2 same-item Available lots into ONE new entity (fresh id, summed
 // quantity, earliest expiry) with genealogy back to every parent. The issue
-// edge fn owns the writes; see shared/batch-merge.ts.
+// server fn owns the writes; see shared/batch-merge.ts.
 export async function mergeTrackedEntities(
   client: SupabaseClient<Database>,
   db: Kysely<KyselyDatabase>,
@@ -1585,8 +1585,8 @@ export async function getWarehouseTransferLines(
     .eq("transferId", transferId);
 }
 
-// Thin wrapper over the post-inventory-adjustment edge function — the single
-// write path for manual adjustments (shared with MES). The edge function owns
+// Thin wrapper over the post-inventory-adjustment server function — the single
+// write path for manual adjustments (shared with MES). The server function owns
 // Set Quantity resolution, storage-unit transfers, serial/batch stock-target
 // resolution, tracked-entity updates, cost layers, and GL posting (only when
 // companySettings.accountingEnabled) in one transaction.
@@ -1632,7 +1632,7 @@ export async function insertManualInventoryAdjustment(
 // Authoritative effective quantity for a movement's correction group: resolve
 // the ultimate root by walking correctionOfItemLedgerId, then sum the root and
 // every correction in the group (BFS — historical count corrections chained
-// fix→fix). Mirrors the walk inside the correct-stock-movement edge function;
+// fix→fix). Mirrors the walk inside the correct-stock-movement server function;
 // the modal pre-fills from this so the user never submits a value derived from
 // an incomplete page of movements.
 export async function getStockMovementEffectiveQuantity(
@@ -2950,7 +2950,7 @@ export async function getPickingListLineTrackedEntities(
 /**
  * Pick (or unpick) a tracked (serial/batch) lot for a picking line. A pick
  * MOVES the chosen lot from its warehouse bin to the line's lineside shelf via
- * the `post-picking` edge function (serial/batch), records it on the line, and
+ * the `post-picking` server function (serial/batch), records it on the line, and
  * points the job material at lineside. `unpick` reverses it.
  */
 export async function setPickingListLineTrackedEntity(
@@ -2974,7 +2974,7 @@ export async function setPickingListLineTrackedEntity(
     )
     .eq("id", args.pickingListLineId)
     // Callers pass the service role: the company scope is the tenant boundary,
-    // and the edge function below acts in args.companyId, never the row's.
+    // and the server function below acts in args.companyId, never the row's.
     .eq("companyId", args.companyId)
     .single();
 
@@ -3942,7 +3942,7 @@ export async function generatePickingList(
 /**
  * Pick, partial-pick (short), or unpick a picking line. A pick TRANSFERS the
  * material from its warehouse source shelf to the work center's lineside shelf
- * via the `post-picking` edge function (consumption happens later at
+ * via the `post-picking` server function (consumption happens later at
  * production). The DELTA between the desired picked quantity and what's already
  * picked is what moves: positive transfers in, negative reverses.
  *   - Pick (full):  quantity = quantityToPick
@@ -3969,7 +3969,7 @@ export async function pickPickingListLine(
     )
     .eq("id", args.pickingListLineId)
     // Callers pass the service role: the company scope is the tenant boundary,
-    // and the edge function below acts in args.companyId, never the row's.
+    // and the server function below acts in args.companyId, never the row's.
     .eq("companyId", args.companyId)
     .single();
 
@@ -4056,7 +4056,7 @@ export async function pickPickingListLine(
     }
   }
 
-  // Short overrides the status the edge function derived from quantities.
+  // Short overrides the status the server function derived from quantities.
   if (args.markShort) {
     const update = await client
       .from("pickingListLine")

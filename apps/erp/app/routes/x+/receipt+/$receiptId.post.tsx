@@ -61,7 +61,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   // A voided receipt has already been reversed — re-posting would duplicate
   // ledger entries, cost layers and journal lines. Block it before mutating
   // any state (the route flips status to "Pending" below, which is why this
-  // guard lives here and not in the edge function).
+  // guard lives here and not in the server function).
   if (receiptForSurface?.status === "Voided") {
     throw redirect(
       path.to.receipt(receiptId),

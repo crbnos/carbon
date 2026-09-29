@@ -22,7 +22,7 @@ import { path } from "~/utils/path";
 /**
  * The "Pay expense" action. It creates the ordinary documents rather than a
  * bespoke payout: one `payment` with an employee payee, one `invoiceSettlement`
- * with `targetReimbursementId`, then the existing `post-payment` edge function.
+ * with `targetReimbursementId`, then the existing `post-payment` server function.
  * The settlement goes through `replaceInvoiceSettlements`, whose employee arm
  * is the authority on party, currency, Posted status and the balance ceiling —
  * this route never writes a settlement row itself.

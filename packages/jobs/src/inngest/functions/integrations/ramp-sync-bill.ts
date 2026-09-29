@@ -143,7 +143,7 @@ async function buildBillLines(
 }
 
 /**
- * Claim only a Draft, then observe the stored outcome. The posting edge
+ * Claim only a Draft, then observe the stored outcome. The posting server
  * function owns rollback; an ambiguous response must never re-draft a posted
  * invoice or start a second invocation while the first is still Pending.
  */

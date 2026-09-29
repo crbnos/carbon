@@ -1050,7 +1050,7 @@ export const createJobOperationBatchValidator = z.object({
       .min(1, { message: "Select at least one operation" })
   ),
   // Output lot identity is planned here, never typed on the floor. The
-  // batch-operations edge fn enforces the rules (one item to merge, unique
+  // batch-operations server fn enforces the rules (one item to merge, unique
   // numbers when split); these only carry the planner's choice through.
   mergeOutput: zfd.checkbox(),
   outputLotNumber: zfd.text(z.string().trim().optional()),

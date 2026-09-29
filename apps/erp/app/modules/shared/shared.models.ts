@@ -217,8 +217,8 @@ export const oAuthCallbackSchema = z.object({
  * `json`, and they MUST hold an object. A JSON string scalar stored there is
  * read back by supabase-js as a JS string; when the row is later copied through
  * Kysely (quote → sales order, RFQ → quote, quote → revision, method copies)
- * deno-postgres sends that string as raw text and Postgres rejects it with
- * `invalid input syntax for type json`. The edge functions now serialise on
+ * the Postgres driver sends that string as raw text and Postgres rejects it
+ * with `invalid input syntax for type json`. The server functions serialise on
  * their side too (`lib/json.ts`), but the write side must never store the
  * scalar in the first place. Never drops content to `{}`.
  *

@@ -156,8 +156,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
     });
   }
 
-  // Commit the new status BEFORE invoking the scheduler. The `schedule` edge
-  // function only batches jobs whose status is already Ready/In Progress/Paused,
+  // Commit the new status BEFORE invoking the scheduler. The scheduler
+  // only batches jobs whose status is already Ready/In Progress/Paused,
   // so a job released here must be persisted as Ready first — otherwise it is
   // filtered out of its own scheduling run and never lands in the forecast.
   //
@@ -277,7 +277,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 }
 
 // Forecast-first scheduling regenerates the whole location the job is in,
-// in-process (Node) — no edge cold-start or HTTP hop. Throws on failure.
+// in-process (Node). Throws on failure.
 async function scheduleJobLocation({
   id,
   companyId,

@@ -25,7 +25,7 @@ const clientCache = new Map<
   }
 >();
 
-/** `getPostgresClient` is typed against the edge runtime's vendored kysely, so
+/** `getPostgresClient` is typed against @carbon/database's kysely, so
  * the structurally-identical instance needs a cast for this package's copy. */
 export function getJobDatabaseClient(size = 1) {
   const cached = clientCache.get(size);

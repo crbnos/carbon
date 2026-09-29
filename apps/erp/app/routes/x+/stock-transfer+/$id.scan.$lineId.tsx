@@ -169,7 +169,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     ? "batch"
     : "serial";
 
-  // The edge function re-checks this under a row lock, but refusing an already-
+  // The server function re-checks this under a row lock, but refusing an already-
   // full line here avoids a round trip and a raw failure.
   const forward = resolveStockTransferPickForward({
     transferType,
@@ -209,9 +209,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
 
   if (functionError) {
-    // The edge function returns its guard failures (over-pick, already picked)
-    // as a 400 with the real reason in the body; surface that, not the generic
-    // "non-2xx" wrapper text.
+    // The server function returns its guard failures (over-pick, already
+    // picked) with the real reason; surface that, not the generic fallback.
     const message = getErrorMessage(functionError, "Failed to pick line");
     return data(
       { success: false, message },

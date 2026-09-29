@@ -86,7 +86,7 @@ export async function action({ request }: ActionFunctionArgs) {
         throw redirect(path.to.receiptDetails(existingReturnReceipt.data.id));
       }
 
-      // No default-location guard: the create edge function falls back to
+      // No default-location guard: the create server function falls back to
       // the return order's own location and errors specifically otherwise.
       const salesReturnOrderReceipt = await (create(
         ServerFnContext.system({ db: getDatabaseClient(), companyId, userId }),

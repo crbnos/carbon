@@ -29,7 +29,7 @@ import { withTriggersDisabled } from "./utils";
  *  1. In the base pull transaction, `upsertLocal` writes an idempotent **Draft**
  *     `payment` + `invoiceSettlement` via `upsertLocalPaymentDraft`.
  *  2. AFTER the transaction commits, the pull override invokes the native
- *     `post-payment` edge function (`{ type: "post" }` for a settled payment,
+ *     `post-payment` server function (`{ type: "post" }` for a settled payment,
  *     `{ type: "void" }` for a failed/void one), which builds the GL journal,
  *     sets `payment.journalId`, flips the status to Posted/Voided, and lets the
  *     invoice/bill status derive from the settlement.

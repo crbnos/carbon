@@ -6994,7 +6994,7 @@ export async function createChangeNoticeDraftMethod(
         error: { message: "Failed to create draft version" }
       };
     }
-    // @ts-expect-error TS2345 - getMethodValidator flags default via edge fn
+    // @ts-expect-error TS2345 - getMethodValidator flags default in get-method
     const copy = await copyMakeMethod(client, db, {
       sourceId: base.id,
       targetId: draftId,
@@ -7174,7 +7174,7 @@ export async function createChangeNoticeDraftMethod(
   });
 
   // Copy the affected part's method into the new item's (trigger-created) draft.
-  // @ts-expect-error TS2345 - getMethodValidator flags default via edge fn
+  // @ts-expect-error TS2345 - getMethodValidator flags default in get-method
   const copy = await copyItem(client, db, {
     sourceId: itemId,
     targetId: newItemId,
@@ -7236,7 +7236,7 @@ async function discardChangeNoticeDraft(
 
 // Add an affected item to a CO: insert the row, then spin its CO-owned Draft
 // make method per the change type and write the draft refs back. Rolls the row
-// back if draft creation fails (edge-fn calls can't share one txn — G2).
+// back if draft creation fails (get-method runs its own transaction — G2).
 export async function addChangeNoticeAffectedItem(
   client: SupabaseClient<Database>,
   db: Kysely<KyselyDatabase>,

@@ -91,7 +91,7 @@ async function recalculateJobMakeMethodRequirements(
   }
 ): Promise<{ error: Error | null }> {
   // Forecast-first scheduling regenerates the WHOLE LOCATION; resolve the job's
-  // location and regenerate it IN-PROCESS (Node) — no edge cold-start or HTTP hop.
+  // location and regenerate it IN-PROCESS (Node).
   const { data: job, error } = await client
     .from("job")
     .select("locationId")

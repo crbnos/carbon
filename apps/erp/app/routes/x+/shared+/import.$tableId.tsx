@@ -69,7 +69,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const serviceRole = getCarbonServiceRole();
   // Quotes are created through the sales services (Option B) so quote side
   // effects — opportunity, payment, shipment, external link — are preserved;
-  // all other tables run through the generic import-csv edge function.
+  // all other tables run through the generic import-csv server function.
   const importResult = isQuoteImportTable(table)
     ? await importQuotes(serviceRole, {
         db: getDatabaseClient(),

@@ -2647,8 +2647,7 @@ export async function recalculateJobOperationDependencies(
   if (error || !job?.locationId) {
     return { data: null, error: error ?? new Error("Job has no location") };
   }
-  // Regenerate the whole location IN-PROCESS (Node) instead of round-tripping to
-  // the `schedule` edge function — no cold start, no HTTP hop. The caller's
+  // Regenerate the whole location IN-PROCESS (Node). The caller's
   // client reads the (same-company) master data; writes go through the Node
   // Kysely pool.
   try {
@@ -2716,8 +2715,7 @@ export async function runMRP(
     userId: string;
   }
 ) {
-  // Run MRP IN-PROCESS (Node) instead of round-tripping to the `mrp` edge
-  // function — no cold start, no HTTP hop. The caller's service-role client does
+  // Run MRP IN-PROCESS (Node). The caller's service-role client does
   // the PostgREST reads; the atomic Phase-7 write goes through the Node Kysely
   // pool. Preserves the `{ data, error }` shape the caller (api+/mrp.ts) returns.
   try {
@@ -6154,7 +6152,7 @@ export async function notifyScheduleInputsChanged(
 
 // --- Job operation batching (spec: .ai/specs/2026-08-21-job-operation-batching.md) ---
 // Execution lives in MES (the operation view's batch mode); ERP composes
-// batches on the schedule board, mutates them via the batch-operations edge fn,
+// batches on the schedule board, mutates them via the batch-operations server fn,
 // and lists past/active batches at /x/production/batches.
 
 // Count of operations that COULD be batched but aren't yet — unbatched ops on a
@@ -10218,7 +10216,7 @@ export async function saveInspectionDocumentAtomic(
 // ---------------------------------------------------------------------------
 // MES-core write entry points exposed to MCP (gatekeeper-carbon asks #1–#4).
 //
-// Each wraps the SAME edge function / RPC the MES/ERP UI uses, so an MCP caller drives
+// Each wraps the SAME server function / RPC the MES/ERP UI uses, so an MCP caller drives
 // production as the connected user — companyId/userId come from the OAuth token (injected by the
 // MCP executor), not from caller-supplied (falsifiable) fields. Exposed automatically by
 // scripts/generate-mcp.ts as production_issueMaterial / _completeJob / _scheduleJob.
@@ -10232,7 +10230,7 @@ export async function saveInspectionDocumentAtomic(
  * MES material-complete flow's non-tracked path against the same entry points, so an MCP caller
  * drives it as the connected user:
  *   1. record the produced quantity (productionQuantity insert),
- *   2. backflush consumed material (`issue` edge fn, type "jobOperation"),
+ *   2. backflush consumed material (`issue` server fn, type "jobOperation"),
  *   3. when good + reworked quantity reaches the operation's target, mark it Done — the
  *      sync_finish_job_operation DB trigger then completes the job to inventory if this was the
  *      last operation — post any ended-but-unposted production events for GL, and return picked

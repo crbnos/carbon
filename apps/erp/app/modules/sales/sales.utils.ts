@@ -8,8 +8,8 @@ export type QuoteLinePriceSource = "system" | "manual";
  * off, so it is treated as "no defaults" everywhere it is consumed.
  * (Markups are whole-percent, non-negative — e.g. `{ laborCost: 25 }`.)
  *
- * Mirrored in the Deno edge runtime (`functions/lib/methods.ts`), which cannot
- * import app code — keep both in sync.
+ * Mirrored in `functions/lib/methods.ts`, which cannot import app code — keep
+ * both in sync.
  */
 export function getEffectiveDefaultMarkups(
   defaultMarkups: CategoryMarkups
@@ -96,8 +96,7 @@ export type RecalcPricingDecision =
  *   - `'system'` without markups → reprice from the effective defaults (which
  *     is `{}` — i.e. price at cost — when defaults are disabled)
  *
- * Mirrored in the Deno edge runtime (`functions/lib/methods.ts`) — keep both
- * in sync.
+ * Mirrored in `functions/lib/methods.ts` — keep both in sync.
  */
 export function decideRecalcPricing(
   row: {

@@ -35,7 +35,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     }
   } catch (err) {
     // A redirect is control flow, not a failure — including the one thrown just
-    // above carrying the edge function's own message ("Charge is already
+    // above carrying the server function's own message ("Charge is already
     // voided"). Swallowing it replaced that with a generic string and handed a
     // `Response` object to `error()` as the thing to log.
     if (err instanceof Response) throw err;

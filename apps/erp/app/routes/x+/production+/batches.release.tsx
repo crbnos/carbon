@@ -10,7 +10,7 @@ import { releaseBatchMemberJobs } from "~/modules/production/production.server";
 import { getDatabaseClient } from "~/services/database.server";
 
 // Bulk release — one release per selected Planned batch. Each is independent:
-// a batch the edge fn refuses (no members, already recorded production) is
+// a batch the server fn refuses (no members, already recorded production) is
 // reported in `failed` while the rest still release. Only Planned batches are
 // released — the caller filters, and any non-Planned id is refused here too so a
 // stale selection can't flip an Active/Completing batch. Fetcher-driven; the

@@ -553,7 +553,7 @@ export async function action(args: ActionFunctionArgs) {
   const serviceRole = getCarbonServiceRole();
 
   // Everything below reads and writes through the service role (and the
-  // Stripe preflight runs before the edge function re-checks the invoice), so
+  // Stripe preflight runs before the server function re-checks the invoice), so
   // the URL's invoiceId must belong to this company before anything happens.
   await requireCompanyRecord(serviceRole, "salesInvoice", companyId, {
     id: invoiceId
@@ -573,7 +573,7 @@ export async function action(args: ActionFunctionArgs) {
 
   // Sales-rule terminal gate. Posting is the revenue checkpoint and the only
   // gate an invoice raised with no upstream document ever passes — lines can
-  // arrive from the convert edge function, the API, or MCP without the
+  // arrive from the convert server function, the API, or MCP without the
   // per-line check. Re-reads the whole document, so it also catches
   // staleness (a rule authored after the lines were written). Must run
   // BEFORE the optimistic `Pending` write below, or a blocked post strands

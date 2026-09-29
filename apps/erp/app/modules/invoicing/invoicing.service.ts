@@ -3568,7 +3568,7 @@ export async function replaceInvoiceSettlements(
 // supplier), a signed amount against a reason GL account, and a set of
 // invoiceSettlement applications (memo as SOURCE) to open invoices of the same
 // party. Direction (Credit/Debit) is the discriminator; numbering uses the
-// creditMemo / debitMemo sequences. Posting is handled by the post-memo edge
+// creditMemo / debitMemo sequences. Posting is handled by the post-memo server
 // function; the apply table is editable only while the memo is Draft.
 
 export async function getMemo(client: SupabaseClient<Database>, id: string) {

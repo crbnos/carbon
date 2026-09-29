@@ -47,7 +47,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const { batchId } = params;
   if (!batchId) throw notFound("batchId not found");
 
-  // "Delete" is the edge fn's dissolve: members return to the schedule un-run
+  // "Delete" is the server fn's dissolve: members return to the schedule un-run
   // and the batch row is removed. It refuses once production has been recorded
   // — that refusal message surfaces here as the flash.
   const result = await updateJobOperationBatch(client, getDatabaseClient(), {

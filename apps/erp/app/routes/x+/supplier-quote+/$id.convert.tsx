@@ -18,8 +18,6 @@ import { path } from "~/utils/path";
 
 const logger = getLogger("erp", "id-convert");
 
-// the edge function grows larger than 2MB - so this is a workaround to avoid the edge function limit
-
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
   const { companyId, userId } = await requirePermissions(request, {

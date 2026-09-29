@@ -21,7 +21,7 @@ const logger = getLogger("mes", "batch-complete");
 // A batch planned with a combined output merges every member's produced lot
 // into the planned lot number once completion lands. Parent ids are derived
 // SERVER-SIDE from membership: this route invokes `issue` with the SERVICE
-// ROLE, so the edge fn's `inventory` check validates the service role rather
+// ROLE, so the server fn's `inventory` check validates the service role rather
 // than the operator. A second call finds nothing (parents are Consumed), so a
 // resume never double-merges.
 async function getPlannedMergeLots(
@@ -75,8 +75,8 @@ export async function action({ request, params }: ActionFunctionArgs) {
   // Lot identity was planned at creation: a merged batch stamps its one lot
   // number on every member's output; otherwise each member keeps its own
   // planned number (null leaves the entity's readableId untouched, and the
-  // edge fn refuses an output with no number at all).
-  // The edge function is invoked with the service role, so the submitted
+  // server fn refuses an output with no number at all).
+  // The server function is invoked with the service role, so the submitted
   // member ids must be this batch's members, and any tracked entity this
   // company's — one scoped query for the entity list.
   const memberIds = new Set(

@@ -81,8 +81,7 @@ export const mrpFunction = inngest.createFunction(
     for (const company of scheduled) {
       try {
         await step.run(`mrp-${company.id}`, async () => {
-          // Run MRP in-process (Node) instead of invoking the `mrp` edge
-          // function; runMrp throws on failure.
+          // Run MRP in-process (Node); runMrp throws on failure.
           await runMrp(serviceRole, getJobDatabaseClient(), {
             type: "company",
             id: company.id,

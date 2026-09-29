@@ -606,7 +606,7 @@ export async function placeReleasedBatches(args: {
   // ones appearing — the per-job runs that follow read a consistent set.
   await db.transaction().execute(async (trx) => {
     // Persist auto-selected work centers to the batch (and its members —
-    // mirroring the edge fn's "assigning a work center writes it to every
+    // mirroring the server fn's "assigning a work center writes it to every
     // member"). The IS NULL guard defers to a human pick that landed after
     // this wave's read; the next wave then places on theirs (sticky).
     for (const [batchId, workCenterId] of selectedWorkCenters) {
