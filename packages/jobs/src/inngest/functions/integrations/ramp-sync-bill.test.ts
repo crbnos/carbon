@@ -4,14 +4,10 @@ import type { RampSyncContext } from "./ramp-sync-shared";
 
 vi.mock("@carbon/env", () => ({ getAppUrl: () => "http://localhost" }));
 
-// The posting operation is the boundary; each fixture installs its own stand-in.
-const posting = vi.hoisted(() => ({
-  invoke: (() => Promise.resolve({ data: null, error: null })) as (
-    ...args: unknown[]
-  ) => Promise<{ data: unknown; error: Error | null }>
-}));
+// The posting operation is the boundary; each fixture installs its own behavior.
+const { post } = vi.hoisted(() => ({ post: vi.fn() }));
 vi.mock("@carbon/operations/post-purchase-invoice", () => ({
-  postPurchaseInvoiceAs: (...args: unknown[]) => posting.invoke(...args)
+  postPurchaseInvoiceAs: post
 }));
 
 function postingFixture(
@@ -25,11 +21,11 @@ function postingFixture(
     invoiceId: "PI-1",
     status: initialStatus
   };
-  const invoke = vi.fn(async () => {
+  post.mockReset();
+  post.mockImplementation(async () => {
     row.status = finalStatus;
     return { data: null, error: error ? new Error("response lost") : null };
   });
-  posting.invoke = invoke;
   const client = {
     from: () => {
       let update: Record<string, unknown> | undefined;
@@ -59,8 +55,7 @@ function postingFixture(
   };
   return {
     ctx: { client, companyId: "company-1" } as unknown as RampSyncContext,
-    row,
-    invoke
+    row
   };
 }
 
@@ -84,11 +79,11 @@ describe("Ramp invoice posting observation", () => {
     "Pending",
     "Voided"
   ])("does not restart an invoice already %s", async (status) => {
-    const { ctx, invoke, row } = postingFixture(status, "Open");
+    const { ctx, row } = postingFixture(status, "Open");
     expect(await postPurchaseInvoice(ctx, "invoice-1")).toEqual({
       fail: expect.stringContaining(status)
     });
-    expect(invoke).not.toHaveBeenCalled();
+    expect(post).not.toHaveBeenCalled();
     expect(row.status).toBe(status);
   });
 });

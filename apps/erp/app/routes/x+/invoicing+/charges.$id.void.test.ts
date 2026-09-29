@@ -6,7 +6,7 @@ import { describe, expect, it, vi } from "vitest";
  * under test. `flash` is stubbed to put the user-facing message on a header so a
  * thrown redirect can be read.
  */
-const invoke = vi.hoisted(() => vi.fn());
+const postCharge = vi.hoisted(() => vi.fn());
 
 vi.mock("@carbon/auth", () => ({
   assertIsPost: () => undefined,
@@ -17,7 +17,7 @@ vi.mock("@carbon/auth/auth.server", () => ({
   requirePermissions: () =>
     Promise.resolve({ companyId: "company-1", userId: "user-1" })
 }));
-vi.mock("@carbon/operations/post-charge", () => ({ postCharge: invoke }));
+vi.mock("@carbon/operations/post-charge", () => ({ postCharge: postCharge }));
 vi.mock("~/services/database.server", () => ({
   getDatabaseClient: () => ({})
 }));
@@ -52,7 +52,7 @@ describe("voiding a charge", () => {
     // The refusal is the whole point of the round-trip. Catching the redirect
     // that carries it and replacing it with "Failed to void charge" left the
     // user staring at a Posted charge with no idea why it stayed posted.
-    invoke.mockResolvedValue({
+    postCharge.mockResolvedValue({
       data: null,
       error: { message: "Charge is already voided" }
     });
@@ -66,7 +66,7 @@ describe("voiding a charge", () => {
 
   it("falls back to a generic string when the failure has no user-facing message", async () => {
     // A data-layer failure arrives with an empty message by design.
-    invoke.mockResolvedValue({ data: null, error: { message: "" } });
+    postCharge.mockResolvedValue({ data: null, error: { message: "" } });
 
     expect(((await run()) as Response).headers.get("x-flash")).toBe(
       "Failed to void charge"
@@ -76,7 +76,7 @@ describe("voiding a charge", () => {
   it("still reports a genuine throw generically", async () => {
     // A real exception is NOT a Response, so the generic handler must still own
     // it — the rethrow guard must not swallow the error path it replaced.
-    invoke.mockRejectedValue(new Error("socket hang up"));
+    postCharge.mockRejectedValue(new Error("socket hang up"));
 
     expect(((await run()) as Response).headers.get("x-flash")).toBe(
       "Failed to void charge"
@@ -84,7 +84,7 @@ describe("voiding a charge", () => {
   });
 
   it("reports success when the void lands", async () => {
-    invoke.mockResolvedValue({ data: { success: true }, error: null });
+    postCharge.mockResolvedValue({ data: { success: true }, error: null });
 
     expect(((await run()) as Response).headers.get("x-flash")).toBe(
       "Charge voided"

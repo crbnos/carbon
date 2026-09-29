@@ -29,10 +29,7 @@ vi.mock("@carbon/auth/session.server", () => ({
   flash: vi.fn(async () => ({}))
 }));
 vi.mock("@carbon/auth/client.server", () => ({
-  getCarbonServiceRole: vi.fn(async () => ({
-    from: vi.fn(),
-    functions: { invoke: vi.fn() }
-  }))
+  getCarbonServiceRole: vi.fn(async () => ({ from: vi.fn() }))
 }));
 vi.mock("@carbon/ee/notifications", () => ({ notifyIssueCreated: vi.fn() }));
 vi.mock("@carbon/operations/post-nonconformance", () => ({
@@ -86,8 +83,7 @@ async function runAction(request: Request) {
   }
 }
 
-const invoke = vi.fn();
-const client = { functions: { invoke }, from: vi.fn() };
+const client = { from: vi.fn() };
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -96,7 +92,6 @@ beforeEach(() => {
     companyId: "company-1",
     userId: "user-1"
   } as any);
-  invoke.mockResolvedValue({ data: { success: true }, error: null });
   vi.mocked(postNonConformance).mockResolvedValue({
     data: { journalId: null },
     error: null

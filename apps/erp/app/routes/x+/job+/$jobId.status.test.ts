@@ -122,13 +122,7 @@ function setup() {
   const serviceRole = {
     from: vi.fn(() =>
       makeChain({ data: { locationId: "location-1" }, error: null })
-    ),
-    functions: {
-      invoke: vi.fn(async (name: string) => {
-        events.push(`invoke:${name}`);
-        return { data: {}, error: null };
-      })
-    }
+    )
   };
 
   vi.mocked(requirePermissions).mockResolvedValue({

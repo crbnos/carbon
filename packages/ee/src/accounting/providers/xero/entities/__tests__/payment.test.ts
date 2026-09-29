@@ -13,11 +13,9 @@ import {
   XeroPaymentSyncer
 } from "../payment";
 
-// The base dynamically imports @carbon/auth/client.server only when posting;
-// mock it so nothing touches server env during these pure-mapper tests.
-vi.mock("@carbon/auth/client.server", () => ({
-  getCarbonServiceRole: () => ({ functions: { invoke: vi.fn() } })
-}));
+// Posting imports the post-payment operation lazily; stub it so these tests
+// never reach the database or server env.
+vi.mock("@carbon/operations/post-payment", () => ({ postPayment: vi.fn() }));
 
 describe("composite payment sync entity id (Xero)", () => {
   it("round-trips invoice + payment ids as a prefix-less AR id", () => {
