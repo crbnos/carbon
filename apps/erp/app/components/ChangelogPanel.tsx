@@ -3,6 +3,7 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import { AnimatePresence, motion } from "framer-motion";
 import { LuExternalLink, LuX } from "react-icons/lu";
 import type { ChangelogPanelEntry } from "~/modules/account";
+import { path } from "~/utils/path";
 
 type ChangelogPanelProps = {
   entry: ChangelogPanelEntry | null;
@@ -13,7 +14,9 @@ type ChangelogPanelProps = {
 /**
  * Linear-style "What's new" card, shown bottom-right like the training panel:
  * NEW pill, the newest changelog entry's title and description, Dismiss, and a
- * link to the entry on docs.carbon.ms (the guid is its permalink).
+ * link to the entry on the docs feed. The link goes to the feed's anchor for the
+ * entry (`#<slug>`) rather than the guid permalink: `path.to.changelog` carries
+ * the instance hint, and the feed page is where the Subscribe popover reads it.
  */
 export default function ChangelogPanel({
   entry,
@@ -65,7 +68,13 @@ export default function ChangelogPanel({
             <Button
               size="sm"
               rightIcon={<LuExternalLink />}
-              onClick={() => window.open(entry.guid, "_blank")}
+              onClick={() =>
+                window.open(
+                  `${path.to.changelog}#${entry.slug}`,
+                  "_blank",
+                  "noopener,noreferrer"
+                )
+              }
             >
               <Trans>Changelog</Trans>
             </Button>

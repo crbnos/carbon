@@ -1,5 +1,5 @@
 {
-  "totalTools": 1558,
+  "totalTools": 1557,
   "modules": 15,
   "tools": [
     {"name":"account_deleteUserAttributeValue","classification":"DESTRUCTIVE","paramCount":2,"schema":"0d38e12233b4","response":"bcde375ebd4c","injectAuth":"companyId+userId","permission":"none","paginates":false},
@@ -7,7 +7,6 @@
     {"name":"account_getAllAttributeCategories","classification":"READ","paramCount":0,"schema":"efddc7bd8bbc","response":"e93d76f694fe","injectAuth":"companyId","permission":"none","paginates":false},
     {"name":"account_getAttributeCategoryWithValues","classification":"READ","paramCount":1,"schema":"34d65afdb82e","response":"32112b6759f8","injectAuth":"companyId","permission":"none","paginates":false},
     {"name":"account_getAttributes","classification":"READ","paramCount":1,"schema":"f69289b8004c","response":"e93d76f694fe","injectAuth":"companyId","permission":"none","paginates":false},
-    {"name":"account_getChangelogPanelEntry","classification":"READ","paramCount":1,"schema":"3d6d5ad66dc6","response":"12e614a9c15c","injectAuth":"companyId","permission":"none","paginates":false},
     {"name":"account_getCurrentUser","classification":"READ","paramCount":0,"schema":"efddc7bd8bbc","response":"ddc730821e71","injectAuth":"companyId","permission":"none","paginates":false},
     {"name":"account_getNotificationPreferences","classification":"READ","paramCount":0,"schema":"efddc7bd8bbc","response":"0486649779fc","injectAuth":"companyId","permission":"none","paginates":false},
     {"name":"account_getPrivateAttributes","classification":"READ","paramCount":0,"schema":"efddc7bd8bbc","response":"e93d76f694fe","injectAuth":"companyId","permission":"none","paginates":false},
