@@ -14,6 +14,7 @@ import { trigger } from "@carbon/jobs";
 import { trackWorkEvent } from "@carbon/lib/telemetry";
 import { raiseMoment } from "@carbon/lib/workflows";
 import { getLogger } from "@carbon/logger";
+import { postShipmentAs } from "@carbon/operations/post-shipment";
 import { getCachedPrinterConfig } from "@carbon/printing/printing.server";
 import { datetime } from "@carbon/utils";
 import { parseDate } from "@internationalized/date";
@@ -26,6 +27,7 @@ import {
   getLocationTimeZone
 } from "~/modules/shared/timezone.server";
 import { loader as pdfLoader } from "~/routes/file+/shipment+/$id[.]pdf";
+import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
 import { stripSpecialCharacters } from "~/utils/string";
 
@@ -351,14 +353,16 @@ export async function action({ request, params }: ActionFunctionArgs) {
       }
     }
 
-    const postShipment = await serviceRole.functions.invoke("post-shipment", {
-      body: {
+    const postShipment = await postShipmentAs(
+      serviceRole,
+      getDatabaseClient(),
+      {
         type: "post",
         shipmentId: shipmentId,
         userId: userId,
         companyId: companyId
       }
-    });
+    );
 
     if (postShipment.error) {
       await client

@@ -2,8 +2,10 @@ import { error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
+import { postShipmentAs } from "@carbon/operations/post-shipment";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
+import { getDatabaseClient } from "~/services/database.server";
 import { path } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
@@ -48,14 +50,16 @@ export async function action({ request, params }: ActionFunctionArgs) {
       );
     }
 
-    const voidShipment = await serviceRole.functions.invoke("post-shipment", {
-      body: {
+    const voidShipment = await postShipmentAs(
+      serviceRole,
+      getDatabaseClient(),
+      {
         type: "void",
         shipmentId: shipmentId,
         userId: userId,
         companyId: companyId
       }
-    });
+    );
 
     if (voidShipment.error) {
       throw redirect(
