@@ -211,7 +211,7 @@
     {"name":"inventory_getPickingList","classification":"READ","paramCount":1,"schema":"0a4ec3e7319b","response":"227255936b96","injectAuth":"companyId","permission":"inventory:view","paginates":false},
     {"name":"inventory_getPickingListAvailability","classification":"READ","paramCount":1,"schema":"0a4ec3e7319b","response":"none","injectAuth":"companyId","permission":"inventory:view","paginates":false},
     {"name":"inventory_getPickingListLine","classification":"READ","paramCount":1,"schema":"063a6777d378","response":"b51ad23d436f","injectAuth":"companyId","permission":"inventory:view","paginates":false},
-    {"name":"inventory_getPickingListLines","classification":"READ","paramCount":1,"schema":"0a4ec3e7319b","response":"07d244c0f017","injectAuth":"companyId","permission":"inventory:view","paginates":false},
+    {"name":"inventory_getPickingListLines","classification":"READ","paramCount":1,"schema":"0a4ec3e7319b","response":"b3ab0a2018d9","injectAuth":"companyId","permission":"inventory:view","paginates":false},
     {"name":"inventory_getPickingListLineTrackedEntities","classification":"READ","paramCount":1,"schema":"063a6777d378","response":"51dd622ce168","injectAuth":"companyId","permission":"inventory:view","paginates":false},
     {"name":"inventory_getPickingListRecommendations","classification":"READ","paramCount":1,"schema":"0a4ec3e7319b","response":"24283057a15d","injectAuth":"companyId","permission":"inventory:view","paginates":false},
     {"name":"inventory_getPickingLists","classification":"READ","paramCount":6,"schema":"3599c50bdc36","response":"2112d9a1ea1d","injectAuth":"companyId","permission":"inventory:view","paginates":true},
