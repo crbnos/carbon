@@ -20,7 +20,14 @@ describe("edgeFunctionAuthorizesCaller", () => {
   });
 
   it("does not accept a gate that is only declared", () => {
-    const ts = "async function requireCaller";
+    const ts =
+      "async function requireCaller(req: Request): Promise<void> {}\nDeno.serve(() => ok());";
     expect(edgeFunctionAuthorizesCaller.scan(`${DIR}/x`, ts)).toHaveLength(1);
+  });
+
+  it("accepts a declared gate that is also called", () => {
+    const ts =
+      "async function requireServiceRole(req: Request) {}\nawait requireServiceRole(req);";
+    expect(edgeFunctionAuthorizesCaller.scan(`${DIR}/x`, ts)).toHaveLength(0);
   });
 });

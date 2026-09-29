@@ -250,7 +250,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   if (status === "Closed") {
     const closed = await closeJob(
-      ServerFnContext.user({ db: getDatabaseClient(), companyId, userId }),
+      ServerFnContext.system({ db: getDatabaseClient(), companyId, userId }),
       { jobId: id }
     );
     if (closed.error) {

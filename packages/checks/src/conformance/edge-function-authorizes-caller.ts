@@ -5,14 +5,7 @@ import type { ConformanceCheck, Violation } from "../check";
  * throws for the bare anon key, which verify_jwt alone lets through: it is a
  * validly signed JWT, and the apps publish it in their HTML.
  */
-const AUTH_CALL = /\b(requireCaller|requireServiceRole)\s*\(/;
-
-/**
- * Functions that may skip the shared gates. Keep the reason with each entry.
- * A function that SHOULD be gated but cannot be yet belongs in baseline.json,
- * not here — this list is for "correct as it is".
- */
-const ALLOWED = new Map<string, string>();
+const AUTH_CALL = /(?<!function\s+)\b(requireCaller|requireServiceRole)\s*\(/;
 
 export const edgeFunctionAuthorizesCaller: ConformanceCheck = {
   id: "edge-function-authorizes-caller",
@@ -24,7 +17,7 @@ export const edgeFunctionAuthorizesCaller: ConformanceCheck = {
   },
   scan(file, contents) {
     const name = file.split("/").pop() ?? file;
-    if (ALLOWED.has(name) || AUTH_CALL.test(contents)) return [];
+    if (AUTH_CALL.test(contents)) return [];
     const violation: Violation = {
       file,
       line: 0,

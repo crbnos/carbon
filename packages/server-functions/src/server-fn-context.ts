@@ -44,13 +44,26 @@ async function isServiceRoleClient(
   return clientUsesKey(client, SUPABASE_SERVICE_ROLE_KEY);
 }
 
+/** The `sub` of a `Bearer` JWT, unverified: the token is on a client this
+ *  process built from its own session, not on request input. */
+function bearerSubject(authorization: string | undefined): string | undefined {
+  const payload = authorization?.replace(/^Bearer\s+/i, "").split(".")[1];
+  if (!payload) return undefined;
+  try {
+    return JSON.parse(Buffer.from(payload, "base64url").toString("utf8")).sub;
+  } catch {
+    return undefined;
+  }
+}
+
 /**
  * Who a server function runs for. `system` is a server-side caller with no
  * signed-in user behind it (an Inngest job, an accounting syncer, a route that
- * holds the service role) and skips permission checks; `user` is always
- * checked. Never derive it from request input.
+ * holds the service role) and skips permission checks; `user` is checked
+ * against the user's claims, `apiKey` against the key's own scopes (never its
+ * creator's permissions). Never derive it from request input.
  */
-export type Actor = "system" | "user";
+export type Actor = "system" | "user" | "apiKey";
 
 type ContextFields = {
   db: Kysely<KyselyDatabase>;
@@ -68,12 +81,15 @@ export class ServerFnContext {
   readonly companyId: string;
   readonly userId: string;
   readonly actor: Actor;
+  /** The raw `carbon-key`, when `actor` is `apiKey`. */
+  readonly apiKey: string | undefined;
 
-  private constructor(fields: ContextFields, actor: Actor) {
+  private constructor(fields: ContextFields, actor: Actor, apiKey?: string) {
     this.db = fields.db;
     this.companyId = fields.companyId;
     this.userId = fields.userId;
     this.actor = actor;
+    this.apiKey = apiKey;
   }
 
   static system(fields: ContextFields): ServerFnContext {
@@ -85,18 +101,27 @@ export class ServerFnContext {
   }
 
   /**
-   * For code that received its caller's Supabase client: the service-role key
-   * makes the caller the system, any other key a user. Never replace this with
-   * a flag the caller passes: /api/v1 fills unknown parameters from the body.
+   * For code that received its caller's Supabase client: a `carbon-key` header
+   * makes the caller that API key, the service-role key the system, and a
+   * user's token that user — who must be `fields.userId`, since permissions
+   * are read for it. Never replace this with a flag the caller passes: /api/v1
+   * fills unknown parameters from the body.
    */
   static async fromClient(
     client: SupabaseClient<Database>,
     fields: ContextFields
   ): Promise<ServerFnContext> {
-    return new ServerFnContext(
-      fields,
-      (await isServiceRoleClient(client)) ? "system" : "user"
-    );
+    const headers =
+      (client as unknown as { headers?: Record<string, string> }).headers ?? {};
+    const apiKey = headers["carbon-key"];
+    if (apiKey) return new ServerFnContext(fields, "apiKey", apiKey);
+    if (await isServiceRoleClient(client)) {
+      return new ServerFnContext(fields, "system");
+    }
+    if (bearerSubject(headers.Authorization) !== fields.userId) {
+      throw new ForbiddenError("userId does not match the signed-in user");
+    }
+    return new ServerFnContext(fields, "user");
   }
 
   get isSystem(): boolean {
@@ -115,7 +140,7 @@ export type Permissions = RequiredPermissions | "system";
 /**
  * Throws `ForbiddenError` unless the context may run a function requiring
  * `required`. The system passes everything; a user needs the claims, read with
- * `get_claims` over the context's own database.
+ * `get_claims` over the context's own database; an API key needs its scopes.
  */
 export async function authorize(
   ctx: ServerFnContext,
@@ -125,6 +150,7 @@ export async function authorize(
   if (required === "system") {
     throw new ForbiddenError("Only server-side callers may run this");
   }
+  if (ctx.actor === "apiKey") return authorizeApiKey(ctx, required);
   const { rows } = await sql<{
     claims: Record<string, unknown> | null;
   }>`SELECT get_claims(${ctx.userId}, ${ctx.companyId}) AS claims`.execute(
@@ -133,5 +159,38 @@ export async function authorize(
   const permissions = permissionsFromClaims(rows[0]?.claims ?? {});
   if (!hasPermissions(permissions, ctx.companyId, required)) {
     throw new ForbiddenError();
+  }
+}
+
+/** A key of this company, unexpired, whose scopes (`<module>_<action>` →
+ *  company ids, shaped like claims) cover `required`. Rate limiting stays with
+ *  the route that authenticated the key. */
+async function authorizeApiKey(
+  ctx: ServerFnContext,
+  required: RequiredPermissions
+): Promise<void> {
+  const key = await ctx.db
+    .selectFrom("apiKey")
+    .select("scopes")
+    .where(
+      "keyHash",
+      "=",
+      sql<string>`encode(sha256(convert_to(${ctx.apiKey}, 'UTF8')), 'hex')`
+    )
+    .where("companyId", "=", ctx.companyId)
+    .where((eb) =>
+      eb.or([
+        eb("expiresAt", "is", null),
+        eb("expiresAt", ">", sql<string>`now()`)
+      ])
+    )
+    .executeTakeFirst();
+  if (!key) throw new ForbiddenError("Invalid API key");
+  if (Object.keys(required).length === 0) return;
+  const scopes = permissionsFromClaims(
+    (key.scopes ?? {}) as Record<string, unknown>
+  );
+  if (!hasPermissions(scopes, ctx.companyId, required)) {
+    throw new ForbiddenError("API key lacks required permissions");
   }
 }

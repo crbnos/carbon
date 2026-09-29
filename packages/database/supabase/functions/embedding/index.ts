@@ -152,6 +152,6 @@ Deno.serve(async (req) => {
   } catch (err) {
     const status = err instanceof HttpError ? err.status : 500;
     if (status === 500) console.error("embedding failed", err);
-    return json({ message: err instanceof HttpError ? err.message : "" }, status);
+    return json({ message: err instanceof Error ? err.message : "" }, status);
   }
 });

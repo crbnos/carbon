@@ -1698,15 +1698,15 @@ export async function correctStockMovement(
   }
 ) {
   const { companyId, createdBy, ...rest } = correction;
-  const [{ correctStockMovement }, { ServerFnContext }] = await Promise.all([
-    import("@carbon/server-functions/correct-stock-movement"),
-    import("@carbon/server-functions")
-  ]);
-
-  const result = await correctStockMovement(
-    ServerFnContext.user({ db, companyId, userId: createdBy }),
-    rest
+  const { correctStockMovement } = await import(
+    "@carbon/server-functions/correct-stock-movement"
   );
+
+  const result = await correctStockMovement.withClient(client, db, {
+    ...rest,
+    companyId,
+    userId: createdBy
+  });
 
   if (result.error) {
     return {

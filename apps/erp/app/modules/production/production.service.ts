@@ -10,6 +10,7 @@ import { raiseMoment } from "@carbon/lib/workflows";
 import { getLogger } from "@carbon/logger";
 import type { JSONContent } from "@carbon/react";
 import {
+  async,
   getErrorMessage,
   groupBy,
   nameSimilarity,
@@ -603,14 +604,15 @@ export async function deleteProductionEvent(
   // A posted event's journal entry must be reversed before the row goes
   // away, otherwise WIP keeps the orphaned absorption.
   if (event.data.postedToGL) {
-    const [{ postProductionEvent }, { ServerFnContext }] = await Promise.all([
-      import("@carbon/server-functions/post-production-event"),
-      import("@carbon/server-functions")
-    ]);
-    const reversal = await postProductionEvent(
-      ServerFnContext.user({ db, companyId, userId }),
-      { productionEventId, reverse: true }
+    const { postProductionEvent } = await import(
+      "@carbon/server-functions/post-production-event"
     );
+    const reversal = await postProductionEvent.withClient(client, db, {
+      productionEventId,
+      reverse: true,
+      companyId,
+      userId
+    });
     if (reversal.error) {
       return {
         data: null,
@@ -10343,16 +10345,18 @@ export async function completeOperation(
       .not("endTime", "is", null)
       .eq("postedToGL", false);
     if (unposted.data?.length) {
-      const [{ postProductionEvent }, { ServerFnContext }] = await Promise.all([
-        import("@carbon/server-functions/post-production-event"),
-        import("@carbon/server-functions")
-      ]);
-      await Promise.all(
-        unposted.data.map((event) =>
-          postProductionEvent(ServerFnContext.user({ db, companyId, userId }), {
-            productionEventId: event.id
-          })
-        )
+      const { postProductionEvent } = await import(
+        "@carbon/server-functions/post-production-event"
+      );
+      await async.map(
+        unposted.data,
+        (event) =>
+          postProductionEvent.withClient(client, db, {
+            productionEventId: event.id,
+            companyId,
+            userId
+          }),
+        { concurrency: 4 }
       );
     }
 

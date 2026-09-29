@@ -1,9 +1,21 @@
+import { createHash } from "node:crypto";
 import type { Database } from "@carbon/database";
 import type { KyselyDatabase } from "@carbon/database/client";
 import { createClient } from "@supabase/supabase-js";
-import type { Kysely } from "kysely";
-import { describe, expect, it } from "vitest";
+import { type Kysely, sql } from "kysely";
+import { describe, expect, it, vi } from "vitest";
+import {
+  connectLocalTestDatabase,
+  databaseTest
+} from "./local-database-test-fixture";
 import { authorize, clientUsesKey, ServerFnContext } from "./server-fn-context";
+
+vi.mock("@carbon/env", () => ({
+  SUPABASE_SERVICE_ROLE_KEY: "service-role-key"
+}));
+
+const jwt = (payload: object) =>
+  `h.${Buffer.from(JSON.stringify(payload)).toString("base64url")}.s`;
 
 const fields = {
   db: {} as Kysely<KyselyDatabase>,
@@ -42,4 +54,124 @@ describe("clientUsesKey", () => {
   it("never matches an unset key", () => {
     expect(clientUsesKey(client("anon-key"), undefined)).toBe(false);
   });
+});
+
+describe("ServerFnContext.fromClient", () => {
+  const clientWith = (key: string, headers: Record<string, string> = {}) =>
+    createClient<Database>("http://localhost:54321", key, {
+      global: { headers }
+    });
+
+  it("makes a carbon-key client an API key, whatever user it names", async () => {
+    const ctx = await ServerFnContext.fromClient(
+      clientWith("anon-key", { "carbon-key": "crbn_k" }),
+      fields
+    );
+    expect(ctx.actor).toBe("apiKey");
+    expect(ctx.apiKey).toBe("crbn_k");
+  });
+
+  it("makes the service-role client the system", async () => {
+    const ctx = await ServerFnContext.fromClient(
+      clientWith("service-role-key"),
+      fields
+    );
+    expect(ctx.isSystem).toBe(true);
+  });
+
+  it("binds a user's client to its own userId", async () => {
+    const own = clientWith("anon-key", {
+      Authorization: `Bearer ${jwt({ sub: "u1", role: "authenticated" })}`
+    });
+    expect((await ServerFnContext.fromClient(own, fields)).actor).toBe("user");
+
+    const other = clientWith("anon-key", {
+      Authorization: `Bearer ${jwt({ sub: "u2", role: "authenticated" })}`
+    });
+    await expect(
+      ServerFnContext.fromClient(other, fields)
+    ).rejects.toMatchObject({ status: 403 });
+    await expect(
+      ServerFnContext.fromClient(clientWith("anon-key"), fields)
+    ).rejects.toMatchObject({ status: 403 });
+  });
+});
+
+describe("authorize (API key)", () => {
+  class Rollback extends Error {}
+
+  /** Runs `fn` with a context for a real `apiKey` row, then rolls back. */
+  async function withApiKey(
+    row: { scopes: Record<string, string[]>; expiresAt: string | null },
+    fn: (ctx: ServerFnContext, companyId: string) => Promise<void>
+  ) {
+    const db = await connectLocalTestDatabase();
+    const owner = await sql<{ companyId: string; userId: string }>`
+      SELECT "companyId", "userId" FROM "userToCompany" LIMIT 1
+    `.execute(db);
+    const { companyId, userId } = owner.rows[0]!;
+    const rawKey = `crbn_test_${Date.now()}`;
+    try {
+      await db.transaction().execute(async (trx) => {
+        await trx
+          .insertInto("apiKey")
+          .values({
+            name: "authorize test",
+            companyId,
+            createdBy: userId,
+            keyHash: createHash("sha256").update(rawKey).digest("hex"),
+            scopes: JSON.stringify(row.scopes),
+            expiresAt: row.expiresAt
+          })
+          .execute();
+        const ctx = await ServerFnContext.fromClient(
+          createClient<Database>("http://localhost:54321", "anon-key", {
+            global: { headers: { "carbon-key": rawKey } }
+          }),
+          { db: trx, companyId, userId }
+        );
+        await fn(ctx, companyId);
+        throw new Rollback();
+      });
+    } catch (err) {
+      if (!(err instanceof Rollback)) throw err;
+    } finally {
+      await db.destroy();
+    }
+  }
+
+  databaseTest("checks the key's scopes, not its creator's claims", () =>
+    withApiKey({ scopes: {}, expiresAt: null }, async (ctx) => {
+      await expect(authorize(ctx, {})).resolves.toBeUndefined();
+      // The creator of a real company holds this; the key does not.
+      await expect(authorize(ctx, { view: "inventory" })).rejects.toMatchObject(
+        { status: 403 }
+      );
+    })
+  );
+
+  databaseTest("passes a key whose scopes cover the requirement", () =>
+    withApiKey({ scopes: {}, expiresAt: null }, async (ctx, companyId) => {
+      await sql`UPDATE "apiKey" SET scopes = ${JSON.stringify({
+        inventory_update: [companyId]
+      })}::jsonb WHERE name = 'authorize test'`.execute(ctx.db);
+      await expect(
+        authorize(ctx, { update: "inventory" })
+      ).resolves.toBeUndefined();
+      await expect(
+        authorize(ctx, { update: "invoicing" })
+      ).rejects.toMatchObject({ status: 403 });
+    })
+  );
+
+  databaseTest("refuses an expired key", () =>
+    withApiKey(
+      { scopes: {}, expiresAt: "2000-01-01T00:00:00Z" },
+      async (ctx) => {
+        await expect(authorize(ctx, {})).rejects.toMatchObject({
+          status: 403
+        });
+      }
+    )
+  );
 });

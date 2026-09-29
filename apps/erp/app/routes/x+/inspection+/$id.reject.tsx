@@ -5,7 +5,6 @@ import { flash } from "@carbon/auth/session.server";
 import { lockIssueDispositions } from "@carbon/database/quality";
 import { notifyIssueCreated } from "@carbon/ee/notifications";
 import { getLogger } from "@carbon/logger";
-import { ServerFnContext } from "@carbon/server-functions";
 import { create } from "@carbon/server-functions/create";
 import { postNonConformance } from "@carbon/server-functions/post-nonconformance";
 import { datetime } from "@carbon/utils";
@@ -76,9 +75,12 @@ export async function action({ request, params }: ActionFunctionArgs) {
   // it, so proceeding would leave the received quantity double-counted on hand.
   const writeOff = dispositionResult.data?.writeOff;
   if (writeOff) {
-    const post = await postNonConformance(
-      ServerFnContext.user({ db: getDatabaseClient(), companyId, userId }),
+    const post = await postNonConformance.withClient(
+      client,
+      getDatabaseClient(),
       {
+        companyId,
+        userId,
         documentType: "Inbound Inspection",
         documentId: id,
         description: "Inbound inspection lot rejected",

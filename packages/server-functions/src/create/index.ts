@@ -3188,6 +3188,10 @@ export const create = defineServerFn({
           if (existingShipmentId && !shipment.data)
             throw new NotFoundError("Shipment not found");
           const hasShipment = !!shipment.data?.id;
+          if (hasShipment && shipment.data!.status !== "Draft")
+            throw new Error(
+              `Cannot re-source a ${shipment.data!.status} shipment`
+            );
           const previouslyShippedQuantity =
             salesOrderLine.data.quantitySent ?? 0;
 

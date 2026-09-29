@@ -94,14 +94,18 @@ export function defineServerFn<S extends z.ZodType, R>({
       client: SupabaseClient<Database>,
       db: Kysely<KyselyDatabase>,
       input: z.input<S> & { companyId: string; userId: string }
-    ) =>
-      call(
-        await ServerFnContext.fromClient(client, {
+    ): Promise<ServerFnResult<R>> => {
+      let ctx: ServerFnContext;
+      try {
+        ctx = await ServerFnContext.fromClient(client, {
           db,
           companyId: input.companyId,
           userId: input.userId
-        }),
-        input
-      )
+        });
+      } catch (err) {
+        return { data: null, error: toServerFnError(name, err, defaultStatus) };
+      }
+      return call(ctx, input);
+    }
   });
 }

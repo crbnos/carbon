@@ -1129,7 +1129,7 @@ export async function closeIssue(
   // a retry after a later failure is safe; a posting failure aborts the close.
   if (movements.length > 0) {
     const post = await postNonConformance(
-      ServerFnContext.user({ db, companyId, userId }),
+      ServerFnContext.system({ db, companyId, userId }),
       {
         documentType: "Non-Conformance",
         documentId: nonConformanceId,

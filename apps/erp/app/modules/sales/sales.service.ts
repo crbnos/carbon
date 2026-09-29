@@ -297,7 +297,11 @@ export async function copyQuoteLine(
 export async function copyQuote(
   client: SupabaseClient<Database>,
   db: Kysely<KyselyDatabase>,
-  payload: Omit<z.infer<typeof getMethodValidator>, "type"> & {
+  payload: {
+    /** The quote to copy. */
+    sourceId: string;
+    /** The same quote id for a new revision, "" for a new quote. */
+    targetId: string;
     companyId: string;
     userId: string;
   }
