@@ -14,6 +14,7 @@ import type { AssemblyReview, PartReview, ReleaseReview } from "./review";
 import {
   applyCount,
   applyRequestBody,
+  clearFieldErrors,
   createReview,
   customFieldDisplayValue,
   defaultSelectedPartIds,
@@ -527,6 +528,12 @@ describe("field errors", () => {
       ])
     ).toEqual({ p1: ["Name is required"] });
     expect(indexFieldErrors(undefined)).toEqual({});
+  });
+
+  it("clears one key and returns the same object when there is nothing to clear", () => {
+    const errors = { p1: ["a"], p2: ["b"] };
+    expect(clearFieldErrors(errors, "p1")).toEqual({ p2: ["b"] });
+    expect(clearFieldErrors(errors, "p3")).toBe(errors);
   });
 });
 

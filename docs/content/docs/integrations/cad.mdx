@@ -116,8 +116,8 @@ category.
   ### Connect Onshape V2
 
   Press **Connect** on **Onshape V2**. A popup opens on Onshape; approve access. The
-  popup closes on its own and the card switches to Installed. The V2 card has no
-  settings of its own — everything is configured from inside the panel.
+  popup closes on its own and the card switches to Installed. The V2 card holds the
+  push defaults; the property map is edited on the panel's **Fields** page.
   </Step>
   <Step>
   ### Optionally connect Onshape
@@ -186,13 +186,14 @@ sends you through the normal login first) and closes itself. The session lasts 1
 hours and is held only in that browser tab.
 
 The panel is recorded against the Carbon **company you are signed in to** in the
-Carbon tab that the popup used. The **Settings** page shows which company and
-user that is. To push into a different company, switch company in Carbon and
+Carbon tab that the popup used. The strip at the top of the panel shows which
+company that is. To push into a different company, switch company in Carbon and
 press **Sign out** then **Sign in to Carbon** again in the panel.
 
-The panel has three pages, chosen from the strip at the top. Pages that do not
-apply to the current element are hidden — a drawing has no parts, so it shows
-Releases and Settings only.
+The panel has up to three pages, chosen from the strip at the top: **Parts** or
+**Assembly**, **Releases** and **Fields**. Pages that do not apply to the current
+element are hidden — a drawing has no parts, so it shows Releases only. Fields is
+shown only to users with the **settings: update** permission in Carbon.
 
 ### Parts / Assembly
 
@@ -281,30 +282,27 @@ Two options are chosen per push, in the review:
 
 Pushing the same release twice creates nothing twice.
 
-### Settings
+### Fields
 
-The **Settings** page is the company's, not the element's, and is reachable from
-any element. It has one **Save** for the whole page.
+The **Fields** page maps Onshape properties (Vendor, Project, Material, your
+company's custom properties) onto Carbon custom fields on the part. It lists the
+properties of the element you have open, but the mappings are the company's and
+apply to every push. It lives in the panel because Onshape only lists properties
+from inside a document.
 
-- **Connection**: the Carbon company and user every push from this panel is recorded
-  against, and **Sign out**.
-- **Push defaults**: the values a created item starts with. Unit of measure (or
-  *First in the company's list*), replenishment for designed parts, method for
-  designed parts, method for purchased parts, tracking type. Each can still be
-  changed per item while reviewing a push. A replenishment/method pair Carbon's own
-  Part form would refuse is corrected to the nearest allowed method; a purchased BOM
-  row is always Buy.
-- **Custom fields**: map Onshape properties (Vendor, Project, Material, your
-  company's custom properties) onto Carbon custom fields on the part. Create the
-  field in Carbon first, then select it here; **Refresh** re-reads the field list.
-  Text and enum properties map to Text fields, booleans to Yes/No, numbers to
-  Numeric, dates to Date; properties with no matching Carbon type are hidden unless
-  already mapped. Each mapping is either **owned by Onshape** (written on every push
-  and locked in Carbon, like the name) or a **default** (filled in when the item is
-  created, editable in the review, and yours in Carbon afterwards). A property that
-  doesn't fit its field is called out in the review and skipped.
+- Create the field in Carbon first, then select it here; **Refresh** re-reads the
+  properties and the field list.
+- Text and enum properties map to Text fields, booleans to Yes/No, numbers to
+  Numeric, dates to Date. Properties with no matching Carbon type are hidden unless
+  already mapped.
+- Every push writes each mapped property into its field, and a property emptied in
+  Onshape empties the field. A property that doesn't fit its field is called out in
+  the review and skipped.
+- **Save mappings** needs the **settings: update** permission in Carbon.
 
-Saving Settings needs the **settings: update** permission in Carbon.
+The values a created item starts with (unit of measure, replenishment, methods,
+tracking type) are the push defaults on the **Onshape V2** integration page in
+Carbon.
 
 ## Troubleshooting the panel
 

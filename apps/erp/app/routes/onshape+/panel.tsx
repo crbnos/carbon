@@ -39,6 +39,7 @@ export default function OnshapePanelRoute() {
       paths={{
         auth: path.to.onshapePanelAuth,
         me: path.to.api.onShapePanelMe,
+        fields: path.to.api.onShapePanelFields,
         session: path.to.api.onShapePanelSession,
         status: path.to.api.onShapePanelStatus,
         planPart: path.to.api.onShapePanelPlanPart,
