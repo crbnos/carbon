@@ -56,8 +56,8 @@ Deno.serve(async (req: Request) => {
       // hard CPU) apply — worker BOOT (module evaluation of kysely/zod-heavy
       // functions) alone can blow that, and a hard-limit kill mid-request
       // surfaces as a hanging POST with "CPU time hard limit reached" in the
-      // logs. Dev should never kill a worker for CPU; heavy functions (mrp,
-      // schedule, get-method, batch-operations) legitimately burn it.
+      // logs. Dev should never kill a worker for CPU; a heavy function
+      // (e.g. embedding's model load) legitimately burns it.
       cpuTimeSoftLimitMs: 30 * 1000,
       cpuTimeHardLimitMs: 60 * 1000,
       noModuleCache: false,

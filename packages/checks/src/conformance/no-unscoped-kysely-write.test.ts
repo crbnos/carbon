@@ -145,7 +145,7 @@ describe("noUnscopedKyselyWrite", () => {
   it("ignores edge functions and packages/ee", () => {
     const ts = 'await db.deleteFrom("user").where("id", "=", id).execute();';
     for (const file of [
-      "packages/database/supabase/functions/post-receipt/index.ts",
+      "packages/database/supabase/functions/embedding/index.ts",
       "packages/ee/src/sso/provisioning.server.ts"
     ]) {
       expect(scan(ts, file)).toHaveLength(0);
