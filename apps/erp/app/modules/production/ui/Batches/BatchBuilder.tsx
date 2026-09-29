@@ -356,6 +356,12 @@ export function BatchBuilder({
     const days = Number(dueSelect);
     return Number.isInteger(days) && days > 0 ? { kind: "window", days } : null;
   }, [dueSelect, dueRange]);
+  // Leaving "custom" drops its range, so coming back to it starts empty
+  // rather than silently re-applying a range picked earlier.
+  const onDueSelectChange = useCallback((value: string) => {
+    setDueSelect(value);
+    if (value !== "custom") setDueRange(null);
+  }, []);
   const [workCenterId, setWorkCenterId] = useState<string | null>(null);
   const [notes, setNotes] = useState("");
   const [outputLots, setOutputLots] =
@@ -951,7 +957,7 @@ export function BatchBuilder({
                 facets={facets}
                 dimensions={facetDimensions}
                 dueSelect={dueSelect}
-                onDueSelectChange={setDueSelect}
+                onDueSelectChange={onDueSelectChange}
                 dueRange={dueRange}
                 onDueRangeChange={setDueRange}
                 isDueFiltered={due !== null}
