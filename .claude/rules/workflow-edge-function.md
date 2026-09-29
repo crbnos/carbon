@@ -56,12 +56,9 @@ verify_jwt = true                              # JWT required (the common case)
   until they got one. The `edge-function-authorizes-caller` check (`@carbon/checks`) fails a
   function that calls none of them. `embed`, `event-wake` and `trigger` are still open —
   Postgres calls them with the anon key from the `config` table (`util.invoke_edge_function`,
-  `util.wake_event_queue`, `finish_job_operation`), so they cannot tell it from an anonymous
+  `util.wake_event_queue`), so they cannot tell it from an anonymous
   caller until Postgres sends a server credential.
 - `verify_jwt = false` — only for genuinely public endpoints (`logo-resizer`).
-  Image processing for API/server callers is `process-image` (`verify_jwt = true`,
-  in-function `requirePermissions`); it runs the shared pipeline in
-  `shared/image-pipeline.ts` — see `packages/files/AGENTS.md`.
 
 ## 3. Function skeleton
 

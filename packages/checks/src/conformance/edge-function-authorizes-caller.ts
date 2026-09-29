@@ -17,10 +17,6 @@ const ALLOWED = new Map<string, string>([
   [
     "logo-resizer",
     "public by design (verify_jwt = false): resizes the company logo shown on unauthenticated pages"
-  ],
-  [
-    "transcription",
-    "verifies the bearer itself with auth.getUser(), which rejects the anon key; touches no company data"
   ]
 ]);
 

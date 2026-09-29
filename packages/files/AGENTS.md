@@ -39,8 +39,7 @@ document-panel upload mutation — TanStack-shaped: options at the hook or per-c
 `useImageUpload` (ERP + MES editor hooks), Suggestion, slide uploads,
 `DocumentCreateForm`, `AttachmentsList`, the three curated forms
 (`ItemThumbnailUpload`, `ProfilePhotoForm`, `CompanyLogoForm`). Non-browser callers
-(REST/MCP/integrations) use the `process-image` edge function, which runs the same
-`processImage`; the MCP signed-URL flow (`createDocumentUploadUrl` in
+(REST/MCP/integrations) go through the MCP signed-URL flow (`createDocumentUploadUrl` in
 `documents.service`, which every module's `create*DocumentUploadUrl` delegates to)
 mints a `.heic` name into `{companyId}/tmp/uploads/…` staging, and
 `insertUploadedDocument` converts it to JPEG (imgproxy round-trip — the bytes
@@ -113,7 +112,6 @@ cd packages/database/supabase/functions && deno check --no-lock shared/image-pip
 
 ## Cross-References
 
-- `packages/database/supabase/functions/process-image/` — the authed server entry
 - `packages/database/supabase/functions/logo-resizer/`, `thumbnail/` — consumers of
   the pipeline primitives (`decodeImage` / `resizeImage` / `encodeImage`)
 - `packages/dev/docker/docker-compose.dev.yml`,
