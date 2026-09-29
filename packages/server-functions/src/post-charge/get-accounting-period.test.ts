@@ -1,11 +1,11 @@
 import type { Database } from "@carbon/database";
-import {
-  getAccountingPeriodForDate,
-  getCurrentAccountingPeriod
-} from "@carbon/database/posting";
 import { createClient } from "@supabase/supabase-js";
 import { sql } from "kysely";
 import { expect } from "vitest";
+import {
+  getAccountingPeriodForDate,
+  getCurrentAccountingPeriod
+} from "../lib/get-accounting-period";
 import { databaseTest } from "../local-database-test-fixture";
 import { chargeFixture } from "./post-charge-test-fixture";
 

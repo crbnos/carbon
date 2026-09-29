@@ -491,7 +491,7 @@ function decideDocumentFamily(args: {
  *
  * Carbon's post-* server functions sign amounts by the account's NATURAL
  * balance (`credit("liability", x)` stores +x; `debit("liability", x)`
- * stores -x — see functions/lib/utils.ts), so a Carbon journal balances
+ * stores -x — see `credit`/`debit` in @carbon/utils), so a Carbon journal balances
  * as debits == credits, not as a signed sum of zero. The engine's
  * preflight, netting, consolidation and provider mappers all assume
  * debit-signed amounts, so every journal fetch converts at the edge using

@@ -10,7 +10,7 @@
 //   cost + (when companySettings.accountingEnabled) a balanced journal against
 //   the inventory adjustment variance account. EVERY one of those rows is
 //   BUILT by the pure builders `bookAdjustment` itself uses
-//   (`shared/plan-adjustment.ts`: `buildItemLedgerRow`, `buildCostLedgerRow`,
+//   (`../lib/plan-adjustment.ts`: `buildItemLedgerRow`, `buildCostLedgerRow`,
 //   `buildAdjustmentJournalLines`, `buildJournalLineDimensions`) and
 //   inserted in bulk — one statement per table per chunk instead of ~7 round
 //   trips per row, which keeps a large file fast.
@@ -23,24 +23,26 @@
 
 import { type Database, getCompanyTimeZone, type Json } from "@carbon/database";
 import type { KyselyDatabase } from "@carbon/database/client";
-import {
-  buildAdjustmentJournalLines,
-  buildCostLedgerRow,
-  buildItemLedgerRow,
-  buildJournalLineDimensions,
-  carriesAdjustmentValue,
-  createAdjustmentJournal,
-  getCurrentAccountingPeriod,
-  getDefaultPostingGroup,
-  loadOpenCostLayers,
-  planStockRows
-} from "@carbon/database/posting";
 import { getLogger } from "@carbon/logger";
 import { datetime } from "@carbon/utils";
 import { parseDate } from "@internationalized/date";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Kysely } from "kysely";
 import { nanoid } from "nanoid";
+import { getCurrentAccountingPeriod } from "../lib/get-accounting-period";
+import { getDefaultPostingGroup } from "../lib/get-posting-group";
+import {
+  buildAdjustmentJournalLines,
+  buildCostLedgerRow,
+  buildItemLedgerRow,
+  buildJournalLineDimensions,
+  carriesAdjustmentValue,
+  planStockRows
+} from "../lib/plan-adjustment";
+import {
+  createAdjustmentJournal,
+  loadOpenCostLayers
+} from "../lib/post-adjustment";
 import { chunked } from "./chunks";
 import {
   buildStockItemMap,
@@ -325,7 +327,7 @@ export async function importStockQuantities(
   // The rows are byte-for-byte what `bookAdjustment` writes per movement
   // because every one of them — item ledger, cost layer, journal line,
   // journal line dimension — comes out of the builders in
-  // `shared/plan-adjustment.ts` that `bookAdjustment` itself calls, and the
+  // `../lib/plan-adjustment.ts` that `bookAdjustment` itself calls, and the
   // cost layers are valued by replaying the per-row read (see
   // `planIncreaseUnitCosts`). Nothing here re-derives a field.
   await db.transaction().execute(async (trx) => {

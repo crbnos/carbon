@@ -1,4 +1,5 @@
-import { assertEquals } from "https://deno.land/std@0.175.0/testing/asserts.ts";
+import { round } from "@carbon/utils";
+import { expect, it } from "vitest";
 import {
   buildAdjustmentJournalLines,
   buildCostLedgerRow,
@@ -6,16 +7,15 @@ import {
   buildJournalLineDimensions,
   planIncreaseUnitCosts,
   planStockRows,
-  toJournalLineDocumentType,
-} from "./plan-adjustment.ts";
-import type { AdjustmentItemCost } from "./post-adjustment-cost.ts";
-import { computeCurrentUnitCost } from "./post-adjustment-cost.ts";
-import { round } from "./precision.ts";
+  toJournalLineDocumentType
+} from "./plan-adjustment";
+import type { AdjustmentItemCost } from "./post-adjustment-cost";
+import { computeCurrentUnitCost } from "./post-adjustment-cost";
 
 const accountDefaults = {
   rawMaterialsAccount: "raw",
   finishedGoodsAccount: "fg",
-  inventoryAdjustmentVarianceAccount: "variance",
+  inventoryAdjustmentVarianceAccount: "variance"
 };
 
 // The read the per-row path performs before each increase, reproduced from the
@@ -37,14 +37,14 @@ const bookOneAtATime = (
       quantity,
       cost: quantity * unitCost,
       postingDate: "2026-09-22",
-      companyId: "c",
+      companyId: "c"
     });
     if ((row.remainingQuantity ?? 0) > 0) {
       layers.push({
         quantity: row.quantity!,
         remainingQuantity: row.remainingQuantity!,
         cost: row.cost!,
-        appliedChildCost: 0,
+        appliedChildCost: 0
       });
     }
     return row.cost;
@@ -60,77 +60,61 @@ const plannedCosts = (
     round(increase.cost)
   );
 
-Deno.test("Standard: every row of an item costs the same, layers ignored", () => {
+it("Standard: every row of an item costs the same, layers ignored", () => {
   const itemCost = {
     costingMethod: "Standard" as const,
     unitCost: 3,
-    standardCost: 5,
+    standardCost: 5
   };
   const increases = planIncreaseUnitCosts(itemCost, [], [2, 10, 1]);
-  assertEquals(
-    increases.map((i) => i.unitCost),
-    [5, 5, 5]
-  );
-  assertEquals(
-    increases.map((i) => i.cost),
-    [10, 50, 5]
-  );
+  expect(increases.map((i) => i.unitCost)).toEqual([5, 5, 5]);
+  expect(increases.map((i) => i.cost)).toEqual([10, 50, 5]);
 });
 
-Deno.test("Average: every row of an item costs the same, layers ignored", () => {
+it("Average: every row of an item costs the same, layers ignored", () => {
   const itemCost = {
     costingMethod: "Average" as const,
     unitCost: 7.25,
-    standardCost: 0,
+    standardCost: 0
   };
   const increases = planIncreaseUnitCosts(
     itemCost,
     [{ quantity: 100, remainingQuantity: 100, cost: 1, appliedChildCost: 0 }],
     [4, 4]
   );
-  assertEquals(
-    increases.map((i) => i.unitCost),
-    [7.25, 7.25]
-  );
+  expect(increases.map((i) => i.unitCost)).toEqual([7.25, 7.25]);
 });
 
-Deno.test("FIFO: a layer added at the current average leaves it unchanged", () => {
+it("FIFO: a layer added at the current average leaves it unchanged", () => {
   // 100 @ $10 open. Every row books at $10 and the average stays $10, because
   // a layer of q units carrying q × $10 contributes exactly the average back.
   const itemCost = {
     costingMethod: "FIFO" as const,
     unitCost: 1,
-    standardCost: 0,
+    standardCost: 0
   };
   const increases = planIncreaseUnitCosts(
     itemCost,
-    [{ quantity: 100, remainingQuantity: 100, cost: 1000, appliedChildCost: 0 }],
+    [
+      { quantity: 100, remainingQuantity: 100, cost: 1000, appliedChildCost: 0 }
+    ],
     [5, 5, 5]
   );
-  assertEquals(
-    increases.map((i) => i.unitCost),
-    [10, 10, 10]
-  );
+  expect(increases.map((i) => i.unitCost)).toEqual([10, 10, 10]);
 });
 
-Deno.test("FIFO: the first row seeds the fallback cost and later rows average over it", () => {
+it("FIFO: the first row seeds the fallback cost and later rows average over it", () => {
   const itemCost = {
     costingMethod: "FIFO" as const,
     unitCost: 4.5,
-    standardCost: 0,
+    standardCost: 0
   };
   const increases = planIncreaseUnitCosts(itemCost, [], [2, 8]);
-  assertEquals(
-    increases.map((i) => i.unitCost),
-    [4.5, 4.5]
-  );
-  assertEquals(
-    increases.map((i) => i.cost),
-    [9, 36]
-  );
+  expect(increases.map((i) => i.unitCost)).toEqual([4.5, 4.5]);
+  expect(increases.map((i) => i.cost)).toEqual([9, 36]);
 });
 
-Deno.test("FIFO: a rounded layer cost carries into the next row, exactly as the per-row path does", () => {
+it("FIFO: a rounded layer cost carries into the next row, exactly as the per-row path does", () => {
   // The equivalence is only exact in real arithmetic: the layer is STORED at
   // round(q × u, 5), so a 1-unit row at 1/3 stores 0.33333 and the next row
   // averages over 0.33333, not over 1/3. A hoisted unit cost would book
@@ -138,73 +122,67 @@ Deno.test("FIFO: a rounded layer cost carries into the next row, exactly as the 
   const itemCost = {
     costingMethod: "FIFO" as const,
     unitCost: 1 / 3,
-    standardCost: 0,
+    standardCost: 0
   };
   const planned = plannedCosts(itemCost, [], [1, 1000]);
-  assertEquals(planned, [0.33333, 333.33]);
-  assertEquals(planned, bookOneAtATime(itemCost, [], [1, 1000]));
+  expect(planned).toEqual([0.33333, 333.33]);
+  expect(planned).toEqual(bookOneAtATime(itemCost, [], [1, 1000]));
   // What hoisting one unit cost per item would have produced.
-  assertEquals(round(1000 * (1 / 3)), 333.33333);
+  expect(round(1000 * (1 / 3))).toEqual(333.33333);
 });
 
-Deno.test("planIncreaseUnitCosts matches booking the rows one at a time", () => {
+it("planIncreaseUnitCosts matches booking the rows one at a time", () => {
   const openLayers = [
     { quantity: 7, remainingQuantity: 3, cost: 21.55, appliedChildCost: 1.3 },
-    { quantity: 12, remainingQuantity: 12, cost: 149.99, appliedChildCost: 0 },
+    { quantity: 12, remainingQuantity: 12, cost: 149.99, appliedChildCost: 0 }
   ];
   const quantities = [1, 3.5, 0.125, 1000, 17];
   for (const costingMethod of [
     "Standard",
     "Average",
     "FIFO",
-    "LIFO",
+    "LIFO"
   ] as const) {
     const itemCost = { costingMethod, unitCost: 1 / 7, standardCost: 2.5 };
-    assertEquals(
-      plannedCosts(itemCost, openLayers, quantities),
-      bookOneAtATime(itemCost, openLayers, quantities),
-      costingMethod
+    expect(plannedCosts(itemCost, openLayers, quantities)).toEqual(
+      bookOneAtATime(itemCost, openLayers, quantities)
     );
   }
 });
 
-Deno.test("planIncreaseUnitCosts is per item: one item's layers never reach another", () => {
+it("planIncreaseUnitCosts is per item: one item's layers never reach another", () => {
   // The driver groups rows by item and calls this once per item, so a mixed
   // file is two independent replays. Proven by planning the same item's rows
   // interleaved and alone.
   const itemCost = {
     costingMethod: "FIFO" as const,
     unitCost: 1 / 3,
-    standardCost: 0,
+    standardCost: 0
   };
   const other = {
     costingMethod: "FIFO" as const,
     unitCost: 99,
-    standardCost: 0,
+    standardCost: 0
   };
-  assertEquals(
-    plannedCosts(itemCost, [], [1, 1000]),
+  expect(plannedCosts(itemCost, [], [1, 1000])).toEqual(
     plannedCosts(itemCost, [], [1, 1000])
   );
-  assertEquals(plannedCosts(other, [], [1]), [99]);
+  expect(plannedCosts(other, [], [1])).toEqual([99]);
 });
 
-Deno.test("A zero-quantity row opens no layer for the next row to see", () => {
+it("A zero-quantity row opens no layer for the next row to see", () => {
   const itemCost = {
     costingMethod: "FIFO" as const,
     unitCost: 4,
-    standardCost: 0,
+    standardCost: 0
   };
   // The middle row rounds to a zero quantity, so its layer has
   // remainingQuantity 0 and the open-layer query would not return it.
   const increases = planIncreaseUnitCosts(itemCost, [], [0, 0, 6]);
-  assertEquals(
-    increases.map((i) => i.unitCost),
-    [4, 4, 4]
-  );
+  expect(increases.map((i) => i.unitCost)).toEqual([4, 4, 4]);
 });
 
-Deno.test("buildCostLedgerRow opens a layer on an increase and none on a decrease", () => {
+it("buildCostLedgerRow opens a layer on an increase and none on a decrease", () => {
   const increase = buildCostLedgerRow({
     entryType: "Positive Adjmt.",
     documentType: null,
@@ -213,13 +191,13 @@ Deno.test("buildCostLedgerRow opens a layer on an increase and none on a decreas
     quantity: 5,
     cost: 12.345678,
     postingDate: "2026-09-22",
-    companyId: "c",
+    companyId: "c"
   });
-  assertEquals(increase.quantity, 5);
-  assertEquals(increase.cost, 12.34568);
-  assertEquals(increase.remainingQuantity, 5);
-  assertEquals(increase.adjustment, false);
-  assertEquals(increase.costLedgerType, "Direct Cost");
+  expect(increase.quantity).toEqual(5);
+  expect(increase.cost).toEqual(12.34568);
+  expect(increase.remainingQuantity).toEqual(5);
+  expect(increase.adjustment).toEqual(false);
+  expect(increase.costLedgerType).toEqual("Direct Cost");
 
   const decrease = buildCostLedgerRow({
     entryType: "Negative Adjmt.",
@@ -229,13 +207,13 @@ Deno.test("buildCostLedgerRow opens a layer on an increase and none on a decreas
     quantity: -5,
     cost: -50,
     postingDate: "2026-09-22",
-    companyId: "c",
+    companyId: "c"
   });
-  assertEquals(decrease.quantity, -5);
-  assertEquals(decrease.remainingQuantity, 0);
+  expect(decrease.quantity).toEqual(-5);
+  expect(decrease.remainingQuantity).toEqual(0);
 });
 
-Deno.test("buildAdjustmentJournalLines balances a gain against the variance account", () => {
+it("buildAdjustmentJournalLines balances a gain against the variance account", () => {
   const [inventory, offset] = buildAdjustmentJournalLines({
     journalId: "j1",
     documentId: "il1",
@@ -246,19 +224,19 @@ Deno.test("buildAdjustmentJournalLines balances a gain against the variance acco
     quantity: 10,
     replenishmentSystem: "Buy",
     accountDefaults,
-    companyId: "c",
+    companyId: "c"
   });
-  assertEquals(inventory.accountId, "raw");
-  assertEquals(inventory.description, "Raw Materials Account");
-  assertEquals(inventory.amount, 250);
-  assertEquals(inventory.documentType, "Inventory Adjustment");
-  assertEquals(offset.accountId, "variance");
-  assertEquals(offset.amount, -250);
-  assertEquals(inventory.amount + offset.amount, 0);
-  assertEquals(inventory.journalLineReference, offset.journalLineReference);
+  expect(inventory.accountId).toEqual("raw");
+  expect(inventory.description).toEqual("Raw Materials Account");
+  expect(inventory.amount).toEqual(250);
+  expect(inventory.documentType).toEqual("Inventory Adjustment");
+  expect(offset.accountId).toEqual("variance");
+  expect(offset.amount).toEqual(-250);
+  expect(inventory.amount + offset.amount).toEqual(0);
+  expect(inventory.journalLineReference).toEqual(offset.journalLineReference);
 });
 
-Deno.test("buildAdjustmentJournalLines sends a Make item to finished goods", () => {
+it("buildAdjustmentJournalLines sends a Make item to finished goods", () => {
   const [inventory] = buildAdjustmentJournalLines({
     journalId: "j1",
     documentId: "il1",
@@ -268,53 +246,60 @@ Deno.test("buildAdjustmentJournalLines sends a Make item to finished goods", () 
     quantity: 1,
     replenishmentSystem: "Make",
     accountDefaults,
-    companyId: "c",
+    companyId: "c"
   });
-  assertEquals(inventory.accountId, "fg");
+  expect(inventory.accountId).toEqual("fg");
 });
 
-Deno.test("toJournalLineDocumentType falls back for types the journal enum lacks", () => {
-  assertEquals(toJournalLineDocumentType(null), "Inventory Adjustment");
-  assertEquals(toJournalLineDocumentType("Sales Invoice"), "Inventory Adjustment");
-  assertEquals(toJournalLineDocumentType("Inventory Count"), "Inventory Count");
+it("toJournalLineDocumentType falls back for types the journal enum lacks", () => {
+  expect(toJournalLineDocumentType(null)).toEqual("Inventory Adjustment");
+  expect(toJournalLineDocumentType("Sales Invoice")).toEqual(
+    "Inventory Adjustment"
+  );
+  expect(toJournalLineDocumentType("Inventory Count")).toEqual(
+    "Inventory Count"
+  );
 });
 
-Deno.test("buildJournalLineDimensions tags every line with the active dimensions", () => {
+it("buildJournalLineDimensions tags every line with the active dimensions", () => {
   const rows = buildJournalLineDimensions({
     journalLineIds: ["l1", "l2"],
     dimensions: { Item: "d-item", Location: "d-loc" },
     itemId: "item",
     itemPostingGroupId: "ipg",
     locationId: "loc",
-    companyId: "c",
+    companyId: "c"
   });
   // ItemPostingGroup has a value but no active dimension, so it is not tagged.
-  assertEquals(rows.length, 4);
-  assertEquals(
-    rows.map((r) => `${r.journalLineId}:${r.dimensionId}:${r.valueId}`),
-    [
-      "l1:d-item:item",
-      "l1:d-loc:loc",
-      "l2:d-item:item",
-      "l2:d-loc:loc",
-    ]
-  );
+  expect(rows.length).toEqual(4);
+  expect(
+    rows.map((r) => `${r.journalLineId}:${r.dimensionId}:${r.valueId}`)
+  ).toEqual([
+    "l1:d-item:item",
+    "l1:d-loc:loc",
+    "l2:d-item:item",
+    "l2:d-loc:loc"
+  ]);
 });
 
-Deno.test("buildJournalLineDimensions skips a dimension whose value is null", () => {
+it("buildJournalLineDimensions skips a dimension whose value is null", () => {
   const rows = buildJournalLineDimensions({
     journalLineIds: ["l1"],
-    dimensions: { Item: "d-item", ItemPostingGroup: "d-ipg", Location: "d-loc" },
+    dimensions: {
+      Item: "d-item",
+      ItemPostingGroup: "d-ipg",
+      Location: "d-loc"
+    },
     itemId: "item",
     itemPostingGroupId: null,
     locationId: null,
-    companyId: "c",
+    companyId: "c"
   });
-  assertEquals(rows.length, 1);
-  assertEquals(rows[0].dimensionId, "d-item");
+  expect(rows.length).toEqual(1);
+  expect(rows[0]!.dimensionId).toEqual("d-item");
 });
 
-Deno.test("buildItemLedgerRow rounds the quantity and defaults the optional columns", () => {
+it("buildItemLedgerRow rounds the quantity and defaults the optional columns", () => {
   const row = buildItemLedgerRow({
     postingDate: "2026-09-22",
     entryType: "Positive Adjmt.",
@@ -324,19 +309,19 @@ Deno.test("buildItemLedgerRow rounds the quantity and defaults the optional colu
     trackedEntityId: "te1",
     quantity: 2.1234567,
     companyId: "c",
-    createdBy: "u",
+    createdBy: "u"
   });
-  assertEquals(row.quantity, 2.12346);
-  assertEquals(row.entryType, "Positive Adjmt.");
-  assertEquals(row.documentType, null);
-  assertEquals(row.documentId, null);
-  assertEquals(row.correctionOfItemLedgerId, null);
-  assertEquals(row.comment, null);
-  assertEquals(row.scrapReasonId, null);
-  assertEquals(row.trackedEntityId, "te1");
+  expect(row.quantity).toEqual(2.12346);
+  expect(row.entryType).toEqual("Positive Adjmt.");
+  expect(row.documentType).toEqual(null);
+  expect(row.documentId).toEqual(null);
+  expect(row.correctionOfItemLedgerId).toEqual(null);
+  expect(row.comment).toEqual(null);
+  expect(row.scrapReasonId).toEqual(null);
+  expect(row.trackedEntityId).toEqual("te1");
 });
 
-Deno.test("buildItemLedgerRow keeps a decrease signed and carries the passed columns", () => {
+it("buildItemLedgerRow keeps a decrease signed and carries the passed columns", () => {
   const row = buildItemLedgerRow({
     postingDate: "2026-09-22",
     entryType: "Negative Adjmt.",
@@ -351,15 +336,15 @@ Deno.test("buildItemLedgerRow keeps a decrease signed and carries the passed col
     comment: "note",
     scrapReasonId: "sr1",
     companyId: "c",
-    createdBy: "u",
+    createdBy: "u"
   });
-  assertEquals(row.quantity, -5);
-  assertEquals(row.documentType, "Scrap");
-  assertEquals(row.documentId, "doc1");
-  assertEquals(row.correctionOfItemLedgerId, "il0");
-  assertEquals(row.storageUnitId, "su1");
-  assertEquals(row.comment, "note");
-  assertEquals(row.scrapReasonId, "sr1");
+  expect(row.quantity).toEqual(-5);
+  expect(row.documentType).toEqual("Scrap");
+  expect(row.documentId).toEqual("doc1");
+  expect(row.correctionOfItemLedgerId).toEqual("il0");
+  expect(row.storageUnitId).toEqual("su1");
+  expect(row.comment).toEqual("note");
+  expect(row.scrapReasonId).toEqual("sr1");
 });
 
 // --- planStockRows: the batching decision the importer writes from ---------
@@ -371,69 +356,58 @@ const itemCosts = (
 const fifo = (unitCost: number): AdjustmentItemCost => ({
   costingMethod: "FIFO",
   unitCost,
-  standardCost: 0,
+  standardCost: 0
 });
 
-Deno.test("planStockRows scatters each item's replayed costs back onto its own rows", () => {
+it("planStockRows scatters each item's replayed costs back onto its own rows", () => {
   // A mixed file with one item's rows NOT adjacent. Item A's two rows differ
   // (the rounded-layer case), so a scatter that dropped or swapped an index
   // would put B's cost — or A's other row's cost — on the wrong row.
   const rows = [
     { itemId: "A", quantity: 1, itemTrackingType: "Inventory" },
     { itemId: "B", quantity: 2, itemTrackingType: "Inventory" },
-    { itemId: "A", quantity: 1000, itemTrackingType: "Inventory" },
+    { itemId: "A", quantity: 1000, itemTrackingType: "Inventory" }
   ];
   const plans = planStockRows({
     rows,
     itemCosts: itemCosts({
       A: fifo(1 / 3),
-      B: { costingMethod: "Standard", unitCost: 0, standardCost: 5 },
+      B: { costingMethod: "Standard", unitCost: 0, standardCost: 5 }
     }),
     openLayersByItem: new Map(),
-    hasAccounting: true,
+    hasAccounting: true
   });
 
   const replayA = planIncreaseUnitCosts(fifo(1 / 3), [], [1, 1000]);
-  assertEquals(
-    plans.map((p) => round(p.cost)),
-    [round(replayA[0].cost), 10, round(replayA[1].cost)]
-  );
-  assertEquals(
-    plans.map((p) => round(p.cost)),
-    [0.33333, 10, 333.33]
-  );
-  assertEquals(
-    plans.map((p) => p.carriesValue),
-    [true, true, true]
-  );
-  assertEquals(
-    plans.map((p) => p.postsJournal),
-    [true, true, true]
-  );
+  expect(plans.map((p) => round(p.cost))).toEqual([
+    round(replayA[0]!.cost),
+    10,
+    round(replayA[1]!.cost)
+  ]);
+  expect(plans.map((p) => round(p.cost))).toEqual([0.33333, 10, 333.33]);
+  expect(plans.map((p) => p.carriesValue)).toEqual([true, true, true]);
+  expect(plans.map((p) => p.postsJournal)).toEqual([true, true, true]);
 });
 
-Deno.test("planStockRows replays several rows of ONE item in file order", () => {
+it("planStockRows replays several rows of ONE item in file order", () => {
   const quantities = [1, 1000, 3];
   const rows = quantities.map((quantity) => ({
     itemId: "A",
     quantity,
-    itemTrackingType: "Inventory",
+    itemTrackingType: "Inventory"
   }));
   const plans = planStockRows({
     rows,
     itemCosts: itemCosts({ A: fifo(1 / 3) }),
     openLayersByItem: new Map(),
-    hasAccounting: true,
+    hasAccounting: true
   });
-  assertEquals(
-    plans.map((p) => round(p.cost)),
-    planIncreaseUnitCosts(fifo(1 / 3), [], quantities).map((i) =>
-      round(i.cost)
-    )
+  expect(plans.map((p) => round(p.cost))).toEqual(
+    planIncreaseUnitCosts(fifo(1 / 3), [], quantities).map((i) => round(i.cost))
   );
 });
 
-Deno.test("planStockRows values against the item's open layers", () => {
+it("planStockRows values against the item's open layers", () => {
   const plans = planStockRows({
     rows: [{ itemId: "A", quantity: 5, itemTrackingType: "Inventory" }],
     itemCosts: itemCosts({ A: fifo(1) }),
@@ -445,101 +419,77 @@ Deno.test("planStockRows values against the item's open layers", () => {
             quantity: 100,
             remainingQuantity: 100,
             cost: 1000,
-            appliedChildCost: 0,
-          },
-        ],
-      ],
+            appliedChildCost: 0
+          }
+        ]
+      ]
     ]),
-    hasAccounting: true,
+    hasAccounting: true
   });
   // $10 average from the open layer, not the $1 itemCost fallback.
-  assertEquals(plans[0].cost, 50);
+  expect(plans[0]!.cost).toEqual(50);
 });
 
-Deno.test("planStockRows: a zero-cost item plans a cost layer but no journal", () => {
+it("planStockRows: a zero-cost item plans a cost layer but no journal", () => {
   const plans = planStockRows({
     rows: [
       { itemId: "A", quantity: 5, itemTrackingType: "Inventory" },
-      { itemId: "A", quantity: 9, itemTrackingType: "Inventory" },
+      { itemId: "A", quantity: 9, itemTrackingType: "Inventory" }
     ],
     itemCosts: itemCosts({
-      A: { costingMethod: "Average", unitCost: 0, standardCost: 0 },
+      A: { costingMethod: "Average", unitCost: 0, standardCost: 0 }
     }),
     openLayersByItem: new Map(),
-    hasAccounting: true,
+    hasAccounting: true
   });
-  assertEquals(
-    plans.map((p) => p.cost),
-    [0, 0]
-  );
+  expect(plans.map((p) => p.cost)).toEqual([0, 0]);
   // The layer is still written — only the journal pair is suppressed.
-  assertEquals(
-    plans.map((p) => p.carriesValue),
-    [true, true]
-  );
-  assertEquals(
-    plans.map((p) => p.postsJournal),
-    [false, false]
-  );
+  expect(plans.map((p) => p.carriesValue)).toEqual([true, true]);
+  expect(plans.map((p) => p.postsJournal)).toEqual([false, false]);
   const row = buildCostLedgerRow({
     entryType: "Positive Adjmt.",
     documentType: null,
     documentId: "il1",
     itemId: "A",
     quantity: 5,
-    cost: plans[0].cost,
+    cost: plans[0]!.cost,
     postingDate: "2026-09-22",
-    companyId: "c",
+    companyId: "c"
   });
-  assertEquals(row.cost, 0);
-  assertEquals(row.remainingQuantity, 5);
+  expect(row.cost).toEqual(0);
+  expect(row.remainingQuantity).toEqual(5);
 });
 
-Deno.test("planStockRows: accounting disabled posts no journal on any row", () => {
+it("planStockRows: accounting disabled posts no journal on any row", () => {
   const plans = planStockRows({
     rows: [
       { itemId: "A", quantity: 3, itemTrackingType: "Inventory" },
-      { itemId: "B", quantity: 4, itemTrackingType: "Batch" },
+      { itemId: "B", quantity: 4, itemTrackingType: "Batch" }
     ],
     itemCosts: itemCosts({
       A: { costingMethod: "Average", unitCost: 2, standardCost: 0 },
-      B: { costingMethod: "Average", unitCost: 2, standardCost: 0 },
+      B: { costingMethod: "Average", unitCost: 2, standardCost: 0 }
     }),
     openLayersByItem: new Map(),
-    hasAccounting: false,
+    hasAccounting: false
   });
   // Cost layers are unaffected by the GL setting; only the journal is.
-  assertEquals(
-    plans.map((p) => p.cost),
-    [6, 8]
-  );
-  assertEquals(
-    plans.map((p) => p.postsJournal),
-    [false, false]
-  );
+  expect(plans.map((p) => p.cost)).toEqual([6, 8]);
+  expect(plans.map((p) => p.postsJournal)).toEqual([false, false]);
 });
 
-Deno.test("planStockRows: a Non-Inventory or zero-quantity row carries no value", () => {
+it("planStockRows: a Non-Inventory or zero-quantity row carries no value", () => {
   const plans = planStockRows({
     rows: [
       { itemId: "A", quantity: 5, itemTrackingType: "Non-Inventory" },
       { itemId: "A", quantity: 0, itemTrackingType: "Inventory" },
-      { itemId: "A", quantity: 2, itemTrackingType: "Inventory" },
+      { itemId: "A", quantity: 2, itemTrackingType: "Inventory" }
     ],
     itemCosts: itemCosts({ A: fifo(3) }),
     openLayersByItem: new Map(),
-    hasAccounting: true,
+    hasAccounting: true
   });
-  assertEquals(
-    plans.map((p) => p.carriesValue),
-    [false, false, true]
-  );
-  assertEquals(
-    plans.map((p) => p.cost),
-    [0, 0, 6]
-  );
-  assertEquals(
-    plans.map((p) => p.postsJournal),
-    [false, false, true]
-  );
+  expect(plans.map((p) => p.carriesValue)).toEqual([false, false, true]);
+  expect(plans.map((p) => p.cost)).toEqual([0, 0, 6]);
+  expect(plans.map((p) => p.postsJournal)).toEqual([false, false, true]);
 });

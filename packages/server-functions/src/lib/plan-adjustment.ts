@@ -1,19 +1,17 @@
-// Pure row planning for inventory adjustment postings. No I/O, so it is
-// unit-testable with `deno test` and — more importantly — it is the SINGLE
+// Pure row planning for inventory adjustment postings. No I/O, and it is the SINGLE
 // copy of the arithmetic that `bookAdjustment` (one movement at a time) and
 // the bulk opening-stock importer (a whole CSV in a handful of statements)
 // both write. Neither may re-derive a cost, an account side or a dimension
 // tag on its own.
 
-import { Database } from "../lib/types.ts";
-import { credit, debit } from "../lib/utils.ts";
-import { resolveInventoryAccount } from "./get-posting-group.ts";
+import type { Database } from "@carbon/database";
+import { credit, debit, round } from "@carbon/utils";
+import { resolveInventoryAccount } from "./get-posting-group";
 import {
-  AdjustmentItemCost,
+  type AdjustmentItemCost,
   computeCurrentUnitCost,
-  OpenCostLayer,
-} from "./post-adjustment-cost.ts";
-import { round } from "./precision.ts";
+  type OpenCostLayer
+} from "./post-adjustment-cost";
 
 type ItemLedgerInsert = Database["public"]["Tables"]["itemLedger"]["Insert"];
 type CostLedgerInsert = Database["public"]["Tables"]["costLedger"]["Insert"];
@@ -41,7 +39,7 @@ export const JOURNAL_LINE_SAFE_DOCUMENT_TYPES: ReadonlySet<string> = new Set([
   "Inventory Count",
   "Non-Conformance",
   "Inbound Inspection",
-  "Scrap",
+  "Scrap"
 ]);
 
 export function toJournalLineDocumentType(
@@ -89,7 +87,7 @@ export function buildItemLedgerRow(args: {
     comment: args.comment ?? null,
     scrapReasonId: args.scrapReasonId ?? null,
     companyId: args.companyId,
-    createdBy: args.createdBy,
+    createdBy: args.createdBy
   };
 }
 
@@ -119,7 +117,7 @@ export function buildCostLedgerRow(args: {
     cost: round(args.cost),
     remainingQuantity: quantity > 0 ? quantity : 0,
     postingDate: args.postingDate,
-    companyId: args.companyId,
+    companyId: args.companyId
   };
 }
 
@@ -158,7 +156,7 @@ export function buildAdjustmentJournalLines(args: {
     documentType,
     documentId: args.documentId,
     journalLineReference: args.journalLineReference,
-    companyId: args.companyId,
+    companyId: args.companyId
   };
   return [
     {
@@ -167,7 +165,7 @@ export function buildAdjustmentJournalLines(args: {
       description: inventoryAccount.description,
       amount: round(
         args.isGain ? debit("asset", args.cost) : credit("asset", args.cost)
-      ),
+      )
     },
     {
       ...shared,
@@ -177,8 +175,8 @@ export function buildAdjustmentJournalLines(args: {
       description: args.offsetDescription ?? "Inventory Adjustment",
       amount: round(
         args.isGain ? credit("expense", args.cost) : debit("expense", args.cost)
-      ),
-    },
+      )
+    }
   ];
 }
 
@@ -200,7 +198,7 @@ export function buildJournalLineDimensions(args: {
     ["Location", args.locationId],
     ...(args.extraDimensions ?? []).map(
       (d) => [d.entityType, d.valueId] as [string, string]
-    ),
+    )
   ];
   return args.journalLineIds.flatMap((journalLineId) =>
     dimensionValues
@@ -209,7 +207,7 @@ export function buildJournalLineDimensions(args: {
         journalLineId,
         dimensionId: args.dimensions[entityType]!,
         valueId: valueId as string,
-        companyId: args.companyId,
+        companyId: args.companyId
       }))
   );
 }
@@ -272,7 +270,7 @@ export function planIncreaseUnitCosts(
       quantity,
       cost: quantity * unitCost,
       postingDate: "",
-      companyId: "",
+      companyId: ""
     });
     if ((row.remainingQuantity ?? 0) > 0) {
       // New layers carry no applied adjustment children.
@@ -280,7 +278,7 @@ export function planIncreaseUnitCosts(
         quantity: row.quantity as number,
         remainingQuantity: row.remainingQuantity as number,
         cost: row.cost as number,
-        appliedChildCost: 0,
+        appliedChildCost: 0
       });
     }
     return { unitCost, cost: quantity * unitCost };
@@ -332,7 +330,7 @@ export function planStockRows(args: {
   const plans: StockRowPlan[] = args.rows.map((row) => ({
     carriesValue: carriesAdjustmentValue(row.quantity, row.itemTrackingType),
     cost: 0,
-    postsJournal: false,
+    postsJournal: false
   }));
 
   const rowIndexesByItem = new Map<string, number[]>();

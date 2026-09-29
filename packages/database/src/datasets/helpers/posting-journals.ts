@@ -1,8 +1,7 @@
 import {
   accountTypeFromClass,
   credit,
-  debit,
-  journalReference
+  debit
 } from "../../../supabase/functions/lib/utils.ts";
 import { buildMemoJournal } from "../../../supabase/functions/shared/build-memo-journal.ts";
 import { buildPaymentJournal } from "../../../supabase/functions/shared/build-payment-journal.ts";
@@ -14,6 +13,7 @@ import {
   buildSalesPostingLines,
   type SalesPostingAccount
 } from "../../../supabase/functions/shared/sales-posting-amounts.ts";
+import { journalReference } from "../../utils.ts";
 import type { AccountClass } from "../types.ts";
 
 /**

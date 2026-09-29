@@ -1,26 +1,20 @@
+import type { Database } from "@carbon/database";
+import type { KyselyDatabase as DB } from "@carbon/database/client";
+import { getNextSequence } from "@carbon/database/sequence";
+import type { Transaction } from "kysely";
 import { nanoid } from "nanoid";
-import { Transaction } from "kysely";
-import type { KyselyDatabase as DB } from "../lib/postgres/index.ts";
-import { Database } from "../lib/types.ts";
-import { calculateCOGS } from "./calculate-cogs.ts";
-import { getNextSequence } from "../../../src/sequence.ts";
+import { calculateCOGS } from "./calculate-cogs";
 import {
   buildAdjustmentJournalLines,
   buildCostLedgerRow,
   buildItemLedgerRow,
-  buildJournalLineDimensions,
-} from "./plan-adjustment.ts";
+  buildJournalLineDimensions
+} from "./plan-adjustment";
 import {
-  AdjustmentItemCost,
+  type AdjustmentItemCost,
   computeCurrentUnitCost,
-  OpenCostLayer,
-} from "./post-adjustment-cost.ts";
-
-export { computeCurrentUnitCost } from "./post-adjustment-cost.ts";
-export type {
-  AdjustmentItemCost,
-  OpenCostLayer,
-} from "./post-adjustment-cost.ts";
+  type OpenCostLayer
+} from "./post-adjustment-cost";
 
 export interface BookAdjustmentArgs {
   ledger: {
@@ -39,9 +33,7 @@ export interface BookAdjustmentArgs {
     // enum is accepted because stock-movement corrections copy the ORIGINAL
     // movement's documentType so document-scoped movement views keep including
     // the fix.
-    documentType?:
-      | Database["public"]["Enums"]["itemLedgerDocumentType"]
-      | null;
+    documentType?: Database["public"]["Enums"]["itemLedgerDocumentType"] | null;
     documentId?: string | null;
     correctionOfItemLedgerId?: string | null;
     comment?: string | null;
@@ -144,7 +136,7 @@ export async function createAdjustmentJournal(
       status: "Posted",
       postedAt: new Date().toISOString(),
       postedBy: args.userId,
-      createdBy: args.userId,
+      createdBy: args.userId
     })
     .returning(["id"])
     .executeTakeFirstOrThrow();
@@ -180,7 +172,7 @@ export async function loadOpenCostLayers(
     .where((eb) =>
       eb.or([
         eb("documentType", "is", null),
-        eb("documentType", "!=", "Purchase Order"),
+        eb("documentType", "!=", "Purchase Order")
       ])
     )
     .execute();
@@ -220,7 +212,7 @@ export async function loadOpenCostLayers(
       quantity: Number(layer.quantity),
       remainingQuantity: Number(layer.remainingQuantity),
       cost: Number(layer.cost),
-      appliedChildCost: appliedChildCostByLayer.get(layer.id) ?? 0,
+      appliedChildCost: appliedChildCostByLayer.get(layer.id) ?? 0
     });
     byItem.set(itemId, list);
   }
@@ -257,7 +249,7 @@ export async function bookAdjustment(
         comment: ledger.comment,
         scrapReasonId: ledger.scrapReasonId,
         companyId,
-        createdBy: ledger.createdBy,
+        createdBy: ledger.createdBy
       })
     )
     .returning(["id"])
@@ -281,7 +273,7 @@ export async function bookAdjustment(
     const cogs = await calculateCOGS(trx, {
       itemId: ledger.itemId,
       quantity: absQuantity,
-      companyId,
+      companyId
     });
     cost = cogs.totalCost;
 
@@ -296,7 +288,7 @@ export async function bookAdjustment(
           quantity: -absQuantity,
           cost: -cogs.totalCost,
           postingDate: ledger.postingDate,
-          companyId,
+          companyId
         })
       )
       .execute();
@@ -316,7 +308,7 @@ export async function bookAdjustment(
           quantity: absQuantity,
           cost,
           postingDate: ledger.postingDate,
-          companyId,
+          companyId
         })
       )
       .execute();
@@ -324,7 +316,7 @@ export async function bookAdjustment(
     // Increase: create a layer at the item's current carrying cost.
     const openLayers = await loadOpenCostLayers(trx, {
       itemIds: [ledger.itemId],
-      companyId,
+      companyId
     });
     const unitCost = computeCurrentUnitCost(
       itemCost,
@@ -343,7 +335,7 @@ export async function bookAdjustment(
           quantity: absQuantity,
           cost,
           postingDate: ledger.postingDate,
-          companyId,
+          companyId
         })
       )
       .execute();
@@ -363,7 +355,7 @@ export async function bookAdjustment(
         description: accounting.description,
         postingDate: ledger.postingDate,
         userId: accounting.userId,
-        sourceType: accounting.sourceType,
+        sourceType: accounting.sourceType
       });
 
   const journalLines = await trx
@@ -381,7 +373,7 @@ export async function bookAdjustment(
         accountDefaults: accounting.accountDefaults,
         offsetAccount: accounting.offsetAccount,
         offsetDescription: accounting.offsetDescription,
-        companyId,
+        companyId
       })
     )
     .returning(["id"])
@@ -394,7 +386,7 @@ export async function bookAdjustment(
     itemPostingGroupId: item.itemPostingGroupId,
     locationId: ledger.locationId,
     extraDimensions: accounting.extraDimensions,
-    companyId,
+    companyId
   });
   if (journalLineDimensionInserts.length > 0) {
     await trx

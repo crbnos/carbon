@@ -18,7 +18,6 @@ import {
   effectiveReplenishment,
   type ReplenishmentSystem
 } from "@carbon/database/mrp-engine";
-import { getStorageUnitId } from "@carbon/database/posting";
 import {
   getNextRevisionSequence,
   getNextSequence
@@ -44,6 +43,7 @@ import { nanoid } from "nanoid";
 import { z } from "zod";
 import { defineServerFn } from "../define-server-fn";
 import { NotFoundError } from "../errors";
+import { getStorageUnitId } from "../lib/storage-units";
 import { importTypeScript } from "./sandbox";
 
 const logger = getLogger("server-functions", "get-method");

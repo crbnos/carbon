@@ -1,4 +1,4 @@
-import { Database } from "../lib/types.ts";
+import type { Database } from "@carbon/database";
 
 export interface AdjustmentItemCost {
   costingMethod: Database["public"]["Enums"]["itemCostingMethod"];
@@ -17,7 +17,6 @@ export interface OpenCostLayer {
 // value. Mirrors the valuation RPC's carrying CTE: FIFO/LIFO use the
 // weighted-average effective cost of open layers (including applied
 // invoice-vs-receipt children); Average/Standard come straight from itemCost.
-// Pure (no I/O) so it stays unit-testable with `deno test`.
 export function computeCurrentUnitCost(
   itemCost: AdjustmentItemCost,
   openLayers: OpenCostLayer[]

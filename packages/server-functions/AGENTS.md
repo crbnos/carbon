@@ -74,3 +74,5 @@ pnpm --filter @carbon/checks test
 |---|---|
 | `.` | `defineServerFn`, `ServerFn`, `ServerFnResult`, `ServerFnContext`, `authorize`, `ServerFnError`, `InvalidInputError`, `ForbiddenError`, `NotFoundError`, `assertCompanyRecords`, `hasPermissions` |
 | `./<name>` | one server function (`src/<name>/index.ts`) |
+
+Shared posting internals live in `src/lib/` (not exported): `get-accounting-period` (`resolveAccountingPeriod`, `getCurrentAccountingPeriod`, `getAccountingPeriodForDate`), `get-posting-group` (`getDefaultPostingGroup`, `resolveInventoryAccount`), `calculate-cogs`, `storage-units`, and the inventory-adjustment core — `post-adjustment` (`bookAdjustment`, `createAdjustmentJournal`, `loadOpenCostLayers`), the pure row builders in `plan-adjustment` and `post-adjustment-cost` (`computeCurrentUnitCost`). Pure logic that the apps also need goes to `@carbon/utils` / `@carbon/database`, not here.

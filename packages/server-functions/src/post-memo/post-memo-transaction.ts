@@ -1,15 +1,13 @@
 import type { Database } from "@carbon/database";
 import type { KyselyDatabase } from "@carbon/database/client";
-import {
-  buildMemoJournal,
-  getCurrentAccountingPeriod
-} from "@carbon/database/posting";
+import { buildMemoJournal } from "@carbon/database/posting";
 import { getNextSequence } from "@carbon/database/sequence";
 import { datetime, toBaseAmount, toDocumentAmount } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Kysely } from "kysely";
 import { nanoid } from "nanoid";
 import { NotFoundError } from "../errors";
+import { getCurrentAccountingPeriod } from "../lib/get-accounting-period";
 
 export type PostMemoArgs = {
   type: "post" | "void";

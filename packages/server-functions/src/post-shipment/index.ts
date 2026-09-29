@@ -1,12 +1,10 @@
-import { type Database, getCompanyTimeZone, type Json } from "@carbon/database";
-import type { KyselyDatabase } from "@carbon/database/client";
 import {
-  calculateCOGS,
-  getCurrentAccountingPeriod,
-  getDefaultPostingGroup,
-  journalReference,
-  resolveInventoryAccount
-} from "@carbon/database/posting";
+  type Database,
+  getCompanyTimeZone,
+  type Json,
+  journalReference
+} from "@carbon/database";
+import type { KyselyDatabase } from "@carbon/database/client";
 import { getNextSequence } from "@carbon/database/sequence";
 import { getLogger } from "@carbon/logger";
 import {
@@ -25,6 +23,12 @@ import { nanoid } from "nanoid";
 import { z } from "zod";
 import { defineServerFn } from "../define-server-fn";
 import { NotFoundError } from "../errors";
+import { calculateCOGS } from "../lib/calculate-cogs";
+import { getCurrentAccountingPeriod } from "../lib/get-accounting-period";
+import {
+  getDefaultPostingGroup,
+  resolveInventoryAccount
+} from "../lib/get-posting-group";
 
 const logger = getLogger("server-functions", "post-shipment");
 

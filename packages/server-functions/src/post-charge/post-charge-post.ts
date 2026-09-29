@@ -1,10 +1,10 @@
 import type { KyselyDatabase } from "@carbon/database/client";
-import { resolveAccountingPeriod } from "@carbon/database/posting";
 import { getNextSequence } from "@carbon/database/sequence";
 import { type AccountClass, isAccountClass } from "@carbon/utils";
 import type { Selectable, Transaction } from "kysely";
 import { nanoid } from "nanoid";
 import { NotFoundError } from "../errors";
+import { resolveAccountingPeriod } from "../lib/get-accounting-period";
 import { buildChargeJournal } from "./build-charge-journal";
 import { allocateJournalLineIds } from "./journal-line-ids";
 

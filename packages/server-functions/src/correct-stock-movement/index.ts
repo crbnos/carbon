@@ -1,12 +1,10 @@
-import {
-  bookAdjustment,
-  getAccountingPeriodForDate,
-  getDefaultPostingGroup
-} from "@carbon/database/posting";
 import { equals, round, statusAfterQuantityChange } from "@carbon/utils";
 import { z } from "zod";
 import { defineServerFn } from "../define-server-fn";
 import { InvalidInputError, NotFoundError } from "../errors";
+import { getAccountingPeriodForDate } from "../lib/get-accounting-period";
+import { getDefaultPostingGroup } from "../lib/get-posting-group";
+import { bookAdjustment } from "../lib/post-adjustment";
 
 // Corrects a posted stock movement by inserting ONE opposite (delta) movement
 // linked to the original via itemLedger.correctionOfItemLedgerId. The caller

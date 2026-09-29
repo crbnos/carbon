@@ -1,10 +1,8 @@
-import { type Database, getCompanyTimeZone } from "@carbon/database";
 import {
-  getCurrentAccountingPeriod,
-  getDefaultPostingGroup,
-  journalReference,
-  resolveInventoryAccount
-} from "@carbon/database/posting";
+  type Database,
+  getCompanyTimeZone,
+  journalReference
+} from "@carbon/database";
 import { getNextSequence } from "@carbon/database/sequence";
 import { getLogger } from "@carbon/logger";
 import {
@@ -24,6 +22,11 @@ import { nanoid } from "nanoid";
 import { z } from "zod";
 import { defineServerFn } from "../define-server-fn";
 import { NotFoundError } from "../errors";
+import { getCurrentAccountingPeriod } from "../lib/get-accounting-period";
+import {
+  getDefaultPostingGroup,
+  resolveInventoryAccount
+} from "../lib/get-posting-group";
 import {
   calculatePurchasePostingAmounts,
   getInvoicedPurchaseQuantityAfterVoid

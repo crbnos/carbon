@@ -1,10 +1,10 @@
 import type { KyselyDatabase } from "@carbon/database/client";
-import { resolveAccountingPeriod } from "@carbon/database/posting";
 import { getNextSequence } from "@carbon/database/sequence";
 import { type AccountClass, isAccountClass } from "@carbon/utils";
 import type { Selectable, Transaction } from "kysely";
 import { nanoid } from "nanoid";
 import { NotFoundError } from "../errors";
+import { resolveAccountingPeriod } from "../lib/get-accounting-period";
 // Already generic — allocating journal-line ids has nothing charge-specific
 // about it, so this is imported rather than copied.
 import { allocateJournalLineIds } from "../post-charge/journal-line-ids";

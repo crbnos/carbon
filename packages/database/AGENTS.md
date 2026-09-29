@@ -52,7 +52,7 @@ pnpm --filter @carbon/database authz migration <name>   # ship unshipped rules/h
 
 | Subpath | Provides |
 |---------|----------|
-| `.` (index) | `Database` type, `fetchAllFromTable`, `fetchAllRecords` (takes a query factory), `fetchRecordsInBatches`. The `datetime` derivation API lives in `@carbon/utils` |
+| `.` (index) | `Database` type, `fetchAllFromTable`, `fetchAllRecords` (takes a query factory), `fetchRecordsInBatches`, `journalReference` (`journalLine.documentLineReference` values). The `datetime` derivation API lives in `@carbon/utils` |
 | `./client` | `Kysely`, `KyselyDatabase`, Postgres pool factories (`getPostgresClient`, `getPostgresConnectionPool`) |
 | `./methods` | Make-method helpers shared by get-method and `@carbon/planning` (`getJobMethodTree`, `getQuoteMethodTree`, `traverseJobMethod`, `calculateQuoteLinePrices`, …) |
 | `./job-quantities-engine` | `computeJobQuantities` / `flattenJobQuantityTree` — the pure job-quantity cascade behind the `recalculate` server function |
@@ -63,7 +63,7 @@ pnpm --filter @carbon/database authz migration <name>   # ship unshipped rules/h
 | `./json` | `toJson` / `toJsonColumns` — pre-serialise `json`/`jsonb` values written through Kysely (the driver sends strings and arrays unquoted) |
 | `./supersession-pick` | The supersession rules shared by MRP, get-method and picking (`buildSupersessionRedirectMap`, `buildConsumeFirstHops`, `settleConsumeFirstLine`, `resolveMadeLinePull`, `consumableInWholeAssemblies`, …) |
 | `./picked-consumption` | Consumption follows what was picked (`linesideCredit`, `getPickedBudgets`, `allocateAcrossBudgets`, …) — the one definition of usable lineside stock shared by the pick-list generator and the `issue` backflush |
-| `./posting` | Node re-export of the `supabase/functions/{lib,shared}` posting helpers (journal builders, COGS, posting groups, accounting periods, cost layers) for `@carbon/server-functions`. `credit`/`debit`, `AccountType`/`AccountClass`, pick guards, entity drain, short-close, journal dimensions, due dates and the accounting-posting / payment-funding helpers come from `@carbon/utils`, not here |
+| `./posting` | `buildPaymentJournal` / `buildMemoJournal` — re-exported from `supabase/functions/shared/` for the `post-payment` / `post-memo` server functions. They stay there with `accounting-currency` / `accounting-posting` / `sales-posting-amounts` and the functions-lib `credit`/`debit` because the dataset tiers post through them too and this package cannot import `@carbon/utils` (turbo cycle) |
 | `./sequence` | `getNextSequence` / `getNextRevisionSequence` / `getNextSerialNumbers` — the one allocator for document and serial numbers (date tokens in the company timezone) |
 | `./seed-data` | The company seed data (accounts, sequences, groups + `getGroupId`, …) used by the `seed-company` server function and the dataset tooling |
 | *(no subpath)* | `supabase/functions/shared/image-pipeline.ts` — the codebase-wide image pipeline (decode HEIC/JPEG/PNG/WebP → shape → encode), re-exported by `@carbon/files/media` (NOT by this package). Unlike `precision.ts` it has npm deps (`libheif-js`, `@jsquash/*`) which are pinned in BOTH this package.json and `functions/deno.json` `imports` — keep the versions identical. Its `.d.ts` sits beside it (`wasm-codecs.d.ts`, triple-slash referenced). Consumed by `renderLabelLogo` (`@carbon/files/media`) and the `thumbnail` edge function |

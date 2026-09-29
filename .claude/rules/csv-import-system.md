@@ -166,10 +166,10 @@ per-row decision is `classify-stock-row.ts` (tested by `classify-stock-row.test.
   runtime's wall clock and rolled back. The importer instead plans every row in
   memory and writes one statement per table per 500-row chunk (`INSERT_CHUNK_SIZE`).
   The rows are byte-for-byte what `bookAdjustment` writes because **both call the
-  same pure builders** in `shared/plan-adjustment.ts` — `buildItemLedgerRow`,
+  same pure builders** in `packages/server-functions/src/lib/plan-adjustment.ts` — `buildItemLedgerRow`,
   `buildCostLedgerRow`, `buildAdjustmentJournalLines`, `buildJournalLineDimensions`,
   `toJournalLineDocumentType` — and the same open-layer query (`loadOpenCostLayers`
-  in `shared/post-adjustment.ts`, which takes a list of item ids and chunks its
+  in `packages/server-functions/src/lib/post-adjustment.ts`, which takes a list of item ids and chunks its
   applied-child lookup over the layer ids, since open layers per item are
   unbounded). Do not fork a row shape or an arithmetic step into the importer:
   a column added to a builder must reach both paths at once, which is the whole
@@ -181,11 +181,11 @@ per-row decision is `classify-stock-row.ts` (tested by `classify-stock-row.test.
   returns `["id", "journalLineReference"]` and the pair is grouped by the
   reference the importer generated per movement.
 - **The plan itself is pure and tested.** `planStockRows` in
-  `shared/plan-adjustment.ts` takes the file's rows plus the item costs and open
+  `packages/server-functions/src/lib/plan-adjustment.ts` takes the file's rows plus the item costs and open
   layers and returns, per row, `{ carriesValue, cost, postsJournal }` — the
   per-item grouping, the cost replay, the scatter back onto source rows and the
   journal filter. The transaction body only inserts what it returns.
-  `shared/plan-adjustment.test.ts` covers mixed items, repeated rows for one item,
+  `packages/server-functions/src/lib/plan-adjustment.test.ts` covers mixed items, repeated rows for one item,
   a zero-cost item, accounting disabled and a Non-Inventory / zero-quantity row.
 - **Cost layers are replayed, not hoisted.** `bookAdjustment` re-reads the item's
   open layers before every increase, so row n+1 sees the layer row n wrote.
@@ -196,7 +196,7 @@ per-row decision is `classify-stock-row.ts` (tested by `classify-stock-row.test.
   by the rounding and the drift is scaled by the next row's quantity (a 1-unit row at
   ⅓ stores 0.33333, and a following 1000-unit row books 333.33, not 333.33333).
   Hoisting one unit cost per item would therefore change what is written. Pinned by
-  `shared/plan-adjustment.test.ts`, which asserts the plan equals booking the rows
+  `packages/server-functions/src/lib/plan-adjustment.test.ts`, which asserts the plan equals booking the rows
   one at a time for all four costing methods.
 - No Unique ID column and no `externalIntegrationMapping` writes. Business rules
   (`evaluateLinesForSurface`) that the single-record adjustment route runs are NOT

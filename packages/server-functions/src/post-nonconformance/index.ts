@@ -1,16 +1,16 @@
 import { type Database, getCompanyTimeZone } from "@carbon/database";
-import {
-  type AdjustmentItemCost,
-  bookAdjustment,
-  createAdjustmentJournal,
-  getCurrentAccountingPeriod,
-  getDefaultPostingGroup
-} from "@carbon/database/posting";
 import { datetime } from "@carbon/utils";
 import { z } from "zod";
 import { assertCompanyRecords } from "../company-records";
 import { defineServerFn } from "../define-server-fn";
 import { NotFoundError } from "../errors";
+import { getCurrentAccountingPeriod } from "../lib/get-accounting-period";
+import { getDefaultPostingGroup } from "../lib/get-posting-group";
+import {
+  bookAdjustment,
+  createAdjustmentJournal
+} from "../lib/post-adjustment";
+import type { AdjustmentItemCost } from "../lib/post-adjustment-cost";
 
 // The GL/cost posting path for inspection-reject and NCR-disposition inventory
 // write-offs. The caller (inspection reject route / closeIssue) owns the

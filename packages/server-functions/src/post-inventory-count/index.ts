@@ -1,14 +1,14 @@
 import { type Database, getCompanyTimeZone } from "@carbon/database";
-import {
-  bookAdjustment,
-  createAdjustmentJournal,
-  getCurrentAccountingPeriod,
-  getDefaultPostingGroup
-} from "@carbon/database/posting";
 import { datetime } from "@carbon/utils";
 import { z } from "zod";
 import { defineServerFn } from "../define-server-fn";
 import { InvalidInputError, NotFoundError } from "../errors";
+import { getCurrentAccountingPeriod } from "../lib/get-accounting-period";
+import { getDefaultPostingGroup } from "../lib/get-posting-group";
+import {
+  bookAdjustment,
+  createAdjustmentJournal
+} from "../lib/post-adjustment";
 import { resolveCountedEntity } from "./count-guards";
 import { planInventoryCountPost } from "./plan-post";
 

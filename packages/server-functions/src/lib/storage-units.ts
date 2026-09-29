@@ -1,5 +1,5 @@
-import { Transaction } from "kysely";
-import type { KyselyDatabase as DB } from "./postgres/index.ts";
+import type { KyselyDatabase as DB } from "@carbon/database/client";
+import type { Transaction } from "kysely";
 
 export async function getStorageUnitId(
   trx: Transaction<DB>,
@@ -18,11 +18,8 @@ export async function getStorageUnitId(
 
   if (pickMethod?.defaultStorageUnitId) return pickMethod.defaultStorageUnitId;
 
-  const storageUnitWithHighestQuantity = await getStorageUnitWithHighestQuantity(
-    trx,
-    itemId,
-    locationId
-  );
+  const storageUnitWithHighestQuantity =
+    await getStorageUnitWithHighestQuantity(trx, itemId, locationId);
 
   return storageUnitWithHighestQuantity ?? undefined;
 }
@@ -39,7 +36,10 @@ export async function getStorageUnitWithHighestQuantity(
     .where("locationId", "=", locationId)
     .where("storageUnitId", "is not", null)
     .groupBy("storageUnitId")
-    .select(["storageUnitId", (eb) => eb.fn.sum("quantity").as("totalQuantity")])
+    .select([
+      "storageUnitId",
+      (eb) => eb.fn.sum("quantity").as("totalQuantity")
+    ])
     .having((eb) => eb.fn.sum("quantity"), ">", 0)
     .orderBy("totalQuantity", "desc")
     .executeTakeFirst();
@@ -75,6 +75,7 @@ export async function updatePickMethodDefaultStorageUnitIfNeeded(
       .selectFrom("pickMethod")
       .where("itemId", "=", itemId)
       .where("locationId", "=", locationId)
+      .where("companyId", "=", companyId)
       .select("defaultStorageUnitId")
       .executeTakeFirst();
 
@@ -85,10 +86,11 @@ export async function updatePickMethodDefaultStorageUnitIfNeeded(
         .set({
           defaultStorageUnitId: storageUnitId,
           updatedBy: userId,
-          updatedAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
         })
         .where("itemId", "=", itemId)
         .where("locationId", "=", locationId)
+        .where("companyId", "=", companyId)
         .execute();
     } else {
       // Insert new pickMethod
@@ -100,7 +102,7 @@ export async function updatePickMethodDefaultStorageUnitIfNeeded(
           defaultStorageUnitId: storageUnitId,
           companyId,
           createdBy: userId,
-          createdAt: new Date().toISOString(),
+          createdAt: new Date().toISOString()
         })
         .execute();
     }

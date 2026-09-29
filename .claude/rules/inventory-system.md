@@ -34,7 +34,7 @@ Key service functions (verified):
   increases) and posts a journal (Dr/Cr `resolveInventoryAccount` vs
   `accountDefault.inventoryAdjustmentVarianceAccount`) when `companySettings.accountingEnabled`.
   `post-inventory-count` books its variances through the same shared core
-  (`functions/shared/post-adjustment.ts`). Storage-unit transfers post no GL. The valuation
+  (`packages/server-functions/src/lib/post-adjustment.ts`). Storage-unit transfers post no GL. The valuation
   workbench tie-out offers a **Reconcile** action (`createInventoryReconciliationJournal`) that
   drafts an adjusting journal for any residual pre-feature variance.
   **Scrap** = a `Negative Adjmt.` movement with `documentType='Scrap'` +

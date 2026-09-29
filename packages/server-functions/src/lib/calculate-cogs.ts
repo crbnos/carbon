@@ -1,5 +1,5 @@
-import { Transaction } from "kysely";
-import type { KyselyDatabase as DB } from "../lib/postgres/index.ts";
+import type { KyselyDatabase as DB } from "@carbon/database/client";
+import type { Transaction } from "kysely";
 
 export interface CostLayer {
   costLedgerId: string;
@@ -18,7 +18,7 @@ export async function calculateCOGS(
   {
     itemId,
     quantity,
-    companyId,
+    companyId
   }: {
     itemId: string;
     quantity: number;
@@ -40,7 +40,7 @@ export async function calculateCOGS(
       return {
         unitCost: standardCost,
         totalCost: standardCost * quantity,
-        layersConsumed: [],
+        layersConsumed: []
       };
     }
 
@@ -49,7 +49,7 @@ export async function calculateCOGS(
       return {
         unitCost,
         totalCost: unitCost * quantity,
-        layersConsumed: [],
+        layersConsumed: []
       };
     }
 
@@ -70,7 +70,7 @@ export async function calculateCOGS(
         .where((eb) =>
           eb.or([
             eb("documentType", "is", null),
-            eb("documentType", "!=", "Purchase Order"),
+            eb("documentType", "!=", "Purchase Order")
           ])
         )
         .orderBy("postingDate", orderDirection)
@@ -103,13 +103,13 @@ export async function calculateCOGS(
         layersConsumed.push({
           costLedgerId: layer.id,
           quantityConsumed: quantityFromLayer,
-          unitCost: layerUnitCost,
+          unitCost: layerUnitCost
         });
 
         await trx
           .updateTable("costLedger")
           .set({
-            remainingQuantity: layerRemaining - quantityFromLayer,
+            remainingQuantity: layerRemaining - quantityFromLayer
           })
           .where("id", "=", layer.id)
           .where("companyId", "=", companyId)
@@ -159,7 +159,7 @@ export async function calculateCOGS(
       return {
         unitCost: effectiveUnitCost,
         totalCost,
-        layersConsumed,
+        layersConsumed
       };
     }
 

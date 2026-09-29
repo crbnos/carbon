@@ -1,5 +1,5 @@
-import { resolveAccountingPeriod } from "@carbon/database/posting";
 import { getNextSequence } from "@carbon/database/sequence";
+import { resolveAccountingPeriod } from "../lib/get-accounting-period";
 import { allocateJournalLineIds } from "../post-charge/journal-line-ids";
 import type { ReimbursementContext } from "./post-reimbursement-post";
 

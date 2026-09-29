@@ -1,5 +1,5 @@
-import { SupabaseClient } from "@supabase/supabase-js";
-import { Database } from "../lib/types.ts";
+import type { Database } from "@carbon/database";
+import type { SupabaseClient } from "@supabase/supabase-js";
 
 export async function getDefaultPostingGroup(
   client: SupabaseClient<Database>,
@@ -16,19 +16,22 @@ export async function getDefaultPostingGroup(
 // stable property of the item so the debit side (receipt/job completion) and
 // the credit side (shipment/issue/invoice) always hit the same account.
 export function resolveInventoryAccount(
-  replenishmentSystem: Database["public"]["Enums"]["itemReplenishmentSystem"] | null,
+  replenishmentSystem:
+    | Database["public"]["Enums"]["itemReplenishmentSystem"]
+    | null,
   accountDefaults: {
     rawMaterialsAccount: string;
     finishedGoodsAccount: string;
   }
 ): { account: string; description: string } {
-  return replenishmentSystem === "Make" || replenishmentSystem === "Buy and Make"
+  return replenishmentSystem === "Make" ||
+    replenishmentSystem === "Buy and Make"
     ? {
         account: accountDefaults.finishedGoodsAccount,
-        description: "Finished Goods Account",
+        description: "Finished Goods Account"
       }
     : {
         account: accountDefaults.rawMaterialsAccount,
-        description: "Raw Materials Account",
+        description: "Raw Materials Account"
       };
 }
