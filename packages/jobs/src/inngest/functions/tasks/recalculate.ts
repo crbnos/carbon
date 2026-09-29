@@ -17,7 +17,7 @@ export const recalculateFunction = inngest.createFunction(
       const serviceRole = getCarbonServiceRole();
 
       switch (payload.type) {
-        case "jobRequirements":
+        case "jobRequirements": {
           logger.info(`Recalculating job requirements for ${payload.id}`);
           const calculateQuantities = await recalculateJobRequirements({
             id: payload.id,
@@ -29,7 +29,7 @@ export const recalculateFunction = inngest.createFunction(
             success: !calculateQuantities.error,
             message: calculateQuantities.error?.message
           };
-
+        }
         case "jobMakeMethodRequirements": {
           logger.info(
             `Recalculating job make method requirements for ${payload.id}`

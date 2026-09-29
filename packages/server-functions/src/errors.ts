@@ -100,8 +100,15 @@ export function toServerFnError(
   err: unknown,
   defaultStatus = 500
 ): ServerFnError {
-  logger.error(`${name} failed`, { error: err });
+  const error = toError(err, defaultStatus);
+  // A refusal the caller caused (bad input, missing record, no permission) is
+  // expected traffic; only a server failure is an error.
+  if (error.status >= 500) logger.error(`${name} failed`, { error: err });
+  else logger.warn(`${name} refused`, { status: error.status, error: err });
+  return error;
+}
 
+function toError(err: unknown, defaultStatus: number): ServerFnError {
   if (err instanceof ServerFnError) return err;
   if (isZodError(err)) return new InvalidInputError(summarizeIssues(err));
 

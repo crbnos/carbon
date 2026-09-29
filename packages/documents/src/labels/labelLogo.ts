@@ -46,7 +46,10 @@ export async function resolveLabelLogo(
     const bytes = new Uint8Array(await imgRes.arrayBuffer());
     const { renderLabelLogo } = await import("@carbon/files/media/node");
     // ZPL/mono can't clip at render — crop before the threshold.
-    const logo = await renderLabelLogo(bytes, "png", { widthDots, crop });
+    // The company logo may be a JPEG or WebP, not only a PNG.
+    const extension =
+      imgRes.headers.get("content-type")?.split("/")[1]?.split(";")[0] ?? "png";
+    const logo = await renderLabelLogo(bytes, extension, { widthDots, crop });
     return {
       color,
       mono: logo.monoPng,

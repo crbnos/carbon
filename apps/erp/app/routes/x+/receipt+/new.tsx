@@ -158,7 +158,10 @@ export async function action({ request }: ActionFunctionArgs) {
       if (!defaultReceipt.data || defaultReceipt.error) {
         throw redirect(
           path.to.receipts,
-          await flash(request, error(error, "Failed to create receipt"))
+          await flash(
+            request,
+            error(defaultReceipt.error, "Failed to create receipt")
+          )
         );
       }
 

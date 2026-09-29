@@ -266,13 +266,22 @@ export async function createRevision(
 
   if (item.replenishmentSystem !== "Buy") {
     const { getMethod } = await import("@carbon/server-functions/get-method");
-    await getMethod.withClient(client, db, {
+    const copy = await getMethod.withClient(client, db, {
       type: "itemToItem",
       sourceId: item.id,
       targetId: itemInsert.data.id,
       companyId: item.companyId!,
       userId: createdBy
     });
+    // The revision stands either way; its make method can be copied again.
+    if (copy.error) {
+      logger.error("Failed to copy the make method onto the new revision", {
+        companyId: item.companyId,
+        sourceItemId: item.id,
+        revisionItemId: itemInsert.data.id,
+        error: copy.error
+      });
+    }
   }
 
   return itemInsert;

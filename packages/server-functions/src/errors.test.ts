@@ -2,7 +2,9 @@ import { describe, expect, it, vi } from "vitest";
 import { z } from "zod";
 import { InvalidInputError, ServerFnError, toServerFnError } from "./errors";
 
-vi.mock("@carbon/logger", () => ({ getLogger: () => ({ error: vi.fn() }) }));
+vi.mock("@carbon/logger", () => ({
+  getLogger: () => ({ error: vi.fn(), warn: vi.fn() })
+}));
 
 const toError = (err: unknown) => toServerFnError("test", err);
 

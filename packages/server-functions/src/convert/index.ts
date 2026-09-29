@@ -626,27 +626,46 @@ export const convert = defineServerFn({
             })
             .execute();
 
-          const pickMethodDefaultsByLineId = new Map<string, string | null>();
-          await Promise.all(
-            selectedQuoteLines.map(async (line) => {
-              if (!line.id || !line.itemId) return;
-              if (line.methodType === "Make to Order") return;
-              const lineLocationId = line.locationId ?? quote.data.locationId;
-              if (!lineLocationId) return;
-              const pickMethod = await trx
+          // One read for every picked line's default bin, keyed by item and location.
+          const pickedLines = selectedQuoteLines.flatMap((line) => {
+            const locationId = line.locationId ?? quote.data.locationId;
+            return line.id &&
+              line.itemId &&
+              locationId &&
+              line.methodType !== "Make to Order"
+              ? [{ id: line.id, itemId: line.itemId, locationId }]
+              : [];
+          });
+          const pickMethods = pickedLines.length
+            ? await trx
                 .selectFrom("pickMethod")
-                .where("itemId", "=", line.itemId)
-                .where("locationId", "=", lineLocationId)
+                .where(
+                  "itemId",
+                  "in",
+                  pickedLines.map((line) => line.itemId)
+                )
+                .where(
+                  "locationId",
+                  "in",
+                  pickedLines.map((line) => line.locationId)
+                )
                 .where("companyId", "=", companyId)
-                .select("defaultStorageUnitId")
-                .executeTakeFirst();
-              if (pickMethod?.defaultStorageUnitId) {
-                pickMethodDefaultsByLineId.set(
-                  line.id,
-                  pickMethod.defaultStorageUnitId
-                );
-              }
-            })
+                .select(["itemId", "locationId", "defaultStorageUnitId"])
+                .execute()
+            : [];
+          const defaultBinByItemLocation = new Map(
+            pickMethods.map((pm) => [
+              `${pm.itemId}:${pm.locationId}`,
+              pm.defaultStorageUnitId
+            ])
+          );
+          const pickMethodDefaultsByLineId = new Map(
+            pickedLines.map((line) => [
+              line.id,
+              defaultBinByItemLocation.get(
+                `${line.itemId}:${line.locationId}`
+              ) ?? null
+            ])
           );
 
           const salesOrderLineInserts: Database["public"]["Tables"]["salesOrderLine"]["Insert"][] =
@@ -1368,10 +1387,11 @@ export const convert = defineServerFn({
         // Copy each make line's method. Each copy holds a pooled connection
         // for its whole tree, so a few at a time rather than all at once.
         const system = ServerFnContext.system({ db, companyId, userId });
-        await async.map(
-          insertedQuoteLines.filter(
-            (line) => line.methodType === "Make to Order"
-          ),
+        const makeLines = insertedQuoteLines.filter(
+          (line) => line.methodType === "Make to Order"
+        );
+        const copies = await async.map(
+          makeLines,
           (line) =>
             getMethod(system, {
               type: "itemToQuoteLine",
@@ -1380,6 +1400,16 @@ export const convert = defineServerFn({
             }),
           { concurrency: 2 }
         );
+        // The quote stands either way; a line's method can be copied again.
+        for (const [index, copy] of copies.entries()) {
+          if (copy.error) {
+            logger.error("Failed to copy the method onto a quote line", {
+              quoteId: insertedQuoteId,
+              quoteLineId: makeLines[index]?.id,
+              error: copy.error
+            });
+          }
+        }
         break;
       }
       case "shipmentToSalesInvoice": {
