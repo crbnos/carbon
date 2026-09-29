@@ -1,8 +1,8 @@
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
+import { ServerFnContext } from "@carbon/server-functions";
 import { postPayment } from "@carbon/server-functions/post-payment";
 import { getErrorMessage, toBaseAmount } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
@@ -183,18 +183,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
       )
     );
   }
-
-  const serviceRole = getCarbonServiceRole();
   try {
-    const result = await postPayment.withClient(
-      serviceRole,
-      getDatabaseClient(),
-      {
-        type: "post",
-        paymentId: payment.data.id,
-        userId,
-        companyId
-      }
+    const result = await postPayment(
+      ServerFnContext.system({ db: getDatabaseClient(), companyId, userId }),
+      { type: "post", paymentId: payment.data.id }
     );
     if (result.error) {
       const message = getErrorMessage(

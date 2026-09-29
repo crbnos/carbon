@@ -1,7 +1,7 @@
 import { assertIsPost } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { getLogger } from "@carbon/logger";
+import { ServerFnContext } from "@carbon/server-functions";
 import { issue } from "@carbon/server-functions/issue";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
@@ -62,19 +62,18 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  const serviceRole = await getCarbonServiceRole();
-
   if (children && children.length > 0) {
     // Tracked entities (serial/batch)
-    const issued = await issue.withClient(serviceRole, getDatabaseClient(), {
-      type: "maintenanceDispatchTrackedEntities",
-      maintenanceDispatchId: dispatchId,
-      itemId,
-      unitOfMeasureCode,
-      children,
-      companyId,
-      userId
-    });
+    const issued = await issue(
+      ServerFnContext.system({ db: getDatabaseClient(), companyId, userId }),
+      {
+        type: "maintenanceDispatchTrackedEntities",
+        maintenanceDispatchId: dispatchId,
+        itemId,
+        unitOfMeasureCode,
+        children
+      }
+    );
 
     if (issued.error) {
       log.error("Failed to issue for maintenance dispatch", {
@@ -87,15 +86,16 @@ export async function action({ request, params }: ActionFunctionArgs) {
     }
   } else {
     // Inventory item
-    const issued = await issue.withClient(serviceRole, getDatabaseClient(), {
-      type: "maintenanceDispatchInventory",
-      maintenanceDispatchId: dispatchId,
-      itemId,
-      unitOfMeasureCode,
-      quantity: totalQuantity,
-      companyId,
-      userId
-    });
+    const issued = await issue(
+      ServerFnContext.system({ db: getDatabaseClient(), companyId, userId }),
+      {
+        type: "maintenanceDispatchInventory",
+        maintenanceDispatchId: dispatchId,
+        itemId,
+        unitOfMeasureCode,
+        quantity: totalQuantity
+      }
+    );
 
     if (issued.error) {
       log.error("Failed to issue for maintenance dispatch", {

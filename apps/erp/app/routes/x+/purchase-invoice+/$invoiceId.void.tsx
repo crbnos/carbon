@@ -1,7 +1,7 @@
 import { error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
+import { ServerFnContext } from "@carbon/server-functions";
 import { postPurchaseInvoice } from "@carbon/server-functions/post-purchase-invoice";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
@@ -17,8 +17,6 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (!invoiceId) throw new Error("invoiceId not found");
 
   try {
-    const serviceRole = getCarbonServiceRole();
-
     const { data: purchaseInvoice } = await client
       .from("purchaseInvoice")
       .select("status, postingDate")
@@ -80,15 +78,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
       );
     }
 
-    const voidInvoice = await postPurchaseInvoice.withClient(
-      serviceRole,
-      getDatabaseClient(),
-      {
-        type: "void",
-        invoiceId: invoiceId,
-        userId: userId,
-        companyId: companyId
-      }
+    const voidInvoice = await postPurchaseInvoice(
+      ServerFnContext.system({ db: getDatabaseClient(), companyId, userId }),
+      { type: "void", invoiceId: invoiceId }
     );
 
     if (voidInvoice.error) {

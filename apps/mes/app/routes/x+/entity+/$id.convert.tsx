@@ -1,7 +1,7 @@
 import { assertIsPost } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { getLogger } from "@carbon/logger";
+import { ServerFnContext } from "@carbon/server-functions";
 import { issue } from "@carbon/server-functions/issue";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
@@ -39,16 +39,15 @@ export async function action({ request, params }: ActionFunctionArgs) {
     newRevision: revision,
     quantity: newQuantity
   } = validation.data;
-
-  const serviceRole = await getCarbonServiceRole();
-  const convert = await issue.withClient(serviceRole, getDatabaseClient(), {
-    type: "convertEntity",
-    trackedEntityId,
-    newRevision: revision,
-    quantity: newQuantity,
-    companyId,
-    userId
-  });
+  const convert = await issue(
+    ServerFnContext.system({ db: getDatabaseClient(), companyId, userId }),
+    {
+      type: "convertEntity",
+      trackedEntityId,
+      newRevision: revision,
+      quantity: newQuantity
+    }
+  );
 
   if (convert.error) {
     log.error("Failed to convert entity", { error: convert.error });

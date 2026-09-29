@@ -1,6 +1,6 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { getLogger } from "@carbon/logger";
+import { ServerFnContext } from "@carbon/server-functions";
 import { create } from "@carbon/server-functions/create";
 import type { ActionFunctionArgs } from "react-router";
 import { isIssueLocked } from "~/modules/quality";
@@ -61,18 +61,18 @@ export async function action({ request }: ActionFunctionArgs) {
           data: null
         };
       }
-
-      const serviceRole = await getCarbonServiceRole();
       // A silent reconcile failure leaves the column and the task list disagreeing.
       // Only the issues the scoped read above found are this company's.
       const reconciled = await Promise.all(
         (issues.data ?? []).map(({ id }) =>
-          create.withClient(serviceRole, getDatabaseClient(), {
-            type: "nonConformanceTasks",
-            id,
-            companyId,
-            userId
-          })
+          create(
+            ServerFnContext.system({
+              db: getDatabaseClient(),
+              companyId,
+              userId
+            }),
+            { type: "nonConformanceTasks", id }
+          )
         )
       );
 

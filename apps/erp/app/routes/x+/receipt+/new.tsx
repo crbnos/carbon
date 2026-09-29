@@ -1,8 +1,8 @@
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import type { ServerFnResult } from "@carbon/server-functions";
+import { ServerFnContext } from "@carbon/server-functions";
 import { create } from "@carbon/server-functions/create";
 import { getErrorMessage } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
@@ -30,20 +30,16 @@ export async function action({ request }: ActionFunctionArgs) {
   const sourceDocumentId = (formData.get("sourceDocumentId") as string) ?? "";
 
   const defaults = await getUserDefaults(client, userId, companyId);
-  const serviceRole = getCarbonServiceRole();
 
   switch (sourceDocument) {
     case "Purchase Order":
-      const purchaseOrderReceipt = await (create.withClient(
-        serviceRole,
-        getDatabaseClient(),
+      const purchaseOrderReceipt = await (create(
+        ServerFnContext.system({ db: getDatabaseClient(), companyId, userId }),
         {
           type: "receiptFromPurchaseOrder",
-          companyId,
           locationId: defaults.data?.locationId as string | undefined,
           purchaseOrderId: sourceDocumentId,
-          receiptId: undefined,
-          userId: userId
+          receiptId: undefined
         }
       ) as Promise<
         ServerFnResult<{
@@ -92,16 +88,13 @@ export async function action({ request }: ActionFunctionArgs) {
 
       // No default-location guard: the create edge function falls back to
       // the return order's own location and errors specifically otherwise.
-      const salesReturnOrderReceipt = await (create.withClient(
-        serviceRole,
-        getDatabaseClient(),
+      const salesReturnOrderReceipt = await (create(
+        ServerFnContext.system({ db: getDatabaseClient(), companyId, userId }),
         {
           type: "receiptFromSalesReturnOrder",
-          companyId,
           locationId: defaults.data?.locationId as string | undefined,
           salesReturnOrderId: sourceDocumentId,
-          receiptId: undefined,
-          userId: userId
+          receiptId: undefined
         }
       ) as Promise<
         ServerFnResult<{
@@ -126,15 +119,12 @@ export async function action({ request }: ActionFunctionArgs) {
 
       throw redirect(path.to.receiptDetails(salesReturnOrderReceipt.data.id));
     case "Inbound Transfer":
-      const warehouseTransferReceipt = await (create.withClient(
-        serviceRole,
-        getDatabaseClient(),
+      const warehouseTransferReceipt = await (create(
+        ServerFnContext.system({ db: getDatabaseClient(), companyId, userId }),
         {
           type: "receiptFromInboundTransfer",
-          companyId,
           warehouseTransferId: sourceDocumentId,
-          receiptId: undefined,
-          userId: userId
+          receiptId: undefined
         }
       ) as Promise<
         ServerFnResult<{
@@ -153,14 +143,11 @@ export async function action({ request }: ActionFunctionArgs) {
 
       throw redirect(path.to.receiptDetails(warehouseTransferReceipt.data.id));
     default:
-      const defaultReceipt = await (create.withClient(
-        serviceRole,
-        getDatabaseClient(),
+      const defaultReceipt = await (create(
+        ServerFnContext.system({ db: getDatabaseClient(), companyId, userId }),
         {
           type: "receiptDefault",
-          companyId,
-          locationId: defaults.data?.locationId as string,
-          userId: userId
+          locationId: defaults.data?.locationId as string
         }
       ) as Promise<
         ServerFnResult<{

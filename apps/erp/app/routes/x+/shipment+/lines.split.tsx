@@ -1,8 +1,8 @@
 import { assertIsPost } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { validator } from "@carbon/form";
 import type { ServerFnResult } from "@carbon/server-functions";
+import { ServerFnContext } from "@carbon/server-functions";
 import { create } from "@carbon/server-functions/create";
 import type { ActionFunctionArgs } from "react-router";
 import { splitValidator } from "~/modules/inventory";
@@ -43,19 +43,14 @@ export async function action({ request }: ActionFunctionArgs) {
     };
   }
 
-  const serviceRole = getCarbonServiceRole();
-
-  const salesOrderShipment = await (create.withClient(
-    serviceRole,
-    getDatabaseClient(),
+  const salesOrderShipment = await (create(
+    ServerFnContext.system({ db: getDatabaseClient(), companyId, userId }),
     {
       type: "shipmentLineSplit",
-      companyId,
       locationId,
       shipmentId: documentId,
       shipmentLineId: documentLineId,
-      quantity,
-      userId: userId
+      quantity
     }
   ) as Promise<
     ServerFnResult<{

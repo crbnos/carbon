@@ -1,7 +1,7 @@
 import { error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
+import { ServerFnContext } from "@carbon/server-functions";
 import { postReceipt } from "@carbon/server-functions/post-receipt";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
@@ -17,8 +17,6 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (!receiptId) throw new Error("receiptId not found");
 
   try {
-    const serviceRole = getCarbonServiceRole();
-
     const { data: receipt } = await client
       .from("receipt")
       .select("status, invoiced")
@@ -61,15 +59,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
       );
     }
 
-    const voidReceipt = await postReceipt.withClient(
-      serviceRole,
-      getDatabaseClient(),
-      {
-        type: "void",
-        receiptId: receiptId,
-        userId: userId,
-        companyId: companyId
-      }
+    const voidReceipt = await postReceipt(
+      ServerFnContext.system({ db: getDatabaseClient(), companyId, userId }),
+      { type: "void", receiptId: receiptId }
     );
 
     if (voidReceipt.error) {

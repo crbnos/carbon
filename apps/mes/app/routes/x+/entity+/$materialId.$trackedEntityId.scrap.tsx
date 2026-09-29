@@ -1,6 +1,6 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { validationError, validator } from "@carbon/form";
+import { ServerFnContext } from "@carbon/server-functions";
 import { issue } from "@carbon/server-functions/issue";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
@@ -34,18 +34,17 @@ export async function action({ request, params }: ActionFunctionArgs) {
       { status: 400 }
     );
   }
-
-  const serviceRole = await getCarbonServiceRole();
-  const issued = await issue.withClient(serviceRole, getDatabaseClient(), {
-    trackedEntityId,
-    materialId,
-    parentTrackedEntityId: parentTrackedEntityId!,
-    type: "scrapTrackedEntity",
-    scrapReasonId: validation.data.scrapReasonId,
-    makeReplacement: validation.data.makeReplacement,
-    companyId,
-    userId
-  });
+  const issued = await issue(
+    ServerFnContext.system({ db: getDatabaseClient(), companyId, userId }),
+    {
+      trackedEntityId,
+      materialId,
+      parentTrackedEntityId: parentTrackedEntityId!,
+      type: "scrapTrackedEntity",
+      scrapReasonId: validation.data.scrapReasonId,
+      makeReplacement: validation.data.makeReplacement
+    }
+  );
 
   if (issued.error) {
     return data(

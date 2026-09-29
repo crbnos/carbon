@@ -1,7 +1,7 @@
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
+import { ServerFnContext } from "@carbon/server-functions";
 import { postMemo } from "@carbon/server-functions/post-memo";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
@@ -17,15 +17,11 @@ export async function action({ request, params }: ActionFunctionArgs) {
   if (!memoId) {
     return { success: false, message: "Missing memoId" };
   }
-
-  const serviceRole = getCarbonServiceRole();
   try {
-    const result = await postMemo.withClient(serviceRole, getDatabaseClient(), {
-      type: "post",
-      memoId,
-      userId,
-      companyId
-    });
+    const result = await postMemo(
+      ServerFnContext.system({ db: getDatabaseClient(), companyId, userId }),
+      { type: "post", memoId }
+    );
     if (result.error) {
       const message = result.error.message || "Failed to post memo";
       throw redirect(

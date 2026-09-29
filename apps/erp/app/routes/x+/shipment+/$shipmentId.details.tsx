@@ -1,11 +1,11 @@
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { getLogger } from "@carbon/logger";
 import type { JSONContent } from "@carbon/react";
 import type { ServerFnResult } from "@carbon/server-functions";
+import { ServerFnContext } from "@carbon/server-functions";
 import { create } from "@carbon/server-functions/create";
 import { getErrorMessage } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
@@ -62,19 +62,19 @@ export async function action({ request }: ActionFunctionArgs) {
     currentShipment.data.locationId !== d.locationId;
 
   if (shipmentDataHasChanged) {
-    const serviceRole = getCarbonServiceRole();
     switch (d.sourceDocument) {
       case "Sales Order":
-        const salesOrderShipment = await (create.withClient(
-          serviceRole,
-          getDatabaseClient(),
+        const salesOrderShipment = await (create(
+          ServerFnContext.system({
+            db: getDatabaseClient(),
+            companyId,
+            userId
+          }),
           {
             type: "shipmentFromSalesOrder",
-            companyId,
             locationId: d.locationId as string,
             salesOrderId: d.sourceDocumentId,
-            shipmentId: id,
-            userId: userId
+            shipmentId: id
           }
         ) as Promise<
           ServerFnResult<{
@@ -101,16 +101,17 @@ export async function action({ request }: ActionFunctionArgs) {
         }
         break;
       case "Sales Return Order": {
-        const salesReturnShipment = await (create.withClient(
-          serviceRole,
-          getDatabaseClient(),
+        const salesReturnShipment = await (create(
+          ServerFnContext.system({
+            db: getDatabaseClient(),
+            companyId,
+            userId
+          }),
           {
             type: "shipmentFromSalesReturnOrder",
-            companyId,
             locationId: d.locationId,
             salesReturnOrderId: d.sourceDocumentId,
-            shipmentId: id,
-            userId: userId
+            shipmentId: id
           }
         ) as Promise<
           ServerFnResult<{
@@ -138,16 +139,17 @@ export async function action({ request }: ActionFunctionArgs) {
         break;
       }
       case "Purchase Return Order": {
-        const purchaseReturnShipment = await (create.withClient(
-          serviceRole,
-          getDatabaseClient(),
+        const purchaseReturnShipment = await (create(
+          ServerFnContext.system({
+            db: getDatabaseClient(),
+            companyId,
+            userId
+          }),
           {
             type: "shipmentFromPurchaseReturnOrder",
-            companyId,
             locationId: d.locationId,
             purchaseReturnOrderId: d.sourceDocumentId,
-            shipmentId: id,
-            userId: userId
+            shipmentId: id
           }
         ) as Promise<
           ServerFnResult<{
@@ -175,16 +177,17 @@ export async function action({ request }: ActionFunctionArgs) {
         break;
       }
       case "Purchase Order":
-        const purchaseOrderShipment = await (create.withClient(
-          serviceRole,
-          getDatabaseClient(),
+        const purchaseOrderShipment = await (create(
+          ServerFnContext.system({
+            db: getDatabaseClient(),
+            companyId,
+            userId
+          }),
           {
             type: "shipmentFromPurchaseOrder",
-            companyId,
             locationId: d.locationId as string,
             purchaseOrderId: d.sourceDocumentId,
-            shipmentId: id,
-            userId: userId
+            shipmentId: id
           }
         ) as Promise<
           ServerFnResult<{
@@ -211,15 +214,16 @@ export async function action({ request }: ActionFunctionArgs) {
         }
         break;
       case "Outbound Transfer":
-        const warehouseTransferShipment = await (create.withClient(
-          serviceRole,
-          getDatabaseClient(),
+        const warehouseTransferShipment = await (create(
+          ServerFnContext.system({
+            db: getDatabaseClient(),
+            companyId,
+            userId
+          }),
           {
             type: "shipmentFromWarehouseTransfer",
-            companyId,
             warehouseTransferId: d.sourceDocumentId,
-            shipmentId: id,
-            userId: userId
+            shipmentId: id
           }
         ) as Promise<
           ServerFnResult<{
