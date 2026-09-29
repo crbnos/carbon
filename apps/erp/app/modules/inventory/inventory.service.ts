@@ -2955,6 +2955,7 @@ export async function getPickingListLineTrackedEntities(
  */
 export async function setPickingListLineTrackedEntity(
   client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   args: {
     pickingListLineId: string;
     trackedEntityId: string;
@@ -2965,6 +2966,7 @@ export async function setPickingListLineTrackedEntity(
     companyId: string;
   }
 ) {
+  const { postPickingAs } = await import("@carbon/operations/post-picking");
   const lineResult = await client
     .from("pickingListLine")
     .select(
@@ -3032,7 +3034,11 @@ export async function setPickingListLineTrackedEntity(
     if (isBatch) body.quantity = Math.max(1, args.quantity ?? 1);
   }
 
-  const result = await client.functions.invoke("post-picking", { body });
+  const result = await postPickingAs(
+    client,
+    db,
+    body as Parameters<typeof postPickingAs>[2]
+  );
   if (result.error) {
     return {
       data: null,
@@ -3949,6 +3955,7 @@ export async function generatePickingList(
  */
 export async function pickPickingListLine(
   client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   args: {
     pickingListLineId: string;
     quantity: number;
@@ -3957,6 +3964,7 @@ export async function pickPickingListLine(
     companyId: string;
   }
 ) {
+  const { postPickingAs } = await import("@carbon/operations/post-picking");
   const lineResult = await client
     .from("pickingListLine")
     .select(
@@ -4037,7 +4045,11 @@ export async function pickPickingListLine(
             companyId: args.companyId
           };
 
-    const result = await client.functions.invoke("post-picking", { body });
+    const result = await postPickingAs(
+      client,
+      db,
+      body as Parameters<typeof postPickingAs>[2]
+    );
 
     if (result.error) {
       return {

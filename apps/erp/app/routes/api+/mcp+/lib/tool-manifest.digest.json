@@ -1450,7 +1450,7 @@
     {"name":"settings_getWebhooks","classification":"READ","paramCount":3,"schema":"04eded31eebb","response":"f236afae1a37","injectAuth":"companyId","permission":"settings:view","paginates":true},
     {"name":"settings_getWebhookTables","classification":"READ","paramCount":0,"schema":"efddc7bd8bbc","response":"633f9f3bffc6","injectAuth":"companyId","permission":"settings:view","paginates":false},
     {"name":"settings_insertSubsidiary","classification":"WRITE","paramCount":20,"schema":"b6b1b6ddf516","response":"3797626bd17e","injectAuth":"companyId+createdBy+updatedBy","permission":"settings:create","paginates":false},
-    {"name":"settings_resolveSections","classification":"WRITE","paramCount":1,"schema":"0eb0c2be01ed","response":"9cf53d9645e3","injectAuth":"companyId","permission":"settings:update","paginates":false},
+    {"name":"settings_resolveSections","classification":"WRITE","paramCount":1,"schema":"0eb0c2be01ed","response":"59781d2a00b3","injectAuth":"companyId","permission":"settings:update","paginates":false},
     {"name":"settings_updateAccountingEnabledSetting","classification":"WRITE","paramCount":1,"schema":"82d5e14a67e0","response":"bcde375ebd4c","injectAuth":"companyId+updatedBy","permission":"settings:update","paginates":false},
     {"name":"settings_updateAccountsPayableAddressSetting","classification":"WRITE","paramCount":1,"schema":"7a679bb0d746","response":"bcde375ebd4c","injectAuth":"companyId+updatedBy","permission":"settings:update","paginates":false},
     {"name":"settings_updateAccountsPayableBillingAddress","classification":"WRITE","paramCount":10,"schema":"1d9ef8425567","response":"bcde375ebd4c","injectAuth":"companyId+updatedBy","permission":"settings:update","paginates":false},

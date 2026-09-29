@@ -157,11 +157,6 @@ verify_jwt = true
 # For example, if you want to serve static HTML pages in your function:
 # static_files = [ "./functions/sync/*.html" ]
 
-[functions.post-picking]
-enabled = true
-verify_jwt = true
-entrypoint = "./functions/post-picking/index.ts"
-
 [functions.post-charge]
 enabled = true
 verify_jwt = true

@@ -3149,8 +3149,10 @@ export async function updateJobOperationStatus(
  */
 export async function returnPickedRemaindersForOperation(
   client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   args: { jobOperationId: string; userId: string; companyId: string }
 ) {
+  const { postPickingAs } = await import("@carbon/operations/post-picking");
   const op = await client
     .from("jobOperation")
     .select("jobId")
@@ -3183,7 +3185,7 @@ export async function returnPickedRemaindersForOperation(
           companyId: args.companyId
         };
 
-  return client.functions.invoke("post-picking", { body });
+  return postPickingAs(client, db, body);
 }
 
 /**
@@ -3192,15 +3194,15 @@ export async function returnPickedRemaindersForOperation(
  */
 export async function returnPickedRemaindersForJob(
   client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   args: { jobId: string; userId: string; companyId: string }
 ) {
-  return client.functions.invoke("post-picking", {
-    body: {
-      type: "returnJobRemainders",
-      jobId: args.jobId,
-      userId: args.userId,
-      companyId: args.companyId
-    }
+  const { postPickingAs } = await import("@carbon/operations/post-picking");
+  return postPickingAs(client, db, {
+    type: "returnJobRemainders",
+    jobId: args.jobId,
+    userId: args.userId,
+    companyId: args.companyId
   });
 }
 
@@ -10292,6 +10294,7 @@ export async function completeOperation(
     quantity: number;
   }
 ) {
+  const { postPickingAs } = await import("@carbon/operations/post-picking");
   const { issueAs } = await import("@carbon/operations/issue");
   const operation = await client
     .from("jobOperation")
@@ -10414,11 +10417,10 @@ export async function completeOperation(
               userId,
               companyId
             };
-      const { error: returnError } = await client.functions.invoke(
-        "post-picking",
-        {
-          body: returnBody
-        }
+      const { error: returnError } = await postPickingAs(
+        client,
+        db,
+        returnBody
       );
       if (returnError) {
         logger.error("picked-material return sweep failed", {

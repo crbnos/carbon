@@ -1,30 +1,33 @@
-import { serve } from "https://deno.land/std@0.175.0/http/server.ts";
-import { nanoid } from "https://deno.land/x/nanoid@v3.0.0/nanoid.ts";
-import { z } from "https://deno.land/x/zod@v3.21.4/mod.ts";
-import { sql } from "kysely";
-import { DB, getConnectionPool, getDatabaseClient } from "../lib/database.ts";
-import { assertCompanyRecords, RecordNotFoundError } from "../lib/company-records.ts";
-import { datetime, getCompanyTimeZone } from "../lib/datetime.ts";
-import { corsPreflight, errorResponse, jsonResponse } from "../lib/response.ts";
-import { requirePermissions } from "../lib/supabase.ts";
-import type { Database } from "../lib/types.ts";
-import { resolveTrackedEntityBin } from "../shared/resolve-tracked-entity-bin.ts";
+import type { Database } from "@carbon/database";
+import type { KyselyDatabase } from "@carbon/database/client";
+import { datetime, getCompanyTimeZone } from "@carbon/database/datetime";
+import {
+  getPickedBudgets,
+  orderOldFirst
+} from "@carbon/database/picked-consumption";
+import {
+  assertEntityCoversPick,
+  resolvePick,
+  resolveTrackedEntityBin,
+  settleQuantity
+} from "@carbon/database/posting";
 import {
   buildBatchSplitRecords,
   buildMergeRecords,
-  isFullDraw
-} from "../shared/batch-split.ts";
-import { settleQuantity } from "../shared/entity-drain.ts";
+  isFullDraw,
+  round
+} from "@carbon/utils";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import { type Insertable, type Kysely, sql } from "kysely";
+import { nanoid } from "nanoid";
+import { z } from "zod";
+import { assertCompanyRecords, RecordNotFoundError } from "../company-records";
 import {
-  assertEntityCoversPick,
-  PickGuardError,
-  resolvePick
-} from "../shared/pick-guards.ts";
-import { round } from "../shared/precision.ts";
-import { getPickedBudgets, orderOldFirst } from "../lib/picked-consumption.ts";
-
-const pool = getConnectionPool(1);
-const db = getDatabaseClient<DB>(pool);
+  assertOperationPermissions,
+  callerContext,
+  type OperationContext
+} from "../context";
+import { runOperation } from "../result";
 
 type ItemLedgerInsert = Database["public"]["Tables"]["itemLedger"]["Insert"];
 
@@ -32,24 +35,20 @@ type ItemLedgerInsert = Database["public"]["Tables"]["itemLedger"]["Insert"];
 // (pickingListLine.storageUnitId) to the work center's lineside shelf
 // (pickingListLine.toStorageUnitId). Consumption happens later at production,
 // which is why we also point jobMaterial.storageUnitId at the lineside shelf.
-const payloadValidator = z.discriminatedUnion("type", [
+export const postPickingInput = z.discriminatedUnion("type", [
   z.object({
     type: z.literal("inventory"),
     pickingListId: z.string(),
     pickingListLineId: z.string(),
     quantity: z.number().positive(),
-    locationId: z.string(),
-    userId: z.string(),
-    companyId: z.string()
+    locationId: z.string()
   }),
   z.object({
     type: z.literal("unpickInventory"),
     pickingListId: z.string(),
     pickingListLineId: z.string(),
     quantity: z.number().positive(),
-    locationId: z.string(),
-    userId: z.string(),
-    companyId: z.string()
+    locationId: z.string()
   }),
   z.object({
     type: z.literal("serial"),
@@ -57,9 +56,7 @@ const payloadValidator = z.discriminatedUnion("type", [
     pickingListLineId: z.string(),
     trackedEntityId: z.string(),
     fromStorageUnitId: z.string().nullable(),
-    locationId: z.string(),
-    userId: z.string(),
-    companyId: z.string()
+    locationId: z.string()
   }),
   z.object({
     type: z.literal("batch"),
@@ -68,27 +65,21 @@ const payloadValidator = z.discriminatedUnion("type", [
     trackedEntityId: z.string(),
     fromStorageUnitId: z.string().nullable(),
     quantity: z.number().positive(),
-    locationId: z.string(),
-    userId: z.string(),
-    companyId: z.string()
+    locationId: z.string()
   }),
   z.object({
     type: z.literal("unpickSerial"),
     pickingListId: z.string(),
     pickingListLineId: z.string(),
     trackedEntityId: z.string(),
-    locationId: z.string(),
-    userId: z.string(),
-    companyId: z.string()
+    locationId: z.string()
   }),
   z.object({
     type: z.literal("unpickBatch"),
     pickingListId: z.string(),
     pickingListLineId: z.string(),
     trackedEntityId: z.string(),
-    locationId: z.string(),
-    userId: z.string(),
-    companyId: z.string()
+    locationId: z.string()
   }),
   // Return the un-consumed remainder of a tracked (batch/serial) allocation from
   // the lineside shelf back to the warehouse source at job complete. Unlike
@@ -101,9 +92,7 @@ const payloadValidator = z.discriminatedUnion("type", [
     pickingListId: z.string(),
     pickingListLineId: z.string(),
     trackedEntityId: z.string(),
-    locationId: z.string(),
-    userId: z.string(),
-    companyId: z.string()
+    locationId: z.string()
   }),
   // Sweep every picking-list line of one operation (policy-gated: no-ops unless
   // companySettings.returnPickedMaterialTiming = 'operation') or of one job
@@ -113,40 +102,57 @@ const payloadValidator = z.discriminatedUnion("type", [
   // back what completion-time backflush still needs.
   z.object({
     type: z.literal("returnOperationRemainders"),
-    jobOperationId: z.string(),
-    userId: z.string(),
-    companyId: z.string()
+    jobOperationId: z.string()
   }),
   z.object({
     type: z.literal("returnJobRemainders"),
-    jobId: z.string(),
-    userId: z.string(),
-    companyId: z.string()
+    jobId: z.string()
   })
 ]);
 
-serve(async (req: Request) => {
-  const preflight = corsPreflight(req);
-  if (preflight) return preflight;
+/**
+ * `postPicking` for app code that holds a Supabase client: a service-role client
+ * runs it as the system, any other client is permission-checked.
+ */
+export async function postPickingAs(
+  client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
+  input: z.input<typeof postPickingInput> & {
+    companyId: string;
+    userId: string;
+  }
+) {
+  const { companyId, userId } = input;
+  return postPicking(
+    await callerContext(client, { db, companyId, userId }),
+    input
+  );
+}
 
-  try {
-    const payload = await req.json();
-    const validatedPayload = payloadValidator.parse(payload);
+/** Picks, un-picks and returns picking-list material, per `type`. */
+export function postPicking(
+  ctx: OperationContext,
+  input: z.input<typeof postPickingInput>
+) {
+  return runOperation("post-picking", async () => {
+    const { db } = ctx;
+    const validatedPayload = {
+      ...postPickingInput.parse(input),
+      companyId: ctx.companyId,
+      userId: ctx.userId
+    };
 
     // Kysely below bypasses RLS: the caller must belong to the company it names.
-    try {
-      await requirePermissions(req, validatedPayload.companyId, validatedPayload.userId, {});
-    } catch (err) {
-      return errorResponse(err, 401);
-    }
+    await assertOperationPermissions(ctx, {});
 
-    // requirePermissions proves the caller may act in companyId, not that the
+    // The permission check proves the caller may act in companyId, not that the
     // body's ids belong to it. Every line-scoped case writes pickingListId as the
     // ledger/activity documentId and locationId / fromStorageUnitId /
     // trackedEntityId onto this company's ledger rows, so all of them are
     // re-read under companyId — and the line must be on the list the body names.
     if ("pickingListLineId" in validatedPayload) {
-      const { companyId, pickingListId, pickingListLineId, locationId } = validatedPayload;
+      const { companyId, pickingListId, pickingListLineId, locationId } =
+        validatedPayload;
       const line = await db
         .selectFrom("pickingListLine")
         .select("id")
@@ -155,24 +161,40 @@ serve(async (req: Request) => {
         .where("companyId", "=", companyId)
         .executeTakeFirst();
       if (!line) throw new RecordNotFoundError("Picking list line not found");
-      await assertCompanyRecords(db, "location", [locationId], companyId, "Location");
+      await assertCompanyRecords(
+        db,
+        "location",
+        [locationId],
+        companyId,
+        "Location"
+      );
       await assertCompanyRecords(
         db,
         "storageUnit",
-        ["fromStorageUnitId" in validatedPayload ? validatedPayload.fromStorageUnitId : null],
+        [
+          "fromStorageUnitId" in validatedPayload
+            ? validatedPayload.fromStorageUnitId
+            : null
+        ],
         companyId,
         "Storage unit"
       );
       await assertCompanyRecords(
         db,
         "trackedEntity",
-        ["trackedEntityId" in validatedPayload ? validatedPayload.trackedEntityId : null],
+        [
+          "trackedEntityId" in validatedPayload
+            ? validatedPayload.trackedEntityId
+            : null
+        ],
         companyId,
         "Tracked entity"
       );
     }
 
-    const today = datetime.today(await getCompanyTimeZone(db, validatedPayload.companyId)).toString();
+    const today = datetime
+      .today(await getCompanyTimeZone(db, validatedPayload.companyId))
+      .toString();
     let splitEntityId: string | undefined;
 
     switch (validatedPayload.type) {
@@ -238,14 +260,14 @@ serve(async (req: Request) => {
               }),
               status: "Picked",
               updatedBy: userId,
-              updatedAt: new Date().toISOString()
+              updatedAt: datetime.timestamp()
             })
             .where("id", "=", pickingListLineId)
             .where("companyId", "=", companyId)
             .execute();
 
           // Production consumes from where the material now physically sits.
-          await pointJobMaterialAtLineside(trx, line, userId);
+          await pointJobMaterialAtLineside(trx, line, userId, companyId);
         });
         break;
       }
@@ -311,14 +333,14 @@ serve(async (req: Request) => {
               ),
               status: "Pending",
               updatedBy: userId,
-              updatedAt: new Date().toISOString()
+              updatedAt: datetime.timestamp()
             })
             .where("id", "=", pickingListLineId)
             .where("companyId", "=", companyId)
             .execute();
 
           // Restore the warehouse source as the consumption point.
-          await restoreJobMaterialSource(trx, line, userId);
+          await restoreJobMaterialSource(trx, line, userId, companyId);
         });
         break;
       }
@@ -417,7 +439,7 @@ serve(async (req: Request) => {
               }),
               status: "Picked",
               updatedBy: userId,
-              updatedAt: new Date().toISOString()
+              updatedAt: datetime.timestamp()
             })
             .where("id", "=", pickingListLineId)
             .where("companyId", "=", companyId)
@@ -430,19 +452,21 @@ serve(async (req: Request) => {
             .values({
               pickingListLineId,
               trackedEntityId,
+              companyId,
               quantity: 1,
               quantityPicked: 1
             })
             .onConflict((oc) =>
               oc.columns(["pickingListLineId", "trackedEntityId"]).doUpdateSet({
-                quantity: (eb) => eb("pickingListLineTrackedEntity.quantity", "+", 1),
+                quantity: (eb) =>
+                  eb("pickingListLineTrackedEntity.quantity", "+", 1),
                 quantityPicked: (eb) =>
                   eb("pickingListLineTrackedEntity.quantityPicked", "+", 1)
               })
             )
             .execute();
 
-          await pointJobMaterialAtLineside(trx, line, userId);
+          await pointJobMaterialAtLineside(trx, line, userId, companyId);
         });
         break;
       }
@@ -548,12 +572,20 @@ serve(async (req: Request) => {
 
             await trx
               .insertInto("trackedActivity")
-              .values(split.activityInsert)
+              .values(
+                split.activityInsert as Insertable<
+                  KyselyDatabase["trackedActivity"]
+                >
+              )
               .execute();
 
             await trx
               .insertInto("trackedEntity")
-              .values(split.childEntityInsert)
+              .values(
+                split.childEntityInsert as Insertable<
+                  KyselyDatabase["trackedEntity"]
+                >
+              )
               .execute();
 
             await trx
@@ -570,13 +602,14 @@ serve(async (req: Request) => {
               .updateTable("trackedEntity")
               .set(split.parentUpdate)
               .where("id", "=", trackedEntityId)
+              .where("companyId", "=", companyId)
               .execute();
 
             inserts.push(
-              ...split.ledgerInserts.map((ledgerRow) => ({
+              ...(split.ledgerInserts.map((ledgerRow) => ({
                 ...ledgerRow,
                 quantity: round(ledgerRow.quantity)
-              }))
+              })) as typeof inserts)
             );
           }
 
@@ -648,7 +681,7 @@ serve(async (req: Request) => {
               quantityPicked: newQuantityPicked,
               status: "Picked",
               updatedBy: userId,
-              updatedAt: new Date().toISOString()
+              updatedAt: datetime.timestamp()
             })
             .where("id", "=", pickingListLineId)
             .where("companyId", "=", companyId)
@@ -663,13 +696,18 @@ serve(async (req: Request) => {
             .values({
               pickingListLineId,
               trackedEntityId: pickedEntityId,
+              companyId,
               quantity: transferQuantity,
               quantityPicked: transferQuantity
             })
             .onConflict((oc) =>
               oc.columns(["pickingListLineId", "trackedEntityId"]).doUpdateSet({
                 quantity: (eb) =>
-                  eb("pickingListLineTrackedEntity.quantity", "+", transferQuantity),
+                  eb(
+                    "pickingListLineTrackedEntity.quantity",
+                    "+",
+                    transferQuantity
+                  ),
                 quantityPicked: (eb) =>
                   eb(
                     "pickingListLineTrackedEntity.quantityPicked",
@@ -680,7 +718,7 @@ serve(async (req: Request) => {
             )
             .execute();
 
-          await pointJobMaterialAtLineside(trx, line, userId);
+          await pointJobMaterialAtLineside(trx, line, userId, companyId);
         });
         break;
       }
@@ -765,10 +803,12 @@ serve(async (req: Request) => {
           await trx
             .deleteFrom("trackedActivityInput")
             .where("trackedActivityId", "=", activity.id!)
+            .where("companyId", "=", companyId)
             .execute();
           await trx
             .deleteFrom("trackedActivity")
             .where("id", "=", activity.id!)
+            .where("companyId", "=", companyId)
             .execute();
 
           await trx
@@ -780,7 +820,7 @@ serve(async (req: Request) => {
               ),
               status: "Pending",
               updatedBy: userId,
-              updatedAt: new Date().toISOString()
+              updatedAt: datetime.timestamp()
             })
             .where("id", "=", pickingListLineId)
             .where("companyId", "=", companyId)
@@ -791,9 +831,10 @@ serve(async (req: Request) => {
             .deleteFrom("pickingListLineTrackedEntity")
             .where("pickingListLineId", "=", pickingListLineId)
             .where("trackedEntityId", "=", trackedEntityId)
+            .where("companyId", "=", companyId)
             .execute();
 
-          await restoreJobMaterialSource(trx, line, userId);
+          await restoreJobMaterialSource(trx, line, userId, companyId);
         });
         break;
       }
@@ -941,12 +982,14 @@ serve(async (req: Request) => {
                   )
                 })
                 .where("id", "=", parent.id)
+                .where("companyId", "=", companyId)
                 .execute();
 
               await trx
                 .updateTable("trackedEntity")
                 .set(childSettled)
                 .where("id", "=", trackedEntityId)
+                .where("companyId", "=", companyId)
                 .execute();
 
               // Net out the original split pair at the source bin. Keep the
@@ -986,14 +1029,17 @@ serve(async (req: Request) => {
                 await trx
                   .deleteFrom("trackedActivityOutput")
                   .where("trackedActivityId", "=", splitActivity.id!)
+                  .where("companyId", "=", companyId)
                   .execute();
                 await trx
                   .deleteFrom("trackedActivityInput")
                   .where("trackedActivityId", "=", splitActivity.id!)
+                  .where("companyId", "=", companyId)
                   .execute();
                 await trx
                   .deleteFrom("trackedActivity")
                   .where("id", "=", splitActivity.id!)
+                  .where("companyId", "=", companyId)
                   .execute();
               }
             }
@@ -1004,10 +1050,12 @@ serve(async (req: Request) => {
           await trx
             .deleteFrom("trackedActivityInput")
             .where("trackedActivityId", "=", activity.id!)
+            .where("companyId", "=", companyId)
             .execute();
           await trx
             .deleteFrom("trackedActivity")
             .where("id", "=", activity.id!)
+            .where("companyId", "=", companyId)
             .execute();
 
           await trx
@@ -1015,11 +1063,14 @@ serve(async (req: Request) => {
             .set({
               quantityPicked: Math.max(
                 0,
-                round(round(Number(line.quantityPicked ?? 0)) - round(unpickQuantity))
+                round(
+                  round(Number(line.quantityPicked ?? 0)) -
+                    round(unpickQuantity)
+                )
               ),
               status: "Pending",
               updatedBy: userId,
-              updatedAt: new Date().toISOString()
+              updatedAt: datetime.timestamp()
             })
             .where("id", "=", pickingListLineId)
             .where("companyId", "=", companyId)
@@ -1030,16 +1081,22 @@ serve(async (req: Request) => {
             .deleteFrom("pickingListLineTrackedEntity")
             .where("pickingListLineId", "=", pickingListLineId)
             .where("trackedEntityId", "=", trackedEntityId)
+            .where("companyId", "=", companyId)
             .execute();
 
-          await restoreJobMaterialSource(trx, line, userId);
+          await restoreJobMaterialSource(trx, line, userId, companyId);
         });
         break;
       }
 
       case "returnPickedRemainder": {
-        const { pickingListLineId, trackedEntityId, locationId, userId, companyId } =
-          validatedPayload;
+        const {
+          pickingListLineId,
+          trackedEntityId,
+          locationId,
+          userId,
+          companyId
+        } = validatedPayload;
 
         await db.transaction().execute(async (trx) => {
           // Lock the line: every case here read-modify-writes its picked or
@@ -1067,7 +1124,7 @@ serve(async (req: Request) => {
           // only when something actually returned (matching the original
           // early-return behavior). The sweep cases decide per material.
           if (totalReturned > 0) {
-            await restoreJobMaterialSource(trx, line, userId);
+            await restoreJobMaterialSource(trx, line, userId, companyId);
           }
         });
         break;
@@ -1104,7 +1161,11 @@ serve(async (req: Request) => {
 
           await runReturnSweep(trx, {
             scope: "operation",
-            job: { id: job.id, quantity: job.quantity, locationId: job.locationId },
+            job: {
+              id: job.id,
+              quantity: job.quantity,
+              locationId: job.locationId
+            },
             opId: op.id,
             opQuantityComplete: Number(op.quantityComplete ?? 0),
             today,
@@ -1136,7 +1197,11 @@ serve(async (req: Request) => {
 
           await runReturnSweep(trx, {
             scope: "job",
-            job: { id: job.id, quantity: job.quantity, locationId: job.locationId },
+            job: {
+              id: job.id,
+              quantity: job.quantity,
+              locationId: job.locationId
+            },
             today,
             userId,
             companyId
@@ -1146,15 +1211,9 @@ serve(async (req: Request) => {
       }
     }
 
-    return jsonResponse({ success: true, splitEntityId });
-  } catch (err) {
-    // A pick guard is a caller-input refusal, not a server fault — surface it
-    // as a 400 with its message so the scan UI can show "already fully picked"
-    // instead of a generic failure. Matches post-stock-transfer.
-    const status = err instanceof PickGuardError ? 400 : 500;
-    return errorResponse(err, status);
-  }
-});
+    return { success: true, splitEntityId };
+  });
+}
 
 // A balanced Transfer ledger pair moving `quantity` of a tracked entity from one
 // storage unit to another (a pick, unpick, or return is all the same shape).
@@ -1182,8 +1241,16 @@ function transferPair(args: {
     companyId: args.companyId
   };
   return [
-    { ...base, quantity: round(-args.quantity), storageUnitId: args.fromStorageUnitId },
-    { ...base, quantity: round(args.quantity), storageUnitId: args.toStorageUnitId }
+    {
+      ...base,
+      quantity: round(-args.quantity),
+      storageUnitId: args.fromStorageUnitId
+    },
+    {
+      ...base,
+      quantity: round(args.quantity),
+      storageUnitId: args.toStorageUnitId
+    }
   ];
 }
 
@@ -1192,7 +1259,8 @@ function transferPair(args: {
 async function pointJobMaterialAtLineside(
   trx: any,
   line: { jobMaterialId: string; toStorageUnitId: string | null },
-  userId: string
+  userId: string,
+  companyId: string
 ) {
   if (!line.toStorageUnitId) return;
   await trx
@@ -1200,9 +1268,10 @@ async function pointJobMaterialAtLineside(
     .set({
       storageUnitId: line.toStorageUnitId,
       updatedBy: userId,
-      updatedAt: new Date().toISOString()
+      updatedAt: datetime.timestamp()
     })
     .where("id", "=", line.jobMaterialId)
+    .where("companyId", "=", companyId)
     .execute();
 }
 
@@ -1210,16 +1279,18 @@ async function pointJobMaterialAtLineside(
 async function restoreJobMaterialSource(
   trx: any,
   line: { jobMaterialId: string; storageUnitId: string | null },
-  userId: string
+  userId: string,
+  companyId: string
 ) {
   await trx
     .updateTable("jobMaterial")
     .set({
       storageUnitId: line.storageUnitId,
       updatedBy: userId,
-      updatedAt: new Date().toISOString()
+      updatedAt: datetime.timestamp()
     })
     .where("id", "=", line.jobMaterialId)
+    .where("companyId", "=", companyId)
     .execute();
 }
 
@@ -1292,9 +1363,15 @@ async function returnTrackedAllocationRemainder(
   // unassigned bin), fall through to the line bin rather than reusing an
   // older pick's stale shelf.
   const latestPickForLine = pickActivities
-    .map((a: { attributes: unknown }) => a.attributes as Record<string, unknown> | null)
+    .map(
+      (a: { attributes: unknown }) =>
+        a.attributes as Record<string, unknown> | null
+    )
     // Disambiguate if the same entity was picked on multiple lines.
-    .find((a: Record<string, unknown> | null) => a?.["Picking List Line"] === line.id);
+    .find(
+      (a: Record<string, unknown> | null) =>
+        a?.["Picking List Line"] === line.id
+    );
   const pickedFromShelf = latestPickForLine?.["From Shelf"] as
     | string
     | null
@@ -1348,7 +1425,7 @@ async function returnTrackedAllocationRemainder(
       .where("storageUnitId", "=", lineside)
       .where("itemId", "=", line.itemId)
       .where("companyId", "=", companyId)
-      .select((eb: any) => eb.fn.sum<number>("quantity").as("qty"))
+      .select((eb: any) => eb.fn.sum("quantity").as("qty"))
       .executeTakeFirst();
     const onHand = Number(onHandRow?.qty ?? 0);
     if (onHand <= 0) continue;
@@ -1445,11 +1522,13 @@ async function returnTrackedAllocationRemainder(
             .updateTable("trackedEntity")
             .set(merge.parentUpdate)
             .where("id", "=", parent.id)
+            .where("companyId", "=", companyId)
             .execute();
           await trx
             .updateTable("trackedEntity")
             .set(merge.childUpdate)
             .where("id", "=", entity.id)
+            .where("companyId", "=", companyId)
             .execute();
 
           merged = true;
@@ -1502,6 +1581,7 @@ async function returnTrackedAllocationRemainder(
         .deleteFrom("pickingListLineTrackedEntity")
         .where("pickingListLineId", "=", line.id)
         .where("trackedEntityId", "=", trackedEntityId)
+        .where("companyId", "=", companyId)
         .execute();
     } else {
       await trx
@@ -1509,6 +1589,7 @@ async function returnTrackedAllocationRemainder(
         .set({ quantity: nextQuantity, quantityPicked: nextPicked })
         .where("pickingListLineId", "=", line.id)
         .where("trackedEntityId", "=", trackedEntityId)
+        .where("companyId", "=", companyId)
         .execute();
     }
   }
@@ -1518,7 +1599,7 @@ async function returnTrackedAllocationRemainder(
     .set((eb: any) => ({
       quantityReturned: eb("quantityReturned", "+", totalReturned),
       updatedBy: userId,
-      updatedAt: new Date().toISOString()
+      updatedAt: datetime.timestamp()
     }))
     .where("id", "=", line.id)
     .where("companyId", "=", companyId)
@@ -1585,7 +1666,8 @@ async function returnUntrackedMaterialRemainder(
   // Newest-first: return the most recently staged stock, deterministic.
   staged.sort(
     (a, b) =>
-      new Date(b.createdAt ?? 0).getTime() - new Date(a.createdAt ?? 0).getTime()
+      new Date(b.createdAt ?? 0).getTime() -
+      new Date(a.createdAt ?? 0).getTime()
   );
 
   // Lazy fallback bin for lines picked from an unassigned source.
@@ -1627,7 +1709,11 @@ async function returnUntrackedMaterialRemainder(
       companyId
     };
     inserts.push(
-      { ...base, quantity: round(-quantity), storageUnitId: line.toStorageUnitId },
+      {
+        ...base,
+        quantity: round(-quantity),
+        storageUnitId: line.toStorageUnitId
+      },
       { ...base, quantity: round(quantity), storageUnitId: target }
     );
 
@@ -1636,7 +1722,7 @@ async function returnUntrackedMaterialRemainder(
       .set((eb: any) => ({
         quantityReturned: eb("quantityReturned", "+", quantity),
         updatedBy: userId,
-        updatedAt: new Date().toISOString()
+        updatedAt: datetime.timestamp()
       }))
       .where("id", "=", line.id)
       .where("companyId", "=", companyId)
@@ -1667,7 +1753,8 @@ async function runReturnSweep(
     companyId: string;
   }
 ) {
-  const { scope, job, opId, opQuantityComplete, today, userId, companyId } = args;
+  const { scope, job, opId, opQuantityComplete, today, userId, companyId } =
+    args;
 
   let lineQuery = trx
     .selectFrom("pickingListLine as pll")
@@ -1812,7 +1899,12 @@ async function maybeRestoreJobMaterialSource(
     .where("pll.companyId", "=", companyId)
     .where("pll.status", "<>", "Cancelled")
     .where("pl.status", "not in", ["Draft", "Cancelled"])
-    .select(["pll.storageUnitId", "pll.quantityPicked", "pll.quantityReturned", "pll.createdAt"])
+    .select([
+      "pll.storageUnitId",
+      "pll.quantityPicked",
+      "pll.quantityReturned",
+      "pll.createdAt"
+    ])
     .execute();
 
   if (scope === "operation") {
@@ -1828,13 +1920,15 @@ async function maybeRestoreJobMaterialSource(
     .filter((l: ReturnSweepLine) => l.storageUnitId)
     .sort(
       (a: ReturnSweepLine, b: ReturnSweepLine) =>
-        new Date(b.createdAt ?? 0).getTime() - new Date(a.createdAt ?? 0).getTime()
+        new Date(b.createdAt ?? 0).getTime() -
+        new Date(a.createdAt ?? 0).getTime()
     )[0];
   if (!sourceLine) return;
 
   await restoreJobMaterialSource(
     trx,
     { jobMaterialId: material.id, storageUnitId: sourceLine.storageUnitId },
-    userId
+    userId,
+    companyId
   );
 }

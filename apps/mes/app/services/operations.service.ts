@@ -368,7 +368,7 @@ export async function finishJobOperation(
     // last operation. Return any picked-but-unconsumed stock staged at lineside
     // back to its warehouse source — the SQL trigger can't call edge functions,
     // so we orchestrate it here.
-    const { jobId } = await returnPickedRemainders(client, args);
+    const { jobId } = await returnPickedRemainders(client, db, args);
 
     if (jobId) {
       await raiseMoment("production.jobOperationCompleted", {
@@ -434,12 +434,14 @@ export async function finishJobOperation(
  */
 export async function returnPickedRemainders(
   client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   args: {
     jobOperationId: string;
     userId: string;
     companyId: string;
   }
 ): Promise<{ jobId: string | undefined }> {
+  const { postPickingAs } = await import("@carbon/operations/post-picking");
   const op = await client
     .from("jobOperation")
     .select("jobId")
@@ -474,7 +476,7 @@ export async function returnPickedRemainders(
 
   // `functions.invoke` resolves to `{ data, error }` rather than rejecting —
   // inspect and log, otherwise a stranded lineside remainder is lost silently.
-  const { error } = await client.functions.invoke("post-picking", { body });
+  const { error } = await postPickingAs(client, db, body);
   if (error) {
     log.error("picked-material return sweep failed", {
       error,
