@@ -131,16 +131,24 @@ export const OnshapeV2 = defineIntegration({
     // Opened here, inside the click, so the browser still holds user
     // activation; the fetch below can take as long as it needs.
     const popup = beginOAuthPopup();
+    let error = "unexpected";
     try {
       const response = await fetch("/api/integrations/onshape-v2/install");
-      const body = await response.json();
-      if (!response.ok || !body?.url) {
-        throw new Error(body?.error ?? `Carbon answered ${response.status}`);
+      const body = (await response.json()) as { url?: string; error?: string };
+      if (body?.url) {
+        // The callback (api/integrations/onshape-v2/oauth) posts an
+        // OAuthPopupResult back to this window and closes the popup;
+        // IntegrationCard listens for it.
+        popup.navigate(body.url);
+        return;
       }
-      popup.navigate(body.url);
-    } catch (error) {
-      popup.close();
-      throw error;
+      error = body?.error ?? error;
+    } catch {
+      // Fall through to the error toast below.
     }
+    popup.close();
+    // The integrations page turns `?integration=&error=` into a toast — the
+    // same place a failed callback lands (see integration-errors.ts).
+    window.location.href = `/x/settings/integrations?integration=${ONSHAPE_V2_INTEGRATION_ID}&error=${error}`;
   }
 });
