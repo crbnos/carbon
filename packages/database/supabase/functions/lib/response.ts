@@ -109,13 +109,12 @@ function zodIssueSummary(err: unknown): string | null {
  * - SANITIZES: when `isDataLayerError(err)`, the message is dropped from the body and only
  *   logged. Raw text like `duplicate key value violates unique constraint "receiptLine_pkey"`
  *   must never reach a toast. The caller's fallback string wins instead.
- * - OMITS the `message` key entirely when there is no usable message. Load-bearing —
- *   `getEdgeFunctionErrorMessage(err, fallback)` falls back to the caller's own copy.
+ * - OMITS the `message` key entirely when there is no usable message, so the caller
+ *   falls back to its own copy.
  * - `console.error`s the ORIGINAL value (not the extracted string) so the stack and the
  *   sanitized detail both survive into the Supabase log drain.
- * - `extra` merges additional top-level keys — currently only `invalidLineIds` from
- *   `post-inventory-count`. `undefined` values are dropped so callers can pass optionals
- *   without conditional spreads.
+ * - `extra` merges additional top-level keys. `undefined` values are dropped so callers
+ *   can pass optionals without conditional spreads.
  * - A numeric 4xx/5xx `err.status` (e.g. `RecordNotFoundError`'s 404, a rate-limit 429)
  *   wins over `status`, so a catch block needn't map each error class itself.
  */

@@ -157,7 +157,7 @@ Deno.test("a ZodError with no issues omits the message key entirely", async () =
     name: "ZodError",
     issues: [],
   });
-  // `getEdgeFunctionErrorMessage` falls back to the caller's own copy when the
+  // The caller falls back to its own copy when the
   // key is absent, so an empty summary must not ship an empty string.
   assertEquals(await errorResponse(err).json(), {});
 });
@@ -179,7 +179,7 @@ Deno.test("isDataLayerError returns false for non-data-layer values", () => {
 });
 
 Deno.test("errorResponse uses a numeric 4xx/5xx err.status over the passed status", async () => {
-  // Shaped like lib/company-records.ts' RecordNotFoundError.
+  // A not-found error that carries its own 404.
   class NotFoundError extends Error {
     readonly status = 404;
   }

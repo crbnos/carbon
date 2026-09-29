@@ -11,7 +11,7 @@ import { getDatabaseClient } from "~/services/database.server";
  * that barrel is imported by client components, and a `.server` module that
  * reaches the client graph fails the React Router build.
  */
-async function invokePostReimbursement(
+async function runPostReimbursement(
   type: "post" | "void",
   args: { reimbursementId: string; companyId: string; userId: string },
   fallbackMessage: string
@@ -35,7 +35,7 @@ export function postReimbursement(args: {
   companyId: string;
   userId: string;
 }): Promise<{ error: string | null }> {
-  return invokePostReimbursement("post", args, "Failed to post reimbursement");
+  return runPostReimbursement("post", args, "Failed to post reimbursement");
 }
 
 export function voidReimbursement(args: {
@@ -43,7 +43,7 @@ export function voidReimbursement(args: {
   companyId: string;
   userId: string;
 }): Promise<{ error: string | null }> {
-  return invokePostReimbursement("void", args, "Failed to void reimbursement");
+  return runPostReimbursement("void", args, "Failed to void reimbursement");
 }
 
 /**

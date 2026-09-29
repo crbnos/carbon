@@ -43,19 +43,15 @@ export const seedCompany = defineServerFn({
   input: seedCompanyInput,
   permissions: "system",
   async run(ctx, { parentCompanyId, identityOnly }) {
-    const { db, companyId: id, userId } = ctx;
+    const { db, companyId, userId } = ctx;
 
     logger.info({
-      id,
+      companyId,
       userId,
       parentCompanyId,
       identityOnly: identityOnly === true
     });
 
-    if (!id) throw new Error("Payload is missing id");
-    if (!userId) throw new Error("Payload is missing userId");
-
-    const companyId = id as string;
     const client = await ctx.supabase();
 
     const company = await client

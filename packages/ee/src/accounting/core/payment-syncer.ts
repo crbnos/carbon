@@ -227,7 +227,7 @@ export abstract class PaymentSyncerBase<TRemote> extends BaseEntitySyncer<
       return result;
     }
 
-    const posted = await this.invokePostPayment(
+    const posted = await this.runPostPayment(
       pending.paymentRowId,
       pending.postAction,
       pending.actorId
@@ -246,7 +246,7 @@ export abstract class PaymentSyncerBase<TRemote> extends BaseEntitySyncer<
     return result;
   }
 
-  private async invokePostPayment(
+  private async runPostPayment(
     paymentId: string,
     type: "post" | "void",
     userId: string
