@@ -1407,6 +1407,12 @@ export function OnshapePanel({
         warning: undefined,
         fieldErrors: {}
       });
+      // Lands only on the save still in flight: a move to another element
+      // resets the page to `closed`, which must not be undone by the answer.
+      const land = (next: PanelFieldsState) =>
+        setFields((latest) =>
+          latest.status === "ready" && latest.saving ? next : latest
+        );
       try {
         const response = await panelFetch(token, paths.fields, {
           method: "POST",
@@ -1421,7 +1427,7 @@ export function OnshapePanel({
             }
           | PanelErrorResponse;
         if (!response.ok || "error" in body) {
-          setFields({
+          land({
             ...current,
             saving: false,
             error:
@@ -1435,7 +1441,7 @@ export function OnshapePanel({
           });
           return;
         }
-        setFields({
+        land({
           ...current,
           data: {
             ...current.data,
@@ -1455,7 +1461,7 @@ export function OnshapePanel({
           setSession({ status: "signed-out" });
           return;
         }
-        setFields({ ...current, saving: false, error: thrownMessage(error) });
+        land({ ...current, saving: false, error: thrownMessage(error) });
       }
     },
     [fields, paths.fields]

@@ -252,25 +252,54 @@ export async function action({ request }: ActionFunctionArgs) {
 
   const existingIds = [...new Set(entries.map((entry) => entry.carbonFieldId))];
   if (existingIds.length > 0) {
-    const existing = await client
-      .from("customField")
-      .select("id")
-      .eq("companyId", companyId)
-      .eq("table", "part")
-      .in("id", existingIds);
-    if (existing.error) {
+    const [existing, stored] = await Promise.all([
+      client
+        .from("customField")
+        .select("id, dataTypeId")
+        .eq("companyId", companyId)
+        .eq("table", "part")
+        .in("id", existingIds),
+      client
+        .from("companyIntegration")
+        .select("metadata")
+        .eq("id", ONSHAPE_V2_INTEGRATION_ID)
+        .eq("companyId", companyId)
+        .maybeSingle()
+    ]);
+    if (existing.error || stored.error) {
       logger.error("Failed to read custom fields", {
         companyId,
-        error: existing.error
+        error: existing.error ?? stored.error
       });
       return data({ error: "Failed to read custom fields" }, { status: 500 });
     }
-    const found = new Set((existing.data ?? []).map((row) => row.id));
+    const dataTypes = new Map(
+      (existing.data ?? []).map((row) => [row.id, row.dataTypeId])
+    );
+    // A mapping saved before MAPPABLE_VALUE_TYPES narrowed keeps working at
+    // plan time, so only a new or changed target has to fit.
+    const unchanged = new Set(
+      parsePropertyMap(stored.data?.metadata).map(
+        (entry) => `${entry.onshapePropertyId}:${entry.carbonFieldId}`
+      )
+    );
     for (const entry of entries) {
-      if (!found.has(entry.carbonFieldId)) {
+      const dataTypeId = dataTypes.get(entry.carbonFieldId);
+      if (dataTypeId === undefined) {
         fieldErrors.push({
           key: entry.onshapePropertyId,
           errors: ["The mapped Carbon field no longer exists"]
+        });
+      } else if (
+        Object.hasOwn(MAPPABLE_VALUE_TYPES, entry.valueType) &&
+        !MAPPABLE_VALUE_TYPES[entry.valueType]?.includes(dataTypeId) &&
+        !unchanged.has(`${entry.onshapePropertyId}:${entry.carbonFieldId}`)
+      ) {
+        fieldErrors.push({
+          key: entry.onshapePropertyId,
+          errors: [
+            `An Onshape ${entry.valueType} property can't be stored in this field's type`
+          ]
         });
       }
     }
