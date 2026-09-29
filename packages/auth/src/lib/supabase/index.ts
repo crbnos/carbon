@@ -1,4 +1,4 @@
-import { carbonClient, getCarbon } from "./client";
+import { carbonClient, getCarbon, getCarbonClient } from "./client";
 import { CarbonProvider, useCarbon } from "./provider";
 
-export { carbonClient, CarbonProvider, getCarbon, useCarbon };
+export { carbonClient, CarbonProvider, getCarbon, getCarbonClient, useCarbon };

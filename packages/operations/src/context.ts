@@ -1,7 +1,7 @@
 import type { Database } from "@carbon/database";
 import type { KyselyDatabase } from "@carbon/database/client";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { Kysely } from "kysely";
+import { type Kysely, sql } from "kysely";
 
 /**
  * Everything an operation runs with. The caller builds it; the DB client comes
@@ -58,20 +58,45 @@ export function hasPermissions(
 }
 
 /**
+ * A user's claims (the `get_claims` jsonb: `<module>_<action>` → company ids,
+ * plus `role`) as permissions per module — the edge functions' parser.
+ */
+export function permissionsFromClaims(
+  claims: Record<string, unknown>
+): ModulePermissions {
+  const permissions: ModulePermissions = {};
+  for (const [key, value] of Object.entries(claims)) {
+    const parts = key.split("_");
+    if (parts.length !== 2 || !Array.isArray(value)) continue;
+    const [module, action] = parts as [string, Action];
+    if (!ACTIONS.includes(action)) continue;
+    permissions[module] ??= { view: [], create: [], update: [], delete: [] };
+    permissions[module][action] = value as string[];
+  }
+  return permissions;
+}
+
+/**
  * Throws `OperationForbiddenError` unless the context's user holds `required`
  * in its company. Every operation calls this (or `assertSystemCaller`) before
  * touching data: callers reach it from routes, services, the API and jobs, and
  * not every one of them checks the same permission first.
+ *
+ * Reads the claims with `get_claims` over `ctx.db`, as the edge functions did.
+ * Not `@carbon/auth`'s cached `getUserClaims`: it lives in a `.server` module,
+ * which a browser-bundled service's `import()` of an operation may not reach.
  */
 export async function assertOperationPermissions(
   ctx: OperationContext,
   required: RequiredPermissions
 ): Promise<void> {
   if (ctx.system) return;
-  // Lazy: users.server pulls Redis and the service-role client, which a
-  // `*.service.ts` importing this package must not load at module scope.
-  const { getUserClaims } = await import("@carbon/auth/users.server");
-  const { permissions } = await getUserClaims(ctx.userId, ctx.companyId);
+  const { rows } = await sql<{
+    claims: Record<string, unknown> | null;
+  }>`SELECT get_claims(${ctx.userId}, ${ctx.companyId}) AS claims`.execute(
+    ctx.db
+  );
+  const permissions = permissionsFromClaims(rows[0]?.claims ?? {});
   if (!hasPermissions(permissions, ctx.companyId, required)) {
     throw new OperationForbiddenError("Insufficient permissions");
   }
@@ -86,11 +111,14 @@ export function assertSystemCaller(ctx: OperationContext): void {
 
 /**
  * The service-role client, which every edge function read and wrote with once
- * its permission check passed. Fetched here rather than passed in: callers
+ * its permission check passed. Built here rather than passed in: callers
  * include browser-bundled `*.service.ts` files, which cannot import it, and a
- * caller's own RLS client would change what the operation can see.
+ * caller's own RLS client would change what the operation can see. Same
+ * construction as `getCarbonServiceRole`, which is `.server`-only.
  */
 export async function serviceRoleClient(): Promise<SupabaseClient<Database>> {
-  const { getCarbonServiceRole } = await import("@carbon/auth/client.server");
-  return getCarbonServiceRole();
+  // Lazy: @carbon/env throws at import when a required variable is unset.
+  const [{ getCarbonClient }, { SUPABASE_SERVICE_ROLE_KEY }] =
+    await Promise.all([import("@carbon/auth"), import("@carbon/env")]);
+  return getCarbonClient(SUPABASE_SERVICE_ROLE_KEY!);
 }

@@ -31,6 +31,13 @@ is tracked in `.ai/plans/2026-09-28-remove-edge-functions.md`.
 
 - Never set `ctx.system` from request input. It is the service-role bearer's
   counterpart: jobs and syncers only.
+- Never import a `.server` module, not even with a lazy `import()`. Services
+  `import()` operations, so this package is in the browser graph, and the React
+  Router build fails with "Server-only module referenced by client". That is why
+  `assertOperationPermissions` reads `get_claims` over `ctx.db` and
+  `serviceRoleClient` builds the client itself, instead of using
+  `@carbon/auth/users.server` / `client.server`. `pnpm --filter erp build`
+  catches it; typecheck does not.
 
 ## Validation Commands
 

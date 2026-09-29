@@ -4,7 +4,8 @@ import {
   assertSystemCaller,
   hasPermissions,
   type ModulePermissions,
-  type OperationContext
+  type OperationContext,
+  permissionsFromClaims
 } from "./context";
 
 const none = { view: [], create: [], update: [], delete: [] };
@@ -50,5 +51,27 @@ describe("system callers", () => {
   it("are the only ones assertSystemCaller admits", () => {
     expect(() => assertSystemCaller(ctx)).toThrow(/server-side/);
     expect(() => assertSystemCaller({ ...ctx, system: true })).not.toThrow();
+  });
+});
+
+describe("permissionsFromClaims", () => {
+  it("groups <module>_<action> claims by module and ignores the rest", () => {
+    expect(
+      permissionsFromClaims({
+        role: "employee",
+        inventory_update: ["co1"],
+        inventory_view: ["co1", "co2"],
+        "not-a-claim": ["co1"],
+        users_admin: ["co1"],
+        sales_view: "co1"
+      })
+    ).toEqual({
+      inventory: {
+        view: ["co1", "co2"],
+        create: [],
+        update: ["co1"],
+        delete: []
+      }
+    });
   });
 });
