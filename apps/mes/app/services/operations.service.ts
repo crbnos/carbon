@@ -324,7 +324,7 @@ export async function finishJobOperation(
     })
     .eq("id", args.jobOperationId)
     .eq("companyId", args.companyId)
-    .select("id");
+    .select("id, jobId");
 
   if (!result.error && result.data.length === 0) {
     log.warn("finishJobOperation: job operation not found in company", {
@@ -379,9 +379,10 @@ export async function finishJobOperation(
     // The status='Done' write fires the sync_finish_job_operation trigger, which
     // completes the job to inventory (job.status → 'Completed') when this was the
     // last operation. Return any picked-but-unconsumed stock staged at lineside
-    // back to its warehouse source — the SQL trigger can't call edge functions,
+    // back to its warehouse source — the SQL trigger can't run app code,
     // so we orchestrate it here.
-    const { jobId } = await returnPickedRemainders(client, db, args);
+    await returnPickedRemainders(client, db, args);
+    const jobId = result.data[0]?.jobId;
 
     if (jobId) {
       await raiseMoment("production.jobOperationCompleted", {
@@ -434,16 +435,9 @@ export async function finishJobOperation(
 }
 
 /**
- * Flush un-consumed picked material (tracked AND untracked) from the lineside
- * shelf back to the warehouse via the post-picking sweep cases. Job just
- * completed → sweep the whole job (runs under both returnPickedMaterialTiming
- * policies). Otherwise → sweep this operation's lines; the edge function itself
- * no-ops unless the company policy is 'operation'. Both sweeps are idempotent.
- *
- * Uses the client `finishJobOperation` is given — every caller passes a
- * service-role client, so the picking lines (an inventory table the finishing
- * operator may not have RLS access to) are always readable and the returns
- * aren't silently skipped for production-only roles.
+ * Returns picked-but-unconsumed material a Done operation left at lineside —
+ * the whole job's remainder when it completed the job. Logged, never thrown:
+ * the status change has already happened.
  */
 export async function returnPickedRemainders(
   client: SupabaseClient<Database>,
@@ -453,53 +447,19 @@ export async function returnPickedRemainders(
     userId: string;
     companyId: string;
   }
-): Promise<{ jobId: string | undefined }> {
+): Promise<void> {
   const { postPicking } = await import("@carbon/server-functions/post-picking");
-  const op = await client
-    .from("jobOperation")
-    .select("jobId")
-    .eq("id", args.jobOperationId)
-    .eq("companyId", args.companyId)
-    .maybeSingle();
-  const jobId = op.data?.jobId;
-  if (!jobId) return { jobId: undefined };
-
-  const job = await client
-    .from("job")
-    .select("status")
-    .eq("id", jobId)
-    .eq("companyId", args.companyId)
-    .maybeSingle();
-  if (!job.data) return { jobId };
-
-  const body =
-    job.data.status === "Completed"
-      ? {
-          type: "returnJobRemainders" as const,
-          jobId,
-          userId: args.userId,
-          companyId: args.companyId
-        }
-      : {
-          type: "returnOperationRemainders" as const,
-          jobOperationId: args.jobOperationId,
-          userId: args.userId,
-          companyId: args.companyId
-        };
-
-  // `functions.invoke` resolves to `{ data, error }` rather than rejecting —
-  // inspect and log, otherwise a stranded lineside remainder is lost silently.
-  const { error } = await postPicking.withClient(client, db, body);
+  const { error } = await postPicking.withClient(client, db, {
+    type: "returnOperationRemainders",
+    ...args
+  });
   if (error) {
     log.error("picked-material return sweep failed", {
       error,
-      jobId,
-      scope: body.type,
+      jobOperationId: args.jobOperationId,
       companyId: args.companyId
     });
   }
-
-  return { jobId };
 }
 
 export async function getActiveJobOperationsByEmployee(

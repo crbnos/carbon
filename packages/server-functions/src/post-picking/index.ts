@@ -89,9 +89,11 @@ export const postPickingInput = z.discriminatedUnion("type", [
     trackedEntityId: z.string(),
     locationId: z.string()
   }),
-  // Sweep every picking-list line of one operation (policy-gated: no-ops unless
-  // companySettings.returnPickedMaterialTiming = 'operation') or of one job
-  // (runs under both policies; requires job.status = 'Completed'). Tracked lines
+  // Sweep what one Done operation left at lineside, or a whole job's
+  // remainder. An operation whose job is Completed (it was the last one)
+  // sweeps the whole job under either return policy; otherwise the operation
+  // sweep no-ops unless companySettings.returnPickedMaterialTiming =
+  // 'operation'. The job sweep requires job.status Completed or Cancelled. Tracked lines
   // return via the split-lineage walk; untracked lines return
   // picked − returned − max(issued, owed) per job material, where `owed` holds
   // back what completion-time backflush still needs.
@@ -1108,38 +1110,50 @@ export const postPicking = defineServerFn({
         const { jobOperationId, userId, companyId } = validatedPayload;
 
         await db.transaction().execute(async (trx) => {
-          const settings = await trx
-            .selectFrom("companySettings")
-            .where("id", "=", companyId)
-            .select("returnPickedMaterialTiming")
-            .executeTakeFirst();
-          // The policy gate lives here (not at call sites) so every op-Done
-          // path can invoke unconditionally.
-          if (settings?.returnPickedMaterialTiming !== "operation") return;
-
           const op = await trx
             .selectFrom("jobOperation")
             .where("id", "=", jobOperationId)
             .where("companyId", "=", companyId)
             .select(["id", "jobId", "quantityComplete"])
-            .executeTakeFirstOrThrow();
-          if (!op.jobId) return;
+            .executeTakeFirst();
+          if (!op?.jobId) return;
 
           const job = await trx
             .selectFrom("job")
             .where("id", "=", op.jobId)
             .where("companyId", "=", companyId)
             .select(["id", "quantity", "locationId", "status"])
-            .executeTakeFirstOrThrow();
-          if (!job.locationId) return;
+            .executeTakeFirst();
+          if (!job?.locationId) return;
+          const sweepJob = {
+            id: job.id,
+            quantity: job.quantity,
+            locationId: job.locationId
+          };
+
+          // The last operation completed the job (sync_finish_job_operation),
+          // so its whole remainder is provably surplus under either policy.
+          if (job.status === "Completed") {
+            await runReturnSweep(trx, {
+              scope: "job",
+              job: sweepJob,
+              today,
+              userId,
+              companyId
+            });
+            return;
+          }
+
+          const settings = await trx
+            .selectFrom("companySettings")
+            .where("id", "=", companyId)
+            .select("returnPickedMaterialTiming")
+            .executeTakeFirst();
+          if (settings?.returnPickedMaterialTiming !== "operation") return;
 
           await runReturnSweep(trx, {
             scope: "operation",
-            job: {
-              id: job.id,
-              quantity: job.quantity,
-              locationId: job.locationId
-            },
+            job: sweepJob,
             opId: op.id,
             opQuantityComplete: Number(op.quantityComplete ?? 0),
             today,

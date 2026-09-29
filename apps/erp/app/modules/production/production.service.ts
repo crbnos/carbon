@@ -3140,13 +3140,10 @@ export async function updateJobOperationStatus(
 }
 
 /**
- * Flush un-consumed picked material staged at lineside back to the warehouse
- * after an operation went 'Done'. If the operation was the last one, the SQL
- * interceptor has already completed the job — sweep the whole job (both
- * returnPickedMaterialTiming policies); otherwise sweep this operation's lines
- * (the post-picking edge function no-ops unless the policy is 'operation').
- * Pass a service-role client so the picking lines are readable regardless of
- * the caller's inventory permissions. Idempotent.
+ * Returns picked-but-unconsumed material an operation left at lineside once it
+ * is Done; when that completed the job, the whole job's remainder. Pass a
+ * service-role client so the picking lines are readable regardless of the
+ * caller's inventory permissions. Idempotent.
  */
 export async function returnPickedRemaindersForOperation(
   client: SupabaseClient<Database>,
@@ -3154,44 +3151,15 @@ export async function returnPickedRemaindersForOperation(
   args: { jobOperationId: string; userId: string; companyId: string }
 ) {
   const { postPicking } = await import("@carbon/server-functions/post-picking");
-  const op = await client
-    .from("jobOperation")
-    .select("jobId")
-    .eq("id", args.jobOperationId)
-    .eq("companyId", args.companyId)
-    .maybeSingle();
-  const jobId = op.data?.jobId;
-  if (!jobId) return { data: null, error: op.error };
-
-  const job = await client
-    .from("job")
-    .select("status")
-    .eq("id", jobId)
-    .eq("companyId", args.companyId)
-    .maybeSingle();
-  if (!job.data) return { data: null, error: job.error };
-
-  const body =
-    job.data.status === "Completed"
-      ? {
-          type: "returnJobRemainders" as const,
-          jobId,
-          userId: args.userId,
-          companyId: args.companyId
-        }
-      : {
-          type: "returnOperationRemainders" as const,
-          jobOperationId: args.jobOperationId,
-          userId: args.userId,
-          companyId: args.companyId
-        };
-
-  return postPicking.withClient(client, db, body);
+  return postPicking.withClient(client, db, {
+    type: "returnOperationRemainders",
+    ...args
+  });
 }
 
 /**
  * Job-scope sweep after an explicit job completion (the ERP Complete button).
- * The edge function guards on job.status = 'Completed' and is idempotent.
+ * post-picking guards on job.status = 'Completed' and is idempotent.
  */
 export async function returnPickedRemaindersForJob(
   client: SupabaseClient<Database>,
@@ -10289,7 +10257,6 @@ export async function completeOperation(
     quantity: number;
   }
 ) {
-  const { postPicking } = await import("@carbon/server-functions/post-picking");
   const { issue } = await import("@carbon/server-functions/issue");
   const operation = await client
     .from("jobOperation")
@@ -10394,34 +10361,17 @@ export async function completeOperation(
       );
     }
 
-    // Return picked-but-unconsumed stock (the SQL trigger can't call edge functions).
     const jobId = operation.data.jobId;
     if (jobId) {
-      const job = await client
-        .from("job")
-        .select("status")
-        .eq("id", jobId)
-        .eq("companyId", companyId)
-        .maybeSingle();
-      const returnBody =
-        job.data?.status === "Completed"
-          ? { type: "returnJobRemainders" as const, jobId, userId, companyId }
-          : {
-              type: "returnOperationRemainders" as const,
-              jobOperationId: args.operationId,
-              userId,
-              companyId
-            };
-      const { error: returnError } = await postPicking.withClient(
+      const { error: returnError } = await returnPickedRemaindersForOperation(
         client,
         db,
-        returnBody
+        { jobOperationId: args.operationId, userId, companyId }
       );
       if (returnError) {
         logger.error("picked-material return sweep failed", {
           error: returnError,
           jobId,
-          scope: returnBody.type,
           companyId
         });
       }
