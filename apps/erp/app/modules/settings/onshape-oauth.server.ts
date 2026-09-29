@@ -49,9 +49,8 @@ function integrationsUrl(request: Request) {
  * `Onshape.onClientInstall` opened, or the whole tab when the connect started
  * from a settings save — so a failure has to render as something the user can
  * act on. `oauthPopupResponse` posts the outcome to the page that opened the
- * popup and closes it; that page turns the code into a toast. With no opener it
- * falls back to the integrations page, which shows the same toast. Only a code
- * crosses the boundary; `integrationErrors` owns the copy.
+ * popup and closes it. Only a code crosses the boundary; `integrationErrors`
+ * owns the copy.
  */
 export async function completeOnshapeAuthorization({
   request,
@@ -159,10 +158,8 @@ export async function completeOnshapeAuthorization({
       return connectionFailed("token-exchange");
     }
 
-    // `upsertCompanyIntegration` writes the whole metadata column, so a
-    // reconnect built from fresh credentials alone would drop everything else
-    // the integration keeps there. A failed read must not be mistaken for an
-    // empty row.
+    // `upsertCompanyIntegration` writes the whole metadata column. A failed
+    // read must not be mistaken for an empty row.
     const existing = await serviceRole
       .from("companyIntegration")
       .select("metadata")
@@ -235,7 +232,6 @@ export async function completeOnshapeAuthorization({
       }
     }
 
-    // Success: tell the opener to revalidate, close the popup.
     return withCookie(
       oauthPopupResponse(
         { integration: integrationId, ok: true },

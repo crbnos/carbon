@@ -637,8 +637,8 @@ export type Events = {
   };
 
   // Onshape released-asset backfill / reconcile
-  // Panel push: export one pushed element's assets (GLTF + thumbnail) onto an
-  // item the push route already created/linked. Workspace- or version-scoped.
+  // Panel push: export one pushed element's assets onto an item the push
+  // route already created/linked.
   "carbon/onshape-panel-sync": {
     data: {
       companyId: string;

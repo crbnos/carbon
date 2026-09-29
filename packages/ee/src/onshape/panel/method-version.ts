@@ -2,16 +2,15 @@
  * Correlating a make method's BOM lines with the copy taken of them.
  *
  * A push must never write into a released (Active) method — Carbon's model is
- * that a live method is superseded by a new Draft version, which is what a
- * change notice's `Version` type does. So when the panel meets an Active
- * method it takes a Draft copy and writes there instead.
+ * that a live method is superseded by a new Draft version. So when the panel
+ * meets an Active method it takes a Draft copy and writes there instead.
  *
- * That copy is where line ownership can be lost. A push only replaces lines a
- * previous push wrote, identified by an `externalIntegrationMapping` row keyed
- * on the line id; the copy has new line ids and no mappings, so every
- * Onshape-owned line would read as manual and the next push would insert a
- * second copy beside each one. The mappings have to be carried across, and the
- * copy carries no back-pointer to say which new line came from which old one.
+ * A push only replaces lines a previous push wrote, identified by an
+ * `externalIntegrationMapping` row keyed on the line id; the copy has new line
+ * ids and no mappings, so every Onshape-owned line would read as manual and
+ * the next push would insert a second copy beside each one. The mappings have
+ * to be carried across, and the copy carries no back-pointer to say which new
+ * line came from which old one.
  *
  * So they are paired on natural key, the same way `diffMethod` correlates a
  * change notice's draft against its base: by component item, and by `order`

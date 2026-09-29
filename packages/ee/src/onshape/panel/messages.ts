@@ -39,7 +39,7 @@ function param(searchParams: URLSearchParams, name: string) {
   const trimmed = value.trim();
   // A parameter Onshape cannot resolve in the current context arrives as the
   // literal placeholder (`{$partNumber}` in a Part Studio with nothing
-  // selected, observed 2026-08-28) or as the empty string.
+  // selected) or as the empty string.
   if (trimmed === "" || /^\{\$[A-Za-z]+\}$/.test(trimmed)) return null;
   return trimmed;
 }

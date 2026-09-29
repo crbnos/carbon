@@ -123,9 +123,7 @@ export function IntegrationCard({
     roleIncumbent && roleIncumbent !== integration.id ? roleIncumbent : null;
 
   // An OAuth callback that ran inside the popup `onClientInstall` opened posts
-  // its outcome here and closes the popup (see oauth-popup.server.ts). Revalidate
-  // so the card flips to Installed without a reload; surface a failure the same
-  // way the integrations page does for a redirected callback.
+  // its outcome here and closes the popup (see oauth-popup.server.ts).
   useEffect(() => {
     const onMessage = (event: MessageEvent) => {
       if (event.origin !== window.location.origin) return;
@@ -165,8 +163,6 @@ export function IntegrationCard({
     } else if (integration.settings.some((setting) => setting.required)) {
       navigate(path.to.integration(integration.id));
     } else if (integration.onClientInstall) {
-      // An install that cannot start has to say so: it used to reject into
-      // nothing, so a misconfigured OAuth route read as a dead button.
       try {
         await integration.onClientInstall();
       } catch (error) {

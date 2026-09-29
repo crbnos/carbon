@@ -34,7 +34,7 @@ const logger = getLogger("erp", "onshape", "panel-fields");
 
 const querySchema = z.object({
   documentId: z.string().min(1),
-  // Like the status route: a microversion context may read properties too.
+  // A microversion context may read properties too.
   wv: z.enum(["w", "v", "m"]),
   wvId: z.string().min(1),
   elementId: z.string().min(1)
@@ -195,7 +195,6 @@ const payloadSchema = z.object({
 
 type FieldError = { key: string; errors: string[] };
 
-/** The values that appear more than once. */
 function duplicates(values: string[]): Set<string> {
   const seen = new Set<string>();
   const twice = new Set<string>();
@@ -208,8 +207,7 @@ function duplicates(values: string[]): Set<string> {
 
 /**
  * Replace the company's property map. The panel always posts the whole list
- * (an empty array clears the map), so what was posted is the map. Every target
- * must already exist, so the only write is the map itself.
+ * (an empty array clears the map), so what was posted is the map.
  */
 export async function action({ request }: ActionFunctionArgs) {
   const { client, companyId } = await requireOnshapePanelPermissions(request, {
@@ -328,8 +326,7 @@ export async function action({ request }: ActionFunctionArgs) {
 
   /*
    * Definitions are re-read so the editor shows the fields as they now stand.
-   * The map is saved by this point, so a failed re-read is not a failed save:
-   * it answers 200 with the definitions missing and a warning saying so.
+   * The map is saved by this point, so a failed re-read is not a failed save.
    */
   let definitions: PlanCustomFieldDefinition[] | null = null;
   let warning: string | undefined;

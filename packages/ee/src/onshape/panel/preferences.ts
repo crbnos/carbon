@@ -1,18 +1,6 @@
 /**
  * Company preferences for Onshape pushes.
  *
- * The panel used to hardcode every default a push applies: the unit of measure
- * ("EA" if the company happens to have it, otherwise whichever unit sorted
- * first), Make / Make to Order / Inventory for a designed part, Buy / Pull from
- * Inventory for a purchased BOM row, and the whole tree for an assembly. Each
- * was a reasonable guess and each was wrong for some shop, which then re-edited
- * the same fields on every push.
- *
- * Release behaviour is deliberately NOT here. What a release push does in
- * Carbon — whether new revisions become the default, whether a change notice
- * is recorded — is chosen per push in the panel's review step, because it is a
- * judgement about one release rather than a standing company rule.
- *
  * These live on the integration's settings metadata alongside `credentials` and
  * `propertyMap`. Everything here is pure and total: a stored value that no
  * longer parses (a unit that was deleted, an enum that was renamed, a
@@ -77,10 +65,6 @@ function pickTrimmedString(value: unknown): string | null {
   return trimmed === "" ? null : trimmed;
 }
 
-/**
- * Read the company's push defaults off the integration metadata. Total: any
- * shape in, a usable set of defaults out.
- */
 export function parsePushDefaults(metadata: unknown): OnshapePushDefaults {
   if (!isRecord(metadata)) return { ...DEFAULT_PUSH_DEFAULTS };
 
@@ -119,9 +103,7 @@ export function parsePushDefaults(metadata: unknown): OnshapePushDefaults {
  * The ERP refuses a replenishment/method pair its own Part form would, and the
  * two are configured independently — so a pair that stopped being legal (the
  * replenishment changed, the method did not) resolves to the first method that
- * replenishment allows rather than failing a plan. Applied on the way in from
- * storage and on every edit in the Settings page, so the same rule holds
- * whether a value was typed or found.
+ * replenishment allows rather than failing a plan.
  */
 export function reconcilePushDefaults(
   defaults: OnshapePushDefaults
@@ -133,7 +115,6 @@ export function reconcilePushDefaults(
       defaults.methodTypeForMake,
       DEFAULT_PUSH_DEFAULTS.methodTypeForMake
     ),
-    // A purchased BOM row is always Buy, whatever the designed-part setting is.
     methodTypeForBuy: reconcileMethodType(
       "Buy",
       defaults.methodTypeForBuy,

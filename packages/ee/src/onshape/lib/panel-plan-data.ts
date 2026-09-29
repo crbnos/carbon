@@ -7,14 +7,13 @@ import { ONSHAPE_V2_INTEGRATION_ID } from "./integration-id";
 
 /**
  * Carbon reads the panel's plan and apply routes share. Every function here
- * takes the ids it needs in one call — the plan for an 11-line BOM must not
- * cost 11 round trips — and returns plain maps the pure builders in
- * `panel/plan.ts` consume.
+ * takes the ids it needs in one call and returns plain maps the pure builders
+ * in `panel/plan.ts` consume.
  *
- * "One call" is bounded by the gateway, not by us: an `.in()` list rides in
- * the URL and the request line dies past 4 KB. Every list sized by the BOM
- * therefore goes through `selectInBatches`, which splits on encoded bytes —
- * a count would be wrong, since these ids range from 22 to 58 characters.
+ * "One call" is bounded by the gateway: an `.in()` list rides in the URL and
+ * the request line dies past 4 KB. Every list sized by the BOM therefore goes
+ * through `selectInBatches`, which splits on encoded bytes — a count would be
+ * wrong, since these ids range from 22 to 58 characters.
  */
 
 type Client = SupabaseClient<Database>;
@@ -52,8 +51,6 @@ export async function loadPlanOptions(
 }
 
 /**
- * The active make method per item id (activeMakeMethods view), one query.
- *
  * Throws on a failed read: an empty map reads as "no method" for every item,
  * so a plan would call every existing method missing and an apply would skip
  * or flatten every BOM. Callers answer 500.
@@ -190,8 +187,6 @@ export async function loadMethodLineOwnership(
     (items.data ?? []).map((item) => [item.id, item.readableId])
   );
 
-  // Appended in place: a method with n lines would otherwise copy its list n
-  // times over.
   const append = <T>(map: Map<string, T[]>, key: string, value: T) => {
     const list = map.get(key);
     if (list) {
@@ -226,7 +221,6 @@ export async function loadMethodLineOwnership(
   return result;
 }
 
-/** The company's custom field definitions for the `part` table, one query. */
 export async function loadPartCustomFieldDefinitions(
   client: Client,
   companyId: string

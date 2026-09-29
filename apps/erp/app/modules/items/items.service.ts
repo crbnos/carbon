@@ -4116,16 +4116,14 @@ export async function upsertPart(
     active: true
   };
 
-  // An item pushed from Onshape (externalIntegrationMapping row) has its
-  // identity fields owned by the CAD side: a Properties save must not
-  // overwrite them. The panel's own push updates them directly; Detach
-  // removes the mapping and releases the fields.
+  // An item pushed from Onshape has its identity fields owned by the CAD
+  // side: a Properties save must not overwrite them. The panel's own push
+  // updates them directly; Detach removes the mapping and releases the fields.
   const externalSource = await client
     .from("externalIntegrationMapping")
     .select("id")
     .eq("entityType", "item")
     .eq("entityId", part.id)
-    // Either Onshape integration owning the item locks the same fields.
     .in("integration", [...ONSHAPE_MAPPING_NAMESPACES])
     .limit(1)
     .maybeSingle();

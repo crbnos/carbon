@@ -17,9 +17,6 @@ import { DEFAULT_PUSH_DEFAULTS } from "./panel/preferences";
  * panel. Separate from `onshape` (the pull-shaped original) because it holds
  * its own OAuth grant and writes its own `externalIntegrationMapping`
  * namespace — see `./lib/integration-id`.
- *
- * Connect, disconnect and the push defaults live here. The panel itself has
- * no settings: it shows status and pushes.
  */
 export const OnshapeV2 = defineIntegration({
   name: "Onshape V2",
@@ -35,9 +32,8 @@ export const OnshapeV2 = defineIntegration({
    * What a push fills in that Onshape has no field for. Everything else a
    * created item carries — part number, name, description, revision, Buy vs
    * Make — comes from Onshape, and is changed there. These are read at plan
-   * time by `parsePushDefaults`, which also falls back to DEFAULT_PUSH_DEFAULTS
-   * for a value that no longer parses. The generic settings save merges into
-   * the stored metadata, so the property map and connection keys survive.
+   * time by `parsePushDefaults`. The generic settings save merges into the
+   * stored metadata, so the property map and connection keys survive.
    */
   settingGroups: [
     {
