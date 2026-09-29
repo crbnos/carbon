@@ -65,7 +65,8 @@ import {
   LuTriangleAlert,
   LuTruck,
   LuUser,
-  LuUsers
+  LuUsers,
+  LuWrench
 } from "react-icons/lu";
 import { RxCodesandboxLogo } from "react-icons/rx";
 import { TbTargetOff } from "react-icons/tb";
@@ -633,6 +634,8 @@ export const JournalEntrySourceTypeIcon = ({
       return <LuHardHat className={className} />;
     case "Job Close":
       return <LuCircleCheck className={className} />;
+    case "Maintenance Event":
+      return <LuWrench className={className} />;
     case "Asset Depreciation":
       return <LuClock className={className} />;
     case "Asset Disposal":

@@ -1,13 +1,16 @@
-import { assertIsPost } from "@carbon/auth";
+import { assertIsPost, error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
+import { flash } from "@carbon/auth/session.server";
 import { validator } from "@carbon/form";
 import type { ActionFunctionArgs } from "react-router";
+import { data } from "react-router";
 import {
   getMaintenanceDispatch,
   isMaintenanceDispatchLocked,
   maintenanceDispatchEventValidator,
   upsertMaintenanceDispatchEvent
 } from "~/modules/resources";
+import { postMaintenanceLabor } from "~/modules/resources/resources.server";
 import { requireUnlocked } from "~/utils/lockedGuard.server";
 import { path } from "~/utils/path";
 
@@ -62,6 +65,21 @@ export async function action({ request, params }: ActionFunctionArgs) {
       success: false,
       message: "Failed to add timecard"
     };
+  }
+
+  const postingError = await postMaintenanceLabor({
+    maintenanceDispatchIds: [dispatchId],
+    companyId,
+    userId
+  });
+  if (postingError) {
+    return data(
+      { success: true },
+      await flash(
+        request,
+        error(postingError, "Timecard added, but its labor cost did not post")
+      )
+    );
   }
 
   return { success: true };

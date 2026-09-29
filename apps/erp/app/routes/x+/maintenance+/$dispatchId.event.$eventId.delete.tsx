@@ -8,12 +8,13 @@ import {
   getMaintenanceDispatch,
   isMaintenanceDispatchLocked
 } from "~/modules/resources";
+import { postMaintenanceLabor } from "~/modules/resources/resources.server";
 import { requireUnlocked } from "~/utils/lockedGuard.server";
 import { path, requestReferrer } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client } = await requirePermissions(request, {
+  const { client, companyId, userId } = await requirePermissions(request, {
     delete: "resources"
   });
 
@@ -41,8 +42,23 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
+  // Reverses the labor cost the deleted timecard posted.
+  const postingError = await postMaintenanceLabor({
+    maintenanceDispatchIds: [dispatchId],
+    companyId,
+    userId
+  });
+
   throw redirect(
     requestReferrer(request) ?? path.to.maintenanceDispatch(dispatchId),
-    await flash(request, success("Timecard removed successfully"))
+    await flash(
+      request,
+      postingError
+        ? error(
+            postingError,
+            "Timecard removed, but its labor cost was not reversed"
+          )
+        : success("Timecard removed successfully")
+    )
   );
 }

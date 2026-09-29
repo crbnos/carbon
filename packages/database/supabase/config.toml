@@ -189,6 +189,11 @@ entrypoint = "./functions/post-stock-transfer/index.ts"
 # For example, if you want to serve static HTML pages in your function:
 # static_files = [ "./functions/post-stock-transfer/*.html" ]
 
+[functions.post-maintenance-event]
+enabled = true
+verify_jwt = true
+entrypoint = "./functions/post-maintenance-event/index.ts"
+
 [functions.post-picking]
 enabled = true
 verify_jwt = true
