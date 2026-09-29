@@ -3,6 +3,7 @@ import { sql } from "kysely";
 import { z } from "zod";
 import { defineServerFn } from "../define-server-fn";
 import { NotFoundError } from "../errors";
+import { attributesContain } from "../tracked-entity-attributes";
 
 export const assignSerialNumbersInput = z.object({
   jobId: z.string()
@@ -81,7 +82,7 @@ export const assignSerialNumbers = defineServerFn({
         .selectFrom("trackedEntity")
         .selectAll()
         .where("companyId", "=", companyId)
-        .where(sql<boolean>`attributes->>'Job' = ${jobId}`)
+        .where(attributesContain({ Job: jobId }))
         .where(sql<boolean>`attributes->>'Job Material' IS NULL`)
         .where(sql<boolean>`attributes->>'Split Entity ID' IS NULL`)
         .where(sql<boolean>`attributes->>'Split From Entity ID' IS NULL`)

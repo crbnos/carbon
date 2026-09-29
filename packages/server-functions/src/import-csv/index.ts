@@ -9,6 +9,7 @@ import { nanoid } from "nanoid";
 import { z } from "zod";
 import { defineServerFn } from "../define-server-fn";
 import type { RequiredPermissions } from "../permissions";
+import { inChunks } from "./chunks";
 import { classifyImportRow } from "./classify-import-row";
 import { importConfigLookups } from "./config-lookup-import";
 import { importMaterialProperties } from "./material-property-import";
@@ -551,35 +552,37 @@ async function upsertCsvMappings(
 
   const now = datetime.timestamp();
 
-  await trx
-    .insertInto("externalIntegrationMapping")
-    .values(
-      valid.map((m) => ({
-        entityType,
-        entityId: m.entityId,
-        integration: EXTERNAL_ID_KEY,
-        externalId: m.externalId,
-        companyId: cId,
-        allowDuplicateExternalId: false,
-        createdBy: userId,
-        createdAt: now,
-        updatedAt: now
-      }))
-    )
-    // On conflict (orphan mapping with same csv id but stale entityId),
-    // repoint entityId to the freshly-inserted entity. The .where() matches
-    // the partial unique index's predicate, required by Postgres for
-    // arbitration on partial indexes (42P10 otherwise).
-    .onConflict((oc) =>
-      oc
-        .columns(["integration", "externalId", "entityType", "companyId"])
-        .where("allowDuplicateExternalId", "=", false)
-        .doUpdateSet((eb) => ({
-          entityId: eb.ref("excluded.entityId"),
-          updatedAt: eb.ref("excluded.updatedAt")
-        }))
-    )
-    .execute();
+  await inChunks(
+    valid.map((m) => ({
+      entityType,
+      entityId: m.entityId,
+      integration: EXTERNAL_ID_KEY,
+      externalId: m.externalId,
+      companyId: cId,
+      allowDuplicateExternalId: false,
+      createdBy: userId,
+      createdAt: now,
+      updatedAt: now
+    })),
+    (rows) =>
+      trx
+        .insertInto("externalIntegrationMapping")
+        .values(rows)
+        // On conflict (orphan mapping with same csv id but stale entityId),
+        // repoint entityId to the freshly-inserted entity. The .where() matches
+        // the partial unique index's predicate, required by Postgres for
+        // arbitration on partial indexes (42P10 otherwise).
+        .onConflict((oc) =>
+          oc
+            .columns(["integration", "externalId", "entityType", "companyId"])
+            .where("allowDuplicateExternalId", "=", false)
+            .doUpdateSet((eb) => ({
+              entityId: eb.ref("excluded.entityId"),
+              updatedAt: eb.ref("excluded.updatedAt")
+            }))
+        )
+        .execute()
+  );
 }
 
 /**
@@ -656,27 +659,29 @@ async function resolveMaterialTaxonomyIds(
   );
 
   if (missing.length > 0) {
-    await trx
-      .insertInto(taxonomyTable)
-      .values(
-        missing.map((pair) => ({
-          name: pair.name,
-          companyId: cId,
-          [scopeColumn]: pair.scopeId
-        })) as never
-      )
-      // A concurrent import may have created the same name first; the
-      // re-select below picks up whichever row won. The unique constraint is
-      // exact-match, so two concurrent imports inserting different CASINGS of
-      // the same new name can both land, leaving a case-variant duplicate —
-      // the same duplicate the app's creatable comboboxes permit. Closing
-      // that window needs a case-insensitive unique index on
-      // (scope, lower(name), companyId), which requires a migration plus a
-      // dedupe of existing case-variant rows.
-      .onConflict((oc) =>
-        oc.columns([scopeColumn, "name", "companyId"] as never).doNothing()
-      )
-      .execute();
+    await inChunks(
+      missing.map((pair) => ({
+        name: pair.name,
+        companyId: cId,
+        [scopeColumn]: pair.scopeId
+      })),
+      (rows) =>
+        trx
+          .insertInto(taxonomyTable)
+          .values(rows as never)
+          // A concurrent import may have created the same name first; the
+          // re-select below picks up whichever row won. The unique constraint is
+          // exact-match, so two concurrent imports inserting different CASINGS of
+          // the same new name can both land, leaving a case-variant duplicate —
+          // the same duplicate the app's creatable comboboxes permit. Closing
+          // that window needs a case-insensitive unique index on
+          // (scope, lower(name), companyId), which requires a migration plus a
+          // dedupe of existing case-variant rows.
+          .onConflict((oc) =>
+            oc.columns([scopeColumn, "name", "companyId"] as never).doNothing()
+          )
+          .execute()
+    );
 
     collect(await selectMatches());
   }
@@ -1167,46 +1172,50 @@ async function upsertTaxIdentifiers(
 
   const now = datetime.timestamp();
   if (table === "customerTax") {
-    await trx
-      .insertInto("customerTax")
-      .values(
-        records.map((r) => ({
-          customerId: r.entityId,
-          taxId: r.taxId ?? null,
-          companyId: cId,
-          updatedAt: now,
-          updatedBy: userId
-        }))
-      )
-      .onConflict((oc) =>
-        oc.column("customerId").doUpdateSet({
-          taxId: sql`excluded."taxId"`,
-          updatedAt: now,
-          updatedBy: userId
-        })
-      )
-      .execute();
-    return;
-  }
-  await trx
-    .insertInto("supplierTax")
-    .values(
+    await inChunks(
       records.map((r) => ({
-        supplierId: r.entityId,
+        customerId: r.entityId,
         taxId: r.taxId ?? null,
         companyId: cId,
         updatedAt: now,
         updatedBy: userId
-      }))
-    )
-    .onConflict((oc) =>
-      oc.column("supplierId").doUpdateSet({
-        taxId: sql`excluded."taxId"`,
-        updatedAt: now,
-        updatedBy: userId
-      })
-    )
-    .execute();
+      })),
+      (rows) =>
+        trx
+          .insertInto("customerTax")
+          .values(rows)
+          .onConflict((oc) =>
+            oc.column("customerId").doUpdateSet({
+              taxId: sql`excluded."taxId"`,
+              updatedAt: now,
+              updatedBy: userId
+            })
+          )
+          .execute()
+    );
+    return;
+  }
+  await inChunks(
+    records.map((r) => ({
+      supplierId: r.entityId,
+      taxId: r.taxId ?? null,
+      companyId: cId,
+      updatedAt: now,
+      updatedBy: userId
+    })),
+    (rows) =>
+      trx
+        .insertInto("supplierTax")
+        .values(rows)
+        .onConflict((oc) =>
+          oc.column("supplierId").doUpdateSet({
+            taxId: sql`excluded."taxId"`,
+            updatedAt: now,
+            updatedBy: userId
+          })
+        )
+        .execute()
+  );
 }
 
 /** Imports an uploaded CSV into `table`, per the caller's column and enum mappings. */
@@ -1443,11 +1452,9 @@ export const importCsv = defineServerFn({
           summary.updated += customerUpdates.length;
 
           if (customerInserts.length > 0) {
-            const inserted = await trx
-              .insertInto(table)
-              .values(customerInserts)
-              .returning(["id"])
-              .execute();
+            const inserted = await inChunks(customerInserts, (rows) =>
+              trx.insertInto(table).values(rows).returning(["id"]).execute()
+            );
             await upsertCsvMappings(
               trx,
               "customer",
@@ -1656,11 +1663,9 @@ export const importCsv = defineServerFn({
           summary.updated += supplierUpdates.length;
 
           if (supplierInserts.length > 0) {
-            const inserted = await trx
-              .insertInto(table)
-              .values(supplierInserts)
-              .returning(["id"])
-              .execute();
+            const inserted = await inChunks(supplierInserts, (rows) =>
+              trx.insertInto(table).values(rows).returning(["id"]).execute()
+            );
             await upsertCsvMappings(
               trx,
               "supplier",
@@ -2182,25 +2187,27 @@ export const importCsv = defineServerFn({
           }
 
           if (itemInserts.length > 0) {
-            const insertedItems = await trx
-              .insertInto("item")
-              .values(itemInserts)
-              .onConflict((oc) =>
-                oc.constraint("item_unique").doUpdateSet({
-                  updatedAt: datetime.timestamp(),
-                  updatedBy: userId,
-                  name: sql`EXCLUDED."name"`,
-                  description: sql`EXCLUDED."description"`,
-                  mpn: sql`EXCLUDED."mpn"`,
-                  active: sql`EXCLUDED."active"`,
-                  unitOfMeasureCode: sql`EXCLUDED."unitOfMeasureCode"`,
-                  replenishmentSystem: sql`EXCLUDED."replenishmentSystem"`,
-                  defaultMethodType: sql`EXCLUDED."defaultMethodType"`,
-                  itemTrackingType: sql`EXCLUDED."itemTrackingType"`
-                })
-              )
-              .returning(["id", "readableId"])
-              .execute();
+            const insertedItems = await inChunks(itemInserts, (rows) =>
+              trx
+                .insertInto("item")
+                .values(rows)
+                .onConflict((oc) =>
+                  oc.constraint("item_unique").doUpdateSet({
+                    updatedAt: datetime.timestamp(),
+                    updatedBy: userId,
+                    name: sql`EXCLUDED."name"`,
+                    description: sql`EXCLUDED."description"`,
+                    mpn: sql`EXCLUDED."mpn"`,
+                    active: sql`EXCLUDED."active"`,
+                    unitOfMeasureCode: sql`EXCLUDED."unitOfMeasureCode"`,
+                    replenishmentSystem: sql`EXCLUDED."replenishmentSystem"`,
+                    defaultMethodType: sql`EXCLUDED."defaultMethodType"`,
+                    itemTrackingType: sql`EXCLUDED."itemTrackingType"`
+                  })
+                )
+                .returning(["id", "readableId"])
+                .execute()
+            );
 
             await upsertCsvMappings(
               trx,
@@ -2231,20 +2238,22 @@ export const importCsv = defineServerFn({
                 createdBy: userId
               }));
 
-              await trx
-                .insertInto(table)
-                .values(specificInserts as unknown as never)
-                // Hard-deleting an item does NOT remove its type row: the type
-                // tables (part/tool/fixture/consumable) key on readableId and have
-                // no FK back to item, so the row is orphaned by (id, companyId).
-                // Re-importing that Part Number would otherwise collide on the PK
-                // and abort the whole import (the "deleted then re-imported and it
-                // failed" case). The orphan already represents this Part Number, so
-                // keep it.
-                .onConflict((oc: any) =>
-                  oc.columns(["id", "companyId"]).doNothing()
-                )
-                .execute();
+              await inChunks(specificInserts, (rows) =>
+                trx
+                  .insertInto(table)
+                  .values(rows as unknown as never)
+                  // Hard-deleting an item does NOT remove its type row: the type
+                  // tables (part/tool/fixture/consumable) key on readableId and have
+                  // no FK back to item, so the row is orphaned by (id, companyId).
+                  // Re-importing that Part Number would otherwise collide on the PK
+                  // and abort the whole import (the "deleted then re-imported and it
+                  // failed" case). The orphan already represents this Part Number, so
+                  // keep it.
+                  .onConflict((oc: any) =>
+                    oc.columns(["id", "companyId"]).doNothing()
+                  )
+                  .execute()
+              );
             }
 
             if (
@@ -2272,14 +2281,18 @@ export const importCsv = defineServerFn({
                 return acc;
               }, []);
 
-              await trx
-                .insertInto("material")
-                .values(materialInserts)
-                // Same orphan-after-delete case as the type insert above: the
-                // material row survives an item delete, so re-import must not
-                // collide on the (id, companyId) PK.
-                .onConflict((oc) => oc.columns(["id", "companyId"]).doNothing())
-                .execute();
+              await inChunks(materialInserts, (rows) =>
+                trx
+                  .insertInto("material")
+                  .values(rows)
+                  // Same orphan-after-delete case as the type insert above: the
+                  // material row survives an item delete, so re-import must not
+                  // collide on the (id, companyId) PK.
+                  .onConflict((oc) =>
+                    oc.columns(["id", "companyId"]).doNothing()
+                  )
+                  .execute()
+              );
             }
 
             // Build supplier-part links and lead-time entries for the items we
@@ -2508,11 +2521,9 @@ export const importCsv = defineServerFn({
           });
 
           if (contactInserts.length > 0) {
-            const inserted = await trx
-              .insertInto("contact")
-              .values(contactInserts)
-              .returning(["id"])
-              .execute();
+            const inserted = await inChunks(contactInserts, (rows) =>
+              trx.insertInto("contact").values(rows).returning(["id"]).execute()
+            );
             await upsertCsvMappings(
               trx,
               "contact",
@@ -2537,10 +2548,9 @@ export const importCsv = defineServerFn({
           }
 
           if (customerContactInserts.length > 0) {
-            await trx
-              .insertInto("customerContact")
-              .values(customerContactInserts)
-              .execute();
+            await inChunks(customerContactInserts, (rows) =>
+              trx.insertInto("customerContact").values(rows).execute()
+            );
           }
         });
 
@@ -2637,11 +2647,9 @@ export const importCsv = defineServerFn({
           });
 
           if (contactInserts.length > 0) {
-            const inserted = await trx
-              .insertInto("contact")
-              .values(contactInserts)
-              .returning(["id"])
-              .execute();
+            const inserted = await inChunks(contactInserts, (rows) =>
+              trx.insertInto("contact").values(rows).returning(["id"]).execute()
+            );
             await upsertCsvMappings(
               trx,
               "contact",
@@ -2666,10 +2674,9 @@ export const importCsv = defineServerFn({
           }
 
           if (supplierContactInserts.length > 0) {
-            await trx
-              .insertInto("supplierContact")
-              .values(supplierContactInserts)
-              .execute();
+            await inChunks(supplierContactInserts, (rows) =>
+              trx.insertInto("supplierContact").values(rows).execute()
+            );
           }
         });
 
@@ -2754,11 +2761,13 @@ export const importCsv = defineServerFn({
           });
 
           if (workCenterInserts.length > 0) {
-            const inserted = await trx
-              .insertInto("workCenter")
-              .values(workCenterInserts)
-              .returning(["id"])
-              .execute();
+            const inserted = await inChunks(workCenterInserts, (rows) =>
+              trx
+                .insertInto("workCenter")
+                .values(rows)
+                .returning(["id"])
+                .execute()
+            );
             await upsertCsvMappings(
               trx,
               "workCenter",
@@ -2871,11 +2880,9 @@ export const importCsv = defineServerFn({
           });
 
           if (processInserts.length > 0) {
-            const inserted = await trx
-              .insertInto("process")
-              .values(processInserts)
-              .returning(["id"])
-              .execute();
+            const inserted = await inChunks(processInserts, (rows) =>
+              trx.insertInto("process").values(rows).returning(["id"]).execute()
+            );
             await upsertCsvMappings(
               trx,
               "process",
@@ -3182,11 +3189,13 @@ export const importCsv = defineServerFn({
           summary.updated += updates.length;
 
           if (inserts.length > 0) {
-            const inserted = await trx
-              .insertInto("storageUnit")
-              .values(inserts)
-              .returning(["id"])
-              .execute();
+            const inserted = await inChunks(inserts, (rows) =>
+              trx
+                .insertInto("storageUnit")
+                .values(rows)
+                .returning(["id"])
+                .execute()
+            );
             await upsertCsvMappings(
               trx,
               "storageUnit",

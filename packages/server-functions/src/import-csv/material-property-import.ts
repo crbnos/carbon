@@ -1,6 +1,7 @@
 import type { KyselyDatabase } from "@carbon/database/client";
 import { getLogger } from "@carbon/logger";
 import type { Kysely, Transaction } from "kysely";
+import { inChunks } from "./chunks";
 
 const logger = getLogger("server-functions", "import-csv");
 
@@ -108,23 +109,25 @@ const CONFIGS: Record<MaterialPropertyTable, TableConfig> = {
     },
     insert: async (trx, rows, companyId, userId) => {
       const now = new Date().toISOString();
-      const inserted = await trx
-        .insertInto("materialSubstance")
-        .values(
-          rows.map(
-            (r) =>
-              ({
-                name: r.name!.trim(),
-                code: r.code!.trim(),
-                companyId,
-                createdBy: userId,
-                createdAt: now
-              }) as never
-          )
-        )
-        .onConflict((oc) => oc.doNothing())
-        .returning(["id"])
-        .execute();
+      const inserted = await inChunks(
+        rows.map(
+          (r) =>
+            ({
+              name: r.name!.trim(),
+              code: r.code!.trim(),
+              companyId,
+              createdBy: userId,
+              createdAt: now
+            }) as never
+        ),
+        (rows) =>
+          trx
+            .insertInto("materialSubstance")
+            .values(rows)
+            .onConflict((oc) => oc.doNothing())
+            .returning(["id"])
+            .execute()
+      );
       return inserted.length;
     }
   },
@@ -148,23 +151,25 @@ const CONFIGS: Record<MaterialPropertyTable, TableConfig> = {
     },
     insert: async (trx, rows, companyId, userId) => {
       const now = new Date().toISOString();
-      const inserted = await trx
-        .insertInto("materialForm")
-        .values(
-          rows.map(
-            (r) =>
-              ({
-                name: r.name!.trim(),
-                code: r.code!.trim(),
-                companyId,
-                createdBy: userId,
-                createdAt: now
-              }) as never
-          )
-        )
-        .onConflict((oc) => oc.doNothing())
-        .returning(["id"])
-        .execute();
+      const inserted = await inChunks(
+        rows.map(
+          (r) =>
+            ({
+              name: r.name!.trim(),
+              code: r.code!.trim(),
+              companyId,
+              createdBy: userId,
+              createdAt: now
+            }) as never
+        ),
+        (rows) =>
+          trx
+            .insertInto("materialForm")
+            .values(rows)
+            .onConflict((oc) => oc.doNothing())
+            .returning(["id"])
+            .execute()
+      );
       return inserted.length;
     }
   },
@@ -196,21 +201,23 @@ const CONFIGS: Record<MaterialPropertyTable, TableConfig> = {
       );
     },
     insert: async (trx, rows, companyId) => {
-      const inserted = await trx
-        .insertInto("materialFinish")
-        .values(
-          rows.map(
-            (r) =>
-              ({
-                name: r.name!.trim(),
-                materialSubstanceId: r.materialSubstanceId!.trim(),
-                companyId
-              }) as never
-          )
-        )
-        .onConflict((oc) => oc.doNothing())
-        .returning(["id"])
-        .execute();
+      const inserted = await inChunks(
+        rows.map(
+          (r) =>
+            ({
+              name: r.name!.trim(),
+              materialSubstanceId: r.materialSubstanceId!.trim(),
+              companyId
+            }) as never
+        ),
+        (rows) =>
+          trx
+            .insertInto("materialFinish")
+            .values(rows)
+            .onConflict((oc) => oc.doNothing())
+            .returning(["id"])
+            .execute()
+      );
       return inserted.length;
     }
   },
@@ -242,21 +249,23 @@ const CONFIGS: Record<MaterialPropertyTable, TableConfig> = {
       );
     },
     insert: async (trx, rows, companyId) => {
-      const inserted = await trx
-        .insertInto("materialGrade")
-        .values(
-          rows.map(
-            (r) =>
-              ({
-                name: r.name!.trim(),
-                materialSubstanceId: r.materialSubstanceId!.trim(),
-                companyId
-              }) as never
-          )
-        )
-        .onConflict((oc) => oc.doNothing())
-        .returning(["id"])
-        .execute();
+      const inserted = await inChunks(
+        rows.map(
+          (r) =>
+            ({
+              name: r.name!.trim(),
+              materialSubstanceId: r.materialSubstanceId!.trim(),
+              companyId
+            }) as never
+        ),
+        (rows) =>
+          trx
+            .insertInto("materialGrade")
+            .values(rows)
+            .onConflict((oc) => oc.doNothing())
+            .returning(["id"])
+            .execute()
+      );
       return inserted.length;
     }
   },
@@ -311,23 +320,25 @@ const CONFIGS: Record<MaterialPropertyTable, TableConfig> = {
       return set;
     },
     insert: async (trx, rows, companyId) => {
-      const inserted = await trx
-        .insertInto("materialType")
-        .values(
-          rows.map(
-            (r) =>
-              ({
-                name: r.name!.trim(),
-                code: r.code!.trim(),
-                materialSubstanceId: r.materialSubstanceId!.trim(),
-                materialFormId: r.materialFormId!.trim(),
-                companyId
-              }) as never
-          )
-        )
-        .onConflict((oc) => oc.doNothing())
-        .returning(["id"])
-        .execute();
+      const inserted = await inChunks(
+        rows.map(
+          (r) =>
+            ({
+              name: r.name!.trim(),
+              code: r.code!.trim(),
+              materialSubstanceId: r.materialSubstanceId!.trim(),
+              materialFormId: r.materialFormId!.trim(),
+              companyId
+            }) as never
+        ),
+        (rows) =>
+          trx
+            .insertInto("materialType")
+            .values(rows)
+            .onConflict((oc) => oc.doNothing())
+            .returning(["id"])
+            .execute()
+      );
       return inserted.length;
     }
   },
@@ -357,22 +368,24 @@ const CONFIGS: Record<MaterialPropertyTable, TableConfig> = {
       return new Set(rows.map((x) => `${x.materialFormId}:${norm(x.name)}`));
     },
     insert: async (trx, rows, companyId) => {
-      const inserted = await trx
-        .insertInto("materialDimension")
-        .values(
-          rows.map(
-            (r) =>
-              ({
-                name: r.name!.trim(),
-                materialFormId: r.materialFormId!.trim(),
-                isMetric: isMetricValue(r.isMetric),
-                companyId
-              }) as never
-          )
-        )
-        .onConflict((oc) => oc.doNothing())
-        .returning(["id"])
-        .execute();
+      const inserted = await inChunks(
+        rows.map(
+          (r) =>
+            ({
+              name: r.name!.trim(),
+              materialFormId: r.materialFormId!.trim(),
+              isMetric: isMetricValue(r.isMetric),
+              companyId
+            }) as never
+        ),
+        (rows) =>
+          trx
+            .insertInto("materialDimension")
+            .values(rows)
+            .onConflict((oc) => oc.doNothing())
+            .returning(["id"])
+            .execute()
+      );
       return inserted.length;
     }
   }

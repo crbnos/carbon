@@ -85,7 +85,7 @@ export const postReceipt = defineServerFn({
           client
             .from("trackedEntity")
             .select("*")
-            .eq("attributes->> Receipt", receiptId)
+            .contains("attributes", { Receipt: receiptId })
             .eq("companyId", companyId),
           client
             .from("dimension")

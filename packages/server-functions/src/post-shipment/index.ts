@@ -67,7 +67,7 @@ export const postShipment = defineServerFn({
           client
             .from("trackedEntity")
             .select("*")
-            .eq("attributes->> Shipment", shipmentId)
+            .contains("attributes", { Shipment: shipmentId })
             .eq("companyId", companyId)
         ]
       );

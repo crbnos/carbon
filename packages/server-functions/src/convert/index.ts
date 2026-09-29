@@ -7,7 +7,7 @@ import {
 } from "@carbon/database/posting";
 import { getNextSequence } from "@carbon/database/sequence";
 import { getLogger } from "@carbon/logger";
-import { deriveRate } from "@carbon/utils";
+import { async, deriveRate } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
 import { defineServerFn } from "../define-server-fn";
@@ -1361,17 +1361,20 @@ export const convert = defineServerFn({
           convertedId = insertedQuoteId;
         });
 
-        // get method for each make line
-        await Promise.all(
-          insertedQuoteLines
-            .filter((line) => line.methodType === "Make to Order")
-            .map((line) =>
-              getMethod(ServerFnContext.system({ db, companyId, userId }), {
-                type: "itemToQuoteLine",
-                sourceId: line.itemId!,
-                targetId: `${insertedQuoteId}:${line.id}`
-              })
-            )
+        // Copy each make line's method. Each copy holds a pooled connection
+        // for its whole tree, so a few at a time rather than all at once.
+        const system = ServerFnContext.system({ db, companyId, userId });
+        await async.map(
+          insertedQuoteLines.filter(
+            (line) => line.methodType === "Make to Order"
+          ),
+          (line) =>
+            getMethod(system, {
+              type: "itemToQuoteLine",
+              sourceId: line.itemId!,
+              targetId: `${insertedQuoteId}:${line.id}`
+            }),
+          { concurrency: 2 }
         );
         break;
       }

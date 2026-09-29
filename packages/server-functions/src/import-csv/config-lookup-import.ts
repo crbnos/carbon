@@ -1,6 +1,7 @@
 import type { KyselyDatabase } from "@carbon/database/client";
 import { getLogger } from "@carbon/logger";
 import type { Kysely, Transaction } from "kysely";
+import { inChunks } from "./chunks";
 
 const logger = getLogger("server-functions", "import-csv");
 
@@ -252,22 +253,24 @@ export async function importConfigLookups(
 
     if (accepted.length > 0) {
       const now = new Date().toISOString();
-      const inserted = await trx
-        .insertInto(table)
-        .values(
-          accepted.map(
-            (r) =>
-              ({
-                ...config.values(r),
-                companyId,
-                createdBy: userId,
-                createdAt: now
-              }) as never
-          )
-        )
-        .onConflict((oc) => oc.doNothing())
-        .returning(["id"])
-        .execute();
+      const inserted = await inChunks(
+        accepted.map(
+          (r) =>
+            ({
+              ...config.values(r),
+              companyId,
+              createdBy: userId,
+              createdAt: now
+            }) as never
+        ),
+        (rows) =>
+          trx
+            .insertInto(table)
+            .values(rows)
+            .onConflict((oc) => oc.doNothing())
+            .returning(["id"])
+            .execute()
+      );
       summary.inserted += inserted.length;
     }
   });

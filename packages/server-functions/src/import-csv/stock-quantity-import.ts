@@ -41,6 +41,7 @@ import { parseDate } from "@internationalized/date";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Kysely } from "kysely";
 import { nanoid } from "nanoid";
+import { chunked } from "./chunks";
 import {
   buildStockItemMap,
   classifyStockRow,
@@ -62,21 +63,6 @@ type Summary = {
 };
 
 const text = (s: string | undefined): string => (s ?? "").trim();
-
-// Rows per INSERT. Every statement here is a plain multi-row VALUES insert, so
-// the ceiling is Postgres' 65535 bind parameters: the widest table written
-// (itemLedger, 14 columns) is ~7k parameters at this size, and the deepest
-// fan-out (journalLineDimension, 3 tags × 2 lines per row) still lands inside
-// one statement per 84 source rows.
-const INSERT_CHUNK_SIZE = 500;
-
-const chunked = <T>(rows: T[], size = INSERT_CHUNK_SIZE): T[][] => {
-  const chunks: T[][] = [];
-  for (let i = 0; i < rows.length; i += size) {
-    chunks.push(rows.slice(i, i + size));
-  }
-  return chunks;
-};
 
 export async function importStockQuantities(
   db: Kysely<KyselyDatabase>,

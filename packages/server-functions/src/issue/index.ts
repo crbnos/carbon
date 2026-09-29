@@ -2042,7 +2042,9 @@ export const issue = defineServerFn({
         const trackedEntities = await client
           .from("trackedEntity")
           .select("*")
-          .eq("attributes->>Job Make Method", jobOperation.data.jobMakeMethodId)
+          .contains("attributes", {
+            "Job Make Method": jobOperation.data.jobMakeMethodId
+          })
           .eq("companyId", companyId)
           .order("createdAt", { ascending: true });
 
@@ -2319,7 +2321,9 @@ export const issue = defineServerFn({
           client
             .from("trackedEntity")
             .select("id")
-            .eq("attributes->>Job Make Method", operation.jobMakeMethodId)
+            .contains("attributes", {
+              "Job Make Method": operation.jobMakeMethodId
+            })
             .eq("companyId", companyId),
           client
             .from("companySettings")

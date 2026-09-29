@@ -9,7 +9,7 @@ import {
 import { getLogger } from "@carbon/logger";
 import { buildBatchSplitRecords, isFullDraw, round } from "@carbon/utils";
 import type { CalendarDate } from "@internationalized/date";
-import { type Insertable, sql } from "kysely";
+import type { Insertable } from "kysely";
 import { nanoid } from "nanoid";
 import { z } from "zod";
 import { assertCompanyRecords } from "../company-records";
@@ -22,6 +22,7 @@ import {
   expiryVerdict,
   getExpiredEntityPolicy
 } from "../shelf-life";
+import { attributesContain } from "../tracked-entity-attributes";
 
 const logger = getLogger("server-functions", "post-stock-transfer");
 
@@ -1012,9 +1013,7 @@ export const postStockTransfer = defineServerFn({
               .where("type", "=", "Split")
               .where("sourceDocument", "=", "Stock Transfer")
               .where("sourceDocumentId", "=", stockTransferId)
-              .where(
-                sql<boolean>`attributes->>'Split Entity ID' = ${trackedEntityId}`
-              )
+              .where(attributesContain({ "Split Entity ID": trackedEntityId }))
               .where("companyId", "=", companyId)
               .selectAll()
               .executeTakeFirst();
@@ -1059,7 +1058,7 @@ export const postStockTransfer = defineServerFn({
               .where("sourceDocument", "=", "Stock Transfer")
               .where("sourceDocumentId", "=", stockTransferId)
               .where(
-                sql<boolean>`attributes->>'Split Entity ID' = ${legacyRemainderId}`
+                attributesContain({ "Split Entity ID": legacyRemainderId })
               )
               .where("companyId", "=", companyId)
               .selectAll()

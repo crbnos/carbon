@@ -17,12 +17,13 @@ import {
   isFullDraw,
   round
 } from "@carbon/utils";
-import { type Insertable, sql } from "kysely";
+import type { Insertable } from "kysely";
 import { nanoid } from "nanoid";
 import { z } from "zod";
 import { assertCompanyRecords } from "../company-records";
 import { defineServerFn } from "../define-server-fn";
 import { NotFoundError } from "../errors";
+import { attributesContain } from "../tracked-entity-attributes";
 
 type ItemLedgerInsert = Database["public"]["Tables"]["itemLedger"]["Insert"];
 
@@ -944,7 +945,7 @@ export const postPicking = defineServerFn({
                 .selectFrom("trackedActivity")
                 .where("type", "=", "Split")
                 .where(
-                  sql<boolean>`attributes->>'Split Entity ID' = ${trackedEntityId}`
+                  attributesContain({ "Split Entity ID": trackedEntityId })
                 )
                 .where("companyId", "=", companyId)
                 .selectAll()

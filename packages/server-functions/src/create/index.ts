@@ -1725,7 +1725,7 @@ export const create = defineServerFn({
               .from("trackedEntity")
               .select("*")
               .eq("companyId", companyId)
-              .eq("attributes->> Receipt Line", receiptLineId)
+              .contains("attributes", { "Receipt Line": receiptLineId })
           ]);
 
           logger.debug({ trackedEntities });
@@ -2420,7 +2420,7 @@ export const create = defineServerFn({
                 .from("trackedEntity")
                 .select("id, attributes")
                 .eq("companyId", companyId)
-                .eq("attributes ->> Shipment", shipment.data!.id)
+                .contains("attributes", { Shipment: shipment.data!.id })
             : { data: [], error: null };
           if (staleEntities.error) throw new Error(staleEntities.error.message);
 
@@ -3004,7 +3004,9 @@ export const create = defineServerFn({
                           .from("trackedEntity")
                           .select("*")
                           .eq("companyId", companyId)
-                          .eq("attributes->>Job Make Method", jobMakeMethod.id)
+                          .contains("attributes", {
+                            "Job Make Method": jobMakeMethod.id
+                          })
                           .order("createdAt", { ascending: true });
 
                         let index = 0;
@@ -3318,7 +3320,9 @@ export const create = defineServerFn({
                         .from("trackedEntity")
                         .select("*")
                         .eq("companyId", companyId)
-                        .eq("attributes->>Job Make Method", jobMakeMethod.id)
+                        .contains("attributes", {
+                          "Job Make Method": jobMakeMethod.id
+                        })
                         .order("createdAt", { ascending: true });
 
                       let index = 0;
