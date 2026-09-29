@@ -15,8 +15,8 @@ import {
 } from "../payment";
 
 const { invokeMock } = vi.hoisted(() => ({ invokeMock: vi.fn() }));
-vi.mock("@carbon/auth/client.server", () => ({
-  getCarbonServiceRole: () => ({ functions: { invoke: invokeMock } })
+vi.mock("@carbon/operations/post-payment", () => ({
+  postPayment: invokeMock
 }));
 
 describe("composite payment sync entity id", () => {
@@ -995,14 +995,14 @@ describe("PaymentSyncerBase post-payment dispatch", () => {
 
     const result = await syncer.applyPostPayment("inv-1:pay-1", successResult);
 
-    expect(invokeMock).toHaveBeenCalledWith("post-payment", {
-      body: {
-        type: "post",
-        paymentId: "payment-row-1",
+    expect(invokeMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        companyId: "company-1",
         userId: "user-1",
-        companyId: "company-1"
-      }
-    });
+        system: true
+      }),
+      { type: "post", paymentId: "payment-row-1" }
+    );
     expect(result).toEqual(successResult);
   });
 
@@ -1015,14 +1015,14 @@ describe("PaymentSyncerBase post-payment dispatch", () => {
 
     await syncer.applyPostPayment("inv-1:pay-1", successResult);
 
-    expect(invokeMock).toHaveBeenCalledWith("post-payment", {
-      body: {
-        type: "void",
-        paymentId: "payment-row-1",
+    expect(invokeMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        companyId: "company-1",
         userId: "user-1",
-        companyId: "company-1"
-      }
-    });
+        system: true
+      }),
+      { type: "void", paymentId: "payment-row-1" }
+    );
   });
 
   it("does not invoke post-payment when postAction is 'none'", async () => {
@@ -1038,8 +1038,8 @@ describe("PaymentSyncerBase post-payment dispatch", () => {
 
   it("surfaces a post-payment error as a Failed result (not swallowed)", async () => {
     invokeMock.mockResolvedValue({
-      data: { message: "Accounting period is locked" },
-      error: { message: "Edge Function returned 500" }
+      data: null,
+      error: { message: "Accounting period is locked" }
     });
     const syncer = makeDispatchSyncer({
       paymentRowId: "payment-row-1",

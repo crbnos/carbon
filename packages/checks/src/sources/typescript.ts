@@ -30,7 +30,10 @@ const TYPESCRIPT_ROOTS = [
 
 const EXCLUDED_DIRS = new Set(["node_modules"]);
 
+// `*-test-fixture.ts` is test support code (live-database fixtures), not
+// shipped code, so it is held to the same rules as the tests that import it.
 const isTest = (name: string) =>
+  name.endsWith("-test-fixture.ts") ||
   name.endsWith(".test.ts") ||
   name.endsWith(".test.tsx") ||
   name.endsWith(".spec.ts") ||

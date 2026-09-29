@@ -2,7 +2,7 @@ import {
   assert,
   assertEquals,
 } from "https://deno.land/std@0.175.0/testing/asserts.ts";
-import { round } from "../shared/precision.ts";
+import { round } from "./precision.ts";
 import {
   buildPaymentJournal,
   type PaymentJournalApplicationInput,

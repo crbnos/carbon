@@ -1,12 +1,12 @@
 // Pure journal construction from authoritative, locked funding allocations.
 // Cash/sourceAmount are document currency. Control, relief, carrying remainders,
 // and the persisted per-application realized FX snapshots are company base.
-import { assertBalanced, EPSILON, round } from "../shared/precision.ts";
+import { assertBalanced, EPSILON, round } from "./precision.ts";
 import {
   assertExchangeRate,
   toBaseAmount,
-} from "../shared/accounting-currency.ts";
-import { onAccountCreditDescription } from "../shared/accounting-posting.ts";
+} from "./accounting-currency.ts";
+import { onAccountCreditDescription } from "./accounting-posting.ts";
 import { accountTypeFromClass, credit, debit } from "../lib/utils.ts";
 
 export interface PaymentJournalLine {

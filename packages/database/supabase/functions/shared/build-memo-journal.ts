@@ -31,8 +31,8 @@
 // purchase price variance — emitted as a third leg. Without it the credit and
 // the cost never reconcile and GRNI keeps a permanent residual.
 
-import { assertBalanced, round } from "../shared/precision.ts";
-import { toBaseAmount } from "../shared/accounting-currency.ts";
+import { assertBalanced, round } from "./precision.ts";
+import { toBaseAmount } from "./accounting-currency.ts";
 import { accountTypeFromClass, credit, debit } from "../lib/utils.ts";
 
 type AccountType = "asset" | "liability" | "equity" | "revenue" | "expense";

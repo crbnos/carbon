@@ -11,6 +11,7 @@ import {
   getPostgresConnectionPool
 } from "@carbon/database/client";
 import { getLogger } from "@carbon/logger";
+import { postPayment } from "@carbon/operations/post-payment";
 import type { ConnectInvoice } from "@carbon/stripe/connect.server";
 import {
   fromStripeAmount,
@@ -541,15 +542,10 @@ export async function recordStripeConnectPayment({
     );
   }
 
-  const posted = await serviceRole.functions.invoke("post-payment", {
-    body: {
-      type: "post",
-      paymentId,
-      userId: SYSTEM_USER,
-      companyId,
-      fee: journalFee
-    }
-  });
+  const posted = await postPayment(
+    { db: _db, companyId, userId: SYSTEM_USER, system: true },
+    { type: "post", paymentId, fee: journalFee }
+  );
 
   if (posted.error) {
     // The payment and its settlement are correct — only the posting failed, so
@@ -654,14 +650,10 @@ export async function voidStripeConnectPayment({
 
   const voidedIds: string[] = [];
   for (const payment of voidable) {
-    const voided = await serviceRole.functions.invoke("post-payment", {
-      body: {
-        type: "void",
-        paymentId: payment.id,
-        userId: SYSTEM_USER,
-        companyId
-      }
-    });
+    const voided = await postPayment(
+      { db: _db, companyId, userId: SYSTEM_USER, system: true },
+      { type: "void", paymentId: payment.id }
+    );
 
     if (voided.error) {
       logger.error("Failed to void a Stripe Connect payment", {

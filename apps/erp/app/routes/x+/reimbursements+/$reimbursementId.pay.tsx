@@ -3,6 +3,7 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
+import { postPaymentAs } from "@carbon/operations/post-payment";
 import { toBaseAmount } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
@@ -186,13 +187,13 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   const serviceRole = getCarbonServiceRole();
   try {
-    const result = await serviceRole.functions.invoke("post-payment", {
-      body: { type: "post", paymentId: payment.data.id, userId, companyId }
+    const result = await postPaymentAs(serviceRole, getDatabaseClient(), {
+      type: "post",
+      paymentId: payment.data.id,
+      userId,
+      companyId
     });
     if (result.error) {
-      // `result.data` is ALWAYS null on a non-2xx, and `FunctionsHttpError.message`
-      // is the fixed "Edge Function returned a non-2xx status code" — so reading
-      // either hides the real reason post-payment refused.
       const message = await getEdgeFunctionErrorMessage(
         result.error,
         "Failed to post the payment"

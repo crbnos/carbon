@@ -5,6 +5,7 @@ import {
   upsertLocalPaymentDraft
 } from "@carbon/ee/accounting";
 import type { RampBill, RampBillPayment } from "@carbon/ee/ramp.server";
+import { postPaymentAs } from "@carbon/operations/post-payment";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { type Kysely, sql } from "kysely";
 
@@ -189,19 +190,15 @@ export async function createOrResumeRampPayment(
   return ensureRampPaymentPosted({
     stage: () => stageRampPaymentDraft(db, args),
     post: async (paymentRowId) => {
-      const response = await client.functions.invoke("post-payment", {
-        body: {
-          type: "post",
-          paymentId: paymentRowId,
-          userId: args.actorId,
-          companyId: args.companyId
-        }
+      const response = await postPaymentAs(client, db, {
+        type: "post",
+        paymentId: paymentRowId,
+        userId: args.actorId,
+        companyId: args.companyId
       });
       return {
         error: Boolean(response.error),
-        message:
-          (response.data as { message?: string } | undefined)?.message ??
-          response.error?.message
+        message: response.error?.message
       };
     },
     readStatus: async (paymentRowId) => {

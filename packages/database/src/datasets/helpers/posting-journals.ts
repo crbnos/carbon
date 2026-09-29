@@ -4,8 +4,8 @@ import {
   debit,
   journalReference
 } from "../../../supabase/functions/lib/utils.ts";
-import { buildMemoJournal } from "../../../supabase/functions/post-memo/build-memo-journal.ts";
-import { buildPaymentJournal } from "../../../supabase/functions/post-payment/build-payment-journal.ts";
+import { buildMemoJournal } from "../../../supabase/functions/shared/build-memo-journal.ts";
+import { buildPaymentJournal } from "../../../supabase/functions/shared/build-payment-journal.ts";
 import {
   EPSILON,
   round

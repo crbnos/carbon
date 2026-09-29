@@ -28,6 +28,8 @@
   },
   "devDependencies": {
     "@carbon/config": "workspace:*",
+    "@types/pg": "8.15.6",
+    "pg": "8.20.0",
     "vitest": "catalog:"
   }
 }

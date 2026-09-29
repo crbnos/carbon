@@ -251,20 +251,23 @@ export abstract class PaymentSyncerBase<TRemote> extends BaseEntitySyncer<
     type: "post" | "void",
     userId: string
   ): Promise<{ error: false } | { error: true; message: string }> {
-    // Dynamic import: keeps the server-only auth/env module out of the module
-    // graph for consumers (and tests) that never post a payment (mirrors the
-    // base's dynamic import of the SyncFactory).
-    const { getCarbonServiceRole } = await import("@carbon/auth/client.server");
-    const serviceRole = getCarbonServiceRole();
-    const response = await serviceRole.functions.invoke("post-payment", {
-      body: { type, paymentId, userId, companyId: this.companyId }
-    });
+    // Dynamic import: keeps the operation graph out of consumers (and tests)
+    // that never post a payment (mirrors the base's dynamic import of the
+    // SyncFactory).
+    const { postPayment } = await import("@carbon/operations/post-payment");
+    const posted = await postPayment(
+      {
+        db: this.database,
+        companyId: this.companyId,
+        userId,
+        system: true
+      },
+      { type, paymentId }
+    );
 
-    if (response.error) {
+    if (posted.error) {
       const message =
-        (response.data as { message?: string } | undefined)?.message ??
-        response.error.message ??
-        `Failed to ${type} payment ${paymentId}`;
+        posted.error.message || `Failed to ${type} payment ${paymentId}`;
       return { error: true, message };
     }
     return { error: false };
