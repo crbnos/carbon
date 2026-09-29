@@ -17,6 +17,56 @@ type IntegrationErrorMessage = {
   description: MessageDescriptor;
 };
 
+/**
+ * Onshape's public-app copy. The panel's own grant (`onshape-v2`) authorizes
+ * against the same OAuth application through the same callback handler, so its
+ * failures read the same. It never answers `connection-conflict`: the panel is
+ * not one of the sync connections that rule is about.
+ */
+const onshapeErrors = {
+  // `invalid_scope` means the OAuth application isn't granted a scope we asked
+  // for. In practice that's `OAuth2Write`, so name the exact dev-portal
+  // permission instead of echoing Onshape's wording, which never says which
+  // scope is missing. The quoted label stays English in every locale — it's a
+  // literal string in Onshape's UI.
+  "write-permission": {
+    title: msg`Onshape denied the connection`,
+    description: msg`In Onshape, edit this OAuth application's permissions to include "Application can write to your documents", then connect again.`
+  },
+  denied: {
+    title: msg`Onshape denied the connection`,
+    description: msg`The authorization was refused in Onshape. Try connecting again.`
+  },
+  "invalid-state": {
+    title: msg`The Onshape connection expired`,
+    description: msg`Return to Integrations and connect Onshape again.`
+  },
+  "invalid-response": {
+    title: msg`Onshape didn't return an authorization code`,
+    description: msg`The response from Onshape was missing required parameters. Try connecting again.`
+  },
+  "not-configured": {
+    title: msg`Onshape isn't configured`,
+    description: msg`This Carbon instance is missing its Onshape OAuth credentials. Ask an administrator to set them.`
+  },
+  "token-exchange": {
+    title: msg`Onshape rejected the authorization`,
+    description: msg`Exchanging the authorization code for an access token failed. Try connecting again.`
+  },
+  "save-failed": {
+    title: msg`Couldn't save the Onshape connection`,
+    description: msg`Onshape authorized the connection but saving it failed. Try connecting again.`
+  },
+  unexpected: {
+    title: msg`Couldn't complete the Onshape connection`,
+    description: msg`An unexpected error occurred while connecting to Onshape. Try connecting again.`
+  },
+  "connection-conflict": {
+    title: msg`Onshape Government is already connected`,
+    description: msg`A company connects to one Onshape at a time. Uninstall Onshape Government, then connect Onshape.`
+  }
+} satisfies Record<string, IntegrationErrorMessage>;
+
 export const integrationErrors = {
   ramp: {
     denied: {
@@ -55,49 +105,8 @@ export const integrationErrors = {
       description: msg`Ramp allows only one. Disconnect the other system in Ramp, or connect Carbon again choosing "Another system posts my ledger".`
     }
   },
-  onshape: {
-    // `invalid_scope` means the OAuth application isn't granted a scope we asked
-    // for. In practice that's `OAuth2Write`, so name the exact dev-portal
-    // permission instead of echoing Onshape's wording, which never says which
-    // scope is missing. The quoted label stays English in every locale — it's a
-    // literal string in Onshape's UI.
-    "write-permission": {
-      title: msg`Onshape denied the connection`,
-      description: msg`In Onshape, edit this OAuth application's permissions to include "Application can write to your documents", then connect again.`
-    },
-    denied: {
-      title: msg`Onshape denied the connection`,
-      description: msg`The authorization was refused in Onshape. Try connecting again.`
-    },
-    "invalid-state": {
-      title: msg`The Onshape connection expired`,
-      description: msg`Return to Integrations and connect Onshape again.`
-    },
-    "invalid-response": {
-      title: msg`Onshape didn't return an authorization code`,
-      description: msg`The response from Onshape was missing required parameters. Try connecting again.`
-    },
-    "not-configured": {
-      title: msg`Onshape isn't configured`,
-      description: msg`This Carbon instance is missing its Onshape OAuth credentials. Ask an administrator to set them.`
-    },
-    "token-exchange": {
-      title: msg`Onshape rejected the authorization`,
-      description: msg`Exchanging the authorization code for an access token failed. Try connecting again.`
-    },
-    "save-failed": {
-      title: msg`Couldn't save the Onshape connection`,
-      description: msg`Onshape authorized the connection but saving it failed. Try connecting again.`
-    },
-    unexpected: {
-      title: msg`Couldn't complete the Onshape connection`,
-      description: msg`An unexpected error occurred while connecting to Onshape. Try connecting again.`
-    },
-    "connection-conflict": {
-      title: msg`Onshape Government is already connected`,
-      description: msg`A company connects to one Onshape at a time. Uninstall Onshape Government, then connect Onshape.`
-    }
-  },
+  onshape: onshapeErrors,
+  "onshape-v2": onshapeErrors,
   // A Government customer's private OAuth app. Same codes as `onshape` — the two
   // share one callback handler — but the fixes live in the customer's own
   // Enterprise settings and in the Carbon integration settings, not in Carbon's
