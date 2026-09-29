@@ -2951,7 +2951,12 @@ const UNPOSTED_DOCUMENT_LIMIT = 25;
  * for the topology work. Until then, a provider added to the registry must be
  * added here too.
  */
-const ACCOUNTING_SYNC_INTEGRATION_IDS = ["xero", "quickbooks", "rillet"];
+const ACCOUNTING_SYNC_INTEGRATION_IDS = [
+  "xero",
+  "quickbooks",
+  "rillet",
+  "netsuite"
+];
 
 /** Terminal sync dispositions — the journal is accounted for externally. */
 const TERMINAL_SYNC_OPERATION_STATUSES = new Set([

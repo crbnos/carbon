@@ -6462,9 +6462,6 @@ msgstr "vence en 1 día"
 msgid "due now"
 msgstr "vence ahora"
 
-msgid "Due within"
-msgstr "Vence en"
-
 msgid "Duplicate"
 msgstr "Duplicar"
 

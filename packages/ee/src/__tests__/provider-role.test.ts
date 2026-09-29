@@ -19,10 +19,7 @@ import { describe, expect, it } from "vitest";
  */
 
 const SRC = join(__dirname, "..");
-const MIGRATION = join(
-  __dirname,
-  "../../../database/supabase/migrations/20260924133915_integration-provider-role.sql"
-);
+const MIGRATIONS = join(__dirname, "../../../database/supabase/migrations");
 
 function declaredRoles(): Record<string, string> {
   const roles: Record<string, string> = {};
@@ -44,7 +41,10 @@ function declaredRoles(): Record<string, string> {
 }
 
 function backfilledRoles(): Record<string, string> {
-  const sql = readFileSync(MIGRATION, "utf8");
+  const sql = readdirSync(MIGRATIONS)
+    .filter((name) => name.endsWith(".sql"))
+    .map((name) => readFileSync(join(MIGRATIONS, name), "utf8"))
+    .join("\n");
   const roles: Record<string, string> = {};
   for (const stmt of sql.split(/UPDATE\s+"integration"\s+SET/i).slice(1)) {
     const role = stmt.match(/"providerRole"\s*=\s*'(accounting|spend)'/);
@@ -63,6 +63,7 @@ describe("providerRole", () => {
       xero: "accounting",
       quickbooks: "accounting",
       rillet: "accounting",
+      netsuite: "accounting",
       ramp: "spend"
     });
   });

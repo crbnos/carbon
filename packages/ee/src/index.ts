@@ -2,6 +2,7 @@ import { Email } from "./email/config";
 import { Jira } from "./jira/config";
 import { Linear } from "./linear/config";
 import { Mount } from "./mount/config";
+import { NetSuite } from "./netsuite/config";
 import { Onshape, OnshapeGovernment } from "./onshape/config";
 import { PaperlessParts } from "./paperless-parts/config";
 import { QuickBooks } from "./quickbooks/config";
@@ -54,6 +55,7 @@ export const integrations = [
   Jira,
   Linear,
   Mount,
+  NetSuite,
   Onshape,
   OnshapeGovernment,
   PaperlessParts,
@@ -70,6 +72,11 @@ export type IntegrationID = (typeof integrations)[number]["id"];
 
 export { Jira } from "./jira/config";
 export { Mount } from "./mount/config";
+export { NetSuite } from "./netsuite/config";
+export {
+  foldNetSuiteCredentials,
+  unfoldNetSuiteCredentials
+} from "./netsuite/credentials";
 export {
   Logo as OnshapeLogo,
   Onshape,

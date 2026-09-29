@@ -1,4 +1,6 @@
 import type { AccountingProvider } from "../providers";
+import { sumNetSuiteJournalDebitTotals } from "../providers/netsuite/journal";
+import { NetSuiteProvider } from "../providers/netsuite/provider";
 import type { Qbo } from "../providers/quickbooks-online";
 import { QboProvider } from "../providers/quickbooks-online";
 import type { Rillet } from "../providers/rillet";
@@ -141,6 +143,15 @@ export async function fetchRemoteJournalTotals(
     return {
       found: true,
       debitTotalsByAccountRef: sumRilletJournalEntryDebitTotals(entry)
+    };
+  }
+
+  if (provider instanceof NetSuiteProvider) {
+    const entry = await provider.getJournalEntry(externalId);
+    if (!entry) return notFound();
+    return {
+      found: true,
+      debitTotalsByAccountRef: sumNetSuiteJournalDebitTotals(entry)
     };
   }
 

@@ -47,6 +47,12 @@ export const SECRET_KEYS: Record<string, string[]> = {
     "webhookSecret"
   ],
   rillet: ["credentials.apiKey", "credentials.providerMetadata.webhookToken"],
+  netsuite: [
+    "credentials.consumerKey",
+    "credentials.consumerSecret",
+    "credentials.tokenId",
+    "credentials.tokenSecret"
+  ],
   "paperless-parts": ["apiKey", "secretKey"],
   resend: ["apiKey"],
   // email carries a secret in EITHER variant: Resend `apiKey` or SMTP `password`

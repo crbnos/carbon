@@ -1,6 +1,6 @@
 # Accounting
 
-> Mirror invoices, bills, and GL journals to Xero, QuickBooks, or Rillet, and keep exchange rates current.
+> Mirror invoices, bills, and GL journals to Xero, QuickBooks, or Rillet, post journals to NetSuite, and keep exchange rates current.
 
 Carbon keeps an external accounting ledger in step with what happens inside the ERP. Three ledgers are
 supported — **Xero**, **QuickBooks Online**, and **Rillet** — plus an **Exchange Rates** service that keeps
@@ -24,7 +24,7 @@ payments outbound; Xero and QuickBooks are pull-back only.
 
 ## Connect a ledger
 
-Xero and QuickBooks Online connect over **OAuth** — no keys to paste. Rillet uses a per-company **API key**.
+Xero and QuickBooks Online connect over **OAuth** — no keys to paste. Rillet uses a per-company **API key**. NetSuite uses token-based authentication (account id, consumer key, consumer secret, token id, token secret) and an optional subsidiary id. Carbon pushes automated journals to NetSuite and reads its chart of accounts for mapping. Customers, invoices, bills, and payments are not synced.
 
   
   ### Authorize the connection

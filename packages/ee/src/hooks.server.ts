@@ -2,6 +2,11 @@ import { emailHealthcheck } from "./email/hooks.server";
 import { jiraHealthcheck } from "./jira/hooks.server";
 import { linearHealthcheck } from "./linear/hooks.server";
 import { mountHealthcheck } from "./mount/hooks.server";
+import {
+  netsuiteHealthcheck,
+  netsuiteOnInstall,
+  netsuiteOnUninstall
+} from "./netsuite/hooks.server";
 import { onshapeOnUninstall } from "./onshape/hooks.server";
 import {
   quickbooksOnInstall,
@@ -86,6 +91,12 @@ const serverHooks: Record<string, IntegrationServerHooks> = {
     onInstall: rilletOnInstall,
     onUpdate: rilletOnInstall,
     onUninstall: rilletOnUninstall
+  },
+  netsuite: {
+    onHealthcheck: netsuiteHealthcheck,
+    onInstall: netsuiteOnInstall,
+    onUpdate: netsuiteOnInstall,
+    onUninstall: netsuiteOnUninstall
   },
   xero: {
     onHealthcheck: xeroHealthcheck,

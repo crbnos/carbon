@@ -14,7 +14,8 @@ function withNullable<T extends z.ZodTypeAny>(schema: T) {
 export enum ProviderID {
   XERO = "xero",
   QUICKBOOKS = "quickbooks",
-  RILLET = "rillet"
+  RILLET = "rillet",
+  NETSUITE = "netsuite"
   // SAGE = "sage",
 }
 
@@ -53,6 +54,16 @@ export const ProviderCredentialsSchema = z.discriminatedUnion("type", [
     /** Which host the key belongs to — API keys are environment-specific. */
     environment: z.enum(["production", "sandbox"]).default("production"),
     // rillet: { subsidiaryId?, webhookToken? }
+    providerMetadata: z.record(z.string(), z.unknown()).optional()
+  }),
+  z.object({
+    type: z.literal("tba"),
+    accountId: z.string().min(1),
+    consumerKey: z.string().min(1),
+    consumerSecret: z.string().min(1),
+    tokenId: z.string().min(1),
+    tokenSecret: z.string().min(1),
+    // netsuite: { subsidiaryId? }
     providerMetadata: z.record(z.string(), z.unknown()).optional()
   }),
   z.object({

@@ -78,6 +78,9 @@ describe("REQUIRED_SYNC_SUBSCRIPTIONS", () => {
     // Guards the removal above from over-reaching: dropping `item` must not
     // disturb the master/document tables the push actually depends on.
     for (const providerId of Object.values(ProviderID)) {
+      // NetSuite ships journals only. Those document tables have no syncer,
+      // so subscribing them would enqueue events nothing can push.
+      if (providerId === ProviderID.NETSUITE) continue;
       const tables = REQUIRED_SYNC_SUBSCRIPTIONS[providerId].map(
         (subscription) => subscription.table
       );

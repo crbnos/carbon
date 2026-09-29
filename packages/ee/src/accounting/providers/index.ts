@@ -1,9 +1,15 @@
+import type { NetSuiteProvider } from "./netsuite";
 import type { QboProvider } from "./quickbooks-online";
 import type { RilletProvider } from "./rillet";
 import type { XeroProvider } from "./xero";
 
-export type AccountingProvider = XeroProvider | QboProvider | RilletProvider;
+export type AccountingProvider =
+  | XeroProvider
+  | QboProvider
+  | RilletProvider
+  | NetSuiteProvider;
 
+export * from "./netsuite";
 export * from "./quickbooks-online";
 export * from "./rillet";
 export * from "./xero";

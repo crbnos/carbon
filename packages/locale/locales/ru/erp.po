@@ -6462,9 +6462,6 @@ msgstr "срок в 1 день"
 msgid "due now"
 msgstr "срочно"
 
-msgid "Due within"
-msgstr "Срок в пределах"
-
 msgid "Duplicate"
 msgstr "Дублировать"
 

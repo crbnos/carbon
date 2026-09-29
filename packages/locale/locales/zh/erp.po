@@ -6462,9 +6462,6 @@ msgstr "明天到期"
 msgid "due now"
 msgstr "立即到期"
 
-msgid "Due within"
-msgstr "应收期限"
-
 msgid "Duplicate"
 msgstr "复制"
 

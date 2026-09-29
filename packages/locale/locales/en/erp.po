@@ -6462,9 +6462,6 @@ msgstr "due in 1 day"
 msgid "due now"
 msgstr "due now"
 
-msgid "Due within"
-msgstr "Due within"
-
 msgid "Duplicate"
 msgstr "Duplicate"
 

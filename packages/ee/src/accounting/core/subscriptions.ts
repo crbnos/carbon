@@ -107,6 +107,9 @@ export const REQUIRED_SYNC_SUBSCRIPTIONS: Record<
     // payments still ride the CDC pull sweep + webhook.
     { table: "payment", operations: ["INSERT", "UPDATE"] }
   ],
+  // Journals only. Document syncers are not registered, so subscribing
+  // customer/invoice/payment would enqueue events nothing can push.
+  [ProviderID.NETSUITE]: [JOURNAL_SUBSCRIPTION],
   /**
    * Ramp is a SPEND provider: it mirrors Carbon's purchase orders and its open
    * payables, and nothing else. No `customer`/`item`/`journal` — Ramp is not a

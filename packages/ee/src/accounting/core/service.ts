@@ -7,6 +7,7 @@ import {
   resolveIntegrationSecrets
 } from "../../integrations/secrets";
 import type { AccountingProvider } from "../providers";
+import { NetSuiteProvider } from "../providers/netsuite";
 import { QboProvider } from "../providers/quickbooks-online";
 import { RilletProvider } from "../providers/rillet";
 import { XeroProvider } from "../providers/xero";
@@ -228,6 +229,12 @@ export function getProviderIntegration(
 export function getProviderIntegration(
   client: SupabaseClient<Database>,
   companyId: string,
+  provider: ProviderID.NETSUITE,
+  config?: ProviderIntegrationMetadata
+): NetSuiteProvider;
+export function getProviderIntegration(
+  client: SupabaseClient<Database>,
+  companyId: string,
   provider: ProviderID,
   config?: ProviderIntegrationMetadata
 ): AccountingProvider;
@@ -350,6 +357,13 @@ export function getProviderIntegration(
       // API-key provider: no OAuth client and no token refresh — the apiKey
       // credentials variant is the whole connection
       return new RilletProvider({
+        companyId,
+        credentials,
+        syncConfig
+      });
+    }
+    case "netsuite": {
+      return new NetSuiteProvider({
         companyId,
         credentials,
         syncConfig
