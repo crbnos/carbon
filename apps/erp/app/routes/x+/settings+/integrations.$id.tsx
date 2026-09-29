@@ -1,5 +1,6 @@
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
+import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import type { Database, Json } from "@carbon/database";
 import {
@@ -53,6 +54,7 @@ import {
 } from "@carbon/ee/hooks.server";
 import {
   getPath,
+  patchIntegrationState,
   SECRET_KEYS,
   WEBHOOK_SIGNING_SECRET_KEY
 } from "@carbon/ee/integrations/secrets";
@@ -1710,12 +1712,15 @@ export async function action({ request, params }: ActionFunctionArgs) {
   // app's consent screen (below). Re-authorize whenever there is no token yet or
   // the app it was issued by changed — a token is only good for the client and
   // tenant that issued it.
+  const onshapeAppChanged =
+    integrationId === ONSHAPE_GOVERNMENT_INTEGRATION_ID &&
+    (["baseUrl", "oauthUrl", "clientId"] as const).some(
+      (key) => metadata[key] !== existingMetadata[key]
+    );
   const onshapeNeedsAuthorization =
     integrationId === ONSHAPE_GOVERNMENT_INTEGRATION_ID &&
     (!existingMetadata.credentials ||
-      (["baseUrl", "oauthUrl", "clientId"] as const).some(
-        (key) => metadata[key] !== existingMetadata[key]
-      ) ||
+      onshapeAppChanged ||
       (typeof metadata.clientSecret === "string" &&
         metadata.clientSecret.trim().length > 0));
 
@@ -1798,6 +1803,53 @@ export async function action({ request, params }: ActionFunctionArgs) {
         )
       );
     }
+  }
+
+  // A connected Government app whose tenant or client changed: its tokens were
+  // issued by the OLD app for the OLD host. Clear them now rather than when
+  // consent completes — an abandoned or failed consent would otherwise leave
+  // them live, sent to the new host by every job. The upsert below only drops
+  // plaintext fields; vaulted secrets merge, so they are removed explicitly.
+  if (onshapeAppChanged && existingMetadata.credentials) {
+    // Unsubscribe the old tenant's release webhook while its token still works.
+    if (existingMetadata.assetSyncEnabled === true) {
+      const unsubscribed = await ensureOnshapeReleaseWebhook(companyId, false);
+      if (!unsubscribed.ok) {
+        logger.error("Could not remove the previous Onshape release webhook", {
+          companyId,
+          error: unsubscribed.error
+        });
+      }
+    }
+    try {
+      await patchIntegrationState(
+        getCarbonServiceRole(),
+        companyId,
+        integrationId,
+        {
+          removeMetadata: ["credentials", "scope", "onshapeCompanyId"],
+          removeSecrets: ["credentials.accessToken", "credentials.refreshToken"]
+        }
+      );
+    } catch (clearError) {
+      logger.error("Could not clear the previous Onshape credentials", {
+        companyId,
+        error: clearError
+      });
+      return data(
+        {},
+        await flash(
+          request,
+          error(
+            clearError,
+            `Couldn't disconnect the previous ${integration.name} app. Try saving again.`
+          )
+        )
+      );
+    }
+    delete metadata.credentials;
+    delete metadata.scope;
+    delete metadata.onshapeCompanyId;
   }
 
   const update = await upsertCompanyIntegration(client, {
