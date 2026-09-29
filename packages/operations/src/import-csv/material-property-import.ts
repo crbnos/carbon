@@ -1,5 +1,5 @@
-import { Kysely, Transaction } from "npm:kysely@0.27.6";
-import { DB } from "../lib/database.ts";
+import type { KyselyDatabase } from "@carbon/database/client";
+import type { Kysely, Transaction } from "kysely";
 
 type Rec = Record<string, string>;
 
@@ -22,7 +22,9 @@ const norm = (s: string | undefined) => (s ?? "").trim().toLowerCase();
 
 const isMetricValue = (s: string | undefined) => {
   const v = norm(s);
-  return v === "true" || v === "1" || v === "yes" || v === "y" || v === "metric";
+  return (
+    v === "true" || v === "1" || v === "yes" || v === "y" || v === "metric"
+  );
 };
 
 const SUBSTANCE_UNMATCHED =
@@ -40,11 +42,11 @@ type TableConfig = {
   validate: (r: Rec) => string | null;
   keysOf: (r: Rec) => string[];
   loadExistingKeys: (
-    trx: Transaction<DB>,
+    trx: Transaction<KyselyDatabase>,
     companyId: string
   ) => Promise<Set<string>>;
   insert: (
-    trx: Transaction<DB>,
+    trx: Transaction<KyselyDatabase>,
     rows: Rec[],
     companyId: string,
     userId: string
@@ -53,7 +55,7 @@ type TableConfig = {
 };
 
 const loadParentIds = async (
-  trx: Transaction<DB>,
+  trx: Transaction<KyselyDatabase>,
   table: "materialSubstance" | "materialForm",
   companyId: string
 ): Promise<Set<string>> => {
@@ -65,7 +67,7 @@ const loadParentIds = async (
           .where((eb) =>
             eb.or([
               eb("companyId", "=", companyId),
-              eb("companyId", "is", null),
+              eb("companyId", "is", null)
             ])
           )
           .execute()
@@ -75,7 +77,7 @@ const loadParentIds = async (
           .where((eb) =>
             eb.or([
               eb("companyId", "=", companyId),
-              eb("companyId", "is", null),
+              eb("companyId", "is", null)
             ])
           )
           .execute();
@@ -109,11 +111,11 @@ const CONFIGS: Record<MaterialPropertyTable, TableConfig> = {
           rows.map(
             (r) =>
               ({
-                name: r.name.trim(),
-                code: r.code.trim(),
+                name: r.name!.trim(),
+                code: r.code!.trim(),
                 companyId,
                 createdBy: userId,
-                createdAt: now,
+                createdAt: now
               }) as never
           )
         )
@@ -121,7 +123,7 @@ const CONFIGS: Record<MaterialPropertyTable, TableConfig> = {
         .returning(["id"])
         .execute();
       return inserted.length;
-    },
+    }
   },
   materialForm: {
     validate: (r) =>
@@ -149,11 +151,11 @@ const CONFIGS: Record<MaterialPropertyTable, TableConfig> = {
           rows.map(
             (r) =>
               ({
-                name: r.name.trim(),
-                code: r.code.trim(),
+                name: r.name!.trim(),
+                code: r.code!.trim(),
                 companyId,
                 createdBy: userId,
-                createdAt: now,
+                createdAt: now
               }) as never
           )
         )
@@ -161,15 +163,15 @@ const CONFIGS: Record<MaterialPropertyTable, TableConfig> = {
         .returning(["id"])
         .execute();
       return inserted.length;
-    },
+    }
   },
   materialFinish: {
     parents: [
       {
         field: "materialSubstanceId",
         table: "materialSubstance",
-        reason: SUBSTANCE_UNMATCHED,
-      },
+        reason: SUBSTANCE_UNMATCHED
+      }
     ],
     validate: (r) =>
       !r.name?.trim()
@@ -177,7 +179,7 @@ const CONFIGS: Record<MaterialPropertyTable, TableConfig> = {
         : !r.materialSubstanceId?.trim()
           ? SUBSTANCE_UNMATCHED
           : null,
-    keysOf: (r) => [`${r.materialSubstanceId.trim()}:${norm(r.name)}`],
+    keysOf: (r) => [`${r.materialSubstanceId!.trim()}:${norm(r.name)}`],
     loadExistingKeys: async (trx, companyId) => {
       const rows = await trx
         .selectFrom("materialFinish")
@@ -186,7 +188,9 @@ const CONFIGS: Record<MaterialPropertyTable, TableConfig> = {
           eb.or([eb("companyId", "=", companyId), eb("companyId", "is", null)])
         )
         .execute();
-      return new Set(rows.map((x) => `${x.materialSubstanceId}:${norm(x.name)}`));
+      return new Set(
+        rows.map((x) => `${x.materialSubstanceId}:${norm(x.name)}`)
+      );
     },
     insert: async (trx, rows, companyId) => {
       const inserted = await trx
@@ -195,9 +199,9 @@ const CONFIGS: Record<MaterialPropertyTable, TableConfig> = {
           rows.map(
             (r) =>
               ({
-                name: r.name.trim(),
-                materialSubstanceId: r.materialSubstanceId.trim(),
-                companyId,
+                name: r.name!.trim(),
+                materialSubstanceId: r.materialSubstanceId!.trim(),
+                companyId
               }) as never
           )
         )
@@ -205,15 +209,15 @@ const CONFIGS: Record<MaterialPropertyTable, TableConfig> = {
         .returning(["id"])
         .execute();
       return inserted.length;
-    },
+    }
   },
   materialGrade: {
     parents: [
       {
         field: "materialSubstanceId",
         table: "materialSubstance",
-        reason: SUBSTANCE_UNMATCHED,
-      },
+        reason: SUBSTANCE_UNMATCHED
+      }
     ],
     validate: (r) =>
       !r.name?.trim()
@@ -221,7 +225,7 @@ const CONFIGS: Record<MaterialPropertyTable, TableConfig> = {
         : !r.materialSubstanceId?.trim()
           ? SUBSTANCE_UNMATCHED
           : null,
-    keysOf: (r) => [`${r.materialSubstanceId.trim()}:${norm(r.name)}`],
+    keysOf: (r) => [`${r.materialSubstanceId!.trim()}:${norm(r.name)}`],
     loadExistingKeys: async (trx, companyId) => {
       const rows = await trx
         .selectFrom("materialGrade")
@@ -230,7 +234,9 @@ const CONFIGS: Record<MaterialPropertyTable, TableConfig> = {
           eb.or([eb("companyId", "=", companyId), eb("companyId", "is", null)])
         )
         .execute();
-      return new Set(rows.map((x) => `${x.materialSubstanceId}:${norm(x.name)}`));
+      return new Set(
+        rows.map((x) => `${x.materialSubstanceId}:${norm(x.name)}`)
+      );
     },
     insert: async (trx, rows, companyId) => {
       const inserted = await trx
@@ -239,9 +245,9 @@ const CONFIGS: Record<MaterialPropertyTable, TableConfig> = {
           rows.map(
             (r) =>
               ({
-                name: r.name.trim(),
-                materialSubstanceId: r.materialSubstanceId.trim(),
-                companyId,
+                name: r.name!.trim(),
+                materialSubstanceId: r.materialSubstanceId!.trim(),
+                companyId
               }) as never
           )
         )
@@ -249,20 +255,20 @@ const CONFIGS: Record<MaterialPropertyTable, TableConfig> = {
         .returning(["id"])
         .execute();
       return inserted.length;
-    },
+    }
   },
   materialType: {
     parents: [
       {
         field: "materialSubstanceId",
         table: "materialSubstance",
-        reason: SUBSTANCE_UNMATCHED,
+        reason: SUBSTANCE_UNMATCHED
       },
       {
         field: "materialFormId",
         table: "materialForm",
-        reason: SHAPE_UNMATCHED,
-      },
+        reason: SHAPE_UNMATCHED
+      }
     ],
     validate: (r) =>
       !r.name?.trim()
@@ -275,9 +281,12 @@ const CONFIGS: Record<MaterialPropertyTable, TableConfig> = {
               ? SHAPE_UNMATCHED
               : null,
     keysOf: (r) => {
-      const sub = r.materialSubstanceId.trim();
-      const form = r.materialFormId.trim();
-      return [`${sub}:${form}:c:${norm(r.code)}`, `${sub}:${form}:n:${norm(r.name)}`];
+      const sub = r.materialSubstanceId!.trim();
+      const form = r.materialFormId!.trim();
+      return [
+        `${sub}:${form}:c:${norm(r.code)}`,
+        `${sub}:${form}:n:${norm(r.name)}`
+      ];
     },
     loadExistingKeys: async (trx, companyId) => {
       const rows = await trx
@@ -292,7 +301,9 @@ const CONFIGS: Record<MaterialPropertyTable, TableConfig> = {
         set.add(
           `${x.materialSubstanceId}:${x.materialFormId}:c:${norm(x.code ?? "")}`
         );
-        set.add(`${x.materialSubstanceId}:${x.materialFormId}:n:${norm(x.name)}`);
+        set.add(
+          `${x.materialSubstanceId}:${x.materialFormId}:n:${norm(x.name)}`
+        );
       }
       return set;
     },
@@ -303,11 +314,11 @@ const CONFIGS: Record<MaterialPropertyTable, TableConfig> = {
           rows.map(
             (r) =>
               ({
-                name: r.name.trim(),
-                code: r.code.trim(),
-                materialSubstanceId: r.materialSubstanceId.trim(),
-                materialFormId: r.materialFormId.trim(),
-                companyId,
+                name: r.name!.trim(),
+                code: r.code!.trim(),
+                materialSubstanceId: r.materialSubstanceId!.trim(),
+                materialFormId: r.materialFormId!.trim(),
+                companyId
               }) as never
           )
         )
@@ -315,15 +326,15 @@ const CONFIGS: Record<MaterialPropertyTable, TableConfig> = {
         .returning(["id"])
         .execute();
       return inserted.length;
-    },
+    }
   },
   materialDimension: {
     parents: [
       {
         field: "materialFormId",
         table: "materialForm",
-        reason: SHAPE_UNMATCHED,
-      },
+        reason: SHAPE_UNMATCHED
+      }
     ],
     validate: (r) =>
       !r.name?.trim()
@@ -331,7 +342,7 @@ const CONFIGS: Record<MaterialPropertyTable, TableConfig> = {
         : !r.materialFormId?.trim()
           ? SHAPE_UNMATCHED
           : null,
-    keysOf: (r) => [`${r.materialFormId.trim()}:${norm(r.name)}`],
+    keysOf: (r) => [`${r.materialFormId!.trim()}:${norm(r.name)}`],
     loadExistingKeys: async (trx, companyId) => {
       const rows = await trx
         .selectFrom("materialDimension")
@@ -349,10 +360,10 @@ const CONFIGS: Record<MaterialPropertyTable, TableConfig> = {
           rows.map(
             (r) =>
               ({
-                name: r.name.trim(),
-                materialFormId: r.materialFormId.trim(),
+                name: r.name!.trim(),
+                materialFormId: r.materialFormId!.trim(),
                 isMetric: isMetricValue(r.isMetric),
-                companyId,
+                companyId
               }) as never
           )
         )
@@ -360,18 +371,18 @@ const CONFIGS: Record<MaterialPropertyTable, TableConfig> = {
         .returning(["id"])
         .execute();
       return inserted.length;
-    },
-  },
+    }
+  }
 };
 
 export async function importMaterialProperties(
-  db: Kysely<DB>,
+  db: Kysely<KyselyDatabase>,
   {
     table,
     mappedRecords,
     companyId,
     userId,
-    summary,
+    summary
   }: {
     table: MaterialPropertyTable;
     mappedRecords: Rec[];
@@ -388,7 +399,10 @@ export async function importMaterialProperties(
     const parentSpecs = config.parents ?? [];
     const parentIds = new Map<string, Set<string>>();
     for (const parentTable of new Set(parentSpecs.map((p) => p.table))) {
-      parentIds.set(parentTable, await loadParentIds(trx, parentTable, companyId));
+      parentIds.set(
+        parentTable,
+        await loadParentIds(trx, parentTable, companyId)
+      );
     }
 
     const seenKeys = new Set<string>();
@@ -411,13 +425,16 @@ export async function importMaterialProperties(
 
       const keys = config.keysOf(record);
       if (keys.some((k) => existingKeys.has(k))) {
-        summary.skipped.push({ row: rowIndex, reason: "Already exists — skipped" });
+        summary.skipped.push({
+          row: rowIndex,
+          reason: "Already exists — skipped"
+        });
         continue;
       }
       if (keys.some((k) => seenKeys.has(k))) {
         summary.skipped.push({
           row: rowIndex,
-          reason: "Duplicate row in file — skipped",
+          reason: "Duplicate row in file — skipped"
         });
         continue;
       }
@@ -432,7 +449,7 @@ export async function importMaterialProperties(
       totalRecords: mappedRecords.length,
       accepted: accepted.length,
       skipped: summary.skipped.length,
-      errors: summary.errors.length,
+      errors: summary.errors.length
     });
 
     if (accepted.length > 0) {

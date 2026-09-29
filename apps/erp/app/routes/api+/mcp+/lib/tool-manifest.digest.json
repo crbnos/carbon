@@ -1517,7 +1517,7 @@
     {"name":"shared_getSavedViews","classification":"READ","paramCount":0,"schema":"efddc7bd8bbc","response":"be2b0aada3eb","injectAuth":"companyId","permission":"none","paginates":false},
     {"name":"shared_getTagsList","classification":"READ","paramCount":1,"schema":"43c92414cb2f","response":"b837740e18f4","injectAuth":"companyId","permission":"none","paginates":false},
     {"name":"shared_getTimezoneNames","classification":"READ","paramCount":0,"schema":"efddc7bd8bbc","response":"93968ed2dcdb","injectAuth":"companyId","permission":"none","paginates":false},
-    {"name":"shared_importCsv","classification":"WRITE","paramCount":4,"schema":"8f2d77f74ffb","response":"none","injectAuth":"companyId+userId","permission":"none","paginates":false},
+    {"name":"shared_importCsv","classification":"WRITE","paramCount":4,"schema":"8f2d77f74ffb","response":"fe3f36b94f53","injectAuth":"companyId+userId","permission":"none","paginates":false},
     {"name":"shared_insertNote","classification":"WRITE","paramCount":2,"schema":"260839f76e18","response":"c2fb0e5225f8","injectAuth":"companyId+createdBy+updatedBy","permission":"none","paginates":false},
     {"name":"shared_insertTag","classification":"WRITE","paramCount":1,"schema":"11926edb131b","response":"27f67ae1958c","injectAuth":"companyId+createdBy+updatedBy","permission":"none","paginates":false},
     {"name":"shared_lookupBuyPriceFromMap","classification":"WRITE","paramCount":4,"schema":"4360b71230e3","response":"cddf8275afa1","injectAuth":"companyId","permission":"none","paginates":false},

@@ -8,8 +8,8 @@
 // owns (methodType / sourcingType / materialMakeMethodId / storageUnitIds from the
 // component item) is replicated here.
 
-import { Kysely, Transaction } from "npm:kysely@0.27.6";
-import { DB } from "../lib/database.ts";
+import type { KyselyDatabase } from "@carbon/database/client";
+import type { Kysely, Transaction } from "kysely";
 
 type Rec = Record<string, string>;
 type Summary = {
@@ -31,7 +31,7 @@ const STEP_TYPES = [
   "Person",
   "List",
   "File",
-  "Inspection",
+  "Inspection"
 ] as const;
 
 type Entry = { record: Rec; index: number };
@@ -94,7 +94,7 @@ function plainTextToTiptap(value: string): Record<string, unknown> {
   if (!t) return {};
   return {
     type: "doc",
-    content: [{ type: "paragraph", content: [{ type: "text", text: t }] }],
+    content: [{ type: "paragraph", content: [{ type: "text", text: t }] }]
   };
 }
 
@@ -115,7 +115,7 @@ function normalizeRowType(
 // ---------------------------------------------------------------------------
 
 export async function importMethods(
-  db: Kysely<DB>,
+  db: Kysely<KyselyDatabase>,
   args: {
     table: "bom" | "operations" | "partWithMethod";
     mappedRecords: Rec[];
@@ -132,7 +132,12 @@ export async function importMethods(
     const k = key(readableId, revision);
     let g = groups.get(k);
     if (!g) {
-      g = { readableId, revision: revision || "0", firstIndex: index, versions: new Map() };
+      g = {
+        readableId,
+        revision: revision || "0",
+        firstIndex: index,
+        versions: new Map()
+      };
       groups.set(k, g);
     }
     return g;
@@ -151,7 +156,7 @@ export async function importMethods(
     if (!rowType) {
       summary.errors.push({
         row: rowOf(index),
-        reason: `Unknown or missing Row Type "${text(record.rowType)}"`,
+        reason: `Unknown or missing Row Type "${text(record.rowType)}"`
       });
       return;
     }
@@ -161,7 +166,7 @@ export async function importMethods(
       if (!readableId) {
         summary.errors.push({
           row: rowOf(index),
-          reason: "PART row is missing Part Number",
+          reason: "PART row is missing Part Number"
         });
         return;
       }
@@ -175,7 +180,7 @@ export async function importMethods(
     if (!parentId) {
       summary.errors.push({
         row: rowOf(index),
-        reason: `${rowType} row is missing Parent ID`,
+        reason: `${rowType} row is missing Parent ID`
       });
       return;
     }
@@ -202,19 +207,25 @@ export async function importMethods(
     readableIds.add(g.readableId);
     for (const bucket of g.versions.values()) {
       for (const e of bucket.bom) {
-        if (text(e.record.componentId)) readableIds.add(text(e.record.componentId));
-        if (text(e.record.unitOfMeasureCode)) uomCodes.add(text(e.record.unitOfMeasureCode));
+        if (text(e.record.componentId))
+          readableIds.add(text(e.record.componentId));
+        if (text(e.record.unitOfMeasureCode))
+          uomCodes.add(text(e.record.unitOfMeasureCode));
       }
       for (const e of bucket.bop) {
-        if (text(e.record.process)) processNames.add(text(e.record.process).toLowerCase());
-        if (text(e.record.workCenter)) workCenterNames.add(text(e.record.workCenter).toLowerCase());
-        if (text(e.record.supplier)) supplierNames.add(text(e.record.supplier).toLowerCase());
+        if (text(e.record.process))
+          processNames.add(text(e.record.process).toLowerCase());
+        if (text(e.record.workCenter))
+          workCenterNames.add(text(e.record.workCenter).toLowerCase());
+        if (text(e.record.supplier))
+          supplierNames.add(text(e.record.supplier).toLowerCase());
       }
       for (const e of bucket.tool) {
         if (text(e.record.toolId)) readableIds.add(text(e.record.toolId));
       }
       for (const e of bucket.step) {
-        if (text(e.record.stepUnitOfMeasureCode)) uomCodes.add(text(e.record.stepUnitOfMeasureCode));
+        if (text(e.record.stepUnitOfMeasureCode))
+          uomCodes.add(text(e.record.stepUnitOfMeasureCode));
       }
     }
   }
@@ -223,7 +234,14 @@ export async function importMethods(
   if (readableIds.size > 0) {
     const rows = await db
       .selectFrom("item")
-      .select(["id", "readableId", "revision", "type", "defaultMethodType", "sourcingType"])
+      .select([
+        "id",
+        "readableId",
+        "revision",
+        "type",
+        "defaultMethodType",
+        "sourcingType"
+      ])
       .where("companyId", "=", companyId)
       .where("readableId", "in", Array.from(readableIds))
       .execute();
@@ -234,7 +252,7 @@ export async function importMethods(
           id: r.id,
           type: r.type,
           defaultMethodType: r.defaultMethodType ?? null,
-          sourcingType: r.sourcingType ?? null,
+          sourcingType: r.sourcingType ?? null
         });
       }
     }
@@ -293,7 +311,7 @@ export async function importMethods(
       processAmbiguous,
       workCenterMap,
       workCenterAmbiguous,
-      uomSet,
+      uomSet
     });
 
     if (errors.length > 0) {
@@ -308,7 +326,7 @@ export async function importMethods(
         itemMap,
         processMap,
         workCenterMap,
-        supplierMap,
+        supplierMap
       });
       if (result.filledAny) {
         // A new part counts as imported; an existing part as updated.
@@ -319,7 +337,7 @@ export async function importMethods(
         // Benign: not something the user needs to fix, so it's a skip, not an error.
         summary.skipped.push({
           row: rowOf(g.firstIndex),
-          reason: `Part ${partLabel} already has a method; skipped`,
+          reason: `Part ${partLabel} already has a method; skipped`
         });
       } else if (g.partRow) {
         // A PART row with no BOM/BOP rows — only the part itself was created.
@@ -330,7 +348,7 @@ export async function importMethods(
         row: rowOf(g.firstIndex),
         reason: `Part ${partLabel} failed to import: ${
           err instanceof Error ? err.message : String(err)
-        }`,
+        }`
       });
     }
   }
@@ -341,7 +359,7 @@ export async function importMethods(
 // ---------------------------------------------------------------------------
 
 async function nameMap(
-  db: Kysely<DB>,
+  db: Kysely<KyselyDatabase>,
   table: "process" | "workCenter",
   companyId: string,
   names: Set<string>
@@ -391,12 +409,12 @@ function validateGroup(
     if (!parent) {
       errors.push({
         row: rowOf(g.firstIndex),
-        reason: `Parent part ${partLabel} not found`,
+        reason: `Parent part ${partLabel} not found`
       });
     } else if (parent.type !== "Part" && parent.type !== "Tool") {
       errors.push({
         row: rowOf(g.firstIndex),
-        reason: `Parent ${partLabel} is a ${parent.type}; only a Part or Tool can own a method`,
+        reason: `Parent ${partLabel} is a ${parent.type}; only a Part or Tool can own a method`
       });
     }
   }
@@ -407,13 +425,16 @@ function validateGroup(
     for (const e of bucket.bop) {
       const opNo = text(e.record.opNo);
       if (!opNo) {
-        errors.push({ row: rowOf(e.index), reason: "BOP row is missing Op No" });
+        errors.push({
+          row: rowOf(e.index),
+          reason: "BOP row is missing Op No"
+        });
         continue;
       }
       if (opNos.has(opNo)) {
         errors.push({
           row: rowOf(e.index),
-          reason: `Duplicate Op No "${opNo}" for ${partLabel}`,
+          reason: `Duplicate Op No "${opNo}" for ${partLabel}`
         });
       }
       opNos.add(opNo);
@@ -421,29 +442,49 @@ function validateGroup(
       // process required + resolvable
       const proc = text(e.record.process).toLowerCase();
       if (!proc) {
-        errors.push({ row: rowOf(e.index), reason: `Op ${opNo}: Process is required` });
+        errors.push({
+          row: rowOf(e.index),
+          reason: `Op ${opNo}: Process is required`
+        });
       } else if (lk.processAmbiguous.has(proc)) {
-        errors.push({ row: rowOf(e.index), reason: `Op ${opNo}: Process name is ambiguous` });
+        errors.push({
+          row: rowOf(e.index),
+          reason: `Op ${opNo}: Process name is ambiguous`
+        });
       } else if (!lk.processMap.has(proc)) {
-        errors.push({ row: rowOf(e.index), reason: `Op ${opNo}: Process "${text(e.record.process)}" not found` });
+        errors.push({
+          row: rowOf(e.index),
+          reason: `Op ${opNo}: Process "${text(e.record.process)}" not found`
+        });
       }
 
       const wc = text(e.record.workCenter).toLowerCase();
       if (wc) {
         if (lk.workCenterAmbiguous.has(wc)) {
-          errors.push({ row: rowOf(e.index), reason: `Op ${opNo}: Work Center name is ambiguous` });
+          errors.push({
+            row: rowOf(e.index),
+            reason: `Op ${opNo}: Work Center name is ambiguous`
+          });
         } else if (!lk.workCenterMap.has(wc)) {
-          errors.push({ row: rowOf(e.index), reason: `Op ${opNo}: Work Center "${text(e.record.workCenter)}" not found` });
+          errors.push({
+            row: rowOf(e.index),
+            reason: `Op ${opNo}: Work Center "${text(e.record.workCenter)}" not found`
+          });
         }
       }
 
       // In-house operations need time units.
-      const opType = normalizeOperationType(text(e.record.operationType)) || "Process";
+      const opType =
+        normalizeOperationType(text(e.record.operationType)) || "Process";
       if (opType !== "Outside Processing") {
-        if (!text(e.record.setupUnit) || !text(e.record.laborUnit) || !text(e.record.machineUnit)) {
+        if (
+          !text(e.record.setupUnit) ||
+          !text(e.record.laborUnit) ||
+          !text(e.record.machineUnit)
+        ) {
           errors.push({
             row: rowOf(e.index),
-            reason: `Op ${opNo}: In-house operations require Setup, Labor, and Machine units`,
+            reason: `Op ${opNo}: In-house operations require Setup, Labor, and Machine units`
           });
         }
       }
@@ -453,22 +494,31 @@ function validateGroup(
     for (const e of bucket.bom) {
       const componentId = text(e.record.componentId);
       if (!componentId) {
-        errors.push({ row: rowOf(e.index), reason: "BOM row is missing Material ID" });
+        errors.push({
+          row: rowOf(e.index),
+          reason: "BOM row is missing Material ID"
+        });
         continue;
       }
       const compKey = key(componentId, text(e.record.componentRevision));
       if (!lk.itemMap.has(compKey) && !lk.fileCreatedParts.has(compKey)) {
         errors.push({
           row: rowOf(e.index),
-          reason: `Material ${componentId} rev ${text(e.record.componentRevision) || "0"} not found`,
+          reason: `Material ${componentId} rev ${text(e.record.componentRevision) || "0"} not found`
         });
       }
       if (num(e.record.quantity) === undefined) {
-        errors.push({ row: rowOf(e.index), reason: "BOM row has an invalid Quantity" });
+        errors.push({
+          row: rowOf(e.index),
+          reason: "BOM row has an invalid Quantity"
+        });
       }
       const uom = text(e.record.unitOfMeasureCode);
       if (uom && !lk.uomSet.has(uom)) {
-        errors.push({ row: rowOf(e.index), reason: `Unit of Measure "${uom}" not found` });
+        errors.push({
+          row: rowOf(e.index),
+          reason: `Unit of Measure "${uom}" not found`
+        });
       }
     }
 
@@ -476,50 +526,86 @@ function validateGroup(
     for (const e of bucket.step) {
       const opNo = text(e.record.opNo);
       if (!opNos.has(opNo)) {
-        errors.push({ row: rowOf(e.index), reason: `STEP references unknown Op No "${opNo}"` });
+        errors.push({
+          row: rowOf(e.index),
+          reason: `STEP references unknown Op No "${opNo}"`
+        });
       }
       if (!text(e.record.stepName)) {
-        errors.push({ row: rowOf(e.index), reason: "STEP row is missing Name" });
+        errors.push({
+          row: rowOf(e.index),
+          reason: "STEP row is missing Name"
+        });
       }
       const stepType = text(e.record.stepType) || "Task";
       if (!(STEP_TYPES as readonly string[]).includes(stepType)) {
-        errors.push({ row: rowOf(e.index), reason: `Invalid Step Type "${stepType}"` });
+        errors.push({
+          row: rowOf(e.index),
+          reason: `Invalid Step Type "${stepType}"`
+        });
       }
       if (stepType === "Measurement" && !text(e.record.stepUnitOfMeasureCode)) {
-        errors.push({ row: rowOf(e.index), reason: "Measurement step requires a Step Unit of Measure" });
+        errors.push({
+          row: rowOf(e.index),
+          reason: "Measurement step requires a Step Unit of Measure"
+        });
       }
       if (stepType === "List" && !text(e.record.stepListValues)) {
-        errors.push({ row: rowOf(e.index), reason: "List step requires Step List Values" });
+        errors.push({
+          row: rowOf(e.index),
+          reason: "List step requires Step List Values"
+        });
       }
     }
     for (const e of bucket.tool) {
       const opNo = text(e.record.opNo);
       if (!opNos.has(opNo)) {
-        errors.push({ row: rowOf(e.index), reason: `TOOL references unknown Op No "${opNo}"` });
+        errors.push({
+          row: rowOf(e.index),
+          reason: `TOOL references unknown Op No "${opNo}"`
+        });
       }
       const toolId = text(e.record.toolId);
       if (!toolId) {
-        errors.push({ row: rowOf(e.index), reason: "TOOL row is missing Tool ID" });
+        errors.push({
+          row: rowOf(e.index),
+          reason: "TOOL row is missing Tool ID"
+        });
       } else {
         const toolKey = key(toolId, text(e.record.toolRevision));
         if (!lk.itemMap.has(toolKey) && !lk.fileCreatedParts.has(toolKey)) {
-          errors.push({ row: rowOf(e.index), reason: `Tool ${toolId} rev ${text(e.record.toolRevision) || "0"} not found` });
+          errors.push({
+            row: rowOf(e.index),
+            reason: `Tool ${toolId} rev ${text(e.record.toolRevision) || "0"} not found`
+          });
         }
       }
       if (num(e.record.toolQuantity) === undefined) {
-        errors.push({ row: rowOf(e.index), reason: "TOOL row has an invalid Quantity" });
+        errors.push({
+          row: rowOf(e.index),
+          reason: "TOOL row has an invalid Quantity"
+        });
       }
     }
     for (const e of bucket.param) {
       const opNo = text(e.record.opNo);
       if (!opNos.has(opNo)) {
-        errors.push({ row: rowOf(e.index), reason: `PARAM references unknown Op No "${opNo}"` });
+        errors.push({
+          row: rowOf(e.index),
+          reason: `PARAM references unknown Op No "${opNo}"`
+        });
       }
       if (!text(e.record.paramKey)) {
-        errors.push({ row: rowOf(e.index), reason: "PARAM row is missing Key" });
+        errors.push({
+          row: rowOf(e.index),
+          reason: "PARAM row is missing Key"
+        });
       }
       if (!text(e.record.paramValue)) {
-        errors.push({ row: rowOf(e.index), reason: "PARAM row is missing Value" });
+        errors.push({
+          row: rowOf(e.index),
+          reason: "PARAM row is missing Value"
+        });
       }
     }
   }
@@ -532,7 +618,7 @@ function validateGroup(
 // ---------------------------------------------------------------------------
 
 async function writeGroup(
-  db: Kysely<DB>,
+  db: Kysely<KyselyDatabase>,
   g: Group,
   ctx: {
     companyId: string;
@@ -570,19 +656,19 @@ async function writeGroup(
             itemTrackingType: text(r.itemTrackingType) || "Inventory",
             unitOfMeasureCode: text(r.unitOfMeasureCode) || "EA",
             createdAt: now(),
-            createdBy: userId,
-          } as never,
+            createdBy: userId
+          } as never
         ])
         // Re-running the same file upserts the item rather than duplicating it.
         .onConflict((oc) =>
           oc.constraint("item_unique").doUpdateSet({
             updatedAt: now(),
-            updatedBy: userId,
+            updatedBy: userId
           } as never)
         )
         .returning(["id"])
         .execute();
-      parentItemId = inserted[0].id;
+      parentItemId = inserted[0]!.id;
 
       // The makeMethod Draft v1 is created by the AFTER INSERT trigger on item.
       // The part row links to the item by readableId (part.id = item.readableId).
@@ -594,8 +680,8 @@ async function writeGroup(
             companyId,
             approved: true,
             createdAt: now(),
-            createdBy: userId,
-          } as never,
+            createdBy: userId
+          } as never
         ])
         .onConflict((oc) => oc.columns(["id", "companyId"]).doNothing())
         .execute();
@@ -635,13 +721,23 @@ async function writeGroup(
       let order = 1;
       for (const e of bucket.bom) {
         const r = e.record;
-        const component = await resolveItem(trx, companyId, text(r.componentId), text(r.componentRevision), ctx.itemMap);
+        const component = await resolveItem(
+          trx,
+          companyId,
+          text(r.componentId),
+          text(r.componentRevision),
+          ctx.itemMap
+        );
         const methodType = component.defaultMethodType ?? "Pull from Inventory";
         const sourcingType = component.sourcingType ?? "Specified";
 
         let materialMakeMethodId: string | null = null;
         if (methodType === "Make to Order") {
-          materialMakeMethodId = await currentMakeMethodId(trx, component.id, companyId);
+          materialMakeMethodId = await currentMakeMethodId(
+            trx,
+            component.id,
+            companyId
+          );
         }
 
         const storageUnitIds = await seedStorageUnitIds(trx, component.id);
@@ -663,8 +759,8 @@ async function writeGroup(
               storageUnitIds,
               companyId,
               createdBy: userId,
-              createdAt: now(),
-            } as never,
+              createdAt: now()
+            } as never
           ])
           .execute();
         order++;
@@ -677,7 +773,8 @@ async function writeGroup(
       for (const e of bucket.bop) {
         const r = e.record;
         const opNo = text(r.opNo);
-        const opType = normalizeOperationType(text(r.operationType)) || "Process";
+        const opType =
+          normalizeOperationType(text(r.operationType)) || "Process";
         const processId = ctx.processMap.get(text(r.process).toLowerCase())!;
         const workCenterId = text(r.workCenter)
           ? ctx.workCenterMap.get(text(r.workCenter).toLowerCase())
@@ -717,12 +814,12 @@ async function writeGroup(
               workInstruction: {},
               companyId,
               createdBy: userId,
-              createdAt: now(),
-            } as never,
+              createdAt: now()
+            } as never
           ])
           .returning(["id"])
           .execute();
-        opIdByNo.set(opNo, inserted[0].id);
+        opIdByNo.set(opNo, inserted[0]!.id);
         opIndex++;
         filledAny = true;
       }
@@ -746,17 +843,22 @@ async function writeGroup(
               required: bool(r.stepRequired),
               sortOrder,
               unitOfMeasureCode:
-                stepType === "Measurement" ? text(r.stepUnitOfMeasureCode) || undefined : undefined,
+                stepType === "Measurement"
+                  ? text(r.stepUnitOfMeasureCode) || undefined
+                  : undefined,
               minValue: num(r.stepMinValue),
               maxValue: num(r.stepMaxValue),
               listValues:
                 stepType === "List" && text(r.stepListValues)
-                  ? text(r.stepListValues).split("|").map((v) => v.trim()).filter(Boolean)
+                  ? text(r.stepListValues)
+                      .split("|")
+                      .map((v) => v.trim())
+                      .filter(Boolean)
                   : undefined,
               companyId,
               createdBy: userId,
-              createdAt: now(),
-            } as never,
+              createdAt: now()
+            } as never
           ])
           .execute();
       }
@@ -764,7 +866,13 @@ async function writeGroup(
       for (const e of bucket.tool) {
         const r = e.record;
         const operationId = opIdByNo.get(text(r.opNo))!;
-        const tool = await resolveItem(trx, companyId, text(r.toolId), text(r.toolRevision), ctx.itemMap);
+        const tool = await resolveItem(
+          trx,
+          companyId,
+          text(r.toolId),
+          text(r.toolRevision),
+          ctx.itemMap
+        );
         await trx
           .insertInto("methodOperationTool")
           .values([
@@ -774,8 +882,8 @@ async function writeGroup(
               quantity: num(r.toolQuantity) ?? 1,
               companyId,
               createdBy: userId,
-              createdAt: now(),
-            } as never,
+              createdAt: now()
+            } as never
           ])
           .execute();
       }
@@ -792,8 +900,8 @@ async function writeGroup(
               value: text(r.paramValue),
               companyId,
               createdBy: userId,
-              createdAt: now(),
-            } as never,
+              createdAt: now()
+            } as never
           ])
           .execute();
       }
@@ -810,7 +918,7 @@ async function writeGroup(
 // Resolve an item id by readableId + revision. Falls back to a DB lookup for a
 // part created earlier in this same file (not present in the prefetched map).
 async function resolveItem(
-  trx: Transaction<DB>,
+  trx: Transaction<KyselyDatabase>,
   companyId: string,
   readableId: string,
   revision: string,
@@ -835,7 +943,7 @@ async function resolveItem(
     id: row.id,
     type: row.type,
     defaultMethodType: row.defaultMethodType ?? null,
-    sourcingType: row.sourcingType ?? null,
+    sourcingType: row.sourcingType ?? null
   };
   itemMap.set(k, info);
   return info;
@@ -844,7 +952,7 @@ async function resolveItem(
 // The part's current (active, else highest non-archived) make method id —
 // mirrors the activeMakeMethods view ranking.
 async function currentMakeMethodId(
-  trx: Transaction<DB>,
+  trx: Transaction<KyselyDatabase>,
   itemId: string,
   companyId: string
 ): Promise<string | null> {
@@ -862,14 +970,14 @@ async function currentMakeMethodId(
     if (aActive !== bActive) return aActive - bActive;
     return Number(b.version) - Number(a.version);
   });
-  return rows[0].id;
+  return rows[0]!.id;
 }
 
 // Resolve the target make method for a version. Blank → the part's current
 // method (the trigger-created Draft v1 for a new part). Explicit → find-or-create
 // that version as a Draft; never auto-activate.
 async function ensureMakeMethod(
-  trx: Transaction<DB>,
+  trx: Transaction<KyselyDatabase>,
   itemId: string,
   version: string,
   companyId: string,
@@ -882,11 +990,18 @@ async function ensureMakeMethod(
     const inserted = await trx
       .insertInto("makeMethod")
       .values([
-        { itemId, companyId, version: 1, status: "Draft", createdBy: userId, createdAt: new Date().toISOString() } as never,
+        {
+          itemId,
+          companyId,
+          version: 1,
+          status: "Draft",
+          createdBy: userId,
+          createdAt: new Date().toISOString()
+        } as never
       ])
       .returning(["id"])
       .execute();
-    return inserted[0].id;
+    return inserted[0]!.id;
   }
 
   const versionNumber = num(version) ?? 1;
@@ -903,17 +1018,24 @@ async function ensureMakeMethod(
   const inserted = await trx
     .insertInto("makeMethod")
     .values([
-      { itemId, companyId, version: versionNumber, status: "Draft", createdBy: userId, createdAt: new Date().toISOString() } as never,
+      {
+        itemId,
+        companyId,
+        version: versionNumber,
+        status: "Draft",
+        createdBy: userId,
+        createdAt: new Date().toISOString()
+      } as never
     ])
     .returning(["id"])
     .execute();
-  return inserted[0].id;
+  return inserted[0]!.id;
 }
 
 // Seed storageUnitIds from the component's pickMethod default bins (mirrors
 // resolveMethodMaterialStorageUnitIds in items.service.ts).
 async function seedStorageUnitIds(
-  trx: Transaction<DB>,
+  trx: Transaction<KyselyDatabase>,
   itemId: string
 ): Promise<Record<string, string>> {
   const current: Record<string, string> = {};
@@ -923,7 +1045,11 @@ async function seedStorageUnitIds(
     .where("itemId", "=", itemId)
     .execute();
   for (const row of rows) {
-    if (row.locationId && row.defaultStorageUnitId && !current[row.locationId]) {
+    if (
+      row.locationId &&
+      row.defaultStorageUnitId &&
+      !current[row.locationId]
+    ) {
       current[row.locationId] = row.defaultStorageUnitId;
     }
   }
@@ -932,7 +1058,7 @@ async function seedStorageUnitIds(
 
 // Optional supplier-process link for an Outside Processing operation (by supplier + process).
 async function resolveSupplierProcess(
-  trx: Transaction<DB>,
+  trx: Transaction<KyselyDatabase>,
   companyId: string,
   supplierId: string | undefined,
   processId: string

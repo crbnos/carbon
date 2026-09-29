@@ -6,7 +6,7 @@
 // Every accepted row becomes ONE Positive Adjmt. — these imports only ever add
 // stock, never reduce or set it.
 
-import { round } from "../shared/precision.ts";
+import { round } from "@carbon/utils";
 
 export type StockImportTable =
   | "inventoryQuantity"
@@ -17,7 +17,7 @@ export type StockImportTable =
 export const STOCK_IMPORT_TRACKING_TYPE: Record<StockImportTable, string> = {
   inventoryQuantity: "Inventory",
   batchQuantity: "Batch",
-  serialQuantity: "Serial",
+  serialQuantity: "Serial"
 };
 
 // The import a user should reach for, per tracking type, for the mismatch
@@ -25,7 +25,7 @@ export const STOCK_IMPORT_TRACKING_TYPE: Record<StockImportTable, string> = {
 const IMPORT_LABEL_BY_TRACKING_TYPE: Record<string, string> = {
   Inventory: "Inventory Quantities",
   Batch: "Batch Quantities",
-  Serial: "Serial Quantities",
+  Serial: "Serial Quantities"
 };
 
 export type StockItemInfo = {
@@ -86,7 +86,7 @@ export function buildStockItemMap(
       map.set(key, {
         id: c.id,
         itemTrackingType: c.itemTrackingType,
-        hasItemCost: c.hasItemCost,
+        hasItemCost: c.hasItemCost
       });
       continue;
     }
@@ -102,7 +102,7 @@ export function buildStockItemMap(
       map.set(key, {
         id: c.id,
         itemTrackingType: c.itemTrackingType,
-        hasItemCost: c.hasItemCost,
+        hasItemCost: c.hasItemCost
       });
     }
   }
@@ -129,8 +129,21 @@ export function isIsoDate(value: string): boolean {
   const day = Number(match[3]);
   if (month < 1 || month > 12 || day < 1) return false;
   const leap = (year % 4 === 0 && year % 100 !== 0) || year % 400 === 0;
-  const daysInMonth = [31, leap ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
-  return day <= daysInMonth[month - 1];
+  const daysInMonth = [
+    31,
+    leap ? 29 : 28,
+    31,
+    30,
+    31,
+    30,
+    31,
+    31,
+    30,
+    31,
+    30,
+    31
+  ];
+  return day <= daysInMonth[month - 1]!;
 }
 
 export function classifyStockRow(params: {
@@ -149,12 +162,12 @@ export function classifyStockRow(params: {
     locationIds,
     storageUnitMap,
     existingTrackedKeys,
-    seenTrackedKeys,
+    seenTrackedKeys
   } = params;
   const error = (reason: string): StockRowDecision => ({
     action: "skip",
     reason,
-    category: "error",
+    category: "error"
   });
 
   const readableId = text(record.readableId);
@@ -247,14 +260,14 @@ export function classifyStockRow(params: {
       return {
         action: "skip",
         reason: `${label} "${trackedNumber}" already exists for this item`,
-        category: "skipped",
+        category: "skipped"
       };
     }
     if (seenTrackedKeys.has(key)) {
       return {
         action: "skip",
         reason: `Duplicate ${label.toLowerCase()} "${trackedNumber}" for this item in file`,
-        category: "skipped",
+        category: "skipped"
       };
     }
   }
@@ -269,7 +282,7 @@ export function classifyStockRow(params: {
       readableId: trackedNumber,
       expirationDate,
       comment: text(record.comment) || null,
-      trackedKey: key,
-    },
+      trackedKey: key
+    }
   };
 }

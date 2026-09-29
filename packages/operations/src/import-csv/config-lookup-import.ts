@@ -1,5 +1,5 @@
-import { Kysely, Transaction } from "npm:kysely@0.27.6";
-import { DB } from "../lib/database.ts";
+import type { KyselyDatabase } from "@carbon/database/client";
+import type { Kysely, Transaction } from "kysely";
 
 type Rec = Record<string, string>;
 
@@ -70,20 +70,20 @@ export const CONFIGS: Record<ConfigLookupTable, TableConfig> = {
       `c:${norm(r.code ?? "")}`,
       `n:${norm(r.name ?? "")}`
     ],
-    values: (r) => ({ code: r.code.trim(), name: r.name.trim() })
+    values: (r) => ({ code: r.code!.trim(), name: r.name!.trim() })
   },
   itemPostingGroup: {
     validate: (r) => {
       const reason = requireName(r);
       if (reason) return reason;
-      if (r.name.trim().length > 255)
+      if (r.name!.trim().length > 255)
         return "Name must be 255 characters or fewer";
       return null;
     },
     keysOf: (r) => [norm(r.name)],
     keysOfExisting: (r) => [norm(r.name ?? "")],
     values: (r) => {
-      const values: Record<string, string> = { name: r.name.trim() };
+      const values: Record<string, string> = { name: r.name!.trim() };
       if (r.description?.trim()) values.description = r.description.trim();
       return values;
     }
@@ -92,25 +92,25 @@ export const CONFIGS: Record<ConfigLookupTable, TableConfig> = {
     validate: requireName,
     keysOf: (r) => [norm(r.name)],
     keysOfExisting: (r) => [norm(r.name ?? "")],
-    values: (r) => ({ name: r.name.trim() })
+    values: (r) => ({ name: r.name!.trim() })
   },
   scrapReason: {
     validate: requireName,
     keysOf: (r) => [norm(r.name)],
     keysOfExisting: (r) => [norm(r.name ?? "")],
-    values: (r) => ({ name: r.name.trim() })
+    values: (r) => ({ name: r.name!.trim() })
   },
   department: {
     validate: requireName,
     keysOf: (r) => [norm(r.name)],
     keysOfExisting: (r) => [norm(r.name ?? "")],
-    values: (r) => ({ name: r.name.trim() }),
+    values: (r) => ({ name: r.name!.trim() }),
     parentField: "parentDepartmentId"
   }
 };
 
 const loadExisting = async (
-  trx: Kysely<DB> | Transaction<DB>,
+  trx: Kysely<KyselyDatabase> | Transaction<KyselyDatabase>,
   table: ConfigLookupTable,
   companyId: string
 ) => {
@@ -128,7 +128,7 @@ const loadExisting = async (
 // instead of rolling the whole import back. Mirrors the storage-unit parent
 // pass in `index.ts`.
 const applyParents = async (
-  db: Kysely<DB>,
+  db: Kysely<KyselyDatabase>,
   table: ConfigLookupTable,
   parentField: "parentDepartmentId",
   pending: Array<{ row: number; name: string; parentName: string }>,
@@ -174,7 +174,7 @@ const applyParents = async (
 };
 
 export async function importConfigLookups(
-  db: Kysely<DB>,
+  db: Kysely<KyselyDatabase>,
   {
     table,
     mappedRecords,
@@ -233,7 +233,7 @@ export async function importConfigLookups(
       if (config.parentField && record.parentName?.trim()) {
         pendingParents.push({
           row: rowIndex,
-          name: record.name.trim(),
+          name: record.name!.trim(),
           parentName: record.parentName.trim()
         });
       }

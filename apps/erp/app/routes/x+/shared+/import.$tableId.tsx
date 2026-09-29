@@ -81,12 +81,12 @@ export async function action({ request, params }: ActionFunctionArgs) {
         companyGroupId,
         userId
       })
-    : await importCsv(serviceRole, {
+    : await importCsv(serviceRole, getDatabaseClient(), {
         table,
         filePath: filePath as string,
         columnMappings: columnMappings as Record<string, string>,
-        // The edge-fn wrapper types enumMappings loosely (Record<string,
-        // string[]>); the real payload is field → { value → mapped }.
+        // The service types enumMappings loosely (Record<string, string[]>);
+        // the real payload is field → { value → mapped }.
         enumMappings: parsedEnumMappings as unknown as Record<string, string[]>,
         companyId,
         userId

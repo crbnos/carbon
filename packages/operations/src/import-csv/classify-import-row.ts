@@ -24,27 +24,32 @@ export function classifyImportRow(params: {
 
   // `name` can be undefined at runtime when the CSV's Name column is unmapped.
   if (!name || name.trim() === "") {
-    return { action: "skip", reason: "Missing required Name", category: "error" };
+    return {
+      action: "skip",
+      reason: "Missing required Name",
+      category: "error"
+    };
   }
   if (id && seenIds.has(id)) {
     return {
       action: "skip",
       reason: `Duplicate ID "${id}" in file`,
-      category: "skipped",
+      category: "skipped"
     };
   }
   if (seenNames.has(name)) {
     return {
       action: "skip",
       reason: `Duplicate name "${name}" in file`,
-      category: "skipped",
+      category: "skipped"
     };
   }
 
   // The CSV name is matched as-is. Whitespace/case normalization is intentionally
   // out of scope for this data-loss fix and is handled by the later identity redesign.
   const matchedById = id ? externalIdMap.get(id) : undefined;
-  const matchedByName = matchedById === undefined ? nameMap.get(name) : undefined;
+  const matchedByName =
+    matchedById === undefined ? nameMap.get(name) : undefined;
   const existingEntityId = matchedById ?? matchedByName;
 
   if (existingEntityId !== undefined) {

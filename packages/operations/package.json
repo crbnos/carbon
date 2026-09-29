@@ -18,6 +18,7 @@
     "@carbon/auth": "workspace:*",
     "@carbon/database": "workspace:*",
     "@carbon/env": "workspace:*",
+    "@carbon/files": "workspace:*",
     "@carbon/logger": "workspace:*",
     "@carbon/utils": "workspace:*",
     "@internationalized/date": "catalog:",

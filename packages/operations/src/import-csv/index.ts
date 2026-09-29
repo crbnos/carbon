@@ -1,25 +1,29 @@
-import { parse } from "https://deno.land/std@0.175.0/encoding/csv.ts";
-import { serve } from "https://deno.land/std@0.175.0/http/server.ts";
-import { nanoid } from "https://deno.land/x/nanoid@v3.0.0/mod.ts";
-import { sql } from "npm:kysely@0.27.6";
-import z from "npm:zod@^4.5.4";
-import { DB, getConnectionPool, getDatabaseClient } from "../lib/database.ts";
-import { getFunctionLogger } from "../lib/logging.ts";
-import { corsPreflight, errorResponse, jsonResponse } from "../lib/response.ts";
-import { requirePermissions } from "../lib/supabase.ts";
-import { Database } from "../lib/types.ts";
-import { getReadableIdWithRevision } from "../lib/utils.ts";
-import { classifyImportRow } from "./classify-import-row.ts";
-import { importConfigLookups } from "./config-lookup-import.ts";
-import { importMaterialProperties } from "./material-property-import.ts";
-import { importMethods } from "./method-import.ts";
-import { importStockQuantities } from "./stock-quantity-import.ts";
+import type { Database } from "@carbon/database";
+import type { KyselyDatabase } from "@carbon/database/client";
+import { datetime } from "@carbon/database/datetime";
+import { getReadableIdWithRevision } from "@carbon/database/posting";
+import { parseCsv } from "@carbon/files/csv";
+import { getLogger } from "@carbon/logger";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import { type Kysely, sql } from "kysely";
+import { nanoid } from "nanoid";
+import { z } from "zod";
+import {
+  assertOperationPermissions,
+  callerContext,
+  type OperationContext,
+  serviceRoleClient
+} from "../context";
+import { runOperation } from "../result";
+import { classifyImportRow } from "./classify-import-row";
+import { importConfigLookups } from "./config-lookup-import";
+import { importMaterialProperties } from "./material-property-import";
+import { importMethods } from "./method-import";
+import { importStockQuantities } from "./stock-quantity-import";
 
-const pool = getConnectionPool(1);
-const db = getDatabaseClient<DB>(pool);
-const logger = getFunctionLogger("import-csv");
+const logger = getLogger("operations", "import-csv");
 
-const importCsvValidator = z.object({
+export const importCsvInput = z.object({
   table: z.enum([
     "consumable",
     "customer",
@@ -50,20 +54,18 @@ const importCsvValidator = z.object({
     "materialDimension",
     "inventoryQuantity",
     "batchQuantity",
-    "serialQuantity",
+    "serialQuantity"
   ]),
   filePath: z.string(),
   columnMappings: z.record(z.string(), z.string()),
   enumMappings: z
     .record(z.string(), z.record(z.string(), z.string()))
-    .optional(),
-  companyId: z.string(),
-  userId: z.string(),
+    .optional()
 });
 
 const EXTERNAL_ID_KEY = "csv";
 
-type ImportTable = z.infer<typeof importCsvValidator>["table"];
+type ImportTable = z.infer<typeof importCsvInput>["table"];
 
 // The module whose `update` permission each import needs — the same map the
 // ERP's import route checks (`importPermissions` in `imports.models.ts`).
@@ -97,7 +99,7 @@ const IMPORT_PERMISSIONS: Record<ImportTable, string> = {
   materialDimension: "parts",
   inventoryQuantity: "inventory",
   batchQuantity: "inventory",
-  serialQuantity: "inventory",
+  serialQuantity: "inventory"
 };
 
 // Imports that post new records also need `create`, as the ERP's import route
@@ -105,7 +107,7 @@ const IMPORT_PERMISSIONS: Record<ImportTable, string> = {
 const IMPORT_REQUIRES_CREATE = new Set<ImportTable>([
   "inventoryQuantity",
   "batchQuantity",
-  "serialQuantity",
+  "serialQuantity"
 ]);
 
 // The columns each importer may write from a CSV row. Kysely here runs as the
@@ -115,8 +117,8 @@ const IMPORT_REQUIRES_CREATE = new Set<ImportTable>([
 // `imports.models.ts`; columns the importer derives itself (rates, flags,
 // side-table fields) are handled explicitly at the call site.
 type Tables = Database["public"]["Tables"];
-type InsertColumns<T extends keyof Tables> = readonly (keyof Tables[T]["Insert"] &
-  string)[];
+type InsertColumns<T extends keyof Tables> =
+  readonly (keyof Tables[T]["Insert"] & string)[];
 
 const CUSTOMER_COLUMNS = [
   "name",
@@ -126,7 +128,7 @@ const CUSTOMER_COLUMNS = [
   "phone",
   "fax",
   "currencyCode",
-  "website",
+  "website"
 ] as const satisfies InsertColumns<"customer">;
 const SUPPLIER_COLUMNS = [
   "name",
@@ -136,7 +138,7 @@ const SUPPLIER_COLUMNS = [
   "phone",
   "fax",
   "currencyCode",
-  "website",
+  "website"
 ] as const satisfies InsertColumns<"supplier">;
 const CONTACT_COLUMNS = [
   "firstName",
@@ -147,17 +149,17 @@ const CONTACT_COLUMNS = [
   "workPhone",
   "homePhone",
   "fax",
-  "notes",
+  "notes"
 ] as const satisfies InsertColumns<"contact">;
 const WORK_CENTER_COLUMNS = [
   "name",
   "description",
   "defaultStandardFactor",
-  "locationId",
+  "locationId"
 ] as const satisfies InsertColumns<"workCenter">;
 const PROCESS_COLUMNS = [
   "name",
-  "defaultStandardFactor",
+  "defaultStandardFactor"
 ] as const satisfies InsertColumns<"process">;
 
 /**
@@ -165,7 +167,10 @@ const PROCESS_COLUMNS = [
  * cells are strings; the enum and numeric columns among them are checked by
  * Postgres on write, as they were before the allow-list.
  */
-function pickColumns<T extends keyof Tables, K extends keyof Tables[T]["Insert"] & string>(
+function pickColumns<
+  T extends keyof Tables,
+  K extends keyof Tables[T]["Insert"] & string
+>(
   _table: T,
   record: Partial<Record<string, string>>,
   columns: readonly K[]
@@ -199,13 +204,13 @@ const GLOBAL_REFERENCED_TABLES = new Set<ReferencedTable>([
   "materialForm",
   "materialFinish",
   "materialGrade",
-  "materialDimension",
+  "materialDimension"
 ]);
 
 type ReferenceSpec = { column: string; table: ReferencedTable; label: string };
 
 const itemReferences: ReferenceSpec[] = [
-  { column: "supplierId", table: "supplier", label: "Supplier" },
+  { column: "supplierId", table: "supplier", label: "Supplier" }
 ];
 
 // Id-valued columns per import. The wizard resolves these through
@@ -216,7 +221,7 @@ const REFERENCES: Partial<Record<ImportTable, ReferenceSpec[]>> = {
     { column: "accountManagerId", table: "employee", label: "Account Manager" },
     { column: "customerStatusId", table: "customerStatus", label: "Status" },
     { column: "customerTypeId", table: "customerType", label: "Type" },
-    { column: "paymentTermId", table: "paymentTerm", label: "Payment Term" },
+    { column: "paymentTermId", table: "paymentTerm", label: "Payment Term" }
   ],
   supplier: [
     { column: "accountManagerId", table: "employee", label: "Account Manager" },
@@ -225,8 +230,8 @@ const REFERENCES: Partial<Record<ImportTable, ReferenceSpec[]>> = {
     {
       column: "shippingMethodId",
       table: "shippingMethod",
-      label: "Shipping Method",
-    },
+      label: "Shipping Method"
+    }
   ],
   part: itemReferences,
   tool: itemReferences,
@@ -238,15 +243,15 @@ const REFERENCES: Partial<Record<ImportTable, ReferenceSpec[]>> = {
     {
       column: "materialSubstanceId",
       table: "materialSubstance",
-      label: "Substance",
+      label: "Substance"
     },
     { column: "materialFormId", table: "materialForm", label: "Form" },
     { column: "finishId", table: "materialFinish", label: "Finish" },
     { column: "gradeId", table: "materialGrade", label: "Grade" },
-    { column: "dimensionId", table: "materialDimension", label: "Dimensions" },
+    { column: "dimensionId", table: "materialDimension", label: "Dimensions" }
   ],
   workCenter: [{ column: "locationId", table: "location", label: "Location" }],
-  storageUnit: [{ column: "locationId", table: "location", label: "Location" }],
+  storageUnit: [{ column: "locationId", table: "location", label: "Location" }]
 };
 
 type CsvRecord = Record<string, string>;
@@ -257,6 +262,7 @@ type CsvRecord = Record<string, string>;
  * the summary reports). One query per referenced column, run together.
  */
 async function rejectForeignReferences(
+  db: Kysely<KyselyDatabase>,
   table: ImportTable,
   records: CsvRecord[],
   cId: string,
@@ -265,7 +271,9 @@ async function rejectForeignReferences(
   const ownedBySpec = await Promise.all(
     (REFERENCES[table] ?? []).map(async (spec) => {
       const ids = [
-        ...new Set(records.map((r) => r[spec.column]).filter((v) => !!v)),
+        ...new Set(
+          records.map((r) => r[spec.column]).filter((v): v is string => !!v)
+        )
       ];
       if (ids.length === 0) return { spec, owned: new Set<string>() };
       const scope = GLOBAL_REFERENCED_TABLES.has(spec.table)
@@ -287,12 +295,12 @@ async function rejectForeignReferences(
   for (const [rowIndex, record] of records.entries()) {
     const foreign = ownedBySpec.find(
       ({ spec, owned }) =>
-        !!record[spec.column] && !owned.has(record[spec.column])
+        !!record[spec.column] && !owned.has(record[spec.column]!)
     );
     if (foreign) {
       errors.push({
         row: rowIndex,
-        reason: `${foreign.spec.label} "${record[foreign.spec.column]}" was not found in this company`,
+        reason: `${foreign.spec.label} "${record[foreign.spec.column]}" was not found in this company`
       });
     } else {
       accepted.push([rowIndex, record]);
@@ -354,8 +362,8 @@ function parsePermissiveCsv(text: string): Record<string, string>[] {
   const headers = rows[0];
   return rows.slice(1).map((r) => {
     const obj: Record<string, string> = {};
-    for (let i = 0; i < headers.length; i++) {
-      obj[headers[i]] = r[i] ?? "";
+    for (let i = 0; i < headers!.length; i++) {
+      obj[headers![i]!] = r[i] ?? "";
     }
     return obj;
   });
@@ -376,6 +384,7 @@ type CsvEntityType =
  * that bypass the generated DB types.
  */
 async function fetchLiveEntityIds(
+  db: Kysely<KyselyDatabase>,
   entityType: CsvEntityType,
   ids: string[]
 ): Promise<Set<string>> {
@@ -444,6 +453,7 @@ async function fetchLiveEntityIds(
  * supplier/customer for companies with large rosters.
  */
 async function getNameMap(
+  db: Kysely<KyselyDatabase>,
   entityType: "supplier" | "customer",
   cId: string,
   namesToCheck: string[]
@@ -473,6 +483,7 @@ async function getNameMap(
  * subsequent supplierTax/customerTax upsert with a 23503 FK error.
  */
 async function getCsvExternalIdMap(
+  db: Kysely<KyselyDatabase>,
   entityType: CsvEntityType,
   cId: string
 ): Promise<Map<string, string>> {
@@ -492,6 +503,7 @@ async function getCsvExternalIdMap(
   if (candidates.length === 0) return new Map();
 
   const liveIds = await fetchLiveEntityIds(
+    db,
     entityType,
     candidates.map((r) => r.entityId)
   );
@@ -523,7 +535,7 @@ function nullifyEmptyStrings<T extends Record<string, unknown>>(
  * Uses ON CONFLICT to handle re-imports idempotently.
  */
 async function upsertCsvMappings(
-  trx: typeof db,
+  trx: Kysely<KyselyDatabase>,
   entityType: CsvEntityType,
   mappings: Array<{ entityId: string; externalId: string }>,
   cId: string,
@@ -534,7 +546,7 @@ async function upsertCsvMappings(
   const valid = mappings.filter((m) => m.externalId);
   if (valid.length === 0) return;
 
-  const now = new Date().toISOString();
+  const now = datetime.timestamp();
 
   await trx
     .insertInto("externalIntegrationMapping")
@@ -548,7 +560,7 @@ async function upsertCsvMappings(
         allowDuplicateExternalId: false,
         createdBy: userId,
         createdAt: now,
-        updatedAt: now,
+        updatedAt: now
       }))
     )
     // On conflict (orphan mapping with same csv id but stale entityId),
@@ -561,7 +573,7 @@ async function upsertCsvMappings(
         .where("allowDuplicateExternalId", "=", false)
         .doUpdateSet((eb) => ({
           entityId: eb.ref("excluded.entityId"),
-          updatedAt: eb.ref("excluded.updatedAt"),
+          updatedAt: eb.ref("excluded.updatedAt")
         }))
     )
     .execute();
@@ -586,7 +598,7 @@ function materialTaxonomyKey(scopeId: string, name: string): string {
  * materialTaxonomyKey.
  */
 async function resolveMaterialTaxonomyIds(
-  trx: typeof db,
+  trx: Kysely<KyselyDatabase>,
   taxonomyTable: "materialFinish" | "materialGrade" | "materialDimension",
   scopeColumn: "materialSubstanceId" | "materialFormId",
   pairs: Array<{ scopeId: string; name: string }>,
@@ -620,7 +632,7 @@ async function resolveMaterialTaxonomyIds(
       id: row.id as string,
       name: row.name as string,
       companyId: row.companyId ?? null,
-      scopeId: row[scopeColumn] as string,
+      scopeId: row[scopeColumn] as string
     }));
   };
 
@@ -647,7 +659,7 @@ async function resolveMaterialTaxonomyIds(
         missing.map((pair) => ({
           name: pair.name,
           companyId: cId,
-          [scopeColumn]: pair.scopeId,
+          [scopeColumn]: pair.scopeId
         })) as never
       )
       // A concurrent import may have created the same name first; the
@@ -703,7 +715,7 @@ function extractPartnerExtensions(
     paymentTermId: record.paymentTermId,
     shippingMethodId: record.shippingMethodId,
     incoterm: record.incoterm,
-    incotermLocation: record.incotermLocation,
+    incotermLocation: record.incotermLocation
   };
 }
 
@@ -715,9 +727,7 @@ function hasAnyAddressField(ext: PartnerExtensionData): boolean {
   return !!ext.addressLine1;
 }
 
-function buildAddressFields(
-  ext: PartnerExtensionData
-): {
+function buildAddressFields(ext: PartnerExtensionData): {
   addressLine1: string | null;
   addressLine2: string | null;
   city: string | null;
@@ -735,7 +745,7 @@ function buildAddressFields(
     postalCode: ext.postalCode || null,
     // address.countryCode is TEXT storing ISO 3166-1 alpha-2 (e.g., "US"),
     // post-20240928155702_country-codes.
-    countryCode: ext.countryCode || null,
+    countryCode: ext.countryCode || null
   };
 }
 
@@ -746,7 +756,7 @@ function buildAddressFields(
  * since by construction they have no location yet.
  */
 async function preloadPrimaryLocationAddressIds(
-  trx: typeof db,
+  trx: Kysely<KyselyDatabase>,
   entityType: "supplier" | "customer",
   entityIds: string[]
 ): Promise<Map<string, string>> {
@@ -777,7 +787,7 @@ async function preloadPrimaryLocationAddressIds(
 }
 
 async function writeSupplierExtensions(
-  trx: typeof db,
+  trx: Kysely<KyselyDatabase>,
   supplierId: string,
   ext: PartnerExtensionData,
   companyId: string,
@@ -787,7 +797,7 @@ async function writeSupplierExtensions(
   // SELECT per supplier. undefined means "no existing location → insert".
   existingAddressId: string | undefined
 ): Promise<void> {
-  const now = new Date().toISOString();
+  const now = datetime.timestamp();
 
   if (hasAnyAddressField(ext)) {
     const addressFields = buildAddressFields(ext);
@@ -797,6 +807,7 @@ async function writeSupplierExtensions(
         .updateTable("address")
         .set(addressFields)
         .where("id", "=", existingAddressId)
+        .where("companyId", "=", companyId)
         .execute();
     } else {
       const inserted = await trx
@@ -809,11 +820,12 @@ async function writeSupplierExtensions(
           .insertInto("supplierLocation")
           .values({
             supplierId,
+            companyId,
             addressId: inserted.id,
             // supplierLocation.name is NOT NULL. Prefer the user's
             // Location Name column; fall back to Address Line 1 so the row
             // always has a recognizable label.
-            name: ext.locationName || ext.addressLine1,
+            name: (ext.locationName || ext.addressLine1)!
           })
           .execute();
       }
@@ -831,13 +843,13 @@ async function writeSupplierExtensions(
         paymentTermId: ext.paymentTermId,
         companyId,
         updatedAt: now,
-        updatedBy: userId,
+        updatedBy: userId
       })
       .onConflict((oc) =>
         oc.column("supplierId").doUpdateSet({
           paymentTermId: ext.paymentTermId,
           updatedAt: now,
-          updatedBy: userId,
+          updatedBy: userId
         })
       )
       .execute();
@@ -855,12 +867,12 @@ async function writeSupplierExtensions(
         : {}),
       ...(ext.incoterm
         ? {
-            incoterm: ext.incoterm as Database["public"]["Enums"]["incoterm"],
+            incoterm: ext.incoterm as Database["public"]["Enums"]["incoterm"]
           }
         : {}),
       ...(ext.incotermLocation
         ? { incotermLocation: ext.incotermLocation }
-        : {}),
+        : {})
     };
     await trx
       .insertInto("supplierShipping")
@@ -869,13 +881,13 @@ async function writeSupplierExtensions(
         companyId,
         updatedAt: now,
         updatedBy: userId,
-        ...partialUpdate,
+        ...partialUpdate
       })
       .onConflict((oc) =>
         oc.column("supplierId").doUpdateSet({
           updatedAt: now,
           updatedBy: userId,
-          ...partialUpdate,
+          ...partialUpdate
         })
       )
       .execute();
@@ -883,14 +895,14 @@ async function writeSupplierExtensions(
 }
 
 async function writeCustomerExtensions(
-  trx: typeof db,
+  trx: Kysely<KyselyDatabase>,
   customerId: string,
   ext: PartnerExtensionData,
   companyId: string,
   userId: string,
   existingAddressId: string | undefined
 ): Promise<void> {
-  const now = new Date().toISOString();
+  const now = datetime.timestamp();
 
   if (hasAnyAddressField(ext)) {
     const addressFields = buildAddressFields(ext);
@@ -900,6 +912,7 @@ async function writeCustomerExtensions(
         .updateTable("address")
         .set(addressFields)
         .where("id", "=", existingAddressId)
+        .where("companyId", "=", companyId)
         .execute();
     } else {
       const inserted = await trx
@@ -912,10 +925,11 @@ async function writeCustomerExtensions(
           .insertInto("customerLocation")
           .values({
             customerId,
+            companyId,
             addressId: inserted.id,
             // customerLocation.name is NOT NULL. Prefer the user's
             // Location Name column; fall back to Address Line 1.
-            name: ext.locationName || ext.addressLine1,
+            name: (ext.locationName || ext.addressLine1)!
           })
           .execute();
       }
@@ -930,18 +944,17 @@ async function writeCustomerExtensions(
         paymentTermId: ext.paymentTermId,
         companyId,
         updatedAt: now,
-        updatedBy: userId,
+        updatedBy: userId
       })
       .onConflict((oc) =>
         oc.column("customerId").doUpdateSet({
           paymentTermId: ext.paymentTermId,
           updatedAt: now,
-          updatedBy: userId,
+          updatedBy: userId
         })
       )
       .execute();
   }
-
 }
 
 /**
@@ -976,7 +989,7 @@ type ItemPlanningOrderMultiple = {
 };
 
 async function writeSupplierPartLinks(
-  trx: typeof db,
+  trx: Kysely<KyselyDatabase>,
   links: SupplierPartImportLink[],
   companyId: string,
   userId: string
@@ -995,7 +1008,7 @@ async function writeSupplierPartLinks(
     existing.map((e) => [`${e.itemId}:${e.supplierId}`, e.id])
   );
 
-  const now = new Date().toISOString();
+  const now = datetime.timestamp();
   for (const link of links) {
     const key = `${link.itemId}:${link.supplierId}`;
     const existingId = existingByPair.get(key);
@@ -1023,9 +1036,10 @@ async function writeSupplierPartLinks(
           conversionFactor: numericConversion,
           unitPrice: numericPrice,
           updatedAt: now,
-          updatedBy: userId,
+          updatedBy: userId
         })
         .where("id", "=", existingId)
+        .where("companyId", "=", companyId)
         .execute();
     } else {
       await trx
@@ -1040,7 +1054,7 @@ async function writeSupplierPartLinks(
           conversionFactor: numericConversion,
           unitPrice: numericPrice,
           companyId,
-          createdBy: userId,
+          createdBy: userId
         })
         .execute();
     }
@@ -1054,13 +1068,13 @@ async function writeSupplierPartLinks(
 // leadTime), so within this transaction the row already exists for every
 // item we just upserted — we only need to UPDATE it.
 async function writeItemPurchasingLeadTimes(
-  trx: typeof db,
+  trx: Kysely<KyselyDatabase>,
   entries: ItemPurchasingLeadTime[],
   companyId: string,
   userId: string
 ): Promise<void> {
   if (entries.length === 0) return;
-  const now = new Date().toISOString();
+  const now = datetime.timestamp();
   for (const entry of entries) {
     const numericLeadTime = Number.parseInt(entry.leadTime, 10);
     if (Number.isNaN(numericLeadTime)) continue;
@@ -1069,7 +1083,7 @@ async function writeItemPurchasingLeadTimes(
       .set({
         leadTime: numericLeadTime,
         updatedAt: now,
-        updatedBy: userId,
+        updatedBy: userId
       })
       .where("itemId", "=", entry.itemId)
       .where("companyId", "=", companyId)
@@ -1082,13 +1096,13 @@ async function writeItemPurchasingLeadTimes(
 // within this transaction the row already exists for every item we upserted —
 // we only need to UPDATE it. Non-numeric/blank values are skipped.
 async function writeItemUnitCosts(
-  trx: typeof db,
+  trx: Kysely<KyselyDatabase>,
   entries: ItemUnitCost[],
   companyId: string,
   userId: string
 ): Promise<void> {
   if (entries.length === 0) return;
-  const now = new Date().toISOString();
+  const now = datetime.timestamp();
   for (const entry of entries) {
     const numericUnitCost = Number.parseFloat(entry.unitCost);
     if (Number.isNaN(numericUnitCost)) continue;
@@ -1097,7 +1111,7 @@ async function writeItemUnitCosts(
       .set({
         unitCost: numericUnitCost,
         updatedAt: now,
-        updatedBy: userId,
+        updatedBy: userId
       })
       .where("itemId", "=", entry.itemId)
       .where("companyId", "=", companyId)
@@ -1115,22 +1129,23 @@ async function writeItemUnitCosts(
 // kept in sync at import time even though they're structurally distinct
 // fields (supplier case-pack vs MRP preferred multiple).
 async function writeItemPlanningOrderMultiples(
-  trx: typeof db,
+  trx: Kysely<KyselyDatabase>,
   entries: ItemPlanningOrderMultiple[],
   companyId: string,
   userId: string
 ): Promise<void> {
   if (entries.length === 0) return;
-  const now = new Date().toISOString();
+  const now = datetime.timestamp();
   for (const entry of entries) {
     const numericOrderMultiple = Number.parseInt(entry.orderMultiple, 10);
-    if (Number.isNaN(numericOrderMultiple) || numericOrderMultiple < 1) continue;
+    if (Number.isNaN(numericOrderMultiple) || numericOrderMultiple < 1)
+      continue;
     await trx
       .updateTable("itemPlanning")
       .set({
         orderMultiple: numericOrderMultiple,
         updatedAt: now,
-        updatedBy: userId,
+        updatedBy: userId
       })
       .where("itemId", "=", entry.itemId)
       .where("companyId", "=", companyId)
@@ -1139,7 +1154,7 @@ async function writeItemPlanningOrderMultiples(
 }
 
 async function upsertTaxIdentifiers(
-  trx: typeof db,
+  trx: Kysely<KyselyDatabase>,
   table: "customerTax" | "supplierTax",
   records: Array<{ entityId: string; taxId: string | null | undefined }>,
   cId: string,
@@ -1147,7 +1162,7 @@ async function upsertTaxIdentifiers(
 ): Promise<void> {
   if (records.length === 0) return;
 
-  const now = new Date().toISOString();
+  const now = datetime.timestamp();
   if (table === "customerTax") {
     await trx
       .insertInto("customerTax")
@@ -1157,14 +1172,14 @@ async function upsertTaxIdentifiers(
           taxId: r.taxId ?? null,
           companyId: cId,
           updatedAt: now,
-          updatedBy: userId,
+          updatedBy: userId
         }))
       )
       .onConflict((oc) =>
         oc.column("customerId").doUpdateSet({
           taxId: sql`excluded."taxId"`,
           updatedAt: now,
-          updatedBy: userId,
+          updatedBy: userId
         })
       )
       .execute();
@@ -1178,42 +1193,65 @@ async function upsertTaxIdentifiers(
         taxId: r.taxId ?? null,
         companyId: cId,
         updatedAt: now,
-        updatedBy: userId,
+        updatedBy: userId
       }))
     )
     .onConflict((oc) =>
       oc.column("supplierId").doUpdateSet({
         taxId: sql`excluded."taxId"`,
         updatedAt: now,
-        updatedBy: userId,
+        updatedBy: userId
       })
     )
     .execute();
 }
 
-serve(async (req: Request) => {
-  const preflight = corsPreflight(req);
-  if (preflight) return preflight;
-  const payload = await req.json();
+/**
+ * `importCsv` for app code that holds a Supabase client: a service-role client
+ * runs it as the system, any other client is permission-checked.
+ */
+export async function importCsvAs(
+  client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
+  input: z.input<typeof importCsvInput> & { companyId: string; userId: string }
+) {
+  const { companyId, userId } = input;
+  return importCsv(
+    await callerContext(client, { db, companyId, userId }),
+    input
+  );
+}
 
-  try {
+/** Imports an uploaded CSV into `table`, per the caller's column and enum mappings. */
+export function importCsv(
+  ctx: OperationContext,
+  input: z.input<typeof importCsvInput>
+) {
+  return runOperation("import-csv", async () => {
     const {
       table,
       filePath,
       columnMappings,
-      enumMappings = {},
+      enumMappings = {}
+    } = importCsvInput.parse(input);
+    const { db, companyId, userId } = ctx;
+
+    logger.info({
+      table,
+      filePath,
+      columnMappings,
+      enumMappings,
       companyId,
-      userId,
-    } = importCsvValidator.parse(payload);
+      userId
+    });
 
-    logger.info({ table, filePath, columnMappings, enumMappings, companyId, userId });
-
-    const client = await requirePermissions(req, companyId, userId, {
+    await assertOperationPermissions(ctx, {
       update: IMPORT_PERMISSIONS[table],
       ...(IMPORT_REQUIRES_CREATE.has(table)
         ? { create: IMPORT_PERMISSIONS[table] }
-        : {}),
+        : {})
     });
+    const client = await serviceRoleClient();
 
     // The client is service-role and the legacy bucket is shared across
     // tenants, so the `${companyId}/` key prefix is the tenant boundary on the
@@ -1234,17 +1272,14 @@ serve(async (req: Request) => {
     const csvText = new TextDecoder().decode(
       new Uint8Array(await csvFile.data.arrayBuffer())
     );
-    // std/csv is strict on row-length mismatches; fall back to the
+    // A row whose field count disagrees with the header falls back to the
     // permissive parser for real-world CSVs with quoting/comma issues.
-    let parsedCsv: Record<string, string>[];
-    try {
-      parsedCsv = parse(csvText, {
-        skipFirstRow: true,
-        lazyQuotes: true,
-      }) as Record<string, string>[];
-    } catch (_strictErr) {
-      parsedCsv = parsePermissiveCsv(csvText);
-    }
+    const strict = parseCsv<Record<string, string>>(csvText);
+    const parsedCsv: Record<string, string>[] = strict.errors.some(
+      (e) => e.type === "FieldMismatch"
+    )
+      ? parsePermissiveCsv(csvText)
+      : strict.rows;
 
     let mappedRecords = parsedCsv.map((row) => {
       const record: Record<string, string> = {};
@@ -1252,10 +1287,10 @@ serve(async (req: Request) => {
         if (key in enumMappings) {
           const enumMapping = enumMappings[key];
           const csvValue = row[value];
-          if (csvValue in enumMapping) {
-            record[key] = enumMapping[csvValue];
+          if (csvValue! in enumMapping!) {
+            record[key] = enumMapping![csvValue!]!;
           } else {
-            record[key] = enumMapping["Default"];
+            record[key] = enumMapping!["Default"]!;
           }
         } else if (value && value !== "N/A") {
           record[key] = row[value] || "";
@@ -1265,7 +1300,7 @@ serve(async (req: Request) => {
     });
 
     const missingEnumKeys = Object.keys(enumMappings).filter(
-      (key) => !(key in mappedRecords[0])
+      (key) => !(key in mappedRecords[0]!)
     );
 
     if (missingEnumKeys.length > 0) {
@@ -1273,7 +1308,7 @@ serve(async (req: Request) => {
         const processedRecord = { ...record };
 
         missingEnumKeys.forEach((key) => {
-          processedRecord[key] = enumMappings[key]["Default"];
+          processedRecord[key] = enumMappings[key]!["Default"]!;
         });
 
         return processedRecord;
@@ -1286,10 +1321,11 @@ serve(async (req: Request) => {
       // Rows the user should fix and re-import (validation / missing required data).
       errors: [] as Array<{ row: number; reason: string }>,
       // Rows intentionally not written (duplicates, already-existing) — informational.
-      skipped: [] as Array<{ row: number; reason: string }>,
+      skipped: [] as Array<{ row: number; reason: string }>
     };
 
     const acceptedRows = await rejectForeignReferences(
+      db,
       table,
       mappedRecords,
       companyId,
@@ -1298,7 +1334,11 @@ serve(async (req: Request) => {
 
     switch (table) {
       case "customer": {
-        const externalIdMap = await getCsvExternalIdMap("customer", companyId);
+        const externalIdMap = await getCsvExternalIdMap(
+          db,
+          "customer",
+          companyId
+        );
         const csvNames = Array.from(
           new Set(
             mappedRecords
@@ -1306,7 +1346,7 @@ serve(async (req: Request) => {
               .filter((n): n is string => typeof n === "string" && n !== "")
           )
         );
-        const nameMap = await getNameMap("customer", companyId, csvNames);
+        const nameMap = await getNameMap(db, "customer", companyId, csvNames);
         const customerIds = new Set<string>();
         // Tracks names queued for INSERT in this batch so a second CSV row
         // with the same name doesn't trip the (name, companyId) unique
@@ -1362,32 +1402,37 @@ serve(async (req: Request) => {
             } = record;
             const matchedByCsvId = id ? externalIdMap.get(id) : undefined;
             const decision = classifyImportRow({
-              id,
-              name: rest.name,
+              id: id!,
+              name: rest.name!,
               externalIdMap,
               nameMap,
               seenIds: customerIds,
-              seenNames: namesQueuedForInsert,
+              seenNames: namesQueuedForInsert
             });
 
             if (decision.action === "skip") {
               const bucket =
-                decision.category === "error" ? summary.errors : summary.skipped;
+                decision.category === "error"
+                  ? summary.errors
+                  : summary.skipped;
               bucket.push({ row: rowIndex, reason: decision.reason });
               continue;
             }
 
             if (id) customerIds.add(id);
-            if (decision.action === "insert") namesQueuedForInsert.add(rest.name);
+            if (decision.action === "insert")
+              namesQueuedForInsert.add(rest.name!);
 
             if (decision.action === "update") {
               customerUpdates.push({
                 id: decision.entityId,
                 data: {
-                  ...nullifyEmptyStrings(pickColumns("customer", rest, CUSTOMER_COLUMNS)),
-                  updatedAt: new Date().toISOString(),
-                  updatedBy: userId,
-                },
+                  ...nullifyEmptyStrings(
+                    pickColumns("customer", rest, CUSTOMER_COLUMNS)
+                  ),
+                  updatedAt: datetime.timestamp(),
+                  updatedBy: userId
+                }
               });
               customerTaxUpdates.push({ entityId: decision.entityId, taxId });
               extForUpdates.push({ entityId: decision.entityId, ext });
@@ -1395,19 +1440,21 @@ serve(async (req: Request) => {
               if (matchedByCsvId === undefined && id) {
                 csvIdsForNameMatchedUpdates.push({
                   entityId: decision.entityId,
-                  externalId: id,
+                  externalId: id
                 });
               }
             } else {
               customerInserts.push({
-                ...nullifyEmptyStrings(pickColumns("customer", rest, CUSTOMER_COLUMNS)),
-                readableId: id || null,
+                ...nullifyEmptyStrings(
+                  pickColumns("customer", rest, CUSTOMER_COLUMNS)
+                ),
+                readableId: (id || null) as string | undefined,
                 companyId,
-                createdAt: new Date().toISOString(),
-                createdBy: userId,
-              });
+                createdAt: datetime.timestamp(),
+                createdBy: userId
+              } as Database["public"]["Tables"]["customer"]["Insert"]);
               customerTaxForInserts.push({ taxId });
-              csvIdsForInserts.push(id);
+              csvIdsForInserts.push(id!);
               extForInserts.push(ext);
             }
           }
@@ -1415,7 +1462,7 @@ serve(async (req: Request) => {
           logger.info({
             totalRecords: mappedRecords.length,
             customerInserts: customerInserts.length,
-            customerUpdates: customerUpdates.length,
+            customerUpdates: customerUpdates.length
           });
           summary.inserted += customerInserts.length;
           summary.updated += customerUpdates.length;
@@ -1431,7 +1478,7 @@ serve(async (req: Request) => {
               "customer",
               inserted.map((row, i) => ({
                 entityId: row.id!,
-                externalId: csvIdsForInserts[i],
+                externalId: csvIdsForInserts[i]!
               })),
               companyId,
               userId
@@ -1441,7 +1488,7 @@ serve(async (req: Request) => {
               "customerTax",
               inserted.map((row, i) => ({
                 entityId: row.id!,
-                taxId: customerTaxForInserts[i]?.taxId,
+                taxId: customerTaxForInserts[i]?.taxId
               })),
               companyId,
               userId
@@ -1450,7 +1497,7 @@ serve(async (req: Request) => {
               // Newly-inserted customers can't have an existing location yet.
               await writeCustomerExtensions(
                 trx,
-                inserted[i].id!,
+                inserted[i]!.id!,
                 extForInserts[i] ?? {},
                 companyId,
                 userId,
@@ -1464,6 +1511,7 @@ serve(async (req: Request) => {
                 .updateTable(table)
                 .set(update.data)
                 .where("id", "=", update.id)
+                .where("companyId", "=", companyId)
                 .execute();
             }
             await upsertTaxIdentifiers(
@@ -1503,7 +1551,11 @@ serve(async (req: Request) => {
         break;
       }
       case "supplier": {
-        const externalIdMap = await getCsvExternalIdMap("supplier", companyId);
+        const externalIdMap = await getCsvExternalIdMap(
+          db,
+          "supplier",
+          companyId
+        );
         const csvNames = Array.from(
           new Set(
             mappedRecords
@@ -1511,7 +1563,7 @@ serve(async (req: Request) => {
               .filter((n): n is string => typeof n === "string" && n !== "")
           )
         );
-        const nameMap = await getNameMap("supplier", companyId, csvNames);
+        const nameMap = await getNameMap(db, "supplier", companyId, csvNames);
         const supplierIds = new Set<string>();
         const namesQueuedForInsert = new Set<string>();
 
@@ -1563,23 +1615,26 @@ serve(async (req: Request) => {
             } = record;
             const matchedByCsvId = id ? externalIdMap.get(id) : undefined;
             const decision = classifyImportRow({
-              id,
-              name: rest.name,
+              id: id!,
+              name: rest.name!,
               externalIdMap,
               nameMap,
               seenIds: supplierIds,
-              seenNames: namesQueuedForInsert,
+              seenNames: namesQueuedForInsert
             });
 
             if (decision.action === "skip") {
               const bucket =
-                decision.category === "error" ? summary.errors : summary.skipped;
+                decision.category === "error"
+                  ? summary.errors
+                  : summary.skipped;
               bucket.push({ row: rowIndex, reason: decision.reason });
               continue;
             }
 
             if (id) supplierIds.add(id);
-            if (decision.action === "insert") namesQueuedForInsert.add(rest.name);
+            if (decision.action === "insert")
+              namesQueuedForInsert.add(rest.name!);
 
             if (decision.action === "update") {
               supplierUpdates.push({
@@ -1588,9 +1643,9 @@ serve(async (req: Request) => {
                   ...nullifyEmptyStrings(
                     pickColumns("supplier", rest, SUPPLIER_COLUMNS)
                   ),
-                  updatedAt: new Date().toISOString(),
-                  updatedBy: userId,
-                },
+                  updatedAt: datetime.timestamp(),
+                  updatedBy: userId
+                }
               });
               supplierTaxUpdates.push({ entityId: decision.entityId, taxId });
               extForUpdates.push({ entityId: decision.entityId, ext });
@@ -1598,19 +1653,21 @@ serve(async (req: Request) => {
               if (matchedByCsvId === undefined && id) {
                 csvIdsForNameMatchedUpdates.push({
                   entityId: decision.entityId,
-                  externalId: id,
+                  externalId: id
                 });
               }
             } else {
               supplierInserts.push({
-                ...nullifyEmptyStrings(pickColumns("supplier", rest, SUPPLIER_COLUMNS)),
-                readableId: id || null,
+                ...nullifyEmptyStrings(
+                  pickColumns("supplier", rest, SUPPLIER_COLUMNS)
+                ),
+                readableId: (id || null) as string | undefined,
                 companyId,
-                createdAt: new Date().toISOString(),
-                createdBy: userId,
-              });
+                createdAt: datetime.timestamp(),
+                createdBy: userId
+              } as Database["public"]["Tables"]["supplier"]["Insert"]);
               supplierTaxForInserts.push({ taxId });
-              csvIdsForInserts.push(id);
+              csvIdsForInserts.push(id!);
               extForInserts.push(ext);
             }
           }
@@ -1618,7 +1675,7 @@ serve(async (req: Request) => {
           logger.info({
             totalRecords: mappedRecords.length,
             supplierInserts: supplierInserts.length,
-            supplierUpdates: supplierUpdates.length,
+            supplierUpdates: supplierUpdates.length
           });
           summary.inserted += supplierInserts.length;
           summary.updated += supplierUpdates.length;
@@ -1634,7 +1691,7 @@ serve(async (req: Request) => {
               "supplier",
               inserted.map((row, i) => ({
                 entityId: row.id!,
-                externalId: csvIdsForInserts[i],
+                externalId: csvIdsForInserts[i]!
               })),
               companyId,
               userId
@@ -1644,7 +1701,7 @@ serve(async (req: Request) => {
               "supplierTax",
               inserted.map((row, i) => ({
                 entityId: row.id!,
-                taxId: supplierTaxForInserts[i]?.taxId,
+                taxId: supplierTaxForInserts[i]?.taxId
               })),
               companyId,
               userId
@@ -1653,7 +1710,7 @@ serve(async (req: Request) => {
               // Newly-inserted suppliers can't have an existing location yet.
               await writeSupplierExtensions(
                 trx,
-                inserted[i].id!,
+                inserted[i]!.id!,
                 extForInserts[i] ?? {},
                 companyId,
                 userId,
@@ -1667,6 +1724,7 @@ serve(async (req: Request) => {
                 .updateTable(table)
                 .set(update.data)
                 .where("id", "=", update.id)
+                .where("companyId", "=", companyId)
                 .execute();
             }
             await upsertTaxIdentifiers(
@@ -1732,7 +1790,7 @@ serve(async (req: Request) => {
           }
         }
 
-        const externalIdMap = await getCsvExternalIdMap("item", companyId);
+        const externalIdMap = await getCsvExternalIdMap(db, "item", companyId);
         const readableIds = new Set();
 
         await db.transaction().execute(async (trx) => {
@@ -1799,13 +1857,19 @@ serve(async (req: Request) => {
             replenishmentSystem: z
               .enum(["Buy", "Make", "Buy and Make"])
               .optional(),
-            defaultMethodType: z.enum(["Purchase to Order", "Make to Order", "Pull from Inventory"]).optional(),
+            defaultMethodType: z
+              .enum([
+                "Purchase to Order",
+                "Make to Order",
+                "Pull from Inventory"
+              ])
+              .optional(),
             itemTrackingType: z.enum([
               "Inventory",
               "Non-Inventory",
               "Serial",
-              "Batch",
-            ]),
+              "Batch"
+            ])
           });
 
           const materialValidator = itemValidator.extend({
@@ -1817,7 +1881,7 @@ serve(async (req: Request) => {
             // Raw text from the mapping UI; resolved to the *Id columns below.
             finish: z.string().optional(),
             grade: z.string().optional(),
-            dimensions: z.string().optional(),
+            dimensions: z.string().optional()
           });
 
           // The mapping UI sends Finish / Grade / Dimensions as raw CSV text —
@@ -1834,8 +1898,7 @@ serve(async (req: Request) => {
           if (table === "material") {
             const finishPairs: Array<{ scopeId: string; name: string }> = [];
             const gradePairs: Array<{ scopeId: string; name: string }> = [];
-            const dimensionPairs: Array<{ scopeId: string; name: string }> =
-              [];
+            const dimensionPairs: Array<{ scopeId: string; name: string }> = [];
 
             // Rejected rows are left out: one may name another company's
             // substance or form, and resolving it would create taxonomy rows
@@ -1853,7 +1916,10 @@ serve(async (req: Request) => {
                 gradePairs.push({ scopeId: substanceId, name: record.grade });
               }
               if (formId && record.dimensions && !record.dimensionId) {
-                dimensionPairs.push({ scopeId: formId, name: record.dimensions });
+                dimensionPairs.push({
+                  scopeId: formId,
+                  name: record.dimensions
+                });
               }
             }
 
@@ -1921,7 +1987,7 @@ serve(async (req: Request) => {
               mappedRecords
                 .map((r) => r.readableId)
                 .filter((id): id is string => !!id && id.trim() !== "")
-            ),
+            )
           ];
           const existingItemKeys = new Set<string>();
           if (candidateReadableIds.length > 0) {
@@ -1944,7 +2010,10 @@ serve(async (req: Request) => {
               .execute();
             for (const existing of existingItems) {
               existingItemKeys.add(
-                getReadableIdWithRevision(existing.readableId, existing.revision)
+                getReadableIdWithRevision(
+                  existing.readableId,
+                  existing.revision
+                )
               );
             }
           }
@@ -1955,7 +2024,7 @@ serve(async (req: Request) => {
             if (!item.success) {
               summary.errors.push({
                 row: rowIndex,
-                reason: item.error.issues[0]?.message ?? "Invalid row",
+                reason: item.error.issues[0]?.message ?? "Invalid row"
               });
               continue;
             }
@@ -1986,14 +2055,14 @@ serve(async (req: Request) => {
                 data: {
                   ...rest,
                   revision,
-                  active: rest.active?.toLowerCase() !== "false" ?? true,
+                  active: rest.active?.toLowerCase() !== "false",
                   unitOfMeasureCode: rest.unitOfMeasureCode || undefined,
                   description: rest.description || undefined,
                   replenishmentSystem: rest.replenishmentSystem || undefined,
                   defaultMethodType: rest.defaultMethodType || undefined,
-                  updatedAt: new Date().toISOString(),
-                  updatedBy: userId,
-                },
+                  updatedAt: datetime.timestamp(),
+                  updatedBy: userId
+                }
               });
 
               // Existing item: we already know its id, so the supplierPart
@@ -2007,28 +2076,28 @@ serve(async (req: Request) => {
                   minimumOrderQuantity: record.minimumOrderQuantity,
                   orderMultiple: record.orderMultiple,
                   conversionFactor: record.conversionFactor,
-                  unitPrice: record.unitPrice,
+                  unitPrice: record.unitPrice
                 });
               }
 
               if (record.leadTime) {
                 purchasingLeadTimes.push({
                   itemId: existingEntityId,
-                  leadTime: record.leadTime,
+                  leadTime: record.leadTime
                 });
               }
 
               if (record.unitCost) {
                 itemUnitCosts.push({
                   itemId: existingEntityId,
-                  unitCost: record.unitCost,
+                  unitCost: record.unitCost
                 });
               }
 
               if (record.orderMultiple) {
                 itemPlanningOrderMultiples.push({
                   itemId: existingEntityId,
-                  orderMultiple: record.orderMultiple,
+                  orderMultiple: record.orderMultiple
                 });
               }
 
@@ -2054,9 +2123,9 @@ serve(async (req: Request) => {
                         resolveFinishId(material.data) ||
                         undefined,
                       companyId,
-                      updatedAt: new Date().toISOString(),
-                      updatedBy: userId,
-                    },
+                      updatedAt: datetime.timestamp(),
+                      updatedBy: userId
+                    }
                   });
                 }
               }
@@ -2065,14 +2134,14 @@ serve(async (req: Request) => {
               if (existingItemKeys.has(readableIdWithRevision)) {
                 summary.errors.push({
                   row: rowIndex,
-                  reason: `An item with Unique ID "${item.data.readableId}" already exists. Change the Unique ID (and Name) or delete the existing item, then re-import.`,
+                  reason: `An item with Unique ID "${item.data.readableId}" already exists. Change the Unique ID (and Name) or delete the existing item, then re-import.`
                 });
                 continue;
               }
               const newItem = {
                 ...rest,
                 replenishmentSystem: rest.replenishmentSystem ?? "Buy",
-                active: rest.active?.toLowerCase() !== "false" ?? true,
+                active: rest.active?.toLowerCase() !== "false",
                 unitOfMeasureCode: rest.unitOfMeasureCode || undefined,
                 description: rest.description || undefined,
                 defaultMethodType: rest.defaultMethodType || undefined,
@@ -2085,8 +2154,8 @@ serve(async (req: Request) => {
                   | "Consumable",
                 companyId,
                 revision,
-                createdAt: new Date().toISOString(),
-                createdBy: userId,
+                createdAt: datetime.timestamp(),
+                createdBy: userId
               };
               itemInserts.push(newItem);
               csvIdsForInserts.push(getExternalId(id));
@@ -2100,7 +2169,7 @@ serve(async (req: Request) => {
                 minimumOrderQuantity: record.minimumOrderQuantity,
                 orderMultiple: record.orderMultiple,
                 conversionFactor: record.conversionFactor,
-                unitPrice: record.unitPrice,
+                unitPrice: record.unitPrice
               });
               leadTimeForInserts.push(record.leadTime);
               orderMultipleForInserts.push(record.orderMultiple);
@@ -2113,7 +2182,7 @@ serve(async (req: Request) => {
                     row: rowIndex,
                     reason:
                       material.error.issues[0]?.message ??
-                      "Invalid material row",
+                      "Invalid material row"
                   });
                   continue;
                 }
@@ -2129,8 +2198,8 @@ serve(async (req: Request) => {
                     finishId:
                       material.data.finishId || resolveFinishId(material.data),
                     companyId,
-                    createdAt: new Date().toISOString(),
-                    createdBy: userId,
+                    createdAt: datetime.timestamp(),
+                    createdBy: userId
                   };
                 }
               }
@@ -2143,7 +2212,7 @@ serve(async (req: Request) => {
               .values(itemInserts)
               .onConflict((oc) =>
                 oc.constraint("item_unique").doUpdateSet({
-                  updatedAt: new Date().toISOString(),
+                  updatedAt: datetime.timestamp(),
                   updatedBy: userId,
                   name: sql`EXCLUDED."name"`,
                   description: sql`EXCLUDED."description"`,
@@ -2152,7 +2221,7 @@ serve(async (req: Request) => {
                   unitOfMeasureCode: sql`EXCLUDED."unitOfMeasureCode"`,
                   replenishmentSystem: sql`EXCLUDED."replenishmentSystem"`,
                   defaultMethodType: sql`EXCLUDED."defaultMethodType"`,
-                  itemTrackingType: sql`EXCLUDED."itemTrackingType"`,
+                  itemTrackingType: sql`EXCLUDED."itemTrackingType"`
                 })
               )
               .returning(["id", "readableId"])
@@ -2163,7 +2232,7 @@ serve(async (req: Request) => {
               "item",
               insertedItems.map((item, i) => ({
                 entityId: item.id!,
-                externalId: csvIdsForInserts[i],
+                externalId: csvIdsForInserts[i]!
               })),
               companyId,
               userId
@@ -2183,8 +2252,8 @@ serve(async (req: Request) => {
                   ? { serviceType: "External" }
                   : { approved: true }),
                 companyId,
-                createdAt: new Date().toISOString(),
-                createdBy: userId,
+                createdAt: datetime.timestamp(),
+                createdBy: userId
               }));
 
               await trx
@@ -2221,8 +2290,8 @@ serve(async (req: Request) => {
                     gradeId: materialData.gradeId || undefined,
                     finishId: materialData.finishId || undefined,
                     companyId,
-                    createdAt: new Date().toISOString(),
-                    createdBy: userId,
+                    createdAt: datetime.timestamp(),
+                    createdBy: userId
                   });
                 }
                 return acc;
@@ -2244,37 +2313,37 @@ serve(async (req: Request) => {
             // link, only rows with a lead time produce a lead-time entry.
             for (let i = 0; i < insertedItems.length; i++) {
               const sp = supplierPartForInserts[i];
-              if (sp?.supplierId && insertedItems[i].id) {
+              if (sp?.supplierId && insertedItems[i]!.id) {
                 supplierPartLinks.push({
-                  itemId: insertedItems[i].id!,
+                  itemId: insertedItems[i]!.id!,
                   supplierId: sp.supplierId,
                   supplierPartId: sp.supplierPartId,
                   supplierUnitOfMeasureCode: sp.supplierUnitOfMeasureCode,
                   minimumOrderQuantity: sp.minimumOrderQuantity,
                   orderMultiple: sp.orderMultiple,
                   conversionFactor: sp.conversionFactor,
-                  unitPrice: sp.unitPrice,
+                  unitPrice: sp.unitPrice
                 });
               }
               const leadTime = leadTimeForInserts[i];
-              if (leadTime && insertedItems[i].id) {
+              if (leadTime && insertedItems[i]!.id) {
                 purchasingLeadTimes.push({
-                  itemId: insertedItems[i].id!,
-                  leadTime,
+                  itemId: insertedItems[i]!.id!,
+                  leadTime
                 });
               }
               const orderMultiple = orderMultipleForInserts[i];
-              if (orderMultiple && insertedItems[i].id) {
+              if (orderMultiple && insertedItems[i]!.id) {
                 itemPlanningOrderMultiples.push({
-                  itemId: insertedItems[i].id!,
-                  orderMultiple,
+                  itemId: insertedItems[i]!.id!,
+                  orderMultiple
                 });
               }
               const unitCost = unitCostForInserts[i];
-              if (unitCost && insertedItems[i].id) {
+              if (unitCost && insertedItems[i]!.id) {
                 itemUnitCosts.push({
-                  itemId: insertedItems[i].id!,
-                  unitCost,
+                  itemId: insertedItems[i]!.id!,
+                  unitCost
                 });
               }
             }
@@ -2285,7 +2354,7 @@ serve(async (req: Request) => {
             itemInserts: itemInserts.length,
             itemUpdates: itemUpdates.length,
             materialInserts: Object.keys(materialPartialInserts).length,
-            materialUpdates: materialUpdates.length,
+            materialUpdates: materialUpdates.length
           });
 
           if (itemUpdates.length > 0) {
@@ -2307,6 +2376,7 @@ serve(async (req: Request) => {
                 .updateTable("item")
                 .set(update.data)
                 .where("id", "=", update.id)
+                .where("companyId", "=", companyId)
                 .execute();
             }
 
@@ -2373,10 +2443,12 @@ serve(async (req: Request) => {
       }
       case "customerContact": {
         const externalContactIdMap = await getCsvExternalIdMap(
+          db,
           "contact",
           companyId
         );
         const externalCustomerIdMap = await getCsvExternalIdMap(
+          db,
           "customer",
           companyId
         );
@@ -2392,9 +2464,9 @@ serve(async (req: Request) => {
           const customerContactInserts: Database["public"]["Tables"]["customerContact"]["Insert"][] =
             [];
 
-          const isContactValid = (
-            record: { email?: string | null }
-          ): record is {
+          const isContactValid = (record: {
+            email?: string | null;
+          }): record is {
             email: string;
           } => {
             return (
@@ -2408,41 +2480,44 @@ serve(async (req: Request) => {
             const { id, companyId: customerId } = record;
             const contactData = pickColumns("contact", record, CONTACT_COLUMNS);
 
-            if (externalContactIdMap.has(id)) {
-              const existingEntityId = externalContactIdMap.get(id)!;
+            if (externalContactIdMap.has(id!)) {
+              const existingEntityId = externalContactIdMap.get(id!)!;
               if (isContactValid(contactData)) {
                 contactUpdates.push({
                   id: existingEntityId,
                   data: {
-                    ...contactData,
-                  },
+                    ...contactData
+                  }
                 });
               }
             } else if (
               isContactValid(contactData) &&
-              externalCustomerIdMap.has(customerId)
+              externalCustomerIdMap.has(customerId!)
             ) {
-              const existingCustomerId = externalCustomerIdMap.get(customerId)!;
+              const existingCustomerId = externalCustomerIdMap.get(
+                customerId!
+              )!;
               const contactId = nanoid();
               const newContact = {
                 id: contactId,
                 ...contactData,
-                companyId,
+                companyId
               };
 
               contactInserts.push(newContact);
-              csvIdsForContactInserts.push(id);
+              csvIdsForContactInserts.push(id!);
               customerContactInserts.push({
                 contactId,
                 customerId: existingCustomerId,
-                customFields: {},
+                companyId,
+                customFields: {}
               });
             } else {
               summary.errors.push({
                 row: rowIndex,
                 reason: isContactValid(contactData)
                   ? `No customer found for External Company ID "${customerId}"`
-                  : "Invalid contact (missing required fields)",
+                  : "Invalid contact (missing required fields)"
               });
             }
           }
@@ -2454,7 +2529,7 @@ serve(async (req: Request) => {
             totalRecords: mappedRecords.length,
             contactInserts: contactInserts.length,
             contactUpdates: contactUpdates.length,
-            customerContactInserts: customerContactInserts.length,
+            customerContactInserts: customerContactInserts.length
           });
 
           if (contactInserts.length > 0) {
@@ -2468,7 +2543,7 @@ serve(async (req: Request) => {
               "contact",
               inserted.map((row, i) => ({
                 entityId: row.id!,
-                externalId: csvIdsForContactInserts[i],
+                externalId: csvIdsForContactInserts[i]!
               })),
               companyId,
               userId
@@ -2481,6 +2556,7 @@ serve(async (req: Request) => {
                 .updateTable("contact")
                 .set(update.data)
                 .where("id", "=", update.id)
+                .where("companyId", "=", companyId)
                 .execute();
             }
           }
@@ -2497,10 +2573,12 @@ serve(async (req: Request) => {
       }
       case "supplierContact": {
         const externalContactIdMap = await getCsvExternalIdMap(
+          db,
           "contact",
           companyId
         );
         const externalSupplierIdMap = await getCsvExternalIdMap(
+          db,
           "supplier",
           companyId
         );
@@ -2516,9 +2594,9 @@ serve(async (req: Request) => {
           const supplierContactInserts: Database["public"]["Tables"]["supplierContact"]["Insert"][] =
             [];
 
-          const isContactValid = (
-            record: { email?: string | null }
-          ): record is {
+          const isContactValid = (record: {
+            email?: string | null;
+          }): record is {
             email: string;
           } => {
             return (
@@ -2532,40 +2610,43 @@ serve(async (req: Request) => {
             const { id, companyId: supplierId } = record;
             const contactData = pickColumns("contact", record, CONTACT_COLUMNS);
 
-            if (externalContactIdMap.has(id)) {
-              const existingEntityId = externalContactIdMap.get(id)!;
+            if (externalContactIdMap.has(id!)) {
+              const existingEntityId = externalContactIdMap.get(id!)!;
               if (isContactValid(contactData)) {
                 contactUpdates.push({
                   id: existingEntityId,
                   data: {
-                    ...contactData,
-                  },
+                    ...contactData
+                  }
                 });
               }
             } else if (
               isContactValid(contactData) &&
-              externalSupplierIdMap.has(supplierId)
+              externalSupplierIdMap.has(supplierId!)
             ) {
-              const existingSupplierId = externalSupplierIdMap.get(supplierId)!;
+              const existingSupplierId = externalSupplierIdMap.get(
+                supplierId!
+              )!;
               const contactId = nanoid();
               const newContact = {
                 id: contactId,
                 ...contactData,
-                companyId,
+                companyId
               };
               contactInserts.push(newContact);
-              csvIdsForContactInserts.push(id);
+              csvIdsForContactInserts.push(id!);
               supplierContactInserts.push({
                 contactId,
                 supplierId: existingSupplierId,
-                customFields: {},
+                companyId,
+                customFields: {}
               });
             } else {
               summary.errors.push({
                 row: rowIndex,
                 reason: isContactValid(contactData)
                   ? `No supplier found for External Company ID "${supplierId}"`
-                  : "Invalid contact (missing required fields)",
+                  : "Invalid contact (missing required fields)"
               });
             }
           }
@@ -2577,7 +2658,7 @@ serve(async (req: Request) => {
             totalRecords: mappedRecords.length,
             contactInserts: contactInserts.length,
             contactUpdates: contactUpdates.length,
-            supplierContactInserts: supplierContactInserts.length,
+            supplierContactInserts: supplierContactInserts.length
           });
 
           if (contactInserts.length > 0) {
@@ -2591,7 +2672,7 @@ serve(async (req: Request) => {
               "contact",
               inserted.map((row, i) => ({
                 entityId: row.id!,
-                externalId: csvIdsForContactInserts[i],
+                externalId: csvIdsForContactInserts[i]!
               })),
               companyId,
               userId
@@ -2604,6 +2685,7 @@ serve(async (req: Request) => {
                 .updateTable("contact")
                 .set(update.data)
                 .where("id", "=", update.id)
+                .where("companyId", "=", companyId)
                 .execute();
             }
           }
@@ -2620,6 +2702,7 @@ serve(async (req: Request) => {
       }
       case "workCenter": {
         const externalIdMap = await getCsvExternalIdMap(
+          db,
           "workCenter",
           companyId
         );
@@ -2636,7 +2719,10 @@ serve(async (req: Request) => {
 
           const isWorkCenterValid = (
             record: Record<string, string>
-          ): record is { name: string; locationId: string } => {
+          ): record is Record<string, string> & {
+            name: string;
+            locationId: string;
+          } => {
             return (
               typeof record.name === "string" &&
               record.name.trim() !== "" &&
@@ -2647,8 +2733,8 @@ serve(async (req: Request) => {
 
           for (const [, record] of acceptedRows) {
             const { id, ...rest } = record;
-            if (externalIdMap.has(id)) {
-              const existingEntityId = externalIdMap.get(id)!;
+            if (externalIdMap.has(id!)) {
+              const existingEntityId = externalIdMap.get(id!)!;
               if (isWorkCenterValid(rest) && !workCenterIds.has(id)) {
                 workCenterIds.add(id);
                 workCenterUpdates.push({
@@ -2662,9 +2748,9 @@ serve(async (req: Request) => {
                     overheadRate: rest.overheadRate
                       ? parseFloat(rest.overheadRate)
                       : 0,
-                    updatedAt: new Date().toISOString(),
-                    updatedBy: userId,
-                  },
+                    updatedAt: datetime.timestamp(),
+                    updatedBy: userId
+                  }
                 });
               }
             } else if (isWorkCenterValid(rest) && !workCenterIds.has(id)) {
@@ -2679,17 +2765,17 @@ serve(async (req: Request) => {
                   ? parseFloat(rest.overheadRate)
                   : 0,
                 companyId,
-                createdAt: new Date().toISOString(),
-                createdBy: userId,
+                createdAt: datetime.timestamp(),
+                createdBy: userId
               } as never);
-              csvIdsForInserts.push(id);
+              csvIdsForInserts.push(id!);
             }
           }
 
           logger.info({
             totalRecords: mappedRecords.length,
             workCenterInserts: workCenterInserts.length,
-            workCenterUpdates: workCenterUpdates.length,
+            workCenterUpdates: workCenterUpdates.length
           });
 
           if (workCenterInserts.length > 0) {
@@ -2703,7 +2789,7 @@ serve(async (req: Request) => {
               "workCenter",
               inserted.map((row, i) => ({
                 entityId: row.id!,
-                externalId: csvIdsForInserts[i],
+                externalId: csvIdsForInserts[i]!
               })),
               companyId,
               userId
@@ -2715,6 +2801,7 @@ serve(async (req: Request) => {
                 .updateTable("workCenter")
                 .set(update.data)
                 .where("id", "=", update.id)
+                .where("companyId", "=", companyId)
                 .execute();
             }
           }
@@ -2722,7 +2809,11 @@ serve(async (req: Request) => {
         break;
       }
       case "process": {
-        const externalIdMap = await getCsvExternalIdMap("process", companyId);
+        const externalIdMap = await getCsvExternalIdMap(
+          db,
+          "process",
+          companyId
+        );
         const processIds = new Set();
 
         await db.transaction().execute(async (trx) => {
@@ -2740,18 +2831,21 @@ serve(async (req: Request) => {
               ? "Process"
               : value === "Outside" || value === "Inside and Outside"
                 ? "Outside Processing"
-                : value) as Database["public"]["Enums"]["processType"];
+                : value) as Database["public"]["Enums"]["operationType"];
 
           const validProcessTypes = [
             "Process",
             "Assembly",
             "Inspection",
-            "Outside Processing",
+            "Outside Processing"
           ];
 
           const isProcessValid = (
             record: Record<string, string>
-          ): record is { name: string; processType: string } => {
+          ): record is Record<string, string> & {
+            name: string;
+            processType: string;
+          } => {
             return (
               typeof record.name === "string" &&
               record.name.trim() !== "" &&
@@ -2764,8 +2858,8 @@ serve(async (req: Request) => {
 
           for (const record of mappedRecords) {
             const { id, ...rest } = record;
-            if (externalIdMap.has(id)) {
-              const existingEntityId = externalIdMap.get(id)!;
+            if (externalIdMap.has(id!)) {
+              const existingEntityId = externalIdMap.get(id!)!;
               if (isProcessValid(rest) && !processIds.has(id)) {
                 processIds.add(id);
                 processUpdates.push({
@@ -2774,10 +2868,10 @@ serve(async (req: Request) => {
                     ...pickColumns("process", rest, PROCESS_COLUMNS),
                     processType: normalizeProcessType(rest.processType),
                     completeAllOnScan:
-                      rest.completeAllOnScan?.toLowerCase() === "true" ?? false,
-                    updatedAt: new Date().toISOString(),
-                    updatedBy: userId,
-                  },
+                      rest.completeAllOnScan?.toLowerCase() === "true",
+                    updatedAt: datetime.timestamp(),
+                    updatedBy: userId
+                  }
                 });
               }
             } else if (isProcessValid(rest) && !processIds.has(id)) {
@@ -2786,19 +2880,19 @@ serve(async (req: Request) => {
                 ...pickColumns("process", rest, PROCESS_COLUMNS),
                 processType: normalizeProcessType(rest.processType),
                 completeAllOnScan:
-                  rest.completeAllOnScan?.toLowerCase() === "true" ?? false,
+                  rest.completeAllOnScan?.toLowerCase() === "true",
                 companyId,
-                createdAt: new Date().toISOString(),
-                createdBy: userId,
+                createdAt: datetime.timestamp(),
+                createdBy: userId
               } as never);
-              csvIdsForInserts.push(id);
+              csvIdsForInserts.push(id!);
             }
           }
 
           logger.info({
             totalRecords: mappedRecords.length,
             processInserts: processInserts.length,
-            processUpdates: processUpdates.length,
+            processUpdates: processUpdates.length
           });
 
           if (processInserts.length > 0) {
@@ -2812,7 +2906,7 @@ serve(async (req: Request) => {
               "process",
               inserted.map((row, i) => ({
                 entityId: row.id!,
-                externalId: csvIdsForInserts[i],
+                externalId: csvIdsForInserts[i]!
               })),
               companyId,
               userId
@@ -2824,6 +2918,7 @@ serve(async (req: Request) => {
                 .updateTable("process")
                 .set(update.data)
                 .where("id", "=", update.id)
+                .where("companyId", "=", companyId)
                 .execute();
             }
           }
@@ -2832,6 +2927,7 @@ serve(async (req: Request) => {
       }
       case "storageUnit": {
         const externalIdMap = await getCsvExternalIdMap(
+          db,
           "storageUnit",
           companyId
         );
@@ -2955,7 +3051,7 @@ serve(async (req: Request) => {
                     name,
                     companyId,
                     createdBy: userId,
-                    createdAt: new Date().toISOString(),
+                    createdAt: datetime.timestamp()
                   } as never)
                   .returning(["id"])
                   .execute();
@@ -2979,14 +3075,14 @@ serve(async (req: Request) => {
                 reason:
                   name === ""
                     ? "Missing required Name"
-                    : "Missing required Location",
+                    : "Missing required Location"
               });
               continue;
             }
             if (id && seenCsvIds.has(id)) {
               summary.skipped.push({
                 row: rowIndex,
-                reason: `Duplicate ID "${id}" in file`,
+                reason: `Duplicate ID "${id}" in file`
               });
               continue;
             }
@@ -2994,7 +3090,7 @@ serve(async (req: Request) => {
             if (seenNaturalKeys.has(key)) {
               summary.skipped.push({
                 row: rowIndex,
-                reason: `Duplicate storage unit "${name}" for this location in file`,
+                reason: `Duplicate storage unit "${name}" for this location in file`
               });
               continue;
             }
@@ -3016,7 +3112,7 @@ serve(async (req: Request) => {
             ) {
               summary.errors.push({
                 row: rowIndex,
-                reason: `Unique ID "${id}" already belongs to a storage unit in a different location; import cannot move a storage unit between locations`,
+                reason: `Unique ID "${id}" already belongs to a storage unit in a different location; import cannot move a storage unit between locations`
               });
               continue;
             }
@@ -3030,7 +3126,7 @@ serve(async (req: Request) => {
               if (nameOwner !== undefined && nameOwner !== matchedByCsvId) {
                 summary.errors.push({
                   row: rowIndex,
-                  reason: `A different storage unit named "${name}" already exists in this location`,
+                  reason: `A different storage unit named "${name}" already exists in this location`
                 });
                 continue;
               }
@@ -3053,7 +3149,7 @@ serve(async (req: Request) => {
                 locationId,
                 childKey: key,
                 parentName,
-                rowIndex,
+                rowIndex
               });
             }
 
@@ -3066,9 +3162,9 @@ serve(async (req: Request) => {
                   name,
                   storageTypeIds,
                   active,
-                  updatedAt: new Date().toISOString(),
-                  updatedBy: userId,
-                },
+                  updatedAt: datetime.timestamp(),
+                  updatedBy: userId
+                }
               });
               if (
                 matchedByCsvId === undefined &&
@@ -3077,7 +3173,7 @@ serve(async (req: Request) => {
               ) {
                 csvIdsForNameMatchedUpdates.push({
                   entityId: existingEntityId,
-                  externalId: id,
+                  externalId: id
                 });
                 // Guard against two name-matched rows in the same file both
                 // trying to first-map the same entity (they can't share a
@@ -3095,7 +3191,7 @@ serve(async (req: Request) => {
                 active,
                 companyId,
                 createdBy: userId,
-                createdAt: new Date().toISOString(),
+                createdAt: datetime.timestamp()
               } as never);
               csvIdsForInserts.push(id);
               naturalKeyMap.set(key, newId);
@@ -3105,7 +3201,7 @@ serve(async (req: Request) => {
           logger.info({
             totalRecords: mappedRecords.length,
             storageUnitInserts: inserts.length,
-            storageUnitUpdates: updates.length,
+            storageUnitUpdates: updates.length
           });
           summary.inserted += inserts.length;
           summary.updated += updates.length;
@@ -3121,7 +3217,7 @@ serve(async (req: Request) => {
               "storageUnit",
               inserted.map((row, i) => ({
                 entityId: row.id!,
-                externalId: csvIdsForInserts[i],
+                externalId: csvIdsForInserts[i]!
               })),
               companyId,
               userId
@@ -3132,6 +3228,7 @@ serve(async (req: Request) => {
               .updateTable("storageUnit")
               .set(update.data)
               .where("id", "=", update.id)
+              .where("companyId", "=", companyId)
               .execute();
           }
           if (csvIdsForNameMatchedUpdates.length > 0) {
@@ -3159,14 +3256,14 @@ serve(async (req: Request) => {
           if (!parentId) {
             summary.errors.push({
               row: intent.rowIndex,
-              reason: `Parent storage unit "${intent.parentName}" not found in the same location`,
+              reason: `Parent storage unit "${intent.parentName}" not found in the same location`
             });
             continue;
           }
           if (parentId === childId) {
             summary.errors.push({
               row: intent.rowIndex,
-              reason: `Storage unit cannot be its own parent`,
+              reason: `Storage unit cannot be its own parent`
             });
             continue;
           }
@@ -3175,17 +3272,18 @@ serve(async (req: Request) => {
               .updateTable("storageUnit")
               .set({
                 parentId,
-                updatedAt: new Date().toISOString(),
-                updatedBy: userId,
+                updatedAt: datetime.timestamp(),
+                updatedBy: userId
               })
               .where("id", "=", childId)
+              .where("companyId", "=", companyId)
               .execute();
           } catch (parentErr) {
             summary.errors.push({
               row: intent.rowIndex,
               reason: `Could not set parent "${intent.parentName}": ${
                 (parentErr as Error).message
-              }`,
+              }`
             });
           }
         }
@@ -3199,7 +3297,7 @@ serve(async (req: Request) => {
           mappedRecords,
           companyId,
           userId,
-          summary,
+          summary
         });
         break;
       }
@@ -3213,7 +3311,7 @@ serve(async (req: Request) => {
           mappedRecords,
           companyId,
           userId,
-          summary,
+          summary
         });
         break;
       }
@@ -3228,7 +3326,7 @@ serve(async (req: Request) => {
           mappedRecords,
           companyId,
           userId,
-          summary,
+          summary
         });
         break;
       }
@@ -3240,7 +3338,7 @@ serve(async (req: Request) => {
           mappedRecords,
           companyId,
           userId,
-          summary,
+          summary
         });
         break;
       }
@@ -3256,17 +3354,15 @@ serve(async (req: Request) => {
     const withValues = (issues: Array<{ row: number; reason: string }>) =>
       issues.map((issue) => ({ ...issue, values: parsedCsv[issue.row] ?? {} }));
 
-    return jsonResponse({
+    return {
       success: true,
       inserted: summary.inserted,
       updated: summary.updated,
       errors: withValues(summary.errors),
-      skipped: withValues(summary.skipped),
-    });
-  } catch (err) {
-    return errorResponse(err, 500);
-  }
-});
+      skipped: withValues(summary.skipped)
+    };
+  });
+}
 
 function capitalize(str: string) {
   return str.charAt(0).toUpperCase() + str.slice(1);

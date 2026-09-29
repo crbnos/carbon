@@ -22,28 +22,26 @@
 // Row validation / dedup lives in the pure `classify-stock-row.ts`. No
 // externalIntegrationMapping writes: there is no Unique ID column.
 
-import { parseDate } from "@internationalized/date";
-import type { SupabaseClient } from "@supabase/supabase-js";
-import { nanoid } from "https://deno.land/x/nanoid@v3.0.0/mod.ts";
-import type { Kysely } from "kysely";
-import type { DB } from "../lib/database.ts";
-import { datetime, getCompanyTimeZone } from "../lib/datetime.ts";
-import { getFunctionLogger } from "../lib/logging.ts";
-import type { Database, Json } from "../lib/types.ts";
-import { getCurrentAccountingPeriod } from "../shared/get-accounting-period.ts";
-import { getDefaultPostingGroup } from "../shared/get-posting-group.ts";
+import type { Database, Json } from "@carbon/database";
+import type { KyselyDatabase } from "@carbon/database/client";
+import { datetime, getCompanyTimeZone } from "@carbon/database/datetime";
 import {
   buildAdjustmentJournalLines,
   buildCostLedgerRow,
   buildItemLedgerRow,
   buildJournalLineDimensions,
   carriesAdjustmentValue,
-  planStockRows,
-} from "../shared/plan-adjustment.ts";
-import {
   createAdjustmentJournal,
+  getCurrentAccountingPeriod,
+  getDefaultPostingGroup,
   loadOpenCostLayers,
-} from "../shared/post-adjustment.ts";
+  planStockRows
+} from "@carbon/database/posting";
+import { getLogger } from "@carbon/logger";
+import { parseDate } from "@internationalized/date";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import type { Kysely } from "kysely";
+import { nanoid } from "nanoid";
 import {
   buildStockItemMap,
   classifyStockRow,
@@ -51,10 +49,10 @@ import {
   type StockImportTable,
   type StockRowResolved,
   storageUnitKey,
-  trackedKey,
-} from "./classify-stock-row.ts";
+  trackedKey
+} from "./classify-stock-row";
 
-const logger = getFunctionLogger("import-csv");
+const logger = getLogger("operations", "import-csv");
 
 type Rec = Record<string, string>;
 type Summary = {
@@ -82,7 +80,7 @@ const chunked = <T>(rows: T[], size = INSERT_CHUNK_SIZE): T[][] => {
 };
 
 export async function importStockQuantities(
-  db: Kysely<DB>,
+  db: Kysely<KyselyDatabase>,
   client: SupabaseClient<Database>,
   args: {
     table: StockImportTable;
@@ -97,7 +95,7 @@ export async function importStockQuantities(
 
   // 1. preload lookups ------------------------------------------------------
   const readableIds = [
-    ...new Set(mappedRecords.map((r) => text(r.readableId)).filter(Boolean)),
+    ...new Set(mappedRecords.map((r) => text(r.readableId)).filter(Boolean))
   ];
   const items =
     readableIds.length > 0
@@ -110,7 +108,7 @@ export async function importStockQuantities(
             "readableIdWithRevision",
             "itemTrackingType",
             "replenishmentSystem",
-            "type",
+            "type"
           ])
           .where("companyId", "=", companyId)
           .where("readableId", "in", readableIds)
@@ -130,7 +128,7 @@ export async function importStockQuantities(
               "costingMethod",
               "unitCost",
               "standardCost",
-              "itemPostingGroupId",
+              "itemPostingGroupId"
             ])
             .where("companyId", "=", companyId)
             .where("itemId", "in", itemIds)
@@ -142,7 +140,7 @@ export async function importStockQuantities(
                 .where("companyId", "=", companyId)
                 .where("itemId", "in", itemIds)
                 .execute()
-            : Promise.resolve([]),
+            : Promise.resolve([])
         ])
       : [[], []];
   const itemCostByItem = new Map(itemCosts.map((c) => [c.itemId, c]));
@@ -157,7 +155,7 @@ export async function importStockQuantities(
       readableId: i.readableId,
       revision: i.revision,
       itemTrackingType: i.itemTrackingType,
-      hasItemCost: itemCostByItem.has(i.id),
+      hasItemCost: itemCostByItem.has(i.id)
     }))
   );
   const itemById = new Map(items.map((i) => [i.id, i]));
@@ -174,7 +172,7 @@ export async function importStockQuantities(
       mappedRecords
         .map((r) => text(r.locationId))
         .filter((l) => l !== "" && locationIds.has(l))
-    ),
+    )
   ];
   const storageUnits =
     referencedLocationIds.length > 0
@@ -197,9 +195,10 @@ export async function importStockQuantities(
   // Existing batch / serial numbers on the referenced items, any status.
   const existingTrackedKeys = new Set<string>();
   if (isTracked && itemIds.length > 0) {
-    const numberField = table === "serialQuantity" ? "serialNumber" : "batchNumber";
+    const numberField =
+      table === "serialQuantity" ? "serialNumber" : "batchNumber";
     const numbers = [
-      ...new Set(mappedRecords.map((r) => text(r[numberField])).filter(Boolean)),
+      ...new Set(mappedRecords.map((r) => text(r[numberField])).filter(Boolean))
     ];
     if (numbers.length > 0) {
       const existing = await db
@@ -228,12 +227,12 @@ export async function importStockQuantities(
       locationIds,
       storageUnitMap,
       existingTrackedKeys,
-      seenTrackedKeys,
+      seenTrackedKeys
     });
     if (decision.action === "skip") {
       (decision.category === "error" ? summary.errors : summary.skipped).push({
         row: rowIndex,
-        reason: decision.reason,
+        reason: decision.reason
       });
       continue;
     }
@@ -250,7 +249,7 @@ export async function importStockQuantities(
     totalRecords: mappedRecords.length,
     planned: planned.length,
     skipped: summary.skipped.length,
-    errors: summary.errors.length,
+    errors: summary.errors.length
   });
 
   if (planned.length === 0) return;
@@ -296,7 +295,7 @@ export async function importStockQuantities(
     const dimensions = await client
       .from("dimension")
       .select("id, entityType")
-      .eq("companyGroupId", companyRecord.data.companyGroupId)
+      .eq("companyGroupId", companyRecord.data.companyGroupId!)
       .eq("active", true)
       .in("entityType", ["Item", "ItemPostingGroup", "Location"]);
     // Fail closed: journal lines must not silently lose dimension tags.
@@ -314,11 +313,11 @@ export async function importStockQuantities(
             rawMaterialsAccount: accountDefaults.data.rawMaterialsAccount,
             finishedGoodsAccount: accountDefaults.data.finishedGoodsAccount,
             inventoryAdjustmentVarianceAccount:
-              accountDefaults.data.inventoryAdjustmentVarianceAccount,
+              accountDefaults.data.inventoryAdjustmentVarianceAccount
           },
           description: "Inventory Adjustment — CSV import",
           userId,
-          dimensions: dimensionMap,
+          dimensions: dimensionMap
         }
       : null;
 
@@ -329,7 +328,9 @@ export async function importStockQuantities(
     if (row.expirationDate) return row.expirationDate;
     const shelfLife = shelfLifeByItem.get(row.itemId);
     if (shelfLife?.mode === "Fixed Duration" && shelfLife.days) {
-      return parseDate(today).add({ days: Number(shelfLife.days) }).toString();
+      return parseDate(today)
+        .add({ days: Number(shelfLife.days) })
+        .toString();
     }
     return null;
   };
@@ -355,7 +356,7 @@ export async function importStockQuantities(
     const planInputs = planned.map((row) => ({
       itemId: row.itemId,
       quantity: row.quantity,
-      itemTrackingType: itemById.get(row.itemId)!.itemTrackingType,
+      itemTrackingType: itemById.get(row.itemId)!.itemTrackingType
     }));
     const openLayersByItem = await loadOpenCostLayers(trx, {
       itemIds: [
@@ -365,15 +366,15 @@ export async function importStockQuantities(
               carriesAdjustmentValue(row.quantity, row.itemTrackingType)
             )
             .map((row) => row.itemId)
-        ),
+        )
       ],
-      companyId,
+      companyId
     });
     const rowPlans = planStockRows({
       rows: planInputs,
       itemCosts: itemCostByItem,
       openLayersByItem,
-      hasAccounting: accounting !== null,
+      hasAccounting: accounting !== null
     });
 
     // Tracked entities first: the ledger rows reference them.
@@ -386,7 +387,7 @@ export async function importStockQuantities(
         const adjustmentStamp = {
           userId,
           at: nowIso,
-          reason: "Created via CSV import",
+          reason: "Created via CSV import"
         };
         const attributes: Record<string, unknown> = {
           "Inventory Adjustment": adjustmentStamp,
@@ -399,11 +400,11 @@ export async function importStockQuantities(
                     reason: adjustmentStamp.reason,
                     source: "Inventory Adjustment",
                     userId: adjustmentStamp.userId,
-                    at: adjustmentStamp.at,
-                  },
-                ],
+                    at: adjustmentStamp.at
+                  }
+                ]
               }
-            : {}),
+            : {})
         };
         return {
           id: trackedEntityIds[rowIndex]!,
@@ -417,7 +418,7 @@ export async function importStockQuantities(
           expirationDate,
           attributes: attributes as unknown as Json,
           companyId,
-          createdBy: userId,
+          createdBy: userId
         };
       });
       for (const rows of chunked(trackedEntityRows)) {
@@ -442,12 +443,12 @@ export async function importStockQuantities(
           itemId: row.itemId,
           locationId: row.locationId,
           storageUnitId: row.storageUnitId,
-          trackedEntityId: trackedEntityIds[rowIndex],
+          trackedEntityId: trackedEntityIds[rowIndex] ?? null,
           quantity: row.quantity,
           comment: row.comment,
           scrapReasonId: null,
           companyId,
-          createdBy: userId,
+          createdBy: userId
         })
       )
     )) {
@@ -465,18 +466,18 @@ export async function importStockQuantities(
 
     // Cost layers.
     const costLedgerRows = planned.flatMap((row, rowIndex) =>
-      rowPlans[rowIndex].carriesValue
+      rowPlans[rowIndex]!.carriesValue
         ? [
             buildCostLedgerRow({
               entryType: "Positive Adjmt.",
               documentType: null,
-              documentId: itemLedgerIds[rowIndex],
+              documentId: itemLedgerIds[rowIndex]!,
               itemId: row.itemId,
               quantity: row.quantity,
-              cost: rowPlans[rowIndex].cost,
+              cost: rowPlans[rowIndex]!.cost,
               postingDate: today,
-              companyId,
-            }),
+              companyId
+            })
           ]
         : []
     );
@@ -489,14 +490,14 @@ export async function importStockQuantities(
     // once here instead of per row.
     const postingRowIndexes = planned
       .map((_, rowIndex) => rowIndex)
-      .filter((rowIndex) => rowPlans[rowIndex].postsJournal);
+      .filter((rowIndex) => rowPlans[rowIndex]!.postsJournal);
     if (accounting && postingRowIndexes.length > 0) {
       const journalId = await createAdjustmentJournal(trx, {
         companyId,
         accountingPeriodId: accounting.accountingPeriodId,
         description: accounting.description,
         postingDate: today,
-        userId,
+        userId
       });
 
       // `journalLineReference` already identifies a movement's line pair (it
@@ -508,18 +509,18 @@ export async function importStockQuantities(
       );
       const journalLineRows = postingRowIndexes.flatMap((rowIndex) => {
         const row = planned[rowIndex];
-        const item = itemById.get(row.itemId)!;
+        const item = itemById.get(row!.itemId)!;
         return buildAdjustmentJournalLines({
           journalId,
-          documentId: itemLedgerIds[rowIndex],
+          documentId: itemLedgerIds[rowIndex]!,
           documentType: null,
           journalLineReference: referenceByRowIndex.get(rowIndex)!,
           isGain: true,
-          cost: rowPlans[rowIndex].cost,
-          quantity: row.quantity,
+          cost: rowPlans[rowIndex]!.cost,
+          quantity: row!.quantity,
           replenishmentSystem: item.replenishmentSystem,
           accountDefaults: accounting.accountDefaults,
-          companyId,
+          companyId
         });
       });
       const journalLineIdsByReference = new Map<string, string[]>();
@@ -549,10 +550,11 @@ export async function importStockQuantities(
         return buildJournalLineDimensions({
           journalLineIds,
           dimensions: accounting.dimensions,
-          itemId: row.itemId,
-          itemPostingGroupId: itemCostByItem.get(row.itemId)!.itemPostingGroupId,
-          locationId: row.locationId,
-          companyId,
+          itemId: row!.itemId,
+          itemPostingGroupId: itemCostByItem.get(row!.itemId)!
+            .itemPostingGroupId,
+          locationId: row!.locationId,
+          companyId
         });
       });
       for (const rows of chunked(dimensionRows)) {

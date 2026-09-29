@@ -1,4 +1,5 @@
 import type { Database, Tables } from "@carbon/database";
+import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import { getContentType, getFileExtension, storage } from "@carbon/files";
 import type {
   PostgrestResponse,
@@ -194,6 +195,7 @@ export async function getTagsList(
 
 export async function importCsv(
   client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   args: {
     table: string;
     filePath: string;
@@ -203,9 +205,14 @@ export async function importCsv(
     userId: string;
   }
 ) {
-  return client.functions.invoke("import-csv", {
-    body: args
-  });
+  const { importCsvAs } = await import("@carbon/operations/import-csv");
+  // The operation validates `table` and the enum mappings' real shape
+  // (field → { value → mapped }).
+  return importCsvAs(
+    client,
+    db,
+    args as unknown as Parameters<typeof importCsvAs>[2]
+  );
 }
 
 export async function insertNote(

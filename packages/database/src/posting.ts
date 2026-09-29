@@ -27,10 +27,12 @@ export * from "../supabase/functions/shared/intercompany-capture.ts";
 export * from "../supabase/functions/shared/journal-dimensions.ts";
 export * from "../supabase/functions/shared/payment-funding.ts";
 export * from "../supabase/functions/shared/pick-guards.ts";
+export * from "../supabase/functions/shared/plan-adjustment.ts";
 export {
   type AdjustmentItemCost,
   bookAdjustment,
-  createAdjustmentJournal
+  createAdjustmentJournal,
+  loadOpenCostLayers
 } from "../supabase/functions/shared/post-adjustment.ts";
 export * from "../supabase/functions/shared/purchase-cost-adjustment.ts";
 export * from "../supabase/functions/shared/resolve-return-cost.ts";
