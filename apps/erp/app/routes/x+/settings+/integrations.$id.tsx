@@ -56,6 +56,12 @@ import {
   SECRET_KEYS,
   WEBHOOK_SIGNING_SECRET_KEY
 } from "@carbon/ee/integrations/secrets";
+import {
+  getConflictingOnshapeIntegration,
+  isOnshapeIntegrationId,
+  ONSHAPE_GOVERNMENT_INTEGRATION_ID
+} from "@carbon/ee/onshape";
+import { beginOnshapeAuthorization } from "@carbon/ee/onshape.server";
 import { isIntegrationWhitelisted } from "@carbon/ee/plan";
 import { requireFeature } from "@carbon/ee/plan.server";
 import {
@@ -1699,13 +1705,52 @@ export async function action({ request, params }: ActionFunctionArgs) {
     metadata = foldRampCredentials(metadata);
   }
 
+  // Onshape Government is configured BEFORE it is authorized: the admin enters
+  // their private OAuth app here, and the save then sends them through that
+  // app's consent screen (below). Re-authorize whenever there is no token yet or
+  // the app it was issued by changed — a token is only good for the client and
+  // tenant that issued it.
+  const onshapeNeedsAuthorization =
+    integrationId === ONSHAPE_GOVERNMENT_INTEGRATION_ID &&
+    (!existingMetadata.credentials ||
+      (["baseUrl", "oauthUrl", "clientId"] as const).some(
+        (key) => metadata[key] !== existingMetadata[key]
+      ) ||
+      (typeof metadata.clientSecret === "string" &&
+        metadata.clientSecret.trim().length > 0));
+
+  // A company holds one Onshape connection at a time; two would leave every
+  // background job guessing which tenant to talk to.
+  if (isOnshapeIntegrationId(integrationId) && !existing.data?.active) {
+    const conflict = await getConflictingOnshapeIntegration(
+      client,
+      companyId,
+      integrationId
+    );
+    if (conflict) {
+      return data(
+        {},
+        await flash(
+          request,
+          error(
+            null,
+            "Another Onshape integration is already connected. Uninstall it before connecting this one."
+          )
+        )
+      );
+    }
+  }
+
   // Onshape asset sync needs the OAuth2Write scope (export jobs + webhook). A
   // connection authorized read-only can't run it, and a refresh can't widen the
   // scope — only a reconnect can. If a read-only user is turning the feature ON,
   // don't persist an on-but-non-functional toggle: force it back off here and
-  // tell them to reconnect first (below). Leaving it off imposes nothing.
+  // tell them to reconnect first (below). Leaving it off imposes nothing. A
+  // connection about to be (re)authorized is judged by the callback instead,
+  // against the scope it is actually granted.
   const onshapeActivatingWithoutWrite =
-    integrationId === "onshape" &&
+    isOnshapeIntegrationId(integrationId) &&
+    !onshapeNeedsAuthorization &&
     (metadata as Record<string, unknown>).assetSyncEnabled === true &&
     !onshapeConnectionHasWriteScope(existingMetadata);
   if (onshapeActivatingWithoutWrite) {
@@ -1728,7 +1773,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
     "ramp",
     "rillet"
   ]);
-  if (FORM_SECRET_INTEGRATIONS.has(integrationId)) {
+  if (
+    FORM_SECRET_INTEGRATIONS.has(integrationId) ||
+    integrationId === ONSHAPE_GOVERNMENT_INTEGRATION_ID
+  ) {
     const alreadyVaulted = existing.data?.secretRef != null;
     // The optional webhook signing secret is not a credential: it must not
     // satisfy the "a credential is required" check on its own.
@@ -1823,7 +1871,42 @@ export async function action({ request, params }: ActionFunctionArgs) {
   // and need a reconnect, so surface a registration failure instead of flashing
   // success while the sync silently never fires. The settings themselves are
   // already saved either way.
-  if (integrationId === "onshape") {
+  if (onshapeNeedsAuthorization) {
+    const started = await beginOnshapeAuthorization(request, {
+      integrationId: ONSHAPE_GOVERNMENT_INTEGRATION_ID,
+      userId,
+      companyId
+    });
+    await invalidateIntegrationHealthCache(integrationId, companyId);
+    if (!started.ok) {
+      logger.error("Could not start Onshape Government authorization", {
+        companyId,
+        reason: started.reason
+      });
+      throw redirect(
+        path.to.integrations,
+        await flash(
+          request,
+          error(
+            started.reason,
+            "Saved Onshape Government settings, but couldn't start the connection. Check the Onshape URL, OAuth URL, client ID and client secret."
+          )
+        )
+      );
+    }
+    // Off to the tenant's consent screen; its callback finishes the install
+    // (and registers the release webhook if asset sync is on).
+    throw redirect(started.url, { headers: { "Set-Cookie": started.cookie } });
+  }
+
+  if (isOnshapeIntegrationId(integrationId)) {
+    // The public app reconnects from the integrations list; a Government
+    // private app reconnects by saving its client secret again.
+    const reconnect =
+      integrationId === ONSHAPE_GOVERNMENT_INTEGRATION_ID
+        ? "Grant the private app write access in Onshape, then enter its client secret again and save to reconnect"
+        : "Reconnect Onshape to grant write access";
+
     // Read-only connection trying to turn asset sync on: we already forced the
     // toggle back off above, so just tell them exactly what to do. Explicit and
     // scope-accurate — not inferred from a downstream webhook failure.
@@ -1835,7 +1918,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
           request,
           error(
             "onshape connection is read-only",
-            "Onshape is connected with read-only access. Reconnect Onshape to grant write access, then enable asset sync."
+            `${integration.name} is connected with read-only access. ${reconnect}, then enable asset sync.`
           )
         )
       );
@@ -1855,7 +1938,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
           request,
           error(
             webhookResult.error,
-            "Saved Onshape settings, but couldn't register the release webhook. Reconnect Onshape to grant write access, then save again."
+            `Saved ${integration.name} settings, but couldn't register the release webhook. ${reconnect}, then save again.`
           )
         )
       );

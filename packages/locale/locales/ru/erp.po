@@ -570,6 +570,12 @@ msgstr "Извещение об изменении отслеживает кон
 msgid "A clearing account holding the value of goods received but not yet billed; the supplier invoice clears it."
 msgstr "Счет, содержащий стоимость полученных товаров, еще не выставленных счетом; счет-фактура поставщика его очищает."
 
+msgid "A company connects to one Onshape at a time. Uninstall Onshape Government, then connect Onshape."
+msgstr ""
+
+msgid "A company connects to one Onshape at a time. Uninstall Onshape, then connect Onshape Government."
+msgstr ""
+
 msgid "A company that designs and builds its own finished products end to end (here, the shop building humanoid robots) rather than making parts to another company's specification."
 msgstr "Организация, которая проектирует и производит свои готовые продукты полностью (здесь — цех, производящий гуманоидных роботов), а не производит детали по спецификации другой организации."
 
@@ -1948,6 +1954,9 @@ msgstr "Операция этого задания входит в эту пар
 
 msgid "An operation's position in its work center's queue — the order the floor picks work up. The engine numbers it from placement order (earliest projected start first); reordering cards on the Work Centers board overrides it without changing dates."
 msgstr "Позиция операции в очереди ее рабочего центра — порядок, в котором цех берет работу. Двигатель нумерует ее по порядку размещения (самое раннее предполагаемое начало в первую очередь); переупорядочение карт на доске Рабочих центров переопределяет его без изменения дат."
+
+msgid "An unexpected error occurred while connecting to Onshape. Save the integration settings to try again."
+msgstr ""
 
 msgid "An unexpected error occurred while connecting to Onshape. Try connecting again."
 msgstr "При подключении к Onshape произошла непредвиденная ошибка. Повторите попытку подключения."
@@ -4676,6 +4685,9 @@ msgstr "Не удалось сохранить"
 msgid "Couldn't complete the Onshape connection"
 msgstr "Не удалось завершить подключение к Onshape"
 
+msgid "Couldn't complete the Onshape Government connection"
+msgstr ""
+
 msgid "Couldn't load documents"
 msgstr "Не удалось загрузить документы"
 
@@ -4690,6 +4702,9 @@ msgstr "Не удалось перепланировать задание. По�
 
 msgid "Couldn't save the Onshape connection"
 msgstr "Не удалось сохранить подключение к Onshape"
+
+msgid "Couldn't save the Onshape Government connection"
+msgstr ""
 
 msgid "Couldn't save the Ramp connection"
 msgstr "Не удалось сохранить подключение к Ramp"
@@ -7146,6 +7161,9 @@ msgstr "Введите 6-значный код из приложения аут�
 msgid "Enter the 6-digit code from your authenticator app to resume."
 msgstr "Введите 6-значный код из приложения-аутентификатора, чтобы продолжить."
 
+msgid "Enter the Onshape URL, OAuth URL, client ID and client secret of your private OAuth application, then save."
+msgstr ""
+
 msgid "Enter the quantity this movement should have been. An opposite movement for the difference is posted next to the original, in the original's time period."
 msgstr "Введите количество, которое должно было быть в этом движении. Противоположное движение для разницы размещается рядом с оригинальным в его временном периоде."
 
@@ -7361,6 +7379,9 @@ msgstr "Валютный курс обновлен в"
 
 msgid "Exchange Rates"
 msgstr "Валютные курсы"
+
+msgid "Exchanging the authorization code failed. Check the OAuth URL and the client secret, then save the integration settings again."
+msgstr ""
 
 msgid "Exchanging the authorization code for access failed. Try connecting again."
 msgstr "Не удалось обменять код авторизации на токен доступа. Попробуйте подключиться снова."
@@ -9027,6 +9048,9 @@ msgstr "На этом шаге"
 
 msgid "In use"
 msgstr "В использовании"
+
+msgid "In your Enterprise settings under Developer, edit the private OAuth application's permissions to include \"Application can write to your documents\", then save the integration settings again."
+msgstr ""
 
 msgid "In-app"
 msgstr "В приложении"
@@ -12271,6 +12295,9 @@ msgstr "Одновременно может быть активна только
 msgid "Only qualified employees can be scheduled for and run this process"
 msgstr "Только квалифицированные сотрудники могут быть запланированы и выполнить этот процесс"
 
+msgid "Onshape authorized the connection but saving it failed. Save the integration settings to try again."
+msgstr ""
+
 msgid "Onshape authorized the connection but saving it failed. Try connecting again."
 msgstr "Onshape авторизовал подключение, но сохранить его не удалось. Повторите попытку подключения."
 
@@ -12279,6 +12306,24 @@ msgstr "Onshape отклонил подключение"
 
 msgid "Onshape didn't return an authorization code"
 msgstr "Onshape не вернул код авторизации"
+
+msgid "Onshape Government denied the connection"
+msgstr ""
+
+msgid "Onshape Government didn't return an authorization code"
+msgstr ""
+
+msgid "Onshape Government is already connected"
+msgstr ""
+
+msgid "Onshape Government isn't configured"
+msgstr ""
+
+msgid "Onshape Government rejected the authorization"
+msgstr ""
+
+msgid "Onshape is already connected"
+msgstr ""
 
 msgid "Onshape isn't configured"
 msgstr "Onshape не настроен"
@@ -12393,6 +12438,9 @@ msgstr "Открытые запланированные"
 
 msgid "Open task details"
 msgstr "Открыть детали задачи"
+
+msgid "Open the Onshape Government integration and save its settings to connect again."
+msgstr ""
 
 msgid "Open the Ramp integration and try connecting again to finish setup."
 msgstr "Откройте интеграцию Ramp и попробуйте подключиться снова, чтобы завершить настройку."
@@ -17612,6 +17660,9 @@ msgstr "Количество дней после метода расчета, в
 msgid "The append-only record of every stock movement; on-hand is the sum of its signed entries and the source of truth."
 msgstr "Журнал доступного только для добавления, отражающий каждое движение запасов; остаток на складе является суммой подписанных записей и источником истины."
 
+msgid "The authorization was refused in Onshape. Save the integration settings to try again."
+msgstr ""
+
 msgid "The authorization was refused in Onshape. Try connecting again."
 msgstr "Авторизация была отклонена в Onshape. Повторите попытку подключения."
 
@@ -18064,6 +18115,9 @@ msgstr "Уровень наличного запаса, который запу�
 msgid "The Onshape connection expired"
 msgstr "Подключение Onshape истекло"
 
+msgid "The Onshape Government connection expired"
+msgstr ""
+
 msgid "The operations and steps your parts move through"
 msgstr "Операции и шаги, через которые переходят ваши детали"
 
@@ -18187,6 +18241,9 @@ msgstr "Тело запроса, отправляемое дословно с т
 
 msgid "The residual WIP a job has left at close, swept to a Production Variance account — the only variance Carbon books for a job."
 msgstr "Остаточное незавершенное производство, оставленное заданием при закрытии, перемещено на счет производственного отклонения — единственное отклонение, которое Carbon регистрирует для задания."
+
+msgid "The response from Onshape was missing required parameters. Check the private app's redirect URL, then save the integration settings again."
+msgstr ""
 
 msgid "The response from Onshape was missing required parameters. Try connecting again."
 msgstr "В ответе Onshape отсутствовали обязательные параметры. Повторите попытку подключения."

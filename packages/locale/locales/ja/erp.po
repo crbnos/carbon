@@ -570,6 +570,12 @@ msgstr "変更通知は、エンジニアリングまたは製造変更をレビ
 msgid "A clearing account holding the value of goods received but not yet billed; the supplier invoice clears it."
 msgstr "受け取ったが請求されていない商品の価値を保有するクリアリング勘定。仕入先請求書がそれを結済します。"
 
+msgid "A company connects to one Onshape at a time. Uninstall Onshape Government, then connect Onshape."
+msgstr ""
+
+msgid "A company connects to one Onshape at a time. Uninstall Onshape, then connect Onshape Government."
+msgstr ""
+
 msgid "A company that designs and builds its own finished products end to end (here, the shop building humanoid robots) rather than making parts to another company's specification."
 msgstr "自社で最初から最後まで完成製品を設計・製造する会社です（ここでは、ヒューマノイドロボットを製造するショップ）。別の会社の仕様に従って部品を製造するのではなく。"
 
@@ -1948,6 +1954,9 @@ msgstr "このジョブの工程がこのバッチで実行されます"
 
 msgid "An operation's position in its work center's queue — the order the floor picks work up. The engine numbers it from placement order (earliest projected start first); reordering cards on the Work Centers board overrides it without changing dates."
 msgstr "作業区のキューにおける工程のポジション — 床がピックアップする順序。エンジンは配置順序（最初に予想される開始が最初）からそれに番号を付けます。作業区ボード上でカードを並べ替えることは、日付を変えずにそれを上書きします。"
+
+msgid "An unexpected error occurred while connecting to Onshape. Save the integration settings to try again."
+msgstr ""
 
 msgid "An unexpected error occurred while connecting to Onshape. Try connecting again."
 msgstr "Onshape への接続中に予期しないエラーが発生しました。もう一度接続してください。"
@@ -4676,6 +4685,9 @@ msgstr "保存できませんでした"
 msgid "Couldn't complete the Onshape connection"
 msgstr "Onshape 接続を完了できませんでした"
 
+msgid "Couldn't complete the Onshape Government connection"
+msgstr ""
+
 msgid "Couldn't load documents"
 msgstr "ドキュメントを読み込めませんでした"
 
@@ -4690,6 +4702,9 @@ msgstr "ジョブを再スケジュールできませんでした。もう一度
 
 msgid "Couldn't save the Onshape connection"
 msgstr "Onshape 接続を保存できませんでした"
+
+msgid "Couldn't save the Onshape Government connection"
+msgstr ""
 
 msgid "Couldn't save the Ramp connection"
 msgstr "Ramp 接続を保存できませんでした"
@@ -7146,6 +7161,9 @@ msgstr "認証アプリから6桁のコードを入力してください"
 msgid "Enter the 6-digit code from your authenticator app to resume."
 msgstr "認証器アプリから6桁のコードを入力して再開します。"
 
+msgid "Enter the Onshape URL, OAuth URL, client ID and client secret of your private OAuth application, then save."
+msgstr ""
+
 msgid "Enter the quantity this movement should have been. An opposite movement for the difference is posted next to the original, in the original's time period."
 msgstr "この移動がどの数量であるべきかを入力します。差分の反対の移動は、オリジナルの横に、オリジナルの期間に投稿されます。"
 
@@ -7361,6 +7379,9 @@ msgstr "為替レート更新時刻"
 
 msgid "Exchange Rates"
 msgstr "為替レート"
+
+msgid "Exchanging the authorization code failed. Check the OAuth URL and the client secret, then save the integration settings again."
+msgstr ""
 
 msgid "Exchanging the authorization code for access failed. Try connecting again."
 msgstr "アクセス権を取得するための認可コードの交換に失敗しました。もう一度接続してください。"
@@ -9027,6 +9048,9 @@ msgstr "このステップで"
 
 msgid "In use"
 msgstr "使用中"
+
+msgid "In your Enterprise settings under Developer, edit the private OAuth application's permissions to include \"Application can write to your documents\", then save the integration settings again."
+msgstr ""
 
 msgid "In-app"
 msgstr "アプリ内"
@@ -12271,6 +12295,9 @@ msgstr "一度にアクティブにできる支出統合は1つだけです。�
 msgid "Only qualified employees can be scheduled for and run this process"
 msgstr "資格のある従業員のみがこのプロセスをスケジュールして実行できます"
 
+msgid "Onshape authorized the connection but saving it failed. Save the integration settings to try again."
+msgstr ""
+
 msgid "Onshape authorized the connection but saving it failed. Try connecting again."
 msgstr "Onshape は接続を承認しましたが、保存に失敗しました。もう一度接続してください。"
 
@@ -12279,6 +12306,24 @@ msgstr "Onshape が接続を拒否しました"
 
 msgid "Onshape didn't return an authorization code"
 msgstr "Onshape が認可コードを返しませんでした"
+
+msgid "Onshape Government denied the connection"
+msgstr ""
+
+msgid "Onshape Government didn't return an authorization code"
+msgstr ""
+
+msgid "Onshape Government is already connected"
+msgstr ""
+
+msgid "Onshape Government isn't configured"
+msgstr ""
+
+msgid "Onshape Government rejected the authorization"
+msgstr ""
+
+msgid "Onshape is already connected"
+msgstr ""
 
 msgid "Onshape isn't configured"
 msgstr "Onshape が構成されていません"
@@ -12393,6 +12438,9 @@ msgstr "スケジュール済みを開く"
 
 msgid "Open task details"
 msgstr "タスク詳細を開く"
+
+msgid "Open the Onshape Government integration and save its settings to connect again."
+msgstr ""
 
 msgid "Open the Ramp integration and try connecting again to finish setup."
 msgstr "Ramp 連携を開き、設定を完了するためにもう一度接続してください。"
@@ -17612,6 +17660,9 @@ msgstr "計算方法の後の支払い期日までの日数"
 msgid "The append-only record of every stock movement; on-hand is the sum of its signed entries and the source of truth."
 msgstr "すべての在庫移動の追加専用レコード。手持在庫はその署名付きエントリの合計であり、信頼できる情報源です。"
 
+msgid "The authorization was refused in Onshape. Save the integration settings to try again."
+msgstr ""
+
 msgid "The authorization was refused in Onshape. Try connecting again."
 msgstr "Onshape で認可が拒否されました。もう一度接続してください。"
 
@@ -18064,6 +18115,9 @@ msgstr "数量ベースのポリシーに基づいて新しい補充注文をト
 msgid "The Onshape connection expired"
 msgstr "Onshape の接続が期限切れです"
 
+msgid "The Onshape Government connection expired"
+msgstr ""
+
 msgid "The operations and steps your parts move through"
 msgstr "部品が通過する工程とステップ。"
 
@@ -18187,6 +18241,9 @@ msgstr "ワークフロー変数が置き換えられた後、JSON コンテン�
 
 msgid "The residual WIP a job has left at close, swept to a Production Variance account — the only variance Carbon books for a job."
 msgstr "製造指図がクローズ時に残した残留仕掛品は、生産差異勘定に振り替えられます — これはCarbonが製造指図について計上する唯一の差異です。"
+
+msgid "The response from Onshape was missing required parameters. Check the private app's redirect URL, then save the integration settings again."
+msgstr ""
 
 msgid "The response from Onshape was missing required parameters. Try connecting again."
 msgstr "Onshape からの応答に必須パラメーターが含まれていませんでした。もう一度接続してください。"

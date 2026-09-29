@@ -570,6 +570,12 @@ msgstr "Zawiadomienie o zmianie śledzi kontrolowaną zmianę inżynieryjną lub
 msgid "A clearing account holding the value of goods received but not yet billed; the supplier invoice clears it."
 msgstr "Konto kompensacyjne zawierające wartość towarów otrzymanych, ale jeszcze niezafakturowanych; faktura dostawcy go wyzerowuje."
 
+msgid "A company connects to one Onshape at a time. Uninstall Onshape Government, then connect Onshape."
+msgstr ""
+
+msgid "A company connects to one Onshape at a time. Uninstall Onshape, then connect Onshape Government."
+msgstr ""
+
 msgid "A company that designs and builds its own finished products end to end (here, the shop building humanoid robots) rather than making parts to another company's specification."
 msgstr "Firma, która projektuje i buduje własne produkty końcowe od początku do końca (tutaj sklep budujący roboty humanoidalne) zamiast wytwarzać części zgodnie ze specyfikacją innej firmy."
 
@@ -1948,6 +1954,9 @@ msgstr "Operacja tego zlecenia jest w tej partii"
 
 msgid "An operation's position in its work center's queue — the order the floor picks work up. The engine numbers it from placement order (earliest projected start first); reordering cards on the Work Centers board overrides it without changing dates."
 msgstr "Pozycja operacji w kolejce stanowiska roboczego — kolejność, w jakiej brygada podejmuje prace. Silnik numeruje ją na podstawie kolejności umieszczenia (najwcześniejszy planowany start najpierw); zmiana kolejności kart na tablicy Stanowisk roboczych zmienia ją bez zmiany dat."
+
+msgid "An unexpected error occurred while connecting to Onshape. Save the integration settings to try again."
+msgstr ""
 
 msgid "An unexpected error occurred while connecting to Onshape. Try connecting again."
 msgstr "Podczas łączenia z Onshape wystąpił nieoczekiwany błąd. Spróbuj połączyć się ponownie."
@@ -4676,6 +4685,9 @@ msgstr "Nie można było zapisać"
 msgid "Couldn't complete the Onshape connection"
 msgstr "Nie udało się ukończyć połączenia z Onshape"
 
+msgid "Couldn't complete the Onshape Government connection"
+msgstr ""
+
 msgid "Couldn't load documents"
 msgstr "Nie udało się załadować dokumentów"
 
@@ -4690,6 +4702,9 @@ msgstr "Nie można przeplanować zadania. Spróbuj ponownie."
 
 msgid "Couldn't save the Onshape connection"
 msgstr "Nie udało się zapisać połączenia z Onshape"
+
+msgid "Couldn't save the Onshape Government connection"
+msgstr ""
 
 msgid "Couldn't save the Ramp connection"
 msgstr "Nie udało się zapisać połączenia z Ramp"
@@ -7146,6 +7161,9 @@ msgstr "Wprowadź 6-cyfrowy kod z aplikacji authenticator"
 msgid "Enter the 6-digit code from your authenticator app to resume."
 msgstr "Wpisz 6-cyfrowy kod z aplikacji Authenticator, aby wznowić."
 
+msgid "Enter the Onshape URL, OAuth URL, client ID and client secret of your private OAuth application, then save."
+msgstr ""
+
 msgid "Enter the quantity this movement should have been. An opposite movement for the difference is posted next to the original, in the original's time period."
 msgstr "Wprowadź ilość, która powinna być dla tego ruchu. Przeciwny ruch dla różnicy jest publikowany obok oryginału w okresie czasowym oryginału."
 
@@ -7361,6 +7379,9 @@ msgstr "Kurs wymiany zaktualizowany"
 
 msgid "Exchange Rates"
 msgstr "Kursy wymiany"
+
+msgid "Exchanging the authorization code failed. Check the OAuth URL and the client secret, then save the integration settings again."
+msgstr ""
 
 msgid "Exchanging the authorization code for access failed. Try connecting again."
 msgstr "Wymiana kodu autoryzacyjnego na dostęp nie powiodła się. Spróbuj połączyć się ponownie."
@@ -9027,6 +9048,9 @@ msgstr "W tym kroku"
 
 msgid "In use"
 msgstr "W użyciu"
+
+msgid "In your Enterprise settings under Developer, edit the private OAuth application's permissions to include \"Application can write to your documents\", then save the integration settings again."
+msgstr ""
 
 msgid "In-app"
 msgstr "W aplikacji"
@@ -12271,6 +12295,9 @@ msgstr "Tylko jedna integracja wydatków może być aktywna jednocześnie. Najpi
 msgid "Only qualified employees can be scheduled for and run this process"
 msgstr "Tylko wykwalifikowani pracownicy mogą być zaplanowani i uruchamiać ten proces"
 
+msgid "Onshape authorized the connection but saving it failed. Save the integration settings to try again."
+msgstr ""
+
 msgid "Onshape authorized the connection but saving it failed. Try connecting again."
 msgstr "Onshape autoryzował połączenie, ale jego zapisanie nie udało się. Spróbuj połączyć się ponownie."
 
@@ -12279,6 +12306,24 @@ msgstr "Onshape odmówił połączenia"
 
 msgid "Onshape didn't return an authorization code"
 msgstr "Onshape nie zwrócił kodu autoryzacji"
+
+msgid "Onshape Government denied the connection"
+msgstr ""
+
+msgid "Onshape Government didn't return an authorization code"
+msgstr ""
+
+msgid "Onshape Government is already connected"
+msgstr ""
+
+msgid "Onshape Government isn't configured"
+msgstr ""
+
+msgid "Onshape Government rejected the authorization"
+msgstr ""
+
+msgid "Onshape is already connected"
+msgstr ""
 
 msgid "Onshape isn't configured"
 msgstr "Onshape nie jest skonfigurowany"
@@ -12393,6 +12438,9 @@ msgstr "Otwarte zaplanowane"
 
 msgid "Open task details"
 msgstr "Otwórz szczegóły zadania"
+
+msgid "Open the Onshape Government integration and save its settings to connect again."
+msgstr ""
 
 msgid "Open the Ramp integration and try connecting again to finish setup."
 msgstr "Otwórz integrację Ramp i spróbuj połączyć się ponownie, aby dokończyć konfigurację."
@@ -17612,6 +17660,9 @@ msgstr "Liczba dni po metodzie obliczenia, w której płatność jest wymagalna"
 msgid "The append-only record of every stock movement; on-hand is the sum of its signed entries and the source of truth."
 msgstr "Rejestr tylko dołączania każdego ruchu magazynowego; dostępna ilość jest sumą jego podpisanych wpisów i źródłem prawdy."
 
+msgid "The authorization was refused in Onshape. Save the integration settings to try again."
+msgstr ""
+
 msgid "The authorization was refused in Onshape. Try connecting again."
 msgstr "Autoryzacja została odrzucona w Onshape. Spróbuj połączyć się ponownie."
 
@@ -18064,6 +18115,9 @@ msgstr "Poziom zapasu w ręku, który wyzwala nowy porządek uzupełniania zgodn
 msgid "The Onshape connection expired"
 msgstr "Połączenie Onshape wygasło"
 
+msgid "The Onshape Government connection expired"
+msgstr ""
+
 msgid "The operations and steps your parts move through"
 msgstr "Operacje i kroki, przez które przechodzą Twoje części"
 
@@ -18187,6 +18241,9 @@ msgstr "Treść żądania wysłana dosłownie z typem zawartości JSON po zastą
 
 msgid "The residual WIP a job has left at close, swept to a Production Variance account — the only variance Carbon books for a job."
 msgstr "Rezydualna produkcja w toku, którą zlecenie ma przy zamknięciu, przenoszona na konto Odchylenia Produkcji — jedyne odchylenie, które Carbon księguje dla zlecenia."
+
+msgid "The response from Onshape was missing required parameters. Check the private app's redirect URL, then save the integration settings again."
+msgstr ""
 
 msgid "The response from Onshape was missing required parameters. Try connecting again."
 msgstr "W odpowiedzi z Onshape brakowało wymaganych parametrów. Spróbuj połączyć się ponownie."

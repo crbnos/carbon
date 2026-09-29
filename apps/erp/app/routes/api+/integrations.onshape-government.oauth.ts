@@ -1,5 +1,5 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { Onshape } from "@carbon/ee";
+import { OnshapeGovernment } from "@carbon/ee";
 import type { LoaderFunctionArgs } from "react-router";
 import { completeOnshapeAuthorization } from "~/modules/settings/onshape-oauth.server";
 
@@ -7,6 +7,9 @@ export const config = {
   runtime: "nodejs"
 };
 
+// The redirect URL a Government customer registers on the private OAuth app in
+// their Onshape Enterprise. The authorization itself is started by saving the
+// integration settings (see x+/settings+/integrations.$id.tsx).
 export async function loader({ request }: LoaderFunctionArgs) {
   const { userId, companyId } = await requirePermissions(request, {
     update: "settings"
@@ -14,7 +17,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   return completeOnshapeAuthorization({
     request,
-    integrationId: Onshape.id,
+    integrationId: OnshapeGovernment.id,
     userId,
     companyId
   });

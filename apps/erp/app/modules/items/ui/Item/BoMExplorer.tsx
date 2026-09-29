@@ -1,3 +1,4 @@
+import { hasOnshapeIntegration } from "@carbon/ee";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -155,7 +156,7 @@ function ItemBoMExplorerContent({
           </BoMExplorerActions>
         </HStack>
       )}
-      {integrations.has("onshape") && (
+      {hasOnshapeIntegration(integrations) && (
         <div className="flex flex-shrink-0 w-full">
           <OnshapeSync
             makeMethodId={makeMethodId}

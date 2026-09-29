@@ -83,7 +83,6 @@
   "no-integration-id-branching::apps/erp/app/modules/accounting/accounting.service.ts::\"xero\", \"quickbooks\"",
   "no-integration-id-branching::apps/erp/app/modules/settings/settings.server.ts::=== \"ramp\"",
   "no-integration-id-branching::apps/erp/app/modules/settings/ui/Integrations/IntegrationCard.tsx::=== \"ramp\"",
-  "no-integration-id-branching::apps/erp/app/routes/x+/settings+/integrations.$id.tsx::=== \"onshape\"",
   "no-integration-id-branching::apps/erp/app/routes/x+/settings+/integrations.$id.tsx::=== \"quickbooks\"",
   "no-integration-id-branching::apps/erp/app/routes/x+/settings+/integrations.$id.tsx::=== \"ramp\"",
   "no-integration-id-branching::apps/erp/app/routes/x+/settings+/integrations.$id.tsx::=== \"rillet\"",

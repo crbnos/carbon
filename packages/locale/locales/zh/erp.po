@@ -570,6 +570,12 @@ msgstr "变更通知跟踪通过评审和实施的受控工程或制造变更。
 msgid "A clearing account holding the value of goods received but not yet billed; the supplier invoice clears it."
 msgstr "持有已收但未开票商品价值的结算账户；供应商发票将其结清。"
 
+msgid "A company connects to one Onshape at a time. Uninstall Onshape Government, then connect Onshape."
+msgstr ""
+
+msgid "A company connects to one Onshape at a time. Uninstall Onshape, then connect Onshape Government."
+msgstr ""
+
 msgid "A company that designs and builds its own finished products end to end (here, the shop building humanoid robots) rather than making parts to another company's specification."
 msgstr "设计和制造自己成品的公司（这里，制造人形机器人的工坊），而不是按照另一家公司的规格制造零件。"
 
@@ -1948,6 +1954,9 @@ msgstr "此工作的一道工序在此批次中运行"
 
 msgid "An operation's position in its work center's queue — the order the floor picks work up. The engine numbers it from placement order (earliest projected start first); reordering cards on the Work Centers board overrides it without changing dates."
 msgstr "工序在所在工作中心队列中的位置——车间人员拿工作的顺序。引擎按安排顺序编号（最早预计开始时间优先）；在工作中心看板上重新排列卡片会覆盖它，不会改变日期。"
+
+msgid "An unexpected error occurred while connecting to Onshape. Save the integration settings to try again."
+msgstr ""
 
 msgid "An unexpected error occurred while connecting to Onshape. Try connecting again."
 msgstr "连接 Onshape 时发生意外错误。请重新连接。"
@@ -4676,6 +4685,9 @@ msgstr "无法保存"
 msgid "Couldn't complete the Onshape connection"
 msgstr "无法完成 Onshape 连接"
 
+msgid "Couldn't complete the Onshape Government connection"
+msgstr ""
+
 msgid "Couldn't load documents"
 msgstr "无法加载文档"
 
@@ -4690,6 +4702,9 @@ msgstr "无法重新安排作业。请重试。"
 
 msgid "Couldn't save the Onshape connection"
 msgstr "无法保存 Onshape 连接"
+
+msgid "Couldn't save the Onshape Government connection"
+msgstr ""
 
 msgid "Couldn't save the Ramp connection"
 msgstr "无法保存 Ramp 连接"
@@ -7146,6 +7161,9 @@ msgstr "输入来自您的身份验证器应用的6位数代码"
 msgid "Enter the 6-digit code from your authenticator app to resume."
 msgstr "输入您的身份验证器应用中的 6 位数字代码以继续。"
 
+msgid "Enter the Onshape URL, OAuth URL, client ID and client secret of your private OAuth application, then save."
+msgstr ""
+
 msgid "Enter the quantity this movement should have been. An opposite movement for the difference is posted next to the original, in the original's time period."
 msgstr "输入此移动应该的数量。差异的相反移动在原始时期内的原始旁边过账。"
 
@@ -7361,6 +7379,9 @@ msgstr "汇率更新于"
 
 msgid "Exchange Rates"
 msgstr "汇率"
+
+msgid "Exchanging the authorization code failed. Check the OAuth URL and the client secret, then save the integration settings again."
+msgstr ""
 
 msgid "Exchanging the authorization code for access failed. Try connecting again."
 msgstr "用授权代码交换访问权限失败。请重新连接。"
@@ -9027,6 +9048,9 @@ msgstr "在此步骤中"
 
 msgid "In use"
 msgstr "使用中"
+
+msgid "In your Enterprise settings under Developer, edit the private OAuth application's permissions to include \"Application can write to your documents\", then save the integration settings again."
+msgstr ""
 
 msgid "In-app"
 msgstr "应用内"
@@ -12271,6 +12295,9 @@ msgstr "一次只能激活一个支出集成。请先卸载当前的集成，然
 msgid "Only qualified employees can be scheduled for and run this process"
 msgstr "只有合格的员工才能被安排和运行此流程"
 
+msgid "Onshape authorized the connection but saving it failed. Save the integration settings to try again."
+msgstr ""
+
 msgid "Onshape authorized the connection but saving it failed. Try connecting again."
 msgstr "Onshape 已授权此连接，但保存失败。请重新连接。"
 
@@ -12279,6 +12306,24 @@ msgstr "Onshape 拒绝了连接"
 
 msgid "Onshape didn't return an authorization code"
 msgstr "Onshape 未返回授权代码"
+
+msgid "Onshape Government denied the connection"
+msgstr ""
+
+msgid "Onshape Government didn't return an authorization code"
+msgstr ""
+
+msgid "Onshape Government is already connected"
+msgstr ""
+
+msgid "Onshape Government isn't configured"
+msgstr ""
+
+msgid "Onshape Government rejected the authorization"
+msgstr ""
+
+msgid "Onshape is already connected"
+msgstr ""
 
 msgid "Onshape isn't configured"
 msgstr "尚未配置 Onshape"
@@ -12393,6 +12438,9 @@ msgstr "打开 Scheduled"
 
 msgid "Open task details"
 msgstr "打开任务详情"
+
+msgid "Open the Onshape Government integration and save its settings to connect again."
+msgstr ""
 
 msgid "Open the Ramp integration and try connecting again to finish setup."
 msgstr "打开 Ramp 集成，然后重新连接以完成配置。"
@@ -17612,6 +17660,9 @@ msgstr "计算方法后的天数，在该天数后付款到期"
 msgid "The append-only record of every stock movement; on-hand is the sum of its signed entries and the source of truth."
 msgstr "每个库存变动的追加专用记录；在手数量是其带符号条目的总和，也是单一信息源。"
 
+msgid "The authorization was refused in Onshape. Save the integration settings to try again."
+msgstr ""
+
 msgid "The authorization was refused in Onshape. Try connecting again."
 msgstr "授权在 Onshape 中被拒绝。请重新连接。"
 
@@ -18064,6 +18115,9 @@ msgstr "按数量触发新补充订单的库存水平根据基于数量的政策
 msgid "The Onshape connection expired"
 msgstr "Onshape连接已过期"
 
+msgid "The Onshape Government connection expired"
+msgstr ""
+
 msgid "The operations and steps your parts move through"
 msgstr "您的零件所经历的工序和步骤"
 
@@ -18187,6 +18241,9 @@ msgstr "在替换其中的工作流变量后，使用 JSON 内容类型逐字发
 
 msgid "The residual WIP a job has left at close, swept to a Production Variance account — the only variance Carbon books for a job."
 msgstr "工作在关闭时留下的残余在制品，扫至生产差异帐户 - Carbon为工作记录的唯一差异。"
+
+msgid "The response from Onshape was missing required parameters. Check the private app's redirect URL, then save the integration settings again."
+msgstr ""
 
 msgid "The response from Onshape was missing required parameters. Try connecting again."
 msgstr "Onshape 的响应缺少必需的参数。请重新连接。"
