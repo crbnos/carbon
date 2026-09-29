@@ -1714,7 +1714,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   // tenant that issued it.
   const onshapeAppChanged =
     integrationId === ONSHAPE_GOVERNMENT_INTEGRATION_ID &&
-    (["baseUrl", "oauthUrl", "clientId"] as const).some(
+    (["baseUrl", "clientId"] as const).some(
       (key) => metadata[key] !== existingMetadata[key]
     );
   const onshapeNeedsAuthorization =
@@ -1941,7 +1941,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
           request,
           error(
             started.reason,
-            "Saved Onshape Government settings, but couldn't start the connection. Check the Onshape URL, OAuth URL, client ID and client secret."
+            "Saved Onshape Government settings, but couldn't start the connection. Check the Onshape URL, client ID and client secret."
           )
         )
       );
