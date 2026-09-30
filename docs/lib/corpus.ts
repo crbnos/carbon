@@ -5,7 +5,8 @@ import { guideSource, source } from "@/lib/source";
 
 // The dir source.config.ts points both collections at. Read directly rather than via
 // Fumadocs' getText("raw"): fumadocs-mdx >= 15.2.1 drops the leading "../" of a content
-// dir outside the app, so its fullPath doesn't resolve.
+// dir outside the app, so its fullPath doesn't resolve. Drop this once
+// https://github.com/fuma-nama/fumadocs/issues/3623 is fixed.
 const CONTENT_ROOT = path.join(process.cwd(), "../packages/content/mdx");
 
 /** Every docs + guide page as stripped markdown, in file-path order. */
