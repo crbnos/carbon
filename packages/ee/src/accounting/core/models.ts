@@ -498,12 +498,12 @@ export const POSTING_POLICY: Record<
   "Production Event": {
     representation: "journal",
     defaultEnabled: true,
-    defaultGranularity: "daily-summary"
+    defaultGranularity: "individual"
   },
   "Job Consumption": {
     representation: "journal",
     defaultEnabled: true,
-    defaultGranularity: "daily-summary"
+    defaultGranularity: "individual"
   },
   "Job Receipt": {
     representation: "journal",
@@ -519,7 +519,7 @@ export const POSTING_POLICY: Record<
   "Maintenance Event": {
     representation: "journal",
     defaultEnabled: true,
-    defaultGranularity: "daily-summary"
+    defaultGranularity: "individual"
   },
   "Asset Depreciation": {
     representation: "journal",

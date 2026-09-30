@@ -399,7 +399,7 @@ describe("resolvePostingSyncSettings", () => {
     ).toEqual({ enabled: true, granularity: "individual" });
     expect(
       DEFAULT_POSTING_SYNC_SETTINGS.sourceTypes["Production Event"]
-    ).toEqual({ enabled: true, granularity: "daily-summary" });
+    ).toEqual({ enabled: true, granularity: "individual" });
     expect(DEFAULT_POSTING_SYNC_SETTINGS.sourceTypes.Manual).toEqual({
       enabled: false,
       granularity: "individual"
