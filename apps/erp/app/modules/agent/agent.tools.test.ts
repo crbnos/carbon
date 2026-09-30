@@ -8,7 +8,7 @@ vi.mock("~/routes/api+/v1+/lib/call.server", () => ({ callOperation }));
 // Data tools are gated off in v1; enable them so call_tool exists to test.
 vi.mock("./agent.config", () => ({ AGENT_DATA_TOOLS_ENABLED: true }));
 
-// agent.pages → ~/utils/path → @carbon/glossary, whose module-load-time Lingui `msg`
+// agent.pages → ~/utils/path → @carbon/content/glossary, whose module-load-time Lingui `msg`
 // macros aren't transformed under plain vitest and throw. The tools under test need
 // none of it. Same stub as production.service.test.ts.
 vi.mock("@lingui/core/macro", () => ({

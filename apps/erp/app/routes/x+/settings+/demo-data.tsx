@@ -8,13 +8,7 @@ import { msg } from "@lingui/core/macro";
 import { Trans } from "@lingui/react/macro";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import {
-  data,
-  redirect,
-  useFetcher,
-  useLoaderData,
-  useRevalidator
-} from "react-router";
+import { data, useFetcher, useLoaderData, useRevalidator } from "react-router";
 import type { CompanyTemplateRun } from "~/modules/settings";
 import { getCompanyTemplateRun } from "~/modules/settings";
 import { purgeCorruptedRows } from "~/modules/settings/backups.server";
@@ -27,7 +21,6 @@ import {
   TemplateCards,
   TemplateReviewRow
 } from "~/modules/settings/ui/DemoData";
-import { canAccessBackups } from "~/utils/backups";
 import { path } from "~/utils/path";
 
 export const handle = {
@@ -35,20 +28,10 @@ export const handle = {
   to: path.to.demoData
 };
 
-function requireDemoDataAccess(email: string | null) {
-  // Same gate as Backups: this replaces a company's data wholesale and carries
-  // the same unhardened multi-tenant caveats, so it stays internal-only in real
-  // deployments and open to everyone on a local dev stack.
-  if (!canAccessBackups(email)) {
-    throw redirect(path.to.settings);
-  }
-}
-
 export async function loader({ request }: LoaderFunctionArgs) {
-  const { client, companyId, email } = await requirePermissions(request, {
+  const { client, companyId } = await requirePermissions(request, {
     update: "settings"
   });
-  requireDemoDataAccess(email);
 
   const run = await getCompanyTemplateRun(client, companyId);
 
@@ -65,13 +48,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 export async function action({ request }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client, companyId, userId, email } = await requirePermissions(
-    request,
-    {
-      update: "settings"
-    }
-  );
-  requireDemoDataAccess(email);
+  const { client, companyId, userId } = await requirePermissions(request, {
+    update: "settings"
+  });
 
   const formData = await request.formData();
   const intent = formData.get("intent");

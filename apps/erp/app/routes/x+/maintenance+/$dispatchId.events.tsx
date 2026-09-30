@@ -19,6 +19,7 @@ import {
   isMaintenanceDispatchLocked,
   maintenanceDispatchEventValidator
 } from "~/modules/resources";
+import { postMaintenanceLabor } from "~/modules/resources/resources.server";
 import type { MaintenanceDispatchEvent } from "~/modules/resources/types";
 import { requireUnlocked } from "~/utils/lockedGuard.server";
 import { path } from "~/utils/path";
@@ -107,7 +108,24 @@ export async function action({ request, params }: ActionFunctionArgs) {
       );
     }
 
-    return data({}, await flash(request, success("Event stopped")));
+    const postingError = await postMaintenanceLabor({
+      maintenanceDispatchIds: [dispatchId],
+      companyId,
+      userId
+    });
+
+    return data(
+      {},
+      await flash(
+        request,
+        postingError
+          ? error(
+              postingError,
+              "Event stopped, but its labor cost did not post"
+            )
+          : success("Event stopped")
+      )
+    );
   }
 
   const validation = await validator(
@@ -131,7 +149,21 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
-  return data({}, await flash(request, success("Event saved")));
+  const postingError = await postMaintenanceLabor({
+    maintenanceDispatchIds: [dispatchId],
+    companyId,
+    userId
+  });
+
+  return data(
+    {},
+    await flash(
+      request,
+      postingError
+        ? error(postingError, "Event saved, but its labor cost did not post")
+        : success("Event saved")
+    )
+  );
 }
 
 export default function MaintenanceDispatchEventsRoute() {

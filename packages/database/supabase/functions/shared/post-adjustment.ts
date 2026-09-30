@@ -9,6 +9,7 @@ import {
   buildCostLedgerRow,
   buildItemLedgerRow,
   buildJournalLineDimensions,
+  carriesAdjustmentValue,
 } from "./plan-adjustment.ts";
 import {
   AdjustmentItemCost,
@@ -228,17 +229,13 @@ export async function loadOpenCostLayers(
 }
 
 // Book one adjustment movement inside the caller's transaction: the item
-// ledger row, cost-layer maintenance (consume via calculateCOGS on decreases,
-// create a layer at current cost on increases), and — when accounting is
-// enabled and the movement carries value — a balanced journal against the
-// inventory adjustment variance account. Tracked-entity mutations are the
-// caller's responsibility.
+// ledger row, then its valuation (`valueMovement`). Tracked-entity mutations
+// are the caller's responsibility.
 export async function bookAdjustment(
   trx: Transaction<DB>,
   args: BookAdjustmentArgs
 ): Promise<BookAdjustmentResult> {
   const { ledger, item, itemCost, accounting, skipValuation } = args;
-  const { companyId } = ledger;
 
   const inserted = await trx
     .insertInto("itemLedger")
@@ -256,36 +253,95 @@ export async function bookAdjustment(
         quantity: ledger.quantity,
         comment: ledger.comment,
         scrapReasonId: ledger.scrapReasonId,
-        companyId,
+        companyId: ledger.companyId,
         createdBy: ledger.createdBy,
       })
     )
     .returning(["id"])
     .executeTakeFirstOrThrow();
 
-  if (
-    skipValuation ||
-    item.itemTrackingType === "Non-Inventory" ||
-    ledger.quantity === 0
-  ) {
+  if (skipValuation) {
     return { itemLedgerId: inserted.id, journalId: null, cost: 0 };
   }
 
-  const absQuantity = Math.abs(ledger.quantity);
-  const documentId = ledger.documentId ?? inserted.id;
+  const { journalId, cost } = await valueMovement(trx, {
+    movement: {
+      postingDate: ledger.postingDate,
+      itemId: ledger.itemId,
+      quantity: ledger.quantity,
+      locationId: ledger.locationId,
+      entryType: ledger.entryType,
+      documentType: ledger.documentType,
+      documentId: ledger.documentId ?? inserted.id,
+      trackedEntityId: ledger.trackedEntityId,
+      companyId: ledger.companyId,
+    },
+    item,
+    itemCost,
+    accounting,
+    fixedUnitCost: args.fixedUnitCost,
+  });
+
+  return { itemLedgerId: inserted.id, journalId, cost };
+}
+
+export interface ValueMovementArgs {
+  movement: {
+    postingDate: string; // yyyy-MM-dd
+    itemId: string;
+    // SIGNED: < 0 relieves cost layers, > 0 opens one
+    quantity: number;
+    locationId: string | null;
+    entryType: Database["public"]["Enums"]["itemLedgerType"];
+    documentType?:
+      | Database["public"]["Enums"]["itemLedgerDocumentType"]
+      | null;
+    // costLedger.documentId and journalLine.documentId
+    documentId: string;
+    // The moved unit or batch; only a serial unit's is used for costing.
+    trackedEntityId?: string | null;
+    companyId: string;
+  };
+  item: BookAdjustmentArgs["item"];
+  itemCost: AdjustmentItemCost;
+  accounting: BookAdjustmentArgs["accounting"];
+  fixedUnitCost?: number;
+}
+
+// Value a stock movement whose item ledger row the caller has already written:
+// cost-layer maintenance (consume via calculateCOGS on decreases, open a layer
+// at current cost — or `fixedUnitCost` — on increases) and, when accounting is
+// enabled and the movement carries value, a balanced journal of the inventory
+// account against the offset account. `bookAdjustment` is this plus the ledger
+// row; maintenance consumption calls it directly because its ledger rows are
+// written alongside tracked-entity splits.
+export async function valueMovement(
+  trx: Transaction<DB>,
+  args: ValueMovementArgs
+): Promise<{ journalId: string | null; cost: number }> {
+  const { movement, item, itemCost, accounting } = args;
+  const { companyId, documentId } = movement;
+
+  if (!carriesAdjustmentValue(movement.quantity, item.itemTrackingType)) {
+    return { journalId: null, cost: 0 };
+  }
+
+  const absQuantity = Math.abs(movement.quantity);
   // A serial unit's movement is costed by specific identification: an
   // increase books a layer that belongs to the unit, and a decrease relieves
   // that layer first (calculateCOGS / cost-layer-order.ts). A batch entity is
   // split and re-pointed as it moves, so its layers stay FIFO / LIFO.
   const serialId =
-    item.itemTrackingType === "Serial" ? ledger.trackedEntityId : null;
+    item.itemTrackingType === "Serial"
+      ? (movement.trackedEntityId ?? null)
+      : null;
   let cost = 0;
 
-  if (ledger.quantity < 0) {
+  if (movement.quantity < 0) {
     // Decrease: relieve carrying value exactly as shipments do — consume
     // layers (FIFO/LIFO) / current cost (Average/Standard).
     const cogs = await calculateCOGS(trx, {
-      itemId: ledger.itemId,
+      itemId: movement.itemId,
       quantity: absQuantity,
       companyId,
       trackedEntityIds: serialId ? [serialId] : [],
@@ -296,13 +352,13 @@ export async function bookAdjustment(
       .insertInto("costLedger")
       .values(
         buildCostLedgerRow({
-          entryType: ledger.entryType,
-          documentType: ledger.documentType,
+          entryType: movement.entryType,
+          documentType: movement.documentType,
           documentId,
-          itemId: ledger.itemId,
+          itemId: movement.itemId,
           quantity: -absQuantity,
           cost: -cogs.totalCost,
-          postingDate: ledger.postingDate,
+          postingDate: movement.postingDate,
           trackedEntityId: serialId,
           companyId,
         })
@@ -317,13 +373,13 @@ export async function bookAdjustment(
       .insertInto("costLedger")
       .values(
         buildCostLedgerRow({
-          entryType: ledger.entryType,
-          documentType: ledger.documentType,
+          entryType: movement.entryType,
+          documentType: movement.documentType,
           documentId,
-          itemId: ledger.itemId,
+          itemId: movement.itemId,
           quantity: absQuantity,
           cost,
-          postingDate: ledger.postingDate,
+          postingDate: movement.postingDate,
           trackedEntityId: serialId,
           companyId,
         })
@@ -332,12 +388,12 @@ export async function bookAdjustment(
   } else {
     // Increase: create a layer at the item's current carrying cost.
     const openLayers = await loadOpenCostLayers(trx, {
-      itemIds: [ledger.itemId],
+      itemIds: [movement.itemId],
       companyId,
     });
     const unitCost = computeCurrentUnitCost(
       itemCost,
-      openLayers.get(ledger.itemId) ?? []
+      openLayers.get(movement.itemId) ?? []
     );
     cost = absQuantity * unitCost;
 
@@ -345,13 +401,13 @@ export async function bookAdjustment(
       .insertInto("costLedger")
       .values(
         buildCostLedgerRow({
-          entryType: ledger.entryType,
-          documentType: ledger.documentType,
+          entryType: movement.entryType,
+          documentType: movement.documentType,
           documentId,
-          itemId: ledger.itemId,
+          itemId: movement.itemId,
           quantity: absQuantity,
           cost,
-          postingDate: ledger.postingDate,
+          postingDate: movement.postingDate,
           trackedEntityId: serialId,
           companyId,
         })
@@ -362,7 +418,7 @@ export async function bookAdjustment(
   // A zero-value movement posts no journal (nothing to tie out; a $0-net
   // entry is noise).
   if (!accounting || cost === 0) {
-    return { itemLedgerId: inserted.id, journalId: null, cost };
+    return { journalId: null, cost };
   }
 
   const journalId = accounting.getJournalId
@@ -371,7 +427,7 @@ export async function bookAdjustment(
         companyId,
         accountingPeriodId: accounting.accountingPeriodId,
         description: accounting.description,
-        postingDate: ledger.postingDate,
+        postingDate: movement.postingDate,
         userId: accounting.userId,
         sourceType: accounting.sourceType,
       });
@@ -382,9 +438,9 @@ export async function bookAdjustment(
       buildAdjustmentJournalLines({
         journalId,
         documentId,
-        documentType: ledger.documentType,
+        documentType: movement.documentType,
         journalLineReference: nanoid(),
-        isGain: ledger.quantity > 0,
+        isGain: movement.quantity > 0,
         cost,
         quantity: absQuantity,
         replenishmentSystem: item.replenishmentSystem,
@@ -400,9 +456,9 @@ export async function bookAdjustment(
   const journalLineDimensionInserts = buildJournalLineDimensions({
     journalLineIds: journalLines.map((line) => line.id),
     dimensions: accounting.dimensions ?? {},
-    itemId: ledger.itemId,
+    itemId: movement.itemId,
     itemPostingGroupId: item.itemPostingGroupId,
-    locationId: ledger.locationId,
+    locationId: movement.locationId,
     extraDimensions: accounting.extraDimensions,
     companyId,
   });
@@ -413,5 +469,5 @@ export async function bookAdjustment(
       .execute();
   }
 
-  return { itemLedgerId: inserted.id, journalId, cost };
+  return { journalId, cost };
 }

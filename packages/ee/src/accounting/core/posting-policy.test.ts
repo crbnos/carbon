@@ -70,7 +70,10 @@ describe("POSTING_POLICY", () => {
         // Added post-v2 with the Ramp integration: charge journals
         // (Dr expense / Cr card liability) push to the provider like any other
         // automated internal posting — no document representation exists.
-        "Charge"
+        "Charge",
+        // Added post-v2 with maintenance labor: time on a maintenance dispatch
+        // posts Dr maintenance / Cr labor absorption, like Production Event.
+        "Maintenance Event"
       ].sort()
     );
 

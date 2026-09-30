@@ -88,12 +88,14 @@ import type {
 import { costCategoryKeys, OPEN_SALES_ORDER_STATUSES } from "./sales.models";
 import type { CategoryMarkups, QuoteLinePriceSource } from "./sales.utils";
 import {
+  applyPriceRules,
+  asConfiguration,
   decideRecalcPricing,
   getEffectiveDefaultMarkups,
-  resolvePreservedQuoteLinePriceFields
+  resolvePreservedQuoteLinePriceFields,
+  toMatchedRule
 } from "./sales.utils";
 import type {
-  MatchedRule,
   OverrideEntry,
   PriceListResult,
   PriceListRow,
@@ -115,78 +117,6 @@ const SALES_ORDERS_LIST_COLUMNS =
 
 const logger = getLogger("erp", "sales");
 
-export function applyPriceRules(
-  startingPrice: number,
-  matchedRules: MatchedRule[]
-): { finalPrice: number; appendedTrace: PriceTraceStep[] } {
-  const appendedTrace: PriceTraceStep[] = [];
-  let finalPrice = startingPrice;
-
-  const markupRules = matchedRules.filter((r) => r.ruleType === "Markup");
-  const discountRules = matchedRules.filter((r) => r.ruleType === "Discount");
-
-  // Discounts: highest priority wins (non-stacking); ties broken by best
-  // effective amount against the current running price.
-  if (discountRules.length > 0) {
-    const ranked = discountRules
-      .map((rule) => ({
-        rule,
-        effective:
-          rule.amountType === "Percentage"
-            ? finalPrice * rule.amount
-            : rule.amount
-      }))
-      .sort((a, b) => {
-        if (b.rule.priority !== a.rule.priority) {
-          return b.rule.priority - a.rule.priority;
-        }
-        return b.effective - a.effective;
-      });
-
-    const winner = ranked[0];
-    if (winner && winner.effective > 0) {
-      finalPrice = finalPrice - winner.effective;
-      appendedTrace.push({
-        step: "Discount",
-        source: `Rule: ${winner.rule.name}`,
-        amount: finalPrice,
-        adjustment: -winner.effective,
-        ruleId: winner.rule.id
-      });
-    }
-  }
-
-  // Markups: stack in priority order (highest first), compounding on the
-  // running price so ordering + basis are both deterministic.
-  const sortedMarkups = [...markupRules].sort(
-    (a, b) => b.priority - a.priority
-  );
-  for (const rule of sortedMarkups) {
-    const adjustment =
-      rule.amountType === "Percentage" ? finalPrice * rule.amount : rule.amount;
-    finalPrice = finalPrice + adjustment;
-    appendedTrace.push({
-      step: "Markup",
-      source: `Rule: ${rule.name}`,
-      amount: finalPrice,
-      adjustment,
-      ruleId: rule.id
-    });
-  }
-
-  if (finalPrice < 0) {
-    appendedTrace.push({
-      step: "Floor",
-      source: "Clamped to 0 (rules drove price negative)",
-      amount: 0,
-      adjustment: -finalPrice
-    });
-    finalPrice = 0;
-  }
-
-  return { finalPrice, appendedTrace };
-}
-
 export async function closeSalesOrder(
   client: SupabaseClient<Database>,
   salesOrderId: string,
@@ -204,9 +134,10 @@ export async function closeSalesOrder(
   return client
     .from("salesOrder")
     .update({
-      closed: true,
+      status: "Closed",
       closedAt: datetime.today(companyTz).toString(),
-      closedBy: userId
+      closedBy: userId,
+      updatedBy: userId
     })
     .eq("id", salesOrderId)
     .select("id")
@@ -322,30 +253,67 @@ export async function createPricingRule(
   userId: string,
   data: z.infer<typeof pricingRuleValidator>
 ) {
+  const rule = normalizePricingRule(data);
   return client
     .from("pricingRule")
     .insert([
       {
-        name: data.name,
-        ruleType: data.ruleType,
-        amountType: data.amountType,
-        amount: data.amount,
-        minQuantity: data.minQuantity ?? null,
-        maxQuantity: data.maxQuantity ?? null,
-        customerIds: data.customerIds ?? [],
-        customerTypeIds: data.customerTypeIds ?? [],
-        itemIds: data.itemIds ?? [],
-        itemPostingGroupId: data.itemPostingGroupId ?? null,
-        validFrom: data.validFrom || null,
-        validTo: data.validTo || null,
-        priority: data.priority ?? 0,
-        active: data.active ?? true,
+        name: rule.name,
+        ruleType: rule.ruleType,
+        amountType: rule.amountType,
+        amount: rule.amount,
+        minQuantity: rule.minQuantity ?? null,
+        maxQuantity: rule.maxQuantity ?? null,
+        customerIds: rule.customerIds ?? [],
+        customerTypeIds: rule.customerTypeIds ?? [],
+        itemIds: rule.itemIds ?? [],
+        itemPostingGroupId: rule.itemPostingGroupId ?? null,
+        validFrom: rule.validFrom || null,
+        validTo: rule.validTo || null,
+        priority: rule.priority ?? 0,
+        active: rule.active ?? true,
+        configurationPrices: rule.configurationPrices ?? null,
         companyId,
         createdBy: userId
       }
     ])
     .select("id")
     .single();
+}
+
+// A Configuration rule is one configurable item's parameter prices and
+// nothing else: its item comes from `itemId`, and it has no item group and
+// no discount/markup amount. Any other rule type carries no configuration
+// prices. A partial update that leaves `ruleType` alone is passed through.
+function normalizePricingRule<
+  T extends Partial<z.infer<typeof pricingRuleValidator>>
+>(
+  data: T
+): Omit<T, "itemId" | "configurationPrices"> & {
+  configurationPrices?: Json | null;
+} {
+  const { itemId, configurationPrices, ...rule } = data;
+  if (rule.ruleType === undefined) {
+    return configurationPrices === undefined
+      ? rule
+      : { ...rule, configurationPrices: configurationPrices as Json };
+  }
+  if (rule.ruleType !== "Configuration") {
+    return { ...rule, configurationPrices: null };
+  }
+  const itemIds = itemId ? [itemId] : (rule.itemIds ?? []);
+  const prices = (configurationPrices ?? []).filter(
+    (price) => price.amount !== 0
+  );
+  return {
+    ...rule,
+    itemIds,
+    itemPostingGroupId: undefined,
+    amountType: "Fixed" as const,
+    amount: 0,
+    configurationPrices:
+      itemIds.length === 1 && prices.length > 0 ? (prices as Json) : null
+  };
 }
 
 export async function deleteCustomer(
@@ -603,6 +571,7 @@ export async function duplicatePricingRule(
         validFrom: original.validFrom,
         validTo: original.validTo,
         priority: original.priority,
+        configurationPrices: original.configurationPrices,
         active: false,
         companyId,
         createdBy: userId
@@ -2305,8 +2274,10 @@ export async function resolvePrice(
     }
   }
 
+  // An override that skips the rules still takes the line's configuration
+  // prices — they price the chosen options, not the part.
   let finalPrice = startingPrice;
-  if (!skipRules) {
+  if (!skipRules || input.configuration) {
     let rulesQuery = client
       .from("pricingRule")
       .select("*")
@@ -2318,7 +2289,7 @@ export async function resolvePrice(
 
     const { data: allRules } = await rulesQuery;
 
-    const matchedRules: MatchedRule[] = (allRules ?? []).filter((rule) => {
+    const matchedRules = (allRules ?? []).filter((rule) => {
       if (rule.minQuantity !== null && input.quantity < rule.minQuantity)
         return false;
       if (rule.maxQuantity !== null && input.quantity > rule.maxQuantity)
@@ -2349,9 +2320,13 @@ export async function resolvePrice(
           return false;
       }
       return true;
-    }) as MatchedRule[];
+    });
 
-    const ruleResult = applyPriceRules(startingPrice, matchedRules);
+    const ruleResult = applyPriceRules(
+      startingPrice,
+      matchedRules.map(toMatchedRule),
+      { configuration: input.configuration, configurationOnly: skipRules }
+    );
     finalPrice = ruleResult.finalPrice;
     trace.push(...ruleResult.appendedTrace);
   }
@@ -2633,7 +2608,7 @@ export async function resolvePriceList(
     let hasRuleAdjustment = false;
 
     if (!skipRules) {
-      const matchedRules: MatchedRule[] = (allRules ?? []).filter((rule) => {
+      const matchedRules = (allRules ?? []).filter((rule) => {
         if (rule.minQuantity !== null && previewQuantity < rule.minQuantity)
           return false;
         if (rule.maxQuantity !== null && previewQuantity > rule.maxQuantity)
@@ -2671,7 +2646,10 @@ export async function resolvePriceList(
         return true;
       });
 
-      const ruleResult = applyPriceRules(startingPrice, matchedRules);
+      const ruleResult = applyPriceRules(
+        startingPrice,
+        matchedRules.map(toMatchedRule)
+      );
       finalPrice = ruleResult.finalPrice;
       trace.push(...ruleResult.appendedTrace);
       hasRuleAdjustment = ruleResult.appendedTrace.length > 0;
@@ -3248,7 +3226,7 @@ export async function updatePricingRule(
     .from("pricingRule")
     .update(
       sanitize({
-        ...data,
+        ...normalizePricingRule(data),
         updatedBy: userId,
         updatedAt: new Date().toISOString()
       })
@@ -4554,7 +4532,7 @@ export async function buildMakeToOrderPriceRows(
       .single(),
     client
       .from("quoteLine")
-      .select("itemId, unitPricePrecision")
+      .select("itemId, unitPricePrecision, configuration")
       .eq("id", quoteLineId)
       .single()
   ]);
@@ -4624,7 +4602,8 @@ export async function buildMakeToOrderPriceRows(
             itemId,
             quantity: qty,
             customerId,
-            existingBasePrice: rollupPrice
+            existingBasePrice: rollupPrice,
+            configuration: asConfiguration(lineResult.data.configuration)
           })
         ).finalPrice
       : rollupPrice;
@@ -4694,7 +4673,7 @@ export async function buildPullFromInventoryPriceRows(
       .single(),
     client
       .from("quoteLine")
-      .select("itemId, unitPricePrecision")
+      .select("itemId, unitPricePrecision, configuration")
       .eq("id", quoteLineId)
       .single()
   ]);
@@ -4722,7 +4701,8 @@ export async function buildPullFromInventoryPriceRows(
     const resolved = await resolvePrice(client, companyId, {
       itemId,
       quantity: qty,
-      customerId
+      customerId,
+      configuration: asConfiguration(lineResult.data.configuration)
     });
 
     priceRows.push({
@@ -4790,7 +4770,7 @@ export async function buildPurchaseToOrderPriceRows(
       .single(),
     client
       .from("quoteLine")
-      .select("itemId, unitPricePrecision")
+      .select("itemId, unitPricePrecision, configuration")
       .eq("id", quoteLineId)
       .single()
   ]);
@@ -4821,7 +4801,8 @@ export async function buildPurchaseToOrderPriceRows(
       itemId,
       quantity: qty,
       customerId,
-      existingBasePrice: supplierPrice
+      existingBasePrice: supplierPrice,
+      configuration: asConfiguration(lineResult.data.configuration)
     });
 
     priceRows.push({
@@ -4882,7 +4863,7 @@ export async function recalculateQuoteLinePrices(
   const [lineResult, quoteResult] = await Promise.all([
     client
       .from("quoteLine")
-      .select("itemId, unitPricePrecision")
+      .select("itemId, unitPricePrecision, configuration")
       .eq("id", quoteLineId)
       .eq("quoteId", quoteId)
       .eq("companyId", companyId)
@@ -4994,7 +4975,8 @@ export async function recalculateQuoteLinePrices(
               itemId,
               quantity: qty,
               customerId,
-              existingBasePrice: rollupPrice
+              existingBasePrice: rollupPrice,
+              configuration: asConfiguration(lineResult.data.configuration)
             })
           ).finalPrice
         : rollupPrice;

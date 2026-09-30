@@ -137,6 +137,15 @@ not substring filtering. The typed, tested logic lives OUTSIDE the
   size, plus the compact response schema when the generator derived one.
 - Server instructions live in `packages/ee/src/mcp/instructions.ts` (module list + interpolated
   `MCP_DEFAULT_LIMIT`), importable by tests without server.ts's auth/env chain.
+- `expandQueryTerm` also adds each word's inflection stem (`stemInflection`,
+  `@carbon/content/search`: zbsearch's Porter limited to plural/-ed/-ing/-e) to the
+  QUERY, never the index — "scrapping" finds the scrap tools. Stemming the index
+  collapsed "orders" into "order" and ranked single-record tools above list tools;
+  full Porter turned "customer" into "custom". The docs site uses the same stemmer.
+- The in-app agent's `search_docs` reuses this engine over the docs corpus —
+  `createDocSearch` in `packages/ee/src/mcp/doc-search.ts` shares `expandQueryTerm`
+  (so a new alias improves both) and the typo retry. It indexes page SECTIONS, weights
+  each page's intro ×2 via `sortBy`, and returns at most two sections per page.
 - Pinned by `lib/catalog-search.test.ts` and `lib/describe-format.test.ts`;
   `lib/manifest.ts` carries its own copies of the meta-tool descriptions
   (pinned >40 chars by `manifest.test.ts`) — keep them in sync with

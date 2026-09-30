@@ -62,6 +62,11 @@ jobs:
 
       - run: pnpm exec biome check
 
+      - name: Conformance checks
+        run: |
+          pnpm --filter @carbon/config build
+          pnpm --filter @carbon/checks exec vitest run src/run.test.ts
+
   typecheck:
     name: Typecheck
     needs: install

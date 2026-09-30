@@ -30,6 +30,7 @@
     "./mount/hooks.server": "./src/mount/hooks.server.ts",
     "./notifications": "./src/notifications/index.ts",
     "./onshape": "./src/onshape/lib/index.ts",
+    "./onshape.server": "./src/onshape/oauth.server.ts",
     "./paperless-parts": "./src/paperless-parts/lib/index.ts",
     "./permissions.server": "./src/permissions.server.ts",
     "./plan": "./src/plan.ts",
@@ -104,7 +105,7 @@
   "devDependencies": {
     "@carbon/api": "workspace:*",
     "@carbon/config": "workspace:*",
-    "@carbon/glossary": "workspace:*",
+    "@carbon/content": "workspace:*",
     "@logtape/logtape": "catalog:",
     "@logtape/testing": "catalog:",
     "@types/nodemailer": "6.4.21",

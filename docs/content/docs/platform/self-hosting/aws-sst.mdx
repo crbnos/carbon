@@ -35,13 +35,13 @@ The WAF web ACL must be **manually associated** with the application load balanc
 
 ## Deploy
 
-SST drives the deploy from `sst.config.ts`. Run it from the repo root with the [infrastructure variables](/docs/platform/self-hosting/environment-variables#infrastructure-sst) exported.
+SST drives the deploy from `sst.config.ts`. Run it from the repo root with the [infrastructure variables](/docs/platform/self-hosting/environment-variables#infrastructure--sst) exported.
 
 <Steps>
   <Step>
   ### Set the environment
 
-  Export the SST variables (`AWS_REGION`, `AWS_ACCOUNT_ID`, `IMAGE_TAG`, the `CERT_ARN_*`, and any `URL_*`) plus the app config the services read at runtime. The [Supabase instance](/docs/platform/self-hosting/environment-variables#database-supabase) is provisioned out of band.
+  Export the SST variables (`AWS_REGION`, `AWS_ACCOUNT_ID`, `IMAGE_TAG`, the `CERT_ARN_*`, and any `URL_*`) plus the app config the services read at runtime. The [Supabase instance](/docs/platform/self-hosting/environment-variables#database--supabase) is provisioned out of band.
   </Step>
   <Step>
   ### Deploy the stack

@@ -109,7 +109,10 @@ integrations' pending states survive. `consumeOAuthState()` validates all fields
 removes that integration's entry on every attempt (the cookie is destroyed once empty).
 The integrations page loader issues one for every integration with an `oauth` config
 (Ramp, Xero, QuickBooks, Jira — IntegrationCard puts it on the authorize URL), Onshape's
-`api+/integrations.onshape.install.ts` issues its own, and each callback consumes it.
+`api+/integrations.onshape.install.ts` issues its own (via `beginOnshapeAuthorization`,
+`@carbon/ee/onshape.server`), Onshape Government's is issued by the integration settings
+save — its OAuth client is the customer's private app, not an env var — and each callback
+consumes it.
 Slack binds its state separately (`SLACK_STATE_SECRET`, `@slack/oauth` state store,
 checked against the caller's company and user). Managed deployment propagates both Ramp OAuth
 vars through `ci/src/deploy.ts` → `sst.config.ts` → the ERP service only.

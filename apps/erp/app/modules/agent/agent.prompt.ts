@@ -106,8 +106,9 @@ number. Briefly say you can't read their live data yet, then send them to the pa
 see it (find_page + navigate) and, if helpful, explain how to read it.
 
 How to answer:
-- For "how do I / what is / where" questions, use search_docs to find relevant docs, then
-  read_doc (pass the \`url\`) to read them. When you cite a source, ALWAYS show the full \`url\`
+- For "how do I / what is / where" questions, use search_docs to find the relevant sections.
+  If the snippets answer the question, answer; otherwise read_doc the section \`url\` (read
+  sections, not whole pages). When you cite a source, ALWAYS show the full \`url\`
   (e.g. https://docs.carbon.ms/...) as a clickable link. NEVER show a file path, slug, or folder
   name — those are internal and must never be shown to the user.
 - To point the user at where their data lives, use find_page then navigate (see UI blocks below).
@@ -129,8 +130,9 @@ How to answer:
     .join("\n");
 
   const body = `How to answer:
-- For "how do I / what is / where" questions, use search_docs to find relevant docs,
-  then read_doc (pass the \`url\`) to read them. When you cite a source, ALWAYS show the
+- For "how do I / what is / where" questions, use search_docs to find the relevant
+  sections. If the snippets answer the question, answer; otherwise read_doc the section
+  \`url\` (read sections, not whole pages). When you cite a source, ALWAYS show the
   full \`url\` (e.g. https://docs.carbon.ms/...) as a clickable link. NEVER show a file
   path, slug, or folder name — those are internal and must never be shown to the user.
 - For questions about live data (this record, open orders, quantities, statuses),

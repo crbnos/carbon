@@ -63,6 +63,9 @@ const serverHooks: Record<string, IntegrationServerHooks> = {
   onshape: {
     onUninstall: onshapeOnUninstall
   },
+  "onshape-government": {
+    onUninstall: onshapeOnUninstall
+  },
   // The accounting providers' onUpdate re-runs the same subscription
   // convergence as onInstall: a settings save on an existing install
   // self-heals the company's `${provider}-sync` subscription rows whenever

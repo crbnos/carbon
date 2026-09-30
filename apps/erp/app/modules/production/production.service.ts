@@ -47,6 +47,7 @@ import {
 import { sanitize } from "~/utils/supabase";
 import { getDefaultStorageUnitForJob } from "../inventory";
 import { getEmployeeJob } from "../people";
+import { resolveJobConfiguration } from "../sales/sales.utils";
 import type {
   MethodType,
   operationParameterValidator,
@@ -184,6 +185,21 @@ export async function convertSalesOrderLinesToJobs(
   const quoteId = opportunity.data?.quotes[0]?.id;
   const salesOrderId = opportunity.data?.salesOrders[0]?.id;
 
+  // A converted quote line shares its id with the order line, so its
+  // configuration is the fallback for an order line configured nowhere else.
+  const quoteLineConfigurations = new Map<string, unknown>();
+  if (quoteId) {
+    const quoteLines = await client
+      .from("quoteLine")
+      .select("id, configuration")
+      .eq("quoteId", quoteId)
+      .eq("companyId", companyId)
+      .in("id", lines.map((line) => line.id).filter(Boolean) as string[]);
+    for (const quoteLine of quoteLines.data ?? []) {
+      quoteLineConfigurations.set(quoteLine.id, quoteLine.configuration);
+    }
+  }
+
   const errors: string[] = [];
   let jobsCreated = 0;
 
@@ -205,6 +221,11 @@ export async function convertSalesOrderLinesToJobs(
       const totalJobs = lotSize > 0 ? Math.ceil(totalQuantity / lotSize) : 1;
 
       const jobsToCreate = Math.max(1, totalJobs);
+
+      const { configuration, reconfigured } = resolveJobConfiguration(
+        line.configuration,
+        line.id ? quoteLineConfigurations.get(line.id) : null
+      );
 
       const defaultLocation = await client
         .from("location")
@@ -277,7 +298,8 @@ export async function convertSalesOrderLinesToJobs(
           salesOrderLineId: line.id,
           scrapQuantity,
           storageUnitId: storageUnitId ?? undefined,
-          unitOfMeasureCode: line.unitOfMeasureCode ?? "EA"
+          unitOfMeasureCode: line.unitOfMeasureCode ?? "EA",
+          configuration: configuration as Json
         };
 
         // Calculate priority based on due date and deadline type
@@ -326,7 +348,7 @@ export async function convertSalesOrderLinesToJobs(
           source: "salesOrder"
         });
 
-        if (quoteId) {
+        if (quoteId && !reconfigured) {
           const upsertMethod = await client.functions.invoke("get-method", {
             body: {
               type: "quoteLineToJob",
@@ -350,7 +372,8 @@ export async function convertSalesOrderLinesToJobs(
               sourceId: data.itemId,
               targetId: createJob.data.id,
               companyId,
-              userId
+              userId,
+              ...(configuration ? { configuration } : {})
             }
           });
 
@@ -1945,12 +1968,14 @@ export async function getJobOperationsByMethodId(
 export async function getJobOperationStepRecords(
   client: SupabaseClient<Database>,
   jobId: string,
+  companyId: string,
   args: GenericQueryFilters & {
     search: string | null;
   }
 ) {
   let query = client.rpc("get_job_operation_step_records", {
-    p_job_id: jobId
+    p_job_id: jobId,
+    p_company_id: companyId
   });
 
   if (args.search) {
@@ -3501,6 +3526,7 @@ export async function insertJob(
       customFields: input.customFields,
       fixedAssetClassId: input.fixedAssetClassId ?? null,
       fixedAssetId: input.fixedAssetId ?? null,
+      configuration: (input.configuration as Json | undefined) ?? null,
       companyId: input.companyId,
       createdBy: input.createdBy,
       updatedBy: input.createdBy

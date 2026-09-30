@@ -221,6 +221,7 @@ serve(async (req: Request) => {
               itemId: string | null;
               itemPostingGroupId: string | null;
               locationId: string | null;
+              // Always null: salesOrderLine has no cost center column.
               costCenterId: string | null;
               fixedAssetClassId: string | null;
             }[] = [];
@@ -485,7 +486,7 @@ serve(async (req: Request) => {
                     itemId: shipmentLine.itemId ?? null,
                     itemPostingGroupId,
                     locationId: shipmentLine.locationId ?? locationId ?? null,
-                    costCenterId: salesOrderLine?.costCenterId ?? null,
+                    costCenterId: null,
                     fixedAssetClassId: null,
                   });
                 }
@@ -624,7 +625,7 @@ serve(async (req: Request) => {
                     itemId: null,
                     itemPostingGroupId: null,
                     locationId: locationId ?? assetRecord.data.locationId ?? null,
-                    costCenterId: faSoLine.costCenterId ?? null,
+                    costCenterId: null,
                     fixedAssetClassId: assetRecord.data.fixedAssetClassId ?? null,
                   });
                 }
@@ -656,7 +657,7 @@ serve(async (req: Request) => {
                     itemId: null,
                     itemPostingGroupId: null,
                     locationId: locationId ?? assetRecord.data.locationId ?? null,
-                    costCenterId: faSoLine.costCenterId ?? null,
+                    costCenterId: null,
                     fixedAssetClassId: assetRecord.data.fixedAssetClassId ?? null,
                   });
                 }
@@ -683,7 +684,7 @@ serve(async (req: Request) => {
                   itemId: null,
                   itemPostingGroupId: null,
                   locationId: locationId ?? assetRecord.data.locationId ?? null,
-                  costCenterId: faSoLine.costCenterId ?? null,
+                  costCenterId: null,
                   fixedAssetClassId: assetRecord.data.fixedAssetClassId ?? null,
                 });
 

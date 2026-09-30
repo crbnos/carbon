@@ -1,6 +1,7 @@
 import { getAppUrl } from "@carbon/auth";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { getOnshapeClient } from "./lib/client";
+import { getOnshapeIntegration } from "./lib/connection";
 
 // The release webhook's callback path for a company. We match/deregister by this
 // PATH (not the full URL) so a host change — localhost, a tunnel, or the prod
@@ -9,16 +10,12 @@ function callbackPath(companyId: string): string {
   return `/api/webhook/onshape/${companyId}`;
 }
 
-// Build an Onshape client for background webhook management. Reads the installer
-// (updatedBy) for token refresh/audit; falls back to "system".
+// Build an Onshape client for background webhook management — against whichever
+// Onshape connection the company has (public app or Government private app).
+// Reads the installer (updatedBy) for token refresh/audit; falls back to "system".
 async function onshapeClientForCompany(companyId: string) {
   const client = getCarbonServiceRole();
-  const integration = await client
-    .from("companyIntegration")
-    .select("updatedBy")
-    .eq("id", "onshape")
-    .eq("companyId", companyId)
-    .maybeSingle();
+  const integration = await getOnshapeIntegration(client, companyId);
   const userId = integration.data?.updatedBy ?? "system";
   return getOnshapeClient(client, companyId, userId);
 }
@@ -33,12 +30,9 @@ async function resolveAndStoreOnshapeCompanyId(
   client: Awaited<ReturnType<typeof getOnshapeClient>>["client"]
 ): Promise<string | null> {
   const carbon = getCarbonServiceRole();
-  const integration = await carbon
-    .from("companyIntegration")
-    .select("metadata")
-    .eq("id", "onshape")
-    .eq("companyId", companyId)
-    .maybeSingle();
+  const integration = await getOnshapeIntegration(carbon, companyId);
+  if (!integration.data) return null;
+  const integrationId = integration.data.id;
   const metadata = (integration.data?.metadata ?? {}) as Record<
     string,
     unknown
@@ -53,7 +47,7 @@ async function resolveAndStoreOnshapeCompanyId(
   const update = await carbon
     .from("companyIntegration")
     .update({ metadata: { ...metadata, onshapeCompanyId: resolved } })
-    .eq("id", "onshape")
+    .eq("id", integrationId)
     .eq("companyId", companyId);
   if (update.error) {
     // Non-fatal: we can still register with the resolved id; the jobs just fall

@@ -759,6 +759,7 @@ export const journalEntrySourceTypes = [
   "Job Receipt",
   "Production Event",
   "Job Close",
+  "Maintenance Event",
   "Asset Depreciation",
   "Asset Disposal",
   "Asset Transfer",

@@ -45,8 +45,8 @@ import {
   SCHEMA_REPO_PATH
 } from "./backup-baseline";
 
-const SCHEMA_FILE = join(import.meta.dirname, "../../manifests/schema.json");
 const REPO_ROOT = join(import.meta.dirname, "../../../..");
+const SCHEMA_FILE = join(REPO_ROOT, SCHEMA_REPO_PATH);
 /** A hook that hangs is a hook people bypass. */
 const FETCH_TIMEOUT_MS = 3000;
 
@@ -174,6 +174,9 @@ function reportBlocking(
   return true;
 }
 
+// Run from the repo root: a pre-commit hook in a linked worktree exports GIT_DIR
+// without GIT_WORK_TREE, so git takes the current directory (packages/jobs) as
+// the worktree top and `git add` would stage the file at the wrong path.
 function git(args: string[]): string {
   // Always from the repo root. A git hook exports GIT_DIR without GIT_WORK_TREE,
   // and git then takes the CURRENT directory as the work tree — so `git add` of

@@ -72,14 +72,14 @@ The same templates power onboarding. When anyone creates a new company, the data
 Choosing a template then asks **"Which best describes your company?"** and seeds the matching industry. See [Getting started](/docs/reference/onboarding) for the rest of the wizard.
 
 <Callout type="info" title="Who can see the Demo Data page">
-Demo Data sits behind the same gate as Backups, since it replaces a company's data wholesale. On production deployments it is currently limited to Carbon staff; on a local development stack it is open to everyone.
+Anyone with permission to update settings can open Settings → Demo Data.
 </Callout>
 
 <AgentContext>
 ## Troubleshooting
 
 ### The Demo Data page isn't in my Settings menu
-On production deployments Demo Data is visible to internal Carbon staff accounts only; on a local development stack it is open to everyone. Its absence for a regular customer account is expected — same gate as Backups.
+The page needs permission to update settings. Ask an admin to grant it to your role.
 
 ### I applied a template and want my old data back
 Use "Revert" on the "Demo data applied" card. Carbon saved a copy of your data immediately before applying, and the card stays open until you choose Keep or Revert — reverting puts back exactly what was there before.

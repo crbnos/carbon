@@ -31,6 +31,13 @@ export const SECRET_KEYS: Record<string, string[]> = {
     "webhookSigningSecret"
   ],
   onshape: ["credentials.accessToken", "credentials.refreshToken"],
+  // A Government customer's private OAuth app: its client secret is entered in
+  // the settings form, the tokens come from the callback.
+  "onshape-government": [
+    "clientSecret",
+    "credentials.accessToken",
+    "credentials.refreshToken"
+  ],
   xero: ["credentials.accessToken", "credentials.refreshToken"],
   quickbooks: ["credentials.accessToken", "credentials.refreshToken"],
   ramp: [

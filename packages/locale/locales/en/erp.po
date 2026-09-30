@@ -592,6 +592,12 @@ msgstr "A change notice tracks a controlled engineering or manufacturing change 
 msgid "A clearing account holding the value of goods received but not yet billed; the supplier invoice clears it."
 msgstr "A clearing account holding the value of goods received but not yet billed; the supplier invoice clears it."
 
+msgid "A company connects to one Onshape at a time. Uninstall Onshape Government, then connect Onshape."
+msgstr "A company connects to one Onshape at a time. Uninstall Onshape Government, then connect Onshape."
+
+msgid "A company connects to one Onshape at a time. Uninstall Onshape, then connect Onshape Government."
+msgstr "A company connects to one Onshape at a time. Uninstall Onshape, then connect Onshape Government."
+
 msgid "A company that designs and builds its own finished products end to end (here, the shop building humanoid robots) rather than making parts to another company's specification."
 msgstr "A company that designs and builds its own finished products end to end (here, the shop building humanoid robots) rather than making parts to another company's specification."
 
@@ -1734,6 +1740,9 @@ msgstr "Added {0} lines"
 msgid "Added for this customer"
 msgstr "Added for this customer"
 
+msgid "Added to the unit price for the chosen values, before discounts and markups. Use a negative amount for a credit."
+msgstr "Added to the unit price for the chosen values, before discounts and markups. Use a negative amount for a credit."
+
 msgid "Adding demo records"
 msgstr "Adding demo records"
 
@@ -2063,6 +2072,9 @@ msgstr "An operation on this job runs in this batch"
 
 msgid "An operation's position in its work center's queue — the order the floor picks work up. The engine numbers it from placement order (earliest projected start first); reordering cards on the Work Centers board overrides it without changing dates."
 msgstr "An operation's position in its work center's queue — the order the floor picks work up. The engine numbers it from placement order (earliest projected start first); reordering cards on the Work Centers board overrides it without changing dates."
+
+msgid "An unexpected error occurred while connecting to Onshape. Save the integration settings to try again."
+msgstr "An unexpected error occurred while connecting to Onshape. Save the integration settings to try again."
 
 msgid "An unexpected error occurred while connecting to Onshape. Try connecting again."
 msgstr "An unexpected error occurred while connecting to Onshape. Try connecting again."
@@ -3367,6 +3379,9 @@ msgstr "BOM"
 msgid "BoM + BoP"
 msgstr "BoM + BoP"
 
+msgid "BoM Explorer"
+msgstr "BoM Explorer"
+
 msgid "BOM synced successfully"
 msgstr "BOM synced successfully"
 
@@ -3972,6 +3987,9 @@ msgstr "Choose how to add lines to this return."
 msgid "Choose what appears on the printed job traveler."
 msgstr "Choose what appears on the printed job traveler."
 
+msgid "Choose whether the bill of material explorer on items, quotes, and jobs labels each line with its description or its item ID."
+msgstr "Choose whether the bill of material explorer on items, quotes, and jobs labels each line with its description or its item ID."
+
 msgid "Choose your style"
 msgstr "Choose your style"
 
@@ -4301,6 +4319,9 @@ msgstr "Configuration"
 msgid "Configuration Parameters"
 msgstr "Configuration Parameters"
 
+msgid "Configuration Prices"
+msgstr "Configuration Prices"
+
 msgid "Configuration, data migration, and any integrations"
 msgstr "Configuration, data migration, and any integrations"
 
@@ -4375,6 +4396,9 @@ msgstr "configured"
 
 msgid "Configured"
 msgstr "Configured"
+
+msgid "Configured Part"
+msgstr "Configured Part"
 
 msgid "Confirm"
 msgstr "Confirm"
@@ -4928,6 +4952,9 @@ msgstr "Could not save"
 msgid "Couldn't complete the Onshape connection"
 msgstr "Couldn't complete the Onshape connection"
 
+msgid "Couldn't complete the Onshape Government connection"
+msgstr "Couldn't complete the Onshape Government connection"
+
 msgid "Couldn't load documents"
 msgstr "Couldn't load documents"
 
@@ -4942,6 +4969,9 @@ msgstr "Couldn't reschedule the job. Please try again."
 
 msgid "Couldn't save the Onshape connection"
 msgstr "Couldn't save the Onshape connection"
+
+msgid "Couldn't save the Onshape Government connection"
+msgstr "Couldn't save the Onshape Government connection"
 
 msgid "Couldn't save the Ramp connection"
 msgstr "Couldn't save the Ramp connection"
@@ -6777,9 +6807,6 @@ msgstr "due in 1 day"
 msgid "due now"
 msgstr "due now"
 
-msgid "Due within"
-msgstr "Due within"
-
 msgid "Duplicate"
 msgstr "Duplicate"
 
@@ -6875,6 +6902,9 @@ msgstr "Each line is a link from this company's data to a row it doesn't own. Re
 
 msgid "Each line is a link from this company's data to a row it doesn't own. Removing those rows lets the restore run."
 msgstr "Each line is a link from this company's data to a row it doesn't own. Removing those rows lets the restore run."
+
+msgid "Each line shows its item ID and revision."
+msgstr "Each line shows its item ID and revision."
 
 msgid "Each operation's unused material returns as soon as the operation is done."
 msgstr "Each operation's unused material returns as soon as the operation is done."
@@ -7378,6 +7408,9 @@ msgstr "Enable to show a readable Customer ID on lists, forms and dropdowns."
 msgid "Enable to show a readable Supplier ID on lists, forms and dropdowns."
 msgstr "Enable to show a readable Supplier ID on lists, forms and dropdowns."
 
+msgid "Enable to show the item ID and revision instead of the description."
+msgstr "Enable to show the item ID and revision instead of the description."
+
 msgid "Enable to start tracking changes to your data."
 msgstr "Enable to start tracking changes to your data."
 
@@ -7487,6 +7520,9 @@ msgstr "Enter the 6-digit code from your authenticator app"
 
 msgid "Enter the 6-digit code from your authenticator app to resume."
 msgstr "Enter the 6-digit code from your authenticator app to resume."
+
+msgid "Enter the Onshape URL, client ID and client secret of your private OAuth application, then save."
+msgstr "Enter the Onshape URL, client ID and client secret of your private OAuth application, then save."
 
 msgid "Enter the quantity this movement should have been. An opposite movement for the difference is posted next to the original, in the original's time period."
 msgstr "Enter the quantity this movement should have been. An opposite movement for the difference is posted next to the original, in the original's time period."
@@ -7706,6 +7742,9 @@ msgstr "Exchange rate updated at"
 
 msgid "Exchange Rates"
 msgstr "Exchange Rates"
+
+msgid "Exchanging the authorization code failed. Check the Onshape URL and the client secret, then save the integration settings again."
+msgstr "Exchanging the authorization code failed. Check the Onshape URL and the client secret, then save the integration settings again."
 
 msgid "Exchanging the authorization code for access failed. Try connecting again."
 msgstr "Exchanging the authorization code for access failed. Try connecting again."
@@ -9436,6 +9475,9 @@ msgstr "In this step"
 msgid "In use"
 msgstr "In use"
 
+msgid "In your Enterprise settings under Developer, edit the private OAuth application's permissions to include \"Application can write to your documents\", then save the integration settings again."
+msgstr "In your Enterprise settings under Developer, edit the private OAuth application's permissions to include \"Application can write to your documents\", then save the integration settings again."
+
 msgid "In-app"
 msgstr "In-app"
 
@@ -10468,6 +10510,12 @@ msgstr "Lines need internal part numbers"
 
 msgid "Lines need prices or lead times"
 msgstr "Lines need prices or lead times"
+
+msgid "Lines show descriptions"
+msgstr "Lines show descriptions"
+
+msgid "Lines show item IDs"
+msgstr "Lines show item IDs"
 
 msgid "Lineside"
 msgstr "Lineside"
@@ -12802,6 +12850,9 @@ msgstr "Only one spend integration can be active at a time. Uninstall the curren
 msgid "Only qualified employees can be scheduled for and run this process"
 msgstr "Only qualified employees can be scheduled for and run this process"
 
+msgid "Onshape authorized the connection but saving it failed. Save the integration settings to try again."
+msgstr "Onshape authorized the connection but saving it failed. Save the integration settings to try again."
+
 msgid "Onshape authorized the connection but saving it failed. Try connecting again."
 msgstr "Onshape authorized the connection but saving it failed. Try connecting again."
 
@@ -12810,6 +12861,24 @@ msgstr "Onshape denied the connection"
 
 msgid "Onshape didn't return an authorization code"
 msgstr "Onshape didn't return an authorization code"
+
+msgid "Onshape Government denied the connection"
+msgstr "Onshape Government denied the connection"
+
+msgid "Onshape Government didn't return an authorization code"
+msgstr "Onshape Government didn't return an authorization code"
+
+msgid "Onshape Government is already connected"
+msgstr "Onshape Government is already connected"
+
+msgid "Onshape Government isn't configured"
+msgstr "Onshape Government isn't configured"
+
+msgid "Onshape Government rejected the authorization"
+msgstr "Onshape Government rejected the authorization"
+
+msgid "Onshape is already connected"
+msgstr "Onshape is already connected"
 
 msgid "Onshape isn't configured"
 msgstr "Onshape isn't configured"
@@ -12924,6 +12993,9 @@ msgstr "Open Scheduled"
 
 msgid "Open task details"
 msgstr "Open task details"
+
+msgid "Open the Onshape Government integration and save its settings to connect again."
+msgstr "Open the Onshape Government integration and save its settings to connect again."
 
 msgid "Open the Ramp integration and try connecting again to finish setup."
 msgstr "Open the Ramp integration and try connecting again to finish setup."
@@ -13537,6 +13609,9 @@ msgstr "per day"
 
 msgid "per month"
 msgstr "per month"
+
+msgid "Per unit"
+msgstr "Per unit"
 
 msgid "Per Unit"
 msgstr "Per Unit"
@@ -14954,6 +15029,9 @@ msgstr "Reconciliation found discrepancies with the provider"
 
 msgid "Reconciling a purchase order against what was received and invoiced — implicit in Carbon, via the line quantities and GR/IR balance."
 msgstr "Reconciling a purchase order against what was received and invoiced — implicit in Carbon, via the line quantities and GR/IR balance."
+
+msgid "Reconfigure"
+msgstr "Reconfigure"
 
 msgid "Record"
 msgstr "Record"
@@ -18417,6 +18495,9 @@ msgstr "The append-only record of every stock movement; on-hand is the sum of it
 msgid "The asset moves into its in-service class and starts depreciating from the in-service date."
 msgstr "The asset moves into its in-service class and starts depreciating from the in-service date."
 
+msgid "The authorization was refused in Onshape. Save the integration settings to try again."
+msgstr "The authorization was refused in Onshape. Save the integration settings to try again."
+
 msgid "The authorization was refused in Onshape. Try connecting again."
 msgstr "The authorization was refused in Onshape. Try connecting again."
 
@@ -18894,6 +18975,9 @@ msgstr "The on-hand level that triggers a new replenishment order under the quan
 msgid "The Onshape connection expired"
 msgstr "The Onshape connection expired"
 
+msgid "The Onshape Government connection expired"
+msgstr "The Onshape Government connection expired"
+
 msgid "The operations and steps your parts move through"
 msgstr "The operations and steps your parts move through"
 
@@ -19020,6 +19104,9 @@ msgstr "The request body sent verbatim with a JSON content type after workflow v
 
 msgid "The residual WIP a job has left at close, swept to a Production Variance account — the only variance Carbon books for a job."
 msgstr "The residual WIP a job has left at close, swept to a Production Variance account — the only variance Carbon books for a job."
+
+msgid "The response from Onshape was missing required parameters. Check the private app's redirect URL, then save the integration settings again."
+msgstr "The response from Onshape was missing required parameters. Check the private app's redirect URL, then save the integration settings again."
 
 msgid "The response from Onshape was missing required parameters. Try connecting again."
 msgstr "The response from Onshape was missing required parameters. Try connecting again."

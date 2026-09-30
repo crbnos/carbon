@@ -19,7 +19,7 @@ export default defineConfig({
         "packages/react/src",
         "packages/form/src",
         "packages/printing/src/ui",
-        "packages/glossary/src",
+        "docs/content/src/glossary",
         "packages/onboarding/src",
         "packages/ee/src/workflows"
       ],

@@ -1,3 +1,4 @@
+import type { TermId } from "@carbon/content/glossary";
 import type { WorkflowCatalog } from "@carbon/ee/workflows";
 import {
   buildCatalogOverlay,
@@ -7,7 +8,6 @@ import {
 } from "@carbon/ee/workflows";
 import { WORKFLOW_FIELD_HELP } from "@carbon/ee/workflows/help";
 import { WORKFLOW_LABELS } from "@carbon/ee/workflows/labels";
-import type { TermId } from "@carbon/glossary";
 import { useLingui } from "@lingui/react";
 import { useLingui as useLinguiMacro } from "@lingui/react/macro";
 import { useMemo } from "react";

@@ -10,9 +10,9 @@ import { action } from "./$id.reject";
 // handling (a failed write-off must NOT silently proceed to NCR creation, whose
 // Use-As-Is restore assumes the reject already wrote the value off).
 
-// @carbon/glossary's terms.ts evaluates Lingui `msg` macros at module load,
+// @carbon/content/glossary's terms.ts evaluates Lingui `msg` macros at module load,
 // which vitest doesn't transform; the route graph pulls it in transitively.
-vi.mock("@carbon/glossary", () => ({
+vi.mock("@carbon/content/glossary", () => ({
   terms: {},
   getEntry: vi.fn(),
   lookupEntry: vi.fn(),
