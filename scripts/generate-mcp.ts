@@ -46,6 +46,40 @@ export async function generateToolMetadata(): Promise<void> {
         auditDrops.push({ toolName, table, dropped }),
     });
 
+  // Refuse BEFORE writing. Every `z.infer` param must resolve NATIVELY — the
+  // real validator, converted by zod itself. There is no longer a source-text
+  // fallback to absorb a module that will not load: it published a lossy
+  // contract, and measured over the real tree it never once fired. A manifest
+  // with `{}` where a real schema belongs invites an MCP client to guess field
+  // names, and a guessed field reaches the insert and fails with PGRST204 — so
+  // leaving the previous good manifest in place beats overwriting it with one
+  // nobody can trust.
+  const unresolved = resolutions.filter((r) => r.how !== "native");
+  const failures: string[] = [];
+  if (registryStats.moduleErrors.length > 0) {
+    console.error(
+      `\n  ✗ ${registryStats.moduleErrors.length} module(s) failed to load:`
+    );
+    for (const e of registryStats.moduleErrors) {
+      console.error(`      ${e.module}: ${e.error}`);
+    }
+    failures.push(
+      `${registryStats.moduleErrors.length} module(s) failed to load`
+    );
+  }
+  if (unresolved.length > 0) {
+    const unique = [...new Set(unresolved.map((f) => f.validatorName))];
+    console.error(
+      `\n  ✗ ${unresolved.length} param(s) could not resolve their validator: ${unique.slice(0, 12).join(", ")}`
+    );
+    failures.push(`${unresolved.length} param(s) have no validator schema`);
+  }
+  if (failures.length > 0) {
+    throw new Error(
+      `generate:mcp refused to publish a lossy manifest — ${failures.join("; ")}. Nothing was written.`
+    );
+  }
+
   // No timestamp: the file must be a pure function of the sources so repeated
   // runs on an unchanged tree are byte-identical.
   const metadata = {
@@ -80,22 +114,12 @@ export async function generateToolMetadata(): Promise<void> {
     }
   }
 
-  // Schema provenance. A validator that fell back to source-text parsing still
-  // produces a manifest entry, so surface it rather than letting the degrade pass
-  // silently — that fallback is the only path that can publish a lossy schema.
-  const fallbacks = resolutions.filter((r) => r.how !== "native");
   console.log(
     `  Schemas: ${registryStats.validatorsConverted} validators converted from ${registryStats.modulesLoaded}/${MODULE_LIST.length} modules`
   );
   console.log(
     `  Responses: ${responseStats.derived}/${responseStats.functions} reflected from return types (${responseStats.empty} yielded nothing usable)`
   );
-  if (registryStats.moduleErrors.length > 0) {
-    console.warn(`  ⚠ ${registryStats.moduleErrors.length} module(s) failed to load:`);
-    for (const e of registryStats.moduleErrors) {
-      console.warn(`      ${e.module}: ${e.error}`);
-    }
-  }
   if (registryStats.conversionFailures.length > 0) {
     console.warn(
       `  ⚠ ${registryStats.conversionFailures.length} validator(s) failed to convert:`
@@ -103,12 +127,6 @@ export async function generateToolMetadata(): Promise<void> {
     for (const f of registryStats.conversionFailures.slice(0, 10)) {
       console.warn(`      ${f.module}.${f.name}: ${f.error}`);
     }
-  }
-  if (fallbacks.length > 0) {
-    const unique = [...new Set(fallbacks.map((f) => f.validatorName))];
-    console.warn(
-      `  ⚠ ${fallbacks.length} param(s) used the source-text fallback: ${unique.slice(0, 12).join(", ")}`
-    );
   }
 }
 

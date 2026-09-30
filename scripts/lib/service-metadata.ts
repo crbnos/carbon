@@ -412,7 +412,6 @@ function parseExportedFunctions(content: string): ParsedFunction[] {
  * — a guessed `contact.phone` reached the insert and failed with PGRST204.
  */
 type TypeResolveContext = SchemaBuildContext & {
-  modelsContent: string | null;
   /** Module-local sources searched for `type X = …` / `interface X {…}`. */
   aliasSources?: string[];
   /** Cycle guard for alias-to-alias references. */
@@ -790,13 +789,6 @@ function lookupValidatorSchema(
     ctx.onResolved?.(validatorName, "native");
     return native as Record<string, unknown>;
   }
-  if (ctx.modelsContent) {
-    const textual = parseValidatorFields(validatorName, ctx.modelsContent);
-    if (textual) {
-      ctx.onResolved?.(validatorName, "textual");
-      return textual;
-    }
-  }
   ctx.onResolved?.(validatorName, "unresolved");
   return null;
 }
@@ -900,51 +892,6 @@ function splitObjectFields(inner: string): string[] {
 // Validator resolution
 // ---------------------------------------------------------------------------
 
-function parseValidatorFields(
-  validatorName: string,
-  modelsContent: string,
-  seen: Set<string> = new Set()
-): Record<string, unknown> | null {
-  // Cycle guard for mutually-referential validators.
-  if (seen.has(validatorName)) return null;
-  seen = new Set(seen).add(validatorName);
-
-  const rhs = extractValidatorRhs(validatorName, modelsContent);
-  if (rhs === null) return null;
-
-  const properties: Record<string, unknown> = {};
-  const required: string[] = [];
-  const mergeIn = (sub: Record<string, unknown> | null) => {
-    if (!sub) return;
-    Object.assign(properties, sub.properties as Record<string, unknown>);
-    for (const r of (sub.required as string[] | undefined) ?? []) {
-      if (!required.includes(r)) required.push(r);
-    }
-  };
-
-  // Base validators pulled in by `Base.merge(...)` / `Base.extend(...)` — resolve
-  // each referenced `*Validator` (same file) and fold its fields in first, so the
-  // extension below can override. This is what makes
-  // `applyX(itemValidator.merge(z.object({...})))` resolvable instead of opaque.
-  const refs = new Set(
-    (rhs.match(/\b\w+Validator\b/g) ?? []).filter((n) => n !== validatorName)
-  );
-  for (const ref of refs) {
-    mergeIn(parseValidatorFields(ref, modelsContent, seen));
-  }
-
-  // This validator's own object literal — for a `.merge(z.object({...}))` /
-  // wrapped chain the FIRST z.object is the extension; for a plain
-  // `z.object({...})` it is the whole thing. Wrappers (`applyX(...)`, `.refine`,
-  // `.superRefine`) are transparent to this scan.
-  mergeIn(parseFirstZObject(rhs));
-
-  if (Object.keys(properties).length === 0) return null;
-  const result: Record<string, unknown> = { type: "object", properties };
-  if (required.length > 0) result.required = required;
-  return result;
-}
-
 /**
  * Resolve a bare type-alias name against the module's own sources (service
  * file, `types.ts`, models, and the shared equivalents): `type X = <rhs>` and
@@ -1006,114 +953,6 @@ function resolveTypeAlias(
     }
   }
   return null;
-}
-
-// The assignment expression of `export const {name} = <expr>;`, captured to the
-// first top-level `;` (arrow-guarded) so a `*Validator` reference or `z.object`
-// from a later declaration is never pulled in.
-function extractValidatorRhs(
-  validatorName: string,
-  modelsContent: string
-): string | null {
-  const regex = new RegExp(`export\\s+const\\s+${validatorName}\\s*=\\s*`);
-  const match = regex.exec(modelsContent);
-  if (!match) return null;
-  const start = match.index + match[0].length;
-
-  let depth = 0;
-  for (let i = start; i < modelsContent.length; i++) {
-    const ch = modelsContent[i];
-    if ("({[<".includes(ch)) depth++;
-    else if (")}]>".includes(ch) && !isArrowClose(modelsContent, i)) depth--;
-    else if (ch === ";" && depth === 0) {
-      return modelsContent.substring(start, i);
-    }
-  }
-  return modelsContent.substring(start);
-}
-
-// Parse the first `z.object({ ... })` in an expression into a JSON-Schema object.
-function parseFirstZObject(expr: string): Record<string, unknown> | null {
-  const idx = expr.indexOf("z.object(");
-  if (idx === -1) return null;
-  const braceStart = expr.indexOf("{", idx);
-  if (braceStart === -1) return null;
-  const braceEnd = findMatchingBrace(expr, braceStart);
-  const inner = expr.substring(braceStart + 1, braceEnd).trim();
-
-  const properties: Record<string, unknown> = {};
-  const required: string[] = [];
-
-  // Validator fields are comma-separated, not semicolon-separated
-  const fields = splitAtTopLevel(inner, ",");
-
-  for (const field of fields) {
-    const f = field.trim();
-    if (!f || f.startsWith("//")) continue;
-
-    const colonMatch = f.match(/^(\w+)\s*:/);
-    if (!colonMatch) continue;
-    const fieldName = colonMatch[1];
-
-    if (CONTEXT_PARAMS.has(fieldName)) continue;
-
-    const zodExpr = f.substring(colonMatch[0].length).trim();
-    const schema = zodExprToJsonSchema(zodExpr);
-    const isOptional =
-      zodExpr.includes(".optional()") ||
-      zodExpr.includes(".nullable()") ||
-      zodExpr.startsWith("zfd.text(") ||
-      zodExpr.startsWith("zfd.numeric(") ||
-      zodExpr.includes(".default(");
-
-    properties[fieldName] = schema;
-    if (!isOptional) required.push(fieldName);
-  }
-
-  if (Object.keys(properties).length === 0) return null;
-  const result: Record<string, unknown> = { type: "object", properties };
-  if (required.length > 0) result.required = required;
-  return result;
-}
-
-function zodExprToJsonSchema(expr: string): Record<string, unknown> {
-  const e = expr.trim();
-
-  if (e.includes("z.enum(")) {
-    const enumMatch = e.match(/z\.enum\(\[([^\]]+)\]\)/);
-    if (enumMatch) {
-      const values = enumMatch[1]
-        .split(",")
-        .map((s) => s.trim().replace(/^["']|["']$/g, ""))
-        .filter(Boolean);
-      return { type: "string", enum: values };
-    }
-  }
-
-  if (e.startsWith("z.array(")) {
-    // Resolve the element schema so the array is well-formed rather than a bare
-    // `{type:"array"}` a caller can't fill.
-    const open = e.indexOf("(");
-    const close = findMatchingBrace(e, open);
-    const inner = e.substring(open + 1, close).trim();
-    return { type: "array", items: inner ? zodExprToJsonSchema(inner) : {} };
-  }
-  if (e.includes("z.number()")) return { type: "number" };
-  if (e.includes("z.boolean()")) return { type: "boolean" };
-  if (e.includes("z.string()") || e.startsWith("zfd.text("))
-    return { type: "string" };
-  if (e.includes("z.any()")) return {};
-  if (e.startsWith("zfd.numeric(")) return { type: "number" };
-  if (e.startsWith("z.preprocess(")) {
-    // A preprocessed enum whose values aren't an inline array can't be
-    // enumerated (the top-of-function z.enum check already ran on this same
-    // expr), so treat it as a string. Recursing on `e` here looped forever.
-    if (e.includes("z.enum(")) return { type: "string" };
-    if (e.includes("z.number()")) return { type: "number" };
-    return { type: "string" };
-  }
-
-  return { type: "string" };
 }
 
 // ---------------------------------------------------------------------------
@@ -1384,11 +1223,10 @@ function generateDescription(funcName: string): string {
 
 function buildToolSchema(
   func: ParsedFunction,
-  modelsContent: string | null,
   ctx: SchemaBuildContext = {}
 ): { schema: Record<string, unknown>; paramCount: number } {
   const userParams = func.params.filter((p) => !CONTEXT_PARAMS.has(p.name));
-  const resolveCtx: TypeResolveContext = { ...ctx, modelsContent };
+  const resolveCtx: TypeResolveContext = { ...ctx };
 
   if (userParams.length === 0) {
     return { schema: { type: "object", properties: {} }, paramCount: 0 };
@@ -1482,19 +1320,9 @@ function buildToolSchema(
         return { schema: native, paramCount: propCount };
       }
 
-      // Fallback: parse the validator's source text. Reached when the module failed
-      // to load or zod could not represent the validator — never a silent downgrade,
-      // the caller records it.
-      if (modelsContent) {
-        const resolved = parseValidatorFields(validatorName, modelsContent);
-        if (resolved) {
-          ctx.onResolved?.(validatorName, "textual");
-          const propCount = Object.keys(
-            (resolved.properties as Record<string, unknown>) || {}
-          ).length;
-          return { schema: resolved, paramCount: propCount };
-        }
-      }
+      // No fallback. A validator that cannot be loaded is reported as
+      // `unresolved` and the generator FAILS — see the note on
+      // ValidatorResolution.
       ctx.onResolved?.(validatorName, "unresolved");
     }
 
@@ -1610,7 +1438,19 @@ function loadModelsContent(mod: string): string | null {
 // ---------------------------------------------------------------------------
 
 /** How a `z.infer<typeof X>` param's schema was obtained, for the accuracy report. */
-export type ValidatorResolution = "native" | "textual" | "unresolved";
+/**
+ * How a `z.infer<typeof v>` parameter's schema was obtained. `native` is the only
+ * good answer: the REAL validator, converted by zod's own `z.toJSONSchema`.
+ *
+ * There used to be a `textual` route that re-parsed the validator's SOURCE TEXT
+ * when the module would not load — a hand-rolled zod-expression evaluator that
+ * could not see enum values, numeric bounds or nested shapes, so it published a
+ * lossy contract to MCP, the v1 OpenAPI spec and the docs. Measured over the real
+ * tree it fired ZERO times out of 342, so it was 145 lines of the most fragile
+ * code in this file standing in for a case that never happens. It is gone;
+ * `unresolved` now fails the generator instead of degrading quietly.
+ */
+export type ValidatorResolution = "native" | "unresolved";
 
 /** Per-module state threaded into `buildToolSchema`. */
 interface SchemaBuildContext {
@@ -1748,7 +1588,7 @@ export function buildAllToolMetadata(opts: BuildOptions = {}): ManifestEntry[] {
         func.name,
         classification
       );
-      const { schema, paramCount } = buildToolSchema(func, modelsContent, {
+      const { schema, paramCount } = buildToolSchema(func, {
         module: mod,
         validators: opts.validators,
         aliasSources,
