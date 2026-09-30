@@ -4,7 +4,7 @@
  *
  * Two consumers, one stripper (keep it that way):
  *  - `./agent-kb` — the in-app agent's corpus.
- *  - `docs/app/llms.txt` + `docs/app/llms-full.txt` (raw text via Fumadocs, `docs/lib/corpus.ts`) — the public
+ *  - `docs/app/llms.txt` + `docs/app/llms-full.txt` (raw text read by `docs/lib/corpus.ts`) — the public
  *    index/corpus for AI crawlers and assistants (llmstxt.org convention).
  *
  * Pure — no fs — so it is safe in any bundle.

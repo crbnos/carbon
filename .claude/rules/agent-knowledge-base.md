@@ -15,7 +15,8 @@ paths:
 | Consumer | Reads | How |
 |---|---|---|
 | Docs site | `mdx/docs`, `mdx/guides` | Fumadocs `dir: "../packages/content/mdx/…"` in `docs/source.config.ts`; `turbopack.root` is the repo root so Next compiles files outside `docs/` |
-| `/llms.txt`, `/llms-full.txt` | same MDX | `parsePage` from `@carbon/content/corpus` over Fumadocs' own `page.data.getText("raw")` (`docs/lib/corpus.ts`) |
+| `/llms.txt`, `/llms-full.txt` | same MDX | `parsePage` from `@carbon/content/corpus` over each page's file, read in `docs/lib/corpus.ts` (not `getText("raw")`: fumadocs-mdx ≥ 15.2.1 drops the leading `../` of a content dir outside the app) |
+| Docs site search (`/api/search`) | same MDX | Fumadocs `createSearchAPI` — zbsearch since `fumadocs-core` 16.14, the same engine as MCP `search_tools` |
 | In-app agent (`search_docs`, `read_doc`) | same MDX | `agentDocs` from `@carbon/content/agent-kb` — `import.meta.glob(..., { eager: true })` bakes every page into the ERP server build |
 | ERP/MES field help, docs `<Term>` | `src/glossary` | `@carbon/content/glossary` |
 | Anything linking to the docs | `src/links.ts` | `DOCS_URL`, `docUrl()` |
