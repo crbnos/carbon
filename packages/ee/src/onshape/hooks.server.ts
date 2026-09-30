@@ -1,7 +1,11 @@
 import { getAppUrl } from "@carbon/auth";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { getOnshapeClient } from "./lib/client";
-import { getOnshapeIntegration } from "./lib/connection";
+import {
+  getOnshapeIntegration,
+  type OnshapeIntegrationId
+} from "./lib/connection";
+import { patchOnshapeCompanyId } from "./lib/state";
 
 // The release webhook's callback path for a company. We match/deregister by this
 // PATH (not the full URL) so a host change — localhost, a tunnel, or the prod
@@ -44,17 +48,19 @@ async function resolveAndStoreOnshapeCompanyId(
   const resolved = companies[0]?.id;
   if (!resolved) return null;
 
-  const update = await carbon
-    .from("companyIntegration")
-    .update({ metadata: { ...metadata, onshapeCompanyId: resolved } })
-    .eq("id", integrationId)
-    .eq("companyId", companyId);
-  if (update.error) {
+  try {
+    await patchOnshapeCompanyId(
+      carbon,
+      companyId,
+      integrationId as OnshapeIntegrationId,
+      resolved
+    );
+  } catch (error) {
     // Non-fatal: we can still register with the resolved id; the jobs just fall
     // back to their own getCompanies() resolve if the store didn't stick.
     console.error(
       "onshape: failed to persist resolved Onshape company id",
-      update.error
+      error
     );
   }
   return resolved;
