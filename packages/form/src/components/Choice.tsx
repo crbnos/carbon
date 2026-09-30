@@ -1,4 +1,4 @@
-import type { TermId } from "@carbon/glossary";
+import type { TermId } from "@carbon/content/glossary";
 import { cn, LabelWithHelp, RadioGroup, RadioGroupItem } from "@carbon/react";
 import type { ReactNode } from "react";
 

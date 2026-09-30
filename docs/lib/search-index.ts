@@ -6,7 +6,7 @@ import {
   getTermText,
   glossaryEntries,
   termSlug,
-} from "@carbon/glossary";
+} from "@carbon/content/glossary";
 import { guideSource, source } from "@/lib/source";
 import { operationLabel, toolModules } from "@/lib/tools-data";
 

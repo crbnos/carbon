@@ -3,7 +3,7 @@ import {
   getTermText,
   lookupEntry,
   termSlug
-} from "@carbon/glossary";
+} from "@carbon/content/glossary";
 import { Popover, PopoverContent, PopoverTrigger } from "@carbon/react";
 import type { ReactNode } from "react";
 

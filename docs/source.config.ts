@@ -3,7 +3,7 @@ import { defineConfig, defineDocs } from "fumadocs-mdx/config";
 import { z } from "zod";
 
 export const docs = defineDocs({
-  dir: "content/docs",
+  dir: "../packages/content/mdx/docs",
   docs: {
     // Optional `plan` frontmatter — when set (e.g. "Business"), the page template
     // renders a PlanBadge inline with the title to flag a paid-tier feature.
@@ -16,7 +16,7 @@ export const docs = defineDocs({
 // The editorial Guide. Same MDX pipeline as the Reference, but each file is a
 // chapter: `label` is its display marker (e.g. "(I)") and `index` orders the rail.
 export const guide = defineDocs({
-  dir: "content/guides",
+  dir: "../packages/content/mdx/guides",
   docs: {
     schema: pageSchema.extend({
       label: z.string(),
@@ -34,7 +34,7 @@ export const guide = defineDocs({
 // Remove <AgentContext> blocks from the MDX AST before fumadocs' remark-structure
 // runs. AgentContext is agent-only: this keeps its content out of the rendered page
 // AND out of the site search index (structuredData). The in-app agent still receives
-// it — scripts/generate-agent-kb.ts reads the raw MDX source, not the compiled tree.
+// it — @carbon/content/agent-kb reads the raw MDX source, not the compiled tree.
 // fumadocs splices user remarkPlugins before remarkStructure, so this runs first.
 function remarkStripAgentContext() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

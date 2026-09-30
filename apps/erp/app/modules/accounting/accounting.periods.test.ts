@@ -8,10 +8,10 @@ vi.mock("~/modules/settings", () => ({
   getNextSequence: vi.fn()
 }));
 
-// @carbon/glossary's terms.ts evaluates Lingui `msg` macros at module load,
+// @carbon/content/glossary's terms.ts evaluates Lingui `msg` macros at module load,
 // which vitest doesn't transform. Nothing under test touches the glossary, so
 // stub the whole package.
-vi.mock("@carbon/glossary", () => ({
+vi.mock("@carbon/content/glossary", () => ({
   getDefinitionText: () => "",
   getEntry: () => undefined,
   getTermText: () => "",

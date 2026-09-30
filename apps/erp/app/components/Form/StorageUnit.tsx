@@ -10,8 +10,8 @@
 // single-purpose interaction handled by `StorageUnitParentSelect`, local to the
 // Storage Unit form.
 
+import type { TermId } from "@carbon/content/glossary";
 import { CreatableCombobox } from "@carbon/form";
-import type { TermId } from "@carbon/glossary";
 import {
   CreatableCombobox as CreatableComboboxBase,
   useDisclosure

@@ -20,7 +20,7 @@
     "@carbon/env": "workspace:*",
     "@carbon/files": "workspace:*",
     "@carbon/form": "workspace:*",
-    "@carbon/glossary": "workspace:*",
+    "@carbon/content": "workspace:*",
     "@carbon/jobs": "workspace:*",
     "@carbon/kv": "workspace:*",
     "@carbon/lib": "workspace:*",

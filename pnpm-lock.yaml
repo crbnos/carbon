@@ -476,6 +476,9 @@ importers:
       '@carbon/auth':
         specifier: workspace:*
         version: link:../../packages/auth
+      '@carbon/content':
+        specifier: workspace:*
+        version: link:../../packages/content
       '@carbon/database':
         specifier: workspace:*
         version: link:../../packages/database
@@ -485,9 +488,6 @@ importers:
       '@carbon/form':
         specifier: workspace:*
         version: link:../../packages/form
-      '@carbon/glossary':
-        specifier: workspace:*
-        version: link:../../packages/glossary
       '@carbon/kv':
         specifier: workspace:*
         version: link:../../packages/kv
@@ -660,6 +660,9 @@ importers:
       '@carbon/auth':
         specifier: workspace:*
         version: link:../../packages/auth
+      '@carbon/content':
+        specifier: workspace:*
+        version: link:../../packages/content
       '@carbon/database':
         specifier: workspace:*
         version: link:../../packages/database
@@ -678,9 +681,6 @@ importers:
       '@carbon/form':
         specifier: workspace:*
         version: link:../../packages/form
-      '@carbon/glossary':
-        specifier: workspace:*
-        version: link:../../packages/glossary
       '@carbon/jobs':
         specifier: workspace:*
         version: link:../../packages/jobs
@@ -1773,9 +1773,9 @@ importers:
 
   docs:
     dependencies:
-      '@carbon/glossary':
+      '@carbon/content':
         specifier: workspace:*
-        version: link:../packages/glossary
+        version: link:../packages/content
       '@carbon/utils':
         specifier: workspace:*
         version: link:../packages/utils
@@ -2062,6 +2062,37 @@ importers:
       tsup:
         specifier: 'catalog:'
         version: 8.5.1(jiti@2.7.0)(postcss@8.5.18)(tsx@4.21.0)(typescript@5.8.3)(yaml@2.8.3)
+
+  packages/content:
+    dependencies:
+      '@lingui/core':
+        specifier: 'catalog:'
+        version: 5.9.4(@lingui/babel-plugin-lingui-macro@5.9.4(babel-plugin-macros@3.1.0)(typescript@5.8.3))(babel-plugin-macros@3.1.0)
+    devDependencies:
+      '@carbon/config':
+        specifier: workspace:*
+        version: link:../config
+      '@lingui/vite-plugin':
+        specifier: 'catalog:'
+        version: 5.9.4(babel-plugin-macros@3.1.0)(typescript@5.8.3)(vite@8.0.16(@types/node@24.12.2)(esbuild@0.28.0)(jiti@2.7.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.8.3))
+      '@types/node':
+        specifier: 'catalog:'
+        version: 24.12.2
+      rimraf:
+        specifier: 'catalog:'
+        version: 5.0.10
+      typescript:
+        specifier: 'catalog:'
+        version: 5.8.3
+      vite:
+        specifier: 'catalog:'
+        version: 8.0.16(@types/node@24.12.2)(esbuild@0.28.0)(jiti@2.7.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.8.3)
+      vite-plugin-babel-macros:
+        specifier: 'catalog:'
+        version: 1.0.6(vite@8.0.16(@types/node@24.12.2)(esbuild@0.28.0)(jiti@2.7.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.8.3))
+      vitest:
+        specifier: 'catalog:'
+        version: 4.1.6(@opentelemetry/api@1.9.0)(@types/node@24.12.2)(vite@8.0.16(@types/node@24.12.2)(esbuild@0.28.0)(jiti@2.7.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.8.3))
 
   packages/database:
     dependencies:
@@ -2462,9 +2493,9 @@ importers:
       '@carbon/config':
         specifier: workspace:*
         version: link:../config
-      '@carbon/glossary':
+      '@carbon/content':
         specifier: workspace:*
-        version: link:../glossary
+        version: link:../content
       '@logtape/logtape':
         specifier: 'catalog:'
         version: 2.2.3
@@ -2554,9 +2585,9 @@ importers:
 
   packages/form:
     dependencies:
-      '@carbon/glossary':
+      '@carbon/content':
         specifier: workspace:*
-        version: link:../glossary
+        version: link:../content
       '@carbon/logger':
         specifier: workspace:*
         version: link:../logger
@@ -2651,34 +2682,6 @@ importers:
       zod-form-data:
         specifier: 'catalog:'
         version: 3.0.3(zod@4.5.4)
-
-  packages/glossary:
-    dependencies:
-      '@lingui/core':
-        specifier: 'catalog:'
-        version: 5.9.4(@lingui/babel-plugin-lingui-macro@5.9.4(babel-plugin-macros@3.1.0)(typescript@5.8.3))(babel-plugin-macros@3.1.0)
-    devDependencies:
-      '@carbon/config':
-        specifier: workspace:*
-        version: link:../config
-      '@lingui/vite-plugin':
-        specifier: 'catalog:'
-        version: 5.9.4(babel-plugin-macros@3.1.0)(typescript@5.8.3)(vite@7.3.5(@types/node@26.1.0)(jiti@2.7.0)(lightningcss@1.32.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.8.3))
-      rimraf:
-        specifier: 'catalog:'
-        version: 5.0.10
-      tsup:
-        specifier: 'catalog:'
-        version: 8.5.1(jiti@2.7.0)(postcss@8.5.18)(tsx@4.21.0)(typescript@5.8.3)(yaml@2.8.3)
-      typescript:
-        specifier: 'catalog:'
-        version: 5.8.3
-      vite-plugin-babel-macros:
-        specifier: 'catalog:'
-        version: 1.0.6(vite@7.3.5(@types/node@26.1.0)(jiti@2.7.0)(lightningcss@1.32.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.8.3))
-      vitest:
-        specifier: 'catalog:'
-        version: 4.1.6(@opentelemetry/api@1.9.0)(@types/node@26.1.0)(vite@7.3.5(@types/node@26.1.0)(jiti@2.7.0)(lightningcss@1.32.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.8.3))
 
   packages/harness:
     devDependencies:
@@ -3197,15 +3200,15 @@ importers:
       '@base-ui/react':
         specifier: 1.6.0
         version: 1.6.0(@types/react@18.3.28)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)
+      '@carbon/content':
+        specifier: workspace:*
+        version: link:../content
       '@carbon/database':
         specifier: workspace:*
         version: link:../database
       '@carbon/env':
         specifier: workspace:*
         version: link:../env
-      '@carbon/glossary':
-        specifier: workspace:*
-        version: link:../glossary
       '@carbon/logger':
         specifier: workspace:*
         version: link:../logger
@@ -18670,11 +18673,11 @@ snapshots:
     transitivePeerDependencies:
       - typescript
 
-  '@lingui/vite-plugin@5.9.4(babel-plugin-macros@3.1.0)(typescript@5.8.3)(vite@7.3.5(@types/node@26.1.0)(jiti@2.7.0)(lightningcss@1.32.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.8.3))':
+  '@lingui/vite-plugin@5.9.4(babel-plugin-macros@3.1.0)(typescript@5.8.3)(vite@8.0.16(@types/node@24.12.2)(esbuild@0.28.0)(jiti@2.7.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.8.3))':
     dependencies:
       '@lingui/cli': 5.9.4(babel-plugin-macros@3.1.0)(typescript@5.8.3)
       '@lingui/conf': 5.9.4(typescript@5.8.3)
-      vite: 7.3.5(@types/node@26.1.0)(jiti@2.7.0)(lightningcss@1.32.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.8.3)
+      vite: 8.0.16(@types/node@24.12.2)(esbuild@0.28.0)(jiti@2.7.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.8.3)
     transitivePeerDependencies:
       - babel-plugin-macros
       - supports-color
@@ -25124,6 +25127,14 @@ snapshots:
       magic-string: 0.30.21
     optionalDependencies:
       vite: 7.3.5(@types/node@26.1.0)(jiti@2.7.0)(lightningcss@1.32.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.8.3)
+
+  '@vitest/mocker@4.1.6(vite@8.0.16(@types/node@24.12.2)(esbuild@0.28.0)(jiti@2.7.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.8.3))':
+    dependencies:
+      '@vitest/spy': 4.1.6
+      estree-walker: 3.0.3
+      magic-string: 0.30.21
+    optionalDependencies:
+      vite: 8.0.16(@types/node@24.12.2)(esbuild@0.28.0)(jiti@2.7.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.8.3)
 
   '@vitest/mocker@4.1.6(vite@8.0.16(@types/node@26.1.0)(esbuild@0.27.7)(jiti@2.7.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.8.3))':
     dependencies:
@@ -31968,17 +31979,6 @@ snapshots:
       - tsx
       - yaml
 
-  vite-plugin-babel-macros@1.0.6(vite@7.3.5(@types/node@26.1.0)(jiti@2.7.0)(lightningcss@1.32.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.8.3)):
-    dependencies:
-      '@babel/core': 7.29.0
-      '@babel/plugin-syntax-jsx': 7.28.6(@babel/core@7.29.0)
-      '@babel/plugin-syntax-typescript': 7.28.6(@babel/core@7.29.0)
-      '@types/babel__core': 7.20.5
-      babel-plugin-macros: 3.1.0
-      vite: 7.3.5(@types/node@26.1.0)(jiti@2.7.0)(lightningcss@1.32.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.8.3)
-    transitivePeerDependencies:
-      - supports-color
-
   vite-plugin-babel-macros@1.0.6(vite@8.0.16(@types/node@24.12.2)(esbuild@0.28.0)(jiti@2.7.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.8.3)):
     dependencies:
       '@babel/core': 7.29.0
@@ -32222,6 +32222,34 @@ snapshots:
       tinyglobby: 0.2.17
       tinyrainbow: 3.1.0
       vite: 7.3.5(@types/node@24.12.2)(jiti@2.7.0)(lightningcss@1.32.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.8.3)
+      why-is-node-running: 2.3.0
+    optionalDependencies:
+      '@opentelemetry/api': 1.9.0
+      '@types/node': 24.12.2
+    transitivePeerDependencies:
+      - msw
+
+  vitest@4.1.6(@opentelemetry/api@1.9.0)(@types/node@24.12.2)(vite@8.0.16(@types/node@24.12.2)(esbuild@0.28.0)(jiti@2.7.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.8.3)):
+    dependencies:
+      '@vitest/expect': 4.1.6
+      '@vitest/mocker': 4.1.6(vite@8.0.16(@types/node@24.12.2)(esbuild@0.28.0)(jiti@2.7.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.8.3))
+      '@vitest/pretty-format': 4.1.6
+      '@vitest/runner': 4.1.6
+      '@vitest/snapshot': 4.1.6
+      '@vitest/spy': 4.1.6
+      '@vitest/utils': 4.1.6
+      es-module-lexer: 2.3.0
+      expect-type: 1.3.0
+      magic-string: 0.30.21
+      obug: 2.1.1
+      pathe: 2.0.3
+      picomatch: 4.0.4
+      std-env: 4.0.0
+      tinybench: 2.9.0
+      tinyexec: 1.2.4
+      tinyglobby: 0.2.17
+      tinyrainbow: 3.1.0
+      vite: 8.0.16(@types/node@24.12.2)(esbuild@0.28.0)(jiti@2.7.0)(terser@5.48.0)(tsx@4.21.0)(yaml@2.8.3)
       why-is-node-running: 2.3.0
     optionalDependencies:
       '@opentelemetry/api': 1.9.0

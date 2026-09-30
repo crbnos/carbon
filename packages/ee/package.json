@@ -105,7 +105,7 @@
   "devDependencies": {
     "@carbon/api": "workspace:*",
     "@carbon/config": "workspace:*",
-    "@carbon/glossary": "workspace:*",
+    "@carbon/content": "workspace:*",
     "@logtape/logtape": "catalog:",
     "@logtape/testing": "catalog:",
     "@types/nodemailer": "6.4.21",

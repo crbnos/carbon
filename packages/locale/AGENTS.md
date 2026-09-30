@@ -51,5 +51,5 @@ Supported runtime locales are `en`, `fr`, `de`, `es`, `it`, `ja`, `pl`, `pt`, `r
 
 - `.claude/rules/i18n-lingui-system.md` — full i18n system docs, marking patterns, gotchas
 - `lingui.config.js` (root) — catalog config, source paths, locale list
-- `packages/locale/locales/glossary.json` and `@carbon/glossary` — approved manufacturing terminology (terms use `msg` descriptors for i18n)
+- `packages/locale/locales/glossary.json` and `@carbon/content/glossary` — approved manufacturing terminology (terms use `msg` descriptors for i18n)
 - `apps/{erp,mes}/app/services/lingui.ts` — isomorphic catalog loading (`preloadCatalog` / `getCatalog` / `useCatalog`)

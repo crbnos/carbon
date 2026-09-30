@@ -25,7 +25,7 @@ Per-company logical backup, in-place restore (with revert), and onboarding-seed
 from a committed demo template. **Inngest tasks, NOT edge functions** — the old
 `import-company` / `finalize-import` / `revert-import` edge functions and the
 `company-revert` / `publish-demo` / `refresh-demo-catalog` jobs were deleted; this
-is the replacement. Reader-facing docs: `docs/content/docs/platform/backups.mdx`
+is the replacement. Reader-facing docs: `packages/content/mdx/docs/platform/backups.mdx`
 (kept deliberately impl-free — keep internals here, not there).
 
 User-facing rules of the feature: backups require `settings` update permission

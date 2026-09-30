@@ -1,5 +1,5 @@
+import type { TermId } from "@carbon/content/glossary";
 import { useControlField, useField } from "@carbon/form";
-import type { TermId } from "@carbon/glossary";
 import {
   Button,
   CommandTrigger,
