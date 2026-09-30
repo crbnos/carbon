@@ -6250,6 +6250,12 @@ msgstr "Description of Change"
 msgid "Description of Issue"
 msgstr "Description of Issue"
 
+msgid "Detach"
+msgstr "Detach"
+
+msgid "Detach to edit them in Carbon."
+msgstr "Detach to edit them in Carbon."
+
 msgid "Detail"
 msgstr "Detail"
 
@@ -10087,6 +10093,9 @@ msgstr "Last name"
 msgid "Last Name"
 msgstr "Last Name"
 
+msgid "Last pushed {lastPushed}."
+msgstr "Last pushed {lastPushed}."
+
 msgid "Last Quarter"
 msgstr "Last Quarter"
 
@@ -10303,6 +10312,9 @@ msgstr "Link this Carbon customer to one of them, or create a separate Stripe cu
 
 msgid "Link to sales order line"
 msgstr "Link to sales order line"
+
+msgid "Linked"
+msgstr "Linked"
 
 #. placeholder {0}: r.linkedSum
 #. placeholder {1}: r.quantity
@@ -11248,6 +11260,9 @@ msgstr "Name"
 
 msgid "Name an internal project owner with decision authority"
 msgstr "Name an internal project owner with decision authority"
+
+msgid "Name and description are managed in Onshape."
+msgstr "Name and description are managed in Onshape."
 
 msgid "Names fill in wherever those roles are referenced across the hub."
 msgstr "Names fill in wherever those roles are referenced across the hub."
@@ -12697,6 +12712,9 @@ msgstr "Open in change notices {ids}. Release them to create new versions or rev
 
 msgid "Open in MES"
 msgstr "Open in MES"
+
+msgid "Open in Onshape"
+msgstr "Open in Onshape"
 
 msgid "Open Issues"
 msgstr "Open Issues"

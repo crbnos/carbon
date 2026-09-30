@@ -5,7 +5,7 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { getLogger } from "@carbon/logger";
-import { unchecked } from "@carbon/utils";
+import { datetime, unchecked } from "@carbon/utils";
 import type { ActionFunctionArgs } from "react-router";
 import type { InventoryItemType } from "~/modules/items";
 import { deriveItemMethodUpdate } from "~/modules/items";
@@ -18,6 +18,7 @@ import {
   updateItemMethodAndSourcing,
   updateMaterialProperties
 } from "~/modules/items/items.service";
+import { checkItemIdentityEdit } from "~/modules/items/onshape-lock";
 import { getDatabaseClient } from "~/services/database.server";
 
 const logger = getLogger("erp", "update");
@@ -74,7 +75,24 @@ export async function action({ request }: ActionFunctionArgs) {
       return result;
     }
     case "name":
-    case "description":
+    case "description": {
+      const identity = await checkItemIdentityEdit(client, {
+        companyId,
+        itemIds: items as string[],
+        ...(field === "name" ? { name: value } : { description: value })
+      });
+      if (identity.error) return { error: identity.error, data: null };
+
+      return await client
+        .from("item")
+        .update({
+          [field]: value,
+          updatedBy: userId,
+          updatedAt: datetime.timestamp()
+        })
+        .in("id", items as string[])
+        .eq("companyId", companyId);
+    }
     case "mpn":
     case "unitOfMeasureCode":
       return await client

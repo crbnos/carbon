@@ -6250,6 +6250,12 @@ msgstr "变更说明"
 msgid "Description of Issue"
 msgstr "问题描述"
 
+msgid "Detach"
+msgstr ""
+
+msgid "Detach to edit them in Carbon."
+msgstr ""
+
 msgid "Detail"
 msgstr "详情"
 
@@ -10087,6 +10093,9 @@ msgstr "姓氏"
 msgid "Last Name"
 msgstr "姓氏"
 
+msgid "Last pushed {lastPushed}."
+msgstr ""
+
 msgid "Last Quarter"
 msgstr "上一季度"
 
@@ -10303,6 +10312,9 @@ msgstr "将此 Carbon 客户链接到其中一个，或创建单独的 Stripe �
 
 msgid "Link to sales order line"
 msgstr "关联销售订单行"
+
+msgid "Linked"
+msgstr ""
 
 #. placeholder {0}: r.linkedSum
 #. placeholder {1}: r.quantity
@@ -11248,6 +11260,9 @@ msgstr "名称"
 
 msgid "Name an internal project owner with decision authority"
 msgstr "指定具有决策权的内部项目负责人"
+
+msgid "Name and description are managed in Onshape."
+msgstr ""
 
 msgid "Names fill in wherever those roles are referenced across the hub."
 msgstr "名称会在整个中心内引用这些角色的任何地方填入。"
@@ -12697,6 +12712,9 @@ msgstr "打开于变更通知 {ids}。下达它们来创建新版本或修订版
 
 msgid "Open in MES"
 msgstr "在 MES 中打开"
+
+msgid "Open in Onshape"
+msgstr ""
 
 msgid "Open Issues"
 msgstr "未结领料"
