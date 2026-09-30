@@ -138,7 +138,7 @@ export const path = {
           `${api}/quality/inspection-document/${inspectionDocumentId}/balloon-analyze`
         ),
       inspectionDocuments: (itemId: string) =>
-        generatePath(`${api}/production/inspection-documents/${itemId}`),
+        generatePath(`${api}/quality/inspection-documents/${itemId}`),
       issueTypes: `${api}/quality/issue-types`,
       item: (type: string) => generatePath(`${api}/item/${type}`),
       itemConfigurable: `${api}/items/configurable`,
