@@ -21,6 +21,7 @@ import {
   loadMethodLineOwnership,
   loadPartCustomFieldDefinitions,
   loadPlanOptions,
+  loadReusableDrafts,
   ONSHAPE_V2_INTEGRATION_ID,
   OnshapeWVMType,
   onshapeFailure,
@@ -202,7 +203,7 @@ export async function action({ request }: ActionFunctionArgs) {
     client
       .from("item")
       .select(
-        "id, readableId, revision, name, description, type, replenishmentSystem, defaultMethodType, itemTrackingType, unitOfMeasureCode"
+        "id, readableId, revision, active, name, description, type, replenishmentSystem, defaultMethodType, itemTrackingType, unitOfMeasureCode"
       )
       .eq("companyId", companyId)
       .in("readableId", batch)
@@ -211,12 +212,6 @@ export async function action({ request }: ActionFunctionArgs) {
   if (existing.error) {
     return data({ error: "Failed to read Carbon items" }, { status: 500 });
   }
-  // Each batch is sorted within itself, so the concatenation is not. No
-  // consumer depends on it today (every pick below compares revisions
-  // directly).
-  existing.data.sort((a, b) =>
-    (a.revision ?? "").localeCompare(b.revision ?? "")
-  );
   // item.revision is nullable; the builders read a missing one as "0", the
   // same default pickAdoptTarget and proposeItem use.
   const items: PlanItemRow[] = existing.data.map((row) => ({
@@ -295,14 +290,25 @@ export async function action({ request }: ActionFunctionArgs) {
       linkedItemIdByExternalId.set(link.externalId, link.entityId);
     }
   }
+  // A released method is pushed through a Draft; the review shows the one
+  // the push will reuse, or the Active method a new Draft would copy.
+  let reusableDraftByItemId: Awaited<ReturnType<typeof loadReusableDrafts>>;
   let ownership: Awaited<ReturnType<typeof loadMethodLineOwnership>>;
   try {
-    ownership = await loadMethodLineOwnership(
+    reusableDraftByItemId = await loadReusableDrafts(
       client,
       serviceRole,
       companyId,
-      [...methodByItemId.values()].map((method) => method.id)
+      new Map(
+        [...methodByItemId.entries()]
+          .filter(([, method]) => method.status === "Active")
+          .map(([itemId, method]) => [itemId, method.id])
+      )
     );
+    ownership = await loadMethodLineOwnership(client, serviceRole, companyId, [
+      ...[...methodByItemId.values()].map((method) => method.id),
+      ...[...reusableDraftByItemId.values()].map((draft) => draft.id)
+    ]);
   } catch (error) {
     return data(
       {
@@ -334,7 +340,8 @@ export async function action({ request }: ActionFunctionArgs) {
     options,
     depth,
     linkedItemIdByExternalId,
-    configuration
+    configuration,
+    reusableDraftByItemId
   });
 
   // ---- Root custom fields (property map) ---------------------------------

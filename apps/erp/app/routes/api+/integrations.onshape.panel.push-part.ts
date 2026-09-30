@@ -19,7 +19,6 @@ import {
 } from "@carbon/ee";
 import {
   loadPartCustomFieldDefinitions,
-  ONSHAPE_V2_INTEGRATION_ID,
   peekPanelPlan,
   selectInBatches,
   takePanelPlan
@@ -31,6 +30,8 @@ import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { z } from "zod";
 import { upsertPart } from "~/modules/items";
+import { swapItemMapping } from "~/modules/settings/onshape-push.server";
+import { getDatabaseClient } from "~/services/database.server";
 
 export const config = {
   runtime: "nodejs"
@@ -225,7 +226,7 @@ export async function action({ request }: ActionFunctionArgs) {
     selectInBatches(partNumbers, (batch) =>
       client
         .from("item")
-        .select("id, readableId, revision, name, type")
+        .select("id, readableId, revision, active, name, type")
         .eq("companyId", companyId)
         .in("readableId", batch)
         .order("revision")
@@ -233,7 +234,7 @@ export async function action({ request }: ActionFunctionArgs) {
     selectInBatches(targetItemIds, (batch) =>
       client
         .from("item")
-        .select("id, readableId, revision, name, type")
+        .select("id, readableId, revision, active, name, type")
         .eq("companyId", companyId)
         .in("id", batch)
     )
@@ -252,6 +253,7 @@ export async function action({ request }: ActionFunctionArgs) {
   );
 
   const serviceRole = getCarbonServiceRole();
+  const db = getDatabaseClient();
 
   const resolveTarget = (row: PartPlanRow): PlanItemRow | undefined => {
     let target: PlanItemRow | undefined;
@@ -547,8 +549,7 @@ export async function action({ request }: ActionFunctionArgs) {
       }
     }
 
-    // Upsert the mapping: one row per item, one per external part. The delete
-    // by entityId OR externalId is what the uniqueness constraints rely on.
+    // One row per item, one per external part, swapped in one transaction.
     const externalId = externalIdForPart(
       documentId,
       elementId,
@@ -556,64 +557,30 @@ export async function action({ request }: ActionFunctionArgs) {
       configuration
     );
     const now = datetime.timestamp();
-    // Both deletes must land before the insert, so a failure here stops this
-    // part rather than inserting alongside.
-    const clearedByItem = await serviceRole
-      .from("externalIntegrationMapping")
-      .delete()
-      .eq("companyId", companyId)
-      .eq("integration", ONSHAPE_V2_INTEGRATION_ID)
-      .eq("entityType", "item")
-      .eq("entityId", itemId);
-    const clearedByExternal = clearedByItem.error
-      ? null
-      : await serviceRole
-          .from("externalIntegrationMapping")
-          .delete()
-          .eq("companyId", companyId)
-          .eq("integration", ONSHAPE_V2_INTEGRATION_ID)
-          .eq("entityType", "item")
-          .eq("externalId", externalId);
-    if (clearedByItem.error || clearedByExternal?.error) {
-      results.push({
+    const linked = await swapItemMapping(db, {
+      companyId,
+      userId,
+      itemId,
+      externalId,
+      metadata: {
+        documentId,
+        elementId,
         partId,
-        action: "error",
-        message:
-          "Item saved but its previous Onshape link could not be cleared; push again"
-      });
-      continue;
-    }
-    const inserted = await client
-      .from("externalIntegrationMapping")
-      .insert({
-        entityType: "item",
-        entityId: itemId,
-        integration: ONSHAPE_V2_INTEGRATION_ID,
-        externalId,
-        metadata: {
-          documentId,
-          elementId,
-          partId,
-          configuration,
-          wv,
-          wvId,
-          // The plan-time microversion: the only "unchanged" signal a later
-          // plan has, so it must be the one the user reviewed, not a newer one.
-          microversionId: row.microversionId,
-          partNumber: row.partNumber,
-          name: row.name,
-          revision: row.revision,
-          pushedBy: userId,
-          pushedAt: now,
-          planId
-        },
-        lastSyncedAt: now,
-        companyId,
-        createdBy: userId
-      })
-      .select("id")
-      .single();
-    if (inserted.error || !inserted.data) {
+        configuration,
+        wv,
+        wvId,
+        // The plan-time microversion: the only "unchanged" signal a later
+        // plan has, so it must be the one the user reviewed, not a newer one.
+        microversionId: row.microversionId,
+        partNumber: row.partNumber,
+        name: row.name,
+        revision: row.revision,
+        pushedBy: userId,
+        pushedAt: now,
+        planId
+      }
+    });
+    if (linked.error !== null) {
       results.push({
         partId,
         action: "error",
@@ -654,7 +621,7 @@ export async function action({ request }: ActionFunctionArgs) {
         .from("externalIntegrationMapping")
         .delete()
         .eq("companyId", companyId)
-        .eq("id", inserted.data.id);
+        .eq("id", linked.id);
       results.push({
         partId,
         action: "error",

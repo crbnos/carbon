@@ -27,6 +27,7 @@ import {
   loadActiveMakeMethods,
   loadMethodLineOwnership,
   loadPartCustomFieldDefinitions,
+  loadReusableDrafts,
   ONSHAPE_V2_INTEGRATION_ID,
   peekPanelPlan,
   selectInBatches,
@@ -41,6 +42,12 @@ import { data } from "react-router";
 import { z } from "zod";
 import { upsertPart } from "~/modules/items";
 import { ensureDraftMakeMethod } from "~/modules/settings/onshape-draft-method.server";
+import {
+  insertOwnedMethodLines,
+  type OwnedMethodLine,
+  swapItemMapping
+} from "~/modules/settings/onshape-push.server";
+import { getDatabaseClient } from "~/services/database.server";
 
 export const config = {
   runtime: "nodejs"
@@ -89,6 +96,7 @@ type ItemRow = {
   id: string;
   readableId: string;
   revision: string | null;
+  active?: boolean | null;
   type: string | null;
   defaultMethodType: string | null;
   unitOfMeasureCode: string | null;
@@ -257,7 +265,7 @@ export async function action({ request }: ActionFunctionArgs) {
     client
       .from("item")
       .select(
-        "id, readableId, revision, type, defaultMethodType, unitOfMeasureCode"
+        "id, readableId, revision, active, type, defaultMethodType, unitOfMeasureCode"
       )
       .eq("companyId", companyId)
       .in("readableId", batch)
@@ -266,12 +274,6 @@ export async function action({ request }: ActionFunctionArgs) {
   if (existing.error) {
     return data({ error: "Failed to read Carbon items" }, { status: 500 });
   }
-  // Each batch is sorted within itself, so the concatenation is not. No
-  // consumer depends on the order today: every pick below compares revisions
-  // directly.
-  existing.data.sort((a, b) =>
-    (a.revision ?? "").localeCompare(b.revision ?? "")
-  );
   const rowsByReadableId = new Map<string, ItemRow[]>();
   for (const row of (existing.data ?? []) as ItemRow[]) {
     const list = rowsByReadableId.get(row.readableId) ?? [];
@@ -383,6 +385,7 @@ export async function action({ request }: ActionFunctionArgs) {
   // Mirrors the row pick inside ensureItem, over the same re-resolved rows,
   // so the values "about to be written" are exact before any write.
   const serviceRole = getCarbonServiceRole();
+  const db = getDatabaseClient();
   const rootRows = rowsByReadableId.get(root.partNumber) ?? [];
   const rootWillReuse = Boolean(
     rootRows.find((row) => row.id === root.itemId) ?? pickLatestRow(rootRows)
@@ -561,6 +564,33 @@ export async function action({ request }: ActionFunctionArgs) {
   // lines and the push would duplicate every one.
   const targetMethodByItemId = new Map<string, string>();
   const methodErrorByItemId = new Map<string, string>();
+  // One read for every released level: which already has a Draft an earlier
+  // push made from it (`pickReusableDraft`).
+  const activeMethodIdByItemId = new Map<string, string>();
+  for (const planned of plan.methods) {
+    const parentItem = itemByReadableId.get(planned.parentPartNumber);
+    const method = parentItem ? methodByItemId.get(parentItem.id) : undefined;
+    if (parentItem && method?.status === "Active") {
+      activeMethodIdByItemId.set(parentItem.id, method.id);
+    }
+  }
+  let reusableDraftByItemId: Awaited<ReturnType<typeof loadReusableDrafts>>;
+  try {
+    reusableDraftByItemId = await loadReusableDrafts(
+      client,
+      serviceRole,
+      companyId,
+      activeMethodIdByItemId
+    );
+  } catch (error) {
+    return data(
+      {
+        error:
+          error instanceof Error ? error.message : "Failed to read the Drafts"
+      },
+      { status: 500 }
+    );
+  }
   for (const planned of plan.methods) {
     const parentItem = itemByReadableId.get(planned.parentPartNumber);
     if (!parentItem) continue;
@@ -575,7 +605,8 @@ export async function action({ request }: ActionFunctionArgs) {
       itemId: parentItem.id,
       activeMethodId: method.id,
       companyId,
-      userId
+      userId,
+      reusableDraft: reusableDraftByItemId.get(parentItem.id) ?? null
     });
     if (!draft.ok) {
       methodErrorByItemId.set(parentItem.id, draft.error);
@@ -656,10 +687,8 @@ export async function action({ request }: ActionFunctionArgs) {
     // per-line INSERTs cost two round-trips each (the line, then its mapping
     // row). Updates stay per-line — each carries different values.
     const pendingInserts: Array<{
-      row: Record<string, unknown>;
+      row: OwnedMethodLine["row"];
       metadata: Record<string, unknown>;
-      syncedAt: string;
-      label: string;
     }> = [];
 
     summary.methodsTouched += 1;
@@ -735,7 +764,8 @@ export async function action({ request }: ActionFunctionArgs) {
             updatedBy: userId,
             updatedAt: lineSyncedAt
           })
-          .eq("id", reuse.mappingId);
+          .eq("id", reuse.mappingId)
+          .eq("companyId", companyId);
         if (remapped.error) {
           summary.errors.push(
             `${parentLabel} → ${write.partNumber}: line updated but its Onshape link was not refreshed (${remapped.error.message})`
@@ -754,68 +784,33 @@ export async function action({ request }: ActionFunctionArgs) {
           makeMethodId: methodId,
           materialMakeMethodId: childMethod?.id ?? null,
           methodType:
-            (childItem.defaultMethodType as "Make to Order" | null) ??
+            (childItem.defaultMethodType as OwnedMethodLine["row"]["methodType"]) ??
             (write.purchased ? "Pull from Inventory" : "Make to Order"),
           order,
           itemType,
-          unitOfMeasureCode: childItem.unitOfMeasureCode ?? fallbackUnit,
-          companyId,
-          createdBy: userId
+          unitOfMeasureCode: childItem.unitOfMeasureCode ?? fallbackUnit
         },
-        metadata: lineMetadata,
-        syncedAt: lineSyncedAt,
-        label: `${parentLabel} → ${write.partNumber}`
+        metadata: lineMetadata
       });
       order += 1;
     }
 
-    // Ids come back in insertion order, which is what pairs each new line with
-    // its own mapping row.
     if (pendingInserts.length > 0) {
-      const inserted = await client
-        .from("methodMaterial")
-        // enum unions narrowed above
-        .insert(pendingInserts.map((pending) => pending.row) as any)
-        .select("id");
-      if (inserted.error || !inserted.data) {
+      const written = await insertOwnedMethodLines(db, {
+        companyId,
+        userId,
+        lines: pendingInserts.map((pending) => ({
+          row: pending.row,
+          metadata: pending.metadata
+        }))
+      });
+      if (written.error !== null) {
         summary.errors.push(
-          `${parentLabel}: ${inserted.error?.message ?? "line insert failed"}`
+          `${parentLabel}: ${pendingInserts.length} new lines were not written (${written.error})`
         );
-      } else if (inserted.data.length !== pendingInserts.length) {
-        // Pairing by index is only sound while the counts match — a short
-        // result would link mapping rows to the wrong lines.
-        summary.errors.push(
-          `${parentLabel}: wrote ${inserted.data.length} of ${pendingInserts.length} lines; the rest are not linked to Onshape and a later push will duplicate them`
-        );
-        summary.linesWritten += inserted.data.length;
       } else {
-        summary.linesWritten += inserted.data.length;
-        // Without these rows the lines are indistinguishable from ones a
-        // person added by hand: the next push will not replace them, and will
-        // insert a second copy beside each.
-        const lineMappings = await client
-          .from("externalIntegrationMapping")
-          .insert(
-            pendingInserts.map((pending, index) => ({
-              entityType: "methodMaterial",
-              entityId: inserted.data[index].id,
-              integration: ONSHAPE_V2_INTEGRATION_ID,
-              metadata: pending.metadata as Json,
-              lastSyncedAt: pending.syncedAt,
-              companyId,
-              createdBy: userId
-            }))
-          )
-          .select("id");
-        if (lineMappings.error || !lineMappings.data) {
-          summary.errors.push(
-            `${parentLabel}: ${pendingInserts.length} lines written but not linked to Onshape (${lineMappings.error?.message ?? "link failed"}); a later push will duplicate them`
-          );
-        } else {
-          for (const mapping of lineMappings.data) {
-            liveMappingIds.push(mapping.id);
-          }
-        }
+        summary.linesWritten += pendingInserts.length;
+        liveMappingIds.push(...written.mappingIds);
       }
     }
 
@@ -828,6 +823,7 @@ export async function action({ request }: ActionFunctionArgs) {
         const removedLines = await client
           .from("methodMaterial")
           .delete()
+          .eq("companyId", companyId)
           .in("id", batch);
         if (removedLines.error) {
           summary.errors.push(
@@ -886,60 +882,28 @@ export async function action({ request }: ActionFunctionArgs) {
     elementId,
     configuration
   );
-  // Both deletes clear the way for one canonical row: by item (an older link
-  // for this item) and by externalId (this element pointing at some other
-  // item).
-  const clearedByItem = await serviceRole
-    .from("externalIntegrationMapping")
-    .delete()
-    .eq("companyId", companyId)
-    .eq("integration", ONSHAPE_V2_INTEGRATION_ID)
-    .eq("entityType", "item")
-    .eq("entityId", rootItem.id);
-  if (clearedByItem.error) {
+  const assemblyMapping = await swapItemMapping(db, {
+    companyId,
+    userId,
+    itemId: rootItem.id,
+    externalId: assemblyExternalId,
+    metadata: {
+      documentId,
+      elementId,
+      configuration,
+      wv,
+      wvId,
+      kind: "assembly",
+      partNumber: root.partNumber,
+      name: root.name,
+      pushedBy: userId,
+      pushedAt,
+      planId
+    }
+  });
+  if (assemblyMapping.error !== null) {
     summary.errors.push(
-      `${root.partNumber}: could not clear the previous Onshape link (${clearedByItem.error.message})`
-    );
-  }
-  const clearedByElement = await serviceRole
-    .from("externalIntegrationMapping")
-    .delete()
-    .eq("companyId", companyId)
-    .eq("integration", ONSHAPE_V2_INTEGRATION_ID)
-    .eq("entityType", "item")
-    .eq("externalId", assemblyExternalId);
-  if (clearedByElement.error) {
-    summary.errors.push(
-      `${root.partNumber}: could not clear this element's previous link (${clearedByElement.error.message})`
-    );
-  }
-  const assemblyMapping = await client
-    .from("externalIntegrationMapping")
-    .insert({
-      entityType: "item",
-      entityId: rootItem.id,
-      integration: ONSHAPE_V2_INTEGRATION_ID,
-      externalId: assemblyExternalId,
-      metadata: {
-        documentId,
-        elementId,
-        configuration,
-        wv,
-        wvId,
-        kind: "assembly",
-        partNumber: root.partNumber,
-        name: root.name,
-        pushedBy: userId,
-        pushedAt,
-        planId
-      },
-      lastSyncedAt: pushedAt,
-      companyId,
-      createdBy: userId
-    });
-  if (assemblyMapping.error) {
-    summary.errors.push(
-      `${root.partNumber}: pushed, but not linked to Onshape (${assemblyMapping.error.message}); the next push will not recognise it`
+      `${root.partNumber}: pushed, but not linked to Onshape (${assemblyMapping.error}); the next push will not recognise it`
     );
   }
 
