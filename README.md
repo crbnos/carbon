@@ -37,7 +37,6 @@
     <img src="https://img.shields.io/badge/TypeScript-3178C6?style=flat-square&logo=typescript&logoColor=white" alt="TypeScript" />
     <img src="https://img.shields.io/badge/React_Router-CA4245?style=flat-square&logo=reactrouter&logoColor=white" alt="React Router" />
     <img src="https://img.shields.io/badge/Postgres-4169E1?style=flat-square&logo=postgresql&logoColor=white" alt="Postgres" />
-    <img src="https://img.shields.io/badge/Supabase-3FCF8E?style=flat-square&logo=supabase&logoColor=white" alt="Supabase" />
     <img src="https://img.shields.io/badge/Rust-000000?style=flat-square&logo=rust&logoColor=white" alt="Rust" />
     <img src="https://img.shields.io/badge/MCP-server-000000?style=flat-square&logo=modelcontextprotocol&logoColor=white" alt="MCP server" />
   </p>
@@ -151,15 +150,12 @@ Carbon is API-first. One API key unlocks three surfaces:
 
 Create a key under **Settings → API Keys**, then call the Data API:
 
-```ts
-import { createClient } from "@supabase/supabase-js";
-
-const carbon = createClient("https://rest.carbon.ms", process.env.CARBON_API_KEY!); // crbn_…
-
-const { data, error } = await carbon.from("salesOrder").select("id, salesOrderId, status");
+```bash
+curl "https://rest.carbon.ms/salesOrder?select=id,salesOrderId,status" \
+  -H "Authorization: Bearer $CARBON_API_KEY"   # crbn_…
 ```
 
-Self-hosted, call PostgREST directly at `<SUPABASE_URL>/rest/v1` and send the key as a `carbon-key` header. See [API keys](https://docs.carbon.ms/docs/building/api-keys).
+Self-hosted, call PostgREST at `<your API URL>/rest/v1/<table>` and send the key as a `carbon-key` header. See [API keys](https://docs.carbon.ms/docs/building/api-keys).
 
 <br />
 
@@ -174,7 +170,7 @@ flowchart LR
     MES["MES app"]
     EXT["Your apps & AI agents"]
   end
-  subgraph Supabase
+  subgraph DP["Data plane"]
     REST["PostgREST"]
     AUTH["Auth"]
     RT["Realtime"]
@@ -198,19 +194,22 @@ flowchart LR
 
 ## Tech Stack
 
-| Layer      | Technology                                                                              |
-| ---------- | --------------------------------------------------------------------------------------- |
-| Framework  | [React Router](https://reactrouter.com)                                                  |
-| Language   | [TypeScript](https://www.typescriptlang.org/), [Rust](https://www.rust-lang.org)         |
-| UI         | [Tailwind](https://tailwindcss.com), [Radix UI](https://radix-ui.com), [React Aria](https://react-spectrum.adobe.com/react-aria/) |
-| Database   | [Postgres](https://www.postgresql.org) via [Supabase](https://supabase.com), [Kysely](https://kysely.dev) |
-| Auth       | [Supabase Auth](https://supabase.com/auth)                                               |
-| Jobs       | [Inngest](https://inngest.com)                                                           |
-| Cache      | [Redis](https://redis.io)                                                                |
-| 3D / CAD   | [three.js](https://threejs.org), OpenCASCADE and FCL (in the Rust assembler)             |
-| i18n       | [Lingui](https://lingui.dev)                                                             |
-| Email      | SMTP ([Nodemailer](https://nodemailer.com))                                              |
-| Hosting    | [AWS](https://aws.amazon.com) via [SST](https://sst.dev), or self-hosted with Docker     |
+| Layer          | Technology                                                                                       |
+| -------------- | ------------------------------------------------------------------------------------------------ |
+| Apps           | [React Router 7](https://reactrouter.com) on [Vite](https://vite.dev), [TypeScript](https://www.typescriptlang.org/) |
+| UI             | [Tailwind 4](https://tailwindcss.com), [Radix](https://radix-ui.com), [React Aria](https://react-spectrum.adobe.com/react-aria/), [TanStack Table and Query](https://tanstack.com) |
+| Forms          | [Zod](https://zod.dev) with `@carbon/form`                                                       |
+| Database       | [Postgres](https://www.postgresql.org) with row-level security, [PostgREST](https://postgrest.org) and [Kysely](https://kysely.dev) |
+| API            | [oRPC](https://orpc.unnoq.com) with OpenAPI, [MCP](https://modelcontextprotocol.io) server       |
+| AI             | [AI SDK](https://ai-sdk.dev) (Anthropic, OpenAI)                                                  |
+| Jobs & events  | [Inngest](https://inngest.com)                                                                    |
+| Cache          | [Redis](https://redis.io)                                                                         |
+| 3D & CAD       | [three.js](https://threejs.org) / react-three-fiber; Rust with [OpenCASCADE](https://dev.opencascade.org) and [FCL](https://github.com/flexible-collision-library/fcl) |
+| Documents      | [React PDF](https://react-pdf.org), [React Email](https://react.email), [TipTap](https://tiptap.dev) |
+| i18n           | [Lingui](https://lingui.dev)                                                                      |
+| Tooling        | [pnpm](https://pnpm.io), [Turborepo](https://turbo.build), [Biome](https://biomejs.dev), [Vitest](https://vitest.dev) |
+| Docs           | [Next.js](https://nextjs.org) + [Fumadocs](https://fumadocs.dev)                                  |
+| Hosting        | [AWS](https://aws.amazon.com) via [SST](https://sst.dev), or self-hosted with Docker              |
 
 <br />
 
@@ -220,9 +219,10 @@ A [pnpm](https://pnpm.io) + [Turborepo](https://turbo.build) monorepo:
 
 ```
 carbon
-├── apps         # applications
-├── packages     # shared code
-└── docs         # docs.carbon.ms
+├── apps         # ERP, MES and the Rust assembler
+├── packages     # shared TypeScript packages
+├── crates       # Rust crates behind the assembler (CAD conversion, collision, motion planning)
+└── docs         # docs.carbon.ms, with content and glossary as @carbon/content
 ```
 
 ### `/apps`
@@ -237,23 +237,35 @@ carbon
 
 ### `/packages`
 
-| Package                | Description                                                              |
-| ---------------------- | ------------------------------------------------------------------------ |
-| `@carbon/database`     | Schema, migrations, generated types, Supabase and Kysely clients         |
-| `@carbon/auth`         | Authentication, RBAC, sessions, API keys and OAuth                       |
-| `@carbon/react`        | Shared UI components (Radix, React Aria, Tailwind)                       |
-| `@carbon/form`         | `ValidatedForm` and field components for zod + FormData                  |
-| `@carbon/jobs`         | Inngest background jobs, integrations and workflows                      |
-| `@carbon/planning`     | MRP and scheduling engines                                               |
-| `@carbon/documents`    | PDFs, email templates, ZPL labels, QR and barcodes                       |
-| `@carbon/printing`     | Printer routing and label print queue                                    |
-| `@carbon/viewer`       | 3D models and animated assembly instructions (react-three-fiber)         |
-| `@carbon/files`        | File handling: images, HEIC, CAD formats                                 |
-| `@carbon/locale`       | Lingui i18n runtime for ERP and MES                                      |
-| `@carbon/kv`           | Redis client and rate limiting                                           |
-| `@carbon/utils`        | Pure shared utilities (dates, precision, BOM, formatting)                |
-| `@carbon/ee`           | Enterprise features and integrations (commercial license)                |
-| `@carbon/config`       | Shared vitest, tsconfig and tailwind configuration                       |
+| Package                  | Description                                                                  |
+| ------------------------ | ---------------------------------------------------------------------------- |
+| `@carbon/database`       | Schema, migrations, generated types and database clients                     |
+| `@carbon/auth`           | Authentication, RBAC, sessions, API keys and OAuth                           |
+| `@carbon/api`            | API contract: the generated operation manifest behind the Carbon API and MCP |
+| `@carbon/react`          | Shared UI components (Radix, React Aria, Tailwind)                           |
+| `@carbon/form`           | `ValidatedForm` and field components for zod + FormData                      |
+| `@carbon/jobs`           | Inngest background jobs: events, integrations, notifications, workflows      |
+| `@carbon/planning`       | MRP and scheduling engines                                                   |
+| `@carbon/documents`      | PDFs, email templates, ZPL labels, QR and barcodes                           |
+| `@carbon/printing`       | Printer routing, label queue and ProxyBox delivery                           |
+| `@carbon/viewer`         | 3D models and animated assembly instructions (react-three-fiber)             |
+| `@carbon/files`          | File handling: images, HEIC, CAD formats                                     |
+| `@carbon/tiptap`         | Rich-text editor extensions and components                                   |
+| `@carbon/onboarding`     | Implementation Hub: guided company setup                                     |
+| `@carbon/notifications`  | Notification event taxonomy shared by apps and jobs                          |
+| `@carbon/workflows-core` | Community-licensed contracts for workflow triggers                           |
+| `@carbon/locale`         | Lingui i18n runtime for ERP and MES                                          |
+| `@carbon/lib`            | Server utilities: event system, Inngest client, SMTP, Slack                  |
+| `@carbon/kv`             | Redis client and rate limiting                                               |
+| `@carbon/env`            | Validated environment variables, secrets kept server-side                    |
+| `@carbon/logger`         | Isomorphic logger built on LogTape                                           |
+| `@carbon/utils`          | Pure shared utilities (dates, precision, BOM, formatting)                    |
+| `@carbon/stripe`         | Stripe billing (Carbon Cloud only)                                           |
+| `@carbon/ee`             | Enterprise features and integrations (commercial license)                    |
+| `@carbon/checks`         | Conformance checks that keep the codebase consistent                         |
+| `@carbon/dev`            | The `crbn` dev CLI: worktrees, Docker stacks, dev URLs                       |
+| `@carbon/harness`        | Harness for AI coding agents working on this repo                            |
+| `@carbon/config`         | Shared Vitest, TypeScript and Tailwind configuration                         |
 
 <br />
 
@@ -268,13 +280,13 @@ cp .env.example .env
 pnpm dev
 ```
 
-`pnpm dev` boots the whole backend in Docker (Postgres, Supabase, Inngest, Redis, a mail catcher), applies migrations, generates types and starts the apps:
+`pnpm dev` boots the whole backend in Docker (Postgres, PostgREST, auth, storage, realtime, Inngest, Redis and a mail catcher), applies migrations, generates types and starts the apps:
 
 | Surface      | URL                      |
 | ------------ | ------------------------ |
 | ERP          | http://localhost:3000    |
 | MES          | http://localhost:3001    |
-| Supabase API | http://localhost:54321   |
+| API          | http://localhost:54321   |
 
 Sign in as `test@carbon.ms`: the dev stack seeds that user and skips the magic link. To fill a company with a full demo story (items, BOMs, orders, jobs, inspections, journals), seed one of the industry datasets (`satellite`, `robotics`, `precision`, `motor`):
 
@@ -334,7 +346,7 @@ The full command reference is in the [local development guide](https://docs.carb
 
 To restore a production database snapshot locally, use `crbn restore`. It handles both plain-text `.backup` and custom-format `.dump` archives, drops and rebuilds the public schema, realigns internal sequences, resets storage metadata, then applies any migrations the backup predates and regenerates types.
 
-1. Export a backup from your production Supabase project (`pg_dump` or Supabase Dashboard → Database → Backups).
+1. Export a backup of your production database with `pg_dump`.
 2. Run it from your worktree root:
 
    ```bash
