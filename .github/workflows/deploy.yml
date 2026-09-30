@@ -8,6 +8,7 @@ on:
       - "apps/erp/**"
       - "apps/mes/**"
       - "packages/**"
+      - "docs/content/**"
   workflow_dispatch:
 jobs:
   build:

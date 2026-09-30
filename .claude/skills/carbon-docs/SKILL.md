@@ -171,7 +171,7 @@ flowIndex: 1          # order of the flow in the subnav (0 = first)
 - `<Divider />` — closes a chapter before its wrap-up line.
 - `<Term>make to order</Term>` — inline glossary term: dotted-underline; click/tap opens a popover with a
   grounded one-line definition + an optional "Learn more" link. Same component on both surfaces; definitions
-  live in `@carbon/content/glossary` (`packages/content/src/glossary/terms.ts`), rendered by
+  live in `@carbon/content/glossary` (`docs/content/src/glossary/terms.ts`), rendered by
   `docs/components/editorial/glossary.tsx`. See "Interlinking & the glossary" below.
 
 Each `##` heading becomes a sidebar rail entry — so structure chapters as 3–5 `##` sections.
@@ -239,13 +239,13 @@ Each `##` heading becomes a sidebar rail entry — so structure chapters as 3–
     `plan` frontmatter and passes it in) — sticky under the header, spanning the content area. Adding
     `plan: Business` frontmatter is all it takes; the badge and the bar both light up. Don't hand-place a
     banner in MDX.
-  - **Licensing model — get this right, it's been wrong before.** See `packages/content/mdx/docs/platform/licensing.mdx`
+  - **Licensing model — get this right, it's been wrong before.** See `docs/content/docs/platform/licensing.mdx`
     (the canonical page). Editions (`packages/utils/src/types.ts` `enum Edition`): **Community** (self-host,
     AGPLv3 open core), **Enterprise** (self-host + commercial license), **Cloud** (managed). EE features =
     code under `packages/ee` or any `.ee` file → require a commercial license per the repo `LICENSE`.
     - **Carbon Cloud = the hosted SaaS at https://app.carbon.ms** — NOT the `/docs/platform/...` deployment
       docs. Self-hosting recipes (Docker with Caddy, AWS with SST) live under
-      `packages/content/mdx/docs/platform/self-hosting/`.
+      `docs/content/docs/platform/self-hosting/`.
     - **Cloud plans = Starter and Business only.** `Plan` enum also has `Partner`, but Partner is
       **internal-only — never mention it in reader-facing docs.** Don't write "Business and Partner plans".
     - **Never write "self-hosted isn't plan-gated."** The *runtime* gate is Cloud-only
@@ -339,7 +339,7 @@ a page that links out *and* glosses its jargon is worth more than the same prose
   - `<Term>make to order</Term>` slugifies the text to find the entry; `<Term id="make-to-order">made</Term>`
     when the display text differs from the slug.
   - **First occurrence per page only** — not every instance. Underlining every "order" is noise.
-  - Definitions are a single source of truth: `@carbon/content/glossary` (`packages/content/src/glossary/terms.ts`),
+  - Definitions are a single source of truth: `@carbon/content/glossary` (`docs/content/src/glossary/terms.ts`),
     where each entry is `slug → { term, definition }` with `term`/`definition` as Lingui `msg` descriptors
     (rendered by `docs/components/editorial/glossary.tsx`).
     Add the entry there *before* you use a new term, and **ground the definition in source** (the prime

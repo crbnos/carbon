@@ -2,6 +2,7 @@ packages:
   - apps/*
   - ci
   - docs
+  - docs/content
   - contrib/building/examples/*
   - packages/*
 

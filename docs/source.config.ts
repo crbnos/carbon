@@ -3,7 +3,7 @@ import { defineConfig, defineDocs } from "fumadocs-mdx/config";
 import { z } from "zod";
 
 export const docs = defineDocs({
-  dir: "../packages/content/mdx/docs",
+  dir: "content/docs",
   docs: {
     // Optional `plan` frontmatter — when set (e.g. "Business"), the page template
     // renders a PlanBadge inline with the title to flag a paid-tier feature.
@@ -16,7 +16,7 @@ export const docs = defineDocs({
 // The editorial Guide. Same MDX pipeline as the Reference, but each file is a
 // chapter: `label` is its display marker (e.g. "(I)") and `index` orders the rail.
 export const guide = defineDocs({
-  dir: "../packages/content/mdx/guides",
+  dir: "content/guides",
   docs: {
     schema: pageSchema.extend({
       label: z.string(),

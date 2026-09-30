@@ -58,7 +58,7 @@ question:
 - Stress-test fuzzy answers with a concrete scenario before accepting them
   ("a PO has 3 lines and one is already received — what happens on cancel?").
 - Sharpen fuzzy terms. When the user uses a vague or overloaded word, propose
-  the precise canonical term. Check `packages/content/src/glossary` (the `terms` object in
+  the precise canonical term. Check `docs/content/src/glossary` (the `terms` object in
   `@carbon/content/glossary`) for an existing definition and challenge conflicts:
   "the glossary defines {term} as {definition}; you seem to mean {other} —
   which is it?"
@@ -74,7 +74,7 @@ apply regardless of target:
 - A genuinely new canonical domain term → offer a `@carbon/content/glossary` entry,
   only when all three hold: the term is user-facing (UI or docs), the grill
   revealed real ambiguity, and the user confirmed the definition. Follow
-  `packages/content/AGENTS.md` (its "Ask First" rule is satisfied by the
+  `docs/content/AGENTS.md` (its "Ask First" rule is satisfied by the
   user's confirmation in the interview).
 
 ## Done when

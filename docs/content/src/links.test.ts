@@ -6,13 +6,13 @@ import { splitByCodeFence, splitFrontmatter } from "./corpus";
 import { terms } from "./glossary";
 import { DOCS_URL } from "./links";
 
-const sources = import.meta.glob("../mdx/**/*.mdx", {
+const sources = import.meta.glob(["../docs/**/*.mdx", "../guides/**/*.mdx"], {
   query: "?raw",
   import: "default",
   eager: true
 }) as Record<string, string>;
 const mdxFiles = Object.entries(sources).map(([file, raw]) => ({
-  file: file.replace(/^\.\.\/mdx\//, ""),
+  file: file.replace(/^\.\.\//, ""),
   raw
 }));
 const REPO_ROOT = fileURLToPath(new URL("../../..", import.meta.url));

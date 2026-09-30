@@ -1,4 +1,3 @@
-import { fileURLToPath } from "node:url";
 import { createMDX } from "fumadocs-mdx/next";
 
 const withMDX = createMDX();
@@ -6,8 +5,6 @@ const withMDX = createMDX();
 /** @type {import('next').NextConfig} */
 const config = {
   reactStrictMode: true,
-  // The MDX lives in packages/content, outside this app, so Turbopack must root at the repo.
-  turbopack: { root: fileURLToPath(new URL("..", import.meta.url)) },
   // Consume the shared status→color constants (@carbon/utils/status-colors) — a pure-TS
   // workspace module, so Next must transpile it.
   transpilePackages: ["@carbon/utils"],

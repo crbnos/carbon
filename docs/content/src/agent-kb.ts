@@ -3,7 +3,7 @@ import { type CorpusPage, keywords, parsePage } from "./corpus";
 
 // Vite-only: bundles every page's raw MDX into the importing build (the ERP server),
 // so the agent needs no fs or docs app at runtime.
-const sources = import.meta.glob("../mdx/**/*.mdx", {
+const sources = import.meta.glob(["../docs/**/*.mdx", "../guides/**/*.mdx"], {
   query: "?raw",
   import: "default",
   eager: true
@@ -15,7 +15,7 @@ export type AgentDoc = CorpusPage & { keywords: string[] };
 export const agentDocs: AgentDoc[] = Object.entries(sources)
   .map(([file, raw]) => {
     const page = parsePage(
-      file.replace(/^\.\.\/mdx\//, "").replace(/\.mdx$/, ""),
+      file.replace(/^\.\.\//, "").replace(/\.mdx$/, ""),
       raw
     );
     return { ...page, keywords: keywords(page.title, page.slug) };

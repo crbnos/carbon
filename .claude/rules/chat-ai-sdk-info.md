@@ -20,7 +20,7 @@ features. Most are one-shot `generateObject` extractions against OpenAI
 > provider is still **OpenAI** (`agentProvider` / `agentChatModel = "gpt-4"` in
 > `packages/utils/src/llm.ts`), NOT Anthropic, despite the `agentThread.modelId`
 > column defaulting to a Claude id. See `.claude/rules/agent-knowledge-base.md`
-> and `packages/content/mdx/docs/reference/agent.mdx`. The older unshipped
+> and `docs/content/docs/reference/agent.mdx`. The older unshipped
 > `functions/chat/index.ts` + `Agent.ee.tsx` scaffold (`@ai-sdk/anthropic`) this
 > rule used to warn about is a separate, dead thing.
 

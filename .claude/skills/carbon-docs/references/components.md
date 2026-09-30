@@ -150,7 +150,7 @@ the paywall check lives in `requireLicense()`.
 - Use it for extra code/behavior detail that helps the agent answer accurately but
   would clutter or over-disclose to a human reader (internal table names, service
   functions, edge cases). Author normal markdown inside. Works on Guide and Reference.
-- Nothing to regenerate: the ERP bundles `packages/content/mdx` at build time.
+- Nothing to regenerate: the ERP bundles `docs/content` at build time.
 
 ---
 

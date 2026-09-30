@@ -30,7 +30,7 @@ export type WebhookEvent = z.infer<typeof eventSchema>;
 
 /**
  * Map a queue event onto the body external consumers receive. PUBLIC contract —
- * see packages/content/mdx/docs/building/webhooks.mdx and webhook-body.test.ts.
+ * see docs/content/docs/building/webhooks.mdx and webhook-body.test.ts.
  *
  *   INSERT  { type, record: NEW,           companyId, table, eventId }
  *   UPDATE  { type, record: NEW, old: OLD, companyId, table, eventId }

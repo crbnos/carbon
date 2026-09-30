@@ -60,7 +60,7 @@ with the code, the **code wins** — fix the doc, don't trust the stale text.
 ### Product Docs (`docs/`)
 
 - If the change is user-facing (a feature, workflow, field, or behavior a
-  customer sees), update the relevant page under `packages/content/mdx/`. Use the
+  customer sees), update the relevant page under `docs/content/`. Use the
   `carbon-docs` skill and ground every claim in source, not in a rule.
 - `docs/lib/*.generated.ts` is generated from the OpenAPI schema + MCP tool
   metadata by `docs/scripts/generate-api-docs.mjs` — never hand-edit; it

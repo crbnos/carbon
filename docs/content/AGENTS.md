@@ -1,11 +1,12 @@
 # @carbon/content
 
 Carbon's written content: the docs site's MDX, the manufacturing glossary, and the helpers
-that turn both into something apps and agents can read. The `docs/` app only renders it.
+that turn both into something apps and agents can read. Nested in the docs app so the MDX stays
+colocated with the site; the `docs/` Next app renders it, ERP/MES/packages import it.
 
 ## Layout
 
-- `mdx/docs/**`, `mdx/guides/**` — the docs pages (Fumadocs reads them via `docs/source.config.ts`).
+- `docs/**`, `guides/**` — the docs pages (Fumadocs reads them via `docs/source.config.ts`).
 - `src/glossary/` — term definitions for ERP/MES field help and docs `<Term>` popovers.
 - `src/corpus.ts` — MDX → plain markdown (pure; callers bring the raw text).
 - `src/agent-kb.ts` — every page, stripped, for the in-app agent (Vite `import.meta.glob`).

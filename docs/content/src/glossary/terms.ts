@@ -15,7 +15,7 @@
  * term — the full story lives behind the "Learn more" link. `href` (optional) points
  * that link at the exact section that explains the term, not just the page top; omit
  * it for terms with no home yet (popover still shows the definition). Anchors are
- * grounded against real headings in packages/content/mdx — fix them if a heading is renamed.
+ * grounded against real headings in docs/content — fix them if a heading is renamed.
  * Enum values verified:
  *   methodType            → "Make to Order" | "Purchase to Order" | "Pull from Inventory"
  *                           (packages/database/.../20260321143847_method-type-migration.sql)

@@ -1,5 +1,5 @@
 /* "Edit on GitHub" footer link. `path` is the file's path relative to the repo root
- * (e.g. "packages/content/mdx/docs/reference/items.mdx"); the repo + branch live here so the
+ * (e.g. "docs/content/docs/reference/items.mdx"); the repo + branch live here so the
  * source of the link is in one place. Plain (no hooks) so it renders in both the
  * server Reference footer and the client Guide footer. */
 

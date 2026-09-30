@@ -67,7 +67,7 @@ export default async function Page(props: Params) {
           })}
         />
       </div>
-      <DocsFooter url={page.url} editPath={`packages/content/mdx/docs/${page.path}`} />
+      <DocsFooter url={page.url} editPath={`docs/content/docs/${page.path}`} />
     </article>
   );
 }
