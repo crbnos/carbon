@@ -167,16 +167,19 @@ export function useAgentThread() {
     ++loadSeq.current;
     unsentRef.current = null;
     void stop();
+    // stop() and setMessages() leave useChat's error in place.
+    clearError();
     setMessages([]);
     setSendError(null);
     setThread(null);
     threadIdRef.current = null;
-  }, [setMessages, setThread, stop]);
+  }, [clearError, setMessages, setThread, stop]);
 
   const loadThread = useCallback(
     async (id: string) => {
       const seq = ++loadSeq.current;
       void stop();
+      clearError();
       setSendError(null);
       setThread(id);
       threadIdRef.current = id;
@@ -193,7 +196,7 @@ export function useAgentThread() {
       if (seq !== loadSeq.current) return;
       setMessages(data.messages);
     },
-    [newThread, setMessages, setThread, stop]
+    [clearError, newThread, setMessages, setThread, stop]
   );
 
   // Resume the last chat when the panel opens: if it mounted with a persisted thread

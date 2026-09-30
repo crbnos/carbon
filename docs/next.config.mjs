@@ -1,10 +1,25 @@
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { createMDX } from "fumadocs-mdx/next";
+
+// The monorepo root, not docs/: pnpm hoists `next` into the root
+// node_modules/.pnpm store, and Turbopack refuses to compile anything outside
+// its root — scoping to docs/ makes the framework itself unresolvable.
+const workspaceRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
 
 const withMDX = createMDX();
 
 /** @type {import('next').NextConfig} */
 const config = {
   reactStrictMode: true,
+  // Next's own default, pinned so it cannot drift: shipping browser source maps
+  // would publish the docs site's unminified sources and inflate the build for
+  // no reader-facing gain.
+  productionBrowserSourceMaps: false,
+  // Turbopack walks up looking for a lockfile to infer the workspace root, and
+  // a stray one above the repo (a ~/pnpm-lock.yaml) makes it pick the HOME
+  // directory — so it traces every sibling checkout instead of this repo.
+  turbopack: { root: workspaceRoot },
   // Consume the shared status→color constants (@carbon/utils/status-colors) — a pure-TS
   // workspace module, so Next must transpile it.
   transpilePackages: ["@carbon/utils"],
@@ -15,6 +30,23 @@ const config = {
   // `.message` directly without pulling the macro runtime.
   experimental: {
     swcPlugins: [["@lingui/swc-plugin", {}]],
+    // Static generation is the memory peak here: the API and MCP reference
+    // pages expand ~108 MDX sources into ~2,180 pages, rendered across a pool
+    // of worker processes that each hold their own Next runtime.
+    //
+    // The pool size is otherwise `os.cpus().length - 1` (13 on a dev laptop)
+    // regardless of how much memory is actually free, which is what pushes a
+    // constrained machine into OOM. This scales it to free memory instead —
+    // `max(min(cpus, freemem/1GB), 4)` in Next's getNumberOfWorkers.
+    //
+    // NOTE: `os.freemem()` reports the HOST's memory, not a cgroup limit, so
+    // under Docker with a memory cap set `cpus` to a hard number instead —
+    // an explicit `cpus` overrides this branch entirely.
+    memoryBasedWorkersCount: true,
+    // No server source maps in a production build either: they are pure build
+    // cost and retained heap for a docs site that ships no server code worth
+    // debugging from a stack trace.
+    serverSourceMaps: false,
   },
   // The monorepo pins React 18 (catalog) while this app runs React 19, so two
   // @types/react versions coexist and `next build` trips on the ReactNode /

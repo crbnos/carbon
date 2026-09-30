@@ -12,7 +12,7 @@ import {
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { LuClipboardList, LuPackagePlus, LuSettings2 } from "react-icons/lu";
-import { Form, Link } from "react-router";
+import { Form, Link, useNavigation } from "react-router";
 import { SearchFilter } from "~/components";
 import { useLocations } from "~/components/Form/Location";
 import { usePermissions } from "~/hooks";
@@ -49,6 +49,7 @@ export function PickingListsHeader({
 }: PickingListsHeaderProps) {
   const { t } = useLingui();
   const permissions = usePermissions();
+  const navigation = useNavigation();
   const locations = useLocations();
 
   return (
@@ -78,6 +79,7 @@ export function PickingListsHeader({
               type="submit"
               leftIcon={<LuPackagePlus />}
               isDisabled={!permissions.can("create", "inventory")}
+              isLoading={navigation.formAction === path.to.newPickingList}
             >
               <Trans>Generate Picking List</Trans>{" "}
               {selectedJobOperationIds.length}

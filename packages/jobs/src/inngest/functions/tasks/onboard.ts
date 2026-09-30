@@ -232,7 +232,9 @@ export const onboardFunction = inngest.createFunction(
 
         await step.run("send-slack-customer-notification", async () => {
           try {
-            slack.sendMessage({
+            // Awaited: sendMessage rethrows now, and an unawaited rejection
+            // would escape this catch as an unhandled rejection.
+            await slack.sendMessage({
               channel: "#sales",
               text: "New Customer",
               blocks: [
