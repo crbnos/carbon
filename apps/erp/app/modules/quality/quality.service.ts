@@ -2924,6 +2924,7 @@ function mapInspectionFeature(row: Record<string, unknown>) {
     samplingInspectionLevel:
       (row.samplingInspectionLevel as string | null) ?? null,
     samplingSeverity: (row.samplingSeverity as string | null) ?? null,
+    gaugeTypeId: (row.gaugeTypeId as string | null) ?? null,
     balloonId:
       typeof balloonIdRaw === "string"
         ? balloonIdRaw
