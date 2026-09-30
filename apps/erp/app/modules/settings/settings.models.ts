@@ -615,6 +615,8 @@ export const postingSyncSettingsValidator = z.object({
   ),
   familyAr: z.enum(["documents", "journals", "none"]),
   familyAp: z.enum(["documents", "journals", "none"]),
+  familyCreditMemo: z.enum(["documents", "journals", "none"]),
+  familySupplierCredit: z.enum(["documents", "journals", "none"]),
   periodLockPolicy: z.enum(["park", "redate"]),
   lockDate: zfd.text(z.string().optional())
 });

@@ -25,6 +25,7 @@ export interface PaymentJournalApplicationInput {
   targetMemoId?: string | null;
   targetSalesInvoiceId?: string | null;
   targetPurchaseInvoiceId?: string | null;
+  targetReimbursementId?: string | null;
   sourceAmount: number;
   sourcePaymentId: string | null;
   fxGainLossAmount: number;
@@ -70,6 +71,12 @@ export interface BuildPaymentJournalInput {
   // Party determines the control account class; cash direction determines
   // debit/credit sides independently (including reusable refund arithmetic).
   isAR: boolean;
+  /** An employee reimbursement payout. Structurally the AP arm — cash out,
+   *  liability control debited — with `targetReimbursementId` as the target
+   *  column and the reimbursement's own booked payable account (passed per
+   *  application as `targetControlAccountId`) as the control. `isAR` stays
+   *  false, so every sign in this builder is already correct. */
+  isReimbursement?: boolean;
   cashIn: boolean;
   totalAmount: number;
   exchangeRate: number;
@@ -106,6 +113,7 @@ export function buildPaymentJournal(
     paymentId,
     companyId,
     isAR,
+    isReimbursement = false,
     cashIn,
     totalAmount,
     exchangeRate,
@@ -186,19 +194,28 @@ export function buildPaymentJournal(
   let currentDocumentReleased = 0;
   const priorCreditReleased = new Map<string, number>();
   for (const app of applications) {
-    const isRefund = cashIn !== isAR;
-    const target = isRefund
+    const isRefund = !isReimbursement && cashIn !== isAR;
+    const target = isReimbursement
+      ? app.targetReimbursementId
+      : isRefund
       ? app.targetMemoId
       : isAR
       ? app.targetSalesInvoiceId
       : app.targetPurchaseInvoiceId;
     if (
       !target ||
-      (isRefund
+      (isReimbursement
+        // A reimbursement payout carries no other target, no prior-credit
+        // funding source, and no trade discount or write-off.
         ? app.targetSalesInvoiceId || app.targetPurchaseInvoiceId ||
+          app.targetMemoId || app.sourcePaymentId ||
+          app.discountAmount !== 0 || app.writeOffAmount !== 0
+        : isRefund
+        ? app.targetSalesInvoiceId || app.targetPurchaseInvoiceId ||
+          app.targetReimbursementId ||
           app.sourcePaymentId || app.discountAmount !== 0 ||
           app.writeOffAmount !== 0
-        : app.targetMemoId ||
+        : app.targetMemoId || app.targetReimbursementId ||
           (isAR ? app.targetPurchaseInvoiceId : app.targetSalesInvoiceId))
     ) {
       throw new Error("Invalid payment application target");
@@ -243,7 +260,11 @@ export function buildPaymentJournal(
       isAR ? "asset" : "liability",
       round(applied + discount + writeOff),
       app.targetControlAccountId ?? accounts.controlAccountId,
-      isAR ? "Accounts Receivable" : "Accounts Payable",
+      isReimbursement
+        ? "Employee Reimbursements Payable"
+        : isAR
+        ? "Accounts Receivable"
+        : "Accounts Payable",
       target,
     );
     push(

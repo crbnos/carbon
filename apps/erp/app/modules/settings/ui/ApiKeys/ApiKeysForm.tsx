@@ -109,7 +109,6 @@ const ApiKeyForm = ({
             }
             defaultValues={initialValues}
             fetcher={fetcher}
-            className="flex flex-col h-full"
           >
             <ModalHeader>
               <ModalTitle>
@@ -120,7 +119,7 @@ const ApiKeyForm = ({
                 )}
               </ModalTitle>
             </ModalHeader>
-            <ModalBody className="max-h-[70dvh] overflow-y-auto">
+            <ModalBody>
               <Hidden name="id" />
               <Hidden name="scopes" value={scopesJsonb} />
               <VStack spacing={4}>

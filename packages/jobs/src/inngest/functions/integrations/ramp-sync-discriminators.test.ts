@@ -42,55 +42,162 @@ describe("Ramp inbound accounting discriminators", () => {
     expect(getMappedInvoiceId).toHaveBeenCalledWith("bill-1");
   });
 
-  it.each([
-    "REIMBURSED",
-    "REIMBURSED_VIA_PUSH",
-    "MANUALLY_REIMBURSED",
-    "APPROVED",
-    "AWAITING_PAYMENT",
-    "AWAITING_PUSH_PAYMENT"
-  ])("requires a settlement only for verified Ramp-paid state %s", async (state) => {
+  /**
+   * A mapped reimbursement's DOCUMENT is never re-read, so the deps only have to
+   * answer the mapping lookup, the metadata merge, and the durability reread.
+   */
+  function mappedReimbursementDeps(
+    mappingMetadata: Record<string, unknown> | null
+  ) {
     const mappingQuery = {
+      selectAll: vi.fn().mockReturnThis(),
       select: vi.fn().mockReturnThis(),
       where: vi.fn().mockReturnThis(),
-      executeTakeFirst: vi.fn().mockResolvedValue({ entityId: "invoice-1" })
+      executeTakeFirst: vi.fn().mockResolvedValue({
+        id: "mapping-1",
+        entityId: "reimbursement-row-1",
+        metadata: mappingMetadata
+      })
     };
-    const invoiceQuery = {
+    const metadataUpdate = {
+      set: vi.fn().mockReturnThis(),
+      where: vi.fn().mockReturnThis(),
+      execute: vi.fn().mockResolvedValue(undefined)
+    };
+    const documentQuery = {
       select: vi.fn().mockReturnThis(),
       eq: vi.fn().mockReturnThis(),
       maybeSingle: vi.fn().mockResolvedValue({
-        data: {
-          id: "invoice-1",
-          invoiceId: "PI-1",
-          status: "Posted",
-          currencyCode: "USD",
-          exchangeRate: 1
-        },
+        data: { id: "reimbursement-row-1", reimbursementId: "REIMB-1" },
         error: null
       })
     };
     const normalizeAmount = vi
       .fn()
-      .mockResolvedValue({ ok: false, error: "Payment amount required" });
-    const outcome = await syncRampReimbursement(
-      {
-        db: { selectFrom: vi.fn().mockReturnValue(mappingQuery) },
-        client: { from: vi.fn().mockReturnValue(invoiceQuery) },
+      .mockResolvedValue({ ok: true, value: 125.5 });
+    const from = vi.fn().mockReturnValue(documentQuery);
+    return {
+      metadataUpdate,
+      normalizeAmount,
+      from,
+      deps: {
+        db: {
+          selectFrom: vi.fn().mockReturnValue(mappingQuery),
+          updateTable: vi.fn().mockReturnValue(metadataUpdate)
+        },
+        client: { from },
         companyId: "company-1",
+        baseCurrency: "USD",
+        reimbursementBankAccountId: "bank-1",
         normalizeAmount,
-        invoiceDeepLinkUrl: () => "https://carbon.example/invoice-1"
-      } as unknown as RampReimbursementDependencies,
-      { id: "reimbursement-1", state }
-    );
-    if (state === "REIMBURSED" || state === "REIMBURSED_VIA_PUSH") {
-      expect(outcome).toEqual({
-        fail: { id: "reimbursement-1", message: "Payment amount required" }
-      });
-      expect(normalizeAmount).toHaveBeenCalledOnce();
-    } else {
-      expect(outcome).toHaveProperty("ok");
-      expect(normalizeAmount).not.toHaveBeenCalled();
+        getExchangeRate: vi.fn().mockResolvedValue(1),
+        reimbursementDeepLinkUrl: (id: string) =>
+          `https://carbon.example/x/reimbursements/${id}`
+      } as unknown as RampReimbursementDependencies
+    };
+  }
+
+  const reconfirmed = {
+    ok: {
+      id: "reimbursement-1",
+      referenceId: "REIMB-1",
+      deepLinkUrl: "https://carbon.example/x/reimbursements/reimbursement-row-1"
     }
+  };
+
+  it.each([
+    "MANUALLY_REIMBURSED",
+    "APPROVED",
+    "AWAITING_PAYMENT",
+    "AWAITING_PUSH_PAYMENT"
+  ])("re-confirms an already-imported reimbursement in state %s without touching it", async (state) => {
+    // Carbon owns the document once it lands. These states record no payout
+    // intent, so a mapped item does no work at all beyond the reread.
+    const { deps, metadataUpdate, normalizeAmount, from } =
+      mappedReimbursementDeps(null);
+    expect(
+      await syncRampReimbursement(deps, { id: "reimbursement-1", state })
+    ).toEqual(reconfirmed);
+    expect(normalizeAmount).not.toHaveBeenCalled();
+    expect(metadataUpdate.execute).not.toHaveBeenCalled();
+    expect(from).toHaveBeenCalledWith("reimbursement");
+  });
+
+  it.each([
+    "REIMBURSED",
+    "REIMBURSED_VIA_PUSH"
+  ])("records the payout intent on an already-imported reimbursement Ramp has since PAID in state %s", async (state) => {
+    // The document still is not touched — but the mapping must gain the
+    // payout, or Post never creates the `payment`/`invoiceSettlement` and the
+    // money Ramp moved is never settled in Carbon.
+    const { deps, metadataUpdate } = mappedReimbursementDeps(null);
+    expect(
+      await syncRampReimbursement(deps, {
+        id: "reimbursement-1",
+        state,
+        transaction_date: "2026-09-12",
+        approved_at: "2026-09-13T10:00:00Z",
+        entity_amount: { currency: "USD", value: 12550 }
+      })
+    ).toEqual(reconfirmed);
+    expect(metadataUpdate.execute).toHaveBeenCalledTimes(1);
+    expect(metadataUpdate.set).toHaveBeenCalledTimes(1);
+    // The merge is a raw jsonb `||` fragment; its one parameter is the intent.
+    const merged = metadataUpdate.set.mock.calls[0]?.[0] as {
+      metadata: { toOperationNode: () => { parameters: unknown[] } };
+    };
+    const node = merged.metadata.toOperationNode();
+    expect(node.parameters).toEqual([
+      {
+        kind: "ValueNode",
+        value: JSON.stringify({
+          rampPaymentId: "reimbursement-payment:reimbursement-1",
+          paidAt: "2026-09-13",
+          bankAccountId: "bank-1",
+          amount: 125.5,
+          currencyCode: "USD",
+          exchangeRate: 1
+        })
+      }
+    ]);
+  });
+
+  it("does not record a second payout intent on the next pass", async () => {
+    // Idempotent, and the FIRST intent wins: it carries the FX snapshot of the
+    // payout that actually happened.
+    const { deps, metadataUpdate, normalizeAmount } = mappedReimbursementDeps({
+      rampPaymentId: "reimbursement-payment:reimbursement-1",
+      exchangeRate: 0.91
+    });
+    expect(
+      await syncRampReimbursement(deps, {
+        id: "reimbursement-1",
+        state: "REIMBURSED",
+        transaction_date: "2026-09-12",
+        entity_amount: { currency: "USD", value: 12550 }
+      })
+    ).toEqual(reconfirmed);
+    expect(metadataUpdate.execute).not.toHaveBeenCalled();
+    expect(normalizeAmount).not.toHaveBeenCalled();
+  });
+
+  it("fails a PAID reimbursement whose payout intent cannot be built", async () => {
+    // Ramp has already paid the employee, so an unrecordable payout is the
+    // operator's problem to see — not something to confirm away silently.
+    const { deps, metadataUpdate } = mappedReimbursementDeps(null);
+    expect(
+      await syncRampReimbursement(deps, {
+        id: "reimbursement-1",
+        state: "REIMBURSED",
+        entity_amount: { currency: "USD", value: 12550 }
+      })
+    ).toEqual({
+      fail: {
+        id: "reimbursement-1",
+        message: expect.stringContaining("payment date")
+      }
+    });
+    expect(metadataUpdate.execute).not.toHaveBeenCalled();
   });
 
   it("continues original transaction resolution for documented ach repayments", async () => {
@@ -117,11 +224,7 @@ describe("Ramp inbound accounting discriminators", () => {
       }
     } as unknown as RampClient;
     await syncRampRepayments(ctx, ramp, undefined, "card-1", null);
-    expect(getEntityId).toHaveBeenCalledWith(
-      "ramp",
-      "charge-1",
-      "cardTransaction"
-    );
+    expect(getEntityId).toHaveBeenCalledWith("ramp", "charge-1", "charge");
   });
 
   it.each([

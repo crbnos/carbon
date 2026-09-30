@@ -3,7 +3,6 @@
 // test runners — that imports this client).
 
 import type { Database } from "@carbon/database";
-import { ONSHAPE_CLIENT_ID, ONSHAPE_CLIENT_SECRET } from "@carbon/env";
 import { getLogger } from "@carbon/logger";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import axios from "axios";
@@ -11,8 +10,14 @@ import {
   persistIntegrationSecrets,
   resolveIntegrationSecrets
 } from "../../integrations/secrets";
+import {
+  getOnshapeIntegration,
+  ONSHAPE_DEFAULT_BASE_URL,
+  type OnshapeIntegrationId
+} from "./connection";
 import type { OnshapeDocument } from "./document.type";
 import type { OnshapeElementType } from "./element.type";
+import { getOnshapeOAuthConfig, refreshOnshapeAccessToken } from "./oauth";
 
 const logger = getLogger("ee", "onshape");
 
@@ -311,7 +316,8 @@ export class OnshapeClient {
   // getCompanyRevisions). Onshape caps `offset` at 100 and its `next` advances by
   // `after=<date>&offset=1`, so following the cursor — NOT incrementing offset — is
   // the only way to page a company's full revision history. `next` is an absolute
-  // cad.onshape.com URL; axios uses it as-is (same host, so the auth header applies).
+  // URL on the connection's own host (cad.onshape.com or a Government tenant);
+  // axios uses it as-is (same host, so the auth header applies).
   async getCompanyRevisionsPage(
     nextUrl: string
   ): Promise<
@@ -561,37 +567,6 @@ export class OnshapeClient {
     );
     return bytesWritten;
   }
-
-  static async refreshAccessToken(refreshToken: string): Promise<{
-    access_token: string;
-    refresh_token: string;
-    token_type: string;
-  }> {
-    if (!ONSHAPE_CLIENT_ID || !ONSHAPE_CLIENT_SECRET) {
-      throw new Error("Onshape OAuth not configured");
-    }
-
-    const response = await fetch("https://oauth.onshape.com/oauth/token", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded"
-      },
-      body: new URLSearchParams({
-        grant_type: "refresh_token",
-        refresh_token: refreshToken,
-        client_id: ONSHAPE_CLIENT_ID,
-        client_secret: ONSHAPE_CLIENT_SECRET
-      })
-    });
-
-    if (!response.ok) {
-      throw new Error(
-        `Onshape token refresh failed (${response.status}): ${await response.text()}`
-      );
-    }
-
-    return response.json();
-  }
 }
 
 export async function getOnshapeClient(
@@ -601,12 +576,9 @@ export async function getOnshapeClient(
 ): Promise<
   { client: OnshapeClient; error: null } | { client: null; error: string }
 > {
-  const integration = await client
-    .from("companyIntegration")
-    .select("*")
-    .eq("id", "onshape")
-    .eq("companyId", companyId)
-    .maybeSingle();
+  // Either Onshape connection — the public app or a Government private app.
+  // Past authorization they are the same API, just on a different host.
+  const integration = await getOnshapeIntegration(client, companyId);
 
   if (integration.error || !integration.data) {
     return { client: null, error: "Onshape integration not found" };
@@ -617,10 +589,11 @@ export async function getOnshapeClient(
   // the service-role client (the passed `client` may be RLS-scoped).
   const { getCarbonServiceRole } = await import("@carbon/auth/client.server");
   const serviceRole = getCarbonServiceRole();
+  const integrationId: OnshapeIntegrationId = integration.data.id;
   const metadata = (await resolveIntegrationSecrets(
     serviceRole,
     companyId,
-    "onshape",
+    integrationId,
     integration.data.metadata,
     integration.data.secretRef
   )) as Record<string, any>;
@@ -631,7 +604,7 @@ export async function getOnshapeClient(
   }
 
   let accessToken = credentials.accessToken;
-  const baseUrl = metadata?.baseUrl ?? "https://cad.onshape.com";
+  const baseUrl = metadata?.baseUrl ?? ONSHAPE_DEFAULT_BASE_URL;
 
   // Refresh token if expired
   if (
@@ -640,7 +613,10 @@ export async function getOnshapeClient(
     new Date(credentials.expiresAt) <= new Date()
   ) {
     try {
-      const refreshed = await OnshapeClient.refreshAccessToken(
+      const oauth = getOnshapeOAuthConfig(integrationId, metadata);
+      if (!oauth) throw new Error("Onshape OAuth not configured");
+      const refreshed = await refreshOnshapeAccessToken(
+        oauth,
         credentials.refreshToken
       );
 
@@ -648,7 +624,7 @@ export async function getOnshapeClient(
 
       // Persist the new tokens. Secret material is split out to Supabase Vault;
       // only the non-secret config is written to the metadata column.
-      await persistIntegrationSecrets(serviceRole, companyId, "onshape", {
+      await persistIntegrationSecrets(serviceRole, companyId, integrationId, {
         ...metadata,
         credentials: {
           ...credentials,

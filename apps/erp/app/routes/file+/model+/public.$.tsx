@@ -3,8 +3,10 @@ import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import {
   fileResponseHeaders,
   getContentType,
+  isStorageNotFound,
   isUnsafeStoragePath,
-  storage
+  storage,
+  storageErrorStatus
 } from "@carbon/files";
 import { getLogger } from "@carbon/logger";
 import type { LoaderFunctionArgs } from "react-router";
@@ -38,23 +40,19 @@ export async function loader({ params }: LoaderFunctionArgs) {
   // the companyId, which selects the per-company bucket (with legacy fallback).
   const companyId = path.split("/")[0];
 
-  async function downloadFile() {
-    const result = await storage(client).company(companyId).download(`${path}`);
-    if (!result.data) {
-      logger.error("Failed to download file", { error: result.error });
-      return null;
-    }
-    return result.data;
-  }
-
-  let fileData = await downloadFile();
-  if (!fileData) {
-    // Wait for a second and try again
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    fileData = await downloadFile();
-    if (!fileData) {
-      throw new Error("Failed to download file after retry");
-    }
+  // No retry here: the client's fetchWithRetry already retries 5xx and
+  // network failures.
+  const { data: fileData, error } = await storage(client)
+    .company(companyId)
+    .download(path);
+  if (error) {
+    logger.error("Failed to download file", {
+      path,
+      status: storageErrorStatus(error),
+      error
+    });
+    if (await isStorageNotFound(error)) throw notFound("File not found");
+    throw new Response(null, { status: 500 });
   }
 
   const headers = fileResponseHeaders(

@@ -16,6 +16,7 @@ export {
 } from "./chart-of-accounts";
 export {
   advanceRampCursor,
+  buildRampClient,
   clearRampConnectionMetadata,
   ensureRampConnection,
   exchangeRampOAuthCode,
@@ -44,16 +45,13 @@ export {
   pushProjects
 } from "./projects";
 export type {
-  RampInvoicePush,
   RampPurchaseOrderBatch,
-  RampPurchaseOrderPush,
-  RampPurchaseOrderPushLine,
+  RampVendorResolution,
   RampVendorSupplier
 } from "./spend";
 export {
   prepareRampPurchaseOrderBatch,
-  pushInvoiceDraftBill,
-  pushPurchaseOrder,
+  prepareRampVendorResolution,
   resolveOrCreateRampSpendVendor
 } from "./spend";
 export {

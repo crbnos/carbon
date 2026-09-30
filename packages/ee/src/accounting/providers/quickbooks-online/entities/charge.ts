@@ -16,9 +16,9 @@ import {
   upsertDimensionValueMapping
 } from "../../../core/dimension-mapping";
 import {
-  type CardTransactionCostingResult,
+  type ChargeCostingResult,
   type CostingLine,
-  loadCardTransactionCostingLines,
+  loadChargeCostingLines,
   toTransactionCurrencyLines
 } from "../../../core/document-costing";
 import { createMappingService } from "../../../core/external-mapping";
@@ -42,7 +42,7 @@ import {
 } from "./shared";
 
 /**
- * QboChargeSyncer — Carbon card transactions (Ramp card spend) → QuickBooks
+ * QboChargeSyncer — Carbon charges (Ramp card spend) → QuickBooks
  * Online `Purchase` objects with `PaymentType: "CreditCard"` (push-only;
  * entityType "charge"; the QBO counterpart of RilletChargeSyncer).
  *
@@ -50,15 +50,15 @@ import {
  * (`EntityRef`), a charge date, account-coded expense lines, and the
  * credit-card liability account (`AccountRef`) it settles against. QBO
  * derives the posting itself — debit each line's account, credit the card
- * account — which is exactly what Carbon's "Card Transaction" journal booked,
+ * account — which is exactly what Carbon's "Charge" journal booked,
  * so the lines are that journal's coded lines (shared
- * `loadCardTransactionCostingLines`, card-liability line excluded) and the
+ * `loadChargeCostingLines`, card-liability line excluded) and the
  * two ledgers cannot drift. While this syncer is enabled the journal itself is
  * DOC_BACKED-excluded per row (core/posting.ts), never pushed twice.
  *
  * A Posted `Charge` OR `Credit` with a merchant supplier is pushed: QBO can
  * represent a merchant refund natively (`Credit: true`, positive line
- * amounts — `CHARGE_CREDIT_PROVIDERS`). The other three card-transaction
+ * amounts — `CHARGE_CREDIT_PROVIDERS`). The other three charge
  * types are money movements with no vendor and stay journal entries. Every
  * skip here is mirrored by the policy, so a skipped row's journal keeps
  * pushing — the spend always reaches QBO as exactly one of the two.
@@ -74,7 +74,7 @@ import {
  */
 
 /**
- * The Carbon `cardTransaction` header as the syncer reads it — the same shape
+ * The Carbon `charge` header as the syncer reads it — the same shape
  * the Rillet charge syncer reads, named per provider because the provider
  * barrels are re-exported side by side (`export *` would collide).
  */
@@ -85,7 +85,7 @@ export type QboChargeCostingLine = CostingLine;
 
 /** The parts of the costing result the pure mapper consumes. */
 export type QboChargeCosting = Pick<
-  CardTransactionCostingResult,
+  ChargeCostingResult,
   | "lines"
   | "documentTotal"
   | "decimalPlaces"
@@ -98,7 +98,7 @@ export type QboChargeCosting = Pick<
 >;
 
 /**
- * Map a Carbon card transaction to the QBO Purchase create payload. Pure —
+ * Map a Carbon charge to the QBO Purchase create payload. Pure —
  * exported for tests. `costing.lines` are the posted journal's coded lines
  * (card-liability line already excluded), base-currency and debit-signed;
  * `costing.exchangeRate` converts them to the card's transaction currency
@@ -118,7 +118,7 @@ export type QboChargeCosting = Pick<
  * - DocNumber carries the Carbon readable id under QBO's 21-char cap, else
  *   PrivateNote; the memo rides PrivateNote either way.
  */
-export function mapCardTransactionToQboPurchase(args: {
+export function mapChargeToQboPurchase(args: {
   charge: QboCardCharge;
   costing: QboChargeCosting;
   vendorRemoteId: string;
@@ -182,10 +182,7 @@ export function mapCardTransactionToQboPurchase(args: {
     };
   });
 
-  const docNumber = buildQboDocNumberFields(
-    charge.cardTransactionId,
-    charge.memo
-  );
+  const docNumber = buildQboDocNumberFields(charge.chargeId, charge.memo);
 
   return {
     PaymentType: "CreditCard",
@@ -429,7 +426,7 @@ export class QboChargeSyncer extends ChargeSyncerBase<
   }
 
   // =================================================================
-  // 5. SHOULD SYNC — mirrors isChargeBackedCardTransaction exactly
+  // 5. SHOULD SYNC — mirrors isDocBackedCharge exactly
   // =================================================================
 
   protected shouldSync(
@@ -441,10 +438,10 @@ export class QboChargeSyncer extends ChargeSyncerBase<
     const local = context.localEntity;
     if (!local) return true;
     if (local.status !== "Posted") {
-      return `Card transaction must be posted before syncing (current status: ${local.status})`;
+      return `Charge must be posted before syncing (current status: ${local.status})`;
     }
     if (local.type !== "Charge" && local.type !== "Credit") {
-      return `Card transaction type ${local.type} is a money movement, not a charge — it syncs as a journal entry`;
+      return `Charge type ${local.type} is a money movement, not a charge — it syncs as a journal entry`;
     }
     if (!local.supplierId) {
       return "Card charge has no merchant supplier — it syncs as a journal entry";
@@ -473,9 +470,9 @@ export class QboChargeSyncer extends ChargeSyncerBase<
       );
     }
 
-    const costing = await loadCardTransactionCostingLines(this.database, {
+    const costing = await loadChargeCostingLines(this.database, {
       companyId: this.companyId,
-      cardTransactionId: local.id
+      chargeId: local.id
     });
 
     // Dimension slots (ClassRef / DepartmentRef): resolve the value-mapping
@@ -500,7 +497,7 @@ export class QboChargeSyncer extends ChargeSyncerBase<
       };
     }
 
-    return mapCardTransactionToQboPurchase({
+    return mapChargeToQboPurchase({
       charge: local,
       costing,
       vendorRemoteId,

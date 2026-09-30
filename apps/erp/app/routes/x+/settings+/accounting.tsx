@@ -289,27 +289,47 @@ export default function AccountingSettingsRoute() {
 
         <Card>
           <CardHeader>
+            <CardTitle>
+              <Trans>Show Trailing Zeros</Trans>
+            </CardTitle>
+            <CardDescription>
+              <Trans>
+                Pad amounts to their currency's decimal places, so 300 appears
+                as 300.00 and columns of figures stay aligned. Turn this off to
+                show only the digits that carry value. Printed documents and
+                stored amounts are unaffected either way.
+              </Trans>
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
             <HStack className="justify-between items-center">
-              <div>
-                <CardTitle>
-                  <Trans>Show Trailing Zeros</Trans>
-                </CardTitle>
-                <CardDescription>
-                  <Trans>
-                    Pad amounts to their currency's decimal places, so 300
-                    appears as 300.00 and columns of figures stay aligned. Turn
-                    this off to show only the digits that carry value. Printed
-                    documents and stored amounts are unaffected either way.
-                  </Trans>
-                </CardDescription>
-              </div>
+              <VStack className="items-start" spacing={1}>
+                <span className="font-medium">
+                  {companySettings.showCurrencyTrailingZeros ? (
+                    <Trans>Trailing zeros are shown</Trans>
+                  ) : (
+                    <Trans>Trailing zeros are hidden</Trans>
+                  )}
+                </span>
+                <span className="text-sm text-muted-foreground">
+                  {companySettings.showCurrencyTrailingZeros ? (
+                    <Trans>
+                      Amounts are padded to their currency's decimal places.
+                    </Trans>
+                  ) : (
+                    <Trans>
+                      Amounts show only the digits that carry value.
+                    </Trans>
+                  )}
+                </span>
+              </VStack>
               <Switch
                 checked={companySettings.showCurrencyTrailingZeros}
                 onCheckedChange={handleTrailingZerosToggle}
                 disabled={fetcher.state !== "idle"}
               />
             </HStack>
-          </CardHeader>
+          </CardContent>
         </Card>
 
         <ValidatedForm

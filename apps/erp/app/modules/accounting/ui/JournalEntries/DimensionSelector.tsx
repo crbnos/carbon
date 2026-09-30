@@ -74,7 +74,11 @@ const entityTypeColors: Record<string, string> = {
   Custom: ""
 };
 
-function getColor(entityType: string) {
+// Exported so a read-only dimension badge outside this file (the reimbursement
+// and charge detail pages) can tint by entity type exactly as the editor does.
+// Two independent colour maps for the same dimension types is how the read and
+// edit views of one document start disagreeing about what colour a Project is.
+export function getColor(entityType: string) {
   return entityTypeColors[entityType] ?? "";
 }
 

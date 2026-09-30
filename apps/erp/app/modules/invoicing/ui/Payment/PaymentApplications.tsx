@@ -25,15 +25,18 @@ type PaymentApplication = NonNullable<
 
 type PaymentApplicationsProps = {
   isRefund?: boolean;
+  // An employee payee: every target is a reimbursement.
+  isReimbursement?: boolean;
   applications: PaymentApplication[];
   paymentTotal: number;
   paymentCurrency: string;
   baseCurrency: string;
 };
 
-// The applied invoice's human-readable id comes from the embedded
-// salesInvoice/purchaseInvoice relation (getInvoiceSettlements); fall back to
-// the raw FK id if the relation didn't resolve.
+// The applied document's human-readable id comes from the embedded
+// salesInvoice/purchaseInvoice/memo/reimbursement relation
+// (getInvoiceSettlements); fall back to the raw FK id if the relation didn't
+// resolve.
 function invoiceLabel(a: PaymentApplication) {
   const rec = a as unknown as {
     salesInvoice?:
@@ -51,6 +54,11 @@ function invoiceLabel(a: PaymentApplication) {
       | { memoId?: string | null }
       | { memoId?: string | null }[]
       | null;
+    targetReimbursementId?: string | null;
+    targetReimbursement?:
+      | { reimbursementId?: string | null }
+      | { reimbursementId?: string | null }[]
+      | null;
   };
   const pick = (x: typeof rec.salesInvoice) =>
     Array.isArray(x) ? x[0]?.invoiceId : x?.invoiceId;
@@ -60,14 +68,19 @@ function invoiceLabel(a: PaymentApplication) {
     (Array.isArray(rec.targetMemo)
       ? rec.targetMemo[0]?.memoId
       : rec.targetMemo?.memoId) ??
+    (Array.isArray(rec.targetReimbursement)
+      ? rec.targetReimbursement[0]?.reimbursementId
+      : rec.targetReimbursement?.reimbursementId) ??
     rec.targetSalesInvoiceId ??
     rec.targetPurchaseInvoiceId ??
-    rec.targetMemoId
+    rec.targetMemoId ??
+    rec.targetReimbursementId
   );
 }
 
 const PaymentApplications = ({
   isRefund = false,
+  isReimbursement = false,
   applications: splits,
   paymentCurrency,
   baseCurrency,
@@ -84,6 +97,7 @@ const PaymentApplications = ({
       a.targetSalesInvoiceId ??
       a.targetPurchaseInvoiceId ??
       a.targetMemoId ??
+      a.targetReimbursementId ??
       a.id;
     const existing = byInvoice.get(id);
     if (!existing) {
@@ -137,7 +151,15 @@ const PaymentApplications = ({
         <Table>
           <Thead>
             <Tr>
-              <Th>{isRefund ? <Trans>Memo</Trans> : <Trans>Invoice</Trans>}</Th>
+              <Th>
+                {isReimbursement ? (
+                  <Trans>Reimbursement</Trans>
+                ) : isRefund ? (
+                  <Trans>Memo</Trans>
+                ) : (
+                  <Trans>Invoice</Trans>
+                )}
+              </Th>
               <Th className="text-right">
                 <Trans>Applied</Trans>
               </Th>
@@ -186,6 +208,12 @@ const PaymentApplications = ({
                       </Hyperlink>
                     ) : a.targetMemoId ? (
                       <Hyperlink to={path.to.memo(a.targetMemoId)}>
+                        {invoiceLabel(a)}
+                      </Hyperlink>
+                    ) : a.targetReimbursementId ? (
+                      <Hyperlink
+                        to={path.to.reimbursement(a.targetReimbursementId)}
+                      >
                         {invoiceLabel(a)}
                       </Hyperlink>
                     ) : (

@@ -22,7 +22,7 @@
     "@slack/web-api": "catalog:",
     "@supabase/functions-js": "catalog:",
     "@supabase/supabase-js": "catalog:",
-    "ai": "5.0.172",
+    "ai": "catalog:",
     "axios": "catalog:",
     "inngest": "^3.52.7",
     "kysely": "catalog:",

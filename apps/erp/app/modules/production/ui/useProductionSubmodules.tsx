@@ -10,7 +10,8 @@ import {
   LuSquareChartGantt,
   LuSquareKanban,
   LuStepForward,
-  LuTrash
+  LuTrash,
+  LuTruck
 } from "react-icons/lu";
 import { usePermissions } from "~/hooks";
 import { useSavedViews } from "~/hooks/useSavedViews";
@@ -73,6 +74,11 @@ export default function useProductionSubmodules() {
           name: t`Priorities`,
           to: path.to.priorityDates,
           icon: <LuSquareKanban />
+        },
+        {
+          name: t`Outbound`,
+          to: path.to.scheduleOutbound,
+          icon: <LuTruck />
         }
       ]
     },

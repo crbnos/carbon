@@ -79,31 +79,49 @@ export function buildLineCodingSelections(
     costCenterId: string | null;
     projectId: string | null;
   },
+  /**
+   * `Carbon id -> the id Ramp knows the option by`. Not a membership set: when
+   * another system holds Ramp's accounting seat, the options are ITS and a
+   * Carbon id addresses nothing. See `SpendPushedCoding`.
+   */
   pushed: {
-    pushedAccountIds: ReadonlySet<string>;
-    pushedCostCenterIds: ReadonlySet<string>;
-    pushedProjectIds: ReadonlySet<string>;
+    pushedAccountIds: ReadonlyMap<string, string>;
+    pushedCostCenterIds: ReadonlyMap<string, string>;
+    pushedProjectIds: ReadonlyMap<string, string>;
   }
 ): RampCodingWriteSelection[] {
   const selections: RampCodingWriteSelection[] = [];
-  if (line.accountId && pushed.pushedAccountIds.has(line.accountId)) {
+
+  const accountOption = line.accountId
+    ? pushed.pushedAccountIds.get(line.accountId)
+    : undefined;
+  if (accountOption) {
     selections.push({
       field_external_id: RAMP_GL_ACCOUNT_FIELD_ID,
-      field_option_external_id: line.accountId
+      field_option_external_id: accountOption
     });
   }
-  if (line.costCenterId && pushed.pushedCostCenterIds.has(line.costCenterId)) {
+
+  const costCenterOption = line.costCenterId
+    ? pushed.pushedCostCenterIds.get(line.costCenterId)
+    : undefined;
+  if (costCenterOption) {
     selections.push({
       field_external_id: RAMP_COST_CENTER_FIELD_ID,
-      field_option_external_id: line.costCenterId
+      field_option_external_id: costCenterOption
     });
   }
-  if (line.projectId && pushed.pushedProjectIds.has(line.projectId)) {
+
+  const projectOption = line.projectId
+    ? pushed.pushedProjectIds.get(line.projectId)
+    : undefined;
+  if (projectOption) {
     selections.push({
       field_external_id: RAMP_PROJECT_FIELD_ID,
-      field_option_external_id: line.projectId
+      field_option_external_id: projectOption
     });
   }
+
   return selections;
 }
 

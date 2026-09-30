@@ -138,7 +138,7 @@ export const RampTransactionSchema = z
     // as a last-resort fallback. Verified 2026-08-28 against the OpenAPI spec.
     amount: z.number().optional(),
     // The settlement amount to the entity — signed integer in minor units
-    // (cents). This is the field ramp-sync should read for card transactions.
+    // (cents). This is the field ramp-sync should read for charges.
     entity_amount: RampSignedAmountSchema.nullish(),
     // The amount the merchant originally charged — signed integer minor units.
     merchant_amount: RampSignedAmountSchema.nullish(),
@@ -244,12 +244,31 @@ export const RampReimbursementSchema = z
     id: z.string(),
     state: z.string().optional(),
     sync_status: z.string().optional(),
+    // DEPRECATED exactly as on a transaction: a live reimbursement sends a bare
+    // number in MAJOR units (dollars) here while the real amount sits in the
+    // verified minor-unit objects below. Readers must prefer those.
     amount: z.union([RampCurrencyAmountSchema, z.number()]).optional(),
+    // The settlement amount in the ENTITY's currency — signed integer minor
+    // units. This is the field the reimbursement header should read, matching
+    // the charge path's use of `entity_amount`.
+    entity_amount: RampSignedAmountSchema.nullish(),
+    // What the employee is actually paid, and what they originally submitted —
+    // integer minor units. Fallbacks when the entity amount is absent.
+    payee_amount: RampCurrencyAmountSchema.nullish(),
+    original_reimbursement_amount: RampCurrencyAmountSchema.nullish(),
     currency_code: z.string().optional(),
+    currency: z.string().optional(),
     transaction_date: z.string().nullish(),
     approved_at: z.string().nullish(),
     entity_id: z.string().nullish(),
     user_id: z.string().nullish(),
+    // Ramp puts the employee's identity at the TOP LEVEL of a reimbursement
+    // (`user_email` / `user_full_name`); `user` is null on every record we have
+    // seen. Declared explicitly because the employee match keys on the email —
+    // `.passthrough()` keeps undeclared fields at runtime but hides them from
+    // the type, which is how the reader came to look only at `user.email`.
+    user_email: z.string().nullish(),
+    user_full_name: z.string().nullish(),
     user: z.unknown().optional(),
     line_items: z.array(RampLineItemSchema).optional()
   })
@@ -403,12 +422,12 @@ export type RampSyncFlags = z.infer<typeof RampSyncFlagsSchema>;
 
 export const RampCursorsSchema = z
   .object({
-    repaymentsRepaidAt: z.string().optional(),
-    // Outbound cursors remain strings so one atomic metadata-path patch can
-    // persist the full keyset. New values encode [updatedAt, id]; legacy bare
-    // timestamps remain valid and are replayed inclusively during migration.
-    purchaseOrderPushUpdatedAt: z.string().optional(),
-    invoicePushUpdatedAt: z.string().optional()
+    // Inbound only. The outbound push cursors
+    // (`purchaseOrderPushUpdatedAt` / `invoicePushUpdatedAt`) were dropped when
+    // purchase orders and bills moved onto the event engine — the ledger is the
+    // idempotency now, not a keyset. Values stored by earlier installs are
+    // simply ignored; no migration strips them.
+    repaymentsRepaidAt: z.string().optional()
   })
   .optional();
 
@@ -439,6 +458,25 @@ export const RampIntegrationMetadataSchema = z
     cashbackIncomeAccountId: z.string().optional(),
     reimbursementBankAccountId: z.string().optional(),
     entityId: z.string().optional(),
+    /**
+     * The install mode, stamped from the signed OAuth state at connect time.
+     * ABSENT on every install that predates modes, which resolves to
+     * `"provider"` — today's behaviour — via `resolveRampMode`.
+     */
+    syncMode: z.enum(["provider", "push-only"]).optional(),
+    /**
+     * The scopes the token response ACTUALLY returned, not the set requested.
+     * RFC 6749 §3.3 permits an authorization server to issue narrower scope than
+     * asked for, and it must then say so in `scope`.
+     */
+    grantedScopes: z.array(z.string()).optional(),
+    /**
+     * Which system holds Ramp's accounting connection (its
+     * `remote_provider_name`). In push-only this should NOT be Carbon; the
+     * healthcheck reports the mismatch rather than failing the connect, because
+     * the customer may connect the other provider afterwards.
+     */
+    accountingConnectionProvider: z.string().optional(),
     connectionId: z.string().optional(),
     webhookId: z.string().optional(),
     webhookSecret: z.string().optional(),

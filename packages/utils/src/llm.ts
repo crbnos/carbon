@@ -12,5 +12,7 @@ export type AgentProvider = "openai" | "anthropic";
 
 export const agentProvider: AgentProvider = "openai";
 
-export const agentChatModel = "gpt-4" as const; // main chat turns
+// gpt-4.1-mini: 1M-token window, no reasoning tokens, a small fraction of GPT-4's price.
+// Plain "gpt-4" (the 2023 model) has an 8k window: one long docs page overflowed it.
+export const agentChatModel = "gpt-4.1-mini" as const; // main chat turns
 export const agentTitleModel = "gpt-4o-mini" as const; // cheap: chat titles

@@ -79,15 +79,6 @@ export const BLOCK_FIXTURES: BlockFixture[] = [
     ]
   },
   {
-    label: "Navigate",
-    blocks: [
-      {
-        toolName: "navigate",
-        input: { entity: "part", id: "part_preview", label: "A part" }
-      }
-    ]
-  },
-  {
     label: "Link + Button",
     blocks: [
       {

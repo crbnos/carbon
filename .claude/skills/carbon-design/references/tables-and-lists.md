@@ -82,7 +82,8 @@ Key props (`components/Table/Table.tsx`): `columns`, `data`, `count`, `title` (t
 title), `primaryAction`, `headerActions`, `table` + `withSavedView` (top-level lists),
 `withSearch` (default on), `withPagination` (on), `withColumnOrdering` (on), `withCsvExport`
 (on), `withSelectableRows` + `renderActions` (bulk), `renderContextMenu`,
-`renderExpandedRow`, `defaultColumnVisibility`, `defaultColumnPinning`, `compact` (embedded),
+`renderExpandedRow`, `groupRowsBy` (a header row above each run of rows sharing a key — the
+caller orders `data` by it; e.g. Outbound grouped by day), `defaultColumnVisibility`, `defaultColumnPinning`, `compact` (embedded),
 `emptyState`, `importCSV`, `getRowClassName`, `withInlineEditing` + `editableComponents`.
 
 Column `meta` (`components/Table/types.ts`): `icon`, `filter` (`static | fetcher | custom`,

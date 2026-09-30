@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 
-// sales.models' module graph transitively loads @carbon/glossary and
+// sales.models' module graph transitively loads @carbon/content/glossary and
 // @carbon/onboarding, both of which build Lingui `msg` descriptors at module
 // load. The macro isn't transformed under plain vitest, so raw `msg` throws.
 // Stub it to a plain string builder; the validator under test is untouched.

@@ -1,103 +1,81 @@
 ---
-description: Vercel AI SDK usage in Carbon — what AI features actually exist, which models are configured, and the stale chat-edge-function scaffold
+description: Vercel AI SDK usage in Carbon — versions, the v7 idioms in use, every call site, and the models configured
 paths:
   - "apps/erp/app/routes/api+/ai+/**"
-  - "apps/erp/app/modules/quality/inspectionBalloonAnalyze.*"
+  - "apps/erp/app/modules/agent/**"
+  - "apps/erp/app/modules/production/inspectionBalloonAnalyze.*"
   - "packages/utils/src/llm.ts"
   - "packages/database/supabase/functions/lib/ai/**"
 ---
 
 # AI SDK Usage in Carbon
 
-Carbon uses the [Vercel AI SDK](https://sdk.vercel.ai/) (`ai` v5) for its AI
-features. Most are one-shot `generateObject` extractions against OpenAI
-(document extraction, inspection-balloon analysis).
+Carbon uses the [Vercel AI SDK](https://ai-sdk.dev/) **v7**. Versions live in the pnpm
+catalog (`pnpm-workspace.yaml`): `ai`, `@ai-sdk/openai`, `@ai-sdk/anthropic` and
+`@ai-sdk/react` must move together, because each provider release pins one
+`@ai-sdk/provider-utils` and `@ai-sdk/react` pins an exact `ai`. `erp`, `ee` and `jobs`
+all take `ai` from `catalog:`. v7 is ESM-only and needs Node ≥ 22.
 
-> **Update (2026-07): an in-app assistant chat DID ship.** The `agent` module
-> (`apps/erp/app/modules/agent/`, migration `20260721090000_in-app-agent.sql`,
-> plan-gated `AI_AGENT`) is a streaming, tool-using **read-only docs assistant**
-> — a real chat UI with threads/messages in the ERP top bar. Its runtime
-> provider is still **OpenAI** (`agentProvider` / `agentChatModel = "gpt-4"` in
-> `packages/utils/src/llm.ts`), NOT Anthropic, despite the `agentThread.modelId`
-> column defaulting to a Claude id. See `.claude/rules/agent-knowledge-base.md`
-> and `docs/content/docs/reference/agent.mdx`. The older unshipped
-> `functions/chat/index.ts` + `Agent.ee.tsx` scaffold (`@ai-sdk/anthropic`) this
-> rule used to warn about is a separate, dead thing.
+`ai@4` still appears in the lockfile through `linguito` (the translation CLI, dev only).
+That is expected and nothing imports it.
 
-## Packages (`apps/erp/package.json`)
+## v7 idioms (the deprecated v5/v6 names still compile; don't use them)
 
-- `ai` `5.0.172` — core SDK (`generateObject`, etc.)
-- `@ai-sdk/openai` (catalog `2.0.102` in `pnpm-workspace.yaml`) — **the provider actually used**
-- `@ai-sdk/anthropic` `2.0.74` — **declared but never imported anywhere in source**
-- `@ai-sdk/react` `2.0.174` and the `@ai-sdk-tools/*` suite (`agents`, `artifacts`,
-  `cache`, `devtools`, `memory`, `store`, all `1.2.0`) — `@ai-sdk/react` now
-  drives the in-app `agent` assistant chat (see the Update above); the broader
-  `@ai-sdk-tools/*` suite is largely unused
+| Use | Not |
+|---|---|
+| `instructions` | `system` |
+| `isStepCount(n)` | `stepCountIs(n)` |
+| `onEnd` (on `streamText` and on UI streams) | `onFinish` |
+| `event.usage` (all steps) | `totalUsage` |
+| `usage.inputTokenDetails.cacheReadTokens` | `cachedInputTokens` |
+| `await convertToModelMessages(...)` | the sync call (it is async now) |
+| `createUIMessageStreamResponse({ stream: toUIMessageStream({ stream: result.stream, … }) })` | `result.toUIMessageStreamResponse(…)` |
+| `generateText({ output: Output.object({ schema, name?, description? }) })`, read `output` | `generateObject` / `schemaName` / `schemaDescription` |
 
-`packages/jobs` and `packages/ee` also depend on `ai` `5.0.172` + `@ai-sdk/openai`.
-
-## Model IDs configured now
-
-`packages/utils/src/llm.ts`:
-
-```ts
-export const openAiCategorizationModel = "gpt-4o" as const;
-export const anthropicAgentModel = "claude-3-7-sonnet-20250219" as const;
-```
-
-- `openAiCategorizationModel` (`gpt-4o`) — the OpenAI model for categorization-style work.
-- `anthropicAgentModel` — **dead code.** It is exported but imported by nothing, and it
-  pins `claude-3-7-sonnet-20250219`, which **retired on 2026-02-19** and now returns a
-  404 if ever called. If this constant is ever revived, the drop-in replacement is
-  `claude-sonnet-4-6` (or `claude-opus-4-8` for the most capable Opus tier) — do not
-  re-use the retired id. <!-- UNVERIFIED: intended use of anthropicAgentModel — it has no call sites -->
-
-Note: the three active call sites below pass the literal model string to `openai(...)`
-directly; they do **not** import `openAiCategorizationModel`. Two use `gpt-4o`, one uses
-`gpt-4o-mini`.
-
-## Active AI call sites (all OpenAI, all `generateObject`)
+## Structured extraction (`generateText` + `Output.object`)
 
 | File | Model | Purpose |
 |---|---|---|
 | `apps/erp/app/routes/api+/ai+/csv+/$table.columns.tsx` | `gpt-4o` | Map CSV import columns → DB fields |
 | `apps/erp/app/routes/x+/quote+/$quoteId.drag.tsx` | `gpt-4o-mini` | Parse 3D model filename → part id + revision |
-| `apps/erp/app/modules/quality/inspectionBalloonAnalyze.server.ts` | `gpt-4o` | Vision: extract dimension callouts from CAD drawing crops |
-
-Each imports `{ openai } from "@ai-sdk/openai"` and `{ generateObject } from "ai"`, then:
+| `apps/erp/app/modules/production/inspectionBalloonAnalyze.server.ts` | `gpt-4o` | Vision: dimension callouts from drawing crops |
+| `packages/ee/src/accounting/core/account-mapping-ai.ts` | `openAiCategorizationModel` | Map GL accounts to a provider's chart |
+| `packages/ee/src/paperless-parts/lib/lib.ts` (2) | `openAiCategorizationModel` | Substance / material properties |
+| `packages/jobs/src/inngest/functions/tasks/onboard.ts` | `gpt-4o` | Lead quality (Warm/Cold) |
 
 ```ts
-const { object } = await generateObject({
+const { output } = await generateText({
   model: openai("gpt-4o"),
-  schema: /* zod schema */,
-  // prompt / messages
+  output: Output.object({ schema }),
+  prompt
 });
 ```
 
-These run server-side (route actions / `.server.ts`). `OPENAI_API_KEY` is read from the
-environment by the provider.
+`@ai-sdk/openai` 4 sends `Output.object` schemas in OpenAI's **strict** mode (v5 did not),
+which refuses optional keys: every property must be required, with `.nullable()` for "may be
+absent". A `.partial()` / `.optional()` schema fails with `invalid_json_schema` — and the CSV
+column route used to swallow that and return no mappings. Design the schema for the ANSWER the
+model gives (the CSV route asks for column names, so each field is a `z.string()`), not by
+reusing a data validator.
 
-## Supabase edge-function OpenAI helper
+## The in-app agent (streaming)
 
-`packages/database/supabase/functions/lib/ai/openai.ts` builds a Deno-side OpenAI client:
+`apps/erp/app/modules/agent/` is the only streaming, multi-turn, tool-using use.
+`streamChat` (`agent.server.ts`) runs `streamText`, converts its `stream` with the
+standalone `toUIMessageStream` (`generateMessageId` mints the stored row's id; `onEnd`
+persists the answer) and returns it with `createUIMessageStreamResponse`, where
+`consumeSseStream: consumeStream` keeps `onEnd` running after a browser disconnect.
+A model error is recorded by `streamText`'s `onError`, not by the UI stream's outcome.
+The browser side is `useChat` + `DefaultChatTransport` from `@ai-sdk/react`
+(`hooks/useAgentThread.ts`). History, persistence and the docs tools are covered in
+`agent-knowledge-base.md`.
 
-```ts
-import { createOpenAI } from "npm:@ai-sdk/openai@2.0.60";
-export const openai = createOpenAI({ /* apiKey from Deno.env */ });
-```
+The provider registry (`agent.provider.ts`) is the only importer of `@ai-sdk/anthropic`.
+The runtime provider is `agentProvider` (`openai`) in `packages/utils/src/llm.ts`, with
+`agentChatModel` (`gpt-4.1-mini`) and `agentTitleModel` (`gpt-4o-mini`).
 
-This is the Deno/edge-function equivalent of the npm provider. Verify call sites before
-assuming it's wired into anything. <!-- UNVERIFIED: which edge functions consume this helper -->
+## Edge functions
 
-## Gotchas
-
-- **Don't reach for `@ai-sdk/anthropic` / Claude.** No code uses it; adding Anthropic
-  means choosing a current model id (`claude-opus-4-8` / `claude-sonnet-4-6`) and a real
-  API key path — not the retired constant in `llm.ts`.
-- **The `@ai-sdk-tools/*` and `@ai-sdk/react` deps are dead weight** today. If you build a
-  chat UI, that's where `useChat` + a transport would live — but none exists yet.
-- **No streaming, no `streamText`, no multi-turn.** All usage is single-shot structured
-  extraction via `generateObject`. The old doc's `doGenerate` / `finishReason: "tool-calls"`
-  / MCP-tool-loop description does not match anything in the tree.
-- The `.ee.tsx` (enterprise edition) convention exists, but only for the Configurator
-  (`apps/erp/app/components/Configurator/**`) — there is no `Agent`/chat `.ee.tsx`.
+`packages/database/supabase/functions/lib/ai/openai.ts` pins its own
+`npm:@ai-sdk/openai@2.0.60` (Deno, self-contained); only `transcription` imports it. It is
+not on the catalog and does not follow the app's version.

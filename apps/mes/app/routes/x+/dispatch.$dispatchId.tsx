@@ -49,7 +49,7 @@ import { useItems } from "~/stores";
 import { path } from "~/utils/path";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client, userId } = await requirePermissions(request, {});
+  const { client, companyId, userId } = await requirePermissions(request, {});
   const { dispatchId } = params;
 
   if (!dispatchId) {
@@ -60,7 +60,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     getMaintenanceDispatch(client, dispatchId),
     getMaintenanceDispatchEvents(client, dispatchId),
     getMaintenanceDispatchItems(client, dispatchId),
-    getActiveMaintenanceEventByEmployee(client, userId)
+    getActiveMaintenanceEventByEmployee(client, {
+      dispatchId,
+      employeeId: userId,
+      companyId
+    })
   ]);
 
   // Fetch replacement parts for the work center if available
@@ -230,7 +234,7 @@ export default function MaintenanceDetailRoute() {
 
   return (
     <div className="flex flex-col flex-1">
-      <header className="sticky top-0 z-10 flex h-[var(--header-height)] shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12 border-b bg-card">
+      <header className="sticky top-0 z-10 flex h-[var(--header-height)] shrink-0 items-center gap-2 border-b bg-card">
         <div className="flex items-center gap-2 px-2 w-full justify-between">
           <HStack>
             <SidebarTrigger />

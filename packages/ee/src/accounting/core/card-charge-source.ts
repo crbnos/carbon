@@ -1,13 +1,13 @@
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import { fromDate } from "@internationalized/date";
 import type { CostingLine } from "./document-costing";
-import { type CardTransactionType, JournalEntrySyncError } from "./posting";
+import { type ChargeType, JournalEntrySyncError } from "./posting";
 
 export type CardChargeSource = {
   id: string;
   companyId: string;
-  cardTransactionId: string;
-  type: CardTransactionType;
+  chargeId: string;
+  type: ChargeType;
   status: "Draft" | "Posted" | "Voided";
   supplierId: string | null;
   supplierExternalId: string | null;
@@ -30,35 +30,35 @@ export async function loadCardChargeSources(
 ): Promise<Map<string, CardChargeSource>> {
   if (args.ids.length === 0) return new Map();
   const rows = await database
-    .selectFrom("cardTransaction")
+    .selectFrom("charge")
     .leftJoin("externalIntegrationMapping as mapping", (join) =>
       join
-        .onRef("mapping.entityId", "=", "cardTransaction.supplierId")
-        .onRef("mapping.companyId", "=", "cardTransaction.companyId")
+        .onRef("mapping.entityId", "=", "charge.supplierId")
+        .onRef("mapping.companyId", "=", "charge.companyId")
         .on("mapping.integration", "=", args.integration)
         .on("mapping.entityType", "=", "vendor")
     )
     .select([
-      "cardTransaction.id",
-      "cardTransaction.companyId",
-      "cardTransaction.cardTransactionId",
-      "cardTransaction.type",
-      "cardTransaction.status",
-      "cardTransaction.supplierId",
-      "cardTransaction.merchantName",
-      "cardTransaction.memo",
-      "cardTransaction.updatedAt",
+      "charge.id",
+      "charge.companyId",
+      "charge.chargeId",
+      "charge.type",
+      "charge.status",
+      "charge.supplierId",
+      "charge.merchantName",
+      "charge.memo",
+      "charge.updatedAt",
       "mapping.externalId as supplierExternalId"
     ])
-    .where("cardTransaction.id", "in", args.ids)
-    .where("cardTransaction.companyId", "=", args.companyId)
+    .where("charge.id", "in", args.ids)
+    .where("charge.companyId", "=", args.companyId)
     .execute();
   return new Map(
     rows.map((row) => [
       row.id,
       {
         ...row,
-        type: row.type as CardTransactionType,
+        type: row.type as ChargeType,
         status: row.status as CardChargeSource["status"],
         updatedAt: sourceTimestamp(row.updatedAt)
       }
@@ -81,7 +81,7 @@ export function chargeLineDescription(
   return charge.merchantName ?? line.description ?? charge.memo ?? undefined;
 }
 
-/** The parts of a card-transaction costing result the account-mapping guard
+/** The parts of a charge costing result the account-mapping guard
  * reads — the coded lines and the card-liability account they settle against. */
 type ChargeAccountValidationCosting = {
   lines: CostingLine[];
@@ -91,7 +91,7 @@ type ChargeAccountValidationCosting = {
 /**
  * Guard a card charge's account mapping before it is mapped to any provider,
  * the same two checks every charge adapter runs: refuse an empty journal (no
- * posted Card Transaction lines to replay), and refuse when any coded line or
+ * posted Charge lines to replay), and refuse when any coded line or
  * the card-liability account is unmapped. Throws the structured
  * `UNMAPPED_ACCOUNTS` Warning each adapter surfaces; `providerName` is the ONLY
  * per-provider difference in the message ("Rillet" / "QuickBooks Online" /
@@ -111,8 +111,8 @@ export function validateChargeAccountMapping(args: {
       errorCode: "UNMAPPED_ACCOUNTS",
       warning: true,
       message:
-        "Cannot sync card charge: no posted Card Transaction journal lines found. Post the card transaction with accounting enabled, then retry.",
-      metadata: { cardTransactionId: charge.id }
+        "Cannot sync card charge: no posted Charge journal lines found. Post the charge with accounting enabled, then retry.",
+      metadata: { chargeId: charge.id }
     });
   }
 
@@ -133,7 +133,7 @@ export function validateChargeAccountMapping(args: {
       warning: true,
       message: `Cannot sync card charge: one or more accounts are not mapped to ${providerName}. Map the accounts under the integration's Accounts tab, then retry.`,
       metadata: {
-        cardTransactionId: charge.id,
+        chargeId: charge.id,
         unmappedAccountIds: [...unmapped],
         lineIdsWithoutAccount
       }

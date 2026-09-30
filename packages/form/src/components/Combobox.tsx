@@ -1,4 +1,4 @@
-import type { TermId } from "@carbon/glossary";
+import type { TermId } from "@carbon/content/glossary";
 import type { ComboboxProps as ComboboxBaseProps } from "@carbon/react";
 import {
   Combobox as ComboboxBase,

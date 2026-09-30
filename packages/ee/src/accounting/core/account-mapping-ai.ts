@@ -1,7 +1,7 @@
 import { openai } from "@ai-sdk/openai";
 import { getLogger } from "@carbon/logger";
 import { openAiCategorizationModel } from "@carbon/utils";
-import { generateObject } from "ai";
+import { generateText, Output } from "ai";
 import { z } from "zod";
 import type {
   AccountMatchProposal,
@@ -67,9 +67,9 @@ export async function suggestAccountMatchesWithAI(args: {
       )
       .join("\n");
 
-    const { object } = await generateObject({
+    const { output: object } = await generateText({
       model: openai(openAiCategorizationModel),
-      schema: aiMatchSchema,
+      output: Output.object({ schema: aiMatchSchema }),
       prompt: `You are mapping a manufacturing ERP's general-ledger accounts to an external accounting system's chart of accounts. For each Carbon account, pick the single best matching provider account.
 
 Match on the account's purpose — use the account number/code and name. A close number match is a strong signal, but the name's meaning matters most (e.g. "Accounts Receivable" should map to the provider's receivables account even if the numbers differ). Only return a match when you are reasonably confident; if no provider account is a good fit, return an empty string for externalId. Never invent ids — every id you return must come verbatim from the lists below.

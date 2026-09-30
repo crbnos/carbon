@@ -198,7 +198,7 @@ const ProductLabelPDF = ({
                       >
                         {textBlocks.map(renderBlock)}
                       </View>
-                      {rightBlocks.length > 0 && (
+                      {rightBlocks.length > 0 ? (
                         <View
                           style={{
                             ...tw("flex flex-col items-end justify-start"),
@@ -207,7 +207,7 @@ const ProductLabelPDF = ({
                         >
                           {rightBlocks.map(renderBlock)}
                         </View>
-                      )}
+                      ) : null}
                     </View>
                     {barcodeBlocks.map(renderBlock)}
                     {entityBlocks.map(renderBlock)}

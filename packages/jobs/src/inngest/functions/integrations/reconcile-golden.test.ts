@@ -28,6 +28,7 @@
  * table.
  */
 import { resolvePostingSyncSettings } from "@carbon/ee/accounting";
+import { asCarbonOwnedSettings } from "@carbon/ee/sync";
 import { describe, expect, it } from "vitest";
 import {
   getJournalPostingDecision,
@@ -47,7 +48,7 @@ const baseContext: ReconcileContext = {
   journalEntryPushEnabled: true,
   entityPushEnabled: true,
   providerSupportsPaymentPush: true,
-  settings,
+  settings: asCarbonOwnedSettings(settings),
   docSync: {
     invoiceEnabled: true,
     billEnabled: true,
@@ -252,7 +253,7 @@ describe("golden: journals", () => {
 // ── Documents ───────────────────────────────────────────────────────────────
 
 describe("golden: charges", () => {
-  // A Charge/Credit cardTransaction as a provider charge object — the same
+  // A Charge/Credit charge as a provider charge object — the same
   // document rules as bills/invoices, with the card statuses.
   const postedCharge = { status: "Posted", updatedAt: "2026-08-12T01:00:00Z" };
 
@@ -333,10 +334,10 @@ describe("golden: charges", () => {
         entityType: "journalEntry",
         snapshot: {
           status: "Posted",
-          sourceType: "Card Transaction",
+          sourceType: "Charge",
           reversalOfId: null
         },
-        cardTransaction: { type: "Charge", hasSupplier: true }
+        charge: { type: "Charge", hasSupplier: true }
       })
     );
     expect(kinds(decision)).toEqual(["record-terminal"]);
@@ -348,10 +349,10 @@ describe("golden: charges", () => {
         entityType: "journalEntry",
         snapshot: {
           status: "Posted",
-          sourceType: "Card Transaction",
+          sourceType: "Charge",
           reversalOfId: null
         },
-        cardTransaction: { type: "Payment", hasSupplier: false }
+        charge: { type: "Payment", hasSupplier: false }
       })
     );
     expect(kinds(decision)).toEqual(["enqueue"]);
@@ -720,6 +721,60 @@ describe("golden: master data", () => {
     ).toEqual(["enqueue"]);
   });
 
+  /**
+   * The executor loads `lastSyncedAt` through Kysely, where node-postgres
+   * decodes timestamptz as a `Date` while the generated types say `string`;
+   * `snapshot.updatedAt` arrives from supabase-js as a PostgREST string.
+   * Comparing those two directly coerces the string to NaN, so the check
+   * above silently never fired and every master-data row edited inside the
+   * 7-day sweep window re-enqueued a no-op push twice an hour. These pin the
+   * REAL argument shapes, not two matching ISO strings.
+   */
+  it("FIX-3: unchanged, with the Date the executor actually passes ⇔ nothing", () => {
+    expect(
+      kinds(
+        computeReconcileDecision(
+          input({
+            entityType: "vendor",
+            snapshot: { updatedAt: "2026-09-26T05:59:30.25629+00:00" },
+            hasMappingWithExternalId: true,
+            lastSyncedAt: new Date("2026-09-26T05:59:32.765Z")
+          })
+        )
+      )
+    ).toEqual(["nothing"]);
+  });
+
+  it("FIX-3: changed, with the Date the executor actually passes ⇔ enqueue", () => {
+    expect(
+      kinds(
+        computeReconcileDecision(
+          input({
+            entityType: "vendor",
+            snapshot: { updatedAt: "2026-09-26T06:30:00.123456+00:00" },
+            hasMappingWithExternalId: true,
+            lastSyncedAt: new Date("2026-09-26T05:59:32.765Z")
+          })
+        )
+      )
+    ).toEqual(["enqueue"]);
+  });
+
+  it("FIX-3: same instant in two spellings ⇔ nothing", () => {
+    expect(
+      kinds(
+        computeReconcileDecision(
+          input({
+            entityType: "vendor",
+            snapshot: { updatedAt: "2026-09-26T05:59:32.765+00:00" },
+            hasMappingWithExternalId: true,
+            lastSyncedAt: new Date("2026-09-26T05:59:32.765Z")
+          })
+        )
+      )
+    ).toEqual(["nothing"]);
+  });
+
   it("deleted row ⇔ legacy DELETE skip", () => {
     expect(
       kinds(
@@ -820,4 +875,73 @@ describe("Rillet mapped void reconciliation", () => {
       )
     ).toEqual(["re-drive"]);
   });
+});
+
+// ── Credit memos / supplier credits ─────────────────────────────────────────
+
+describe("golden: credit memos and supplier credits", () => {
+  /**
+   * The bug this pins: both types were wired into the entity union, the snapshot
+   * tables, the table map, the subscriptions and the outbound sweep, but had no
+   * arm in `computeReconcileDecision` — so every ref fell through to `default`
+   * and returned `nothing("... is not reconciled")`. With the family in
+   * `documents` mode the memo's journal is excluded as DOC_BACKED at the same
+   * time, so the credit reached neither the provider's GL nor its subledger, and
+   * nothing failed. No test in this file referenced either type.
+   */
+  for (const entityType of ["creditMemo", "supplierCredit"] as const) {
+    it(`enqueues a posted unmapped ${entityType}`, () => {
+      const decision = computeReconcileDecision(
+        input({
+          entityType,
+          entityId: "memo_1",
+          snapshot: {
+            id: "memo_1",
+            status: "Posted",
+            updatedAt: "2026-09-01T00:00:00.000Z"
+          } as never
+        })
+      );
+      expect(kinds(decision)).toContain("enqueue");
+    });
+
+    it(`leaves a Draft ${entityType} alone`, () => {
+      const decision = computeReconcileDecision(
+        input({
+          entityType,
+          entityId: "memo_1",
+          snapshot: {
+            id: "memo_1",
+            status: "Draft",
+            updatedAt: "2026-09-01T00:00:00.000Z"
+          } as never
+        })
+      );
+      expect(kinds(decision)).toEqual(["nothing"]);
+      expect(decision.actions[0]).toMatchObject({
+        kind: "nothing",
+        reason: expect.stringMatching(/not posted/i)
+      });
+    });
+
+    it(`does not re-enqueue an already-mapped ${entityType}`, () => {
+      // Without `creditMemo`/`supplierCredit` in the executor's MAPPED_TYPES,
+      // `hasMappingWithExternalId` was always false and every pass duplicated
+      // the push.
+      const decision = computeReconcileDecision(
+        input({
+          entityType,
+          entityId: "memo_1",
+          hasMappingWithExternalId: true,
+          lastSyncedAt: "2026-09-02T00:00:00.000Z",
+          snapshot: {
+            id: "memo_1",
+            status: "Posted",
+            updatedAt: "2026-09-01T00:00:00.000Z"
+          } as never
+        })
+      );
+      expect(kinds(decision)).toEqual(["nothing"]);
+    });
+  }
 });

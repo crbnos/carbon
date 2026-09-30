@@ -60,6 +60,8 @@ export enum NotificationEvent {
 // `notification.topic` column, so renaming any of these is a migration.
 export enum NotificationTopic {
   Approval = "approval",
+  // The changelog newsletter: opt-in and email-only.
+  Changelog = "changelog",
   General = "general",
   Inventory = "inventory",
   Items = "items",
@@ -86,8 +88,36 @@ export const USER_FACING_NOTIFICATION_TOPICS = [
   NotificationTopic.Maintenance,
   NotificationTopic.Training,
   NotificationTopic.Suggestion,
-  NotificationTopic.General
+  NotificationTopic.General,
+  NotificationTopic.Changelog
 ] as const satisfies readonly NotificationTopic[];
+
+// In-app is always delivered, so it is not a preference channel.
+export type NotificationPreferenceChannel = "email" | "slack";
+
+export function getNotificationTopicChannels(
+  topic: NotificationTopic
+): readonly NotificationPreferenceChannel[] {
+  switch (topic) {
+    case NotificationTopic.Changelog:
+      return ["email"];
+    default:
+      return ["email", "slack"];
+  }
+}
+
+// What no preference row means. The newsletter is opt-in: its dispatcher only
+// mails users with an enabled row.
+export function isNotificationTopicEnabledByDefault(
+  topic: NotificationTopic
+): boolean {
+  switch (topic) {
+    case NotificationTopic.Changelog:
+      return false;
+    default:
+      return true;
+  }
+}
 
 // A labeled fact attached to a notification (e.g. Customer / Acme Corp),
 // rendered in the email, Slack text, and notification.payload.details.

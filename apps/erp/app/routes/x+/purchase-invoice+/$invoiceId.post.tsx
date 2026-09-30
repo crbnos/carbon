@@ -2,8 +2,12 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { trackWorkEvent } from "@carbon/lib/telemetry";
 import { raiseMoment } from "@carbon/lib/workflows";
+import { getLogger } from "@carbon/logger";
 import type { ActionFunctionArgs } from "react-router";
 import { getCompanySettings } from "~/modules/settings";
+import { checkPartyContactRequirement } from "~/modules/settings/party-contact.server";
+
+const logger = getLogger("erp", "purchase-invoice.post");
 
 export async function action({ request, params }: ActionFunctionArgs) {
   const { client, companyId, userId } = await requirePermissions(request, {
@@ -15,6 +19,43 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   const formData = await request.formData();
   const skipReceiptPost = formData.get("skipReceiptPost") === "true";
+
+  // A supplier with no reachable contact cannot be created as a vendor at a
+  // spend platform, so an invoice posted for one is rejected downstream, hours
+  // later, in a sync log nobody is watching. Gate it here while the person who
+  // can fix the supplier is still looking at it. No-op unless the company has
+  // turned the setting on.
+  const invoiceSupplier = await client
+    .from("purchaseInvoice")
+    .select("supplierId")
+    .eq("id", invoiceId)
+    .eq("companyId", companyId)
+    .maybeSingle();
+
+  // Fail CLOSED. Without the error check this read was the gate's own bypass: any
+  // failure (or a row in another tenant) left `supplierId` undefined, and
+  // `checkPartyContactRequirement` returns null for a party with no id — so the
+  // requirement the company switched on silently let the invoice post.
+  if (invoiceSupplier.error || !invoiceSupplier.data) {
+    logger.error("Could not read the invoice supplier before posting", {
+      companyId,
+      invoiceId,
+      error: invoiceSupplier.error
+    });
+    return {
+      success: false,
+      message: "Failed to post purchase invoice"
+    };
+  }
+
+  const supplierContactError = await checkPartyContactRequirement(
+    client,
+    companyId,
+    { kind: "supplier", id: invoiceSupplier.data.supplierId }
+  );
+  if (supplierContactError) {
+    return { success: false, message: supplierContactError };
+  }
 
   const setPendingState = await client
     .from("purchaseInvoice")

@@ -86,21 +86,21 @@ export function PartiesBlock({ data }: { data: PurchaseOrderData }) {
               country={supplierCountryName ?? supplierCountryCode}
             />
             {purchaseOrderLocations.supplierTaxId &&
-              !isEoriCountry(supplierCountryCode) && (
-                <Text>Tax ID: {purchaseOrderLocations.supplierTaxId}</Text>
-              )}
-            {purchaseOrderLocations.supplierVatNumber && (
+            !isEoriCountry(supplierCountryCode) ? (
+              <Text>Tax ID: {purchaseOrderLocations.supplierTaxId}</Text>
+            ) : null}
+            {purchaseOrderLocations.supplierVatNumber ? (
               <Text>VAT: {purchaseOrderLocations.supplierVatNumber}</Text>
-            )}
-            {purchaseOrderLocations.supplierEori && (
+            ) : null}
+            {purchaseOrderLocations.supplierEori ? (
               <Text>EORI: {purchaseOrderLocations.supplierEori}</Text>
-            )}
-            {purchaseOrderLocations.supplierContactName && (
+            ) : null}
+            {purchaseOrderLocations.supplierContactName ? (
               <Text>Contact: {purchaseOrderLocations.supplierContactName}</Text>
-            )}
-            {purchaseOrderLocations.supplierContactEmail && (
+            ) : null}
+            {purchaseOrderLocations.supplierContactEmail ? (
               <Text>Email: {purchaseOrderLocations.supplierContactEmail}</Text>
-            )}
+            ) : null}
           </View>
         </View>
 
@@ -113,19 +113,19 @@ export function PartiesBlock({ data }: { data: PurchaseOrderData }) {
               Order Info
             </Text>
             <View style={tw("text-[9px] text-gray-800")}>
-              {purchaseOrder?.purchaseOrderId && (
+              {purchaseOrder?.purchaseOrderId ? (
                 <Text>PO Number: {purchaseOrder.purchaseOrderId}</Text>
-              )}
-              {purchaseOrder?.orderDate && (
+              ) : null}
+              {purchaseOrder?.orderDate ? (
                 <Text>
                   Date: {formatDate(purchaseOrder.orderDate, undefined, locale)}
                 </Text>
-              )}
+              ) : null}
               <Text>Currency: {currencyCode}</Text>
-              {purchaseOrder?.supplierReference && (
+              {purchaseOrder?.supplierReference ? (
                 <Text>Reference: {purchaseOrder.supplierReference}</Text>
-              )}
-              {purchaseOrder?.receiptRequestedDate && (
+              ) : null}
+              {purchaseOrder?.receiptRequestedDate ? (
                 <Text>
                   Requested:{" "}
                   {formatDate(
@@ -134,8 +134,8 @@ export function PartiesBlock({ data }: { data: PurchaseOrderData }) {
                     locale
                   )}
                 </Text>
-              )}
-              {purchaseOrder?.receiptPromisedDate && (
+              ) : null}
+              {purchaseOrder?.receiptPromisedDate ? (
                 <Text>
                   Promised:{" "}
                   {formatDate(
@@ -144,21 +144,23 @@ export function PartiesBlock({ data }: { data: PurchaseOrderData }) {
                     locale
                   )}
                 </Text>
-              )}
-              {paymentTerm && <Text>Payment Terms: {paymentTerm.name}</Text>}
-              {purchaseOrder?.incoterm && (
+              ) : null}
+              {paymentTerm ? (
+                <Text>Payment Terms: {paymentTerm.name}</Text>
+              ) : null}
+              {purchaseOrder?.incoterm ? (
                 <Text>
                   Incoterm: {purchaseOrder.incoterm}
                   {purchaseOrder.incotermLocation
                     ? ` — ${purchaseOrder.incotermLocation}`
                     : ""}
                 </Text>
-              )}
+              ) : null}
             </View>
             <View style={tw("h-[1px] bg-gray-200 my-2")} />
             <View style={tw("text-[9px] text-gray-800")}>
-              {company.vatNumber && <Text>VAT: {company.vatNumber}</Text>}
-              {company.eori && <Text>EORI: {company.eori}</Text>}
+              {company.vatNumber ? <Text>VAT: {company.vatNumber}</Text> : null}
+              {company.eori ? <Text>EORI: {company.eori}</Text> : null}
               {(() => {
                 const name =
                   purchaseOrder.assigneeFullName ??
@@ -174,13 +176,13 @@ export function PartiesBlock({ data }: { data: PurchaseOrderData }) {
                   purchaseOrder.createdByPhone;
                 return (
                   <>
-                    {name && <Text>Contact: {name}</Text>}
-                    {email && <Text>Email: {email}</Text>}
-                    {phone && <Text>Phone: {phone}</Text>}
+                    {name ? <Text>Contact: {name}</Text> : null}
+                    {email ? <Text>Email: {email}</Text> : null}
+                    {phone ? <Text>Phone: {phone}</Text> : null}
                   </>
                 );
               })()}
-              {accountsPayableBillingAddress?.email && (
+              {accountsPayableBillingAddress?.email ? (
                 <>
                   <Text style={tw("font-bold mt-1")}>
                     Billing documents and enquiries:
@@ -189,7 +191,7 @@ export function PartiesBlock({ data }: { data: PurchaseOrderData }) {
                     {accountsPayableBillingAddress.email}
                   </Text>
                 </>
-              )}
+              ) : null}
             </View>
           </View>
 

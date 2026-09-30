@@ -1,7 +1,7 @@
 import type { MetadataRoute } from "next";
 import { allResourceParams } from "@/lib/api-data";
 import { SITE } from "@/lib/seo";
-import { guideSource, source } from "@/lib/source";
+import { changelogSource, guideSource, source } from "@/lib/source";
 import { allToolParams } from "@/lib/tools-data";
 
 /** Every canonical, indexable URL on the docs site. `/` is intentionally omitted —
@@ -18,6 +18,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
   // Reference docs (platform + product reference + building)
   for (const page of source.getPages()) {
     out.push({ url: abs(page.url), changeFrequency: "monthly", priority: 0.7 });
+  }
+
+  // Changelog (the feed page + one permalink per entry)
+  out.push({ url: abs("/changelog"), changeFrequency: "weekly", priority: 0.7 });
+  for (const page of changelogSource.getPages()) {
+    out.push({ url: abs(page.url), changeFrequency: "yearly", priority: 0.5 });
   }
 
   // Carbon API (the headline surface — service layer, reached over MCP today)

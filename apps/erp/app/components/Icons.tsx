@@ -65,7 +65,8 @@ import {
   LuTriangleAlert,
   LuTruck,
   LuUser,
-  LuUsers
+  LuUsers,
+  LuWrench
 } from "react-icons/lu";
 import { RxCodesandboxLogo } from "react-icons/rx";
 import { TbTargetOff } from "react-icons/tb";
@@ -633,14 +634,19 @@ export const JournalEntrySourceTypeIcon = ({
       return <LuHardHat className={className} />;
     case "Job Close":
       return <LuCircleCheck className={className} />;
+    case "Maintenance Event":
+      return <LuWrench className={className} />;
     case "Asset Depreciation":
       return <LuClock className={className} />;
     case "Asset Disposal":
       return <LuBuilding2 className={className} />;
     case "Payment":
       return <LuBanknote className={className} />;
-    case "Card Transaction":
+    case "Charge":
       return <LuCreditCard className={className} />;
+    case "Reimbursement":
+      // An employee payable, not a card charge — pair it with Payment's icon.
+      return <LuBanknote className={className} />;
     case "Credit Memo":
       return <LuCreditCard className={className} />;
     case "Debit Memo":

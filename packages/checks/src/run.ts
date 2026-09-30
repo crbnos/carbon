@@ -15,12 +15,14 @@ import { noDbClientInService } from "./conformance/no-db-client-in-service";
 import { noDefaultOnEffects } from "./conformance/no-default-on-effects";
 import { noDerivedPercentColumn } from "./conformance/no-derived-percent-column";
 import { noInlineFractionDigits } from "./conformance/no-inline-fraction-digits";
+import { noIntegrationIdBranching } from "./conformance/no-integration-id-branching";
 import { noLegacyRls } from "./conformance/no-legacy-rls";
 import { noLocalTimezone } from "./conformance/no-local-timezone";
 import { noNumericPrecision } from "./conformance/no-numeric-precision";
 import { noRawForwardedHeaders } from "./conformance/no-raw-forwarded-headers";
 import { noRawRounding } from "./conformance/no-raw-rounding";
 import { noRequiredColumnWithoutDefault } from "./conformance/no-required-column-without-default";
+import { noUnguardedSubmit } from "./conformance/no-unguarded-submit";
 import { noUnroundedTrackedQuantity } from "./conformance/no-unrounded-tracked-quantity";
 import { noUnscopedKyselyWrite } from "./conformance/no-unscoped-kysely-write";
 import { noViewWithoutInvoker } from "./conformance/no-view-without-invoker";
@@ -55,7 +57,9 @@ export const TS_CHECKS: ConformanceCheck[] = [
   noDbClientInService,
   noDefaultOnEffects,
   noUnroundedTrackedQuantity,
-  noUnscopedKyselyWrite
+  noIntegrationIdBranching,
+  noUnscopedKyselyWrite,
+  noUnguardedSubmit
 ];
 
 /** Checks that run once per edge function, over all of its .ts files. */

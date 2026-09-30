@@ -29,7 +29,13 @@ import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useState } from "react";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
-import { data, Form, redirect, useLoaderData } from "react-router";
+import {
+  data,
+  Form,
+  redirect,
+  useLoaderData,
+  useNavigation
+} from "react-router";
 import { z } from "zod";
 import { usePermissions, useUser } from "~/hooks";
 import type { Handle } from "~/utils/handle";
@@ -183,6 +189,7 @@ export async function action({ request }: ActionFunctionArgs) {
 // This route now only handles actions - UI is in the company route
 export default function PaymentSettings() {
   const { plan, usage, employees } = useLoaderData<typeof loader>();
+  const navigation = useNavigation();
   const { isOwner } = usePermissions();
   const { id: userId } = useUser();
   const edition = useEdition();
@@ -268,7 +275,10 @@ export default function PaymentSettings() {
               <CardFooter>
                 <Form method="post" action={path.to.billing}>
                   <input type="hidden" name="intent" value="billing-portal" />
-                  <Button type="submit">
+                  <Button
+                    type="submit"
+                    isLoading={navigation.formAction === path.to.billing}
+                  >
                     <Trans>Manage Subscription</Trans>
                   </Button>
                 </Form>

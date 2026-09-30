@@ -69,9 +69,9 @@ function args(searchParams: string) {
 }
 
 // `~/modules/resources` is a barrel that reaches UI components and so pulls in
-// `@carbon/glossary`, whose `msg` macro is untransformed under vitest (no
+// `@carbon/content/glossary`, whose `msg` macro is untransformed under vitest (no
 // lingui plugin here). Stub it so this test exercises the server helper only.
-vi.mock("@carbon/glossary", () => ({
+vi.mock("@carbon/content/glossary", () => ({
   getDefinitionText: () => "",
   getEntry: () => undefined,
   getTermText: () => "",

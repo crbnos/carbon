@@ -1,4 +1,4 @@
-import { docs, guide } from "collections/server";
+import { changelog, docs, guide } from "collections/server";
 import { loader } from "fumadocs-core/source";
 
 export const source = loader({
@@ -10,3 +10,15 @@ export const guideSource = loader({
   baseUrl: "/guides",
   source: guide.toFumadocsSource(),
 });
+
+export const changelogSource = loader({
+  baseUrl: "/changelog",
+  source: changelog.toFumadocsSource(),
+});
+
+// Newest first by frontmatter `date`; filename order breaks ties.
+export function getChangelogEntries() {
+  return [...changelogSource.getPages()].sort((a, b) =>
+    b.data.date.localeCompare(a.data.date)
+  );
+}

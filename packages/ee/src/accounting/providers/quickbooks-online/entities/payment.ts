@@ -1,9 +1,11 @@
 import type { NormalizedPayment } from "../../../core/payment-application";
 import {
+  PAYMENT_TARGET_LABELS,
   type PaymentPushContext,
   PaymentSyncerBase
 } from "../../../core/payment-syncer";
 import { JournalEntrySyncError } from "../../../core/posting";
+import { EMPLOYEE_VENDOR_ENTITY_TYPE } from "../../../core/reimbursement-source";
 import type { ShouldSyncContext } from "../../../core/types";
 import { parseQboDate, type Qbo } from "../models";
 import type { QboProvider } from "../provider";
@@ -304,8 +306,12 @@ export class QboPaymentSyncer extends PaymentSyncerBase<QboPayment> {
   protected async pushRemotePayment(
     context: PaymentPushContext
   ): Promise<{ remoteId: string; compositeEntityId: string }> {
+    // An employee reimbursement IS a QBO Bill (see entities/reimbursement.ts),
+    // so a BillPayment with `LinkedTxn.TxnType: "Bill"` settles it unchanged —
+    // only the MAPPING entityType differs, because its remote id is stored
+    // under `reimbursement`.
     const documentRemoteId = await this.mappingService.getExternalId(
-      context.family === "ar" ? "invoice" : "bill",
+      context.targetEntityType,
       context.targetDocumentId,
       this.provider.id
     );
@@ -313,7 +319,7 @@ export class QboPaymentSyncer extends PaymentSyncerBase<QboPayment> {
       throw new JournalEntrySyncError({
         errorCode: "UNSYNCED_DOCUMENT",
         message: `The settled ${
-          context.family === "ar" ? "invoice" : "bill"
+          PAYMENT_TARGET_LABELS[context.targetEntityType]
         } has not synced to QuickBooks Online yet — sync it, then retry the payment`,
         warning: true,
         metadata: { targetDocumentId: context.targetDocumentId }
@@ -393,6 +399,36 @@ export class QboPaymentSyncer extends PaymentSyncerBase<QboPayment> {
   private async resolveCounterpartyRef(
     context: PaymentPushContext
   ): Promise<Qbo.Ref> {
+    // A reimbursement's counterparty is the EMPLOYEE, whose provider-side
+    // Vendor is linked under `employeeVendor` — not `vendor`, which holds
+    // Carbon supplier ids. The reimbursement syncer creates and links it, so a
+    // missing link means the document has not synced yet.
+    if (context.targetEntityType === "reimbursement") {
+      const reimbursement = await this.database
+        .selectFrom("reimbursement")
+        .select("employeeId")
+        .where("id", "=", context.targetDocumentId)
+        .where("companyId", "=", this.companyId)
+        .executeTakeFirst();
+      const employeeVendorRemoteId = reimbursement?.employeeId
+        ? await this.mappingService.getExternalId(
+            EMPLOYEE_VENDOR_ENTITY_TYPE,
+            reimbursement.employeeId,
+            this.provider.id
+          )
+        : null;
+      if (!employeeVendorRemoteId) {
+        throw new JournalEntrySyncError({
+          errorCode: "UNSYNCED_DOCUMENT",
+          message:
+            "The reimbursement's employee has no QuickBooks Online vendor yet — sync the reimbursement, then retry the payment",
+          warning: true,
+          metadata: { targetDocumentId: context.targetDocumentId }
+        });
+      }
+      return { value: employeeVendorRemoteId };
+    }
+
     const counterpartyId =
       context.family === "ar"
         ? ((

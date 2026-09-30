@@ -495,9 +495,18 @@ export const sequences = [
     step: 1
   },
   {
-    table: "cardTransaction",
-    name: "Card Transaction",
-    prefix: "CARD-%{yyyy}-%{mm}-",
+    table: "charge",
+    name: "Charge",
+    prefix: "CHG-%{yyyy}-%{mm}-",
+    suffix: null,
+    next: 0,
+    size: 6,
+    step: 1
+  },
+  {
+    table: "reimbursement",
+    name: "Reimbursement",
+    prefix: "REIMB-%{yyyy}-%{mm}-",
     suffix: null,
     next: 0,
     size: 6,
@@ -715,6 +724,7 @@ export const accounts = [
   { key: "2150", number: "2150", name: "Accrued Wages & Salaries", isGroup: false, parentKey: "current-liabilities", accountType: "Other Current Liability", incomeBalance: "Balance Sheet", class: "Liability", consolidatedRate: "Current", createdBy: "system" },
   { key: "2160", number: "2160", name: "Deferred Revenue", isGroup: false, parentKey: "current-liabilities", accountType: "Other Current Liability", incomeBalance: "Balance Sheet", class: "Liability", consolidatedRate: "Current", createdBy: "system" },
   { key: "2170", number: "2170", name: "Short-Term Loans", isGroup: false, parentKey: "current-liabilities", accountType: "Other Current Liability", incomeBalance: "Balance Sheet", class: "Liability", consolidatedRate: "Current", createdBy: "system" },
+  { key: "2180", number: "2180", name: "Employee Reimbursements Payable", isGroup: false, parentKey: "current-liabilities", accountType: "Other Current Liability", incomeBalance: "Balance Sheet", class: "Liability", consolidatedRate: "Current", createdBy: "system" },
 
   // Tax Liabilities
   { key: "tax-liabilities", number: null, name: "Tax Liabilities", isGroup: true, parentKey: "liabilities", accountType: "Tax", incomeBalance: "Balance Sheet", class: "Liability", consolidatedRate: "Current", createdBy: "system" },
@@ -813,6 +823,7 @@ export const accountDefaults = {
   salesShippingRevenueAccount: "4050",
   salesDiscountAccount: "4020",
   salesReturnsAccount: "4900",
+  employeeReimbursementsPayableAccount: "2180",
   costOfGoodsSoldAccount: "5010",
   purchaseVarianceAccount: "5210",
   inventoryAdjustmentVarianceAccount: "5310",

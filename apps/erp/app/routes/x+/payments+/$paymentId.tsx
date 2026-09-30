@@ -4,6 +4,7 @@ import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import { VStack } from "@carbon/react";
 import type { FundingSource } from "@carbon/utils";
+import { msg } from "@lingui/core/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, redirect, useLoaderData } from "react-router";
 import {
@@ -12,6 +13,7 @@ import {
   getAvailableOnAccountCreditSources,
   getInvoiceSettlements,
   getOpenPurchaseInvoicesForSupplier,
+  getOpenReimbursementsForEmployee,
   getOpenSalesInvoicesForCustomer,
   getPayment,
   getPaymentCurrencyConfiguration,
@@ -29,7 +31,7 @@ import { path } from "~/utils/path";
 
 export const handle: Handle = {
   breadcrumb: detailBreadcrumb(
-    { breadcrumb: "Payments", to: path.to.payments },
+    { breadcrumb: msg`Payments`, to: path.to.payments },
     (data) => data?.payment?.paymentId
   ),
   module: "invoicing"
@@ -71,7 +73,34 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     let stagedCredits: NonNullable<
       Awaited<ReturnType<typeof getStagedCreditsForPayment>>["data"]
     > = [];
-    if (payment.data.status === "Draft") {
+    // An employee payee settles Posted reimbursements, never invoices or memos:
+    // it is resolved BEFORE the customer-XOR-supplier check below, which a
+    // three-way party can no longer satisfy. There is no on-account credit and
+    // no credit memo to draw on, so `funding`, `availableCredits` and
+    // `stagedCredits` all stay empty — exactly what
+    // `replaceInvoiceSettlements`' employee arm assumes.
+    if (payment.data.status === "Draft" && payment.data.employeeId) {
+      const reimbursements = await getOpenReimbursementsForEmployee(
+        client,
+        companyId,
+        payment.data.employeeId,
+        payment.data.currencyCode
+      );
+      if (reimbursements.error) throw reimbursements.error;
+      openInvoices = (reimbursements.data ?? []).map((reimbursement) => ({
+        id: reimbursement.id,
+        invoiceId: reimbursement.reimbursementId,
+        dateDue: null,
+        dateIssued: null,
+        paymentTermId: null,
+        currencyCode: reimbursement.currencyCode,
+        exchangeRate: reimbursement.exchangeRate,
+        totalAmount: reimbursement.totalAmount,
+        balance: reimbursement.balance,
+        remainingDocument: reimbursement.remainingDocument,
+        status: "Posted"
+      }));
+    } else if (payment.data.status === "Draft") {
       const isAR = Boolean(payment.data.customerId);
       const isRefund = isAR !== (payment.data.paymentType === "Receipt");
       const partyId = isAR ? payment.data.customerId : payment.data.supplierId;
@@ -256,8 +285,13 @@ export default function PaymentDetailRoute() {
     stagedCredits
   } = useLoaderData<typeof loader>();
   const locked = isPaymentLocked(payment.status);
+  const isReimbursement = Boolean(payment.employeeId);
   const side: "sales" | "purchase" = payment.customerId ? "sales" : "purchase";
-  const isRefund = (side === "sales") !== (payment.paymentType === "Receipt");
+  // A reimbursement payout is always cash OUT against the employee-payable
+  // control account — never a refund, whatever the trade-side arithmetic says.
+  const isRefund =
+    !isReimbursement &&
+    (side === "sales") !== (payment.paymentType === "Receipt");
 
   const initialValues = {
     id: payment.id,
@@ -265,6 +299,7 @@ export default function PaymentDetailRoute() {
     paymentType: payment.paymentType,
     customerId: payment.customerId ?? "",
     supplierId: payment.supplierId ?? "",
+    employeeId: payment.employeeId ?? "",
     paymentDate: payment.paymentDate,
     currencyCode: payment.currencyCode ?? "",
     exchangeRate: Number(payment.exchangeRate),
@@ -284,12 +319,14 @@ export default function PaymentDetailRoute() {
         paymentCurrency={payment.currencyCode}
         baseCurrency={baseCurrencyCode}
         isRefund={isRefund}
+        isReimbursement={isReimbursement}
       />
 
       {!locked && (
         <PaymentApplyTable
-          key={`${payment.id}:${side}:${payment.customerId ?? payment.supplierId}:${payment.currencyCode}:${payment.paymentType}`}
+          key={`${payment.id}:${side}:${payment.customerId ?? payment.supplierId ?? payment.employeeId}:${payment.currencyCode}:${payment.paymentType}`}
           isRefund={isRefund}
+          isReimbursement={isReimbursement}
           paymentId={payment.id}
           paymentType={payment.paymentType}
           paymentCurrency={payment.currencyCode}
@@ -314,6 +351,7 @@ export default function PaymentDetailRoute() {
             targetSalesInvoiceId: a.targetSalesInvoiceId,
             targetPurchaseInvoiceId: a.targetPurchaseInvoiceId,
             targetMemoId: a.targetMemoId,
+            targetReimbursementId: a.targetReimbursementId,
             sourceAmount: a.sourceAmount,
             sourcePaymentId: a.sourcePaymentId,
             appliedAmount: Number(a.appliedAmount),

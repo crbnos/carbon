@@ -27,11 +27,6 @@ staged UI/`.po` files slip past `I18N_RELEVANT` and skip Gate 6. From the change
 paths, derive:
 
 - `SCHEMA_CHANGED` — any file under `packages/database/supabase/migrations/`
-- `AGENT_KB_RELEVANT` — the diff touches `docs/content/**` or
-  `docs/scripts/generate-agent-kb.ts`. When true, Gate 1b regenerates the agent's doc
-  corpus (`apps/erp/app/modules/agent/kb/`) so the generated copy ships in this same
-  commit instead of drifting behind the docs (same model as the `.po` files —
-  see `.ai/rules/agent-knowledge-base.md`).
 - `WORKFLOW_CATALOG_RELEVANT` — the diff touches `SCHEMA_CHANGED` paths,
   `packages/database/src/swagger-docs-schema.ts`, or the workflow catalog source
   (`packages/workflows/src/catalog/**`, e.g. `entities.ts`, `actions.ts`,
@@ -69,11 +64,6 @@ Stop on failure, apply the fix policy (Step 3), re-run the failed gate.
 # Gate 1 — types (only if SCHEMA_CHANGED)
 pnpm run generate:types
 # then include the regenerated files in the commit
-
-# Gate 1b — agent knowledge base (only if AGENT_KB_RELEVANT)
-pnpm run generate:agent-kb
-# then include the regenerated apps/erp/app/modules/agent/kb/** in the commit
-# (runs before biome so the regenerated manifest.json gets formatted too)
 
 # Gate 1c — workflow catalog (only if WORKFLOW_CATALOG_RELEVANT)
 pnpm run generate:workflow-catalog          # regenerate from schema + catalog source

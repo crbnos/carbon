@@ -230,19 +230,44 @@ async function assertWipeable(ctx: Ctx): Promise<void> {
       `Seed: this company trades with other companies in its group (${partnerCount} intercompany customer/supplier record(s)). Demo data can only be applied to a company without intercompany partners.`
     );
   }
-  const cards = await client.query<{ count: number }>(
-    `SELECT count(*) AS count FROM "cardTransaction"
+  const charges = await client.query<{ count: number }>(
+    `SELECT count(*) AS count FROM "charge"
      WHERE "companyId" = $1 AND status <> 'Draft'`,
     [companyId]
   );
-  const cardCount = Number(cards.rows[0]?.count ?? 0);
-  if (cardCount > 0) {
+  const chargeCount = Number(charges.rows[0]?.count ?? 0);
+  if (chargeCount > 0) {
     throw new Error(
-      `Seed: this company has ${cardCount} posted or voided card transaction(s), which cannot be deleted. Demo data can only be applied to a company without posted card transactions.`
+      `Seed: this company has ${chargeCount} posted or voided charge(s), which cannot be deleted. Demo data can only be applied to a company without posted charges.`
+    );
+  }
+  // Same shape as the charge guard, and for the same reason:
+  // `check_reimbursement_draft_mutation` (migration 20260923231244) refuses to
+  // DELETE any row that is not Draft and does NOT honour app.sync_in_progress,
+  // so without this the apply aborted mid-wipe on a raw trigger error. The row
+  // cannot be walked back to Draft either — unlike an invoice, Posted -> Draft
+  // is not an allowed transition.
+  const reimbursements = await client.query<{ count: number }>(
+    `SELECT count(*) AS count FROM "reimbursement"
+     WHERE "companyId" = $1 AND status <> 'Draft'`,
+    [companyId]
+  );
+  const reimbursementCount = Number(reimbursements.rows[0]?.count ?? 0);
+  if (reimbursementCount > 0) {
+    throw new Error(
+      `Seed: this company has ${reimbursementCount} posted or voided reimbursement(s), which cannot be deleted. Demo data can only be applied to a company without posted reimbursements.`
     );
   }
 }
 
+/**
+ * `Reimbursement` is here for the same reason every other document source is:
+ * its journal credits an employee payable against documents this wipe deletes.
+ * In practice `assertWipeable` refuses a non-Draft reimbursement before the
+ * wipe starts, so today this is the second line of defence — but the two lists
+ * must stay in step, or relaxing that guard would silently leave a live journal
+ * behind for a document that no longer exists.
+ */
 const DOCUMENT_JOURNAL_SOURCES = [
   "Sales Invoice",
   "Purchase Invoice",
@@ -251,7 +276,8 @@ const DOCUMENT_JOURNAL_SOURCES = [
   "Debit Memo",
   "Purchase Receipt",
   "Sales Shipment",
-  "Inventory Adjustment"
+  "Inventory Adjustment",
+  "Reimbursement"
 ];
 
 /**
@@ -281,10 +307,13 @@ async function reverseDocumentJournals(ctx: Ctx): Promise<void> {
              UNION ALL SELECT id FROM memo WHERE "companyId" = $1
              UNION ALL SELECT id FROM receipt WHERE "companyId" = $1
              UNION ALL SELECT id FROM shipment WHERE "companyId" = $1
+             UNION ALL SELECT id FROM "reimbursement" WHERE "companyId" = $1
              UNION ALL SELECT id FROM "itemLedger" WHERE "companyId" = $1))
          -- a zero-cash payment's journal has no lines to match on
          OR j.id IN (SELECT "journalId" FROM payment WHERE "companyId" = $1)
-         OR j.id IN (SELECT "journalId" FROM memo WHERE "companyId" = $1))
+         OR j.id IN (SELECT "journalId" FROM memo WHERE "companyId" = $1)
+         OR j.id IN (
+              SELECT "journalId" FROM "reimbursement" WHERE "companyId" = $1))
      ORDER BY j."postingDate", j."journalEntryId"`,
     [companyId, DOCUMENT_JOURNAL_SOURCES]
   );

@@ -6,9 +6,11 @@ import {
   fileResponseHeaders,
   getCompanyPrivateBucket,
   getContentType,
+  isStorageNotFound,
   isUnsafeStoragePath,
   LEGACY_PRIVATE_BUCKET,
   storage,
+  storageErrorStatus,
   TEMP_STAGING_BUCKET
 } from "@carbon/files";
 import { getLogger } from "@carbon/logger";
@@ -99,33 +101,34 @@ export let loader = async ({ request, params }: LoaderFunctionArgs) => {
       if (!transformed.error) {
         // imgproxy may negotiate webp via Accept — trust the blob, not the path
         contentType = transformed.data.type || "image/jpeg";
-        return transformed.data;
+        return transformed;
       }
       // No imgproxy (stale self-host stack) — fall through to the raw bytes;
       // Safari can still render them.
       logger.error(transformed.error);
     }
     // Use the original encoded path for the storage API call
-    const result = await source.download(path);
-    if (result.error) {
-      logger.error("Failed to download file", { error: result.error });
-      return null;
-    }
-    return result.data;
+    return source.download(path);
   }
 
-  let fileData = await downloadFile();
-  if (!fileData) {
-    // Wait for a second and try again
-    await new Promise((resolve) => setTimeout(resolve, 1000));
-    fileData = await downloadFile();
-    if (!fileData) {
-      // A missing object is a clean 404, not a 500 — consumers (e.g. the model
-      // download flow) branch on the status; an opaque error page body must
-      // never be saved to disk as if it were the file.
-      return new Response(null, { status: 404 });
-    }
+  // No retry here: the client's fetchWithRetry already retries 5xx and
+  // network failures.
+  const result = await downloadFile();
+  if (result.error) {
+    logger.error("Failed to download file", {
+      path,
+      status: storageErrorStatus(result.error),
+      error: result.error
+    });
+    // A missing object is a clean 404, not a 500 — consumers (e.g. the model
+    // download flow) branch on the status; an opaque error page body must
+    // never be saved to disk as if it were the file.
+    // Anything else is a real failure and must not pass for a miss.
+    return new Response(null, {
+      status: (await isStorageNotFound(result.error)) ? 404 : 500
+    });
   }
+  const fileData = result.data;
 
   const headers = fileResponseHeaders(
     contentType,

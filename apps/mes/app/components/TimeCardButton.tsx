@@ -1,13 +1,8 @@
-import {
-  Badge,
-  SidebarMenuButton,
-  SidebarMenuItem,
-  useSidebar
-} from "@carbon/react";
-import { Trans, useLingui } from "@lingui/react/macro";
+import { Badge, NavRailItem, NavRailLink } from "@carbon/react";
+import { useLingui } from "@lingui/react/macro";
 import { useEffect, useState } from "react";
 import { LuClock, LuPlay, LuSquare } from "react-icons/lu";
-import { Link, useFetcher, useLocation } from "react-router";
+import { useFetcher, useLocation } from "react-router";
 import { path } from "~/utils/path";
 
 type TimeCardButtonProps = {
@@ -27,7 +22,6 @@ function formatElapsed(since: string) {
 export function TimeCardButton({ openClockEntry }: TimeCardButtonProps) {
   const { t } = useLingui();
   const fetcher = useFetcher();
-  const { isMobile, setOpenMobile } = useSidebar();
   const { pathname } = useLocation();
   const [, setTick] = useState(0);
 
@@ -42,7 +36,6 @@ export function TimeCardButton({ openClockEntry }: TimeCardButtonProps) {
   }, [openClockEntry]);
 
   const handleClockOut = () => {
-    if (isMobile) setOpenMobile(false);
     const formData = new FormData();
     formData.append("intent", "clockOut");
     fetcher.submit(formData, {
@@ -52,7 +45,6 @@ export function TimeCardButton({ openClockEntry }: TimeCardButtonProps) {
   };
 
   const handleClockIn = () => {
-    if (isMobile) setOpenMobile(false);
     const formData = new FormData();
     formData.append("intent", "clockIn");
     fetcher.submit(formData, {
@@ -66,57 +58,37 @@ export function TimeCardButton({ openClockEntry }: TimeCardButtonProps) {
   return (
     <>
       {isClockedIn ? (
-        <SidebarMenuItem>
-          <SidebarMenuButton
-            tooltip={t`Clock Out`}
-            onClick={handleClockOut}
-            disabled={fetcher.state !== "idle"}
-            className="font-medium"
-          >
-            <LuSquare className="size-4" />
-            <span>
-              <Trans>Clock Out</Trans>
-            </span>
-            {openClockEntry && (
-              <Badge variant="red" className="ml-auto">
+        <NavRailItem
+          icon={<LuSquare />}
+          label={t`Clock Out`}
+          onClick={handleClockOut}
+          disabled={fetcher.state !== "idle"}
+          trailing={
+            openClockEntry && (
+              <Badge
+                variant="red"
+                className="min-h-5 px-1 text-[10px] tabular-nums"
+              >
                 {formatElapsed(openClockEntry.clockIn)}
               </Badge>
-            )}
-          </SidebarMenuButton>
-        </SidebarMenuItem>
+            )
+          }
+        />
       ) : (
-        <SidebarMenuItem>
-          <SidebarMenuButton
-            tooltip={t`Clock In`}
-            onClick={handleClockIn}
-            disabled={fetcher.state !== "idle"}
-            className="font-medium"
-          >
-            <LuPlay className="size-4" />
-            <span>
-              <Trans>Clock In</Trans>
-            </span>
-          </SidebarMenuButton>
-        </SidebarMenuItem>
+        <NavRailItem
+          icon={<LuPlay />}
+          label={t`Clock In`}
+          onClick={handleClockIn}
+          disabled={fetcher.state !== "idle"}
+        />
       )}
 
-      <SidebarMenuItem>
-        <SidebarMenuButton
-          tooltip={t`My Hours`}
-          isActive={isOnTimeCardPage}
-          asChild
-        >
-          <Link
-            to={path.to.timeCardPage}
-            onClick={() => isMobile && setOpenMobile(false)}
-          >
-            <LuClock />
-            <span>
-              <Trans>My Hours</Trans>
-            </span>
-          </Link>
-        </SidebarMenuButton>
-      </SidebarMenuItem>
+      <NavRailLink
+        to={path.to.timeCardPage}
+        icon={<LuClock />}
+        label={t`My Hours`}
+        isActive={isOnTimeCardPage}
+      />
     </>
   );
 }

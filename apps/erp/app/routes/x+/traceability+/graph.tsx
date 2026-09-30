@@ -83,6 +83,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     let payload = await fetchLineageSubgraph(
       client,
       trackedEntityId,
+      companyId,
       depth,
       "both"
     );
@@ -96,7 +97,11 @@ export async function loader({ request }: LoaderFunctionArgs) {
         companyId,
         depth
       );
-      const jobReadableId = await getJobReadableId(client, associatedJobId);
+      const jobReadableId = await getJobReadableId(
+        client,
+        associatedJobId,
+        companyId
+      );
       payload = mergeLineagePayloads(
         payload,
         withJobNode(jobPayload, associatedJobId, jobReadableId)
@@ -105,10 +110,11 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
     const containments = await fetchContainmentsForEntities(
       client,
-      payload.entities.map((e) => e.id)
+      payload.entities.map((e) => e.id),
+      companyId
     );
     return {
-      ...(await enrichActivityBinNames(client, payload)),
+      ...(await enrichActivityBinNames(client, payload, companyId)),
       containments,
       rootId: trackedEntityId,
       rootType: "entity" as const,
@@ -117,14 +123,14 @@ export async function loader({ request }: LoaderFunctionArgs) {
   }
 
   if (jobId) {
-    const jobReadableId = await getJobReadableId(client, jobId);
+    const jobReadableId = await getJobReadableId(client, jobId, companyId);
     const payload = withJobNode(
       await fetchJobScopedLineage(client, jobId, companyId, depth),
       jobId,
       jobReadableId
     );
     return {
-      ...(await enrichActivityBinNames(client, payload)),
+      ...(await enrichActivityBinNames(client, payload, companyId)),
       rootId: jobId,
       rootType: "job" as const,
       depth
@@ -133,15 +139,21 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   // Legacy 1-hop activity-rooted view.
   const [activity, directInputs, directOutputs] = await Promise.all([
-    client.from("trackedActivity").select("*").eq("id", trackedActivityId!),
+    client
+      .from("trackedActivity")
+      .select("*")
+      .eq("id", trackedActivityId!)
+      .eq("companyId", companyId),
     client
       .from("trackedActivityInput")
       .select("*")
-      .eq("trackedActivityId", trackedActivityId!),
+      .eq("trackedActivityId", trackedActivityId!)
+      .eq("companyId", companyId),
     client
       .from("trackedActivityOutput")
       .select("*")
       .eq("trackedActivityId", trackedActivityId!)
+      .eq("companyId", companyId)
   ]);
 
   const directEntityIds = Array.from(
@@ -154,19 +166,22 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const directEntities = await client
     .from("trackedEntity")
     .select("*")
-    .in("id", directEntityIds);
+    .in("id", directEntityIds)
+    .eq("companyId", companyId);
 
   const [additionalInputs, additionalOutputs] = await Promise.all([
     client
       .from("trackedActivityInput")
       .select("*")
       .in("trackedEntityId", directEntityIds)
-      .neq("trackedActivityId", trackedActivityId!),
+      .neq("trackedActivityId", trackedActivityId!)
+      .eq("companyId", companyId),
     client
       .from("trackedActivityOutput")
       .select("*")
       .in("trackedEntityId", directEntityIds)
       .neq("trackedActivityId", trackedActivityId!)
+      .eq("companyId", companyId)
   ]);
 
   const additionalActivityIds = Array.from(
@@ -181,7 +196,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const additionalActivities = await client
     .from("trackedActivity")
     .select("*")
-    .in("id", additionalActivityIds);
+    .in("id", additionalActivityIds)
+    .eq("companyId", companyId);
 
   const allEntities = (directEntities?.data ?? []) as TrackedEntity[];
   const allActivities = [
@@ -191,22 +207,27 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
   const containments = await fetchContainmentsForEntities(
     client,
-    allEntities.map((e) => e.id)
+    allEntities.map((e) => e.id),
+    companyId
   );
 
   return {
-    ...(await enrichActivityBinNames(client, {
-      entities: allEntities,
-      inputs: [
-        ...(directInputs?.data || []),
-        ...(additionalInputs?.data || [])
-      ],
-      outputs: [
-        ...(directOutputs?.data || []),
-        ...(additionalOutputs?.data || [])
-      ],
-      activities: allActivities
-    })),
+    ...(await enrichActivityBinNames(
+      client,
+      {
+        entities: allEntities,
+        inputs: [
+          ...(directInputs?.data || []),
+          ...(additionalInputs?.data || [])
+        ],
+        outputs: [
+          ...(directOutputs?.data || []),
+          ...(additionalOutputs?.data || [])
+        ],
+        activities: allActivities
+      },
+      companyId
+    )),
     containments,
     rootId: trackedActivityId!,
     rootType: "activity" as const,
@@ -216,9 +237,15 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 async function getJobReadableId(
   client: SupabaseClient<Database>,
-  jobId: string
+  jobId: string,
+  companyId: string
 ): Promise<string> {
-  const job = await client.from("job").select("jobId").eq("id", jobId).single();
+  const job = await client
+    .from("job")
+    .select("jobId")
+    .eq("id", jobId)
+    .eq("companyId", companyId)
+    .maybeSingle();
   return job.data?.jobId ?? jobId;
 }
 

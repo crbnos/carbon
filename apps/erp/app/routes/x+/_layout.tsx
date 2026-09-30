@@ -9,6 +9,7 @@ import {
   SESSION_HEARTBEAT_MS,
   SESSION_IDLE_LOCK_MS
 } from "@carbon/auth";
+import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { getCompanyId, setCompanyId } from "@carbon/auth/company.server";
 import { userHasVerifiedTotpFactor } from "@carbon/auth/mfa.server";
 import {
@@ -32,6 +33,7 @@ import {
   ItarEntityCertification,
   ItarEntityPendingBlock,
   ItarUserCertification,
+  SidebarProvider,
   TooltipProvider,
   useKeyboardWedge,
   useNProgress
@@ -58,6 +60,7 @@ import {
   useNavigate
 } from "react-router";
 import { RealtimeDataProvider } from "~/components";
+import ChangelogPanel from "~/components/ChangelogPanel";
 import { PrimaryNavigation, Topbar } from "~/components/Layout";
 import MfaEnrollmentRequired from "~/components/MfaEnrollmentRequired";
 import SessionLockOverlay from "~/components/SessionLockOverlay";
@@ -65,7 +68,9 @@ import ShortcutHelp from "~/components/ShortcutHelp";
 import { TimeCardWarning } from "~/components/TimeCardWarning";
 import TrainingPanel from "~/components/TrainingPanel";
 import { useIdle, usePermissions, useRecordRecentlyViewed } from "~/hooks";
+import { useChangelogPanel } from "~/hooks/useChangelogPanel";
 import { useTrainingPanel } from "~/hooks/useTrainingPanel";
+import { getChangelogPanelEntry } from "~/modules/account";
 import { AgentRoot } from "~/modules/agent/ui/AgentRoot";
 import { getOpenClockEntry } from "~/modules/people";
 import {
@@ -177,7 +182,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
     implementationHub,
     implementationCheckStates,
     implementationSignals,
-    itarCertification
+    itarCertification,
+    changelog
   ] = await Promise.all([
     getCompanies(client, userId),
     getEmployeeCompanies(client, userId),
@@ -197,7 +203,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
     implementationHubPromise,
     getImplementationCheckStates(client, companyId),
     implementationSignalsPromise,
-    itarCertificationPromise
+    itarCertificationPromise,
+    // Whether this user dismissed it is a user flag, read client-side.
+    getChangelogPanelEntry(getCarbonServiceRole()).catch(() => null)
   ]);
 
   // Empty groups is a valid pre-onboarding state (a first-run user with no
@@ -316,6 +324,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     implementationHub: implementationHub.data ?? null,
     implementationCheckStates: implementationCheckStates.data ?? [],
     implementationSignals,
+    changelog,
     itarCertification: {
       ...itarCertification,
       // Server-decided, never client-inferred: the gate must not be skippable
@@ -360,6 +369,7 @@ export default function AuthenticatedRoute() {
   const navigate = useNavigate();
   const permissions = usePermissions();
   const { isOpen, training, dismiss } = useTrainingPanel();
+  const changelogPanel = useChangelogPanel();
 
   // Session lock (NIST 3.1.10) — client idle UX only; the server enforces in
   // requireAuthSession. Inert unless CONTROLLED_ENVIRONMENT.
@@ -493,7 +503,10 @@ export default function AuthenticatedRoute() {
           >
             <RealtimeDataProvider>
               <TooltipProvider>
-                <div className="flex h-screen">
+                <SidebarProvider
+                  defaultOpen={false}
+                  className="h-screen min-h-0"
+                >
                   <PrimaryNavigation />
                   <div className="flex flex-1 flex-col min-w-0 overflow-hidden bg-card md:mt-2 md:mr-2 md:mb-2 md:rounded-2xl md:border md:border-border shadow-md relative z-10">
                     <Topbar />
@@ -501,11 +514,17 @@ export default function AuthenticatedRoute() {
                       <Outlet />
                     </main>
                   </div>
-                </div>
+                </SidebarProvider>
                 <TrainingPanel
                   training={training}
                   isOpen={isOpen}
                   onDismiss={dismiss}
+                />
+                {/* Shares the training panel's corner; training wins while open. */}
+                <ChangelogPanel
+                  entry={changelogPanel.entry}
+                  isOpen={changelogPanel.isOpen && !isOpen}
+                  onDismiss={changelogPanel.dismiss}
                 />
                 <AgentRoot />
                 <ShortcutHelp />

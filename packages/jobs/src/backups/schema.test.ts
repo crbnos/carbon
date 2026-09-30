@@ -17,7 +17,12 @@ vi.mock("./renames", () => ({
     retiredFeature: null,
     oldName: "newName",
     danglingRename: "alsoMissing"
-  }
+  },
+  COLUMN_RENAMES: { oldName: { legacyId: "newId" } },
+  renameColumns: (table: string, columns: string[]) =>
+    table === "oldName"
+      ? columns.map((c) => (c === "legacyId" ? "newId" : c))
+      : columns
 }));
 
 const col = (name: string, opts: Partial<ColumnInfo> = {}): ColumnInfo => ({
@@ -213,6 +218,16 @@ describe("reportBackupCompatibility — TABLE_RENAMES", () => {
     const result = reportBackupCompatibility(
       catalog([table("newName", [col("id"), col("name")])]),
       backup([{ name: "oldName", rows: 2, columns: ["id", "name"] }])
+    );
+
+    expect(result.findings).toEqual([]);
+    expect(result.blocked).toBe(false);
+  });
+
+  it("compares a renamed table's columns under their current names", () => {
+    const result = reportBackupCompatibility(
+      catalog([table("newName", [col("id"), col("newId")])]),
+      backup([{ name: "oldName", rows: 2, columns: ["id", "legacyId"] }])
     );
 
     expect(result.findings).toEqual([]);

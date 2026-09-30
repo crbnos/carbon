@@ -6,7 +6,7 @@ import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import { type Kysely, sql } from "kysely";
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { getJobDatabaseClient } from "../../../db";
-import { stageOrResumeRampCardTransaction } from "./ramp-sync-card-stage";
+import { stageOrResumeRampCharge } from "./ramp-sync-card-stage";
 import type { RampSyncContext } from "./ramp-sync-shared";
 
 const runDatabaseTests = process.env.RUN_RAMP_DB_TESTS === "true";
@@ -88,7 +88,7 @@ describe.skipIf(!runDatabaseTests)("Ramp card staging (Postgres)", () => {
         .select("entityId")
         .where("companyId", "=", fixture.companyId)
         .where("integration", "=", "ramp")
-        .where("entityType", "=", "cardTransaction")
+        .where("entityType", "=", "charge")
         .where("externalId", "in", rampIds)
         .execute();
       const ids = mappings.map((mapping) => mapping.entityId);
@@ -96,17 +96,17 @@ describe.skipIf(!runDatabaseTests)("Ramp card staging (Postgres)", () => {
         .deleteFrom("externalIntegrationMapping")
         .where("companyId", "=", fixture.companyId)
         .where("integration", "=", "ramp")
-        .where("entityType", "=", "cardTransaction")
+        .where("entityType", "=", "charge")
         .where("externalId", "in", rampIds)
         .execute();
       if (ids.length > 0) {
         await tx
-          .deleteFrom("cardTransactionLine")
+          .deleteFrom("chargeLine")
           .where("companyId", "=", fixture.companyId)
-          .where("cardTransactionId", "in", ids)
+          .where("chargeId", "in", ids)
           .execute();
         await tx
-          .deleteFrom("cardTransaction")
+          .deleteFrom("charge")
           .where("companyId", "=", fixture.companyId)
           .where("id", "in", ids)
           .execute();
@@ -147,11 +147,11 @@ describe.skipIf(!runDatabaseTests)("Ramp card staging (Postgres)", () => {
     const rampId = `ramp-card-${crypto.randomUUID()}`;
     rampIds.push(rampId);
     const [first, second] = await Promise.all([
-      stageOrResumeRampCardTransaction(db, draftArgs(rampId)),
-      stageOrResumeRampCardTransaction(db, draftArgs(rampId))
+      stageOrResumeRampCharge(db, draftArgs(rampId)),
+      stageOrResumeRampCharge(db, draftArgs(rampId))
     ]);
 
-    expect(second.cardTransactionId).toBe(first.cardTransactionId);
+    expect(second.chargeId).toBe(first.chargeId);
     expect([first.created, second.created].sort()).toEqual([false, true]);
   });
 
@@ -161,7 +161,7 @@ describe.skipIf(!runDatabaseTests)("Ramp card staging (Postgres)", () => {
     const readableId = `CARD-ROLLBACK-${crypto.randomUUID()}`;
 
     await expect(
-      stageOrResumeRampCardTransaction(db, {
+      stageOrResumeRampCharge(db, {
         ...draftArgs(rampId, `acct_missing_${crypto.randomUUID()}`),
         readableId
       })
@@ -169,17 +169,17 @@ describe.skipIf(!runDatabaseTests)("Ramp card staging (Postgres)", () => {
 
     const [headers, mappings] = await Promise.all([
       db
-        .selectFrom("cardTransaction")
+        .selectFrom("charge")
         .select("id")
         .where("companyId", "=", fixture.companyId)
-        .where("cardTransactionId", "=", readableId)
+        .where("chargeId", "=", readableId)
         .execute(),
       db
         .selectFrom("externalIntegrationMapping")
         .select("id")
         .where("companyId", "=", fixture.companyId)
         .where("integration", "=", "ramp")
-        .where("entityType", "=", "cardTransaction")
+        .where("entityType", "=", "charge")
         .where("externalId", "=", rampId)
         .execute()
     ]);
@@ -190,7 +190,7 @@ describe.skipIf(!runDatabaseTests)("Ramp card staging (Postgres)", () => {
   it("atomically refreshes corrected header and coding on a mapped Draft", async () => {
     const rampId = `ramp-card-${crypto.randomUUID()}`;
     rampIds.push(rampId);
-    const first = await stageOrResumeRampCardTransaction(db, draftArgs(rampId));
+    const first = await stageOrResumeRampCharge(db, draftArgs(rampId));
     const corrected = {
       ...draftArgs(rampId, fixture.correctedAccountId),
       amount: 30,
@@ -208,12 +208,12 @@ describe.skipIf(!runDatabaseTests)("Ramp card staging (Postgres)", () => {
         }
       ]
     };
-    const resumed = await stageOrResumeRampCardTransaction(db, corrected);
+    const resumed = await stageOrResumeRampCharge(db, corrected);
     expect(resumed).toEqual({ ...first, created: false });
     const header = await db
-      .selectFrom("cardTransaction")
+      .selectFrom("charge")
       .selectAll()
-      .where("id", "=", first.cardTransactionId)
+      .where("id", "=", first.chargeId)
       .where("companyId", "=", fixture.companyId)
       .executeTakeFirstOrThrow();
     expect(header).toMatchObject({
@@ -224,9 +224,9 @@ describe.skipIf(!runDatabaseTests)("Ramp card staging (Postgres)", () => {
       status: "Draft"
     });
     const lines = await db
-      .selectFrom("cardTransactionLine")
+      .selectFrom("chargeLine")
       .select(["accountId", "amount", "description"])
-      .where("cardTransactionId", "=", first.cardTransactionId)
+      .where("chargeId", "=", first.chargeId)
       .where("companyId", "=", fixture.companyId)
       .execute();
     expect(lines).toEqual([
@@ -238,36 +238,33 @@ describe.skipIf(!runDatabaseTests)("Ramp card staging (Postgres)", () => {
     ]);
 
     await expect(
-      stageOrResumeRampCardTransaction(db, {
+      stageOrResumeRampCharge(db, {
         ...corrected,
         amount: 50,
         lines: [{ ...corrected.lines[0]!, accountId: "acct_missing" }]
       })
     ).rejects.toThrow();
     const retained = await db
-      .selectFrom("cardTransaction")
+      .selectFrom("charge")
       .select("amount")
-      .where("id", "=", first.cardTransactionId)
+      .where("id", "=", first.chargeId)
       .where("companyId", "=", fixture.companyId)
       .executeTakeFirstOrThrow();
     expect(retained.amount).toBe(30);
     const retainedLines = await db
-      .selectFrom("cardTransactionLine")
+      .selectFrom("chargeLine")
       .select(["accountId", "amount", "description"])
-      .where("cardTransactionId", "=", first.cardTransactionId)
+      .where("chargeId", "=", first.chargeId)
       .where("companyId", "=", fixture.companyId)
       .execute();
     expect(retainedLines).toEqual(lines);
   });
 
   it("retries a mapped Draft with current Ramp coding and leaves the Posted mapping unchanged", async () => {
-    const { syncRampCardTransactions } = await import("./ramp-sync-card");
+    const { syncRampCharges } = await import("./ramp-sync-card");
     const rampId = `ramp-card-${crypto.randomUUID()}`;
     rampIds.push(rampId);
-    const staged = await stageOrResumeRampCardTransaction(
-      db,
-      draftArgs(rampId)
-    );
+    const staged = await stageOrResumeRampCharge(db, draftArgs(rampId));
     const client = createClient<Database>(
       process.env.SUPABASE_URL!,
       process.env.SUPABASE_SERVICE_ROLE_KEY!,
@@ -277,9 +274,9 @@ describe.skipIf(!runDatabaseTests)("Ramp card staging (Postgres)", () => {
     vi.spyOn(client, "functions", "get").mockReturnValue(functions);
     const post = vi.spyOn(functions, "invoke").mockImplementation(async () => {
       const lines = await db
-        .selectFrom("cardTransactionLine")
+        .selectFrom("chargeLine")
         .select("accountId")
-        .where("cardTransactionId", "=", staged.cardTransactionId)
+        .where("chargeId", "=", staged.chargeId)
         .where("companyId", "=", fixture.companyId)
         .execute();
       if (
@@ -289,14 +286,14 @@ describe.skipIf(!runDatabaseTests)("Ramp card staging (Postgres)", () => {
         return { data: null, error: new Error("Account must be recoded") };
       }
       await db
-        .updateTable("cardTransaction")
+        .updateTable("charge")
         .set({
           status: "Posted",
           postingDate: "2026-09-11",
           postedAt: "2026-09-11T12:00:00.000Z",
           postedBy: fixture.actorId
         })
-        .where("id", "=", staged.cardTransactionId)
+        .where("id", "=", staged.chargeId)
         .where("companyId", "=", fixture.companyId)
         .execute();
       return { data: null, error: new Error("response lost") };
@@ -346,7 +343,7 @@ describe.skipIf(!runDatabaseTests)("Ramp card staging (Postgres)", () => {
       },
       getReceipt: async () => null
     } as unknown as RampClient;
-    const result = await syncRampCardTransactions(
+    const result = await syncRampCharges(
       ctx,
       ramp,
       undefined,
@@ -355,9 +352,9 @@ describe.skipIf(!runDatabaseTests)("Ramp card staging (Postgres)", () => {
     expect(result).toMatchObject({ failed: 0, created: 0, reconfirmed: 1 });
     expect(post).toHaveBeenCalledTimes(1);
     const header = await db
-      .selectFrom("cardTransaction")
+      .selectFrom("charge")
       .select(["status", "memo"])
-      .where("id", "=", staged.cardTransactionId)
+      .where("id", "=", staged.chargeId)
       .where("companyId", "=", fixture.companyId)
       .executeTakeFirstOrThrow();
     expect(header).toEqual({ status: "Posted", memo: "Corrected Ramp source" });
@@ -366,7 +363,7 @@ describe.skipIf(!runDatabaseTests)("Ramp card staging (Postgres)", () => {
       memo: "Must not overwrite Posted",
       accounting_field_selections: []
     };
-    const retried = await syncRampCardTransactions(
+    const retried = await syncRampCharges(
       ctx,
       ramp,
       undefined,
@@ -375,9 +372,9 @@ describe.skipIf(!runDatabaseTests)("Ramp card staging (Postgres)", () => {
     expect(retried).toMatchObject({ failed: 0, reconfirmed: 1 });
     expect(post).toHaveBeenCalledTimes(1);
     const unchanged = await db
-      .selectFrom("cardTransaction")
+      .selectFrom("charge")
       .select("memo")
-      .where("id", "=", staged.cardTransactionId)
+      .where("id", "=", staged.chargeId)
       .where("companyId", "=", fixture.companyId)
       .executeTakeFirstOrThrow();
     expect(unchanged.memo).toBe("Corrected Ramp source");
@@ -398,7 +395,7 @@ describe.skipIf(!runDatabaseTests)("Ramp card staging (Postgres)", () => {
       maybeSingle: async () => ({
         data:
           (await db
-            .selectFrom("cardTransaction")
+            .selectFrom("charge")
             .select("status")
             .where("id", "=", observedId)
             .where("companyId", "=", fixture.companyId)
@@ -410,17 +407,17 @@ describe.skipIf(!runDatabaseTests)("Ramp card staging (Postgres)", () => {
       functions: {
         invoke: async (
           _name: string,
-          options: { body: { cardTransactionId: string } }
+          options: { body: { chargeId: string } }
         ) => {
           await db
-            .updateTable("cardTransaction")
+            .updateTable("charge")
             .set({
               status: "Posted",
               postingDate: "2026-09-11",
               postedAt: "2026-09-11T12:00:00.000Z",
               postedBy: fixture.actorId
             })
-            .where("id", "=", options.body.cardTransactionId)
+            .where("id", "=", options.body.chargeId)
             .where("companyId", "=", fixture.companyId)
             .execute();
           return { data: null, error: new Error("response lost") };
@@ -497,12 +494,12 @@ describe.skipIf(!runDatabaseTests)("Ramp card staging (Postgres)", () => {
       .select("entityId")
       .where("companyId", "=", fixture.companyId)
       .where("integration", "=", "ramp")
-      .where("entityType", "=", "cardTransaction")
+      .where("entityType", "=", "charge")
       .where("externalId", "=", rampId)
       .execute();
     expect(mappings).toHaveLength(1);
     const headers = await db
-      .selectFrom("cardTransaction")
+      .selectFrom("charge")
       .select(["id", "amount", "memo"])
       .where("companyId", "=", fixture.companyId)
       .where("id", "=", mappings[0]?.entityId ?? "")

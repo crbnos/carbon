@@ -56,12 +56,18 @@ export type PaginatedResult<T> =
       error: PostgrestError;
     };
 
-type PageQuery<T extends object> = PostgrestFilterBuilder<
-  PostgrestClientOptions,
-  Database["public"],
-  Record<string, unknown>,
-  T[]
->;
+/**
+ * What paging needs from a query: `.range()` resolving to a PostgREST result.
+ * Structural on purpose — naming `PostgrestFilterBuilder` here made the
+ * compiler compare an app's whole schema against it for every call, which no
+ * embed-heavy select or RPC survived ("excessively deep").
+ */
+type PageQuery<T extends object> = {
+  range(
+    from: number,
+    to: number
+  ): PromiseLike<{ data: T[] | null; error: PostgrestError | null }>;
+};
 
 /**
  * Fetches all records from a table by automatically handling pagination

@@ -1,6 +1,6 @@
 import { distributeRoundingResidual, round } from "@carbon/utils";
 
-/** A card-transaction line to be scaled for a partial repayment. */
+/** A charge line to be scaled for a partial repayment. */
 export type RepaymentLineInput = {
   accountId: string;
   amount: number;

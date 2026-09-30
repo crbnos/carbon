@@ -1,8 +1,8 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-// @carbon/glossary's terms.ts evaluates Lingui `msg` macros at module load,
+// @carbon/content/glossary's terms.ts evaluates Lingui `msg` macros at module load,
 // which vitest doesn't transform; the module graph pulls it in transitively.
-vi.mock("@carbon/glossary", () => ({
+vi.mock("@carbon/content/glossary", () => ({
   terms: {},
   getEntry: vi.fn(),
   lookupEntry: vi.fn(),

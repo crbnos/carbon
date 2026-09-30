@@ -150,6 +150,13 @@ interface TableProps<T extends object> {
   // + toggle). Defaults to all rows. Use it so only parents with children get an
   // affordance, like a tree's `hasChildren`.
   canExpandRow?: (row: T) => boolean;
+  // Renders a full-width header row above each run of consecutive rows that
+  // share a key (e.g. a report grouped by date). Grouping follows `data`'s
+  // order, so the caller sorts by the key; `header` receives the run's rows.
+  groupRowsBy?: {
+    key: (row: T) => string;
+    header: (rows: T[]) => ReactNode;
+  };
 }
 
 type AggregateFunction = "sum" | "average" | "min" | "max" | "median" | "count";
@@ -298,9 +305,10 @@ const Table = <T extends object>({
   renderActions,
   renderContextMenu,
   renderExpandedRow,
-  canExpandRow
+  canExpandRow,
+  groupRowsBy
 }: TableProps<T>) => {
-  const { i18n } = useLingui();
+  const { t } = useLingui();
   const tableContainerRef = useRef<HTMLDivElement>(null);
   // Visible width of the scroll container. An expanded row's cell spans every
   // column, so on a wide table (the 48-week planning grids) its content would
@@ -316,8 +324,6 @@ const Table = <T extends object>({
     observer.observe(el);
     return () => observer.disconnect();
   }, []);
-
-  const translateLabel = useCallback((value: string) => i18n._(value), [i18n]);
 
   const { currentView, view } = useSavedViews();
 
@@ -464,10 +470,7 @@ const Table = <T extends object>({
     exportValues,
     sortKeyToLabel,
     exportOnlyColumns
-  } = useMemo(
-    () => buildColumnMaps(columns, translateLabel),
-    [columns, translateLabel]
-  );
+  } = useMemo(() => buildColumnMaps(columns), [columns]);
 
   // Export-only columns must never render in the grid. Force them hidden in the
   // table state without mutating the stored columnVisibility (so saved-view
@@ -488,7 +491,11 @@ const Table = <T extends object>({
         ...getExpandColumn<T>(
           expandedRows,
           toggleRowExpanded,
-          translateLabel,
+          {
+            expand: t`Expand`,
+            expandRow: t`Expand row`,
+            collapseRow: t`Collapse row`
+          },
           canExpandRow
         )
       );
@@ -498,7 +505,7 @@ const Table = <T extends object>({
     }
     result.push(...columns);
     if (renderContextMenu) {
-      result.push(...getActionColumn<T>(renderContextMenu, translateLabel));
+      result.push(...getActionColumn<T>(renderContextMenu, t`Actions`));
     }
     return result;
   }, [
@@ -509,7 +516,7 @@ const Table = <T extends object>({
     canExpandRow,
     expandedRows,
     toggleRowExpanded,
-    translateLabel
+    t
   ]);
 
   const table = useReactTable({
@@ -867,6 +874,24 @@ const Table = <T extends object>({
 
   const rows = table.getRowModel().rows;
   const visibleColumns = table.getVisibleLeafColumns();
+
+  // Row id → the rows of the group that row starts (only group starts appear).
+  const groupStarts = useMemo(() => {
+    const starts = new Map<string, T[]>();
+    if (!groupRowsBy) return starts;
+    let current: T[] = [];
+    let previousKey: string | undefined;
+    for (const row of rows) {
+      const key = groupRowsBy.key(row.original);
+      if (key !== previousKey) {
+        current = [];
+        starts.set(row.id, current);
+        previousKey = key;
+      }
+      current.push(row.original);
+    }
+    return starts;
+  }, [rows, groupRowsBy]);
 
   const tableRef = useRef<HTMLTableElement>(null);
 
@@ -1249,9 +1274,7 @@ const Table = <T extends object>({
                                     {header.column.columnDef.meta?.icon}
                                     {typeof header.column.columnDef.header ===
                                     "string"
-                                      ? translateLabel(
-                                          header.column.columnDef.header
-                                        )
+                                      ? header.column.columnDef.header
                                       : flexRender(
                                           header.column.columnDef.header,
                                           header.getContext()
@@ -1316,9 +1339,7 @@ const Table = <T extends object>({
                                 {header.column.columnDef.meta?.icon}
                                 {typeof header.column.columnDef.header ===
                                 "string"
-                                  ? translateLabel(
-                                      header.column.columnDef.header
-                                    )
+                                  ? header.column.columnDef.header
                                   : flexRender(
                                       header.column.columnDef.header,
                                       header.getContext()
@@ -1398,8 +1419,22 @@ const Table = <T extends object>({
                     />
                   );
 
+                  const groupRows = groupStarts.get(row.id);
+
                   return (
                     <Fragment key={row.id}>
+                      {groupRows && groupRowsBy && (
+                        <Tr>
+                          <Td
+                            colSpan={visibleColumns.length}
+                            className="p-0 bg-muted/40 border-b border-border"
+                          >
+                            <div className="sticky left-0 w-fit">
+                              {groupRowsBy.header(groupRows)}
+                            </div>
+                          </Td>
+                        </Tr>
+                      )}
                       {rowContent}
                       {isRowExpanded && (
                         <Tr>
@@ -1543,14 +1578,12 @@ function getRowSelectionColumn<T>(
 
 function getActionColumn<T>(
   renderContextMenu: (item: T) => JSX.Element | null,
-  translateLabel: (value: string) => string
+  actionsLabel: string
 ): ColumnDef<T>[] {
   return [
     {
       id: "Actions",
-      header: () => (
-        <span className="sr-only">{translateLabel("Actions")}</span>
-      ),
+      header: () => <span className="sr-only">{actionsLabel}</span>,
       cell: (item) => (
         <div className="flex justify-end">
           <ActionMenu>{renderContextMenu(item.row.original)}</ActionMenu>
@@ -1564,7 +1597,7 @@ function getActionColumn<T>(
 function getExpandColumn<T>(
   expandedRows: Record<number, boolean>,
   toggleRowExpanded: (rowIndex: number) => void,
-  translateLabel: (value: string) => string,
+  labels: { expand: string; expandRow: string; collapseRow: string },
   canExpandRow?: (row: T) => boolean
 ): ColumnDef<T>[] {
   return [
@@ -1572,7 +1605,7 @@ function getExpandColumn<T>(
       id: "Expand",
       size: 40,
       enablePinning: true,
-      header: () => <span className="sr-only">{translateLabel("Expand")}</span>,
+      header: () => <span className="sr-only">{labels.expand}</span>,
       cell: ({ row }) => {
         // No chevron for rows that have nothing to reveal (tree `hasChildren`).
         if (canExpandRow && !canExpandRow(row.original)) return null;
@@ -1585,11 +1618,7 @@ function getExpandColumn<T>(
               toggleRowExpanded(row.index);
             }}
             className="p-1 hover:bg-muted rounded transition-colors text-muted-foreground hover:text-foreground"
-            aria-label={
-              isExpanded
-                ? translateLabel("Collapse row")
-                : translateLabel("Expand row")
-            }
+            aria-label={isExpanded ? labels.collapseRow : labels.expandRow}
           >
             {isExpanded ? (
               <LuChevronDown className="size-4" />

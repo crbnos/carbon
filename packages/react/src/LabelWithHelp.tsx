@@ -1,12 +1,11 @@
-import { getEntry, type TermId } from "@carbon/glossary";
+import { getEntry, type TermId } from "@carbon/content/glossary";
+import { docUrl } from "@carbon/content/links";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ReactNode } from "react";
 import { LuInfo } from "react-icons/lu";
 import { HoverCard, HoverCardContent, HoverCardTrigger } from "./HoverCard";
 import { HStack } from "./HStack";
 import { cn } from "./utils/cn";
-
-const DOCS_BASE_URL = "https://docs.carbon.ms";
 
 type LabelWithHelpProps = {
   termId: TermId | undefined;
@@ -37,7 +36,8 @@ export function LabelWithHelp({
 
   const translatedTerm = i18n._(entry.term);
   const translatedDefinition = i18n._(entry.definition);
-  const showLearnMore = entry.href !== undefined;
+  const learnMoreUrl =
+    entry.href === undefined ? undefined : docUrl(entry.href);
   const isInline = variant === "inline";
 
   // HoverCard (not Tooltip): the popup contains an interactive "Learn more"
@@ -74,11 +74,11 @@ export function LabelWithHelp({
         className="w-auto max-w-xs p-3 text-xs text-pretty leading-relaxed text-muted-foreground"
       >
         {translatedDefinition}
-        {showLearnMore && (
+        {learnMoreUrl && (
           <>
             {" "}
             <a
-              href={`${DOCS_BASE_URL}${entry.href}`}
+              href={learnMoreUrl}
               target="_blank"
               rel="noreferrer"
               className="text-primary font-medium underline decoration-dashed underline-offset-4 hover:decoration-solid"

@@ -2,6 +2,7 @@ import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { sendEmail } from "@carbon/lib/email.server";
 import { NonRetriableError } from "inngest";
 import { inngest } from "../../client";
+import { emailDeliveryFailure } from "./delivery-failure";
 
 export const sendEmailFunction = inngest.createFunction(
   {
@@ -47,16 +48,10 @@ export const sendEmailFunction = inngest.createFunction(
         text: payload.text,
         to: toRecipients
       });
-      if (response.error) {
-        // A rejected envelope (bad recipient/sender address) will never
-        // succeed on retry.
-        if ((response.error as { code?: string }).code === "EENVELOPE") {
-          throw new NonRetriableError(
-            `Email envelope error: ${response.error.message}`
-          );
-        }
-        throw new Error(`Email error: ${response.error.message}`);
-      }
+      // Retry only what provably never reached the relay; everything else is
+      // terminal, because a replay of an ambiguous failure is how one click
+      // becomes three copies in the customer's inbox.
+      if (response.error) throw emailDeliveryFailure(response.error);
       // data is null when SMTP is not configured — email is disabled.
       return response.data;
     });

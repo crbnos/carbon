@@ -39,9 +39,20 @@ export const integrationErrors = {
       title: msg`Couldn't save the Ramp connection`,
       description: msg`Ramp authorized the connection but saving it failed. Try connecting again.`
     },
+    "role-conflict": {
+      title: msg`Another spend integration is already active`,
+      description: msg`Only one spend integration can be active at a time. Uninstall the current one first, then connect Ramp.`
+    },
     "install-failed": {
       title: msg`Ramp connected but setup didn't finish`,
       description: msg`Open the Ramp integration and try connecting again to finish setup.`
+    },
+    // Ramp allows exactly ONE connected accounting system, and another one holds
+    // it. This is the conflict push-only mode exists for, so the copy names the
+    // two real ways out instead of the generic "try again", which cannot work.
+    "seat-conflict": {
+      title: msg`Another system is connected to Ramp as its accounting system`,
+      description: msg`Ramp allows only one. Disconnect the other system in Ramp, or connect Carbon again choosing "Another system posts my ledger".`
     }
   },
   onshape: {
@@ -81,6 +92,52 @@ export const integrationErrors = {
     unexpected: {
       title: msg`Couldn't complete the Onshape connection`,
       description: msg`An unexpected error occurred while connecting to Onshape. Try connecting again.`
+    },
+    "connection-conflict": {
+      title: msg`Onshape Government is already connected`,
+      description: msg`A company connects to one Onshape at a time. Uninstall Onshape Government, then connect Onshape.`
+    }
+  },
+  // A Government customer's private OAuth app. Same codes as `onshape` — the two
+  // share one callback handler — but the fixes live in the customer's own
+  // Enterprise settings and in the Carbon integration settings, not in Carbon's
+  // environment.
+  "onshape-government": {
+    "write-permission": {
+      title: msg`Onshape Government denied the connection`,
+      description: msg`In your Enterprise settings under Developer, edit the private OAuth application's permissions to include "Application can write to your documents", then save the integration settings again.`
+    },
+    denied: {
+      title: msg`Onshape Government denied the connection`,
+      description: msg`The authorization was refused in Onshape. Save the integration settings to try again.`
+    },
+    "invalid-state": {
+      title: msg`The Onshape Government connection expired`,
+      description: msg`Open the Onshape Government integration and save its settings to connect again.`
+    },
+    "invalid-response": {
+      title: msg`Onshape Government didn't return an authorization code`,
+      description: msg`The response from Onshape was missing required parameters. Check the private app's redirect URL, then save the integration settings again.`
+    },
+    "not-configured": {
+      title: msg`Onshape Government isn't configured`,
+      description: msg`Enter the Onshape URL, client ID and client secret of your private OAuth application, then save.`
+    },
+    "token-exchange": {
+      title: msg`Onshape Government rejected the authorization`,
+      description: msg`Exchanging the authorization code failed. Check the Onshape URL and the client secret, then save the integration settings again.`
+    },
+    "save-failed": {
+      title: msg`Couldn't save the Onshape Government connection`,
+      description: msg`Onshape authorized the connection but saving it failed. Save the integration settings to try again.`
+    },
+    unexpected: {
+      title: msg`Couldn't complete the Onshape Government connection`,
+      description: msg`An unexpected error occurred while connecting to Onshape. Save the integration settings to try again.`
+    },
+    "connection-conflict": {
+      title: msg`Onshape is already connected`,
+      description: msg`A company connects to one Onshape at a time. Uninstall Onshape, then connect Onshape Government.`
     }
   }
 } satisfies Record<string, Record<string, IntegrationErrorMessage>>;

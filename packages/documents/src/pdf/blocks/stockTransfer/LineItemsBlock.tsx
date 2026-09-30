@@ -82,17 +82,17 @@ export function LineItemsBlock({
                   {line.itemReadableId}
                 </Text>
                 {opts.showThumbnails &&
-                  thumbnails &&
-                  line.id != null &&
-                  line.id in thumbnails &&
-                  thumbnails[line.id] && (
-                    <View style={tw("mt-2 mb-2")}>
-                      <Image
-                        src={thumbnails[line.id]!}
-                        style={tw("w-1/4 h-auto max-w-[25%]")}
-                      />
-                    </View>
-                  )}
+                thumbnails &&
+                line.id != null &&
+                line.id in thumbnails &&
+                thumbnails[line.id] ? (
+                  <View style={tw("mt-2 mb-2")}>
+                    <Image
+                      src={thumbnails[line.id]!}
+                      style={tw("w-1/4 h-auto max-w-[25%]")}
+                    />
+                  </View>
+                ) : null}
                 <Image src={barcodeDataUrl} style={tw("max-w-[50%]")} />
               </View>
 

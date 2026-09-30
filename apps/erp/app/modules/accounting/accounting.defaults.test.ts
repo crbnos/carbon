@@ -5,7 +5,10 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import { describe, expect, it, vi } from "vitest";
 
 vi.mock("~/modules/settings", () => ({ getNextSequence: vi.fn() }));
-vi.mock("@carbon/glossary", () => ({ terms: {}, glossaryEntries: () => [] }));
+vi.mock("@carbon/content/glossary", () => ({
+  terms: {},
+  glossaryEntries: () => []
+}));
 vi.mock("@carbon/auth", () => ({
   assertIsPost: () => undefined,
   getMESUrl: () => "http://localhost",

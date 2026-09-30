@@ -66,6 +66,7 @@ const QuotationFinalizeModal = ({
     onSuccess: onClose
   });
   const { fetcher } = ruleViolations;
+  const isSubmitting = fetcher.state !== "idle";
 
   const integrations = useIntegrations();
   const canEmail = integrations.has("email");
@@ -248,7 +249,11 @@ const QuotationFinalizeModal = ({
             <Button variant="secondary" onClick={onClose}>
               <Trans>Cancel</Trans>
             </Button>
-            <Button isDisabled={loading} type="submit">
+            <Button
+              isDisabled={loading || isSubmitting}
+              isLoading={isSubmitting}
+              type="submit"
+            >
               <Trans>Finalize</Trans>
             </Button>
           </ModalFooter>

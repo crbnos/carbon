@@ -145,7 +145,7 @@ const KanbanLabelPDF = ({
                         />
 
                         {/* Thumbnail if available */}
-                        {label.thumbnail && (
+                        {label.thumbnail ? (
                           <Image
                             src={label.thumbnail}
                             style={{
@@ -155,7 +155,7 @@ const KanbanLabelPDF = ({
                               marginLeft: 8
                             }}
                           />
-                        )}
+                        ) : null}
                       </View>
 
                       {/* Item Information */}

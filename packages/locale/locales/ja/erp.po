@@ -204,6 +204,10 @@ msgstr "{0} 受領 · {1} 返金済み"
 msgid "{0} registered"
 msgstr "{0}登録済み"
 
+#. placeholder {0}: integration.name
+msgid "{0} reports the ledger is held by"
+msgstr "{0}は台帳が以下に保持されていると報告しています"
+
 #. placeholder {0}: run.rows.toLocaleString()
 msgid "{0} rows"
 msgstr "{0} 行"
@@ -297,7 +301,7 @@ msgid "{chainLabel}. Consider pointing this part directly at the final successor
 msgstr "{chainLabel}。この部品を最終的な後継品目に直接ポイントすることを検討してください。"
 
 msgid "{componentCount, plural, one {# component} other {# components}}"
-msgstr ""
+msgstr "{componentCount, plural, one {# コンポーネント} other {# コンポーネント}}"
 
 msgid "{conflictCount} conflicts"
 msgstr "{conflictCount} 個の競合"
@@ -310,6 +314,9 @@ msgstr "{count, plural, one {# コース} other {# コース}}"
 
 msgid "{days}d"
 msgstr "{days}日"
+
+msgid "{delegatedTo} posts this to your ledger, so Carbon doesn't push it. Your saved choice is kept in case that changes."
+msgstr "{delegatedTo}がこれをあなたの台帳に転記するため、Carbonはそれをプッシュしません。変更があった場合に備えて、保存された選択肢は保持されます。"
 
 msgid "{dismissed} dismissed"
 msgstr ""
@@ -559,7 +566,7 @@ msgid "A \"must match\" rule on this process blocks these from sharing a batch"
 msgstr "このプロセスの\"一致必須\"ルールにより、これらはバッチを共有できません"
 
 msgid "A 3D model the operator can turn around"
-msgstr ""
+msgstr "作業者が回転させることができる3Dモデル"
 
 msgid "A 4-digit PIN is generated when the operator is created."
 msgstr "4 桁の PIN は、作業者が作成されるときに生成されます。"
@@ -575,6 +582,12 @@ msgstr "変更通知は、エンジニアリングまたは製造変更をレビ
 
 msgid "A clearing account holding the value of goods received but not yet billed; the supplier invoice clears it."
 msgstr "受け取ったが請求されていない商品の価値を保有するクリアリング勘定。仕入先請求書がそれを結済します。"
+
+msgid "A company connects to one Onshape at a time. Uninstall Onshape Government, then connect Onshape."
+msgstr "1つの会社は一度に1つのOnshapeにしか接続できません。Onshape Governmentをアンインストールしてから、Onshapeを接続してください。"
+
+msgid "A company connects to one Onshape at a time. Uninstall Onshape, then connect Onshape Government."
+msgstr "1つの会社は一度に1つのOnshapeにしか接続できません。Onshapeをアンインストールしてから、Onshape Governmentを接続してください。"
 
 msgid "A company that designs and builds its own finished products end to end (here, the shop building humanoid robots) rather than making parts to another company's specification."
 msgstr "自社で最初から最後まで完成製品を設計・製造する会社です（ここでは、ヒューマノイドロボットを製造するショップ）。別の会社の仕様に従って部品を製造するのではなく。"
@@ -603,6 +616,12 @@ msgstr "外部作業者は、特定のスキルと利用可能な時間を持つ
 msgid "A custom solution to meet your needs"
 msgstr "お客様のニーズに合わせたカスタムソリューション"
 
+msgid "A customer contact and location are optional"
+msgstr "得意先の担当者と拠点は任意です"
+
+msgid "A customer contact and location are required"
+msgstr "得意先の担当者と拠点が必須です"
+
 msgid "A customer is a business or person who buys your parts or services."
 msgstr "得意先は、あなたの部品またはサービスを購入する企業または個人です。"
 
@@ -611,6 +630,9 @@ msgstr "得意先が作成されました"
 
 msgid "A customer is deleted"
 msgstr "得意先が削除されました"
+
+msgid "A customer must have at least one contact with an email address and at least one location with a country — plus a state, for US addresses — before its quotes, orders and invoices can be issued or posted. The mirror of the supplier requirement under Purchasing; no integration requires it today."
+msgstr "得意先は、見積、注文書、請求書を発行または転記する前に、メールアドレスを持つ担当者が少なくとも1人と、国を指定した拠点が少なくとも1つ必要です。米国の住所の場合は州も必須です。これは購買の仕入先要件の対称です。現在のところ、どの連携でも要求されていません。"
 
 msgid "A customer's account manager changes"
 msgstr "得意先のアカウント マネージャーが変わりました"
@@ -644,6 +666,9 @@ msgstr "毎期残り帳簿価額の一定の割合を請求する減価償却方
 
 msgid "A depreciation method that charges an equal amount each period across the asset's useful life."
 msgstr "資産の耐用年数全体にわたって、毎期同じ金額を請求する減価償却方法。"
+
+msgid "A different inspector is required"
+msgstr "異なる検査担当者が必須です"
 
 #. placeholder {0}: file.name
 msgid "A file named {0} already exists — delete or rename it first"
@@ -769,10 +794,10 @@ msgid "A part contains the information about a specific item that can be purchas
 msgstr "パーツには、購入または製造できる特定の品目に関する情報が含まれています。"
 
 msgid "A part in this step may tip once placed — consider a fixture or a second person."
-msgstr ""
+msgstr "このステップの部品は配置後に転倒する可能性があります。治具または第2作業者の使用を検討してください。"
 
 msgid "A photo or PDF the operator sees on this step"
-msgstr ""
+msgstr "このステップで作業者が見る写真またはPDF"
 
 msgid "A physical pull signal — a printed card or QR code living with the stock — that raises a purchase order or a job the moment it's scanned to refill a bin."
 msgstr "物理的なプルシグナル。在庫に付属する印刷されたカードまたはQRコード。スキャンされた時点で発注書またはジョブを作成してビンを補充します。"
@@ -875,6 +900,12 @@ msgstr "見積の営業担当者が変更される"
 
 msgid "A quote's status changes"
 msgstr "見積のステータスが変更される"
+
+msgid "A readable Customer ID appears on lists, forms and dropdowns."
+msgstr "読みやすい得意先IDがリスト、フォーム、ドロップダウンに表示されます。"
+
+msgid "A readable Supplier ID appears on lists, forms and dropdowns."
+msgstr "読みやすい仕入先IDがリスト、フォーム、ドロップダウンに表示されます。"
 
 msgid "A receipt is created"
 msgstr "領収書が作成される"
@@ -1029,11 +1060,20 @@ msgstr "ステップには名前が必要です。"
 msgid "A stored booking of a work center or operator for one operation's placed time span — the materialized output of a scheduling run, and what the Forecast draws."
 msgstr "作業区または作業者の予約で、1つの工程の配置された時間帯のもの — スケジュール実行の具現化された出力で、予測が描画するもの"
 
+msgid "A supplier contact and location are optional"
+msgstr "仕入先の担当者と拠点は任意です"
+
+msgid "A supplier contact and location are required"
+msgstr "仕入先の担当者と拠点が必須です"
+
 msgid "A supplier is created"
 msgstr "仕入先が作成される"
 
 msgid "A supplier is deleted"
 msgstr "仕入先が削除される"
+
+msgid "A supplier must have at least one contact with an email address and at least one location with a country — plus a state, for US addresses — before its quotes, orders and invoices can be issued or posted. Spend platforms cannot create a vendor without all of them, so a supplier missing any has its bills rejected after the fact."
+msgstr "仕入先は、見積、注文書、請求書を発行または転記する前に、メールアドレスを持つ担当者が少なくとも1人と、国を指定した拠点が少なくとも1つ必要です。米国の住所の場合は州も必須です。支出管理プラットフォームはこれらすべてがなければベンダーを作成できないため、不足している仕入先の請求書は後で却下されます。"
 
 msgid "A supplier return sends previously received goods back to the supplier for credit or replacement."
 msgstr "仕入先への返品は、以前受け取った商品を仕入先に返品してクレジットまたは交換を受けます。"
@@ -1346,14 +1386,14 @@ msgstr "数量、価格、配送、リードタイム、および税を上書き
 msgid "Add a domain"
 msgstr "ドメインを追加"
 
-msgid "Add a line (in document explorers)"
-msgstr "行を追加（文書エクスプローラーで）"
+msgid "Add a line to the document"
+msgstr "文書に明細を追加"
 
 msgid "Add a materials section that lists each item on the bill of materials with its quantity."
 msgstr "部品表の各項目とその数量をリストアップした材料セクションを追加します。"
 
-msgid "Add a parameter (in the procedure explorer)"
-msgstr "手順書エクスプローラーでパラメータを追加"
+msgid "Add a parameter (procedures only)"
+msgstr "パラメータを追加（手順書のみ）"
 
 msgid "Add a printer in the printing settings to print labels directly."
 msgstr "プリンター設定にプリンターを追加して、ラベルを直接印刷します。"
@@ -1367,8 +1407,8 @@ msgstr "行を追加"
 msgid "Add a step"
 msgstr "ステップを追加"
 
-msgid "Add a step or question (in procedure and training explorers)"
-msgstr "手順書と教育訓練エクスプローラーでステップまたは質問を追加"
+msgid "Add a step or question"
+msgstr "ステップまたは質問を追加"
 
 msgid "Add Ability"
 msgstr "スキルを追加"
@@ -1413,7 +1453,7 @@ msgid "Add Company"
 msgstr "会社を追加"
 
 msgid "Add components first"
-msgstr ""
+msgstr "最初にコンポーネントを追加"
 
 msgid "Add condition"
 msgstr "条件を追加"
@@ -1457,6 +1497,9 @@ msgstr "アイテムを追加"
 msgid "Add Line"
 msgstr "行を追加"
 
+msgid "Add line item"
+msgstr "明細行を追加"
+
 msgid "Add Line Item"
 msgstr "ラインアイテムを追加"
 
@@ -1473,7 +1516,7 @@ msgid "Add match"
 msgstr "マッチを追加"
 
 msgid "Add Model"
-msgstr ""
+msgstr "モデルを追加"
 
 msgid "Add Note"
 msgstr "メモを追加"
@@ -1555,7 +1598,7 @@ msgid "Add Shipping"
 msgstr "配送を追加"
 
 msgid "Add Slide"
-msgstr ""
+msgstr "スライドを追加"
 
 msgid "Add slot"
 msgstr "スロットを追加"
@@ -1615,6 +1658,9 @@ msgstr "{0}行を追加しました"
 
 msgid "Added for this customer"
 msgstr "この得意先に追加済み"
+
+msgid "Added to the unit price for the chosen values, before discounts and markups. Use a negative amount for a credit."
+msgstr "選択値に対する単価への加算で、値引およびマークアップの前に適用されます。クレジットには負の金額を使用してください。"
 
 msgid "Adding demo records"
 msgstr "デモレコードを追加中"
@@ -1735,6 +1781,9 @@ msgstr "すべて内製 {0}"
 msgid "All members of selected groups and selected individuals will be able to approve requests"
 msgstr "選択されたグループのすべてのメンバーと選択された個人が承認リクエストを承認できます"
 
+msgid "All open jobs"
+msgstr "すべてのオープン製造指図"
+
 msgid "All returnable lines"
 msgstr "すべての返品対象明細"
 
@@ -1804,6 +1853,12 @@ msgstr "{0}に適用する金額"
 
 msgid "Amount Type"
 msgstr "金額タイプ"
+
+msgid "Amounts are padded to their currency's decimal places."
+msgstr "金額は通貨の小数点以下の桁数までパディングされます。"
+
+msgid "Amounts show only the digits that carry value."
+msgstr "金額は値を持つ桁のみを表示します。"
 
 msgid "An ability is a process's qualification. Only processes without one are listed."
 msgstr "スキルは工法の適格条件です。適格条件のない工法のみが表示されます。"
@@ -1919,6 +1974,9 @@ msgstr "このジョブの工程がこのバッチで実行されます"
 msgid "An operation's position in its work center's queue — the order the floor picks work up. The engine numbers it from placement order (earliest projected start first); reordering cards on the Work Centers board overrides it without changing dates."
 msgstr "作業区のキューにおける工程のポジション — 床がピックアップする順序。エンジンは配置順序（最初に予想される開始が最初）からそれに番号を付けます。作業区ボード上でカードを並べ替えることは、日付を変えずにそれを上書きします。"
 
+msgid "An unexpected error occurred while connecting to Onshape. Save the integration settings to try again."
+msgstr "Onshapeへの接続中に予期しないエラーが発生しました。連携設定を保存して再度お試しください。"
+
 msgid "An unexpected error occurred while connecting to Onshape. Try connecting again."
 msgstr "Onshape への接続中に予期しないエラーが発生しました。もう一度接続してください。"
 
@@ -1959,8 +2017,14 @@ msgstr "注釈が更新されました"
 msgid "Another cost center this one rolls up into, letting you nest a sub-department under its parent for hierarchical cost reporting."
 msgstr "このコストセンターがロールアップされる別の原価センター。親の下に部門をネストさせて、階層的なコスト報告を実現します"
 
+msgid "Another spend integration is already active"
+msgstr "別の支出統合が既にアクティブです"
+
 msgid "Another storage unit this one nests inside (e.g. a bin within a rack); must be in the same location."
 msgstr "この保管ユニットがネストされる別の保管ユニット（例：ラック内のビン）。同じ拠点にある必要があります"
+
+msgid "Another system is connected to Ramp as its accounting system"
+msgstr "別のシステムがRampの会計システムとして接続されています"
 
 msgid "Any item group"
 msgstr "任意のアイテムグループ"
@@ -1982,6 +2046,9 @@ msgstr "買掛金エージング"
 
 msgid "AP Clerk"
 msgstr "買掛金担当者"
+
+msgid "AP invoices are routed to a single billing address."
+msgstr "買掛金請求書は単一の請求先住所にルーティングされます。"
 
 msgid "AP Outstanding"
 msgstr "未払買掛金"
@@ -2077,6 +2144,9 @@ msgstr "請求書に適用"
 msgid "Apply to invoices"
 msgstr "請求書に適用"
 
+msgid "Apply to reimbursements"
+msgstr "払戻に充当する"
+
 msgid "Applying"
 msgstr "適用中"
 
@@ -2130,6 +2200,9 @@ msgstr "売掛金エージング"
 
 msgid "AR Clerk"
 msgstr "売掛金係員"
+
+msgid "AR invoices are routed to a single billing address."
+msgstr "売掛金請求書は単一の請求先住所にルーティングされます。"
 
 msgid "AR Outstanding"
 msgstr "売掛金未払い"
@@ -2585,7 +2658,8 @@ msgstr "これらのユーザーに招待を送信してもよろしいですか
 msgid "Are you sure you want to send an invite to this user?"
 msgstr "このユーザーに招待を送信してもよろしいですか?"
 
-#. placeholder {0}: cardTransaction.cardTransactionId
+#. placeholder {0}: charge.chargeId
+#. placeholder {0}: reimbursement.reimbursementId
 msgid "Are you sure you want to void {0}? This posts a reversing journal entry and cannot be undone."
 msgstr "{0}を取消してもよろしいですか？これにより逆仕訳行が転記され、元に戻すことはできません。"
 
@@ -2857,7 +2931,7 @@ msgid "Automate your business processes with event-driven workflows that trigger
 msgstr "Carbonで発生するときにアクションをトリガーするイベント駆動型ワークフローでビジネスプロセスを自動化します。"
 
 msgid "Automatic"
-msgstr ""
+msgstr "自動"
 
 msgid "Automatic Cost Updates"
 msgstr "原価の自動更新"
@@ -3155,10 +3229,13 @@ msgid "BoM"
 msgstr "BoM"
 
 msgid "BOM"
-msgstr ""
+msgstr "BOM"
 
 msgid "BoM + BoP"
 msgstr "BoM + BoP"
+
+msgid "BoM Explorer"
+msgstr "BoM Explorer"
 
 msgid "BOM synced successfully"
 msgstr "BOMが正常に同期されました"
@@ -3200,7 +3277,7 @@ msgid "Bring in your parts, BOMs, Bill of Process, and costing — with Carbon's
 msgstr "部品、BOM、工程表、原価計算をインポート — Carbonのツール、CSV、LLM支援で。"
 
 msgid "Brings in steps"
-msgstr ""
+msgstr "ステップを取り込む"
 
 msgid "Browse library"
 msgstr "ライブラリを参照"
@@ -3230,7 +3307,7 @@ msgid "Build integrations and customizations"
 msgstr "連携とカスタマイズを構築"
 
 msgid "Build off to the side"
-msgstr ""
+msgstr "サイドで構築"
 
 msgid "Build quotes pulling live part, cost, and Bill of Process data"
 msgstr "部品、原価、工程表データをリアルタイムで取得する見積を構築"
@@ -3242,13 +3319,13 @@ msgid "Build tailored, role-based training materials"
 msgstr "カスタマイズされたロールベースの教育訓練教材を構築"
 
 msgid "Builds this step's components beside the model as a group, then carries the group in at a later join step."
-msgstr ""
+msgstr "このステップのコンポーネントをモデルの横にグループとして構築し、後の結合ステップでグループを配置します。"
 
 msgid "Built and costed as its own method"
 msgstr "独自の方法として構築および原価計算"
 
 msgid "Built off to the side, then carried in at its join step"
-msgstr ""
+msgstr "サイドで構築されて、その結合ステップで配置される"
 
 msgid "Bulk Import"
 msgstr "一括インポート"
@@ -3350,7 +3427,7 @@ msgid "Called a method in Carbon — the components plus operations that produce
 msgstr "Carbonで「製法」と呼ばれるもの — 部品を製造するための部品と工程。"
 
 msgid "Camera"
-msgstr ""
+msgstr "カメラ"
 
 msgid "Can't be restored"
 msgstr "復元できません"
@@ -3545,9 +3622,6 @@ msgstr "Carbonの単一レコード。部品番号を持つあらゆるもの（
 msgid "Card Holder"
 msgstr "カードホルダー"
 
-msgid "Card Transactions"
-msgstr "カード取引"
-
 msgid "Cards"
 msgstr "カード"
 
@@ -3577,6 +3651,12 @@ msgstr "CC"
 
 msgid "Centralized Billing Address"
 msgstr "一元化された請求先住所"
+
+msgid "Centralized billing is disabled"
+msgstr "一括請求は無効です"
+
+msgid "Centralized billing is enabled"
+msgstr "一括請求は有効です"
 
 msgid "Cert Version"
 msgstr "認定バージョン"
@@ -3647,6 +3727,12 @@ msgstr "タイプを変更"
 msgid "Changed By"
 msgstr "変更者"
 
+msgid "Changelog"
+msgstr "変更ログ"
+
+msgid "Changelog newsletter"
+msgstr "変更ログニュースレター"
+
 msgid "Changes"
 msgstr "変更"
 
@@ -3658,6 +3744,9 @@ msgstr "これを変更するとパーツIDが更新されます"
 
 msgid "Changing type resets this item's draft edits."
 msgstr "タイプを変更すると、この品目の下書き編集がリセットされます。"
+
+msgid "Charges"
+msgstr "カード請求"
 
 msgid "Chart"
 msgstr "チャート"
@@ -3723,8 +3812,14 @@ msgstr "この返品に明細を追加する方法を選択してください。
 msgid "Choose what appears on the printed job traveler."
 msgstr "印刷された製造指図現品票に表示される内容を選択します。"
 
+msgid "Choose whether the bill of material explorer on items, quotes, and jobs labels each line with its description or its item ID."
+msgstr "品目、見積、製造指図上の部品表エクスプローラーが各明細を説明またはアイテムIDのどちらでラベル付けするかを選択します。"
+
 msgid "Choose your style"
 msgstr "あなたのスタイルを選択"
+
+msgid "Chosen when you connected and fixed for this install. To change it, uninstall and reconnect in a different mode."
+msgstr "接続時に選択され、このインストール用に固定されています。変更するには、アンインストールして別のモードで再接続してください。"
 
 msgid "City"
 msgstr "市区町村"
@@ -3775,7 +3870,7 @@ msgid "Click again to disconnect"
 msgstr "再度クリックして切断"
 
 msgid "Click components in the viewer to add them. Shift-click adds several."
-msgstr ""
+msgstr "ビューアーでコンポーネントをクリックして追加します。Shift キーを押しながらクリックすると複数が追加されます。"
 
 msgid "Click to rename"
 msgstr "クリックして名前を変更"
@@ -3846,7 +3941,7 @@ msgstr "折りたたむ"
 #. placeholder {0}: group.name
 #. placeholder {0}: unit.name
 msgid "Collapse {0}"
-msgstr ""
+msgstr "{0}を折りたたむ"
 
 msgid "Collapse all"
 msgstr "すべて折りたたむ"
@@ -3860,8 +3955,14 @@ msgstr "機能テーブルを折りたたむ"
 msgid "Collapse Labor"
 msgstr "労務を折りたたみ"
 
+msgid "Collapse line"
+msgstr "明細を折りたたむ"
+
 msgid "Collapse Machine"
 msgstr "機械を折りたたむ"
+
+msgid "Collapse row"
+msgstr "行を折りたたむ"
 
 msgid "Collapse Setup"
 msgstr "段取りを折りたたむ"
@@ -3989,6 +4090,9 @@ msgstr "この教育訓練を完了すると、選択されたスキルが付与
 msgid "Completion Barcode"
 msgstr "完了バーコード"
 
+msgid "Completion Date"
+msgstr "完了日"
+
 msgid "Completion in progress — retry in Shop Floor"
 msgstr "完了処理進行中 — 製造現場で再試行してください"
 
@@ -3997,13 +4101,13 @@ msgstr "完了時間"
 
 #. placeholder {0}: group.name
 msgid "Component details: {0}"
-msgstr ""
+msgstr "コンポーネント詳細: {0}"
 
 msgid "Components"
-msgstr ""
+msgstr "コンポーネント"
 
 msgid "Components hidden only while this step plays, such as a fixture in the way; use the eye in the Components tab to hide one."
-msgstr ""
+msgstr "このステップの再生中にのみ非表示になるコンポーネント（治具など）。コンポーネントタブの目のアイコンを使用して非表示にします。"
 
 #. placeholder {0}: formatRelativeTime(tieOut.computedAt)
 msgid "computed {0}"
@@ -4023,6 +4127,9 @@ msgstr "設定"
 
 msgid "Configuration Parameters"
 msgstr "設定パラメータ"
+
+msgid "Configuration Prices"
+msgstr "構成価格"
 
 msgid "Configuration, data migration, and any integrations"
 msgstr "構成、データ移行、および任意の連携"
@@ -4045,8 +4152,8 @@ msgstr "現金と銀行取引のデフォルトアカウントを構成"
 msgid "Configure default accounts for inventory management"
 msgstr "在庫管理のデフォルトアカウントを構成する"
 
-msgid "Configure default accounts for vendor and supplier transactions"
-msgstr "ベンダーおよび仕入先取引のデフォルトアカウントを構成"
+msgid "Configure default accounts for supplier transactions"
+msgstr "仕入先取引のデフォルト勘定科目を設定"
 
 msgid "Configure default equity and retained earnings accounts"
 msgstr "純資産および利益剰余金のデフォルトアカウントを構成"
@@ -4098,6 +4205,9 @@ msgstr "設定済み"
 
 msgid "Configured"
 msgstr "設定済み"
+
+msgid "Configured Part"
+msgstr "構成済み部品"
 
 msgid "Confirm"
 msgstr "確認"
@@ -4630,6 +4740,9 @@ msgstr "保存できませんでした"
 msgid "Couldn't complete the Onshape connection"
 msgstr "Onshape 接続を完了できませんでした"
 
+msgid "Couldn't complete the Onshape Government connection"
+msgstr "Onshape Government接続を完了できませんでした"
+
 msgid "Couldn't load documents"
 msgstr "ドキュメントを読み込めませんでした"
 
@@ -4644,6 +4757,9 @@ msgstr "ジョブを再スケジュールできませんでした。もう一度
 
 msgid "Couldn't save the Onshape connection"
 msgstr "Onshape 接続を保存できませんでした"
+
+msgid "Couldn't save the Onshape Government connection"
+msgstr "Onshape Government接続を保存できませんでした"
 
 msgid "Couldn't save the Ramp connection"
 msgstr "Ramp 接続を保存できませんでした"
@@ -4972,9 +5088,6 @@ msgstr "クレジット ({0})"
 msgid "Credit / debit memo"
 msgstr "貸方/借方メモ"
 
-msgid "Credit / Debit Memos"
-msgstr "貸方/借方メモ"
-
 msgid "Credit Account"
 msgstr "クレジット勘定"
 
@@ -4993,6 +5106,15 @@ msgstr "クレジット金額は会社の基本通貨（{currency}）で表示�
 msgid "Credit Memo"
 msgstr "クレジットメモ"
 
+msgid "Credit Memos"
+msgstr "クレジットメモ"
+
+msgid "Credit memos and supplier credits are gated separately from invoices and bills, so payables can be handled outside the sync while credits still reach the ledger. Enabling one pushes credits from the enable date forward — existing history is left alone, and bringing it across needs an explicit backfill."
+msgstr "クレジットメモと仕入先クレジットの同期は請求書の同期とは別々に制御されるため、買掛金は同期の外で処理できる一方、これらは台帳に記録されます。いずれかを有効化すると、有効化日以降のクレジットがプッシュされます。既存の履歴はそのままで、これを取り込むには明示的なバックフィルが必要です。"
+
+msgid "Credit representation"
+msgstr "クレジット・メモの表示"
+
 msgid "Credit total"
 msgstr "クレジット合計"
 
@@ -5001,9 +5123,6 @@ msgstr "クレジット済み"
 
 msgid "Credits"
 msgstr "クレジット"
-
-msgid "Credits & Debits"
-msgstr "貸方と借方"
 
 msgid "Credits applied"
 msgstr "適用されたクレジット"
@@ -5104,6 +5223,9 @@ msgstr "得意先"
 msgid "Customer Accounts"
 msgstr "得意先アカウント"
 
+msgid "Customer and supplier pages"
+msgstr "得意先および仕入先ページ"
+
 msgid "Customer contact"
 msgstr "得意先担当者"
 
@@ -5127,6 +5249,12 @@ msgstr "得意先ID"
 
 msgid "Customer ID cannot be changed after creation"
 msgstr "得意先IDは作成後に変更することはできません"
+
+msgid "Customer IDs are hidden"
+msgstr "得意先IDは非表示です"
+
+msgid "Customer IDs are shown"
+msgstr "得意先IDは表示されています"
 
 msgid "Customer Invoice Number"
 msgstr "得意先請求書番号"
@@ -5835,7 +5963,7 @@ msgid "Delete step"
 msgstr "ステップを削除"
 
 msgid "Delete Step"
-msgstr ""
+msgstr "ステップを削除"
 
 msgid "Delete Stock Transfer"
 msgstr "在庫移動を削除"
@@ -5848,7 +5976,7 @@ msgstr "保管ユニットを削除"
 
 #. placeholder {0}: unit.name
 msgid "Delete subassembly {0}"
-msgstr ""
+msgstr "サブアセンブリ {0} を削除"
 
 msgid "Delete Substance"
 msgstr "物質を削除"
@@ -6020,7 +6148,7 @@ msgid "Details"
 msgstr "詳細"
 
 msgid "Detected by the motion planner"
-msgstr ""
+msgstr "モーションプランナーで検出されました"
 
 msgid "Developer"
 msgstr "開発者"
@@ -6243,16 +6371,16 @@ msgid "Done"
 msgstr "完了"
 
 msgid "Done Adding"
-msgstr ""
+msgstr "追加完了"
 
 msgid "Done Editing Path"
-msgstr ""
+msgstr "パス編集完了"
 
 msgid "Done when day-to-day runs without us in the room"
 msgstr "日常業務が私たちなしで円滑に進むようになったら完了"
 
 msgid "Double-click to play this step"
-msgstr ""
+msgstr "このステップを再生するにはダブルクリック"
 
 msgid "Download"
 msgstr "ダウンロード"
@@ -6298,7 +6426,7 @@ msgid "Drag handle"
 msgstr "ドラッグハンドル"
 
 msgid "Drag the red waypoints in the viewer"
-msgstr ""
+msgstr "ビューアーで赤いウェイポイントをドラッグ"
 
 msgid "Drag to assign"
 msgstr "ドラッグして割り当て"
@@ -6326,6 +6454,9 @@ msgstr "図面番号"
 
 msgid "Drawing replaced. Balloon placements were removed; feature rows are unchanged."
 msgstr "図面が置き換わりました。バルーン配置は削除されました。機能行は変更されていません。"
+
+msgid "Drop Ship"
+msgstr "ドロップシップ"
 
 msgid "Drop shipment"
 msgstr "ドロップシップメント"
@@ -6397,9 +6528,6 @@ msgstr "1 日後が納期"
 
 msgid "due now"
 msgstr "本日が納期"
-
-msgid "Due within"
-msgstr "期限内"
 
 msgid "Duplicate"
 msgstr "複製"
@@ -6496,6 +6624,9 @@ msgstr "各明細は、この会社のデータから所有していない行へ
 
 msgid "Each line is a link from this company's data to a row it doesn't own. Removing those rows lets the restore run."
 msgstr "各明細はこの会社のデータから、それが所有していない行へのリンクです。それらの行を削除すると、復元を実行できます。"
+
+msgid "Each line shows its item ID and revision."
+msgstr "各明細はアイテムIDとリビジョンを表示します。"
 
 msgid "Each operation's unused material returns as soon as the operation is done."
 msgstr "各操作の未使用材料は操作が完了するとすぐに戻されます。"
@@ -6708,7 +6839,7 @@ msgid "Edit Passkey"
 msgstr "パスキーを編集"
 
 msgid "Edit Path"
-msgstr ""
+msgstr "パスを編集"
 
 msgid "Edit Payment"
 msgstr "支払いを編集"
@@ -6811,7 +6942,7 @@ msgstr "保管ユニットを編集"
 
 #. placeholder {0}: unit.name
 msgid "Edit subassembly {0}"
-msgstr ""
+msgstr "サブアセンブリ {0} を編集"
 
 msgid "Edit Substance"
 msgstr "物質を編集"
@@ -6906,6 +7037,9 @@ msgstr "従業員"
 msgid "Employee Accounts"
 msgstr "従業員アカウント"
 
+msgid "Employee Reimbursements Payable"
+msgstr "従業員払戻金"
+
 msgid "Employee Type"
 msgstr "従業員タイプ"
 
@@ -6966,11 +7100,35 @@ msgstr "共有ワークステーションモードを有効にします。"
 msgid "Enable to automatically post transactions to the general ledger."
 msgstr "自動的にトランザクションを総勘定元帳に転記するには有効にしてください。"
 
+msgid "Enable to block issuing or posting for a customer with no contact or no location."
+msgstr "担当者または拠点がない得意先の発行または転記をブロックするために有効にします。"
+
+msgid "Enable to block issuing or posting for a supplier with no contact or no location."
+msgstr "担当者または拠点がない仕入先の発行または転記をブロックするために有効にします。"
+
 msgid "Enable to configure tax-specific depreciation methods on asset classes (e.g., MACRS, accelerated)."
 msgstr "税固有の減価償却方法を資産クラスで設定するために有効にします（例：MACRS、加速）。"
 
 msgid "Enable to generate IDs and descriptions for raw materials."
 msgstr "有効にして、原材料のIDと説明を生成します。"
+
+msgid "Enable to require an authenticator app before anyone can open this company."
+msgstr "この会社を開く前に誰でも認証器アプリが必須となるように有効にします。"
+
+msgid "Enable to route all AP invoices to a single billing address."
+msgstr "すべての買掛金請求書を単一の請求先住所にルーティングするために有効にします。"
+
+msgid "Enable to route all AR invoices to a single billing address."
+msgstr "すべての売掛金請求書を単一の請求先住所にルーティングするために有効にします。"
+
+msgid "Enable to show a readable Customer ID on lists, forms and dropdowns."
+msgstr "リスト、フォーム、ドロップダウンに読みやすい得意先IDを表示するために有効にします。"
+
+msgid "Enable to show a readable Supplier ID on lists, forms and dropdowns."
+msgstr "リスト、フォーム、ドロップダウンに読みやすい仕入先IDを表示するために有効にします。"
+
+msgid "Enable to show the item ID and revision instead of the description."
+msgstr "有効にして、説明の代わりにアイテムIDとリビジョンを表示します。"
 
 msgid "Enable to start tracking changes to your data."
 msgstr "データへの変更の追跡を開始するには有効にしてください。"
@@ -6978,8 +7136,14 @@ msgstr "データへの変更の追跡を開始するには有効にしてくだ
 msgid "Enable to start tracking work shifts."
 msgstr "作業シフトの追跡を開始するには有効にしてください。"
 
+msgid "Enable to update part lead times from posted purchase receipts."
+msgstr "転記済の購買入荷から部品のリードタイムを更新するために有効にします。"
+
 msgid "Enable to use metric units for material dimensions."
 msgstr "材料の寸法にメートル法単位を使用できるようにします。"
+
+msgid "Enable to warn when the inspector also received the item."
+msgstr "検査担当者が品目を受け取った場合に警告するために有効にします。"
 
 msgid "Enabled"
 msgstr "有効"
@@ -7069,6 +7233,9 @@ msgstr "認証アプリから6桁のコードを入力してください"
 
 msgid "Enter the 6-digit code from your authenticator app to resume."
 msgstr "認証器アプリから6桁のコードを入力して再開します。"
+
+msgid "Enter the Onshape URL, client ID and client secret of your private OAuth application, then save."
+msgstr "プライベートOAuthアプリケーションのOnshape URL、クライアントID、クライアントシークレットを入力して保存します。"
 
 msgid "Enter the quantity this movement should have been. An opposite movement for the difference is posted next to the original, in the original's time period."
 msgstr "この移動がどの数量であるべきかを入力します。差分の反対の移動は、オリジナルの横に、オリジナルの期間に投稿されます。"
@@ -7253,6 +7420,9 @@ msgstr "すべての必須タスクは期間がクローズされる前に完了
 msgid "Every row was imported successfully."
 msgstr "すべての行が正常にインポートされました。"
 
+msgid "Everyone must set up an authenticator app before opening this company."
+msgstr "この会社を開く前に、誰もが認証器アプリをセットアップする必要があります。"
+
 msgid "Everyone working any day of the week you pick stays on past their shift by the hours you set. Only the departments and shifts you're filtering by are affected."
 msgstr "選択した週のどの日でも勤務している全員が、設定した時間分シフトを超えて勤務します。フィルタリングしている部門とシフトのみが影響を受けます。"
 
@@ -7282,6 +7452,9 @@ msgstr "為替レート更新時刻"
 
 msgid "Exchange Rates"
 msgstr "為替レート"
+
+msgid "Exchanging the authorization code failed. Check the Onshape URL and the client secret, then save the integration settings again."
+msgstr "認可コードの交換に失敗しました。Onshape URLとクライアントシークレットを確認してから、連携設定を再度保存してください。"
 
 msgid "Exchanging the authorization code for access failed. Try connecting again."
 msgstr "アクセス権を取得するための認可コードの交換に失敗しました。もう一度接続してください。"
@@ -7328,8 +7501,14 @@ msgstr "機能テーブルを展開"
 msgid "Expand Labor"
 msgstr "労務を展開"
 
+msgid "Expand line"
+msgstr "明細を展開する"
+
 msgid "Expand Machine"
 msgstr "機械を展開"
+
+msgid "Expand row"
+msgstr "行を展開"
 
 msgid "Expand Setup"
 msgstr "段取りを展開"
@@ -8519,6 +8698,9 @@ msgstr "ガイド付き実施"
 msgid "Handle recurring and reversing journal entries"
 msgstr "繰り返しおよび逆仕訳の処理"
 
+msgid "Handled by {delegatedTo}"
+msgstr "{delegatedTo}によって処理されています"
+
 msgid "Hands-on"
 msgstr "ハンズオン"
 
@@ -8541,25 +8723,25 @@ msgid "Help"
 msgstr "ヘルプ"
 
 msgid "Hidden on this step"
-msgstr ""
+msgstr "このステップで非表示"
 
 msgid "Hide"
 msgstr "非表示"
 
 msgid "Hide {label}"
-msgstr ""
+msgstr "{label}を非表示"
 
 msgid "Hide account number"
 msgstr "口座番号を隠す"
 
 msgid "Hide Again"
-msgstr ""
+msgstr "もう一度非表示"
 
 msgid "Hide raw"
 msgstr "生データを非表示"
 
 msgid "Hide selected on this step"
-msgstr ""
+msgstr "選択したものをこのステップで非表示"
 
 msgid "Hide system quantities until the review step"
 msgstr "レビューステップまでシステム数量を非表示にする"
@@ -8753,6 +8935,9 @@ msgstr "私たちの働き方"
 msgid "How We Work Together"
 msgstr "私たちの働き方"
 
+msgid "How will you use {integrationName}?"
+msgstr "{integrationName}をどのように使用しますか？"
+
 msgid "How your company's process maps to Carbon"
 msgstr "あなたの会社のプロセスがCarbonにどのようにマップされるか"
 
@@ -8781,13 +8966,16 @@ msgid "I have a reasonable basis to believe this individual is a U.S. person as 
 msgstr "この個人は22 CFR 120.62で定義されている米国人である合理的な根拠があります"
 
 msgid "I understand, replace my existing data with the new demo data"
-msgstr ""
+msgstr "理解しました。既存データを新しいデモデータに置き換えます"
 
 msgid "I'm Still Working"
 msgstr "まだ働いています"
 
 msgid "IBAN"
 msgstr "IBAN"
+
+msgid "IC Transaction"
+msgstr "企業間取引"
 
 msgid "Id"
 msgstr "ID"
@@ -8935,10 +9123,13 @@ msgid "In the loop together"
 msgstr "一緒にループの中にいる"
 
 msgid "In this step"
-msgstr ""
+msgstr "このステップで"
 
 msgid "In use"
 msgstr "使用中"
+
+msgid "In your Enterprise settings under Developer, edit the private OAuth application's permissions to include \"Application can write to your documents\", then save the integration settings again."
+msgstr "Enterprise設定の開発者セクションで、プライベートOAuthアプリケーションの権限を編集して「アプリケーションはドキュメントに書き込むことができます」を含め、連携設定を再度保存してください。"
 
 msgid "In-app"
 msgstr "アプリ内"
@@ -9069,6 +9260,9 @@ msgstr "最初のNを検査"
 msgid "Inspect Item"
 msgstr "検査項目"
 
+msgid "Inspecting an item you received shows a warning."
+msgstr "受け取った品目の検査時に警告が表示されます。"
+
 msgid "Inspection"
 msgstr "検査"
 
@@ -9105,14 +9299,17 @@ msgstr "検査：別の検査官が必要です"
 msgid "Install"
 msgstr "インストール"
 
+msgid "Install mode"
+msgstr "インストール方式"
+
 msgid "Installed"
 msgstr "インストール済み"
 
 msgid "Installed on this step, so it can't be hidden here."
-msgstr ""
+msgstr "このステップにインストールされているため、ここでは非表示にできません。"
 
 msgid "Instruction"
-msgstr ""
+msgstr "指示"
 
 msgid "Instructions"
 msgstr "手順"
@@ -9122,6 +9319,9 @@ msgstr "手順は手順書から継承されています。"
 
 msgid "Integration"
 msgstr "連携"
+
+msgid "Integration credentials"
+msgstr "連携認証情報"
 
 msgid "Integration not found"
 msgstr "連携が見つかりません"
@@ -9221,6 +9421,9 @@ msgstr "在庫ジョブ通知"
 
 msgid "Inventory Movements"
 msgstr "在庫移動"
+
+msgid "Inventory pages"
+msgstr "在庫管理ページ"
 
 msgid "Inventory Qty"
 msgstr "在庫数量"
@@ -9483,6 +9686,9 @@ msgstr "アイテムは選択されたタイプまたは選択されたグルー
 msgid "Item Name"
 msgstr "品目名"
 
+msgid "Item pages"
+msgstr "品目ページ"
+
 msgid "Item Scope"
 msgstr "アイテムスコープ"
 
@@ -9570,10 +9776,10 @@ msgstr "{0}に参加"
 
 #. placeholder {0}: selected.number
 msgid "Joins step {0}"
-msgstr ""
+msgstr "ステップ {0} に参加"
 
 msgid "Joins step {number}: {title}"
-msgstr ""
+msgstr "ステップ {number}: {title} に参加"
 
 msgid "Journal"
 msgstr "仕訳"
@@ -9592,9 +9798,6 @@ msgstr "仕訳明細"
 
 msgid "Journals dated on or before this date are treated as locked. Merged with the provider-reported lock date when both exist."
 msgstr "この日付以前の仕訳はロック中として扱われます。両方が存在する場合、プロバイダーが報告したロック日付とマージされます。"
-
-msgid "Jump to a section on detail pages (same modifiers + the section's letter)"
-msgstr "詳細ページのセクションにジャンプします (同じ修飾子 + セクションの文字)"
 
 msgid "Just one"
 msgstr "1つだけ"
@@ -9618,10 +9821,10 @@ msgid "Keep Current"
 msgstr "現在の設定を保持"
 
 msgid "Keep demo data"
-msgstr ""
+msgstr "デモデータを保持する"
 
 msgid "Keep demo data and delete your previous data?"
-msgstr ""
+msgstr "デモデータを保持し、以前のデータを削除しますか？"
 
 msgid "Keep editing"
 msgstr "編集を続ける"
@@ -9792,6 +9995,12 @@ msgstr "リードタイム（日数）"
 msgid "Lead Time (Days)"
 msgstr "リードタイム（日数）"
 
+msgid "Lead time updates are disabled"
+msgstr "リードタイム更新は無効です"
+
+msgid "Lead time updates are enabled"
+msgstr "リードタイム更新は有効です"
+
 msgid "Lead Time:"
 msgstr "リードタイム:"
 
@@ -9855,6 +10064,9 @@ msgstr "アカウントをセットアップしましょう"
 msgid "Letter"
 msgstr "文字"
 
+msgid "Liability account for amounts owed to employees for expense reimbursements. Falls back to Payables when unset"
+msgstr "従業員への費用払戻に対する負債勘定です。未設定の場合は買掛金にフォールバックします。"
+
 msgid "Liability account for deferred taxes from accelerated depreciation"
 msgstr "加速度的な減価償却による繰延税金の負債勘定"
 
@@ -9904,6 +10116,9 @@ msgstr "行の説明 (オプション)"
 msgid "Line Item Comparison"
 msgstr "明細項目の比較"
 
+msgid "Line items"
+msgstr "明細行"
+
 msgid "Line options"
 msgstr "行オプション"
 
@@ -9927,6 +10142,12 @@ msgstr "明細には社内部品番号が必要です"
 
 msgid "Lines need prices or lead times"
 msgstr "ラインには価格またはリードタイムが必要です"
+
+msgid "Lines show descriptions"
+msgstr "明細が説明を表示"
+
+msgid "Lines show item IDs"
+msgstr "明細がアイテムIDを表示"
 
 msgid "Lineside"
 msgstr "ラインサイド"
@@ -9971,6 +10192,9 @@ msgstr "リンク済みPO"
 
 msgid "List Options"
 msgstr "リストオプション"
+
+msgid "List pages"
+msgstr "リストページ"
 
 msgid "List Parameters"
 msgstr "リストパラメータ"
@@ -10799,7 +11023,7 @@ msgid "Most things get caught and resolved here. Name it plainly."
 msgstr "ほとんどのことはここで発見され、解決されます。明確に名前を付けてください。"
 
 msgid "Motion"
-msgstr ""
+msgstr "モーション"
 
 msgid "Move"
 msgstr "移動"
@@ -10995,8 +11219,8 @@ msgstr "新規外部作業者"
 msgid "New Cost Center"
 msgstr "新規原価センター"
 
-msgid "New Credit / Debit Memo"
-msgstr "新しい貸方/借方メモ"
+msgid "New Credit Memo"
+msgstr "新規クレジットメモ"
 
 msgid "New Currency"
 msgstr "新規通貨"
@@ -11154,8 +11378,8 @@ msgstr "新規見積明細"
 msgid "New Receipt"
 msgstr "新しい領収書"
 
-msgid "New record (on list pages)"
-msgstr "新規記録（リストページで）"
+msgid "New record"
+msgstr "新しいレコード"
 
 msgid "New record created"
 msgstr "新しいレコードが作成されました"
@@ -11217,6 +11441,9 @@ msgstr "新しい保管ユニット"
 msgid "New Supplier"
 msgstr "新規仕入先"
 
+msgid "New Supplier Credit"
+msgstr "新しい仕入先クレジット"
+
 msgid "New Supplier Part"
 msgstr "新規仕入先部品"
 
@@ -11265,6 +11492,15 @@ msgstr "最新順"
 msgid "Next"
 msgstr "次へ"
 
+msgid "Next 14 days"
+msgstr "次の14日間"
+
+msgid "Next 30 days"
+msgstr "次の30日間"
+
+msgid "Next 7 days"
+msgstr "次の7日間"
+
 msgid "Next Calibration"
 msgstr "次の校正"
 
@@ -11288,9 +11524,6 @@ msgstr "次の期日"
 
 msgid "Next page"
 msgstr "次のページ"
-
-msgid "Next page (in tables)"
-msgstr "次ページ（テーブルで）"
 
 msgid "Next Sequence"
 msgstr "次の採番"
@@ -11408,10 +11641,10 @@ msgid "No clauses yet. Use Add clause above."
 msgstr "まだ条件がありません。上記の条件を追加を使用してください。"
 
 msgid "No clear path"
-msgstr ""
+msgstr "パスが明確でない"
 
 msgid "No collision-free path"
-msgstr ""
+msgstr "衝突のない経路がない"
 
 msgid "No comments yet. Be the first to add a comment."
 msgstr "まだコメントがありません。最初のコメントを追加してください。"
@@ -11419,8 +11652,11 @@ msgstr "まだコメントがありません。最初のコメントを追加し
 msgid "No completed jobs within range"
 msgstr "範囲内に完了した製造指図がありません"
 
+msgid "No completion date"
+msgstr "完了日なし"
+
 msgid "No components yet"
-msgstr ""
+msgstr "まだコンポーネントがない"
 
 msgid "No condition may match"
 msgstr "条件が一致しない"
@@ -11542,6 +11778,9 @@ msgstr "ここにはまだアイテムの在庫活動がありません。"
 msgid "No jobs are scheduled at this location yet — release a job to see work-center load."
 msgstr "この拠点ではまだ製造指図がスケジュール化されていません — 製造指図をリリースして作業区負荷を確認してください。"
 
+msgid "No jobs match your search."
+msgstr "検索に一致する製造指図がありません。"
+
 msgid "No jobs were created"
 msgstr "製造指図は作成されませんでした"
 
@@ -11599,11 +11838,20 @@ msgstr "割り当てる人がいません"
 msgid "No open invoices"
 msgstr "未処理の請求書がありません"
 
+msgid "No open jobs for sales orders are projected to complete at this location in the next {horizon} days."
+msgstr "この拠点で、次の{horizon}日間に完了予定のオープン受注用製造指図はありません。"
+
+msgid "No open jobs for sales orders at this location."
+msgstr "この拠点にはオープン受注用製造指図がありません。"
+
 msgid "No open memos"
 msgstr "オープンなメモはありません"
 
 msgid "No open orders for this item are available to link."
 msgstr "この品目のオープン注文はリンク可能なものがありません。"
+
+msgid "No open reimbursements"
+msgstr "オープンな払戻がありません"
 
 msgid "No open sales order lines"
 msgstr "オープン受注明細がありません"
@@ -11769,13 +12017,13 @@ msgid "No single, trusted number for inventory or job status"
 msgstr "在庫またはジョブステータスの単一の信頼できる数値がない"
 
 msgid "No slides yet"
-msgstr ""
+msgstr "まだスライドがない"
 
 msgid "No sorts applied to this view"
 msgstr "このビューに適用されたソートはありません"
 
 msgid "No step selected"
-msgstr ""
+msgstr "ステップが選択されていない"
 
 msgid "No stock"
 msgstr "在庫なし"
@@ -11847,10 +12095,10 @@ msgid "No work centers exist"
 msgstr "作業区がありません"
 
 msgid "No, build in place"
-msgstr ""
+msgstr "いいえ、現地で構築してください"
 
 msgid "No, it's the base"
-msgstr ""
+msgstr "いいえ、これがベースです"
 
 msgid "Nom"
 msgstr "公称値"
@@ -12174,8 +12422,14 @@ msgstr "得意先名と異なる場合のみ"
 msgid "Only if it differs from the supplier name"
 msgstr "仕入先名と異なる場合のみ"
 
+msgid "Only one spend integration can be active at a time. Uninstall the current one first, then connect Ramp."
+msgstr "一度にアクティブにできる支出統合は1つだけです。まず現在のものをアンインストールしてから、Rampに接続してください。"
+
 msgid "Only qualified employees can be scheduled for and run this process"
 msgstr "資格のある従業員のみがこのプロセスをスケジュールして実行できます"
+
+msgid "Onshape authorized the connection but saving it failed. Save the integration settings to try again."
+msgstr "Onshapeが接続を認可しましたが、保存に失敗しました。連携設定を保存して再度試してください。"
 
 msgid "Onshape authorized the connection but saving it failed. Try connecting again."
 msgstr "Onshape は接続を承認しましたが、保存に失敗しました。もう一度接続してください。"
@@ -12185,6 +12439,24 @@ msgstr "Onshape が接続を拒否しました"
 
 msgid "Onshape didn't return an authorization code"
 msgstr "Onshape が認可コードを返しませんでした"
+
+msgid "Onshape Government denied the connection"
+msgstr "Onshape Governmentが接続を拒否しました"
+
+msgid "Onshape Government didn't return an authorization code"
+msgstr "Onshape Governmentが認可コードを返しませんでした"
+
+msgid "Onshape Government is already connected"
+msgstr "Onshape Governmentは既に接続されています"
+
+msgid "Onshape Government isn't configured"
+msgstr "Onshape Governmentは構成されていません"
+
+msgid "Onshape Government rejected the authorization"
+msgstr "Onshape Governmentが認可を却下しました"
+
+msgid "Onshape is already connected"
+msgstr "Onshapeは既に接続されています"
 
 msgid "Onshape isn't configured"
 msgstr "Onshape が構成されていません"
@@ -12249,9 +12521,6 @@ msgstr "MESで開く"
 msgid "Open Issues"
 msgstr "未解決の問題"
 
-msgid "Open job"
-msgstr "オープンジョブ"
-
 msgid "Open job demand plus outstanding transfers out of this bin"
 msgstr "このビンからの未処理転送を含むオープン製造指図所要量"
 
@@ -12299,6 +12568,9 @@ msgstr "スケジュール済みを開く"
 
 msgid "Open task details"
 msgstr "タスク詳細を開く"
+
+msgid "Open the Onshape Government integration and save its settings to connect again."
+msgstr "Onshape Government連携を開いて、その設定を保存して再度接続してください。"
 
 msgid "Open the Ramp integration and try connecting again to finish setup."
 msgstr "Ramp 連携を開き、設定を完了するためにもう一度接続してください。"
@@ -12404,7 +12676,7 @@ msgid "Operator must pick a different batch/serial."
 msgstr "作業者は別のバッチ/シリアル番号を選択する必要があります。"
 
 msgid "Operator must record this step"
-msgstr ""
+msgstr "作業者がこのステップを記録する必要があります"
 
 msgid "Operator Pool"
 msgstr "作業者プール"
@@ -12537,8 +12809,8 @@ msgstr "営業外収益"
 msgid "Other Income account for FX gains when a payment settles a foreign-currency invoice at a more favorable rate"
 msgstr "支払が外貨請求書をより有利なレートで決済する場合の為替差益のための営業外収益勘定"
 
-msgid "Other Income account for vendor balances cleared without full payment on AP settlement"
-msgstr "買掛金決済で全額支払いなしに仕入先残高がクリアされる場合の営業外収益勘定"
+msgid "Other Income account for supplier balances cleared without full payment on AP settlement"
+msgstr "買掛金決済時に全額支払なしで消去された仕入先の残高に対する営業外収益勘定科目"
 
 msgid "Other Type"
 msgstr "その他のタイプ"
@@ -12548,6 +12820,9 @@ msgstr "その他"
 
 msgid "Out"
 msgstr "対象外"
+
+msgid "Outbound"
+msgstr "出荷"
 
 msgid "Outgoing"
 msgstr "発送"
@@ -12712,6 +12987,9 @@ msgstr "部品ID"
 msgid "Part is configured for manufacturing"
 msgstr "部品は製造用に構成されています"
 
+msgid "Part lead times update from posted purchase receipts."
+msgstr "部品のリードタイムは転記済の購買入荷から更新されます。"
+
 msgid "Part Number"
 msgstr "部品番号"
 
@@ -12745,9 +13023,6 @@ msgstr "部品が単一の負荷でまとめて実行されます。例：炉、
 msgid "Parts, materials, and how you classify them."
 msgstr "部品、材料、およびそれらの分類方法。"
 
-msgid "Party Type"
-msgstr "取引先タイプ"
-
 msgid "Pass"
 msgstr "合格"
 
@@ -12774,6 +13049,12 @@ msgstr "IDプロバイダーがメタデータURLを公開していない場合�
 
 msgid "Path"
 msgstr "パス"
+
+msgid "Pay"
+msgstr "支払う"
+
+msgid "Pay expense"
+msgstr "費用を支払う"
 
 msgid "Pay Rate"
 msgstr "支払レート"
@@ -12858,6 +13139,9 @@ msgstr "人員"
 
 msgid "People"
 msgstr "人員"
+
+msgid "Per unit"
+msgstr "個当たり"
 
 msgid "Per Unit"
 msgstr "単位あたり"
@@ -12956,7 +13240,7 @@ msgid "Pick a record type…"
 msgstr "レコード種類を選択..."
 
 msgid "Pick a step from the list to edit its details, components, and materials."
-msgstr ""
+msgstr "リストからステップを選択して、その詳細、コンポーネント、および材料を編集します"
 
 msgid "Pick a target date to compare."
 msgstr "比較するターゲット日を選択してください。"
@@ -13108,7 +13392,7 @@ msgid "Plants, warehouses"
 msgstr "工場、倉庫"
 
 msgid "Playback"
-msgstr ""
+msgstr "再生"
 
 msgid "Please contact your administrator to enable audit logging."
 msgstr "監査ログを有効にするには、管理者にお問い合わせください。"
@@ -13248,6 +13532,9 @@ msgstr "前払金 (デフォルト)"
 msgid "Present Week"
 msgstr "今週"
 
+msgid "Press ? on any page to open this list. Shortcuts are ignored while you type in a field."
+msgstr "任意のページで？キーを押すと、このリストが表示されます。フィールドに入力中はショートカットが無視されます。"
+
 msgid "Prev"
 msgstr "前へ"
 
@@ -13280,9 +13567,6 @@ msgstr "前の日"
 
 msgid "Previous page"
 msgstr "前のページ"
-
-msgid "Previous page (in tables)"
-msgstr "前ページ（テーブルで）"
 
 msgid "Previous step"
 msgstr "前のステップ"
@@ -13395,6 +13679,9 @@ msgstr "手順書"
 msgid "Procedures"
 msgstr "手順書"
 
+msgid "Procedures and training"
+msgstr "手順書と教育訓練"
+
 msgid "process"
 msgstr "プロセス"
 
@@ -13412,6 +13699,9 @@ msgstr "生産"
 
 msgid "Processes"
 msgstr "プロセス"
+
+msgid "Processes (suppliers only)"
+msgstr "工法（仕入先のみ）"
 
 msgid "Procurement status — needs ordering, planned, on order, or received. The same indicator shown in the BoM tree."
 msgstr "調達ステータス — 発注が必要、計画済み、発注済み、または入荷済み。BoM ツリーに表示されるものと同じインジケーター。"
@@ -13539,6 +13829,9 @@ msgstr "予測"
 
 msgid "Projects"
 msgstr "プロジェクト"
+
+msgid "Promised"
+msgstr "約束日"
 
 msgid "Promised Date"
 msgstr "回答納期"
@@ -13978,6 +14271,15 @@ msgstr "見積"
 msgid "Quotes with Lines"
 msgstr "明細付き見積"
 
+msgid "Quotes, orders and invoices are blocked until the customer has a contact with an email address and a location with a country."
+msgstr "得意先がメールアドレスを持つ担当者と国を指定した拠点を持つまで、見積、注文書、請求書はブロックされます。"
+
+msgid "Quotes, orders and invoices are blocked until the supplier has a contact with an email address and a location with a country."
+msgstr "仕入先がメールアドレスを持つ担当者と国を指定した拠点を持つまで、見積、注文書、請求書はブロックされます。"
+
+msgid "Quotes, orders, invoices and RFQs"
+msgstr "見積、受注、請求書および見積依頼"
+
 msgid "Quoting and sales orders"
 msgstr "見積と受注"
 
@@ -13992,6 +14294,9 @@ msgstr "早期に報告し、明確に報告してください。2週目に特�
 
 msgid "Ramp"
 msgstr "Ramp"
+
+msgid "Ramp allows only one. Disconnect the other system in Ramp, or connect Carbon again choosing \"Another system posts my ledger\"."
+msgstr "Rampは1つのみ許可しています。Rampで他のシステムを切断するか、「別のシステムが私の台帳を投稿する」を選択してCarbonに再度接続してください。"
 
 msgid "Ramp authorized the connection but saving it failed. Try connecting again."
 msgstr "Ramp は接続を承認しましたが、保存に失敗しました。もう一度接続してください。"
@@ -14213,20 +14518,29 @@ msgstr "調整でプロバイダとの不一致が見つかりました"
 msgid "Reconciling a purchase order against what was received and invoiced — implicit in Carbon, via the line quantities and GR/IR balance."
 msgstr "発注書を受け取られたものと請求済のものと照合する - Carbonでは、明細数量とGR/IRバランスを介して暗黙的に行われます。"
 
+msgid "Reconfigure"
+msgstr "再構成"
+
 msgid "Record"
 msgstr "記録"
 
-msgid "Record a credit or debit memo against a customer or supplier. Applications to specific invoices are added after the memo is created."
-msgstr "得意先または仕入先に対して貸方メモまたは借方メモを記録する。特定の請求書への適用はメモ作成後に追加される。"
+msgid "Record a credit from a supplier — it reduces what you owe them. Applications to specific invoices are added after it is created."
+msgstr "仕入先からのクレジットを記録します — これはあなたが仕入先に負っているものを減らします。特定の請求書への適用は作成後に追加されます。"
 
-msgid "Record a customer payment, supplier payment, or refund. Applications to invoices or memos are added after the payment is created."
-msgstr "得意先支払、仕入先支払、または返金を記録します。請求書またはメモへの適用は、支払が作成された後に追加されます。"
+msgid "Record a credit memo for a customer — it reduces what they owe. Applications to specific invoices are added after it is created."
+msgstr "得意先向けのクレジットメモを記録します — これは得意先が負っているものを減らします。特定の請求書への適用は作成後に追加されます。"
+
+msgid "Record a customer payment, supplier payment, refund, or employee reimbursement. Applications to invoices, memos or reimbursements are added after the payment is created."
+msgstr "得意先からの支払、仕入先への支払、返金、または従業員への払戻を記録します。請求書、メモ、または払戻への適用は、支払が作成された後に追加されます。"
 
 msgid "Record deleted"
 msgstr "レコード削除済み"
 
 msgid "Record inspections tied to a part and a job"
 msgstr "部品とジョブに関連付けられた検査を記録する"
+
+msgid "Record the payout of {displayId} to the employee. Pay less than the total due to settle it partially."
+msgstr "{displayId}の従業員への支払を記録します。支払うべき合計金額より少ない金額を支払うと、部分的に清算することができます。"
 
 msgid "Record type"
 msgstr "レコード種別"
@@ -14283,7 +14597,7 @@ msgid "Regenerate thumbnail from the 3D model"
 msgstr "3Dモデルからサムネイルを再生成"
 
 msgid "Regenerating removes \"Build off to the side\" settings."
-msgstr ""
+msgstr "再生成により「横に積み重ねてビルド」設定が削除されます"
 
 msgid "Regenerating thumbnail…"
 msgstr "サムネイルを再生成中…"
@@ -14302,6 +14616,21 @@ msgstr "登録に失敗しました"
 
 msgid "Registration Number"
 msgstr "登録番号"
+
+msgid "Reimbursement"
+msgstr "払戻"
+
+msgid "Reimbursement Date"
+msgstr "払戻日"
+
+msgid "Reimbursement ID"
+msgstr "払戻ID"
+
+msgid "Reimbursement to Employee"
+msgstr "従業員への払戻"
+
+msgid "Reimbursements"
+msgstr "払戻"
 
 msgid "Reject"
 msgstr "却下"
@@ -14399,7 +14728,7 @@ msgstr "{0}をこのバッチから除去しますか？その工程はスケジ
 
 #. placeholder {0}: group.name
 msgid "Remove {0} from this step"
-msgstr ""
+msgstr "このステップから{0}を除去"
 
 #. placeholder {0}: selectedIds.size
 #. placeholder {1}: batch.readableId
@@ -14595,6 +14924,12 @@ msgstr "希望納期"
 
 msgid "Require a 6-digit code from an authenticator app when signing in."
 msgstr "サインイン時に認証器アプリから6桁のコードが必要です。"
+
+msgid "Require a Customer Contact and Location"
+msgstr "得意先の担当者と拠点が必須"
+
+msgid "Require a Supplier Contact and Location"
+msgstr "仕入先の担当者と拠点が必須"
 
 msgid "Require an assigned operator before the scheduler places work at a location. When on, unstaffed work centers get no work and an operation with no manned coverage shows as unschedulable. Lights-out (24×7) work centers are exempt."
 msgstr "スケジューラがある拠点に作業を配置する前に、割当済の作業者を必要とします。オンの場合、スタッフなしの作業区は作業を取得せず、配置された人員がいない工程はスケジュール不可として表示されます。ライトアウト（24×7）作業区は除外されます。"
@@ -15328,6 +15663,9 @@ msgstr "保存して閉じる"
 msgid "Save and Overwrite"
 msgstr "保存して上書き"
 
+msgid "Save and post"
+msgstr "保存して転記する"
+
 msgid "Save applications"
 msgstr "アプリケーションを保存"
 
@@ -15359,7 +15697,7 @@ msgid "Saved"
 msgstr "保存済み"
 
 msgid "Saved view"
-msgstr ""
+msgstr "保存済みの表示"
 
 msgid "Saved Views"
 msgstr "保存済みビュー"
@@ -15669,7 +16007,7 @@ msgid "Select a shape first to see available options"
 msgstr "形状を先に選択すると、利用可能なオプションが表示されます。"
 
 msgid "Select a step to hide parts on it."
-msgstr ""
+msgstr "ステップを選択して、その上の部品を非表示にします"
 
 msgid "Select a substance and shape first to see available options"
 msgstr "物質と形状を先に選択すると、利用可能なオプションが表示されます。"
@@ -16161,8 +16499,14 @@ msgstr "出荷"
 msgid "Ship some, stock some"
 msgstr "一部を出荷し、一部を在庫に"
 
+msgid "Ship To"
+msgstr "送付先"
+
 msgid "Ship to Customer"
 msgstr "得意先に出荷する"
+
+msgid "Ship Via"
+msgstr "配送方法"
 
 msgid "Ship-From Location"
 msgstr "発送元の場所"
@@ -16289,14 +16633,14 @@ msgstr "表示"
 
 #. placeholder {0}: group.name
 msgid "Show {0}"
-msgstr ""
+msgstr "{0}を表示"
 
 #. placeholder {0}: overflow.length
 msgid "Show {0} more"
 msgstr "あと{0}個表示"
 
 msgid "Show {label}"
-msgstr ""
+msgstr "{label}を表示"
 
 msgid "Show a readable Customer ID column on the customer list, customer forms, and dropdowns. Customers are still identified internally either way."
 msgstr "得意先リスト、得意先フォーム、ドロップダウンで読みやすい得意先IDカラムを表示します。得意先はどちらの方法でも内部的に識別されます。"
@@ -16305,10 +16649,10 @@ msgid "Show a readable Supplier ID column on the supplier list, supplier forms, 
 msgstr "仕入先リスト、仕入先フォーム、ドロップダウンで読みやすい仕入先IDカラムを表示します。仕入先はどちらの方法でも内部的に識別されます。"
 
 msgid "Show All"
-msgstr ""
+msgstr "すべて表示"
 
 msgid "Show all hidden on this step"
-msgstr ""
+msgstr "このステップで非表示になっているすべてを表示"
 
 msgid "Show available batch numbers"
 msgstr "利用可能なバッチ番号を表示"
@@ -16321,6 +16665,9 @@ msgstr "得意先IDを表示"
 
 msgid "Show Durations"
 msgstr "期間を表示"
+
+msgid "Show keyboard shortcuts"
+msgstr "キーボードショートカットを表示"
 
 msgid "Show more"
 msgstr "さらに表示"
@@ -16342,9 +16689,6 @@ msgstr "仕入先IDを表示"
 
 msgid "Show sync options"
 msgstr "同期オプションを表示"
-
-msgid "Show this overlay"
-msgstr "このオーバーレイを表示"
 
 msgid "Show Trailing Zeros"
 msgstr "末尾のゼロを表示"
@@ -16479,7 +16823,7 @@ msgid "Slide {0}"
 msgstr "スライド {0}"
 
 msgid "Slides"
-msgstr ""
+msgstr "スライド"
 
 msgid "Smallest run worth batching. Leave empty for none."
 msgstr "バッチ処理に値する最小ラン。設定しない場合は空白のままにしてください。"
@@ -16736,7 +17080,7 @@ msgstr "ステップ"
 
 #. placeholder {0}: stepIndex + 1
 msgid "Step {0} of {stepCount}"
-msgstr ""
+msgstr "ステップ {0} / {stepCount}"
 
 msgid "Step added"
 msgstr "ステップが追加されました"
@@ -16751,10 +17095,10 @@ msgid "Step removed — pick a new value"
 msgstr "ステップが削除されました —新しい値を選択してください"
 
 msgid "Step status: {label}"
-msgstr ""
+msgstr "ステップステータス: {label}"
 
 msgid "Step status: {label}. Change status"
-msgstr ""
+msgstr "ステップステータス: {label}。ステータスを変更"
 
 msgid "steps"
 msgstr "ステップ"
@@ -17030,11 +17374,23 @@ msgstr "仕入先担当者"
 msgid "Supplier Contact"
 msgstr "仕入先担当者"
 
+msgid "Supplier Credit"
+msgstr "仕入先クレジット"
+
+msgid "Supplier Credits"
+msgstr "仕入先クレジット"
+
 msgid "Supplier ID"
 msgstr "仕入先ID"
 
 msgid "Supplier ID cannot be changed after creation"
 msgstr "仕入先IDは作成後に変更できません"
+
+msgid "Supplier IDs are hidden"
+msgstr "仕入先IDは非表示です"
+
+msgid "Supplier IDs are shown"
+msgstr "仕入先IDは表示されています"
 
 msgid "Supplier interaction"
 msgstr "仕入先対応"
@@ -17152,6 +17508,9 @@ msgstr "仕入先単価"
 
 msgid "Supplier updated"
 msgstr "仕入先が更新されました"
+
+msgid "Supplier Write-Off Income"
+msgstr "仕入先償却収益"
 
 msgid "Supplier:"
 msgstr "仕入先："
@@ -17469,6 +17828,9 @@ msgstr "計算方法の後の支払い期日までの日数"
 
 msgid "The append-only record of every stock movement; on-hand is the sum of its signed entries and the source of truth."
 msgstr "すべての在庫移動の追加専用レコード。手持在庫はその署名付きエントリの合計であり、信頼できる情報源です。"
+
+msgid "The authorization was refused in Onshape. Save the integration settings to try again."
+msgstr "Onshapeで認可が拒否されました。連携設定を保存して再度試してください。"
 
 msgid "The authorization was refused in Onshape. Try connecting again."
 msgstr "Onshape で認可が拒否されました。もう一度接続してください。"
@@ -17922,6 +18284,9 @@ msgstr "数量ベースのポリシーに基づいて新しい補充注文をト
 msgid "The Onshape connection expired"
 msgstr "Onshape の接続が期限切れです"
 
+msgid "The Onshape Government connection expired"
+msgstr "Onshape Government接続が期限切れになりました"
+
 msgid "The operations and steps your parts move through"
 msgstr "部品が通過する工程とステップ。"
 
@@ -17950,7 +18315,7 @@ msgid "The part is taken from existing stock when its parent is built — no new
 msgstr "部品はその親製品が製造されるときに既存在庫から取得されます。新しい製造指図または発注書は作成されません。"
 
 msgid "The path this step's components travel into place during playback; worked out from the model, or drawn by hand with Edit Path."
-msgstr ""
+msgstr "このステップのコンポーネントが再生中に所定の位置に移動するパス。モデルから計算されるか、パスの編集で手動で描画されます"
 
 msgid "The people on the Carbon side who will run your implementation, and how to reach them."
 msgstr "実装を実施する Carbon 側の人員および連絡方法"
@@ -18046,6 +18411,9 @@ msgstr "ワークフロー変数が置き換えられた後、JSON コンテン�
 msgid "The residual WIP a job has left at close, swept to a Production Variance account — the only variance Carbon books for a job."
 msgstr "製造指図がクローズ時に残した残留仕掛品は、生産差異勘定に振り替えられます — これはCarbonが製造指図について計上する唯一の差異です。"
 
+msgid "The response from Onshape was missing required parameters. Check the private app's redirect URL, then save the integration settings again."
+msgstr "Onshapeからのレスポンスに必要なパラメータが不足しています。プライベートアプリのリダイレクトURLを確認してから、連携設定を再度保存してください。"
+
 msgid "The response from Onshape was missing required parameters. Try connecting again."
 msgstr "Onshape からの応答に必須パラメーターが含まれていませんでした。もう一度接続してください。"
 
@@ -18063,6 +18431,9 @@ msgstr "部品のリビジョン番号"
 
 msgid "The sales order line this job was created to supply, tying the job to the customer demand behind it."
 msgstr "この製造指図が供給するために作成された受注明細であり、製造指図を背後の得意先所要量に結びつけます。"
+
+msgid "The same person may inspect"
+msgstr "同じ個人が検査できます"
 
 msgid "The SAML metadata URL published by your identity provider"
 msgstr "あなたのアイデンティティプロバイダーによって公開されたSAMLメタデータURL"
@@ -18242,7 +18613,7 @@ msgid "The version stamp for this procedure; new versions create a copy that sup
 msgstr "この手順書のバージョン識別子。新しいバージョンは前のバージョンを削除せずに置き換える新しいコピーを作成します。"
 
 msgid "The view a step plays from; without a saved view the step frames its own components."
-msgstr ""
+msgstr "ステップが再生される表示。保存済みの表示がない場合、ステップはそれ自身のコンポーネントをフレーミングします"
 
 msgid "The warehouse goods on this order will ship from; the customer's Shipping Location is where they'll arrive."
 msgstr "この注文から出荷される倉庫。得意先の出荷拠点がそれらの到着地点です。"
@@ -18264,6 +18635,9 @@ msgstr "テーマ"
 
 msgid "Theme Color"
 msgstr "テーマカラー"
+
+msgid "then"
+msgstr "その後"
 
 msgid "Then adjusted for"
 msgstr "その後、以下のために調整されます"
@@ -18332,6 +18706,9 @@ msgstr "このバックアップを完了できませんでした。"
 
 msgid "This backup hasn't been checked yet. Any differences are found when the restore runs."
 msgstr "このバックアップはまだチェックされていません。違いは復元の実行時に見つかります。"
+
+msgid "This cannot be changed later — {integrationName} allows only one connected accounting system, so the choice decides what Carbon is permitted to do. To switch, you would uninstall and reconnect."
+msgstr "これは後で変更することはできません — {integrationName}は接続できる会計システムが1つだけに限定されているため、この選択はCarbonが実行できることを決定します。切り替えるには、アンインストールして再度接続する必要があります。"
 
 msgid "This Carbon instance is missing its Onshape OAuth credentials. Ask an administrator to set them."
 msgstr "この Carbon インスタンスには Onshape の OAuth 認証情報がありません。管理者に設定を依頼してください。"
@@ -18735,7 +19112,7 @@ msgid "Today:"
 msgstr "今日:"
 
 msgid "Todo"
-msgstr ""
+msgstr "やることリスト"
 
 msgid "Toggle"
 msgstr "切り替え"
@@ -18782,6 +19159,9 @@ msgstr "許容範囲 (+/-)"
 msgid "Tolerance (days)"
 msgstr ""
 
+msgid "Tomorrow"
+msgstr "明日"
+
 msgid "tool"
 msgstr "ツール"
 
@@ -18820,6 +19200,9 @@ msgstr "資産の総資本化原価（購入価格、運賃、設置、および
 
 msgid "Total discount"
 msgstr "合計値引"
+
+msgid "Total Due"
+msgstr "支払うべき合計金額"
 
 msgid "Total expected production units for units-of-production depreciation; cost is spread per unit produced."
 msgstr "生産単位による減価償却に対する予想生産数。原価は生産単位当たりに配分されます。"
@@ -18938,6 +19321,12 @@ msgstr "追跡タイプ"
 msgid "Tracking URL"
 msgstr "トラッキングURL"
 
+msgid "Trailing zeros are hidden"
+msgstr "末尾の0は非表示です"
+
+msgid "Trailing zeros are shown"
+msgstr "末尾の0は表示されています"
+
 msgid "Train"
 msgstr "トレーニング"
 
@@ -19046,6 +19435,12 @@ msgstr "二要素認証の強制"
 msgid "Two-factor authentication is not enabled."
 msgstr "二要素認証は有効になっていません。"
 
+msgid "Two-factor authentication is optional"
+msgstr "二要素認証は任意です"
+
+msgid "Two-factor authentication is required"
+msgstr "二要素認証は必須です"
+
 msgid "Type"
 msgstr "種類"
 
@@ -19056,7 +19451,7 @@ msgid "Type {TRIGGER} to insert a variable"
 msgstr "変数を挿入するために {TRIGGER} を入力してください"
 
 msgid "Type <0>\"{confirmPhrase}\"</0> to continue."
-msgstr ""
+msgstr "続行するには <0>\"{confirmPhrase}\"</0> と入力してください。"
 
 msgid "Type a message..."
 msgstr "メッセージを入力..."
@@ -19097,6 +19492,9 @@ msgstr "ルールの割り当てを解除"
 msgid "Unassigned"
 msgstr "未割り当て"
 
+msgid "Unbalanced"
+msgstr "差額有り"
+
 msgid "Unballoon"
 msgstr "バルーンを削除"
 
@@ -19120,6 +19518,9 @@ msgstr "元に戻す"
 
 msgid "Uninstall"
 msgstr "アンインストール"
+
+msgid "Uninstall {conflictsWith} first"
+msgstr "まず{conflictsWith}をアンインストールしてください"
 
 msgid "Unique, uppercase, without spaces (max 10 characters)"
 msgstr "一意、大文字、スペースなし（最大10文字）"
@@ -19278,7 +19679,7 @@ msgid "Untitled line"
 msgstr "無題の行"
 
 msgid "Untitled step"
-msgstr ""
+msgstr "無題のステップ"
 
 msgid "Unused picked material flushed back from the work center to the warehouse."
 msgstr "未使用のピッキング済み材料が作業区から倉庫に戻されました。"
@@ -19471,7 +19872,7 @@ msgid "Use a different email"
 msgstr "別のメールアドレスを使用"
 
 msgid "Use Current View"
-msgstr ""
+msgstr "現在のビューを使用"
 
 msgid "Use metric system for default material dimensions."
 msgstr "デフォルト材料ディメンションにメートル法を使用してください。"
@@ -19607,9 +20008,6 @@ msgstr "差異のみ"
 
 msgid "VAT Number"
 msgstr "VAT番号"
-
-msgid "Vendor Write-Off Income"
-msgstr "仕入先償却収益"
 
 msgid "Verdict"
 msgstr "判定"
@@ -19866,8 +20264,8 @@ msgstr "取消"
 msgid "Void {0}"
 msgstr "取消 {0}"
 
-msgid "Void Card Transaction"
-msgstr "カード取引を取消"
+msgid "Void Charge"
+msgstr "カード請求を取消"
 
 msgid "Void Invoice"
 msgstr "請求書を取消"
@@ -19877,6 +20275,9 @@ msgstr "仕入先請求書を取消"
 
 msgid "Void Receipt"
 msgstr "入荷を取消"
+
+msgid "Void Reimbursement"
+msgstr "払戻を取消"
 
 msgid "Void Sales Invoice"
 msgstr "売上請求書を取消"
@@ -20641,7 +21042,7 @@ msgid "Your customer-facing price lists"
 msgstr "顧客向けの価格表"
 
 msgid "Your data from before the demo data was applied will be permanently deleted. You won't be able to revert or recover it."
-msgstr ""
+msgstr "デモデータが適用される前のデータは永久に削除されます。元に戻したり、回復したりすることはできません。"
 
 msgid "Your data is accessible and reasonably clean"
 msgstr "あなたのデータはアクセス可能で、適切にクリーンです"

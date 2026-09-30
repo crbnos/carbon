@@ -31,7 +31,7 @@ export function QuoteSummaryBlock({ data }: { data: QuoteData }) {
           {numberFormatter.format(totals.shipping)}
         </Text>
       </View>
-      {totals.fees > 0 && (
+      {totals.fees > 0 ? (
         <View style={ROW}>
           <Text style={tw("w-5/6 text-right pr-3 text-gray-600")}>
             Fees ({currencyCode})
@@ -40,7 +40,7 @@ export function QuoteSummaryBlock({ data }: { data: QuoteData }) {
             {numberFormatter.format(totals.fees)}
           </Text>
         </View>
-      )}
+      ) : null}
       <View style={ROW}>
         <Text style={tw("w-5/6 text-right pr-3 text-gray-600")}>
           Taxes ({currencyCode})

@@ -12,7 +12,7 @@ import {
   ModalFooter,
   ModalHeader,
   ModalTitle,
-  SidebarMenuButton,
+  NavRailItem,
   toast,
   useDisclosure,
   useMount,
@@ -110,15 +110,11 @@ export function AdjustInventory({ add }: { add: boolean }) {
 
   return (
     <>
-      <SidebarMenuButton
-        tooltip={add ? t`Add Inventory` : t`Remove Inventory`}
+      <NavRailItem
+        icon={add ? <LuGitPullRequestCreateArrow /> : <LuGitBranchPlus />}
+        label={add ? t`Add Inventory` : t`Remove Inventory`}
         onClick={modal.onOpen}
-      >
-        {add ? <LuGitPullRequestCreateArrow /> : <LuGitBranchPlus />}
-        <span>
-          {add ? <Trans>Add Inventory</Trans> : <Trans>Remove Inventory</Trans>}
-        </span>
-      </SidebarMenuButton>
+      />
       {modal.isOpen && (
         <Modal
           open={modal.isOpen}

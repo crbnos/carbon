@@ -6,7 +6,7 @@
     "@carbon/database": "workspace:*",
     "@carbon/documents": "workspace:*",
     "@carbon/form": "workspace:*",
-    "@carbon/glossary": "workspace:*",
+    "@carbon/content": "workspace:*",
     "@carbon/kv": "workspace:*",
     "@carbon/logger": "workspace:*",
     "@carbon/react": "workspace:*",

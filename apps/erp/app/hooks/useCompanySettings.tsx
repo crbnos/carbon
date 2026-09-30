@@ -1,13 +1,33 @@
+import type { Database } from "@carbon/database";
 import { useRouteData } from "@carbon/react";
 import { createContext, useContext } from "react";
 import { path } from "~/utils/path";
 
-type CompanySettings = {
-  showSupplierReadableId?: boolean | null;
-  showCustomerReadableId?: boolean | null;
-  showCurrencyTrailingZeros?: boolean | null;
-  allowLowercaseItemIds?: boolean | null;
-} & Record<string, unknown>;
+/**
+ * The `companySettings` columns client components read through this hook.
+ *
+ * Typed as a `Pick` of the generated Row so a typo is a COMPILE error: the
+ * shape used to end in `& Record<string, unknown>`, which made every property
+ * access legal — `requireSupplierContactAndLocaton` compiled, read `undefined`,
+ * and silently dropped whatever it gated. Add a column here when a component
+ * needs it; never widen.
+ *
+ * `Partial` because a provider may hand down a SUBSET (the public quote share
+ * page supplies only the three settings that page renders), so every consumer
+ * must still tolerate `undefined`.
+ */
+type CompanySettings = Partial<
+  Pick<
+    Database["public"]["Tables"]["companySettings"]["Row"],
+    | "allowLowercaseItemIds"
+    | "digitalQuoteEnabled"
+    | "digitalQuoteIncludesPurchaseOrders"
+    | "showBomExplorerReadableId"
+    | "showCurrencyTrailingZeros"
+    | "showCustomerReadableId"
+    | "showSupplierReadableId"
+  >
+>;
 
 /** Set by a route that loaded the settings itself. `useRouteData` matches on the
  *  PATHNAME "/x", so it returns nothing outside the authenticated tree — the

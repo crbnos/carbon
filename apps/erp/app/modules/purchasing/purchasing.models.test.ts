@@ -1,9 +1,9 @@
 import { describe, expect, it, vi } from "vitest";
 
-// @carbon/glossary's terms.ts evaluates Lingui `msg` macros at module load,
+// @carbon/content/glossary's terms.ts evaluates Lingui `msg` macros at module load,
 // which vitest doesn't transform. Nothing under test touches the glossary
 // (it's pulled in via the ../shared barrel), so stub the whole package.
-vi.mock("@carbon/glossary", () => ({
+vi.mock("@carbon/content/glossary", () => ({
   getDefinitionText: () => "",
   getEntry: () => undefined,
   getTermText: () => "",
@@ -15,11 +15,14 @@ vi.mock("@carbon/glossary", () => ({
   terms: {}
 }));
 
+import * as purchasingModels from "./purchasing.models";
 import {
   canCreatePurchaseOrderRevision,
   isPurchaseOrderLocked,
   PURCHASE_ORDER_LOCKED_STATUSES,
-  purchaseOrderStatusType
+  purchaseOrderStatusType,
+  purchaseOrderValidator,
+  supplierQuoteValidator
 } from "./purchasing.models";
 
 const ORDER_DATE = "2026-06-01";
@@ -111,5 +114,44 @@ describe("canCreatePurchaseOrderRevision", () => {
     for (const status of PURCHASE_ORDER_LOCKED_STATUSES) {
       expect(isPurchaseOrderLocked(status)).toBe(true);
     }
+  });
+});
+
+describe("the document validators carry no contact requirement (D-2)", () => {
+  /**
+   * The requirement is on the SUPPLIER RECORD, checked once at the release
+   * boundary by `checkPartyContactRequirement` — not on the document. The
+   * `make*Validator` factories that made `supplierContactId` /
+   * `supplierLocationId` required were absent from every create action (so the
+   * API, MCP and curl wrote a null contact anyway) and refused to save an
+   * EXISTING draft whose optional location was null, which blocked editing
+   * unrelated fields such as `supplierReference`.
+   */
+  it("offers no strict variant to build a document-level rule from", () => {
+    const exported = Object.keys(purchasingModels);
+    expect(exported).not.toContain("makePurchaseOrderValidator");
+    expect(exported).not.toContain("makeSupplierQuoteValidator");
+  });
+
+  it("saves a draft whose optional supplier location is null", () => {
+    // The concrete regression: a Draft PO with no location could no longer have
+    // its supplier reference changed.
+    expect(
+      purchaseOrderValidator.safeParse({
+        id: "po_1",
+        purchaseOrderType: "Purchase",
+        supplierId: "sup_1",
+        supplierReference: "PO-4417"
+      }).success
+    ).toBe(true);
+
+    expect(
+      supplierQuoteValidator.safeParse({
+        id: "sq_1",
+        supplierQuoteType: "Purchase",
+        supplierId: "sup_1",
+        supplierReference: "RFQ-9"
+      }).success
+    ).toBe(true);
   });
 });

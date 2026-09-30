@@ -5,6 +5,10 @@ on:
     paths: ["packages/database/supabase/**"]
   workflow_dispatch:
 
+permissions:
+  contents: read
+  id-token: write # AWS role for the public.ecr.aws login below
+
 jobs:
   supabase:
     name: Supabase Sync
@@ -36,6 +40,29 @@ jobs:
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+
+      # `supabase functions deploy` bundles inside the CLI's edge-runtime image,
+      # pulled from public.ecr.aws. Never blocks a migration deploy.
+      - if: vars.IMAGE_AWS_REGION != ''
+        uses: aws-actions/configure-aws-credentials@v6
+        continue-on-error: true
+        with:
+          aws-region: us-east-1
+          role-to-assume: ${{ vars.IMAGE_AWS_ROLE_ARN }}
+          aws-access-key-id: ${{ secrets.IMAGE_AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.IMAGE_AWS_SECRET_ACCESS_KEY }}
+
+      # Anonymous public.ecr.aws pulls share one data quota per runner IP and fail
+      # with "toomanyrequests: Data limit exceeded"; authenticated pulls count against
+      # the AWS account. Needs ecr-public:GetAuthorizationToken and
+      # sts:GetServiceBearerToken; without them the pulls stay anonymous.
+      - if: vars.IMAGE_AWS_REGION != ''
+        uses: docker/login-action@v4
+        continue-on-error: true
+        with:
+          registry: public.ecr.aws
+        env:
+          AWS_REGION: us-east-1
 
       - name: Run migrations
         run: pnpm --filter ci ci:migrations

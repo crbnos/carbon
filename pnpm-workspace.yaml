@@ -2,6 +2,7 @@ packages:
   - apps/*
   - ci
   - docs
+  - docs/content
   - contrib/building/examples/*
   - packages/*
 
@@ -53,7 +54,9 @@ overrides:
   "ws@8": 8.21.0
 
 catalog:
-  '@ai-sdk/openai': 2.0.102
+  '@ai-sdk/anthropic': 4.0.65
+  '@ai-sdk/openai': 4.0.78
+  '@ai-sdk/react': 4.0.119
   '@dnd-kit/core': 6.3.1
   '@dnd-kit/sortable': 8.0.0
   '@dnd-kit/utilities': 3.2.2
@@ -82,9 +85,9 @@ catalog:
   '@react-router/dev': 7.18.0
   '@react-router/remix-routes-option-adapter': 7.18.0
   '@react-router/serve': 7.18.0
-  '@shikijs/langs': 4.0.2
-  '@shikijs/themes': 4.0.2
-  '@shikijs/types': 4.0.2
+  '@shikijs/langs': 4.2.0
+  '@shikijs/themes': 4.2.0
+  '@shikijs/types': 4.2.0
   '@slack/web-api': 7.10.0
   '@supabase/functions-js': 2.1.5
   '@supabase/postgrest-js': 2.80.0
@@ -112,6 +115,7 @@ catalog:
   '@types/node': '24'
   '@vercel/analytics': 1.6.1
   '@vercel/react-router': 1.2.6
+  ai: 7.0.116
   axios: 1.16.0
   botid: 1.5.11
   class-variance-authority: 0.7.1

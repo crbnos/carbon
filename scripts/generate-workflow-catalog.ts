@@ -83,7 +83,7 @@ const labels = [
 // from plain Node, which check-workflow-catalog.ts relies on.
 const help = [
   HEADER,
-  `import type { TermId } from "@carbon/glossary";`,
+  `import type { TermId } from "@carbon/content/glossary";`,
   ``,
   `export const WORKFLOW_FIELD_HELP: Record<string, TermId> = ${JSON.stringify(sorted(built.help))};`,
   ``

@@ -79,6 +79,7 @@ vi.mock("~/components/Form", () => {
     Customer: () => createElement("input", { name: "customerId" }),
     CustomFormFields: Field,
     DatePicker: Field,
+    Employee: () => createElement("input", { name: "employeeId" }),
     Hidden: ({ name, value }: { name: string; value?: string }) =>
       createElement("input", { type: "hidden", name, value, readOnly: true }),
     Input: Field,
@@ -201,6 +202,37 @@ describe("PaymentForm refund directions", () => {
     );
     expect(next).toContain(`name="${party}"`);
     expect(next).toContain(`name="${otherParty}" readonly="" value=""`);
+  });
+});
+
+describe("PaymentForm employee payee", () => {
+  it("mounts only the employee field and blanks both trade parties", () => {
+    const html = render();
+    expect(html).toContain("Reimbursement to Employee");
+    harness.typeChange?.({
+      value: "employee-payment",
+      label: "employee-payment"
+    });
+    const next = render();
+    // Always cash OUT — an employee payment is never a receipt.
+    expect(next).toContain(
+      'name="paymentType" readonly="" value="Disbursement"'
+    );
+    expect(next).toContain('name="employeeId"');
+    expect(next).toContain('name="customerId" readonly="" value=""');
+    expect(next).toContain('name="supplierId" readonly="" value=""');
+  });
+
+  it("seeds the employee kind from a saved payment and blanks employeeId for a trade party", () => {
+    render({
+      ...initialValues,
+      customerId: "",
+      employeeId: "employee",
+      paymentType: "Disbursement"
+    });
+    expect(harness.values.paymentKind).toBe("employee-payment");
+    harness.states = [];
+    expect(render()).toContain('name="employeeId" readonly="" value=""');
   });
 });
 

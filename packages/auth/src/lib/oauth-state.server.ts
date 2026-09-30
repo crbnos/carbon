@@ -25,10 +25,27 @@ export type OAuthStatePayload = {
   companyId: string;
 };
 
-type StoredOAuthState = OAuthStatePayload & {
-  state: string;
-  expiresAt: number;
+/**
+ * Extra fields carried THROUGH the round trip rather than matched on it.
+ *
+ * `mode` decides which scopes were requested, so it must survive the redirect to
+ * be stamped on the install afterwards — and it must travel in the SIGNED,
+ * HttpOnly cookie, never a query parameter. A user-editable mode would let
+ * someone consent to push-only's narrow scopes and have Carbon record the install
+ * as provider mode, or the reverse.
+ *
+ * It is deliberately NOT part of the match: the callback has no independent copy
+ * to compare against, so "matching" it would only compare the cookie to itself.
+ */
+export type OAuthStateExtras = {
+  mode?: string;
 };
+
+type StoredOAuthState = OAuthStatePayload &
+  OAuthStateExtras & {
+    state: string;
+    expiresAt: number;
+  };
 
 type StoredOAuthStates = Record<string, StoredOAuthState>;
 
@@ -111,7 +128,7 @@ async function commitStates(
  */
 export async function issueOAuthStates(
   request: Request | null,
-  payloads: OAuthStatePayload[]
+  payloads: Array<OAuthStatePayload & OAuthStateExtras>
 ) {
   const session = await oauthStateStorage.getSession(
     request?.headers.get("Cookie")
@@ -126,6 +143,9 @@ export async function issueOAuthStates(
       !!existing &&
       existing.userId === payload.userId &&
       existing.companyId === payload.companyId &&
+      // `mode` rides the cookie to be stamped on the install, so a state issued
+      // for one mode must never be handed to a connect for another.
+      existing.mode === payload.mode &&
       existing.expiresAt - now >= OAUTH_STATE_REUSE_MIN_REMAINING_MS;
 
     if (reusable) {
@@ -153,7 +173,7 @@ export async function issueOAuthStates(
  * pending states in its cookie survive the new Set-Cookie.
  */
 export async function issueOAuthState(
-  payload: OAuthStatePayload,
+  payload: OAuthStatePayload & OAuthStateExtras,
   request: Request | null = null
 ) {
   const { states, cookie } = await issueOAuthStates(request, [payload]);
@@ -189,6 +209,14 @@ export async function consumeOAuthState(
 
   return {
     valid,
-    cookie: await commitStates(session, states)
+    cookie: await commitStates(session, states),
+    /**
+     * The stored payload, for fields the callback cannot re-derive — only when
+     * the state was VALID. Returning it on an invalid state would hand the
+     * caller attacker-supplied values that passed no check.
+     */
+    payload: valid
+      ? ({ mode: stored?.mode } satisfies OAuthStateExtras)
+      : undefined
   };
 }

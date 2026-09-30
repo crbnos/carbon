@@ -1,5 +1,5 @@
 import { openai } from "@ai-sdk/openai";
-import { generateObject } from "ai";
+import { generateText, Output } from "ai";
 import {
   type BalloonRegionAnalysis,
   balloonRegionAnalysisResultSchema
@@ -49,12 +49,14 @@ export async function runInspectionBalloonRegionVisionAnalysis(args: {
   mediaType: string;
 }): Promise<BalloonRegionAnalysis> {
   const { imageBytes, mediaType } = args;
-  const { object } = await generateObject({
+  const { output: object } = await generateText({
     model: openai("gpt-4o"),
-    schema: balloonRegionAnalysisResultSchema,
-    schemaName: "balloon_region_analysis",
-    schemaDescription: BALLOON_REGION_ANALYSIS_SCHEMA_DESCRIPTION,
-    system: BALLOON_REGION_ANALYSIS_SYSTEM,
+    output: Output.object({
+      schema: balloonRegionAnalysisResultSchema,
+      name: "balloon_region_analysis",
+      description: BALLOON_REGION_ANALYSIS_SCHEMA_DESCRIPTION
+    }),
+    instructions: BALLOON_REGION_ANALYSIS_SYSTEM,
     messages: [
       {
         role: "user",
