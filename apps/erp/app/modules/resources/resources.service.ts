@@ -29,6 +29,7 @@ import type {
   workCenterValidator
 } from "./resources.models";
 
+/** @mcp */
 export async function activateWorkCenter(
   client: SupabaseClient<Database>,
   id: string
@@ -36,6 +37,7 @@ export async function activateWorkCenter(
   return client.from("workCenter").update({ active: true }).eq("id", id);
 }
 
+/** @mcp */
 export async function deleteAbility(
   client: SupabaseClient<Database>,
   abilityId: string,
@@ -46,6 +48,7 @@ export async function deleteAbility(
     : client.from("ability").update({ active: false }).eq("id", abilityId);
 }
 
+/** @mcp */
 export async function deleteContractor(
   client: SupabaseClient<Database>,
   contractorId: string
@@ -53,6 +56,7 @@ export async function deleteContractor(
   return client.from("contractor").delete().eq("id", contractorId);
 }
 
+/** @mcp */
 export async function deleteEmployeeAbility(
   client: SupabaseClient<Database>,
   employeeAbilityId: string
@@ -60,6 +64,7 @@ export async function deleteEmployeeAbility(
   return client.from("employeeAbility").delete().eq("id", employeeAbilityId);
 }
 
+/** @mcp */
 export async function deleteFailureMode(
   client: SupabaseClient<Database>,
   failureModeId: string
@@ -67,6 +72,7 @@ export async function deleteFailureMode(
   return client.from("maintenanceFailureMode").delete().eq("id", failureModeId);
 }
 
+/** @mcp */
 export async function deleteLocation(
   client: SupabaseClient<Database>,
   locationId: string
@@ -74,6 +80,7 @@ export async function deleteLocation(
   return client.from("location").delete().eq("id", locationId);
 }
 
+/** @mcp */
 export async function deleteMaintenanceDispatch(
   client: SupabaseClient<Database>,
   dispatchId: string
@@ -88,6 +95,7 @@ export async function deleteMaintenanceDispatchComment(
   return client.from("maintenanceDispatchComment").delete().eq("id", commentId);
 }
 
+/** @mcp */
 export async function deleteMaintenanceDispatchEvent(
   client: SupabaseClient<Database>,
   eventId: string
@@ -95,6 +103,7 @@ export async function deleteMaintenanceDispatchEvent(
   return client.from("maintenanceDispatchEvent").delete().eq("id", eventId);
 }
 
+/** @mcp */
 export async function deleteMaintenanceDispatchItem(
   client: SupabaseClient<Database>,
   itemId: string
@@ -112,6 +121,7 @@ export async function deleteMaintenanceDispatchWorkCenter(
     .eq("id", workCenterId);
 }
 
+/** @mcp */
 export async function deleteMaintenanceSchedule(
   client: SupabaseClient<Database>,
   scheduleId: string
@@ -126,6 +136,7 @@ export async function deleteMaintenanceScheduleItem(
   return client.from("maintenanceScheduleItem").delete().eq("id", itemId);
 }
 
+/** @mcp */
 export async function deletePartner(
   client: SupabaseClient<Database>,
   partnerId: string
@@ -133,6 +144,7 @@ export async function deletePartner(
   return client.from("partner").delete().eq("id", partnerId);
 }
 
+/** @mcp */
 export async function activateProcess(
   client: SupabaseClient<Database>,
   processId: string
@@ -140,6 +152,7 @@ export async function activateProcess(
   return client.from("process").update({ active: true }).eq("id", processId);
 }
 
+/** @mcp */
 export async function processDeactivate(
   client: SupabaseClient<Database>,
   processId: string
@@ -147,6 +160,7 @@ export async function processDeactivate(
   return client.from("process").update({ active: false }).eq("id", processId);
 }
 
+/** @mcp */
 export async function deleteProcess(
   client: SupabaseClient<Database>,
   processId: string
@@ -154,6 +168,7 @@ export async function deleteProcess(
   return client.from("process").delete().eq("id", processId);
 }
 
+/** @mcp */
 export async function deleteShift(
   client: SupabaseClient<Database>,
   shiftId: string
@@ -162,6 +177,7 @@ export async function deleteShift(
   return client.from("shift").update({ active: false }).eq("id", shiftId);
 }
 
+/** @mcp */
 export async function deleteSuggestion(
   client: SupabaseClient<Database>,
   suggestionId: string
@@ -169,6 +185,7 @@ export async function deleteSuggestion(
   return client.from("suggestion").delete().eq("id", suggestionId);
 }
 
+/** @mcp */
 export async function deleteTraining(
   client: SupabaseClient<Database>,
   trainingId: string
@@ -176,6 +193,7 @@ export async function deleteTraining(
   return client.from("training").delete().eq("id", trainingId);
 }
 
+/** @mcp */
 export async function deleteTrainingAssignment(
   client: SupabaseClient<Database>,
   assignmentId: string
@@ -183,6 +201,7 @@ export async function deleteTrainingAssignment(
   return client.from("trainingAssignment").delete().eq("id", assignmentId);
 }
 
+/** @mcp */
 export async function deleteTrainingQuestion(
   client: SupabaseClient<Database>,
   trainingQuestionId: string,
@@ -195,6 +214,7 @@ export async function deleteTrainingQuestion(
     .eq("companyId", companyId);
 }
 
+/** @mcp */
 export async function deleteWorkCenter(
   client: SupabaseClient<Database>,
   id: string
@@ -1252,6 +1272,7 @@ export async function getTrainingGrantedAbilityId(
   return training.data?.grantsAbilityId ?? null;
 }
 
+/** @mcp */
 export async function updateAbility(
   client: SupabaseClient<Database>,
   id: string,
@@ -1270,6 +1291,7 @@ export async function updateAbility(
  * Resolves the qualification expiry for an employee ability. An explicit
  * expiresAt wins; otherwise it is computed from lastTrainingDate + the
  * ability's recertifyEveryDays (null when the ability never expires).
+ * @mcp
  */
 export async function resolveEmployeeAbilityExpiresAt(
   client: SupabaseClient<Database>,
@@ -1293,6 +1315,7 @@ export async function resolveEmployeeAbilityExpiresAt(
     .slice(0, 10);
 }
 
+/** @mcp */
 export async function upsertEmployeeAbilityCell(
   client: SupabaseClient<Database>,
   cell: {
@@ -1314,6 +1337,7 @@ export async function upsertEmployeeAbilityCell(
  * Find-or-create the ability linked 1:1 to a process. Called when a process
  * has "Requires Ability" toggled on — the ability (named after the process)
  * is what employees get qualified against.
+ * @mcp
  */
 export async function ensureProcessAbility(
   client: SupabaseClient<Database>,
@@ -1355,6 +1379,7 @@ export async function ensureProcessAbility(
     .single();
 }
 
+/** @mcp */
 export async function updateSuggestionEmoji(
   client: SupabaseClient<Database>,
   suggestionId: string,
@@ -1371,6 +1396,7 @@ export async function updateSuggestionTags(
   return client.from("suggestion").update({ tags }).eq("id", suggestionId);
 }
 
+/** @mcp */
 export async function updateTrainingQuestionOrder(
   client: SupabaseClient<Database>,
   updates: {
@@ -1388,6 +1414,7 @@ export async function updateTrainingQuestionOrder(
   return Promise.all(updatePromises);
 }
 
+/** @mcp */
 export async function upsertContractor(
   client: SupabaseClient<Database>,
   contractorWithAbilities:
@@ -1446,6 +1473,7 @@ export async function upsertContractor(
   return client.from("contractorAbility").insert(contractorAbilities);
 }
 
+/** @mcp */
 export async function upsertFailureMode(
   client: SupabaseClient<Database>,
   failureMode:
@@ -1473,6 +1501,7 @@ export async function upsertFailureMode(
   }
 }
 
+/** @mcp */
 export async function upsertLocation(
   client: SupabaseClient<Database>,
   location:
@@ -1496,6 +1525,7 @@ export async function upsertLocation(
   return client.from("location").insert([location]).select("*").single();
 }
 
+/** @mcp */
 export async function insertMaintenanceDispatch(
   client: SupabaseClient<Database>,
   input: {
@@ -1580,6 +1610,7 @@ export async function insertMaintenanceDispatch(
   };
 }
 
+/** @mcp */
 export async function updateMaintenanceDispatch(
   client: SupabaseClient<Database>,
   input: {
@@ -1657,6 +1688,7 @@ export async function upsertMaintenanceDispatch(
   }
 }
 
+/** @mcp */
 export async function upsertMaintenanceDispatchComment(
   client: SupabaseClient<Database>,
   comment:
@@ -1683,6 +1715,7 @@ export async function upsertMaintenanceDispatchComment(
   }
 }
 
+/** @mcp */
 export async function upsertMaintenanceDispatchEvent(
   client: SupabaseClient<Database>,
   event:
@@ -1709,6 +1742,7 @@ export async function upsertMaintenanceDispatchEvent(
   }
 }
 
+/** @mcp */
 export async function upsertMaintenanceDispatchItem(
   client: SupabaseClient<Database>,
   item:
@@ -1761,6 +1795,7 @@ export async function upsertMaintenanceDispatchWorkCenter(
   }
 }
 
+/** @mcp */
 export async function upsertMaintenanceSchedule(
   client: SupabaseClient<Database>,
   schedule:
@@ -1813,6 +1848,7 @@ export async function upsertMaintenanceScheduleItem(
   }
 }
 
+/** @mcp */
 export async function upsertPartner(
   client: SupabaseClient<Database>,
   partner:
@@ -1876,6 +1912,7 @@ function extractBatchRules<
   return { batchRules, rest };
 }
 
+/** @mcp */
 export async function upsertProcess(
   client: SupabaseClient<Database>,
   process:
@@ -1969,6 +2006,7 @@ export async function upsertProcess(
   return processUpdate;
 }
 
+/** @mcp */
 export async function upsertTraining(
   client: SupabaseClient<Database>,
   training:
@@ -1993,6 +2031,7 @@ export async function upsertTraining(
   return client.from("training").insert([training]).select("id").single();
 }
 
+/** @mcp */
 export async function upsertTrainingAssignment(
   client: SupabaseClient<Database>,
   assignment: {
@@ -2027,6 +2066,7 @@ export async function upsertTrainingAssignment(
     .single();
 }
 
+/** @mcp */
 export async function upsertTrainingQuestion(
   client: SupabaseClient<Database>,
   trainingQuestion:
@@ -2054,6 +2094,7 @@ export async function upsertTrainingQuestion(
     .single();
 }
 
+/** @mcp */
 export async function upsertWorkCenter(
   client: SupabaseClient<Database>,
   workCenter:

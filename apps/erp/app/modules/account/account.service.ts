@@ -14,6 +14,7 @@ export async function getNotificationPreferences(
     .eq("companyId", companyId);
 }
 
+/** @mcp */
 export async function upsertNotificationPreference(
   client: SupabaseClient<Database>,
   preference: {
@@ -33,6 +34,7 @@ export async function upsertNotificationPreference(
   );
 }
 
+/** @mcp */
 export async function deleteUserAttributeValue(
   client: SupabaseClient<Database>,
   args: {
@@ -160,6 +162,7 @@ export async function getAttributeCategoryWithValues(
     .single();
 }
 
+/** @mcp */
 export async function updateAvatar(
   client: SupabaseClient<Database>,
   userId: string,
@@ -175,6 +178,7 @@ export async function updateAvatar(
     .eq("id", userId);
 }
 
+/** @mcp */
 export async function updatePublicAccount(
   client: SupabaseClient<Database>,
   account: {
@@ -188,6 +192,7 @@ export async function updatePublicAccount(
   return client.from("user").update(sanitize(account)).eq("id", account.id);
 }
 
+/** @mcp */
 export async function upsertUserAttributeValue(
   client: SupabaseClient<Database>,
   update: {

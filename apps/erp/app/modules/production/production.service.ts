@@ -120,6 +120,7 @@ export { mapBalloonIdsToFeatureIdsForDocument };
 
 const logger = getLogger("erp", "production");
 
+/** @mcp */
 export async function convertSalesOrderLinesToJobs(
   client: SupabaseClient<Database>,
   {
@@ -446,6 +447,7 @@ export async function convertSalesOrderLinesToJobs(
  * @param client - Supabase client
  * @param params - Job details
  * @returns The calculated priority number
+ * @mcp
  */
 export async function calculateJobPriority(
   client: SupabaseClient<Database>,
@@ -531,6 +533,7 @@ export async function calculateJobPriority(
   return newPriority;
 }
 
+/** @mcp */
 export async function deleteJob(
   client: SupabaseClient<Database>,
   jobId: string
@@ -538,6 +541,7 @@ export async function deleteJob(
   return client.from("job").delete().eq("id", jobId);
 }
 
+/** @mcp */
 export async function deleteJobMaterial(
   client: SupabaseClient<Database>,
   jobMaterialId: string
@@ -552,6 +556,7 @@ export async function deleteJobOperation(
   return client.from("jobOperation").delete().eq("id", jobOperationId);
 }
 
+/** @mcp */
 export async function deleteJobOperationStep(
   client: SupabaseClient<Database>,
   id: string
@@ -559,6 +564,7 @@ export async function deleteJobOperationStep(
   return client.from("jobOperationStep").delete().eq("id", id);
 }
 
+/** @mcp */
 export async function deleteJobOperationStepSlide(
   client: SupabaseClient<Database>,
   id: string
@@ -566,6 +572,7 @@ export async function deleteJobOperationStepSlide(
   return client.from("jobOperationStepSlide").delete().eq("id", id);
 }
 
+/** @mcp */
 export async function deleteJobOperationParameter(
   client: SupabaseClient<Database>,
   id: string
@@ -573,6 +580,7 @@ export async function deleteJobOperationParameter(
   return client.from("jobOperationParameter").delete().eq("id", id);
 }
 
+/** @mcp */
 export async function deleteJobOperationTool(
   client: SupabaseClient<Database>,
   id: string
@@ -580,6 +588,7 @@ export async function deleteJobOperationTool(
   return client.from("jobOperationTool").delete().eq("id", id);
 }
 
+/** @mcp */
 export async function deleteProcedure(
   client: SupabaseClient<Database>,
   procedureId: string
@@ -587,6 +596,7 @@ export async function deleteProcedure(
   return client.from("procedure").delete().eq("id", procedureId);
 }
 
+/** @mcp */
 export async function deleteProcedureStep(
   client: SupabaseClient<Database>,
   procedureStepId: string,
@@ -599,6 +609,7 @@ export async function deleteProcedureStep(
     .eq("companyId", companyId);
 }
 
+/** @mcp */
 export async function deleteProcedureParameter(
   client: SupabaseClient<Database>,
   procedureParameterId: string,
@@ -611,6 +622,7 @@ export async function deleteProcedureParameter(
     .eq("companyId", companyId);
 }
 
+/** @mcp */
 export async function deleteProductionEvent(
   client: SupabaseClient<Database>,
   productionEventId: string,
@@ -664,6 +676,7 @@ export async function deleteProductionEvent(
     .eq("companyId", companyId);
 }
 
+/** @mcp */
 export async function deleteProductionQuantity(
   client: SupabaseClient<Database>,
   productionQuantityId: string
@@ -758,6 +771,7 @@ export async function getActiveProductionEvents(
     .is("endTime", null);
 }
 
+/** @mcp */
 export async function deleteScrapReason(
   client: SupabaseClient<Database>,
   scrapReasonId: string
@@ -765,6 +779,7 @@ export async function deleteScrapReason(
   return client.from("scrapReason").delete().eq("id", scrapReasonId);
 }
 
+/** @mcp */
 export async function deleteFailureMode(
   client: SupabaseClient<Database>,
   failureModeId: string
@@ -772,6 +787,7 @@ export async function deleteFailureMode(
   return client.from("maintenanceFailureMode").delete().eq("id", failureModeId);
 }
 
+/** @mcp */
 export async function deleteMaintenanceDispatch(
   client: SupabaseClient<Database>,
   dispatchId: string
@@ -786,6 +802,7 @@ export async function deleteMaintenanceDispatchComment(
   return client.from("maintenanceDispatchComment").delete().eq("id", commentId);
 }
 
+/** @mcp */
 export async function deleteMaintenanceDispatchEvent(
   client: SupabaseClient<Database>,
   eventId: string
@@ -793,6 +810,7 @@ export async function deleteMaintenanceDispatchEvent(
   return client.from("maintenanceDispatchEvent").delete().eq("id", eventId);
 }
 
+/** @mcp */
 export async function deleteMaintenanceDispatchItem(
   client: SupabaseClient<Database>,
   itemId: string
@@ -810,6 +828,7 @@ export async function deleteMaintenanceDispatchWorkCenter(
     .eq("id", workCenterId);
 }
 
+/** @mcp */
 export async function deleteMaintenanceSchedule(
   client: SupabaseClient<Database>,
   scheduleId: string
@@ -2649,6 +2668,7 @@ export async function getJobReceiptSnapshot(
 /**
  * Reschedule a job using the unified scheduling engine.
  * This recalculates dates, work centers, and priorities for all operations.
+ * @mcp
  */
 export async function recalculateJobOperationDependencies(
   client: SupabaseClient<Database>,
@@ -2691,6 +2711,7 @@ export async function recalculateJobOperationDependencies(
     };
   }
 }
+/** @mcp */
 export async function recalculateJobRequirements(
   client: SupabaseClient<Database>,
   params: {
@@ -2707,6 +2728,7 @@ export async function recalculateJobRequirements(
   });
 }
 
+/** @mcp */
 export async function recalculateJobMakeMethodRequirements(
   client: SupabaseClient<Database>,
   params: {
@@ -2723,6 +2745,7 @@ export async function recalculateJobMakeMethodRequirements(
   });
 }
 
+/** @mcp */
 export async function runMRP(
   client: SupabaseClient<Database>,
   db: Kysely<KyselyDatabase>,
@@ -2755,6 +2778,7 @@ export async function runMRP(
   }
 }
 
+/** @mcp */
 export async function updateJobBatchNumber(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -2983,6 +3007,7 @@ export async function getJobReleaseReadiness(
   };
 }
 
+/** @mcp */
 export async function updateJobStatus(
   client: SupabaseClient<Database>,
   params: {
@@ -3048,6 +3073,7 @@ export async function updateJobStatus(
   return result;
 }
 
+/** @mcp */
 export async function updateJobMaterialOrder(
   client: SupabaseClient<Database>,
   updates: {
@@ -3062,6 +3088,7 @@ export async function updateJobMaterialOrder(
   return Promise.all(updatePromises);
 }
 
+/** @mcp */
 export async function updateJobOperationOrder(
   client: SupabaseClient<Database>,
   updates: {
@@ -3076,6 +3103,7 @@ export async function updateJobOperationOrder(
   return Promise.all(updatePromises);
 }
 
+/** @mcp */
 export async function updateJobOperationStepOrder(
   client: SupabaseClient<Database>,
   updates: {
@@ -3093,6 +3121,7 @@ export async function updateJobOperationStepOrder(
   return Promise.all(updatePromises);
 }
 
+/** @mcp */
 export async function updateKanbanJob(
   client: SupabaseClient<Database>,
   params: {
@@ -3110,6 +3139,7 @@ export async function updateKanbanJob(
     .eq("companyId", companyId);
 }
 
+/** @mcp */
 export async function updateQuoteOperationStepOrder(
   client: SupabaseClient<Database>,
   updates: {
@@ -3127,6 +3157,7 @@ export async function updateQuoteOperationStepOrder(
   return Promise.all(updatePromises);
 }
 
+/** @mcp */
 export async function updateMethodOperationStepOrder(
   client: SupabaseClient<Database>,
   updates: {
@@ -3144,6 +3175,7 @@ export async function updateMethodOperationStepOrder(
   return Promise.all(updatePromises);
 }
 
+/** @mcp */
 export async function updateJobOperationStatus(
   client: SupabaseClient<Database>,
   id: string,
@@ -3228,6 +3260,7 @@ export async function returnPickedRemaindersForJob(
   });
 }
 
+/** @mcp */
 export async function updateJobOperationDueDate(
   client: SupabaseClient<Database>,
   id: string,
@@ -3247,6 +3280,7 @@ export async function updateJobOperationDueDate(
     .single();
 }
 
+/** @mcp */
 export async function updateProcedureStepOrder(
   client: SupabaseClient<Database>,
   updates: {
@@ -3261,6 +3295,7 @@ export async function updateProcedureStepOrder(
   return Promise.all(updatePromises);
 }
 
+/** @mcp */
 export async function upsertProductionEvent(
   client: SupabaseClient<Database>,
   productionEvent:
@@ -3320,6 +3355,7 @@ export async function updateProductionQuantity(
     .single();
 }
 
+/** @mcp */
 export async function upsertProductionQuantity(
   client: SupabaseClient<Database>,
   productionQuantity:
@@ -3371,6 +3407,7 @@ export async function upsertProductionQuantity(
  * Kept out of the options type literal on purpose: the MCP metadata generator
  * parses that object textually and turns a JSDoc block above a property into a
  * property name of its own, which then ships in the public tool schema.
+ * @mcp
  */
 export async function insertJob(
   client: SupabaseClient<Database>,
@@ -3644,6 +3681,7 @@ async function assignJobSerialNumbers(
   }
 }
 
+/** @mcp */
 export async function updateJob(
   client: SupabaseClient<Database>,
   input: {
@@ -3708,7 +3746,10 @@ export async function updateJob(
     .single();
 }
 
-/** @deprecated Use insertJob for new jobs, updateJob for existing jobs */
+/**
+ * @deprecated Use insertJob for new jobs, updateJob for existing jobs
+ * @mcp
+ */
 export async function upsertJob(
   client: SupabaseClient<Database>,
   job:
@@ -3752,6 +3793,7 @@ export async function upsertJob(
   }
 }
 
+/** @mcp */
 export async function upsertJobMaterial(
   client: SupabaseClient<Database>,
   jobMaterial:
@@ -3796,6 +3838,7 @@ export async function upsertJobMaterial(
     .single();
 }
 
+/** @mcp */
 export async function upsertJobOperation(
   client: SupabaseClient<Database>,
   jobOperation:
@@ -3863,6 +3906,7 @@ export async function upsertJobOperation(
   return operationInsert;
 }
 
+/** @mcp */
 export async function upsertJobOperationStep(
   client: SupabaseClient<Database>,
   jobOperationStep:
@@ -3903,6 +3947,7 @@ export async function upsertJobOperationStep(
 // are captured operator results, not part of the template, and must start empty on a copy.
 // NCR linkage (nonConformance*Id) is intentionally dropped so a clone isn't a second step
 // claiming the same containment action.
+/** @mcp */
 export async function duplicateJobOperationStep(
   client: SupabaseClient<Database>,
   args: { id: string; companyId: string; createdBy: string }
@@ -4032,6 +4077,7 @@ export async function duplicateJobOperationStep(
 // Job-tier twin of upsertMethodOperationStepSlide (items.service.ts). Same generic
 // validator; `stepId` here is a jobOperationStep id. On update we sanitize() so an
 // omitted optional field (caption-only save) never wipes size/annotations.
+/** @mcp */
 export async function upsertJobOperationStepSlide(
   client: SupabaseClient<Database>,
   slide:
@@ -4073,6 +4119,7 @@ export async function upsertJobOperationStepSlide(
     .single();
 }
 
+/** @mcp */
 export async function upsertJobOperationParameter(
   client: SupabaseClient<Database>,
   jobOperationParameter:
@@ -4149,6 +4196,7 @@ export async function getJobPromiseDate(
   };
 }
 
+/** @mcp */
 export async function upsertJobOperationTool(
   client: SupabaseClient<Database>,
   jobOperationTool:
@@ -4224,6 +4272,7 @@ export async function replaceJobMaterialSteps(
 // `linked` true = link the material to the step, false = unlink. Idempotent on link.
 // `quantity` is the per-step share of the BOM line (NULL = the full line quantity);
 // re-linking an existing link updates the quantity, so the same call edits a split.
+/** @mcp */
 export async function setJobMaterialStepLink(
   client: SupabaseClient<Database>,
   args: {
@@ -4262,6 +4311,7 @@ export async function setJobMaterialStepLink(
 // row the operation's Tools tab would create) before linking it to the step. Unlink
 // removes only the step link; the operation tool row stays (the Tools tab owns it).
 // Twin of setJobMaterialStepLink.
+/** @mcp */
 export async function setJobOperationToolStepLink(
   client: SupabaseClient<Database>,
   args: {
@@ -4321,6 +4371,7 @@ export async function setJobOperationToolStepLink(
     .eq("jobOperationStepId", args.jobOperationStepId);
 }
 
+/** @mcp */
 export async function upsertJobMethod(
   client: SupabaseClient<Database>,
   type: "itemToJob" | "quoteLineToJob" | "jobToJob",
@@ -4401,6 +4452,7 @@ export async function upsertJobMethod(
   });
 }
 
+/** @mcp */
 export async function upsertJobMaterialMakeMethod(
   client: SupabaseClient<Database>,
   jobMaterial: {
@@ -4483,6 +4535,7 @@ export async function upsertJobMaterialMakeMethod(
  * method (BOM + operations) into it. Shared by the job-material create and edit
  * routes: both flip a material to "Make to Order" and must populate the newly
  * created child make method.
+ * @mcp
  */
 export async function pullJobMaterialMakeMethod(
   client: SupabaseClient<Database>,
@@ -4520,6 +4573,7 @@ export async function pullJobMaterialMakeMethod(
   });
 }
 
+/** @mcp */
 export async function upsertMakeMethodFromJob(
   client: SupabaseClient<Database>,
   jobMethod: {
@@ -4549,6 +4603,7 @@ export async function upsertMakeMethodFromJob(
   });
 }
 
+/** @mcp */
 export async function upsertMakeMethodFromJobMethod(
   client: SupabaseClient<Database>,
   jobMethod: {
@@ -4587,6 +4642,7 @@ export async function upsertMakeMethodFromJobMethod(
   return { data: null, error: null };
 }
 
+/** @mcp */
 export async function upsertProcedure(
   client: SupabaseClient<Database>,
   procedure:
@@ -4681,6 +4737,7 @@ export async function upsertProcedure(
   return insert;
 }
 
+/** @mcp */
 export async function upsertProcedureStep(
   client: SupabaseClient<Database>,
   procedureStep:
@@ -4708,6 +4765,7 @@ export async function upsertProcedureStep(
     .single();
 }
 
+/** @mcp */
 export async function upsertProcedureParameter(
   client: SupabaseClient<Database>,
   procedureParameter:
@@ -4735,6 +4793,7 @@ export async function upsertProcedureParameter(
     .single();
 }
 
+/** @mcp */
 export async function upsertScrapReason(
   client: SupabaseClient<Database>,
   scrapReason:
@@ -4759,6 +4818,7 @@ export async function upsertScrapReason(
   }
 }
 
+/** @mcp */
 export async function upsertFailureMode(
   client: SupabaseClient<Database>,
   failureMode:
@@ -4817,6 +4877,7 @@ export async function upsertMaintenanceDispatch(
   }
 }
 
+/** @mcp */
 export async function upsertMaintenanceDispatchComment(
   client: SupabaseClient<Database>,
   comment:
@@ -4843,6 +4904,7 @@ export async function upsertMaintenanceDispatchComment(
   }
 }
 
+/** @mcp */
 export async function upsertMaintenanceDispatchEvent(
   client: SupabaseClient<Database>,
   event:
@@ -4869,6 +4931,7 @@ export async function upsertMaintenanceDispatchEvent(
   }
 }
 
+/** @mcp */
 export async function upsertMaintenanceDispatchItem(
   client: SupabaseClient<Database>,
   item:
@@ -4921,6 +4984,7 @@ export async function upsertMaintenanceDispatchWorkCenter(
   }
 }
 
+/** @mcp */
 export async function upsertMaintenanceSchedule(
   client: SupabaseClient<Database>,
   schedule:
@@ -5332,6 +5396,7 @@ async function requirePeopleBoardRefs(
 /**
  * Move-semantics upsert: one magnet per person per date/shift — any existing
  * assignment for the person on that date/shift is replaced.
+ * @mcp
  */
 export async function upsertPeopleAssignment(
   db: Kysely<KyselyDatabase>,
@@ -5449,6 +5514,7 @@ export async function upsertPeopleAssignment(
   });
 }
 
+/** @mcp */
 export async function deletePeopleAssignment(
   client: SupabaseClient<Database>,
   id: string,
@@ -5463,6 +5529,7 @@ export async function deletePeopleAssignment(
     .single();
 }
 
+/** @mcp */
 export async function setPeopleAbsence(
   client: SupabaseClient<Database>,
   absence: {
@@ -5477,6 +5544,7 @@ export async function setPeopleAbsence(
   return client.from("peopleAbsence").insert([absence]).select("id").single();
 }
 
+/** @mcp */
 export async function clearPeopleAbsence(
   client: SupabaseClient<Database>,
   id: string,
@@ -5499,6 +5567,7 @@ export async function clearPeopleAbsence(
  * Move one assignment row to another station (drag = move). If the person
  * already has a row at the target station for the same shift/date, the rows
  * merge (hours add; a whole-shift row absorbs the other).
+ * @mcp
  */
 export async function movePeopleAssignment(
   db: Kysely<KyselyDatabase>,
@@ -5579,6 +5648,7 @@ export async function movePeopleAssignment(
  * stations are updated (hours/overtime), new stations inserted, stations
  * not in `rows` deleted. Scoped to the shift when one is given. One
  * transaction — the Working-hours popover's Save.
+ * @mcp
  */
 export async function setPeopleDay(
   db: Kysely<KyselyDatabase>,
@@ -5687,6 +5757,7 @@ export async function setPeopleDay(
  * shift). Lowering hours releases the remainder back to the board's
  * free-hours pool; splitting across stations = lower here, then drag the
  * remainder card to the next station.
+ * @mcp
  */
 export async function setPeopleAssignmentHours(
   client: SupabaseClient<Database>,
@@ -5711,6 +5782,7 @@ export async function setPeopleAssignmentHours(
  * department (via the location's work centers) and/or a shift. One UPDATE so
  * partial application can't happen; department resolves server-side (never a
  * client-supplied work-center list).
+ * @mcp
  */
 export async function setPeopleOvertimeBulk(
   db: Kysely<KyselyDatabase>,
@@ -5756,6 +5828,7 @@ export async function setPeopleOvertimeBulk(
   });
 }
 
+/** @mcp */
 export async function copyPeopleBoard(
   db: Kysely<KyselyDatabase>,
   args: {
@@ -5860,6 +5933,7 @@ const toIsoDate = (value: unknown) => {
  * Assign a person to a station for a whole Monday-start week: one row per
  * working day (the shift's weekdays when a shift is given, Mon–Fri
  * otherwise), skipping days where they're absent or already assigned.
+ * @mcp
  */
 export async function assignPeopleWeek(
   db: Kysely<KyselyDatabase>,
@@ -5981,7 +6055,8 @@ export async function assignPeopleWeek(
 }
 
 /** Remove a person from a station for the whole week (their other stations
- * and other weeks are untouched). */
+ * and other weeks are untouched). * @mcp
+ */
 export async function unassignPeopleWeek(
   db: Kysely<KyselyDatabase>,
   args: {
@@ -6009,6 +6084,7 @@ export async function unassignPeopleWeek(
  * Move a person's whole week from one station to another. Days where they
  * already have a row at the target station keep the target row (the source
  * row is dropped); other days simply change station.
+ * @mcp
  */
 export async function movePeopleWeek(
   db: Kysely<KyselyDatabase>,
@@ -6080,6 +6156,7 @@ export async function movePeopleWeek(
  * Copy a whole Monday-start week of people assignments onto another week,
  * day by day, with the same skip rules as the day copy (people already
  * assigned or absent on the target date are left alone). One transaction.
+ * @mcp
  */
 export async function copyPeopleWeek(
   db: Kysely<KyselyDatabase>,
@@ -6116,6 +6193,7 @@ export async function copyPeopleWeek(
 /**
  * Mark a person absent for every date in [fromDate, toDate] (vacation as one
  * action). Dates that already carry an absence for the person are skipped.
+ * @mcp
  */
 export async function setPeopleAbsenceRange(
   db: Kysely<KyselyDatabase>,
@@ -6184,6 +6262,7 @@ export async function setPeopleAbsenceRange(
  * Reactive replanning: notify that a scheduling INPUT changed (shift,
  * qualification, work center, location). Marks the company's active jobs
  * schedule-outdated immediately and schedules a debounced replan wave.
+ * @mcp
  */
 export async function notifyScheduleInputsChanged(
   companyId: string,
@@ -6519,6 +6598,7 @@ export async function getBatchableProcesses(
     .order("name");
 }
 
+/** @mcp */
 export async function createJobOperationBatch(
   client: SupabaseClient<Database>,
   args: {
@@ -6541,6 +6621,7 @@ export async function createJobOperationBatch(
   });
 }
 
+/** @mcp */
 export async function updateJobOperationBatch(
   client: SupabaseClient<Database>,
   args: {
@@ -6558,6 +6639,7 @@ export async function updateJobOperationBatch(
   });
 }
 
+/** @mcp */
 export async function releaseJobOperationBatch(
   client: SupabaseClient<Database>,
   args: { batchId: string; companyId: string; userId: string }
@@ -6567,6 +6649,7 @@ export async function releaseJobOperationBatch(
   });
 }
 
+/** @mcp */
 export async function unreleaseJobOperationBatch(
   client: SupabaseClient<Database>,
   args: { batchId: string; companyId: string; userId: string }
@@ -6696,6 +6779,7 @@ export async function getAssemblyInstructionSteps(
     .order("sortOrder", { ascending: true });
 }
 
+/** @mcp */
 export async function upsertAssemblyInstruction(
   client: SupabaseClient<Database>,
   data: {
@@ -6735,6 +6819,7 @@ export async function upsertAssemblyInstruction(
     .single();
 }
 
+/** @mcp */
 export async function updateAssemblyInstructionStatus(
   client: SupabaseClient<Database>,
   id: string,
@@ -6791,6 +6876,7 @@ export async function getAssemblyInstructionVersions(
  * the self-referential tree) and each step's live child rows (materials,
  * slides, tools). Non-atomic multi-insert — a partial copy leaves a deletable
  * Draft, matching the procedure/make-method copy precedents.
+ * @mcp
  */
 export async function copyAssemblyInstructionAsVersion(
   client: SupabaseClient<Database>,
@@ -6925,6 +7011,7 @@ export async function copyAssemblyInstructionAsVersion(
  * but only active job operations (status not Done/Canceled) on active jobs
  * (status not Completed/Closed/Cancelled). Method operations are intentionally
  * left untouched.
+ * @mcp
  */
 export async function activateAssemblyInstructionVersion(
   client: SupabaseClient<Database>,
@@ -7094,6 +7181,7 @@ export async function activateAssemblyInstructionVersion(
   return publish;
 }
 
+/** @mcp */
 export async function deleteAssemblyInstruction(
   client: SupabaseClient<Database>,
   id: string
@@ -7223,6 +7311,7 @@ async function invalidateAssemblyPlanCache(
  * convert can run. This is the user-facing escape hatch for stale caches
  * (e.g. after a geometry-service upgrade that changes nodeIds); routine
  * instruction deletion uses the narrower invalidateAssemblyPlanCache instead.
+ * @mcp
  */
 export async function invalidateAssemblyModelCache(
   client: SupabaseClient<Database>,
@@ -7283,6 +7372,7 @@ export async function invalidateAssemblyModelCache(
     .eq("id", modelUploadId);
 }
 
+/** @mcp */
 export async function upsertAssemblyInstructionStep(
   client: SupabaseClient<Database>,
   data: {
@@ -7398,6 +7488,7 @@ export async function upsertAssemblyInstructionStep(
  * `title` and the typed-step fields) so the 3D editor can autosave a drag or a
  * "Set view" click without touching the rest of the step. `camera: null` clears
  * the pose (return to auto-framing); omitting a field leaves it untouched.
+ * @mcp
  */
 export async function updateAssemblyStepMotion(
   client: SupabaseClient<Database>,
@@ -7426,6 +7517,7 @@ export async function updateAssemblyStepMotion(
 // Autosave target for the Details panel's Add/remove component controls: patches
 // only the step's assigned components, leaving the title/typed fields and motion
 // untouched.
+/** @mcp */
 export async function updateAssemblyStepComponents(
   client: SupabaseClient<Database>,
   data: {
@@ -7448,6 +7540,7 @@ export async function updateAssemblyStepComponents(
 
 // Replaces a step's hidden list. The step's own components are stripped (and the
 // list deduped) by the assembly_step_strip_own_hidden_components trigger.
+/** @mcp */
 export async function updateAssemblyStepHiddenComponents(
   client: SupabaseClient<Database>,
   data: {
@@ -7473,6 +7566,7 @@ export async function updateAssemblyStepHiddenComponents(
 // Sub-assembly staging: `parentStepId` = the later JOIN step this step is built
 // aside for (NULL = built in place). Which links are allowed is `joinTargets`,
 // the one rule the select and playback share.
+/** @mcp */
 export async function updateAssemblyStepJoin(
   client: SupabaseClient<Database>,
   data: {
@@ -7527,6 +7621,7 @@ export async function updateAssemblyStepJoin(
 // ends up on exactly the target. `remove` (no target) strips them from EVERY
 // step, unassigning them entirely. One transaction: a half-applied move (added
 // to target but not removed from the source, or vice versa) would be a real bug.
+/** @mcp */
 export async function reassignAssemblyStepComponents(
   db: Kysely<KyselyDatabase>,
   data: {
@@ -7683,6 +7778,7 @@ async function getNextStepSortOrder(
   return (lastStep.data?.sortOrder ?? 0) + 1;
 }
 
+/** @mcp */
 export async function updateAssemblyInstructionStepStatus(
   client: SupabaseClient<Database>,
   id: string,
@@ -7703,6 +7799,7 @@ export async function updateAssemblyInstructionStepStatus(
     .single();
 }
 
+/** @mcp */
 export async function updateAssemblyInstructionStepOrder(
   db: Kysely<KyselyDatabase>,
   companyId: string,
@@ -7739,6 +7836,7 @@ export async function updateAssemblyInstructionStepOrder(
   });
 }
 
+/** @mcp */
 export async function deleteAssemblyInstructionStep(
   client: SupabaseClient<Database>,
   id: string
@@ -7760,6 +7858,7 @@ export async function getAssemblyInstructionStepSlides(
     .order("sortOrder", { ascending: true });
 }
 
+/** @mcp */
 export async function upsertAssemblyInstructionStepSlide(
   client: SupabaseClient<Database>,
   slide:
@@ -7801,6 +7900,7 @@ export async function upsertAssemblyInstructionStepSlide(
     .single();
 }
 
+/** @mcp */
 export async function deleteAssemblyInstructionStepSlide(
   client: SupabaseClient<Database>,
   id: string
@@ -7822,6 +7922,7 @@ export async function getAssemblyInstructionStepTools(
     .order("sortOrder", { ascending: true });
 }
 
+/** @mcp */
 export async function upsertAssemblyInstructionStepTool(
   client: SupabaseClient<Database>,
   data: {
@@ -7880,6 +7981,7 @@ async function getNextStepToolSortOrder(
   return (last.data?.sortOrder ?? 0) + 1;
 }
 
+/** @mcp */
 export async function deleteAssemblyInstructionStepTool(
   client: SupabaseClient<Database>,
   id: string
@@ -7901,6 +8003,7 @@ export async function getAssemblyInstructionStepMaterials(
     .order("sortOrder", { ascending: true });
 }
 
+/** @mcp */
 export async function upsertAssemblyInstructionStepMaterial(
   client: SupabaseClient<Database>,
   data: {
@@ -7959,6 +8062,7 @@ async function getNextStepMaterialSortOrder(
   return (last.data?.sortOrder ?? 0) + 1;
 }
 
+/** @mcp */
 export async function updateAssemblyInstructionStepMaterialOrder(
   db: Kysely<KyselyDatabase>,
   companyId: string,
@@ -7985,6 +8089,7 @@ export async function updateAssemblyInstructionStepMaterialOrder(
   });
 }
 
+/** @mcp */
 export async function deleteAssemblyInstructionStepMaterial(
   client: SupabaseClient<Database>,
   id: string
@@ -8063,6 +8168,7 @@ function insertAssemblyStepMaterialSeeds(
  * assemblyComponentMapping) as step materials. Additive and best-effort:
  * existing rows are never updated or removed — manual quantities and
  * deliberate deletions survive — and failures never block the caller.
+ * @mcp
  */
 export async function syncAssemblyStepMaterialsFromMappings(
   client: SupabaseClient<Database>,
@@ -8167,6 +8273,7 @@ export async function getAssemblyUnits(
     .order("name");
 }
 
+/** @mcp */
 export async function upsertAssemblyUnit(
   client: SupabaseClient<Database>,
   data: {
@@ -8209,6 +8316,7 @@ export async function upsertAssemblyUnit(
     .single();
 }
 
+/** @mcp */
 export async function deleteAssemblyUnit(
   client: SupabaseClient<Database>,
   id: string
@@ -8261,6 +8369,7 @@ export async function getLatestAssemblyPlanJob(
  * it to Processing; without this the row only exists after event pickup, and
  * the post-action revalidation lands in that gap — nothing polls, and the run
  * (and its finished motions) never surface without a manual reload.
+ * @mcp
  */
 export async function createAssemblyPlanJob(
   client: SupabaseClient<Database>,
@@ -8326,6 +8435,7 @@ export async function getAssemblyComponentMappings(
     .eq("modelUploadId", modelUploadId);
 }
 
+/** @mcp */
 export async function upsertAssemblyComponentMapping(
   client: SupabaseClient<Database>,
   data: {
@@ -8356,6 +8466,7 @@ export async function upsertAssemblyComponentMapping(
     .single();
 }
 
+/** @mcp */
 export async function deleteAssemblyComponentMapping(
   client: SupabaseClient<Database>,
   id: string
@@ -8447,6 +8558,7 @@ export type AutoMatchResult = {
  * strong name matches first (greedy, best score wins), then unique
  * quantity matches (a component appearing N times matched to the only BOM line
  * with quantity N) as low-confidence fallbacks. Existing mappings are kept.
+ * @mcp
  */
 export async function autoMatchAssemblyComponents(
   client: SupabaseClient<Database>,
@@ -8774,6 +8886,7 @@ export function planAssemblyStepMarkerSync(
 /**
  * The re-sync ratchets a tool's operation-level quantity up to the max quantity
  * any source step asks for (operation-level rows are never lowered or deleted).
+ * @mcp
  */
 export function maxToolQuantityByItem(
   sourceTools: { itemId: string; quantity: number | null }[]
@@ -8816,6 +8929,7 @@ export function buildAssemblyToolStepLinks(
   return rows;
 }
 
+/** @mcp */
 export async function syncAssemblyInstructionToOperation(
   db: Kysely<KyselyDatabase>,
   args: {
@@ -9280,6 +9394,7 @@ export async function syncAssemblyInstructionToOperation(
  * with motion "none" plus a `warnings` payload — the viewer fades them in
  * rather than animating a fabricated colliding path. The author
  * validates/edits the drafts instead of authoring motions by hand.
+ * @mcp
  */
 export async function generateAssemblyStepsFromPlan(
   client: SupabaseClient<Database>,
@@ -9547,6 +9662,7 @@ export async function generateAssemblyStepsFromPlan(
  * Maps a DB step row to the viewer's step shape. JSONB columns are validated
  * defensively — `path` motions with invalid keyframes throw inside the viewer,
  * so anything that fails the schema falls back to a safe default.
+ * @mcp
  */
 export function toViewerStep(step: AssemblyInstructionStepRow): AssemblyStep {
   const motion = motionSchema.safeParse(step.motion);
@@ -9800,6 +9916,7 @@ async function resolveInspectionDocumentDrawingNumber(
   return `${base} (${suffix})`;
 }
 
+/** @mcp */
 export async function upsertInspectionDocument(
   client: SupabaseClient<Database>,
   diagram:
@@ -9983,6 +10100,7 @@ export async function upsertInspectionDocument(
     .single();
 }
 
+/** @mcp */
 export async function deleteInspectionDocument(
   client: SupabaseClient<Database>,
   id: string,
@@ -10182,6 +10300,7 @@ export async function getInspectionPlan(
   };
 }
 
+/** @mcp */
 export async function updateInspectionDocumentSampling(
   client: SupabaseClient<Database>,
   args: z.infer<typeof inspectionDocumentSamplingValidator> & {
@@ -10202,6 +10321,7 @@ export async function updateInspectionDocumentSampling(
     .eq("companyId", companyId);
 }
 
+/** @mcp */
 export async function saveInspectionDocumentAtomic(
   client: SupabaseClient<Database>,
   args: {
@@ -10267,6 +10387,7 @@ export async function saveInspectionDocumentAtomic(
  *
  * NOTE: mirrors apps/mes complete.tsx (non-tracked branch) + finishJobOperation; these should share
  * a service function eventually rather than duplicate the orchestration.
+ * @mcp
  */
 export async function completeOperation(
   client: SupabaseClient<Database>,
@@ -10437,6 +10558,9 @@ export async function completeOperation(
  * upload flow: PUT the file bytes to the returned `signedUrl`, then call
  * `documents_insertUploadedDocument` with the returned `path`,
  * `sourceDocument: "Job"`, and `sourceDocumentId: jobId`.
+ * @mcp — part of the documented MCP signed-URL upload flow
+ *       (packages/files/AGENTS.md): a non-browser caller mints a staged
+ *       upload URL, then insertUploadedDocument converts and lands it.
  */
 export async function createJobDocumentUploadUrl(
   client: SupabaseClient<Database>,

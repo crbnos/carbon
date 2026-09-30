@@ -146,6 +146,7 @@ export async function getItarCertificationReport(
   return { data, error: null };
 }
 
+/** @mcp */
 export async function deleteGroup(
   client: SupabaseClient<Database>,
   groupId: string
@@ -482,6 +483,7 @@ export async function searchUsersForSelect(
   return query;
 }
 
+/** @mcp */
 export async function resolveUserSelectIds(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -574,6 +576,7 @@ export async function getUserEmails(
     .filter((email): email is string => !!email);
 }
 
+/** @mcp */
 export async function insertGroup(
   client: SupabaseClient<Database>,
   group: { name: string; companyId: string }
@@ -581,6 +584,7 @@ export async function insertGroup(
   return client.from("group").insert(group).select("*").single();
 }
 
+/** @mcp */
 export async function upsertGroup(
   client: SupabaseClient<Database>,
   {
@@ -596,6 +600,7 @@ export async function upsertGroup(
   return client.from("group").upsert([{ id, name, companyId }]);
 }
 
+/** @mcp */
 export async function upsertGroupMembers(
   client: SupabaseClient<Database>,
   groupId: string,

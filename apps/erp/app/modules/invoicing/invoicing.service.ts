@@ -259,6 +259,7 @@ export async function computeEarlyPaymentDiscounts(
   return result;
 }
 
+/** @mcp */
 export async function createPurchaseInvoiceFromPurchaseOrder(
   client: SupabaseClient<Database>,
   purchaseOrderId: string,
@@ -275,6 +276,7 @@ export async function createPurchaseInvoiceFromPurchaseOrder(
   });
 }
 
+/** @mcp */
 export async function createSalesInvoiceFromSalesOrder(
   client: SupabaseClient<Database>,
   salesOrderId: string,
@@ -291,6 +293,7 @@ export async function createSalesInvoiceFromSalesOrder(
   });
 }
 
+/** @mcp */
 export async function createSalesInvoiceFromShipment(
   client: SupabaseClient<Database>,
   shipmentId: string,
@@ -307,6 +310,7 @@ export async function createSalesInvoiceFromShipment(
   });
 }
 
+/** @mcp */
 export async function deletePurchaseInvoice(
   client: SupabaseClient<Database>,
   purchaseInvoiceId: string
@@ -335,6 +339,7 @@ export async function deletePurchaseInvoice(
   return client.from("purchaseInvoice").delete().eq("id", purchaseInvoiceId);
 }
 
+/** @mcp */
 export async function deletePurchaseInvoiceLine(
   client: SupabaseClient<Database>,
   purchaseInvoiceLineId: string
@@ -345,6 +350,7 @@ export async function deletePurchaseInvoiceLine(
     .eq("id", purchaseInvoiceLineId);
 }
 
+/** @mcp */
 export async function deleteSalesInvoice(
   client: SupabaseClient<Database>,
   salesInvoiceId: string
@@ -373,6 +379,7 @@ export async function deleteSalesInvoice(
   return client.from("salesInvoice").delete().eq("id", salesInvoiceId);
 }
 
+/** @mcp */
 export async function deleteSalesInvoiceLine(
   client: SupabaseClient<Database>,
   salesInvoiceLineId: string
@@ -535,6 +542,7 @@ export async function getSalesInvoiceLine(
     .single();
 }
 
+/** @mcp */
 export async function updatePurchaseInvoiceExchangeRate(
   client: SupabaseClient<Database>,
   data: {
@@ -554,6 +562,7 @@ export async function updatePurchaseInvoiceExchangeRate(
   return client.from("purchaseInvoice").update(update).eq("id", update.id);
 }
 
+/** @mcp */
 export async function updatePurchaseInvoiceStatus(
   client: SupabaseClient<Database>,
   update: {
@@ -580,6 +589,7 @@ export async function updatePurchaseInvoiceStatus(
   return client.from("purchaseInvoice").update(update).eq("id", update.id);
 }
 
+/** @mcp */
 export async function updateSalesInvoiceExchangeRate(
   client: SupabaseClient<Database>,
   data: {
@@ -599,6 +609,7 @@ export async function updateSalesInvoiceExchangeRate(
   return client.from("salesInvoice").update(update).eq("id", update.id);
 }
 
+/** @mcp */
 export async function updateSalesInvoiceStatus(
   client: SupabaseClient<Database>,
   update: {
@@ -625,6 +636,7 @@ export async function updateSalesInvoiceStatus(
   return client.from("salesInvoice").update(update).eq("id", update.id);
 }
 
+/** @mcp */
 export async function insertPurchaseInvoice(
   client: SupabaseClient<Database>,
   input: {
@@ -762,6 +774,7 @@ export async function insertPurchaseInvoice(
   };
 }
 
+/** @mcp */
 export async function updatePurchaseInvoice(
   client: SupabaseClient<Database>,
   input: {
@@ -912,6 +925,7 @@ export async function upsertPurchaseInvoice(
   return invoice;
 }
 
+/** @mcp */
 export async function upsertPurchaseInvoiceDelivery(
   client: SupabaseClient<Database>,
   purchaseInvoiceDelivery:
@@ -941,6 +955,7 @@ export async function upsertPurchaseInvoiceDelivery(
     .single();
 }
 
+/** @mcp */
 export async function upsertPurchaseInvoiceLine(
   client: SupabaseClient<Database>,
   purchaseInvoiceLine:
@@ -981,6 +996,7 @@ export async function upsertPurchaseInvoiceLine(
     .single();
 }
 
+/** @mcp */
 export async function updatePurchaseInvoiceLineOrder(
   db: Kysely<KyselyDatabase>,
   companyId: string,
@@ -998,6 +1014,7 @@ export async function updatePurchaseInvoiceLineOrder(
   });
 }
 
+/** @mcp */
 export async function insertSalesInvoice(
   client: SupabaseClient<Database>,
   input: {
@@ -1140,6 +1157,7 @@ export async function insertSalesInvoice(
   };
 }
 
+/** @mcp */
 export async function updateSalesInvoice(
   client: SupabaseClient<Database>,
   input: {
@@ -1290,6 +1308,7 @@ export async function upsertSalesInvoice(
   return invoice;
 }
 
+/** @mcp */
 export async function upsertSalesInvoiceShipment(
   client: SupabaseClient<Database>,
   salesInvoiceShipment:
@@ -1319,6 +1338,7 @@ export async function upsertSalesInvoiceShipment(
     .single();
 }
 
+/** @mcp */
 export async function upsertSalesInvoiceLine(
   client: SupabaseClient<Database>,
   salesInvoiceLine:
@@ -1359,6 +1379,7 @@ export async function upsertSalesInvoiceLine(
     .single();
 }
 
+/** @mcp */
 export async function updateSalesInvoiceLineOrder(
   db: Kysely<KyselyDatabase>,
   companyId: string,
@@ -1542,6 +1563,7 @@ export async function getReimbursements(
  * document is immutable, and a caller that tries gets zero rows rather than
  * a silent partial write. There is deliberately no insert branch: the Ramp
  * sync is the only thing that creates a reimbursement.
+ * @mcp
  */
 export async function updateReimbursement(
   client: SupabaseClient<Database>,
@@ -1575,6 +1597,7 @@ export async function updateReimbursement(
  *
  * Delete-all-then-reinsert rather than a diff: the editor submits the whole
  * line set as one field, so a diff would be more code for the same result.
+ * @mcp
  */
 export async function upsertReimbursementLines(
   db: Kysely<KyselyDatabase>,
@@ -2564,6 +2587,7 @@ export async function getAvailableOnAccountCredit(
   }
 }
 
+/** @mcp */
 export async function upsertPayment(
   client: SupabaseClient<Database>,
   payment:
@@ -2610,6 +2634,7 @@ export async function upsertPayment(
 }
 
 // RLS DELETE policy on payment restricts to status='Draft'.
+/** @mcp */
 export async function deletePayment(
   client: SupabaseClient<Database>,
   id: string
@@ -3011,6 +3036,7 @@ async function loadTransactionMemoConsumption(
     .execute();
 }
 
+/** @mcp */
 export async function replaceInvoiceSettlements(
   db: Kysely<KyselyDatabase>,
   args: {
@@ -3624,6 +3650,7 @@ export async function getMemos(
   return query;
 }
 
+/** @mcp */
 export async function upsertMemo(
   client: SupabaseClient<Database>,
   memo:
@@ -3655,6 +3682,7 @@ export async function upsertMemo(
 }
 
 // RLS DELETE policy on memo restricts to status='Draft'.
+/** @mcp */
 export async function deleteMemo(client: SupabaseClient<Database>, id: string) {
   return client.from("memo").delete().eq("id", id);
 }
@@ -3932,6 +3960,7 @@ export async function getStagedCreditsForPayment(
   return { data, error: null };
 }
 
+/** @mcp */
 export async function applyCreditsToInvoices(
   db: Kysely<KyselyDatabase>,
   args: {

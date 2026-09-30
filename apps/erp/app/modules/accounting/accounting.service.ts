@@ -1240,6 +1240,7 @@ export async function getReportPins(
     .eq("companyId", companyId);
 }
 
+/** @mcp */
 export async function upsertReportPin(
   client: SupabaseClient<Database>,
   args: {
@@ -1821,6 +1822,7 @@ export async function getReportViews(
   return query.order("name", { ascending: true });
 }
 
+/** @mcp */
 export async function upsertReportView(
   client: SupabaseClient<Database>,
   view:
@@ -1855,6 +1857,7 @@ export async function upsertReportView(
   return client.from("reportView").insert([view]).select("*").single();
 }
 
+/** @mcp */
 export async function deleteReportView(
   client: SupabaseClient<Database>,
   id: string,
@@ -1882,6 +1885,7 @@ export async function getCompaniesInGroup(
     .order("name", { ascending: true });
 }
 
+/** @mcp */
 export async function deleteAccount(
   client: SupabaseClient<Database>,
   accountId: string
@@ -1889,6 +1893,7 @@ export async function deleteAccount(
   return client.from("account").delete().eq("id", accountId);
 }
 
+/** @mcp */
 export async function deletePaymentTerm(
   client: SupabaseClient<Database>,
   paymentTermId: string
@@ -2146,6 +2151,7 @@ export async function getExchangeRates(
   });
 }
 
+/** @mcp */
 export async function upsertExchangeRateOverride(
   client: SupabaseClient<Database>,
   override: {
@@ -2205,6 +2211,7 @@ export async function upsertExchangeRateOverride(
   return insert;
 }
 
+/** @mcp */
 export async function deleteExchangeRateOverride(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -2493,6 +2500,7 @@ export async function getAccountingPeriodDeletability(
   };
 }
 
+/** @mcp */
 export async function deleteAccountingPeriod(
   client: SupabaseClient<Database>,
   args: { periodId: string; companyId: string }
@@ -2551,6 +2559,7 @@ export async function getFiscalCalendarCommitted(
   };
 }
 
+/** @mcp */
 export async function lockAccountingPeriod(
   client: SupabaseClient<Database>,
   args: { periodId: string; companyId: string; userId: string }
@@ -2586,6 +2595,7 @@ export async function lockAccountingPeriod(
     .single();
 }
 
+/** @mcp */
 export async function unlockAccountingPeriod(
   client: SupabaseClient<Database>,
   args: { periodId: string; companyId: string; userId: string }
@@ -2771,6 +2781,7 @@ export async function closeAccountingPeriod(
 // checklist-aware close is exactly that call with the argument shape the route
 // action passes. Kept as a distinct named export so the route imports intent,
 // not the lower-level lifecycle primitive.
+/** @mcp */
 export async function closePeriodWithChecklist(
   client: SupabaseClient<Database>,
   db: Kysely<KyselyDatabase>,
@@ -2850,6 +2861,7 @@ export async function reopenAccountingPeriod(
     .single();
 }
 
+/** @mcp */
 export async function createFiscalYearPeriods(
   client: SupabaseClient<Database>,
   args: { companyId: string; fiscalYear: number; userId: string }
@@ -3602,6 +3614,7 @@ async function getPeriodCloseTaskById(
   }>;
 }
 
+/** @mcp */
 export async function completeCloseTask(
   client: SupabaseClient<Database>,
   args: { taskId: string; companyId: string; userId: string; notes?: string }
@@ -3642,6 +3655,7 @@ export async function completeCloseTask(
     .single();
 }
 
+/** @mcp */
 export async function skipCloseTask(
   client: SupabaseClient<Database>,
   args: {
@@ -3912,7 +3926,10 @@ export async function getPaymentTermsList(
     .order("name", { ascending: true });
 }
 
-/** Save both defaults sections atomically after validating the effective mapping. */
+/**
+ * Save both defaults sections atomically after validating the effective mapping.
+ * @mcp
+ */
 export async function updateDefaultAccounts(
   client: SupabaseClient<Database>,
   defaultAccounts: z.infer<typeof defaultAccountValidator> & {
@@ -3987,6 +4004,7 @@ export async function validateDefaultIncomeAccounts(
   return { error: null };
 }
 
+/** @mcp */
 export async function updateFiscalYearSettings(
   client: SupabaseClient<Database>,
   fiscalYearSettings: z.infer<typeof fiscalYearSettingsValidator> & {
@@ -4000,6 +4018,7 @@ export async function updateFiscalYearSettings(
     .eq("companyId", fiscalYearSettings.companyId);
 }
 
+/** @mcp */
 export async function upsertAccount(
   client: SupabaseClient<Database>,
   account:
@@ -4025,6 +4044,7 @@ export async function upsertAccount(
     .single();
 }
 
+/** @mcp */
 export async function upsertCurrency(
   client: SupabaseClient<Database>,
   currency:
@@ -4051,6 +4071,7 @@ export async function upsertCurrency(
     .single();
 }
 
+/** @mcp */
 export async function upsertPaymentTerm(
   client: SupabaseClient<Database>,
   paymentTerm:
@@ -4080,6 +4101,7 @@ export async function upsertPaymentTerm(
     .single();
 }
 
+/** @mcp */
 export async function deleteCostCenter(
   client: SupabaseClient<Database>,
   costCenterId: string
@@ -4141,6 +4163,7 @@ export async function getCostCentersTree(
     .order("name");
 }
 
+/** @mcp */
 export async function upsertCostCenter(
   client: SupabaseClient<Database>,
   costCenter:
@@ -4166,6 +4189,7 @@ export async function upsertCostCenter(
     .single();
 }
 
+/** @mcp */
 export async function deleteProject(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -4222,6 +4246,7 @@ export async function getProjects(
   return query;
 }
 
+/** @mcp */
 export async function upsertProject(
   client: SupabaseClient<Database>,
   project:
@@ -4289,6 +4314,7 @@ export async function getDimension(
     .single();
 }
 
+/** @mcp */
 export async function upsertDimension(
   client: SupabaseClient<Database>,
   dimension:
@@ -4366,6 +4392,7 @@ export async function upsertDimension(
   return dimensionResult;
 }
 
+/** @mcp */
 export async function deleteDimension(
   client: SupabaseClient<Database>,
   dimensionId: string
@@ -4670,6 +4697,7 @@ function getEntityValuesByIds(
   }
 }
 
+/** @mcp */
 export async function saveJournalLineDimensions(
   client: SupabaseClient<Database>,
   journalLineId: string,
@@ -4695,6 +4723,7 @@ export async function saveJournalLineDimensions(
   );
 }
 
+/** @mcp */
 export async function translateCompanyBalances(
   client: SupabaseClient<Database>,
   companyGroupId: string,
@@ -5093,6 +5122,7 @@ export async function getIntercompanyTransactions(
   return query;
 }
 
+/** @mcp */
 export async function createIntercompanyTransaction(
   client: SupabaseClient<Database>,
   input: z.infer<typeof intercompanyTransactionValidator> & {
@@ -5203,6 +5233,7 @@ export async function getIntercompanyEliminationLines(
     .in("intercompanyTransactionId", transactionIds);
 }
 
+/** @mcp */
 export async function runIntercompanyMatching(
   client: SupabaseClient<Database>,
   companyGroupId: string
@@ -5212,6 +5243,7 @@ export async function runIntercompanyMatching(
   });
 }
 
+/** @mcp */
 export async function generateEliminations(
   client: SupabaseClient<Database>,
   companyGroupId: string,
@@ -5299,6 +5331,7 @@ export async function getJournalEntry(
     .single();
 }
 
+/** @mcp */
 export async function createJournalEntry(
   client: SupabaseClient<Database>,
   data: z.infer<typeof journalEntryValidator> & {
@@ -5334,6 +5367,7 @@ export async function updateJournalEntry(
     .eq("status", "Draft");
 }
 
+/** @mcp */
 export async function deleteJournalEntry(
   client: SupabaseClient<Database>,
   id: string
@@ -5408,6 +5442,7 @@ export async function deleteJournalEntryLine(
   return client.from("journalLine").delete().eq("id", id);
 }
 
+/** @mcp */
 export async function saveJournalEntryWithLines(
   client: SupabaseClient<Database>,
   data: {
@@ -5519,6 +5554,7 @@ export async function saveJournalEntryWithLines(
   return insertResult;
 }
 
+/** @mcp */
 export async function postJournalEntry(
   client: SupabaseClient<Database>,
   id: string,
@@ -5634,6 +5670,7 @@ export async function getExistingOpeningBalanceEntry(
 // the Retained Earnings default account so debits equal credits. Reuses the
 // manual-JE stack: createJournalEntry (Draft) → saveJournalEntryWithLines →
 // postJournalEntry (which validates the balance and resolves the period).
+/** @mcp */
 export async function createOpeningBalanceJournal(
   client: SupabaseClient<Database>,
   args: {
@@ -5799,6 +5836,7 @@ export async function createOpeningBalanceJournal(
   return { data: { id }, error: null };
 }
 
+/** @mcp */
 export async function reverseJournalEntry(
   client: SupabaseClient<Database>,
   id: string,
@@ -5950,6 +5988,7 @@ export async function getFixedAssetClassesList(
     .order("name");
 }
 
+/** @mcp */
 export async function upsertFixedAssetClass(
   client: SupabaseClient<Database>,
   data:
@@ -5972,6 +6011,7 @@ export async function upsertFixedAssetClass(
     .single();
 }
 
+/** @mcp */
 export async function deleteFixedAssetClass(
   client: SupabaseClient<Database>,
   id: string
@@ -6050,6 +6090,7 @@ export async function getFixedAssetsListForSale(
     .order("fixedAssetId");
 }
 
+/** @mcp */
 export async function insertFixedAsset(
   client: SupabaseClient<Database>,
   input: {
@@ -6133,6 +6174,7 @@ export async function insertFixedAsset(
   };
 }
 
+/** @mcp */
 export async function updateFixedAsset(
   client: SupabaseClient<Database>,
   input: {
@@ -6197,6 +6239,7 @@ export async function upsertFixedAsset(
     .single();
 }
 
+/** @mcp */
 export async function deleteFixedAsset(
   client: SupabaseClient<Database>,
   id: string
@@ -6204,6 +6247,7 @@ export async function deleteFixedAsset(
   return client.from("fixedAsset").delete().eq("id", id).eq("status", "Draft");
 }
 
+/** @mcp */
 export async function insertDepreciationRun(
   client: SupabaseClient<Database>,
   input: {
@@ -6284,6 +6328,7 @@ export async function insertDepreciationRun(
   };
 }
 
+/** @mcp */
 export async function deleteDepreciationRun(
   client: SupabaseClient<Database>,
   id: string

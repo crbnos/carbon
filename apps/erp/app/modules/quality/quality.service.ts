@@ -33,6 +33,7 @@ import type {
   riskSource,
   riskStatus
 } from "./quality.models";
+/** @mcp */
 export async function activateGauge(
   client: SupabaseClient<Database>,
   gaugeId: string
@@ -43,6 +44,7 @@ export async function activateGauge(
     .eq("id", gaugeId);
 }
 
+/** @mcp */
 export async function deactivateGauge(
   client: SupabaseClient<Database>,
   gaugeId: string
@@ -53,6 +55,7 @@ export async function deactivateGauge(
     .eq("id", gaugeId);
 }
 
+/** @mcp */
 export async function deleteGauge(
   client: SupabaseClient<Database>,
   gaugeId: string
@@ -60,6 +63,7 @@ export async function deleteGauge(
   return client.from("gauges").delete().eq("id", gaugeId);
 }
 
+/** @mcp */
 export async function deleteGaugeCalibrationRecord(
   client: SupabaseClient<Database>,
   gaugeCalibrationRecordId: string
@@ -70,6 +74,7 @@ export async function deleteGaugeCalibrationRecord(
     .eq("id", gaugeCalibrationRecordId);
 }
 
+/** @mcp */
 export async function deleteGaugeType(
   client: SupabaseClient<Database>,
   gaugeTypeId: string
@@ -77,6 +82,7 @@ export async function deleteGaugeType(
   return client.from("gaugeType").delete().eq("id", gaugeTypeId);
 }
 
+/** @mcp */
 export async function deleteIssue(
   client: SupabaseClient<Database>,
   nonConformanceId: string
@@ -84,6 +90,7 @@ export async function deleteIssue(
   return client.from("nonConformance").delete().eq("id", nonConformanceId);
 }
 
+/** @mcp */
 export async function deleteIssueAssociation(
   client: SupabaseClient<Database>,
   type: string,
@@ -183,6 +190,7 @@ export async function deleteIssueAssociation(
   }
 }
 
+/** @mcp */
 export async function deleteIssueType(
   client: SupabaseClient<Database>,
   nonConformanceTypeId: string
@@ -193,6 +201,7 @@ export async function deleteIssueType(
     .eq("id", nonConformanceTypeId);
 }
 
+/** @mcp */
 export async function deleteIssueWorkflow(
   client: SupabaseClient<Database>,
   nonConformanceWorkflowId: string
@@ -203,6 +212,7 @@ export async function deleteIssueWorkflow(
     .eq("id", nonConformanceWorkflowId);
 }
 
+/** @mcp */
 export async function deleteRequiredAction(
   client: SupabaseClient<Database>,
   requiredActionId: string
@@ -213,6 +223,7 @@ export async function deleteRequiredAction(
     .eq("id", requiredActionId);
 }
 
+/** @mcp */
 export async function deleteQualityDocument(
   client: SupabaseClient<Database>,
   qualityDocumentId: string
@@ -232,6 +243,7 @@ export async function deleteQualityDocumentStep(
     .eq("companyId", companyId);
 }
 
+/** @mcp */
 export async function deleteRisk(
   client: SupabaseClient<Database>,
   riskId: string
@@ -1249,6 +1261,7 @@ export async function getRisks(
   return query;
 }
 
+/** @mcp */
 export async function insertIssueReviewer(
   client: SupabaseClient<Database>,
   reviewer: z.infer<typeof nonConformanceReviewerValidator> & {
@@ -1260,6 +1273,7 @@ export async function insertIssueReviewer(
   return client.from("nonConformanceReviewer").insert(reviewer);
 }
 
+/** @mcp */
 export async function updateIssueActionProcesses(
   client: SupabaseClient<Database>,
   args: {
@@ -1295,6 +1309,7 @@ export async function updateIssueActionProcesses(
   }
 }
 
+/** @mcp */
 export async function updateIssueStatus(
   client: SupabaseClient<Database>,
   update: {
@@ -1308,6 +1323,7 @@ export async function updateIssueStatus(
   return client.from("nonConformance").update(update).eq("id", update.id);
 }
 
+/** @mcp */
 export async function updateIssueTaskStatus(
   client: SupabaseClient<Database>,
   args: {
@@ -1356,6 +1372,7 @@ export async function updateIssueTaskStatus(
     .single();
 }
 
+/** @mcp */
 export async function updateIssueTaskContent(
   client: SupabaseClient<Database>,
   args: {
@@ -1405,6 +1422,7 @@ export async function updateRiskStatus(
   return client.from("riskRegister").update({ status }).eq("id", riskId);
 }
 
+/** @mcp */
 export async function insertGauge(
   client: SupabaseClient<Database>,
   input: {
@@ -1484,6 +1502,7 @@ export async function insertGauge(
   };
 }
 
+/** @mcp */
 export async function updateGauge(
   client: SupabaseClient<Database>,
   input: {
@@ -1547,6 +1566,7 @@ export async function upsertGauge(
   }
 }
 
+/** @mcp */
 export async function upsertGaugeCalibrationRecord(
   client: SupabaseClient<Database>,
   gaugeCalibrationRecord:
@@ -1631,6 +1651,7 @@ export async function upsertGaugeCalibrationRecord(
     .eq("id", gaugeCalibrationRecord.id);
 }
 
+/** @mcp */
 export async function upsertGaugeType(
   client: SupabaseClient<Database>,
   gaugeType:
@@ -1655,6 +1676,7 @@ export async function upsertGaugeType(
   }
 }
 
+/** @mcp */
 export async function insertIssue(
   client: SupabaseClient<Database>,
   input: {
@@ -1881,6 +1903,7 @@ export async function insertIssue(
   };
 }
 
+/** @mcp */
 export async function updateIssue(
   client: SupabaseClient<Database>,
   input: {
@@ -2084,6 +2107,7 @@ export async function upsertIssue(
   }
 }
 
+/** @mcp */
 export async function upsertIssueWorkflow(
   client: SupabaseClient<Database>,
   nonConformanceWorkflow:
@@ -2110,6 +2134,7 @@ export async function upsertIssueWorkflow(
   }
 }
 
+/** @mcp */
 export async function upsertIssueType(
   client: SupabaseClient<Database>,
   nonConformanceType:
@@ -2137,6 +2162,7 @@ export async function upsertIssueType(
   }
 }
 
+/** @mcp */
 export async function upsertRequiredAction(
   client: SupabaseClient<Database>,
   requiredAction:
@@ -2164,6 +2190,7 @@ export async function upsertRequiredAction(
   }
 }
 
+/** @mcp */
 export async function upsertQualityDocument(
   client: SupabaseClient<Database>,
   qualityDocument:
@@ -2268,6 +2295,7 @@ export async function upsertQualityDocumentStep(
     .single();
 }
 
+/** @mcp */
 export async function upsertRisk(
   client: SupabaseClient<Database>,
   risk:
@@ -2447,6 +2475,7 @@ export async function getItemInspectionDocumentAssignments(
     .eq("companyId", companyId);
 }
 
+/** @mcp */
 export async function upsertItemInspectionDocumentAssignment(
   client: SupabaseClient<Database>,
   assignment: z.infer<typeof itemInspectionDocumentAssignmentValidator> & {

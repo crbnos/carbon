@@ -18,6 +18,7 @@ import type {
   shiftValidator
 } from "./people.models";
 
+/** @mcp */
 export async function deleteAttribute(
   client: SupabaseClient<Database>,
   attributeId: string
@@ -28,6 +29,7 @@ export async function deleteAttribute(
     .eq("id", attributeId);
 }
 
+/** @mcp */
 export async function deleteAttributeCategory(
   client: SupabaseClient<Database>,
   attributeCategoryId: string
@@ -38,6 +40,7 @@ export async function deleteAttributeCategory(
     .eq("id", attributeCategoryId);
 }
 
+/** @mcp */
 export async function deleteDepartment(
   client: SupabaseClient<Database>,
   departmentId: string
@@ -45,6 +48,7 @@ export async function deleteDepartment(
   return client.from("department").delete().eq("id", departmentId);
 }
 
+/** @mcp */
 export async function deleteHoliday(
   client: SupabaseClient<Database>,
   holidayId: string
@@ -52,6 +56,7 @@ export async function deleteHoliday(
   return client.from("holiday").delete().eq("id", holidayId);
 }
 
+/** @mcp */
 export async function deleteShift(
   client: SupabaseClient<Database>,
   shiftId: string
@@ -485,6 +490,7 @@ export async function getShiftsWithTimes(
     .order("name");
 }
 
+/** @mcp */
 export async function insertAttribute(
   client: SupabaseClient<Database>,
   attribute: {
@@ -514,6 +520,7 @@ export async function insertAttribute(
     .single();
 }
 
+/** @mcp */
 export async function insertAttributeCategory(
   client: SupabaseClient<Database>,
   attributeCategory: {
@@ -531,6 +538,7 @@ export async function insertAttributeCategory(
     .single();
 }
 
+/** @mcp */
 export async function insertEmployeeJob(
   client: SupabaseClient<Database>,
   job: {
@@ -542,6 +550,7 @@ export async function insertEmployeeJob(
   return client.from("employeeJob").insert(job).select("*").single();
 }
 
+/** @mcp */
 export async function updateAttribute(
   client: SupabaseClient<Database>,
   attribute: {
@@ -566,6 +575,7 @@ export async function updateAttribute(
     .eq("id", attribute.id);
 }
 
+/** @mcp */
 export async function updateAttributeCategory(
   client: SupabaseClient<Database>,
   attributeCategory: {
@@ -583,6 +593,7 @@ export async function updateAttributeCategory(
     .eq("id", id);
 }
 
+/** @mcp */
 export async function updateAttributeSortOrder(
   client: SupabaseClient<Database>,
   updates: {
@@ -597,6 +608,7 @@ export async function updateAttributeSortOrder(
   return Promise.all(updatePromises);
 }
 
+/** @mcp */
 export async function updateEmployeeJob(
   db: Kysely<KyselyDatabase>,
   employeeId: string,
@@ -730,6 +742,7 @@ export async function updateEmployeeJob(
   }
 }
 
+/** @mcp */
 export async function upsertDepartment(
   client: SupabaseClient<Database>,
   department:
@@ -753,6 +766,7 @@ export async function upsertDepartment(
   return client.from("department").insert(department).select("*").single();
 }
 
+/** @mcp */
 export async function upsertHoliday(
   client: SupabaseClient<Database>,
   holiday:
@@ -773,6 +787,7 @@ export async function upsertHoliday(
   return client.from("holiday").update(sanitize(holiday)).eq("id", holiday.id);
 }
 
+/** @mcp */
 export async function upsertShift(
   client: SupabaseClient<Database>,
   shift:
@@ -793,6 +808,7 @@ export async function upsertShift(
   return client.from("shift").update(sanitize(shift)).eq("id", shift.id);
 }
 
+/** @mcp */
 export async function clockIn(
   client: SupabaseClient<Database>,
   args: {
@@ -817,6 +833,7 @@ export async function clockIn(
   });
 }
 
+/** @mcp */
 export async function clockOut(
   client: SupabaseClient<Database>,
   args: {
@@ -845,6 +862,7 @@ export async function clockOut(
     .eq("id", open.data.id);
 }
 
+/** @mcp */
 export async function createTimeCardEntry(
   client: SupabaseClient<Database>,
   entry: {
@@ -863,6 +881,7 @@ export async function createTimeCardEntry(
     .single();
 }
 
+/** @mcp */
 export async function deleteTimeCardEntry(
   client: SupabaseClient<Database>,
   entryId: string
@@ -1027,6 +1046,7 @@ export async function getWeeklyHoursForEmployees(
   return weeklyMs;
 }
 
+/** @mcp */
 export async function updateTimeCardEntry(
   client: SupabaseClient<Database>,
   args: {

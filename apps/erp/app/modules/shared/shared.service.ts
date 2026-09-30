@@ -17,6 +17,7 @@ export async function deleteNote(
   return client.from("note").update({ active: false }).eq("id", noteId);
 }
 
+/** @mcp */
 export async function deleteSavedView(
   client: SupabaseClient<Database>,
   viewId: string
@@ -192,6 +193,7 @@ export async function getTagsList(
   return query.order("name");
 }
 
+/** @mcp */
 export async function importCsv(
   client: SupabaseClient<Database>,
   args: {
@@ -208,6 +210,7 @@ export async function importCsv(
   });
 }
 
+/** @mcp */
 export async function insertNote(
   client: SupabaseClient<Database>,
   note: {
@@ -220,6 +223,7 @@ export async function insertNote(
   return client.from("note").insert([note]).select("*").single();
 }
 
+/** @mcp */
 export async function insertTag(
   client: SupabaseClient<Database>,
   tag: Database["public"]["Tables"]["tag"]["Insert"]
@@ -236,6 +240,7 @@ export async function getExternalLink(
   return query;
 }
 
+/** @mcp */
 export async function upsertExternalLink(
   client: SupabaseClient<Database>,
   externalLink:
@@ -339,6 +344,7 @@ export async function updateNote(
   return client.from("note").update({ note }).eq("id", id);
 }
 
+/** @mcp */
 export async function upsertSavedView(
   client: SupabaseClient<Database>,
   view: {
@@ -393,6 +399,7 @@ export async function upsertSavedView(
     .single();
 }
 
+/** @mcp */
 export async function updateSavedViewOrder(
   client: SupabaseClient<Database>,
   updates: {
@@ -452,6 +459,7 @@ export function lookupBuyPriceFromMap(
  * lookupBuyPriceFromMap directly silently ignores a typed cost.
  *
  * Mirrored in the Deno edge runtime (`functions/lib/methods.ts`).
+ * @mcp
  */
 export function resolveBuyUnitCost(
   material: {

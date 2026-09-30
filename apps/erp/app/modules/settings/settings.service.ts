@@ -60,6 +60,7 @@ export async function getAccountsReceivableBillingAddress(
     .single();
 }
 
+/** @mcp */
 export async function updateAccountsPayableBillingAddress(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -72,6 +73,7 @@ export async function updateAccountsPayableBillingAddress(
     .eq("id", companyId);
 }
 
+/** @mcp */
 export async function updateAccountsReceivableBillingAddress(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -496,6 +498,7 @@ export async function getItemSerialSequenceByItemId(
     .maybeSingle();
 }
 
+/** @mcp */
 export async function upsertItemSerialSequence(
   client: SupabaseClient<Database>,
   itemSerialSequence:
@@ -526,6 +529,7 @@ export async function upsertItemSerialSequence(
     .single();
 }
 
+/** @mcp */
 export async function deleteItemSerialSequence(
   client: SupabaseClient<Database>,
   id: string,
@@ -592,6 +596,7 @@ export async function getDocumentTemplateConfig(
   return toDocumentTemplate(stored.data, documentType);
 }
 
+/** @mcp */
 export async function upsertDocumentTemplate(
   client: SupabaseClient<Database>,
   documentTemplate: {
@@ -653,6 +658,7 @@ export async function getDocumentSectionsByIds(
     .in("id", ids);
 }
 
+/** @mcp */
 export async function upsertDocumentSection(
   client: SupabaseClient<Database>,
   documentSection: {
@@ -715,6 +721,7 @@ export async function upsertDocumentSection(
     .select("id");
 }
 
+/** @mcp */
 export async function deleteDocumentSection(
   client: SupabaseClient<Database>,
   id: string,
@@ -727,7 +734,10 @@ export async function deleteDocumentSection(
     .eq("companyId", companyId);
 }
 
-/** Fetch the given section ids and return them keyed by id for rendering. */
+/**
+ * Fetch the given section ids and return them keyed by id for rendering.
+ * @mcp
+ */
 export async function resolveSections(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -814,6 +824,7 @@ export async function insertSubsidiary(
   return client.from("company").insert(data).select("id").single();
 }
 
+/** @mcp */
 export async function updateSubsidiary(
   client: SupabaseClient<Database>,
   id: string,
@@ -857,6 +868,7 @@ export async function updateCompanyPlan(
   return client.from("companyPlan").update(updateData).eq("id", companyId);
 }
 
+/** @mcp */
 export async function updateDefaultCustomerCc(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -873,6 +885,7 @@ export async function updateDefaultCustomerCc(
   );
 }
 
+/** @mcp */
 export async function updateCompany(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -889,6 +902,7 @@ export async function updateCompany(
  * — a committed base flip with surviving old-base pins silently mis-rates
  * every new document, and a non-atomic cleanup can race a freshly created
  * new-base override. Kysely throws on rollback; the route try/catches.
+ * @mcp
  */
 export async function updateCompanyWithBaseCurrencyChange(
   db: Kysely<KyselyDatabase>,
@@ -918,6 +932,7 @@ export async function updateCompanyWithBaseCurrencyChange(
   });
 }
 
+/** @mcp */
 export async function updateShelfLifeSettings(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -945,6 +960,7 @@ export async function updateShelfLifeSettings(
     .eq("id", companyId);
 }
 
+/** @mcp */
 export async function updateDigitalQuoteSetting(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -969,6 +985,7 @@ export async function updateDigitalQuoteSetting(
 // client barrel (~/modules/settings) — a `@carbon/auth/client.server` import here
 // would pull the service-role client into the browser bundle (Vite blocks it).
 
+/** @mcp */
 export async function updateAccountingEnabledSetting(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -980,6 +997,7 @@ export async function updateAccountingEnabledSetting(
     .eq("id", companyId);
 }
 
+/** @mcp */
 export async function updateAssetTaxDepreciationSettings(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -994,6 +1012,7 @@ export async function updateAssetTaxDepreciationSettings(
     .eq("id", companyId);
 }
 
+/** @mcp */
 export async function updateTimeCardSetting(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1005,6 +1024,7 @@ export async function updateTimeCardSetting(
     .eq("id", companyId);
 }
 
+/** @mcp */
 export async function updateKanbanOutputSetting(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1016,6 +1036,7 @@ export async function updateKanbanOutputSetting(
     .eq("id", companyId);
 }
 
+/** @mcp */
 export async function updateLogoDark(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1031,6 +1052,7 @@ export async function updateLogoDark(
     .eq("id", companyId);
 }
 
+/** @mcp */
 export async function updateLogoDarkIcon(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1042,6 +1064,7 @@ export async function updateLogoDarkIcon(
     .eq("id", companyId);
 }
 
+/** @mcp */
 export async function updateLogoLight(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1053,6 +1076,7 @@ export async function updateLogoLight(
     .eq("id", companyId);
 }
 
+/** @mcp */
 export async function updateLogoLightIcon(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1064,6 +1088,7 @@ export async function updateLogoLightIcon(
     .eq("id", companyId);
 }
 
+/** @mcp */
 export async function updateLogoWatermark(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1075,6 +1100,7 @@ export async function updateLogoWatermark(
     .eq("id", companyId);
 }
 
+/** @mcp */
 export async function updateMaintenanceDispatchNotificationSettings(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1091,6 +1117,7 @@ export async function updateMaintenanceDispatchNotificationSettings(
     .eq("id", companyId);
 }
 
+/** @mcp */
 export async function updateMaterialGeneratedIdsSetting(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1102,6 +1129,7 @@ export async function updateMaterialGeneratedIdsSetting(
     .eq("id", companyId);
 }
 
+/** @mcp */
 export async function updateMetricSettings(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1113,6 +1141,7 @@ export async function updateMetricSettings(
     .eq("id", companyId);
 }
 
+/** @mcp */
 export async function updateAllowLowercaseItemIdsSetting(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1124,6 +1153,7 @@ export async function updateAllowLowercaseItemIdsSetting(
     .eq("id", companyId);
 }
 
+/** @mcp */
 export async function updateBomExplorerReadableIdSetting(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1135,6 +1165,7 @@ export async function updateBomExplorerReadableIdSetting(
     .eq("id", companyId);
 }
 
+/** @mcp */
 export async function updatePlmReleaseControlSetting(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1157,6 +1188,7 @@ export async function updateProductLabelSize(
     .eq("id", companyId);
 }
 
+/** @mcp */
 export async function updatePurchasePriceUpdateTimingSetting(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1168,6 +1200,7 @@ export async function updatePurchasePriceUpdateTimingSetting(
     .eq("id", companyId);
 }
 
+/** @mcp */
 export async function updateLeadTimesOnReceiptSetting(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1178,6 +1211,7 @@ export async function updateLeadTimesOnReceiptSetting(
     .eq("id", companyId);
 }
 
+/** @mcp */
 export async function updateIncludeMaterialsOnTravelerSetting(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1191,6 +1225,7 @@ export async function updateIncludeMaterialsOnTravelerSetting(
     .eq("id", companyId);
 }
 
+/** @mcp */
 export async function updateIncludeOperationsOnTravelerSetting(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1202,6 +1237,7 @@ export async function updateIncludeOperationsOnTravelerSetting(
     .eq("id", companyId);
 }
 
+/** @mcp */
 export async function updateAccountsPayableAddressSetting(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1218,6 +1254,7 @@ export async function updateAccountsPayableAddressSetting(
  *
  * See `party-contact.ts` for why the requirement lives on the PARTY and why the
  * bar is an email rather than merely a contact row.
+ * @mcp
  */
 export async function updateRequireSupplierContactSetting(
   client: SupabaseClient<Database>,
@@ -1230,7 +1267,10 @@ export async function updateRequireSupplierContactSetting(
     .eq("id", companyId);
 }
 
-/** The customer-side mirror. Ships off; nothing downstream forces it today. */
+/**
+ * The customer-side mirror. Ships off; nothing downstream forces it today.
+ * @mcp
+ */
 export async function updateRequireCustomerContactSetting(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1242,6 +1282,7 @@ export async function updateRequireCustomerContactSetting(
     .eq("id", companyId);
 }
 
+/** @mcp */
 export async function updateAccountsReceivableAddressSetting(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1277,6 +1318,7 @@ export async function updateAccountsReceivableEmail(
     .eq("id", companyId);
 }
 
+/** @mcp */
 export async function updateSalesRuleNotificationSetting(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1288,6 +1330,7 @@ export async function updateSalesRuleNotificationSetting(
     .eq("id", companyId);
 }
 
+/** @mcp */
 export async function updateQuoteLineCategoryMarkups(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1299,6 +1342,7 @@ export async function updateQuoteLineCategoryMarkups(
     .eq("id", companyId);
 }
 
+/** @mcp */
 export async function updateRfqReadySetting(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1310,6 +1354,7 @@ export async function updateRfqReadySetting(
     .eq("id", companyId);
 }
 
+/** @mcp */
 export async function updateSequence(
   client: SupabaseClient<Database>,
   table: string,
@@ -1325,6 +1370,7 @@ export async function updateSequence(
     .eq("table", table);
 }
 
+/** @mcp */
 export async function updateSuggestionNotificationSetting(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1336,6 +1382,7 @@ export async function updateSuggestionNotificationSetting(
     .eq("id", companyId);
 }
 
+/** @mcp */
 export async function updateSupplierQuoteNotificationSetting(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1347,6 +1394,7 @@ export async function updateSupplierQuoteNotificationSetting(
     .eq("id", companyId);
 }
 
+/** @mcp */
 export async function updateDefaultSupplierCc(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1358,6 +1406,7 @@ export async function updateDefaultSupplierCc(
     .eq("id", companyId);
 }
 
+/** @mcp */
 export async function updateShowCurrencyTrailingZerosSetting(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1369,6 +1418,7 @@ export async function updateShowCurrencyTrailingZerosSetting(
     .eq("id", companyId);
 }
 
+/** @mcp */
 export async function updateShowSupplierReadableIdSetting(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1380,6 +1430,7 @@ export async function updateShowSupplierReadableIdSetting(
     .eq("id", companyId);
 }
 
+/** @mcp */
 export async function updateShowCustomerReadableIdSetting(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1391,6 +1442,7 @@ export async function updateShowCustomerReadableIdSetting(
     .eq("id", companyId);
 }
 
+/** @mcp */
 export async function updateAutoSelectMaterialWithoutPickingListSetting(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1402,6 +1454,7 @@ export async function updateAutoSelectMaterialWithoutPickingListSetting(
     .eq("id", companyId);
 }
 
+/** @mcp */
 export async function updateIncompletePickingListPolicySetting(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1413,6 +1466,7 @@ export async function updateIncompletePickingListPolicySetting(
     .eq("id", companyId);
 }
 
+/** @mcp */
 export async function updateReturnPickedMaterialTimingSetting(
   client: SupabaseClient<Database>,
   companyId: string,

@@ -22,6 +22,12 @@ import type {
 } from "@carbon/api";
 import { MCP_BLOCKED_TOOL_NAMES } from "../../apps/erp/app/routes/api+/mcp+/lib/mcp-blocked-tools";
 import {
+  hasMcpExposureTag,
+  MCP_EXPOSURE_TAG,
+  MCP_MODULE_ALLOWLIST,
+  MCP_TAG_REQUIRED_FOR
+} from "../../apps/erp/app/routes/api+/mcp+/lib/mcp-exposure";
+import {
   buildResponseSchemaIndex,
   type ResponseSchemaIndex,
 } from "./response-schema";
@@ -1482,6 +1488,10 @@ export interface BuildOptions {
     validatorName: string,
     how: ValidatorResolution
   ) => void;
+  /** A data-changing function with no `@mcp` tag, so it is not exposed. */
+  onUntagged?: (toolName: string, classification: Classification) => void;
+  /** A module absent from `MCP_MODULE_ALLOWLIST`, so none of it is exposed. */
+  onModuleSkipped?: (module: string, functionCount: number) => void;
   /**
    * Reported whenever the name-derived auth set claimed an audit column the
    * tool's table does not have. Surfaced by the generator so a wrong drop is
@@ -1555,11 +1565,25 @@ export function buildAllToolMetadata(opts: BuildOptions = {}): ManifestEntry[] {
 
     let toolCount = 0;
 
+    if (!MCP_MODULE_ALLOWLIST.includes(mod)) {
+      opts.onModuleSkipped?.(mod, functions.length);
+      continue;
+    }
+
     for (const func of functions) {
       const toolName = `${mod}_${func.name}`;
       if (MCP_BLOCKED_TOOL_NAMES.includes(toolName)) continue;
 
       const classification = classifyFunction(func.name, content);
+      // Opt-IN for anything that changes data. A function reaches the API
+      // because someone tagged it, not because it happens to be exported.
+      if (
+        MCP_TAG_REQUIRED_FOR.includes(classification) &&
+        !hasMcpExposureTag(func.jsdoc)
+      ) {
+        opts.onUntagged?.(toolName, classification);
+        continue;
+      }
       // An explicit override states INTENT and wins outright (the ledger
       // entries keep `updatedBy` NULL even though the column exists); only the
       // name-derived set is checked against the real schema.

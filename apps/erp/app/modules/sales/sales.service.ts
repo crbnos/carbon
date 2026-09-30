@@ -134,6 +134,7 @@ export async function closeSalesOrder(
     .single();
 }
 
+/** @mcp */
 export async function convertSalesRfqToQuote(
   client: SupabaseClient<Database>,
   payload: {
@@ -150,6 +151,7 @@ export async function convertSalesRfqToQuote(
   });
 }
 
+/** @mcp */
 export async function convertQuoteToOrder(
   client: SupabaseClient<Database>,
   payload: {
@@ -199,6 +201,7 @@ export async function convertQuoteToOrder(
   return result;
 }
 
+/** @mcp */
 export async function copyQuoteLine(
   client: SupabaseClient<Database>,
   payload: z.infer<typeof getMethodValidator> & {
@@ -222,6 +225,7 @@ export async function copyQuoteLine(
   });
 }
 
+/** @mcp */
 export async function copyQuote(
   client: SupabaseClient<Database>,
   payload: Omit<z.infer<typeof getMethodValidator>, "type"> & {
@@ -237,6 +241,7 @@ export async function copyQuote(
   });
 }
 
+/** @mcp */
 export async function createPricingRule(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -306,6 +311,7 @@ function normalizePricingRule<
   };
 }
 
+/** @mcp */
 export async function deleteCustomer(
   client: SupabaseClient<Database>,
   customerId: string
@@ -313,6 +319,7 @@ export async function deleteCustomer(
   return client.from("customer").delete().eq("id", customerId);
 }
 
+/** @mcp */
 export async function deleteCustomerBankAccount(
   client: SupabaseClient<Database>,
   id: string
@@ -331,6 +338,7 @@ export async function getCustomerBankAccounts(
     .order("name");
 }
 
+/** @mcp */
 export async function upsertCustomerBankAccount(
   db: Kysely<KyselyDatabase>,
   bankAccount:
@@ -371,6 +379,7 @@ export async function upsertCustomerBankAccount(
     .executeTakeFirstOrThrow();
 }
 
+/** @mcp */
 export async function deleteCustomerContact(
   client: SupabaseClient<Database>,
   customerId: string,
@@ -396,6 +405,7 @@ export async function deleteCustomerContact(
   return customerContact;
 }
 
+/** @mcp */
 export async function deleteCustomerLocation(
   client: SupabaseClient<Database>,
   customerId: string,
@@ -420,6 +430,7 @@ export async function deleteCustomerLocation(
   }
 }
 
+/** @mcp */
 export async function deleteCustomerStatus(
   client: SupabaseClient<Database>,
   customerStatusId: string
@@ -427,6 +438,7 @@ export async function deleteCustomerStatus(
   return client.from("customerStatus").delete().eq("id", customerStatusId);
 }
 
+/** @mcp */
 export async function deleteCustomerType(
   client: SupabaseClient<Database>,
   customerTypeId: string
@@ -434,6 +446,7 @@ export async function deleteCustomerType(
   return client.from("customerType").delete().eq("id", customerTypeId);
 }
 
+/** @mcp */
 export async function deleteNoQuoteReason(
   client: SupabaseClient<Database>,
   noQuoteReasonId: string
@@ -441,6 +454,7 @@ export async function deleteNoQuoteReason(
   return client.from("noQuoteReason").delete().eq("id", noQuoteReasonId);
 }
 
+/** @mcp */
 export async function deletePricingRule(
   client: SupabaseClient<Database>,
   pricingRuleId: string
@@ -448,6 +462,7 @@ export async function deletePricingRule(
   return client.from("pricingRule").delete().eq("id", pricingRuleId);
 }
 
+/** @mcp */
 export async function deleteQuote(
   client: SupabaseClient<Database>,
   quoteId: string
@@ -462,6 +477,7 @@ export async function deleteQuoteMakeMethod(
   return client.from("quoteMakeMethod").delete().eq("id", quoteMakeMethodId);
 }
 
+/** @mcp */
 export async function deleteQuoteLine(
   client: SupabaseClient<Database>,
   quoteLineId: string
@@ -469,6 +485,7 @@ export async function deleteQuoteLine(
   return client.from("quoteLine").delete().eq("id", quoteLineId);
 }
 
+/** @mcp */
 export async function deleteQuoteMaterial(
   client: SupabaseClient<Database>,
   quoteMaterialId: string
@@ -483,6 +500,7 @@ export async function deleteQuoteOperation(
   return client.from("quoteOperation").delete().eq("id", quoteOperationId);
 }
 
+/** @mcp */
 export async function deleteQuoteOperationStep(
   client: SupabaseClient<Database>,
   id: string
@@ -490,6 +508,7 @@ export async function deleteQuoteOperationStep(
   return client.from("quoteOperationStep").delete().eq("id", id);
 }
 
+/** @mcp */
 export async function deleteQuoteOperationParameter(
   client: SupabaseClient<Database>,
   id: string
@@ -497,6 +516,7 @@ export async function deleteQuoteOperationParameter(
   return client.from("quoteOperationParameter").delete().eq("id", id);
 }
 
+/** @mcp */
 export async function deleteQuoteOperationTool(
   client: SupabaseClient<Database>,
   id: string
@@ -504,6 +524,7 @@ export async function deleteQuoteOperationTool(
   return client.from("quoteOperationTool").delete().eq("id", id);
 }
 
+/** @mcp */
 export async function deleteSalesOrder(
   client: SupabaseClient<Database>,
   salesOrderId: string
@@ -511,6 +532,7 @@ export async function deleteSalesOrder(
   return client.from("salesOrder").delete().eq("id", salesOrderId);
 }
 
+/** @mcp */
 export async function deleteSalesOrderLine(
   client: SupabaseClient<Database>,
   salesOrderLineId: string
@@ -518,6 +540,7 @@ export async function deleteSalesOrderLine(
   return client.from("salesOrderLine").delete().eq("id", salesOrderLineId);
 }
 
+/** @mcp */
 export async function deleteSalesRFQ(
   client: SupabaseClient<Database>,
   salesRfqId: string
@@ -525,6 +548,7 @@ export async function deleteSalesRFQ(
   return client.from("salesRfq").delete().eq("id", salesRfqId);
 }
 
+/** @mcp */
 export async function deleteSalesRFQLine(
   client: SupabaseClient<Database>,
   salesRFQLineId: string
@@ -532,6 +556,7 @@ export async function deleteSalesRFQLine(
   return client.from("salesRfqLine").delete().eq("id", salesRFQLineId);
 }
 
+/** @mcp */
 export async function duplicatePricingRule(
   client: SupabaseClient<Database>,
   id: string,
@@ -1960,6 +1985,7 @@ export async function getSalesRFQLines(
     .order("customerPartId", { ascending: true });
 }
 
+/** @mcp */
 export async function insertCustomerContact(
   client: SupabaseClient<Database>,
   customerContact: {
@@ -2005,6 +2031,7 @@ export async function insertCustomerContact(
     .single();
 }
 
+/** @mcp */
 export async function insertCustomerLocation(
   client: SupabaseClient<Database>,
   customerLocation: {
@@ -2073,6 +2100,7 @@ export async function insertSalesOrderLines(
   return client.from("salesOrderLine").insert(linesWithDefaults).select("id");
 }
 
+/** @mcp */
 export async function finalizeQuote(
   client: SupabaseClient<Database>,
   quoteId: string,
@@ -2117,6 +2145,7 @@ export async function finalizeQuote(
   return lineUpdate;
 }
 
+/** @mcp */
 export async function releaseSalesOrder(
   client: SupabaseClient<Database>,
   salesOrderId: string,
@@ -2132,6 +2161,7 @@ export async function releaseSalesOrder(
     .eq("id", salesOrderId);
 }
 
+/** @mcp */
 export async function resolvePrice(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -2366,6 +2396,7 @@ async function resolvePostingGroupFilter(
   return { itemIds, filters: remaining };
 }
 
+/** @mcp */
 export async function resolvePriceList(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -2751,6 +2782,7 @@ export async function getBaseCatalog(
   return { data: rows, count: count ?? 0 };
 }
 
+/** @mcp */
 export async function upsertCustomer(
   client: SupabaseClient<Database>,
   customer:
@@ -2783,6 +2815,7 @@ export async function upsertCustomer(
     .single();
 }
 
+/** @mcp */
 export async function upsertCustomerItemPriceOverride(
   db: Kysely<KyselyDatabase>,
   companyId: string,
@@ -2996,6 +3029,7 @@ export async function upsertCustomerItemPriceOverride(
   }
 }
 
+/** @mcp */
 export async function deleteCustomerItemPriceOverride(
   client: SupabaseClient<Database>,
   id: string,
@@ -3103,6 +3137,7 @@ export async function updateCustomerAccounting(
     .eq("id", customerAccounting.id);
 }
 
+/** @mcp */
 export async function updateCustomerContact(
   client: SupabaseClient<Database>,
   customerContact: {
@@ -3133,6 +3168,7 @@ export async function updateCustomerContact(
     .single();
 }
 
+/** @mcp */
 export async function updateCustomerLocation(
   client: SupabaseClient<Database>,
   customerLocation: {
@@ -3169,6 +3205,7 @@ export async function updateCustomerLocation(
     .select("id")
     .single();
 }
+/** @mcp */
 export async function updateCustomerPayment(
   client: SupabaseClient<Database>,
   customerPayment: z.infer<typeof customerPaymentValidator> & {
@@ -3181,6 +3218,7 @@ export async function updateCustomerPayment(
     .eq("customerId", customerPayment.customerId);
 }
 
+/** @mcp */
 export async function updateCustomerShipping(
   client: SupabaseClient<Database>,
   customerShipping: z.infer<typeof customerShippingValidator> & {
@@ -3193,6 +3231,7 @@ export async function updateCustomerShipping(
     .eq("customerId", customerShipping.customerId);
 }
 
+/** @mcp */
 export async function updateCustomerTax(
   client: SupabaseClient<Database>,
   customerTax: z.infer<typeof customerTaxValidator> & {
@@ -3206,6 +3245,7 @@ export async function updateCustomerTax(
     .eq("customerId", customerTax.customerId);
 }
 
+/** @mcp */
 export async function updatePricingRule(
   client: SupabaseClient<Database>,
   id: string,
@@ -3226,6 +3266,7 @@ export async function updatePricingRule(
     .single();
 }
 
+/** @mcp */
 export async function upsertCustomerStatus(
   client: SupabaseClient<Database>,
   customerStatus:
@@ -3250,6 +3291,7 @@ export async function upsertCustomerStatus(
   }
 }
 
+/** @mcp */
 export async function upsertCustomerType(
   client: SupabaseClient<Database>,
   customerType:
@@ -3274,6 +3316,7 @@ export async function upsertCustomerType(
   }
 }
 
+/** @mcp */
 export async function upsertNoQuoteReason(
   client: SupabaseClient<Database>,
   noQuoteReason:
@@ -3320,6 +3363,7 @@ export async function updateSalesRFQFavorite(
   }
 }
 
+/** @mcp */
 export async function updateQuoteExchangeRate(
   client: SupabaseClient<Database>,
   data: {
@@ -3336,6 +3380,7 @@ export async function updateQuoteExchangeRate(
   return client.from("quote").update(update).eq("id", update.id);
 }
 
+/** @mcp */
 export async function updateQuoteLinePrecision(
   db: Kysely<KyselyDatabase>,
   companyId: string,
@@ -3362,6 +3407,7 @@ export async function updateQuoteLinePrecision(
   });
 }
 
+/** @mcp */
 export async function updateSalesOrderExchangeRate(
   client: SupabaseClient<Database>,
   data: {
@@ -3398,6 +3444,7 @@ export async function updateQuoteFavorite(
   }
 }
 
+/** @mcp */
 export async function updateSalesRFQStatus(
   client: SupabaseClient<Database>,
   update: {
@@ -3424,6 +3471,7 @@ export async function updateSalesRFQStatus(
   return client.from("salesRfq").update(updateData).eq("id", update.id);
 }
 
+/** @mcp */
 export async function updateQuoteMaterialOrder(
   client: SupabaseClient<Database>,
   updates: {
@@ -3438,6 +3486,7 @@ export async function updateQuoteMaterialOrder(
   return Promise.all(updatePromises);
 }
 
+/** @mcp */
 export async function updateQuoteOperationOrder(
   client: SupabaseClient<Database>,
   updates: {
@@ -3452,6 +3501,7 @@ export async function updateQuoteOperationOrder(
   return Promise.all(updatePromises);
 }
 
+/** @mcp */
 export async function updateQuoteStatus(
   client: SupabaseClient<Database>,
   update: {
@@ -3472,6 +3522,7 @@ export async function updateQuoteStatus(
   return client.from("quote").update(updateData).eq("id", update.id);
 }
 
+/** @mcp */
 export async function upsertMakeMethodFromQuoteLine(
   client: SupabaseClient<Database>,
   lineMethod: {
@@ -3502,6 +3553,7 @@ export async function upsertMakeMethodFromQuoteLine(
   });
 }
 
+/** @mcp */
 export async function upsertMakeMethodFromQuoteMethod(
   client: SupabaseClient<Database>,
   quoteMethod: {
@@ -3540,6 +3592,7 @@ export async function upsertMakeMethodFromQuoteMethod(
   return { data: null, error: null };
 }
 
+/** @mcp */
 export async function insertQuote(
   client: SupabaseClient<Database>,
   input: {
@@ -3712,6 +3765,7 @@ export async function insertQuote(
   return { data: { id: createdQuoteId, quoteId }, error: null };
 }
 
+/** @mcp */
 export async function updateQuote(
   client: SupabaseClient<Database>,
   input: {
@@ -3789,7 +3843,10 @@ export async function updateQuote(
     .single();
 }
 
-/** @deprecated Use insertQuote for new quotes, updateQuote for existing quotes */
+/**
+ * @deprecated Use insertQuote for new quotes, updateQuote for existing quotes
+ * @mcp
+ */
 export async function upsertQuote(
   client: SupabaseClient<Database>,
   quote:
@@ -3968,6 +4025,7 @@ export async function upsertQuote(
   }
 }
 
+/** @mcp */
 export async function upsertQuoteLine(
   client: SupabaseClient<Database>,
   quotationLine:
@@ -4008,6 +4066,7 @@ export async function upsertQuoteLine(
     .single();
 }
 
+/** @mcp */
 export async function updateQuoteLineOrder(
   db: Kysely<KyselyDatabase>,
   companyId: string,
@@ -4025,6 +4084,7 @@ export async function updateQuoteLineOrder(
   });
 }
 
+/** @mcp */
 export async function upsertQuoteLineAdditionalCharges(
   client: SupabaseClient<Database>,
   lineId: string,
@@ -4050,6 +4110,7 @@ type QuoteLinePriceInput = {
   priceSource?: "system" | "manual";
 };
 
+/** @mcp */
 export async function upsertQuoteLinePrices(
   db: Kysely<KyselyDatabase>,
   companyId: string,
@@ -4503,6 +4564,7 @@ type BuildPriceRowsResult = {
   error: unknown | null;
 };
 
+/** @mcp */
 export async function buildMakeToOrderPriceRows(
   client: SupabaseClient<Database>,
   quoteId: string,
@@ -4616,6 +4678,7 @@ export async function buildMakeToOrderPriceRows(
   return { rows: priceRows, error: null };
 }
 
+/** @mcp */
 export async function calculatePricesForQuantities(
   client: SupabaseClient<Database>,
   quoteId: string,
@@ -4644,6 +4707,7 @@ export async function calculatePricesForQuantities(
   return { error: null };
 }
 
+/** @mcp */
 export async function buildPullFromInventoryPriceRows(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -4711,6 +4775,7 @@ export async function buildPullFromInventoryPriceRows(
   return { rows: priceRows, error: null };
 }
 
+/** @mcp */
 export async function resolveQuoteLinePrices(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -4741,6 +4806,7 @@ export async function resolveQuoteLinePrices(
   return { error: null };
 }
 
+/** @mcp */
 export async function buildPurchaseToOrderPriceRows(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -4811,6 +4877,7 @@ export async function buildPurchaseToOrderPriceRows(
   return { rows: priceRows, error: null };
 }
 
+/** @mcp */
 export async function resolvePurchaseToOrderPrices(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -4841,6 +4908,7 @@ export async function resolvePurchaseToOrderPrices(
   return { error: null };
 }
 
+/** @mcp */
 export async function recalculateQuoteLinePrices(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -5005,6 +5073,7 @@ export async function recalculateQuoteLinePrices(
   return { error: null };
 }
 
+/** @mcp */
 export async function upsertQuoteLineMethod(
   client: SupabaseClient<Database>,
   lineMethod: {
@@ -5062,6 +5131,7 @@ export async function upsertQuoteLineMethod(
   });
 }
 
+/** @mcp */
 export async function upsertQuoteMaterial(
   client: SupabaseClient<Database>,
   quoteMaterial:
@@ -5109,6 +5179,7 @@ export async function upsertQuoteMaterial(
     .single();
 }
 
+/** @mcp */
 export async function upsertQuoteMaterialMakeMethod(
   client: SupabaseClient<Database>,
   quoteMethod: {
@@ -5174,6 +5245,7 @@ export async function upsertQuoteMaterialMakeMethod(
   return { data: null, error: null };
 }
 
+/** @mcp */
 export async function upsertQuoteOperation(
   client: SupabaseClient<Database>,
   operation:
@@ -5226,6 +5298,7 @@ export async function upsertQuoteOperation(
     .single();
 }
 
+/** @mcp */
 export async function upsertQuoteOperationStep(
   client: SupabaseClient<Database>,
   quoteOperationStep:
@@ -5260,6 +5333,7 @@ export async function upsertQuoteOperationStep(
     .single();
 }
 
+/** @mcp */
 export async function upsertQuoteOperationParameter(
   client: SupabaseClient<Database>,
   quoteOperationParameter:
@@ -5289,6 +5363,7 @@ export async function upsertQuoteOperationParameter(
     .single();
 }
 
+/** @mcp */
 export async function upsertQuoteOperationTool(
   client: SupabaseClient<Database>,
   quoteOperationTool:
@@ -5318,6 +5393,7 @@ export async function upsertQuoteOperationTool(
     .single();
 }
 
+/** @mcp */
 export async function upsertQuotePayment(
   client: SupabaseClient<Database>,
   quotePayment:
@@ -5346,6 +5422,7 @@ export async function upsertQuotePayment(
     .single();
 }
 
+/** @mcp */
 export async function upsertQuoteShipment(
   client: SupabaseClient<Database>,
   quoteShipment:
@@ -5394,6 +5471,7 @@ export async function updateSalesOrderFavorite(
   }
 }
 
+/** @mcp */
 export async function updateSalesOrderStatus(
   client: SupabaseClient<Database>,
   update: {
@@ -5417,6 +5495,7 @@ export async function updateSalesOrderStatus(
   return client.from("salesOrder").update(updateData).eq("id", update.id);
 }
 
+/** @mcp */
 export async function insertSalesOrder(
   client: SupabaseClient<Database>,
   input: {
@@ -5592,6 +5671,7 @@ export async function insertSalesOrder(
   return { data: { id: orderId, salesOrderId }, error: null };
 }
 
+/** @mcp */
 export async function updateSalesOrder(
   client: SupabaseClient<Database>,
   input: {
@@ -5668,6 +5748,7 @@ export const LIVE_JOB_STATUSES: Database["public"]["Enums"]["jobStatus"][] = [
   "Paused"
 ];
 
+/** @mcp */
 export async function cancelSalesOrder(
   client: SupabaseClient<Database>,
   args: {
@@ -5755,7 +5836,10 @@ export async function cancelSalesOrder(
   };
 }
 
-/** @deprecated Use insertSalesOrder for new orders, updateSalesOrder for existing orders */
+/**
+ * @deprecated Use insertSalesOrder for new orders, updateSalesOrder for existing orders
+ * @mcp
+ */
 export async function upsertSalesOrder(
   client: SupabaseClient<Database>,
   salesOrder:
@@ -5937,6 +6021,7 @@ export async function upsertSalesOrder(
   return order;
 }
 
+/** @mcp */
 export async function upsertSalesOrderShipment(
   client: SupabaseClient<Database>,
   salesOrderShipment:
@@ -5965,6 +6050,7 @@ export async function upsertSalesOrderShipment(
     .single();
 }
 
+/** @mcp */
 export async function upsertSalesOrderLine(
   client: SupabaseClient<Database>,
   salesOrderLine:
@@ -6036,6 +6122,7 @@ export async function upsertSalesOrderLine(
     .single();
 }
 
+/** @mcp */
 export async function updateSalesOrderLineOrder(
   db: Kysely<KyselyDatabase>,
   companyId: string,
@@ -6053,6 +6140,7 @@ export async function updateSalesOrderLineOrder(
   });
 }
 
+/** @mcp */
 export async function upsertSalesOrderPayment(
   client: SupabaseClient<Database>,
   salesOrderPayment:
@@ -6081,6 +6169,7 @@ export async function upsertSalesOrderPayment(
     .single();
 }
 
+/** @mcp */
 export async function insertSalesRFQ(
   client: SupabaseClient<Database>,
   db: Kysely<KyselyDatabase>,
@@ -6306,7 +6395,10 @@ export async function updateSalesRFQ(
     .single();
 }
 
-/** @deprecated Use insertSalesRFQ for new RFQs, updateSalesRFQ for existing RFQs */
+/**
+ * @deprecated Use insertSalesRFQ for new RFQs, updateSalesRFQ for existing RFQs
+ * @mcp
+ */
 export async function upsertSalesRFQ(
   client: SupabaseClient<Database>,
   rfq:
@@ -6375,6 +6467,7 @@ export async function upsertSalesRFQ(
   }
 }
 
+/** @mcp */
 export async function upsertSalesRFQLine(
   client: SupabaseClient<Database>,
 
@@ -6415,6 +6508,7 @@ export async function upsertSalesRFQLine(
     .single();
 }
 
+/** @mcp */
 export async function updateSalesRFQLineOrder(
   db: Kysely<KyselyDatabase>,
   companyId: string,
@@ -6479,6 +6573,7 @@ export async function getReturnReason(
     .single();
 }
 
+/** @mcp */
 export async function upsertReturnReason(
   client: SupabaseClient<Database>,
   returnReason:
@@ -6512,6 +6607,7 @@ export async function upsertReturnReason(
     .single();
 }
 
+/** @mcp */
 export async function deleteReturnReason(
   client: SupabaseClient<Database>,
   returnReasonId: string
@@ -6603,6 +6699,7 @@ export async function getSalesReturnOrderLineTrackedEntities(
     .in("salesReturnOrderLineId", lineIds);
 }
 
+/** @mcp */
 export async function insertSalesReturnOrder(
   client: SupabaseClient<Database>,
   input: {
@@ -6724,6 +6821,7 @@ export async function updateSalesReturnOrder(
     .single();
 }
 
+/** @mcp */
 export async function upsertSalesReturnOrderLine(
   client: SupabaseClient<Database>,
   line:
@@ -6774,6 +6872,7 @@ export async function upsertSalesReturnOrderLine(
     .single();
 }
 
+/** @mcp */
 export async function deleteSalesReturnOrder(
   client: SupabaseClient<Database>,
   salesReturnOrderId: string
@@ -6781,6 +6880,7 @@ export async function deleteSalesReturnOrder(
   return client.from("salesReturnOrder").delete().eq("id", salesReturnOrderId);
 }
 
+/** @mcp */
 export async function deleteSalesReturnOrderLine(
   client: SupabaseClient<Database>,
   lineId: string
@@ -6834,6 +6934,7 @@ export async function getSalesReturnOrderIssues(
  * the governing SOURCE rows (shipment/SO/invoice lines) are row-locked so two
  * concurrent confirms against the same source line serialize, and the
  * aggregates are re-read under that lock (replaceInvoiceSettlements pattern).
+ * @mcp
  */
 export async function confirmSalesReturnOrder(
   db: Kysely<KyselyDatabase>,
@@ -7048,6 +7149,7 @@ export async function confirmSalesReturnOrder(
  * receipt exists and nothing received, so reviving is safe). "To Receive" no
  * longer implies nothing received (it also covers partially received), so the
  * nothing-received invariant is enforced on the line quantities directly.
+ * @mcp
  */
 export async function reopenSalesReturnOrder(
   db: Kysely<KyselyDatabase>,
@@ -7098,6 +7200,7 @@ export async function reopenSalesReturnOrder(
   });
 }
 
+/** @mcp */
 export async function cancelSalesReturnOrder(
   db: Kysely<KyselyDatabase>,
   { id, companyId, userId }: { id: string; companyId: string; userId: string }
@@ -7162,6 +7265,7 @@ export async function cancelSalesReturnOrder(
  * short-closing the last open line completes the RMA (there is no separate
  * manual Complete action, mirroring the Purchase Order). Disposition is tracked
  * independently and does not gate completion.
+ * @mcp
  */
 export async function shortCloseSalesReturnOrderLine(
   db: Kysely<KyselyDatabase>,
@@ -7413,6 +7517,7 @@ export async function getCreditableQuantities(
  * Drafts count so two drafts can't double-credit) is validated inside the
  * transaction under a row lock on the RMA lines. Amount is rounded ONCE at
  * the currency's decimals (settlement boundary). Returns the memo id.
+ * @mcp
  */
 export async function createSalesReturnOrderCredit(
   client: SupabaseClient<Database>,
@@ -7595,6 +7700,7 @@ export async function createSalesReturnOrderCredit(
  * lines, priced via resolvePrice (user adjusts on the draft — e.g. to zero
  * for warranty). One replacement per RMA; re-invoking returns the existing
  * link. Rollback-by-delete on line failure (the insertSalesOrder pattern).
+ * @mcp
  */
 export async function createReplacementSalesOrder(
   client: SupabaseClient<Database>,
@@ -7718,6 +7824,7 @@ export async function createReplacementSalesOrder(
  * shape the NCR disposition writes. Scrap/Rework are set via Issue escalation
  * (the line's issue route), not through this function's callers' UI, but the
  * write itself is shared: those dispositions have no entity side effects here.
+ * @mcp
  */
 export async function setSalesReturnOrderLineDisposition(
   client: SupabaseClient<Database>,
@@ -7954,6 +8061,9 @@ export async function setSalesReturnOrderLineDisposition(
  * returned `path`, the document type as `sourceDocument`, and the quote/order id as
  * `sourceDocumentId`. The storage folder is scoped by `opportunityId`, which is a
  * different id from `sourceDocumentId`.
+ * @mcp — part of the documented MCP signed-URL upload flow
+ *       (packages/files/AGENTS.md): a non-browser caller mints a staged
+ *       upload URL, then insertUploadedDocument converts and lands it.
  */
 export async function createOpportunityDocumentUploadUrl(
   client: SupabaseClient<Database>,
@@ -7972,6 +8082,9 @@ export async function createOpportunityDocumentUploadUrl(
  * two-step upload flow: PUT the file bytes to the returned `signedUrl`, then call
  * `documents_insertUploadedDocument` with the returned `path`, the line's document
  * type as `sourceDocument`, and the line id as `sourceDocumentId`.
+ * @mcp — part of the documented MCP signed-URL upload flow
+ *       (packages/files/AGENTS.md): a non-browser caller mints a staged
+ *       upload URL, then insertUploadedDocument converts and lands it.
  */
 export async function createOpportunityLineDocumentUploadUrl(
   client: SupabaseClient<Database>,

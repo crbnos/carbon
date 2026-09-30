@@ -38,12 +38,18 @@ export async function generateToolMetadata(): Promise<void> {
 
   const auditDrops: { toolName: string; table: string; dropped: string[] }[] =
     [];
+  const untagged: { toolName: string; classification: string }[] = [];
+  const skippedModules: { module: string; functionCount: number }[] = [];
 
   const { tools: allTools, registryStats, responseStats, resolutions } =
     await buildAllToolMetadataWithValidators({
       onModule: (mod, count) => console.log(`  ✓ ${mod}: ${count} tools`),
       onAuditColumnsDropped: (toolName, table, dropped) =>
         auditDrops.push({ toolName, table, dropped }),
+      onUntagged: (toolName, classification) =>
+        untagged.push({ toolName, classification }),
+      onModuleSkipped: (module, functionCount) =>
+        skippedModules.push({ module, functionCount }),
     });
 
   // Refuse BEFORE writing. Every `z.infer` param must resolve NATIVELY — the
@@ -98,6 +104,23 @@ export async function generateToolMetadata(): Promise<void> {
   console.log(`\n✓ Generated metadata for ${allTools.length} tools`);
   console.log(`  Output: ${path.relative(ROOT, METADATA_FILE)} (gitignored)`);
   console.log(`  Digest: ${path.relative(ROOT, DIGEST_FILE)} (committed)`);
+
+  // Exposure. A data-changing function reaches the API because it carries
+  // `@mcp`, not because it is exported — see mcp-exposure.ts for why.
+  if (skippedModules.length > 0) {
+    console.log(
+      `\n  Modules not on MCP_MODULE_ALLOWLIST: ${skippedModules.map((m) => `${m.module} (${m.functionCount} fns)`).join(", ")}`
+    );
+  }
+  if (untagged.length > 0) {
+    const byClass = untagged.reduce<Record<string, number>>((acc, u) => {
+      acc[u.classification] = (acc[u.classification] ?? 0) + 1;
+      return acc;
+    }, {});
+    console.log(
+      `\n  Not exposed (no ${"@mcp"} tag): ${untagged.length} — ${Object.entries(byClass).map(([c, n]) => `${n} ${c}`).join(", ")}`
+    );
+  }
 
   // Audit-column provenance. The name-verb rule claims createdBy/updatedBy for
   // every upsert*/insert*, and dispatch stamps them onto the payload OBJECT — so
