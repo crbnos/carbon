@@ -390,45 +390,20 @@ export function resolveMappedFields({
 }
 
 /**
- * The user's edits over a row's mapped fields. Only `default`-mode fields
- * take edits (an `owned` value is Onshape's); values are validated against
- * the field's type. Keyed by field id.
+ * The values a push writes for a row's mapped fields, keyed by field id. An
+ * owned field carries its null through, so `mergeCustomFieldValues` deletes
+ * the key and a property emptied in Onshape empties in Carbon.
  */
-export function mergeCustomFieldEdits(
-  fields: PlanCustomField[],
-  edits: Record<string, unknown> | null | undefined
-):
-  | { ok: true; values: Record<string, string | number | boolean | null> }
-  | { ok: false; errors: string[] } {
-  const errors: string[] = [];
+export function mappedFieldValues(
+  fields: PlanCustomField[]
+): Record<string, string | number | boolean | null> {
   const values: Record<string, string | number | boolean | null> = {};
   for (const field of fields) {
-    // Owned fields carry their null through: mergeCustomFieldValues deletes
-    // the key.
     if (field.mode === "owned" || field.value !== null) {
       values[field.fieldId] = field.value;
     }
   }
-  for (const [fieldId, raw] of Object.entries(edits ?? {})) {
-    const field = fields.find((f) => f.fieldId === fieldId);
-    if (!field) continue;
-    if (field.mode === "owned") {
-      errors.push(`${field.name}: Onshape owns this field`);
-      continue;
-    }
-    const coerced = coerceOnshapeValue(
-      raw,
-      field.dataTypeId,
-      field.listOptions
-    );
-    if (!coerced.ok) {
-      errors.push(`${field.name}: ${coerced.reason}`);
-      continue;
-    }
-    if (coerced.value === null) delete values[fieldId];
-    else values[fieldId] = coerced.value;
-  }
-  return errors.length > 0 ? { ok: false, errors } : { ok: true, values };
+  return values;
 }
 
 /**
@@ -468,26 +443,4 @@ export function ownedCustomFieldsDiffer(
       ? value !== undefined && value !== null
       : value !== field.value;
   });
-}
-
-/**
- * List options a List field is missing for the values about to be written.
- *
- * No new mapping can target a List field (see MAPPABLE_VALUE_TYPES), so this
- * only fires for a map written before that narrowing. A value written to a
- * List field whose options do not include it renders blank in every table
- * that reads the field as a select.
- */
-export function missingListOptions(
-  definition: PlanCustomFieldDefinition,
-  values: Array<string | number | boolean | null>
-): string[] {
-  if (definition.dataTypeId !== CUSTOM_FIELD_DATA_TYPES.list) return [];
-  const have = new Set(definition.listOptions ?? []);
-  const missing: string[] = [];
-  for (const value of values) {
-    if (typeof value !== "string" || value === "") continue;
-    if (!have.has(value) && !missing.includes(value)) missing.push(value);
-  }
-  return missing;
 }

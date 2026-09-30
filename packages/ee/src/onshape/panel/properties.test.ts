@@ -4,9 +4,8 @@ import {
   CUSTOM_FIELD_DATA_TYPES,
   coerceOnshapeValue,
   MAPPABLE_VALUE_TYPES,
-  mergeCustomFieldEdits,
+  mappedFieldValues,
   mergeCustomFieldValues,
-  missingListOptions,
   ownedCustomFieldsDiffer,
   parseProperties,
   parsePropertyMap,
@@ -21,12 +20,6 @@ const textField = {
   name: "Coating",
   dataTypeId: 5,
   listOptions: null
-};
-const listField = {
-  id: "cf_list",
-  name: "Line",
-  dataTypeId: 3,
-  listOptions: ["A", "B"]
 };
 const numField = {
   id: "cf_num",
@@ -267,47 +260,32 @@ describe("resolveMappedFields", () => {
   });
 });
 
-describe("mergeCustomFieldEdits", () => {
-  const fields = [
-    {
-      fieldId: "cf_text",
-      name: "Coating",
-      mode: "owned" as const,
+describe("mappedFieldValues", () => {
+  it("writes every owned value, null included, and set default values", () => {
+    const field = (
+      fieldId: string,
+      mode: "owned" | "default",
+      value: string | null
+    ) => ({
+      fieldId,
+      name: fieldId,
+      mode,
       dataTypeId: 5,
       listOptions: null,
-      value: "Anodized",
-      onshapeName: "Coating"
-    },
-    {
-      fieldId: "cf_num",
-      name: "Mass",
-      mode: "default" as const,
-      dataTypeId: 4,
-      listOptions: null,
-      value: 2.5,
-      onshapeName: "Mass"
-    }
-  ];
-
-  it("applies default-mode edits, refuses owned and bad values", () => {
-    expect(mergeCustomFieldEdits(fields, { cf_num: "3.5" })).toEqual({
-      ok: true,
-      values: { cf_text: "Anodized", cf_num: 3.5 }
+      value,
+      onshapeName: fieldId
     });
-    expect(mergeCustomFieldEdits(fields, { cf_text: "Painted" })).toEqual({
-      ok: false,
-      errors: ["Coating: Onshape owns this field"]
-    });
-    expect(mergeCustomFieldEdits(fields, { cf_num: "heavy" })).toEqual({
-      ok: false,
-      errors: ['Mass: "heavy" is not a number']
-    });
-    // Clearing a default value drops the key; unknown keys are ignored.
     expect(
-      mergeCustomFieldEdits(fields, { cf_num: "", cf_other: "x" })
+      mappedFieldValues([
+        field("cf_owned", "owned", "Anodized"),
+        field("cf_emptied", "owned", null),
+        field("cf_default", "default", "Painted"),
+        field("cf_unset", "default", null)
+      ])
     ).toEqual({
-      ok: true,
-      values: { cf_text: "Anodized" }
+      cf_owned: "Anodized",
+      cf_emptied: null,
+      cf_default: "Painted"
     });
   });
 });
@@ -351,7 +329,7 @@ describe("ownedCustomFieldsDiffer", () => {
   });
 });
 
-describe("mergeCustomFieldValues / missingListOptions", () => {
+describe("mergeCustomFieldValues", () => {
   it("clears an allowed key whose value is null", () => {
     // An owned property emptied in Onshape empties in Carbon; a key the
     // caller does not list is untouched.
@@ -375,11 +353,6 @@ describe("mergeCustomFieldValues / missingListOptions", () => {
     expect(
       mergeCustomFieldValues(null, { cf_text: "A" }, new Set(["cf_text"]))
     ).toEqual({ cf_text: "A" });
-  });
-
-  it("lists unseen options for list fields only", () => {
-    expect(missingListOptions(listField, ["A", "C", "C", null])).toEqual(["C"]);
-    expect(missingListOptions(textField, ["A"])).toEqual([]);
   });
 });
 
@@ -412,11 +385,6 @@ describe("MAPPABLE_VALUE_TYPES", () => {
     for (const valueType of ["COMPUTED", "CATEGORY", "USER", "BLOB"]) {
       expect(Object.hasOwn(MAPPABLE_VALUE_TYPES, valueType)).toBe(false);
     }
-  });
-
-  /* A List field a legacy map still points at keeps its option sync. */
-  it("still fills a legacy List field's missing options", () => {
-    expect(missingListOptions(listField, ["A", "C"])).toEqual(["C"]);
   });
 });
 

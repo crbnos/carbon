@@ -252,36 +252,21 @@ export async function action({ request }: ActionFunctionArgs) {
 
   const existingIds = [...new Set(entries.map((entry) => entry.carbonFieldId))];
   if (existingIds.length > 0) {
-    const [existing, stored] = await Promise.all([
-      client
-        .from("customField")
-        .select("id, dataTypeId")
-        .eq("companyId", companyId)
-        .eq("table", "part")
-        .in("id", existingIds),
-      client
-        .from("companyIntegration")
-        .select("metadata")
-        .eq("id", ONSHAPE_V2_INTEGRATION_ID)
-        .eq("companyId", companyId)
-        .maybeSingle()
-    ]);
-    if (existing.error || stored.error) {
+    const existing = await client
+      .from("customField")
+      .select("id, dataTypeId")
+      .eq("companyId", companyId)
+      .eq("table", "part")
+      .in("id", existingIds);
+    if (existing.error) {
       logger.error("Failed to read custom fields", {
         companyId,
-        error: existing.error ?? stored.error
+        error: existing.error
       });
       return data({ error: "Failed to read custom fields" }, { status: 500 });
     }
     const dataTypes = new Map(
       (existing.data ?? []).map((row) => [row.id, row.dataTypeId])
-    );
-    // A mapping saved before MAPPABLE_VALUE_TYPES narrowed keeps working at
-    // plan time, so only a new or changed target has to fit.
-    const unchanged = new Set(
-      parsePropertyMap(stored.data?.metadata).map(
-        (entry) => `${entry.onshapePropertyId}:${entry.carbonFieldId}`
-      )
     );
     for (const entry of entries) {
       const dataTypeId = dataTypes.get(entry.carbonFieldId);
@@ -292,8 +277,7 @@ export async function action({ request }: ActionFunctionArgs) {
         });
       } else if (
         Object.hasOwn(MAPPABLE_VALUE_TYPES, entry.valueType) &&
-        !MAPPABLE_VALUE_TYPES[entry.valueType]?.includes(dataTypeId) &&
-        !unchanged.has(`${entry.onshapePropertyId}:${entry.carbonFieldId}`)
+        !MAPPABLE_VALUE_TYPES[entry.valueType]?.includes(dataTypeId)
       ) {
         fieldErrors.push({
           key: entry.onshapePropertyId,

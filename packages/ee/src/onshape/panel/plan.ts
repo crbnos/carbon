@@ -100,10 +100,7 @@ export const EDITABLE_ITEM_FIELDS = [
 
 export type ItemEdit = Partial<
   Pick<ProposedItem, (typeof EDITABLE_ITEM_FIELDS)[number]>
-> & {
-  /** Edits to mapped custom fields, keyed by Carbon field id. */
-  customFields?: Record<string, unknown>;
-};
+>;
 
 export type PlanMappingRow = {
   entityId: string;
