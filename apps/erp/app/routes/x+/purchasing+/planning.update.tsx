@@ -144,13 +144,15 @@ export async function action({ request }: ActionFunctionArgs) {
         }> = [];
 
         // Separate existing-line updates from new orders, and group new
-        // orders by supplier+period so each period gets its own PO.
+        // orders by supplier so every supplier gets exactly one PO per
+        // submit. Each line keeps its own requiredDate, so per-period timing
+        // lives on the lines rather than on separate headers.
         type OrderEntry = {
           itemId: string;
           order: (typeof itemsToOrder)[0]["orders"][0];
         };
         const existingLineUpdates: OrderEntry[] = [];
-        const ordersBySupplierPeriod = new Map<string, OrderEntry[]>();
+        const ordersBySupplier = new Map<string, OrderEntry[]>();
         const errors: string[] = [];
 
         for (const item of itemsToOrder) {
@@ -164,11 +166,10 @@ export async function action({ request }: ActionFunctionArgs) {
               existingLineUpdates.push({ itemId: item.id, order });
               itemHasUsableOrder = true;
             } else if (order.supplierId && order.periodId) {
-              const key = `${order.supplierId}::${order.periodId}`;
-              if (!ordersBySupplierPeriod.has(key)) {
-                ordersBySupplierPeriod.set(key, []);
+              if (!ordersBySupplier.has(order.supplierId)) {
+                ordersBySupplier.set(order.supplierId, []);
               }
-              ordersBySupplierPeriod.get(key)!.push({
+              ordersBySupplier.get(order.supplierId)!.push({
                 itemId: item.id,
                 order
               });
@@ -181,6 +182,18 @@ export async function action({ request }: ActionFunctionArgs) {
             );
           }
         }
+
+        logger.info("Planning order request grouped by supplier", {
+          companyId,
+          userId,
+          locationId,
+          itemCount: itemsToOrder.length,
+          existingLineUpdates: existingLineUpdates.length,
+          suppliers: Array.from(ordersBySupplier, ([supplierId, orders]) => ({
+            supplierId,
+            orderCount: orders.length
+          }))
+        });
 
         // bypassRls hands back the service role, and every id below comes
         // from the request body: the location, items and existing lines must
@@ -229,7 +242,7 @@ export async function action({ request }: ActionFunctionArgs) {
           );
         }
 
-        const [suppliers, supplierParts, periods, company, currencies] =
+        const [suppliers, supplierParts, company, currencies] =
           await Promise.all([
             client
               .from("supplier")
@@ -241,7 +254,6 @@ export async function action({ request }: ActionFunctionArgs) {
               .select("*")
               .in("itemId", Array.from(itemIds))
               .eq("companyId", companyId),
-            client.from("period").select("*").in("id", Array.from(periodIds)),
             client
               .from("company")
               .select("id, baseCurrencyCode")
@@ -273,17 +285,6 @@ export async function action({ request }: ActionFunctionArgs) {
               success: false,
               message:
                 "Failed to retrieve supplier part information from database"
-            },
-            { status: 500 }
-          );
-        }
-
-        if (periods.error) {
-          logger.error("Failed to fetch periods", { error: periods.error });
-          return data(
-            {
-              success: false,
-              message: "Failed to retrieve period information from database"
             },
             { status: 500 }
           );
@@ -326,68 +327,104 @@ export async function action({ request }: ActionFunctionArgs) {
             .eq("id", order.existingLineId!)
             .eq("companyId", companyId);
           if (updateLine.error) {
+            logger.error("Failed to update existing PO line", {
+              companyId,
+              userId,
+              locationId,
+              purchaseOrderLineId: order.existingLineId,
+              error: updateLine.error
+            });
             errors.push(
               `Failed to update existing PO line ${order.existingLineId}: ${updateLine.error.message}`
             );
           }
         }
 
-        // ── CREATE new PO lines, one PO per supplier+period ──
-        // Cache created POs so multiple items in the same supplier+period
-        // share one PO. Track readable id too so the client can present a
-        // clickable toast.
+        // ── CREATE new PO lines, one PO per supplier ──
+        // Track readable id too so the client can present a clickable toast.
         const poCache = new Map<string, { id: string; readableId: string }>();
 
-        for (const [key, ordersInGroup] of ordersBySupplierPeriod) {
-          const [supplierId, periodId] = key.split("::");
+        for (const [supplierId, ordersInGroup] of ordersBySupplier) {
           const supplier = suppliersById.get(supplierId);
           if (!supplier) {
+            logger.warn("Planning order supplier not found", {
+              companyId,
+              userId,
+              locationId,
+              supplierId
+            });
             errors.push(`Supplier ${supplierId} not found`);
             continue;
           }
 
-          // Find or create a PO for this supplier+period
-          let purchaseOrderId = poCache.get(key)?.id;
-          let purchaseOrderReadableId = poCache.get(key)?.readableId;
+          // Reuse the supplier's open Planned/Draft PO for this location,
+          // else create one. Looking up the header directly (rather than a
+          // line whose requiredDate falls in a period) means a null or
+          // overdue due date can no longer miss the match and spawn a
+          // duplicate PO.
+          let purchaseOrderId: string | undefined;
+          let purchaseOrderReadableId: string | undefined;
 
-          if (!purchaseOrderId) {
-            const period = periods.data?.find((p) => p.id === periodId);
+          const existingPO = await client
+            .from("purchaseOrder")
+            .select(
+              "id, purchaseOrderId, purchaseOrderDelivery!inner(locationId)"
+            )
+            .eq("companyId", companyId)
+            .eq("supplierId", supplierId)
+            .eq("purchaseOrderType", "Purchase")
+            .in("status", ["Draft", "Planned"])
+            .eq("purchaseOrderDelivery.locationId", locationId)
+            .order("createdAt", { ascending: true })
+            .limit(1)
+            .maybeSingle();
 
-            if (period) {
-              // Find an existing PO line in this period for this supplier,
-              // then use its parent PO.
-              const { data: matchingLines } = await client
-                .from("purchaseOrderLine")
-                .select(
-                  "purchaseOrderId, purchaseOrder!inner(readableId:purchaseOrderId, supplierId, status)"
-                )
-                .gte("requiredDate", period.startDate)
-                .lte("requiredDate", period.endDate)
-                .eq("companyId", companyId)
-                .eq("purchaseOrder.supplierId", supplierId)
-                .in("purchaseOrder.status", ["Draft", "Planned"])
-                .limit(1);
-
-              if (matchingLines?.[0]) {
-                purchaseOrderId = matchingLines[0].purchaseOrderId;
-                purchaseOrderReadableId =
-                  matchingLines[0].purchaseOrder?.readableId ?? undefined;
-              }
-            }
+          if (existingPO.error) {
+            logger.error("Failed to look up existing PO for supplier", {
+              companyId,
+              userId,
+              locationId,
+              supplierId,
+              error: existingPO.error
+            });
+            errors.push(
+              `Failed to look up existing PO for supplier ${supplierId}: ${existingPO.error.message}`
+            );
+            continue;
           }
 
-          if (!purchaseOrderId) {
+          if (existingPO.data) {
+            purchaseOrderId = existingPO.data.id;
+            purchaseOrderReadableId = existingPO.data.purchaseOrderId;
+            logger.info("Reusing open PO for supplier", {
+              companyId,
+              userId,
+              locationId,
+              supplierId,
+              purchaseOrderId,
+              readableId: purchaseOrderReadableId,
+              orderCount: ordersInGroup.length
+            });
+          } else {
             const createPO = await insertPurchaseOrder(client, {
               status: "Planned",
               supplierId,
               purchaseOrderType: "Purchase",
               currencyCode: supplier.currencyCode ?? baseCurrencyCode,
+              locationId,
               companyId,
               companyGroupId,
               createdBy: userId
             });
 
             if (createPO.error || !createPO.data) {
+              logger.error("Failed to create PO for supplier", {
+                companyId,
+                userId,
+                locationId,
+                supplierId,
+                error: createPO.error
+              });
               errors.push(
                 `Failed to create PO for supplier ${supplierId}: ${createPO.error?.message ?? "no data returned"}`
               );
@@ -396,14 +433,23 @@ export async function action({ request }: ActionFunctionArgs) {
 
             purchaseOrderId = createPO.data.id;
             purchaseOrderReadableId = createPO.data.purchaseOrderId;
+            logger.info("Created PO for supplier", {
+              companyId,
+              userId,
+              locationId,
+              supplierId,
+              purchaseOrderId,
+              readableId: purchaseOrderReadableId,
+              orderCount: ordersInGroup.length
+            });
           }
 
-          poCache.set(key, {
+          poCache.set(supplierId, {
             id: purchaseOrderId,
             readableId: purchaseOrderReadableId ?? purchaseOrderId
           });
 
-          // Create one line per item in this supplier+period group
+          // Create one line per order for this supplier
           for (const { itemId, order } of ordersInGroup) {
             const supplierPart = supplierParts?.data?.find(
               (sp) => sp.itemId === itemId && sp.supplierId === supplierId
@@ -417,6 +463,15 @@ export async function action({ request }: ActionFunctionArgs) {
               .single();
 
             if (purchasing.error) {
+              logger.error("Failed to retrieve item replenishment", {
+                companyId,
+                userId,
+                locationId,
+                supplierId,
+                purchaseOrderId,
+                itemId,
+                error: purchasing.error
+              });
               errors.push(
                 `Failed to retrieve purchasing data for item ${itemId}: ${purchasing.error.message}`
               );
@@ -424,6 +479,14 @@ export async function action({ request }: ActionFunctionArgs) {
             }
 
             if (purchasing.data?.purchasingBlocked) {
+              logger.warn("Planning order skipped: purchasing blocked", {
+                companyId,
+                userId,
+                locationId,
+                supplierId,
+                purchaseOrderId,
+                itemId
+              });
               errors.push(`Purchasing is blocked for item ${itemId}`);
               continue;
             }
@@ -438,14 +501,19 @@ export async function action({ request }: ActionFunctionArgs) {
               adjustedQuantity = minimumOrderQuantity;
             }
 
-            // Check if this PO already has a line for the same item
-            const { data: existingLines } = await client
+            // Check if this PO already has a line for the same item due on
+            // the same date. Orders for different weeks stay on separate
+            // lines so each keeps its own required date.
+            let existingLineQuery = client
               .from("purchaseOrderLine")
               .select("id, purchaseQuantity")
               .eq("purchaseOrderId", purchaseOrderId)
               .eq("itemId", itemId)
-              .eq("companyId", companyId)
-              .limit(1);
+              .eq("companyId", companyId);
+            existingLineQuery = order.dueDate
+              ? existingLineQuery.eq("requiredDate", order.dueDate)
+              : existingLineQuery.is("requiredDate", null);
+            const { data: existingLines } = await existingLineQuery.limit(1);
 
             if (existingLines?.[0]) {
               const existing = existingLines[0];
@@ -460,11 +528,31 @@ export async function action({ request }: ActionFunctionArgs) {
                 .eq("companyId", companyId);
 
               if (updateLine.error) {
+                logger.error("Failed to merge PO line", {
+                  companyId,
+                  userId,
+                  locationId,
+                  purchaseOrderId,
+                  purchaseOrderLineId: existing.id,
+                  itemId,
+                  error: updateLine.error
+                });
                 errors.push(
                   `Failed to update PO line for item ${itemId}: ${updateLine.error.message}`
                 );
                 continue;
               }
+              logger.info("Merged planned order into existing PO line", {
+                companyId,
+                userId,
+                locationId,
+                purchaseOrderId,
+                purchaseOrderLineId: existing.id,
+                itemId,
+                requiredDate: order.dueDate ?? null,
+                previousQuantity: existing.purchaseQuantity ?? 0,
+                addedQuantity: adjustedQuantity
+              });
             } else {
               const createLine = await upsertPurchaseOrderLine(client, {
                 purchaseOrderId,
@@ -501,11 +589,29 @@ export async function action({ request }: ActionFunctionArgs) {
               });
 
               if (createLine.error) {
+                logger.error("Failed to create PO line", {
+                  companyId,
+                  userId,
+                  locationId,
+                  purchaseOrderId,
+                  itemId,
+                  error: createLine.error
+                });
                 errors.push(
                   `Failed to create PO line for item ${itemId}: ${createLine.error.message}`
                 );
                 continue;
               }
+              logger.info("Created PO line from planned order", {
+                companyId,
+                userId,
+                locationId,
+                purchaseOrderId,
+                itemId,
+                requiredDate: order.dueDate ?? null,
+                quantity: adjustedQuantity,
+                minimumOrderQuantityApplied: adjustedQuantity !== order.quantity
+              });
             }
 
             processedItems++;
@@ -516,7 +622,7 @@ export async function action({ request }: ActionFunctionArgs) {
               locationId,
               sourceType: "Purchase Order" as const,
               forecastQuantity: order.quantity * conversionFactor,
-              periodId,
+              periodId: order.periodId,
               companyId,
               createdBy: userId,
               updatedBy: userId
