@@ -41,6 +41,7 @@ import { Button, Card, HStack, VStack, IconButton, cn } from "@carbon/react";
 - **Choice screens**: `ChoiceCardGroup` (card radios, `autoFocus` focuses the selected card) and `RadioGroupButton` (radio styled as a secondary Button) give one tab stop + arrow-key select; Enter stays free for the screen's continue action
 - **Layout**: `VStack` / `HStack` with numeric `spacing` prop (maps to `space-y-*`/`space-x-*`)
 - **Overlays**: `Drawer`, `Modal`, `ModalDrawer` (unified drawer/modal), `BottomSheet`, `Popover`
+- **App nav**: `NavRail` is the primary left nav of both the ERP and MES shells (56px icon rail, expands after a 150ms mouse hover or when pinned via `SidebarProvider`/⌘B, left drawer below md that closes itself on navigation). Optional `header` (use `NavRailBrand` for a logo + name) and `footer` slots; `NavRailGroup` adds a titled section that shows as a divider while collapsed. Entries are `NavRailItem` (a button, or `asChild` for a trigger/link) and `NavRailLink`; `label` is a string and doubles as the accessible name. A Radix menu/popover opened from a `NavRailItem` keeps the rail as it was (open or collapsed) until it closes. Render inside `SidebarProvider`; the shadcn-style `Sidebar*` primitives remain for other layouts
 - **Data**: `Table` (TanStack), chart components via sub-exports (`@carbon/react/Chart`)
 - **Rich text**: `@carbon/react/Editor` and `@carbon/react/RichText` (wraps `@carbon/tiptap`)
 - **Error boundary**: `@carbon/react/ErrorBoundary` — `RootErrorBoundary` (drop-in root `ErrorBoundary` for RR v7 that maps 404 / other HTTP / thrown `Error` to a styled screen) plus its parts (`ErrorScreen`, `GlitchHeading`, `StatusReadout`, `MagneticLink`, `NoiseOverlay`). Wrap it in the app's `Document` and pass `env` so `window.env` is set (the client crashes hydration otherwise). Copy is intentionally hardcoded English, not i18n.
@@ -50,5 +51,5 @@ import { Button, Card, HStack, VStack, IconButton, cn } from "@carbon/react";
 
 - `.claude/rules/conventions-ui.md` — full UI conventions, polish principles, review checklist
 - `@carbon/tiptap` — editor extensions used by `Editor/` and `RichText/`
-- `@carbon/glossary` — term definitions used by `LabelWithHelp`
+- `@carbon/content/glossary` — term definitions used by `LabelWithHelp`
 - `@carbon/form` — form field components (import from `~/components/Form` in apps, not directly)

@@ -8,7 +8,7 @@ import { getSlackClient } from "@carbon/lib/slack.server";
 import { getTwentyClient } from "@carbon/lib/twenty.server";
 import { render } from "@react-email/components";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import { generateObject } from "ai";
+import { generateText, Output } from "ai";
 import { z } from "zod/v3";
 import { inngest } from "../../client";
 
@@ -81,10 +81,12 @@ export const onboardFunction = inngest.createFunction(
         const leadType = await step.run("classify-lead", async () => {
           let type: "Warm" | "Cold" = "Warm";
           try {
-            const { object } = await generateObject({
+            const { output: object } = await generateText({
               model: openai("gpt-4o"),
-              schema: z.object({
-                type: z.enum(["Warm", "Cold"]).describe("The type of lead")
+              output: Output.object({
+                schema: z.object({
+                  type: z.enum(["Warm", "Cold"]).describe("The type of lead")
+                })
               }),
               prompt: `
                 The following is a description of a lead for an ERP system.
@@ -230,7 +232,9 @@ export const onboardFunction = inngest.createFunction(
 
         await step.run("send-slack-customer-notification", async () => {
           try {
-            slack.sendMessage({
+            // Awaited: sendMessage rethrows now, and an unawaited rejection
+            // would escape this catch as an unhandled rejection.
+            await slack.sendMessage({
               channel: "#sales",
               text: "New Customer",
               blocks: [

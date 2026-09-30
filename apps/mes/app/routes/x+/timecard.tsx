@@ -387,6 +387,7 @@ export default function MESTimecardPage() {
                                   />
                                 )}
                               <Button
+                                isLoading={fetcher.state !== "idle"}
                                 variant="secondary"
                                 type="submit"
                                 disabled={isNaN(

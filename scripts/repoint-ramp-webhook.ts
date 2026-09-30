@@ -24,7 +24,7 @@
  */
 
 // Deep subpath, NOT the `@carbon/auth` barrel: the barrel transitively pulls
-// `@carbon/react`, whose `LabelWithHelp` value-imports `@carbon/glossary`, whose
+// `@carbon/react`, whose `LabelWithHelp` value-imports `@carbon/content/glossary`, whose
 // `msg` Lingui macro throws under plain tsx ("msg is not a function"). This
 // module is server-only and macro-free.
 import { getCarbonServiceRole } from "@carbon/auth/client.server";

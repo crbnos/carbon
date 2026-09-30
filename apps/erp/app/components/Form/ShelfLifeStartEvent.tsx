@@ -1,5 +1,5 @@
+import type { TermId } from "@carbon/content/glossary";
 import { useControlField } from "@carbon/form";
-import type { TermId } from "@carbon/glossary";
 import {
   ChoiceCardGroup,
   FormControl,

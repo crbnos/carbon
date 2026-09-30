@@ -28,6 +28,7 @@ const NAV = [
   { key: "reference", label: "Reference", href: "/docs" },
   { key: "guides", label: "Guides", href: "/guides/order" },
   { key: "api", label: "API", href: "/api" },
+  { key: "changelog", label: "Changelog", href: "/changelog" },
 ] as const;
 
 type Active = (typeof NAV)[number]["key"];

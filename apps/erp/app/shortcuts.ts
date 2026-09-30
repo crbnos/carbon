@@ -83,3 +83,6 @@ export const MODULE_GO_TO: Record<string, string> = {
   users: "y",
   workflows: "w"
 };
+
+/** Leaves the rail's Customize mode without saving. */
+export const navigationEditCancelShortcut: ShortcutInput = "escape";

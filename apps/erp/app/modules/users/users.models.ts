@@ -167,9 +167,18 @@ export const validUserFlags = [
   "training:quality"
 ] as const;
 
+// Dismissing the What's new panel sets `changelog:<entry slug>`; open-ended
+// because entries keep being published.
+const CHANGELOG_FLAG_PREFIX = "changelog:";
+export const changelogFlagKey = (slug: string) =>
+  `${CHANGELOG_FLAG_PREFIX}${slug}`;
+
 export type UserFlagKey = (typeof validUserFlags)[number];
 
-const userFlagKeyValidator = z.enum(validUserFlags);
+const userFlagKeyValidator = z.union([
+  z.enum(validUserFlags),
+  z.string().regex(/^changelog:[a-z0-9-]+$/)
+]);
 
 export const userFlagValidator = z.object({
   flag: userFlagKeyValidator,

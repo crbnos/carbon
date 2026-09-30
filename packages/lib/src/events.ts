@@ -71,6 +71,11 @@ export type Events = {
     };
   };
 
+  // Sent after a changelog entry is published; platform-level, no companyId.
+  "carbon/changelog-dispatch": {
+    data: Record<string, never>;
+  };
+
   // Assembly model conversion (CAD → GLB + assembly graph)
   "carbon/assembly-convert": {
     data: {

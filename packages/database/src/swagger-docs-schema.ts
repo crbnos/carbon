@@ -6402,6 +6402,141 @@ export default {
         tags: ["workflow"]
       }
     },
+    "/changelogDispatch": {
+      get: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.changelogDispatch.guid"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changelogDispatch.title"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changelogDispatch.description"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changelogDispatch.dispatchedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changelogDispatch.emailsSent"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/order"
+          },
+          {
+            $ref: "#/parameters/range"
+          },
+          {
+            $ref: "#/parameters/rangeUnit"
+          },
+          {
+            $ref: "#/parameters/offset"
+          },
+          {
+            $ref: "#/parameters/limit"
+          },
+          {
+            $ref: "#/parameters/preferCount"
+          }
+        ],
+        responses: {
+          "200": {
+            description: "OK",
+            schema: {
+              items: {
+                $ref: "#/definitions/changelogDispatch"
+              },
+              type: "array"
+            }
+          },
+          "206": {
+            description: "Partial Content"
+          }
+        },
+        tags: ["changelogDispatch"]
+      },
+      post: {
+        parameters: [
+          {
+            $ref: "#/parameters/body.changelogDispatch"
+          },
+          {
+            $ref: "#/parameters/select"
+          },
+          {
+            $ref: "#/parameters/preferPost"
+          }
+        ],
+        responses: {
+          "201": {
+            description: "Created"
+          }
+        },
+        tags: ["changelogDispatch"]
+      },
+      delete: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.changelogDispatch.guid"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changelogDispatch.title"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changelogDispatch.description"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changelogDispatch.dispatchedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changelogDispatch.emailsSent"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["changelogDispatch"]
+      },
+      patch: {
+        parameters: [
+          {
+            $ref: "#/parameters/rowFilter.changelogDispatch.guid"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changelogDispatch.title"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changelogDispatch.description"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changelogDispatch.dispatchedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.changelogDispatch.emailsSent"
+          },
+          {
+            $ref: "#/parameters/body.changelogDispatch"
+          },
+          {
+            $ref: "#/parameters/preferReturn"
+          }
+        ],
+        responses: {
+          "204": {
+            description: "No Content"
+          }
+        },
+        tags: ["changelogDispatch"]
+      }
+    },
     "/approvalRequests": {
       get: {
         parameters: [
@@ -24880,6 +25015,9 @@ export default {
             $ref: "#/parameters/rowFilter.pricingRule.updatedAt"
           },
           {
+            $ref: "#/parameters/rowFilter.pricingRule.configurationPrices"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -24999,6 +25137,9 @@ export default {
             $ref: "#/parameters/rowFilter.pricingRule.updatedAt"
           },
           {
+            $ref: "#/parameters/rowFilter.pricingRule.configurationPrices"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -25070,6 +25211,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.pricingRule.updatedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.pricingRule.configurationPrices"
           },
           {
             $ref: "#/parameters/body.pricingRule"
@@ -59476,6 +59620,9 @@ export default {
             $ref: "#/parameters/rowFilter.salesOrderLines.convertedNonTaxableAddOnCost"
           },
           {
+            $ref: "#/parameters/rowFilter.salesOrderLines.configuration"
+          },
+          {
             $ref: "#/parameters/rowFilter.salesOrderLines.itemReadableId"
           },
           {
@@ -71515,6 +71662,9 @@ export default {
             $ref: "#/parameters/rowFilter.salesOrderLine.convertedNonTaxableAddOnCost"
           },
           {
+            $ref: "#/parameters/rowFilter.salesOrderLine.configuration"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -71706,6 +71856,9 @@ export default {
             $ref: "#/parameters/rowFilter.salesOrderLine.convertedNonTaxableAddOnCost"
           },
           {
+            $ref: "#/parameters/rowFilter.salesOrderLine.configuration"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -71849,6 +72002,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.salesOrderLine.convertedNonTaxableAddOnCost"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesOrderLine.configuration"
           },
           {
             $ref: "#/parameters/body.salesOrderLine"
@@ -97977,6 +98133,107 @@ export default {
         tags: ["(rpc) get_quote_methods"]
       }
     },
+    "/rpc/get_completion_jobs": {
+      get: {
+        parameters: [
+          {
+            format: "text",
+            in: "query",
+            name: "company_id",
+            required: true,
+            type: "string"
+          },
+          {
+            format: "text",
+            in: "query",
+            name: "location_id",
+            required: true,
+            type: "string"
+          },
+          {
+            format: "text",
+            in: "query",
+            name: "time_zone",
+            required: true,
+            type: "string"
+          },
+          {
+            format: "date",
+            in: "query",
+            name: "through_date",
+            required: false,
+            type: "string"
+          },
+          {
+            format: "text",
+            in: "query",
+            name: "search",
+            required: false,
+            type: "string"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) get_completion_jobs"]
+      },
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                company_id: {
+                  format: "text",
+                  type: "string"
+                },
+                location_id: {
+                  format: "text",
+                  type: "string"
+                },
+                search: {
+                  format: "text",
+                  type: "string"
+                },
+                through_date: {
+                  format: "date",
+                  type: "string"
+                },
+                time_zone: {
+                  format: "text",
+                  type: "string"
+                }
+              },
+              required: ["company_id", "location_id", "time_zone"],
+              type: "object"
+            }
+          },
+          {
+            $ref: "#/parameters/preferParams"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) get_completion_jobs"]
+      }
+    },
     "/rpc/xid_time": {
       post: {
         parameters: [
@@ -109397,6 +109654,35 @@ export default {
       },
       type: "object"
     },
+    changelogDispatch: {
+      required: ["guid", "dispatchedAt", "emailsSent"],
+      properties: {
+        guid: {
+          description: "Note:\nThis is a Primary Key.<pk/>",
+          format: "text",
+          type: "string"
+        },
+        title: {
+          format: "text",
+          type: "string"
+        },
+        description: {
+          format: "text",
+          type: "string"
+        },
+        dispatchedAt: {
+          default: "now()",
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        emailsSent: {
+          default: 0,
+          format: "integer",
+          type: "integer"
+        }
+      },
+      type: "object"
+    },
     approvalRequests: {
       properties: {
         id: {
@@ -118279,7 +118565,7 @@ export default {
           type: "string"
         },
         ruleType: {
-          enum: ["Discount", "Markup"],
+          enum: ["Discount", "Markup", "Configuration"],
           format: 'public."pricingRuleType"',
           type: "string"
         },
@@ -118372,6 +118658,9 @@ export default {
         updatedAt: {
           format: "timestamp with time zone",
           type: "string"
+        },
+        configurationPrices: {
+          format: "jsonb"
         }
       },
       type: "object"
@@ -134464,6 +134753,9 @@ export default {
           format: "numeric",
           type: "number"
         },
+        configuration: {
+          format: "jsonb"
+        },
         itemReadableId: {
           format: "text",
           type: "string"
@@ -140708,6 +141000,9 @@ export default {
         convertedNonTaxableAddOnCost: {
           format: "numeric",
           type: "number"
+        },
+        configuration: {
+          format: "jsonb"
         }
       },
       type: "object"
@@ -154511,6 +154806,45 @@ export default {
       in: "query",
       type: "string"
     },
+    "body.changelogDispatch": {
+      name: "changelogDispatch",
+      description: "changelogDispatch",
+      required: false,
+      in: "body",
+      schema: {
+        $ref: "#/definitions/changelogDispatch"
+      }
+    },
+    "rowFilter.changelogDispatch.guid": {
+      name: "guid",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.changelogDispatch.title": {
+      name: "title",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.changelogDispatch.description": {
+      name: "description",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.changelogDispatch.dispatchedAt": {
+      name: "dispatchedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.changelogDispatch.emailsSent": {
+      name: "emailsSent",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.approvalRequests": {
       name: "approvalRequests",
       description: "approvalRequests",
@@ -164542,6 +164876,12 @@ export default {
     },
     "rowFilter.pricingRule.updatedAt": {
       name: "updatedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.pricingRule.configurationPrices": {
+      name: "configurationPrices",
       required: false,
       in: "query",
       type: "string"
@@ -182497,6 +182837,12 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.salesOrderLines.configuration": {
+      name: "configuration",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "rowFilter.salesOrderLines.itemReadableId": {
       name: "itemReadableId",
       required: false,
@@ -189434,6 +189780,12 @@ export default {
     },
     "rowFilter.salesOrderLine.convertedNonTaxableAddOnCost": {
       name: "convertedNonTaxableAddOnCost",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.salesOrderLine.configuration": {
+      name: "configuration",
       required: false,
       in: "query",
       type: "string"

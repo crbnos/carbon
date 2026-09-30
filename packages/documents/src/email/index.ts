@@ -1,3 +1,4 @@
+import ChangelogEntryEmail from "./ChangelogEntryEmail";
 import CompanyDeletionWarningEmail from "./CompanyDeletionWarningEmail";
 import GetStartedEmail from "./GetStartedEmail";
 import ImplementationHubEmail from "./ImplementationHubEmail";
@@ -20,6 +21,7 @@ export {
 } from "./WeeklyReminderEmail";
 
 export {
+  ChangelogEntryEmail,
   CompanyDeletionWarningEmail,
   GetStartedEmail,
   ImplementationHubEmail,

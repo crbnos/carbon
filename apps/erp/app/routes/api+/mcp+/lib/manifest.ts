@@ -13,6 +13,7 @@
  * up promising a module that was removed two releases ago.
  */
 
+import { DOCS_URL } from "@carbon/content/links";
 import toolMetadataJson from "./tool-metadata.json";
 
 type ToolSummary = {
@@ -46,7 +47,6 @@ export const MCP_META_KEY = "ms.carbon/v1";
 
 export const MARKETING_URL = "https://carbon.ms";
 export const REPOSITORY_URL = "https://github.com/crbnos/carbon";
-export const DOCS_URL = "https://docs.carbon.ms";
 
 /**
  * The three tools the server registers. Carbon publishes meta-tools rather than

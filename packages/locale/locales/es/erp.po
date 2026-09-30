@@ -1646,6 +1646,9 @@ msgstr "Se agregaron {0} líneas"
 msgid "Added for this customer"
 msgstr "Añadido para este cliente"
 
+msgid "Added to the unit price for the chosen values, before discounts and markups. Use a negative amount for a credit."
+msgstr "Se agrega al precio unitario por los valores seleccionados, antes de descuentos y recargos. Utilice un importe negativo para un haber."
+
 msgid "Adding demo records"
 msgstr "Agregando registros de demostración"
 
@@ -1767,6 +1770,9 @@ msgstr "todos fabricados {0}"
 
 msgid "All members of selected groups and selected individuals will be able to approve requests"
 msgstr "Todos los miembros de los grupos seleccionados e individuos seleccionados podrán aprobar solicitudes"
+
+msgid "All open jobs"
+msgstr "Todas las órdenes de trabajo abiertas"
 
 msgid "All returnable lines"
 msgstr "Todas las líneas retornables"
@@ -3702,6 +3708,12 @@ msgstr "Cambiar Tipo"
 msgid "Changed By"
 msgstr "Cambiado por"
 
+msgid "Changelog"
+msgstr "Registro de cambios"
+
+msgid "Changelog newsletter"
+msgstr "Boletín de cambios"
+
 msgid "Changes"
 msgstr "Cambios"
 
@@ -4059,6 +4071,9 @@ msgstr "Completar esta Capacitación otorga o renueva la Habilidad seleccionada.
 msgid "Completion Barcode"
 msgstr "Código de Barras de Finalización"
 
+msgid "Completion Date"
+msgstr "Fecha de finalización"
+
 msgid "Completion in progress — retry in Shop Floor"
 msgstr "Finalización en curso — reintentar en Planta"
 
@@ -4093,6 +4108,9 @@ msgstr "Configuración"
 
 msgid "Configuration Parameters"
 msgstr "Parámetros de Configuración"
+
+msgid "Configuration Prices"
+msgstr "Precios de configuración"
 
 msgid "Configuration, data migration, and any integrations"
 msgstr "Configuración, migración de datos e integraciones"
@@ -4168,6 +4186,9 @@ msgstr "configurado"
 
 msgid "Configured"
 msgstr "Configurado"
+
+msgid "Configured Part"
+msgstr "Pieza configurada"
 
 msgid "Confirm"
 msgstr "Confirmar"
@@ -6405,6 +6426,9 @@ msgstr "Número de plano"
 
 msgid "Drawing replaced. Balloon placements were removed; feature rows are unchanged."
 msgstr "Dibujo reemplazado. Las ubicaciones de globos se eliminaron; las filas de características no cambiaron."
+
+msgid "Drop Ship"
+msgstr "Envío directo"
 
 msgid "Drop shipment"
 msgstr "Envío directo"
@@ -11410,6 +11434,15 @@ msgstr "Más reciente primero"
 msgid "Next"
 msgstr "Siguiente"
 
+msgid "Next 14 days"
+msgstr "Próximos 14 días"
+
+msgid "Next 30 days"
+msgstr "Próximos 30 días"
+
+msgid "Next 7 days"
+msgstr "Próximos 7 días"
+
 msgid "Next Calibration"
 msgstr "Próxima Calibración"
 
@@ -11561,6 +11594,9 @@ msgstr "No hay comentarios aún. Sé el primero en agregar un comentario."
 msgid "No completed jobs within range"
 msgstr "No hay órdenes de trabajo completadas dentro del rango"
 
+msgid "No completion date"
+msgstr "Sin fecha de finalización"
+
 msgid "No components yet"
 msgstr "Sin componentes aún"
 
@@ -11687,6 +11723,9 @@ msgstr "Aún no hay actividad de inventario de artículos aquí."
 msgid "No jobs are scheduled at this location yet — release a job to see work-center load."
 msgstr "No hay órdenes de trabajo programadas en esta ubicación aún — libera una orden de trabajo para ver la carga del centro de trabajo."
 
+msgid "No jobs match your search."
+msgstr "Ninguna orden de trabajo coincide con su búsqueda."
+
 msgid "No jobs were created"
 msgstr "No se crearon órdenes de trabajo"
 
@@ -11743,6 +11782,12 @@ msgstr "Nadie para asignar"
 
 msgid "No open invoices"
 msgstr "Sin facturas abiertas"
+
+msgid "No open jobs for sales orders are projected to complete at this location in the next {horizon} days."
+msgstr "No hay órdenes de trabajo abiertas de pedidos de venta proyectadas para completarse en esta ubicación en los próximos {horizon} días."
+
+msgid "No open jobs for sales orders at this location."
+msgstr "No hay órdenes de trabajo abiertas de pedidos de venta en esta ubicación."
 
 msgid "No open memos"
 msgstr "Sin memorandos abiertos"
@@ -12421,9 +12466,6 @@ msgstr "Abrir en MES"
 msgid "Open Issues"
 msgstr "Problemas Abiertos"
 
-msgid "Open job"
-msgstr "Trabajo abierto"
-
 msgid "Open job demand plus outstanding transfers out of this bin"
 msgstr "Demanda de trabajo abierto más transferencias pendientes de este contenedor"
 
@@ -12726,6 +12768,8 @@ msgstr "Fuera"
 
 msgid "Out of calibration"
 msgstr ""
+msgid "Outbound"
+msgstr "Saliente"
 
 msgid "Outgoing"
 msgstr "Salida"
@@ -13039,6 +13083,9 @@ msgstr "personal"
 
 msgid "People"
 msgstr "Personas"
+
+msgid "Per unit"
+msgstr "Por unidad"
 
 msgid "Per Unit"
 msgstr "Por unidad"
@@ -13720,6 +13767,9 @@ msgstr "Proyecciones"
 
 msgid "Projects"
 msgstr "Proyectos"
+
+msgid "Promised"
+msgstr "Comprometido"
 
 msgid "Promised Date"
 msgstr "Fecha Prometida"
@@ -14408,6 +14458,9 @@ msgstr "La reconciliación encontró discrepancias con el proveedor"
 
 msgid "Reconciling a purchase order against what was received and invoiced — implicit in Carbon, via the line quantities and GR/IR balance."
 msgstr "Conciliación de una orden de compra contra lo que se recibió y se facturó — implícita en Carbon, a través de las cantidades de línea y el saldo de GR/IR."
+
+msgid "Reconfigure"
+msgstr "Reconfigurar"
 
 msgid "Record"
 msgstr "Registro"
@@ -16387,8 +16440,14 @@ msgstr "Enviar"
 msgid "Ship some, stock some"
 msgstr "Envía algunos, almacena algunos"
 
+msgid "Ship To"
+msgstr "Enviar a"
+
 msgid "Ship to Customer"
 msgstr "Enviar al Cliente"
+
+msgid "Ship Via"
+msgstr "Vía de envío"
 
 msgid "Ship-From Location"
 msgstr "Ubicación de Envío"
@@ -19034,6 +19093,9 @@ msgstr "Tol+"
 
 msgid "Tolerance (+/-)"
 msgstr "Tolerancia (+/-)"
+
+msgid "Tomorrow"
+msgstr "Mañana"
 
 msgid "tool"
 msgstr "Herramienta"

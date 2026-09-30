@@ -1,6 +1,6 @@
+import type { TermId } from "@carbon/content/glossary";
 import { downloadCsv } from "@carbon/files/csv";
 import { ValidatedForm } from "@carbon/form";
-import type { TermId } from "@carbon/glossary";
 import {
   Badge,
   Button,

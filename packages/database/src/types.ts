@@ -5478,6 +5478,30 @@ export type Database = {
           }
         ]
       }
+      changelogDispatch: {
+        Row: {
+          description: string | null
+          dispatchedAt: string
+          emailsSent: number
+          guid: string
+          title: string | null
+        }
+        Insert: {
+          description?: string | null
+          dispatchedAt?: string
+          emailsSent?: number
+          guid: string
+          title?: string | null
+        }
+        Update: {
+          description?: string | null
+          dispatchedAt?: string
+          emailsSent?: number
+          guid?: string
+          title?: string | null
+        }
+        Relationships: []
+      }
       changeOrder: {
         Row: {
           approvalRequirements: string[] | null
@@ -39779,6 +39803,7 @@ export type Database = {
           amount: number
           amountType: Database["public"]["Enums"]["pricingRuleAmountType"]
           companyId: string
+          configurationPrices: Json | null
           createdAt: string
           createdBy: string
           customerIds: string[] | null
@@ -39801,6 +39826,7 @@ export type Database = {
           amount: number
           amountType?: Database["public"]["Enums"]["pricingRuleAmountType"]
           companyId: string
+          configurationPrices?: Json | null
           createdAt?: string
           createdBy: string
           customerIds?: string[] | null
@@ -39823,6 +39849,7 @@ export type Database = {
           amount?: number
           amountType?: Database["public"]["Enums"]["pricingRuleAmountType"]
           companyId?: string
+          configurationPrices?: Json | null
           createdAt?: string
           createdBy?: string
           customerIds?: string[] | null
@@ -52055,6 +52082,7 @@ export type Database = {
           addOnCost: number
           assetId: string | null
           companyId: string
+          configuration: Json | null
           convertedAddOnCost: number | null
           convertedNonTaxableAddOnCost: number | null
           convertedShippingCost: number | null
@@ -52101,6 +52129,7 @@ export type Database = {
           addOnCost?: number
           assetId?: string | null
           companyId: string
+          configuration?: Json | null
           convertedAddOnCost?: number | null
           convertedNonTaxableAddOnCost?: number | null
           convertedShippingCost?: number | null
@@ -52147,6 +52176,7 @@ export type Database = {
           addOnCost?: number
           assetId?: string | null
           companyId?: string
+          configuration?: Json | null
           convertedAddOnCost?: number | null
           convertedNonTaxableAddOnCost?: number | null
           convertedShippingCost?: number | null
@@ -78801,6 +78831,7 @@ export type Database = {
           assetReadableId: string | null
           autodeskUrn: string | null
           companyId: string | null
+          configuration: Json | null
           convertedAddOnCost: number | null
           convertedNonTaxableAddOnCost: number | null
           convertedShippingCost: number | null
@@ -83222,6 +83253,42 @@ export type Database = {
         Args: { foreign_key: string; tbl: string }
         Returns: string
       }
+      get_completion_jobs: {
+        Args: {
+          company_id: string
+          location_id: string
+          search?: string
+          through_date?: string
+          time_zone: string
+        }
+        Returns: {
+          completionDate: string
+          customerId: string
+          customerName: string
+          customerReference: string
+          dropShipment: boolean
+          dueDate: string
+          id: string
+          itemName: string
+          itemReadableIdWithRevision: string
+          itemType: Database["public"]["Enums"]["itemType"]
+          jobId: string
+          jobOperations: Json
+          productionQuantity: number
+          projectedCompletionAt: string
+          promisedDate: string
+          quantityComplete: number
+          salesOrderId: string
+          salesOrderReadableId: string
+          shippingMethod: string
+          shipToCity: string
+          shipToCountryCode: string
+          shipToName: string
+          shipToState: string
+          status: Database["public"]["Enums"]["jobStatus"]
+          thumbnailPath: string
+        }[]
+      }
       get_consumable_details: {
         Args: { item_id: string }
         Returns: {
@@ -85995,7 +86062,7 @@ export type Database = {
         | "Partial"
       pickMethodSortMethod: "Default" | "FEFO" | "FIFO" | "LIFO"
       pricingRuleAmountType: "Percentage" | "Fixed"
-      pricingRuleType: "Discount" | "Markup"
+      pricingRuleType: "Discount" | "Markup" | "Configuration"
       procedureStatus: "Draft" | "Active" | "Archived"
       procedureStepType:
         | "Value"
@@ -87443,7 +87510,7 @@ export const Constants = {
       ],
       pickMethodSortMethod: ["Default", "FEFO", "FIFO", "LIFO"],
       pricingRuleAmountType: ["Percentage", "Fixed"],
-      pricingRuleType: ["Discount", "Markup"],
+      pricingRuleType: ["Discount", "Markup", "Configuration"],
       procedureStatus: ["Draft", "Active", "Archived"],
       procedureStepType: [
         "Value",

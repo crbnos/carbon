@@ -1,5 +1,5 @@
+import type { TermId } from "@carbon/content/glossary";
 import { useField } from "@carbon/form";
-import type { TermId } from "@carbon/glossary";
 import type { InputProps } from "@carbon/react";
 import {
   Button,

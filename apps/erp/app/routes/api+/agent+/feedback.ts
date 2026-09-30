@@ -1,7 +1,10 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { validationError, validator } from "@carbon/form";
+import { getLogger } from "@carbon/logger";
 import type { ActionFunctionArgs } from "react-router";
 import { feedbackValidator, setFeedback } from "~/modules/agent";
+
+const logger = getLogger("erp", "agent-feedback");
 
 export async function action({ request }: ActionFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {});
@@ -11,13 +14,20 @@ export async function action({ request }: ActionFunctionArgs) {
   );
   if (validation.error) return validationError(validation.error);
 
-  const { threadId, feedback, note } = validation.data;
+  const { messageId, feedback, note } = validation.data;
   const result = await setFeedback(client, {
-    threadId,
+    messageId,
     companyId,
     feedback,
     note
   });
-  if (result.error) return { success: false };
-  return { success: true };
+  if (result.error) {
+    logger.error("Failed to save agent feedback", {
+      companyId,
+      messageId,
+      error: result.error
+    });
+  }
+  // No row means the answer was never saved (or is not the caller's).
+  return { success: !result.error && !!result.data };
 }

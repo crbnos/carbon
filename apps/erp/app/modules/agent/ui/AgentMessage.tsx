@@ -9,17 +9,11 @@ import { AgentNavigate } from "./blocks/AgentNavigate";
 const RUNNING_LABEL: Record<string, string> = {
   search_docs: "Searching the docs",
   read_doc: "Reading a doc",
-  search_tools: "Finding the right tool",
-  describe_tool: "Inspecting a tool",
-  call_tool: "Looking up data",
   find_page: "Finding the page"
 };
 const DONE_LABEL: Record<string, string> = {
   search_docs: "Searched the docs",
   read_doc: "Read a doc",
-  search_tools: "Found a tool",
-  describe_tool: "Inspected a tool",
-  call_tool: "Looked up data",
   find_page: "Found the page"
 };
 
@@ -91,8 +85,9 @@ export function AgentMessage({
             return (
               <AgentNavigate
                 key={part.type + i}
-                input={part.input}
-                state={part.state}
+                output={
+                  part.state === "output-available" ? part.output : undefined
+                }
                 toolCallId={part.toolCallId}
               />
             );
@@ -111,7 +106,7 @@ export function AgentMessage({
         })}
       </div>
       {!isUser && isLast && !isStreaming && threadId && (
-        <AgentFeedback threadId={threadId} />
+        <AgentFeedback messageId={message.id} />
       )}
     </div>
   );

@@ -75,6 +75,7 @@ import {
 import {
   assemblyConvertFunction,
   assemblyPlanFunction,
+  changelogDispatchFunction,
   companyExportFunction,
   companyImportFunction,
   companyRestoreFinalizeFunction,
@@ -141,6 +142,7 @@ export const functions = [
   onboardFunction,
   printJobFunction,
   printJobDeliverFunction,
+  changelogDispatchFunction,
   // Scheduled
   cleanupFunction,
   dispatchFunction,

@@ -19,6 +19,8 @@ COPY packages ./packages
 COPY patches ./patches
 # Needed by the postinstall and the //#generate:mcp turbo task.
 COPY scripts ./scripts
+# @carbon/content (glossary, the agent's doc corpus) lives with the docs it serves.
+COPY docs/content ./docs/content
 RUN --mount=type=cache,id=pnpm-store,target=/pnpm/store,sharing=locked \
     pnpm install --frozen-lockfile
 

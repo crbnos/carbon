@@ -164,8 +164,8 @@ A single boolean setting is a toggle card that saves on change (no footer) — e
 | Server failure | toast/flash "Failed to <verb> <noun>" — not inline | "Failed to create customer type" |
 | Description on create | one definitional sentence "A <entity> is …" in the header, create mode only | CustomerForm |
 
-New glossary terms: add to `packages/glossary` (`msg` term + one-sentence definition + docs
-anchor) — ask first per `packages/glossary/AGENTS.md`.
+New glossary terms: add to `docs/content/src/glossary` (`msg` term + one-sentence definition + docs
+anchor) — ask first per `docs/content/AGENTS.md`.
 
 ## 6. New vs edit
 

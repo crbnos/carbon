@@ -1646,6 +1646,9 @@ msgstr "Eklenen {0} satır"
 msgid "Added for this customer"
 msgstr "Bu müşteri için eklendi"
 
+msgid "Added to the unit price for the chosen values, before discounts and markups. Use a negative amount for a credit."
+msgstr "Seçilen değerler için birim fiyata eklenir, iskontolar ve marjlar öncesi. İndirim için negatif tutar kullanın."
+
 msgid "Adding demo records"
 msgstr "Demo kayıtları ekleniyor"
 
@@ -1767,6 +1770,9 @@ msgstr "tümü {0} üretim"
 
 msgid "All members of selected groups and selected individuals will be able to approve requests"
 msgstr "Seçilen gruplardaki ve bireylerdeki tüm üyeler talepleri onaylayabilecektir"
+
+msgid "All open jobs"
+msgstr "Tüm açık iş emirleri"
 
 msgid "All returnable lines"
 msgstr "Tüm iade edilebilir satırlar"
@@ -3702,6 +3708,12 @@ msgstr "Tipi Değiştir"
 msgid "Changed By"
 msgstr "Değiştiren"
 
+msgid "Changelog"
+msgstr "Değişiklik Günlüğü"
+
+msgid "Changelog newsletter"
+msgstr "Değişiklik Günlüğü Haber Bülteni"
+
 msgid "Changes"
 msgstr "Değişiklikler"
 
@@ -4059,6 +4071,9 @@ msgstr "Bu eğitimi tamamlamak seçilen yetkinliği verir veya yeniler."
 msgid "Completion Barcode"
 msgstr "Tamamlama Barkodu"
 
+msgid "Completion Date"
+msgstr "Tamamlama Tarihi"
+
 msgid "Completion in progress — retry in Shop Floor"
 msgstr "Tamamlama devam ediyor — Atölye'de yeniden deneyin"
 
@@ -4093,6 +4108,9 @@ msgstr "Yapılandırma"
 
 msgid "Configuration Parameters"
 msgstr "Yapılandırma Parametreleri"
+
+msgid "Configuration Prices"
+msgstr "Konfigürasyon Fiyatları"
 
 msgid "Configuration, data migration, and any integrations"
 msgstr "Yapılandırma, veri taşıması ve tüm entegrasyonlar"
@@ -4168,6 +4186,9 @@ msgstr "yapılandırıldı"
 
 msgid "Configured"
 msgstr "Yapılandırılmış"
+
+msgid "Configured Part"
+msgstr "Yapılandırılmış Parça"
 
 msgid "Confirm"
 msgstr "Onayla"
@@ -6405,6 +6426,9 @@ msgstr "Resim numarası"
 
 msgid "Drawing replaced. Balloon placements were removed; feature rows are unchanged."
 msgstr "Çizim değiştirildi. Balon yerleşimleri kaldırıldı; özellik satırları değişmedi."
+
+msgid "Drop Ship"
+msgstr "Direkt Sevkiyat"
 
 msgid "Drop shipment"
 msgstr "Doğrudan Sevkiyat"
@@ -11410,6 +11434,15 @@ msgstr "En yeniden önce"
 msgid "Next"
 msgstr "İleri"
 
+msgid "Next 14 days"
+msgstr "Sonraki 14 gün"
+
+msgid "Next 30 days"
+msgstr "Sonraki 30 gün"
+
+msgid "Next 7 days"
+msgstr "Sonraki 7 gün"
+
 msgid "Next Calibration"
 msgstr "Son Kalibrasyon"
 
@@ -11561,6 +11594,9 @@ msgstr "Henüz yorum yok. İlk yorumu ekleyin."
 msgid "No completed jobs within range"
 msgstr "Aralıkta tamamlanmış İş emri yok"
 
+msgid "No completion date"
+msgstr "Tamamlama tarihi yok"
+
 msgid "No components yet"
 msgstr "Henüz bileşen yok"
 
@@ -11687,6 +11723,9 @@ msgstr "Burada henüz hiçbir maddenin envanter hareketi yok."
 msgid "No jobs are scheduled at this location yet — release a job to see work-center load."
 msgstr "Bu Lokasyonda henüz İş emri planlanmamış — çalışma merkezinin yükünü görmek için İş emrini Serbest bırakın."
 
+msgid "No jobs match your search."
+msgstr "Aramanızla eşleşen iş emri yok."
+
 msgid "No jobs were created"
 msgstr "İş emri oluşturulmadı"
 
@@ -11743,6 +11782,12 @@ msgstr "Atanacak kimse yok"
 
 msgid "No open invoices"
 msgstr "Açık fatura yok"
+
+msgid "No open jobs for sales orders are projected to complete at this location in the next {horizon} days."
+msgstr "Bu lokasyonda sonraki {horizon} gün içinde tamamlanması beklenen satış siparişleri için açık iş emri yok."
+
+msgid "No open jobs for sales orders at this location."
+msgstr "Bu lokasyonda satış siparişleri için açık iş emri yok."
 
 msgid "No open memos"
 msgstr "Açık muhasebe notları yok"
@@ -12421,9 +12466,6 @@ msgstr "MES'te Aç"
 msgid "Open Issues"
 msgstr "Açık Sorunlar"
 
-msgid "Open job"
-msgstr "Açık iş"
-
 msgid "Open job demand plus outstanding transfers out of this bin"
 msgstr "Bu gözden çıkan açık iş emri talebi ve beklemede transferler"
 
@@ -12726,6 +12768,8 @@ msgstr "Dışı"
 
 msgid "Out of calibration"
 msgstr ""
+msgid "Outbound"
+msgstr "Giden"
 
 msgid "Outgoing"
 msgstr "Çıkış"
@@ -13039,6 +13083,9 @@ msgstr "personel"
 
 msgid "People"
 msgstr "Personel"
+
+msgid "Per unit"
+msgstr "Birim başına"
 
 msgid "Per Unit"
 msgstr "Birim Başı"
@@ -13720,6 +13767,9 @@ msgstr "Projeksiyonlar"
 
 msgid "Projects"
 msgstr "Projeler"
+
+msgid "Promised"
+msgstr "Vaat Edilen"
 
 msgid "Promised Date"
 msgstr "Taahhüt Tarihi"
@@ -14408,6 +14458,9 @@ msgstr "Mutabakat sağlayıcıyla tutarsızlıklar buldu"
 
 msgid "Reconciling a purchase order against what was received and invoiced — implicit in Carbon, via the line quantities and GR/IR balance."
 msgstr "Satın alma siparişinin alınan ve faturalandırılana karşı uzlaştırması — Carbon'da satır miktarları ve GR/IR bakiyesi aracılığıyla örtük olarak yapılır."
+
+msgid "Reconfigure"
+msgstr "Yeniden Yapılandır"
 
 msgid "Record"
 msgstr "Kayıt"
@@ -16387,8 +16440,14 @@ msgstr "Sevk Et"
 msgid "Ship some, stock some"
 msgstr "Bazı gönder, bazı stokla"
 
+msgid "Ship To"
+msgstr "Sevkiyat Adresi"
+
 msgid "Ship to Customer"
 msgstr "Müşteriye Gönder"
+
+msgid "Ship Via"
+msgstr "Sevkiyat Yöntemi"
 
 msgid "Ship-From Location"
 msgstr "Gönderme Konumu"
@@ -19034,6 +19093,9 @@ msgstr "Tolerans+"
 
 msgid "Tolerance (+/-)"
 msgstr "Tolerans (+/-)"
+
+msgid "Tomorrow"
+msgstr "Yarın"
 
 msgid "tool"
 msgstr "Araç"
