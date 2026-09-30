@@ -38,7 +38,7 @@ const payloadSchema = z.object({
 });
 
 const ITEM_COLUMNS =
-  "id, readableId, revision, name, description, type, replenishmentSystem, defaultMethodType, itemTrackingType";
+  "id, readableId, revision, active, name, description, type, replenishmentSystem, defaultMethodType, itemTrackingType";
 
 /**
  * Plan a part push: what pushing these parts of the current Onshape element

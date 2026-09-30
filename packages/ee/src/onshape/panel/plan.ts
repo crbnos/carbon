@@ -4,6 +4,7 @@ import type { OnshapePushDefaults } from "./preferences";
 import type { PlanCustomField, UnmappedProperty } from "./properties";
 import type { PanelRelease, PanelReleaseItem } from "./releases";
 import { isModelReleaseItem } from "./releases";
+import { compareRevisions } from "./revision";
 import {
   externalIdForAssembly,
   externalIdForBomLine,
@@ -119,6 +120,8 @@ export type PlanItemRow = {
   description?: string | null;
   /** item.type — Part, Material, Consumable, … */
   type?: string | null;
+  /** False for a revision not yet in use (a change notice's, say). */
+  active?: boolean | null;
   /**
    * The three Carbon-side manufacturing attributes the panel can edit on an
    * existing item. `currentItemFields` coerces whatever is present.
@@ -145,16 +148,19 @@ export function bomLineItemType(
 /**
  * The latest revision among rows sharing a part number — the row a BOM line
  * points at when the plan reuses an item, and the base a release revision is
- * copied from. Order-independent (string compare on the letter, which is the
- * ERP's own revision order), so plan and apply agree whatever the query
- * returned.
+ * copied from. Active rows win over inactive ones (a revision a change notice
+ * has not released yet is not the one in use). Order-independent, so plan and
+ * apply agree whatever the query returned.
  */
-export function pickLatestRow<T extends { revision: string | null }>(
-  rows: T[]
-): T | undefined {
+export function pickLatestRow<
+  T extends { revision: string | null; active?: boolean | null }
+>(rows: T[]): T | undefined {
+  const active = rows.filter((row) => row.active !== false);
   let latest: T | undefined;
-  for (const row of rows) {
-    if (!latest || (row.revision ?? "") > (latest.revision ?? "")) latest = row;
+  for (const row of active.length > 0 ? active : rows) {
+    if (!latest || compareRevisions(row.revision, latest.revision) > 0) {
+      latest = row;
+    }
   }
   return latest;
 }
@@ -709,6 +715,11 @@ export type AssemblyPlanMethod = {
   parentPartNumber: string;
   parentItemId: string | null;
   status: AssemblyPlanMethodStatus;
+  /**
+   * `active` only: the version of the Draft an earlier push made from this
+   * method, which this push writes into. Absent, the push creates a new Draft.
+   */
+  reusedDraftVersion?: number | null;
   /** Lines the push writes, in BOM order. */
   writes: Array<{
     index: string;
@@ -807,7 +818,8 @@ export function buildAssemblyPlan({
   options,
   depth = "all",
   linkedItemIdByExternalId = new Map(),
-  configuration = null
+  configuration = null,
+  reusableDraftByItemId = new Map()
 }: {
   documentId: string;
   wv: "w" | "v";
@@ -838,19 +850,29 @@ export function buildAssemblyPlan({
    */
   linkedItemIdByExternalId?: Map<string, string>;
   configuration?: string | null;
+  /**
+   * Per item whose method is Active, the Draft the push would reuse
+   * (`loadReusableDrafts`), so the review counts that Draft's lines.
+   */
+  reusableDraftByItemId?: Map<string, { id: string; version: number | null }>;
 }): AssemblyPlan {
   // One row per part number: the latest revision, whatever order the rows
   // arrived in, so the plan pins the same item the apply would pick.
-  const itemByReadableId = new Map<string, PlanItemRow>();
+  const rowsByReadableId = new Map<string, PlanItemRow[]>();
   // Every item id → its part number, across all revisions. A link that points
   // at ANY revision of a part is still a link to that part (see below).
   const readableIdByItemId = new Map<string, string>();
   for (const item of items) {
     readableIdByItemId.set(item.id, item.readableId);
-    const current = itemByReadableId.get(item.readableId);
-    if (!current || (item.revision ?? "") > (current.revision ?? "")) {
-      itemByReadableId.set(item.readableId, item);
-    }
+    const list = rowsByReadableId.get(item.readableId) ?? [];
+    list.push(item);
+    rowsByReadableId.set(item.readableId, list);
+  }
+  // The same pick the apply makes (`pickLatestRow`).
+  const itemByReadableId = new Map<string, PlanItemRow>();
+  for (const [readableId, rows] of rowsByReadableId) {
+    const latest = pickLatestRow(rows);
+    if (latest) itemByReadableId.set(readableId, latest);
   }
   const everything = flattenNodes(nodes);
   // At `top` depth only the root's own children become items: the rest of the
@@ -984,10 +1006,18 @@ export function buildAssemblyPlan({
         : method.status === "Active"
           ? "active"
           : "draft";
+    // A released method is written through a Draft: the reused one's lines,
+    // or the Active method's, which a new Draft copies with their ownership.
+    const reusedDraft =
+      status === "active" && parentItemId
+        ? reusableDraftByItemId.get(parentItemId)
+        : undefined;
+    const linesMethodId = reusedDraft?.id ?? method?.id;
     methods.push({
       parentPartNumber,
       parentItemId,
       status,
+      ...(reusedDraft ? { reusedDraftVersion: reusedDraft.version } : {}),
       writes: children
         .filter(
           (child) => !!child.partNumber && !unusable.has(child.partNumber)
@@ -999,8 +1029,12 @@ export function buildAssemblyPlan({
           quantity: child.quantity,
           purchased: child.purchased
         })),
-      replaces: method ? (mappedLinesByMethodId.get(method.id) ?? []) : [],
-      keeps: method ? (manualLinesByMethodId.get(method.id) ?? []) : []
+      replaces: linesMethodId
+        ? (mappedLinesByMethodId.get(linesMethodId) ?? [])
+        : [],
+      keeps: linesMethodId
+        ? (manualLinesByMethodId.get(linesMethodId) ?? [])
+        : []
     });
     for (const child of children) {
       if (child.partNumber && child.children.length > 0) {
@@ -1089,6 +1123,13 @@ export type ReleasePlanItem = {
   elementType: number;
   elementId: string;
   versionId: string;
+  /**
+   * Part Studio items: the released part. The export translates exactly this
+   * part, so an item without one is not exported.
+   */
+  partId?: string | null;
+  /** The released configuration, null for the default. */
+  configuration?: string | null;
   action: ReleasePlanItemAction;
   baseItemId: string | null;
   baseRevision: string | null;
@@ -1329,7 +1370,10 @@ function releaseIdentity(item: PanelReleaseItem) {
     revision: item.revision,
     elementType: item.elementType,
     elementId: item.elementId,
-    versionId: item.versionId
+    versionId: item.versionId,
+    partId: item.partId ?? null,
+    // Raw: the export sends it back to Onshape as the revision gave it.
+    configuration: item.configuration ?? null
   };
 }
 

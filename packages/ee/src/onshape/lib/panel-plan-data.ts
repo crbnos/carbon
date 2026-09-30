@@ -1,5 +1,10 @@
 import type { Database } from "@carbon/database";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import {
+  DRAFT_MARKER_ENTITY_TYPE,
+  type DraftCandidate,
+  pickReusableDraft
+} from "../panel/method-version";
 import type { PlanLine, PlanMethodRow, PlanOptions } from "../panel/plan";
 import { parsePushDefaults } from "../panel/preferences";
 import { selectInBatches } from "./batched-filter";
@@ -79,6 +84,80 @@ export async function loadActiveMakeMethods(
     }
   }
   return byItemId;
+}
+
+/**
+ * For each item whose method is Active, the Draft a push would write into
+ * rather than create (`pickReusableDraft`). Items with none are absent: the
+ * push creates a new Draft from the Active method. Throws on a failed read —
+ * "no reusable Draft" would make every push mint another version.
+ */
+export async function loadReusableDrafts(
+  client: Client,
+  serviceRole: Client,
+  companyId: string,
+  activeMethodIdByItemId: Map<string, string>
+): Promise<Map<string, DraftCandidate>> {
+  const itemIds = [...activeMethodIdByItemId.keys()];
+  const result = new Map<string, DraftCandidate>();
+  if (itemIds.length === 0) return result;
+
+  const drafts = await selectInBatches(itemIds, (batch) =>
+    client
+      .from("makeMethod")
+      .select("id, itemId, version, changeOrderId")
+      .eq("companyId", companyId)
+      .eq("status", "Draft")
+      .in("itemId", batch)
+  );
+  if (drafts.error) {
+    throw new Error(
+      `Failed to read Draft make methods: ${drafts.error.message}`
+    );
+  }
+  const draftIds = (drafts.data ?? []).map((draft) => draft.id);
+  const markers = await selectInBatches(draftIds, (batch) =>
+    serviceRole
+      .from("externalIntegrationMapping")
+      .select("entityId, metadata")
+      .eq("companyId", companyId)
+      .eq("integration", ONSHAPE_V2_INTEGRATION_ID)
+      .eq("entityType", DRAFT_MARKER_ENTITY_TYPE)
+      .in("entityId", batch)
+  );
+  if (markers.error) {
+    throw new Error(
+      `Failed to read the Onshape Draft markers: ${markers.error.message}`
+    );
+  }
+  const markerRows = (markers.data ?? []).map((row) => ({
+    draftId: row.entityId,
+    sourceMethodId:
+      ((row.metadata as Record<string, unknown> | null)?.sourceMethodId as
+        | string
+        | undefined) ?? null
+  }));
+
+  const draftsByItemId = new Map<string, DraftCandidate[]>();
+  for (const draft of drafts.data ?? []) {
+    if (!draft.itemId) continue;
+    const list = draftsByItemId.get(draft.itemId) ?? [];
+    list.push({
+      id: draft.id,
+      version: draft.version ?? null,
+      changeOrderId: draft.changeOrderId ?? null
+    });
+    draftsByItemId.set(draft.itemId, list);
+  }
+  for (const [itemId, activeMethodId] of activeMethodIdByItemId) {
+    const chosen = pickReusableDraft(
+      draftsByItemId.get(itemId) ?? [],
+      markerRows,
+      activeMethodId
+    );
+    if (chosen) result.set(itemId, chosen);
+  }
+  return result;
 }
 
 /**

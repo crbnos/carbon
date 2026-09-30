@@ -1,3 +1,13 @@
+// Pure panel helpers the push routes need that the root barrel does not carry.
+export type { DraftCandidate } from "../panel/method-version";
+export {
+  DRAFT_MARKER_ENTITY_TYPE,
+  pairOwnedCopiedLines,
+  pickReusableDraft
+} from "../panel/method-version";
+export type { ReleaseExportSelection } from "../panel/releases";
+export { releaseExportSelection } from "../panel/releases";
+export { compareRevisions } from "../panel/revision";
 export * from "./batched-filter";
 export * from "./client";
 export * from "./connection";
