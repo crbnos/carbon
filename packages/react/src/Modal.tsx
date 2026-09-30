@@ -124,7 +124,9 @@ ModalHeader.displayName = "ModalHeader";
 const ModalBody = ({ className, ...props }: HTMLAttributes<HTMLDivElement>) => (
   <div
     className={cn(
-      "relative w-full min-h-0 overflow-y-auto py-0 px-6 mb-4",
+      // py-1 keeps the 3px focus ring of the first/last field inside the
+      // scroll clip; -mt-1/mb-3 cancel it so the layout is unchanged.
+      "relative w-full min-h-0 overflow-y-auto -mt-1 py-1 px-6 mb-3",
       "scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent",
       className
     )}
