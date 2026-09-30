@@ -61,3 +61,37 @@ export function hasMcpExposureTag(jsdoc: string | undefined): boolean {
       new RegExp(`^\\s*\\*?\\s*${MCP_EXPOSURE_TAG}(\\s|$)`).test(line)
     );
 }
+
+/**
+ * A classification DECLARED on the tag — `@mcp read`, `@mcp write`,
+ * `@mcp destructive` — which wins over `classifyFunction`'s name-verb guess.
+ *
+ * The guess is not merely cosmetic. Classification drives three things: the
+ * permission actions a caller must hold (`permissionActionsFor`: READ → view),
+ * the injected auth fields (READ → companyId only), and whether the function
+ * needs an `@mcp` tag at all. So a read guessed WRITE over-demands permission —
+ * `items_diffMethod` diffs two methods and asks for `parts:update`,
+ * `production_maxToolQuantityByItem` returns a maximum and asks for
+ * `production:update` — which locks out an API key scoped to `view`.
+ *
+ * Declaring it follows the rule this generator already applies to descriptions:
+ * "a JSDoc on the function itself beats the override table (code closest
+ * wins)". The declaration is authoritative and the generator VERIFIES it
+ * against the body, refusing a contradiction, so a declaration cannot quietly
+ * downgrade a real write.
+ */
+export function declaredClassification(
+  jsdoc: string | undefined
+): "READ" | "WRITE" | "DESTRUCTIVE" | null {
+  if (!jsdoc) return null;
+  for (const line of jsdoc.split("\n")) {
+    const m = new RegExp(
+      `^\\s*\\*?\\s*${MCP_EXPOSURE_TAG}\\s+(read|write|destructive)\\b`,
+      "i"
+    ).exec(line);
+    if (m?.[1]) {
+      return m[1].toUpperCase() as "READ" | "WRITE" | "DESTRUCTIVE";
+    }
+  }
+  return null;
+}

@@ -8886,7 +8886,8 @@ export function planAssemblyStepMarkerSync(
 /**
  * The re-sync ratchets a tool's operation-level quantity up to the max quantity
  * any source step asks for (operation-level rows are never lowered or deleted).
- * @mcp
+ * @mcp read — a pure read; the name-verb rule guesses WRITE, which would demand
+ *            update permission from a caller that only needs view.
  */
 export function maxToolQuantityByItem(
   sourceTools: { itemId: string; quantity: number | null }[]

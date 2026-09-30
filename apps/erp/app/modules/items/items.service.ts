@@ -3639,6 +3639,8 @@ export async function upsertConsumable(
  *
  * Callers that also have a customer/supplier part mapping should try that
  * first; this covers the readableId/name half of the match.
+ * @mcp read — a pure read; the name-verb rule guesses WRITE, which would demand
+ *            update permission from a caller that only needs view.
  */
 export async function matchItemIdByText(
   client: SupabaseClient<Database>,
@@ -6332,6 +6334,8 @@ export async function getSupplierPriceBreaksForItems(
  * Delegates to getSupplierPriceBreaksForItems + lookupBuyPriceFromMap.
  *
  * Used in quote creation where the specific supplier isn't known.
+ * @mcp read — a pure read; the name-verb rule guesses WRITE, which would demand
+ *            update permission from a caller that only needs view.
  */
 export async function lookupBuyPrice(
   client: SupabaseClient<Database>,
@@ -8474,7 +8478,10 @@ export type DiffMethodResult = {
 // PURE. Compares two method snapshots. No DB access — the caller supplies plain
 // rows (live method rows as `base`, CO-staged rows as `target`), and optionally
 // the per-operation child buckets to also diff steps/parameters/tools.
-/** @mcp */
+/**
+ * @mcp read — a pure read; the name-verb rule guesses WRITE, which would demand
+ *            update permission from a caller that only needs view.
+ */
 export function diffMethod(input: DiffMethodInput): DiffMethodResult {
   return {
     materials: diffRows(

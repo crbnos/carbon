@@ -79,6 +79,54 @@ load failure refuse to write rather than publish a lossy manifest. That is the
 precedent this spec follows: measure the route, delete what never runs, fail
 loudly instead of degrading.
 
+### What landed after this spec was written, and what it changed
+
+Two commits moved the ground under Phase 2, so the design below is not the one
+originally written here.
+
+**Exposure is now opt-in** (`a961578699`). A WRITE/DESTRUCTIVE function reaches
+the API only with an `@mcp` JSDoc tag, gated by `MCP_MODULE_ALLOWLIST`
+(`apps/erp/app/routes/api+/mcp+/lib/mcp-exposure.ts`). The surface went 1557 →
+1468. That matters here for one reason: **`classifyFunction` is now
+load-bearing.** It was a name-verb heuristic feeding a metadata field; it now
+decides whether a function needs a tag at all, so its errors change what is
+published. Three reads are already misclassified WRITE and had to be tagged to
+stay exposed — `items_diffMethod`, `items_lookupBuyPrice`,
+`shared_lookupPriceFromBreaks` (also `items_matchItemIdByText`,
+`production_maxToolQuantityByItem`, `shared_lookupBuyPriceFromMap`,
+`shared_resolveSupplierPrice`). `@mcp` means "expose", not "this writes", so
+they are harmless today, but the inaccuracy now leaks into exposure decisions.
+
+**The audit-column analysis was measured against a ts-morph prototype**, and the
+result was not the expected one. Over the pre-fix baseline: 58 of 77 drops
+agreed, ts-morph found **0** breakage the string version missed (including across
+the 36 multi-table functions the string version skips entirely), the 19
+string-only drops are writes built from an explicit literal where the field
+never reaches the row either way, and the prototype produced **one false
+positive** of its own (`purchasing_upsertPurchaseOrder`, from misattributing a
+receiver chain). So Phase 2 is not a correctness upgrade for that rule — it is a
+maintainability one, plus the ability to express cases the regex cannot.
+
+Two constraints came out of that measurement and both belong in the design:
+
+- **Removal must be asymmetric.** 292 tables declare `createdBy TEXT NOT NULL`,
+  so wrongly REMOVING an injection trades a PGRST204 for a NOT NULL violation.
+  Only a provable break justifies a removal; "looks unnecessary" never does. A
+  symmetric "is it needed?" rule disagreed with the baseline 244 times.
+- **The signature is a hard constraint.** `insertDepreciationRun` and
+  `upsertReimbursementLines` declare `createdBy: string` in their parameter type
+  and read it explicitly. Any rule must consult
+  `param.getType().getProperty("createdBy")` and keep it.
+
+**And both analyses share a blind spot neither can close: they are
+intra-procedural.** 24 audit-injecting tools hand their payload to an edge
+function (`get-method`, `recalculate`, `post-picking`, `batch-operations`), three
+of them by spread (`body: { type: "create", ...args }`). Those turn out to be
+safe only because every one of those functions re-validates its body with a zod
+schema and `z.object()` strips unknown keys — a property of the RECEIVING code
+that the generator knows nothing about. That is the real lesson from the
+production incident: the analysis was never wrong, it was never asked.
+
 ## Proposed Solution
 
 Hoist one shared ts-morph `Project`, hand it to both halves of the generator as
@@ -121,7 +169,37 @@ reason (below). Digest verdict: **must be unchanged** — verified below.
 for `functionBodyPaginates`, `.from("t")` / `insertInto("t")` /
 `updateTable("t")` string-literal arguments for `functionBodyTables`, and the
 `_operation` discriminator for `usesOperationDiscriminator`. Digest verdict:
-**must be unchanged**.
+**must be unchanged** for pagination and `_operation`; `classification` and
+`injectAuth` may move, and each move is justified below.
+
+Phase 2 carries three sub-goals the original draft did not have:
+
+**2a — `classifyFunction` becomes structural, because exposure now depends on
+it.** A `.delete(` substring cannot tell a call from a comment, a string, or a
+nested closure, and it is the reason seven read helpers are classified WRITE and
+need an `@mcp` tag to stay exposed. On the AST the question is exact: does the
+function contain a `CallExpression` whose callee is a `.delete` / `.deleteFrom`
+member, and does it contain any write call at all. Expect `classification` to
+change for those seven; each is a read gaining its correct label, and each drops
+its now-unnecessary tag in the same commit.
+
+**2b — the audit-column rule keeps its asymmetry and gains conflict
+reporting.** Per write call site, resolve that site's OWN table (so the 36
+multi-table functions stop being skipped), decide payload flow by symbol
+identity rather than a spread regex, and consult the parameter TYPE for a
+declared `createdBy`/`updatedBy`. Remove a field only when every write receiving
+the payload targets a table lacking it; when some targets have it and some do
+not, that is a genuine conflict in the service — **report it and keep the
+field**, never silently pick.
+
+**2c — refuse rather than assume when the payload escapes analysis.** If the
+payload object is passed to `functions.invoke`, an `.rpc`, or another function,
+the generator cannot see where it lands and must say so instead of quietly
+continuing to inject. This is the sub-goal that addresses the production
+incident's actual cause, and it is the opposite of what both the string version
+and the first ts-morph prototype do today. The report is advisory at first (the
+24 known handoffs are all zod-guarded, so failing hard would block the build for
+no live defect) and becomes a refusal once the list is known-empty.
 
 **Phase 3 — type resolution.** Replace the 498-line type parser with
 `param.getType()` plus the `typeToJsonSchema` walker `response-schema.ts`
@@ -143,6 +221,11 @@ resolving through the loaded validator and `z.toJSONSchema`. Digest verdict:
 | Digest churn review (Phase 3) | Accept the compiler's output; spot-check per category | ~531 params sit in the two shapes where the string parser is weakest. Justifying all of them individually would stall the phase; requiring zero churn would make it unlandable. Spot-check one sample per category (inline object, generic, bare alias) and record the counts in the PR |
 | Heuristic 1–6 (multi-tenancy, service shape, RLS, permissions, forms, module layout) | N/A | No database, service, route, form or module change. This touches build tooling under `scripts/` only |
 | Heuristic 7 (backward compatibility) | Tool schemas are not a listed contract surface; treat Phase 3 as additive-in-spirit | `BACKWARD_COMPATIBILITY.md` lists Database Schema, Permission Scope Strings, RLS Policy Names, Service Function Signatures, Route Paths, Edge Function Names, Event Types, Component Props, Import Paths and Model Validators. The generated manifest is none of them, and it is regenerated from source on every `postinstall`. Phase 3 must still not *remove* a published field: a param that has a schema today keeps one |
+| Audit-column removal | Asymmetric — remove only on proven breakage | 292 tables declare `createdBy TEXT NOT NULL`, so a wrong removal trades PGRST204 for a NOT NULL violation. A symmetric "is it needed?" rule disagreed with the baseline 244 times |
+| Declared parameter fields | Always injected | `insertDepreciationRun` / `upsertReimbursementLines` declare `createdBy: string` and read it explicitly; `param.getType().getProperty()` is the only reliable way to see that, and string matching cannot |
+| Multi-table conflict | Report and KEEP | A function writing one table that has the column and one that lacks it is at fault; guessing either way breaks a write. One exists today after false positives are discounted |
+| Payload escaping the function | Report, then refuse | Both the string version and the ts-morph prototype are intra-procedural; 24 tools hand the payload to an edge function. Advisory first because all 24 are zod-guarded today |
+| `classifyFunction` | Structural, in Phase 2a | It stopped being a metadata field and became an exposure gate when `@mcp` landed; seven reads are misclassified WRITE today |
 | Competitor research (`/research`) | N/A | This is internal build tooling with no ERP domain logic. The skill's research gate exists so domain behaviour is not invented; there is no domain behaviour here |
 
 ## Data Model Changes
@@ -196,6 +279,18 @@ None.
       green, and CI runs them
 - [ ] `pnpm exec turbo run typecheck --filter='*' --concurrency=1` is 33/33 and
       `pnpm run test` is green after each phase
+- [ ] The seven reads currently classified WRITE (`items_diffMethod`,
+      `items_lookupBuyPrice`, `items_matchItemIdByText`,
+      `production_maxToolQuantityByItem`, `shared_lookupBuyPriceFromMap`,
+      `shared_lookupPriceFromBreaks`, `shared_resolveSupplierPrice`) are
+      classified READ after 2a, and their `@mcp` tags are removed in the same
+      commit
+- [ ] A function whose payload reaches `functions.invoke` / `.rpc` / another
+      function is listed by name in the generator output, with a count
+- [ ] A multi-table conflict is reported and the field KEPT — verified by
+      constructing one in a fixture
+- [ ] A parameter type declaring `createdBy` keeps the injection regardless of
+      which tables the function writes
 - [ ] `service-metadata.ts` is under 950 lines with no `findMatchingBrace`,
       `stripComments`, `extractFunctionBody` or `splitAtTopLevel`
 
@@ -254,6 +349,15 @@ All resolved with the user on 2026-10-01 before this spec was written.
 
 ## Changelog
 
+- 2026-10-01: Phase 2 redesigned after measurement, and after opt-in exposure
+  landed (`a961578699`). The original draft treated Phase 2 as a drop-in
+  ts-morph swap; measuring it showed 58/77 agreement, zero extra breakage found,
+  and one false positive of its own, so the phase gained three sub-goals
+  (structural `classifyFunction`, the asymmetric audit rule with conflict
+  reporting, and escape refusal) and two hard constraints (NOT NULL asymmetry,
+  declared-parameter fields). Recorded that both analyses are intra-procedural
+  and that 24 edge-function handoffs are safe only through zod stripping in the
+  receiving code.
 - 2026-10-01: Created. Open questions resolved with the user before writing
   (four asked, one re-asked after the answer contradicted the variadic signature
   in `production.service.ts`). Measurements taken against commit `5c90a8df30`:

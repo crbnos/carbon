@@ -22,6 +22,7 @@ import type {
 } from "@carbon/api";
 import { MCP_BLOCKED_TOOL_NAMES } from "../../apps/erp/app/routes/api+/mcp+/lib/mcp-blocked-tools";
 import {
+  declaredClassification,
   hasMcpExposureTag,
   MCP_EXPOSURE_TAG,
   MCP_MODULE_ALLOWLIST,
@@ -1026,6 +1027,20 @@ function extractFunctionBody(content: string, funcName: string): string | null {
   );
 }
 
+/**
+ * Whether the body performs a WRITE — evidence against a `@mcp read`
+ * declaration. Same body-scan mechanism (and shadowed-wrapper first-match
+ * caveat) as `functionBodyDeletes`.
+ */
+function functionBodyWrites(content: string, funcName: string): boolean {
+  const body = extractFunctionBody(content, funcName);
+  if (body === null) return false;
+  const stripped = stripComments(body);
+  return /\.(insert|upsert|update)\s*\(|\b(insertInto|updateTable|deleteFrom)\s*\(|\.delete\s*\(/.test(
+    stripped
+  );
+}
+
 function computeInjectAuth(
   funcName: string,
   classification: Classification
@@ -1490,6 +1505,12 @@ export interface BuildOptions {
   ) => void;
   /** A data-changing function with no `@mcp` tag, so it is not exposed. */
   onUntagged?: (toolName: string, classification: Classification) => void;
+  /** A `@mcp <kind>` declaration that overrode the name-verb guess. */
+  onClassificationDeclared?: (
+    toolName: string,
+    inferred: Classification,
+    declared: Classification
+  ) => void;
   /** A module absent from `MCP_MODULE_ALLOWLIST`, so none of it is exposed. */
   onModuleSkipped?: (module: string, functionCount: number) => void;
   /**
@@ -1574,7 +1595,27 @@ export function buildAllToolMetadata(opts: BuildOptions = {}): ManifestEntry[] {
       const toolName = `${mod}_${func.name}`;
       if (MCP_BLOCKED_TOOL_NAMES.includes(toolName)) continue;
 
-      const classification = classifyFunction(func.name, content);
+      // A declared `@mcp read|write|destructive` wins over the name-verb guess
+      // — the same rule descriptions already follow, code closest wins. It is
+      // VERIFIED against the body, so a declaration cannot quietly downgrade a
+      // real write into a read (which would relax its permission from
+      // create/update to view and drop its audit injection).
+      const inferred = classifyFunction(func.name, content);
+      const declared = declaredClassification(func.jsdoc);
+      if (declared === "READ" && functionBodyWrites(content, func.name)) {
+        throw new Error(
+          `${toolName} declares \`${MCP_EXPOSURE_TAG} read\` but its body performs a write. A read cannot write: fix the tag or the function.`
+        );
+      }
+      if (declared === "WRITE" && functionBodyDeletes(content, func.name)) {
+        throw new Error(
+          `${toolName} declares \`${MCP_EXPOSURE_TAG} write\` but its body deletes. Declare it \`${MCP_EXPOSURE_TAG} destructive\`.`
+        );
+      }
+      const classification = declared ?? inferred;
+      if (declared && declared !== inferred) {
+        opts.onClassificationDeclared?.(toolName, inferred, declared);
+      }
       // Opt-IN for anything that changes data. A function reaches the API
       // because someone tagged it, not because it happens to be exported.
       if (

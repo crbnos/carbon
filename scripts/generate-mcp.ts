@@ -39,6 +39,7 @@ export async function generateToolMetadata(): Promise<void> {
   const auditDrops: { toolName: string; table: string; dropped: string[] }[] =
     [];
   const untagged: { toolName: string; classification: string }[] = [];
+  const declared: { toolName: string; from: string; to: string }[] = [];
   const skippedModules: { module: string; functionCount: number }[] = [];
 
   const { tools: allTools, registryStats, responseStats, resolutions } =
@@ -48,6 +49,8 @@ export async function generateToolMetadata(): Promise<void> {
         auditDrops.push({ toolName, table, dropped }),
       onUntagged: (toolName, classification) =>
         untagged.push({ toolName, classification }),
+      onClassificationDeclared: (toolName, from, to) =>
+        declared.push({ toolName, from, to }),
       onModuleSkipped: (module, functionCount) =>
         skippedModules.push({ module, functionCount }),
     });
@@ -111,6 +114,14 @@ export async function generateToolMetadata(): Promise<void> {
     console.log(
       `\n  Modules not on MCP_MODULE_ALLOWLIST: ${skippedModules.map((m) => `${m.module} (${m.functionCount} fns)`).join(", ")}`
     );
+  }
+  if (declared.length > 0) {
+    console.log(
+      `\n  Classification declared on the tag (overrides the name-verb guess): ${declared.length}`
+    );
+    for (const d of declared) {
+      console.log(`      ${d.toolName}: ${d.from} → ${d.to}`);
+    }
   }
   if (untagged.length > 0) {
     const byClass = untagged.reduce<Record<string, number>>((acc, u) => {
