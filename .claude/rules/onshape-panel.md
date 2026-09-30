@@ -15,31 +15,31 @@ trigger everything from Onshape; Carbon never pulls automatically. Design spec:
 ## Two integrations — `onshape` and `onshape-v2`
 
 The panel is its own integration, `onshape-v2` ("Onshape V2",
-`packages/ee/src/onshape/config-v2.tsx`). `onshape` stays the pull-shaped
-original (released-asset webhook sync, `config.tsx`). Separate OAuth grant,
-separate `companyIntegration` row, separate `externalIntegrationMapping`
-namespace; a company can run either, both, or neither. Intended to be
-temporary while v2 replaces v1.
+`packages/ee/src/onshape/config-v2.tsx`). `onshape` and `onshape-government`
+are the sync connections (released-asset webhook sync, `config.tsx`).
+Separate OAuth grant, separate `companyIntegration` row, separate
+`externalIntegrationMapping` namespace; a company can run the panel beside
+either sync connection.
 
-- The panel id is `ONSHAPE_V2_INTEGRATION_ID` in
-  `packages/ee/src/onshape/lib/integration-id.ts`. Every panel read and write
+- The panel id is `ONSHAPE_V2_INTEGRATION_ID`
+  (`packages/ee/src/onshape/lib/integration-id.ts`). Every panel read and write
   passes it explicitly: `getOnshapeClient(…, ONSHAPE_V2_INTEGRATION_ID)`;
   omitted, `getOnshapeClient` resolves the company's sync connection. A bare
   `"onshape"` literal in panel code is a bug.
 - `ONSHAPE_INTEGRATION_IDS`, `OnshapeIntegrationId` and `isOnshapeIntegrationId`
-  (`lib/connection.ts`) cover the two SYNC connections only, `onshape` and
-  `onshape-government`. The one-active-connection rule
-  (`getConflictingOnshapeIntegration`) is between those two and never involves
-  the panel. `OnshapeOAuthIntegrationId` is all three grants.
-- Reads that answer "is this already in Carbon?" (status, the item page's
-  `ExternalSourceCard`, `items.service.ts`, the detach route) look in both
-  mapping namespaces, `ONSHAPE_MAPPING_NAMESPACES`, v2 first. Both sync
-  connections write under `onshape`. Writes name exactly one.
+  (`lib/connection.ts`) cover the two SYNC connections only. The
+  one-active-connection rule (`getConflictingOnshapeIntegration`) is between
+  those two and never involves the panel. `OnshapeOAuthIntegrationId` is all
+  three grants.
+- Only the `onshape-v2` link means "Onshape owns this item". A sync
+  connection's `onshape` item row is BOM-import bookkeeping (the BoM Explorer,
+  `components/OnshapeSync.tsx`, reads it); the item lock, the item card and
+  Detach never read or delete it.
 - Same Onshape OAuth app, same scopes (`OAuth2Read OAuth2Write`), two redirect
   URIs: `ONSHAPE_OAUTH_REDIRECT_URL` → `/api/integrations/onshape/oauth`,
   `ONSHAPE_V2_OAUTH_REDIRECT_URL` → `/api/integrations/onshape-v2/oauth`. Both
-  must be registered on the Onshape app. Every Onshape grant shares one flow:
-  install routes call `beginOnshapeAuthorization` (`@carbon/ee/onshape.server`),
+  must be registered on the Onshape app. Every grant shares one flow: install
+  routes call `beginOnshapeAuthorization` (`@carbon/ee/onshape.server`),
   callbacks call `completeOnshapeAuthorization`
   (`apps/erp/app/modules/settings/onshape-oauth.server.ts`), and
   `getOnshapeOAuthConfig` picks the redirect URI per id; a missing client or
@@ -47,90 +47,131 @@ temporary while v2 replaces v1.
   one from `@carbon/auth/oauth-state.server`. The callback renders
   `oauthPopupResponse`: it posts the outcome to the opener and closes the popup,
   or lands on the integrations page when there is no opener.
+- Install opens a popup (`beginOAuthPopup`, `packages/ee/src/oauth-popup.ts`,
+  opened inside the click, before the install fetch). The drawer's
+  **Reconnect Onshape** action (Onshape and Onshape V2) POSTs to the same
+  install route, which answers `{ redirectUrl }`; the page goes to the consent
+  screen and the callback returns to the integrations page. Onshape Government
+  re-authorizes by saving its client secret.
+- Every Onshape connection has a health check (`onshapeHealthcheck`,
+  `packages/ee/src/onshape/hooks.server.ts`): build the client (which refreshes
+  an expired token) and read `/companies`. A revoked grant or dead refresh token
+  reads unhealthy on the card. `getIntegrationHealth` caches a healthy answer
+  for five hours.
 - Migration `20260929185557_onshape-v2-integration.sql` seeds the `integration`
-  row (FK target for `companyIntegration`); `credentials` required, `baseUrl`
-  not — the integration settings form may write metadata before any grant exists.
-- The V2 integration form holds the five push defaults (`config-v2.tsx`,
-  "Push defaults" group). The unit dropdown's options are the company's units,
-  loaded in `x+/settings+/integrations.$id.tsx` as `dynamicOptions`. The generic
-  save spreads existing metadata under the form values, so `propertyMap`,
-  `credentials` and the vaulted tokens survive a save.
-- `onshape-v2` is in `SECRET_KEYS`: its tokens live in Supabase Vault
-  (migration `20260929185558_onshape-v2-vault-secrets.sql` moved existing ones).
-- `beginOAuthPopup` (`packages/ee/src/oauth-popup.ts`) opens the popup inside
-  the click, before the install fetch — opening after the await was silently
-  blocked.
+  row; `…558_onshape-v2-vault-secrets.sql` puts `onshape-v2` in `SECRET_KEYS`,
+  so its tokens live in Supabase Vault.
+- The V2 integration form holds the five push defaults (`config-v2.tsx`, "Push
+  defaults" group). The unit dropdown's options are the company's units, loaded
+  in `x+/settings+/integrations.$id.tsx` as `dynamicOptions`.
+
+## Integration state — one owner per key
+
+`companyIntegration.metadata` has several writers: the token refresh, the OAuth
+callback, the settings save (form and API), the webhook's Onshape company id,
+and the panel's property map. Each writes only its own keys through
+`patchIntegrationState` (row lock, dot-path patches); the helpers are in
+`packages/ee/src/onshape/lib/state.ts` (`patchOnshapeSettings`,
+`patchOnshapeOAuthGrant`, `patchOnshapeRefreshedTokens`,
+`patchOnshapeCompanyId`). The Fields save writes `propertyMap` with
+`jsonb_set`. Never write the whole column from a copy read earlier: whichever
+write lands last reverts the others.
+
+## Onshape token refresh
+
+`getOnshapeClient` refreshes when the token is within two minutes of expiry and
+again on a 401. Onshape rotates refresh tokens, so a refresh runs under an
+owner-bound lease from `@carbon/kv` (`acquireLease` / `withLease`: Lua acquire
+that tells "held" from "Redis unavailable", renewal while the exchange runs,
+compare-and-delete release). With Redis down the refresh runs without a lock.
+The lease holder re-reads the stored pair and adopts a token another caller
+already refreshed (`resolveOnshapeRefresh`, `lib/token-refresh.ts`). The token
+request times out after 15 s.
 
 ## Auth — why the panel has its own credential
 
 The `carbon` session cookie is `SameSite=Lax` and never reaches a cross-site
 iframe. So:
 
-- `onshape+/panel.tsx` loads with **no auth** and is the ONLY route that may be
-  framed (`Content-Security-Policy: frame-ancestors https://*.onshape.com` —
-  nothing else in the app sets a CSP).
-- `onshape+/auth.tsx` is a same-origin popup: normal cookie session required,
+- `onshape+/panel.tsx` loads with **no auth** and is the only route that may
+  be framed by Onshape: its own `Content-Security-Policy: frame-ancestors
+  https://onshape.com https://*.onshape.com` replaces the app's baseline
+  `frame-ancestors` directive for that route.
+- `onshape+/auth.tsx` is a same-origin popup. It takes identity from the cookie
+  session alone (`requireAuthSession`), refuses non-employees (portal accounts
+  included) and console sessions, applies the app shell's account gates
+  (enforced MFA enrollment; ITAR attestation in a controlled environment), then
   mints an opaque `cps_<32 base64url>` token (Redis `panel-session:<token>`,
-  12 h TTL, `packages/ee/src/onshape/panel/session.server.ts`), posts it to
-  the opener, closes. The panel keeps it in sessionStorage and sends
+  `packages/ee/src/onshape/panel/session.server.ts`) and posts it to the
+  opener. The panel keeps it in sessionStorage and sends
   `Authorization: Bearer`.
-- The panel API routes do NOT call `requirePermissions` — that is the core
-  cookie/API-key gate and carries no Onshape coupling. They call the
-  purpose-built `requireOnshapePanelPermissions`
-  (`@carbon/ee/onshape/panel-session.server`), which resolves the bearer token,
-  refreshes the underlying access token in place, and runs the SAME claims check
-  as `requirePermissions`, returning the identical `{ client, companyId, userId,
-  … }` shape. Denials return 401 (token missing/expired/revoked) or 403
-  (permission) — **never redirects** (a redirect inside the iframe is
-  meaningless). This whole credential lives in `@carbon/ee`, not `@carbon/auth`,
-  because it is an integration concern; `@carbon/ee` imports `refreshAccessToken`
-  / `getUserClaims` back from `@carbon/auth`, never the reverse.
-- Supabase rotates refresh tokens, so the panel refresh runs under an
-  owner-bound lease lock (`panel-session-refresh:<token>`, 5 s lease renewed
-  every 2 s by `withPanelRefreshLock`, compare-and-delete release). Only the
-  holder refreshes; waiters poll for its result and retry the lock, and one
-  that sees neither answers 401 rather than racing a second refresh.
+- A panel session holds **identity only** (`PanelSession`, `session-policy.ts`)
+  — never a Supabase token. Each request builds its client from a short-lived
+  token signed for the user (`getUserScopedClient`, as the MCP bearer path
+  does). Copying the cookie session's refresh token would make the panel and
+  the ERP tab rotate one chain, and GoTrue revokes the session family on reuse.
+- Panel API routes call `requireOnshapePanelPermissions`
+  (`@carbon/ee/onshape/panel-session.server`), not `requirePermissions`. Every
+  request applies the cookie path's session policy (`panelSessionRefusal`: in
+  a controlled environment the absolute cap and idle lock; everywhere, a TOTP
+  factor enrolled after minting), requires the `employee` role, then runs the
+  same claims check as `requirePermissions` and returns the same shape. The
+  acting user is always the session user. Denials are 401 (token missing,
+  expired, revoked, refused by policy) or 403 (role or permission) — never
+  redirects. Activity is stamped only on an authorized request, with
+  `SET … KEEPTTL XX` so a deleted session stays deleted. In a controlled
+  environment the Redis TTL stops at the ERP session's absolute cap.
 - Tokens never appear in URLs. postMessage targets `window.location.origin`.
 
-## Identity — externalIntegrationMapping (integration `onshape-v2` for panel writes)
+## Identity — externalIntegrationMapping (integration `onshape-v2`)
 
 | Entity | externalId |
 |---|---|
-| Part item | `documentId:elementId:partId` |
-| Assembly item | `documentId:elementId:assembly` |
+| Part item | `documentId:elementId:partId[:configuration]` |
+| Assembly item | `documentId:elementId:assembly[:configuration]` |
 | Release revision item | `release:<releaseId>:<partNumber>` |
-| Onshape-origin BOM line | entityType `methodMaterial`, `metadata.makeMethodId` identifies the owning method |
+| Onshape-origin BOM line | entityType `methodMaterial`, `metadata.makeMethodId` names the owning method |
+| Draft the panel made | entityType `makeMethod` (`DRAFT_MARKER_ENTITY_TYPE`), `externalId` = the Draft's id, `metadata.sourceMethodId` = the Active method it copied |
 
 BOM pushes are a **diff, not a rebuild**: delete only lines whose mapping rows a
-previous push wrote (matched by `metadata->>makeMethodId`), insert fresh ones,
-leave manual lines untouched.
-
-**Released (Active) make methods are never edited and no longer refused.** The
-push takes a Draft version (`ensureDraftMakeMethod`,
-`apps/erp/app/modules/settings/onshape-draft-method.server.ts`: reuse the
-newest existing Draft, else `copyMakeMethod` + `upsertMakeMethodVersion`) and
-writes there. Idempotent — a second push finds the same Draft. The copy has new
-line ids and no mappings, so `correlateCopiedLines`
-(`packages/ee/src/onshape/panel/method-version.ts`) re-derives the
-Onshape-origin mappings by natural key (component item, then `order` within a
-component) and leaves anything it cannot pair unmapped — an unmapped line reads
-as manual and is preserved. Pairing wrongly is the failure that matters. The
-push result reports `New Draft version, not yet live: …`.
-
-A line already carrying the right component is UPDATED in place, and one whose
+previous push wrote, insert fresh ones, leave manual lines untouched. A line
+already carrying the right component is updated in place, and one whose
 push-owned columns (`quantity`, `order`, `materialMakeMethodId`) already match
-is skipped entirely — an untouched re-push costs no writes and stamps no
-`updatedBy`. New lines are collected per method and written as ONE bulk insert
-plus ONE bulk mapping insert, paired by index; the counts are compared before
-pairing, since a short result would link mapping rows to the wrong lines.
+is skipped. New lines and their mapping rows are written together in a Kysely
+transaction (`insertOwnedMethodLines`,
+`apps/erp/app/modules/settings/onshape-push.server.ts`; a count mismatch rolls
+back), and the item link is swapped in one (`swapItemMapping`). Every delete is
+scoped by `companyId`.
 
-Onshape-owned item fields — `readableId`, `name`, `description`, `revision`,
-thumbnail, model — are dropped by `upsertPart`'s update path for mapped items.
-The item page's ONLY integration footprint is the self-loading
-`ExternalSourceCard` (one JSX line in `x+/part+/$itemId.details.tsx`). It shows
-the v2 link when both exist and posts that row's `integration` to Detach, which
-validates it and deletes exactly that namespace's row. A failed lock lookup in
-`upsertPart` returns the error instead of writing the owned fields.
+**Released (Active) make methods are never edited.** The push writes into a
+Draft (`ensureDraftMakeMethod`,
+`apps/erp/app/modules/settings/onshape-draft-method.server.ts`). It reuses a
+Draft only when the panel made it from the current Active method and no change
+notice holds it (`pickReusableDraft`, marker row above); a person's Draft, a
+change notice's, one copied from an older version, or a half-built one is left
+alone and a new version is made (`max(version) + 1`). The copy runs through
+`copyMakeMethod`; ownership is carried with `pairOwnedCopiedLines`, which pairs
+over every source line and skips zero quantities. The marker is written last;
+a failed copy or carry deletes the new Draft with the service role. The
+assembly plan loads the reusable Draft too (`loadReusableDrafts`), so the review
+names the Draft the push will write into.
+
+**Item ownership lock.** A panel-linked item's `name` and `description` belong
+to Onshape. `checkItemIdentityEdit` (`apps/erp/app/modules/items/onshape-lock.ts`,
+kept out of the service file so it is not an MCP tool, and out of `.server` so
+the client-bundled service can import it) guards `upsertPart` (after resolving
+a readable id), `updateItem` and the Properties sidebar
+(`x+/items+/update.tsx`). It refuses only when a value actually changes; the
+sidebar shows the refusal as its existing error toast. `upsertPart` leaves the
+owned keys out of the write. The panel's own push writes them directly. CSV
+import is not guarded (deliberate admin bulk action).
+
+The item page's only integration footprint is the self-loading
+`ExternalSourceCard` (one JSX line in `x+/part+/$itemId.details.tsx`): "Name and
+description are managed in Onshape", last push time, **Open in Onshape** (the
+exact tab when the link records a workspace, else the document — assembly
+pushes link children without one) and **Detach** (`api+/integrations.onshape.detach`,
+deletes the item's `onshape-v2` row only, company-scoped).
 
 ## Plan / apply — every push is two requests
 
@@ -139,239 +180,149 @@ Pushes never write on the first request. PLAN
 and Carbon, builds the plan with the pure builders in
 `packages/ee/src/onshape/panel/plan.ts`, stores it and returns
 `{ planId, expiresAt, plan }`. APPLY (`push-{part,assembly,release}`) takes the
-stored plan and writes — it makes NO Onshape
-call; every read a push needs is already in the plan. A completed push costs
-the same Onshape reads as before, spent at review time — a review that is
-cancelled or expires has spent them (part 1, assembly 2, release 1 + N
-assemblies whose method is not released).
+stored plan and writes; it makes NO Onshape call. A review that is cancelled or
+expires has spent its reads (part 1, assembly 2, release 1 + N assemblies whose
+method is not released).
 
 - Store: `packages/ee/src/onshape/lib/panel-plan-store.ts`, Redis
-  `panel-plan:cpp_<32 base64url>`, 15 min, bound to companyId + userId,
-  peeked for edit validation (a 422 leaves it in place) and taken with GETDEL
-  right before the writes (one-shot — a double-click cannot apply twice; an
-  apply that fails after the take means "review again"). `createPanelPlan`
-  returns null when Redis did
-  not take the write (`@carbon/kv` is fail-soft) → the PLAN request answers
-  503. A missing/expired/foreign plan at apply → 410.
-- The review edits three manufacturing fields per row (`ItemFieldSelects.tsx`).
-  Editable at CREATE (through the proposal): name, description,
-  replenishmentSystem, defaultMethodType, itemTrackingType, unitOfMeasureCode —
-  validated by `mergeItemEdits` (enum whitelist, the ERP's replenishment↔method
-  interlock duplicated as `VALID_METHOD_TYPES_BY_REPLENISHMENT`, unit must be one
-  of the company's).
-- Editable on an EXISTING item: only the three manufacturing fields
-  (replenishmentSystem, defaultMethodType, itemTrackingType) — they are
-  Carbon-side, not Onshape-owned, so unlike name/description a push may change
-  them on an item that already exists. `applyRequestBody` scopes an existing
-  row's edit to just those three (name/description/unit/customFields are
-  stripped, so the owned-field lock stays true); the plan carries each existing
-  row's `current` snapshot (`currentItemFields`, plan-route selects now read
-  `replenishmentSystem`/`defaultMethodType`/`itemTrackingType`) so the panel
-  seeds the editor with what Carbon holds; the push validates with
-  `mergeExistingItemEdits` and writes ONLY what changed (an untouched re-push
-  stamps nothing). The panel editor is `ItemFieldSelects.tsx` — compact
-  icon-only Selects, text in the dropdown. Name and description on an
-  adopt/update/reuse still come from Onshape's values, never from edits.
-- `proposeItem` takes the company's **push defaults** from
-  `parsePushDefaults(companyIntegration.metadata)`
-  (`packages/ee/src/onshape/panel/preferences.ts`, pure, total, fail-soft —
-  a malformed row yields `DEFAULT_PUSH_DEFAULTS`: Make / Make to Order /
-  Pull from Inventory for purchased rows / Inventory / unit null). Null unit
-  means "resolve from the company's list at plan time" ("EA" is not seeded by
-  any migration, and a stored code can stop existing). `reconcilePushDefaults`
-  enforces the replenishment↔method interlock; a purchased BOM row is always
-  Buy. Keys: `defaultUnitOfMeasureCode`, `defaultReplenishmentSystem`,
-  `defaultMethodTypeForMake`, `defaultMethodTypeForBuy`,
-  `defaultItemTrackingType`. Release behaviour is fixed, not configurable: a
-  release push records the plan's change notice when it creates revisions, and
-  new revisions become the default (`push-release` still takes `changeNotice`
-  and `makeDefault`; the panel sends the plan's values). `panel.me` returns only
-  `{ userId, email, company }`.
-- APPLY re-resolves items by readableId before creating: `upsertPart` reads
-  the new id back from the `parts` view, which is the WRONG row when another
-  revision of that number exists, so a "create" whose number now exists
-  becomes adopt/reuse. Parts adopt via `pickAdoptTarget` (a Part at the same
-  revision, else any Part — never a Material/Tool sharing the number).
-- Assembly apply is FLAT over `plan.methods`: each level stands alone, so a
-  Draft sub-assembly under a released parent is still applied (the old
-  recursive push skipped it). Line `itemType` comes from `bomLineItemType`.
-- Assembly plans carry a `depth`: `all` (default, the whole tree) or `top`
-  (the root's method only, each sub-assembly a single line pointing at its own
-  make method). `top` exists because `methodMaterial.materialMakeMethodId`
-  already nests levels, so a big tree composes from pushes made a level at a
-  time — and each push is then bounded by one level's line count. A `top` plan
-  still classifies an unexploded sub-assembly as an assembly (`madePartNumbers`
-  is computed over the WHOLE tree); classifying it from its now-empty child
-  list would create it as a Buy part. Apply loads make methods for every
-  `isAssembly` item, not just the ones in `plan.methods`, or a `top` push would
-  write its lines with a null child-method pointer and flatten the tree.
-- `plan-assembly` refuses over `MAX_PLAN_PARTS` (1500) distinct part numbers
-  with a message naming the count and the level-by-level route out. Not a
-  technical limit — a push is one request with no rollback, so a very large one
-  can be cut off mid-write.
-- Release plan reads each released assembly's BOM at its version (immutable,
-  stored in the plan); the change notice number is only minted at apply
-  (`get_next_sequence` burns a number — never call it from a plan).
-- The panel patches its part list from the apply response instead of
-  re-reading status (saves the 2 status reads per push in production).
+  `panel-plan:cpp_<32 base64url>`, 15 min, bound to companyId + userId, peeked
+  for validation (a 422 leaves it in place) and taken with GETDEL right before
+  the writes (one-shot). `createPanelPlan` returns null when Redis did not take
+  the write → the PLAN request answers 503. A missing/expired/foreign plan at
+  apply → 410.
+- The review's only editors are three manufacturing selects per row
+  (`ItemFieldSelects.tsx`: replenishment, method type, tracking type). A create
+  validates them with `mergeItemEdits`; an existing item with
+  `mergeExistingItemEdits`, writing only what changed. Name and description
+  always come from Onshape.
+- A part is `unchanged` when its microversion matches the one the last push
+  recorded. When a property map exists, unchanged rows still have their mapped
+  fields resolved; if an owned value differs from Carbon's
+  (`ownedCustomFieldsDiffer`), the row becomes an `update` flagged
+  `cadUnchanged`, and apply writes the fields and link but skips the model
+  export.
+- `proposeItem` takes the company's push defaults from `parsePushDefaults`
+  (`panel/preferences.ts`, fail-soft to `DEFAULT_PUSH_DEFAULTS`). A null unit
+  resolves from the company's list at plan time. A purchased BOM row is always
+  Buy.
+- APPLY re-resolves items by readableId before creating. Parts adopt via
+  `pickAdoptTarget` (a Part at the same revision, else any Part — never a
+  Material/Tool sharing the number). Revisions compare the way
+  `getNextRevision` counts them (`compareRevisions`, `panel/revision.ts`:
+  digits by value, letters by length then alphabet, active rows first).
+- Assembly apply is FLAT over `plan.methods`. An assembly push links a child
+  item to its Onshape source only when neither the item nor the source is
+  linked already (`linkChildParts`); a part push owns the link. The pushed
+  assembly itself is always linked.
+- Assembly plans carry a `depth`: `all` (default) or `top` (the root's method
+  only, each sub-assembly a line pointing at its own method). `plan-assembly`
+  refuses over `MAX_PLAN_PARTS` (1500) distinct part numbers.
+- A root with no part number is refused at plan ("Set a part number on the
+  assembly in Onshape first").
 
 ## Custom fields — the property map
 
-Onshape properties flow into Carbon custom fields through ONE explicit map per
+Onshape properties flow into Carbon part custom fields through ONE map per
 company, `companyIntegration.metadata.propertyMap`. Entry:
-`{ onshapePropertyId, onshapeName, valueType, carbonFieldId, mode }`.
-Pure logic in `packages/ee/src/onshape/panel/properties.ts` (tested).
+`{ onshapePropertyId, onshapeName, valueType, carbonFieldId, mode }`. Pure logic
+in `packages/ee/src/onshape/panel/properties.ts` (tested).
 
-- The editor is the panel's **Fields** page, the one setting the panel keeps:
-  Onshape lists properties only from inside a document (the metadata API has no
-  company property-schema call), so Carbon's integration page has nothing to
-  offer. `api+/integrations.onshape.panel.fields.ts`: GET lists the current
-  element's properties (a part studio's as the union across its parts, hidden
-  ones included; an assembly's from element metadata), the map and the part
-  custom field definitions; POST replaces the whole map. Both take settings
-  update; `panel.me` returns `canEditFields` and the panel shows the page only
-  then. The page loads when opened and posts every entry, including ones mapped
-  from other elements, so saving here never unmaps them. A mapping needs an
-  existing Carbon field; the save refuses unmappable types, two properties on
-  one field, and deleted fields (422, pinned per property).
-- ONE mode: `parsePropertyMap` reads every entry as `owned` — Onshape writes the
-  field on every push. A stored `"default"` is treated as owned. Nothing on the
-  item page locks mapped custom fields; they stay editable until the next push
-  overwrites them.
-- Values are read at plan: parts via `readPartProperties`
-  (`@carbon/ee/onshape.server` — kept off the general barrel; one metadata read
-  at `depth=2`, verified live to nest `parts.items[].properties`; per-part
-  fallback exists), assembly ROOT from the element-metadata read the plan
-  already makes. Release pushes and BOM children don't touch custom fields.
-  Map empty → zero extra reads.
-- Values land in `part.customFields`, KEYED BY readableId — one row per part
-  number shared across revisions. Writes are read-merge-write of only the
-  mapped keys (`mergeCustomFieldValues`), so Carbon-owned keys survive.
-- Enum/List options sync ADD-ONLY at apply (`missingListOptions`), never at
-  plan (a plan writes nothing) and never removing options.
-- Coercion: STRING→Text/List, BOOL→Yes/No, INT/DOUBLE→Numeric, DATE→Date,
-  ENUM→List/Text, OBJECT (Material)→Text display name; USER/BLOB/COMPUTED not
-  mappable. A value that cannot coerce is a review problem line, never a write.
-  A Yes/No field stores the ERP's checkbox value — the string `"on"` when
-  ticked, no key when not (`BOOLEAN_TRUE`); a JSON boolean renders unticked in
-  every table (`useCustomColumns` reads `=== "on"`). Dates are validated as
-  real calendar days, not just the YYYY-MM-DD shape.
-- An `owned` field emptied in Onshape empties in Carbon: owned nulls carry
-  through and `mergeCustomFieldValues` deletes the key. Fields the push does
-  not own are never touched.
-- The OAuth callback spreads the existing metadata, so reconnecting Onshape
-  keeps the map (it used to rebuild the column from scratch).
+- The editor is the panel's **Fields** page: Onshape lists properties only from
+  inside a document. `api+/integrations.onshape.panel.fields.ts`: GET lists the
+  element's properties (a part studio's as the union across its parts), the map
+  and the part custom field definitions; POST replaces the whole map. Both take
+  settings update; `panel.me` returns `canEditFields`. The save refuses a target
+  type `MAPPABLE_VALUE_TYPES` does not allow, two properties on one field, and
+  deleted fields (422, per property).
+- ONE mode: every entry is `owned` — Onshape writes the field on every push.
+  Nothing on the item page locks mapped custom fields.
+- `MAPPABLE_VALUE_TYPES`: STRING/ENUM/OBJECT→Text, BOOL→Yes/No,
+  INT/DOUBLE→Numeric, DATE→Date. USER/BLOB/COMPUTED/CATEGORY are not mappable,
+  and no type maps to List.
+- Values are read at plan (parts via `readPartProperties`,
+  `@carbon/ee/onshape.server`, one metadata read at `depth=2`; assembly root
+  from the element metadata the plan already reads). Release pushes and BOM
+  children write no custom fields. Map empty → zero extra reads.
+- Values land in `part.customFields`, keyed by readableId (shared across
+  revisions). Writes merge only the mapped keys (`mergeCustomFieldValues`);
+  an owned value emptied in Onshape deletes the key. A Yes/No field stores the
+  string `"on"` (`BOOLEAN_TRUE`); a JSON boolean renders unticked.
 
 ## Push release
 
 - Releases come from `GET /revisions/d/{did}` grouped by releaseId
-  (`packages/ee/src/onshape/panel/releases.ts`, pure + tested). Onshape has no
-  packages-by-document endpoint.
+  (`panel/releases.ts`). Every Part Studio revision carries its `partId`.
 - Per released model item: ensure an item AT the released letter —
-  `createRevision` from the base (created active, then `updateDefaultRevision`
-  cuts consumers over) or a fresh item. The revision copy's Onshape-origin
-  lines are deduped via the base method's mapping tuples so manual lines
-  survive into the new revision. BOM children that aren't release items are
-  resolved with one bulk lookup before minting anything (purchased hardware
-  already in Carbon must be reused, not re-created).
-- One **Draft** change notice records the push; releasing methods stays with
-  the user. Idempotent on partNumber+letter; re-push re-applies BOMs + assets.
+  `createRevision` from the base or a fresh item. BOM children that are not
+  release items are resolved with one bulk lookup (purchased hardware is
+  reused). Release lines are inserted in one batch per method.
+- One **Draft** change notice records the push. A released method in Carbon is
+  not edited: its BOM is reported as skipped. Idempotent on
+  partNumber+letter.
+- Model exports carry the revision's `partId` and configuration
+  (`releaseExportSelection`); the configuration is sent as Onshape returned it.
+  A Part Studio item with no single `partId` is reported as skipped.
 
 ## Batch every `.in()` sized by CAD data
 
-Supabase's gateway rejects a REST request whose **encoded request line exceeds
-4,096 bytes**, and a PostgREST `.in()` list rides in the URL. Measured: 3,821
-bytes succeeds, 4,001 fails; past ~6 KB Kong answers 414, and between the two it
-forwards and PostgREST rejects it, which Kong reports as a **502 "invalid
-response from upstream"** — a confusing way to be told a list was too long.
-
-The limit is BYTES, so the part count a call survives depends on the value
-length — ~215 nine-character part numbers, but only **~56** of the 53-58
-character `documentId:elementId:partId` external ids. That pair of reads in
-`linkChildParts` was therefore the first thing a real assembly broke, and it
-broke QUIETLY: the failure lands in `summary.errors` on a push that otherwise
-reports success, leaving created items unlinked from their part studios.
-
-Every panel `.in()` sized by a BOM, a part studio or a release now goes through
-`selectInBatches` / `chunkFilterValues` (`onshape/lib/batched-filter.ts`, exported
-from `@carbon/ee/onshape`), which split on encoded bytes. They live under
-`onshape/` rather than in shared code deliberately: the limit is platform-wide,
-but the panel is the only feature that turns an arbitrary customer assembly into
-an unbounded filter list, and the integration should not be changing the shape of
-calls the rest of Carbon makes. **A fixed count is not a fix** — it is exactly how a list of long
-ids slips past a limit tuned for short ones. Two consequences to keep in mind:
-a batched read's rows arrive in batch order, so anything that relied on
-`.order("revision")` re-sorts afterwards; and the orphan-mapping cleanup reads
-the method's rows and diffs in memory rather than sending a `not in` list of
-every line it just wrote.
+Supabase's gateway rejects a REST request whose encoded request line exceeds
+4,096 bytes, and a PostgREST `.in()` list rides in the URL (between ~4 KB and
+~6 KB Kong reports it as a 502 "invalid response from upstream"). The limit is
+bytes, so a list of 53-58 character `documentId:elementId:partId` ids fails at
+~56 entries. Every panel `.in()` sized by a BOM, part studio or release goes
+through `selectInBatches` / `chunkFilterValues` (`onshape/lib/batched-filter.ts`),
+which split on encoded bytes. A fixed count is not a fix. Batched rows arrive
+in batch order, so anything relying on `.order(...)` re-sorts afterwards.
 
 ## Onshape API quirks (verified live)
 
-- The indented BOM never includes the top-level assembly row
-  (`includeTopLevelAssemblyRow=true` notwithstanding) — root identity comes
-  from element metadata property "Part number".
-- `partIds` on Part Studio translations is **ignored**: exports are always the
-  whole studio.
-- Unresolved action-URL placeholders arrive literally (`{$partNumber}`) and
-  must be treated as null (`parsePanelContext`).
-- Extensions render only for users **subscribed** to the app (private store
-  entry + "Get for free") — an OAuth grant alone shows nothing.
-- Configurations are part of identity. A configured part is one partId whose
-  variants can carry different part numbers, so the configuration is appended
-  to every mapping key when it is not the default:
-  `documentId:elementId:partId[:configuration]`, `…:assembly[:configuration]`
-  (`normalizeConfiguration` / `externalIdFor*` in `panel/status.ts`). The
-  default configuration ("default", empty, absent) adds nothing, so keys written
-  before this still match. BOM rows carry it in `itemSource.configuration`; the
-  panel sends its launch `configuration` to status, plan-part and plan-assembly,
-  which pass it to the Onshape reads (BOM, parts, metadata) and store it on the
-  plan; the push routes key and export with it (`onshape-panel-sync` passes it to
-  the GLTF translation). Without it, two variants in one BOM claimed one key and
-  the unique mapping index rejected the whole child-link insert.
-- Child links (`linkChildParts` in push-assembly) skip a source claimed by two
-  items and report it, and fall back to one insert per row when the bulk insert
-  is refused, so one bad row cannot unlink the rest. Remaining edge: two
-  configurations sharing ONE part number map to one item, which gets only the
-  first source's link; the other row shows Conflict. The thumbnail is still read
-  unconfigured.
-- Quota: private apps debit the app owner's annual quota; **publicly listed**
-  App Store apps are exempt. Production ships as a public listing.
+- The indented BOM never includes the top-level assembly row — root identity
+  comes from element metadata property "Part number".
+- A Part Studio model export needs exactly one `partId`; the export job
+  (`onshape-sync-element`) refuses a studio export without one. The element
+  thumbnail endpoint cannot select a part or configuration, so only
+  unconfigured assemblies take Onshape's thumbnail; every other thumbnail comes
+  from Carbon's model optimizer once it processes the export.
+- Unresolved action-URL placeholders arrive literally (`{$partNumber}`) and are
+  treated as null (`parsePanelContext`).
+- Extensions render only for users **subscribed** to the app — an OAuth grant
+  alone shows nothing.
+- Configurations are part of identity: the configuration is appended to every
+  mapping key when it is not the default (`normalizeConfiguration` /
+  `externalIdFor*` in `panel/status.ts`).
+- A linked document's BOM can report a different revision for the same part
+  than the source document's own BOM at the same version.
+- A refresh token still worked after seven days unused.
+- Quota: private apps debit the app owner's annual quota; publicly listed App
+  Store apps are exempt.
 
 ## Dev workflow
 
-- `ONSHAPE_DEV_CACHE=1` (worktree `.env`) serves repeated GETs from a
-  10-minute Redis cache — but ONLY paths in `DEV_CACHEABLE_PATHS`
-  (`packages/ee/src/onshape/lib/client.ts`). Never add a polling endpoint
-  (`/translations/{id}` poisoned the wait loop once). `/revisions/d/` is
-  cached, so a fresh Onshape release can lag up to the TTL in a dev panel.
-- Live calls are counted in Redis `onshape:api-calls:<year>`.
+- `ONSHAPE_DEV_CACHE=1` (worktree `.env`) serves repeated GETs from a 10-minute
+  Redis cache, only for paths in `DEV_CACHEABLE_PATHS`
+  (`packages/ee/src/onshape/lib/client.ts`). Never add a polling endpoint.
+- Live calls are counted in Redis `onshape:api-calls:<year>` (never awaited).
 - The slow work (export, poll, download, thumbnail; released drawings as PDF)
   is one Inngest job: `onshape-panel-sync`, `elementKind`
-  `partstudio | assembly | drawing`, retries 1, per-item concurrency 1 —
-  every execution spends live quota.
+  `partstudio | assembly | drawing`, retries 1, per-item concurrency 1.
 
-## Panel layout — two pages, no settings
+## Panel layout — three pages
 
-The panel shows status and pushes; it edits nothing. Anything a user would
-change lives in Onshape or on the Onshape V2 integration page in Carbon.
+The panel shows status and pushes. Anything a user would change lives in
+Onshape or on the Onshape V2 integration page in Carbon, except the property
+map (the Fields page), because Onshape lists properties only inside a document.
 
 Top band pinned (`Tabs` is the outermost element): **Parts / Assembly** (label
 follows the element kind; hidden on a drawing), **Releases** (needs a
-`documentId`), and on the right the Carbon company plus Sign out. A page that
-vanishes when Onshape moves the panel to another element falls back to the
-first available.
+`documentId`), **Fields** (settings update only), and on the right the Carbon
+company plus Sign out.
 
-- Assembly BOM is the structured tree only (top level collapsed, Expand all),
-  built from the status route's dotted item numbers
-  (`packages/ee/src/onshape/panel/bom-view.ts`). Assembly plans are
-  `depth: "all"` unless the too-large refusal offers "Push this level only".
-- Status badges: Linked (green), Conflict (red — same part number, no link),
-  Unlinked (grey).
-- Reviews are summaries: one line of counts, the conflict / won't-write / Draft
-  / manual-lines-kept alerts, and read-only rows (no per-method line list) (proposed settings, owned-field changes, mapped
-  custom field values). No search, filter chips, tick boxes or editors.
-- Every action disabled while a read or write is in flight; a Refresh keeps
-  rows on screen instead of collapsing to a spinner.
+- Assembly BOM is the structured tree (`panel/bom-view.ts`).
+- Status badges: Linked (green), Conflict (red — same part number, not linked
+  to this source), Unlinked (grey).
+- Reviews are summaries: one line of counts, alerts (parts matched by part
+  number, won't-write, Draft, manual lines kept), and read-only rows.
+- Every action is disabled while a read or write is in flight.
 
 ## Panel layout — the scroll container is load-bearing
 
@@ -381,15 +332,7 @@ renders three bands: a pinned header, ONE scrolling body
 review section. The document itself must never scroll.
 
 That is not styling. The app shell sets `html.h-full.overflow-x-hidden` plus
-`body.h-full`, which makes the ROOT element a fixed-height scroll container, and
-**Radix Select does not survive that**: opening one snapped the document to
-scrollTop 0 and closed the popup before it could be used. Verified live in the
-panel — click a Select near the bottom of a scrolled page and the trigger takes
-focus, the view jumps to the top, and no listbox mounts. Freeing `html`/`body`
-height, or giving the panel its own scroller, both fix it; the panel owns its
-scroller because that is also what lets the header and the push button stay put.
-Never reintroduce `min-h-screen`/`min-h-dvh` on the panel shell.
-
-Review rows are text and a badge, with no controls, so a 300-row review needs
-no virtualization. Adding an interactive control per row would bring that back
-into question — the removed editors mounted six Radix Selects per row.
+`body.h-full`, which makes the root element a fixed-height scroll container,
+and Radix Select does not survive that: opening one snapped the document to
+scrollTop 0 and closed the popup. Never reintroduce `min-h-screen`/`min-h-dvh`
+on the panel shell.
