@@ -136,7 +136,17 @@ export function typeToJsonSchema(
       return { type: "object" };
     }
 
-    const key = type.getText();
+    // The checker's own type id, NOT `type.getText()`. getText() serializes the
+    // whole structural type to a string, and a supabase row with embeds
+    // serializes to a very large one — paying that at every object node was
+    // measured at 5.2s of a 5.2s walk, i.e. effectively the entire cost of
+    // walking 1574 return types. The id is O(1), it is only ever a Map key here
+    // (never emitted — that is the `__@toStringTag@75448` trap noted above), and
+    // it is per-program so it stays valid for the one walk that uses it.
+    // Verified byte-identical over all 1574 functions.
+    const key = String(
+      (type.compilerType as unknown as { id?: number }).id ?? type.getText()
+    );
     // Cycle: the type is already being expanded further up this branch.
     if (seen.has(key)) return { type: "object" };
 
