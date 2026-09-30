@@ -36,23 +36,32 @@
 
 <br />
 
-<img alt="Carbon MES: job traveler with a step-by-step 3D assembly instruction" src=".github/assets/readme/mes-light.webp" />
+<a href="https://carbon.ms">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset=".github/assets/readme/assembly-dark.webp" />
+    <img alt="Carbon assembly instructions: step-by-step 3D work instructions authored from the CAD model" src=".github/assets/readme/assembly-light.webp" />
+  </picture>
+</a>
 
 <table>
   <tr>
-    <td width="50%">
+    <td width="33%" valign="top">
+      <img alt="Shop floor job traveler with 3D assembly steps and barcode scanning" src=".github/assets/readme/mes-light.webp" />
+      <p align="center"><sub><b>Real-time shop floor.</b> Digital travelers, scanning and live labor.</sub></p>
+    </td>
+    <td width="33%" valign="top">
       <picture>
         <source media="(prefers-color-scheme: dark)" srcset=".github/assets/readme/bom-dark.webp" />
         <img alt="Multi-level bill of materials with planning and supersession" src=".github/assets/readme/bom-light.webp" />
       </picture>
-      <p align="center"><sub><b>Unfork your BOM.</b> Multi-level BOMs, revisions and rule-driven configuration.</sub></p>
+      <p align="center"><sub><b>Unfork your BOM.</b> Multi-level BOMs, revisions and configuration.</sub></p>
     </td>
-    <td width="50%">
+    <td width="33%" valign="top">
       <picture>
         <source media="(prefers-color-scheme: dark)" srcset=".github/assets/readme/traceability-dark.webp" />
         <img alt="Lot and serial traceability graph" src=".github/assets/readme/traceability-light.webp" />
       </picture>
-      <p align="center"><sub><b>Traceability is the default.</b> Full lot and serial genealogy, forwards and back.</sub></p>
+      <p align="center"><sub><b>Traceability by default.</b> Lot and serial genealogy, forwards and back.</sub></p>
     </td>
   </tr>
 </table>
