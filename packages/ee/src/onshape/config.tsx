@@ -48,6 +48,19 @@ const backfillAction = {
   enabledWhenSetting: "assetSyncEnabled"
 };
 
+// Re-runs the connection's consent screen when its grant has died (the card
+// reads Unhealthy): a revoked grant or an expired refresh token cannot be
+// refreshed, only re-authorized. Settings and links are kept.
+export function onshapeReconnectAction(installEndpoint: string) {
+  return {
+    id: "reconnect",
+    label: "Reconnect Onshape",
+    description:
+      "Sign in to Onshape again to renew Carbon's access. Use this when the connection shows Unhealthy; settings and linked items are kept.",
+    endpoint: installEndpoint
+  };
+}
+
 export const Onshape = defineIntegration({
   name: "Onshape",
   id: ONSHAPE_INTEGRATION_ID,
@@ -62,7 +75,10 @@ export const Onshape = defineIntegration({
   schema: z.object({
     assetSyncEnabled: assetSyncEnabledSchema
   }),
-  actions: [backfillAction],
+  actions: [
+    onshapeReconnectAction("/api/integrations/onshape/install"),
+    backfillAction
+  ],
   onClientInstall: async () => {
     // Opened here, inside the click, so the browser still holds user
     // activation; the fetch below can take as long as it needs.
