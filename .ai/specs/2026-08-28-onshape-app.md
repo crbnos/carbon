@@ -44,7 +44,7 @@ Deployment requirements the split adds:
   (alongside `ONSHAPE_OAUTH_REDIRECT_URL` = `<erp>/api/integrations/onshape/oauth`).
   Install and callback for both ids share one handler
   (`onshape-oauth.server.ts`).
-- Migration `20260929185557_onshape-v2-integration.sql` seeds the integration
+- Migration `20260930224500_onshape-v2-integration.sql` seeds the integration
   row. `credentials` required, `baseUrl` optional.
 - The V2 integration form carries no settings; the panel's Settings page owns
   them.

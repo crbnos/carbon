@@ -25,7 +25,6 @@ const SETTINGS_PATHS: Record<OnshapeOAuthIntegrationId, readonly string[]> = {
   [ONSHAPE_INTEGRATION_ID]: ["assetSyncEnabled"],
   [ONSHAPE_GOVERNMENT_INTEGRATION_ID]: [
     "baseUrl",
-    "oauthUrl",
     "clientId",
     "assetSyncEnabled"
   ],
