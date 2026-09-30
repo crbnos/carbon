@@ -1,4 +1,6 @@
-import type { UIMessage } from "ai";
+import type { Database } from "@carbon/database";
+import { getToolName, isToolUIPart, type UIMessage } from "ai";
+import { isEphemeralTool, isUiBlockTool } from "./agent.blocks";
 
 // Sliding window: send the model only the most recent messages whose combined size stays
 // under this character budget (a rough token proxy — ~4 chars/token), dropping the oldest.
@@ -12,8 +14,19 @@ export type StoredMessage = {
     orderIndex: number;
     type: string;
     textContent: string | null;
+    toolName?: string | null;
+    toolCallId?: string | null;
+    toolInput?: unknown;
+    toolOutput?: unknown;
   }> | null;
 };
+
+type Role = "user" | "assistant";
+const isChatRole = (role: string): role is Role =>
+  role === "user" || role === "assistant";
+
+const sortedParts = (row: StoredMessage) =>
+  (row.parts ?? []).slice().sort((a, b) => a.orderIndex - b.orderIndex);
 
 const messageText = (m: UIMessage) =>
   m.parts.map((p) => (p.type === "text" ? p.text : "")).join("");
@@ -50,10 +63,9 @@ export function buildModelHistory(
   budget = HISTORY_CHAR_BUDGET
 ): UIMessage[] {
   const messages = rows.flatMap((row): UIMessage[] => {
-    if (row.role !== "user" && row.role !== "assistant") return [];
-    const text = (row.parts ?? [])
+    if (!isChatRole(row.role)) return [];
+    const text = sortedParts(row)
       .filter((p) => p.type === "text" && p.textContent)
-      .sort((a, b) => a.orderIndex - b.orderIndex)
       .map((p) => p.textContent)
       .join("\n\n")
       .trim();
@@ -68,4 +80,74 @@ export function buildModelHistory(
       messages[i + 1]?.role === "assistant"
   );
   return windowByChars(answeredOrCurrent, budget);
+}
+
+/**
+ * The conversation as the panel shows it when a thread is reopened: text, plus the UI
+ * blocks (choices, links, buttons) the answers carried. Read-tool steps are not replayed.
+ */
+export function toDisplayMessages(rows: StoredMessage[]): UIMessage[] {
+  return rows.flatMap((row): UIMessage[] => {
+    if (!isChatRole(row.role)) return [];
+    const parts = sortedParts(row).flatMap((p): UIMessage["parts"] => {
+      if (p.type === "text" && p.textContent) {
+        return [{ type: "text", text: p.textContent }];
+      }
+      if (p.type === "tool" && p.toolName && isUiBlockTool(p.toolName)) {
+        return [
+          {
+            type: `tool-${p.toolName}`,
+            toolCallId: p.toolCallId ?? `${row.id}-${p.orderIndex}`,
+            state: "output-available",
+            input: p.toolInput,
+            output: p.toolOutput
+          }
+        ];
+      }
+      return [];
+    });
+    return parts.length > 0 ? [{ id: row.id, role: row.role, parts }] : [];
+  });
+}
+
+export type StoredPart = Omit<
+  Database["public"]["Tables"]["agentMessagePart"]["Insert"],
+  "messageId" | "companyId" | "orderIndex" | "createdBy"
+>;
+
+const DOC_TOOLS = new Set(["search_docs", "read_doc"]);
+
+/** The parts of an answer worth keeping: text, and tool calls that completed. */
+export function toStoredParts(message: UIMessage): StoredPart[] {
+  return message.parts.flatMap((part): StoredPart[] => {
+    if (part.type === "text") {
+      return part.text ? [{ type: "text", textContent: part.text }] : [];
+    }
+    if (!isToolUIPart(part)) return [];
+    const name = getToolName(part);
+    // Ephemeral tools (navigate) are never replayed; a call cut off by Stop has no result.
+    if (isEphemeralTool(name)) return [];
+    if (part.state !== "output-available" && part.state !== "output-error") {
+      return [];
+    }
+    return [
+      {
+        type: "tool",
+        toolName: name,
+        toolClassification: isUiBlockTool(name)
+          ? null
+          : DOC_TOOLS.has(name)
+            ? "DOCS"
+            : "READ",
+        toolCallId: part.toolCallId,
+        toolInput: JSON.stringify(part.input ?? null),
+        toolOutput: JSON.stringify(
+          part.state === "output-error"
+            ? { error: part.errorText }
+            : (part.output ?? null)
+        ),
+        toolState: part.state === "output-available" ? "success" : "error"
+      }
+    ];
+  });
 }

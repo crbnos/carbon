@@ -4,20 +4,7 @@ import posthog from "posthog-js";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useAgentStore } from "~/stores/agent";
 import { path } from "~/utils/path";
-import { isUiBlockTool } from "../agent.blocks";
 import { useBrowsingContext } from "./useBrowsingContext";
-
-// Persisted rows as returned by the thread-history endpoint.
-type DbPart = {
-  orderIndex: number;
-  type: string;
-  textContent: string | null;
-  toolName: string | null;
-  toolCallId: string | null;
-  toolInput: unknown;
-  toolOutput: unknown;
-};
-type DbMessage = { id: string; role: string; parts?: DbPart[] };
 
 /** The text of the newest user message — the only thing a send puts on the wire. */
 function lastUserText(messages: UIMessage[]): string | undefined {
@@ -26,41 +13,6 @@ function lastUserText(messages: UIMessage[]): string | undefined {
     .map((p) => (p.type === "text" ? p.text : ""))
     .join("")
     .trim();
-}
-
-// Rebuild persisted rows into the AI SDK's UIMessage shape for history replay.
-// Only text and UI-block tool parts are reconstructed — read-tool step lines are
-// transient and not replayed. The SDK types tool parts as `tool-${name}` template
-// literals we can't express statically, so the DB→UIMessage mapping is asserted
-// once here, at this single boundary, instead of leaking casts into callers.
-function reconstructMessages(dbMessages: DbMessage[]): UIMessage[] {
-  return dbMessages
-    .filter((m) => m.role === "user" || m.role === "assistant")
-    .map((m) => ({
-      id: m.id,
-      role: m.role,
-      parts: (m.parts ?? [])
-        .slice()
-        .sort((a, b) => a.orderIndex - b.orderIndex)
-        .flatMap((p): Record<string, unknown>[] => {
-          if (p.type === "text" && p.textContent) {
-            return [{ type: "text", text: p.textContent }];
-          }
-          if (p.type === "tool" && p.toolName && isUiBlockTool(p.toolName)) {
-            return [
-              {
-                type: `tool-${p.toolName}`,
-                toolCallId: p.toolCallId ?? `hist-${p.orderIndex}`,
-                state: "output-available",
-                input: p.toolInput,
-                output: p.toolOutput
-              }
-            ];
-          }
-          return [];
-        })
-    }))
-    .filter((m) => m.parts.length > 0) as unknown as UIMessage[];
 }
 
 /**
@@ -224,9 +176,10 @@ export function useAgentThread() {
         newThread();
         return;
       }
-      const data = (await res.json()) as { messages?: DbMessage[] };
+      // The server returns the thread ready to show (`toDisplayMessages`).
+      const data = (await res.json()) as { messages: UIMessage[] };
       if (seq !== loadSeq.current) return;
-      setMessages(reconstructMessages(data.messages ?? []));
+      setMessages(data.messages);
     },
     [newThread, setMessages, setThread, stop]
   );

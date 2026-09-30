@@ -3,6 +3,8 @@ import { describe, expect, it } from "vitest";
 import {
   buildModelHistory,
   type StoredMessage,
+  toDisplayMessages,
+  toStoredParts,
   windowByChars
 } from "./agent.history";
 
@@ -102,5 +104,75 @@ describe("windowByChars", () => {
       windowByChars(history, 0).map((m) => m.role),
       "the newest message is always kept"
     ).toEqual(["user"]);
+  });
+});
+
+describe("toStoredParts → toDisplayMessages", () => {
+  const answer = {
+    id: "agm_answer",
+    role: "assistant",
+    parts: [
+      {
+        type: "tool-search_docs",
+        toolCallId: "c1",
+        state: "output-available",
+        input: { query: "batching" },
+        output: [{ title: "Batching" }]
+      },
+      {
+        type: "tool-navigate",
+        toolCallId: "c2",
+        state: "output-available",
+        input: { key: "batches" },
+        output: { url: "/x/production/batches" }
+      },
+      {
+        type: "tool-read_doc",
+        toolCallId: "c3",
+        state: "input-available",
+        input: { url: "https://docs.carbon.ms/docs/reference/batching" }
+      },
+      { type: "text", text: "Batching groups operations." },
+      {
+        type: "tool-present_link",
+        toolCallId: "c4",
+        state: "output-available",
+        input: { label: "Batching docs", url: "https://docs.carbon.ms/x" },
+        output: { shown: true }
+      }
+    ]
+  } as unknown as Parameters<typeof toStoredParts>[0];
+
+  // What the database hands back: JSON columns come back parsed.
+  const stored = toStoredParts(answer).map((p, orderIndex) => ({
+    ...p,
+    textContent: p.textContent ?? null,
+    toolInput: p.toolInput ? JSON.parse(p.toolInput as string) : null,
+    toolOutput: p.toolOutput ? JSON.parse(p.toolOutput as string) : null,
+    orderIndex
+  }));
+
+  it("keeps finished tools and text, never navigate or a cut-off call", () => {
+    expect(stored.map((p) => p.toolName ?? p.type)).toEqual([
+      "search_docs",
+      "text",
+      "present_link"
+    ]);
+  });
+
+  it("reopens as the text and UI blocks, without read-tool steps", () => {
+    const [message] = toDisplayMessages([
+      { id: "agm_answer", role: "assistant", parts: stored }
+    ]);
+    expect(message?.parts).toEqual([
+      { type: "text", text: "Batching groups operations." },
+      {
+        type: "tool-present_link",
+        toolCallId: "c4",
+        state: "output-available",
+        input: { label: "Batching docs", url: "https://docs.carbon.ms/x" },
+        output: { shown: true }
+      }
+    ]);
   });
 });

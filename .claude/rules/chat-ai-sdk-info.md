@@ -61,7 +61,7 @@ reusing a data validator.
 ## The in-app agent (streaming)
 
 `apps/erp/app/modules/agent/` is the only streaming, multi-turn, tool-using use.
-`streamChat` (`agent.service.ts`) runs `streamText`, converts its `stream` with the
+`streamChat` (`agent.server.ts`) runs `streamText`, converts its `stream` with the
 standalone `toUIMessageStream` (`generateMessageId` mints the stored row's id; `onEnd`
 persists the answer) and returns it with `createUIMessageStreamResponse`, where
 `consumeSseStream: consumeStream` keeps `onEnd` running after a browser disconnect.

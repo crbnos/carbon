@@ -3,20 +3,18 @@ import { companyHasFeature } from "@carbon/ee/plan.server";
 import { getLogger } from "@carbon/logger";
 import type { ActionFunctionArgs } from "react-router";
 import {
-  assertAgentRateLimit,
   chatRequest,
   getModelHistory,
   getThread,
-  saveUserMessage,
-  streamChat
+  saveUserMessage
 } from "~/modules/agent";
+import { assertAgentRateLimit, streamChat } from "~/modules/agent/agent.server";
 import { getDatabaseClient } from "~/services/database.server";
 
 const logger = getLogger("erp", "agent-chat");
 
 export async function action({ request }: ActionFunctionArgs) {
-  const { client, companyId, companyGroupId, userId } =
-    await requirePermissions(request, {});
+  const { client, companyId, userId } = await requirePermissions(request, {});
 
   const allowed = await companyHasFeature(client, companyId, {
     feature: "AI_AGENT"
@@ -78,7 +76,6 @@ export async function action({ request }: ActionFunctionArgs) {
 
   return streamChat(client, db, {
     companyId,
-    companyGroupId,
     userId,
     threadId,
     history: history.data,

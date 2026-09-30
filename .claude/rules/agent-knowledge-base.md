@@ -59,14 +59,28 @@ site's own (`headingAnchor`, github-slugger rules incl. `-1` suffixes), pinned b
 `links.test.ts`; the size bound on every page and section read is pinned by
 `agent.kb.test.ts`.
 
+The agent is read-only and docs-only: its tools are `search_docs`, `read_doc`,
+`find_page`, `navigate` and three UI blocks (`agent.tools.ts`). It has no tool that reads
+the customer's data. `navigate` resolves the page key on the server (`resolvePage`,
+`agent.pages.ts`, params URL-encoded) and returns `{ url }` or an error the model sees; the
+browser only follows a returned `/x/` url.
+
 The conversation is server-owned: the browser sends only its new question (or a retry
 trigger) and the thread id, and the chat route checks the thread is the caller's, saves the
-question in a Kysely transaction, and builds the model's history from the stored thread
-(`buildModelHistory`, `agent.history.ts`): user and assistant TEXT only, so earlier tool
-results never ride along, and an unanswered question is dropped unless it is the one being
-answered. Nothing the browser holds reaches the model. The answer is saved in one
-transaction under the id the server minted for it (`generateMessageId`), which is what
-feedback targets; a failed turn saves nothing and Retry answers the stored question.
+question in a Kysely transaction, and builds the model's history from the stored thread.
+`agent.history.ts` is the one place stored rows and messages convert:
+`buildModelHistory` (user and assistant TEXT only, so earlier tool results never ride
+along, and an unanswered question is dropped unless it is the one being answered),
+`toDisplayMessages` (text plus UI blocks, what the thread loader returns to the panel) and
+`toStoredParts` (an answer's text and finished tool calls, never `navigate`). Nothing the
+browser holds reaches the model. The answer is saved in one transaction under the id the
+server minted for it (`generateMessageId`), which is what feedback targets; a failed turn
+saves nothing and Retry answers the stored question.
+
+`agent.service.ts` is data access only (threads, messages, feedback, the two Kysely
+writes). The turn itself (`streamChat`, titling, the rate limit) is `agent.server.ts`,
+server-only and outside the module barrel. The system prompt takes today's date in the
+company's timezone.
 
 The model is `agentChatModel` in `packages/utils/src/llm.ts` (`gpt-4.1-mini`). It was plain
 `gpt-4` — an 8k-token window — and a single long page overflowed it

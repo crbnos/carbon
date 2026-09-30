@@ -1,7 +1,7 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getLogger } from "@carbon/logger";
 import type { LoaderFunctionArgs } from "react-router";
-import { getMessages, getThread } from "~/modules/agent";
+import { getDisplayMessages, getThread } from "~/modules/agent";
 
 const logger = getLogger("erp", "agent-thread");
 
@@ -24,7 +24,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     throw new Response("Conversation not found", { status: 404 });
   }
 
-  const messages = await getMessages(client, { threadId, companyId });
+  const messages = await getDisplayMessages(client, { threadId, companyId });
   if (messages.error) {
     logger.error("Failed to load agent messages", {
       companyId,
@@ -33,5 +33,5 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     });
     throw new Response("Failed to load the conversation", { status: 500 });
   }
-  return { messages: messages.data ?? [] };
+  return { messages: messages.data };
 }
