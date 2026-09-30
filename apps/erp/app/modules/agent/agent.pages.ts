@@ -75,14 +75,16 @@ export function findPages(query: string, limit = 8): NavigablePage[] {
 }
 
 // Resolve a chosen page + params to a real URL. Returns null when the key isn't an
-// allowlisted page or required args are missing — the client no-ops rather than sending
-// the user somewhere broken or unsafe (the model can't emit a raw URL, only a known key).
+// allowlisted page or required args are missing (the model can't emit a raw URL, only a
+// known key). Params are encoded, so a model-supplied id stays one path segment.
 export function resolvePage(key: string, params: string[] = []): string | null {
   const page = PAGE_BY_KEY.get(key);
   if (!page || params.length < page.arity) return null;
   const val = (path.to as Record<string, unknown>)[key];
   if (typeof val === "function") {
-    return (val as (...a: string[]) => string)(...params.slice(0, page.arity));
+    return (val as (...a: string[]) => string)(
+      ...params.slice(0, page.arity).map(encodeURIComponent)
+    );
   }
   return typeof val === "string" ? val : null;
 }

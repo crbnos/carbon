@@ -1,10 +1,11 @@
 import {
-  cn,
+  NavRail,
+  NavRailItem,
+  NavRailLink,
   ShortcutKey,
-  useDisclosure,
   useShortcutKeys,
   useShortcutSequence,
-  VStack
+  useSidebar
 } from "@carbon/react";
 import {
   closestCenter,
@@ -18,11 +19,10 @@ import {
   SortableContext,
   verticalListSortingStrategy
 } from "@dnd-kit/sortable";
-import { Trans, useLingui } from "@lingui/react/macro";
-import type { AnchorHTMLAttributes } from "react";
-import { forwardRef, memo, useEffect, useMemo } from "react";
+import { useLingui } from "@lingui/react/macro";
+import { memo, useMemo } from "react";
 import { LuSearch, LuSettings2 } from "react-icons/lu";
-import { Link, useMatches, useNavigate } from "react-router";
+import { useMatches, useNavigate } from "react-router";
 import {
   useModules,
   useOptimisticLocation,
@@ -30,7 +30,12 @@ import {
   useSettingsModule
 } from "~/hooks";
 import { useImplementationNavItem } from "~/hooks/useImplementationNavItem";
-import { MODULE_GO_TO, MODULE_GO_TO_PREFIX, searchShortcut } from "~/shortcuts";
+import {
+  MODULE_GO_TO,
+  MODULE_GO_TO_PREFIX,
+  navigationEditCancelShortcut,
+  searchShortcut
+} from "~/shortcuts";
 import { useUIStore } from "~/stores/ui";
 import type { Authenticated, NavItem } from "~/types";
 import { SearchModal } from "../Topbar/Search";
@@ -39,8 +44,13 @@ import { NavigationEditBar } from "./NavigationEditBar";
 import { SortableNavItem } from "./SortableNavItem";
 import { useNavigationEditMode } from "./useNavigationEditMode";
 
+// Search and Customize are actions, not destinations — they keep the neutral
+// accent hover instead of the active-tinted one module links use.
+const ACTION_HOVER = "hover:bg-accent hover:text-accent-foreground";
+
 const PrimaryNavigation = () => {
-  const navigationPanel = useDisclosure();
+  const { t } = useLingui();
+  const { isMobile } = useSidebar();
   const permissions = usePermissions();
   const location = useOptimisticLocation();
   const currentModule = getModule(location.pathname);
@@ -56,6 +66,11 @@ const PrimaryNavigation = () => {
 
     return acc;
   }, new Set<string>());
+
+  const isModuleActive = (to: string) => {
+    const m = getModule(to);
+    return currentModule === m || matchedModules.has(m);
+  };
 
   const editMode = useNavigationEditMode();
 
@@ -79,306 +94,142 @@ const PrimaryNavigation = () => {
     disabled: editMode.isEditing
   });
 
-  // The rail expands on hover. The search modal (a Radix dialog) toggles
-  // document.body pointer-events, and restoring them on close fires a phantom
-  // `mouseenter` on the rail with no paired `mouseleave` — leaving it stuck
-  // expanded. Ignore hover while the modal is open, and collapse on the next
-  // frame after it closes (after any phantom event has fired).
+  useShortcutKeys({
+    shortcut: navigationEditCancelShortcut,
+    action: editMode.cancelEditMode,
+    disabled: !editMode.isEditing
+  });
+
+  // Hover is off while the search modal owns the pointer or the rail is being
+  // rearranged; flipping it back also clears any hover left over from either.
   const isSearchModalOpen = useUIStore((s) => s.isSearchModalOpen);
-  const closePanel = navigationPanel.onClose;
-  useEffect(() => {
-    if (isSearchModalOpen) {
-      closePanel();
-      return;
-    }
-    const raf = requestAnimationFrame(() => closePanel());
-    return () => cancelAnimationFrame(raf);
-  }, [isSearchModalOpen, closePanel]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
     useSensor(KeyboardSensor)
   );
 
-  useEffect(() => {
-    if (!editMode.isEditing) return;
-    const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") editMode.cancelEditMode();
-    };
-    document.addEventListener("keydown", onKeyDown);
-    return () => document.removeEventListener("keydown", onKeyDown);
-  }, [editMode.isEditing, editMode.cancelEditMode]);
+  const renderLink = (link: Authenticated<NavItem>, isActive: boolean) => (
+    <NavRailLink
+      key={link.name}
+      to={link.to}
+      icon={<link.icon />}
+      label={link.name}
+      tag={link.tag}
+      external={link.external}
+      isActive={isActive}
+    />
+  );
 
-  const isOpen = navigationPanel.isOpen || editMode.isEditing;
+  const footer = (
+    <>
+      {settingsModule && !editMode.isEditing
+        ? renderLink(settingsModule, isModuleActive(settingsModule.to))
+        : null}
+
+      {editMode.isEditing ? (
+        <NavigationEditBar
+          isSaving={editMode.isSaving}
+          isDirty={editMode.isDirty}
+          onSave={editMode.save}
+          onCancel={editMode.cancelEditMode}
+        />
+      ) : isMobile ? null : (
+        <NavRailItem
+          icon={<LuSettings2 />}
+          label={t`Customize`}
+          onClick={editMode.enterEditMode}
+          className={ACTION_HOVER}
+        />
+      )}
+    </>
+  );
+
+  const canSearch = permissions.is("employee");
 
   return (
-    // The wrapper (not just the inner nav) grows on expand, so the rail pushes
-    // the rest of the layout right instead of floating over it. The inner nav is
-    // `w-full` and follows the wrapper's animated width.
-    <div
-      data-state={isOpen ? "expanded" : "collapsed"}
-      className={cn(
-        "h-full flex-col z-50 hidden md:flex shrink-0",
-        "w-14 data-[state=expanded]:w-[13rem]",
-        "transition-[width] duration-200"
-      )}
-    >
-      <nav
-        data-state={isOpen ? "expanded" : "collapsed"}
-        className={cn(
-          "bg-background py-2 group z-10 h-full w-full",
-          "flex flex-col justify-between",
-          "hide-scrollbar overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent"
-        )}
-        onMouseEnter={
-          editMode.isEditing || isSearchModalOpen
-            ? undefined
-            : navigationPanel.onOpen
-        }
-        onMouseLeave={editMode.isEditing ? undefined : navigationPanel.onClose}
+    <>
+      <NavRail
+        forceExpanded={editMode.isEditing}
+        disableHover={editMode.isEditing || isSearchModalOpen}
+        footer={footer}
       >
-        <VStack
-          spacing={1}
-          className="flex flex-col justify-between h-full px-2"
-        >
-          <VStack spacing={1}>
-            {permissions.is("employee") && (
-              <NavigationSearchButton isOpen={isOpen} />
-            )}
-            {!editMode.isEditing && implementationNav ? (
-              <NavigationIconLink
-                link={implementationNav}
-                isActive={currentModule === "get-started"}
-                isOpen={isOpen}
-                onClick={navigationPanel.onClose}
-              />
-            ) : null}
-            {editMode.isEditing ? (
-              <DndContext
-                sensors={sensors}
-                collisionDetection={closestCenter}
-                onDragEnd={editMode.handleDragEnd}
-              >
-                <SortableContext
-                  items={editMode.visibleDraft.map((m) => m.key)}
-                  strategy={verticalListSortingStrategy}
-                >
-                  {editMode.visibleDraft.map((module) => (
-                    <SortableNavItem
-                      key={module.key}
-                      module={module}
-                      isOpen={isOpen}
-                      onToggleHidden={editMode.toggleHidden}
-                    />
-                  ))}
-                </SortableContext>
-              </DndContext>
-            ) : (
-              links.map((link) => {
-                const m = getModule(link.to);
-                const moduleMatches = matchedModules.has(m);
-                const isActive = currentModule === m || moduleMatches;
-                return (
-                  <NavigationIconLink
-                    key={link.name}
-                    link={link}
-                    isActive={isActive}
-                    isOpen={isOpen}
-                    onClick={navigationPanel.onClose}
-                  />
-                );
-              })
-            )}
+        {canSearch && <NavigationSearchButton />}
+        {!editMode.isEditing && implementationNav
+          ? renderLink(implementationNav, currentModule === "get-started")
+          : null}
+        {editMode.isEditing ? (
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragEnd={editMode.handleDragEnd}
+          >
+            <SortableContext
+              items={editMode.visibleDraft.map((m) => m.key)}
+              strategy={verticalListSortingStrategy}
+            >
+              {editMode.visibleDraft.map((module) => (
+                <SortableNavItem
+                  key={module.key}
+                  module={module}
+                  onToggleHidden={editMode.toggleHidden}
+                />
+              ))}
+            </SortableContext>
+          </DndContext>
+        ) : (
+          links.map((link) => renderLink(link, isModuleActive(link.to)))
+        )}
 
-            {editMode.isEditing && (
-              <HiddenModulesPopover
-                hiddenModules={editMode.hiddenDraft}
-                onToggleHidden={editMode.toggleHidden}
-              />
-            )}
-          </VStack>
-
-          <VStack spacing={1}>
-            {settingsModule &&
-              !editMode.isEditing &&
-              (() => {
-                const m = getModule(settingsModule.to);
-                const moduleMatches = matchedModules.has(m);
-                const isActive = currentModule === m || moduleMatches;
-                return (
-                  <NavigationIconLink
-                    link={settingsModule}
-                    isActive={isActive}
-                    isOpen={isOpen}
-                    onClick={navigationPanel.onClose}
-                  />
-                );
-              })()}
-
-            {editMode.isEditing ? (
-              <NavigationEditBar
-                isSaving={editMode.isSaving}
-                isDirty={editMode.isDirty}
-                onSave={editMode.save}
-                onCancel={editMode.cancelEditMode}
-              />
-            ) : (
-              <button
-                type="button"
-                onClick={editMode.enterEditMode}
-                className={cn(
-                  "relative",
-                  "h-10 w-10 group-data-[state=expanded]:w-full",
-                  "flex items-center rounded-md",
-                  "group-data-[state=collapsed]:justify-center",
-                  "group-data-[state=expanded]:-space-x-2",
-                  "font-medium shrink-0 inline-flex select-none",
-                  "hover:bg-accent hover:text-accent-foreground",
-                  "transition-[background-color,color,width] duration-100 ease-out",
-                  "focus:!outline-none focus:!ring-0 active:!outline-none active:!ring-0",
-                  "after:pointer-events-none after:absolute after:-inset-[3px] after:rounded-lg after:border after:border-blue-500 after:opacity-0 after:ring-2 after:ring-blue-500/20 after:transition-opacity focus-visible:after:opacity-100 active:after:opacity-0",
-                  "group/item"
-                )}
-              >
-                <LuSettings2 className="absolute left-3 top-3 flex items-center justify-center" />
-                <span
-                  className={cn(
-                    "min-w-[128px] text-sm text-left",
-                    "absolute left-7 group-data-[state=expanded]:left-12",
-                    "opacity-0 group-data-[state=expanded]:opacity-100"
-                  )}
-                >
-                  <Trans>Customize</Trans>
-                </span>
-              </button>
-            )}
-          </VStack>
-        </VStack>
-      </nav>
-    </div>
+        {editMode.isEditing && (
+          <HiddenModulesPopover
+            hiddenModules={editMode.hiddenDraft}
+            onToggleHidden={editMode.toggleHidden}
+          />
+        )}
+      </NavRail>
+      {/* Outside the rail: on phones the rail is a drawer that unmounts when
+          closed, and ⌘K plus the modal must outlive it. */}
+      {canSearch && <GlobalSearch />}
+    </>
   );
 };
 
-const NavigationSearchButton = ({ isOpen = false }: { isOpen?: boolean }) => {
+const NavigationSearchButton = () => {
   const { t } = useLingui();
-  const { openSearchModal } = useUIStore();
+  const openSearchModal = useUIStore((s) => s.openSearchModal);
+  const { setOpenMobile } = useSidebar();
+
+  return (
+    <NavRailItem
+      icon={<LuSearch />}
+      label={t`Search`}
+      onClick={() => {
+        setOpenMobile(false);
+        openSearchModal();
+      }}
+      className={ACTION_HOVER}
+      trailing={
+        <ShortcutKey
+          shortcut={searchShortcut}
+          variant="small"
+          className="mx-0"
+        />
+      }
+    />
+  );
+};
+
+const GlobalSearch = () => {
+  const openSearchModal = useUIStore((s) => s.openSearchModal);
 
   useShortcutKeys({
     shortcut: searchShortcut,
     action: openSearchModal
   });
 
-  return (
-    <>
-      <button
-        type="button"
-        aria-label={t`Search`}
-        onClick={openSearchModal}
-        className={cn(
-          "relative",
-          "h-10 w-10 group-data-[state=expanded]:w-full",
-          "flex items-center rounded-md",
-          "group-data-[state=collapsed]:justify-center",
-          "group-data-[state=expanded]:-space-x-2",
-          "font-medium shrink-0 inline-flex select-none",
-          "hover:bg-accent hover:text-accent-foreground",
-          "transition-[background-color,color,width] duration-100 ease-out",
-          "focus:!outline-none focus:!ring-0 active:!outline-none active:!ring-0",
-          "after:pointer-events-none after:absolute after:-inset-[3px] after:rounded-lg after:border after:border-blue-500 after:opacity-0 after:ring-2 after:ring-blue-500/20 after:transition-opacity focus-visible:after:opacity-100 active:after:opacity-0",
-          "group/item"
-        )}
-      >
-        <LuSearch className="absolute left-3 top-3 flex items-center justify-center" />
-        <span
-          aria-hidden={isOpen || undefined}
-          className={cn(
-            "min-w-[128px] text-sm text-left",
-            "absolute left-7 group-data-[state=expanded]:left-12",
-            "opacity-0 group-data-[state=expanded]:opacity-100"
-          )}
-        >
-          <Trans>Search</Trans>
-        </span>
-        {/* ⌘K hint — only meaningful when expanded (the shortcut itself is wired
-            via useShortcutKeys above, same as the old topbar search). */}
-        <ShortcutKey
-          shortcut={searchShortcut}
-          variant="small"
-          className={cn(
-            "pointer-events-none absolute right-3 top-1/2 mx-0 -translate-y-1/2",
-            "opacity-0 transition-opacity duration-100 group-data-[state=expanded]:opacity-100"
-          )}
-        />
-      </button>
-      <SearchModal />
-    </>
-  );
+  return <SearchModal />;
 };
-
-interface NavigationIconButtonProps
-  extends AnchorHTMLAttributes<HTMLAnchorElement> {
-  link: Authenticated<NavItem>;
-  isActive?: boolean;
-  isOpen?: boolean;
-}
-
-const NavigationIconLink = forwardRef<
-  HTMLAnchorElement,
-  NavigationIconButtonProps
->(({ link, isActive = false, isOpen = false, onClick, ...props }, ref) => {
-  const iconClasses = [
-    "absolute left-3 top-3 flex items-center items-center justify-center"
-  ];
-
-  const classes = [
-    "relative text-foreground/70 hover:text-foreground",
-    "h-10 w-10 group-data-[state=expanded]:w-full",
-    "flex items-center rounded-md",
-    "group-data-[state=collapsed]:justify-center",
-    "group-data-[state=expanded]:-space-x-2",
-    "font-medium shrink-0 inline-flex items-center justify-center select-none",
-    "disabled:opacity-50",
-    "transition-[background-color,color,width] duration-100 ease-out",
-    "focus:!outline-none focus:!ring-0 active:!outline-none active:!ring-0",
-    "after:pointer-events-none after:absolute after:-inset-[3px] after:rounded-lg after:border after:border-blue-500 after:opacity-0 after:ring-2 after:ring-blue-500/20 after:transition-opacity focus-visible:after:opacity-100 active:after:opacity-0",
-    !isActive && "hover:bg-active/60 hover:text-active-foreground",
-    isActive && "bg-active text-active-foreground dark:shadow-button-base",
-    "group/item"
-  ];
-
-  return (
-    <Link
-      role="button"
-      aria-current={isActive}
-      ref={ref}
-      to={link.to}
-      {...props}
-      onClick={onClick}
-      className={cn(classes, props.className)}
-      prefetch={link.external ? "none" : "intent"}
-    >
-      <link.icon className={cn(...iconClasses)} />
-
-      {link.tag ? (
-        <span className="absolute top-1 right-1 min-w-4 h-4 px-1 rounded-full bg-primary text-primary-foreground text-[10px] font-medium leading-4 text-center tabular-nums">
-          {link.tag}
-        </span>
-      ) : null}
-
-      <span
-        aria-hidden={isOpen || undefined}
-        className={cn(
-          "min-w-[128px] text-sm",
-          "absolute left-7 group-data-[state=expanded]:left-12",
-          "opacity-0 group-data-[state=expanded]:opacity-100"
-        )}
-      >
-        {link.name}
-      </span>
-    </Link>
-  );
-});
-NavigationIconLink.displayName = "NavigationIconLink";
 
 export default memo(PrimaryNavigation);
 

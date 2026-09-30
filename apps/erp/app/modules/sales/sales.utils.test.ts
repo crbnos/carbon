@@ -1,10 +1,15 @@
 import { describe, expect, it } from "vitest";
 import {
+  applyPriceRules,
+  configurationSurcharge,
   decideRecalcPricing,
   getEffectiveDefaultMarkups,
   reconcileQuantityBreaks,
-  resolvePreservedQuoteLinePriceFields
+  resolveJobConfiguration,
+  resolvePreservedQuoteLinePriceFields,
+  toMatchedRule
 } from "./sales.utils";
+import type { MatchedRule } from "./types";
 
 describe("resolvePreservedQuoteLinePriceFields", () => {
   const stored = {
@@ -176,5 +181,241 @@ describe("decideRecalcPricing", () => {
         {}
       )
     ).toEqual({ mode: "reprice", markups: { laborCost: 20 } });
+  });
+});
+
+describe("configurationSurcharge", () => {
+  it("prices a list option only when it is the chosen value", () => {
+    const price = { key: "color", value: "Red", amount: 10 };
+    expect(configurationSurcharge(price, { color: "Red" })).toBe(10);
+    expect(configurationSurcharge(price, { color: "Blue" })).toBe(0);
+  });
+
+  it("prices a boolean when it is true", () => {
+    const price = { key: "anodized", value: "true", amount: 4 };
+    expect(configurationSurcharge(price, { anodized: true })).toBe(4);
+    expect(configurationSurcharge(price, { anodized: false })).toBe(0);
+  });
+
+  it("prices a numeric parameter per unit of its value", () => {
+    const price = { key: "length", value: null, amount: 0.5 };
+    expect(configurationSurcharge(price, { length: 120 })).toBe(60);
+    expect(configurationSurcharge(price, { length: "12" })).toBe(6);
+  });
+
+  it("adds nothing for a missing or non-numeric value", () => {
+    const price = { key: "length", value: null, amount: 0.5 };
+    expect(configurationSurcharge(price, {})).toBe(0);
+    expect(configurationSurcharge(price, { length: "" })).toBe(0);
+    expect(configurationSurcharge(price, { length: "abc" })).toBe(0);
+  });
+
+  it("keeps a negative amount as a credit", () => {
+    const price = { key: "color", value: "Raw", amount: -3 };
+    expect(configurationSurcharge(price, { color: "Raw" })).toBe(-3);
+  });
+});
+
+describe("applyPriceRules with configuration prices", () => {
+  const rule = (overrides: Partial<MatchedRule>): MatchedRule => ({
+    id: "pr1",
+    name: "Rule",
+    ruleType: "Markup",
+    amountType: "Fixed",
+    amount: 0,
+    priority: 0,
+    configurationPrices: [],
+    ...overrides
+  });
+
+  it("adds surcharges to the starting price before the discount", () => {
+    const { finalPrice, appendedTrace } = applyPriceRules(
+      100,
+      [
+        rule({
+          id: "options",
+          ruleType: "Configuration",
+          configurationPrices: [
+            { key: "color", value: "Red", amount: 20 },
+            { key: "length", value: null, amount: 1 }
+          ]
+        }),
+        rule({
+          id: "discount",
+          ruleType: "Discount",
+          amountType: "Percentage",
+          amount: 0.1
+        })
+      ],
+      { configuration: { color: "Red", length: 30 } }
+    );
+    // (100 + 20 + 30) × 0.9
+    expect(finalPrice).toBeCloseTo(135);
+    expect(appendedTrace.map((step) => step.step)).toEqual([
+      "Configuration",
+      "Configuration",
+      "Discount"
+    ]);
+  });
+
+  it("names a configuration step by its parameter label", () => {
+    const { appendedTrace } = applyPriceRules(
+      100,
+      [
+        rule({
+          name: "Options",
+          ruleType: "Configuration",
+          configurationPrices: [
+            { key: "a3", value: "Green", amount: 400, label: "Color" }
+          ]
+        })
+      ],
+      { configuration: { a3: "Green" } }
+    );
+    expect(appendedTrace[0]).toMatchObject({
+      step: "Configuration",
+      label: "Color",
+      source: "Rule: Options (Color = Green)"
+    });
+  });
+
+  it("only takes configuration prices from Configuration rules", () => {
+    const { finalPrice } = applyPriceRules(
+      100,
+      [
+        rule({
+          ruleType: "Markup",
+          configurationPrices: [{ key: "color", value: "Red", amount: 20 }]
+        })
+      ],
+      { configuration: { color: "Red" } }
+    );
+    expect(finalPrice).toBe(100);
+  });
+
+  it("ignores configuration prices without a configuration", () => {
+    const { finalPrice } = applyPriceRules(100, [
+      rule({
+        ruleType: "Configuration",
+        configurationPrices: [{ key: "color", value: "Red", amount: 20 }]
+      })
+    ]);
+    expect(finalPrice).toBe(100);
+  });
+
+  it("clamps a price driven negative by credits to zero", () => {
+    const { finalPrice } = applyPriceRules(
+      10,
+      [
+        rule({
+          ruleType: "Configuration",
+          configurationPrices: [{ key: "color", value: "Raw", amount: -25 }]
+        })
+      ],
+      { configuration: { color: "Raw" } }
+    );
+    expect(finalPrice).toBe(0);
+  });
+
+  it("keeps configuration prices under an override that skips rules", () => {
+    const { finalPrice, appendedTrace } = applyPriceRules(
+      100,
+      [
+        rule({
+          ruleType: "Configuration",
+          configurationPrices: [{ key: "color", value: "Red", amount: 20 }]
+        }),
+        rule({ ruleType: "Discount", amountType: "Percentage", amount: 0.5 }),
+        rule({ ruleType: "Markup", amountType: "Fixed", amount: 7 })
+      ],
+      { configuration: { color: "Red" }, configurationOnly: true }
+    );
+    expect(finalPrice).toBe(120);
+    expect(appendedTrace.map((step) => step.step)).toEqual(["Configuration"]);
+  });
+});
+
+describe("toMatchedRule", () => {
+  const row = {
+    id: "pr1",
+    name: "Options",
+    ruleType: "Configuration" as const,
+    amountType: "Fixed" as const,
+    amount: 0,
+    priority: 0
+  };
+
+  it("keeps the well-formed configuration prices of a Configuration rule", () => {
+    expect(
+      toMatchedRule({
+        ...row,
+        configurationPrices: [
+          { key: "color", value: "Red", amount: 10 },
+          { key: "color", value: "Blue" },
+          { key: "", value: null, amount: 1 },
+          "junk"
+        ]
+      }).configurationPrices
+    ).toEqual([{ key: "color", value: "Red", amount: 10 }]);
+  });
+
+  it("reads no configuration prices from any other rule type", () => {
+    expect(
+      toMatchedRule({
+        ...row,
+        ruleType: "Markup",
+        configurationPrices: [{ key: "color", value: "Red", amount: 10 }]
+      }).configurationPrices
+    ).toEqual([]);
+  });
+});
+
+describe("resolveJobConfiguration", () => {
+  it("falls back to the quote line's configuration", () => {
+    expect(resolveJobConfiguration(null, { color: "Red" })).toEqual({
+      configuration: { color: "Red" },
+      reconfigured: false
+    });
+  });
+
+  it("uses the order line's configuration when it matches the quote", () => {
+    expect(
+      resolveJobConfiguration(
+        { length: 10, color: "Red" },
+        { color: "Red", length: 10 }
+      )
+    ).toEqual({
+      configuration: { length: 10, color: "Red" },
+      reconfigured: false
+    });
+  });
+
+  it("flags an order line configured differently from its quote", () => {
+    expect(
+      resolveJobConfiguration({ color: "Blue" }, { color: "Red" })
+    ).toEqual({ configuration: { color: "Blue" }, reconfigured: true });
+  });
+
+  it("flags an order line configured where the quote was not", () => {
+    expect(resolveJobConfiguration({ color: "Blue" }, null)).toEqual({
+      configuration: { color: "Blue" },
+      reconfigured: true
+    });
+  });
+
+  it("treats an unset parameter the same whether absent, null or blank", () => {
+    expect(
+      resolveJobConfiguration(
+        { color: "Red", finish: "", coating: null },
+        { color: "Red" }
+      ).reconfigured
+    ).toBe(false);
+  });
+
+  it("treats an empty configuration as none", () => {
+    expect(resolveJobConfiguration({}, {})).toEqual({
+      configuration: null,
+      reconfigured: false
+    });
   });
 });

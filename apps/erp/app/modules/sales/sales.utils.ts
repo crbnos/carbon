@@ -1,3 +1,10 @@
+import { z } from "zod";
+import type {
+  MatchedRule,
+  PriceTraceStep,
+  PricingRuleConfigurationPrice
+} from "./types";
+
 export type CategoryMarkups = Record<string, number>;
 
 export type QuoteLinePriceSource = "system" | "manual";
@@ -114,4 +121,225 @@ export function decideRecalcPricing(
     return { mode: "reprice", markups: rowMarkups };
   }
   return { mode: "reprice", markups: effectiveDefaults };
+}
+
+// The surcharge one configuration price adds for a line's configuration: the
+// amount per unit of a numeric value (`value` null), else the amount when the
+// chosen value equals `value` (a list option, or "true" for a boolean).
+export function configurationSurcharge(
+  price: PricingRuleConfigurationPrice,
+  configuration: Record<string, unknown>
+): number {
+  const chosen = configuration[price.key];
+  if (chosen === undefined || chosen === null || chosen === "") return 0;
+  if (price.value === null) {
+    const units = typeof chosen === "number" ? chosen : Number(chosen);
+    return Number.isFinite(units) ? price.amount * units : 0;
+  }
+  return String(chosen) === price.value ? price.amount : 0;
+}
+
+// A signed per-unit surcharge for one configuration parameter value. `value`
+// is the list option (or "true" for a boolean); null prices a numeric
+// parameter per unit of its value. `label` is the parameter's label when the
+// rule was saved, so the price trace can name it without a lookup. Defined
+// here rather than in sales.models so the pricing engine (and its tests) stay
+// out of the models import graph; pricingRuleValidator reuses it.
+export const pricingRuleConfigurationPriceValidator = z.object({
+  key: z.string().min(1),
+  value: z.string().nullable(),
+  amount: z.number(),
+  label: z.string().optional()
+});
+
+// The stored JSONB, keeping only well-formed entries — one bad entry must not
+// discard a rule's other prices.
+function parseConfigurationPrices(
+  value: unknown
+): PricingRuleConfigurationPrice[] {
+  if (!Array.isArray(value)) return [];
+  return value.flatMap((entry) => {
+    const parsed = pricingRuleConfigurationPriceValidator.safeParse(entry);
+    return parsed.success && Number.isFinite(parsed.data.amount)
+      ? [parsed.data]
+      : [];
+  });
+}
+
+type PricingRuleRow = Omit<MatchedRule, "configurationPrices"> & {
+  configurationPrices: unknown;
+};
+
+// A `pricingRule` row as the engine reads it. Only a Configuration rule
+// carries configuration prices.
+export function toMatchedRule(row: PricingRuleRow): MatchedRule {
+  return {
+    id: row.id,
+    name: row.name,
+    ruleType: row.ruleType,
+    amountType: row.amountType,
+    amount: row.amount,
+    priority: row.priority,
+    configurationPrices:
+      row.ruleType === "Configuration"
+        ? parseConfigurationPrices(row.configurationPrices)
+        : []
+  };
+}
+
+type ApplyPriceRulesOptions = {
+  // The line's configurator values, keyed by configurationParameter key.
+  configuration?: Record<string, unknown> | null;
+  // A price override with `applyRulesOnTop = false` pins the part's price:
+  // discounts and markups are skipped, but the configuration prices still
+  // apply — they price the chosen options, not the part.
+  configurationOnly?: boolean;
+};
+
+export function applyPriceRules(
+  startingPrice: number,
+  matchedRules: MatchedRule[],
+  { configuration, configurationOnly = false }: ApplyPriceRulesOptions = {}
+): { finalPrice: number; appendedTrace: PriceTraceStep[] } {
+  const appendedTrace: PriceTraceStep[] = [];
+  let finalPrice = startingPrice;
+
+  // Configuration surcharges: signed amounts added to the starting price
+  // before any discount or markup, stacking across every matched
+  // Configuration rule.
+  if (configuration) {
+    const byPriority = matchedRules
+      .filter((rule) => rule.ruleType === "Configuration")
+      .sort((a, b) => b.priority - a.priority);
+    for (const rule of byPriority) {
+      for (const price of rule.configurationPrices) {
+        const adjustment = configurationSurcharge(price, configuration);
+        if (adjustment === 0) continue;
+        finalPrice = finalPrice + adjustment;
+        const label = price.label ?? price.key;
+        appendedTrace.push({
+          step: "Configuration",
+          label,
+          source: `Rule: ${rule.name} (${label} = ${String(
+            configuration[price.key]
+          )})`,
+          amount: finalPrice,
+          adjustment,
+          ruleId: rule.id
+        });
+      }
+    }
+  }
+
+  const adjustmentRules = configurationOnly ? [] : matchedRules;
+  const markupRules = adjustmentRules.filter((r) => r.ruleType === "Markup");
+  const discountRules = adjustmentRules.filter(
+    (r) => r.ruleType === "Discount"
+  );
+
+  // Discounts: highest priority wins (non-stacking); ties broken by best
+  // effective amount against the current running price.
+  if (discountRules.length > 0) {
+    const ranked = discountRules
+      .map((rule) => ({
+        rule,
+        effective:
+          rule.amountType === "Percentage"
+            ? finalPrice * rule.amount
+            : rule.amount
+      }))
+      .sort((a, b) => {
+        if (b.rule.priority !== a.rule.priority) {
+          return b.rule.priority - a.rule.priority;
+        }
+        return b.effective - a.effective;
+      });
+
+    const winner = ranked[0];
+    if (winner && winner.effective > 0) {
+      finalPrice = finalPrice - winner.effective;
+      appendedTrace.push({
+        step: "Discount",
+        source: `Rule: ${winner.rule.name}`,
+        amount: finalPrice,
+        adjustment: -winner.effective,
+        ruleId: winner.rule.id
+      });
+    }
+  }
+
+  // Markups: stack in priority order (highest first), compounding on the
+  // running price so ordering + basis are both deterministic.
+  const sortedMarkups = [...markupRules].sort(
+    (a, b) => b.priority - a.priority
+  );
+  for (const rule of sortedMarkups) {
+    const adjustment =
+      rule.amountType === "Percentage" ? finalPrice * rule.amount : rule.amount;
+    finalPrice = finalPrice + adjustment;
+    appendedTrace.push({
+      step: "Markup",
+      source: `Rule: ${rule.name}`,
+      amount: finalPrice,
+      adjustment,
+      ruleId: rule.id
+    });
+  }
+
+  if (finalPrice < 0) {
+    appendedTrace.push({
+      step: "Floor",
+      source: "Clamped to 0 (rules drove price negative)",
+      amount: 0,
+      adjustment: -finalPrice
+    });
+    finalPrice = 0;
+  }
+
+  return { finalPrice, appendedTrace };
+}
+
+type Configuration = Record<string, unknown>;
+
+function stableStringify(value: unknown): string {
+  if (value === null || typeof value !== "object") {
+    return JSON.stringify(value) ?? "null";
+  }
+  if (Array.isArray(value)) {
+    return `[${value.map(stableStringify).join(",")}]`;
+  }
+  // An unset parameter reads the same whether it is absent, null or blank.
+  const entries = Object.entries(value as Record<string, unknown>)
+    .filter(([, v]) => v !== undefined && v !== null && v !== "")
+    .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0));
+  return `{${entries
+    .map(([k, v]) => `${JSON.stringify(k)}:${stableStringify(v)}`)
+    .join(",")}}`;
+}
+
+/**
+ * The configuration a job made for a sales order line is built with: the
+ * line's own, falling back to its quote line's. `reconfigured` is true when
+ * the order line was configured differently from the quote — the quote's
+ * method was built for another configuration, so the job must be built from
+ * the item with the order line's values instead of copied from the quote.
+ */
+export function resolveJobConfiguration(
+  salesOrderLineConfiguration: unknown,
+  quoteLineConfiguration: unknown
+): { configuration: Configuration | null; reconfigured: boolean } {
+  const orderLine = asConfiguration(salesOrderLineConfiguration);
+  const quoteLine = asConfiguration(quoteLineConfiguration);
+  if (!orderLine) return { configuration: quoteLine, reconfigured: false };
+  return {
+    configuration: orderLine,
+    reconfigured: stableStringify(orderLine) !== stableStringify(quoteLine)
+  };
+}
+
+// A stored line configuration (JSONB), or null when it is empty or not an
+// object.
+export function asConfiguration(value: unknown): Configuration | null {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  return Object.keys(value).length > 0 ? (value as Configuration) : null;
 }

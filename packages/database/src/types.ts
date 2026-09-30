@@ -39773,6 +39773,7 @@ export type Database = {
           amount: number
           amountType: Database["public"]["Enums"]["pricingRuleAmountType"]
           companyId: string
+          configurationPrices: Json | null
           createdAt: string
           createdBy: string
           customerIds: string[] | null
@@ -39795,6 +39796,7 @@ export type Database = {
           amount: number
           amountType?: Database["public"]["Enums"]["pricingRuleAmountType"]
           companyId: string
+          configurationPrices?: Json | null
           createdAt?: string
           createdBy: string
           customerIds?: string[] | null
@@ -39817,6 +39819,7 @@ export type Database = {
           amount?: number
           amountType?: Database["public"]["Enums"]["pricingRuleAmountType"]
           companyId?: string
+          configurationPrices?: Json | null
           createdAt?: string
           createdBy?: string
           customerIds?: string[] | null
@@ -52049,6 +52052,7 @@ export type Database = {
           addOnCost: number
           assetId: string | null
           companyId: string
+          configuration: Json | null
           convertedAddOnCost: number | null
           convertedNonTaxableAddOnCost: number | null
           convertedShippingCost: number | null
@@ -52095,6 +52099,7 @@ export type Database = {
           addOnCost?: number
           assetId?: string | null
           companyId: string
+          configuration?: Json | null
           convertedAddOnCost?: number | null
           convertedNonTaxableAddOnCost?: number | null
           convertedShippingCost?: number | null
@@ -52141,6 +52146,7 @@ export type Database = {
           addOnCost?: number
           assetId?: string | null
           companyId?: string
+          configuration?: Json | null
           convertedAddOnCost?: number | null
           convertedNonTaxableAddOnCost?: number | null
           convertedShippingCost?: number | null
@@ -78795,6 +78801,7 @@ export type Database = {
           assetReadableId: string | null
           autodeskUrn: string | null
           companyId: string | null
+          configuration: Json | null
           convertedAddOnCost: number | null
           convertedNonTaxableAddOnCost: number | null
           convertedShippingCost: number | null
@@ -85989,7 +85996,7 @@ export type Database = {
         | "Partial"
       pickMethodSortMethod: "Default" | "FEFO" | "FIFO" | "LIFO"
       pricingRuleAmountType: "Percentage" | "Fixed"
-      pricingRuleType: "Discount" | "Markup"
+      pricingRuleType: "Discount" | "Markup" | "Configuration"
       procedureStatus: "Draft" | "Active" | "Archived"
       procedureStepType:
         | "Value"
@@ -87437,7 +87444,7 @@ export const Constants = {
       ],
       pickMethodSortMethod: ["Default", "FEFO", "FIFO", "LIFO"],
       pricingRuleAmountType: ["Percentage", "Fixed"],
-      pricingRuleType: ["Discount", "Markup"],
+      pricingRuleType: ["Discount", "Markup", "Configuration"],
       procedureStatus: ["Draft", "Active", "Archived"],
       procedureStepType: [
         "Value",

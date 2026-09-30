@@ -9,7 +9,7 @@ The in-app assistant is a chat panel inside the ERP that answers "how do I / wha
 It is deliberately narrow. This first version is **read-only and documentation-only**: it explains features and workflows and can take you to a page, but it cannot read your live data and cannot change anything. Ask "how many open sales orders do I have?" and it will tell you it can't read your data yet, then open the sales orders page so you can see for yourself.
 
 <Callout type="warn" title="It never writes, and it never reads your records">
-The assistant answers from the docs and can navigate you around the app. It does not create, edit, or delete anything, and it cannot see your customers, orders, parts, quantities, or statuses. If you ask it to make a change, it explains what you would do in the UI instead. Don't expect it to act on your behalf. The tooling for live-data lookups exists in the code but is gated off in this version.
+The assistant answers from the docs and can navigate you around the app. It does not create, edit, or delete anything, and it cannot see your customers, orders, parts, quantities, or statuses. If you ask it to make a change, it explains what you would do in the UI instead. Don't expect it to act on your behalf.
 </Callout>
 
 This is distinct from the [Slack assistant](/docs/integrations/assistant), which is a separate integration that surfaces Carbon in Slack. The in-app assistant lives only inside the ERP.
@@ -32,7 +32,7 @@ The button and the panel only appear when your plan includes the assistant. On a
 
 ## Threads and messages
 
-Each conversation is a **thread**, private to you within your company. Your threads are not visible to your teammates. Open the history from the panel to switch between past threads or start a new one, and delete any thread you no longer want.
+Each conversation is a **thread**, private to you within your company. Your threads are not visible to your teammates. Open the history from the panel to switch between past threads or start a new one, and delete any thread you no longer want. A thread is deleted automatically **7 days after its last message**; a reopened thread shows its most recent 200 messages.
 
 Inside a thread, every exchange is stored as messages, and each message is broken into ordered parts: the text you see, plus a record of any documentation the assistant looked up along the way. A thread gets an automatic short title once it has a clear topic, so your history stays scannable. You can give a thumbs up or thumbs down on the assistant's latest answer, with an optional note, which helps improve it over time.
 
@@ -53,13 +53,16 @@ The assistant is a paid feature.
 Exact strings from the assistant's request path and rate limiter.
 
 ### "Rate limit exceeded. Please wait a moment."
-You sent more than 30 messages within 5 minutes (counted per person, per company). Wait a short while and send again. This is a throttle, not a plan limit, and it resets on its own.
+You sent more than 30 messages within 5 minutes (counted per person, per company). Wait a short while and press **Retry**: the question you sent is kept and goes through once the limit resets. This is a throttle, not a plan limit, and it resets on its own.
+
+### "The assistant couldn't answer that. Please try again."
+The answer failed part-way (usually the AI provider). Nothing from the failed answer is saved; press **Retry** and the same question is answered again.
 
 ### "Upgrade required"
 The chat request returned a 402: your company's plan does not include the assistant (the `AI_AGENT` feature, granted on the Business plan on Carbon Cloud). Upgrade the plan to enable it. Normally the **Question** trigger and the panel are hidden on an ineligible plan, so you would not reach a send in the first place — seeing this means a send was attempted anyway.
 
-### "Failed to create thread"
-The assistant could not start a new conversation (a 500 while inserting the thread). Retry; if it persists, it is a server-side issue, not something you can fix from the UI.
+### "Could not start a conversation"
+The assistant could not create a new thread for your message. Send it again; if it persists, it is a server-side issue, not something you can fix from the UI.
 
 ### "I couldn't find that in the docs"
 Not an error — the assistant searched the documentation and found nothing relevant to your question. Rephrase in different terms, or ask a broader "how do I / what is" version of the question. If it is a question about your own data (counts, statuses, a specific record), the assistant can't answer it in this version; open the relevant page to see the data directly.

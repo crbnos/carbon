@@ -723,6 +723,7 @@ serve(async (req: Request) => {
                 taxPercent: line.taxPercent,
                 shippingCost: price.shippingCost ?? 0,
                 sortOrder: line.sortOrder ?? 1,
+                configuration: toJson(line.configuration),
               };
             });
 

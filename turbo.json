@@ -24,6 +24,7 @@
         "apps/erp/app/**",
         "apps/mes/app/**",
         "packages/react/src/**",
+        "docs/content/src/glossary/**",
         "packages/ee/src/workflows/**",
         "packages/locale/locales/**/*.po"
       ],

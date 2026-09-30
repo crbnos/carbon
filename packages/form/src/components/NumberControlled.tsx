@@ -1,5 +1,5 @@
+import type { TermId } from "@carbon/content/glossary";
 import { useFormContext } from "@carbon/form";
-import type { TermId } from "@carbon/glossary";
 import type { NumberFieldProps } from "@carbon/react";
 import {
   FormControl,

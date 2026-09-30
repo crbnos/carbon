@@ -354,9 +354,6 @@ msgstr "Completamento in corso"
 msgid "Connecting"
 msgstr "Collegamento in corso"
 
-msgid "Console"
-msgstr "Console"
-
 msgid "Console Mode"
 msgstr "Modalità Console"
 

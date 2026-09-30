@@ -82,7 +82,7 @@ pnpm --filter @carbon/erp test
 
 ## Key Service Functions
 
-- `convertSalesOrderLinesToJobs` — creates jobs from sales order Make to Order lines
+- `convertSalesOrderLinesToJobs` — creates jobs from sales order Make to Order lines; each job takes the order line's `configuration` (else the converted quote line's, via `resolveJobConfiguration` in `~/modules/sales`) and is built with `itemToJob` instead of `quoteLineToJob` when the order line was reconfigured
 - `getJob` / `getJobs` / `getJobMethodTree` / `getJobMethodTreeArray` — job reads with method hierarchy
 - `getJobMaterialsWithQuantityOnHand` — BOM with on-hand for shortfall visibility
 - `getJobMaterialShortfallByItem` — priority-adjusted shortfall calculation

@@ -8,6 +8,7 @@ import {
   duplicatePricingRule,
   getPricingRule,
   pricingRuleValidator,
+  toMatchedRule,
   updatePricingRule
 } from "~/modules/sales";
 import PricingRuleForm from "~/modules/sales/ui/Pricing/PricingRuleForm";
@@ -113,11 +114,16 @@ export default function EditPricingRuleRoute() {
     customerIds: pricingRule.customerIds ?? [],
     customerTypeIds: pricingRule.customerTypeIds ?? [],
     itemIds: pricingRule.itemIds ?? [],
+    itemId:
+      pricingRule.ruleType === "Configuration"
+        ? (pricingRule.itemIds?.[0] ?? undefined)
+        : undefined,
     itemPostingGroupId: pricingRule.itemPostingGroupId ?? undefined,
     validFrom: pricingRule.validFrom ?? undefined,
     validTo: pricingRule.validTo ?? undefined,
     priority: pricingRule.priority ?? 0,
-    active: pricingRule.active
+    active: pricingRule.active,
+    configurationPrices: toMatchedRule(pricingRule).configurationPrices
   };
 
   return (

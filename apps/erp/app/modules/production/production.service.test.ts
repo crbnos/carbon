@@ -1,10 +1,10 @@
 import { describe, expect, it, vi } from "vitest";
 
-// production.service's module graph transitively loads @carbon/glossary, whose
+// production.service's module graph transitively loads @carbon/content/glossary, whose
 // module-load-time Lingui `msg` macros aren't transformed under plain vitest and
 // throw. The functions under test need none of it, so stub glossary; the real
 // implementations stay under test.
-vi.mock("@carbon/glossary", () => ({
+vi.mock("@carbon/content/glossary", () => ({
   terms: {},
   getEntry: vi.fn(),
   lookupEntry: vi.fn(),

@@ -354,9 +354,6 @@ msgstr "Завершение"
 msgid "Connecting"
 msgstr "Подключение"
 
-msgid "Console"
-msgstr "Консоль"
-
 msgid "Console Mode"
 msgstr "Режим консоли"
 
