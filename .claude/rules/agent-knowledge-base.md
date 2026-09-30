@@ -15,7 +15,7 @@ paths:
 | Consumer | Reads | How |
 |---|---|---|
 | Docs site | `mdx/docs`, `mdx/guides` | Fumadocs `dir: "../packages/content/mdx/…"` in `docs/source.config.ts`; `turbopack.root` is the repo root so Next compiles files outside `docs/` |
-| `/llms.txt`, `/llms-full.txt` | same MDX | `readCorpus` from `@carbon/content/corpus/node` |
+| `/llms.txt`, `/llms-full.txt` | same MDX | `parsePage` from `@carbon/content/corpus` over Fumadocs' own `page.data.getText("raw")` (`docs/lib/corpus.ts`) |
 | In-app agent (`search_docs`, `read_doc`) | same MDX | `agentDocs` from `@carbon/content/agent-kb` — `import.meta.glob(..., { eager: true })` bakes every page into the ERP server build |
 | ERP/MES field help, docs `<Term>` | `src/glossary` | `@carbon/content/glossary` |
 | Anything linking to the docs | `src/links.ts` | `DOCS_URL`, `docUrl()` |
@@ -30,9 +30,9 @@ All three machine-readable consumers strip MDX through the one `stripComponents`
 ## Never
 
 - Never import `@carbon/content/agent-kb` outside a Vite build (the docs app, Node scripts) —
-  `import.meta.glob` is Vite-only. Use `./corpus/node`.
-- Never put `fs` into `src/corpus.ts` — `agent-kb` imports it and the agent module is
-  re-exported from a barrel client code can reach.
+  `import.meta.glob` is Vite-only. Feed raw MDX from your own source into `./corpus`'s `parsePage`.
+- Never add `fs` or any Node-only import to the package — it is isomorphic on purpose;
+  `agent-kb` is re-exported from a barrel client code can reach.
 - Never hardcode a docs page URL without keeping `links.test.ts` green; it fails on any link to
   a missing page or heading.
 
