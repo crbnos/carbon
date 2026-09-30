@@ -1,16 +1,32 @@
 import { randomBytes } from "node:crypto";
+import type { AuthSession } from "@carbon/auth";
+import { logAuthEvent } from "@carbon/auth/auth-events.server";
 import {
-  type AuthSession,
-  CONTROLLED_ENVIRONMENT,
-  getCarbon,
-  SESSION_IDLE_LOCK_MS
-} from "@carbon/auth";
-import { refreshAccessToken } from "@carbon/auth/auth.server";
-import { getCarbonServiceRole } from "@carbon/auth/client.server";
+  getCarbonServiceRole,
+  getUserScopedClient
+} from "@carbon/auth/client.server";
+import { userHasVerifiedTotpFactor } from "@carbon/auth/mfa.server";
 import { getUserClaims } from "@carbon/auth/users.server";
 import type { Database } from "@carbon/database";
+import {
+  CONTROLLED_ENVIRONMENT,
+  SESSION_ABSOLUTE_MAX_MS,
+  SESSION_IDLE_LOCK_MS
+} from "@carbon/env";
 import { redis } from "@carbon/kv";
+import { getClientIp } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import {
+  type PanelSession,
+  panelSessionFromAuthSession,
+  panelSessionRefusal,
+  panelSessionTtlSeconds
+} from "./session-policy";
+
+export {
+  PANEL_SESSION_TTL_SECONDS,
+  type PanelSession
+} from "./session-policy";
 
 /**
  * Onshape panel sessions: a bearer credential for the Carbon UI that runs inside
@@ -18,15 +34,22 @@ import type { SupabaseClient } from "@supabase/supabase-js";
  *
  * The `carbon` session cookie is `SameSite=Lax`, so it never reaches a
  * cross-site iframe. Instead, a popup on Carbon's own origin (which does have
- * the cookie) mints one of these: an opaque `cps_…` token whose `AuthSession`
- * lives in Redis for `PANEL_SESSION_TTL_SECONDS`. The iframe keeps the token in
- * `sessionStorage` and sends it as `Authorization: Bearer cps_…`.
+ * the cookie) mints one of these: an opaque `cps_…` token whose identity lives
+ * in Redis for at most `PANEL_SESSION_TTL_SECONDS`. The iframe keeps the token
+ * in `sessionStorage` and sends it as `Authorization: Bearer cps_…`.
+ *
+ * The session holds identity only, never a Supabase token. Each request builds
+ * its database client from a short-lived token signed for the user
+ * (`getUserScopedClient`, as the MCP bearer path does). Sharing the cookie
+ * session's refresh token would have both sides rotating one chain, and GoTrue
+ * revokes the whole session family on the first reuse it sees.
  *
  * Opaque by design: nothing about the user is decodable from the token, and
  * deleting the Redis key revokes it immediately.
  */
 
-export const PANEL_SESSION_TTL_SECONDS = 12 * 60 * 60;
+/** How often a request re-stamps `lastActiveAt`, like the cookie heartbeat. */
+const ACTIVITY_STAMP_INTERVAL_MS = 60_000;
 
 const TOKEN_PREFIX = "cps_";
 // 24 random bytes → 32 base64url characters.
@@ -48,40 +71,57 @@ export function panelSessionTokenFromRequest(request: Request): string | null {
   return isPanelSessionToken(token) ? token : null;
 }
 
+/** Null when the ERP session has no time left to lend the panel. */
 export async function createPanelSession(
   authSession: AuthSession
-): Promise<string> {
+): Promise<string | null> {
+  const now = Date.now();
+  const session = panelSessionFromAuthSession(authSession, now);
+  const ttl = panelSessionTtlSeconds(session, now, {
+    controlled: CONTROLLED_ENVIRONMENT,
+    absoluteMaxMs: SESSION_ABSOLUTE_MAX_MS
+  });
+  if (ttl <= 0) return null;
+
   const token = `${TOKEN_PREFIX}${randomBytes(24).toString("base64url")}`;
-  await redis.set(
+  const stored = await redis.set(
     keyFor(token),
-    JSON.stringify(authSession),
+    JSON.stringify(session),
     "EX",
-    PANEL_SESSION_TTL_SECONDS
+    ttl
   );
-  return token;
+  // The client is fail-soft: a token Redis never stored would 401 on first use.
+  return stored === "OK" ? token : null;
 }
 
-export async function loadPanelSession(
-  token: string
-): Promise<AuthSession | null> {
+async function loadPanelSession(token: string): Promise<PanelSession | null> {
   const raw = await redis.get(keyFor(token));
   if (!raw) return null;
   try {
-    return JSON.parse(raw) as AuthSession;
+    const session = JSON.parse(raw) as Partial<PanelSession> & {
+      accessToken?: string;
+    };
+    // A session minted before panel sessions stopped carrying Supabase tokens:
+    // it has to sign in again once.
+    if (session.accessToken || !session.userId || !session.createdAt) {
+      await redis.del(keyFor(token));
+      return null;
+    }
+    return session as PanelSession;
   } catch {
     await redis.del(keyFor(token));
     return null;
   }
 }
 
-/** Overwrite the stored session (after a token refresh), keeping the remaining TTL. */
-export async function savePanelSession(
-  token: string,
-  authSession: AuthSession
-): Promise<void> {
-  const ttl = await redis.ttl(keyFor(token));
-  if (ttl <= 0) return;
-  await redis.set(keyFor(token), JSON.stringify(authSession), "EX", ttl);
+async function stampActivity(token: string, session: PanelSession) {
+  // XX: a session deleted since it was read (logout, a refusal) stays deleted.
+  await redis.set(
+    keyFor(token),
+    JSON.stringify({ ...session, lastActiveAt: Date.now() }),
+    "KEEPTTL",
+    "XX"
+  );
 }
 
 export async function deletePanelSession(token: string): Promise<void> {
@@ -89,234 +129,43 @@ export async function deletePanelSession(token: string): Promise<void> {
 }
 
 /**
- * Supabase ROTATES refresh tokens, so two requests refreshing the same panel
- * session at once cannot both succeed — the second is told the token was
- * already used. This lock makes exactly one of them do the refresh while the
- * others wait for it.
- *
- * The lease is short and renewed while the holder works. A fixed long TTL
- * could still run out under a slow refresh, letting a second request take the
- * lock and refresh concurrently; a request that dies mid-refresh stops
- * renewing, so its lease lapses within seconds rather than locking the session
- * out.
- *
- * The lock is owner-bound: each holder stores its own random value, and
- * renewal and release only act when the stored value is still theirs. A
- * holder whose lease lapsed can therefore never extend or delete the lock a
- * later request took.
+ * The session policy the cookie path applies on every request
+ * (`requireAuthSession`), applied to a panel session. Every refusal is a 401:
+ * the panel sends the user back through the sign-in popup, and the cookie path
+ * there routes them through `/unlock` or `/mfa`.
  */
-export const PANEL_REFRESH_LOCK_LEASE_MS = 5_000;
-export const PANEL_REFRESH_LOCK_RENEW_MS = 2_000;
-
-function refreshLockKeyFor(token: string) {
-  return `panel-session-refresh:${token}`;
-}
-
-// Compare-and-act scripts: the check and the write are one atomic step.
-const RELEASE_IF_OWNER = `if redis.call("get", KEYS[1]) == ARGV[1] then return redis.call("del", KEYS[1]) else return 0 end`;
-const RENEW_IF_OWNER = `if redis.call("get", KEYS[1]) == ARGV[1] then return redis.call("pexpire", KEYS[1], ARGV[2]) else return 0 end`;
-
-/**
- * Take the refresh lock. Returns this caller's owner value when it now holds
- * the lock, null when another request already does (or Redis is unavailable).
- */
-export async function acquirePanelRefreshLock(
-  token: string
-): Promise<string | null> {
-  const owner = randomBytes(16).toString("base64url");
-  const result = await redis.set(
-    refreshLockKeyFor(token),
-    owner,
-    "PX",
-    PANEL_REFRESH_LOCK_LEASE_MS,
-    "NX"
-  );
-  return result === "OK" ? owner : null;
-}
-
-/** Extend the lease. False when the lock is no longer this owner's. */
-export async function renewPanelRefreshLock(
-  token: string,
-  owner: string
-): Promise<boolean> {
-  const result = await redis.eval(
-    RENEW_IF_OWNER,
-    1,
-    refreshLockKeyFor(token),
-    owner,
-    String(PANEL_REFRESH_LOCK_LEASE_MS)
-  );
-  return result === 1;
-}
-
-export async function releasePanelRefreshLock(
-  token: string,
-  owner: string
-): Promise<void> {
-  await redis.eval(RELEASE_IF_OWNER, 1, refreshLockKeyFor(token), owner);
-}
-
-/**
- * Renewal failures are ignored: the worst case is the lease lapsing, which the
- * owner check makes safe.
- */
-export async function withPanelRefreshLock<T>(
-  token: string,
-  owner: string,
-  work: () => Promise<T>
-): Promise<T> {
-  const renewal = setInterval(() => {
-    renewPanelRefreshLock(token, owner).catch(() => undefined);
-  }, PANEL_REFRESH_LOCK_RENEW_MS);
-  try {
-    return await work();
-  } finally {
-    clearInterval(renewal);
-    await releasePanelRefreshLock(token, owner).catch(() => undefined);
-  }
-}
-
-// Mirrors session.server's isExpiringSoon: `expiresAt` is epoch seconds.
-const PANEL_REFRESH_THRESHOLD_SECONDS = 60;
-
-function isPanelSessionExpiringSoon(session: AuthSession) {
-  return (
-    (session.expiresAt - PANEL_REFRESH_THRESHOLD_SECONDS) * 1000 < Date.now()
-  );
-}
-
-/**
- * How long a request will wait for whoever is already refreshing: past one
- * full lease, so a holder that died has let its lock lapse and a waiter can
- * take it over before giving up.
- */
-const PANEL_REFRESH_WAIT_MS = 100;
-const PANEL_REFRESH_WAIT_ATTEMPTS =
-  Math.ceil(PANEL_REFRESH_LOCK_LEASE_MS / PANEL_REFRESH_WAIT_MS) + 10;
-
-async function refreshPanelSessionNow(
-  token: string,
-  stored: AuthSession
-): Promise<AuthSession | null> {
-  const refreshed = await refreshAccessToken(
-    stored.refreshToken,
-    stored.companyId,
-    stored.companyGroupId
-  );
-  // Deliberately NOT deleting the session here. A failed refresh is far more
-  // often a lost race than a revoked account. Only `loadPanelSession`
-  // returning nothing proves the session is gone.
-  if (!refreshed) return null;
-
-  // Same carry-over as refreshAuthSession: a refresh is not a re-auth.
-  if (stored.console) refreshed.console = stored.console;
-  if (stored.mfaVerified) refreshed.mfaVerified = stored.mfaVerified;
-  if (stored.createdAt) refreshed.createdAt = stored.createdAt;
-  if (stored.lastActiveAt) refreshed.lastActiveAt = stored.lastActiveAt;
-
-  await savePanelSession(token, refreshed);
-  return refreshed;
-}
-
-/**
- * Refresh a panel session's Supabase token exactly once across concurrent
- * requests: one request holds the lock and refreshes; the others wait for it
- * and read what it stored.
- *
- * Only the lock holder ever refreshes. A waiter keeps trying to take the lock —
- * a holder that died stops renewing its lease, so the lock frees itself — and
- * refreshes only once it holds it, from the session as stored at that moment.
- */
-async function refreshPanelSession(
-  token: string,
-  stored: AuthSession
-): Promise<AuthSession | null> {
-  for (let attempt = 0; attempt <= PANEL_REFRESH_WAIT_ATTEMPTS; attempt++) {
-    const owner = await acquirePanelRefreshLock(token);
-    if (owner) {
-      return withPanelRefreshLock(token, owner, async () => {
-        // Re-read under the lock: an earlier holder may have finished between
-        // the expiry check and the lock being acquired.
-        const current = (await loadPanelSession(token)) ?? stored;
-        if (!isPanelSessionExpiringSoon(current)) return current;
-        return refreshPanelSessionNow(token, current);
-      });
-    }
-
-    await new Promise((resolve) => setTimeout(resolve, PANEL_REFRESH_WAIT_MS));
-    const current = await loadPanelSession(token);
-    // Gone while we waited: genuinely signed out or revoked.
-    if (!current) return null;
-    if (!isPanelSessionExpiringSoon(current)) return current;
-  }
-
-  // Nobody published a result and the lock never came free: the holder's
-  // refresh failed or is stuck. A 401 sends the panel to sign in again, which
-  // is safer than a second refresh racing the first.
-  return null;
-}
-
-/**
- * Resolve a panel session token to a live `AuthSession`, refreshing the
- * Supabase token in place when it is about to expire. A missing, expired or
- * unrefreshable session is a 401.
- */
-async function requirePanelSession(token: string): Promise<AuthSession> {
-  const stored = await loadPanelSession(token);
-  if (!stored) {
+async function requirePanelSession(token: string): Promise<PanelSession> {
+  const session = await loadPanelSession(token);
+  if (!session) {
     throw new Response("Unauthorized", { status: 401 });
   }
-  if (!isPanelSessionExpiringSoon(stored)) return stored;
 
-  const refreshed = await refreshPanelSession(token, stored);
-  if (!refreshed) {
+  const refusal = panelSessionRefusal(session, Date.now(), {
+    controlled: CONTROLLED_ENVIRONMENT,
+    absoluteMaxMs: SESSION_ABSOLUTE_MAX_MS,
+    idleLockMs: SESSION_IDLE_LOCK_MS,
+    hasVerifiedTotpFactor: session.mfaVerified
+      ? false
+      : await userHasVerifiedTotpFactor(session.userId)
+  });
+  if (refusal) {
+    await deletePanelSession(token);
     throw new Response("Unauthorized", { status: 401 });
   }
-  return refreshed;
-}
-
-// Ported from `@carbon/auth`'s `requirePermissions` so panel routes resolve the
-// console-mode effective user identically. Panel requests are cross-site, so the
-// `console-pin-*` cookie is not present in practice.
-function getEffectiveUser(
-  request: Request,
-  companyId: string,
-  sessionUserId: string,
-  consoleMode: boolean
-): string {
-  if (!consoleMode) return sessionUserId;
-
-  const cookieHeader = request.headers.get("cookie");
-  if (!cookieHeader) return sessionUserId;
-
-  const cookies = Object.fromEntries(
-    cookieHeader.split(";").map((c) => {
-      const [key, ...rest] = c.trim().split("=");
-      return [key, decodeURIComponent(rest.join("="))];
-    })
-  );
-
-  const pinRaw = cookies[`console-pin-${companyId}`];
-  if (!pinRaw) return sessionUserId;
-
-  try {
-    const pinIn = JSON.parse(pinRaw);
-    const elapsed = Date.now() - pinIn.pinnedAt;
-    const maxAge = CONTROLLED_ENVIRONMENT ? SESSION_IDLE_LOCK_MS : 3600000;
-    if (elapsed > maxAge) return sessionUserId;
-    return pinIn.userId ?? sessionUserId;
-  } catch {
-    return sessionUserId;
-  }
+  return session;
 }
 
 /**
  * The Onshape panel's own gate, purpose-built for the bearer-token iframe path.
  *
- * It mirrors `requirePermissions`' claims check and RLS-client construction but
- * is deliberately separate: `requirePermissions` is the cookie/API-key gate for
- * the rest of Carbon and carries no Onshape coupling. Panel API routes call
- * THIS instead, and get the identical return shape.
+ * It mirrors `requirePermissions`' claims check but is deliberately separate:
+ * `requirePermissions` is the cookie/API-key gate for the rest of Carbon and
+ * carries no Onshape coupling. Panel API routes call THIS instead, and get the
+ * same return shape.
+ *
+ * Stricter than the cookie path in two ways. Only employees pass: a portal,
+ * deactivated or role-less account is refused outright. And the acting user is
+ * always the session user: console pin-ins never reach a cross-site iframe.
  *
  * A panel request is always a fetch from an iframe, so both failure modes are a
  * status, never a redirect: 401 when the token is missing/expired/revoked, 403
@@ -329,7 +178,6 @@ export async function requireOnshapePanelPermissions(
     create?: string | string[];
     update?: string | string[];
     delete?: string | string[];
-    role?: string;
     bypassRls?: boolean;
   }
 ): Promise<{
@@ -348,61 +196,65 @@ export async function requireOnshapePanelPermissions(
     throw new Response("Unauthorized", { status: 401 });
   }
 
-  const authSession = await requirePanelSession(token);
-  const { accessToken, companyId, companyGroupId, email, userId } = authSession;
-  const consoleMode = authSession.console === companyId;
+  const session = await requirePanelSession(token);
+  const { companyId, companyGroupId, email, userId } = session;
 
   const myClaims = await getUserClaims(userId, companyId);
 
-  const client =
-    !!requiredPermissions.bypassRls && myClaims.role === "employee"
-      ? getCarbonServiceRole()
-      : getCarbon(accessToken);
-
-  const result = {
-    client,
-    companyId,
-    companyGroupId,
-    email,
-    userId: getEffectiveUser(request, companyId, userId, consoleMode),
-    sessionUserId: userId,
-    consoleMode
+  const deny = (reason: string) => {
+    logAuthEvent("permission_denied", {
+      userId,
+      actor: email,
+      companyId,
+      ip: getClientIp(request) ?? undefined,
+      reason: `onshape panel: ${reason}`
+    });
+    return new Response("Forbidden", { status: 403 });
   };
 
-  if (Object.keys(requiredPermissions).length === 0) {
-    return result;
+  if (myClaims.role !== "employee") {
+    throw deny(`${myClaims.role ?? "no"} role`);
   }
 
   const hasRequiredPermissions = Object.entries(requiredPermissions).every(
     ([action, permission]) => {
       if (action === "bypassRls") return true;
-      if (typeof permission === "string") {
-        if (action === "role") {
-          return myClaims.role === permission;
-        }
-        if (!(permission in myClaims.permissions)) return false;
-        const permissionForCompany =
-          myClaims.permissions[permission]?.[
+      const permissions =
+        typeof permission === "string"
+          ? [permission]
+          : Array.isArray(permission)
+            ? permission
+            : null;
+      if (!permissions) return false;
+      return permissions.every(
+        (p) =>
+          myClaims.permissions[p]?.[
             action as "view" | "create" | "update" | "delete"
-          ];
-        return permissionForCompany?.includes(companyId) || false;
-      } else if (Array.isArray(permission)) {
-        return permission.every((p) => {
-          const permissionForCompany =
-            myClaims.permissions[p]?.[
-              action as "view" | "create" | "update" | "delete"
-            ];
-          return permissionForCompany?.includes(companyId) ?? false;
-        });
-      } else {
-        return false;
-      }
+          ]?.includes(companyId) ?? false
+      );
     }
   );
 
   if (!hasRequiredPermissions) {
-    throw new Response("Forbidden", { status: 403 });
+    throw deny(JSON.stringify(requiredPermissions));
   }
 
-  return result;
+  // Only an authorized request counts as activity.
+  if (Date.now() - session.lastActiveAt > ACTIVITY_STAMP_INTERVAL_MS) {
+    await stampActivity(token, session);
+  }
+
+  const client = requiredPermissions.bypassRls
+    ? getCarbonServiceRole()
+    : await getUserScopedClient(userId);
+
+  return {
+    client,
+    companyId,
+    companyGroupId,
+    email,
+    userId,
+    sessionUserId: userId,
+    consoleMode: false
+  };
 }
