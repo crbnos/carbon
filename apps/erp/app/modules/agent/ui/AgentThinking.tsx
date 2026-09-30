@@ -3,6 +3,7 @@ export function AgentThinking() {
   return (
     <div
       className="self-start inline-flex items-center gap-1.5 rounded-lg border bg-muted/40 px-3 py-1.5 text-xs text-muted-foreground"
+      role="status"
       aria-label="Assistant is thinking"
     >
       <span>Thinking</span>

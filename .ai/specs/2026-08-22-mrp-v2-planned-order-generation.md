@@ -365,8 +365,9 @@ Three deterministic layers plus the agent:
   planner's `reviewedAt` marks: *"Since your last review: 3 new, 2 rescheduled in,
   1 canceled — latest cause: SO-1042 quantity changed."* Nervousness becomes something
   planners watch, not fear.
-- **Ask the plan (agent data tools)** — flip `AGENT_DATA_TOOLS_ENABLED = true`
-  (`apps/erp/app/modules/agent/agent.config.ts`). The mechanism is already built:
+- **Ask the plan (agent data tools)** — the gated data tools were REMOVED from the agent on
+  2026-09-30 (they had never shipped); restore them from the commit that deleted them
+  (`git log -S AGENT_DATA_TOOLS_ENABLED`) rather than flipping a flag. As they were built:
   `search_tools`/`describe_tool`/`call_tool` execute READ-classified MCP tools via the
   direct executor. v1 work: ensure the new planning reads (`getPlannedOrders`,
   `getPlannedOrderCascade`, `getItemTimePhasedPlan`, `getPlanningRun`) are
@@ -878,8 +879,8 @@ rows with `forecastMethod = 'suggested'`).
 
 **Agent (`apps/erp/app/modules/agent`)**
 
-- Flip `AGENT_DATA_TOOLS_ENABLED = true` (READ-only classification + blocklist already
-  enforced by the direct executor). Verify the new planning service reads are
+- Restore the agent data tools (removed 2026-09-30, see "Ask the plan" above) and enable
+  them (READ-only classification + blocklist enforced in the tool itself). Verify the new planning service reads are
   READ-classified in `tool-metadata.json` (regen via `pnpm run generate:mcp`); add a
   planning-concepts docs page so the KB regeneration teaches the agent the standard
   terminology.

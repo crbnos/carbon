@@ -4,7 +4,7 @@ import {
   getTermText,
   glossaryEntries,
   termSlug
-} from "@carbon/glossary";
+} from "@carbon/content/glossary";
 
 /**
  * Glossary — the whole `lib/glossary.ts` rendered as one reference page, in the

@@ -1,7 +1,7 @@
 import type { ConnectCustomerInput } from "@carbon/stripe/connect.server";
 // Type-only imports on purpose: they are erased at build, so this module stays
 // free of the `~/modules/sales` barrel. Importing it for real would transitively
-// pull `@carbon/glossary`'s Lingui macros, which throw outside a configured i18n
+// pull `@carbon/content/glossary`'s Lingui macros, which throw outside a configured i18n
 // runtime and take plain unit tests of this mapper down with them.
 import type {
   getCustomer,

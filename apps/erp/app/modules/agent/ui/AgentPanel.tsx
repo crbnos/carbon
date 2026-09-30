@@ -51,6 +51,7 @@ export function AgentPanel() {
     error,
     isStreaming,
     send,
+    retry,
     stop,
     loadThread,
     newThread,
@@ -140,6 +141,7 @@ export function AgentPanel() {
               threadId={threadId}
               error={error}
               isStreaming={isStreaming}
+              onRetry={retry}
             />
           </StickToBottom.Content>
           <ScrollToBottomButton />

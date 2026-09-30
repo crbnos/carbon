@@ -354,9 +354,6 @@ msgstr "Abschluss läuft"
 msgid "Connecting"
 msgstr "Verbindung wird hergestellt"
 
-msgid "Console"
-msgstr "Konsole"
-
 msgid "Console Mode"
 msgstr "Konsolenmodus"
 

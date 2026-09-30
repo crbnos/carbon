@@ -354,9 +354,6 @@ msgstr "完成中"
 msgid "Connecting"
 msgstr "连接中"
 
-msgid "Console"
-msgstr "控制台"
-
 msgid "Console Mode"
 msgstr "控制台模式"
 

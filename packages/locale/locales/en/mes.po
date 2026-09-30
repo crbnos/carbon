@@ -354,9 +354,6 @@ msgstr "Completing"
 msgid "Connecting"
 msgstr "Connecting"
 
-msgid "Console"
-msgstr "Console"
-
 msgid "Console Mode"
 msgstr "Console Mode"
 

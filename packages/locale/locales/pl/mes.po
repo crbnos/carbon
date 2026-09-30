@@ -354,9 +354,6 @@ msgstr "Finalizowanie"
 msgid "Connecting"
 msgstr "Łączenie"
 
-msgid "Console"
-msgstr "Konsola"
-
 msgid "Console Mode"
 msgstr "Tryb konsoli"
 

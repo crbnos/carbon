@@ -15,10 +15,10 @@ import {
   Checkbox,
   File,
   HStack,
+  NavRailItem,
   Popover,
   PopoverContent,
   PopoverTrigger,
-  SidebarMenuButton,
   toast,
   useMode,
   VStack
@@ -138,12 +138,7 @@ const Suggestion = () => {
   return (
     <Popover>
       <PopoverTrigger ref={popoverTriggerRef} asChild>
-        <SidebarMenuButton tooltip={t`Suggestion`}>
-          <LuMailbox />
-          <span>
-            <Trans>Suggestion</Trans>
-          </span>
-        </SidebarMenuButton>
+        <NavRailItem icon={<LuMailbox />} label={t`Suggestion`} />
       </PopoverTrigger>
       <PopoverContent className="w-[380px] ">
         <ValidatedForm

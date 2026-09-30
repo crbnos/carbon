@@ -354,9 +354,6 @@ msgstr "पूर्ण हो रहा है"
 msgid "Connecting"
 msgstr "जुड़ रहा है"
 
-msgid "Console"
-msgstr "कंसोल"
-
 msgid "Console Mode"
 msgstr "कंसोल मोड"
 

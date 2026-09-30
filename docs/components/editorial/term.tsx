@@ -15,7 +15,7 @@
 import * as Popover from "@radix-ui/react-popover";
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { getDefinitionText, getTermText, lookupEntry } from "@carbon/glossary";
+import { getDefinitionText, getTermText, lookupEntry } from "@carbon/content/glossary";
 
 function slugify(text: string) {
   return text

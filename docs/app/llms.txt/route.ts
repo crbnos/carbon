@@ -1,5 +1,4 @@
-import path from "node:path";
-import { readCorpus } from "@/lib/markdown-corpus";
+import { getCorpus } from "@/lib/corpus";
 import { SITE } from "@/lib/seo";
 
 /* /llms.txt — the llmstxt.org index for AI crawlers and assistants: every page as
@@ -17,8 +16,8 @@ const SECTIONS: { label: string; prefix: string }[] = [
   { label: "Overview", prefix: "docs/" },
 ];
 
-export function GET() {
-  const pages = readCorpus(path.join(process.cwd(), "content"));
+export async function GET() {
+  const pages = await getCorpus();
 
   const line = (p: (typeof pages)[number]) =>
     `- [${p.title}](${SITE.url}/${p.slug.replace(/\/index$/, "")})${

@@ -1,11 +1,11 @@
 import { describe, expect, it, vi } from "vitest";
 
 // diffMethod now lives in items.service. Importing the real module drags in the
-// items.service graph, which transitively loads @carbon/glossary — whose
+// items.service graph, which transitively loads @carbon/content/glossary — whose
 // module-load-time Lingui `msg` macro isn't transformed under plain vitest and
 // throws. The pure diffMethod under test needs none of it, so stub glossary; the
 // diffMethod under test stays the genuine implementation.
-vi.mock("@carbon/glossary", () => ({
+vi.mock("@carbon/content/glossary", () => ({
   terms: {},
   getEntry: vi.fn(),
   lookupEntry: vi.fn(),

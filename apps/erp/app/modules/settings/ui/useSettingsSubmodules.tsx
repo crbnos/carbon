@@ -35,11 +35,6 @@ import { path } from "~/utils/path";
 
 const internalOnlyRoutes = new Set<string>([path.to.companies]);
 
-// Demo Data (template seeding) stays internal / local-dev only — mirrors
-// `canAccessBackups`. Backups is now a Business/Enterprise feature gated
-// separately below (with the same internal/local-dev escape hatch).
-const localOrInternalRoutes = new Set<string>([path.to.demoData]);
-
 export default function useSettingsSubmodules() {
   const { t } = useLingui();
   const permissions = usePermissions();
@@ -252,8 +247,6 @@ export default function useSettingsSubmodules() {
     if (route.requiresControlledEnvironment && !isControlledEnvironment)
       return false;
     if (!isInternal && internalOnlyRoutes.has(route.to)) return false;
-    if (!isInternal && !isLocalDev && localOrInternalRoutes.has(route.to))
-      return false;
     // Backups: visible to Business/Enterprise, internal staff, or local dev.
     if (
       route.to === path.to.backups &&

@@ -1,4 +1,4 @@
-import { getTermText, listEntries } from "@carbon/glossary";
+import { getTermText, listEntries } from "@carbon/content/glossary";
 
 export type GlossarySegment = string | { text: string; slug: string };
 

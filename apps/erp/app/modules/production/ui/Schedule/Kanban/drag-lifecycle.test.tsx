@@ -51,7 +51,7 @@ type TestFetcher = {
 
 const fetchers = vi.hoisted(() => ({ current: [] as TestFetcher[] }));
 
-vi.mock("@carbon/glossary", () => ({
+vi.mock("@carbon/content/glossary", () => ({
   terms: {},
   getEntry: vi.fn(),
   lookupEntry: vi.fn(),

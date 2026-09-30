@@ -1,3 +1,4 @@
+import { Button } from "@carbon/react";
 import type { UIMessage } from "ai";
 import { AgentGreeting } from "./AgentGreeting";
 import { AgentMessage } from "./AgentMessage";
@@ -7,15 +8,33 @@ export function AgentMessageList({
   messages,
   threadId,
   error,
-  isStreaming
+  isStreaming,
+  onRetry
 }: {
   messages: UIMessage[];
   threadId: string | null;
   error?: Error;
   isStreaming: boolean;
+  onRetry: () => void;
 }) {
+  const errorRow = error && (
+    <div className="flex items-center gap-2 text-sm text-destructive">
+      {/* The server's own message (rate limit, a failed turn); never raw internals. */}
+      <span>{error.message || "Something went wrong."}</span>
+      <Button variant="secondary" size="sm" onClick={onRetry}>
+        Retry
+      </Button>
+    </div>
+  );
+
+  // A first question can fail before any message exists (the thread was not created).
   if (messages.length === 0) {
-    return <AgentGreeting />;
+    return (
+      <>
+        <AgentGreeting />
+        {errorRow && <div className="px-3 pb-3">{errorRow}</div>}
+      </>
+    );
   }
 
   const lastAssistantIndex = messages
@@ -41,11 +60,7 @@ export function AgentMessageList({
         />
       ))}
       {showThinking && <AgentThinking />}
-      {error && (
-        <div className="text-sm text-destructive">
-          Something went wrong. Please try again.
-        </div>
-      )}
+      {errorRow}
     </div>
   );
 }

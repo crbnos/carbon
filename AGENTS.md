@@ -111,7 +111,7 @@ IMPORTANT: Before any research or coding, match the task to this table. A single
 | Audit log system | `.claude/rules/audit-log-system.md` |
 | Shipments / receipts UI | `.claude/rules/shipments-receipts-ui-patterns.md` |
 | AI chat / SDK | `.claude/rules/chat-ai-sdk-info.md` |
-| In-app agent knowledge base (docs → agent) | `.claude/rules/agent-knowledge-base.md` |
+| Docs content, glossary, in-app agent knowledge base | `.claude/rules/agent-knowledge-base.md` + `docs/content/AGENTS.md` |
 | **Integrations** | |
 | Ramp integration (charges, accounting-provider sync) | `.claude/rules/ramp-integration.md` |
 | Jira integration | `.claude/rules/jira-integration.md` |
@@ -189,7 +189,7 @@ IMPORTANT: Before any research or coding, match the task to this table. A single
 - **Database**: Supabase (Postgres) with RLS, typed via `@carbon/database` + Kysely
 - **Background jobs**: Inngest (NOT Trigger.dev), via `@carbon/jobs`
 - **Apps**: `erp` (main), `mes` (shop floor), `academy` (training), `starter` (example)
-- **Packages**: 24 under `packages/` — auth, database, lib, react, form, documents, jobs, notifications, config, env, checks, harness, dev, stripe, ee, tiptap, locale, glossary, utils, files, kv, printing, onboarding, logger
+- **Packages**: 23 under `packages/` — auth, database, lib, react, form, documents, jobs, notifications, config, env, checks, harness, dev, stripe, ee, tiptap, locale, utils, files, kv, printing, onboarding, logger — plus `@carbon/content` at `docs/content` (docs MDX + glossary)
 - **Multi-tenancy**: every table has `companyId` + composite PK `("id", "companyId")`
 - **IDs**: `id('prefix')` default in SQL
 - **Imports**: `~/*` → app code; `@carbon/*` → workspace packages

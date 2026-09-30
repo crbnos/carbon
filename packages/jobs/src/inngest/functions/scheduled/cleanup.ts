@@ -5,7 +5,10 @@ import {
   TEMP_STAGING_BUCKET
 } from "@carbon/files";
 import { NotificationEvent } from "@carbon/notifications";
+import { sql } from "kysely";
+import { getJobDatabaseClient } from "../../../db";
 import { inngest } from "../../client";
+import { purgeStaleAgentThreads } from "./agent-thread-retention";
 
 // Raw CAD in `temp-staging` is transient — the optimise/assembly jobs read it,
 // and the compact pipeline COPIES what must survive into `private` (never an
@@ -14,14 +17,25 @@ import { inngest } from "../../client";
 // stale objects that were copied to durable, or that no modelUpload references.
 const STAGED_RAW_TTL_DAYS = 7;
 
-// Agent chat threads are transient — purge after 30 days of inactivity.
-const AGENT_THREAD_TTL_DAYS = 30;
-
 // Everything under `{companyId}/tmp/` in the private bucket is transient by
 // contract: HEIC-conversion round-trip files (removed in a `finally`, but a
 // crash can leak them) and staged signed-URL uploads an MCP agent PUT but
 // never registered. One day is generous — both are seconds-to-minutes lived.
 const TMP_STAGING_TTL_HOURS = 24;
+
+async function listStorageObjects(where: ReturnType<typeof sql>) {
+  try {
+    const { rows } = await sql<{
+      name: string | null;
+      bucket_id: string | null;
+    }>`
+      SELECT name, bucket_id FROM storage.objects WHERE ${where} LIMIT 1000
+    `.execute(getJobDatabaseClient());
+    return { data: rows, error: null };
+  } catch (error) {
+    return { data: [], error };
+  }
+}
 
 type NotifyEvent = {
   name: "carbon/notify";
@@ -339,60 +353,15 @@ export const cleanupFunction = inngest.createFunction(
     });
 
     await step.run("purge-old-agent-threads", async () => {
-      logger.info("Purging agent chat threads older than 30 days...");
-      const cutoff = new Date(
-        Date.now() - AGENT_THREAD_TTL_DAYS * 24 * 60 * 60 * 1000
-      ).toISOString();
-
-      // Small batches: the ids ride in PostgREST query strings below, and the
-      // job runs 3×/day, so any backlog drains within a few runs.
-      const old = await serviceRole
-        .from("agentThread")
-        .select("id")
-        .lt("createdAt", cutoff)
-        .limit(200);
-      if (old.error) {
-        logger.error("Error fetching old agent threads", { error: old.error });
-        return;
-      }
-      const ids = old.data.map((t) => t.id);
-      if (ids.length === 0) {
-        logger.info("No old agent threads to purge");
-        return;
-      }
-
-      // Age by last activity, not creation — a thread the user is still
-      // talking in stays, even if it was started over 30 days ago.
-      const active = await serviceRole
-        .from("agentMessage")
-        .select("threadId")
-        .in("threadId", ids)
-        .gte("createdAt", cutoff);
-      if (active.error) {
-        logger.error("Error checking agent thread activity", {
-          error: active.error
-        });
-        return;
-      }
-      const activeIds = new Set(active.data.map((m) => m.threadId));
-      const purgeIds = ids.filter((id) => !activeIds.has(id));
-      if (purgeIds.length === 0) {
-        logger.info("No stale agent threads to purge", {
-          stillActive: activeIds.size
-        });
-        return;
-      }
-
-      // Messages and parts cascade with the thread.
-      const purged = await serviceRole
-        .from("agentThread")
-        .delete()
-        .in("id", purgeIds);
-      if (purged.error) {
-        logger.error("Error purging agent threads", { error: purged.error });
+      const result = await purgeStaleAgentThreads(getJobDatabaseClient());
+      if (result.drained) {
+        logger.info("Purged stale agent threads", { count: result.purged });
       } else {
-        logger.info("Purged stale agent threads", { count: purgeIds.length });
+        logger.warn("Stale agent threads remain after this run", {
+          count: result.purged
+        });
       }
+      return result;
     });
 
     await step.run("prune-staged-raw-models", async () => {
@@ -401,19 +370,16 @@ export const cleanupFunction = inngest.createFunction(
         Date.now() - STAGED_RAW_TTL_DAYS * 24 * 60 * 60 * 1000
       ).toISOString();
 
-      const stale = await serviceRole
-        .schema("storage")
-        .from("objects")
-        .select("name")
-        .eq("bucket_id", TEMP_STAGING_BUCKET)
-        .lt("created_at", cutoff)
-        .limit(1000);
+      // PostgREST only exposes `public`, so `storage.objects` is read directly.
+      const stale = await listStorageObjects(
+        sql`bucket_id = ${TEMP_STAGING_BUCKET} AND created_at < ${cutoff}`
+      );
 
       if (stale.error) {
         logger.error("Error listing stale staged raws", { error: stale.error });
         return;
       }
-      const staleNames = (stale.data ?? [])
+      const staleNames = stale.data
         .map((o) => o.name)
         .filter((n): n is string => Boolean(n));
       if (staleNames.length === 0) {
@@ -517,13 +483,9 @@ export const cleanupFunction = inngest.createFunction(
       // with the legacy shared `private` bucket still holding pre-migration
       // objects — so select the bucket alongside the name and prune per bucket
       // rather than assuming one shared bucket.
-      const stale = await serviceRole
-        .schema("storage")
-        .from("objects")
-        .select("name, bucket_id")
-        .like("name", "%/tmp/%")
-        .lt("created_at", cutoff)
-        .limit(1000);
+      const stale = await listStorageObjects(
+        sql`name LIKE '%/tmp/%' AND created_at < ${cutoff}`
+      );
 
       if (stale.error) {
         logger.error("Error listing stale tmp objects", { error: stale.error });
@@ -534,7 +496,7 @@ export const cleanupFunction = inngest.createFunction(
       // `tmp` marks the transient prefix (`{companyId}/tmp/…`). Entity
       // folders are never named tmp, but don't rely on that for a delete.
       const byBucket = new Map<string, string[]>();
-      for (const object of stale.data ?? []) {
+      for (const object of stale.data) {
         const name = object.name;
         const bucketId = object.bucket_id;
         if (typeof name !== "string" || typeof bucketId !== "string") continue;

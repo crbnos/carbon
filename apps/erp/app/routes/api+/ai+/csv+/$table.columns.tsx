@@ -2,7 +2,7 @@ import { openai } from "@ai-sdk/openai";
 import { notFound } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getLogger } from "@carbon/logger";
-import { generateObject } from "ai";
+import { generateText, Output } from "ai";
 import type { ActionFunctionArgs } from "react-router";
 import type { ZodSchema } from "zod";
 import { z } from "zod";
@@ -70,12 +70,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
     return matched;
   }
 
-  // Use AI only for unmatched fields
-  const unmatchedSchema = schema.pick(
-    Object.fromEntries(unmatchedFields.map((f) => [f, true])) as Record<
-      string,
-      true
-    >
+  // Use AI only for unmatched fields. Each answer is a column NAME, so every field is a
+  // required string: OpenAI's strict structured output refuses optional keys.
+  const unmatchedSchema = z.object(
+    Object.fromEntries(unmatchedFields.map((f) => [f, z.string()]))
   );
 
   const unmatchedFileColumns = fileColumns.filter(
@@ -83,9 +81,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
   );
 
   try {
-    const { object } = await generateObject({
+    const { output: object } = await generateText({
       model: openai("gpt-4o"),
-      schema: unmatchedSchema,
+      output: Output.object({ schema: unmatchedSchema }),
       prompt: `
       The following columns are the headings from a CSV import file for importing a ${table}.
       Map these column names to the correct fields in our database (${unmatchedFields.join(", ")}) by providing the matching column name for each field.

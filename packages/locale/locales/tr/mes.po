@@ -354,9 +354,6 @@ msgstr "Tamamlanıyor"
 msgid "Connecting"
 msgstr "Bağlanıyor"
 
-msgid "Console"
-msgstr "Konsol"
-
 msgid "Console Mode"
 msgstr "Konsol Modu"
 
