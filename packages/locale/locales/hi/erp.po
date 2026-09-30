@@ -1646,6 +1646,9 @@ msgstr "जोड़ी गई {0} लाइनें"
 msgid "Added for this customer"
 msgstr "इस ग्राहक के लिए जोड़ा गया"
 
+msgid "Added to the unit price for the chosen values, before discounts and markups. Use a negative amount for a credit."
+msgstr "इकाई मूल्य में चुने गए मानों के लिए जोड़ा जाता है, छूट और अधिशुल्क से पहले। जमा के लिए नकारात्मक राशि का उपयोग करें।"
+
 msgid "Adding demo records"
 msgstr "डेमो रिकॉर्ड जोड़ रहे हैं"
 
@@ -4085,6 +4088,9 @@ msgstr "विन्यास"
 msgid "Configuration Parameters"
 msgstr "कॉन्फ़िगरेशन पैरामीटर"
 
+msgid "Configuration Prices"
+msgstr "कॉन्फ़िगरेशन मूल्य"
+
 msgid "Configuration, data migration, and any integrations"
 msgstr "कॉन्फ़िगरेशन, डेटा माइग्रेशन, और कोई भी एकीकरण"
 
@@ -4159,6 +4165,9 @@ msgstr "कॉन्फ़िगर किया गया"
 
 msgid "Configured"
 msgstr "कॉन्फ़िगर किया गया"
+
+msgid "Configured Part"
+msgstr "कॉन्फ़िगर की गई पार्ट"
 
 msgid "Confirm"
 msgstr "पुष्टि करें"
@@ -13019,6 +13028,9 @@ msgstr "लोग"
 msgid "People"
 msgstr "लोग"
 
+msgid "Per unit"
+msgstr "प्रति इकाई"
+
 msgid "Per Unit"
 msgstr "प्रति यूनिट"
 
@@ -14384,6 +14396,9 @@ msgstr "समन्वय ने प्रदाता के साथ वि�
 
 msgid "Reconciling a purchase order against what was received and invoiced — implicit in Carbon, via the line quantities and GR/IR balance."
 msgstr "एक क्रय आदेश को जो प्राप्त और चालान किया गया था उसके खिलाफ सुलह करना — Carbon में अंतर्निहित, पंक्ति मात्रा और GR/IR शेष राशि के माध्यम से।"
+
+msgid "Reconfigure"
+msgstr "फिर से कॉन्फ़िगर करें"
 
 msgid "Record"
 msgstr "रिकॉर्ड करें"

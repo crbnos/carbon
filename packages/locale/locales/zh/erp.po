@@ -1646,6 +1646,9 @@ msgstr "已添加 {0} 行"
 msgid "Added for this customer"
 msgstr "为此客户添加"
 
+msgid "Added to the unit price for the chosen values, before discounts and markups. Use a negative amount for a credit."
+msgstr "添加到所选配置的单价中，在折扣和加价之前生效。使用负数金额可作为抵扣。"
+
 msgid "Adding demo records"
 msgstr "正在添加演示记录"
 
@@ -4085,6 +4088,9 @@ msgstr "配置"
 msgid "Configuration Parameters"
 msgstr "配置参数"
 
+msgid "Configuration Prices"
+msgstr "配置价格"
+
 msgid "Configuration, data migration, and any integrations"
 msgstr "配置、数据迁移和任何集成"
 
@@ -4159,6 +4165,9 @@ msgstr "已配置"
 
 msgid "Configured"
 msgstr "已配置"
+
+msgid "Configured Part"
+msgstr "配置零件"
 
 msgid "Confirm"
 msgstr "确认"
@@ -13019,6 +13028,9 @@ msgstr "人员"
 msgid "People"
 msgstr "人员"
 
+msgid "Per unit"
+msgstr "每件"
+
 msgid "Per Unit"
 msgstr "每单位"
 
@@ -14384,6 +14396,9 @@ msgstr "对账发现与提供商的差异"
 
 msgid "Reconciling a purchase order against what was received and invoiced — implicit in Carbon, via the line quantities and GR/IR balance."
 msgstr "将采购订单与已收货和已开票的内容进行对账——在Carbon中隐含进行，通过行数量和GR/IR余额。"
+
+msgid "Reconfigure"
+msgstr "重新配置"
 
 msgid "Record"
 msgstr "录音"

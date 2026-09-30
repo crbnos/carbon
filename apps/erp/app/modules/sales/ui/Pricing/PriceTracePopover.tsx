@@ -171,8 +171,8 @@ export function PriceTracePopover({
 function StepTypeBadge({ step }: { step: PriceTraceStep }) {
   const mapping = STEP_BADGE[step.step];
   if (mapping === null) return null;
-  if (!mapping) return <Badge variant="gray">{step.step}</Badge>;
-  return <Badge variant={mapping.variant}>{mapping.label}</Badge>;
+  if (!mapping) return <Badge variant="gray">{step.label ?? step.step}</Badge>;
+  return <Badge variant={mapping.variant}>{step.label ?? mapping.label}</Badge>;
 }
 
 export function DeltaPill({

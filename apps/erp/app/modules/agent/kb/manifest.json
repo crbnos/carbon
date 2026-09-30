@@ -1206,6 +1206,7 @@
       "keywords": ["pricing", "rules", "and", "overrides", "docs", "reference"],
       "headings": [
         "Pricing rules",
+        "Configuration rules",
         "Price overrides",
         "How the engine picks a price",
         "What wins when rules collide",

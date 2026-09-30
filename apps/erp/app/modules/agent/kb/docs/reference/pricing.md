@@ -6,9 +6,9 @@ When you add an item to a quote line or a sales order line, Carbon doesn't just 
 
 ## Pricing rules
 
-A **pricing rule** is a company-scoped rule that adjusts a price up or down. Each rule is a `Discount` or a `Markup`, expressed as either a `Percentage` or a `Fixed` amount, and it only fires when the line matches the rule's conditions.
+A **pricing rule** is a company-scoped rule that adjusts a price up or down. Each rule is a `Discount` or a `Markup`, expressed as either a `Percentage` or a `Fixed` amount, or a `Configuration` rule that prices a configured part's options (below). A rule only fires when the line matches its conditions.
 
-  - **Rule type**: `Discount` (lowers the price) or `Markup` (raises it).
+  - **Rule type**: `Discount` (lowers the price), `Markup` (raises it), or `Configuration` (prices a configured part's options).
   - **Amount type**: `Percentage` or `Fixed`. A percentage is stored as a fraction from 0 to 1 (10% is `0.10`), so the form caps it at 100%.
   - **Amount**: The discount/markup value. For a percentage, the fraction of the running price; for fixed, an absolute amount.
   - **Priority**: Higher priority wins among discounts and orders the markup stack. Defaults to `0`.
@@ -21,6 +21,18 @@ A **pricing rule** is a company-scoped rule that adjusts a price up or down. Eac
 A rule matches a line only when every set condition holds: the quantity is within `min`/`max`, the date is inside the valid window, and the item and customer fall inside the item/customer restrictions (empty restriction means no restriction). Only matching, active rules go into the calculation.
 
 A `Percentage` amount is a fraction between 0 and 1 (`0.10` for 10%). The rule form rejects anything above 1. If you enter 15 expecting 15%, that's a 1500% adjustment.
+
+### Configuration rules
+
+A `Configuration` rule has no amount or item scope of its own. Instead you pick one **configured part** (only parts that require configuration are listed), and the form shows a **Configuration Prices** section listing that part's configuration parameters. Each amount is a per-unit surcharge added to the line's unit price when the line's configuration matches:
+
+- **List** parameters take an amount per option (`Color = Red → 10`).
+- **Boolean** parameters take an amount for when the value is true.
+- **Numeric** parameters take an amount per unit of the value (`0.50 × Length`).
+
+Text, date and material parameters can't be priced. Amounts are signed, so a negative amount gives a credit. The surcharges from every matching Configuration rule stack. They are added before the discount and markup rules, so a discount also applies to the surcharges. Each one appears in the price trace as a `Configuration` step labelled with the parameter's name. The customer scope, dates, quantity range and priority work as on any other rule.
+
+Configuration prices apply wherever the line has a configuration: quote lines, which reprice when a line is configured or reconfigured, and sales order lines, which have their own **Configure** button.
 
 ## Price overrides
 
@@ -65,7 +77,7 @@ Discounts and markups combine differently, and this is the part that surprises p
 - **Discounts don't stack — the single highest-priority discount wins.** When several discount rules match, Carbon ranks them by priority (ties broken by the larger effective amount) and applies **only the top one**. The rest are discarded. You never get two discounts on the same line.
 - **Markups stack and compound.** Every matching markup rule applies, in priority order, each computed against the already-adjusted running price. A 10% markup after a 20% markup compounds, it doesn't simply add.
 
-Discounts are applied first, then the markup stack, then the zero floor.
+Configuration prices are added first, then the discount, then the markup stack, then the zero floor.
 
 If a customer qualifies for both a 10% and a 15% discount rule, they get 15% only — never 25%, and never both applied in sequence. Markups are the opposite: all of them apply, compounding.
 

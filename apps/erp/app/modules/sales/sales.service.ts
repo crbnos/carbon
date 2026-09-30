@@ -78,8 +78,10 @@ import type {
 import { costCategoryKeys, OPEN_SALES_ORDER_STATUSES } from "./sales.models";
 import type { CategoryMarkups, QuoteLinePriceSource } from "./sales.utils";
 import {
+  applyPriceRules,
   decideRecalcPricing,
   getEffectiveDefaultMarkups,
+  hasConfigurationSurcharge,
   resolvePreservedQuoteLinePriceFields
 } from "./sales.utils";
 import type {
@@ -104,78 +106,6 @@ const SALES_ORDERS_LIST_COLUMNS =
   "id,salesOrderId,status,orderDate,customerId,customerReference,assignee,companyId,customFields,createdAt,createdBy,updatedAt,updatedBy,locationId,displayStatus,thumbnailPath,itemType,orderTotal,jobs,lines,paymentTermId,shippingMethodId,receiptPromisedDate,dropShipment" as const;
 
 const logger = getLogger("erp", "sales");
-
-export function applyPriceRules(
-  startingPrice: number,
-  matchedRules: MatchedRule[]
-): { finalPrice: number; appendedTrace: PriceTraceStep[] } {
-  const appendedTrace: PriceTraceStep[] = [];
-  let finalPrice = startingPrice;
-
-  const markupRules = matchedRules.filter((r) => r.ruleType === "Markup");
-  const discountRules = matchedRules.filter((r) => r.ruleType === "Discount");
-
-  // Discounts: highest priority wins (non-stacking); ties broken by best
-  // effective amount against the current running price.
-  if (discountRules.length > 0) {
-    const ranked = discountRules
-      .map((rule) => ({
-        rule,
-        effective:
-          rule.amountType === "Percentage"
-            ? finalPrice * rule.amount
-            : rule.amount
-      }))
-      .sort((a, b) => {
-        if (b.rule.priority !== a.rule.priority) {
-          return b.rule.priority - a.rule.priority;
-        }
-        return b.effective - a.effective;
-      });
-
-    const winner = ranked[0];
-    if (winner && winner.effective > 0) {
-      finalPrice = finalPrice - winner.effective;
-      appendedTrace.push({
-        step: "Discount",
-        source: `Rule: ${winner.rule.name}`,
-        amount: finalPrice,
-        adjustment: -winner.effective,
-        ruleId: winner.rule.id
-      });
-    }
-  }
-
-  // Markups: stack in priority order (highest first), compounding on the
-  // running price so ordering + basis are both deterministic.
-  const sortedMarkups = [...markupRules].sort(
-    (a, b) => b.priority - a.priority
-  );
-  for (const rule of sortedMarkups) {
-    const adjustment =
-      rule.amountType === "Percentage" ? finalPrice * rule.amount : rule.amount;
-    finalPrice = finalPrice + adjustment;
-    appendedTrace.push({
-      step: "Markup",
-      source: `Rule: ${rule.name}`,
-      amount: finalPrice,
-      adjustment,
-      ruleId: rule.id
-    });
-  }
-
-  if (finalPrice < 0) {
-    appendedTrace.push({
-      step: "Floor",
-      source: "Clamped to 0 (rules drove price negative)",
-      amount: 0,
-      adjustment: -finalPrice
-    });
-    finalPrice = 0;
-  }
-
-  return { finalPrice, appendedTrace };
-}
 
 export async function closeSalesOrder(
   client: SupabaseClient<Database>,
@@ -313,30 +243,67 @@ export async function createPricingRule(
   userId: string,
   data: z.infer<typeof pricingRuleValidator>
 ) {
+  const rule = normalizePricingRule(data);
   return client
     .from("pricingRule")
     .insert([
       {
-        name: data.name,
-        ruleType: data.ruleType,
-        amountType: data.amountType,
-        amount: data.amount,
-        minQuantity: data.minQuantity ?? null,
-        maxQuantity: data.maxQuantity ?? null,
-        customerIds: data.customerIds ?? [],
-        customerTypeIds: data.customerTypeIds ?? [],
-        itemIds: data.itemIds ?? [],
-        itemPostingGroupId: data.itemPostingGroupId ?? null,
-        validFrom: data.validFrom || null,
-        validTo: data.validTo || null,
-        priority: data.priority ?? 0,
-        active: data.active ?? true,
+        name: rule.name,
+        ruleType: rule.ruleType,
+        amountType: rule.amountType,
+        amount: rule.amount,
+        minQuantity: rule.minQuantity ?? null,
+        maxQuantity: rule.maxQuantity ?? null,
+        customerIds: rule.customerIds ?? [],
+        customerTypeIds: rule.customerTypeIds ?? [],
+        itemIds: rule.itemIds ?? [],
+        itemPostingGroupId: rule.itemPostingGroupId ?? null,
+        validFrom: rule.validFrom || null,
+        validTo: rule.validTo || null,
+        priority: rule.priority ?? 0,
+        active: rule.active ?? true,
+        configurationPrices: rule.configurationPrices ?? null,
         companyId,
         createdBy: userId
       }
     ])
     .select("id")
     .single();
+}
+
+// A Configuration rule is one configurable item's parameter prices and
+// nothing else: its item comes from `itemId`, and it has no item group and
+// no discount/markup amount. Any other rule type carries no configuration
+// prices. A partial update that leaves `ruleType` alone is passed through.
+function normalizePricingRule<
+  T extends Partial<z.infer<typeof pricingRuleValidator>>
+>(
+  data: T
+): Omit<T, "itemId" | "configurationPrices"> & {
+  configurationPrices?: Json | null;
+} {
+  const { itemId, configurationPrices, ...rule } = data;
+  if (rule.ruleType === undefined) {
+    return configurationPrices === undefined
+      ? rule
+      : { ...rule, configurationPrices: configurationPrices as Json };
+  }
+  if (rule.ruleType !== "Configuration") {
+    return { ...rule, configurationPrices: null };
+  }
+  const itemIds = itemId ? [itemId] : (rule.itemIds ?? []);
+  const prices = (configurationPrices ?? []).filter(
+    (price) => price.amount !== 0
+  );
+  return {
+    ...rule,
+    itemIds,
+    itemPostingGroupId: undefined,
+    amountType: "Fixed" as const,
+    amount: 0,
+    configurationPrices:
+      itemIds.length === 1 && prices.length > 0 ? (prices as Json) : null
+  };
 }
 
 export async function deleteCustomer(
@@ -594,6 +561,7 @@ export async function duplicatePricingRule(
         validFrom: original.validFrom,
         validTo: original.validTo,
         priority: original.priority,
+        configurationPrices: original.configurationPrices,
         active: false,
         companyId,
         createdBy: userId
@@ -2342,7 +2310,24 @@ export async function resolvePrice(
       return true;
     }) as MatchedRule[];
 
-    const ruleResult = applyPriceRules(startingPrice, matchedRules);
+    let parameterLabels: Record<string, string> | undefined;
+    if (hasConfigurationSurcharge(matchedRules, input.configuration)) {
+      const { data: parameters } = await client
+        .from("configurationParameter")
+        .select("key, label")
+        .eq("itemId", input.itemId)
+        .eq("companyId", companyId);
+      parameterLabels = Object.fromEntries(
+        (parameters ?? []).map((parameter) => [parameter.key, parameter.label])
+      );
+    }
+
+    const ruleResult = applyPriceRules(
+      startingPrice,
+      matchedRules,
+      input.configuration,
+      parameterLabels
+    );
     finalPrice = ruleResult.finalPrice;
     trace.push(...ruleResult.appendedTrace);
   }
@@ -3239,7 +3224,7 @@ export async function updatePricingRule(
     .from("pricingRule")
     .update(
       sanitize({
-        ...data,
+        ...normalizePricingRule(data),
         updatedBy: userId,
         updatedAt: new Date().toISOString()
       })
@@ -4526,6 +4511,13 @@ type BuildPriceRowsResult = {
   error: unknown | null;
 };
 
+// A line's stored configuration, as the pricing engine reads it.
+function lineConfiguration(configuration: Json | null | undefined) {
+  if (!configuration || typeof configuration !== "object") return null;
+  if (Array.isArray(configuration)) return null;
+  return configuration as Record<string, unknown>;
+}
+
 export async function buildMakeToOrderPriceRows(
   client: SupabaseClient<Database>,
   quoteId: string,
@@ -4545,7 +4537,7 @@ export async function buildMakeToOrderPriceRows(
       .single(),
     client
       .from("quoteLine")
-      .select("itemId, unitPricePrecision")
+      .select("itemId, unitPricePrecision, configuration")
       .eq("id", quoteLineId)
       .single()
   ]);
@@ -4615,7 +4607,8 @@ export async function buildMakeToOrderPriceRows(
             itemId,
             quantity: qty,
             customerId,
-            existingBasePrice: rollupPrice
+            existingBasePrice: rollupPrice,
+            configuration: lineConfiguration(lineResult.data.configuration)
           })
         ).finalPrice
       : rollupPrice;
@@ -4685,7 +4678,7 @@ export async function buildPullFromInventoryPriceRows(
       .single(),
     client
       .from("quoteLine")
-      .select("itemId, unitPricePrecision")
+      .select("itemId, unitPricePrecision, configuration")
       .eq("id", quoteLineId)
       .single()
   ]);
@@ -4713,7 +4706,8 @@ export async function buildPullFromInventoryPriceRows(
     const resolved = await resolvePrice(client, companyId, {
       itemId,
       quantity: qty,
-      customerId
+      customerId,
+      configuration: lineConfiguration(lineResult.data.configuration)
     });
 
     priceRows.push({
@@ -4781,7 +4775,7 @@ export async function buildPurchaseToOrderPriceRows(
       .single(),
     client
       .from("quoteLine")
-      .select("itemId, unitPricePrecision")
+      .select("itemId, unitPricePrecision, configuration")
       .eq("id", quoteLineId)
       .single()
   ]);
@@ -4812,7 +4806,8 @@ export async function buildPurchaseToOrderPriceRows(
       itemId,
       quantity: qty,
       customerId,
-      existingBasePrice: supplierPrice
+      existingBasePrice: supplierPrice,
+      configuration: lineConfiguration(lineResult.data.configuration)
     });
 
     priceRows.push({
@@ -4873,7 +4868,7 @@ export async function recalculateQuoteLinePrices(
   const [lineResult, quoteResult] = await Promise.all([
     client
       .from("quoteLine")
-      .select("itemId, unitPricePrecision")
+      .select("itemId, unitPricePrecision, configuration")
       .eq("id", quoteLineId)
       .eq("quoteId", quoteId)
       .eq("companyId", companyId)
@@ -4985,7 +4980,8 @@ export async function recalculateQuoteLinePrices(
               itemId,
               quantity: qty,
               customerId,
-              existingBasePrice: rollupPrice
+              existingBasePrice: rollupPrice,
+              configuration: lineConfiguration(lineResult.data.configuration)
             })
           ).finalPrice
         : rollupPrice;

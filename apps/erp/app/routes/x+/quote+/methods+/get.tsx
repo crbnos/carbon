@@ -6,6 +6,7 @@ import { data, redirect } from "react-router";
 import {
   copyQuoteLine,
   getMethodValidator,
+  recalculateQuoteLinePrices,
   upsertQuoteLineMethod,
   upsertQuoteMaterialMakeMethod
 } from "~/modules/sales";
@@ -59,8 +60,24 @@ export async function action({ request }: ActionFunctionArgs) {
       lineMethodPayload
     );
 
+    if (lineMethod.error) {
+      return { error: "Failed to get quote line method" };
+    }
+
+    // A new method (or configuration) changes the line's cost and its
+    // configuration surcharges, so reprice its existing quantities.
+    const recalculate = await recalculateQuoteLinePrices(
+      serviceRole,
+      companyId,
+      quoteId,
+      quoteLineId,
+      userId
+    );
+
     return {
-      error: lineMethod.error ? "Failed to get quote line method" : null
+      error: recalculate.error
+        ? "Failed to recalculate quote line prices"
+        : null
     };
   }
 

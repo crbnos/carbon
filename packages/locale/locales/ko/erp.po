@@ -1646,6 +1646,9 @@ msgstr "{0}개 라인이 추가되었습니다"
 msgid "Added for this customer"
 msgstr "이 고객을 위해 추가됨"
 
+msgid "Added to the unit price for the chosen values, before discounts and markups. Use a negative amount for a credit."
+msgstr "선택한 값에 대해 단가에 추가되며, 할인 및 마크업 전입니다. 대변을 위해 음수 금액을 사용하세요."
+
 msgid "Adding demo records"
 msgstr "데모 레코드 추가 중"
 
@@ -4085,6 +4088,9 @@ msgstr "구성"
 msgid "Configuration Parameters"
 msgstr "설정 파라미터"
 
+msgid "Configuration Prices"
+msgstr "구성 가격"
+
 msgid "Configuration, data migration, and any integrations"
 msgstr "설정, 데이터 마이그레이션 및 각종 연동"
 
@@ -4159,6 +4165,9 @@ msgstr "설정됨"
 
 msgid "Configured"
 msgstr "설정됨"
+
+msgid "Configured Part"
+msgstr "구성된 부품"
 
 msgid "Confirm"
 msgstr "확인"
@@ -13019,6 +13028,9 @@ msgstr "인원"
 msgid "People"
 msgstr "인원"
 
+msgid "Per unit"
+msgstr "개당"
+
 msgid "Per Unit"
 msgstr "단위당"
 
@@ -14384,6 +14396,9 @@ msgstr "조정 중에 공급자와의 불일치를 발견했습니다"
 
 msgid "Reconciling a purchase order against what was received and invoiced — implicit in Carbon, via the line quantities and GR/IR balance."
 msgstr "발주서를 입고 및 송장 발행된 내용과 대조하기 — Carbon에서 라인 수량 및 GR/IR 잔액을 통해 암묵적으로 수행됩니다."
+
+msgid "Reconfigure"
+msgstr "재설정"
 
 msgid "Record"
 msgstr "기록"
