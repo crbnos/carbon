@@ -12,8 +12,8 @@
 -- quoteLine.configuration). Used to price the line and to configure the job
 -- made for it.
 
-ALTER TABLE "pricingRule" ADD COLUMN "configurationPrices" JSONB;
-ALTER TABLE "salesOrderLine" ADD COLUMN "configuration" JSONB;
+ALTER TABLE "pricingRule" ADD COLUMN IF NOT EXISTS "configurationPrices" JSONB;
+ALTER TABLE "salesOrderLine" ADD COLUMN IF NOT EXISTS "configuration" JSONB;
 
 -- salesOrderLines selects sl.*, which Postgres expands at creation time, so it
 -- is recreated (verbatim from 20260811123619) to expose the new column.

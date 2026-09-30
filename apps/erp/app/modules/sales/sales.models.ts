@@ -23,6 +23,7 @@ import {
   standardFactorType,
   taxExemptionReasons
 } from "../shared";
+import { pricingRuleConfigurationPriceValidator } from "./sales.utils";
 
 export const KPIs = [
   {
@@ -341,15 +342,6 @@ export const priceResolutionInputValidator = z.object({
   date: z.string().optional(),
   existingBasePrice: z.number().optional(),
   configuration: z.record(z.string(), z.unknown()).optional()
-});
-
-// A signed per-unit surcharge for one configuration parameter value. `value`
-// is the list option (or "true" for a boolean); null prices a numeric
-// parameter per unit of its value.
-export const pricingRuleConfigurationPriceValidator = z.object({
-  key: z.string().min(1),
-  value: z.string().nullable(),
-  amount: z.number()
 });
 
 const parseJsonField = (value: unknown) => {

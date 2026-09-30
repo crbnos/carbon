@@ -44,6 +44,9 @@ interface FormData {
   [key: string]: string | number | boolean | MaterialConfigurationData;
 }
 
+// The values a configurator collects, keyed by configurationParameter key.
+export type ConfiguratorValues = FormData;
+
 interface ParameterFieldProps {
   parameter: ConfigurationParameter;
 }

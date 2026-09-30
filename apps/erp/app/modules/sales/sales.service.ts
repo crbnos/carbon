@@ -79,13 +79,13 @@ import { costCategoryKeys, OPEN_SALES_ORDER_STATUSES } from "./sales.models";
 import type { CategoryMarkups, QuoteLinePriceSource } from "./sales.utils";
 import {
   applyPriceRules,
+  asConfiguration,
   decideRecalcPricing,
   getEffectiveDefaultMarkups,
-  hasConfigurationSurcharge,
-  resolvePreservedQuoteLinePriceFields
+  resolvePreservedQuoteLinePriceFields,
+  toMatchedRule
 } from "./sales.utils";
 import type {
-  MatchedRule,
   OverrideEntry,
   PriceListResult,
   PriceListRow,
@@ -2264,8 +2264,10 @@ export async function resolvePrice(
     }
   }
 
+  // An override that skips the rules still takes the line's configuration
+  // prices — they price the chosen options, not the part.
   let finalPrice = startingPrice;
-  if (!skipRules) {
+  if (!skipRules || input.configuration) {
     let rulesQuery = client
       .from("pricingRule")
       .select("*")
@@ -2277,7 +2279,7 @@ export async function resolvePrice(
 
     const { data: allRules } = await rulesQuery;
 
-    const matchedRules: MatchedRule[] = (allRules ?? []).filter((rule) => {
+    const matchedRules = (allRules ?? []).filter((rule) => {
       if (rule.minQuantity !== null && input.quantity < rule.minQuantity)
         return false;
       if (rule.maxQuantity !== null && input.quantity > rule.maxQuantity)
@@ -2308,25 +2310,12 @@ export async function resolvePrice(
           return false;
       }
       return true;
-    }) as MatchedRule[];
-
-    let parameterLabels: Record<string, string> | undefined;
-    if (hasConfigurationSurcharge(matchedRules, input.configuration)) {
-      const { data: parameters } = await client
-        .from("configurationParameter")
-        .select("key, label")
-        .eq("itemId", input.itemId)
-        .eq("companyId", companyId);
-      parameterLabels = Object.fromEntries(
-        (parameters ?? []).map((parameter) => [parameter.key, parameter.label])
-      );
-    }
+    });
 
     const ruleResult = applyPriceRules(
       startingPrice,
-      matchedRules,
-      input.configuration,
-      parameterLabels
+      matchedRules.map(toMatchedRule),
+      { configuration: input.configuration, configurationOnly: skipRules }
     );
     finalPrice = ruleResult.finalPrice;
     trace.push(...ruleResult.appendedTrace);
@@ -2609,7 +2598,7 @@ export async function resolvePriceList(
     let hasRuleAdjustment = false;
 
     if (!skipRules) {
-      const matchedRules: MatchedRule[] = (allRules ?? []).filter((rule) => {
+      const matchedRules = (allRules ?? []).filter((rule) => {
         if (rule.minQuantity !== null && previewQuantity < rule.minQuantity)
           return false;
         if (rule.maxQuantity !== null && previewQuantity > rule.maxQuantity)
@@ -2647,7 +2636,10 @@ export async function resolvePriceList(
         return true;
       });
 
-      const ruleResult = applyPriceRules(startingPrice, matchedRules);
+      const ruleResult = applyPriceRules(
+        startingPrice,
+        matchedRules.map(toMatchedRule)
+      );
       finalPrice = ruleResult.finalPrice;
       trace.push(...ruleResult.appendedTrace);
       hasRuleAdjustment = ruleResult.appendedTrace.length > 0;
@@ -4511,13 +4503,6 @@ type BuildPriceRowsResult = {
   error: unknown | null;
 };
 
-// A line's stored configuration, as the pricing engine reads it.
-function lineConfiguration(configuration: Json | null | undefined) {
-  if (!configuration || typeof configuration !== "object") return null;
-  if (Array.isArray(configuration)) return null;
-  return configuration as Record<string, unknown>;
-}
-
 export async function buildMakeToOrderPriceRows(
   client: SupabaseClient<Database>,
   quoteId: string,
@@ -4608,7 +4593,7 @@ export async function buildMakeToOrderPriceRows(
             quantity: qty,
             customerId,
             existingBasePrice: rollupPrice,
-            configuration: lineConfiguration(lineResult.data.configuration)
+            configuration: asConfiguration(lineResult.data.configuration)
           })
         ).finalPrice
       : rollupPrice;
@@ -4707,7 +4692,7 @@ export async function buildPullFromInventoryPriceRows(
       itemId,
       quantity: qty,
       customerId,
-      configuration: lineConfiguration(lineResult.data.configuration)
+      configuration: asConfiguration(lineResult.data.configuration)
     });
 
     priceRows.push({
@@ -4807,7 +4792,7 @@ export async function buildPurchaseToOrderPriceRows(
       quantity: qty,
       customerId,
       existingBasePrice: supplierPrice,
-      configuration: lineConfiguration(lineResult.data.configuration)
+      configuration: asConfiguration(lineResult.data.configuration)
     });
 
     priceRows.push({
@@ -4981,7 +4966,7 @@ export async function recalculateQuoteLinePrices(
               quantity: qty,
               customerId,
               existingBasePrice: rollupPrice,
-              configuration: lineConfiguration(lineResult.data.configuration)
+              configuration: asConfiguration(lineResult.data.configuration)
             })
           ).finalPrice
         : rollupPrice;

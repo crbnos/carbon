@@ -59,7 +59,7 @@ Standalone rules, `id` default `id('pr')`, scoped to a company. Columns: `name`,
    resolves a *base unit price* during quote-line price recalculation (cost rollup with
    `categoryMarkups`, then `resolvePrice`). Precedence: customer override > customer-type
    override > all-customers override > base (`itemUnitSalePrice`). Overrides may set
-   `applyRulesOnTop=false` to skip rules. Then `applyPriceRules`:
+   `applyRulesOnTop=false` to skip the discount and markup rules. Then `applyPriceRules`:
    - **Discount rules: non-stacking** — highest `priority` wins; ties broken by best
      effective amount. Percentage = `price * amount`; Fixed = `amount`.
    - **Markup rules: stack** in priority order, compounding on the running price.
@@ -67,7 +67,10 @@ Standalone rules, `id` default `id('pr')`, scoped to a company. Columns: `name`,
      their `configurationPrices` are signed per-unit surcharges added to the starting price
      BEFORE the discount, stacking across every matched Configuration rule; they need the
      line's `configuration` (`quoteLine` / `salesOrderLine`), passed to `resolvePrice` as
-     `input.configuration`. Trace steps carry the parameter's `label`.
+     `input.configuration`. Trace steps carry the parameter's `label`, saved on each
+     price entry by the rule form (no lookup at pricing time). An override with
+     `applyRulesOnTop=false` skips discounts and markups but still applies the
+     configuration prices (`applyPriceRules(..., { configurationOnly: true })`).
    - Final price clamped to ≥ 0.
    Each step is recorded as a `PriceTraceStep` (`{ step, source, amount, adjustment?, ruleId? }`)
    into `priceTrace`. The winning rule's id lands on `quoteLine.pricingRuleId`.

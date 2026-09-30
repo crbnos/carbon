@@ -2,7 +2,6 @@ import type { Database } from "@carbon/database";
 import type { z } from "zod";
 import type { jobStatus } from "../production/production.models";
 import type { QuantityEffect } from "../shared";
-import type { pricingRuleConfigurationPriceValidator } from "./sales.models";
 import type {
   getCustomer,
   getCustomerBankAccounts,
@@ -33,17 +32,19 @@ import type {
   getSalesRFQs,
   priceSourceTypes
 } from "./sales.service";
+import type { pricingRuleConfigurationPriceValidator } from "./sales.utils";
 
 // Pricing types
 export type MatchedRule = {
   id: string;
   name: string;
-  ruleType: string;
-  amountType: string;
+  ruleType: Database["public"]["Enums"]["pricingRuleType"];
+  amountType: Database["public"]["Enums"]["pricingRuleAmountType"];
   amount: number;
   priority: number;
-  // Stored JSONB — parsed by applyPriceRules, which ignores malformed entries.
-  configurationPrices?: unknown;
+  // Parsed from the stored JSONB by `toMatchedRule`; empty for any rule type
+  // but Configuration.
+  configurationPrices: PricingRuleConfigurationPrice[];
 };
 
 export type PricingRuleConfigurationPrice = z.infer<

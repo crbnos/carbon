@@ -30,7 +30,7 @@ A `Configuration` rule has no amount or item scope of its own. Instead you pick 
 - **Boolean** parameters take an amount for when the value is true.
 - **Numeric** parameters take an amount per unit of the value (`0.50 × Length`).
 
-Text, date and material parameters can't be priced. Amounts are signed, so a negative amount gives a credit. The surcharges from every matching Configuration rule stack. They are added before the discount and markup rules, so a discount also applies to the surcharges. Each one appears in the price trace as a `Configuration` step labelled with the parameter's name. The customer scope, dates, quantity range and priority work as on any other rule.
+Text, date and material parameters can't be priced. Amounts are signed, so a negative amount gives a credit. The surcharges from every matching Configuration rule stack. They are added before the discount and markup rules, so a discount also applies to the surcharges. Each one appears in the price trace as a `Configuration` step labelled with the parameter's name. The customer scope, dates, quantity range and priority work as on any other rule. A price override that doesn't apply rules on top still takes the configuration prices, because they price the chosen options rather than the part.
 
 Configuration prices apply wherever the line has a configuration: quote lines, which reprice when a line is configured or reconfigured, and sales order lines, which have their own **Configure** button.
 

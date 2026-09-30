@@ -4,11 +4,11 @@ import { flash } from "@carbon/auth/session.server";
 import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { redirect, useLoaderData, useNavigate } from "react-router";
-import type { PricingRuleConfigurationPrice } from "~/modules/sales";
 import {
   duplicatePricingRule,
   getPricingRule,
   pricingRuleValidator,
+  toMatchedRule,
   updatePricingRule
 } from "~/modules/sales";
 import PricingRuleForm from "~/modules/sales/ui/Pricing/PricingRuleForm";
@@ -123,8 +123,7 @@ export default function EditPricingRuleRoute() {
     validTo: pricingRule.validTo ?? undefined,
     priority: pricingRule.priority ?? 0,
     active: pricingRule.active,
-    configurationPrices: (pricingRule.configurationPrices ??
-      []) as PricingRuleConfigurationPrice[]
+    configurationPrices: toMatchedRule(pricingRule).configurationPrices
   };
 
   return (

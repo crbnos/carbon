@@ -251,6 +251,7 @@ const PricingRuleForm = ({ initialValues, onClose }: PricingRuleFormProps) => {
                     <Hidden name="itemPostingGroupId" value="" />
                     <PricingRuleConfigurationPrices
                       itemId={configurationItemId}
+                      initialItemId={initialValues.itemId ?? null}
                       initialPrices={initialValues.configurationPrices ?? []}
                     />
                   </>

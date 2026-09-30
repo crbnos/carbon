@@ -2,7 +2,7 @@ import { useCarbon } from "@carbon/auth";
 import { NumberField, NumberInput, Subheading, toast } from "@carbon/react";
 import { INPUT_FORMAT, INPUT_STEP } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Hidden } from "~/components/Form";
 import { useCurrencyDecimals, useUser } from "~/hooks";
 import type { ConfigurationParameter } from "~/modules/items/types";
@@ -36,8 +36,15 @@ function priceRows(
 const priceKey = (key: string, value: string | null) =>
   `${key}\u0000${value ?? ""}`;
 
+const toAmounts = (prices: PricingRuleConfigurationPrice[]) =>
+  new Map(
+    prices.map((price) => [priceKey(price.key, price.value), price.amount])
+  );
+
 type PricingRuleConfigurationPricesProps = {
   itemId: string | null;
+  // The item the stored prices belong to (the rule's item when it was loaded).
+  initialItemId: string | null;
   initialPrices: PricingRuleConfigurationPrice[];
 };
 
@@ -47,6 +54,7 @@ type PricingRuleConfigurationPricesProps = {
  */
 const PricingRuleConfigurationPrices = ({
   itemId,
+  initialItemId,
   initialPrices
 }: PricingRuleConfigurationPricesProps) => {
   const { t } = useLingui();
@@ -56,29 +64,20 @@ const PricingRuleConfigurationPrices = ({
   const currencyDecimals = useCurrencyDecimals(baseCurrency);
 
   const [parameters, setParameters] = useState<ConfigurationParameter[]>([]);
-  // The item the parameters were loaded for — until then the stored prices
-  // are posted untouched, so a quick save cannot drop them.
+  // The item the parameters were loaded for. Until they load, the stored
+  // prices of the rule's own item are posted untouched, so a quick save (or a
+  // failed load) cannot drop them.
   const [loadedItemId, setLoadedItemId] = useState<string | null>(null);
-  const [amounts, setAmounts] = useState<Map<string, number>>(
-    () =>
-      new Map(
-        initialPrices.map((price) => [
-          priceKey(price.key, price.value),
-          price.amount
-        ])
-      )
-  );
+  const [amounts, setAmounts] = useState(() => toAmounts(initialPrices));
 
-  // Prices are keyed by one item's parameters: switching from one item to
-  // another starts from an empty price list.
-  const lastItemId = useRef<string | null>(null);
+  // Prices are keyed by one item's parameters: another item starts from an
+  // empty price list, and switching back restores the stored prices.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: reset only when the item changes
+  useEffect(() => {
+    setAmounts(itemId === initialItemId ? toAmounts(initialPrices) : new Map());
+  }, [itemId]);
 
   useEffect(() => {
-    if (itemId && lastItemId.current && lastItemId.current !== itemId) {
-      setAmounts(new Map());
-    }
-    if (itemId) lastItemId.current = itemId;
-
     if (!itemId || !carbon || !company?.id) {
       setParameters([]);
       return;
@@ -86,21 +85,6 @@ const PricingRuleConfigurationPrices = ({
 
     let cancelled = false;
     (async () => {
-      const replenishment = await carbon
-        .from("itemReplenishment")
-        .select("requiresConfiguration")
-        .eq("itemId", itemId)
-        .eq("companyId", company.id)
-        .maybeSingle();
-
-      if (!replenishment.data?.requiresConfiguration) {
-        if (!cancelled) {
-          setParameters([]);
-          setLoadedItemId(itemId);
-        }
-        return;
-      }
-
       const result = await carbon
         .from("configurationParameter")
         .select("*")
@@ -138,18 +122,30 @@ const PricingRuleConfigurationPrices = ({
   const isLoading = itemId !== null && loadedItemId !== itemId;
 
   const prices = useMemo(() => {
-    if (isLoading) return initialPrices;
+    if (isLoading) return itemId === initialItemId ? initialPrices : [];
     const result: PricingRuleConfigurationPrice[] = [];
     for (const { parameter, rows } of rowsByParameter) {
       for (const row of rows) {
         const amount = amounts.get(priceKey(parameter.key, row.value));
         if (amount) {
-          result.push({ key: parameter.key, value: row.value, amount });
+          result.push({
+            key: parameter.key,
+            value: row.value,
+            amount,
+            label: parameter.label
+          });
         }
       }
     }
     return result;
-  }, [isLoading, initialPrices, rowsByParameter, amounts]);
+  }, [
+    isLoading,
+    itemId,
+    initialItemId,
+    initialPrices,
+    rowsByParameter,
+    amounts
+  ]);
 
   const setAmount = (key: string, value: string | null, amount: number) => {
     setAmounts((current) => {

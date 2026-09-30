@@ -1,3 +1,4 @@
+import { z } from "zod";
 import type {
   MatchedRule,
   PriceTraceStep,
@@ -138,46 +139,67 @@ export function configurationSurcharge(
   return String(chosen) === price.value ? price.amount : 0;
 }
 
-// The stored JSONB, keeping only well-formed entries. A plain guard rather
-// than the zod validator: this file stays free of the models import graph.
+// A signed per-unit surcharge for one configuration parameter value. `value`
+// is the list option (or "true" for a boolean); null prices a numeric
+// parameter per unit of its value. `label` is the parameter's label when the
+// rule was saved, so the price trace can name it without a lookup. Defined
+// here rather than in sales.models so the pricing engine (and its tests) stay
+// out of the models import graph; pricingRuleValidator reuses it.
+export const pricingRuleConfigurationPriceValidator = z.object({
+  key: z.string().min(1),
+  value: z.string().nullable(),
+  amount: z.number(),
+  label: z.string().optional()
+});
+
+// The stored JSONB, keeping only well-formed entries — one bad entry must not
+// discard a rule's other prices.
 function parseConfigurationPrices(
   value: unknown
 ): PricingRuleConfigurationPrice[] {
   if (!Array.isArray(value)) return [];
-  return value.filter(
-    (price): price is PricingRuleConfigurationPrice =>
-      typeof price === "object" &&
-      price !== null &&
-      typeof price.key === "string" &&
-      (price.value === null || typeof price.value === "string") &&
-      typeof price.amount === "number" &&
-      Number.isFinite(price.amount)
-  );
+  return value.flatMap((entry) => {
+    const parsed = pricingRuleConfigurationPriceValidator.safeParse(entry);
+    return parsed.success && Number.isFinite(parsed.data.amount)
+      ? [parsed.data]
+      : [];
+  });
 }
 
-const configurationRules = (rules: MatchedRule[]) =>
-  rules.filter((rule) => rule.ruleType === "Configuration");
+type PricingRuleRow = Omit<MatchedRule, "configurationPrices"> & {
+  configurationPrices: unknown;
+};
 
-// Whether any matched rule prices a parameter of this configuration — the
-// caller only needs parameter labels for the trace when one does.
-export function hasConfigurationSurcharge(
-  matchedRules: MatchedRule[],
-  configuration: Record<string, unknown> | null | undefined
-) {
-  if (!configuration) return false;
-  return configurationRules(matchedRules).some((rule) =>
-    parseConfigurationPrices(rule.configurationPrices).some(
-      (price) => configurationSurcharge(price, configuration) !== 0
-    )
-  );
+// A `pricingRule` row as the engine reads it. Only a Configuration rule
+// carries configuration prices.
+export function toMatchedRule(row: PricingRuleRow): MatchedRule {
+  return {
+    id: row.id,
+    name: row.name,
+    ruleType: row.ruleType,
+    amountType: row.amountType,
+    amount: row.amount,
+    priority: row.priority,
+    configurationPrices:
+      row.ruleType === "Configuration"
+        ? parseConfigurationPrices(row.configurationPrices)
+        : []
+  };
 }
+
+type ApplyPriceRulesOptions = {
+  // The line's configurator values, keyed by configurationParameter key.
+  configuration?: Record<string, unknown> | null;
+  // A price override with `applyRulesOnTop = false` pins the part's price:
+  // discounts and markups are skipped, but the configuration prices still
+  // apply — they price the chosen options, not the part.
+  configurationOnly?: boolean;
+};
 
 export function applyPriceRules(
   startingPrice: number,
   matchedRules: MatchedRule[],
-  configuration?: Record<string, unknown> | null,
-  // configurationParameter key → label, for a readable trace
-  parameterLabels?: Record<string, string>
+  { configuration, configurationOnly = false }: ApplyPriceRulesOptions = {}
 ): { finalPrice: number; appendedTrace: PriceTraceStep[] } {
   const appendedTrace: PriceTraceStep[] = [];
   let finalPrice = startingPrice;
@@ -186,15 +208,15 @@ export function applyPriceRules(
   // before any discount or markup, stacking across every matched
   // Configuration rule.
   if (configuration) {
-    const byPriority = configurationRules(matchedRules).sort(
-      (a, b) => b.priority - a.priority
-    );
+    const byPriority = matchedRules
+      .filter((rule) => rule.ruleType === "Configuration")
+      .sort((a, b) => b.priority - a.priority);
     for (const rule of byPriority) {
-      for (const price of parseConfigurationPrices(rule.configurationPrices)) {
+      for (const price of rule.configurationPrices) {
         const adjustment = configurationSurcharge(price, configuration);
         if (adjustment === 0) continue;
         finalPrice = finalPrice + adjustment;
-        const label = parameterLabels?.[price.key] ?? price.key;
+        const label = price.label ?? price.key;
         appendedTrace.push({
           step: "Configuration",
           label,
@@ -209,8 +231,11 @@ export function applyPriceRules(
     }
   }
 
-  const markupRules = matchedRules.filter((r) => r.ruleType === "Markup");
-  const discountRules = matchedRules.filter((r) => r.ruleType === "Discount");
+  const adjustmentRules = configurationOnly ? [] : matchedRules;
+  const markupRules = adjustmentRules.filter((r) => r.ruleType === "Markup");
+  const discountRules = adjustmentRules.filter(
+    (r) => r.ruleType === "Discount"
+  );
 
   // Discounts: highest priority wins (non-stacking); ties broken by best
   // effective amount against the current running price.
@@ -251,8 +276,6 @@ export function applyPriceRules(
   for (const rule of sortedMarkups) {
     const adjustment =
       rule.amountType === "Percentage" ? finalPrice * rule.amount : rule.amount;
-    // A rule that only carries configuration prices has a zero markup.
-    if (adjustment === 0) continue;
     finalPrice = finalPrice + adjustment;
     appendedTrace.push({
       step: "Markup",
@@ -285,8 +308,9 @@ function stableStringify(value: unknown): string {
   if (Array.isArray(value)) {
     return `[${value.map(stableStringify).join(",")}]`;
   }
+  // An unset parameter reads the same whether it is absent, null or blank.
   const entries = Object.entries(value as Record<string, unknown>)
-    .filter(([, v]) => v !== undefined)
+    .filter(([, v]) => v !== undefined && v !== null && v !== "")
     .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0));
   return `{${entries
     .map(([k, v]) => `${JSON.stringify(k)}:${stableStringify(v)}`)
@@ -313,7 +337,9 @@ export function resolveJobConfiguration(
   };
 }
 
-function asConfiguration(value: unknown): Configuration | null {
+// A stored line configuration (JSONB), or null when it is empty or not an
+// object.
+export function asConfiguration(value: unknown): Configuration | null {
   if (!value || typeof value !== "object" || Array.isArray(value)) return null;
   return Object.keys(value).length > 0 ? (value as Configuration) : null;
 }

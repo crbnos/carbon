@@ -4,7 +4,6 @@ import { useRuleViolations } from "@carbon/ee/rules";
 import { Combobox, ValidatedForm } from "@carbon/form";
 import {
   Badge,
-  Button,
   Select as CarbonSelect,
   cn,
   FormControl,
@@ -49,7 +48,11 @@ import {
 import { useParams } from "react-router";
 import type { z } from "zod";
 import { ItemLifecycleBadge, MethodIcon } from "~/components";
-import { ConfiguratorModal } from "~/components/Configurator/ConfiguratorForm";
+import type { ConfiguratorValues } from "~/components/Configurator/ConfiguratorForm";
+import {
+  ItemConfigureButton,
+  useItemConfiguration
+} from "~/components/Configurator/ItemConfigurator";
 import {
   CustomFormFields,
   DatePicker,
@@ -72,10 +75,6 @@ import {
   useUser
 } from "~/hooks";
 import { getDefaultStorageUnitForJob } from "~/modules/inventory/inventory.service";
-import type {
-  ConfigurationParameter,
-  ConfigurationParameterGroup
-} from "~/modules/items/types";
 import { itemType, methodType } from "~/modules/shared";
 import { useItems } from "~/stores";
 import { path } from "~/utils/path";
@@ -169,18 +168,12 @@ const SalesOrderLineForm = ({
       null
   });
 
-  const configurationDisclosure = useDisclosure();
-  const [configurationParameters, setConfigurationParameters] = useState<{
-    parameters: ConfigurationParameter[];
-    groups: ConfigurationParameterGroup[];
-  } | null>(null);
-  const [configuration, setConfiguration] = useState<Record<
-    string,
-    unknown
-  > | null>(
-    (initialValues.configuration as Record<string, unknown> | null) ?? null
-  );
-  const requiresConfiguration = configurationParameters !== null;
+  const configurator = useItemConfiguration({
+    itemId: initialValues.itemId,
+    configuration: initialValues.configuration as ConfiguratorValues | null
+  });
+  const { configuration } = configurator;
+  const requiresConfiguration = configurator.parameters !== null;
 
   const isEditing = initialValues.id !== undefined;
   const isFixedAsset = initialValues.salesOrderLineType === "Fixed Asset";
@@ -326,21 +319,24 @@ const SalesOrderLineForm = ({
     [routeData?.salesOrder?.customerId]
   );
 
+  const applyResolvedPrice = (
+    result: NonNullable<Awaited<ReturnType<typeof resolvePrice>>>
+  ) =>
+    setItemData((d) => ({
+      ...d,
+      unitPrice: result.finalPrice,
+      priceListId: result.priceListId,
+      priceListName: result.priceListName,
+      priceTrace: result.trace
+    }));
+
   const debouncedQuantityResolve = useDebounce(async (qty: number) => {
     if (!itemData.itemId) {
       setIsPriceResolving(false);
       return;
     }
     const result = await resolvePrice(itemData.itemId, qty, configuration);
-    if (result) {
-      setItemData((d) => ({
-        ...d,
-        unitPrice: result.finalPrice,
-        priceListId: result.priceListId,
-        priceListName: result.priceListName,
-        priceTrace: result.trace
-      }));
-    }
+    if (result) applyResolvedPrice(result);
     setIsPriceResolving(false);
   }, 400);
 
@@ -350,64 +346,12 @@ const SalesOrderLineForm = ({
     debouncedQuantityResolve(qty);
   };
 
-  // Loads the configurator for a configurable item; null for any other item.
-  const loadConfigurationParameters = useCallback(
-    async (itemId: string) => {
-      if (!carbon || !company.id) return;
-      const replenishment = await carbon
-        .from("itemReplenishment")
-        .select("requiresConfiguration")
-        .eq("itemId", itemId)
-        .eq("companyId", company.id)
-        .maybeSingle();
-      if (!replenishment.data?.requiresConfiguration) {
-        setConfigurationParameters(null);
-        return;
-      }
-      const [parameters, groups] = await Promise.all([
-        carbon
-          .from("configurationParameter")
-          .select("*")
-          .eq("itemId", itemId)
-          .eq("companyId", company.id),
-        carbon
-          .from("configurationParameterGroup")
-          .select("*")
-          .eq("itemId", itemId)
-          .eq("companyId", company.id)
-      ]);
-      if (parameters.error || groups.error) {
-        toast.error(t`Failed to load configuration parameters`);
-        setConfigurationParameters(null);
-        return;
-      }
-      setConfigurationParameters({
-        parameters: parameters.data ?? [],
-        groups: groups.data ?? []
-      });
-    },
-    [carbon, company.id, t]
-  );
-
-  useMount(() => {
-    if (initialValues.itemId) loadConfigurationParameters(initialValues.itemId);
-  });
-
-  const onConfigure = async (values: Record<string, unknown>) => {
-    setConfiguration(values);
-    configurationDisclosure.onClose();
+  // A new configuration changes the configuration prices.
+  const onConfigured = async (values: ConfiguratorValues) => {
     if (!itemData.itemId) return;
     setIsPriceResolving(true);
     const result = await resolvePrice(itemData.itemId, saleQuantity, values);
-    if (result) {
-      setItemData((d) => ({
-        ...d,
-        unitPrice: result.finalPrice,
-        priceListId: result.priceListId,
-        priceListName: result.priceListName,
-        priceTrace: result.trace
-      }));
-    }
+    if (result) applyResolvedPrice(result);
     setIsPriceResolving(false);
   };
 
@@ -415,9 +359,7 @@ const SalesOrderLineForm = ({
     if (!itemId) return;
     if (!carbon || !company.id) return;
     setIsPriceResolving(true);
-    // A configuration belongs to one item's parameters.
-    setConfiguration(null);
-    loadConfigurationParameters(itemId);
+    configurator.changeItem(itemId);
     const [item, price] = await Promise.all([
       carbon
         .from("item")
@@ -1143,24 +1085,17 @@ const SalesOrderLineForm = ({
                   )}
                 </ModalCardBody>
                 <ModalCardFooter>
-                  {requiresConfiguration && activeTab === "item" && (
-                    <Button
-                      variant={configuration ? "secondary" : "primary"}
-                      type="button"
+                  {activeTab === "item" && (
+                    <ItemConfigureButton
+                      configurator={configurator}
                       isDisabled={
                         !isEditable ||
                         (isEditing
                           ? !permissions.can("update", "sales")
                           : !permissions.can("create", "sales"))
                       }
-                      onClick={configurationDisclosure.onOpen}
-                    >
-                      {configuration ? (
-                        <Trans>Reconfigure</Trans>
-                      ) : (
-                        <Trans>Configure</Trans>
-                      )}
-                    </Button>
+                      onConfigured={onConfigured}
+                    />
                   )}
                   <Submit
                     isDisabled={
@@ -1184,20 +1119,6 @@ const SalesOrderLineForm = ({
         </ModalCardProvider>
       </Tabs>
       <rules.ViolationModal />
-      {requiresConfiguration && configurationDisclosure.isOpen && (
-        <ConfiguratorModal
-          open
-          initialValues={
-            (configuration ?? {}) as Parameters<
-              typeof ConfiguratorModal
-            >[0]["initialValues"]
-          }
-          groups={configurationParameters.groups}
-          parameters={configurationParameters.parameters}
-          onClose={configurationDisclosure.onClose}
-          onSubmit={onConfigure}
-        />
-      )}
     </>
   );
 };
