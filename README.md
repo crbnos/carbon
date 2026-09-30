@@ -46,8 +46,11 @@
 <table>
   <tr>
     <td width="33%" valign="top">
-      <img alt="Shop floor job traveler with 3D assembly steps and barcode scanning" src=".github/assets/readme/mes-light.webp" />
-      <p align="center"><sub><b>Real-time shop floor.</b> Digital travelers, scanning and live labor.</sub></p>
+      <picture>
+        <source media="(prefers-color-scheme: dark)" srcset=".github/assets/readme/sales-orders-dark.webp" />
+        <img alt="Sales orders list with status, linked jobs and order totals" src=".github/assets/readme/sales-orders-light.webp" />
+      </picture>
+      <p align="center"><sub><b>Quote to cash.</b> Quotes, orders, jobs and invoices on one record.</sub></p>
     </td>
     <td width="33%" valign="top">
       <picture>
