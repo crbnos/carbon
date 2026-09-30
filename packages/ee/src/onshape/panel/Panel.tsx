@@ -407,18 +407,22 @@ type PushOutcome = {
   notes?: string[];
 };
 
+function plural(count: number, noun: string) {
+  return `${count} ${noun}${count === 1 ? "" : "s"}`;
+}
+
 function assemblyOutcomeText(s: AssemblyPushSummary): PushOutcome {
   const unchanged = s.linesUnchanged ?? 0;
   // A push that changed nothing should say so. "0 BOM lines" reads as a
   // failure; "42 already up to date" reads as the no-op it was.
   const lines =
     s.linesWritten === 0 && unchanged > 0
-      ? `${unchanged} BOM lines already up to date`
-      : `${s.linesWritten} BOM lines` +
+      ? `${plural(unchanged, "BOM line")} already up to date`
+      : plural(s.linesWritten, "BOM line") +
         (unchanged > 0 ? ` (${unchanged} unchanged)` : "");
   const text =
-    `${s.itemsCreated} items created, ${s.itemsReused} reused, ` +
-    `${lines} across ${s.methodsTouched} methods`;
+    `${plural(s.itemsCreated, "item")} created, ${s.itemsReused} reused, ` +
+    `${lines} across ${plural(s.methodsTouched, "method")}`;
   const drafts = s.draftVersionsCreated ?? [];
   return {
     text,
@@ -2956,7 +2960,12 @@ function AssemblyReviewSection({
     ...described.filter((d) => d.tone === "warning").map((d) => d.text),
     ...plan.skipped
   ];
-  const drafts = described.filter((d) => d.tone === "notice");
+  const drafts = plan.methods.filter(
+    (_, index) => described[index]?.tone === "notice"
+  );
+  const newDrafts = drafts.filter(
+    (method) => method.reusedDraftVersion == null
+  ).length;
   // Lines someone added by hand in Carbon survive a push, so that BOM will
   // not match Onshape afterwards. Always zero on a first push.
   const keepsManual = plan.methods.filter(
@@ -2975,12 +2984,9 @@ function AssemblyReviewSection({
       <ReviewSummary
         counts={[
           [created, "created"],
-          [conflicts.length, "linked"],
+          [conflicts.length, "matched by part number"],
           [reused, "already in Carbon"],
-          [
-            plan.methods.length,
-            plan.methods.length === 1 ? "BOM written" : "BOMs written"
-          ]
+          [plan.methods.length, plan.methods.length === 1 ? "BOM" : "BOMs"]
         ]}
       />
 
@@ -2992,7 +2998,7 @@ function AssemblyReviewSection({
               ? "1 part shares a part number with an existing Carbon item"
               : `${n} parts share a part number with an existing Carbon item`
           }
-          description={`Pushing links them to these Onshape parts and uses them in the BOM. Any that are assemblies get Onshape's BOM lines written into their make methods${plan.root.conflict ? ", and the assembly's Onshape-owned custom fields are overwritten" : ""}. If any of them is a different part, renumber it in Onshape before pushing.`}
+          description={`The push uses them in the BOM. The assembly being pushed and any part not yet linked to Onshape are linked to these Onshape parts; a part already linked to another Onshape part keeps that link. Any that are assemblies get Onshape's BOM lines written into their make methods${plan.root.conflict ? ", and the assembly's Onshape-owned custom fields are overwritten" : ""}. If any of them is a different part, renumber it in Onshape before pushing.`}
           lines={conflicts}
         />
       ) : null}
@@ -3010,9 +3016,15 @@ function AssemblyReviewSection({
         <Alert variant="info">
           <LuInfo />
           <AlertTitle>
-            {drafts.length === 1
-              ? "1 released method gets a new Draft version"
-              : `${drafts.length} released methods get new Draft versions`}
+            {newDrafts === drafts.length
+              ? drafts.length === 1
+                ? "1 released method gets a new Draft version"
+                : `${drafts.length} released methods get new Draft versions`
+              : newDrafts === 0
+                ? drafts.length === 1
+                  ? "1 released method is written into its Draft version"
+                  : `${drafts.length} released methods are written into their Draft versions`
+                : `${drafts.length} released methods are written into Draft versions, ${newDrafts} of them new`}
           </AlertTitle>
           <AlertDescription>
             Nothing live changes until someone releases them in Carbon.

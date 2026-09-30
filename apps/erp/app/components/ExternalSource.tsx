@@ -80,10 +80,13 @@ export function ExternalSourceCard({
   if (!mapping) return null;
 
   const meta = mapping.metadata ?? {};
-  const onshapeUrl =
-    meta.documentId && meta.wvId && meta.elementId
+  // A child linked by an assembly push records no workspace or version, so it
+  // opens its document rather than an exact tab.
+  const onshapeUrl = !meta.documentId
+    ? null
+    : meta.wvId && meta.elementId
       ? `https://cad.onshape.com/documents/${meta.documentId}/${meta.wv ?? "w"}/${meta.wvId}/e/${meta.elementId}`
-      : null;
+      : `https://cad.onshape.com/documents/${meta.documentId}`;
   const pushedAt = meta.pushedAt ?? mapping.lastSyncedAt;
   const lastPushed = pushedAt ? formatDateTime(pushedAt) : null;
 
