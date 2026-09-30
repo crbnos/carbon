@@ -24,9 +24,22 @@ import type { ConformanceCheck, Violation } from "../check";
 // exists to catch. Word boundaries are load-bearing: `loading` must not satisfy
 // `isLoading`.
 const IN_FLIGHT_SIGNAL =
-  /\bisLoading\b|\bisSubmitting\b|\bisPending\b|\bisSaving\b|\buseIsSubmitting\b|\b\w*(?:fetcher|navigation|transition)\w*\.state\b/i;
+  /\bisSubmitting\b|\bisPending\b|\bisSaving\b|\buseIsSubmitting\b|\b\w*(?:fetcher|navigation|transition)\w*\.state\b/i;
 
-const SUBMIT_ATTR = /type\s*=\s*"submit"/;
+// `isLoading` counts wherever it is bound, because the prop's MEANING is "this
+// button's own action is running" and `Button` disables on it. `isDisabled` /
+// `disabled` are generic — permissions, field validity, a step being
+// incomplete — so they only count when the expression names a submit state.
+// That split is what keeps the original bug failing: `isDisabled={loading}`,
+// where `loading` was the modal's data-fetch flag and nothing disabled the
+// button while its own POST was in flight.
+const LOADING_PROP = /\bisLoading\s*(?:=|\/?>|\s)/;
+const DISABLING_PROPS = ["disabled", "isDisabled"];
+
+// Match `type` at an attribute boundary, both JSX quote styles. Searching for
+// the bare text matched `data-type="submit"` on a non-submit button and missed
+// `type='submit'`.
+const SUBMIT_ATTR = /(?:^|[\s{])type\s*=\s*["']submit["']/;
 
 // Where the two guards are DEFINED. `<Submit>` renders `type="submit"` and is
 // the component this check tells everyone else to use.
@@ -60,13 +73,51 @@ function openingTag(contents: string, start: number): string | null {
   return null;
 }
 
+/** The `{...}` expression bound to `prop` in a JSX opening tag, brace-balanced. */
+function propExpression(tag: string, prop: string): string | null {
+  const at = new RegExp(`\\b${prop}\\s*=\\s*\\{`).exec(tag);
+  if (!at) return null;
+  const start = at.index + at[0].length;
+  let depth = 1;
+  for (let i = start; i < tag.length; i++) {
+    if (tag[i] === "{") depth++;
+    else if (tag[i] === "}" && --depth === 0) return tag.slice(start, i);
+  }
+  return null;
+}
+
+/**
+ * Does the tag disable itself while its own submission runs? The signal has to
+ * sit on a prop that actually disables — finding `isSubmitting` anywhere in the
+ * tag would accept `title={isSubmitting ? "Saving" : "Save"}`, which changes a
+ * tooltip and nothing else.
+ */
+function isGuarded(tag: string): boolean {
+  if (LOADING_PROP.test(tag)) return true;
+  return DISABLING_PROPS.some((prop) => {
+    const expression = propExpression(tag, prop);
+    return expression !== null && IN_FLIGHT_SIGNAL.test(expression);
+  });
+}
+
 /**
  * Is `index` inside a `<ValidatedForm>`? ValidatedForm drops a re-entrant
  * submit in `handleSubmit`, so a second click cannot produce a second POST
  * however the button is written — flagging those would be noise.
+ *
+ * Matches the complete tag name: a prefix match would let a hypothetical
+ * `<ValidatedFormProvider>` exempt a button it establishes no guard for.
  */
+const VALIDATED_FORM_OPEN = /<ValidatedForm(?![A-Za-z0-9_])/g;
+
 function inValidatedForm(contents: string, index: number): boolean {
-  const open = contents.lastIndexOf("<ValidatedForm", index);
+  VALIDATED_FORM_OPEN.lastIndex = 0;
+  let open = -1;
+  let match: RegExpExecArray | null = VALIDATED_FORM_OPEN.exec(contents);
+  while (match !== null && match.index < index) {
+    open = match.index;
+    match = VALIDATED_FORM_OPEN.exec(contents);
+  }
   if (open === -1) return false;
   const close = contents.indexOf("</ValidatedForm>", open);
   return close === -1 || close > index;
@@ -99,7 +150,7 @@ export const noUnguardedSubmit: ConformanceCheck = {
       if (
         tag &&
         SUBMIT_ATTR.test(tag) &&
-        !IN_FLIGHT_SIGNAL.test(tag) &&
+        !isGuarded(tag) &&
         !inValidatedForm(contents, start)
       ) {
         violations.push({

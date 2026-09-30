@@ -422,6 +422,24 @@ export function ValidatedForm<
     // trusts for its disabled state, so it clears down the same proven paths.
     if (isSubmitting) return;
     startSubmit();
+    try {
+      await runSubmit(e, target, nativeEvent);
+    } catch (error) {
+      // Validation and the caller's `onSubmit` are both awaited, so either can
+      // reject before any router submission starts — and then no completion
+      // hook exists to clear `isSubmitting`. That already left `<Submit>`
+      // permanently disabled; with the re-entry guard above it would wedge the
+      // whole form until unmount. Clear, then let the error surface.
+      endSubmit();
+      throw error;
+    }
+  };
+
+  const runSubmit = async (
+    e: FormEvent<HTMLFormElement>,
+    target: typeof e.currentTarget,
+    nativeEvent: HTMLSubmitEvent["nativeEvent"]
+  ) => {
     const submitter = nativeEvent.submitter as HTMLFormSubmitter | null;
 
     const isValidSubmit = submitter?.form === target;

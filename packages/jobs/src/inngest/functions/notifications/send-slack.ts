@@ -53,7 +53,12 @@ export const sendSlackFunction = inngest.createFunction(
 
     await step.run("post-message", async () => {
       // Client is a no-op on localhost — see slack.server.ts.
-      const slack = getSlackClient(accessToken);
+      // `retries: 0` because Inngest owns the retry policy here: the SDK's
+      // default is ~10 attempts over ~30 minutes, which would both stall this
+      // step and retry the ambiguous failures classified below.
+      const slack = getSlackClient(accessToken, {
+        retryConfig: { retries: 0 }
+      });
       try {
         await slack.sendMessage({ blocks, channel, text });
       } catch (err) {

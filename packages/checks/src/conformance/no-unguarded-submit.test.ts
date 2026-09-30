@@ -83,6 +83,46 @@ describe("noUnguardedSubmit", () => {
     expect(scan('<button type="submit">Log out</button>')).toHaveLength(1);
   });
 
+  // A signal that only changes a tooltip disables nothing.
+  it("rejects an in-flight signal on a prop that does not disable", () => {
+    expect(
+      scan('<Button title={isSubmitting ? "Saving" : "Save"} type="submit">')
+    ).toHaveLength(1);
+  });
+
+  it("accepts isLoading whatever it is bound to — the prop itself disables", () => {
+    expect(scan('<Button isLoading={busy} type="submit">')).toHaveLength(0);
+    expect(scan('<Button isLoading={starting} type="submit">')).toHaveLength(0);
+    expect(scan('<Button isLoading type="submit">')).toHaveLength(0);
+  });
+
+  it("requires isDisabled/disabled to name a submit state", () => {
+    expect(
+      scan('<Button isDisabled={isSubmitting} type="submit">')
+    ).toHaveLength(0);
+    expect(scan('<Button disabled={busy} type="submit">')).toHaveLength(1);
+    expect(
+      scan(
+        '<Button isDisabled={!permissions.can("create", "sales")} type="submit">'
+      )
+    ).toHaveLength(1);
+  });
+
+  it("matches type at an attribute boundary, both quote styles", () => {
+    expect(scan("<Button type='submit'>")).toHaveLength(1);
+    expect(scan('<Button data-type="submit" type="button">')).toHaveLength(0);
+  });
+
+  it("does not let a ValidatedForm-prefixed component grant the exemption", () => {
+    expect(
+      scan(`
+        <ValidatedFormProvider>
+          <Button type="submit">Save</Button>
+        </ValidatedFormProvider>
+      `)
+    ).toHaveLength(1);
+  });
+
   it("ignores a non-submit button", () => {
     expect(scan("<Button onClick={go}>Go</Button>")).toHaveLength(0);
   });
