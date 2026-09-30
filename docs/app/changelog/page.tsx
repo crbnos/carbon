@@ -20,5 +20,5 @@ export const metadata: Metadata = {
 };
 
 export default function ChangelogPage() {
-  return <ChangelogFeed page={1} />;
+  return <ChangelogFeed />;
 }

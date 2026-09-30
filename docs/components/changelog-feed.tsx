@@ -1,116 +1,69 @@
 import Link from "next/link";
-import { ChangelogSubscribe } from "@/components/changelog-subscribe";
-import { getMDXComponents } from "@/components/mdx";
+import { ChangelogReveal } from "@/components/changelog-motion";
 import {
-  changelogPagePath,
-  formatChangelogDate,
-  paginateChangelog
-} from "@/lib/changelog";
+  ChangelogEntryMeta,
+  ChangelogTag,
+  TIMELINE_GRID,
+} from "@/components/changelog-timeline";
 import { getChangelogEntries } from "@/lib/source";
 
-const PAGER_BUTTON =
-  "inline-flex items-center gap-1.5 rounded-lg border border-ed-hairline bg-[#F5F5F2] px-3.5 py-2 text-ed-14 font-book text-ink-ui no-underline transition-colors hover:border-[#D8D8D3]";
+const FEED_TAG_LIMIT = 3;
 
-export function ChangelogFeed({ page }: { page: number }) {
-  const { entries, pageCount } = paginateChangelog(getChangelogEntries(), page);
+// One continuous timeline — no pager. Entries are summaries, so the whole archive is a
+// short scroll; the full text of each lives on its own page.
+export function ChangelogFeed() {
+  const entries = getChangelogEntries();
 
   return (
     <div>
-      <header className="flex items-end justify-between gap-4">
-        <h1 className="reference-title m-0">Changelog</h1>
-        <div className="mb-1">
-          <ChangelogSubscribe />
-        </div>
-      </header>
+      <h1 className="sr-only">Changelog</h1>
 
-      <div className="mt-6">
+      <ChangelogReveal>
         {entries.map((entry, i) => {
-          const MDX = entry.data.body;
-          const slug = entry.slugs[entry.slugs.length - 1];
-          // Accent the newest entry overall, not the newest on an older page.
-          const isLatest = page === 1 && i === 0;
-          return (
-            <article
-              key={entry.url}
-              id={slug}
-              className="scroll-mt-24 py-10 md:grid md:grid-cols-[8.5rem_1px_minmax(0,1fr)] md:gap-x-8 md:py-0"
-            >
-              <div className="mb-4 md:mb-0 md:py-14">
-                <div className="flex flex-row items-center gap-x-3 gap-y-2.5 md:sticky md:top-24 md:flex-col md:items-end">
+        const slug = entry.slugs[entry.slugs.length - 1];
+        return (
+          <article
+            key={entry.url}
+            id={slug}
+            data-reveal
+            className={`group relative scroll-mt-24 transition-[opacity,transform] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] data-pending:translate-y-3 data-pending:opacity-0 border-b border-ed-hairline py-8 last:border-b-0 md:border-b-0 md:py-0 ${TIMELINE_GRID}`}
+          >
+            <ChangelogEntryMeta date={entry.data.date} isLatest={i === 0} />
+
+            <div className="min-w-0 max-w-144 md:py-7">
+              <h2 className="m-0 text-ed-20 font-semi leading-[1.35] tracking-[-0.01em] text-ed-ink">
+                {/* Stretched over the whole row, so anywhere in the entry is clickable. */}
+                <Link
+                  href={entry.url}
+                  className="no-underline after:absolute after:inset-0 group-hover:underline"
+                >
+                  {entry.data.title}
+                </Link>
+              </h2>
+              {entry.data.description && (
+                <p className="m-0 mt-2.5 text-ed-16 font-book leading-relaxed text-ink-body">
+                  {entry.data.description}
+                </p>
+              )}
+              <div className="mt-5 flex flex-wrap items-center gap-x-3 gap-y-2">
+                {entry.data.tags.slice(0, FEED_TAG_LIMIT).map((tag) => (
+                  <ChangelogTag key={tag}>{tag}</ChangelogTag>
+                ))}
+                <span className="inline-flex items-center gap-1.5 text-ed-14 font-book text-ed-brand-ink">
+                  Read entry
                   <span
                     aria-hidden="true"
-                    className={`absolute top-[5px] right-[calc(-2rem-6px)] hidden size-[11px] rounded-full border-2 md:block ${
-                      isLatest
-                        ? "border-[#1E84B0] bg-[#1E84B0] shadow-[0_0_0_4px_rgba(30,132,176,0.16)]"
-                        : "border-[#B9B9B4] bg-[#FBFBF9]"
-                    }`}
-                  />
-                  <time
-                    dateTime={entry.data.date}
-                    className="whitespace-nowrap text-ed-14 font-book text-ink-faint"
+                    className="transition-transform duration-200 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:translate-x-0.5"
                   >
-                    {formatChangelogDate(entry.data.date)}
-                  </time>
-                </div>
+                    →
+                  </span>
+                </span>
               </div>
-
-              <div className="hidden bg-[#E7E7E3] md:block" aria-hidden="true" />
-
-              <div className="min-w-0 md:py-14">
-                <h2 className="m-0 text-[27px] font-demi leading-[1.2] tracking-[-0.02em] text-ink-ui">
-                  <Link href={entry.url} className="no-underline hover:underline">
-                    {entry.data.title}
-                  </Link>
-                </h2>
-                {entry.data.image && (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={entry.data.image}
-                    alt={entry.data.title}
-                    className="mt-6 w-full rounded-xl border border-ed-hairline bg-[#F5F5F2]"
-                  />
-                )}
-                <div className="prose mt-6">
-                  <MDX components={getMDXComponents()} />
-                </div>
-              </div>
-            </article>
-          );
+            </div>
+          </article>
+        );
         })}
-      </div>
-
-      {pageCount > 1 && (
-        <nav
-          aria-label="Changelog pages"
-          className="mt-4 flex items-center justify-between gap-4 border-t border-ed-hairline pt-6"
-        >
-          {page > 1 ? (
-            <Link
-              href={changelogPagePath(page - 1)}
-              className={PAGER_BUTTON}
-            >
-              <span aria-hidden="true">←</span>
-              Newer entries
-            </Link>
-          ) : (
-            <span />
-          )}
-          <span className="text-ed-14 font-book text-ink-faint">
-            Page {page} of {pageCount}
-          </span>
-          {page < pageCount ? (
-            <Link
-              href={changelogPagePath(page + 1)}
-              className={PAGER_BUTTON}
-            >
-              Older entries
-              <span aria-hidden="true">→</span>
-            </Link>
-          ) : (
-            <span />
-          )}
-        </nav>
-      )}
+      </ChangelogReveal>
     </div>
   );
 }

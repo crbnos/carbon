@@ -1,15 +1,25 @@
 ---
 title: "Change notices"
-description: "Draft an engineering change against real methods, review it as a diff, and release it so planning supersedes the versions it replaces. Plus inventory valuation, Service items, and assembly instructions."
+description: "Draft an engineering change against real methods and review it as a diff. Plus inventory valuation and assembly instructions."
 date: "2026-07-21"
 tags: ["items", "accounting", "inventory"]
 ---
 
-A [change notice](/docs/reference/change-orders) groups the parts whose designs are changing, revises each one on a hidden draft, and releases them together. It answers what changed, who owns it, and what the new version supersedes, without touching a live method until release. You pick the affected items, edit each one's real bill of materials and bill of process inside the notice, review it as a diff with new part properties highlighted, and link issues to it. Change notices live under Items → Change notices.
+A design change usually touches several parts at once. Change notices let you revise them together and release them together.
 
-## Inventory valuation and Service items
+## Change notices
 
-The inventory valuation report ties on-hand stock to the ledger, and inventory adjustments post to the GL. Service is now a first-class item type. The accounting period close has a full lifecycle with a close checklist and posted-record immutability.
+A [change notice](/docs/reference/change-orders) groups the parts whose designs are changing, revises each one on a hidden draft, and releases them together. It answers what changed, who owns it, and what the new version supersedes — without touching a live method until release.
+
+Pick the affected items, edit each one's real bill of materials and bill of process inside the notice, review it as a diff with new part properties highlighted, and link issues to it. Change notices live under **Items → Change notices**.
+
+## Inventory valuation
+
+The inventory valuation report ties on-hand stock to the ledger, and [inventory](/docs/reference/inventory) adjustments post to the general ledger.
+
+## Service items and period close
+
+Service is now a first-class [item](/docs/reference/items) type. The accounting [period close](/docs/reference/period-close) has a full lifecycle, with a close checklist and posted-record immutability.
 
 <Accordion title="Improvements">
 

@@ -1,4 +1,5 @@
-import { createElement, Fragment, type ReactNode } from "react";
+import { createElement } from "react";
+import { FEED_COMPONENTS } from "@/lib/changelog-feed-components";
 import { escapeXml, RSS_ITEM_LIMIT, rfc822Date } from "@/lib/changelog";
 import { SITE } from "@/lib/seo";
 import { getChangelogEntries } from "@/lib/source";
@@ -7,20 +8,6 @@ import { getChangelogEntries } from "@/lib/source";
 export const dynamic = "force-static";
 
 type ChangelogEntry = ReturnType<typeof getChangelogEntries>[number];
-
-// Feed readers have no page URL to resolve site-relative links against.
-function absoluteUrl(href: string | undefined): string | undefined {
-  return href?.startsWith("/") ? `${SITE.url}${href}` : href;
-}
-
-// Feed readers do not run components: an Accordion becomes a heading. Any other
-// component fails the build rather than silently vanishing from the feed.
-const FEED_COMPONENTS = {
-  a: ({ href, children }: { href?: string; children?: ReactNode }) =>
-    createElement("a", { href: absoluteUrl(href) }, children),
-  Accordion: ({ title, children }: { title: string; children?: ReactNode }) =>
-    createElement(Fragment, null, createElement("h3", null, title), children),
-};
 
 // `description` stays the short summary the dispatcher and the ERP panel read.
 async function entryHtml(entry: ChangelogEntry): Promise<string> {

@@ -5,15 +5,25 @@ date: "2026-09-04"
 tags: ["production", "settings", "accounting"]
 ---
 
-The [scheduler](/docs/reference/scheduling) now plans against real capacity instead of assuming infinite machines and people. Scheduling an operation reserves capacity on its work center, operators are gated by the abilities a job operation requires, and the Gantt explains its placements, so you can see why an operation landed where it did instead of guessing.
+Scheduling used to assume infinite machines and people. It now plans against the capacity you actually have.
+
+## Finite-capacity scheduling
+
+The [scheduler](/docs/reference/scheduling) reserves capacity on an operation's [work center](/docs/reference/work-centers), and operators are gated by the abilities a job operation requires.
+
+The Gantt explains its placements, so you can see why an operation landed where it did instead of guessing.
 
 ## Enterprise SAML SSO
 
-Carbon now supports SAML single sign-on, so your team can sign in through your identity provider. Account linking is provider-agnostic, and the configuration lives in Settings → Security. Two-factor enforcement is also now available on the Business plan.
+Carbon now supports [SAML single sign-on](/docs/reference/single-sign-on), so your team can sign in through your identity provider. Account linking is provider-agnostic, and the configuration lives in **Settings → Security**.
 
-## Platform exchange rates with per-company overrides
+[Two-factor enforcement](/docs/reference/two-factor) is also now available on the Business plan.
 
-Currency exchange rates are now managed platform-globally, with per-company overrides when your company needs to pin its own rate. The chart of accounts also gained an opening-balances tool for bringing existing books into Carbon.
+## Platform exchange rates
+
+Currency exchange rates are now managed platform-globally, with per-company overrides when your company needs to pin its own rate.
+
+The [chart of accounts](/docs/reference/accounting) also gained an opening-balances tool for bringing existing books into Carbon.
 
 <Accordion title="Improvements">
 

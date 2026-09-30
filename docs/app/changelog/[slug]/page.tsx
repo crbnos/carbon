@@ -1,8 +1,13 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { ChangelogSection } from "@/components/changelog-section";
+import {
+  ChangelogEntryMeta,
+  ChangelogTag,
+  TIMELINE_GRID,
+} from "@/components/changelog-timeline";
 import { getMDXComponents } from "@/components/mdx";
-import { formatChangelogDate } from "@/lib/changelog";
 import { pageSeo } from "@/lib/seo";
 import { changelogSource, getChangelogEntries } from "@/lib/source";
 
@@ -16,48 +21,45 @@ export default async function ChangelogEntryPage(props: Params) {
   const MDX = page.data.body;
 
   return (
-    <article className="mx-auto max-w-190">
-      <Link
-        href="/changelog"
-        className="text-ed-14 font-book text-ink-faint no-underline hover:text-ink-ui"
-      >
-        ← Changelog
-      </Link>
-      <div className="mt-6 flex flex-wrap items-center gap-x-3 gap-y-2">
-        <time
-          dateTime={page.data.date}
-          className="text-ed-14 font-book text-ink-faint"
-        >
-          {formatChangelogDate(page.data.date)}
-        </time>
-        {page.data.tags.map((tag) => (
-          <span
-            key={tag}
-            className="rounded-full border border-ed-hairline bg-[#F5F5F2] px-2 py-0.5 text-[11.5px] font-book leading-normal text-ink-faint"
-          >
-            {tag}
-          </span>
-        ))}
-      </div>
-      <h1 className="reference-title m-0 mt-2.5">{page.data.title}</h1>
-      {page.data.image && (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-          src={page.data.image}
-          alt={page.data.title}
-          className="mt-7 w-full rounded-xl border border-ed-hairline bg-[#F5F5F2]"
-        />
-      )}
-      <div className="prose mt-[30px]">
-        <MDX components={getMDXComponents()} />
-      </div>
-      <div className="mt-12 border-t border-ed-hairline pt-6">
+    <article className={`py-8 md:py-0 ${TIMELINE_GRID}`}>
+      <ChangelogEntryMeta date={page.data.date} progress />
+
+      <div className="min-w-0 max-w-160 md:py-7">
         <Link
           href="/changelog"
-          className="text-ed-14 text-[#1E84B0] no-underline hover:underline"
+          className="text-ed-13 font-book text-ink-faint no-underline hover:text-ink-ui"
         >
-          ← All changelog entries
+          ← Changelog
         </Link>
+        <h1 className="m-0 mt-5 text-ed-32 font-semi leading-[1.2] tracking-[-0.02em] text-ed-ink">
+          {page.data.title}
+        </h1>
+        {page.data.tags.length > 0 && (
+          <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-2">
+            {page.data.tags.map((tag) => (
+              <ChangelogTag key={tag}>{tag}</ChangelogTag>
+            ))}
+          </div>
+        )}
+        {page.data.image && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={page.data.image}
+            alt={page.data.title}
+            className="mt-7 w-full rounded-xl border border-ed-hairline bg-[#F5F5F2]"
+          />
+        )}
+        <div className="prose mt-7">
+          <MDX components={getMDXComponents({ Accordion: ChangelogSection })} />
+        </div>
+        <div className="mt-12 border-t border-ed-hairline pt-6">
+          <Link
+            href="/changelog"
+            className="text-ed-14 text-ed-brand-ink no-underline hover:underline"
+          >
+            ← All changelog entries
+          </Link>
+        </div>
       </div>
     </article>
   );

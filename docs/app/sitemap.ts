@@ -1,6 +1,5 @@
 import type { MetadataRoute } from "next";
 import { allResourceParams } from "@/lib/api-data";
-import { changelogPagePath, paginateChangelog } from "@/lib/changelog";
 import { SITE } from "@/lib/seo";
 import { changelogSource, guideSource, source } from "@/lib/source";
 import { allToolParams } from "@/lib/tools-data";
@@ -23,10 +22,6 @@ export default function sitemap(): MetadataRoute.Sitemap {
 
   // Changelog (the feed page + one permalink per entry)
   out.push({ url: abs("/changelog"), changeFrequency: "weekly", priority: 0.7 });
-  const { pageCount } = paginateChangelog(changelogSource.getPages(), 1);
-  for (let n = 2; n <= pageCount; n++) {
-    out.push({ url: abs(changelogPagePath(n)), changeFrequency: "weekly", priority: 0.4 });
-  }
   for (const page of changelogSource.getPages()) {
     out.push({ url: abs(page.url), changeFrequency: "yearly", priority: 0.5 });
   }

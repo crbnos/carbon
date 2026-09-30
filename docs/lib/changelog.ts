@@ -38,24 +38,4 @@ export function escapeXml(value: string): string {
     .replaceAll("'", "&apos;");
 }
 
-export const CHANGELOG_PAGE_SIZE = 10;
-
 export const RSS_ITEM_LIMIT = 20;
-
-export function changelogPagePath(page: number): string {
-  return page <= 1 ? "/changelog" : `/changelog/page/${page}`;
-}
-
-// `page` is 1-based; out of range yields nothing, which the route turns into a 404.
-export function paginateChangelog<T>(
-  entries: T[],
-  page: number
-): { entries: T[]; page: number; pageCount: number } {
-  const pageCount = Math.max(1, Math.ceil(entries.length / CHANGELOG_PAGE_SIZE));
-  const start = (page - 1) * CHANGELOG_PAGE_SIZE;
-  return {
-    entries: entries.slice(start, start + CHANGELOG_PAGE_SIZE),
-    page,
-    pageCount
-  };
-}

@@ -1,19 +1,27 @@
 ---
 title: "Automation workflows"
-description: "Build automations on a canvas from a trigger, conditions, and steps that notify people, update records, or call an outside service. Plus accounting sync for Xero, QuickBooks Online, and Rillet, financial reports, and scrap."
+description: "Build automations on a canvas from a trigger, conditions, and steps. Plus accounting sync for Xero, QuickBooks, and Rillet."
 date: "2026-08-18"
 tags: ["workflows", "accounting", "mes"]
 ---
 
-A [workflow](/docs/reference/workflows) watches for something happening in Carbon and then does something about it: notify the account manager when a sales order changes hands, open an issue when a job is put on hold, or call your own service when a shipment is posted. You build one on a canvas under Automate → Workflows and press Publish. Steps are cards you connect by their handles, so one trigger can fan out into branches. Every run is recorded step by step in [workflow runs](/docs/reference/workflow-runs).
+Plenty happens in Carbon that ought to set something else in motion — a sales order changing hands, a job going on hold. Workflows let you wire that up yourself.
+
+## Automation workflows
+
+A [workflow](/docs/reference/workflows) watches for something happening in Carbon and then does something about it: notify the account manager when a sales order changes hands, open an issue when a job is put on hold, or call your own service when a shipment is posted.
+
+Build one on a canvas under **Automate → Workflows** and press Publish. Steps are cards you connect by their handles, so one trigger can fan out into branches. Every run is recorded step by step.
 
 ## Accounting sync and financial reports
 
-Carbon can sync accounting data to Xero, QuickBooks Online, and Rillet through one multi-provider sync engine. A financial reports module arrives with it. Multi-entity companies get a capture-driven intercompany elimination engine: intercompany invoices are posted, matched, and eliminated automatically, and consolidated reports show the group without double-counted internal trade.
+Carbon can sync accounting data to Xero, QuickBooks Online and Rillet through one [multi-provider sync engine](/docs/integrations/accounting), and a [financial reports](/docs/reference/financial-reports) module arrives with it.
+
+Multi-entity companies get a capture-driven [intercompany](/docs/reference/intercompany) elimination engine: intercompany invoices are posted, matched and eliminated automatically, and consolidated reports show the group without double-counted internal trade.
 
 ## Scrap and unscrap
 
-Scrap serials and subcomponents from MES or stock from the ERP, with a scrap-reason dimension; unscrap restores a scrapped part at its original cost.
+[Scrap](/docs/reference/scrap) serials and subcomponents from [MES](/docs/reference/mes) or stock from the ERP, with a scrap-reason [dimension](/docs/reference/dimensions). Unscrap restores a scrapped part at its original cost.
 
 <Accordion title="Improvements">
 

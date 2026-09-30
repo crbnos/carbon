@@ -80,13 +80,26 @@ function SubscribePopover() {
         type="button"
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
-        className="inline-flex items-center gap-1.5 rounded-lg border border-ed-hairline bg-[#F5F5F2] px-3.5 py-2 text-ed-14 font-book text-ink-ui transition-colors hover:border-[#D8D8D3]"
+        className="group relative inline-flex h-10 items-center justify-center gap-2 rounded-lg px-4 transition-transform duration-150 ease-[cubic-bezier(0.22,1,0.36,1)] active:scale-[0.97]"
       >
-        Subscribe
+        <span aria-hidden="true" className="pointer-events-none absolute inset-0 rounded-lg cta-btn-dark" />
+        <span
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 rounded-lg btn-dark-hover opacity-0 transition-opacity duration-200 ease-out group-hover:opacity-100"
+        />
+        <span className="text-on-dark relative z-10 text-ed-14 font-book tracking-[0.15px]">
+          Subscribe
+        </span>
+        <span
+          aria-hidden="true"
+          className="text-on-dark relative z-10 transition-transform duration-200 ease-out group-hover:translate-x-0.5"
+        >
+          →
+        </span>
       </button>
 
       {open && (
-        <div className="absolute right-0 top-full z-30 mt-2 w-[21rem] rounded-xl border border-ed-hairline bg-[#FBFBF9] p-4 shadow-[0_12px_32px_rgba(38,35,35,0.10)]">
+        <div className="absolute left-0 top-full z-30 mt-2 w-[21rem] rounded-xl border border-ed-hairline bg-[#FBFBF9] p-4 shadow-[0_12px_32px_rgba(38,35,35,0.10)]">
           <div className="mb-4">
             <div className="mb-1.5 text-[12px] font-demi uppercase tracking-[0.06em] text-ink-faint">
               Email

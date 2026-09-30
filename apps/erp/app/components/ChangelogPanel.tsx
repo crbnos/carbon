@@ -11,8 +11,8 @@ type ChangelogPanelProps = {
   onDismiss: () => void;
 };
 
-// The link opens the docs feed at the entry's anchor, not its permalink:
-// path.to.changelog carries the instance hint the feed's Subscribe popover reads.
+// The link opens the entry's own page. path.to.changelogEntry carries the instance
+// hint the docs Subscribe popover reads, which now sits on every changelog page.
 export default function ChangelogPanel({
   entry,
   isOpen,
@@ -65,7 +65,7 @@ export default function ChangelogPanel({
               rightIcon={<LuExternalLink />}
               onClick={() =>
                 window.open(
-                  `${path.to.changelog}#${entry.slug}`,
+                  path.to.changelogEntry(entry.slug),
                   "_blank",
                   "noopener,noreferrer"
                 )
