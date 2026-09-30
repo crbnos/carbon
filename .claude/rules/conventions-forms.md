@@ -180,6 +180,19 @@ const ThingForm = ({ initialValues, type = "drawer", open, onClose }: ThingFormP
 - `VStack spacing={4}` for vertical layout; `grid grid-cols-1 lg:grid-cols-3
   gap-x-8 gap-y-4` for multi-column.
 - Permission check drives `isDisabled` on `<Submit>`.
+- **A submit button must disable while its own submission is in flight.** Inside a
+  `ValidatedForm` use `<Submit>`, which disables on `isSubmitting`; the form itself
+  also drops a re-entrant submit, so the two together make a double POST impossible.
+  On a `fetcher.Form` / `<Form>` bind the button yourself —
+  `isLoading={fetcher.state !== "idle"}` (on `@carbon/react`'s `Button`, `isLoading`
+  disables as well as spins), or `navigation.formAction === <action>` for a
+  navigation form. Every extra click is a whole extra POST: `fetcher.submit` aborts
+  the previous browser request, but the server action it started runs to completion
+  — nothing reads `request.signal`. A slow action (render a PDF, post a ledger entry,
+  email a customer) is exactly where this bites, and the missing spinner is what
+  invites the second click. Enforced by `no-unguarded-submit` (`@carbon/checks`);
+  note that an `isDisabled` bound to something that is not a submit-state signal
+  does NOT count.
 - Pass `fetcher` from `useFetcher()` when the form is a drawer/modal (so loading
   state and action data flow through the fetcher); plain page forms may omit it.
 
