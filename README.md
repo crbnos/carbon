@@ -110,7 +110,7 @@ Carbon is an open-source alternative to [NetSuite](https://carbon.ms/compare/net
 | **Accounting**               | GL, journals, multi-entity and multi-currency, Xero / QuickBooks sync            |
 | **Workflows**                | No-code automation rules with full run history                                   |
 | **Maintenance & Assets**     | Scheduled maintenance, fixed assets, kanban replenishment                        |
-| **API, Webhooks & MCP**      | A REST endpoint for every table, plus a built-in MCP server for AI agents        |
+| **API, Webhooks & MCP**      | 1,500+ typed API operations, served over HTTP and as a built-in MCP server       |
 | **Custom Fields**            | Extend any record                                                                |
 | **Integrations**             | Onshape, SolidWorks, Paperless Parts, Linear, Jira, Slack, Ramp, Stripe, Zebra   |
 
@@ -140,22 +140,21 @@ See the [full roadmap](https://github.com/orgs/crbnos/projects/1/views/1) for wh
 
 ## API & MCP
 
-Carbon is API-first. One API key unlocks three surfaces:
+Carbon is API-first. The [**Carbon API**](https://docs.carbon.ms/api) is the service layer, the same code the app runs when you click a button: 1,500+ operations across 15 modules, each validating its input, recalculating what depends on it and enforcing your permissions. Every operation is reachable two ways, with the same arguments:
 
-| Surface | What it is |
-| --- | --- |
-| [**Carbon API**](https://docs.carbon.ms/api) | The service layer, the same code the app runs, at `POST /api/v1/{module}/{operation}`, with an OpenAPI spec and [client SDKs](https://docs.carbon.ms/api/sdks) |
-| [**MCP server**](https://docs.carbon.ms/api/mcp) | Every Carbon API operation as a tool for Claude, ChatGPT, Cursor and other agents, permission-scoped to the key or OAuth identity |
-| [**Data API**](https://docs.carbon.ms/api/data) | Direct REST access to every table and view, governed by the same row-level security as the app |
+- **HTTP:** `POST https://app.carbon.ms/api/v1/{module}/{operation}`, with a published [OpenAPI spec](https://app.carbon.ms/api/v1/openapi.json) for [generating a typed client](https://docs.carbon.ms/api/sdks) in any language
+- **[MCP](https://docs.carbon.ms/api/mcp):** as tools for Claude, ChatGPT, Cursor and other agents, scoped to the permissions of the key or signed-in user
 
-Create a key under **Settings → API Keys**, then call the Data API:
+Create a key under **Settings → API Keys**, then:
 
 ```bash
-curl "https://rest.carbon.ms/salesOrder?select=id,salesOrderId,status" \
-  -H "Authorization: Bearer $CARBON_API_KEY"   # crbn_…
+curl -X POST https://app.carbon.ms/api/v1/sales/getSalesOrders \
+  -H "Authorization: Bearer $CARBON_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{ "args": { "limit": 10 } }'
 ```
 
-Self-hosted, call PostgREST at `<your API URL>/rest/v1/<table>` and send the key as a `carbon-key` header. See [API keys](https://docs.carbon.ms/docs/building/api-keys).
+Self-hosted, the same API is served by your ERP at `/api/v1`. For the rare case the service layer doesn't cover, the [Data API](https://docs.carbon.ms/api/data) exposes every table and view directly.
 
 <br />
 
@@ -179,8 +178,7 @@ flowchart LR
   PG[("Postgres + RLS")]
   ERP --> REST
   MES --> REST
-  EXT -- "REST / MCP" --> ERP
-  EXT --> REST
+  EXT -- "Carbon API / MCP" --> ERP
   REST --> PG
   AUTH --> PG
   RT --> PG
