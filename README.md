@@ -162,31 +162,9 @@ Self-hosted, the same API is served by your ERP at `/api/v1`. For the rare case 
 
 ERP and MES are React Router apps over a single Postgres database. Permissions (row-level security), computed totals and change events live in the database itself; background work runs through Inngest, which calls back into the ERP to execute jobs. The [architecture guide](https://docs.carbon.ms/docs/building/architecture) follows one click all the way down.
 
-```mermaid
-flowchart LR
-  subgraph Clients
-    ERP["ERP app"]
-    MES["MES app"]
-    EXT["Your apps & AI agents"]
-  end
-  subgraph DP["Data plane"]
-    REST["PostgREST"]
-    AUTH["Auth"]
-    RT["Realtime"]
-    STO["Storage"]
-  end
-  PG[("Postgres + RLS")]
-  ERP --> REST
-  MES --> REST
-  EXT -- "Carbon API / MCP" --> ERP
-  REST --> PG
-  AUTH --> PG
-  RT --> PG
-  PG -- "events" --> ING["Inngest"]
-  ING -- "run job" --> ERP
-  ERP --> REDIS[("Redis")]
-  ERP --> ASM["Assembler (Rust)<br/>STEP → GLB, motion planning"]
-```
+<a href="https://docs.carbon.ms/docs/building/architecture">
+  <img alt="How Carbon fits together: shop floor, office and customers reach the MES and ERP, which read and write Postgres; subscribed writes queue Inngest jobs that run back in the ERP" src=".github/assets/readme/architecture.png" width="720" />
+</a>
 
 <br />
 
