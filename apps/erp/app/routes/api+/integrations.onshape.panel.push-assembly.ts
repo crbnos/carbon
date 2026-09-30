@@ -12,11 +12,10 @@ import {
   externalIdForAssembly,
   externalIdForBomLine,
   flattenNodes,
-  mergeCustomFieldEdits,
+  mappedFieldValues,
   mergeCustomFieldValues,
   mergeEditsForCreates,
   mergeExistingItemEdits,
-  missingListOptions,
   normalizeConfiguration,
   pickLatestRow,
   proposeItem
@@ -26,7 +25,6 @@ import {
   chunkFilterValues,
   loadActiveMakeMethods,
   loadMethodLineOwnership,
-  loadPartCustomFieldDefinitions,
   loadReusableDrafts,
   ONSHAPE_V2_INTEGRATION_ID,
   peekPanelPlan,
@@ -62,10 +60,7 @@ const itemEditSchema = z.object({
   replenishmentSystem: z.string().optional(),
   defaultMethodType: z.string().optional(),
   itemTrackingType: z.string().optional(),
-  unitOfMeasureCode: z.string().optional(),
-  // Values stay unknown here: mergeCustomFieldEdits is the validator (per
-  // field type coercion, owned-mode refusal) and answers per-row 422s.
-  customFields: z.record(z.string(), z.unknown()).optional()
+  unitOfMeasureCode: z.string().optional()
 });
 
 const payloadSchema = z.object({
@@ -181,52 +176,13 @@ export async function action({ request }: ActionFunctionArgs) {
     }
   }
   const merged = mergeEditsForCreates(creates, edits, options);
-  // Custom-field edits are validated in the same peek phase, and only for the
-  // ROOT. An edit to an owned-mode field is refused here — Onshape owns the
-  // value.
   const rootFields = root.customFields ?? [];
-  const rootFieldMerge = mergeCustomFieldEdits(
-    rootFields,
-    edits[root.partNumber]?.customFields
-  );
-  if (!rootFieldMerge.ok) {
-    return data(
-      {
-        error: "Some edits are not valid",
-        fieldErrors: [
-          ...merged.errors,
-          { key: root.partNumber, errors: rootFieldMerge.errors }
-        ]
-      },
-      { status: 422 }
-    );
-  }
+  const rootFieldValues = mappedFieldValues(rootFields);
   if (merged.errors.length > 0) {
     return data(
       { error: "Some edits are not valid", fieldErrors: merged.errors },
       { status: 422 }
     );
-  }
-
-  // The definitions the list-option sync needs are read while the plan is
-  // still peeked: nothing the take produces feeds them, so a failed read must
-  // not burn a one-shot review.
-  let definitions: Awaited<ReturnType<typeof loadPartCustomFieldDefinitions>> =
-    [];
-  if (rootFields.length > 0) {
-    try {
-      definitions = await loadPartCustomFieldDefinitions(client, companyId);
-    } catch (error) {
-      return data(
-        {
-          error:
-            error instanceof Error
-              ? error.message
-              : "Failed to read the custom field definitions"
-        },
-        { status: 500 }
-      );
-    }
   }
 
   // One-shot from here: a concurrent apply of the same review finds nothing.
@@ -398,37 +354,9 @@ export async function action({ request }: ActionFunctionArgs) {
   const rootAllFieldIds = new Set(rootFields.map((field) => field.fieldId));
   const rootValuesToWrite = mergeCustomFieldValues(
     {},
-    rootFieldMerge.values,
+    rootFieldValues,
     rootWillReuse ? rootOwnedFieldIds : rootAllFieldIds
   );
-
-  // List options are synced ADD-ONLY, at apply, never at plan: the
-  // definitions read above are fresh, so an option edited since the review is
-  // unioned with, not clobbered by, what this push is about to write.
-  if (Object.keys(rootValuesToWrite).length > 0) {
-    for (const definition of definitions) {
-      if (!(definition.id in rootValuesToWrite)) continue;
-      const missing = missingListOptions(definition, [
-        rootFieldMerge.values[definition.id] ?? null
-      ]);
-      if (missing.length === 0) continue;
-      const appended = await serviceRole
-        .from("customField")
-        .update({
-          listOptions: [...(definition.listOptions ?? []), ...missing],
-          updatedAt: datetime.timestamp(),
-          updatedBy: userId
-        })
-        .eq("id", definition.id)
-        .eq("companyId", companyId);
-      if (appended.error) {
-        // The value is still written below; the option can be added by hand.
-        summary.errors.push(
-          `${definition.name}: could not add list option ${missing.join(", ")}`
-        );
-      }
-    }
-  }
 
   const rootItem = await ensureItem(
     root.partNumber,
@@ -472,7 +400,7 @@ export async function action({ request }: ActionFunctionArgs) {
     } else {
       const mergedRootFields = mergeCustomFieldValues(
         currentPart.data?.customFields,
-        rootFieldMerge.values,
+        rootFieldValues,
         rootOwnedFieldIds
       );
       const updatedPart = await client
