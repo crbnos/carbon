@@ -3,11 +3,13 @@ import { useLingui } from "@lingui/react/macro";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { LuCheck, LuX } from "react-icons/lu";
 import type {
+  InspectionGauge,
   InspectionMeasurement,
   InspectionSample,
   InspectionSamplingPlan
 } from "~/services/types";
 import { path } from "~/utils/path";
+import InspectionGaugePicker from "./InspectionGaugePicker";
 
 // A cell save's response payload (the measurement action returns it so the
 // matrix can update without a revalidation roundtrip). Same contract as the
@@ -37,6 +39,8 @@ type MatrixRow = {
   sampleSize: number;
   acceptanceNumber: number;
   rejectionNumber: number;
+  gaugeTypeId: string | null;
+  gaugeTypeName: string | null;
 };
 
 type InspectionMeasurementMatrixProps = {
@@ -46,6 +50,8 @@ type InspectionMeasurementMatrixProps = {
   features: InspectionSamplingPlan[];
   samples: InspectionSample[];
   measurements: InspectionMeasurement[];
+  gauges: InspectionGauge[];
+  recentGaugeIds: string[];
   maxSampleSize: number;
   // Lot size caps how many sample columns can exist — a feature's n is the
   // required minimum, but the inspector may record up to the whole lot.
@@ -78,6 +84,8 @@ const InspectionMeasurementMatrix = ({
   features,
   samples,
   measurements,
+  gauges,
+  recentGaugeIds,
   maxSampleSize,
   lotSize,
   lotAcceptanceNumber,
@@ -116,7 +124,9 @@ const InspectionMeasurementMatrix = ({
           specLabel: "",
           sampleSize: maxSampleSize,
           acceptanceNumber: lotAcceptanceNumber,
-          rejectionNumber: lotRejectionNumber
+          rejectionNumber: lotRejectionNumber,
+          gaugeTypeId: null,
+          gaugeTypeName: null
         }
       ];
     }
@@ -141,7 +151,9 @@ const InspectionMeasurementMatrix = ({
         specLabel,
         sampleSize: lotFeature.sampleSize,
         acceptanceNumber: lotFeature.acceptanceNumber,
-        rejectionNumber: lotFeature.rejectionNumber
+        rejectionNumber: lotFeature.rejectionNumber,
+        gaugeTypeId: feature.gaugeTypeId ?? null,
+        gaugeTypeName: feature.gaugeType?.name ?? null
       };
     });
   }, [
@@ -353,6 +365,56 @@ const InspectionMeasurementMatrix = ({
     [persistMeasurement, persistOverall, onMeasurementSaved]
   );
 
+  // The gauge recorded per feature, seeded from the plan rows and patched
+  // optimistically on selection; recently used gauges float to the top.
+  const [gaugeByFeature, setGaugeByFeature] = useState<
+    Record<string, string | null>
+  >({});
+  const [recentGauges, setRecentGauges] = useState(recentGaugeIds);
+  useEffect(() => {
+    setRecentGauges(recentGaugeIds);
+  }, [recentGaugeIds]);
+  const gaugeFor = useCallback(
+    (featureId: string): string | null =>
+      featureId in gaugeByFeature
+        ? gaugeByFeature[featureId]
+        : (features.find((f) => f.inspectionFeatureId === featureId)?.gaugeId ??
+          null),
+    [gaugeByFeature, features]
+  );
+
+  const persistGauge = useCallback(
+    async (featureId: string, gaugeId: string | null) => {
+      const previous = gaugeFor(featureId);
+      setGaugeByFeature((prev) => ({ ...prev, [featureId]: gaugeId }));
+
+      const formData = new FormData();
+      formData.set("inspectionId", inspectionId);
+      formData.set("inspectionFeatureId", featureId);
+      formData.set("gaugeId", gaugeId ?? "");
+      const response = await fetch(path.to.inspectionGauge(inspectionId), {
+        method: "post",
+        body: formData
+      });
+      const body = (await response.json().catch(() => null)) as {
+        error?: { message: string } | null;
+      } | null;
+
+      if (!response.ok || !body || body.error) {
+        toast.error(body?.error?.message ?? t`Failed to record gauge`);
+        setGaugeByFeature((prev) => ({ ...prev, [featureId]: previous }));
+        return;
+      }
+      if (gaugeId) {
+        setRecentGauges((prev) => [
+          gaugeId,
+          ...prev.filter((id) => id !== gaugeId)
+        ]);
+      }
+    },
+    [gaugeFor, inspectionId, t]
+  );
+
   const columnHeaders = useMemo(
     () =>
       Array.from({ length: columnCount }, (_, index) => {
@@ -392,6 +454,11 @@ const InspectionMeasurementMatrix = ({
                 <span>{t`Result`}</span>
               )}
             </th>
+            {hasFeatures && (
+              <th className="min-w-[140px] border-b border-r border-border bg-card px-3 py-2 text-left font-medium text-muted-foreground">
+                {t`Gauge`}
+              </th>
+            )}
             {columnHeaders.map((column, index) => (
               // biome-ignore lint/suspicious/noArrayIndexKey: columns are positional
               <th
@@ -452,6 +519,21 @@ const InspectionMeasurementMatrix = ({
                     </div>
                   </div>
                 </td>
+                {hasFeatures && (
+                  <td className="h-px border-b border-r border-border p-0 align-middle">
+                    <InspectionGaugePicker
+                      gauges={gauges}
+                      recentGaugeIds={recentGauges}
+                      gaugeTypeId={row.gaugeTypeId}
+                      gaugeTypeName={row.gaugeTypeName}
+                      value={gaugeFor(row.featureId)}
+                      isReadOnly={isReadOnly}
+                      onChange={(gaugeId) =>
+                        persistGauge(row.featureId, gaugeId)
+                      }
+                    />
+                  </td>
+                )}
                 {Array.from({ length: columnCount }, (_, columnIndex) => {
                   const disabled = isReadOnly;
                   const status = cellStatus(columnIndex, row.featureId);

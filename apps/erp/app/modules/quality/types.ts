@@ -6,6 +6,7 @@ import type {
   getGauges,
   getGaugeTypes,
   getInspection,
+  getInspectionGauges,
   getInspectionMeasurements,
   getInspectionSamplingPlans,
   getInspections,
@@ -185,6 +186,10 @@ export type InspectionMeasurementRow =
 
 export type InspectionSamplingPlan = NonNullable<
   Awaited<ReturnType<typeof getInspectionSamplingPlans>>["data"]
+>[number];
+
+export type InspectionGauge = NonNullable<
+  Awaited<ReturnType<typeof getInspectionGauges>>["data"]
 >[number];
 
 export type InspectionMeasurement = NonNullable<

@@ -1746,6 +1746,9 @@ msgstr "所有部门"
 msgid "All Documents"
 msgstr "所有文档"
 
+msgid "All gauges"
+msgstr ""
+
 msgid "All item types"
 msgstr "所有物料类型"
 
@@ -2006,6 +2009,9 @@ msgstr "此存储单元嵌套在其中的另一个存储单元（例如，架内
 
 msgid "Another system is connected to Ramp as its accounting system"
 msgstr "另一个系统已连接到 Ramp 作为其会计系统"
+
+msgid "Any"
+msgstr ""
 
 msgid "Any item group"
 msgstr "任何项目组"
@@ -3807,6 +3813,9 @@ msgstr "清除到期日"
 
 msgid "Clear Filters"
 msgstr "清除筛选"
+
+msgid "Clear gauge"
+msgstr ""
 
 msgid "Clear search"
 msgstr "清除搜索"
@@ -7869,6 +7878,9 @@ msgstr "加载跟踪实体失败"
 msgid "Failed to move account: {0}"
 msgstr "移动账户失败: {0}"
 
+msgid "Failed to record gauge"
+msgstr ""
+
 msgid "Failed to regenerate schedule"
 msgstr "排程再生成失败"
 
@@ -9075,6 +9087,9 @@ msgstr "已停用"
 
 msgid "Inactive actions will not appear in selection lists"
 msgstr "已停用的操作不会出现在选择列表中"
+
+msgid "Inactive gauge"
+msgstr ""
 
 msgid "Inbound inspection"
 msgstr "来料检验"
@@ -11642,6 +11657,9 @@ msgstr "此任务没有可用预测。"
 msgid "No Gauge Selected"
 msgstr "未选择量具"
 
+msgid "No gauges found."
+msgstr ""
+
 msgid "No grouped notifications"
 msgstr "没有分组通知"
 
@@ -12705,6 +12723,9 @@ msgstr "否则"
 
 msgid "Out"
 msgstr "出"
+
+msgid "Out of calibration"
+msgstr ""
 
 msgid "Outgoing"
 msgstr "出库"
@@ -14373,6 +14394,9 @@ msgstr "最近的付款"
 msgid "Recently Created"
 msgstr "最近创建"
 
+msgid "Recently used"
+msgstr ""
+
 msgid "Recertify Every (Days)"
 msgstr "每(天)重新认证"
 
@@ -15698,6 +15722,9 @@ msgstr "已报废"
 msgid "Search"
 msgstr "搜索"
 
+msgid "Search {gaugeTypeName}..."
+msgstr ""
+
 msgid "Search accounts"
 msgstr "搜索账户"
 
@@ -15742,6 +15769,9 @@ msgstr "搜索字段..."
 
 msgid "Search for existing or create a new one"
 msgstr "搜索现有问题或创建新问题"
+
+msgid "Search gauges..."
+msgstr ""
 
 msgid "Search items or bins"
 msgstr "搜索物料或料箱"
@@ -15938,6 +15968,9 @@ msgstr "选择员工类型"
 
 msgid "Select field"
 msgstr "选择字段"
+
+msgid "Select gauge"
+msgstr ""
 
 msgid "Select Gauge"
 msgstr "选择量具"

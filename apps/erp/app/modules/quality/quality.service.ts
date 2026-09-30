@@ -2417,10 +2417,26 @@ export async function getInspectionSamplingPlans(
   return client
     .from("inspectionSamplingPlan")
     .select(
-      "*, inspectionFeature(id, label, description, pageNumber, type, nominalValue, tolerancePlus, toleranceMinus, unit)"
+      "*, inspectionFeature(id, label, description, pageNumber, type, nominalValue, tolerancePlus, toleranceMinus, unit, gaugeTypeId, gaugeType(name))"
     )
     .eq("inspectionId", inspectionId)
     .eq("companyId", companyId);
+}
+
+// Active gauges the inspection execution view can record against a feature.
+// Inactive gauges are retired and never offered (the engine refuses them too).
+export async function getInspectionGauges(
+  client: SupabaseClient<Database>,
+  companyId: string
+) {
+  return client
+    .from("gauges")
+    .select(
+      "id, gaugeId, description, gaugeTypeId, gaugeCalibrationStatusWithDueDate, nextCalibrationDate"
+    )
+    .eq("companyId", companyId)
+    .eq("gaugeStatus", "Active")
+    .order("gaugeId");
 }
 
 export async function getInspectionMeasurements(

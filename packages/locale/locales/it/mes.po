@@ -148,6 +148,9 @@ msgstr "Tutti"
 msgid "All clear"
 msgstr "Tutto libero"
 
+msgid "All gauges"
+msgstr ""
+
 msgid "All jobs"
 msgstr "Tutti gli ordini di produzione"
 
@@ -282,6 +285,9 @@ msgstr "Cancella"
 
 msgid "Clear Filters"
 msgstr "Cancella Filtri"
+
+msgid "Clear gauge"
+msgstr ""
 
 msgid "Clear Search"
 msgstr "Cancella Ricerca"
@@ -584,6 +590,9 @@ msgstr "Impossibile recuperare le operazioni attive"
 msgid "Failed to fetch storageUnits"
 msgstr "Impossibile recuperare le unità di archiviazione"
 
+msgid "Failed to record gauge"
+msgstr ""
+
 msgid "Failed to save measurement"
 msgstr "Errore durante il salvataggio della misurazione"
 
@@ -648,6 +657,9 @@ msgstr "Correggi le quantità evidenziate prima di completare."
 msgid "Forgot to Clock Out?"
 msgstr "Hai dimenticato il timbra fine?"
 
+msgid "Gauge"
+msgstr ""
+
 msgid "General"
 msgstr "Generale"
 
@@ -690,6 +702,9 @@ msgstr "tra {0}"
 
 msgid "In Progress"
 msgstr "In Corso"
+
+msgid "Inactive gauge"
+msgstr ""
 
 msgid "Inspect Item"
 msgstr "Ispeziona Articolo"
@@ -962,6 +977,9 @@ msgstr "Nessun intervento di manutenzione assegnato"
 msgid "No files"
 msgstr "Nessun file"
 
+msgid "No gauges found."
+msgstr ""
+
 msgid "No Impact"
 msgstr "Nessun Impatto"
 
@@ -1129,6 +1147,9 @@ msgstr "Facoltativo"
 msgid "or"
 msgstr "o"
 
+msgid "Out of calibration"
+msgstr ""
+
 msgid "Output lot"
 msgstr "Lotto di output"
 
@@ -1279,6 +1300,9 @@ msgstr "Motivo della rilavorazione"
 msgid "Recent"
 msgstr "Recenti"
 
+msgid "Recently used"
+msgstr ""
+
 msgid "Record"
 msgstr "Registra"
 
@@ -1410,8 +1434,14 @@ msgstr "Scarto del numero di serie selezionato"
 msgid "Search"
 msgstr "Cerca"
 
+msgid "Search {gaugeTypeName}..."
+msgstr ""
+
 msgid "Search by job or item ID"
 msgstr "Cerca per ID lavoro o articolo"
+
+msgid "Search gauges..."
+msgstr ""
 
 msgid "Search operators..."
 msgstr "Cerca operatori..."
@@ -1446,6 +1476,9 @@ msgstr "Seleziona un articolo..."
 #. placeholder {0}: index + 1
 msgid "Select Batch {0}"
 msgstr "Seleziona Lotto {0}"
+
+msgid "Select gauge"
+msgstr ""
 
 msgid "Select Printer"
 msgstr "Seleziona Stampante"

@@ -148,6 +148,9 @@ msgstr "Todos"
 msgid "All clear"
 msgstr "Tudo limpo"
 
+msgid "All gauges"
+msgstr ""
+
 msgid "All jobs"
 msgstr "Todas as ordens de produção"
 
@@ -282,6 +285,9 @@ msgstr "Limpar"
 
 msgid "Clear Filters"
 msgstr "Limpar Filtros"
+
+msgid "Clear gauge"
+msgstr ""
 
 msgid "Clear Search"
 msgstr "Limpar Pesquisa"
@@ -584,6 +590,9 @@ msgstr "Falha ao buscar operações ativas"
 msgid "Failed to fetch storageUnits"
 msgstr "Falha ao buscar unidades de armazenamento"
 
+msgid "Failed to record gauge"
+msgstr ""
+
 msgid "Failed to save measurement"
 msgstr "Falha ao salvar medição"
 
@@ -648,6 +657,9 @@ msgstr "Corrija as quantidades realçadas antes de concluir."
 msgid "Forgot to Clock Out?"
 msgstr "Esqueceu de apontar fim?"
 
+msgid "Gauge"
+msgstr ""
+
 msgid "General"
 msgstr "Geral"
 
@@ -690,6 +702,9 @@ msgstr "em {0}"
 
 msgid "In Progress"
 msgstr "Em Andamento"
+
+msgid "Inactive gauge"
+msgstr ""
 
 msgid "Inspect Item"
 msgstr "Inspecionar Item"
@@ -962,6 +977,9 @@ msgstr "Nenhuma ordem de manutenção atribuída a você"
 msgid "No files"
 msgstr "Nenhum arquivo"
 
+msgid "No gauges found."
+msgstr ""
+
 msgid "No Impact"
 msgstr "Sem Impacto"
 
@@ -1129,6 +1147,9 @@ msgstr "Opcional"
 msgid "or"
 msgstr "ou"
 
+msgid "Out of calibration"
+msgstr ""
+
 msgid "Output lot"
 msgstr "Lote de saída"
 
@@ -1279,6 +1300,9 @@ msgstr "Motivo da retrabalhação"
 msgid "Recent"
 msgstr "Recente"
 
+msgid "Recently used"
+msgstr ""
+
 msgid "Record"
 msgstr "Registrar"
 
@@ -1410,8 +1434,14 @@ msgstr "Descartando a serial selecionada"
 msgid "Search"
 msgstr "Pesquisar"
 
+msgid "Search {gaugeTypeName}..."
+msgstr ""
+
 msgid "Search by job or item ID"
 msgstr "Pesquisar por ID de trabalho ou item"
+
+msgid "Search gauges..."
+msgstr ""
 
 msgid "Search operators..."
 msgstr "Pesquisar operadores..."
@@ -1446,6 +1476,9 @@ msgstr "Selecione um item..."
 #. placeholder {0}: index + 1
 msgid "Select Batch {0}"
 msgstr "Selecionar Lote {0}"
+
+msgid "Select gauge"
+msgstr ""
 
 msgid "Select Printer"
 msgstr "Selecionar Impressora"

@@ -1746,6 +1746,9 @@ msgstr "Tüm departmanlar"
 msgid "All Documents"
 msgstr "Tüm Belgeler"
 
+msgid "All gauges"
+msgstr ""
+
 msgid "All item types"
 msgstr "Tüm Stok kartı türleri"
 
@@ -2006,6 +2009,9 @@ msgstr "Bu depolama biriminin yerleştirildiği başka bir depolama birimi (örn
 
 msgid "Another system is connected to Ramp as its accounting system"
 msgstr "Başka bir sistem Ramp'a muhasebe sistemi olarak bağlı"
+
+msgid "Any"
+msgstr ""
 
 msgid "Any item group"
 msgstr "Herhangi bir ürün grubu"
@@ -3807,6 +3813,9 @@ msgstr "Son tarihi temizle"
 
 msgid "Clear Filters"
 msgstr "Filtreleri Temizle"
+
+msgid "Clear gauge"
+msgstr ""
 
 msgid "Clear search"
 msgstr "Aramayı temizle"
@@ -7869,6 +7878,9 @@ msgstr "Takip edilen varlıklar yüklenemedi"
 msgid "Failed to move account: {0}"
 msgstr "Hesap taşınamadı: {0}"
 
+msgid "Failed to record gauge"
+msgstr ""
+
 msgid "Failed to regenerate schedule"
 msgstr "Çizelge yeniden oluşturulamadı"
 
@@ -9075,6 +9087,9 @@ msgstr "Pasif"
 
 msgid "Inactive actions will not appear in selection lists"
 msgstr "Pasif eylemler seçim listelerinde görünmeyecektir"
+
+msgid "Inactive gauge"
+msgstr ""
 
 msgid "Inbound inspection"
 msgstr "Girdi kontrolü"
@@ -11642,6 +11657,9 @@ msgstr "Bu İş emri için Tahmin mevcut değildir."
 msgid "No Gauge Selected"
 msgstr "Ölçüm aleti seçilmedi"
 
+msgid "No gauges found."
+msgstr ""
+
 msgid "No grouped notifications"
 msgstr "Gruplanmış bildirim yok"
 
@@ -12705,6 +12723,9 @@ msgstr "Aksi takdirde"
 
 msgid "Out"
 msgstr "Dışı"
+
+msgid "Out of calibration"
+msgstr ""
 
 msgid "Outgoing"
 msgstr "Çıkış"
@@ -14373,6 +14394,9 @@ msgstr "Son ödemeler"
 msgid "Recently Created"
 msgstr "Son Oluşturulanlar"
 
+msgid "Recently used"
+msgstr ""
+
 msgid "Recertify Every (Days)"
 msgstr "Her (Gün) Yeniden Sertifikalandır"
 
@@ -15698,6 +15722,9 @@ msgstr "Çıkartıldı"
 msgid "Search"
 msgstr "Ara"
 
+msgid "Search {gaugeTypeName}..."
+msgstr ""
+
 msgid "Search accounts"
 msgstr "Hesapları arayın"
 
@@ -15742,6 +15769,9 @@ msgstr "Alanları ara..."
 
 msgid "Search for existing or create a new one"
 msgstr "Mevcut birini arayın veya yeni bir tane oluşturun"
+
+msgid "Search gauges..."
+msgstr ""
 
 msgid "Search items or bins"
 msgstr "Stok kartlarını veya gözleri ara"
@@ -15938,6 +15968,9 @@ msgstr "Çalışan Türü Seçin"
 
 msgid "Select field"
 msgstr "Alan seçin"
+
+msgid "Select gauge"
+msgstr ""
 
 msgid "Select Gauge"
 msgstr "Ölçüm Aleti Seç"

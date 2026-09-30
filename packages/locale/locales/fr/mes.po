@@ -148,6 +148,9 @@ msgstr "Tout"
 msgid "All clear"
 msgstr "Tout est correct"
 
+msgid "All gauges"
+msgstr ""
+
 msgid "All jobs"
 msgstr "Tous les ordres de fabrication"
 
@@ -282,6 +285,9 @@ msgstr "Effacer"
 
 msgid "Clear Filters"
 msgstr "Effacer les filtres"
+
+msgid "Clear gauge"
+msgstr ""
 
 msgid "Clear Search"
 msgstr "Effacer la recherche"
@@ -584,6 +590,9 @@ msgstr "Échec de la récupération des opérations actives"
 msgid "Failed to fetch storageUnits"
 msgstr "Échec de la récupération des unités de stockage"
 
+msgid "Failed to record gauge"
+msgstr ""
+
 msgid "Failed to save measurement"
 msgstr "Échec de l'enregistrement de la mesure"
 
@@ -648,6 +657,9 @@ msgstr "Corrigez les quantités surlignées avant de continuer."
 msgid "Forgot to Clock Out?"
 msgstr "Avez-vous oublié le pointage fin ?"
 
+msgid "Gauge"
+msgstr ""
+
 msgid "General"
 msgstr "Général"
 
@@ -690,6 +702,9 @@ msgstr "dans {0}"
 
 msgid "In Progress"
 msgstr "En cours"
+
+msgid "Inactive gauge"
+msgstr ""
 
 msgid "Inspect Item"
 msgstr "Inspecter l'article"
@@ -962,6 +977,9 @@ msgstr "Aucune intervention de maintenance qui vous est assignée"
 msgid "No files"
 msgstr "Aucun fichier"
 
+msgid "No gauges found."
+msgstr ""
+
 msgid "No Impact"
 msgstr "Aucun impact"
 
@@ -1129,6 +1147,9 @@ msgstr "Optionnel"
 msgid "or"
 msgstr "ou"
 
+msgid "Out of calibration"
+msgstr ""
+
 msgid "Output lot"
 msgstr "Lot de sortie"
 
@@ -1279,6 +1300,9 @@ msgstr "Raison de la retouche"
 msgid "Recent"
 msgstr "Récent"
 
+msgid "Recently used"
+msgstr ""
+
 msgid "Record"
 msgstr "Enregistrer"
 
@@ -1410,8 +1434,14 @@ msgstr "Mise au rebut du numéro de série sélectionné"
 msgid "Search"
 msgstr "Rechercher"
 
+msgid "Search {gaugeTypeName}..."
+msgstr ""
+
 msgid "Search by job or item ID"
 msgstr "Rechercher par numéro de travail ou d'article"
+
+msgid "Search gauges..."
+msgstr ""
 
 msgid "Search operators..."
 msgstr "Rechercher des opérateurs..."
@@ -1446,6 +1476,9 @@ msgstr "Sélectionner un article..."
 #. placeholder {0}: index + 1
 msgid "Select Batch {0}"
 msgstr "Sélectionner le lot {0}"
+
+msgid "Select gauge"
+msgstr ""
 
 msgid "Select Printer"
 msgstr "Sélectionner l'imprimante"

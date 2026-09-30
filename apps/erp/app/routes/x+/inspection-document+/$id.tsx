@@ -15,6 +15,7 @@ import {
 } from "~/modules/production";
 import type { InspectionDocumentContent } from "~/modules/production/types";
 import type { SamplingRule } from "~/modules/production/ui/InspectionDocument/SamplingRuleModal";
+import { getGaugeTypesList } from "~/modules/quality";
 import { getCompanySettings } from "~/modules/settings";
 import type { BreadcrumbSegment, Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
@@ -52,12 +53,14 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     featuresResult,
     balloonsResult,
     unitOfMeasuresResult,
+    gaugeTypesResult,
     companySettings
   ] = await Promise.all([
     getInspectionDocument(serviceRole, id, companyId),
     getInspectionFeatures(serviceRole, id),
     getBalloons(serviceRole, id),
     getUnitOfMeasuresList(client, companyId),
+    getGaugeTypesList(client, companyId),
     getCompanySettings(client, companyId)
   ]);
 
@@ -89,6 +92,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     features,
     balloons,
     unitOfMeasures,
+    gaugeTypes: gaugeTypesResult.data ?? [],
     samplingStandard:
       ((companySettings.data as any)?.samplingStandard as
         | "ANSI_Z1_4"
@@ -97,8 +101,14 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 }
 
 export default function BalloonDetailRoute() {
-  const { diagram, features, balloons, unitOfMeasures, samplingStandard } =
-    useLoaderData<typeof loader>();
+  const {
+    diagram,
+    features,
+    balloons,
+    unitOfMeasures,
+    gaugeTypes,
+    samplingStandard
+  } = useLoaderData<typeof loader>();
   const content = diagram.content as InspectionDocumentContent | null;
 
   return (
@@ -126,6 +136,7 @@ export default function BalloonDetailRoute() {
               features={features}
               balloons={balloons}
               unitOfMeasures={unitOfMeasures}
+              gaugeTypes={gaugeTypes}
               sampling={(diagram.sampling as SamplingRule | null) ?? null}
               samplingStandard={samplingStandard}
             />

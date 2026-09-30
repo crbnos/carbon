@@ -24,6 +24,7 @@ export type InspectionFeatureRow = {
     | Database["public"]["Enums"]["inspectionLevel"]
     | null;
   samplingSeverity: Database["public"]["Enums"]["inspectionSeverity"] | null;
+  gaugeTypeId: string | null;
   createdBy: string;
   createdAt: string;
   updatedBy: string | null;

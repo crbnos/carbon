@@ -144,6 +144,8 @@ export const path = {
       generatePath(`${x}/inspection-lot/${id}/complete-passed`),
     inspectionDisposition: (id: string) =>
       generatePath(`${x}/inspection-lot/${id}/disposition`),
+    inspectionGauge: (id: string) =>
+      generatePath(`${x}/inspection-lot/${id}/gauge`),
     inspectionMeasurement: (id: string) =>
       generatePath(`${x}/inspection-lot/${id}/measurement`),
     inspectionSample: (id: string) =>

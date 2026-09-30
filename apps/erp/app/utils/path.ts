@@ -1265,6 +1265,8 @@ export const path = {
     inspectionDocument: (id: string) =>
       generatePath(`${x}/inspection-document/${id}`),
     inspectionDocuments: `${x}/production/inspection`,
+    inspectionGauge: (id: string) =>
+      generatePath(`${x}/inspection/${id}/gauge`),
     inspectionMeasurement: (id: string) =>
       generatePath(`${x}/inspection/${id}/measurement`),
     inspectionPartial: (id: string) =>

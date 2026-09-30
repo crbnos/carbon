@@ -63,3 +63,23 @@ export async function changeInspectionDocument(args: {
 }) {
   return engine.changeInspectionDocument(getDatabaseClient(), args);
 }
+
+export async function recordInspectionGauge(args: {
+  inspectionId: string;
+  inspectionFeatureId: string;
+  gaugeId: string | null;
+  companyId: string;
+  userId: string;
+}) {
+  return engine.recordInspectionGauge(getDatabaseClient(), args);
+}
+
+export async function getRecentInspectionGauges(
+  inspectionId: string,
+  companyId: string
+) {
+  return engine.getRecentInspectionGauges(getDatabaseClient(), {
+    inspectionId,
+    companyId
+  });
+}

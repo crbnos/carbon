@@ -1746,6 +1746,9 @@ msgstr "Todos los departamentos"
 msgid "All Documents"
 msgstr "Todos los documentos"
 
+msgid "All gauges"
+msgstr ""
+
 msgid "All item types"
 msgstr "Todos los tipos de artículos"
 
@@ -2006,6 +2009,9 @@ msgstr "Otra unidad de almacenamiento dentro de la que está anidada esta (p. ej
 
 msgid "Another system is connected to Ramp as its accounting system"
 msgstr "Otro sistema está conectado a Ramp como su sistema contable"
+
+msgid "Any"
+msgstr ""
 
 msgid "Any item group"
 msgstr "Cualquier grupo de artículos"
@@ -3807,6 +3813,9 @@ msgstr "Borrar fecha de vencimiento"
 
 msgid "Clear Filters"
 msgstr "Limpiar filtros"
+
+msgid "Clear gauge"
+msgstr ""
 
 msgid "Clear search"
 msgstr "Limpiar búsqueda"
@@ -7869,6 +7878,9 @@ msgstr "No se pudieron cargar las entidades rastreadas"
 msgid "Failed to move account: {0}"
 msgstr "Error al mover cuenta: {0}"
 
+msgid "Failed to record gauge"
+msgstr ""
+
 msgid "Failed to regenerate schedule"
 msgstr "Fallo al regenerar el programa"
 
@@ -9075,6 +9087,9 @@ msgstr "Inactivo"
 
 msgid "Inactive actions will not appear in selection lists"
 msgstr "Las acciones inactivas no aparecerán en las listas de selección"
+
+msgid "Inactive gauge"
+msgstr ""
 
 msgid "Inbound inspection"
 msgstr "Inspección de recepción"
@@ -11642,6 +11657,9 @@ msgstr "Sin pronóstico disponible para este trabajo."
 msgid "No Gauge Selected"
 msgstr "Ningún instrumento de medición seleccionado"
 
+msgid "No gauges found."
+msgstr ""
+
 msgid "No grouped notifications"
 msgstr "Sin notificaciones agrupadas"
 
@@ -12705,6 +12723,9 @@ msgstr "De lo contrario"
 
 msgid "Out"
 msgstr "Fuera"
+
+msgid "Out of calibration"
+msgstr ""
 
 msgid "Outgoing"
 msgstr "Salida"
@@ -14373,6 +14394,9 @@ msgstr "Pagos recientes"
 msgid "Recently Created"
 msgstr "Creado Recientemente"
 
+msgid "Recently used"
+msgstr ""
+
 msgid "Recertify Every (Days)"
 msgstr "Recertificar cada (Días)"
 
@@ -15698,6 +15722,9 @@ msgstr "Descartada"
 msgid "Search"
 msgstr "Buscar"
 
+msgid "Search {gaugeTypeName}..."
+msgstr ""
+
 msgid "Search accounts"
 msgstr "Buscar cuentas"
 
@@ -15742,6 +15769,9 @@ msgstr "Buscar campos..."
 
 msgid "Search for existing or create a new one"
 msgstr "Buscar uno existente o crear uno nuevo"
+
+msgid "Search gauges..."
+msgstr ""
 
 msgid "Search items or bins"
 msgstr "Buscar artículos o contenedores"
@@ -15938,6 +15968,9 @@ msgstr "Seleccionar Tipo de Empleado"
 
 msgid "Select field"
 msgstr "Seleccionar campo"
+
+msgid "Select gauge"
+msgstr ""
 
 msgid "Select Gauge"
 msgstr "Seleccionar instrumento de medición"

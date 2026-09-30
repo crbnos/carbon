@@ -148,6 +148,9 @@ msgstr "Все"
 msgid "All clear"
 msgstr "Все в порядке"
 
+msgid "All gauges"
+msgstr ""
+
 msgid "All jobs"
 msgstr "Все производственные заказы"
 
@@ -282,6 +285,9 @@ msgstr "Очистить"
 
 msgid "Clear Filters"
 msgstr "Очистить фильтры"
+
+msgid "Clear gauge"
+msgstr ""
 
 msgid "Clear Search"
 msgstr "Очистить поиск"
@@ -584,6 +590,9 @@ msgstr "Не удалось загрузить активные операции
 msgid "Failed to fetch storageUnits"
 msgstr "Не удалось получить единицы хранения"
 
+msgid "Failed to record gauge"
+msgstr ""
+
 msgid "Failed to save measurement"
 msgstr "Не удалось сохранить измерение"
 
@@ -648,6 +657,9 @@ msgstr "Исправьте выделенные количества перед 
 msgid "Forgot to Clock Out?"
 msgstr "Забыли отметить окончание работы?"
 
+msgid "Gauge"
+msgstr ""
+
 msgid "General"
 msgstr "Общие"
 
@@ -690,6 +702,9 @@ msgstr "через {0}"
 
 msgid "In Progress"
 msgstr "В работе"
+
+msgid "Inactive gauge"
+msgstr ""
 
 msgid "Inspect Item"
 msgstr "Проверить элемент"
@@ -962,6 +977,9 @@ msgstr "Вам не назначены никакие заявки на техо
 msgid "No files"
 msgstr "Нет файлов"
 
+msgid "No gauges found."
+msgstr ""
+
 msgid "No Impact"
 msgstr "Без влияния"
 
@@ -1129,6 +1147,9 @@ msgstr "Опционально"
 msgid "or"
 msgstr "или"
 
+msgid "Out of calibration"
+msgstr ""
+
 msgid "Output lot"
 msgstr "Партия выпуска"
 
@@ -1279,6 +1300,9 @@ msgstr "Причина доработки"
 msgid "Recent"
 msgstr "Недавние"
 
+msgid "Recently used"
+msgstr ""
+
 msgid "Record"
 msgstr "Записать"
 
@@ -1410,8 +1434,14 @@ msgstr "Списание выбранного серийного номера"
 msgid "Search"
 msgstr "Поиск"
 
+msgid "Search {gaugeTypeName}..."
+msgstr ""
+
 msgid "Search by job or item ID"
 msgstr "Поиск по номеру работы или товара"
+
+msgid "Search gauges..."
+msgstr ""
 
 msgid "Search operators..."
 msgstr "Поиск операторов..."
@@ -1446,6 +1476,9 @@ msgstr "Выберите номенклатуру..."
 #. placeholder {0}: index + 1
 msgid "Select Batch {0}"
 msgstr "Выберите партию {0}"
+
+msgid "Select gauge"
+msgstr ""
 
 msgid "Select Printer"
 msgstr "Выберите принтер"

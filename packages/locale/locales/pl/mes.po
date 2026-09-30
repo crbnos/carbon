@@ -148,6 +148,9 @@ msgstr "Wszystkie"
 msgid "All clear"
 msgstr "Wszystko jasne"
 
+msgid "All gauges"
+msgstr ""
+
 msgid "All jobs"
 msgstr "Wszystkie zlecenia produkcyjne"
 
@@ -282,6 +285,9 @@ msgstr "Wyczyść"
 
 msgid "Clear Filters"
 msgstr "Wyczyść filtry"
+
+msgid "Clear gauge"
+msgstr ""
 
 msgid "Clear Search"
 msgstr "Wyczyść wyszukiwanie"
@@ -584,6 +590,9 @@ msgstr "Nie udało się pobrać aktywnych operacji"
 msgid "Failed to fetch storageUnits"
 msgstr "Nie udało się pobrać jednostek magazynowych"
 
+msgid "Failed to record gauge"
+msgstr ""
+
 msgid "Failed to save measurement"
 msgstr "Nie udało się zapisać pomiaru"
 
@@ -648,6 +657,9 @@ msgstr "Popraw podświetlone ilości przed sfinalizowaniem."
 msgid "Forgot to Clock Out?"
 msgstr "Zapomniano o zakończeniu pracy?"
 
+msgid "Gauge"
+msgstr ""
+
 msgid "General"
 msgstr "Ogólne"
 
@@ -690,6 +702,9 @@ msgstr "za {0}"
 
 msgid "In Progress"
 msgstr "W toku"
+
+msgid "Inactive gauge"
+msgstr ""
 
 msgid "Inspect Item"
 msgstr "Zbadaj artykuł"
@@ -962,6 +977,9 @@ msgstr "Brak zleceń utrzymania ruchu przydzielonych Tobie"
 msgid "No files"
 msgstr "Brak plików"
 
+msgid "No gauges found."
+msgstr ""
+
 msgid "No Impact"
 msgstr "Brak wpływu"
 
@@ -1129,6 +1147,9 @@ msgstr "Opcjonalnie"
 msgid "or"
 msgstr "lub"
 
+msgid "Out of calibration"
+msgstr ""
+
 msgid "Output lot"
 msgstr "Partia wyrobu"
 
@@ -1279,6 +1300,9 @@ msgstr "Przyczyna poprawki"
 msgid "Recent"
 msgstr "Ostatnie"
 
+msgid "Recently used"
+msgstr ""
+
 msgid "Record"
 msgstr "Rejestruj"
 
@@ -1410,8 +1434,14 @@ msgstr "Złomowanie wybranego numeru seryjnego"
 msgid "Search"
 msgstr "Szukaj"
 
+msgid "Search {gaugeTypeName}..."
+msgstr ""
+
 msgid "Search by job or item ID"
 msgstr "Szukaj po ID zadania lub przedmiotu"
+
+msgid "Search gauges..."
+msgstr ""
 
 msgid "Search operators..."
 msgstr "Szukaj operatorów..."
@@ -1446,6 +1476,9 @@ msgstr "Wybierz pozycję..."
 #. placeholder {0}: index + 1
 msgid "Select Batch {0}"
 msgstr "Wybierz partię {0}"
+
+msgid "Select gauge"
+msgstr ""
 
 msgid "Select Printer"
 msgstr "Wybierz drukarkę"

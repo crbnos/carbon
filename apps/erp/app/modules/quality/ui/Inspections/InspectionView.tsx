@@ -45,6 +45,7 @@ import { useFetcher } from "react-router";
 import { Confirm } from "~/components/Modals";
 import { usePermissions } from "~/hooks";
 import type {
+  InspectionGauge,
   InspectionMeasurement,
   InspectionRow,
   InspectionSample,
@@ -94,6 +95,10 @@ export type InspectionViewProps = {
   samples: InspectionSample[];
   features: InspectionSamplingPlan[];
   measurements: InspectionMeasurement[];
+  // Active gauges, and the ones most recently recorded at this lot's work
+  // center (receipts are their own), newest first.
+  gauges: InspectionGauge[];
+  recentGaugeIds: string[];
   balloons: {
     id: string;
     inspectionFeatureId: string;
@@ -124,6 +129,8 @@ const InspectionView = ({
   samples,
   features,
   measurements,
+  gauges,
+  recentGaugeIds,
   balloons,
   documentName,
   pdfUrl,
@@ -637,6 +644,8 @@ const InspectionView = ({
                   features={features}
                   samples={samples}
                   measurements={measurements}
+                  gauges={gauges}
+                  recentGaugeIds={recentGaugeIds}
                   maxSampleSize={maxSampleSize}
                   lotSize={inspection.lotSize}
                   lotAcceptanceNumber={inspection.acceptanceNumber}
@@ -684,6 +693,8 @@ const InspectionView = ({
                 features={features}
                 samples={samples}
                 measurements={measurements}
+                gauges={gauges}
+                recentGaugeIds={recentGaugeIds}
                 maxSampleSize={maxSampleSize}
                 lotSize={inspection.lotSize}
                 lotAcceptanceNumber={inspection.acceptanceNumber}

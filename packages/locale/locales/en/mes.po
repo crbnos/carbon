@@ -148,6 +148,9 @@ msgstr "All"
 msgid "All clear"
 msgstr "All clear"
 
+msgid "All gauges"
+msgstr "All gauges"
+
 msgid "All jobs"
 msgstr "All jobs"
 
@@ -282,6 +285,9 @@ msgstr "Clear"
 
 msgid "Clear Filters"
 msgstr "Clear Filters"
+
+msgid "Clear gauge"
+msgstr "Clear gauge"
 
 msgid "Clear Search"
 msgstr "Clear Search"
@@ -584,6 +590,9 @@ msgstr "Failed to fetch active operations"
 msgid "Failed to fetch storageUnits"
 msgstr "Failed to fetch storageUnits"
 
+msgid "Failed to record gauge"
+msgstr "Failed to record gauge"
+
 msgid "Failed to save measurement"
 msgstr "Failed to save measurement"
 
@@ -648,6 +657,9 @@ msgstr "Fix the highlighted quantities before completing."
 msgid "Forgot to Clock Out?"
 msgstr "Forgot to Clock Out?"
 
+msgid "Gauge"
+msgstr "Gauge"
+
 msgid "General"
 msgstr "General"
 
@@ -690,6 +702,9 @@ msgstr "in {0}"
 
 msgid "In Progress"
 msgstr "In Progress"
+
+msgid "Inactive gauge"
+msgstr "Inactive gauge"
 
 msgid "Inspect Item"
 msgstr "Inspect Item"
@@ -962,6 +977,9 @@ msgstr "No dispatches assigned to you"
 msgid "No files"
 msgstr "No files"
 
+msgid "No gauges found."
+msgstr "No gauges found."
+
 msgid "No Impact"
 msgstr "No Impact"
 
@@ -1129,6 +1147,9 @@ msgstr "Optional"
 msgid "or"
 msgstr "or"
 
+msgid "Out of calibration"
+msgstr "Out of calibration"
+
 msgid "Output lot"
 msgstr "Output lot"
 
@@ -1279,6 +1300,9 @@ msgstr "Reason for rework"
 msgid "Recent"
 msgstr "Recent"
 
+msgid "Recently used"
+msgstr "Recently used"
+
 msgid "Record"
 msgstr "Record"
 
@@ -1410,8 +1434,14 @@ msgstr "Scrapping the selected serial"
 msgid "Search"
 msgstr "Search"
 
+msgid "Search {gaugeTypeName}..."
+msgstr "Search {gaugeTypeName}..."
+
 msgid "Search by job or item ID"
 msgstr "Search by job or item ID"
+
+msgid "Search gauges..."
+msgstr "Search gauges..."
 
 msgid "Search operators..."
 msgstr "Search operators..."
@@ -1446,6 +1476,9 @@ msgstr "Select an item..."
 #. placeholder {0}: index + 1
 msgid "Select Batch {0}"
 msgstr "Select Batch {0}"
+
+msgid "Select gauge"
+msgstr "Select gauge"
 
 msgid "Select Printer"
 msgstr "Select Printer"

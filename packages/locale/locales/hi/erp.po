@@ -1746,6 +1746,9 @@ msgstr "सभी विभाग"
 msgid "All Documents"
 msgstr "सभी दस्तावेज़"
 
+msgid "All gauges"
+msgstr ""
+
 msgid "All item types"
 msgstr "सभी आइटम प्रकार"
 
@@ -2006,6 +2009,9 @@ msgstr "एक अन्य भंडारण इकाई जिसमें �
 
 msgid "Another system is connected to Ramp as its accounting system"
 msgstr "एक अन्य सिस्टम Ramp से इसके लेखांकन प्रणाली के रूप में जुड़ा हुआ है"
+
+msgid "Any"
+msgstr ""
 
 msgid "Any item group"
 msgstr "कोई भी आइटम समूह"
@@ -3807,6 +3813,9 @@ msgstr "नियत तिथि साफ करें"
 
 msgid "Clear Filters"
 msgstr "फ़िल्टर साफ़ करें"
+
+msgid "Clear gauge"
+msgstr ""
 
 msgid "Clear search"
 msgstr "खोज साफ़ करें"
@@ -7869,6 +7878,9 @@ msgstr "ट्रैक किए गए इकाइयों को लोड 
 msgid "Failed to move account: {0}"
 msgstr "खाता स्थानांतरित करने में विफल: {0}"
 
+msgid "Failed to record gauge"
+msgstr ""
+
 msgid "Failed to regenerate schedule"
 msgstr "शेड्यूल पुनः उत्पन्न करने में विफल"
 
@@ -9075,6 +9087,9 @@ msgstr "निष्क्रिय"
 
 msgid "Inactive actions will not appear in selection lists"
 msgstr "निष्क्रिय क्रियाएं चयन सूचियों में दिखाई नहीं देंगी"
+
+msgid "Inactive gauge"
+msgstr ""
 
 msgid "Inbound inspection"
 msgstr "इनबाउंड निरीक्षण"
@@ -11642,6 +11657,9 @@ msgstr "इस नौकरी के लिए कोई पूर्वान�
 msgid "No Gauge Selected"
 msgstr "कोई गेज चयनित नहीं"
 
+msgid "No gauges found."
+msgstr ""
+
 msgid "No grouped notifications"
 msgstr "कोई समूहीकृत सूचनाएं नहीं"
 
@@ -12705,6 +12723,9 @@ msgstr "अन्यथा"
 
 msgid "Out"
 msgstr "बाहर"
+
+msgid "Out of calibration"
+msgstr ""
 
 msgid "Outgoing"
 msgstr "बाहर जाने वाला"
@@ -14373,6 +14394,9 @@ msgstr "हाल के भुगतान"
 msgid "Recently Created"
 msgstr "हाल ही में बनाया गया"
 
+msgid "Recently used"
+msgstr ""
+
 msgid "Recertify Every (Days)"
 msgstr "हर (दिन) को पुनः प्रमाणित करें"
 
@@ -15698,6 +15722,9 @@ msgstr "स्क्रैप किया गया"
 msgid "Search"
 msgstr "खोजें"
 
+msgid "Search {gaugeTypeName}..."
+msgstr ""
+
 msgid "Search accounts"
 msgstr "खातों को खोजें"
 
@@ -15742,6 +15769,9 @@ msgstr "फ़ील्ड खोजें..."
 
 msgid "Search for existing or create a new one"
 msgstr "मौजूदा को खोजें या नया बनाएं"
+
+msgid "Search gauges..."
+msgstr ""
 
 msgid "Search items or bins"
 msgstr "आइटम या बिन खोजें"
@@ -15938,6 +15968,9 @@ msgstr "कर्मचारी प्रकार चुनें"
 
 msgid "Select field"
 msgstr "फ़ील्ड चुनें"
+
+msgid "Select gauge"
+msgstr ""
 
 msgid "Select Gauge"
 msgstr "गेज चुनें"

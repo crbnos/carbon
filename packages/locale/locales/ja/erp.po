@@ -1746,6 +1746,9 @@ msgstr "すべての部門"
 msgid "All Documents"
 msgstr "すべてのドキュメント"
 
+msgid "All gauges"
+msgstr ""
+
 msgid "All item types"
 msgstr "すべての品目タイプ"
 
@@ -2006,6 +2009,9 @@ msgstr "この保管ユニットがネストされる別の保管ユニット（
 
 msgid "Another system is connected to Ramp as its accounting system"
 msgstr "別のシステムがRampの会計システムとして接続されています"
+
+msgid "Any"
+msgstr ""
 
 msgid "Any item group"
 msgstr "任意のアイテムグループ"
@@ -3807,6 +3813,9 @@ msgstr "期日をクリア"
 
 msgid "Clear Filters"
 msgstr "絞り込みをクリア"
+
+msgid "Clear gauge"
+msgstr ""
 
 msgid "Clear search"
 msgstr "検索をクリア"
@@ -7869,6 +7878,9 @@ msgstr "追跡対象エンティティの読み込みに失敗しました"
 msgid "Failed to move account: {0}"
 msgstr "勘定科目の移動に失敗しました: {0}"
 
+msgid "Failed to record gauge"
+msgstr ""
+
 msgid "Failed to regenerate schedule"
 msgstr "スケジュールの再生成に失敗しました"
 
@@ -9075,6 +9087,9 @@ msgstr "無効"
 
 msgid "Inactive actions will not appear in selection lists"
 msgstr "無効なアクションは選択リストに表示されません。"
+
+msgid "Inactive gauge"
+msgstr ""
 
 msgid "Inbound inspection"
 msgstr "受入検査"
@@ -11642,6 +11657,9 @@ msgstr "この製造指図に対して利用可能な予測はありません。
 msgid "No Gauge Selected"
 msgstr "測定器が選択されていません"
 
+msgid "No gauges found."
+msgstr ""
+
 msgid "No grouped notifications"
 msgstr "グループ化された通知がありません"
 
@@ -12705,6 +12723,9 @@ msgstr "その他"
 
 msgid "Out"
 msgstr "対象外"
+
+msgid "Out of calibration"
+msgstr ""
 
 msgid "Outgoing"
 msgstr "発送"
@@ -14373,6 +14394,9 @@ msgstr "最近の支払い"
 msgid "Recently Created"
 msgstr "最近作成"
 
+msgid "Recently used"
+msgstr ""
+
 msgid "Recertify Every (Days)"
 msgstr "再認定 (日)"
 
@@ -15698,6 +15722,9 @@ msgstr "スクラップ済み"
 msgid "Search"
 msgstr "検索"
 
+msgid "Search {gaugeTypeName}..."
+msgstr ""
+
 msgid "Search accounts"
 msgstr "アカウントを検索"
 
@@ -15742,6 +15769,9 @@ msgstr "フィールドを検索..."
 
 msgid "Search for existing or create a new one"
 msgstr "既存のものを検索するか、新しいものを作成してください"
+
+msgid "Search gauges..."
+msgstr ""
 
 msgid "Search items or bins"
 msgstr "アイテムまたはビンを検索"
@@ -15938,6 +15968,9 @@ msgstr "従業員タイプを選択"
 
 msgid "Select field"
 msgstr "フィールドを選択"
+
+msgid "Select gauge"
+msgstr ""
 
 msgid "Select Gauge"
 msgstr "測定器を選択"

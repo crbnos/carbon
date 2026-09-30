@@ -1,6 +1,7 @@
 import { useCarbon } from "@carbon/auth";
 import {
   Button,
+  Combobox,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -126,6 +127,7 @@ type InspectionDocumentEditorProps = {
   features: Array<Record<string, unknown>>;
   balloons: Array<Record<string, unknown>>;
   unitOfMeasures: Array<{ code: string; name: string }>;
+  gaugeTypes: Array<{ id: string; name: string }>;
   // The document's default sampling rule (fallback for features without a
   // rule) and the company's sampling standard for previews.
   sampling: SamplingRule | null;
@@ -378,6 +380,8 @@ type FeatureRow = {
   samplingAql: number | null;
   samplingInspectionLevel: SamplingRule["samplingInspectionLevel"];
   samplingSeverity: SamplingRule["samplingSeverity"];
+  /** Optional gauge type the feature must be measured with. */
+  gaugeTypeId: string | null;
   featureDirty?: boolean;
   geometryDirty?: boolean;
 };
@@ -436,6 +440,32 @@ const ConditionalMeasurementList =
     }
     return EditableList(baseMutation, options)(props);
   };
+
+// Optional gauge type: a clearable list (cleared = any gauge may be used).
+const EditableGaugeType =
+  (
+    baseMutation: FeatureMutationFn,
+    options: { label: string; value: string }[]
+  ) =>
+  ({
+    value,
+    row,
+    accessorKey,
+    onUpdate
+  }: EditableTableCellComponentProps<FeatureRow>) => (
+    <Combobox
+      autoFocus
+      isClearable
+      className="rounded-none"
+      size="sm"
+      value={(value as string | null) ?? undefined}
+      options={options}
+      onChange={(newValue) => {
+        onUpdate({ [accessorKey]: newValue || null });
+        baseMutation(accessorKey, newValue, row);
+      }}
+    />
+  );
 
 const BALLOON_W_NORM = 0.04;
 const BALLOON_H_NORM = 0.04;
@@ -595,6 +625,7 @@ function mapFeatureRowFromRecords(
       null,
     samplingSeverity:
       (feature.samplingSeverity as SamplingRule["samplingSeverity"]) ?? null,
+    gaugeTypeId: (feature.gaugeTypeId as string | null) ?? null,
     featureDirty: false,
     geometryDirty: false
   };
@@ -625,6 +656,7 @@ export default function InspectionDocumentEditor({
   features: initialFeatures,
   balloons,
   unitOfMeasures,
+  gaugeTypes,
   sampling,
   samplingStandard
 }: InspectionDocumentEditorProps) {
@@ -1232,7 +1264,8 @@ export default function InspectionDocumentEditor({
               samplingPercentage: null,
               samplingAql: null,
               samplingInspectionLevel: null,
-              samplingSeverity: null
+              samplingSeverity: null,
+              gaugeTypeId: null
             }
           ];
         });
@@ -2075,7 +2108,8 @@ export default function InspectionDocumentEditor({
         samplingPercentage: r.samplingPercentage,
         samplingAql: r.samplingAql,
         samplingInspectionLevel: r.samplingInspectionLevel,
-        samplingSeverity: r.samplingSeverity
+        samplingSeverity: r.samplingSeverity,
+        gaugeTypeId: r.gaugeTypeId
       }));
 
     const featuresUpdate = featureRows
@@ -2099,7 +2133,8 @@ export default function InspectionDocumentEditor({
         samplingPercentage: r.samplingPercentage,
         samplingAql: r.samplingAql,
         samplingInspectionLevel: r.samplingInspectionLevel,
-        samplingSeverity: r.samplingSeverity
+        samplingSeverity: r.samplingSeverity,
+        gaugeTypeId: r.gaugeTypeId
       }));
 
     formData.set(
@@ -2351,7 +2386,8 @@ export default function InspectionDocumentEditor({
           samplingPercentage: null,
           samplingAql: null,
           samplingInspectionLevel: null,
-          samplingSeverity: null
+          samplingSeverity: null,
+          gaugeTypeId: null
         }
       ];
     });
@@ -2401,7 +2437,8 @@ export default function InspectionDocumentEditor({
         | "tolerancePlus"
         | "toleranceMinus"
         | "units"
-        | "type",
+        | "type"
+        | "gaugeTypeId",
       value: string
     ) => {
       setFeatureRows((prev) =>
@@ -2410,7 +2447,7 @@ export default function InspectionDocumentEditor({
             ? r
             : {
                 ...r,
-                [field]: value,
+                [field]: field === "gaugeTypeId" ? value || null : value,
                 featureDirty: isTempFeatureId(r.featureId)
                   ? r.featureDirty
                   : true
@@ -2432,7 +2469,8 @@ export default function InspectionDocumentEditor({
           | "tolerancePlus"
           | "toleranceMinus"
           | "units"
-          | "type",
+          | "type"
+          | "gaugeTypeId",
         newValue
       );
       return {
@@ -2467,6 +2505,16 @@ export default function InspectionDocumentEditor({
     [unitOfMeasures]
   );
 
+  const gaugeTypeOptions = useMemo(
+    () => gaugeTypes.map((gt) => ({ value: gt.id, label: gt.name })),
+    [gaugeTypes]
+  );
+
+  const gaugeTypeIdToName = useMemo(
+    () => new Map(gaugeTypes.map((gt) => [gt.id, gt.name])),
+    [gaugeTypes]
+  );
+
   const featureEditableComponents = useMemo(
     () => ({
       type: EditableList(featureMutation, featureTypeOptions),
@@ -2475,9 +2523,10 @@ export default function InspectionDocumentEditor({
       nominalValue: ConditionalMeasurementText(featureMutation),
       tolerancePlus: ConditionalMeasurementText(featureMutation),
       toleranceMinus: ConditionalMeasurementText(featureMutation),
-      units: ConditionalMeasurementList(featureMutation, unitOfMeasureOptions)
+      units: ConditionalMeasurementList(featureMutation, unitOfMeasureOptions),
+      gaugeTypeId: EditableGaugeType(featureMutation, gaugeTypeOptions)
     }),
-    [featureMutation, unitOfMeasureOptions]
+    [featureMutation, unitOfMeasureOptions, gaugeTypeOptions]
   );
 
   const featureColumns = useMemo<ColumnDef<FeatureRow>[]>(
@@ -2534,6 +2583,17 @@ export default function InspectionDocumentEditor({
           row.original.type === "Measurement"
             ? (uomCodeToName.get(row.original.units) ?? row.original.units)
             : null
+      },
+      {
+        accessorKey: "gaugeTypeId",
+        header: t`Gauge Type`,
+        size: 160,
+        cell: ({ row }) =>
+          row.original.gaugeTypeId ? (
+            (gaugeTypeIdToName.get(row.original.gaugeTypeId) ?? "—")
+          ) : (
+            <span className="text-muted-foreground">{t`Any`}</span>
+          )
       },
       {
         id: "sampling",
@@ -2617,6 +2677,7 @@ export default function InspectionDocumentEditor({
       handleUnballoon,
       isOverlayReady,
       uomCodeToName,
+      gaugeTypeIdToName,
       t
     ]
   );

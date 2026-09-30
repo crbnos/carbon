@@ -1746,6 +1746,9 @@ msgstr "Все отделы"
 msgid "All Documents"
 msgstr "Все документы"
 
+msgid "All gauges"
+msgstr ""
+
 msgid "All item types"
 msgstr "Все типы номенклатуры"
 
@@ -2006,6 +2009,9 @@ msgstr "Другая единица хранения, в которую влож
 
 msgid "Another system is connected to Ramp as its accounting system"
 msgstr "Другая система подключена к Ramp как система учета"
+
+msgid "Any"
+msgstr ""
 
 msgid "Any item group"
 msgstr "Любая группа товаров"
@@ -3807,6 +3813,9 @@ msgstr "Очистить срок выполнения"
 
 msgid "Clear Filters"
 msgstr "Очистить фильтры"
+
+msgid "Clear gauge"
+msgstr ""
 
 msgid "Clear search"
 msgstr "Очистить поиск"
@@ -7869,6 +7878,9 @@ msgstr "Не удалось загрузить отслеживаемые сущ
 msgid "Failed to move account: {0}"
 msgstr "Не удалось переместить счет: {0}"
 
+msgid "Failed to record gauge"
+msgstr ""
+
 msgid "Failed to regenerate schedule"
 msgstr "Ошибка при пересчете графика"
 
@@ -9075,6 +9087,9 @@ msgstr "Неактивно"
 
 msgid "Inactive actions will not appear in selection lists"
 msgstr "Неактивные действия не будут отображаться в списках выбора"
+
+msgid "Inactive gauge"
+msgstr ""
 
 msgid "Inbound inspection"
 msgstr "Входной контроль"
@@ -11642,6 +11657,9 @@ msgstr "Прогноз недоступен для этой работы."
 msgid "No Gauge Selected"
 msgstr "Средство измерения не выбрано"
 
+msgid "No gauges found."
+msgstr ""
+
 msgid "No grouped notifications"
 msgstr "Нет сгруппированных уведомлений"
 
@@ -12705,6 +12723,9 @@ msgstr "В противном случае"
 
 msgid "Out"
 msgstr "Вне"
+
+msgid "Out of calibration"
+msgstr ""
 
 msgid "Outgoing"
 msgstr "Исходящие"
@@ -14373,6 +14394,9 @@ msgstr "Недавние платежи"
 msgid "Recently Created"
 msgstr "Недавно созданные"
 
+msgid "Recently used"
+msgstr ""
+
 msgid "Recertify Every (Days)"
 msgstr "Пересертификация каждые (дни)"
 
@@ -15698,6 +15722,9 @@ msgstr "Списано"
 msgid "Search"
 msgstr "Поиск"
 
+msgid "Search {gaugeTypeName}..."
+msgstr ""
+
 msgid "Search accounts"
 msgstr "Поиск счетов"
 
@@ -15742,6 +15769,9 @@ msgstr "Поиск полей..."
 
 msgid "Search for existing or create a new one"
 msgstr "Поиск существующей или создание новой"
+
+msgid "Search gauges..."
+msgstr ""
 
 msgid "Search items or bins"
 msgstr "Поиск номенклатуры или ячеек"
@@ -15938,6 +15968,9 @@ msgstr "Выберите тип сотрудника"
 
 msgid "Select field"
 msgstr "Выберите поле"
+
+msgid "Select gauge"
+msgstr ""
 
 msgid "Select Gauge"
 msgstr "Выбрать средство измерения"

@@ -1746,6 +1746,9 @@ msgstr "모든 부서"
 msgid "All Documents"
 msgstr "모든 문서"
 
+msgid "All gauges"
+msgstr ""
+
 msgid "All item types"
 msgstr "모든 품목 유형"
 
@@ -2006,6 +2009,9 @@ msgstr "이것이 중첩되는 다른 보관 단위 (예: 랙 내의 빈); 같�
 
 msgid "Another system is connected to Ramp as its accounting system"
 msgstr "다른 시스템이 Ramp에 회계 시스템으로 연결되어 있습니다"
+
+msgid "Any"
+msgstr ""
 
 msgid "Any item group"
 msgstr "모든 품목 그룹"
@@ -3807,6 +3813,9 @@ msgstr "마감일 지우기"
 
 msgid "Clear Filters"
 msgstr "필터 지우기"
+
+msgid "Clear gauge"
+msgstr ""
 
 msgid "Clear search"
 msgstr "검색어 지우기"
@@ -7869,6 +7878,9 @@ msgstr "추적 개체를 불러오지 못했습니다"
 msgid "Failed to move account: {0}"
 msgstr "계정 이동 실패: {0}"
 
+msgid "Failed to record gauge"
+msgstr ""
+
 msgid "Failed to regenerate schedule"
 msgstr "일정 재생성 실패"
 
@@ -9075,6 +9087,9 @@ msgstr "비활성"
 
 msgid "Inactive actions will not appear in selection lists"
 msgstr "비활성 조치는 선택 목록에 표시되지 않습니다"
+
+msgid "Inactive gauge"
+msgstr ""
 
 msgid "Inbound inspection"
 msgstr "수입 검사"
@@ -11642,6 +11657,9 @@ msgstr "이 작업 지시에 대한 예측이 없습니다."
 msgid "No Gauge Selected"
 msgstr "선택된 계측기 없음"
 
+msgid "No gauges found."
+msgstr ""
+
 msgid "No grouped notifications"
 msgstr "그룹화된 알림이 없습니다"
 
@@ -12705,6 +12723,9 @@ msgstr "그 외에"
 
 msgid "Out"
 msgstr "출고"
+
+msgid "Out of calibration"
+msgstr ""
 
 msgid "Outgoing"
 msgstr "발신"
@@ -14373,6 +14394,9 @@ msgstr "최근 지불"
 msgid "Recently Created"
 msgstr "최근 생성됨"
 
+msgid "Recently used"
+msgstr ""
+
 msgid "Recertify Every (Days)"
 msgstr "매 (Days)마다 재인증"
 
@@ -15698,6 +15722,9 @@ msgstr "폐기됨"
 msgid "Search"
 msgstr "검색"
 
+msgid "Search {gaugeTypeName}..."
+msgstr ""
+
 msgid "Search accounts"
 msgstr "계정 검색"
 
@@ -15742,6 +15769,9 @@ msgstr "필드 검색..."
 
 msgid "Search for existing or create a new one"
 msgstr "기존 항목을 검색하거나 새로 생성하세요"
+
+msgid "Search gauges..."
+msgstr ""
 
 msgid "Search items or bins"
 msgstr "품목 또는 빈 검색"
@@ -15938,6 +15968,9 @@ msgstr "직원 유형 선택"
 
 msgid "Select field"
 msgstr "필드 선택"
+
+msgid "Select gauge"
+msgstr ""
 
 msgid "Select Gauge"
 msgstr "계측기 선택"

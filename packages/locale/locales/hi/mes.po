@@ -148,6 +148,9 @@ msgstr "सभी"
 msgid "All clear"
 msgstr "सब कुछ स्पष्ट"
 
+msgid "All gauges"
+msgstr ""
+
 msgid "All jobs"
 msgstr "सभी जॉब"
 
@@ -282,6 +285,9 @@ msgstr "साफ़ करें"
 
 msgid "Clear Filters"
 msgstr "फ़िल्टर साफ़ करें"
+
+msgid "Clear gauge"
+msgstr ""
 
 msgid "Clear Search"
 msgstr "खोज साफ़ करें"
@@ -584,6 +590,9 @@ msgstr "चल रहे ऑपरेशन प्राप्त करने �
 msgid "Failed to fetch storageUnits"
 msgstr "storageUnits को प्राप्त करने में विफल"
 
+msgid "Failed to record gauge"
+msgstr ""
+
 msgid "Failed to save measurement"
 msgstr "माप को सहेजने में विफल"
 
@@ -648,6 +657,9 @@ msgstr "पूर्ण करने से पहले हाइलाइट �
 msgid "Forgot to Clock Out?"
 msgstr "कार्य समाप्त करना भूल गए?"
 
+msgid "Gauge"
+msgstr ""
+
 msgid "General"
 msgstr "सामान्य"
 
@@ -690,6 +702,9 @@ msgstr "{0} में"
 
 msgid "In Progress"
 msgstr "प्रगति में"
+
+msgid "Inactive gauge"
+msgstr ""
 
 msgid "Inspect Item"
 msgstr "आइटम का निरीक्षण करें"
@@ -962,6 +977,9 @@ msgstr "आपको कोई असाइन किया गया रखर�
 msgid "No files"
 msgstr "कोई फ़ाइलें नहीं"
 
+msgid "No gauges found."
+msgstr ""
+
 msgid "No Impact"
 msgstr "कोई प्रभाव नहीं"
 
@@ -1129,6 +1147,9 @@ msgstr "वैकल्पिक"
 msgid "or"
 msgstr "या"
 
+msgid "Out of calibration"
+msgstr ""
+
 msgid "Output lot"
 msgstr "आउटपुट लॉट"
 
@@ -1279,6 +1300,9 @@ msgstr "पुनः कार्य का कारण"
 msgid "Recent"
 msgstr "हाल ही में"
 
+msgid "Recently used"
+msgstr ""
+
 msgid "Record"
 msgstr "रिकॉर्ड"
 
@@ -1410,8 +1434,14 @@ msgstr "चयनित सीरीयल को स्क्रैप कि�
 msgid "Search"
 msgstr "खोजें"
 
+msgid "Search {gaugeTypeName}..."
+msgstr ""
+
 msgid "Search by job or item ID"
 msgstr "जॉब या आइटम आईडी से खोजें"
+
+msgid "Search gauges..."
+msgstr ""
 
 msgid "Search operators..."
 msgstr "ऑपरेटर खोजें..."
@@ -1446,6 +1476,9 @@ msgstr "एक आइटम चुनें..."
 #. placeholder {0}: index + 1
 msgid "Select Batch {0}"
 msgstr "बैच {0} चुनें"
+
+msgid "Select gauge"
+msgstr ""
 
 msgid "Select Printer"
 msgstr "प्रिंटर चुनें"

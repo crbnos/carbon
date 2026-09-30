@@ -51,6 +51,7 @@ import { QuantityModal } from "~/components/JobOperation/components/QuantityModa
 import { ReworkModal } from "~/components/JobOperation/components/ReworkModal";
 import { useUser } from "~/hooks";
 import type {
+  InspectionGauge,
   InspectionMeasurement,
   Inspection as InspectionRow,
   InspectionSample,
@@ -115,6 +116,10 @@ type InspectionViewProps = {
   samples: InspectionSample[];
   features: InspectionSamplingPlan[];
   measurements: InspectionMeasurement[];
+  // Active gauges, and the ones most recently recorded at this operation's
+  // work center, newest first.
+  gauges: InspectionGauge[];
+  recentGaugeIds: string[];
   balloons: DrawingBalloonRow[];
   documentName: string | null;
   pdfUrl: string | null;
@@ -144,6 +149,8 @@ export function InspectionView({
   samples,
   features,
   measurements,
+  gauges,
+  recentGaugeIds,
   balloons,
   documentName,
   pdfUrl,
@@ -830,6 +837,8 @@ export function InspectionView({
                 features={features}
                 samples={samples}
                 measurements={measurements}
+                gauges={gauges}
+                recentGaugeIds={recentGaugeIds}
                 maxSampleSize={maxSampleSize}
                 lotSize={inspection.lotSize}
                 lotAcceptanceNumber={inspection.acceptanceNumber}
@@ -851,6 +860,8 @@ export function InspectionView({
               features={features}
               samples={samples}
               measurements={measurements}
+              gauges={gauges}
+              recentGaugeIds={recentGaugeIds}
               maxSampleSize={maxSampleSize}
               lotSize={inspection.lotSize}
               lotAcceptanceNumber={inspection.acceptanceNumber}

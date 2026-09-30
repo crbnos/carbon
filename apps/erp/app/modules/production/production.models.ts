@@ -1895,6 +1895,12 @@ const inspectionFeatureSamplingFieldsValidator = {
   samplingSeverity: z.enum(inspectionSeverities).nullable().optional()
 };
 
+// The gauge type a feature must be measured with (optional). The save RPC
+// refuses another company's gauge type.
+const inspectionFeatureGaugeTypeValidator = {
+  gaugeTypeId: z.string().min(1).nullable().optional()
+};
+
 export const inspectionSaveFeatureCreateItemValidator = z
   .object({
     tempId: z.string().min(1),
@@ -1906,7 +1912,8 @@ export const inspectionSaveFeatureCreateItemValidator = z
     toleranceMinus: z.string().nullable().optional(),
     unit: z.string().nullable().optional(),
     type: z.enum(procedureStepType).optional(),
-    ...inspectionFeatureSamplingFieldsValidator
+    ...inspectionFeatureSamplingFieldsValidator,
+    ...inspectionFeatureGaugeTypeValidator
   })
   .strict();
 
@@ -1921,7 +1928,8 @@ export const inspectionSaveFeatureUpdateItemValidator = z
     toleranceMinus: z.string().nullable().optional(),
     unit: z.string().nullable().optional(),
     type: z.enum(procedureStepType).optional(),
-    ...inspectionFeatureSamplingFieldsValidator
+    ...inspectionFeatureSamplingFieldsValidator,
+    ...inspectionFeatureGaugeTypeValidator
   })
   .strict();
 

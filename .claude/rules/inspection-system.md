@@ -140,6 +140,30 @@ Execution-layer tables (`20260722040401_inbound-inspection-execution.sql`):
 
 RLS on all tables: standard SELECT/INSERT/UPDATE/DELETE gated by `quality_view/create/update/delete`.
 
+## Gauges (`20260929203517_inspection-gauges.sql`)
+
+- **Plan side** — `inspectionFeature.gaugeTypeId` (nullable FK → `gaugeType`,
+  ON DELETE SET NULL): the gauge TYPE a feature must be measured with. Edited in
+  the inspection plan editor's **Gauge Type** column (clearable = any gauge),
+  persisted by the `save_inspection_document_atomic` fork in that migration,
+  which refuses another company's gauge type (the FK alone would accept it).
+- **Execution side** — the gauge actually used is recorded per **lot × feature**
+  on `inspectionSamplingPlan.gaugeId` (+ `gaugeRecordedAt`), not per
+  measurement — one gauge per characteristic per lot, as SAP QM / FAI forms do.
+  Written by `recordInspectionGauge` (`@carbon/database/quality`): closed-lot
+  guard, company-scoped gauge, refuses `Inactive` gauges and a gauge whose type
+  differs from the feature's `gaugeTypeId`. Out-of-calibration is shown
+  (amber icon / badge) but does NOT block. Routes: ERP `x+/inspection+/$id.gauge.tsx`,
+  MES `x+/inspection-lot.$id.gauge.tsx` (`path.to.inspectionGauge`), quiet POSTs
+  like the measurement cells.
+- **Picker** — `InspectionGaugePicker` (ERP `ui/Inspections/`, touch-sized copy in
+  MES `components/Inspection/`): a button filling the whole Gauge cell opens a
+  search + list of Active gauges (the `gauges` view, filtered to the feature's
+  type). "Recently used" comes first — `getRecentInspectionGauges` returns the
+  gauges most recently recorded at the lot's **station**: a Job Operation lot's
+  station is its operation's `workCenterId`; **all receipts are one station**.
+  No Gauge column on the no-document "Overall result" row.
+
 ## Receipt → inspection flow (`post-receipt/index.ts`, Supabase edge fn)
 
 `packages/database/supabase/functions/post-receipt/index.ts` (inserts ~line 700):

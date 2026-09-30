@@ -148,6 +148,9 @@ msgstr "Tümü"
 msgid "All clear"
 msgstr "Tamamen temiz"
 
+msgid "All gauges"
+msgstr ""
+
 msgid "All jobs"
 msgstr "Tüm iş emirleri"
 
@@ -282,6 +285,9 @@ msgstr "Temizle"
 
 msgid "Clear Filters"
 msgstr "Filtreleri Temizle"
+
+msgid "Clear gauge"
+msgstr ""
 
 msgid "Clear Search"
 msgstr "Aramayı Temizle"
@@ -584,6 +590,9 @@ msgstr "Aktif operasyonlar alınamadı"
 msgid "Failed to fetch storageUnits"
 msgstr "Depolama birimlerini almak başarısız oldu"
 
+msgid "Failed to record gauge"
+msgstr ""
+
 msgid "Failed to save measurement"
 msgstr "Ölçüm kaydedilemedi"
 
@@ -648,6 +657,9 @@ msgstr "Tamamlamadan önce vurgulanan miktarları düzeltin."
 msgid "Forgot to Clock Out?"
 msgstr "İş bitişini unutmuş musunuz?"
 
+msgid "Gauge"
+msgstr ""
+
 msgid "General"
 msgstr "Genel"
 
@@ -690,6 +702,9 @@ msgstr "{0} içinde"
 
 msgid "In Progress"
 msgstr "Devam Ediyor"
+
+msgid "Inactive gauge"
+msgstr ""
 
 msgid "Inspect Item"
 msgstr "Ürünü İncele"
@@ -962,6 +977,9 @@ msgstr "Size atanmış bakım emri yok"
 msgid "No files"
 msgstr "Dosya yok"
 
+msgid "No gauges found."
+msgstr ""
+
 msgid "No Impact"
 msgstr "Etki Yok"
 
@@ -1129,6 +1147,9 @@ msgstr "İsteğe bağlı"
 msgid "or"
 msgstr "veya"
 
+msgid "Out of calibration"
+msgstr ""
+
 msgid "Output lot"
 msgstr "Çıktı Lotu"
 
@@ -1279,6 +1300,9 @@ msgstr "Yeniden işleme nedeni"
 msgid "Recent"
 msgstr "Son"
 
+msgid "Recently used"
+msgstr ""
+
 msgid "Record"
 msgstr "Kaydet"
 
@@ -1410,8 +1434,14 @@ msgstr "Seçilen serinin hurdası"
 msgid "Search"
 msgstr "Ara"
 
+msgid "Search {gaugeTypeName}..."
+msgstr ""
+
 msgid "Search by job or item ID"
 msgstr "İş veya ürün kimliği ile ara"
+
+msgid "Search gauges..."
+msgstr ""
 
 msgid "Search operators..."
 msgstr "Operatörleri ara..."
@@ -1446,6 +1476,9 @@ msgstr "Bir ürün seçin..."
 #. placeholder {0}: index + 1
 msgid "Select Batch {0}"
 msgstr "Seçilecek Parti {0}"
+
+msgid "Select gauge"
+msgstr ""
 
 msgid "Select Printer"
 msgstr "Yazıcı Seç"

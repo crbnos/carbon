@@ -148,6 +148,9 @@ msgstr "すべて"
 msgid "All clear"
 msgstr "異常なし"
 
+msgid "All gauges"
+msgstr ""
+
 msgid "All jobs"
 msgstr "すべての製造指図"
 
@@ -282,6 +285,9 @@ msgstr "クリア"
 
 msgid "Clear Filters"
 msgstr "絞り込みをクリア"
+
+msgid "Clear gauge"
+msgstr ""
 
 msgid "Clear Search"
 msgstr "検索をクリア"
@@ -584,6 +590,9 @@ msgstr "アクティブな工程の取得に失敗しました"
 msgid "Failed to fetch storageUnits"
 msgstr "storageUnitsの取得に失敗しました"
 
+msgid "Failed to record gauge"
+msgstr ""
+
 msgid "Failed to save measurement"
 msgstr "測定の保存に失敗しました"
 
@@ -648,6 +657,9 @@ msgstr "完了する前に、ハイライトされた数量を修正してくだ
 msgid "Forgot to Clock Out?"
 msgstr "作業終了を忘れていませんか？"
 
+msgid "Gauge"
+msgstr ""
+
 msgid "General"
 msgstr "一般"
 
@@ -690,6 +702,9 @@ msgstr "{0}で"
 
 msgid "In Progress"
 msgstr "進行中"
+
+msgid "Inactive gauge"
+msgstr ""
 
 msgid "Inspect Item"
 msgstr "アイテムを検査"
@@ -962,6 +977,9 @@ msgstr "あなたに割り当てられた保全指示はありません。"
 msgid "No files"
 msgstr "ファイルなし"
 
+msgid "No gauges found."
+msgstr ""
+
 msgid "No Impact"
 msgstr "影響なし"
 
@@ -1129,6 +1147,9 @@ msgstr "オプション"
 msgid "or"
 msgstr "または"
 
+msgid "Out of calibration"
+msgstr ""
+
 msgid "Output lot"
 msgstr "出力ロット"
 
@@ -1279,6 +1300,9 @@ msgstr "手直しの理由"
 msgid "Recent"
 msgstr "最近"
 
+msgid "Recently used"
+msgstr ""
+
 msgid "Record"
 msgstr "記録"
 
@@ -1410,8 +1434,14 @@ msgstr "選択したシリアルをスクラップ中"
 msgid "Search"
 msgstr "検索"
 
+msgid "Search {gaugeTypeName}..."
+msgstr ""
+
 msgid "Search by job or item ID"
 msgstr "ジョブまたはアイテムIDで検索"
+
+msgid "Search gauges..."
+msgstr ""
 
 msgid "Search operators..."
 msgstr "作業者を検索..."
@@ -1446,6 +1476,9 @@ msgstr "品目を選択..."
 #. placeholder {0}: index + 1
 msgid "Select Batch {0}"
 msgstr "バッチ {0} を選択"
+
+msgid "Select gauge"
+msgstr ""
 
 msgid "Select Printer"
 msgstr "プリンターを選択"
