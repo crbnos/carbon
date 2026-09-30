@@ -137,6 +137,9 @@ not substring filtering. The typed, tested logic lives OUTSIDE the
   size, plus the compact response schema when the generator derived one.
 - Server instructions live in `packages/ee/src/mcp/instructions.ts` (module list + interpolated
   `MCP_DEFAULT_LIMIT`), importable by tests without server.ts's auth/env chain.
+- The in-app agent's `search_docs` reuses this engine over the docs corpus —
+  `createDocSearch` in `packages/ee/src/mcp/doc-search.ts` shares `expandQueryTerm`
+  (so a new alias improves both) and the typo retry.
 - Pinned by `lib/catalog-search.test.ts` and `lib/describe-format.test.ts`;
   `lib/manifest.ts` carries its own copies of the meta-tool descriptions
   (pinned >40 chars by `manifest.test.ts`) — keep them in sync with

@@ -38,7 +38,11 @@ All three machine-readable consumers strip MDX through the one `stripComponents`
 
 ## How the agent uses it
 
-`apps/erp/app/modules/agent/agent.kb.ts` ranks `agentDocs` by keyword (metadata hits weigh
-double) for `search_docs`; `read_doc` returns a page by its public URL
+`apps/erp/app/modules/agent/agent.kb.ts` answers `search_docs` with `createDocSearch` from
+`@carbon/ee/mcp` (`packages/ee/src/mcp/doc-search.ts`) — the MCP `search_tools` engine
+(zbsearch BM25 + prefix, `SEARCH_ALIASES` via `expandQueryTerm`, one-edit typo retry) over
+title/keywords/headings/description/body. It stays in `packages/ee` on purpose: the licence
+split is kept, so `@carbon/content` holds the corpus and ee holds the ranking. Pinned against
+the real corpus by `agent.kb.test.ts`. `read_doc` returns a page by its public URL
 (`https://docs.carbon.ms/<slug>`). The agent only ever sees URLs — slugs/file paths are never
 surfaced to the user.
