@@ -24,8 +24,12 @@
   </p>
 
   <p>
-    <a href="https://github.com/crbnos/carbon/stargazers"><img src="https://img.shields.io/github/stars/crbnos/carbon?style=flat-square&logo=github&label=Stars&color=000000" alt="GitHub stars" /></a>
-    <a href="https://github.com/crbnos/carbon/actions/workflows/check.yml"><img src="https://img.shields.io/github/actions/workflow/status/crbnos/carbon/check.yml?branch=main&style=flat-square&label=CI" alt="CI" /></a>
+    <a href="https://github.com/crbnos/carbon/stargazers"><img src="https://img.shields.io/github/stars/crbnos/carbon?style=flat-square&logo=github&label=Stars&color=000000&labelColor=000000" alt="GitHub stars" /></a>
+    <a href="https://discord.gg/yGUJWhNqzy"><img src="https://img.shields.io/badge/Discord-000000?style=flat-square&logo=discord&logoColor=white" alt="Discord" /></a>
+    <img src="https://img.shields.io/badge/TypeScript-000000?style=flat-square&logo=typescript&logoColor=white" alt="TypeScript" />
+    <img src="https://img.shields.io/badge/React-000000?style=flat-square&logo=react&logoColor=white" alt="React" />
+    <img src="https://img.shields.io/badge/Postgres-000000?style=flat-square&logo=postgresql&logoColor=white" alt="Postgres" />
+    <img src="https://img.shields.io/badge/Rust-000000?style=flat-square&logo=rust&logoColor=white" alt="Rust" />
     <a href="LICENSE"><img src="https://img.shields.io/badge/License-AGPL--3.0-000000?style=flat-square" alt="License: AGPL-3.0" /></a>
   </p>
 </div>
