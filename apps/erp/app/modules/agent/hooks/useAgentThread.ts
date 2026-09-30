@@ -1,7 +1,7 @@
 import { useChat } from "@ai-sdk/react";
 import { DefaultChatTransport, type UIMessage } from "ai";
 import posthog from "posthog-js";
-import { useCallback, useEffect, useMemo, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useAgentStore } from "~/stores/agent";
 import { path } from "~/utils/path";
 import { isUiBlockTool } from "../agent.blocks";
@@ -18,6 +18,15 @@ type DbPart = {
   toolOutput: unknown;
 };
 type DbMessage = { id: string; role: string; parts?: DbPart[] };
+
+/** The text of the newest user message — the only thing a send puts on the wire. */
+function lastUserText(messages: UIMessage[]): string | undefined {
+  const last = messages.findLast((m) => m.role === "user");
+  return last?.parts
+    .map((p) => (p.type === "text" ? p.text : ""))
+    .join("")
+    .trim();
+}
 
 // Rebuild persisted rows into the AI SDK's UIMessage shape for history replay.
 // Only text and UI-block tool parts are reconstructed — read-tool step lines are
@@ -75,10 +84,15 @@ export function useAgentThread() {
     () =>
       new DefaultChatTransport({
         api: path.to.api.agentChat,
-        prepareSendMessagesRequest: ({ messages }) => ({
+        // Only the new question travels: the server loads the thread's history itself,
+        // so nothing held in the browser reaches the model. A retry sends no text and
+        // the server answers the stored, unanswered question.
+        prepareSendMessagesRequest: ({ messages, trigger }) => ({
           body: {
-            messages,
             threadId: threadIdRef.current,
+            trigger,
+            text:
+              trigger === "submit-message" ? lastUserText(messages) : undefined,
             context: contextRef.current
           }
         })
@@ -86,9 +100,19 @@ export function useAgentThread() {
     []
   );
 
-  const { messages, sendMessage, setMessages, status, stop, error } = useChat({
-    transport
-  });
+  const {
+    messages,
+    sendMessage,
+    setMessages,
+    status,
+    stop,
+    error: chatError,
+    regenerate,
+    clearError
+  } = useChat({ transport });
+  // Set when a send could not even start (no thread); the chat's own error covers the rest.
+  const [sendError, setSendError] = useState<Error | null>(null);
+  const error = chatError ?? sendError ?? undefined;
 
   const isStreaming = status === "streaming" || status === "submitted";
   const isStreamingRef = useRef(isStreaming);
@@ -153,25 +177,47 @@ export function useAgentThread() {
       posthog.capture("agent_message_sent", {
         hasContext: !!contextRef.current
       });
-      await ensureThread();
+      setSendError(null);
+      const id = await ensureThread();
+      if (!id) {
+        setSendError(new Error("Could not start a conversation"));
+        return;
+      }
       sendMessage({ text });
     } finally {
       isPreparingRef.current = false;
     }
   }
 
+  // Re-answer the last question after a failed turn, from the stored thread.
+  const retry = useCallback(() => {
+    if (isStreamingRef.current) return;
+    setSendError(null);
+    clearError();
+    void regenerate();
+  }, [clearError, regenerate]);
+
   // Reset in place (no navigation) so the panel never flickers closed.
   const newThread = useCallback(() => {
+    void stop();
     setMessages([]);
+    setSendError(null);
     setThread(null);
     threadIdRef.current = null;
-  }, [setMessages, setThread]);
+  }, [setMessages, setThread, stop]);
 
+  // Switching threads stops the current answer, and a slow response for a thread the
+  // user has already left is ignored, so one thread's messages never show under another.
+  const loadSeq = useRef(0);
   const loadThread = useCallback(
     async (id: string) => {
+      const seq = ++loadSeq.current;
+      void stop();
+      setSendError(null);
       setThread(id);
       threadIdRef.current = id;
       const res = await fetch(path.to.api.agentThread(id));
+      if (seq !== loadSeq.current) return;
       if (!res.ok) {
         // Stale/archived thread (e.g. a persisted id resumed from a previous
         // session) — fall back to a fresh chat so sends don't post to a dead thread.
@@ -179,9 +225,10 @@ export function useAgentThread() {
         return;
       }
       const data = (await res.json()) as { messages?: DbMessage[] };
+      if (seq !== loadSeq.current) return;
       setMessages(reconstructMessages(data.messages ?? []));
     },
-    [newThread, setMessages, setThread]
+    [newThread, setMessages, setThread, stop]
   );
 
   // Resume the last chat when the panel opens: if it mounted with a persisted thread
@@ -199,6 +246,7 @@ export function useAgentThread() {
     error,
     isStreaming,
     send,
+    retry,
     stop,
     loadThread,
     newThread,

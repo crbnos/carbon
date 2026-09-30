@@ -1,31 +1,18 @@
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { companyHasFeature } from "@carbon/ee/plan.server";
-import type { UIMessage } from "ai";
+import { getLogger } from "@carbon/logger";
 import type { ActionFunctionArgs } from "react-router";
 import {
   assertAgentRateLimit,
   chatRequest,
-  createThread,
+  getModelHistory,
+  getThread,
   saveUserMessage,
   streamChat
 } from "~/modules/agent";
+import { getDatabaseClient } from "~/services/database.server";
 
-function extractText(message: unknown): string {
-  const m = message as
-    | { content?: unknown; parts?: Array<{ type?: string; text?: string }> }
-    | undefined;
-  if (!m) return "";
-  if (typeof m.content === "string") return m.content;
-  const parts = Array.isArray(m.parts)
-    ? m.parts
-    : Array.isArray(m.content)
-      ? (m.content as Array<{ type?: string; text?: string }>)
-      : [];
-  return parts
-    .filter((p) => p?.type === "text")
-    .map((p) => p.text ?? "")
-    .join("");
-}
+const logger = getLogger("erp", "agent-chat");
 
 export async function action({ request }: ActionFunctionArgs) {
   const { client, companyId, companyGroupId, userId } =
@@ -40,38 +27,63 @@ export async function action({ request }: ActionFunctionArgs) {
 
   await assertAgentRateLimit(userId, companyId);
 
-  const parsed = chatRequest.parse(await request.json());
-
-  let threadId = parsed.threadId;
-  if (!threadId) {
-    const created = await createThread(client, {
-      companyId,
-      userId,
-      context: parsed.context
-    });
-    if (created.error || !created.data) {
-      throw new Response("Failed to create thread", { status: 500 });
-    }
-    threadId = created.data.id;
+  const parsed = chatRequest.safeParse(await request.json());
+  if (!parsed.success) {
+    throw new Response("Invalid request", { status: 400 });
   }
+  const { threadId, trigger, text, context } = parsed.data;
 
-  const text = extractText(parsed.messages[parsed.messages.length - 1]);
-  if (text) {
-    await saveUserMessage(client, {
+  // The browser sends only its new message and a thread id; the thread must be the
+  // caller's own before anything is written to it or read back into the model.
+  const thread = await getThread(client, { threadId, companyId, userId });
+  if (thread.error) {
+    logger.error("Failed to read agent thread", {
+      companyId,
       threadId,
-      companyId,
-      userId,
-      text,
-      context: parsed.context
+      error: thread.error
     });
+    throw new Response("Failed to load the conversation", { status: 500 });
+  }
+  if (!thread.data) {
+    throw new Response("Conversation not found", { status: 404 });
   }
 
-  return streamChat(client, {
+  const db = getDatabaseClient();
+  if (trigger === "submit-message" && text) {
+    try {
+      await saveUserMessage(db, { threadId, companyId, userId, text, context });
+    } catch (error) {
+      logger.error("Failed to save agent message", {
+        companyId,
+        threadId,
+        error
+      });
+      throw new Response("Failed to save your message", { status: 500 });
+    }
+  }
+
+  const history = await getModelHistory(client, { threadId, companyId });
+  if (history.error || !history.data) {
+    logger.error("Failed to load agent history", {
+      companyId,
+      threadId,
+      error: history.error
+    });
+    throw new Response("Failed to load the conversation", { status: 500 });
+  }
+  // A retry answers the stored, unanswered question; with none there is nothing to do.
+  if (history.data.at(-1)?.role !== "user") {
+    throw new Response("There is no question to answer", { status: 409 });
+  }
+
+  return streamChat(client, db, {
     companyId,
     companyGroupId,
     userId,
     threadId,
-    messages: parsed.messages as UIMessage[],
-    context: parsed.context
+    history: history.data,
+    context,
+    isNewQuestion: trigger === "submit-message",
+    abortSignal: request.signal
   });
 }

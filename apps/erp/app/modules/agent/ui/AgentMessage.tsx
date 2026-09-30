@@ -111,7 +111,7 @@ export function AgentMessage({
         })}
       </div>
       {!isUser && isLast && !isStreaming && threadId && (
-        <AgentFeedback threadId={threadId} />
+        <AgentFeedback messageId={message.id} />
       )}
     </div>
   );

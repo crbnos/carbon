@@ -1,3 +1,4 @@
+import { Button } from "@carbon/react";
 import type { UIMessage } from "ai";
 import { AgentGreeting } from "./AgentGreeting";
 import { AgentMessage } from "./AgentMessage";
@@ -7,12 +8,14 @@ export function AgentMessageList({
   messages,
   threadId,
   error,
-  isStreaming
+  isStreaming,
+  onRetry
 }: {
   messages: UIMessage[];
   threadId: string | null;
   error?: Error;
   isStreaming: boolean;
+  onRetry: () => void;
 }) {
   if (messages.length === 0) {
     return <AgentGreeting />;
@@ -42,8 +45,11 @@ export function AgentMessageList({
       ))}
       {showThinking && <AgentThinking />}
       {error && (
-        <div className="text-sm text-destructive">
-          Something went wrong. Please try again.
+        <div className="flex items-center gap-2 text-sm text-destructive">
+          <span>Something went wrong.</span>
+          <Button variant="secondary" size="sm" onClick={onRetry}>
+            Retry
+          </Button>
         </div>
       )}
     </div>

@@ -1,12 +1,16 @@
 import type { Database } from "@carbon/database";
+import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import { Ratelimit, redis } from "@carbon/kv";
 import { getLogger } from "@carbon/logger";
 import { agentChatModel, agentProvider, agentTitleModel } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import {
+  consumeStream,
   convertToModelMessages,
+  createIdGenerator,
   generateText,
   getToolName,
+  hasToolCall,
   isToolUIPart,
   type ModelMessage,
   stepCountIs,
@@ -14,11 +18,7 @@ import {
   type UIMessage
 } from "ai";
 import { isEphemeralTool, isUiBlockTool } from "./agent.blocks";
-import {
-  compactEarlierToolOutputs,
-  HISTORY_CHAR_BUDGET,
-  windowByChars
-} from "./agent.history";
+import { buildModelHistory, type StoredMessage } from "./agent.history";
 import { buildSystemPrompt } from "./agent.prompt";
 import { agentModel } from "./agent.provider";
 import { createAgentTools } from "./agent.tools";
@@ -29,6 +29,20 @@ const log = getLogger("erp", "agent");
 // Every step re-sends the whole context. A docs answer is search → read → answer, with a
 // read or two more at most, so a few steps cover it and bound the worst-case cost.
 const MAX_STEPS = 6;
+
+// The assistant message id is minted here and becomes the row's id, so the browser's
+// copy of an answer and its database row share one id (feedback targets it).
+const newAssistantMessageId = createIdGenerator({
+  prefix: "agm",
+  separator: "_",
+  size: 20
+});
+
+// What the browser sees when a turn fails; the real error is logged, never streamed.
+const TURN_FAILED_MESSAGE =
+  "The assistant couldn't answer that. Please try again.";
+
+const DOC_TOOLS = new Set(["search_docs", "read_doc"]);
 
 const agentRatelimit = new Ratelimit({
   redis,
@@ -63,8 +77,26 @@ export async function createThread(
     .single();
 }
 
-export async function saveUserMessage(
+/** The caller's own thread, or null. Every read or write of a thread checks this first. */
+export async function getThread(
   client: SupabaseClient<Database>,
+  args: { threadId: string; companyId: string; userId: string }
+) {
+  return client
+    .from("agentThread")
+    .select("id")
+    .eq("id", args.threadId)
+    .eq("companyId", args.companyId)
+    .eq("userId", args.userId)
+    .maybeSingle();
+}
+
+/**
+ * Save the user's question and its text part in one transaction. Kysely bypasses RLS:
+ * the chat route has already checked the thread belongs to this user and company.
+ */
+export async function saveUserMessage(
+  db: Kysely<KyselyDatabase>,
   args: {
     threadId: string;
     companyId: string;
@@ -73,38 +105,31 @@ export async function saveUserMessage(
     context?: BrowsingContext | null;
   }
 ) {
-  const { data: message, error } = await client
-    .from("agentMessage")
-    .insert({
-      threadId: args.threadId,
-      companyId: args.companyId,
-      role: "user",
-      context: args.context ?? null,
-      createdBy: args.userId
-    })
-    .select("id")
-    .single();
-  if (error || !message) return { data: message, error };
-
-  const { error: partError } = await client.from("agentMessagePart").insert({
-    messageId: message.id,
-    companyId: args.companyId,
-    orderIndex: 0,
-    type: "text",
-    textContent: args.text,
-    createdBy: args.userId
+  return db.transaction().execute(async (trx) => {
+    const message = await trx
+      .insertInto("agentMessage")
+      .values({
+        threadId: args.threadId,
+        companyId: args.companyId,
+        role: "user",
+        context: args.context ? JSON.stringify(args.context) : null,
+        createdBy: args.userId
+      })
+      .returning("id")
+      .executeTakeFirstOrThrow();
+    await trx
+      .insertInto("agentMessagePart")
+      .values({
+        messageId: message.id,
+        companyId: args.companyId,
+        orderIndex: 0,
+        type: "text",
+        textContent: args.text,
+        createdBy: args.userId
+      })
+      .execute();
+    return message.id;
   });
-  // supabase-js has no multi-statement transaction; compensate by deleting the parent
-  // so a failed part insert never leaves an empty, unrecoverable message bubble.
-  if (partError) {
-    await client
-      .from("agentMessage")
-      .delete()
-      .eq("id", message.id)
-      .eq("companyId", args.companyId);
-    return { data: null, error: partError };
-  }
-  return { data: message, error: null };
 }
 
 export async function getThreads(
@@ -143,30 +168,36 @@ export async function getMessages(
     .order("createdAt", { ascending: true });
 }
 
+/** The stored thread as the model sees it (see `buildModelHistory`). */
+export async function getModelHistory(
+  client: SupabaseClient<Database>,
+  args: { threadId: string; companyId: string }
+) {
+  const { data, error } = await getMessages(client, args);
+  if (error) return { data: null, error };
+  return {
+    data: buildModelHistory((data ?? []) as StoredMessage[]),
+    error: null
+  };
+}
+
 export async function setFeedback(
   client: SupabaseClient<Database>,
   args: {
-    threadId: string;
+    messageId: string;
     companyId: string;
     feedback: "up" | "down";
     note?: string;
   }
 ) {
-  const { data: latest } = await client
-    .from("agentMessage")
-    .select("id")
-    .eq("threadId", args.threadId)
-    .eq("companyId", args.companyId)
-    .eq("role", "assistant")
-    .order("createdAt", { ascending: false })
-    .limit(1)
-    .maybeSingle();
-  if (!latest) return { data: null, error: null };
   return client
     .from("agentMessage")
     .update({ feedback: args.feedback, feedbackNote: args.note ?? null })
-    .eq("id", latest.id)
-    .eq("companyId", args.companyId);
+    .eq("id", args.messageId)
+    .eq("companyId", args.companyId)
+    .eq("role", "assistant")
+    .select("id")
+    .maybeSingle();
 }
 
 /** Append the browsing context to the latest user message so it travels with the turn. */
@@ -191,19 +222,22 @@ function injectContext(
 
 /**
  * Core streaming turn. Returns the AI SDK UI-message SSE Response for `useChat`.
- * Persists the assistant message + parts on finish, using the SAME normalized
- * UIMessage shape the client (and history load) speak — so read and write stay
- * inverse transforms of one shape rather than two divergent ones.
+ * `history` comes from the database (`getModelHistory`) and ends with the question being
+ * answered; the answer is persisted on finish in one transaction.
  */
 export function streamChat(
   client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   args: {
     companyId: string;
     companyGroupId: string;
     userId: string;
     threadId: string;
-    messages: UIMessage[];
+    history: UIMessage[];
     context?: BrowsingContext | null;
+    /** A new question (not a retry): the thread may need a title. */
+    isNewQuestion: boolean;
+    abortSignal?: AbortSignal;
   }
 ) {
   const ctx = {
@@ -217,13 +251,19 @@ export function streamChat(
     scopes: {}
   };
 
+  // Titling needs only the stored questions, so it runs alongside the answer instead of
+  // holding the stream open for another model round trip at the end.
+  const titling = args.isNewQuestion
+    ? maybeTitleThread(client, {
+        threadId: args.threadId,
+        companyId: args.companyId
+      }).catch((error) => {
+        log.error("Failed to title thread", { error, threadId: args.threadId });
+      })
+    : Promise.resolve();
+
   const modelMessages = injectContext(
-    convertToModelMessages(
-      windowByChars(
-        compactEarlierToolOutputs(args.messages),
-        HISTORY_CHAR_BUDGET
-      )
-    ),
+    convertToModelMessages(args.history),
     args.context
   );
 
@@ -233,13 +273,16 @@ export function streamChat(
   let inputTokens = 0;
   let outputTokens = 0;
   let finishReason = "stop";
+  let failed = false;
 
   const result = streamText({
     model: agentModel(agentChatModel),
     system: buildSystemPrompt(),
     messages: modelMessages,
     tools: createAgentTools(ctx),
-    stopWhen: stepCountIs(MAX_STEPS),
+    abortSignal: args.abortSignal,
+    // present_choice hands the turn back to the user, so the answer ends there.
+    stopWhen: [stepCountIs(MAX_STEPS), hasToolCall("present_choice")],
     // On the final allowed step, forbid tools so the model must write an answer with what
     // it has — instead of ending on a dangling tool call and returning no text.
     prepareStep: ({ stepNumber }) =>
@@ -250,6 +293,7 @@ export function streamChat(
       ? { providerOptions: { openai: { promptCacheKey: "carbon-agent" } } }
       : {}),
     onError: ({ error }) => {
+      failed = true;
       log.error("Agent model call failed", { error, threadId: args.threadId });
     },
     onFinish: (event) => {
@@ -269,36 +313,34 @@ export function streamChat(
   });
 
   return result.toUIMessageStreamResponse({
-    onFinish: async ({ responseMessage }) => {
-      // This callback runs after the stream is handed to the client, so a throw here is
-      // otherwise swallowed silently — log both steps so a persistence failure is diagnosable.
-      try {
-        await persistAssistantTurn(client, {
-          threadId: args.threadId,
-          companyId: args.companyId,
-          userId: args.userId,
-          message: responseMessage,
-          inputTokens,
-          outputTokens,
-          finishReason
-        });
-      } catch (error) {
-        log.error("Failed to persist assistant turn", {
-          error,
-          threadId: args.threadId
-        });
+    // Needed for the SDK to use generateMessageId for the answer.
+    originalMessages: args.history,
+    generateMessageId: newAssistantMessageId,
+    // Keep reading the model stream if the browser disconnects, so onFinish still runs.
+    consumeSseStream: consumeStream,
+    onError: () => TURN_FAILED_MESSAGE,
+    onFinish: async ({ responseMessage, isAborted }) => {
+      // A failed turn is not persisted: the question stays unanswered, and Retry (or the
+      // next question) answers it from the stored thread.
+      if (!failed) {
+        try {
+          await persistAssistantTurn(db, {
+            threadId: args.threadId,
+            companyId: args.companyId,
+            userId: args.userId,
+            message: responseMessage,
+            inputTokens,
+            outputTokens,
+            finishReason: isAborted ? "aborted" : finishReason
+          });
+        } catch (error) {
+          log.error("Failed to persist assistant turn", {
+            error,
+            threadId: args.threadId
+          });
+        }
       }
-      try {
-        await maybeTitleThread(client, {
-          threadId: args.threadId,
-          companyId: args.companyId
-        });
-      } catch (error) {
-        log.error("Failed to title thread", {
-          error,
-          threadId: args.threadId
-        });
-      }
+      await titling;
     }
   });
 }
@@ -359,8 +401,53 @@ async function maybeTitleThread(
     .eq("companyId", args.companyId);
 }
 
+type StoredPart = Omit<
+  Database["public"]["Tables"]["agentMessagePart"]["Insert"],
+  "messageId" | "companyId" | "orderIndex" | "createdBy"
+>;
+
+/** The parts of an answer worth keeping: text, and tool calls that completed. */
+function storedParts(message: UIMessage): StoredPart[] {
+  return message.parts.flatMap((part): StoredPart[] => {
+    if (part.type === "text") {
+      return part.text ? [{ type: "text", textContent: part.text }] : [];
+    }
+    if (!isToolUIPart(part)) return [];
+    const name = getToolName(part);
+    // Ephemeral tools (navigate) are never replayed; a call cut off by Stop has no result.
+    if (isEphemeralTool(name)) return [];
+    if (part.state !== "output-available" && part.state !== "output-error") {
+      return [];
+    }
+    return [
+      {
+        type: "tool",
+        toolName: name,
+        toolClassification: isUiBlockTool(name)
+          ? null
+          : DOC_TOOLS.has(name)
+            ? "DOCS"
+            : "READ",
+        toolCallId: part.toolCallId,
+        toolInput: JSON.stringify(part.input ?? null),
+        toolOutput: JSON.stringify(
+          part.state === "output-error"
+            ? { error: part.errorText }
+            : (part.output ?? null)
+        ),
+        toolState: part.state === "output-available" ? "success" : "error"
+      }
+    ];
+  });
+}
+
+/**
+ * Save the answer and its parts in one transaction, under the id the browser already
+ * has. An answer with nothing to show is not saved. Kysely bypasses RLS: the chat route
+ * checked the thread's ownership before the turn started.
+ */
 async function persistAssistantTurn(
-  client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
   args: {
     threadId: string;
     companyId: string;
@@ -371,67 +458,34 @@ async function persistAssistantTurn(
     finishReason: string;
   }
 ) {
-  const { data: message } = await client
-    .from("agentMessage")
-    .insert({
-      threadId: args.threadId,
-      companyId: args.companyId,
-      role: "assistant",
-      finishReason: args.finishReason,
-      inputTokens: args.inputTokens,
-      outputTokens: args.outputTokens,
-      createdBy: args.userId
-    })
-    .select("id")
-    .single();
-  if (!message) return;
+  const parts = storedParts(args.message);
+  if (parts.length === 0) return;
 
-  const parts: Database["public"]["Tables"]["agentMessagePart"]["Insert"][] =
-    [];
-  let order = 0;
-  for (const part of args.message.parts) {
-    if (part.type === "text" && part.text) {
-      parts.push({
-        messageId: message.id,
+  await db.transaction().execute(async (trx) => {
+    await trx
+      .insertInto("agentMessage")
+      .values({
+        id: args.message.id,
+        threadId: args.threadId,
         companyId: args.companyId,
-        orderIndex: order++,
-        type: "text",
-        textContent: part.text,
+        role: "assistant",
+        finishReason: args.finishReason,
+        inputTokens: args.inputTokens,
+        outputTokens: args.outputTokens,
         createdBy: args.userId
-      });
-    } else if (isToolUIPart(part)) {
-      const name = getToolName(part);
-      if (isEphemeralTool(name)) continue; // e.g. navigate — never persisted, never replayed
-      parts.push({
-        messageId: message.id,
-        companyId: args.companyId,
-        orderIndex: order++,
-        type: "tool",
-        toolName: name,
-        toolClassification: isUiBlockTool(name) ? null : "READ",
-        toolCallId: part.toolCallId,
-        toolInput: (part.input ?? null) as never,
-        toolOutput: (part.state === "output-error"
-          ? { error: part.errorText }
-          : (part.output ?? null)) as never,
-        toolState: part.state === "output-available" ? "success" : "error",
-        createdBy: args.userId
-      });
-    }
-  }
-  if (parts.length > 0) {
-    const { error: partsError } = await client
-      .from("agentMessagePart")
-      .insert(parts);
-    // No multi-statement transaction in supabase-js: roll back the parent message so a
-    // failed parts insert never persists an empty assistant bubble with no recoverable content.
-    if (partsError) {
-      await client
-        .from("agentMessage")
-        .delete()
-        .eq("id", message.id)
-        .eq("companyId", args.companyId);
-      throw partsError;
-    }
-  }
+      })
+      .execute();
+    await trx
+      .insertInto("agentMessagePart")
+      .values(
+        parts.map((part, orderIndex) => ({
+          ...part,
+          messageId: args.message.id,
+          companyId: args.companyId,
+          orderIndex,
+          createdBy: args.userId
+        }))
+      )
+      .execute();
+  });
 }
