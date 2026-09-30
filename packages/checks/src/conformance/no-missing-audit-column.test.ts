@@ -4,7 +4,8 @@ import { noMissingAuditColumn } from "./no-missing-audit-column";
 const FILE = "apps/erp/app/routes/api+/sales-rfq.$rfqId.map-lines.ts";
 
 // customerPartToItem really has these six columns and no audit ones; item has
-// both. A table absent from the map is unknown to the check.
+// both; company has updatedBy but not createdBy. A table absent from the map is
+// unknown to the check.
 const COLUMNS = new Map([
   [
     "customerPartToItem",
@@ -22,6 +23,7 @@ const COLUMNS = new Map([
 ]);
 
 const check = noMissingAuditColumn(COLUMNS);
+const snippets = (ts: string) => check.scan(FILE, ts).map((v) => v.snippet);
 
 describe("noMissingAuditColumn", () => {
   it("flags the real customerPartToItem upsert that failed with PGRST204", () => {
@@ -45,22 +47,23 @@ describe("noMissingAuditColumn", () => {
   });
 
   it("flags both fields, and only the ones the table lacks", () => {
-    const both =
-      'client.from("customerPartToItem").insert({ createdBy, updatedBy });';
-    expect(check.scan(FILE, both).map((v) => v.snippet)).toEqual([
-      "createdBy",
-      "updatedBy"
-    ]);
+    expect(
+      snippets(
+        'client.from("customerPartToItem").insert({ createdBy, updatedBy });'
+      )
+    ).toEqual(["createdBy", "updatedBy"]);
     // company has updatedBy but not createdBy
-    const one =
-      'client.from("company").update({ name, createdBy, updatedBy });';
-    expect(check.scan(FILE, one).map((v) => v.snippet)).toEqual(["createdBy"]);
+    expect(
+      snippets('client.from("company").update({ createdBy, updatedBy });')
+    ).toEqual(["createdBy"]);
   });
 
   it("allows audit fields on a table that has them", () => {
-    const ts =
-      'client.from("item").insert({ readableId, companyId, createdBy });';
-    expect(check.scan(FILE, ts)).toEqual([]);
+    expect(
+      snippets(
+        'client.from("item").insert({ readableId, companyId, createdBy });'
+      )
+    ).toEqual([]);
   });
 
   it("ignores a read and a delete on the same table", () => {
@@ -69,25 +72,13 @@ describe("noMissingAuditColumn", () => {
       '  .eq("createdBy", userId);',
       'await client.from("customerPartToItem").delete().eq("id", id);'
     ].join("\n");
-    expect(check.scan(FILE, ts)).toEqual([]);
+    expect(snippets(ts)).toEqual([]);
   });
 
   it("ignores a table it has no columns for", () => {
-    const ts = 'client.from("someFutureTable").insert({ createdBy });';
-    expect(check.scan(FILE, ts)).toEqual([]);
-  });
-
-  it("does not reach into a later, unrelated write", () => {
-    // `createdBy` here belongs to the item insert, not to the link-table read.
-    const ts = [
-      'const existing = await client.from("customerPartToItem").select("id");',
-      "",
-      "// a comment long enough that the next write is well past the window,",
-      "// which is what keeps the two statements from being conflated at all",
-      "",
-      'await client.from("item").insert({ companyId, createdBy: userId });'
-    ].join("\n");
-    expect(check.scan(FILE, ts)).toEqual([]);
+    expect(
+      snippets('client.from("someFutureTable").insert({ createdBy });')
+    ).toEqual([]);
   });
 
   it("covers the Kysely spellings", () => {
@@ -96,17 +87,102 @@ describe("noMissingAuditColumn", () => {
       "  .values({ customerId, itemId, companyId, createdBy: userId })",
       "  .execute();"
     ].join("\n");
-    expect(check.scan(FILE, insert).map((v) => v.snippet)).toEqual([
-      "createdBy"
-    ]);
+    expect(snippets(insert)).toEqual(["createdBy"]);
 
     const update = [
       'await trx.updateTable("customerPartToItem")',
       "  .set({ customerPartId, updatedBy: userId })",
       "  .execute();"
     ].join("\n");
-    expect(check.scan(FILE, update).map((v) => v.snippet)).toEqual([
-      "updatedBy"
-    ]);
+    expect(snippets(update)).toEqual(["updatedBy"]);
+  });
+
+  // The write must come from the target's own chain. A character window reached
+  // into the following statement and blamed the wrong table; an earlier version
+  // of this test only passed because it padded the gap with comments.
+  describe("binds the write to the matched chain", () => {
+    it("does not blame a link table for the next statement's write", () => {
+      const ts = [
+        'client.from("customerPartToItem").select("id");',
+        'client.from("item").insert({ createdBy });'
+      ].join("\n");
+      expect(snippets(ts)).toEqual([]);
+    });
+
+    it("does not blame a table for a write on the preceding line", () => {
+      const ts = [
+        'client.from("item").insert({ createdBy });',
+        'client.from("customerPartToItem").select("id");'
+      ].join("\n");
+      expect(snippets(ts)).toEqual([]);
+    });
+
+    it("still follows a chain broken across lines", () => {
+      const ts = [
+        "await client",
+        '  .from("customerPartToItem")',
+        "  // staged by the RFQ mapping",
+        "  .upsert({ customerId, createdBy: userId })",
+        '  .select("id");'
+      ].join("\n");
+      expect(snippets(ts)).toEqual(["createdBy"]);
+    });
+  });
+
+  // A name only counts in KEY position in a row object.
+  describe("inspects row keys, not identifier occurrences", () => {
+    it("ignores an audit identifier used as a value", () => {
+      expect(
+        snippets(
+          'client.from("company").update({ name: createdBy, updatedBy });'
+        )
+      ).toEqual([]);
+    });
+
+    it("flags a quoted key", () => {
+      expect(
+        snippets(
+          'client.from("customerPartToItem").insert({ "createdBy": userId });'
+        )
+      ).toEqual(["createdBy"]);
+    });
+
+    it("ignores the keys of a nested value object", () => {
+      expect(
+        snippets(
+          'client.from("customerPartToItem").update({ meta: { createdBy } });'
+        )
+      ).toEqual([]);
+    });
+
+    it("ignores a write option in the second argument", () => {
+      expect(
+        snippets(
+          'client.from("customerPartToItem").upsert({ customerId }, { onConflict: "createdBy" });'
+        )
+      ).toEqual([]);
+    });
+
+    it("ignores an audit name inside a call in a value position", () => {
+      expect(
+        snippets(
+          'client.from("customerPartToItem").update({ customerPartId: pick(row, createdBy) });'
+        )
+      ).toEqual([]);
+    });
+
+    it("flags every row of an inserted array", () => {
+      expect(
+        snippets(
+          'client.from("customerPartToItem").insert([{ createdBy }, { updatedBy }]);'
+        )
+      ).toEqual(["createdBy", "updatedBy"]);
+    });
+
+    it("finds nothing in a spread payload — that is the generator's job", () => {
+      expect(
+        snippets('client.from("customerPartToItem").insert([customerPart]);')
+      ).toEqual([]);
+    });
   });
 });
