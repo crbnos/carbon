@@ -5,7 +5,8 @@ import * as sales from "~/modules/sales";
 import { getCompanySettings } from "~/modules/settings";
 import { loader } from "./$orderId";
 
-vi.mock("@carbon/auth", () => ({
+vi.mock("@carbon/auth", async () => ({
+  ...(await import("@carbon/env")),
   error: (cause: unknown, message: string) => ({ cause, message })
 }));
 vi.mock("@carbon/auth/auth.server", () => ({ requirePermissions: vi.fn() }));
@@ -140,8 +141,33 @@ describe("sales order invoice summary", () => {
     expect(result.invoiceSummary).toEqual({
       invoicedAmount: 100,
       paidAmount: 75,
+      balanceRemaining: 0,
       currencyMismatchCount: 0
     });
+  });
+
+  it("keeps a credit-only invoice balance separate from cash paid", async () => {
+    getSalesOrderInvoicePaymentsByIds.mockResolvedValue({
+      data: [],
+      count: 0,
+      error: null
+    });
+    const result = await loader({
+      request: new Request("http://localhost/x/sales-order/order-1"),
+      params: { orderId: "order-1" },
+      context: {}
+    } as unknown as Parameters<typeof loader>[0]);
+    expect(result.invoiceSummary).toEqual({
+      invoicedAmount: 100,
+      paidAmount: 0,
+      balanceRemaining: 0,
+      currencyMismatchCount: 0
+    });
+    expect(sales.getSalesOrderInvoicesByIds).toHaveBeenCalledWith(
+      {},
+      ["invoice-1"],
+      "company-1"
+    );
   });
 
   it("returns invoice and payment totals in the order currency", async () => {
@@ -189,6 +215,7 @@ describe("sales order invoice summary", () => {
     expect(result.invoiceSummary).toEqual({
       invoicedAmount: 80,
       paidAmount: 40,
+      balanceRemaining: 40,
       currencyMismatchCount: 0
     });
   });

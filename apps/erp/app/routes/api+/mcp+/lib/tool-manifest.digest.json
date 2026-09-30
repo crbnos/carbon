@@ -1,5 +1,5 @@
 {
-  "totalTools": 1557,
+  "totalTools": 1560,
   "modules": 15,
   "tools": [
     {"name":"account_deleteUserAttributeValue","classification":"DESTRUCTIVE","paramCount":2,"schema":"0d38e12233b4","response":"bcde375ebd4c","injectAuth":"companyId+userId","permission":"none","paginates":false},
@@ -327,6 +327,7 @@
     {"name":"invoicing_getCharge","classification":"READ","paramCount":1,"schema":"3797626bd17e","response":"4d45de90549b","injectAuth":"companyId","permission":"invoicing:view","paginates":false},
     {"name":"invoicing_getCharges","classification":"READ","paramCount":5,"schema":"39305c3c8ba7","response":"a1c047af8dd8","injectAuth":"companyId","permission":"invoicing:view","paginates":true},
     {"name":"invoicing_getCompanyHasOpenCredits","classification":"READ","paramCount":1,"schema":"ffed91643c1d","response":"7cb541e84f22","injectAuth":"companyId","permission":"invoicing:view","paginates":false},
+    {"name":"invoicing_getInvoicePaidAmounts","classification":"READ","paramCount":2,"schema":"8c8fd7d1ed77","response":"96915ea19193","injectAuth":"companyId","permission":"invoicing:view","paginates":false},
     {"name":"invoicing_getInvoiceSettlements","classification":"READ","paramCount":1,"schema":"bd163ca304cd","response":"5483e69d7515","injectAuth":"companyId","permission":"invoicing:view","paginates":false},
     {"name":"invoicing_getInvoiceSettlementsForInvoice","classification":"READ","paramCount":2,"schema":"9d6509fa2229","response":"a334c4e05d56","injectAuth":"companyId","permission":"invoicing:view","paginates":false},
     {"name":"invoicing_getMemo","classification":"READ","paramCount":1,"schema":"3797626bd17e","response":"cf9b5fc48d0d","injectAuth":"companyId","permission":"invoicing:view","paginates":false},
@@ -913,6 +914,8 @@
     {"name":"purchasing_getLinkedSupplierQuotes","classification":"READ","paramCount":1,"schema":"4e16cef99961","response":"cb143b1fe761","injectAuth":"companyId","permission":"purchasing:view","paginates":false},
     {"name":"purchasing_getPurchaseOrder","classification":"READ","paramCount":1,"schema":"28cffcd9d6e8","response":"3797db2be7c6","injectAuth":"companyId","permission":"purchasing:view","paginates":false},
     {"name":"purchasing_getPurchaseOrderDelivery","classification":"READ","paramCount":1,"schema":"28cffcd9d6e8","response":"0564bac29ef5","injectAuth":"companyId","permission":"purchasing:view","paginates":false},
+    {"name":"purchasing_getPurchaseOrderInvoiceLines","classification":"READ","paramCount":1,"schema":"28cffcd9d6e8","response":"1ff852ae9154","injectAuth":"companyId","permission":"purchasing:view","paginates":false},
+    {"name":"purchasing_getPurchaseOrderInvoicesByIds","classification":"READ","paramCount":1,"schema":"d51ae9969843","response":"5280f88c4af8","injectAuth":"companyId","permission":"purchasing:view","paginates":false},
     {"name":"purchasing_getPurchaseOrderLine","classification":"READ","paramCount":1,"schema":"ed69a5b8e424","response":"56c9d7ca858b","injectAuth":"companyId","permission":"purchasing:view","paginates":false},
     {"name":"purchasing_getPurchaseOrderLines","classification":"READ","paramCount":1,"schema":"28cffcd9d6e8","response":"4e2a81139b3b","injectAuth":"companyId","permission":"purchasing:view","paginates":false},
     {"name":"purchasing_getPurchaseOrderLocations","classification":"READ","paramCount":1,"schema":"28cffcd9d6e8","response":"d4d4c42eb761","injectAuth":"companyId","permission":"purchasing:view","paginates":false},
