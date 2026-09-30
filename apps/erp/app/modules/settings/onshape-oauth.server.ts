@@ -16,14 +16,17 @@ import {
   ONSHAPE_OAUTH_SCOPES,
   type OnshapeOAuthIntegrationId
 } from "@carbon/ee/onshape";
-import { loadOnshapeOAuthConfig } from "@carbon/ee/onshape.server";
+import {
+  loadOnshapeOAuthConfig,
+  patchOnshapeOAuthGrant
+} from "@carbon/ee/onshape.server";
 import { getLogger } from "@carbon/logger";
 import { oAuthCallbackSchema } from "~/modules/shared";
 import { path } from "~/utils/path";
 import type { IntegrationErrorCode } from "./integration-errors";
 import { integrationErrorSearch } from "./integration-errors";
 import { oauthPopupResponse } from "./oauth-popup.server";
-import { upsertCompanyIntegration } from "./settings.server";
+import { clearCompanyIntegrationCache } from "./settings.server";
 
 const logger = getLogger("erp", "onshape", "oauth");
 
@@ -158,66 +161,42 @@ export async function completeOnshapeAuthorization({
       return connectionFailed("token-exchange");
     }
 
-    // `upsertCompanyIntegration` writes the whole metadata column. A failed
-    // read must not be mistaken for an empty row.
-    const existing = await serviceRole
-      .from("companyIntegration")
-      .select("metadata")
-      .eq("id", integrationId)
-      .eq("companyId", companyId)
-      .maybeSingle();
-    if (existing.error) {
-      logger.error("Failed to read the Onshape integration before saving", {
-        integrationId,
-        error: existing.error
-      });
-      return connectionFailed("save-failed");
-    }
-    const existingMetadata = (existing.data?.metadata ?? {}) as Record<
-      string,
-      unknown
-    >;
-
     // The scope actually granted by this authorization. Onshape returns it on
     // the token response; fall back to what we requested. A token minted
     // without write can't export assets or manage the release webhook, and a
-    // refresh can't widen it — so asset sync is switched off rather than left
-    // on-but-broken.
+    // refresh can't widen it, so the grant patch turns asset sync off.
+    //
+    // Only the grant's own keys are written: settings (a Government app's
+    // client and tenant, the asset-sync toggle, the panel's property map and
+    // push defaults) survive a reconnect.
     const scope = tokenData.scope ?? ONSHAPE_OAUTH_SCOPES.join(" ");
-    const metadata: Record<string, unknown> = {
-      ...existingMetadata,
-      credentials: {
-        type: "oauth2",
-        accessToken: tokenData.access_token,
-        refreshToken: tokenData.refresh_token,
-        expiresAt: new Date(Date.now() + 3600 * 1000).toISOString()
-      },
-      scope,
-      baseUrl: oauth.baseUrl
-    };
-    // Settings survive a reconnect (a Government app's client and tenant, the
-    // asset-sync toggle), but the Onshape company is re-resolved from the new
-    // token: it may belong to a different account or tenant.
-    delete metadata.onshapeCompanyId;
-    const canWrite = onshapeConnectionHasWriteScope(metadata);
-    if (!canWrite) metadata.assetSyncEnabled = false;
-
-    const saved = await upsertCompanyIntegration(serviceRole, {
-      id: integrationId,
-      active: true,
-      // @ts-expect-error TS2322 - metadata is a JSON object
-      metadata,
-      updatedBy: userId,
-      companyId
-    });
-
-    if (saved.error || !saved.data?.metadata) {
+    let saved: Awaited<ReturnType<typeof patchOnshapeOAuthGrant>>;
+    try {
+      saved = await patchOnshapeOAuthGrant(
+        serviceRole,
+        companyId,
+        integrationId,
+        {
+          accessToken: tokenData.access_token,
+          refreshToken: tokenData.refresh_token,
+          expiresAt: new Date(
+            Date.now() + (tokenData.expires_in ?? 3600) * 1000
+          ).toISOString(),
+          scope,
+          baseUrl: oauth.baseUrl,
+          canWrite: onshapeConnectionHasWriteScope({ scope }),
+          updatedBy: userId
+        }
+      );
+    } catch (error) {
       logger.error("Failed to save Onshape integration", {
         integrationId,
-        error: saved.error
+        error
       });
       return connectionFailed("save-failed");
     }
+    await clearCompanyIntegrationCache(companyId);
+    const metadata = (saved.metadata ?? {}) as Record<string, unknown>;
 
     // A Government connection is configured BEFORE it is authorized, so asset
     // sync may already be on: subscribe to releases now that there is a token.
