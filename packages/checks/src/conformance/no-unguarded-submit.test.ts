@@ -90,9 +90,30 @@ describe("noUnguardedSubmit", () => {
     ).toHaveLength(1);
   });
 
-  it("accepts isLoading whatever it is bound to — the prop itself disables", () => {
-    expect(scan('<Button isLoading={busy} type="submit">')).toHaveLength(0);
-    expect(scan('<Button isLoading={starting} type="submit">')).toHaveLength(0);
+  // A guard is routinely held in a local, so the scanner resolves one hop.
+  it("resolves a guard held in a local variable", () => {
+    expect(
+      scan(`
+        const busy = fetcher.state !== "idle";
+        <Button isLoading={busy} type="submit">Go</Button>
+      `)
+    ).toHaveLength(0);
+  });
+
+  it("rejects a local that names no submit state", () => {
+    expect(
+      scan(`
+        const [loading, setLoading] = useState(true);
+        <Button isDisabled={loading} type="submit">Go</Button>
+      `)
+    ).toHaveLength(1);
+  });
+
+  it("rejects isLoading bound to a constant — it disables nothing", () => {
+    expect(scan('<Button isLoading={false} type="submit">')).toHaveLength(1);
+  });
+
+  it("accepts a bare isLoading — always true, so always disabled", () => {
     expect(scan('<Button isLoading type="submit">')).toHaveLength(0);
   });
 

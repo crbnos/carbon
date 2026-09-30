@@ -24,17 +24,18 @@ import type { ConformanceCheck, Violation } from "../check";
 // exists to catch. Word boundaries are load-bearing: `loading` must not satisfy
 // `isLoading`.
 const IN_FLIGHT_SIGNAL =
-  /\bisSubmitting\b|\bisPending\b|\bisSaving\b|\buseIsSubmitting\b|\b\w*(?:fetcher|navigation|transition)\w*\.state\b/i;
+  /\bisLoading\b|\bisSubmitting\b|\bisPending\b|\bisSaving\b|\buseIsSubmitting\b|\b\w*(?:fetcher|navigation|transition)\w*\.(?:state|formAction)\b/i;
 
-// `isLoading` counts wherever it is bound, because the prop's MEANING is "this
-// button's own action is running" and `Button` disables on it. `isDisabled` /
-// `disabled` are generic — permissions, field validity, a step being
-// incomplete — so they only count when the expression names a submit state.
-// That split is what keeps the original bug failing: `isDisabled={loading}`,
-// where `loading` was the modal's data-fetch flag and nothing disabled the
-// button while its own POST was in flight.
-const LOADING_PROP = /\bisLoading\s*(?:=|\/?>|\s)/;
-const DISABLING_PROPS = ["disabled", "isDisabled"];
+// Props that actually disable the button. All three are checked the same way —
+// the bound expression must name an in-flight signal. Presence alone is not
+// enough: `isLoading={false}` spins nothing and disables nothing, and
+// `isDisabled={loading}` bound to a data-fetch flag is the exact bug this
+// check exists to catch.
+const DISABLING_PROPS = ["disabled", "isDisabled", "isLoading"];
+
+// A bare `isLoading` with no expression is `true` — permanently disabled, so
+// a second submit is impossible.
+const BARE_LOADING_PROP = /\bisLoading\s*(?:\/?>|\s+[a-zA-Z-]+\s*=|\s*$)/;
 
 // Match `type` at an attribute boundary, both JSX quote styles. Searching for
 // the bare text matched `data-type="submit"` on a non-submit button and missed
@@ -92,12 +93,35 @@ function propExpression(tag: string, prop: string): string | null {
  * tag would accept `title={isSubmitting ? "Saving" : "Save"}`, which changes a
  * tooltip and nothing else.
  */
-function isGuarded(tag: string): boolean {
-  if (LOADING_PROP.test(tag)) return true;
+function isGuarded(tag: string, contents: string): boolean {
+  if (BARE_LOADING_PROP.test(tag)) return true;
   return DISABLING_PROPS.some((prop) => {
     const expression = propExpression(tag, prop);
-    return expression !== null && IN_FLIGHT_SIGNAL.test(expression);
+    return expression !== null && namesInFlightSignal(expression, contents);
   });
+}
+
+/**
+ * Does `expression` name an in-flight signal, directly or through ONE hop of
+ * same-file resolution? Guards are routinely held in a local — `isLoading={busy}`
+ * over `const busy = fetcher.state !== "idle"` is a real guard, and demanding
+ * the signal inline would flag a dozen correct call sites. Resolving the
+ * binding is what lets the check accept those while still rejecting
+ * `isDisabled={loading}` over `const [loading] = useState(true)`, whose
+ * declaration names no submit state.
+ *
+ * One hop, never recursive: a chain long enough to matter is beyond what a
+ * text scan should claim to understand, and the baseline is the escape hatch.
+ */
+function namesInFlightSignal(expression: string, contents: string): boolean {
+  if (IN_FLIGHT_SIGNAL.test(expression)) return true;
+  for (const identifier of expression.match(/[A-Za-z_$][\w$]*/g) ?? []) {
+    const declaration = new RegExp(
+      `\\b(?:const|let|var)\\s+${identifier}\\s*=([^;\n]*(?:\n(?!\\s*(?:const|let|var|function|return)\\b)[^;\n]*)*)`
+    ).exec(contents);
+    if (declaration && IN_FLIGHT_SIGNAL.test(declaration[1] ?? "")) return true;
+  }
+  return false;
 }
 
 /**
@@ -150,7 +174,7 @@ export const noUnguardedSubmit: ConformanceCheck = {
       if (
         tag &&
         SUBMIT_ATTR.test(tag) &&
-        !isGuarded(tag) &&
+        !isGuarded(tag, contents) &&
         !inValidatedForm(contents, start)
       ) {
         violations.push({

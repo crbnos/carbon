@@ -56,8 +56,13 @@ export const sendSlackFunction = inngest.createFunction(
       // `retries: 0` because Inngest owns the retry policy here: the SDK's
       // default is ~10 attempts over ~30 minutes, which would both stall this
       // step and retry the ambiguous failures classified below.
+      // `rejectRateLimitedCalls` so a 429 arrives as a RateLimitedError the
+      // classifier can recognise. Left at its default, the SDK sleeps the
+      // whole Retry-After inside this step and then throws a bare Error with
+      // no `code`, which the classifier would read as ambiguous and drop.
       const slack = getSlackClient(accessToken, {
-        retryConfig: { retries: 0 }
+        retryConfig: { retries: 0 },
+        rejectRateLimitedCalls: true
       });
       try {
         await slack.sendMessage({ blocks, channel, text });
