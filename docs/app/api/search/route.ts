@@ -8,6 +8,8 @@ import { buildSearchIndexes } from "@/lib/search-index";
 
 const { GET: search } = createSearchAPI("advanced", {
   language: "english",
+  // zbsearch's built-in English stemmer, so "purchase order" matches "Purchase orders".
+  tokenizer: { language: "english", stemming: true },
   indexes: buildSearchIndexes()
 });
 
