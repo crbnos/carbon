@@ -120,6 +120,8 @@ export function useAgentThread() {
   // Guards the async gap between the isStreaming check and sendMessage, so rapid
   // clicks can't fire duplicate turns before the stream status flips.
   const isPreparingRef = useRef(false);
+  // A question whose thread could not be created never reached useChat, so Retry resends it.
+  const unsentRef = useRef<string | null>(null);
   async function send(text: string) {
     // One turn at a time: ignore sends (from the input or a block action) mid-stream.
     if (isStreamingRef.current || isPreparingRef.current) return;
@@ -131,25 +133,39 @@ export function useAgentThread() {
       setSendError(null);
       const id = await ensureThread();
       if (!id) {
+        unsentRef.current = text;
         setSendError(new Error("Could not start a conversation"));
         return;
       }
+      unsentRef.current = null;
       sendMessage({ text });
     } finally {
       isPreparingRef.current = false;
     }
   }
 
-  // Re-answer the last question after a failed turn, from the stored thread.
-  const retry = useCallback(() => {
+  // Re-answer the last question after a failed turn, from the stored thread — or resend
+  // a question that never left the browser.
+  const retry = () => {
     if (isStreamingRef.current) return;
+    const unsent = unsentRef.current;
+    if (unsent) {
+      void send(unsent);
+      return;
+    }
     setSendError(null);
     clearError();
     void regenerate();
-  }, [clearError, regenerate]);
+  };
+
+  // Switching threads stops the current answer, and a slow response for a thread the
+  // user has already left is ignored, so one thread's messages never show under another.
+  const loadSeq = useRef(0);
 
   // Reset in place (no navigation) so the panel never flickers closed.
   const newThread = useCallback(() => {
+    ++loadSeq.current;
+    unsentRef.current = null;
     void stop();
     setMessages([]);
     setSendError(null);
@@ -157,9 +173,6 @@ export function useAgentThread() {
     threadIdRef.current = null;
   }, [setMessages, setThread, stop]);
 
-  // Switching threads stops the current answer, and a slow response for a thread the
-  // user has already left is ignored, so one thread's messages never show under another.
-  const loadSeq = useRef(0);
   const loadThread = useCallback(
     async (id: string) => {
       const seq = ++loadSeq.current;

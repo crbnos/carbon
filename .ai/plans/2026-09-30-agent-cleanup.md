@@ -43,3 +43,16 @@ Not in this pass: translating the panel's strings (Lingui) — say so to the use
   stale and empty-old purged, old-but-active and new kept, no orphans, second run 0.
 - Follow-up, not done: `agentMessagePart` RLS calls `auth.uid()` per row (not wrapped in
   `select`); needs an authz-manifest change.
+
+## CodeRabbit review on #1774 (all five fixed, each verified live)
+
+- [x] `present_choice` kept in model history as text (a choice-only turn no longer drops
+  its question); history query loads choice parts. Live: the pick resolved against the
+  original question.
+- [x] Retry reuses the stored question only when the text matches; otherwise saves the
+  retried one. Live: A stored unanswered, retry B → B saved and answered.
+- [x] Purge deletes each batch in one statement on `(companyId, id)`. Live: 2 stale purged
+  in one delete, old-but-active kept, second run 0.
+- [x] A failed thread creation shows the error + Retry under the greeting; Retry resends
+  the unsent question. Live via a patched 500.
+- [x] New chat invalidates a pending thread load. Live with a 3 s delayed load + control.

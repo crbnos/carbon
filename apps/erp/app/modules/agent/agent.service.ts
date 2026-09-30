@@ -114,10 +114,13 @@ export async function getModelHistory(
 ) {
   const { data, error } = await client
     .from("agentMessage")
-    .select("id, role, parts:agentMessagePart(orderIndex, type, textContent)")
+    .select(
+      "id, role, parts:agentMessagePart(orderIndex, type, textContent, toolName, toolInput)"
+    )
     .eq("threadId", args.threadId)
     .eq("companyId", args.companyId)
-    .eq("parts.type", "text")
+    // Text, plus offered choices (see buildModelHistory); never read-tool output.
+    .or("type.eq.text,toolName.eq.present_choice", { referencedTable: "parts" })
     .order("createdAt", { ascending: false })
     .limit(MAX_THREAD_MESSAGES);
   if (error) return { data: null, error };

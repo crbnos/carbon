@@ -1,5 +1,5 @@
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
-import { groupBy } from "@carbon/utils";
+import { pluckUnique } from "@carbon/utils";
 import { sql } from "kysely";
 
 // Agent chat threads are transient: purged after this many days without a message.
@@ -42,16 +42,21 @@ export async function purgeStaleAgentThreads(
       .limit(BATCH)
       .execute();
 
-    for (const [companyId, threads] of Object.entries(
-      groupBy(stale, (t) => t.companyId)
-    )) {
+    if (stale.length > 0) {
+      // One statement per batch, on the composite key (companyId, id).
       const result = await db
         .deleteFrom("agentThread")
-        .where("companyId", "=", companyId)
         .where(
-          "id",
+          "companyId",
           "in",
-          threads.map((t) => t.id)
+          pluckUnique(stale, (t) => t.companyId)
+        )
+        .where(({ eb, refTuple, tuple }) =>
+          eb(
+            refTuple("companyId", "id"),
+            "in",
+            stale.map((t) => tuple(t.companyId, t.id))
+          )
         )
         .executeTakeFirst();
       purged += Number(result.numDeletedRows ?? 0);

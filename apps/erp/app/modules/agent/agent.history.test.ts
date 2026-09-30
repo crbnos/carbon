@@ -78,6 +78,43 @@ describe("buildModelHistory", () => {
     ).toEqual([["user", "q2"]]);
   });
 
+  it("keeps a choice-only answer, so the pick after it has its question", () => {
+    // The turn ends on present_choice with no text; the user's pick is the next message.
+    const choice: StoredMessage = {
+      id: "agm_choice",
+      role: "assistant",
+      parts: [
+        {
+          orderIndex: 0,
+          type: "tool",
+          textContent: null,
+          toolName: "present_choice",
+          toolInput: {
+            prompt: "Which location?",
+            options: [
+              { id: "a", label: "Plant A", value: "Plant A" },
+              { id: "b", label: "Plant B", value: "plant_b" }
+            ]
+          }
+        }
+      ]
+    };
+    expect(
+      texts([
+        row("user", text("where do I set the default location")),
+        choice,
+        row("user", text("plant_b"))
+      ])
+    ).toEqual([
+      ["user", "where do I set the default location"],
+      [
+        "assistant",
+        "Which location?\n[Choices offered: Plant A; Plant B (plant_b)]"
+      ],
+      ["user", "plant_b"]
+    ]);
+  });
+
   it("produces a prompt the AI SDK accepts", async () => {
     const history = buildModelHistory([
       row("user", text("q1")),

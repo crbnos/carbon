@@ -70,7 +70,9 @@ trigger) and the thread id, and the chat route checks the thread is the caller's
 question in a Kysely transaction, and builds the model's history from the stored thread.
 `agent.history.ts` is the one place stored rows and messages convert:
 `buildModelHistory` (user and assistant TEXT only, so earlier tool results never ride
-along, and an unanswered question is dropped unless it is the one being answered),
+along — except a `present_choice`, kept as `[Choices offered: …]` text, since the user's
+pick arrives as the next question and means nothing without it — and an unanswered
+question is dropped unless it is the one being answered),
 `toDisplayMessages` (text plus UI blocks, what the thread loader returns to the panel) and
 `toStoredParts` (an answer's text and finished tool calls, never `navigate`). Nothing the
 browser holds reaches the model. The answer is saved in one transaction under the id the
@@ -78,14 +80,16 @@ server minted for it (`generateMessageId`), which is what feedback targets; a fa
 saves nothing and Retry answers the stored question.
 
 Thread reads are capped at the newest `MAX_THREAD_MESSAGES` (200) and filtered in
-PostgREST: the model's history reads text parts only, the panel reads text and UI-block
-parts, so read-tool outputs (the bulk of a thread's bytes) are never loaded per request.
-A Retry sends the question's text as well; the chat route answers the stored unanswered
-question, or saves the sent one when the first attempt was refused before saving it (the
-rate limit runs before the save). Threads are purged 7 days after their last message by
+PostgREST: the model's history reads text and `present_choice` parts, the panel reads text
+and UI-block parts, so read-tool outputs (the bulk of a thread's bytes) are never loaded
+per request. A Retry sends the question's text as well; the chat route answers the stored
+unanswered question only when its text matches, and otherwise saves and answers the sent
+one (it was refused before saving — the rate limit runs first — possibly after an older
+question failed). A question whose thread could not even be created never reached the
+server; the panel keeps it and Retry resends it. Threads are purged 7 days after their last message by
 `purgeStaleAgentThreads` (`packages/jobs/.../scheduled/agent-thread-retention.ts`, called
 from the daily `cleanup` cron), which tests activity inside its query so every batch
-advances.
+advances, and deletes each batch in one statement on `(companyId, id)`.
 
 `agent.service.ts` is data access only (threads, messages, feedback, the two Kysely
 writes). The turn itself (`streamChat`, titling, the rate limit) is `agent.server.ts`,

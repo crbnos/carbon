@@ -1,6 +1,6 @@
 import type { Database } from "@carbon/database";
 import { getToolName, isToolUIPart, type UIMessage } from "ai";
-import { isEphemeralTool, isUiBlockTool } from "./agent.blocks";
+import { choiceBlock, isEphemeralTool, isUiBlockTool } from "./agent.blocks";
 
 // Sliding window: send the model only the most recent messages whose combined size stays
 // under this character budget (a rough token proxy — ~4 chars/token), dropping the oldest.
@@ -28,6 +28,18 @@ const isChatRole = (role: string): role is Role =>
 const sortedParts = (row: StoredMessage) =>
   (row.parts ?? []).slice().sort((a, b) => a.orderIndex - b.orderIndex);
 
+// A choice the answer offered, as text: the user's pick arrives as the next question, and
+// without the options the model cannot tell what it was picked from.
+function choiceAsText(input: unknown): string | null {
+  const parsed = choiceBlock.safeParse(input);
+  if (!parsed.success) return null;
+  const { prompt, options } = parsed.data;
+  const offered = options
+    .map((o) => (o.label === o.value ? o.label : `${o.label} (${o.value})`))
+    .join("; ");
+  return `${prompt ? `${prompt}\n` : ""}[Choices offered: ${offered}]`;
+}
+
 const messageText = (m: UIMessage) =>
   m.parts.map((p) => (p.type === "text" ? p.text : "")).join("");
 
@@ -52,9 +64,10 @@ export function windowByChars(
 
 /**
  * The conversation as the model sees it, built from the stored thread — never from the
- * browser. Only user and assistant TEXT is kept: earlier tool calls and results are
- * dropped (the answers already carry what they found, and the model can search again),
- * which also keeps every later request small. A question whose turn failed has no answer
+ * browser. Only user and assistant TEXT is kept, plus any choice an answer offered (as
+ * text): earlier tool calls and results are dropped (the answers already carry what they
+ * found, and the model can search again), which also keeps every later request small. A
+ * question whose turn failed has no answer
  * after it; it is dropped unless it is the question being answered now, so the model
  * never sees two questions in a row.
  */
@@ -65,8 +78,14 @@ export function buildModelHistory(
   const messages = rows.flatMap((row): UIMessage[] => {
     if (!isChatRole(row.role)) return [];
     const text = sortedParts(row)
-      .filter((p) => p.type === "text" && p.textContent)
-      .map((p) => p.textContent)
+      .flatMap((p): string[] => {
+        if (p.type === "text" && p.textContent) return [p.textContent];
+        const choice =
+          p.type === "tool" && p.toolName === "present_choice"
+            ? choiceAsText(p.toolInput)
+            : null;
+        return choice ? [choice] : [];
+      })
       .join("\n\n")
       .trim();
     return text

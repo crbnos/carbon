@@ -85,16 +85,22 @@ export async function action({ request }: ActionFunctionArgs) {
   }
   let history = await loadHistory();
 
-  // A retry answers the stored, unanswered question. When there is none, the first
-  // attempt was refused before its question was saved (e.g. rate-limited), so the retry
-  // carries the question and it is saved now.
-  if (trigger === "regenerate-message" && history.at(-1)?.role !== "user") {
-    if (!text) {
+  // A retry answers the stored, unanswered question — when it is the question being
+  // retried. Otherwise that question was refused before it was saved (e.g. rate-limited),
+  // possibly after an older one failed, so the retry's own text is saved and answered.
+  if (trigger === "regenerate-message") {
+    const last = history.at(-1);
+    const pending =
+      last?.role === "user"
+        ? last.parts.map((p) => (p.type === "text" ? p.text : "")).join("")
+        : null;
+    if (text && text !== pending) {
+      await saveQuestion(text);
+      saved = true;
+      history = await loadHistory();
+    } else if (pending === null) {
       throw new Response("There is no question to answer", { status: 409 });
     }
-    await saveQuestion(text);
-    saved = true;
-    history = await loadHistory();
   }
 
   return streamChat(client, db, {
