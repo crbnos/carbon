@@ -2,6 +2,7 @@ import type { PartPlan, PlanItemRow, PlanMappingRow } from "@carbon/ee";
 import {
   buildPartPlan,
   normalizeConfiguration,
+  ownedCustomFieldsDiffer,
   parsePropertyMap,
   resolveMappedFields
 } from "@carbon/ee";
@@ -212,13 +213,11 @@ export async function action({ request }: ActionFunctionArgs) {
 
   // Custom fields ride on the plan only when the company mapped properties:
   // the common no-map case must stay free (zero extra Onshape reads, rows
-  // carry no customFields keys). Rows apply never writes skip resolution —
-  // unchanged ones, and numberless ones it refuses outright — so an
-  // all-unchanged plan is also free.
+  // carry no customFields keys). Numberless rows are refused outright, so
+  // they skip resolution. Unchanged rows do not: a property mapped after the
+  // last push has to reach Carbon even though the CAD did not move.
   const propertyMap = parsePropertyMap(integration.data?.metadata);
-  const resolvable = rows.filter(
-    (row) => row.action !== "unchanged" && row.action !== "skip-no-part-number"
-  );
+  const resolvable = rows.filter((row) => row.action !== "skip-no-part-number");
   if (propertyMap.length > 0 && resolvable.length > 0) {
     let definitions: Awaited<ReturnType<typeof loadPartCustomFieldDefinitions>>;
     let properties: Awaited<ReturnType<typeof readPartProperties>>;
@@ -252,6 +251,42 @@ export async function action({ request }: ActionFunctionArgs) {
       }
       if (resolved.problems.length > 0) {
         row.customFieldProblems = resolved.problems;
+      }
+    }
+
+    // An unchanged row is only worth pushing when its mapped fields differ
+    // from Carbon's; it then goes as an update that skips the model export.
+    const unchanged = resolvable.filter(
+      (row) => row.action === "unchanged" && (row.customFields ?? []).length > 0
+    );
+    const held = await selectInBatches(
+      [
+        ...new Set(
+          unchanged.flatMap((row) => (row.item ? [row.item.readableId] : []))
+        )
+      ],
+      (batch) =>
+        client
+          .from("part")
+          .select("id, customFields")
+          .eq("companyId", companyId)
+          .in("id", batch)
+    );
+    if (held.error) {
+      return data({ error: "Failed to read Carbon parts" }, { status: 500 });
+    }
+    const heldByReadableId = new Map(
+      (held.data ?? []).map((part) => [part.id, part.customFields])
+    );
+    for (const row of unchanged) {
+      const current = row.item
+        ? heldByReadableId.get(row.item.readableId)
+        : undefined;
+      if (ownedCustomFieldsDiffer(current, row.customFields ?? [])) {
+        row.action = "update";
+        row.cadUnchanged = true;
+      } else {
+        delete row.customFields;
       }
     }
   }

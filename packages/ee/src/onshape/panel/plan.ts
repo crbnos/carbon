@@ -516,6 +516,11 @@ export type PartPlanRow = {
   }>;
   /** Mapped custom fields apply would write (absent when nothing is mapped). */
   customFields?: PlanCustomField[];
+  /**
+   * An update only because mapped custom fields differ: the CAD is the one the
+   * last push exported, so apply writes the fields and skips the model export.
+   */
+  cadUnchanged?: true;
   /** Valued Onshape properties no map entry covers — review shows "not mapped". */
   unmappedProperties?: UnmappedProperty[];
   /** Mapped properties whose value cannot coerce; shown, never written. */

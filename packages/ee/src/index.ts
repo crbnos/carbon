@@ -183,6 +183,7 @@ export {
   mergeCustomFieldEdits,
   mergeCustomFieldValues,
   missingListOptions,
+  ownedCustomFieldsDiffer,
   parseProperties,
   parsePropertyMap,
   partPropertiesFromElementMetadata,

@@ -7,6 +7,7 @@ import {
   mergeCustomFieldEdits,
   mergeCustomFieldValues,
   missingListOptions,
+  ownedCustomFieldsDiffer,
   parseProperties,
   parsePropertyMap,
   partPropertiesFromElementMetadata,
@@ -308,6 +309,45 @@ describe("mergeCustomFieldEdits", () => {
       ok: true,
       values: { cf_text: "Anodized" }
     });
+  });
+});
+
+describe("ownedCustomFieldsDiffer", () => {
+  const field = (
+    value: string | number | boolean | null,
+    mode: "owned" | "default" = "owned"
+  ) => ({
+    fieldId: "cf-title",
+    name: "Title",
+    mode,
+    dataTypeId: 5,
+    listOptions: null,
+    value,
+    onshapeName: "Description"
+  });
+
+  it("is true when a newly mapped value is not in Carbon yet", () => {
+    expect(ownedCustomFieldsDiffer({}, [field("Rubber pad")])).toBe(true);
+    expect(ownedCustomFieldsDiffer(null, [field("Rubber pad")])).toBe(true);
+  });
+
+  it("is false when Carbon already holds the value", () => {
+    expect(
+      ownedCustomFieldsDiffer({ "cf-title": "Rubber pad" }, [
+        field("Rubber pad")
+      ])
+    ).toBe(false);
+  });
+
+  it("is true when Onshape emptied a value Carbon still holds", () => {
+    expect(
+      ownedCustomFieldsDiffer({ "cf-title": "Rubber pad" }, [field(null)])
+    ).toBe(true);
+    expect(ownedCustomFieldsDiffer({}, [field(null)])).toBe(false);
+  });
+
+  it("ignores fields the push does not own", () => {
+    expect(ownedCustomFieldsDiffer({}, [field("x", "default")])).toBe(false);
   });
 });
 

@@ -452,6 +452,25 @@ export function mergeCustomFieldValues(
 }
 
 /**
+ * Whether writing the owned mapped fields would change what Carbon holds. A
+ * part whose CAD is unchanged still needs a push when a property was mapped,
+ * or remapped, after its last push.
+ */
+export function ownedCustomFieldsDiffer(
+  current: unknown,
+  fields: PlanCustomField[]
+): boolean {
+  const held = isRecord(current) ? current : {};
+  return fields.some((field) => {
+    if (field.mode !== "owned") return false;
+    const value = held[field.fieldId];
+    return field.value === null
+      ? value !== undefined && value !== null
+      : value !== field.value;
+  });
+}
+
+/**
  * List options a List field is missing for the values about to be written.
  *
  * No new mapping can target a List field (see MAPPABLE_VALUE_TYPES), so this

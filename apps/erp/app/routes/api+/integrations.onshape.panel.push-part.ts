@@ -589,6 +589,12 @@ export async function action({ request }: ActionFunctionArgs) {
       continue;
     }
 
+    // Only the mapped fields changed; the model the last push exported stands.
+    if (row.cadUnchanged && resolved === "update") {
+      results.push({ partId, action: "updated", itemId, readableId });
+      continue;
+    }
+
     // One event id per plan × item × element: a retried apply of the same
     // plan cannot queue the export twice.
     try {
