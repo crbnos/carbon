@@ -44,9 +44,14 @@ export {
   projectFingerprint,
   pushProjects
 } from "./projects";
-export type { RampPurchaseOrderBatch, RampVendorSupplier } from "./spend";
+export type {
+  RampPurchaseOrderBatch,
+  RampVendorResolution,
+  RampVendorSupplier
+} from "./spend";
 export {
   prepareRampPurchaseOrderBatch,
+  prepareRampVendorResolution,
   resolveOrCreateRampSpendVendor
 } from "./spend";
 export {

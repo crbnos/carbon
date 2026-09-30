@@ -35,7 +35,10 @@ import { isPushableInvoiceStatus } from "../../spend/gates";
 import { describeMissingVendorFields } from "../../spend/parties";
 import { buildRampIdempotencyKey } from "../lib/client";
 import { buildLineCodingSelections } from "../lib/coding";
-import { resolveOrCreateRampSpendVendor } from "../lib/spend";
+import {
+  prepareRampVendorResolution,
+  resolveOrCreateRampSpendVendor
+} from "../lib/spend";
 import { RampPushOnlyEntitySyncer } from "./shared";
 
 export type RampBillRemote = {
@@ -146,6 +149,21 @@ export class RampBillSyncer extends RampPushOnlyEntitySyncer<
   }
 
   protected async mapToRemote(local: SpendBillSource): Promise<RampBillRemote> {
+    /**
+     * Whose identifiers Ramp's coding options — and its accounting vendors —
+     * are keyed by.
+     *
+     * When another system holds Ramp's accounting seat it published the
+     * options, so the mappings to read are ITS (`rillet`'s account → its
+     * external id), and the external id is what Ramp knows the option by.
+     * Reading Ramp's own mappings there finds nothing — Carbon never pushed a
+     * chart of accounts in that mode — so every line degraded to uncoded and the
+     * bill landed needing manual coding before the seat-holder could post it.
+     * The same system owns the accounting vendor the bill posts against, so the
+     * Ramp vendor is linked to ITS vendor id too.
+     */
+    const delegatedTo = this.rampProvider.codingIdentityIntegrationId;
+
     // A bill REQUIRES a vendor_id, unlike a PO where it is optional — so Ramp's
     // own rejection is the only actionable diagnosis and must not be swallowed.
     const vendorId = await resolveOrCreateRampSpendVendor(
@@ -153,7 +171,12 @@ export class RampBillSyncer extends RampPushOnlyEntitySyncer<
       this.ramp,
       local.supplier,
       this.companyId,
-      undefined,
+      await prepareRampVendorResolution(
+        this.mappingService,
+        this.ramp,
+        [local.supplier],
+        { accountingIntegration: delegatedTo }
+      ),
       { surfaceCreateError: true }
     );
     if (!vendorId) {
@@ -166,17 +189,6 @@ export class RampBillSyncer extends RampPushOnlyEntitySyncer<
       );
     }
 
-    /**
-     * Whose coding options these lines address.
-     *
-     * When another system holds Ramp's accounting seat it published the options,
-     * so the mappings to read are ITS (`rillet`'s account → its external id), and
-     * the external id is what Ramp knows the option by. Reading Ramp's own
-     * mappings there finds nothing — Carbon never pushed a chart of accounts in
-     * that mode — so every line degraded to uncoded and the bill landed needing
-     * manual coding before the seat-holder could post it.
-     */
-    const delegatedTo = this.rampProvider.codingIdentityIntegrationId;
     const pushed = await loadPushedCoding(
       this.mappingService,
       delegatedTo ?? "ramp",

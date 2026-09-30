@@ -581,6 +581,17 @@ export class RampClient {
     });
   }
 
+  /**
+   * Update a Ramp SPEND vendor (`PATCH /developer/v1/vendors/{id}`). Carbon uses
+   * it for one field: `accounting_vendor_remote_id`, the link to the accounting
+   * vendor the seat-holder published — Ramp's documented way to join a bill-pay
+   * vendor to its GL vendor ("Creating a bill-pay vendor does not auto-create an
+   * accounting vendor. Link them explicitly via PATCH /vendors/{id}").
+   */
+  updateSpendVendor<T = unknown>(id: string, body: unknown): Promise<T> {
+    return this.request<T>("PATCH", `/developer/v1/vendors/${id}`, { body });
+  }
+
   // ---- Business entities (for the required PO `entity_id`) ----
 
   getEntities<T = unknown>(): Promise<T> {
