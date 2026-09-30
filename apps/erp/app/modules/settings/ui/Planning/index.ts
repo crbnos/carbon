@@ -1,5 +1,3 @@
 export { ForecastConsumptionCard } from "./ForecastConsumptionCard";
-export {
-  RescheduleToleranceCard,
-  ResponsibleEmployeeCard
-} from "./ResponsibleEmployeeCard";
+export { RescheduleToleranceCard } from "./RescheduleToleranceCard";
+export { ResponsibleEmployeeCard } from "./ResponsibleEmployeeCard";

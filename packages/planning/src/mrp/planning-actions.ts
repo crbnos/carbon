@@ -24,7 +24,7 @@ import type { DB } from "@carbon/database/client";
 import { datetime, getCompanyTimeZone } from "@carbon/database/datetime";
 import { fetchAll } from "@carbon/database/fetch-all";
 import { getFunctionLogger } from "@carbon/database/logging";
-import { computePlanningOrders } from "@carbon/utils";
+import { computePlanningOrders, equals, round } from "@carbon/utils";
 import { parseDate, startOfWeek } from "@internationalized/date";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Kysely } from "kysely";
@@ -271,17 +271,20 @@ export function deriveChangeActions(
       }
     }
 
-    const leftover = order.quantity - consumed;
+    // Round at the compare: `consumed` is a running float sum, so the raw
+    // difference can be ~1e-16 for an order that is fully required.
+    const required = round(consumed);
+    const leftover = round(order.quantity - consumed);
     if (leftover > 0) {
       const period = periodFor(order.dueDate);
       actions.push({
         ...target,
         type: "Decrease",
         periodId: period.id,
-        suggestedQuantity: consumed,
+        suggestedQuantity: required,
         suggestedDate: order.dueDate,
         isASAP: false,
-        reason: `Only ${consumed} of ${order.quantity} is required`
+        reason: `Only ${required} of ${order.quantity} is required`
       });
     }
   }
@@ -331,8 +334,8 @@ export function convertOrdersToIncreases(args: {
       purchaseOrderLineId: match.purchaseOrderLineId ?? null,
       jobId: match.jobId ?? null,
       requiresManualAction: match.requiresManualAction,
-      suggestedQuantity: match.quantity + candidate.suggestedQuantity,
-      reason: `Increase from ${match.quantity} to cover a shortfall of ${candidate.suggestedQuantity}`
+      suggestedQuantity: round(match.quantity + candidate.suggestedQuantity),
+      reason: `Increase from ${match.quantity} to cover a shortfall of ${round(candidate.suggestedQuantity)}`
     };
   });
 }
@@ -426,7 +429,7 @@ export function diffPlanningActions(args: {
     }
 
     const materialChange =
-      current.suggestedQuantity !== candidate.suggestedQuantity ||
+      !equals(current.suggestedQuantity, candidate.suggestedQuantity) ||
       Math.abs(daysBetween(current.suggestedDate, candidate.suggestedDate)) >
         toleranceDays;
 
@@ -437,7 +440,7 @@ export function diffPlanningActions(args: {
 
     const patch: Record<string, unknown> = {};
     if (current.status === "Dismissed") patch.status = "Open";
-    if (current.suggestedQuantity !== candidate.suggestedQuantity) {
+    if (!equals(current.suggestedQuantity, candidate.suggestedQuantity)) {
       patch.suggestedQuantity = candidate.suggestedQuantity;
     }
     if (current.suggestedDate !== candidate.suggestedDate) {
@@ -888,6 +891,8 @@ export async function generatePlanningActions(
         if (!action.periodId || !periodById.has(action.periodId)) continue;
         candidates.push({
           ...action,
+          // Persist boundary: every source above is float arithmetic.
+          suggestedQuantity: round(action.suggestedQuantity),
           itemId: row.id,
           locationId: location.id,
           assignee

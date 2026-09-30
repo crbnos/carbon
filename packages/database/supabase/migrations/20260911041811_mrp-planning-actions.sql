@@ -69,38 +69,9 @@ CREATE UNIQUE INDEX IF NOT EXISTS "planningAction_natural_key_idx" ON "planningA
    (COALESCE("purchaseOrderLineId", "jobId", '')))
   WHERE "status" <> 'Actioned';
 
+-- RLS policies live in packages/database/src/authz/manifest.ts (`planningAction`)
+-- and ship through the generated authz migration.
 ALTER TABLE "public"."planningAction" ENABLE ROW LEVEL SECURITY;
-
-DO $$ BEGIN
-  CREATE POLICY "SELECT" ON "public"."planningAction"
-  FOR SELECT USING (
-    "companyId" = ANY ((SELECT get_companies_with_employee_role())::text[])
-  );
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-
-DO $$ BEGIN
-  CREATE POLICY "INSERT" ON "public"."planningAction"
-  FOR INSERT WITH CHECK (
-    "companyId" = ANY ((SELECT get_companies_with_employee_permission('purchasing_update'))::text[])
-    OR "companyId" = ANY ((SELECT get_companies_with_employee_permission('production_update'))::text[])
-  );
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-
-DO $$ BEGIN
-  CREATE POLICY "UPDATE" ON "public"."planningAction"
-  FOR UPDATE USING (
-    "companyId" = ANY ((SELECT get_companies_with_employee_permission('purchasing_update'))::text[])
-    OR "companyId" = ANY ((SELECT get_companies_with_employee_permission('production_update'))::text[])
-  );
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-
-DO $$ BEGIN
-  CREATE POLICY "DELETE" ON "public"."planningAction"
-  FOR DELETE USING (
-    "companyId" = ANY ((SELECT get_companies_with_employee_permission('purchasing_update'))::text[])
-    OR "companyId" = ANY ((SELECT get_companies_with_employee_permission('production_update'))::text[])
-  );
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 
 -- Ownership ladder (tree: company default -> location -> location-specific item group -> item)
 ALTER TABLE "itemPlanning"    ADD COLUMN IF NOT EXISTS "responsibleEmployee" TEXT REFERENCES "user"("id");
@@ -140,32 +111,6 @@ CREATE TABLE IF NOT EXISTS "itemPostingGroupResponsibility" (
 CREATE INDEX IF NOT EXISTS "itemPostingGroupResponsibility_companyId_idx" ON "itemPostingGroupResponsibility" ("companyId");
 CREATE INDEX IF NOT EXISTS "itemPostingGroupResponsibility_createdBy_idx" ON "itemPostingGroupResponsibility" ("createdBy");
 
+-- RLS policies live in packages/database/src/authz/manifest.ts
+-- (`itemPostingGroupResponsibility`) and ship through the generated authz migration.
 ALTER TABLE "public"."itemPostingGroupResponsibility" ENABLE ROW LEVEL SECURITY;
-
-DO $$ BEGIN
-  CREATE POLICY "SELECT" ON "public"."itemPostingGroupResponsibility"
-  FOR SELECT USING (
-    "companyId" = ANY ((SELECT get_companies_with_employee_role())::text[])
-  );
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-
-DO $$ BEGIN
-  CREATE POLICY "INSERT" ON "public"."itemPostingGroupResponsibility"
-  FOR INSERT WITH CHECK (
-    "companyId" = ANY ((SELECT get_companies_with_employee_permission('settings_update'))::text[])
-  );
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-
-DO $$ BEGIN
-  CREATE POLICY "UPDATE" ON "public"."itemPostingGroupResponsibility"
-  FOR UPDATE USING (
-    "companyId" = ANY ((SELECT get_companies_with_employee_permission('settings_update'))::text[])
-  );
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;
-
-DO $$ BEGIN
-  CREATE POLICY "DELETE" ON "public"."itemPostingGroupResponsibility"
-  FOR DELETE USING (
-    "companyId" = ANY ((SELECT get_companies_with_employee_permission('settings_update'))::text[])
-  );
-EXCEPTION WHEN duplicate_object THEN NULL; END $$;

@@ -1,5 +1,5 @@
 {
-  "totalTools": 1563,
+  "totalTools": 1564,
   "modules": 15,
   "tools": [
     {"name":"account_deleteUserAttributeValue","classification":"DESTRUCTIVE","paramCount":2,"schema":"0d38e12233b4","response":"bcde375ebd4c","injectAuth":"companyId+userId","permission":"none","paginates":false},
@@ -775,7 +775,7 @@
     {"name":"production_getProductionEventsByJob","classification":"READ","paramCount":1,"schema":"4999bd4be598","response":"0c36813c32a1","injectAuth":"companyId","permission":"production:view","paginates":false},
     {"name":"production_getProductionEventsByOperations","classification":"READ","paramCount":1,"schema":"0715cdbaa5fb","response":"acc5e1d1e2c9","injectAuth":"companyId","permission":"production:view","paginates":false},
     {"name":"production_getProductionEventsPage","classification":"READ","paramCount":3,"schema":"86ca80961401","response":"d82d26b306e9","injectAuth":"companyId","permission":"production:view","paginates":true},
-    {"name":"production_getProductionPlanning","classification":"READ","paramCount":3,"schema":"d561f840242a","response":"684c3b20f68c","injectAuth":"companyId","permission":"production:view","paginates":true},
+    {"name":"production_getProductionPlanning","classification":"READ","paramCount":3,"schema":"78ce50ca03e5","response":"684c3b20f68c","injectAuth":"companyId","permission":"production:view","paginates":true},
     {"name":"production_getProductionProjections","classification":"READ","paramCount":3,"schema":"d561f840242a","response":"4973a62dfd1b","injectAuth":"companyId","permission":"production:view","paginates":true},
     {"name":"production_getProductionQuantities","classification":"READ","paramCount":2,"schema":"304bd714250f","response":"3b4cf7a6bc87","injectAuth":"companyId","permission":"production:view","paginates":true},
     {"name":"production_getProductionQuantity","classification":"READ","paramCount":1,"schema":"3797626bd17e","response":"c506c8c71d8f","injectAuth":"companyId","permission":"production:view","paginates":false},
@@ -807,6 +807,7 @@
     {"name":"production_recalculateJobOperationDependencies","classification":"WRITE","paramCount":1,"schema":"4999bd4be598","response":"a70079765330","injectAuth":"companyId+updatedBy+userId","permission":"production:update","paginates":false},
     {"name":"production_recalculateJobRequirements","classification":"WRITE","paramCount":1,"schema":"3797626bd17e","response":"none","injectAuth":"companyId+updatedBy+userId","permission":"production:update","paginates":false},
     {"name":"production_releaseJobOperationBatch","classification":"WRITE","paramCount":1,"schema":"979f64cb9229","response":"none","injectAuth":"companyId+updatedBy+userId","permission":"production:update","paginates":false},
+    {"name":"production_reopenDismissedPlanningActions","classification":"WRITE","paramCount":1,"schema":"0eb0c2be01ed","response":"bcde375ebd4c","injectAuth":"companyId+userId","permission":"production:update","paginates":false},
     {"name":"production_reopenPlanningActions","classification":"WRITE","paramCount":1,"schema":"0eb0c2be01ed","response":"bcde375ebd4c","injectAuth":"companyId+userId","permission":"production:update","paginates":false},
     {"name":"production_replaceJobMaterialSteps","classification":"DESTRUCTIVE","paramCount":2,"schema":"876f8375508a","response":"bcde375ebd4c","injectAuth":"companyId","permission":"production:update","paginates":false},
     {"name":"production_runMRP","classification":"WRITE","paramCount":2,"schema":"6e039fba26f6","response":"9e056a59d695","injectAuth":"companyId+updatedBy+userId","permission":"production:update","paginates":false},
@@ -929,7 +930,7 @@
     {"name":"purchasing_getPurchaseReturnOrders","classification":"READ","paramCount":5,"schema":"9d3e5d4db447","response":"de438833d869","injectAuth":"companyId","permission":"purchasing:view","paginates":true},
     {"name":"purchasing_getPurchaseReturnOrderShipments","classification":"READ","paramCount":1,"schema":"11b028f16d94","response":"08e1b6f03862","injectAuth":"companyId","permission":"purchasing:view","paginates":false},
     {"name":"purchasing_getPurchasingDocumentsAssignedToMe","classification":"READ","paramCount":0,"schema":"efddc7bd8bbc","response":"0f0173c85a86","injectAuth":"companyId","permission":"purchasing:view","paginates":false},
-    {"name":"purchasing_getPurchasingPlanning","classification":"READ","paramCount":3,"schema":"d561f840242a","response":"0cd4f8e33cdc","injectAuth":"companyId","permission":"purchasing:view","paginates":true},
+    {"name":"purchasing_getPurchasingPlanning","classification":"READ","paramCount":3,"schema":"78ce50ca03e5","response":"0cd4f8e33cdc","injectAuth":"companyId","permission":"purchasing:view","paginates":true},
     {"name":"purchasing_getPurchasingRFQ","classification":"READ","paramCount":1,"schema":"3797626bd17e","response":"08cb90c207da","injectAuth":"companyId","permission":"purchasing:view","paginates":false},
     {"name":"purchasing_getPurchasingRFQLine","classification":"READ","paramCount":1,"schema":"063a6777d378","response":"045f66457f11","injectAuth":"companyId","permission":"purchasing:view","paginates":false},
     {"name":"purchasing_getPurchasingRFQLines","classification":"READ","paramCount":1,"schema":"4e16cef99961","response":"24a761144b4a","injectAuth":"companyId","permission":"purchasing:view","paginates":false},

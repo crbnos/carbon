@@ -33,8 +33,8 @@ once by `buildColumnMaps(columns, translateLabel)` in
   resolve an id to a name) instead of the raw accessor read. See "meta hooks".
 - `sortKeyToLabel: Record<string, string>` — server-sort key (`meta.sortBy ??
   accessorKey`) → translated label, used by the `Sort` picker. Only string-header
-  columns with an accessorKey are included, so JSX-header columns (e.g. MRP week
-  columns) never flood the picker.
+  columns with an accessorKey are included, so JSX-header columns (e.g. the
+  demand projection week columns) never flood the picker.
 
 `Download` also receives:
 

@@ -81,6 +81,16 @@ export const planningActionType = [
 
 export const planningActionStatus = ["Open", "Dismissed", "Actioned"] as const;
 
+// Pure (no lingui / JSX) so the ERP vitest suite can import it directly — the
+// models barrel drags the glossary's lingui macros, which vitest does not
+// transform (see apps/erp/test/job-complete-logic.test.ts).
+export {
+  PLANNING_ACTIONS_COLUMN,
+  PLANNING_ACTIONS_SCOPE_MINE,
+  PLANNING_ACTIONS_SCOPE_PARAM,
+  resolvePlanningActionScope
+} from "./ui/Planning/planning-action-scope";
+
 export const planningActionDismissValidator = z.object({
   ids: z
     .array(z.string().min(1))

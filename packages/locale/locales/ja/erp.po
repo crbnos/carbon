@@ -311,6 +311,9 @@ msgstr "{count, plural, one {# コース} other {# コース}}"
 msgid "{days}d"
 msgstr "{days}日"
 
+msgid "{dismissed} dismissed"
+msgstr ""
+
 msgid "{done} of {total} phases complete"
 msgstr "{done} / {total} フェーズ完了"
 
@@ -330,6 +333,9 @@ msgstr "{hiddenCount} 件さらに表示: {hiddenNames}"
 #. placeholder {1}: skipped.length
 msgid "{inserted} inserted, {updated} updated, {0} need fixing, {1} skipped."
 msgstr "{inserted} 件が挿入されました、{updated} 件が更新されました、{0} 件の修正が必要です、{1} 件がスキップされました。"
+
+msgid "{leadTime} days"
+msgstr ""
 
 msgid "{linesCount, plural, one {# line} other {# lines}}"
 msgstr "{linesCount, plural, one {# 行} other {# 行}}"
@@ -458,6 +464,9 @@ msgstr "≈ {0}"
 
 msgid "0 operations"
 msgstr "0 件の工程"
+
+msgid "0 suggests a move for any date difference."
+msgstr ""
 
 msgid "0-4 weeks"
 msgstr "0～4週間"
@@ -1750,9 +1759,6 @@ msgstr "すべての期間"
 msgid "All tools"
 msgstr "すべてのツール"
 
-msgid "All types"
-msgstr "すべてのタイプ"
-
 msgid "All Types"
 msgstr "すべてのタイプ"
 
@@ -2055,6 +2061,9 @@ msgstr "価格設定ルールを適用"
 
 msgid "Apply Rules On Top"
 msgstr "上にルールを適用"
+
+msgid "Apply Suggested Changes"
+msgstr ""
 
 msgid "Apply suggestions"
 msgstr "提案を適用"
@@ -2697,9 +2706,6 @@ msgstr "資産"
 msgid "Assets, liabilities and equity as of a date"
 msgstr "特定の日付時点での資産、負債および純資産"
 
-msgid "Assign"
-msgstr "割り当て"
-
 msgid "Assign printers to locations. Shipping, receiving, and work centers inherit the location default unless overridden."
 msgstr "プリンターを拠点に割り当てます。出荷、入荷受付、および作業区は、上書きされない限り拠点のデフォルトを継承します。"
 
@@ -2709,14 +2715,17 @@ msgstr "割り当て先"
 msgid "Assign to Groups"
 msgstr "グループに割り当て"
 
-msgid "Assign to..."
-msgstr "割り当て先..."
+msgid "Assign to Me"
+msgstr ""
 
 msgid "Assigned"
 msgstr "割り当て済み"
 
 msgid "Assigned {employeeName} to {targetName} for the week"
 msgstr "{employeeName}を1週間の{targetName}に配置しました"
+
+msgid "Assigned to me"
+msgstr ""
 
 msgid "Assigned to Me"
 msgstr "私に割り当てられた"
@@ -4219,12 +4228,6 @@ msgstr "消耗品"
 msgid "Consumables"
 msgstr "消耗品"
 
-msgid "Consume forecast backward (weeks)"
-msgstr "予測の遡及消費 (週)"
-
-msgid "Consume forecast forward (weeks)"
-msgstr "予測の先行消費 (週)"
-
 msgid "Consumed"
 msgstr "消費済み"
 
@@ -5339,9 +5342,6 @@ msgstr "休日"
 msgid "Day-to-day questions and hypercare after launch"
 msgstr "日々の質問とローンチ後のハイパーケア"
 
-msgid "days"
-msgstr "日"
-
 msgid "Days"
 msgstr "日数"
 
@@ -5433,6 +5433,9 @@ msgstr "小数位数"
 
 msgid "Declining balance"
 msgstr "定率法"
+
+msgid "Decrease"
+msgstr ""
 
 msgid "Deep in the small hours, {name}."
 msgstr "真夜中ですね、{name}さん。"
@@ -5550,6 +5553,9 @@ msgstr "このクラスの新しい資産に事前入力されるデフォルト
 
 msgid "Defaults"
 msgstr "デフォルト"
+
+msgid "Defer"
+msgstr ""
 
 msgid "Deferred Tax Expense"
 msgstr "繰延税金費用"
@@ -6128,6 +6134,9 @@ msgstr "発見"
 msgid "Dismiss"
 msgstr "閉じる"
 
+msgid "Dismissed"
+msgstr ""
+
 msgid "Dispatch"
 msgstr "保全指示"
 
@@ -6499,6 +6508,9 @@ msgstr "各仕入先の全製造指図からの外注工程は、1つの新規�
 
 msgid "Each, lb, ft…"
 msgstr "各、ポンド、フィート…"
+
+msgid "Earlier weeks are consumed first."
+msgstr ""
 
 msgid "Earliest operation start"
 msgstr "最早操作開始"
@@ -7336,6 +7348,9 @@ msgstr "予想受取日"
 
 msgid "Expected Receipt Date"
 msgstr "予想受取日"
+
+msgid "Expedite"
+msgstr ""
 
 msgid "Expense account for customer balances written off as uncollectable on AR settlement"
 msgstr "売掛金決済において回収不可能として償却された得意先残高の費用勘定"
@@ -8988,6 +9003,9 @@ msgstr "インコタームズ"
 msgid "Incoterm Location"
 msgstr "インコタームズの場所"
 
+msgid "Increase"
+msgstr ""
+
 msgid "Indirect"
 msgstr "間接"
 
@@ -9750,8 +9768,14 @@ msgstr "最後に使用"
 msgid "Late in the evening, {name}."
 msgstr "夜遅く、{name}さん。"
 
+msgid "Later weeks are consumed once earlier ones are used up."
+msgstr ""
+
 msgid "Latest operation end"
 msgstr "最終操作終了"
+
+msgid "Latest Order Date"
+msgstr ""
 
 msgid "Latitude"
 msgstr "緯度"
@@ -10067,6 +10091,12 @@ msgstr "長い説明"
 
 msgid "Longitude"
 msgstr "経度"
+
+msgid "Look ahead (weeks)"
+msgstr ""
+
+msgid "Look back (weeks)"
+msgstr ""
 
 msgid "Looks empty here"
 msgstr "ここは空のようです"
@@ -10824,20 +10854,20 @@ msgstr "MPN"
 msgid "MRP (planning)"
 msgstr "MRP (計画)"
 
-msgid "MRP only suggests moving an existing order when its date is off by strictly more than this many days. Smaller gaps are suppressed to keep the worklist quiet."
-msgstr "MRPは、既存の注文のスケジュール日がこの日数を超えてずれている場合のみ、変更を提案します。より小さいズレは作業リストの静寂を保つために抑制されます。"
-
 msgid "MRP runs automatically every 3 hours, but you can run it manually here."
 msgstr "MRPは3時間ごとに自動的に実行されますが、ここで手動で実行することもできます。"
+
+msgid "MRP Suggestions"
+msgstr ""
+
+msgid "MRP suggests moving an existing order only when its date is off by more than this many days. Smaller gaps are left alone so the worklist stays quiet."
+msgstr ""
 
 msgid "Multiple jobs can run on this process at the same time — e.g. a laser table, furnace, or plating bath"
 msgstr "複数の製造指図がこの工法上で同時に実行できます—例：レーザーテーブル、炉、またはめっき槽"
 
 msgid "Must be in the same location"
 msgstr "同じ場所にある必要があります"
-
-msgid "My actions"
-msgstr "マイアクション"
 
 msgid "My Documents"
 msgstr "マイドキュメント"
@@ -11193,6 +11223,9 @@ msgstr "新規仕入先部品"
 msgid "New Supplier Return"
 msgstr "新規仕入先返品"
 
+msgid "New supply"
+msgstr ""
+
 msgid "New Timecard"
 msgstr "新しいタイムカード"
 
@@ -11303,9 +11336,6 @@ msgstr "検索に一致するアカウントがありません"
 
 msgid "No action needed"
 msgstr "対応は不要です"
-
-msgid "No actions assigned to you"
-msgstr "割り当てられたアクションがありません"
 
 msgid "No actions found."
 msgstr "アクションが見つかりません。"
@@ -11632,9 +11662,6 @@ msgstr "まだ支払いはありません。"
 
 msgid "No planned or recorded time."
 msgstr "計画時間または記録時間がありません。"
-
-msgid "No planning actions"
-msgstr "計画アクションなし"
 
 msgid "No planning data"
 msgstr "計画データなし"
@@ -12603,6 +12630,9 @@ msgstr "責任者"
 msgid "Owner (cost center)"
 msgstr "責任者 (原価センター)"
 
+msgid "Ownership"
+msgstr ""
+
 #. placeholder {0}: i18n._(member.owns)
 msgid "Owns: {0}"
 msgstr "所有者: {0}"
@@ -13062,9 +13092,6 @@ msgstr "予定時間"
 msgid "Planning"
 msgstr "計画"
 
-msgid "Planning Actions"
-msgstr "計画アクション"
-
 msgid "Planning Ownership"
 msgstr "計画所有権"
 
@@ -13464,6 +13491,9 @@ msgstr "プロジェクト計画"
 
 msgid "Project start"
 msgstr "プロジェクト開始"
+
+msgid "Projected"
+msgstr ""
 
 #. placeholder {0}: formatDate(projectedDate)
 msgid "Projected {0}"
@@ -14894,12 +14924,6 @@ msgstr "確認と作成"
 
 msgid "Review each item's changes, then confirm — releasing can't be undone."
 msgstr "各アイテムの変更をレビューしてから確認してください。リリースは取り消せません。"
-
-msgid "Review on Job"
-msgstr "製造指図のレビュー"
-
-msgid "Review on PO"
-msgstr "発注書のレビュー"
 
 msgid "Review the period's balance sheet and income statement and confirm the figures look right. This is a manual sign-off — mark it done once you have reviewed them."
 msgstr "期間の貸借対照表と損益計算書をレビューして、数字が正しいことを確認してください。これは手動の承認です。レビュー後、完了にマークしてください。"
@@ -16747,6 +16771,9 @@ msgstr "ステップは検査計画から継承されます。"
 msgid "Still dark out on the floor."
 msgstr "まだフロアは暗い。"
 
+msgid "Stock Availability"
+msgstr ""
+
 msgid "Stock movement corrected"
 msgstr "在庫移動が訂正されました"
 
@@ -16951,9 +16978,6 @@ msgstr "照合を提案"
 
 msgid "Suggest with AI"
 msgstr "AIで提案"
-
-msgid "Suggested by the last MRP run. Apply acts on uncommitted supply; sent orders link out for review."
-msgstr "最後のMRP実行により提案されました。適用はコミット前の供給に対して機能し、送付済み注文はレビューにリンクします。"
 
 msgid "Suggested orders you haven't placed yet."
 msgstr "まだ発注していない推奨注文。"
@@ -18755,6 +18779,9 @@ msgstr "許容差+"
 msgid "Tolerance (+/-)"
 msgstr "許容範囲 (+/-)"
 
+msgid "Tolerance (days)"
+msgstr ""
+
 msgid "tool"
 msgstr "ツール"
 
@@ -20117,8 +20144,8 @@ msgstr "{name}が変更されるとき"
 msgid "When a finished product's shelf life is set to Calculated, pick which consumed inputs feed the calculation."
 msgstr "完成品の保存期間が「計算」に設定されている場合、計算に使用される消費材料を選択してください。"
 
-msgid "When a sales order or job lands in a week with no remaining forecast, it consumes forecast from up to this many weeks back, then forward, instead of double-counting demand. Set both to 0 to restrict netting to the same week."
-msgstr "受注または製造指図が残りの予測がない週に到着した場合、所要量の二重計算を回避するため、最大この数の週前後から予測を消費します。ネッティングを同じ週に限定するには、両方を0に設定してください。"
+msgid "When a sales order or job lands in a week with no remaining forecast, it consumes forecast from nearby weeks instead of being counted on top of it. Set both to 0 to net within the same week only."
+msgstr ""
 
 msgid "When a serial or batch expires, and what happens if used after — a company policy can Warn, Block, or BlockWithOverride."
 msgstr "シリアルまたはバッチが期限切れになるとき、およびその後使用された場合に何が起こるか — 会社のポリシーは警告、ブロック、またはブロック上書きできます。"

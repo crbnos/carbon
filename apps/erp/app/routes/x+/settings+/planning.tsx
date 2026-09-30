@@ -1,14 +1,19 @@
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { validator } from "@carbon/form";
 import { Heading, ScrollArea, VStack } from "@carbon/react";
+import { msg } from "@lingui/core/macro";
 import { Trans } from "@lingui/react/macro";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { redirect, useLoaderData } from "react-router";
 import { z } from "zod";
+import SettingsSectionHeader from "~/components/SettingsSectionHeader";
 import {
+  forecastConsumptionValidator,
   getCompanySettings,
   getItemPostingGroupResponsibilities,
+  rescheduleToleranceValidator,
   setDefaultResponsibleEmployee,
   setForecastConsumptionWindow,
   setLocationResponsibleEmployee,
@@ -24,7 +29,7 @@ import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
 export const handle: Handle = {
-  breadcrumb: "Planning",
+  breadcrumb: msg`Planning`,
   to: path.to.planningSettings
 };
 
@@ -75,8 +80,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
 }
 
 const employeeIdValidator = z.string().optional();
-const toleranceValidator = z.coerce.number().int().min(0).max(365);
-const consumptionValidator = z.coerce.number().int().min(0).max(52);
 
 export async function action({ request }: ActionFunctionArgs) {
   const { client, companyId, userId } = await requirePermissions(request, {
@@ -155,8 +158,10 @@ export async function action({ request }: ActionFunctionArgs) {
       return { success: true, message: "Item group ownership updated" };
     }
     case "setTolerance": {
-      const parsed = toleranceValidator.safeParse(formData.get("days"));
-      if (!parsed.success) {
+      const validation = await validator(rescheduleToleranceValidator).validate(
+        formData
+      );
+      if (validation.error) {
         return {
           success: false,
           message: "Tolerance must be between 0 and 365 days"
@@ -164,7 +169,7 @@ export async function action({ request }: ActionFunctionArgs) {
       }
       const result = await setRescheduleToleranceDays(client, {
         companyId,
-        days: parsed.data
+        days: validation.data.days
       });
       if (result.error) {
         return { success: false, message: "Failed to update tolerance" };
@@ -172,13 +177,10 @@ export async function action({ request }: ActionFunctionArgs) {
       return { success: true, message: "Reschedule tolerance updated" };
     }
     case "setForecastConsumption": {
-      const backward = consumptionValidator.safeParse(
-        formData.get("backwardPeriods")
+      const validation = await validator(forecastConsumptionValidator).validate(
+        formData
       );
-      const forward = consumptionValidator.safeParse(
-        formData.get("forwardPeriods")
-      );
-      if (!backward.success || !forward.success) {
+      if (validation.error) {
         return {
           success: false,
           message: "Consumption window must be between 0 and 52 weeks"
@@ -186,8 +188,8 @@ export async function action({ request }: ActionFunctionArgs) {
       }
       const result = await setForecastConsumptionWindow(client, {
         companyId,
-        backwardPeriods: backward.data,
-        forwardPeriods: forward.data
+        backwardPeriods: validation.data.backwardPeriods,
+        forwardPeriods: validation.data.forwardPeriods
       });
       if (result.error) {
         return {
@@ -214,7 +216,7 @@ export default function PlanningSettingsRoute() {
   } = useLoaderData<typeof loader>();
 
   return (
-    <ScrollArea className="w-full h-[calc(100dvh-49px)]">
+    <ScrollArea className="w-full h-[calc(100dvh-var(--topbar-height)-var(--content-inset))]">
       <VStack
         spacing={4}
         className="py-12 px-4 max-w-[60rem] h-full mx-auto gap-4"
@@ -222,6 +224,10 @@ export default function PlanningSettingsRoute() {
         <Heading size="h3">
           <Trans>Planning</Trans>
         </Heading>
+
+        <SettingsSectionHeader>
+          <Trans>MRP Suggestions</Trans>
+        </SettingsSectionHeader>
         <RescheduleToleranceCard
           rescheduleToleranceDays={rescheduleToleranceDays}
         />
@@ -229,6 +235,10 @@ export default function PlanningSettingsRoute() {
           backwardPeriods={forecastConsumptionBackwardPeriods}
           forwardPeriods={forecastConsumptionForwardPeriods}
         />
+
+        <SettingsSectionHeader>
+          <Trans>Ownership</Trans>
+        </SettingsSectionHeader>
         <ResponsibleEmployeeCard
           defaultResponsibleEmployee={defaultResponsibleEmployee}
           locations={locations}

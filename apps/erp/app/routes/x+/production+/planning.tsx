@@ -9,9 +9,10 @@ import { Outlet, redirect, useLoaderData } from "react-router";
 import type { ProductionPlanningItem } from "~/modules/production";
 import {
   getPlanningActions,
-  getProductionPlanning
+  getProductionPlanning,
+  PLANNING_ACTIONS_SCOPE_PARAM,
+  resolvePlanningActionScope
 } from "~/modules/production";
-import PlanningActionsTable from "~/modules/production/ui/Planning/PlanningActionsTable";
 import ProductionPlanningTable from "~/modules/production/ui/Planning/ProductionPlanningTable";
 import { resolveLocationId } from "~/modules/shared/location.server";
 import { getOrCreatePeriods } from "~/modules/shared/shared.server";
@@ -53,31 +54,39 @@ export async function loader({ request }: LoaderFunctionArgs) {
   );
   const periods = await getOrCreatePeriods(locationToday, WEEKS_TO_PLAN);
 
-  const [items, planningActions] = await Promise.all([
-    getProductionPlanning(
-      client,
-      locationId,
-      companyId,
-      periods.map((p) => p.id),
-      {
-        search,
-        limit,
-        offset,
-        sorts,
-        filters
-      }
-    ),
-    // the persisted MRP action worklist — deliberately NOT driven by the
-    // grid's URL filters/sorts (those name grid columns)
-    getPlanningActions(client, {
-      companyId,
-      locationId,
-      kind: "Make",
-      search: null,
-      limit: 500,
-      offset: 0
-    })
-  ]);
+  // The persisted MRP action worklist — loaded first because the grid's
+  // Actions-column filter and "Assigned to me" scope resolve to item ids
+  // through it (the planning RPC has no such column).
+  const planningActions = await getPlanningActions(client, {
+    companyId,
+    locationId,
+    kind: "Make",
+    search: null,
+    limit: 500,
+    offset: 0
+  });
+
+  const { gridFilters, itemIds } = resolvePlanningActionScope({
+    filters,
+    scope: searchParams.get(PLANNING_ACTIONS_SCOPE_PARAM),
+    userId,
+    actions: planningActions.data ?? []
+  });
+
+  const items = await getProductionPlanning(
+    client,
+    locationId,
+    companyId,
+    periods.map((p) => p.id),
+    {
+      search,
+      limit,
+      offset,
+      sorts,
+      filters: gridFilters,
+      itemIds
+    }
+  );
 
   if (items.error) {
     redirect(
@@ -111,22 +120,13 @@ export default function ProductionPlanningRoute() {
           minSize={25}
           className="bg-background"
         >
-          <div className="flex flex-col h-full">
-            <PlanningActionsTable
-              actions={planningActions}
-              kind="Make"
-              locationId={locationId}
-              updatePath={path.to.bulkUpdateProductionPlanning}
-            />
-            <div className="flex-1 min-h-0">
-              <ProductionPlanningTable
-                data={items}
-                count={count}
-                locationId={locationId}
-                periods={periods}
-              />
-            </div>
-          </div>
+          <ProductionPlanningTable
+            data={items}
+            count={count}
+            locationId={locationId}
+            periods={periods}
+            planningActions={planningActions}
+          />
         </ResizablePanel>
         <Outlet />
       </ResizablePanelGroup>

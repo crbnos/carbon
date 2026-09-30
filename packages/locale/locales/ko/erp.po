@@ -311,6 +311,9 @@ msgstr "교육과정 {count}개"
 msgid "{days}d"
 msgstr "{days}일"
 
+msgid "{dismissed} dismissed"
+msgstr ""
+
 msgid "{done} of {total} phases complete"
 msgstr "{done}개 중 {total}개 단계 완료"
 
@@ -330,6 +333,9 @@ msgstr "{hiddenCount}개 추가: {hiddenNames}"
 #. placeholder {1}: skipped.length
 msgid "{inserted} inserted, {updated} updated, {0} need fixing, {1} skipped."
 msgstr "{inserted}개 추가, {updated}개 업데이트, {0}개 수정 필요, {1}개 건너뜀."
+
+msgid "{leadTime} days"
+msgstr ""
 
 msgid "{linesCount, plural, one {# line} other {# lines}}"
 msgstr "{linesCount, plural, one {# 줄} other {# 줄}}"
@@ -458,6 +464,9 @@ msgstr "≈ {0}"
 
 msgid "0 operations"
 msgstr "0개 공정"
+
+msgid "0 suggests a move for any date difference."
+msgstr ""
 
 msgid "0-4 weeks"
 msgstr "0-4주"
@@ -1750,9 +1759,6 @@ msgstr "전체 기간"
 msgid "All tools"
 msgstr "모든 도구"
 
-msgid "All types"
-msgstr "모든 유형"
-
 msgid "All Types"
 msgstr "모든 유형"
 
@@ -2055,6 +2061,9 @@ msgstr "가격 규칙 적용"
 
 msgid "Apply Rules On Top"
 msgstr "규칙을 우선 적용"
+
+msgid "Apply Suggested Changes"
+msgstr ""
 
 msgid "Apply suggestions"
 msgstr "제안 적용"
@@ -2697,9 +2706,6 @@ msgstr "자산"
 msgid "Assets, liabilities and equity as of a date"
 msgstr "특정 날짜 기준 자산, 부채 및 자본"
 
-msgid "Assign"
-msgstr "할당"
-
 msgid "Assign printers to locations. Shipping, receiving, and work centers inherit the location default unless overridden."
 msgstr "사업장에 프린터를 할당합니다. 출하, 입고, 및 작업장은 사업장 기본값을 상속하며 재정의할 수 있습니다."
 
@@ -2709,14 +2715,17 @@ msgstr "할당"
 msgid "Assign to Groups"
 msgstr "그룹에 할당"
 
-msgid "Assign to..."
-msgstr "...에 할당"
+msgid "Assign to Me"
+msgstr ""
 
 msgid "Assigned"
 msgstr "배정됨"
 
 msgid "Assigned {employeeName} to {targetName} for the week"
 msgstr "{employeeName}을(를) 주간으로 {targetName}에 배정"
+
+msgid "Assigned to me"
+msgstr ""
 
 msgid "Assigned to Me"
 msgstr "나에게 배정됨"
@@ -4219,12 +4228,6 @@ msgstr "소모품"
 msgid "Consumables"
 msgstr "소모품"
 
-msgid "Consume forecast backward (weeks)"
-msgstr "예측 역방향 소모(주)"
-
-msgid "Consume forecast forward (weeks)"
-msgstr "예측 순방향 소모(주)"
-
 msgid "Consumed"
 msgstr "소진됨"
 
@@ -5339,9 +5342,6 @@ msgstr "휴무일"
 msgid "Day-to-day questions and hypercare after launch"
 msgstr "도입 후 일상적인 질문 대응 및 하이퍼케어"
 
-msgid "days"
-msgstr "일"
-
 msgid "Days"
 msgstr "일"
 
@@ -5433,6 +5433,9 @@ msgstr "소수 자릿수"
 
 msgid "Declining balance"
 msgstr "정률법"
+
+msgid "Decrease"
+msgstr ""
 
 msgid "Deep in the small hours, {name}."
 msgstr "{name}님, 한밤중이군요."
@@ -5550,6 +5553,9 @@ msgstr "이 분류의 신규 자산에 미리 채워지는 기본 내용연수�
 
 msgid "Defaults"
 msgstr "기본값"
+
+msgid "Defer"
+msgstr ""
 
 msgid "Deferred Tax Expense"
 msgstr "이연법인세비용"
@@ -6128,6 +6134,9 @@ msgstr "발견"
 msgid "Dismiss"
 msgstr "닫기"
 
+msgid "Dismissed"
+msgstr ""
+
 msgid "Dispatch"
 msgstr "유지보수 지시"
 
@@ -6499,6 +6508,9 @@ msgstr "각 공급업체의 외주 공정은 모든 작업 지시에서 새로�
 
 msgid "Each, lb, ft…"
 msgstr "개, lb, ft…"
+
+msgid "Earlier weeks are consumed first."
+msgstr ""
 
 msgid "Earliest operation start"
 msgstr "최초 작업 시작"
@@ -7336,6 +7348,9 @@ msgstr "예상 입고"
 
 msgid "Expected Receipt Date"
 msgstr "예상 입고일"
+
+msgid "Expedite"
+msgstr ""
 
 msgid "Expense account for customer balances written off as uncollectable on AR settlement"
 msgstr "매출채권 정산 시 회수 불가로 상각된 고객 잔액에 대한 비용 계정"
@@ -8988,6 +9003,9 @@ msgstr "인코텀즈"
 msgid "Incoterm Location"
 msgstr "인코텀즈 위치"
 
+msgid "Increase"
+msgstr ""
+
 msgid "Indirect"
 msgstr "간접"
 
@@ -9750,8 +9768,14 @@ msgstr "마지막 사용"
 msgid "Late in the evening, {name}."
 msgstr "{name}님, 저녁이 늦어가는군요."
 
+msgid "Later weeks are consumed once earlier ones are used up."
+msgstr ""
+
 msgid "Latest operation end"
 msgstr "최신 작업 종료"
+
+msgid "Latest Order Date"
+msgstr ""
 
 msgid "Latitude"
 msgstr "위도"
@@ -10067,6 +10091,12 @@ msgstr "상세 설명"
 
 msgid "Longitude"
 msgstr "경도"
+
+msgid "Look ahead (weeks)"
+msgstr ""
+
+msgid "Look back (weeks)"
+msgstr ""
 
 msgid "Looks empty here"
 msgstr "이곳은 비어 있는 것 같습니다"
@@ -10824,20 +10854,20 @@ msgstr "Mpn"
 msgid "MRP (planning)"
 msgstr "MRP(계획)"
 
-msgid "MRP only suggests moving an existing order when its date is off by strictly more than this many days. Smaller gaps are suppressed to keep the worklist quiet."
-msgstr "MRP는 기존 주문의 날짜가 이 일수를 초과하여 차이날 때만 주문 이동을 제안합니다. 더 작은 간격은 작업 목록을 간결하게 유지하기 위해 무시됩니다."
-
 msgid "MRP runs automatically every 3 hours, but you can run it manually here."
 msgstr "MRP는 3시간마다 자동으로 실행되지만, 여기서 수동으로 실행할 수도 있습니다."
+
+msgid "MRP Suggestions"
+msgstr ""
+
+msgid "MRP suggests moving an existing order only when its date is off by more than this many days. Smaller gaps are left alone so the worklist stays quiet."
+msgstr ""
 
 msgid "Multiple jobs can run on this process at the same time — e.g. a laser table, furnace, or plating bath"
 msgstr "여러 작업 지시가 이 공법에서 동시에 실행될 수 있습니다 — 예: 레이저 테이블, 용광로 또는 도금 조에"
 
 msgid "Must be in the same location"
 msgstr "동일한 위치에 있어야 합니다"
-
-msgid "My actions"
-msgstr "내 작업"
 
 msgid "My Documents"
 msgstr "내 문서"
@@ -11193,6 +11223,9 @@ msgstr "새 공급업체 부품"
 msgid "New Supplier Return"
 msgstr "새 공급업체 반품"
 
+msgid "New supply"
+msgstr ""
+
 msgid "New Timecard"
 msgstr "새 근무기록"
 
@@ -11303,9 +11336,6 @@ msgstr "검색과 일치하는 계정이 없습니다"
 
 msgid "No action needed"
 msgstr "조치가 필요하지 않습니다"
-
-msgid "No actions assigned to you"
-msgstr "할당된 작업이 없습니다."
 
 msgid "No actions found."
 msgstr "작업을 찾을 수 없습니다."
@@ -11632,9 +11662,6 @@ msgstr "아직 지불이 없습니다."
 
 msgid "No planned or recorded time."
 msgstr "계획되거나 기록된 시간이 없습니다."
-
-msgid "No planning actions"
-msgstr "계획 작업이 없습니다."
 
 msgid "No planning data"
 msgstr "계획 데이터가 없습니다"
@@ -12603,6 +12630,9 @@ msgstr "책임자"
 msgid "Owner (cost center)"
 msgstr "책임자 (원가 센터)"
 
+msgid "Ownership"
+msgstr ""
+
 #. placeholder {0}: i18n._(member.owns)
 msgid "Owns: {0}"
 msgstr "소유: {0}"
@@ -13062,9 +13092,6 @@ msgstr "계획된 시간"
 msgid "Planning"
 msgstr "계획"
 
-msgid "Planning Actions"
-msgstr "계획 작업"
-
 msgid "Planning Ownership"
 msgstr "계획 소유권"
 
@@ -13464,6 +13491,9 @@ msgstr "프로젝트 계획"
 
 msgid "Project start"
 msgstr "프로젝트 시작"
+
+msgid "Projected"
+msgstr ""
 
 #. placeholder {0}: formatDate(projectedDate)
 msgid "Projected {0}"
@@ -14894,12 +14924,6 @@ msgstr "검토 및 생성"
 
 msgid "Review each item's changes, then confirm — releasing can't be undone."
 msgstr "각 항목의 변경 사항을 검토한 후 확인하세요 — 릴리스는 실행 취소할 수 없습니다."
-
-msgid "Review on Job"
-msgstr "작업 지시 검토"
-
-msgid "Review on PO"
-msgstr "발주서 검토"
 
 msgid "Review the period's balance sheet and income statement and confirm the figures look right. This is a manual sign-off — mark it done once you have reviewed them."
 msgstr "기간의 재무상태표 및 손익계산서를 검토하고 수치가 올바른지 확인합니다. 이는 수동 승인입니다 — 검토한 후 완료로 표시합니다."
@@ -16747,6 +16771,9 @@ msgstr "단계는 검사 계획에서 상속됩니다."
 msgid "Still dark out on the floor."
 msgstr "작업장은 여전히 어둡습니다."
 
+msgid "Stock Availability"
+msgstr ""
+
 msgid "Stock movement corrected"
 msgstr "재고 이동 수정됨"
 
@@ -16951,9 +16978,6 @@ msgstr "일치 제안"
 
 msgid "Suggest with AI"
 msgstr "AI로 제안"
-
-msgid "Suggested by the last MRP run. Apply acts on uncommitted supply; sent orders link out for review."
-msgstr "마지막 MRP 실행으로 제안됨. 적용은 미확약 공급에 작용하고, 발송된 주문은 검토를 위해 연결됩니다."
 
 msgid "Suggested orders you haven't placed yet."
 msgstr "아직 발주하지 않은 제안 주문입니다."
@@ -18755,6 +18779,9 @@ msgstr "공차+"
 msgid "Tolerance (+/-)"
 msgstr "공차(+/-)"
 
+msgid "Tolerance (days)"
+msgstr ""
+
 msgid "tool"
 msgstr "공구"
 
@@ -20117,8 +20144,8 @@ msgstr "{name}이(가) 변경될 때"
 msgid "When a finished product's shelf life is set to Calculated, pick which consumed inputs feed the calculation."
 msgstr "완성 제품의 보존 기간이 계산됨으로 설정된 경우, 계산에 영향을 주는 소모된 입력을 선택하세요."
 
-msgid "When a sales order or job lands in a week with no remaining forecast, it consumes forecast from up to this many weeks back, then forward, instead of double-counting demand. Set both to 0 to restrict netting to the same week."
-msgstr "수주 또는 작업 지시가 남은 예측이 없는 주에 도착할 때, 소요량을 이중 계산하는 대신 최대 이 주 수만큼 전후로 예측을 소비합니다. 네팅을 동일한 주로만 제한하려면 둘 다 0으로 설정합니다."
+msgid "When a sales order or job lands in a week with no remaining forecast, it consumes forecast from nearby weeks instead of being counted on top of it. Set both to 0 to net within the same week only."
+msgstr ""
 
 msgid "When a serial or batch expires, and what happens if used after — a company policy can Warn, Block, or BlockWithOverride."
 msgstr "일련번호 또는 배치가 만료되는 시점과 만료 후 사용 시의 처리 방식입니다 — 회사 정책은 경고, 차단, 또는 승인 후 차단 중 하나로 설정할 수 있습니다."

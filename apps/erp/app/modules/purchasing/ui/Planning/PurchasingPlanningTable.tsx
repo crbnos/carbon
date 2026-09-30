@@ -10,15 +10,16 @@ import {
   Loading,
   PulsingDot,
   Status,
+  Switch,
   Tooltip,
   TooltipContent,
   TooltipTrigger,
   toast,
   VStack
 } from "@carbon/react";
-import { getLocalTimeZone, parseDate } from "@internationalized/date";
+import { parseDate } from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useDateFormatter, useNumberFormatter } from "@react-aria/i18n";
+import { useNumberFormatter } from "@react-aria/i18n";
 import type { ColumnDef } from "@tanstack/react-table";
 import {
   memo,
@@ -32,10 +33,13 @@ import {
   LuBlocks,
   LuBookMarked,
   LuBox,
+  LuCalendarClock,
+  LuChartNoAxesColumn,
   LuCircleCheck,
   LuCirclePlay,
   LuClock,
   LuContainer,
+  LuListTodo,
   LuSquareChartGantt
 } from "react-icons/lu";
 import { Link, useFetcher } from "react-router";
@@ -49,7 +53,7 @@ import {
 import { Enumerable } from "~/components/Enumerable";
 import { useLocations } from "~/components/Form/Location";
 import { useUnitOfMeasure } from "~/components/Form/UnitOfMeasure";
-import { usePermissions } from "~/hooks";
+import { usePermissions, useUrlParams, useUser } from "~/hooks";
 import { inventoryItemTypes } from "~/modules/inventory/inventory.models";
 import { itemReorderingPolicies } from "~/modules/items/items.models";
 import type { SupplierPart } from "~/modules/items/types";
@@ -59,6 +63,28 @@ import {
   getReorderPolicyDescription,
   ItemReorderPolicy
 } from "~/modules/items/ui/Item/ItemReorderPolicy";
+import type { PlanningAction } from "~/modules/production";
+import {
+  PLANNING_ACTIONS_COLUMN,
+  PLANNING_ACTIONS_SCOPE_MINE,
+  PLANNING_ACTIONS_SCOPE_PARAM
+} from "~/modules/production";
+import {
+  LatestOrderDateCell,
+  latestOrderDateExportValue
+} from "~/modules/production/ui/Planning/LatestOrderDate";
+import {
+  isApplyablePlanningAction,
+  PlanningActionLines,
+  PlanningActionsCell,
+  planningActionsExportValue,
+  usePlanningActionTypeOptions
+} from "~/modules/production/ui/Planning/PlanningActionLines";
+import {
+  PlanningWeekStrip,
+  planningWeekStripSize,
+  planningWeekValues
+} from "~/modules/production/ui/Planning/PlanningWeekStrip";
 import type { action as mrpAction } from "~/routes/api+/mrp";
 import type { action as bulkUpdateAction } from "~/routes/x+/purchasing+/planning.update";
 import { useItems } from "~/stores";
@@ -73,17 +99,21 @@ type PlanningTableProps = {
   count: number;
   locationId: string;
   periods: { id: string; startDate: string; endDate: string }[];
+  /** The persisted MRP worklist for this location and kind (spec §P1.7),
+   *  rendered as the Actions column + each item's expanded row. */
+  planningActions: PlanningAction[];
 };
 
 const PlanningTable = memo(
-  ({ data, count, locationId, periods }: PlanningTableProps) => {
+  ({
+    data,
+    count,
+    locationId,
+    periods,
+    planningActions
+  }: PlanningTableProps) => {
     const { t } = useLingui();
     const permissions = usePermissions();
-
-    const dateFormatter = useDateFormatter({
-      month: "short",
-      day: "numeric"
-    });
 
     const numberFormatter = useNumberFormatter();
     const locations = useLocations();
@@ -92,6 +122,53 @@ const PlanningTable = memo(
 
     const mrpFetcher = useFetcher<typeof mrpAction>();
     const bulkUpdateFetcher = useFetcher<typeof bulkUpdateAction>();
+
+    // ── Planning actions (the MRP worklist) ──────────────────────────────────
+    const user = useUser();
+    const [params, setParams] = useUrlParams();
+    const canUpdateActions = permissions.can("update", "purchasing");
+    const actionTypeOptions = usePlanningActionTypeOptions("Buy");
+    const actionsFetcher = useFetcher<{
+      success?: boolean;
+      message?: string;
+    }>();
+    const isActionsBusy = actionsFetcher.state !== "idle";
+
+    useEffect(() => {
+      if (actionsFetcher.state !== "idle" || !actionsFetcher.data?.message)
+        return;
+      if (actionsFetcher.data.success) {
+        toast.success(actionsFetcher.data.message);
+      } else {
+        toast.error(actionsFetcher.data.message);
+      }
+    }, [actionsFetcher.state, actionsFetcher.data]);
+
+    const actionsByItemId = useMemo(() => {
+      const map = new Map<string, PlanningAction[]>();
+      for (const action of planningActions) {
+        const list = map.get(action.itemId);
+        if (list) list.push(action);
+        else map.set(action.itemId, [action]);
+      }
+      return map;
+    }, [planningActions]);
+
+    // ONE batched request per click: the route derives each row's behaviour
+    // from its persisted type, and a fetcher holds a single in-flight submission.
+    const submitActions = useCallback(
+      (payload: Record<string, unknown>) => {
+        actionsFetcher.submit(JSON.stringify({ locationId, ...payload }), {
+          method: "post",
+          action: path.to.bulkUpdatePurchasingPlanning,
+          encType: "application/json"
+        });
+      },
+      [actionsFetcher, locationId]
+    );
+
+    const isAssignedToMe =
+      params.get(PLANNING_ACTIONS_SCOPE_PARAM) === PLANNING_ACTIONS_SCOPE_MINE;
 
     // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
     useEffect(() => {
@@ -332,52 +409,36 @@ const PlanningTable = memo(
 
     // biome-ignore lint/correctness/useExhaustiveDependencies: suppressed due to migration
     const columns = useMemo<ColumnDef<PurchasingPlanningItem>[]>(() => {
-      const periodColumns: ColumnDef<PurchasingPlanningItem>[] = periods.map(
-        (period, index) => {
-          const isCurrentWeek = index === 0;
+      // The grid shows every week as one bar in a strip; the CSV keeps a
+      // column per week so an export still carries the numbers.
+      const periodColumns: ColumnDef<PurchasingPlanningItem>[] = [
+        {
+          id: "stockAvailability",
+          header: t`Stock Availability`,
+          cell: ({ row }) => (
+            <PlanningWeekStrip
+              periods={periods}
+              values={planningWeekValues(row.original, periods)}
+            />
+          ),
+          size: planningWeekStripSize(periods.length),
+          meta: {
+            icon: <LuChartNoAxesColumn />
+          }
+        },
+        ...periods.map((_, index) => {
           const weekNumber = index + 1;
           const weekKey = `week${weekNumber}` as keyof PurchasingPlanningItem;
-          const startDate = parseDate(period.startDate).toDate(
-            getLocalTimeZone()
-          );
-          const endDate = parseDate(period.endDate).toDate(getLocalTimeZone());
-
-          return {
-            accessorKey: weekKey,
-            header: () => (
-              <VStack spacing={0}>
-                <div>
-                  {isCurrentWeek ? "Present Week" : `Week ${weekNumber}`}
-                </div>
-                <div className="text-xs text-muted-foreground">
-                  {dateFormatter.format(startDate)} -{" "}
-                  {dateFormatter.format(endDate)}
-                </div>
-              </VStack>
-            ),
-            cell: ({ row }) => {
-              const value = row.getValue<number>(weekKey);
-              if (value === undefined) return "-";
-              return (
-                <span
-                  className={value < 0 ? "text-red-500 font-bold" : undefined}
-                >
-                  {numberFormatter.format(value)}
-                </span>
-              );
-            },
-            meta: {
-              filterHeader: isCurrentWeek
-                ? t`Present Week`
-                : t`Week ${weekNumber}`,
-              exportValue: (row: PurchasingPlanningItem) => {
-                const value = row[weekKey] as number | undefined;
-                return value === undefined ? null : value;
-              }
+          return exportOnlyColumn<PurchasingPlanningItem>({
+            id: weekKey,
+            header: index === 0 ? t`Present Week` : t`Week ${weekNumber}`,
+            value: (row) => {
+              const value = row[weekKey] as number | undefined;
+              return value === undefined ? null : value;
             }
-          };
-        }
-      );
+          });
+        })
+      ];
 
       return [
         {
@@ -413,6 +474,25 @@ const PlanningTable = memo(
           header: t`Item Name`,
           value: (row) => row.name ?? null
         }),
+        {
+          id: PLANNING_ACTIONS_COLUMN,
+          header: t`Actions`,
+          cell: ({ row }) => (
+            <PlanningActionsCell
+              actions={actionsByItemId.get(row.original.id) ?? []}
+            />
+          ),
+          meta: {
+            icon: <LuListTodo />,
+            pluralHeader: t`Actions`,
+            filter: {
+              type: "static",
+              options: actionTypeOptions
+            },
+            exportValue: (row: PurchasingPlanningItem) =>
+              planningActionsExportValue(actionsByItemId.get(row.id) ?? [])
+          }
+        },
         {
           accessorKey: "unitOfMeasureCode",
           header: "",
@@ -526,6 +606,21 @@ const PlanningTable = memo(
           }
         },
         {
+          id: "latestOrderDate",
+          header: t`Latest Order Date`,
+          cell: ({ row }) => (
+            <LatestOrderDateCell
+              itemPlanning={row.original}
+              periods={periods}
+            />
+          ),
+          meta: {
+            icon: <LuCalendarClock />,
+            exportValue: (row: PurchasingPlanningItem) =>
+              latestOrderDateExportValue(row, periods)
+          }
+        },
+        {
           accessorKey: "type",
           header: t`Type`,
           cell: ({ row }) =>
@@ -595,17 +690,23 @@ const PlanningTable = memo(
       ];
     }, [
       suppliers,
-      dateFormatter,
       numberFormatter,
       unitOfMeasures,
       suppliersMap,
-      isDisabled
+      isDisabled,
+      actionsByItemId,
+      actionTypeOptions
       // Note: ordersMap is intentionally not in deps to avoid column regeneration
       // getOrdersForItem inside the cell will access the latest ordersMap via closure
     ]);
 
     const renderActions = useCallback(
       (selectedRows: typeof data) => {
+        const applyableIds = selectedRows.flatMap((row) =>
+          (actionsByItemId.get(row.id) ?? [])
+            .filter(isApplyablePlanningAction)
+            .map((action) => action.id)
+        );
         return (
           <DropdownMenuContent align="end" className="min-w-[200px]">
             <DropdownMenuLabel>Update</DropdownMenuLabel>
@@ -618,10 +719,88 @@ const PlanningTable = memo(
               <DropdownMenuIcon icon={<LuSquareChartGantt />} />
               <Trans>Order Parts</Trans>
             </DropdownMenuItem>
+            <DropdownMenuItem
+              disabled={
+                !canUpdateActions || applyableIds.length === 0 || isActionsBusy
+              }
+              onSelect={() =>
+                submitActions({
+                  action: "apply",
+                  planningActionIds: applyableIds
+                })
+              }
+            >
+              <DropdownMenuIcon icon={<LuListTodo />} />
+              <Trans>Apply Suggested Changes</Trans>
+              {applyableIds.length > 0 && (
+                <span className="ml-auto pl-3 text-xs text-muted-foreground tabular-nums">
+                  {applyableIds.length}
+                </span>
+              )}
+            </DropdownMenuItem>
           </DropdownMenuContent>
         );
       },
-      [bulkUpdateFetcher.state, onBulkUpdate]
+      [
+        bulkUpdateFetcher.state,
+        onBulkUpdate,
+        actionsByItemId,
+        canUpdateActions,
+        isActionsBusy,
+        submitActions
+      ]
+    );
+
+    const canExpandRow = useCallback(
+      (row: PurchasingPlanningItem) =>
+        (actionsByItemId.get(row.id)?.length ?? 0) > 0,
+      [actionsByItemId]
+    );
+
+    const renderExpandedRow = useCallback(
+      (row: PurchasingPlanningItem) => (
+        <PlanningActionLines
+          actions={actionsByItemId.get(row.id) ?? []}
+          currentUserId={user.id}
+          canUpdate={canUpdateActions}
+          isBusy={isActionsBusy}
+          onApply={(ids) =>
+            submitActions({ action: "apply", planningActionIds: ids })
+          }
+          onDismiss={(ids) =>
+            submitActions({ action: "dismiss", planningActionIds: ids })
+          }
+          onReopen={(ids) =>
+            submitActions({ action: "reopen", planningActionIds: ids })
+          }
+          onAssignToMe={(ids) =>
+            submitActions({
+              action: "assign",
+              planningActionIds: ids,
+              assignee: user.id
+            })
+          }
+          onOrder={() => setSelectedItem(row)}
+        />
+      ),
+      [actionsByItemId, user.id, canUpdateActions, isActionsBusy, submitActions]
+    );
+
+    const headerActions = (
+      <Switch
+        variant="small"
+        label={t`Assigned to me`}
+        checked={isAssignedToMe}
+        onCheckedChange={(checked) =>
+          setParams({
+            [PLANNING_ACTIONS_SCOPE_PARAM]: checked
+              ? PLANNING_ACTIONS_SCOPE_MINE
+              : null,
+            // the result set changes — reset paging like SearchFilter does
+            offset: null
+          })
+        }
+      />
     );
 
     const defaultColumnVisibility = {
@@ -678,6 +857,9 @@ const PlanningTable = memo(
             </div>
           }
           renderActions={renderActions}
+          renderExpandedRow={renderExpandedRow}
+          canExpandRow={canExpandRow}
+          headerActions={headerActions}
           title={t`Material Planning`}
           table="planning"
           withSavedView

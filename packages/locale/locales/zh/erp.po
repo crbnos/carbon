@@ -311,6 +311,9 @@ msgstr "{count, plural, one {# 门课程} other {# 门课程}}"
 msgid "{days}d"
 msgstr "{days}天"
 
+msgid "{dismissed} dismissed"
+msgstr ""
+
 msgid "{done} of {total} phases complete"
 msgstr "{done}个/{total}个阶段已完成"
 
@@ -330,6 +333,9 @@ msgstr "还有{hiddenCount}个：{hiddenNames}"
 #. placeholder {1}: skipped.length
 msgid "{inserted} inserted, {updated} updated, {0} need fixing, {1} skipped."
 msgstr "已插入{inserted}条，已更新{updated}条，需修复{0}条，已跳过{1}条。"
+
+msgid "{leadTime} days"
+msgstr ""
 
 msgid "{linesCount, plural, one {# line} other {# lines}}"
 msgstr "{linesCount, plural, one {# 行} other {# 行}}"
@@ -458,6 +464,9 @@ msgstr "≈ {0}"
 
 msgid "0 operations"
 msgstr "0个工序"
+
+msgid "0 suggests a move for any date difference."
+msgstr ""
 
 msgid "0-4 weeks"
 msgstr "0-4 周"
@@ -1750,9 +1759,6 @@ msgstr "所有时间"
 msgid "All tools"
 msgstr "所有工具"
 
-msgid "All types"
-msgstr "所有类型"
-
 msgid "All Types"
 msgstr "所有类型"
 
@@ -2055,6 +2061,9 @@ msgstr "应用定价规则"
 
 msgid "Apply Rules On Top"
 msgstr "在顶部应用规则"
+
+msgid "Apply Suggested Changes"
+msgstr ""
 
 msgid "Apply suggestions"
 msgstr "应用建议"
@@ -2697,9 +2706,6 @@ msgstr "资产"
 msgid "Assets, liabilities and equity as of a date"
 msgstr "某一日期的资产、负债和所有者权益"
 
-msgid "Assign"
-msgstr "分配"
-
 msgid "Assign printers to locations. Shipping, receiving, and work centers inherit the location default unless overridden."
 msgstr "将打印机分配到位置。运输、接收和工作中心继承位置默认值，除非被覆盖。"
 
@@ -2709,14 +2715,17 @@ msgstr "分配给"
 msgid "Assign to Groups"
 msgstr "分配给组"
 
-msgid "Assign to..."
-msgstr "分配给..."
+msgid "Assign to Me"
+msgstr ""
 
 msgid "Assigned"
 msgstr "已分配"
 
 msgid "Assigned {employeeName} to {targetName} for the week"
 msgstr "将 {employeeName} 分配给 {targetName}，为期一周"
+
+msgid "Assigned to me"
+msgstr ""
 
 msgid "Assigned to Me"
 msgstr "已分配给我"
@@ -4219,12 +4228,6 @@ msgstr "耗材"
 msgid "Consumables"
 msgstr "耗材"
 
-msgid "Consume forecast backward (weeks)"
-msgstr "向后消耗预测（周数）"
-
-msgid "Consume forecast forward (weeks)"
-msgstr "向前消耗预测（周数）"
-
 msgid "Consumed"
 msgstr "已消耗"
 
@@ -5339,9 +5342,6 @@ msgstr "休息日"
 msgid "Day-to-day questions and hypercare after launch"
 msgstr "日常问题和上线后的超级护理"
 
-msgid "days"
-msgstr "天"
-
 msgid "Days"
 msgstr "天数"
 
@@ -5433,6 +5433,9 @@ msgstr "小数位数"
 
 msgid "Declining balance"
 msgstr "余额递减法"
+
+msgid "Decrease"
+msgstr ""
 
 msgid "Deep in the small hours, {name}."
 msgstr "深夜时分，{name}。"
@@ -5550,6 +5553,9 @@ msgstr "新增此类资产时预填充的默认使用年限"
 
 msgid "Defaults"
 msgstr "默认值"
+
+msgid "Defer"
+msgstr ""
 
 msgid "Deferred Tax Expense"
 msgstr "递延所得税费用"
@@ -6128,6 +6134,9 @@ msgstr "发现"
 msgid "Dismiss"
 msgstr "关闭"
 
+msgid "Dismissed"
+msgstr ""
+
 msgid "Dispatch"
 msgstr "维护工单"
 
@@ -6499,6 +6508,9 @@ msgstr "每个供应商的外协工序从每个工单转至一份新采购订单
 
 msgid "Each, lb, ft…"
 msgstr "每个、磅、英尺…"
+
+msgid "Earlier weeks are consumed first."
+msgstr ""
 
 msgid "Earliest operation start"
 msgstr "最早操作开始"
@@ -7336,6 +7348,9 @@ msgstr "预期收货"
 
 msgid "Expected Receipt Date"
 msgstr "预期收货日期"
+
+msgid "Expedite"
+msgstr ""
 
 msgid "Expense account for customer balances written off as uncollectable on AR settlement"
 msgstr "应收账款结算时作为无法收回的客户余额的费用账户"
@@ -8988,6 +9003,9 @@ msgstr "贸易术语"
 msgid "Incoterm Location"
 msgstr "贸易术语地点"
 
+msgid "Increase"
+msgstr ""
+
 msgid "Indirect"
 msgstr "间接"
 
@@ -9750,8 +9768,14 @@ msgstr "最后使用"
 msgid "Late in the evening, {name}."
 msgstr "傍晚晚些时候，{name}。"
 
+msgid "Later weeks are consumed once earlier ones are used up."
+msgstr ""
+
 msgid "Latest operation end"
 msgstr "最新操作结束"
+
+msgid "Latest Order Date"
+msgstr ""
 
 msgid "Latitude"
 msgstr "纬度"
@@ -10067,6 +10091,12 @@ msgstr "长描述"
 
 msgid "Longitude"
 msgstr "经度"
+
+msgid "Look ahead (weeks)"
+msgstr ""
+
+msgid "Look back (weeks)"
+msgstr ""
 
 msgid "Looks empty here"
 msgstr "看起来这里是空的"
@@ -10824,20 +10854,20 @@ msgstr "Mpn"
 msgid "MRP (planning)"
 msgstr "MRP (计划)"
 
-msgid "MRP only suggests moving an existing order when its date is off by strictly more than this many days. Smaller gaps are suppressed to keep the worklist quiet."
-msgstr "MRP 仅在现有订单的日期严格偏离超过此天数时建议移动它。较小的间隙被抑制以保持工作清单的安静。"
-
 msgid "MRP runs automatically every 3 hours, but you can run it manually here."
 msgstr "MRP 每 3 小时自动运行一次，但您也可以在此手动运行。"
+
+msgid "MRP Suggestions"
+msgstr ""
+
+msgid "MRP suggests moving an existing order only when its date is off by more than this many days. Smaller gaps are left alone so the worklist stays quiet."
+msgstr ""
 
 msgid "Multiple jobs can run on this process at the same time — e.g. a laser table, furnace, or plating bath"
 msgstr "多个作业可以同时在此工序上运行 — 例如激光切割机、炉子或电镀槽"
 
 msgid "Must be in the same location"
 msgstr "必须在同一位置"
-
-msgid "My actions"
-msgstr "我的计划行动"
 
 msgid "My Documents"
 msgstr "我的文档"
@@ -11193,6 +11223,9 @@ msgstr "新供应商零件"
 msgid "New Supplier Return"
 msgstr "新建供应商退货"
 
+msgid "New supply"
+msgstr ""
+
 msgid "New Timecard"
 msgstr "新时间卡"
 
@@ -11303,9 +11336,6 @@ msgstr "没有账户与您的搜索匹配"
 
 msgid "No action needed"
 msgstr "无需操作"
-
-msgid "No actions assigned to you"
-msgstr "没有分配给您的计划行动"
 
 msgid "No actions found."
 msgstr "未找到操作。"
@@ -11632,9 +11662,6 @@ msgstr "还没有付款。"
 
 msgid "No planned or recorded time."
 msgstr "没有计划或记录的时间。"
-
-msgid "No planning actions"
-msgstr "没有计划行动"
 
 msgid "No planning data"
 msgstr "没有计划数据"
@@ -12603,6 +12630,9 @@ msgstr "负责人"
 msgid "Owner (cost center)"
 msgstr "负责人（成本中心）"
 
+msgid "Ownership"
+msgstr ""
+
 #. placeholder {0}: i18n._(member.owns)
 msgid "Owns: {0}"
 msgstr "拥有：{0}"
@@ -13062,9 +13092,6 @@ msgstr "已计划时间"
 msgid "Planning"
 msgstr "计划"
 
-msgid "Planning Actions"
-msgstr "计划行动"
-
 msgid "Planning Ownership"
 msgstr "计划所有权"
 
@@ -13464,6 +13491,9 @@ msgstr "项目计划"
 
 msgid "Project start"
 msgstr "项目开始"
+
+msgid "Projected"
+msgstr ""
 
 #. placeholder {0}: formatDate(projectedDate)
 msgid "Projected {0}"
@@ -14894,12 +14924,6 @@ msgstr "查看和创建"
 
 msgid "Review each item's changes, then confirm — releasing can't be undone."
 msgstr "评审每个物料的更改，然后确认——发布无法撤销。"
-
-msgid "Review on Job"
-msgstr "工单上的评审"
-
-msgid "Review on PO"
-msgstr "采购订单上的评审"
 
 msgid "Review the period's balance sheet and income statement and confirm the figures look right. This is a manual sign-off — mark it done once you have reviewed them."
 msgstr "评审期间的资产负债表和利润表，并确认数字正确。这是手动签核——一旦您评审完毕即标记为完成。"
@@ -16747,6 +16771,9 @@ msgstr "步骤继承自检验计划。"
 msgid "Still dark out on the floor."
 msgstr "车间仍在黑暗中。"
 
+msgid "Stock Availability"
+msgstr ""
+
 msgid "Stock movement corrected"
 msgstr "库存移动已修正"
 
@@ -16951,9 +16978,6 @@ msgstr "建议匹配"
 
 msgid "Suggest with AI"
 msgstr "使用 AI 建议"
-
-msgid "Suggested by the last MRP run. Apply acts on uncommitted supply; sent orders link out for review."
-msgstr "由最后一次MRP运行建议。应用作用于未提交的供应；发送的订单链接以供评审。"
 
 msgid "Suggested orders you haven't placed yet."
 msgstr "您尚未下达的建议订单。"
@@ -18755,6 +18779,9 @@ msgstr "公差+"
 msgid "Tolerance (+/-)"
 msgstr "容差 (+/-)"
 
+msgid "Tolerance (days)"
+msgstr ""
+
 msgid "tool"
 msgstr "工具"
 
@@ -20117,8 +20144,8 @@ msgstr "当 {name} 更改时"
 msgid "When a finished product's shelf life is set to Calculated, pick which consumed inputs feed the calculation."
 msgstr "当成品的保质期设置为计算时，选择哪些已消耗的输入项用于计算。"
 
-msgid "When a sales order or job lands in a week with no remaining forecast, it consumes forecast from up to this many weeks back, then forward, instead of double-counting demand. Set both to 0 to restrict netting to the same week."
-msgstr "当销售订单或工单进入某一周（该周没有剩余预测）时，它将从之前最多指定周数及之后消耗预测，而不是重复计算需求。将两者设置为0可将净额限制在同一周。"
+msgid "When a sales order or job lands in a week with no remaining forecast, it consumes forecast from nearby weeks instead of being counted on top of it. Set both to 0 to net within the same week only."
+msgstr ""
 
 msgid "When a serial or batch expires, and what happens if used after — a company policy can Warn, Block, or BlockWithOverride."
 msgstr "当序列号或批次过期时,以及之后使用时会发生什么 — 公司政策可以警告、阻止或使用覆盖阻止。"

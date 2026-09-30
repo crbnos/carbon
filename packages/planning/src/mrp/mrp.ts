@@ -652,7 +652,9 @@ export async function runMrp(
           consumedQuantity: round(consumedByPeriod.get(periodIndex) ?? 0)
         });
 
-        const remainder = remainderByPeriod.get(periodIndex) ?? 0;
+        // Round at the compare: the consumed side is a float sum, so an
+        // exactly-consumed forecast can leave a ~1e-16 remainder.
+        const remainder = round(remainderByPeriod.get(periodIndex) ?? 0);
         if (remainder <= 0) continue;
 
         const key = makeKey(locationId, periodId, itemId);

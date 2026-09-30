@@ -6,8 +6,11 @@ import { datetime } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { Outlet, redirect, useLoaderData } from "react-router";
-import { getPlanningActions } from "~/modules/production";
-import PlanningActionsTable from "~/modules/production/ui/Planning/PlanningActionsTable";
+import {
+  getPlanningActions,
+  PLANNING_ACTIONS_SCOPE_PARAM,
+  resolvePlanningActionScope
+} from "~/modules/production";
 import type { PurchasingPlanningItem } from "~/modules/purchasing";
 import { getPurchasingPlanning } from "~/modules/purchasing";
 import PurchasingPlanningTable from "~/modules/purchasing/ui/Planning/PurchasingPlanningTable";
@@ -51,31 +54,39 @@ export async function loader({ request }: LoaderFunctionArgs) {
   );
   const periods = await getOrCreatePeriods(locationToday, WEEKS_TO_PLAN);
 
-  const [items, planningActions] = await Promise.all([
-    getPurchasingPlanning(
-      client,
-      locationId,
-      companyId,
-      periods.map((p) => p.id),
-      {
-        search,
-        limit,
-        offset,
-        sorts,
-        filters
-      }
-    ),
-    // the persisted MRP action worklist — deliberately NOT driven by the
-    // grid's URL filters/sorts (those name grid columns)
-    getPlanningActions(client, {
-      companyId,
-      locationId,
-      kind: "Buy",
-      search: null,
-      limit: 500,
-      offset: 0
-    })
-  ]);
+  // The persisted MRP action worklist — loaded first because the grid's
+  // Actions-column filter and "Assigned to me" scope resolve to item ids
+  // through it (the planning RPC has no such column).
+  const planningActions = await getPlanningActions(client, {
+    companyId,
+    locationId,
+    kind: "Buy",
+    search: null,
+    limit: 500,
+    offset: 0
+  });
+
+  const { gridFilters, itemIds } = resolvePlanningActionScope({
+    filters,
+    scope: searchParams.get(PLANNING_ACTIONS_SCOPE_PARAM),
+    userId,
+    actions: planningActions.data ?? []
+  });
+
+  const items = await getPurchasingPlanning(
+    client,
+    locationId,
+    companyId,
+    periods.map((p) => p.id),
+    {
+      search,
+      limit,
+      offset,
+      sorts,
+      filters: gridFilters,
+      itemIds
+    }
+  );
 
   if (items.error) {
     redirect(
@@ -109,22 +120,13 @@ export default function PurchasingPlanningRoute() {
           minSize={25}
           className="bg-background"
         >
-          <div className="flex flex-col h-full">
-            <PlanningActionsTable
-              actions={planningActions}
-              kind="Buy"
-              locationId={locationId}
-              updatePath={path.to.bulkUpdatePurchasingPlanning}
-            />
-            <div className="flex-1 min-h-0">
-              <PurchasingPlanningTable
-                data={items}
-                count={count}
-                locationId={locationId}
-                periods={periods}
-              />
-            </div>
-          </div>
+          <PurchasingPlanningTable
+            data={items}
+            count={count}
+            locationId={locationId}
+            periods={periods}
+            planningActions={planningActions}
+          />
         </ResizablePanel>
         <Outlet />
       </ResizablePanelGroup>

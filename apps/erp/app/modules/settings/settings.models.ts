@@ -262,6 +262,16 @@ export const expiredEntityPolicies = [
 // Every shelf-life knob lives inside the companySettings.inventoryShelfLife
 // JSONB blob. The validator below reads/writes that single object so the
 // settings form can submit one cohesive structure.
+// Planning settings (MRP suggestions). Whole days / whole weekly buckets.
+export const rescheduleToleranceValidator = z.object({
+  days: zfd.numeric(z.number().int().min(0).max(365))
+});
+
+export const forecastConsumptionValidator = z.object({
+  backwardPeriods: zfd.numeric(z.number().int().min(0).max(52)),
+  forwardPeriods: zfd.numeric(z.number().int().min(0).max(52))
+});
+
 export const shelfLifeSettingsValidator = z.object({
   // Empty input -> undefined -> persisted as null in JSONB, which disables
   // expiry badges company-wide. Any value 0..365 drives the amber

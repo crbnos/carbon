@@ -13,6 +13,7 @@ import {
   notifyScheduleInputsChanged,
   productionOrderValidator,
   recalculateJobRequirements,
+  reopenDismissedPlanningActions,
   reopenPlanningActions,
   updateJob,
   updateJobStatus,
@@ -708,6 +709,33 @@ export async function action({ request }: ActionFunctionArgs) {
       return {
         success: true,
         message: `Dismissed ${parsedIds.data.length} planning action${parsedIds.data.length === 1 ? "" : "s"}`
+      };
+    }
+    case "reopen": {
+      const parsedIds = z
+        .array(z.string().min(1))
+        .min(1)
+        .safeParse(planningActionIds);
+      if (!parsedIds.success) {
+        return data(
+          { success: false, message: "planningActionIds is required" },
+          { status: 500 }
+        );
+      }
+      const result = await reopenDismissedPlanningActions(client, {
+        ids: parsedIds.data,
+        companyId,
+        userId
+      });
+      if (result.error) {
+        return data(
+          { success: false, message: "Failed to reopen planning actions" },
+          { status: 500 }
+        );
+      }
+      return {
+        success: true,
+        message: `Reopened ${parsedIds.data.length} planning action${parsedIds.data.length === 1 ? "" : "s"}`
       };
     }
     case "assign": {

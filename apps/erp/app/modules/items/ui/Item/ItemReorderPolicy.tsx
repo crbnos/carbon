@@ -209,6 +209,26 @@ export function clearOrdersCache() {
   ordersCache.clear();
 }
 
+/**
+ * The planned order a planner has to act on first for a planning row, or null
+ * when nothing needs ordering. Its `startDate` is the LATEST date the order can
+ * be placed: the date the supply is required (`dueDate`) less the item's lead
+ * time. Read from the same cached sizing the order drawer uses, so the grid and
+ * the drawer can never show different dates.
+ */
+export function getNextPlannedOrder(
+  itemPlanning: ProductionPlanningItem | PurchasingPlanningItem,
+  periods: { startDate: string; id: string }[]
+) {
+  let next: ReturnType<typeof calculateOrders>[number] | null = null;
+  for (const order of calculateOrders({ itemPlanning, periods })) {
+    if (order.quantity <= 0) continue;
+    // ISO dates: string order is chronological
+    if (!next || order.startDate < next.startDate) next = order;
+  }
+  return next;
+}
+
 export function getProductionOrdersFromPlanning(
   itemPlanning: ProductionPlanningItem,
   periods: { startDate: string; id: string }[]

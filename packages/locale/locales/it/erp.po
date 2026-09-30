@@ -311,6 +311,9 @@ msgstr "{count, plural, one {# corso} other {# corsi}}"
 msgid "{days}d"
 msgstr "{days}g"
 
+msgid "{dismissed} dismissed"
+msgstr ""
+
 msgid "{done} of {total} phases complete"
 msgstr "{done} di {total} fasi completate"
 
@@ -330,6 +333,9 @@ msgstr "{hiddenCount} altri: {hiddenNames}"
 #. placeholder {1}: skipped.length
 msgid "{inserted} inserted, {updated} updated, {0} need fixing, {1} skipped."
 msgstr "{inserted} inseriti, {updated} aggiornati, {0} richiedono correzione, {1} saltati."
+
+msgid "{leadTime} days"
+msgstr ""
 
 msgid "{linesCount, plural, one {# line} other {# lines}}"
 msgstr "{linesCount, plural, one {# riga} other {# righe}}"
@@ -458,6 +464,9 @@ msgstr "≈ {0}"
 
 msgid "0 operations"
 msgstr "0 operazioni"
+
+msgid "0 suggests a move for any date difference."
+msgstr ""
 
 msgid "0-4 weeks"
 msgstr "0-4 settimane"
@@ -1750,9 +1759,6 @@ msgstr "Tutto il tempo"
 msgid "All tools"
 msgstr "Tutti gli strumenti"
 
-msgid "All types"
-msgstr "Tutti i tipi"
-
 msgid "All Types"
 msgstr "Tutti i tipi"
 
@@ -2055,6 +2061,9 @@ msgstr "Applica regole di prezzo"
 
 msgid "Apply Rules On Top"
 msgstr "Applica regole in alto"
+
+msgid "Apply Suggested Changes"
+msgstr ""
 
 msgid "Apply suggestions"
 msgstr "Applica proposte"
@@ -2697,9 +2706,6 @@ msgstr "Cespiti"
 msgid "Assets, liabilities and equity as of a date"
 msgstr "Attività, passività e patrimonio netto a una data"
 
-msgid "Assign"
-msgstr "Assegna"
-
 msgid "Assign printers to locations. Shipping, receiving, and work centers inherit the location default unless overridden."
 msgstr "Assegna stampanti alle posizioni. Spedizione, ricezione e centri di lavoro ereditano l'impostazione predefinita della posizione se non sovrascritti."
 
@@ -2709,14 +2715,17 @@ msgstr "Assegna a"
 msgid "Assign to Groups"
 msgstr "Assegna ai Gruppi"
 
-msgid "Assign to..."
-msgstr "Assegna a..."
+msgid "Assign to Me"
+msgstr ""
 
 msgid "Assigned"
 msgstr "Assegnato"
 
 msgid "Assigned {employeeName} to {targetName} for the week"
 msgstr "Assegnato {employeeName} a {targetName} per la settimana"
+
+msgid "Assigned to me"
+msgstr ""
 
 msgid "Assigned to Me"
 msgstr "Assegnato a me"
@@ -4219,12 +4228,6 @@ msgstr "materiali di consumo"
 msgid "Consumables"
 msgstr "Materiali di consumo"
 
-msgid "Consume forecast backward (weeks)"
-msgstr "Consumo previsione indietro (settimane)"
-
-msgid "Consume forecast forward (weeks)"
-msgstr "Consumo previsione avanti (settimane)"
-
 msgid "Consumed"
 msgstr "Consumato"
 
@@ -5339,9 +5342,6 @@ msgstr "Giorno libero"
 msgid "Day-to-day questions and hypercare after launch"
 msgstr "Domande quotidiane e supporto intensivo dopo il lancio"
 
-msgid "days"
-msgstr "giorni"
-
 msgid "Days"
 msgstr "Giorni"
 
@@ -5433,6 +5433,9 @@ msgstr "Posizioni Decimali"
 
 msgid "Declining balance"
 msgstr "Quote decrescenti"
+
+msgid "Decrease"
+msgstr ""
 
 msgid "Deep in the small hours, {name}."
 msgstr "Nel bel mezzo della notte, {name}."
@@ -5550,6 +5553,9 @@ msgstr "Vita utile predefinita che viene precompilata su nuovi beni in questa cl
 
 msgid "Defaults"
 msgstr "Impostazioni predefinite"
+
+msgid "Defer"
+msgstr ""
 
 msgid "Deferred Tax Expense"
 msgstr "Imposte Differite - Spese"
@@ -6128,6 +6134,9 @@ msgstr "Scoperta"
 msgid "Dismiss"
 msgstr "Ignora"
 
+msgid "Dismissed"
+msgstr ""
+
 msgid "Dispatch"
 msgstr "Intervento di manutenzione"
 
@@ -6499,6 +6508,9 @@ msgstr "Le operazioni esterne di ogni fornitore da ogni ordine di produzione ven
 
 msgid "Each, lb, ft…"
 msgstr "Ogni, lb, ft…"
+
+msgid "Earlier weeks are consumed first."
+msgstr ""
 
 msgid "Earliest operation start"
 msgstr "Inizio operazione anticipato"
@@ -7336,6 +7348,9 @@ msgstr "Ricevimento Previsto"
 
 msgid "Expected Receipt Date"
 msgstr "Data di Ricezione Prevista"
+
+msgid "Expedite"
+msgstr ""
 
 msgid "Expense account for customer balances written off as uncollectable on AR settlement"
 msgstr "Conto di Spesa per i saldi dei Clienti cancellati come inesigibili alla regolazione dei Crediti verso clienti"
@@ -8988,6 +9003,9 @@ msgstr "Incoterm"
 msgid "Incoterm Location"
 msgstr "Luogo Incoterm"
 
+msgid "Increase"
+msgstr ""
+
 msgid "Indirect"
 msgstr "Indiretto"
 
@@ -9750,8 +9768,14 @@ msgstr "Ultimo utilizzo"
 msgid "Late in the evening, {name}."
 msgstr "Tardi la sera, {name}."
 
+msgid "Later weeks are consumed once earlier ones are used up."
+msgstr ""
+
 msgid "Latest operation end"
 msgstr "Fine dell'ultimo operazione"
+
+msgid "Latest Order Date"
+msgstr ""
 
 msgid "Latitude"
 msgstr "Latitudine"
@@ -10067,6 +10091,12 @@ msgstr "Descrizione Lunga"
 
 msgid "Longitude"
 msgstr "Longitudine"
+
+msgid "Look ahead (weeks)"
+msgstr ""
+
+msgid "Look back (weeks)"
+msgstr ""
 
 msgid "Looks empty here"
 msgstr "Sembra vuoto qui"
@@ -10824,20 +10854,20 @@ msgstr "MPN"
 msgid "MRP (planning)"
 msgstr "MRP (pianificazione)"
 
-msgid "MRP only suggests moving an existing order when its date is off by strictly more than this many days. Smaller gaps are suppressed to keep the worklist quiet."
-msgstr "MRP suggerisce solo lo spostamento di un Ordine quando la sua data è scostata di più di questo numero di giorni. Gli scostamenti più piccoli vengono soppressi per mantenere la lista di lavoro pulita."
-
 msgid "MRP runs automatically every 3 hours, but you can run it manually here."
 msgstr "MRP viene eseguito automaticamente ogni 3 ore, ma puoi eseguirlo manualmente qui."
+
+msgid "MRP Suggestions"
+msgstr ""
+
+msgid "MRP suggests moving an existing order only when its date is off by more than this many days. Smaller gaps are left alone so the worklist stays quiet."
+msgstr ""
 
 msgid "Multiple jobs can run on this process at the same time — e.g. a laser table, furnace, or plating bath"
 msgstr "Più ordini di produzione possono essere eseguiti su questo processo contemporaneamente — ad esempio, un tavolo laser, un forno o un bagno di galvanica"
 
 msgid "Must be in the same location"
 msgstr "Deve essere nella stessa posizione"
-
-msgid "My actions"
-msgstr "Le mie azioni"
 
 msgid "My Documents"
 msgstr "I miei documenti"
@@ -11193,6 +11223,9 @@ msgstr "Nuovo Fornitore Parte"
 msgid "New Supplier Return"
 msgstr "Nuovo Reso Fornitore"
 
+msgid "New supply"
+msgstr ""
+
 msgid "New Timecard"
 msgstr "Nuovo Foglio Presenze"
 
@@ -11303,9 +11336,6 @@ msgstr "Nessun account corrisponde alla tua ricerca"
 
 msgid "No action needed"
 msgstr "Nessuna azione necessaria"
-
-msgid "No actions assigned to you"
-msgstr "Nessuna azione assegnata a te"
 
 msgid "No actions found."
 msgstr "Nessuna azione trovata."
@@ -11632,9 +11662,6 @@ msgstr "Nessun pagamento ancora."
 
 msgid "No planned or recorded time."
 msgstr "Nessun tempo pianificato o registrato."
-
-msgid "No planning actions"
-msgstr "Nessuna azione di pianificazione"
 
 msgid "No planning data"
 msgstr "Nessun dato di pianificazione"
@@ -12603,6 +12630,9 @@ msgstr "Responsabile"
 msgid "Owner (cost center)"
 msgstr "Responsabile (Centro di costo)"
 
+msgid "Ownership"
+msgstr ""
+
 #. placeholder {0}: i18n._(member.owns)
 msgid "Owns: {0}"
 msgstr "Possiede: {0}"
@@ -13062,9 +13092,6 @@ msgstr "Tempo previsto"
 msgid "Planning"
 msgstr "Pianificazione"
 
-msgid "Planning Actions"
-msgstr "Azioni di Pianificazione"
-
 msgid "Planning Ownership"
 msgstr "Responsabilità di Pianificazione"
 
@@ -13464,6 +13491,9 @@ msgstr "Piano di Progetto"
 
 msgid "Project start"
 msgstr "Inizio progetto"
+
+msgid "Projected"
+msgstr ""
 
 #. placeholder {0}: formatDate(projectedDate)
 msgid "Projected {0}"
@@ -14894,12 +14924,6 @@ msgstr "Rivedi e crea"
 
 msgid "Review each item's changes, then confirm — releasing can't be undone."
 msgstr "Rivedi le modifiche di ogni articolo, quindi conferma — il rilascio non può essere annullato."
-
-msgid "Review on Job"
-msgstr "Revisione su Ordine di produzione"
-
-msgid "Review on PO"
-msgstr "Revisione su Ordine di acquisto"
 
 msgid "Review the period's balance sheet and income statement and confirm the figures look right. This is a manual sign-off — mark it done once you have reviewed them."
 msgstr "Rivedi lo stato patrimoniale e il conto economico del periodo e conferma che i dati siano corretti. Si tratta di un'autorizzazione manuale — segna come fatto dopo averli revisionati."
@@ -16747,6 +16771,9 @@ msgstr "I passi sono ereditati dal piano di controllo."
 msgid "Still dark out on the floor."
 msgstr "Ancora buio in officina."
 
+msgid "Stock Availability"
+msgstr ""
+
 msgid "Stock movement corrected"
 msgstr "Movimento di magazzino corretto"
 
@@ -16951,9 +16978,6 @@ msgstr "Suggerisci Corrispondenza"
 
 msgid "Suggest with AI"
 msgstr "Suggerisci con l'IA"
-
-msgid "Suggested by the last MRP run. Apply acts on uncommitted supply; sent orders link out for review."
-msgstr "Suggerito dall'ultimo ciclo MRP. L'applicazione agisce sulla copertura non impegnata; gli ordini inviati rimandano a una revisione."
 
 msgid "Suggested orders you haven't placed yet."
 msgstr "Ordini suggeriti che non hai ancora effettuato."
@@ -18755,6 +18779,9 @@ msgstr "Tol+"
 msgid "Tolerance (+/-)"
 msgstr "Tolleranza (+/-)"
 
+msgid "Tolerance (days)"
+msgstr ""
+
 msgid "tool"
 msgstr "Strumento"
 
@@ -20117,8 +20144,8 @@ msgstr "Quando {name} cambia"
 msgid "When a finished product's shelf life is set to Calculated, pick which consumed inputs feed the calculation."
 msgstr "Quando la durata di conservazione di un prodotto finito è impostata su Calcolata, scegli quali input consumati alimentano il calcolo."
 
-msgid "When a sales order or job lands in a week with no remaining forecast, it consumes forecast from up to this many weeks back, then forward, instead of double-counting demand. Set both to 0 to restrict netting to the same week."
-msgstr "Quando un ordine di vendita o un ordine di produzione cade in una settimana senza previsione residua, consuma previsione da fino a questo numero di settimane indietro e poi in avanti, anziché contare due volte il fabbisogno. Impostare entrambi a 0 per limitare il netting alla stessa settimana."
+msgid "When a sales order or job lands in a week with no remaining forecast, it consumes forecast from nearby weeks instead of being counted on top of it. Set both to 0 to net within the same week only."
+msgstr ""
 
 msgid "When a serial or batch expires, and what happens if used after — a company policy can Warn, Block, or BlockWithOverride."
 msgstr "Quando un numero di serie o un lotto scade, e cosa succede se usato dopo — una politica aziendale può Avvertire, Bloccare o BloccareCon Sostituzione."

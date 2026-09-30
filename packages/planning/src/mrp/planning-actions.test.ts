@@ -182,6 +182,28 @@ describe("deriveChangeActions", () => {
     });
   });
 
+  it("does not raise Decrease when fractional demand consumes the order exactly", () => {
+    // 0.7 + 0.1 is 0.7999999999999999 in floats; the raw leftover would be
+    // ~1e-16 and read as an unneeded tail of a fully required order.
+    const actions = deriveChangeActions({
+      ...base,
+      onHand: 0,
+      demandPeriods: [
+        { periodId: "p1", startDate: "2026-10-05", quantity: 0.7 },
+        { periodId: "p2", startDate: "2026-10-12", quantity: 0.1 }
+      ],
+      openOrders: [
+        {
+          purchaseOrderLineId: "pol-1",
+          quantity: 0.8,
+          dueDate: "2026-10-05", // on time → no date action
+          requiresManualAction: false
+        }
+      ]
+    });
+    expect(actions).toEqual([]);
+  });
+
   it("emits exactly ONE action per target — a date problem beats a quantity problem", () => {
     const actions = deriveChangeActions({
       ...base,
@@ -443,6 +465,17 @@ describe("diffPlanningActions", () => {
     const diff = diffPlanningActions({
       existing: [{ ...existing, status: "Dismissed" }],
       candidates: [candidate],
+      toleranceDays: TOLERANCE
+    });
+    expect(diff).toEqual({ inserts: [], updates: [], deleteIds: [] });
+  });
+
+  it("float noise in the candidate quantity is not a material change", () => {
+    // 0.1 + 0.2 is 0.30000000000000004: the same need, re-summed in a
+    // different row order, must not reopen a Dismissed row.
+    const diff = diffPlanningActions({
+      existing: [{ ...existing, status: "Dismissed", suggestedQuantity: 0.3 }],
+      candidates: [{ ...candidate, suggestedQuantity: 0.1 + 0.2 }],
       toleranceDays: TOLERANCE
     });
     expect(diff).toEqual({ inserts: [], updates: [], deleteIds: [] });

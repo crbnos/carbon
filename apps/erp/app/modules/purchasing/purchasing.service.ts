@@ -536,6 +536,10 @@ export async function getPurchasingPlanning(
   periods: string[],
   args: GenericQueryFilters & {
     search: string | null;
+    /** Restrict the grid to these items (the Actions column / "Assigned to me"
+     *  quick filter resolve to item ids in the loader). An empty array yields
+     *  no rows — the caller asked for a set nothing matched. */
+    itemIds?: string[];
   }
 ) {
   let query = client.rpc(
@@ -554,6 +558,10 @@ export async function getPurchasingPlanning(
     query = query.or(
       `name.ilike.%${args.search}%,readableIdWithRevision.ilike.%${args.search}%`
     );
+  }
+
+  if (args?.itemIds) {
+    query = query.in("id", args.itemIds);
   }
 
   query = setGenericQueryFilters(query, args, [

@@ -220,9 +220,48 @@ All join through `itemReplenishment` to expose `replenishmentSystem`, `leadTime`
 - Purchasing: `apps/erp/app/routes/x+/purchasing+/planning.tsx`
   (`view: "purchasing"`) + `PurchasingPlanningTable` under
   `apps/erp/app/modules/purchasing/ui/Planning/`.
+- **Weeks are one column, not 48.** Both grids render the per-period projection
+  (`week1`…`weekN`) as a single **Stock Availability** strip
+  (`modules/production/ui/Planning/PlanningWeekStrip.tsx`): one bar per week,
+  red below zero, grey at zero, green above, faint when MRP wrote no projection.
+  One tooltip per row follows the hovered bar (the shared `TooltipContent`
+  takes an `anchor` for this) and shows the week label, its date range and the
+  projected quantity. The per-week numbers stay in the CSV as
+  `exportOnlyColumn`s keyed `week1`…`weekN`, so an export is unchanged.
+- **Latest Order Date** (both grids, after Qty to Order): the last day the
+  row's NEXT planned order can be placed and still arrive on time — the date
+  the supply is required less the item's lead time. It is the `startDate` of
+  the earliest planned order from `getNextPlannedOrder`
+  (`items/ui/Item/ItemReorderPolicy.tsx`), which reads the same cached
+  `calculateOrders` sizing the order drawer uses, so grid and drawer cannot
+  disagree. Red once the day has passed (the order's `isASAP`); "-" when
+  nothing needs ordering. The tooltip shows the required date and lead time;
+  the CSV carries the ISO date. Cell: `ui/Planning/LatestOrderDate.tsx`.
 - Both have a "Recalculate" button (`mrpFetcher.Form` POST to
   `path.to.api.mrp(locationId)`) tooltip: *"MRP runs automatically every 3 hours,
   but you can run it manually here."*
+- **Planning actions (the MRP worklist, spec §P1.7) live INSIDE each grid**, not
+  in a separate list. Both routes load the location's persisted `planningAction`
+  rows (`getPlanningActions`, Buy/Make by kind) and pass them to the grid, which
+  renders an **Actions** column (one ICON chip per open type with a count and
+  the type name in a tooltip, the ASAP flag, a muted dismissed chip; always one
+  line so busy rows are no taller than the rest; static type filter) and an
+  **expandable row** (`renderExpandedRow`/`canExpandRow`, gated to items with
+  actions) listing the item's actions as child lines — type, target PO/job
+  hyperlink, quantity, `DateTime` (red when past), reason, assignee — each with
+  ONE button: **Apply** (open change action on an uncommitted target), **Review
+  on PO/Job** (`requiresManualAction`), or **Order…/Make…** (opens the grid's
+  order drawer; Order/Make rows are fulfilled by the existing Order button, never
+  applied as a change). A per-line ⋯ holds Assign to Me and Dismiss/Reopen. The
+  bulk menu gains **Apply Suggested Changes** (every applyable action on the
+  selected items, ONE batched request). Shared UI:
+  `modules/production/ui/Planning/PlanningActionLines.tsx`; every mutation posts
+  to the existing `planning.update.tsx` cases (`apply`/`dismiss`/`reopen`/`assign`).
+  The Actions column filter (`filter=planningActions:eq:<type>`) and the
+  `headerActions` **Assigned to me** switch (`?actions=mine`) are not grid RPC
+  columns: the loader resolves them through `resolvePlanningActionScope`
+  (`ui/Planning/planning-action-scope.ts`, pure, unit-tested) to an `itemIds`
+  restriction on `getPurchasingPlanning`/`getProductionPlanning`.
 - **Create planned orders** — `planning.update.tsx` in each module:
   - production (`create: "production"`, role `employee`): inserts jobs +
     job methods, upserts `supplyForecast` (`'Production Order'`), then

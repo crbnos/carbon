@@ -2157,6 +2157,10 @@ export async function getProductionPlanning(
   periods: string[],
   args: GenericQueryFilters & {
     search: string | null;
+    /** Restrict the grid to these items (the Actions column / "Assigned to me"
+     *  quick filter resolve to item ids in the loader). An empty array yields
+     *  no rows — the caller asked for a set nothing matched. */
+    itemIds?: string[];
   }
 ) {
   let query = client.rpc(
@@ -2175,6 +2179,10 @@ export async function getProductionPlanning(
     query = query.or(
       `name.ilike.%${args.search}%,readableIdWithRevision.ilike.%${args.search}%`
     );
+  }
+
+  if (args?.itemIds) {
+    query = query.in("id", args.itemIds);
   }
 
   query = setGenericQueryFilters(query, args, [
@@ -10579,6 +10587,23 @@ export async function reopenPlanningActions(
     .in("id", args.ids)
     .eq("companyId", args.companyId)
     .eq("status", "Actioned");
+}
+
+/**
+ * The worklist's "Reopen" on a Dismissed row. Dismissed-only: `reopenPlanningActions`
+ * above is the apply path's claim rollback (Actioned → Open) and must stay
+ * separate so a stale worklist id can never un-claim a row another apply holds.
+ */
+export async function reopenDismissedPlanningActions(
+  client: SupabaseClient<Database>,
+  args: { ids: string[]; companyId: string; userId: string }
+) {
+  return client
+    .from("planningAction")
+    .update({ status: "Open" as const, updatedBy: args.userId })
+    .in("id", args.ids)
+    .eq("companyId", args.companyId)
+    .eq("status", "Dismissed");
 }
 
 /**

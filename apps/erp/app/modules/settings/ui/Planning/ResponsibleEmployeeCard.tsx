@@ -1,22 +1,15 @@
 import {
-  Button,
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
   Combobox,
-  NumberDecrementStepper,
-  NumberField,
-  NumberIncrementStepper,
-  NumberInput,
-  NumberInputGroup,
-  NumberInputStepper,
   toast
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { ReactNode } from "react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo } from "react";
 import { LuFactory, LuMapPin, LuTags } from "react-icons/lu";
 import { useFetcher } from "react-router";
 import { usePeople } from "~/stores";
@@ -243,82 +236,5 @@ function OwnershipRow({
         />
       </div>
     </div>
-  );
-}
-
-export function RescheduleToleranceCard({
-  rescheduleToleranceDays
-}: {
-  rescheduleToleranceDays: number;
-}) {
-  const { t } = useLingui();
-  const toleranceFetcher = useFetcher<{ success: boolean; message: string }>();
-  const [days, setDays] = useState(rescheduleToleranceDays);
-
-  useEffect(() => {
-    if (
-      toleranceFetcher.data?.success === true &&
-      toleranceFetcher.data?.message
-    ) {
-      toast.success(toleranceFetcher.data.message);
-    }
-    if (
-      toleranceFetcher.data?.success === false &&
-      toleranceFetcher.data?.message
-    ) {
-      toast.error(toleranceFetcher.data.message);
-    }
-  }, [toleranceFetcher.data?.message, toleranceFetcher.data?.success]);
-
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle>
-          <Trans>Reschedule Tolerance</Trans>
-        </CardTitle>
-        <CardDescription>
-          <Trans>
-            MRP only suggests moving an existing order when its date is off by
-            strictly more than this many days. Smaller gaps are suppressed to
-            keep the worklist quiet.
-          </Trans>
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        <div className="flex items-center gap-3">
-          <div className="w-[160px]">
-            <NumberField
-              value={days}
-              minValue={0}
-              maxValue={365}
-              onChange={(value) => setDays(Number.isNaN(value) ? 0 : value)}
-            >
-              <NumberInputGroup className="relative">
-                <NumberInput />
-                <NumberInputStepper>
-                  <NumberIncrementStepper />
-                  <NumberDecrementStepper />
-                </NumberInputStepper>
-              </NumberInputGroup>
-            </NumberField>
-          </div>
-          <span className="text-sm text-muted-foreground">
-            <Trans>days</Trans>
-          </span>
-          <Button
-            size="sm"
-            isLoading={toleranceFetcher.state !== "idle"}
-            onClick={() => {
-              const formData = new FormData();
-              formData.set("intent", "setTolerance");
-              formData.set("days", String(days));
-              toleranceFetcher.submit(formData, { method: "POST" });
-            }}
-          >
-            {t`Save`}
-          </Button>
-        </div>
-      </CardContent>
-    </Card>
   );
 }

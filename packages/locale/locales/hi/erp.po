@@ -311,6 +311,9 @@ msgstr "{count, plural, one {# कोर्स} other {# कोर्स}}"
 msgid "{days}d"
 msgstr "{days}d"
 
+msgid "{dismissed} dismissed"
+msgstr ""
+
 msgid "{done} of {total} phases complete"
 msgstr "{done} में से {total} चरण पूर्ण"
 
@@ -330,6 +333,9 @@ msgstr "और {hiddenCount}: {hiddenNames}"
 #. placeholder {1}: skipped.length
 msgid "{inserted} inserted, {updated} updated, {0} need fixing, {1} skipped."
 msgstr "{inserted} सम्मिलित किया गया, {updated} अपडेट किया गया, {0} को ठीक करने की आवश्यकता है, {1} छोड़ा गया।"
+
+msgid "{leadTime} days"
+msgstr ""
 
 msgid "{linesCount, plural, one {# line} other {# lines}}"
 msgstr "{linesCount, plural, one {# लाइन} other {# लाइनें}}"
@@ -458,6 +464,9 @@ msgstr "≈ {0}"
 
 msgid "0 operations"
 msgstr "0 ऑपरेशन"
+
+msgid "0 suggests a move for any date difference."
+msgstr ""
 
 msgid "0-4 weeks"
 msgstr "0-4 सप्ताह"
@@ -1750,9 +1759,6 @@ msgstr "सभी समय"
 msgid "All tools"
 msgstr "सभी उपकरण"
 
-msgid "All types"
-msgstr "सभी प्रकार"
-
 msgid "All Types"
 msgstr "सभी प्रकार"
 
@@ -2055,6 +2061,9 @@ msgstr "मूल्य निर्धारण नियम लागू क�
 
 msgid "Apply Rules On Top"
 msgstr "शीर्ष पर नियम लागू करें"
+
+msgid "Apply Suggested Changes"
+msgstr ""
 
 msgid "Apply suggestions"
 msgstr "सुझाव लागू करें"
@@ -2697,9 +2706,6 @@ msgstr "संपत्तियां"
 msgid "Assets, liabilities and equity as of a date"
 msgstr "एक तारीख तक संपत्ति, देनदारियां और इक्विटी"
 
-msgid "Assign"
-msgstr "असाइन करें"
-
 msgid "Assign printers to locations. Shipping, receiving, and work centers inherit the location default unless overridden."
 msgstr "प्रिंटर को स्थानों को असाइन करें। शिपिंग, रिसीविंग और वर्क सेंटर स्थान डिफ़ॉल्ट को विरासत में लेते हैं जब तक कि ओवरराइड न किया जाए।"
 
@@ -2709,14 +2715,17 @@ msgstr "को असाइन करें"
 msgid "Assign to Groups"
 msgstr "समूहों को असाइन करें"
 
-msgid "Assign to..."
-msgstr "को असाइन करें..."
+msgid "Assign to Me"
+msgstr ""
 
 msgid "Assigned"
 msgstr "नियुक्त"
 
 msgid "Assigned {employeeName} to {targetName} for the week"
 msgstr "{employeeName} को सप्ताह के लिए {targetName} पर असाइन किया"
+
+msgid "Assigned to me"
+msgstr ""
 
 msgid "Assigned to Me"
 msgstr "मुझे असाइन किया गया"
@@ -4219,12 +4228,6 @@ msgstr "उपभोग्य सामग्री"
 msgid "Consumables"
 msgstr "उपभोग्य सामग्री"
 
-msgid "Consume forecast backward (weeks)"
-msgstr "पूर्वानुमान को पीछे की ओर उपयोग करें (सप्ताह)"
-
-msgid "Consume forecast forward (weeks)"
-msgstr "पूर्वानुमान को आगे की ओर उपयोग करें (सप्ताह)"
-
 msgid "Consumed"
 msgstr "उपभोग किया गया"
 
@@ -5339,9 +5342,6 @@ msgstr "छुट्टी"
 msgid "Day-to-day questions and hypercare after launch"
 msgstr "दिन-प्रतिदिन के प्रश्न और लॉन्च के बाद हाइपरकेयर"
 
-msgid "days"
-msgstr "दिन"
-
 msgid "Days"
 msgstr "दिन"
 
@@ -5433,6 +5433,9 @@ msgstr "दशमलव स्थान"
 
 msgid "Declining balance"
 msgstr "ह्रासमान शेष"
+
+msgid "Decrease"
+msgstr ""
 
 msgid "Deep in the small hours, {name}."
 msgstr "गहरी रात में, {name}।"
@@ -5550,6 +5553,9 @@ msgstr "डिफ़ॉल्ट उपयोगी जीवन जो इस �
 
 msgid "Defaults"
 msgstr "डिफ़ॉल्ट"
+
+msgid "Defer"
+msgstr ""
 
 msgid "Deferred Tax Expense"
 msgstr "आस्थगित कर व्यय"
@@ -6128,6 +6134,9 @@ msgstr "खोज"
 msgid "Dismiss"
 msgstr "खारिज करें"
 
+msgid "Dismissed"
+msgstr ""
+
 msgid "Dispatch"
 msgstr "रखरखाव कार्य"
 
@@ -6499,6 +6508,9 @@ msgstr "प्रत्येक आपूर्तिकर्ता की ब
 
 msgid "Each, lb, ft…"
 msgstr "प्रत्येक, lb, ft…"
+
+msgid "Earlier weeks are consumed first."
+msgstr ""
 
 msgid "Earliest operation start"
 msgstr "सबसे पहले संचालन शुरू"
@@ -7336,6 +7348,9 @@ msgstr "अपेक्षित रसीद"
 
 msgid "Expected Receipt Date"
 msgstr "अपेक्षित प्राप्ति तारीख"
+
+msgid "Expedite"
+msgstr ""
 
 msgid "Expense account for customer balances written off as uncollectable on AR settlement"
 msgstr "ग्राहक शेष राशि के लिए व्यय खाता जो प्राप्य खाते समझौते पर अनिर्धारक के रूप में लिखा गया है"
@@ -8988,6 +9003,9 @@ msgstr "इनकोटर्म"
 msgid "Incoterm Location"
 msgstr "इनकोटर्म स्थान"
 
+msgid "Increase"
+msgstr ""
+
 msgid "Indirect"
 msgstr "अप्रत्यक्ष"
 
@@ -9750,8 +9768,14 @@ msgstr "अंतिम उपयोग"
 msgid "Late in the evening, {name}."
 msgstr "शाम को देर में, {name}।"
 
+msgid "Later weeks are consumed once earlier ones are used up."
+msgstr ""
+
 msgid "Latest operation end"
 msgstr "नवीनतम ऑपरेशन अंत"
+
+msgid "Latest Order Date"
+msgstr ""
 
 msgid "Latitude"
 msgstr "अक्षांश"
@@ -10067,6 +10091,12 @@ msgstr "लंबा विवरण"
 
 msgid "Longitude"
 msgstr "देशांतर"
+
+msgid "Look ahead (weeks)"
+msgstr ""
+
+msgid "Look back (weeks)"
+msgstr ""
 
 msgid "Looks empty here"
 msgstr "यहाँ खाली लगता है"
@@ -10824,20 +10854,20 @@ msgstr "MPN"
 msgid "MRP (planning)"
 msgstr "MRP (योजना)"
 
-msgid "MRP only suggests moving an existing order when its date is off by strictly more than this many days. Smaller gaps are suppressed to keep the worklist quiet."
-msgstr "MRP केवल तभी किसी मौजूदा आदेश को स्थानांतरित करने का सुझाव देता है जब इसकी तारीख इतने दिनों से सख्ती से अधिक हो। छोटे अंतराल कार्यसूची को शांत रखने के लिए दबाए जाते हैं।"
-
 msgid "MRP runs automatically every 3 hours, but you can run it manually here."
 msgstr "MRP हर 3 घंटे में स्वचालित रूप से चलता है, लेकिन आप इसे यहां मैन्युअल रूप से चला सकते हैं।"
+
+msgid "MRP Suggestions"
+msgstr ""
+
+msgid "MRP suggests moving an existing order only when its date is off by more than this many days. Smaller gaps are left alone so the worklist stays quiet."
+msgstr ""
 
 msgid "Multiple jobs can run on this process at the same time — e.g. a laser table, furnace, or plating bath"
 msgstr "एक ही समय में इस प्रक्रिया पर कई जॉब चल सकती हैं — उदाहरण के लिए, एक लेजर टेबल, फर्नेस, या प्लेटिंग बाथ"
 
 msgid "Must be in the same location"
 msgstr "एक ही स्थान में होना चाहिए"
-
-msgid "My actions"
-msgstr "मेरी कार्रवाइयां"
 
 msgid "My Documents"
 msgstr "मेरे दस्तावेज़"
@@ -11193,6 +11223,9 @@ msgstr "नया आपूर्तिकर्ता भाग"
 msgid "New Supplier Return"
 msgstr "नया आपूर्तिकर्ता रिटर्न"
 
+msgid "New supply"
+msgstr ""
+
 msgid "New Timecard"
 msgstr "नया टाइमकार्ड"
 
@@ -11303,9 +11336,6 @@ msgstr "कोई खाता आपकी खोज से मेल नही
 
 msgid "No action needed"
 msgstr "कोई कार्रवाई की आवश्यकता नहीं है"
-
-msgid "No actions assigned to you"
-msgstr "आपको कोई कार्रवाई असाइन नहीं की गई है"
 
 msgid "No actions found."
 msgstr "कोई कार्य नहीं मिला।"
@@ -11632,9 +11662,6 @@ msgstr "अभी तक कोई भुगतान नहीं।"
 
 msgid "No planned or recorded time."
 msgstr "कोई नियोजित या दर्ज समय नहीं।"
-
-msgid "No planning actions"
-msgstr "कोई योजना कार्रवाइयां नहीं"
 
 msgid "No planning data"
 msgstr "कोई योजना डेटा नहीं"
@@ -12603,6 +12630,9 @@ msgstr "स्वामी"
 msgid "Owner (cost center)"
 msgstr "स्वामी (लागत केंद्र)"
 
+msgid "Ownership"
+msgstr ""
+
 #. placeholder {0}: i18n._(member.owns)
 msgid "Owns: {0}"
 msgstr "स्वामित्व: {0}"
@@ -13062,9 +13092,6 @@ msgstr "योजनाबद्ध समय"
 msgid "Planning"
 msgstr "योजना"
 
-msgid "Planning Actions"
-msgstr "योजना कार्रवाइयां"
-
 msgid "Planning Ownership"
 msgstr "योजना स्वामित्व"
 
@@ -13464,6 +13491,9 @@ msgstr "प्रोजेक्ट प्लान"
 
 msgid "Project start"
 msgstr "प्रोजेक्ट शुरुआत"
+
+msgid "Projected"
+msgstr ""
 
 #. placeholder {0}: formatDate(projectedDate)
 msgid "Projected {0}"
@@ -14894,12 +14924,6 @@ msgstr "समीक्षा और बनाएं"
 
 msgid "Review each item's changes, then confirm — releasing can't be undone."
 msgstr "प्रत्येक आइटम के परिवर्तनों की समीक्षा करें, फिर पुष्टि करें — जारी करना वापस नहीं किया जा सकता।"
-
-msgid "Review on Job"
-msgstr "जॉब पर समीक्षा"
-
-msgid "Review on PO"
-msgstr "PO पर समीक्षा"
 
 msgid "Review the period's balance sheet and income statement and confirm the figures look right. This is a manual sign-off — mark it done once you have reviewed them."
 msgstr "अवधि के तुलन पत्र और आय विवरण की समीक्षा करें और पुष्टि करें कि आंकड़े सही दिखते हैं। यह एक मैनुअल हस्ताक्षर बंद है — समीक्षा के बाद इसे पूरा करें।"
@@ -16747,6 +16771,9 @@ msgstr "चरण निरीक्षण योजना से विरा�
 msgid "Still dark out on the floor."
 msgstr "अभी भी फर्श पर अंधकार है।"
 
+msgid "Stock Availability"
+msgstr ""
+
 msgid "Stock movement corrected"
 msgstr "स्टॉक आंदोलन सही किया गया"
 
@@ -16951,9 +16978,6 @@ msgstr "मिलान सुझाएं"
 
 msgid "Suggest with AI"
 msgstr "एआई के साथ सुझाएं"
-
-msgid "Suggested by the last MRP run. Apply acts on uncommitted supply; sent orders link out for review."
-msgstr "अंतिम MRP रन द्वारा सुझाया गया। लागू करने से अप्रतिबद्ध आपूर्ति पर कार्य होता है; भेजे गए आदेश समीक्षा के लिए लिंक करते हैं।"
 
 msgid "Suggested orders you haven't placed yet."
 msgstr "सुझाए गए ऑर्डर जो आपने अभी तक नहीं दिए हैं।"
@@ -18755,6 +18779,9 @@ msgstr "Tol+"
 msgid "Tolerance (+/-)"
 msgstr "सहनशीलता (+/-)"
 
+msgid "Tolerance (days)"
+msgstr ""
+
 msgid "tool"
 msgstr "उपकरण"
 
@@ -20117,8 +20144,8 @@ msgstr "जब {name} परिवर्तन होता है"
 msgid "When a finished product's shelf life is set to Calculated, pick which consumed inputs feed the calculation."
 msgstr "जब किसी तैयार उत्पाद की शेल्फ लाइफ को गणना के लिए सेट किया जाता है, तो चुनें कि गणना को कौन सी उपयोग की गई इनपुट प्रदान करती हैं।"
 
-msgid "When a sales order or job lands in a week with no remaining forecast, it consumes forecast from up to this many weeks back, then forward, instead of double-counting demand. Set both to 0 to restrict netting to the same week."
-msgstr "जब कोई विक्रय आदेश या जॉब किसी ऐसे सप्ताह में आता है जिसमें कोई शेष पूर्वानुमान नहीं है, तो यह इस कई सप्ताह पीछे और फिर आगे के पूर्वानुमान का उपभोग करता है, मांग को दोहरी गणना करने के बजाय। नेटिंग को एक ही सप्ताह तक सीमित करने के लिए दोनों को 0 पर सेट करें।"
+msgid "When a sales order or job lands in a week with no remaining forecast, it consumes forecast from nearby weeks instead of being counted on top of it. Set both to 0 to net within the same week only."
+msgstr ""
 
 msgid "When a serial or batch expires, and what happens if used after — a company policy can Warn, Block, or BlockWithOverride."
 msgstr "जब एक सीरियल या बैच समाप्त हो जाता है, और उपयोग के बाद क्या होता है — एक कंपनी नीति सतर्क, अवरुद्ध, या ब्लॉकविदअधिग्रहण हो सकती है।"

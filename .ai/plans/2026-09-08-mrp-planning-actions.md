@@ -24,7 +24,7 @@ SCOPE.** If a task seems to require any of those, STOP and report — do not bui
 - [x] Task 8: planning.update extended (both routes) — IDOR bind by id+companyId+Open, commitment gates, updateJob+notify for jobs, shortClose for cancel, wire map lowercase
 - [x] Task 9: responsibleEmployee on itemPlanningValidator + ItemPlanningForm (Employee picker, all 4 item types via shared form)
 - [x] Task 10: /x/settings/planning — ResponsibleEmployeeCard tree (company→location→item-group, inherited placeholders) + RescheduleToleranceCard (0–365), writers in settings.service, nav + path registered
-- [x] Task 11: PlanningActionsTable worklist on both planning pages (Mine/All default Mine, type filter, bulk apply/dismiss/assign, Review-on-PO/Job links, ASAP badges); dismiss/assign route cases added
+- [x] Task 11: worklist on both planning pages — dismiss/assign route cases added. (Originally a `PlanningActionsTable` card above the grid; reworked 2026-09-29 into the grid's Actions column + expandable rows — `ui/Planning/PlanningActionLines.tsx`, plan `2026-09-29-planning-actions-grid-rows.md`.)
 - [x] Task 12: browser-verified on satellite dataset — 72 actions (41 Order/27 Make/2 Expedite/2 Defer) from scheduled+manual MRP; ladder assignment→My actions 45; Review-on-PO nav to parent PO; dismissal survives regen; settings+item-tab render. Screenshots in .ai/scratch/e2e/
 
 ## Dependencies
