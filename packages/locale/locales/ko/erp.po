@@ -1768,6 +1768,9 @@ msgstr "모두 사내 생산 {0}"
 msgid "All members of selected groups and selected individuals will be able to approve requests"
 msgstr "선택한 그룹의 모든 구성원과 선택한 개인이 요청을 승인할 수 있습니다"
 
+msgid "All open jobs"
+msgstr "모든 미결 작업 지시"
+
 msgid "All returnable lines"
 msgstr "모든 반품 가능 라인"
 
@@ -4058,6 +4061,9 @@ msgstr "이 교육을 완료하면 선택한 역량을 부여하거나 갱신합
 
 msgid "Completion Barcode"
 msgstr "완료 바코드"
+
+msgid "Completion Date"
+msgstr "완료예정일"
 
 msgid "Completion in progress — retry in Shop Floor"
 msgstr "완료 진행 중 — 작업 현장에서 다시 시도하세요"
@@ -6411,6 +6417,9 @@ msgstr "도면 번호"
 
 msgid "Drawing replaced. Balloon placements were removed; feature rows are unchanged."
 msgstr "도면이 교체되었습니다. 벌룬 배치는 제거되었으며, 피처 행은 변경되지 않습니다."
+
+msgid "Drop Ship"
+msgstr "직배송"
 
 msgid "Drop shipment"
 msgstr "직배송"
@@ -11410,6 +11419,15 @@ msgstr "최신순"
 msgid "Next"
 msgstr "다음"
 
+msgid "Next 14 days"
+msgstr "다음 14일"
+
+msgid "Next 30 days"
+msgstr "다음 30일"
+
+msgid "Next 7 days"
+msgstr "다음 7일"
+
 msgid "Next Calibration"
 msgstr "다음 교정"
 
@@ -11561,6 +11579,9 @@ msgstr "아직 댓글이 없습니다. 첫 번째 댓글을 추가하세요."
 msgid "No completed jobs within range"
 msgstr "범위 내에 완료된 작업 지시가 없습니다"
 
+msgid "No completion date"
+msgstr "완료예정일 없음"
+
 msgid "No components yet"
 msgstr "아직 구성 요소 없음"
 
@@ -11684,6 +11705,9 @@ msgstr "아직 여기에 재고 활동이 있는 항목이 없습니다."
 msgid "No jobs are scheduled at this location yet — release a job to see work-center load."
 msgstr "아직 이 사업장에 스케줄된 작업 지시가 없습니다 — 작업 지시를 릴리스하여 작업장 부하를 확인하세요."
 
+msgid "No jobs match your search."
+msgstr "검색 결과와 일치하는 작업 지시가 없습니다."
+
 msgid "No jobs were created"
 msgstr "생성된 작업 지시가 없음"
 
@@ -11740,6 +11764,12 @@ msgstr "할당할 사람이 없습니다"
 
 msgid "No open invoices"
 msgstr "미결 송장이 없습니다."
+
+msgid "No open jobs for sales orders are projected to complete at this location in the next {horizon} days."
+msgstr "이 사업장에서 다음 {horizon}일 이내에 완료될 것으로 예상되는 수주 관련 미결 작업 지시가 없습니다."
+
+msgid "No open jobs for sales orders at this location."
+msgstr "이 사업장의 수주 관련 미결 작업 지시가 없습니다."
 
 msgid "No open memos"
 msgstr "미결 메모 없음"
@@ -12418,9 +12448,6 @@ msgstr "MES에서 열기"
 msgid "Open Issues"
 msgstr "미결 이슈"
 
-msgid "Open job"
-msgstr "공개 작업"
-
 msgid "Open job demand plus outstanding transfers out of this bin"
 msgstr "작업 지시 소요량 더하기 이 빈에서의 미결 이송"
 
@@ -12719,6 +12746,9 @@ msgid "Otherwise"
 msgstr "그 외에"
 
 msgid "Out"
+msgstr "출고"
+
+msgid "Outbound"
 msgstr "출고"
 
 msgid "Outgoing"
@@ -13717,6 +13747,9 @@ msgstr "예측"
 
 msgid "Projects"
 msgstr "프로젝트"
+
+msgid "Promised"
+msgstr "약속된"
 
 msgid "Promised Date"
 msgstr "약속일"
@@ -16375,8 +16408,14 @@ msgstr "출하"
 msgid "Ship some, stock some"
 msgstr "일부는 출하하고 일부는 재고로"
 
+msgid "Ship To"
+msgstr "배송처"
+
 msgid "Ship to Customer"
 msgstr "고객에게 출하"
+
+msgid "Ship Via"
+msgstr "배송 방법"
 
 msgid "Ship-From Location"
 msgstr "출하지 위치"
@@ -19022,6 +19061,9 @@ msgstr "공차+"
 
 msgid "Tolerance (+/-)"
 msgstr "공차(+/-)"
+
+msgid "Tomorrow"
+msgstr "내일"
 
 msgid "tool"
 msgstr "공구"

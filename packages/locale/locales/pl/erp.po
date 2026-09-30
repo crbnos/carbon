@@ -1768,6 +1768,9 @@ msgstr "całość produkcji {0}"
 msgid "All members of selected groups and selected individuals will be able to approve requests"
 msgstr "Wszyscy członkowie wybranych grup i wybrane osoby będą mogły zatwierdzać żądania"
 
+msgid "All open jobs"
+msgstr "Wszystkie otwarte zlecenia produkcyjne"
+
 msgid "All returnable lines"
 msgstr "Wszystkie pozycje do zwrotu"
 
@@ -4058,6 +4061,9 @@ msgstr "Ukończenie tego szkolenia przyznaje lub odnawia wybraną umiejętność
 
 msgid "Completion Barcode"
 msgstr "Kod kreskowy ukończenia"
+
+msgid "Completion Date"
+msgstr "Data zakończenia"
 
 msgid "Completion in progress — retry in Shop Floor"
 msgstr "Ukończenie w toku — spróbuj ponownie w Hali produkcyjnej."
@@ -6411,6 +6417,9 @@ msgstr "Numer rysunku"
 
 msgid "Drawing replaced. Balloon placements were removed; feature rows are unchanged."
 msgstr "Rysunek zastąpiony. Umieszczenia balonów zostały usunięte; wiersze funkcji pozostają niezmienione."
+
+msgid "Drop Ship"
+msgstr "Wysyłka bezpośrednia"
 
 msgid "Drop shipment"
 msgstr "Przesyłka bezpośrednia"
@@ -11410,6 +11419,15 @@ msgstr "Najnowsze najpierw"
 msgid "Next"
 msgstr "Dalej"
 
+msgid "Next 14 days"
+msgstr "Następne 14 dni"
+
+msgid "Next 30 days"
+msgstr "Następne 30 dni"
+
+msgid "Next 7 days"
+msgstr "Następne 7 dni"
+
 msgid "Next Calibration"
 msgstr "Następne Wzorcowanie"
 
@@ -11561,6 +11579,9 @@ msgstr "Brak komentarzy. Bądź pierwszy i dodaj komentarz."
 msgid "No completed jobs within range"
 msgstr "Nie znaleziono zakończonych zleceń produkcyjnych w danym zakresie"
 
+msgid "No completion date"
+msgstr "Brak daty zakończenia"
+
 msgid "No components yet"
 msgstr "Brak komponentów"
 
@@ -11684,6 +11705,9 @@ msgstr "Brak aktywności magazynowej tutaj."
 msgid "No jobs are scheduled at this location yet — release a job to see work-center load."
 msgstr "Żadne zlecenia produkcyjne nie są zaplanowane w tej lokalizacji — zwolnij zlecenie produkcyjne, aby zobaczyć obciążenie stanowiska roboczego."
 
+msgid "No jobs match your search."
+msgstr "Żadne zlecenia produkcyjne nie pasują do wyszukiwania."
+
 msgid "No jobs were created"
 msgstr "Nie utworzono zleceń produkcyjnych"
 
@@ -11740,6 +11764,12 @@ msgstr "Nikt do przypisania"
 
 msgid "No open invoices"
 msgstr "Brak otwartych faktur"
+
+msgid "No open jobs for sales orders are projected to complete at this location in the next {horizon} days."
+msgstr "Brak otwartych zleceń produkcyjnych dla zamówień sprzedaży, których przewiduje się zakończenie w tej lokalizacji w ciągu następnych {horizon} dni."
+
+msgid "No open jobs for sales orders at this location."
+msgstr "Brak otwartych zleceń produkcyjnych dla zamówień sprzedaży w tej lokalizacji."
 
 msgid "No open memos"
 msgstr "Brak otwartych notatek"
@@ -12418,9 +12448,6 @@ msgstr "Otwórz w MES"
 msgid "Open Issues"
 msgstr "Otwarte problemy"
 
-msgid "Open job"
-msgstr "Otwarte zadanie"
-
 msgid "Open job demand plus outstanding transfers out of this bin"
 msgstr "Otwarte zapotrzebowanie ze zleceń plus pozostające przesunięcia z tego pojemnika"
 
@@ -12720,6 +12747,9 @@ msgstr "W przeciwnym razie"
 
 msgid "Out"
 msgstr "Poza"
+
+msgid "Outbound"
+msgstr "Wychodzące"
 
 msgid "Outgoing"
 msgstr "Wychodzące"
@@ -13717,6 +13747,9 @@ msgstr "Prognozy"
 
 msgid "Projects"
 msgstr "Projekty"
+
+msgid "Promised"
+msgstr "Obiecane"
 
 msgid "Promised Date"
 msgstr "Data potwierdzona"
@@ -16375,8 +16408,14 @@ msgstr "Wysyłka"
 msgid "Ship some, stock some"
 msgstr "Wyślij część, przechowaj część"
 
+msgid "Ship To"
+msgstr "Wysyłka do"
+
 msgid "Ship to Customer"
 msgstr "Wyślij do klienta"
+
+msgid "Ship Via"
+msgstr "Wysyłka przez"
 
 msgid "Ship-From Location"
 msgstr "Lokalizacja Wysyłki"
@@ -19022,6 +19061,9 @@ msgstr "Tol+"
 
 msgid "Tolerance (+/-)"
 msgstr "Tolerancja (+/-)"
+
+msgid "Tomorrow"
+msgstr "Jutro"
 
 msgid "tool"
 msgstr "Narzędzie"

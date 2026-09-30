@@ -1,5 +1,5 @@
 import type { Database, Json } from "@carbon/database";
-import { fetchAllFromTable } from "@carbon/database";
+import { fetchAllFromTable, fetchAllRecords } from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import { consumableInWholeAssemblies } from "@carbon/database/supersession-pick";
 import { ASSEMBLER_SERVICE_API_KEY, ASSEMBLER_SERVICE_URL } from "@carbon/env";
@@ -1080,6 +1080,39 @@ export async function getCapacityReservationsByJob(
     )
     .eq("jobId", jobId)
     .is("scenarioId", null);
+}
+
+/**
+ * The Outbound report: open jobs at a location that fill a sales order, with
+ * where each one ships (RPC `get_completion_jobs`), ordered by the plant-calendar
+ * day they complete — the report groups on that order.
+ */
+export async function getCompletionJobs(
+  client: SupabaseClient<Database>,
+  args: {
+    companyId: string;
+    locationId: string;
+    timeZone: string;
+    /** Last completion day to include (YYYY-MM-DD); null reads every open job. */
+    throughDate: string | null;
+    search: string | null;
+  }
+) {
+  return fetchAllRecords(() =>
+    client
+      .rpc("get_completion_jobs", {
+        company_id: args.companyId,
+        location_id: args.locationId,
+        time_zone: args.timeZone,
+        through_date: args.throughDate ?? undefined,
+        search: args.search ?? undefined
+      })
+      // Day, then time within the day; `id` last keeps paging stable.
+      .order("completionDate", { ascending: true, nullsFirst: false })
+      .order("projectedCompletionAt", { ascending: true, nullsFirst: false })
+      .order("jobId", { ascending: true })
+      .order("id", { ascending: true })
+  );
 }
 
 export async function getCapacityReservationsForResources(

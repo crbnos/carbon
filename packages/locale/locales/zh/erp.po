@@ -1768,6 +1768,9 @@ msgstr "全部自制 {0}"
 msgid "All members of selected groups and selected individuals will be able to approve requests"
 msgstr "所选组的所有成员和所选个人都将能够审批请求"
 
+msgid "All open jobs"
+msgstr "所有未结工单"
+
 msgid "All returnable lines"
 msgstr "所有可退货的行"
 
@@ -4058,6 +4061,9 @@ msgstr "完成此培训将授予或更新所选能力。"
 
 msgid "Completion Barcode"
 msgstr "完成条码"
+
+msgid "Completion Date"
+msgstr "完成日期"
 
 msgid "Completion in progress — retry in Shop Floor"
 msgstr "完成进行中 — 请在生产车间重试"
@@ -6411,6 +6417,9 @@ msgstr "图号"
 
 msgid "Drawing replaced. Balloon placements were removed; feature rows are unchanged."
 msgstr "图纸已替换。气球位置已移除；功能行保持不变。"
+
+msgid "Drop Ship"
+msgstr "代发货"
 
 msgid "Drop shipment"
 msgstr "直发"
@@ -11410,6 +11419,15 @@ msgstr "最新优先"
 msgid "Next"
 msgstr "下一步"
 
+msgid "Next 14 days"
+msgstr "接下来14天"
+
+msgid "Next 30 days"
+msgstr "接下来30天"
+
+msgid "Next 7 days"
+msgstr "接下来7天"
+
 msgid "Next Calibration"
 msgstr "下次校准"
 
@@ -11561,6 +11579,9 @@ msgstr "还没有评论。成为第一个添加评论的人。"
 msgid "No completed jobs within range"
 msgstr "范围内没有已完成的工单"
 
+msgid "No completion date"
+msgstr "无完成日期"
+
 msgid "No components yet"
 msgstr "还没有组件"
 
@@ -11684,6 +11705,9 @@ msgstr "此处尚无物料库存活动。"
 msgid "No jobs are scheduled at this location yet — release a job to see work-center load."
 msgstr "此地点还没有排程工单——下达工单以查看工作中心负荷。"
 
+msgid "No jobs match your search."
+msgstr "没有工单与您的搜索匹配。"
+
 msgid "No jobs were created"
 msgstr "没有创建工单"
 
@@ -11740,6 +11764,12 @@ msgstr "没有人员可分配"
 
 msgid "No open invoices"
 msgstr "没有未结发票"
+
+msgid "No open jobs for sales orders are projected to complete at this location in the next {horizon} days."
+msgstr "该地点在接下来{horizon}天内没有计划完成的销售订单相关的未结工单。"
+
+msgid "No open jobs for sales orders at this location."
+msgstr "此地点没有销售订单相关的未结工单。"
 
 msgid "No open memos"
 msgstr "无未结单据"
@@ -12418,9 +12448,6 @@ msgstr "在 MES 中打开"
 msgid "Open Issues"
 msgstr "未结领料"
 
-msgid "Open job"
-msgstr "未完成的工作"
-
 msgid "Open job demand plus outstanding transfers out of this bin"
 msgstr "未结工单需求加上从此料箱转出的未清调拨"
 
@@ -12720,6 +12747,9 @@ msgstr "否则"
 
 msgid "Out"
 msgstr "出"
+
+msgid "Outbound"
+msgstr "出库"
 
 msgid "Outgoing"
 msgstr "出库"
@@ -13717,6 +13747,9 @@ msgstr "预测"
 
 msgid "Projects"
 msgstr "项目"
+
+msgid "Promised"
+msgstr "承诺"
 
 msgid "Promised Date"
 msgstr "承诺日期"
@@ -16375,8 +16408,14 @@ msgstr "发货"
 msgid "Ship some, stock some"
 msgstr "发货一些，库存一些"
 
+msgid "Ship To"
+msgstr "发往"
+
 msgid "Ship to Customer"
 msgstr "发货给客户"
+
+msgid "Ship Via"
+msgstr "发货方式"
 
 msgid "Ship-From Location"
 msgstr "发货地点"
@@ -19022,6 +19061,9 @@ msgstr "公差+"
 
 msgid "Tolerance (+/-)"
 msgstr "容差 (+/-)"
+
+msgid "Tomorrow"
+msgstr "明天"
 
 msgid "tool"
 msgstr "工具"

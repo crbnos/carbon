@@ -1,5 +1,5 @@
 {
-  "totalTools": 1557,
+  "totalTools": 1558,
   "modules": 15,
   "tools": [
     {"name":"account_deleteUserAttributeValue","classification":"DESTRUCTIVE","paramCount":2,"schema":"0d38e12233b4","response":"bcde375ebd4c","injectAuth":"companyId+userId","permission":"none","paginates":false},
@@ -695,6 +695,7 @@
     {"name":"production_getBatchOutputLots","classification":"READ","paramCount":1,"schema":"979f64cb9229","response":"7783e113d7a1","injectAuth":"companyId","permission":"production:view","paginates":false},
     {"name":"production_getCapacityReservationsByJob","classification":"READ","paramCount":1,"schema":"4999bd4be598","response":"8ea855e0971b","injectAuth":"companyId","permission":"production:view","paginates":false},
     {"name":"production_getCapacityReservationsForResources","classification":"READ","paramCount":2,"schema":"c0f9784197a0","response":"fc576887f258","injectAuth":"companyId","permission":"production:view","paginates":false},
+    {"name":"production_getCompletionJobs","classification":"READ","paramCount":4,"schema":"205595d8458d","response":"c26a96dae780","injectAuth":"companyId","permission":"production:view","paginates":false},
     {"name":"production_getDemandForecasts","classification":"READ","paramCount":3,"schema":"c24ad31f1eaa","response":"21892ee9e3b8","injectAuth":"companyId","permission":"production:view","paginates":false},
     {"name":"production_getDemandProjections","classification":"READ","paramCount":3,"schema":"c24ad31f1eaa","response":"3f9a097c510e","injectAuth":"companyId","permission":"production:view","paginates":false},
     {"name":"production_getFailureMode","classification":"READ","paramCount":1,"schema":"4a3e0384d72f","response":"2f49c8d39495","injectAuth":"companyId","permission":"production:view","paginates":false},

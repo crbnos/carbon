@@ -1768,6 +1768,9 @@ msgstr "Tous font {0}"
 msgid "All members of selected groups and selected individuals will be able to approve requests"
 msgstr "Tous les membres des groupes sélectionnés et les individus sélectionnés pourront approuver les demandes"
 
+msgid "All open jobs"
+msgstr "Toutes les ordres de fabrication ouvertes"
+
 msgid "All returnable lines"
 msgstr "Toutes les lignes retournables"
 
@@ -4058,6 +4061,9 @@ msgstr "Terminer cette Formation accorde ou renouvelle la Compétence sélection
 
 msgid "Completion Barcode"
 msgstr "Code-barres d'achèvement"
+
+msgid "Completion Date"
+msgstr "Date d'achèvement"
 
 msgid "Completion in progress — retry in Shop Floor"
 msgstr "Achèvement en cours — réessayer dans l'Atelier"
@@ -6411,6 +6417,9 @@ msgstr "Numéro de plan"
 
 msgid "Drawing replaced. Balloon placements were removed; feature rows are unchanged."
 msgstr "Le dessin a été remplacé. Les placements de bulles ont été supprimés ; les lignes de fonctionnalités restent inchangées."
+
+msgid "Drop Ship"
+msgstr "Livraison directe"
 
 msgid "Drop shipment"
 msgstr "Expédition directe"
@@ -11410,6 +11419,15 @@ msgstr "Plus récent d'abord"
 msgid "Next"
 msgstr "Suivant"
 
+msgid "Next 14 days"
+msgstr "Les 14 prochains jours"
+
+msgid "Next 30 days"
+msgstr "Les 30 prochains jours"
+
+msgid "Next 7 days"
+msgstr "Les 7 prochains jours"
+
 msgid "Next Calibration"
 msgstr "Prochain étalonnage"
 
@@ -11561,6 +11579,9 @@ msgstr "Aucun commentaire pour le moment. Soyez le premier à ajouter un comment
 msgid "No completed jobs within range"
 msgstr "Aucun ordre de fabrication terminé dans cette plage"
 
+msgid "No completion date"
+msgstr "Aucune date d'achèvement"
+
 msgid "No components yet"
 msgstr "Aucun composant pour le moment"
 
@@ -11684,6 +11705,9 @@ msgstr "Aucun article n'a encore d'activité d'inventaire ici."
 msgid "No jobs are scheduled at this location yet — release a job to see work-center load."
 msgstr "Aucun ordre de fabrication n'est programmé sur ce site pour l'instant — lancez un ordre de fabrication pour voir la charge du poste de travail."
 
+msgid "No jobs match your search."
+msgstr "Aucune ordre de fabrication ne correspond à votre recherche."
+
 msgid "No jobs were created"
 msgstr "Aucun ordre de fabrication n'a été créé"
 
@@ -11740,6 +11764,12 @@ msgstr "Aucune personne à attribuer"
 
 msgid "No open invoices"
 msgstr "Aucune facture ouverte"
+
+msgid "No open jobs for sales orders are projected to complete at this location in the next {horizon} days."
+msgstr "Aucune ordre de fabrication ouverte pour les commandes client n'est prévue pour se terminer sur ce site dans les {horizon} prochains jours."
+
+msgid "No open jobs for sales orders at this location."
+msgstr "Aucune ordre de fabrication ouverte pour les commandes client sur ce site."
 
 msgid "No open memos"
 msgstr "Aucun mémo ouvert"
@@ -12418,9 +12448,6 @@ msgstr "Ouvrir dans MES"
 msgid "Open Issues"
 msgstr "Problèmes ouverts"
 
-msgid "Open job"
-msgstr "Tâche ouverte"
-
 msgid "Open job demand plus outstanding transfers out of this bin"
 msgstr "Besoins d'ordres de fabrication ouverts plus les transferts en suspens hors de ce casier"
 
@@ -12720,6 +12747,9 @@ msgstr "Sinon"
 
 msgid "Out"
 msgstr "Hors"
+
+msgid "Outbound"
+msgstr "Expédition"
 
 msgid "Outgoing"
 msgstr "Sortant"
@@ -13717,6 +13747,9 @@ msgstr "Projections"
 
 msgid "Projects"
 msgstr "Projets"
+
+msgid "Promised"
+msgstr "Promis"
 
 msgid "Promised Date"
 msgstr "Date promise"
@@ -16375,8 +16408,14 @@ msgstr "Expédier"
 msgid "Ship some, stock some"
 msgstr "Expédier une partie, stocker une partie"
 
+msgid "Ship To"
+msgstr "Livrer à"
+
 msgid "Ship to Customer"
 msgstr "Livrer au client"
+
+msgid "Ship Via"
+msgstr "Expédier via"
 
 msgid "Ship-From Location"
 msgstr "Emplacement d'Expédition"
@@ -19022,6 +19061,9 @@ msgstr "Tol+"
 
 msgid "Tolerance (+/-)"
 msgstr "Tolérance (+/-)"
+
+msgid "Tomorrow"
+msgstr "Demain"
 
 msgid "tool"
 msgstr "Outil"

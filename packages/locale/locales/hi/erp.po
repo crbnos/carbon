@@ -1768,6 +1768,9 @@ msgstr "सभी निर्माण {0}"
 msgid "All members of selected groups and selected individuals will be able to approve requests"
 msgstr "चयनित समूहों के सभी सदस्य और चयनित व्यक्ति अनुरोधों को अनुमोदित करने में सक्षम होंगे"
 
+msgid "All open jobs"
+msgstr "सभी खुले जॉब"
+
 msgid "All returnable lines"
 msgstr "सभी रिटर्न योग्य पंक्तियाँ"
 
@@ -4058,6 +4061,9 @@ msgstr "इस प्रशिक्षण को पूरा करने स�
 
 msgid "Completion Barcode"
 msgstr "पूर्ण बारकोड"
+
+msgid "Completion Date"
+msgstr "पूर्णता तारीख"
 
 msgid "Completion in progress — retry in Shop Floor"
 msgstr "समापन प्रगति में है — शॉप फ्लोर में पुनः प्रयास करें।"
@@ -6411,6 +6417,9 @@ msgstr "ड्राइंग नंबर"
 
 msgid "Drawing replaced. Balloon placements were removed; feature rows are unchanged."
 msgstr "ड्राइंग बदल दी गई। बैलून प्लेसमेंट हटा दिए गए; फीचर पंक्तियां अपरिवर्तित हैं।"
+
+msgid "Drop Ship"
+msgstr "ड्रॉप शिप"
 
 msgid "Drop shipment"
 msgstr "ड्रॉप शिपमेंट"
@@ -11410,6 +11419,15 @@ msgstr "नवीनतम पहले"
 msgid "Next"
 msgstr "अगला"
 
+msgid "Next 14 days"
+msgstr "अगले 14 दिन"
+
+msgid "Next 30 days"
+msgstr "अगले 30 दिन"
+
+msgid "Next 7 days"
+msgstr "अगले 7 दिन"
+
 msgid "Next Calibration"
 msgstr "अगला अंशांकन"
 
@@ -11561,6 +11579,9 @@ msgstr "अभी कोई टिप्पणी नहीं है। पह�
 msgid "No completed jobs within range"
 msgstr "रेंज में कोई पूर्ण जॉब नहीं"
 
+msgid "No completion date"
+msgstr "कोई पूर्णता तारीख नहीं"
+
 msgid "No components yet"
 msgstr "अभी कोई घटक नहीं"
 
@@ -11684,6 +11705,9 @@ msgstr "अभी तक यहाँ कोई आइटम इन्वें�
 msgid "No jobs are scheduled at this location yet — release a job to see work-center load."
 msgstr "इस स्थान पर अभी तक कोई जॉब शेड्यूल नहीं किया गया है — वर्क-सेंटर लोड देखने के लिए एक जॉब जारी करें।"
 
+msgid "No jobs match your search."
+msgstr "आपकी खोज से कोई जॉब नहीं मिला।"
+
 msgid "No jobs were created"
 msgstr "कोई जॉब नहीं बनाया गया"
 
@@ -11740,6 +11764,12 @@ msgstr "असाइन करने के लिए कोई नहीं"
 
 msgid "No open invoices"
 msgstr "कोई खुले चालान नहीं"
+
+msgid "No open jobs for sales orders are projected to complete at this location in the next {horizon} days."
+msgstr "इस स्थान पर विक्रय आदेशों के लिए कोई खुली जॉब अगले {horizon} दिनों में पूरी होने के लिए प्रक्षेपित नहीं है।"
+
+msgid "No open jobs for sales orders at this location."
+msgstr "इस स्थान पर विक्रय आदेशों के लिए कोई खुली जॉब नहीं है।"
 
 msgid "No open memos"
 msgstr "कोई खुला ज्ञापन नहीं"
@@ -12418,9 +12448,6 @@ msgstr "MES में खोलें"
 msgid "Open Issues"
 msgstr "खुले मुद्दे"
 
-msgid "Open job"
-msgstr "खुला कार्य"
-
 msgid "Open job demand plus outstanding transfers out of this bin"
 msgstr "खुली नौकरी की मांग प्लस इस बिन से बकाया ट्रांसफर"
 
@@ -12720,6 +12747,9 @@ msgstr "अन्यथा"
 
 msgid "Out"
 msgstr "बाहर"
+
+msgid "Outbound"
+msgstr "निर्गामी"
 
 msgid "Outgoing"
 msgstr "बाहर जाने वाला"
@@ -13717,6 +13747,9 @@ msgstr "अनुमान"
 
 msgid "Projects"
 msgstr "परियोजनाएँ"
+
+msgid "Promised"
+msgstr "प्रतिश्रुत"
 
 msgid "Promised Date"
 msgstr "वादा की गई तिथि"
@@ -16375,8 +16408,14 @@ msgstr "भेजें"
 msgid "Ship some, stock some"
 msgstr "कुछ भेजें, कुछ स्टॉक करें"
 
+msgid "Ship To"
+msgstr "को भेजें"
+
 msgid "Ship to Customer"
 msgstr "ग्राहक को भेजें"
+
+msgid "Ship Via"
+msgstr "भेजने का तरीका"
 
 msgid "Ship-From Location"
 msgstr "शिप-फ्रॉम स्थान"
@@ -19022,6 +19061,9 @@ msgstr "Tol+"
 
 msgid "Tolerance (+/-)"
 msgstr "सहनशीलता (+/-)"
+
+msgid "Tomorrow"
+msgstr "कल"
 
 msgid "tool"
 msgstr "उपकरण"

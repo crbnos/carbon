@@ -150,6 +150,13 @@ interface TableProps<T extends object> {
   // + toggle). Defaults to all rows. Use it so only parents with children get an
   // affordance, like a tree's `hasChildren`.
   canExpandRow?: (row: T) => boolean;
+  // Renders a full-width header row above each run of consecutive rows that
+  // share a key (e.g. a report grouped by date). Grouping follows `data`'s
+  // order, so the caller sorts by the key; `header` receives the run's rows.
+  groupRowsBy?: {
+    key: (row: T) => string;
+    header: (rows: T[]) => ReactNode;
+  };
 }
 
 type AggregateFunction = "sum" | "average" | "min" | "max" | "median" | "count";
@@ -298,7 +305,8 @@ const Table = <T extends object>({
   renderActions,
   renderContextMenu,
   renderExpandedRow,
-  canExpandRow
+  canExpandRow,
+  groupRowsBy
 }: TableProps<T>) => {
   const { t } = useLingui();
   const tableContainerRef = useRef<HTMLDivElement>(null);
@@ -853,6 +861,24 @@ const Table = <T extends object>({
   const rows = table.getRowModel().rows;
   const visibleColumns = table.getVisibleLeafColumns();
 
+  // Row id → the rows of the group that row starts (only group starts appear).
+  const groupStarts = useMemo(() => {
+    const starts = new Map<string, T[]>();
+    if (!groupRowsBy) return starts;
+    let current: T[] = [];
+    let previousKey: string | undefined;
+    for (const row of rows) {
+      const key = groupRowsBy.key(row.original);
+      if (key !== previousKey) {
+        current = [];
+        starts.set(row.id, current);
+        previousKey = key;
+      }
+      current.push(row.original);
+    }
+    return starts;
+  }, [rows, groupRowsBy]);
+
   const tableRef = useRef<HTMLTableElement>(null);
 
   // Getter for the nested table wrapper element
@@ -1379,8 +1405,22 @@ const Table = <T extends object>({
                     />
                   );
 
+                  const groupRows = groupStarts.get(row.id);
+
                   return (
                     <Fragment key={row.id}>
+                      {groupRows && groupRowsBy && (
+                        <Tr>
+                          <Td
+                            colSpan={visibleColumns.length}
+                            className="p-0 bg-muted/40 border-b border-border"
+                          >
+                            <div className="sticky left-0 w-fit">
+                              {groupRowsBy.header(groupRows)}
+                            </div>
+                          </Td>
+                        </Tr>
+                      )}
                       {rowContent}
                       {isRowExpanded && (
                         <Tr>

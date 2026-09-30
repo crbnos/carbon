@@ -1768,6 +1768,9 @@ msgstr "alle Eigenfertigung {0}"
 msgid "All members of selected groups and selected individuals will be able to approve requests"
 msgstr "Alle Mitglieder der ausgewählten Gruppen und ausgewählten Personen können Anfragen genehmigen"
 
+msgid "All open jobs"
+msgstr "Alle offenen Fertigungsaufträge"
+
 msgid "All returnable lines"
 msgstr "Alle rückgabefähigen Positionen"
 
@@ -4058,6 +4061,9 @@ msgstr "Das Abschließen dieser Schulung vergibt oder erneuert die ausgewählte 
 
 msgid "Completion Barcode"
 msgstr "Fertigstellungs-Barcode"
+
+msgid "Completion Date"
+msgstr "Fertigstellungsdatum"
 
 msgid "Completion in progress — retry in Shop Floor"
 msgstr "Fertigstellung in Bearbeitung – versuchen Sie es in der Werkstatt erneut."
@@ -6411,6 +6417,9 @@ msgstr "Zeichnungsnummer"
 
 msgid "Drawing replaced. Balloon placements were removed; feature rows are unchanged."
 msgstr "Zeichnung ersetzt. Ballonplatzierungen wurden entfernt; Funktionszeilen bleiben unverändert."
+
+msgid "Drop Ship"
+msgstr "Direktversand"
 
 msgid "Drop shipment"
 msgstr "Direktversand"
@@ -11410,6 +11419,15 @@ msgstr "Neueste zuerst"
 msgid "Next"
 msgstr "Weiter"
 
+msgid "Next 14 days"
+msgstr "Nächste 14 Tage"
+
+msgid "Next 30 days"
+msgstr "Nächste 30 Tage"
+
+msgid "Next 7 days"
+msgstr "Nächste 7 Tage"
+
 msgid "Next Calibration"
 msgstr "Nächste Kalibrierung"
 
@@ -11561,6 +11579,9 @@ msgstr "Noch keine Kommentare. Seien Sie der Erste, der einen Kommentar hinzufü
 msgid "No completed jobs within range"
 msgstr "Keine fertiggestellten Fertigungsaufträge im Bereich"
 
+msgid "No completion date"
+msgstr "Kein Fertigstellungsdatum"
+
 msgid "No components yet"
 msgstr "Noch keine Komponenten"
 
@@ -11684,6 +11705,9 @@ msgstr "Hier gibt es noch keine Bestandsbewegungen."
 msgid "No jobs are scheduled at this location yet — release a job to see work-center load."
 msgstr "Noch keine Fertigungsaufträge an diesem Standort geplant — geben Sie einen Fertigungsauftrag frei, um die Arbeitszentrums-Auslastung zu sehen."
 
+msgid "No jobs match your search."
+msgstr "Keine Fertigungsaufträge entsprechen Ihrer Suche."
+
 msgid "No jobs were created"
 msgstr "Keine Fertigungsaufträge wurden erstellt"
 
@@ -11740,6 +11764,12 @@ msgstr "Niemand zum Zuweisen"
 
 msgid "No open invoices"
 msgstr "Keine offenen Rechnungen"
+
+msgid "No open jobs for sales orders are projected to complete at this location in the next {horizon} days."
+msgstr "Keine offenen Fertigungsaufträge für Kundenaufträge werden voraussichtlich an diesem Standort in den nächsten {horizon} Tagen fertiggestellt."
+
+msgid "No open jobs for sales orders at this location."
+msgstr "Keine offenen Fertigungsaufträge für Kundenaufträge an diesem Standort."
 
 msgid "No open memos"
 msgstr "Keine offenen Notizen"
@@ -12418,9 +12448,6 @@ msgstr "Im MES öffnen"
 msgid "Open Issues"
 msgstr "Offene Probleme"
 
-msgid "Open job"
-msgstr "Offener Auftrag"
-
 msgid "Open job demand plus outstanding transfers out of this bin"
 msgstr "Offener Fertigungsauftrag-Bedarf plus ausstehende Umlagerungen aus diesem Lagerplatz"
 
@@ -12720,6 +12747,9 @@ msgstr "Andernfalls"
 
 msgid "Out"
 msgstr "Aus"
+
+msgid "Outbound"
+msgstr "Versand"
 
 msgid "Outgoing"
 msgstr "Ausgehend"
@@ -13717,6 +13747,9 @@ msgstr "Prognosen"
 
 msgid "Projects"
 msgstr "Projekte"
+
+msgid "Promised"
+msgstr "Zugesagt"
 
 msgid "Promised Date"
 msgstr "Zugesagter Termin"
@@ -16375,8 +16408,14 @@ msgstr "Versand"
 msgid "Ship some, stock some"
 msgstr "Einige versenden, einige lagern"
 
+msgid "Ship To"
+msgstr "Lieferadresse"
+
 msgid "Ship to Customer"
 msgstr "An Kunde versenden"
+
+msgid "Ship Via"
+msgstr "Versandart"
 
 msgid "Ship-From Location"
 msgstr "Versendungsort"
@@ -19022,6 +19061,9 @@ msgstr "Tol+"
 
 msgid "Tolerance (+/-)"
 msgstr "Toleranz (+/-)"
+
+msgid "Tomorrow"
+msgstr "Morgen"
 
 msgid "tool"
 msgstr "Werkzeug"

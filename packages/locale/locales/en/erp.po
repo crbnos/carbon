@@ -1768,6 +1768,9 @@ msgstr "all make {0}"
 msgid "All members of selected groups and selected individuals will be able to approve requests"
 msgstr "All members of selected groups and selected individuals will be able to approve requests"
 
+msgid "All open jobs"
+msgstr "All open jobs"
+
 msgid "All returnable lines"
 msgstr "All returnable lines"
 
@@ -4058,6 +4061,9 @@ msgstr "Completing this training grants or renews the selected ability."
 
 msgid "Completion Barcode"
 msgstr "Completion Barcode"
+
+msgid "Completion Date"
+msgstr "Completion Date"
 
 msgid "Completion in progress — retry in Shop Floor"
 msgstr "Completion in progress — retry in Shop Floor"
@@ -6411,6 +6417,9 @@ msgstr "Drawing Number"
 
 msgid "Drawing replaced. Balloon placements were removed; feature rows are unchanged."
 msgstr "Drawing replaced. Balloon placements were removed; feature rows are unchanged."
+
+msgid "Drop Ship"
+msgstr "Drop Ship"
 
 msgid "Drop shipment"
 msgstr "Drop shipment"
@@ -11410,6 +11419,15 @@ msgstr "Newest first"
 msgid "Next"
 msgstr "Next"
 
+msgid "Next 14 days"
+msgstr "Next 14 days"
+
+msgid "Next 30 days"
+msgstr "Next 30 days"
+
+msgid "Next 7 days"
+msgstr "Next 7 days"
+
 msgid "Next Calibration"
 msgstr "Next Calibration"
 
@@ -11561,6 +11579,9 @@ msgstr "No comments yet. Be the first to add a comment."
 msgid "No completed jobs within range"
 msgstr "No completed jobs within range"
 
+msgid "No completion date"
+msgstr "No completion date"
+
 msgid "No components yet"
 msgstr "No components yet"
 
@@ -11684,6 +11705,9 @@ msgstr "No items have inventory activity here yet."
 msgid "No jobs are scheduled at this location yet — release a job to see work-center load."
 msgstr "No jobs are scheduled at this location yet — release a job to see work-center load."
 
+msgid "No jobs match your search."
+msgstr "No jobs match your search."
+
 msgid "No jobs were created"
 msgstr "No jobs were created"
 
@@ -11740,6 +11764,12 @@ msgstr "No one to assign"
 
 msgid "No open invoices"
 msgstr "No open invoices"
+
+msgid "No open jobs for sales orders are projected to complete at this location in the next {horizon} days."
+msgstr "No open jobs for sales orders are projected to complete at this location in the next {horizon} days."
+
+msgid "No open jobs for sales orders at this location."
+msgstr "No open jobs for sales orders at this location."
 
 msgid "No open memos"
 msgstr "No open memos"
@@ -12418,9 +12448,6 @@ msgstr "Open in MES"
 msgid "Open Issues"
 msgstr "Open Issues"
 
-msgid "Open job"
-msgstr "Open job"
-
 msgid "Open job demand plus outstanding transfers out of this bin"
 msgstr "Open job demand plus outstanding transfers out of this bin"
 
@@ -12720,6 +12747,9 @@ msgstr "Otherwise"
 
 msgid "Out"
 msgstr "Out"
+
+msgid "Outbound"
+msgstr "Outbound"
 
 msgid "Outgoing"
 msgstr "Outgoing"
@@ -13717,6 +13747,9 @@ msgstr "Projections"
 
 msgid "Projects"
 msgstr "Projects"
+
+msgid "Promised"
+msgstr "Promised"
 
 msgid "Promised Date"
 msgstr "Promised Date"
@@ -16375,8 +16408,14 @@ msgstr "Ship"
 msgid "Ship some, stock some"
 msgstr "Ship some, stock some"
 
+msgid "Ship To"
+msgstr "Ship To"
+
 msgid "Ship to Customer"
 msgstr "Ship to Customer"
+
+msgid "Ship Via"
+msgstr "Ship Via"
 
 msgid "Ship-From Location"
 msgstr "Ship-From Location"
@@ -19022,6 +19061,9 @@ msgstr "Tol+"
 
 msgid "Tolerance (+/-)"
 msgstr "Tolerance (+/-)"
+
+msgid "Tomorrow"
+msgstr "Tomorrow"
 
 msgid "tool"
 msgstr "tool"

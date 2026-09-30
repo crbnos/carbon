@@ -98106,6 +98106,107 @@ export default {
         tags: ["(rpc) get_quote_methods"]
       }
     },
+    "/rpc/get_completion_jobs": {
+      get: {
+        parameters: [
+          {
+            format: "text",
+            in: "query",
+            name: "company_id",
+            required: true,
+            type: "string"
+          },
+          {
+            format: "text",
+            in: "query",
+            name: "location_id",
+            required: true,
+            type: "string"
+          },
+          {
+            format: "text",
+            in: "query",
+            name: "time_zone",
+            required: true,
+            type: "string"
+          },
+          {
+            format: "date",
+            in: "query",
+            name: "through_date",
+            required: false,
+            type: "string"
+          },
+          {
+            format: "text",
+            in: "query",
+            name: "search",
+            required: false,
+            type: "string"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) get_completion_jobs"]
+      },
+      post: {
+        parameters: [
+          {
+            in: "body",
+            name: "args",
+            required: true,
+            schema: {
+              properties: {
+                company_id: {
+                  format: "text",
+                  type: "string"
+                },
+                location_id: {
+                  format: "text",
+                  type: "string"
+                },
+                search: {
+                  format: "text",
+                  type: "string"
+                },
+                through_date: {
+                  format: "date",
+                  type: "string"
+                },
+                time_zone: {
+                  format: "text",
+                  type: "string"
+                }
+              },
+              required: ["company_id", "location_id", "time_zone"],
+              type: "object"
+            }
+          },
+          {
+            $ref: "#/parameters/preferParams"
+          }
+        ],
+        produces: [
+          "application/json",
+          "application/vnd.pgrst.object+json;nulls=stripped",
+          "application/vnd.pgrst.object+json"
+        ],
+        responses: {
+          "200": {
+            description: "OK"
+          }
+        },
+        tags: ["(rpc) get_completion_jobs"]
+      }
+    },
     "/rpc/xid_time": {
       post: {
         parameters: [

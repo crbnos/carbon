@@ -1768,6 +1768,9 @@ msgstr "все производят {0}"
 msgid "All members of selected groups and selected individuals will be able to approve requests"
 msgstr "Все члены выбранных групп и выбранные лица смогут утвердить запросы"
 
+msgid "All open jobs"
+msgstr "Все открытые производственные заказы"
+
 msgid "All returnable lines"
 msgstr "Все возвратные строки"
 
@@ -4058,6 +4061,9 @@ msgstr "Завершение этого обучения предоставля�
 
 msgid "Completion Barcode"
 msgstr "Штрихкод завершения"
+
+msgid "Completion Date"
+msgstr "Дата завершения"
 
 msgid "Completion in progress — retry in Shop Floor"
 msgstr "Завершение выполняется — повторите попытку в Цехе"
@@ -6411,6 +6417,9 @@ msgstr "Номер чертежа"
 
 msgid "Drawing replaced. Balloon placements were removed; feature rows are unchanged."
 msgstr "Рисунок заменён. Размещение выносок удалено; строки функций не изменены."
+
+msgid "Drop Ship"
+msgstr "Дропшиппинг"
 
 msgid "Drop shipment"
 msgstr "Прямая отправка"
@@ -11410,6 +11419,15 @@ msgstr "Сначала новые"
 msgid "Next"
 msgstr "Далее"
 
+msgid "Next 14 days"
+msgstr "Следующие 14 дней"
+
+msgid "Next 30 days"
+msgstr "Следующие 30 дней"
+
+msgid "Next 7 days"
+msgstr "Следующие 7 дней"
+
 msgid "Next Calibration"
 msgstr "Следующая калибровка"
 
@@ -11561,6 +11579,9 @@ msgstr "Нет комментариев. Будьте первым, кто до�
 msgid "No completed jobs within range"
 msgstr "Нет завершенных производственных заказов в диапазоне"
 
+msgid "No completion date"
+msgstr "Нет даты завершения"
+
 msgid "No components yet"
 msgstr "Компонентов еще нет"
 
@@ -11684,6 +11705,9 @@ msgstr "Здесь еще нет активности с товарами."
 msgid "No jobs are scheduled at this location yet — release a job to see work-center load."
 msgstr "На этой площадке еще не запланированы производственные заказы — запустите производственный заказ в работу, чтобы увидеть нагрузку на рабочий центр."
 
+msgid "No jobs match your search."
+msgstr "По вашему поиску производственные заказы не найдены."
+
 msgid "No jobs were created"
 msgstr "Производственные заказы не были созданы"
 
@@ -11740,6 +11764,12 @@ msgstr "Некого назначать"
 
 msgid "No open invoices"
 msgstr "Нет открытых счетов-фактур"
+
+msgid "No open jobs for sales orders are projected to complete at this location in the next {horizon} days."
+msgstr "На этой площадке не прогнозируется завершение открытых производственных заказов по заказам покупателей в течение следующих {horizon} дней."
+
+msgid "No open jobs for sales orders at this location."
+msgstr "На этой площадке нет открытых производственных заказов по заказам покупателей."
 
 msgid "No open memos"
 msgstr "Нет открытых служебных записок"
@@ -12418,9 +12448,6 @@ msgstr "Открыть в MES"
 msgid "Open Issues"
 msgstr "Открытые проблемы"
 
-msgid "Open job"
-msgstr "Открытая работа"
-
 msgid "Open job demand plus outstanding transfers out of this bin"
 msgstr "Открытая потребность производственного заказа плюс неурегулированные перемещения из этой ячейки"
 
@@ -12720,6 +12747,9 @@ msgstr "В противном случае"
 
 msgid "Out"
 msgstr "Вне"
+
+msgid "Outbound"
+msgstr "Исходящие"
 
 msgid "Outgoing"
 msgstr "Исходящие"
@@ -13717,6 +13747,9 @@ msgstr "Прогнозы"
 
 msgid "Projects"
 msgstr "Проекты"
+
+msgid "Promised"
+msgstr "Обещанная дата"
 
 msgid "Promised Date"
 msgstr "Подтвержденная дата"
@@ -16375,8 +16408,14 @@ msgstr "Отправить"
 msgid "Ship some, stock some"
 msgstr "Отправить часть, оставить часть на складе"
 
+msgid "Ship To"
+msgstr "Адрес доставки"
+
 msgid "Ship to Customer"
 msgstr "Отправить Покупателю"
+
+msgid "Ship Via"
+msgstr "Способ доставки"
 
 msgid "Ship-From Location"
 msgstr "Место отправки"
@@ -19022,6 +19061,9 @@ msgstr "Допуск+"
 
 msgid "Tolerance (+/-)"
 msgstr "Допуск (+/-)"
+
+msgid "Tomorrow"
+msgstr "Завтра"
 
 msgid "tool"
 msgstr "Инструмент"

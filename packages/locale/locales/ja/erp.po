@@ -1768,6 +1768,9 @@ msgstr "すべて内製 {0}"
 msgid "All members of selected groups and selected individuals will be able to approve requests"
 msgstr "選択されたグループのすべてのメンバーと選択された個人が承認リクエストを承認できます"
 
+msgid "All open jobs"
+msgstr "すべてのオープン製造指図"
+
 msgid "All returnable lines"
 msgstr "すべての返品対象明細"
 
@@ -4058,6 +4061,9 @@ msgstr "この教育訓練を完了すると、選択されたスキルが付与
 
 msgid "Completion Barcode"
 msgstr "完了バーコード"
+
+msgid "Completion Date"
+msgstr "完了日"
 
 msgid "Completion in progress — retry in Shop Floor"
 msgstr "完了処理進行中 — 製造現場で再試行してください"
@@ -6411,6 +6417,9 @@ msgstr "図面番号"
 
 msgid "Drawing replaced. Balloon placements were removed; feature rows are unchanged."
 msgstr "図面が置き換わりました。バルーン配置は削除されました。機能行は変更されていません。"
+
+msgid "Drop Ship"
+msgstr "ドロップシップ"
 
 msgid "Drop shipment"
 msgstr "ドロップシップメント"
@@ -11410,6 +11419,15 @@ msgstr "最新順"
 msgid "Next"
 msgstr "次へ"
 
+msgid "Next 14 days"
+msgstr "次の14日間"
+
+msgid "Next 30 days"
+msgstr "次の30日間"
+
+msgid "Next 7 days"
+msgstr "次の7日間"
+
 msgid "Next Calibration"
 msgstr "次の校正"
 
@@ -11561,6 +11579,9 @@ msgstr "まだコメントがありません。最初のコメントを追加し
 msgid "No completed jobs within range"
 msgstr "範囲内に完了した製造指図がありません"
 
+msgid "No completion date"
+msgstr "完了日なし"
+
 msgid "No components yet"
 msgstr "まだコンポーネントがない"
 
@@ -11684,6 +11705,9 @@ msgstr "ここにはまだアイテムの在庫活動がありません。"
 msgid "No jobs are scheduled at this location yet — release a job to see work-center load."
 msgstr "この拠点ではまだ製造指図がスケジュール化されていません — 製造指図をリリースして作業区負荷を確認してください。"
 
+msgid "No jobs match your search."
+msgstr "検索に一致する製造指図がありません。"
+
 msgid "No jobs were created"
 msgstr "製造指図は作成されませんでした"
 
@@ -11740,6 +11764,12 @@ msgstr "割り当てる人がいません"
 
 msgid "No open invoices"
 msgstr "未処理の請求書がありません"
+
+msgid "No open jobs for sales orders are projected to complete at this location in the next {horizon} days."
+msgstr "この拠点で、次の{horizon}日間に完了予定のオープン受注用製造指図はありません。"
+
+msgid "No open jobs for sales orders at this location."
+msgstr "この拠点にはオープン受注用製造指図がありません。"
 
 msgid "No open memos"
 msgstr "オープンなメモはありません"
@@ -12418,9 +12448,6 @@ msgstr "MESで開く"
 msgid "Open Issues"
 msgstr "未解決の問題"
 
-msgid "Open job"
-msgstr "オープンジョブ"
-
 msgid "Open job demand plus outstanding transfers out of this bin"
 msgstr "このビンからの未処理転送を含むオープン製造指図所要量"
 
@@ -12720,6 +12747,9 @@ msgstr "その他"
 
 msgid "Out"
 msgstr "対象外"
+
+msgid "Outbound"
+msgstr "出荷"
 
 msgid "Outgoing"
 msgstr "発送"
@@ -13717,6 +13747,9 @@ msgstr "予測"
 
 msgid "Projects"
 msgstr "プロジェクト"
+
+msgid "Promised"
+msgstr "約束日"
 
 msgid "Promised Date"
 msgstr "回答納期"
@@ -16375,8 +16408,14 @@ msgstr "出荷"
 msgid "Ship some, stock some"
 msgstr "一部を出荷し、一部を在庫に"
 
+msgid "Ship To"
+msgstr "送付先"
+
 msgid "Ship to Customer"
 msgstr "得意先に出荷する"
+
+msgid "Ship Via"
+msgstr "配送方法"
 
 msgid "Ship-From Location"
 msgstr "発送元の場所"
@@ -19022,6 +19061,9 @@ msgstr "許容差+"
 
 msgid "Tolerance (+/-)"
 msgstr "許容範囲 (+/-)"
+
+msgid "Tomorrow"
+msgstr "明日"
 
 msgid "tool"
 msgstr "ツール"
