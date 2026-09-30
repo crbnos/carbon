@@ -17,12 +17,16 @@ import {
   pickLatestRow,
   proposeItem
 } from "@carbon/ee";
-import type { StoredReleasePlan } from "@carbon/ee/onshape";
+import type {
+  ReleaseExportSelection,
+  StoredReleasePlan
+} from "@carbon/ee/onshape";
 import {
   chunkFilterValues,
   loadActiveMakeMethods,
   ONSHAPE_V2_INTEGRATION_ID,
   peekPanelPlan,
+  releaseExportSelection,
   selectInBatches,
   takePanelPlan
 } from "@carbon/ee/onshape";
@@ -39,7 +43,13 @@ import {
   updateDefaultRevision,
   upsertPart
 } from "~/modules/items";
+import {
+  insertOwnedMethodLines,
+  type OwnedMethodLine,
+  swapItemMapping
+} from "~/modules/settings/onshape-push.server";
 import { getCompanyTimeZone } from "~/modules/shared/timezone.server";
+import { getDatabaseClient } from "~/services/database.server";
 
 export const config = {
   runtime: "nodejs"
@@ -89,6 +99,7 @@ type ItemRow = {
   id: string;
   readableId: string;
   revision: string;
+  active?: boolean | null;
   name: string;
   type: string | null;
   defaultMethodType: string | null;
@@ -140,7 +151,8 @@ function partInsert(proposed: ProposedItem, companyId: string, userId: string) {
  * (models + thumbnails, released drawings as PDF) run as background jobs.
  * Re-applying a release that is already in Carbon re-applies BOMs and assets
  * and creates nothing (idempotent on the release's part number + letter
- * pairs).
+ * pairs). A letter item whose make method has since been released in Carbon
+ * keeps its BOM, reported as skipped.
  */
 export async function action({ request }: ActionFunctionArgs) {
   const { client, companyId, userId } = await requireOnshapePanelPermissions(
@@ -308,7 +320,7 @@ export async function action({ request }: ActionFunctionArgs) {
     client
       .from("item")
       .select(
-        "id, readableId, revision, name, type, defaultMethodType, unitOfMeasureCode"
+        "id, readableId, revision, active, name, type, defaultMethodType, unitOfMeasureCode"
       )
       .eq("companyId", companyId)
       .in("readableId", batch)
@@ -317,12 +329,6 @@ export async function action({ request }: ActionFunctionArgs) {
   if (existing.error) {
     return data({ error: "Failed to read Carbon items" }, { status: 500 });
   }
-  // Each batch is sorted within itself, so the concatenation is not. No
-  // consumer depends on the order today: every pick below compares revisions
-  // directly.
-  existing.data.sort((a, b) =>
-    (a.revision ?? "").localeCompare(b.revision ?? "")
-  );
   const byReadable = new Map<string, ItemRow[]>();
   const rememberRow = (row: ItemRow) => {
     const list = byReadable.get(row.readableId) ?? [];
@@ -449,6 +455,7 @@ export async function action({ request }: ActionFunctionArgs) {
     );
   }
   const serviceRole = getCarbonServiceRole();
+  const db = getDatabaseClient();
   const copiedKeysByBaseMethodId = new Map<string, Set<string>>();
   const baseMethodIds = [
     ...new Set([...baseMethodByItemId.values()].map((method) => method.id))
@@ -621,7 +628,8 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 
   // 2a — which assemblies take their BOM. Status is re-checked here: a method
-  // released between review and apply is refused.
+  // released between review and apply keeps its BOM. That is a skip, not an
+  // error: the item is in Carbon at the letter, and the review said so.
   type BomTarget = {
     item: ReleasePlanItem;
     label: string;
@@ -644,8 +652,8 @@ export async function action({ request }: ActionFunctionArgs) {
       continue;
     }
     if (method.status === "Active") {
-      summary.errors.push(
-        `${label}: make method is released in Carbon; refusing to rewrite it`
+      summary.skipped.push(
+        `${label}: make method is released in Carbon, so its BOM was left as it is`
       );
       continue;
     }
@@ -844,6 +852,7 @@ export async function action({ request }: ActionFunctionArgs) {
     const deduped = await client
       .from("methodMaterial")
       .delete()
+      .eq("companyId", companyId)
       .in("id", batch);
     if (deduped.error) {
       summary.errors.push(
@@ -859,6 +868,7 @@ export async function action({ request }: ActionFunctionArgs) {
       const removedLines = await client
         .from("methodMaterial")
         .delete()
+        .eq("companyId", companyId)
         .in("id", batch);
       if (removedLines.error) {
         summary.errors.push(
@@ -872,6 +882,7 @@ export async function action({ request }: ActionFunctionArgs) {
       const removedMappings = await serviceRole
         .from("externalIntegrationMapping")
         .delete()
+        .eq("companyId", companyId)
         .in("id", batch);
       if (removedMappings.error) {
         summary.errors.push(
@@ -884,10 +895,11 @@ export async function action({ request }: ActionFunctionArgs) {
 
   // 2d — write the released lines. Level-1 only: deeper levels belong to the
   // released subassemblies' own methods, which this release populates
-  // through their own entries.
+  // through their own entries. One insert per method, lines and ownership
+  // rows together (`insertOwnedMethodLines`).
   for (const target of bomTargets) {
     const { item, label, methodId } = target;
-    let order = 0;
+    const lines: OwnedMethodLine[] = [];
     for (const child of target.lines) {
       if (!child.partNumber) {
         summary.skipped.push(
@@ -911,62 +923,43 @@ export async function action({ request }: ActionFunctionArgs) {
 
       const childMethod =
         child.children.length > 0 ? methodByItemId.get(childItem.id) : null;
-
-      const inserted = await client
-        .from("methodMaterial")
-        .insert({
+      lines.push({
+        row: {
           itemId: childItem.id,
           quantity: child.quantity,
           makeMethodId: methodId,
           materialMakeMethodId: childMethod?.id ?? null,
           methodType:
-            (childItem.defaultMethodType as "Make to Order" | null) ??
+            (childItem.defaultMethodType as OwnedMethodLine["row"]["methodType"]) ??
             (child.purchased ? "Pull from Inventory" : "Make to Order"),
-          order,
+          order: lines.length,
           itemType,
-          unitOfMeasureCode: childItem.unitOfMeasureCode ?? "EA",
-          companyId,
-          createdBy: userId
-        } as any)
-        .select("id")
-        .single();
-      if (inserted.error || !inserted.data) {
-        summary.errors.push(
-          `${label} → ${child.partNumber}: ${
-            inserted.error?.message ?? "line insert failed"
-          }`
-        );
-        continue;
-      }
-      order += 1;
-      summary.linesWritten += 1;
-
-      // A released line with no ownership record is indistinguishable from a
-      // manual one, and manual lines are preserved across revisions by
-      // design — so it would never be replaced again.
-      const lineMapping = await client
-        .from("externalIntegrationMapping")
-        .insert({
-          entityType: "methodMaterial",
-          entityId: inserted.data.id,
-          integration: ONSHAPE_V2_INTEGRATION_ID,
-          metadata: {
-            makeMethodId: methodId,
-            documentId: plan.documentId,
-            elementId: item.elementId,
-            partNumber: child.partNumber,
-            index: child.index,
-            releaseId: plan.releaseId
-          },
-          lastSyncedAt: datetime.timestamp(),
-          companyId,
-          createdBy: userId
-        });
-      if (lineMapping.error) {
-        summary.errors.push(
-          `${label} → ${child.partNumber}: line written but not linked to Onshape (${lineMapping.error.message}); a later push will duplicate it`
-        );
-      }
+          unitOfMeasureCode: childItem.unitOfMeasureCode ?? "EA"
+        },
+        // A released line with no ownership record is indistinguishable from
+        // a manual one, and manual lines are preserved across revisions by
+        // design — so it would never be replaced again.
+        metadata: {
+          makeMethodId: methodId,
+          documentId: plan.documentId,
+          elementId: item.elementId,
+          partNumber: child.partNumber,
+          index: child.index,
+          releaseId: plan.releaseId
+        }
+      });
+    }
+    const written = await insertOwnedMethodLines(db, {
+      companyId,
+      userId,
+      lines
+    });
+    if (written.error !== null) {
+      summary.errors.push(
+        `${label}: the released BOM lines were not written (${written.error}); push the release again`
+      );
+    } else {
+      summary.linesWritten += lines.length;
     }
   }
 
@@ -976,61 +969,29 @@ export async function action({ request }: ActionFunctionArgs) {
     if (!row) continue;
     const externalId = `release:${plan.releaseId}:${item.partNumber}`;
     const pushedAt = datetime.timestamp();
-    // One row per item, one per external id: both uniqueness constraints
-    // depend on this delete running before the insert.
-    const clearedByItem = await serviceRole
-      .from("externalIntegrationMapping")
-      .delete()
-      .eq("companyId", companyId)
-      .eq("integration", ONSHAPE_V2_INTEGRATION_ID)
-      .eq("entityType", "item")
-      .eq("entityId", row.id);
-    const clearedByExternal = clearedByItem.error
-      ? null
-      : await serviceRole
-          .from("externalIntegrationMapping")
-          .delete()
-          .eq("companyId", companyId)
-          .eq("integration", ONSHAPE_V2_INTEGRATION_ID)
-          .eq("entityType", "item")
-          .eq("externalId", externalId);
-    if (clearedByItem.error || clearedByExternal?.error) {
+    const releaseMapping = await swapItemMapping(db, {
+      companyId,
+      userId,
+      itemId: row.id,
+      externalId,
+      metadata: {
+        kind: "release",
+        releaseId: plan.releaseId,
+        releaseName: plan.releaseName,
+        documentId: plan.documentId,
+        elementId: item.elementId,
+        wv: "v",
+        wvId: item.versionId,
+        partNumber: item.partNumber,
+        revision: item.revision,
+        pushedBy: userId,
+        pushedAt,
+        planId
+      }
+    });
+    if (releaseMapping.error !== null) {
       summary.errors.push(
-        `${item.partNumber} Rev ${item.revision}: revision written but its previous Onshape link could not be cleared (${
-          (clearedByItem.error ?? clearedByExternal?.error)?.message ??
-          "delete failed"
-        }); push the release again`
-      );
-      continue;
-    }
-    const releaseMapping = await client
-      .from("externalIntegrationMapping")
-      .insert({
-        entityType: "item",
-        entityId: row.id,
-        integration: ONSHAPE_V2_INTEGRATION_ID,
-        externalId,
-        metadata: {
-          kind: "release",
-          releaseId: plan.releaseId,
-          releaseName: plan.releaseName,
-          documentId: plan.documentId,
-          elementId: item.elementId,
-          wv: "v",
-          wvId: item.versionId,
-          partNumber: item.partNumber,
-          revision: item.revision,
-          pushedBy: userId,
-          pushedAt,
-          planId
-        },
-        lastSyncedAt: pushedAt,
-        companyId,
-        createdBy: userId
-      });
-    if (releaseMapping.error) {
-      summary.errors.push(
-        `${item.partNumber} Rev ${item.revision}: revision written but not linked to Onshape (${releaseMapping.error.message}); it is invisible to change detection and to Detach`
+        `${item.partNumber} Rev ${item.revision}: revision written but not linked to Onshape (${releaseMapping.error}); it is invisible to change detection and to Detach`
       );
     }
   }
@@ -1134,6 +1095,18 @@ export async function action({ request }: ActionFunctionArgs) {
     assetTargets.push({ item: drawing, itemId: target.id, kind: "drawing" });
   }
   for (const target of assetTargets) {
+    // A drawing is the whole drawing element; a model export selects the
+    // released part and configuration.
+    const selection: ReleaseExportSelection =
+      target.kind === "drawing"
+        ? { ok: true }
+        : releaseExportSelection(target.item);
+    if (!selection.ok) {
+      summary.skipped.push(
+        `${target.item.partNumber} Rev ${target.item.revision}: ${selection.reason}`
+      );
+      continue;
+    }
     // The event id makes a retried apply idempotent per item + element: the
     // job spends live quota on every execution.
     //
@@ -1152,6 +1125,10 @@ export async function action({ request }: ActionFunctionArgs) {
           wvmId: target.item.versionId,
           elementId: target.item.elementId,
           elementKind: target.kind,
+          ...(selection.partId ? { partId: selection.partId } : {}),
+          ...(selection.configuration
+            ? { configuration: selection.configuration }
+            : {}),
           assetBaseName: `${target.item.partNumber}-${target.item.revision}`
         },
         { id: `${planId}:${target.itemId}:${target.item.elementId}` }

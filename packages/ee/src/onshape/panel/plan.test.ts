@@ -13,6 +13,7 @@ import {
   mergeExistingItemEdits,
   mergeItemEdits,
   pickAdoptTarget,
+  pickLatestRow,
   proposeItem,
   reconcileMethodForReplenishment
 } from "./plan";
@@ -409,6 +410,54 @@ describe("buildAssemblyPlan", () => {
     node({ index: "2", partNumber: "TOP-001", name: "Top" })
   ];
 
+  describe("released methods", () => {
+    const build = (
+      reusableDraftByItemId?: Map<
+        string,
+        { id: string; version: number | null }
+      >
+    ) =>
+      buildAssemblyPlan({
+        documentId: "d",
+        wv: "w",
+        wvId: "w1",
+        elementId: "e",
+        root: {
+          partNumber: "WB-100",
+          name: "Workbench",
+          description: null,
+          revision: null
+        },
+        nodes: [node({ index: "1", partNumber: "TOP-001", name: "Top" })],
+        items: [{ id: "root", readableId: "WB-100", revision: "0", name: "W" }],
+        methodByItemId: new Map([["root", { id: "active", status: "Active" }]]),
+        mappedLinesByMethodId: new Map([
+          ["active", [{ readableId: "OLD-1", quantity: 1 }]],
+          ["draft", [{ readableId: "DRAFT-1", quantity: 2 }]]
+        ]),
+        manualLinesByMethodId: new Map(),
+        options,
+        reusableDraftByItemId
+      });
+
+    it("counts the Active method's lines when the push will copy a new Draft", () => {
+      const [method] = build().methods;
+      expect(method?.status).toBe("active");
+      expect(method?.reusedDraftVersion).toBeUndefined();
+      expect(method?.replaces).toEqual([{ readableId: "OLD-1", quantity: 1 }]);
+    });
+
+    it("counts the reused Draft's lines and names its version", () => {
+      const [method] = build(
+        new Map([["root", { id: "draft", version: 3 }]])
+      ).methods;
+      expect(method?.reusedDraftVersion).toBe(3);
+      expect(method?.replaces).toEqual([
+        { readableId: "DRAFT-1", quantity: 2 }
+      ]);
+    });
+  });
+
   describe("depth", () => {
     const build = (depth: "all" | "top") =>
       buildAssemblyPlan({
@@ -743,6 +792,7 @@ describe("buildReleasePlan", () => {
         documentId: "d",
         versionId: "v1",
         elementId: "e-wb",
+        partId: null,
         configuration: null,
         obsolete: false,
         state: "missing",
@@ -755,6 +805,7 @@ describe("buildReleasePlan", () => {
         documentId: "d",
         versionId: "v1",
         elementId: "e-ps",
+        partId: null,
         configuration: null,
         obsolete: false,
         state: "missing",
@@ -767,6 +818,7 @@ describe("buildReleasePlan", () => {
         documentId: "d",
         versionId: "v1",
         elementId: "e-ps",
+        partId: null,
         configuration: null,
         obsolete: false,
         state: "missing",
@@ -779,6 +831,7 @@ describe("buildReleasePlan", () => {
         documentId: "d",
         versionId: "v1",
         elementId: "e-drw",
+        partId: null,
         configuration: null,
         obsolete: false,
         state: "missing",
@@ -791,6 +844,7 @@ describe("buildReleasePlan", () => {
         documentId: "d",
         versionId: "v1",
         elementId: "e-drw2",
+        partId: null,
         configuration: null,
         obsolete: false,
         state: "missing",
@@ -901,6 +955,26 @@ describe("buildReleasePlan", () => {
     // The apply records only created release items on the notice.
     expect(plan.changeNotice).toBeNull();
   });
+
+  it("carries each released part's partId and configuration to the export", () => {
+    const released = release.items[1]!;
+    const plan = buildReleasePlan({
+      documentId: "d",
+      release: {
+        ...release,
+        items: [{ ...released, partId: "JHD", configuration: "size%3DLarge" }]
+      },
+      items: [],
+      bomLinesByElementId: {},
+      methodByItemId: new Map(),
+      options
+    });
+    expect(plan.items[0]).toMatchObject({
+      partNumber: "PAD-005",
+      partId: "JHD",
+      configuration: "size%3DLarge"
+    });
+  });
 });
 
 describe("pickAdoptTarget", () => {
@@ -922,6 +996,29 @@ describe("pickAdoptTarget", () => {
     expect(
       pickAdoptTarget([rows[0] as (typeof rows)[number]], "0")
     ).toBeUndefined();
+  });
+});
+
+describe("pickLatestRow", () => {
+  it("orders revisions by sequence, not as text", () => {
+    expect(
+      pickLatestRow([{ revision: "9" }, { revision: "10" }])?.revision
+    ).toBe("10");
+    expect(
+      pickLatestRow([{ revision: "Y" }, { revision: "AA" }])?.revision
+    ).toBe("AA");
+  });
+
+  it("prefers an active revision over a newer inactive one", () => {
+    expect(
+      pickLatestRow([
+        { revision: "B", active: true },
+        { revision: "C", active: false }
+      ])?.revision
+    ).toBe("B");
+    expect(pickLatestRow([{ revision: "C", active: false }])?.revision).toBe(
+      "C"
+    );
   });
 });
 

@@ -1,10 +1,20 @@
+import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { Database, Json } from "@carbon/database";
-import { correlateCopiedLines } from "@carbon/ee";
+import type { DraftCandidate } from "@carbon/ee/onshape";
+import {
+  DRAFT_MARKER_ENTITY_TYPE,
+  loadReusableDrafts,
+  pairOwnedCopiedLines
+} from "@carbon/ee/onshape";
 import { ONSHAPE_V2_INTEGRATION_ID } from "@carbon/ee/onshape/integration-id";
+import { getLogger } from "@carbon/logger";
+import { datetime } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { copyMakeMethod, upsertMakeMethodVersion } from "~/modules/items";
 
 type Client = SupabaseClient<Database>;
+
+const logger = getLogger("erp", "onshape", "draft-method");
 
 /**
  * The Draft make method a push should write into, for an item whose current
@@ -17,10 +27,13 @@ type Client = SupabaseClient<Database>;
  * Creating a Draft changes nothing live. The new version sits beside the
  * Active one until a person releases it.
  *
- * Idempotent by construction: a second push finds the Draft the first one made
- * and writes into it, because `activeMakeMethods` always prefers the Active
- * row and would otherwise hand back the released method every time — spawning
- * a new version per push.
+ * A Draft is reused only when this integration made it from the current
+ * Active method (`pickReusableDraft`): a second push finds the Draft the first
+ * one made. Any other Draft — a person's, a change notice's, one copied from
+ * an older version, one whose copy failed — is left alone and a new version
+ * is created beside it. The marker row that makes a Draft reusable is written
+ * only once its copy and line ownership are complete; a failure before that
+ * deletes the new Draft, so a half-built one is never released by mistake.
  */
 export async function ensureDraftMakeMethod(
   client: Client,
@@ -29,31 +42,42 @@ export async function ensureDraftMakeMethod(
     activeMethodId: string;
     companyId: string;
     userId: string;
+    /**
+     * The reusable Draft when the caller already loaded it for many items
+     * (`loadReusableDrafts`); null when it found none. Omitted, it is read.
+     */
+    reusableDraft?: DraftCandidate | null;
   }
 ): Promise<
   | { ok: true; id: string; created: boolean; version: number | null }
   | { ok: false; error: string }
 > {
   const { itemId, activeMethodId, companyId, userId } = args;
+  const serviceRole = getCarbonServiceRole();
 
-  const existing = await client
-    .from("makeMethod")
-    .select("id, version")
-    .eq("itemId", itemId)
-    .eq("companyId", companyId)
-    .eq("status", "Draft")
-    .order("version", { ascending: false })
-    .limit(1)
-    .maybeSingle();
-  if (existing.error) {
-    return { ok: false, error: existing.error.message };
+  let existing = args.reusableDraft;
+  if (existing === undefined) {
+    try {
+      const reusable = await loadReusableDrafts(
+        client,
+        serviceRole,
+        companyId,
+        new Map([[itemId, activeMethodId]])
+      );
+      existing = reusable.get(itemId) ?? null;
+    } catch (error) {
+      return {
+        ok: false,
+        error: error instanceof Error ? error.message : "could not read Drafts"
+      };
+    }
   }
-  if (existing.data?.id) {
+  if (existing) {
     return {
       ok: true,
-      id: existing.data.id,
+      id: existing.id,
       created: false,
-      version: existing.data.version ?? null
+      version: existing.version
     };
   }
 
@@ -103,22 +127,79 @@ export async function ensureDraftMakeMethod(
     steps: true,
     workInstructions: true
   });
-  if (copied.error) {
-    return {
-      ok: false,
-      error: `draft version created but its method could not be copied (${copied.error.message})`
-    };
+  const failure = copied.error
+    ? `its method could not be copied (${copied.error.message})`
+    : await carryLineOwnership(client, {
+        sourceMethodId: activeMethodId,
+        targetMethodId: draftId,
+        companyId,
+        userId
+      });
+  const marked = failure
+    ? null
+    : await client.from("externalIntegrationMapping").insert({
+        entityType: DRAFT_MARKER_ENTITY_TYPE,
+        entityId: draftId,
+        integration: ONSHAPE_V2_INTEGRATION_ID,
+        // Unique per Draft; the source is in metadata, so two Drafts made
+        // from one Active method never collide on the externalId index.
+        externalId: draftId,
+        metadata: { sourceMethodId: activeMethodId, itemId } as Json,
+        lastSyncedAt: datetime.timestamp(),
+        companyId,
+        createdBy: userId
+      });
+  const problem =
+    failure ??
+    (marked?.error
+      ? `it could not be marked as Onshape's (${marked.error.message})`
+      : null);
+  if (!problem) {
+    return { ok: true, id: draftId, created: true, version };
   }
 
-  const carried = await carryLineOwnership(client, {
-    sourceMethodId: activeMethodId,
-    targetMethodId: draftId,
-    companyId,
-    userId
+  // A half-built Draft must not survive: released, it would ship the assembly
+  // without whatever failed to copy. The panel user lacks parts_delete, so the
+  // service role removes it; its lines and mappings cascade or are cleared.
+  const discarded = await discardDraft(serviceRole, {
+    draftId,
+    companyId
   });
-  if (carried) return { ok: false, error: carried };
+  return {
+    ok: false,
+    error: discarded
+      ? `a draft version was created but ${problem}, so it was removed; push again`
+      : `a draft version was created but ${problem}, and it could not be removed — delete version ${version} before pushing again`
+  };
+}
 
-  return { ok: true, id: draftId, created: true, version };
+async function discardDraft(
+  serviceRole: Client,
+  args: { draftId: string; companyId: string }
+): Promise<boolean> {
+  const { draftId, companyId } = args;
+  const mappings = await serviceRole
+    .from("externalIntegrationMapping")
+    .delete()
+    .eq("companyId", companyId)
+    .eq("integration", ONSHAPE_V2_INTEGRATION_ID)
+    .eq("entityType", "methodMaterial")
+    .eq("metadata->>makeMethodId", draftId);
+  const removed = await serviceRole
+    .from("makeMethod")
+    .delete()
+    .eq("id", draftId)
+    .eq("companyId", companyId);
+  const error = mappings.error ?? removed.error;
+  if (error) {
+    logger.error("Failed to discard a half-built Onshape Draft", {
+      companyId,
+      draftId,
+      error
+    });
+    return false;
+  }
+  return true;
 }
 
 /**
@@ -155,7 +236,7 @@ async function carryLineOwnership(
   const [sourceLines, targetLines] = await Promise.all([
     client
       .from("methodMaterial")
-      .select("id, itemId, order")
+      .select("id, itemId, order, quantity")
       .eq("makeMethodId", sourceMethodId)
       .eq("companyId", companyId),
     client
@@ -168,9 +249,10 @@ async function carryLineOwnership(
   if (targetLines.error) return targetLines.error.message;
 
   const owned = new Set((mappings.data ?? []).map((row) => row.entityId));
-  const paired = correlateCopiedLines(
-    (sourceLines.data ?? []).filter((line) => owned.has(line.id)),
-    targetLines.data ?? []
+  const paired = pairOwnedCopiedLines(
+    sourceLines.data ?? [],
+    targetLines.data ?? [],
+    owned
   );
 
   const inserts = [];
@@ -200,7 +282,7 @@ async function carryLineOwnership(
     .from("externalIntegrationMapping")
     .insert(inserts);
   if (written.error) {
-    return `draft version created but ${inserts.length} of its lines are not linked to Onshape (${written.error.message}); a later push would duplicate them`;
+    return `${inserts.length} of its lines could not be linked to Onshape (${written.error.message})`;
   }
   return null;
 }

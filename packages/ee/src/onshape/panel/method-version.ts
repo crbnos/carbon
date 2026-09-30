@@ -66,3 +66,76 @@ function byOrderThenId(a: CorrelatableLine, b: CorrelatableLine): number {
   if (left !== right) return left - right;
   return a.id.localeCompare(b.id);
 }
+
+/**
+ * The marker a push writes on a Draft it created (`externalIntegrationMapping`,
+ * entityType `makeMethod`): which Active method the Draft was copied from.
+ */
+export const DRAFT_MARKER_ENTITY_TYPE = "makeMethod";
+
+export type DraftCandidate = {
+  id: string;
+  version: number | null;
+  /** Set when a change notice owns the Draft. */
+  changeOrderId: string | null;
+};
+
+export type DraftMarker = {
+  draftId: string;
+  sourceMethodId: string | null;
+};
+
+/**
+ * The Draft a push may write into instead of creating another, or null.
+ *
+ * Only a Draft this integration made from the CURRENT Active method qualifies:
+ * - a person's own "New Version" Draft has no marker, and writing into it
+ *   would put Onshape lines beside theirs;
+ * - a change notice's Draft is authored through the notice, and the ERP's own
+ *   tools leave it alone;
+ * - a marker naming another method is stale: releasing that Draft would roll
+ *   back whatever the newer Active version changed;
+ * - a Draft whose copy failed carries no marker, so it is never reused.
+ */
+export function pickReusableDraft(
+  drafts: DraftCandidate[],
+  markers: DraftMarker[],
+  activeMethodId: string
+): DraftCandidate | null {
+  const madeFromActive = new Set(
+    markers
+      .filter((marker) => marker.sourceMethodId === activeMethodId)
+      .map((marker) => marker.draftId)
+  );
+  let chosen: DraftCandidate | null = null;
+  for (const draft of drafts) {
+    if (draft.changeOrderId || !madeFromActive.has(draft.id)) continue;
+    if (!chosen || (draft.version ?? 0) > (chosen.version ?? 0)) chosen = draft;
+  }
+  return chosen;
+}
+
+/**
+ * Which copied line each Onshape-owned source line became.
+ *
+ * Pairing runs over EVERY source line, owned or manual: pairing the owned ones
+ * alone would let an owned line claim the copy of a manual line on the same
+ * component, swapping which of the two the next push replaces. Zero-quantity
+ * lines are left out because the copy drops them, and counting them would
+ * shift every later pair on that component. Only owned lines are returned.
+ */
+export function pairOwnedCopiedLines(
+  source: Array<CorrelatableLine & { quantity: number | null }>,
+  target: CorrelatableLine[],
+  ownedIds: ReadonlySet<string>
+): Map<string, string> {
+  // Only a real 0: the copy keeps a null quantity (it reads as 1).
+  const paired = correlateCopiedLines(
+    source.filter((line) => line.quantity !== 0),
+    target
+  );
+  for (const sourceId of paired.keys()) {
+    if (!ownedIds.has(sourceId)) paired.delete(sourceId);
+  }
+  return paired;
+}

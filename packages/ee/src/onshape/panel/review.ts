@@ -422,11 +422,15 @@ export function describeMethod(
   const counts =
     `${added} added, ${method.replaces.length} replaced, ` +
     `${method.keeps.length} manual kept`;
-  // A released method is not skipped: the push writes a new Draft version of
-  // it (see `ensureDraftMakeMethod`).
+  // A released method is not skipped: the push writes a Draft version of it
+  // (see `ensureDraftMakeMethod`) — the one an earlier push made, or a new one.
   if (method.status === "active") {
+    const draft =
+      method.reusedDraftVersion != null
+        ? `Draft version ${method.reusedDraftVersion}`
+        : "new Draft version";
     return {
-      text: `${parent} · released in Carbon — new Draft version: ${counts}`,
+      text: `${parent} · released in Carbon — ${draft}: ${counts}`,
       tone: "notice"
     };
   }

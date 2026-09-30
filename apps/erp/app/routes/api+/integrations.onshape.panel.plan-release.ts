@@ -116,7 +116,7 @@ export async function action({ request }: ActionFunctionArgs) {
     client
       .from("item")
       .select(
-        "id, readableId, revision, name, type, replenishmentSystem, defaultMethodType, itemTrackingType, unitOfMeasureCode"
+        "id, readableId, revision, active, name, type, replenishmentSystem, defaultMethodType, itemTrackingType, unitOfMeasureCode"
       )
       .eq("companyId", companyId)
       .in("readableId", batch)
@@ -244,7 +244,7 @@ export async function action({ request }: ActionFunctionArgs) {
     client
       .from("item")
       .select(
-        "id, readableId, revision, name, type, replenishmentSystem, defaultMethodType, itemTrackingType, unitOfMeasureCode"
+        "id, readableId, revision, active, name, type, replenishmentSystem, defaultMethodType, itemTrackingType, unitOfMeasureCode"
       )
       .eq("companyId", companyId)
       .in("readableId", batch)

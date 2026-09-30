@@ -1,10 +1,13 @@
+import { getLogger } from "@carbon/logger";
 import type { OnshapePropertyValue } from "../panel/properties";
 import {
   parseProperties,
   partPropertiesFromElementMetadata
 } from "../panel/properties";
-import type { OnshapeClient } from "./client";
+import { OnshapeApiError, type OnshapeClient } from "./client";
 import type { OnshapeDocument } from "./document.type";
+
+const logger = getLogger("ee", "onshape", "part-properties");
 
 /**
  * Per-part property values for one element, quota-frugally: one metadata read
@@ -44,9 +47,25 @@ export async function readPartProperties(
           )
         )
       );
-    } catch {
-      // A part without readable metadata simply has no mapped values; the
-      // push itself is not blocked on properties.
+    } catch (error) {
+      // A part Onshape no longer has simply has no mapped values. Anything
+      // else — a 401, a rate limit, an outage — fails the plan: reading it as
+      // "no values" would push stale mapped fields as if they were current.
+      if (error instanceof OnshapeApiError && error.status === 404) {
+        logger.warn("Onshape part has no metadata; no mapped values", {
+          documentId: document.documentId,
+          elementId,
+          partId
+        });
+        continue;
+      }
+      logger.error("Failed to read Onshape part properties", {
+        documentId: document.documentId,
+        elementId,
+        partId,
+        error
+      });
+      throw error;
     }
   }
   return byPartId;

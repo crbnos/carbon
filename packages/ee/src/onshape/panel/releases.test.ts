@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 import type { ReleaseRevisionLike } from "./releases";
-import { groupRevisionsIntoReleases, resolveReleaseStates } from "./releases";
+import {
+  groupRevisionsIntoReleases,
+  releaseExportSelection,
+  resolveReleaseStates
+} from "./releases";
 
 function revision(
   over: Partial<ReleaseRevisionLike> = {}
@@ -110,5 +114,32 @@ describe("resolveReleaseStates", () => {
     expect(
       resolved[0]?.items.find((i) => i.partNumber === "DRW-001")?.itemId
     ).toBeNull();
+  });
+});
+
+describe("releaseExportSelection", () => {
+  it("exports a released part by its partId and configuration", () => {
+    expect(
+      releaseExportSelection({
+        elementType: 0,
+        partId: "JHD",
+        configuration: "size%3DLarge"
+      })
+    ).toEqual({ ok: true, partId: "JHD", configuration: "size%3DLarge" });
+  });
+
+  it("skips a Part Studio release that names no single part", () => {
+    expect(releaseExportSelection({ elementType: 0, partId: null }).ok).toBe(
+      false
+    );
+    expect(
+      releaseExportSelection({ elementType: 0, partId: "JHD,JKD" }).ok
+    ).toBe(false);
+  });
+
+  it("exports an assembly without a partId, dropping the default configuration", () => {
+    expect(
+      releaseExportSelection({ elementType: 1, configuration: "default" })
+    ).toEqual({ ok: true });
   });
 });
