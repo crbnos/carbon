@@ -8,9 +8,9 @@ import type {
   LoaderFunctionArgs
 } from "react-router";
 import { redirect, useNavigate } from "react-router";
-import { upsertInspectionDocument } from "~/modules/production";
-import { inspectionDocumentValidator } from "~/modules/production/production.models";
-import { InspectionDocumentForm } from "~/modules/production/ui/InspectionDocument";
+import { upsertInspectionDocument } from "~/modules/quality";
+import { inspectionDocumentValidator } from "~/modules/quality/quality.models";
+import { InspectionDocumentForm } from "~/modules/quality/ui/InspectionDocument";
 import { path } from "~/utils/path";
 import { invalidateInspectionDocuments } from "~/utils/react-query";
 

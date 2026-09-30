@@ -75,7 +75,7 @@ export async function getIssueTypesList(
 
 // The drawing pane needs the document's display name, its PDF preview URL, and
 // the balloon coordinates. This is a simplified read of what the ERP
-// production module assembles via mapInspectionDocument/mapBalloon.
+// quality module assembles via mapInspectionDocument/mapBalloon.
 export async function getInspectionDocumentWithBalloons(
   client: SupabaseClient<Database>,
   inspectionDocumentId: string

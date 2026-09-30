@@ -8,7 +8,7 @@ import type {
   ClientActionFunctionArgs
 } from "react-router";
 import { redirect } from "react-router";
-import { deleteInspectionDocument } from "~/modules/production";
+import { deleteInspectionDocument } from "~/modules/quality";
 import { path } from "~/utils/path";
 import { invalidateInspectionDocuments } from "~/utils/react-query";
 

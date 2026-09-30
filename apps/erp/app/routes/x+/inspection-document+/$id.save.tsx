@@ -8,7 +8,7 @@ import { data } from "react-router";
 import {
   saveInspectionDocumentAtomic,
   updateInspectionDocumentSampling
-} from "~/modules/production";
+} from "~/modules/quality";
 import {
   type InspectionSaveBalloonsGeometryPayload,
   type InspectionSaveFeaturesPayload,
@@ -16,14 +16,14 @@ import {
   mergeInspectionFeaturesPayload,
   resolveInspectionFeaturePayloadIds,
   translateLegacyInspectionSavePayload
-} from "~/modules/production/inspectionDocumentSave.server";
+} from "~/modules/quality/inspectionDocumentSave.server";
 import {
   inspectionDocumentSamplingValidator,
   inspectionSaveAnchorsPayloadValidator,
   inspectionSaveBalloonsGeometryPayloadValidator,
   inspectionSaveBalloonsPayloadValidator,
   inspectionSaveFeaturesPayloadValidator
-} from "~/modules/production/production.models";
+} from "~/modules/quality/quality.models";
 import { invalidateInspectionDocuments } from "~/utils/react-query";
 
 function getErrorMessage(error: unknown, fallback: string) {

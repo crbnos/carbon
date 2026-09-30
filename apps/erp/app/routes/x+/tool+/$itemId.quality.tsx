@@ -5,8 +5,8 @@ import { validationError, validator } from "@carbon/form";
 import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
 import { data, redirect, useLoaderData, useParams } from "react-router";
 import invariant from "tiny-invariant";
-import { getInspectionDocumentsForItem } from "~/modules/production";
 import {
+  getInspectionDocumentsForItem,
   getItemInspectionDocumentAssignments,
   itemInspectionDocumentAssignmentValidator,
   upsertItemInspectionDocumentAssignment

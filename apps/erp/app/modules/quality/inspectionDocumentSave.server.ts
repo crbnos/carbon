@@ -6,7 +6,7 @@ import type {
   inspectionSaveBalloonsGeometryPayloadValidator,
   inspectionSaveBalloonsPayloadValidator,
   inspectionSaveFeaturesPayloadValidator
-} from "./production.models";
+} from "./quality.models";
 
 export type InspectionSaveFeaturesPayload = ReturnType<
   typeof inspectionSaveFeaturesPayloadValidator.parse

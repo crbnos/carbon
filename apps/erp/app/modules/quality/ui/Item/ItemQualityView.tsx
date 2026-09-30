@@ -17,12 +17,12 @@ import { LuPlus } from "react-icons/lu";
 import { Hyperlink } from "~/components";
 import { Hidden, InspectionDocument, Submit } from "~/components/Form";
 import { usePermissions } from "~/hooks";
-import InspectionDocumentForm from "~/modules/production/ui/InspectionDocument/InspectionDocumentForm";
 import {
   inspectionDocumentUsages,
   itemInspectionDocumentAssignmentValidator
 } from "~/modules/quality";
 import type { ItemInspectionDocumentAssignment } from "~/modules/quality/types";
+import InspectionDocumentForm from "~/modules/quality/ui/InspectionDocument/InspectionDocumentForm";
 import { path } from "~/utils/path";
 
 type ItemQualityViewProps = {

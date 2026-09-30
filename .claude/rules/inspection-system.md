@@ -398,7 +398,8 @@ GL/cost posting and `.ai/plans/2026-07-25-inspection-disposition-gl-posting.md`.
 - **Inspection-required tracked entities post `On Hold`, not Available.** They are not on-hand
   until released by sampling/disposition.
 - **`trackedEntityId` is nullable** on samples; serial uniqueness is enforced by a *partial* index.
-- **Inspection *documents* are authored in the production module** (`inspectionDocument`/
+- **Inspection *documents* ("Inspection Plans") are authored in the quality module** (list
+  at `/x/quality/inspection-plans`, editor at `/x/inspection-document/{id}`; `inspectionDocument`/
   `inspectionFeature`/`balloon` + `save_inspection_document_atomic`, newest def
   `20260722040401`) and are now *consumed* by this flow via the item's Receipt-usage
   assignment. The lot references the document **live** — measurement rows store the

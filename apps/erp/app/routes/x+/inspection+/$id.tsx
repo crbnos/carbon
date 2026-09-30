@@ -6,9 +6,10 @@ import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { data, redirect, useLoaderData } from "react-router";
 import invariant from "tiny-invariant";
-import { getBalloons, getInspectionDocument } from "~/modules/production";
 import {
+  getBalloons,
   getInspection,
+  getInspectionDocument,
   getInspectionGauges,
   getInspectionMeasurements,
   getInspectionSamplingPlans,

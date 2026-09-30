@@ -64,7 +64,7 @@ pnpm --filter @carbon/erp test
 - `getIssueWorkflow` / `getIssueActionTasks` / `getIssueApprovalTasks` — workflow state
 - `updateIssueStatus` / `updateIssueTaskStatus` — status transitions
 - `closeIssue` (quality-disposition.server.ts, NOT quality.server.ts) — blocked while a linked supplier return is open; the 'Return to Supplier' write-off is reduced by shipped-via-return coverage, and return-shipped entities stay Consumed (not flipped Rejected). The `x+/issue+/$id.supplier-return.tsx` action drafts the linked `purchaseReturnOrder` (idempotent, supplier auto-resolution)
-- `getInspectionDocument` / `getBalloons` / `getInspectionFeatures` / `getInspectionPlan` — drawing-inspection reads; NOTE these live in `production.service.ts`, not this module
+- `getInspectionDocument` / `getBalloons` / `getInspectionFeatures` / `getInspectionPlan` — drawing-inspection reads (plan authoring: `getInspectionDocuments`, `upsertInspectionDocument`, `deleteInspectionDocument`, `saveInspectionDocumentAtomic`; editor UI in `ui/InspectionDocument/`, list at `/x/quality/inspection-plans`)
 - `getInspection` / `getInspections` (status + source filters) / `getInspectionTrackedEntities` — inspections
 - `getInspectionSamplingPlans` / `getInspectionMeasurements` — per-inspection feature plans and grid readings
 - `getItemInspectionDocumentAssignments` / `upsertItemInspectionDocumentAssignment` — Receipt-usage document assignment

@@ -10,33 +10,31 @@ import { redirect, useLoaderData } from "react-router";
 import { getUnitOfMeasuresList } from "~/modules/items/items.service";
 import {
   getBalloons,
+  getGaugeTypesList,
   getInspectionDocument,
   getInspectionFeatures
-} from "~/modules/production";
-import type { InspectionDocumentContent } from "~/modules/production/types";
-import type { SamplingRule } from "~/modules/production/ui/InspectionDocument/SamplingRuleModal";
-import { getGaugeTypesList } from "~/modules/quality";
+} from "~/modules/quality";
+import type { InspectionDocumentContent } from "~/modules/quality/types";
+import type { SamplingRule } from "~/modules/quality/ui/InspectionDocument/SamplingRuleModal";
 import { getCompanySettings } from "~/modules/settings";
 import type { BreadcrumbSegment, Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
 
 const InspectionDocumentEditor = lazy(
   () =>
-    import(
-      "~/modules/production/ui/InspectionDocument/InspectionDocumentEditor"
-    )
+    import("~/modules/quality/ui/InspectionDocument/InspectionDocumentEditor")
 );
 
 export const handle: Handle = {
   breadcrumb: (_params: unknown, data: any): BreadcrumbSegment[] => {
     const segments: BreadcrumbSegment[] = [
-      { breadcrumb: msg`Production`, to: path.to.production },
+      { breadcrumb: msg`Quality`, to: path.to.quality },
       { breadcrumb: msg`Inspection Plans`, to: path.to.inspectionDocuments }
     ];
     const name = data?.diagram?.name;
     return name ? [...segments, { breadcrumb: name }] : segments;
   },
-  module: "production"
+  module: "quality"
 };
 
 export async function loader({ request, params }: LoaderFunctionArgs) {

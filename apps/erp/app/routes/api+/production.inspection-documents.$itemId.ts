@@ -4,7 +4,7 @@ import type {
   LoaderFunctionArgs
 } from "react-router";
 import { data } from "react-router";
-import { getInspectionDocumentsForItem } from "~/modules/production";
+import { getInspectionDocumentsForItem } from "~/modules/quality";
 import { getCompanyId, inspectionDocumentsQuery } from "~/utils/react-query";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
