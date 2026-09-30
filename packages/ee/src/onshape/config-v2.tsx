@@ -2,7 +2,7 @@ import { ONSHAPE_CLIENT_ID } from "@carbon/auth";
 import { z } from "zod";
 import { defineIntegration } from "../fns";
 import { beginOAuthPopup } from "../oauth-popup";
-import { Logo } from "./config";
+import { Logo, onshapeReconnectAction } from "./config";
 import { ONSHAPE_V2_INTEGRATION_ID } from "./lib/integration-id";
 import {
   ITEM_METHOD_TYPES,
@@ -123,6 +123,7 @@ export const OnshapeV2 = defineIntegration({
         });
       }
     }),
+  actions: [onshapeReconnectAction("/api/integrations/onshape-v2/install")],
   onClientInstall: async () => {
     // Opened here, inside the click, so the browser still holds user
     // activation; the fetch below can take as long as it needs.
