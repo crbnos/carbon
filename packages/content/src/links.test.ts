@@ -58,7 +58,9 @@ function walkSource(dir: string, out: string[] = []): string[] {
     if (entry.name === "node_modules") continue;
     const p = path.join(dir, entry.name);
     if (entry.isDirectory()) walkSource(p, out);
-    else if (/\.tsx?$/.test(entry.name)) out.push(p);
+    // Test files may hold deliberately stale URLs; only shipped links count.
+    else if (/\.tsx?$/.test(entry.name) && !/\.test\.tsx?$/.test(entry.name))
+      out.push(p);
   }
   return out;
 }

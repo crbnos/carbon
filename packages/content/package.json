@@ -7,7 +7,8 @@
     "./agent-kb": "./src/agent-kb.ts",
     "./corpus": "./src/corpus.ts",
     "./glossary": "./src/glossary/index.ts",
-    "./links": "./src/links.ts"
+    "./links": "./src/links.ts",
+    "./search": "./src/search.ts"
   },
   "scripts": {
     "clean": "rimraf .turbo node_modules",
@@ -17,7 +18,8 @@
     "typecheck": "tsgo --noEmit"
   },
   "dependencies": {
-    "@lingui/core": "catalog:"
+    "@lingui/core": "catalog:",
+    "zbsearch": "catalog:"
   },
   "devDependencies": {
     "@carbon/config": "workspace:*",

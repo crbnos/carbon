@@ -10,12 +10,15 @@ that turn both into something apps and agents can read. The `docs/` app only ren
 - `src/corpus.ts` — MDX → plain markdown (pure; callers bring the raw text).
 - `src/agent-kb.ts` — every page, stripped, for the in-app agent (Vite `import.meta.glob`).
 - `src/links.ts` — `DOCS_URL` and `docUrl()`.
+- `src/search.ts` — `stemInflection()`, the one stemmer for docs site search, MCP `search_tools`
+  and the agent's `search_docs` (zbsearch's Porter, limited to plural/-ed/-ing/-e).
 
 ## Exports
 
 ```typescript
 import { terms, getEntry, lookupEntry, type TermId } from "@carbon/content/glossary";
 import { docUrl, DOCS_URL } from "@carbon/content/links";
+import { stemInflection } from "@carbon/content/search";
 import { parsePage, stripComponents } from "@carbon/content/corpus";   // pure, any bundle
 import { agentDocs } from "@carbon/content/agent-kb";                  // Vite builds only (ERP)
 ```

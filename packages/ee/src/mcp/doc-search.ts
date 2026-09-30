@@ -1,7 +1,7 @@
 // Ranked search over the docs corpus for the in-app agent's `search_docs`. Same
 // engine as the tool catalog (catalog-search.ts): zbsearch BM25 with prefix
-// expansion, SEARCH_ALIASES via expandQueryTerm, and a typo-tolerant second pass —
-// indexed over doc fields instead of tool fields.
+// expansion, SEARCH_ALIASES and word stems via expandQueryTerm, and a
+// typo-tolerant second pass — indexed over doc fields instead of tool fields.
 import { create, insertMultiple, search } from "zbsearch";
 import { expandQueryTerm } from "./catalog-search";
 

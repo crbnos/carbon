@@ -1,3 +1,4 @@
+import { stemInflection } from "@carbon/content/search";
 import { createSearchAPI } from "fumadocs-core/search/server";
 import { buildSearchIndexes } from "@/lib/search-index";
 
@@ -8,8 +9,9 @@ import { buildSearchIndexes } from "@/lib/search-index";
 
 const { GET: search } = createSearchAPI("advanced", {
   language: "english",
-  // zbsearch's built-in English stemmer, so "purchase order" matches "Purchase orders".
-  tokenizer: { language: "english", stemming: true },
+  // Inflection-only stemming ("purchase order" matches "Purchase orders"), the same
+  // stemInflection MCP search_tools and the agent's search_docs add to their queries.
+  tokenizer: { language: "english", stemming: true, stemmer: stemInflection },
   indexes: buildSearchIndexes()
 });
 
