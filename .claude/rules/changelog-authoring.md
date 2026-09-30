@@ -38,7 +38,40 @@ tags: ["sales", "purchasing", "production"]
   row; a 40-word run-on is a wall there. Use `Plus …` to gather the tail
   (`"Draft an engineering change … Plus inventory valuation and assembly instructions."`).
 - **`tags`** — most important first; the feed shows only the first three.
-- **`image`** — optional hero, a path under `docs/public/`. Nothing uses it today.
+- **`image`** — optional hero, a path under `docs/public/changelog/`. Rendered above the
+  title on both the feed row and the entry page, and it carries a shared
+  `view-transition-name` so the card morphs between them.
+
+## Thumbnails
+
+**Generated, not hand-drawn.** `docs/scripts/generate-changelog-thumbnail.mjs` writes
+`docs/public/changelog/<slug>.svg` for every entry and stamps `image:` into the
+frontmatter when it is missing:
+
+```bash
+cd docs && pnpm generate:changelog-thumbnails          # all
+cd docs && pnpm generate:changelog-thumbnails <slug>   # one
+```
+
+The motif is derived from the **title**: whichever motif keyword appears earliest wins,
+since a changelog title leads with its headline feature ("Ramp card transactions, batch
+materials, …" is a ledger entry, not a batching one). Layout detail is varied by a hash
+of the slug, so entries sharing a motif differ, and a rerun is byte-identical.
+
+House style, enforced by the primitives in that script: 1200×675, dark and flat. Field
+`#09090B`, panel `#141518`, hairline `#26272B`, solid fills only. No gradients, no
+shadows, no `fill-opacity`, no text, no logos, one `#00B0FF` accent per image. These
+render at ~56% in the feed, so detail is lost and only clutter survives.
+
+A literal version was tried once — real part numbers, work centres and status pills from
+the demo dataset — and rejected: unreadable at feed scale and busy rather than
+convincing. If you ever want true realism, screenshot the running app
+(`pnpm db:seed:dev --dataset satellite` fills every screen) the way
+`docs/public/screens/` was made, rather than drawing it.
+
+**A new subject with no motif gets a new motif** in `MOTIFS` plus a drawing function —
+never a hand-authored one-off SVG, or the set drifts out of style. Never draw a third
+party's logo, and never use real tenant data.
 
 ## Body — concise, useful, linked
 

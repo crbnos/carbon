@@ -108,6 +108,7 @@ IMPORTANT: Before any research or coding, match the task to this table. A single
 | Printing system | `.claude/rules/printing-system.md` + `packages/printing/AGENTS.md` |
 | CSV import/export | `.claude/rules/csv-import-system.md` + `.claude/rules/table-csv-export.md` |
 | Changelog entries (authoring + the feed) | `.claude/rules/changelog-authoring.md` |
+| Writing/shipping a changelog entry (end to end) | `.claude/skills/changelog-entry/SKILL.md` |
 | Billing / Stripe | `.claude/rules/billing-system.md` + `packages/stripe/AGENTS.md` |
 | Deployment (SST) | `.claude/rules/sst-deployment-infrastructure.md` |
 | Audit log system | `.claude/rules/audit-log-system.md` |

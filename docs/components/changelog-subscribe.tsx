@@ -92,14 +92,14 @@ function SubscribePopover() {
         </span>
         <span
           aria-hidden="true"
-          className="text-on-dark relative z-10 transition-transform duration-200 ease-out group-hover:translate-x-0.5"
+          className="text-on-dark relative z-10 transition-transform duration-200 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:translate-x-0.5"
         >
           →
         </span>
       </button>
 
       {open && (
-        <div className="absolute left-0 top-full z-30 mt-2 w-[21rem] rounded-xl border border-ed-hairline bg-[#FBFBF9] p-4 shadow-[0_12px_32px_rgba(38,35,35,0.10)]">
+        <div className="absolute right-0 top-full z-30 mt-2 w-[21rem] rounded-xl border border-ed-hairline bg-[#FBFBF9] p-4 shadow-[0_12px_32px_rgba(38,35,35,0.10)]">
           <div className="mb-4">
             <div className="mb-1.5 text-[12px] font-demi uppercase tracking-[0.06em] text-ink-faint">
               Email
@@ -108,11 +108,11 @@ function SubscribePopover() {
               href={newsletterSettingsUrl}
               className="flex w-full items-center justify-between gap-2 rounded-lg bg-[#1E84B0] px-3.5 py-2 text-ed-14 font-book text-white no-underline transition-opacity hover:opacity-90"
             >
-              <span>Manage in your Carbon account</span>
+              <span>Turn on the email digest</span>
               <span aria-hidden="true">→</span>
             </a>
             <p className="m-0 mt-1.5 text-[12px] leading-normal text-ink-faint">
-              Turn on “Changelog newsletter” under Account → Notifications.
+              Opens Account → Notifications in your Carbon instance.
             </p>
           </div>
 
@@ -121,7 +121,7 @@ function SubscribePopover() {
             <CopyRow label="Slack" value={SLACK_COMMAND} />
           </div>
           <p className="m-0 mt-3 text-[12px] leading-normal text-ink-faint">
-            Paste the Slack command into any channel to get entries there.
+            Paste into any Slack channel to post new entries there.
           </p>
         </div>
       )}

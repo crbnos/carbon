@@ -1,13 +1,14 @@
 import type { Metadata } from "next";
 import { ChangelogFeed } from "@/components/changelog-feed";
+import { ChangelogHeader } from "@/components/changelog-header";
 import { pageSeo } from "@/lib/seo";
 
 const DESCRIPTION =
-  "What's new in Carbon. Every entry is dated, not versioned, and ships the moment it merges.";
+  "New features, improvements, and fixes across the Carbon ERP and the shop floor.";
 
 export const metadata: Metadata = {
   ...pageSeo({
-    title: "Changelog — Carbon",
+    title: "Changelog · Carbon",
     ogTitle: "Changelog",
     description: DESCRIPTION,
     path: "/changelog",
@@ -20,5 +21,10 @@ export const metadata: Metadata = {
 };
 
 export default function ChangelogPage() {
-  return <ChangelogFeed />;
+  return (
+    <>
+      <ChangelogHeader />
+      <ChangelogFeed />
+    </>
+  );
 }

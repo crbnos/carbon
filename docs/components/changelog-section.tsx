@@ -18,13 +18,13 @@ function WrenchIcon() {
   );
 }
 
-// "Fixes" gets the wrench, anything else the sparkle — the two titles the entries use.
+// "Fixes" gets the wrench, anything else the sparkle: the two titles the entries use.
 function iconFor(title: string) {
   return /fix/i.test(title) ? <WrenchIcon /> : <SparkleIcon />;
 }
 
 /* Replaces <Accordion> inside a changelog entry. A release note's Improvements and Fixes
- * are the substance of the entry, not an aside to be opened — so they render as a plain
+ * are the substance of the entry, not an aside to be opened, so they render as a plain
  * titled section. The RSS route degrades the same component to an <h3> plus its list, so
  * the page, the feed and the newsletter all show the same thing. */
 export function ChangelogSection({

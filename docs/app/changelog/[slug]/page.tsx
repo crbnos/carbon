@@ -1,18 +1,16 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ChangelogSection } from "@/components/changelog-section";
-import {
-  ChangelogEntryMeta,
-  ChangelogTag,
-  TIMELINE_GRID,
-} from "@/components/changelog-timeline";
+import { ChangelogTag } from "@/components/changelog-timeline";
 import { getMDXComponents } from "@/components/mdx";
+import { formatChangelogDate } from "@/lib/changelog";
 import { pageSeo } from "@/lib/seo";
 import { changelogSource, getChangelogEntries } from "@/lib/source";
 
 type Params = { params: Promise<{ slug: string }> };
 
+/* A single entry reads as an article, not as one row of the feed: no timeline rail, a
+ * wider measure and a larger type scale than the summary it came from. */
 export default async function ChangelogEntryPage(props: Params) {
   const { slug } = await props.params;
   const page = changelogSource.getPage([slug]);
@@ -21,45 +19,61 @@ export default async function ChangelogEntryPage(props: Params) {
   const MDX = page.data.body;
 
   return (
-    <article className={`py-8 md:py-0 ${TIMELINE_GRID}`}>
-      <ChangelogEntryMeta date={page.data.date} progress />
+    <article className="mx-auto w-full max-w-[46rem] px-6 pt-10 pb-8 lg:px-8">
+      <a
+        href="/changelog"
+        className="inline-flex items-center gap-1.5 text-ed-14 font-book text-ink-faint no-underline transition-colors hover:text-ink-ui"
+      >
+        <span aria-hidden="true">←</span>
+        Changelog
+      </a>
 
-      <div className="min-w-0 max-w-160 md:py-7">
-        <Link
+      <time
+        dateTime={page.data.date}
+        className="mt-10 block text-ed-14 font-medium tabular-nums text-ink-faint"
+      >
+        {formatChangelogDate(page.data.date)}
+      </time>
+
+      <h1 style={{ viewTransitionName: `title-${slug}` }} className="m-0 mt-3 font-display text-ed-40 font-semibold leading-[1.12] tracking-[-0.025em] text-ed-ink">
+        {page.data.title}
+      </h1>
+
+      {page.data.tags.length > 0 && (
+        <div className="mt-5 flex flex-wrap items-center gap-x-3 gap-y-2">
+          {page.data.tags.map((tag) => (
+            <ChangelogTag key={tag}>{tag}</ChangelogTag>
+          ))}
+        </div>
+      )}
+
+      {page.data.image && (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={page.data.image}
+          alt=""
+          width={1200}
+          height={675}
+          style={{ viewTransitionName: `hero-${slug}` }}
+          className="mt-9 aspect-video w-full rounded-xl bg-[#09090B] object-cover ring-1 ring-ed-ink/10 ring-inset"
+        />
+      )}
+
+      {/* `.guide-prose` (global.css) is the site's long-form reading rhythm: 17px at 1.75.
+          It was defined for the Guide and had no call sites; an entry page wants exactly
+          it, rather than a second size override competing with `.prose`. */}
+      <div className="prose guide-prose mt-10">
+        <MDX components={getMDXComponents({ Accordion: ChangelogSection })} />
+      </div>
+
+      <div className="mt-14 border-t border-ed-hairline pt-6">
+        <a
           href="/changelog"
-          className="text-ed-13 font-book text-ink-faint no-underline hover:text-ink-ui"
+          className="inline-flex items-center gap-1.5 text-ed-14 text-ed-brand-ink no-underline transition-colors hover:text-ed-ink"
         >
-          ← Changelog
-        </Link>
-        <h1 className="m-0 mt-5 text-ed-32 font-semi leading-[1.2] tracking-[-0.02em] text-ed-ink">
-          {page.data.title}
-        </h1>
-        {page.data.tags.length > 0 && (
-          <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-2">
-            {page.data.tags.map((tag) => (
-              <ChangelogTag key={tag}>{tag}</ChangelogTag>
-            ))}
-          </div>
-        )}
-        {page.data.image && (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={page.data.image}
-            alt={page.data.title}
-            className="mt-7 w-full rounded-xl border border-ed-hairline bg-[#F5F5F2]"
-          />
-        )}
-        <div className="prose mt-7">
-          <MDX components={getMDXComponents({ Accordion: ChangelogSection })} />
-        </div>
-        <div className="mt-12 border-t border-ed-hairline pt-6">
-          <Link
-            href="/changelog"
-            className="text-ed-14 text-ed-brand-ink no-underline hover:underline"
-          >
-            ← All changelog entries
-          </Link>
-        </div>
+          <span aria-hidden="true">←</span>
+          Back to the changelog
+        </a>
       </div>
     </article>
   );
@@ -77,7 +91,7 @@ export async function generateMetadata(props: Params): Promise<Metadata> {
   if (!page) notFound();
 
   return pageSeo({
-    title: `${page.data.title} — Carbon Changelog`,
+    title: `${page.data.title} · Carbon Changelog`,
     ogTitle: page.data.title,
     description: page.data.description,
     path: page.url,
