@@ -319,7 +319,7 @@ msgid "{delegatedTo} posts this to your ledger, so Carbon doesn't push it. Your 
 msgstr "${delegatedTo} publica isto no seu razão, portanto o Carbon não o envia. Sua escolha salva é mantida caso isso mude."
 
 msgid "{dismissed} dismissed"
-msgstr ""
+msgstr "{dismissed} dispensados"
 
 msgid "{done} of {total} phases complete"
 msgstr "{done} de {total} fases concluídas"
@@ -342,7 +342,7 @@ msgid "{inserted} inserted, {updated} updated, {0} need fixing, {1} skipped."
 msgstr "{inserted} inseridos, {updated} atualizados, {0} precisam de correção, {1} ignorados."
 
 msgid "{leadTime} days"
-msgstr ""
+msgstr "{leadTime} dias"
 
 msgid "{linesCount, plural, one {# line} other {# lines}}"
 msgstr "{linesCount, plural, one {# linha} other {# linhas}}"
@@ -473,7 +473,7 @@ msgid "0 operations"
 msgstr "0 operações"
 
 msgid "0 suggests a move for any date difference."
-msgstr ""
+msgstr "0 sugere uma movimentação para qualquer diferença de data."
 
 msgid "0-4 weeks"
 msgstr "0-4 semanas"
@@ -2130,7 +2130,7 @@ msgid "Apply Rules On Top"
 msgstr "Aplicar regras na parte superior"
 
 msgid "Apply Suggested Changes"
-msgstr ""
+msgstr "Aplicar Alterações Sugeridas"
 
 msgid "Apply suggestions"
 msgstr "Aplicar sugestões"
@@ -2790,7 +2790,7 @@ msgid "Assign to Groups"
 msgstr "Atribuir a Grupos"
 
 msgid "Assign to Me"
-msgstr ""
+msgstr "Atribuir para Mim"
 
 msgid "Assigned"
 msgstr "Atribuído"
@@ -2799,7 +2799,7 @@ msgid "Assigned {employeeName} to {targetName} for the week"
 msgstr "Atribuído {employeeName} a {targetName} para a semana"
 
 msgid "Assigned to me"
-msgstr ""
+msgstr "Para Mim"
 
 msgid "Assigned to Me"
 msgstr "Atribuído a Mim"
@@ -5563,7 +5563,7 @@ msgid "Declining balance"
 msgstr "Saldo Decrescente"
 
 msgid "Decrease"
-msgstr ""
+msgstr "Diminuir"
 
 msgid "Deep in the small hours, {name}."
 msgstr "Bem na madrugada, {name}."
@@ -5683,7 +5683,7 @@ msgid "Defaults"
 msgstr "Padrões"
 
 msgid "Defer"
-msgstr ""
+msgstr "Adiar"
 
 msgid "Deferred Tax Expense"
 msgstr "Despesa de Imposto Diferido"
@@ -6263,7 +6263,7 @@ msgid "Dismiss"
 msgstr "Descartar"
 
 msgid "Dismissed"
-msgstr ""
+msgstr "Dispensado"
 
 msgid "Dispatch"
 msgstr "Ordem de manutenção"
@@ -6641,7 +6641,7 @@ msgid "Each, lb, ft…"
 msgstr "Cada, lb, ft…"
 
 msgid "Earlier weeks are consumed first."
-msgstr ""
+msgstr "O estoque das semanas anteriores é usado em primeiro lugar."
 
 msgid "Earliest operation start"
 msgstr "Início mais cedo da operação"
@@ -7529,7 +7529,7 @@ msgid "Expected Receipt Date"
 msgstr "Data de Recebimento Esperada"
 
 msgid "Expedite"
-msgstr ""
+msgstr "Antecipar"
 
 msgid "Expense account for customer balances written off as uncollectable on AR settlement"
 msgstr "Conta de despesa para saldos de clientes cancelados como incobrável na liquidação de contas a receber"
@@ -9195,7 +9195,7 @@ msgid "Incoterm Location"
 msgstr "Local de Incoterm"
 
 msgid "Increase"
-msgstr ""
+msgstr "Aumentar"
 
 msgid "Indirect"
 msgstr "Indireto"
@@ -9972,13 +9972,13 @@ msgid "Late in the evening, {name}."
 msgstr "Tarde da noite, {name}."
 
 msgid "Later weeks are consumed once earlier ones are used up."
-msgstr ""
+msgstr "O estoque das semanas posteriores é usado assim que o das semanas anteriores for usado."
 
 msgid "Latest operation end"
 msgstr "Término da operação mais recente"
 
 msgid "Latest Order Date"
-msgstr ""
+msgstr "Data Mais Recente do Pedido"
 
 msgid "Latitude"
 msgstr "Latitude"
@@ -10317,10 +10317,10 @@ msgid "Longitude"
 msgstr "Longitude"
 
 msgid "Look ahead (weeks)"
-msgstr ""
+msgstr "Próximas Semanas"
 
 msgid "Look back (weeks)"
-msgstr ""
+msgstr "Semanas Anteriores"
 
 msgid "Looks empty here"
 msgstr "Parece vazio aqui"
@@ -11082,10 +11082,10 @@ msgid "MRP runs automatically every 3 hours, but you can run it manually here."
 msgstr "MRP é executado automaticamente a cada 3 horas, mas você pode executá-lo manualmente aqui."
 
 msgid "MRP Suggestions"
-msgstr ""
+msgstr "Sugestões MRP"
 
 msgid "MRP suggests moving an existing order only when its date is off by more than this many days. Smaller gaps are left alone so the worklist stays quiet."
-msgstr ""
+msgstr "MRP sugere mover um pedido existente apenas quando sua data está fora de prazo por mais de vários dias. Diferenças menores são ignoradas para manter a lista de trabalho tranquila."
 
 msgid "Multiple jobs can run on this process at the same time — e.g. a laser table, furnace, or plating bath"
 msgstr "Múltiplas ordens de produção podem ser executadas neste processo ao mesmo tempo — por exemplo, uma mesa a laser, forno ou banho de galvanização"
@@ -11451,7 +11451,7 @@ msgid "New Supplier Return"
 msgstr "Nova Devolução de Fornecedor"
 
 msgid "New supply"
-msgstr ""
+msgstr "Novo Suprimento"
 
 msgid "New Timecard"
 msgstr "Novo Cartão de Ponto"
@@ -12906,7 +12906,7 @@ msgid "Owner (cost center)"
 msgstr "Responsável (centro de custo)"
 
 msgid "Ownership"
-msgstr ""
+msgstr "Propriedade"
 
 #. placeholder {0}: i18n._(member.owns)
 msgid "Owns: {0}"
@@ -13783,7 +13783,7 @@ msgid "Project start"
 msgstr "Início do projeto"
 
 msgid "Projected"
-msgstr ""
+msgstr "Projetado"
 
 #. placeholder {0}: formatDate(projectedDate)
 msgid "Projected {0}"
@@ -17116,7 +17116,7 @@ msgid "Still dark out on the floor."
 msgstr "Ainda está escuro no chão."
 
 msgid "Stock Availability"
-msgstr ""
+msgstr "Disponibilidade de Estoque"
 
 msgid "Stock movement corrected"
 msgstr "Movimento de estoque corrigido"
@@ -19157,7 +19157,7 @@ msgid "Tolerance (+/-)"
 msgstr "Tolerância (+/-)"
 
 msgid "Tolerance (days)"
-msgstr ""
+msgstr "Tolerância (dias)"
 
 msgid "Tomorrow"
 msgstr "Amanhã"
@@ -20546,7 +20546,7 @@ msgid "When a finished product's shelf life is set to Calculated, pick which con
 msgstr "Quando a vida de prateleira de um produto acabado é definida como Calculada, escolha quais entradas consumidas alimentam o cálculo."
 
 msgid "When a sales order or job lands in a week with no remaining forecast, it consumes forecast from nearby weeks instead of being counted on top of it. Set both to 0 to net within the same week only."
-msgstr ""
+msgstr "Quando um Pedido de Venda ou Ordem de Produção chega a uma semana sem previsão remanescente, ela utiliza a previsão de semanas próximas em vez de ser contabilizada adicionalmente. Defina ambas como 0 para compensar apenas na mesma semana."
 
 msgid "When a serial or batch expires, and what happens if used after — a company policy can Warn, Block, or BlockWithOverride."
 msgstr "Quando um número de série ou lote expira e o que acontece se usado depois — uma política da empresa pode Avisar, Bloquear ou BloquearComSubstituição."

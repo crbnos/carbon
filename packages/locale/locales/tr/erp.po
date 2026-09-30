@@ -319,7 +319,7 @@ msgid "{delegatedTo} posts this to your ledger, so Carbon doesn't push it. Your 
 msgstr "{delegatedTo} bunu muhasebe defterinize gönderir, bu nedenle Carbon onu göndermez. Kaydedilen seçiminiz değişmesi durumunda korunur."
 
 msgid "{dismissed} dismissed"
-msgstr ""
+msgstr "{dismissed} reddedildi"
 
 msgid "{done} of {total} phases complete"
 msgstr "{done} / {total} aşama tamamlandı"
@@ -342,7 +342,7 @@ msgid "{inserted} inserted, {updated} updated, {0} need fixing, {1} skipped."
 msgstr "{inserted} eklendi, {updated} güncellendi, {0} düzeltme gerekli, {1} atlandı."
 
 msgid "{leadTime} days"
-msgstr ""
+msgstr "{leadTime} gün"
 
 msgid "{linesCount, plural, one {# line} other {# lines}}"
 msgstr "{linesCount, plural, one {# satır} other {# satırlar}}"
@@ -473,7 +473,7 @@ msgid "0 operations"
 msgstr "0 operasyon"
 
 msgid "0 suggests a move for any date difference."
-msgstr ""
+msgstr "0, herhangi bir tarih farkı için bir taşıma önerir."
 
 msgid "0-4 weeks"
 msgstr "0-4 hafta"
@@ -2130,7 +2130,7 @@ msgid "Apply Rules On Top"
 msgstr "Kuralları üste uygula"
 
 msgid "Apply Suggested Changes"
-msgstr ""
+msgstr "Önerilen Değişiklikleri Uygula"
 
 msgid "Apply suggestions"
 msgstr "Önerileri Uygula"
@@ -2790,7 +2790,7 @@ msgid "Assign to Groups"
 msgstr "Gruplara Ata"
 
 msgid "Assign to Me"
-msgstr ""
+msgstr "Bana Ata"
 
 msgid "Assigned"
 msgstr "Atanmış"
@@ -2799,7 +2799,7 @@ msgid "Assigned {employeeName} to {targetName} for the week"
 msgstr "{employeeName} öğesi hafta boyunca {targetName} için atandı"
 
 msgid "Assigned to me"
-msgstr ""
+msgstr "Bana Atandı"
 
 msgid "Assigned to Me"
 msgstr "Bana Atananlar"
@@ -5563,7 +5563,7 @@ msgid "Declining balance"
 msgstr "Azalan Bakiye"
 
 msgid "Decrease"
-msgstr ""
+msgstr "Azalt"
 
 msgid "Deep in the small hours, {name}."
 msgstr "Gece derin saatlerinde, {name}."
@@ -5683,7 +5683,7 @@ msgid "Defaults"
 msgstr "Varsayılanlar"
 
 msgid "Defer"
-msgstr ""
+msgstr "Ertele"
 
 msgid "Deferred Tax Expense"
 msgstr "Ertelenen Vergi Gideri"
@@ -6263,7 +6263,7 @@ msgid "Dismiss"
 msgstr "Kapat"
 
 msgid "Dismissed"
-msgstr ""
+msgstr "Reddedildi"
 
 msgid "Dispatch"
 msgstr "Bakım emri"
@@ -6641,7 +6641,7 @@ msgid "Each, lb, ft…"
 msgstr "Her, lb, ft…"
 
 msgid "Earlier weeks are consumed first."
-msgstr ""
+msgstr "Daha önceki haftalar önce tüketilir."
 
 msgid "Earliest operation start"
 msgstr "En erken operasyon başlangıcı"
@@ -7529,7 +7529,7 @@ msgid "Expected Receipt Date"
 msgstr "Beklenen Teslim Alma Tarihi"
 
 msgid "Expedite"
-msgstr ""
+msgstr "Hızlandır"
 
 msgid "Expense account for customer balances written off as uncollectable on AR settlement"
 msgstr "Alacak hesapları uzlaşması sırasında tahsil edilemez olarak silinen müşteri bakiyeleri için gider hesabı"
@@ -9195,7 +9195,7 @@ msgid "Incoterm Location"
 msgstr "Incoterm Lokasyonu"
 
 msgid "Increase"
-msgstr ""
+msgstr "Artır"
 
 msgid "Indirect"
 msgstr "Dolaylı"
@@ -9972,13 +9972,13 @@ msgid "Late in the evening, {name}."
 msgstr "Akşamın geç saatlerinde, {name}."
 
 msgid "Later weeks are consumed once earlier ones are used up."
-msgstr ""
+msgstr "Daha sonraki haftalar, daha önceki olanlar bittiğinde tüketilir."
 
 msgid "Latest operation end"
 msgstr "En son işlem sonu"
 
 msgid "Latest Order Date"
-msgstr ""
+msgstr "Son Sipariş Tarihi"
 
 msgid "Latitude"
 msgstr "Enlem"
@@ -10317,10 +10317,10 @@ msgid "Longitude"
 msgstr "Boylam"
 
 msgid "Look ahead (weeks)"
-msgstr ""
+msgstr "İleri Görüş (haftalar)"
 
 msgid "Look back (weeks)"
-msgstr ""
+msgstr "Geriye Görüş (haftalar)"
 
 msgid "Looks empty here"
 msgstr "Burada boş görünüyor"
@@ -11082,10 +11082,10 @@ msgid "MRP runs automatically every 3 hours, but you can run it manually here."
 msgstr "MRP otomatik olarak her 3 saatte bir çalışır, ancak buradan manuel olarak çalıştırabilirsiniz."
 
 msgid "MRP Suggestions"
-msgstr ""
+msgstr "MRP Önerileri"
 
 msgid "MRP suggests moving an existing order only when its date is off by more than this many days. Smaller gaps are left alone so the worklist stays quiet."
-msgstr ""
+msgstr "MRP, mevcut bir siparişi ancak tarihinden bu sayıda günden fazla fark olduğunda taşımayı önerir. Daha küçük farklar, iş listesinin sessiz kalması için yalnız bırakılır."
 
 msgid "Multiple jobs can run on this process at the same time — e.g. a laser table, furnace, or plating bath"
 msgstr "Bu Proses üzerinde aynı anda birden fazla İş emri çalışabilir — örneğin bir lazer masası, fırın veya kaplama havuzu"
@@ -11451,7 +11451,7 @@ msgid "New Supplier Return"
 msgstr "Yeni Tedarikçi İadesi"
 
 msgid "New supply"
-msgstr ""
+msgstr "Yeni Arz"
 
 msgid "New Timecard"
 msgstr "Yeni Vardiya"
@@ -12906,7 +12906,7 @@ msgid "Owner (cost center)"
 msgstr "Sahip (Maliyet merkezi)"
 
 msgid "Ownership"
-msgstr ""
+msgstr "Sahiplik"
 
 #. placeholder {0}: i18n._(member.owns)
 msgid "Owns: {0}"
@@ -13783,7 +13783,7 @@ msgid "Project start"
 msgstr "Proje başlangıcı"
 
 msgid "Projected"
-msgstr ""
+msgstr "Öngörülen"
 
 #. placeholder {0}: formatDate(projectedDate)
 msgid "Projected {0}"
@@ -17116,7 +17116,7 @@ msgid "Still dark out on the floor."
 msgstr "Fabrikada hala karanlık."
 
 msgid "Stock Availability"
-msgstr ""
+msgstr "Stok Mevcudiyeti"
 
 msgid "Stock movement corrected"
 msgstr "Stok hareketi düzeltildi"
@@ -19157,7 +19157,7 @@ msgid "Tolerance (+/-)"
 msgstr "Tolerans (+/-)"
 
 msgid "Tolerance (days)"
-msgstr ""
+msgstr "Tolerans (gün)"
 
 msgid "Tomorrow"
 msgstr "Yarın"
@@ -20546,7 +20546,7 @@ msgid "When a finished product's shelf life is set to Calculated, pick which con
 msgstr "Bir bitmiş ürünün raf ömrü Hesaplanan olarak ayarlandığında, hesaplamaya hangi tüketilen girdilerin dahil edileceğini seçin."
 
 msgid "When a sales order or job lands in a week with no remaining forecast, it consumes forecast from nearby weeks instead of being counted on top of it. Set both to 0 to net within the same week only."
-msgstr ""
+msgstr "Bir satış siparişi veya iş emri kalan tahmini olmayan bir haftaya düştüğünde, yakındaki haftalardan tahmin tüketir, üzerine eklenmek yerine. Her ikisini de 0 olarak ayarlayın, yalnızca aynı hafta içinde netleştirmek için."
 
 msgid "When a serial or batch expires, and what happens if used after — a company policy can Warn, Block, or BlockWithOverride."
 msgstr "Bir seri veya parti ne zaman süresinin dolduğu ve kullanıldığında ne olduğu — bir şirket politikası Uyar, Engelle veya EngellePrekesiyle yer alabilir."

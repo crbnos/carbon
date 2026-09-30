@@ -319,7 +319,7 @@ msgid "{delegatedTo} posts this to your ledger, so Carbon doesn't push it. Your 
 msgstr "{delegatedTo}将其发布到您的分类账，因此Carbon不会推送它。您保存的选择将被保留，以防情况发生变化。"
 
 msgid "{dismissed} dismissed"
-msgstr ""
+msgstr "{dismissed} 已忽略"
 
 msgid "{done} of {total} phases complete"
 msgstr "{done}个/{total}个阶段已完成"
@@ -342,7 +342,7 @@ msgid "{inserted} inserted, {updated} updated, {0} need fixing, {1} skipped."
 msgstr "已插入{inserted}条，已更新{updated}条，需修复{0}条，已跳过{1}条。"
 
 msgid "{leadTime} days"
-msgstr ""
+msgstr "{leadTime} 天"
 
 msgid "{linesCount, plural, one {# line} other {# lines}}"
 msgstr "{linesCount, plural, one {# 行} other {# 行}}"
@@ -473,7 +473,7 @@ msgid "0 operations"
 msgstr "0个工序"
 
 msgid "0 suggests a move for any date difference."
-msgstr ""
+msgstr "0 代表为任何日期差异建议移动。"
 
 msgid "0-4 weeks"
 msgstr "0-4 周"
@@ -2130,7 +2130,7 @@ msgid "Apply Rules On Top"
 msgstr "在顶部应用规则"
 
 msgid "Apply Suggested Changes"
-msgstr ""
+msgstr "应用建议的更改"
 
 msgid "Apply suggestions"
 msgstr "应用建议"
@@ -2790,7 +2790,7 @@ msgid "Assign to Groups"
 msgstr "分配给组"
 
 msgid "Assign to Me"
-msgstr ""
+msgstr "分配给我"
 
 msgid "Assigned"
 msgstr "已分配"
@@ -2799,7 +2799,7 @@ msgid "Assigned {employeeName} to {targetName} for the week"
 msgstr "将 {employeeName} 分配给 {targetName}，为期一周"
 
 msgid "Assigned to me"
-msgstr ""
+msgstr "已分配给我"
 
 msgid "Assigned to Me"
 msgstr "已分配给我"
@@ -5563,7 +5563,7 @@ msgid "Declining balance"
 msgstr "余额递减法"
 
 msgid "Decrease"
-msgstr ""
+msgstr "减少"
 
 msgid "Deep in the small hours, {name}."
 msgstr "深夜时分，{name}。"
@@ -5683,7 +5683,7 @@ msgid "Defaults"
 msgstr "默认值"
 
 msgid "Defer"
-msgstr ""
+msgstr "延后"
 
 msgid "Deferred Tax Expense"
 msgstr "递延所得税费用"
@@ -6263,7 +6263,7 @@ msgid "Dismiss"
 msgstr "关闭"
 
 msgid "Dismissed"
-msgstr ""
+msgstr "已忽略"
 
 msgid "Dispatch"
 msgstr "维护工单"
@@ -6641,7 +6641,7 @@ msgid "Each, lb, ft…"
 msgstr "每个、磅、英尺…"
 
 msgid "Earlier weeks are consumed first."
-msgstr ""
+msgstr "较早的周次先被消耗。"
 
 msgid "Earliest operation start"
 msgstr "最早操作开始"
@@ -7529,7 +7529,7 @@ msgid "Expected Receipt Date"
 msgstr "预期收货日期"
 
 msgid "Expedite"
-msgstr ""
+msgstr "加急"
 
 msgid "Expense account for customer balances written off as uncollectable on AR settlement"
 msgstr "应收账款结算时作为无法收回的客户余额的费用账户"
@@ -9195,7 +9195,7 @@ msgid "Incoterm Location"
 msgstr "贸易术语地点"
 
 msgid "Increase"
-msgstr ""
+msgstr "增加"
 
 msgid "Indirect"
 msgstr "间接"
@@ -9972,13 +9972,13 @@ msgid "Late in the evening, {name}."
 msgstr "傍晚晚些时候，{name}。"
 
 msgid "Later weeks are consumed once earlier ones are used up."
-msgstr ""
+msgstr "一旦较早的周次用完，较晚的周次将被消耗。"
 
 msgid "Latest operation end"
 msgstr "最新操作结束"
 
 msgid "Latest Order Date"
-msgstr ""
+msgstr "最晚订单日期"
 
 msgid "Latitude"
 msgstr "纬度"
@@ -10317,10 +10317,10 @@ msgid "Longitude"
 msgstr "经度"
 
 msgid "Look ahead (weeks)"
-msgstr ""
+msgstr "前瞻（周）"
 
 msgid "Look back (weeks)"
-msgstr ""
+msgstr "回顾（周）"
 
 msgid "Looks empty here"
 msgstr "看起来这里是空的"
@@ -11082,10 +11082,10 @@ msgid "MRP runs automatically every 3 hours, but you can run it manually here."
 msgstr "MRP 每 3 小时自动运行一次，但您也可以在此手动运行。"
 
 msgid "MRP Suggestions"
-msgstr ""
+msgstr "MRP 建议"
 
 msgid "MRP suggests moving an existing order only when its date is off by more than this many days. Smaller gaps are left alone so the worklist stays quiet."
-msgstr ""
+msgstr "MRP 仅在现有订单的日期偏差超过此天数时才建议移动订单。较小的偏差将被忽略，以保持工作列表的清晰。"
 
 msgid "Multiple jobs can run on this process at the same time — e.g. a laser table, furnace, or plating bath"
 msgstr "多个作业可以同时在此工序上运行 — 例如激光切割机、炉子或电镀槽"
@@ -11451,7 +11451,7 @@ msgid "New Supplier Return"
 msgstr "新建供应商退货"
 
 msgid "New supply"
-msgstr ""
+msgstr "新供应"
 
 msgid "New Timecard"
 msgstr "新时间卡"
@@ -12906,7 +12906,7 @@ msgid "Owner (cost center)"
 msgstr "负责人（成本中心）"
 
 msgid "Ownership"
-msgstr ""
+msgstr "所有权"
 
 #. placeholder {0}: i18n._(member.owns)
 msgid "Owns: {0}"
@@ -13783,7 +13783,7 @@ msgid "Project start"
 msgstr "项目开始"
 
 msgid "Projected"
-msgstr ""
+msgstr "预测"
 
 #. placeholder {0}: formatDate(projectedDate)
 msgid "Projected {0}"
@@ -17116,7 +17116,7 @@ msgid "Still dark out on the floor."
 msgstr "车间仍在黑暗中。"
 
 msgid "Stock Availability"
-msgstr ""
+msgstr "库存可用性"
 
 msgid "Stock movement corrected"
 msgstr "库存移动已修正"
@@ -19157,7 +19157,7 @@ msgid "Tolerance (+/-)"
 msgstr "容差 (+/-)"
 
 msgid "Tolerance (days)"
-msgstr ""
+msgstr "容差（天）"
 
 msgid "Tomorrow"
 msgstr "明天"
@@ -20546,7 +20546,7 @@ msgid "When a finished product's shelf life is set to Calculated, pick which con
 msgstr "当成品的保质期设置为计算时，选择哪些已消耗的输入项用于计算。"
 
 msgid "When a sales order or job lands in a week with no remaining forecast, it consumes forecast from nearby weeks instead of being counted on top of it. Set both to 0 to net within the same week only."
-msgstr ""
+msgstr "当销售订单或工单落在没有剩余预测的周次时，该订单或工单将从附近周次的预测中抵消，而不是累加计算。将两者都设置为 0 以仅在同一周内抵消。"
 
 msgid "When a serial or batch expires, and what happens if used after — a company policy can Warn, Block, or BlockWithOverride."
 msgstr "当序列号或批次过期时,以及之后使用时会发生什么 — 公司政策可以警告、阻止或使用覆盖阻止。"

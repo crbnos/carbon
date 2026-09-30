@@ -319,7 +319,7 @@ msgid "{delegatedTo} posts this to your ledger, so Carbon doesn't push it. Your 
 msgstr "{delegatedTo} यह आपके लेजर में पोस्ट करता है, इसलिए Carbon इसे पुश नहीं करता है। आपकी सहेजी गई पसंद को इस बात के मामले में रखा जाता है कि यह बदल जाए।"
 
 msgid "{dismissed} dismissed"
-msgstr ""
+msgstr "{dismissed} खारिज किया गया"
 
 msgid "{done} of {total} phases complete"
 msgstr "{done} में से {total} चरण पूर्ण"
@@ -342,7 +342,7 @@ msgid "{inserted} inserted, {updated} updated, {0} need fixing, {1} skipped."
 msgstr "{inserted} सम्मिलित किया गया, {updated} अपडेट किया गया, {0} को ठीक करने की आवश्यकता है, {1} छोड़ा गया।"
 
 msgid "{leadTime} days"
-msgstr ""
+msgstr "{leadTime} दिन"
 
 msgid "{linesCount, plural, one {# line} other {# lines}}"
 msgstr "{linesCount, plural, one {# लाइन} other {# लाइनें}}"
@@ -473,7 +473,7 @@ msgid "0 operations"
 msgstr "0 ऑपरेशन"
 
 msgid "0 suggests a move for any date difference."
-msgstr ""
+msgstr "0 किसी भी तारीख के अंतर के लिए स्थानांतरण का सुझाव देता है।"
 
 msgid "0-4 weeks"
 msgstr "0-4 सप्ताह"
@@ -2130,7 +2130,7 @@ msgid "Apply Rules On Top"
 msgstr "शीर्ष पर नियम लागू करें"
 
 msgid "Apply Suggested Changes"
-msgstr ""
+msgstr "सुझाए गए परिवर्तन लागू करें"
 
 msgid "Apply suggestions"
 msgstr "सुझाव लागू करें"
@@ -2790,7 +2790,7 @@ msgid "Assign to Groups"
 msgstr "समूहों को असाइन करें"
 
 msgid "Assign to Me"
-msgstr ""
+msgstr "मुझे असाइन करें"
 
 msgid "Assigned"
 msgstr "नियुक्त"
@@ -2799,7 +2799,7 @@ msgid "Assigned {employeeName} to {targetName} for the week"
 msgstr "{employeeName} को सप्ताह के लिए {targetName} पर असाइन किया"
 
 msgid "Assigned to me"
-msgstr ""
+msgstr "मुझे असाइन किया गया"
 
 msgid "Assigned to Me"
 msgstr "मुझे असाइन किया गया"
@@ -5563,7 +5563,7 @@ msgid "Declining balance"
 msgstr "ह्रासमान शेष"
 
 msgid "Decrease"
-msgstr ""
+msgstr "घटाएं"
 
 msgid "Deep in the small hours, {name}."
 msgstr "गहरी रात में, {name}।"
@@ -5683,7 +5683,7 @@ msgid "Defaults"
 msgstr "डिफ़ॉल्ट"
 
 msgid "Defer"
-msgstr ""
+msgstr "स्थगित करें"
 
 msgid "Deferred Tax Expense"
 msgstr "आस्थगित कर व्यय"
@@ -6263,7 +6263,7 @@ msgid "Dismiss"
 msgstr "खारिज करें"
 
 msgid "Dismissed"
-msgstr ""
+msgstr "खारिज किया गया"
 
 msgid "Dispatch"
 msgstr "रखरखाव कार्य"
@@ -6641,7 +6641,7 @@ msgid "Each, lb, ft…"
 msgstr "प्रत्येक, lb, ft…"
 
 msgid "Earlier weeks are consumed first."
-msgstr ""
+msgstr "पहले के सप्ताह सबसे पहले उपयोग किए जाते हैं।"
 
 msgid "Earliest operation start"
 msgstr "सबसे पहले संचालन शुरू"
@@ -7529,7 +7529,7 @@ msgid "Expected Receipt Date"
 msgstr "अपेक्षित प्राप्ति तारीख"
 
 msgid "Expedite"
-msgstr ""
+msgstr "तेज़ी से करें"
 
 msgid "Expense account for customer balances written off as uncollectable on AR settlement"
 msgstr "ग्राहक शेष राशि के लिए व्यय खाता जो प्राप्य खाते समझौते पर अनिर्धारक के रूप में लिखा गया है"
@@ -9195,7 +9195,7 @@ msgid "Incoterm Location"
 msgstr "इनकोटर्म स्थान"
 
 msgid "Increase"
-msgstr ""
+msgstr "बढ़ाएं"
 
 msgid "Indirect"
 msgstr "अप्रत्यक्ष"
@@ -9972,13 +9972,13 @@ msgid "Late in the evening, {name}."
 msgstr "शाम को देर में, {name}।"
 
 msgid "Later weeks are consumed once earlier ones are used up."
-msgstr ""
+msgstr "बाद के सप्ताह तब उपयोग किए जाते हैं जब पहले वाले समाप्त हो जाते हैं।"
 
 msgid "Latest operation end"
 msgstr "नवीनतम ऑपरेशन अंत"
 
 msgid "Latest Order Date"
-msgstr ""
+msgstr "नवीनतम आदेश तारीख"
 
 msgid "Latitude"
 msgstr "अक्षांश"
@@ -10317,10 +10317,10 @@ msgid "Longitude"
 msgstr "देशांतर"
 
 msgid "Look ahead (weeks)"
-msgstr ""
+msgstr "आगे देखें (सप्ताह)"
 
 msgid "Look back (weeks)"
-msgstr ""
+msgstr "पीछे देखें (सप्ताह)"
 
 msgid "Looks empty here"
 msgstr "यहाँ खाली लगता है"
@@ -11082,10 +11082,10 @@ msgid "MRP runs automatically every 3 hours, but you can run it manually here."
 msgstr "MRP हर 3 घंटे में स्वचालित रूप से चलता है, लेकिन आप इसे यहां मैन्युअल रूप से चला सकते हैं।"
 
 msgid "MRP Suggestions"
-msgstr ""
+msgstr "MRP सुझाव"
 
 msgid "MRP suggests moving an existing order only when its date is off by more than this many days. Smaller gaps are left alone so the worklist stays quiet."
-msgstr ""
+msgstr "MRP एक मौजूदा आदेश को स्थानांतरित करने का सुझाव देता है केवल जब इसकी तारीख इतने दिनों से अधिक भिन्न हो। छोटे अंतराल को अकेला छोड़ा जाता है ताकि कार्यसूची शांत रहे।"
 
 msgid "Multiple jobs can run on this process at the same time — e.g. a laser table, furnace, or plating bath"
 msgstr "एक ही समय में इस प्रक्रिया पर कई जॉब चल सकती हैं — उदाहरण के लिए, एक लेजर टेबल, फर्नेस, या प्लेटिंग बाथ"
@@ -11451,7 +11451,7 @@ msgid "New Supplier Return"
 msgstr "नया आपूर्तिकर्ता रिटर्न"
 
 msgid "New supply"
-msgstr ""
+msgstr "नई आपूर्ति"
 
 msgid "New Timecard"
 msgstr "नया टाइमकार्ड"
@@ -12906,7 +12906,7 @@ msgid "Owner (cost center)"
 msgstr "स्वामी (लागत केंद्र)"
 
 msgid "Ownership"
-msgstr ""
+msgstr "स्वामित्व"
 
 #. placeholder {0}: i18n._(member.owns)
 msgid "Owns: {0}"
@@ -13783,7 +13783,7 @@ msgid "Project start"
 msgstr "प्रोजेक्ट शुरुआत"
 
 msgid "Projected"
-msgstr ""
+msgstr "अनुमानित"
 
 #. placeholder {0}: formatDate(projectedDate)
 msgid "Projected {0}"
@@ -17116,7 +17116,7 @@ msgid "Still dark out on the floor."
 msgstr "अभी भी फर्श पर अंधकार है।"
 
 msgid "Stock Availability"
-msgstr ""
+msgstr "स्टॉक उपलब्धता"
 
 msgid "Stock movement corrected"
 msgstr "स्टॉक आंदोलन सही किया गया"
@@ -19157,7 +19157,7 @@ msgid "Tolerance (+/-)"
 msgstr "सहनशीलता (+/-)"
 
 msgid "Tolerance (days)"
-msgstr ""
+msgstr "सहनशीलता (दिन)"
 
 msgid "Tomorrow"
 msgstr "कल"
@@ -20546,7 +20546,7 @@ msgid "When a finished product's shelf life is set to Calculated, pick which con
 msgstr "जब किसी तैयार उत्पाद की शेल्फ लाइफ को गणना के लिए सेट किया जाता है, तो चुनें कि गणना को कौन सी उपयोग की गई इनपुट प्रदान करती हैं।"
 
 msgid "When a sales order or job lands in a week with no remaining forecast, it consumes forecast from nearby weeks instead of being counted on top of it. Set both to 0 to net within the same week only."
-msgstr ""
+msgstr "जब एक विक्रय आदेश या जॉब एक ऐसे सप्ताह में आता है जिसमें कोई पूर्वानुमान शेष नहीं है, तो यह पास के सप्ताहों से पूर्वानुमान का उपयोग करता है बजाय इसके कि इसे शीर्ष पर गिना जाए। दोनों को 0 पर सेट करें केवल उसी सप्ताह के भीतर समायोजित करने के लिए।"
 
 msgid "When a serial or batch expires, and what happens if used after — a company policy can Warn, Block, or BlockWithOverride."
 msgstr "जब एक सीरियल या बैच समाप्त हो जाता है, और उपयोग के बाद क्या होता है — एक कंपनी नीति सतर्क, अवरुद्ध, या ब्लॉकविदअधिग्रहण हो सकती है।"
