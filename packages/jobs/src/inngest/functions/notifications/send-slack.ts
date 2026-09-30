@@ -1,18 +1,8 @@
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { resolveIntegrationSecrets } from "@carbon/ee";
 import { getSlackClient } from "@carbon/lib/slack.server";
-import { NonRetriableError } from "inngest";
 import { inngest } from "../../client";
-
-/**
- * The only Slack failure that provably posted nothing. A platform error is
- * deterministic (channel_not_found will not fix itself), and a request/HTTP
- * error is ambiguous — Slack may have accepted the message before the response
- * was lost. `chat.postMessage` takes no idempotency key, so the ambiguous cases
- * must not replay. Function-level retries still cover the token lookup step,
- * which is an idempotent read.
- */
-const RETRYABLE_SLACK_CODES = new Set(["slack_webapi_rate_limited_error"]);
+import { slackDeliveryFailure } from "./delivery-failure";
 
 export const sendSlackFunction = inngest.createFunction(
   {
@@ -67,11 +57,7 @@ export const sendSlackFunction = inngest.createFunction(
       try {
         await slack.sendMessage({ blocks, channel, text });
       } catch (err) {
-        const code = (err as { code?: string }).code;
-        if (code && RETRYABLE_SLACK_CODES.has(code)) throw err;
-        throw new NonRetriableError(
-          `Slack error${code ? ` (${code})` : ""}: ${(err as Error).message}`
-        );
+        throw slackDeliveryFailure(err);
       }
     });
 

@@ -2,21 +2,7 @@ import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { sendEmail } from "@carbon/lib/email.server";
 import { NonRetriableError } from "inngest";
 import { inngest } from "../../client";
-
-/**
- * Nodemailer codes raised while connecting, greeting or authenticating — before
- * a single recipient or byte of DATA is sent. A failure here provably delivered
- * nothing, so replaying it is safe.
- *
- * Everything else is treated as ambiguous and terminal, including `ETIMEDOUT`
- * and `ESOCKET`: nodemailer raises those at ANY phase, so one of them can mean
- * the relay accepted the message and then dropped the connection before the
- * final ack. Retrying that is how one send becomes three copies in a customer's
- * inbox. An SMTP send carries no idempotency key, so "did that land?" is not a
- * question we can ask — a missed email is recoverable by re-sending, a
- * duplicated one is not.
- */
-const RETRYABLE_SMTP_CODES = new Set(["ECONNECTION", "EDNS", "EAUTH", "ETLS"]);
+import { emailDeliveryFailure } from "./delivery-failure";
 
 export const sendEmailFunction = inngest.createFunction(
   {
@@ -62,19 +48,10 @@ export const sendEmailFunction = inngest.createFunction(
         text: payload.text,
         to: toRecipients
       });
-      if (response.error) {
-        const code = (response.error as { code?: string }).code;
-        if (code && RETRYABLE_SMTP_CODES.has(code)) {
-          // Nothing was handed to the relay — let Inngest retry.
-          throw new Error(`Email error (${code}): ${response.error.message}`);
-        }
-        // Everything else is terminal, either because it is deterministic (a
-        // rejected envelope never succeeds on retry) or because delivery is
-        // ambiguous and a retry risks a duplicate. Fail loud, send once.
-        throw new NonRetriableError(
-          `Email error${code ? ` (${code})` : ""}: ${response.error.message}`
-        );
-      }
+      // Retry only what provably never reached the relay; everything else is
+      // terminal, because a replay of an ambiguous failure is how one click
+      // becomes three copies in the customer's inbox.
+      if (response.error) throw emailDeliveryFailure(response.error);
       // data is null when SMTP is not configured — email is disabled.
       return response.data;
     });
