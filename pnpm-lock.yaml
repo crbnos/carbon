@@ -94,14 +94,14 @@ catalogs:
       specifier: 7.18.0
       version: 7.18.0
     '@shikijs/langs':
-      specifier: 4.0.2
-      version: 4.0.2
+      specifier: 4.2.0
+      version: 4.2.0
     '@shikijs/themes':
-      specifier: 4.0.2
-      version: 4.0.2
+      specifier: 4.2.0
+      version: 4.2.0
     '@shikijs/types':
-      specifier: 4.0.2
-      version: 4.0.2
+      specifier: 4.2.0
+      version: 4.2.0
     '@slack/web-api':
       specifier: 7.10.0
       version: 7.10.0
@@ -3328,13 +3328,13 @@ importers:
         version: 3.13.5(react@18.3.1)
       '@shikijs/langs':
         specifier: 'catalog:'
-        version: 4.0.2
+        version: 4.2.0
       '@shikijs/themes':
         specifier: 'catalog:'
-        version: 4.0.2
+        version: 4.2.0
       '@shikijs/types':
         specifier: 'catalog:'
-        version: 4.0.2
+        version: 4.2.0
       '@supabase/supabase-js':
         specifier: 'catalog:'
         version: 2.80.0
@@ -9413,10 +9413,6 @@ packages:
     resolution: {integrity: sha512-EcOQkxdxGQrc1Row/cC2c96/v1dbZqGnEVu1qTuT/MJmp6+cXCvQussowVmCv5Tqr3KuY3c7IbM6HTW3LJ1k9w==}
     engines: {node: '>=20'}
 
-  '@shikijs/langs@4.0.2':
-    resolution: {integrity: sha512-KaXby5dvoeuZzN0rYQiPMjFoUrz4hgwIE+D6Du9owcHcl6/g16/yT5BQxSW5cGt2MZBz6Hl0YuRqf12omRfUUg==}
-    engines: {node: '>=20'}
-
   '@shikijs/langs@4.2.0':
     resolution: {integrity: sha512-bwrVRlJ0wUhZxAbVdvBbv2TTC9yLsh4C/IO5Ofz0T8MQntgDvyVnkbjw9vi50r1kx7RCIJdnJnjZAwmAsXFLZQ==}
     engines: {node: '>=20'}
@@ -9433,20 +9429,12 @@ packages:
     resolution: {integrity: sha512-m0wBeLDQDeIxRdUmrCPdQqfuUamDwRL5isCfYbguKD6NiaKpVbsv+3J81DyIKgNW5h4WAIIr8T4EkgQrBBxvaQ==}
     engines: {node: '>=20'}
 
-  '@shikijs/themes@4.0.2':
-    resolution: {integrity: sha512-mjCafwt8lJJaVSsQvNVrJumbnnj1RI8jbUKrPKgE6E3OvQKxnuRoBaYC51H4IGHePsGN/QtALglWBU7DoKDFnA==}
-    engines: {node: '>=20'}
-
   '@shikijs/themes@4.2.0':
     resolution: {integrity: sha512-RX8IHYeLv8Cu2W6ruc3RxUqWn0IYCqSrMBzi/uRGAmfyDNOnNO5BF/Px7o97n4XTpmFTo5GbRaazuOWj+2ak2w==}
     engines: {node: '>=20'}
 
   '@shikijs/themes@4.4.3':
     resolution: {integrity: sha512-w8UHjeUnIR965KMWJHUPXOc2mNJUnK3vpVLYLvw5IYU2mnTTJ89E24OrJDBNiJDQ0qzb0tc4l7mrIXx5cFeIyw==}
-    engines: {node: '>=20'}
-
-  '@shikijs/types@4.0.2':
-    resolution: {integrity: sha512-qzbeRooUTPnLE+sHD/Z8DStmaDgnbbc/pMrU203950aRqjX/6AFHeDYT+j00y2lPdz0ywJKx7o/7qnqTivtlXg==}
     engines: {node: '>=20'}
 
   '@shikijs/types@4.2.0':
@@ -23656,10 +23644,6 @@ snapshots:
       '@shikijs/types': 4.4.3
       '@shikijs/vscode-textmate': 10.0.2
 
-  '@shikijs/langs@4.0.2':
-    dependencies:
-      '@shikijs/types': 4.0.2
-
   '@shikijs/langs@4.2.0':
     dependencies:
       '@shikijs/types': 4.2.0
@@ -23680,10 +23664,6 @@ snapshots:
       '@shikijs/vscode-textmate': 10.0.2
       '@types/hast': 3.0.5
 
-  '@shikijs/themes@4.0.2':
-    dependencies:
-      '@shikijs/types': 4.0.2
-
   '@shikijs/themes@4.2.0':
     dependencies:
       '@shikijs/types': 4.2.0
@@ -23691,11 +23671,6 @@ snapshots:
   '@shikijs/themes@4.4.3':
     dependencies:
       '@shikijs/types': 4.4.3
-
-  '@shikijs/types@4.0.2':
-    dependencies:
-      '@shikijs/vscode-textmate': 10.0.2
-      '@types/hast': 3.0.4
 
   '@shikijs/types@4.2.0':
     dependencies:
@@ -27708,7 +27683,7 @@ snapshots:
 
   hast-util-raw@9.1.0:
     dependencies:
-      '@types/hast': 3.0.4
+      '@types/hast': 3.0.5
       '@types/unist': 3.0.3
       '@ungap/structured-clone': 1.3.0
       hast-util-from-parse5: 8.0.3
@@ -27724,7 +27699,7 @@ snapshots:
 
   hast-util-sanitize@5.0.2:
     dependencies:
-      '@types/hast': 3.0.4
+      '@types/hast': 3.0.5
       '@ungap/structured-clone': 1.3.0
       unist-util-position: 5.0.0
 
@@ -27766,7 +27741,7 @@ snapshots:
   hast-util-to-jsx-runtime@2.3.6:
     dependencies:
       '@types/estree': 1.0.8
-      '@types/hast': 3.0.4
+      '@types/hast': 3.0.5
       '@types/unist': 3.0.3
       comma-separated-tokens: 2.0.3
       devlop: 1.1.0
@@ -28912,7 +28887,7 @@ snapshots:
 
   mdast-util-to-hast@13.2.1:
     dependencies:
-      '@types/hast': 3.0.4
+      '@types/hast': 3.0.5
       '@types/mdast': 4.0.4
       '@ungap/structured-clone': 1.3.0
       devlop: 1.1.0
@@ -30793,7 +30768,7 @@ snapshots:
 
   remark-rehype@11.1.2:
     dependencies:
-      '@types/hast': 3.0.4
+      '@types/hast': 3.0.5
       '@types/mdast': 4.0.4
       mdast-util-to-hast: 13.2.1
       unified: 11.0.5
