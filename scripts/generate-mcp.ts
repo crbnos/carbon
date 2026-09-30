@@ -36,9 +36,14 @@ export const DIGEST_FILE = path.join(
 export async function generateToolMetadata(): Promise<void> {
   console.log("Generating tool metadata from service files...");
 
+  const auditDrops: { toolName: string; table: string; dropped: string[] }[] =
+    [];
+
   const { tools: allTools, registryStats, responseStats, resolutions } =
     await buildAllToolMetadataWithValidators({
       onModule: (mod, count) => console.log(`  ✓ ${mod}: ${count} tools`),
+      onAuditColumnsDropped: (toolName, table, dropped) =>
+        auditDrops.push({ toolName, table, dropped }),
     });
 
   // No timestamp: the file must be a pure function of the sources so repeated
@@ -59,6 +64,21 @@ export async function generateToolMetadata(): Promise<void> {
   console.log(`\n✓ Generated metadata for ${allTools.length} tools`);
   console.log(`  Output: ${path.relative(ROOT, METADATA_FILE)} (gitignored)`);
   console.log(`  Digest: ${path.relative(ROOT, DIGEST_FILE)} (committed)`);
+
+  // Audit-column provenance. The name-verb rule claims createdBy/updatedBy for
+  // every upsert*/insert*, and dispatch stamps them onto the payload OBJECT — so
+  // a service that spreads its argument into the write would send a column the
+  // table does not have (PGRST204). Each drop below is that rule being corrected
+  // against the generated types; a drop that looks wrong means the table really
+  // does have the column, or the tool needs an INJECT_AUTH_OVERRIDES entry.
+  if (auditDrops.length > 0) {
+    console.log(
+      `\n  Audit columns dropped (absent from the tool's table): ${auditDrops.length}`
+    );
+    for (const d of auditDrops) {
+      console.log(`      ${d.toolName} → ${d.table}: ${d.dropped.join(", ")}`);
+    }
+  }
 
   // Schema provenance. A validator that fell back to source-text parsing still
   // produces a manifest entry, so surface it rather than letting the degrade pass

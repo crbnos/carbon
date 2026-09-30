@@ -18,6 +18,7 @@ import { noInlineFractionDigits } from "./conformance/no-inline-fraction-digits"
 import { noIntegrationIdBranching } from "./conformance/no-integration-id-branching";
 import { noLegacyRls } from "./conformance/no-legacy-rls";
 import { noLocalTimezone } from "./conformance/no-local-timezone";
+import { noMissingAuditColumn } from "./conformance/no-missing-audit-column";
 import { noNumericPrecision } from "./conformance/no-numeric-precision";
 import { noRawForwardedHeaders } from "./conformance/no-raw-forwarded-headers";
 import { noRawRounding } from "./conformance/no-raw-rounding";
@@ -26,6 +27,7 @@ import { noUnroundedTrackedQuantity } from "./conformance/no-unrounded-tracked-q
 import { noUnscopedKyselyWrite } from "./conformance/no-unscoped-kysely-write";
 import { noViewWithoutInvoker } from "./conformance/no-view-without-invoker";
 import { noZeroConcurrency } from "./conformance/no-zero-concurrency";
+import { loadDbTableColumns } from "./sources/db-columns";
 import { loadEdgeFunctions } from "./sources/edge-functions";
 import { loadSqlFiles, migrationsDir, repoRoot } from "./sources/migrations";
 import { loadModules, modulesDir } from "./sources/modules";
@@ -115,7 +117,13 @@ export function collectFindings(root: string = repoRoot()): Finding[] {
     ]),
     ...scanModules(loadModules(modulesDir(root))),
     ...scanAll(loadServerFiles(root), SERVER_CHECKS),
-    ...scanAll(loadTypescriptFiles(root), TS_CHECKS),
+    // noMissingAuditColumn needs the real column list, so it is built from the
+    // generated types here rather than sitting in TS_CHECKS — the same shape as
+    // noAuthzDdlInMigrations above, which keeps every `scan` pure.
+    ...scanAll(loadTypescriptFiles(root), [
+      ...TS_CHECKS,
+      noMissingAuditColumn(loadDbTableColumns(root))
+    ]),
     ...scanAll(loadTypescriptFiles(root, REQUEST_HANDLING_ROOTS), [
       noRawForwardedHeaders
     ]),

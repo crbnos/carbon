@@ -84,30 +84,25 @@ const DESCRIPTION_OVERRIDES: Record<string, string> = {
   inventory_updateWarehouseTransfer: "Update an existing warehouse transfer",
 };
 
-// Per-tool overrides of the auto-computed injectAuth set. The default rule
-// (insert* → companyId + createdBy + updatedBy) is wrong for tools that spread
-// their argument object straight into an INSERT on an append-only ledger table.
-// Those tables now carry an updatedBy column (schema uniformity, migration
-// 20260701143512), but by convention it must stay NULL — an "edit" is a new
-// offsetting row, never an in-place mutation. Injecting updatedBy would stamp it
-// on the ledger row and destroy the "untouched since creation" guarantee, so we
-// drop it here. Both tools below insert([data]) where data is built from the
-// spread of their injected args:
+// Per-tool overrides of the auto-computed injectAuth set, for INTENT the schema
+// cannot express. An override wins outright — nothing below is checked against
+// the real columns.
+//
+// A table that simply HAS NO createdBy/updatedBy column needs no entry:
+// `withoutAbsentAuditColumns` derives that from the generated types, which is
+// why account_upsertNotificationPreference and the four lean material lookups
+// (dimension, finish, grade, type) no longer appear here.
+//
+// The two ledger entries are the opposite case — the column EXISTS (schema
+// uniformity, migration 20260701143512) but by convention must stay NULL: an
+// "edit" is a new offsetting row, never an in-place mutation, and a stamped
+// updatedBy would destroy the "untouched since creation" guarantee. Both
+// insert([data]) where data is the spread of their injected args:
 //   - inventory_insertManualInventoryAdjustment → itemLedger
 //   - accounting_upsertFixedAssetUsageLog       → fixedAssetUsageLog
-// account_upsertNotificationPreference spreads its argument into an upsert on
-// notificationPreference, which (like userModulePreference) carries no
-// createdBy/updatedBy columns at all — injecting them breaks the write. The
-// four lean material lookups (dimension, finish, grade, type) are the same:
-// no audit columns, argument spread into the row.
 const INJECT_AUTH_OVERRIDES: Record<string, AuthField[]> = {
   inventory_insertManualInventoryAdjustment: ["companyId", "createdBy"],
   accounting_upsertFixedAssetUsageLog: ["companyId", "createdBy"],
-  account_upsertNotificationPreference: ["companyId"],
-  items_upsertMaterialDimension: ["companyId"],
-  items_upsertMaterialFinish: ["companyId"],
-  items_upsertMaterialGrade: ["companyId"],
-  items_upsertMaterialType: ["companyId"],
   // Both operations replace settlement rows in a transaction. Their verbs do
   // not imply INSERT to the name-based rule, but the service requires the
   // authenticated creator for every replacement row.
@@ -1214,6 +1209,63 @@ function computeInjectAuth(
   return ["companyId"];
 }
 
+/**
+ * Tables the function touches, from its body — `.from("t")` (supabase-js),
+ * `insertInto("t")` / `updateTable("t")` (Kysely). Same body-scan mechanism (and
+ * shadowed-wrapper first-match caveat) as `functionBodyDeletes`. Reads count:
+ * a function that reads one table and writes another yields two names, which
+ * `withoutAbsentAuditColumns` treats as "can't tell" and leaves alone.
+ */
+function functionBodyTables(content: string, funcName: string): string[] {
+  const body = extractFunctionBody(content, funcName);
+  if (body === null) return [];
+  const stripped = stripComments(body);
+  const names = new Set<string>();
+  for (const m of stripped.matchAll(
+    /(?:\.from|insertInto|updateTable)\(\s*["'`](\w+)["'`]\s*\)/g
+  )) {
+    names.add(m[1]);
+  }
+  return [...names];
+}
+
+/**
+ * Drop `createdBy` / `updatedBy` when the function's ONE table has no such
+ * column. `computeInjectAuth` decides from the name verb alone, and
+ * `enrichWithAuthContext` stamps the fields onto the payload OBJECT — so a
+ * service that spreads its argument into the write (`insert([row])`,
+ * `update(sanitize(row))`) sends a nonexistent column to PostgREST and the call
+ * fails with PGRST204. The HTML form routes build the row from their validator
+ * and never saw it, so this only ever broke MCP and the v1 API.
+ *
+ * The generated types are the source of truth (`pnpm run generate:types` runs
+ * after every migration, so they cannot lag a new table). Ambiguity is left
+ * alone: zero or several tables keeps the computed set, as does a table missing
+ * from the generated types. `companyId` is never derived away — it is frequently
+ * an `.eq()` filter argument rather than a column.
+ */
+function withoutAbsentAuditColumns(
+  fields: AuthField[],
+  content: string,
+  funcName: string,
+  onDrop?: (table: string, dropped: AuthField[]) => void
+): AuthField[] {
+  const audit: AuthField[] = ["createdBy", "updatedBy"];
+  if (!audit.some((f) => fields.includes(f))) return fields;
+
+  const tables = functionBodyTables(content, funcName);
+  if (tables.length !== 1) return fields;
+  const columns = getDbTableTypeFields(tables[0], "Row");
+  if (!columns) return fields;
+
+  const present = new Set(columns.map((c) => c.name));
+  const dropped = audit.filter((f) => fields.includes(f) && !present.has(f));
+  if (dropped.length === 0) return fields;
+
+  onDrop?.(tables[0], dropped);
+  return fields.filter((f) => !dropped.includes(f));
+}
+
 export function withPayloadUserId(
   fields: AuthField[],
   func: ParsedFunction
@@ -1590,6 +1642,16 @@ export interface BuildOptions {
     validatorName: string,
     how: ValidatorResolution
   ) => void;
+  /**
+   * Reported whenever the name-derived auth set claimed an audit column the
+   * tool's table does not have. Surfaced by the generator so a wrong drop is
+   * visible in the run output, not only in the digest diff.
+   */
+  onAuditColumnsDropped?: (
+    toolName: string,
+    table: string,
+    dropped: AuthField[]
+  ) => void;
 }
 
 /**
@@ -1658,9 +1720,19 @@ export function buildAllToolMetadata(opts: BuildOptions = {}): ManifestEntry[] {
       if (MCP_BLOCKED_TOOL_NAMES.includes(toolName)) continue;
 
       const classification = classifyFunction(func.name, content);
+      // An explicit override states INTENT and wins outright (the ledger
+      // entries keep `updatedBy` NULL even though the column exists); only the
+      // name-derived set is checked against the real schema.
+      const override = INJECT_AUTH_OVERRIDES[toolName];
       const injectAuth = withPayloadUserId(
-        INJECT_AUTH_OVERRIDES[toolName] ||
-          computeInjectAuth(func.name, classification),
+        override ||
+          withoutAbsentAuditColumns(
+            computeInjectAuth(func.name, classification),
+            content,
+            func.name,
+            (table, dropped) =>
+              opts.onAuditColumnsDropped?.(toolName, table, dropped)
+          ),
         func
       );
       // A JSDoc on the function itself beats the override table (code closest

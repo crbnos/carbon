@@ -191,18 +191,30 @@ export async function action({ request, params }: ActionFunctionArgs) {
         })
         .eq("id", map.lineId);
 
-      // Upsert customerPartToItem
+      // Upsert customerPartToItem. The table has no audit columns — a
+      // `createdBy` here made every upsert fail with PGRST204, and the
+      // unchecked result meant the mapping silently never persisted.
       if (customerId && map.customerPartId) {
-        await serviceRole.from("customerPartToItem").upsert(
-          {
-            customerId,
-            customerPartId: map.customerPartId,
-            itemId: finalItemId,
+        const { error: customerPartError } = await serviceRole
+          .from("customerPartToItem")
+          .upsert(
+            {
+              customerId,
+              customerPartId: map.customerPartId,
+              itemId: finalItemId,
+              companyId
+            },
+            { onConflict: "customerId,itemId" }
+          );
+        if (customerPartError) {
+          logger.error("Failed to map customer part to item", {
             companyId,
-            createdBy: userId
-          },
-          { onConflict: "customerId, itemId" }
-        );
+            customerId,
+            itemId: finalItemId,
+            customerPartId: map.customerPartId,
+            error: customerPartError
+          });
+        }
       }
     }
   }
