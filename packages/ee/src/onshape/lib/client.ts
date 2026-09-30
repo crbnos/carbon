@@ -7,13 +7,12 @@
 // test runners — that imports this client).
 
 import type { Database } from "@carbon/database";
-import { redis } from "@carbon/kv";
+import { acquireLease, redis, withLease } from "@carbon/kv";
 import { getLogger } from "@carbon/logger";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import axios from "axios";
 import {
   IntegrationSecretUnavailableError,
-  persistIntegrationSecrets,
   resolveIntegrationSecrets
 } from "../../integrations/secrets";
 import { normalizeConfiguration } from "../panel/status";
@@ -26,6 +25,12 @@ import type { OnshapeDocument } from "./document.type";
 import type { OnshapeElementType } from "./element.type";
 import type { OnshapeOAuthIntegrationId } from "./integration-id";
 import { getOnshapeOAuthConfig, refreshOnshapeAccessToken } from "./oauth";
+import { patchOnshapeRefreshedTokens } from "./state";
+import {
+  isFresh,
+  resolveOnshapeRefresh,
+  type StoredOnshapeCredentials
+} from "./token-refresh";
 
 const logger = getLogger("ee", "onshape");
 
@@ -256,7 +261,7 @@ export class OnshapeClient {
         url: path,
         data: body
       });
-      await this.countLiveCall(path);
+      void this.countLiveCall(path);
       if (cacheKey) {
         try {
           await redis.set(
@@ -271,7 +276,7 @@ export class OnshapeClient {
       }
       return response.data;
     } catch (error) {
-      await this.countLiveCall(path);
+      void this.countLiveCall(path);
 
       if (
         axios.isAxiosError(error) &&
@@ -297,7 +302,8 @@ export class OnshapeClient {
 
   /**
    * Tally of live calls per year, so quota use is observable without the dev
-   * portal: `GET onshape:api-calls:<year>` in Redis. Best-effort only.
+   * portal: `GET onshape:api-calls:<year>` in Redis. Best-effort and never
+   * awaited: a slow Redis must not slow the call it counts.
    */
   private async countLiveCall(path: string) {
     try {
@@ -834,14 +840,11 @@ export class OnshapeClient {
   }
 }
 
-/**
- * Refresh this many seconds BEFORE the recorded expiry. Onshape access tokens
- * live about an hour; a two-minute margin covers a slow request, a clock
- * difference between Carbon and Onshape, and a token that would otherwise
- * expire between the check and the call.
- */
-const REFRESH_MARGIN_SECONDS = 120;
-const REFRESH_LOCK_TTL_SECONDS = 20;
+/** The refresh lease is short and renewed while the token exchange runs. */
+const REFRESH_LEASE_MS = 5_000;
+const REFRESH_LEASE_RENEW_MS = 2_000;
+/** How long a caller waits on another caller's refresh before giving up. */
+const REFRESH_WAIT_DEADLINE_MS = 20_000;
 const REFRESH_WAIT_MS = 250;
 
 export async function getOnshapeClient(
@@ -916,112 +919,140 @@ export async function getOnshapeClient(
     accessToken = next.accessToken;
   };
 
-  /**
-   * Exchange the refresh token and persist the result, once across concurrent
-   * callers.
-   *
-   * Onshape rotates refresh tokens, so two callers refreshing the same
-   * connection cannot both succeed — and the loser would persist a dead pair
-   * over the winner's live one, breaking the integration until someone
-   * reconnects.
-   */
-  const refreshNow = async (): Promise<string | null> => {
-    if (!credentials.refreshToken) return null;
-    // Per integration, not per company: `onshape` and `onshape-v2` hold
-    // separate refresh tokens, and a v1 refresh in flight must not make a v2
-    // caller wait for a v2 token that nobody is fetching.
-    const lockKey = `onshape-token-refresh:${companyId}:${integrationId}`;
-    const held = await redis
-      .set(lockKey, "1", "EX", REFRESH_LOCK_TTL_SECONDS, "NX")
-      .catch(() => null);
+  /** The row's credentials as stored now, not as read when this request started. */
+  const readStoredCredentials = async (): Promise<Record<
+    string,
+    any
+  > | null> => {
+    const row = await serviceRole
+      .from("companyIntegration")
+      .select("metadata, secretRef")
+      .eq("id", integrationId)
+      .eq("companyId", companyId)
+      .maybeSingle();
+    if (row.error || !row.data) return null;
+    const current = (await resolveIntegrationSecrets(
+      serviceRole,
+      companyId,
+      integrationId,
+      row.data.metadata,
+      row.data.secretRef
+    ).catch(() => null)) as Record<string, any> | null;
+    return current?.credentials ?? null;
+  };
 
-    if (held !== "OK") {
-      /*
-       * Someone else is refreshing. Wait for them and re-read what they stored
-       * rather than spending our own (now stale) refresh token.
-       *
-       * The wait follows the lock holder, not a fixed count of polls: an
-       * Onshape token exchange plus a vault write can outlast a short wait.
-       */
-      /*
-       * Re-read the ROW, not the copy loaded when this request started. The
-       * resolver only reaches the database for vaulted secrets; given the old
-       * copy, anything still inline comes back unchanged.
-       */
-      const readToken = async () => {
-        const row = await serviceRole
-          .from("companyIntegration")
-          .select("metadata, secretRef")
-          .eq("id", integrationId)
-          .eq("companyId", companyId)
-          .maybeSingle();
-        if (row.error || !row.data) return null;
-        const current = (await resolveIntegrationSecrets(
-          serviceRole,
-          companyId,
-          integrationId,
-          row.data.metadata,
-          row.data.secretRef
-        ).catch(() => null)) as Record<string, any> | null;
-        const token = current?.credentials?.accessToken;
-        if (!token || token === accessToken) return null;
-        adoptCredentials(current?.credentials);
-        return token as string;
-      };
-      const deadline = Date.now() + REFRESH_LOCK_TTL_SECONDS * 1000;
-      while (Date.now() < deadline) {
-        await new Promise((resolve) => setTimeout(resolve, REFRESH_WAIT_MS));
-        const token = await readToken();
-        if (token) return token;
-        // Unreadable lock state reads as still held: waiting is the safe side.
-        const stillHeld = await redis.exists(lockKey).catch(() => 1);
-        if (!stillHeld) {
-          // Released between the read above and now: one last look, since the
-          // holder persists before it releases.
-          return readToken();
-        }
-      }
-      return null;
-    }
+  const refreshFromStored = async (): Promise<string | null> => {
+    const next = resolveOnshapeRefresh(
+      await readStoredCredentials(),
+      credentials,
+      accessToken,
+      Date.now()
+    );
+    if (next.action === "exchange") return exchange(next.credentials);
+    adoptCredentials(next.credentials);
+    return accessToken;
+  };
 
+  const exchange = async (
+    from: StoredOnshapeCredentials
+  ): Promise<string | null> => {
+    if (!from.refreshToken) return null;
+    let next: { accessToken: string; refreshToken?: string; expiresAt: string };
     try {
       const oauth = getOnshapeOAuthConfig(integrationId, metadata);
       if (!oauth) throw new Error("Onshape OAuth not configured");
       const refreshed = await refreshOnshapeAccessToken(
         oauth,
-        credentials.refreshToken
+        from.refreshToken
       );
       const lifetimeSeconds = refreshed.expires_in ?? 3600;
-      const next = {
-        ...credentials,
+      next = {
         accessToken: refreshed.access_token,
         refreshToken: refreshed.refresh_token,
         expiresAt: new Date(Date.now() + lifetimeSeconds * 1000).toISOString()
       };
-      await persistIntegrationSecrets(serviceRole, companyId, integrationId, {
-        ...metadata,
-        credentials: next
-      });
-      adoptCredentials(next);
-      return refreshed.access_token;
     } catch (error) {
-      logger.error("Failed to refresh Onshape token", { error });
+      logger.error("Failed to refresh Onshape token", {
+        companyId,
+        integrationId,
+        error
+      });
       return null;
-    } finally {
-      // Best-effort: the lock's own TTL is the real release.
-      await redis.del(lockKey).catch(() => undefined);
+    }
+    // The old refresh token is spent either way, so this request keeps the new
+    // pair even if saving it fails.
+    adoptCredentials(next);
+    try {
+      await patchOnshapeRefreshedTokens(
+        serviceRole,
+        companyId,
+        integrationId,
+        next
+      );
+    } catch (error) {
+      logger.error("Failed to save the refreshed Onshape token", {
+        companyId,
+        integrationId,
+        error
+      });
+    }
+    return next.accessToken;
+  };
+
+  /**
+   * Refresh once across concurrent callers. Onshape rotates refresh tokens, so
+   * two callers refreshing the same connection cannot both succeed, and the
+   * loser would store a dead pair over the winner's live one.
+   *
+   * The lease holder re-reads the stored pair before spending it: an earlier
+   * holder has usually rotated the one this request loaded. Waiters adopt the
+   * holder's result, or take the lease once it frees. With Redis down there is
+   * no lock to take, so the refresh runs without one.
+   */
+  const refreshNow = async (): Promise<string | null> => {
+    // Per integration, not per company: each Onshape integration holds its own
+    // refresh token.
+    const leaseKey = `onshape-token-refresh:${companyId}:${integrationId}`;
+    const deadline = Date.now() + REFRESH_WAIT_DEADLINE_MS;
+
+    while (true) {
+      const lease = await acquireLease(leaseKey, REFRESH_LEASE_MS);
+
+      if (lease.status === "unavailable") {
+        logger.warn("Refreshing the Onshape token without a lock", {
+          companyId,
+          integrationId
+        });
+        return refreshFromStored();
+      }
+
+      if (lease.status === "acquired") {
+        return withLease(
+          leaseKey,
+          lease.owner,
+          { leaseMs: REFRESH_LEASE_MS, renewMs: REFRESH_LEASE_RENEW_MS },
+          refreshFromStored
+        );
+      }
+
+      if (Date.now() >= deadline) return null;
+      await new Promise((resolve) => setTimeout(resolve, REFRESH_WAIT_MS));
+      const next = resolveOnshapeRefresh(
+        await readStoredCredentials(),
+        credentials,
+        accessToken,
+        Date.now()
+      );
+      if (next.action === "adopt") {
+        adoptCredentials(next.credentials);
+        return accessToken;
+      }
     }
   };
 
   // A connection with no recorded expiry (an older install) would otherwise
   // never refresh at all.
-  const expiresAt = credentials.expiresAt
-    ? new Date(credentials.expiresAt).getTime()
-    : 0;
-  if (
-    credentials.refreshToken &&
-    expiresAt - REFRESH_MARGIN_SECONDS * 1000 <= Date.now()
-  ) {
+  if (credentials.refreshToken && !isFresh(credentials, Date.now())) {
     const refreshedToken = await refreshNow();
     if (!refreshedToken) {
       return { client: null, error: "Failed to refresh Onshape token" };

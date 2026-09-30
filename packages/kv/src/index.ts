@@ -5,6 +5,8 @@
 import redis from "./client";
 
 export { redis };
+export type { LeaseAcquisition } from "./lease";
+export { acquireLease, releaseLease, renewLease, withLease } from "./lease";
 export type {
   AccountLockoutOptions,
   LockDurationOptions,

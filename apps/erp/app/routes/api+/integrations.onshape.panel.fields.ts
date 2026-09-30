@@ -321,12 +321,10 @@ export async function action({ request }: ActionFunctionArgs) {
   }));
 
   // ---- Write the map ------------------------------------------------------
-  // Only this key is written, and the merge happens in the database. Other
-  // writers of the column — the token refresh inside `getOnshapeClient`, the
-  // integration settings save — update it from a copy read before their own
-  // round trip, so a read-spread-write here would be reverted by whichever of
-  // those lands in between; `jsonb_set` leaves every sibling key as the row
-  // holds it. The column is `json`, hence the casts.
+  // Only this key is written, and the merge happens in the database, as the
+  // column's other writers (`@carbon/ee/onshape.server` state patches) do too:
+  // `jsonb_set` leaves every sibling key as the row holds it. The column is
+  // `json`, hence the casts.
   const db = getDatabaseClient();
   let updatedRows: bigint;
   try {

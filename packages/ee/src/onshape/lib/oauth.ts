@@ -144,6 +144,12 @@ export class OnshapeTokenError extends Error {
   }
 }
 
+/**
+ * A token exchange that hangs would hold the refresh lease for as long as it
+ * hangs, and every other request for the connection waits behind it.
+ */
+const TOKEN_REQUEST_TIMEOUT_MS = 15_000;
+
 async function requestToken(
   config: OnshapeOAuthConfig,
   body: Record<string, string>
@@ -155,7 +161,8 @@ async function requestToken(
       ...body,
       client_id: config.clientId,
       client_secret: config.clientSecret
-    })
+    }),
+    signal: AbortSignal.timeout(TOKEN_REQUEST_TIMEOUT_MS)
   });
 
   if (!response.ok) {
