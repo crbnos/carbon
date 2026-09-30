@@ -76,13 +76,13 @@ describe("buildModelHistory", () => {
     ).toEqual([["user", "q2"]]);
   });
 
-  it("produces a prompt the AI SDK accepts", () => {
+  it("produces a prompt the AI SDK accepts", async () => {
     const history = buildModelHistory([
       row("user", text("q1")),
       row("assistant", tool, text("a1")),
       row("user", text("q2"))
     ]);
-    const prompt = convertToModelMessages(history);
+    const prompt = await convertToModelMessages(history);
     expect(modelMessageSchema.array().safeParse(prompt).success).toBe(true);
   });
 });

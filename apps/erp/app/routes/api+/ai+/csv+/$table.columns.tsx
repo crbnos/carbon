@@ -2,7 +2,7 @@ import { openai } from "@ai-sdk/openai";
 import { notFound } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getLogger } from "@carbon/logger";
-import { generateObject } from "ai";
+import { generateText, Output } from "ai";
 import type { ActionFunctionArgs } from "react-router";
 import type { ZodSchema } from "zod";
 import { z } from "zod";
@@ -83,9 +83,9 @@ export async function action({ request, params }: ActionFunctionArgs) {
   );
 
   try {
-    const { object } = await generateObject({
+    const { output: object } = await generateText({
       model: openai("gpt-4o"),
-      schema: unmatchedSchema,
+      output: Output.object({ schema: unmatchedSchema }),
       prompt: `
       The following columns are the headings from a CSV import file for importing a ${table}.
       Map these column names to the correct fields in our database (${unmatchedFields.join(", ")}) by providing the matching column name for each field.

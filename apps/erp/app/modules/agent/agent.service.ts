@@ -8,13 +8,15 @@ import {
   consumeStream,
   convertToModelMessages,
   createIdGenerator,
+  createUIMessageStreamResponse,
   generateText,
   getToolName,
   hasToolCall,
+  isStepCount,
   isToolUIPart,
   type ModelMessage,
-  stepCountIs,
   streamText,
+  toUIMessageStream,
   type UIMessage
 } from "ai";
 import { isEphemeralTool, isUiBlockTool } from "./agent.blocks";
@@ -225,7 +227,7 @@ function injectContext(
  * `history` comes from the database (`getModelHistory`) and ends with the question being
  * answered; the answer is persisted on finish in one transaction.
  */
-export function streamChat(
+export async function streamChat(
   client: SupabaseClient<Database>,
   db: Kysely<KyselyDatabase>,
   args: {
@@ -263,26 +265,26 @@ export function streamChat(
     : Promise.resolve();
 
   const modelMessages = injectContext(
-    convertToModelMessages(args.history),
+    await convertToModelMessages(args.history),
     args.context
   );
 
-  // Token usage / finish reason live on the streamText event (typed), the
-  // normalized message parts live on the UI-message stream — capture the former
-  // to persist alongside the latter.
+  // Token usage / finish reason come from the model stream's onEnd, the message parts
+  // from the UI stream's onEnd — the former is captured to persist with the latter.
   let inputTokens = 0;
   let outputTokens = 0;
   let finishReason = "stop";
   let failed = false;
 
+  const tools = createAgentTools(ctx);
   const result = streamText({
     model: agentModel(agentChatModel),
-    system: buildSystemPrompt(),
+    instructions: buildSystemPrompt(),
     messages: modelMessages,
-    tools: createAgentTools(ctx),
+    tools,
     abortSignal: args.abortSignal,
     // present_choice hands the turn back to the user, so the answer ends there.
-    stopWhen: [stepCountIs(MAX_STEPS), hasToolCall("present_choice")],
+    stopWhen: [isStepCount(MAX_STEPS), hasToolCall("present_choice")],
     // On the final allowed step, forbid tools so the model must write an answer with what
     // it has — instead of ending on a dangling tool call and returning no text.
     prepareStep: ({ stepNumber }) =>
@@ -296,30 +298,30 @@ export function streamChat(
       failed = true;
       log.error("Agent model call failed", { error, threadId: args.threadId });
     },
-    onFinish: (event) => {
-      inputTokens = event.totalUsage.inputTokens ?? 0;
-      outputTokens = event.totalUsage.outputTokens ?? 0;
+    onEnd: (event) => {
+      inputTokens = event.usage.inputTokens ?? 0;
+      outputTokens = event.usage.outputTokens ?? 0;
       finishReason = event.finishReason;
       log.info("Agent turn", {
         threadId: args.threadId,
         model: agentChatModel,
         steps: event.steps.length,
         inputTokens,
-        cachedInputTokens: event.totalUsage.cachedInputTokens ?? 0,
+        cachedInputTokens: event.usage.inputTokenDetails.cacheReadTokens ?? 0,
         outputTokens,
         finishReason
       });
     }
   });
 
-  return result.toUIMessageStreamResponse({
+  const stream = toUIMessageStream({
+    stream: result.stream,
+    tools,
     // Needed for the SDK to use generateMessageId for the answer.
     originalMessages: args.history,
     generateMessageId: newAssistantMessageId,
-    // Keep reading the model stream if the browser disconnects, so onFinish still runs.
-    consumeSseStream: consumeStream,
     onError: () => TURN_FAILED_MESSAGE,
-    onFinish: async ({ responseMessage, isAborted }) => {
+    onEnd: async ({ responseMessage, isAborted }) => {
       // A failed turn is not persisted: the question stays unanswered, and Retry (or the
       // next question) answers it from the stored thread.
       if (!failed) {
@@ -342,6 +344,12 @@ export function streamChat(
       }
       await titling;
     }
+  });
+
+  return createUIMessageStreamResponse({
+    stream,
+    // Keep reading the model stream if the browser disconnects, so onEnd still runs.
+    consumeSseStream: consumeStream
   });
 }
 

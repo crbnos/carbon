@@ -83,7 +83,7 @@
     "@slack/types": "2.20.1",
     "@slack/web-api": "catalog:",
     "@supabase/supabase-js": "catalog:",
-    "ai": "5.0.172",
+    "ai": "catalog:",
     "axios": "catalog:",
     "cookie": "catalog:",
     "dompurify": "catalog:",
