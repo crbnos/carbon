@@ -66,6 +66,7 @@
 - [Monorepo](#monorepo)
 - [Local Development](#local-development)
 - [Commands](#commands)
+- [Security](#security)
 - [Contributing](#contributing)
 - [License](#license)
 
@@ -358,9 +359,24 @@ This project uses [Biome](https://biomejs.dev/) for formatting and linting; inst
 
 <br />
 
+## Security
+
+**Found a vulnerability?** Please email [support@carbon.ms](mailto:support@carbon.ms) instead of opening a public issue. We respond within 3 business days and credit reporters once a fix ships. The full policy is in [SECURITY.md](.github/SECURITY.md).
+
+Security is enforced by the database, not left to application code:
+
+- **Tenant isolation in Postgres.** Every table is scoped to a company and guarded by row-level security, so a query can only see its own company's rows.
+- **Granular permissions.** Role-based access per module and action for employees, customers and suppliers, applied the same way in the app, the API and MCP.
+- **Scoped API keys.** Keys carry explicit permissions, are stored only as hashes and are rate limited per key.
+- **Sign-in.** Passkeys, SSO, and enforced two-factor authentication on the Business plan.
+- **Audit log.** A record of who changed what and when, on the Business plan.
+- **Your perimeter.** Self-host on a single server, in your own cloud account or fully air-gapped, for programs with ITAR or CMMC requirements.
+
+<br />
+
 ## Contributing
 
-We welcome contributions of all sizes. Read [CONTRIBUTING.md](.github/CONTRIBUTING.md) to get started, and say hi in [Discord](https://discord.gg/yGUJWhNqzy). Good first issues are labelled [`good first issue`](https://github.com/crbnos/carbon/labels/good%20first%20issue). Found a vulnerability? Please follow [SECURITY.md](.github/SECURITY.md) instead of opening a public issue.
+We welcome contributions of all sizes. Read [CONTRIBUTING.md](.github/CONTRIBUTING.md) to get started, and say hi in [Discord](https://discord.gg/yGUJWhNqzy). Good first issues are labelled [`good first issue`](https://github.com/crbnos/carbon/labels/good%20first%20issue).
 
 <a href="https://github.com/crbnos/carbon/graphs/contributors">
   <img src="https://contrib.rocks/image?repo=crbnos/carbon&max=100" alt="Contributors" />
