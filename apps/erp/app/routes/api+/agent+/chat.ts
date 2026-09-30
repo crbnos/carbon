@@ -47,9 +47,15 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 
   const db = getDatabaseClient();
-  if (trigger === "submit-message" && text) {
+  const saveQuestion = async (question: string) => {
     try {
-      await saveUserMessage(db, { threadId, companyId, userId, text, context });
+      await saveUserMessage(db, {
+        threadId,
+        companyId,
+        userId,
+        text: question,
+        context
+      });
     } catch (error) {
       logger.error("Failed to save agent message", {
         companyId,
@@ -58,29 +64,46 @@ export async function action({ request }: ActionFunctionArgs) {
       });
       throw new Response("Failed to save your message", { status: 500 });
     }
-  }
+  };
+  const loadHistory = async () => {
+    const history = await getModelHistory(client, { threadId, companyId });
+    if (history.error) {
+      logger.error("Failed to load agent history", {
+        companyId,
+        threadId,
+        error: history.error
+      });
+      throw new Response("Failed to load the conversation", { status: 500 });
+    }
+    return history.data;
+  };
 
-  const history = await getModelHistory(client, { threadId, companyId });
-  if (history.error || !history.data) {
-    logger.error("Failed to load agent history", {
-      companyId,
-      threadId,
-      error: history.error
-    });
-    throw new Response("Failed to load the conversation", { status: 500 });
+  let saved = false;
+  if (trigger === "submit-message" && text) {
+    await saveQuestion(text);
+    saved = true;
   }
-  // A retry answers the stored, unanswered question; with none there is nothing to do.
-  if (history.data.at(-1)?.role !== "user") {
-    throw new Response("There is no question to answer", { status: 409 });
+  let history = await loadHistory();
+
+  // A retry answers the stored, unanswered question. When there is none, the first
+  // attempt was refused before its question was saved (e.g. rate-limited), so the retry
+  // carries the question and it is saved now.
+  if (trigger === "regenerate-message" && history.at(-1)?.role !== "user") {
+    if (!text) {
+      throw new Response("There is no question to answer", { status: 409 });
+    }
+    await saveQuestion(text);
+    saved = true;
+    history = await loadHistory();
   }
 
   return streamChat(client, db, {
     companyId,
     userId,
     threadId,
-    history: history.data,
+    history,
     context,
-    isNewQuestion: trigger === "submit-message",
+    isNewQuestion: saved,
     abortSignal: request.signal
   });
 }

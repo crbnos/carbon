@@ -8,6 +8,7 @@ import { NotificationEvent } from "@carbon/notifications";
 import { sql } from "kysely";
 import { getJobDatabaseClient } from "../../../db";
 import { inngest } from "../../client";
+import { purgeStaleAgentThreads } from "./agent-thread-retention";
 
 // Raw CAD in `temp-staging` is transient — the optimise/assembly jobs read it,
 // and the compact pipeline COPIES what must survive into `private` (never an
@@ -15,9 +16,6 @@ import { inngest } from "../../client";
 // source pointer). This sweep is the ONLY thing that deletes from staging:
 // stale objects that were copied to durable, or that no modelUpload references.
 const STAGED_RAW_TTL_DAYS = 7;
-
-// Agent chat threads are transient — purge after 30 days of inactivity.
-const AGENT_THREAD_TTL_DAYS = 30;
 
 // Everything under `{companyId}/tmp/` in the private bucket is transient by
 // contract: HEIC-conversion round-trip files (removed in a `finally`, but a
@@ -355,60 +353,15 @@ export const cleanupFunction = inngest.createFunction(
     });
 
     await step.run("purge-old-agent-threads", async () => {
-      logger.info("Purging agent chat threads older than 30 days...");
-      const cutoff = new Date(
-        Date.now() - AGENT_THREAD_TTL_DAYS * 24 * 60 * 60 * 1000
-      ).toISOString();
-
-      // Small batches: the ids ride in PostgREST query strings below, and the
-      // job runs 3×/day, so any backlog drains within a few runs.
-      const old = await serviceRole
-        .from("agentThread")
-        .select("id")
-        .lt("createdAt", cutoff)
-        .limit(200);
-      if (old.error) {
-        logger.error("Error fetching old agent threads", { error: old.error });
-        return;
-      }
-      const ids = old.data.map((t) => t.id);
-      if (ids.length === 0) {
-        logger.info("No old agent threads to purge");
-        return;
-      }
-
-      // Age by last activity, not creation — a thread the user is still
-      // talking in stays, even if it was started over 30 days ago.
-      const active = await serviceRole
-        .from("agentMessage")
-        .select("threadId")
-        .in("threadId", ids)
-        .gte("createdAt", cutoff);
-      if (active.error) {
-        logger.error("Error checking agent thread activity", {
-          error: active.error
-        });
-        return;
-      }
-      const activeIds = new Set(active.data.map((m) => m.threadId));
-      const purgeIds = ids.filter((id) => !activeIds.has(id));
-      if (purgeIds.length === 0) {
-        logger.info("No stale agent threads to purge", {
-          stillActive: activeIds.size
-        });
-        return;
-      }
-
-      // Messages and parts cascade with the thread.
-      const purged = await serviceRole
-        .from("agentThread")
-        .delete()
-        .in("id", purgeIds);
-      if (purged.error) {
-        logger.error("Error purging agent threads", { error: purged.error });
+      const result = await purgeStaleAgentThreads(getJobDatabaseClient());
+      if (result.drained) {
+        logger.info("Purged stale agent threads", { count: result.purged });
       } else {
-        logger.info("Purged stale agent threads", { count: purgeIds.length });
+        logger.warn("Stale agent threads remain after this run", {
+          count: result.purged
+        });
       }
+      return result;
     });
 
     await step.run("prune-staged-raw-models", async () => {

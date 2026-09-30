@@ -77,6 +77,16 @@ browser holds reaches the model. The answer is saved in one transaction under th
 server minted for it (`generateMessageId`), which is what feedback targets; a failed turn
 saves nothing and Retry answers the stored question.
 
+Thread reads are capped at the newest `MAX_THREAD_MESSAGES` (200) and filtered in
+PostgREST: the model's history reads text parts only, the panel reads text and UI-block
+parts, so read-tool outputs (the bulk of a thread's bytes) are never loaded per request.
+A Retry sends the question's text as well; the chat route answers the stored unanswered
+question, or saves the sent one when the first attempt was refused before saving it (the
+rate limit runs before the save). Threads are purged 7 days after their last message by
+`purgeStaleAgentThreads` (`packages/jobs/.../scheduled/agent-thread-retention.ts`, called
+from the daily `cleanup` cron), which tests activity inside its query so every batch
+advances.
+
 `agent.service.ts` is data access only (threads, messages, feedback, the two Kysely
 writes). The turn itself (`streamChat`, titling, the rate limit) is `agent.server.ts`,
 server-only and outside the module barrel. The system prompt takes today's date in the

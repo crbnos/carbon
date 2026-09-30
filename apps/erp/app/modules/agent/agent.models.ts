@@ -13,9 +13,10 @@ export const browsingContext = z.object({
   label: z.string().max(MAX_CONTEXT_CHARS)
 }) satisfies z.ZodType<BrowsingContext>;
 
-// The browser sends only its new message; the server loads the rest of the thread from
-// the database, so nothing the browser holds reaches the model. A retry
-// (`regenerate-message`) sends no text: the server answers the stored, unanswered question.
+// The browser sends only its newest question; the server loads the rest of the thread
+// from the database, so nothing the browser holds reaches the model. A retry
+// (`regenerate-message`) answers the stored, unanswered question, and uses `text` only when
+// that question never reached the database.
 export const chatRequest = z
   .object({
     threadId: z.string().min(1),

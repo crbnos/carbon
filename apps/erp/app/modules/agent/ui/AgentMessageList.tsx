@@ -46,7 +46,8 @@ export function AgentMessageList({
       {showThinking && <AgentThinking />}
       {error && (
         <div className="flex items-center gap-2 text-sm text-destructive">
-          <span>Something went wrong.</span>
+          {/* The server's own message (rate limit, a failed turn); never raw internals. */}
+          <span>{error.message || "Something went wrong."}</span>
           <Button variant="secondary" size="sm" onClick={onRetry}>
             Retry
           </Button>

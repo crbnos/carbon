@@ -30,3 +30,16 @@ now point at the deleting commit (user confirmed the deletion). The dev block vi
 Navigate fixture was already broken (old input shape) and is removed.
 
 Not in this pass: translating the panel's strings (Lingui) — say so to the user.
+
+## Follow-up fixes (same day)
+
+- [x] 429 recovery: the panel shows the server's message; Retry sends the question and the
+  route saves it when the first attempt never stored it. Verified live (rate limit hit, then
+  Retry saved and answered once).
+- [x] Long threads: reads capped at 200 newest messages; model history text-only, panel
+  text + UI blocks (PostgREST embedded filters, verified live incl. a present_link part).
+- [x] Retention 7 days (user decision); purge extracted to `agent-thread-retention.ts`,
+  activity filtered in the query, ordered, batched until drained. Verified on real rows:
+  stale and empty-old purged, old-but-active and new kept, no orphans, second run 0.
+- Follow-up, not done: `agentMessagePart` RLS calls `auth.uid()` per row (not wrapped in
+  `select`); needs an authz-manifest change.

@@ -1,6 +1,7 @@
 import type { Database } from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { UI_BLOCK_TOOLS } from "./agent.blocks";
 import {
   buildModelHistory,
   type StoredPart,
@@ -78,28 +79,32 @@ export async function setThreadTitle(
     .eq("companyId", args.companyId);
 }
 
-function getMessages(
-  client: SupabaseClient<Database>,
-  args: { threadId: string; companyId: string }
-) {
-  return client
-    .from("agentMessage")
-    .select(
-      "id, role, parts:agentMessagePart(orderIndex, type, textContent, toolName, toolCallId, toolInput, toolOutput)"
-    )
-    .eq("threadId", args.threadId)
-    .eq("companyId", args.companyId)
-    .order("createdAt", { ascending: true });
-}
+// A thread is read newest-first and capped, so a long thread costs the same per request
+// as a short one. The model's history is trimmed further by its character budget.
+export const MAX_THREAD_MESSAGES = 200;
+
+const newestFirst = <T>(rows: T[] | null) => (rows ?? []).slice().reverse();
 
 /** The stored thread as the panel shows it (see `toDisplayMessages`). */
 export async function getDisplayMessages(
   client: SupabaseClient<Database>,
   args: { threadId: string; companyId: string }
 ) {
-  const { data, error } = await getMessages(client, args);
+  const { data, error } = await client
+    .from("agentMessage")
+    .select(
+      "id, role, parts:agentMessagePart(orderIndex, type, textContent, toolName, toolCallId, toolInput, toolOutput)"
+    )
+    .eq("threadId", args.threadId)
+    .eq("companyId", args.companyId)
+    // Only what the panel shows: read-tool outputs are the bulk of a thread's bytes.
+    .or(`type.eq.text,toolName.in.(${UI_BLOCK_TOOLS.join(",")})`, {
+      referencedTable: "parts"
+    })
+    .order("createdAt", { ascending: false })
+    .limit(MAX_THREAD_MESSAGES);
   if (error) return { data: null, error };
-  return { data: toDisplayMessages(data ?? []), error: null };
+  return { data: toDisplayMessages(newestFirst(data)), error: null };
 }
 
 /** The stored thread as the model sees it (see `buildModelHistory`). */
@@ -107,9 +112,16 @@ export async function getModelHistory(
   client: SupabaseClient<Database>,
   args: { threadId: string; companyId: string }
 ) {
-  const { data, error } = await getMessages(client, args);
+  const { data, error } = await client
+    .from("agentMessage")
+    .select("id, role, parts:agentMessagePart(orderIndex, type, textContent)")
+    .eq("threadId", args.threadId)
+    .eq("companyId", args.companyId)
+    .eq("parts.type", "text")
+    .order("createdAt", { ascending: false })
+    .limit(MAX_THREAD_MESSAGES);
   if (error) return { data: null, error };
-  return { data: buildModelHistory(data ?? []), error: null };
+  return { data: buildModelHistory(newestFirst(data)), error: null };
 }
 
 export async function setFeedback(

@@ -36,15 +36,14 @@ export function useAgentThread() {
     () =>
       new DefaultChatTransport({
         api: path.to.api.agentChat,
-        // Only the new question travels: the server loads the thread's history itself,
-        // so nothing held in the browser reaches the model. A retry sends no text and
-        // the server answers the stored, unanswered question.
+        // Only the newest question travels: the server loads the thread's history
+        // itself, so nothing held in the browser reaches the model. A retry sends it
+        // too, for when the first attempt was refused before the server saved it.
         prepareSendMessagesRequest: ({ messages, trigger }) => ({
           body: {
             threadId: threadIdRef.current,
             trigger,
-            text:
-              trigger === "submit-message" ? lastUserText(messages) : undefined,
+            text: lastUserText(messages),
             context: contextRef.current
           }
         })
