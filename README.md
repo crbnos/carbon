@@ -25,20 +25,8 @@
 
   <p>
     <a href="https://github.com/crbnos/carbon/stargazers"><img src="https://img.shields.io/github/stars/crbnos/carbon?style=flat-square&logo=github&label=Stars&color=000000" alt="GitHub stars" /></a>
-    <a href="https://discord.gg/yGUJWhNqzy"><img src="https://img.shields.io/badge/Discord-Join_us-5865F2?style=flat-square&logo=discord&logoColor=white" alt="Discord" /></a>
     <a href="https://github.com/crbnos/carbon/actions/workflows/check.yml"><img src="https://img.shields.io/github/actions/workflow/status/crbnos/carbon/check.yml?branch=main&style=flat-square&label=CI" alt="CI" /></a>
-    <a href="https://github.com/crbnos/carbon/pulse"><img src="https://img.shields.io/github/commit-activity/m/crbnos/carbon?style=flat-square&label=Commits&color=000000" alt="Commit activity" /></a>
-    <a href="https://github.com/crbnos/carbon/graphs/contributors"><img src="https://img.shields.io/github/contributors/crbnos/carbon?style=flat-square&label=Contributors&color=000000" alt="Contributors" /></a>
     <a href="LICENSE"><img src="https://img.shields.io/badge/License-AGPL--3.0-000000?style=flat-square" alt="License: AGPL-3.0" /></a>
-    <a href="https://x.com/carbon_ms"><img src="https://img.shields.io/badge/Follow-@carbon__ms-000000?style=flat-square&logo=x" alt="Follow on X" /></a>
-  </p>
-
-  <p>
-    <img src="https://img.shields.io/badge/TypeScript-3178C6?style=flat-square&logo=typescript&logoColor=white" alt="TypeScript" />
-    <img src="https://img.shields.io/badge/React_Router-CA4245?style=flat-square&logo=reactrouter&logoColor=white" alt="React Router" />
-    <img src="https://img.shields.io/badge/Postgres-4169E1?style=flat-square&logo=postgresql&logoColor=white" alt="Postgres" />
-    <img src="https://img.shields.io/badge/Rust-000000?style=flat-square&logo=rust&logoColor=white" alt="Rust" />
-    <img src="https://img.shields.io/badge/MCP-server-000000?style=flat-square&logo=modelcontextprotocol&logoColor=white" alt="MCP server" />
   </p>
 </div>
 
