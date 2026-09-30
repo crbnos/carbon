@@ -76,7 +76,7 @@ export type IntegrationID = (typeof integrations)[number]["id"];
 
 export { Jira } from "./jira/config";
 export { Mount } from "./mount/config";
-export { beginOAuthPopup, openOAuthPopup } from "./oauth-popup";
+export { beginOAuthPopup } from "./oauth-popup";
 export {
   Logo as OnshapeLogo,
   Onshape,
@@ -179,9 +179,8 @@ export {
   CUSTOM_FIELD_DATA_TYPES,
   coerceOnshapeValue,
   MAPPABLE_VALUE_TYPES,
-  mergeCustomFieldEdits,
+  mappedFieldValues,
   mergeCustomFieldValues,
-  missingListOptions,
   ownedCustomFieldsDiffer,
   parseProperties,
   parsePropertyMap,
@@ -189,8 +188,6 @@ export {
   propertyDisplayValue,
   resolveMappedFields
 } from "./onshape/panel/properties";
-export type { PartPushPlan } from "./onshape/panel/push-plan";
-export { planPartPush } from "./onshape/panel/push-plan";
 export type {
   PanelRelease,
   PanelReleaseItem,

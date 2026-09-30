@@ -393,19 +393,6 @@ describe("applyRequestBody", () => {
     });
   });
 
-  it("carries custom-field edits inside a selected create's entry", () => {
-    const review = partReview([partRow({ partId: "p1", action: "create" })]);
-    const edited: PartReview = {
-      ...review,
-      edits: { p1: { customFields: { "cf-finish": "Raw" } } }
-    };
-    expect(applyRequestBody(edited)).toEqual({
-      planId: "plan-1",
-      selected: ["p1"],
-      edits: { p1: { customFields: { "cf-finish": "Raw" } } }
-    });
-  });
-
   it("sends assembly edits for the root and included creates, and the exclusions", () => {
     const review = assemblyReview();
     const edited: AssemblyReview = {

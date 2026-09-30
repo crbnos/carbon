@@ -9,16 +9,13 @@ import type {
 } from "@carbon/ee";
 import {
   externalIdForPart,
-  mergeCustomFieldEdits,
   mergeCustomFieldValues,
   mergeEditsForCreates,
   mergeExistingItemEdits,
-  missingListOptions,
   pickAdoptTarget,
   proposeItem
 } from "@carbon/ee";
 import {
-  loadPartCustomFieldDefinitions,
   peekPanelPlan,
   selectInBatches,
   takePanelPlan
@@ -47,10 +44,7 @@ const itemEditSchema = z.object({
   replenishmentSystem: z.string().optional(),
   defaultMethodType: z.string().optional(),
   itemTrackingType: z.string().optional(),
-  unitOfMeasureCode: z.string().optional(),
-  // Same reasoning: `mergeCustomFieldEdits` is the validator (owned-field
-  // refusal, per-type coercion) and answers 422 per row, keyed by field id.
-  customFields: z.record(z.string(), z.unknown()).optional()
+  unitOfMeasureCode: z.string().optional()
 });
 
 const payloadSchema = z.object({
@@ -138,64 +132,12 @@ export async function action({ request }: ActionFunctionArgs) {
     edits,
     options
   );
-  // Custom-field edits are validated per create row, while the plan is still
-  // peeked. Adopt/update rows take no custom-field edits.
-  const customFieldValues = new Map<
-    string,
-    Record<string, string | number | boolean | null>
-  >();
-  const fieldErrors = merged.errors.map((entry) => ({ ...entry }));
-  for (const row of selectedRows) {
-    if (row.action !== "create" || !row.partNumber) continue;
-    const mergedFields = mergeCustomFieldEdits(
-      row.customFields ?? [],
-      edits[row.partId]?.customFields
-    );
-    if (mergedFields.ok) {
-      customFieldValues.set(row.partId, mergedFields.values);
-      continue;
-    }
-    // One fieldErrors entry per row: item and custom-field errors share it.
-    const existing = fieldErrors.find((entry) => entry.key === row.partId);
-    if (existing) {
-      existing.errors = [...existing.errors, ...mergedFields.errors];
-    } else {
-      fieldErrors.push({ key: row.partId, errors: mergedFields.errors });
-    }
-  }
+  const fieldErrors = merged.errors;
   if (fieldErrors.length > 0) {
     return data(
       { error: "Some edits are not valid", fieldErrors },
       { status: 422 }
     );
-  }
-
-  // The definitions the list-option sync needs are read while the plan is
-  // still peeked: a failed read must not burn a one-shot review. They are
-  // re-read here rather than taken from the plan, so an option edited between
-  // review and apply is unioned, never clobbered.
-  const writesMappedFields = selectedRows.some(
-    (row) =>
-      row.action !== "unchanged" &&
-      row.action !== "skip-no-part-number" &&
-      (row.customFields ?? []).length > 0
-  );
-  let definitions: Awaited<ReturnType<typeof loadPartCustomFieldDefinitions>> =
-    [];
-  if (writesMappedFields) {
-    try {
-      definitions = await loadPartCustomFieldDefinitions(client, companyId);
-    } catch (error) {
-      return data(
-        {
-          error:
-            error instanceof Error
-              ? error.message
-              : "Failed to read the custom field definitions"
-        },
-        { status: 500 }
-      );
-    }
   }
 
   // One-shot from here: a concurrent apply of the same review finds nothing.
@@ -268,60 +210,6 @@ export async function action({ request }: ActionFunctionArgs) {
     }
     return target;
   };
-
-  // Plan-level problems that belong to no single part — currently only a
-  // failed list-option append.
-  const warnings: string[] = [];
-
-  // ---- Custom fields: list options + current part values, before the loop -
-  // Every value this apply could write, per field. A row with no target left
-  // creates and writes them all. The loop can only gain targets from here, so
-  // this never under-counts.
-  const writtenValuesByFieldId = new Map<
-    string,
-    Array<string | number | boolean | null>
-  >();
-  for (const row of selectedRows) {
-    if (row.action === "unchanged" || row.action === "skip-no-part-number") {
-      continue;
-    }
-    const values = resolveTarget(row)
-      ? (ownedCustomFieldValues(row)?.values ?? {})
-      : (customFieldValues.get(row.partId) ?? planCustomFieldValues(row));
-    for (const [fieldId, value] of Object.entries(values)) {
-      const list = writtenValuesByFieldId.get(fieldId) ?? [];
-      list.push(value);
-      writtenValuesByFieldId.set(fieldId, list);
-    }
-  }
-  if (writtenValuesByFieldId.size > 0) {
-    for (const definition of definitions) {
-      const values = writtenValuesByFieldId.get(definition.id);
-      if (!values) continue;
-      const missing = missingListOptions(definition, values);
-      if (missing.length === 0) continue;
-      // Add-only, order kept. The user holds parts permissions, not settings,
-      // so the append needs the service role. A failure is non-fatal — the
-      // plan is already taken, the value is written regardless, and the next
-      // push of the same value retries the append.
-      const appended = await serviceRole
-        .from("customField")
-        .update({
-          listOptions: [...(definition.listOptions ?? []), ...missing],
-          updatedBy: userId,
-          updatedAt: datetime.timestamp()
-        })
-        .eq("id", definition.id)
-        .eq("companyId", companyId);
-      if (appended.error) {
-        warnings.push(
-          `${definition.name}: could not add the option${
-            missing.length > 1 ? "s" : ""
-          } ${missing.join(", ")} to the field (${appended.error.message}); parts carry the value but the field does not list it`
-        );
-      }
-    }
-  }
 
   // Owned-mode fields merge into the target part rows' stored JSON. part.id
   // is the item's readableId (one part row per part number, shared across
@@ -438,11 +326,8 @@ export async function action({ request }: ActionFunctionArgs) {
     let readableId: string;
     if (resolved === "create") {
       const item = merged.items.get(row.partId) ?? proposedFor(row, plan);
-      // A create writes every mapped value. The fallback covers an
-      // adopt/update whose target vanished (no peek-phase merge ran for it):
-      // plan values as-is.
-      const fieldValues =
-        customFieldValues.get(row.partId) ?? planCustomFieldValues(row);
+      // A create writes every mapped value.
+      const fieldValues = planCustomFieldValues(row);
       const created = await upsertPart(client, {
         id: item.readableId,
         name: item.name,
@@ -655,9 +540,12 @@ export async function action({ request }: ActionFunctionArgs) {
     });
   }
 
-  return data(warnings.length > 0 ? { results, warnings } : { results }, {
-    headers: { "Cache-Control": "no-store" }
-  });
+  return data(
+    { results },
+    {
+      headers: { "Cache-Control": "no-store" }
+    }
+  );
 }
 
 /**
