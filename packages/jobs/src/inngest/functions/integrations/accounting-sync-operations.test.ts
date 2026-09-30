@@ -1275,7 +1275,8 @@ describe("planJournalPostingOperation", () => {
         direction: "push-to-accounting",
         metadata: {
           sourceType: "Production Event",
-          granularity: "daily-summary"
+          // No type summarizes by default — daily summary is opt-in per type
+          granularity: "individual"
         }
       }
     });
