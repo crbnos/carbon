@@ -51,6 +51,13 @@ const { output } = await generateText({
 });
 ```
 
+`@ai-sdk/openai` 4 sends `Output.object` schemas in OpenAI's **strict** mode (v5 did not),
+which refuses optional keys: every property must be required, with `.nullable()` for "may be
+absent". A `.partial()` / `.optional()` schema fails with `invalid_json_schema` — and the CSV
+column route used to swallow that and return no mappings. Design the schema for the ANSWER the
+model gives (the CSV route asks for column names, so each field is a `z.string()`), not by
+reusing a data validator.
+
 ## The in-app agent (streaming)
 
 `apps/erp/app/modules/agent/` is the only streaming, multi-turn, tool-using use.

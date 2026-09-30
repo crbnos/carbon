@@ -70,12 +70,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
     return matched;
   }
 
-  // Use AI only for unmatched fields
-  const unmatchedSchema = schema.pick(
-    Object.fromEntries(unmatchedFields.map((f) => [f, true])) as Record<
-      string,
-      true
-    >
+  // Use AI only for unmatched fields. Each answer is a column NAME, so every field is a
+  // required string: OpenAI's strict structured output refuses optional keys.
+  const unmatchedSchema = z.object(
+    Object.fromEntries(unmatchedFields.map((f) => [f, z.string()]))
   );
 
   const unmatchedFileColumns = fileColumns.filter(
