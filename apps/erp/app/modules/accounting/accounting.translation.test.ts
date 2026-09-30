@@ -6,7 +6,7 @@ import { describe, expect, it, vi } from "vitest";
 // The settings/glossary barrels evaluate Lingui macros that Vitest does not
 // transform. The real translation service needs neither dependency here.
 vi.mock("~/modules/settings", () => ({ getNextSequence: vi.fn() }));
-vi.mock("@carbon/glossary", () => ({
+vi.mock("@carbon/content/glossary", () => ({
   getDefinitionText: () => "",
   getEntry: () => undefined,
   getTermText: () => "",

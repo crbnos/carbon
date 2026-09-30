@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 
-// @carbon/auth's barrel export pulls in @carbon/glossary, whose Lingui `msg`
+// @carbon/auth's barrel export pulls in @carbon/content/glossary, whose Lingui `msg`
 // macro isn't transformed under plain vitest (no lingui plugin configured for
 // apps/erp tests). Mock it the same way traceability.search.test.ts does -
 // getSearchTokens/setSearchFilter don't call badRequest or

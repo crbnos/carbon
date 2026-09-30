@@ -1,3 +1,4 @@
+import { stemInflection } from "@carbon/content/search";
 import { createSearchAPI } from "fumadocs-core/search/server";
 import { buildSearchIndexes } from "@/lib/search-index";
 
@@ -6,8 +7,20 @@ import { buildSearchIndexes } from "@/lib/search-index";
  * entry `tag`ged (docs | guide | resources | tools) so the header's surface pills can
  * filter via `?tag=`. */
 
+// zbsearch ignores term frequency, so a one-word fragment ("Shipment" in the audit
+// log's entity table) scores the same as a page titled "Shipments", and the tie falls
+// to insertion order. Weighting each page's own title row puts the page about the
+// term ahead of pages that only mention it; groups follow this order.
+const TITLE_WEIGHT = 2;
+const weighted = ([, score, doc]: [unknown, number, unknown]) =>
+  (doc as { type?: string }).type === "page" ? score * TITLE_WEIGHT : score;
+
 const { GET: search } = createSearchAPI("advanced", {
   language: "english",
+  // Inflection-only stemming ("purchase order" matches "Purchase orders"), the same
+  // stemInflection MCP search_tools and the agent's search_docs add to their queries.
+  tokenizer: { language: "english", stemming: true, stemmer: stemInflection },
+  search: { sortBy: (a, b) => weighted(b) - weighted(a) },
   indexes: buildSearchIndexes()
 });
 

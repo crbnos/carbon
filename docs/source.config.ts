@@ -34,7 +34,7 @@ export const guide = defineDocs({
 // Remove <AgentContext> blocks from the MDX AST before fumadocs' remark-structure
 // runs. AgentContext is agent-only: this keeps its content out of the rendered page
 // AND out of the site search index (structuredData). The in-app agent still receives
-// it — scripts/generate-agent-kb.ts reads the raw MDX source, not the compiled tree.
+// it — @carbon/content/agent-kb reads the raw MDX source, not the compiled tree.
 // fumadocs splices user remarkPlugins before remarkStructure, so this runs first.
 function remarkStripAgentContext() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

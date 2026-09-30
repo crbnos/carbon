@@ -8,7 +8,7 @@ import { describe, expect, it, vi } from "vitest";
 
 // Same module-graph stubs as production.service.test.ts: glossary and the
 // onboarding content build Lingui `msg` descriptors at module load.
-vi.mock("@carbon/glossary", () => ({
+vi.mock("@carbon/content/glossary", () => ({
   terms: {},
   getEntry: vi.fn(),
   lookupEntry: vi.fn(),

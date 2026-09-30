@@ -48,6 +48,11 @@ import {
 import { useParams } from "react-router";
 import type { z } from "zod";
 import { ItemLifecycleBadge, MethodIcon } from "~/components";
+import type { ConfiguratorValues } from "~/components/Configurator/ConfiguratorForm";
+import {
+  ItemConfigureButton,
+  useItemConfiguration
+} from "~/components/Configurator/ItemConfigurator";
 import {
   CustomFormFields,
   DatePicker,
@@ -163,6 +168,13 @@ const SalesOrderLineForm = ({
       null
   });
 
+  const configurator = useItemConfiguration({
+    itemId: initialValues.itemId,
+    configuration: initialValues.configuration as ConfiguratorValues | null
+  });
+  const { configuration } = configurator;
+  const requiresConfiguration = configurator.parameters !== null;
+
   const isEditing = initialValues.id !== undefined;
   const isFixedAsset = initialValues.salesOrderLineType === "Fixed Asset";
   const [activeTab, setActiveTab] = useState<"item" | "asset">(
@@ -269,7 +281,11 @@ const SalesOrderLineForm = ({
   const percentFormatter = usePercentFormatter();
 
   const resolvePrice = useCallback(
-    async (itemId: string, quantity: number) => {
+    async (
+      itemId: string,
+      quantity: number,
+      lineConfiguration: Record<string, unknown> | null
+    ) => {
       const customerId = routeData?.salesOrder?.customerId;
       if (!customerId) return null;
 
@@ -277,7 +293,12 @@ const SalesOrderLineForm = ({
         const response = await fetch(path.to.api.salesResolvePrice, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ customerId, itemId, quantity })
+          body: JSON.stringify({
+            customerId,
+            itemId,
+            quantity,
+            ...(lineConfiguration ? { configuration: lineConfiguration } : {})
+          })
         });
         if (response.ok) {
           const result = await response.json();
@@ -298,21 +319,24 @@ const SalesOrderLineForm = ({
     [routeData?.salesOrder?.customerId]
   );
 
+  const applyResolvedPrice = (
+    result: NonNullable<Awaited<ReturnType<typeof resolvePrice>>>
+  ) =>
+    setItemData((d) => ({
+      ...d,
+      unitPrice: result.finalPrice,
+      priceListId: result.priceListId,
+      priceListName: result.priceListName,
+      priceTrace: result.trace
+    }));
+
   const debouncedQuantityResolve = useDebounce(async (qty: number) => {
     if (!itemData.itemId) {
       setIsPriceResolving(false);
       return;
     }
-    const result = await resolvePrice(itemData.itemId, qty);
-    if (result) {
-      setItemData((d) => ({
-        ...d,
-        unitPrice: result.finalPrice,
-        priceListId: result.priceListId,
-        priceListName: result.priceListName,
-        priceTrace: result.trace
-      }));
-    }
+    const result = await resolvePrice(itemData.itemId, qty, configuration);
+    if (result) applyResolvedPrice(result);
     setIsPriceResolving(false);
   }, 400);
 
@@ -322,10 +346,20 @@ const SalesOrderLineForm = ({
     debouncedQuantityResolve(qty);
   };
 
+  // A new configuration changes the configuration prices.
+  const onConfigured = async (values: ConfiguratorValues) => {
+    if (!itemData.itemId) return;
+    setIsPriceResolving(true);
+    const result = await resolvePrice(itemData.itemId, saleQuantity, values);
+    if (result) applyResolvedPrice(result);
+    setIsPriceResolving(false);
+  };
+
   const onChange = async (itemId: string) => {
     if (!itemId) return;
     if (!carbon || !company.id) return;
     setIsPriceResolving(true);
+    configurator.changeItem(itemId);
     const [item, price] = await Promise.all([
       carbon
         .from("item")
@@ -356,7 +390,7 @@ const SalesOrderLineForm = ({
     let resolvedPrice = price.data?.unitSalePrice ?? 0;
     let priceListId: string | null = null;
 
-    const result = await resolvePrice(itemId, saleQuantity);
+    const result = await resolvePrice(itemId, saleQuantity, null);
     if (result) {
       resolvedPrice = result.finalPrice;
       priceListId = result.priceListId;
@@ -582,6 +616,10 @@ const SalesOrderLineForm = ({
                       }
                     />
                     <Hidden name="unitOfMeasureCode" value={itemData.uom} />
+                    <Hidden
+                      name="configuration"
+                      value={configuration ? JSON.stringify(configuration) : ""}
+                    />
                     <VStack>
                       <div className="grid w-full gap-x-8 gap-y-4 grid-cols-1 lg:grid-cols-3">
                         <Item
@@ -1047,9 +1085,25 @@ const SalesOrderLineForm = ({
                   )}
                 </ModalCardBody>
                 <ModalCardFooter>
+                  {activeTab === "item" && (
+                    <ItemConfigureButton
+                      configurator={configurator}
+                      isDisabled={
+                        !isEditable ||
+                        (isEditing
+                          ? !permissions.can("update", "sales")
+                          : !permissions.can("create", "sales"))
+                      }
+                      onConfigured={onConfigured}
+                    />
+                  )}
                   <Submit
                     isDisabled={
                       isPriceResolving ||
+                      (!isEditing &&
+                        requiresConfiguration &&
+                        activeTab === "item" &&
+                        !configuration) ||
                       !isEditable ||
                       (isEditing
                         ? !permissions.can("update", "sales")

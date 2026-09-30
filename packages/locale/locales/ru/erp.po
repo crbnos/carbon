@@ -1646,6 +1646,9 @@ msgstr "Добавлено строк: {0}"
 msgid "Added for this customer"
 msgstr "Добавлено для этого покупателя"
 
+msgid "Added to the unit price for the chosen values, before discounts and markups. Use a negative amount for a credit."
+msgstr "Добавляется к цене за единицу для выбранных значений, до скидок и надбавок. Используйте отрицательную сумму для кредита."
+
 msgid "Adding demo records"
 msgstr "Добавление демо-записей"
 
@@ -4085,6 +4088,9 @@ msgstr "Конфигурация"
 msgid "Configuration Parameters"
 msgstr "Параметры конфигурации"
 
+msgid "Configuration Prices"
+msgstr "Цены конфигурации"
+
 msgid "Configuration, data migration, and any integrations"
 msgstr "Конфигурация, миграция данных и любые интеграции"
 
@@ -4159,6 +4165,9 @@ msgstr "настроено"
 
 msgid "Configured"
 msgstr "Настроено"
+
+msgid "Configured Part"
+msgstr "Сконфигурированная деталь"
 
 msgid "Confirm"
 msgstr "Подтвердить"
@@ -13019,6 +13028,9 @@ msgstr "сотрудники"
 msgid "People"
 msgstr "Сотрудники"
 
+msgid "Per unit"
+msgstr "За единицу"
+
 msgid "Per Unit"
 msgstr "За единицу"
 
@@ -14384,6 +14396,9 @@ msgstr "Сверка обнаружила расхождения с постав
 
 msgid "Reconciling a purchase order against what was received and invoiced — implicit in Carbon, via the line quantities and GR/IR balance."
 msgstr "Сверка заказа поставщику с полученными товарами и выставленными счетами — выполняется автоматически в Carbon на основе количеств в строках и остатка GR/IR."
+
+msgid "Reconfigure"
+msgstr "Переконфигурировать"
 
 msgid "Record"
 msgstr "Записать"

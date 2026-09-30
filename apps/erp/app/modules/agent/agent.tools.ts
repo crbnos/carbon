@@ -30,7 +30,7 @@ export function createAgentTools(ctx: AuthedContext) {
   return {
     search_docs: tool({
       description:
-        "Search Carbon product documentation for how-to and conceptual answers. Returns matching doc slugs.",
+        "Search Carbon product documentation for how-to and conceptual answers. Returns matching sections: page title, section heading, a short snippet and a `url` (with #section). Answer from the snippets when they are enough; otherwise read_doc the url.",
       inputSchema: z.object({
         query: z.string(),
         limit: z.number().int().min(1).max(10).optional()
@@ -40,7 +40,7 @@ export function createAgentTools(ctx: AuthedContext) {
 
     read_doc: tool({
       description:
-        "Read the full markdown of a documentation page by its URL (the `url` returned by search_docs).",
+        "Read documentation by the `url` search_docs returned. A url with #section returns just that section; a page url returns the page, or for a long page its intro and the section urls to read next.",
       inputSchema: z.object({ url: z.string() }),
       execute: async ({ url }) => readDoc({ url })
     }),

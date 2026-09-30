@@ -1646,6 +1646,9 @@ msgstr "Added {0} lines"
 msgid "Added for this customer"
 msgstr "Added for this customer"
 
+msgid "Added to the unit price for the chosen values, before discounts and markups. Use a negative amount for a credit."
+msgstr "Added to the unit price for the chosen values, before discounts and markups. Use a negative amount for a credit."
+
 msgid "Adding demo records"
 msgstr "Adding demo records"
 
@@ -4085,6 +4088,9 @@ msgstr "Configuration"
 msgid "Configuration Parameters"
 msgstr "Configuration Parameters"
 
+msgid "Configuration Prices"
+msgstr "Configuration Prices"
+
 msgid "Configuration, data migration, and any integrations"
 msgstr "Configuration, data migration, and any integrations"
 
@@ -4159,6 +4165,9 @@ msgstr "configured"
 
 msgid "Configured"
 msgstr "Configured"
+
+msgid "Configured Part"
+msgstr "Configured Part"
 
 msgid "Confirm"
 msgstr "Confirm"
@@ -13019,6 +13028,9 @@ msgstr "people"
 msgid "People"
 msgstr "People"
 
+msgid "Per unit"
+msgstr "Per unit"
+
 msgid "Per Unit"
 msgstr "Per Unit"
 
@@ -14384,6 +14396,9 @@ msgstr "Reconciliation found discrepancies with the provider"
 
 msgid "Reconciling a purchase order against what was received and invoiced — implicit in Carbon, via the line quantities and GR/IR balance."
 msgstr "Reconciling a purchase order against what was received and invoiced — implicit in Carbon, via the line quantities and GR/IR balance."
+
+msgid "Reconfigure"
+msgstr "Reconfigure"
 
 msgid "Record"
 msgstr "Record"

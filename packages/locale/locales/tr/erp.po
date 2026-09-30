@@ -1646,6 +1646,9 @@ msgstr "Eklenen {0} satır"
 msgid "Added for this customer"
 msgstr "Bu müşteri için eklendi"
 
+msgid "Added to the unit price for the chosen values, before discounts and markups. Use a negative amount for a credit."
+msgstr "Seçilen değerler için birim fiyata eklenir, iskontolar ve marjlar öncesi. İndirim için negatif tutar kullanın."
+
 msgid "Adding demo records"
 msgstr "Demo kayıtları ekleniyor"
 
@@ -4085,6 +4088,9 @@ msgstr "Yapılandırma"
 msgid "Configuration Parameters"
 msgstr "Yapılandırma Parametreleri"
 
+msgid "Configuration Prices"
+msgstr "Konfigürasyon Fiyatları"
+
 msgid "Configuration, data migration, and any integrations"
 msgstr "Yapılandırma, veri taşıması ve tüm entegrasyonlar"
 
@@ -4159,6 +4165,9 @@ msgstr "yapılandırıldı"
 
 msgid "Configured"
 msgstr "Yapılandırılmış"
+
+msgid "Configured Part"
+msgstr "Yapılandırılmış Parça"
 
 msgid "Confirm"
 msgstr "Onayla"
@@ -13019,6 +13028,9 @@ msgstr "personel"
 msgid "People"
 msgstr "Personel"
 
+msgid "Per unit"
+msgstr "Birim başına"
+
 msgid "Per Unit"
 msgstr "Birim Başı"
 
@@ -14384,6 +14396,9 @@ msgstr "Mutabakat sağlayıcıyla tutarsızlıklar buldu"
 
 msgid "Reconciling a purchase order against what was received and invoiced — implicit in Carbon, via the line quantities and GR/IR balance."
 msgstr "Satın alma siparişinin alınan ve faturalandırılana karşı uzlaştırması — Carbon'da satır miktarları ve GR/IR bakiyesi aracılığıyla örtük olarak yapılır."
+
+msgid "Reconfigure"
+msgstr "Yeniden Yapılandır"
 
 msgid "Record"
 msgstr "Kayıt"

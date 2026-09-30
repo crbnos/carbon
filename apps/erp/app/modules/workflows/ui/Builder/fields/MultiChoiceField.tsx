@@ -1,5 +1,5 @@
+import type { TermId } from "@carbon/content/glossary";
 import type { ValueOrRef, ValueType } from "@carbon/ee/workflows";
-import type { TermId } from "@carbon/glossary";
 import { ChoiceSelect, type ChoiceSelectOption } from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
 import { Field } from "./Field";

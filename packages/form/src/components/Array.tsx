@@ -1,4 +1,4 @@
-import type { TermId } from "@carbon/glossary";
+import type { TermId } from "@carbon/content/glossary";
 import type { InputProps } from "@carbon/react";
 import {
   Button,

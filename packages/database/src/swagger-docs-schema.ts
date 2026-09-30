@@ -24880,6 +24880,9 @@ export default {
             $ref: "#/parameters/rowFilter.pricingRule.updatedAt"
           },
           {
+            $ref: "#/parameters/rowFilter.pricingRule.configurationPrices"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -24999,6 +25002,9 @@ export default {
             $ref: "#/parameters/rowFilter.pricingRule.updatedAt"
           },
           {
+            $ref: "#/parameters/rowFilter.pricingRule.configurationPrices"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -25070,6 +25076,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.pricingRule.updatedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.pricingRule.configurationPrices"
           },
           {
             $ref: "#/parameters/body.pricingRule"
@@ -59467,6 +59476,9 @@ export default {
             $ref: "#/parameters/rowFilter.salesOrderLines.convertedNonTaxableAddOnCost"
           },
           {
+            $ref: "#/parameters/rowFilter.salesOrderLines.configuration"
+          },
+          {
             $ref: "#/parameters/rowFilter.salesOrderLines.itemReadableId"
           },
           {
@@ -71506,6 +71518,9 @@ export default {
             $ref: "#/parameters/rowFilter.salesOrderLine.convertedNonTaxableAddOnCost"
           },
           {
+            $ref: "#/parameters/rowFilter.salesOrderLine.configuration"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -71697,6 +71712,9 @@ export default {
             $ref: "#/parameters/rowFilter.salesOrderLine.convertedNonTaxableAddOnCost"
           },
           {
+            $ref: "#/parameters/rowFilter.salesOrderLine.configuration"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -71840,6 +71858,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.salesOrderLine.convertedNonTaxableAddOnCost"
+          },
+          {
+            $ref: "#/parameters/rowFilter.salesOrderLine.configuration"
           },
           {
             $ref: "#/parameters/body.salesOrderLine"
@@ -118287,7 +118308,7 @@ export default {
           type: "string"
         },
         ruleType: {
-          enum: ["Discount", "Markup"],
+          enum: ["Discount", "Markup", "Configuration"],
           format: 'public."pricingRuleType"',
           type: "string"
         },
@@ -118380,6 +118401,9 @@ export default {
         updatedAt: {
           format: "timestamp with time zone",
           type: "string"
+        },
+        configurationPrices: {
+          format: "jsonb"
         }
       },
       type: "object"
@@ -134466,6 +134490,9 @@ export default {
           format: "numeric",
           type: "number"
         },
+        configuration: {
+          format: "jsonb"
+        },
         itemReadableId: {
           format: "text",
           type: "string"
@@ -140710,6 +140737,9 @@ export default {
         convertedNonTaxableAddOnCost: {
           format: "numeric",
           type: "number"
+        },
+        configuration: {
+          format: "jsonb"
         }
       },
       type: "object"
@@ -164538,6 +164568,12 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.pricingRule.configurationPrices": {
+      name: "configurationPrices",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.location": {
       name: "location",
       description: "location",
@@ -182483,6 +182519,12 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.salesOrderLines.configuration": {
+      name: "configuration",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "rowFilter.salesOrderLines.itemReadableId": {
       name: "itemReadableId",
       required: false,
@@ -189420,6 +189462,12 @@ export default {
     },
     "rowFilter.salesOrderLine.convertedNonTaxableAddOnCost": {
       name: "convertedNonTaxableAddOnCost",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.salesOrderLine.configuration": {
+      name: "configuration",
       required: false,
       in: "query",
       type: "string"

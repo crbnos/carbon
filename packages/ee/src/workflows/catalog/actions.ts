@@ -1,4 +1,4 @@
-import type { TermId } from "@carbon/glossary";
+import type { TermId } from "@carbon/content/glossary";
 import type { RequiredPermission } from "../definition/catalog";
 import { t, type ValueType } from "../definition/types";
 

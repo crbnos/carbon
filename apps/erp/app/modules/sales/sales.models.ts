@@ -23,6 +23,7 @@ import {
   standardFactorType,
   taxExemptionReasons
 } from "../shared";
+import { pricingRuleConfigurationPriceValidator } from "./sales.utils";
 
 export const KPIs = [
   {
@@ -339,10 +340,27 @@ export const priceResolutionInputValidator = z.object({
   customerTypeId: z.string().optional(),
   itemPostingGroupId: z.string().optional(),
   date: z.string().optional(),
-  existingBasePrice: z.number().optional()
+  existingBasePrice: z.number().optional(),
+  configuration: z.record(z.string(), z.unknown()).optional()
 });
 
-export const pricingRuleTypes = ["Discount", "Markup"] as const;
+const parseJsonField = (value: unknown) => {
+  if (typeof value !== "string") return value;
+  if (value.trim() === "") return undefined;
+  try {
+    return JSON.parse(value);
+  } catch {
+    return value;
+  }
+};
+
+// A Configuration rule prices one configurable item's parameter values
+// (`configurationPrices`) and has no discount or markup of its own.
+export const pricingRuleTypes = [
+  "Discount",
+  "Markup",
+  "Configuration"
+] as const;
 export const pricingRuleAmountTypes = ["Percentage", "Fixed"] as const;
 
 export const pricingRuleValidator = z
@@ -357,11 +375,17 @@ export const pricingRuleValidator = z
     customerIds: z.array(z.string()).optional().default([]),
     customerTypeIds: z.array(z.string()).optional().default([]),
     itemIds: z.array(z.string()).optional().nullable().default([]),
+    // The single configurable item of a Configuration rule.
+    itemId: zfd.text(z.string().optional()),
     itemPostingGroupId: zfd.text(z.string().optional()),
     validFrom: zfd.text(z.string().optional()),
     validTo: zfd.text(z.string().optional()),
     priority: zfd.numeric(z.number().int().min(0).optional().default(0)),
-    active: zfd.checkbox()
+    active: zfd.checkbox(),
+    configurationPrices: z.preprocess(
+      parseJsonField,
+      z.array(pricingRuleConfigurationPriceValidator).optional()
+    )
   })
   .refine((d) => d.amountType !== "Percentage" || d.amount <= 1, {
     message: "Percentage must be between 0% and 100%",
@@ -370,7 +394,12 @@ export const pricingRuleValidator = z
   .refine((d) => !d.validFrom || !d.validTo || d.validFrom <= d.validTo, {
     message: "Valid From must be on or before Valid To",
     path: ["validTo"]
-  });
+  })
+  .refine(
+    (d) =>
+      d.ruleType !== "Configuration" || !!d.itemId || d.itemIds?.length === 1,
+    { message: "A configured part is required", path: ["itemId"] }
+  );
 
 export const quoteLineStatusType = [
   "Not Started",
@@ -929,7 +958,12 @@ export const salesOrderLineValidator = z
     ),
     unitOfMeasureCode: zfd.text(z.string().optional()),
     unitPrice: zfd.numeric(z.number().optional()),
-    exchangeRate: zfd.numeric(z.number().optional())
+    exchangeRate: zfd.numeric(z.number().optional()),
+    // Configurator values keyed by configurationParameter key, posted as JSON.
+    configuration: z.preprocess(
+      parseJsonField,
+      z.record(z.string(), z.any()).nullable().optional()
+    )
   })
   .refine((data) => (data.salesOrderLineType === "Part" ? data.itemId : true), {
     message: "Part is required",

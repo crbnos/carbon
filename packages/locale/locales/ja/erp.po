@@ -1646,6 +1646,9 @@ msgstr "{0}行を追加しました"
 msgid "Added for this customer"
 msgstr "この得意先に追加済み"
 
+msgid "Added to the unit price for the chosen values, before discounts and markups. Use a negative amount for a credit."
+msgstr "選択値に対する単価への加算で、値引およびマークアップの前に適用されます。クレジットには負の金額を使用してください。"
+
 msgid "Adding demo records"
 msgstr "デモレコードを追加中"
 
@@ -4085,6 +4088,9 @@ msgstr "設定"
 msgid "Configuration Parameters"
 msgstr "設定パラメータ"
 
+msgid "Configuration Prices"
+msgstr "構成価格"
+
 msgid "Configuration, data migration, and any integrations"
 msgstr "構成、データ移行、および任意の連携"
 
@@ -4159,6 +4165,9 @@ msgstr "設定済み"
 
 msgid "Configured"
 msgstr "設定済み"
+
+msgid "Configured Part"
+msgstr "構成済み部品"
 
 msgid "Confirm"
 msgstr "確認"
@@ -13019,6 +13028,9 @@ msgstr "人員"
 msgid "People"
 msgstr "人員"
 
+msgid "Per unit"
+msgstr "個当たり"
+
 msgid "Per Unit"
 msgstr "単位あたり"
 
@@ -14384,6 +14396,9 @@ msgstr "調整でプロバイダとの不一致が見つかりました"
 
 msgid "Reconciling a purchase order against what was received and invoiced — implicit in Carbon, via the line quantities and GR/IR balance."
 msgstr "発注書を受け取られたものと請求済のものと照合する - Carbonでは、明細数量とGR/IRバランスを介して暗黙的に行われます。"
+
+msgid "Reconfigure"
+msgstr "再構成"
 
 msgid "Record"
 msgstr "記録"

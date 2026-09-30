@@ -1,4 +1,5 @@
 import type { Database } from "@carbon/database";
+import type { z } from "zod";
 import type { jobStatus } from "../production/production.models";
 import type { QuantityEffect } from "../shared";
 import type {
@@ -31,16 +32,24 @@ import type {
   getSalesRFQs,
   priceSourceTypes
 } from "./sales.service";
+import type { pricingRuleConfigurationPriceValidator } from "./sales.utils";
 
 // Pricing types
 export type MatchedRule = {
   id: string;
   name: string;
-  ruleType: string;
-  amountType: string;
+  ruleType: Database["public"]["Enums"]["pricingRuleType"];
+  amountType: Database["public"]["Enums"]["pricingRuleAmountType"];
   amount: number;
   priority: number;
+  // Parsed from the stored JSONB by `toMatchedRule`; empty for any rule type
+  // but Configuration.
+  configurationPrices: PricingRuleConfigurationPrice[];
 };
+
+export type PricingRuleConfigurationPrice = z.infer<
+  typeof pricingRuleConfigurationPriceValidator
+>;
 
 export type PriceOverrideBreak = {
   id?: string;
@@ -90,6 +99,7 @@ export type PriceResolutionInput = {
   quantity: number;
   date?: string;
   existingBasePrice?: number;
+  configuration?: Record<string, unknown> | null;
 };
 
 export type PriceResolutionResult = {
@@ -106,6 +116,9 @@ export type PriceTraceStep = {
   amount: number;
   adjustment?: number;
   ruleId?: string;
+  // A readable name for the step's badge — the parameter label on a
+  // Configuration step.
+  label?: string;
 };
 
 export type PricingRule = NonNullable<

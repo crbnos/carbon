@@ -5,6 +5,8 @@ import {
   TEMP_STAGING_BUCKET
 } from "@carbon/files";
 import { NotificationEvent } from "@carbon/notifications";
+import { sql } from "kysely";
+import { getJobDatabaseClient } from "../../../db";
 import { inngest } from "../../client";
 
 // Raw CAD in `temp-staging` is transient — the optimise/assembly jobs read it,
@@ -22,6 +24,20 @@ const AGENT_THREAD_TTL_DAYS = 30;
 // crash can leak them) and staged signed-URL uploads an MCP agent PUT but
 // never registered. One day is generous — both are seconds-to-minutes lived.
 const TMP_STAGING_TTL_HOURS = 24;
+
+async function listStorageObjects(where: ReturnType<typeof sql>) {
+  try {
+    const { rows } = await sql<{
+      name: string | null;
+      bucket_id: string | null;
+    }>`
+      SELECT name, bucket_id FROM storage.objects WHERE ${where} LIMIT 1000
+    `.execute(getJobDatabaseClient());
+    return { data: rows, error: null };
+  } catch (error) {
+    return { data: [], error };
+  }
+}
 
 type NotifyEvent = {
   name: "carbon/notify";
@@ -401,19 +417,16 @@ export const cleanupFunction = inngest.createFunction(
         Date.now() - STAGED_RAW_TTL_DAYS * 24 * 60 * 60 * 1000
       ).toISOString();
 
-      const stale = await serviceRole
-        .schema("storage")
-        .from("objects")
-        .select("name")
-        .eq("bucket_id", TEMP_STAGING_BUCKET)
-        .lt("created_at", cutoff)
-        .limit(1000);
+      // PostgREST only exposes `public`, so `storage.objects` is read directly.
+      const stale = await listStorageObjects(
+        sql`bucket_id = ${TEMP_STAGING_BUCKET} AND created_at < ${cutoff}`
+      );
 
       if (stale.error) {
         logger.error("Error listing stale staged raws", { error: stale.error });
         return;
       }
-      const staleNames = (stale.data ?? [])
+      const staleNames = stale.data
         .map((o) => o.name)
         .filter((n): n is string => Boolean(n));
       if (staleNames.length === 0) {
@@ -517,13 +530,9 @@ export const cleanupFunction = inngest.createFunction(
       // with the legacy shared `private` bucket still holding pre-migration
       // objects — so select the bucket alongside the name and prune per bucket
       // rather than assuming one shared bucket.
-      const stale = await serviceRole
-        .schema("storage")
-        .from("objects")
-        .select("name, bucket_id")
-        .like("name", "%/tmp/%")
-        .lt("created_at", cutoff)
-        .limit(1000);
+      const stale = await listStorageObjects(
+        sql`name LIKE '%/tmp/%' AND created_at < ${cutoff}`
+      );
 
       if (stale.error) {
         logger.error("Error listing stale tmp objects", { error: stale.error });
@@ -534,7 +543,7 @@ export const cleanupFunction = inngest.createFunction(
       // `tmp` marks the transient prefix (`{companyId}/tmp/…`). Entity
       // folders are never named tmp, but don't rely on that for a delete.
       const byBucket = new Map<string, string[]>();
-      for (const object of stale.data ?? []) {
+      for (const object of stale.data) {
         const name = object.name;
         const bucketId = object.bucket_id;
         if (typeof name !== "string" || typeof bucketId !== "string") continue;

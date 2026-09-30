@@ -1,7 +1,7 @@
 import type { Database } from "@carbon/database";
 import { Ratelimit, redis } from "@carbon/kv";
 import { getLogger } from "@carbon/logger";
-import { agentChatModel, agentTitleModel } from "@carbon/utils";
+import { agentChatModel, agentProvider, agentTitleModel } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import {
   convertToModelMessages,
@@ -14,6 +14,11 @@ import {
   type UIMessage
 } from "ai";
 import { isEphemeralTool, isUiBlockTool } from "./agent.blocks";
+import {
+  compactEarlierToolOutputs,
+  HISTORY_CHAR_BUDGET,
+  windowByChars
+} from "./agent.history";
 import { buildSystemPrompt } from "./agent.prompt";
 import { agentModel } from "./agent.provider";
 import { createAgentTools } from "./agent.tools";
@@ -21,42 +26,9 @@ import type { BrowsingContext } from "./types";
 
 const log = getLogger("erp", "agent");
 
-const MAX_STEPS = 20;
-
-// Sliding window: send the model only the most recent messages whose combined size stays
-// under this character budget (a rough token proxy — ~4 chars/token), dropping the oldest.
-// Keeps the conversation from growing unbounded toward the context window. Whole messages
-// are kept/dropped so tool-call/result pairs stay intact.
-const HISTORY_CHAR_BUDGET = 100_000; // ~25k tokens of history
-
-function messageSize(m: UIMessage): number {
-  let n = 0;
-  for (const part of m.parts) {
-    if (part.type === "text") n += part.text.length;
-    else if (isToolUIPart(part)) {
-      n +=
-        JSON.stringify(part.input ?? "").length +
-        JSON.stringify(part.output ?? "").length;
-    }
-  }
-  return n;
-}
-
-function windowByChars(messages: UIMessage[], budget: number): UIMessage[] {
-  const kept: UIMessage[] = [];
-  let total = 0;
-  for (let i = messages.length - 1; i >= 0; i--) {
-    const size = messageSize(messages[i]);
-    // Always keep the most recent message, even if it alone exceeds the budget.
-    if (kept.length > 0 && total + size > budget) break;
-    kept.unshift(messages[i]);
-    total += size;
-  }
-  // Anthropic requires the first message to be a user message; dropping the oldest
-  // turns can leave an assistant at the front, so trim any leading non-user messages.
-  while (kept.length > 1 && kept[0].role !== "user") kept.shift();
-  return kept;
-}
+// Every step re-sends the whole context. A docs answer is search → read → answer, with a
+// read or two more at most, so a few steps cover it and bound the worst-case cost.
+const MAX_STEPS = 6;
 
 const agentRatelimit = new Ratelimit({
   redis,
@@ -246,7 +218,12 @@ export function streamChat(
   };
 
   const modelMessages = injectContext(
-    convertToModelMessages(windowByChars(args.messages, HISTORY_CHAR_BUDGET)),
+    convertToModelMessages(
+      windowByChars(
+        compactEarlierToolOutputs(args.messages),
+        HISTORY_CHAR_BUDGET
+      )
+    ),
     args.context
   );
 
@@ -267,10 +244,27 @@ export function streamChat(
     // it has — instead of ending on a dangling tool call and returning no text.
     prepareStep: ({ stepNumber }) =>
       stepNumber >= MAX_STEPS - 1 ? { toolChoice: "none" } : undefined,
+    // One key for every turn: the system prompt and tool definitions are the same
+    // prefix each time, and OpenAI bills a cached prefix at a fraction of the price.
+    ...(agentProvider === "openai"
+      ? { providerOptions: { openai: { promptCacheKey: "carbon-agent" } } }
+      : {}),
+    onError: ({ error }) => {
+      log.error("Agent model call failed", { error, threadId: args.threadId });
+    },
     onFinish: (event) => {
       inputTokens = event.totalUsage.inputTokens ?? 0;
       outputTokens = event.totalUsage.outputTokens ?? 0;
       finishReason = event.finishReason;
+      log.info("Agent turn", {
+        threadId: args.threadId,
+        model: agentChatModel,
+        steps: event.steps.length,
+        inputTokens,
+        cachedInputTokens: event.totalUsage.cachedInputTokens ?? 0,
+        outputTokens,
+        finishReason
+      });
     }
   });
 

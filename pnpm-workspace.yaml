@@ -2,6 +2,7 @@ packages:
   - apps/*
   - ci
   - docs
+  - docs/content
   - contrib/building/examples/*
   - packages/*
 
@@ -82,9 +83,9 @@ catalog:
   '@react-router/dev': 7.18.0
   '@react-router/remix-routes-option-adapter': 7.18.0
   '@react-router/serve': 7.18.0
-  '@shikijs/langs': 4.0.2
-  '@shikijs/themes': 4.0.2
-  '@shikijs/types': 4.0.2
+  '@shikijs/langs': 4.2.0
+  '@shikijs/themes': 4.2.0
+  '@shikijs/types': 4.2.0
   '@slack/web-api': 7.10.0
   '@supabase/functions-js': 2.1.5
   '@supabase/postgrest-js': 2.80.0

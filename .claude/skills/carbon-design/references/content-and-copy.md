@@ -94,9 +94,9 @@ Known gaps you must not copy: English defaults in `ConfirmDelete`/`Confirm`, `Co
 
 - Carbon vocabulary: a **Method** = BoM + BoP; "Change Notice" (not ECO); method types "Make to
   Order | Purchase to Order | Pull from Inventory"; "Readable ID"/"Number" for human IDs.
-  Check `packages/glossary/src/terms.ts` before naming a concept.
+  Check `docs/content/src/glossary/terms.ts` before naming a concept.
 - Fields whose label is domain jargon get `termId` (→ `LabelWithHelp`). New terms: `msg` term +
-  one-sentence definition + docs anchor, in `packages/glossary` (ask first).
+  one-sentence definition + docs anchor, in `docs/content/src/glossary` (ask first).
 - Name by the user's mental model, not the table name (`019fcf0a46`: "Procedure" →
   "Instructions" for operators). Order choices by likely use.
 

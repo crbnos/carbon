@@ -171,7 +171,7 @@ flowIndex: 1          # order of the flow in the subnav (0 = first)
 - `<Divider />` — closes a chapter before its wrap-up line.
 - `<Term>make to order</Term>` — inline glossary term: dotted-underline; click/tap opens a popover with a
   grounded one-line definition + an optional "Learn more" link. Same component on both surfaces; definitions
-  live in `@carbon/glossary` (`packages/glossary/src/terms.ts`), rendered by
+  live in `@carbon/content/glossary` (`docs/content/src/glossary/terms.ts`), rendered by
   `docs/components/editorial/glossary.tsx`. See "Interlinking & the glossary" below.
 
 Each `##` heading becomes a sidebar rail entry — so structure chapters as 3–5 `##` sections.
@@ -224,8 +224,8 @@ Each `##` heading becomes a sidebar rail entry — so structure chapters as 3–
     ERP** (never guessed), then pass it. Use it ONLY for a **linear** lifecycle — a 2-axis comparison matrix
     (e.g. invoices sales-vs-purchase) or a small enum list stays a markdown table.
   - `<AgentContext>…</AgentContext>` — renders **nothing** on the site; its content ships only to the
-    in-app agent's knowledge base (`pnpm run generate:agent-kb` → `apps/erp/app/modules/agent/kb/`,
-    regenerated automatically by check-and-commit). Put troubleshooting/FAQ, exact error strings, and
+    in-app agent's knowledge base (`@carbon/content/agent-kb`, bundled into the ERP at build time).
+    Put troubleshooting/FAQ, exact error strings, and
     internal mechanics (table names, routes, enum internals) here — reader-facing prose stays free of
     them. Never write a reader-visible "Troubleshooting" section. About half the Reference pages still
     have no `<AgentContext>`: when your fact sheet surfaced exact error strings for a page you're
@@ -339,7 +339,7 @@ a page that links out *and* glosses its jargon is worth more than the same prose
   - `<Term>make to order</Term>` slugifies the text to find the entry; `<Term id="make-to-order">made</Term>`
     when the display text differs from the slug.
   - **First occurrence per page only** — not every instance. Underlining every "order" is noise.
-  - Definitions are a single source of truth: `@carbon/glossary` (`packages/glossary/src/terms.ts`),
+  - Definitions are a single source of truth: `@carbon/content/glossary` (`docs/content/src/glossary/terms.ts`),
     where each entry is `slug → { term, definition }` with `term`/`definition` as Lingui `msg` descriptors
     (rendered by `docs/components/editorial/glossary.tsx`).
     Add the entry there *before* you use a new term, and **ground the definition in source** (the prime
