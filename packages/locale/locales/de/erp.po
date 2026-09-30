@@ -7362,6 +7362,12 @@ msgstr "Änderungsbeschreibung"
 msgid "Description of Issue"
 msgstr "Problembeschreibung"
 
+msgid "Detach"
+msgstr ""
+
+msgid "Detach to edit them in Carbon."
+msgstr ""
+
 msgid "Detail"
 msgstr "Detail"
 
@@ -11732,6 +11738,8 @@ msgstr "Letzte Übertragung {when} fehlgeschlagen: {0}"
 
 msgid "Last push {when}:"
 msgstr "Letzte Übertragung {when}:"
+msgid "Last pushed {lastPushed}."
+msgstr ""
 
 msgid "Last Quarter"
 msgstr "Letztes Quartal"
@@ -12009,6 +12017,9 @@ msgstr "Verknüpfen Sie diesen Carbon-Kunden mit einem davon, oder erstellen Sie
 
 msgid "Link to sales order line"
 msgstr "Mit Kundenauftragsposition verknüpfen"
+
+msgid "Linked"
+msgstr ""
 
 #. placeholder {0}: r.linkedSum
 #. placeholder {1}: r.quantity
@@ -13054,6 +13065,9 @@ msgstr "Name"
 
 msgid "Name an internal project owner with decision authority"
 msgstr "Benennen Sie einen internen Projektverantwortlichen mit Entscheidungsbefugnis"
+
+msgid "Name and description are managed in Onshape."
+msgstr ""
 
 msgid "Names fill in wherever those roles are referenced across the hub."
 msgstr "Namen werden überall dort eingefügt, wo diese Rollen im Hub referenziert werden."
@@ -14764,6 +14778,9 @@ msgstr "In Änderungsmitteilungen {ids} offen. Geben Sie sie frei, um neue Versi
 
 msgid "Open in MES"
 msgstr "Im MES öffnen"
+
+msgid "Open in Onshape"
+msgstr ""
 
 msgid "Open Issues"
 msgstr "Offene Probleme"

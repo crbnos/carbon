@@ -1,6 +1,5 @@
 import { useCarbon } from "@carbon/auth";
-import type { OnshapeMappingNamespace } from "@carbon/ee/onshape/integration-id";
-import { ONSHAPE_MAPPING_NAMESPACES } from "@carbon/ee/onshape/integration-id";
+import { ONSHAPE_V2_INTEGRATION_ID } from "@carbon/ee/onshape/integration-id";
 import {
   Badge,
   Button,
@@ -8,16 +7,17 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
-  HStack
+  HStack,
+  toast
 } from "@carbon/react";
+import { Trans } from "@lingui/react/macro";
 import { useEffect, useState } from "react";
 import { LuExternalLink, LuUnlink } from "react-icons/lu";
 import { useFetcher } from "react-router";
+import { useDateFormatter } from "~/hooks";
 import { path } from "~/utils/path";
 
 type ExternalSourceMapping = {
-  /** Which Onshape integration owns the link — Detach removes exactly this one. */
-  integration: OnshapeMappingNamespace;
   externalId: string | null;
   lastSyncedAt: string | null;
   metadata: {
@@ -32,9 +32,12 @@ type ExternalSourceMapping = {
 };
 
 /**
- * The one item-page footprint of the Onshape integration: a self-contained
- * card that loads its own mapping row and renders nothing when the item was
- * never pushed. No loader changes, no form fields.
+ * The one item-page footprint of the Onshape panel: a self-contained card
+ * that loads the item's panel link and renders nothing when the item was never
+ * pushed. No loader changes, no form fields.
+ *
+ * Only the panel's `onshape-v2` link counts. A sync connection's `onshape`
+ * row is BOM-import bookkeeping and never meant Onshape owns the item.
  */
 export function ExternalSourceCard({
   itemId,
@@ -44,35 +47,36 @@ export function ExternalSourceCard({
   canDetach: boolean;
 }) {
   const { carbon } = useCarbon();
+  const { formatDateTime } = useDateFormatter();
   const [mapping, setMapping] = useState<ExternalSourceMapping | null>(null);
-  const detacher = useFetcher<{ ok?: boolean }>();
+  const detacher = useFetcher<{ success: boolean; message: string }>();
 
   useEffect(() => {
     if (!carbon) return;
     let cancelled = false;
     carbon
       .from("externalIntegrationMapping")
-      .select("integration, externalId, lastSyncedAt, metadata")
+      .select("externalId, lastSyncedAt, metadata")
       .eq("entityType", "item")
       .eq("entityId", itemId)
-      // An item holds at most one row per integration, and the database
-      // returns them in no particular order, so the pick is made here: v2
-      // first, the order of ONSHAPE_MAPPING_NAMESPACES.
-      .in("integration", [...ONSHAPE_MAPPING_NAMESPACES])
+      .eq("integration", ONSHAPE_V2_INTEGRATION_ID)
+      .maybeSingle()
       .then(({ data }) => {
         if (cancelled) return;
-        const rows = (data ?? []) as ExternalSourceMapping[];
-        const preferred = ONSHAPE_MAPPING_NAMESPACES.map((id) =>
-          rows.find((row) => row.integration === id)
-        ).find((row) => row !== undefined);
-        setMapping(preferred ?? null);
+        setMapping((data as ExternalSourceMapping | null) ?? null);
       });
     return () => {
       cancelled = true;
     };
   }, [carbon, itemId]);
 
-  if (detacher.state !== "idle" || detacher.data?.ok) return null;
+  useEffect(() => {
+    if (detacher.state === "idle" && detacher.data?.success === false) {
+      toast.error(detacher.data.message);
+    }
+  }, [detacher.state, detacher.data]);
+
+  if (detacher.state !== "idle" || detacher.data?.success) return null;
   if (!mapping) return null;
 
   const meta = mapping.metadata ?? {};
@@ -81,42 +85,48 @@ export function ExternalSourceCard({
       ? `https://cad.onshape.com/documents/${meta.documentId}/${meta.wv ?? "w"}/${meta.wvId}/e/${meta.elementId}`
       : null;
   const pushedAt = meta.pushedAt ?? mapping.lastSyncedAt;
+  const lastPushed = pushedAt ? formatDateTime(pushedAt) : null;
 
   return (
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           Onshape
-          <Badge variant="green">Linked</Badge>
+          <Badge variant="green">
+            <Trans>Linked</Trans>
+          </Badge>
         </CardTitle>
       </CardHeader>
       <CardContent>
         <div className="flex items-center justify-between gap-4">
           <p className="text-sm text-muted-foreground">
-            Name, description and revision are pushed from Onshape
-            {pushedAt
-              ? ` · last push ${new Date(pushedAt).toLocaleString()}`
-              : ""}
-            . Detach to edit them in Carbon.
+            <Trans>Name and description are managed in Onshape.</Trans>
+            {lastPushed ? (
+              <>
+                {" "}
+                <Trans>Last pushed {lastPushed}.</Trans>
+              </>
+            ) : null}
+            {canDetach ? (
+              <>
+                {" "}
+                <Trans>Detach to edit them in Carbon.</Trans>
+              </>
+            ) : null}
           </p>
           <HStack spacing={2} className="shrink-0">
             {onshapeUrl ? (
               <Button variant="secondary" leftIcon={<LuExternalLink />} asChild>
                 <a href={onshapeUrl} target="_blank" rel="noreferrer">
-                  Open in Onshape
+                  <Trans>Open in Onshape</Trans>
                 </a>
               </Button>
             ) : null}
             {canDetach ? (
               <detacher.Form method="post" action={path.to.api.onShapeDetach}>
                 <input type="hidden" name="itemId" value={itemId} />
-                <input
-                  type="hidden"
-                  name="integration"
-                  value={mapping.integration}
-                />
                 <Button variant="ghost" leftIcon={<LuUnlink />} type="submit">
-                  Detach
+                  <Trans>Detach</Trans>
                 </Button>
               </detacher.Form>
             ) : null}

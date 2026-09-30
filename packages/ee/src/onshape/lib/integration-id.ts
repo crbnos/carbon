@@ -1,7 +1,4 @@
-import {
-  ONSHAPE_INTEGRATION_ID,
-  type OnshapeIntegrationId
-} from "./connection";
+import type { OnshapeIntegrationId } from "./connection";
 
 /**
  * The panel runs as its own integration, beside the sync connections in
@@ -17,10 +14,10 @@ import {
  * one-connection-at-a-time rule in `./connection` is between the two sync
  * connections only.
  *
- * While both are installable, every read that answers "does Carbon know about
- * this Onshape thing?" has to consider both namespaces, and every write has to
- * name exactly one. An `"onshape"` string literal in panel code is almost
- * always a bug.
+ * An item linked by the panel is linked under `onshape-v2` only. A sync
+ * connection's `onshape` row is BOM-import bookkeeping and never means Onshape
+ * owns the item, so the item lock, its card and Detach read `onshape-v2` alone.
+ * An `"onshape"` string literal in panel code is almost always a bug.
  */
 export const ONSHAPE_V2_INTEGRATION_ID = "onshape-v2";
 
@@ -33,31 +30,3 @@ export type OnshapeV2IntegrationId = typeof ONSHAPE_V2_INTEGRATION_ID;
 export type OnshapeOAuthIntegrationId =
   | OnshapeIntegrationId
   | OnshapeV2IntegrationId;
-
-/**
- * An `externalIntegrationMapping` namespace an Onshape link can live in. Both
- * sync connections write under `onshape` (see `./connection`); the panel writes
- * under its own id.
- */
-export type OnshapeMappingNamespace =
-  | typeof ONSHAPE_INTEGRATION_ID
-  | OnshapeV2IntegrationId;
-
-/**
- * Both namespaces, for reads that must see an item however it was linked —
- * the item page's source card, and anything answering "is this already in
- * Carbon?". Order matters where a single row is picked: v2 first, because a
- * company running both is migrating toward it.
- */
-export const ONSHAPE_MAPPING_NAMESPACES: readonly OnshapeMappingNamespace[] = [
-  ONSHAPE_V2_INTEGRATION_ID,
-  ONSHAPE_INTEGRATION_ID
-];
-
-export function isOnshapeMappingNamespace(
-  value: unknown
-): value is OnshapeMappingNamespace {
-  return (
-    value === ONSHAPE_INTEGRATION_ID || value === ONSHAPE_V2_INTEGRATION_ID
-  );
-}

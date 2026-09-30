@@ -19,7 +19,6 @@ import {
   type SupplierPriceBreak,
   supplierPartCurrency
 } from "@carbon/database/supplier-part-price";
-import { ONSHAPE_MAPPING_NAMESPACES } from "@carbon/ee/onshape/integration-id";
 import { storage } from "@carbon/files";
 import { getLogger } from "@carbon/logger";
 import { serverFns } from "@carbon/server-functions";
@@ -100,7 +99,8 @@ import {
   type shelfLifeTriggerTimings,
   type supplierPartValidator,
   type toolValidator,
-  type unitOfMeasureValidator
+  type unitOfMeasureValidator,
+  withoutOnshapeOwnedFields
 } from "./items.models";
 import {
   checkMaterialProperties,
@@ -115,6 +115,7 @@ import {
   sentFields,
   sentMaterialProperties
 } from "./material-properties";
+import { checkItemIdentityEdit } from "./onshape-lock";
 import type { InventoryItemType } from "./types";
 
 const PARTS_LIST_COLUMNS =
@@ -4134,7 +4135,24 @@ export async function upsertPart(
     return newPart;
   }
 
-  const item: Database["public"]["Tables"]["item"]["Update"] = {
+  // Resolved first: the Onshape link is keyed by item id, and `part.id` may
+  // be the readable id.
+  const resolved = await resolveTypedItemRevision(client, {
+    id: part.id,
+    companyId: part.companyId,
+    type: "Part"
+  });
+  if (resolved.error) return resolved;
+
+  const identity = await checkItemIdentityEdit(client, {
+    companyId: part.companyId,
+    itemIds: [resolved.data.id],
+    name: part.name,
+    description: part.description
+  });
+  if (identity.error) return identity;
+
+  const item = {
     name: part.name,
     description: part.description,
     replenishmentSystem: part.replenishmentSystem,
@@ -4143,32 +4161,15 @@ export async function upsertPart(
     unitOfMeasureCode: part.unitOfMeasureCode,
     active: true
   };
-
-  // An item pushed from Onshape has its identity fields owned by the CAD
-  // side: a Properties save must not overwrite them. The panel's own push
-  // updates them directly; Detach removes the mapping and releases the fields.
-  const externalSource = await client
-    .from("externalIntegrationMapping")
-    .select("id")
-    .eq("entityType", "item")
-    .eq("entityId", part.id)
-    .in("integration", [...ONSHAPE_MAPPING_NAMESPACES])
-    .limit(1)
-    .maybeSingle();
-  // A failed lookup is not "not linked": falling through would write name
-  // and description over the values Onshape owns.
-  if (externalSource.error) return externalSource;
-  if (externalSource.data) {
-    item.name = undefined;
-    item.description = undefined;
-  }
-
   const updated = await updateTypedItem(client, {
-    id: part.id,
+    id: resolved.data.id,
     companyId: part.companyId,
     updatedBy: part.updatedBy,
     type: "Part",
-    item,
+    item:
+      identity.data.linkedItemIds.length > 0
+        ? withoutOnshapeOwnedFields(item)
+        : item,
     typed: { customFields: part.customFields }
   });
   if (updated.error) return updated;
@@ -4217,6 +4218,17 @@ export async function updateItem(
     shelfLifeCalculateFromBom: _shelfLifeCalculateFromBom,
     ...row
   } = item;
+
+  // `sanitize` writes a key that is present but undefined as null, and leaves
+  // an absent key alone; the check reads the edit the same way.
+  const identity = await checkItemIdentityEdit(client, {
+    companyId: item.companyId,
+    itemIds: [item.id],
+    name: item.name,
+    description: "description" in item ? (item.description ?? null) : undefined
+  });
+  if (identity.error) return identity;
+
   return client
     .from("item")
     .update(sanitize(row))
