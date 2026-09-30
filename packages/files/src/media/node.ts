@@ -1,3 +1,10 @@
+/// <reference path="../vite-env.d.ts" />
+// The reference is load-bearing, not decoration: `@carbon/files` exports SOURCE
+// (`./src/*.ts`), so a consumer typechecks this very file inside its own program
+// — where `packages/files/tsconfig.json`'s `include` does not reach and the
+// `*.wasm?inline` declaration would be invisible. @carbon/ee and @carbon/jobs
+// both failed that way. Same fix as packages/viewer/src/raw/rawWorker.ts.
+
 // Node-only: pre-instantiate the jSquash wasm codecs. Their default loaders
 // fetch the .wasm relative to import.meta.url, which Node's fetch refuses for
 // file: URLs — so server-side consumers of the image pipeline (paperless-parts,
