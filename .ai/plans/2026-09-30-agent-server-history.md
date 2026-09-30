@@ -7,28 +7,28 @@ message.
 
 ## Tasks
 
-- [ ] **Chat request carries one message.** `chatRequest` = `{ threadId, trigger, text?, context? }`
+- [x] **Chat request carries one message.** `chatRequest` = `{ threadId, trigger, text?, context? }`
   with length caps. `useAgentThread`'s transport sends the last user message's text, or
   `trigger: "regenerate-message"` and no text for a retry.
-- [ ] **Thread ownership up front.** The chat route reads the thread under `companyId` +
+- [x] **Thread ownership up front.** The chat route reads the thread under `companyId` +
   `userId` and 404s a missing or foreign one. `thread.$threadId` 404s too. The browser
   aborts a send when the thread cannot be created instead of spawning orphan threads.
-- [ ] **History from the database.** `buildModelHistory` (`agent.history.ts`, pure): user and
+- [x] **History from the database.** `buildModelHistory` (`agent.history.ts`, pure): user and
   assistant TEXT only, an unanswered user message dropped unless it is the last one, then
   the char-budget window. Replaces `compactEarlierToolOutputs` and client history.
-- [ ] **One transaction per write.** `saveUserMessage` and `persistAssistantTurn` run in a
+- [x] **One transaction per write.** `saveUserMessage` and `persistAssistantTurn` run in a
   Kysely transaction (`db` passed from the route). Nothing is persisted for a turn that
   errored or produced no parts; an aborted turn keeps its complete parts with
   `finishReason: "aborted"`.
-- [ ] **Assistant ids match rows.** `generateMessageId` mints the `agm…` id the row is
+- [x] **Assistant ids match rows.** `generateMessageId` mints the `agm…` id the row is
   inserted with; feedback posts that `messageId`, not "latest assistant message".
-- [ ] **Stream hygiene.** `abortSignal: request.signal`, `consumeSseStream: consumeStream`,
+- [x] **Stream hygiene.** `abortSignal: request.signal`, `consumeSseStream: consumeStream`,
   a masked `onError` message, titling started in parallel with the answer.
-- [ ] **Retry.** The error banner offers Retry (`regenerate()`); the server answers the
+- [x] **Retry.** The error banner offers Retry (`regenerate()`); the server answers the
   stored unanswered question without saving a new one.
-- [ ] **Stop after choices.** `stopWhen` includes `hasToolCall("present_choice")`.
-- [ ] **Thread switching.** `loadThread` stops an active stream and ignores stale responses.
-- [ ] Tests for every pure piece; typecheck ERP; rules updated.
+- [x] **Stop after choices.** `stopWhen` includes `hasToolCall("present_choice")`.
+- [x] **Thread switching.** `loadThread` stops an active stream and ignores stale responses.
+- [x] Tests for every pure piece; typecheck ERP; rules updated.
 
 ## Verification
 

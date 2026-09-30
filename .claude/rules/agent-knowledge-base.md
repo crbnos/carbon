@@ -57,8 +57,16 @@ later step. `read_doc` returns one section for a `#anchor` url, a short page who
 (≤ 12k chars), and a long page as its intro plus section links. Section anchors are the
 site's own (`headingAnchor`, github-slugger rules incl. `-1` suffixes), pinned by
 `links.test.ts`; the size bound on every page and section read is pinned by
-`agent.kb.test.ts`. `read_doc` and `search_docs` results from EARLIER turns are compacted to
-titles and urls before each request (`compactEarlierToolOutputs`, `agent.history.ts`).
+`agent.kb.test.ts`.
+
+The conversation is server-owned: the browser sends only its new question (or a retry
+trigger) and the thread id, and the chat route checks the thread is the caller's, saves the
+question in a Kysely transaction, and builds the model's history from the stored thread
+(`buildModelHistory`, `agent.history.ts`): user and assistant TEXT only, so earlier tool
+results never ride along, and an unanswered question is dropped unless it is the one being
+answered. Nothing the browser holds reaches the model. The answer is saved in one
+transaction under the id the server minted for it (`generateMessageId`), which is what
+feedback targets; a failed turn saves nothing and Retry answers the stored question.
 
 The model is `agentChatModel` in `packages/utils/src/llm.ts` (`gpt-4.1-mini`). It was plain
 `gpt-4` — an 8k-token window — and a single long page overflowed it
