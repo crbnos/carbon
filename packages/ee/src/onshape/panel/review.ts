@@ -152,6 +152,61 @@ export function editedItem(
 }
 
 /**
+ * Items whose Buy or Make in Carbon, after the review's edits, disagrees with
+ * Onshape's BOM: a Buy item the push writes a BOM into, and a Make item
+ * Onshape lists as one unit, which gets no BOM. Carbon decides Buy or Make
+ * for an item it already has, so the push leaves it and the review says so.
+ */
+export function replenishmentMismatches(
+  plan: AssemblyPlan,
+  edits: Record<string, ItemEdit>,
+  excluded: ReadonlySet<string>
+): string[] {
+  const rows = new Map<
+    string,
+    {
+      current?: { replenishmentSystem: string } | null;
+      proposed: ProposedItem | null;
+    }
+  >([
+    [plan.root.partNumber, plan.root],
+    ...plan.items.map((item) => [item.partNumber, item] as const)
+  ]);
+  const replenishment = (partNumber: string) => {
+    const row = rows.get(partNumber);
+    return (
+      edits[partNumber]?.replenishmentSystem ??
+      row?.current?.replenishmentSystem ??
+      row?.proposed?.replenishmentSystem
+    );
+  };
+  const lines: string[] = [];
+  for (const method of plan.methods) {
+    if (
+      method.status === "missing" ||
+      method.writes.length === 0 ||
+      excluded.has(method.parentPartNumber)
+    ) {
+      continue;
+    }
+    if (replenishment(method.parentPartNumber) === "Buy") {
+      lines.push(
+        `${method.parentPartNumber} is Buy in Carbon, so the BOM written to it isn't used until it's set to Make`
+      );
+    }
+  }
+  for (const item of plan.items) {
+    if (!item.shownAsUnit || excluded.has(item.partNumber)) continue;
+    if (replenishment(item.partNumber) === "Make") {
+      lines.push(
+        `${item.partNumber} is one unit in Onshape (Show Assembly only), so no BOM is written for it, but Carbon makes it`
+      );
+    }
+  }
+  return lines;
+}
+
+/**
  * A mapped value as review text; "—" when nothing will be written. A Yes/No
  * field stores BOOLEAN_TRUE or no key, so the raw "on" never reaches the
  * review text.

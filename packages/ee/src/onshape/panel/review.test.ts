@@ -22,7 +22,8 @@ import {
   editedItem,
   indexFieldErrors,
   normalizeWarnings,
-  patchPartStatuses
+  patchPartStatuses,
+  replenishmentMismatches
 } from "./review";
 import type { PanelPartStatus } from "./status";
 
@@ -727,5 +728,84 @@ describe("normalizeWarnings", () => {
       ])
     ).toEqual(["ASM-001: BOM could not be read", "x"]);
     expect(normalizeWarnings(undefined)).toEqual([]);
+  });
+});
+
+describe("replenishmentMismatches", () => {
+  const current = (replenishmentSystem: "Buy" | "Make" | "Buy and Make") => ({
+    replenishmentSystem,
+    defaultMethodType:
+      replenishmentSystem === "Buy"
+        ? ("Pull from Inventory" as const)
+        : ("Make to Order" as const),
+    itemTrackingType: "Inventory" as const
+  });
+  const reusedRoot = (replenishmentSystem: "Buy" | "Make" | "Buy and Make") =>
+    assemblyPlan({
+      root: {
+        partNumber: "ASM-001",
+        name: "Base",
+        description: null,
+        revision: null,
+        action: "reuse",
+        itemId: "item-asm",
+        proposed: null,
+        current: current(replenishmentSystem)
+      }
+    });
+
+  it("flags a Buy item the push writes a BOM into, until it is set to Make", () => {
+    const plan = reusedRoot("Buy");
+    expect(replenishmentMismatches(plan, {}, new Set())).toEqual([
+      "ASM-001 is Buy in Carbon, so the BOM written to it isn't used until it's set to Make"
+    ]);
+    expect(
+      replenishmentMismatches(
+        plan,
+        { "ASM-001": { replenishmentSystem: "Make" } },
+        new Set()
+      )
+    ).toEqual([]);
+    expect(
+      replenishmentMismatches(reusedRoot("Buy and Make"), {}, new Set())
+    ).toEqual([]);
+  });
+
+  it("flags a Make item Onshape shows as one unit, but not a new one proposed as Buy", () => {
+    const plan = assemblyPlan({
+      items: [
+        {
+          partNumber: "ASM-009",
+          name: "Foot assembly",
+          revision: null,
+          action: "reuse",
+          itemId: "item-foot",
+          proposed: null,
+          current: current("Make"),
+          isAssembly: false,
+          purchased: true,
+          shownAsUnit: true
+        },
+        {
+          partNumber: "ASM-010",
+          name: "Caster assembly",
+          revision: null,
+          action: "create",
+          itemId: null,
+          proposed: proposed({
+            readableId: "ASM-010",
+            replenishmentSystem: "Buy",
+            defaultMethodType: "Pull from Inventory"
+          }),
+          isAssembly: false,
+          purchased: true,
+          shownAsUnit: true
+        }
+      ]
+    });
+    expect(replenishmentMismatches(plan, {}, new Set())).toEqual([
+      "ASM-009 is one unit in Onshape (Show Assembly only), so no BOM is written for it, but Carbon makes it"
+    ]);
+    expect(replenishmentMismatches(plan, {}, new Set(["ASM-009"]))).toEqual([]);
   });
 });

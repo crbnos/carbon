@@ -19,8 +19,16 @@ export type OnshapeBomNode = {
   name: string | null;
   description: string | null;
   quantity: number;
-  /** From the "Purchasing Level" column: true when the row says Purchased. */
+  /**
+   * Bought as a unit: the "Purchasing Level" column says Purchased, or the
+   * sub-assembly's "Subassembly BOM behavior" is Show Assembly only.
+   */
   purchased: boolean;
+  /**
+   * Onshape lists this sub-assembly as one unit ("Show Assembly only"), so the
+   * BOM carries none of its components.
+   */
+  shownAsUnit?: true;
   itemSource: {
     documentId?: string;
     elementId?: string;
@@ -38,6 +46,13 @@ type BomRow = {
   headerIdToValue?: Record<string, unknown>;
   itemSource?: Record<string, unknown>;
 };
+
+/**
+ * Onshape's "Subassembly BOM behavior" for a sub-assembly listed as one line
+ * with no components — the setting Onshape suggests for one bought (or built)
+ * as a unit. The API returns the label as text; compared case-insensitively.
+ */
+const SHOWN_AS_UNIT = "show assembly only";
 
 function cell(value: unknown): string | null {
   if (value == null) return null;
@@ -93,6 +108,8 @@ export function parseBomTree(payload: unknown): {
     const quantityText = get(row, "Quantity");
     const quantity = quantityText ? Number(quantityText) : Number.NaN;
     const source = row.itemSource ?? null;
+    const shownAsUnit =
+      get(row, "Subassembly BOM behavior")?.toLowerCase() === SHOWN_AS_UNIT;
     return {
       index,
       level: index === "" ? 0 : index.split(".").length,
@@ -101,7 +118,8 @@ export function parseBomTree(payload: unknown): {
       name: get(row, "Name"),
       description: get(row, "Description"),
       quantity: Number.isFinite(quantity) && quantity > 0 ? quantity : 1,
-      purchased: get(row, "Purchasing Level") === "Purchased",
+      purchased: get(row, "Purchasing Level") === "Purchased" || shownAsUnit,
+      ...(shownAsUnit ? { shownAsUnit: true as const } : {}),
       itemSource: source
         ? {
             documentId: cell(source.documentId) ?? undefined,
