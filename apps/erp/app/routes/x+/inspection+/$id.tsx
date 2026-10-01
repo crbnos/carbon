@@ -11,16 +11,22 @@ import { msg } from "@lingui/core/macro";
 import type { LoaderFunctionArgs } from "react-router";
 import { data, redirect, useLoaderData } from "react-router";
 import invariant from "tiny-invariant";
-import { getBalloons, getInspectionDocument } from "~/modules/production";
 import {
+  getBalloons,
   getInspection,
+  getInspectionDocument,
+  getInspectionGauges,
   getInspectionMeasurements,
   getInspectionSamplingPlans,
   getInspectionTrackedEntities,
   getIssueTypesList
 } from "~/modules/quality";
-import { reconcileInspectionSamplingPlans } from "~/modules/quality/quality.server";
+import {
+  getRecentInspectionGauges,
+  reconcileInspectionSamplingPlans
+} from "~/modules/quality/quality.server";
 import type {
+  InspectionGauge,
   InspectionMeasurement,
   InspectionRow,
   InspectionSample,
@@ -85,37 +91,43 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   const isReceiptSource = insp.sourceDocument === "Receipt";
   const serviceRole = getCarbonServiceRole();
-  const [features, measurements, lotEntities, document, balloons, receipt] =
-    await Promise.all([
-      getInspectionSamplingPlans(client, id, companyId),
-      getInspectionMeasurements(client, id, companyId),
-      isReceiptSource && insp.sourceDocumentLineId
-        ? getInspectionTrackedEntities(
-            client,
-            insp.sourceDocumentLineId,
-            companyId
-          )
-        : Promise.resolve({ data: null, error: null }),
-      insp.inspectionDocumentId
-        ? getInspectionDocument(
-            serviceRole,
-            insp.inspectionDocumentId,
-            companyId
-          )
-        : Promise.resolve({ data: null, error: null }),
-      insp.inspectionDocumentId
-        ? getBalloons(serviceRole, insp.inspectionDocumentId)
-        : Promise.resolve({ data: null, error: null }),
-      // Four-eyes: the receiver is the receipt's creator (no FK on the generic
-      // source id, so this is a separate lookup).
-      isReceiptSource
-        ? client
-            .from("receipt")
-            .select("createdBy")
-            .eq("id", insp.sourceDocumentId)
-            .maybeSingle()
-        : Promise.resolve({ data: null, error: null })
-    ]);
+  const [
+    features,
+    measurements,
+    gauges,
+    recentGauges,
+    lotEntities,
+    document,
+    balloons,
+    receipt
+  ] = await Promise.all([
+    getInspectionSamplingPlans(client, id, companyId),
+    getInspectionMeasurements(client, id, companyId),
+    getInspectionGauges(client, companyId, id),
+    getRecentInspectionGauges({ inspectionId: id, companyId }),
+    isReceiptSource && insp.sourceDocumentLineId
+      ? getInspectionTrackedEntities(
+          client,
+          insp.sourceDocumentLineId,
+          companyId
+        )
+      : Promise.resolve({ data: null, error: null }),
+    insp.inspectionDocumentId
+      ? getInspectionDocument(serviceRole, insp.inspectionDocumentId, companyId)
+      : Promise.resolve({ data: null, error: null }),
+    insp.inspectionDocumentId
+      ? getBalloons(serviceRole, insp.inspectionDocumentId)
+      : Promise.resolve({ data: null, error: null }),
+    // Four-eyes: the receiver is the receipt's creator (no FK on the generic
+    // source id, so this is a separate lookup).
+    isReceiptSource
+      ? client
+          .from("receipt")
+          .select("createdBy")
+          .eq("id", insp.sourceDocumentId)
+          .maybeSingle()
+      : Promise.resolve({ data: null, error: null })
+  ]);
 
   const doc = document.data as {
     name?: string | null;
@@ -132,12 +144,18 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     samples: insp.inspectionSample ?? [],
     features: (features.data ?? []) as InspectionSamplingPlan[],
     measurements: (measurements.data ?? []) as InspectionMeasurement[],
+    gauges: (gauges.data ?? []) as InspectionGauge[],
+    recentGaugeIds: recentGauges.data ?? [],
     balloons: ((balloons.data ?? []) as any[]).map((b) => ({
       id: b.id as string,
       inspectionFeatureId: b.inspectionFeatureId as string,
       pageNumber: Number(b.pageNumber ?? 1),
       xCoordinate: Number(b.xCoordinate ?? 0),
-      yCoordinate: Number(b.yCoordinate ?? 0)
+      yCoordinate: Number(b.yCoordinate ?? 0),
+      regionX: Number(b.regionX ?? 0),
+      regionY: Number(b.regionY ?? 0),
+      regionWidth: Number(b.regionWidth ?? 0),
+      regionHeight: Number(b.regionHeight ?? 0)
     })),
     documentName: doc?.name ?? null,
     pdfUrl: doc?.content?.pdfUrl ?? null,
@@ -163,6 +181,8 @@ export default function InspectionExecutionRoute() {
       samples={loaderData.samples as InspectionSample[]}
       features={loaderData.features as InspectionSamplingPlan[]}
       measurements={loaderData.measurements as InspectionMeasurement[]}
+      gauges={loaderData.gauges as InspectionGauge[]}
+      recentGaugeIds={loaderData.recentGaugeIds}
       balloons={loaderData.balloons}
       documentName={loaderData.documentName}
       pdfUrl={loaderData.pdfUrl}

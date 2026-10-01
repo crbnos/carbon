@@ -7,6 +7,7 @@ import type { Json } from "@carbon/database";
 import { DatePicker, InputControlled, ValidatedForm } from "@carbon/form";
 import {
   Button,
+  Copy,
   HStack,
   Subheading,
   Tooltip,
@@ -17,7 +18,7 @@ import {
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useCallback, useEffect } from "react";
-import { LuCopy, LuLink } from "react-icons/lu";
+import { LuCopy, LuKeySquare, LuLink } from "react-icons/lu";
 import { useFetcher, useParams } from "react-router";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
@@ -136,6 +137,13 @@ const SalesRFQProperties = () => {
                 <span>Copy link to RFQ</span>
               </TooltipContent>
             </Tooltip>
+            <Copy
+              text={rfqId}
+              label={t`Copy RFQ unique identifier`}
+              icon={<LuKeySquare className="size-3" />}
+              variant="ghost"
+              className="w-auto"
+            />
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button

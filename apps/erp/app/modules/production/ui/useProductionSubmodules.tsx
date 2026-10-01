@@ -4,7 +4,6 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { useLingui } from "@lingui/react/macro";
-import { IoBalloonOutline } from "react-icons/io5";
 import {
   LuChartBarBig,
   LuChartLine,
@@ -95,12 +94,6 @@ export default function useProductionSubmodules() {
           to: path.to.assemblyInstructions,
           icon: <LuStepForward />,
           role: "employee"
-        },
-        {
-          name: t`Inspection Plans`,
-          to: path.to.inspectionDocuments,
-          icon: <IoBalloonOutline />,
-          permission: "quality"
         },
         {
           name: t`Procedures`,

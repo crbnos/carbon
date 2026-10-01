@@ -11,6 +11,8 @@ import type {
   getGauges,
   getGaugeTypes,
   getInspection,
+  getInspectionDocuments,
+  getInspectionGauges,
   getInspectionMeasurements,
   getInspectionSamplingPlans,
   getInspections,
@@ -192,6 +194,10 @@ export type InspectionSamplingPlan = NonNullable<
   Awaited<ReturnType<typeof getInspectionSamplingPlans>>["data"]
 >[number];
 
+export type InspectionGauge = NonNullable<
+  Awaited<ReturnType<typeof getInspectionGauges>>["data"]
+>[number];
+
 export type InspectionMeasurement = NonNullable<
   Awaited<ReturnType<typeof getInspectionMeasurements>>["data"]
 >[number];
@@ -199,3 +205,25 @@ export type InspectionMeasurement = NonNullable<
 export type IssueTypeListItem = NonNullable<
   Awaited<ReturnType<typeof getIssueTypesList>>["data"]
 >[number];
+
+// --- Inspection Documents -----------------------------------------------
+
+export type InspectionDocument = NonNullable<
+  Awaited<ReturnType<typeof getInspectionDocuments>>["data"]
+>[number];
+
+export type BalloonFeature = {
+  id: string;
+  balloonNumber: number;
+  description: string;
+  nominalValue: number | null;
+  tolerancePlus: number | null;
+  toleranceMinus: number | null;
+  unitOfMeasureCode: string | null;
+};
+
+export type InspectionDocumentContent = {
+  pdfUrl: string | null;
+  drawingNumber: string | null;
+  features: BalloonFeature[];
+};

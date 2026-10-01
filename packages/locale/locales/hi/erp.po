@@ -48,6 +48,9 @@ msgstr "\"{taskName}\" पूरा हो गया — इसके सभी 
 msgid "(excluded for this customer)"
 msgstr "(इस ग्राहक के लिए बाहर रखा गया)"
 
+msgid "(Inactive)"
+msgstr "(निष्क्रिय)"
+
 #. placeholder {0}: target.slackDays
 msgid "{0, plural, one {# day of slack} other {# days of slack}}"
 msgstr "{0, plural, one {# दिन का अतिरिक्त समय} other {# दिन का अतिरिक्त समय}}"
@@ -1430,6 +1433,9 @@ msgstr "ऑथेंटिकेटर ऐप जोड़ें"
 msgid "Add Calibration Record"
 msgstr "अंशांकन रिकॉर्ड जोड़ें"
 
+msgid "Add Characteristic"
+msgstr "विशेषता जोड़ें"
+
 msgid "Add Child Storage Unit"
 msgstr "बाल भंडारण इकाई जोड़ें"
 
@@ -1459,9 +1465,6 @@ msgstr "कर्मचारी जोड़ें"
 
 msgid "Add Entry"
 msgstr "प्रविष्टि जोड़ें"
-
-msgid "Add Feature"
-msgstr "फीचर जोड़ें"
 
 msgid "Add from library…"
 msgstr "लाइब्रेरी से जोड़ें…"
@@ -1749,6 +1752,9 @@ msgstr "सभी विभाग"
 msgid "All Documents"
 msgstr "सभी दस्तावेज़"
 
+msgid "All gauges"
+msgstr "सभी गेज"
+
 msgid "All item types"
 msgstr "सभी आइटम प्रकार"
 
@@ -2013,6 +2019,9 @@ msgstr "एक अन्य भंडारण इकाई जिसमें �
 msgid "Another system is connected to Ramp as its accounting system"
 msgstr "एक अन्य सिस्टम Ramp से इसके लेखांकन प्रणाली के रूप में जुड़ा हुआ है"
 
+msgid "Any"
+msgstr "कोई भी"
+
 msgid "Any item group"
 msgstr "कोई भी आइटम समूह"
 
@@ -2092,8 +2101,8 @@ msgstr "सभी पर लागू होता है"
 msgid "Applies to all work centers"
 msgstr "सभी वर्क सेंटर पर लागू होता है"
 
-msgid "Applies to features without their own rule, and to the lot when this plan drives an inspection."
-msgstr "उन सुविधाओं पर लागू होता है जिनके अपने नियम नहीं हैं, और जब यह योजना निरीक्षण चलाती है तो लॉट पर लागू होता है।"
+msgid "Applies to characteristics without their own rule, and to the lot when this plan drives an inspection."
+msgstr "उन विशेषताओं पर लागू होता है जिनके अपने नियम नहीं हैं, और लॉट पर जब यह योजना निरीक्षण संचालित करती है।"
 
 msgid "Apply"
 msgstr "लागू करें"
@@ -3720,6 +3729,15 @@ msgstr "इसे बदलने से पार्ट ID अपडेट ह�
 msgid "Changing type resets this item's draft edits."
 msgstr "प्रकार बदलने से इस आइटम की ड्राफ्ट संपादन रीसेट हो जाती है।"
 
+msgid "Characteristic"
+msgstr "विशेषता"
+
+msgid "Characteristic values suggested from drawing"
+msgstr "ड्राइंग से सुझाई गई विशेषता के मान"
+
+msgid "Characteristics"
+msgstr "विशेषताएं"
+
 msgid "Charges"
 msgstr "शुल्क"
 
@@ -3819,6 +3837,9 @@ msgstr "नियत तिथि साफ करें"
 
 msgid "Clear Filters"
 msgstr "फ़िल्टर साफ़ करें"
+
+msgid "Clear gauge"
+msgstr "गेज साफ़ करें"
 
 msgid "Clear search"
 msgstr "खोज साफ़ करें"
@@ -3921,11 +3942,11 @@ msgstr "{0} को संक्षिप्त करें"
 msgid "Collapse all"
 msgstr "सभी को संक्षिप्त करें"
 
+msgid "Collapse characteristics table"
+msgstr "विशेषताओं की तालिका को संपीड़ित करें"
+
 msgid "Collapse Costs"
 msgstr "लागत को संक्षिप्त करें"
-
-msgid "Collapse features table"
-msgstr "फीचर्स टेबल को संक्षिप्त करें"
 
 msgid "Collapse Labor"
 msgstr "श्रम को संक्षिप्त करें"
@@ -4430,6 +4451,9 @@ msgstr "क्लिपबोर्ड में लिंक कॉपी क�
 msgid "Copied setup prompt to your clipboard"
 msgstr "सेटअप प्रॉम्प्ट आपके क्लिपबोर्ड में कॉपी किया गया"
 
+msgid "Copied!"
+msgstr "कॉपी हो गया!"
+
 msgid "Copies a setup prompt for your AI coding tool"
 msgstr "आपकी AI कोडिंग टूल के लिए एक सेटअप प्रॉम्प्ट कॉपी करता है"
 
@@ -4445,11 +4469,20 @@ msgstr "API कुंजी की नकल करें"
 msgid "Copy batch number"
 msgstr "बैच नंबर कॉपी करें"
 
+msgid "Copy change notice unique identifier"
+msgstr "परिवर्तन सूचना की विशिष्ट पहचान नकल करें"
+
 msgid "Copy company unique identifier"
 msgstr "कंपनी के अद्वितीय पहचानकर्ता की प्रतिलिपि बनाएं"
 
 msgid "Copy consumable number"
 msgstr "उपभोग्य सामग्री संख्या की नकल करें"
+
+msgid "Copy consumable unique identifier"
+msgstr "उपभोग्य सामग्री की विशिष्ट पहचान नकल करें"
+
+msgid "Copy customer unique identifier"
+msgstr "ग्राहक की विशिष्ट पहचान नकल करें"
 
 msgid "Copy dispatch ID"
 msgstr "रखरखाव कार्य ID की नकल करें"
@@ -4474,6 +4507,9 @@ msgstr "समस्या की अद्वितीय पहचान क�
 
 msgid "Copy Job number"
 msgstr "जॉब नंबर कॉपी करें"
+
+msgid "Copy job unique identifier"
+msgstr "जॉब की विशिष्ट पहचान नकल करें"
 
 msgid "Copy link"
 msgstr "लिंक कॉपी करें"
@@ -4553,6 +4589,15 @@ msgstr "कार्यविधि का नाम नकल करें"
 msgid "Copy procedure unique identifier"
 msgstr "कार्यविधि की अद्वितीय पहचान की नकल करें"
 
+msgid "Copy purchase invoice unique identifier"
+msgstr "क्रय चालान की विशिष्ट पहचान नकल करें"
+
+msgid "Copy purchase order unique identifier"
+msgstr "क्रय आदेश की विशिष्ट पहचान नकल करें"
+
+msgid "Copy purchase return order unique identifier"
+msgstr "क्रय रिटर्न आदेश की विशिष्ट पहचान नकल करें"
+
 msgid "Copy Quality Document"
 msgstr "गुणवत्ता दस्तावेज़ कॉपी करें"
 
@@ -4562,17 +4607,38 @@ msgstr "उद्धरण की प्रतिलिपि बनाएँ"
 msgid "Copy Quote number"
 msgstr "उद्धरण संख्या कॉपी करें"
 
+msgid "Copy quote unique identifier"
+msgstr "कोटेशन की विशिष्ट पहचान नकल करें"
+
 msgid "Copy return number"
 msgstr "रिटर्न नंबर कॉपी करें"
 
+msgid "Copy RFQ unique identifier"
+msgstr "RFQ की विशिष्ट पहचान नकल करें"
+
 msgid "Copy RMA number"
 msgstr "RMA नंबर कॉपी करें"
+
+msgid "Copy sales invoice unique identifier"
+msgstr "विक्रय चालान की विशिष्ट पहचान नकल करें"
+
+msgid "Copy sales order unique identifier"
+msgstr "विक्रय आदेश की विशिष्ट पहचान नकल करें"
+
+msgid "Copy sales return order unique identifier"
+msgstr "विक्रय रिटर्न आदेश की विशिष्ट पहचान नकल करें"
 
 msgid "Copy service number"
 msgstr "सेवा संख्या कॉपी करें"
 
 msgid "Copy service unique identifier"
 msgstr "सेवा अनन्य पहचानकर्ता कॉपी करें"
+
+msgid "Copy supplier quote unique identifier"
+msgstr "आपूर्तिकर्ता कोटेशन की विशिष्ट पहचान नकल करें"
+
+msgid "Copy supplier unique identifier"
+msgstr "आपूर्तिकर्ता की विशिष्ट पहचान नकल करें"
 
 msgid "Copy this item's pricing to another scope."
 msgstr "इस आइटम की मूल्य निर्धारण को दूसरे स्कोप में कॉपी करें।"
@@ -4582,6 +4648,9 @@ msgstr "इस लिंक को कॉपी करें ताकि आप
 
 msgid "Copy this link to share the quote with a supplier"
 msgstr "कोटेशन को आपूर्तिकर्ता के साथ साझा करने के लिए इस लिंक की नकल करें"
+
+msgid "Copy to clipboard"
+msgstr "क्लिपबोर्ड पर कॉपी करें"
 
 msgid "Copy tool number"
 msgstr "टूल नंबर कॉपी करें"
@@ -6119,9 +6188,6 @@ msgstr "गति योजनाकार द्वारा पहचाना
 msgid "Developer"
 msgstr "डेवलपर"
 
-msgid "Diagram saved"
-msgstr "आरेख सहेजा गया"
-
 msgid "Differs from the selection — allowed, but confirm they nest together"
 msgstr "चयन से अलग — अनुमत, लेकिन पुष्टि करें कि वे एक साथ नेस्ट करते हैं"
 
@@ -6400,11 +6466,11 @@ msgstr "ड्राइंग पर रखने के लिए ड्रै�
 msgid "Drag to reorder"
 msgstr "पुनः व्यवस्थित करने के लिए खींचें"
 
-msgid "Drag to resize diagram and features"
-msgstr "आरेख और सुविधाओं को पुनः आकार देने के लिए खींचें"
+msgid "Drag to resize diagram and characteristics"
+msgstr "आरेख और विशेषताओं को आकार बदलने के लिए खींचें"
 
-msgid "Drag to resize drawing and features"
-msgstr "ड्राइंग और विशेषताओं को आकार बदलने के लिए खींचें"
+msgid "Drag to resize drawing and characteristics"
+msgstr "चित्र और विशेषताओं को आकार बदलने के लिए खींचें"
 
 msgid "Drag to zoom"
 msgstr "ज़ूम करने के लिए ड्रैग करें"
@@ -6415,8 +6481,8 @@ msgstr "आहरण"
 msgid "Drawing Number"
 msgstr "ड्राइंग नंबर"
 
-msgid "Drawing replaced. Balloon placements were removed; feature rows are unchanged."
-msgstr "ड्राइंग बदल दी गई। बैलून प्लेसमेंट हटा दिए गए; फीचर पंक्तियां अपरिवर्तित हैं।"
+msgid "Drawing replaced. Balloon placements were removed; characteristic rows are unchanged."
+msgstr "चित्र को प्रतिस्थापित किया गया। बैलून प्लेसमेंट हटा दिए गए; विशेषता पंक्तियां अपरिवर्तित रहीं।"
 
 msgid "Drop Ship"
 msgstr "ड्रॉप शिप"
@@ -7452,11 +7518,11 @@ msgstr "विस्तार करें {0}"
 msgid "Expand all"
 msgstr "सभी को विस्तृत करें"
 
+msgid "Expand characteristics table"
+msgstr "विशेषताओं की तालिका को विस्तारित करें"
+
 msgid "Expand Costs"
 msgstr "लागत विस्तृत करें"
-
-msgid "Expand features table"
-msgstr "फीचर्स टेबल को विस्तृत करें"
 
 msgid "Expand Labor"
 msgstr "श्रम विस्तृत करें"
@@ -7641,8 +7707,8 @@ msgstr "अनुत्तीर्ण"
 msgid "Failed"
 msgstr "विफल"
 
-msgid "Failed features"
-msgstr "विफल विशेषताएँ"
+msgid "Failed characteristics"
+msgstr "विफल विशेषताएं"
 
 #. placeholder {0}: rows.length
 msgid "Failed to add line — {addedCount} of {0} lines were added"
@@ -7896,6 +7962,9 @@ msgstr "ट्रैक किए गए इकाइयों को लोड 
 msgid "Failed to move account: {0}"
 msgstr "खाता स्थानांतरित करने में विफल: {0}"
 
+msgid "Failed to record gauge"
+msgstr "गेज रिकॉर्ड करने में विफल"
+
 msgid "Failed to regenerate schedule"
 msgstr "शेड्यूल पुनः उत्पन्न करने में विफल"
 
@@ -7929,8 +7998,8 @@ msgstr "CSV कॉलम डेटा प्राप्त करने मे�
 msgid "Failed to save configuration rule"
 msgstr "कॉन्फ़िगरेशन नियम सहेजने में विफल"
 
-msgid "Failed to save diagram"
-msgstr "आरेख सहेजने में विफल"
+msgid "Failed to save inspection plan"
+msgstr "निरीक्षण योजना को सहेजने में विफल"
 
 msgid "Failed to save measurement"
 msgstr "माप को सहेजने में विफल"
@@ -8030,15 +8099,6 @@ msgstr "फैक्स"
 
 msgid "Fax Number"
 msgstr "फैक्स नंबर"
-
-msgid "Feature"
-msgstr "विशेषता"
-
-msgid "Feature values suggested from drawing"
-msgstr "ड्राइंग से सुझाए गए फीचर मान"
-
-msgid "Features"
-msgstr "विशेषताएं"
 
 msgid "Fees"
 msgstr "शुल्क"
@@ -8344,6 +8404,9 @@ msgstr "गेज"
 
 msgid "Gauge Calibration Notifications"
 msgstr "गेज अंशांकन सूचनाएँ"
+
+msgid "Gauge for characteristic {characteristicLabel}: {currentGauge}"
+msgstr "विशेषता {characteristicLabel} के लिए गेज: {currentGauge}"
 
 msgid "Gauge ID"
 msgstr "गेज आईडी"
@@ -11681,6 +11744,9 @@ msgstr "इस नौकरी के लिए कोई पूर्वान�
 msgid "No Gauge Selected"
 msgstr "कोई गेज चयनित नहीं"
 
+msgid "No gauges found."
+msgstr "कोई गेज नहीं मिले।"
+
 msgid "No grouped notifications"
 msgstr "कोई समूहीकृत सूचनाएं नहीं"
 
@@ -12750,6 +12816,9 @@ msgstr "अन्यथा"
 
 msgid "Out"
 msgstr "बाहर"
+
+msgid "Out of calibration"
+msgstr "अंशांकन से बाहर"
 
 msgid "Outbound"
 msgstr "निर्गामी"
@@ -14427,6 +14496,9 @@ msgstr "हाल के भुगतान"
 msgid "Recently Created"
 msgstr "हाल ही में बनाया गया"
 
+msgid "Recently used"
+msgstr "हाल ही में उपयोग किया गया"
+
 msgid "Recertify Every (Days)"
 msgstr "हर (दिन) को पुनः प्रमाणित करें"
 
@@ -14804,8 +14876,8 @@ msgstr "इस कंपनी के डेटा को डेमो डेट
 msgid "Replacement Order"
 msgstr "प्रतिस्थापन आदेश"
 
-msgid "Replacing the PDF removes all balloon placements on this document. Feature rows and their values stay; you can place balloons again on the new drawing."
-msgstr "इस दस्तावेज़ पर PDF को बदलने से सभी बैलून प्लेसमेंट हटा दिए जाते हैं। सुविधा पंक्तियां और उनके मान रहते हैं; आप नई ड्राइंग पर फिर से बैलून रख सकते हैं।"
+msgid "Replacing the PDF removes all balloon placements on this document. Characteristic rows and their values stay; you can place balloons again on the new drawing."
+msgstr "PDF को बदलने से इस दस्तावेज़ पर सभी बैलून प्लेसमेंट हटा दिए जाते हैं। विशेषता पंक्तियां और उनके मान रहते हैं; आप नए चित्र पर फिर से बैलून रख सकते हैं।"
 
 msgid "Replenishment"
 msgstr "पुनःपूर्ति"
@@ -15553,8 +15625,8 @@ msgstr "नमूना आकार"
 msgid "Sampling"
 msgstr "नमूनाकरण"
 
-msgid "Sampling — Feature {featureLabel}"
-msgstr "नमूनाकरण — सुविधा {featureLabel}"
+msgid "Sampling — Characteristic {featureLabel}"
+msgstr "नमूनाकरण — विशेषता {featureLabel}"
 
 msgid "Sampling Standard"
 msgstr "नमूना मानक"
@@ -15755,6 +15827,9 @@ msgstr "स्क्रैप किया गया"
 msgid "Search"
 msgstr "खोजें"
 
+msgid "Search {gaugeTypeName}..."
+msgstr "{gaugeTypeName} खोजें..."
+
 msgid "Search accounts"
 msgstr "खातों को खोजें"
 
@@ -15799,6 +15874,9 @@ msgstr "फ़ील्ड खोजें..."
 
 msgid "Search for existing or create a new one"
 msgstr "मौजूदा को खोजें या नया बनाएं"
+
+msgid "Search gauges..."
+msgstr "गेज खोजें..."
 
 msgid "Search items or bins"
 msgstr "आइटम या बिन खोजें"
@@ -15995,6 +16073,9 @@ msgstr "कर्मचारी प्रकार चुनें"
 
 msgid "Select field"
 msgstr "फ़ील्ड चुनें"
+
+msgid "Select gauge"
+msgstr "गेज चुनें"
 
 msgid "Select Gauge"
 msgstr "गेज चुनें"
@@ -18116,8 +18197,8 @@ msgstr "लॉट को उत्तीर्ण के रूप में च
 msgid "The lot will still be rejected, but an NCR cannot be created until at least one Issue Type is configured."
 msgstr "लॉट अभी भी अस्वीकृत कर दिया जाएगा, लेकिन कम से कम एक Issue Type कॉन्फ़िगर होने तक NCR नहीं बनाया जा सकता।"
 
-msgid "The lot's per-feature sampling plan will be re-resolved from the selected document."
-msgstr "चयनित दस्तावेज़ से लॉट की प्रति-विशेषता नमूनाकरण योजना को पुनः निर्धारित किया जाएगा।"
+msgid "The lot's per-characteristic sampling plan will be re-resolved from the selected document."
+msgstr "लॉट की प्रति-विशेषता नमूनाकरण योजना को चयनित दस्तावेज़ से पुनः हल किया जाएगा।"
 
 msgid "The lowest amount this supplier will charge for this process, regardless of quantity; jobs below the breakeven volume still cost at least this much."
 msgstr "यह न्यूनतम राशि जो यह आपूर्तिकर्ता इस प्रक्रिया के लिए चार्ज करेगा, मात्रा की परवाह किए बिना; ब्रेकइवन वॉल्यूम के नीचे जॉब की लागत कम से कम यह राशि ही होगी।"
@@ -19482,6 +19563,9 @@ msgstr "अज्ञात"
 msgid "unknown error"
 msgstr "अज्ञात त्रुटि"
 
+msgid "Unknown gauge"
+msgstr "अज्ञात गेज"
+
 msgid "unknown location"
 msgstr "अज्ञात स्थान"
 
@@ -20053,6 +20137,9 @@ msgstr "नोट्स देखें"
 
 msgid "View on schedule board"
 msgstr "शेड्यूल बोर्ड पर देखें"
+
+msgid "View only — changes are not saved"
+msgstr "केवल देखें — परिवर्तन सहेजे नहीं जाते"
 
 msgid "View Open"
 msgstr "खुला देखें"
@@ -20974,6 +21061,9 @@ msgstr "आपका निमंत्रण अमान्य है या �
 
 msgid "Your job here: check a real sample of each row, then mark it validated. Foundation data loads first, then master records, then open transactions at cutover."
 msgstr "आपका काम यहाँ है: प्रत्येक पंक्ति का एक वास्तविक नमूना जांचें, फिर इसे सत्यापित के रूप में चिह्नित करें। फाउंडेशन डेटा पहले लोड होता है, फिर मास्टर रिकॉर्ड, फिर कटओवर पर खुले लेनदेन।"
+
+msgid "Your latest changes could not be saved. Are you sure you want to leave this page?"
+msgstr "आपके नवीनतम परिवर्तन सहेजे नहीं जा सके। क्या आप निश्चित हैं कि आप इस पृष्ठ को छोड़ना चाहते हैं?"
 
 msgid "Your legal name, addresses, branding, and document defaults"
 msgstr "आपका कानूनी नाम, पते, ब्रांडिंग, और दस्तावेज़ डिफ़ॉल्ट"

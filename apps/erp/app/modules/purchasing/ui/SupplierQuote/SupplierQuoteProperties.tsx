@@ -7,6 +7,7 @@ import type { Json } from "@carbon/database";
 import { DatePicker, InputControlled, ValidatedForm } from "@carbon/form";
 import {
   Button,
+  Copy,
   HStack,
   IconButton,
   Subheading,
@@ -18,7 +19,13 @@ import {
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useCallback, useEffect } from "react";
-import { LuCopy, LuInfo, LuLink, LuRefreshCcw } from "react-icons/lu";
+import {
+  LuCopy,
+  LuInfo,
+  LuKeySquare,
+  LuLink,
+  LuRefreshCcw
+} from "react-icons/lu";
 import { useFetcher, useParams } from "react-router";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
@@ -141,6 +148,13 @@ const SupplierQuoteProperties = () => {
                 <span>Copy link to Quote</span>
               </TooltipContent>
             </Tooltip>
+            <Copy
+              text={id}
+              label={t`Copy supplier quote unique identifier`}
+              icon={<LuKeySquare className="size-3" />}
+              variant="ghost"
+              className="w-auto"
+            />
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button

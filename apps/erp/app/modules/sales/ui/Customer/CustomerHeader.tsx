@@ -13,6 +13,7 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
+  Copy,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuIcon,
@@ -27,7 +28,7 @@ import {
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useCallback } from "react";
-import { LuEllipsisVertical, LuTrash } from "react-icons/lu";
+import { LuEllipsisVertical, LuKeySquare, LuTrash } from "react-icons/lu";
 import { useFetcher, useParams } from "react-router";
 import { z } from "zod";
 import { EmployeeAvatar } from "~/components";
@@ -125,6 +126,11 @@ const CustomerHeader = () => {
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
+                <Copy
+                  text={customerId}
+                  label={t`Copy customer unique identifier`}
+                  icon={<LuKeySquare />}
+                />
               </CardTitle>
             </CardHeader>
           </HStack>

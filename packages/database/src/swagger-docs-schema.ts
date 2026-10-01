@@ -54103,6 +54103,9 @@ export default {
             $ref: "#/parameters/rowFilter.inspectionFeature.samplingSeverity"
           },
           {
+            $ref: "#/parameters/rowFilter.inspectionFeature.gaugeTypeId"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -54225,6 +54228,9 @@ export default {
             $ref: "#/parameters/rowFilter.inspectionFeature.samplingSeverity"
           },
           {
+            $ref: "#/parameters/rowFilter.inspectionFeature.gaugeTypeId"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -54299,6 +54305,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.inspectionFeature.samplingSeverity"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionFeature.gaugeTypeId"
           },
           {
             $ref: "#/parameters/body.inspectionFeature"
@@ -78103,6 +78112,12 @@ export default {
             $ref: "#/parameters/rowFilter.inspectionSamplingPlan.updatedAt"
           },
           {
+            $ref: "#/parameters/rowFilter.inspectionSamplingPlan.gaugeId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionSamplingPlan.gaugeRecordedAt"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -78198,6 +78213,12 @@ export default {
             $ref: "#/parameters/rowFilter.inspectionSamplingPlan.updatedAt"
           },
           {
+            $ref: "#/parameters/rowFilter.inspectionSamplingPlan.gaugeId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionSamplingPlan.gaugeRecordedAt"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -78245,6 +78266,12 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.inspectionSamplingPlan.updatedAt"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionSamplingPlan.gaugeId"
+          },
+          {
+            $ref: "#/parameters/rowFilter.inspectionSamplingPlan.gaugeRecordedAt"
           },
           {
             $ref: "#/parameters/body.inspectionSamplingPlan"
@@ -132410,6 +132437,12 @@ export default {
           enum: ["Normal", "Tightened", "Reduced"],
           format: 'public."inspectionSeverity"',
           type: "string"
+        },
+        gaugeTypeId: {
+          description:
+            "Note:\nThis is a Foreign Key to `gaugeType.id`.<fk table='gaugeType' column='id'/>",
+          format: "text",
+          type: "string"
         }
       },
       type: "object"
@@ -143648,6 +143681,16 @@ export default {
           type: "string"
         },
         updatedAt: {
+          format: "timestamp with time zone",
+          type: "string"
+        },
+        gaugeId: {
+          description:
+            "Note:\nThis is a Foreign Key to `gauge.id`.<fk table='gauge' column='id'/>",
+          format: "text",
+          type: "string"
+        },
+        gaugeRecordedAt: {
           format: "timestamp with time zone",
           type: "string"
         }
@@ -180240,6 +180283,12 @@ export default {
       in: "query",
       type: "string"
     },
+    "rowFilter.inspectionFeature.gaugeTypeId": {
+      name: "gaugeTypeId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
     "body.itarCertification": {
       name: "itarCertification",
       description: "itarCertification",
@@ -192701,6 +192750,18 @@ export default {
     },
     "rowFilter.inspectionSamplingPlan.updatedAt": {
       name: "updatedAt",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.inspectionSamplingPlan.gaugeId": {
+      name: "gaugeId",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.inspectionSamplingPlan.gaugeRecordedAt": {
+      name: "gaugeRecordedAt",
       required: false,
       in: "query",
       type: "string"

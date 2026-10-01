@@ -6,6 +6,7 @@
 import { useCarbon } from "@carbon/auth";
 import {
   Button,
+  Combobox,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -35,6 +36,12 @@ import "react-pdf/dist/Page/AnnotationLayer.css";
 import "react-pdf/dist/Page/TextLayer.css";
 import type { Database } from "@carbon/database";
 import { storage } from "@carbon/files";
+import {
+  BALLOON_CALLOUT_STROKE,
+  BALLOON_H_NORM,
+  BALLOON_W_NORM,
+  clippedBalloonToAnchorLine
+} from "@carbon/utils";
 import type { ColumnDef } from "@tanstack/react-table";
 import {
   LuChevronDown,
@@ -49,13 +56,12 @@ import {
   LuMinus,
   LuPlus,
   LuRectangleHorizontal,
-  LuSave,
   LuScan,
   LuSlidersHorizontal,
   LuTrash2,
   LuUpload
 } from "react-icons/lu";
-import { useFetcher, useNavigate } from "react-router";
+import { useBlocker, useFetcher, useNavigate } from "react-router";
 import type { EditableTableCellComponentProps } from "~/components/Editable";
 import { EditableList, EditableText } from "~/components/Editable";
 import Grid from "~/components/Grid";
@@ -63,14 +69,23 @@ import { ProcedureStepTypeIcon } from "~/components/Icons";
 import { ConfirmDelete } from "~/components/Modals";
 import { usePermissions, useUser } from "~/hooks";
 import { getLinkToItemDetails } from "~/modules/items/ui/Item/ItemForm";
-import type { BalloonRegionAnalysis } from "~/modules/production/inspectionBalloonAnalyze";
-import type { InspectionDocumentContent } from "~/modules/production/types";
+import type { BalloonRegionAnalysis } from "~/modules/quality/quality.models";
 import type { SamplingStandard } from "~/modules/quality/samplingStandards";
+import type { InspectionDocumentContent } from "~/modules/quality/types";
 import { procedureStepType } from "~/modules/shared/shared.models";
 import { useItems } from "~/stores/items";
 import { path } from "~/utils/path";
-import { cropInspectionAnchorToPngBlob } from "./cropInspectionAnchorToPng";
-import { buildInspectionDocumentPdfWithOverlaysBytes } from "./exportInspectionDocumentPdfWithOverlays";
+import {
+  AUTOSAVE_DELAY_MS,
+  hasUnsavedRows,
+  mergeSaveResponse,
+  newBalloonId,
+  newFeatureId
+} from "./autosave";
+import {
+  buildInspectionDocumentPdfWithOverlaysBytes,
+  cropInspectionAnchorToPngBlob
+} from "./drawingRaster";
 import type { SamplingRule } from "./SamplingRuleModal";
 import SamplingRuleModal, { EMPTY_SAMPLING_RULE } from "./SamplingRuleModal";
 
@@ -131,6 +146,7 @@ type InspectionDocumentEditorProps = {
   features: Array<Record<string, unknown>>;
   balloons: Array<Record<string, unknown>>;
   unitOfMeasures: Array<{ code: string; name: string }>;
+  gaugeTypes: Array<{ id: string; name: string }>;
   // The document's default sampling rule (fallback for features without a
   // rule) and the company's sampling standard for previews.
   sampling: SamplingRule | null;
@@ -267,8 +283,6 @@ function cursorForSelectorResizeHandle(
   }
 }
 
-/** Callout / anchor stroke — matches reference (orange border, hollow fill). */
-const CALLOUT_STROKE = "#f97316";
 const CALLOUT_TEXT = "#171717";
 
 /**
@@ -280,72 +294,6 @@ function konvaContentFromStageRef(stageRef: {
 }): HTMLElement | null {
   const st = stageRef.current as { content?: HTMLElement } | null | undefined;
   return st?.content ?? null;
-}
-
-/** Liang–Barsky: clip segment (x0,y0)→(x1,y1) to axis-aligned rect; returns [0,1] params or null. */
-function liangBarskySegmentRect(
-  x0: number,
-  y0: number,
-  x1: number,
-  y1: number,
-  minX: number,
-  minY: number,
-  maxX: number,
-  maxY: number
-): { u0: number; u1: number } | null {
-  const dx = x1 - x0;
-  const dy = y1 - y0;
-  let u0 = 0;
-  let u1 = 1;
-  const p = [-dx, dx, -dy, dy];
-  const q = [x0 - minX, maxX - x0, y0 - minY, maxY - y0];
-  for (let i = 0; i < 4; i += 1) {
-    if (Math.abs(p[i]) < 1e-12) {
-      if (q[i] < 0) return null;
-    } else {
-      const r = q[i] / p[i];
-      if (p[i] < 0) {
-        u0 = Math.max(u0, r);
-      } else {
-        u1 = Math.min(u1, r);
-      }
-      if (u0 > u1) return null;
-    }
-  }
-  return { u0, u1 };
-}
-
-/**
- * Visible connector from balloon edge → toward anchor, stopping before the anchor rect interior.
- * u is linear param from B (0) to A (1); balloon occupies u ∈ [0, r/L).
- */
-function clippedBalloonToAnchorLine(
-  bx: number,
-  by: number,
-  radiusPx: number,
-  ax: number,
-  ay: number,
-  rect: { x: number; y: number; w: number; h: number }
-): [number, number, number, number] | null {
-  const L = Math.hypot(ax - bx, ay - by);
-  if (L < 1e-6) return null;
-  const epsU = Math.max(1e-4, 2 / L);
-  const uBalloonExit = Math.min(1 - epsU, radiusPx / L + epsU);
-  const { x, y, w, h } = rect;
-  const hit = liangBarskySegmentRect(bx, by, ax, ay, x, y, x + w, y + h);
-  let uEnd = 1 - epsU;
-  if (hit) {
-    const uEnter = Math.max(0, Math.min(1, hit.u0));
-    if (uEnter > uBalloonExit) {
-      uEnd = Math.min(uEnd, uEnter - epsU);
-    }
-  }
-  if (uEnd <= uBalloonExit + 1e-4) return null;
-  const x0 = bx + (ax - bx) * uBalloonExit;
-  const y0 = by + (ay - by) * uBalloonExit;
-  const x1 = bx + (ax - bx) * uEnd;
-  const y1 = by + (ay - by) * uEnd;
-  return [x0, y0, x1, y1];
 }
 
 type SelectorRect = {
@@ -383,6 +331,8 @@ type FeatureRow = {
   samplingAql: number | null;
   samplingInspectionLevel: SamplingRule["samplingInspectionLevel"];
   samplingSeverity: SamplingRule["samplingSeverity"];
+  /** Optional gauge type the feature must be measured with. */
+  gaugeTypeId: string | null;
   featureDirty?: boolean;
   geometryDirty?: boolean;
 };
@@ -442,8 +392,32 @@ const ConditionalMeasurementList =
     return EditableList(baseMutation, options)(props);
   };
 
-const BALLOON_W_NORM = 0.04;
-const BALLOON_H_NORM = 0.04;
+// Optional gauge type: a clearable list (cleared = any gauge may be used).
+const EditableGaugeType =
+  (
+    baseMutation: FeatureMutationFn,
+    options: { label: string; value: string }[]
+  ) =>
+  ({
+    value,
+    row,
+    accessorKey,
+    onUpdate
+  }: EditableTableCellComponentProps<FeatureRow>) => (
+    <Combobox
+      autoFocus
+      isClearable
+      className="rounded-none"
+      size="sm"
+      value={(value as string | null) ?? undefined}
+      options={options}
+      onChange={(newValue) => {
+        onUpdate({ [accessorKey]: newValue || null });
+        baseMutation(accessorKey, newValue, row);
+      }}
+    />
+  );
+
 const BALLOON_OFFSET_NORM = 0.02;
 const BALLOON_W_PCT = BALLOON_W_NORM * 100;
 const BALLOON_H_PCT = BALLOON_H_NORM * 100;
@@ -457,13 +431,18 @@ function nextBalloonLabel(rows: FeatureRow[]): string {
   return String(max + 1);
 }
 
-function isTempFeatureId(featureId: string) {
-  return featureId.startsWith("temp-ftr-");
-}
-
-function isTempBalloonId(balloonId: string | null) {
-  return balloonId != null && balloonId.startsWith("temp-bln-");
-}
+/** What a save sent, so its response can tell what changed since. */
+type SaveSnapshot = {
+  featureRows: FeatureRow[];
+  anchorRects: SelectorRect[];
+  docSampling: SamplingRule;
+  pdfUrl: string;
+  sentPdfMetrics: boolean;
+  /** Characteristic and balloon ids this save creates. */
+  createdIds: string[];
+  featureDeleteIds: string[];
+  balloonDeleteIds: string[];
+};
 
 function stripBalloonGeometryFromFeatureRows(rows: FeatureRow[]): FeatureRow[] {
   return rows.map((r) =>
@@ -562,7 +541,7 @@ function mapFeatureRowFromRecords(
       ? String(feature.description)
       : "";
   const label = String(feature.label ?? "");
-  const featureName = desc || `Feature ${label}`;
+  const featureName = desc || `Characteristic ${label}`;
   const balloonId =
     balloon != null
       ? String(balloon.id)
@@ -600,9 +579,31 @@ function mapFeatureRowFromRecords(
       null,
     samplingSeverity:
       (feature.samplingSeverity as SamplingRule["samplingSeverity"]) ?? null,
+    gaugeTypeId: (feature.gaugeTypeId as string | null) ?? null,
     featureDirty: false,
     geometryDirty: false
   };
+}
+
+// Features saved together share one createdAt (the save RPC runs in a single
+// transaction), so createdAt alone leaves their order to the heap, and an
+// UPDATE moves the edited row to the end. Break the tie by balloon label, the
+// order the inspection grid shows them in. Rows are sorted on load only; a
+// save response keeps the editor's order (mergeSaveResponse), so a row never
+// moves under the cursor.
+function compareFeatureRecords(
+  a: Record<string, unknown>,
+  b: Record<string, unknown>
+) {
+  const aCreated = String(a.createdAt ?? "");
+  const bCreated = String(b.createdAt ?? "");
+  return (
+    (aCreated < bCreated ? -1 : aCreated > bCreated ? 1 : 0) ||
+    String(a.label ?? "").localeCompare(String(b.label ?? ""), undefined, {
+      numeric: true
+    }) ||
+    String(a.id).localeCompare(String(b.id))
+  );
 }
 
 function buildFeatureRowsFromLoader(
@@ -612,14 +613,16 @@ function buildFeatureRowsFromLoader(
   const balloonByFeatureId = new Map(
     balloons.map((b) => [String(b.inspectionFeatureId), b])
   );
-  return features.map((f) =>
-    mapFeatureRowFromRecords(
-      f,
-      f.balloonId != null
-        ? balloons.find((b) => String(b.id) === String(f.balloonId))
-        : balloonByFeatureId.get(String(f.id))
-    )
-  );
+  return [...features]
+    .sort(compareFeatureRecords)
+    .map((f) =>
+      mapFeatureRowFromRecords(
+        f,
+        f.balloonId != null
+          ? balloons.find((b) => String(b.id) === String(f.balloonId))
+          : balloonByFeatureId.get(String(f.id))
+      )
+    );
 }
 
 export default function InspectionDocumentEditor({
@@ -630,6 +633,7 @@ export default function InspectionDocumentEditor({
   features: initialFeatures,
   balloons,
   unitOfMeasures,
+  gaugeTypes,
   sampling,
   samplingStandard
 }: InspectionDocumentEditorProps) {
@@ -670,7 +674,7 @@ export default function InspectionDocumentEditor({
   const companyId = user.company.id;
 
   const [pdfUrl, setPdfUrl] = useState<string>(content?.pdfUrl ?? "");
-  // The document's default sampling rule; persisted with Save alongside the
+  // The document's default sampling rule; autosaved alongside the
   // feature rows. "document" | featureId targets the sampling modal.
   const [docSampling, setDocSampling] = useState<SamplingRule>(
     sampling ?? EMPTY_SAMPLING_RULE
@@ -748,14 +752,42 @@ export default function InspectionDocumentEditor({
     null
   );
   const fileInputRef = useRef<HTMLInputElement>(null);
-  /** Only the explicit Save button should show "Diagram saved" — not auto-persist after anchor draw. */
-  const manualSaveToastRef = useRef(false);
   const pdfReplaceToastRef = useRef(false);
-  const pdfReplacePendingMetricsRef = useRef(false);
-  /** Persisted feature ids to hard-delete on next Save. */
+  /** A replaced drawing's page metrics still need saving once it renders. */
+  const [pdfMetricsDirty, setPdfMetricsDirty] = useState(false);
+  /** Persisted feature ids to hard-delete on the next save. */
   const pendingFeatureDeleteIdsRef = useRef(new Set<string>());
-  /** Persisted balloon ids to hard-delete on next Save (unballoon). */
+  /** Persisted balloon ids to hard-delete on the next save (unballoon). */
   const pendingBalloonDeleteIdsRef = useRef(new Set<string>());
+  /** The save in flight; null when none is. */
+  const inFlightSaveRef = useRef<SaveSnapshot | null>(null);
+  /** The save response last merged — the merge effect also runs on edits. */
+  const handledSaveDataRef = useRef<unknown>(null);
+  /** The last autosave that failed — not retried until something changes. */
+  const failedSaveRef = useRef<SaveSnapshot | null>(null);
+  /** Characteristic and balloon ids minted here that no save has created
+   * yet. A save sends these as creates, everything else as updates. */
+  const unsavedIdsRef = useRef(new Set<string>());
+  const isUnsaved = useCallback(
+    (id: string) => unsavedIdsRef.current.has(id),
+    []
+  );
+  /** Queues a delete for a row the server has — or is creating right now —
+   * and simply forgets one that never left the browser. */
+  const queueDelete = useCallback((pending: Set<string>, id: string) => {
+    const sending = inFlightSaveRef.current?.createdIds.includes(id);
+    if (unsavedIdsRef.current.has(id) && !sending) {
+      unsavedIdsRef.current.delete(id);
+    } else {
+      pending.add(id);
+    }
+  }, []);
+  const savedSamplingRef = useRef<SamplingRule>(
+    sampling ?? EMPTY_SAMPLING_RULE
+  );
+  const savedPdfUrlRef = useRef(content?.pdfUrl ?? "");
+  /** Whether a save has succeeded yet — the label shows nothing before. */
+  const [hasSaved, setHasSaved] = useState(false);
   const [placingFeatureId, setPlacingFeatureId] = useState<string | null>(null);
 
   const [annotations, setAnnotations] = useState<AnnotationRecord[]>([]);
@@ -890,44 +922,56 @@ export default function InspectionDocumentEditor({
     return () => ro.disconnect();
   }, [pdfFile, pdfUrl]);
 
+  // Merges each save response into the editor's current state. It reads the
+  // current rows, so it also runs on every edit; handledSaveDataRef makes each
+  // response merge exactly once.
   useEffect(() => {
-    if (!pdfReplacePendingMetricsRef.current || !pdfMetrics) return;
-    pdfReplacePendingMetricsRef.current = false;
-    const formData = new FormData();
-    formData.set("pageCount", String(pdfMetrics.pageCount));
-    formData.set("defaultPageWidth", String(pdfMetrics.defaultPageWidth));
-    formData.set("defaultPageHeight", String(pdfMetrics.defaultPageHeight));
-    fetcher.submit(formData, {
-      method: "post",
-      action: path.to.saveInspectionDocument(diagramId)
-    });
-  }, [diagramId, fetcher, pdfMetrics]);
+    const data = fetcher.data;
+    if (!data || data === handledSaveDataRef.current) return;
+    handledSaveDataRef.current = data;
+    const sent = inFlightSaveRef.current;
+    inFlightSaveRef.current = null;
+    if (!sent) return;
 
-  useEffect(() => {
-    if (fetcher.data?.success === true) {
-      const savedBalloons = fetcher.data.balloons ?? [];
-      setSelectorRects(selectorRectsFromBalloonRecords(savedBalloons));
-      setFeatureRows(
-        buildFeatureRowsFromLoader(fetcher.data.features ?? [], savedBalloons)
-      );
-      pendingFeatureDeleteIdsRef.current.clear();
-      pendingBalloonDeleteIdsRef.current.clear();
-      if (pdfReplaceToastRef.current) {
-        toast.success(
-          t`Drawing replaced. Balloon placements were removed; feature rows are unchanged.`
-        );
-        pdfReplaceToastRef.current = false;
-      } else if (manualSaveToastRef.current) {
-        toast.success(t`Diagram saved`);
-        manualSaveToastRef.current = false;
-      }
-    } else if (fetcher.data?.success === false) {
+    if (!data.success) {
+      failedSaveRef.current = sent;
       pdfReplaceToastRef.current = false;
-      pdfReplacePendingMetricsRef.current = false;
-      manualSaveToastRef.current = false;
-      toast.error(fetcher.data.message ?? t`Failed to save diagram`);
+      toast.error(data.message ?? t`Failed to save inspection plan`);
+      return;
     }
-  }, [fetcher.data, t]);
+
+    const savedBalloons = data.balloons ?? [];
+    const merged = mergeSaveResponse({
+      sentRows: sent.featureRows,
+      sentAnchors: sent.anchorRects,
+      currentRows: featureRows,
+      currentAnchors: anchorRects,
+      savedRows: buildFeatureRowsFromLoader(data.features ?? [], savedBalloons),
+      savedAnchors: selectorRectsFromBalloonRecords(savedBalloons)
+    });
+
+    for (const id of sent.createdIds) unsavedIdsRef.current.delete(id);
+    for (const id of sent.featureDeleteIds) {
+      pendingFeatureDeleteIdsRef.current.delete(id);
+    }
+    for (const id of sent.balloonDeleteIds) {
+      pendingBalloonDeleteIdsRef.current.delete(id);
+    }
+    savedSamplingRef.current = sent.docSampling;
+    savedPdfUrlRef.current = sent.pdfUrl;
+    failedSaveRef.current = null;
+    if (sent.sentPdfMetrics) setPdfMetricsDirty(false);
+    setFeatureRows(merged.rows);
+    setSelectorRects(merged.anchors);
+    setHasSaved(true);
+
+    if (pdfReplaceToastRef.current && sent.pdfUrl === pdfUrl) {
+      pdfReplaceToastRef.current = false;
+      toast.success(
+        t`Drawing replaced. Balloon placements were removed; characteristic rows are unchanged.`
+      );
+    }
+  }, [fetcher.data, featureRows, anchorRects, pdfUrl, t]);
 
   const loadAnnotations = useCallback(async () => {
     setAnnotations([]);
@@ -1168,7 +1212,10 @@ export default function InspectionDocumentEditor({
         }
 
         const placingExistingFeatureId = placingFeatureId;
-        const tempBalloonId = `temp-bln-${nanoid()}`;
+        const balloonId = newBalloonId();
+        const featureId = newFeatureId();
+        unsavedIdsRef.current.add(balloonId);
+        if (!placingExistingFeatureId) unsavedIdsRef.current.add(featureId);
         let balloonX = rx + rw + BALLOON_OFFSET_PCT;
         if (balloonX + BALLOON_W_PCT > 100) {
           balloonX = rx - BALLOON_OFFSET_PCT - BALLOON_W_PCT;
@@ -1179,7 +1226,7 @@ export default function InspectionDocumentEditor({
         setSelectorRects((prev) => [
           ...prev,
           {
-            id: tempBalloonId,
+            id: balloonId,
             pageNumber,
             x: rx,
             y: localY,
@@ -1200,33 +1247,32 @@ export default function InspectionDocumentEditor({
                 ? r
                 : {
                     ...r,
-                    balloonId: tempBalloonId,
-                    balloonAnchorId: tempBalloonId,
+                    balloonId,
+                    balloonAnchorId: balloonId,
                     pageNumber,
                     x: balloonX,
                     y: balloonY,
-                    featureDirty: isTempFeatureId(r.featureId)
-                      ? r.featureDirty
-                      : true,
+                    featureDirty: true,
                     geometryDirty: true
                   }
             );
           }
-          const tempFeatureId = `temp-ftr-${nanoid()}`;
+          // The feature being placed was deleted meanwhile: a new one it is.
+          unsavedIdsRef.current.add(featureId);
           const label = nextBalloonLabel(prev);
           return [
             ...prev,
             {
-              featureId: tempFeatureId,
-              balloonId: tempBalloonId,
-              balloonAnchorId: tempBalloonId,
+              featureId,
+              balloonId,
+              balloonAnchorId: balloonId,
               label,
               pageNumber,
               x: balloonX,
               y: balloonY,
               width: BALLOON_W_PCT,
               height: BALLOON_H_PCT,
-              featureName: `Feature ${label}`,
+              featureName: `Characteristic ${label}`,
               nominalValue: "",
               tolerancePlus: "",
               toleranceMinus: "",
@@ -1237,7 +1283,8 @@ export default function InspectionDocumentEditor({
               samplingPercentage: null,
               samplingAql: null,
               samplingInspectionLevel: null,
-              samplingSeverity: null
+              samplingSeverity: null,
+              gaugeTypeId: null
             }
           ];
         });
@@ -1300,7 +1347,7 @@ export default function InspectionDocumentEditor({
                 const a = payload.analysis;
                 setFeatureRows((prev) =>
                   prev.map((r) => {
-                    if (r.balloonId !== tempBalloonId) return r;
+                    if (r.balloonId !== balloonId) return r;
                     const fmt = (n: number | null, fallback: string) =>
                       n != null && Number.isFinite(n) ? String(n) : fallback;
                     const nextNominal = fmt(a.nominal, r.nominalValue);
@@ -1326,7 +1373,7 @@ export default function InspectionDocumentEditor({
                     };
                   })
                 );
-                toast.success(t`Feature values suggested from drawing`);
+                toast.success(t`Characteristic values suggested from drawing`);
               } catch {
                 toast.error(t`Could not analyze cropped region`);
               }
@@ -1870,9 +1917,7 @@ export default function InspectionDocumentEditor({
               ...row,
               x: nextX,
               y: nextY,
-              geometryDirty: isTempBalloonId(row.balloonId)
-                ? row.geometryDirty
-                : true
+              geometryDirty: true
             };
           })
         );
@@ -2020,9 +2065,7 @@ export default function InspectionDocumentEditor({
               ? row
               : {
                   ...row,
-                  geometryDirty: isTempBalloonId(row.balloonId)
-                    ? row.geometryDirty
-                    : true
+                  geometryDirty: true
                 }
           )
         );
@@ -2058,15 +2101,17 @@ export default function InspectionDocumentEditor({
     [drag, dragKind, getRelativePosFromStage, finalizeDragAt]
   );
 
-  const handleSave = useCallback(() => {
-    manualSaveToastRef.current = true;
+  const { submit: submitSave } = fetcher;
+  const saveChanges = useCallback(() => {
+    const featureDeleteIds = [...pendingFeatureDeleteIdsRef.current];
+    const balloonDeleteIds = [...pendingBalloonDeleteIdsRef.current];
     const formData = new FormData();
     formData.set("name", name);
     if (pdfUrl) formData.set("pdfUrl", pdfUrl);
     const featuresCreate = featureRows
-      .filter((r) => isTempFeatureId(r.featureId))
+      .filter((r) => isUnsaved(r.featureId))
       .map((r) => ({
-        tempId: r.featureId,
+        id: r.featureId,
         pageNumber: r.pageNumber,
         label: r.label,
         description: r.featureName.trim() || null,
@@ -2080,13 +2125,14 @@ export default function InspectionDocumentEditor({
         samplingPercentage: r.samplingPercentage,
         samplingAql: r.samplingAql,
         samplingInspectionLevel: r.samplingInspectionLevel,
-        samplingSeverity: r.samplingSeverity
+        samplingSeverity: r.samplingSeverity,
+        gaugeTypeId: r.gaugeTypeId
       }));
 
     const featuresUpdate = featureRows
       .filter(
         (r) =>
-          !isTempFeatureId(r.featureId) &&
+          !isUnsaved(r.featureId) &&
           (r.featureDirty || (r.geometryDirty && r.balloonId != null))
       )
       .map((r) => ({
@@ -2104,7 +2150,8 @@ export default function InspectionDocumentEditor({
         samplingPercentage: r.samplingPercentage,
         samplingAql: r.samplingAql,
         samplingInspectionLevel: r.samplingInspectionLevel,
-        samplingSeverity: r.samplingSeverity
+        samplingSeverity: r.samplingSeverity,
+        gaugeTypeId: r.gaugeTypeId
       }));
 
     formData.set(
@@ -2112,19 +2159,20 @@ export default function InspectionDocumentEditor({
       JSON.stringify({
         create: featuresCreate,
         update: featuresUpdate,
-        delete: [...pendingFeatureDeleteIdsRef.current]
+        delete: featureDeleteIds
       })
     );
 
     const balloonsCreate = featureRows
-      .filter((r) => isTempBalloonId(r.balloonId))
+      .filter(
+        (r): r is FeatureRow & { balloonId: string } =>
+          r.balloonId != null && isUnsaved(r.balloonId)
+      )
       .map((r) => {
         const anchor = anchorRects.find((s) => s.id === r.balloonAnchorId);
         return {
-          ...(isTempFeatureId(r.featureId)
-            ? { tempInspectionFeatureId: r.featureId }
-            : { inspectionFeatureId: r.featureId }),
-          tempBalloonAnchorId: r.balloonId ?? undefined,
+          id: r.balloonId,
+          inspectionFeatureId: r.featureId,
           pageNumber: r.pageNumber,
           regionX: (anchor?.x ?? 0) / 100,
           regionY: (anchor?.y ?? 0) / 100,
@@ -2161,7 +2209,7 @@ export default function InspectionDocumentEditor({
     }
 
     for (const row of featureRows.filter(
-      (r) => r.balloonId && !isTempBalloonId(r.balloonId) && r.geometryDirty
+      (r) => r.balloonId && !isUnsaved(r.balloonId) && r.geometryDirty
     )) {
       const anchor = anchorRects.find((s) => s.id === row.balloonAnchorId);
       const existing = balloonsUpdateById.get(row.balloonId!) ?? {
@@ -2188,7 +2236,7 @@ export default function InspectionDocumentEditor({
       JSON.stringify({
         create: balloonsCreate,
         update: [...balloonsUpdateById.values()],
-        delete: [...pendingBalloonDeleteIdsRef.current]
+        delete: balloonDeleteIds
       })
     );
 
@@ -2198,7 +2246,20 @@ export default function InspectionDocumentEditor({
       formData.set("defaultPageHeight", String(pdfMetrics.defaultPageHeight));
     }
     formData.set("samplingDefault", JSON.stringify(docSampling));
-    fetcher.submit(formData, {
+    inFlightSaveRef.current = {
+      featureRows,
+      anchorRects,
+      docSampling,
+      pdfUrl,
+      sentPdfMetrics: pdfMetrics != null,
+      createdIds: [
+        ...featuresCreate.map((f) => f.id),
+        ...balloonsCreate.map((b) => b.id)
+      ],
+      featureDeleteIds,
+      balloonDeleteIds
+    };
+    submitSave(formData, {
       method: "post",
       action: path.to.saveInspectionDocument(diagramId)
     });
@@ -2210,8 +2271,66 @@ export default function InspectionDocumentEditor({
     featureRows,
     pdfMetrics,
     docSampling,
-    fetcher
+    submitSave,
+    isUnsaved
   ]);
+
+  // Every edit saves itself once the editor has been quiet for a moment — a
+  // drag saves when it ends, and one save at a time: an edit made while a save
+  // is in flight is picked up when it returns. Someone without update
+  // permission can still look around, but nothing they change is saved.
+  const canUpdate = permissions.can("update", "quality");
+  const isSaving = fetcher.state !== "idle";
+  const hasUnsavedChanges =
+    canUpdate &&
+    (hasUnsavedRows(featureRows, anchorRects, isUnsaved) ||
+      pendingFeatureDeleteIdsRef.current.size > 0 ||
+      pendingBalloonDeleteIdsRef.current.size > 0 ||
+      pdfUrl !== savedPdfUrlRef.current ||
+      (pdfMetricsDirty && pdfMetrics != null) ||
+      JSON.stringify(docSampling) !== JSON.stringify(savedSamplingRef.current));
+  const failedSave = failedSaveRef.current;
+  const saveFailed =
+    failedSave != null &&
+    failedSave.featureRows === featureRows &&
+    failedSave.anchorRects === anchorRects &&
+    failedSave.docSampling === docSampling &&
+    failedSave.pdfUrl === pdfUrl;
+
+  // Leaving with unsaved changes saves them first, then continues; only a
+  // failed save asks.
+  const blocker = useBlocker(
+    ({ currentLocation, nextLocation }) =>
+      (hasUnsavedChanges || isSaving) &&
+      currentLocation.pathname !== nextLocation.pathname
+  );
+  const isLeaving = blocker.state === "blocked";
+
+  useEffect(() => {
+    if (!hasUnsavedChanges || isSaving || uploading || saveFailed) return;
+    if (dragKind !== null) return;
+    const timer = setTimeout(saveChanges, isLeaving ? 0 : AUTOSAVE_DELAY_MS);
+    return () => clearTimeout(timer);
+  }, [
+    hasUnsavedChanges,
+    isSaving,
+    uploading,
+    saveFailed,
+    dragKind,
+    isLeaving,
+    saveChanges
+  ]);
+
+  useEffect(() => {
+    if (isLeaving && !hasUnsavedChanges && !isSaving) blocker.proceed?.();
+  }, [blocker, isLeaving, hasUnsavedChanges, isSaving]);
+
+  useEffect(() => {
+    if (!hasUnsavedChanges && !isSaving) return;
+    const onBeforeUnload = (event: BeforeUnloadEvent) => event.preventDefault();
+    window.addEventListener("beforeunload", onBeforeUnload);
+    return () => window.removeEventListener("beforeunload", onBeforeUnload);
+  }, [hasUnsavedChanges, isSaving]);
 
   const uploadPdfAndSave = useCallback(
     async (file: File, options: { clearBalloons: boolean }) => {
@@ -2237,40 +2356,22 @@ export default function InspectionDocumentEditor({
       setPdfViewPage(1);
       setNumPages(0);
       setPdfMetrics(null);
-
-      const formData = new FormData();
-      formData.set("pdfUrl", nextPdfUrl);
+      // The new URL, the cleared balloons and the new drawing's page metrics
+      // (once it renders) all reach the server through the autosave.
+      setPdfMetricsDirty(true);
 
       if (options.clearBalloons) {
-        const persistedBalloonDeleteIds = featureRows
-          .filter(
-            (r): r is FeatureRow & { balloonId: string } =>
-              r.balloonId != null && !isTempBalloonId(r.balloonId)
-          )
-          .map((r) => r.balloonId);
-
-        formData.set(
-          "balloons",
-          JSON.stringify({
-            create: [],
-            update: [],
-            delete: persistedBalloonDeleteIds
-          })
-        );
-
+        for (const r of featureRows) {
+          if (r.balloonId != null) {
+            queueDelete(pendingBalloonDeleteIdsRef.current, r.balloonId);
+          }
+        }
         setSelectorRects([]);
         setFeatureRows((prev) => stripBalloonGeometryFromFeatureRows(prev));
-        pendingBalloonDeleteIdsRef.current.clear();
         pdfReplaceToastRef.current = true;
-        pdfReplacePendingMetricsRef.current = true;
       }
-
-      fetcher.submit(formData, {
-        method: "post",
-        action: path.to.saveInspectionDocument(diagramId)
-      });
     },
-    [carbon, companyId, diagramId, featureRows, fetcher, t]
+    [carbon, companyId, diagramId, featureRows, t, queueDelete]
   );
 
   const handlePdfUpload = useCallback(
@@ -2311,32 +2412,35 @@ export default function InspectionDocumentEditor({
   const isPdfReady = hasPdf && (numPages > 0 || pdfMetrics !== null);
   const isOverlayReady = isPdfReady && containerWidth > 0 && overlayHeight > 0;
 
-  const handleDeleteFeature = useCallback((featureId: string) => {
-    setFeatureRows((prev) => {
-      const row = prev.find((r) => r.featureId === featureId);
-      if (row && !isTempFeatureId(row.featureId)) {
-        pendingFeatureDeleteIdsRef.current.add(row.featureId);
-      }
-      const nextRows = prev.filter((r) => r.featureId !== featureId);
-      const keptAnchorIds = new Set(
-        nextRows
-          .map((r) => r.balloonAnchorId)
-          .filter((id): id is string => id.length > 0)
-      );
-      setSelectorRects((sels) =>
-        sels.filter((sel) => keptAnchorIds.has(sel.id))
-      );
-      return nextRows;
-    });
-  }, []);
+  const handleDeleteFeature = useCallback(
+    (featureId: string) => {
+      setFeatureRows((prev) => {
+        const row = prev.find((r) => r.featureId === featureId);
+        if (row) queueDelete(pendingFeatureDeleteIdsRef.current, row.featureId);
+        const nextRows = prev.filter((r) => r.featureId !== featureId);
+        const keptAnchorIds = new Set(
+          nextRows
+            .map((r) => r.balloonAnchorId)
+            .filter((id): id is string => id.length > 0)
+        );
+        setSelectorRects((sels) =>
+          sels.filter((sel) => keptAnchorIds.has(sel.id))
+        );
+        return nextRows;
+      });
+    },
+    [queueDelete]
+  );
 
   const handleAddFeature = useCallback(() => {
+    const featureId = newFeatureId();
+    unsavedIdsRef.current.add(featureId);
     setFeatureRows((prev) => {
       const label = nextBalloonLabel(prev);
       return [
         ...prev,
         {
-          featureId: `temp-ftr-${nanoid()}`,
+          featureId,
           balloonId: null,
           balloonAnchorId: "",
           label,
@@ -2345,7 +2449,7 @@ export default function InspectionDocumentEditor({
           y: 0,
           width: BALLOON_W_PCT,
           height: BALLOON_H_PCT,
-          featureName: `Feature ${label}`,
+          featureName: `Characteristic ${label}`,
           nominalValue: "",
           tolerancePlus: "",
           toleranceMinus: "",
@@ -2356,7 +2460,8 @@ export default function InspectionDocumentEditor({
           samplingPercentage: null,
           samplingAql: null,
           samplingInspectionLevel: null,
-          samplingSeverity: null
+          samplingSeverity: null,
+          gaugeTypeId: null
         }
       ];
     });
@@ -2369,32 +2474,33 @@ export default function InspectionDocumentEditor({
     setZoomBoxMode(false);
   }, []);
 
-  const handleUnballoon = useCallback((featureId: string) => {
-    setFeatureRows((prev) => {
-      const row = prev.find((r) => r.featureId === featureId);
-      if (!row?.balloonId) return prev;
-      if (!isTempBalloonId(row.balloonId)) {
-        pendingBalloonDeleteIdsRef.current.add(row.balloonId);
-      }
-      if (row.balloonAnchorId) {
-        setSelectorRects((sels) =>
-          sels.filter((s) => s.id !== row.balloonAnchorId)
+  const handleUnballoon = useCallback(
+    (featureId: string) => {
+      setFeatureRows((prev) => {
+        const row = prev.find((r) => r.featureId === featureId);
+        if (!row?.balloonId) return prev;
+        queueDelete(pendingBalloonDeleteIdsRef.current, row.balloonId);
+        if (row.balloonAnchorId) {
+          setSelectorRects((sels) =>
+            sels.filter((s) => s.id !== row.balloonAnchorId)
+          );
+        }
+        return prev.map((r) =>
+          r.featureId !== featureId
+            ? r
+            : {
+                ...r,
+                balloonId: null,
+                balloonAnchorId: "",
+                x: 0,
+                y: 0,
+                geometryDirty: false
+              }
         );
-      }
-      return prev.map((r) =>
-        r.featureId !== featureId
-          ? r
-          : {
-              ...r,
-              balloonId: null,
-              balloonAnchorId: "",
-              x: 0,
-              y: 0,
-              geometryDirty: false
-            }
-      );
-    });
-  }, []);
+      });
+    },
+    [queueDelete]
+  );
 
   const updateFeatureField = useCallback(
     (
@@ -2406,7 +2512,8 @@ export default function InspectionDocumentEditor({
         | "tolerancePlus"
         | "toleranceMinus"
         | "units"
-        | "type",
+        | "type"
+        | "gaugeTypeId",
       value: string
     ) => {
       setFeatureRows((prev) =>
@@ -2415,10 +2522,8 @@ export default function InspectionDocumentEditor({
             ? r
             : {
                 ...r,
-                [field]: value,
-                featureDirty: isTempFeatureId(r.featureId)
-                  ? r.featureDirty
-                  : true
+                [field]: field === "gaugeTypeId" ? value || null : value,
+                featureDirty: true
               }
         )
       );
@@ -2437,7 +2542,8 @@ export default function InspectionDocumentEditor({
           | "tolerancePlus"
           | "toleranceMinus"
           | "units"
-          | "type",
+          | "type"
+          | "gaugeTypeId",
         newValue
       );
       return {
@@ -2472,6 +2578,16 @@ export default function InspectionDocumentEditor({
     [unitOfMeasures]
   );
 
+  const gaugeTypeOptions = useMemo(
+    () => gaugeTypes.map((gt) => ({ value: gt.id, label: gt.name })),
+    [gaugeTypes]
+  );
+
+  const gaugeTypeIdToName = useMemo(
+    () => new Map(gaugeTypes.map((gt) => [gt.id, gt.name])),
+    [gaugeTypes]
+  );
+
   const featureEditableComponents = useMemo(
     () => ({
       type: EditableList(featureMutation, featureTypeOptions),
@@ -2480,14 +2596,15 @@ export default function InspectionDocumentEditor({
       nominalValue: ConditionalMeasurementText(featureMutation),
       tolerancePlus: ConditionalMeasurementText(featureMutation),
       toleranceMinus: ConditionalMeasurementText(featureMutation),
-      units: ConditionalMeasurementList(featureMutation, unitOfMeasureOptions)
+      units: ConditionalMeasurementList(featureMutation, unitOfMeasureOptions),
+      gaugeTypeId: EditableGaugeType(featureMutation, gaugeTypeOptions)
     }),
-    [featureMutation, unitOfMeasureOptions]
+    [featureMutation, unitOfMeasureOptions, gaugeTypeOptions]
   );
 
   const featureColumns = useMemo<ColumnDef<FeatureRow>[]>(
     () => [
-      { accessorKey: "label", header: t`Feature`, size: 80 },
+      { accessorKey: "label", header: t`Characteristic`, size: 80 },
       {
         accessorKey: "type",
         header: t`Type`,
@@ -2539,6 +2656,17 @@ export default function InspectionDocumentEditor({
           row.original.type === "Measurement"
             ? (uomCodeToName.get(row.original.units) ?? row.original.units)
             : null
+      },
+      {
+        accessorKey: "gaugeTypeId",
+        header: t`Gauge Type`,
+        size: 160,
+        cell: ({ row }) =>
+          row.original.gaugeTypeId ? (
+            (gaugeTypeIdToName.get(row.original.gaugeTypeId) ?? "—")
+          ) : (
+            <span className="text-muted-foreground">{t`Any`}</span>
+          )
       },
       {
         id: "sampling",
@@ -2622,6 +2750,7 @@ export default function InspectionDocumentEditor({
       handleUnballoon,
       isOverlayReady,
       uomCodeToName,
+      gaugeTypeIdToName,
       t
     ]
   );
@@ -2706,7 +2835,7 @@ export default function InspectionDocumentEditor({
           </ModalHeader>
           <ModalBody>
             <p className="text-sm text-muted-foreground">
-              {t`Replacing the PDF removes all balloon placements on this document. Feature rows and their values stay; you can place balloons again on the new drawing.`}
+              {t`Replacing the PDF removes all balloon placements on this document. Characteristic rows and their values stay; you can place balloons again on the new drawing.`}
             </p>
           </ModalBody>
           <ModalFooter>
@@ -2805,6 +2934,17 @@ export default function InspectionDocumentEditor({
           </DropdownMenu>
         </div>
         <HStack spacing={2} className="flex-shrink-0 flex-wrap justify-end">
+          {!canUpdate ? (
+            <span className="text-xs text-muted-foreground">
+              {t`View only — changes are not saved`}
+            </span>
+          ) : saveFailed ? (
+            <span className="text-xs text-destructive">{t`Could not save`}</span>
+          ) : hasUnsavedChanges || isSaving ? (
+            <span className="text-xs text-muted-foreground">{t`Saving…`}</span>
+          ) : hasSaved ? (
+            <span className="text-xs text-muted-foreground">{t`Saved`}</span>
+          ) : null}
           <Button
             variant={placing ? "primary" : "secondary"}
             leftIcon={<LuRectangleHorizontal />}
@@ -2830,13 +2970,6 @@ export default function InspectionDocumentEditor({
             onClick={() => setSamplingTarget("document")}
           >
             {samplingRuleSummary(docSampling) ?? t`Sampling`}
-          </Button>
-          <Button
-            leftIcon={<LuSave />}
-            onClick={handleSave}
-            isDisabled={fetcher.state !== "idle"}
-          >
-            {t`Save`}
           </Button>
           <HStack
             spacing={0}
@@ -2903,6 +3036,29 @@ export default function InspectionDocumentEditor({
           </HStack>
         </HStack>
       </div>
+
+      {isLeaving && saveFailed && (
+        <Modal open onOpenChange={(open) => !open && blocker.reset?.()}>
+          <ModalContent>
+            <ModalHeader>
+              <ModalTitle>{t`Unsaved changes`}</ModalTitle>
+            </ModalHeader>
+            <ModalBody>
+              <p className="text-sm text-muted-foreground">
+                {t`Your latest changes could not be saved. Are you sure you want to leave this page?`}
+              </p>
+            </ModalBody>
+            <ModalFooter>
+              <Button variant="secondary" onClick={() => blocker.reset?.()}>
+                {t`Stay on this page`}
+              </Button>
+              <Button onClick={() => blocker.proceed?.()}>
+                {t`Leave this page`}
+              </Button>
+            </ModalFooter>
+          </ModalContent>
+        </Modal>
+      )}
 
       {deleteDisclosure.isOpen && (
         <ConfirmDelete
@@ -3059,7 +3215,7 @@ export default function InspectionDocumentEditor({
                                     y={y}
                                     width={width}
                                     height={height}
-                                    stroke={CALLOUT_STROKE}
+                                    stroke={BALLOON_CALLOUT_STROKE}
                                     strokeWidth={isSelected ? 3 : 2}
                                     fill={
                                       isSelected
@@ -3109,7 +3265,7 @@ export default function InspectionDocumentEditor({
                                           ? "rgba(249,115,22,0.22)"
                                           : "rgba(249,115,22,0.12)"
                                       }
-                                      stroke={CALLOUT_STROKE}
+                                      stroke={BALLOON_CALLOUT_STROKE}
                                       strokeWidth={isSelected ? 2.5 : 1.5}
                                       cornerRadius={4}
                                       listening={false}
@@ -3148,7 +3304,7 @@ export default function InspectionDocumentEditor({
                                       width={w}
                                       height={h}
                                       fill="rgba(249,115,22,0.16)"
-                                      stroke={CALLOUT_STROKE}
+                                      stroke={BALLOON_CALLOUT_STROKE}
                                       dash={[4, 4]}
                                       strokeWidth={2}
                                       cornerRadius={4}
@@ -3254,7 +3410,7 @@ export default function InspectionDocumentEditor({
                                           linePoints[2] - balloonX,
                                           linePoints[3] - balloonY
                                         ]}
-                                        stroke={CALLOUT_STROKE}
+                                        stroke={BALLOON_CALLOUT_STROKE}
                                         strokeWidth={2}
                                         listening={false}
                                       />
@@ -3270,7 +3426,7 @@ export default function InspectionDocumentEditor({
                                           : "rgba(0,0,0,0)"
                                       }
                                       fillEnabled
-                                      stroke={CALLOUT_STROKE}
+                                      stroke={BALLOON_CALLOUT_STROKE}
                                       strokeWidth={isSelected ? 3 : 2}
                                       listening={false}
                                     />
@@ -3283,7 +3439,7 @@ export default function InspectionDocumentEditor({
                                       text={b.label}
                                       align="center"
                                       verticalAlign="middle"
-                                      fill={CALLOUT_STROKE}
+                                      fill={BALLOON_CALLOUT_STROKE}
                                       fontStyle="bold"
                                       fontSize={balloonLabelFontSize}
                                       listening={false}
@@ -3304,7 +3460,7 @@ export default function InspectionDocumentEditor({
                                 stroke={
                                   dragKind === "zoom"
                                     ? "#2563eb"
-                                    : CALLOUT_STROKE
+                                    : BALLOON_CALLOUT_STROKE
                                 }
                                 strokeWidth={2}
                                 fillEnabled={false}
@@ -3529,7 +3685,7 @@ export default function InspectionDocumentEditor({
             <div
               role="separator"
               aria-orientation="horizontal"
-              aria-label={t`Drag to resize diagram and features`}
+              aria-label={t`Drag to resize diagram and characteristics`}
               aria-valuenow={Math.round(pdfPaneHeightPx)}
               className={`group flex h-2 shrink-0 cursor-row-resize touch-none items-center justify-center rounded-md px-2 hover:bg-muted/80 ${
                 isResizingPdfFeatures ? "bg-muted" : ""
@@ -3540,7 +3696,7 @@ export default function InspectionDocumentEditor({
             </div>
           ) : null}
 
-          {/* Features table — form fields map to balloon columns; persisted on Save */}
+          {/* Features table — form fields map to balloon columns; autosaved */}
           <div
             className={
               featuresTableExpanded
@@ -3555,7 +3711,7 @@ export default function InspectionDocumentEditor({
           >
             <div className="flex min-h-10 flex-shrink-0 items-center justify-between gap-2 px-2 py-2 pl-3">
               <span className="min-w-0 flex-1 truncate text-sm font-medium text-foreground">
-                {t`Features`} ({featureRows.length})
+                {t`Characteristics`} ({featureRows.length})
               </span>
               <HStack spacing={1} className="flex-shrink-0 items-center">
                 <Button
@@ -3565,7 +3721,7 @@ export default function InspectionDocumentEditor({
                   leftIcon={<LuPlus className="h-4 w-4" />}
                   onClick={handleAddFeature}
                 >
-                  {t`Add Feature`}
+                  {t`Add Characteristic`}
                 </Button>
                 <IconButton
                   type="button"
@@ -3574,8 +3730,8 @@ export default function InspectionDocumentEditor({
                   aria-expanded={featuresTableExpanded}
                   aria-label={
                     featuresTableExpanded
-                      ? t`Collapse features table`
-                      : t`Expand features table`
+                      ? t`Collapse characteristics table`
+                      : t`Expand characteristics table`
                   }
                   icon={
                     featuresTableExpanded ? (

@@ -19254,6 +19254,7 @@ export type Database = {
           createdAt: string
           createdBy: string
           description: string | null
+          gaugeTypeId: string | null
           id: string
           inspectionDocumentId: string
           label: string
@@ -19283,6 +19284,7 @@ export type Database = {
           createdAt?: string
           createdBy: string
           description?: string | null
+          gaugeTypeId?: string | null
           id?: string
           inspectionDocumentId: string
           label: string
@@ -19312,6 +19314,7 @@ export type Database = {
           createdAt?: string
           createdBy?: string
           description?: string | null
+          gaugeTypeId?: string | null
           id?: string
           inspectionDocumentId?: string
           label?: string
@@ -19413,6 +19416,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "inspectionDocuments"
             referencedColumns: ["id", "companyId"]
+          },
+          {
+            foreignKeyName: "inspectionFeature_gaugeTypeId_fkey"
+            columns: ["gaugeTypeId"]
+            isOneToOne: false
+            referencedRelation: "gaugeType"
+            referencedColumns: ["id"]
           },
           {
             foreignKeyName: "inspectionFeature_updatedBy_fkey"
@@ -20087,6 +20097,8 @@ export type Database = {
           companyId: string
           createdAt: string
           createdBy: string
+          gaugeId: string | null
+          gaugeRecordedAt: string | null
           id: string
           inspectionFeatureId: string
           inspectionId: string
@@ -20101,6 +20113,8 @@ export type Database = {
           companyId: string
           createdAt?: string
           createdBy: string
+          gaugeId?: string | null
+          gaugeRecordedAt?: string | null
           id?: string
           inspectionFeatureId: string
           inspectionId: string
@@ -20115,6 +20129,8 @@ export type Database = {
           companyId?: string
           createdAt?: string
           createdBy?: string
+          gaugeId?: string | null
+          gaugeRecordedAt?: string | null
           id?: string
           inspectionFeatureId?: string
           inspectionId?: string
@@ -20235,6 +20251,20 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "userDefaults"
             referencedColumns: ["userId"]
+          },
+          {
+            foreignKeyName: "inspectionSamplingPlan_gaugeId_fkey"
+            columns: ["gaugeId"]
+            isOneToOne: false
+            referencedRelation: "gauge"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inspectionSamplingPlan_gaugeId_fkey"
+            columns: ["gaugeId"]
+            isOneToOne: false
+            referencedRelation: "gauges"
+            referencedColumns: ["id"]
           }
         ]
       }

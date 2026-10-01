@@ -13,7 +13,14 @@ import { data } from "react-router";
 import {
   saveInspectionDocumentAtomic,
   updateInspectionDocumentSampling
-} from "~/modules/production";
+} from "~/modules/quality";
+import {
+  inspectionDocumentSamplingValidator,
+  inspectionSaveAnchorsPayloadValidator,
+  inspectionSaveBalloonsGeometryPayloadValidator,
+  inspectionSaveBalloonsPayloadValidator,
+  inspectionSaveFeaturesPayloadValidator
+} from "~/modules/quality/quality.models";
 import {
   type InspectionSaveBalloonsGeometryPayload,
   type InspectionSaveFeaturesPayload,
@@ -21,14 +28,7 @@ import {
   mergeInspectionFeaturesPayload,
   resolveInspectionFeaturePayloadIds,
   translateLegacyInspectionSavePayload
-} from "~/modules/production/inspectionDocumentSave.server";
-import {
-  inspectionDocumentSamplingValidator,
-  inspectionSaveAnchorsPayloadValidator,
-  inspectionSaveBalloonsGeometryPayloadValidator,
-  inspectionSaveBalloonsPayloadValidator,
-  inspectionSaveFeaturesPayloadValidator
-} from "~/modules/production/production.models";
+} from "~/modules/quality/quality.server";
 import { invalidateInspectionDocuments } from "~/utils/react-query";
 
 function getErrorMessage(error: unknown, fallback: string) {
@@ -186,36 +186,14 @@ export async function action({ request, params }: ActionFunctionArgs) {
   featuresParsed = await resolveInspectionFeaturePayloadIds(
     client,
     id,
+    companyId,
     featuresParsed
   );
 
-  const rpcResult = await saveInspectionDocumentAtomic(client, {
-    inspectionDocumentId: id,
-    companyId,
-    userId,
-    pdfUrl: pdfUrl ?? undefined,
-    pageCount,
-    defaultPageWidth,
-    defaultPageHeight,
-    features: featuresParsed,
-    balloons: balloonsParsed
-  });
-
-  if (rpcResult.error || !rpcResult.data) {
-    return data(
-      {
-        success: false,
-        message: getErrorMessage(
-          rpcResult.error,
-          "Failed to save inspection plan"
-        )
-      },
-      { status: 400 }
-    );
-  }
-
   // The document's default sampling rule rides the same save (a single
-  // UPDATE; not part of the features/balloons atomic contract).
+  // UPDATE; not part of the features/balloons atomic contract). It goes
+  // first: a failure after the RPC had committed new features would leave
+  // the editor holding their temp ids, and its retry would create them twice.
   if (samplingDefaultRaw) {
     try {
       const json = JSON.parse(samplingDefaultRaw) as unknown;
@@ -241,6 +219,31 @@ export async function action({ request, params }: ActionFunctionArgs) {
         { status: 400 }
       );
     }
+  }
+
+  const rpcResult = await saveInspectionDocumentAtomic(client, {
+    inspectionDocumentId: id,
+    companyId,
+    userId,
+    pdfUrl: pdfUrl ?? undefined,
+    pageCount,
+    defaultPageWidth,
+    defaultPageHeight,
+    features: featuresParsed,
+    balloons: balloonsParsed
+  });
+
+  if (rpcResult.error || !rpcResult.data) {
+    return data(
+      {
+        success: false,
+        message: getErrorMessage(
+          rpcResult.error,
+          "Failed to save inspection plan"
+        )
+      },
+      { status: 400 }
+    );
   }
 
   return rpcResult.data as {

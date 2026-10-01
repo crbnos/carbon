@@ -16,6 +16,7 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
+  Copy,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuIcon,
@@ -41,6 +42,7 @@ import {
   LuCheckCheck,
   LuClipboardCheck,
   LuEllipsisVertical,
+  LuKeySquare,
   LuTrash,
   LuX
 } from "react-icons/lu";
@@ -179,6 +181,11 @@ const SupplierHeader = () => {
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
+                <Copy
+                  text={supplierId}
+                  label={t`Copy supplier unique identifier`}
+                  icon={<LuKeySquare />}
+                />
               </CardTitle>
             </CardHeader>
             <CardAction className="flex h-full flex-row items-center gap-2">
