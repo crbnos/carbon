@@ -134,7 +134,12 @@ iframe. So:
 | Draft the panel made | entityType `makeMethod` (`DRAFT_MARKER_ENTITY_TYPE`), `externalId` = the Draft's id, `metadata.sourceMethodId` = the Active method it copied |
 
 BOM pushes are a **diff, not a rebuild**: delete only lines whose mapping rows a
-previous push wrote, insert fresh ones, leave manual lines untouched. A line
+previous push wrote, insert fresh ones. A manual line for a part number Onshape
+also lists is **taken over** (`pairManualLines` in `panel/plan.ts`, applied by
+`claimManualMethodLine`): Onshape's quantity, order and child method, plus an
+ownership row, with its operation and scrap kept, so a hand-built BOM does not
+end up with each shared part twice. Manual lines for parts Onshape doesn't
+list are left untouched. A line
 already carrying the right component is updated in place, and one whose
 push-owned columns (`quantity`, `order`, `materialMakeMethodId`) already match
 is skipped. New lines and their mapping rows are written together in a Kysely
@@ -329,7 +334,8 @@ company plus Sign out.
   to this source; its tooltip says so, and parts and BOM rows add "number
   already used in Carbon"), Unlinked (grey).
 - Reviews are summaries: one line of counts, alerts (parts matched by part
-  number, won't-write, Draft, manual lines kept), and read-only rows.
+  number, won't-write, Draft, manual lines taken over with their quantity
+  change, manual lines kept), and read-only rows.
 - Every action is disabled while a read or write is in flight.
 - `panelFetch` gives up after `PANEL_FETCH_TIMEOUT_MS` (60 s) with
   `PanelTimeoutError`, so a stalled read shows a message and Refresh. Applies

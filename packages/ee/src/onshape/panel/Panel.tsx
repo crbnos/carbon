@@ -398,8 +398,8 @@ type PushOutcome = {
   errors: string[];
   /**
    * Things that went through but the user has to know about — a released
-   * method superseded by a Draft version, which takes effect only once
-   * somebody releases it.
+   * method superseded by a Draft version (not live until released), or lines
+   * added by hand that now follow Onshape.
    */
   notes?: string[];
 };
@@ -473,9 +473,10 @@ function PushOutcomeView({ outcome }: { outcome: PushOutcome }) {
         )
       ) : null}
       {(outcome.notes ?? []).length > 0 ? (
+        // Each note says what it is: a Draft version is not live yet, a
+        // taken-over line is. One heading for both would misstate one of them.
         <Alert variant="info">
           <LuInfo />
-          <AlertTitle>Nothing live changed</AlertTitle>
           <AlertDescription>
             <ul className="list-disc space-y-1 pl-4">
               {(outcome.notes ?? []).map((note) => (
