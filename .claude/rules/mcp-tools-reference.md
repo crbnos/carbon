@@ -24,15 +24,24 @@ catalogSearch, toolMetadata }`.
 > `describe_tool` / `search_tools` read from it at runtime.
 >
 > That manifest is **gitignored build output** (1.9 MB, rewritten wholesale on every
-> run — it churned 250+ commits). It is produced by `pnpm generate:mcp`, which runs
-> from `postinstall` and as the turbo root task `//#generate:mcp` that `typecheck`,
-> `build` and `test` depend on — so a fresh clone regenerates it before anything
-> imports it. The committed record of the published contract is its small companion
+> run — it churned 250+ commits). It is produced by `pnpm generate:mcp`, as the turbo
+> root task `//#generate:mcp`. `postinstall` runs that task, and the `typecheck`,
+> `build` and `test` of the two packages that read the manifest — `erp` and `docs`
+> (`apps/erp/turbo.json`, `docs/turbo.json`) — depend on it, so a fresh clone
+> regenerates it before anything imports it. The task is CACHED: its `inputs` in
+> `turbo.json` are the files the generator opens (service / `mcp.server` / models /
+> module `types.ts`, the generated DB types, `mcp-blocked-tools.ts`,
+> `mcp-exposure.ts`, `packages/api/src`, `scripts/lib`), so with none of those
+> changed turbo restores both output files in milliseconds instead of spending ~20s.
+> A file the generator starts reading must be added to that list, or a cache hit
+> restores a stale manifest. Types it reaches only THROUGH the compiler (a return
+> type declared in another package) are deliberately not inputs.
+> The committed record of the published contract is its small companion
 > `tool-manifest.digest.json`: one line per operation carrying classification,
 > permission, injectAuth, argument count and a hash of the schema, so a contract
-> change is still one visible line in review. `pnpm check:manifest` regenerates and
-> fails if the digest is stale; pre-commit runs it when a service, models or
-> generator file is staged.
+> change is still one visible line in review. `pnpm check:manifest` regenerates
+> WITHOUT the cache and fails if the digest is stale; pre-commit runs it when a
+> service, models or generator file is staged.
 
 ## Endpoint & transport
 

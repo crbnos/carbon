@@ -53,6 +53,14 @@ pnpm db:check:datasets       # Do the demo datasets still apply? (pre-commit gat
 pnpm db:check:backups        # Would existing customer backups still restore? (pre-commit gate)
 ```
 
+`typecheck`, `test`, `lint` and `build` are cached by Turborepo: a package re-runs
+only when its own files, a workspace dependency's files, or the lockfile changed
+(`--force` re-runs regardless). That is only correct while a task reads nothing
+outside that set. A package whose task reads other paths declares them in its own
+`turbo.json` — as `inputs`, or `"cache": false` when it scans the repo
+(`packages/checks`, `docs/content`) — and a package that needs a generated root
+artifact depends on the task that makes it (`apps/erp/turbo.json`).
+
 Both `db:check:*` commands read your live local schema. They run from
 `.husky/pre-commit`, so run `pnpm db:migrate` before either — a stale database makes
 the dataset check fail for the wrong reason and makes the backup check refuse to give
