@@ -163,6 +163,26 @@ export function pickLatestRow<
 }
 
 /**
+ * Which existing row an assembly push reuses when several share a part number:
+ * the latest Part, else the latest row that can be a BOM line, else the latest
+ * row (which the plan then reports as unusable). Item numbers are unique per
+ * type, so a Tool can share a Part's number; picking it by revision alone
+ * dropped the line although the Part was there.
+ */
+export function pickReuseRow<
+  T extends {
+    revision: string | null;
+    active?: boolean | null;
+    type?: string | null;
+  }
+>(rows: T[]): T | undefined {
+  const parts = rows.filter((row) => (row.type ?? "Part") === "Part");
+  if (parts.length > 0) return pickLatestRow(parts);
+  const usable = rows.filter((row) => bomLineItemType(row) !== null);
+  return pickLatestRow(usable.length > 0 ? usable : rows);
+}
+
+/**
  * Which existing row an Onshape part adopts when several share its part
  * number: a Part at the same revision, else the latest Part, else nothing — an
  * Onshape part never adopts a Material or Tool that happens to share the
@@ -870,10 +890,10 @@ export function buildAssemblyPlan({
     list.push(item);
     rowsByReadableId.set(item.readableId, list);
   }
-  // The same pick the apply makes (`pickLatestRow`).
+  // The same pick the apply makes (`pickReuseRow`).
   const itemByReadableId = new Map<string, PlanItemRow>();
   for (const [readableId, rows] of rowsByReadableId) {
-    const latest = pickLatestRow(rows);
+    const latest = pickReuseRow(rows);
     if (latest) itemByReadableId.set(readableId, latest);
   }
   const everything = flattenNodes(nodes);

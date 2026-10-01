@@ -14,6 +14,7 @@ import {
   mergeItemEdits,
   pickAdoptTarget,
   pickLatestRow,
+  pickReuseRow,
   proposeItem,
   reconcileMethodForReplenishment
 } from "./plan";
@@ -624,6 +625,48 @@ describe("buildAssemblyPlan", () => {
     ]);
   });
 
+  it("reuses the Part when a Tool shares its number", () => {
+    // Item numbers are unique per type; the Tool must not shadow the Part.
+    const plan = buildAssemblyPlan({
+      documentId: "d",
+      wv: "w",
+      wvId: "w1",
+      elementId: "e",
+      root: {
+        partNumber: "WB-100",
+        name: null,
+        description: null,
+        revision: null
+      },
+      nodes: [node({ index: "1", partNumber: "TOP-001", name: "Top" })],
+      items: [
+        {
+          id: "tool",
+          readableId: "TOP-001",
+          revision: "0",
+          name: "Top",
+          type: "Tool"
+        },
+        {
+          id: "part",
+          readableId: "TOP-001",
+          revision: "0",
+          name: "Top",
+          type: "Part"
+        }
+      ],
+      methodByItemId: new Map(),
+      mappedLinesByMethodId: new Map(),
+      manualLinesByMethodId: new Map(),
+      options
+    });
+    expect(plan.skipped).toEqual([]);
+    expect(plan.items.map((item) => item.itemId)).toEqual(["part"]);
+    expect(plan.methods[0]?.writes.map((w) => w.partNumber)).toEqual([
+      "TOP-001"
+    ]);
+  });
+
   it("flags released and missing methods on reused parents", () => {
     const plan = buildAssemblyPlan({
       documentId: "d",
@@ -996,6 +1039,17 @@ describe("pickAdoptTarget", () => {
     expect(
       pickAdoptTarget([rows[0] as (typeof rows)[number]], "0")
     ).toBeUndefined();
+  });
+});
+
+describe("pickReuseRow", () => {
+  it("prefers the latest Part, then any row that can be a BOM line", () => {
+    const tool = { id: "t", revision: "B", type: "Tool" };
+    const material = { id: "m", revision: "A", type: "Material" };
+    const part = { id: "p", revision: "0", type: "Part" };
+    expect(pickReuseRow([tool, material, part])?.id).toBe("p");
+    expect(pickReuseRow([tool, material])?.id).toBe("m");
+    expect(pickReuseRow([tool])?.id).toBe("t");
   });
 });
 
