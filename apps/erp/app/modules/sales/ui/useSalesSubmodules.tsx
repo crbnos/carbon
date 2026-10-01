@@ -52,7 +52,7 @@ export default function useSalesSubmodules() {
           table: "quote"
         },
         {
-          name: t`Orders`,
+          name: t`Sales Orders`,
           to: path.to.salesOrders,
           icon: <RiProgress8Line />,
           table: "salesOrder"
