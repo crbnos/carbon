@@ -2966,7 +2966,11 @@ serve(async (req: Request) => {
                         .select("*")
                         .eq("companyId", companyId)
                         .eq("attributes->>Job Make Method", jobMakeMethod.id)
-                        .order("createdAt", { ascending: true });
+                        // Unit-axis order, so "Shipment Line Index" follows serial order
+                        // instead of the physical order of tied `createdAt` rows.
+                        .order("createdAt", { ascending: true })
+                        .order("readableId", { ascending: true })
+                        .order("id", { ascending: true });
 
                       let index = 0;
                       for await (const trackedEntity of trackedEntities?.data ??
@@ -3272,7 +3276,11 @@ serve(async (req: Request) => {
                       .select("*")
                       .eq("companyId", companyId)
                       .eq("attributes->>Job Make Method", jobMakeMethod.id)
-                      .order("createdAt", { ascending: true });
+                      // Unit-axis order, so "Shipment Line Index" follows serial order
+                      // instead of the physical order of tied `createdAt` rows.
+                      .order("createdAt", { ascending: true })
+                      .order("readableId", { ascending: true })
+                      .order("id", { ascending: true });
 
                     let index = 0;
                     for await (const trackedEntity of trackedEntities?.data ??

@@ -147,7 +147,10 @@ export async function getJobOperationBatch(
         .select("id, readableId, attributes, createdAt")
         .in("attributes->>Job Make Method", makeMethodIds)
         .eq("companyId", companyId)
+        // Unit-axis order — see getTrackedEntitiesByMakeMethodId.
         .order("createdAt", { ascending: true })
+        .order("readableId", { ascending: true })
+        .order("id", { ascending: true })
     : { data: [], error: null };
   const entityByMakeMethod = new Map<
     string,
@@ -1907,6 +1910,34 @@ export async function getScrapReasonsList(
     .order("name");
 }
 
+/**
+ * The tracked entities of a make method in UNIT-AXIS order — position `i` here is
+ * the `index` every `jobOperationStepRecord` (and inspection result) for unit `i`
+ * is stored under (`deriveUnits` in `~/utils/units`). So this order is not
+ * cosmetic: it is the join key between a recorded value and the serial it was
+ * recorded for, and it must be the same on every read, forever.
+ *
+ * `createdAt` alone is NOT that. `assign-serial-numbers` used to mint every
+ * serial after the first in one INSERT, so they share a `createdAt`; Postgres
+ * returns tied rows in physical order, and any UPDATE moves a row to the end of
+ * it. Logging one serial complete therefore reshuffled the others, and the
+ * values recorded at position 2 displayed under whichever serial slid into
+ * position 2 — and the Assembly view then auto-completed that unit.
+ *
+ * The tiebreakers make the order a pure function of immutable columns:
+ * `readableId` puts tied serials back in the sequence they were minted in
+ * (serials are zero-padded, so text order is number order within a batch) and
+ * `id` settles anything left. New serials no longer tie at all — the mint now
+ * spaces their `createdAt` — so this only decides rows minted before that.
+ *
+ * ponytail: text order, so a batch whose counter overflowed its pad width
+ * (…99 → …100 at size 2) sorts wrong among PRE-EXISTING tied rows. Sort with a
+ * numeric collator in JS if that ever turns up.
+ *
+ * Kept in step with the ERP copy (`inventory.service.ts`), the inline copies
+ * (`getJobOperationBatch` here, `JobHeader.tsx`) and the `issue` edge
+ * function's serial-complete branch — they all index into this same axis.
+ */
 export async function getTrackedEntitiesByMakeMethodId(
   client: SupabaseClient<Database>,
   jobMakeMethodId: string,
@@ -1917,7 +1948,9 @@ export async function getTrackedEntitiesByMakeMethodId(
     .select("*")
     .eq("attributes->>Job Make Method", jobMakeMethodId)
     .eq("companyId", companyId)
-    .order("createdAt", { ascending: true });
+    .order("createdAt", { ascending: true })
+    .order("readableId", { ascending: true })
+    .order("id", { ascending: true });
 }
 
 type SerialEntityForSelection = Pick<

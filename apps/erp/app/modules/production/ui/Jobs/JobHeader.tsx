@@ -1375,7 +1375,10 @@ function JobCompleteModal({
         .select("*")
         .eq("attributes->>Job Make Method", makeMethod.data?.id!)
         .eq("companyId", company.id)
-        .order("createdAt", { ascending: true });
+        // Unit-axis order — see getTrackedEntitiesByMakeMethodId.
+        .order("createdAt", { ascending: true })
+        .order("readableId", { ascending: true })
+        .order("id", { ascending: true });
 
       if (trackedEntities.data?.length) {
         const availableQuantity = trackedEntities.data.reduce((acc, curr) => {

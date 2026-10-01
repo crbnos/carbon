@@ -1424,12 +1424,19 @@ export async function getTrackedEntitiesByMakeMethodId(
   jobMakeMethodId: string,
   companyId: string
 ) {
+  // Unit-axis order: position here is the `index` step records are stored
+  // under, so it must be a pure function of immutable columns. `createdAt`
+  // alone ties for bulk-minted serials and Postgres breaks the tie by physical
+  // row order, which any UPDATE changes. Full reasoning on the MES copy
+  // (`apps/mes/app/services/operations.service.ts`); keep the two identical.
   return client
     .from("trackedEntity")
     .select("*")
     .eq("attributes->>Job Make Method", jobMakeMethodId)
     .eq("companyId", companyId)
-    .order("createdAt", { ascending: true });
+    .order("createdAt", { ascending: true })
+    .order("readableId", { ascending: true })
+    .order("id", { ascending: true });
 }
 
 export async function getTrackedEntity(
