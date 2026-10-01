@@ -195,18 +195,46 @@ export function extractOperation(args: Record<string, any> | undefined): {
 
 type UpsertRule = NonNullable<ManifestEntry["upsert"]>;
 
-/** A payload field, at the top level or inside the one object the payload is
- *  wrapped in (`{ job: { id } }`) — the same two places `_operation` is read. */
-function payloadField(
+/** Service params the dispatcher fills itself; the rest carry the payload. */
+const UPSERT_CONTEXT_PARAMS = new Set([
+  "client",
+  "db",
+  "userId",
+  "companyId",
+  "companyGroupId",
+  "eliminationClient"
+]);
+
+/**
+ * A field of the RECORD the call is about: at the top level of the body, or
+ * inside the object the payload is wrapped in — `{ job: { id } }`, where `job`
+ * is one of the service's payload parameters, or a lone unnamed wrapper, which
+ * the dispatcher unwraps the same way.
+ *
+ * Never inside any other nested object. Searching them all read
+ * `{ name, customFields: { id } }` as an update of record `id`, and a create
+ * was sent down the service's update branch.
+ */
+function recordField(
   args: Record<string, any> | undefined,
-  field: string
+  field: string,
+  payloadParams: readonly string[]
 ): unknown {
   if (!args) return undefined;
   if (args[field] !== undefined) return args[field];
-  for (const value of Object.values(args)) {
-    if (value && typeof value === "object" && !Array.isArray(value)) {
-      if (value[field] !== undefined) return value[field];
-    }
+
+  const isObject = (value: unknown): value is Record<string, any> =>
+    value !== null && typeof value === "object" && !Array.isArray(value);
+
+  for (const name of payloadParams) {
+    const wrapper = args[name];
+    if (isObject(wrapper) && wrapper[field] !== undefined)
+      return wrapper[field];
+  }
+  const keys = Object.keys(args);
+  if (keys.length === 1 && !payloadParams.includes(keys[0])) {
+    const wrapper = args[keys[0]];
+    if (isObject(wrapper)) return wrapper[field];
   }
   return undefined;
 }
@@ -224,6 +252,7 @@ function payloadField(
 export async function resolveUpsertOperation(
   rule: UpsertRule,
   args: Record<string, any> | undefined,
+  payloadParams: readonly string[],
   rowExists: (
     table: string,
     filter: Record<string, unknown>
@@ -231,7 +260,7 @@ export async function resolveUpsertOperation(
 ): Promise<McpOperation> {
   const values: Record<string, unknown> = {};
   for (const key of rule.keys) {
-    const value = payloadField(args, key);
+    const value = recordField(args, key, payloadParams);
     if (value === undefined || value === null || value === "") return "create";
     values[key] = value;
   }
@@ -367,6 +396,7 @@ export async function dispatchOperation(
       (await resolveUpsertOperation(
         meta.upsert,
         normalizedArgs,
+        meta.serviceParams.filter((name) => !UPSERT_CONTEXT_PARAMS.has(name)),
         async (table, filter) => {
           // Scoped to the caller's company on top of RLS: a user-scoped client
           // can see every company the user belongs to.

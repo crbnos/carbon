@@ -2,26 +2,26 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { Project } from "ts-morph";
 import { describe, expect, it } from "vitest";
 import {
   branchesOnKeyPresence,
   dbWrites,
-  exportedFunctions,
   namedTables,
-  paginates
+  paginates,
+  parseServiceSource
 } from "../../../scripts/lib/service-ast";
-import { declarationOf } from "../../../scripts/lib/service-metadata";
+import {
+  declarationOf,
+  upsertRule,
+  withoutAbsentAuditColumns
+} from "../../../scripts/lib/service-metadata";
 
 // The generator's questions about a service function, asked of real source
 // through the real compiler — no fixtures on disk, nothing stubbed.
 function parse(source: string) {
-  const project = new Project({ useInMemoryFileSystem: true });
-  const functions = exportedFunctions(
-    "mod",
-    project.createSourceFile("mod.service.ts", source)
+  return Object.fromEntries(
+    parseServiceSource("mod", source).map((fn) => [fn.name, fn])
   );
-  return Object.fromEntries(functions.map((fn) => [fn.name, fn]));
 }
 
 describe("service discovery", () => {
@@ -247,6 +247,135 @@ describe("the @mcp declaration", () => {
     expect(() => declare("twice")).toThrow(
       /must declare exactly one `@mcp <verb>` line; it has 2/
     );
+  });
+});
+
+// An upsert that branches on an audit field needs a rule for telling create
+// from update, and the generator refuses to publish one without it. Table and
+// column names are checked against the real generated database types.
+describe("the upsert rule", () => {
+  const fns = parse(`
+    type Shape = { name: string };
+    /** @mcp upsert */
+    export async function byId(
+      client: any,
+      row: (Shape & { createdBy: string }) | (Shape & { id: string; updatedBy: string })
+    ) {}
+
+    /** @mcp upsert */
+    export async function idBothWays(
+      client: any,
+      row:
+        | (Shape & { id: string; createdBy: string })
+        | (Shape & { id: string; updatedBy: string })
+    ) {}
+
+    /**
+     * @mcp upsert
+     * @mcp key pickMethod itemId, locationId
+     */
+    export async function composite(client: any, row: any) {}
+
+    /**
+     * @mcp upsert
+     * @mcp key item id
+     * @mcp key item readableId=id
+     */
+    export async function alternatives(client: any, row: any) {}
+
+    /**
+     * @mcp upsert
+     * @mcp key notATable id
+     */
+    export async function unknownTable(client: any, row: any) {}
+
+    /**
+     * @mcp upsert
+     * @mcp key pickMethod bogus
+     */
+    export async function unknownColumn(client: any, row: any) {}
+
+    /**
+     * @mcp upsert
+     * @mcp key pickMethod itemId
+     */
+    export async function fieldNotInInput(client: any, row: any) {}
+  `);
+  const schema = (...fields: string[]) => ({
+    type: "object",
+    properties: Object.fromEntries(fields.map((f) => [f, { type: "string" }]))
+  });
+
+  it("reads `id decides` off the parameter type", () => {
+    expect(upsertRule(fns.byId!, schema("id", "name"))).toEqual({
+      keys: ["id"]
+    });
+  });
+
+  it("refuses an upsert whose payload cannot say, until a key is declared", () => {
+    expect(() => upsertRule(fns.idBothWays!, schema("id", "name"))).toThrow(
+      /cannot say whether it creates or updates.*`@mcp key <table>/s
+    );
+  });
+
+  it("turns key lines into lookups, several lines being alternatives", () => {
+    expect(upsertRule(fns.composite!, schema("itemId", "locationId"))).toEqual({
+      keys: ["itemId", "locationId"],
+      lookups: [
+        {
+          table: "pickMethod",
+          match: { itemId: "itemId", locationId: "locationId" }
+        }
+      ]
+    });
+    expect(upsertRule(fns.alternatives!, schema("id"))).toEqual({
+      keys: ["id"],
+      lookups: [
+        { table: "item", match: { id: "id" } },
+        { table: "item", match: { readableId: "id" } }
+      ]
+    });
+  });
+
+  it("refuses a key that names nothing real", () => {
+    expect(() => upsertRule(fns.unknownTable!, schema("id"))).toThrow(
+      /"notATable", which is not a table or view/
+    );
+    expect(() => upsertRule(fns.unknownColumn!, schema("bogus"))).toThrow(
+      /"pickMethod" has no "bogus" column/
+    );
+    expect(() => upsertRule(fns.fieldNotInInput!, schema("id"))).toThrow(
+      /field "itemId" is not part of the tool's input/
+    );
+  });
+});
+
+// The bug this branch started from: createdBy stamped onto a payload that is
+// spread into a table with no such column (PGRST204).
+describe("audit fields the table does not have", () => {
+  const fns = parse(`
+    export async function linkTable(client: any, row: any) {
+      return client.from("customerPartToItem").insert([row]);
+    }
+    export async function audited(client: any, row: any) {
+      return client.from("customer").insert([row]);
+    }
+    export async function twoTables(client: any, row: any) {
+      await client.from("item").select("id");
+      return client.from("customerPartToItem").insert([row]);
+    }
+  `);
+  const fields = ["companyId", "createdBy", "updatedBy"] as const;
+  const drop = (name: string) =>
+    withoutAbsentAuditColumns([...fields], fns[name]!);
+
+  it("drops them when the function's one table lacks the columns", () => {
+    expect(drop("linkTable")).toEqual(["companyId"]);
+  });
+
+  it("keeps them when the table has the columns, or the table is ambiguous", () => {
+    expect(drop("audited")).toEqual([...fields]);
+    expect(drop("twoTables")).toEqual([...fields]);
   });
 });
 

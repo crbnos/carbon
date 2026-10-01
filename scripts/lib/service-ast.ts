@@ -276,6 +276,19 @@ export function exportedFunctions(
   return found.sort((a, b) => a.pos - b.pos).map((entry) => entry.fn);
 }
 
+/** The exported functions of service source held in memory — no files, no
+ *  tsconfig. What the tests feed the generator's questions with. */
+export function parseServiceSource(
+  module: string,
+  source: string
+): ServiceFunction[] {
+  const project = new Project({ useInMemoryFileSystem: true });
+  return exportedFunctions(
+    module,
+    project.createSourceFile(`${module}.service.ts`, source)
+  );
+}
+
 /**
  * Parse every module's service file — plus its `mcp.server.ts` companion, for
  * the tools that must import `*.server` modules and so cannot live in the

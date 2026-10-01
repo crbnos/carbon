@@ -940,7 +940,7 @@ const OPERATION_FIELDS = ["createdBy", "updatedBy"] as const;
  * from the generated types. `companyId` is never derived away — it is frequently
  * an `.eq()` filter argument rather than a column.
  */
-function withoutAbsentAuditColumns(
+export function withoutAbsentAuditColumns(
   fields: AuthField[],
   fn: ServiceFunction,
   onDrop?: (table: string, dropped: AuthField[]) => void
@@ -1007,7 +1007,7 @@ function stripRedundantPatterns(node: unknown): void {
  * Anything else fails generation, so a new upsert cannot quietly become a tool
  * that needs to be told what it is doing.
  */
-function upsertRule(
+export function upsertRule(
   fn: ServiceFunction,
   schema: Record<string, unknown>
 ): NonNullable<ManifestEntry["upsert"]> {
@@ -1106,7 +1106,7 @@ function describeUpsertKeys(
   if (annotate(top)) return;
   // The payload is wrapped (`{ job: {…} }`): the key lives one level down, or
   // in an object the schema does not spell out — say it on the wrapper then.
-  for (const [name, property] of Object.entries(top ?? {})) {
+  for (const property of Object.values(top ?? {})) {
     if (!property || typeof property !== "object") continue;
     if (annotate(property.properties)) return;
   }

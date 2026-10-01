@@ -782,6 +782,8 @@ describe("upserts decided by whether the record exists", () => {
     if (!upsert) throw new Error(`${name} has no upsert rule`);
     return upsert;
   };
+  // The service's payload parameter — the only object a key may be wrapped in.
+  const PARAMS = ["record"];
   const database = (rows: Record<string, Record<string, unknown>[]>) => {
     const asked: [string, Record<string, unknown>][] = [];
     const rowExists = async (
@@ -801,15 +803,15 @@ describe("upserts decided by whether the record exists", () => {
     const args = { id: "jm1", jobId: "j1", quantity: 2 };
 
     const empty = database({});
-    expect(await resolveUpsertOperation(upsert, args, empty.rowExists)).toBe(
-      "create"
-    );
+    expect(
+      await resolveUpsertOperation(upsert, args, PARAMS, empty.rowExists)
+    ).toBe("create");
     expect(empty.asked).toEqual([["jobMaterial", { id: "jm1" }]]);
 
     const stored = database({ jobMaterial: [{ id: "jm1" }] });
-    expect(await resolveUpsertOperation(upsert, args, stored.rowExists)).toBe(
-      "update"
-    );
+    expect(
+      await resolveUpsertOperation(upsert, args, PARAMS, stored.rowExists)
+    ).toBe("update");
   });
 
   it("r. a part is found by its item id OR its part number", async () => {
@@ -818,13 +820,18 @@ describe("upserts decided by whether the record exists", () => {
 
     for (const id of ["item_1", "PN-100"]) {
       const db = database(items);
-      expect(await resolveUpsertOperation(upsert, { id }, db.rowExists)).toBe(
-        "update"
-      );
+      expect(
+        await resolveUpsertOperation(upsert, { id }, PARAMS, db.rowExists)
+      ).toBe("update");
     }
     const db = database(items);
     expect(
-      await resolveUpsertOperation(upsert, { id: "PN-200" }, db.rowExists)
+      await resolveUpsertOperation(
+        upsert,
+        { id: "PN-200" },
+        PARAMS,
+        db.rowExists
+      )
     ).toBe("create");
     expect(db.asked).toEqual([
       ["item", { id: "PN-200" }],
@@ -841,6 +848,7 @@ describe("upserts decided by whether the record exists", () => {
       await resolveUpsertOperation(
         upsert,
         { itemId: "i1", locationId: "l1" },
+        PARAMS,
         db.rowExists
       )
     ).toBe("update");
@@ -848,6 +856,7 @@ describe("upserts decided by whether the record exists", () => {
       await resolveUpsertOperation(
         upsert,
         { itemId: "i1", locationId: "l2" },
+        PARAMS,
         db.rowExists
       )
     ).toBe("create");
@@ -857,10 +866,32 @@ describe("upserts decided by whether the record exists", () => {
       await resolveUpsertOperation(
         upsert,
         { itemId: "i1" },
+        PARAMS,
         untouched.rowExists
       )
     ).toBe("create");
     expect(untouched.asked).toEqual([]);
+  });
+
+  it("u. the key is the RECORD's: an id inside some other nested object is not it", async () => {
+    const byId = { keys: ["id"] };
+    const never = database({}).rowExists;
+    const resolve = (args: Record<string, unknown>) =>
+      resolveUpsertOperation(byId, args, PARAMS, never);
+
+    // A create whose custom fields happen to hold an `id` used to be sent down
+    // the update branch.
+    expect(await resolve({ name: "x", customFields: { id: "z" } })).toBe(
+      "create"
+    );
+    // The record's own id, flat or inside its wrapper, still means update.
+    expect(await resolve({ id: "a1", name: "x" })).toBe("update");
+    expect(await resolve({ record: { id: "a1", name: "x" } })).toBe("update");
+    // A lone unnamed wrapper is unwrapped, as the dispatcher does.
+    expect(await resolve({ guessed: { id: "a1" } })).toBe("update");
+    expect(await resolve({ record: { name: "x" }, other: { id: "z" } })).toBe(
+      "create"
+    );
   });
 
   it("t. no operation publishes _operation, and every branching upsert has a rule", () => {

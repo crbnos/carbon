@@ -79,16 +79,14 @@
     },
     "//#generate:mcp": {
       "inputs": [
-        "apps/erp/app/modules/*/*.service.ts",
-        "apps/erp/app/modules/*/*.mcp.server.ts",
-        "apps/erp/app/modules/*/*.models.ts",
-        "apps/erp/app/modules/*/types.ts",
-        "apps/erp/app/modules/shared/index.ts",
+        "apps/erp/app/modules/**/*.ts",
+        "apps/erp/app/types/**",
+        "apps/erp/app/utils/**",
         "apps/erp/app/routes/api+/mcp+/lib/mcp-blocked-tools.ts",
         "apps/erp/app/routes/api+/mcp+/lib/mcp-exposure.ts",
         "apps/erp/tsconfig.json",
-        "packages/api/src/**",
-        "packages/database/src/types.ts",
+        "packages/{api,database,documents,files,locale,logger,notifications,printing,utils}/src/**",
+        "packages/database/supabase/functions/shared/**",
         "scripts/generate-mcp.ts",
         "scripts/lib/**"
       ],
