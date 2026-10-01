@@ -77,10 +77,10 @@ import { getCachedChangelogPanelEntry } from "~/modules/account/account.server";
 import { AgentRoot } from "~/modules/agent/ui/AgentRoot";
 import { getOpenClockEntry } from "~/modules/people";
 import {
+  employeeCompaniesOf,
   getCompanies,
   getCompanyIntegrations,
-  getCompanySettings,
-  getEmployeeCompanies
+  getCompanySettings
 } from "~/modules/settings";
 import { getCustomFieldsSchemas } from "~/modules/shared/shared.server";
 import { getSavedViews } from "~/modules/shared/shared.service";
@@ -191,7 +191,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
   // Parallelize all requests
   const [
     companies,
-    employeeCompaniesResult,
     stripeCustomer,
     plan,
     customFields,
@@ -207,7 +206,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
     itarCertification
   ] = await Promise.all([
     getCompanies(client, userId),
-    getEmployeeCompanies(client, userId),
     getStripeCustomerByCompanyId(companyId, userId),
     getPlan(client, companyId),
     getCustomFieldsSchemas(client, { companyId }),
@@ -252,7 +250,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     throw await destroyAuthSession(request, reason);
   }
 
-  const employeeCompanies = employeeCompaniesResult.data ?? [];
+  const employeeCompanies = employeeCompaniesOf(companies.data ?? []);
   const hasMultipleCompanies = employeeCompanies.length > 1;
 
   // Send multi-company users to the picker, preserving where they were headed.
