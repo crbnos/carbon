@@ -38,21 +38,12 @@ const logger = getLogger("erp", "onshape", "panel-fields");
 
 const querySchema = z.object({
   documentId: z.string().min(1),
-  // A microversion context may read properties too.
   wv: z.enum(["w", "v", "m"]),
   wvId: z.string().min(1),
   elementId: z.string().min(1)
 });
 
-/**
- * The Fields editor's data: the current element's Onshape properties, the
- * company's property map, and the part custom field definitions.
- *
- * Onshape only lists properties from inside a document, which is why the
- * editor lives in the panel rather than on the integration page in Carbon. It
- * is a company setting, so it takes settings update, as the save does; the
- * panel shows the page only to users who hold it (`panel.me`).
- */
+/** Fields editor data: properties, property map, custom field definitions. */
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId, userId } = await requireOnshapePanelPermissions(
     request,
@@ -95,16 +86,14 @@ export async function loader({ request }: LoaderFunctionArgs) {
     wvmId: wvId
   };
 
-  // Which properties exist depends on the element kind: a part studio's live
-  // on its parts (union across them — a property with no value on one part may
-  // still exist on another), an assembly's on the element itself.
+  // A part studio's properties live on its parts, so take the union across
+  // them; an assembly's live on the element.
   let properties: OnshapePropertyValue[];
   try {
     const elements = await onshape.client.getElementsIn(document);
     const element = elements.find((e) => e.id === elementId);
     if (element?.elementType === "PARTSTUDIO") {
-      // Hidden parts included: the map is per property, not per part, and a
-      // property that only appears on a hidden part is still mappable.
+      // Hidden parts count: a property only on a hidden part is still mappable.
       const parts = await onshape.client.getPartsInElement(document, elementId);
       const byPartId = await readPartProperties(
         onshape.client,
@@ -112,7 +101,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
         elementId,
         parts.map((part) => part.partId)
       );
-      // One row per propertyId; the first occurrence names it.
       const seen = new Map<string, OnshapePropertyValue>();
       for (const partProperties of byPartId.values()) {
         for (const property of partProperties) {
@@ -132,8 +120,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
     return data(failure.body, { status: failure.status });
   }
 
-  // `loadPartCustomFieldDefinitions` throws on a failed read rather than
-  // returning an empty list, which would call every mapped field deleted.
+  // loadPartCustomFieldDefinitions throws on a failed read; an empty list
+  // would read as every mapped field deleted.
   const reads = await Promise.all([
     client
       .from("companyIntegration")
@@ -174,10 +162,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
   );
 }
 
-/*
- * A mapping needs an existing Carbon field. The panel does not create one:
- * defining a custom field is a settings change with its own form.
- */
 const entrySchema = z.object({
   onshapePropertyId: z.string().min(1),
   onshapeName: z.string(),
@@ -189,8 +173,7 @@ const payloadSchema = z.object({
   entries: z
     .array(entrySchema)
     .max(100)
-    // The map is keyed by propertyId; a duplicate would make one entry
-    // silently win, so it is a client bug worth rejecting outright.
+    // A duplicate propertyId would make one entry silently win.
     .refine(
       (entries) =>
         new Set(entries.map((e) => e.onshapePropertyId)).size === entries.length
@@ -209,10 +192,7 @@ function duplicates(values: string[]): Set<string> {
   return twice;
 }
 
-/**
- * Replace the company's property map. The panel always posts the whole list
- * (an empty array clears the map), so what was posted is the map.
- */
+/** Replace the property map; the panel always posts the whole list. */
 export async function action({ request }: ActionFunctionArgs) {
   const { client, companyId } = await requireOnshapePanelPermissions(request, {
     update: "settings"
@@ -226,11 +206,9 @@ export async function action({ request }: ActionFunctionArgs) {
   }
   const { entries } = parsed.data;
 
-  // ---- Validate before the write ------------------------------------------
   const fieldErrors: FieldError[] = [];
 
-  // A value type with no Carbon target cannot be mapped at all. The editor
-  // hides those rows, so this is the guard for a hand-made payload.
+  // The editor hides unmappable rows; this guards a hand-made payload.
   for (const entry of entries) {
     if (!Object.hasOwn(MAPPABLE_VALUE_TYPES, entry.valueType)) {
       fieldErrors.push({
@@ -240,8 +218,6 @@ export async function action({ request }: ActionFunctionArgs) {
     }
   }
 
-  // Two entries resolving to one Carbon field make a single property's value
-  // win by array order, silently.
   const duplicateFieldIds = duplicates(
     entries.map((entry) => entry.carbonFieldId)
   );
@@ -308,11 +284,8 @@ export async function action({ request }: ActionFunctionArgs) {
     mode: "owned"
   }));
 
-  // ---- Write the map ------------------------------------------------------
-  // Only this key is written, and the merge happens in the database, as the
-  // column's other writers (`@carbon/ee/onshape.server` state patches) do too:
-  // `jsonb_set` leaves every sibling key as the row holds it. The column is
-  // `json`, hence the casts.
+  // jsonb_set patches only propertyMap; other writers own the sibling keys.
+  // The column is json, hence the casts.
   const db = getDatabaseClient();
   let updatedRows: bigint;
   try {
@@ -331,7 +304,6 @@ export async function action({ request }: ActionFunctionArgs) {
     logger.error("Failed to save the property map", { companyId, error });
     return data({ error: "Failed to save the property map" }, { status: 500 });
   }
-  // No row to update means the company never connected Onshape V2.
   if (Number(updatedRows) === 0) {
     return data(
       { error: "Onshape is not connected for this company" },
@@ -339,10 +311,7 @@ export async function action({ request }: ActionFunctionArgs) {
     );
   }
 
-  /*
-   * Definitions are re-read so the editor shows the fields as they now stand.
-   * The map is saved by this point, so a failed re-read is not a failed save.
-   */
+  // The map is saved; a failed re-read is a warning, not a failed save.
   let definitions: PlanCustomFieldDefinition[] | null = null;
   let warning: string | undefined;
   try {

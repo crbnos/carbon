@@ -47,33 +47,16 @@ const payloadSchema = z.object({
   wvId: z.string().min(1),
   elementId: z.string().min(1),
   depth: z.enum(["all", "top"]).default("all"),
-  /** The assembly configuration the panel was opened in; absent = default. */
   configuration: z.string().nullish()
 });
 
 /**
- * The most distinct part numbers one push will plan.
- *
- * Not a technical limit — the reads are batched and the writes are bulk — but
- * a push is one HTTP request with no rollback, so a very large one can be cut
- * off by a gateway halfway through, leaving a partly written BOM.
- *
- * A `top` push is bounded by one level and is never refused.
+ * Most distinct part numbers one push plans. A push is one request with no
+ * rollback, so a gateway can cut a large one off mid-BOM. `top` is exempt.
  */
 const MAX_PLAN_PARTS = 1500;
 
-/**
- * Plan an assembly push: read the BOM and the assembly's identity from
- * Onshape, join them to Carbon, and return what `push-assembly` would do —
- * every item it would create (with the values it would use), every make
- * method it would touch and the lines each would gain, lose or keep — without
- * writing anything. The plan is stored server-side with the parsed BOM so the
- * apply never reads Onshape again: the two live calls here (BOM + element
- * metadata) are the push's whole quota cost.
- *
- * Permissions match the apply so a user who could not push fails here,
- * before reviewing.
- */
+/** Plan an assembly push without writing; the apply reuses the stored plan. */
 export async function action({ request }: ActionFunctionArgs) {
   const { client, companyId, userId } = await requireOnshapePanelPermissions(
     request,
@@ -123,11 +106,9 @@ export async function action({ request }: ActionFunctionArgs) {
     return data(failure.body, { status: failure.status });
   }
 
-  // The indented BOM never carries the assembly's own row; its identity comes
-  // from element metadata, with the BOM root as the fallback when present.
+  // The indented BOM omits the assembly's own row; element metadata names it.
   const { root: bomRoot, lines, missingColumns } = parseBomTree(bom);
-  // An unreadable tree plans as "the assembly has no lines", and the apply
-  // would then remove every Onshape-origin line from the method.
+  // An empty plan from an unreadable tree would drop every Onshape line.
   if (missingColumns.length > 0) {
     return data(
       { error: missingBomColumnsMessage(missingColumns) },
@@ -139,9 +120,6 @@ export async function action({ request }: ActionFunctionArgs) {
   let rootDescription = bomRoot?.description ?? null;
   const rootRevision = bomRoot?.revision ?? null;
   let elementMetadata: unknown = null;
-  // A failed read is kept, not swallowed: identity may still come from the
-  // BOM root, but the mapped fields cannot, and the property-map block below
-  // refuses to plan without them.
   let metadataError: unknown = null;
   try {
     elementMetadata = await onshape.client.getElementMetadata(
@@ -158,8 +136,7 @@ export async function action({ request }: ActionFunctionArgs) {
     metadataError = error;
   }
   if (!rootPartNumber) {
-    // A read that failed is not an assembly without a part number: telling
-    // the user to fix their Onshape data would send them the wrong way.
+    // A failed read is not a missing part number; report the read failure.
     if (metadataError !== null) {
       const failure = onshapeFailure(metadataError);
       return data(failure.body, { status: failure.status });
@@ -170,9 +147,6 @@ export async function action({ request }: ActionFunctionArgs) {
     );
   }
 
-  // ---- Carbon side, all bulk --------------------------------------------
-  // At `top` depth the push writes one method, so only the root's own children
-  // are planned; the rest of the tree belongs to its own push.
   const allNodes = depth === "top" ? lines : flattenNodes(lines);
   const partNumbers = [
     ...new Set(
@@ -185,12 +159,8 @@ export async function action({ request }: ActionFunctionArgs) {
     const subAssemblies = lines.filter(
       (node) => node.children.length > 0
     ).length;
-    /*
-     * "Push the sub-assemblies first" cannot work: this count is over the
-     * WHOLE tree regardless of what is already in Carbon, so the parent is
-     * refused just the same afterwards. A level-only push is the way out, and
-     * `code` lets the panel offer it as a button.
-     */
+    // The count covers the whole tree whatever Carbon holds, so pushing the
+    // sub-assemblies first does not help; `code` lets the panel offer `top`.
     return data(
       {
         code: "too-large" as const,
@@ -217,17 +187,13 @@ export async function action({ request }: ActionFunctionArgs) {
   if (existing.error) {
     return data({ error: "Failed to read Carbon items" }, { status: 500 });
   }
-  // item.revision is nullable; the builders read a missing one as "0", the
-  // same default pickAdoptTarget and proposeItem use.
   const items: PlanItemRow[] = existing.data.map((row) => ({
     ...row,
     revision: row.revision ?? "0"
   }));
 
-  // Parents are the root and every node with children: only their make
-  // methods get lines, so only those methods' line ownership is read. Every
-  // revision row of a parent part number is included so the ownership read
-  // covers whichever row the builder pins.
+  // Every revision row of a parent is included so the ownership read covers
+  // whichever row the builder pins.
   const parentPartNumbers = new Set<string>([rootPartNumber]);
   for (const node of allNodes) {
     if (node.partNumber && node.children.length > 0) {
@@ -238,8 +204,6 @@ export async function action({ request }: ActionFunctionArgs) {
     .filter((item) => parentPartNumbers.has(item.readableId))
     .map((item) => item.id);
 
-  // The links the status badges read, so the review can tell a reuse the user
-  // already linked from one found by part number alone (a conflict).
   const linkExternalIds = [
     ...new Set(
       [
@@ -254,8 +218,7 @@ export async function action({ request }: ActionFunctionArgs) {
   const serviceRole = getCarbonServiceRole();
   const [options, methods, links, itemLinks] = await Promise.all([
     loadPlanOptions(client, companyId),
-    // Settled here so the other reads still resolve; a failure answers 500
-    // below rather than planning every existing method as missing.
+    // Settled so a failure answers 500 instead of planning methods as missing.
     loadActiveMakeMethods(client, companyId, parentItemIds).then(
       (byItemId) => ({ byItemId, error: null }),
       (error: unknown) => ({ byItemId: null, error })
@@ -269,8 +232,7 @@ export async function action({ request }: ActionFunctionArgs) {
         .eq("entityType", "item")
         .in("externalId", batch)
     ),
-    // Which existing items carry any Onshape link: an item linked elsewhere
-    // keeps that link, so this push neither links it nor writes its text.
+    // An item linked elsewhere keeps its link, and this push leaves its text.
     selectInBatches(
       items.map((item) => item.id),
       (batch) =>
@@ -311,8 +273,6 @@ export async function action({ request }: ActionFunctionArgs) {
       linkedItemIdByExternalId.set(link.externalId, link.entityId);
     }
   }
-  // A released method is pushed through a Draft; the review shows the one
-  // the push will reuse, or the Active method a new Draft would copy.
   let reusableDraftByItemId: Awaited<ReturnType<typeof loadReusableDrafts>>;
   let ownership: Awaited<ReturnType<typeof loadMethodLineOwnership>>;
   try {
@@ -366,13 +326,8 @@ export async function action({ request }: ActionFunctionArgs) {
     reusableDraftByItemId
   });
 
-  // ---- Root custom fields (property map) ---------------------------------
-  // The Onshape→custom-field map lives on the integration's settings
-  // metadata (getOnshapeClient read the same row but returns only a client,
-  // so this is one more RLS-scoped select). Only the ROOT item resolves
-  // fields — child items get theirs when their own part studio is pushed —
-  // and only from the element metadata already fetched above, so the map
-  // costs no extra Onshape call.
+  // Root custom fields only (children get theirs from their own part push),
+  // from the metadata read above, so the map costs no extra Onshape call.
   if (elementMetadata !== null || metadataError !== null) {
     const integration = await client
       .from("companyIntegration")
@@ -380,8 +335,7 @@ export async function action({ request }: ActionFunctionArgs) {
       .eq("id", ONSHAPE_V2_INTEGRATION_ID)
       .eq("companyId", companyId)
       .maybeSingle();
-    // A failed read must not silently plan a push without the mapped fields —
-    // an "owned" field the user expects to follow every push would be skipped.
+    // A failed read must not plan a push that silently skips owned fields.
     if (integration.error) {
       return data(
         { error: "Failed to read the Onshape property map" },
@@ -400,8 +354,7 @@ export async function action({ request }: ActionFunctionArgs) {
       try {
         definitions = await loadPartCustomFieldDefinitions(client, companyId);
       } catch (error) {
-        // The read throws rather than answering []: resolving the map against
-        // no definitions would read as "every mapped field was deleted".
+        // Never fall back to []: it would read as every mapped field deleted.
         return data(
           {
             error:
@@ -418,8 +371,8 @@ export async function action({ request }: ActionFunctionArgs) {
         definitions
       });
       let fields = resolved.fields;
-      // A reused root reads Carbon's values so the review never claims to
-      // clear a field Carbon doesn't hold. `part` is keyed by readableId.
+      // A reused root drops clears of fields Carbon doesn't hold.
+      // `part` is keyed by readableId.
       if (plan.root.action === "reuse" && fields.length > 0) {
         const held = await client
           .from("part")
@@ -447,8 +400,7 @@ export async function action({ request }: ActionFunctionArgs) {
     }
   }
 
-  // The parsed BOM rides along server-side: apply walks it for line order
-  // and child part links, and the panel never needs it.
+  // The parsed BOM is stored for the apply; the panel never needs it.
   const stored: StoredAssemblyPlan = { ...plan, nodes: lines };
   const created = await createPanelPlan({ companyId, userId, plan: stored });
   if (!created) {
