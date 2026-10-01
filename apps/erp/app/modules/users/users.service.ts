@@ -8,7 +8,7 @@ import { getLogger } from "@carbon/logger";
 import { datetime } from "@carbon/utils";
 import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
 import type { GenericQueryFilters } from "~/utils/query";
-import { setGenericQueryFilters } from "~/utils/query";
+import { LIST_COUNT, setGenericQueryFilters } from "~/utils/query";
 import type { UserSelectGroupMembers } from "./types";
 
 const logger = getLogger("erp", "users");
@@ -187,7 +187,7 @@ export async function getCustomers(
     .select(
       `active, user!inner(id, fullName, firstName, lastName, email, avatarUrl),
       customer!inner(name, customerType!left(name))`,
-      { count: "exact" }
+      { count: LIST_COUNT }
     )
     .eq("companyId", companyId);
 
@@ -251,7 +251,7 @@ export async function getEmployees(
 ) {
   let query = client
     .from("employees")
-    .select("*", { count: "exact" })
+    .select("*", { count: LIST_COUNT })
     .eq("companyId", companyId);
 
   if (args.search) {
@@ -291,7 +291,7 @@ export async function getConsoleOperators(
 ) {
   let query = client
     .from("employees")
-    .select("*", { count: "exact" })
+    .select("*", { count: LIST_COUNT })
     .eq("companyId", companyId)
     .like("email", "%@console.internal");
 
@@ -323,7 +323,7 @@ export async function getEmployeeTypes(
 ) {
   let query = client
     .from("employeeType")
-    .select("*", { count: "exact" })
+    .select("*", { count: LIST_COUNT })
     .eq("companyId", companyId);
 
   if (args?.search) {
@@ -529,7 +529,7 @@ export async function getSuppliers(
     .select(
       `active, user!inner(id, fullName, firstName, lastName, email, avatarUrl),
       supplier!inner(name, supplierType!left(name))`,
-      { count: "exact" }
+      { count: LIST_COUNT }
     )
     .eq("companyId", companyId);
 

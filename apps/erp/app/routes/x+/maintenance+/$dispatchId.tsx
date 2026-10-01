@@ -8,8 +8,12 @@ import { flash } from "@carbon/auth/session.server";
 import { storage } from "@carbon/files";
 import type { JSONContent } from "@carbon/react";
 import { VStack } from "@carbon/react";
+import { isUnaffectedByNavigation } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
-import type { LoaderFunctionArgs } from "react-router";
+import type {
+  LoaderFunctionArgs,
+  ShouldRevalidateFunction
+} from "react-router";
 import { Outlet, redirect, useLoaderData, useParams } from "react-router";
 import { PanelProvider, ResizablePanels } from "~/components/Layout/Panels";
 import RiskRegisterCard from "~/modules/quality/ui/RiskRegister/RiskRegisterCard";
@@ -48,6 +52,11 @@ async function getMaintenanceDispatchFiles(
     .list(`${companyId}/maintenance/${dispatchId}`);
   return result.data ?? [];
 }
+
+export const shouldRevalidate: ShouldRevalidateFunction = (args) =>
+  isUnaffectedByNavigation(args, { params: ["dispatchId"] })
+    ? false
+    : args.defaultShouldRevalidate;
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {

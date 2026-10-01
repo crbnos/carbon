@@ -40,11 +40,7 @@ import {
   VStack
 } from "@carbon/react";
 import { getStripeCustomerByCompanyId } from "@carbon/stripe/stripe.server";
-import {
-  Edition,
-  isSearchParamOnlyNavigation,
-  requiresItarEntityCertification
-} from "@carbon/utils";
+import { Edition, requiresItarEntityCertification } from "@carbon/utils";
 import { Trans } from "@lingui/react/macro";
 import posthog from "posthog-js";
 import type { ReactNode } from "react";
@@ -84,7 +80,6 @@ import { ERP_URL, MES_URL, path } from "~/utils/path";
 
 export const shouldRevalidate: ShouldRevalidateFunction = ({
   currentUrl,
-  nextUrl,
   formMethod,
   formAction,
   defaultShouldRevalidate
@@ -108,15 +103,10 @@ export const shouldRevalidate: ShouldRevalidateFunction = ({
     return true;
   }
 
-  // This loader is the app shell: 9 queries plus an auth round-trip. Without
-  // this it re-ran on every filter, sort and page click, none of which can
-  // change anything it returns.
-  // NOTE: `useRevalidator().revalidate()` — how the realtime hooks refresh —
-  // also looks like a same-pathname GET, so the shell does not re-run for
-  // realtime events either. Leaf loaders still refresh, which is the intent.
-  // Shell data that must react to a realtime change needs an explicit case
-  // above.
-  if (isSearchParamOnlyNavigation({ currentUrl, nextUrl, formMethod })) {
+  // Only a mutation can change what the shell returns, so a GET never re-runs
+  // it — including `useRevalidator().revalidate()` from the realtime hooks.
+  // Shell data that must react to a realtime change needs a case above.
+  if (!formMethod || formMethod === "GET") {
     return false;
   }
 
@@ -132,26 +122,6 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
   // share a client between requests
   const client = getCarbon(accessToken);
 
-  // parallelize the requests
-  const [companies, user] = await Promise.all([
-    getCompanies(client, userId),
-    getUser(client, userId)
-  ]);
-
-  if (user.error || !user.data) {
-    throw await destroyAuthSession(request);
-  }
-
-  const company = companies.data?.find((c) => c.companyId === companyId);
-  if (!company) {
-    // A company-less authenticated user (e.g. an enterprise first-run user who
-    // hasn't onboarded) has no MES to enter — MES doesn't host onboarding.
-    // Send them to a terminal screen that links to ERP onboarding, not into
-    // accountSettings (an ERP /x route that would itself bounce a no-company
-    // user, i.e. a redirect loop).
-    throw redirect(path.to.setupRequired);
-  }
-
   // Get the location and console state from middleware context
   const ctx = context.get(userContext);
   const locationId = ctx?.locationId;
@@ -162,6 +132,9 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
   const serviceRole = getCarbonServiceRole();
 
   let [
+    companies,
+    user,
+    activeMaintenanceCount,
     companyPlan,
     locations,
     activeEvents,
@@ -170,6 +143,9 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
     locationEmployees,
     printerRoutes
   ] = await Promise.all([
+    getCompanies(client, userId),
+    getUser(client, userId),
+    getActiveMaintenanceEventsCount(client, locationId),
     getStripeCustomerByCompanyId(companyId, userId),
     getLocationsByCompany(client, companyId),
     getActiveJobCount(client, {
@@ -194,6 +170,20 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
       : Promise.resolve({ data: [] as { id: string }[] }),
     getPrinterRoutes(serviceRole, companyId)
   ]);
+
+  if (user.error || !user.data) {
+    throw await destroyAuthSession(request);
+  }
+
+  const company = companies.data?.find((c) => c.companyId === companyId);
+  if (!company) {
+    // A company-less authenticated user (e.g. an enterprise first-run user who
+    // hasn't onboarded) has no MES to enter — MES doesn't host onboarding.
+    // Send them to a terminal screen that links to ERP onboarding, not into
+    // accountSettings (an ERP /x route that would itself bounce a no-company
+    // user, i.e. a redirect loop).
+    throw redirect(path.to.setupRequired);
+  }
 
   const locationEmployeeIds =
     locationEmployees.data?.map((e: { id: string }) => e.id) ?? [];
@@ -233,12 +223,6 @@ export async function loader({ request, context }: LoaderFunctionArgs) {
     mfaRequired && !ssoMfaExempt
       ? !(await userHasVerifiedTotpFactor(userId))
       : false;
-
-  // Get active maintenance count after we have the location
-  const activeMaintenanceCount = await getActiveMaintenanceEventsCount(
-    client,
-    locationId
-  );
 
   // ITAR gate — only queried in controlled environments. `entityRequired` is
   // false for Carbon staff: the Rider binds the customer's own organization, so

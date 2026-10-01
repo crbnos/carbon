@@ -874,7 +874,7 @@ export async function getCustomers(
   let query = client
     .from("customers")
     .select("*", {
-      count: "exact"
+      count: LIST_COUNT
     })
     .eq("companyId", companyId);
 
@@ -918,7 +918,7 @@ export async function getCustomerStatuses(
 ) {
   let query = client
     .from("customerStatus")
-    .select("id, name, customFields", { count: "exact" })
+    .select("id, name, customFields", { count: LIST_COUNT })
     .eq("companyId", companyId);
 
   if (args?.search) {
@@ -963,7 +963,7 @@ export async function getCustomerTypes(
 ) {
   let query = client
     .from("customerType")
-    .select("*", { count: "exact" })
+    .select("*", { count: LIST_COUNT })
     .eq("companyId", companyId);
 
   if (args?.search) {
@@ -999,7 +999,7 @@ export async function getExternalSalesOrderLines(
     "get_sales_order_lines_by_customer_id",
     { customer_id: customerId },
     {
-      count: "exact"
+      count: LIST_COUNT
     }
   );
 
@@ -1062,7 +1062,7 @@ export async function getNoQuoteReasons(
 ) {
   let query = client
     .from("noQuoteReason")
-    .select("*", { count: "exact" })
+    .select("*", { count: LIST_COUNT })
     .eq("companyId", companyId);
 
   if (args?.search) {
@@ -1192,7 +1192,7 @@ export async function getPricingRules(
 ) {
   let query = client
     .from("pricingRule")
-    .select("*", { count: "exact" })
+    .select("*", { count: LIST_COUNT })
     .eq("companyId", companyId);
 
   if (args?.search) {
@@ -1931,7 +1931,7 @@ export async function getSalesRFQs(
 ) {
   let query = client
     .from("salesRfqs")
-    .select("*", { count: "exact" })
+    .select("*", { count: LIST_COUNT })
     .eq("companyId", companyId);
 
   if (args.search) {
@@ -2410,7 +2410,7 @@ export async function resolvePriceList(
     .from("item")
     .select(
       "id, readableId, name, thumbnailPath, itemUnitSalePrice(unitSalePrice), itemCost(itemPostingGroupId)",
-      { count: "exact" }
+      { count: LIST_COUNT }
     )
     .eq("active", true)
     .in("id", overriddenItemIds);
@@ -2696,7 +2696,7 @@ export async function getBaseCatalog(
     .from("item")
     .select(
       "id, readableId, name, thumbnailPath, itemUnitSalePrice(unitSalePrice), itemCost(itemPostingGroupId)",
-      { count: "exact" }
+      { count: LIST_COUNT }
     )
     .eq("companyId", companyId)
     .eq("active", true);
@@ -3067,7 +3067,7 @@ export async function getCustomerItemPriceOverridesList(
       customerType:customerTypeId(id, name),
       item:itemId(id, name, unitSalePrice:itemUnitSalePrice(unitSalePrice))
     `,
-      { count: "exact" }
+      { count: LIST_COUNT }
     )
     .eq("companyId", companyId);
 
@@ -6499,7 +6499,7 @@ export async function getReturnReasons(
 ) {
   let query = client
     .from("returnReason")
-    .select("*", { count: "exact" })
+    .select("*", { count: LIST_COUNT })
     .eq("companyId", companyId);
 
   if (args?.search) {

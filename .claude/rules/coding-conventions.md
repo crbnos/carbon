@@ -100,6 +100,15 @@ MES is lighter: services live under `apps/mes/app/services/`, components under
   destructuring `{ client, companyId, userId }` (also `email`, `companyGroupId`).
 - Loaders/actions return **plain objects** or `data(value, responseInit)`.
   Do NOT use `json(...)` — that is the old Remix helper and is not the convention here.
+- A route with children that has a loader exports `shouldRevalidate`. Single fetch
+  re-runs every matched loader on every navigation otherwise. Use
+  `isUnaffectedByNavigation(args, { params, search })` from `@carbon/utils`, naming the
+  route params the loader reads and either the search params it reads or `search: "all"`
+  for a list loader. Shell data that does not gate rendering is returned as a promise.
+  Render it through `Await` when it is visible on first paint, so it streams in the
+  server HTML (`ImplementationData` in `~/hooks/useImplementationNavItem` is the
+  pattern); read it with `useResolved` (`~/hooks/useResolved`) when a late value is
+  harmless.
 - On success an action throws a redirect (`throw redirect(...)`), not `return`.
   Cached entities add a `clientAction`/`clientLoader` for cache control.
 

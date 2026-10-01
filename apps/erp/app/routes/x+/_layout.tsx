@@ -13,7 +13,6 @@ import {
   SESSION_HEARTBEAT_MS,
   SESSION_IDLE_LOCK_MS
 } from "@carbon/auth";
-import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { getCompanyId, setCompanyId } from "@carbon/auth/company.server";
 import { userHasVerifiedTotpFactor } from "@carbon/auth/mfa.server";
 import {
@@ -43,11 +42,7 @@ import {
   useNProgress
 } from "@carbon/react";
 import { getStripeCustomerByCompanyId } from "@carbon/stripe/stripe.server";
-import {
-  Edition,
-  isSearchParamOnlyNavigation,
-  requiresItarEntityCertification
-} from "@carbon/utils";
+import { Edition, requiresItarEntityCertification } from "@carbon/utils";
 import posthog from "posthog-js";
 import type { ReactNode } from "react";
 import { Suspense, useEffect } from "react";
@@ -74,7 +69,7 @@ import TrainingPanel from "~/components/TrainingPanel";
 import { useIdle, usePermissions, useRecordRecentlyViewed } from "~/hooks";
 import { useChangelogPanel } from "~/hooks/useChangelogPanel";
 import { useTrainingPanel } from "~/hooks/useTrainingPanel";
-import { getChangelogPanelEntry } from "~/modules/account";
+import { getCachedChangelogPanelEntry } from "~/modules/account/account.server";
 import { AgentRoot } from "~/modules/agent/ui/AgentRoot";
 import { getOpenClockEntry } from "~/modules/people";
 import {
@@ -99,7 +94,6 @@ const log = getLogger("erp", "auth");
 
 export const shouldRevalidate: ShouldRevalidateFunction = ({
   currentUrl,
-  nextUrl,
   formMethod,
   defaultShouldRevalidate
 }) => {
@@ -114,15 +108,10 @@ export const shouldRevalidate: ShouldRevalidateFunction = ({
     return true;
   }
 
-  // This loader is the app shell: 16 parallel queries plus an auth round-trip.
-  // Without this it re-ran on every table filter, sort and page click, none of
-  // which can change anything it returns.
-  // NOTE: `useRevalidator().revalidate()` — how the realtime hooks refresh —
-  // also looks like a same-pathname GET, so the shell does not re-run for
-  // realtime events either. Leaf loaders still refresh, which is the intent.
-  // Shell data that must react to a realtime change needs an explicit case
-  // above.
-  if (isSearchParamOnlyNavigation({ currentUrl, nextUrl, formMethod })) {
+  // Only a mutation can change what the shell returns, so a GET never re-runs
+  // it — including `useRevalidator().revalidate()` from the realtime hooks.
+  // Shell data that must react to a realtime change needs a case above.
+  if (!formMethod || formMethod === "GET") {
     return false;
   }
 
@@ -166,6 +155,32 @@ export async function loader({ request }: LoaderFunctionArgs) {
     ? getItarCertificationStatus(client, companyId, userId)
     : Promise.resolve({ entityCertified: true, userCertified: true });
 
+  // Streamed, not awaited. Each catches: the loader can exit early with
+  // nothing awaiting them.
+  const implementation = Promise.all([
+    implementationHubPromise,
+    getImplementationCheckStates(client, companyId),
+    implementationSignalsPromise
+  ])
+    .then(([hub, checkStates, signals]) => ({
+      implementationHub: hub.data ?? null,
+      implementationCheckStates: checkStates.data ?? [],
+      implementationSignals: signals
+    }))
+    .catch((error) => {
+      log.error("Failed to load implementation hub", { companyId, error });
+      return {
+        implementationHub: null,
+        implementationCheckStates: [],
+        implementationSignals: null
+      };
+    });
+  const auditLogEnabled = isAuditLogEnabled(client, companyId).catch(
+    () => false
+  );
+  // Whether this user dismissed it is a user flag, read client-side.
+  const changelog = getCachedChangelogPanelEntry().catch(() => null);
+
   // Parallelize all requests
   const [
     companies,
@@ -180,14 +195,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
     claims,
     groups,
     defaults,
-    auditLogEnabled,
     modulePreferences,
     printerRoutes,
-    implementationHub,
-    implementationCheckStates,
-    implementationSignals,
-    itarCertification,
-    changelog
+    itarCertification
   ] = await Promise.all([
     getCompanies(client, userId),
     getEmployeeCompanies(client, userId),
@@ -201,15 +211,9 @@ export async function loader({ request }: LoaderFunctionArgs) {
     getUserClaims(userId, companyId),
     getUserGroups(client, userId),
     getUserDefaults(client, userId, companyId),
-    isAuditLogEnabled(client, companyId).catch(() => false),
     getModulePreferences(client, userId, companyId),
     getPrinterRoutes(client, companyId),
-    implementationHubPromise,
-    getImplementationCheckStates(client, companyId),
-    implementationSignalsPromise,
-    itarCertificationPromise,
-    // Whether this user dismissed it is a user flag, read client-side.
-    getChangelogPanelEntry(getCarbonServiceRole()).catch(() => null)
+    itarCertificationPromise
   ]);
 
   // Empty groups is a valid pre-onboarding state (a first-run user with no
@@ -325,9 +329,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
     modulePreferences: modulePreferences.data ?? [],
     savedViews: savedViews.data ?? [],
     printerRoutes: printerRoutes.data ?? [],
-    implementationHub: implementationHub.data ?? null,
-    implementationCheckStates: implementationCheckStates.data ?? [],
-    implementationSignals,
+    implementation,
     changelog,
     itarCertification: {
       ...itarCertification,

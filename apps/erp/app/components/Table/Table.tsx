@@ -356,7 +356,7 @@ const Table = <T extends object>({
   }, [data.length, withSelectableRows]);
 
   /* Pagination */
-  const pagination = usePagination(count, setRowSelection);
+  const pagination = usePagination(count, setRowSelection, data.length);
 
   /* Column Visibility */
   const [columnVisibility, setColumnVisibility] = useState(

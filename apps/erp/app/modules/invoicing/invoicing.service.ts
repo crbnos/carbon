@@ -1410,7 +1410,7 @@ export async function getPayments(
 ) {
   let query = client
     .from("payment")
-    .select("*", { count: "exact" })
+    .select("*", { count: LIST_COUNT })
     .eq("companyId", companyId);
 
   if (args.search) {
@@ -1468,7 +1468,7 @@ export async function getCharges(
 ) {
   let query = client
     .from("charge")
-    .select("*", { count: "exact" })
+    .select("*", { count: LIST_COUNT })
     .eq("companyId", companyId);
 
   if (args.search) {
@@ -1517,7 +1517,7 @@ export async function getReimbursements(
 ) {
   let query = client
     .from("reimbursement")
-    .select("*", { count: "exact" })
+    .select("*", { count: LIST_COUNT })
     .eq("companyId", companyId);
 
   if (args.search) {
@@ -3595,7 +3595,7 @@ export async function getMemos(
 ) {
   let query = client
     .from("memo")
-    .select("*", { count: "exact" })
+    .select("*", { count: LIST_COUNT })
     .eq("companyId", companyId);
 
   if (args.search) {

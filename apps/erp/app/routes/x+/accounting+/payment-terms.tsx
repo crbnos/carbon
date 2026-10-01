@@ -4,8 +4,12 @@
 
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { VStack } from "@carbon/react";
+import { isUnaffectedByNavigation } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
-import type { LoaderFunctionArgs } from "react-router";
+import type {
+  LoaderFunctionArgs,
+  ShouldRevalidateFunction
+} from "react-router";
 import { Outlet, useLoaderData } from "react-router";
 import { getPaymentTerms } from "~/modules/accounting";
 import { PaymentTermsTable } from "~/modules/accounting/ui/PaymentTerms";
@@ -17,6 +21,11 @@ export const handle: Handle = {
   breadcrumb: msg`Payment Terms`,
   to: path.to.paymentTerms
 };
+
+export const shouldRevalidate: ShouldRevalidateFunction = (args) =>
+  isUnaffectedByNavigation(args, { search: "all" })
+    ? false
+    : args.defaultShouldRevalidate;
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {

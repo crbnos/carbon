@@ -18,3 +18,18 @@ export function getPageSize(params: URLSearchParams): number {
 export function getPageOffset(params: URLSearchParams): number {
   return Math.max(0, parseNumberFromUrlParam(params, "offset", 0));
 }
+
+// `count` may be an estimate (`LIST_COUNT`), so the rows returned decide
+// whether a next page exists: a low estimate must not hide rows.
+export function pageBounds(args: {
+  count: number;
+  offset: number;
+  pageSize: number;
+  rowsOnPage: number;
+}) {
+  const seen = args.offset + args.rowsOnPage;
+  return {
+    canNextPage: args.rowsOnPage >= args.pageSize && seen !== args.count,
+    count: Math.max(args.count, seen)
+  };
+}

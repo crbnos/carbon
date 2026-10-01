@@ -5,7 +5,12 @@
 import { assertIsPost, error, notFound } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
-import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
+import { isUnaffectedByNavigation } from "@carbon/utils";
+import type {
+  ActionFunctionArgs,
+  LoaderFunctionArgs,
+  ShouldRevalidateFunction
+} from "react-router";
 import {
   data,
   Outlet,
@@ -19,6 +24,11 @@ import { CustomFieldsTableDetail, getCustomFields } from "~/modules/settings";
 import { updateCustomFieldsSortOrder } from "~/modules/settings/settings.server";
 import { getTagsList } from "~/modules/shared";
 import { path } from "~/utils/path";
+
+export const shouldRevalidate: ShouldRevalidateFunction = (args) =>
+  isUnaffectedByNavigation(args, { params: ["table"] })
+    ? false
+    : args.defaultShouldRevalidate;
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {

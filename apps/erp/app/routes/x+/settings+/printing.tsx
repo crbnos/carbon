@@ -17,11 +17,15 @@ import {
 } from "@carbon/printing";
 import { invalidatePrinterCache } from "@carbon/printing/printing.server";
 import { Button, Heading, ScrollArea, VStack } from "@carbon/react";
-import { labelSizes } from "@carbon/utils";
+import { isUnaffectedByNavigation, labelSizes } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import { Trans } from "@lingui/react/macro";
 import { LuPrinter } from "react-icons/lu";
-import type { ActionFunctionArgs, LoaderFunctionArgs } from "react-router";
+import type {
+  ActionFunctionArgs,
+  LoaderFunctionArgs,
+  ShouldRevalidateFunction
+} from "react-router";
 import { Link, Outlet, redirect, useLoaderData } from "react-router";
 import { getLocationsList, getWorkCentersList } from "~/modules/resources";
 import { getCompanySettings, printerRouteValidator } from "~/modules/settings";
@@ -34,6 +38,9 @@ export const handle: Handle = {
   breadcrumb: msg`Printing`,
   to: path.to.printingSettings
 };
+
+export const shouldRevalidate: ShouldRevalidateFunction = (args) =>
+  isUnaffectedByNavigation(args) ? false : args.defaultShouldRevalidate;
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId, userId } = await requirePermissions(request, {
