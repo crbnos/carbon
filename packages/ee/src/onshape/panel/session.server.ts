@@ -1,5 +1,6 @@
 import { randomBytes } from "node:crypto";
 import type { AuthSession } from "@carbon/auth";
+import { hasPermission } from "@carbon/auth";
 import { logAuthEvent } from "@carbon/auth/auth-events.server";
 import {
   getCarbonServiceRole,
@@ -226,11 +227,15 @@ export async function requireOnshapePanelPermissions(
             ? permission
             : null;
       if (!permissions) return false;
-      return permissions.every(
-        (p) =>
-          myClaims.permissions[p]?.[
-            action as "view" | "create" | "update" | "delete"
-          ]?.includes(companyId) ?? false
+      // `hasPermission` honours the "0" all-companies scope, as
+      // `requirePermissions` and the panel's own `me` route do.
+      return permissions.every((p) =>
+        hasPermission(
+          myClaims.permissions,
+          p,
+          action as "view" | "create" | "update" | "delete",
+          companyId
+        )
       );
     }
   );
