@@ -8763,6 +8763,9 @@ msgstr "口座番号を隠す"
 msgid "Hide Again"
 msgstr "もう一度非表示"
 
+msgid "Hide calculation"
+msgstr ""
+
 msgid "Hide raw"
 msgstr "生データを非表示"
 
@@ -8933,6 +8936,9 @@ msgstr "解決された価格がどのように計算されたかを示します
 
 msgid "How the sample size is decided — Inspect All, Inspect First N, Percentage of Lot, or AQL (Z1.4 / ISO 2859-1). Each mode reveals its own parameter fields below."
 msgstr "サンプルサイズがどのように決定されるか—すべてを検査、最初のNを検査、ロットのパーセンテージまたはAQL（Z1.4 / ISO 2859-1）。各モードは下記の独自のパラメータフィールドを表示します。"
+
+msgid "How the unit price of each quantity was calculated."
+msgstr ""
 
 msgid "How this gauge is used — Standard (regular checks) or Master (calibrates other gauges)."
 msgstr "この測定器の使用方法 — なみ検査(通常のチェック)または標準器(他の測定器を校正)"
@@ -11952,6 +11958,9 @@ msgstr "選択した数量の価格設定がありません"
 msgid "No pricing options found"
 msgstr "価格設定オプションが見つかりません"
 
+msgid "No pricing rules apply to this quantity."
+msgstr ""
+
 msgid "No printer configured"
 msgstr "プリンターが設定されていません"
 
@@ -13631,6 +13640,9 @@ msgstr "価格リスト"
 msgid "Price override"
 msgstr "価格上書き"
 
+msgid "Priced before pricing traces were recorded — this is today's calculation."
+msgstr ""
+
 msgid "Prices"
 msgstr "価格"
 
@@ -14157,6 +14169,10 @@ msgstr "数量"
 
 msgid "Quantity"
 msgstr "数量"
+
+#. placeholder {0}: price.quantity
+msgid "Quantity {0}"
+msgstr ""
 
 msgid "Quantity arriving — on open purchase orders plus on production (make) orders."
 msgstr "入荷予定数量 — 未処理の発注書および生産（製造）注文の分。"
@@ -14941,6 +14957,13 @@ msgstr "報告ディメンション"
 
 msgid "Reports"
 msgstr "レポート"
+
+msgid "Reprice with current rules"
+msgstr ""
+
+#. placeholder {0}: format(repricedPrice)
+msgid "Repricing with today's rules and costs gives <0>{0}</0>."
+msgstr ""
 
 msgid "Reprint"
 msgstr "再印刷"
@@ -16697,6 +16720,9 @@ msgstr "利用可能なバッチ番号を表示"
 
 msgid "Show available tracking numbers"
 msgstr "利用可能な追跡番号を表示"
+
+msgid "Show calculation"
+msgstr ""
 
 msgid "Show Customer IDs"
 msgstr "得意先IDを表示"
@@ -18901,6 +18927,9 @@ msgstr "このPINは再度表示されません。紛失した場合は、作業
 
 msgid "This PIN will not be shown again. You will need it to exit console mode on MES terminals."
 msgstr "このPINは再度表示されません。MES 端末でコンソールモードを終了するときに必要です。"
+
+msgid "This price was entered manually, so no pricing rules were applied."
+msgstr ""
 
 msgid "this purchase order"
 msgstr "この発注書"

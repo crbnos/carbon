@@ -8763,6 +8763,9 @@ msgstr "Hide account number"
 msgid "Hide Again"
 msgstr "Hide Again"
 
+msgid "Hide calculation"
+msgstr "Hide calculation"
+
 msgid "Hide raw"
 msgstr "Hide raw"
 
@@ -8933,6 +8936,9 @@ msgstr "How the resolved price was calculated."
 
 msgid "How the sample size is decided — Inspect All, Inspect First N, Percentage of Lot, or AQL (Z1.4 / ISO 2859-1). Each mode reveals its own parameter fields below."
 msgstr "How the sample size is decided — Inspect All, Inspect First N, Percentage of Lot, or AQL (Z1.4 / ISO 2859-1). Each mode reveals its own parameter fields below."
+
+msgid "How the unit price of each quantity was calculated."
+msgstr "How the unit price of each quantity was calculated."
 
 msgid "How this gauge is used — Standard (regular checks) or Master (calibrates other gauges)."
 msgstr "How this gauge is used — Standard (regular checks) or Master (calibrates other gauges)."
@@ -11952,6 +11958,9 @@ msgstr "No pricing for selected quantity"
 msgid "No pricing options found"
 msgstr "No pricing options found"
 
+msgid "No pricing rules apply to this quantity."
+msgstr "No pricing rules apply to this quantity."
+
 msgid "No printer configured"
 msgstr "No printer configured"
 
@@ -13631,6 +13640,9 @@ msgstr "Price Lists"
 msgid "Price override"
 msgstr "Price override"
 
+msgid "Priced before pricing traces were recorded — this is today's calculation."
+msgstr "Priced before pricing traces were recorded — this is today's calculation."
+
 msgid "Prices"
 msgstr "Prices"
 
@@ -14157,6 +14169,10 @@ msgstr "Quantities"
 
 msgid "Quantity"
 msgstr "Quantity"
+
+#. placeholder {0}: price.quantity
+msgid "Quantity {0}"
+msgstr "Quantity {0}"
 
 msgid "Quantity arriving — on open purchase orders plus on production (make) orders."
 msgstr "Quantity arriving — on open purchase orders plus on production (make) orders."
@@ -14941,6 +14957,13 @@ msgstr "Reporting dimension"
 
 msgid "Reports"
 msgstr "Reports"
+
+msgid "Reprice with current rules"
+msgstr "Reprice with current rules"
+
+#. placeholder {0}: format(repricedPrice)
+msgid "Repricing with today's rules and costs gives <0>{0}</0>."
+msgstr "Repricing with today's rules and costs gives <0>{0}</0>."
 
 msgid "Reprint"
 msgstr "Reprint"
@@ -16697,6 +16720,9 @@ msgstr "Show available batch numbers"
 
 msgid "Show available tracking numbers"
 msgstr "Show available tracking numbers"
+
+msgid "Show calculation"
+msgstr "Show calculation"
 
 msgid "Show Customer IDs"
 msgstr "Show Customer IDs"
@@ -18901,6 +18927,9 @@ msgstr "This PIN will not be shown again. If it is lost, reset it from the opera
 
 msgid "This PIN will not be shown again. You will need it to exit console mode on MES terminals."
 msgstr "This PIN will not be shown again. You will need it to exit console mode on MES terminals."
+
+msgid "This price was entered manually, so no pricing rules were applied."
+msgstr "This price was entered manually, so no pricing rules were applied."
 
 msgid "this purchase order"
 msgstr "this purchase order"

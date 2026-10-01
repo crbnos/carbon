@@ -32,6 +32,7 @@ import { getItemReplenishment } from "~/modules/items";
 import { getJobsBySalesOrderLine } from "~/modules/production";
 import type {
   Opportunity,
+  PriceTraceStep,
   SalesOrder,
   SalesOrderLineType
 } from "~/modules/sales";
@@ -282,6 +283,7 @@ export default function EditSalesOrderLineRoute() {
     shippingCost: line?.shippingCost ?? 0,
     configuration:
       (line?.configuration as Record<string, unknown> | null) ?? null,
+    priceTrace: (line?.priceTrace as PriceTraceStep[] | null) ?? null,
     assetReadableId: (line as any)?.assetReadableId ?? undefined,
     assetName: (line as any)?.assetName ?? undefined,
     ...getCustomFields(line?.customFields)

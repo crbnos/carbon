@@ -33,7 +33,7 @@ import { path } from "~/utils/path";
 /**
  * Steps a tracked entity's expirationDate can flow through. Mirrors the
  * shape of {@link PriceTraceStep} (sales/types) so the popover layout
- * stays consistent with PriceTracePopover.
+ * stays consistent with PriceTraceModal.
  *
  * - "Source"   : where this entity was created (Receipt / Production /
  *                Split / Manual).
@@ -88,7 +88,7 @@ type ExpiryTracePopoverProps = {
 
 /**
  * Hover-style popover that explains how the expirationDate column was
- * resolved. Same layout as PriceTracePopover so users get a single
+ * resolved. Same layout as PriceTraceModal so users get a single
  * mental model for "trace" UIs.
  *
  * Steps are derived from the row's attributes JSONB plus optional

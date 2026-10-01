@@ -67504,6 +67504,9 @@ export default {
             $ref: "#/parameters/rowFilter.quoteLinePrice.convertedShippingCost"
           },
           {
+            $ref: "#/parameters/rowFilter.quoteLinePrice.priceTrace"
+          },
+          {
             $ref: "#/parameters/select"
           },
           {
@@ -67626,6 +67629,9 @@ export default {
             $ref: "#/parameters/rowFilter.quoteLinePrice.convertedShippingCost"
           },
           {
+            $ref: "#/parameters/rowFilter.quoteLinePrice.priceTrace"
+          },
+          {
             $ref: "#/parameters/preferReturn"
           }
         ],
@@ -67700,6 +67706,9 @@ export default {
           },
           {
             $ref: "#/parameters/rowFilter.quoteLinePrice.convertedShippingCost"
+          },
+          {
+            $ref: "#/parameters/rowFilter.quoteLinePrice.priceTrace"
           },
           {
             $ref: "#/parameters/body.quoteLinePrice"
@@ -138865,6 +138874,9 @@ export default {
         convertedShippingCost: {
           format: "numeric",
           type: "number"
+        },
+        priceTrace: {
+          format: "jsonb"
         }
       },
       type: "object"
@@ -187475,6 +187487,12 @@ export default {
     },
     "rowFilter.quoteLinePrice.convertedShippingCost": {
       name: "convertedShippingCost",
+      required: false,
+      in: "query",
+      type: "string"
+    },
+    "rowFilter.quoteLinePrice.priceTrace": {
+      name: "priceTrace",
       required: false,
       in: "query",
       type: "string"

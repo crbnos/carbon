@@ -8763,6 +8763,9 @@ msgstr "Скрыть номер счёта"
 msgid "Hide Again"
 msgstr "Скрыть снова"
 
+msgid "Hide calculation"
+msgstr ""
+
 msgid "Hide raw"
 msgstr "Скрыть исходное"
 
@@ -8933,6 +8936,9 @@ msgstr "Как была рассчитана окончательная цена
 
 msgid "How the sample size is decided — Inspect All, Inspect First N, Percentage of Lot, or AQL (Z1.4 / ISO 2859-1). Each mode reveals its own parameter fields below."
 msgstr "Как определяется объем выборки — проверить все, проверить первые N, процент партии или AQL (Z1.4 / ISO 2859-1). Каждый режим показывает свои собственные поля параметров ниже."
+
+msgid "How the unit price of each quantity was calculated."
+msgstr ""
 
 msgid "How this gauge is used — Standard (regular checks) or Master (calibrates other gauges)."
 msgstr "Как используется это средство измерения — Нормальный (регулярные проверки) или Эталон (калибрует другие средства измерения)."
@@ -11952,6 +11958,9 @@ msgstr "Нет ценообразования для выбранного кол
 msgid "No pricing options found"
 msgstr "Варианты ценообразования не найдены"
 
+msgid "No pricing rules apply to this quantity."
+msgstr ""
+
 msgid "No printer configured"
 msgstr "Принтер не настроен"
 
@@ -13631,6 +13640,9 @@ msgstr "Прайс-листы"
 msgid "Price override"
 msgstr "Переопределение цены"
 
+msgid "Priced before pricing traces were recorded — this is today's calculation."
+msgstr ""
+
 msgid "Prices"
 msgstr "Цены"
 
@@ -14157,6 +14169,10 @@ msgstr "Количества"
 
 msgid "Quantity"
 msgstr "Количество"
+
+#. placeholder {0}: price.quantity
+msgid "Quantity {0}"
+msgstr ""
 
 msgid "Quantity arriving — on open purchase orders plus on production (make) orders."
 msgstr "Поступающее количество — из открытых заказов поставщику и производственных заказов."
@@ -14941,6 +14957,13 @@ msgstr "Измерение отчётности"
 
 msgid "Reports"
 msgstr "Отчеты"
+
+msgid "Reprice with current rules"
+msgstr ""
+
+#. placeholder {0}: format(repricedPrice)
+msgid "Repricing with today's rules and costs gives <0>{0}</0>."
+msgstr ""
 
 msgid "Reprint"
 msgstr "Перепечать"
@@ -16697,6 +16720,9 @@ msgstr "Показать доступные номера серии"
 
 msgid "Show available tracking numbers"
 msgstr "Показать доступные номера отслеживания"
+
+msgid "Show calculation"
+msgstr ""
 
 msgid "Show Customer IDs"
 msgstr "Показывать ID Покупателей"
@@ -18901,6 +18927,9 @@ msgstr "Этот PIN больше не будет показан. Если он 
 
 msgid "This PIN will not be shown again. You will need it to exit console mode on MES terminals."
 msgstr "Этот PIN больше не будет показан. Он вам понадобится для выхода из режима консоли на терминалах MES."
+
+msgid "This price was entered manually, so no pricing rules were applied."
+msgstr ""
 
 msgid "this purchase order"
 msgstr "этот заказ поставщику"

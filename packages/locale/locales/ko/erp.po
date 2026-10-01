@@ -8763,6 +8763,9 @@ msgstr "계좌 번호 숨기기"
 msgid "Hide Again"
 msgstr "다시 숨기기"
 
+msgid "Hide calculation"
+msgstr ""
+
 msgid "Hide raw"
 msgstr "원본 숨기기"
 
@@ -8933,6 +8936,9 @@ msgstr "확정된 가격이 계산된 방식입니다."
 
 msgid "How the sample size is decided — Inspect All, Inspect First N, Percentage of Lot, or AQL (Z1.4 / ISO 2859-1). Each mode reveals its own parameter fields below."
 msgstr "샘플 크기를 결정하는 방식 — 전수 검사, 처음 N개 검사, 로트 비율, 또는 AQL(Z1.4 / ISO 2859-1). 각 모드는 아래에 고유한 파라미터 필드를 표시합니다."
+
+msgid "How the unit price of each quantity was calculated."
+msgstr ""
 
 msgid "How this gauge is used — Standard (regular checks) or Master (calibrates other gauges)."
 msgstr "이 계측기의 사용 방식 — 보통 검사(정기 점검) 또는 표준기(다른 계측기 교정)."
@@ -11952,6 +11958,9 @@ msgstr "선택한 수량에 대한 가격 책정이 없습니다."
 msgid "No pricing options found"
 msgstr "가격 책정 옵션을 찾을 수 없습니다."
 
+msgid "No pricing rules apply to this quantity."
+msgstr ""
+
 msgid "No printer configured"
 msgstr "설정된 프린터가 없습니다"
 
@@ -13631,6 +13640,9 @@ msgstr "가격표"
 msgid "Price override"
 msgstr "가격 재정의"
 
+msgid "Priced before pricing traces were recorded — this is today's calculation."
+msgstr ""
+
 msgid "Prices"
 msgstr "가격"
 
@@ -14157,6 +14169,10 @@ msgstr "수량"
 
 msgid "Quantity"
 msgstr "수량"
+
+#. placeholder {0}: price.quantity
+msgid "Quantity {0}"
+msgstr ""
 
 msgid "Quantity arriving — on open purchase orders plus on production (make) orders."
 msgstr "도착 예정 수량 — 미결 발주서 및 생산(사내 생산) 작업 지시상의 수량입니다."
@@ -14941,6 +14957,13 @@ msgstr "보고 차원"
 
 msgid "Reports"
 msgstr "보고서"
+
+msgid "Reprice with current rules"
+msgstr ""
+
+#. placeholder {0}: format(repricedPrice)
+msgid "Repricing with today's rules and costs gives <0>{0}</0>."
+msgstr ""
 
 msgid "Reprint"
 msgstr "재출력"
@@ -16697,6 +16720,9 @@ msgstr "가용 배치 번호 표시"
 
 msgid "Show available tracking numbers"
 msgstr "가용 추적 번호 표시"
+
+msgid "Show calculation"
+msgstr ""
 
 msgid "Show Customer IDs"
 msgstr "고객 ID 표시"
@@ -18901,6 +18927,9 @@ msgstr "이 PIN은 다시 표시되지 않습니다. 분실한 경우 작업자 
 
 msgid "This PIN will not be shown again. You will need it to exit console mode on MES terminals."
 msgstr "이 PIN은 다시 표시되지 않습니다. MES 터미널에서 콘솔 모드를 종료할 때 필요합니다."
+
+msgid "This price was entered manually, so no pricing rules were applied."
+msgstr ""
 
 msgid "this purchase order"
 msgstr "이 발주서"

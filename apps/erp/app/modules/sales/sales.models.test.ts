@@ -18,7 +18,8 @@ vi.mock("@lingui/core/macro", () => ({
       : String(strings)
 }));
 
-const { quoteLineValidator, quoteValidator } = await import("./sales.models");
+const { quoteLineValidator, quoteValidator, salesOrderLineValidator } =
+  await import("./sales.models");
 
 // `quote.internalNotes` is a `json` column that the sales-order conversion
 // copies through Kysely. A bare string stored there (which `notes: z.any()`
@@ -52,6 +53,42 @@ describe("quoteValidator.notes", () => {
     expect(quoteValidator.safeParse({ ...base, notes: 42 }).success).toBe(
       false
     );
+  });
+});
+
+describe("salesOrderLineValidator priceTrace", () => {
+  const line = {
+    salesOrderId: "so1",
+    salesOrderLineType: "Part",
+    itemId: "item1",
+    methodType: "Pull from Inventory",
+    locationId: "loc1",
+    taxPercent: "0"
+  };
+  const trace = [
+    { step: "Base Price", source: "Item Unit Sale Price", amount: 100 },
+    { step: "Final Price", source: "Resolved", amount: 100 }
+  ];
+
+  const parse = (priceTrace?: string) =>
+    salesOrderLineValidator.parse(
+      priceTrace === undefined ? line : { ...line, priceTrace }
+    ).priceTrace;
+
+  it("keeps a posted trace", () => {
+    expect(parse(JSON.stringify(trace))).toEqual(trace);
+  });
+
+  it('clears the trace when "null" is posted for a typed price', () => {
+    expect(parse("null")).toBeNull();
+  });
+
+  it("leaves the stored trace alone when the field is not posted", () => {
+    expect(parse()).toBeUndefined();
+  });
+
+  it("rejects a trace that is not a list of steps", () => {
+    expect(() => parse(JSON.stringify({ step: "Base Price" }))).toThrow();
   });
 });
 

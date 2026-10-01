@@ -8763,6 +8763,9 @@ msgstr "隐藏账户号码"
 msgid "Hide Again"
 msgstr "再次隐藏"
 
+msgid "Hide calculation"
+msgstr ""
+
 msgid "Hide raw"
 msgstr "隐藏原始内容"
 
@@ -8933,6 +8936,9 @@ msgstr "已解决价格的计算方式。"
 
 msgid "How the sample size is decided — Inspect All, Inspect First N, Percentage of Lot, or AQL (Z1.4 / ISO 2859-1). Each mode reveals its own parameter fields below."
 msgstr "样本量如何确定——检验全部、检验前N个、批次百分比或AQL（Z1.4 / ISO 2859-1）。每种模式显示其自身的参数字段。"
+
+msgid "How the unit price of each quantity was calculated."
+msgstr ""
 
 msgid "How this gauge is used — Standard (regular checks) or Master (calibrates other gauges)."
 msgstr "此量具的用途——正常检验（定期检查）或标准器（校准其他量具）。"
@@ -11952,6 +11958,9 @@ msgstr "所选数量无定价"
 msgid "No pricing options found"
 msgstr "未找到定价选项"
 
+msgid "No pricing rules apply to this quantity."
+msgstr ""
+
 msgid "No printer configured"
 msgstr "未配置打印机"
 
@@ -13631,6 +13640,9 @@ msgstr "价格表"
 msgid "Price override"
 msgstr "价格覆盖"
 
+msgid "Priced before pricing traces were recorded — this is today's calculation."
+msgstr ""
+
 msgid "Prices"
 msgstr "价格"
 
@@ -14157,6 +14169,10 @@ msgstr "数量"
 
 msgid "Quantity"
 msgstr "数量"
+
+#. placeholder {0}: price.quantity
+msgid "Quantity {0}"
+msgstr ""
 
 msgid "Quantity arriving — on open purchase orders plus on production (make) orders."
 msgstr "即将到货的数量——来自未结采购订单以及生产（制造）订单。"
@@ -14941,6 +14957,13 @@ msgstr "报告维度"
 
 msgid "Reports"
 msgstr "报告"
+
+msgid "Reprice with current rules"
+msgstr ""
+
+#. placeholder {0}: format(repricedPrice)
+msgid "Repricing with today's rules and costs gives <0>{0}</0>."
+msgstr ""
 
 msgid "Reprint"
 msgstr "重新打印"
@@ -16697,6 +16720,9 @@ msgstr "显示可用的生产批次号"
 
 msgid "Show available tracking numbers"
 msgstr "显示可用的跟踪号码"
+
+msgid "Show calculation"
+msgstr ""
 
 msgid "Show Customer IDs"
 msgstr "显示客户ID"
@@ -18901,6 +18927,9 @@ msgstr "此PIN将不再显示。如果丢失，可从操作员列表中重置。
 
 msgid "This PIN will not be shown again. You will need it to exit console mode on MES terminals."
 msgstr "此PIN将不再显示。您需要它来在MES终端上退出控制台模式。"
+
+msgid "This price was entered manually, so no pricing rules were applied."
+msgstr ""
 
 msgid "this purchase order"
 msgstr "此采购订单"

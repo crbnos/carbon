@@ -8763,6 +8763,9 @@ msgstr "Kontonummer verbergen"
 msgid "Hide Again"
 msgstr "Erneut ausblenden"
 
+msgid "Hide calculation"
+msgstr ""
+
 msgid "Hide raw"
 msgstr "Roh ausblenden"
 
@@ -8933,6 +8936,9 @@ msgstr "Wie der aufgelöste Preis berechnet wurde."
 
 msgid "How the sample size is decided — Inspect All, Inspect First N, Percentage of Lot, or AQL (Z1.4 / ISO 2859-1). Each mode reveals its own parameter fields below."
 msgstr "Wie die Stichprobengröße entschieden wird — Alle inspizieren, Erste N inspizieren, Prozentsatz des Loses oder AQL (Z1.4 / ISO 2859-1). Jeder Modus zeigt seine eigenen Parameterfelder unten."
+
+msgid "How the unit price of each quantity was calculated."
+msgstr ""
 
 msgid "How this gauge is used — Standard (regular checks) or Master (calibrates other gauges)."
 msgstr "Wie dieses Prüfmittel verwendet wird — Normal (regelmäßige Überprüfungen) oder Referenz (kalibriert andere Prüfmittel)."
@@ -11952,6 +11958,9 @@ msgstr "Keine Preisfindung für die ausgewählte Menge"
 msgid "No pricing options found"
 msgstr "Keine Preisfindungsoptionen gefunden"
 
+msgid "No pricing rules apply to this quantity."
+msgstr ""
+
 msgid "No printer configured"
 msgstr "Kein Drucker konfiguriert"
 
@@ -13631,6 +13640,9 @@ msgstr "Preislisten"
 msgid "Price override"
 msgstr "Preisübersteuerung"
 
+msgid "Priced before pricing traces were recorded — this is today's calculation."
+msgstr ""
+
 msgid "Prices"
 msgstr "Preise"
 
@@ -14157,6 +14169,10 @@ msgstr "Mengen"
 
 msgid "Quantity"
 msgstr "Menge"
+
+#. placeholder {0}: price.quantity
+msgid "Quantity {0}"
+msgstr ""
 
 msgid "Quantity arriving — on open purchase orders plus on production (make) orders."
 msgstr "Eintreffende Menge – aus offenen Bestellungen plus aus Produktionsaufträgen (Herstellen)."
@@ -14941,6 +14957,13 @@ msgstr "Berichtsdimension"
 
 msgid "Reports"
 msgstr "Berichte"
+
+msgid "Reprice with current rules"
+msgstr ""
+
+#. placeholder {0}: format(repricedPrice)
+msgid "Repricing with today's rules and costs gives <0>{0}</0>."
+msgstr ""
 
 msgid "Reprint"
 msgstr "Erneut drucken"
@@ -16697,6 +16720,9 @@ msgstr "Verfügbare Losnummern anzeigen"
 
 msgid "Show available tracking numbers"
 msgstr "Verfügbare Verfolgungsnummern anzeigen"
+
+msgid "Show calculation"
+msgstr ""
 
 msgid "Show Customer IDs"
 msgstr "Kundenkennung anzeigen"
@@ -18901,6 +18927,9 @@ msgstr "Diese PIN wird nicht mehr angezeigt. Wenn Sie sie vergessen haben, setze
 
 msgid "This PIN will not be shown again. You will need it to exit console mode on MES terminals."
 msgstr "Diese PIN wird nicht mehr angezeigt. Sie benötigen sie, um den Konsolenmodus auf MES-Terminals zu beenden."
+
+msgid "This price was entered manually, so no pricing rules were applied."
+msgstr ""
 
 msgid "this purchase order"
 msgstr "diese Bestellung"

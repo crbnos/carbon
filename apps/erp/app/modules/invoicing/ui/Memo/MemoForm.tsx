@@ -196,9 +196,17 @@ const MemoForm = ({ initialValues, type }: MemoFormProps) => {
                   />
                 )}
                 {isVendor ? (
-                  <Supplier name="supplierId" label={t`Supplier`} />
+                  <Supplier
+                    autoFocus={!isEditing}
+                    name="supplierId"
+                    label={t`Supplier`}
+                  />
                 ) : (
-                  <Customer name="customerId" label={t`Customer`} />
+                  <Customer
+                    autoFocus={!isEditing}
+                    name="customerId"
+                    label={t`Customer`}
+                  />
                 )}
                 <Select
                   name="direction"

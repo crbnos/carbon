@@ -2679,6 +2679,40 @@ the generated manifest against the previous one before trusting a generator chan
 **Applies to:** `scripts/lib/service-ast.ts`, and any analyser or dispatcher that indexes a
 record by a name it did not choose.
 
+## A JS array bound for a jsonb column must be stringified on the Kysely path
+
+**Context:** `quoteLinePrice.priceTrace` (a `PriceTraceStep[]`) is written both through
+supabase-js (PostgREST) and through Kysely (`rewriteQuoteLinePrices`,
+`saveQuoteLineWithPrices`, `get-method`).
+
+**Problem:** node-postgres and deno-postgres serialise a parameter by its JS type, not the
+column's: an object becomes JSON, but an array becomes a Postgres array literal (`{a,b}`),
+which a jsonb column rejects. supabase-js sends JSON either way, so the same row "works" on
+one path and fails on the other — and typecheck sees nothing, since `Json` admits arrays.
+
+**Rule:** On a Kysely write, `JSON.stringify` any jsonb value that can be an array (or a bare
+string). In Deno use `toJson` / `toJsonColumns` (`functions/lib/json.ts`).
+
+**Applies to:** every `insertInto` / `updateTable` that sets a jsonb column — `priceTrace`,
+`configuration`, notes, `customFields`, any copied row spread from a supabase-js read.
+
+## Demo datasets state percentages the way people write them; the tier converts
+
+**Context:** `PricingRuleSpec.amount` is documented and validated as percent points
+(0–100], but tier 02 inserted it into `pricingRule.amount` unchanged.
+
+**Problem:** the pricing engine multiplies by a fraction (`price × amount`), so every demo
+"5% discount" was a 500% discount and drove prices to the ≥ 0 floor. It surfaced only when
+the price trace showed the step — the validator checked the dataset's own convention, not
+the column's.
+
+**Rule:** When a dataset field and the column it lands in use different units, convert in
+the tier at the insert, next to a comment naming both units — and check any new percent
+field against how the engine reads the column, not against the dataset type.
+
+**Applies to:** `packages/database/src/datasets/tiers/*` — `pricingRule.amount`, and any
+other fraction-valued column (`discountPercent`, `taxPercent`, rates).
+
 ## Single fetch re-runs every matched loader on every navigation
 
 **Context:** A click on a BOM node under a part (`/x/part/:itemId/make/:makeMethodId.data`)

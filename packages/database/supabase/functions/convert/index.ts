@@ -10,6 +10,7 @@ import { datetime, getCompanyTimeZone } from "../lib/datetime.ts";
 
 import { getFunctionLogger } from "../lib/logging.ts";
 import { toJson } from "../lib/json.ts";
+import { quoteToOrderPriceTrace } from "../lib/price-trace.ts";
 import { RecordNotFoundError } from "../lib/company-records.ts";
 import { corsPreflight, errorResponse, jsonResponse } from "../lib/response.ts";
 import { requirePermissions } from "../lib/supabase.ts";
@@ -727,6 +728,15 @@ serve(async (req: Request) => {
                 status: "Ordered",
                 unitOfMeasureCode: line.unitOfMeasureCode,
                 unitPrice: price.netUnitPrice ?? 0,
+                // How the quoted price was reached, carried onto the order.
+                priceTrace: toJson(
+                  quoteToOrderPriceTrace(
+                    price.priceTrace,
+                    price.unitPrice ?? 0,
+                    price.netUnitPrice ?? 0,
+                    price.discountPercent ?? 0
+                  )
+                ),
                 promisedDate: todayDate
                   .add({ days: price.leadTime ?? 0 })
                   .toString(),

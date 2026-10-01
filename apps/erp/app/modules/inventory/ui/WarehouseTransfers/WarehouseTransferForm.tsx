@@ -359,7 +359,11 @@ const WarehouseTransferForm = ({
                     table="warehouseTransfer"
                   />
                 )}
-                <Input name="reference" label={t`Reference`} />
+                <Input
+                  name="reference"
+                  label={t`Reference`}
+                  autoFocus={!isEditing}
+                />
                 <Location name="fromLocationId" label={t`From Location`} />
                 <Location name="toLocationId" label={t`To Location`} />
                 {isEditing && (

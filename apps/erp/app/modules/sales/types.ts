@@ -36,7 +36,10 @@ import type {
   getSalesRFQs,
   priceSourceTypes
 } from "./sales.service";
-import type { pricingRuleConfigurationPriceValidator } from "./sales.utils";
+import type {
+  pricingRuleConfigurationPriceValidator,
+  QuoteLinePriceSource
+} from "./sales.utils";
 
 // Pricing types
 export type MatchedRule = {
@@ -123,6 +126,18 @@ export type PriceTraceStep = {
   // A readable name for the step's badge — the parameter label on a
   // Configuration step.
   label?: string;
+};
+
+// One quantity break of a quote line: `trace` is how its price was reached
+// (stored with the price; null for a manual price or one set before traces
+// were recorded), `currentTrace` what today's rules would produce (null for a
+// manual price).
+export type QuoteLinePriceTrace = {
+  quantity: number;
+  unitPrice: number;
+  priceSource: QuoteLinePriceSource;
+  trace: PriceTraceStep[] | null;
+  currentTrace: PriceTraceStep[] | null;
 };
 
 export type PricingRule = NonNullable<

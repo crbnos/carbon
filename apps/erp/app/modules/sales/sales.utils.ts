@@ -2,6 +2,7 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import { equals, round } from "@carbon/utils";
 import { z } from "zod";
 import type {
   MatchedRule,
@@ -27,6 +28,44 @@ export function getEffectiveDefaultMarkups(
 ): CategoryMarkups {
   const enabled = Object.values(defaultMarkups).some((v) => v > 0);
   return enabled ? defaultMarkups : {};
+}
+
+// What a quote line price starts from when it is not the item's sale price.
+export const QUOTE_BASE_PRICE_SOURCES = {
+  costPlus: "Cost + Markup",
+  supplier: "Supplier Price"
+} as const;
+
+/**
+ * resolvePrice names every base price "Item Unit Sale Price". A quote row that
+ * starts from somewhere else — the cost-plus rollup, a supplier price break —
+ * names its real base so the stored trace reads true. A null source keeps the
+ * trace as resolved.
+ */
+export function withBasePriceSource(
+  trace: PriceTraceStep[],
+  source: string | null
+): PriceTraceStep[] {
+  if (!source) return trace;
+  return trace.map((step) =>
+    step.step === "Base Price" ? { ...step, source } : step
+  );
+}
+
+/**
+ * The unit price today's calculation gives, at the line's precision — null
+ * when there is no calculation (a manual price) or it gives the stored price.
+ * What the pricing trace's "repricing gives X" note and Reprice act on.
+ */
+export function repricedUnitPrice(
+  currentTrace: PriceTraceStep[] | null,
+  unitPrice: number,
+  precision: number
+): number | null {
+  const finalPrice = currentTrace?.at(-1)?.amount;
+  if (finalPrice === undefined) return null;
+  const rounded = round(finalPrice, precision);
+  return equals(rounded, unitPrice) ? null : rounded;
 }
 
 /**
