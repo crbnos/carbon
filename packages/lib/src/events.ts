@@ -653,6 +653,11 @@ export type Events = {
       /** Non-default configuration to export; absent = default. */
       configuration?: string;
       assetBaseName?: string;
+      /**
+       * Workspace pushes only: the part's reviewed microversion, so a changed
+       * part gets a new model rather than the workspace's earlier one.
+       */
+      microversionId?: string;
     };
   };
 
