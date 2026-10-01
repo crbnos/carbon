@@ -152,6 +152,7 @@ const SalesReturnOrderSummary = () => {
                         className="flex-shrink-0 items-end w-auto"
                       >
                         <MotionMoney
+                          className="font-semibold text-xl whitespace-nowrap"
                           value={lineCredit}
                           currency={currencyCode}
                           decimalPlaces={currencyDecimals}

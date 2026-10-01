@@ -68,7 +68,18 @@ export async function action({ request, params }: ActionFunctionArgs) {
 
   const registration = validation.data;
 
-  const companySettings = await getCompanySettings(client, companyId);
+  const [companySettings, asset] = await Promise.all([
+    getCompanySettings(client, companyId),
+    client
+      .from("fixedAsset")
+      .select(
+        "fixedAssetId, locationId, fixedAssetClassId, fixedAssetClass:fixedAssetClassId(assetAccountId, accumulatedDepreciationAccountId, isConstructionInProgress)"
+      )
+      .eq("id", fixedAssetId)
+      .eq("companyId", companyId)
+      .single()
+  ]);
+
   if (companySettings.error) {
     throw redirect(
       path.to.fixedAsset(fixedAssetId),
@@ -78,44 +89,49 @@ export async function action({ request, params }: ActionFunctionArgs) {
       )
     );
   }
+  if (asset.error || !asset.data) {
+    throw redirect(
+      path.to.fixedAsset(fixedAssetId),
+      await flash(request, error(asset.error, "Failed to get fixed asset"))
+    );
+  }
+
   const accountingEnabled =
     (companySettings.data as { accountingEnabled?: boolean } | null)
       ?.accountingEnabled ?? false;
+
+  const assetClass = asset.data.fixedAssetClass as {
+    assetAccountId: string;
+    accumulatedDepreciationAccountId: string;
+    isConstructionInProgress: boolean;
+  } | null;
+
+  // An asset in a construction-in-progress class is registered as Under
+  // Construction rather than Active: it accumulates cost until it is
+  // capitalized into its in-service class, and is not depreciated before then.
+  const registeredStatus = assetClass?.isConstructionInProgress
+    ? "Under Construction"
+    : "Active";
 
   // With accounting on, capitalize the asset with a real GL entry
   // (Dr asset / Cr owner equity) rather than a bare status flip, so no
   // capitalized asset exists without a journal.
   if (accountingEnabled) {
-    const [asset, defaults, dimensionsResult, accountingPeriod] =
-      await Promise.all([
-        client
-          .from("fixedAsset")
-          .select(
-            "fixedAssetId, locationId, fixedAssetClassId, fixedAssetClass:fixedAssetClassId(assetAccountId, accumulatedDepreciationAccountId)"
-          )
-          .eq("id", fixedAssetId)
-          .eq("companyId", companyId)
-          .single(),
-        getDefaultAccounts(client, companyId),
-        client
-          .from("dimension")
-          .select("id, entityType")
-          .eq("companyGroupId", companyGroupId)
-          .eq("active", true),
-        getOrCreateAccountingPeriod(
-          client,
-          companyId,
-          registration.acquisitionDate,
-          "accounting"
-        )
-      ]);
+    const [defaults, dimensionsResult, accountingPeriod] = await Promise.all([
+      getDefaultAccounts(client, companyId),
+      client
+        .from("dimension")
+        .select("id, entityType")
+        .eq("companyGroupId", companyGroupId)
+        .eq("active", true),
+      getOrCreateAccountingPeriod(
+        client,
+        companyId,
+        registration.acquisitionDate,
+        "accounting"
+      )
+    ]);
 
-    if (asset.error || !asset.data) {
-      throw redirect(
-        path.to.fixedAsset(fixedAssetId),
-        await flash(request, error(asset.error, "Failed to get fixed asset"))
-      );
-    }
     if (accountingPeriod.error || !accountingPeriod.data) {
       throw redirect(
         path.to.fixedAsset(fixedAssetId),
@@ -135,10 +151,6 @@ export async function action({ request, params }: ActionFunctionArgs) {
       );
     }
 
-    const assetClass = asset.data.fixedAssetClass as {
-      assetAccountId: string;
-      accumulatedDepreciationAccountId: string;
-    } | null;
     const assetAccountId = assetClass?.assetAccountId;
     const accumulatedDepreciationAccountId =
       assetClass?.accumulatedDepreciationAccountId;
@@ -191,6 +203,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
         accountingPeriodId: accountingPeriod.data,
         locationDimensionId,
         assetClassDimensionId,
+        status: registeredStatus,
         companyId,
         userId
       });
@@ -214,7 +227,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
     .from("fixedAsset")
     .update({
       ...registration,
-      status: "Active",
+      status: registeredStatus,
       updatedBy: userId
     })
     .eq("id", fixedAssetId)
@@ -234,6 +247,36 @@ export async function action({ request, params }: ActionFunctionArgs) {
       path.to.fixedAsset(fixedAssetId),
       await flash(request, error(null, "Only Draft assets can be registered"))
     );
+  }
+
+  // A construction-in-progress registration keeps its cost as a CIP cost row
+  // (see postAssetRegistration). No journal with accounting off, so this is a
+  // second write; a failure is reported rather than hidden, since a missing row
+  // would drop the cost when the asset is capitalized into service.
+  if (
+    registeredStatus === "Under Construction" &&
+    registration.acquisitionCost > 0
+  ) {
+    const cipCost = await client.from("fixedAssetCipCost").insert({
+      fixedAssetId,
+      sourceType: "Manual",
+      amount: registration.acquisitionCost,
+      costDate: registration.acquisitionDate,
+      companyId,
+      createdBy: userId
+    });
+    if (cipCost.error) {
+      throw redirect(
+        path.to.fixedAsset(fixedAssetId),
+        await flash(
+          request,
+          error(
+            cipCost.error,
+            "Asset registered, but its construction cost could not be recorded"
+          )
+        )
+      );
+    }
   }
 
   throw redirect(

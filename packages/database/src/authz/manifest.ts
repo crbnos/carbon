@@ -324,6 +324,7 @@ export const manifest = {
   }),
   customerItemPriceOverride: company("sales"),
   customerItemPriceOverrideBreak: company("sales"),
+  customerItemRentalRate: company("sales", { read: "sales_view" }),
   customerLocation: policies({
     select: or(
       viaParent("customerId", "customer", "sales_view"),
@@ -602,12 +603,14 @@ export const manifest = {
   feedback: serviceOnly(),
   fiscalYearSettings: company("settings", { read: "settings_view" }),
   fixedAsset: company("accounting", { read: "accounting_view" }),
+  fixedAssetCipCost: company("accounting", { read: "accounting_view" }),
   fixedAssetClass: company("accounting", { read: "accounting_view" }),
   fixedAssetDisposal: company("accounting", {
     read: "accounting_view",
     update: false,
     delete: false
   }),
+  fixedAssetTransfer: company("accounting", { read: "accounting_view" }),
   fixedAssetUsageLog: company("accounting", { read: "accounting_view" }),
   fixture: serviceOnly(),
   fulfillment: company("sales", {
@@ -764,6 +767,7 @@ export const manifest = {
   }),
   itemPlanning: company("parts", { read: "parts_view", delete: false }),
   itemPostingGroup: company("accounting", { read: "accounting_view" }),
+  itemRentalRate: company("sales", { read: "sales_view" }),
   itemReplenishment: company("parts", { read: "parts_view" }),
   itemSerialSequence: company("settings"),
   itemShelfLife: company("parts", { read: "parts_view" }),
@@ -1245,6 +1249,11 @@ export const manifest = {
     CREATE POLICY "DELETE" ON ${t} AS PERMISSIVE FOR DELETE TO public USING ((EXISTS (SELECT 1 FROM public."reimbursementLine" l JOIN public."reimbursement" h ON ((h.id = l."reimbursementId") AND (h."companyId" = l."companyId")) WHERE ((l.id = ${t}."reimbursementLineId") AND (l."companyId" = ${t}."companyId") AND (h.status = 'Draft'::"reimbursementStatus"))) AND ("companyId" = ANY ((SELECT get_companies_with_employee_permission('invoicing_delete'::text))::text[]))));
   `
   ),
+  rentalAgreement: company("sales", { read: "sales_view" }),
+  rentalAgreementCharge: company("sales", { read: "sales_view" }),
+  rentalAgreementLine: company("sales", { read: "sales_view" }),
+  rentalBillingPeriod: company("sales", { read: "sales_view" }),
+  rentalLeaseScheduleLine: company("sales", { read: "sales_view" }),
   reportPin: policies({
     all: and(owner("userId"), inCompany("companyId", "employee"))
   }),
@@ -1261,6 +1270,11 @@ export const manifest = {
     delete: and(inCompany("companyId", "employee"), owner("createdBy"))
   }),
   returnReason: company("sales"),
+  revenueRecognitionRun: company("accounting", { read: "accounting_view" }),
+  revenueRecognitionRunLine: company("accounting", { read: "accounting_view" }),
+  revenueRecognitionSchedule: company("accounting", {
+    read: "accounting_view"
+  }),
   rework: company("production", { read: "production_view" }),
   riskRegister: company("quality", { create: "employee" }),
   salesInvoice: company("invoicing", { read: "invoicing_view" }),

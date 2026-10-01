@@ -47,6 +47,7 @@ export const JOURNAL_LINE_SAFE_DOCUMENT_TYPES: ReadonlySet<string> = new Set([
   "Non-Conformance",
   "Inbound Inspection",
   "Scrap",
+  "Asset Transfer",
 ]);
 
 export function toJournalLineDocumentType(
@@ -110,6 +111,8 @@ export function buildCostLedgerRow(args: {
   quantity: number;
   cost: number;
   postingDate: string;
+  // A serial unit's own layer (specific identification); null for FIFO/LIFO.
+  trackedEntityId?: string | null;
   companyId: string;
 }): CostLedgerInsert {
   const quantity = round(args.quantity);
@@ -124,6 +127,7 @@ export function buildCostLedgerRow(args: {
     cost: round(args.cost),
     remainingQuantity: quantity > 0 ? quantity : 0,
     postingDate: args.postingDate,
+    trackedEntityId: args.trackedEntityId ?? null,
     companyId: args.companyId,
   };
 }

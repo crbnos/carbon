@@ -151,6 +151,8 @@ export const WORKFLOW_LABELS: Record<string, MessageDescriptor> = {
   "entity.job.deadlineType": msg`Deadline type`,
   "entity.job.dueDate": msg`Due date`,
   "entity.job.estimatedTime": msg`Estimated time`,
+  "entity.job.fixedAssetClassId": msg`Fixed asset class`,
+  "entity.job.fixedAssetId": msg`Fixed asset`,
   "entity.job.id": msg`Id`,
   "entity.job.itemId": msg`Item`,
   "entity.job.jobId": msg`Job`,

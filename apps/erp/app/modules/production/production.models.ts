@@ -228,7 +228,12 @@ const baseJobValidator = z.object({
     .string()
     .min(1, { message: "Unit of measure is required" }),
   modelUploadId: zfd.text(z.string().optional()),
-  configuration: z.any().optional()
+  configuration: z.any().optional(),
+  // Make to Asset: the job completes to a fixed asset instead of inventory —
+  // either capitalised into a class, or its cost swept onto one asset that is
+  // already under construction. At most one is set (DB CHECK, refined below).
+  fixedAssetClassId: zfd.text(z.string().optional()),
+  fixedAssetId: zfd.text(z.string().optional())
 });
 
 export const bulkJobValidator = z
@@ -295,18 +300,24 @@ export const bulkJobValidator = z
     }
   );
 
-export const jobValidator = baseJobValidator.refine(
-  (data) => {
-    if (deadlineRequiresDueDate(data.deadlineType) && !data.dueDate) {
-      return false;
+export const jobValidator = baseJobValidator
+  .refine(
+    (data) => {
+      if (deadlineRequiresDueDate(data.deadlineType) && !data.dueDate) {
+        return false;
+      }
+      return true;
+    },
+    {
+      message: "Due date is required",
+      path: ["dueDate"]
     }
-    return true;
-  },
-  {
-    message: "Due date is required",
-    path: ["dueDate"]
-  }
-);
+  )
+  .refine((data) => !(data.fixedAssetClassId && data.fixedAssetId), {
+    message:
+      "A job completes to a fixed-asset class or to one asset under construction, not both",
+    path: ["fixedAssetId"]
+  });
 
 export const leftoverAction = ["ship", "receive", "split", "discard"] as const;
 export type LeftoverAction = (typeof leftoverAction)[number];

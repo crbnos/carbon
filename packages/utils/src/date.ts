@@ -3,11 +3,13 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
+import type { CalendarDateTime } from "@internationalized/date";
 import {
   getLocalTimeZone,
   parseAbsolute,
   parseDate,
   parseTime,
+  toCalendarDateTime,
   toZoned
 } from "@internationalized/date";
 
@@ -98,6 +100,16 @@ export function formatDateTime(isoString: string, locale?: string) {
     { dateStyle: "short", timeStyle: "short" },
     locale
   );
+}
+
+/** A stored UTC instant as a wall-clock value in the browser's zone — what a `DateTimePicker` edits. */
+export function toLocalDateTime(isoString: string) {
+  return toCalendarDateTime(parseAbsolute(isoString, getLocalTimeZone()));
+}
+
+/** A `DateTimePicker`'s wall-clock value (browser zone) back to a UTC instant string. */
+export function fromLocalDateTime(value: CalendarDateTime) {
+  return toZoned(value, getLocalTimeZone()).toAbsoluteString();
 }
 
 export function formatRelativeTime(isoString: string, locale?: string) {

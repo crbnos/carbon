@@ -174,7 +174,7 @@ const LineItems = ({
                     >
                       <HStack spacing={4}>
                         <VStack spacing={0}>
-                          <span className="font-bold text-xl whitespace-nowrap">
+                          <span className="font-semibold text-xl whitespace-nowrap">
                             {formatter.format(total)}
                           </span>
                           {shouldConvertCurrency && (
@@ -385,7 +385,7 @@ const LineItems = ({
                       </Td>
                     </Tr>
 
-                    <Tr key="total" className="font-bold">
+                    <Tr key="total" className="font-semibold">
                       <Td>Total</Td>
                       <Td className="text-right">
                         <VStack spacing={0} className="items-end">

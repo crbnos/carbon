@@ -745,6 +745,9 @@ export async function getActiveProductionEvents(
   client: SupabaseClient<Database>,
   companyId: string
 ) {
+  // @ts-ignore TS2589 — supabase select-string instantiation depth sits on
+  // tsgo's limit; the cliff shifts as unrelated modules join the program.
+  // ts-ignore, not ts-expect-error, so it satisfies both tsc and tsgo.
   return client
     .from("productionEvent")
     .select(
@@ -3427,6 +3430,8 @@ export async function insertJob(
     notes?: string;
     customFields?: Json;
     configuration?: Record<string, unknown>;
+    fixedAssetClassId?: string | null;
+    fixedAssetId?: string | null;
   },
   options?: {
     skipMethod?: boolean;
@@ -3548,6 +3553,8 @@ export async function insertJob(
       modelUploadId: input.modelUploadId,
       notes: input.notes,
       customFields: input.customFields,
+      fixedAssetClassId: input.fixedAssetClassId ?? null,
+      fixedAssetId: input.fixedAssetId ?? null,
       configuration: (input.configuration as Json | undefined) ?? null,
       companyId: input.companyId,
       createdBy: input.createdBy,
@@ -3698,6 +3705,8 @@ export async function updateJob(
     customFields?: Json;
     scrapQuantity?: number;
     itemId?: string;
+    fixedAssetClassId?: string | null;
+    fixedAssetId?: string | null;
   }
 ): Promise<{ data: { id: string } | null; error: PostgrestError | null }> {
   const { id, updatedBy, ...updates } = input;

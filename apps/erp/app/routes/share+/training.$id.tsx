@@ -445,7 +445,7 @@ export default function TrainingWizard() {
                 <LuFlag />
               </div>
               <div className="flex flex-col">
-                <span className="uppercase text-[10px] font-display font-bold text-muted-foreground">
+                <span className="uppercase text-[10px] font-display font-semibold text-muted-foreground">
                   Training
                 </span>
                 <CardTitle className="text-2xl">{training.name}</CardTitle>
@@ -745,7 +745,7 @@ function QuestionStep({
   return (
     <VStack spacing={4} className="w-full">
       <div className="flex flex-col gap-2">
-        <h3 className="text-lg font-display font-bold">
+        <h3 className="text-lg font-display font-semibold">
           Question {questionIndex + 1} of {totalQuestions}
         </h3>
         <p className="text-base">{question.question}</p>
@@ -790,7 +790,7 @@ function ResultsView({
               {actionData.passed ? <LuCircleCheck /> : <LuCircleX />}
             </div>
             <div className="flex flex-col">
-              <span className="uppercase text-[10px] font-display font-bold text-muted-foreground">
+              <span className="uppercase text-[10px] font-display font-semibold text-muted-foreground">
                 Training Complete
               </span>
               <CardTitle className="text-2xl">{training.name}</CardTitle>
@@ -802,7 +802,7 @@ function ResultsView({
             <div className="flex flex-col items-center justify-center gap-2">
               <span
                 className={cn(
-                  "text-xl uppercase font-mono font-bold tracking-tight",
+                  "text-xl uppercase font-mono font-semibold tracking-tight",
                   actionData.passed ? "text-emerald-500" : "text-red-500"
                 )}
               >
@@ -810,7 +810,7 @@ function ResultsView({
               </span>
               <div
                 className={cn(
-                  "text-6xl font-mono font-bold",
+                  "text-6xl font-mono font-semibold",
                   actionData.passed ? "text-emerald-500" : "text-red-500"
                 )}
               >

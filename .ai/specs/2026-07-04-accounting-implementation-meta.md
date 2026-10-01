@@ -44,7 +44,7 @@ Waves are a scheduling convenience; the truth is the edge list. `⚠ spec-first`
 | [#1038](https://github.com/crbnos/carbon/issues/1038) | Gapless numbering + legal series | spec exists (`2026-07-04-gapless-numbering-legal-series.md`) — `/plan` next | #1031 | coordinate with #1047 |
 | [#1039](https://github.com/crbnos/carbon/issues/1039) | Close automation (depreciation, accruals, recurring) | spec exists (`2026-07-04-close-automation.md`) — `/plan` next | #1031 | |
 | [#1040](https://github.com/crbnos/carbon/issues/1040) | Inventory valuation completeness | spec exists (`2026-07-04-inventory-valuation-completeness.md`) — `/plan` next | #1031 | IAS 2 reversal waits for #1052 |
-| [#1041](https://github.com/crbnos/carbon/issues/1041) | Fixed assets completeness | spec exists (`2026-07-04-fixed-assets-completeness.md`) — `/plan` next | #1031 | |
+| [#1041](https://github.com/crbnos/carbon/issues/1041) | Fixed assets completeness | original spec archived 2026-09-22 (`archived/2026-07-04-fixed-assets-completeness.md`); scope narrowed to make/self-constructed assets — the make-to-asset + CIP contract and the inventory→asset bridge are now specified in `2026-09-22-revenue-recognition-and-rentals.md` (§2); components / impairment / reclassification remain unspecified follow-ons | #1031 | |
 | [#1042](https://github.com/crbnos/carbon/issues/1042) | Plaid bank feeds + cash position | spec exists — `/plan` next | #1034 | |
 | [#1043](https://github.com/crbnos/carbon/issues/1043) | Tax Phase 2 (returns, settlement) | spec exists | #1036, #1031 | |
 | [#1044](https://github.com/crbnos/carbon/issues/1044) | Tax Phase 3 (Avalara, Xero mapping) | spec exists | #1036 | foundation for #1054 |

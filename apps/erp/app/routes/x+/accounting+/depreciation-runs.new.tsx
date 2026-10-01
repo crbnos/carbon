@@ -6,9 +6,12 @@
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { validator } from "@carbon/form";
+import { endOfMonth, parseDate } from "@internationalized/date";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
 import {
+  depreciationRunValidator,
   getBaseCurrencyDecimalPlaces,
   insertDepreciationRun
 } from "~/modules/accounting";
@@ -36,7 +39,26 @@ export async function action({ request }: ActionFunctionArgs) {
   const lastPeriodEnd =
     lastRun.data && lastRun.data.length > 0 ? lastRun.data[0].periodEnd : null;
 
-  const periodEnd = getNextPeriodEnd(lastPeriodEnd);
+  // The list page posts the period the user picked; a bare POST falls back to
+  // the period after the last run. Depreciation is monthly, so the picked
+  // date snaps to its month end, and it must come after the last run — the
+  // calculation depreciates every month from the last posted run up to it.
+  const validation = await validator(depreciationRunValidator).validate(
+    await request.formData()
+  );
+  const periodEnd = validation.error
+    ? getNextPeriodEnd(lastPeriodEnd)
+    : endOfMonth(parseDate(validation.data.periodEnd)).toString();
+
+  if (lastPeriodEnd && periodEnd <= lastPeriodEnd) {
+    throw redirect(
+      path.to.depreciationRuns,
+      await flash(
+        request,
+        error(null, "The period must end after the last depreciation run")
+      )
+    );
+  }
 
   // Check for existing run at this period
   const existing = await client
@@ -91,14 +113,25 @@ export async function action({ request }: ActionFunctionArgs) {
       ? lastPostedRun.data[0].periodEnd
       : null;
 
-  const usageLogs = await client
+  // A run can cover several months (a picked later period), so units of
+  // production sums every usage log since the last posted run.
+  let usageQuery = client
     .from("fixedAssetUsageLog")
     .select("fixedAssetId, unitsProduced")
-    .eq("periodEnd", periodEnd);
+    .eq("companyId", companyId)
+    .lte("periodEnd", periodEnd);
+  if (lastPostedPeriodEnd) {
+    usageQuery = usageQuery.gt("periodEnd", lastPostedPeriodEnd);
+  }
+  const usageLogs = await usageQuery;
 
-  const usageMap = new Map(
-    (usageLogs.data ?? []).map((u) => [u.fixedAssetId, u])
-  );
+  const usageMap = new Map<string, { unitsProduced: number }>();
+  for (const u of usageLogs.data ?? []) {
+    const current = usageMap.get(u.fixedAssetId)?.unitsProduced ?? 0;
+    usageMap.set(u.fixedAssetId, {
+      unitsProduced: current + Number(u.unitsProduced)
+    });
+  }
 
   const lines = buildDepreciationLines(
     (assets.data ?? []).map((a) => ({

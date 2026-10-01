@@ -211,6 +211,7 @@ const LineItems = ({
                     </HStack>
                     <HStack spacing={4}>
                       <MotionMoney
+                        className="font-semibold text-xl whitespace-nowrap"
                         value={
                           (selectedLine.convertedNetUnitPrice ?? 0) *
                             (selectedLine.quantity ?? 0) +
@@ -647,7 +648,7 @@ const LinePricingOptions = ({
                 </Td>
               </Tr>
 
-              <Tr key="total" className="font-bold">
+              <Tr key="total" className="font-semibold">
                 <Td>
                   <Trans>Total</Trans>
                 </Td>

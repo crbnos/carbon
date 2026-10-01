@@ -7,7 +7,7 @@
 
 import {
   Button,
-  Input,
+  DateTimePicker,
   Modal,
   ModalBody,
   ModalContent,
@@ -18,6 +18,9 @@ import {
   toast,
   VStack
 } from "@carbon/react";
+import { fromLocalDateTime } from "@carbon/utils";
+import type { CalendarDateTime } from "@internationalized/date";
+import { toCalendarDateTime } from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useEffect, useState } from "react";
 import { useFetcher } from "react-router";
@@ -38,7 +41,9 @@ type TimeCardWarningProps = {
 export function TimeCardWarning({ openClockEntry }: TimeCardWarningProps) {
   const { t } = useLingui();
   const [showClockWarning, setShowClockWarning] = useState(false);
-  const [editClockOut, setEditClockOut] = useState("");
+  const [editClockOut, setEditClockOut] = useState<CalendarDateTime | null>(
+    null
+  );
   const fetcher = useFetcher();
 
   useEffect(() => {
@@ -88,7 +93,7 @@ export function TimeCardWarning({ openClockEntry }: TimeCardWarningProps) {
     if (!editClockOut || !openClockEntry) return;
     const formData = new FormData();
     formData.append("intent", "clockOut");
-    formData.append("clockOut", new Date(editClockOut).toISOString());
+    formData.append("clockOut", fromLocalDateTime(editClockOut));
     fetcher.submit(formData, {
       method: "post",
       action: path.to.timecard
@@ -133,10 +138,12 @@ export function TimeCardWarning({ openClockEntry }: TimeCardWarningProps) {
                 <label className="text-sm font-medium">
                   <Trans>Set clock-out time</Trans>
                 </label>
-                <Input
-                  type="datetime-local"
+                <DateTimePicker
+                  aria-label={t`Set clock-out time`}
                   value={editClockOut}
-                  onChange={(e) => setEditClockOut(e.target.value)}
+                  onChange={(value) =>
+                    setEditClockOut(value ? toCalendarDateTime(value) : null)
+                  }
                 />
               </div>
             </VStack>

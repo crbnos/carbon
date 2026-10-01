@@ -27,7 +27,6 @@ import { msg } from "@lingui/core/macro";
 import { LuEllipsisVertical, LuRepeat, LuTrash } from "react-icons/lu";
 import type { LoaderFunctionArgs } from "react-router";
 import {
-  Link,
   Outlet,
   redirect,
   useFetcher,
@@ -35,7 +34,7 @@ import {
   useNavigate,
   useParams
 } from "react-router";
-import { DateTime } from "~/components";
+import { DateTime, Hyperlink } from "~/components";
 import { Confirm, ConfirmDelete } from "~/components/Modals";
 import { usePermissions, useSettings, useUser } from "~/hooks";
 import { useCurrencyFormatter } from "~/hooks/useCurrencyFormatter";
@@ -164,7 +163,7 @@ export default function DepreciationRunDetailRoute() {
                     type="submit"
                     isLoading={fetcher.state !== "idle"}
                   >
-                    Post Run
+                    Post
                   </Button>
                 </fetcher.Form>
               )}
@@ -239,12 +238,9 @@ export default function DepreciationRunDetailRoute() {
                         </div>
                         <div>
                           {asset?.id ? (
-                            <Link
-                              to={path.to.fixedAsset(asset.id)}
-                              className="text-foreground hover:underline"
-                            >
+                            <Hyperlink to={path.to.fixedAsset(asset.id)}>
                               {asset.fixedAssetId ?? "—"}
-                            </Link>
+                            </Hyperlink>
                           ) : (
                             "—"
                           )}

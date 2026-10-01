@@ -2223,6 +2223,29 @@ load-bearing only for the old one.
 sites across `apps/erp`, `apps/mes`, `packages/{jobs,ee,lib}`, and any future
 change to a helper whose result is destructured widely.
 
+## A git hook exports GIT_DIR, so any git run from a subdirectory gets the wrong work tree
+
+**Context:** The pre-commit backup check (`packages/jobs/src/scripts/check-backups.ts`,
+reached through `pnpm --filter @carbon/jobs`, so its cwd is `packages/jobs`) regenerates
+`packages/jobs/manifests/schema.json` and stages it with `git add <absolute path>`.
+
+**Problem:** Run by hand it staged the right path. Under the hook it ALSO indexed the
+same content as a root-level `manifests/schema.json` on every migration commit — a
+6,994-line file that existed nowhere on disk, resurfacing after each `git rm --cached`.
+Git runs hooks with `GIT_DIR` exported and no `GIT_WORK_TREE`; with `GIT_DIR` set, git
+treats the CURRENT directory as the work-tree root, so an absolute path under
+`packages/jobs` was recorded relative to `packages/jobs`. An absolute path does not
+protect you: the index path is computed from the assumed work tree, not from cwd.
+
+**Rule:** Any script a git hook may invoke must run its git commands from the
+repository root (`cwd: REPO_ROOT` derived from `import.meta.dirname`, or `git -C`),
+never from the package `pnpm --filter` dropped it in. Verify a hook-driven `git add`
+by reading `git show --stat HEAD` after the commit, not by running the script by hand.
+
+**Applies to:** `check-backups.ts`, `scripts/generate-mcp.ts`'s digest staging, the
+lingui staging in `.husky/pre-commit`, and any future hook step that writes and stages
+a generated file from inside a workspace package.
+
 ## Lingui: a ternary inside t`` bakes the English words as runtime values
 
 **Context:** Building the quote lead-time modal, plural labels were written as
@@ -2248,6 +2271,51 @@ categories, e.g. Polish/Russian `few`/`many`, get the extra branches).
 **Applies to:** any `apps/{erp,mes}/app` or `packages/{react,form}/src` string
 with a count-dependent word; grep `? "` inside `` t` `` templates when reviewing
 i18n.
+
+## A migration file created while migrations are running is recorded as applied — empty
+
+**Context:** Phase D of the rentals plan. `crbn up` was booting (its migrate step
+runs `supabase migration up --include-all`) while `pnpm db:migrate:new lease-enum`
+created the next migration file, whose SQL was written a few seconds later.
+
+**Problem:** The running migrate step picked up the brand-new, still-empty file and
+recorded version `20260923051441` in `supabase_migrations.schema_migrations` with
+zero statements. Every later `crbn migrate` treated it as applied, so the enum value
+it adds never reached the database; the regenerated types silently lacked it and
+the first symptom was an unrelated-looking TS2353 in `@carbon/ee`. A sibling file
+created four seconds later had its SQL in time and applied normally — so "the other
+migration worked" proves nothing.
+
+**Rule:** Never create or edit a migration file while `crbn up` / `crbn migrate` /
+`pnpm db:migrate` is running; write the SQL first (or wait for the run to finish).
+When a regenerated type is missing something a new migration adds, check
+`select version, array_length(statements, 1) from supabase_migrations.schema_migrations
+order by version desc limit 5` — a NULL statement count on your version means it was
+recorded empty. Idempotent SQL can then be re-applied with `psql -f`.
+
+**Applies to:** every new migration under `packages/database/supabase/migrations/`
+during a `crbn up` boot or a background migrate.
+
+## A PR's CLA check counts every commit author on the branch, including copies of main's commits
+
+**Context:** PR #1697's `license/cla` stayed pending after the author had signed many
+times. The bot listed "Brad Barbin" (not a GitHub user) and `chasefostermfg` as unsigned.
+
+**Problem:** Two independent causes, neither fixable by signing again. (1) Commits made
+before `user.email` was configured were authored as `<user>@<hostname>.local` — git's
+fallback — which no GitHub account can own, so cla-assistant can never match them.
+(2) Rebasing the branch onto main by replaying commits copied other contributors'
+already-merged commits onto the branch with new SHAs, so they became PR commits and
+their authors became CLA "committers".
+
+**Rule:** Set `user.name` / `user.email` before the first commit
+(`git log origin/main..HEAD --format='%ae' | sort -u` must show only GitHub-linked
+emails). Bring main in with a MERGE, never by replaying main's commits onto the branch.
+To repair an affected PR, squash onto `origin/main` (merge main first so the tree is
+current, `git reset --soft origin/main`, commit once, confirm `HEAD^{tree}` is
+unchanged) and `git push --force-with-lease=<branch>:<known sha>`.
+
+**Applies to:** any PR on crbnos/carbon (cla-assistant.io).
 
 ## The root `.env` overrides `.env.local`, so a worktree's DB port is not the default
 
@@ -2488,6 +2556,26 @@ a row whose policy also covers the other rows the transaction writes.
 
 **Applies to:** any service that takes both `client` and `db` and writes with
 `db` on behalf of an API or MCP caller.
+
+## A merge can clobber a branch's SQL function with a later-dated copy from main (2026-09-28)
+
+**Context:** `20260922230906_complete-job-to-asset` (branch) added the Make to Asset
+branch to `complete_job_to_inventory`; main's `20260925121735_rpc-function-guards`
+redefined the same function, forked from the definition before it, to add one guard
+line. Both merged cleanly — they are different files.
+
+**Problem:** In timestamp order main's copy runs last, so every fresh or local database
+silently lost the asset branch (a Make to Asset job received its units into inventory).
+Production pushes with `--include-all`, which applies the older branch file AFTER main's,
+so there the guard goes missing instead. `check-clobbers` compares against the merge
+base and reported nothing.
+
+**Rule:** After merging main, list main's migrations newer than your branch's oldest and
+grep them for every function and view your migrations define. For any hit, write a NEW
+migration dated after both that carries both changes; never edit either original.
+
+**Applies to:** any branch that redefines a SQL function or view main also touches —
+`complete_job_to_inventory`, the event dispatchers, the document line views.
 
 ---
 

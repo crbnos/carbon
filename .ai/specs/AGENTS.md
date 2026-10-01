@@ -12,6 +12,7 @@ Check `.ai/specs/` before modifying any module. Create or update specs when the 
 ## Ask First
 
 - Ask before moving a spec to `implemented/` if deployment/completion evidence is incomplete.
+- Ask before archiving a spec that still owns live scope — add a scope note instead.
 - Ask before changing the spec directory structure or naming convention.
 
 ## Never
@@ -29,7 +30,17 @@ Check `.ai/specs/` before modifying any module. Create or update specs when the 
 4. Implementation proceeds phase-by-phase
 5. Completed spec moves to .ai/specs/implemented/
 6. PR links back to spec via "Tracking spec:" line
+7. A spec superseded before implementation moves to .ai/specs/archived/ with a
+   "> Superseded by:" line (partially superseded specs stay live with a scope note)
 ```
+
+## Directories
+
+| Directory | Holds |
+|-----------|-------|
+| `.ai/specs/` | Live designs (draft / in-progress) |
+| `.ai/specs/implemented/` | Shipped designs, kept implementation-accurate |
+| `.ai/specs/archived/` | Superseded-before-implementation designs; history only, never precedent (see its README) |
 
 ## File Naming Convention
 

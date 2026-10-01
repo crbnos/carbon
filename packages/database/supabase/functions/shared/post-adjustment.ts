@@ -278,6 +278,7 @@ export async function bookAdjustment(
       entryType: ledger.entryType,
       documentType: ledger.documentType,
       documentId: ledger.documentId ?? inserted.id,
+      trackedEntityId: ledger.trackedEntityId,
       companyId: ledger.companyId,
     },
     item,
@@ -302,6 +303,8 @@ export interface ValueMovementArgs {
       | null;
     // costLedger.documentId and journalLine.documentId
     documentId: string;
+    // The moved unit or batch; only a serial unit's is used for costing.
+    trackedEntityId?: string | null;
     companyId: string;
   };
   item: BookAdjustmentArgs["item"];
@@ -329,6 +332,14 @@ export async function valueMovement(
   }
 
   const absQuantity = Math.abs(movement.quantity);
+  // A serial unit's movement is costed by specific identification: an
+  // increase books a layer that belongs to the unit, and a decrease relieves
+  // that layer first (calculateCOGS / cost-layer-order.ts). A batch entity is
+  // split and re-pointed as it moves, so its layers stay FIFO / LIFO.
+  const serialId =
+    item.itemTrackingType === "Serial"
+      ? (movement.trackedEntityId ?? null)
+      : null;
   let cost = 0;
 
   if (movement.quantity < 0) {
@@ -338,6 +349,7 @@ export async function valueMovement(
       itemId: movement.itemId,
       quantity: absQuantity,
       companyId,
+      trackedEntityIds: serialId ? [serialId] : [],
     });
     cost = cogs.totalCost;
 
@@ -352,6 +364,7 @@ export async function valueMovement(
           quantity: -absQuantity,
           cost: -cogs.totalCost,
           postingDate: movement.postingDate,
+          trackedEntityId: serialId,
           companyId,
         })
       )
@@ -372,6 +385,7 @@ export async function valueMovement(
           quantity: absQuantity,
           cost,
           postingDate: movement.postingDate,
+          trackedEntityId: serialId,
           companyId,
         })
       )
@@ -399,6 +413,7 @@ export async function valueMovement(
           quantity: absQuantity,
           cost,
           postingDate: movement.postingDate,
+          trackedEntityId: serialId,
           companyId,
         })
       )

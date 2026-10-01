@@ -42,6 +42,7 @@ import type {
   SalesInvoiceLine,
   SalesInvoiceShipment
 } from "../../types";
+import { useRentalLineKindLabel } from "./SalesInvoiceLineForm";
 
 const LineItems = ({
   currencyCode,
@@ -63,6 +64,7 @@ const LineItems = ({
 
   const [items] = useItems();
   const percentFormatter = usePercentFormatter();
+  const rentalKindLabel = useRentalLineKindLabel();
   const [openItems, setOpenItems] = useState<string[]>([]);
   const unitOfMeasures = useUnitOfMeasure();
 
@@ -78,9 +80,11 @@ const LineItems = ({
         if (!line.id) return null;
 
         const itemReadableId =
-          line.invoiceLineType === "Fixed Asset"
-            ? (line as any).assetReadableId || "Fixed Asset"
-            : getItemReadableId(items, line.itemId);
+          line.invoiceLineType === "Rental"
+            ? rentalKindLabel(line.rentalInvoiceLineKind)
+            : line.invoiceLineType === "Fixed Asset"
+              ? (line as any).assetReadableId || "Fixed Asset"
+              : getItemReadableId(items, line.itemId);
         const lineSubtotal = (line.unitPrice ?? 0) * (line.quantity ?? 0);
         const customerSubtotal =
           (line.convertedUnitPrice ?? 0) * (line.quantity ?? 0);
@@ -166,7 +170,7 @@ const LineItems = ({
                     >
                       <HStack spacing={4}>
                         <VStack spacing={0}>
-                          <span className="font-bold text-xl whitespace-nowrap">
+                          <span className="font-semibold text-xl whitespace-nowrap">
                             {formatter.format(total)}
                           </span>
                           {shouldConvertCurrency && (
@@ -192,11 +196,12 @@ const LineItems = ({
                           className="flex items-center gap-2"
                         >
                           {line.quantity}
-                          {line.invoiceLineType !== "Fixed Asset" && (
-                            <MethodIcon
-                              type={line.methodType ?? "Pull from Inventory"}
-                            />
-                          )}
+                          {line.invoiceLineType !== "Fixed Asset" &&
+                            line.invoiceLineType !== "Rental" && (
+                              <MethodIcon
+                                type={line.methodType ?? "Pull from Inventory"}
+                              />
+                            )}
                         </Badge>
                         <Badge variant="green">
                           {formatter.format(line.unitPrice ?? 0)}{" "}
@@ -318,7 +323,7 @@ const LineItems = ({
                       </Td>
                     </Tr>
 
-                    <Tr key="total" className="font-bold">
+                    <Tr key="total" className="font-semibold">
                       <Td>
                         <Trans>Total</Trans>
                       </Td>

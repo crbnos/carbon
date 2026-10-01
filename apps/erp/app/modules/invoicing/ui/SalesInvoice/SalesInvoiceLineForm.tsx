@@ -4,6 +4,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { useCarbon } from "@carbon/auth";
+import type { Database } from "@carbon/database";
 import { useRuleViolations } from "@carbon/ee/rules";
 import { Combobox, ValidatedForm } from "@carbon/form";
 import {
@@ -35,27 +36,32 @@ import {
   VStack
 } from "@carbon/react";
 import {
+  formatDate,
   getItemReadableId,
   INPUT_FORMAT,
   INPUT_STEP,
   taxableBase,
   taxPairFromPercent
 } from "@carbon/utils";
+import { parseDate } from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
-import { useState } from "react";
+import { useLocale } from "@react-aria/i18n";
+import { useEffect, useState } from "react";
 import {
   LuBox,
   LuChevronRight,
   LuCircleAlert,
+  LuKeyRound,
   LuLandmark,
   LuPlus,
   LuTruck
 } from "react-icons/lu";
 import { useParams } from "react-router";
 import type { z } from "zod";
-import { MethodIcon } from "~/components";
+import { Hyperlink, MethodIcon } from "~/components";
 import {
   CustomFormFields,
+  DatePicker,
   Hidden,
   Item,
   Location,
@@ -73,9 +79,10 @@ import {
   usePercentFormatter,
   usePermissions,
   useRouteData,
+  useSettings,
   useUser
 } from "~/hooks";
-import type { SalesInvoice } from "~/modules/invoicing";
+import type { SalesInvoice, SalesInvoiceLine } from "~/modules/invoicing";
 import { salesInvoiceLineValidator } from "~/modules/invoicing";
 import { type ItemType, itemType, methodType } from "~/modules/shared";
 import { useItems } from "~/stores";
@@ -93,7 +100,175 @@ type SalesInvoiceLineFormProps = {
   onClose?: () => void;
 };
 
-const SalesInvoiceLineForm = ({
+type RentalInvoiceLineKind =
+  Database["public"]["Enums"]["rentalInvoiceLineKind"];
+
+export function useRentalLineKindLabel() {
+  const { t } = useLingui();
+  return (kind: RentalInvoiceLineKind | null | undefined) => {
+    switch (kind) {
+      case "Rent":
+        return t`Rent`;
+      case "Charge":
+        return t`Rental Charge`;
+      case "Purchase Option":
+        return t`Purchase Option`;
+      default:
+        return t`Rental`;
+    }
+  };
+}
+
+// A Rental line is written by rental invoice generation from its agreement's
+// billing period or charge — it has no item, and it is never edited here.
+const SalesInvoiceLineForm = (props: SalesInvoiceLineFormProps) =>
+  props.initialValues.invoiceLineType === "Rental" ? (
+    <RentalInvoiceLineSummary
+      lineId={props.initialValues.id}
+      type={props.type}
+      onClose={props.onClose}
+    />
+  ) : (
+    <SalesInvoiceItemLineForm {...props} />
+  );
+
+function RentalInvoiceLineSummary({
+  lineId,
+  type,
+  onClose
+}: {
+  lineId?: string;
+  type?: "card" | "modal";
+  onClose?: () => void;
+}) {
+  const { locale } = useLocale();
+  const { carbon } = useCarbon();
+  const { company } = useUser();
+  const { invoiceId } = useParams();
+  if (!invoiceId) throw new Error("invoiceId not found");
+
+  const routeData = useRouteData<{
+    salesInvoice: SalesInvoice;
+    salesInvoiceLines: SalesInvoiceLine[];
+    currency: { decimalPlaces: number } | null;
+  }>(path.to.salesInvoice(invoiceId));
+  const line = routeData?.salesInvoiceLines?.find((l) => l.id === lineId);
+
+  const currency =
+    routeData?.salesInvoice?.currencyCode ?? company.baseCurrencyCode;
+  const configuredDecimals = useCurrencyDecimals(currency);
+  const currencyFormatter = useCurrencyFormatter({
+    currency,
+    decimalPlaces: routeData?.currency?.decimalPlaces ?? configuredDecimals
+  });
+  const percentFormatter = usePercentFormatter();
+  const kindLabel = useRentalLineKindLabel();
+
+  const rentalAgreementId = line?.rentalAgreementId ?? null;
+  const [agreementReadableId, setAgreementReadableId] = useState<string | null>(
+    null
+  );
+  useEffect(() => {
+    if (!carbon || !rentalAgreementId) return;
+    let cancelled = false;
+    carbon
+      .from("rentalAgreement")
+      .select("rentalAgreementId")
+      .eq("id", rentalAgreementId)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (!cancelled) setAgreementReadableId(data?.rentalAgreementId ?? null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [carbon, rentalAgreementId]);
+
+  const amount = (line?.unitPrice ?? 0) * (line?.quantity ?? 1);
+  const period =
+    line?.serviceStartDate && line?.serviceEndDate
+      ? `${formatDate(line.serviceStartDate, undefined, locale)} – ${formatDate(
+          line.serviceEndDate,
+          undefined,
+          locale
+        )}`
+      : line?.serviceStartDate
+        ? formatDate(line.serviceStartDate, undefined, locale)
+        : "—";
+
+  return (
+    <ModalCardProvider type={type}>
+      <ModalCard onClose={onClose}>
+        <ModalCardContent size="xxlarge">
+          <ModalCardHeader>
+            <ModalCardTitle className="flex items-center gap-2">
+              <LuKeyRound />
+              {kindLabel(line?.rentalInvoiceLineKind)}
+            </ModalCardTitle>
+            <ModalCardDescription>
+              <Trans>
+                Generated from a rental agreement. Change the agreement to
+                change this line.
+              </Trans>
+            </ModalCardDescription>
+          </ModalCardHeader>
+          <ModalCardBody>
+            <div className="grid w-full gap-x-8 gap-y-4 grid-cols-1 lg:grid-cols-3">
+              <VStack spacing={1}>
+                <Label className="text-muted-foreground">
+                  <Trans>Rental Agreement</Trans>
+                </Label>
+                {rentalAgreementId ? (
+                  <Hyperlink to={path.to.rentalAgreement(rentalAgreementId)}>
+                    {agreementReadableId ?? rentalAgreementId}
+                  </Hyperlink>
+                ) : (
+                  <span>—</span>
+                )}
+              </VStack>
+              <VStack spacing={1}>
+                <Label className="text-muted-foreground">
+                  <Trans>Kind</Trans>
+                </Label>
+                <span>{kindLabel(line?.rentalInvoiceLineKind)}</span>
+              </VStack>
+              <VStack spacing={1}>
+                <Label className="text-muted-foreground">
+                  <Trans>Service Period</Trans>
+                </Label>
+                <span>{period}</span>
+              </VStack>
+              <VStack spacing={1} className="lg:col-span-2">
+                <Label className="text-muted-foreground">
+                  <Trans>Description</Trans>
+                </Label>
+                <span>{line?.description || "—"}</span>
+              </VStack>
+              <VStack spacing={1}>
+                <Label className="text-muted-foreground">
+                  <Trans>Amount</Trans>
+                </Label>
+                <HStack spacing={2}>
+                  <span className="font-medium tabular-nums">
+                    {currencyFormatter.format(amount)}
+                  </span>
+                  {(line?.taxPercent ?? 0) > 0 ? (
+                    <Badge variant="red">
+                      {percentFormatter.format(line?.taxPercent ?? 0)}{" "}
+                      <Trans>Tax</Trans>
+                    </Badge>
+                  ) : null}
+                </HStack>
+              </VStack>
+            </div>
+          </ModalCardBody>
+        </ModalCardContent>
+      </ModalCard>
+    </ModalCardProvider>
+  );
+}
+
+const SalesInvoiceItemLineForm = ({
   initialValues,
   type,
   isSalesOrderLine = false,
@@ -101,6 +276,7 @@ const SalesInvoiceLineForm = ({
 }: SalesInvoiceLineFormProps) => {
   const { t } = useLingui();
   const permissions = usePermissions();
+  const { accountingEnabled } = useSettings();
   const { carbon } = useCarbon();
 
   const { company, defaults } = useUser();
@@ -144,6 +320,10 @@ const SalesInvoiceLineForm = ({
 
   const [lineType, setLineType] = useState<ItemType>(
     initialValues.invoiceLineType as ItemType
+  );
+  // A service can run a single day, so its end may equal its start.
+  const [serviceStartDate, setServiceStartDate] = useState(
+    initialValues.serviceStartDate
   );
   const [locationId, setLocationId] = useState(defaults.locationId ?? "");
   const [itemData, setItemData] = useState<{
@@ -630,6 +810,26 @@ const SalesInvoiceLineForm = ({
                               }))
                             }
                           />
+                          {accountingEnabled && lineType === "Service" && (
+                            <>
+                              <DatePicker
+                                name="serviceStartDate"
+                                label={t`Service start`}
+                                onChange={(date) =>
+                                  setServiceStartDate(date ?? undefined)
+                                }
+                              />
+                              <DatePicker
+                                name="serviceEndDate"
+                                label={t`Service end`}
+                                minValue={
+                                  serviceStartDate
+                                    ? parseDate(serviceStartDate)
+                                    : undefined
+                                }
+                              />
+                            </>
+                          )}
                           <Location
                             name="locationId"
                             label={t`Shipping Location`}

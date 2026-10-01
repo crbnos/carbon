@@ -41,6 +41,7 @@ import {
   VStack
 } from "@carbon/react";
 import { getItemReadableId, INPUT_FORMAT, INPUT_STEP } from "@carbon/utils";
+import { parseDate } from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useCallback, useEffect, useState } from "react";
 import {
@@ -77,6 +78,7 @@ import {
   usePercentFormatter,
   usePermissions,
   useRouteData,
+  useSettings,
   useUser
 } from "~/hooks";
 import { getDefaultStorageUnitForJob } from "~/modules/inventory/inventory.service";
@@ -110,6 +112,7 @@ const SalesOrderLineForm = ({
 }: SalesOrderLineFormProps) => {
   const { t, i18n } = useLingui();
   const permissions = usePermissions();
+  const { accountingEnabled } = useSettings();
   const { carbon } = useCarbon();
   const { company } = useUser();
   const { orderId } = useParams();
@@ -141,6 +144,10 @@ const SalesOrderLineForm = ({
   const [items] = useItems();
 
   const [lineType, setLineType] = useState(initialValues.salesOrderLineType);
+  // A service can run a single day, so its end may equal its start.
+  const [serviceStartDate, setServiceStartDate] = useState(
+    initialValues.serviceStartDate
+  );
   const [locationId, setLocationId] = useState(initialValues.locationId ?? "");
   const [saleQuantity, setSaleQuantity] = useState(
     initialValues.saleQuantity ?? 1
@@ -731,6 +738,26 @@ const SalesOrderLineForm = ({
                               label={t`Promised Date`}
                               termId="sales-order-line-promised-date"
                             />
+                            {accountingEnabled && lineType === "Service" && (
+                              <>
+                                <DatePicker
+                                  name="serviceStartDate"
+                                  label={t`Service start`}
+                                  onChange={(date) =>
+                                    setServiceStartDate(date ?? undefined)
+                                  }
+                                />
+                                <DatePicker
+                                  name="serviceEndDate"
+                                  label={t`Service end`}
+                                  minValue={
+                                    serviceStartDate
+                                      ? parseDate(serviceStartDate)
+                                      : undefined
+                                  }
+                                />
+                              </>
+                            )}
                             {[
                               "Part",
                               "Material",

@@ -643,6 +643,29 @@ serve(async (req: Request) => {
           pol.receivedComplete
       );
 
+      // CIP cost rows this receipt wrote, summed per asset. Their presence is
+      // the durable record that the posting went into Construction in
+      // Progress, even if the asset has since been capitalized into a
+      // depreciating class.
+      const cipCostByAssetVoid = new Map<string, number>();
+      if (faPoLinesForVoid.length > 0) {
+        const cipCostRowsVoid = await client
+          .from("fixedAssetCipCost")
+          .select("fixedAssetId, amount")
+          .eq("companyId", companyId)
+          .eq("sourceDocumentId", receiptId);
+        if (cipCostRowsVoid.error)
+          throw new Error("Failed to fetch fixed asset CIP costs");
+        for (const row of cipCostRowsVoid.data) {
+          cipCostByAssetVoid.set(
+            row.fixedAssetId,
+            (cipCostByAssetVoid.get(row.fixedAssetId) ?? 0) + Number(row.amount)
+          );
+        }
+      }
+      // Reduced acquisition cost per CIP asset, written inside the void transaction
+      const cipAssetUpdatesVoid = new Map<string, number>();
+
       for (const faPoLine of faPoLinesForVoid) {
         const hasReceiptEntries = originalJournalLines.data.some(
           (jl) =>
@@ -667,11 +690,38 @@ serve(async (req: Request) => {
 
           const assetRecord = await client
             .from("fixedAsset")
-            .select("id, acquisitionCost, status")
+            .select(
+              "id, acquisitionCost, status, fixedAssetClass:fixedAssetClassId(isConstructionInProgress)"
+            )
             .eq("id", faPoLine.assetId!)
             .single();
 
           if (!assetRecord.error && assetRecord.data) {
+            const isConstructionInProgress =
+              cipCostByAssetVoid.has(faPoLine.assetId!) ||
+              Boolean(
+                (assetRecord.data.fixedAssetClass as any)
+                  ?.isConstructionInProgress
+              );
+            if (isConstructionInProgress) {
+              if (assetRecord.data.status !== "Under Construction") {
+                throw new Error(
+                  "Asset was capitalized; reverse the capitalization first"
+                );
+              }
+              const cipCost = cipCostByAssetVoid.get(faPoLine.assetId!);
+              if (cipCost !== undefined) {
+                cipAssetUpdatesVoid.set(
+                  faPoLine.assetId!,
+                  Math.max(
+                    0,
+                    round(Number(assetRecord.data.acquisitionCost) - cipCost)
+                  )
+                );
+              }
+              continue;
+            }
+
             const newAcquisitionCost = Math.max(
               0,
               Number(assetRecord.data.acquisitionCost) - receiptCost
@@ -788,6 +838,21 @@ serve(async (req: Request) => {
           .set({ status: purchaseOrderStatusVoid })
           .where("id", "=", receipt.data.sourceDocumentId!)
           .execute();
+
+        for (const [assetId, acquisitionCost] of cipAssetUpdatesVoid) {
+          await trx
+            .deleteFrom("fixedAssetCipCost")
+            .where("companyId", "=", companyId)
+            .where("sourceDocumentId", "=", receiptId)
+            .where("fixedAssetId", "=", assetId)
+            .execute();
+          await trx
+            .updateTable("fixedAsset")
+            .set({ acquisitionCost, updatedBy: userId })
+            .where("id", "=", assetId)
+            .where("companyId", "=", companyId)
+            .execute();
+        }
 
         if (reversingJournalLines.length > 0) {
           const voidJournalEntryId = await getNextSequence(
@@ -1705,7 +1770,7 @@ serve(async (req: Request) => {
         // Process Fixed Asset PO lines (no receipt lines — handled directly from PO)
         const { data: receiptFaLines } = await client
           .from("receiptFixedAssetLine")
-          .select("purchaseOrderLineId, serialNumber")
+          .select("id, purchaseOrderLineId, serialNumber")
           .eq("receiptId", receiptId)
           .eq("received", true);
         const receivedFaPoLineIds = new Set(
@@ -1714,6 +1779,17 @@ serve(async (req: Request) => {
         const faSerialNumbers = new Map(
           (receiptFaLines ?? []).map((r) => [r.purchaseOrderLineId, r.serialNumber])
         );
+        const faReceiptLineIds = new Map<string, string>();
+        for (const r of receiptFaLines ?? []) {
+          faReceiptLineIds.set(r.purchaseOrderLineId, r.id);
+        }
+        // A Construction in Progress asset records every posting that adds to
+        // its acquisition cost as a CIP cost row. Written inside the
+        // transaction, after the journal, so it can carry the journal id.
+        const cipCostInserts: Omit<
+          Database["public"]["Tables"]["fixedAssetCipCost"]["Insert"],
+          "journalId"
+        >[] = [];
 
         const faPurchaseOrderLines = purchaseOrderLines.data.filter(
           (pol) =>
@@ -1734,13 +1810,17 @@ serve(async (req: Request) => {
             const assetRecord = await client
               .from("fixedAsset")
               .select(
-                "id, status, acquisitionDate, depreciationStartDate, acquisitionCost, locationId, fixedAssetClassId, fixedAssetClass:fixedAssetClassId(assetAccountId)"
+                "id, status, acquisitionDate, depreciationStartDate, acquisitionCost, locationId, fixedAssetClassId, fixedAssetClass:fixedAssetClassId(assetAccountId, isConstructionInProgress)"
               )
               .eq("id", faPoLine.assetId!)
               .single();
 
             if (assetRecord.error)
               throw new Error("Failed to fetch fixed asset");
+
+            const isConstructionInProgress = Boolean(
+              (assetRecord.data.fixedAssetClass as any)?.isConstructionInProgress
+            );
 
             const journalLineRef = nanoid();
 
@@ -1792,11 +1872,18 @@ serve(async (req: Request) => {
             if (!assetRecord.data.acquisitionDate) {
               updateData.acquisitionDate = today;
             }
-            if (!assetRecord.data.depreciationStartDate) {
+            // A CIP asset does not depreciate until it is capitalized, so its
+            // depreciation start date stays null and it goes Under Construction.
+            if (
+              !isConstructionInProgress &&
+              !assetRecord.data.depreciationStartDate
+            ) {
               updateData.depreciationStartDate = today;
             }
             if (assetRecord.data.status === "Draft") {
-              updateData.status = "Active";
+              updateData.status = isConstructionInProgress
+                ? "Under Construction"
+                : "Active";
             }
 
             const serialNumber = faSerialNumbers.get(faPoLine.id!);
@@ -1813,6 +1900,19 @@ serve(async (req: Request) => {
               .from("fixedAsset")
               .update(updateData)
               .eq("id", faPoLine.assetId!);
+
+            if (isConstructionInProgress) {
+              cipCostInserts.push({
+                fixedAssetId: faPoLine.assetId!,
+                sourceType: "Receipt",
+                sourceDocumentId: receiptId,
+                sourceDocumentLineId: faReceiptLineIds.get(faPoLine.id!) ?? null,
+                amount: round(cost),
+                costDate: today,
+                companyId,
+                createdBy: userId,
+              });
+            }
           }
 
           purchaseOrderLineUpdates[faPoLine.id!] = {
@@ -2053,6 +2153,7 @@ serve(async (req: Request) => {
             .where("id", "=", receipt.data.sourceDocumentId)
             .execute();
 
+          let receiptJournalId: string | null = null;
           if (accountingEnabled && journalLineInserts.length > 0) {
             const journalEntryId = await getNextSequence(
               trx,
@@ -2076,6 +2177,7 @@ serve(async (req: Request) => {
               })
               .returning(["id"])
               .executeTakeFirstOrThrow();
+            receiptJournalId = journalResult.id;
 
             const journalLineResults = await trx
               .insertInto("journalLine")
@@ -2175,6 +2277,18 @@ serve(async (req: Request) => {
                   .execute();
               }
             }
+          }
+
+          if (cipCostInserts.length > 0) {
+            await trx
+              .insertInto("fixedAssetCipCost")
+              .values(
+                cipCostInserts.map((row) => ({
+                  ...row,
+                  journalId: receiptJournalId,
+                }))
+              )
+              .execute();
           }
 
           if (itemLedgerInserts.length > 0) {

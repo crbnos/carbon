@@ -61,6 +61,9 @@ vi.mock("~/modules/invoicing", () => ({
   paymentValidator: {},
   upsertPayment: vi.fn()
 }));
+vi.mock("~/modules/invoicing/invoicing.server", () => ({
+  getDepositDocuments: vi.fn(async () => [])
+}));
 
 import { loader } from "./$paymentId";
 

@@ -277,6 +277,16 @@ export const auditConfig = {
       }
     },
 
+    // A lease classification override is audit-logged against its agreement
+    // (spec §4); the agreement's own edits come along with it.
+    rentalAgreement: {
+      label: "Rental Agreement",
+      tables: {
+        rentalAgreement: { role: "root" },
+        rentalAgreementLine: { entityIdColumn: "rentalAgreementId" }
+      }
+    },
+
     purchaseOrder: {
       label: "Purchase Order",
       tables: {
@@ -643,6 +653,8 @@ export const auditConfig = {
     salesOrderLine: "Line Item",
     salesOrderPayment: "Payment",
     salesOrderShipment: "Shipment",
+    rentalAgreement: "Rental Agreement",
+    rentalAgreementLine: "Unit",
     purchaseOrder: "Purchase Order",
     purchaseOrderLine: "Line Item",
     purchaseOrderPayment: "Payment",

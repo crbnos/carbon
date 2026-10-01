@@ -6,6 +6,7 @@
 > Tracking issue: crbnos/carbon#1048
 > Readiness finding: `.ai/specs/2026-07-03-public-company-readiness.md` GAP-1
 > Research: `.ai/research/public-company-compliance.md` (§ASC 606 answers, §NetSuite ARM)
+> Phasing note (2026-09-22): Phase 1 of this model (recognition schedule, run, deferral/accrual core, deposits, straight-line by date range) is specified in `.ai/specs/2026-09-22-revenue-recognition-and-rentals.md`, which also uses a `revenueRecognitionRun` batch instead of the Draft-journal hook below; arrangements, SSP allocation, modifications and POC remain this spec's later phases on that substrate.
 
 ## TLDR
 
@@ -342,3 +343,4 @@ Routes (new, `apps/erp/app/routes/x+/accounting+/`): `revenue-arrangements.tsx` 
 
 - 2026-07-04: Created — full ASC 606 model per Brad's 2026-07-04 scope resolution ("the more complete plan", incl. SSP allocation). Grounded in codebase exploration (post-sales-invoice revenue posting, dead 2160 seed, accountDefault/prepayment plumbing, job WIP-by-documentId costing, close-job, jobMaterial/jobOperation estimates, AR/AP payment tables) and `.ai/research/public-company-compliance.md` (NetSuite ARM vocabulary and reclass pattern). Registers into the period-closing spec's checklist substrate. Two new blocking questions (POC COGS timing; ship-before-bill recognition) recorded unchecked.
 - 2026-07-04: Remaining open questions resolved under the program ambition heuristic (ambitious scope now; back-out valves at plan stage).
+- 2026-09-22: Phased. Phase 1 (schedule/run/deferral/accrual core, deposits, straight-line by date range) moved to `.ai/specs/2026-09-22-revenue-recognition-and-rentals.md`; rentals are that phase's first consumer. SSP allocation, arrangements, modifications and POC remain here as later phases and post through the same run.

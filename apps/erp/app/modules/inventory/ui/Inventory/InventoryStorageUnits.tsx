@@ -49,6 +49,7 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import { nanoid } from "nanoid";
 import { Fragment, useMemo, useState } from "react";
 import {
+  LuBuilding2,
   LuCheck,
   LuChevronDown,
   LuChevronRight,
@@ -57,7 +58,7 @@ import {
   LuPrinter,
   LuQrCode
 } from "react-icons/lu";
-import { Outlet, useFetcher } from "react-router";
+import { Link, Outlet, useFetcher } from "react-router";
 import type { z } from "zod";
 import { DateTime } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
@@ -249,6 +250,20 @@ const InventoryStorageUnits = ({
     }
   };
 
+  // A serialized unit can leave stock as a fixed asset (Dr asset / Cr Finished
+  // Goods at its carrying cost). The capitalize route reads the unit from the
+  // search params; the posting itself needs `create: accounting`.
+  const canCapitalize = permissions.can("create", "accounting");
+  const capitalizeHref = (item: ItemStorageUnitQuantities) => {
+    const params = new URLSearchParams({
+      itemId: pickMethod.itemId,
+      trackedEntityId: item.trackedEntityId,
+      locationId,
+      storageUnitId: item.storageUnitId
+    });
+    return `${path.to.fixedAssetCapitalize}?${params}`;
+  };
+
   const handleConfirmPrint = () => {
     if (!pendingPrintEntityId || !selectedPrinterId) return;
     printFetcher.submit(
@@ -337,6 +352,14 @@ const InventoryStorageUnits = ({
               >
                 <DropdownMenuIcon icon={<LuPrinter />} />
                 <Trans>Print Label</Trans>
+              </DropdownMenuItem>
+            )}
+            {item.trackedEntityId && canCapitalize && (
+              <DropdownMenuItem asChild>
+                <Link to={capitalizeHref(item)}>
+                  <DropdownMenuIcon icon={<LuBuilding2 />} />
+                  <Trans>Capitalize as Fixed Asset</Trans>
+                </Link>
               </DropdownMenuItem>
             )}
           </DropdownMenuContent>
