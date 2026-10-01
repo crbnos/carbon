@@ -20,7 +20,7 @@ export async function getWorkflows(
     .from("workflow")
     .select(
       "id, name, description, ownerId, publishedVersionId, createdAt, updatedAt",
-      { count: "exact" }
+      { count: LIST_COUNT }
     )
     .eq("companyId", companyId);
 

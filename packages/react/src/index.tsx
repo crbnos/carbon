@@ -119,6 +119,7 @@ import {
 } from "./Date";
 import type { DateTimeProps } from "./DateTime";
 import { DateTime } from "./DateTime";
+import { DisabledReason, getDisabledReason } from "./DisabledReason";
 import {
   Drawer,
   DrawerBody,
@@ -458,6 +459,7 @@ export {
   DateRangePicker,
   DateTime,
   DateTimePicker,
+  DisabledReason,
   Drawer,
   DrawerBody,
   DrawerContent,
@@ -659,6 +661,7 @@ export {
   TrackedEntityPicker,
   usePickOrderOptions,
   TruncatedTooltipText,
+  getDisabledReason,
   Tooltip,
   TooltipContent,
   TooltipProvider,

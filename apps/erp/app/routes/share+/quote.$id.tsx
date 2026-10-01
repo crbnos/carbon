@@ -14,6 +14,7 @@ import {
   CardHeader,
   CardTitle,
   cn,
+  DisabledReason,
   generateHTML,
   Heading,
   HStack,
@@ -475,7 +476,23 @@ const LineItems = ({
                   <div className="flex items-center gap-x-4 justify-between flex-grow min-w-0">
                     {/* min-w-0 so a long item id wraps inside the card
                         instead of shoving the price out of it. */}
-                    <Heading className="min-w-0">{line.itemReadableId}</Heading>
+                    <div className="flex min-w-0 items-center gap-2">
+                      <Heading className="min-w-0">
+                        {line.itemReadableId}
+                      </Heading>
+                      {selectedLines[line.id!]?.quantity === 0 &&
+                        (pricingByLine[line.id!]?.length ?? 0) > 0 &&
+                        ![
+                          "Ordered",
+                          "Partial",
+                          "Expired",
+                          "Cancelled"
+                        ].includes(quote.status) && (
+                          <Badge variant="secondary" className="shrink-0">
+                            <Trans>Removed</Trans>
+                          </Badge>
+                        )}
+                    </div>
                     <HStack spacing={4} className="shrink-0">
                       <MotionMoney
                         value={
@@ -580,7 +597,10 @@ const LinePricingOptions = ({
   // Settlement money at the document currency's configured decimals.
   const currencyDecimals = useCurrencyDecimals(quoteCurrency);
   const percentFormatter = usePercentFormatter();
-  const { quote } = useLoaderData<typeof loader>().data!;
+  const { quote, quoteLines } = useLoaderData<typeof loader>().data!;
+  // Removing the only item would just empty the quote; Reject covers that.
+  const canRemoveLine =
+    (quoteLines?.filter((quoteLine) => !!quoteLine.id).length ?? 0) > 1;
 
   const [selectedValue, setSelectedValue] = useState<string | null>(
     selectedLine?.quantity?.toString() ?? null
@@ -973,7 +993,8 @@ const LinePricingOptions = ({
         </div>
       )}
 
-      {selectedLine.quantity !== 0 &&
+      {canRemoveLine &&
+        selectedLine.quantity !== 0 &&
         !["Ordered", "Partial", "Expired", "Cancelled"].includes(
           quote.status
         ) && (
@@ -989,7 +1010,7 @@ const LinePricingOptions = ({
                 }));
               }}
             >
-              <Trans>Remove</Trans>
+              <Trans>Remove this item</Trans>
             </Button>
           </HStack>
         )}
@@ -1198,6 +1219,11 @@ const Quote = ({ data }: { data: QuoteData }) => {
   const convertedShippingCost =
     (quote.exchangeRate ?? 1) * (quoteShipment?.shippingCost ?? 0);
   const total = subtotal + tax + convertedShippingCost;
+  // Gate on items, not money: quote-level shipping keeps the total above zero
+  // even after the customer removes every item.
+  const hasSelectedItem = Object.values(selectedLines).some(
+    (line) => line.quantity > 0
+  );
 
   const termsHTML = generateHTML(terms as JSONContent);
 
@@ -1347,15 +1373,24 @@ const Quote = ({ data }: { data: QuoteData }) => {
             {companySettings?.digitalQuoteEnabled &&
               quote?.status === "Sent" && (
                 <>
-                  <Button
-                    onClick={confirmQuoteModal.onOpen}
-                    size="lg"
-                    variant="primary"
-                    isDisabled={total === 0}
-                    className="w-full mt-8 text-lg"
+                  <DisabledReason
+                    className="w-full mt-8"
+                    reason={
+                      hasSelectedItem
+                        ? undefined
+                        : t`Select at least one item to accept the quote`
+                    }
                   >
-                    <Trans>Accept Quote</Trans>
-                  </Button>
+                    <Button
+                      onClick={confirmQuoteModal.onOpen}
+                      size="lg"
+                      variant="primary"
+                      isDisabled={!hasSelectedItem}
+                      className="w-full text-lg"
+                    >
+                      <Trans>Accept Quote</Trans>
+                    </Button>
+                  </DisabledReason>
                   <Button
                     onClick={rejectQuoteModal.onOpen}
                     size="lg"

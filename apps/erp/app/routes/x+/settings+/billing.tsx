@@ -63,10 +63,11 @@ export async function loader({ request }: LoaderFunctionArgs) {
   });
 
   // Get company plan and usage data for payment section
-  const companyPlan = await client
-    .from("companyPlan")
-    .select(
-      `
+  const [companyPlan, companyUsage, userToCompany] = await Promise.all([
+    client
+      .from("companyPlan")
+      .select(
+        `
       *,
       plan:planId (
         name,
@@ -75,21 +76,16 @@ export async function loader({ request }: LoaderFunctionArgs) {
         aiTokensLimit
       )
     `
-    )
-    .eq("id", companyId)
-    .single();
-
-  const companyUsage = await client
-    .from("companyUsage")
-    .select("*")
-    .eq("companyId", companyId)
-    .single();
-
-  const userToCompany = await client
-    .from("userToCompany")
-    .select("userId")
-    .eq("companyId", companyId)
-    .eq("role", "employee");
+      )
+      .eq("id", companyId)
+      .single(),
+    client.from("companyUsage").select("*").eq("companyId", companyId).single(),
+    client
+      .from("userToCompany")
+      .select("userId")
+      .eq("companyId", companyId)
+      .eq("role", "employee")
+  ]);
 
   const userIds = userToCompany.data?.map((utc) => utc.userId) || [];
 

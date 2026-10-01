@@ -30,6 +30,7 @@ import { Assignee, EmployeeAvatar } from "~/components";
 import { Enumerable } from "~/components/Enumerable";
 import { Combobox, CreatableCombobox } from "~/components/Form";
 import { usePermissions, useRouteData } from "~/hooks";
+import { useResolved } from "~/hooks/useResolved";
 import type { action } from "~/routes/x+/items+/change-notice+/update";
 import type { ListItem } from "~/types";
 import { path } from "~/utils/path";
@@ -72,6 +73,8 @@ function PropertiesSection({
 // route.) Self-contained: reads everything from the $id route loader so
 // ResizablePanels can render it with only a `key` (mirrors SalesOrderProperties).
 // Owns its own width / scroll / border / padding.
+const NO_IMPACT: ChangeNoticeImpactItem[] = [];
+
 const ChangeNoticeProperties = () => {
   const { id } = useParams();
   if (!id) throw new Error("id not found");
@@ -84,7 +87,7 @@ const ChangeNoticeProperties = () => {
     changeNotice: ChangeNotice;
     types: ListItem[];
     affectedItems: AffectedItemDraft[];
-    impactUsedIn: ChangeNoticeImpactItem[];
+    impactUsedIn: Promise<ChangeNoticeImpactItem[]>;
     nonConformanceOptions: {
       id: string;
       nonConformanceId: string;
@@ -100,7 +103,7 @@ const ChangeNoticeProperties = () => {
   const changeNotice = routeData?.changeNotice;
   const types = routeData?.types ?? [];
   const affectedItems = routeData?.affectedItems ?? [];
-  const impactUsedIn = routeData?.impactUsedIn ?? [];
+  const impactUsedIn = useResolved(routeData?.impactUsedIn, NO_IMPACT);
   const nonConformanceOptions = routeData?.nonConformanceOptions ?? [];
   const linkedNonConformance = routeData?.linkedNonConformance ?? null;
   const isLocked = isChangeNoticeLocked(changeNotice?.status);

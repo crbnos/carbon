@@ -14,11 +14,14 @@ import {
   TabsList,
   TabsTrigger
 } from "@carbon/react";
-import { isInternalEmail } from "@carbon/utils";
+import { isInternalEmail, isUnaffectedByNavigation } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import { useLingui } from "@lingui/react/macro";
 import { useCallback } from "react";
-import type { LoaderFunctionArgs } from "react-router";
+import type {
+  LoaderFunctionArgs,
+  ShouldRevalidateFunction
+} from "react-router";
 import { Outlet, redirect, useLoaderData, useNavigate } from "react-router";
 import { New } from "~/components";
 import { getSubsidiaries } from "~/modules/settings";
@@ -33,6 +36,9 @@ export const handle: Handle = {
   breadcrumb: msg`Companies`,
   to: path.to.companies
 };
+
+export const shouldRevalidate: ShouldRevalidateFunction = (args) =>
+  isUnaffectedByNavigation(args) ? false : args.defaultShouldRevalidate;
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { companyGroupId, email } = await requirePermissions(request, {

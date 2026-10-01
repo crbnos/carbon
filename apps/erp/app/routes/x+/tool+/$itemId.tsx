@@ -17,11 +17,15 @@ import {
   TabsTrigger,
   useRouteData
 } from "@carbon/react";
+import { isUnaffectedByNavigation } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { Suspense, useState } from "react";
 import { LuSearch } from "react-icons/lu";
-import type { LoaderFunctionArgs } from "react-router";
+import type {
+  LoaderFunctionArgs,
+  ShouldRevalidateFunction
+} from "react-router";
 import {
   Await,
   Outlet,
@@ -35,8 +39,6 @@ import type { ItemFile, ToolSummary } from "~/modules/items";
 import {
   findChangeNoticesForItem,
   getItemFiles,
-  getItemSupersededBy,
-  getItemSupersession,
   getMakeMethodById,
   getMakeMethods,
   getMethodTree,
@@ -46,7 +48,10 @@ import {
   getTool,
   isChangeNoticeOpen
 } from "~/modules/items";
-import { getUnreleasedChangeOrderForItem } from "~/modules/items/items.server";
+import {
+  getUnreleasedChangeOrderForItem,
+  streamItemSupersession
+} from "~/modules/items/items.server";
 import { BoMActions, BoMExplorer } from "~/modules/items/ui/Item";
 import type { UsedInNode } from "~/modules/items/ui/Item/UsedIn";
 import {
@@ -67,6 +72,11 @@ export const handle: Handle = {
   module: "items"
 };
 
+export const shouldRevalidate: ShouldRevalidateFunction = (args) =>
+  isUnaffectedByNavigation(args, { params: ["itemId"], search: ["methodId"] })
+    ? false
+    : args.defaultShouldRevalidate;
+
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
     view: "parts",
@@ -76,13 +86,17 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { itemId } = params;
   if (!itemId) throw new Error("Could not find itemId");
 
+  const { supersession, supersededBy } = streamItemSupersession(
+    client,
+    itemId,
+    companyId
+  );
+
   const [
     toolSummary,
     supplierParts,
     pickMethods,
     tags,
-    supersession,
-    supersededBy,
     allChangeNotices,
     unreleasedChangeOrder
   ] = await Promise.all([
@@ -90,8 +104,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     getSupplierParts(client, itemId, companyId),
     getPickMethods(client, itemId, companyId),
     getTagsList(client, companyId, "tool"),
-    getItemSupersession(client, itemId, companyId),
-    getItemSupersededBy(client, itemId, companyId),
     // Every CO, any status; the open subset (which locks manual version/revision
     // creation) is derived below.
     findChangeNoticesForItem(client, { itemId, companyId }),
@@ -149,8 +161,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   return {
     toolSummary: toolSummary.data,
-    supersession: supersession.data,
-    supersededBy: supersededBy.data ?? [],
+    supersession,
+    supersededBy,
     files: getItemFiles(client, itemId, companyId),
     supplierParts: supplierParts.data ?? [],
     pickMethods: pickMethods.data ?? [],
@@ -186,7 +198,7 @@ export default function ToolRoute() {
 
   return (
     <div className="flex flex-col h-[calc(100dvh-var(--topbar-height)-var(--content-inset))] overflow-hidden w-full">
-      <ToolHeader />
+      <ToolHeader key={itemId} />
       <div className="flex h-[calc(100dvh-var(--topbar-height)-var(--header-height)-var(--content-inset))] overflow-hidden w-full">
         <div className="flex flex-grow overflow-hidden">
           <ResizablePanels

@@ -123,18 +123,13 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     ]);
 
   const configData = partManufacturing.data?.requiresConfiguration
-    ? {
-        configurationParametersAndGroups: await getConfigurationParameters(
-          client,
-          itemId,
-          companyId
-        ),
-        configurationRules: await getConfigurationRules(
-          client,
-          itemId,
-          companyId
-        )
-      }
+    ? await Promise.all([
+        getConfigurationParameters(client, itemId, companyId),
+        getConfigurationRules(client, itemId, companyId)
+      ]).then(([configurationParametersAndGroups, configurationRules]) => ({
+        configurationParametersAndGroups,
+        configurationRules
+      }))
     : {
         configurationParametersAndGroups: { groups: [], parameters: [] },
         configurationRules: []

@@ -18,3 +18,23 @@ export function getPageSize(params: URLSearchParams): number {
 export function getPageOffset(params: URLSearchParams): number {
   return Math.max(0, parseNumberFromUrlParam(params, "offset", 0));
 }
+
+// PostgREST's `estimated` count is exact up to max-rows (config.toml) and a
+// planner estimate above it.
+const MAX_EXACT_COUNT = 1000;
+
+// An estimate can run low, so past the exact range the rows returned decide
+// whether a next page exists.
+export function pageBounds(args: {
+  count: number;
+  offset: number;
+  pageSize: number;
+  rowsOnPage: number;
+}) {
+  const seen = args.offset + args.rowsOnPage;
+  const atExactEnd = args.count <= MAX_EXACT_COUNT && seen === args.count;
+  return {
+    canNextPage: args.rowsOnPage >= args.pageSize && !atExactEnd,
+    count: Math.max(args.count, seen)
+  };
+}

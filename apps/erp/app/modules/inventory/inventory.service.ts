@@ -307,7 +307,7 @@ export async function getInventoryItems(
       company_id: companyId
     },
     {
-      count: "exact"
+      count: LIST_COUNT
     }
   );
 
@@ -334,7 +334,7 @@ export async function getInventoryItemsCount(
   let query = client
     .from("item")
     .select("id", {
-      count: "exact"
+      count: LIST_COUNT
     })
     .neq("itemTrackingType", "Non-Inventory")
     .eq("companyId", companyId);
@@ -487,7 +487,7 @@ export async function getKanbans(
   let query = client
     .from("kanbans")
     .select("*", {
-      count: "exact"
+      count: LIST_COUNT
     })
     .eq("companyId", companyId)
     .eq("locationId", locationId);
@@ -577,7 +577,7 @@ export async function getStockTransfers(
   let query = client
     .from("stockTransfer")
     .select("*", {
-      count: "exact"
+      count: LIST_COUNT
     })
     .eq("companyId", companyId);
 
@@ -641,7 +641,7 @@ export async function getReceipts(
   let query = client
     .from("receipt")
     .select("*", {
-      count: "exact"
+      count: LIST_COUNT
     })
     .eq("companyId", companyId)
     .neq("sourceDocumentId", "");
@@ -945,7 +945,7 @@ export async function getStorageUnits(
   // for tree rendering (indentation, hierarchy filters, subtree rollups).
   let query = client
     .from("storageUnits_recursive")
-    .select("*", { count: "exact" })
+    .select("*", { count: LIST_COUNT })
     .eq("companyId", companyId)
     .eq("locationId", locationId);
 
@@ -992,7 +992,7 @@ export async function getStorageUnitRoots(
 ) {
   let query = client
     .from("storageUnits_recursive")
-    .select("*", { count: "exact" })
+    .select("*", { count: LIST_COUNT })
     .eq("companyId", companyId)
     .eq("locationId", locationId)
     .eq("depth", 1);
@@ -1135,7 +1135,7 @@ export async function getStockMovements(
   let query = client
     .from("itemLedgers")
     .select("*", {
-      count: "exact"
+      count: LIST_COUNT
     })
     .eq("companyId", companyId);
 
@@ -1166,7 +1166,7 @@ export async function getShipments(
   let query = client
     .from("shipment")
     .select("*", {
-      count: "exact"
+      count: LIST_COUNT
     })
     .eq("companyId", companyId)
     .neq("sourceDocumentId", "");
@@ -1311,7 +1311,7 @@ export async function getShippingMethods(
   let query = client
     .from("shippingMethod")
     .select("*", {
-      count: "exact"
+      count: LIST_COUNT
     })
     .eq("companyId", companyId)
     .eq("active", true);
@@ -1537,7 +1537,7 @@ export async function getWarehouseTransfers(
     .select(
       "*, fromLocation:location!fromLocationId(name), toLocation:location!toLocationId(name)",
       {
-        count: "exact"
+        count: LIST_COUNT
       }
     )
     .eq("companyId", companyId);
@@ -1736,7 +1736,7 @@ export async function getInventoryCounts(
 ) {
   let query = client
     .from("inventoryCount")
-    .select("*", { count: "exact" })
+    .select("*", { count: LIST_COUNT })
     .eq("companyId", companyId);
 
   if (args.search) {
@@ -1773,7 +1773,7 @@ export async function getInventoryCountLines(
   // apply the same generic column filters the quantities screen does.
   let query = client
     .from("inventoryCountLines")
-    .select("*", { count: "exact" })
+    .select("*", { count: LIST_COUNT })
     .eq("inventoryCountId", inventoryCountId)
     .eq("companyId", companyId);
 
@@ -2602,7 +2602,7 @@ export async function getStorageTypes(
 ) {
   let query = client
     .from("storageType")
-    .select("*", { count: "exact" })
+    .select("*", { count: LIST_COUNT })
     .eq("companyId", companyId);
 
   if (args?.search) {
@@ -2717,7 +2717,7 @@ export async function getPickingLists(
   let query = client
     .from("pickingLists")
     .select("*", {
-      count: "exact"
+      count: LIST_COUNT
     })
     .eq("companyId", companyId);
 

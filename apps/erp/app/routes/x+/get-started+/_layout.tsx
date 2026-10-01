@@ -27,9 +27,14 @@ import {
   HubProvider,
   toFormFields
 } from "@carbon/onboarding/ui";
+import { isUnaffectedByNavigation } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import { useCallback, useEffect, useMemo, useRef } from "react";
-import type { LoaderFunctionArgs, MetaFunction } from "react-router";
+import type {
+  LoaderFunctionArgs,
+  MetaFunction,
+  ShouldRevalidateFunction
+} from "react-router";
 import {
   Outlet,
   redirect,
@@ -132,6 +137,9 @@ export const handle: Handle = {
   breadcrumb: msg`Get Started`,
   to: path.to.getStarted
 };
+
+export const shouldRevalidate: ShouldRevalidateFunction = (args) =>
+  isUnaffectedByNavigation(args) ? false : args.defaultShouldRevalidate;
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {});

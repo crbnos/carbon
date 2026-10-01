@@ -41,12 +41,14 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { runId } = params;
   if (!runId) throw new Error("runId is not found");
 
-  const runResult = await getWorkflowRun(client, runId, companyId);
+  // One row past the cap tells us it truncated without a second COUNT query.
+  const [runResult, stepsResult] = await Promise.all([
+    getWorkflowRun(client, runId, companyId),
+    getWorkflowRunSteps(client, runId, companyId)
+  ]);
   const run = runResult.data;
   if (!run) throw new Error("Run not found");
 
-  // One row past the cap tells us it truncated without a second COUNT query.
-  const stepsResult = await getWorkflowRunSteps(client, runId, companyId);
   const allSteps = stepsResult.data ?? [];
   const truncated = allSteps.length > MAX_RUN_STEPS;
   const steps = truncated ? allSteps.slice(0, MAX_RUN_STEPS) : allSteps;
