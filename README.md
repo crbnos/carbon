@@ -6,19 +6,21 @@
     </picture>
   </a>
 
-  <h3>The open-source manufacturing ERP, MES &amp; QMS</h3>
+  <h3>Build hardware at the speed of software</h3>
 
   <p>
-    Quote, plan, buy, build, inspect and ship on one live model of your factory,<br />
-    from a ten-person prototype shop to a rate-production line.
+    Carbon combines ERP, MRP, MES and QMS.<br />
+    Plan materials, run the shop floor, manage quality and track actual costs in one system.
   </p>
 
+  <p><strong>Hard tech unicorns build on Carbon.</strong></p>
+
   <p>
-    <a href="https://app.carbon.ms"><strong>Start free</strong></a> ·
+    <a href="https://app.carbon.ms"><strong>Start 30-day trial</strong></a> ·
     <a href="https://carbon.ms/self-hosted"><strong>Self-host</strong></a> ·
     <a href="https://docs.carbon.ms"><strong>Docs</strong></a> ·
-    <a href="https://docs.carbon.ms/api-reference"><strong>API</strong></a> ·
-    <a href="https://docs.carbon.ms/mcp"><strong>MCP</strong></a> ·
+    <a href="https://docs.carbon.ms/api"><strong>API</strong></a> ·
+    <a href="https://docs.carbon.ms/api/mcp"><strong>MCP</strong></a> ·
     <a href="https://discord.gg/yGUJWhNqzy"><strong>Discord</strong></a> ·
     <a href="https://github.com/orgs/crbnos/projects/1/views/1"><strong>Roadmap</strong></a>
   </p>
@@ -50,21 +52,21 @@
         <source media="(prefers-color-scheme: dark)" srcset=".github/assets/readme/sales-orders-dark.webp" />
         <img alt="Sales orders list with status, linked jobs and order totals" src=".github/assets/readme/sales-orders-light.webp" />
       </picture>
-      <p align="center"><sub><b>Quote to cash.</b> Quotes, orders, jobs and invoices on one record.</sub></p>
+      <p align="center"><sub><b>One record from quote to cash.</b> Link quotes, orders, jobs and invoices.</sub></p>
     </td>
     <td width="33%" valign="top">
       <picture>
         <source media="(prefers-color-scheme: dark)" srcset=".github/assets/readme/bom-dark.webp" />
         <img alt="Multi-level bill of materials with planning and supersession" src=".github/assets/readme/bom-light.webp" />
       </picture>
-      <p align="center"><sub><b>Unfork your BOM.</b> Multi-level BOMs, revisions and configuration.</sub></p>
+      <p align="center"><sub><b>Generate configurations from rules.</b> Control BOMs, routings and revisions.</sub></p>
     </td>
     <td width="33%" valign="top">
       <picture>
         <source media="(prefers-color-scheme: dark)" srcset=".github/assets/readme/traceability-dark.webp" />
         <img alt="Lot and serial traceability graph" src=".github/assets/readme/traceability-light.webp" />
       </picture>
-      <p align="center"><sub><b>Traceability by default.</b> Lot and serial genealogy, forwards and back.</sub></p>
+      <p align="center"><sub><b>Trace every unit to its source.</b> Follow lot and serial genealogy in both directions.</sub></p>
     </td>
   </tr>
 </table>
@@ -90,15 +92,16 @@
 
 ## Why Carbon
 
-Legacy ERPs were built for accountants in the 1990s. We built Carbon after years of running manufacturing on off-the-shelf systems and finding that:
+Manufacturing teams often run planning, production, quality and accounting in separate systems. That creates predictable problems:
 
-- Modern, API-first tooling didn't exist
-- Vendor lock-in bordered on extortion
-- There is no "perfect ERP", because every manufacturer is unique
+- BOMs and revisions are re-keyed between engineering and production
+- Material shortages surface after work has started
+- Job costs and quality records are reconstructed after the fact
+- Integrations depend on vendor-specific tools and consultants
 
-So Carbon puts ERP, MRP, MES and QMS on **one Postgres schema you can read, own and extend**. Every stage, from CAD to cash, writes to the same record: no handoffs, no re-keying, no reconciliation.
+Carbon puts ERP, MRP, MES and QMS in **one Postgres database you can inspect, own and extend**. Engineering, planning, production, quality and accounting update the same data, without synchronization jobs between separate product databases.
 
-Carbon is an open-source alternative to [NetSuite](https://carbon.ms/compare/netsuite), [Epicor](https://carbon.ms/compare/epicor), [SAP Business One](https://carbon.ms/compare/sap-business-one), [Plex](https://carbon.ms/compare/plex), [Odoo](https://carbon.ms/compare/odoo) and [ERPNext](https://carbon.ms/compare/erpnext), built for discrete manufacturing: complex assembly, contract manufacturing, configure-to-order and high-mix, low-volume production. See [all comparisons](https://carbon.ms/compare).
+Carbon is an open-source alternative to [NetSuite](https://carbon.ms/compare/netsuite), [Epicor](https://carbon.ms/compare/epicor), [SAP Business One](https://carbon.ms/compare/sap-business-one), [Plex](https://carbon.ms/compare/plex), [Odoo](https://carbon.ms/compare/odoo) and [ERPNext](https://carbon.ms/compare/erpnext). It supports complex assembly, contract manufacturing, configure-to-order and high-mix, low-volume production. See [all comparisons](https://carbon.ms/compare).
 
 <br />
 
@@ -106,30 +109,30 @@ Carbon is an open-source alternative to [NetSuite](https://carbon.ms/compare/net
 
 |                              |                                                                                  |
 | ---------------------------- | -------------------------------------------------------------------------------- |
-| **ERP**                      | Sales (quotes, orders, RMAs), purchasing, inventory, items, invoicing            |
-| **MRP & Planning**           | Material requirements planning, demand forecasts, finite capacity scheduling     |
-| **MES**                      | Digital travelers, 3D assembly instructions, barcode/QR tracking, live labor     |
-| **QMS**                      | Inspections, FAI, non-conformances, CAPA, gauge calibration, risk register       |
-| **Traceability**             | Serial and lot genealogy, forwards and back                                      |
-| **Engineering**              | Nested BoMs, revisions, change orders, item supersession, product configurator   |
-| **Accounting**               | GL, journals, multi-entity and multi-currency, Xero / QuickBooks sync            |
-| **Workflows**                | No-code automation rules with full run history                                   |
-| **Maintenance & Assets**     | Scheduled maintenance, fixed assets, kanban replenishment                        |
-| **API, Webhooks & MCP**      | 1,500+ typed API operations, served over HTTP and as a built-in MCP server       |
-| **Custom Fields**            | Extend any record                                                                |
-| **Integrations**             | Onshape, SolidWorks, Paperless Parts, Linear, Jira, Slack, Ramp, Stripe, Zebra   |
+| **ERP — Inventory & Costing** | Quotes, orders, purchasing, inventory, invoicing and actual job costs             |
+| **MRP — Planning**            | Demand, supply planning, versioned BOMs and routings, finite-capacity scheduling  |
+| **MES — Execution**           | Digital travelers, operator terminals, 3D instructions, barcode and labor capture |
+| **QMS — Quality**             | Inspections, FAI, nonconformance, CAPA, calibration and risk management           |
+| **Traceability**              | Forward and backward lot and serial genealogy                                     |
+| **Engineering**               | Multi-level BOMs, revisions, change orders, supersession and product configuration |
+| **Accounting**                | General ledger, journals, multi-entity, multi-currency and accounting integrations |
+| **Workflows**                 | Rule-based automation with triggers, actions and run history                      |
+| **Maintenance & Assets**      | Scheduled maintenance, fixed assets and kanban replenishment                      |
+| **API, Webhooks & MCP**       | Typed REST operations, event-driven webhooks and a permission-aware MCP server    |
+| **Custom Fields**             | Extend records without changing the core schema                                   |
+| **Integrations**              | Onshape, SolidWorks, Paperless Parts, Linear, Jira, Slack, Ramp, Stripe and Zebra |
 
 See the [full roadmap](https://github.com/orgs/crbnos/projects/1/views/1) for what's next.
 
 **Technical highlights**
 
-- Full-stack type safety, from the database to the UI
-- Row-level security, multi-tenant by design
-- Role- and attribute-based access control (Employee, Customer, Supplier)
+- Generated types shared by the database, application and API
+- Postgres row-level security and tenant-scoped records
+- Role- and attribute-based access for employees, customers and suppliers
 - Realtime database subscriptions
-- Unified auth and permissions across apps
-- Dependency graph for operations
-- Rust geometry service: STEP → GLB and assembly motion planning
+- Shared identity and permissions across the application, API and MCP server
+- Explicit dependency graphs for manufacturing operations
+- Rust geometry services for STEP conversion and assembly motion planning
 
 <br />
 
@@ -137,18 +140,18 @@ See the [full roadmap](https://github.com/orgs/crbnos/projects/1/views/1) for wh
 
 | | |
 | --- | --- |
-| **Carbon Cloud** | The fastest way to start. [Create a company](https://app.carbon.ms), no call required. |
-| **Self-hosted** | Run the whole stack on a single VPS, your own AWS account, or air-gapped. See the [self-hosting guide](https://docs.carbon.ms/docs/platform/self-hosting). |
-| **Develop locally** | Hack on the source: follow [Local Development](#local-development). |
+| **Carbon Cloud** | Managed application, database, updates and backups. [Start a 30-day trial](https://app.carbon.ms) without a sales call. |
+| **Self-hosted** | Run Carbon in your VPC, on-prem or air-gapped. See the [self-hosting guide](https://docs.carbon.ms/docs/platform/self-hosting). |
+| **Develop locally** | Run the application and supporting services from source. Follow [Local Development](#local-development). |
 
 <br />
 
 ## API & MCP
 
-Carbon is API-first. The [**Carbon API**](https://docs.carbon.ms/api) is the service layer, the same code the app runs when you click a button: 1,500+ operations across 15 modules, each validating its input, recalculating what depends on it and enforcing your permissions. Every operation is reachable two ways, with the same arguments:
+The [**Carbon API**](https://docs.carbon.ms/api) exposes the same manufacturing operations used by the application. Each operation validates its input, updates dependent records and enforces the authenticated identity's permissions. Operations are available through two interfaces with the same arguments:
 
 - **HTTP:** `POST https://app.carbon.ms/api/v1/{module}/{operation}`, with a published [OpenAPI spec](https://app.carbon.ms/api/v1/openapi.json) for [generating a typed client](https://docs.carbon.ms/api/sdks) in any language
-- **[MCP](https://docs.carbon.ms/api/mcp):** as tools for Claude, ChatGPT, Cursor and other agents, scoped to the permissions of the key or signed-in user
+- **[MCP](https://docs.carbon.ms/api/mcp):** as tools for hosted or local AI agents, scoped to the permissions of the API key or signed-in user
 
 Create a key under **Settings → API Keys**, then:
 
@@ -159,7 +162,9 @@ curl -X POST https://app.carbon.ms/api/v1/sales/getSalesOrders \
   -d '{ "args": { "limit": 10 } }'
 ```
 
-Self-hosted, the same API is served by your ERP at `/api/v1`. For the rare case the service layer doesn't cover, the [Data API](https://docs.carbon.ms/api/data) exposes every table and view directly.
+Self-hosted deployments serve the same API at `/api/v1`. The [Data API](https://docs.carbon.ms/api/data) provides direct access to permitted tables and views when an operation is not available in the service layer.
+
+API keys and MCP are included with Business and Enterprise plans. Using them in a self-hosted deployment requires a commercial license.
 
 <br />
 
@@ -386,7 +391,7 @@ Security is enforced by the database, not left to application code:
 - **Scoped API keys.** Keys carry explicit permissions, are stored only as hashes and are rate limited per key.
 - **Sign-in.** Passkeys, SSO, and enforced two-factor authentication on the Business plan.
 - **Audit log.** A record of who changed what and when, on the Business plan.
-- **Your perimeter.** Self-host on a single server, in your own cloud account or fully air-gapped, for programs with ITAR or CMMC requirements.
+- **Your perimeter.** Deploy in your VPC, on-prem or air-gapped to keep CUI inside infrastructure you control while supporting ITAR and CMMC requirements.
 
 <br />
 

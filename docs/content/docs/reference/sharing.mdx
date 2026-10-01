@@ -3,9 +3,9 @@ title: External sharing
 description: How Carbon's private, login-free links work — a customer accepts a quote, a supplier prices a request or answers a SCAR, a buyer watches order status.
 ---
 
-Some of Carbon's work happens with people who don't have a Carbon login. Rather than email a PDF and wait, Carbon hands them a **private link** to a single, live document: open it and you act right there in the browser — no account, no password, just the one record the link points at. The link is the only credential, so guard it like a password: whoever holds the URL gets in.
+Carbon can give external participants a **private link** to one live document without requiring a login. The URL is the only credential; anyone who has it can access the shared record.
 
-Four things reach an outside party this way. Each is documented where the feature lives:
+Four features use external links:
 
 <Cards>
   <Card title="Digital quotes" href="/docs/reference/quotes#digital-quotes">A **"Sent"** quote the customer accepts or rejects.</Card>
@@ -18,4 +18,4 @@ Four things reach an outside party this way. Each is documented where the featur
 Each link is only as live as the record behind it: an expired or answered quote turns its page read-only, and a closed issue locks its SCAR. There is no separate link-revocation step to remember.
 </Callout>
 
-Two other pages *look* shared but aren't: the RFQ preview is an internal view of how a supplier's request will look (purchasing login required), and training assignments require an employee login. Neither hands anything to an outside party.
+The RFQ preview and training assignments are not external shares. RFQ previews require a purchasing login, and training assignments require an employee login.

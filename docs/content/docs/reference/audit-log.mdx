@@ -4,20 +4,20 @@ description: A per-company change history for key business entities. What gets r
 plan: Business
 ---
 
-The audit log records every create, update, and delete on Carbon's important business entities, along with who made the change and exactly which fields moved. It is a company-wide switch, **off by default**, and each company keeps its own log. Turn it on from **Settings → Audit Logs** and Carbon begins tracking changes to your data from that moment forward.
+The audit log records creates, updates, and deletes for supported business entities. Each entry identifies the actor and changed fields. Logging is isolated by company and is **off by default**. Enable it under **Settings → Audit Logs**. Carbon records only changes made after enablement.
 
 <Callout type="note">
-The audit log is entity-centric. A change to any underlying table that makes up an entity is attributed to the parent entity you recognize. Editing an item's cost, for example, records against the **Item**, not a raw `itemCost` row.
+The log groups changes by business entity. For example, changing an item's cost creates an **Item** entry rather than an entry for the underlying `itemCost` row.
 </Callout>
 
 ## Turning it on
 
-Audit logging is a single toggle on the **Audit Logging** card. Enabling it creates the per-company log storage, sets `auditLogEnabled` on the company, and subscribes every auditable table to the change pipeline. The card reflects the state directly:
+The **Audit Logging** card contains one toggle. Enabling it creates company-specific storage, sets `auditLogEnabled`, and subscribes supported tables to the change pipeline. The card shows the current state:
 
 - Enabled: *"Audit logging is enabled — All changes to auditable entities are being recorded."*
 - Disabled: *"Audit logging is disabled — Enable to start tracking changes to your data."*
 
-Disabling it stops new records from being written, but **keeps everything already logged** — the existing history is preserved for compliance, not dropped. Re-enabling picks tracking back up; the gap while it was off simply isn't recorded.
+Disabling logging stops new entries but preserves existing history. Re-enabling resumes logging without filling the disabled interval.
 
 Only users who can **update settings** can flip the toggle. Viewing the log needs the **view settings** permission. See [permissions and access](/docs/reference/permissions) for how the settings module maps to employee types.
 
@@ -42,7 +42,7 @@ Carbon tracks a fixed set of entities. Anything not on this list is not audited.
 | Price Override | Price Override Break |
 | Fixed Asset | Accounting Period |
 
-For each change, an entry captures the **operation** (`INSERT`, `UPDATE`, or `DELETE`), the **actor** (the user who made it — a system or service-role change shows as *System*), a **field-level diff** of what changed, request **metadata** (IP address, user agent, origin), and the **timestamp**. Fields that only reflect bookkeeping — `updatedAt`, `updatedBy`, and internal embeddings — are excluded from diffs, so the log stays focused on meaningful changes.
+Each entry records the **operation** (`INSERT`, `UPDATE`, or `DELETE`), **actor**, field-level diff, request **metadata** (IP address, user agent, and origin), and **timestamp**. System and service-role changes show *System* as the actor. Diffs exclude bookkeeping fields such as `updatedAt`, `updatedBy`, and internal embeddings.
 
 ## Viewing and filtering
 
@@ -60,7 +60,7 @@ The table columns are **Entity**, **Operation**, **Changed By**, **Changes**, an
 
 ## Retention and archives
 
-The live log keeps the last **30 days** of activity. A nightly job sweeps entries older than that into a compressed archive, records the archive's date range, row count, and size, then removes the aged rows from the live table. Nothing is lost — it moves to cold storage.
+The live log retains **30 days** of activity. A nightly job moves older entries into a compressed archive, records its date range, row count, and size, and removes those entries from the live table.
 
 Archived periods appear under **Archived Logs** on the settings page, each with a **Download** button that generates a short-lived signed link to the compressed export. When no archives exist yet, the card explains that logs older than 30 days will be archived and made available for download there.
 

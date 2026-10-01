@@ -3,27 +3,26 @@ title: Overview
 description: "Carbon is a manufacturing system: ERP for the office, MES for the floor. These are the technical docs."
 ---
 
-Carbon is a manufacturing system: **ERP** for the office (orders, purchasing, planning, accounting) and
-**MES** for the floor (<Term id="job">jobs</Term>, <Term id="operation">operations</Term>, tracking). One platform over one data model.
+Carbon is a manufacturing system with **ERP** for orders, purchasing, planning, and accounting, and
+**MES** for shop-floor <Term id="job">jobs</Term>, <Term id="operation">operations</Term>, and tracking. Both applications use one data model.
 
-These are the **technical docs**: exact behavior, fields, and operations. If you're new, start with the
-narrated [**Guide**](/guides/order), which walks one order from the sales desk to a shipped, traceable satellite.
-Come here when you already know the noun you need and want the precise detail behind it.
+These technical docs describe system behavior, fields, and operations. For an end-to-end introduction,
+follow the [**Guide**](/guides/order) from sales order through shipment and traceability.
 
 ## How the docs are organized
 
 <Cards>
   <Card title="Architecture" href="/docs/building/architecture">
-    How Carbon is built: apps, packages, database, events, jobs, and auth.
+    Carbon's applications, packages, database, events, jobs, and authentication.
   </Card>
   <Card title="Self-hosting" href="/docs/platform/self-hosting">
-    Run Carbon on your own infrastructure — a single VPS with Docker, or your own AWS account with SST.
+    Deploy Carbon to a Docker-based VPS or an AWS account with SST.
   </Card>
   <Card title="Environment variables" href="/docs/platform/self-hosting/environment-variables">
     Every variable that configures a Carbon instance, grouped by concern.
   </Card>
   <Card title="Reference" href="/docs/reference/methods">
-    The entities behind the Guide: methods, reordering, routings, and more.
+    Definitions and behavior for methods, reordering, routings, and other entities.
   </Card>
 </Cards>
 
@@ -31,15 +30,15 @@ Come here when you already know the noun you need and want the precise detail be
 
 <Cards>
   <Card title="Carbon API" href="/api">
-    The service layer — read and write your data the safe way, over HTTP or MCP.
+    Read and write data through the service layer over HTTP or MCP.
   </Card>
   <Card title="Data API" href="/api/data">
-    Direct table access — the escape hatch, when the Carbon API doesn't cover it.
+    Access tables directly when the Carbon API does not expose an operation.
   </Card>
   <Card title="API keys" href="/docs/building/api-keys">
-    Scoped secrets that let an external system call Carbon on your behalf.
+    Authenticate external systems with scoped secrets.
   </Card>
   <Card title="Webhooks" href="/docs/building/webhooks">
-    Get an HTTP callback the moment a subscribed record changes.
+    Receive HTTP callbacks when subscribed records change.
   </Card>
 </Cards>

@@ -3,9 +3,9 @@ title: Inspections and sampling
 description: How Carbon inspects received goods against AQL sampling plans, and how inspection templates and ballooned FAI drawings define what gets checked.
 ---
 
-A drum of 5,000 fasteners lands on the dock. You don't measure every one. You pull a sample, check it against a plan, and let the numbers decide whether the whole lot passes. That is what Carbon's <Term id="inbound-inspection">inbound inspection</Term> does: when a receipt is posted for an item flagged to [require inspection](/docs/reference/quality), Carbon holds the received units, computes a sample size from an AQL standard, and waits for an inspector to record pass/fail before the stock becomes available.
+Carbon's <Term id="inbound-inspection">inbound inspection</Term> evaluates received goods against a sampling plan. When a receipt posts for an item that [requires inspection](/docs/reference/quality), Carbon holds the received units, calculates the sample size, and requires inspection results before releasing stock.
 
-This page is the deep dive. The [quality overview](/docs/reference/quality) has the short version; here you get the lifecycle, the sampling math, the step types that build an inspection template, and the ballooned-drawing FAI system.
+This page describes the inspection lifecycle, sampling calculations, template step types, and ballooned-drawing FAI workflow. See [quality](/docs/reference/quality) for the module overview.
 
 ## The inbound inspection lifecycle
 
@@ -19,7 +19,7 @@ Inspection is **lot-based**: one inspection per received line (the `receiptLineI
   <Status name="Partial" terminal>Some units cleared and the rest stay On Hold. A middle disposition for when part of the lot is good and part isn't.</Status>
 </StatusFlow>
 
-The status enum is exactly `Pending`, `In Progress`, `Passed`, `Failed`, `Partial` (`quality.models.ts:698`, matching the `inboundInspectionStatus` type in `20260419163058_inbound-inspection-sampling.sql:73`). **Passed / Failed / Partial are disposition outcomes**, not something an inspector reaches by finishing samples — the inspector records results, then presses **Accept Lot**, **Reject Lot**, or **Partial** to close the lot.
+The status enum is `Pending`, `In Progress`, `Passed`, `Failed`, or `Partial` (`quality.models.ts:698`, matching `inboundInspectionStatus` in `20260419163058_inbound-inspection-sampling.sql:73`). **Passed**, **Failed**, and **Partial** are disposition outcomes. Recording all samples does not close a lot; the inspector must select **Accept Lot**, **Reject Lot**, or **Partial**.
 
 <Callout type="warn" title="Inspection-required stock is not on-hand until dispositioned">
 When a receipt posts for a `requiresInspection` item, its tracked entities are set to **On Hold**, not Available. They're received but you can't sell or consume them yet. Only Accept (or the per-sample passes) releases them.
@@ -54,7 +54,7 @@ Every lot needs a sample size and an accept/reject rule. That comes from the ite
   <Field name="AQL" type="AQL">Statistical acceptance sampling per ANSI/ASQ Z1.4 or ISO 2859-1 — the sample size and accept/reject numbers come from the standard's tables.</Field>
 </FieldTable>
 
-The first three are simple counts with a zero-defect rule. **AQL** is the interesting one.
+The first three plans use a zero-defect rule. **AQL** uses standard acceptance tables.
 
 ### How an AQL plan resolves
 

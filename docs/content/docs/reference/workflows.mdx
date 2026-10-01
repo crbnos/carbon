@@ -4,7 +4,7 @@ description: "Build an automation on a canvas: one trigger, conditions, and step
 plan: Business
 ---
 
-A <Term>workflow</Term> watches for something happening in Carbon and then does something about it: notify the account manager when a sales order changes hands, open an issue when a job is put on hold, or call your own service when a shipment is posted. You build one on a canvas under **Automate → Workflows**, wire the steps together, and press **"Publish"**. It is a canvas, not a list of rules: steps are cards you drag from the palette and connect by their handles, so one trigger can fan out into several branches that each end differently. Every firing is recorded step by step; see [runs and history](#runs-and-history) below.
+A <Term>workflow</Term> reacts to a Carbon event by evaluating conditions and running actions. Examples include notifying an account manager after a sales-order assignment, creating an issue when a job is put on hold, or calling an external service after shipment posting. Build the workflow under **Automate → Workflows** by connecting one trigger to condition and action cards, then select **"Publish"**. A trigger can fan out into multiple branches. Carbon records each execution in [runs and history](#runs-and-history).
 
 <Screenshot label="The workflow builder canvas under Automate → Workflows: a trigger card wired to condition and action steps, with the palette and the Publish button" caption="One trigger, fanning out into branches that each end differently." />
 
@@ -29,7 +29,7 @@ You pick the exact field you care about. Ten record types can be watched — pur
 **Schedules.** In **"Schedule"** mode you pick a **"Frequency"** of Daily, Weekly, or Monthly, the days it applies to, a **"Time of day"**, and a **"Timezone"**; the builder shows a live **"Next fires at:"** line as you change it.
 
 <Callout type="warn" title="Schedules never catch up">
-The time is stored as wall-clock time plus a zone, so 09:00 stays 09:00 across daylight-saving changes. A monthly schedule set to the 31st simply **skips** months with no 31st, and after an outage Carbon resumes from the next due time instead of replaying missed ones. Anything more than an hour late is recorded as skipped. Each workflow also carries a small fixed offset of up to five minutes, so a 9:00 schedule fires somewhere in 9:00–9:05.
+Carbon stores the wall-clock time and time zone separately, so 09:00 remains 09:00 across daylight-saving changes. A monthly schedule on day 31 **skips** months without that date. After an outage, Carbon resumes at the next due time and records runs more than one hour late as skipped. A fixed offset of up to five minutes spreads load, so a 09:00 schedule runs between 09:00 and 09:05.
 </Callout>
 
 **"Triggered by".** Event triggers also choose *who* caused the change: **"People"**, **"Workflows"**, or **"Both"**. A new trigger starts at **"People"**, which is the safe answer: it stops a workflow from reacting to edits made by workflows, including its own. Switch it to **"Both"** deliberately, when you want one automation to feed another.
@@ -57,7 +57,7 @@ An update step can only set the fields Carbon lists for that record: an assignee
 
 Most fields take either a value you type or a value from an earlier step. Type `{` in a text field and a menu opens listing the steps above this one, their outputs, and up to two levels of properties. Only steps *guaranteed* to have run before this one are offered — a value from the other side of a condition is not on the menu, and referring to one is rejected at publish.
 
-**Repeating steps.** There is no repeat checkbox. Wire a list into a field that expects a single value and the step runs once per item, which the form confirms in place, up to 100 items. Wiring two lists into the same step is an error at publish time rather than a guess about which one to loop over.
+**Repeating steps.** Connecting a list to a single-value field runs the step once per item, up to 100 items. The form displays this behavior. Connecting two lists to one step causes a publish-time error because the loop source is ambiguous.
 
 ## Calling an outside URL
 
@@ -113,7 +113,7 @@ If a condition matches none of its paths and has no **"Otherwise"**, that step *
 
 A failed step stops its branch, not the run: other branches keep going, and a wired **Failure** handle is followed, though the run is marked failed at the end regardless. The one exception is a permission failure, which stops the branch outright even when a failure path exists.
 
-**Chains.** When a workflow's writes trigger another workflow, the runs are linked and the drawer draws the whole chain. Two guards record a **Blocked** run rather than looping forever: a cycle (the same workflow already ran in this chain) and a depth limit of ten hops. The [**"Triggered by"**](#what-starts-a-workflow) setting is the first line of defence.
+**Chains.** When one workflow's writes trigger another, Carbon links the runs and displays the complete chain. A repeated workflow or a chain deeper than ten hops records a **Blocked** run. Use [**"Triggered by"**](#what-starts-a-workflow) to limit which changes can start a workflow.
 
 <Callout type="warn" title="There is no retry button">
 A finished run cannot be re-run from the Runs page. Fix the outside cause and let the next trigger fire, or use the builder's **"Test run"**. A run that crashes mid-flight is retried automatically by the queue, and because each step is claimed before it acts, the retry cannot repeat work that already completed.

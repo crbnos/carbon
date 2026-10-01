@@ -3,13 +3,13 @@ title: Materials
 description: The property tables that give a material its identity — substance, form, dimension, finish, grade, and type.
 ---
 
-A **material** is an [item](/docs/reference/items) of type *Material*: the raw stock you cut, form, and consume rather than a finished part. What makes it a material is a small set of structured **property tables**. Instead of typing "1/16-inch cold-rolled 304 stainless sheet" into a name field, you pick a **substance**, a **form**, a **dimension**, and optionally a **finish**, **grade**, and **type**. Those choices compose the material's identity and drive its readable name and code.
+A **material** is an [item](/docs/reference/items) of type *Material* used as raw stock. Structured property tables define its **substance**, **form**, **dimension**, and optional **finish**, **grade**, and **type**. Carbon uses these values to generate the material's identity, display name, and code.
 
 Each material row (`material` table) carries only foreign keys into these lookups: `materialSubstanceId`, `materialFormId`, `dimensionId`, `finishId`, `gradeId`, and `materialTypeId`. All six are nullable, so a material can be as loosely or tightly specified as you need.
 
 ## The property tables
 
-Six lookup tables compose a material. Two describe the material in the abstract (**substance** and **form**); the rest are scoped to one of those, so the choices cascade.
+Six lookup tables compose a material. **Substance** and **form** are independent; the remaining choices are scoped by one or both and therefore cascade.
 
 <FieldTable>
   <Field name="Substance" type="materialSubstance">What the material is made of: steel, aluminum, stainless, titanium. Has a `name` and a `code`.</Field>
@@ -26,7 +26,7 @@ Substance and form stand alone. **Grade** and **finish** are picked from the lis
 
 ## Scope: system-wide or per company
 
-The property tables ship with a starter taxonomy. Every lookup has a **nullable `companyId`**: rows with `companyId` null are system-seeded and visible to every company; rows with your company id are your own additions. You inherit a working set of substances, forms, and grades out of the box and extend it per company without touching anyone else's.
+Carbon provides a starter taxonomy. Each lookup has a nullable `companyId`. Rows with `companyId` null are system values visible to every company; rows with a company ID are company-specific additions.
 
 Uniqueness is enforced per scope so a system value and a company value never collide:
 
@@ -55,7 +55,7 @@ When Carbon generates the material and its ids, `materialSubstanceId` and `mater
 
 ## Naming and uniqueness
 
-The property choices are what make a material both readable and unique. Carbon composes the display name and code from the taxonomy rather than from free text: substance, form, and where set the finish, grade, and dimension names build the readable name, while the substance, form, and type **codes** build the material code. Two materials that resolve to the same combination of properties are the same material, which is the point of driving identity from the tables instead of a typed string.
+Carbon composes a material's display name from substance, form, and optional finish, grade, and dimension names. Substance, form, and type codes compose the material code. Property combinations provide a structured identity rather than relying on free text.
 
 Because dimensions belong to forms and grades and finishes belong to substances, a valid material is always an internally consistent set of choices. You cannot pick a bar dimension for a sheet, or a stainless grade for aluminum, because those lists are filtered to the parent you already chose.
 

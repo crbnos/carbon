@@ -3,9 +3,9 @@ title: Financial statement reports
 description: "The Balance Sheet, Income Statement, and Trial Balance built from posted journals by account class."
 ---
 
-Three reports read the same posted [general ledger](/docs/reference/accounting) and present it three ways. The **Balance Sheet** shows what the company owns and owes as of a date; the **Income Statement** shows revenue minus expense over a period; the **Trial Balance** lists every posting account with its debit or credit balance. All three come from the same balance engine, so they tie out to each other by construction.
+Three reports read the posted [general ledger](/docs/reference/accounting). The **Balance Sheet** reports assets, liabilities, and equity as of a date. The **Income Statement** reports revenue and expense over a period. The **Trial Balance** lists each posting account's debit or credit balance. All three use the same balance engine.
 
-They live under Accounting and each require the `accounting` view permission. Like everything financial, they only show data once **accounting enabled** is on — see [Accounting & the ledger](/docs/reference/accounting) for that switch. With it off, journals are never written and every balance reads zero.
+The reports are under Accounting and require `accounting` view permission. They contain data only after **accounting enabled** is turned on. When accounting is disabled, operations do not create journals, so report balances remain zero.
 
 ## The three statements
 
@@ -15,7 +15,7 @@ They live under Accounting and each require the `accounting` view permission. Li
   <Status name="Trial Balance">Every posting (leaf) account with its balance split into a debit or credit column, across a date range. Normal-debit classes (Asset, Expense) show a positive balance as a debit; normal-credit classes (Liability, Equity, Revenue) show it as a credit.</Status>
 </StatusFlow>
 
-The split isn't three data sources. The Balance Sheet and Trial Balance are the same account set at a cutoff; the Income Statement is the movement across a window. Every account carries an `incomeBalance` marker of either **"Balance Sheet"** or **"Income Statement"**, set when the account is created, that decides which statement it appears on. Asset, Liability, and Equity accounts are Balance Sheet; Revenue and Expense are Income Statement.
+The reports do not use separate data sources. The Balance Sheet and Trial Balance evaluate the same accounts at a cutoff; the Income Statement measures activity within a range. Each account's `incomeBalance` value selects **Balance Sheet** or **Income Statement**. Asset, Liability, and Equity accounts belong to the Balance Sheet; Revenue and Expense accounts belong to the Income Statement.
 
 <Callout type="note">
 Balances always exclude **Draft** journals. Only posted (and reversed) entries move a report, so an unposted entry sitting in the Journal Entries list has no effect on any statement until it posts. This is why the account ledger, the reports, and the [period-close](/docs/reference/period-close) snapshots all agree.
@@ -50,7 +50,7 @@ Alongside the date picker, a company selector lets you view a single company or 
 
 ## What the reports do not slice
 
-There is one gap worth stating plainly, because it's easy to assume otherwise.
+The core statements do not support dimension filtering.
 
 <Callout type="warn" title="Core statements are not sliced by reporting dimension">
 Journal lines can carry <Term id="reporting-dimension">reporting dimensions</Term> (location, department, cost center, and custom axes), but the Balance Sheet, Income Statement, and Trial Balance **do not** offer a dimension filter. They aggregate every posting on an account regardless of its dimension tags. To analyze the ledger by dimension, use the [dimensions](/docs/reference/dimensions) tooling, not these three statements.
