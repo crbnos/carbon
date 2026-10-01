@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 // ITAR certification helpers for MES. Mirrors the ERP implementation
 // (apps/erp/app/modules/users/users.service.ts + routes/x+/acknowledge.tsx) —
 // keep the two in sync; the legal validators must not drift.

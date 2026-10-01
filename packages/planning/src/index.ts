@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 // @carbon/planning — the planning engines (MRP + finite scheduling),
 // relocated from the Supabase edge runtime to run in-process in Node. Every
 // entry point takes an injected Kysely handle (and, for MRP, a service-role

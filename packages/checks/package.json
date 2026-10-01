@@ -11,6 +11,7 @@
     "clean": "rimraf .turbo node_modules dist",
     "clobbers": "tsx src/scripts/check-clobbers.ts",
     "invariants": "tsx src/scripts/run-invariants.ts",
+    "license-headers": "tsx src/scripts/license-headers.ts",
     "lint": "biome lint --write ",
     "test": "vitest run",
     "typecheck": "tsgo --noEmit",

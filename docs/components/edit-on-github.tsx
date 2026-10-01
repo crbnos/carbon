@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 /* "Edit on GitHub" footer link. `path` is the file's path relative to the repo root
  * (e.g. "docs/content/docs/reference/items.mdx"); the repo + branch live here so the
  * source of the link is in one place. Plain (no hooks) so it renders in both the

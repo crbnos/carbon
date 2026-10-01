@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 // Web Worker for the WASM raw-model parsers (occt-import-js, rhino3dm).
 // Tessellating a real STEP file takes seconds-to-minutes of solid WASM compute;
 // on the main thread that freezes scroll and paint for the whole tab. The

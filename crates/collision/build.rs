@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 /// Resolve a library prefix deterministically: `<ENV_KEY>_PREFIX` when set,
 /// else a fixed per-target default. No `brew` shell-out, so the build never
 /// depends on Homebrew being installed or on PATH. Docker/CI set the `*_PREFIX`

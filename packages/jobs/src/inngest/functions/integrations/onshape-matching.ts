@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 // Pure helpers that form the Onshape→Carbon matching contract: how a released
 // Onshape revision resolves to a Carbon item. Kept free of heavy imports
 // (no inngest/auth/env at module load) so they stay unit-testable — see

@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 /* Hand-laid architecture diagrams for /docs/building/architecture. See `architecture-kit.tsx`
  * for the shape vocabulary and why these are drawn by hand rather than generated.
  *

@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 //! `plan` action — collision-free disassembly motion planning. Async: the job
 //! runs detached, the caller long-polls. On completion the plan.json is either
 //! late-mint uploaded (a `planPath` was given) or returned inline in the result.

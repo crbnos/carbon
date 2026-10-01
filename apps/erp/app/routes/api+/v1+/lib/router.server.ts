@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 // The Carbon API oRPC router, built at module load from the operation manifest.
 // A plain nested object `{ [module]: { [operationId]: procedure } }` is a valid oRPC
 // router for both OpenAPIHandler (HTTP) and server-side call() (MCP/agent).

@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 // Must load before any function module pulls in pdfjs (extract-document), whose
 // init runs `new DOMMatrix()` — undefined in the Node worker without this shim.
 import "@carbon/lib/shims";

@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 // The service-function registry the Carbon API dispatch resolves against: every
 // module's service namespace, keyed by the manifest's module name. This is the ONE
 // copy — the oRPC dispatch, MCP call_tool, the in-app agent, and the workflow

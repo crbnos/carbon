@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 //! cxx bridge over OpenCASCADE. `read_step` reads a STEP file into an XCAF
 //! document, walks the assembly tree (names, per-instance transforms, colors),
 //! tessellates each unique part once, and returns a FLAT node list (children as

@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 // Card-shell + list primitives. The hub's surfaces are all "titled card wrapping
 // a divided list", composed the design-system way from `CardHeader` + `CardContent`
 // with their default styling — no custom borders/padding overrides, so they read

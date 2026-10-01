@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { readdirSync } from "node:fs";
 import { join } from "node:path";
 import { keyOf, loadBaseline } from "./baseline";
@@ -27,7 +32,9 @@ import { noUnroundedTrackedQuantity } from "./conformance/no-unrounded-tracked-q
 import { noUnscopedKyselyWrite } from "./conformance/no-unscoped-kysely-write";
 import { noViewWithoutInvoker } from "./conformance/no-view-without-invoker";
 import { noZeroConcurrency } from "./conformance/no-zero-concurrency";
+import { spdxLicenseHeader } from "./conformance/spdx-license-header";
 import { loadEdgeFunctions } from "./sources/edge-functions";
+import { loadLicenseFiles } from "./sources/license-files";
 import { loadSqlFiles, migrationsDir, repoRoot } from "./sources/migrations";
 import { loadModules, modulesDir } from "./sources/modules";
 import { loadServerFiles } from "./sources/server-files";
@@ -108,7 +115,7 @@ export function loadAuthzHelperNames(root: string): string[] {
     .map((file) => file.replace(/\.sql$/, ""));
 }
 
-/** Every finding across the real migrations (text) + modules (structure) + server TS + app TS + edge functions under `root`. */
+/** Every finding across the real migrations (text) + modules (structure) + server TS + app TS + edge functions + license headers under `root`. */
 export function collectFindings(root: string = repoRoot()): Finding[] {
   return [
     ...scanAll(loadSqlFiles(migrationsDir(root)), [
@@ -121,7 +128,8 @@ export function collectFindings(root: string = repoRoot()): Finding[] {
     ...scanAll(loadTypescriptFiles(root, REQUEST_HANDLING_ROOTS), [
       noRawForwardedHeaders
     ]),
-    ...scanAll(loadEdgeFunctions(root), EDGE_FUNCTION_CHECKS)
+    ...scanAll(loadEdgeFunctions(root), EDGE_FUNCTION_CHECKS),
+    ...scanAll(loadLicenseFiles(root), [spdxLicenseHeader])
   ];
 }
 

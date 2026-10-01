@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 /**
  * Loads the real zod validators out of `apps/erp/app/modules/{mod}/{mod}.models.ts`
  * so the manifest generator can convert them with native `z.toJSONSchema` instead of

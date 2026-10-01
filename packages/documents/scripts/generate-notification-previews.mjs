@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 // Regenerates the per-event NotificationEmail preview fixtures in
 // src/email/previews/. The fixtures mirror what the notify function's
 // content builder (packages/jobs/.../notifications/content.ts) produces per

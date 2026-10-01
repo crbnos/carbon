@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 //! Numerics on **ndarray**: pairwise summation for mean/std, sequential
 //! row-reduction, LAPACK SVD/eigh, and BLAS world transforms. The float
 //! evaluation order is fixed so planner ordering heuristics are reproducible.

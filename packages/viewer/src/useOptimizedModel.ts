@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { modelPathOptimizeFormat } from "@carbon/files/cad";
 import { MODEL_RAW_KEEP_MAX_BYTES } from "@carbon/utils";
 import { useQuery, useQueryClient } from "@tanstack/react-query";

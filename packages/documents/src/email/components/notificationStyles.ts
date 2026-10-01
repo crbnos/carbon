@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 // Dark-mode-aware styles shared by every card-style email (notifications and
 // the standalone lifecycle emails). Backgrounds are intentionally set via CSS
 // classes (not inline styles) so `!important` overrides in dark-mode media

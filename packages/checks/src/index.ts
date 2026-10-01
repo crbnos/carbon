@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 export type {
   ConformanceCheck,
   ModuleDir,
@@ -21,6 +26,7 @@ export { noRawRounding } from "./conformance/no-raw-rounding";
 export { noRequiredColumnWithoutDefault } from "./conformance/no-required-column-without-default";
 export { noUnguardedSubmit } from "./conformance/no-unguarded-submit";
 export { noZeroConcurrency } from "./conformance/no-zero-concurrency";
+export { spdxLicenseHeader } from "./conformance/spdx-license-header";
 export {
   type Invariant,
   type InvariantResult,
@@ -28,6 +34,15 @@ export {
   type Query,
   runInvariants
 } from "./invariant";
+export {
+  applyLicenseHeader,
+  classifyFile,
+  classifyPath,
+  type HeaderStatus,
+  inspectLicenseHeader,
+  LICENSE_HEADERS,
+  type LicenseKind
+} from "./license-headers";
 export {
   CONFORMANCE_CHECKS,
   collectFindings,
@@ -41,6 +56,10 @@ export {
   TS_CHECKS
 } from "./run";
 export { loadEdgeFunctions } from "./sources/edge-functions";
+export {
+  listLicenseCandidates,
+  loadLicenseFiles
+} from "./sources/license-files";
 export { loadModules, modulesDir } from "./sources/modules";
 export { loadServerFiles } from "./sources/server-files";
 export { loadTypescriptFiles } from "./sources/typescript";
