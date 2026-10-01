@@ -100,7 +100,7 @@ export function ExternalSourceCard({
       <CardContent>
         <div className="flex items-center justify-between gap-4">
           <p className="text-sm text-muted-foreground">
-            <Trans>Name and description are managed in Onshape.</Trans>
+            <Trans>Short and long descriptions are managed in Onshape.</Trans>
             {lastPushed ? (
               <>
                 {" "}
@@ -138,7 +138,7 @@ export function ExternalSourceCard({
         <Confirm
           action={path.to.api.onShapeDetach}
           title={t`Detach from Onshape?`}
-          text={t`Name and description become editable in Carbon and stop following Onshape. Pushing this part from Onshape again links it back.`}
+          text={t`Short and long descriptions become editable in Carbon and stop following Onshape. Pushing this part from Onshape again links it back.`}
           confirmText={t`Detach`}
           onCancel={() => setConfirmingDetach(false)}
           onSubmit={() => {

@@ -109,6 +109,16 @@ export type PlanMappingRow = {
   metadata?: Record<string, unknown> | null;
 };
 
+/**
+ * A Short Description (`name`) or Long Description (`description`) the push
+ * overwrites with Onshape's.
+ */
+export type OwnedFieldChange = {
+  field: "name" | "description";
+  from: string | null;
+  to: string | null;
+};
+
 export type PlanItemRow = {
   id: string;
   readableId: string;
@@ -562,11 +572,7 @@ export type PartPlanRow = {
    */
   current?: ItemFieldSnapshot | null;
   /** Onshape-owned fields the push will overwrite. */
-  changes: Array<{
-    field: "name" | "description";
-    from: string | null;
-    to: string | null;
-  }>;
+  changes: OwnedFieldChange[];
   /** Mapped custom fields apply would write (absent when nothing is mapped). */
   customFields?: PlanCustomField[];
   /**
@@ -711,6 +717,40 @@ export function buildPartPlan({
   return rows;
 }
 
+/** `{ [key]: list }` when the list has entries, else `{}`. */
+function nonEmpty<K extends string, T>(
+  key: K,
+  list: T[]
+): Partial<Record<K, T[]>> {
+  return list.length > 0 ? ({ [key]: list } as Record<K, T[]>) : {};
+}
+
+/**
+ * The descriptions an assembly push overwrites on a reused item. Only values
+ * Onshape gives are written: Name and Description are optional BOM columns,
+ * so an empty cell may mean "no column", and must not blank Carbon's text.
+ */
+export function assemblyTextChanges(
+  item: Pick<PlanItemRow, "name" | "description">,
+  onshape: { name: string | null; description: string | null }
+): OwnedFieldChange[] {
+  const changes: OwnedFieldChange[] = [];
+  if (onshape.name && onshape.name !== item.name) {
+    changes.push({ field: "name", from: item.name ?? null, to: onshape.name });
+  }
+  if (
+    onshape.description &&
+    onshape.description !== (item.description ?? null)
+  ) {
+    changes.push({
+      field: "description",
+      from: item.description ?? null,
+      to: onshape.description
+    });
+  }
+  return changes;
+}
+
 function ownedFieldChanges(
   item: PlanItemRow,
   part: Pick<OnshapeElementPart, "name" | "description">
@@ -754,6 +794,11 @@ export type AssemblyPlanItem = {
   proposed: ProposedItem | null;
   /** Reuse only: the existing item's current manufacturing fields. */
   current?: ItemFieldSnapshot | null;
+  /**
+   * Reuse only, when the item is or becomes linked to this BOM row's Onshape
+   * part: the descriptions the push overwrites with Onshape's.
+   */
+  changes?: OwnedFieldChange[];
   /** Has children in the BOM: gets a make method and lines of its own. */
   isAssembly: boolean;
   purchased: boolean;
@@ -810,6 +855,8 @@ export type AssemblyPlanRoot = {
   proposed: ProposedItem | null;
   /** Reuse only: the existing item's current manufacturing fields. */
   current?: ItemFieldSnapshot | null;
+  /** Reuse only: the descriptions the push overwrites with Onshape's. */
+  changes?: OwnedFieldChange[];
   /** Mapped custom fields for the root item (element properties). */
   customFields?: PlanCustomField[];
   unmappedProperties?: UnmappedProperty[];
@@ -882,6 +929,7 @@ export function buildAssemblyPlan({
   options,
   depth = "all",
   linkedItemIdByExternalId = new Map(),
+  linkedItemIds,
   configuration = null,
   reusableDraftByItemId = new Map()
 }: {
@@ -913,6 +961,12 @@ export function buildAssemblyPlan({
    * item is a conflict. Omitted, every reuse is one.
    */
   linkedItemIdByExternalId?: Map<string, string>;
+  /**
+   * Existing items carrying any Onshape link. One linked elsewhere keeps that
+   * link, so the push neither links it nor writes its descriptions. Omitted,
+   * only items already linked to their BOM row get their descriptions written.
+   */
+  linkedItemIds?: ReadonlySet<string>;
   configuration?: string | null;
   /**
    * Per item whose method is Active, the Draft the push would reuse
@@ -989,6 +1043,16 @@ export function buildAssemblyPlan({
     itemId: rootItem?.id ?? null,
     ...(rootConflict ? { conflict: true } : {}),
     ...(rootItem ? { current: currentItemFields(rootItem) } : {}),
+    // The pushed assembly is always linked, so its descriptions follow Onshape.
+    ...(rootItem
+      ? nonEmpty(
+          "changes",
+          assemblyTextChanges(rootItem, {
+            name: root.name,
+            description: root.description
+          })
+        )
+      : {}),
     proposed: rootItem
       ? null
       : proposeItem(
@@ -1001,6 +1065,29 @@ export function buildAssemblyPlan({
           },
           options
         )
+  };
+
+  // Which BOM rows this push links to their Onshape part, the way apply's
+  // `linkChildParts` decides: already linked to it, or neither the item nor
+  // the source linked anywhere, with the source not shared by two numbers.
+  const numbersBySource = new Map<string, Set<string>>();
+  for (const node of everything) {
+    const externalId = externalIdForBomLine(node.itemSource ?? null);
+    if (!externalId || !node.partNumber) continue;
+    const numbers = numbersBySource.get(externalId) ?? new Set<string>();
+    numbers.add(node.partNumber);
+    numbersBySource.set(externalId, numbers);
+  }
+  const ownsText = (node: OnshapeBomNode, item: PlanItemRow) => {
+    if (!node.partNumber) return false;
+    if (linkedPartNumbers.has(node.partNumber)) return true;
+    if (!linkedItemIds || linkedItemIds.has(item.id)) return false;
+    const externalId = externalIdForBomLine(node.itemSource ?? null);
+    return (
+      !!externalId &&
+      !linkedItemIdByExternalId.has(externalId) &&
+      (numbersBySource.get(externalId)?.size ?? 0) === 1
+    );
   };
 
   const planItems: AssemblyPlanItem[] = [];
@@ -1035,6 +1122,15 @@ export function buildAssemblyPlan({
         ? { conflict: true }
         : {}),
       ...(existing ? { current: currentItemFields(existing) } : {}),
+      ...(existing && ownsText(node, existing)
+        ? nonEmpty(
+            "changes",
+            assemblyTextChanges(existing, {
+              name: node.name,
+              description: node.description
+            })
+          )
+        : {}),
       proposed: existing
         ? null
         : proposeItem(

@@ -4,6 +4,7 @@ import type {
   ItemEdit,
   ItemFieldSnapshot,
   OnshapeBomNode,
+  OwnedFieldChange,
   ProposedItem
 } from "@carbon/ee";
 import {
@@ -80,6 +81,8 @@ type PushSummary = {
   linesUnchanged: number;
   /** Lines added by hand that now follow Onshape (also in `linesWritten`). */
   linesTakenOver: number;
+  /** Reused items whose Short or Long Description now matches Onshape. */
+  descriptionsUpdated: number;
   methodsTouched: number;
   /**
    * Levels whose released method was superseded by a new Draft version this
@@ -204,6 +207,7 @@ export async function action({ request }: ActionFunctionArgs) {
     linesWritten: 0,
     linesUnchanged: 0,
     linesTakenOver: 0,
+    descriptionsUpdated: 0,
     methodsTouched: 0,
     draftVersionsCreated: [],
     skipped: [...plan.skipped],
@@ -265,6 +269,33 @@ export async function action({ request }: ActionFunctionArgs) {
   for (const item of plan.items) {
     if (item.current) currentByPartNumber.set(item.partNumber, item.current);
   }
+  // Short and Long Descriptions the review showed changing to Onshape's, for
+  // items this push links (or that are already linked to their BOM row).
+  const textByPartNumber = new Map<
+    string,
+    { itemId: string | null; text: { name?: string; description?: string } }
+  >();
+  const plannedText = (changes: OwnedFieldChange[] | undefined) => {
+    const text: { name?: string; description?: string } = {};
+    for (const change of changes ?? []) {
+      if (change.to !== null) text[change.field] = change.to;
+    }
+    return text;
+  };
+  if (root.changes?.length) {
+    textByPartNumber.set(root.partNumber, {
+      itemId: root.itemId,
+      text: plannedText(root.changes)
+    });
+  }
+  for (const item of plan.items) {
+    if (item.changes?.length) {
+      textByPartNumber.set(item.partNumber, {
+        itemId: item.itemId,
+        text: plannedText(item.changes)
+      });
+    }
+  }
 
   const ensureItem = async (
     partNumber: string,
@@ -286,21 +317,31 @@ export async function action({ request }: ActionFunctionArgs) {
         );
       }
       // A reused item still takes the reviewer's manufacturing edits — they are
-      // Carbon-side, not Onshape-owned.
+      // Carbon-side, not Onshape-owned — and, when the review showed it, the
+      // descriptions Onshape owns. Both only on the item the review was about.
       const baseline = currentByPartNumber.get(partNumber);
-      if (baseline) {
-        const mfg = mergeExistingItemEdits(baseline, edits[partNumber]);
-        if (!mfg.ok) {
-          summary.errors.push(`${partNumber}: ${mfg.errors.join("; ")}`);
-        } else if (Object.keys(mfg.changed).length > 0) {
-          const updated = await client
-            .from("item")
-            .update({ ...mfg.changed, updatedBy: userId })
-            .eq("id", found.id)
-            .eq("companyId", companyId);
-          if (updated.error) {
-            summary.errors.push(`${partNumber}: ${updated.error.message}`);
-          }
+      const mfg = baseline
+        ? mergeExistingItemEdits(baseline, edits[partNumber])
+        : null;
+      if (mfg && !mfg.ok) {
+        summary.errors.push(`${partNumber}: ${mfg.errors.join("; ")}`);
+      }
+      const planned = textByPartNumber.get(partNumber);
+      const text = planned && planned.itemId === found.id ? planned.text : {};
+      const update = {
+        ...(mfg?.ok ? mfg.changed : {}),
+        ...text
+      };
+      if (Object.keys(update).length > 0) {
+        const updated = await client
+          .from("item")
+          .update({ ...update, updatedBy: userId })
+          .eq("id", found.id)
+          .eq("companyId", companyId);
+        if (updated.error) {
+          summary.errors.push(`${partNumber}: ${updated.error.message}`);
+        } else if (Object.keys(text).length > 0) {
+          summary.descriptionsUpdated += 1;
         }
       }
       return found;

@@ -120,6 +120,7 @@ export type {
   ItemReplenishmentSystem,
   ItemTrackingType,
   MergeResult,
+  OwnedFieldChange,
   PartPlan,
   PartPlanAction,
   PartPlanRow,

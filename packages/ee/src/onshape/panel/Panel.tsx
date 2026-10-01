@@ -39,6 +39,7 @@ import type {
   AssemblyPlan,
   AssemblyPlanDepth,
   ItemFieldSnapshot,
+  OwnedFieldChange,
   PartPlan,
   PartPlanRow,
   ProposedItem,
@@ -314,6 +315,8 @@ type AssemblyPushSummary = {
   linesUnchanged?: number;
   /** Lines added by hand that now follow Onshape. */
   linesTakenOver?: number;
+  /** Reused items whose descriptions now match Onshape. */
+  descriptionsUpdated?: number;
   methodsTouched: number;
   /** Released methods this push superseded with a Draft version. */
   draftVersionsCreated?: string[];
@@ -422,6 +425,7 @@ function assemblyOutcomeText(s: AssemblyPushSummary): PushOutcome {
     `${lines} across ${plural(s.methodsTouched, "method")}`;
   const drafts = s.draftVersionsCreated ?? [];
   const takenOver = s.linesTakenOver ?? 0;
+  const described = s.descriptionsUpdated ?? 0;
   return {
     text,
     skipped: s.skipped,
@@ -429,6 +433,11 @@ function assemblyOutcomeText(s: AssemblyPushSummary): PushOutcome {
     notes: [
       ...(drafts.length > 0
         ? [`New Draft version, not yet live: ${drafts.join(", ")}`]
+        : []),
+      ...(described > 0
+        ? [
+            `${plural(described, "item")} now ${described === 1 ? "has" : "have"} Onshape's short and long descriptions`
+          ]
         : []),
       ...(takenOver > 0
         ? [
@@ -2714,6 +2723,32 @@ function fieldBaseline(row: {
   return null;
 }
 
+/** Carbon's labels for the two item texts Onshape owns. */
+const TEXT_FIELD_LABEL: Record<OwnedFieldChange["field"], string> = {
+  name: "short description",
+  description: "long description"
+};
+
+function textChangeLine(changes: OwnedFieldChange[]): string {
+  return changes
+    .map(
+      (change) =>
+        `${TEXT_FIELD_LABEL[change.field]}: ${change.from ?? "—"} → ${change.to ?? "—"}`
+    )
+    .join(" · ");
+}
+
+/** The Short and Long Descriptions a push overwrites, read-only. */
+function TextChanges({ changes }: { changes: OwnedFieldChange[] | undefined }) {
+  if (!changes?.length) return null;
+  const line = textChangeLine(changes);
+  return (
+    <p className="mt-1 truncate text-xs text-muted-foreground" title={line}>
+      {line}
+    </p>
+  );
+}
+
 /**
  * The mapped custom fields a row will write, read-only. An update or link
  * lists only the owned fields, the emptied ones included: an owned null
@@ -2837,7 +2872,7 @@ function PartReviewSection({
                   ? "1 part shares a part number with an existing Carbon item"
                   : `${n} parts share a part number with an existing Carbon item`
               }
-              description="Pushing links them and overwrites their name, description and Onshape-owned custom fields with Onshape's. If any of them is a different part, renumber it in Onshape before pushing."
+              description="Pushing links them and overwrites their short and long descriptions and Onshape-owned custom fields with Onshape's. If any of them is a different part, renumber it in Onshape before pushing."
               lines={conflicts.map(
                 (row) =>
                   `${row.partNumber} · ${row.item?.name ?? row.name} in Carbon`
@@ -2876,16 +2911,8 @@ function PartReviewSection({
                     <PartPlanBadge row={row} />
                   </div>
                 </div>
-                {(row.action === "update" || row.action === "adopt") &&
-                row.changes.length > 0 ? (
-                  <p className="mt-1 truncate text-xs text-muted-foreground">
-                    {row.changes
-                      .map(
-                        (change) =>
-                          `${change.field}: ${change.from ?? "—"} → ${change.to ?? "—"}`
-                      )
-                      .join(" · ")}
-                  </p>
+                {row.action === "update" || row.action === "adopt" ? (
+                  <TextChanges changes={row.changes} />
                 ) : null}
                 {(() => {
                   const baseline = fieldBaseline(row);
@@ -2983,6 +3010,18 @@ function AssemblyReviewSection({
             : ` → ×${line.onshapeQuantity}`)
       )
   );
+  const textChanges = [
+    ...(plan.root.changes?.length && !review.excluded.has(plan.root.partNumber)
+      ? [`${plan.root.partNumber}: ${textChangeLine(plan.root.changes)}`]
+      : []),
+    ...plan.items
+      .filter(
+        (item) => item.changes?.length && !review.excluded.has(item.partNumber)
+      )
+      .map(
+        (item) => `${item.partNumber}: ${textChangeLine(item.changes ?? [])}`
+      )
+  ];
   const keptManual = writtenMethods.flatMap((method) =>
     [
       ...method.keeps,
@@ -3051,6 +3090,18 @@ function AssemblyReviewSection({
             Nothing live changes until someone releases them in Carbon.
           </AlertDescription>
         </Alert>
+      ) : null}
+
+      {textChanges.length > 0 ? (
+        <CappedWarningList
+          title={(n) =>
+            n === 1
+              ? "1 item takes Onshape's short and long descriptions"
+              : `${n} items take Onshape's short and long descriptions`
+          }
+          description="These items are linked to their Onshape parts, so their descriptions are managed in Onshape from now on."
+          lines={textChanges}
+        />
       ) : null}
 
       {takenOver.length > 0 ? (
@@ -3127,6 +3178,7 @@ function AssemblyReviewSection({
               />
             ) : null;
           })()}
+          <TextChanges changes={plan.root.changes} />
           <RowFields
             isCreate={plan.root.action === "create"}
             fields={plan.root.customFields}
@@ -3156,6 +3208,7 @@ function AssemblyReviewSection({
                 </div>
               ) : null}
             </div>
+            <TextChanges changes={item.changes} />
             {(() => {
               const baseline = fieldBaseline(item);
               return baseline ? (
