@@ -15,6 +15,7 @@ import type { AuthField, ManifestEntry } from "@carbon/api";
 import { ORPCError } from "@orpc/server";
 import { getDatabaseClient } from "~/services/database.server";
 import type { AuthedContext } from "./base.server";
+import { checkDocumentLocksForOperation } from "./document-lock-gate.server";
 import { functionRegistry } from "./registry.server";
 import { checkSalesRulesForOperation } from "./sales-rules-gate.server";
 
@@ -411,6 +412,21 @@ export async function dispatchOperation(
   );
   if (salesRuleBlock) {
     throw new ORPCError("FORBIDDEN", { message: salesRuleBlock });
+  }
+
+  // Document-lock gate — the route actions refuse writes to locked documents
+  // (requireUnlocked, checkRevisionLock, the change-notice guards, the inline
+  // delete checks); this applies the same refusal, with the route's message,
+  // to the same service functions reached by name. Keyed by tool: status
+  // transitions, reopen and the other writes the UI allows on a locked
+  // document are not in its tables and pass.
+  const lockBlock = await checkDocumentLocksForOperation(
+    meta,
+    context,
+    functionArgs
+  );
+  if (lockBlock) {
+    throw new ORPCError("FORBIDDEN", { message: lockBlock });
   }
 
   let result = await (func as (...args: any[]) => any)(...functionArgs);

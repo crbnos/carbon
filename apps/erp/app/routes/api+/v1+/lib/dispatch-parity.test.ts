@@ -18,6 +18,7 @@ const spies = vi.hoisted(() => ({
   getTrialBalance: vi.fn(),
   upsertAccount: vi.fn(),
   upsertJobMaterial: vi.fn(),
+  upsertProductionQuantity: vi.fn(),
   upsertMethodMaterial: vi.fn(),
   upsertQuoteLinePrices: vi.fn(),
   updateQuoteLineOrder: vi.fn(),
@@ -30,6 +31,9 @@ const spies = vi.hoisted(() => ({
   insertSalesOrder: vi.fn(),
   replaceInvoiceSettlements: vi.fn(),
   applyCreditsToInvoices: vi.fn(),
+  documentLock: vi.fn(
+    async (..._args: unknown[]): Promise<string | null> => null
+  ),
   FAKE_DB: { __kysely: true },
   FAKE_CLIENT: { __supabase: true }
 }));
@@ -60,7 +64,8 @@ vi.mock("~/modules/people/people.service", () => ({}));
 vi.mock("~/modules/production/production.mcp.server", () => ({}));
 vi.mock("~/modules/production/production.service", () => ({
   insertJob: spies.insertJob,
-  upsertJobMaterial: spies.upsertJobMaterial
+  upsertJobMaterial: spies.upsertJobMaterial,
+  upsertProductionQuantity: spies.upsertProductionQuantity
 }));
 vi.mock("~/modules/purchasing/purchasing.service", () => ({
   insertPurchaseOrder: spies.insertPurchaseOrder
@@ -82,6 +87,12 @@ vi.mock("~/modules/settings/settings.service", () => ({}));
 // these golden tests pin, so stub it as "no block".
 vi.mock("./sales-rules-gate.server", () => ({
   checkSalesRulesForOperation: vi.fn(async () => null)
+}));
+// The document-lock gate reads the database and imports server-only lock
+// helpers; its decisions are pinned in document-lock-gate.test.ts. Here it is a
+// switch, so the dispatch wiring (refuse before the service runs) is testable.
+vi.mock("./document-lock-gate.server", () => ({
+  checkDocumentLocksForOperation: spies.documentLock
 }));
 vi.mock("~/modules/shared/shared.service", () => ({}));
 vi.mock("~/modules/users/users.service", () => ({}));
@@ -161,6 +172,7 @@ const allSpies = [
   spies.getTrialBalance,
   spies.upsertAccount,
   spies.upsertJobMaterial,
+  spies.upsertProductionQuantity,
   spies.upsertMethodMaterial,
   spies.upsertQuoteLinePrices,
   spies.updateQuoteLineOrder,
@@ -176,6 +188,8 @@ const allSpies = [
 ];
 
 beforeEach(() => {
+  spies.documentLock.mockReset();
+  spies.documentLock.mockResolvedValue(null);
   for (const spy of allSpies) {
     spy.mockReset();
     spy.mockResolvedValue({ data: null, error: null });
@@ -404,6 +418,67 @@ describe("dispatchOperation service-call contract (golden, ex-executeFunction pa
     expect((r.dispatchError as ORPCError<string, unknown>).message).toBe(
       "accounting_upsertAccount received conflicting _operation values (create, update)."
     );
+  });
+
+  it("e2. a document-lock refusal is FORBIDDEN with the route's message, before the service runs", async () => {
+    spies.documentLock.mockResolvedValueOnce(
+      "This revision is released (Production). Open a change notice to modify it."
+    );
+    const r = await runDispatch(
+      "items_upsertMethodMaterial",
+      spies.upsertMethodMaterial,
+      {
+        _operation: "update",
+        id: "mm_1",
+        makeMethodId: "mk_1",
+        order: 1,
+        itemType: "Part",
+        methodType: "Pull from Inventory",
+        sourcingType: "Buy",
+        quantity: 2,
+        unitOfMeasureCode: "EA"
+      }
+    );
+    expect(r.calls).toEqual([]);
+    expect(r.dispatchError).toBeInstanceOf(ORPCError);
+    expect((r.dispatchError as ORPCError<string, unknown>).code).toBe(
+      "FORBIDDEN"
+    );
+    expect((r.dispatchError as ORPCError<string, unknown>).message).toBe(
+      "This revision is released (Production). Open a change notice to modify it."
+    );
+    // The gate judged the resolved positional payload the service would get.
+    const [, , functionArgs] = spies.documentLock.mock.calls[0] as [
+      unknown,
+      unknown,
+      unknown[]
+    ];
+    expect(functionArgs[1]).toMatchObject({ id: "mm_1", makeMethodId: "mk_1" });
+  });
+
+  it("e3. the lock gate sees the stamped payload: _operation create with a caller id still reads as an insert", async () => {
+    // The gate decides create vs update with the service's own test
+    // (upsertProductionQuantity inserts when updatedBy is absent). That only
+    // holds if the gate receives the payload after stamping, id included.
+    await runDispatch(
+      "production_upsertProductionQuantity",
+      spies.upsertProductionQuantity,
+      {
+        _operation: "create",
+        id: "pq_new",
+        jobOperationId: "op_1",
+        type: "Production",
+        quantity: 1
+      }
+    );
+    const [, , functionArgs] = spies.documentLock.mock.calls[0] as [
+      unknown,
+      unknown,
+      unknown[]
+    ];
+    const payload = functionArgs[1] as Record<string, unknown>;
+    expect(payload).toMatchObject({ id: "pq_new", createdBy: ctx.userId });
+    expect("updatedBy" in payload).toBe(false);
   });
 
   it("f. missing _operation on a tool that requires it is rejected before the service runs", async () => {
