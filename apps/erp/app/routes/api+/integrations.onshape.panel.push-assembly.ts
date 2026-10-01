@@ -17,6 +17,7 @@ import {
   mergeEditsForCreates,
   mergeExistingItemEdits,
   normalizeConfiguration,
+  ownedCustomFieldsDiffer,
   pickLatestRow,
   proposeItem
 } from "@carbon/ee";
@@ -385,7 +386,8 @@ export async function action({ request }: ActionFunctionArgs) {
   // A reused root takes only its owned-mode values, merged into the stored
   // JSON so every field Carbon owns survives. `part` is keyed by readableId
   // (the parts view joins part.id = item.readableId). Owned fields with no
-  // Onshape value still run: the merge clears them.
+  // Onshape value still run: the merge clears them. Nothing is written when
+  // Carbon already holds every value.
   if (rootWillReuse && rootOwnedFieldIds.size > 0) {
     const currentPart = await client
       .from("part")
@@ -397,7 +399,9 @@ export async function action({ request }: ActionFunctionArgs) {
       summary.errors.push(
         `${root.partNumber}: failed to read custom fields (${currentPart.error.message})`
       );
-    } else {
+    } else if (
+      ownedCustomFieldsDiffer(currentPart.data?.customFields, rootFields)
+    ) {
       const mergedRootFields = mergeCustomFieldValues(
         currentPart.data?.customFields,
         rootFieldValues,

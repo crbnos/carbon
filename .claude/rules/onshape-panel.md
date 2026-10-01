@@ -245,7 +245,9 @@ in `packages/ee/src/onshape/panel/properties.ts` (tested).
   children write no custom fields. Map empty → zero extra reads.
 - Values land in `part.customFields`, keyed by readableId (shared across
   revisions). Writes merge only the mapped keys (`mergeCustomFieldValues`);
-  an owned value emptied in Onshape deletes the key. A Yes/No field stores the
+  an owned value emptied in Onshape deletes the key. The plan drops a clear
+  for a field Carbon doesn't hold (`withoutNoOpClears`), so the review says
+  "will be cleared" only when something is. A Yes/No field stores the
   string `"on"` (`BOOLEAN_TRUE`); a JSON boolean renders unticked.
 
 ## Push release

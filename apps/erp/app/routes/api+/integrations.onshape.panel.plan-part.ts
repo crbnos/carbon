@@ -4,7 +4,8 @@ import {
   normalizeConfiguration,
   ownedCustomFieldsDiffer,
   parsePropertyMap,
-  resolveMappedFields
+  resolveMappedFields,
+  withoutNoOpClears
 } from "@carbon/ee";
 import type { OnshapeDocument } from "@carbon/ee/onshape";
 import {
@@ -254,15 +255,17 @@ export async function action({ request }: ActionFunctionArgs) {
       }
     }
 
-    // An unchanged row is only worth pushing when its mapped fields differ
-    // from Carbon's; it then goes as an update that skips the model export.
-    const unchanged = resolvable.filter(
-      (row) => row.action === "unchanged" && (row.customFields ?? []).length > 0
+    // Rows on an existing item compare against Carbon's values: an unchanged
+    // row is only worth pushing when its mapped fields differ (it then goes
+    // as an update that skips the model export), and no row claims to clear
+    // a field Carbon doesn't hold.
+    const existing = resolvable.filter(
+      (row) => row.item && (row.customFields ?? []).length > 0
     );
     const held = await selectInBatches(
       [
         ...new Set(
-          unchanged.flatMap((row) => (row.item ? [row.item.readableId] : []))
+          existing.flatMap((row) => (row.item ? [row.item.readableId] : []))
         )
       ],
       (batch) =>
@@ -278,16 +281,21 @@ export async function action({ request }: ActionFunctionArgs) {
     const heldByReadableId = new Map(
       (held.data ?? []).map((part) => [part.id, part.customFields])
     );
-    for (const row of unchanged) {
+    for (const row of existing) {
       const current = row.item
         ? heldByReadableId.get(row.item.readableId)
         : undefined;
-      if (ownedCustomFieldsDiffer(current, row.customFields ?? [])) {
+      if (row.action === "unchanged") {
+        if (!ownedCustomFieldsDiffer(current, row.customFields ?? [])) {
+          delete row.customFields;
+          continue;
+        }
         row.action = "update";
         row.cadUnchanged = true;
-      } else {
-        delete row.customFields;
       }
+      const fields = withoutNoOpClears(current, row.customFields ?? []);
+      if (fields.length > 0) row.customFields = fields;
+      else delete row.customFields;
     }
   }
 

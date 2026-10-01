@@ -11,7 +11,8 @@ import {
   parseBomTree,
   parseProperties,
   parsePropertyMap,
-  resolveMappedFields
+  resolveMappedFields,
+  withoutNoOpClears
 } from "@carbon/ee";
 import type { OnshapeDocument, StoredAssemblyPlan } from "@carbon/ee/onshape";
 import {
@@ -395,8 +396,26 @@ export async function action({ request }: ActionFunctionArgs) {
         map: propertyMap,
         definitions
       });
-      if (resolved.fields.length > 0) {
-        plan.root.customFields = resolved.fields;
+      let fields = resolved.fields;
+      // A reused root reads Carbon's values so the review never claims to
+      // clear a field Carbon doesn't hold. `part` is keyed by readableId.
+      if (plan.root.action === "reuse" && fields.length > 0) {
+        const held = await client
+          .from("part")
+          .select("customFields")
+          .eq("id", plan.root.partNumber)
+          .eq("companyId", companyId)
+          .maybeSingle();
+        if (held.error) {
+          return data(
+            { error: "Failed to read Carbon parts" },
+            { status: 500 }
+          );
+        }
+        fields = withoutNoOpClears(held.data?.customFields, fields);
+      }
+      if (fields.length > 0) {
+        plan.root.customFields = fields;
       }
       if (resolved.unmapped.length > 0) {
         plan.root.unmappedProperties = resolved.unmapped;
