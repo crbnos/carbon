@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: LicenseRef-Carbon-Commercial
+// Carbon Enterprise file, licensed only under the Carbon Commercial License
+// (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
+
 /**
  * Revision order, matching the sequences `getNextRevision` steps through:
  * numbers count up (9 → 10), letters go A → Z → AA → AB. A text compare gets
