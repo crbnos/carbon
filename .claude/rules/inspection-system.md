@@ -155,7 +155,13 @@ RLS on all tables: standard SELECT/INSERT/UPDATE/DELETE gated by `quality_view/c
   measurement — one gauge per characteristic per lot, as SAP QM / FAI forms do.
   Written by `recordInspectionGauge` (`@carbon/database/quality`): closed-lot
   guard, company-scoped gauge, refuses `Inactive` gauges and a gauge whose type
-  differs from the feature's `gaugeTypeId`. Out-of-calibration is shown
+  differs from the feature's `gaugeTypeId`. A gauge recorded on a **closed** lot
+  (Passed/Failed/Partial) cannot be deleted — the trigger
+  `prevent_deleting_gauge_recorded_on_closed_inspection`
+  (`20261001022340_inspection-gauge-history.sql`) raises `23503`, which also refuses a
+  gauge-type delete reaching it through its cascade; set the gauge Inactive instead. Open
+  lots keep the FK's SET NULL, and a company wipe (`app.sync_in_progress`, or children
+  deleted first) is never blocked. Out-of-calibration is shown
   (red icon in the cell, calibration status badge in the list) but does NOT block. Routes: ERP `x+/inspection+/$id.gauge.tsx`,
   MES `x+/inspection-lot.$id.gauge.tsx` (`path.to.inspectionGauge`), quiet POSTs
   like the measurement cells.
@@ -408,18 +414,24 @@ GL/cost posting and `.ai/plans/2026-07-25-inspection-disposition-gl-posting.md`.
 - **Inspection *documents* ("Inspection Plans") are authored in the quality module** (list
   at `/x/quality/inspection-plans`, editor at `/x/inspection-document/{id}`; `inspectionDocument`/
   `inspectionFeature`/`balloon` + `save_inspection_document_atomic`, newest def
-  `20260722040401`) and are now *consumed* by this flow via the item's Receipt-usage
+  `20261001022635`) and are now *consumed* by this flow via the item's Receipt-usage
   assignment. The lot references the document **live** — measurement rows store the
   valuation at entry, so later tolerance edits never rewrite recorded results.
 - **The plan editor autosaves** — there is no Save button. A debounced effect posts the
   whole diff to `x+/inspection-document+/$id.save.tsx` while the editor is quiet (a drag
   saves when it ends), one save at a time; the toolbar shows Saving… / Saved / Could not
-  save, and leaving the page first flushes the save (`useBlocker`). Rows created in the
-  browser carry `temp-ftr-`/`temp-bln-` ids until the RPC's `featureIdMap` /
-  `balloonAnchorIdMap` come back; edits made while a save is in flight are merged, not
-  overwritten — `mergeSaveResponse` (`ui/InspectionDocument/autosave.ts`, tested) keeps
-  them dirty and re-points them at the persisted ids. A PDF upload goes through the same
-  save. The route skips revalidation after a save (the response carries the rows).
+  save, and leaving the page first flushes the save (`useBlocker`). The editor **mints the
+  ids** of the characteristics and balloons it creates (`ift_…` / `bbn_…`, `newFeatureId` /
+  `newBalloonId` in `ui/InspectionDocument/autosave.ts`), and the RPC inserts with them
+  (`20261001022635_inspection-plan-client-ids.sql`; a taken id fails the insert, it never
+  overwrites). So a row keeps one id from the moment it is drawn: an id the server has not
+  created yet is in the editor's unsaved set and goes out as a create, every edit marks its
+  row dirty, and `mergeSaveResponse` (tested) only swaps in the server copy of rows
+  untouched since the save went out. Deletes are always queued once a row has left the
+  browser (deleting an id the server never created is a no-op). Other callers may still
+  send `tempId` / `tempBalloonAnchorId` and read the `featureIdMap` / `balloonAnchorIdMap`
+  back. A PDF upload goes through the same save. The route skips revalidation after a
+  save (the response carries the rows).
 - **Features saved together share one `createdAt`** (the RPC is one transaction, `NOW()`
   is fixed), so `ORDER BY "createdAt"` alone returns them in heap order, and an UPDATE
   moves a row to the end. Anything listing features must break the tie — the editor sorts

@@ -73,9 +73,9 @@ import { path } from "~/utils/path";
 import {
   AUTOSAVE_DELAY_MS,
   hasUnsavedRows,
-  isTempBalloonId,
-  isTempFeatureId,
-  mergeSaveResponse
+  mergeSaveResponse,
+  newBalloonId,
+  newFeatureId
 } from "./autosave";
 import {
   buildInspectionDocumentPdfWithOverlaysBytes,
@@ -433,6 +433,8 @@ type SaveSnapshot = {
   docSampling: SamplingRule;
   pdfUrl: string;
   sentPdfMetrics: boolean;
+  /** Characteristic and balloon ids this save creates. */
+  createdIds: string[];
   featureDeleteIds: string[];
   balloonDeleteIds: string[];
 };
@@ -758,13 +760,23 @@ export default function InspectionDocumentEditor({
   const handledSaveDataRef = useRef<unknown>(null);
   /** The last autosave that failed — not retried until something changes. */
   const failedSaveRef = useRef<SaveSnapshot | null>(null);
-  /** temp-ftr-/temp-bln- id → the id the save gave it. Async work started
-   * before a save (the region analysis) still holds the temp id. */
-  const persistedIdRef = useRef(new Map<string, string>());
-  const persistedId = useCallback(
-    (id: string) => persistedIdRef.current.get(id) ?? id,
+  /** Characteristic and balloon ids minted here that no save has created
+   * yet. A save sends these as creates, everything else as updates. */
+  const unsavedIdsRef = useRef(new Set<string>());
+  const isUnsaved = useCallback(
+    (id: string) => unsavedIdsRef.current.has(id),
     []
   );
+  /** Queues a delete for a row the server has — or is creating right now —
+   * and simply forgets one that never left the browser. */
+  const queueDelete = useCallback((pending: Set<string>, id: string) => {
+    const sending = inFlightSaveRef.current?.createdIds.includes(id);
+    if (unsavedIdsRef.current.has(id) && !sending) {
+      unsavedIdsRef.current.delete(id);
+    } else {
+      pending.add(id);
+    }
+  }, []);
   const savedSamplingRef = useRef<SamplingRule>(
     sampling ?? EMPTY_SAMPLING_RULE
   );
@@ -923,13 +935,6 @@ export default function InspectionDocumentEditor({
       return;
     }
 
-    const ids = persistedIdRef.current;
-    for (const [tempId, id] of Object.entries({
-      ...data.featureIdMap,
-      ...data.balloonAnchorIdMap
-    })) {
-      ids.set(tempId, id);
-    }
     const savedBalloons = data.balloons ?? [];
     const merged = mergeSaveResponse({
       sentRows: sent.featureRows,
@@ -937,31 +942,22 @@ export default function InspectionDocumentEditor({
       currentRows: featureRows,
       currentAnchors: anchorRects,
       savedRows: buildFeatureRowsFromLoader(data.features ?? [], savedBalloons),
-      savedAnchors: selectorRectsFromBalloonRecords(savedBalloons),
-      persistedIds: ids
+      savedAnchors: selectorRectsFromBalloonRecords(savedBalloons)
     });
 
-    const pendingFeatureDeletes = pendingFeatureDeleteIdsRef.current;
-    const pendingBalloonDeletes = pendingBalloonDeleteIdsRef.current;
-    for (const id of sent.featureDeleteIds) pendingFeatureDeletes.delete(id);
-    for (const id of sent.balloonDeleteIds) pendingBalloonDeletes.delete(id);
-    for (const id of merged.featureDeleteIds) pendingFeatureDeletes.add(id);
-    for (const id of merged.balloonDeleteIds) pendingBalloonDeletes.add(id);
+    for (const id of sent.createdIds) unsavedIdsRef.current.delete(id);
+    for (const id of sent.featureDeleteIds) {
+      pendingFeatureDeleteIdsRef.current.delete(id);
+    }
+    for (const id of sent.balloonDeleteIds) {
+      pendingBalloonDeleteIdsRef.current.delete(id);
+    }
     savedSamplingRef.current = sent.docSampling;
     savedPdfUrlRef.current = sent.pdfUrl;
     failedSaveRef.current = null;
     if (sent.sentPdfMetrics) setPdfMetricsDirty(false);
     setFeatureRows(merged.rows);
     setSelectorRects(merged.anchors);
-
-    const resolve = (id: string | null) =>
-      id == null ? null : (ids.get(id) ?? id);
-    setSelectedBalloonId(resolve);
-    setSelectedSelectorId(resolve);
-    setPlacingFeatureId(resolve);
-    setSamplingTarget((target) =>
-      target === "document" ? target : resolve(target)
-    );
     setHasSaved(true);
 
     if (pdfReplaceToastRef.current && sent.pdfUrl === pdfUrl) {
@@ -1211,7 +1207,10 @@ export default function InspectionDocumentEditor({
         }
 
         const placingExistingFeatureId = placingFeatureId;
-        const tempBalloonId = `temp-bln-${nanoid()}`;
+        const balloonId = newBalloonId();
+        const featureId = newFeatureId();
+        unsavedIdsRef.current.add(balloonId);
+        if (!placingExistingFeatureId) unsavedIdsRef.current.add(featureId);
         let balloonX = rx + rw + BALLOON_OFFSET_PCT;
         if (balloonX + BALLOON_W_PCT > 100) {
           balloonX = rx - BALLOON_OFFSET_PCT - BALLOON_W_PCT;
@@ -1222,7 +1221,7 @@ export default function InspectionDocumentEditor({
         setSelectorRects((prev) => [
           ...prev,
           {
-            id: tempBalloonId,
+            id: balloonId,
             pageNumber,
             x: rx,
             y: localY,
@@ -1243,26 +1242,25 @@ export default function InspectionDocumentEditor({
                 ? r
                 : {
                     ...r,
-                    balloonId: tempBalloonId,
-                    balloonAnchorId: tempBalloonId,
+                    balloonId,
+                    balloonAnchorId: balloonId,
                     pageNumber,
                     x: balloonX,
                     y: balloonY,
-                    featureDirty: isTempFeatureId(r.featureId)
-                      ? r.featureDirty
-                      : true,
+                    featureDirty: true,
                     geometryDirty: true
                   }
             );
           }
-          const tempFeatureId = `temp-ftr-${nanoid()}`;
+          // The feature being placed was deleted meanwhile: a new one it is.
+          unsavedIdsRef.current.add(featureId);
           const label = nextBalloonLabel(prev);
           return [
             ...prev,
             {
-              featureId: tempFeatureId,
-              balloonId: tempBalloonId,
-              balloonAnchorId: tempBalloonId,
+              featureId,
+              balloonId,
+              balloonAnchorId: balloonId,
               label,
               pageNumber,
               x: balloonX,
@@ -1342,8 +1340,6 @@ export default function InspectionDocumentEditor({
                   return;
                 }
                 const a = payload.analysis;
-                // An autosave may have persisted the balloon by now.
-                const balloonId = persistedId(tempBalloonId);
                 setFeatureRows((prev) =>
                   prev.map((r) => {
                     if (r.balloonId !== balloonId) return r;
@@ -1418,7 +1414,6 @@ export default function InspectionDocumentEditor({
       annotations,
       persistAnnotationResize,
       placingFeatureId,
-      persistedId,
       t
     ]
   );
@@ -1917,9 +1912,7 @@ export default function InspectionDocumentEditor({
               ...row,
               x: nextX,
               y: nextY,
-              geometryDirty: isTempBalloonId(row.balloonId)
-                ? row.geometryDirty
-                : true
+              geometryDirty: true
             };
           })
         );
@@ -2067,9 +2060,7 @@ export default function InspectionDocumentEditor({
               ? row
               : {
                   ...row,
-                  geometryDirty: isTempBalloonId(row.balloonId)
-                    ? row.geometryDirty
-                    : true
+                  geometryDirty: true
                 }
           )
         );
@@ -2113,9 +2104,9 @@ export default function InspectionDocumentEditor({
     formData.set("name", name);
     if (pdfUrl) formData.set("pdfUrl", pdfUrl);
     const featuresCreate = featureRows
-      .filter((r) => isTempFeatureId(r.featureId))
+      .filter((r) => isUnsaved(r.featureId))
       .map((r) => ({
-        tempId: r.featureId,
+        id: r.featureId,
         pageNumber: r.pageNumber,
         label: r.label,
         description: r.featureName.trim() || null,
@@ -2136,7 +2127,7 @@ export default function InspectionDocumentEditor({
     const featuresUpdate = featureRows
       .filter(
         (r) =>
-          !isTempFeatureId(r.featureId) &&
+          !isUnsaved(r.featureId) &&
           (r.featureDirty || (r.geometryDirty && r.balloonId != null))
       )
       .map((r) => ({
@@ -2168,14 +2159,15 @@ export default function InspectionDocumentEditor({
     );
 
     const balloonsCreate = featureRows
-      .filter((r) => isTempBalloonId(r.balloonId))
+      .filter(
+        (r): r is FeatureRow & { balloonId: string } =>
+          r.balloonId != null && isUnsaved(r.balloonId)
+      )
       .map((r) => {
         const anchor = anchorRects.find((s) => s.id === r.balloonAnchorId);
         return {
-          ...(isTempFeatureId(r.featureId)
-            ? { tempInspectionFeatureId: r.featureId }
-            : { inspectionFeatureId: r.featureId }),
-          tempBalloonAnchorId: r.balloonId ?? undefined,
+          id: r.balloonId,
+          inspectionFeatureId: r.featureId,
           pageNumber: r.pageNumber,
           regionX: (anchor?.x ?? 0) / 100,
           regionY: (anchor?.y ?? 0) / 100,
@@ -2212,7 +2204,7 @@ export default function InspectionDocumentEditor({
     }
 
     for (const row of featureRows.filter(
-      (r) => r.balloonId && !isTempBalloonId(r.balloonId) && r.geometryDirty
+      (r) => r.balloonId && !isUnsaved(r.balloonId) && r.geometryDirty
     )) {
       const anchor = anchorRects.find((s) => s.id === row.balloonAnchorId);
       const existing = balloonsUpdateById.get(row.balloonId!) ?? {
@@ -2255,6 +2247,10 @@ export default function InspectionDocumentEditor({
       docSampling,
       pdfUrl,
       sentPdfMetrics: pdfMetrics != null,
+      createdIds: [
+        ...featuresCreate.map((f) => f.id),
+        ...balloonsCreate.map((b) => b.id)
+      ],
       featureDeleteIds,
       balloonDeleteIds
     };
@@ -2270,7 +2266,8 @@ export default function InspectionDocumentEditor({
     featureRows,
     pdfMetrics,
     docSampling,
-    submitSave
+    submitSave,
+    isUnsaved
   ]);
 
   // Every edit saves itself once the editor has been quiet for a moment — a
@@ -2281,7 +2278,7 @@ export default function InspectionDocumentEditor({
   const isSaving = fetcher.state !== "idle";
   const hasUnsavedChanges =
     canUpdate &&
-    (hasUnsavedRows(featureRows, anchorRects) ||
+    (hasUnsavedRows(featureRows, anchorRects, isUnsaved) ||
       pendingFeatureDeleteIdsRef.current.size > 0 ||
       pendingBalloonDeleteIdsRef.current.size > 0 ||
       pdfUrl !== savedPdfUrlRef.current ||
@@ -2360,8 +2357,8 @@ export default function InspectionDocumentEditor({
 
       if (options.clearBalloons) {
         for (const r of featureRows) {
-          if (r.balloonId != null && !isTempBalloonId(r.balloonId)) {
-            pendingBalloonDeleteIdsRef.current.add(r.balloonId);
+          if (r.balloonId != null) {
+            queueDelete(pendingBalloonDeleteIdsRef.current, r.balloonId);
           }
         }
         setSelectorRects([]);
@@ -2369,7 +2366,7 @@ export default function InspectionDocumentEditor({
         pdfReplaceToastRef.current = true;
       }
     },
-    [carbon, companyId, diagramId, featureRows, t]
+    [carbon, companyId, diagramId, featureRows, t, queueDelete]
   );
 
   const handlePdfUpload = useCallback(
@@ -2410,32 +2407,35 @@ export default function InspectionDocumentEditor({
   const isPdfReady = hasPdf && (numPages > 0 || pdfMetrics !== null);
   const isOverlayReady = isPdfReady && containerWidth > 0 && overlayHeight > 0;
 
-  const handleDeleteFeature = useCallback((featureId: string) => {
-    setFeatureRows((prev) => {
-      const row = prev.find((r) => r.featureId === featureId);
-      if (row && !isTempFeatureId(row.featureId)) {
-        pendingFeatureDeleteIdsRef.current.add(row.featureId);
-      }
-      const nextRows = prev.filter((r) => r.featureId !== featureId);
-      const keptAnchorIds = new Set(
-        nextRows
-          .map((r) => r.balloonAnchorId)
-          .filter((id): id is string => id.length > 0)
-      );
-      setSelectorRects((sels) =>
-        sels.filter((sel) => keptAnchorIds.has(sel.id))
-      );
-      return nextRows;
-    });
-  }, []);
+  const handleDeleteFeature = useCallback(
+    (featureId: string) => {
+      setFeatureRows((prev) => {
+        const row = prev.find((r) => r.featureId === featureId);
+        if (row) queueDelete(pendingFeatureDeleteIdsRef.current, row.featureId);
+        const nextRows = prev.filter((r) => r.featureId !== featureId);
+        const keptAnchorIds = new Set(
+          nextRows
+            .map((r) => r.balloonAnchorId)
+            .filter((id): id is string => id.length > 0)
+        );
+        setSelectorRects((sels) =>
+          sels.filter((sel) => keptAnchorIds.has(sel.id))
+        );
+        return nextRows;
+      });
+    },
+    [queueDelete]
+  );
 
   const handleAddFeature = useCallback(() => {
+    const featureId = newFeatureId();
+    unsavedIdsRef.current.add(featureId);
     setFeatureRows((prev) => {
       const label = nextBalloonLabel(prev);
       return [
         ...prev,
         {
-          featureId: `temp-ftr-${nanoid()}`,
+          featureId,
           balloonId: null,
           balloonAnchorId: "",
           label,
@@ -2469,32 +2469,33 @@ export default function InspectionDocumentEditor({
     setZoomBoxMode(false);
   }, []);
 
-  const handleUnballoon = useCallback((featureId: string) => {
-    setFeatureRows((prev) => {
-      const row = prev.find((r) => r.featureId === featureId);
-      if (!row?.balloonId) return prev;
-      if (!isTempBalloonId(row.balloonId)) {
-        pendingBalloonDeleteIdsRef.current.add(row.balloonId);
-      }
-      if (row.balloonAnchorId) {
-        setSelectorRects((sels) =>
-          sels.filter((s) => s.id !== row.balloonAnchorId)
+  const handleUnballoon = useCallback(
+    (featureId: string) => {
+      setFeatureRows((prev) => {
+        const row = prev.find((r) => r.featureId === featureId);
+        if (!row?.balloonId) return prev;
+        queueDelete(pendingBalloonDeleteIdsRef.current, row.balloonId);
+        if (row.balloonAnchorId) {
+          setSelectorRects((sels) =>
+            sels.filter((s) => s.id !== row.balloonAnchorId)
+          );
+        }
+        return prev.map((r) =>
+          r.featureId !== featureId
+            ? r
+            : {
+                ...r,
+                balloonId: null,
+                balloonAnchorId: "",
+                x: 0,
+                y: 0,
+                geometryDirty: false
+              }
         );
-      }
-      return prev.map((r) =>
-        r.featureId !== featureId
-          ? r
-          : {
-              ...r,
-              balloonId: null,
-              balloonAnchorId: "",
-              x: 0,
-              y: 0,
-              geometryDirty: false
-            }
-      );
-    });
-  }, []);
+      });
+    },
+    [queueDelete]
+  );
 
   const updateFeatureField = useCallback(
     (
@@ -2517,9 +2518,7 @@ export default function InspectionDocumentEditor({
             : {
                 ...r,
                 [field]: field === "gaugeTypeId" ? value || null : value,
-                featureDirty: isTempFeatureId(r.featureId)
-                  ? r.featureDirty
-                  : true
+                featureDirty: true
               }
         )
       );

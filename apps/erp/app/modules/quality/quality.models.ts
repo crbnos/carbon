@@ -651,9 +651,16 @@ const inspectionFeatureGaugeTypeValidator = {
   gaugeTypeId: z.string().min(1).nullable().optional()
 };
 
+// The plan editor mints the ids of the characteristics and balloons it
+// creates, so a row keeps one id from the moment it is drawn. A taken id fails
+// the insert; it never overwrites. Other callers may still send a tempId and
+// read the persisted id back from the save's id maps.
+const clientIdValidator = z.string().regex(/^[A-Za-z0-9_-]{8,64}$/);
+
 export const inspectionSaveFeatureCreateItemValidator = z
   .object({
-    tempId: z.string().min(1),
+    id: clientIdValidator.optional(),
+    tempId: z.string().min(1).optional(),
     pageNumber: pageNumberValidator,
     label: z.string().min(1),
     description: z.string().nullable().optional(),
@@ -665,7 +672,10 @@ export const inspectionSaveFeatureCreateItemValidator = z
     ...inspectionFeatureSamplingFieldsValidator,
     ...inspectionFeatureGaugeTypeValidator
   })
-  .strict();
+  .strict()
+  .refine((data) => Boolean(data.id) || Boolean(data.tempId), {
+    message: "id or tempId is required"
+  });
 
 export const inspectionSaveFeatureUpdateItemValidator = z
   .object({
@@ -693,6 +703,7 @@ export const inspectionSaveFeaturesPayloadValidator = z
 
 export const inspectionSaveBalloonGeometryCreateItemValidator = z
   .object({
+    id: clientIdValidator.optional(),
     tempInspectionFeatureId: z.string().min(1).optional(),
     inspectionFeatureId: z.string().min(1).optional(),
     tempBalloonAnchorId: z.string().min(1).optional(),
@@ -852,10 +863,6 @@ export const balloonRegionUnits = [
   "degree",
   "rad"
 ] as const;
-
-export type BalloonRegionFeatureType =
-  (typeof balloonRegionFeatureTypes)[number];
-export type BalloonRegionUnit = (typeof balloonRegionUnits)[number];
 
 /** Structured extraction from a cropped engineering-drawing region. */
 export const balloonRegionAnalysisResultSchema = z.object({
