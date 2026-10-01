@@ -26,7 +26,7 @@ export function deriveNameDescription(name: string): string {
 /**
  * One-line argument summary for search results: required params spelled out,
  * optionals as a count — enough to call a simple tool without a describe round
- * trip. "(id)" / "(jobId, _operation, +12 optional)" / "()".
+ * trip. "(id)" / "(jobId, itemId, +12 optional)" / "()".
  */
 export function formatParamSummary(tool: ManifestEntry): string {
   const schema = tool.schema as {

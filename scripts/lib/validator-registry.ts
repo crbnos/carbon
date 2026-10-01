@@ -170,9 +170,9 @@ export async function buildValidatorRegistry(
         null;
       // Hand out a COPY. One validator backs many operations (supplierValidator
       // backs both insertSupplier and upsertSupplier), and downstream steps mutate
-      // the schema in place — `addOperationArg` writes `_operation` onto it. Sharing
-      // the object leaked that required argument onto sibling operations that never
-      // take it.
+      // the schema in place — `describeUpsertKeys` annotates the key fields. Sharing
+      // the object leaked one operation's edits onto sibling operations that never
+      // made them.
       return found ? (structuredClone(found) as JsonSchema) : null;
     },
     getConstArray(mod, exportName) {

@@ -1418,7 +1418,10 @@ export async function updateTrainingQuestionOrder(
   return Promise.all(updatePromises);
 }
 
-/** @mcp */
+/**
+ * @mcp
+ * @upsertKey contractor id
+ */
 export async function upsertContractor(
   client: SupabaseClient<Database>,
   contractorWithAbilities:
@@ -1852,7 +1855,10 @@ export async function upsertMaintenanceScheduleItem(
   }
 }
 
-/** @mcp */
+/**
+ * @mcp
+ * @upsertKey partner id
+ */
 export async function upsertPartner(
   client: SupabaseClient<Database>,
   partner:

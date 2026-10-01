@@ -291,8 +291,8 @@ dispatcher (`apps/erp/app/routes/api+/inngest.ts`). There is no separate
   there handed the service the note STRING instead of the record. The schema
   decides: a wrapper op declares one property named for the param, so read it; an
   op listing the param's own fields is describing it, so pass the whole body.
-  `_operation` and any property that is itself another serviceParam (`args`, and
-  scalar siblings like `locationId`) don't count toward that, since each is
+  A property that is itself another serviceParam (`args`, and
+  scalar siblings like `locationId`) does not count toward that, since each is
   addressed on its own pass. When a payload param is an **array** of rows,
   `enrichWithAuthContext` stamps `createdBy` into each element (insert only) —
   the top-level stamp never reached inside, so a NOT NULL `createdBy` on the row
@@ -461,32 +461,35 @@ exports into the same module namespace), and writes `apps/erp/app/routes/api+/mc
   relations leaves the set alone. `INJECT_AUTH_OVERRIDES` is for INTENT the
   schema cannot express (ledger rows whose `updatedBy` must stay NULL).
 
-- **`_operation`** (`branchesOnKeyPresence`, the `in` operator in the AST): a tool whose service picks
-  insert-vs-update by testing for an audit field on the payload gets a **required**
-  `_operation: "create" | "update"` in its schema — the schema is the only marker,
-  there is no parallel metadata flag. **BOTH discriminator directions count**:
-  `if ("createdBy" in …)` (create-branch first, e.g. `upsertQuoteOperation`) AND
-  `if ("updatedBy" in …)` (update-branch first, e.g. `upsertQuoteMaterial`,
-  `upsertJobMaterial`, `upsertJob`, `upsertProductionQuantity`, `upsertPartner`,
-  `upsertPeriodCloseTaskDefinition`). The generator only matched `"createdBy" in`
-  until it was broadened — so the inverted ones shipped WITHOUT `_operation`, and
-  since `enrichWithAuthContext` always stamped `updatedBy`, their `"updatedBy" in`
-  test was always true: every create was forced down the UPDATE branch, matched
-  zero rows for a fresh id, and returned **PGRST116** — a silent no-op the customer
-  hit trying to add quote/job materials over the connector. (A few — `upsertJobOperation`,
-  `upsertContractor`, `upsertGaugeCalibrationRecord` — got `_operation` anyway from
-  a secondary `"createdBy" in` in the body, but were broken the same way until the
-  dispatch fix below, because their PRIMARY branch is `"updatedBy" in`.)
-  The dispatch (`api+/v1+/lib/dispatch.server.ts`) strips `_operation` from the args
-  (top level *and* the `{ args: {...} }` wrapper) before building the payload, then
-  stamps audit fields **symmetrically**: on `"create"` it stamps `createdBy` and
-  **suppresses `updatedBy`**; on `"update"` it stamps `updatedBy` and **suppresses
-  `createdBy`** — so either convention lands on the branch the caller asked for, and
-  the create path matches the create-variant service type / UI insert (createdBy, no
-  updatedBy). With no `_operation` (operation `undefined`) both audit fields are
-  stamped, as before. Missing/invalid `_operation` on such a tool is rejected before
-  the service is called; `call_tool.arguments` is `z.any()`, so the dispatch is the gate.
-  Pinned by `dispatch-parity.test.ts` (cases o/p/q) and `mcp-tool-metadata.test.ts`.
+- **Create vs update on an upsert is never the caller's question.** A service
+  that picks insert-vs-update by testing for an audit field on the payload
+  (`branchesOnKeyPresence`: `"createdBy" in …` create-branch first, e.g.
+  `upsertQuoteOperation`, or `"updatedBy" in …` update-branch first, e.g.
+  `upsertQuoteMaterial`, `upsertJobMaterial`, `upsertJob`) needs exactly ONE of
+  the two stamped — stamp both and an `"updatedBy" in` service takes its UPDATE
+  branch on every create, matches zero rows and returns PGRST116. The generator
+  records how to decide in the manifest entry's `upsert` (also in the digest), and
+  fails generation for a branching upsert it cannot give a rule to:
+  - **By `id`** (`{ keys: ["id"] }`, 75 tools) — read off the parameter's TYPE
+    (`idDistinguishesUpdate`, `service-ast.ts`): every union member that requires
+    `updatedBy` has an `id`, and no other member requires one. Sending `id` means
+    update; omitting it means create.
+  - **By lookup** (`lookups: [{ table, match }]`, 15 tools) — declared on the
+    function with `@upsertKey <table> <column>[=<field>], …` when the payload
+    cannot say: a part's `id` is its part number on create and its item id (or
+    part number) on update, so `upsertPart` carries `@upsertKey item id` and
+    `@upsertKey item readableId=id` (alternatives); a pick method has no id, only
+    `itemId, locationId`. The dispatcher looks the row up with the caller's
+    client, scoped to the caller's company (the table must have `companyId`), and
+    updates when it exists.
+  `resolveUpsertOperation` (`api+/v1+/lib/dispatch.server.ts`) applies the rule —
+  a missing or empty key is a create without asking the database — then stamps
+  `createdBy` and suppresses `updatedBy` on create, the reverse on update. The
+  key field's schema `description` says what sending it does. These tools used
+  to require `_operation: "create" | "update"`; no schema publishes it now, but
+  a caller that still sends it is obeyed (and a value other than those two is
+  refused). Pinned by `dispatch-parity.test.ts` (f, f2, f3, o–t) and
+  `mcp-tool-metadata.test.ts`.
 
 ## The 15 modules (current `tool-metadata.json`)
 
@@ -600,7 +603,7 @@ the model context or the MCP dispatch.
   estimatedQuantity 0 and issue/picking pulled nothing. The wrapper mirrors both
   routes' orchestration (MTO method pull on transition, recalc released creates /
   all updates) and keeps the exact service payload type so the published schema
-  hash is unchanged. Classification, `_operation` and the audit-column rule are
+  hash is unchanged. Classification, the upsert rule and the audit-column rule are
   read from the WRAPPER's own body (it replaces the service function in the AST),
   so a wrapper that delegates its writes needs the `@mcp` tag — and a declared
   classification when its own body shows less than the function it wraps. Pinned by

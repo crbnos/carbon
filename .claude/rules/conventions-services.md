@@ -220,6 +220,10 @@ v1-API generator (`pnpm run generate:mcp`). What that means when you add one:
   When the name cannot say what the function is — it delegates its write to a
   helper, an RPC or an edge function — declare it: `@mcp write`,
   `@mcp destructive`, or `@mcp read` for a pure function with a non-read name.
+- An upsert that branches on `"createdBy" in payload` must let the API tell
+  create from update without being told: give the update shape an `id` the create
+  shape does not require, or declare the row it updates with
+  `@upsertKey <table> <column>`. Generation fails otherwise.
 - Don't spread a payload into a write on a table the payload has extra keys for;
   build the row. The dispatcher stamps `createdBy`/`updatedBy` onto the payload.
 

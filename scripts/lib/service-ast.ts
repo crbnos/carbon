@@ -34,6 +34,7 @@ import {
   type ParameterDeclaration,
   Project,
   type SourceFile,
+  SymbolFlags,
   SyntaxKind
 } from "ts-morph";
 
@@ -502,4 +503,43 @@ export function branchesOnKeyPresence(
         keys.includes(left.getLiteralText())
       );
     });
+}
+
+/**
+ * Whether sending `id` is what separates an update from an insert, read off the
+ * payload parameter's TYPE: every member of its union that requires `updatedBy`
+ * (the update shape) has an `id`, and no other member REQUIRES one. Then a call
+ * with an `id` can only mean "update this record" and a call without one can
+ * only mean "create".
+ *
+ * False when both shapes require an `id` (a part's `id` is its part number on
+ * create and its item id on update) or neither has one (a pick method is keyed
+ * by item and location) — there the payload cannot say which it is.
+ */
+export function idDistinguishesUpdate(
+  fn: ServiceFunctionNode,
+  contextParams: ReadonlySet<string>
+): boolean {
+  for (const param of fn.getParameters()) {
+    if (contextParams.has(param.getName())) continue;
+    const type = param.getType();
+    const members = type.isUnion() ? type.getUnionTypes() : [type];
+    // The update shape is the one that REQUIRES `updatedBy`. A validator may
+    // itself carry an optional `createdBy`, so its presence proves nothing.
+    const updates = members.filter((m) => {
+      const updatedBy = m.getProperty("updatedBy");
+      return updatedBy !== undefined && !updatedBy.hasFlags(SymbolFlags.Optional);
+    });
+    const creates = members.filter((m) => !updates.includes(m));
+    if (updates.length === 0 || creates.length === 0) continue;
+
+    return (
+      updates.every((m) => m.getProperty("id") !== undefined) &&
+      creates.every((m) => {
+        const id = m.getProperty("id");
+        return id === undefined || id.hasFlags(SymbolFlags.Optional);
+      })
+    );
+  }
+  return false;
 }

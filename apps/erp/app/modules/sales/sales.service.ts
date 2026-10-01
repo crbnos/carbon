@@ -5194,7 +5194,10 @@ export async function upsertQuoteLineMethod(
   });
 }
 
-/** @mcp */
+/**
+ * @mcp
+ * @upsertKey quoteMaterial id
+ */
 export async function upsertQuoteMaterial(
   client: SupabaseClient<Database>,
   quoteMaterial:
@@ -5308,7 +5311,10 @@ export async function upsertQuoteMaterialMakeMethod(
   return { data: null, error: null };
 }
 
-/** @mcp */
+/**
+ * @mcp
+ * @upsertKey quoteOperation id
+ */
 export async function upsertQuoteOperation(
   client: SupabaseClient<Database>,
   operation:

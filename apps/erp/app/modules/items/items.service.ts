@@ -3504,6 +3504,8 @@ const typedItemTables = {
  * `id` is the item id (uuid) or the consumable's readable id and the write is
  * a full replace, so omitted optional fields are cleared.
  * @mcp
+ * @upsertKey item id
+ * @upsertKey item readableId=id
  */
 export async function upsertConsumable(
   client: SupabaseClient<Database>,
@@ -3784,6 +3786,8 @@ export async function resolveItemIdFromExtractedText(
  * item id (uuid) or the part's readable id and the write is a full replace, so
  * omitted optional fields are cleared.
  * @mcp
+ * @upsertKey item id
+ * @upsertKey item readableId=id
  */
 export async function upsertPart(
   client: SupabaseClient<Database>,
@@ -3958,7 +3962,10 @@ export async function upsertItemCost(
     .eq("itemId", itemCost.itemId);
 }
 
-/** @mcp */
+/**
+ * @mcp
+ * @upsertKey pickMethod itemId, locationId
+ */
 export async function upsertPickMethod(
   client: SupabaseClient<Database>,
   pickMethod:
@@ -3999,7 +4006,10 @@ export async function upsertItemManufacturing(
     .eq("itemId", partManufacturing.itemId);
 }
 
-/** @mcp */
+/**
+ * @mcp
+ * @upsertKey itemPlanning itemId, locationId
+ */
 export async function upsertItemPlanning(
   client: SupabaseClient<Database>,
   partPlanning:
@@ -4444,7 +4454,10 @@ async function resolveMethodMaterialStorageUnitIds(
   return current;
 }
 
-/** @mcp */
+/**
+ * @mcp
+ * @upsertKey methodMaterial id
+ */
 export async function upsertMethodMaterial(
   client: SupabaseClient<Database>,
 
@@ -4550,7 +4563,10 @@ export async function upsertMethodMaterial(
     .single();
 }
 
-/** @mcp */
+/**
+ * @mcp
+ * @upsertKey methodOperation id
+ */
 export async function upsertMethodOperation(
   client: SupabaseClient<Database>,
 
@@ -5341,6 +5357,8 @@ async function getNewMaterialSizes(
  * together or not at all; the pick method, shelf life and new sizes are
  * written after them.
  * @mcp
+ * @upsertKey item id
+ * @upsertKey item readableId=id
  */
 export async function upsertMaterial(
   client: SupabaseClient<Database>,
@@ -6023,6 +6041,8 @@ export async function upsertMaterialSubstance(
  * is the item id (uuid) or the service's readable id and the write is a full
  * replace, so omitted optional fields are cleared.
  * @mcp
+ * @upsertKey item id
+ * @upsertKey item readableId=id
  */
 export async function upsertService(
   client: SupabaseClient<Database>,
@@ -6151,6 +6171,8 @@ export async function upsertUnitOfMeasure(
  * item id (uuid) or the tool's readable id and the write is a full replace, so
  * omitted optional fields are cleared.
  * @mcp
+ * @upsertKey item id
+ * @upsertKey item readableId=id
  */
 export async function upsertTool(
   client: SupabaseClient<Database>,

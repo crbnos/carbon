@@ -75,3 +75,22 @@ export const MCP_DECLARED_CLASSIFICATIONS = {
   write: "WRITE",
   destructive: "DESTRUCTIVE"
 } as const;
+
+/**
+ * `@upsertKey <table> <column>[=<field>][, …]` — the row an upsert UPDATES when
+ * it already exists, for a service whose payload cannot say whether it is
+ * creating or updating.
+ *
+ * Most upserts take an optional `id`: sent means update, omitted means create,
+ * and the generator reads that off the parameter's type. A few cannot be read
+ * that way — a part's `id` is its part number on create and its item id (or
+ * part number) on update; a pick method has no id at all, only an item and a
+ * location. For those the dispatcher looks the row up, scoped to the caller's
+ * company, and updates when it is there. `column` is compared with the payload
+ * field of the same name unless `=<field>` names another, and several tags are
+ * alternatives.
+ *
+ * These tools used to demand a `_operation: "create" | "update"` argument,
+ * which made every caller state something the server could find out.
+ */
+export const MCP_UPSERT_KEY_TAG = "@upsertKey";

@@ -33,7 +33,8 @@ import {
   MCP_DECLARED_CLASSIFICATIONS,
   MCP_EXPOSURE_TAG,
   MCP_MODULE_ALLOWLIST,
-  MCP_TAG_REQUIRED_FOR
+  MCP_TAG_REQUIRED_FOR,
+  MCP_UPSERT_KEY_TAG
 } from "../../apps/erp/app/routes/api+/mcp+/lib/mcp-exposure";
 import {
   buildResponseSchemaIndex,
@@ -44,6 +45,7 @@ import {
   branchesOnKeyPresence,
   buildServiceAst,
   dbWrites,
+  idDistinguishesUpdate,
   namedTables,
   paginates as bodyPaginates,
   type ServiceAst,
@@ -1016,18 +1018,138 @@ function stripRedundantPatterns(node: unknown): void {
   }
 }
 
-function addOperationArg(schema: Record<string, unknown>): void {
-  const properties = (schema.properties ?? {}) as Record<string, unknown>;
-  properties._operation = {
-    type: "string",
-    enum: ["create", "update"],
-    description:
-      "Required. 'create' inserts a new record, 'update' modifies the existing record with this id.",
+/**
+ * How the dispatcher tells create from update for a service that branches on an
+ * audit field. Never the caller's job: the answer is either in the payload or
+ * in the database.
+ *
+ *  - `@upsertKey <table> <column>[=<field>], …` on the function — look the row
+ *    up, `column` compared with the payload's `field` (same name by default).
+ *    Several tags are alternatives: a part's `id` may be its item id or its
+ *    part number.
+ *  - otherwise the parameter's type must make `id` decisive (sent = update).
+ *
+ * Anything else fails generation, so a new upsert cannot quietly become a tool
+ * that needs to be told what it is doing.
+ */
+function upsertRule(
+  fn: ServiceFunction,
+  schema: Record<string, unknown>
+): NonNullable<ManifestEntry["upsert"]> {
+  const tags = fn.tags.filter((tag) => `@${tag.name}` === MCP_UPSERT_KEY_TAG);
+  if (tags.length === 0) {
+    if (idDistinguishesUpdate(fn.node, CONTEXT_PARAMS)) return { keys: ["id"] };
+    throw new Error(
+      `${fn.toolName} branches on createdBy/updatedBy, but its payload cannot say whether it creates or updates: \`id\` is required (or absent) in both shapes. Declare the row it updates: \`${MCP_UPSERT_KEY_TAG} <table> <column>[, <column>]\`.`
+    );
+  }
+
+  // The dispatcher reads a key at the top level or inside the one object the
+  // payload is wrapped in, so the schema must declare it at one of the two.
+  const properties = (schema.properties ?? {}) as Record<
+    string,
+    { properties?: Record<string, unknown> }
+  >;
+  const declares = (field: string) =>
+    field in properties ||
+    Object.values(properties).some(
+      (property) => property?.properties && field in property.properties
+    );
+  const fail = (message: string): never => {
+    throw new Error(`${fn.toolName}: ${MCP_UPSERT_KEY_TAG} ${message}`);
   };
-  schema.properties = properties;
-  const required = ((schema.required as string[] | undefined) ?? []).slice();
-  if (!required.includes("_operation")) required.push("_operation");
-  schema.required = required;
+
+  // Each tag is one row to look for; several tags are alternatives.
+  const lookups = tags.map((tag) => {
+    const [table = "", ...rest] = tag.comment.split(/\s+/);
+    const columns = getDbTableTypeFields(table, "Row")?.map((c) => c.name);
+    if (!columns) {
+      return fail(
+        `names "${table}", which is not a table or view in the generated types.`
+      );
+    }
+    // The lookup is always scoped to the caller's company.
+    if (!columns.includes("companyId")) {
+      return fail(`"${table}" has no companyId column to scope the lookup by.`);
+    }
+    const match: Record<string, string> = {};
+    for (const pair of rest.join(" ").split(",")) {
+      const [column = "", field = column] = pair
+        .split("=")
+        .map((part) => part.trim());
+      if (!column) continue;
+      if (!columns.includes(column)) {
+        return fail(`"${table}" has no "${column}" column.`);
+      }
+      if (!declares(field)) {
+        return fail(`field "${field}" is not part of the tool's input.`);
+      }
+      match[column] = field;
+    }
+    if (Object.keys(match).length === 0) {
+      return fail(`${table} names no key column.`);
+    }
+    return { table, match };
+  });
+
+  return {
+    keys: [...new Set(lookups.flatMap((lookup) => Object.values(lookup.match)))],
+    lookups
+  };
+}
+
+/** Say on the key field itself what sending it does — the one place a caller
+ *  reading the schema is certain to look. */
+function describeUpsertKeys(
+  schema: Record<string, unknown>,
+  rule: NonNullable<ManifestEntry["upsert"]>
+): void {
+  type Property = Record<string, unknown> & {
+    properties?: Record<string, Property>;
+  };
+  const note = rule.lookups
+    ? "Updates the existing record with this key; creates one when there is none."
+    : "Send to update that record; omit to create a new one.";
+  const annotate = (properties: Record<string, Property> | undefined) => {
+    if (!properties) return false;
+    let found = false;
+    for (const key of rule.keys) {
+      const property = properties[key];
+      if (!property || typeof property !== "object") continue;
+      const existing =
+        typeof property.description === "string" ? property.description : "";
+      properties[key] = {
+        ...property,
+        description: existing ? `${existing} ${note}` : note
+      };
+      found = true;
+    }
+    return found;
+  };
+
+  const top = schema.properties as Record<string, Property> | undefined;
+  if (annotate(top)) return;
+  // The payload is wrapped (`{ job: {…} }`): the key lives one level down, or
+  // in an object the schema does not spell out — say it on the wrapper then.
+  for (const [name, property] of Object.entries(top ?? {})) {
+    if (!property || typeof property !== "object") continue;
+    if (annotate(property.properties)) return;
+  }
+  const wrapper = Object.entries(top ?? {}).find(
+    ([, property]) =>
+      property && typeof property === "object" && property.type !== "array"
+  );
+  if (wrapper && top) {
+    const [name, property] = wrapper;
+    const hint = `Include \`${rule.keys.join("`, `")}\` to update that record; leave it out to create a new one.`;
+    top[name] = {
+      ...property,
+      description:
+        typeof property.description === "string"
+          ? `${property.description} ${hint}`
+          : hint
+    };
+  }
 }
 
 function generateDescription(funcName: string): string {
@@ -1439,19 +1561,17 @@ export function buildAllToolMetadata(opts: BuildOptions = {}): ManifestEntry[] {
       });
       stripRedundantPatterns(schema);
       // A service that picks insert-vs-update by testing for an audit field on
-      // the payload is the only kind MCP cannot infer, so it needs the
-      // `_operation` flag. BOTH directions count: `"createdBy" in`
-      // (create-branch first, upsertQuoteOperation) and `"updatedBy" in`
-      // (update-branch first, upsertQuoteMaterial / upsertJobMaterial). The
-      // dispatch stamps createdBy on create and updatedBy on update and
-      // suppresses the other, so either convention lands on the branch the
-      // caller asked for.
-      if (
+      // the payload needs exactly ONE of them stamped. BOTH directions count:
+      // `"createdBy" in` (create-branch first, upsertQuoteOperation) and
+      // `"updatedBy" in` (update-branch first, upsertQuoteMaterial /
+      // upsertJobMaterial). Which one is decided by the dispatcher from the
+      // rule recorded here, never by an argument the caller has to supply.
+      const upsert =
         injectAuth.includes("createdBy") &&
         branchesOnKeyPresence(func.node, OPERATION_FIELDS)
-      ) {
-        addOperationArg(schema);
-      }
+          ? upsertRule(func, schema)
+          : undefined;
+      if (upsert) describeUpsertKeys(schema, upsert);
 
       const responseSchema = opts.responses?.get(mod, func.name) ?? undefined;
 
@@ -1468,6 +1588,7 @@ export function buildAllToolMetadata(opts: BuildOptions = {}): ManifestEntry[] {
         // that does not ignores pagination args entirely (the fetchAll
         // `get*List` reads), so the MCP layer pages the response instead.
         paginates: bodyPaginates(func.node),
+        ...(upsert ? { upsert } : {}),
         schema,
         ...(responseSchema ? { responseSchema } : {}),
       });

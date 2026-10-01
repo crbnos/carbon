@@ -3866,7 +3866,10 @@ export async function upsertJobMaterial(
     .single();
 }
 
-/** @mcp */
+/**
+ * @mcp
+ * @upsertKey jobOperation id
+ */
 export async function upsertJobOperation(
   client: SupabaseClient<Database>,
   jobOperation:

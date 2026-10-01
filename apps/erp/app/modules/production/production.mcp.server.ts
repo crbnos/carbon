@@ -206,6 +206,7 @@ export async function scheduleJob(
  * - Update recalcs requirements ALWAYS; dependencies when the material is
  *   Make to Order and tied to an operation.
  * @mcp
+ * @upsertKey jobMaterial id
  */
 export async function upsertJobMaterial(
   client: SupabaseClient<Database>,
