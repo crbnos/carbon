@@ -1,9 +1,14 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
-import { deleteMemo } from "~/modules/invoicing";
+import { deleteMemo, getMemo } from "~/modules/invoicing";
 import { path } from "~/utils/path";
 
 // Action-only route — the delete confirmation modal (ConfirmDelete) posts here.
@@ -18,10 +23,17 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const { memoId } = params;
   if (!memoId) {
     throw redirect(
-      path.to.memos,
+      path.to.invoicing,
       await flash(request, error(params, "Failed to get a memo id"))
     );
   }
+
+  // Read the memo before deleting so we can return to its party's list —
+  // supplier memos → Supplier Credits (AP), customer memos → Credit Memos (AR).
+  const existing = await getMemo(client, memoId);
+  const listPath = existing.data?.supplierId
+    ? path.to.supplierCredits
+    : path.to.creditMemos;
 
   const remove = await deleteMemo(client, memoId);
   if (remove.error) {
@@ -32,7 +44,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   }
 
   throw redirect(
-    path.to.memos,
+    listPath,
     await flash(request, success("Successfully deleted memo"))
   );
 }

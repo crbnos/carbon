@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { JSONContent } from "@carbon/react";
 import { Text, View } from "@react-pdf/renderer";
 import { createTw } from "react-pdf-tailwind";
@@ -44,11 +49,11 @@ const Footer = ({
       ]}
       fixed
     >
-      {hasContent && (
+      {hasContent ? (
         <View style={tw("text-[8px] text-gray-500 mb-2 px-1")}>
           <Note content={content} />
         </View>
-      )}
+      ) : null}
       <View style={tw("border-t border-gray-200 pt-3")}>
         <View
           style={tw(
@@ -56,7 +61,7 @@ const Footer = ({
           )}
         >
           <Text>{showRegistrationLine ? (label ?? "") : ""}</Text>
-          {showPageNumbers && (
+          {showPageNumbers ? (
             <Text
               render={({ pageNumber, totalPages }) =>
                 `${documentId ? `${documentId}   ` : ""}Page ${pageNumber}${
@@ -64,7 +69,7 @@ const Footer = ({
                 }`
               }
             />
-          )}
+          ) : null}
         </View>
       </View>
     </View>

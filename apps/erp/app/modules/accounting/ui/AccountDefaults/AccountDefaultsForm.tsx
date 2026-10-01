@@ -1,6 +1,11 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import type { TermId } from "@carbon/content/glossary";
 import { downloadCsv } from "@carbon/files/csv";
 import { ValidatedForm } from "@carbon/form";
-import type { TermId } from "@carbon/glossary";
 import {
   Badge,
   Button,
@@ -197,7 +202,7 @@ const AccountDefaultsForm = ({
       {
         id: "payables",
         title: t`Accounts Payable`,
-        description: t`Configure default accounts for vendor and supplier transactions`,
+        description: t`Configure default accounts for supplier transactions`,
         fields: [
           {
             name: "payablesAccount",
@@ -221,9 +226,15 @@ const AccountDefaultsForm = ({
           },
           {
             name: "supplierWriteOffAccount",
-            label: t`Vendor Write-Off Income`,
-            description: t`Other Income account for vendor balances cleared without full payment on AP settlement`,
+            label: t`Supplier Write-Off Income`,
+            description: t`Other Income account for supplier balances cleared without full payment on AP settlement`,
             badgeType: "Revenue"
+          },
+          {
+            name: "employeeReimbursementsPayableAccount",
+            label: t`Employee Reimbursements Payable`,
+            description: t`Liability account for amounts owed to employees for expense reimbursements. Falls back to Payables when unset`,
+            badgeType: "Liability"
           }
         ]
       },

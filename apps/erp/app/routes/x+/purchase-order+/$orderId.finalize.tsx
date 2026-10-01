@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
@@ -37,6 +42,7 @@ import {
   updatePurchaseOrderStatus
 } from "~/modules/purchasing";
 import { getCompany, getCompanySettings } from "~/modules/settings";
+import { checkPartyContactRequirement } from "~/modules/settings/party-contact.server";
 import { getUser } from "~/modules/users/users.server";
 import { loader as pdfLoader } from "~/routes/file+/purchase-order+/$orderId[.]pdf";
 import { path, requestReferrer } from "~/utils/path";
@@ -81,6 +87,22 @@ export async function action(args: ActionFunctionArgs) {
         request,
         error("You are not authorized to finalize this purchase order")
       )
+    );
+  }
+
+  // A supplier with no reachable contact cannot be created as a vendor at a
+  // spend platform, so its documents are rejected there long after anyone is
+  // watching. Gate at issue time, where the supplier can still be fixed. No-op
+  // unless the company has turned the setting on.
+  const supplierContactError = await checkPartyContactRequirement(
+    client,
+    companyId,
+    { kind: "supplier", id: purchaseOrder.data.supplierId }
+  );
+  if (supplierContactError) {
+    throw redirect(
+      path.to.purchaseOrder(orderId),
+      await flash(request, error(null, supplierContactError))
     );
   }
 

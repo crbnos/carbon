@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { serve } from "https://deno.land/std@0.175.0/http/server.ts";
 import { type CalendarDate, parseDate } from "@internationalized/date";
 import { sql, Transaction } from "kysely";
@@ -23,8 +28,15 @@ import { buildBatchSplitRecords, isFullDraw } from "../shared/batch-split.ts";
 import { buildBatchMergeRecords } from "../shared/batch-merge.ts";
 import { round } from "../shared/precision.ts";
 import { splitPickAcrossMembers } from "../shared/batch-pick-split.ts";
-import { getCurrentAccountingPeriod } from "../shared/get-accounting-period.ts";
-import { bookAdjustment } from "../shared/post-adjustment.ts";
+import {
+  getCurrentAccountingPeriod,
+  resolveAccountingPeriod,
+} from "../shared/get-accounting-period.ts";
+import {
+  bookAdjustment,
+  createAdjustmentJournal,
+  valueMovement,
+} from "../shared/post-adjustment.ts";
 import { getNextSequence } from "../shared/get-next-sequence.ts";
 import { applyScrapReplacement } from "./scrap-replacement.ts";
 import { getNextSerialNumbers } from "../shared/get-next-serial-number.ts";
@@ -42,6 +54,7 @@ import {
   type SharedTakes,
   splitTakeByBin,
 } from "../lib/picked-consumption.ts";
+import { resolveMaintenanceReturnCost } from "./maintenance-return-cost.ts";
 import { resolveTrackedEntityBin } from "./resolve-tracked-entity-bin.ts";
 
 type ExpiredEntityPolicy = "Warn" | "Block" | "BlockWithOverride";
@@ -1167,6 +1180,188 @@ async function loadConsumeAccountingContext(
   return { accountingEnabled, accountDefaults, dimensionMap };
 }
 
+// Spare parts issued to a maintenance dispatch are an expense the moment they
+// leave stock. The caller writes the item ledger rows; this values them: each
+// movement relieves (or, on a return, restores) the item's cost layers and,
+// with accounting enabled, posts Dr maintenanceAccount / Cr inventory through
+// the shared adjustment core — one journal per call, tagged with the dispatch's
+// work center. A return reverses at what the dispatch actually booked
+// (`resolveMaintenanceReturnCost`), so a part issued before maintenance
+// consumption carried value comes back with no value either.
+async function valueMaintenanceMovements(
+  trx: Transaction<DB>,
+  args: {
+    dispatch: {
+      id: string;
+      maintenanceDispatchId: string;
+      workCenterId: string | null;
+      locationId: string | null;
+    };
+    // SIGNED: < 0 issued to the dispatch, > 0 returned from it
+    movements: Array<{ itemId: string; quantity: number }>;
+    postingDate: string;
+    companyId: string;
+    userId: string;
+  }
+) {
+  const { dispatch, postingDate, companyId, userId } = args;
+  const movements = args.movements.filter((m) => Number(m.quantity) !== 0);
+  if (movements.length === 0) return;
+
+  const itemIds = [...new Set(movements.map((m) => m.itemId))];
+  const hasReturns = movements.some((m) => Number(m.quantity) > 0);
+
+  const [settings, items, itemCosts, bookedRows] = await Promise.all([
+    trx
+      .selectFrom("companySettings")
+      .select("accountingEnabled")
+      .where("id", "=", companyId)
+      .executeTakeFirst(),
+    trx
+      .selectFrom("item")
+      .select(["id", "itemTrackingType", "replenishmentSystem"])
+      .where("id", "in", itemIds)
+      .where("companyId", "=", companyId)
+      .execute(),
+    trx
+      .selectFrom("itemCost")
+      .select([
+        "itemId",
+        "costingMethod",
+        "unitCost",
+        "standardCost",
+        "itemPostingGroupId",
+      ])
+      .where("itemId", "in", itemIds)
+      .where("companyId", "=", companyId)
+      .execute(),
+    hasReturns
+      ? trx
+          .selectFrom("costLedger")
+          .select(["itemId", "quantity", "cost"])
+          .where("documentId", "=", dispatch.id)
+          .where("documentType", "=", "Maintenance Consumption")
+          .where("itemId", "in", itemIds)
+          .where("companyId", "=", companyId)
+          .execute()
+      : Promise.resolve([]),
+  ]);
+
+  const itemById = new Map(items.map((item) => [item.id, item]));
+  const itemCostById = new Map(itemCosts.map((cost) => [cost.itemId, cost]));
+  const bookedByItem = new Map<string, Array<{ quantity: number; cost: number }>>();
+  for (const row of bookedRows) {
+    const list = bookedByItem.get(row.itemId as string) ?? [];
+    list.push({ quantity: Number(row.quantity), cost: Number(row.cost) });
+    bookedByItem.set(row.itemId as string, list);
+  }
+
+  let accounting: Parameters<typeof valueMovement>[1]["accounting"] = null;
+  if (settings?.accountingEnabled) {
+    const accountDefaults = await trx
+      .selectFrom("accountDefault")
+      .selectAll()
+      .where("companyId", "=", companyId)
+      .executeTakeFirst();
+    if (!accountDefaults) throw new Error("Error getting account defaults");
+
+    const dimensions = await trx
+      .selectFrom("dimension")
+      .innerJoin("company", "company.companyGroupId", "dimension.companyGroupId")
+      .select(["dimension.id", "dimension.entityType"])
+      .where("company.id", "=", companyId)
+      .where("dimension.active", "=", true)
+      .where("dimension.entityType", "in", [
+        "Item",
+        "ItemPostingGroup",
+        "Location",
+        "WorkCenter",
+      ])
+      .execute();
+
+    const accountingPeriodId = (
+      await resolveAccountingPeriod(trx, companyId, postingDate, "current")
+    ).id;
+    const description = `Maintenance Consumption ${dispatch.maintenanceDispatchId}`;
+    let journalId: string | null = null;
+
+    accounting = {
+      accountingPeriodId,
+      accountDefaults: {
+        rawMaterialsAccount: accountDefaults.rawMaterialsAccount,
+        finishedGoodsAccount: accountDefaults.finishedGoodsAccount,
+        inventoryAdjustmentVarianceAccount:
+          accountDefaults.inventoryAdjustmentVarianceAccount,
+      },
+      offsetAccount: accountDefaults.maintenanceAccount,
+      offsetDescription: "Maintenance Expense",
+      description,
+      userId,
+      dimensions: Object.fromEntries(
+        dimensions
+          .filter((dim) => dim.entityType)
+          .map((dim) => [dim.entityType as string, dim.id])
+      ),
+      extraDimensions: dispatch.workCenterId
+        ? [{ entityType: "WorkCenter", valueId: dispatch.workCenterId }]
+        : [],
+      getJournalId: async () => {
+        journalId ??= await createAdjustmentJournal(trx, {
+          companyId,
+          accountingPeriodId,
+          description,
+          postingDate,
+          userId,
+        });
+        return journalId;
+      },
+    };
+  }
+
+  for (const movement of movements) {
+    let quantity = Number(movement.quantity);
+    let fixedUnitCost: number | undefined;
+
+    if (quantity > 0) {
+      const booked = bookedByItem.get(movement.itemId) ?? [];
+      const reversal = resolveMaintenanceReturnCost(booked, quantity);
+      if (!reversal) continue;
+      quantity = reversal.quantity;
+      fixedUnitCost = reversal.unitCost;
+      // A later return of the same item in this call sees this one.
+      booked.push({ quantity, cost: quantity * fixedUnitCost });
+      bookedByItem.set(movement.itemId, booked);
+    }
+
+    const item = itemById.get(movement.itemId);
+    const itemCost = itemCostById.get(movement.itemId);
+    await valueMovement(trx, {
+      movement: {
+        postingDate,
+        itemId: movement.itemId,
+        quantity,
+        locationId: dispatch.locationId,
+        entryType: "Consumption",
+        documentType: "Maintenance Consumption",
+        documentId: dispatch.id,
+        companyId,
+      },
+      item: {
+        itemTrackingType: item?.itemTrackingType ?? null,
+        replenishmentSystem: item?.replenishmentSystem ?? null,
+        itemPostingGroupId: itemCost?.itemPostingGroupId ?? null,
+      },
+      itemCost: {
+        costingMethod: itemCost?.costingMethod ?? "Average",
+        unitCost: Number(itemCost?.unitCost ?? 0),
+        standardCost: Number(itemCost?.standardCost ?? 0),
+      },
+      accounting,
+      fixedUnitCost,
+    });
+  }
+}
+
 // The per-operation tracked-consumption write sequence, extracted verbatim from
 // the trackedEntitiesToOperation case so trackedEntitiesToBatch can run it once
 // per member inside ONE transaction. Reads run against `trx`, so sequential
@@ -2040,6 +2235,7 @@ serve(async (req: Request) => {
           .from("trackedEntity")
           .select("*")
           .eq("attributes->>Job Make Method", jobOperation.data.jobMakeMethodId)
+          .eq("companyId", companyId)
           .order("createdAt", { ascending: true });
 
         if (!trackedEntities.data || trackedEntities.data.length === 0) {
@@ -4551,6 +4747,10 @@ serve(async (req: Request) => {
         // Kysely below bypasses RLS, so the caller must hold this permission in the company it names.
         await requirePermissions(req, companyId, userId, { update: "resources" });
 
+        const postingDate = datetime
+          .today(await getCompanyTimeZone(db, companyId))
+          .toString();
+
         await db.transaction().execute(async (trx) => {
           // Get the maintenance dispatch to find the location
           const dispatch = await trx
@@ -4610,6 +4810,14 @@ serve(async (req: Request) => {
                 createdBy: userId,
               })
               .execute();
+
+            await valueMaintenanceMovements(trx, {
+              dispatch,
+              movements: [{ itemId, quantity: -quantity }],
+              postingDate,
+              companyId,
+              userId,
+            });
 
             // Update pickMethod defaultStorageUnitId if needed
             if (locationId) {
@@ -4953,6 +5161,18 @@ serve(async (req: Request) => {
               .values(itemLedgerInserts)
               .execute();
 
+            // Only the consumption rows carry value; batch-split legs move
+            // stock between entities at the same bin.
+            await valueMaintenanceMovements(trx, {
+              dispatch,
+              movements: itemLedgerInserts
+                .filter((l) => l.documentType === "Maintenance Consumption")
+                .map((l) => ({ itemId: l.itemId, quantity: Number(l.quantity) })),
+              postingDate: companyToday.toString(),
+              companyId,
+              userId,
+            });
+
             // Update pickMethod defaultStorageUnitId if needed
             for (const ledger of itemLedgerInserts) {
               await updatePickMethodDefaultStorageUnitIfNeeded(
@@ -4986,6 +5206,10 @@ serve(async (req: Request) => {
         if (children.length === 0) {
           throw new Error("At least one tracked entity is required");
         }
+
+        const postingDate = datetime
+          .today(await getCompanyTimeZone(db, companyId))
+          .toString();
 
         await db.transaction().execute(async (trx) => {
           // Get the maintenance dispatch item with related data
@@ -5138,6 +5362,17 @@ serve(async (req: Request) => {
               .values(itemLedgerInserts)
               .execute();
 
+            await valueMaintenanceMovements(trx, {
+              dispatch,
+              movements: itemLedgerInserts.map((l) => ({
+                itemId: l.itemId,
+                quantity: Number(l.quantity),
+              })),
+              postingDate,
+              companyId,
+              userId,
+            });
+
             // Update pickMethod defaultStorageUnitId if needed
             for (const ledger of itemLedgerInserts) {
               await updatePickMethodDefaultStorageUnitIfNeeded(
@@ -5182,6 +5417,10 @@ serve(async (req: Request) => {
 
         // Kysely below bypasses RLS, so the caller must hold this permission in the company it names.
         await requirePermissions(req, companyId, userId, { update: "resources" });
+
+        const postingDate = datetime
+          .today(await getCompanyTimeZone(db, companyId))
+          .toString();
 
         await db.transaction().execute(async (trx) => {
           // Get the maintenance dispatch item
@@ -5323,6 +5562,17 @@ serve(async (req: Request) => {
                 .insertInto("itemLedger")
                 .values(itemLedgerInserts)
                 .execute();
+
+              await valueMaintenanceMovements(trx, {
+                dispatch,
+                movements: itemLedgerInserts.map((l) => ({
+                  itemId: l.itemId,
+                  quantity: Number(l.quantity),
+                })),
+                postingDate,
+                companyId,
+                userId,
+              });
             }
           } else if (
             item.itemTrackingType !== "Serial" &&
@@ -5356,6 +5606,14 @@ serve(async (req: Request) => {
                   createdBy: userId,
                 })
                 .execute();
+
+              await valueMaintenanceMovements(trx, {
+                dispatch,
+                movements: [{ itemId: dispatchItem.itemId, quantity }],
+                postingDate,
+                companyId,
+                userId,
+              });
             }
           }
 

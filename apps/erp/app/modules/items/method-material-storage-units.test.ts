@@ -1,10 +1,15 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { describe, expect, it, vi } from "vitest";
 
-// Importing the real items.service graph transitively loads @carbon/glossary,
+// Importing the real items.service graph transitively loads @carbon/content/glossary,
 // whose module-load-time Lingui `msg` macro isn't transformed under plain vitest
 // and throws. The code under test needs none of it, so stub glossary; the service
 // under test stays the genuine implementation. (Mirrors items.service.test.ts.)
-vi.mock("@carbon/glossary", () => ({
+vi.mock("@carbon/content/glossary", () => ({
   terms: {},
   getEntry: vi.fn(),
   lookupEntry: vi.fn(),

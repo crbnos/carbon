@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { Database } from "@carbon/database";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { isPickingListLocked } from "~/services/models";
@@ -29,7 +34,7 @@ export async function getPickingListForExecution(
   const { data: lines, error: lineError } = await client
     .from("pickingListLine")
     .select(
-      "*, item:item(name, readableId), jobMaterial:jobMaterial(itemId, quantity, substitutionFactor, item(readableId, itemSupersession!itemSupersession_itemId_fkey(conversionFactor))), job:job(jobId), jobOperation:jobOperation(order, processId, workCenterId, process:process(name), workCenter:workCenter(name)), storageUnit:storageUnit!pickingListLine_storageUnitId_fkey(name), toStorageUnit:storageUnit!pickingListLine_toStorageUnitId_fkey(name)"
+      "*, item:item(name, readableId, unitOfMeasureCode), jobMaterial:jobMaterial(itemId, quantity, substitutionFactor, item(readableId, itemSupersession!itemSupersession_itemId_fkey(conversionFactor))), job:job(jobId), jobOperation:jobOperation(order, processId, workCenterId, process:process(name), workCenter:workCenter(name)), storageUnit:storageUnit!pickingListLine_storageUnitId_fkey(name), toStorageUnit:storageUnit!pickingListLine_toStorageUnitId_fkey(name)"
     )
     .eq("pickingListId", pickingListId)
     .order("jobOperationId")
@@ -387,7 +392,13 @@ export async function setPickingListLineTrackedEntity(
   };
   if (!args.unpick) {
     body.fromStorageUnitId = args.fromStorageUnitId ?? null;
-    if (isBatch) body.quantity = Math.max(1, args.quantity ?? 1);
+    // A batch pick may be fractional (0.5 kg): send the requested quantity as
+    // is and fall back to 1 only when none was given. Flooring at 1 turned
+    // every sub-1 remainder into an over-pick the edge function refused.
+    if (isBatch) {
+      body.quantity =
+        args.quantity !== undefined && args.quantity > 0 ? args.quantity : 1;
+    }
   }
 
   const result = await client.functions.invoke("post-picking", { body });

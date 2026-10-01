@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { Fragment } from "react";
 import type { IconType } from "react-icons";
 import {
@@ -22,7 +27,8 @@ export const shortcutKeyVariants = {
   small:
     "flex h-4.5 min-w-4.5 items-center justify-center gap-0.5 rounded-[3px] border border-current/10 bg-white/10 px-1 ml-1.5 -mr-0.5 text-[0.65rem] font-medium uppercase text-current/80 shadow-xs backdrop-blur-sm",
   medium:
-    "flex h-5 min-w-5 items-center justify-center gap-0.5 rounded-[3px] border border-current/10 bg-white/10 px-1 ml-1.5 -mr-0.5 text-[0.75rem] font-medium uppercase text-current/80 shadow-xs backdrop-blur-sm"
+    "flex h-5 min-w-5 items-center justify-center gap-0.5 rounded-[3px] border border-current/10 bg-white/10 px-1 ml-1.5 -mr-0.5 text-[0.75rem] font-medium uppercase text-current/80 shadow-xs backdrop-blur-sm",
+  help: "flex h-5 min-w-5 items-center justify-center gap-0.5 rounded-[3px] border border-border bg-muted px-1 text-[0.75rem] font-medium uppercase text-foreground"
 };
 
 export type ShortcutKeyVariant = keyof typeof shortcutKeyVariants;

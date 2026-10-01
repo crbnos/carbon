@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 // Unit tests for the pull sweep's cursor arithmetic. These two functions are
 // pure and import-light on purpose so the regression this plan fixes — the
 // cursor advancing on `paid_at` while the Stripe query filters on `created` —

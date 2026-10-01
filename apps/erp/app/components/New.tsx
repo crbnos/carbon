@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { ButtonProps } from "@carbon/react";
 import { Button } from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
@@ -28,8 +33,7 @@ type NewProps = {
 };
 
 const New = ({ label, to, variant = "primary" }: NewProps) => {
-  const { i18n, t } = useLingui();
-  const translatedLabel = label ? i18n._(label) : undefined;
+  const { t } = useLingui();
 
   useEffect(() => {
     mountedCount++;
@@ -53,9 +57,7 @@ const New = ({ label, to, variant = "primary" }: NewProps) => {
       variant={variant}
       shortcut={isSoleNew ? SHORTCUTS.newRecord : undefined}
     >
-      <Link to={to}>
-        {translatedLabel ? `${t`Add`} ${translatedLabel}` : t`Add`}
-      </Link>
+      <Link to={to}>{label ? `${t`Add`} ${label}` : t`Add`}</Link>
     </Button>
   );
 };

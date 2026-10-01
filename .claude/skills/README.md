@@ -71,6 +71,7 @@ in root-cause, BLOCKED in fix) always surface to the human.
 | `writing-skills` | House guide for authoring skills | skills |
 | `pr-explainer` | Self-contained HTML review aid for a PR | `.pr-review/*.html` |
 | `pr-splitter` | Split a large PR into reviewable stacked PRs | branches + split notes |
+| `carbon-design` | Carbon's design language: principles, page archetypes, components, states, copy, anti-patterns + mandatory design review for any ERP/MES UI | design brief + reviewed UI |
 | `ui` | Remote-managed UI exploration shim (uidotsh) | — |
 | `agent-browser` | External: browser CLI reference (pinned in `skills-lock.json`) | — |
 | `make-interfaces-feel-better` | External: UI polish principles (pinned in `skills-lock.json`) | — |

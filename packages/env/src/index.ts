@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 /// <reference types="node" />
 import { Edition, isBrowser, parseBoolean } from "@carbon/utils";
 
@@ -161,17 +166,6 @@ export const CARBON_API_URL =
     isRequired: false,
     isSecret: false
   }) ?? getEnv("SUPABASE_URL", { isSecret: false });
-
-// Turnstile guards login wherever BotID can't run (anything not on Vercel).
-// Both keys or neither: a site key alone would render a widget nobody checks.
-export const CLOUDFLARE_TURNSTILE_SITE_KEY = getEnv(
-  "CLOUDFLARE_TURNSTILE_SITE_KEY",
-  { isRequired: false, isSecret: false }
-);
-export const CLOUDFLARE_TURNSTILE_SECRET_KEY = getEnv(
-  "CLOUDFLARE_TURNSTILE_SECRET_KEY",
-  { isRequired: false }
-);
 
 export const DOMAIN = getEnv("DOMAIN", { isRequired: false }); // preview environments need no domain
 
@@ -484,6 +478,21 @@ export const IS_LOCAL_DEV =
   NODE_ENV !== "production" &&
   VERCEL_ENV !== "production" &&
   VERCEL_ENV !== "preview";
+
+// Turnstile guards login wherever BotID can't run (anything not on Vercel).
+// Both keys or neither: a site key alone would render a widget nobody checks.
+// A local stack always uses Cloudflare's always-pass test pair, so login works
+// with no Turnstile account; the two only pass together.
+// https://developers.cloudflare.com/turnstile/troubleshooting/testing/
+export const CLOUDFLARE_TURNSTILE_SITE_KEY = IS_LOCAL_DEV
+  ? "1x00000000000000000000AA"
+  : getEnv("CLOUDFLARE_TURNSTILE_SITE_KEY", {
+      isRequired: false,
+      isSecret: false
+    });
+export const CLOUDFLARE_TURNSTILE_SECRET_KEY = IS_LOCAL_DEV
+  ? "1x0000000000000000000000000000000AA"
+  : getEnv("CLOUDFLARE_TURNSTILE_SECRET_KEY", { isRequired: false });
 
 // Set to "1" by Vercel itself on every build and function — never by SST,
 // Docker, or a local stack, which all set VERCEL_ENV by hand. Server-only.

@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { requirePermissions } from "@carbon/auth/auth.server";
 import type {
   TrackedEntityOption,
@@ -13,7 +18,6 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-  Count,
   cn,
   DropdownMenu,
   DropdownMenuContent,
@@ -441,9 +445,17 @@ function PickLineItem({
     }
   }, [fetcher.data]);
 
-  const lineItem = line.item as { name: string; readableId: string } | null;
+  const lineItem = line.item as {
+    name: string;
+    readableId: string;
+    unitOfMeasureCode: string | null;
+  } | null;
   const item = items.find((i) => i.id === line.itemId);
   const itemName = item?.name ?? lineItem?.name ?? "";
+  // Pick quantities are in the picked item's own stock unit (a substituted
+  // line is already converted into the successor's units at generation).
+  const unitOfMeasureCode = lineItem?.unitOfMeasureCode ?? null;
+  const unitSuffix = unitOfMeasureCode ? ` ${unitOfMeasureCode}` : "";
   const sourceMaterial = (
     line as {
       jobMaterial?: {
@@ -560,10 +572,10 @@ function PickLineItem({
       )}
     >
       {quantityPicked}/{quantityToPick}
+      {unitSuffix}
     </Badge>
   ) : (
-    <Count
-      count={isShort ? quantityPicked : quantityToPick}
+    <Badge
       className={cn(
         "text-white text-base tabular-nums",
         isFullyPicked
@@ -572,7 +584,10 @@ function PickLineItem({
             ? "bg-orange-500"
             : "bg-red-600"
       )}
-    />
+    >
+      {isShort ? quantityPicked : quantityToPick}
+      {unitSuffix}
+    </Badge>
   );
 
   return (
@@ -655,7 +670,8 @@ function PickLineItem({
                 className="font-mono tabular-nums normal-case"
               >
                 {lot.trackedEntity?.readableId ?? lot.trackedEntityId}
-                {isBatch && ` × ${Number(lot.quantityPicked ?? 0)}`}
+                {isBatch &&
+                  ` × ${Number(lot.quantityPicked ?? 0)}${unitSuffix}`}
               </Badge>
             ))}
           </HStack>
@@ -772,6 +788,7 @@ function PickLineItem({
           itemName={itemName}
           quantityToPick={quantityToPick}
           quantityPicked={quantityPicked}
+          unitOfMeasureCode={unitOfMeasureCode}
           onClose={() => setShortOpen(false)}
         />
       )}

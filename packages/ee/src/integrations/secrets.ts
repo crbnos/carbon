@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: LicenseRef-Carbon-Commercial
+// Copyright (C) Carbon Manufacturing Systems Corporation.
+// Carbon Enterprise file, licensed only under the Carbon Commercial License
+// (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
+
 import type { Database, Json as DatabaseJson } from "@carbon/database";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
@@ -23,6 +28,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
  */
 export const SECRET_KEYS: Record<string, string[]> = {
   linear: ["apiKey", "webhookSigningSecret"],
+  mount: ["clientSecret"],
   slack: ["access_token"],
   jira: [
     "credentials.accessToken",
@@ -30,6 +36,13 @@ export const SECRET_KEYS: Record<string, string[]> = {
     "webhookSigningSecret"
   ],
   onshape: ["credentials.accessToken", "credentials.refreshToken"],
+  // A Government customer's private OAuth app: its client secret is entered in
+  // the settings form, the tokens come from the callback.
+  "onshape-government": [
+    "clientSecret",
+    "credentials.accessToken",
+    "credentials.refreshToken"
+  ],
   xero: ["credentials.accessToken", "credentials.refreshToken"],
   quickbooks: ["credentials.accessToken", "credentials.refreshToken"],
   ramp: [

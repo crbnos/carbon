@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { openai } from "@ai-sdk/openai";
 import { assertIsPost, error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
@@ -7,7 +12,7 @@ import { storage, TEMP_STAGING_BUCKET } from "@carbon/files";
 import { supportedModelTypes } from "@carbon/files/cad";
 import { trigger } from "@carbon/jobs";
 import { getLogger } from "@carbon/logger";
-import { generateObject } from "ai";
+import { generateText, Output } from "ai";
 import { nanoid } from "nanoid";
 import type { ActionFunctionArgs } from "react-router";
 import { data, redirect } from "react-router";
@@ -77,17 +82,19 @@ export async function action({ request, params }: ActionFunctionArgs) {
     let readableId = partName;
     let revision = "0";
     try {
-      const { object: parsedFilename } = await generateObject({
+      const { output: parsedFilename } = await generateText({
         // @ts-ignore
         model: openai("gpt-4o-mini"),
-        schema: z.object({
-          partId: z
-            .string()
-            .describe("The part identifier extracted from the filename"),
-          revision: z
-            .string()
-            .nullable()
-            .describe("The revision number if present, null if not found")
+        output: Output.object({
+          schema: z.object({
+            partId: z
+              .string()
+              .describe("The part identifier extracted from the filename"),
+            revision: z
+              .string()
+              .nullable()
+              .describe("The revision number if present, null if not found")
+          })
         }),
         prompt: `Extract the part ID and revision from this filename: "${partName}". The part ID should be the main identifier, and revision should be any version/revision indicator if present.`
       });

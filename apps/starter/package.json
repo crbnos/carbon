@@ -10,7 +10,6 @@
     "@carbon/logger": "workspace:*",
     "@carbon/react": "workspace:*",
     "@carbon/utils": "workspace:*",
-    "@fontsource-variable/hedvig-letters-serif": "catalog:",
     "@internationalized/date": "catalog:",
     "@react-aria/i18n": "catalog:",
     "@react-router/dev": "catalog:",

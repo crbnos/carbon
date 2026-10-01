@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 // Registry of the custom-row surfaces — the per-customer "Added for this
 // customer" lists Carbon staff can extend on top of the template. One entry here
 // gives a surface its add-button label, empty-state copy, and the default

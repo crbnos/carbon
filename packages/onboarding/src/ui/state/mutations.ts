@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 // The hub's write contract. One typed union for every persisted mutation, plus a
 // pure mapper to the FormData fields the `/x/get-started/state` action validates
 // (see `stateActionValidator` in ../../models). Framework-agnostic: no React

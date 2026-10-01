@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { Database } from "@carbon/database";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import {
@@ -33,10 +38,45 @@ export async function getInspectionSamplingPlans(
   return client
     .from("inspectionSamplingPlan")
     .select(
-      "*, inspectionFeature(id, label, description, pageNumber, type, nominalValue, tolerancePlus, toleranceMinus, unit)"
+      "*, inspectionFeature(id, label, description, pageNumber, type, nominalValue, tolerancePlus, toleranceMinus, unit, gaugeTypeId, gaugeType(name))"
     )
     .eq("inspectionId", inspectionId)
     .eq("companyId", companyId);
+}
+
+// The gauges an inspection lot's view needs: every Active gauge (the
+// selectable options — Inactive gauges are retired and never offered, the
+// engine refuses them too) plus any gauge already recorded on this lot, even
+// if it has since been retired, so the record keeps showing its readable id.
+export async function getInspectionGauges(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  inspectionId: string
+) {
+  const recorded = await client
+    .from("inspectionSamplingPlan")
+    .select("gaugeId")
+    .eq("inspectionId", inspectionId)
+    .eq("companyId", companyId)
+    .not("gaugeId", "is", null);
+  const recordedIds = [
+    ...new Set((recorded.data ?? []).map((row) => row.gaugeId as string))
+  ];
+
+  const query = client
+    .from("gauges")
+    .select(
+      "id, gaugeId, description, gaugeTypeId, gaugeStatus, gaugeCalibrationStatusWithDueDate"
+    )
+    .eq("companyId", companyId);
+
+  return (
+    recordedIds.length > 0
+      ? query.or(
+          `gaugeStatus.eq.Active,id.in.(${recordedIds.map((id) => `"${id}"`).join(",")})`
+        )
+      : query.eq("gaugeStatus", "Active")
+  ).order("gaugeId");
 }
 
 export async function getInspectionMeasurements(
@@ -64,7 +104,7 @@ export async function getIssueTypesList(
 
 // The drawing pane needs the document's display name, its PDF preview URL, and
 // the balloon coordinates. This is a simplified read of what the ERP
-// production module assembles via mapInspectionDocument/mapBalloon.
+// quality module assembles via mapInspectionDocument/mapBalloon.
 export async function getInspectionDocumentWithBalloons(
   client: SupabaseClient<Database>,
   inspectionDocumentId: string
@@ -77,7 +117,9 @@ export async function getInspectionDocumentWithBalloons(
       .single(),
     client
       .from("balloon")
-      .select("id, inspectionFeatureId, pageNumber, xCoordinate, yCoordinate")
+      .select(
+        "id, inspectionFeatureId, pageNumber, xCoordinate, yCoordinate, regionX, regionY, regionWidth, regionHeight"
+      )
       .eq("inspectionDocumentId", inspectionDocumentId)
   ]);
 
@@ -106,7 +148,8 @@ export async function getInspectionDocumentWithBalloons(
 // Everything the MES InspectionView needs about a lot that does not depend on
 // an operation: its per-feature plans, readings, samples (in the engine's
 // column order), the make method's WIP entities and tracking flags, and the
-// plan's drawing. Shared by the job-operation and first-article routes.
+// plan's drawing and the active gauges. Shared by the job-operation and
+// first-article routes.
 export async function getInspectionViewData(
   client: SupabaseClient<Database>,
   args: {
@@ -127,19 +170,21 @@ export async function getInspectionViewData(
     issueTypes,
     trackedEntities,
     jobMakeMethod,
-    document
+    document,
+    gauges
   ] = await Promise.all([
     getInspectionSamplingPlans(client, inspection.id, companyId),
     getInspectionMeasurements(client, inspection.id, companyId),
     getIssueTypesList(client, companyId),
-    getTrackedEntitiesByMakeMethodId(client, jobMakeMethodId),
+    getTrackedEntitiesByMakeMethodId(client, jobMakeMethodId, companyId),
     getJobMakeMethod(client, jobMakeMethodId),
     inspection.inspectionDocumentId
       ? getInspectionDocumentWithBalloons(
           client,
           inspection.inspectionDocumentId
         )
-      : Promise.resolve(null)
+      : Promise.resolve(null),
+    getInspectionGauges(client, companyId, inspection.id)
   ]);
 
   // Sample column order must match the engine's required-feature derivation
@@ -154,6 +199,7 @@ export async function getInspectionViewData(
     samples,
     features: features.data ?? [],
     measurements: measurements.data ?? [],
+    gauges: gauges.data ?? [],
     issueTypes: issueTypes.data ?? [],
     trackedEntities: trackedEntities.data ?? [],
     requiresSerialTracking: jobMakeMethod.data?.requiresSerialTracking ?? false,

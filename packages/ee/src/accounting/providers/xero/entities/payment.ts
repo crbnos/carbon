@@ -1,6 +1,12 @@
+// SPDX-License-Identifier: LicenseRef-Carbon-Commercial
+// Copyright (C) Carbon Manufacturing Systems Corporation.
+// Carbon Enterprise file, licensed only under the Carbon Commercial License
+// (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
+
 import { loadAccountCodesById } from "../../../core/account-mapping";
 import type { NormalizedPayment } from "../../../core/payment-application";
 import {
+  PAYMENT_TARGET_LABELS,
   type PaymentPushContext,
   PaymentSyncerBase
 } from "../../../core/payment-syncer";
@@ -248,8 +254,12 @@ export class XeroPaymentSyncer extends PaymentSyncerBase<Xero.Payment> {
   protected async pushRemotePayment(
     context: PaymentPushContext
   ): Promise<{ remoteId: string; compositeEntityId: string }> {
+    // An employee reimbursement IS a Xero ACCPAY invoice (see
+    // entities/reimbursement.ts), so /Payments settles it through the same
+    // `Invoice: { InvoiceID }` call as a bill — only the MAPPING entityType
+    // differs, because its remote id is stored under `reimbursement`.
     const documentRemoteId = await this.mappingService.getExternalId(
-      context.family === "ar" ? "invoice" : "bill",
+      context.targetEntityType,
       context.targetDocumentId,
       this.provider.id
     );
@@ -257,7 +267,7 @@ export class XeroPaymentSyncer extends PaymentSyncerBase<Xero.Payment> {
       throw new JournalEntrySyncError({
         errorCode: "UNSYNCED_DOCUMENT",
         message: `The settled ${
-          context.family === "ar" ? "invoice" : "bill"
+          PAYMENT_TARGET_LABELS[context.targetEntityType]
         } has not synced to Xero yet — sync it, then retry the payment`,
         warning: true,
         metadata: { targetDocumentId: context.targetDocumentId }

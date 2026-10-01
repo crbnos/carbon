@@ -1,7 +1,12 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { TableName } from "@carbon/database/audit.config";
 import type { KyselyDatabase } from "@carbon/database/client";
 import { type Kysely, sql } from "kysely";
-import { TABLE_RENAMES } from "./renames";
+import { renameColumns, TABLE_RENAMES } from "./renames";
 
 /**
  * Schema introspection + backup-compatibility logic, shared by the backup jobs
@@ -543,7 +548,12 @@ export function reportBackupCompatibility(
       }
     }
 
-    const backupCols = new Set(backupTable.columns);
+    // A renamed table's columns are compared under their CURRENT names, so a
+    // column that moved with the table is not reported as both added and removed.
+    const backupColumnNames = liveByName.has(backupTable.name)
+      ? backupTable.columns
+      : renameColumns(backupTable.name, backupTable.columns);
+    const backupCols = new Set(backupColumnNames);
     for (const c of live.columns) {
       if (backupCols.has(c.name) || c.isGenerated || c.isNullable) continue;
       if (c.hasDefault) {
@@ -565,7 +575,7 @@ export function reportBackupCompatibility(
     }
 
     const liveCols = new Set(live.columns.map((c) => c.name));
-    for (const name of backupTable.columns) {
+    for (const name of backupColumnNames) {
       if (liveCols.has(name)) continue;
       findings.push({
         kind: "discarded",

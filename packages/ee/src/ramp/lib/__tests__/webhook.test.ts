@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: LicenseRef-Carbon-Commercial
+// Copyright (C) Carbon Manufacturing Systems Corporation.
+// Carbon Enterprise file, licensed only under the Carbon Commercial License
+// (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
+
 import { createHmac } from "node:crypto";
 import { describe, expect, it } from "vitest";
 import { verifyRampWebhookSignature } from "../webhook";
@@ -64,6 +69,73 @@ describe("verifyRampWebhookSignature", () => {
         signature: sign(secret, body),
         body,
         secret: ""
+      })
+    ).toBe(false);
+  });
+});
+
+describe("signature encoding tolerance", () => {
+  const secret = "whsec_test_secret";
+  const body = JSON.stringify({
+    type: "webhooks.verification",
+    challenge: "abc"
+  });
+  const digest = createHmac("sha256", secret).update(body).digest();
+
+  it("accepts a HEX digest", () => {
+    // The encoding Ramp's own docs example uses (`.digest("hex")`). Base64-only
+    // verification rejects this: 64 hex chars decode to 48 bytes, not 32, so the
+    // length guard fails and EVERY delivery 401s — including the activation
+    // challenge, which is why the endpoint could never leave "Pending
+    // verification".
+    expect(
+      verifyRampWebhookSignature({
+        signature: digest.toString("hex"),
+        body,
+        secret
+      })
+    ).toBe(true);
+  });
+
+  it("still accepts a BASE64 digest", () => {
+    expect(
+      verifyRampWebhookSignature({
+        signature: digest.toString("base64"),
+        body,
+        secret
+      })
+    ).toBe(true);
+  });
+
+  it.each(["sha256=", "v1,", "v1="])("tolerates a %s prefix", (prefix) => {
+    expect(
+      verifyRampWebhookSignature({
+        signature: `${prefix}${digest.toString("hex")}`,
+        body,
+        secret
+      })
+    ).toBe(true);
+  });
+
+  it("still rejects a wrong digest in either encoding", () => {
+    const wrong = createHmac("sha256", "other").update(body).digest();
+    for (const enc of ["hex", "base64"] as const) {
+      expect(
+        verifyRampWebhookSignature({
+          signature: wrong.toString(enc),
+          body,
+          secret
+        })
+      ).toBe(false);
+    }
+  });
+
+  it("rejects a tampered body", () => {
+    expect(
+      verifyRampWebhookSignature({
+        signature: digest.toString("hex"),
+        body: `${body} `,
+        secret
       })
     ).toBe(false);
   });

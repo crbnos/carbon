@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 //! Ordering pipeline, part 2: precedence DAG, joint/sandwich/support edges,
 //! base reselection, preference topo sort, connectivity repair, forward
 //! verification, and the `plan_parts` / `plan_fixed_sequence` drivers.

@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 // Pins the generator's function-level JSDoc → tool description extraction.
 // The unit cases exercise the summary normalizer directly; the integration
 // case proves the wiring against the generated manifest without pinning any

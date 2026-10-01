@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -11,6 +16,7 @@ import {
   TabsTrigger
 } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
+import { useLingui } from "@lingui/react/macro";
 import { useCallback } from "react";
 import type { LoaderFunctionArgs } from "react-router";
 import { Outlet, redirect, useLoaderData, useNavigate } from "react-router";
@@ -56,6 +62,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 }
 
 export default function Route() {
+  const { t } = useLingui();
   const { costCenters } = useLoaderData<typeof loader>();
   const navigate = useNavigate();
 
@@ -90,7 +97,7 @@ export default function Route() {
             <TabsTrigger value="list">List View</TabsTrigger>
           </TabsList>
           <New
-            label="Cost Center"
+            label={t`Cost Center`}
             to={path.to.newCostCenter}
             variant="primary"
           />

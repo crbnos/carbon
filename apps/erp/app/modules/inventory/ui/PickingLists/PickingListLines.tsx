@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type {
   TrackedEntityOption,
   TrackedEntityPickOrder,
@@ -12,7 +17,6 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-  Count,
   cn,
   DropdownMenu,
   DropdownMenuContent,
@@ -295,6 +299,10 @@ function PickingListLineItem({
 
   const item = items.find((i) => i.id === line.itemId);
   const itemName = item?.name ?? line.item?.name ?? "";
+  // Pick quantities are in the picked item's own stock unit (a substituted
+  // line is already converted into the successor's units at generation).
+  const unitOfMeasureCode = line.item?.unitOfMeasureCode ?? null;
+  const unitSuffix = unitOfMeasureCode ? ` ${unitOfMeasureCode}` : "";
   // A pick is substituted when its item differs from the source job material's
   // item (an item-supersession redirect at generation time). Show the original.
   const sourceMaterial = (
@@ -437,7 +445,8 @@ function PickingListLineItem({
                 className="font-mono tabular-nums normal-case"
               >
                 {lot.trackedEntity?.readableId ?? lot.trackedEntityId}
-                {isBatch && ` × ${Number(lot.quantityPicked ?? 0)}`}
+                {isBatch &&
+                  ` × ${Number(lot.quantityPicked ?? 0)}${unitSuffix}`}
               </Badge>
             ))}
           </HStack>
@@ -467,13 +476,16 @@ function PickingListLineItem({
             className="text-base tabular-nums"
           >
             {quantityPicked}/{quantityToPick}
+            {unitSuffix}
           </Badge>
         ) : (
-          <Count
-            count={isShort ? quantityPicked : quantityToPick}
+          <Badge
             variant={isPicked ? "green" : isShort ? "orange" : "red"}
             className="text-base tabular-nums"
-          />
+          >
+            {isShort ? quantityPicked : quantityToPick}
+            {unitSuffix}
+          </Badge>
         )}
         {isLocked ? null : isTracked ? (
           <HStack spacing={1}>
@@ -564,6 +576,7 @@ function PickingListLineItem({
           itemName={itemName}
           quantityToPick={quantityToPick}
           quantityPicked={quantityPicked}
+          unitOfMeasureCode={unitOfMeasureCode}
           onClose={() => setShortOpen(false)}
         />
       )}

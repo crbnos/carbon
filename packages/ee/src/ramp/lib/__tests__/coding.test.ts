@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: LicenseRef-Carbon-Commercial
+// Copyright (C) Carbon Manufacturing Systems Corporation.
+// Carbon Enterprise file, licensed only under the Carbon Commercial License
+// (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
+
 import { describe, expect, it } from "vitest";
 import {
   buildLineCodingSelections,
@@ -133,9 +138,9 @@ describe("codeSelections", () => {
 
 describe("buildLineCodingSelections (outbound write shape)", () => {
   const pushed = {
-    pushedAccountIds: new Set(["acct_travel"]),
-    pushedCostCenterIds: new Set(["cc_apollo"]),
-    pushedProjectIds: new Set(["prj_apollo"])
+    pushedAccountIds: new Map([["acct_travel", "acct_travel"]]),
+    pushedCostCenterIds: new Map([["cc_apollo", "cc_apollo"]]),
+    pushedProjectIds: new Map([["prj_apollo", "prj_apollo"]])
   };
 
   it("codes the GL account, cost center, and project when all are pushed", () => {

@@ -1,17 +1,22 @@
+// SPDX-License-Identifier: LicenseRef-Carbon-Commercial
+// Copyright (C) Carbon Manufacturing Systems Corporation.
+// Carbon Enterprise file, licensed only under the Carbon Commercial License
+// (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
+
 import { describe, expect, it } from "vitest";
 import { JournalEntrySyncError } from "../../../../core/posting";
 import {
   type CardCharge,
   type ChargeCosting,
   type ChargePostingJournalLine,
-  mapCardTransactionToRilletCharge
+  mapChargeToRilletCharge
 } from "../charge";
 import { toRilletExchangeRate } from "../shared";
 
 const charge = (overrides: Partial<CardCharge> = {}): CardCharge => ({
   id: "ct_1",
   companyId: "company-1",
-  cardTransactionId: "CARD-2026-09-0001",
+  chargeId: "CARD-2026-09-0001",
   type: "Charge",
   status: "Posted",
   supplierId: "sup_delta",
@@ -58,9 +63,9 @@ const base = {
   companyId: "company-1"
 };
 
-describe("mapCardTransactionToRilletCharge", () => {
+describe("mapChargeToRilletCharge", () => {
   it("builds a charge Rillet posts exactly like Carbon's journal (debit lines, credit the card)", () => {
-    const payload = mapCardTransactionToRilletCharge({
+    const payload = mapChargeToRilletCharge({
       charge: charge(),
       costing: costing(),
       ...base
@@ -88,7 +93,7 @@ describe("mapCardTransactionToRilletCharge", () => {
   });
 
   it("carries the cost center (project) as a Rillet Field on the item", () => {
-    const payload = mapCardTransactionToRilletCharge({
+    const payload = mapChargeToRilletCharge({
       charge: charge(),
       costing: costing(),
       ...base,
@@ -103,7 +108,7 @@ describe("mapCardTransactionToRilletCharge", () => {
   });
 
   it("drops a dimension whose Field or value was not provisioned", () => {
-    const payload = mapCardTransactionToRilletCharge({
+    const payload = mapChargeToRilletCharge({
       charge: charge(),
       costing: costing(),
       ...base,
@@ -116,7 +121,7 @@ describe("mapCardTransactionToRilletCharge", () => {
   });
 
   it("uses the merchant name on the line over the line label", () => {
-    const payload = mapCardTransactionToRilletCharge({
+    const payload = mapChargeToRilletCharge({
       charge: charge({ merchantName: "Acme Fuel" }),
       costing: costing(),
       ...base
@@ -125,7 +130,7 @@ describe("mapCardTransactionToRilletCharge", () => {
   });
 
   it("falls back to the line label when there is no merchant name", () => {
-    const payload = mapCardTransactionToRilletCharge({
+    const payload = mapChargeToRilletCharge({
       charge: charge({ merchantName: null }),
       costing: costing(),
       ...base
@@ -134,7 +139,7 @@ describe("mapCardTransactionToRilletCharge", () => {
   });
 
   it("falls back to the card memo when there is no merchant name or line description", () => {
-    const payload = mapCardTransactionToRilletCharge({
+    const payload = mapChargeToRilletCharge({
       charge: charge({ merchantName: null }),
       costing: costing({ lines: [{ ...lines[0]!, description: null }] }),
       ...base
@@ -146,7 +151,7 @@ describe("mapCardTransactionToRilletCharge", () => {
 
   it("converts a foreign charge to its transaction currency and pins the directed rate", () => {
     // A CAD charge: base USD lines × 1.25 CAD per USD.
-    const payload = mapCardTransactionToRilletCharge({
+    const payload = mapChargeToRilletCharge({
       charge: charge(),
       costing: costing({
         lines: [{ ...lines[0]!, amount: 345.34 }],
@@ -170,7 +175,7 @@ describe("mapCardTransactionToRilletCharge", () => {
   });
 
   it("includes the subsidiary when the provider has one", () => {
-    const payload = mapCardTransactionToRilletCharge({
+    const payload = mapChargeToRilletCharge({
       charge: charge(),
       costing: costing(),
       ...base,
@@ -181,7 +186,7 @@ describe("mapCardTransactionToRilletCharge", () => {
 
   it("fails as the UNMAPPED_ACCOUNTS Warning when a line account is unmapped", () => {
     expect(() =>
-      mapCardTransactionToRilletCharge({
+      mapChargeToRilletCharge({
         charge: charge(),
         costing: costing(),
         ...base,
@@ -189,7 +194,7 @@ describe("mapCardTransactionToRilletCharge", () => {
       })
     ).toThrow(JournalEntrySyncError);
     try {
-      mapCardTransactionToRilletCharge({
+      mapChargeToRilletCharge({
         charge: charge(),
         costing: costing(),
         ...base,
@@ -206,7 +211,7 @@ describe("mapCardTransactionToRilletCharge", () => {
 
   it("fails as the UNMAPPED_ACCOUNTS Warning when the card-liability account is unmapped", () => {
     expect(() =>
-      mapCardTransactionToRilletCharge({
+      mapChargeToRilletCharge({
         charge: charge(),
         costing: costing(),
         ...base,
@@ -217,7 +222,7 @@ describe("mapCardTransactionToRilletCharge", () => {
 
   it("fails as a Warning when there is no posted journal to replay", () => {
     expect(() =>
-      mapCardTransactionToRilletCharge({
+      mapChargeToRilletCharge({
         charge: charge(),
         costing: costing({ lines: [] }),
         ...base

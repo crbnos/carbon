@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 // Deno mirror of @carbon/database's fetchAllFromTable: pages through PostgREST
 // in 1000-row batches so reads are complete past the production `max_rows`
 // cap. The local dev stack does not enforce the cap, which is exactly why

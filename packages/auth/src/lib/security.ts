@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 // Pure request-security decisions shared by every app. No env or I/O here, so the
 // rules are unit-tested as plain functions; the middleware in
 // ../middleware/security.server.ts wires them to requests.

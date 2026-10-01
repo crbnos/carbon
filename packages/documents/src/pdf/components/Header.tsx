@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { formatCityStatePostalCode } from "@carbon/utils";
 import { Text, View } from "@react-pdf/renderer";
 import { DEFAULT_HEADER_OPTIONS, type HeaderOptions } from "../../template";
@@ -62,14 +67,14 @@ const Header = ({
             {company.name}
           </Text>
         ) : null}
-        {opts.showCompanyDetails && (
+        {opts.showCompanyDetails ? (
           <View style={tw("flex flex-col text-[9px] text-gray-800")}>
-            {company.name && (
+            {company.name ? (
               <Text style={tw("font-bold")}>{company.name}</Text>
-            )}
-            {company.addressLine1 && <Text>{company.addressLine1}</Text>}
-            {company.addressLine2 && <Text>{company.addressLine2}</Text>}
-            {(company.city || company.stateProvince || company.postalCode) && (
+            ) : null}
+            {company.addressLine1 ? <Text>{company.addressLine1}</Text> : null}
+            {company.addressLine2 ? <Text>{company.addressLine2}</Text> : null}
+            {company.city || company.stateProvince || company.postalCode ? (
               <Text>
                 {formatCityStatePostalCode(
                   company.city,
@@ -77,9 +82,9 @@ const Header = ({
                   company.postalCode
                 )}
               </Text>
-            )}
+            ) : null}
           </View>
-        )}
+        ) : null}
       </View>
       {/* `shrink` (not `shrink-0`) so a long title — "Return Merchandise
           Authorization" — wraps inside its 55% bound instead of overflowing
@@ -87,21 +92,21 @@ const Header = ({
       <View
         style={tw("flex flex-col items-end justify-start shrink max-w-[55%]")}
       >
-        {opts.showDocumentTitle && (
+        {opts.showDocumentTitle ? (
           <Text style={tw("text-2xl font-bold text-gray-800 text-right")}>
             {title}
           </Text>
-        )}
-        {opts.showDocumentId && documentId && (
+        ) : null}
+        {opts.showDocumentId && documentId ? (
           <Text style={tw("text-sm font-bold text-gray-600 -mt-4")}>
             {documentId}
           </Text>
-        )}
-        {documentSubId && (
+        ) : null}
+        {documentSubId ? (
           <Text style={tw("text-[8px] font-bold text-gray-600")}>
             {documentSubId}
           </Text>
-        )}
+        ) : null}
       </View>
     </View>
   );

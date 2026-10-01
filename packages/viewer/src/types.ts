@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 /**
  * Shared contracts for animated work instructions (Phase 0).
  * These types mirror `docs/specs/animated-work-instructions-contracts.md` exactly.
@@ -109,12 +114,17 @@ export type AssemblyStep = {
    */
   flagged?: boolean;
   /**
-   * Subassembly phase this step belongs to (baked at step generation from the
-   * plan's contact graph). `null`/absent = the main phase, built seated. A
-   * non-null phase builds staged off to the side and flies into the main body
-   * at its `join` step. See `@carbon/viewer` staging.
+   * Components the author hid on THIS step only (tooling, fixtures, installed
+   * parts blocking the view). Not drawn while this step is active; they return
+   * on the next step. Never applied to the step's own `componentNodeIds`.
    */
-  phase?: { id: string; name: string; join: boolean } | null;
+  hiddenComponentNodeIds?: string[];
+  /**
+   * Built off to the side: the id of the later JOIN step where the group this
+   * step builds is carried into the main assembly (DB `parentStepId`).
+   * `null`/absent = built in place. See `staging.ts`.
+   */
+  joinStepId?: string | null;
 };
 
 /** One node of the assembly tree in graph.json. */

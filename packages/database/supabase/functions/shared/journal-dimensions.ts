@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 // Pure builder for automatic GL dimension rows on journal lines. Shared by the
 // return-flow posters (post-shipment, post-receipt) so every new journal entry
 // carries the same item / item-group / party / location dimensions. No Deno or

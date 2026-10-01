@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import {
   Drawer,
   DrawerBody,
@@ -37,9 +42,7 @@ const Columns = <T extends object>({
   withSelectableRows,
   setColumnOrder
 }: ColumnsProps<T>) => {
-  const { t, i18n } = useLingui();
-
-  const translate = (value: string) => i18n._(value);
+  const { t } = useLingui();
 
   return (
     <Drawer>
@@ -123,7 +126,7 @@ const Columns = <T extends object>({
                       />
                       <span className="text-sm flex-grow flex items-center gap-2">
                         {column.columnDef.meta?.icon}
-                        <>{translate(column.columnDef.header as string)}</>
+                        <>{column.columnDef.header as string}</>
                       </span>
                       <IconButton
                         aria-label={t`Toggle column`}

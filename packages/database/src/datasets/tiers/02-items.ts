@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { resolveDate, resolveTimestamp } from "../dates.ts";
 import { inspectionPlan } from "../helpers/inspection.ts";
 import { addBomLine, addBopOperation, createItem } from "../helpers/items.ts";
@@ -115,7 +120,7 @@ async function seedAssembly(ctx: Ctx, spec: AssemblySpec): Promise<void> {
   }
 
   // The method's Assembly operation plays this instruction in the MES. Linked
-  // before release, so quote lines (tier 04) and jobs (tier 06) copy it.
+  // here, so quote lines (tier 04) and jobs (tier 06) copy it.
   if (!item?.makeMethodId) {
     throw new Error(
       `Seed: assembly "${spec.name}" needs an item with a make method to link operation ${spec.operation} to`
@@ -270,17 +275,11 @@ export async function runTier2(ctx: Ctx): Promise<void> {
     await seedAssembly(ctx, data.assembly);
   }
 
-  // Authored methods are released: Active is what job creation copies and what
-  // the change notices (tier 08) cut their Draft versions from.
-  await ctx.client.query(
-    `UPDATE "makeMethod" SET status = 'Active', "updatedBy" = $3
-     WHERE id = ANY($1) AND "companyId" = $2`,
-    [
-      data.methods.map((method) => needMM(i, method.readableId)),
-      ctx.companyId,
-      ctx.userId
-    ]
-  );
+  // Authored methods stay Draft (the interceptor's default), so a demo user can
+  // open any BOM/BOP and edit it — an Active method is read-only. With no Active
+  // version, `activeMakeMethods` falls back to the Draft, so quotes, jobs and MRP
+  // read it all the same. Only a Version change notice (tier 08) promotes its
+  // base to Active, as the app does.
 
   // ── Supplier parts (which supplier can supply what) ────────────────────────
   ctx.log("supplier parts");

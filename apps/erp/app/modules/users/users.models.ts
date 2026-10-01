@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { z } from "zod";
 import { zfd } from "zod-form-data";
 
@@ -167,9 +172,18 @@ export const validUserFlags = [
   "training:quality"
 ] as const;
 
+// Dismissing the What's new panel sets `changelog:<entry slug>`; open-ended
+// because entries keep being published.
+const CHANGELOG_FLAG_PREFIX = "changelog:";
+export const changelogFlagKey = (slug: string) =>
+  `${CHANGELOG_FLAG_PREFIX}${slug}`;
+
 export type UserFlagKey = (typeof validUserFlags)[number];
 
-const userFlagKeyValidator = z.enum(validUserFlags);
+const userFlagKeyValidator = z.union([
+  z.enum(validUserFlags),
+  z.string().regex(/^changelog:[a-z0-9-]+$/)
+]);
 
 export const userFlagValidator = z.object({
   flag: userFlagKeyValidator,

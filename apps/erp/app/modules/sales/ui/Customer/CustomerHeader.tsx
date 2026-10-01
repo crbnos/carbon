@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { ValidatedForm } from "@carbon/form";
 import {
   Card,
@@ -8,6 +13,7 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
+  Copy,
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuIcon,
@@ -22,7 +28,7 @@ import {
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useCallback } from "react";
-import { LuEllipsisVertical, LuTrash } from "react-icons/lu";
+import { LuEllipsisVertical, LuKeySquare, LuTrash } from "react-icons/lu";
 import { useFetcher, useParams } from "react-router";
 import { z } from "zod";
 import { EmployeeAvatar } from "~/components";
@@ -37,7 +43,7 @@ import { path } from "~/utils/path";
 import type { CustomerDetail, CustomerStatus } from "../../types";
 
 const CustomerHeader = () => {
-  const { i18n, t } = useLingui();
+  const { t } = useLingui();
   const { customerId } = useParams();
 
   if (!customerId) throw new Error("Could not find customerId");
@@ -120,6 +126,11 @@ const CustomerHeader = () => {
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
+                <Copy
+                  text={customerId}
+                  label={t`Copy customer unique identifier`}
+                  icon={<LuKeySquare />}
+                />
               </CardTitle>
             </CardHeader>
           </HStack>
@@ -130,11 +141,7 @@ const CustomerHeader = () => {
                   <Trans>Status</Trans>
                 </CardAttributeLabel>
                 <CardAttributeValue>
-                  {customerStatus ? (
-                    <Enumerable value={i18n._(customerStatus)} />
-                  ) : (
-                    "-"
-                  )}
+                  {customerStatus ? <Enumerable value={customerStatus} /> : "-"}
                 </CardAttributeValue>
               </CardAttribute>
               <CardAttribute>

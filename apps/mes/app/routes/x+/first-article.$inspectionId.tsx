@@ -1,9 +1,15 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import {
   dispositionInspection,
+  getRecentInspectionGauges,
   reconcileInspectionSamplingPlans
 } from "@carbon/database/quality";
 import { validationError, validator } from "@carbon/form";
@@ -92,7 +98,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
-  const [job, viewData] = await Promise.all([
+  const [job, viewData, recentGauges] = await Promise.all([
     serviceRole
       .from("jobs")
       .select("*, customer(name)")
@@ -103,7 +109,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       inspection,
       jobMakeMethodId: inspection.sourceDocumentLineId,
       companyId
-    })
+    }),
+    getRecentInspectionGauges(getDatabaseClient(), { inspectionId, companyId })
   ]);
 
   if (job.error || !job.data) {
@@ -118,6 +125,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   return {
     ...viewData,
+    recentGaugeIds: recentGauges.data ?? [],
     job: job.data as Job,
     inspection,
     jobId: job.data.id ?? null

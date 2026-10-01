@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { useLingui } from "@lingui/react/macro";
 import { useMemo } from "react";
 import {
@@ -34,11 +39,6 @@ import type { AuthenticatedRouteGroup, Role } from "~/types";
 import { path } from "~/utils/path";
 
 const internalOnlyRoutes = new Set<string>([path.to.companies]);
-
-// Demo Data (template seeding) stays internal / local-dev only — mirrors
-// `canAccessBackups`. Backups is now a Business/Enterprise feature gated
-// separately below (with the same internal/local-dev escape hatch).
-const localOrInternalRoutes = new Set<string>([path.to.demoData]);
 
 export default function useSettingsSubmodules() {
   const { t } = useLingui();
@@ -252,8 +252,6 @@ export default function useSettingsSubmodules() {
     if (route.requiresControlledEnvironment && !isControlledEnvironment)
       return false;
     if (!isInternal && internalOnlyRoutes.has(route.to)) return false;
-    if (!isInternal && !isLocalDev && localOrInternalRoutes.has(route.to))
-      return false;
     // Backups: visible to Business/Enterprise, internal staff, or local dev.
     if (
       route.to === path.to.backups &&

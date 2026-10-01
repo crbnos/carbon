@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { Database } from "@carbon/database";
 import { ERP_URL } from "@carbon/env";
 import type { ProductLabelItem } from "@carbon/utils";
@@ -151,6 +156,7 @@ async function queryTrackedEntities(
           "jobMakeMethodId, ...jobMakeMethod(...item(readableIdWithRevision))"
         )
         .eq("id", sourceDocumentId)
+        .eq("companyId", companyId)
         .single();
 
       if (!jobOperation?.jobMakeMethodId)
@@ -160,6 +166,7 @@ async function queryTrackedEntities(
         .from("trackedEntity")
         .select("*")
         .eq("attributes->>Job Make Method", jobOperation?.jobMakeMethodId)
+        .eq("companyId", companyId)
         .order("createdAt", { ascending: true });
 
       return {

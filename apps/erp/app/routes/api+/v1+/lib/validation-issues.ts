@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 // oRPC's input-validation failure says only "Input validation failed" — useless
 // to an agent (or any API caller) that has to fix its own call. The issues ride
 // along on the ORPCError's `data`, in standard-schema form: `path` segments are

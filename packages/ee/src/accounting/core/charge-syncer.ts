@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: LicenseRef-Carbon-Commercial
+// Copyright (C) Carbon Manufacturing Systems Corporation.
+// Carbon Enterprise file, licensed only under the Carbon Commercial License
+// (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
+
 import { fromDate, parseAbsolute } from "@internationalized/date";
 import {
   createMappingService,
@@ -28,6 +33,15 @@ export abstract class ChargeSyncerBase<
 > extends BaseEntitySyncer<TLocal, TRemote, TOmit> {
   /** QBO retains its timestamp-gated sparse updates; Xero is create-only. */
   protected readonly updateMappedCharges: boolean = false;
+  /**
+   * How this document is named in the base's own skip/failure messages. The
+   * lifecycle here is not charge-specific — reimbursements use it too — and a
+   * reimbursement operation whose reason reads "Card charge already pushed"
+   * sends its reader to the wrong table.
+   */
+  protected get documentLabel(): string {
+    return "Card charge";
+  }
   protected abstract deleteRemote(remoteId: string): Promise<void>;
   protected abstract upsertRemote(
     data: Omit<TRemote, TOmit>,
@@ -93,12 +107,12 @@ export abstract class ChargeSyncerBase<
           action: "none",
           localId: entityId,
           remoteId: mapping.externalId,
-          error: "Card charge already pushed (idempotent)"
+          error: `${this.documentLabel} already pushed (idempotent)`
         };
       }
       if (localEntity.status === "Voided")
         throw new Error(
-          "Cannot confirm card charge void without a durable remote identity; verify the provider transaction before resolving this operation"
+          `Cannot confirm ${this.documentLabel.toLowerCase()} void without a durable remote identity; verify the provider transaction before resolving this operation`
         );
       const eligible = await this.shouldSync?.({
         direction: "push",

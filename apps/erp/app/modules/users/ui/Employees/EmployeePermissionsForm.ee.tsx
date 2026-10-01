@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: LicenseRef-Carbon-Commercial
+// Copyright (C) Carbon Manufacturing Systems Corporation.
+// Carbon Enterprise file, licensed only under the Carbon Commercial License
+// (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
+
 import { ValidatedForm } from "@carbon/form";
 import {
   Button,
@@ -115,12 +120,11 @@ const EmployeePermissionsForm = ({
             method="post"
             action={path.to.employeeAccount(initialValues.id)}
             defaultValues={initialValues}
-            className="flex flex-col h-full"
           >
             <ModalHeader>
               <ModalTitle>{name}</ModalTitle>
             </ModalHeader>
-            <ModalBody className="max-h-[70dvh] overflow-y-auto">
+            <ModalBody>
               <VStack spacing={4}>
                 <Select
                   name="employeeType"

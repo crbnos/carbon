@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 /**
  * Ramp inbound sweep — the correctness guarantee behind the webhook-driven
  * pulls. Webhooks are latency; this hourly sweep is correctness: any missed or
@@ -8,6 +13,7 @@
  * is idempotent (mapping-guarded, confirm-keyed), so re-firing is safe.
  */
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
+import { getIntegrationIdsByRole } from "@carbon/ee";
 import { inngest } from "../../client";
 
 export const rampSweepFunction = inngest.createFunction(
@@ -20,7 +26,9 @@ export const rampSweepFunction = inngest.createFunction(
       const { data, error } = await client
         .from("companyIntegration")
         .select("companyId")
-        .eq("id", "ramp")
+        // Every SPEND-role integration, not a hard-coded "ramp": a second spend
+        // platform joins by declaring its role on its descriptor.
+        .in("id", getIntegrationIdsByRole("spend"))
         .eq("active", true);
 
       if (error) {

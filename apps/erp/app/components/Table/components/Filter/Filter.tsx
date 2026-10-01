@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import {
   Button,
   Checkbox,
@@ -33,7 +38,7 @@ export type FilterProps = Omit<
 
 const Filter = forwardRef<HTMLButtonElement, FilterProps>(
   ({ filters, trigger = "button", ...props }, ref) => {
-    const { t, i18n } = useLingui();
+    const { t } = useLingui();
     const {
       clearFilters,
       getFilter,
@@ -82,16 +87,14 @@ const Filter = forwardRef<HTMLButtonElement, FilterProps>(
       }
     }, [fetcher.data, activeFilter]);
 
-    const translate = useCallback((value: string) => i18n._(value), [i18n]);
-
     const columnFilters = useMemo(
       () =>
         filters.map((f) => ({
           value: f.accessorKey,
-          label: translate(f.header),
+          label: f.header,
           icon: f.icon
         })),
-      [filters, translate]
+      [filters]
     );
 
     const availableFilters = useMemo(
@@ -233,7 +236,7 @@ const Filter = forwardRef<HTMLButtonElement, FilterProps>(
                 </CommandGroup>
               ) : (
                 <div className="max-h-[300px] overflow-y-auto scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent">
-                  <CommandGroup heading={translate(activeFilter.header)}>
+                  <CommandGroup heading={activeFilter.header}>
                     {activeOptions.map((option) => {
                       const isChecked = hasFilter(
                         activeFilter.accessorKey,
@@ -270,7 +273,7 @@ const Filter = forwardRef<HTMLButtonElement, FilterProps>(
                               <span>{option.label}</span>
                               {option.helperText && (
                                 <p className="text-xs text-muted-foreground truncate">
-                                  {translate(option.helperText)}
+                                  {option.helperText}
                                 </p>
                               )}
                             </VStack>

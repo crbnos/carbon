@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 // Resolve an incoming Carbon API v1 request to an AuthedContext.
 //
 // v1 accepts API keys only, sent as `Authorization: Bearer crbn_…` (the convention the

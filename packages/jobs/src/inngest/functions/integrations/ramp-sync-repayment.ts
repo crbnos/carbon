@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import {
   patchRampCursor,
   type RampClient,
@@ -74,7 +79,7 @@ export async function syncRampRepayments(
   const integrationRow = { data: { updatedAt: integrationUpdatedAt } };
   const result: FamilyResult = { created: 0, reconfirmed: 0, failed: 0 };
   // Repayments ride the same expense-recording gate as reimbursements.
-  if (!isRampInboundFamilyEnabled("repayments", metadata.sync)) {
+  if (!isRampInboundFamilyEnabled("repayments", metadata)) {
     return result;
   }
   if (!cardLiabilityAccountId || !metadata.statementBankAccountId) {
@@ -119,7 +124,7 @@ export async function syncRampRepayments(
         const existing = await ctx.mapping.getEntityId(
           "ramp",
           `repayment:${repayment.id}`,
-          "cardTransaction"
+          "charge"
         );
         if (existing) {
           reconfirmed += 1;
@@ -128,7 +133,7 @@ export async function syncRampRepayments(
           continue;
         }
 
-        // Resolve the ORIGINAL card transaction via its mapping.
+        // Resolve the ORIGINAL charge via its mapping.
         const originalRampId = repayment.original_transaction_id;
         if (!originalRampId) {
           failRepayment("No original_transaction_id on the repayment");
@@ -140,7 +145,7 @@ export async function syncRampRepayments(
         const originalEntityId = await ctx.mapping.getEntityId(
           "ramp",
           originalRampId,
-          "cardTransaction"
+          "charge"
         );
         if (!originalEntityId) {
           failRepayment(
@@ -153,24 +158,22 @@ export async function syncRampRepayments(
         }
 
         const original = await ctx.client
-          .from("cardTransaction")
+          .from("charge")
           .select("amount, currencyCode")
           .eq("id", originalEntityId)
           .eq("companyId", companyId)
           .maybeSingle();
         if (!original.data) {
-          failRepayment(
-            `Original card transaction ${originalEntityId} no longer exists`
-          );
+          failRepayment(`Original charge ${originalEntityId} no longer exists`);
           console.error(
-            `[RAMP SYNC] ${companyId}: repayment ${repayment.id} original card transaction ${originalEntityId} no longer exists — skipped`
+            `[RAMP SYNC] ${companyId}: repayment ${repayment.id} original charge ${originalEntityId} no longer exists — skipped`
           );
           continue;
         }
         const originalLines = await ctx.client
-          .from("cardTransactionLine")
+          .from("chargeLine")
           .select("accountId, amount, costCenterId, projectId, description")
-          .eq("cardTransactionId", originalEntityId)
+          .eq("chargeId", originalEntityId)
           .eq("companyId", companyId)
           .order("sequence", { ascending: true });
         if (originalLines.error) {

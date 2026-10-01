@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 // Four opportunities at different completeness levels — this is the acceptance
 // test for the whole seed. Every detail page (opportunity, rfq, quote,
 // salesOrder, shipment, salesInvoice) must open without a 500 or redirect.

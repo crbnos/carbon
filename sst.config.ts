@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 /// <reference path="./.sst/platform/config.d.ts" />
 
 
@@ -240,6 +245,20 @@ export default $config({
         managedRuleGroupStatement: {
           name: "AWSManagedRulesCommonRuleSet",
           vendorName: "AWS",
+          // SizeRestrictions_BODY blocks any request body over 8 KB with a 403
+          // at the WAF, before it reaches the app (so it never shows in app
+          // logs). Carbon legitimately posts larger bodies: bulk account-mapping
+          // saves ship the whole chart of accounts in one POST, and some
+          // /api/inngest steps and /api/webhook/stripe exceed 8 KB too. Count
+          // instead of Block so these are still inspected/counted but not rejected.
+          ruleActionOverrides: [
+            {
+              name: "SizeRestrictions_BODY",
+              actionToUse: {
+                count: {},
+              },
+            },
+          ],
         },
       },
       priority: 2,

@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { ShortcutDefinition, ShortcutInput } from "@carbon/react";
 import { SHORTCUTS } from "@carbon/react";
 
@@ -83,3 +88,6 @@ export const MODULE_GO_TO: Record<string, string> = {
   users: "y",
   workflows: "w"
 };
+
+/** Leaves the rail's Customize mode without saving. */
+export const navigationEditCancelShortcut: ShortcutInput = "escape";

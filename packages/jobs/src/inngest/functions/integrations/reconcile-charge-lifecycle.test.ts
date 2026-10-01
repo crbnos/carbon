@@ -1,4 +1,10 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { QboChargeSyncer, XeroChargeSyncer } from "@carbon/ee/accounting";
+import { buildIntegrationTopology } from "@carbon/ee/sync";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { CardChargeSource } from "../../../../../ee/src/accounting/core/card-charge-source";
 import type { SyncOperationRequest } from "./accounting-sync-operations";
@@ -57,6 +63,9 @@ beforeEach(() => {
   mapping.metadata = {};
 });
 
+// Nothing is delegated in these fixtures, so the topology is carbon-owned.
+const CARBON_TOPOLOGY = buildIntegrationTopology([], []);
+
 describe.each([
   "xero",
   "quickbooks"
@@ -73,9 +82,7 @@ describe.each([
           in: async () => ({
             error: null,
             data:
-              table === "cardTransaction"
-                ? [{ id: "charge-1", status: "Voided" }]
-                : []
+              table === "charge" ? [{ id: "charge-1", status: "Voided" }] : []
           })
         };
         return query;
@@ -92,6 +99,7 @@ describe.each([
       }
     };
     const summary = await reconcileEntities({
+      topology: CARBON_TOPOLOGY,
       client: client as never,
       database: database as never,
       companyId: "company-1",
@@ -149,7 +157,7 @@ describe.each([
     const localSource: CardChargeSource = {
       id: "charge-1",
       companyId: "company-1",
-      cardTransactionId: "CARD-1",
+      chargeId: "CARD-1",
       type: "Charge",
       status: "Voided",
       supplierId: "supplier",
@@ -180,6 +188,7 @@ describe.each([
     expect(
       (
         await reconcileEntities({
+          topology: CARBON_TOPOLOGY,
           client: client as never,
           database: database as never,
           companyId: "company-1",

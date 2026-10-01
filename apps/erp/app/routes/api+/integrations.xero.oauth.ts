@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { getAppUrl, XERO_CLIENT_ID, XERO_CLIENT_SECRET } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { consumeOAuthState } from "@carbon/auth/oauth-state.server";
@@ -64,9 +69,12 @@ export async function loader({ request }: LoaderFunctionArgs) {
     const provider = getProviderIntegration(client, companyId, ProviderID.XERO);
 
     // Exchange the authorization code for tokens. The redirect_uri must match
-    // the authorize-time one (IntegrationCard builds it from
-    // `window.location.origin`); `new URL(request.url).origin` is the internal
-    // proxy address behind a TLS-terminating proxy and fails as a mismatch.
+    // the authorize-time one, which the connect route
+    // (`api+/integrations.$id.connect`) also builds from `getAppUrl()` — so the
+    // two match BY CONSTRUCTION now, rather than because the browser's origin
+    // happened to equal the canonical one. `new URL(request.url).origin` is the
+    // internal proxy address behind a TLS-terminating proxy and fails as a
+    // mismatch.
     const auth = await provider.authenticate(
       params.code,
       `${getAppUrl()}/api/integrations/xero/oauth`

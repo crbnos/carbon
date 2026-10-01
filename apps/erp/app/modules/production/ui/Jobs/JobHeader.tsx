@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { useCarbon } from "@carbon/auth";
 import { Hidden, NumberControlled, ValidatedForm } from "@carbon/form";
 import {
@@ -1431,6 +1436,7 @@ function JobCompleteModal({
   onClose: () => void;
 }) {
   const { carbon } = useCarbon();
+  const { company } = useUser();
   const [loading, setLoading] = useState(true);
   const { t } = useLingui();
   const [defaultStorageUnitId, setDefaultStorageUnitId] = useState<
@@ -1487,6 +1493,7 @@ function JobCompleteModal({
         .from("jobMakeMethod")
         .select("*")
         .eq("jobId", job?.id!)
+        .eq("companyId", company.id)
         .is("parentMaterialId", null)
         .single(),
       getJobReceipts(job?.id!)
@@ -1510,6 +1517,7 @@ function JobCompleteModal({
         .from("trackedEntity")
         .select("*")
         .eq("attributes->>Job Make Method", makeMethod.data?.id!)
+        .eq("companyId", company.id)
         .order("createdAt", { ascending: true });
 
       if (trackedEntities.data?.length) {

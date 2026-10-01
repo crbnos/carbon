@@ -205,9 +205,12 @@ All join through `itemReplenishment` to expose `replenishmentSystem`, `leadTime`
   - production (`create: "production"`, role `employee`): inserts jobs +
     job methods, upserts `supplyForecast` (`'Production Order'`), then
     `recalculateJobRequirements()`.
-  - purchasing (`create: "purchasing"`, role `employee`): inserts purchase
-    orders/lines grouped by supplier+period, upserts `supplyForecast`
-    (`'Purchase Order'`).
+  - purchasing (`create: "purchasing"`, role `employee`): one PO per supplier
+    per submit — reuses the supplier's open Draft/Planned `Purchase` PO whose
+    delivery location is the planning location (header lookup, not a
+    line-in-period match), else inserts one. Lines are matched on item +
+    `requiredDate`, so orders for different weeks stay as separate lines on
+    the same PO. Upserts `supplyForecast` (`'Purchase Order'`) per order period.
 
 ## Gotchas
 

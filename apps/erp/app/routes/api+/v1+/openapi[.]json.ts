@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 // GET /api/v1/openapi.json — the generated OpenAPI 3 spec for the Carbon API.
 // Public, so clients can generate a typed client in any language. Memoized at module
 // scope (the router and its schemas are static for the process lifetime).

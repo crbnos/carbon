@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import bwipjs from "@bwip-js/node";
 import { getAppUrl } from "@carbon/env";
 import { Image, Text, View } from "@react-pdf/renderer";
@@ -82,17 +87,17 @@ export function LineItemsBlock({
                   {line.itemReadableId}
                 </Text>
                 {opts.showThumbnails &&
-                  thumbnails &&
-                  line.id != null &&
-                  line.id in thumbnails &&
-                  thumbnails[line.id] && (
-                    <View style={tw("mt-2 mb-2")}>
-                      <Image
-                        src={thumbnails[line.id]!}
-                        style={tw("w-1/4 h-auto max-w-[25%]")}
-                      />
-                    </View>
-                  )}
+                thumbnails &&
+                line.id != null &&
+                line.id in thumbnails &&
+                thumbnails[line.id] ? (
+                  <View style={tw("mt-2 mb-2")}>
+                    <Image
+                      src={thumbnails[line.id]!}
+                      style={tw("w-1/4 h-auto max-w-[25%]")}
+                    />
+                  </View>
+                ) : null}
                 <Image src={barcodeDataUrl} style={tw("max-w-[50%]")} />
               </View>
 

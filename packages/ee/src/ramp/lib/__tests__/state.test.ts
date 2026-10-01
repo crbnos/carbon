@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: LicenseRef-Carbon-Commercial
+// Copyright (C) Carbon Manufacturing Systems Corporation.
+// Carbon Enterprise file, licensed only under the Carbon Commercial License
+// (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
+
 import { describe, expect, it, vi } from "vitest";
 import {
   clearRampConnectionState,
@@ -140,7 +145,7 @@ describe("Ramp integration state patches", () => {
     await patchRampCursor(
       client,
       "company-1",
-      "invoicePushUpdatedAt",
+      "repaymentsRepaidAt",
       "2026-09-11T15:00:00.000Z"
     );
 
@@ -160,7 +165,7 @@ describe("Ramp integration state patches", () => {
       }),
       expect.objectContaining({
         p_metadata_patch: {
-          "cursors.invoicePushUpdatedAt": "2026-09-11T15:00:00.000Z"
+          "cursors.repaymentsRepaidAt": "2026-09-11T15:00:00.000Z"
         }
       })
     ]);

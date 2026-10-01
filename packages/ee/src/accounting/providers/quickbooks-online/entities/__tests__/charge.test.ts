@@ -1,8 +1,13 @@
+// SPDX-License-Identifier: LicenseRef-Carbon-Commercial
+// Copyright (C) Carbon Manufacturing Systems Corporation.
+// Carbon Enterprise file, licensed only under the Carbon Commercial License
+// (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
+
 import { describe, expect, it } from "vitest";
 import { JournalEntrySyncError } from "../../../../core/posting";
 import type { Qbo } from "../../models";
 import {
-  mapCardTransactionToQboPurchase,
+  mapChargeToQboPurchase,
   type QboCardCharge,
   type QboChargeCosting,
   type QboChargeCostingLine,
@@ -13,7 +18,7 @@ import { QBO_DOC_NUMBER_MAX_LENGTH } from "../shared";
 const charge = (overrides: Partial<QboCardCharge> = {}): QboCardCharge => ({
   id: "ct_1",
   companyId: "company-1",
-  cardTransactionId: "CARD-2026-09-0001",
+  chargeId: "CARD-2026-09-0001",
   type: "Charge",
   status: "Posted",
   supplierId: "sup_delta",
@@ -64,9 +69,9 @@ const base = {
   accountRefsById: ACCOUNT_REFS
 };
 
-describe("mapCardTransactionToQboPurchase", () => {
+describe("mapChargeToQboPurchase", () => {
   it("builds a CreditCard Purchase QBO posts exactly like Carbon's journal (debit lines, credit the card)", () => {
-    const payload = mapCardTransactionToQboPurchase({
+    const payload = mapChargeToQboPurchase({
       charge: charge(),
       costing: costing(),
       ...base
@@ -98,7 +103,7 @@ describe("mapCardTransactionToQboPurchase", () => {
   });
 
   it("sends a merchant refund as Credit: true with the refund's positive magnitude", () => {
-    const payload = mapCardTransactionToQboPurchase({
+    const payload = mapChargeToQboPurchase({
       charge: charge({ type: "Credit" }),
       // A Credit's journal lines come out credit-signed (negative).
       costing: costing({
@@ -113,7 +118,7 @@ describe("mapCardTransactionToQboPurchase", () => {
   });
 
   it("carries a class slot on the line and a department slot on the transaction", () => {
-    const payload = mapCardTransactionToQboPurchase({
+    const payload = mapChargeToQboPurchase({
       charge: charge(),
       costing: costing(),
       ...base,
@@ -139,7 +144,7 @@ describe("mapCardTransactionToQboPurchase", () => {
   });
 
   it("omits refs for unmapped values (drop path) and for unslotted dimensions", () => {
-    const payload = mapCardTransactionToQboPurchase({
+    const payload = mapChargeToQboPurchase({
       charge: charge(),
       costing: costing(),
       ...base,
@@ -156,7 +161,7 @@ describe("mapCardTransactionToQboPurchase", () => {
   });
 
   it("uses the merchant name on the line over the line label", () => {
-    const payload = mapCardTransactionToQboPurchase({
+    const payload = mapChargeToQboPurchase({
       charge: charge({ merchantName: "Acme Fuel" }),
       costing: costing(),
       ...base
@@ -165,7 +170,7 @@ describe("mapCardTransactionToQboPurchase", () => {
   });
 
   it("falls back to the line label when there is no merchant name", () => {
-    const payload = mapCardTransactionToQboPurchase({
+    const payload = mapChargeToQboPurchase({
       charge: charge({ merchantName: null }),
       costing: costing(),
       ...base
@@ -174,7 +179,7 @@ describe("mapCardTransactionToQboPurchase", () => {
   });
 
   it("falls back to the card memo when there is no merchant name or line description", () => {
-    const payload = mapCardTransactionToQboPurchase({
+    const payload = mapChargeToQboPurchase({
       charge: charge({ merchantName: null }),
       costing: costing({ lines: [{ ...lines[0]!, description: null }] }),
       ...base
@@ -184,7 +189,7 @@ describe("mapCardTransactionToQboPurchase", () => {
 
   it("converts a foreign charge to its transaction currency and pins the reciprocal QBO rate", () => {
     // A CAD charge: base USD lines × 1.25 CAD per USD; QBO quotes USD per CAD.
-    const payload = mapCardTransactionToQboPurchase({
+    const payload = mapChargeToQboPurchase({
       charge: charge(),
       costing: costing({
         lines: [{ ...lines[0]!, amount: 345.34 }],
@@ -202,8 +207,8 @@ describe("mapCardTransactionToQboPurchase", () => {
   it("moves an over-long readable id to PrivateNote under QBO's 21-char DocNumber cap", () => {
     const longId = "CARD-2026-09-000000000001";
     expect(longId.length).toBeGreaterThan(QBO_DOC_NUMBER_MAX_LENGTH);
-    const payload = mapCardTransactionToQboPurchase({
-      charge: charge({ cardTransactionId: longId }),
+    const payload = mapChargeToQboPurchase({
+      charge: charge({ chargeId: longId }),
       costing: costing(),
       ...base
     });
@@ -215,7 +220,7 @@ describe("mapCardTransactionToQboPurchase", () => {
 
   it("fails as the UNMAPPED_ACCOUNTS Warning when a line account is unmapped", () => {
     const attempt = () =>
-      mapCardTransactionToQboPurchase({
+      mapChargeToQboPurchase({
         charge: charge(),
         costing: costing(),
         ...base,
@@ -229,7 +234,7 @@ describe("mapCardTransactionToQboPurchase", () => {
         errorCode: "UNMAPPED_ACCOUNTS",
         warning: true,
         metadata: {
-          cardTransactionId: "ct_1",
+          chargeId: "ct_1",
           unmappedAccountIds: ["acct_travel"],
           lineIdsWithoutAccount: []
         }
@@ -239,7 +244,7 @@ describe("mapCardTransactionToQboPurchase", () => {
 
   it("fails as the UNMAPPED_ACCOUNTS Warning when the card-liability account is unmapped", () => {
     try {
-      mapCardTransactionToQboPurchase({
+      mapChargeToQboPurchase({
         charge: charge(),
         costing: costing(),
         ...base,
@@ -258,7 +263,7 @@ describe("mapCardTransactionToQboPurchase", () => {
 
   it("fails as a Warning when there is no posted journal to replay", () => {
     try {
-      mapCardTransactionToQboPurchase({
+      mapChargeToQboPurchase({
         charge: charge(),
         costing: costing({ lines: [] }),
         ...base
@@ -269,13 +274,13 @@ describe("mapCardTransactionToQboPurchase", () => {
       expect((err as JournalEntrySyncError).failure).toMatchObject({
         errorCode: "UNMAPPED_ACCOUNTS",
         warning: true,
-        metadata: { cardTransactionId: "ct_1" }
+        metadata: { chargeId: "ct_1" }
       });
     }
   });
 });
 
-// ── shouldSync mirrors isChargeBackedCardTransaction ──────────────────────────
+// ── shouldSync mirrors isDocBackedCharge ──────────────────────────
 
 describe("QboChargeSyncer.shouldSync", () => {
   function makeSyncer() {

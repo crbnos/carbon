@@ -1,6 +1,11 @@
+// SPDX-License-Identifier: LicenseRef-Carbon-Commercial
+// Copyright (C) Carbon Manufacturing Systems Corporation.
+// Carbon Enterprise file, licensed only under the Carbon Commercial License
+// (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
+
 import { describe, expect, it } from "vitest";
 import {
-  normalizeRampCardTransactionAmount,
+  normalizeRampTransactionAmount,
   parseVerifiedRampMinorAmount,
   rampMinorAmountToMajor,
   validateRampCurrencyDecimals,
@@ -65,10 +70,10 @@ describe("rampMinorAmountToMajor", () => {
   });
 });
 
-describe("normalizeRampCardTransactionAmount", () => {
+describe("normalizeRampTransactionAmount", () => {
   it("prefers signed entity minor units", () => {
     expect(
-      normalizeRampCardTransactionAmount({
+      normalizeRampTransactionAmount({
         entityAmount: { value: -12_345, currency: "USD" },
         deprecatedMajorAmount: -999,
         currencyCode: "USD",
@@ -79,7 +84,7 @@ describe("normalizeRampCardTransactionAmount", () => {
 
   it("keeps the deprecated card fallback in major units", () => {
     expect(
-      normalizeRampCardTransactionAmount({
+      normalizeRampTransactionAmount({
         entityAmount: null,
         deprecatedMajorAmount: 123.45,
         currencyCode: "USD",
@@ -90,7 +95,7 @@ describe("normalizeRampCardTransactionAmount", () => {
 
   it("rejects an entity amount whose currency disagrees with the transaction", () => {
     expect(
-      normalizeRampCardTransactionAmount({
+      normalizeRampTransactionAmount({
         entityAmount: { value: 12_345, currency: "JPY" },
         deprecatedMajorAmount: undefined,
         currencyCode: "USD",
@@ -106,7 +111,7 @@ describe("normalizeRampCardTransactionAmount", () => {
     Number.POSITIVE_INFINITY
   ])("rejects missing or non-finite fallback %s", (deprecatedMajorAmount) => {
     expect(
-      normalizeRampCardTransactionAmount({
+      normalizeRampTransactionAmount({
         entityAmount: null,
         deprecatedMajorAmount,
         currencyCode: "USD",

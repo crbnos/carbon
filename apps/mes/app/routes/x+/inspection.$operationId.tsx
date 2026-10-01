@@ -1,9 +1,15 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { flash } from "@carbon/auth/session.server";
 import {
   getOrCreateJobOperationInspection,
+  getRecentInspectionGauges,
   reconcileInspectionSamplingPlans
 } from "@carbon/database/quality";
 import { getLogger } from "@carbon/logger";
@@ -123,21 +129,27 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     );
   }
 
-  const [viewData, events, quantities, linkedQuantities] = await Promise.all([
-    getInspectionViewData(serviceRole, {
-      inspection,
-      jobMakeMethodId: op.jobMakeMethodId,
-      companyId
-    }),
-    getProductionEventsForJobOperation(serviceRole, { operationId, userId }),
-    getProductionQuantitiesForJobOperation(serviceRole, operationId),
-    // Verdict-driven postings link back to their sample — the UI derives
-    // "Complete passed (n)" from what is passed but not yet posted.
-    serviceRole
-      .from("productionQuantity")
-      .select("id, type, quantity, inspectionSampleId")
-      .eq("inspectionId", lot.data.id)
-  ]);
+  const [viewData, events, quantities, linkedQuantities, recentGauges] =
+    await Promise.all([
+      getInspectionViewData(serviceRole, {
+        inspection,
+        jobMakeMethodId: op.jobMakeMethodId,
+        companyId
+      }),
+      getProductionEventsForJobOperation(serviceRole, { operationId, userId }),
+      getProductionQuantitiesForJobOperation(serviceRole, operationId),
+      // Verdict-driven postings link back to their sample — the UI derives
+      // "Complete passed (n)" from what is passed but not yet posted.
+      serviceRole
+        .from("productionQuantity")
+        .select("id, type, quantity, inspectionSampleId")
+        .eq("inspectionId", lot.data.id),
+      // The gauges most recently recorded at this operation, offered first.
+      getRecentInspectionGauges(getDatabaseClient(), {
+        inspectionId: lot.data.id,
+        companyId
+      })
+    ]);
 
   const linkedProductionRows = (linkedQuantities.data ?? []).filter(
     (row) => row.type === "Production"
@@ -158,6 +170,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     job: job.data,
     operation: makeDurations(op) as OperationWithDetails,
     inspection,
+    recentGaugeIds: recentGauges.data ?? [],
     events: events.data ?? [],
     productionQuantities,
     linkedSampleIds: linkedProductionRows

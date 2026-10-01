@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { assertIsPost, error, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -8,12 +13,13 @@ import {
   getMaintenanceDispatch,
   isMaintenanceDispatchLocked
 } from "~/modules/resources";
+import { postMaintenanceLabor } from "~/modules/resources/resources.server";
 import { requireUnlocked } from "~/utils/lockedGuard.server";
 import { path, requestReferrer } from "~/utils/path";
 
 export async function action({ request, params }: ActionFunctionArgs) {
   assertIsPost(request);
-  const { client } = await requirePermissions(request, {
+  const { client, companyId, userId } = await requirePermissions(request, {
     delete: "resources"
   });
 
@@ -41,8 +47,23 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
+  // Reverses the labor cost the deleted timecard posted.
+  const postingError = await postMaintenanceLabor({
+    maintenanceDispatchIds: [dispatchId],
+    companyId,
+    userId
+  });
+
   throw redirect(
     requestReferrer(request) ?? path.to.maintenanceDispatch(dispatchId),
-    await flash(request, success("Timecard removed successfully"))
+    await flash(
+      request,
+      postingError
+        ? error(
+            postingError,
+            "Timecard removed, but its labor cost was not reversed"
+          )
+        : success("Timecard removed successfully")
+    )
   );
 }

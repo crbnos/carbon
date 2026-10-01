@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -12,7 +17,7 @@ import { path } from "~/utils/path";
 import { getGenericQueryFilters } from "~/utils/query";
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
-  const { client } = await requirePermissions(request, {
+  const { client, companyId } = await requirePermissions(request, {
     view: "production",
     role: "employee"
   });
@@ -27,13 +32,18 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { limit, offset, sorts, filters } =
     getGenericQueryFilters(searchParams);
 
-  const stepRecords = await getJobOperationStepRecords(client, jobId, {
-    limit,
-    offset,
-    sorts,
-    filters,
-    search
-  });
+  const stepRecords = await getJobOperationStepRecords(
+    client,
+    jobId,
+    companyId,
+    {
+      limit,
+      offset,
+      sorts,
+      filters,
+      search
+    }
+  );
 
   if (stepRecords.error) {
     redirect(

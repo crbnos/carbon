@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { Document, Image, Page, Text, View } from "@react-pdf/renderer";
 import { createTw } from "react-pdf-tailwind";
 import { generateQRCode } from "../qr/qr-code";
@@ -145,7 +150,7 @@ const KanbanLabelPDF = ({
                         />
 
                         {/* Thumbnail if available */}
-                        {label.thumbnail && (
+                        {label.thumbnail ? (
                           <Image
                             src={label.thumbnail}
                             style={{
@@ -155,7 +160,7 @@ const KanbanLabelPDF = ({
                               marginLeft: 8
                             }}
                           />
-                        )}
+                        ) : null}
                       </View>
 
                       {/* Item Information */}

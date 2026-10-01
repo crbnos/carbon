@@ -1,4 +1,9 @@
-import type { DateDuration } from "@internationalized/date";
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
+import type { CalendarDate, DateDuration } from "@internationalized/date";
 import { endOfMonth, getWeeksInMonth } from "@internationalized/date";
 import { useCalendarGrid } from "@react-aria/calendar";
 import { useLocale } from "@react-aria/i18n";
@@ -12,11 +17,13 @@ import { CalendarRangeCell } from "./CalendarRangeCell";
 export const CalendarGrid = ({
   state,
   offset = {},
-  isRangeCalendar = false
+  isRangeCalendar = false,
+  isDateMarked
 }: {
   state: CalendarState | RangeCalendarState;
   offset?: DateDuration;
   isRangeCalendar?: boolean;
+  isDateMarked?: (date: CalendarDate) => boolean;
 }) => {
   const { locale } = useLocale();
   const startDate = state.visibleRange.start.add(offset);
@@ -64,6 +71,7 @@ export const CalendarGrid = ({
                       date={date}
                       currentMonth={startDate}
                       locale={locale}
+                      isMarked={isDateMarked?.(date) ?? false}
                     />
                   ) : (
                     <CalendarCell

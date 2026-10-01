@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { Database, Json } from "@carbon/database";
 import { fetchAllFromTable, getCompanyTimeZone } from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
@@ -80,9 +85,10 @@ export async function closePurchaseOrder(
   return client
     .from("purchaseOrder")
     .update({
-      closed: true,
+      status: "Closed",
       closedAt: datetime.today(companyTz).toString(),
-      closedBy: userId
+      closedBy: userId,
+      updatedBy: userId
     })
     .eq("id", purchaseOrderId)
     .select("id")
@@ -1466,8 +1472,9 @@ export async function updateSupplierTax(
 ) {
   return client
     .from("supplierTax")
-    .update(sanitize(supplierTax))
-    .eq("supplierId", supplierTax.supplierId);
+    .update(sanitize({ ...supplierTax, updatedAt: new Date().toISOString() }))
+    .eq("supplierId", supplierTax.supplierId)
+    .eq("companyId", supplierTax.companyId);
 }
 
 export async function insertPurchaseOrder(

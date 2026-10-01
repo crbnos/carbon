@@ -12,6 +12,9 @@ msgstr ""
 "Language-Team: \n"
 "Plural-Forms: \n"
 
+msgid "(Inactive)"
+msgstr "(Inactivo)"
+
 #. placeholder {0}: attribute.name
 #. placeholder {1}: activeStep + 1
 msgid "{0} - Set {1}"
@@ -157,6 +160,9 @@ msgstr "Todos"
 msgid "All clear"
 msgstr "Todo despejado"
 
+msgid "All gauges"
+msgstr "Todos los instrumentos de medición"
+
 msgid "All jobs"
 msgstr "Todas las órdenes de trabajo"
 
@@ -280,6 +286,12 @@ msgstr "Logotipo de Carbon"
 msgid "Cards"
 msgstr "Tarjetas"
 
+msgid "Characteristic"
+msgstr "Característica"
+
+msgid "Characteristics"
+msgstr "Características"
+
 msgid "Chat"
 msgstr "Chat"
 
@@ -294,6 +306,9 @@ msgstr "Limpiar"
 
 msgid "Clear Filters"
 msgstr "Limpiar filtros"
+
+msgid "Clear gauge"
+msgstr "Borrar instrumento de medición"
 
 msgid "Clear Search"
 msgstr "Limpiar Búsqueda"
@@ -313,7 +328,7 @@ msgstr "Marcado entrada desde <0/>"
 msgid "Close"
 msgstr "Cerrar"
 
-msgid "Collapse features table"
+msgid "Collapse characteristics table"
 msgstr "Contraer tabla de características"
 
 msgid "Collapse panel"
@@ -366,9 +381,6 @@ msgstr "Finalizando"
 msgid "Connecting"
 msgstr "Conectando"
 
-msgid "Console"
-msgstr "Consola"
-
 msgid "Console Mode"
 msgstr "Modo consola"
 
@@ -380,6 +392,15 @@ msgstr "Consumido vencido"
 
 msgid "Continue"
 msgstr "Continuar"
+
+msgid "Copied!"
+msgstr "¡Copiado!"
+
+msgid "Copy"
+msgstr "Copiar"
+
+msgid "Copy to clipboard"
+msgstr "Copiar al portapapeles"
 
 #. placeholder {0}: board.unplannedCost.days
 msgid "Cost of unplanned maintenance, last {0} days"
@@ -478,8 +499,8 @@ msgstr "Borrador"
 msgid "Drag and drop a file here, or click to select a file"
 msgstr "Arrastre y suelte un archivo aquí, o haga clic para seleccionar un archivo"
 
-msgid "Drag to resize drawing and features"
-msgstr "Arrastra para redimensionar el dibujo y las características"
+msgid "Drag to resize drawing and characteristics"
+msgstr "Arrastra para redimensionar el dibujo y características"
 
 #. placeholder {0}: active.data.current?.type
 msgid "Dragging {0} cancelled."
@@ -559,7 +580,7 @@ msgstr "Cada orden de trabajo en el lote de producción sigue estos pasos. Regis
 msgid "Every unit has a verdict: {passes} passed and {fails} failed. The lot closes with each unit routed to its own outcome."
 msgstr "Cada unidad tiene un veredicto: {passes} superadas y {fails} rechazadas. El lote se cierra con cada unidad dirigida a su propio resultado."
 
-msgid "Expand features table"
+msgid "Expand characteristics table"
 msgstr "Expandir tabla de características"
 
 msgid "Expand panel"
@@ -581,8 +602,11 @@ msgstr "Vencimiento próximo"
 msgid "Failed"
 msgstr "Fallido"
 
-msgid "Failed features"
+msgid "Failed characteristics"
 msgstr "Características fallidas"
+
+msgid "Failed features"
+msgstr ""
 
 msgid "Failed to complete inventory adjustment"
 msgstr "Error al completar el ajuste de inventario"
@@ -598,6 +622,9 @@ msgstr "Error al obtener las operaciones activas"
 
 msgid "Failed to fetch storageUnits"
 msgstr "Error al obtener unidades de almacenamiento"
+
+msgid "Failed to record gauge"
+msgstr "Error al registrar el instrumento de medición"
 
 msgid "Failed to save measurement"
 msgstr "Error al guardar la medición"
@@ -615,12 +642,6 @@ msgstr "Error al subir el archivo: {0}"
 
 msgid "Failed to upload image"
 msgstr "Error al subir la imagen"
-
-msgid "Feature"
-msgstr "Característica"
-
-msgid "Features"
-msgstr "Características"
 
 msgid "File size exceeds 10MB limit"
 msgstr "El tamaño del archivo excede el límite de 10MB"
@@ -675,6 +696,12 @@ msgstr "Corrija las cantidades resaltadas antes de completar."
 
 msgid "Forgot to Clock Out?"
 msgstr "¿Olvidó fichar salida?"
+
+msgid "Gauge"
+msgstr "Instrumento de medición"
+
+msgid "Gauge for characteristic {characteristicLabel}: {currentGauge}"
+msgstr "Instrumento de medición para la característica {characteristicLabel}: {currentGauge}"
 
 msgid "General"
 msgstr "General"
@@ -996,6 +1023,9 @@ msgstr "Sin órdenes de mantenimiento asignadas a usted"
 msgid "No files"
 msgstr "Sin archivos"
 
+msgid "No gauges found."
+msgstr "No se encontraron instrumentos de medición."
+
 msgid "No Impact"
 msgstr "Sin impacto"
 
@@ -1166,6 +1196,9 @@ msgstr "Opcional"
 msgid "or"
 msgstr "o"
 
+msgid "Out of calibration"
+msgstr "Fuera de calibración"
+
 msgid "Output lot"
 msgstr "Lote de salida"
 
@@ -1248,6 +1281,9 @@ msgstr "Por favor seleccione un artículo"
 msgid "PM schedule lapsed"
 msgstr "Cronograma de PM caducado"
 
+msgid "Press ? on any page to open this list. Shortcuts are ignored while you type in a field."
+msgstr "Presione ? en cualquier página para abrir la lista. Los atajos se ignoran mientras escribe en un campo."
+
 msgid "Prev"
 msgstr "Anterior"
 
@@ -1312,6 +1348,9 @@ msgstr "Motivo del retrabajo"
 
 msgid "Recent"
 msgstr "Recientes"
+
+msgid "Recently used"
+msgstr "Usado recientemente"
 
 msgid "Record"
 msgstr "Registrar"
@@ -1447,8 +1486,14 @@ msgstr "Descartando la serie seleccionada"
 msgid "Search"
 msgstr "Buscar"
 
+msgid "Search {gaugeTypeName}..."
+msgstr "Buscar {gaugeTypeName}..."
+
 msgid "Search by job or item ID"
 msgstr "Buscar por ID de trabajo o artículo"
+
+msgid "Search gauges..."
+msgstr "Buscar instrumentos de medición..."
 
 msgid "Search operators..."
 msgstr "Buscar operadores..."
@@ -1483,6 +1528,9 @@ msgstr "Seleccione un artículo..."
 #. placeholder {0}: index + 1
 msgid "Select Batch {0}"
 msgstr "Seleccionar lote {0}"
+
+msgid "Select gauge"
+msgstr "Seleccionar instrumento de medición"
 
 msgid "Select Printer"
 msgstr "Seleccionar Impresora"
@@ -1561,8 +1609,8 @@ msgstr "Picking corto {itemName}"
 msgid "Show description"
 msgstr "Mostrar descripción"
 
-msgid "Show this overlay"
-msgstr "Mostrar esta superposición"
+msgid "Show keyboard shortcuts"
+msgstr "Mostrar atajos de teclado"
 
 msgid "Sign in with Google"
 msgstr "Iniciar sesión con Google"
@@ -1678,6 +1726,9 @@ msgstr "El lote seguirá siendo disposicionado, pero no se puede crear un NCR ha
 msgid "The timer and completion are shared by all {0} jobs. Steps, materials and files here are this job's own."
 msgstr "El temporizador y la finalización se comparten entre todas las {0} órdenes de trabajo. Los pasos, materiales y archivos aquí son propios de esta orden de trabajo."
 
+msgid "then"
+msgstr "luego"
+
 msgid "There are no available or consumed tracked parts for this material."
 msgstr "No hay piezas rastreadas disponibles o consumidas para este material."
 
@@ -1773,6 +1824,9 @@ msgstr "Materiales de serie/lote no emitidos"
 
 msgid "Unknown"
 msgstr "Desconocido"
+
+msgid "Unknown gauge"
+msgstr "Instrumento de medición desconocido"
 
 msgid "Unlock"
 msgstr "Desbloquear"

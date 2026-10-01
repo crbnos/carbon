@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: LicenseRef-Carbon-Commercial
+// Copyright (C) Carbon Manufacturing Systems Corporation.
+// Carbon Enterprise file, licensed only under the Carbon Commercial License
+// (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
+
 import type { Kysely, KyselyDatabase, KyselyTx } from "@carbon/database/client";
 
 export interface ExternalIntegrationMapping {
@@ -19,6 +24,7 @@ export interface ExternalIntegrationMapping {
 export interface LinkOptions {
   metadata?: Record<string, unknown>;
   remoteUpdatedAt?: Date | string;
+  lastSyncedAt?: Date | string;
   createdBy?: string;
   /**
    * When true, allows multiple Carbon entities to map to the same external ID.
@@ -56,6 +62,10 @@ export class ExternalIntegrationMappingService {
       options?.remoteUpdatedAt instanceof Date
         ? options.remoteUpdatedAt.toISOString()
         : (options?.remoteUpdatedAt ?? now);
+    const lastSyncedAt =
+      options?.lastSyncedAt instanceof Date
+        ? options.lastSyncedAt.toISOString()
+        : (options?.lastSyncedAt ?? now);
     const allowDuplicateExternalId = options?.allowDuplicateExternalId ?? false;
 
     await this.db
@@ -68,7 +78,7 @@ export class ExternalIntegrationMappingService {
         allowDuplicateExternalId,
         companyId: this.companyId,
         metadata: options?.metadata ?? null,
-        lastSyncedAt: now,
+        lastSyncedAt,
         remoteUpdatedAt,
         createdBy: options?.createdBy ?? null,
         createdAt: now,
@@ -81,7 +91,7 @@ export class ExternalIntegrationMappingService {
             externalId,
             allowDuplicateExternalId,
             metadata: (options?.metadata ?? null) as any,
-            lastSyncedAt: now,
+            lastSyncedAt,
             remoteUpdatedAt,
             updatedAt: now
           })

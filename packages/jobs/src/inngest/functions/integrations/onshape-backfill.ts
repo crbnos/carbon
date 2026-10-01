@@ -1,7 +1,13 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { Database } from "@carbon/database";
 import {
   getOnshapeClient,
+  getOnshapeIntegration,
   OnshapeApiError,
   OnshapeAssetTooLargeError
 } from "@carbon/ee/onshape";
@@ -115,12 +121,8 @@ export async function isOnshapeAssetSyncEnabled(
   carbon: CarbonClient,
   companyId: string
 ): Promise<boolean> {
-  const integration = await carbon
-    .from("companyIntegration")
-    .select("active, metadata")
-    .eq("id", "onshape")
-    .eq("companyId", companyId)
-    .maybeSingle();
+  // Either Onshape connection — the public app or a Government private app.
+  const integration = await getOnshapeIntegration(carbon, companyId);
   const metadata = (integration.data?.metadata ?? {}) as Record<
     string,
     unknown
@@ -136,12 +138,7 @@ export async function resolveOnshapeCompanyId(
 ): Promise<string> {
   // Prefer the company id captured at connect (explicit + stable) over guessing
   // getCompanies()[0], which is ambiguous for multi-company Onshape accounts.
-  const stored = await carbon
-    .from("companyIntegration")
-    .select("metadata")
-    .eq("id", "onshape")
-    .eq("companyId", input.companyId)
-    .maybeSingle();
+  const stored = await getOnshapeIntegration(carbon, input.companyId);
   const storedCompanyId = (
     stored.data?.metadata as Record<string, unknown> | undefined
   )?.onshapeCompanyId;

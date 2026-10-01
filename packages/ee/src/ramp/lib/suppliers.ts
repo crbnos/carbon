@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: LicenseRef-Carbon-Commercial
+// Copyright (C) Carbon Manufacturing Systems Corporation.
+// Carbon Enterprise file, licensed only under the Carbon Commercial License
+// (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
+
 import type { Database } from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -119,7 +124,7 @@ async function ensureSupplierTypeId(
 }
 
 /**
- * Resolve the MERCHANT of a Ramp card transaction to a Carbon `supplier` id so
+ * Resolve the MERCHANT of a Ramp charge to a Carbon `supplier` id so
  * the charge can carry a vendor to the accounting provider (Rillet `charge`,
  * QBO `Purchase`, Xero SPEND bank transaction all require one). Match-or-default:
  * mapping-first under the `"merchant"` entityType keyed by Ramp's `merchant_id`,
@@ -127,7 +132,7 @@ async function ensureSupplierTypeId(
  * real vendor), then the single "Card Merchant" house supplier. It NEVER creates
  * a supplier per merchant — that polluted the vendor master with hundreds of
  * one-off rows (see `.ai/specs/2026-09-19-ramp-integration.md`).
- * Merchant identity is preserved on `cardTransaction.merchantName` and pushed
+ * Merchant identity is preserved on `charge.merchantName` and pushed
  * onto the provider charge line description.
  */
 export async function resolveMerchantSupplier(

@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
 import {
@@ -17,7 +22,10 @@ import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
 import { test } from "node:test";
 import { fileURLToPath } from "node:url";
-import { sortRelationships } from "./generate-db-types";
+import {
+  sortRelationships,
+  stripPerTenantTables
+} from "./generate-db-types";
 
 const require = createRequire(import.meta.url);
 const root = fileURLToPath(new URL("../../", import.meta.url));
@@ -207,4 +215,20 @@ test("sortRelationships orders each Relationships block deterministically", () =
   assert.equal(sortRelationships(a), sortRelationships(b));
   assert.equal(sortRelationships(a), b, "sorted output keeps a trailing comma on every entry but the last");
   assert.equal(sortRelationships("        Relationships: []\n      }"), "        Relationships: []\n      }");
+});
+
+test("strips per-tenant tables, including company ids that need quoting", () => {
+  const table = (name: string) =>
+    [`      ${name}: {`, "        Row: {}", "      }"].join("\n");
+  const source = [
+    table("searchIndexRegistry"),
+    table("searchIndex_dal7910g60gg2egcfj40"),
+    table('"searchIndex_accttest-08e7f74786d6-company"'),
+    table('"auditLog_accttest-08e7f74786d6-company"'),
+    table("auditLogArchive")
+  ].join("\n");
+  assert.equal(
+    stripPerTenantTables(source),
+    [table("searchIndexRegistry"), table("auditLogArchive")].join("\n")
+  );
 });

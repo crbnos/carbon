@@ -1,11 +1,11 @@
 {
   "kind": "carbon-company-backup",
   "version": 1,
-  "schemaVersion": "20260928012744",
+  "schemaVersion": "20260928023448",
   "sourceCompanyId": "schema-baseline",
   "sourceCompanyGroupId": null,
   "sourceCompanyName": null,
-  "exportedAt": "2026-09-28T01:33:26.516Z",
+  "exportedAt": "2026-09-28T20:45:32.712Z",
   "exportedBy": "schema-baseline",
   "label": "schema baseline",
   "includeStorage": "none",
@@ -52,6 +52,7 @@
         "costOfGoodsSoldAccount",
         "assetGainOnDisposalAccount",
         "customerWriteOffAccount",
+        "employeeReimbursementsPayableAccount",
         "assetAquisitionCostAccount",
         "supplierPrepaymentAccount",
         "interestAccount",
@@ -399,6 +400,7 @@
         "id",
         "includeOperationsOnTraveler",
         "plmReleaseControl",
+        "requireCustomerContactAndLocation",
         "salesJobCompletedNotificationGroup",
         "autoStartOperationTimer",
         "enforceInspectionFourEyes",
@@ -412,7 +414,7 @@
         "digitalQuoteIncludesPurchaseOrders",
         "digitalQuoteNotificationGroup",
         "purchasePriceUpdateTiming",
-        "requireFirstArticle",
+        "requireSupplierContactAndLocation",
         "autoSelectMaterialWithoutPickingList",
         "showSupplierReadableId",
         "qualityDispatchNotificationGroup",
@@ -448,22 +450,6 @@
         "tasks",
         "createdAt",
         "nextResetDatetime"
-      ]
-    },
-    {
-      "name": "complianceStatement",
-      "rows": 0,
-      "columns": [
-        "companyId",
-        "createdAt",
-        "updatedAt",
-        "updatedBy",
-        "id",
-        "active",
-        "name",
-        "content",
-        "createdBy",
-        "appliesToAllCustomers"
       ]
     },
     {
@@ -2039,6 +2025,68 @@
       ]
     },
     {
+      "name": "reimbursement",
+      "rows": 0,
+      "columns": [
+        "amount",
+        "currencyCode",
+        "id",
+        "integration",
+        "reference",
+        "companyId",
+        "postedAt",
+        "customFields",
+        "exchangeRate",
+        "postingDate",
+        "status",
+        "payableAccountId",
+        "createdBy",
+        "updatedBy",
+        "journalId",
+        "createdAt",
+        "postedBy",
+        "voidedBy",
+        "voidedAt",
+        "notes",
+        "reimbursementId",
+        "employeeId",
+        "reimbursementDate",
+        "updatedAt"
+      ]
+    },
+    {
+      "name": "reimbursementLine",
+      "rows": 0,
+      "columns": [
+        "costCenterId",
+        "updatedBy",
+        "reimbursementId",
+        "customFields",
+        "accountId",
+        "description",
+        "sequence",
+        "id",
+        "createdAt",
+        "projectId",
+        "updatedAt",
+        "companyId",
+        "amount",
+        "createdBy"
+      ]
+    },
+    {
+      "name": "reimbursementLineDimension",
+      "rows": 0,
+      "columns": [
+        "reimbursementLineId",
+        "createdAt",
+        "id",
+        "dimensionId",
+        "valueId",
+        "companyId"
+      ]
+    },
+    {
       "name": "reportPin",
       "rows": 0,
       "columns": [
@@ -2622,6 +2670,7 @@
         "updatedAt",
         "durationSeconds",
         "description",
+        "hiddenComponentNodeIds",
         "planConfidence",
         "fastener",
         "rootStepId",
@@ -2853,7 +2902,6 @@
         "samplingPercentage",
         "samplingAql",
         "fileName",
-        "drawingRevision",
         "samplingInspectionLevel",
         "createdBy",
         "version",
@@ -2876,12 +2924,10 @@
       "rows": 0,
       "columns": [
         "description",
-        "sizeFeatureId",
         "toleranceMinus",
         "id",
         "createdBy",
         "tolerancePlus",
-        "materialCondition",
         "unit",
         "samplingPlanType",
         "updatedBy",
@@ -2889,13 +2935,10 @@
         "type",
         "samplingSeverity",
         "samplingSampleSize",
-        "featureOfSize",
-        "designator",
         "label",
         "createdAt",
         "samplingInspectionLevel",
         "nominalValue",
-        "referenceLocation",
         "updatedAt",
         "companyId",
         "pageNumber",
@@ -3792,72 +3835,57 @@
       ]
     },
     {
-      "name": "cardTransaction",
+      "name": "charge",
       "rows": 0,
       "columns": [
-        "supplierId",
-        "id",
-        "cardHolderName",
         "updatedAt",
-        "integration",
+        "cardHolderName",
+        "id",
+        "supplierId",
         "createdAt",
-        "currencyCode",
-        "memo",
+        "integration",
         "companyId",
-        "offsetAccountId",
-        "createdBy",
+        "memo",
+        "currencyCode",
         "merchantName",
-        "voidedAt",
-        "status",
-        "cardLast4",
+        "createdBy",
+        "offsetAccountId",
         "postedAt",
+        "cardLast4",
+        "status",
+        "voidedAt",
+        "updatedBy",
+        "exchangeRate",
         "postingDate",
         "postedBy",
-        "exchangeRate",
-        "updatedBy",
-        "transactionDate",
-        "cardTransactionId",
-        "type",
-        "journalId",
         "amount",
-        "cardAccountId",
+        "journalId",
+        "type",
+        "transactionDate",
+        "chargeId",
+        "customFields",
         "voidedBy",
-        "customFields"
+        "cardAccountId"
       ]
     },
     {
-      "name": "cardTransactionLine",
+      "name": "chargeLine",
       "rows": 0,
       "columns": [
+        "amount",
         "createdBy",
+        "updatedAt",
+        "companyId",
+        "projectId",
+        "sequence",
         "id",
-        "updatedBy",
+        "createdAt",
         "description",
         "customFields",
-        "companyId",
-        "sequence",
-        "createdAt",
-        "costCenterId",
-        "updatedAt",
-        "cardTransactionId",
-        "projectId",
+        "chargeId",
         "accountId",
-        "amount"
-      ]
-    },
-    {
-      "name": "complianceStatementAssignment",
-      "rows": 0,
-      "columns": [
-        "createdAt",
-        "customerId",
-        "complianceStatementId",
-        "itemId",
-        "updatedBy",
-        "companyId",
-        "createdBy",
-        "id",
-        "updatedAt"
+        "costCenterId",
+        "updatedBy"
       ]
     },
     {
@@ -4070,7 +4098,6 @@
         "updatedAt",
         "incoterm",
         "shippingCustomerId",
-        "requiresFirstArticle",
         "shippingMethodId",
         "customerId",
         "updatedBy",
@@ -4078,7 +4105,6 @@
         "companyId",
         "shippingCustomerContactId",
         "shippingCustomerLocationId",
-        "requiresCertificateOfConformance",
         "shippingTermId"
       ]
     },
@@ -4401,30 +4427,6 @@
         "externalNotes",
         "id",
         "order"
-      ]
-    },
-    {
-      "name": "certificateOfConformance",
-      "rows": 0,
-      "columns": [
-        "id",
-        "signedBy",
-        "signedByTitle",
-        "customerId",
-        "createdAt",
-        "companyId",
-        "lastSentAt",
-        "documentId",
-        "signedByName",
-        "signedAt",
-        "shipmentId",
-        "updatedBy",
-        "createdBy",
-        "revision",
-        "lastSentTo",
-        "certificateId",
-        "updatedAt",
-        "reasonForUpdate"
       ]
     },
     {
@@ -4777,7 +4779,6 @@
       "name": "inspectionMeasurement",
       "rows": 0,
       "columns": [
-        "bonus",
         "value",
         "createdAt",
         "notes",
@@ -4791,8 +4792,7 @@
         "companyId",
         "inspectedBy",
         "updatedBy",
-        "inspectionId",
-        "allowable"
+        "inspectionId"
       ]
     },
     {
@@ -4824,77 +4824,6 @@
         "id",
         "createdBy",
         "nonConformanceId"
-      ]
-    },
-    {
-      "name": "firstArticleInspection",
-      "rows": 0,
-      "columns": [
-        "verifiedByTitle",
-        "baselineFirstArticleInspectionId",
-        "createdAt",
-        "createdBy",
-        "id",
-        "scope",
-        "verifiedBy",
-        "jobId",
-        "companyId",
-        "customerApprovalDate",
-        "partNumber",
-        "updatedAt",
-        "drawingNumber",
-        "reason",
-        "customerApprovalName",
-        "comments",
-        "approvedByName",
-        "type",
-        "approvedBy",
-        "organizationName",
-        "baselineReference",
-        "approvedByTitle",
-        "itemId",
-        "purchaseOrderNumber",
-        "verifiedByName",
-        "drawingRevision",
-        "supplierCode",
-        "partRevision",
-        "additionalChanges",
-        "updatedBy",
-        "manufacturingProcessReference",
-        "status",
-        "partName",
-        "inspectionId",
-        "approvedAt",
-        "verifiedAt",
-        "customFields",
-        "hasNonconformance",
-        "jobMakeMethodId",
-        "documentId"
-      ]
-    },
-    {
-      "name": "firstArticleInspectionProduct",
-      "rows": 0,
-      "columns": [
-        "kind",
-        "functionalTestProcedureNumber",
-        "certificateId",
-        "createdAt",
-        "updatedAt",
-        "updatedBy",
-        "sortOrder",
-        "comments",
-        "firstArticleInspectionId",
-        "specification",
-        "certificateNumber",
-        "id",
-        "supplier",
-        "name",
-        "acceptanceReportNumber",
-        "companyId",
-        "createdBy",
-        "customerApprovalVerification",
-        "code"
       ]
     },
     {
@@ -5617,6 +5546,7 @@
         "bankAccount",
         "createdBy",
         "journalId",
+        "employeeId",
         "postedBy"
       ]
     },
@@ -6011,26 +5941,6 @@
         "requiresSerialTracking",
         "conversionFactor",
         "outstandingQuantity"
-      ]
-    },
-    {
-      "name": "certificate",
-      "rows": 0,
-      "columns": [
-        "createdBy",
-        "id",
-        "documentId",
-        "supplierId",
-        "companyId",
-        "updatedBy",
-        "notes",
-        "jobOperationId",
-        "createdAt",
-        "specification",
-        "certificateNumber",
-        "updatedAt",
-        "type",
-        "receiptLineId"
       ]
     },
     {
@@ -6654,6 +6564,7 @@
         "targetPurchaseInvoiceId",
         "sourceAmount",
         "fxGainLossAmount",
+        "targetReimbursementId",
         "createdBy",
         "appliedViaPaymentId",
         "sourcePaymentId",

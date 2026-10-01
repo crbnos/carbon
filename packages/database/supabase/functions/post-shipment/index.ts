@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { serve } from "https://deno.land/std@0.175.0/http/server.ts";
 import { nanoid } from "https://deno.land/x/nanoid@v3.0.0/mod.ts";
 import { z } from "https://deno.land/x/zod@v3.21.4/mod.ts";
@@ -220,6 +225,7 @@ serve(async (req: Request) => {
               itemId: string | null;
               itemPostingGroupId: string | null;
               locationId: string | null;
+              // Always null: salesOrderLine has no cost center column.
               costCenterId: string | null;
               fixedAssetClassId: string | null;
             }[] = [];
@@ -484,7 +490,7 @@ serve(async (req: Request) => {
                     itemId: shipmentLine.itemId ?? null,
                     itemPostingGroupId,
                     locationId: shipmentLine.locationId ?? locationId ?? null,
-                    costCenterId: salesOrderLine?.costCenterId ?? null,
+                    costCenterId: null,
                     fixedAssetClassId: null,
                   });
                 }
@@ -623,7 +629,7 @@ serve(async (req: Request) => {
                     itemId: null,
                     itemPostingGroupId: null,
                     locationId: locationId ?? assetRecord.data.locationId ?? null,
-                    costCenterId: faSoLine.costCenterId ?? null,
+                    costCenterId: null,
                     fixedAssetClassId: assetRecord.data.fixedAssetClassId ?? null,
                   });
                 }
@@ -655,7 +661,7 @@ serve(async (req: Request) => {
                     itemId: null,
                     itemPostingGroupId: null,
                     locationId: locationId ?? assetRecord.data.locationId ?? null,
-                    costCenterId: faSoLine.costCenterId ?? null,
+                    costCenterId: null,
                     fixedAssetClassId: assetRecord.data.fixedAssetClassId ?? null,
                   });
                 }
@@ -682,7 +688,7 @@ serve(async (req: Request) => {
                   itemId: null,
                   itemPostingGroupId: null,
                   locationId: locationId ?? assetRecord.data.locationId ?? null,
-                  costCenterId: faSoLine.costCenterId ?? null,
+                  costCenterId: null,
                   fixedAssetClassId: assetRecord.data.fixedAssetClassId ?? null,
                 });
 

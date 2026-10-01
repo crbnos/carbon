@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { getCarbonServiceRole } from "@carbon/auth/client.server";
 import type { Database } from "@carbon/database";
 import { getCompanyTimeZone, getLocationTimeZone } from "@carbon/database";
@@ -445,7 +450,8 @@ export async function getInspectionOutcomeState(
     requiresSerialTracking && operation.jobMakeMethodId
       ? await getTrackedEntitiesByMakeMethodId(
           serviceRole,
-          operation.jobMakeMethodId
+          operation.jobMakeMethodId,
+          args.companyId
         )
       : null;
 

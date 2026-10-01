@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: LicenseRef-Carbon-Commercial
+// Copyright (C) Carbon Manufacturing Systems Corporation.
+// Carbon Enterprise file, licensed only under the Carbon Commercial License
+// (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
+
 import { Copy, Input, InputGroup, InputRightElement } from "@carbon/react";
 import { isBrowser } from "@carbon/utils";
 import type { ComponentProps } from "react";
@@ -17,6 +22,7 @@ export const Rillet = defineIntegration({
   id: "rillet",
   active: true,
   category: "Accounting",
+  providerRole: "accounting" as const,
   logo: Logo,
   setupInstructions: SetupInstructions,
   description:
@@ -90,11 +96,20 @@ export const Rillet = defineIntegration({
   schema: RilletSettingsSchema,
   actions: [
     {
-      id: "import-contacts",
+      id: "import-master-data",
       label: "Import customers & vendors",
       description:
         "Pull the customers and vendors already in Rillet into Carbon and link them, so documents Carbon posts later reuse the original Rillet records instead of creating duplicates",
-      endpoint: "/api/integrations/rillet/import-contacts"
+      endpoint:
+        "/api/integrations/master-sync?provider=rillet&direction=pull-from-accounting&entities=customers,vendors"
+    },
+    {
+      id: "push-master-data",
+      label: "Push customers, vendors & items",
+      description:
+        "Send every Carbon customer, vendor and item that has no Rillet counterpart yet",
+      endpoint:
+        "/api/integrations/master-sync?provider=rillet&direction=push-to-accounting"
     }
   ]
 });

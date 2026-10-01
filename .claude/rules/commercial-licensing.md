@@ -17,6 +17,17 @@ and every file whose name contains `.ee`** (e.g. `ApprovalRuleForm.ee.tsx`). Eve
 else is community-licensed. This is the same model as Twenty CRM (their marker is a
 `/* @license Enterprise */` header; ours is the `packages/ee` package + the `.ee` infix).
 
+Each source file also states its license in a leading SPDX header, so the boundary is
+readable per file: commercial files open with
+`// SPDX-License-Identifier: LicenseRef-Carbon-Commercial` /
+`// Copyright (C) Carbon Manufacturing Systems Corporation.`, everything else with
+`// SPDX-License-Identifier: AGPL-3.0-only`. The `spdx-license-header` check
+(`@carbon/checks`) enforces it, and the fixer (`pnpm --filter @carbon/checks
+license-headers`) writes it — the fixer is the source of truth for the full text, so do
+not hand-type it. Location decides the license: a file moved into or out of
+`packages/ee`, or renamed to gain or lose `.ee.`, must have its header swapped — rerun
+the fixer.
+
 ## The bar this pattern hits (be honest about it)
 
 You cannot make a machine refuse to run code its operator has edited. What the pattern
@@ -96,6 +107,8 @@ UI stays `.ee.tsx` in `apps/erp/app/modules/<module>/ui/` (coupled to `~/compone
    `<feature>.server.ts`). Fix `~/` deps: `sanitize` → `@carbon/utils`; redefine any
    `~/utils/query` types locally; keep `trigger()`/notification calls in the ROUTE, not the
    ee function (`@carbon/ee` does not depend on `@carbon/jobs`/`@carbon/notifications`).
+   Moved files change license — rerun `pnpm --filter @carbon/checks license-headers` to
+   swap their AGPL header for the commercial one (same for UI renamed to `.ee.tsx`).
 3. **Embed `requireEntitlement(client, companyId, "X")` at the top of every authoring
    function.** Runtime functions that must degrade use `companyHasFeature` instead.
 4. Move the feature's validators/derived types with it; add the package exports.

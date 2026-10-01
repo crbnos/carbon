@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: LicenseRef-Carbon-Commercial
+// Copyright (C) Carbon Manufacturing Systems Corporation.
+// Carbon Enterprise file, licensed only under the Carbon Commercial License
+// (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
+
 // Server-side storage-rules evaluator. Cross-app entry point — ERP
 // (item surfaces) and MES (workCenter surfaces) both call
 // `evaluateLinesForSurface`.

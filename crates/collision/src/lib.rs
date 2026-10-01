@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 //! cxx bridge over C++ FCL 0.7.0: triangle-mesh BVH build, a persistent
 //! `DynamicAABBTreeCollisionManager` broadphase, and the moving-object queries
 //! the planner drives (max penetration depth per neighbor, with a skip set and

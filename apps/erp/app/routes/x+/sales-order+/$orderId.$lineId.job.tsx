@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { assertIsPost, error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
@@ -7,6 +12,7 @@ import { getLogger } from "@carbon/logger";
 import type { ActionFunctionArgs } from "react-router";
 import { redirect } from "react-router";
 import { insertJob, salesOrderToJobValidator } from "~/modules/production";
+import { resolveJobConfiguration } from "~/modules/sales/sales.utils";
 import { requireCompanyRecord } from "~/modules/shared/shared.server";
 import { setCustomFields } from "~/utils/form";
 import { path } from "~/utils/path";
@@ -70,12 +76,37 @@ export async function action({ request, params }: ActionFunctionArgs) {
       : null
   ]);
 
-  const methodSource = d.quoteId && d.quoteLineId ? "quoteLine" : "item";
+  // The order line's configuration wins over its quote line's; a line
+  // reconfigured on the order is built from the item, not the quote's method.
+  const [salesOrderLine, quoteLine] = await Promise.all([
+    serviceRole
+      .from("salesOrderLine")
+      .select("configuration")
+      .eq("id", lineId)
+      .eq("companyId", companyId)
+      .single(),
+    d.quoteLineId
+      ? serviceRole
+          .from("quoteLine")
+          .select("configuration")
+          .eq("id", d.quoteLineId)
+          .eq("companyId", companyId)
+          .maybeSingle()
+      : Promise.resolve({ data: null })
+  ]);
+  const { configuration, reconfigured } = resolveJobConfiguration(
+    salesOrderLine.data?.configuration,
+    quoteLine.data?.configuration
+  );
+
+  const methodSource =
+    d.quoteId && d.quoteLineId && !reconfigured ? "quoteLine" : "item";
 
   const createJob = await insertJob(
     serviceRole,
     {
       ...d,
+      configuration: configuration ?? d.configuration,
       salesOrderId: orderId,
       salesOrderLineId: lineId,
       jobId: d.jobId || undefined,

@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { CalendarDate, DateValue } from "@internationalized/date";
 import { createCalendar } from "@internationalized/date";
 import type { RangeCalendarProps } from "@react-aria/calendar";
@@ -17,11 +22,14 @@ import { CalendarGrid } from "./CalendarGrid";
 
 export function RangeCalendar({
   bordered = false,
+  isDateMarked,
   ...props
 }: RangeCalendarProps<DateValue> & {
   locale?: string;
   bordered?: boolean;
   className?: string;
+  /** Days to flag with a dot, e.g. days that have work due. */
+  isDateMarked?: (date: CalendarDate) => boolean;
 }) {
   const { locale } = useLocale();
   const state = useRangeCalendarState({
@@ -100,7 +108,11 @@ export function RangeCalendar({
           </div>
         </div>
         <div className="flex gap-8">
-          <CalendarGrid state={state} isRangeCalendar />
+          <CalendarGrid
+            state={state}
+            isRangeCalendar
+            isDateMarked={isDateMarked}
+          />
         </div>
       </div>
       <div
@@ -130,7 +142,12 @@ export function RangeCalendar({
           />
         </div>
         <div className="flex gap-8">
-          <CalendarGrid state={state} offset={{ months: 1 }} isRangeCalendar />
+          <CalendarGrid
+            state={state}
+            offset={{ months: 1 }}
+            isRangeCalendar
+            isDateMarked={isDateMarked}
+          />
         </div>
       </div>
     </div>

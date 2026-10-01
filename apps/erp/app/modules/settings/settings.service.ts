@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { SUPABASE_URL } from "@carbon/auth";
 import type { Database, Json } from "@carbon/database";
 import { getCompanyTimeZone } from "@carbon/database";
@@ -1124,6 +1129,17 @@ export async function updateAllowLowercaseItemIdsSetting(
     .eq("id", companyId);
 }
 
+export async function updateBomExplorerReadableIdSetting(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  showBomExplorerReadableId: boolean
+) {
+  return client
+    .from("companySettings")
+    .update(sanitize({ showBomExplorerReadableId }))
+    .eq("id", companyId);
+}
+
 export async function updatePlmReleaseControlSetting(
   client: SupabaseClient<Database>,
   companyId: string,
@@ -1210,6 +1226,35 @@ export async function updateAccountsPayableAddressSetting(
   return client
     .from("companySettings")
     .update(sanitize({ accountsPayableAddress }))
+    .eq("id", companyId);
+}
+
+/**
+ * Require a supplier to have a contact with an email before its documents issue.
+ *
+ * See `party-contact.ts` for why the requirement lives on the PARTY and why the
+ * bar is an email rather than merely a contact row.
+ */
+export async function updateRequireSupplierContactSetting(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  requireSupplierContactAndLocation: boolean
+) {
+  return client
+    .from("companySettings")
+    .update(sanitize({ requireSupplierContactAndLocation }))
+    .eq("id", companyId);
+}
+
+/** The customer-side mirror. Ships off; nothing downstream forces it today. */
+export async function updateRequireCustomerContactSetting(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  requireCustomerContactAndLocation: boolean
+) {
+  return client
+    .from("companySettings")
+    .update(sanitize({ requireCustomerContactAndLocation }))
     .eq("id", companyId);
 }
 

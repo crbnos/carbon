@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { notFound } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
@@ -8,7 +13,12 @@ import {
   importQuotes,
   isQuoteImportTable
 } from "~/modules/sales/sales.import.server";
-import { importCsv, importPermissions, importSchemas } from "~/modules/shared";
+import {
+  importCsv,
+  importPermissions,
+  importRequiresCreate,
+  importSchemas
+} from "~/modules/shared";
 import { getDatabaseClient } from "~/services/database.server";
 
 export async function action({ request, params }: ActionFunctionArgs) {
@@ -25,7 +35,10 @@ export async function action({ request, params }: ActionFunctionArgs) {
   const { companyId, companyGroupId, userId } = await requirePermissions(
     request,
     {
-      update: importPermissions[table]
+      update: importPermissions[table],
+      ...(importRequiresCreate.has(table)
+        ? { create: importPermissions[table] }
+        : {})
     }
   );
 

@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import {
   Badge,
   BadgeCloseButton,
@@ -74,7 +79,11 @@ const entityTypeColors: Record<string, string> = {
   Custom: ""
 };
 
-function getColor(entityType: string) {
+// Exported so a read-only dimension badge outside this file (the reimbursement
+// and charge detail pages) can tint by entity type exactly as the editor does.
+// Two independent colour maps for the same dimension types is how the read and
+// edit views of one document start disagreeing about what colour a Project is.
+export function getColor(entityType: string) {
   return entityTypeColors[entityType] ?? "";
 }
 

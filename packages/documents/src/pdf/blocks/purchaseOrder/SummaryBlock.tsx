@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { Text, View } from "@react-pdf/renderer";
 import type { SummaryBlock as SummaryBlockType } from "../../../template";
 import { getTotal } from "../../../utils/purchase-order";
@@ -45,7 +50,7 @@ export function SummaryBlock({
         </Text>
       </View>
 
-      {shippingCost > 0 && (
+      {shippingCost > 0 ? (
         <View
           style={[
             tw("flex flex-row py-1.5 px-3 text-[9px]"),
@@ -59,9 +64,9 @@ export function SummaryBlock({
             {numberFormatter.format(shippingCost)}
           </Text>
         </View>
-      )}
+      ) : null}
 
-      {taxAmount > 0 && (
+      {taxAmount > 0 ? (
         <View
           style={[
             tw("flex flex-row py-1.5 px-3 text-[9px]"),
@@ -75,7 +80,7 @@ export function SummaryBlock({
             {numberFormatter.format(taxAmount)}
           </Text>
         </View>
-      )}
+      ) : null}
 
       <View style={tw("h-[1px] bg-gray-200")} />
       <View style={tw("flex flex-row py-2 px-3 text-[9px]")}>

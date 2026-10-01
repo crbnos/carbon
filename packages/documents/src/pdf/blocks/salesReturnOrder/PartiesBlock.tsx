@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { formatDate } from "@carbon/utils";
 import { Text, View } from "@react-pdf/renderer";
 import { getCountryName } from "../../../utils/shared";
@@ -44,16 +49,16 @@ export function PartiesBlock({ data }: { data: SalesReturnOrderData }) {
               Return Details
             </Text>
             <View style={tw("text-[9px] text-gray-800")}>
-              {salesReturnOrder?.salesReturnOrderId && (
+              {salesReturnOrder?.salesReturnOrderId ? (
                 <Text>RMA Number: {salesReturnOrder.salesReturnOrderId}</Text>
-              )}
-              {salesReturnOrder?.orderDate && (
+              ) : null}
+              {salesReturnOrder?.orderDate ? (
                 <Text>
                   Date:{" "}
                   {formatDate(salesReturnOrder.orderDate, undefined, locale)}
                 </Text>
-              )}
-              {salesReturnOrder?.expirationDate && (
+              ) : null}
+              {salesReturnOrder?.expirationDate ? (
                 <Text>
                   Expires:{" "}
                   {formatDate(
@@ -62,10 +67,10 @@ export function PartiesBlock({ data }: { data: SalesReturnOrderData }) {
                     locale
                   )}
                 </Text>
-              )}
-              {salesReturnOrder?.customerReference && (
+              ) : null}
+              {salesReturnOrder?.customerReference ? (
                 <Text>Customer Ref: {salesReturnOrder.customerReference}</Text>
-              )}
+              ) : null}
             </View>
           </View>
 

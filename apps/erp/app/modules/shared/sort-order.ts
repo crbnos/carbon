@@ -1,6 +1,12 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { Database } from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
 import { datetime } from "@carbon/utils";
+import type { Transaction } from "kysely";
 import { sql } from "kysely";
 import { z } from "zod";
 
@@ -75,6 +81,8 @@ export type UpdateSortOrderArgs<
   userId: string;
   parent: SortParent<T, P>;
   updates: { id: string; sortOrder: number }[];
+  /** Runs in the same transaction after the reorder, for rules the new order can break. */
+  afterUpdate?: (trx: Transaction<KyselyDatabase>) => Promise<void>;
 };
 
 /**
@@ -133,6 +141,7 @@ export async function updateSortOrder<
         `${args.table}: ${args.updates.length - rows.length} of ${args.updates.length} rows are not on this document`
       );
     }
+    await args.afterUpdate?.(trx);
   });
 }
 

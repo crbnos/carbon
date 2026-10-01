@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import {
   Alert,
   AlertTitle,
@@ -43,6 +48,9 @@ import { path } from "~/utils/path";
 interface FormData {
   [key: string]: string | number | boolean | MaterialConfigurationData;
 }
+
+// The values a configurator collects, keyed by configurationParameter key.
+export type ConfiguratorValues = FormData;
 
 interface ParameterFieldProps {
   parameter: ConfigurationParameter;
@@ -198,10 +206,12 @@ function ParameterField({ parameter }: ParameterFieldProps) {
       );
 
     case "boolean":
+      // Matches the bordered `Boolean` form field — this form keeps its own
+      // state, so it can't use the ValidatedForm-bound component.
       return (
-        <div className="flex flex-col items-start gap-2">
+        <div className="flex items-center justify-between gap-4 border border-border rounded-lg p-4">
           <Label
-            className="text-xs text-muted-foreground"
+            className="text-sm text-foreground cursor-pointer"
             htmlFor={parameter.key}
           >
             {parameter.label}
@@ -561,7 +571,7 @@ type ConfiguratorStepProps = {
 
 function ConfiguratorStep({ group, parameters }: ConfiguratorStepProps) {
   return (
-    <div className="grid grid-cols-1 gap-4 md:grid-cols-2 w-full">
+    <div className="flex flex-col gap-4 w-full">
       {parameters.map((parameter) => (
         <ParameterField key={parameter.id} parameter={parameter} />
       ))}

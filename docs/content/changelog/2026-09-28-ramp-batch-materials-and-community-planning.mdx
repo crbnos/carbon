@@ -1,0 +1,69 @@
+---
+title: "Ramp card transactions, batch materials, and a larger community edition"
+description: "Ramp card spend flows into the ledger, batches share materials, and planning and accounting join the community edition."
+date: "2026-09-28"
+tags: ["accounting", "production", "sales", "settings", "auth"]
+image: "/changelog/2026-09-28-ramp-batch-materials-and-community-planning.svg"
+---
+
+Carbon can now act as Ramp's accounting provider, so card spend, bills and reimbursements land in the general ledger instead of a spreadsheet.
+
+## Ramp card transactions
+
+Connect the [Ramp integration](/docs/integrations/accounting) and Carbon pushes its chart of accounts and cost centers across, then pulls card transactions, transfers, cashbacks, repayments, bills, reimbursements and payments back.
+
+Card spend arrives as a card transaction document (Draft, Posted or Voided) that posts into the general ledger. Bills and payments flow through accounts payable, and Carbon's [purchase orders](/docs/reference/purchase-orders) and posted [invoices](/docs/reference/invoices) go out to Ramp for bill matching.
+
+Sync Activity shows every record's outcome, and the integration panel reports its health.
+
+## Batches share materials and plan their output
+
+The second half of [operation batching](/docs/reference/batching). Issuing a lot-tracked material to a batch now splits it across the member jobs in proportion to what each still needs: one trip to the shelf, one consumption record per job.
+
+Output lots are planned when the batch is built, either one per member or a single combined lot, so the operator never types a lot number at completion. Jobs are still never merged: costing and genealogy stay per job throughout.
+
+## Quotes predict lead time from the schedule
+
+A **Predict** button on the [quote](/docs/reference/quotes) line pricing grid runs the line's routing through the [finite scheduler](/docs/reference/scheduling) without saving anything.
+
+It answers for every quantity break: **End of queue** behind released work, **Best case** with open jobs excluded, or against a **Target date**, telling you whether the line lands on time, only by expediting, or not even then.
+
+## Demo data for everyone
+
+Every new signup now gets a "How would you like to start?" step in [onboarding](/docs/reference/onboarding), and can begin with an industry [demo company](/docs/platform/demo-data) instead of an empty one.
+
+The data fills every major ERP and MES screen with documents in every status a user can reach. Posted documents carry the ledger entries and stock movements real posting would create, and [planning](/docs/reference/planning) and scheduling run right after it lands, so the shop floor is scheduled rather than blank.
+
+## A larger community edition
+
+Material planning (MRP and the finite scheduler), the configurator rules engine, and accounting are now part of the community edition under AGPLv3.
+
+Every commercial feature's code now lives in one place, `packages/ee`, so the boundary between the editions is the boundary in the source tree. See [licensing](/docs/platform/licensing) for what each edition includes.
+
+<Accordion title="Improvements">
+
+- The 3D assembly viewer can see past parts that are already fitted, with four named views (**Build**, **Focus**, **Isolate**, and **Full**) in both the ERP assembly editor and the MES shop-floor screen.
+- Each company's files now live in their own storage bucket. Backups restored into a different company come back whole: items keep their part numbers and 3D assemblies load.
+- Default accounts can be exported as CSV.
+- The Bill of Process preview shows pin labels and tool descriptions.
+- Login pages on Carbon Cloud use Vercel BotID for bot protection. Self-hosted instances choose between BotID and Turnstile with `BOT_PROTECTION`.
+- Self-hosted: setting `ADMIN_EMAIL` seeds the instance admin's account on a fresh install, and the first admin of an empty instance can reach onboarding.
+- Security hardening: tenant scoping on every path that does not go through row-level security, webhook and OAuth verification that fails closed, hashed MES console PINs (operators pin in again once after the deploy), uploaded SVG and HTML served as downloads, and cross-site request forgery protection with a report-only content security policy.
+- Page headlines are set in Hedvig Letters Serif.
+- The item sales rules card moved to the Sales tab, and unit of measure is editable on consumables and tools.
+
+</Accordion>
+
+<Accordion title="Fixes">
+
+- Completing a job completes its operation quantities, and estimates vs. actual shows the real completed quantity.
+- Completing a serial job from the desk no longer asks for serial numbers it already has.
+- A forced logout now says why instead of failing silently.
+- Tracked lots keep their quantities honest: values are rounded when stored so float residue never reaches the ledger, stock-transfer picks are idempotent, adjustments and counts can no longer leave a zero or negative Available lot, and the MES Complete Batch grid accepts decimals.
+- A receipt's batch-tracking status settles with its quantity, and the stock transfer wizard shows negative storage-unit balances instead of hiding them.
+- The item planning chart includes demand projections.
+- Large backup uploads no longer fail with Request Entity Too Large.
+- MES operation cards open again for companies with a copied twin, and batch numbers are searchable on the shop-floor board.
+- Material edits made over MCP save and follow the properties panel's rules.
+
+</Accordion>

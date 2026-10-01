@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 export * from "./accounting";
 export * from "./accounting-currency";
 export * from "./accounting-posting";
@@ -5,6 +10,7 @@ export * from "./address";
 export * from "./all";
 export * from "./arrays";
 export * from "./assembly-units";
+export * from "./balloons";
 export * from "./bank";
 export * from "./batch-compatibility";
 export * from "./batch-duration";

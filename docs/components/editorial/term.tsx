@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 "use client";
 
 /**
@@ -15,7 +20,7 @@
 import * as Popover from "@radix-ui/react-popover";
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { getDefinitionText, getTermText, lookupEntry } from "@carbon/glossary";
+import { getDefinitionText, getTermText, lookupEntry } from "@carbon/content/glossary";
 
 function slugify(text: string) {
   return text

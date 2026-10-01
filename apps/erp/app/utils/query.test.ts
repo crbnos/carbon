@@ -1,6 +1,11 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { describe, expect, it, vi } from "vitest";
 
-// @carbon/auth's barrel export pulls in @carbon/glossary, whose Lingui `msg`
+// @carbon/auth's barrel export pulls in @carbon/content/glossary, whose Lingui `msg`
 // macro isn't transformed under plain vitest (no lingui plugin configured for
 // apps/erp tests). Mock it the same way traceability.search.test.ts does -
 // getSearchTokens/setSearchFilter don't call badRequest or

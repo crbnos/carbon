@@ -1,6 +1,11 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { describe, expect, it, vi } from "vitest";
 
-// sales.models' module graph transitively loads @carbon/glossary and
+// sales.models' module graph transitively loads @carbon/content/glossary and
 // @carbon/onboarding, both of which build Lingui `msg` descriptors at module
 // load. The macro isn't transformed under plain vitest, so raw `msg` throws.
 // Stub it to a plain string builder; the validator under test is untouched.

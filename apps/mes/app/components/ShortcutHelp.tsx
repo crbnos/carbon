@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { ShortcutHelpEntry } from "@carbon/react";
 import { ShortcutHelpOverlay } from "@carbon/react";
 import { useLingui } from "@lingui/react/macro";
@@ -34,7 +39,7 @@ const ShortcutHelp = () => {
       },
       {
         shortcut: SHORTCUTS.help,
-        description: t`Show this overlay`,
+        description: t`Show keyboard shortcuts`,
         group: general
       },
       {
@@ -95,6 +100,7 @@ const ShortcutHelp = () => {
   return (
     <ShortcutHelpOverlay
       title={t`Keyboard shortcuts`}
+      description={t`Press ? on any page to open this list. Shortcuts are ignored while you type in a field.`}
       entries={entries}
       emptyLabel={t`No shortcuts available on this page.`}
     />

@@ -12,6 +12,9 @@ msgstr ""
 "Language-Team: \n"
 "Plural-Forms: \n"
 
+msgid "(Inactive)"
+msgstr "(Inattivo)"
+
 #. placeholder {0}: attribute.name
 #. placeholder {1}: activeStep + 1
 msgid "{0} - Set {1}"
@@ -157,6 +160,9 @@ msgstr "Tutti"
 msgid "All clear"
 msgstr "Tutto libero"
 
+msgid "All gauges"
+msgstr "Tutti gli strumenti di misura"
+
 msgid "All jobs"
 msgstr "Tutti gli ordini di produzione"
 
@@ -280,6 +286,12 @@ msgstr "Logo Carbon"
 msgid "Cards"
 msgstr "Schede"
 
+msgid "Characteristic"
+msgstr "Caratteristica"
+
+msgid "Characteristics"
+msgstr "Caratteristiche"
+
 msgid "Chat"
 msgstr "Chat"
 
@@ -294,6 +306,9 @@ msgstr "Cancella"
 
 msgid "Clear Filters"
 msgstr "Cancella Filtri"
+
+msgid "Clear gauge"
+msgstr "Cancella strumento di misura"
 
 msgid "Clear Search"
 msgstr "Cancella Ricerca"
@@ -313,8 +328,8 @@ msgstr "Connesso da <0/>"
 msgid "Close"
 msgstr "Chiudi"
 
-msgid "Collapse features table"
-msgstr "Comprimi tabella funzionalità"
+msgid "Collapse characteristics table"
+msgstr "Comprimi tabella delle caratteristiche"
 
 msgid "Collapse panel"
 msgstr "Comprimi pannello"
@@ -366,9 +381,6 @@ msgstr "Completamento in corso"
 msgid "Connecting"
 msgstr "Collegamento in corso"
 
-msgid "Console"
-msgstr "Console"
-
 msgid "Console Mode"
 msgstr "Modalità Console"
 
@@ -380,6 +392,15 @@ msgstr "Consumato scaduto"
 
 msgid "Continue"
 msgstr "Continua"
+
+msgid "Copied!"
+msgstr "Copiato!"
+
+msgid "Copy"
+msgstr "Copia"
+
+msgid "Copy to clipboard"
+msgstr "Copia negli appunti"
 
 #. placeholder {0}: board.unplannedCost.days
 msgid "Cost of unplanned maintenance, last {0} days"
@@ -478,8 +499,8 @@ msgstr "Bozza"
 msgid "Drag and drop a file here, or click to select a file"
 msgstr "Trascina e rilascia un file qui, o clicca per selezionare un file"
 
-msgid "Drag to resize drawing and features"
-msgstr "Trascinare per ridimensionare il disegno e le caratteristiche"
+msgid "Drag to resize drawing and characteristics"
+msgstr "Trascina per ridimensionare il disegno e le caratteristiche"
 
 #. placeholder {0}: active.data.current?.type
 msgid "Dragging {0} cancelled."
@@ -559,8 +580,8 @@ msgstr "Ogni ordine di produzione nel lotto di produzione segue questi passi. Re
 msgid "Every unit has a verdict: {passes} passed and {fails} failed. The lot closes with each unit routed to its own outcome."
 msgstr "Ogni unità ha un verdetto: {passes} superate e {fails} fallite. Il lotto si chiude con ogni unità indirizzata al suo esito."
 
-msgid "Expand features table"
-msgstr "Espandi tabella funzionalità"
+msgid "Expand characteristics table"
+msgstr "Espandi tabella delle caratteristiche"
 
 msgid "Expand panel"
 msgstr "Espandi pannello"
@@ -581,8 +602,11 @@ msgstr "Scadenza prima"
 msgid "Failed"
 msgstr "Non riuscito"
 
+msgid "Failed characteristics"
+msgstr "Caratteristiche non conformi"
+
 msgid "Failed features"
-msgstr "Funzionalità non riuscite"
+msgstr ""
 
 msgid "Failed to complete inventory adjustment"
 msgstr "Impossibile completare la rettifica di magazzino"
@@ -598,6 +622,9 @@ msgstr "Impossibile recuperare le operazioni attive"
 
 msgid "Failed to fetch storageUnits"
 msgstr "Impossibile recuperare le unità di archiviazione"
+
+msgid "Failed to record gauge"
+msgstr "Impossibile registrare lo strumento di misura"
 
 msgid "Failed to save measurement"
 msgstr "Errore durante il salvataggio della misurazione"
@@ -615,12 +642,6 @@ msgstr "Impossibile caricare il file: {0}"
 
 msgid "Failed to upload image"
 msgstr "Impossibile caricare l'immagine"
-
-msgid "Feature"
-msgstr "Funzionalità"
-
-msgid "Features"
-msgstr "Caratteristiche"
 
 msgid "File size exceeds 10MB limit"
 msgstr "La dimensione del file supera il limite di 10MB"
@@ -675,6 +696,12 @@ msgstr "Correggi le quantità evidenziate prima di completare."
 
 msgid "Forgot to Clock Out?"
 msgstr "Hai dimenticato il timbra fine?"
+
+msgid "Gauge"
+msgstr "Strumento di misura"
+
+msgid "Gauge for characteristic {characteristicLabel}: {currentGauge}"
+msgstr "Strumento di misura per la caratteristica {characteristicLabel}: {currentGauge}"
 
 msgid "General"
 msgstr "Generale"
@@ -996,6 +1023,9 @@ msgstr "Nessun intervento di manutenzione assegnato"
 msgid "No files"
 msgstr "Nessun file"
 
+msgid "No gauges found."
+msgstr "Nessuno strumento di misura trovato."
+
 msgid "No Impact"
 msgstr "Nessun Impatto"
 
@@ -1166,6 +1196,9 @@ msgstr "Facoltativo"
 msgid "or"
 msgstr "o"
 
+msgid "Out of calibration"
+msgstr "Fuori dalla taratura"
+
 msgid "Output lot"
 msgstr "Lotto di output"
 
@@ -1248,6 +1281,9 @@ msgstr "Selezionare un articolo"
 msgid "PM schedule lapsed"
 msgstr "Pianificazione PM scaduta"
 
+msgid "Press ? on any page to open this list. Shortcuts are ignored while you type in a field."
+msgstr "Premi ? su qualsiasi pagina per aprire questo elenco. Le scorciatoie vengono ignorate mentre digiti in un campo."
+
 msgid "Prev"
 msgstr "Precedente"
 
@@ -1312,6 +1348,9 @@ msgstr "Motivo della rilavorazione"
 
 msgid "Recent"
 msgstr "Recenti"
+
+msgid "Recently used"
+msgstr "Usato di recente"
 
 msgid "Record"
 msgstr "Registra"
@@ -1447,8 +1486,14 @@ msgstr "Scarto del numero di serie selezionato"
 msgid "Search"
 msgstr "Cerca"
 
+msgid "Search {gaugeTypeName}..."
+msgstr "Cerca {gaugeTypeName}..."
+
 msgid "Search by job or item ID"
 msgstr "Cerca per ID lavoro o articolo"
+
+msgid "Search gauges..."
+msgstr "Cerca strumenti di misura..."
 
 msgid "Search operators..."
 msgstr "Cerca operatori..."
@@ -1483,6 +1528,9 @@ msgstr "Seleziona un articolo..."
 #. placeholder {0}: index + 1
 msgid "Select Batch {0}"
 msgstr "Seleziona Lotto {0}"
+
+msgid "Select gauge"
+msgstr "Seleziona strumento di misura"
 
 msgid "Select Printer"
 msgstr "Seleziona Stampante"
@@ -1561,8 +1609,8 @@ msgstr "Prelievo breve {itemName}"
 msgid "Show description"
 msgstr "Mostra descrizione"
 
-msgid "Show this overlay"
-msgstr "Mostra questo pannello"
+msgid "Show keyboard shortcuts"
+msgstr "Mostra i tasti di scelta rapida"
 
 msgid "Sign in with Google"
 msgstr "Accedi con Google"
@@ -1678,6 +1726,9 @@ msgstr "Il lotto sarà comunque disposizionato, ma non è possibile creare un NC
 msgid "The timer and completion are shared by all {0} jobs. Steps, materials and files here are this job's own."
 msgstr "Il timer e il completamento sono condivisi da tutti gli {0} ordini di produzione. I passi, i materiali e i file qui sono di questo ordine di produzione."
 
+msgid "then"
+msgstr "poi"
+
 msgid "There are no available or consumed tracked parts for this material."
 msgstr "Non ci sono componenti tracciati disponibili o consumati per questo materiale."
 
@@ -1773,6 +1824,9 @@ msgstr "Materiali seriali/lotto non prelevati"
 
 msgid "Unknown"
 msgstr "Sconosciuto"
+
+msgid "Unknown gauge"
+msgstr "Strumento di misura sconosciuto"
 
 msgid "Unlock"
 msgstr "Sblocca"

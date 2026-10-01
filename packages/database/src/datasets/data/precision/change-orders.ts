@@ -1,15 +1,20 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { ChangeOrderData, ChangeOrderSpec } from "../../types.ts";
 
 export const CHANGE_ORDERS: ChangeOrderSpec[] = [
   {
     ref: "co:draft",
-    name: "HMA-4000 Rev A — customer print revision, port relocation",
+    name: "MCH-MANI-BLK — customer print revision, port relocation",
     type: "Engineering",
     status: "Draft",
     openDateOffset: -220,
     affectedItems: [
       {
-        item: "HMA-4000",
+        item: "MCH-MANI-BLK",
         changeType: "Version",
         sortOrder: 1
       }

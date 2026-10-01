@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 // `<StorageUnit>` — the storage-unit (bin) picker. One component, two modes:
 // - with `name`    -> form-bound (`@carbon/form` CreatableCombobox)
 // - without `name` -> controlled (`value` + `onChange`) for table cells
@@ -10,8 +15,8 @@
 // single-purpose interaction handled by `StorageUnitParentSelect`, local to the
 // Storage Unit form.
 
+import type { TermId } from "@carbon/content/glossary";
 import { CreatableCombobox } from "@carbon/form";
-import type { TermId } from "@carbon/glossary";
 import {
   CreatableCombobox as CreatableComboboxBase,
   useDisclosure

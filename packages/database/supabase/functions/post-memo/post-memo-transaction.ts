@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { Kysely } from "kysely";
 import { nanoid } from "https://deno.land/x/nanoid@v3.0.0/mod.ts";
 import type { SupabaseClient } from "@supabase/supabase-js";

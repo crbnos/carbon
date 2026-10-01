@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 "use client";
 
 import * as DialogPrimitive from "@radix-ui/react-dialog";
@@ -44,7 +49,9 @@ ModalOverlay.displayName = DialogPrimitive.Overlay.displayName;
 const ModalContentVariants = cva(
   cn(
     "px-0 pt-6",
-    "relative z-50 grid w-full border dark:border-none gap-4 shadow-md dark:shadow-sm duration-200",
+    "relative z-50 flex flex-col max-h-[calc(100dvh-4rem)] overflow-y-auto w-full border dark:border-none gap-4 shadow-md dark:shadow-sm duration-200",
+    "[&>form]:flex [&>form]:flex-col [&>form]:min-h-0",
+    "scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent",
     "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
     "data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95",
     "data-[state=closed]:slide-out-to-left-[0%] data-[state=closed]:slide-out-to-top-[0%",
@@ -111,7 +118,7 @@ const ModalHeader = ({
 }: HTMLAttributes<HTMLDivElement>) => (
   <div
     className={cn(
-      "flex flex-col space-y-1.5 text-center sm:text-left mb-4 px-6",
+      "flex flex-col shrink-0 space-y-1.5 text-center sm:text-left mb-4 px-6",
       className
     )}
     {...props}
@@ -120,7 +127,16 @@ const ModalHeader = ({
 ModalHeader.displayName = "ModalHeader";
 
 const ModalBody = ({ className, ...props }: HTMLAttributes<HTMLDivElement>) => (
-  <div className={cn(" w-full py-0 px-6 mb-4", className)} {...props} />
+  <div
+    className={cn(
+      // py-1 keeps the 3px focus ring of the first/last field inside the
+      // scroll clip; -mt-1/mb-3 cancel it so the layout is unchanged.
+      "relative w-full min-h-0 overflow-y-auto -mt-1 py-1 px-6 mb-3",
+      "scrollbar-thin scrollbar-track-transparent scrollbar-thumb-accent",
+      className
+    )}
+    {...props}
+  />
 );
 ModalBody.displayName = "ModalBody";
 
@@ -130,7 +146,7 @@ const ModalFooter = ({
 }: HTMLAttributes<HTMLDivElement>) => (
   <div
     className={cn(
-      "flex flex-col-reverse sm:flex-row sm:justify-end gap-2 px-6 py-3 border-t border-border bg-muted/40 sm:rounded-b-2xl",
+      "flex flex-col-reverse shrink-0 sm:flex-row sm:justify-end gap-2 px-6 py-3 border-t border-border bg-muted/40 sm:rounded-b-2xl",
       className
     )}
     {...props}

@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: LicenseRef-Carbon-Commercial
+// Copyright (C) Carbon Manufacturing Systems Corporation.
+// Carbon Enterprise file, licensed only under the Carbon Commercial License
+// (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
+
 import { XERO_CLIENT_ID } from "@carbon/auth";
 import type { ComponentProps } from "react";
 import { z } from "zod";
@@ -20,6 +25,7 @@ export const Xero = defineIntegration({
   id: "xero",
   active: true,
   category: "Accounting",
+  providerRole: "accounting" as const,
   logo: Logo,
   description:
     "Integrating Carbon with Xero enables you to post transactions from sales invoices and purchase invoices into your existing accounting software, neatly organizing everything in your bookkeeping software.",
@@ -78,10 +84,20 @@ export const Xero = defineIntegration({
   },
   actions: [
     {
-      id: "sync-data",
-      label: "Run Initial Sync",
-      description: "Runs the initial backfill for the selected entities above",
-      endpoint: "/api/integrations/xero/backfill"
+      id: "import-master-data",
+      label: "Import customers & vendors",
+      description:
+        "Pull the customers and vendors already in Xero into Carbon and link them, so documents Carbon posts later reuse the original Xero records instead of creating duplicates",
+      endpoint:
+        "/api/integrations/master-sync?provider=xero&direction=pull-from-accounting&entities=customers,vendors"
+    },
+    {
+      id: "push-master-data",
+      label: "Push customers, vendors & items",
+      description:
+        "Send every Carbon record that has no Xero counterpart yet, for the entities selected above",
+      endpoint:
+        "/api/integrations/master-sync?provider=xero&direction=push-to-accounting"
     }
   ]
 });

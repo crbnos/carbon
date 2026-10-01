@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: LicenseRef-Carbon-Commercial
+// Copyright (C) Carbon Manufacturing Systems Corporation.
+// Carbon Enterprise file, licensed only under the Carbon Commercial License
+// (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
+
 import { round } from "@carbon/utils";
 import { describe, expect, it } from "vitest";
 import { scaleLinesToTotal, scaleRepaymentLines } from "../allocation";
@@ -103,7 +108,7 @@ describe("scaleLinesToTotal", () => {
   it("converts a single merchant-currency line to the settlement header total (foreign charge)", () => {
     // A CAD 608.98 charge that settled at USD 431.68 — the line comes in the
     // merchant currency and must be scaled to the settlement amount so it sums
-    // to the header (post-card-transaction's invariant).
+    // to the header (post-charge's invariant).
     const lines = [{ accountId: "adv", amount: 608.98 }];
     const scaled = scaleLinesToTotal(lines, 431.68, 2);
     expect(scaled.map((l) => l.amount)).toEqual([431.68]);

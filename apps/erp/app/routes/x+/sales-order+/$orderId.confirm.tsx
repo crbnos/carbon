@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { assertIsPost } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
@@ -18,6 +23,7 @@ import {
   salesConfirmValidator
 } from "~/modules/sales";
 import { recordSalesRuleOutcome } from "~/modules/sales/sales.server";
+import { checkPartyContactRequirement } from "~/modules/settings/party-contact.server";
 import {
   generateAndAttachSalesOrderPdf,
   sendSalesOrderEmail
@@ -61,6 +67,18 @@ export async function action(args: ActionFunctionArgs) {
         success: false,
         message: "You are not authorized to confirm this sales order"
       };
+    }
+
+    // Mirror of the supplier gate on the purchasing side. Off by default —
+    // nothing downstream forces a customer email today — so this only fires for
+    // a company that has asked for the policy.
+    const customerContactError = await checkPartyContactRequirement(
+      client,
+      companyId,
+      { kind: "customer", id: salesOrder.data.customerId }
+    );
+    if (customerContactError) {
+      return { success: false, message: customerContactError };
     }
 
     // Terminal gate: re-evaluate sales rules across EVERY line on the order,

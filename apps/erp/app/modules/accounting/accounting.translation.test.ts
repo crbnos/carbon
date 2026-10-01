@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { Database } from "@carbon/database";
 import { computeReportPeriodBuckets } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -6,7 +11,7 @@ import { describe, expect, it, vi } from "vitest";
 // The settings/glossary barrels evaluate Lingui macros that Vitest does not
 // transform. The real translation service needs neither dependency here.
 vi.mock("~/modules/settings", () => ({ getNextSequence: vi.fn() }));
-vi.mock("@carbon/glossary", () => ({
+vi.mock("@carbon/content/glossary", () => ({
   getDefinitionText: () => "",
   getEntry: () => undefined,
   getTermText: () => "",

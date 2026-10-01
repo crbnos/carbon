@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import {
   Badge,
   HoverCard,
@@ -103,6 +108,9 @@ const PricingRulesTable = memo(({ data, count }: PricingRulesTableProps) => {
         header: t`Type`,
         cell: ({ row }) => {
           const { amount, amountType, ruleType } = row.original;
+          if (ruleType === "Configuration") {
+            return <Badge variant="blue">{t`Configuration`}</Badge>;
+          }
           return (
             <Badge
               variant={ruleType === "Discount" ? "red" : "green"}

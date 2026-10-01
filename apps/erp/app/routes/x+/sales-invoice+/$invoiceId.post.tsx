@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { assertIsPost } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
@@ -48,6 +53,7 @@ import {
 import { getCustomerContact, updateCustomerContact } from "~/modules/sales";
 import { recordSalesRuleOutcome } from "~/modules/sales/sales.server";
 import { getCompany } from "~/modules/settings";
+import { checkPartyContactRequirement } from "~/modules/settings/party-contact.server";
 import { requireCompanyRecord } from "~/modules/shared/shared.server";
 import { getCompanyTimeZone } from "~/modules/shared/timezone.server";
 import { getUser } from "~/modules/users/users.server";
@@ -571,6 +577,38 @@ async function postSalesInvoice(
       success: false,
       message: "Could not find invoiceId"
     };
+  }
+
+  // Mirror of the supplier gate on the purchasing side. Off by default and
+  // nothing downstream forces it today — Rillet, Xero and QuickBooks all treat a
+  // customer email as optional — so this only fires for a company that has asked
+  // for the policy. It exists so the two sides behave the same when they do.
+  const invoiceCustomer = await client
+    .from("salesInvoice")
+    .select("customerId")
+    .eq("id", invoiceId)
+    .eq("companyId", companyId)
+    .maybeSingle();
+
+  // Fail CLOSED — see the supplier gate on the purchasing side. An unchecked
+  // error left `customerId` undefined, and a party with no id is not checked at
+  // all, so the read failing silently disabled the gate.
+  if (invoiceCustomer.error || !invoiceCustomer.data) {
+    logger.error("Could not read the invoice customer before posting", {
+      companyId,
+      invoiceId,
+      error: invoiceCustomer.error
+    });
+    return { success: false, message: "Failed to post sales invoice" };
+  }
+
+  const customerContactError = await checkPartyContactRequirement(
+    client,
+    companyId,
+    { kind: "customer", id: invoiceCustomer.data.customerId }
+  );
+  if (customerContactError) {
+    return { success: false, message: customerContactError };
   }
 
   let file: ArrayBuffer;

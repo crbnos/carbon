@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { afterEach, describe, expect, it } from "vitest";
 import { applyTableRenames, TABLE_RENAMES } from "./renames";
 
@@ -107,6 +112,41 @@ describe("applyTableRenames", () => {
     // `a` is left unresolved rather than folded into `b` — the gate then refuses.
     expect(names(out)).toEqual({ manifest: ["a", "b"], data: ["a", "b"] });
     expect(out.data.b).toHaveLength(2);
+  });
+
+  it("moves a renamed table's columns and row keys onto their current names", () => {
+    withRenames({ cardTransaction: "charge" });
+    const input: {
+      manifest: {
+        tables: Array<{ name: string; rows: number; columns: string[] }>;
+      };
+      data: Record<string, Record<string, unknown>[]>;
+    } = {
+      manifest: {
+        tables: [
+          {
+            name: "cardTransaction",
+            rows: 1,
+            columns: ["id", "companyId", "cardTransactionId"]
+          }
+        ]
+      },
+      data: {
+        cardTransaction: [
+          { id: "x", companyId: "c", cardTransactionId: "CARD-1" }
+        ]
+      }
+    };
+    const out = applyTableRenames(catalog("charge"), input);
+    expect(out.manifest.tables[0]!.columns).toEqual([
+      "id",
+      "companyId",
+      "chargeId"
+    ]);
+    expect(out.data.charge).toEqual([
+      { id: "x", companyId: "c", chargeId: "CARD-1" }
+    ]);
+    expect(input.data.cardTransaction?.[0]).toHaveProperty("cardTransactionId");
   });
 
   it("does not mutate the backup it was given", () => {

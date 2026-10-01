@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { assertIsPost, error, notFound, success } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
@@ -8,6 +13,7 @@ import {
   duplicatePricingRule,
   getPricingRule,
   pricingRuleValidator,
+  toMatchedRule,
   updatePricingRule
 } from "~/modules/sales";
 import PricingRuleForm from "~/modules/sales/ui/Pricing/PricingRuleForm";
@@ -113,11 +119,16 @@ export default function EditPricingRuleRoute() {
     customerIds: pricingRule.customerIds ?? [],
     customerTypeIds: pricingRule.customerTypeIds ?? [],
     itemIds: pricingRule.itemIds ?? [],
+    itemId:
+      pricingRule.ruleType === "Configuration"
+        ? (pricingRule.itemIds?.[0] ?? undefined)
+        : undefined,
     itemPostingGroupId: pricingRule.itemPostingGroupId ?? undefined,
     validFrom: pricingRule.validFrom ?? undefined,
     validTo: pricingRule.validTo ?? undefined,
     priority: pricingRule.priority ?? 0,
-    active: pricingRule.active
+    active: pricingRule.active,
+    configurationPrices: toMatchedRule(pricingRule).configurationPrices
   };
 
   return (

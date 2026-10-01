@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { VariantProps } from "class-variance-authority";
 import { cva } from "class-variance-authority";
 import type { ComponentProps, ElementType } from "react";
@@ -5,9 +10,9 @@ import { forwardRef } from "react";
 
 import { cn } from "./utils/cn";
 
-// The serif headline face is for page-level titles only. h4 is the compact size
+// The headline face is for page-level titles only. h4 is the compact size
 // record headers (job, picking list, orders) and in-app cards use, so it stays
-// in the body sans alongside the UI chrome around it.
+// in the body font alongside the UI chrome around it.
 const headingVariants = cva(
   "font-medium leading-[1.1] tracking-tight text-foreground text-balance",
   {

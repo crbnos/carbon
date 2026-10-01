@@ -1,10 +1,15 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import Link from "next/link";
 import {
   getDefinitionText,
   getTermText,
   glossaryEntries,
   termSlug
-} from "@carbon/glossary";
+} from "@carbon/content/glossary";
 
 /**
  * Glossary — the whole `lib/glossary.ts` rendered as one reference page, in the

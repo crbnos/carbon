@@ -1,9 +1,15 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { requireBackupsEntitlement } from "@carbon/ee/backups.server";
 import { getCompanyPrivateBucket } from "@carbon/files";
 import { getLogger } from "@carbon/logger";
 import { NonRetriableError } from "inngest";
 import { sql } from "kysely";
+import { listBucketFilesRecursive } from "../../../backups/storage";
 import { getJobDatabaseClient, type JobDatabase } from "../../../db";
 import { inngest } from "../../client";
 import type { Manifest } from "./company-backup";
@@ -471,29 +477,3 @@ export const companyExportFunction = inngest.createFunction(
     });
   }
 );
-
-async function listBucketFilesRecursive(
-  client: ServiceRole,
-  bucket: string,
-  prefix = ""
-): Promise<Array<{ path: string; size: number }>> {
-  const files: Array<{ path: string; size: number }> = [];
-  const { data, error } = await client.storage.from(bucket).list(prefix, {
-    limit: 1000
-  });
-  if (error || !data) return files;
-
-  for (const entry of data) {
-    const path = prefix ? `${prefix}/${entry.name}` : entry.name;
-    if (entry.id === null) {
-      // folder
-      files.push(...(await listBucketFilesRecursive(client, bucket, path)));
-    } else {
-      files.push({
-        path,
-        size: (entry.metadata as { size?: number } | null)?.size ?? 0
-      });
-    }
-  }
-  return files;
-}

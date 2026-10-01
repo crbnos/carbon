@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { RevaluatedDependentMeasurement } from "@carbon/database/quality";
 import {
   Badge,
@@ -19,11 +24,13 @@ import type { EditableTableCellComponentProps } from "~/components/Editable";
 import { EditableNumber } from "~/components/Editable";
 import { useQuantityFormatter } from "~/hooks";
 import type {
+  InspectionGauge,
   InspectionMeasurement,
   InspectionSample,
   InspectionSamplingPlan
 } from "~/modules/quality/types";
 import { path } from "~/utils/path";
+import InspectionGaugePicker from "./InspectionGaugePicker";
 
 // A cell save's response payload (the measurement action returns it so the
 // grid can update without a revalidation roundtrip).
@@ -62,6 +69,8 @@ type FeatureGridRow = {
   sampleSize: number;
   acceptanceNumber: number;
   rejectionNumber: number;
+  gaugeTypeId: string | null;
+  gaugeTypeName: string | null;
 } & Record<string, unknown>;
 
 type InspectionMeasurementGridProps = {
@@ -71,6 +80,8 @@ type InspectionMeasurementGridProps = {
   features: InspectionSamplingPlan[];
   samples: InspectionSample[];
   measurements: InspectionMeasurement[];
+  gauges: InspectionGauge[];
+  recentGaugeIds: string[];
   maxSampleSize: number;
   // Lot size caps how many sample columns can exist — a feature's n is the
   // required minimum, but the inspector may record up to the whole lot.
@@ -88,6 +99,11 @@ type InspectionMeasurementGridProps = {
 };
 
 const sampleKey = (columnIndex: number) => `sample-${columnIndex}`;
+
+// Mirrors RECENT_INSPECTION_GAUGE_LIMIT in packages/database/src/quality.ts
+// (the server's "recently used" cap) — that module is server-only (Kysely), so
+// it cannot be imported into this client component.
+const RECENT_INSPECTION_GAUGE_LIMIT = 10;
 
 // Synthetic feature id for the single pass/fail row shown when the lot has no
 // inspection document. Its cells write the sample's status directly (via the
@@ -112,6 +128,8 @@ const InspectionMeasurementGrid = ({
   features,
   samples,
   measurements,
+  gauges,
+  recentGaugeIds,
   maxSampleSize,
   lotSize,
   lotAcceptanceNumber,
@@ -510,6 +528,143 @@ const InspectionMeasurementGrid = ({
     [persistCell, t]
   );
 
+  // The gauge recorded per feature: the plan rows' value, overridden
+  // optimistically on selection until the loader data agrees with it.
+  const [gaugeByFeature, setGaugeByFeature] = useState<
+    Record<string, string | null>
+  >({});
+  const [recentGauges, setRecentGauges] = useState(recentGaugeIds);
+  useEffect(() => {
+    setRecentGauges(recentGaugeIds);
+  }, [recentGaugeIds]);
+  const serverGaugeFor = useCallback(
+    (featureId: string): string | null =>
+      features.find((f) => f.inspectionFeatureId === featureId)?.gaugeId ??
+      null,
+    [features]
+  );
+  const serverGaugeForRef = useRef(serverGaugeFor);
+  serverGaugeForRef.current = serverGaugeFor;
+  const gaugeFor = useCallback(
+    (featureId: string): string | null =>
+      featureId in gaugeByFeature
+        ? gaugeByFeature[featureId]
+        : serverGaugeFor(featureId),
+    [gaugeByFeature, serverGaugeFor]
+  );
+
+  // Per-feature request bookkeeping, so a request that settles late can never
+  // undo a newer pick: `latest` is the newest request id, `settled` whether
+  // it has answered, `confirmed` the newest request the server accepted.
+  const gaugeRequests = useRef<
+    Record<
+      string,
+      {
+        latest: number;
+        settled: boolean;
+        confirmed?: { id: number; gaugeId: string | null };
+      }
+    >
+  >({});
+  // One gauge request per characteristic at a time, so the server commits the
+  // picks in the order they were made.
+  const gaugeQueue = useRef<Record<string, Promise<void>>>({});
+
+  // Once the loader data matches a settled pick, drop the override so later
+  // revalidations show the server's value.
+  useEffect(() => {
+    const caughtUp = Object.keys(gaugeByFeature).filter((featureId) => {
+      const request = gaugeRequests.current[featureId];
+      return (
+        (!request || request.settled) &&
+        serverGaugeFor(featureId) === gaugeByFeature[featureId]
+      );
+    });
+    if (caughtUp.length === 0) return;
+    for (const featureId of caughtUp) {
+      const request = gaugeRequests.current[featureId];
+      if (request) {
+        request.confirmed = {
+          id: request.latest,
+          gaugeId: serverGaugeFor(featureId)
+        };
+      }
+    }
+    setGaugeByFeature((prev) => {
+      const next = { ...prev };
+      for (const featureId of caughtUp) delete next[featureId];
+      return next;
+    });
+  }, [gaugeByFeature, serverGaugeFor]);
+
+  const persistGauge = useCallback(
+    async (featureId: string, gaugeId: string | null) => {
+      const request = gaugeRequests.current[featureId] ?? {
+        latest: 0,
+        settled: true
+      };
+      gaugeRequests.current[featureId] = request;
+      const requestId = request.latest + 1;
+      request.latest = requestId;
+      request.settled = false;
+      setGaugeByFeature((prev) => ({ ...prev, [featureId]: gaugeId }));
+
+      // Wait for this characteristic's previous request; a pick superseded
+      // while it waited is never sent.
+      const sent = (gaugeQueue.current[featureId] ?? Promise.resolve()).then(
+        async () => {
+          if (requestId !== request.latest) return null;
+          const formData = new FormData();
+          formData.set("inspectionId", inspectionId);
+          formData.set("inspectionFeatureId", featureId);
+          formData.set("gaugeId", gaugeId ?? "");
+          const response = await fetch(path.to.inspectionGauge(inspectionId), {
+            method: "post",
+            body: formData
+          }).catch(() => null);
+          const body = (await response?.json().catch(() => null)) as {
+            error?: { message: string } | null;
+          } | null;
+          return {
+            ok: !!response?.ok && !!body && !body.error,
+            message: body?.error?.message
+          };
+        }
+      );
+      gaugeQueue.current[featureId] = sent.then(() => undefined);
+      const result = await sent;
+      if (!result) return;
+      const { ok } = result;
+
+      if (ok && (!request.confirmed || requestId > request.confirmed.id)) {
+        request.confirmed = { id: requestId, gaugeId };
+      }
+      if (requestId === request.latest) request.settled = true;
+
+      if (!ok) {
+        toast.error(result.message ?? t`Failed to record gauge`);
+      } else if (gaugeId) {
+        setRecentGauges((prev) =>
+          [gaugeId, ...prev.filter((id) => id !== gaugeId)].slice(
+            0,
+            RECENT_INSPECTION_GAUGE_LIMIT
+          )
+        );
+      }
+
+      // Once the newest pick has answered, show what the server last
+      // accepted: that pick if it succeeded, else the newest earlier pick
+      // that did, else the loader's value.
+      if (request.settled) {
+        const shown = request.confirmed
+          ? request.confirmed.gaugeId
+          : serverGaugeForRef.current(featureId);
+        setGaugeByFeature((prev) => ({ ...prev, [featureId]: shown }));
+      }
+    },
+    [inspectionId, t]
+  );
+
   const rows = useMemo<FeatureGridRow[]>(() => {
     if (!hasFeatures) {
       // Single synthetic pass/fail row for lots with no inspection document.
@@ -523,7 +678,9 @@ const InspectionMeasurementGrid = ({
           specLabel: "",
           sampleSize: maxSampleSize,
           acceptanceNumber: lotAcceptanceNumber,
-          rejectionNumber: lotRejectionNumber
+          rejectionNumber: lotRejectionNumber,
+          gaugeTypeId: null,
+          gaugeTypeName: null
         }
       ];
     }
@@ -553,7 +710,9 @@ const InspectionMeasurementGrid = ({
         specLabel: spec,
         sampleSize: lotFeature.sampleSize,
         acceptanceNumber: lotFeature.acceptanceNumber,
-        rejectionNumber: lotFeature.rejectionNumber
+        rejectionNumber: lotFeature.rejectionNumber,
+        gaugeTypeId: feature.gaugeTypeId ?? null,
+        gaugeTypeName: feature.gaugeType?.name ?? null
       };
       for (let i = 0; i < columnCount; i++) {
         const override = valueByCell[`${i}:${feature.id}`];
@@ -669,7 +828,7 @@ const InspectionMeasurementGrid = ({
       },
       {
         accessorKey: "description",
-        header: t`Feature`,
+        header: t`Characteristic`,
         cell: ({ row }) => (
           <span
             className="line-clamp-2 max-w-[180px] text-xs"
@@ -688,6 +847,33 @@ const InspectionMeasurementGrid = ({
           </span>
         )
       },
+      ...(hasFeatures
+        ? [
+            {
+              id: "gauge",
+              header: t`Gauge`,
+              cell: ({ row }) => (
+                // Negative margins cancel the cell padding so the picker's
+                // button fills the whole cell. `data-gauge-picker` lets the
+                // grid's Enter/Tab handler leave the picker's keys alone.
+                <div data-gauge-picker className="-mx-4 -my-2 h-10">
+                  <InspectionGaugePicker
+                    gauges={gauges}
+                    characteristicLabel={row.original.label}
+                    recentGaugeIds={recentGauges}
+                    gaugeTypeId={row.original.gaugeTypeId}
+                    gaugeTypeName={row.original.gaugeTypeName}
+                    value={gaugeFor(row.original.featureId)}
+                    isReadOnly={isReadOnly}
+                    onChange={(gaugeId) =>
+                      persistGauge(row.original.featureId, gaugeId)
+                    }
+                  />
+                </div>
+              )
+            } satisfies ColumnDef<FeatureGridRow>
+          ]
+        : []),
       {
         accessorKey: "sampleSize",
         header: "n / Ac",
@@ -788,6 +974,12 @@ const InspectionMeasurementGrid = ({
     formatQuantity,
     renderNote,
     renderPassFail,
+    hasFeatures,
+    gauges,
+    recentGauges,
+    gaugeFor,
+    isReadOnly,
+    persistGauge,
     t
   ]);
 
@@ -813,7 +1005,13 @@ const InspectionMeasurementGrid = ({
         if (!props.row.isNumeric) {
           return renderPassFail(props.row, i);
         }
-        return <NumberEditor {...props} />;
+        // The marker keeps the cell recognisable as a sample column while
+        // its editor is open (the display cell's marker is unmounted).
+        return (
+          <div data-sample-col={i} className="contents">
+            <NumberEditor {...props} />
+          </div>
+        );
       };
     }
     return components;
@@ -844,6 +1042,21 @@ const InspectionMeasurementGrid = ({
       );
       if (!cell || !gridRef.current?.contains(cell)) return;
 
+      // The Gauge cell: Enter opens its picker. Keep the event from the
+      // Table's own Enter navigation; a focused trigger button opens on its
+      // native Enter click, a selected cell clicks the trigger itself.
+      const gaugeTrigger = cell.querySelector<HTMLElement>(
+        "[data-gauge-picker] button"
+      );
+      if (gaugeTrigger && event.key === "Enter") {
+        event.stopPropagation();
+        if (event.target !== gaugeTrigger) {
+          event.preventDefault();
+          gaugeTrigger.click();
+        }
+        return;
+      }
+
       const rowIndex = Number(cell.getAttribute("data-row"));
       const currentColumn = Number(cell.getAttribute("data-column"));
 
@@ -861,11 +1074,9 @@ const InspectionMeasurementGrid = ({
         return [...columnsSet].sort((a, b) => a - b);
       };
 
-      // The cell currently being edited has its marker replaced by the editor —
-      // include it explicitly.
+      // Every sample cell carries a marker, the open editor included, so a
+      // cell without one (label, spec, gauge, …) is not a sample column.
       const columns = sampleColumnsForRow(rowIndex);
-      if (!columns.includes(currentColumn)) columns.push(currentColumn);
-      columns.sort((a, b) => a - b);
       if (columns.length === 0) return;
 
       const active = document.activeElement as HTMLElement | null;
@@ -949,7 +1160,7 @@ const InspectionMeasurementGrid = ({
         }
         titleBadge={
           <span className="min-w-0 truncate text-sm font-medium text-foreground">
-            {hasFeatures ? `${t`Features`} (${rows.length})` : t`Result`}
+            {hasFeatures ? `${t`Characteristics`} (${rows.length})` : t`Result`}
           </span>
         }
         primaryAction={primaryAction}

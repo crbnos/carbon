@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 // Provider + selector hooks for the hub store. The provider owns one store
 // instance and re-hydrates it from loader data on every change; everything below
 // it reads via hooks, so no view needs `states`/`fieldValues`/`canEdit` props.

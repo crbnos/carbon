@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { Hidden, NumberControlled, ValidatedForm } from "@carbon/form";
 import {
   Button,
@@ -21,6 +26,7 @@ export function ShortPickModal({
   itemName,
   quantityToPick,
   quantityPicked,
+  unitOfMeasureCode,
   onClose
 }: {
   pickingListId: string;
@@ -28,6 +34,7 @@ export function ShortPickModal({
   itemName: string;
   quantityToPick: number;
   quantityPicked: number;
+  unitOfMeasureCode?: string | null;
   onClose: () => void;
 }) {
   const { t } = useLingui();
@@ -72,7 +79,11 @@ export function ShortPickModal({
             <Hidden name="markShort" value="true" />
             <NumberControlled
               name="quantity"
-              label={t`Picked quantity`}
+              label={
+                unitOfMeasureCode
+                  ? `${t`Picked quantity`} (${unitOfMeasureCode})`
+                  : t`Picked quantity`
+              }
               value={quantity}
               onChange={setQuantity}
               minValue={0}

@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (C) Carbon Manufacturing Systems Corporation and contributors.
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import {
   Badge,
   HoverCard,
@@ -10,6 +15,7 @@ import {
   VStack
 } from "@carbon/react";
 import { getItemById, getItemReadableId } from "@carbon/utils";
+import { useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo, useState } from "react";
 import { flushSync } from "react-dom";
@@ -66,6 +72,7 @@ function ProcessingStatus({ status }: { status?: string | null }) {
 
 const AssemblyInstructionsTable = memo(
   ({ data, count }: AssemblyInstructionsTableProps) => {
+    const { t } = useLingui();
     const navigate = useNavigate();
     const permissions = usePermissions();
     const [items] = useItems();
@@ -277,7 +284,7 @@ const AssemblyInstructionsTable = memo(
           primaryAction={
             permissions.can("create", "production") && (
               <New
-                label="Assembly Instruction"
+                label={t`Assembly Instruction`}
                 to={path.to.newAssemblyInstruction}
               />
             )

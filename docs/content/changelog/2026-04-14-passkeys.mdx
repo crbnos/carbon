@@ -1,0 +1,50 @@
+---
+title: "Carbon MCP server, passkeys, and Console mode"
+description: "Connect AI clients over MCP, sign in with a passkey, Console mode on the shop floor, and five new languages."
+date: "2026-04-14"
+tags: ["auth", "mcp", "settings"]
+image: "/changelog/2026-04-14-passkeys.svg"
+---
+
+AI clients can now work with your Carbon data, and nobody needs a password to sign in.
+
+## The Carbon MCP server
+
+The [MCP server](/api/mcp) lets Claude, Cursor and other AI clients work with your data through Carbon's tools.
+
+## Passkeys
+
+Passkeys arrive for passwordless sign-in. Register one from your [account](/docs/reference/account), sign in with Face ID, Touch ID or a security key, and rename or remove passkeys you no longer use.
+
+## Console mode
+
+Console mode runs a shared shop-floor device without a personal session. See [MES](/docs/reference/mes).
+
+## Five new languages
+
+Carbon is now available in Hindi, French, Polish, Portuguese and Russian, and the login page is translated too.
+
+<Accordion title="Improvements">
+
+- Method types are now named for what they do: Pull from Inventory, Purchase to Order, and Make to Order (previously Pick, Buy, Make).
+- CSV import tools.
+- A Recalculate unit cost button on the item master.
+- Purchased lead time is updated from a weighted yearly average.
+- API key expiration dates are validated more strictly.
+- Active time cards count toward duration calculations.
+- Risk updates carry more detail.
+
+</Accordion>
+
+<Accordion title="Fixes">
+
+- Markup is calculated correctly on purchased quoted parts.
+- External notes show on the digital quote.
+- Purchasing RFQ property updates save correctly.
+- Audit logs that went missing are recorded again.
+- Line-item document errors are handled instead of failing the page.
+- Onshape sync tolerates a missing item.
+- Faster dialogs and forms.
+- A cross-site scripting vulnerability was closed.
+
+</Accordion>

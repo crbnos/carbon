@@ -1,0 +1,25 @@
+# Rework, Purchasing Planning 2.0, and ballooning diagrams
+
+> Send serial and batch parts through rework, a rebuilt purchasing planning, ballooned inspection diagrams, and MCP 2.0 with OAuth.
+
+Serial- and batch-tracked parts can be sent through rework. Purchasing Planning 2.0 rebuilds the buying workspace. Quality gained ballooning diagrams for inspections, and an operator can raise a quality issue directly from MES. MCP 2.0 adds OAuth sign-in for AI clients.
+
+- Approvals: a lower-tier notification, a maximum amount, and notifications for rules with lower amounts.
+- Sales orders can be cancelled.
+- A post-login company picker for people in more than one company.
+- Attachments on purchase orders, and supplier part numbers on purchase order lines.
+- The sales order number on invoice PDFs.
+- A custom markup percentage in the quote line pricing dropdown.
+- Manually scheduled operations that the scheduler leaves alone.
+- Subassembly items show their item properties.
+- Location shown on the people table.
+- Long descriptions are editable again.
+
+- Storage rule messages name the storage unit instead of showing an id, and conditions accept value and label.
+- Rework quantities are subtracted on Complete all, and rework respects row-level security.
+- Negative adjustments work on serial items with legacy stock.
+- Dead tax fields on invoice totals fixed, and the upper bound on pricing approval corrected.
+- The job traveler PDF shows the correct time units.
+- List-type custom field values render in table columns.
+- Get Method respects checkbox selections when copying make methods.
+- Supplier and customer ids are consistent.

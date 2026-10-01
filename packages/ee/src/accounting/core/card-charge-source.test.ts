@@ -1,3 +1,8 @@
+// SPDX-License-Identifier: LicenseRef-Carbon-Commercial
+// Copyright (C) Carbon Manufacturing Systems Corporation.
+// Carbon Enterprise file, licensed only under the Carbon Commercial License
+// (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
+
 import { parseAbsolute } from "@internationalized/date";
 import { describe, expect, it } from "vitest";
 import { QboChargeSyncer } from "../providers/quickbooks-online/entities/charge";
@@ -15,7 +20,7 @@ describe.each([
     const rows = ["a", "b"].map((id) => ({
       id,
       companyId: "company-1",
-      cardTransactionId: id,
+      chargeId: id,
       type: "Charge",
       status: "Posted",
       supplierId: `supplier-${id}`,
@@ -77,15 +82,11 @@ describe.each([
       }
     ).fetchLocalBatch(["a", "b"]);
     expect(reads).toHaveLength(1);
-    expect(filters).toContainEqual([
-      "cardTransaction.companyId",
-      "=",
-      "company-1"
-    ]);
+    expect(filters).toContainEqual(["charge.companyId", "=", "company-1"]);
     expect(filters).toContainEqual([
       "mapping.companyId",
       "=",
-      "cardTransaction.companyId"
+      "charge.companyId"
     ]);
     expect(filters).toContainEqual(["mapping.integration", "=", providerId]);
     expect(result.get("a")?.supplierExternalId).toBe("remote-a");
@@ -116,11 +117,11 @@ describe.each([
             return query;
           },
           execute: async () =>
-            table === "cardTransaction"
+            table === "charge"
               ? ["a", "b"].map((id) => ({
                   id,
                   companyId: "company-1",
-                  cardTransactionId: id,
+                  chargeId: id,
                   type: "Charge",
                   status: "Posted",
                   supplierId: `supplier-${id}`,
@@ -161,9 +162,7 @@ describe.each([
       "skipped",
       "skipped"
     ]);
-    expect(reads.filter((table) => table === "cardTransaction")).toHaveLength(
-      1
-    );
+    expect(reads.filter((table) => table === "charge")).toHaveLength(1);
     expect(
       reads.filter((table) => table === "externalIntegrationMapping")
     ).toHaveLength(1);

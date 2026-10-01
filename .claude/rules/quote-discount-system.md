@@ -41,7 +41,7 @@ A trigger on `quote.exchangeRate` cascades the new rate into every `quoteLinePri
 ## Schema: `pricingRule` (`20260413120001_pricing-rules.sql`)
 
 Standalone rules, `id` default `id('pr')`, scoped to a company. Columns: `name`,
-`ruleType` (`pricingRuleType` enum = `'Discount' | 'Markup'`), `amountType`
+`ruleType` (`pricingRuleType` enum = `'Discount' | 'Markup' | 'Configuration'`), `amountType`
 (`pricingRuleAmountType` enum = `'Percentage' | 'Fixed'`, default `Percentage`),
 `amount` NUMERIC, `priority` INT, `minQuantity`/`maxQuantity`, `customerIds[]`,
 `customerTypeIds[]`, `itemIds[]`, `itemPostingGroupId`, `validFrom`/`validTo`,
@@ -55,14 +55,22 @@ Standalone rules, `id` default `id('pr')`, scoped to a company. Columns: `name`,
    (also materialized in the generated `netUnitPrice` column). The UI computes the same
    net for display; persistence is the generated columns.
 
-2. **Pricing-rule engine** (`resolvePrice` → `applyPriceRules` in `sales.service.ts`):
+2. **Pricing-rule engine** (`resolvePrice` in `sales.service.ts` → `applyPriceRules` in `sales.utils.ts`):
    resolves a *base unit price* during quote-line price recalculation (cost rollup with
    `categoryMarkups`, then `resolvePrice`). Precedence: customer override > customer-type
    override > all-customers override > base (`itemUnitSalePrice`). Overrides may set
-   `applyRulesOnTop=false` to skip rules. Then `applyPriceRules`:
+   `applyRulesOnTop=false` to skip the discount and markup rules. Then `applyPriceRules`:
    - **Discount rules: non-stacking** — highest `priority` wins; ties broken by best
      effective amount. Percentage = `price * amount`; Fixed = `amount`.
    - **Markup rules: stack** in priority order, compounding on the running price.
+   - **Configuration rules** (`ruleType = 'Configuration'`, one configurable item, amount 0):
+     their `configurationPrices` are signed per-unit surcharges added to the starting price
+     BEFORE the discount, stacking across every matched Configuration rule; they need the
+     line's `configuration` (`quoteLine` / `salesOrderLine`), passed to `resolvePrice` as
+     `input.configuration`. Trace steps carry the parameter's `label`, saved on each
+     price entry by the rule form (no lookup at pricing time). An override with
+     `applyRulesOnTop=false` skips discounts and markups but still applies the
+     configuration prices (`applyPriceRules(..., { configurationOnly: true })`).
    - Final price clamped to ≥ 0.
    Each step is recorded as a `PriceTraceStep` (`{ step, source, amount, adjustment?, ruleId? }`)
    into `priceTrace`. The winning rule's id lands on `quoteLine.pricingRuleId`.
@@ -110,6 +118,23 @@ it.
 - UI: `ui/Quotes/QuoteLinePricing.tsx` (per-quantity discount/markup editing) and
   the `ui/Pricing/` folder (`PricingRuleForm`, `PricingRulesTable`, `PriceOverrideForm`,
   `PriceTracePopover`).
+- Every path that turns a cost rollup into a quote line price runs it through
+  `resolvePrice` as `existingBasePrice` with the line's `configuration`: the server
+  builders and `recalculateQuoteLinePrices`, and the pricing grid's **Markup %** and
+  per-category markup edits (`resolveRollupPrice` → `api/sales/resolve-price`).
+  Computing `cost × markup` alone drops the pricing rules and the configuration
+  prices. The `get-method` edge function seeds rows at cost-plus only, so every
+  ERP route that invokes it on a quote line (`itemToQuoteLine`,
+  `quoteLineToQuoteLine`) follows with `recalculateQuoteLinePrices`. A typed unit
+  price or markup percent is a manual price and is never repriced.
+- A **configured** Make to Order line whose part has a unit sale price starts from
+  that sale price instead of the cost rollup — the base its sales order line uses —
+  so the configuration prices land on the same base on the quote and the order
+  (`configuredQuoteBasePrice` in `sales.utils.ts`, used by
+  `buildMakeToOrderPriceRows` and `recalculateQuoteLinePrices`). Such rows store
+  `categoryMarkups = {}`. A row whose markups someone chose (**Markup %** or a
+  category edit — anything other than empty or the company defaults it was seeded
+  with) stays cost-plus. Unconfigured lines are always cost-plus.
 
 ## Gotchas
 
