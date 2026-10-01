@@ -42,7 +42,12 @@ import {
   useNProgress
 } from "@carbon/react";
 import { getStripeCustomerByCompanyId } from "@carbon/stripe/stripe.server";
-import { Edition, requiresItarEntityCertification } from "@carbon/utils";
+import {
+  createFreshness,
+  Edition,
+  requiresItarEntityCertification,
+  SHELL_MAX_AGE_MS
+} from "@carbon/utils";
 import posthog from "posthog-js";
 import type { ReactNode } from "react";
 import { Suspense, useEffect } from "react";
@@ -92,6 +97,8 @@ import { ERP_URL, MES_URL, path } from "~/utils/path";
 
 const log = getLogger("erp", "auth");
 
+const shellFreshness = createFreshness(SHELL_MAX_AGE_MS);
+
 export const shouldRevalidate: ShouldRevalidateFunction = ({
   currentUrl,
   formMethod,
@@ -108,11 +115,10 @@ export const shouldRevalidate: ShouldRevalidateFunction = ({
     return true;
   }
 
-  // Only a mutation can change what the shell returns, so a GET never re-runs
-  // it — including `useRevalidator().revalidate()` from the realtime hooks.
-  // Shell data that must react to a realtime change needs a case above.
+  // Only a mutation can change what the shell returns, so a GET re-runs it
+  // only once the data has aged out — that covers out-of-band changes.
   if (!formMethod || formMethod === "GET") {
-    return false;
+    return shellFreshness.isStale();
   }
 
   return defaultShouldRevalidate;
@@ -361,6 +367,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
 }
 
 export default function AuthenticatedRoute() {
+  const loaderData = useLoaderData<typeof loader>();
   const {
     company,
     session,
@@ -371,7 +378,9 @@ export default function AuthenticatedRoute() {
     itarCertification,
     mfaEnrollment,
     sessionTimeout
-  } = useLoaderData<typeof loader>();
+  } = loaderData;
+  // biome-ignore lint/correctness/useExhaustiveDependencies: runs each time the loader does
+  useEffect(() => shellFreshness.markLoaded(), [loaderData]);
   const navigate = useNavigate();
   const permissions = usePermissions();
   const { isOpen, training, dismiss } = useTrainingPanel();

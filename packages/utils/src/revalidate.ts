@@ -63,3 +63,20 @@ export function isUnaffectedByNavigation(
     (key) => currentUrl.searchParams.get(key) === nextUrl.searchParams.get(key)
   );
 }
+
+export const SHELL_MAX_AGE_MS = 5 * 60 * 1000;
+
+/**
+ * Lets a shell's `shouldRevalidate` skip GET navigations only while its data
+ * is fresh. `markLoaded` is called from the component when loader data
+ * arrives, not from `shouldRevalidate` — link prefetching calls that too.
+ */
+export function createFreshness(maxAgeMs: number) {
+  let loadedAt = Date.now();
+  return {
+    isStale: () => Date.now() - loadedAt > maxAgeMs,
+    markLoaded: () => {
+      loadedAt = Date.now();
+    }
+  };
+}
