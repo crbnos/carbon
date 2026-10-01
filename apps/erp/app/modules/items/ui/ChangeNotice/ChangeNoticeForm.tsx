@@ -100,7 +100,7 @@ const ChangeNoticeForm = ({
             isModal ? "" : "md:grid-cols-2"
           }`}
         >
-          <Input name="name" label={t`Name`} />
+          <Input name="name" label={t`Name`} autoFocus={!isEditing} />
           <Combobox
             name="changeOrderTypeId"
             label={t`Category`}

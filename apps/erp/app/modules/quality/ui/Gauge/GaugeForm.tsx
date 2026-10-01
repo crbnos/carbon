@@ -375,7 +375,11 @@ function GaugeFormContent({
             table="gauge"
           />
         )}
-        <Input name="description" label={t`Description`} />
+        <Input
+          name="description"
+          label={t`Description`}
+          autoFocus={!isEditing}
+        />
         <Select
           name="gaugeTypeId"
           label={t`Gauge Type`}

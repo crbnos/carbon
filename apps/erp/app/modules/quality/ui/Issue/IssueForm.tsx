@@ -133,7 +133,7 @@ const IssueForm = ({
 
           <VStack spacing={4}>
             <div className="grid w-full gap-4 grid-cols-1 md:grid-cols-2">
-              <Input name="name" label={t`Name`} />
+              <Input name="name" label={t`Name`} autoFocus={!isEditing} />
               <Select
                 name="nonConformanceTypeId"
                 label={t`Issue Type`}

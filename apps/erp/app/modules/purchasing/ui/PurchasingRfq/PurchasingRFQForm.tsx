@@ -85,6 +85,7 @@ const PurchasingRFQForm = ({ initialValues }: PurchasingRFQFormProps) => {
                 />
               )}
               <Suppliers
+                autoFocus={!isEditing}
                 name="supplierIds"
                 label={t`Suppliers`}
                 termId="purchasing-rfq-suppliers"

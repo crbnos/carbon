@@ -139,6 +139,7 @@ const PurchaseInvoiceForm = ({ initialValues }: PurchaseInvoiceFormProps) => {
                 />
               )}
               <Supplier
+                autoFocus={!isEditing}
                 name="supplierId"
                 label={t`Supplier`}
                 defaultCurrencyCode={invoiceSupplier.currencyCode}
