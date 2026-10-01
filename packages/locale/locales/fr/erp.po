@@ -4451,6 +4451,9 @@ msgstr "Lien copié dans le presse-papiers"
 msgid "Copied setup prompt to your clipboard"
 msgstr "Invite de Réglage copiée dans votre presse-papiers"
 
+msgid "Copied!"
+msgstr "Copié !"
+
 msgid "Copies a setup prompt for your AI coding tool"
 msgstr "Copie une invite de réglage pour votre outil de codage IA"
 
@@ -4646,6 +4649,9 @@ msgstr "Copiez ce lien pour partager le devis avec un client"
 msgid "Copy this link to share the quote with a supplier"
 msgstr "Copiez ce lien pour partager le devis avec un fournisseur"
 
+msgid "Copy to clipboard"
+msgstr "Copier dans le presse-papiers"
+
 msgid "Copy tool number"
 msgstr "Copier le numéro d'outil"
 
@@ -4657,9 +4663,6 @@ msgstr "Copier le nom de la formation"
 
 msgid "Copy training unique identifier"
 msgstr "Copier l'identifiant unique de la formation"
-
-msgid "Copy unique identifier"
-msgstr "Copier l'identifiant unique"
 
 msgid "Copy week"
 msgstr "Copier la semaine"

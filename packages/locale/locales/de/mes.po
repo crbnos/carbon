@@ -381,6 +381,15 @@ msgstr "Verbrauchte abgelaufen"
 msgid "Continue"
 msgstr "Weiter"
 
+msgid "Copied!"
+msgstr "Kopiert!"
+
+msgid "Copy"
+msgstr "Kopieren"
+
+msgid "Copy to clipboard"
+msgstr "In die Zwischenablage kopieren"
+
 #. placeholder {0}: board.unplannedCost.days
 msgid "Cost of unplanned maintenance, last {0} days"
 msgstr "Kosten der ungeplanten Instandhaltung der letzten {0} Tage"

@@ -9,6 +9,7 @@ import {
 import {
   Badge,
   Button,
+  Copy,
   HStack,
   Modal,
   ModalBody,
@@ -252,24 +253,13 @@ const SalesReturnOrderProperties = () => {
                 </span>
               </TooltipContent>
             </Tooltip>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  aria-label={t`Copy unique identifier`}
-                  size="sm"
-                  className="p-1"
-                  onClick={() => copyToClipboard(id)}
-                >
-                  <LuKeySquare className="w-3 h-3" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <span>
-                  <Trans>Copy sales return order unique identifier</Trans>
-                </span>
-              </TooltipContent>
-            </Tooltip>
+            <Copy
+              text={id}
+              label={t`Copy sales return order unique identifier`}
+              icon={<LuKeySquare className="size-3" />}
+              variant="ghost"
+              className="w-auto"
+            />
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button

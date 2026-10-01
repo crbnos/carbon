@@ -4451,6 +4451,9 @@ msgstr "Ссылка скопирована в буфер обмена"
 msgid "Copied setup prompt to your clipboard"
 msgstr "Приглашение наладки скопировано в буфер обмена"
 
+msgid "Copied!"
+msgstr "Скопировано!"
+
 msgid "Copies a setup prompt for your AI coding tool"
 msgstr "Копирует подсказку наладки для вашего инструмента кодирования AI"
 
@@ -4646,6 +4649,9 @@ msgstr "Скопировать эту ссылку, чтобы поделить�
 msgid "Copy this link to share the quote with a supplier"
 msgstr "Скопируйте эту ссылку, чтобы поделиться предложением с поставщиком"
 
+msgid "Copy to clipboard"
+msgstr "Копировать в буфер обмена"
+
 msgid "Copy tool number"
 msgstr "Скопировать номер инструмента"
 
@@ -4657,9 +4663,6 @@ msgstr "Копировать название обучения"
 
 msgid "Copy training unique identifier"
 msgstr "Скопировать уникальный идентификатор обучения"
-
-msgid "Copy unique identifier"
-msgstr "Скопировать уникальный идентификатор"
 
 msgid "Copy week"
 msgstr "Копировать неделю"

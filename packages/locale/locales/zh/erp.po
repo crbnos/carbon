@@ -4451,6 +4451,9 @@ msgstr "已复制链接到剪贴板"
 msgid "Copied setup prompt to your clipboard"
 msgstr "已将换型提示复制到剪贴板"
 
+msgid "Copied!"
+msgstr "已复制！"
+
 msgid "Copies a setup prompt for your AI coding tool"
 msgstr "复制换型提示给您的AI编码工具"
 
@@ -4646,6 +4649,9 @@ msgstr "复制此链接以与客户分享报价"
 msgid "Copy this link to share the quote with a supplier"
 msgstr "复制此链接以与供应商共享报价"
 
+msgid "Copy to clipboard"
+msgstr "复制到剪贴板"
+
 msgid "Copy tool number"
 msgstr "复制工具编号"
 
@@ -4657,9 +4663,6 @@ msgstr "复制培训名称"
 
 msgid "Copy training unique identifier"
 msgstr "复制培训唯一标识符"
-
-msgid "Copy unique identifier"
-msgstr "复制唯一标识符"
 
 msgid "Copy week"
 msgstr "复制周"

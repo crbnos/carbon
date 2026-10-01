@@ -4451,6 +4451,9 @@ msgstr "Skopiowano link do schowka"
 msgid "Copied setup prompt to your clipboard"
 msgstr "Skopiowano monit przezbrojenia do schowka"
 
+msgid "Copied!"
+msgstr "Skopiowano!"
+
 msgid "Copies a setup prompt for your AI coding tool"
 msgstr "Kopiuje instrukcję przezbrojenia dla twojego narzędzia kodowania AI"
 
@@ -4646,6 +4649,9 @@ msgstr "Skopiuj ten link, aby udostępnić ofertę klientowi"
 msgid "Copy this link to share the quote with a supplier"
 msgstr "Skopiuj ten link, aby udostępnić ofertę dostawcy"
 
+msgid "Copy to clipboard"
+msgstr "Kopiuj do schowka"
+
 msgid "Copy tool number"
 msgstr "Skopiuj numer narzędzia"
 
@@ -4657,9 +4663,6 @@ msgstr "Skopiuj nazwę szkolenia"
 
 msgid "Copy training unique identifier"
 msgstr "Skopiuj unikatowy identyfikator szkolenia"
-
-msgid "Copy unique identifier"
-msgstr "Skopiuj unikalny identyfikator"
 
 msgid "Copy week"
 msgstr "Kopiuj tydzień"

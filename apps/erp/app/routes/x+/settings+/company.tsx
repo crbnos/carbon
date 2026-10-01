@@ -9,12 +9,10 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
+  Copy,
   Heading,
   HStack,
   ScrollArea,
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
   VStack
 } from "@carbon/react";
 import { msg } from "@lingui/core/macro";
@@ -35,7 +33,6 @@ import { invalidateCompanyTimeZone } from "~/modules/shared/timezone.server";
 import { getDatabaseClient } from "~/services/database.server";
 import type { Handle } from "~/utils/handle";
 import { path } from "~/utils/path";
-import { copyToClipboard } from "~/utils/string";
 
 export const handle: Handle = {
   breadcrumb: msg`Company`,
@@ -147,24 +144,13 @@ export default function Company() {
           <Heading size="h3">
             <Trans>Company</Trans>
           </Heading>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="ghost"
-                aria-label={t`Copy`}
-                size="sm"
-                className="p-1"
-                onClick={() => copyToClipboard(company.id ?? "")}
-              >
-                <LuKeySquare className="w-3 h-3" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>
-              <span>
-                <Trans>Copy company unique identifier</Trans>
-              </span>
-            </TooltipContent>
-          </Tooltip>
+          <Copy
+            text={company.id ?? ""}
+            label={t`Copy company unique identifier`}
+            icon={<LuKeySquare className="size-3" />}
+            variant="ghost"
+            className="w-auto"
+          />
         </HStack>
         <Card>
           <CardHeader>

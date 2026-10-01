@@ -1,6 +1,7 @@
 import { Select, ValidatedForm } from "@carbon/form";
 import {
   Button,
+  Copy,
   HStack,
   Subheading,
   Tooltip,
@@ -135,24 +136,13 @@ const QualityDocumentProperties = () => {
                 </span>
               </TooltipContent>
             </Tooltip>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  aria-label={t`Copy unique identifier`}
-                  size="sm"
-                  className="p-1"
-                  onClick={() => copyToClipboard(routeData?.document?.id ?? "")}
-                >
-                  <LuKeySquare className="w-3 h-3" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <span>
-                  <Trans>Copy document unique identifier</Trans>
-                </span>
-              </TooltipContent>
-            </Tooltip>
+            <Copy
+              text={routeData?.document?.id ?? ""}
+              label={t`Copy document unique identifier`}
+              icon={<LuKeySquare className="size-3" />}
+              variant="ghost"
+              className="w-auto"
+            />
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button

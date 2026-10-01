@@ -4451,6 +4451,9 @@ msgstr "Link copiado para a área de transferência"
 msgid "Copied setup prompt to your clipboard"
 msgstr "Prompt de setup copiado para sua área de transferência"
 
+msgid "Copied!"
+msgstr "Copiado!"
+
 msgid "Copies a setup prompt for your AI coding tool"
 msgstr "Copia um prompt de setup para sua ferramenta de codificação de IA"
 
@@ -4646,6 +4649,9 @@ msgstr "Copie este link para compartilhar a cotação com um cliente"
 msgid "Copy this link to share the quote with a supplier"
 msgstr "Copie este link para compartilhar a cotação com um fornecedor"
 
+msgid "Copy to clipboard"
+msgstr "Copiar para a área de transferência"
+
 msgid "Copy tool number"
 msgstr "Copiar número da ferramenta"
 
@@ -4657,9 +4663,6 @@ msgstr "Copiar nome do treinamento"
 
 msgid "Copy training unique identifier"
 msgstr "Copiar identificador único do treinamento"
-
-msgid "Copy unique identifier"
-msgstr "Copiar identificador único"
 
 msgid "Copy week"
 msgstr "Copiar semana"

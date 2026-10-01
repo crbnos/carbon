@@ -4451,6 +4451,9 @@ msgstr "Collegamento copiato negli appunti"
 msgid "Copied setup prompt to your clipboard"
 msgstr "Prompt di configurazione copiato negli appunti"
 
+msgid "Copied!"
+msgstr "Copiato!"
+
 msgid "Copies a setup prompt for your AI coding tool"
 msgstr "Copia un prompt di attrezzaggio per il tuo strumento di codifica AI"
 
@@ -4646,6 +4649,9 @@ msgstr "Copia questo link per condividere l'offerta con un cliente"
 msgid "Copy this link to share the quote with a supplier"
 msgstr "Copia questo link per condividere l'offerta con un fornitore"
 
+msgid "Copy to clipboard"
+msgstr "Copia negli appunti"
+
 msgid "Copy tool number"
 msgstr "Copia numero strumento"
 
@@ -4657,9 +4663,6 @@ msgstr "Copia nome della formazione"
 
 msgid "Copy training unique identifier"
 msgstr "Copia identificatore univoco della formazione"
-
-msgid "Copy unique identifier"
-msgstr "Copia identificatore univoco"
 
 msgid "Copy week"
 msgstr "Copia settimana"

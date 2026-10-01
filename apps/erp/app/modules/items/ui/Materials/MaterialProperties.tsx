@@ -5,6 +5,7 @@ import {
   AlertTitle,
   Badge,
   Button,
+  Copy,
   HStack,
   Modal,
   ModalBody,
@@ -327,26 +328,13 @@ const MaterialProperties = ({ data }: MaterialPropertiesProps) => {
                   </span>
                 </TooltipContent>
               </Tooltip>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    aria-label={t`Copy`}
-                    size="sm"
-                    className="p-1"
-                    onClick={() =>
-                      copyToClipboard(routeData?.materialSummary?.id ?? "")
-                    }
-                  >
-                    <LuKeySquare className="w-3 h-3" />
-                  </Button>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <span>
-                    <Trans>Copy material unique identifier</Trans>
-                  </span>
-                </TooltipContent>
-              </Tooltip>
+              <Copy
+                text={routeData?.materialSummary?.id ?? ""}
+                label={t`Copy material unique identifier`}
+                icon={<LuKeySquare className="size-3" />}
+                variant="ghost"
+                className="w-auto"
+              />
               <Tooltip>
                 <TooltipTrigger asChild>
                   <Button

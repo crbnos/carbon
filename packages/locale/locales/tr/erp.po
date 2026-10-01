@@ -4451,6 +4451,9 @@ msgstr "Bağlantı panoya kopyalandı"
 msgid "Copied setup prompt to your clipboard"
 msgstr "Hazırlık istemi panonuza kopyalandı"
 
+msgid "Copied!"
+msgstr "Kopyalandı!"
+
 msgid "Copies a setup prompt for your AI coding tool"
 msgstr "AI kodlama aracınız için hazırlık talimatı kopyalar"
 
@@ -4646,6 +4649,9 @@ msgstr "Bu bağlantıyı bir müşteriyle paylaşmak için kopyalayın"
 msgid "Copy this link to share the quote with a supplier"
 msgstr "Bu teklifi bir tedarikçiyle paylaşmak için bu bağlantıyı kopyalayın"
 
+msgid "Copy to clipboard"
+msgstr "Panoya kopyala"
+
 msgid "Copy tool number"
 msgstr "Araç numarasını kopyala"
 
@@ -4657,9 +4663,6 @@ msgstr "Eğitim adını kopyala"
 
 msgid "Copy training unique identifier"
 msgstr "Eğitim benzersiz tanımlayıcısını kopyala"
-
-msgid "Copy unique identifier"
-msgstr "Benzersiz tanıtıcıyı kopyala"
 
 msgid "Copy week"
 msgstr "Haftayı kopyala"

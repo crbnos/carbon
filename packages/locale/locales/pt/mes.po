@@ -381,6 +381,15 @@ msgstr "Consumido vencido"
 msgid "Continue"
 msgstr "Continuar"
 
+msgid "Copied!"
+msgstr "Copiado!"
+
+msgid "Copy"
+msgstr "Copiar"
+
+msgid "Copy to clipboard"
+msgstr "Copiar para a área de transferência"
+
 #. placeholder {0}: board.unplannedCost.days
 msgid "Cost of unplanned maintenance, last {0} days"
 msgstr "Custo de manutenção não planejada, últimos {0} dias"

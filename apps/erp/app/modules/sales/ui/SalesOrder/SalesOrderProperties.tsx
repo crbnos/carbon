@@ -2,6 +2,7 @@ import type { Json } from "@carbon/database";
 import { DatePicker, InputControlled, ValidatedForm } from "@carbon/form";
 import {
   Button,
+  Copy,
   HStack,
   IconButton,
   Subheading,
@@ -152,24 +153,13 @@ const SalesOrderProperties = () => {
                 <span>Copy link to Sales Order</span>
               </TooltipContent>
             </Tooltip>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  aria-label={t`Copy unique identifier`}
-                  size="sm"
-                  className="p-1"
-                  onClick={() => copyToClipboard(orderId)}
-                >
-                  <LuKeySquare className="w-3 h-3" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <span>
-                  <Trans>Copy sales order unique identifier</Trans>
-                </span>
-              </TooltipContent>
-            </Tooltip>
+            <Copy
+              text={orderId}
+              label={t`Copy sales order unique identifier`}
+              icon={<LuKeySquare className="size-3" />}
+              variant="ghost"
+              className="w-auto"
+            />
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button

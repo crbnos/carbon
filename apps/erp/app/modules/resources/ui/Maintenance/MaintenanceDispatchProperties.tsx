@@ -1,6 +1,7 @@
 import { DateTimePicker, Hidden, Select, ValidatedForm } from "@carbon/form";
 import {
   Button,
+  Copy,
   HStack,
   Modal,
   ModalBody,
@@ -153,24 +154,13 @@ const MaintenanceDispatchProperties = () => {
                 </span>
               </TooltipContent>
             </Tooltip>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  aria-label="Copy ID"
-                  size="sm"
-                  className="p-1"
-                  onClick={() => copyToClipboard(routeData?.dispatch?.id ?? "")}
-                >
-                  <LuKeySquare className="w-3 h-3" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <span>
-                  <Trans>Copy dispatch ID</Trans>
-                </span>
-              </TooltipContent>
-            </Tooltip>
+            <Copy
+              text={routeData?.dispatch?.id ?? ""}
+              label={t`Copy dispatch ID`}
+              icon={<LuKeySquare className="size-3" />}
+              variant="ghost"
+              className="w-auto"
+            />
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button

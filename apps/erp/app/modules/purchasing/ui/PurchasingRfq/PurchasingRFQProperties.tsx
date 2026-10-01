@@ -6,6 +6,7 @@ import {
   AvatarGroupList,
   AvatarOverflowIndicator,
   Button,
+  Copy,
   HStack,
   Subheading,
   Tooltip,
@@ -196,24 +197,13 @@ const PurchasingRFQProperties = () => {
                 <span>Copy link to RFQ</span>
               </TooltipContent>
             </Tooltip>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  aria-label={t`Copy unique identifier`}
-                  size="sm"
-                  className="p-1"
-                  onClick={() => copyToClipboard(rfqId)}
-                >
-                  <LuKeySquare className="w-3 h-3" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <span>
-                  <Trans>Copy RFQ unique identifier</Trans>
-                </span>
-              </TooltipContent>
-            </Tooltip>
+            <Copy
+              text={rfqId}
+              label={t`Copy RFQ unique identifier`}
+              icon={<LuKeySquare className="size-3" />}
+              variant="ghost"
+              className="w-auto"
+            />
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button

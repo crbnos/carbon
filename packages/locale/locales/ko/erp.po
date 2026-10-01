@@ -4451,6 +4451,9 @@ msgstr "링크가 클립보드에 복사됨"
 msgid "Copied setup prompt to your clipboard"
 msgstr "셋업 프롬프트를 클립보드에 복사했습니다"
 
+msgid "Copied!"
+msgstr "복사되었습니다!"
+
 msgid "Copies a setup prompt for your AI coding tool"
 msgstr "AI 코딩 도구용 셋업 프롬프트를 복사합니다"
 
@@ -4646,6 +4649,9 @@ msgstr "이 링크를 복사하여 고객과 견적을 공유하세요"
 msgid "Copy this link to share the quote with a supplier"
 msgstr "이 링크를 복사하여 공급업체와 견적을 공유하세요"
 
+msgid "Copy to clipboard"
+msgstr "클립보드에 복사"
+
 msgid "Copy tool number"
 msgstr "공구 번호 복사"
 
@@ -4657,9 +4663,6 @@ msgstr "교육 이름 복사"
 
 msgid "Copy training unique identifier"
 msgstr "교육 고유 식별자 복사"
-
-msgid "Copy unique identifier"
-msgstr "고유 식별자 복사"
 
 msgid "Copy week"
 msgstr "주간 복사"

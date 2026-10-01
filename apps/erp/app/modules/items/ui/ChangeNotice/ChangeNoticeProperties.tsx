@@ -6,6 +6,7 @@ import {
 } from "@carbon/form";
 import {
   Button,
+  Copy,
   HStack,
   Separator,
   Subheading,
@@ -175,24 +176,13 @@ const ChangeNoticeProperties = () => {
                 <Trans>Copy link to change notice</Trans>
               </TooltipContent>
             </Tooltip>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  aria-label={t`Copy unique identifier`}
-                  size="sm"
-                  className="p-1"
-                  onClick={() => copyToClipboard(id)}
-                >
-                  <LuKeySquare className="w-3 h-3" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <span>
-                  <Trans>Copy change notice unique identifier</Trans>
-                </span>
-              </TooltipContent>
-            </Tooltip>
+            <Copy
+              text={id}
+              label={t`Copy change notice unique identifier`}
+              icon={<LuKeySquare className="size-3" />}
+              variant="ghost"
+              className="w-auto"
+            />
           </HStack>
         </HStack>
         <VStack spacing={1}>

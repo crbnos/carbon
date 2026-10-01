@@ -4451,6 +4451,9 @@ msgstr "क्लिपबोर्ड में लिंक कॉपी क�
 msgid "Copied setup prompt to your clipboard"
 msgstr "सेटअप प्रॉम्प्ट आपके क्लिपबोर्ड में कॉपी किया गया"
 
+msgid "Copied!"
+msgstr "कॉपी हो गया!"
+
 msgid "Copies a setup prompt for your AI coding tool"
 msgstr "आपकी AI कोडिंग टूल के लिए एक सेटअप प्रॉम्प्ट कॉपी करता है"
 
@@ -4646,6 +4649,9 @@ msgstr "इस लिंक को कॉपी करें ताकि आप
 msgid "Copy this link to share the quote with a supplier"
 msgstr "कोटेशन को आपूर्तिकर्ता के साथ साझा करने के लिए इस लिंक की नकल करें"
 
+msgid "Copy to clipboard"
+msgstr "क्लिपबोर्ड पर कॉपी करें"
+
 msgid "Copy tool number"
 msgstr "टूल नंबर कॉपी करें"
 
@@ -4657,9 +4663,6 @@ msgstr "प्रशिक्षण नाम कॉपी करें"
 
 msgid "Copy training unique identifier"
 msgstr "प्रशिक्षण अद्वितीय पहचानकर्ता की प्रतिलिपि बनाएं"
-
-msgid "Copy unique identifier"
-msgstr "विशिष्ट पहचान नकल करें"
 
 msgid "Copy week"
 msgstr "सप्ताह की प्रति"

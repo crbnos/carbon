@@ -3,6 +3,7 @@ import { InputControlled, Select, ValidatedForm } from "@carbon/form";
 import {
   Badge,
   Button,
+  Copy,
   HStack,
   Subheading,
   Tooltip,
@@ -186,26 +187,13 @@ const ServiceProperties = ({ data }: ServicePropertiesProps) => {
                 </span>
               </TooltipContent>
             </Tooltip>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  aria-label={t`Copy`}
-                  size="sm"
-                  className="p-1"
-                  onClick={() =>
-                    copyToClipboard(routeData?.serviceSummary?.id ?? "")
-                  }
-                >
-                  <LuKeySquare className="w-3 h-3" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <span>
-                  <Trans>Copy service unique identifier</Trans>
-                </span>
-              </TooltipContent>
-            </Tooltip>
+            <Copy
+              text={routeData?.serviceSummary?.id ?? ""}
+              label={t`Copy service unique identifier`}
+              icon={<LuKeySquare className="size-3" />}
+              variant="ghost"
+              className="w-auto"
+            />
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button

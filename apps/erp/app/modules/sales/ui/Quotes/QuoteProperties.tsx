@@ -3,6 +3,7 @@ import { getQuoteDisplayId } from "@carbon/documents/utils";
 import { DatePicker, InputControlled, ValidatedForm } from "@carbon/form";
 import {
   Button,
+  Copy,
   HStack,
   IconButton,
   Subheading,
@@ -149,24 +150,13 @@ const QuoteProperties = () => {
                 <span>Copy link to Quote</span>
               </TooltipContent>
             </Tooltip>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  aria-label={t`Copy unique identifier`}
-                  size="sm"
-                  className="p-1"
-                  onClick={() => copyToClipboard(quoteId)}
-                >
-                  <LuKeySquare className="w-3 h-3" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <span>
-                  <Trans>Copy quote unique identifier</Trans>
-                </span>
-              </TooltipContent>
-            </Tooltip>
+            <Copy
+              text={quoteId}
+              label={t`Copy quote unique identifier`}
+              icon={<LuKeySquare className="size-3" />}
+              variant="ghost"
+              className="w-auto"
+            />
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
