@@ -2706,3 +2706,27 @@ awaited.
 drawer (`foo.tsx` + `foo.new.tsx`). A list loader reads the whole query string, so it passes
 `search: "all"`. A loader that reads the pathname, a cookie or a header must not use the
 helper.
+
+## Changing the type of an existing loader key breaks tabs still on the old bundle
+
+**Context:** The app shell loader started streaming `changelog` as a promise instead of
+returning the entry. Tabs opened before that deploy showed an empty What's new panel when
+they were next focused, including for users who had dismissed the entry.
+
+**Problem:** Loader data is a wire contract with every bundle still open in a browser, not
+only the one in the same commit. A stale tab re-runs the shell loader against the NEW
+deployment (any navigation, and the `visibilitychange` session refresh), and Vercel skew
+protection only pins it to its own deployment for four hours. The old hook read
+`data.changelog` as the entry, so it rendered the promise: no title, and a dismissal key of
+`changelog:undefined` that no flag matches. It lasts until React Router's manifest check
+reloads the tab. Typecheck and tests cannot see it — both sides are correct in their own
+commit.
+
+**Rule:** Never change the type or shape of an existing loader key that a mounted component
+reads. Return the new shape under a NEW key (`changelogEntry`) and stop returning the old
+one, so an old bundle reads `undefined` and falls back to its empty state. This matters most
+in the shells (`root.tsx`, `x+/_layout.tsx`), whose loaders every open tab re-runs.
+
+**Applies to:** every loader, most of all `apps/erp/app/routes/x+/_layout.tsx`,
+`apps/mes/app/routes/x+/_layout.tsx` and both `root.tsx` — in particular when moving an
+awaited value to a streamed promise read with `useResolved`.
