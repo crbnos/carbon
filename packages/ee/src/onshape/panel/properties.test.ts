@@ -461,6 +461,13 @@ describe("propertyMapEqual", () => {
     expect(propertyMapEqual(base, [entry("p1", "f1")])).toBe(false);
   });
 
+  it("notices a duplicated row on either side", () => {
+    const base = [entry("p1", "f1"), entry("p2", "f2")];
+    const doubled = [entry("p1", "f1"), entry("p1", "f1")];
+    expect(propertyMapEqual(base, doubled)).toBe(false);
+    expect(propertyMapEqual(doubled, base)).toBe(false);
+  });
+
   it("notices a row mapped to a different property id", () => {
     expect(propertyMapEqual([entry("p1", "f1")], [entry("p2", "f1")])).toBe(
       false

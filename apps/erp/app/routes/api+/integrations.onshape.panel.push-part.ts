@@ -458,6 +458,9 @@ export async function action({ request }: ActionFunctionArgs) {
           elementKind: "partstudio",
           partId,
           ...(configuration ? { configuration } : {}),
+          ...(wv === "w" && row.microversionId
+            ? { microversionId: row.microversionId }
+            : {}),
           assetBaseName: row.partNumber ?? row.name
         },
         { id: `${planId}:${itemId}:${elementId}` }

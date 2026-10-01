@@ -46,6 +46,9 @@ export interface SyncOnshapeElementInput {
   documentId: string;
   versionId: string; // the released version — or a workspace id when sourceWvm is "w"
   sourceWvm?: "w" | "v"; // path segment for export/thumbnail calls; default "v"
+  // A workspace id is mutable, so a workspace export's model identity also
+  // carries the microversion it was reviewed at.
+  sourceMicroversionId?: string;
   modelElementId: string; // released Part Studio OR Assembly element to export
   modelElementKind: "partstudio" | "assembly"; // from the revision's elementType (0/1)
   partId?: string | null; // REQUIRED for individual Part Studio releases
@@ -206,7 +209,10 @@ async function exportRawGltfModel(
                 input.versionId,
                 input.modelElementId,
                 input.partId,
-                configuration ?? ""
+                configuration ?? "",
+                ...(input.sourceWvm === "w"
+                  ? [input.sourceMicroversionId ?? ""]
+                  : [])
               ])
             )
             .digest("hex")

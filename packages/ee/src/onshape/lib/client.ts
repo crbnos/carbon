@@ -76,6 +76,7 @@ export interface OnshapePart {
 }
 
 const DEV_CACHE_TTL_SECONDS = 10 * 60;
+const DOCUMENT_REVISION_MAX_PAGES = 20;
 
 export interface OnshapeElementRow {
   id: string;
@@ -494,17 +495,27 @@ export class OnshapeClient {
   // releaseId/releaseName plus the released versionId/elementId, so grouping
   // by releaseId reconstructs the release packages without a per-package call
   // (Onshape has no packages-by-document endpoint).
+  // Follows `next` so older releases are listed too, up to
+  // DOCUMENT_REVISION_MAX_PAGES pages.
   async getDocumentRevisions(
     documentId: string
-  ): Promise<
-    { items: OnshapeRevision[]; next?: string | null } & Record<string, unknown>
-  > {
-    return this.request<
-      { items: OnshapeRevision[]; next?: string | null } & Record<
-        string,
-        unknown
-      >
-    >("GET", `/api/v10/revisions/d/${documentId}`);
+  ): Promise<{ items: OnshapeRevision[]; next: string | null }> {
+    type Page = { items?: OnshapeRevision[]; next?: string | null };
+    const items: OnshapeRevision[] = [];
+    let page = await this.request<Page>(
+      "GET",
+      `/api/v10/revisions/d/${documentId}`
+    );
+    items.push(...(page.items ?? []));
+    for (
+      let pages = 1;
+      page.next && pages < DOCUMENT_REVISION_MAX_PAGES;
+      pages++
+    ) {
+      page = await this.request<Page>("GET", page.next);
+      items.push(...(page.items ?? []));
+    }
+    return { items, next: page.next ?? null };
   }
 
   // --- Release-asset export ---------------------------------------------------

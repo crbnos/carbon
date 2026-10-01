@@ -314,14 +314,17 @@ export function propertyMapEqual(
 ): boolean {
   if (a.length !== b.length) return false;
   const index = new Map(a.map((entry) => [entry.onshapePropertyId, entry]));
+  if (index.size !== a.length) return false;
+  // A key repeated in `b` can stand in for one it dropped.
+  const seen = new Set<string>();
   for (const entry of b) {
+    if (seen.has(entry.onshapePropertyId)) return false;
+    seen.add(entry.onshapePropertyId);
     const other = index.get(entry.onshapePropertyId);
     if (!other) return false;
     if (other.carbonFieldId !== entry.carbonFieldId) return false;
   }
-  // Equal lengths plus every `b` key present in `a` leaves no room for a
-  // duplicate key to hide a difference.
-  return index.size === a.length;
+  return true;
 }
 
 /**

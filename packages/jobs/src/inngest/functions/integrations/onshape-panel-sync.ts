@@ -33,7 +33,8 @@ const OnshapePanelSyncPayloadSchema = z.object({
   elementKind: z.enum(["partstudio", "assembly", "drawing"]),
   partId: z.string().optional(),
   configuration: z.string().optional(),
-  assetBaseName: z.string().optional()
+  assetBaseName: z.string().optional(),
+  microversionId: z.string().optional()
 });
 
 export const onshapePanelSyncFunction = inngest.createFunction(
@@ -80,6 +81,7 @@ export const onshapePanelSyncFunction = inngest.createFunction(
         sourceWvm: payload.wvm,
         partId: payload.partId,
         configuration: payload.configuration,
+        sourceMicroversionId: payload.microversionId,
         modelElementId: payload.elementId,
         modelElementKind: elementKind,
         assetBaseName: payload.assetBaseName

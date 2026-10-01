@@ -889,9 +889,38 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 
   // Pass 3: release mappings and default revisions.
+  // An item holds one Onshape link. A reused revision already linked to its
+  // part or assembly keeps that link, which status and change detection read.
+  const reusedIds = decisions
+    .filter((decision) => decision.kind === "reuse")
+    .map((decision) => decision.row.id);
+  const keepsLink = new Set<string>();
+  if (reusedIds.length > 0) {
+    const links = await selectInBatches(reusedIds, (batch) =>
+      serviceRole
+        .from("externalIntegrationMapping")
+        .select("entityId, externalId")
+        .eq("companyId", companyId)
+        .eq("integration", ONSHAPE_V2_INTEGRATION_ID)
+        .eq("entityType", "item")
+        .in("entityId", batch)
+    );
+    if (links.error) {
+      for (const id of reusedIds) keepsLink.add(id);
+      summary.errors.push(
+        `Could not read the Onshape links of existing revisions (${links.error.message}); they keep their current links`
+      );
+    } else {
+      for (const link of links.data) {
+        if (!link.externalId?.startsWith("release:")) {
+          keepsLink.add(link.entityId);
+        }
+      }
+    }
+  }
   for (const item of modelItems) {
     const row = revisionItemByPartNumber.get(item.partNumber);
-    if (!row) continue;
+    if (!row || keepsLink.has(row.id)) continue;
     const externalId = `release:${plan.releaseId}:${item.partNumber}`;
     const pushedAt = datetime.timestamp();
     const releaseMapping = await swapItemMapping(db, {
