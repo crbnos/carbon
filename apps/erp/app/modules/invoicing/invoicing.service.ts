@@ -26,7 +26,8 @@ import {
   round,
   type SettlementBalanceRow,
   toBaseAmount,
-  toDocumentAmount
+  toDocumentAmount,
+  unchecked
 } from "@carbon/utils";
 import { endOfMonth, parseDate } from "@internationalized/date";
 import type { SupabaseClient } from "@supabase/supabase-js";
@@ -852,10 +853,12 @@ export async function upsertPurchaseInvoice(
   if ("id" in purchaseInvoice) {
     return client
       .from("purchaseInvoice")
-      .update({
-        ...sanitize(purchaseInvoice),
-        updatedAt: datetime.timestamp()
-      })
+      .update(
+        unchecked({
+          ...sanitize(purchaseInvoice),
+          updatedAt: datetime.timestamp()
+        })
+      )
       .eq("id", purchaseInvoice.id)
       .select("id, invoiceId");
   }
@@ -1235,10 +1238,12 @@ export async function upsertSalesInvoice(
   if ("id" in salesInvoice) {
     return client
       .from("salesInvoice")
-      .update({
-        ...sanitize(salesInvoice),
-        updatedAt: datetime.timestamp()
-      })
+      .update(
+        unchecked({
+          ...sanitize(salesInvoice),
+          updatedAt: datetime.timestamp()
+        })
+      )
       .eq("id", salesInvoice.id)
       .select("id, invoiceId");
   }
@@ -1373,7 +1378,7 @@ export async function upsertSalesInvoiceLine(
   if ("id" in salesInvoiceLine) {
     return client
       .from("salesInvoiceLine")
-      .update(sanitize(salesInvoiceLine))
+      .update(unchecked(sanitize(salesInvoiceLine)))
       .eq("id", salesInvoiceLine.id)
       .select("id")
       .single();

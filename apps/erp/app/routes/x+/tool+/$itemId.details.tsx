@@ -18,10 +18,7 @@ import { CadModel, DeferredFiles } from "~/components";
 import { usePermissions, useRouteData } from "~/hooks";
 import type { ItemFile, MakeMethod, ToolSummary } from "~/modules/items";
 import {
-  getItemChangeNoticeData,
   getItemManufacturing,
-  getMakeMethodById,
-  getMakeMethods,
   getMethodMaterialsByMakeMethod,
   getMethodOperationsByMakeMethodId,
   itemManufacturingValidator,
@@ -29,7 +26,12 @@ import {
   upsertItemManufacturing,
   upsertTool
 } from "~/modules/items";
-import { getRevisionLock } from "~/modules/items/items.server";
+import {
+  getItemChangeNoticeDataOnce,
+  getMakeMethodByIdOnce,
+  getMakeMethodsOnce,
+  getRevisionLock
+} from "~/modules/items/items.server";
 import {
   ChangeNoticeDraftLockReason,
   getChangeNoticeDraftLock,
@@ -66,10 +68,10 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const requestedMethodId = url.searchParams.get("methodId");
 
   const [makeMethods, revisionLock, changeNoticeData] = await Promise.all([
-    getMakeMethods(client, itemId, companyId),
+    getMakeMethodsOnce(client, itemId, companyId),
     getRevisionLock(client, { itemId, companyId }),
     // Tool → CO traceability (4b): CO history for this tool + type labels.
-    getItemChangeNoticeData(client, itemId, companyId)
+    getItemChangeNoticeDataOnce(client, itemId, companyId)
   ]);
   const revisionStatus = revisionLock.revisionStatus;
   const releaseControl = revisionLock.releaseControl;
@@ -94,7 +96,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     };
   }
 
-  const fullMethod = await getMakeMethodById(client, makeMethod.id, companyId);
+  const fullMethod = await getMakeMethodByIdOnce(
+    client,
+    makeMethod.id,
+    companyId
+  );
   if (fullMethod.error || !fullMethod.data) {
     return {
       methodData: null,

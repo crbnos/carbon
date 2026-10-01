@@ -21,7 +21,7 @@ Server-only Inngest jobs for event draining, integrations, notifications, workfl
 
 ## Never
 
-- Never import `@carbon/jobs/inngest` or worker modules into browser bundles. App code normally imports only `@carbon/jobs`.
+- Never import `@carbon/jobs/inngest` into browser bundles. App code normally imports only `@carbon/jobs`.
 - Never use the async event system for data-integrity or real-time guarantees; use database constraints/interceptors.
 - Never write handler tables directly; database triggers route changes through `dispatch_event_batch()` and PGMQ.
 - Never give workflow actions a service-role/untagged business client; it bypasses the owner's permissions and workflow loop guards.
@@ -45,7 +45,6 @@ pnpm --filter @carbon/jobs plan:company -- --company <id> --user <id>   # MRP + 
 | `./events` | `Events` type |
 | `./inngest` | Inngest client plus workflow dispatch/manual-run server seams |
 | `./backups` | Import-light backup catalog, scope, and compatibility helpers |
-| `./worker` | Inngest worker entry point |
 
 ## Durable Entry Points
 

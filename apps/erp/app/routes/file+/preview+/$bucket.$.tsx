@@ -115,8 +115,6 @@ export let loader = async ({ request, params }: LoaderFunctionArgs) => {
     return source.download(path);
   }
 
-  // No retry here: the client's fetchWithRetry already retries 5xx and
-  // network failures.
   const result = await downloadFile();
   if (result.error) {
     logger.error("Failed to download file", {

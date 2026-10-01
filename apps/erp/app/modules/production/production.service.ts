@@ -17,7 +17,8 @@ import {
   groupBy,
   nameSimilarity,
   scrapAllowance,
-  tiptapToText
+  tiptapToText,
+  unchecked
 } from "@carbon/utils";
 import type {
   AssemblyGraph,
@@ -3533,7 +3534,6 @@ export async function insertJob(
     salesOrderLineId?: string;
     quoteId?: string;
     quoteLineId?: string;
-    parentJobId?: string;
     modelUploadId?: string;
     notes?: string;
     customFields?: Json;
@@ -3655,7 +3655,6 @@ export async function insertJob(
       salesOrderLineId: input.salesOrderLineId,
       quoteId: input.quoteId,
       quoteLineId: input.quoteLineId,
-      parentJobId: input.parentJobId,
       modelUploadId: input.modelUploadId,
       notes: input.notes,
       customFields: input.customFields,
@@ -3804,7 +3803,6 @@ export async function updateJob(
     salesOrderLineId?: string | null;
     quoteId?: string | null;
     quoteLineId?: string | null;
-    parentJobId?: string | null;
     modelUploadId?: string | null;
     notes?: string | null;
     customFields?: Json;
@@ -3838,12 +3836,14 @@ export async function updateJob(
 
   return client
     .from("job")
-    .update({
-      ...sanitize(updates),
-      ...(priority !== undefined && { priority }),
-      updatedBy,
-      updatedAt: new Date().toISOString()
-    })
+    .update(
+      unchecked({
+        ...sanitize(updates),
+        ...(priority !== undefined && { priority }),
+        updatedBy,
+        updatedAt: new Date().toISOString()
+      })
+    )
     .eq("id", id)
     .select("id")
     .single();
@@ -4942,12 +4942,12 @@ export async function upsertFailureMode(
   if ("createdBy" in failureMode) {
     return client
       .from("maintenanceFailureMode")
-      .insert([failureMode])
+      .insert([unchecked(failureMode)])
       .select("id");
   } else {
     return client
       .from("maintenanceFailureMode")
-      .update(sanitize(failureMode))
+      .update(unchecked(sanitize(failureMode)))
       .eq("id", failureMode.id);
   }
 }
@@ -9974,13 +9974,15 @@ export async function completeOperation(
   const insertProduction = await client
     .from("productionQuantity")
     .insert(
-      sanitize({
-        jobOperationId: args.operationId,
-        quantity: args.quantity,
-        type: "Production",
-        companyId,
-        createdBy: userId
-      })
+      unchecked(
+        sanitize({
+          jobOperationId: args.operationId,
+          quantity: args.quantity,
+          type: "Production",
+          companyId,
+          createdBy: userId
+        })
+      )
     )
     .select("id")
     .single();

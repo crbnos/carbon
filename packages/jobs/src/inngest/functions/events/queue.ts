@@ -6,20 +6,15 @@ import type { HandlerType, QueueMessage } from "@carbon/database/event";
 import { sql } from "kysely";
 import { getJobDatabaseClient } from "../../../db";
 import { inngest } from "../../client";
+import { packBySize } from "./pack";
 
 const QUEUE_NAME = "event_system"; // Name of the PGMQ queue
 const BATCH_SIZE = 100; // Number of messages to process per pass
 const VISIBILITY_TIMEOUT = 30; // Seconds a message is hidden after being read
-const CHUNK_SIZE = 10; // Max events per sendEvent call (keeps under 256KB limit)
+const MAX_EVENT_BYTES = 200_000; // Inngest caps an event at 256KB
+const MAX_RECORDS = 50; // Records per batched handler event
+const MAX_SLOW_RECORDS = 10; // ...for handlers that call an external service per record
 const MAX_PASSES = 10; // Max read/dispatch/delete passes per run (~1000 msgs)
-
-function chunk<T>(arr: T[], size: number): T[][] {
-  const chunks: T[][] = [];
-  for (let i = 0; i < arr.length; i += size) {
-    chunks.push(arr.slice(i, i + size));
-  }
-  return chunks;
-}
 
 type QueueJob = {
   msg_id: number;
@@ -138,9 +133,9 @@ export const eventQueueFunction = inngest.createFunction(
           }
         }));
 
-        const chunks = chunk(events, CHUNK_SIZE);
+        const chunks = packBySize(events, MAX_EVENT_BYTES);
         for (let i = 0; i < chunks.length; i++) {
-          await step.sendEvent(`dispatch-webhooks-${pass}-${i}`, chunks[i]!);
+          await step.sendEvent(`send-webhooks-${pass}-${i}`, chunks[i]!);
         }
       }
 
@@ -157,9 +152,9 @@ export const eventQueueFunction = inngest.createFunction(
           }
         }));
 
-        const chunks = chunk(events, CHUNK_SIZE);
+        const chunks = packBySize(events, MAX_EVENT_BYTES);
         for (let i = 0; i < chunks.length; i++) {
-          await step.sendEvent(`dispatch-workflows-${pass}-${i}`, chunks[i]!);
+          await step.sendEvent(`send-workflows-${pass}-${i}`, chunks[i]!);
         }
       }
 
@@ -171,9 +166,9 @@ export const eventQueueFunction = inngest.createFunction(
           handlerConfig: job.message.handlerConfig
         }));
 
-        const chunks = chunk(records, CHUNK_SIZE);
+        const chunks = packBySize(records, MAX_EVENT_BYTES, MAX_SLOW_RECORDS);
         for (let i = 0; i < chunks.length; i++) {
-          await step.sendEvent(`dispatch-syncs-${pass}-${i}`, {
+          await step.sendEvent(`send-syncs-${pass}-${i}`, {
             name: "carbon/event-sync" as const,
             data: { records: chunks[i] }
           });
@@ -187,9 +182,9 @@ export const eventQueueFunction = inngest.createFunction(
           companyId: job.message.companyId
         }));
 
-        const chunks = chunk(records, CHUNK_SIZE);
+        const chunks = packBySize(records, MAX_EVENT_BYTES, MAX_RECORDS);
         for (let i = 0; i < chunks.length; i++) {
-          await step.sendEvent(`dispatch-searches-${pass}-${i}`, {
+          await step.sendEvent(`send-searches-${pass}-${i}`, {
             name: "carbon/event-search" as const,
             data: { records: chunks[i] }
           });
@@ -205,9 +200,9 @@ export const eventQueueFunction = inngest.createFunction(
           handlerConfig: job.message.handlerConfig
         }));
 
-        const chunks = chunk(records, CHUNK_SIZE);
+        const chunks = packBySize(records, MAX_EVENT_BYTES, MAX_RECORDS);
         for (let i = 0; i < chunks.length; i++) {
-          await step.sendEvent(`dispatch-audits-${pass}-${i}`, {
+          await step.sendEvent(`send-audits-${pass}-${i}`, {
             name: "carbon/event-audit" as const,
             data: { records: chunks[i] }
           });
@@ -221,9 +216,9 @@ export const eventQueueFunction = inngest.createFunction(
           companyId: job.message.companyId
         }));
 
-        const chunks = chunk(records, CHUNK_SIZE);
+        const chunks = packBySize(records, MAX_EVENT_BYTES, MAX_SLOW_RECORDS);
         for (let i = 0; i < chunks.length; i++) {
-          await step.sendEvent(`dispatch-embeddings-${pass}-${i}`, {
+          await step.sendEvent(`send-embeddings-${pass}-${i}`, {
             name: "carbon/event-embedding" as const,
             data: { records: chunks[i] }
           });

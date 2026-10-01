@@ -14,6 +14,7 @@ import {
   HStack,
   IconButton
 } from "@carbon/react";
+import { unchecked } from "@carbon/utils";
 import { useLingui } from "@lingui/react/macro";
 import type { ColumnDef } from "@tanstack/react-table";
 import { memo, useCallback, useMemo } from "react";
@@ -212,10 +213,12 @@ const JobOperationsTable = memo(({ data, count }: JobOperationsTableProps) => {
       if (!carbon) throw new Error("Carbon client not found");
       return await carbon
         .from("jobOperation")
-        .update({
-          [id]: value,
-          updatedBy: userId
-        })
+        .update(
+          unchecked({
+            [id]: value,
+            updatedBy: userId
+          })
+        )
         .eq("id", row.id!);
     },
     [carbon, userId]

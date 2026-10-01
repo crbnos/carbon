@@ -26,8 +26,11 @@ All client factories live in `packages/auth/src/lib/supabase/`.
 | `getCarbonServiceRole()` | `client.server.ts` (service role key) | No (bypasses RLS) | Server-only privileged ops, jobs, edge functions |
 | `getCarbonAPIKeyClient(apiKey)` | `client.ts` (`carbon-key` header) | Yes | Public API key auth |
 
-`createClient` is configured with `autoRefreshToken: false`, `persistSession: false`, and a
-`fetchWithRetry` wrapper (retries 5xx/408/timeouts with backoff). Do not re-create this config ad hoc.
+`createClient` is configured with `autoRefreshToken: false`, `persistSession: false` and
+`db: { timeout: 25_000 }`. Retries are supabase-js's own (a read is retried up to three times on a
+rejected fetch, 503 or 520; a write is never replayed; a timed-out call is not retried) and cover
+database calls only — storage and auth requests have no retry and no timeout. Do not re-create this
+config ad hoc, and do not add a `global.fetch` retry wrapper: it would multiply the SDK's retries.
 
 ### Getting a client in a route
 

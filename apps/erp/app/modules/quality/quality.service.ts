@@ -7,7 +7,7 @@ import { fetchAllFromTable, getCompanyTimeZone } from "@carbon/database";
 import { storage } from "@carbon/files";
 import { getLogger } from "@carbon/logger";
 import type { JSONContent } from "@carbon/react";
-import { datetime } from "@carbon/utils";
+import { datetime, unchecked } from "@carbon/utils";
 import { parseDate } from "@internationalized/date";
 import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
 import type { z } from "zod";
@@ -2146,7 +2146,7 @@ export async function upsertIssue(
     const { items, ...data } = nonConformance;
     return client
       .from("nonConformance")
-      .update(sanitize(data))
+      .update(unchecked(sanitize(data)))
       .eq("id", nonConformance.id);
   }
 }

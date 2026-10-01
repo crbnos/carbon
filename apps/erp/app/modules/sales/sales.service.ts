@@ -14,7 +14,8 @@ import {
   datetime,
   EPSILON,
   getSalesReturnOrderStatus,
-  round
+  round,
+  unchecked
 } from "@carbon/utils";
 import type { FileObject } from "@supabase/storage-js";
 import type {
@@ -2194,7 +2195,10 @@ export async function insertSalesOrderLines(
     nonTaxableAddOnCost: line.nonTaxableAddOnCost ?? 0,
     taxPercent: line.taxPercent ?? 0
   }));
-  return client.from("salesOrderLine").insert(linesWithDefaults).select("id");
+  return client
+    .from("salesOrderLine")
+    .insert(unchecked(linesWithDefaults))
+    .select("id");
 }
 
 /** @mcp update */
@@ -3262,7 +3266,7 @@ export async function updateCustomerContact(
   }
   return client
     .from("contact")
-    .update(sanitize(customerContact.contact))
+    .update(unchecked(sanitize(customerContact.contact)))
     .eq("id", customerContact.contactId)
     .select("id")
     .single();
@@ -4117,10 +4121,12 @@ export async function upsertQuote(
     const { companyGroupId: _cgId, ...quoteUpdateData } = quote;
     return client
       .from("quote")
-      .update({
-        ...sanitize(quoteUpdateData),
-        updatedAt: datetime.timestamp()
-      })
+      .update(
+        unchecked({
+          ...sanitize(quoteUpdateData),
+          updatedAt: datetime.timestamp()
+        })
+      )
       .eq("id", quote.id);
   }
 }
@@ -6318,7 +6324,7 @@ export async function upsertSalesOrder(
     const { companyGroupId: _cgId, ...salesOrderUpdateData } = salesOrder;
     return client
       .from("salesOrder")
-      .update(sanitize(salesOrderUpdateData))
+      .update(unchecked(sanitize(salesOrderUpdateData)))
       .eq("id", salesOrder.id)
       .select("id, salesOrderId");
   }
@@ -6492,7 +6498,7 @@ export async function upsertSalesOrderLine(
   if ("id" in salesOrderLine) {
     return client
       .from("salesOrderLine")
-      .update(sanitize(salesOrderLine))
+      .update(unchecked(sanitize(salesOrderLine)))
       .eq("id", salesOrderLine.id)
       .select("id")
       .single();
@@ -6581,7 +6587,7 @@ export async function upsertSalesOrderPayment(
   if ("id" in salesOrderPayment) {
     return client
       .from("salesOrderPayment")
-      .update(sanitize(salesOrderPayment))
+      .update(unchecked(sanitize(salesOrderPayment)))
       .eq("id", salesOrderPayment.id)
       .select("id")
       .single();

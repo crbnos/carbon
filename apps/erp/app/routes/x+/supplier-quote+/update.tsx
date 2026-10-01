@@ -3,7 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { datetime } from "@carbon/utils";
+import { datetime, unchecked } from "@carbon/utils";
 import type { CalendarDate } from "@internationalized/date";
 import { parseDate } from "@internationalized/date";
 import type { ActionFunctionArgs } from "react-router";
@@ -98,11 +98,13 @@ export async function action({ request }: ActionFunctionArgs) {
     case "quotedDate":
       return await client
         .from("supplierQuote")
-        .update({
-          [field]: value ? value : null,
-          updatedBy: userId,
-          updatedAt: new Date().toISOString()
-        })
+        .update(
+          unchecked({
+            [field]: value ? value : null,
+            updatedBy: userId,
+            updatedAt: new Date().toISOString()
+          })
+        )
         .in("id", ids as string[]);
 
     case "expirationDate": {

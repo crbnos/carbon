@@ -49,8 +49,7 @@
     ".": "./src/index.ts",
     "./backups": "./src/backups/schema.ts",
     "./events": "./src/events.ts",
-    "./inngest": "./src/inngest/index.ts",
-    "./worker": "./src/inngest/worker.ts"
+    "./inngest": "./src/inngest/index.ts"
   },
   "main": "./src/index.ts",
   "name": "@carbon/jobs",

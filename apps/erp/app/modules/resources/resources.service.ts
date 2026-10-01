@@ -6,7 +6,8 @@ import type { Database, Json } from "@carbon/database";
 import {
   type BatchRules,
   compactBatchRules,
-  resolveBatchRules
+  resolveBatchRules,
+  unchecked
 } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { z } from "zod";
@@ -1339,7 +1340,7 @@ export async function updateAbility(
     recertifyEveryDays?: number | null;
   }
 ) {
-  return client.from("ability").update(ability).eq("id", id);
+  return client.from("ability").update(unchecked(ability)).eq("id", id);
 }
 
 /**
@@ -1549,12 +1550,12 @@ export async function upsertFailureMode(
   if ("createdBy" in failureMode) {
     return client
       .from("maintenanceFailureMode")
-      .insert([failureMode])
+      .insert([unchecked(failureMode)])
       .select("id");
   } else {
     return client
       .from("maintenanceFailureMode")
-      .update(sanitize(failureMode))
+      .update(unchecked(sanitize(failureMode)))
       .eq("id", failureMode.id);
   }
 }

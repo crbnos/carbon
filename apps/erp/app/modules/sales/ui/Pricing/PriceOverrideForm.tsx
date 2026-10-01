@@ -354,7 +354,8 @@ function PriceBreaks({
         error: null,
         count: null,
         status: 200,
-        statusText: "OK"
+        statusText: "OK",
+        success: true
       }) as const,
     []
   );

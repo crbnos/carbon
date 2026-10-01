@@ -82,7 +82,7 @@ pnpm --filter @carbon/logger test
 | `./config.server` | `ensureLoggingConfigured()` (ANSI dev / JSONL+redacted prod, ALS) |
 | `./config.client` | `ensureLoggingConfigured()` (plain console sink, no ALS) |
 | `./middleware.server` | `requestIdMiddleware`, `requestIdContext`, `getRequestId`, `REQUEST_ID_HEADER`, plus the request-context API re-exported from `context.server`: `requestContextMiddleware`, `getRouterContext`, `getRequestContext`, `oncePerRequest`, `oncePerRead` |
-| `./tracing.server` | `createTracing({ serviceName, afterRequest })` — React Router `instrumentations` (OpenTelemetry); `annotateRequestSpan(attributes)`; `queryLog` — Kysely `log` hook, `undefined` when tracing is off |
+| `./tracing.server` | `createTracing({ serviceName, afterRequest })` — React Router `instrumentations` (OpenTelemetry); `annotateRequestSpan(attributes)`; `nameRequestSpan(name)`; `namedMiddleware(list)`; `withSpan(name, attributes, run)`; `queryLog` — Kysely `log` hook, `undefined` when tracing is off |
 | `./inngest` | `createInngestLogger()` — adapter passed to `new Inngest({ logger })` |
 
 ## Wiring (per app)
@@ -91,7 +91,7 @@ pnpm --filter @carbon/logger test
 - `entry.client.tsx`: same from `@carbon/logger/config.client`.
 - `entry.server.tsx` also exports
   `instrumentations = createTracing({ serviceName: "carbon-erp", afterRequest })`.
-- `root.tsx`: `export const middleware = [requestContextMiddleware, requestIdMiddleware, flashMiddleware]`
+- `root.tsx`: `export const middleware = namedMiddleware([requestContextMiddleware, requestIdMiddleware, securityMiddleware, flashMiddleware])`
   (request context FIRST so every downstream middleware and handler runs inside
   the AsyncLocalStorage scope, then request id so downstream logs carry it).
 
@@ -126,12 +126,31 @@ One trace per request:
   `http.response.status_code` and `carbon.request_id` (the id on every log line
   of that request). React Router 7.18's request instrumentation reports neither
   the status nor the pattern, which is why they arrive from those two places.
-- **`middleware|loader|action <routeId>`** spans, one per route handler.
+  A route that serves many things on one path renames it with
+  `nameRequestSpan`: `POST /api/inngest carbon-event-queue`,
+  `POST /api/mcp call_tool sales_getCustomers`, `POST /api/v1/sales/getCustomers`.
+  Only known function ids and operations go into the name; the same values are
+  on `inngest.function.id` / `carbon.operation` for grouping.
+- **`middleware|loader|action <routeId>`** spans, one per route handler. React
+  Router reports a middleware by its route alone, so the apps wrap the root list
+  in `namedMiddleware([...])`, which renames each span after its function
+  (`middleware requestIdMiddleware`). Each one contains everything after it.
 - **Fetch spans** from `@opentelemetry/instrumentation-undici`, only for fetches
-  made inside a request (`requireParentforSpans`). A PostgREST call is named by
-  its table or function (`GET /rest/v1/methodMaterial`); anything else by host,
-  because other paths carry ids. `url.full` and `url.query` get the access log's
-  `redactSearch` masking.
+  made inside a request (`requireParentforSpans`). `fetchSpanName` names a
+  Supabase call by what it does — `GET /rest/v1/methodMaterial`,
+  `storage download`, `auth GET user`, `function get-method` — and anything else
+  by host. Names never carry ids, bucket names or file paths; those are on
+  `url.path`. `url.full` and `url.query` get the access log's `redactSearch`
+  masking.
+
+- **Operation spans**, from `withSpan`. Every Carbon API operation runs through
+  its oRPC procedure (`api+/v1+/lib/router.server.ts`), whose outermost
+  middleware opens `operation sales_getCustomers` — so the HTTP API, MCP
+  `call_tool`, the agent and workflows are all named in one place. The MCP
+  server (`@carbon/ee/mcp.server`) wraps `registerTool` to open
+  `mcp call_tool sales_getCustomers` / `mcp search_tools` around each tool call.
+  Both also set `carbon.operation` (and `carbon.mcp.tool`) on the request span,
+  so a request can be grouped by what it ran without joining spans.
 
 - **Query spans** for Kysely, from `queryLog` passed as Kysely's `log` hook at
   the three places a client is built (`apps/{erp,mes}/app/services/database.server.ts`,

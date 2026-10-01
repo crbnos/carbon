@@ -6,7 +6,7 @@ import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { VStack } from "@carbon/react";
-import { isUnaffectedByNavigation } from "@carbon/utils";
+import { isUnaffectedByNavigation, unchecked } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import type {
   ActionFunctionArgs,
@@ -82,11 +82,13 @@ export async function action({ request }: ActionFunctionArgs) {
   const result = await client
     // @ts-ignore
     .from(table)
-    .update({
-      customFields: JSON.parse(value),
-      updatedBy: userId,
-      updatedAt: new Date().toISOString()
-    })
+    .update(
+      unchecked({
+        customFields: JSON.parse(value),
+        updatedBy: userId,
+        updatedAt: new Date().toISOString()
+      })
+    )
     .in(getIdField(table), ids as string[]);
 
   return result;

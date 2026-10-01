@@ -16,7 +16,8 @@ import {
   flattenTree,
   generateBomIds,
   round,
-  type TrackedActivityAttributes
+  type TrackedActivityAttributes,
+  unchecked
 } from "@carbon/utils";
 import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
 import { nanoid } from "nanoid";
@@ -2405,10 +2406,12 @@ export async function insertReworkQuantity(
   return client
     .from("productionQuantity")
     .insert(
-      sanitize({
-        ...insert,
-        type: "Rework"
-      })
+      unchecked(
+        sanitize({
+          ...insert,
+          type: "Rework"
+        })
+      )
     )
     .select("*");
 }
@@ -2429,10 +2432,12 @@ export async function insertProductionQuantity(
   const result = await client
     .from("productionQuantity")
     .insert(
-      sanitize({
-        ...data,
-        type: "Production"
-      })
+      unchecked(
+        sanitize({
+          ...data,
+          type: "Production"
+        })
+      )
     )
     .select("*");
 
@@ -2463,10 +2468,12 @@ export async function insertScrapQuantity(
   return client
     .from("productionQuantity")
     .insert(
-      sanitize({
-        ...data,
-        type: "Scrap"
-      })
+      unchecked(
+        sanitize({
+          ...data,
+          type: "Scrap"
+        })
+      )
     )
     .select("*");
 }
@@ -2677,7 +2684,11 @@ export async function startProductionEvent(
     const activityId = nanoid();
 
     const [eventInsert, operation] = await Promise.all([
-      client.from("productionEvent").insert(data).select("id").single(),
+      client
+        .from("productionEvent")
+        .insert(unchecked(data))
+        .select("id")
+        .single(),
       client
         .from("jobOperation")
         .select("*")
@@ -2756,7 +2767,7 @@ export async function startProductionEvent(
 
   const eventInsert = await client
     .from("productionEvent")
-    .insert(data)
+    .insert(unchecked(data))
     .select("*");
 
   if (!eventInsert.error) {

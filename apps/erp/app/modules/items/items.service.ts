@@ -12,7 +12,7 @@ import type {
 } from "@carbon/database/client";
 import { storage } from "@carbon/files";
 import { getLogger } from "@carbon/logger";
-import { datetime } from "@carbon/utils";
+import { datetime, unchecked } from "@carbon/utils";
 import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
 import { nanoid } from "nanoid";
 import type { z } from "zod";
@@ -4026,7 +4026,7 @@ export async function updateItem(
 ) {
   return client
     .from("item")
-    .update(sanitize(item))
+    .update(unchecked(sanitize(item)))
     .eq("id", item.id)
     .eq("companyId", item.companyId);
 }
@@ -6818,7 +6818,7 @@ export async function upsertChangeNoticeType(
   if ("createdBy" in changeNoticeType) {
     return client
       .from("changeOrderType")
-      .insert([changeNoticeType])
+      .insert([unchecked(changeNoticeType)])
       .select("id")
       .single();
   }
@@ -6826,7 +6826,7 @@ export async function upsertChangeNoticeType(
   const { companyId, ...update } = changeNoticeType;
   return client
     .from("changeOrderType")
-    .update(sanitize(update))
+    .update(unchecked(sanitize(update)))
     .eq("id", changeNoticeType.id)
     .eq("companyId", companyId)
     .select("id")

@@ -3,6 +3,7 @@
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
 import type { Database } from "@carbon/database";
+import { unchecked } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type {
   PrinterRoute,
@@ -171,7 +172,7 @@ export async function updatePrintJobStatus(
 
   return client
     .from("printJob")
-    .update(update)
+    .update(unchecked(update))
     .eq("id", printJobId)
     .eq("companyId", companyId);
 }

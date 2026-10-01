@@ -6,6 +6,7 @@ import type { Database } from "@carbon/database";
 import { storage } from "@carbon/files";
 import { isHeic } from "@carbon/files/media";
 import { trigger } from "@carbon/jobs";
+import { unchecked } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { z } from "zod";
 import type { GenericQueryFilters } from "~/utils/query";
@@ -206,11 +207,13 @@ export async function upsertDocument(
   return client
     .from("document")
     .update(
-      sanitize({
-        ...data,
-        type,
-        updatedAt: new Date().toISOString()
-      })
+      unchecked(
+        sanitize({
+          ...data,
+          type,
+          updatedAt: new Date().toISOString()
+        })
+      )
     )
     .eq("id", document.id);
 }

@@ -12,7 +12,7 @@ import {
 import { consumableInWholeAssemblies } from "@carbon/database/supersession-pick";
 import { storage } from "@carbon/files";
 import type { TrackedEntityAttributes } from "@carbon/utils";
-import { datetime } from "@carbon/utils";
+import { datetime, unchecked } from "@carbon/utils";
 import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
 import { nanoid } from "nanoid";
 import type { z } from "zod";
@@ -2190,7 +2190,10 @@ export async function updateBatchPropertyOrder(
     updatedBy: string;
   }
 ) {
-  return client.from("batchProperty").update(sanitize(data)).eq("id", data.id);
+  return client
+    .from("batchProperty")
+    .update(unchecked(sanitize(data)))
+    .eq("id", data.id);
 }
 
 /** @mcp update */
@@ -2229,19 +2232,23 @@ export async function upsertBatchProperty(
     return client
       .from("batchProperty")
       .update(
-        sanitize({
-          ...data,
-          updatedBy: userId,
-          updatedAt: new Date().toISOString()
-        })
+        unchecked(
+          sanitize({
+            ...data,
+            updatedBy: userId,
+            updatedAt: new Date().toISOString()
+          })
+        )
       )
       .eq("id", batchProperty.id);
   }
 
-  return client.from("batchProperty").insert({
-    ...data,
-    createdBy: userId
-  });
+  return client.from("batchProperty").insert(
+    unchecked({
+      ...data,
+      createdBy: userId
+    })
+  );
 }
 
 /** @mcp upsert */
@@ -2262,18 +2269,22 @@ export async function upsertKanban(
   if ("createdBy" in kanban) {
     return client
       .from("kanban")
-      .insert({
-        ...kanban
-      })
+      .insert(
+        unchecked({
+          ...kanban
+        })
+      )
       .select("id")
       .single();
   }
   return client
     .from("kanban")
-    .update({
-      ...sanitize(kanban),
-      updatedAt: datetime.timestamp()
-    })
+    .update(
+      unchecked({
+        ...sanitize(kanban),
+        updatedAt: datetime.timestamp()
+      })
+    )
     .eq("id", kanban.id)
     .select("id")
     .single();

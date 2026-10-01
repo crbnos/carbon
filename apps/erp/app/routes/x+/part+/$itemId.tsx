@@ -37,10 +37,7 @@ import { ResizablePanels } from "~/components/Layout";
 import { flattenTree } from "~/components/TreeView";
 import type { ItemFile, PartSummary } from "~/modules/items";
 import {
-  findChangeNoticesForItem,
   getItemFiles,
-  getMakeMethodById,
-  getMakeMethods,
   getMethodTree,
   getPart,
   getPartUsedIn,
@@ -49,6 +46,9 @@ import {
   isChangeNoticeOpen
 } from "~/modules/items";
 import {
+  findChangeNoticesForItemOnce,
+  getMakeMethodByIdOnce,
+  getMakeMethodsOnce,
   getUnreleasedChangeOrderForItem,
   streamItemSupersession
 } from "~/modules/items/items.server";
@@ -111,7 +111,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     getTagsList(client, companyId, "part"),
     // Every CO, any status; the open subset (which locks manual version/revision
     // creation) is derived below.
-    findChangeNoticesForItem(client, { itemId, companyId }),
+    findChangeNoticesForItemOnce(client, { itemId, companyId }),
     // Locks the Active toggle while the change notice that minted this item is
     // still open — release is what activates it.
     getUnreleasedChangeOrderForItem(client, { itemId, companyId })
@@ -142,7 +142,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   // One query, two consumers: `methodTree` derives from it and the raw list is
   // also deferred to the client. Calling getMakeMethods twice issued the same
   // query twice on every part-detail load.
-  const makeMethodsPromise = getMakeMethods(client, itemId, companyId);
+  const makeMethodsPromise = getMakeMethodsOnce(client, itemId, companyId);
 
   const methodTree = makeMethodsPromise.then(async (makeMethods) => {
     // Include CO-owned drafts so a revision/new-part item created by an open
@@ -156,7 +156,7 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       : (selectable.find((m) => m.status === "Active") ?? selectable[0]);
     if (!makeMethod) return null;
 
-    const fullMethod = await getMakeMethodById(
+    const fullMethod = await getMakeMethodByIdOnce(
       client,
       makeMethod.id,
       companyId

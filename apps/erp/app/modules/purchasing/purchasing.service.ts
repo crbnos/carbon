@@ -12,7 +12,8 @@ import {
   EPSILON,
   getPurchaseOrderStatus,
   getPurchaseReturnOrderStatus,
-  round
+  round,
+  unchecked
 } from "@carbon/utils";
 import type {
   PostgrestError,
@@ -1395,7 +1396,7 @@ export async function updateSupplierContact(
   }
   return client
     .from("contact")
-    .update(sanitize(supplierContact.contact))
+    .update(unchecked(sanitize(supplierContact.contact)))
     .eq("id", supplierContact.contactId)
     .select("id")
     .single();
@@ -1789,7 +1790,7 @@ export async function upsertPurchaseOrder(
   if ("id" in purchaseOrder) {
     return client
       .from("purchaseOrder")
-      .update(sanitize(purchaseOrder))
+      .update(unchecked(sanitize(purchaseOrder)))
       .eq("id", purchaseOrder.id)
       .select("id, purchaseOrderId");
   }
@@ -2510,15 +2511,17 @@ export async function upsertSupplierQuote(
     const companyTz = await getCompanyTimeZone(client, companyId);
     return client
       .from("supplierQuote")
-      .update({
-        ...sanitize(supplierQuoteUpdateData),
-        status:
-          supplierQuote.expirationDate &&
-          datetime.today(companyTz).toString() > supplierQuote.expirationDate
-            ? "Expired"
-            : (supplierQuote.status ?? existingStatus ?? "Draft"),
-        updatedAt: datetime.timestamp()
-      })
+      .update(
+        unchecked({
+          ...sanitize(supplierQuoteUpdateData),
+          status:
+            supplierQuote.expirationDate &&
+            datetime.today(companyTz).toString() > supplierQuote.expirationDate
+              ? "Expired"
+              : (supplierQuote.status ?? existingStatus ?? "Draft"),
+          updatedAt: datetime.timestamp()
+        })
+      )
       .eq("id", supplierQuote.id);
   }
 }

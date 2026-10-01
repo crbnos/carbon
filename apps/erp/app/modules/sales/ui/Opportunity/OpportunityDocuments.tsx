@@ -220,7 +220,7 @@ const DraggableCell = ({
 }) => {
   const context = useDndContext();
   const { attributes, listeners, setNodeRef, transform } = useDraggable({
-    id: attachment.id,
+    id: attachment.id ?? attachment.name,
     data: {
       id: attachment.id,
       name: attachment.name,
@@ -447,8 +447,13 @@ export default OpportunityDocuments;
 
 type OptimisticFileObject = Omit<
   FileObject,
-  "owner" | "updated_at" | "created_at" | "last_accessed_at" | "buckets"
->;
+  | "owner"
+  | "updated_at"
+  | "created_at"
+  | "last_accessed_at"
+  | "buckets"
+  | "metadata"
+> & { metadata: { size: number; mimetype: string } };
 export const usePendingItems = () => {
   type PendingItem = ReturnType<typeof useFetchers>[number] & {
     formData: FormData;

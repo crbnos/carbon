@@ -104,8 +104,12 @@ let shellLoadedAt = Date.now();
 export const shouldRevalidate: ShouldRevalidateFunction = ({
   currentUrl,
   formMethod,
+  formAction,
   defaultShouldRevalidate
 }) => {
+  // The refreshed session reaches the client through this loader.
+  if (formAction === path.to.refreshSession) return true;
+
   if (
     currentUrl.pathname.startsWith("/x/settings") ||
     currentUrl.pathname.startsWith("/x/users") ||

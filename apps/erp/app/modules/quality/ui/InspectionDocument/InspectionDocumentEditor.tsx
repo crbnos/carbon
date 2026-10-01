@@ -368,6 +368,7 @@ type FeatureMutationFn = (
   count: null;
   status: number;
   statusText: string;
+  success: true;
 }>;
 
 const ConditionalMeasurementText =
@@ -2550,7 +2551,8 @@ export default function InspectionDocumentEditor({
         error: null,
         count: null,
         status: 200,
-        statusText: "OK"
+        statusText: "OK",
+        success: true
       } as const;
     },
     [updateFeatureField]
