@@ -422,8 +422,6 @@ const QuoteLinePricing = ({
     [line.itemId, line.configuration, customerId, lineId, unitPricePrecision]
   );
 
-  // The cost-plus price of each quantity at its current markups — where a
-  // cost-plus row starts before the pricing rules run.
   const rollupPricesByQuantity: Record<number, number> = {};
   quantities.forEach((quantity, index) => {
     const rollupPrice = computeUnitPriceFromMarkups(
@@ -435,9 +433,6 @@ const QuoteLinePricing = ({
     }
   });
 
-  // The quantities an override or pricing rule applies to. Which rules match
-  // depends on the item, customer, quantity and configuration — never on the
-  // price — so this is loaded once per line rather than after every edit.
   const [quantitiesWithPriceRules, setQuantitiesWithPriceRules] = useState<
     number[]
   >([]);
@@ -448,7 +443,7 @@ const QuoteLinePricing = ({
     quantities,
     line.configuration
   ]);
-  // biome-ignore lint/correctness/useExhaustiveDependencies: priceRulesKey stands for everything rule matching reads; the rollup prices only set the starting price
+  // biome-ignore lint/correctness/useExhaustiveDependencies: keyed on priceRulesKey
   useEffect(() => {
     if (!isEmployee || !line.itemId) {
       setQuantitiesWithPriceRules([]);
@@ -472,7 +467,6 @@ const QuoteLinePricing = ({
     };
   }, [isEmployee, quoteId, lineId, priceRulesKey]);
 
-  // A manual price was typed, so no rule had a part in it.
   const hasPriceRules = quantitiesWithPriceRules.some(
     (quantity) => editableFields.prices[quantity]?.priceSource !== "manual"
   );

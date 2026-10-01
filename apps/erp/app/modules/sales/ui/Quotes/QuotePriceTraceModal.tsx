@@ -41,7 +41,6 @@ import {
 
 const logger = getLogger("erp", "sales", "quote-price-trace");
 
-// Null when the traces could not be loaded; the failure is already logged.
 export async function fetchQuoteLinePriceTraces(input: {
   quoteId: string;
   quoteLineId: string;
@@ -76,9 +75,7 @@ type QuotePriceTraceModalProps = {
   quoteId: string;
   lineId: string;
   quantities: number[];
-  /** The grid's live prices: the quoted unit price and whether it was typed. */
   prices: Record<number, QuotationPrice>;
-  /** Cost-plus price per quantity, as the grid computes it. */
   rollupPrices: Record<number, number>;
   currencyCode: string;
   unitPricePrecision: number;
@@ -107,7 +104,6 @@ const QuotePriceTraceModal = ({
     "loading"
   );
 
-  // The explanation is of the prices as they stand when the modal opens.
   // biome-ignore lint/correctness/useExhaustiveDependencies: run once on mount
   useEffect(() => {
     let stale = false;
@@ -125,8 +121,6 @@ const QuotePriceTraceModal = ({
     };
   }, []);
 
-  // A manual price was typed, so the rules had no part in it and its column
-  // carries no trace.
   const columns = quantities.map((quantity) => {
     const isManual = prices[quantity]?.priceSource === "manual";
     return {
@@ -309,7 +303,6 @@ const QuotePriceTraceModal = ({
   );
 };
 
-// What a step did at one quantity: its change, then the running price.
 function StepCell({
   step,
   format

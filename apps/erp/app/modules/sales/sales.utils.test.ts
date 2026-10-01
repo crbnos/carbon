@@ -538,7 +538,6 @@ describe("quoteLinePriceBasis", () => {
       unitSalePrice: 1800000
     };
     expect(quoteLinePriceBasis(configured)).toBe("salePrice");
-    // Markups someone chose keep the row cost-plus.
     expect(
       quoteLinePriceBasis({
         ...configured,
@@ -615,7 +614,6 @@ describe("price trace matrix", () => {
       }
     ]);
 
-    // Engine order, even though quantity 1 never saw the discount.
     expect(rows.map((row) => row.step.step)).toEqual([
       "Base Price",
       "Discount",

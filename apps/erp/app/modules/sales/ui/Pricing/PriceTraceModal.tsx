@@ -177,7 +177,6 @@ export function PriceTraceModal({
   );
 }
 
-// A step's description; links to the pricing rule behind it when there is one.
 export function PriceTraceStepSource({ step }: { step: PriceTraceStep }) {
   if (!step.ruleId) {
     return <span className="block truncate">{step.source}</span>;

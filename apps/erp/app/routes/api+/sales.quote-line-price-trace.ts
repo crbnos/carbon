@@ -11,8 +11,6 @@ import { getQuoteLinePriceTraces } from "~/modules/sales/sales.server";
 
 const logger = getLogger("erp", "api-sales-quote-line-price-trace");
 
-// Read-only: explains how each quantity break of a quote line is priced.
-// Nothing is persisted, so `view` is sufficient.
 export async function action({ request }: ActionFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
     view: "sales"
