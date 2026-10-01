@@ -7651,6 +7651,9 @@ msgstr "Nie udało się dodać wiersza — dodano {addedCount} z {0} wierszy"
 msgid "Failed to add lines"
 msgstr "Nie udało się dodać wierszy"
 
+msgid "Failed to apply pricing rules"
+msgstr "Nie udało się zastosować reguł cenowych"
+
 msgid "Failed to convert image"
 msgstr "Nie udało się przekonwertować obrazu."
 

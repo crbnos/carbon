@@ -7651,6 +7651,9 @@ msgstr "无法添加行 — 已添加 {addedCount} / {0} 行"
 msgid "Failed to add lines"
 msgstr "添加行失败"
 
+msgid "Failed to apply pricing rules"
+msgstr "无法应用定价规则"
+
 msgid "Failed to convert image"
 msgstr "图像转换失败"
 

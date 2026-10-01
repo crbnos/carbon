@@ -7651,6 +7651,9 @@ msgstr "पंक्ति जोड़ने में विफल — {addedC
 msgid "Failed to add lines"
 msgstr "पंक्तियां जोड़ने में विफल"
 
+msgid "Failed to apply pricing rules"
+msgstr "मूल्य निर्धारण नियम लागू करने में विफल"
+
 msgid "Failed to convert image"
 msgstr "छवि परिवर्तित करने में विफल"
 

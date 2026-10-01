@@ -7651,6 +7651,9 @@ msgstr "Error al Agregar Línea — {addedCount} de {0} Líneas fueron agregadas
 msgid "Failed to add lines"
 msgstr "Error al agregar líneas"
 
+msgid "Failed to apply pricing rules"
+msgstr "No se pudieron aplicar las reglas de precios"
+
 msgid "Failed to convert image"
 msgstr "Error al convertir imagen"
 

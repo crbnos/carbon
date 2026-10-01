@@ -7651,6 +7651,9 @@ msgstr "Satır eklenemedi — {0} satırdan {addedCount} tanesi eklendi"
 msgid "Failed to add lines"
 msgstr "Satırlar ekleme başarısız oldu"
 
+msgid "Failed to apply pricing rules"
+msgstr "Fiyatlandırma kuralları uygulanamadı"
+
 msgid "Failed to convert image"
 msgstr "Resim dönüştürme başarısız oldu"
 

@@ -7651,6 +7651,9 @@ msgstr "Fehler beim Hinzufügen der Position – {addedCount} von {0} Positionen
 msgid "Failed to add lines"
 msgstr "Fehler beim Hinzufügen von Zeilen"
 
+msgid "Failed to apply pricing rules"
+msgstr "Preisregeln konnten nicht angewendet werden"
+
 msgid "Failed to convert image"
 msgstr "Fehler beim Konvertieren des Bildes"
 
