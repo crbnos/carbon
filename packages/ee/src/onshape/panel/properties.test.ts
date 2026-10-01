@@ -12,7 +12,8 @@ import {
   partPropertiesFromElementMetadata,
   propertyDisplayValue,
   propertyMapEqual,
-  resolveMappedFields
+  resolveMappedFields,
+  withoutNoOpClears
 } from "./properties";
 
 const textField = {
@@ -326,6 +327,42 @@ describe("ownedCustomFieldsDiffer", () => {
 
   it("ignores fields the push does not own", () => {
     expect(ownedCustomFieldsDiffer({}, [field("x", "default")])).toBe(false);
+  });
+});
+
+describe("withoutNoOpClears", () => {
+  const field = (
+    value: string | null,
+    mode: "owned" | "default" = "owned"
+  ) => ({
+    fieldId: "cf-title",
+    name: "Title",
+    mode,
+    dataTypeId: 5,
+    listOptions: null,
+    value,
+    onshapeName: "Description"
+  });
+
+  it("drops an owned clear when Carbon holds no value", () => {
+    expect(withoutNoOpClears({}, [field(null)])).toEqual([]);
+    expect(withoutNoOpClears({ "cf-title": null }, [field(null)])).toEqual([]);
+    expect(withoutNoOpClears(null, [field(null)])).toEqual([]);
+  });
+
+  it("keeps an owned clear when Carbon holds a value", () => {
+    expect(
+      withoutNoOpClears({ "cf-title": "Rubber pad" }, [field(null)])
+    ).toEqual([field(null)]);
+  });
+
+  it("keeps values and fields the push does not own", () => {
+    expect(withoutNoOpClears({}, [field("Rubber pad")])).toEqual([
+      field("Rubber pad")
+    ]);
+    expect(withoutNoOpClears({}, [field(null, "default")])).toEqual([
+      field(null, "default")
+    ]);
   });
 });
 

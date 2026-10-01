@@ -186,7 +186,8 @@ export {
   parsePropertyMap,
   partPropertiesFromElementMetadata,
   propertyDisplayValue,
-  resolveMappedFields
+  resolveMappedFields,
+  withoutNoOpClears
 } from "./onshape/panel/properties";
 export type {
   PanelRelease,
