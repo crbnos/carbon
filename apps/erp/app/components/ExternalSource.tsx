@@ -7,13 +7,12 @@ import {
   CardContent,
   CardHeader,
   CardTitle,
-  HStack,
-  toast
+  HStack
 } from "@carbon/react";
-import { Trans } from "@lingui/react/macro";
+import { Trans, useLingui } from "@lingui/react/macro";
 import { useEffect, useState } from "react";
 import { LuExternalLink, LuUnlink } from "react-icons/lu";
-import { useFetcher } from "react-router";
+import { Confirm } from "~/components/Modals";
 import { useDateFormatter } from "~/hooks";
 import { path } from "~/utils/path";
 
@@ -47,10 +46,15 @@ export function ExternalSourceCard({
   canDetach: boolean;
 }) {
   const { carbon } = useCarbon();
+  const { t } = useLingui();
   const { formatDateTime } = useDateFormatter();
   const [mapping, setMapping] = useState<ExternalSourceMapping | null>(null);
-  const detacher = useFetcher<{ success: boolean; message: string }>();
+  const [confirmingDetach, setConfirmingDetach] = useState(false);
+  // Bumped after a detach so the link is read again: the card goes only when
+  // the link is gone, and stays (with Confirm's error toast) when it is not.
+  const [reload, setReload] = useState(0);
 
+  // biome-ignore lint/correctness/useExhaustiveDependencies: reload re-reads the link
   useEffect(() => {
     if (!carbon) return;
     let cancelled = false;
@@ -68,15 +72,8 @@ export function ExternalSourceCard({
     return () => {
       cancelled = true;
     };
-  }, [carbon, itemId]);
+  }, [carbon, itemId, reload]);
 
-  useEffect(() => {
-    if (detacher.state === "idle" && detacher.data?.success === false) {
-      toast.error(detacher.data.message);
-    }
-  }, [detacher.state, detacher.data]);
-
-  if (detacher.state !== "idle" || detacher.data?.success) return null;
   if (!mapping) return null;
 
   const meta = mapping.metadata ?? {};
@@ -126,16 +123,32 @@ export function ExternalSourceCard({
               </Button>
             ) : null}
             {canDetach ? (
-              <detacher.Form method="post" action={path.to.api.onShapeDetach}>
-                <input type="hidden" name="itemId" value={itemId} />
-                <Button variant="ghost" leftIcon={<LuUnlink />} type="submit">
-                  <Trans>Detach</Trans>
-                </Button>
-              </detacher.Form>
+              <Button
+                variant="ghost"
+                leftIcon={<LuUnlink />}
+                onClick={() => setConfirmingDetach(true)}
+              >
+                <Trans>Detach</Trans>
+              </Button>
             ) : null}
           </HStack>
         </div>
       </CardContent>
+      {confirmingDetach ? (
+        <Confirm
+          action={path.to.api.onShapeDetach}
+          title={t`Detach from Onshape?`}
+          text={t`Name and description become editable in Carbon and stop following Onshape. Pushing this part from Onshape again links it back.`}
+          confirmText={t`Detach`}
+          onCancel={() => setConfirmingDetach(false)}
+          onSubmit={() => {
+            setConfirmingDetach(false);
+            setReload((n) => n + 1);
+          }}
+        >
+          <input type="hidden" name="itemId" value={itemId} />
+        </Confirm>
+      ) : null}
     </Card>
   );
 }

@@ -6110,6 +6110,9 @@ msgstr "问题描述"
 msgid "Detach"
 msgstr "分离"
 
+msgid "Detach from Onshape?"
+msgstr "从 Onshape 分离?"
+
 msgid "Detach to edit them in Carbon."
 msgstr "分离以在 Carbon 中编辑它们。"
 
@@ -11049,6 +11052,9 @@ msgstr "指定具有决策权的内部项目负责人"
 
 msgid "Name and description are managed in Onshape."
 msgstr "名称和描述由 Onshape 管理。"
+
+msgid "Name and description become editable in Carbon and stop following Onshape. Pushing this part from Onshape again links it back."
+msgstr "名称和描述在 Carbon 中变为可编辑，并停止同步 Onshape。从 Onshape 再次推送此零件将恢复链接。"
 
 msgid "Names fill in wherever those roles are referenced across the hub."
 msgstr "名称会在整个中心内引用这些角色的任何地方填入。"
