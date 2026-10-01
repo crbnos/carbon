@@ -378,6 +378,9 @@ const InspectionMeasurementGrid = ({
       }
     >
   >({});
+  // One gauge request per characteristic at a time, so the server commits the
+  // picks in the order they were made.
+  const gaugeQueue = useRef<Record<string, Promise<void>>>({});
 
   // Once the loader data matches a settled pick, drop the override so later
   // revalidations show the server's value.
@@ -418,18 +421,32 @@ const InspectionMeasurementGrid = ({
       request.settled = false;
       setGaugeByFeature((prev) => ({ ...prev, [featureId]: gaugeId }));
 
-      const formData = new FormData();
-      formData.set("inspectionId", inspectionId);
-      formData.set("inspectionFeatureId", featureId);
-      formData.set("gaugeId", gaugeId ?? "");
-      const response = await fetch(path.to.inspectionGauge(inspectionId), {
-        method: "post",
-        body: formData
-      }).catch(() => null);
-      const body = (await response?.json().catch(() => null)) as {
-        error?: { message: string } | null;
-      } | null;
-      const ok = !!response?.ok && !!body && !body.error;
+      // Wait for this characteristic's previous request; a pick superseded
+      // while it waited is never sent.
+      const sent = (gaugeQueue.current[featureId] ?? Promise.resolve()).then(
+        async () => {
+          if (requestId !== request.latest) return null;
+          const formData = new FormData();
+          formData.set("inspectionId", inspectionId);
+          formData.set("inspectionFeatureId", featureId);
+          formData.set("gaugeId", gaugeId ?? "");
+          const response = await fetch(path.to.inspectionGauge(inspectionId), {
+            method: "post",
+            body: formData
+          }).catch(() => null);
+          const body = (await response?.json().catch(() => null)) as {
+            error?: { message: string } | null;
+          } | null;
+          return {
+            ok: !!response?.ok && !!body && !body.error,
+            message: body?.error?.message
+          };
+        }
+      );
+      gaugeQueue.current[featureId] = sent.then(() => undefined);
+      const result = await sent;
+      if (!result) return;
+      const { ok } = result;
 
       if (ok && (!request.confirmed || requestId > request.confirmed.id)) {
         request.confirmed = { id: requestId, gaugeId };
@@ -437,7 +454,7 @@ const InspectionMeasurementGrid = ({
       if (requestId === request.latest) request.settled = true;
 
       if (!ok) {
-        toast.error(body?.error?.message ?? t`Failed to record gauge`);
+        toast.error(result.message ?? t`Failed to record gauge`);
       } else if (gaugeId) {
         setRecentGauges((prev) =>
           [gaugeId, ...prev.filter((id) => id !== gaugeId)].slice(

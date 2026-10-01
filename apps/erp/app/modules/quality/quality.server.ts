@@ -92,6 +92,7 @@ export async function getRecentInspectionGauges(
 async function mapBalloonIdsToFeatureIdsForDocument(
   client: SupabaseClient<Database>,
   inspectionDocumentId: string,
+  companyId: string,
   ids: string[]
 ) {
   const unique = [...new Set(ids.filter((id) => id.length > 0))];
@@ -104,11 +105,13 @@ async function mapBalloonIdsToFeatureIdsForDocument(
     client
       .from("balloon")
       .select("id, inspectionFeatureId")
-      .eq("inspectionDocumentId", inspectionDocumentId),
+      .eq("inspectionDocumentId", inspectionDocumentId)
+      .eq("companyId", companyId),
     client
       .from("inspectionFeature")
       .select("id")
       .eq("inspectionDocumentId", inspectionDocumentId)
+      .eq("companyId", companyId)
   ]);
 
   for (const balloon of balloons.data ?? []) {
@@ -289,6 +292,7 @@ export function mergeInspectionBalloonsPayload(
 export async function resolveInspectionFeaturePayloadIds(
   client: SupabaseClient<Database>,
   inspectionDocumentId: string,
+  companyId: string,
   features: InspectionSaveFeaturesPayload
 ): Promise<InspectionSaveFeaturesPayload> {
   const ids = [
@@ -303,6 +307,7 @@ export async function resolveInspectionFeaturePayloadIds(
   const idMap = await mapBalloonIdsToFeatureIdsForDocument(
     client,
     inspectionDocumentId,
+    companyId,
     ids
   );
 

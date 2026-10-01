@@ -181,6 +181,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
   featuresParsed = await resolveInspectionFeaturePayloadIds(
     client,
     id,
+    companyId,
     featuresParsed
   );
 

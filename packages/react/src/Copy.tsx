@@ -30,9 +30,10 @@ const Copy = ({
   const { t } = useLingui();
   const [isCopied, setIsCopied] = useState(false);
 
-  const handleCopy = (e: React.MouseEvent<HTMLButtonElement>) => {
+  const handleCopy = async (e: React.MouseEvent<HTMLButtonElement>) => {
     e.stopPropagation();
-    copyToClipboard(text);
+    // Only confirm a copy that happened.
+    if (!(await copyToClipboard(text))) return;
     setIsCopied(true);
     setTimeout(() => setIsCopied(false), 1500);
   };

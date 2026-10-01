@@ -1091,10 +1091,18 @@ export async function recordInspectionGauge(
 
       const plan = await trx
         .selectFrom("inspectionSamplingPlan")
-        .innerJoin(
-          "inspectionFeature",
-          "inspectionFeature.id",
-          "inspectionSamplingPlan.inspectionFeatureId"
+        .innerJoin("inspectionFeature", (join) =>
+          join
+            .onRef(
+              "inspectionFeature.id",
+              "=",
+              "inspectionSamplingPlan.inspectionFeatureId"
+            )
+            .onRef(
+              "inspectionFeature.companyId",
+              "=",
+              "inspectionSamplingPlan.companyId"
+            )
         )
         .select(["inspectionSamplingPlan.id", "inspectionFeature.gaugeTypeId"])
         .where("inspectionSamplingPlan.inspectionId", "=", args.inspectionId)

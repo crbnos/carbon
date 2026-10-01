@@ -2725,48 +2725,6 @@ export async function upsertInspectionDocument(
     updatedBy
   } = diagram;
 
-  const documentClient = client as unknown as {
-    from: (table: string) => {
-      select: (columns: string) => {
-        eq: (
-          column: string,
-          value: unknown
-        ) => {
-          single: () => Promise<{
-            data: Record<string, unknown> | null;
-            error: unknown;
-          }>;
-        };
-      };
-      update: (payload: Record<string, unknown>) => {
-        eq: (
-          column: string,
-          value: unknown
-        ) => {
-          eq: (
-            column: string,
-            value: unknown
-          ) => {
-            select: (columns: string) => {
-              single: () => Promise<{
-                data: { id: string } | null;
-                error: unknown;
-              }>;
-            };
-          };
-        };
-      };
-      insert: (payload: Record<string, unknown>) => {
-        select: (columns: string) => {
-          single: () => Promise<{
-            data: { id: string } | null;
-            error: unknown;
-          }>;
-        };
-      };
-    };
-  };
-
   const storagePath = toStoragePath(pdfUrl);
 
   if (id) {
@@ -2779,34 +2737,25 @@ export async function upsertInspectionDocument(
       };
     }
 
-    const existingResult = await documentClient
+    const existing = await client
       .from("inspectionDocument")
-      .select("*")
+      .select("id")
       .eq("id", id)
-      .single();
+      .eq("companyId", companyId)
+      .maybeSingle();
 
-    const existing = existingResult.data;
-    if (!existing) {
+    if (!existing.data) {
       return {
         data: null,
-        error: {
-          message: "Inspection plan not found"
-        }
-      };
-    }
-    if (String(existing.companyId ?? "") !== companyId) {
-      return {
-        data: null,
-        error: {
-          message: "Inspection plan does not belong to this company"
-        }
+        error: existing.error ?? { message: "Inspection plan not found" }
       };
     }
 
-    const updatePayload: Record<string, unknown> = {
-      updatedBy: updatedBy ?? createdBy,
-      updatedAt: new Date().toISOString()
-    };
+    const updatePayload: Database["public"]["Tables"]["inspectionDocument"]["Update"] =
+      {
+        updatedBy: updatedBy ?? createdBy,
+        updatedAt: datetime.timestamp()
+      };
     if (drawingNumber !== undefined) {
       updatePayload.drawingNumber = drawingNumber ?? null;
     }
@@ -2828,7 +2777,7 @@ export async function upsertInspectionDocument(
       updatePayload.defaultPageHeight = defaultPageHeight;
     }
 
-    return documentClient
+    return client
       .from("inspectionDocument")
       .update(updatePayload)
       .eq("id", id)
@@ -2848,7 +2797,7 @@ export async function upsertInspectionDocument(
     ? drawingNumber.trim()
     : await resolveInspectionDocumentDrawingNumber(client, companyId, partId);
 
-  return documentClient
+  return client
     .from("inspectionDocument")
     .insert({
       companyId,
