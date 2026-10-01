@@ -41,6 +41,7 @@ import { getLocalTimeZone, today } from "@internationalized/date";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
+  LuCalculator,
   LuCalendarClock,
   LuChevronDown,
   LuChevronRight,
@@ -60,6 +61,10 @@ import {
   useSettings,
   useUser
 } from "~/hooks";
+import type {
+  action as priceTraceAction,
+  loader as priceTraceLoader
+} from "~/routes/x+/quote+/$quoteId.$lineId.price-trace";
 import { path } from "~/utils/path";
 import {
   type CostCategoryKey,
@@ -67,14 +72,22 @@ import {
   quoteLineAdditionalChargesValidator,
   quoteLineCategoryMarkupsValidator
 } from "../../sales.models";
-import { asConfiguration } from "../../sales.utils";
+import {
+  asConfiguration,
+  QUOTE_BASE_PRICE_SOURCES,
+  withBasePriceSource
+} from "../../sales.utils";
 import type {
   Costs,
+  PriceResolutionResult,
+  PriceTraceStep,
   Quotation,
   QuotationLine,
   QuotationPrice
 } from "../../types";
+import { hasPriceAdjustments } from "../Pricing/PriceTraceModal";
 import QuoteLeadTimeModal from "./QuoteLeadTimeModal";
+import QuoteLinePriceTraceModal from "./QuoteLinePriceTraceModal";
 
 const logger = getLogger("erp", "sales", "quote-line-pricing");
 
@@ -376,13 +389,25 @@ const QuoteLinePricing = ({
 
   // A cost-plus rollup is only the starting price: the line's pricing rules,
   // including its configuration prices, apply on top — the same pipeline as
-  // recalculateQuoteLinePrices on the server. Null when the rules could not
-  // be applied.
+  // recalculateQuoteLinePrices on the server. Returns the price with the trace
+  // that explains it (stored alongside); null when the rules could not be
+  // applied.
   const customerId = routeData?.quote?.customerId;
   const [isRepricing, setIsRepricing] = useState(false);
   const resolveRollupPrice = useCallback(
-    async (quantity: number, rollupPrice: number): Promise<number | null> => {
-      if (!line.itemId) return round(rollupPrice, unitPricePrecision);
+    async (
+      quantity: number,
+      rollupPrice: number
+    ): Promise<{
+      unitPrice: number;
+      priceTrace: PriceTraceStep[] | null;
+    } | null> => {
+      if (!line.itemId) {
+        return {
+          unitPrice: round(rollupPrice, unitPricePrecision),
+          priceTrace: null
+        };
+      }
       const configuration = asConfiguration(line.configuration);
       try {
         const response = await fetch(path.to.api.salesResolvePrice, {
@@ -404,8 +429,14 @@ const QuoteLinePricing = ({
           });
           return null;
         }
-        const result = await response.json();
-        return round(result.finalPrice, unitPricePrecision);
+        const result: PriceResolutionResult = await response.json();
+        return {
+          unitPrice: round(result.finalPrice, unitPricePrecision),
+          priceTrace: withBasePriceSource(
+            result.trace,
+            QUOTE_BASE_PRICE_SOURCES.costPlus
+          )
+        };
       } catch (error) {
         logger.error("Failed to resolve quote line price", {
           lineId,
@@ -433,7 +464,7 @@ const QuoteLinePricing = ({
     }
 
     setIsRepricing(true);
-    const unitPricesByQuantity = await Promise.all(
+    const resolvedByQuantity = await Promise.all(
       costsByQuantity.map((costs, index) =>
         resolveRollupPrice(
           quantities[index],
@@ -443,7 +474,7 @@ const QuoteLinePricing = ({
     );
     setIsRepricing(false);
 
-    if (unitPricesByQuantity.some((price) => price === null)) {
+    if (resolvedByQuantity.some((resolved) => resolved === null)) {
       toast.error(t`Failed to apply pricing rules`);
       return;
     }
@@ -451,7 +482,11 @@ const QuoteLinePricing = ({
     const formData = new FormData();
     formData.append(
       "unitPricesByQuantity",
-      JSON.stringify(unitPricesByQuantity)
+      JSON.stringify(resolvedByQuantity.map((resolved) => resolved!.unitPrice))
+    );
+    formData.append(
+      "priceTracesByQuantity",
+      JSON.stringify(resolvedByQuantity.map((resolved) => resolved!.priceTrace))
     );
     formData.append("quantities", JSON.stringify(quantities));
     formData.append(
@@ -512,14 +547,15 @@ const QuoteLinePricing = ({
 
       const quantityIndex = quantities.indexOf(quantity);
       const categoryCosts = costsByQuantity[quantityIndex];
-      const unitPrice = await resolveRollupPrice(
+      const resolved = await resolveRollupPrice(
         quantity,
         computeUnitPriceFromMarkups(categoryCosts, newMarkups)
       );
-      if (unitPrice === null) {
+      if (resolved === null) {
         toast.error(t`Failed to apply pricing rules`);
         return;
       }
+      const { unitPrice, priceTrace } = resolved;
 
       setEditableFields((prev) => ({
         ...prev,
@@ -529,7 +565,8 @@ const QuoteLinePricing = ({
             ...prev.prices[quantity],
             categoryMarkups: newMarkups,
             priceSource: "system",
-            unitPrice
+            unitPrice,
+            priceTrace
           }
         }
       }));
@@ -542,7 +579,8 @@ const QuoteLinePricing = ({
         .update({
           categoryMarkups: newMarkups,
           priceSource: "system",
-          unitPrice
+          unitPrice,
+          priceTrace
         })
         .eq("quoteLineId", lineId)
         .eq("quantity", quantity);
@@ -599,10 +637,11 @@ const QuoteLinePricing = ({
         ...newPrices[quantity],
         [key]: roundedValue,
         // A direct price / virtual-markup edit makes this a manual price:
-        // priceSource 'manual' tells every recalc to preserve it, and clearing
-        // the stored per-category markups keeps the display consistent.
+        // priceSource 'manual' tells every recalc to preserve it, clearing
+        // the stored per-category markups keeps the display consistent, and no
+        // rule explains it any more.
         ...(key === "unitPrice"
-          ? { categoryMarkups: {}, priceSource: "manual" }
+          ? { categoryMarkups: {}, priceSource: "manual", priceTrace: null }
           : {})
       };
 
@@ -617,7 +656,7 @@ const QuoteLinePricing = ({
           .update({
             [key]: roundedValue,
             ...(key === "unitPrice"
-              ? { categoryMarkups: {}, priceSource: "manual" }
+              ? { categoryMarkups: {}, priceSource: "manual", priceTrace: null }
               : {}),
             quoteLineId: lineId,
             quantity
@@ -658,6 +697,47 @@ const QuoteLinePricing = ({
   );
 
   const [leadTimeModalOpen, setLeadTimeModalOpen] = useState(false);
+
+  // How each quantity's price was resolved. The stored traces arrive with the
+  // prices, so showing the button costs no request; today's calculation (the
+  // price-trace route) is loaded when the modal opens and after a reprice —
+  // and once on mount for a line with a system price that has no stored trace
+  // (priced before traces were recorded), since only today's calculation can
+  // tell whether a rule applies to it.
+  const [priceTraceModalOpen, setPriceTraceModalOpen] = useState(false);
+  const priceTraceFetcher = useFetcher<typeof priceTraceLoader>();
+  const repriceFetcher = useFetcher<typeof priceTraceAction>();
+  const priceTraceLoad = priceTraceFetcher.load;
+  const priceTraceUrl = path.to.quoteLinePriceTrace(quoteId, lineId);
+  useEffect(() => {
+    if (repriceFetcher.state !== "idle" || !repriceFetcher.data) return;
+    if (repriceFetcher.data.error) toast.error(repriceFetcher.data.error);
+    else priceTraceLoad(priceTraceUrl);
+  }, [
+    repriceFetcher.state,
+    repriceFetcher.data,
+    priceTraceLoad,
+    priceTraceUrl
+  ]);
+
+  const storedPrices = Object.values(editableFields.prices);
+  const hasUntracedSystemPrice = storedPrices.some(
+    (price) => price.priceSource !== "manual" && !price.priceTrace
+  );
+  useEffect(() => {
+    if (isEmployee && hasUntracedSystemPrice) priceTraceLoad(priceTraceUrl);
+  }, [isEmployee, hasUntracedSystemPrice, priceTraceLoad, priceTraceUrl]);
+
+  const priceTraces = priceTraceFetcher.data?.traces ?? [];
+  const hasPricingRules =
+    storedPrices.some((price) =>
+      hasPriceAdjustments(price.priceTrace as PriceTraceStep[] | null)
+    ) ||
+    priceTraces.some(
+      (price) =>
+        hasPriceAdjustments(price.trace) ||
+        hasPriceAdjustments(price.currentTrace)
+    );
 
   // Applies one predicted lead time per quantity break in ONE state update:
   // onUpdatePrice snapshots editableFields.prices per call and replaces the
@@ -1087,6 +1167,18 @@ const QuoteLinePricing = ({
               <Td className="border-r border-border">
                 <HStack className="w-full justify-between ">
                   <span>Unit Price</span>
+                  {isEmployee && hasPricingRules && (
+                    <IconButton
+                      aria-label={t`How this price was calculated`}
+                      icon={<LuCalculator />}
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        priceTraceLoad(priceTraceUrl);
+                        setPriceTraceModalOpen(true);
+                      }}
+                    />
+                  )}
                 </HStack>
               </Td>
               {quantities.map((quantity) => {
@@ -1524,6 +1616,23 @@ const QuoteLinePricing = ({
           isEditable={isEditable}
           onApply={onUpdateLeadTimes}
           onClose={() => setLeadTimeModalOpen(false)}
+        />
+      )}
+      {priceTraceModalOpen && (
+        <QuoteLinePriceTraceModal
+          traces={priceTraces}
+          isLoading={priceTraceFetcher.state !== "idle"}
+          currencyCode={baseCurrency}
+          unitPricePrecision={unitPricePrecision}
+          isEditable={isEditable}
+          isRepricing={repriceFetcher.state !== "idle"}
+          onReprice={() =>
+            repriceFetcher.submit(null, {
+              method: "post",
+              action: priceTraceUrl
+            })
+          }
+          onClose={() => setPriceTraceModalOpen(false)}
         />
       )}
     </Card>

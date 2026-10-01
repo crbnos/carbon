@@ -39,7 +39,13 @@ import {
   useMount,
   VStack
 } from "@carbon/react";
-import { getItemReadableId, INPUT_FORMAT, INPUT_STEP } from "@carbon/utils";
+import {
+  equals,
+  getItemReadableId,
+  INPUT_FORMAT,
+  INPUT_STEP,
+  round
+} from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useCallback, useEffect, useState } from "react";
 import {
@@ -91,7 +97,7 @@ import type {
   SalesOrder,
   SalesOrderLineType
 } from "../../types";
-import { PriceTracePopover } from "../Pricing/PriceTracePopover";
+import { PriceTraceModal } from "../Pricing/PriceTraceModal";
 
 type SalesOrderLineFormProps = {
   initialValues: z.infer<typeof salesOrderLineValidator> & {
@@ -167,9 +173,7 @@ const SalesOrderLineForm = ({
     priceListId:
       (initialValues as { priceListId?: string | null }).priceListId ?? null,
     priceListName: null,
-    priceTrace:
-      (initialValues as { priceTrace?: PriceTraceStep[] | null }).priceTrace ??
-      null
+    priceTrace: initialValues.priceTrace ?? null
   });
 
   const configurator = useItemConfiguration({
@@ -611,13 +615,11 @@ const SalesOrderLineForm = ({
                       name="priceListId"
                       value={itemData?.priceListId ?? undefined}
                     />
+                    {/* Always posted: "null" clears a stored trace once the
+                        price is typed rather than resolved. */}
                     <Hidden
                       name="priceTrace"
-                      value={
-                        itemData?.priceTrace
-                          ? JSON.stringify(itemData.priceTrace)
-                          : undefined
-                      }
+                      value={JSON.stringify(itemData?.priceTrace ?? null)}
                     />
                     <Hidden name="unitOfMeasureCode" value={itemData.uom} />
                     <Hidden
@@ -705,7 +707,7 @@ const SalesOrderLineForm = ({
                                     <Trans>Unit Price</Trans>
                                   </LabelWithHelp>
                                 </span>
-                                <PriceTracePopover
+                                <PriceTraceModal
                                   trace={itemData.priceTrace}
                                   currencyCode={baseCurrency}
                                 />
@@ -718,10 +720,20 @@ const SalesOrderLineForm = ({
                                   currencyDecimals
                                 )}
                                 onChange={(value) =>
-                                  setItemData((d) => ({
-                                    ...d,
-                                    unitPrice: value
-                                  }))
+                                  setItemData((d) =>
+                                    // The field commits at the storage scale,
+                                    // so a resolved price with more digits
+                                    // comes back rounded on blur — not a typed
+                                    // price.
+                                    equals(round(value), round(d.unitPrice))
+                                      ? d
+                                      : {
+                                          ...d,
+                                          unitPrice: value,
+                                          // A typed price is not the resolved one.
+                                          priceTrace: null
+                                        }
+                                  )
                                 }
                               />
                             </div>

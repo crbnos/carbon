@@ -10,9 +10,11 @@ import {
   decideRecalcPricing,
   getEffectiveDefaultMarkups,
   reconcileQuantityBreaks,
+  repricedUnitPrice,
   resolveJobConfiguration,
   resolvePreservedQuoteLinePriceFields,
-  toMatchedRule
+  toMatchedRule,
+  withBasePriceSource
 } from "./sales.utils";
 import type { MatchedRule } from "./types";
 
@@ -509,5 +511,45 @@ describe("configuredQuoteBasePrice", () => {
         defaultMarkups: {}
       })
     ).toBeNull();
+  });
+});
+
+describe("withBasePriceSource", () => {
+  const trace = [
+    { step: "Base Price", source: "Item Unit Sale Price", amount: 100 },
+    { step: "Markup", source: "Rule: A", amount: 110, adjustment: 10 },
+    { step: "Final Price", source: "Resolved", amount: 110 }
+  ];
+
+  it("names the base the row really started from", () => {
+    expect(withBasePriceSource(trace, "Cost + Markup")).toEqual([
+      { step: "Base Price", source: "Cost + Markup", amount: 100 },
+      trace[1],
+      trace[2]
+    ]);
+  });
+
+  it("keeps the trace as resolved when there is no other base", () => {
+    expect(withBasePriceSource(trace, null)).toBe(trace);
+  });
+});
+
+describe("repricedUnitPrice", () => {
+  const current = (amount: number) => [
+    { step: "Base Price", source: "Cost + Markup", amount: 100 },
+    { step: "Final Price", source: "Resolved", amount }
+  ];
+
+  it("is null for a manual price, which has no current calculation", () => {
+    expect(repricedUnitPrice(null, 110, 2)).toBeNull();
+  });
+
+  it("is null when today's price rounds to the stored one", () => {
+    expect(repricedUnitPrice(current(110.004), 110, 2)).toBeNull();
+  });
+
+  it("is today's price at the line's precision when it differs", () => {
+    expect(repricedUnitPrice(current(104.5678), 110, 2)).toBe(104.57);
+    expect(repricedUnitPrice(current(104.5678), 110, 4)).toBe(104.5678);
   });
 });

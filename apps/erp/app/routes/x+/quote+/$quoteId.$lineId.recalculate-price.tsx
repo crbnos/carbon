@@ -8,7 +8,10 @@ import { getLogger } from "@carbon/logger";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
 import { z } from "zod";
-import { upsertQuoteLinePrices } from "~/modules/sales";
+import {
+  priceTraceStepValidator,
+  upsertQuoteLinePrices
+} from "~/modules/sales";
 import { getDatabaseClient } from "~/services/database.server";
 
 const logger = getLogger("erp", "quoteid-lineid-recalculate-price");
@@ -45,6 +48,13 @@ export async function action({ request, params }: ActionFunctionArgs) {
       JSON.parse((formData.get("categoryMarkupsByQuantity") as string) ?? "{}")
     );
 
+  // The trace each price was resolved with, index-aligned with the prices.
+  const priceTracesByQuantity = z
+    .array(z.array(priceTraceStepValidator).nullable())
+    .safeParse(
+      JSON.parse((formData.get("priceTracesByQuantity") as string) ?? "[]")
+    );
+
   if (unitPricesByQuantity.success === false) {
     return data(
       { data: null, errors: unitPricesByQuantity.error.issues?.[0].message },
@@ -66,6 +76,13 @@ export async function action({ request, params }: ActionFunctionArgs) {
     );
   }
 
+  if (priceTracesByQuantity.success === false) {
+    return data(
+      { data: null, errors: "Invalid price traces" },
+      { status: 400 }
+    );
+  }
+
   if (unitPricesByQuantity.data.length !== quantities.data.length) {
     return data(
       { data: null, errors: "Prices and quantities must have the same length" },
@@ -80,6 +97,7 @@ export async function action({ request, params }: ActionFunctionArgs) {
       quoteLineId: lineId,
       quantity,
       unitPrice,
+      priceTrace: priceTracesByQuantity.data[index] ?? null,
       createdBy: userId,
       // discountPercent / leadTime / shippingCost are intentionally omitted so
       // upsertQuoteLinePrices preserves the user-entered values for each quantity

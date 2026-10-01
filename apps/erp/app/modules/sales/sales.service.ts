@@ -79,7 +79,11 @@ import type {
   salesRfqValidator,
   selectedLinesValidator
 } from "./sales.models";
-import { costCategoryKeys, OPEN_SALES_ORDER_STATUSES } from "./sales.models";
+import {
+  costCategoryKeys,
+  isQuoteLocked,
+  OPEN_SALES_ORDER_STATUSES
+} from "./sales.models";
 import type { CategoryMarkups, QuoteLinePriceSource } from "./sales.utils";
 import {
   applyPriceRules,
@@ -87,8 +91,10 @@ import {
   configuredQuoteBasePrice,
   decideRecalcPricing,
   getEffectiveDefaultMarkups,
+  QUOTE_BASE_PRICE_SOURCES,
   resolvePreservedQuoteLinePriceFields,
-  toMatchedRule
+  toMatchedRule,
+  withBasePriceSource
 } from "./sales.utils";
 import type {
   OverrideEntry,
@@ -100,6 +106,7 @@ import type {
   PriceSource,
   PriceTraceStep,
   Quotation,
+  QuoteLinePriceTrace,
   SalesOrder,
   SalesRFQ
 } from "./types";
@@ -4053,6 +4060,9 @@ type QuoteLinePriceInput = {
   shippingCost?: number;
   categoryMarkups?: Record<string, number>;
   priceSource?: "system" | "manual";
+  // How unitPrice was resolved. Unlike the fields above, an omitted trace is
+  // NOT carried over: it explains the unit price, which every caller restates.
+  priceTrace?: PriceTraceStep[] | null;
 };
 
 export async function upsertQuoteLinePrices(
@@ -4070,6 +4080,7 @@ export async function upsertQuoteLinePrices(
     shippingCost?: number;
     categoryMarkups?: Record<string, number>;
     priceSource?: "system" | "manual";
+    priceTrace?: PriceTraceStep[] | null;
   }[]
 ) {
   return db
@@ -4101,6 +4112,8 @@ async function rewriteQuoteLinePrices(
       unitPrice: Number(price.unitPrice),
       leadTime: Number(price.leadTime),
       discountPercent: Number(price.discountPercent),
+      // A precision rebuild only re-rounds the price; its explanation stands.
+      priceTrace: (price.priceTrace as PriceTraceStep[] | null) ?? null,
       createdBy: price.createdBy
     }));
 
@@ -4156,6 +4169,9 @@ async function rewriteQuoteLinePrices(
           companyId,
           quoteId,
           unitPrice: round(p.unitPrice, quoteLine.unitPricePrecision),
+          // Kysely sends a JS array as a Postgres array literal; jsonb needs
+          // JSON text.
+          priceTrace: p.priceTrace ? JSON.stringify(p.priceTrace) : null,
           // Explicit value wins, omitted value is preserved from the stored row.
           ...resolvePreservedQuoteLinePriceFields(p, {
             leadTime: existing ? Number(existing.leadTime) : undefined,
@@ -4194,7 +4210,8 @@ async function rewriteQuoteLinePrices(
 
 async function buildCostEffects(
   client: SupabaseClient<Database>,
-  quoteLineId: string
+  quoteLineId: string,
+  { refreshBuyCosts = true }: { refreshBuyCosts?: boolean } = {}
 ) {
   const operationsResult = await client
     .from("quoteOperation")
@@ -4204,7 +4221,8 @@ async function buildCostEffects(
   const operations = operationsResult.data ?? [];
 
   // Refresh Buy material costs from supplier price breaks; resolveBuyUnitCost
-  // leaves a typed cost alone.
+  // leaves a typed cost alone. A read-only caller skips the write — the cost
+  // effects below price Buy materials from the same breaks either way.
   const buyMaterials = await client
     .from("quoteMaterial")
     .select("id, itemId, unitCost, unitCostSource")
@@ -4216,7 +4234,7 @@ async function buildCostEffects(
   ];
   const priceMap = await getSupplierPriceBreaksForItems(client, buyItemIds);
 
-  for (const mat of buyMaterials.data ?? []) {
+  for (const mat of refreshBuyCosts ? (buyMaterials.data ?? []) : []) {
     if (mat.unitCostSource === "manual") continue;
     const price = resolveBuyUnitCost(mat, 1, priceMap);
     if (price !== mat.unitCost) {
@@ -4501,6 +4519,7 @@ export type QuoteLinePriceRow = {
   discountPercent: number;
   categoryMarkups?: Record<string, number>;
   priceSource?: string;
+  priceTrace?: PriceTraceStep[] | null;
 };
 
 type BuildPriceRowsResult = {
@@ -4626,27 +4645,31 @@ export async function buildMakeToOrderPriceRows(
       defaultMarkups: effectiveDefaults
     });
 
-    const finalPrice = itemId
-      ? (
-          await resolvePrice(client, companyId, {
-            itemId,
-            quantity: qty,
-            customerId,
-            existingBasePrice: basePrice ?? rollupPrice,
-            configuration
-          })
-        ).finalPrice
-      : rollupPrice;
+    const resolved = itemId
+      ? await resolvePrice(client, companyId, {
+          itemId,
+          quantity: qty,
+          customerId,
+          existingBasePrice: basePrice ?? rollupPrice,
+          configuration
+        })
+      : null;
 
     priceRows.push({
       quoteId,
       quoteLineId,
       companyId,
       quantity: qty,
-      unitPrice: round(finalPrice, precision),
+      unitPrice: round(resolved?.finalPrice ?? rollupPrice, precision),
       // A row priced from the sale price is not cost-plus.
       categoryMarkups: basePrice === null ? effectiveDefaults : {},
       priceSource: "system",
+      priceTrace: resolved
+        ? withBasePriceSource(
+            resolved.trace,
+            basePrice === null ? QUOTE_BASE_PRICE_SOURCES.costPlus : null
+          )
+        : null,
       exchangeRate,
       createdBy: userId,
       leadTime: 0,
@@ -4742,6 +4765,7 @@ export async function buildPullFromInventoryPriceRows(
       companyId,
       quantity: qty,
       unitPrice: round(resolved.finalPrice, precision),
+      priceTrace: resolved.trace,
       exchangeRate,
       createdBy: userId,
       leadTime: 0,
@@ -4842,6 +4866,10 @@ export async function buildPurchaseToOrderPriceRows(
       companyId,
       quantity: qty,
       unitPrice: round(resolved.finalPrice, precision),
+      priceTrace: withBasePriceSource(
+        resolved.trace,
+        QUOTE_BASE_PRICE_SOURCES.supplier
+      ),
       exchangeRate,
       createdBy: userId,
       leadTime: 0,
@@ -4975,6 +5003,7 @@ export async function recalculateQuoteLinePrices(
     quantity: number;
     unitPrice: number;
     categoryMarkups: Record<string, number>;
+    priceTrace: PriceTraceStep[] | null;
   }[] = [];
   for (const row of existingPrices.data) {
     const qty = row.quantity;
@@ -5015,24 +5044,28 @@ export async function recalculateQuoteLinePrices(
       defaultMarkups: effectiveDefaults
     });
 
-    const finalPrice =
+    const resolved =
       itemId && companyId
-        ? (
-            await resolvePrice(client, companyId, {
-              itemId,
-              quantity: qty,
-              customerId,
-              existingBasePrice: basePrice ?? rollupPrice,
-              configuration
-            })
-          ).finalPrice
-        : rollupPrice;
+        ? await resolvePrice(client, companyId, {
+            itemId,
+            quantity: qty,
+            customerId,
+            existingBasePrice: basePrice ?? rollupPrice,
+            configuration
+          })
+        : null;
 
     repricedRows.push({
       quantity: qty,
-      unitPrice: round(finalPrice, precision),
+      unitPrice: round(resolved?.finalPrice ?? rollupPrice, precision),
       // A row priced from the sale price is not cost-plus.
-      categoryMarkups: basePrice === null ? markups : {}
+      categoryMarkups: basePrice === null ? markups : {},
+      priceTrace: resolved
+        ? withBasePriceSource(
+            resolved.trace,
+            basePrice === null ? QUOTE_BASE_PRICE_SOURCES.costPlus : null
+          )
+        : null
     });
   }
 
@@ -5045,6 +5078,7 @@ export async function recalculateQuoteLinePrices(
         unitPrice: row.unitPrice,
         categoryMarkups: row.categoryMarkups,
         priceSource: "system",
+        priceTrace: row.priceTrace,
         updatedBy: userId
       })
       .eq("quoteLineId", quoteLineId)
@@ -5061,6 +5095,233 @@ export async function recalculateQuoteLinePrices(
     }
   }
   return { error: null };
+}
+
+// Explains each quantity's price on a quote line. `trace` is the snapshot
+// written with the price — how it was actually reached, whatever the rules say
+// now. `currentTrace` re-runs today's pipeline from the base the row's builder
+// starts from — the cost-plus rollup (or a configured part's sale price) for
+// Make to Order, the supplier price break for Purchase to Order, the item's
+// sale price for Pull from Inventory — so the UI can show what repricing would
+// change. A manual row has neither: a person stated that price and no rule
+// touched it. Read-only — null data when the line is not this quote's in this
+// company.
+export async function getQuoteLinePriceTraces(
+  client: SupabaseClient<Database>,
+  companyId: string,
+  quoteId: string,
+  quoteLineId: string
+): Promise<{
+  data: QuoteLinePriceTrace[] | null;
+  error: PostgrestError | null;
+}> {
+  const [lineResult, quoteResult, pricesResult] = await Promise.all([
+    client
+      .from("quoteLine")
+      .select("itemId, methodType, configuration")
+      .eq("id", quoteLineId)
+      .eq("quoteId", quoteId)
+      .eq("companyId", companyId)
+      .maybeSingle(),
+    client
+      .from("quote")
+      .select("customerId")
+      .eq("id", quoteId)
+      .eq("companyId", companyId)
+      .maybeSingle(),
+    client
+      .from("quoteLinePrice")
+      .select("quantity, unitPrice, priceSource, categoryMarkups, priceTrace")
+      .eq("quoteLineId", quoteLineId)
+      .eq("companyId", companyId)
+      .order("quantity")
+  ]);
+
+  const error = lineResult.error ?? quoteResult.error ?? pricesResult.error;
+  if (error) return { data: null, error };
+  if (!lineResult.data || !quoteResult.data) return { data: null, error: null };
+
+  const itemId = lineResult.data.itemId;
+  const methodType = lineResult.data.methodType;
+  const customerId = quoteResult.data.customerId ?? undefined;
+  const configuration = asConfiguration(lineResult.data.configuration);
+  const rows = pricesResult.data ?? [];
+
+  const stored = (row: (typeof rows)[number]): QuoteLinePriceTrace => ({
+    quantity: row.quantity,
+    unitPrice: row.unitPrice,
+    priceSource: row.priceSource as QuoteLinePriceSource,
+    trace: (row.priceTrace as PriceTraceStep[] | null) ?? null,
+    currentTrace: null
+  });
+
+  if (!itemId) return { data: rows.map(stored), error: null };
+
+  // The base price each system row starts from today, and what it is; an
+  // undefined amount lets resolvePrice read the item's sale price, as the Pull
+  // from Inventory builder does.
+  type BasePrice = { amount: number | undefined; source: string | null };
+  let basePriceFor: (row: (typeof rows)[number]) => BasePrice = () => ({
+    amount: undefined,
+    source: null
+  });
+
+  if (methodType === "Make to Order") {
+    const [settingsResult, salePrice, costEffects] = await Promise.all([
+      client
+        .from("companySettings")
+        .select("quoteLineCategoryMarkups")
+        .eq("id", companyId)
+        .single(),
+      getConfiguredSalePrice(client, companyId, itemId, configuration),
+      buildCostEffects(client, quoteLineId, { refreshBuyCosts: false })
+    ]);
+    if (settingsResult.error)
+      return { data: null, error: settingsResult.error };
+    if (salePrice.error) return { data: null, error: salePrice.error };
+    // No costed method yet: nothing to roll up, so nothing to compare against.
+    if (!costEffects) return { data: rows.map(stored), error: null };
+
+    const defaultMarkups: Record<string, number> = {};
+    for (const [key, value] of Object.entries(
+      (settingsResult.data.quoteLineCategoryMarkups as Record<
+        string,
+        number
+      >) ?? {}
+    )) {
+      defaultMarkups[key] = value * 100;
+    }
+    const effectiveDefaults = getEffectiveDefaultMarkups(defaultMarkups);
+    const { effects } = costEffects;
+
+    basePriceFor = (row) => {
+      const categoryMarkups = row.categoryMarkups as CategoryMarkups | null;
+      const decision = decideRecalcPricing(
+        { priceSource: row.priceSource, categoryMarkups },
+        effectiveDefaults
+      );
+      const markups = decision.mode === "reprice" ? decision.markups : {};
+      const qty = row.quantity;
+      const rollupPrice = costCategoryKeys.reduce((sum, key) => {
+        const total = effects[key].reduce((acc, fn) => acc + fn(qty), 0);
+        const cost = qty > 0 ? total / qty : 0;
+        return sum + cost * (1 + (markups[key] ?? 0) / 100);
+      }, 0);
+      const configuredPrice = configuredQuoteBasePrice({
+        configuration,
+        unitSalePrice: salePrice.data,
+        categoryMarkups,
+        defaultMarkups: effectiveDefaults
+      });
+      return configuredPrice === null
+        ? { amount: rollupPrice, source: QUOTE_BASE_PRICE_SOURCES.costPlus }
+        : { amount: configuredPrice, source: null };
+    };
+  } else if (methodType === "Purchase to Order") {
+    const priceMap = await getSupplierPriceBreaksForItems(client, [itemId]);
+    basePriceFor = (row) => ({
+      amount: lookupBuyPriceFromMap(itemId, row.quantity, priceMap, 0),
+      source: QUOTE_BASE_PRICE_SOURCES.supplier
+    });
+  }
+
+  const data = await Promise.all(
+    rows.map(async (row) => {
+      if (row.priceSource === "manual") return stored(row);
+      const base = basePriceFor(row);
+      const { trace } = await resolvePrice(client, companyId, {
+        itemId,
+        quantity: row.quantity,
+        customerId,
+        existingBasePrice: base.amount,
+        configuration
+      });
+      return {
+        ...stored(row),
+        currentTrace: withBasePriceSource(trace, base.source)
+      };
+    })
+  );
+
+  return { data, error: null };
+}
+
+export class QuoteLockedError extends Error {
+  constructor() {
+    super("Cannot modify a locked quote. Reopen it first.");
+  }
+}
+
+// Reprices a quote line's system rows to what today's rules give — the
+// `currentTrace` getQuoteLinePriceTraces shows — storing that trace with the
+// price. Manual rows, and rows today's pipeline cannot price, are rewritten
+// unchanged; one transaction either way. Draft quotes only (QuoteLockedError
+// otherwise) — checked here, not in the route, because this is also an MCP
+// tool.
+export async function repriceQuoteLineFromRules(
+  client: SupabaseClient<Database>,
+  db: Kysely<KyselyDatabase>,
+  companyId: string,
+  quoteId: string,
+  quoteLineId: string,
+  userId: string
+): Promise<{ data: null; error: PostgrestError | Error | null }> {
+  const quote = await client
+    .from("quote")
+    .select("status")
+    .eq("id", quoteId)
+    .eq("companyId", companyId)
+    .maybeSingle();
+  if (quote.error) return { data: null, error: quote.error };
+  if (!quote.data) return { data: null, error: new Error("Quote not found") };
+  if (isQuoteLocked(quote.data.status)) {
+    return { data: null, error: new QuoteLockedError() };
+  }
+
+  const traces = await getQuoteLinePriceTraces(
+    client,
+    companyId,
+    quoteId,
+    quoteLineId
+  );
+  if (traces.error) return { data: null, error: traces.error };
+  if (!traces.data) {
+    return { data: null, error: new Error("Quote line not found") };
+  }
+
+  const prices = traces.data.map((price) => {
+    const finalPrice = price.currentTrace?.at(-1)?.amount;
+    if (!price.currentTrace || finalPrice === undefined) {
+      return {
+        quoteLineId,
+        quantity: price.quantity,
+        unitPrice: price.unitPrice,
+        priceTrace: price.trace,
+        createdBy: userId
+      };
+    }
+    return {
+      quoteLineId,
+      quantity: price.quantity,
+      unitPrice: finalPrice,
+      priceTrace: price.currentTrace,
+      priceSource: "system" as const,
+      createdBy: userId
+    };
+  });
+
+  try {
+    await upsertQuoteLinePrices(db, companyId, quoteId, quoteLineId, prices);
+  } catch (error) {
+    logger.error("Failed to reprice quote line from rules", {
+      companyId,
+      quoteId,
+      quoteLineId,
+      error
+    });
+    return { data: null, error: error as Error };
+  }
+  return { data: null, error: null };
 }
 
 export async function upsertQuoteLineMethod(
@@ -7744,6 +8005,7 @@ export async function createReplacementSalesOrder(
       itemId: line.itemId,
       saleQuantity: Number(line.quantity),
       unitPrice: price.finalPrice,
+      priceTrace: price.trace,
       unitOfMeasureCode: line.unitOfMeasureCode,
       companyId,
       createdBy: userId
