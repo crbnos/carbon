@@ -17,7 +17,6 @@ import { isRouteErrorResponse } from "react-router";
 
 ensureLoggingConfigured();
 
-// Off unless an OTLP endpoint is configured (OTEL_EXPORTER_OTLP_ENDPOINT).
 export const instrumentations = createTracing({ serviceName: "carbon-mes" });
 
 const log = getLogger("mes");

@@ -18,7 +18,6 @@ import { scheduleInngestSelfSync } from "./utils/inngest-self-sync.server";
 
 ensureLoggingConfigured();
 
-// Off unless an OTLP endpoint is configured (OTEL_EXPORTER_OTLP_ENDPOINT).
 export const instrumentations = createTracing({ serviceName: "carbon-erp" });
 scheduleInngestSelfSync();
 

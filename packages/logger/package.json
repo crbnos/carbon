@@ -10,7 +10,8 @@
     "@opentelemetry/resources": "catalog:",
     "@opentelemetry/sdk-trace-node": "catalog:",
     "@opentelemetry/semantic-conventions": "catalog:",
-    "@paralleldrive/cuid2": "catalog:"
+    "@paralleldrive/cuid2": "catalog:",
+    "@vercel/functions": "catalog:"
   },
   "peerDependencies": {
     "react-router": "catalog:"

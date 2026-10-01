@@ -32,6 +32,7 @@ import {
   ATTR_URL_PATH,
   ATTR_URL_QUERY
 } from "@opentelemetry/semantic-conventions";
+import { waitUntil } from "@vercel/functions";
 import type { ServerInstrumentation } from "react-router";
 import { redactSearch } from "./redaction";
 
@@ -39,36 +40,10 @@ const REQUEST_SPAN = createContextKey("carbon.request-span");
 const PROVIDER = Symbol.for("carbon.tracing.provider");
 
 export type TracingOptions = {
-  /** `service.name` when `OTEL_SERVICE_NAME` is unset. */
   serviceName: string;
 };
 
-type VercelRequestContext = {
-  get?: () => { waitUntil?: (promise: Promise<unknown>) => void } | undefined;
-};
-
-/**
- * Vercel can suspend an instance once its response is sent, stranding the
- * batch until the next invocation. Its `waitUntil` holds the instance open for
- * the export. Elsewhere this is a no-op and the batch timer exports.
- */
-function waitUntil(promise: Promise<unknown>) {
-  // ponytail: reads the slot `@vercel/functions` reads, to avoid the fourteen
-  // packages that one call would add. Import its `waitUntil` if the slot moves.
-  const slot = (globalThis as Record<PropertyKey, unknown>)[
-    Symbol.for("@vercel/request-context")
-  ] as VercelRequestContext | undefined;
-  slot?.get?.()?.waitUntil?.(promise);
-}
-
-/**
- * React Router `instrumentations` that trace every request, middleware, loader
- * and action, plus each outgoing `fetch` made while handling one.
- *
- * Off unless an OTLP endpoint is configured. The exporter reads the standard
- * `OTEL_EXPORTER_OTLP_*` variables itself, so any OTLP backend works — see
- * `packages/logger/AGENTS.md` for the Axiom values.
- */
+/** Off unless an OTLP endpoint is set; the exporter reads `OTEL_*` itself. */
 export function createTracing(
   options: TracingOptions
 ): ServerInstrumentation[] {
@@ -82,13 +57,13 @@ export function createTracing(
   const provider = ensureProvider(options.serviceName);
   return [
     routerInstrumentation(trace.getTracer("carbon"), () =>
+      // Vercel can suspend the instance once the response is sent.
       waitUntil(provider.forceFlush().catch(() => undefined))
     )
   ];
 }
 
-// A `globalThis` slot, like the logging config: Vite re-evaluates this module
-// in dev, and a second provider would export every span twice.
+// On `globalThis` because Vite re-evaluates this module in dev.
 function ensureProvider(serviceName: string): NodeTracerProvider {
   const g = globalThis as Record<PropertyKey, unknown>;
   const existing = g[PROVIDER] as NodeTracerProvider | undefined;
@@ -111,8 +86,6 @@ function ensureProvider(serviceName: string): NodeTracerProvider {
     tracerProvider: provider,
     instrumentations: [
       new UndiciInstrumentation({
-        // Only fetches made while serving a request; background timers and
-        // analytics pings would otherwise each open a trace of their own.
         requireParentforSpans: true,
         startSpanHook: ({ origin, path }) => redactedUrl(origin, path),
         requestHook: (span, { method, origin, path }) => {
@@ -126,21 +99,14 @@ function ensureProvider(serviceName: string): NodeTracerProvider {
   return provider;
 }
 
-/**
- * PostgREST paths name a table or function, so they make a readable span name.
- * Any other path can carry ids (storage objects, third-party resources) and
- * would explode the name's cardinality, so those are named by host.
- */
+/** PostgREST calls by table or function; anything else by host, since other paths carry ids. */
 export function fetchSpanName(method: string, origin: string, path: string) {
   const pathname = path.split("?")[0] ?? "";
   if (pathname.startsWith("/rest/v1/")) return `${method} ${pathname}`;
   return `${method} ${origin.replace(/^https?:\/\//, "")}`;
 }
 
-/**
- * The instrumentation records the query string twice, as `url.full` and
- * `url.query`. Both get the masking the access log applies.
- */
+/** The instrumentation records the query string in both attributes. */
 export function redactedUrl(origin: string, path: string) {
   const queryStart = path.indexOf("?");
   const pathname = queryStart === -1 ? path : path.slice(0, queryStart);
@@ -151,7 +117,7 @@ export function redactedUrl(origin: string, path: string) {
   };
 }
 
-/** `SELECT item`, `INSERT job` — the statement's verb and the first table it names. */
+/** `SELECT item`: the verb and the first table named. */
 export function querySpanName(sql: string) {
   const operation =
     sql.trimStart().split(/\s+/, 1)[0]?.toUpperCase() || "QUERY";
@@ -159,14 +125,7 @@ export function querySpanName(sql: string) {
   return table ? `${operation} ${table}` : operation;
 }
 
-/**
- * Kysely `log` hook: one span per query. Kysely reports a query after it has
- * run, so the span is back-dated by the duration Kysely measured — which is
- * the query itself, not any wait for a pooled connection before it.
- *
- * Records the SQL text only. Kysely binds values as parameters, and those are
- * never read here.
- */
+/** Kysely `log` hook. Kysely reports a query after it ran, so the span is back-dated. */
 export function traceQuery(event: {
   level: "query" | "error";
   query: { sql: string };
@@ -195,10 +154,7 @@ export function traceQuery(event: {
   span.end(endTime);
 }
 
-/**
- * Add attributes to the root span of the request being handled. A no-op when
- * tracing is off or when called outside a request.
- */
+/** No-op when tracing is off or outside a request. */
 export function annotateRequestSpan(attributes: Attributes) {
   (context.active().getValue(REQUEST_SPAN) as Span | undefined)?.setAttributes(
     attributes
@@ -221,8 +177,7 @@ export function routerInstrumentation(
     handler({ instrument }) {
       instrument({
         request(handleRequest, { request }) {
-          // Named by method alone until a route handler reports the matched
-          // pattern: the raw path holds ids and is not a usable span name.
+          // Renamed once a route handler reports the matched pattern.
           const span = tracer.startSpan(request.method, {
             kind: SpanKind.SERVER,
             attributes: {
@@ -249,8 +204,7 @@ export function routerInstrumentation(
           call: () => Promise<{ error?: Error }>,
           { request, pattern }: { request: { method: string }; pattern: string }
         ) => {
-          // React Router joins the matched route paths, which leaves the
-          // leading slash off ("x/part/:itemId/details").
+          // React Router's pattern has no leading slash.
           const route = pattern.startsWith("/") ? pattern : `/${pattern}`;
           (context.active().getValue(REQUEST_SPAN) as Span | undefined)
             ?.updateName(`${request.method} ${route}`)

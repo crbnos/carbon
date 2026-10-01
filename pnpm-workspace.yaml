@@ -121,6 +121,7 @@ catalog:
   '@types/react-dom': 18.3.7
   '@types/node': '24'
   '@vercel/analytics': 1.6.1
+  '@vercel/functions': 3.9.9
   '@vercel/react-router': 1.2.6
   ai: 7.0.116
   axios: 1.16.0

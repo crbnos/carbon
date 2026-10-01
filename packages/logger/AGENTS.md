@@ -141,8 +141,7 @@ rather than `fetch`. That time shows up inside the enclosing loader or action sp
 
 The batch is exported on a timer in a long-lived server. On Vercel the instance
 can be suspended once the response is sent, so the request span's end hands
-`forceFlush()` to Vercel's `waitUntil`, read from the `@vercel/request-context`
-global that `@vercel/functions` reads.
+`forceFlush()` to `waitUntil` from `@vercel/functions` (a no-op off Vercel).
 
 ## Cross-References
 
