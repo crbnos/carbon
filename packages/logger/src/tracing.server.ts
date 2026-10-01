@@ -56,10 +56,13 @@ export function createTracing(
 
   const provider = ensureProvider(options.serviceName);
   return [
-    routerInstrumentation(trace.getTracer("carbon"), () =>
-      // Vercel can suspend the instance once the response is sent.
-      waitUntil(provider.forceFlush().catch(() => undefined))
-    )
+    routerInstrumentation(trace.getTracer("carbon"), () => {
+      // Vercel can suspend the instance once the response is sent; a
+      // long-lived server leaves it to the batch timer.
+      if (process.env.VERCEL) {
+        waitUntil(provider.forceFlush().catch(() => undefined));
+      }
+    })
   ];
 }
 
