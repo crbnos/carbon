@@ -19131,9 +19131,6 @@ msgstr "Basculer le niveau"
 msgid "Toggle Properties"
 msgstr "Basculer les propriétés"
 
-msgid "Toggle the sidebar"
-msgstr "Activer/désactiver la barre latérale"
-
 msgid "Toggle views"
 msgstr "Basculer les vues"
 

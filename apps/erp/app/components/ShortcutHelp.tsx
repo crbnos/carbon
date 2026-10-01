@@ -64,11 +64,6 @@ const ShortcutHelp = () => {
         group: general
       },
       {
-        shortcut: SHORTCUTS.sidebarToggle,
-        description: t`Toggle the sidebar`,
-        group: general
-      },
-      {
         shortcut: SHORTCUTS.help,
         description: t`Show keyboard shortcuts`,
         group: general

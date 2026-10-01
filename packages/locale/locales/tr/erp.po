@@ -19131,9 +19131,6 @@ msgstr "Seviye değiştir"
 msgid "Toggle Properties"
 msgstr "Özellikleri Aç/Kapat"
 
-msgid "Toggle the sidebar"
-msgstr "Kenar çubuğunu aç/kapat"
-
 msgid "Toggle views"
 msgstr "Görünümleri değiştir"
 

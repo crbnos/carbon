@@ -63,6 +63,8 @@ const SidebarProvider = React.forwardRef<
     open?: boolean;
     onOpenChange?: (open: boolean) => void;
     touch?: boolean;
+    /** Bind ⌘B to toggle the sidebar. */
+    keyboardShortcut?: boolean;
   }
 >(
   (
@@ -71,6 +73,7 @@ const SidebarProvider = React.forwardRef<
       open: openProp,
       onOpenChange: setOpenProp,
       touch = false,
+      keyboardShortcut = true,
       className,
       style,
       children,
@@ -114,7 +117,8 @@ const SidebarProvider = React.forwardRef<
       action: (event) => {
         event.preventDefault();
         toggleSidebar();
-      }
+      },
+      disabled: !keyboardShortcut
     });
 
     // We add a state so that we can do data-state="expanded" or "collapsed".

@@ -19131,9 +19131,6 @@ msgstr "Przełącz poziom"
 msgid "Toggle Properties"
 msgstr "Przełącz właściwości"
 
-msgid "Toggle the sidebar"
-msgstr "Przełącz pasek boczny"
-
 msgid "Toggle views"
 msgstr "Przełącz widoki"
 

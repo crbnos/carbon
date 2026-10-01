@@ -19131,9 +19131,6 @@ msgstr "레벨 전환"
 msgid "Toggle Properties"
 msgstr "속성 전환"
 
-msgid "Toggle the sidebar"
-msgstr "사이드바 토글"
-
 msgid "Toggle views"
 msgstr "보기 전환"
 

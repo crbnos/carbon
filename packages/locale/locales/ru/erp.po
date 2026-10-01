@@ -19131,9 +19131,6 @@ msgstr "Переключить уровень"
 msgid "Toggle Properties"
 msgstr "Переключить свойства"
 
-msgid "Toggle the sidebar"
-msgstr "Переключить боковую панель"
-
 msgid "Toggle views"
 msgstr "Переключить представления"
 

@@ -19131,9 +19131,6 @@ msgstr "Ebene umschalten"
 msgid "Toggle Properties"
 msgstr "Eigenschaften umschalten"
 
-msgid "Toggle the sidebar"
-msgstr "Seitenleiste umschalten"
-
 msgid "Toggle views"
 msgstr "Ansichten umschalten"
 

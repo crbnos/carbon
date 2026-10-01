@@ -19131,9 +19131,6 @@ msgstr "स्तर टॉगल करें"
 msgid "Toggle Properties"
 msgstr "गुण टॉगल करें"
 
-msgid "Toggle the sidebar"
-msgstr "साइडबार को टॉगल करें"
-
 msgid "Toggle views"
 msgstr "दृश्य टॉगल करें"
 

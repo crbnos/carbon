@@ -19131,9 +19131,6 @@ msgstr "切换级别"
 msgid "Toggle Properties"
 msgstr "切换属性"
 
-msgid "Toggle the sidebar"
-msgstr "切换侧边栏"
-
 msgid "Toggle views"
 msgstr "切换视图"
 

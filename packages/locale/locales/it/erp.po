@@ -19131,9 +19131,6 @@ msgstr "Attiva/disattiva livello"
 msgid "Toggle Properties"
 msgstr "Attiva/Disattiva Proprietà"
 
-msgid "Toggle the sidebar"
-msgstr "Attiva/disattiva la barra laterale"
-
 msgid "Toggle views"
 msgstr "Attiva/disattiva visualizzazioni"
 

@@ -19131,9 +19131,6 @@ msgstr "レベルを切り替え"
 msgid "Toggle Properties"
 msgstr "プロパティを切り替え"
 
-msgid "Toggle the sidebar"
-msgstr "サイドバーの表示/非表示を切り替える"
-
 msgid "Toggle views"
 msgstr "ビューを切り替える"
 
