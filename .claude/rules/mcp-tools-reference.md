@@ -29,13 +29,19 @@ catalogSearch, toolMetadata }`.
 > `build` and `test` of the two packages that read the manifest — `erp` and `docs`
 > (`apps/erp/turbo.json`, `docs/turbo.json`) — depend on it, so a fresh clone
 > regenerates it before anything imports it. The task is CACHED: its `inputs` in
-> `turbo.json` are the files the generator opens (service / `mcp.server` / models /
-> module `types.ts`, the generated DB types, `mcp-blocked-tools.ts`,
-> `mcp-exposure.ts`, `packages/api/src`, `scripts/lib`), so with none of those
-> changed turbo restores both output files in milliseconds instead of spending ~20s.
-> A file the generator starts reading must be added to that list, or a cache hit
-> restores a stale manifest. Types it reaches only THROUGH the compiler (a return
-> type declared in another package) are deliberately not inputs.
+> `turbo.json` are every `.ts` file under `apps/erp/app/modules`, the app's
+> `types` and `utils`, the generated DB types, the two `mcp-*` lib files,
+> `scripts/lib`, and the `src` of each package a `*.models.ts` imports. With none
+> of those changed turbo restores both output files in milliseconds instead of
+> spending ~20s. The validators are why the list is that wide: the generator
+> EXECUTES every models file, so an enum array in `sales.utils.ts` or a helper in
+> `@carbon/utils` can change a schema. Listing only service/models files made such
+> a change a cache hit that restored a STALE manifest, which the build then
+> bundled. `apps/erp/test/mcp-manifest-cache-inputs.test.ts` fails when a models
+> file imports something the inputs do not cover; the manifest trigger in
+> `.husky/pre-commit` names the same set. Types reached only through the compiler
+> (a return type declared in a package no models file imports) are still not
+> inputs.
 > The committed record of the published contract is its small companion
 > `tool-manifest.digest.json`: one line per operation carrying classification,
 > permission, injectAuth, argument count and a hash of the schema, so a contract
@@ -495,11 +501,11 @@ exports into the same module namespace), and writes `apps/erp/app/routes/api+/mc
   branch on every create, matches zero rows and returns PGRST116. The generator
   records how to decide in the manifest entry's `upsert` (also in the digest), and
   fails generation for a branching upsert it cannot give a rule to:
-  - **By `id`** (`{ keys: ["id"] }`, 75 tools) — read off the parameter's TYPE
+  - **By `id`** (`{ keys: ["id"] }`, most upserts) — read off the parameter's TYPE
     (`idDistinguishesUpdate`, `service-ast.ts`): every union member that requires
     `updatedBy` has an `id`, and no other member requires one. Sending `id` means
     update; omitting it means create.
-  - **By lookup** (`lookups: [{ table, match }]`, 15 tools) — declared on the
+  - **By lookup** (`lookups: [{ table, match }]`, the rest) — declared on the
     function with `@mcp key <table> <column>[=<field>], …` when the payload
     cannot say: a part's `id` is its part number on create and its item id (or
     part number) on update, so `upsertPart` carries `@mcp key item id` and
@@ -508,7 +514,11 @@ exports into the same module namespace), and writes `apps/erp/app/routes/api+/mc
     client, scoped to the caller's company (the table must have `companyId`), and
     updates when it exists.
   `resolveUpsertOperation` (`api+/v1+/lib/dispatch.server.ts`) applies the rule —
-  a missing or empty key is a create without asking the database — then stamps
+  a missing or empty key is a create without asking the database. The key is
+  read from the RECORD only: the body's top level, the payload parameter's
+  wrapper (`{ job: { id } }`), or a lone unnamed wrapper. Never from any other
+  nested object — `{ name, customFields: { id } }` was once read as an update.
+  It then stamps
   `createdBy` and suppresses `updatedBy` on create, the reverse on update. The
   key field's schema `description` says what sending it does. These tools used
   to require `_operation: "create" | "update"`; no schema publishes it now, but

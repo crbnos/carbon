@@ -2703,3 +2703,53 @@ awaited.
 drawer (`foo.tsx` + `foo.new.tsx`). A list loader reads the whole query string, so it passes
 `search: "all"`. A loader that reads the pathname, a cookie or a header must not use the
 helper.
+
+## A cached generator's inputs are everything it executes, not everything it parses
+
+**Context:** The MCP manifest generator was made a cached Turborepo task with `inputs`
+listing the service, models and `types.ts` files it parses.
+
+**Problem:** It also EXECUTES every `*.models.ts` to convert the zod validators, so the
+schemas depend on whatever those files import: `sales.utils.ts`, `accounting.utils.ts`,
+`samplingStandards`, `@carbon/utils`. A change to one of those was a cache hit; turbo
+restored the old manifest (and the old committed digest) over the working tree, and the
+build bundled it. Uncached, this could not happen.
+
+**Rule:** Before caching a task, list what it loads and runs, not only what it reads on
+purpose, and pin that list with a test against the task's real imports. If the true set
+cannot be named, leave the task uncached.
+
+**Applies to:** `//#generate:mcp` in `turbo.json` (pinned by
+`apps/erp/test/mcp-manifest-cache-inputs.test.ts`), and any task given `inputs`.
+
+## A key looked up "anywhere in the payload" finds the wrong one
+
+**Context:** The API dispatcher decides whether an upsert creates or updates from the
+record's `id`. It looked for `id` at the top level and then inside any nested object, to
+support `{ job: { id } }`.
+
+**Problem:** `{ name: "x", customFields: { id: "z" } }` matched the nested `id`, so a
+create was stamped as an update and went down the service's update branch.
+
+**Rule:** Read a record's key only where the record can be: the body itself or the wrapper
+named by the service's payload parameter. A search that descends into arbitrary objects
+will eventually match user data.
+
+**Applies to:** `resolveUpsertOperation` / `recordField` in
+`apps/erp/app/routes/api+/v1+/lib/dispatch.server.ts`.
+
+## A git merge can move a doc comment onto a different function
+
+**Context:** Every API tool is declared by an `@mcp` line in its function's doc comment.
+Main inserted a new function directly under an existing doc block.
+
+**Problem:** The merge was clean, but the doc block (and its `@mcp` line) now sat above
+the NEW function, and the function it described had none. That function silently stopped
+being a tool. Nothing fails: an untagged export is simply not exposed.
+
+**Rule:** After merging into a branch that touches service files, regenerate the manifest
+and diff the tool NAMES against the pre-merge list. A name that disappears is a displaced
+tag until proven otherwise.
+
+**Applies to:** `apps/erp/app/modules/*/*.service.ts`, `pnpm run generate:mcp`.
+
