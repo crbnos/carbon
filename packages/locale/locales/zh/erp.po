@@ -4454,11 +4454,20 @@ msgstr "复制API密钥"
 msgid "Copy batch number"
 msgstr "复制生产批次号"
 
+msgid "Copy change notice unique identifier"
+msgstr ""
+
 msgid "Copy company unique identifier"
 msgstr "复制公司唯一标识符"
 
 msgid "Copy consumable number"
 msgstr "复制耗材编号"
+
+msgid "Copy consumable unique identifier"
+msgstr ""
+
+msgid "Copy customer unique identifier"
+msgstr ""
 
 msgid "Copy dispatch ID"
 msgstr "复制维护工单ID"
@@ -4483,6 +4492,9 @@ msgstr "复制问题唯一标识符"
 
 msgid "Copy Job number"
 msgstr "复制工作单号"
+
+msgid "Copy job unique identifier"
+msgstr ""
 
 msgid "Copy link"
 msgstr "复制链接"
@@ -4562,6 +4574,15 @@ msgstr "复制程序文件名"
 msgid "Copy procedure unique identifier"
 msgstr "复制程序文件唯一标识符"
 
+msgid "Copy Purchase Invoice unique identifier"
+msgstr ""
+
+msgid "Copy purchase order unique identifier"
+msgstr ""
+
+msgid "Copy purchase return order unique identifier"
+msgstr ""
+
 msgid "Copy Quality Document"
 msgstr "复制质量文件"
 
@@ -4571,17 +4592,38 @@ msgstr "复制报价"
 msgid "Copy Quote number"
 msgstr "复制报价单号"
 
+msgid "Copy quote unique identifier"
+msgstr ""
+
 msgid "Copy return number"
 msgstr "复制退货编号"
 
+msgid "Copy RFQ unique identifier"
+msgstr ""
+
 msgid "Copy RMA number"
 msgstr "复制 RMA 编号"
+
+msgid "Copy Sales Invoice unique identifier"
+msgstr ""
+
+msgid "Copy sales order unique identifier"
+msgstr ""
+
+msgid "Copy sales return order unique identifier"
+msgstr ""
 
 msgid "Copy service number"
 msgstr "复制服务编号"
 
 msgid "Copy service unique identifier"
 msgstr "复制服务唯一标识符"
+
+msgid "Copy supplier quote unique identifier"
+msgstr ""
+
+msgid "Copy supplier unique identifier"
+msgstr ""
 
 msgid "Copy this item's pricing to another scope."
 msgstr "将此项目的定价复制到另一个范围。"
@@ -12768,6 +12810,7 @@ msgstr "出"
 
 msgid "Out of calibration"
 msgstr ""
+
 msgid "Outbound"
 msgstr "出库"
 

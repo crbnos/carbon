@@ -4454,11 +4454,20 @@ msgstr "Copy API Key"
 msgid "Copy batch number"
 msgstr "Copy batch number"
 
+msgid "Copy change notice unique identifier"
+msgstr "Copy change notice unique identifier"
+
 msgid "Copy company unique identifier"
 msgstr "Copy company unique identifier"
 
 msgid "Copy consumable number"
 msgstr "Copy consumable number"
+
+msgid "Copy consumable unique identifier"
+msgstr "Copy consumable unique identifier"
+
+msgid "Copy customer unique identifier"
+msgstr "Copy customer unique identifier"
 
 msgid "Copy dispatch ID"
 msgstr "Copy dispatch ID"
@@ -4483,6 +4492,9 @@ msgstr "Copy issue unique identifier"
 
 msgid "Copy Job number"
 msgstr "Copy Job number"
+
+msgid "Copy job unique identifier"
+msgstr "Copy job unique identifier"
 
 msgid "Copy link"
 msgstr "Copy link"
@@ -4562,6 +4574,15 @@ msgstr "Copy procedure name"
 msgid "Copy procedure unique identifier"
 msgstr "Copy procedure unique identifier"
 
+msgid "Copy Purchase Invoice unique identifier"
+msgstr "Copy Purchase Invoice unique identifier"
+
+msgid "Copy purchase order unique identifier"
+msgstr "Copy purchase order unique identifier"
+
+msgid "Copy purchase return order unique identifier"
+msgstr "Copy purchase return order unique identifier"
+
 msgid "Copy Quality Document"
 msgstr "Copy Quality Document"
 
@@ -4571,17 +4592,38 @@ msgstr "Copy Quote"
 msgid "Copy Quote number"
 msgstr "Copy Quote number"
 
+msgid "Copy quote unique identifier"
+msgstr "Copy quote unique identifier"
+
 msgid "Copy return number"
 msgstr "Copy return number"
 
+msgid "Copy RFQ unique identifier"
+msgstr "Copy RFQ unique identifier"
+
 msgid "Copy RMA number"
 msgstr "Copy RMA number"
+
+msgid "Copy Sales Invoice unique identifier"
+msgstr "Copy Sales Invoice unique identifier"
+
+msgid "Copy sales order unique identifier"
+msgstr "Copy sales order unique identifier"
+
+msgid "Copy sales return order unique identifier"
+msgstr "Copy sales return order unique identifier"
 
 msgid "Copy service number"
 msgstr "Copy service number"
 
 msgid "Copy service unique identifier"
 msgstr "Copy service unique identifier"
+
+msgid "Copy supplier quote unique identifier"
+msgstr "Copy supplier quote unique identifier"
+
+msgid "Copy supplier unique identifier"
+msgstr "Copy supplier unique identifier"
 
 msgid "Copy this item's pricing to another scope."
 msgstr "Copy this item's pricing to another scope."
@@ -12768,6 +12810,7 @@ msgstr "Out"
 
 msgid "Out of calibration"
 msgstr "Out of calibration"
+
 msgid "Outbound"
 msgstr "Outbound"
 

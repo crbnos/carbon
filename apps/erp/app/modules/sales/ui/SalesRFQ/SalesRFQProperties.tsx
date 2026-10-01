@@ -12,7 +12,7 @@ import {
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useCallback, useEffect } from "react";
-import { LuCopy, LuLink } from "react-icons/lu";
+import { LuCopy, LuKeySquare, LuLink } from "react-icons/lu";
 import { useFetcher, useParams } from "react-router";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
@@ -129,6 +129,24 @@ const SalesRFQProperties = () => {
               </TooltipTrigger>
               <TooltipContent>
                 <span>Copy link to RFQ</span>
+              </TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  aria-label={t`Copy`}
+                  size="sm"
+                  className="p-1"
+                  onClick={() => copyToClipboard(rfqId)}
+                >
+                  <LuKeySquare className="w-3 h-3" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <span>
+                  <Trans>Copy RFQ unique identifier</Trans>
+                </span>
               </TooltipContent>
             </Tooltip>
             <Tooltip>

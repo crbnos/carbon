@@ -13,7 +13,13 @@ import {
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useCallback, useEffect } from "react";
-import { LuCopy, LuInfo, LuLink, LuRefreshCcw } from "react-icons/lu";
+import {
+  LuCopy,
+  LuInfo,
+  LuKeySquare,
+  LuLink,
+  LuRefreshCcw
+} from "react-icons/lu";
 import { useFetcher, useParams } from "react-router";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
@@ -136,6 +142,24 @@ const SalesInvoiceProperties = () => {
               </TooltipTrigger>
               <TooltipContent>
                 <span>Copy link to Sales Invoice</span>
+              </TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  aria-label={t`Copy`}
+                  size="sm"
+                  className="p-1"
+                  onClick={() => copyToClipboard(invoiceId)}
+                >
+                  <LuKeySquare className="w-3 h-3" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <span>
+                  <Trans>Copy Sales Invoice unique identifier</Trans>
+                </span>
               </TooltipContent>
             </Tooltip>
             <Tooltip>

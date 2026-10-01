@@ -26,7 +26,7 @@ import {
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { LuCopy, LuLink, LuUnlink2 } from "react-icons/lu";
+import { LuCopy, LuKeySquare, LuLink, LuUnlink2 } from "react-icons/lu";
 import { RiProgress8Line } from "react-icons/ri";
 import { useFetcher, useParams } from "react-router";
 import { z } from "zod";
@@ -246,6 +246,24 @@ const PurchaseReturnOrderProperties = () => {
               <TooltipContent>
                 <span>
                   <Trans>Copy link to supplier return</Trans>
+                </span>
+              </TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  aria-label={t`Copy`}
+                  size="sm"
+                  className="p-1"
+                  onClick={() => copyToClipboard(id)}
+                >
+                  <LuKeySquare className="w-3 h-3" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <span>
+                  <Trans>Copy purchase return order unique identifier</Trans>
                 </span>
               </TooltipContent>
             </Tooltip>

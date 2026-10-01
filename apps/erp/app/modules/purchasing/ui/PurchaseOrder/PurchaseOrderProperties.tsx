@@ -20,6 +20,7 @@ import {
   LuCopy,
   LuExternalLink,
   LuInfo,
+  LuKeySquare,
   LuLink,
   LuRefreshCcw
 } from "react-icons/lu";
@@ -157,6 +158,24 @@ const PurchaseOrderProperties = () => {
               </TooltipTrigger>
               <TooltipContent>
                 <span>Copy link to Purchase Order</span>
+              </TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  aria-label={t`Copy`}
+                  size="sm"
+                  className="p-1"
+                  onClick={() => copyToClipboard(orderId)}
+                >
+                  <LuKeySquare className="w-3 h-3" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <span>
+                  <Trans>Copy purchase order unique identifier</Trans>
+                </span>
               </TooltipContent>
             </Tooltip>
             <Tooltip>

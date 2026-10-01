@@ -4454,11 +4454,20 @@ msgstr "Skopiuj klucz API"
 msgid "Copy batch number"
 msgstr "Skopiuj numer partii produkcyjnej"
 
+msgid "Copy change notice unique identifier"
+msgstr ""
+
 msgid "Copy company unique identifier"
 msgstr "Skopiuj unikalny identyfikator firmy"
 
 msgid "Copy consumable number"
 msgstr "Skopiuj numer materiału eksploatacyjnego"
+
+msgid "Copy consumable unique identifier"
+msgstr ""
+
+msgid "Copy customer unique identifier"
+msgstr ""
 
 msgid "Copy dispatch ID"
 msgstr "Skopiuj identyfikator zlecenia utrzymania ruchu"
@@ -4483,6 +4492,9 @@ msgstr "Skopiuj unikalny identyfikator problemu"
 
 msgid "Copy Job number"
 msgstr "Skopiuj numer zadania"
+
+msgid "Copy job unique identifier"
+msgstr ""
 
 msgid "Copy link"
 msgstr "Skopiuj link"
@@ -4562,6 +4574,15 @@ msgstr "Skopiuj nazwę procedury"
 msgid "Copy procedure unique identifier"
 msgstr "Skopiuj unikatowy identyfikator procedury"
 
+msgid "Copy Purchase Invoice unique identifier"
+msgstr ""
+
+msgid "Copy purchase order unique identifier"
+msgstr ""
+
+msgid "Copy purchase return order unique identifier"
+msgstr ""
+
 msgid "Copy Quality Document"
 msgstr "Skopiuj Dokument Jakości"
 
@@ -4571,17 +4592,38 @@ msgstr "Skopiuj Ofertę"
 msgid "Copy Quote number"
 msgstr "Skopiuj numer oferty"
 
+msgid "Copy quote unique identifier"
+msgstr ""
+
 msgid "Copy return number"
 msgstr "Skopiuj numer zwrotu"
 
+msgid "Copy RFQ unique identifier"
+msgstr ""
+
 msgid "Copy RMA number"
 msgstr "Skopiuj numer RMA"
+
+msgid "Copy Sales Invoice unique identifier"
+msgstr ""
+
+msgid "Copy sales order unique identifier"
+msgstr ""
+
+msgid "Copy sales return order unique identifier"
+msgstr ""
 
 msgid "Copy service number"
 msgstr "Skopiuj numer usługi"
 
 msgid "Copy service unique identifier"
 msgstr "Skopiuj unikalny identyfikator usługi"
+
+msgid "Copy supplier quote unique identifier"
+msgstr ""
+
+msgid "Copy supplier unique identifier"
+msgstr ""
 
 msgid "Copy this item's pricing to another scope."
 msgstr "Skopiuj wycenę tego artykułu na inny zakres."
@@ -12768,6 +12810,7 @@ msgstr "Poza"
 
 msgid "Out of calibration"
 msgstr ""
+
 msgid "Outbound"
 msgstr "Wychodzące"
 

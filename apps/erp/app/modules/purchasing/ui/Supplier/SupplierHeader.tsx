@@ -27,6 +27,9 @@ import {
   ModalOverlay,
   ModalTitle,
   Status,
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
   useDisclosure,
   VStack
 } from "@carbon/react";
@@ -36,6 +39,7 @@ import {
   LuCheckCheck,
   LuClipboardCheck,
   LuEllipsisVertical,
+  LuKeySquare,
   LuTrash,
   LuX
 } from "react-icons/lu";
@@ -57,6 +61,7 @@ import type { SupplierDetail } from "~/modules/purchasing";
 import { SupplierStatusIndicator } from "~/modules/purchasing/ui/Supplier/SupplierStatusIndicator";
 import type { action } from "~/routes/x+/settings+/tags";
 import { path } from "~/utils/path";
+import { copyToClipboard } from "~/utils/string";
 import SupplierApprovalModal from "./SupplierApprovalModal";
 
 const SupplierHeader = () => {
@@ -174,6 +179,20 @@ const SupplierHeader = () => {
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <IconButton
+                      aria-label={t`Copy supplier unique identifier`}
+                      icon={<LuKeySquare />}
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => copyToClipboard(supplierId)}
+                    />
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <Trans>Copy supplier unique identifier</Trans>
+                  </TooltipContent>
+                </Tooltip>
               </CardTitle>
             </CardHeader>
             <CardAction className="flex h-full flex-row items-center gap-2">

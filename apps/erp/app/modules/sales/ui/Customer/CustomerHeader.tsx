@@ -17,12 +17,15 @@ import {
   HStack,
   IconButton,
   Status,
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
   useDisclosure,
   VStack
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useCallback } from "react";
-import { LuEllipsisVertical, LuTrash } from "react-icons/lu";
+import { LuEllipsisVertical, LuKeySquare, LuTrash } from "react-icons/lu";
 import { useFetcher, useParams } from "react-router";
 import { z } from "zod";
 import { EmployeeAvatar } from "~/components";
@@ -34,6 +37,7 @@ import { ConfirmDelete } from "~/components/Modals";
 import { usePermissions, useRouteData, useUser } from "~/hooks";
 import type { action } from "~/routes/x+/settings+/tags";
 import { path } from "~/utils/path";
+import { copyToClipboard } from "~/utils/string";
 import type { CustomerDetail, CustomerStatus } from "../../types";
 
 const CustomerHeader = () => {
@@ -120,6 +124,20 @@ const CustomerHeader = () => {
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <IconButton
+                      aria-label={t`Copy customer unique identifier`}
+                      icon={<LuKeySquare />}
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => copyToClipboard(customerId)}
+                    />
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <Trans>Copy customer unique identifier</Trans>
+                  </TooltipContent>
+                </Tooltip>
               </CardTitle>
             </CardHeader>
           </HStack>

@@ -4454,11 +4454,20 @@ msgstr "API कुंजी की नकल करें"
 msgid "Copy batch number"
 msgstr "बैच नंबर कॉपी करें"
 
+msgid "Copy change notice unique identifier"
+msgstr ""
+
 msgid "Copy company unique identifier"
 msgstr "कंपनी के अद्वितीय पहचानकर्ता की प्रतिलिपि बनाएं"
 
 msgid "Copy consumable number"
 msgstr "उपभोग्य सामग्री संख्या की नकल करें"
+
+msgid "Copy consumable unique identifier"
+msgstr ""
+
+msgid "Copy customer unique identifier"
+msgstr ""
 
 msgid "Copy dispatch ID"
 msgstr "रखरखाव कार्य ID की नकल करें"
@@ -4483,6 +4492,9 @@ msgstr "समस्या की अद्वितीय पहचान क�
 
 msgid "Copy Job number"
 msgstr "जॉब नंबर कॉपी करें"
+
+msgid "Copy job unique identifier"
+msgstr ""
 
 msgid "Copy link"
 msgstr "लिंक कॉपी करें"
@@ -4562,6 +4574,15 @@ msgstr "कार्यविधि का नाम नकल करें"
 msgid "Copy procedure unique identifier"
 msgstr "कार्यविधि की अद्वितीय पहचान की नकल करें"
 
+msgid "Copy Purchase Invoice unique identifier"
+msgstr ""
+
+msgid "Copy purchase order unique identifier"
+msgstr ""
+
+msgid "Copy purchase return order unique identifier"
+msgstr ""
+
 msgid "Copy Quality Document"
 msgstr "गुणवत्ता दस्तावेज़ कॉपी करें"
 
@@ -4571,17 +4592,38 @@ msgstr "उद्धरण की प्रतिलिपि बनाएँ"
 msgid "Copy Quote number"
 msgstr "उद्धरण संख्या कॉपी करें"
 
+msgid "Copy quote unique identifier"
+msgstr ""
+
 msgid "Copy return number"
 msgstr "रिटर्न नंबर कॉपी करें"
 
+msgid "Copy RFQ unique identifier"
+msgstr ""
+
 msgid "Copy RMA number"
 msgstr "RMA नंबर कॉपी करें"
+
+msgid "Copy Sales Invoice unique identifier"
+msgstr ""
+
+msgid "Copy sales order unique identifier"
+msgstr ""
+
+msgid "Copy sales return order unique identifier"
+msgstr ""
 
 msgid "Copy service number"
 msgstr "सेवा संख्या कॉपी करें"
 
 msgid "Copy service unique identifier"
 msgstr "सेवा अनन्य पहचानकर्ता कॉपी करें"
+
+msgid "Copy supplier quote unique identifier"
+msgstr ""
+
+msgid "Copy supplier unique identifier"
+msgstr ""
 
 msgid "Copy this item's pricing to another scope."
 msgstr "इस आइटम की मूल्य निर्धारण को दूसरे स्कोप में कॉपी करें।"
@@ -12768,6 +12810,7 @@ msgstr "बाहर"
 
 msgid "Out of calibration"
 msgstr ""
+
 msgid "Outbound"
 msgstr "निर्गामी"
 

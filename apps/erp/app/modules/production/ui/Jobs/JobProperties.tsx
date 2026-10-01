@@ -28,7 +28,7 @@ import {
 import { Trans, useLingui } from "@lingui/react/macro";
 import type { PostgrestResponse } from "@supabase/supabase-js";
 import { Suspense, useCallback, useEffect, useState } from "react";
-import { LuCopy, LuLink, LuUnlink2 } from "react-icons/lu";
+import { LuCopy, LuKeySquare, LuLink, LuUnlink2 } from "react-icons/lu";
 import { RiProgress8Line } from "react-icons/ri";
 import { Await, useFetcher, useParams } from "react-router";
 import { z } from "zod";
@@ -214,6 +214,24 @@ const JobProperties = () => {
               <TooltipContent>
                 <span>
                   <Trans>Copy link to Job</Trans>
+                </span>
+              </TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  aria-label={t`Copy`}
+                  size="sm"
+                  className="p-1"
+                  onClick={() => copyToClipboard(jobId)}
+                >
+                  <LuKeySquare className="w-3 h-3" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <span>
+                  <Trans>Copy job unique identifier</Trans>
                 </span>
               </TooltipContent>
             </Tooltip>

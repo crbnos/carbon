@@ -4454,11 +4454,20 @@ msgstr "Скопировать API-ключ"
 msgid "Copy batch number"
 msgstr "Копировать номер серии"
 
+msgid "Copy change notice unique identifier"
+msgstr ""
+
 msgid "Copy company unique identifier"
 msgstr "Скопировать уникальный идентификатор организации"
 
 msgid "Copy consumable number"
 msgstr "Скопировать номер расходного материала"
+
+msgid "Copy consumable unique identifier"
+msgstr ""
+
+msgid "Copy customer unique identifier"
+msgstr ""
 
 msgid "Copy dispatch ID"
 msgstr "Скопировать ID заявки на техобслуживание"
@@ -4483,6 +4492,9 @@ msgstr "Скопировать уникальный идентификатор �
 
 msgid "Copy Job number"
 msgstr "Скопировать номер задания"
+
+msgid "Copy job unique identifier"
+msgstr ""
 
 msgid "Copy link"
 msgstr "Копировать ссылку"
@@ -4562,6 +4574,15 @@ msgstr "Копировать имя процедуры"
 msgid "Copy procedure unique identifier"
 msgstr "Скопировать уникальный идентификатор процедуры"
 
+msgid "Copy Purchase Invoice unique identifier"
+msgstr ""
+
+msgid "Copy purchase order unique identifier"
+msgstr ""
+
+msgid "Copy purchase return order unique identifier"
+msgstr ""
+
 msgid "Copy Quality Document"
 msgstr "Копировать документ качества"
 
@@ -4571,17 +4592,38 @@ msgstr "Копировать предложение"
 msgid "Copy Quote number"
 msgstr "Копировать номер предложения"
 
+msgid "Copy quote unique identifier"
+msgstr ""
+
 msgid "Copy return number"
 msgstr "Скопировать номер возврата"
 
+msgid "Copy RFQ unique identifier"
+msgstr ""
+
 msgid "Copy RMA number"
 msgstr "Скопировать номер RMA"
+
+msgid "Copy Sales Invoice unique identifier"
+msgstr ""
+
+msgid "Copy sales order unique identifier"
+msgstr ""
+
+msgid "Copy sales return order unique identifier"
+msgstr ""
 
 msgid "Copy service number"
 msgstr "Копировать номер услуги"
 
 msgid "Copy service unique identifier"
 msgstr "Копировать уникальный идентификатор услуги"
+
+msgid "Copy supplier quote unique identifier"
+msgstr ""
+
+msgid "Copy supplier unique identifier"
+msgstr ""
 
 msgid "Copy this item's pricing to another scope."
 msgstr "Скопировать ценообразование этой номенклатуры в другую область."
@@ -12768,6 +12810,7 @@ msgstr "Вне"
 
 msgid "Out of calibration"
 msgstr ""
+
 msgid "Outbound"
 msgstr "Исходящие"
 

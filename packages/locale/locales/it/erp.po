@@ -4454,11 +4454,20 @@ msgstr "Copia Chiave API"
 msgid "Copy batch number"
 msgstr "Copia numero lotto di produzione"
 
+msgid "Copy change notice unique identifier"
+msgstr ""
+
 msgid "Copy company unique identifier"
 msgstr "Copia identificatore univoco azienda"
 
 msgid "Copy consumable number"
 msgstr "Copia il numero del materiale di consumo"
+
+msgid "Copy consumable unique identifier"
+msgstr ""
+
+msgid "Copy customer unique identifier"
+msgstr ""
 
 msgid "Copy dispatch ID"
 msgstr "Copia l'ID dell'intervento di manutenzione"
@@ -4483,6 +4492,9 @@ msgstr "Copia identificatore univoco del problema"
 
 msgid "Copy Job number"
 msgstr "Copia numero lavoro"
+
+msgid "Copy job unique identifier"
+msgstr ""
 
 msgid "Copy link"
 msgstr "Copia link"
@@ -4562,6 +4574,15 @@ msgstr "Copia nome procedura"
 msgid "Copy procedure unique identifier"
 msgstr "Copia identificatore univoco della procedura"
 
+msgid "Copy Purchase Invoice unique identifier"
+msgstr ""
+
+msgid "Copy purchase order unique identifier"
+msgstr ""
+
+msgid "Copy purchase return order unique identifier"
+msgstr ""
+
 msgid "Copy Quality Document"
 msgstr "Copia Documento Qualità"
 
@@ -4571,17 +4592,38 @@ msgstr "Copia Preventivo"
 msgid "Copy Quote number"
 msgstr "Copia numero preventivo"
 
+msgid "Copy quote unique identifier"
+msgstr ""
+
 msgid "Copy return number"
 msgstr "Copia numero reso"
 
+msgid "Copy RFQ unique identifier"
+msgstr ""
+
 msgid "Copy RMA number"
 msgstr "Copia numero RMA"
+
+msgid "Copy Sales Invoice unique identifier"
+msgstr ""
+
+msgid "Copy sales order unique identifier"
+msgstr ""
+
+msgid "Copy sales return order unique identifier"
+msgstr ""
 
 msgid "Copy service number"
 msgstr "Copia numero servizio"
 
 msgid "Copy service unique identifier"
 msgstr "Copia identificatore univoco del servizio"
+
+msgid "Copy supplier quote unique identifier"
+msgstr ""
+
+msgid "Copy supplier unique identifier"
+msgstr ""
 
 msgid "Copy this item's pricing to another scope."
 msgstr "Copia la determinazione dei prezzi di questo articolo a un altro ambito."
@@ -12768,6 +12810,7 @@ msgstr "Fuori"
 
 msgid "Out of calibration"
 msgstr ""
+
 msgid "Outbound"
 msgstr "In uscita"
 
