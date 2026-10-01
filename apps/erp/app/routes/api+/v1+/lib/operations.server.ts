@@ -10,10 +10,55 @@ import raw from "../../mcp+/lib/tool-metadata.json";
 
 export const OPERATIONS = (raw as { tools: ManifestEntry[] }).tools;
 
-/** operation name (`module_func`) → entry. */
-export const operationsByName = new Map<string, ManifestEntry>(
+/**
+ * Deprecated operation names → the operation that replaced them. An operation's
+ * name is derived from the module its service lives in, so moving a function
+ * between modules renames the published operation; an entry here keeps the old
+ * name working for MCP `call_tool`/`describe_tool`, the agent, workflows and
+ * `POST /api/v1/{module}/{operation}`. The alias runs the NEW operation in full —
+ * its schema, its dispatch and its permission — so it grants nothing the new name
+ * does not. Aliases are never listed in the catalog (search, docs); the OpenAPI
+ * spec carries them marked `deprecated`.
+ */
+export const OPERATION_ALIASES: Readonly<Record<string, string>> = {
+  // Inspection plans moved from production to quality.
+  production_getInspectionDocument: "quality_getInspectionDocument",
+  production_getInspectionDocuments: "quality_getInspectionDocuments",
+  production_getInspectionDocumentsForItem:
+    "quality_getInspectionDocumentsForItem",
+  production_getInspectionFeatures: "quality_getInspectionFeatures",
+  production_getBalloons: "quality_getBalloons",
+  production_getInspectionPlan: "quality_getInspectionPlan",
+  production_saveInspectionDocumentAtomic:
+    "quality_saveInspectionDocumentAtomic",
+  production_updateInspectionDocumentSampling:
+    "quality_updateInspectionDocumentSampling",
+  production_upsertInspectionDocument: "quality_upsertInspectionDocument",
+  production_deleteInspectionDocument: "quality_deleteInspectionDocument"
+};
+
+const canonicalByName = new Map<string, ManifestEntry>(
   OPERATIONS.map((op) => [op.name, op])
 );
+
+/** The aliases that resolve: a real operation of the same name always wins, and
+ *  an alias whose target is gone is dropped (dispatch-parity.test.ts fails on
+ *  both, so neither ships). */
+export const liveOperationAliases: ReadonlyArray<[string, ManifestEntry]> =
+  Object.entries(OPERATION_ALIASES).flatMap(([alias, target]) => {
+    const op = canonicalByName.get(target);
+    return op && !canonicalByName.has(alias)
+      ? [[alias, op] as [string, ManifestEntry]]
+      : [];
+  });
+
+/** operation name (`module_func`) → entry, deprecated aliases included (an alias
+ *  maps to its replacement's entry, so `entry.name` is the CURRENT name). A lookup
+ *  table only — iterate `OPERATIONS` for the catalog. */
+export const operationsByName = new Map<string, ManifestEntry>([
+  ...canonicalByName,
+  ...liveOperationAliases
+]);
 
 /** The bare operation id (the name without its `module_` prefix). */
 export function operationId(op: ManifestEntry): string {

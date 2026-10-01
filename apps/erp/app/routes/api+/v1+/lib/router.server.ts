@@ -7,6 +7,7 @@ import { jsonSchema, jsonSchemaInput } from "@carbon/api/schema";
 import { base, gate, mapThrownErrors } from "./base.server";
 import { dispatchOperation } from "./dispatch.server";
 import {
+  liveOperationAliases,
   OPERATIONS,
   operationId,
   outputSchema,
@@ -23,7 +24,15 @@ const RESERVED_KEYS = new Set([
   "toJSON"
 ]);
 
-function buildProcedure(meta: ManifestEntry, id: string) {
+// `module`/`id` name the route; `meta` is the operation it runs. They differ only
+// for a deprecated alias, which keeps its old path but runs (and is gated as) its
+// replacement.
+function buildProcedure(
+  meta: ManifestEntry,
+  module: string,
+  id: string,
+  deprecated = false
+) {
   return (
     base
       // Outside the gate so it also covers anything the gate itself throws
@@ -32,9 +41,13 @@ function buildProcedure(meta: ManifestEntry, id: string) {
       .use(gate(meta))
       .route({
         method: "POST",
-        path: `/${meta.module}/${id}`,
-        tags: [meta.module],
-        summary: meta.description
+        path: `/${module}/${id}`,
+        tags: [module],
+        summary: deprecated
+          ? `${meta.description} (deprecated: use /${meta.module}/${operationId(meta)})`
+          : meta.description,
+        // Only when set — `deprecated: false` would land on every operation.
+        ...(deprecated ? { deprecated: true } : {})
       })
       // Input validates; output does NOT — shapeHttpBody rewrites the body, so a
       // correct response does not match the declared response schema.
@@ -56,14 +69,27 @@ export const router: Record<
     string,
     Record<string, ReturnType<typeof buildProcedure>>
   > = {};
-  for (const meta of OPERATIONS) {
-    const id = operationId(meta);
-    if (RESERVED_KEYS.has(id) || RESERVED_KEYS.has(meta.module)) {
+  const add = (
+    module: string,
+    id: string,
+    meta: ManifestEntry,
+    deprecated: boolean
+  ) => {
+    if (RESERVED_KEYS.has(id) || RESERVED_KEYS.has(module)) {
       throw new Error(
-        `Carbon API operation "${meta.name}" collides with a reserved oRPC router key.`
+        `Carbon API operation "${module}_${id}" collides with a reserved oRPC router key.`
       );
     }
-    (out[meta.module] ??= {})[id] = buildProcedure(meta, id);
+    (out[module] ??= {})[id] = buildProcedure(meta, module, id, deprecated);
+  };
+  for (const meta of OPERATIONS) {
+    add(meta.module, operationId(meta), meta, false);
+  }
+  // Aliases are `<module>_<operation>` like every operation name; module names
+  // carry no underscore, so the first one splits it.
+  for (const [alias, meta] of liveOperationAliases) {
+    const split = alias.indexOf("_");
+    add(alias.slice(0, split), alias.slice(split + 1), meta, true);
   }
   return out;
 })();

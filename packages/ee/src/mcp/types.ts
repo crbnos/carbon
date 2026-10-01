@@ -35,6 +35,8 @@ export interface McpServerDeps<Ctx> {
     ctx: Ctx,
     args?: string | Record<string, unknown>
   ) => Promise<McpCallResult>;
+  /** Includes deprecated aliases, keyed by the OLD name and mapped to the
+   *  replacement's entry — so `get(name).name !== name` marks an alias. */
   operationsByName: Map<string, ManifestEntry>;
   isListOperation: (meta: ManifestEntry) => boolean;
   isMcpBlockedTool: (name: string) => boolean;
