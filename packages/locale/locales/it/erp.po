@@ -4319,6 +4319,9 @@ msgstr "materiale di consumo"
 msgid "Consumable"
 msgstr "Materiale di consumo"
 
+msgid "Consumable Cost"
+msgstr ""
+
 msgid "Consumable Details"
 msgstr "Dettagli del materiale di consumo"
 
@@ -4438,6 +4441,9 @@ msgstr "Converti le proposte MRP in ordini di acquisto e ordini di produzione."
 
 msgid "Convert to Quote"
 msgstr "Converti in Preventivo"
+
+msgid "Converted Total Price"
+msgstr ""
 
 msgid "Converting…"
 msgstr "Conversione in corso…"
@@ -9181,6 +9187,9 @@ msgstr "Includi Inattivi"
 msgid "Included"
 msgstr "Incluso"
 
+msgid "Includes bought and picked parts"
+msgstr ""
+
 msgid "Includes tax and shipping costs"
 msgstr "Include imposta e spese di spedizione"
 
@@ -9904,6 +9913,12 @@ msgstr "Scostamento manodopera e macchina"
 msgid "Labor & Machine Variance (default)"
 msgstr "Scostamento manodopera e macchina (predefinito)"
 
+msgid "Labor Costs"
+msgstr ""
+
+msgid "Labor Hours"
+msgstr ""
+
 msgid "Labor rate"
 msgstr "Tariffa manodopera"
 
@@ -10375,6 +10390,12 @@ msgstr "Gli ID degli articoli in minuscole sono consentiti"
 msgid "Machine"
 msgstr "Macchina"
 
+msgid "Machine Costs"
+msgstr ""
+
+msgid "Machine Hours"
+msgstr ""
+
 msgid "Machine rate"
 msgstr "Tariffa macchina"
 
@@ -10616,6 +10637,12 @@ msgstr "Cronologia tassi di mercato (per USD)"
 msgid "Marks the person off for every day in the range. They won't be scheduled while they're away."
 msgstr "Segna la persona come assente per ogni giorno nell'intervallo. Non verranno programmati mentre sono via."
 
+msgid "Markup by Category"
+msgstr ""
+
+msgid "Markup Percent"
+msgstr ""
+
 msgid "Master gauge"
 msgstr "Strumento di misurazione master"
 
@@ -10660,6 +10687,9 @@ msgstr "Materiale"
 
 msgid "Material"
 msgstr "Materiale"
+
+msgid "Material Cost"
+msgstr ""
 
 msgid "Material Dimension"
 msgstr "Dimensione Materiale"
@@ -11157,6 +11187,9 @@ msgstr "Variazione netta"
 
 msgid "Net Income"
 msgstr "Proventi netti"
+
+msgid "Net Unit Price"
+msgstr ""
 
 msgid "Never"
 msgstr "Mai"
@@ -12974,6 +13007,9 @@ msgstr "Parte"
 msgid "Part Being Replaced"
 msgstr "Componente Sostituito"
 
+msgid "Part Cost"
+msgstr ""
+
 msgid "Part Details"
 msgstr "Dettagli Parte"
 
@@ -13752,6 +13788,9 @@ msgstr "Produzione: app shop-floor e pianificazione"
 
 msgid "Profile"
 msgstr "Profilo"
+
+msgid "Profit Percent"
+msgstr ""
 
 msgid "Progress"
 msgstr "Progresso"
@@ -14793,6 +14832,9 @@ msgstr "Rimuovi ordinamento per colonna"
 
 msgid "Remove station"
 msgstr "Rimuovi stazione"
+
+msgid "Remove this item"
+msgstr ""
 
 msgid "Remove this storage type from all referencing storage units and delete it. This cannot be undone."
 msgstr "Rimuovi questo tipo di stoccaggio da tutte le unità di stoccaggio che lo referenziano ed eliminalo. Questa azione non può essere annullata."
@@ -16041,6 +16083,9 @@ msgstr "Seleziona un'operazione…"
 msgid "Select an option"
 msgstr "Seleziona un'opzione"
 
+msgid "Select at least one item to accept the quote"
+msgstr ""
+
 msgid "Select at least one line to convert"
 msgstr "Seleziona almeno una riga da convertire"
 
@@ -16655,6 +16700,9 @@ msgstr "Mostra numeri di tracciamento disponibili"
 
 msgid "Show Customer IDs"
 msgstr "Mostra ID Cliente"
+
+msgid "Show Details"
+msgstr ""
 
 msgid "Show Durations"
 msgstr "Mostra durate"
@@ -19158,6 +19206,9 @@ msgstr "Dettagli Strumento"
 msgid "Tool ID"
 msgstr "ID Strumento"
 
+msgid "Tooling Cost"
+msgstr ""
+
 msgid "tools"
 msgstr "Strumenti"
 
@@ -19182,11 +19233,17 @@ msgstr "Importo Totale"
 msgid "Total capitalized cost of the asset (purchase price plus freight, install, and other costs that become part of book value)."
 msgstr "Costo totale capitalizzato dell'asset (prezzo di acquisto più trasporto, installazione e altri costi che diventano parte del valore netto contabile)."
 
+msgid "Total Direct Cost"
+msgstr ""
+
 msgid "Total discount"
 msgstr "Sconto totale"
 
 msgid "Total Due"
 msgstr "Totale Dovuto"
+
+msgid "Total Estimated Cost"
+msgstr ""
 
 msgid "Total expected production units for units-of-production depreciation; cost is spread per unit produced."
 msgstr "Unità di produzione totali previste per ammortamento delle unità di produzione; il costo è distribuito per unità prodotta."
@@ -19194,11 +19251,23 @@ msgstr "Unità di produzione totali previste per ammortamento delle unità di pr
 msgid "Total Hours"
 msgstr "Ore totali"
 
+msgid "Total Indirect Cost"
+msgstr ""
+
+msgid "Total Material Cost"
+msgstr ""
+
 msgid "Total Minutes"
 msgstr "Minuti totali"
 
+msgid "Total Outside Cost"
+msgstr ""
+
 msgid "Total Price"
 msgstr "Prezzo Totale"
+
+msgid "Total Profit"
+msgstr ""
 
 msgid "Total quantity"
 msgstr "Quantità totale"

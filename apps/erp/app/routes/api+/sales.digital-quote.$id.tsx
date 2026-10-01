@@ -92,6 +92,15 @@ export async function action(args: ActionFunctionArgs) {
 
       const selectedLines = parseResult.data;
 
+      if (
+        !Object.values(selectedLines).some((line) => (line.quantity ?? 0) > 0)
+      ) {
+        return {
+          success: false,
+          message: "Select at least one item to accept the quote."
+        };
+      }
+
       // Unauthenticated endpoint: the name becomes a storage key segment.
       const uploadFileName =
         file instanceof File ? safeStorageFileName(file.name) : null;

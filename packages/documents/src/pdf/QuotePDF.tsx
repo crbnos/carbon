@@ -69,7 +69,16 @@ const QuotePDF = ({
 
   // A No Quote line is the company's own decision not to bid — the customer
   // never sees it, its prices, or its lead time.
-  const quoteLines = allQuoteLines.filter((line) => line.status !== "No Quote");
+  // Quantity breaks are stored in entry order; the PDF renders them
+  // least-to-most, and the single-quantity totals below use the smallest
+  // break — matching the in-app summary and the share page, which sort too.
+  const quoteLines = allQuoteLines
+    .filter((line) => line.status !== "No Quote")
+    .map((line) =>
+      line.quantity
+        ? { ...line, quantity: [...line.quantity].sort((a, b) => a - b) }
+        : line
+    );
   const quotedLineIds = new Set(quoteLines.map((line) => line.id));
   const quoteLinePrices = allQuoteLinePrices.filter((price) =>
     quotedLineIds.has(price.quoteLineId)

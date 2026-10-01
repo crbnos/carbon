@@ -610,6 +610,12 @@ serve(async (req: Request) => {
               selectedLines[line.id].quantity > 0
           );
 
+          // Never create an empty order: the share page gates Accept, but this
+          // payload comes from an unauthenticated endpoint.
+          if (selectedQuoteLines.length === 0) {
+            throw new Error("No quote lines selected to convert");
+          }
+
           // Services are never shipped — a service-only order goes straight to
           // "To Invoice" so it isn't stuck waiting on a shipment that can't happen.
           const hasShippableLine = selectedQuoteLines.some(

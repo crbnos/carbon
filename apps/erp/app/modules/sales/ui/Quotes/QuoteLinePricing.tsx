@@ -74,6 +74,7 @@ import type {
   QuotationLine,
   QuotationPrice
 } from "../../types";
+import { CostRowLabel, costRowLabelCellClass } from "./CostRowLabel";
 import QuoteLeadTimeModal from "./QuoteLeadTimeModal";
 
 const logger = getLogger("erp", "sales", "quote-line-pricing");
@@ -107,7 +108,7 @@ const QuoteLinePricing = ({
   const hasCalculatedCost = line.methodType !== "Pull from Inventory";
   // Present quantity breaks least-to-greatest; every column loop and the
   // derived `...ByQuantity` arrays read from this one variable.
-  const quantities = [...(line.quantity ?? [1])].sort((a, b) => a - b);
+  const quantities = [...new Set(line.quantity ?? [1])].sort((a, b) => a - b);
 
   const { quoteId, lineId } = useParams();
   if (!quoteId) throw new Error("Could not find quoteId");
@@ -882,30 +883,37 @@ const QuoteLinePricing = ({
         )}
       </HStack>
       <CardContent>
-        <Table>
+        <Table className="[&_td]:whitespace-nowrap [&_td]:tabular-nums">
           <Thead>
             <Tr>
-              <Th className="w-[300px]" />
+              <Th className={costRowLabelCellClass} />
               {quantities.map((quantity) => (
-                <Th key={quantity.toString()}>{quantity}</Th>
+                <Th
+                  key={quantity.toString()}
+                  className="min-w-[140px] tabular-nums"
+                >
+                  {quantity}
+                </Th>
               ))}
             </Tr>
           </Thead>
           <Tbody>
             <Tr>
-              <Td className="border-r border-border group-hover:bg-muted/50">
-                <HStack className="w-full justify-between ">
-                  <span>Lead Time</span>
-                  {isEmployee && hasCalculatedCost && (
-                    <IconButton
-                      aria-label={t`Predict lead time`}
-                      icon={<LuCalendarClock />}
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setLeadTimeModalOpen(true)}
-                    />
-                  )}
-                </HStack>
+              <Td className={costRowLabelCellClass}>
+                <CostRowLabel
+                  label={<Trans>Lead Time</Trans>}
+                  badge={
+                    isEmployee && hasCalculatedCost ? (
+                      <IconButton
+                        aria-label={t`Predict lead time`}
+                        icon={<LuCalendarClock />}
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setLeadTimeModalOpen(true)}
+                      />
+                    ) : undefined
+                  }
+                />
               </Td>
               {quantities.map((quantity) => {
                 const leadTime = editableFields.prices[quantity]?.leadTime ?? 0;
@@ -933,10 +941,8 @@ const QuoteLinePricing = ({
             </Tr>
             {isEmployee && (
               <Tr className={cn(hasCalculatedCost && "[&>td]:bg-muted/60")}>
-                <Td className="border-r border-border group-hover:bg-muted/50">
-                  <HStack className="w-full justify-between ">
-                    <span>Unit Cost</span>
-                  </HStack>
+                <Td className={costRowLabelCellClass}>
+                  <CostRowLabel label={<Trans>Unit Cost</Trans>} />
                 </Td>
 
                 {unitCostsByQuantity.map((cost, index) => {
@@ -970,18 +976,18 @@ const QuoteLinePricing = ({
 
             {isEmployee && (
               <Tr>
-                <Td className="border-r border-border">
-                  <HStack className="w-full justify-between ">
-                    <span className="flex items-center justify-start gap-2">
-                      Markup Percent
+                <Td className={costRowLabelCellClass}>
+                  <CostRowLabel
+                    label={<Trans>Markup Percent</Trans>}
+                    info={
                       <Tooltip>
                         <TooltipTrigger tabIndex={-1}>
                           <LuInfo className="w-4 h-4" />
                         </TooltipTrigger>
                         <TooltipContent>(Price - Cost) / Cost</TooltipContent>
                       </Tooltip>
-                    </span>
-                  </HStack>
+                    }
+                  />
                 </Td>
                 {quantities.map((quantity, index) => {
                   const price = editableFields.prices[quantity]?.unitPrice ?? 0;
@@ -1016,7 +1022,7 @@ const QuoteLinePricing = ({
             {isEmployee && hasCalculatedCost && (
               <>
                 <Tr>
-                  <Td className="border-r border-border">
+                  <Td className={costRowLabelCellClass}>
                     <Button
                       variant="ghost"
                       className="-ml-3"
@@ -1031,7 +1037,7 @@ const QuoteLinePricing = ({
                         setShowCategoryMarkups(!showCategoryMarkups)
                       }
                     >
-                      Markup by Category
+                      <Trans>Markup by Category</Trans>
                     </Button>
                   </Td>
                   {quantities.map((quantity) => (
@@ -1042,8 +1048,8 @@ const QuoteLinePricing = ({
                   visibleCategories.map((category: CostCategoryKey) => {
                     return (
                       <Tr key={category}>
-                        <Td className="border-r border-border pl-8">
-                          <span>{categoryLabels[category]}</span>
+                        <Td className={cn(costRowLabelCellClass, "pl-8")}>
+                          <CostRowLabel label={categoryLabels[category]} />
                         </Td>
                         {quantities.map((quantity, index) => {
                           const categoryCost =
@@ -1084,10 +1090,8 @@ const QuoteLinePricing = ({
               </>
             )}
             <Tr>
-              <Td className="border-r border-border">
-                <HStack className="w-full justify-between ">
-                  <span>Unit Price</span>
-                </HStack>
+              <Td className={costRowLabelCellClass}>
+                <CostRowLabel label={<Trans>Unit Price</Trans>} />
               </Td>
               {quantities.map((quantity) => {
                 const price = editableFields.prices[quantity]?.unitPrice;
@@ -1111,10 +1115,8 @@ const QuoteLinePricing = ({
             </Tr>
 
             <Tr>
-              <Td className="border-r border-border">
-                <HStack className="w-full justify-between ">
-                  <span>Discount Percent</span>
-                </HStack>
+              <Td className={costRowLabelCellClass}>
+                <CostRowLabel label={<Trans>Discount Percent</Trans>} />
               </Td>
               {quantities.map((quantity, index) => {
                 const discount =
@@ -1137,10 +1139,8 @@ const QuoteLinePricing = ({
               })}
             </Tr>
             <Tr className="[&>td]:bg-muted/60">
-              <Td className="border-r border-border group-hover:bg-muted/50">
-                <HStack className="w-full justify-between ">
-                  <span>Net Unit Price</span>
-                </HStack>
+              <Td className={costRowLabelCellClass}>
+                <CostRowLabel label={<Trans>Net Unit Price</Trans>} />
               </Td>
               {netPricesByQuantity.map((price, index) => {
                 return (
@@ -1155,18 +1155,18 @@ const QuoteLinePricing = ({
 
             {isEmployee && (
               <Tr className="[&>td]:bg-muted/60">
-                <Td className="border-r border-border group-hover:bg-muted/50">
-                  <HStack className="w-full justify-between ">
-                    <span className="flex items-center justify-start gap-2">
-                      Profit Percent
+                <Td className={costRowLabelCellClass}>
+                  <CostRowLabel
+                    label={<Trans>Profit Percent</Trans>}
+                    info={
                       <Tooltip>
                         <TooltipTrigger tabIndex={-1}>
                           <LuInfo className="w-4 h-4" />
                         </TooltipTrigger>
                         <TooltipContent>(Price - Cost) / Price</TooltipContent>
                       </Tooltip>
-                    </span>
-                  </HStack>
+                    }
+                  />
                 </Td>
                 {netPricesByQuantity.map((price, index) => {
                   const cost = unitCostsByQuantity[index];
@@ -1191,10 +1191,8 @@ const QuoteLinePricing = ({
             )}
             {isEmployee && (
               <Tr className="[&>td]:bg-muted/60">
-                <Td className="border-r border-border group-hover:bg-muted/50">
-                  <HStack className="w-full justify-between ">
-                    <span>Total Profit</span>
-                  </HStack>
+                <Td className={costRowLabelCellClass}>
+                  <CostRowLabel label={<Trans>Total Profit</Trans>} />
                 </Td>
                 {quantities.map((quantity, index) => {
                   const price = netPricesByQuantity[index];
@@ -1219,10 +1217,8 @@ const QuoteLinePricing = ({
               </Tr>
             )}
             <Tr>
-              <Td className="border-r border-border">
-                <HStack className="w-full justify-between ">
-                  <span>Shipping Cost</span>
-                </HStack>
+              <Td className={costRowLabelCellClass}>
+                <CostRowLabel label={<Trans>Shipping Cost</Trans>} />
               </Td>
               {quantities.map((quantity) => {
                 const shippingCost =
@@ -1257,7 +1253,7 @@ const QuoteLinePricing = ({
                   fetcher.formData?.get("id") === chargeId;
                 return (
                   <Tr key={chargeId}>
-                    <Td className="border-r border-border">
+                    <Td className={costRowLabelCellClass}>
                       <HStack className="w-full justify-between ">
                         <Input
                           defaultValue={charge.description}
@@ -1347,7 +1343,7 @@ const QuoteLinePricing = ({
                 );
               })}
             <Tr>
-              <Td className="border-r border-border">
+              <Td className={costRowLabelCellClass}>
                 <HStack className="w-full justify-between ">
                   <fetcher.Form
                     method="post"
@@ -1385,10 +1381,8 @@ const QuoteLinePricing = ({
               })}
             </Tr>
             <Tr className="[&>td]:bg-muted/60">
-              <Td className="border-r border-border group-hover:bg-muted/50">
-                <HStack className="w-full justify-between ">
-                  <span>Subtotal</span>
-                </HStack>
+              <Td className={costRowLabelCellClass}>
+                <CostRowLabel label={<Trans>Subtotal</Trans>} />
               </Td>
               {quantities.map((quantity, index) => {
                 const price =
@@ -1405,10 +1399,8 @@ const QuoteLinePricing = ({
               })}
             </Tr>
             <Tr className="[&>td]:bg-muted/60">
-              <Td className="border-r border-border group-hover:bg-muted/50">
-                <HStack className="w-full justify-between ">
-                  <span>Tax Percent</span>
-                </HStack>
+              <Td className={costRowLabelCellClass}>
+                <CostRowLabel label={<Trans>Tax Percent</Trans>} />
               </Td>
               {quantities.map((quantity, index) => {
                 const taxPercent = editableFields.taxPercent;
@@ -1433,10 +1425,8 @@ const QuoteLinePricing = ({
               })}
             </Tr>
             <Tr className="font-bold [&>td]:bg-muted/60">
-              <Td className="border-r border-border group-hover:bg-muted/50">
-                <HStack className="w-full justify-between ">
-                  <span>Total Price</span>
-                </HStack>
+              <Td className={costRowLabelCellClass}>
+                <CostRowLabel label={<Trans>Total Price</Trans>} />
               </Td>
               {quantities.map((quantity, index) => {
                 const subtotal =
@@ -1461,10 +1451,8 @@ const QuoteLinePricing = ({
             {routeData?.quote?.currencyCode !== baseCurrency && (
               <>
                 <Tr className="[&>td]:bg-muted/60">
-                  <Td className="border-r border-border group-hover:bg-muted/50">
-                    <HStack className="w-full justify-between ">
-                      <span>Exchange Rate</span>
-                    </HStack>
+                  <Td className={costRowLabelCellClass}>
+                    <CostRowLabel label={<Trans>Exchange Rate</Trans>} />
                   </Td>
                   {quantities.map((quantity, index) => {
                     const exchangeRate =
@@ -1479,10 +1467,10 @@ const QuoteLinePricing = ({
                   })}
                 </Tr>
                 <Tr className="font-bold [&>td]:bg-muted/60">
-                  <Td className="border-r border-border group-hover:bg-muted/50">
-                    <HStack className="w-full justify-between ">
-                      <span>Converted Total Price</span>
-                    </HStack>
+                  <Td className={costRowLabelCellClass}>
+                    <CostRowLabel
+                      label={<Trans>Converted Total Price</Trans>}
+                    />
                   </Td>
                   {quantities.map((quantity, index) => {
                     const subtotal =

@@ -4319,6 +4319,9 @@ msgstr "consumable"
 msgid "Consumable"
 msgstr "Consumable"
 
+msgid "Consumable Cost"
+msgstr "Consumable Cost"
+
 msgid "Consumable Details"
 msgstr "Consumable Details"
 
@@ -4438,6 +4441,9 @@ msgstr "Convert MRP suggestions into purchase orders and jobs."
 
 msgid "Convert to Quote"
 msgstr "Convert to Quote"
+
+msgid "Converted Total Price"
+msgstr "Converted Total Price"
 
 msgid "Converting…"
 msgstr "Converting…"
@@ -9181,6 +9187,9 @@ msgstr "Include Inactive"
 msgid "Included"
 msgstr "Included"
 
+msgid "Includes bought and picked parts"
+msgstr "Includes bought and picked parts"
+
 msgid "Includes tax and shipping costs"
 msgstr "Includes tax and shipping costs"
 
@@ -9904,6 +9913,12 @@ msgstr "Labor & Machine Variance"
 msgid "Labor & Machine Variance (default)"
 msgstr "Labor & Machine Variance (default)"
 
+msgid "Labor Costs"
+msgstr "Labor Costs"
+
+msgid "Labor Hours"
+msgstr "Labor Hours"
+
 msgid "Labor rate"
 msgstr "Labor rate"
 
@@ -10375,6 +10390,12 @@ msgstr "Lowercase item IDs are allowed"
 msgid "Machine"
 msgstr "Machine"
 
+msgid "Machine Costs"
+msgstr "Machine Costs"
+
+msgid "Machine Hours"
+msgstr "Machine Hours"
+
 msgid "Machine rate"
 msgstr "Machine rate"
 
@@ -10616,6 +10637,12 @@ msgstr "Market Rate History (per USD)"
 msgid "Marks the person off for every day in the range. They won't be scheduled while they're away."
 msgstr "Marks the person off for every day in the range. They won't be scheduled while they're away."
 
+msgid "Markup by Category"
+msgstr "Markup by Category"
+
+msgid "Markup Percent"
+msgstr "Markup Percent"
+
 msgid "Master gauge"
 msgstr "Master gauge"
 
@@ -10660,6 +10687,9 @@ msgstr "material"
 
 msgid "Material"
 msgstr "Material"
+
+msgid "Material Cost"
+msgstr "Material Cost"
 
 msgid "Material Dimension"
 msgstr "Material Dimension"
@@ -11157,6 +11187,9 @@ msgstr "Net Change"
 
 msgid "Net Income"
 msgstr "Net Income"
+
+msgid "Net Unit Price"
+msgstr "Net Unit Price"
 
 msgid "Never"
 msgstr "Never"
@@ -12974,6 +13007,9 @@ msgstr "Part"
 msgid "Part Being Replaced"
 msgstr "Part Being Replaced"
 
+msgid "Part Cost"
+msgstr "Part Cost"
+
 msgid "Part Details"
 msgstr "Part Details"
 
@@ -13752,6 +13788,9 @@ msgstr "Production: shop-floor app and scheduling"
 
 msgid "Profile"
 msgstr "Profile"
+
+msgid "Profit Percent"
+msgstr "Profit Percent"
 
 msgid "Progress"
 msgstr "Progress"
@@ -14793,6 +14832,9 @@ msgstr "Remove sort by column"
 
 msgid "Remove station"
 msgstr "Remove station"
+
+msgid "Remove this item"
+msgstr "Remove this item"
 
 msgid "Remove this storage type from all referencing storage units and delete it. This cannot be undone."
 msgstr "Remove this storage type from all referencing storage units and delete it. This cannot be undone."
@@ -16041,6 +16083,9 @@ msgstr "Select an operation…"
 msgid "Select an option"
 msgstr "Select an option"
 
+msgid "Select at least one item to accept the quote"
+msgstr "Select at least one item to accept the quote"
+
 msgid "Select at least one line to convert"
 msgstr "Select at least one line to convert"
 
@@ -16655,6 +16700,9 @@ msgstr "Show available tracking numbers"
 
 msgid "Show Customer IDs"
 msgstr "Show Customer IDs"
+
+msgid "Show Details"
+msgstr "Show Details"
 
 msgid "Show Durations"
 msgstr "Show Durations"
@@ -19158,6 +19206,9 @@ msgstr "Tool Details"
 msgid "Tool ID"
 msgstr "Tool ID"
 
+msgid "Tooling Cost"
+msgstr "Tooling Cost"
+
 msgid "tools"
 msgstr "tools"
 
@@ -19182,11 +19233,17 @@ msgstr "Total Amount"
 msgid "Total capitalized cost of the asset (purchase price plus freight, install, and other costs that become part of book value)."
 msgstr "Total capitalized cost of the asset (purchase price plus freight, install, and other costs that become part of book value)."
 
+msgid "Total Direct Cost"
+msgstr "Total Direct Cost"
+
 msgid "Total discount"
 msgstr "Total discount"
 
 msgid "Total Due"
 msgstr "Total Due"
+
+msgid "Total Estimated Cost"
+msgstr "Total Estimated Cost"
 
 msgid "Total expected production units for units-of-production depreciation; cost is spread per unit produced."
 msgstr "Total expected production units for units-of-production depreciation; cost is spread per unit produced."
@@ -19194,11 +19251,23 @@ msgstr "Total expected production units for units-of-production depreciation; co
 msgid "Total Hours"
 msgstr "Total Hours"
 
+msgid "Total Indirect Cost"
+msgstr "Total Indirect Cost"
+
+msgid "Total Material Cost"
+msgstr "Total Material Cost"
+
 msgid "Total Minutes"
 msgstr "Total Minutes"
 
+msgid "Total Outside Cost"
+msgstr "Total Outside Cost"
+
 msgid "Total Price"
 msgstr "Total Price"
+
+msgid "Total Profit"
+msgstr "Total Profit"
 
 msgid "Total quantity"
 msgstr "Total quantity"

@@ -4319,6 +4319,9 @@ msgstr "उपभोग्य सामग्री"
 msgid "Consumable"
 msgstr "उपभोग्य सामग्री"
 
+msgid "Consumable Cost"
+msgstr ""
+
 msgid "Consumable Details"
 msgstr "उपभोग्य सामग्री विवरण"
 
@@ -4438,6 +4441,9 @@ msgstr "MRP सुझावों को क्रय आदेश और जॉ
 
 msgid "Convert to Quote"
 msgstr "उद्धरण में परिवर्तित करें"
+
+msgid "Converted Total Price"
+msgstr ""
 
 msgid "Converting…"
 msgstr "परिवर्तित कर रहे हैं…"
@@ -9181,6 +9187,9 @@ msgstr "निष्क्रिय शामिल करें"
 msgid "Included"
 msgstr "शामिल"
 
+msgid "Includes bought and picked parts"
+msgstr ""
+
 msgid "Includes tax and shipping costs"
 msgstr "कर और शिपिंग लागत शामिल है"
 
@@ -9904,6 +9913,12 @@ msgstr "श्रम और मशीन विचलन"
 msgid "Labor & Machine Variance (default)"
 msgstr "श्रम और मशीन विचलन (डिफ़ॉल्ट)"
 
+msgid "Labor Costs"
+msgstr ""
+
+msgid "Labor Hours"
+msgstr ""
+
 msgid "Labor rate"
 msgstr "श्रम दर"
 
@@ -10375,6 +10390,12 @@ msgstr "लोअरकेस आइटम आईडी की अनुमत�
 msgid "Machine"
 msgstr "मशीन"
 
+msgid "Machine Costs"
+msgstr ""
+
+msgid "Machine Hours"
+msgstr ""
+
 msgid "Machine rate"
 msgstr "मशीन दर"
 
@@ -10616,6 +10637,12 @@ msgstr "बाज़ार दर इतिहास (प्रति USD)"
 msgid "Marks the person off for every day in the range. They won't be scheduled while they're away."
 msgstr "रेंज में प्रत्येक दिन व्यक्ति को चिह्नित करता है। वे दूर रहते हुए शेड्यूल नहीं किए जाएंगे।"
 
+msgid "Markup by Category"
+msgstr ""
+
+msgid "Markup Percent"
+msgstr ""
+
 msgid "Master gauge"
 msgstr "मास्टर गेज"
 
@@ -10660,6 +10687,9 @@ msgstr "सामग्री"
 
 msgid "Material"
 msgstr "सामग्री"
+
+msgid "Material Cost"
+msgstr ""
 
 msgid "Material Dimension"
 msgstr "सामग्री आयाम"
@@ -11157,6 +11187,9 @@ msgstr "शुद्ध परिवर्तन"
 
 msgid "Net Income"
 msgstr "शुद्ध आय"
+
+msgid "Net Unit Price"
+msgstr ""
 
 msgid "Never"
 msgstr "कभी नहीं"
@@ -12974,6 +13007,9 @@ msgstr "पार्ट"
 msgid "Part Being Replaced"
 msgstr "प्रतिस्थापित किया जा रहा पार्ट"
 
+msgid "Part Cost"
+msgstr ""
+
 msgid "Part Details"
 msgstr "भाग विवरण"
 
@@ -13752,6 +13788,9 @@ msgstr "उत्पादन: शॉप-फ्लोर ऐप और शेड
 
 msgid "Profile"
 msgstr "प्रोफ़ाइल"
+
+msgid "Profit Percent"
+msgstr ""
 
 msgid "Progress"
 msgstr "प्रगति"
@@ -14793,6 +14832,9 @@ msgstr "कॉलम के अनुसार क्रमबद्धता �
 
 msgid "Remove station"
 msgstr "स्टेशन हटाएं"
+
+msgid "Remove this item"
+msgstr ""
 
 msgid "Remove this storage type from all referencing storage units and delete it. This cannot be undone."
 msgstr "इस भंडारण प्रकार को सभी संदर्भित भंडारण इकाइयों से निकालें और इसे हटाएँ। यह पूर्ववत नहीं किया जा सकता।"
@@ -16041,6 +16083,9 @@ msgstr "एक संचालन चुनें…"
 msgid "Select an option"
 msgstr "एक विकल्प चुनें"
 
+msgid "Select at least one item to accept the quote"
+msgstr ""
+
 msgid "Select at least one line to convert"
 msgstr "परिवर्तित करने के लिए कम से कम एक पंक्ति चुनें"
 
@@ -16655,6 +16700,9 @@ msgstr "उपलब्ध ट्रैकिंग संख्याएँ द
 
 msgid "Show Customer IDs"
 msgstr "ग्राहक आईडी दिखाएं"
+
+msgid "Show Details"
+msgstr ""
 
 msgid "Show Durations"
 msgstr "अवधि दिखाएं"
@@ -19158,6 +19206,9 @@ msgstr "उपकरण विवरण"
 msgid "Tool ID"
 msgstr "टूल आईडी"
 
+msgid "Tooling Cost"
+msgstr ""
+
 msgid "tools"
 msgstr "उपकरण"
 
@@ -19182,11 +19233,17 @@ msgstr "कुल राशि"
 msgid "Total capitalized cost of the asset (purchase price plus freight, install, and other costs that become part of book value)."
 msgstr "संपत्ति की कुल पूंजीकृत लागत (खरीद मूल्य प्लस माल ढुलाई, स्थापना, और अन्य लागतें जो बही मूल्य का हिस्सा बन जाती हैं)।"
 
+msgid "Total Direct Cost"
+msgstr ""
+
 msgid "Total discount"
 msgstr "कुल छूट"
 
 msgid "Total Due"
 msgstr "कुल देय"
+
+msgid "Total Estimated Cost"
+msgstr ""
 
 msgid "Total expected production units for units-of-production depreciation; cost is spread per unit produced."
 msgstr "उत्पादन-इकाई मूल्यह्रास के लिए कुल अपेक्षित उत्पादन इकाइयां; लागत उत्पादित प्रति यूनिट फैली हुई है।"
@@ -19194,11 +19251,23 @@ msgstr "उत्पादन-इकाई मूल्यह्रास के
 msgid "Total Hours"
 msgstr "कुल घंटे"
 
+msgid "Total Indirect Cost"
+msgstr ""
+
+msgid "Total Material Cost"
+msgstr ""
+
 msgid "Total Minutes"
 msgstr "कुल मिनट"
 
+msgid "Total Outside Cost"
+msgstr ""
+
 msgid "Total Price"
 msgstr "कुल मूल्य"
+
+msgid "Total Profit"
+msgstr ""
 
 msgid "Total quantity"
 msgstr "कुल मात्रा"

@@ -4319,6 +4319,9 @@ msgstr "расходный материал"
 msgid "Consumable"
 msgstr "Расходный материал"
 
+msgid "Consumable Cost"
+msgstr ""
+
 msgid "Consumable Details"
 msgstr "Детали расходного материала"
 
@@ -4438,6 +4441,9 @@ msgstr "Преобразовывать предложения MRP в заказ�
 
 msgid "Convert to Quote"
 msgstr "Преобразовать в предложение"
+
+msgid "Converted Total Price"
+msgstr ""
 
 msgid "Converting…"
 msgstr "Преобразование…"
@@ -9181,6 +9187,9 @@ msgstr "Включить неактивные"
 msgid "Included"
 msgstr "Включено"
 
+msgid "Includes bought and picked parts"
+msgstr ""
+
 msgid "Includes tax and shipping costs"
 msgstr "Включает налоги и стоимость доставки"
 
@@ -9904,6 +9913,12 @@ msgstr "Отклонение трудозатрат и времени станк
 msgid "Labor & Machine Variance (default)"
 msgstr "Отклонение трудозатрат и времени станка (по умолчанию)"
 
+msgid "Labor Costs"
+msgstr ""
+
+msgid "Labor Hours"
+msgstr ""
+
 msgid "Labor rate"
 msgstr "Ставка трудозатрат"
 
@@ -10375,6 +10390,12 @@ msgstr "Коды элементов в нижнем регистре разре�
 msgid "Machine"
 msgstr "Станок"
 
+msgid "Machine Costs"
+msgstr ""
+
+msgid "Machine Hours"
+msgstr ""
+
 msgid "Machine rate"
 msgstr "Ставка станка"
 
@@ -10616,6 +10637,12 @@ msgstr "История рыночного курса (за USD)"
 msgid "Marks the person off for every day in the range. They won't be scheduled while they're away."
 msgstr "Отмечает человека как отсутствующего на каждый день в диапазоне. Его не будут планировать, пока он отсутствует."
 
+msgid "Markup by Category"
+msgstr ""
+
+msgid "Markup Percent"
+msgstr ""
+
 msgid "Master gauge"
 msgstr "Эталонное средство измерения"
 
@@ -10660,6 +10687,9 @@ msgstr "Материал"
 
 msgid "Material"
 msgstr "Материал"
+
+msgid "Material Cost"
+msgstr ""
 
 msgid "Material Dimension"
 msgstr "Измерение материала"
@@ -11157,6 +11187,9 @@ msgstr "Чистое изменение"
 
 msgid "Net Income"
 msgstr "Чистый доход"
+
+msgid "Net Unit Price"
+msgstr ""
 
 msgid "Never"
 msgstr "Никогда"
@@ -12974,6 +13007,9 @@ msgstr "Деталь"
 msgid "Part Being Replaced"
 msgstr "Заменяемая деталь"
 
+msgid "Part Cost"
+msgstr ""
+
 msgid "Part Details"
 msgstr "Детали детали"
 
@@ -13752,6 +13788,9 @@ msgstr "Производство: приложение для цеха и пла
 
 msgid "Profile"
 msgstr "Профиль"
+
+msgid "Profit Percent"
+msgstr ""
 
 msgid "Progress"
 msgstr "Прогресс"
@@ -14793,6 +14832,9 @@ msgstr "Убрать сортировку по столбцу"
 
 msgid "Remove station"
 msgstr "Удалить рабочее место"
+
+msgid "Remove this item"
+msgstr ""
 
 msgid "Remove this storage type from all referencing storage units and delete it. This cannot be undone."
 msgstr "Удалите этот тип хранения из всех ссылающихся единиц хранения и удалите его. Это невозможно отменить."
@@ -16041,6 +16083,9 @@ msgstr "Выберите операцию…"
 msgid "Select an option"
 msgstr "Выберите опцию"
 
+msgid "Select at least one item to accept the quote"
+msgstr ""
+
 msgid "Select at least one line to convert"
 msgstr "Выберите хотя бы одну строку для преобразования"
 
@@ -16655,6 +16700,9 @@ msgstr "Показать доступные номера отслеживани�
 
 msgid "Show Customer IDs"
 msgstr "Показывать ID Покупателей"
+
+msgid "Show Details"
+msgstr ""
 
 msgid "Show Durations"
 msgstr "Показать длительность"
@@ -19158,6 +19206,9 @@ msgstr "Детали инструмента"
 msgid "Tool ID"
 msgstr "ID инструмента"
 
+msgid "Tooling Cost"
+msgstr ""
+
 msgid "tools"
 msgstr "Инструменты"
 
@@ -19182,11 +19233,17 @@ msgstr "Общая сумма"
 msgid "Total capitalized cost of the asset (purchase price plus freight, install, and other costs that become part of book value)."
 msgstr "Общая капитализированная стоимость актива (цена покупки плюс доставка, монтаж и другие затраты, которые становятся частью балансовой стоимости)."
 
+msgid "Total Direct Cost"
+msgstr ""
+
 msgid "Total discount"
 msgstr "Общая скидка"
 
 msgid "Total Due"
 msgstr "Итого к оплате"
+
+msgid "Total Estimated Cost"
+msgstr ""
 
 msgid "Total expected production units for units-of-production depreciation; cost is spread per unit produced."
 msgstr "Общее ожидаемое количество единиц производства для амортизации по единицам продукции; себестоимость распределяется на единицу произведенной продукции."
@@ -19194,11 +19251,23 @@ msgstr "Общее ожидаемое количество единиц прои
 msgid "Total Hours"
 msgstr "Всего часов"
 
+msgid "Total Indirect Cost"
+msgstr ""
+
+msgid "Total Material Cost"
+msgstr ""
+
 msgid "Total Minutes"
 msgstr "Всего минут"
 
+msgid "Total Outside Cost"
+msgstr ""
+
 msgid "Total Price"
 msgstr "Общая цена"
+
+msgid "Total Profit"
+msgstr ""
 
 msgid "Total quantity"
 msgstr "Итого количество"

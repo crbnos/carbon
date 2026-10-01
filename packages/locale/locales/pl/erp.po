@@ -4319,6 +4319,9 @@ msgstr "materiał eksploatacyjny"
 msgid "Consumable"
 msgstr "Materiał eksploatacyjny"
 
+msgid "Consumable Cost"
+msgstr ""
+
 msgid "Consumable Details"
 msgstr "Szczegóły materiału eksploatacyjnego"
 
@@ -4438,6 +4441,9 @@ msgstr "Przekształć Propozycje MRP w Zamówienia zakupu i Zlecenia produkcyjne
 
 msgid "Convert to Quote"
 msgstr "Przekształć na ofertę"
+
+msgid "Converted Total Price"
+msgstr ""
 
 msgid "Converting…"
 msgstr "Konwertowanie…"
@@ -9181,6 +9187,9 @@ msgstr "Uwzględnij nieaktywne"
 msgid "Included"
 msgstr "Uwzględnione"
 
+msgid "Includes bought and picked parts"
+msgstr ""
+
 msgid "Includes tax and shipping costs"
 msgstr "Obejmuje podatki i koszty wysyłki"
 
@@ -9904,6 +9913,12 @@ msgstr "Robocizna i odchylenie maszyn"
 msgid "Labor & Machine Variance (default)"
 msgstr "Robocizna i odchylenie maszyn (domyślnie)"
 
+msgid "Labor Costs"
+msgstr ""
+
+msgid "Labor Hours"
+msgstr ""
+
 msgid "Labor rate"
 msgstr "Stawka robocizny"
 
@@ -10375,6 +10390,12 @@ msgstr "Identyfikatory pozycji z małymi literami są dozwolone"
 msgid "Machine"
 msgstr "Maszyna"
 
+msgid "Machine Costs"
+msgstr ""
+
+msgid "Machine Hours"
+msgstr ""
+
 msgid "Machine rate"
 msgstr "Stawka maszyny"
 
@@ -10616,6 +10637,12 @@ msgstr "Historia kursu rynkowego (za USD)"
 msgid "Marks the person off for every day in the range. They won't be scheduled while they're away."
 msgstr "Oznacza osobę jako nieobecną na każdy dzień z zakresu. Nie będą zaplanowani, gdy są nieobecni."
 
+msgid "Markup by Category"
+msgstr ""
+
+msgid "Markup Percent"
+msgstr ""
+
 msgid "Master gauge"
 msgstr "Wzorcowy przyrząd pomiarowy"
 
@@ -10660,6 +10687,9 @@ msgstr "Materiał"
 
 msgid "Material"
 msgstr "Materiał"
+
+msgid "Material Cost"
+msgstr ""
 
 msgid "Material Dimension"
 msgstr "Wymiar materiału"
@@ -11157,6 +11187,9 @@ msgstr "Zmiana netto"
 
 msgid "Net Income"
 msgstr "Przychody netto"
+
+msgid "Net Unit Price"
+msgstr ""
 
 msgid "Never"
 msgstr "Nigdy"
@@ -12974,6 +13007,9 @@ msgstr "Część"
 msgid "Part Being Replaced"
 msgstr "Część wymieniana"
 
+msgid "Part Cost"
+msgstr ""
+
 msgid "Part Details"
 msgstr "Szczegóły części"
 
@@ -13752,6 +13788,9 @@ msgstr "Produkcja: aplikacja hali produkcyjnej i planowanie"
 
 msgid "Profile"
 msgstr "Profil"
+
+msgid "Profit Percent"
+msgstr ""
 
 msgid "Progress"
 msgstr "Postęp"
@@ -14793,6 +14832,9 @@ msgstr "Usuń z listy sortowanie po kolumnie"
 
 msgid "Remove station"
 msgstr "Usuń stanowisko"
+
+msgid "Remove this item"
+msgstr ""
 
 msgid "Remove this storage type from all referencing storage units and delete it. This cannot be undone."
 msgstr "Usuń ten typ magazynowania ze wszystkich jednostek magazynowych, które go wykorzystują, i go usuń. Tej operacji nie można cofnąć."
@@ -16041,6 +16083,9 @@ msgstr "Wybierz operację…"
 msgid "Select an option"
 msgstr "Wybierz opcję"
 
+msgid "Select at least one item to accept the quote"
+msgstr ""
+
 msgid "Select at least one line to convert"
 msgstr "Wybierz co najmniej jedną pozycję do przekształcenia"
 
@@ -16655,6 +16700,9 @@ msgstr "Pokaż dostępne numery śledzenia"
 
 msgid "Show Customer IDs"
 msgstr "Pokaż identyfikatory klientów"
+
+msgid "Show Details"
+msgstr ""
 
 msgid "Show Durations"
 msgstr "Pokaż czasy trwania"
@@ -19158,6 +19206,9 @@ msgstr "Szczegóły narzędzia"
 msgid "Tool ID"
 msgstr "ID narzędzia"
 
+msgid "Tooling Cost"
+msgstr ""
+
 msgid "tools"
 msgstr "Narzędzia"
 
@@ -19182,11 +19233,17 @@ msgstr "Kwota całkowita"
 msgid "Total capitalized cost of the asset (purchase price plus freight, install, and other costs that become part of book value)."
 msgstr "Całkowity skapitalizowany koszt zasobu (cena nabycia plus fracht, instalacja i inne koszty, które stają się częścią wartości netto w księgach)."
 
+msgid "Total Direct Cost"
+msgstr ""
+
 msgid "Total discount"
 msgstr "Rabat całkowity"
 
 msgid "Total Due"
 msgstr "Suma do spłacenia"
+
+msgid "Total Estimated Cost"
+msgstr ""
 
 msgid "Total expected production units for units-of-production depreciation; cost is spread per unit produced."
 msgstr "Całkowita oczekiwana liczba jednostek produkcji do amortyzacji jednostek produkcji; koszt jest rozłożony na wyprodukowaną jednostkę."
@@ -19194,11 +19251,23 @@ msgstr "Całkowita oczekiwana liczba jednostek produkcji do amortyzacji jednoste
 msgid "Total Hours"
 msgstr "Łącznie godzin"
 
+msgid "Total Indirect Cost"
+msgstr ""
+
+msgid "Total Material Cost"
+msgstr ""
+
 msgid "Total Minutes"
 msgstr "Łącznie minut"
 
+msgid "Total Outside Cost"
+msgstr ""
+
 msgid "Total Price"
 msgstr "Cena całkowita"
+
+msgid "Total Profit"
+msgstr ""
 
 msgid "Total quantity"
 msgstr "Suma ilości"

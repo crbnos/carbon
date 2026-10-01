@@ -4319,6 +4319,9 @@ msgstr "消耗品"
 msgid "Consumable"
 msgstr "消耗品"
 
+msgid "Consumable Cost"
+msgstr ""
+
 msgid "Consumable Details"
 msgstr "消耗品の詳細"
 
@@ -4438,6 +4441,9 @@ msgstr "MRP提案を発注書と製造指図に変換します。"
 
 msgid "Convert to Quote"
 msgstr "見積に変換"
+
+msgid "Converted Total Price"
+msgstr ""
 
 msgid "Converting…"
 msgstr "変換中…"
@@ -9181,6 +9187,9 @@ msgstr "無効を含める"
 msgid "Included"
 msgstr "含まれています"
 
+msgid "Includes bought and picked parts"
+msgstr ""
+
 msgid "Includes tax and shipping costs"
 msgstr "税金と送料を含みます"
 
@@ -9904,6 +9913,12 @@ msgstr "労務・機械差異"
 msgid "Labor & Machine Variance (default)"
 msgstr "労務・機械差異（デフォルト）"
 
+msgid "Labor Costs"
+msgstr ""
+
+msgid "Labor Hours"
+msgstr ""
+
 msgid "Labor rate"
 msgstr "労務単価"
 
@@ -10375,6 +10390,12 @@ msgstr "小文字のアイテムIDが許可されます"
 msgid "Machine"
 msgstr "機械"
 
+msgid "Machine Costs"
+msgstr ""
+
+msgid "Machine Hours"
+msgstr ""
+
 msgid "Machine rate"
 msgstr "機械費率"
 
@@ -10616,6 +10637,12 @@ msgstr "市場レート履歴（対USD）"
 msgid "Marks the person off for every day in the range. They won't be scheduled while they're away."
 msgstr "範囲内のすべての日について、その人を休止します。外出中はスケジュール設定されません。"
 
+msgid "Markup by Category"
+msgstr ""
+
+msgid "Markup Percent"
+msgstr ""
+
 msgid "Master gauge"
 msgstr "標準器"
 
@@ -10660,6 +10687,9 @@ msgstr "材料"
 
 msgid "Material"
 msgstr "材料"
+
+msgid "Material Cost"
+msgstr ""
 
 msgid "Material Dimension"
 msgstr "材料ディメンション"
@@ -11157,6 +11187,9 @@ msgstr "純変化"
 
 msgid "Net Income"
 msgstr "純収益"
+
+msgid "Net Unit Price"
+msgstr ""
 
 msgid "Never"
 msgstr "なし"
@@ -12974,6 +13007,9 @@ msgstr "部品"
 msgid "Part Being Replaced"
 msgstr "置き換わる部品"
 
+msgid "Part Cost"
+msgstr ""
+
 msgid "Part Details"
 msgstr "部品詳細"
 
@@ -13752,6 +13788,9 @@ msgstr "生産: ショップフロアアプリとスケジューリング"
 
 msgid "Profile"
 msgstr "プロフィール"
+
+msgid "Profit Percent"
+msgstr ""
 
 msgid "Progress"
 msgstr "進捗"
@@ -14793,6 +14832,9 @@ msgstr "列でのソートを除去"
 
 msgid "Remove station"
 msgstr "ステーションを削除"
+
+msgid "Remove this item"
+msgstr ""
 
 msgid "Remove this storage type from all referencing storage units and delete it. This cannot be undone."
 msgstr "この保管タイプをすべての参照する保管ユニットから除去して削除する。これは元に戻せません。"
@@ -16041,6 +16083,9 @@ msgstr "操作を選択…"
 msgid "Select an option"
 msgstr "オプションを選択"
 
+msgid "Select at least one item to accept the quote"
+msgstr ""
+
 msgid "Select at least one line to convert"
 msgstr "変換する行を少なくとも1つ選択してください"
 
@@ -16655,6 +16700,9 @@ msgstr "利用可能な追跡番号を表示"
 
 msgid "Show Customer IDs"
 msgstr "得意先IDを表示"
+
+msgid "Show Details"
+msgstr ""
 
 msgid "Show Durations"
 msgstr "期間を表示"
@@ -19158,6 +19206,9 @@ msgstr "ツール詳細"
 msgid "Tool ID"
 msgstr "ツールID"
 
+msgid "Tooling Cost"
+msgstr ""
+
 msgid "tools"
 msgstr "ツール"
 
@@ -19182,11 +19233,17 @@ msgstr "合計金額"
 msgid "Total capitalized cost of the asset (purchase price plus freight, install, and other costs that become part of book value)."
 msgstr "資産の総資本化原価（購入価格、運賃、設置、および帳簿価額の一部となるその他のコスト）。"
 
+msgid "Total Direct Cost"
+msgstr ""
+
 msgid "Total discount"
 msgstr "合計値引"
 
 msgid "Total Due"
 msgstr "支払うべき合計金額"
+
+msgid "Total Estimated Cost"
+msgstr ""
 
 msgid "Total expected production units for units-of-production depreciation; cost is spread per unit produced."
 msgstr "生産単位による減価償却に対する予想生産数。原価は生産単位当たりに配分されます。"
@@ -19194,11 +19251,23 @@ msgstr "生産単位による減価償却に対する予想生産数。原価は
 msgid "Total Hours"
 msgstr "合計時間"
 
+msgid "Total Indirect Cost"
+msgstr ""
+
+msgid "Total Material Cost"
+msgstr ""
+
 msgid "Total Minutes"
 msgstr "合計分"
 
+msgid "Total Outside Cost"
+msgstr ""
+
 msgid "Total Price"
 msgstr "合計価格"
+
+msgid "Total Profit"
+msgstr ""
 
 msgid "Total quantity"
 msgstr "合計数量"

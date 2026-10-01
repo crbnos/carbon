@@ -4319,6 +4319,9 @@ msgstr "耗材"
 msgid "Consumable"
 msgstr "耗材"
 
+msgid "Consumable Cost"
+msgstr ""
+
 msgid "Consumable Details"
 msgstr "耗材详情"
 
@@ -4438,6 +4441,9 @@ msgstr "将MRP建议转换为采购订单和工单。"
 
 msgid "Convert to Quote"
 msgstr "转换为报价"
+
+msgid "Converted Total Price"
+msgstr ""
 
 msgid "Converting…"
 msgstr "转换中…"
@@ -9181,6 +9187,9 @@ msgstr "包括已停用"
 msgid "Included"
 msgstr "已包含"
 
+msgid "Includes bought and picked parts"
+msgstr ""
+
 msgid "Includes tax and shipping costs"
 msgstr "包括税费和运费"
 
@@ -9904,6 +9913,12 @@ msgstr "人工机器差异"
 msgid "Labor & Machine Variance (default)"
 msgstr "人工机器差异（默认）"
 
+msgid "Labor Costs"
+msgstr ""
+
+msgid "Labor Hours"
+msgstr ""
+
 msgid "Labor rate"
 msgstr "人工费率"
 
@@ -10375,6 +10390,12 @@ msgstr "允许使用小写物料编号"
 msgid "Machine"
 msgstr "机器"
 
+msgid "Machine Costs"
+msgstr ""
+
+msgid "Machine Hours"
+msgstr ""
+
 msgid "Machine rate"
 msgstr "机器费率"
 
@@ -10616,6 +10637,12 @@ msgstr "市场汇率历史（兑美元）"
 msgid "Marks the person off for every day in the range. They won't be scheduled while they're away."
 msgstr "在范围内的每一天都标记该人缺席。他们在外出期间不会被安排。"
 
+msgid "Markup by Category"
+msgstr ""
+
+msgid "Markup Percent"
+msgstr ""
+
 msgid "Master gauge"
 msgstr "主量具"
 
@@ -10660,6 +10687,9 @@ msgstr "原材料"
 
 msgid "Material"
 msgstr "原材料"
+
+msgid "Material Cost"
+msgstr ""
 
 msgid "Material Dimension"
 msgstr "原材料维度"
@@ -11157,6 +11187,9 @@ msgstr "净变化"
 
 msgid "Net Income"
 msgstr "净收益"
+
+msgid "Net Unit Price"
+msgstr ""
 
 msgid "Never"
 msgstr "永不"
@@ -12974,6 +13007,9 @@ msgstr "零件"
 msgid "Part Being Replaced"
 msgstr "被替代的零件"
 
+msgid "Part Cost"
+msgstr ""
+
 msgid "Part Details"
 msgstr "零件详情"
 
@@ -13752,6 +13788,9 @@ msgstr "生产：车间应用和排程"
 
 msgid "Profile"
 msgstr "个人资料"
+
+msgid "Profit Percent"
+msgstr ""
 
 msgid "Progress"
 msgstr "进度"
@@ -14793,6 +14832,9 @@ msgstr "移除按列排序"
 
 msgid "Remove station"
 msgstr "删除工位"
+
+msgid "Remove this item"
+msgstr ""
 
 msgid "Remove this storage type from all referencing storage units and delete it. This cannot be undone."
 msgstr "从所有引用此存储类型的存储单元中移除它并将其删除。此操作无法撤销。"
@@ -16041,6 +16083,9 @@ msgstr "选择一个操作…"
 msgid "Select an option"
 msgstr "选择一个选项"
 
+msgid "Select at least one item to accept the quote"
+msgstr ""
+
 msgid "Select at least one line to convert"
 msgstr "至少选择一行进行转换"
 
@@ -16655,6 +16700,9 @@ msgstr "显示可用的跟踪号码"
 
 msgid "Show Customer IDs"
 msgstr "显示客户ID"
+
+msgid "Show Details"
+msgstr ""
 
 msgid "Show Durations"
 msgstr "显示时长"
@@ -19158,6 +19206,9 @@ msgstr "工具详情"
 msgid "Tool ID"
 msgstr "工具ID"
 
+msgid "Tooling Cost"
+msgstr ""
+
 msgid "tools"
 msgstr "工具"
 
@@ -19182,11 +19233,17 @@ msgstr "总金额"
 msgid "Total capitalized cost of the asset (purchase price plus freight, install, and other costs that become part of book value)."
 msgstr "资产的总资本化成本（购买价格加运费、安装和其他成为账面价值一部分的成本）。"
 
+msgid "Total Direct Cost"
+msgstr ""
+
 msgid "Total discount"
 msgstr "总折扣"
 
 msgid "Total Due"
 msgstr "应付总额"
+
+msgid "Total Estimated Cost"
+msgstr ""
 
 msgid "Total expected production units for units-of-production depreciation; cost is spread per unit produced."
 msgstr "按产量折旧法的预期生产总单位数；成本按生产的每个单位分摊。"
@@ -19194,11 +19251,23 @@ msgstr "按产量折旧法的预期生产总单位数；成本按生产的每个
 msgid "Total Hours"
 msgstr "总计小时"
 
+msgid "Total Indirect Cost"
+msgstr ""
+
+msgid "Total Material Cost"
+msgstr ""
+
 msgid "Total Minutes"
 msgstr "总计分钟"
 
+msgid "Total Outside Cost"
+msgstr ""
+
 msgid "Total Price"
 msgstr "总价格"
+
+msgid "Total Profit"
+msgstr ""
 
 msgid "Total quantity"
 msgstr "总计数量"

@@ -4319,6 +4319,9 @@ msgstr "소모품"
 msgid "Consumable"
 msgstr "소모품"
 
+msgid "Consumable Cost"
+msgstr ""
+
 msgid "Consumable Details"
 msgstr "소모품 세부정보"
 
@@ -4438,6 +4441,9 @@ msgstr "MRP 제안을 발주서 및 작업 지시로 전환합니다."
 
 msgid "Convert to Quote"
 msgstr "견적으로 전환"
+
+msgid "Converted Total Price"
+msgstr ""
 
 msgid "Converting…"
 msgstr "변환 중…"
@@ -9181,6 +9187,9 @@ msgstr "비활성 포함"
 msgid "Included"
 msgstr "포함됨"
 
+msgid "Includes bought and picked parts"
+msgstr ""
+
 msgid "Includes tax and shipping costs"
 msgstr "세금 및 운송비 포함"
 
@@ -9904,6 +9913,12 @@ msgstr "노무 및 기계 차이"
 msgid "Labor & Machine Variance (default)"
 msgstr "노무 및 기계 차이(기본값)"
 
+msgid "Labor Costs"
+msgstr ""
+
+msgid "Labor Hours"
+msgstr ""
+
 msgid "Labor rate"
 msgstr "노무 요금"
 
@@ -10375,6 +10390,12 @@ msgstr "소문자 항목 ID는 허용됩니다"
 msgid "Machine"
 msgstr "기계"
 
+msgid "Machine Costs"
+msgstr ""
+
+msgid "Machine Hours"
+msgstr ""
+
 msgid "Machine rate"
 msgstr "기계비율"
 
@@ -10616,6 +10637,12 @@ msgstr "시장 환율 이력 (USD당)"
 msgid "Marks the person off for every day in the range. They won't be scheduled while they're away."
 msgstr "범위 내의 모든 날짜에 대해 해당 사람을 표시합니다. 그들은 휴무 중에 스케줄되지 않습니다."
 
+msgid "Markup by Category"
+msgstr ""
+
+msgid "Markup Percent"
+msgstr ""
+
 msgid "Master gauge"
 msgstr "표준 계측기"
 
@@ -10660,6 +10687,9 @@ msgstr "자재"
 
 msgid "Material"
 msgstr "자재"
+
+msgid "Material Cost"
+msgstr ""
 
 msgid "Material Dimension"
 msgstr "자재 차원"
@@ -11157,6 +11187,9 @@ msgstr "순변동"
 
 msgid "Net Income"
 msgstr "순이익"
+
+msgid "Net Unit Price"
+msgstr ""
 
 msgid "Never"
 msgstr "안 함"
@@ -12974,6 +13007,9 @@ msgstr "품목"
 msgid "Part Being Replaced"
 msgstr "대체될 부품"
 
+msgid "Part Cost"
+msgstr ""
+
 msgid "Part Details"
 msgstr "품목 세부정보"
 
@@ -13752,6 +13788,9 @@ msgstr "생산: 현장 앱 및 스케줄링"
 
 msgid "Profile"
 msgstr "프로필"
+
+msgid "Profit Percent"
+msgstr ""
 
 msgid "Progress"
 msgstr "진행 상황"
@@ -14793,6 +14832,9 @@ msgstr "열 정렬 제거"
 
 msgid "Remove station"
 msgstr "스테이션 제거"
+
+msgid "Remove this item"
+msgstr ""
 
 msgid "Remove this storage type from all referencing storage units and delete it. This cannot be undone."
 msgstr "이 저장소 유형을 모든 참조 보관 단위에서 제거하고 삭제합니다. 이는 실행 취소할 수 없습니다."
@@ -16041,6 +16083,9 @@ msgstr "작업 선택…"
 msgid "Select an option"
 msgstr "옵션 선택"
 
+msgid "Select at least one item to accept the quote"
+msgstr ""
+
 msgid "Select at least one line to convert"
 msgstr "전환할 라인을 하나 이상 선택하세요"
 
@@ -16655,6 +16700,9 @@ msgstr "가용 추적 번호 표시"
 
 msgid "Show Customer IDs"
 msgstr "고객 ID 표시"
+
+msgid "Show Details"
+msgstr ""
 
 msgid "Show Durations"
 msgstr "소요 시간 표시"
@@ -19158,6 +19206,9 @@ msgstr "공구 세부정보"
 msgid "Tool ID"
 msgstr "공구 ID"
 
+msgid "Tooling Cost"
+msgstr ""
+
 msgid "tools"
 msgstr "공구"
 
@@ -19182,11 +19233,17 @@ msgstr "총액"
 msgid "Total capitalized cost of the asset (purchase price plus freight, install, and other costs that become part of book value)."
 msgstr "자산의 총 자본화 원가(구매가격에 운송비, 설치비 등 장부가액에 포함되는 기타 비용을 더한 금액)입니다."
 
+msgid "Total Direct Cost"
+msgstr ""
+
 msgid "Total discount"
 msgstr "총 할인"
 
 msgid "Total Due"
 msgstr "총 미결액"
+
+msgid "Total Estimated Cost"
+msgstr ""
 
 msgid "Total expected production units for units-of-production depreciation; cost is spread per unit produced."
 msgstr "생산량비례법 감가상각을 위한 총 예상 생산 수량으로, 원가가 생산된 단위당 배분됩니다."
@@ -19194,11 +19251,23 @@ msgstr "생산량비례법 감가상각을 위한 총 예상 생산 수량으로
 msgid "Total Hours"
 msgstr "총 시간"
 
+msgid "Total Indirect Cost"
+msgstr ""
+
+msgid "Total Material Cost"
+msgstr ""
+
 msgid "Total Minutes"
 msgstr "총 분"
 
+msgid "Total Outside Cost"
+msgstr ""
+
 msgid "Total Price"
 msgstr "총 가격"
+
+msgid "Total Profit"
+msgstr ""
 
 msgid "Total quantity"
 msgstr "총 수량"
