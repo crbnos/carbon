@@ -4,9 +4,12 @@
 
 import {
   Badge,
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
+  Modal,
+  ModalBody,
+  ModalContent,
+  ModalDescription,
+  ModalHeader,
+  ModalTitle,
   Table,
   Tbody,
   Td,
@@ -17,8 +20,9 @@ import {
   TooltipTrigger,
   Tr
 } from "@carbon/react";
-import { Trans } from "@lingui/react/macro";
-import type { ComponentProps, ReactNode } from "react";
+import { Trans, useLingui } from "@lingui/react/macro";
+import type { ComponentProps } from "react";
+import { useState } from "react";
 import { LuCalculator, LuExternalLink } from "react-icons/lu";
 import { Link } from "react-router";
 import { useCurrencyFormatter } from "~/hooks/useCurrencyFormatter";
@@ -42,135 +46,156 @@ const STEP_BADGE: Record<
   "Final Price": null
 };
 
-type PriceTracePopoverProps = {
+const HEAD_CELL =
+  "text-xs uppercase tracking-wide text-muted-foreground whitespace-nowrap";
+
+// True when anything beyond the base price moved the price — an override,
+// a pricing rule or a configuration price.
+export function hasPriceAdjustments(
+  trace: PriceTraceStep[] | null | undefined
+) {
+  return (
+    Array.isArray(trace) &&
+    trace.some(
+      (step) => step.step !== "Base Price" && step.step !== "Final Price"
+    )
+  );
+}
+
+type PriceTraceModalProps = {
   trace: PriceTraceStep[] | null | undefined;
   currencyCode: string;
-  /** Optional trigger content. If omitted, renders a "View calc" text button. */
-  children?: ReactNode;
 };
 
-export function PriceTracePopover({
-  trace,
-  currencyCode,
-  children
-}: PriceTracePopoverProps) {
-  const currencyFormatter = useCurrencyFormatter({ currency: currencyCode });
-  const format = (value: number) => currencyFormatter.format(value);
+export function PriceTraceModal({ trace, currencyCode }: PriceTraceModalProps) {
+  const { t } = useLingui();
+  const [open, setOpen] = useState(false);
 
   const steps = Array.isArray(trace) ? trace : [];
-  if (steps.length === 0) {
-    return children ? <>{children}</> : null;
-  }
-
-  const trigger = children ? (
-    <button
-      type="button"
-      className="cursor-help decoration-dotted underline-offset-2 hover:underline"
-    >
-      {children}
-    </button>
-  ) : (
-    <button
-      type="button"
-      aria-label="How this price was calculated"
-      className="text-xxs text-muted-foreground hover:text-foreground inline-flex items-center gap-0.5"
-    >
-      <LuCalculator className="size-3" />
-    </button>
-  );
+  if (steps.length === 0) return null;
 
   return (
-    <Popover>
-      {children ? (
-        <PopoverTrigger asChild>{trigger}</PopoverTrigger>
-      ) : (
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <PopoverTrigger asChild>{trigger}</PopoverTrigger>
-          </TooltipTrigger>
-          <TooltipContent>
-            <Trans>How this price was calculated</Trans>
-          </TooltipContent>
-        </Tooltip>
+    <>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <button
+            type="button"
+            aria-label={t`How this price was calculated`}
+            className="text-xxs text-muted-foreground hover:text-foreground inline-flex items-center gap-0.5"
+            onClick={() => setOpen(true)}
+          >
+            <LuCalculator className="size-3" />
+          </button>
+        </TooltipTrigger>
+        <TooltipContent>
+          <Trans>How this price was calculated</Trans>
+        </TooltipContent>
+      </Tooltip>
+      {open && (
+        <Modal
+          open
+          onOpenChange={(isOpen) => {
+            if (!isOpen) setOpen(false);
+          }}
+        >
+          <ModalContent size="xxlarge">
+            <ModalHeader>
+              <ModalTitle>
+                <Trans>Pricing Trace</Trans>
+              </ModalTitle>
+              <ModalDescription>
+                <Trans>How the resolved price was calculated.</Trans>
+              </ModalDescription>
+            </ModalHeader>
+            <ModalBody>
+              <PriceTraceTable trace={steps} currencyCode={currencyCode} />
+            </ModalBody>
+          </ModalContent>
+        </Modal>
       )}
-      <PopoverContent align="end" sideOffset={8} className="max-w-[800px] p-0">
-        <div className="px-4 py-3 border-b border-border">
-          <p className="text-sm font-semibold">
-            <Trans>Pricing Trace</Trans>
-          </p>
-          <p className="text-xs text-muted-foreground mt-0.5">
-            <Trans>How the resolved price was calculated.</Trans>
-          </p>
-        </div>
-        <div className="overflow-x-auto">
-          <Table>
-            <Thead>
-              <Tr>
-                <Th className="text-xs uppercase tracking-wide text-muted-foreground whitespace-nowrap">
-                  <Trans>Step</Trans>
-                </Th>
-                <Th className="text-xs uppercase tracking-wide text-muted-foreground whitespace-nowrap">
-                  <Trans>Type</Trans>
-                </Th>
-                <Th className="text-xs uppercase tracking-wide text-muted-foreground whitespace-nowrap">
-                  <Trans>Description</Trans>
-                </Th>
-                <Th className="text-xs uppercase tracking-wide text-muted-foreground text-right whitespace-nowrap">
-                  <Trans>Change</Trans>
-                </Th>
-                <Th className="text-xs uppercase tracking-wide text-muted-foreground text-right whitespace-nowrap">
-                  <Trans>Running Total</Trans>
-                </Th>
-              </Tr>
-            </Thead>
-            <Tbody>
-              {steps.map((step, i) => {
-                const isFinal = step.step === "Final Price";
-                return (
-                  <Tr
-                    key={i}
-                    className={
-                      isFinal
-                        ? "border-t border-border font-semibold"
-                        : undefined
-                    }
-                  >
-                    <Td className="text-sm whitespace-nowrap">{step.step}</Td>
-                    <Td className="text-sm whitespace-nowrap">
-                      <StepTypeBadge step={step} />
-                    </Td>
-                    <Td
-                      className="text-sm text-muted-foreground max-w-[240px]"
-                      title={step.source}
+    </>
+  );
+}
+
+export function PriceTraceTable({
+  trace,
+  currencyCode
+}: {
+  trace: PriceTraceStep[];
+  currencyCode: string;
+}) {
+  const currencyFormatter = useCurrencyFormatter({
+    rate: true,
+    currency: currencyCode
+  });
+  const format = (value: number) => currencyFormatter.format(value);
+
+  return (
+    <div className="overflow-x-auto rounded-lg border border-border">
+      <Table>
+        <Thead>
+          <Tr>
+            <Th className={HEAD_CELL}>
+              <Trans>Step</Trans>
+            </Th>
+            <Th className={HEAD_CELL}>
+              <Trans>Type</Trans>
+            </Th>
+            <Th className={HEAD_CELL}>
+              <Trans>Description</Trans>
+            </Th>
+            <Th className={`${HEAD_CELL} text-right`}>
+              <Trans>Change</Trans>
+            </Th>
+            <Th className={`${HEAD_CELL} text-right`}>
+              <Trans>Running Total</Trans>
+            </Th>
+          </Tr>
+        </Thead>
+        <Tbody>
+          {trace.map((step, i) => {
+            const isFinal = step.step === "Final Price";
+            return (
+              <Tr
+                key={i}
+                className={
+                  isFinal ? "border-t border-border font-semibold" : undefined
+                }
+              >
+                <Td className="text-sm whitespace-nowrap">{step.step}</Td>
+                <Td className="text-sm whitespace-nowrap">
+                  <StepTypeBadge step={step} />
+                </Td>
+                <Td
+                  className="text-sm text-muted-foreground max-w-[320px]"
+                  title={step.source}
+                >
+                  {step.ruleId ? (
+                    <Link
+                      to={path.to.pricingRule(step.ruleId)}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="hover:text-foreground hover:underline decoration-dotted underline-offset-2 inline-flex items-center gap-1 max-w-full"
                     >
-                      {step.ruleId ? (
-                        <Link
-                          to={path.to.pricingRule(step.ruleId)}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="hover:text-foreground hover:underline decoration-dotted underline-offset-2 inline-flex items-center gap-1 max-w-full"
-                        >
-                          <span className="truncate">{step.source}</span>
-                          <LuExternalLink className="size-3 shrink-0" />
-                        </Link>
-                      ) : (
-                        <span className="block truncate">{step.source}</span>
-                      )}
-                    </Td>
-                    <Td className="text-right whitespace-nowrap">
-                      <DeltaPill value={step.adjustment} format={format} />
-                    </Td>
-                    <Td className="text-right text-sm whitespace-nowrap">
-                      {format(step.amount)}
-                    </Td>
-                  </Tr>
-                );
-              })}
-            </Tbody>
-          </Table>
-        </div>
-      </PopoverContent>
-    </Popover>
+                      <span className="truncate">{step.source}</span>
+                      <LuExternalLink className="size-3 shrink-0" />
+                    </Link>
+                  ) : (
+                    <span className="block truncate">{step.source}</span>
+                  )}
+                </Td>
+                <Td className="text-right whitespace-nowrap">
+                  <DeltaPill value={step.adjustment} format={format} />
+                </Td>
+                <Td className="text-right text-sm whitespace-nowrap tabular-nums">
+                  {format(step.amount)}
+                </Td>
+              </Tr>
+            );
+          })}
+        </Tbody>
+      </Table>
+    </div>
   );
 }
 
