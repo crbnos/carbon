@@ -233,7 +233,7 @@ export default function ServiceRoute() {
 
   return (
     <div className="flex flex-col h-[calc(100dvh-var(--topbar-height)-var(--content-inset))] overflow-hidden w-full">
-      <ServiceHeader />
+      <ServiceHeader key={itemId} />
       <div className="flex h-[calc(100dvh-var(--topbar-height)-var(--header-height)-var(--content-inset))] overflow-hidden w-full">
         <div className="flex flex-grow overflow-hidden">
           <ResizablePanels
