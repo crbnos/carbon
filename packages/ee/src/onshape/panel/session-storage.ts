@@ -77,6 +77,7 @@ export async function panelFetch(
   const controller = new AbortController();
   const caller = init.signal;
   const abortForCaller = () => controller.abort();
+  if (caller?.aborted) controller.abort();
   caller?.addEventListener("abort", abortForCaller);
   const timer =
     timeoutMs === null ? null : setTimeout(() => controller.abort(), timeoutMs);
