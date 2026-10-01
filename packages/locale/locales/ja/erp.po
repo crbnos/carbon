@@ -11264,12 +11264,6 @@ msgstr "名前"
 msgid "Name an internal project owner with decision authority"
 msgstr "意思決定権を持つ社内プロジェクト責任者を指定する"
 
-msgid "Name and description are managed in Onshape."
-msgstr "名前と説明はOnshapeで管理されています。"
-
-msgid "Name and description become editable in Carbon and stop following Onshape. Pushing this part from Onshape again links it back."
-msgstr "名前と説明はCarbonで編集可能になり、Onshapeからの更新に追従しなくなります。Onshapeからこの部品を再度プッシュすると、リンクが復活します。"
-
 msgid "Names fill in wherever those roles are referenced across the hub."
 msgstr "名前はハブ全体でそれらのロールが参照されている場所に入力されます。"
 
@@ -16890,6 +16884,12 @@ msgstr "短い"
 
 msgid "Short"
 msgstr "不足"
+
+msgid "Short and long descriptions are managed in Onshape."
+msgstr "短い説明と長い説明はOnshapeで管理されています。"
+
+msgid "Short and long descriptions become editable in Carbon and stop following Onshape. Pushing this part from Onshape again links it back."
+msgstr "短い説明と長い説明はCarbonで編集可能になり、Onshapeに追従しなくなります。Onshapeからこの部品を再度プッシュすると、リンクが復活します。"
 
 msgid "Short Description"
 msgstr "短い説明"

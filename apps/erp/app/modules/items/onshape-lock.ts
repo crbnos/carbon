@@ -66,7 +66,7 @@ export async function checkItemIdentityEdit(
     return {
       data: null,
       error: ruleError(
-        `The name and description of ${readableIds.join(", ")} are managed in Onshape. Change them there, or detach the item from Onshape to edit them in Carbon.`
+        `The short and long descriptions of ${readableIds.join(", ")} are managed in Onshape. Change them there, or detach the item from Onshape to edit them in Carbon.`
       )
     };
   }

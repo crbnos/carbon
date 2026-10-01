@@ -11264,12 +11264,6 @@ msgstr "Adı"
 msgid "Name an internal project owner with decision authority"
 msgstr "Karar verme yetkisine sahip bir dahili proje sahibi belirleyin"
 
-msgid "Name and description are managed in Onshape."
-msgstr "Ad ve açıklama Onshape'da yönetilir."
-
-msgid "Name and description become editable in Carbon and stop following Onshape. Pushing this part from Onshape again links it back."
-msgstr "Ad ve açıklama Carbon'da düzenlenebilir hale gelir ve Onshape ile senkronize olmaktan çıkar. Bu parçayı Onshape'tan tekrar gönderdiğinizde onu yeniden bağlar."
-
 msgid "Names fill in wherever those roles are referenced across the hub."
 msgstr "Adlar, bu rollerin hub genelinde referans verildiği her yerde doldurulur."
 
@@ -16890,6 +16884,12 @@ msgstr "Kısa"
 
 msgid "Short"
 msgstr "Azalt"
+
+msgid "Short and long descriptions are managed in Onshape."
+msgstr "Kısa açıklama ve uzun açıklama Onshape'da yönetilir."
+
+msgid "Short and long descriptions become editable in Carbon and stop following Onshape. Pushing this part from Onshape again links it back."
+msgstr "Kısa açıklama ve uzun açıklama Carbon'da düzenlenebilir hale gelir ve Onshape ile senkronize olmaktan çıkar. Bu parçayı Onshape'tan tekrar gönderdiğinizde yeniden bağlanır."
 
 msgid "Short Description"
 msgstr "Kısa Açıklama"

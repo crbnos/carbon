@@ -248,7 +248,7 @@ export async function action({ request }: ActionFunctionArgs) {
   ];
 
   const serviceRole = getCarbonServiceRole();
-  const [options, methods, links] = await Promise.all([
+  const [options, methods, links, itemLinks] = await Promise.all([
     loadPlanOptions(client, companyId),
     // Settled here so the other reads still resolve; a failure answers 500
     // below rather than planning every existing method as missing.
@@ -264,6 +264,19 @@ export async function action({ request }: ActionFunctionArgs) {
         .eq("integration", ONSHAPE_V2_INTEGRATION_ID)
         .eq("entityType", "item")
         .in("externalId", batch)
+    ),
+    // Which existing items carry any Onshape link: an item linked elsewhere
+    // keeps that link, so this push neither links it nor writes its text.
+    selectInBatches(
+      items.map((item) => item.id),
+      (batch) =>
+        client
+          .from("externalIntegrationMapping")
+          .select("entityId")
+          .eq("companyId", companyId)
+          .eq("integration", ONSHAPE_V2_INTEGRATION_ID)
+          .eq("entityType", "item")
+          .in("entityId", batch)
     )
   ]);
   if (!methods.byItemId) {
@@ -279,12 +292,15 @@ export async function action({ request }: ActionFunctionArgs) {
   }
   const methodByItemId = methods.byItemId;
   // A failed read would mark every reuse a conflict; say so instead.
-  if (links.error) {
+  if (links.error || itemLinks.error) {
     return data(
       { error: "Carbon couldn't read its Onshape links. Try again." },
       { status: 500 }
     );
   }
+  const linkedItemIds = new Set(
+    (itemLinks.data ?? []).map((link) => link.entityId)
+  );
   const linkedItemIdByExternalId = new Map<string, string>();
   for (const link of links.data ?? []) {
     if (link.externalId) {
@@ -341,6 +357,7 @@ export async function action({ request }: ActionFunctionArgs) {
     options,
     depth,
     linkedItemIdByExternalId,
+    linkedItemIds,
     configuration,
     reusableDraftByItemId
   });
