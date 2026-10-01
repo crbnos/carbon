@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 // The shared visual shell for every schedule-board card (operation, job, batch):
 // card background, hover, and the dark-mode elevated-surface shadow. Kept in one
 // place so the batch card is visually locked to the operation/job cards instead

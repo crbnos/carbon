@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { Json } from "@carbon/database";
 import { CreatableMultiSelect, DatePicker, ValidatedForm } from "@carbon/form";
 import {
@@ -6,6 +10,7 @@ import {
   AvatarGroupList,
   AvatarOverflowIndicator,
   Button,
+  Copy,
   HStack,
   Subheading,
   Tooltip,
@@ -17,7 +22,7 @@ import {
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { LuCopy, LuLink } from "react-icons/lu";
+import { LuCopy, LuKeySquare, LuLink } from "react-icons/lu";
 import { useFetcher, useParams } from "react-router";
 import { z } from "zod";
 import { zfd } from "zod-form-data";
@@ -196,6 +201,13 @@ const PurchasingRFQProperties = () => {
                 <span>Copy link to RFQ</span>
               </TooltipContent>
             </Tooltip>
+            <Copy
+              text={rfqId}
+              label={t`Copy RFQ unique identifier`}
+              icon={<LuKeySquare className="size-3" />}
+              variant="ghost"
+              className="w-auto"
+            />
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button

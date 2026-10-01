@@ -2631,3 +2631,44 @@ failed but extra copies appeared", check all four before assuming a browser doub
 `packages/auth/src/lib/supabase/client.ts` (`fetchWithRetry`, `isReplayable`),
 `packages/jobs/src/inngest/functions/notifications/send-{email,slack}.ts`, and any
 `<Button type="submit">` — enforced by `no-unguarded-submit` (`@carbon/checks`).
+
+## Rows inserted in one transaction share `createdAt`
+
+**Context:** The inspection plan editor listed features `ORDER BY "createdAt"`. The save
+RPC (`save_inspection_document_atomic`) creates every new feature in one transaction.
+
+**Problem:** `NOW()` is fixed for the whole transaction, so those features tie, and Postgres
+returns ties in heap order. An `UPDATE` writes a new tuple at the end of the heap, so the
+feature someone just edited dropped to the bottom after a reload. Its neighbour then sat in
+its place, and the edit read as "not saved" although the database had it.
+
+**Rule:** An `ORDER BY` on a timestamp that a batch insert sets needs a deterministic
+tiebreak (a label, a sort order, then the id). Never rely on insertion order surviving.
+
+**Applies to:** any list ordered by `createdAt` whose rows are written together — RPCs,
+Kysely transactions, `insertInto(...).values([...])`, seeds.
+
+## Single fetch re-runs every matched loader on every navigation
+
+**Context:** A click on a BOM node under a part (`/x/part/:itemId/make/:makeMethodId.data`)
+took 2.8 s in production. The Vercel log showed ~68 PostgREST calls for that one click; about
+10 belonged to the page being opened.
+
+**Problem:** React Router 7 single fetch passes `defaultShouldRevalidate = true` for every
+GET navigation, so every reused ancestor loader re-runs unless its route exports
+`shouldRevalidate`. The app shell (`x+/_layout.tsx`, ~20 queries plus an auth round-trip)
+only opted out for same-pathname navigations, and the part layouts not at all. The burst is
+what makes each call slow: the first concurrent wave ran ~200 ms per call, later ones 30–60 ms.
+
+**Rule:** A layout loader with children exports `shouldRevalidate` and re-runs only when what
+it reads changes — `isUnaffectedByNavigation(args, { params, search })` from `@carbon/utils`,
+naming the route and search params the loader reads. Mutations and
+`useRevalidator().revalidate()` still reach it. Data in a shell loader that does not gate
+rendering is returned as a promise and read with `useResolved` (`~/hooks/useResolved`), never
+awaited.
+
+**Applies to:** every route with children under `apps/erp/app/routes/x+` and
+`apps/mes/app/routes/x+` — `_layout.tsx`, `$id.tsx` with tabs, and list pages that parent a
+drawer (`foo.tsx` + `foo.new.tsx`). A list loader reads the whole query string, so it passes
+`search: "all"`. A loader that reads the pathname, a cookie or a header must not use the
+helper.

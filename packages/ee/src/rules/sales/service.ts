@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: LicenseRef-Carbon-Commercial
+// Carbon Enterprise file, licensed only under the Carbon Commercial License
+// (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
+
 // Cross-app DB queries for Sales Rules (sales-document surfaces). The ERP
 // admin UI and the enforcement actions both import from here. Mirrors
 // `../storage/service.ts`.

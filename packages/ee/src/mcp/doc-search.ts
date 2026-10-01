@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: LicenseRef-Carbon-Commercial
+// Carbon Enterprise file, licensed only under the Carbon Commercial License
+// (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
+
 // Ranked search over the docs corpus for the in-app agent's `search_docs`. Same
 // engine as the tool catalog (catalog-search.ts): zbsearch BM25 with prefix
 // expansion, SEARCH_ALIASES and word stems via expandQueryTerm, and a

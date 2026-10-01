@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 //! Async job store shared by every heavy action (convert / optimize / plan).
 //! One lifecycle for all actions: create -> compute -> finalize (submit-time
 //! URLs) -> completion callback; GET /v1/jobs/{id}?wait= serves status and the

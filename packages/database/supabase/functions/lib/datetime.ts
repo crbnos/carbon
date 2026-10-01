@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 // Deno mirror of packages/utils/src/datetime.ts — edge functions cannot import
 // workspace packages, so the ~40-line module is duplicated with the same API.
 // Keep the two files in sync. One deliberate delta: the Node copy also has

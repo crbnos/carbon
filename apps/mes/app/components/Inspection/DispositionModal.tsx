@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import {
   Hidden,
   NumberControlled,
@@ -259,7 +263,7 @@ const DispositionModal = ({
               {failedFeatureSummary && failedFeatureSummary.length > 0 && (
                 <div className="w-full rounded-md border p-3">
                   <p className="mb-1 text-xs font-medium text-muted-foreground">
-                    <Trans>Failed features</Trans>
+                    <Trans>Failed characteristics</Trans>
                   </p>
                   <ul className="flex flex-col gap-0.5">
                     {failedFeatureSummary.map((feature) => (

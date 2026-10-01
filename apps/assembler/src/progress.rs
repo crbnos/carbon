@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 //! Live per-job convert progress, served by `GET /convert/status/{jobId}` so
 //! the app can render a real phase checklist instead of a bare spinner.
 //! Entries exist only while a convert is in flight; unknown id => 404 and the

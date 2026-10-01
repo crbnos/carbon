@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 // The OpenAPI document options for the Carbon API spec — extracted from the
 // openapi.json route so the mechanics test asserts on the REAL options rather
 // than a copy that could drift.

@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 /**
  * Database client singleton for server-side usage.
  * Similar to Prisma client singleton. from https://www.prisma.io/docs/guides/react-router-7
@@ -8,12 +12,13 @@ import {
   getPostgresClient,
   getPostgresConnectionPool
 } from "@carbon/database/client";
+import { queryLog } from "@carbon/logger/tracing.server";
 import { PostgresDriver } from "kysely";
 
 const init = () => {
   const pool = getPostgresConnectionPool(10);
   // We use the PostgresDriver from Kysely here as this code only runs in Node environment
-  return getPostgresClient(pool, PostgresDriver);
+  return getPostgresClient(pool, PostgresDriver, queryLog);
 };
 
 type ClientSingleton = ReturnType<typeof init>;

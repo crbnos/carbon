@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: LicenseRef-Carbon-Commercial
+// Carbon Enterprise file, licensed only under the Carbon Commercial License
+// (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
+
 // Server-only enforcement-rule AUTHORING (storage + sales families).
 //
 // The commercial LOCK for both rule families: every write here calls

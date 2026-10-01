@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 // Pure, DB-free validation of a Dataset's internal consistency (reads the bundled
 // assembly graph.json sidecars from disk); `pnpm db:check:datasets` covers the live
 // schema. RULES order is the order violations are listed in.

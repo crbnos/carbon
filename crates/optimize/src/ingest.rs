@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 //! Mesh-format ingest: OBJ / PLY / OFF / dotbim → uncompressed, weldable GLB.
 //!
 //! Mirrors `stl_to_glb`'s strategy: every format is expanded to a flat triangle

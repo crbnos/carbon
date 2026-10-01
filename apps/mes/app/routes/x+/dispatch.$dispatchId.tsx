@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { requirePermissions } from "@carbon/auth/auth.server";
 import type { Database } from "@carbon/database";
 import { Hidden, ValidatedForm } from "@carbon/form";
@@ -17,12 +21,16 @@ import {
   useDisclosure,
   VStack
 } from "@carbon/react";
+import { isUnaffectedByNavigation } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useMemo } from "react";
 import { BsExclamationSquareFill } from "react-icons/bs";
 import { FaCheck, FaPause, FaPlay } from "react-icons/fa6";
 import { LuArrowLeft, LuCheck, LuCirclePlus, LuX } from "react-icons/lu";
-import type { LoaderFunctionArgs } from "react-router";
+import type {
+  LoaderFunctionArgs,
+  ShouldRevalidateFunction
+} from "react-router";
 import { Link, useFetcher, useLoaderData } from "react-router";
 import { z } from "zod";
 import { HighPriorityIcon } from "~/assets/icons/HighPriorityIcon";
@@ -47,6 +55,11 @@ import type {
 } from "~/services/models";
 import { useItems } from "~/stores";
 import { path } from "~/utils/path";
+
+export const shouldRevalidate: ShouldRevalidateFunction = (args) =>
+  isUnaffectedByNavigation(args, { params: ["dispatchId"] })
+    ? false
+    : args.defaultShouldRevalidate;
 
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId, userId } = await requirePermissions(request, {});

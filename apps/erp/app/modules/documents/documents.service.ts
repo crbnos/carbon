@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { Database } from "@carbon/database";
 import { storage } from "@carbon/files";
 import { isHeic } from "@carbon/files/media";
@@ -5,7 +9,7 @@ import { trigger } from "@carbon/jobs";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { z } from "zod";
 import type { GenericQueryFilters } from "~/utils/query";
-import { setGenericQueryFilters } from "~/utils/query";
+import { LIST_COUNT, setGenericQueryFilters } from "~/utils/query";
 import { sanitize } from "~/utils/supabase";
 import { getDocumentType } from "../shared/shared.service";
 import type {
@@ -71,7 +75,7 @@ export async function getDocuments(
   let query = client
     .from("documents")
     .select("*", {
-      count: "exact"
+      count: LIST_COUNT
     })
     .eq("companyId", companyId)
     .eq("active", args.active);

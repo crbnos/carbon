@@ -48,6 +48,9 @@ msgstr "\"{taskName}\" bitti — tüm {0} Kurulum Haritası öğesi yapılandır
 msgid "(excluded for this customer)"
 msgstr "(bu müşteri için hariç tutulmuş)"
 
+msgid "(Inactive)"
+msgstr "(Pasif)"
+
 #. placeholder {0}: target.slackDays
 msgid "{0, plural, one {# day of slack} other {# days of slack}}"
 msgstr "{0, plural, one {# gün esneklik payı} other {# gün esneklik payı}}"
@@ -1443,6 +1446,9 @@ msgstr "Kimlik Doğrulayıcı Uygulaması Ekle"
 msgid "Add Calibration Record"
 msgstr "Kalibrasyon Kaydı Ekle"
 
+msgid "Add Characteristic"
+msgstr "Özellik Ekle"
+
 msgid "Add Child Storage Unit"
 msgstr "Alt Depolama Birimi Ekle"
 
@@ -1472,9 +1478,6 @@ msgstr "Çalışan Ekle"
 
 msgid "Add Entry"
 msgstr "Giri Ekle"
-
-msgid "Add Feature"
-msgstr "Özellik Ekle"
 
 msgid "Add from library…"
 msgstr "Kütüphaneden ekle…"
@@ -1762,6 +1765,9 @@ msgstr "Tüm departmanlar"
 msgid "All Documents"
 msgstr "Tüm Belgeler"
 
+msgid "All gauges"
+msgstr "Tüm ölçüm aletleri"
+
 msgid "All item types"
 msgstr "Tüm Stok kartı türleri"
 
@@ -2026,6 +2032,9 @@ msgstr "Bu depolama biriminin yerleştirildiği başka bir depolama birimi (örn
 msgid "Another system is connected to Ramp as its accounting system"
 msgstr "Başka bir sistem Ramp'a muhasebe sistemi olarak bağlı"
 
+msgid "Any"
+msgstr "Herhangi bir"
+
 msgid "Any item group"
 msgstr "Herhangi bir ürün grubu"
 
@@ -2105,8 +2114,8 @@ msgstr "Tümüne uygulanır"
 msgid "Applies to all work centers"
 msgstr "Tüm iş merkezlerine uygulanır"
 
-msgid "Applies to features without their own rule, and to the lot when this plan drives an inspection."
-msgstr "Kendi kuralı olmayan özelliklere ve bu plan bir muayene yaptırdığında lota uygulanır."
+msgid "Applies to characteristics without their own rule, and to the lot when this plan drives an inspection."
+msgstr "Kendi kuralı olmayan özelliklere ve bu kontrol planı bir muayene başlattığında lota uygulanır."
 
 msgid "Apply"
 msgstr "Uygula"
@@ -3727,6 +3736,9 @@ msgstr "Tipi Değiştir"
 msgid "Changed By"
 msgstr "Değiştiren"
 
+msgid "Changed for this view only. The item's planning horizon is not updated."
+msgstr ""
+
 msgid "Changelog"
 msgstr "Değişiklik Günlüğü"
 
@@ -3744,6 +3756,15 @@ msgstr "Bunu değiştirmek parça kimliğini güncelleyecektir"
 
 msgid "Changing type resets this item's draft edits."
 msgstr "Türü değiştirmek bu öğenin taslak düzenlemelerini sıfırlar."
+
+msgid "Characteristic"
+msgstr "Özellik"
+
+msgid "Characteristic values suggested from drawing"
+msgstr "Çizimden önerilen özellik değerleri"
+
+msgid "Characteristics"
+msgstr "Özellikler"
 
 msgid "Charges"
 msgstr "Harcamalar"
@@ -3844,6 +3865,9 @@ msgstr "Son tarihi temizle"
 
 msgid "Clear Filters"
 msgstr "Filtreleri Temizle"
+
+msgid "Clear gauge"
+msgstr "Ölçüm aletini temizle"
 
 msgid "Clear search"
 msgstr "Aramayı temizle"
@@ -3946,11 +3970,11 @@ msgstr "{0} öğesini daralt"
 msgid "Collapse all"
 msgstr "Tümünü daralt"
 
+msgid "Collapse characteristics table"
+msgstr "Özellikler tablosunu daralt"
+
 msgid "Collapse Costs"
 msgstr "Maliyetleri Daralt"
-
-msgid "Collapse features table"
-msgstr "Özellikler tablosunu daralt"
 
 msgid "Collapse Labor"
 msgstr "İşçilik Süresini Daralt"
@@ -4326,6 +4350,9 @@ msgstr "sarf malzemesi"
 msgid "Consumable"
 msgstr "Sarf malzemesi"
 
+msgid "Consumable Cost"
+msgstr ""
+
 msgid "Consumable Details"
 msgstr "Sarf malzemesi Ayrıntıları"
 
@@ -4446,6 +4473,9 @@ msgstr "MRP önerilerini satın alma siparişlerine ve iş emirlerine dönüşt�
 msgid "Convert to Quote"
 msgstr "Teklife Dönüştür"
 
+msgid "Converted Total Price"
+msgstr ""
+
 msgid "Converting…"
 msgstr "Dönüştürülüyor…"
 
@@ -4457,6 +4487,9 @@ msgstr "Bağlantı panoya kopyalandı"
 
 msgid "Copied setup prompt to your clipboard"
 msgstr "Hazırlık istemi panonuza kopyalandı"
+
+msgid "Copied!"
+msgstr "Kopyalandı!"
 
 msgid "Copies a setup prompt for your AI coding tool"
 msgstr "AI kodlama aracınız için hazırlık talimatı kopyalar"
@@ -4473,11 +4506,20 @@ msgstr "API Anahtarını Kopyala"
 msgid "Copy batch number"
 msgstr "Parti Numarasını Kopyala"
 
+msgid "Copy change notice unique identifier"
+msgstr "Değişiklik bildirimi benzersiz tanıtıcısını kopyala"
+
 msgid "Copy company unique identifier"
 msgstr "Şirket benzersiz tanımlayıcısını kopyala"
 
 msgid "Copy consumable number"
 msgstr "Sarf malzemesi numarasını kopyala"
+
+msgid "Copy consumable unique identifier"
+msgstr "Sarf malzemesi benzersiz tanıtıcısını kopyala"
+
+msgid "Copy customer unique identifier"
+msgstr "Müşteri benzersiz tanıtıcısını kopyala"
 
 msgid "Copy dispatch ID"
 msgstr "Bakım emri ID'sini kopyala"
@@ -4502,6 +4544,9 @@ msgstr "Sorun benzersiz tanımlayıcısını kopyala"
 
 msgid "Copy Job number"
 msgstr "İş Numarasını Kopyala"
+
+msgid "Copy job unique identifier"
+msgstr "İş emri benzersiz tanıtıcısını kopyala"
 
 msgid "Copy link"
 msgstr "Bağlantıyı kopyala"
@@ -4581,6 +4626,15 @@ msgstr "Prosedür adını kopyala"
 msgid "Copy procedure unique identifier"
 msgstr "Prosedürün benzersiz tanımlayıcısını kopyala"
 
+msgid "Copy purchase invoice unique identifier"
+msgstr "Alış faturası benzersiz tanıtıcısını kopyala"
+
+msgid "Copy purchase order unique identifier"
+msgstr "Satın alma siparişi benzersiz tanıtıcısını kopyala"
+
+msgid "Copy purchase return order unique identifier"
+msgstr "Satın alma iade siparişi benzersiz tanıtıcısını kopyala"
+
 msgid "Copy Quality Document"
 msgstr "Kalite Belgesini Kopyala"
 
@@ -4590,17 +4644,38 @@ msgstr "Teklifi Kopyala"
 msgid "Copy Quote number"
 msgstr "Teklif numarasını kopyala"
 
+msgid "Copy quote unique identifier"
+msgstr "Teklif benzersiz tanıtıcısını kopyala"
+
 msgid "Copy return number"
 msgstr "İade numarasını kopyala"
 
+msgid "Copy RFQ unique identifier"
+msgstr "Teklif talebi benzersiz tanıtıcısını kopyala"
+
 msgid "Copy RMA number"
 msgstr "RMA numarasını kopyala"
+
+msgid "Copy sales invoice unique identifier"
+msgstr "Satış faturası benzersiz tanıtıcısını kopyala"
+
+msgid "Copy sales order unique identifier"
+msgstr "Satış siparişi benzersiz tanıtıcısını kopyala"
+
+msgid "Copy sales return order unique identifier"
+msgstr "Satış iade siparişi benzersiz tanıtıcısını kopyala"
 
 msgid "Copy service number"
 msgstr "Hizmet numarasını kopyala"
 
 msgid "Copy service unique identifier"
 msgstr "Hizmet benzersiz tanımlayıcısını kopyala"
+
+msgid "Copy supplier quote unique identifier"
+msgstr "Tedarikçi teklifi benzersiz tanıtıcısını kopyala"
+
+msgid "Copy supplier unique identifier"
+msgstr "Tedarikçi benzersiz tanıtıcısını kopyala"
 
 msgid "Copy this item's pricing to another scope."
 msgstr "Bu öğenin fiyatlandırmasını başka bir kapsamdaki konumlandırın."
@@ -4610,6 +4685,9 @@ msgstr "Bu bağlantıyı bir müşteriyle paylaşmak için kopyalayın"
 
 msgid "Copy this link to share the quote with a supplier"
 msgstr "Bu teklifi bir tedarikçiyle paylaşmak için bu bağlantıyı kopyalayın"
+
+msgid "Copy to clipboard"
+msgstr "Panoya kopyala"
 
 msgid "Copy tool number"
 msgstr "Araç numarasını kopyala"
@@ -5631,6 +5709,9 @@ msgstr "Ekipman ve tesis bakımı için varsayılan muhasebe gideri hesabı"
 msgid "Default GL expense account for periodic depreciation runs."
 msgstr "Periyodik amortisman çalışmaları için varsayılan muhasebe gideri hesabı"
 
+msgid "Default horizon (days)"
+msgstr ""
+
 msgid "Default Method"
 msgstr "Varsayılan Yöntem"
 
@@ -6153,9 +6234,6 @@ msgstr "Hareket planlayıcısı tarafından algılandı"
 msgid "Developer"
 msgstr "Geliştirici"
 
-msgid "Diagram saved"
-msgstr "Şema kaydedildi"
-
 msgid "Differs from the selection — allowed, but confirm they nest together"
 msgstr "Seçimden farklı — izin verilir, ancak birlikte iç içe geçtiğini doğrulayın"
 
@@ -6437,11 +6515,11 @@ msgstr "Çizime yerleştirmek için sürükleyin"
 msgid "Drag to reorder"
 msgstr "Yeniden sıralamak için sürükleyin"
 
-msgid "Drag to resize diagram and features"
-msgstr "Şemayı ve özellikleri yeniden boyutlandırmak için sürükleyin"
+msgid "Drag to resize diagram and characteristics"
+msgstr "Diyagramı ve özellikleri yeniden boyutlandırmak için sürükleyin"
 
-msgid "Drag to resize drawing and features"
-msgstr "Çizim ve özellikleri yeniden boyutlandırmak için sürükleyin"
+msgid "Drag to resize drawing and characteristics"
+msgstr "Çizimi ve özellikleri yeniden boyutlandırmak için sürükleyin"
 
 msgid "Drag to zoom"
 msgstr "Yakınlaştırmak için sürükleyin"
@@ -6452,8 +6530,8 @@ msgstr "Çekiliyor"
 msgid "Drawing Number"
 msgstr "Resim numarası"
 
-msgid "Drawing replaced. Balloon placements were removed; feature rows are unchanged."
-msgstr "Çizim değiştirildi. Balon yerleşimleri kaldırıldı; özellik satırları değişmedi."
+msgid "Drawing replaced. Balloon placements were removed; characteristic rows are unchanged."
+msgstr "Çizim değiştirildi. Balon yerleştirmeleri kaldırıldı; özellik satırları değişmedi."
 
 msgid "Drop Ship"
 msgstr "Direkt Sevkiyat"
@@ -7492,11 +7570,11 @@ msgstr "Genişlet {0}"
 msgid "Expand all"
 msgstr "Tümünü genişlet"
 
+msgid "Expand characteristics table"
+msgstr "Özellikler tablosunu genişlet"
+
 msgid "Expand Costs"
 msgstr "Maliyetleri Genişlet"
-
-msgid "Expand features table"
-msgstr "Özellikler tablosunu genişlet"
 
 msgid "Expand Labor"
 msgstr "İşçilik Genişlet"
@@ -7684,7 +7762,7 @@ msgstr "Uygun değil"
 msgid "Failed"
 msgstr "Başarısız"
 
-msgid "Failed features"
+msgid "Failed characteristics"
 msgstr "Başarısız özellikler"
 
 #. placeholder {0}: rows.length
@@ -7693,6 +7771,9 @@ msgstr "Satır eklenemedi — {0} satırdan {addedCount} tanesi eklendi"
 
 msgid "Failed to add lines"
 msgstr "Satırlar ekleme başarısız oldu"
+
+msgid "Failed to apply pricing rules"
+msgstr "Fiyatlandırma kuralları uygulanamadı"
 
 msgid "Failed to convert image"
 msgstr "Resim dönüştürme başarısız oldu"
@@ -7936,6 +8017,9 @@ msgstr "Takip edilen varlıklar yüklenemedi"
 msgid "Failed to move account: {0}"
 msgstr "Hesap taşınamadı: {0}"
 
+msgid "Failed to record gauge"
+msgstr "Ölçüm aleti kaydedilemedi"
+
 msgid "Failed to regenerate schedule"
 msgstr "Çizelge yeniden oluşturulamadı"
 
@@ -7969,8 +8053,8 @@ msgstr "CSV sütun verileri alınamadı."
 msgid "Failed to save configuration rule"
 msgstr "Yapılandırma kuralını kaydetme başarısız oldu"
 
-msgid "Failed to save diagram"
-msgstr "Şemayı kaydetme başarısız oldu"
+msgid "Failed to save inspection plan"
+msgstr "Kontrol planı kaydedilemedi"
 
 msgid "Failed to save measurement"
 msgstr "Ölçüm kaydedilemedi"
@@ -8070,15 +8154,6 @@ msgstr "Faks"
 
 msgid "Fax Number"
 msgstr "Faks Numarası"
-
-msgid "Feature"
-msgstr "Özellik"
-
-msgid "Feature values suggested from drawing"
-msgstr "Çizimden önerilen özellik değerleri"
-
-msgid "Features"
-msgstr "Özellikler"
 
 msgid "Fees"
 msgstr "Ücretler"
@@ -8207,6 +8282,9 @@ msgstr "Adı Soyad"
 
 msgid "First Operation"
 msgstr "İlk İşlem"
+
+msgid "First week the projected stock goes below zero"
+msgstr ""
 
 msgid "First-year additional deduction taken before the regular MACRS schedule begins."
 msgstr "Sabit Kıymet"
@@ -8387,6 +8465,9 @@ msgstr "Ölçüm aleti"
 
 msgid "Gauge Calibration Notifications"
 msgstr "Ölçüm Aleti Kalibrasyon Bildirimleri"
+
+msgid "Gauge for characteristic {characteristicLabel}: {currentGauge}"
+msgstr "Özellik {characteristicLabel} için ölçüm aleti: {currentGauge}"
 
 msgid "Gauge ID"
 msgstr "Ölçüm aleti ID"
@@ -9161,6 +9242,9 @@ msgstr "Pasifleri Dahil Et"
 msgid "Included"
 msgstr "Dahil"
 
+msgid "Includes bought and picked parts"
+msgstr ""
+
 msgid "Includes tax and shipping costs"
 msgstr "Vergi ve nakliye bedelini içerir"
 
@@ -9890,6 +9974,12 @@ msgstr "İşçilik ve Makine Sapması"
 msgid "Labor & Machine Variance (default)"
 msgstr "İşçilik ve Makine Sapması (varsayılan)"
 
+msgid "Labor Costs"
+msgstr ""
+
+msgid "Labor Hours"
+msgstr ""
+
 msgid "Labor rate"
 msgstr "İşçilik oranı"
 
@@ -10021,6 +10111,9 @@ msgstr "Sonraki revizyonu otomatik olarak kullanmak için boş bırakın"
 
 msgid "Leave empty for exact match"
 msgstr "Tam eşleşme için boş bırakın"
+
+msgid "Leave empty, or enter 0, to show everything MRP plans."
+msgstr ""
 
 msgid "Leave this page"
 msgstr "Bu sayfadan ayrıl"
@@ -10373,6 +10466,12 @@ msgstr "Küçük harf Ürün Kimlikleri izin verilir"
 msgid "Machine"
 msgstr "Makine"
 
+msgid "Machine Costs"
+msgstr ""
+
+msgid "Machine Hours"
+msgstr ""
+
 msgid "Machine rate"
 msgstr "Makine oranı"
 
@@ -10614,6 +10713,12 @@ msgstr "Piyasa kuru geçmişi (USD başına)"
 msgid "Marks the person off for every day in the range. They won't be scheduled while they're away."
 msgstr "Kişiyi aralıktaki her gün için işaretler. Uzakta iken çizelgelenmazlar."
 
+msgid "Markup by Category"
+msgstr ""
+
+msgid "Markup Percent"
+msgstr ""
+
 msgid "Master gauge"
 msgstr "Mastar ölçüm aleti"
 
@@ -10658,6 +10763,9 @@ msgstr "Malzeme"
 
 msgid "Material"
 msgstr "Malzeme"
+
+msgid "Material Cost"
+msgstr ""
 
 msgid "Material Dimension"
 msgstr "Malzeme Boyutu"
@@ -10706,6 +10814,9 @@ msgstr "Malzeme Stok Kartı"
 
 msgid "Material Planning"
 msgstr "Malzeme Planlama"
+
+msgid "Material planning shows only the actions and suggested orders due within this many days from today, so far-out needs stay out of the way until they matter. An item's own planning horizon overrides this default."
+msgstr ""
 
 msgid "Material Properties"
 msgstr "Malzeme Özellikleri"
@@ -11161,6 +11272,9 @@ msgstr "Net Değişim"
 
 msgid "Net Income"
 msgstr "Net Gelir"
+
+msgid "Net Unit Price"
+msgstr ""
 
 msgid "Never"
 msgstr "Asla"
@@ -11750,6 +11864,9 @@ msgstr "Bu İş emri için Tahmin mevcut değildir."
 
 msgid "No Gauge Selected"
 msgstr "Ölçüm aleti seçilmedi"
+
+msgid "No gauges found."
+msgstr "Ölçüm aleti bulunamadı."
 
 msgid "No grouped notifications"
 msgstr "Gruplanmış bildirim yok"
@@ -12821,6 +12938,9 @@ msgstr "Aksi takdirde"
 msgid "Out"
 msgstr "Dışı"
 
+msgid "Out of calibration"
+msgstr "Kalibrasyon dışı"
+
 msgid "Outbound"
 msgstr "Giden"
 
@@ -12977,6 +13097,9 @@ msgstr "Parça"
 
 msgid "Part Being Replaced"
 msgstr "Yerine Geçilen Parça"
+
+msgid "Part Cost"
+msgstr ""
 
 msgid "Part Details"
 msgstr "Parça Detayları"
@@ -13376,6 +13499,9 @@ msgstr "Planlanan Zaman"
 msgid "Planning"
 msgstr "Planlama"
 
+msgid "Planning Horizon"
+msgstr ""
+
 msgid "Planning Ownership"
 msgstr "Planlama Sahipliği"
 
@@ -13760,6 +13886,9 @@ msgstr "Üretim: atölye uygulaması ve planlama"
 msgid "Profile"
 msgstr "Profil"
 
+msgid "Profit Percent"
+msgstr ""
+
 msgid "Progress"
 msgstr "İlerleme"
 
@@ -13809,6 +13938,9 @@ msgstr "{0} haftası için öngörülen stok tükenmesi"
 
 msgid "Projected stock"
 msgstr "Tahmini stok"
+
+msgid "Projected stock is already below zero this week"
+msgstr ""
 
 #. placeholder {0}: formatWeek(stockoutDate)
 msgid "Projected stockout the week of {0}"
@@ -14506,6 +14638,9 @@ msgstr "Son ödemeler"
 msgid "Recently Created"
 msgstr "Son Oluşturulanlar"
 
+msgid "Recently used"
+msgstr "Son kullanılan"
+
 msgid "Recertify Every (Days)"
 msgstr "Her (Gün) Yeniden Sertifikalandır"
 
@@ -14801,6 +14936,9 @@ msgstr "Sıralamayı kaldır"
 msgid "Remove station"
 msgstr "İstasyonu kaldır"
 
+msgid "Remove this item"
+msgstr ""
+
 msgid "Remove this storage type from all referencing storage units and delete it. This cannot be undone."
 msgstr "Bu depolama türünü tüm referans veren depolama birimlerinden kaldırır ve siler. Bu geri alınamaz."
 
@@ -14883,8 +15021,8 @@ msgstr "Bu şirketin verilerini bir demo veri seti ile değiştirin — önce an
 msgid "Replacement Order"
 msgstr "Değişim Siparişi"
 
-msgid "Replacing the PDF removes all balloon placements on this document. Feature rows and their values stay; you can place balloons again on the new drawing."
-msgstr "PDF'i değiştirmek bu belgedeki tüm balon yerleşimlerini kaldırır. Özellik satırları ve değerleri kalır; yeni çizim üzerinde tekrar balon yerleştirebilirsiniz."
+msgid "Replacing the PDF removes all balloon placements on this document. Characteristic rows and their values stay; you can place balloons again on the new drawing."
+msgstr "PDF'yi değiştirmek bu belgede tüm balon yerleştirmelerini kaldırır. Özellik satırları ve değerleri kalır; yeni çizimde tekrar balon yerleştirebilirsiniz."
 
 msgid "Replenishment"
 msgstr "Yenileştirme"
@@ -15641,7 +15779,7 @@ msgstr "Örneklem büyüklüğü"
 msgid "Sampling"
 msgstr "Örnekleme"
 
-msgid "Sampling — Feature {featureLabel}"
+msgid "Sampling — Characteristic {featureLabel}"
 msgstr "Örnekleme — Özellik {featureLabel}"
 
 msgid "Sampling Standard"
@@ -15843,6 +15981,9 @@ msgstr "Çıkartıldı"
 msgid "Search"
 msgstr "Ara"
 
+msgid "Search {gaugeTypeName}..."
+msgstr "Ara {gaugeTypeName}..."
+
 msgid "Search accounts"
 msgstr "Hesapları arayın"
 
@@ -15887,6 +16028,9 @@ msgstr "Alanları ara..."
 
 msgid "Search for existing or create a new one"
 msgstr "Mevcut birini arayın veya yeni bir tane oluşturun"
+
+msgid "Search gauges..."
+msgstr "Ölçüm aletleri ara..."
 
 msgid "Search items or bins"
 msgstr "Stok kartlarını veya gözleri ara"
@@ -16051,6 +16195,9 @@ msgstr "Bir işlem seçin…"
 msgid "Select an option"
 msgstr "Bir seçenek seçin"
 
+msgid "Select at least one item to accept the quote"
+msgstr ""
+
 msgid "Select at least one line to convert"
 msgstr "Dönüştürmek için en az bir satır seçin"
 
@@ -16083,6 +16230,9 @@ msgstr "Çalışan Türü Seçin"
 
 msgid "Select field"
 msgstr "Alan seçin"
+
+msgid "Select gauge"
+msgstr "Ölçüm aleti seçin"
 
 msgid "Select Gauge"
 msgstr "Ölçüm Aleti Seç"
@@ -16662,6 +16812,9 @@ msgstr "Kullanılabilir izleme numaralarını göster"
 
 msgid "Show Customer IDs"
 msgstr "Müşteri Kimliklerini Göster"
+
+msgid "Show Details"
+msgstr ""
 
 msgid "Show Durations"
 msgstr "Süreleri Göster"
@@ -18207,8 +18360,8 @@ msgstr "Lot, Geçti olarak işaretlenecektir. {fails} örneklenen başarısızl�
 msgid "The lot will still be rejected, but an NCR cannot be created until at least one Issue Type is configured."
 msgstr "Lot yine de reddedilecek, ancak en az bir Hata Türü yapılandırılana kadar Bir Uygunluk Raporu (NCR) oluşturulamaz."
 
-msgid "The lot's per-feature sampling plan will be re-resolved from the selected document."
-msgstr "Lot'un her özellik başına örnekleme planı seçilen belgeden yeniden çözülecektir."
+msgid "The lot's per-characteristic sampling plan will be re-resolved from the selected document."
+msgstr "Lotun her karakteristiği için örnekleme planı seçilen belgeden yeniden belirlenecek."
 
 msgid "The lowest amount this supplier will charge for this process, regardless of quantity; jobs below the breakeven volume still cost at least this much."
 msgstr "Bu Tedarikçinin bu Proses için Miktar ne olursa olsun talep edebileceği en düşük tutar; başabaş hacminin altındaki İş emirleri en az bu tutardan maliyetlidir."
@@ -19045,6 +19198,9 @@ msgstr "dar"
 msgid "Tightened"
 msgstr "Sıkılaştırılmış"
 
+msgid "Time fence"
+msgstr ""
+
 msgid "Time of day"
 msgstr "Günün saati"
 
@@ -19141,9 +19297,6 @@ msgstr "Seviye değiştir"
 msgid "Toggle Properties"
 msgstr "Özellikleri Aç/Kapat"
 
-msgid "Toggle the sidebar"
-msgstr "Kenar çubuğunu aç/kapat"
-
 msgid "Toggle views"
 msgstr "Görünümleri değiştir"
 
@@ -19174,6 +19327,9 @@ msgstr "Alet Detayları"
 msgid "Tool ID"
 msgstr "Alet Kimliği"
 
+msgid "Tooling Cost"
+msgstr ""
+
 msgid "tools"
 msgstr "Araçlar"
 
@@ -19198,11 +19354,17 @@ msgstr "Toplam Tutar"
 msgid "Total capitalized cost of the asset (purchase price plus freight, install, and other costs that become part of book value)."
 msgstr "Varlığın toplam kapitalize edilen maliyeti (satın alma fiyatı artı navlun, kurulum ve defter değerinin parçası haline gelen diğer maliyetler)."
 
+msgid "Total Direct Cost"
+msgstr ""
+
 msgid "Total discount"
 msgstr "Toplam iskonto"
 
 msgid "Total Due"
 msgstr "Toplam Borç"
+
+msgid "Total Estimated Cost"
+msgstr ""
 
 msgid "Total expected production units for units-of-production depreciation; cost is spread per unit produced."
 msgstr "Üretim birimleri amortismanı için toplam beklenen üretim birimleri; maliyet üretilen birim başına dağıtılır."
@@ -19210,11 +19372,23 @@ msgstr "Üretim birimleri amortismanı için toplam beklenen üretim birimleri; 
 msgid "Total Hours"
 msgstr "Toplam Saat"
 
+msgid "Total Indirect Cost"
+msgstr ""
+
+msgid "Total Material Cost"
+msgstr ""
+
 msgid "Total Minutes"
 msgstr "Toplam Dakika"
 
+msgid "Total Outside Cost"
+msgstr ""
+
 msgid "Total Price"
 msgstr "Toplam Fiyat"
+
+msgid "Total Profit"
+msgstr ""
 
 msgid "Total quantity"
 msgstr "Toplam Miktar"
@@ -19575,6 +19749,9 @@ msgstr "Bilinmeyen"
 
 msgid "unknown error"
 msgstr "bilinmeyen hata"
+
+msgid "Unknown gauge"
+msgstr "Bilinmeyen ölçüm aleti"
 
 msgid "unknown location"
 msgstr "bilinmeyen konum"
@@ -20147,6 +20324,9 @@ msgstr "Notları görüntüle"
 
 msgid "View on schedule board"
 msgstr "Çizelge panosunda görüntüle"
+
+msgid "View only — changes are not saved"
+msgstr "Yalnızca görüntüle — değişiklikler kaydedilmez"
 
 msgid "View Open"
 msgstr "Açık Gör"
@@ -21070,6 +21250,9 @@ msgstr "Davetiyeniz geçersiz veya zaten Kabul edilmiştir. Bu bir hata olduğun
 
 msgid "Your job here: check a real sample of each row, then mark it validated. Foundation data loads first, then master records, then open transactions at cutover."
 msgstr "Buradaki işiniz: her satırın gerçek bir örneğini kontrol edin, ardından doğrulanmış olarak işaretleyin. Temel veriler önce yüklenir, ardından ana kayıtlar, ardından kesme noktasında açık işlemler."
+
+msgid "Your latest changes could not be saved. Are you sure you want to leave this page?"
+msgstr "Son değişiklikleriniz kaydedilemedi. Bu sayfadan çıkmak istediğinizden emin misiniz?"
 
 msgid "Your legal name, addresses, branding, and document defaults"
 msgstr "Yasal adınız, adresler, marka kimliği ve belge varsayılanları"

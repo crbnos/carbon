@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 /**
  * Three-free entry point for the pure plan → step-group logic, so server code
  * (the Inngest worker) can build assembly steps without pulling in the viewer's

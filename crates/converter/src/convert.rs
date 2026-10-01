@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 //! STEP → graph.json (+ GLB) driver. Reads the OCCT tree from the occt-bridge,
 //! assigns nodeIds, computes world bboxes, emits graph.json. Mirrors
 //! `app/convert.py::convert_step`.

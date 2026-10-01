@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 // Sales-rule extensions of the shared rule engine. Storage-rule behavior is
 // covered by rules.test.ts — these cases lock the additive sales-rule
 // surface: customer ctx resolution, compileSalesRuleWithCache + evaluateRules

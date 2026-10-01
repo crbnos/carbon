@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { transpile } from "https://deno.land/x/ts_transpiler@v0.0.2/mod.ts";
 import { runConfigurationRule } from "../shared/configuration-rule.ts";
 import { getFunctionLogger } from "./logging.ts";

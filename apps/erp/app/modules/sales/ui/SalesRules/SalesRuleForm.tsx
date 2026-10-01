@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 // Create/edit drawer for Sales Rules. Mirrors
 // `~/modules/inventory/ui/StorageRules/StorageRuleForm` minus targetType/appliesToAll —
 // sales rules are always item-target and broadcast via the item filters.

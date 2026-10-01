@@ -1,0 +1,38 @@
+---
+title: "Gauges on inspections, and Inspection Plans in Quality"
+description: "Record the gauge behind every inspected characteristic and require a gauge type. Plus inspection plans that save themselves."
+date: "2026-09-30"
+tags: ["quality", "production"]
+image: "/changelog/2026-09-30-inspection-gauges.svg"
+---
+
+A measurement is only as good as the instrument that took it. Inspections now record which [gauge](/docs/reference/calibration) measured each characteristic, so an auditor, or a recall, can trace a result back to the tool.
+
+## The gauge used for each characteristic
+
+An [inspection](/docs/reference/inspections#gauges) has a Gauge column, in the ERP and on the shop floor. Pick from your active gauges; the ones recently used at the same work center come first, and receiving inspections share one list. The gauge is recorded once per lot and characteristic, with the time it was recorded.
+
+A gauge that is out of calibration is flagged but can still be recorded, so the inspector can see the problem without being blocked from finishing the lot. A gauge retired later still shows on the lots it measured.
+
+## Required gauge types
+
+An inspection plan can name the gauge type each characteristic must be measured with, in the plan editor's new **Gauge Type** column. When one is set, the inspection only offers gauges of that type. Leave it empty to allow any gauge.
+
+## Inspection plans in Quality, saving as you work
+
+Inspection plans, the ballooned drawings that define what gets checked, now live under **Quality → Inspection → Inspection Plans**, next to the inspections that use them. The plan editor has no Save button anymore: every change saves itself, and the toolbar shows when it has.
+
+<Accordion title="Improvements">
+
+- Features are now called characteristics in inspection plans and inspections.
+- Balloons on an inspection's drawing show their leader line to the region they mark.
+- Properties panels on orders, quotes, invoices, jobs and items, and the customer and supplier headers, can copy the record's unique identifier.
+
+</Accordion>
+
+<Accordion title="Fixes">
+
+- Ramp bills pushed while Rillet holds the accounting seat now arrive with their accounting vendor linked.
+- Focus rings on inputs inside a modal are no longer clipped at the edge of the scroll area.
+
+</Accordion>

@@ -12,6 +12,9 @@ msgstr ""
 "Language-Team: \n"
 "Plural-Forms: \n"
 
+msgid "(Inactive)"
+msgstr "（已停用）"
+
 #. placeholder {0}: attribute.name
 #. placeholder {1}: activeStep + 1
 msgid "{0} - Set {1}"
@@ -148,6 +151,9 @@ msgstr "全部"
 msgid "All clear"
 msgstr "一切正常"
 
+msgid "All gauges"
+msgstr "所有量具"
+
 msgid "All jobs"
 msgstr "所有工单"
 
@@ -268,6 +274,12 @@ msgstr "Carbon 标志"
 msgid "Cards"
 msgstr "卡片"
 
+msgid "Characteristic"
+msgstr "特性"
+
+msgid "Characteristics"
+msgstr "特性"
+
 msgid "Chat"
 msgstr "聊天"
 
@@ -282,6 +294,9 @@ msgstr "清除"
 
 msgid "Clear Filters"
 msgstr "清除筛选"
+
+msgid "Clear gauge"
+msgstr "清除量具"
 
 msgid "Clear Search"
 msgstr "清除搜索"
@@ -301,8 +316,8 @@ msgstr "自 <0/> 起打卡"
 msgid "Close"
 msgstr "关闭"
 
-msgid "Collapse features table"
-msgstr "折叠功能表"
+msgid "Collapse characteristics table"
+msgstr "折叠特性表格"
 
 msgid "Collapse panel"
 msgstr "折叠面板"
@@ -365,6 +380,15 @@ msgstr "已消耗已过期"
 
 msgid "Continue"
 msgstr "继续"
+
+msgid "Copied!"
+msgstr "已复制！"
+
+msgid "Copy"
+msgstr "复制"
+
+msgid "Copy to clipboard"
+msgstr "复制到剪贴板"
 
 #. placeholder {0}: board.unplannedCost.days
 msgid "Cost of unplanned maintenance, last {0} days"
@@ -463,8 +487,8 @@ msgstr "草稿"
 msgid "Drag and drop a file here, or click to select a file"
 msgstr "拖放文件到此处，或点击选择文件"
 
-msgid "Drag to resize drawing and features"
-msgstr "拖动以调整绘图和功能的大小"
+msgid "Drag to resize drawing and characteristics"
+msgstr "拖动调整图形和特性的大小"
 
 #. placeholder {0}: active.data.current?.type
 msgid "Dragging {0} cancelled."
@@ -541,8 +565,8 @@ msgstr "生产批次中的每个工单都遵循这些步骤。同时为所有工
 msgid "Every unit has a verdict: {passes} passed and {fails} failed. The lot closes with each unit routed to its own outcome."
 msgstr "每件都有一个结果：{passes} 个已通过，{fails} 个不合格。批次随着每件分配到其结果而关闭。"
 
-msgid "Expand features table"
-msgstr "展开功能表"
+msgid "Expand characteristics table"
+msgstr "展开特性表格"
 
 msgid "Expand panel"
 msgstr "展开面板"
@@ -563,8 +587,8 @@ msgstr "即将过期优先"
 msgid "Failed"
 msgstr "失败"
 
-msgid "Failed features"
-msgstr "失败的功能"
+msgid "Failed characteristics"
+msgstr "失效特性"
 
 msgid "Failed to complete inventory adjustment"
 msgstr "库存调整失败"
@@ -580,6 +604,9 @@ msgstr "获取活跃工序失败"
 
 msgid "Failed to fetch storageUnits"
 msgstr "获取存储单位失败"
+
+msgid "Failed to record gauge"
+msgstr "无法记录量具"
 
 msgid "Failed to save measurement"
 msgstr "无法保存测量"
@@ -597,12 +624,6 @@ msgstr "文件上传失败：{0}"
 
 msgid "Failed to upload image"
 msgstr "图片上传失败"
-
-msgid "Feature"
-msgstr "功能"
-
-msgid "Features"
-msgstr "特性"
 
 msgid "File size exceeds 10MB limit"
 msgstr "文件大小超过 10MB 限制"
@@ -644,6 +665,12 @@ msgstr "完成前请修正突出显示的数量。"
 
 msgid "Forgot to Clock Out?"
 msgstr "忘记收工了吗？"
+
+msgid "Gauge"
+msgstr "量具"
+
+msgid "Gauge for characteristic {characteristicLabel}: {currentGauge}"
+msgstr "特性 {characteristicLabel} 对应的量具: {currentGauge}"
 
 msgid "General"
 msgstr "常规"
@@ -959,6 +986,9 @@ msgstr "没有分配给您的维护工单"
 msgid "No files"
 msgstr "无文件"
 
+msgid "No gauges found."
+msgstr "未找到量具。"
+
 msgid "No Impact"
 msgstr "无影响"
 
@@ -1126,6 +1156,9 @@ msgstr "可选"
 msgid "or"
 msgstr "或"
 
+msgid "Out of calibration"
+msgstr "需要校准"
+
 msgid "Output lot"
 msgstr "输出批次"
 
@@ -1276,6 +1309,9 @@ msgstr "返工原因"
 msgid "Recent"
 msgstr "最近"
 
+msgid "Recently used"
+msgstr "最近使用"
+
 msgid "Record"
 msgstr "记录"
 
@@ -1407,8 +1443,14 @@ msgstr "报废所选序列号"
 msgid "Search"
 msgstr "搜索"
 
+msgid "Search {gaugeTypeName}..."
+msgstr "搜索 {gaugeTypeName}..."
+
 msgid "Search by job or item ID"
 msgstr "按工作或项目ID搜索"
+
+msgid "Search gauges..."
+msgstr "搜索量具..."
 
 msgid "Search operators..."
 msgstr "搜索操作员..."
@@ -1443,6 +1485,9 @@ msgstr "选择物料..."
 #. placeholder {0}: index + 1
 msgid "Select Batch {0}"
 msgstr "选择批次 {0}"
+
+msgid "Select gauge"
+msgstr "选择量具"
 
 msgid "Select Printer"
 msgstr "选择打印机"
@@ -1727,6 +1772,9 @@ msgstr "未领料的序列号/生产批次物料"
 
 msgid "Unknown"
 msgstr "未知"
+
+msgid "Unknown gauge"
+msgstr "未知量具"
 
 msgid "Unlock"
 msgstr "解锁"

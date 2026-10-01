@@ -1,9 +1,13 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { ComboboxProps } from "@carbon/form";
 import { Combobox } from "@carbon/form";
 import { HStack } from "@carbon/react";
 import { useEffect, useMemo } from "react";
 import { useFetcher } from "react-router";
-import type { getInspectionDocumentsForItem } from "~/modules/production/production.service";
+import type { getInspectionDocumentsForItem } from "~/modules/quality/quality.service";
 import { path } from "~/utils/path";
 
 type InspectionDocumentSelectProps = Omit<ComboboxProps, "options"> & {

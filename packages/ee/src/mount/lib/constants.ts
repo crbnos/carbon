@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: LicenseRef-Carbon-Commercial
+// Carbon Enterprise file, licensed only under the Carbon Commercial License
+// (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
+
 /**
  * Values shared by the integration config (bundled for BOTH client and
  * server) and the API client (server-only). They live here, free of imports,

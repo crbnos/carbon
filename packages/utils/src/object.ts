@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 /**
  * Group an array by a key derived from each item. Indexed loop and a
  * `result[key] === undefined` check keep the hot path off `.reduce`'s

@@ -1,8 +1,16 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
+import { isUnaffectedByNavigation } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
-import type { LoaderFunctionArgs } from "react-router";
+import type {
+  LoaderFunctionArgs,
+  ShouldRevalidateFunction
+} from "react-router";
 import { Outlet, redirect, useLoaderData } from "react-router";
 import { usePlanGate } from "~/hooks/usePlanGate";
 import {
@@ -20,6 +28,9 @@ export const handle: Handle = {
   breadcrumb: msg`Sales Rules`,
   to: path.to.salesRules
 };
+
+export const shouldRevalidate: ShouldRevalidateFunction = (args) =>
+  isUnaffectedByNavigation(args) ? false : args.defaultShouldRevalidate;
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {

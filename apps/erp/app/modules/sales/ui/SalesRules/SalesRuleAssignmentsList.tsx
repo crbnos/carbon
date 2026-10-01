@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 // Per-item "Sales rules" card — the sales-rule counterpart of
 // `~/modules/inventory/ui/StorageRules/RuleAssignmentsList`. Forked (not parameterized)
 // because that component hard-codes the STORAGE_RULES plan gate, the storage

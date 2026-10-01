@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 // The one rule for a tracked entity's status after its quantity changes, shared
 // by the writers that can drain an entity to zero (post-inventory-count, the
 // receipt split in create, correct-stock-movement; post-inventory-adjustment

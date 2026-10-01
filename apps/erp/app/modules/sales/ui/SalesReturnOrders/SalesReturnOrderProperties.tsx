@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { useCarbon } from "@carbon/auth";
 import type { Json } from "@carbon/database";
 import {
@@ -9,6 +13,7 @@ import {
 import {
   Badge,
   Button,
+  Copy,
   HStack,
   Modal,
   ModalBody,
@@ -26,7 +31,7 @@ import {
 } from "@carbon/react";
 import { Trans, useLingui } from "@lingui/react/macro";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { LuCopy, LuLink, LuUnlink2 } from "react-icons/lu";
+import { LuCopy, LuKeySquare, LuLink, LuUnlink2 } from "react-icons/lu";
 import { RiProgress8Line } from "react-icons/ri";
 import { useFetcher, useParams } from "react-router";
 import { z } from "zod";
@@ -252,6 +257,13 @@ const SalesReturnOrderProperties = () => {
                 </span>
               </TooltipContent>
             </Tooltip>
+            <Copy
+              text={id}
+              label={t`Copy sales return order unique identifier`}
+              icon={<LuKeySquare className="size-3" />}
+              variant="ghost"
+              className="w-auto"
+            />
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button

@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { ValidatedForm } from "@carbon/form";
 import {
   Badge,
@@ -17,12 +21,12 @@ import { LuPlus } from "react-icons/lu";
 import { Hyperlink } from "~/components";
 import { Hidden, InspectionDocument, Submit } from "~/components/Form";
 import { usePermissions } from "~/hooks";
-import InspectionDocumentForm from "~/modules/production/ui/InspectionDocument/InspectionDocumentForm";
 import {
   inspectionDocumentUsages,
   itemInspectionDocumentAssignmentValidator
 } from "~/modules/quality";
 import type { ItemInspectionDocumentAssignment } from "~/modules/quality/types";
+import InspectionDocumentForm from "~/modules/quality/ui/InspectionDocument/InspectionDocumentForm";
 import { path } from "~/utils/path";
 
 type ItemQualityViewProps = {

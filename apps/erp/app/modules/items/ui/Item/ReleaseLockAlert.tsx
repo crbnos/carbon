@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { Alert, AlertDescription, AlertTitle } from "@carbon/react";
 import { Trans } from "@lingui/react/macro";
 import { LuTriangleAlert } from "react-icons/lu";

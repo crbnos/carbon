@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: LicenseRef-Carbon-Commercial
+// Carbon Enterprise file, licensed only under the Carbon Commercial License
+// (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
+
 // Text formatting for describe_tool / search_tools output, extracted from the
 // @ts-nocheck server.ts so it is typed and unit-testable. Schemas print as
 // compact JSON on purpose — pretty-printing roughly doubles the whitespace

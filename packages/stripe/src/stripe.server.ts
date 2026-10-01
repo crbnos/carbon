@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { getCarbonServiceRole } from "@carbon/auth/client.server";
 import { isCarbonOwnedCompany } from "@carbon/auth/company.server";
 import type { Database } from "@carbon/database";
@@ -11,7 +15,7 @@ import {
 import { redis } from "@carbon/kv";
 import { trigger } from "@carbon/lib/trigger";
 import { getLogger } from "@carbon/logger";
-import { Edition, Plan } from "@carbon/utils";
+import { companyPlanCacheKey, Edition, Plan } from "@carbon/utils";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { Stripe } from "stripe";
 import { z } from "zod";
@@ -615,6 +619,7 @@ export async function syncStripeDataToKV(
     if (companyPlan.error) {
       log.error("Failed to upsert company plan", { error: companyPlan.error });
     }
+    await redis.del(companyPlanCacheKey(companyId));
   } else {
     log.error("no company id, skipping company plan upsert");
   }

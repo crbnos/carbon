@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { useCallback, useEffect, useRef, useState } from "react";
 
 // UX-only idle detection for the NIST 3.1.10 session lock. The SERVER is the

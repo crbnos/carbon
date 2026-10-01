@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { z } from "zod";
 import type {
   MatchedRule,
@@ -342,4 +346,43 @@ export function resolveJobConfiguration(
 export function asConfiguration(value: unknown): Configuration | null {
   if (!value || typeof value !== "object" || Array.isArray(value)) return null;
   return Object.keys(value).length > 0 ? (value as Configuration) : null;
+}
+
+function sameMarkups(a: CategoryMarkups, b: CategoryMarkups): boolean {
+  const keys = Object.keys(a);
+  return (
+    keys.length === Object.keys(b).length &&
+    keys.every((key) => a[key] === b[key])
+  );
+}
+
+/**
+ * The price a configured quote line starts from: the part's sale price, the
+ * same base its sales order line starts from, so the configuration prices land
+ * on one base on the quote and the order. Null prices the row cost-plus — the
+ * line is not configured, the part has no sale price, or the row carries
+ * markups someone chose. Markups equal to the company defaults are the ones
+ * the row was seeded with, not a choice.
+ */
+export function configuredQuoteBasePrice({
+  configuration,
+  unitSalePrice,
+  categoryMarkups,
+  defaultMarkups
+}: {
+  configuration: unknown;
+  unitSalePrice: number | null | undefined;
+  categoryMarkups: CategoryMarkups | null | undefined;
+  defaultMarkups: CategoryMarkups;
+}): number | null {
+  if (!asConfiguration(configuration)) return null;
+  if (!unitSalePrice || unitSalePrice <= 0) return null;
+  const markups = categoryMarkups ?? {};
+  if (
+    Object.keys(markups).length > 0 &&
+    !sameMarkups(markups, defaultMarkups)
+  ) {
+    return null;
+  }
+  return unitSalePrice;
 }

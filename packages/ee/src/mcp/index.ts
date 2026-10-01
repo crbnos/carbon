@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: LicenseRef-Carbon-Commercial
+// Carbon Enterprise file, licensed only under the Carbon Commercial License
+// (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
+
 // The PURE MCP logic (`@carbon/ee/mcp`): catalog + doc search, result/description
 // formatting, connect-time instructions, and the shared types. It pulls in NO
 // auth/entitlement chain, so tests and the app route can import these helpers

@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { auditConfig, getTableLabel } from "@carbon/database/audit.config";
 import type { AuditLogEntry } from "@carbon/database/audit.types";
 import {
@@ -37,6 +41,7 @@ import {
   UpgradeOverlayUpgradeButton
 } from "~/components/UpgradeOverlay";
 import { usePermissions, useRouteData } from "~/hooks";
+import { useResolved } from "~/hooks/useResolved";
 import { path } from "~/utils/path";
 import { isEmptyDiffValue } from "./utils";
 
@@ -96,10 +101,10 @@ const AuditLogDrawer = memo(
     const lastLoadedRef = useRef<string | null>(null);
     const loadKey = `${entityType}:${entityId}:${companyId}:${recordId ?? ""}`;
 
-    const rootRouteData = useRouteData<{ auditLogEnabled: boolean }>(
+    const rootRouteData = useRouteData<{ auditLogEnabled: Promise<boolean> }>(
       path.to.authenticatedRoot
     );
-    const auditLogEnabled = rootRouteData?.auditLogEnabled ?? false;
+    const auditLogEnabled = useResolved(rootRouteData?.auditLogEnabled, false);
     const { can } = usePermissions();
 
     // Load audit log data when drawer opens or entity changes

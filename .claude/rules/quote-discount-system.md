@@ -118,6 +118,23 @@ it.
 - UI: `ui/Quotes/QuoteLinePricing.tsx` (per-quantity discount/markup editing) and
   the `ui/Pricing/` folder (`PricingRuleForm`, `PricingRulesTable`, `PriceOverrideForm`,
   `PriceTracePopover`).
+- Every path that turns a cost rollup into a quote line price runs it through
+  `resolvePrice` as `existingBasePrice` with the line's `configuration`: the server
+  builders and `recalculateQuoteLinePrices`, and the pricing grid's **Markup %** and
+  per-category markup edits (`resolveRollupPrice` → `api/sales/resolve-price`).
+  Computing `cost × markup` alone drops the pricing rules and the configuration
+  prices. The `get-method` edge function seeds rows at cost-plus only, so every
+  ERP route that invokes it on a quote line (`itemToQuoteLine`,
+  `quoteLineToQuoteLine`) follows with `recalculateQuoteLinePrices`. A typed unit
+  price or markup percent is a manual price and is never repriced.
+- A **configured** Make to Order line whose part has a unit sale price starts from
+  that sale price instead of the cost rollup — the base its sales order line uses —
+  so the configuration prices land on the same base on the quote and the order
+  (`configuredQuoteBasePrice` in `sales.utils.ts`, used by
+  `buildMakeToOrderPriceRows` and `recalculateQuoteLinePrices`). Such rows store
+  `categoryMarkups = {}`. A row whose markups someone chose (**Markup %** or a
+  category edit — anything other than empty or the company defaults it was seeded
+  with) stays cost-plus. Unconfigured lines are always cost-plus.
 
 ## Gotchas
 

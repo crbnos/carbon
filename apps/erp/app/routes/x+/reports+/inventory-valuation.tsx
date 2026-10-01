@@ -1,7 +1,14 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { requirePermissions } from "@carbon/auth/auth.server";
-import { datetime } from "@carbon/utils";
+import { datetime, isUnaffectedByNavigation } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
-import type { LoaderFunctionArgs } from "react-router";
+import type {
+  LoaderFunctionArgs,
+  ShouldRevalidateFunction
+} from "react-router";
 import { useLoaderData } from "react-router";
 import {
   getInventoryValuation,
@@ -18,6 +25,11 @@ export const handle: Handle = {
   to: path.to.inventoryValuation,
   module: "accounting"
 };
+
+export const shouldRevalidate: ShouldRevalidateFunction = (args) =>
+  isUnaffectedByNavigation(args, { search: "all" })
+    ? false
+    : args.defaultShouldRevalidate;
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {

@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { describe, expect, it, vi } from "vitest";
 
 // sales.models' module graph transitively loads @carbon/content/glossary and
@@ -14,7 +18,7 @@ vi.mock("@lingui/core/macro", () => ({
       : String(strings)
 }));
 
-const { quoteValidator } = await import("./sales.models");
+const { quoteLineValidator, quoteValidator } = await import("./sales.models");
 
 // `quote.internalNotes` is a `json` column that the sales-order conversion
 // copies through Kysely. A bare string stored there (which `notes: z.any()`
@@ -48,5 +52,23 @@ describe("quoteValidator.notes", () => {
     expect(quoteValidator.safeParse({ ...base, notes: 42 }).success).toBe(
       false
     );
+  });
+});
+
+// quoteLinePrice is keyed by (quoteLineId, quantity), so two equal breaks on a
+// line would share one price row and edit together.
+describe("quoteLineValidator.quantity", () => {
+  it("rejects repeated quantity breaks", () => {
+    const result = quoteLineValidator.shape.quantity.safeParse([10, 10, 25]);
+    expect(result.success).toBe(false);
+    expect(result.error?.issues[0]?.message).toBe(
+      "Each quantity must be different"
+    );
+  });
+
+  it("accepts distinct quantity breaks", () => {
+    expect(
+      quoteLineValidator.shape.quantity.safeParse([10, 20, 25]).success
+    ).toBe(true);
   });
 });

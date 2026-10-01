@@ -48,6 +48,9 @@ msgstr "„{taskName}\" jest gotowe — wszystkie {0} jego elementów Setup Map 
 msgid "(excluded for this customer)"
 msgstr "(wykluczone dla tego klienta)"
 
+msgid "(Inactive)"
+msgstr "(Nieaktywny)"
+
 #. placeholder {0}: target.slackDays
 msgid "{0, plural, one {# day of slack} other {# days of slack}}"
 msgstr "{0, plural, one {# dzień luzu} few {# dni luzu} many {# dni luzu} other {# dni luzu}}"
@@ -1443,6 +1446,9 @@ msgstr "Dodaj aplikację Authenticator"
 msgid "Add Calibration Record"
 msgstr "Dodaj Zapis wzorcowania"
 
+msgid "Add Characteristic"
+msgstr "Dodaj charakterystykę"
+
 msgid "Add Child Storage Unit"
 msgstr "Dodaj podrzędną jednostkę magazynową"
 
@@ -1472,9 +1478,6 @@ msgstr "Dodaj Pracownika"
 
 msgid "Add Entry"
 msgstr "Dodaj wpis"
-
-msgid "Add Feature"
-msgstr "Dodaj funkcję"
 
 msgid "Add from library…"
 msgstr "Dodaj z biblioteki…"
@@ -1762,6 +1765,9 @@ msgstr "Wszystkie działy"
 msgid "All Documents"
 msgstr "Wszystkie dokumenty"
 
+msgid "All gauges"
+msgstr "Wszystkie przyrządy pomiarowe"
+
 msgid "All item types"
 msgstr "Wszystkie typy artykułów"
 
@@ -2026,6 +2032,9 @@ msgstr "Inna jednostka magazynowa, w której ta się zagnieżdża (np. pojemnik 
 msgid "Another system is connected to Ramp as its accounting system"
 msgstr "Inny system jest połączony z Ramp jako jego system księgowy"
 
+msgid "Any"
+msgstr "Dowolny"
+
 msgid "Any item group"
 msgstr "Dowolna grupa artykułów"
 
@@ -2105,8 +2114,8 @@ msgstr "Dotyczy wszystkich"
 msgid "Applies to all work centers"
 msgstr "Dotyczy wszystkich stanowisk roboczych"
 
-msgid "Applies to features without their own rule, and to the lot when this plan drives an inspection."
-msgstr "Dotyczy funkcji, które nie mają własnej reguły, oraz partii, gdy ten plan prowadzi kontrolę."
+msgid "Applies to characteristics without their own rule, and to the lot when this plan drives an inspection."
+msgstr "Dotyczy charakterystyk bez własnej reguły i partii, gdy ten plan kontroli prowadzi do wykonania kontroli."
 
 msgid "Apply"
 msgstr "Zastosuj"
@@ -3727,6 +3736,9 @@ msgstr "Zmień typ"
 msgid "Changed By"
 msgstr "Zmienione przez"
 
+msgid "Changed for this view only. The item's planning horizon is not updated."
+msgstr ""
+
 msgid "Changelog"
 msgstr "Historia zmian"
 
@@ -3744,6 +3756,15 @@ msgstr "Zmiana tego zaktualizuje identyfikator części"
 
 msgid "Changing type resets this item's draft edits."
 msgstr "Zmiana typu resetuje zmiany wersji roboczej tego artykułu."
+
+msgid "Characteristic"
+msgstr "Charakterystyka"
+
+msgid "Characteristic values suggested from drawing"
+msgstr "Wartości charakterystyki sugerowane na podstawie rysunku"
+
+msgid "Characteristics"
+msgstr "Charakterystyki"
 
 msgid "Charges"
 msgstr "Obciążenia"
@@ -3844,6 +3865,9 @@ msgstr "Wyczyść datę terminu"
 
 msgid "Clear Filters"
 msgstr "Wyczyść filtry"
+
+msgid "Clear gauge"
+msgstr "Wyczyść przyrząd pomiarowy"
 
 msgid "Clear search"
 msgstr "Wyczyść wyszukiwanie"
@@ -3946,11 +3970,11 @@ msgstr "Zwiń {0}"
 msgid "Collapse all"
 msgstr "Zwiń wszystko"
 
+msgid "Collapse characteristics table"
+msgstr "Zwiń tabelę charakterystyk"
+
 msgid "Collapse Costs"
 msgstr "Zwiń koszty"
-
-msgid "Collapse features table"
-msgstr "Zwiń tabelę funkcji"
 
 msgid "Collapse Labor"
 msgstr "Zwiń robociznę"
@@ -4326,6 +4350,9 @@ msgstr "materiał eksploatacyjny"
 msgid "Consumable"
 msgstr "Materiał eksploatacyjny"
 
+msgid "Consumable Cost"
+msgstr ""
+
 msgid "Consumable Details"
 msgstr "Szczegóły materiału eksploatacyjnego"
 
@@ -4446,6 +4473,9 @@ msgstr "Przekształć Propozycje MRP w Zamówienia zakupu i Zlecenia produkcyjne
 msgid "Convert to Quote"
 msgstr "Przekształć na ofertę"
 
+msgid "Converted Total Price"
+msgstr ""
+
 msgid "Converting…"
 msgstr "Konwertowanie…"
 
@@ -4457,6 +4487,9 @@ msgstr "Skopiowano link do schowka"
 
 msgid "Copied setup prompt to your clipboard"
 msgstr "Skopiowano monit przezbrojenia do schowka"
+
+msgid "Copied!"
+msgstr "Skopiowano!"
 
 msgid "Copies a setup prompt for your AI coding tool"
 msgstr "Kopiuje instrukcję przezbrojenia dla twojego narzędzia kodowania AI"
@@ -4473,11 +4506,20 @@ msgstr "Skopiuj klucz API"
 msgid "Copy batch number"
 msgstr "Skopiuj numer partii produkcyjnej"
 
+msgid "Copy change notice unique identifier"
+msgstr "Skopiuj unikalny identyfikator zawiadomienia o zmianie"
+
 msgid "Copy company unique identifier"
 msgstr "Skopiuj unikalny identyfikator firmy"
 
 msgid "Copy consumable number"
 msgstr "Skopiuj numer materiału eksploatacyjnego"
+
+msgid "Copy consumable unique identifier"
+msgstr "Skopiuj unikalny identyfikator materiału eksploatacyjnego"
+
+msgid "Copy customer unique identifier"
+msgstr "Skopiuj unikalny identyfikator klienta"
 
 msgid "Copy dispatch ID"
 msgstr "Skopiuj identyfikator zlecenia utrzymania ruchu"
@@ -4502,6 +4544,9 @@ msgstr "Skopiuj unikalny identyfikator problemu"
 
 msgid "Copy Job number"
 msgstr "Skopiuj numer zadania"
+
+msgid "Copy job unique identifier"
+msgstr "Skopiuj unikalny identyfikator zlecenia produkcyjnego"
 
 msgid "Copy link"
 msgstr "Skopiuj link"
@@ -4581,6 +4626,15 @@ msgstr "Skopiuj nazwę procedury"
 msgid "Copy procedure unique identifier"
 msgstr "Skopiuj unikatowy identyfikator procedury"
 
+msgid "Copy purchase invoice unique identifier"
+msgstr "Skopiuj unikalny identyfikator faktury zakupu"
+
+msgid "Copy purchase order unique identifier"
+msgstr "Skopiuj unikalny identyfikator zamówienia zakupu"
+
+msgid "Copy purchase return order unique identifier"
+msgstr "Skopiuj unikalny identyfikator zamówienia zwrotu zakupu"
+
 msgid "Copy Quality Document"
 msgstr "Skopiuj Dokument Jakości"
 
@@ -4590,17 +4644,38 @@ msgstr "Skopiuj Ofertę"
 msgid "Copy Quote number"
 msgstr "Skopiuj numer oferty"
 
+msgid "Copy quote unique identifier"
+msgstr "Skopiuj unikalny identyfikator oferty"
+
 msgid "Copy return number"
 msgstr "Skopiuj numer zwrotu"
 
+msgid "Copy RFQ unique identifier"
+msgstr "Skopiuj unikalny identyfikator RFQ"
+
 msgid "Copy RMA number"
 msgstr "Skopiuj numer RMA"
+
+msgid "Copy sales invoice unique identifier"
+msgstr "Skopiuj unikalny identyfikator faktury sprzedaży"
+
+msgid "Copy sales order unique identifier"
+msgstr "Skopiuj unikalny identyfikator zamówienia sprzedaży"
+
+msgid "Copy sales return order unique identifier"
+msgstr "Skopiuj unikalny identyfikator zamówienia zwrotu sprzedaży"
 
 msgid "Copy service number"
 msgstr "Skopiuj numer usługi"
 
 msgid "Copy service unique identifier"
 msgstr "Skopiuj unikalny identyfikator usługi"
+
+msgid "Copy supplier quote unique identifier"
+msgstr "Skopiuj unikalny identyfikator oferty dostawcy"
+
+msgid "Copy supplier unique identifier"
+msgstr "Skopiuj unikalny identyfikator dostawcy"
 
 msgid "Copy this item's pricing to another scope."
 msgstr "Skopiuj wycenę tego artykułu na inny zakres."
@@ -4610,6 +4685,9 @@ msgstr "Skopiuj ten link, aby udostępnić ofertę klientowi"
 
 msgid "Copy this link to share the quote with a supplier"
 msgstr "Skopiuj ten link, aby udostępnić ofertę dostawcy"
+
+msgid "Copy to clipboard"
+msgstr "Kopiuj do schowka"
 
 msgid "Copy tool number"
 msgstr "Skopiuj numer narzędzia"
@@ -5631,6 +5709,9 @@ msgstr "Domyślne Konto księgowe wydatków dla Urządzeń i Utrzymania ruchu fa
 msgid "Default GL expense account for periodic depreciation runs."
 msgstr "Domyślne konto wydatków w księdze głównej dla okresowych rozliczeń amortyzacji."
 
+msgid "Default horizon (days)"
+msgstr ""
+
 msgid "Default Method"
 msgstr "Metoda domyślna"
 
@@ -6153,9 +6234,6 @@ msgstr "Wykryte przez planer ruchu"
 msgid "Developer"
 msgstr "Deweloper"
 
-msgid "Diagram saved"
-msgstr "Diagram zapisany"
-
 msgid "Differs from the selection — allowed, but confirm they nest together"
 msgstr "Różni się od wyboru — dozwolone, ale potwierdź, że się do siebie dopasowują"
 
@@ -6437,11 +6515,11 @@ msgstr "Przeciągnij, aby umieścić na rysunku"
 msgid "Drag to reorder"
 msgstr "Przeciągnij, aby zmienić kolejność"
 
-msgid "Drag to resize diagram and features"
-msgstr "Przeciągnij, aby zmienić rozmiar diagramu i funkcji"
+msgid "Drag to resize diagram and characteristics"
+msgstr "Przeciągnij, aby zmienić rozmiar diagramu i charakterystyk"
 
-msgid "Drag to resize drawing and features"
-msgstr "Przeciągnij, aby zmienić rozmiar rysunku i funkcji"
+msgid "Drag to resize drawing and characteristics"
+msgstr "Przeciągnij, aby zmienić rozmiar rysunku i charakterystyk"
 
 msgid "Drag to zoom"
 msgstr "Przeciągnij, aby powiększyć"
@@ -6452,8 +6530,8 @@ msgstr "Pobieranie"
 msgid "Drawing Number"
 msgstr "Numer rysunku"
 
-msgid "Drawing replaced. Balloon placements were removed; feature rows are unchanged."
-msgstr "Rysunek zastąpiony. Umieszczenia balonów zostały usunięte; wiersze funkcji pozostają niezmienione."
+msgid "Drawing replaced. Balloon placements were removed; characteristic rows are unchanged."
+msgstr "Rysunek zastąpiony. Umieszczenia balonów zostały usunięte; wiersze charakterystyk pozostały niezmienione."
 
 msgid "Drop Ship"
 msgstr "Wysyłka bezpośrednia"
@@ -7492,11 +7570,11 @@ msgstr "Rozwiń {0}"
 msgid "Expand all"
 msgstr "Rozwiń wszystko"
 
+msgid "Expand characteristics table"
+msgstr "Rozwiń tabelę charakterystyk"
+
 msgid "Expand Costs"
 msgstr "Rozwiń koszty"
-
-msgid "Expand features table"
-msgstr "Rozwiń tabelę funkcji"
 
 msgid "Expand Labor"
 msgstr "Rozwiń Robociznę"
@@ -7684,8 +7762,8 @@ msgstr "Niezgodny"
 msgid "Failed"
 msgstr "Nieudane"
 
-msgid "Failed features"
-msgstr "Cechy nie powiodły się"
+msgid "Failed characteristics"
+msgstr "Cechy niezgodne"
 
 #. placeholder {0}: rows.length
 msgid "Failed to add line — {addedCount} of {0} lines were added"
@@ -7693,6 +7771,9 @@ msgstr "Nie udało się dodać wiersza — dodano {addedCount} z {0} wierszy"
 
 msgid "Failed to add lines"
 msgstr "Nie udało się dodać wierszy"
+
+msgid "Failed to apply pricing rules"
+msgstr "Nie udało się zastosować reguł cenowych"
 
 msgid "Failed to convert image"
 msgstr "Nie udało się przekonwertować obrazu."
@@ -7936,6 +8017,9 @@ msgstr "Nie udało się załadować śledzonych jednostek"
 msgid "Failed to move account: {0}"
 msgstr "Nie udało się przenieść konta: {0}"
 
+msgid "Failed to record gauge"
+msgstr "Nie udało się zapisać przyrządu pomiarowego"
+
 msgid "Failed to regenerate schedule"
 msgstr "Nie udało się wygenerować harmonogramu"
 
@@ -7969,8 +8053,8 @@ msgstr "Nie udało się pobrać danych kolumn CSV."
 msgid "Failed to save configuration rule"
 msgstr "Nie udało się zapisać reguły konfiguracji"
 
-msgid "Failed to save diagram"
-msgstr "Nie udało się zapisać diagramu"
+msgid "Failed to save inspection plan"
+msgstr "Nie udało się zapisać planu kontroli"
 
 msgid "Failed to save measurement"
 msgstr "Nie udało się zapisać pomiaru"
@@ -8070,15 +8154,6 @@ msgstr "Faks"
 
 msgid "Fax Number"
 msgstr "Numer faksu"
-
-msgid "Feature"
-msgstr "Funkcja"
-
-msgid "Feature values suggested from drawing"
-msgstr "Wartości funkcji sugerowane z rysunku"
-
-msgid "Features"
-msgstr "Funkcje"
 
 msgid "Fees"
 msgstr "Opłaty"
@@ -8207,6 +8282,9 @@ msgstr "Imię"
 
 msgid "First Operation"
 msgstr "Pierwsza operacja"
+
+msgid "First week the projected stock goes below zero"
+msgstr ""
 
 msgid "First-year additional deduction taken before the regular MACRS schedule begins."
 msgstr "Środek Trwały"
@@ -8387,6 +8465,9 @@ msgstr "Przyrząd pomiarowy"
 
 msgid "Gauge Calibration Notifications"
 msgstr "Powiadomienia o wzorcowaniu przyrządów pomiarowych"
+
+msgid "Gauge for characteristic {characteristicLabel}: {currentGauge}"
+msgstr "Przyrząd pomiarowy dla charakterystyki {characteristicLabel}: {currentGauge}"
 
 msgid "Gauge ID"
 msgstr "ID przyrządu pomiarowego"
@@ -9161,6 +9242,9 @@ msgstr "Uwzględnij nieaktywne"
 msgid "Included"
 msgstr "Uwzględnione"
 
+msgid "Includes bought and picked parts"
+msgstr ""
+
 msgid "Includes tax and shipping costs"
 msgstr "Obejmuje podatki i koszty wysyłki"
 
@@ -9890,6 +9974,12 @@ msgstr "Robocizna i odchylenie maszyn"
 msgid "Labor & Machine Variance (default)"
 msgstr "Robocizna i odchylenie maszyn (domyślnie)"
 
+msgid "Labor Costs"
+msgstr ""
+
+msgid "Labor Hours"
+msgstr ""
+
 msgid "Labor rate"
 msgstr "Stawka robocizny"
 
@@ -10021,6 +10111,9 @@ msgstr "Pozostaw puste, aby automatycznie użyć następnej rewizji"
 
 msgid "Leave empty for exact match"
 msgstr "Pozostaw puste dla dokładnego dopasowania"
+
+msgid "Leave empty, or enter 0, to show everything MRP plans."
+msgstr ""
 
 msgid "Leave this page"
 msgstr "Opuść tę stronę"
@@ -10373,6 +10466,12 @@ msgstr "Identyfikatory pozycji z małymi literami są dozwolone"
 msgid "Machine"
 msgstr "Maszyna"
 
+msgid "Machine Costs"
+msgstr ""
+
+msgid "Machine Hours"
+msgstr ""
+
 msgid "Machine rate"
 msgstr "Stawka maszyny"
 
@@ -10614,6 +10713,12 @@ msgstr "Historia kursu rynkowego (za USD)"
 msgid "Marks the person off for every day in the range. They won't be scheduled while they're away."
 msgstr "Oznacza osobę jako nieobecną na każdy dzień z zakresu. Nie będą zaplanowani, gdy są nieobecni."
 
+msgid "Markup by Category"
+msgstr ""
+
+msgid "Markup Percent"
+msgstr ""
+
 msgid "Master gauge"
 msgstr "Wzorcowy przyrząd pomiarowy"
 
@@ -10658,6 +10763,9 @@ msgstr "Materiał"
 
 msgid "Material"
 msgstr "Materiał"
+
+msgid "Material Cost"
+msgstr ""
 
 msgid "Material Dimension"
 msgstr "Wymiar materiału"
@@ -10706,6 +10814,9 @@ msgstr "Artykuł Materiału"
 
 msgid "Material Planning"
 msgstr "Planowanie materiałów"
+
+msgid "Material planning shows only the actions and suggested orders due within this many days from today, so far-out needs stay out of the way until they matter. An item's own planning horizon overrides this default."
+msgstr ""
 
 msgid "Material Properties"
 msgstr "Właściwości materiału"
@@ -11161,6 +11272,9 @@ msgstr "Zmiana netto"
 
 msgid "Net Income"
 msgstr "Przychody netto"
+
+msgid "Net Unit Price"
+msgstr ""
 
 msgid "Never"
 msgstr "Nigdy"
@@ -11750,6 +11864,9 @@ msgstr "Brak prognozy dostępnej dla tego zadania."
 
 msgid "No Gauge Selected"
 msgstr "Nie wybrano Przyrządu pomiarowego"
+
+msgid "No gauges found."
+msgstr "Nie znaleziono przyrządów pomiarowych."
 
 msgid "No grouped notifications"
 msgstr "Brak zgrupowanych powiadomień"
@@ -12821,6 +12938,9 @@ msgstr "W przeciwnym razie"
 msgid "Out"
 msgstr "Poza"
 
+msgid "Out of calibration"
+msgstr "Wymaga wzorcowania"
+
 msgid "Outbound"
 msgstr "Wychodzące"
 
@@ -12977,6 +13097,9 @@ msgstr "Część"
 
 msgid "Part Being Replaced"
 msgstr "Część wymieniana"
+
+msgid "Part Cost"
+msgstr ""
 
 msgid "Part Details"
 msgstr "Szczegóły części"
@@ -13376,6 +13499,9 @@ msgstr "Zaplanowany czas"
 msgid "Planning"
 msgstr "Planowanie"
 
+msgid "Planning Horizon"
+msgstr ""
+
 msgid "Planning Ownership"
 msgstr "Właściciel planowania"
 
@@ -13760,6 +13886,9 @@ msgstr "Produkcja: aplikacja hali produkcyjnej i planowanie"
 msgid "Profile"
 msgstr "Profil"
 
+msgid "Profit Percent"
+msgstr ""
+
 msgid "Progress"
 msgstr "Postęp"
 
@@ -13809,6 +13938,9 @@ msgstr "Prognozowana niedostępność zapasów w tygodniu {0}"
 
 msgid "Projected stock"
 msgstr "Prognozowany zapas"
+
+msgid "Projected stock is already below zero this week"
+msgstr ""
 
 #. placeholder {0}: formatWeek(stockoutDate)
 msgid "Projected stockout the week of {0}"
@@ -14506,6 +14638,9 @@ msgstr "Ostatnie płatności"
 msgid "Recently Created"
 msgstr "Niedawno utworzone"
 
+msgid "Recently used"
+msgstr "Ostatnio używane"
+
 msgid "Recertify Every (Days)"
 msgstr "Ponownie certyfikuj co (Dni)"
 
@@ -14801,6 +14936,9 @@ msgstr "Usuń z listy sortowanie po kolumnie"
 msgid "Remove station"
 msgstr "Usuń stanowisko"
 
+msgid "Remove this item"
+msgstr ""
+
 msgid "Remove this storage type from all referencing storage units and delete it. This cannot be undone."
 msgstr "Usuń ten typ magazynowania ze wszystkich jednostek magazynowych, które go wykorzystują, i go usuń. Tej operacji nie można cofnąć."
 
@@ -14883,8 +15021,8 @@ msgstr "Zastąp dane tej firmy zestawem danych demonstracyjnych — najpierw mig
 msgid "Replacement Order"
 msgstr "Zamówienie zastępcze"
 
-msgid "Replacing the PDF removes all balloon placements on this document. Feature rows and their values stay; you can place balloons again on the new drawing."
-msgstr "Zamiana pliku PDF usuwa wszystkie umieszczenia dymków na tym dokumencie. Wiersze funkcji i ich wartości pozostają; możesz ponownie umieścić dymki na nowym rysunku."
+msgid "Replacing the PDF removes all balloon placements on this document. Characteristic rows and their values stay; you can place balloons again on the new drawing."
+msgstr "Zastąpienie PDF-a usuwa wszystkie umieszczenia balonów na tym dokumencie. Wiersze charakterystyk i ich wartości zostają; możesz ponownie umieścić balony na nowym rysunku."
 
 msgid "Replenishment"
 msgstr "Uzupełnianie"
@@ -15641,8 +15779,8 @@ msgstr "Wielkość próbki"
 msgid "Sampling"
 msgstr "Kontrola wyrywkowa"
 
-msgid "Sampling — Feature {featureLabel}"
-msgstr "Kontrola wyrywkowa — Funkcja {featureLabel}"
+msgid "Sampling — Characteristic {featureLabel}"
+msgstr "Kontrola wyrywkowa — Charakterystyka {featureLabel}"
 
 msgid "Sampling Standard"
 msgstr "Normalna kontrola wyrywkowa"
@@ -15843,6 +15981,9 @@ msgstr "Złomowany"
 msgid "Search"
 msgstr "Szukaj"
 
+msgid "Search {gaugeTypeName}..."
+msgstr "Szukaj {gaugeTypeName}..."
+
 msgid "Search accounts"
 msgstr "Wyszukaj konta"
 
@@ -15887,6 +16028,9 @@ msgstr "Wyszukaj pola..."
 
 msgid "Search for existing or create a new one"
 msgstr "Wyszukaj istniejący lub utwórz nowy"
+
+msgid "Search gauges..."
+msgstr "Szukaj przyrządów pomiarowych..."
 
 msgid "Search items or bins"
 msgstr "Szukaj przedmiotów lub pojemników"
@@ -16051,6 +16195,9 @@ msgstr "Wybierz operację…"
 msgid "Select an option"
 msgstr "Wybierz opcję"
 
+msgid "Select at least one item to accept the quote"
+msgstr ""
+
 msgid "Select at least one line to convert"
 msgstr "Wybierz co najmniej jedną pozycję do przekształcenia"
 
@@ -16083,6 +16230,9 @@ msgstr "Wybierz typ pracownika"
 
 msgid "Select field"
 msgstr "Wybierz pole"
+
+msgid "Select gauge"
+msgstr "Wybierz przyrząd pomiarowy"
 
 msgid "Select Gauge"
 msgstr "Wybierz przyrząd pomiarowy"
@@ -16662,6 +16812,9 @@ msgstr "Pokaż dostępne numery śledzenia"
 
 msgid "Show Customer IDs"
 msgstr "Pokaż identyfikatory klientów"
+
+msgid "Show Details"
+msgstr ""
 
 msgid "Show Durations"
 msgstr "Pokaż czasy trwania"
@@ -18207,8 +18360,8 @@ msgstr "Partia będzie oznaczona jako Zaliczona. {fails} niepowodzenie(ń) prób
 msgid "The lot will still be rejected, but an NCR cannot be created until at least one Issue Type is configured."
 msgstr "Partia będzie nadal odrzucona, ale nie można utworzyć NCR, dopóki nie zostanie skonfigurowany co najmniej jeden typ problemu."
 
-msgid "The lot's per-feature sampling plan will be re-resolved from the selected document."
-msgstr "Plan kontroli wyrywkowej partii będzie ponownie ustalony na podstawie wybranego dokumentu."
+msgid "The lot's per-characteristic sampling plan will be re-resolved from the selected document."
+msgstr "Plan kontroli wyrywkowej dla każdej cechy partii zostanie ponownie ustalony na podstawie wybranego dokumentu."
 
 msgid "The lowest amount this supplier will charge for this process, regardless of quantity; jobs below the breakeven volume still cost at least this much."
 msgstr "Najniższa kwota, którą dostawca będzie pobierać za ten proces, niezależnie od ilości; zlecenia produkcyjne poniżej progu rentowności kosztują przynajmniej tyle."
@@ -19045,6 +19198,9 @@ msgstr "ciasne"
 msgid "Tightened"
 msgstr "Obostrzona"
 
+msgid "Time fence"
+msgstr ""
+
 msgid "Time of day"
 msgstr "Pora dnia"
 
@@ -19141,9 +19297,6 @@ msgstr "Przełącz poziom"
 msgid "Toggle Properties"
 msgstr "Przełącz właściwości"
 
-msgid "Toggle the sidebar"
-msgstr "Przełącz pasek boczny"
-
 msgid "Toggle views"
 msgstr "Przełącz widoki"
 
@@ -19174,6 +19327,9 @@ msgstr "Szczegóły narzędzia"
 msgid "Tool ID"
 msgstr "ID narzędzia"
 
+msgid "Tooling Cost"
+msgstr ""
+
 msgid "tools"
 msgstr "Narzędzia"
 
@@ -19198,11 +19354,17 @@ msgstr "Kwota całkowita"
 msgid "Total capitalized cost of the asset (purchase price plus freight, install, and other costs that become part of book value)."
 msgstr "Całkowity skapitalizowany koszt zasobu (cena nabycia plus fracht, instalacja i inne koszty, które stają się częścią wartości netto w księgach)."
 
+msgid "Total Direct Cost"
+msgstr ""
+
 msgid "Total discount"
 msgstr "Rabat całkowity"
 
 msgid "Total Due"
 msgstr "Suma do spłacenia"
+
+msgid "Total Estimated Cost"
+msgstr ""
 
 msgid "Total expected production units for units-of-production depreciation; cost is spread per unit produced."
 msgstr "Całkowita oczekiwana liczba jednostek produkcji do amortyzacji jednostek produkcji; koszt jest rozłożony na wyprodukowaną jednostkę."
@@ -19210,11 +19372,23 @@ msgstr "Całkowita oczekiwana liczba jednostek produkcji do amortyzacji jednoste
 msgid "Total Hours"
 msgstr "Łącznie godzin"
 
+msgid "Total Indirect Cost"
+msgstr ""
+
+msgid "Total Material Cost"
+msgstr ""
+
 msgid "Total Minutes"
 msgstr "Łącznie minut"
 
+msgid "Total Outside Cost"
+msgstr ""
+
 msgid "Total Price"
 msgstr "Cena całkowita"
+
+msgid "Total Profit"
+msgstr ""
 
 msgid "Total quantity"
 msgstr "Suma ilości"
@@ -19575,6 +19749,9 @@ msgstr "Nieznany"
 
 msgid "unknown error"
 msgstr "nieznany błąd"
+
+msgid "Unknown gauge"
+msgstr "Nieznany przyrząd pomiarowy"
 
 msgid "unknown location"
 msgstr "nieznana lokalizacja"
@@ -20147,6 +20324,9 @@ msgstr "Wyświetl notatki"
 
 msgid "View on schedule board"
 msgstr "Zobacz na tablicy harmonogramu"
+
+msgid "View only — changes are not saved"
+msgstr "Tryb wyświetlania — zmiany nie są zapisywane"
 
 msgid "View Open"
 msgstr "Wyświetl Otwarte"
@@ -21070,6 +21250,9 @@ msgstr "Twoje zaproszenie jest nieprawidłowe lub zostało już zaakceptowane. S
 
 msgid "Your job here: check a real sample of each row, then mark it validated. Foundation data loads first, then master records, then open transactions at cutover."
 msgstr "Twoja rola tutaj: sprawdź rzeczywistą próbkę każdego wiersza, a następnie oznacz ją jako zweryfikowaną. Dane fundamentowe ładują się najpierw, potem rekordy główne, a następnie otwarte transakcje w momencie przejścia."
+
+msgid "Your latest changes could not be saved. Are you sure you want to leave this page?"
+msgstr "Nie można było zapisać ostatnich zmian. Czy na pewno chcesz opuścić tę stronę?"
 
 msgid "Your legal name, addresses, branding, and document defaults"
 msgstr "Twoja nazwa prawna, adresy, branding i domyślne ustawienia dokumentów"

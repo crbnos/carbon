@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: LicenseRef-Carbon-Commercial
+// Carbon Enterprise file, licensed only under the Carbon Commercial License
+// (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
+
 // The MCP server's connect-time instructions, in their own module so they are
 // testable without server.ts's import chain (callOperation → auth → env). The
 // tool catalog is passed in (the generated `tool-metadata.json` lives in the app,

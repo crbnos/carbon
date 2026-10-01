@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { Database, Json } from "@carbon/database";
 import { fetchAllFromTable, getCompanyTimeZone } from "@carbon/database";
 import type { Kysely, KyselyDatabase } from "@carbon/database/client";
@@ -1406,7 +1410,7 @@ export async function getPayments(
 ) {
   let query = client
     .from("payment")
-    .select("*", { count: "exact" })
+    .select("*", { count: LIST_COUNT })
     .eq("companyId", companyId);
 
   if (args.search) {
@@ -1464,7 +1468,7 @@ export async function getCharges(
 ) {
   let query = client
     .from("charge")
-    .select("*", { count: "exact" })
+    .select("*", { count: LIST_COUNT })
     .eq("companyId", companyId);
 
   if (args.search) {
@@ -1513,7 +1517,7 @@ export async function getReimbursements(
 ) {
   let query = client
     .from("reimbursement")
-    .select("*", { count: "exact" })
+    .select("*", { count: LIST_COUNT })
     .eq("companyId", companyId);
 
   if (args.search) {
@@ -3591,7 +3595,7 @@ export async function getMemos(
 ) {
   let query = client
     .from("memo")
-    .select("*", { count: "exact" })
+    .select("*", { count: LIST_COUNT })
     .eq("companyId", companyId);
 
   if (args.search) {

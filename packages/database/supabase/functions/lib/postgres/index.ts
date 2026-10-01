@@ -1,6 +1,11 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import {
   Driver,
   Kysely,
+  KyselyConfig,
   PostgresAdapter,
   PostgresDialectConfig,
   PostgresIntrospector,
@@ -210,7 +215,8 @@ interface PgDriverConstructor {
 
 export function getPostgresClient<D = KyselyDatabase>(
   pool: Pool,
-  driver: PgDriverConstructor
+  driver: PgDriverConstructor,
+  log?: KyselyConfig["log"]
 ): Kysely<D> {
   const runtime = getRuntime();
 
@@ -218,6 +224,7 @@ export function getPostgresClient<D = KyselyDatabase>(
     case "node":
     case "deno": {
       return new Kysely<D>({
+        log,
         dialect: {
           createAdapter() {
             return new PostgresAdapter();

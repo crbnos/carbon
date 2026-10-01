@@ -1,7 +1,12 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { describe, expect, it } from "vitest";
 import {
   applyPriceRules,
   configurationSurcharge,
+  configuredQuoteBasePrice,
   decideRecalcPricing,
   getEffectiveDefaultMarkups,
   reconcileQuantityBreaks,
@@ -417,5 +422,92 @@ describe("resolveJobConfiguration", () => {
       configuration: null,
       reconfigured: false
     });
+  });
+});
+
+describe("configuredQuoteBasePrice", () => {
+  const configuration = { orbit_regime: "LEO" };
+  const defaults = { materialCost: 20, laborCost: 30 };
+
+  it("starts a configured line from the part's sale price", () => {
+    expect(
+      configuredQuoteBasePrice({
+        configuration,
+        unitSalePrice: 1800000,
+        categoryMarkups: null,
+        defaultMarkups: {}
+      })
+    ).toBe(1800000);
+  });
+
+  it("prices an unconfigured line cost-plus", () => {
+    expect(
+      configuredQuoteBasePrice({
+        configuration: null,
+        unitSalePrice: 1800000,
+        categoryMarkups: null,
+        defaultMarkups: {}
+      })
+    ).toBeNull();
+    expect(
+      configuredQuoteBasePrice({
+        configuration: {},
+        unitSalePrice: 1800000,
+        categoryMarkups: null,
+        defaultMarkups: {}
+      })
+    ).toBeNull();
+  });
+
+  it("prices cost-plus when the part has no sale price", () => {
+    for (const unitSalePrice of [null, undefined, 0]) {
+      expect(
+        configuredQuoteBasePrice({
+          configuration,
+          unitSalePrice,
+          categoryMarkups: null,
+          defaultMarkups: {}
+        })
+      ).toBeNull();
+    }
+  });
+
+  it("keeps the sale price for a row seeded with the company defaults", () => {
+    expect(
+      configuredQuoteBasePrice({
+        configuration,
+        unitSalePrice: 100,
+        categoryMarkups: { ...defaults },
+        defaultMarkups: defaults
+      })
+    ).toBe(100);
+    expect(
+      configuredQuoteBasePrice({
+        configuration,
+        unitSalePrice: 100,
+        categoryMarkups: {},
+        defaultMarkups: defaults
+      })
+    ).toBe(100);
+  });
+
+  it("prices cost-plus once someone chose a markup", () => {
+    expect(
+      configuredQuoteBasePrice({
+        configuration,
+        unitSalePrice: 100,
+        categoryMarkups: { materialCost: 40, laborCost: 40 },
+        defaultMarkups: defaults
+      })
+    ).toBeNull();
+    // 0% Markup with no company defaults is still a choice (price at cost).
+    expect(
+      configuredQuoteBasePrice({
+        configuration,
+        unitSalePrice: 100,
+        categoryMarkups: { materialCost: 0, laborCost: 0 },
+        defaultMarkups: {}
+      })
+    ).toBeNull();
   });
 });

@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { SUPABASE_URL } from "@carbon/auth";
 import type { Database, Json } from "@carbon/database";
 import { getCompanyTimeZone } from "@carbon/database";
@@ -22,7 +26,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { z } from "zod";
 import type { plmReleaseControl as plmReleaseControlOptions } from "~/modules/items/items.models";
 import type { GenericQueryFilters } from "~/utils/query";
-import { setGenericQueryFilters } from "~/utils/query";
+import { LIST_COUNT, setGenericQueryFilters } from "~/utils/query";
 import { interpolateSequenceDate } from "~/utils/string";
 import { sanitize } from "~/utils/supabase";
 import type {
@@ -97,7 +101,7 @@ export async function getApiKeys(
 ) {
   let query = client
     .from("apiKey")
-    .select("*", { count: "exact" })
+    .select("*", { count: LIST_COUNT })
     .eq("companyId", companyId);
 
   if (args?.search) {
@@ -327,7 +331,7 @@ export async function getCustomFieldsTables(
   let query = client
     .from("customFieldTables")
     .select("*", {
-      count: "exact"
+      count: LIST_COUNT
     })
     .eq("companyId", companyId);
 
@@ -414,7 +418,7 @@ export async function getSequences(
   let query = client
     .from("sequence")
     .select("*", {
-      count: "exact"
+      count: LIST_COUNT
     })
     .eq("companyId", companyId);
 
@@ -451,7 +455,7 @@ export async function getItemSerialSequences(
   let query = client
     .from("itemSerialSequences")
     .select("*", {
-      count: "exact"
+      count: LIST_COUNT
     })
     .eq("companyId", companyId);
 
@@ -769,7 +773,7 @@ export async function getWebhooks(
   let query = client
     .from("webhook")
     .select("*", {
-      count: "exact"
+      count: LIST_COUNT
     })
     .eq("companyId", companyId);
 

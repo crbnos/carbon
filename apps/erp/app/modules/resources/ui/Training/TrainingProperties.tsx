@@ -1,7 +1,12 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import { Select, ValidatedForm } from "@carbon/form";
 import {
   Badge,
   Button,
+  Copy,
   HStack,
   Subheading,
   Tooltip,
@@ -124,24 +129,13 @@ const TrainingProperties = () => {
                 </span>
               </TooltipContent>
             </Tooltip>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  aria-label="Copy"
-                  size="sm"
-                  className="p-1"
-                  onClick={() => copyToClipboard(routeData?.training?.id ?? "")}
-                >
-                  <LuKeySquare className="w-3 h-3" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <span>
-                  <Trans>Copy training unique identifier</Trans>
-                </span>
-              </TooltipContent>
-            </Tooltip>
+            <Copy
+              text={routeData?.training?.id ?? ""}
+              label={t`Copy training unique identifier`}
+              icon={<LuKeySquare className="size-3" />}
+              variant="ghost"
+              className="w-auto"
+            />
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button

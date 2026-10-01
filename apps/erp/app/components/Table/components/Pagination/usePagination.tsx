@@ -1,21 +1,31 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { RowSelectionState } from "@tanstack/react-table";
 import type { Dispatch, SetStateAction } from "react";
 import { flushSync } from "react-dom";
 import { useUrlParams } from "~/hooks";
-import { getPageOffset, getPageSize } from "~/utils/pagination";
+import { getPageOffset, getPageSize, pageBounds } from "~/utils/pagination";
 
 export function usePagination(
-  count: number,
-  setRowSelections: Dispatch<SetStateAction<RowSelectionState>>
+  estimatedCount: number,
+  setRowSelections: Dispatch<SetStateAction<RowSelectionState>>,
+  rowsOnPage: number
 ) {
   const [params, setParams] = useUrlParams();
   const pageSize = getPageSize(params);
   const offset = getPageOffset(params);
 
   const pageIndex = Math.floor(offset / pageSize) + 1;
+  const { canNextPage, count } = pageBounds({
+    count: estimatedCount,
+    offset,
+    pageSize,
+    rowsOnPage
+  });
   const pageCount = Math.ceil(count / pageSize);
   const canPreviousPage = pageIndex > 1;
-  const canNextPage = pageIndex < Math.ceil(count / pageSize);
 
   const gotoPage = (page: number) => {
     flushSync(() => {

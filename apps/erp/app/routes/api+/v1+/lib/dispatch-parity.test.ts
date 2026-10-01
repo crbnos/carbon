@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 // Dispatch contract tests, pinned against REAL manifest entries.
 //
 // History: these began as an A/B parity harness against the legacy MCP
@@ -21,6 +25,7 @@ const spies = vi.hoisted(() => ({
   upsertNotificationPreference: vi.fn(),
   insertJob: vi.fn(),
   insertIssue: vi.fn(),
+  getInspectionDocument: vi.fn(),
   insertPurchaseOrder: vi.fn(),
   insertSalesOrder: vi.fn(),
   replaceInvoiceSettlements: vi.fn(),
@@ -61,7 +66,8 @@ vi.mock("~/modules/purchasing/purchasing.service", () => ({
   insertPurchaseOrder: spies.insertPurchaseOrder
 }));
 vi.mock("~/modules/quality/quality.service", () => ({
-  insertIssue: spies.insertIssue
+  insertIssue: spies.insertIssue,
+  getInspectionDocument: spies.getInspectionDocument
 }));
 vi.mock("~/modules/resources/resources.service", () => ({}));
 vi.mock("~/modules/sales/sales.service", () => ({
@@ -91,6 +97,8 @@ vi.mock("@carbon/logger", () => ({
   })
 }));
 
+import { CarbonJsonSchemaConverter } from "@carbon/api/schema";
+import { OpenAPIGenerator } from "@orpc/openapi";
 import { MCP_BLOCKED_TOOL_NAMES } from "../../mcp+/lib/mcp-blocked-tools";
 import type { AuthedContext } from "./base.server";
 import { callOperation } from "./call.server";
@@ -100,7 +108,15 @@ import {
   dispatchOperation,
   enrichWithAuthContext
 } from "./dispatch.server";
-import { operationsByName } from "./operations.server";
+import { openApiHandler } from "./handler.server";
+import {
+  liveOperationAliases,
+  OPERATION_ALIASES,
+  OPERATIONS,
+  operationsByName
+} from "./operations.server";
+import { router } from "./router.server";
+import { specOptions } from "./spec-options.server";
 
 const ctx: AuthedContext = {
   client: spies.FAKE_CLIENT as unknown as AuthedContext["client"],
@@ -152,6 +168,7 @@ const allSpies = [
   spies.upsertNotificationPreference,
   spies.insertJob,
   spies.insertIssue,
+  spies.getInspectionDocument,
   spies.insertPurchaseOrder,
   spies.insertSalesOrder,
   spies.replaceInvoiceSettlements,
@@ -891,5 +908,98 @@ describe("blocked tools (D5)", () => {
       errorKind: "execution",
       error: "Tool disabled: settings_seedCompany is not available via MCP."
     });
+  });
+});
+
+describe("renamed operations (deprecated aliases)", () => {
+  const OLD = "production_getInspectionDocument";
+
+  it("every alias names a published operation and shadows none", () => {
+    const published = new Set(OPERATIONS.map((op) => op.name));
+    for (const [alias, target] of Object.entries(OPERATION_ALIASES)) {
+      expect(published.has(target), `${alias} → ${target} is missing`).toBe(
+        true
+      );
+      expect(published.has(alias), `${alias} is a real operation`).toBe(false);
+    }
+    expect(liveOperationAliases).toHaveLength(
+      Object.keys(OPERATION_ALIASES).length
+    );
+  });
+
+  it("resolves an old name to its replacement's entry", () => {
+    expect(operationsByName.get(OLD)?.name).toBe(
+      "quality_getInspectionDocument"
+    );
+  });
+
+  it("callOperation runs the replacement under the OLD name", async () => {
+    spies.getInspectionDocument.mockResolvedValue({
+      data: { id: "isp_1" },
+      error: null
+    });
+    const result = await callOperation(OLD, ctx, { id: "isp_1" });
+    expect(result).toEqual({ success: true, data: { id: "isp_1" } });
+    expect(spies.getInspectionDocument).toHaveBeenCalledWith(
+      spies.FAKE_CLIENT,
+      "isp_1",
+      "c1"
+    );
+  });
+
+  it("gates an API-key caller on the NEW permission, not the old one", async () => {
+    const productionOnly = await callOperation(
+      OLD,
+      { ...ctx, authKind: "api-key", scopes: { production_view: ["c1"] } },
+      { id: "isp_1" }
+    );
+    expect(productionOnly).toEqual({
+      success: false,
+      errorKind: "execution",
+      error: "API key lacks the required scope: quality_view"
+    });
+    expect(spies.getInspectionDocument).not.toHaveBeenCalled();
+
+    const quality = await callOperation(
+      OLD,
+      { ...ctx, authKind: "api-key", scopes: { quality_view: ["c1"] } },
+      { id: "isp_1" }
+    );
+    expect(quality.success).toBe(true);
+  });
+
+  it("serves the old HTTP path through the replacement", async () => {
+    spies.getInspectionDocument.mockResolvedValue({
+      data: { id: "isp_1" },
+      error: null
+    });
+    const { matched, response } = await openApiHandler.handle(
+      new Request("http://localhost/api/v1/production/getInspectionDocument", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ id: "isp_1" })
+      }),
+      { prefix: "/api/v1", context: ctx }
+    );
+    expect(matched).toBe(true);
+    expect(response?.status).toBe(200);
+    expect(await response?.json()).toEqual({ id: "isp_1" });
+    expect(spies.getInspectionDocument).toHaveBeenCalledWith(
+      spies.FAKE_CLIENT,
+      "isp_1",
+      "c1"
+    );
+  });
+
+  it("publishes the old path in the spec, marked deprecated", async () => {
+    const spec = await new OpenAPIGenerator({
+      schemaConverters: [new CarbonJsonSchemaConverter()]
+    }).generate(router, specOptions());
+    const post = (path: string) =>
+      (spec.paths?.[path] as { post?: { deprecated?: boolean } } | undefined)
+        ?.post;
+    expect(post("/production/getInspectionDocument")?.deprecated).toBe(true);
+    // Undefined, so the serialized spec of every real operation is unchanged.
+    expect(post("/quality/getInspectionDocument")?.deprecated).toBeUndefined();
   });
 });

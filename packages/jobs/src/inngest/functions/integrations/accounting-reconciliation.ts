@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 /**
  * Weekly reconciliation cron (posting sync, v3 spec §5 / v4 Pillar E) —
  * presence drift detection plus the per-period × per-account tie-out.

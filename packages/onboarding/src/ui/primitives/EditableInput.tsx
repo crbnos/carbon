@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 // Dashed inline input with save-on-blur, built on @carbon/react's <Input>. Holds
 // a local draft so typing is smooth, commits only when the value changed, and
 // re-syncs to the server value if it updates underneath (realtime / revalidate)
