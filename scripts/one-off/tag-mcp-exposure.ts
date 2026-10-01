@@ -130,9 +130,19 @@ for (const mod of fs.readdirSync(MODULES_DIR)) {
 
       if (block === null) {
         text = `${text.slice(0, m.index)}/** @mcp */\n${text.slice(m.index)}`;
-      } else if (block.includes("\n")) {
-        // Multi-line: add a tag line before the closing delimiter.
+      } else if (/\n\s*\*?\s*$/.test(block.slice(0, -2))) {
+        // Multi-line AND the closing `*/` sits on its own line: a tag line can
+        // simply be inserted before it.
         text = `${text.slice(0, jsdocEnd)}* @mcp\n ${text.slice(jsdocEnd)}`;
+      } else if (block.includes("\n")) {
+        // Multi-line but the closing `*/` trails PROSE (`… untouched). */`).
+        // Appending there produced `… untouched). * @mcp`, which is not a tag
+        // line at all — the tag must get its own.
+        const body = block.slice(3, -2).replace(/\s+$/, "");
+        text =
+          text.slice(0, jsdocStart) +
+          `/**${body}\n * @mcp\n */` +
+          text.slice(jsdocEnd + 2);
       } else {
         // Single-line `/** text */` — EXPAND it, so the tag gets its own line.
         const inner = block.slice(3, -2).trim();

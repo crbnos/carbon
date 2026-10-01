@@ -38,6 +38,15 @@ import {
 } from "./response-schema";
 import { getDbEnumValues, getDbTableTypeFields } from "./db-types";
 import {
+  astDeletes,
+  buildServiceAst,
+  astPaginates,
+  astTables,
+  astUsesOperationDiscriminator,
+  astWrites,
+  type ServiceAst
+} from "./service-ast";
+import {
   buildValidatorRegistry,
   CONTEXT_PARAMS,
   type ValidatorRegistry,
@@ -972,7 +981,8 @@ function resolveTypeAlias(
 
 function classifyFunction(
   name: string,
-  content?: string
+  ast?: ServiceAst,
+  toolName?: string
 ): Classification {
   if (/^delete/.test(name)) return "DESTRUCTIVE";
   // Require a camelCase boundary after the read prefix so a mutating name that merely starts with
@@ -985,17 +995,20 @@ function classifyFunction(
   // caller didn't include. Flag it so the client treats it as destructive, even
   // though its name says `upsert`/`update`. injectAuth stays name-based below, so
   // the insert branch still gets its createdBy.
-  if (content && functionBodyDeletes(content, name)) return "DESTRUCTIVE";
+  if (ast && toolName && functionBodyDeletes(ast, toolName)) {
+    return "DESTRUCTIVE";
+  }
   return "WRITE";
 }
 
 // True when the function body issues a row delete (supabase `.delete(` or Kysely
 // `.deleteFrom(`). Comment/URL-safe via stripComments.
-function functionBodyDeletes(content: string, funcName: string): boolean {
-  const body = extractFunctionBody(content, funcName);
-  if (body === null) return false;
-  const stripped = stripComments(body);
-  return /\.delete\s*\(/.test(stripped) || /\.deleteFrom\s*\(/.test(stripped);
+/** The keys an upsert branches on to pick insert vs update. */
+const OPERATION_FIELDS = ["createdBy", "updatedBy"] as const;
+
+function functionBodyDeletes(ast: ServiceAst, toolName: string): boolean {
+  const fn = ast.functions.get(toolName);
+  return fn ? astDeletes(fn) : false;
 }
 
 /**
@@ -1005,13 +1018,9 @@ function functionBodyDeletes(content: string, funcName: string): boolean {
  * layer pages the response instead. Same body-scan mechanism (and shadowed-
  * wrapper first-match caveat) as `functionBodyDeletes`.
  */
-function functionBodyPaginates(content: string, funcName: string): boolean {
-  const body = extractFunctionBody(content, funcName);
-  if (body === null) return false;
-  const stripped = stripComments(body);
-  return (
-    /setGenericQueryFilters\s*\(/.test(stripped) || /\.range\s*\(/.test(stripped)
-  );
+function functionBodyPaginates(ast: ServiceAst, toolName: string): boolean {
+  const fn = ast.functions.get(toolName);
+  return fn ? astPaginates(fn) : false;
 }
 
 function extractFunctionBody(content: string, funcName: string): string | null {
@@ -1036,13 +1045,9 @@ function extractFunctionBody(content: string, funcName: string): string | null {
  * declaration. Same body-scan mechanism (and shadowed-wrapper first-match
  * caveat) as `functionBodyDeletes`.
  */
-function functionBodyWrites(content: string, funcName: string): boolean {
-  const body = extractFunctionBody(content, funcName);
-  if (body === null) return false;
-  const stripped = stripComments(body);
-  return /\.(insert|upsert|update)\s*\(|\b(insertInto|updateTable|deleteFrom)\s*\(|\.delete\s*\(/.test(
-    stripped
-  );
+function functionBodyWrites(ast: ServiceAst, toolName: string): boolean {
+  const fn = ast.functions.get(toolName);
+  return fn ? astWrites(fn) : false;
 }
 
 function computeInjectAuth(
@@ -1080,17 +1085,9 @@ function computeInjectAuth(
  * a function that reads one table and writes another yields two names, which
  * `withoutAbsentAuditColumns` treats as "can't tell" and leaves alone.
  */
-function functionBodyTables(content: string, funcName: string): string[] {
-  const body = extractFunctionBody(content, funcName);
-  if (body === null) return [];
-  const stripped = stripComments(body);
-  const names = new Set<string>();
-  for (const m of stripped.matchAll(
-    /(?:\.from|insertInto|updateTable)\(\s*["'`](\w+)["'`]\s*\)/g
-  )) {
-    names.add(m[1]);
-  }
-  return [...names];
+function functionBodyTables(ast: ServiceAst, toolName: string): string[] {
+  const fn = ast.functions.get(toolName);
+  return fn ? astTables(fn) : [];
 }
 
 /**
@@ -1110,14 +1107,14 @@ function functionBodyTables(content: string, funcName: string): string[] {
  */
 function withoutAbsentAuditColumns(
   fields: AuthField[],
-  content: string,
-  funcName: string,
+  ast: ServiceAst,
+  toolName: string,
   onDrop?: (table: string, dropped: AuthField[]) => void
 ): AuthField[] {
   const audit: AuthField[] = ["createdBy", "updatedBy"];
   if (!audit.some((f) => fields.includes(f))) return fields;
 
-  const tables = functionBodyTables(content, funcName);
+  const tables = functionBodyTables(ast, toolName);
   if (tables.length !== 1) return fields;
   const columns = getDbTableTypeFields(tables[0], "Row");
   if (!columns) return fields;
@@ -1182,15 +1179,11 @@ function permissionActionsFor(
 // create and updatedBy on update and suppresses the other, so either convention
 // lands on the branch the caller asked for.
 function usesOperationDiscriminator(
-  content: string,
-  funcName: string
+  ast: ServiceAst,
+  toolName: string
 ): boolean {
-  const body = extractFunctionBody(content, funcName);
-  if (body === null) return false;
-  const stripped = stripComments(body);
-  return (
-    stripped.includes('"createdBy" in') || stripped.includes('"updatedBy" in')
-  );
+  const fn = ast.functions.get(toolName);
+  return fn ? astUsesOperationDiscriminator(fn, OPERATION_FIELDS) : false;
 }
 
 // The `:` guard keeps `https://` intact.
@@ -1507,6 +1500,12 @@ export interface BuildOptions {
     validatorName: string,
     how: ValidatorResolution
   ) => void;
+  /**
+   * The service files as an AST. Every body question — does this delete, does
+   * it paginate, which relations does it name, does it branch on
+   * `"createdBy" in` — is answered from it rather than from the file's text.
+   */
+  ast?: ServiceAst;
   /** A data-changing function with no `@mcp` tag, so it is not exposed. */
   onUntagged?: (toolName: string, classification: Classification) => void;
   /** A `@mcp <kind>` declaration that overrode the name-verb guess. */
@@ -1535,6 +1534,9 @@ export interface BuildOptions {
  */
 export function buildAllToolMetadata(opts: BuildOptions = {}): ManifestEntry[] {
   const allTools: ManifestEntry[] = [];
+  // Shared with buildResponseSchemaIndex when the caller passes one in; built
+  // here otherwise so the sync, pure contract of this function is unchanged.
+  const ast = opts.ast ?? buildServiceAst(MODULE_LIST);
 
   for (const mod of MODULE_LIST) {
     let serviceFile = path.join(MODULES_DIR, mod, `${mod}.service.ts`);
@@ -1604,14 +1606,14 @@ export function buildAllToolMetadata(opts: BuildOptions = {}): ManifestEntry[] {
       // VERIFIED against the body, so a declaration cannot quietly downgrade a
       // real write into a read (which would relax its permission from
       // create/update to view and drop its audit injection).
-      const inferred = classifyFunction(func.name, content);
+      const inferred = classifyFunction(func.name, ast, toolName);
       const declared = declaredClassification(func.jsdoc);
-      if (declared === "READ" && functionBodyWrites(content, func.name)) {
+      if (declared === "READ" && functionBodyWrites(ast, toolName)) {
         throw new Error(
           `${toolName} declares \`${MCP_EXPOSURE_TAG} read\` but its body performs a write. A read cannot write: fix the tag or the function.`
         );
       }
-      if (declared === "WRITE" && functionBodyDeletes(content, func.name)) {
+      if (declared === "WRITE" && functionBodyDeletes(ast, toolName)) {
         throw new Error(
           `${toolName} declares \`${MCP_EXPOSURE_TAG} write\` but its body deletes. Declare it \`${MCP_EXPOSURE_TAG} destructive\`.`
         );
@@ -1637,8 +1639,8 @@ export function buildAllToolMetadata(opts: BuildOptions = {}): ManifestEntry[] {
         override ||
           withoutAbsentAuditColumns(
             computeInjectAuth(func.name, classification),
-            content,
-            func.name,
+            ast,
+            toolName,
             (table, dropped) =>
               opts.onAuditColumnsDropped?.(toolName, table, dropped)
           ),
@@ -1667,13 +1669,13 @@ export function buildAllToolMetadata(opts: BuildOptions = {}): ManifestEntry[] {
       stripRedundantPatterns(schema);
       if (
         injectAuth.includes("createdBy") &&
-        usesOperationDiscriminator(content, func.name)
+        usesOperationDiscriminator(ast, toolName)
       ) {
         addOperationArg(schema);
       }
 
       const responseSchema = opts.responses?.get(mod, func.name) ?? undefined;
-      const paginates = functionBodyPaginates(content, func.name);
+      const paginates = functionBodyPaginates(ast, toolName);
 
       allTools.push({
         name: toolName,

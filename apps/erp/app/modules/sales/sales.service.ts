@@ -4115,7 +4115,13 @@ type QuoteLinePriceInput = {
   priceSource?: "system" | "manual";
 };
 
-/** @mcp */
+/**
+ * @mcp
+ * @mcp destructive — it delegates to rewriteQuoteLinePrices, which
+ *                  deleteFrom("quoteLinePrice") then re-inserts. The body of
+ *                  THIS function holds no delete, so neither the name verb nor
+ *                  an AST scan of it can see that; declaring it is the point.
+ */
 export async function upsertQuoteLinePrices(
   db: Kysely<KyselyDatabase>,
   companyId: string,

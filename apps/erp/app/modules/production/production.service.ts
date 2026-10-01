@@ -6082,8 +6082,10 @@ export async function assignPeopleWeek(
   });
 }
 
-/** Remove a person from a station for the whole week (their other stations
- * and other weeks are untouched). * @mcp
+/**
+ * Remove a person from a station for the whole week (their other stations
+ * and other weeks are untouched).
+ * @mcp
  */
 export async function unassignPeopleWeek(
   db: Kysely<KyselyDatabase>,
