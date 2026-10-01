@@ -6182,6 +6182,15 @@ msgstr "Description du changement"
 msgid "Description of Issue"
 msgstr "Description du problème"
 
+msgid "Detach"
+msgstr "Détacher"
+
+msgid "Detach from Onshape?"
+msgstr "Détacher d'Onshape ?"
+
+msgid "Detach to edit them in Carbon."
+msgstr "Détacher pour les modifier dans Carbon."
+
 msgid "Detail"
 msgstr "Détail"
 
@@ -9979,6 +9988,9 @@ msgstr "Nom"
 msgid "Last Name"
 msgstr "Nom de famille"
 
+msgid "Last pushed {lastPushed}."
+msgstr "Dernière mise à jour le {lastPushed}."
+
 msgid "Last Quarter"
 msgstr "Dernier trimestre"
 
@@ -10201,6 +10213,9 @@ msgstr "Liez ce client Carbon à l'un d'entre eux, ou créez un client Stripe di
 
 msgid "Link to sales order line"
 msgstr "Lier à la ligne de commande client"
+
+msgid "Linked"
+msgstr "Lié"
 
 #. placeholder {0}: r.linkedSum
 #. placeholder {1}: r.quantity
@@ -12546,6 +12561,9 @@ msgstr "Ouverts dans les avis de modification {ids}. Lancez-les pour créer de n
 
 msgid "Open in MES"
 msgstr "Ouvrir dans MES"
+
+msgid "Open in Onshape"
+msgstr "Ouvrir dans Onshape"
 
 msgid "Open Issues"
 msgstr "Problèmes ouverts"
@@ -16656,6 +16674,12 @@ msgstr "court"
 
 msgid "Short"
 msgstr "Manquant"
+
+msgid "Short and long descriptions are managed in Onshape."
+msgstr "La description courte et la description longue sont gérées dans Onshape."
+
+msgid "Short and long descriptions become editable in Carbon and stop following Onshape. Pushing this part from Onshape again links it back."
+msgstr "La description courte et la description longue deviennent modifiables dans Carbon et ne suivent plus Onshape. Repousser cette pièce depuis Onshape rétablit le lien."
 
 msgid "Short Description"
 msgstr "Description courte"

@@ -6182,6 +6182,15 @@ msgstr "Değişiklimin Açıklaması"
 msgid "Description of Issue"
 msgstr "Sorun Açıklaması"
 
+msgid "Detach"
+msgstr "Ayır"
+
+msgid "Detach from Onshape?"
+msgstr "Onshape'tan Ayır?"
+
+msgid "Detach to edit them in Carbon."
+msgstr "Bunları Carbon'da düzenlemek için ayırın."
+
 msgid "Detail"
 msgstr "Detay"
 
@@ -9979,6 +9988,9 @@ msgstr "Soyadı"
 msgid "Last Name"
 msgstr "Soyadı"
 
+msgid "Last pushed {lastPushed}."
+msgstr "Son gönderim: {lastPushed}."
+
 msgid "Last Quarter"
 msgstr "Son Çeyrek"
 
@@ -10201,6 +10213,9 @@ msgstr "Bu Carbon müşterisini bunlardan birine bağlayın veya ayrı bir Strip
 
 msgid "Link to sales order line"
 msgstr "Satış siparişi satırına bağla"
+
+msgid "Linked"
+msgstr "Bağlantılı"
 
 #. placeholder {0}: r.linkedSum
 #. placeholder {1}: r.quantity
@@ -12546,6 +12561,9 @@ msgstr "Değişiklik bildirimleri {ids} içinde aç. Yeni sürümler veya revizy
 
 msgid "Open in MES"
 msgstr "MES'te Aç"
+
+msgid "Open in Onshape"
+msgstr "Onshape'da Aç"
 
 msgid "Open Issues"
 msgstr "Açık Sorunlar"
@@ -16656,6 +16674,12 @@ msgstr "Kısa"
 
 msgid "Short"
 msgstr "Azalt"
+
+msgid "Short and long descriptions are managed in Onshape."
+msgstr "Kısa açıklama ve uzun açıklama Onshape'da yönetilir."
+
+msgid "Short and long descriptions become editable in Carbon and stop following Onshape. Pushing this part from Onshape again links it back."
+msgstr "Kısa açıklama ve uzun açıklama Carbon'da düzenlenebilir hale gelir ve Onshape ile senkronize olmaktan çıkar. Bu parçayı Onshape'tan tekrar gönderdiğinizde yeniden bağlanır."
 
 msgid "Short Description"
 msgstr "Kısa Açıklama"

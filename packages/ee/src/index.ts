@@ -7,6 +7,7 @@ import { Jira } from "./jira/config";
 import { Linear } from "./linear/config";
 import { Mount } from "./mount/config";
 import { Onshape, OnshapeGovernment } from "./onshape/config";
+import { OnshapeV2 } from "./onshape/config-v2";
 import { PaperlessParts } from "./paperless-parts/config";
 import { QuickBooks } from "./quickbooks/config";
 // import { Radan } from "./radan/config";
@@ -60,6 +61,7 @@ export const integrations = [
   Mount,
   Onshape,
   OnshapeGovernment,
+  OnshapeV2,
   PaperlessParts,
   QuickBooks,
   Ramp,
@@ -74,11 +76,14 @@ export type IntegrationID = (typeof integrations)[number]["id"];
 
 export { Jira } from "./jira/config";
 export { Mount } from "./mount/config";
+export { beginOAuthPopup } from "./oauth-popup";
 export {
   Logo as OnshapeLogo,
   Onshape,
   OnshapeGovernment
 } from "./onshape/config";
+export { OnshapeV2 } from "./onshape/config-v2";
+export type { OnshapeDocument } from "./onshape/lib";
 // Client-safe (no client or env imports): lets UI ask "is Onshape connected?"
 // without naming either integration id.
 export {
@@ -86,6 +91,133 @@ export {
   isOnshapeIntegrationId,
   ONSHAPE_INTEGRATION_IDS
 } from "./onshape/lib/connection";
+export type { OnshapeBomNode } from "./onshape/panel/bom";
+export {
+  flattenBomTree,
+  metadataProperty,
+  missingBomColumnsMessage,
+  parseBomTree
+} from "./onshape/panel/bom";
+export type { OnshapePanelContext } from "./onshape/panel/messages";
+export {
+  PANEL_SESSION_MESSAGE,
+  parsePanelContext
+} from "./onshape/panel/messages";
+export { correlateCopiedLines } from "./onshape/panel/method-version";
+export type { OnshapePanelMe, OnshapePanelPaths } from "./onshape/panel/Panel";
+export { OnshapePanel } from "./onshape/panel/Panel";
+export type {
+  AssemblyPlan,
+  AssemblyPlanItem,
+  AssemblyPlanMethod,
+  AssemblyPlanMethodStatus,
+  AssemblyPlanRoot,
+  ChangeNoticeEdit,
+  ItemEdit,
+  ItemFieldSnapshot,
+  ItemMethodType,
+  ItemReplenishmentSystem,
+  ItemTrackingType,
+  MergeResult,
+  OwnedFieldChange,
+  PartPlan,
+  PartPlanAction,
+  PartPlanRow,
+  PlanItemRow,
+  PlanLine,
+  PlanMappingRow,
+  PlanMethodRow,
+  PlanOptions,
+  PlanUnitOfMeasure,
+  ProposedItem,
+  ReleasePlan,
+  ReleasePlanChild,
+  ReleasePlanItem,
+  ReleasePlanItemAction
+} from "./onshape/panel/plan";
+export {
+  BOM_LINE_ITEM_TYPES,
+  bomLineItemType,
+  buildAssemblyPlan,
+  buildPartPlan,
+  buildReleasePlan,
+  CHANGE_NOTICE_DESCRIPTION_MAX_LENGTH,
+  CHANGE_NOTICE_NAME_MAX_LENGTH,
+  changeNoticeDescriptionJson,
+  currentItemFields,
+  defaultUnitOfMeasureCode,
+  EDITABLE_ITEM_FIELDS,
+  flattenNodes,
+  ITEM_DESCRIPTION_MAX_LENGTH,
+  ITEM_METHOD_TYPES,
+  ITEM_NAME_MAX_LENGTH,
+  ITEM_REPLENISHMENT_SYSTEMS,
+  ITEM_TRACKING_TYPES,
+  mergeChangeNoticeEdit,
+  mergeEditsForCreates,
+  mergeExistingItemEdits,
+  mergeItemEdits,
+  pickAdoptTarget,
+  pickLatestRow,
+  pickReuseRow,
+  proposeItem,
+  reconcileMethodForReplenishment,
+  VALID_METHOD_TYPES_BY_REPLENISHMENT
+} from "./onshape/panel/plan";
+export type { OnshapePushDefaults } from "./onshape/panel/preferences";
+export {
+  DEFAULT_PUSH_DEFAULTS,
+  parsePushDefaults,
+  reconcilePushDefaults
+} from "./onshape/panel/preferences";
+export type {
+  OnshapePropertyValue,
+  PlanCustomField,
+  PlanCustomFieldDefinition,
+  PropertyMapEntry,
+  UnmappedProperty
+} from "./onshape/panel/properties";
+export {
+  CUSTOM_FIELD_DATA_TYPES,
+  coerceOnshapeValue,
+  MAPPABLE_VALUE_TYPES,
+  mappedFieldValues,
+  mergeCustomFieldValues,
+  ownedCustomFieldsDiffer,
+  parseProperties,
+  parsePropertyMap,
+  partPropertiesFromElementMetadata,
+  propertyDisplayValue,
+  resolveMappedFields,
+  withoutNoOpClears
+} from "./onshape/panel/properties";
+export type {
+  PanelRelease,
+  PanelReleaseItem,
+  ReleaseCarbonItemRow,
+  ReleaseRevisionLike
+} from "./onshape/panel/releases";
+export {
+  groupRevisionsIntoReleases,
+  isModelReleaseItem,
+  releaseKeyFor,
+  resolveReleaseStates
+} from "./onshape/panel/releases";
+export type {
+  PanelAssemblyLineInput,
+  PanelAssemblyLineStatus,
+  PanelItemRow,
+  PanelMappingRow,
+  PanelPartStatus
+} from "./onshape/panel/status";
+export {
+  buildAssemblyLineStatuses,
+  buildPartStatuses,
+  externalIdForAssembly,
+  externalIdForBomLine,
+  externalIdForPart,
+  normalizeConfiguration
+} from "./onshape/panel/status";
 // TODO: export as @carbon/ee/paperless
 export { PaperlessPartsClient } from "./paperless-parts/lib/client";
 export { QuickBooks } from "./quickbooks/config";

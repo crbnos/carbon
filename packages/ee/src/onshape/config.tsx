@@ -6,6 +6,7 @@ import { ONSHAPE_CLIENT_ID } from "@carbon/auth";
 import { type SVGProps, useEffect, useState } from "react";
 import { z } from "zod";
 import { defineIntegration } from "../fns";
+import { beginOAuthPopup } from "../oauth-popup";
 import {
   normalizeOnshapeUrl,
   ONSHAPE_GOVERNMENT_INTEGRATION_ID,
@@ -47,6 +48,19 @@ const backfillAction = {
   enabledWhenSetting: "assetSyncEnabled"
 };
 
+// Re-runs the connection's consent screen when its grant has died (the card
+// reads Unhealthy): a revoked grant or an expired refresh token cannot be
+// refreshed, only re-authorized. Settings and links are kept.
+export function onshapeReconnectAction(installEndpoint: string) {
+  return {
+    id: "reconnect",
+    label: "Reconnect Onshape",
+    description:
+      "Sign in to Onshape again to renew Carbon's access. Use this when the connection shows Unhealthy; settings and linked items are kept.",
+    endpoint: installEndpoint
+  };
+}
+
 export const Onshape = defineIntegration({
   name: "Onshape",
   id: ONSHAPE_INTEGRATION_ID,
@@ -61,45 +75,33 @@ export const Onshape = defineIntegration({
   schema: z.object({
     assetSyncEnabled: assetSyncEnabledSchema
   }),
-  actions: [backfillAction],
+  actions: [
+    onshapeReconnectAction("/api/integrations/onshape/install"),
+    backfillAction
+  ],
   onClientInstall: async () => {
-    const response = await fetch("/api/integrations/onshape/install").then(
-      (res) => res.json()
-    );
-
-    const { url, error } = response as { url?: string; error?: string };
-    if (!url) {
-      // The integrations page turns `?integration=&error=` into a toast — the
-      // same place a failed callback lands (see integration-errors.ts).
-      window.location.href = `/x/settings/integrations?integration=${ONSHAPE_INTEGRATION_ID}&error=${error ?? "unexpected"}`;
-      return;
-    }
-
-    const width = 600;
-    const height = 800;
-    const left = window.screenX + (window.outerWidth - width) / 2;
-    const top = window.screenY + (window.outerHeight - height) / 2.5;
-
-    const popup = window.open(
-      url,
-      "",
-      `toolbar=no, location=no, directories=no, status=no, menubar=no, scrollbars=no, resizable=no, copyhistory=no, width=${width}, height=${height}, top=${top}, left=${left}`
-    );
-
-    if (!popup) {
-      window.location.href = url;
-      return;
-    }
-
-    const listener = (e: MessageEvent) => {
-      if (e.data === "app_oauth_completed") {
-        window.location.reload();
-        window.removeEventListener("message", listener);
-        popup.close();
+    // Opened here, inside the click, so the browser still holds user
+    // activation; the fetch below can take as long as it needs.
+    const popup = beginOAuthPopup();
+    let error = "unexpected";
+    try {
+      const response = await fetch("/api/integrations/onshape/install");
+      const body = (await response.json()) as { url?: string; error?: string };
+      if (body?.url) {
+        // The callback (api/integrations/onshape/oauth) posts an
+        // OAuthPopupResult back to this window and closes the popup;
+        // IntegrationCard listens for it.
+        popup.navigate(body.url);
+        return;
       }
-    };
-
-    window.addEventListener("message", listener);
+      error = body?.error ?? error;
+    } catch {
+      // Fall through to the error toast below.
+    }
+    popup.close();
+    // The integrations page turns `?integration=&error=` into a toast — the
+    // same place a failed callback lands (see integration-errors.ts).
+    window.location.href = `/x/settings/integrations?integration=${ONSHAPE_INTEGRATION_ID}&error=${error}`;
   }
 });
 

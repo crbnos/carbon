@@ -6182,6 +6182,15 @@ msgstr "परिवर्तन का विवरण"
 msgid "Description of Issue"
 msgstr "समस्या का विवरण"
 
+msgid "Detach"
+msgstr "अलग करें"
+
+msgid "Detach from Onshape?"
+msgstr "Onshape से अलग करें?"
+
+msgid "Detach to edit them in Carbon."
+msgstr "Carbon में संपादित करने के लिए इन्हें अलग करें।"
+
 msgid "Detail"
 msgstr "विवरण"
 
@@ -9979,6 +9988,9 @@ msgstr "अंतिम नाम"
 msgid "Last Name"
 msgstr "अंतिम नाम"
 
+msgid "Last pushed {lastPushed}."
+msgstr "अंतिम बार {lastPushed} को पुश किया गया।"
+
 msgid "Last Quarter"
 msgstr "पिछली तिमाही"
 
@@ -10201,6 +10213,9 @@ msgstr "इस Carbon ग्राहक को इनमें से किस
 
 msgid "Link to sales order line"
 msgstr "विक्रय आदेश पंक्ति से जोड़ें"
+
+msgid "Linked"
+msgstr "जुड़ा हुआ"
 
 #. placeholder {0}: r.linkedSum
 #. placeholder {1}: r.quantity
@@ -12546,6 +12561,9 @@ msgstr "परिवर्तन सूचनाओं {ids} में खुल
 
 msgid "Open in MES"
 msgstr "MES में खोलें"
+
+msgid "Open in Onshape"
+msgstr "Onshape में खोलें"
 
 msgid "Open Issues"
 msgstr "खुले मुद्दे"
@@ -16656,6 +16674,12 @@ msgstr "अधूरा"
 
 msgid "Short"
 msgstr "कम"
+
+msgid "Short and long descriptions are managed in Onshape."
+msgstr "संक्षिप्त विवरण और लंबा विवरण Onshape में प्रबंधित किए जाते हैं।"
+
+msgid "Short and long descriptions become editable in Carbon and stop following Onshape. Pushing this part from Onshape again links it back."
+msgstr "संक्षिप्त विवरण और लंबा विवरण Carbon में संपादन योग्य हो जाते हैं और Onshape का अनुसरण करना बंद कर देते हैं। Onshape से इस पार्ट को फिर से पुश करने से यह वापस लिंक हो जाता है।"
 
 msgid "Short Description"
 msgstr "संक्षिप्त विवरण"

@@ -7,27 +7,63 @@
 // test runners — that imports this client).
 
 import type { Database } from "@carbon/database";
+import { acquireLease, redis, withLease } from "@carbon/kv";
 import { getLogger } from "@carbon/logger";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import axios from "axios";
 import {
-  persistIntegrationSecrets,
+  IntegrationSecretUnavailableError,
   resolveIntegrationSecrets
 } from "../../integrations/secrets";
+import { normalizeConfiguration } from "../panel/status";
 import {
   getOnshapeIntegration,
-  ONSHAPE_DEFAULT_BASE_URL,
-  type OnshapeIntegrationId
+  isOnshapeIntegrationId,
+  ONSHAPE_DEFAULT_BASE_URL
 } from "./connection";
 import type { OnshapeDocument } from "./document.type";
 import type { OnshapeElementType } from "./element.type";
+import type { OnshapeOAuthIntegrationId } from "./integration-id";
 import { getOnshapeOAuthConfig, refreshOnshapeAccessToken } from "./oauth";
+import { patchOnshapeRefreshedTokens } from "./state";
+import {
+  isFresh,
+  resolveOnshapeRefresh,
+  type StoredOnshapeCredentials
+} from "./token-refresh";
 
 const logger = getLogger("ee", "onshape");
 
 interface OnshapeClientConfig {
   baseUrl: string;
   accessToken: string;
+  /**
+   * Re-acquire an access token after Onshape rejects the current one, so a
+   * single request can recover instead of surfacing a 401.
+   *
+   * A stored expiry cannot know about a revocation, a clock difference, or a
+   * token that dies between the expiry check and the call going out.
+   * Returns null when no new token could be obtained.
+   */
+  onUnauthorized?: () => Promise<string | null>;
+}
+
+/**
+ * A row from `GET /parts/d/{did}/{wvm}/{wvmId}/e/{eid}`. The API names the
+ * stable per-studio identifier `partId`; `microversionId` moves whenever the
+ * part's definition changes, which makes it the cheap "did anything change
+ * since the last push" check.
+ */
+export interface OnshapeElementPart {
+  partId: string;
+  name: string;
+  partNumber: string | null;
+  revision: string | null;
+  description?: string | null;
+  state?: string;
+  microversionId?: string;
+  isHidden?: boolean;
+  [key: string]: unknown;
 }
 
 export interface OnshapePart {
@@ -37,6 +73,43 @@ export interface OnshapePart {
   revision: string;
   description: string;
   metadata: Record<string, string>;
+}
+
+const DEV_CACHE_TTL_SECONDS = 10 * 60;
+const DOCUMENT_REVISION_MAX_PAGES = 20;
+
+export interface OnshapeElementRow {
+  id: string;
+  name: string;
+  elementType: string; // "PARTSTUDIO" | "ASSEMBLY" | "DRAWING" | ...
+  [key: string]: unknown;
+}
+
+// Stable content reads only — never /translations (a status poll) and never
+// anything paginated by cursor.
+const DEV_CACHEABLE_PATHS = [
+  /^\/api\/v\d+\/parts\//,
+  /^\/api\/v\d+\/partstudios\/.*\/massproperties/,
+  /^\/api\/v\d+\/documents\//,
+  /^\/api\/v\d+\/assemblies\/.*\/bom/,
+  /^\/api\/v\d+\/metadata\//,
+  // A fresh Onshape release can take up to the TTL to show in a dev panel;
+  // flush the onshape-dev-cache:* keys to see it sooner.
+  /^\/api\/v\d+\/revisions\/d\//
+];
+
+export interface OnshapeMassProperties {
+  bodies: Record<
+    string,
+    {
+      mass: number[];
+      volume: number[];
+      centroid: number[];
+      hasMass: boolean;
+      [key: string]: unknown;
+    }
+  >;
+  [key: string]: unknown;
 }
 
 export interface OnshapeCompany {
@@ -87,8 +160,18 @@ export interface OnshapeRevision {
   name?: string;
   releaseId?: string;
   releaseName?: string;
+  releaseCreatedDate?: string;
   isObsolete?: boolean;
   [key: string]: unknown;
+}
+
+/**
+ * `&configuration=…` for a non-default configuration, nothing for the default:
+ * an unconfigured read keeps the URL (and so the dev cache key) it always had.
+ */
+function configurationQuery(configuration?: string | null): string {
+  const normalized = normalizeConfiguration(configuration);
+  return normalized ? `&configuration=${encodeURIComponent(normalized)}` : "";
 }
 
 // Typed API error so callers can detect rate limiting (status 429) and honor
@@ -120,10 +203,14 @@ export class OnshapeClient {
   private baseUrl: string;
   private accessToken: string;
   private axiosInstance: ReturnType<typeof axios.create>;
+  private onUnauthorized?: () => Promise<string | null>;
+  /** One recovery per client: a second 401 is a real authorization failure. */
+  private retriedUnauthorized = false;
 
   constructor(config: OnshapeClientConfig) {
     this.baseUrl = config.baseUrl;
     this.accessToken = config.accessToken;
+    this.onUnauthorized = config.onUnauthorized;
 
     this.axiosInstance = axios.create({
       baseURL: this.baseUrl,
@@ -147,15 +234,84 @@ export class OnshapeClient {
     path: string,
     body?: Record<string, unknown>
   ): Promise<T> {
+    // Every Onshape call counts against an annual per-account quota (private
+    // apps debit the app owner). In dev, ONSHAPE_DEV_CACHE=1 serves repeated
+    // GETs from Redis.
+    //
+    // Allow-list, not "all GETs": polling endpoints (translation status) change
+    // between calls, and caching one poisons the poll loop.
+    const cacheable =
+      method === "GET" && DEV_CACHEABLE_PATHS.some((re) => re.test(path));
+    const cacheKey =
+      process.env.ONSHAPE_DEV_CACHE === "1" && cacheable
+        ? `onshape-dev-cache:${path}`
+        : null;
+
+    if (cacheKey) {
+      try {
+        const cached = await redis.get(cacheKey);
+        if (cached) return JSON.parse(cached) as T;
+      } catch {
+        // Cache is best-effort.
+      }
+    }
+
     try {
       const response = await this.axiosInstance.request<T>({
         method,
         url: path,
         data: body
       });
+      void this.countLiveCall(path);
+      if (cacheKey) {
+        try {
+          await redis.set(
+            cacheKey,
+            JSON.stringify(response.data),
+            "EX",
+            DEV_CACHE_TTL_SECONDS
+          );
+        } catch {
+          // best-effort
+        }
+      }
       return response.data;
     } catch (error) {
+      void this.countLiveCall(path);
+
+      if (
+        axios.isAxiosError(error) &&
+        error.response?.status === 401 &&
+        this.onUnauthorized &&
+        !this.retriedUnauthorized
+      ) {
+        this.retriedUnauthorized = true;
+        const token = await this.onUnauthorized();
+        if (token) {
+          this.accessToken = token;
+          this.axiosInstance.defaults.headers = {
+            ...this.axiosInstance.defaults.headers,
+            ...this.getAuthHeaders()
+          } as typeof this.axiosInstance.defaults.headers;
+          return this.request<T>(method, path, body);
+        }
+      }
+
       throw this.toApiError(error);
+    }
+  }
+
+  /**
+   * Tally of live calls per year, so quota use is observable without the dev
+   * portal: `GET onshape:api-calls:<year>` in Redis. Best-effort and never
+   * awaited: a slow Redis must not slow the call it counts.
+   */
+  private async countLiveCall(path: string) {
+    try {
+      const year = new Date().getUTCFullYear();
+      await redis.incr(`onshape:api-calls:${year}`);
+    } catch {
+      // Never let accounting break a real request.
     }
   }
 
@@ -335,6 +491,33 @@ export class OnshapeClient {
     >("GET", nextUrl);
   }
 
+  // Released revisions for ONE document. Every item carries
+  // releaseId/releaseName plus the released versionId/elementId, so grouping
+  // by releaseId reconstructs the release packages without a per-package call
+  // (Onshape has no packages-by-document endpoint).
+  // Follows `next` so older releases are listed too, up to
+  // DOCUMENT_REVISION_MAX_PAGES pages.
+  async getDocumentRevisions(
+    documentId: string
+  ): Promise<{ items: OnshapeRevision[]; next: string | null }> {
+    type Page = { items?: OnshapeRevision[]; next?: string | null };
+    const items: OnshapeRevision[] = [];
+    let page = await this.request<Page>(
+      "GET",
+      `/api/v10/revisions/d/${documentId}`
+    );
+    items.push(...(page.items ?? []));
+    for (
+      let pages = 1;
+      page.next && pages < DOCUMENT_REVISION_MAX_PAGES;
+      pages++
+    ) {
+      page = await this.request<Page>("GET", page.next);
+      items.push(...(page.items ?? []));
+    }
+    return { items, next: page.next ?? null };
+  }
+
   // --- Release-asset export ---------------------------------------------------
   // Onshape's api/v10 translation API. Version-scoped (/v/) to match
   // getBillOfMaterials — released assets live at a version. The async flow:
@@ -368,6 +551,97 @@ export class OnshapeClient {
     );
   }
 
+  /**
+   * Mass properties for every part of an element in one call. SI units
+   * (kg, m); numeric triples are [value, min, max]. Parts without an assigned
+   * material come back with hasMass=false.
+   */
+  async getPartStudioMassProperties(
+    document: OnshapeDocument,
+    elementId: string
+  ): Promise<OnshapeMassProperties> {
+    return this.request<OnshapeMassProperties>(
+      "GET",
+      `/api/v10/partstudios/d/${document.documentId}/${document.wvm}/${document.wvmId}/e/${elementId}/massproperties?massAsGroup=false&useMassPropertyOverrides=true`
+    );
+  }
+
+  async getElementsIn(
+    document: OnshapeDocument,
+    elementType?: OnshapeElementType
+  ): Promise<OnshapeElementRow[]> {
+    return this.request<OnshapeElementRow[]>(
+      "GET",
+      `/api/v10/documents/d/${document.documentId}/${document.wvm}/${document.wvmId}/elements${elementType ? "?elementType=" + elementType : ""}`
+    );
+  }
+
+  async getBillOfMaterialsIn(
+    document: OnshapeDocument,
+    elementId: string,
+    configuration?: string | null
+  ): Promise<Record<string, unknown>> {
+    return this.request<Record<string, unknown>>(
+      "GET",
+      `/api/v10/assemblies/d/${document.documentId}/${document.wvm}/${document.wvmId}/e/${elementId}/bom?indented=true&multiLevel=true&generateIfAbsent=true&onlyVisibleColumns=false&includeItemMicroversions=true&includeTopLevelAssemblyRow=true&thumbnail=false${configurationQuery(configuration)}`
+    );
+  }
+
+  /**
+   * Element metadata (the properties panel: Part number, Name, ...) at w/v/m.
+   * Used for an assembly's own identity, which the BOM omits.
+   */
+  async getElementMetadata(
+    document: OnshapeDocument,
+    elementId: string,
+    configuration?: string | null
+  ): Promise<Record<string, unknown>> {
+    return this.request<Record<string, unknown>>(
+      "GET",
+      `/api/v10/metadata/d/${document.documentId}/${document.wvm}/${document.wvmId}/e/${elementId}?inferMetadataOwner=false&depth=1${configurationQuery(configuration)}`
+    );
+  }
+
+  /**
+   * Element metadata with the element's parts nested (`depth=2`): for a Part
+   * Studio the response carries `parts.items[].properties`, so every part's
+   * standard and custom property values arrive in one read. Onshape's metadata
+   * depth semantics are documented loosely.
+   */
+  async getElementMetadataWithParts(
+    document: OnshapeDocument,
+    elementId: string,
+    configuration?: string | null
+  ): Promise<Record<string, unknown>> {
+    return this.request<Record<string, unknown>>(
+      "GET",
+      `/api/v10/metadata/d/${document.documentId}/${document.wvm}/${document.wvmId}/e/${elementId}?inferMetadataOwner=false&depth=2${configurationQuery(configuration)}`
+    );
+  }
+
+  async getPartMetadata(
+    document: OnshapeDocument,
+    elementId: string,
+    partId: string,
+    configuration?: string | null
+  ): Promise<Record<string, unknown>> {
+    return this.request<Record<string, unknown>>(
+      "GET",
+      `/api/v10/metadata/d/${document.documentId}/${document.wvm}/${document.wvmId}/e/${elementId}/p/${encodeURIComponent(partId)}?inferMetadataOwner=false${configurationQuery(configuration)}`
+    );
+  }
+
+  async getPartsInElement(
+    document: OnshapeDocument,
+    elementId: string,
+    configuration?: string | null
+  ): Promise<OnshapeElementPart[]> {
+    return this.request<OnshapeElementPart[]>(
+      "GET",
+      `/api/v10/parts/d/${document.documentId}/${document.wvm}/${document.wvmId}/e/${elementId}?includePropertyDefaults=true${configurationQuery(configuration)}`
+    );
+  }
+
   async createPartStudioTranslation(
     documentId: string,
     versionId: string,
@@ -380,11 +654,12 @@ export class OnshapeClient {
       // FLAGGED: single-part export support unverified. Omit to export the whole
       // Part Studio; the reliable documented path is a whole-Part-Studio translation.
       partIds?: string;
+      wvm?: "w" | "v";
     } = {}
   ): Promise<OnshapeTranslation> {
     return this.request<OnshapeTranslation>(
       "POST",
-      `/api/v10/partstudios/d/${documentId}/v/${versionId}/e/${elementId}/translations`,
+      `/api/v10/partstudios/d/${documentId}/${options.wvm ?? "v"}/${versionId}/e/${elementId}/translations`,
       {
         formatName: options.formatName ?? "GLTF",
         storeInDocument: options.storeInDocument ?? false,
@@ -409,11 +684,12 @@ export class OnshapeClient {
       storeInDocument?: boolean;
       configuration?: string;
       resolution?: OnshapeMeshResolution;
+      wvm?: "w" | "v";
     } = {}
   ): Promise<OnshapeTranslation> {
     return this.request<OnshapeTranslation>(
       "POST",
-      `/api/v10/assemblies/d/${documentId}/v/${versionId}/e/${elementId}/translations`,
+      `/api/v10/assemblies/d/${documentId}/${options.wvm ?? "v"}/${versionId}/e/${elementId}/translations`,
       {
         formatName: options.formatName ?? "GLTF",
         storeInDocument: options.storeInDocument ?? false,
@@ -433,11 +709,12 @@ export class OnshapeClient {
     options: {
       formatName?: OnshapeDrawingTranslationFormat;
       storeInDocument?: boolean;
+      wvm?: "w" | "v";
     } = {}
   ): Promise<OnshapeTranslation> {
     return this.request<OnshapeTranslation>(
       "POST",
-      `/api/v10/drawings/d/${documentId}/v/${versionId}/e/${elementId}/translations`,
+      `/api/v10/drawings/d/${documentId}/${options.wvm ?? "v"}/${versionId}/e/${elementId}/translations`,
       {
         formatName: options.formatName ?? "PDF",
         storeInDocument: options.storeInDocument ?? false
@@ -495,12 +772,13 @@ export class OnshapeClient {
     documentId: string,
     versionId: string,
     elementId: string,
-    size: string = "300x300"
+    size: string = "300x300",
+    wvm: "w" | "v" = "v"
   ): Promise<ArrayBuffer> {
     try {
       const response = await this.axiosInstance.request<ArrayBuffer>({
         method: "GET",
-        url: `/api/v10/thumbnails/d/${documentId}/v/${versionId}/e/${elementId}/s/${size}`,
+        url: `/api/v10/thumbnails/d/${documentId}/${wvm}/${versionId}/e/${elementId}/s/${size}`,
         responseType: "arraybuffer",
         headers: { Accept: "image/png" }
       });
@@ -573,34 +851,63 @@ export class OnshapeClient {
   }
 }
 
+/** The refresh lease is short and renewed while the token exchange runs. */
+const REFRESH_LEASE_MS = 5_000;
+const REFRESH_LEASE_RENEW_MS = 2_000;
+/** How long a caller waits on another caller's refresh before giving up. */
+const REFRESH_WAIT_DEADLINE_MS = 20_000;
+const REFRESH_WAIT_MS = 250;
+
 export async function getOnshapeClient(
   client: SupabaseClient<Database>,
   companyId: string,
-  userId: string
+  userId: string,
+  /**
+   * Which Onshape grant to authenticate as. The panel passes its own
+   * (`onshape-v2`). Omitted, or a sync id, it is the company's sync connection.
+   */
+  requestedIntegrationId?: OnshapeOAuthIntegrationId
 ): Promise<
   { client: OnshapeClient; error: null } | { client: null; error: string }
 > {
-  // Either Onshape connection — the public app or a Government private app.
+  // Either sync connection — the public app or a Government private app.
   // Past authorization they are the same API, just on a different host.
-  const integration = await getOnshapeIntegration(client, companyId);
+  const integration =
+    requestedIntegrationId && !isOnshapeIntegrationId(requestedIntegrationId)
+      ? await client
+          .from("companyIntegration")
+          .select("*")
+          .eq("id", requestedIntegrationId)
+          .eq("companyId", companyId)
+          .maybeSingle()
+      : await getOnshapeIntegration(client, companyId);
 
   if (integration.error || !integration.data) {
     return { client: null, error: "Onshape integration not found" };
   }
-
   // Secret material (accessToken/refreshToken) lives in Supabase Vault; merge it
   // back so we read `metadata.credentials` the same as before. Vault RPCs require
   // the service-role client (the passed `client` may be RLS-scoped).
   const { getCarbonServiceRole } = await import("@carbon/auth/client.server");
   const serviceRole = getCarbonServiceRole();
-  const integrationId: OnshapeIntegrationId = integration.data.id;
-  const metadata = (await resolveIntegrationSecrets(
-    serviceRole,
-    companyId,
-    integrationId,
-    integration.data.metadata,
-    integration.data.secretRef
-  )) as Record<string, any>;
+  const integrationId = integration.data.id as OnshapeOAuthIntegrationId;
+  // A row with no vaulted secret is a company that saved panel settings but
+  // never connected: that is "not connected", not a server error.
+  let metadata: Record<string, any>;
+  try {
+    metadata = (await resolveIntegrationSecrets(
+      serviceRole,
+      companyId,
+      integrationId,
+      integration.data.metadata,
+      integration.data.secretRef
+    )) as Record<string, any>;
+  } catch (error) {
+    if (error instanceof IntegrationSecretUnavailableError) {
+      return { client: null, error: "Onshape credentials not found" };
+    }
+    throw error;
+  }
   const credentials = metadata?.credentials;
 
   if (!credentials?.accessToken) {
@@ -610,41 +917,166 @@ export async function getOnshapeClient(
   let accessToken = credentials.accessToken;
   const baseUrl = metadata?.baseUrl ?? ONSHAPE_DEFAULT_BASE_URL;
 
-  // Refresh token if expired
-  if (
-    credentials.expiresAt &&
-    credentials.refreshToken &&
-    new Date(credentials.expiresAt) <= new Date()
-  ) {
+  /**
+   * Make a refreshed pair the one this request uses from now on. Onshape
+   * rotates refresh tokens, so a later refresh in this request must spend the
+   * new one.
+   */
+  const adoptCredentials = (next: Record<string, any> | undefined) => {
+    if (!next?.accessToken) return;
+    credentials.accessToken = next.accessToken;
+    if (next.refreshToken) credentials.refreshToken = next.refreshToken;
+    if (next.expiresAt) credentials.expiresAt = next.expiresAt;
+    accessToken = next.accessToken;
+  };
+
+  /** The row's credentials as stored now, not as read when this request started. */
+  const readStoredCredentials = async (): Promise<Record<
+    string,
+    any
+  > | null> => {
+    const row = await serviceRole
+      .from("companyIntegration")
+      .select("metadata, secretRef")
+      .eq("id", integrationId)
+      .eq("companyId", companyId)
+      .maybeSingle();
+    if (row.error || !row.data) return null;
+    const current = (await resolveIntegrationSecrets(
+      serviceRole,
+      companyId,
+      integrationId,
+      row.data.metadata,
+      row.data.secretRef
+    ).catch(() => null)) as Record<string, any> | null;
+    return current?.credentials ?? null;
+  };
+
+  const refreshFromStored = async (): Promise<string | null> => {
+    const next = resolveOnshapeRefresh(
+      await readStoredCredentials(),
+      credentials,
+      accessToken,
+      Date.now()
+    );
+    if (next.action === "exchange") return exchange(next.credentials);
+    adoptCredentials(next.credentials);
+    return accessToken;
+  };
+
+  const exchange = async (
+    from: StoredOnshapeCredentials
+  ): Promise<string | null> => {
+    if (!from.refreshToken) return null;
+    let next: { accessToken: string; refreshToken?: string; expiresAt: string };
     try {
       const oauth = getOnshapeOAuthConfig(integrationId, metadata);
       if (!oauth) throw new Error("Onshape OAuth not configured");
       const refreshed = await refreshOnshapeAccessToken(
         oauth,
-        credentials.refreshToken
+        from.refreshToken
       );
-
-      accessToken = refreshed.access_token;
-
-      // Persist the new tokens. Secret material is split out to Supabase Vault;
-      // only the non-secret config is written to the metadata column.
-      await persistIntegrationSecrets(serviceRole, companyId, integrationId, {
-        ...metadata,
-        credentials: {
-          ...credentials,
-          accessToken: refreshed.access_token,
-          refreshToken: refreshed.refresh_token,
-          expiresAt: new Date(Date.now() + 3600 * 1000).toISOString()
-        }
-      });
+      const lifetimeSeconds = refreshed.expires_in ?? 3600;
+      next = {
+        accessToken: refreshed.access_token,
+        refreshToken: refreshed.refresh_token,
+        expiresAt: new Date(Date.now() + lifetimeSeconds * 1000).toISOString()
+      };
     } catch (error) {
-      logger.error("Failed to refresh Onshape token", { error });
+      logger.error("Failed to refresh Onshape token", {
+        companyId,
+        integrationId,
+        error
+      });
+      return null;
+    }
+    // The old refresh token is spent either way, so this request keeps the new
+    // pair even if saving it fails.
+    adoptCredentials(next);
+    try {
+      await patchOnshapeRefreshedTokens(
+        serviceRole,
+        companyId,
+        integrationId,
+        next
+      );
+    } catch (error) {
+      logger.error("Failed to save the refreshed Onshape token", {
+        companyId,
+        integrationId,
+        error
+      });
+    }
+    return next.accessToken;
+  };
+
+  /**
+   * Refresh once across concurrent callers. Onshape rotates refresh tokens, so
+   * two callers refreshing the same connection cannot both succeed, and the
+   * loser would store a dead pair over the winner's live one.
+   *
+   * The lease holder re-reads the stored pair before spending it: an earlier
+   * holder has usually rotated the one this request loaded. Waiters adopt the
+   * holder's result, or take the lease once it frees. With Redis down there is
+   * no lock to take, so the refresh runs without one.
+   */
+  const refreshNow = async (): Promise<string | null> => {
+    // Per integration, not per company: each Onshape integration holds its own
+    // refresh token.
+    const leaseKey = `onshape-token-refresh:${companyId}:${integrationId}`;
+    const deadline = Date.now() + REFRESH_WAIT_DEADLINE_MS;
+
+    while (true) {
+      const lease = await acquireLease(leaseKey, REFRESH_LEASE_MS);
+
+      if (lease.status === "unavailable") {
+        logger.warn("Refreshing the Onshape token without a lock", {
+          companyId,
+          integrationId
+        });
+        return refreshFromStored();
+      }
+
+      if (lease.status === "acquired") {
+        return withLease(
+          leaseKey,
+          lease.owner,
+          { leaseMs: REFRESH_LEASE_MS, renewMs: REFRESH_LEASE_RENEW_MS },
+          refreshFromStored
+        );
+      }
+
+      if (Date.now() >= deadline) return null;
+      await new Promise((resolve) => setTimeout(resolve, REFRESH_WAIT_MS));
+      const next = resolveOnshapeRefresh(
+        await readStoredCredentials(),
+        credentials,
+        accessToken,
+        Date.now()
+      );
+      if (next.action === "adopt") {
+        adoptCredentials(next.credentials);
+        return accessToken;
+      }
+    }
+  };
+
+  // A connection with no recorded expiry (an older install) would otherwise
+  // never refresh at all.
+  if (credentials.refreshToken && !isFresh(credentials, Date.now())) {
+    const refreshedToken = await refreshNow();
+    if (!refreshedToken) {
       return { client: null, error: "Failed to refresh Onshape token" };
     }
+    accessToken = refreshedToken;
   }
 
   return {
-    client: new OnshapeClient({ baseUrl, accessToken }),
+    client: new OnshapeClient({
+      baseUrl,
+      accessToken,
+      onUnauthorized: refreshNow
+    }),
     error: null
   };
 }

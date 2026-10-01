@@ -6182,6 +6182,15 @@ msgstr "Описание изменения"
 msgid "Description of Issue"
 msgstr "Описание проблемы"
 
+msgid "Detach"
+msgstr "Отключить"
+
+msgid "Detach from Onshape?"
+msgstr "Отключить от Onshape?"
+
+msgid "Detach to edit them in Carbon."
+msgstr "Отключите, чтобы изменить их в Carbon."
+
 msgid "Detail"
 msgstr "Подробности"
 
@@ -9979,6 +9988,9 @@ msgstr "Фамилия"
 msgid "Last Name"
 msgstr "Фамилия"
 
+msgid "Last pushed {lastPushed}."
+msgstr "Последний раз передано {lastPushed}."
+
 msgid "Last Quarter"
 msgstr "Последний квартал"
 
@@ -10201,6 +10213,9 @@ msgstr "Свяжите этого покупателя Carbon с одним из
 
 msgid "Link to sales order line"
 msgstr "Ссылка на строку заказа покупателя"
+
+msgid "Linked"
+msgstr "Связано"
 
 #. placeholder {0}: r.linkedSum
 #. placeholder {1}: r.quantity
@@ -12546,6 +12561,9 @@ msgstr "Открыть в Извещениях об изменении {ids}. З
 
 msgid "Open in MES"
 msgstr "Открыть в MES"
+
+msgid "Open in Onshape"
+msgstr "Открыть в Onshape"
 
 msgid "Open Issues"
 msgstr "Открытые проблемы"
@@ -16656,6 +16674,12 @@ msgstr "короткий"
 
 msgid "Short"
 msgstr "Недостача"
+
+msgid "Short and long descriptions are managed in Onshape."
+msgstr "Краткое и подробное описания управляются в Onshape."
+
+msgid "Short and long descriptions become editable in Carbon and stop following Onshape. Pushing this part from Onshape again links it back."
+msgstr "Краткое и подробное описания станут редактируемыми в Carbon и перестанут синхронизироваться с Onshape. Если отправить эту деталь из Onshape еще раз, она будет связана обратно."
 
 msgid "Short Description"
 msgstr "Краткое описание"

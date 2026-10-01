@@ -12,6 +12,7 @@ export { jiraSyncFunction, syncIssueFromJiraSchema } from "./jira";
 export { linearSyncFunction, syncIssueFromLinearSchema } from "./linear";
 export { mountPublishFunction } from "./mount-publish";
 export { onshapeBackfillFunction } from "./onshape-backfill";
+export { onshapePanelSyncFunction } from "./onshape-panel-sync";
 export { onshapeRevisionSyncFunction } from "./onshape-revision-sync";
 export { paperlessPartsFunction } from "./paperless-parts";
 export { rampSweepFunction } from "./ramp-sweep";

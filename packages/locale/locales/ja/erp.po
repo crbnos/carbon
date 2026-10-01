@@ -6182,6 +6182,15 @@ msgstr "変更の説明"
 msgid "Description of Issue"
 msgstr "問題の説明"
 
+msgid "Detach"
+msgstr "リンク解除"
+
+msgid "Detach from Onshape?"
+msgstr "Onshapeからリンク解除しますか？"
+
+msgid "Detach to edit them in Carbon."
+msgstr "Carbonで編集するにはリンクを解除してください。"
+
 msgid "Detail"
 msgstr "詳細"
 
@@ -9979,6 +9988,9 @@ msgstr "姓"
 msgid "Last Name"
 msgstr "姓"
 
+msgid "Last pushed {lastPushed}."
+msgstr "最終プッシュ: {lastPushed}"
+
 msgid "Last Quarter"
 msgstr "前四半期"
 
@@ -10201,6 +10213,9 @@ msgstr "このCarbonの得意先をいずれかにリンクするか、別のStr
 
 msgid "Link to sales order line"
 msgstr "受注明細へのリンク"
+
+msgid "Linked"
+msgstr "リンク済み"
 
 #. placeholder {0}: r.linkedSum
 #. placeholder {1}: r.quantity
@@ -12546,6 +12561,9 @@ msgstr "変更通知{ids}で開いています。新しいバージョンまた�
 
 msgid "Open in MES"
 msgstr "MESで開く"
+
+msgid "Open in Onshape"
+msgstr "Onshapeで開く"
 
 msgid "Open Issues"
 msgstr "未解決の問題"
@@ -16656,6 +16674,12 @@ msgstr "短い"
 
 msgid "Short"
 msgstr "不足"
+
+msgid "Short and long descriptions are managed in Onshape."
+msgstr "短い説明と長い説明はOnshapeで管理されています。"
+
+msgid "Short and long descriptions become editable in Carbon and stop following Onshape. Pushing this part from Onshape again links it back."
+msgstr "短い説明と長い説明はCarbonで編集可能になり、Onshapeに追従しなくなります。Onshapeからこの部品を再度プッシュすると、リンクが復活します。"
 
 msgid "Short Description"
 msgstr "短い説明"

@@ -614,6 +614,30 @@ export type Events = {
   };
 
   // Onshape released-asset backfill / reconcile
+  // Panel push: export one pushed element's assets onto an item the push
+  // route already created/linked.
+  "carbon/onshape-panel-sync": {
+    data: {
+      companyId: string;
+      userId: string;
+      itemId: string;
+      documentId: string;
+      wvm: "w" | "v";
+      wvmId: string;
+      elementId: string;
+      elementKind: "partstudio" | "assembly" | "drawing";
+      partId?: string;
+      /** Non-default configuration to export; absent = default. */
+      configuration?: string;
+      assetBaseName?: string;
+      /**
+       * Workspace pushes only: the part's reviewed microversion, so a changed
+       * part gets a new model rather than the workspace's earlier one.
+       */
+      microversionId?: string;
+    };
+  };
+
   "carbon/onshape-backfill": {
     data: {
       companyId: string;

@@ -12,6 +12,10 @@ import {
   splitSecrets
 } from "@carbon/ee";
 import { getIntegrationServerHooks } from "@carbon/ee/hooks.server";
+import {
+  isOnshapeOAuthIntegrationId,
+  patchOnshapeSettings
+} from "@carbon/ee/onshape.server";
 import { patchRampSettings } from "@carbon/ee/ramp.server";
 import { redis } from "@carbon/kv";
 import { getLogger } from "@carbon/logger";
@@ -364,6 +368,32 @@ export async function upsertCompanyIntegration(
     }
   }
 
+  // The Onshape rows are shared with the token refresh, the OAuth callback and
+  // the panel's property map, so a settings save patches only its own keys.
+  if (isOnshapeOAuthIntegrationId(update.id)) {
+    try {
+      const data = await patchOnshapeSettings(
+        getCarbonServiceRole(),
+        update.companyId,
+        update.id,
+        {
+          metadata: update.metadata as Record<string, unknown>,
+          active: update.active,
+          updatedBy: update.updatedBy
+        }
+      );
+      await clearCompanyIntegrationCache(update.companyId);
+      return { data, error: null };
+    } catch (error) {
+      logger.error("Failed to patch Onshape settings", {
+        error,
+        companyId: update.companyId,
+        integrationId: update.id
+      });
+      return { data: null, error };
+    }
+  }
+
   // Split secret material out of the metadata: only the non-secret config is
   // written to the column; the secrets go to Supabase Vault. The row is upserted
   // FIRST (so it exists), then the vault RPC stamps `secretRef` onto it.
@@ -591,6 +621,21 @@ export async function updateIntegrationMetadata(
         metadata: metadata as Record<string, unknown>,
         updatedBy
       });
+      await clearCompanyIntegrationCache(companyId);
+      return { data, error: null };
+    } catch (error) {
+      return { data: null, error };
+    }
+  }
+
+  if (isOnshapeOAuthIntegrationId(integrationId)) {
+    try {
+      const data = await patchOnshapeSettings(
+        getCarbonServiceRole(),
+        companyId,
+        integrationId,
+        { metadata: metadata as Record<string, unknown>, updatedBy }
+      );
       await clearCompanyIntegrationCache(companyId);
       return { data, error: null };
     } catch (error) {

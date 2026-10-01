@@ -30,6 +30,7 @@ const taskToEvent = {
   onboard: "carbon/onboard",
   "mount-publish": "carbon/mount-publish",
   "onshape-backfill": "carbon/onshape-backfill",
+  "onshape-panel-sync": "carbon/onshape-panel-sync",
   "onshape-revision-sync": "carbon/onshape-revision-sync",
   "paperless-parts": "carbon/paperless-parts",
   "post-transactions": "carbon/post-transaction",

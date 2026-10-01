@@ -173,6 +173,48 @@ export const supplierPartPriceSourceTypes = [
   "Manual Entry"
 ] as const;
 
+/**
+ * The fields of an item linked to the Onshape panel that Onshape owns. Detach
+ * (removing the `onshape-v2` link) releases them.
+ */
+export const onshapeOwnedItemFields = ["name", "description"] as const;
+
+type OnshapeOwnedItemField = (typeof onshapeOwnedItemFields)[number];
+
+/**
+ * The linked items an edit would actually change an Onshape-owned field on. A
+ * field passed as `undefined` is one the caller is not writing, and an empty
+ * value and a missing one are the same.
+ */
+export function onshapeOwnedFieldConflicts<
+  T extends Record<OnshapeOwnedItemField, string | null>
+>(
+  linkedItems: T[],
+  edit: Partial<Record<OnshapeOwnedItemField, string | null>>
+): T[] {
+  const written = onshapeOwnedItemFields.filter(
+    (field) => edit[field] !== undefined
+  );
+  return linkedItems.filter((item) =>
+    written.some((field) => (item[field] ?? "") !== (edit[field] ?? ""))
+  );
+}
+
+/**
+ * An item write with the Onshape-owned fields left out. Omitted, not set to
+ * undefined: `sanitize` would write a null, and item.name is NOT NULL.
+ */
+export function withoutOnshapeOwnedFields<T extends object>(
+  item: T
+): Omit<T, OnshapeOwnedItemField> {
+  const {
+    name: _name,
+    description: _description,
+    ...rest
+  } = item as T & Partial<Record<OnshapeOwnedItemField, unknown>>;
+  return rest;
+}
+
 export const itemValidator = z.object({
   id: z.string().min(1, { message: "Item ID is required" }).max(255),
   readableId: zfd.text(z.string().optional()),
