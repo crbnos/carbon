@@ -862,6 +862,9 @@ export async function action({ request }: ActionFunctionArgs) {
   }
 
   if (mapped && !bomReadFailure) {
+    // A line whose delete failed is still in the method and still Onshape's:
+    // its ownership row stays, or it reads as manual and is never replaced.
+    const failedLineIds = new Set<string>();
     for (const batch of chunkFilterValues(
       mapped.data.map((mapping) => mapping.entityId)
     )) {
@@ -871,13 +874,16 @@ export async function action({ request }: ActionFunctionArgs) {
         .eq("companyId", companyId)
         .in("id", batch);
       if (removedLines.error) {
+        for (const id of batch) failedLineIds.add(id);
         summary.errors.push(
           `Could not replace the lines a previous release push wrote (${removedLines.error.message}); this push may add a second copy of them`
         );
       }
     }
     for (const batch of chunkFilterValues(
-      mapped.data.map((mapping) => mapping.id)
+      mapped.data
+        .filter((mapping) => !failedLineIds.has(mapping.entityId))
+        .map((mapping) => mapping.id)
     )) {
       const removedMappings = await serviceRole
         .from("externalIntegrationMapping")

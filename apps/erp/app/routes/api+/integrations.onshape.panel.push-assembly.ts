@@ -740,6 +740,10 @@ export async function action({ request }: ActionFunctionArgs) {
           summary.errors.push(
             `${parentLabel} → ${write.partNumber}: ${updated.error.message}`
           );
+          // The line is still there and still Onshape's: keep its ownership
+          // row, or the next push reads it as manual and adds a second copy.
+          liveMappingIds.push(reuse.mappingId);
+          order += 1;
           continue;
         }
         const remapped = await serviceRole
