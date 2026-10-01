@@ -170,8 +170,9 @@ The item page's only integration footprint is the self-loading
 `ExternalSourceCard` (one JSX line in `x+/part+/$itemId.details.tsx`): "Name and
 description are managed in Onshape", last push time, **Open in Onshape** (the
 exact tab when the link records a workspace, else the document — assembly
-pushes link children without one) and **Detach** (`api+/integrations.onshape.detach`,
-deletes the item's `onshape-v2` row only, company-scoped).
+pushes link children without one) and **Detach** (behind a `Confirm` dialog;
+`api+/integrations.onshape.detach` deletes the item's `onshape-v2` row only,
+company-scoped; the card re-reads the link and goes only when it is gone).
 
 ## Plan / apply — every push is two requests
 
@@ -254,6 +255,10 @@ in `packages/ee/src/onshape/panel/properties.ts` (tested).
 
 - Releases come from `GET /revisions/d/{did}` grouped by releaseId
   (`panel/releases.ts`). Every Part Studio revision carries its `partId`.
+- Release management is an Onshape company feature. An empty list triggers one
+  `getCompanies()` call; with no company the route returns
+  `releaseManagementAvailable: false` and the panel says releases need a
+  company account rather than "No releases yet".
 - Per released model item: ensure an item AT the released letter —
   `createRevision` from the base or a fresh item. BOM children that are not
   release items are resolved with one bulk lookup (purchased hardware is
@@ -321,10 +326,15 @@ company plus Sign out.
 
 - Assembly BOM is the structured tree (`panel/bom-view.ts`).
 - Status badges: Linked (green), Conflict (red — same part number, not linked
-  to this source), Unlinked (grey).
+  to this source; its tooltip says so, and parts and BOM rows add "number
+  already used in Carbon"), Unlinked (grey).
 - Reviews are summaries: one line of counts, alerts (parts matched by part
   number, won't-write, Draft, manual lines kept), and read-only rows.
 - Every action is disabled while a read or write is in flight.
+- `panelFetch` gives up after `PANEL_FETCH_TIMEOUT_MS` (60 s) with
+  `PanelTimeoutError`, so a stalled read shows a message and Refresh. Applies
+  pass `null`: a push keeps writing after the panel stops waiting, and its plan
+  is spent.
 
 ## Panel layout — the scroll container is load-bearing
 
