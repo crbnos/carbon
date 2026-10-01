@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: LicenseRef-Carbon-Commercial
+// Carbon Enterprise file, licensed only under the Carbon Commercial License
+// (packages/ee/LICENSE). Not AGPL. Running, modifying, or copying it beyond those terms requires a commercial license.
+
 /**
  * The provider redirects the popup back to Carbon's OAuth callback, which posts
  * its outcome to `window.opener` and closes the popup (the ERP's

@@ -1,3 +1,7 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
+// including ports, remain AGPLv3; serving them over a network requires releasing their source.
+
 import type { OAuthPopupOutcome, OAuthPopupResult } from "./oauth-popup";
 import { OAUTH_POPUP_MESSAGE } from "./oauth-popup";
 
