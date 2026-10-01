@@ -40,13 +40,13 @@ export default function usePurchasingSubmodules() {
           table: "purchasingRfq"
         },
         {
-          name: t`Quotes`,
+          name: t`Supplier Quotes`,
           to: path.to.supplierQuotes,
           icon: <LuFileText />,
           table: "supplierQuote"
         },
         {
-          name: t`Orders`,
+          name: t`Purchase Orders`,
           to: path.to.purchaseOrders,
           icon: <LuLayoutList />,
           table: "purchaseOrder"
