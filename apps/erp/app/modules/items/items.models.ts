@@ -430,7 +430,7 @@ export const materialValidatorWithGeneratedIds = z.object({
 });
 
 export const methodMaterialValidator = z.object({
-  id: z.string().min(1, { message: "Material ID is required" }),
+  id: z.string().trim().min(1, { message: "Material ID is required" }),
   makeMethodId: z.string().min(1, { message: "Make method is required" }),
   order: zfd.numeric(z.number().min(0)),
   itemType: z.enum(methodItemType, {

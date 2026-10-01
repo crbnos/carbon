@@ -4407,6 +4407,16 @@ export async function upsertMethodMaterial(
         customFields?: Json;
       })
 ) {
+  // The MCP/API path skips methodMaterialValidator, and the insert spreads the
+  // id over the column default — so a blank id was stored as "" and the next
+  // blank create collided with it.
+  if (!methodMaterial.id?.trim()) {
+    return {
+      data: null,
+      error: { message: "Material ID is required" }
+    };
+  }
+
   // sourcingType and methodType are item-level properties (edited in the
   // item's Properties sidebar). A methodMaterial is a read-only mirror of its
   // component item, so derive both from the item rather than trusting the
