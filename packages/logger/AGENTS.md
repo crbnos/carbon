@@ -82,7 +82,7 @@ pnpm --filter @carbon/logger test
 | `./config.server` | `ensureLoggingConfigured()` (ANSI dev / JSONL+redacted prod, ALS) |
 | `./config.client` | `ensureLoggingConfigured()` (plain console sink, no ALS) |
 | `./middleware.server` | `requestIdMiddleware`, `requestIdContext`, `getRequestId`, `REQUEST_ID_HEADER`, plus the request-context API re-exported from `context.server`: `requestContextMiddleware`, `getRouterContext`, `getRequestContext`, `oncePerRequest`, `oncePerRead` |
-| `./tracing.server` | `createTracing({ serviceName })` — React Router `instrumentations` (OpenTelemetry); `annotateRequestSpan(attributes)`; `traceQuery` — Kysely `log` hook |
+| `./tracing.server` | `createTracing({ serviceName, afterRequest })` — React Router `instrumentations` (OpenTelemetry); `annotateRequestSpan(attributes)`; `queryLog` — Kysely `log` hook, `undefined` when tracing is off |
 | `./inngest` | `createInngestLogger()` — adapter passed to `new Inngest({ logger })` |
 
 ## Wiring (per app)
@@ -90,17 +90,22 @@ pnpm --filter @carbon/logger test
 - `entry.server.tsx`: `import { ensureLoggingConfigured } from "@carbon/logger/config.server"; ensureLoggingConfigured();` at top.
 - `entry.client.tsx`: same from `@carbon/logger/config.client`.
 - `entry.server.tsx` also exports
-  `instrumentations = createTracing({ serviceName: "carbon-erp" })`.
+  `instrumentations = createTracing({ serviceName: "carbon-erp", afterRequest })`.
 - `root.tsx`: `export const middleware = [requestContextMiddleware, requestIdMiddleware, flashMiddleware]`
   (request context FIRST so every downstream middleware and handler runs inside
   the AsyncLocalStorage scope, then request id so downstream logs carry it).
 
 ## Tracing (OpenTelemetry)
 
-`src/tracing.server.ts`. Off unless `OTEL_EXPORTER_OTLP_ENDPOINT` (or
-`OTEL_EXPORTER_OTLP_TRACES_ENDPOINT`) is set — `createTracing` then returns `[]`
-and no provider is registered. Configuration is the standard OTel variables, read
-by the exporter and SDK themselves, so any OTLP backend works:
+`src/tracing.server.ts`. **Off unless enabled**: with no
+`OTEL_EXPORTER_OTLP_ENDPOINT` (or `OTEL_EXPORTER_OTLP_TRACES_ENDPOINT`), or with
+`OTEL_SDK_DISABLED=true`, `createTracing` returns `[]`, no provider or fetch
+instrumentation is registered, `queryLog` is `undefined` so Kysely installs no
+hook, and `annotateRequestSpan` returns immediately. The library code is loaded
+but nothing in it runs.
+
+Nothing here is specific to a vendor or host. Configuration is the standard OTel
+variables, read by the exporter and SDK themselves, so any OTLP backend works:
 
 ```bash
 # Axiom — the host is your Axiom edge domain (api.axiom.co is the US default)
@@ -108,6 +113,7 @@ OTEL_EXPORTER_OTLP_ENDPOINT="https://api.axiom.co"
 OTEL_EXPORTER_OTLP_HEADERS="Authorization=Bearer%20<api-token>,X-Axiom-Dataset=<dataset>"
 # optional
 OTEL_SERVICE_NAME="carbon-erp"                     # default: the app's serviceName
+OTEL_RESOURCE_ATTRIBUTES="deployment.environment.name=production,service.version=<sha>"
 OTEL_TRACES_SAMPLER="parentbased_traceidratio"     # default: every request
 OTEL_TRACES_SAMPLER_ARG="0.1"
 ```
@@ -127,7 +133,7 @@ One trace per request:
   because other paths carry ids. `url.full` and `url.query` get the access log's
   `redactSearch` masking.
 
-- **Query spans** for Kysely, from `traceQuery` passed as Kysely's `log` hook at
+- **Query spans** for Kysely, from `queryLog` passed as Kysely's `log` hook at
   the three places a client is built (`apps/{erp,mes}/app/services/database.server.ts`,
   `packages/jobs/src/db.ts`, through `getPostgresClient`'s third argument). Named
   `SELECT item` / `INSERT jobMaterial` — the verb and the first quoted table —
@@ -139,9 +145,11 @@ One trace per request:
 Not traced: Redis, and anything that talks HTTP through Node's `http` module
 rather than `fetch`. That time shows up inside the enclosing loader or action span.
 
-The batch is exported on a timer in a long-lived server. On Vercel the instance
-can be suspended once the response is sent, so the request span's end hands
-`forceFlush()` to `waitUntil` from `@vercel/functions`, only when `VERCEL` is set.
+The batch is exported on a timer (every 5 s by default, `OTEL_BSP_*` to tune).
+A host that suspends the process once a response is sent would strand it, so
+`createTracing` takes an optional `afterRequest(flush)`; the apps pass one only
+when `VERCEL` is set, handing the flush to `waitUntil` from `@vercel/functions`.
+That host-specific line lives in each app's `entry.server.tsx`, not here.
 
 ## Cross-References
 

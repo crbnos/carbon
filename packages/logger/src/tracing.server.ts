@@ -17,6 +17,8 @@ import { registerInstrumentations } from "@opentelemetry/instrumentation";
 import { UndiciInstrumentation } from "@opentelemetry/instrumentation-undici";
 import {
   defaultResource,
+  detectResources,
+  envDetector,
   resourceFromAttributes
 } from "@opentelemetry/resources";
 import {
@@ -27,42 +29,46 @@ import {
   ATTR_HTTP_REQUEST_METHOD,
   ATTR_HTTP_ROUTE,
   ATTR_SERVICE_NAME,
-  ATTR_SERVICE_VERSION,
   ATTR_URL_FULL,
   ATTR_URL_PATH,
   ATTR_URL_QUERY
 } from "@opentelemetry/semantic-conventions";
-import { waitUntil } from "@vercel/functions";
 import type { ServerInstrumentation } from "react-router";
 import { redactSearch } from "./redaction";
 
 const REQUEST_SPAN = createContextKey("carbon.request-span");
 const PROVIDER = Symbol.for("carbon.tracing.provider");
 
+// Everything below is inert unless an OTLP endpoint is configured.
+const enabled =
+  process.env.OTEL_SDK_DISABLED !== "true" &&
+  Boolean(
+    process.env.OTEL_EXPORTER_OTLP_ENDPOINT ||
+      process.env.OTEL_EXPORTER_OTLP_TRACES_ENDPOINT
+  );
+
 export type TracingOptions = {
   serviceName: string;
+  /**
+   * For hosts that suspend the process once a response is sent: called after
+   * each request with a flush to keep alive. Elsewhere the batch timer exports.
+   */
+  afterRequest?: (flush: () => Promise<void>) => void;
 };
 
-/** Off unless an OTLP endpoint is set; the exporter reads `OTEL_*` itself. */
-export function createTracing(
-  options: TracingOptions
-): ServerInstrumentation[] {
-  if (
-    !process.env.OTEL_EXPORTER_OTLP_ENDPOINT &&
-    !process.env.OTEL_EXPORTER_OTLP_TRACES_ENDPOINT
-  ) {
-    return [];
-  }
+export function createTracing({
+  serviceName,
+  afterRequest
+}: TracingOptions): ServerInstrumentation[] {
+  if (!enabled) return [];
 
-  const provider = ensureProvider(options.serviceName);
+  const provider = ensureProvider(serviceName);
+  const flush = () => provider.forceFlush().catch(() => undefined);
   return [
-    routerInstrumentation(trace.getTracer("carbon"), () => {
-      // Vercel can suspend the instance once the response is sent; a
-      // long-lived server leaves it to the batch timer.
-      if (process.env.VERCEL) {
-        waitUntil(provider.forceFlush().catch(() => undefined));
-      }
-    })
+    routerInstrumentation(
+      trace.getTracer("carbon"),
+      afterRequest && (() => afterRequest(flush))
+    )
   ];
 }
 
@@ -73,14 +79,10 @@ function ensureProvider(serviceName: string): NodeTracerProvider {
   if (existing) return existing;
 
   const provider = new NodeTracerProvider({
-    resource: defaultResource().merge(
-      resourceFromAttributes({
-        [ATTR_SERVICE_NAME]: process.env.OTEL_SERVICE_NAME ?? serviceName,
-        [ATTR_SERVICE_VERSION]: process.env.VERCEL_GIT_COMMIT_SHA,
-        "deployment.environment.name":
-          process.env.VERCEL_ENV ?? process.env.NODE_ENV
-      })
-    ),
+    // OTEL_SERVICE_NAME and OTEL_RESOURCE_ATTRIBUTES override the default.
+    resource: defaultResource()
+      .merge(resourceFromAttributes({ [ATTR_SERVICE_NAME]: serviceName }))
+      .merge(detectResources({ detectors: [envDetector] })),
     spanProcessors: [new BatchSpanProcessor(new OTLPTraceExporter())]
   });
   provider.register();
@@ -129,7 +131,7 @@ export function querySpanName(sql: string) {
 }
 
 /** Kysely `log` hook. Kysely reports a query after it ran, so the span is back-dated. */
-export function traceQuery(event: {
+function traceQuery(event: {
   level: "query" | "error";
   query: { sql: string };
   queryDurationMillis: number;
@@ -157,8 +159,12 @@ export function traceQuery(event: {
   span.end(endTime);
 }
 
+/** Pass as Kysely's `log`; undefined when tracing is off, so Kysely installs no hook. */
+export const queryLog = enabled ? traceQuery : undefined;
+
 /** No-op when tracing is off or outside a request. */
 export function annotateRequestSpan(attributes: Attributes) {
+  if (!enabled) return;
   (context.active().getValue(REQUEST_SPAN) as Span | undefined)?.setAttributes(
     attributes
   );
