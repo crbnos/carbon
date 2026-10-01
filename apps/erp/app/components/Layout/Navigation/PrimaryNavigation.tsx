@@ -33,7 +33,10 @@ import {
   usePermissions,
   useSettingsModule
 } from "~/hooks";
-import { useImplementationNavItem } from "~/hooks/useImplementationNavItem";
+import {
+  getImplementationNavItem,
+  ImplementationData
+} from "~/hooks/useImplementationNavItem";
 import {
   MODULE_GO_TO,
   MODULE_GO_TO_PREFIX,
@@ -52,15 +55,26 @@ import { useNavigationEditMode } from "./useNavigationEditMode";
 // accent hover instead of the active-tinted one module links use.
 const ACTION_HOVER = "hover:bg-accent hover:text-accent-foreground";
 
+const renderLink = (link: Authenticated<NavItem>, isActive: boolean) => (
+  <NavRailLink
+    key={link.name}
+    to={link.to}
+    icon={<link.icon />}
+    label={link.name}
+    tag={link.tag}
+    external={link.external}
+    isActive={isActive}
+  />
+);
+
 const PrimaryNavigation = () => {
-  const { t } = useLingui();
+  const { t, i18n } = useLingui();
   const { isMobile } = useSidebar();
   const permissions = usePermissions();
   const location = useOptimisticLocation();
   const currentModule = getModule(location.pathname);
   const links = useModules();
   const settingsModule = useSettingsModule();
-  const implementationNav = useImplementationNavItem();
   const matchedModules = useMatches().reduce((acc, match) => {
     const handle = match.handle as { module?: string } | undefined;
 
@@ -113,18 +127,6 @@ const PrimaryNavigation = () => {
     useSensor(KeyboardSensor)
   );
 
-  const renderLink = (link: Authenticated<NavItem>, isActive: boolean) => (
-    <NavRailLink
-      key={link.name}
-      to={link.to}
-      icon={<link.icon />}
-      label={link.name}
-      tag={link.tag}
-      external={link.external}
-      isActive={isActive}
-    />
-  );
-
   const footer = (
     <>
       {settingsModule && !editMode.isEditing
@@ -159,9 +161,16 @@ const PrimaryNavigation = () => {
         footer={footer}
       >
         {canSearch && <NavigationSearchButton />}
-        {!editMode.isEditing && implementationNav
-          ? renderLink(implementationNav, currentModule === "get-started")
-          : null}
+        {editMode.isEditing ? null : (
+          <ImplementationData>
+            {(data) => {
+              const item = getImplementationNavItem(data, i18n);
+              return item
+                ? renderLink(item, currentModule === "get-started")
+                : null;
+            }}
+          </ImplementationData>
+        )}
         {editMode.isEditing ? (
           <DndContext
             sensors={sensors}

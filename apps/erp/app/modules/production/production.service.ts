@@ -1942,7 +1942,7 @@ export async function getJobOperations(
     .select(
       "*, jobMakeMethod(parentMaterialId, item(readableIdWithRevision))",
       {
-        count: "exact"
+        count: LIST_COUNT
       }
     )
     .eq("jobId", jobId);
@@ -2147,7 +2147,7 @@ export async function getProcedures(
   let query = client
     .from("procedures")
     .select("*", {
-      count: "exact"
+      count: LIST_COUNT
     })
     .eq("companyId", companyId);
 
@@ -2206,7 +2206,7 @@ export async function getProductionEvents(
     .select(
       "*, jobOperation(description, jobMakeMethod(parentMaterialId, item(readableIdWithRevision)))",
       {
-        count: "exact"
+        count: LIST_COUNT
       }
     )
     .in("jobOperationId", jobOperationIds)
@@ -2291,7 +2291,7 @@ export async function getProductionPlanning(
       periods
     },
     {
-      count: "exact"
+      count: LIST_COUNT
     }
   );
 
@@ -2326,7 +2326,7 @@ export async function getProductionProjections(
       periods
     },
     {
-      count: "exact"
+      count: LIST_COUNT
     }
   );
 
@@ -2366,7 +2366,7 @@ export async function getProductionQuantities(
     .select(
       "*, jobOperation(description, jobMakeMethod(parentMaterialId, item(readableIdWithRevision)))",
       {
-        count: "exact"
+        count: LIST_COUNT
       }
     )
     .in("jobOperationId", jobOperationIds);
@@ -2447,7 +2447,7 @@ export async function getScrapReasons(
 ) {
   let query = client
     .from("scrapReason")
-    .select("id, name, customFields", { count: "exact" })
+    .select("id, name, customFields", { count: LIST_COUNT })
     .eq("companyId", companyId);
 
   if (args?.search) {
@@ -2483,7 +2483,7 @@ export async function getFailureModes(
 ) {
   let query = client
     .from("maintenanceFailureMode")
-    .select("*", { count: "exact" })
+    .select("*", { count: LIST_COUNT })
     .eq("companyId", companyId);
 
   if (args?.search) {
@@ -2537,7 +2537,7 @@ export async function getMaintenanceDispatches(
 ) {
   let query = client
     .from("maintenanceDispatch")
-    .select(`*`, { count: "exact" })
+    .select(`*`, { count: LIST_COUNT })
     .eq("companyId", companyId);
 
   if (args?.search) {
@@ -2635,7 +2635,7 @@ export async function getMaintenanceSchedules(
 ) {
   let query = client
     .from("maintenanceSchedules")
-    .select(`*`, { count: "exact" })
+    .select(`*`, { count: LIST_COUNT })
     .eq("companyId", companyId);
 
   if (args?.search) {

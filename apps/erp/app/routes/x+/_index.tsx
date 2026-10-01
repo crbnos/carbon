@@ -6,16 +6,13 @@ import { requirePermissions } from "@carbon/auth/auth.server";
 import { getCompanyTimeZone } from "@carbon/database";
 import { CONTROLLED_ENVIRONMENT, getAppUrl } from "@carbon/env";
 import {
-  type CheckStateRow,
   gatesDone,
-  type HubStatus,
   labelForTier,
   nextAction,
   type Signals,
   SPINE,
   spineForTier,
-  stateMap,
-  type Tier
+  stateMap
 } from "@carbon/onboarding";
 import { OnboardingHubSummary } from "@carbon/onboarding/ui";
 import {
@@ -29,8 +26,7 @@ import {
   TooltipContent,
   TooltipTrigger,
   toast,
-  useOperatingSystem,
-  useRouteData
+  useOperatingSystem
 } from "@carbon/react";
 import { datetime, formatRelativeTime } from "@carbon/utils";
 import { Trans, useLingui } from "@lingui/react/macro";
@@ -65,6 +61,10 @@ import {
   useUser
 } from "~/hooks";
 import { useHubDismissed } from "~/hooks/useHubDismissed";
+import {
+  ImplementationData,
+  type ImplementationHubData
+} from "~/hooks/useImplementationNavItem";
 import type { RecentDocument } from "~/hooks/useRecentlyViewed";
 import { useUIStore } from "~/stores/ui";
 import type { Authenticated, NavItem } from "~/types";
@@ -76,7 +76,7 @@ import { copyToClipboard } from "~/utils/string";
 const AGENT_WIDGET_COOKIE = "onboardAgentDismissed";
 
 // The home page is always accessible. When a hub is active (enrolled and not yet
-// finished) it surfaces as a primary-nav item (`useImplementationNavItem`) and a
+// finished) it surfaces as a primary-nav item (`getImplementationNavItem`) and a
 // summary card below — it never replaces the home page for anyone.
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {});
@@ -108,24 +108,19 @@ const NO_SIGNALS: Signals = {
   hasTrackedEntity: false
 };
 
-function useImplementationSummary() {
+function ImplementationSummary({ data }: { data: ImplementationHubData }) {
   const { i18n } = useLingui();
-  const data = useRouteData<{
-    implementationHub: { tier: Tier; status: HubStatus } | null;
-    implementationCheckStates: CheckStateRow[];
-    implementationSignals: Signals | null;
-  }>(path.to.authenticatedRoot);
   const { company } = useUser();
   const [dismissed, dismiss] = useHubDismissed(company.id);
 
-  const hub = data?.implementationHub;
+  const hub = data.implementationHub;
   // Shown only to enrolled companies — a hub row exists once the company
   // enrolls itself (self-serve from the home page card below).
   if (!hub || hub.status === "complete" || hub.status === "archived") {
     return null;
   }
-  const map = stateMap(data?.implementationCheckStates ?? []);
-  const signals = data?.implementationSignals ?? NO_SIGNALS;
+  const map = stateMap(data.implementationCheckStates);
+  const signals = data.implementationSignals ?? NO_SIGNALS;
   const spine = spineForTier(SPINE, hub.tier);
   const done = gatesDone(spine, map, signals);
   const total = spine.length;
@@ -133,28 +128,32 @@ function useImplementationSummary() {
   if (done === total || dismissed) return null;
 
   const next = nextAction(spine, map, signals);
-  return {
-    label: i18n._(labelForTier(hub.tier)),
-    done,
-    total,
-    nextLabel: next?.title ? i18n._(next.title) : undefined,
-    dismiss
-  };
+  return (
+    <OnboardingHubSummary
+      label={i18n._(labelForTier(hub.tier))}
+      done={done}
+      total={total}
+      nextLabel={next?.title ? i18n._(next.title) : undefined}
+      onDismiss={dismiss}
+      action={
+        <Button asChild>
+          <Link to={path.to.getStarted} prefetch="intent">
+            Open
+          </Link>
+        </Button>
+      }
+    />
+  );
 }
 
 export default function AppIndexRoute() {
   const { greeting, agentDismissed } = useLoaderData<typeof loader>();
   const modules = useModules();
-  const implementation = useImplementationSummary();
-  const layout = useRouteData<{ implementationHub: unknown | null }>(
-    path.to.authenticatedRoot
-  );
   const permissions = usePermissions();
   const enrollFetcher = useFetcher();
   // Self-serve: anyone who can update company settings can enroll their
   // company — no Carbon staff required.
-  const canEnroll =
-    permissions.can("update", "settings") && !layout?.implementationHub;
+  const canEnroll = permissions.can("update", "settings");
 
   return (
     <div className="relative w-full h-full overflow-hidden">
@@ -186,55 +185,49 @@ export default function AppIndexRoute() {
               />
             </div>
           </div>
-          {implementation ? (
-            <OnboardingHubSummary
-              label={implementation.label}
-              done={implementation.done}
-              total={implementation.total}
-              nextLabel={implementation.nextLabel}
-              onDismiss={implementation.dismiss}
-              action={
-                <Button asChild>
-                  <Link to={path.to.getStarted} prefetch="intent">
-                    Open
-                  </Link>
-                </Button>
-              }
-            />
-          ) : null}
+          <ImplementationData>
+            {(data) => <ImplementationSummary data={data} />}
+          </ImplementationData>
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
             <div className="lg:col-span-1 order-last lg:order-first">
               {canEnroll ? (
-                <enrollFetcher.Form
-                  method="post"
-                  action={path.to.getStartedEnroll}
-                  className="mb-6"
-                >
-                  <SectionLabel>
-                    <Trans>Implementation Hub</Trans>
-                  </SectionLabel>
-                  <Card className="shadow-none">
-                    <CardContent>
-                      <p className="text-sm text-muted-foreground text-pretty">
-                        <Trans>
-                          Set up your company with a step-by-step implementation
-                          plan covering setup, data, training, and go-live.
-                        </Trans>
-                      </p>
-                      <div>
-                        <Button
-                          className="mt-4"
-                          type="submit"
-                          rightIcon={<LuRocket />}
-                          isLoading={enrollFetcher.state !== "idle"}
-                          isDisabled={enrollFetcher.state !== "idle"}
-                        >
-                          <Trans>Enroll</Trans>
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </enrollFetcher.Form>
+                <ImplementationData>
+                  {(data) =>
+                    data.implementationHub ? null : (
+                      <enrollFetcher.Form
+                        method="post"
+                        action={path.to.getStartedEnroll}
+                        className="mb-6"
+                      >
+                        <SectionLabel>
+                          <Trans>Implementation Hub</Trans>
+                        </SectionLabel>
+                        <Card className="shadow-none">
+                          <CardContent>
+                            <p className="text-sm text-muted-foreground text-pretty">
+                              <Trans>
+                                Set up your company with a step-by-step
+                                implementation plan covering setup, data,
+                                training, and go-live.
+                              </Trans>
+                            </p>
+                            <div>
+                              <Button
+                                className="mt-4"
+                                type="submit"
+                                rightIcon={<LuRocket />}
+                                isLoading={enrollFetcher.state !== "idle"}
+                                isDisabled={enrollFetcher.state !== "idle"}
+                              >
+                                <Trans>Enroll</Trans>
+                              </Button>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      </enrollFetcher.Form>
+                    )
+                  }
+                </ImplementationData>
               ) : null}
               <RecentlyViewed />
             </div>

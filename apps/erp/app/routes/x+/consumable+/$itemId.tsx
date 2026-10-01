@@ -6,9 +6,13 @@ import { error } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { flash } from "@carbon/auth/session.server";
 import { useRouteData } from "@carbon/react";
+import { isUnaffectedByNavigation } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
 import { Suspense } from "react";
-import type { LoaderFunctionArgs } from "react-router";
+import type {
+  LoaderFunctionArgs,
+  ShouldRevalidateFunction
+} from "react-router";
 import {
   Await,
   Outlet,
@@ -21,12 +25,11 @@ import type { ConsumableSummary, ItemFile } from "~/modules/items";
 import {
   getConsumable,
   getItemFiles,
-  getItemSupersededBy,
-  getItemSupersession,
   getMaterialUsedIn,
   getPickMethods,
   getSupplierParts
 } from "~/modules/items";
+import { streamItemSupersession } from "~/modules/items/items.server";
 import {
   ConsumableHeader,
   ConsumableProperties
@@ -45,6 +48,11 @@ export const handle: Handle = {
   module: "items"
 };
 
+export const shouldRevalidate: ShouldRevalidateFunction = (args) =>
+  isUnaffectedByNavigation(args, { params: ["itemId"] })
+    ? false
+    : args.defaultShouldRevalidate;
+
 export async function loader({ request, params }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
     view: "parts",
@@ -54,21 +62,19 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { itemId } = params;
   if (!itemId) throw new Error("Could not find itemId");
 
-  const [
-    consumableSummary,
-    supplierParts,
-    pickMethods,
-    tags,
-    supersession,
-    supersededBy
-  ] = await Promise.all([
-    getConsumable(client, itemId, companyId),
-    getSupplierParts(client, itemId, companyId),
-    getPickMethods(client, itemId, companyId),
-    getTagsList(client, companyId, "consumable"),
-    getItemSupersession(client, itemId, companyId),
-    getItemSupersededBy(client, itemId, companyId)
-  ]);
+  const { supersession, supersededBy } = streamItemSupersession(
+    client,
+    itemId,
+    companyId
+  );
+
+  const [consumableSummary, supplierParts, pickMethods, tags] =
+    await Promise.all([
+      getConsumable(client, itemId, companyId),
+      getSupplierParts(client, itemId, companyId),
+      getPickMethods(client, itemId, companyId),
+      getTagsList(client, companyId, "consumable")
+    ]);
 
   if (consumableSummary.error) {
     throw redirect(
@@ -82,8 +88,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   return {
     consumableSummary: consumableSummary.data,
-    supersession: supersession.data,
-    supersededBy: supersededBy.data ?? [],
+    supersession,
+    supersededBy,
     files: getItemFiles(client, itemId, companyId),
     supplierParts: supplierParts.data ?? [],
     pickMethods: pickMethods.data ?? [],
@@ -107,7 +113,7 @@ export default function ConsumableRoute() {
 
   return (
     <div className="flex flex-col h-[calc(100dvh-var(--topbar-height)-var(--content-inset))] overflow-hidden w-full">
-      <ConsumableHeader />
+      <ConsumableHeader key={itemId} />
       <div className="flex h-[calc(100dvh-var(--topbar-height)-var(--header-height)-var(--content-inset))] overflow-hidden w-full">
         <div className="flex flex-grow overflow-hidden">
           <ResizablePanels

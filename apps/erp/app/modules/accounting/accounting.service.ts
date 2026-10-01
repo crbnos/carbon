@@ -24,7 +24,7 @@ import { sql } from "kysely";
 import type { z } from "zod";
 import { getNextSequence } from "~/modules/settings";
 import type { GenericQueryFilters } from "~/utils/query";
-import { setGenericQueryFilters } from "~/utils/query";
+import { LIST_COUNT, setGenericQueryFilters } from "~/utils/query";
 import { sanitize } from "~/utils/supabase";
 import type {
   AnalyticsAccountScope,
@@ -1942,7 +1942,7 @@ export async function getAccounts(
   let query = client
     .from("account")
     .select("*", {
-      count: "exact"
+      count: LIST_COUNT
     })
     .eq("companyGroupId", companyGroupId)
     .eq("active", true);
@@ -3948,7 +3948,7 @@ export async function getPaymentTerms(
   let query = client
     .from("paymentTerm")
     .select("*", {
-      count: "exact"
+      count: LIST_COUNT
     })
     .eq("companyId", companyId)
     .eq("active", true);
@@ -4175,7 +4175,7 @@ export async function getCostCenters(
 ) {
   let query = client
     .from("costCenter")
-    .select("*", { count: "exact" })
+    .select("*", { count: LIST_COUNT })
     .eq("companyId", companyId);
 
   if (args?.search) {
@@ -4285,7 +4285,7 @@ export async function getProjects(
 ) {
   let query = client
     .from("project")
-    .select("*", { count: "exact" })
+    .select("*", { count: LIST_COUNT })
     .eq("companyId", companyId)
     .eq("active", true);
 
@@ -4345,7 +4345,7 @@ export async function getDimensions(
   let query = client
     .from("dimension")
     .select("*, dimensionValue(id, name)", {
-      count: "exact"
+      count: LIST_COUNT
     })
     .eq("companyGroupId", companyGroupId)
     .eq("active", true);
@@ -5170,7 +5170,7 @@ export async function getIntercompanyTransactions(
     .from("intercompanyTransaction")
     .select(
       "*, sourceCompany:company!intercompanyTransaction_sourceCompanyId_fkey(name), targetCompany:company!intercompanyTransaction_targetCompanyId_fkey(name)",
-      { count: "exact" }
+      { count: LIST_COUNT }
     )
     .eq("companyGroupId", companyGroupId);
 
@@ -5366,7 +5366,7 @@ export async function getJournalEntries(
 ) {
   let query = client
     .from("journalEntries")
-    .select("*", { count: "exact" })
+    .select("*", { count: LIST_COUNT })
     .eq("companyId", companyId);
 
   if (args.search) {
@@ -6023,7 +6023,7 @@ export async function getFixedAssetClasses(
     .from("fixedAssetClass")
     .select(
       "id, name, description, depreciationMethod, usefulLifeMonths, residualValuePercent, taxDepreciationMethod, taxUsefulLifeMonths, macrsPropertyClass",
-      { count: "exact" }
+      { count: LIST_COUNT }
     )
     .eq("companyId", companyId);
 
@@ -6105,7 +6105,7 @@ export async function getFixedAssets(
     .from("fixedAsset")
     .select(
       "id, fixedAssetId, fixedAssetClassId, name, serialNumber, status, depreciationMethod, acquisitionCost, accumulatedDepreciation, fixedAssetClass:fixedAssetClassId(id, name), location:locationId(id, name)",
-      { count: "exact" }
+      { count: LIST_COUNT }
     )
     .eq("companyId", companyId);
 
@@ -6426,7 +6426,7 @@ export async function getDepreciationRuns(
   let query = client
     .from("depreciationRun")
     .select("id, depreciationRunId, periodEnd, status, postedAt", {
-      count: "exact"
+      count: LIST_COUNT
     })
     .eq("companyId", companyId);
 

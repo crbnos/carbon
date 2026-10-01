@@ -12,6 +12,8 @@ const serviceRoleFrom = vi.hoisted(() =>
   }))
 );
 const isCarbonOwnedCompany = vi.hoisted(() => vi.fn());
+const redisGet = vi.hoisted(() => vi.fn());
+const redisSet = vi.hoisted(() => vi.fn());
 
 vi.mock("@carbon/auth", () => ({
   CarbonEdition: "cloud",
@@ -23,6 +25,10 @@ vi.mock("@carbon/auth/client.server", () => ({
 }));
 vi.mock("@carbon/auth/company.server", () => ({ isCarbonOwnedCompany }));
 vi.mock("@carbon/auth/session.server", () => ({ flash: vi.fn() }));
+vi.mock("@carbon/kv", () => ({ redis: { get: redisGet, set: redisSet } }));
+vi.mock("@carbon/logger/middleware.server", () => ({
+  oncePerRead: (_key: string, compute: () => unknown) => compute()
+}));
 vi.mock("@carbon/logger", () => ({
   getLogger: () => ({
     error: vi.fn(),
@@ -53,6 +59,7 @@ describe("plan gate reads companyPlan via service role", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     isCarbonOwnedCompany.mockResolvedValue(false);
+    redisGet.mockResolvedValue(null);
   });
 
   it("grants a PARTNER-* company MCP even when the caller's client cannot see the plan row", async () => {
@@ -89,5 +96,37 @@ describe("plan gate reads companyPlan via service role", () => {
     );
 
     expect(allowed).toBe(false);
+  });
+});
+
+describe("plan gate cache", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    isCarbonOwnedCompany.mockResolvedValue(false);
+    redisGet.mockResolvedValue(null);
+  });
+
+  it("answers from Redis without reading companyPlan", async () => {
+    redisGet.mockResolvedValue("PARTNER-33");
+
+    const allowed = await companyHasFeature(
+      rlsBlockedClient() as never,
+      "company-1",
+      { feature: "MCP" }
+    );
+
+    expect(allowed).toBe(true);
+    expect(redisGet).toHaveBeenCalledWith("companyPlan:company-1");
+    expect(serviceRoleFrom).not.toHaveBeenCalled();
+  });
+
+  it("does not cache a missing plan row", async () => {
+    serviceRoleMaybeSingle.mockResolvedValue({ data: null, error: null });
+
+    await companyHasFeature(rlsBlockedClient() as never, "company-3", {
+      feature: "MCP"
+    });
+
+    expect(redisSet).not.toHaveBeenCalled();
   });
 });

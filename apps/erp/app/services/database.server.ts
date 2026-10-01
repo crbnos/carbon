@@ -12,12 +12,13 @@ import {
   getPostgresClient,
   getPostgresConnectionPool
 } from "@carbon/database/client";
+import { queryLog } from "@carbon/logger/tracing.server";
 import { PostgresDriver } from "kysely";
 
 const init = () => {
   const pool = getPostgresConnectionPool(10);
   // We use the PostgresDriver from Kysely here as this code only runs in Node environment
-  return getPostgresClient(pool, PostgresDriver);
+  return getPostgresClient(pool, PostgresDriver, queryLog);
 };
 
 type ClientSingleton = ReturnType<typeof init>;

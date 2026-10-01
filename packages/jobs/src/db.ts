@@ -7,6 +7,7 @@ import {
   getPostgresConnectionPool,
   type KyselyDatabase
 } from "@carbon/database/client";
+import { queryLog } from "@carbon/logger/tracing.server";
 import { type Kysely, PostgresDriver } from "kysely";
 
 /** Cached per pool size, like the pool itself. The engine, matcher and queue
@@ -43,7 +44,8 @@ export function getJobDatabaseClient(size = 1) {
   const pool = getPostgresConnectionPool(size);
   const client = getPostgresClient(
     pool,
-    PostgresDriver
+    PostgresDriver,
+    queryLog
   ) as unknown as Kysely<KyselyDatabase>;
   clientCache.set(size, { client, pool });
   return client;

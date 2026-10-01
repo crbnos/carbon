@@ -26,7 +26,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { z } from "zod";
 import type { plmReleaseControl as plmReleaseControlOptions } from "~/modules/items/items.models";
 import type { GenericQueryFilters } from "~/utils/query";
-import { setGenericQueryFilters } from "~/utils/query";
+import { LIST_COUNT, setGenericQueryFilters } from "~/utils/query";
 import { interpolateSequenceDate } from "~/utils/string";
 import { sanitize } from "~/utils/supabase";
 import type {
@@ -109,7 +109,7 @@ export async function getApiKeys(
 ) {
   let query = client
     .from("apiKey")
-    .select("*", { count: "exact" })
+    .select("*", { count: LIST_COUNT })
     .eq("companyId", companyId);
 
   if (args?.search) {
@@ -125,14 +125,33 @@ export async function getApiKeys(
   return query;
 }
 
-/** @mcp read */
+type CompaniesRow = Database["public"]["Views"]["companies"]["Row"];
+
+const logoUrl = (path: string | null) =>
+  path ? `${PUBLIC_STORAGE_URL_PREFIX}${path}` : null;
+
+function withLogoUrls(company: CompaniesRow) {
+  return {
+    ...company,
+    logoLight: logoUrl(company.logoLight),
+    logoDark: logoUrl(company.logoDark),
+    logoLightIcon: logoUrl(company.logoLightIcon),
+    logoDarkIcon: logoUrl(company.logoDarkIcon),
+    logoWatermark: logoUrl(company.logoWatermark)
+  };
+}
+
+/**
+ * The view already carries `companyGroupName`, so there is nothing to embed.
+ * @mcp read
+ */
 export async function getCompanies(
   client: SupabaseClient<Database>,
   userId: string
 ) {
   const companies = await client
     .from("companies")
-    .select("*, companyGroup(name)")
+    .select("*")
     .eq("userId", userId)
     .order("name");
 
@@ -140,28 +159,14 @@ export async function getCompanies(
     return companies;
   }
 
-  return {
-    data: companies.data.map(({ companyGroup, ...company }) => ({
-      ...company,
-      companyGroupName: (companyGroup as { name: string } | null)?.name ?? null,
-      logoLight: company.logoLight
-        ? `${PUBLIC_STORAGE_URL_PREFIX}${company.logoLight}`
-        : null,
-      logoDark: company.logoDark
-        ? `${PUBLIC_STORAGE_URL_PREFIX}${company.logoDark}`
-        : null,
-      logoLightIcon: company.logoLightIcon
-        ? `${PUBLIC_STORAGE_URL_PREFIX}${company.logoLightIcon}`
-        : null,
-      logoDarkIcon: company.logoDarkIcon
-        ? `${PUBLIC_STORAGE_URL_PREFIX}${company.logoDarkIcon}`
-        : null,
-      logoWatermark: company.logoWatermark
-        ? `${PUBLIC_STORAGE_URL_PREFIX}${company.logoWatermark}`
-        : null
-    })),
-    error: null
-  };
+  return { data: companies.data.map(withLogoUrls), error: null };
+}
+
+/** The `getEmployeeCompanies` filter, for a list already loaded by `getCompanies`. */
+export function employeeCompaniesOf<T extends { role: string | null }>(
+  companies: T[]
+) {
+  return companies.filter((company) => company.role === "employee");
 }
 
 /**
@@ -177,7 +182,7 @@ export async function getEmployeeCompanies(
 ) {
   const companies = await client
     .from("companies")
-    .select("*, companyGroup(name)")
+    .select("*")
     .eq("userId", userId)
     .eq("role", "employee")
     .order("name");
@@ -186,28 +191,7 @@ export async function getEmployeeCompanies(
     return companies;
   }
 
-  return {
-    data: companies.data.map(({ companyGroup, ...company }) => ({
-      ...company,
-      companyGroupName: (companyGroup as { name: string } | null)?.name ?? null,
-      logoLight: company.logoLight
-        ? `${PUBLIC_STORAGE_URL_PREFIX}${company.logoLight}`
-        : null,
-      logoDark: company.logoDark
-        ? `${PUBLIC_STORAGE_URL_PREFIX}${company.logoDark}`
-        : null,
-      logoLightIcon: company.logoLightIcon
-        ? `${PUBLIC_STORAGE_URL_PREFIX}${company.logoLightIcon}`
-        : null,
-      logoDarkIcon: company.logoDarkIcon
-        ? `${PUBLIC_STORAGE_URL_PREFIX}${company.logoDarkIcon}`
-        : null,
-      logoWatermark: company.logoWatermark
-        ? `${PUBLIC_STORAGE_URL_PREFIX}${company.logoWatermark}`
-        : null
-    })),
-    error: null
-  };
+  return { data: companies.data.map(withLogoUrls), error: null };
 }
 
 /** @mcp read */
@@ -351,7 +335,7 @@ export async function getCustomFieldsTables(
   let query = client
     .from("customFieldTables")
     .select("*", {
-      count: "exact"
+      count: LIST_COUNT
     })
     .eq("companyId", companyId);
 
@@ -446,7 +430,7 @@ export async function getSequences(
   let query = client
     .from("sequence")
     .select("*", {
-      count: "exact"
+      count: LIST_COUNT
     })
     .eq("companyId", companyId);
 
@@ -485,7 +469,7 @@ export async function getItemSerialSequences(
   let query = client
     .from("itemSerialSequences")
     .select("*", {
-      count: "exact"
+      count: LIST_COUNT
     })
     .eq("companyId", companyId);
 
@@ -823,7 +807,7 @@ export async function getWebhooks(
   let query = client
     .from("webhook")
     .select("*", {
-      count: "exact"
+      count: LIST_COUNT
     })
     .eq("companyId", companyId);
 

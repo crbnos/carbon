@@ -26,6 +26,7 @@ import {
   useLocalStorage,
   VStack
 } from "@carbon/react";
+import { isUnaffectedByNavigation } from "@carbon/utils";
 import {
   endOfMonth,
   endOfWeek,
@@ -40,7 +41,10 @@ import { Trans, useLingui } from "@lingui/react/macro";
 import { useLocale } from "@react-aria/i18n";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { LuChevronLeft, LuChevronRight, LuSettings2 } from "react-icons/lu";
-import type { LoaderFunctionArgs } from "react-router";
+import type {
+  LoaderFunctionArgs,
+  ShouldRevalidateFunction
+} from "react-router";
 import {
   redirect,
   useLoaderData,
@@ -75,6 +79,11 @@ export const handle: Handle = {
 };
 
 type ViewType = "week" | "month";
+
+export const shouldRevalidate: ShouldRevalidateFunction = (args) =>
+  isUnaffectedByNavigation(args, { search: "all" })
+    ? false
+    : args.defaultShouldRevalidate;
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId, userId } = await requirePermissions(request, {

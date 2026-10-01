@@ -4,8 +4,12 @@
 
 import { requirePermissions } from "@carbon/auth/auth.server";
 import { VStack } from "@carbon/react";
+import { isUnaffectedByNavigation } from "@carbon/utils";
 import { msg } from "@lingui/core/macro";
-import type { LoaderFunctionArgs } from "react-router";
+import type {
+  LoaderFunctionArgs,
+  ShouldRevalidateFunction
+} from "react-router";
 import { Outlet, useLoaderData } from "react-router";
 import { getUnitOfMeasures } from "~/modules/items";
 import { UnitOfMeasuresTable } from "~/modules/items/ui/UnitOfMeasure";
@@ -17,6 +21,11 @@ export const handle: Handle = {
   breadcrumb: msg`Unit of Measures`,
   to: path.to.uoms
 };
+
+export const shouldRevalidate: ShouldRevalidateFunction = (args) =>
+  isUnaffectedByNavigation(args, { search: "all" })
+    ? false
+    : args.defaultShouldRevalidate;
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const { client, companyId } = await requirePermissions(request, {
