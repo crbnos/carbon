@@ -21,7 +21,7 @@ import {
   pickReuseRow,
   proposeItem
 } from "@carbon/ee";
-import type { MappedLineRow } from "@carbon/ee/onshape";
+import type { ManualLineRow, MappedLineRow } from "@carbon/ee/onshape";
 import {
   chunkFilterValues,
   loadActiveMakeMethods,
@@ -42,6 +42,7 @@ import { z } from "zod";
 import { upsertPart } from "~/modules/items";
 import { ensureDraftMakeMethod } from "~/modules/settings/onshape-draft-method.server";
 import {
+  claimManualMethodLine,
   insertOwnedMethodLines,
   type OwnedMethodLine,
   swapItemMapping
@@ -77,6 +78,8 @@ type PushSummary = {
   linesWritten: number;
   /** Lines already correct, left untouched — reported so a no-op push says so. */
   linesUnchanged: number;
+  /** Lines added by hand that now follow Onshape (also in `linesWritten`). */
+  linesTakenOver: number;
   methodsTouched: number;
   /**
    * Levels whose released method was superseded by a new Draft version this
@@ -200,6 +203,7 @@ export async function action({ request }: ActionFunctionArgs) {
     itemsReused: 0,
     linesWritten: 0,
     linesUnchanged: 0,
+    linesTakenOver: 0,
     methodsTouched: 0,
     draftVersionsCreated: [],
     skipped: [...plan.skipped],
@@ -597,8 +601,9 @@ export async function action({ request }: ActionFunctionArgs) {
 
     // Lines a previous push wrote to this method are RECONCILED, not rebuilt:
     // one still in the BOM is updated in place, one no longer in it is
-    // deleted, a new component is inserted. Manual lines are untouched
-    // throughout.
+    // deleted, a new component is inserted. A manual line for a part number
+    // Onshape also lists is taken over (the plan's `takesOver`); other manual
+    // lines are untouched.
     //
     // The in-place update is the point: delete-and-reinsert would reset the
     // Carbon-owned columns (`methodOperationId`, `scrapQuantity`, `tags`,
@@ -611,6 +616,14 @@ export async function action({ request }: ActionFunctionArgs) {
       const queue = reusableByItemId.get(row.itemId) ?? [];
       queue.push(row);
       reusableByItemId.set(row.itemId, queue);
+    }
+    // Manual lines pair by part number, after the owned ones, in line order —
+    // the pairing the plan showed (`pairManualLines`).
+    const manualByReadableId = new Map<string, ManualLineRow[]>();
+    for (const row of ownership.manualRows.get(methodId) ?? []) {
+      const queue = manualByReadableId.get(row.readableId) ?? [];
+      queue.push(row);
+      manualByReadableId.set(row.readableId, queue);
     }
     // Every mapping row this method should still own when the loop is done —
     // anything else under this method is an orphan and is cleared at the end.
@@ -706,6 +719,35 @@ export async function action({ request }: ActionFunctionArgs) {
         liveMappingIds.push(reuse.mappingId);
         order += 1;
         summary.linesWritten += 1;
+        continue;
+      }
+
+      const claim = manualByReadableId.get(write.partNumber)?.shift();
+      if (claim) {
+        // Taken over, not duplicated: the line keeps its id and everything
+        // Carbon owns on it, and gains an ownership row.
+        const claimed = await claimManualMethodLine(db, {
+          companyId,
+          userId,
+          lineId: claim.lineId,
+          update: {
+            itemId: childItem.id,
+            quantity: write.quantity,
+            order,
+            materialMakeMethodId: childMethod?.id ?? null
+          },
+          metadata: lineMetadata
+        });
+        if (claimed.error !== null) {
+          summary.errors.push(
+            `${parentLabel} → ${write.partNumber}: the line added by hand was not taken over (${claimed.error})`
+          );
+          continue;
+        }
+        liveMappingIds.push(claimed.mappingId);
+        order += 1;
+        summary.linesWritten += 1;
+        summary.linesTakenOver += 1;
         continue;
       }
 
