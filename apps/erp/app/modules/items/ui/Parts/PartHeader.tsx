@@ -28,6 +28,7 @@ import { useAuditLog } from "~/components/AuditLog";
 import { DetailsTopbar } from "~/components/Layout";
 import ConfirmDelete from "~/components/Modals/ConfirmDelete";
 import { usePermissions, useRouteData, useUser } from "~/hooks";
+import { useResolved } from "~/hooks/useResolved";
 import { path } from "~/utils/path";
 import type { PartSummary } from "../../types";
 import { CreateChangeNoticeModal } from "../ChangeNotice";
@@ -53,17 +54,18 @@ const PartHeader = () => {
 
   const routeData = useRouteData<{
     partSummary: PartSummary;
-    supersession: {
+    supersession: Promise<{
       supersessionMode:
         | "Consume First"
         | "Prefer New"
         | "Stock Only"
         | "No Stock";
-    } | null;
+    } | null>;
   }>(path.to.part(itemId));
 
+  const supersession = useResolved(routeData?.supersession, null);
   const lifecycleStatus = getItemLifecycleStatus(
-    routeData?.supersession?.supersessionMode
+    supersession?.supersessionMode
   );
 
   return (

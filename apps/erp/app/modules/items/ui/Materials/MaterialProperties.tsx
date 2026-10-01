@@ -52,6 +52,7 @@ import Shape from "~/components/Form/Shape";
 import Substance from "~/components/Form/Substance";
 import { ItemThumbnailUpload } from "~/components/ItemThumnailUpload";
 import { useRouteData } from "~/hooks";
+import { useResolved } from "~/hooks/useResolved";
 import { useSettings } from "~/hooks/useSettings";
 import { methodType } from "~/modules/shared";
 import type { action } from "~/routes/x+/items+/update";
@@ -114,7 +115,7 @@ const MaterialProperties = ({ data }: MaterialPropertiesProps) => {
     supplierParts: SupplierPart[];
     pickMethods: PickMethod[];
     tags: { name: string }[];
-    supersession?: {
+    supersession?: Promise<{
       successorItemId: string | null;
       successorEffectivityDate: string | null;
       successor: {
@@ -122,15 +123,19 @@ const MaterialProperties = ({ data }: MaterialPropertiesProps) => {
         readableIdWithRevision: string;
         name: string;
       } | null;
-    } | null;
-    supersededBy?: Array<{
-      predecessor: {
-        id: string;
-        readableIdWithRevision: string;
-        name: string;
-      } | null;
-    }>;
+    } | null>;
+    supersededBy?: Promise<
+      Array<{
+        predecessor: {
+          id: string;
+          readableIdWithRevision: string;
+          name: string;
+        } | null;
+      }>
+    >;
   }>(path.to.material(itemId));
+  const supersession = useResolved(routeDataFromRoute?.supersession, null);
+  const supersededBy = useResolved(routeDataFromRoute?.supersededBy, null);
   const routeData = data ?? routeDataFromRoute;
 
   const locations = data?.locations ?? sharedMaterialsData?.locations ?? [];
@@ -748,27 +753,23 @@ const MaterialProperties = ({ data }: MaterialPropertiesProps) => {
             />
           </ValidatedForm>
         )}
-        {routeDataFromRoute?.supersession?.successor && (
+        {supersession?.successor && (
           <div className="w-full">
             <h3 className="text-xs text-muted-foreground mb-1">
               <Trans>Superseded By</Trans>
             </h3>
             <Link
-              to={path.to.material(
-                routeDataFromRoute.supersession.successor.id
-              )}
+              to={path.to.material(supersession.successor.id)}
               className="text-sm text-primary hover:underline"
             >
-              {routeDataFromRoute.supersession.successor.readableIdWithRevision}
+              {supersession.successor.readableIdWithRevision}
             </Link>
-            {routeDataFromRoute.supersession.successorEffectivityDate && (
+            {supersession.successorEffectivityDate && (
               <p className="text-xs text-muted-foreground">
                 <Trans>
                   From{" "}
                   <DateTime
-                    value={
-                      routeDataFromRoute.supersession.successorEffectivityDate
-                    }
+                    value={supersession.successorEffectivityDate}
                     variant="date"
                   />
                 </Trans>
@@ -776,12 +777,12 @@ const MaterialProperties = ({ data }: MaterialPropertiesProps) => {
             )}
           </div>
         )}
-        {(routeDataFromRoute?.supersededBy?.length ?? 0) > 0 && (
+        {(supersededBy?.length ?? 0) > 0 && (
           <div className="w-full">
             <h3 className="text-xs text-muted-foreground mb-1">
               <Trans>Supersedes</Trans>
             </h3>
-            {routeDataFromRoute?.supersededBy?.map(
+            {supersededBy?.map(
               (ref) =>
                 ref.predecessor && (
                   <Link

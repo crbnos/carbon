@@ -39,8 +39,6 @@ import type { ItemFile, PartSummary } from "~/modules/items";
 import {
   findChangeNoticesForItem,
   getItemFiles,
-  getItemSupersededBy,
-  getItemSupersession,
   getMakeMethodById,
   getMakeMethods,
   getMethodTree,
@@ -50,7 +48,10 @@ import {
   getSupplierParts,
   isChangeNoticeOpen
 } from "~/modules/items";
-import { getUnreleasedChangeOrderForItem } from "~/modules/items/items.server";
+import {
+  getUnreleasedChangeOrderForItem,
+  streamItemSupersession
+} from "~/modules/items/items.server";
 import type { Method } from "~/modules/items/types";
 import {
   BoMActions,
@@ -90,13 +91,17 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { itemId } = params;
   if (!itemId) throw new Error("Could not find itemId");
 
+  const { supersession, supersededBy } = streamItemSupersession(
+    client,
+    itemId,
+    companyId
+  );
+
   const [
     partSummary,
     supplierParts,
     pickMethods,
     tags,
-    supersession,
-    supersededBy,
     allChangeNotices,
     unreleasedChangeOrder
   ] = await Promise.all([
@@ -104,8 +109,6 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
     getSupplierParts(client, itemId, companyId),
     getPickMethods(client, itemId, companyId),
     getTagsList(client, companyId, "part"),
-    getItemSupersession(client, itemId, companyId),
-    getItemSupersededBy(client, itemId, companyId),
     // Every CO, any status; the open subset (which locks manual version/revision
     // creation) is derived below.
     findChangeNoticesForItem(client, { itemId, companyId }),
@@ -174,8 +177,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   return {
     partSummary: partSummary.data,
-    supersession: supersession.data,
-    supersededBy: supersededBy.data ?? [],
+    supersession,
+    supersededBy,
     files: getItemFiles(client, itemId, companyId),
     supplierParts: supplierParts.data ?? [],
     pickMethods: pickMethods.data ?? [],

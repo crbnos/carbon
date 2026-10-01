@@ -8350,7 +8350,7 @@ msgid "From"
 msgstr "Başlangıç"
 
 #. placeholder {0}: formatDate(startDate)
-#. placeholder {0}: routeDataFromRoute.supersession.successorEffectivityDate
+#. placeholder {0}: supersession.successorEffectivityDate
 msgid "From {0}"
 msgstr "{0} tarihinden itibaren"
 

@@ -38,8 +38,6 @@ import { flattenTree } from "~/components/TreeView";
 import type { ItemFile, ServiceSummary } from "~/modules/items";
 import {
   getItemFiles,
-  getItemSupersededBy,
-  getItemSupersession,
   getMakeMethodById,
   getMakeMethods,
   getMethodTree,
@@ -47,6 +45,7 @@ import {
   getService,
   getSupplierParts
 } from "~/modules/items";
+import { streamItemSupersession } from "~/modules/items/items.server";
 import { BoMActions, BoMExplorer } from "~/modules/items/ui/Item";
 import type { UsedInNode } from "~/modules/items/ui/Item/UsedIn";
 import { UsedInSkeleton, UsedInTree } from "~/modules/items/ui/Item/UsedIn";
@@ -75,14 +74,17 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
   const { itemId } = params;
   if (!itemId) throw new Error("Could not find itemId");
 
-  const [serviceSummary, supplierParts, tags, supersession, supersededBy] =
-    await Promise.all([
-      getService(client, itemId, companyId),
-      getSupplierParts(client, itemId, companyId),
-      getTagsList(client, companyId, "service"),
-      getItemSupersession(client, itemId, companyId),
-      getItemSupersededBy(client, itemId, companyId)
-    ]);
+  const { supersession, supersededBy } = streamItemSupersession(
+    client,
+    itemId,
+    companyId
+  );
+
+  const [serviceSummary, supplierParts, tags] = await Promise.all([
+    getService(client, itemId, companyId),
+    getSupplierParts(client, itemId, companyId),
+    getTagsList(client, companyId, "service")
+  ]);
 
   if (serviceSummary.error) {
     throw redirect(
@@ -128,8 +130,8 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
 
   return {
     serviceSummary: serviceSummary.data,
-    supersession: supersession.data,
-    supersededBy: supersededBy.data ?? [],
+    supersession,
+    supersededBy,
     files: getItemFiles(client, itemId, companyId),
     supplierParts: supplierParts.data ?? [],
     makeMethods: getMakeMethods(client, itemId, companyId),
