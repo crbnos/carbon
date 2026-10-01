@@ -41,7 +41,6 @@ import {
 } from "@carbon/react";
 import { getStripeCustomerByCompanyId } from "@carbon/stripe/stripe.server";
 import {
-  createFreshness,
   Edition,
   requiresItarEntityCertification,
   SHELL_MAX_AGE_MS
@@ -83,7 +82,9 @@ import {
 import { getOpenClockEntry } from "~/services/people.service";
 import { ERP_URL, MES_URL, path } from "~/utils/path";
 
-const shellFreshness = createFreshness(SHELL_MAX_AGE_MS);
+// Set from the component when loader data arrives, not in shouldRevalidate:
+// link prefetching calls that too.
+let shellLoadedAt = Date.now();
 
 export const shouldRevalidate: ShouldRevalidateFunction = ({
   currentUrl,
@@ -113,7 +114,7 @@ export const shouldRevalidate: ShouldRevalidateFunction = ({
   // Only a mutation can change what the shell returns, so a GET re-runs it
   // only once the data has aged out — that covers out-of-band changes.
   if (!formMethod || formMethod === "GET") {
-    return shellFreshness.isStale();
+    return Date.now() - shellLoadedAt > SHELL_MAX_AGE_MS;
   }
 
   return defaultShouldRevalidate;
@@ -339,7 +340,9 @@ export default function AuthenticatedRoute() {
     sessionTimeout
   } = loaderData;
   // biome-ignore lint/correctness/useExhaustiveDependencies: runs each time the loader does
-  useEffect(() => shellFreshness.markLoaded(), [loaderData]);
+  useEffect(() => {
+    shellLoadedAt = Date.now();
+  }, [loaderData]);
 
   const navigate = useNavigate();
 

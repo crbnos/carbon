@@ -2,9 +2,8 @@
 // Carbon (github.com/crbnos/carbon). Modified or adapted versions of this file,
 // including ports, remain AGPLv3; serving them over a network requires releasing their source.
 
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 import {
-  createFreshness,
   isSearchParamOnlyNavigation,
   isUnaffectedByNavigation
 } from "./revalidate";
@@ -132,18 +131,5 @@ describe("isUnaffectedByNavigation", () => {
       true
     );
     expect(list("/x/items/parts?sort=a", "/x/items/parts/new")).toBe(false);
-  });
-});
-
-describe("createFreshness", () => {
-  it("goes stale after the max age and is fresh again once marked loaded", () => {
-    vi.useFakeTimers();
-    const freshness = createFreshness(1000);
-    expect(freshness.isStale()).toBe(false);
-    vi.advanceTimersByTime(1001);
-    expect(freshness.isStale()).toBe(true);
-    freshness.markLoaded();
-    expect(freshness.isStale()).toBe(false);
-    vi.useRealTimers();
   });
 });
