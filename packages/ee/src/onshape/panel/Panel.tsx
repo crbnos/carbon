@@ -153,6 +153,8 @@ type PanelReleasesState =
   | {
       status: "ready";
       releases: PanelRelease[];
+      /** False when the connected Onshape account is in no company. */
+      releaseManagementAvailable?: boolean;
       refreshing?: boolean;
       refreshFailure?: LoadFailure;
     }
@@ -883,7 +885,7 @@ export function OnshapePanel({
         const query = new URLSearchParams({ documentId: context.documentId });
         const response = await panelFetch(token, `${paths.releases}?${query}`);
         const body = (await response.json()) as
-          | { releases: PanelRelease[] }
+          | { releases: PanelRelease[]; releaseManagementAvailable?: boolean }
           | { error: string };
         if (!response.ok || "error" in body) {
           fail(
@@ -892,7 +894,11 @@ export function OnshapePanel({
           );
           return;
         }
-        setReleases({ status: "ready", releases: body.releases });
+        setReleases({
+          status: "ready",
+          releases: body.releases,
+          releaseManagementAvailable: body.releaseManagementAvailable
+        });
       } catch (error) {
         if (error instanceof PanelUnauthorizedError) {
           setSession({ status: "signed-out" });
@@ -1166,11 +1172,18 @@ export function OnshapePanel({
             ? paths.pushAssembly
             : paths.pushRelease;
       try {
-        const response = await panelFetch(token, path, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(applyRequestBody(current))
-        });
+        // No timeout: the push keeps writing after the panel stops waiting,
+        // and its plan is spent, so a timeout would misreport it as failed.
+        const response = await panelFetch(
+          token,
+          path,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(applyRequestBody(current))
+          },
+          null
+        );
         const body = (await response.json()) as
           | { results: PartApplyResult[]; warnings?: string[] }
           | { summary: AssemblyPushSummary | ReleasePushSummary }
@@ -2031,6 +2044,7 @@ function BomLineText({
       <p className="text-xs text-muted-foreground truncate">
         {line.partNumber ?? "No part number"}
         {line.purchased ? " · purchased" : ""}
+        {line.state === "matched" ? " · number already used in Carbon" : ""}
         {note ? ` · ${note}` : ""}
       </p>
     </div>
@@ -2256,7 +2270,11 @@ function ReleasesSection({
       ) : null}
 
       {releases.status === "ready" && releases.releases.length === 0 ? (
-        <PanelEmpty>No releases yet</PanelEmpty>
+        <PanelEmpty>
+          {releases.releaseManagementAvailable === false
+            ? "No releases. Releases need an Onshape company account; a revision letter on a part is only a property."
+            : "No releases yet"}
+        </PanelEmpty>
       ) : null}
 
       {releases.status === "ready" && releases.releases.length > 0 ? (
@@ -3431,7 +3449,10 @@ function PartStateBadge({ state }: { state: PanelPartStatus["state"] }) {
     );
   if (state === "matched")
     return (
-      <Status color="red" disableTooltip>
+      <Status
+        color="red"
+        tooltip="Carbon already has an item with this part number that isn't linked to this Onshape part. Pushing uses that item."
+      >
         Conflict
       </Status>
     );

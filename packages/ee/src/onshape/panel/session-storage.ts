@@ -42,18 +42,63 @@ export class PanelUnauthorizedError extends Error {
 }
 
 /**
+ * How long the panel waits for Carbon before giving up on a request. Generous,
+ * because Onshape generates an assembly's BOM on first request and the status
+ * read waits for it; finite, because a request that never settles left its
+ * section loading with no message and no Refresh.
+ */
+export const PANEL_FETCH_TIMEOUT_MS = 60_000;
+
+export class PanelTimeoutError extends Error {
+  constructor(timeoutMs: number) {
+    super(
+      `Carbon didn't answer within ${timeoutMs / 1000} seconds. It may still be working; try Refresh in a moment.`
+    );
+    this.name = "PanelTimeoutError";
+  }
+}
+
+/**
  * `fetch` with the panel token as a bearer header. A 401 means the session is
  * gone (expired, revoked, or the stack restarted with an empty Redis): the
- * token is dropped so the panel offers sign-in again.
+ * token is dropped so the panel offers sign-in again. A request still open
+ * after `timeoutMs` is aborted and throws {@link PanelTimeoutError}; `null`
+ * waits indefinitely (a push, which keeps writing after the panel gives up).
  */
 export async function panelFetch(
   token: string,
   input: string,
-  init: RequestInit = {}
+  init: RequestInit = {},
+  timeoutMs: number | null = PANEL_FETCH_TIMEOUT_MS
 ): Promise<Response> {
   const headers = new Headers(init.headers);
   headers.set("Authorization", `Bearer ${token}`);
-  const response = await fetch(input, { ...init, headers });
+
+  const controller = new AbortController();
+  const caller = init.signal;
+  const abortForCaller = () => controller.abort();
+  caller?.addEventListener("abort", abortForCaller);
+  const timer =
+    timeoutMs === null ? null : setTimeout(() => controller.abort(), timeoutMs);
+
+  let response: Response;
+  try {
+    response = await fetch(input, {
+      ...init,
+      headers,
+      signal: controller.signal
+    });
+  } catch (error) {
+    // Only our own abort is a timeout; a caller's cancellation stays theirs.
+    if (timeoutMs !== null && controller.signal.aborted && !caller?.aborted) {
+      throw new PanelTimeoutError(timeoutMs);
+    }
+    throw error;
+  } finally {
+    if (timer) clearTimeout(timer);
+    caller?.removeEventListener("abort", abortForCaller);
+  }
+
   if (response.status === 401) {
     clearPanelSessionToken();
     throw new PanelUnauthorizedError();
