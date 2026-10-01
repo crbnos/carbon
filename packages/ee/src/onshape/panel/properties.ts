@@ -444,3 +444,20 @@ export function ownedCustomFieldsDiffer(
       : value !== field.value;
   });
 }
+
+/**
+ * Drop owned fields that would clear a value Carbon doesn't hold, so the
+ * review says "will be cleared" only when something is.
+ */
+export function withoutNoOpClears(
+  current: unknown,
+  fields: PlanCustomField[]
+): PlanCustomField[] {
+  const held = isRecord(current) ? current : {};
+  return fields.filter(
+    (field) =>
+      field.mode !== "owned" ||
+      field.value !== null ||
+      (held[field.fieldId] !== undefined && held[field.fieldId] !== null)
+  );
+}
