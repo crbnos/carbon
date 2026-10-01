@@ -12,6 +12,7 @@ import {
   mergeEditsForCreates,
   mergeExistingItemEdits,
   mergeItemEdits,
+  pairManualLines,
   pickAdoptTarget,
   pickLatestRow,
   pickReuseRow,
@@ -1039,6 +1040,50 @@ describe("pickAdoptTarget", () => {
     expect(
       pickAdoptTarget([rows[0] as (typeof rows)[number]], "0")
     ).toBeUndefined();
+  });
+});
+
+describe("pairManualLines", () => {
+  it("takes over a manual line Onshape also lists, after the lines a push owns", () => {
+    const { takesOver, keeps } = pairManualLines(
+      [
+        { partNumber: "PAD-005", quantity: 1 },
+        { partNumber: "HDW-010", quantity: 1 },
+        { partNumber: "HDW-011", quantity: 1 },
+        { partNumber: "STD-006", quantity: 1 }
+      ],
+      [{ readableId: "STD-006", quantity: 1 }],
+      [
+        { readableId: "PAD-005", quantity: 2 },
+        { readableId: "HDW-010", quantity: 1 },
+        { readableId: "GLUE-01", quantity: 1 },
+        { readableId: "STD-006", quantity: 3 }
+      ]
+    );
+    expect(takesOver).toEqual([
+      { readableId: "PAD-005", quantity: 2, onshapeQuantity: 1 },
+      { readableId: "HDW-010", quantity: 1, onshapeQuantity: 1 }
+    ]);
+    // STD-006 pairs with the line a push already owns; its manual line stays.
+    expect(keeps).toEqual([
+      { readableId: "GLUE-01", quantity: 1 },
+      { readableId: "STD-006", quantity: 3 }
+    ]);
+  });
+
+  it("takes over one manual line per Onshape row of a part", () => {
+    const { takesOver, keeps } = pairManualLines(
+      [{ partNumber: "BOLT", quantity: 4 }],
+      [],
+      [
+        { readableId: "BOLT", quantity: 2 },
+        { readableId: "BOLT", quantity: 2 }
+      ]
+    );
+    expect(takesOver).toEqual([
+      { readableId: "BOLT", quantity: 2, onshapeQuantity: 4 }
+    ]);
+    expect(keeps).toEqual([{ readableId: "BOLT", quantity: 2 }]);
   });
 });
 
