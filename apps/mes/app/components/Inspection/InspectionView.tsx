@@ -97,6 +97,10 @@ type DrawingBalloonRow = {
   pageNumber: number;
   xCoordinate: number;
   yCoordinate: number;
+  regionX: number;
+  regionY: number;
+  regionWidth: number;
+  regionHeight: number;
 };
 
 type WorkType = "Setup" | "Labor" | "Machine";
@@ -543,6 +547,10 @@ export function InspectionView({
         pageNumber: b.pageNumber,
         xCoordinate: b.xCoordinate,
         yCoordinate: b.yCoordinate,
+        regionX: b.regionX,
+        regionY: b.regionY,
+        regionWidth: b.regionWidth,
+        regionHeight: b.regionHeight,
         label: labelByFeatureId.get(b.inspectionFeatureId) ?? ""
       }));
   }, [balloons, liveFeatures]);

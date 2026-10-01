@@ -146,7 +146,11 @@ export async function loader({ request, params }: LoaderFunctionArgs) {
       inspectionFeatureId: b.inspectionFeatureId as string,
       pageNumber: Number(b.pageNumber ?? 1),
       xCoordinate: Number(b.xCoordinate ?? 0),
-      yCoordinate: Number(b.yCoordinate ?? 0)
+      yCoordinate: Number(b.yCoordinate ?? 0),
+      regionX: Number(b.regionX ?? 0),
+      regionY: Number(b.regionY ?? 0),
+      regionWidth: Number(b.regionWidth ?? 0),
+      regionHeight: Number(b.regionHeight ?? 0)
     })),
     documentName: doc?.name ?? null,
     pdfUrl: doc?.content?.pdfUrl ?? null,

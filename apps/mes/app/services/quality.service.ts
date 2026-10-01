@@ -88,7 +88,9 @@ export async function getInspectionDocumentWithBalloons(
       .single(),
     client
       .from("balloon")
-      .select("id, inspectionFeatureId, pageNumber, xCoordinate, yCoordinate")
+      .select(
+        "id, inspectionFeatureId, pageNumber, xCoordinate, yCoordinate, regionX, regionY, regionWidth, regionHeight"
+      )
       .eq("inspectionDocumentId", inspectionDocumentId)
   ]);
 

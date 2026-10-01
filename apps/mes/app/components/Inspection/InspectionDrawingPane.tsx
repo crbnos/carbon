@@ -1,12 +1,18 @@
 import { IconButton } from "@carbon/react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { LuChevronLeft, LuChevronRight } from "react-icons/lu";
-import { Circle, Group, Layer, Stage, Text } from "react-konva";
+import { Circle, Group, Layer, Line, Stage, Text } from "react-konva";
 import { Document, Page } from "react-pdf";
 import "react-pdf/dist/Page/AnnotationLayer.css";
 import "react-pdf/dist/Page/TextLayer.css";
 
 const CALLOUT_STROKE = "#f97316";
+
+// A balloon is stored as the top-left corner of a box this size (normalized to
+// the page); the circle sits at the box's center. The plan editor places
+// balloons with the same box, so both views agree on where a circle is.
+export const BALLOON_W_NORM = 0.04;
+export const BALLOON_H_NORM = 0.04;
 
 export type DrawingBalloon = {
   id: string;
@@ -14,8 +20,78 @@ export type DrawingBalloon = {
   pageNumber: number;
   xCoordinate: number;
   yCoordinate: number;
+  regionX: number;
+  regionY: number;
+  regionWidth: number;
+  regionHeight: number;
   label: string;
 };
+
+/** Liang–Barsky: clip segment (x0,y0)→(x1,y1) to axis-aligned rect; returns [0,1] params or null. */
+function liangBarskySegmentRect(
+  x0: number,
+  y0: number,
+  x1: number,
+  y1: number,
+  minX: number,
+  minY: number,
+  maxX: number,
+  maxY: number
+): { u0: number; u1: number } | null {
+  const dx = x1 - x0;
+  const dy = y1 - y0;
+  let u0 = 0;
+  let u1 = 1;
+  const p = [-dx, dx, -dy, dy];
+  const q = [x0 - minX, maxX - x0, y0 - minY, maxY - y0];
+  for (let i = 0; i < 4; i += 1) {
+    if (Math.abs(p[i]) < 1e-12) {
+      if (q[i] < 0) return null;
+    } else {
+      const r = q[i] / p[i];
+      if (p[i] < 0) {
+        u0 = Math.max(u0, r);
+      } else {
+        u1 = Math.min(u1, r);
+      }
+      if (u0 > u1) return null;
+    }
+  }
+  return { u0, u1 };
+}
+
+/**
+ * Visible connector from balloon edge → toward anchor, stopping before the anchor rect interior.
+ * u is linear param from B (0) to A (1); balloon occupies u ∈ [0, r/L).
+ */
+export function clippedBalloonToAnchorLine(
+  bx: number,
+  by: number,
+  radiusPx: number,
+  ax: number,
+  ay: number,
+  rect: { x: number; y: number; w: number; h: number }
+): [number, number, number, number] | null {
+  const L = Math.hypot(ax - bx, ay - by);
+  if (L < 1e-6) return null;
+  const epsU = Math.max(1e-4, 2 / L);
+  const uBalloonExit = Math.min(1 - epsU, radiusPx / L + epsU);
+  const { x, y, w, h } = rect;
+  const hit = liangBarskySegmentRect(bx, by, ax, ay, x, y, x + w, y + h);
+  let uEnd = 1 - epsU;
+  if (hit) {
+    const uEnter = Math.max(0, Math.min(1, hit.u0));
+    if (uEnter > uBalloonExit) {
+      uEnd = Math.min(uEnd, uEnter - epsU);
+    }
+  }
+  if (uEnd <= uBalloonExit + 1e-4) return null;
+  const x0 = bx + (ax - bx) * uBalloonExit;
+  const y0 = by + (ay - by) * uBalloonExit;
+  const x1 = bx + (ax - bx) * uEnd;
+  const y1 = by + (ay - by) * uEnd;
+  return [x0, y0, x1, y1];
+}
 
 type InspectionDrawingPaneProps = {
   pdfUrl: string;
@@ -144,9 +220,28 @@ const InspectionDrawingPane = ({
               <Stage width={containerWidth} height={overlayHeight} listening>
                 <Layer>
                   {pageBalloons.map((balloon) => {
-                    // DB coordinates are normalized 0–1.
-                    const x = balloon.xCoordinate * containerWidth;
-                    const y = balloon.yCoordinate * overlayHeight;
+                    // DB coordinates are normalized 0–1: the balloon box's
+                    // top-left corner, and the anchor region it points at.
+                    const x =
+                      (balloon.xCoordinate + BALLOON_W_NORM / 2) *
+                      containerWidth;
+                    const y =
+                      (balloon.yCoordinate + BALLOON_H_NORM / 2) *
+                      overlayHeight;
+                    const region = {
+                      x: balloon.regionX * containerWidth,
+                      y: balloon.regionY * overlayHeight,
+                      w: balloon.regionWidth * containerWidth,
+                      h: balloon.regionHeight * overlayHeight
+                    };
+                    const linePoints = clippedBalloonToAnchorLine(
+                      x,
+                      y,
+                      balloonRadius,
+                      region.x + region.w / 2,
+                      region.y + region.h / 2,
+                      region
+                    );
                     const isActive =
                       balloon.inspectionFeatureId === activeFeatureId;
                     return (
@@ -167,6 +262,14 @@ const InspectionDrawingPane = ({
                           if (stage) stage.container().style.cursor = "";
                         }}
                       >
+                        {linePoints && (
+                          <Line
+                            points={linePoints}
+                            stroke={CALLOUT_STROKE}
+                            strokeWidth={2}
+                            listening={false}
+                          />
+                        )}
                         <Circle
                           x={x}
                           y={y}

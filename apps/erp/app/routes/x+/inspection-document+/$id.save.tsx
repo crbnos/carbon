@@ -10,20 +10,20 @@ import {
   updateInspectionDocumentSampling
 } from "~/modules/quality";
 import {
-  type InspectionSaveBalloonsGeometryPayload,
-  type InspectionSaveFeaturesPayload,
-  mergeInspectionBalloonsPayload,
-  mergeInspectionFeaturesPayload,
-  resolveInspectionFeaturePayloadIds,
-  translateLegacyInspectionSavePayload
-} from "~/modules/quality/inspectionDocumentSave.server";
-import {
   inspectionDocumentSamplingValidator,
   inspectionSaveAnchorsPayloadValidator,
   inspectionSaveBalloonsGeometryPayloadValidator,
   inspectionSaveBalloonsPayloadValidator,
   inspectionSaveFeaturesPayloadValidator
 } from "~/modules/quality/quality.models";
+import {
+  type InspectionSaveBalloonsGeometryPayload,
+  type InspectionSaveFeaturesPayload,
+  mergeInspectionBalloonsPayload,
+  mergeInspectionFeaturesPayload,
+  resolveInspectionFeaturePayloadIds,
+  translateLegacyInspectionSavePayload
+} from "~/modules/quality/quality.server";
 import { invalidateInspectionDocuments } from "~/utils/react-query";
 
 function getErrorMessage(error: unknown, fallback: string) {

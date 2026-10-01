@@ -2,11 +2,11 @@ import { assertIsPost } from "@carbon/auth";
 import { requirePermissions } from "@carbon/auth/auth.server";
 import type { ActionFunctionArgs } from "react-router";
 import { data } from "react-router";
-import { balloonRegionAnalysisRequestSchema } from "~/modules/quality/inspectionBalloonAnalyze";
+import { balloonRegionAnalysisRequestSchema } from "~/modules/quality/quality.models";
 import {
   INSPECTION_BALLOON_ANALYZE_MAX_IMAGE_BYTES,
   runInspectionBalloonRegionVisionAnalysis
-} from "~/modules/quality/inspectionBalloonAnalyze.server";
+} from "~/modules/quality/quality.server";
 import { getInspectionDocument } from "~/modules/quality/quality.service";
 
 function getErrorMessage(error: unknown, fallback: string) {

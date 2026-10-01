@@ -10,13 +10,6 @@ import type { z } from "zod";
 import type { GenericQueryFilters } from "~/utils/query";
 import { setGenericQueryFilters } from "~/utils/query";
 import { sanitize } from "~/utils/supabase";
-import {
-  listBalloons,
-  listInspectionFeatures,
-  mapBalloonIdsToFeatureIdsForDocument
-} from "./inspectionDocumentDb";
-
-export { mapBalloonIdsToFeatureIdsForDocument };
 
 const logger = getLogger("erp", "quality");
 
@@ -2994,19 +2987,25 @@ async function getInspectionFeaturesRaw(
   client: SupabaseClient<Database>,
   inspectionDocumentId: string
 ) {
-  return listInspectionFeatures(client, inspectionDocumentId);
+  return client
+    .from("inspectionFeature")
+    .select("*")
+    .eq("inspectionDocumentId", inspectionDocumentId)
+    .order("createdAt", { ascending: true });
 }
 
 export async function getBalloons(
   client: SupabaseClient<Database>,
   inspectionDocumentId: string
 ) {
-  const result = await listBalloons(client, inspectionDocumentId);
+  const result = await client
+    .from("balloon")
+    .select("*")
+    .eq("inspectionDocumentId", inspectionDocumentId)
+    .order("createdAt", { ascending: true });
 
   return {
-    data: (result.data ?? []).map((row) =>
-      mapBalloon(row as unknown as Record<string, unknown>)
-    ),
+    data: (result.data ?? []).map(mapBalloon),
     error: result.error
   };
 }
