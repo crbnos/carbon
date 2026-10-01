@@ -98,8 +98,8 @@ pnpm --filter @carbon/logger test
 ## Tracing (OpenTelemetry)
 
 `src/tracing.server.ts`. **Off unless enabled**: with no
-`OTEL_EXPORTER_OTLP_ENDPOINT` (or `OTEL_EXPORTER_OTLP_TRACES_ENDPOINT`), or with
-`OTEL_SDK_DISABLED=true`, `createTracing` returns `[]`, no provider or fetch
+`OTEL_EXPORTER_OTLP_ENDPOINT` (or `OTEL_EXPORTER_OTLP_TRACES_ENDPOINT`),
+`createTracing` returns `[]`, no provider or fetch
 instrumentation is registered, `queryLog` is `undefined` so Kysely installs no
 hook, and `annotateRequestSpan` returns immediately. The library code is loaded
 but nothing in it runs.

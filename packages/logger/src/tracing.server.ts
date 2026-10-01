@@ -40,12 +40,10 @@ const REQUEST_SPAN = createContextKey("carbon.request-span");
 const PROVIDER = Symbol.for("carbon.tracing.provider");
 
 // Everything below is inert unless an OTLP endpoint is configured.
-const enabled =
-  process.env.OTEL_SDK_DISABLED !== "true" &&
-  Boolean(
-    process.env.OTEL_EXPORTER_OTLP_ENDPOINT ||
-      process.env.OTEL_EXPORTER_OTLP_TRACES_ENDPOINT
-  );
+const enabled = Boolean(
+  process.env.OTEL_EXPORTER_OTLP_ENDPOINT ||
+    process.env.OTEL_EXPORTER_OTLP_TRACES_ENDPOINT
+);
 
 export type TracingOptions = {
   serviceName: string;
