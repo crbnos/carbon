@@ -1,9 +1,25 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   PANEL_FORBIDDEN_MESSAGE,
+  PanelTimeoutError,
   PanelUnauthorizedError,
   panelFetch
 } from "./session-storage";
+
+/** A fetch that never settles until its signal aborts. */
+function hang() {
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(
+      (_input: string, init: RequestInit) =>
+        new Promise<Response>((_resolve, reject) => {
+          init.signal?.addEventListener("abort", () =>
+            reject(new DOMException("Aborted", "AbortError"))
+          );
+        })
+    )
+  );
+}
 
 function answer(body: string, status: number, contentType?: string) {
   vi.stubGlobal(
@@ -83,5 +99,40 @@ describe("panelFetch", () => {
     expect(await (await panelFetch("t", "/api/x")).text()).toBe(
       "not json at all"
     );
+  });
+
+  it("gives up on a request that never settles", async () => {
+    hang();
+    await expect(panelFetch("t", "/api/x", {}, 10)).rejects.toBeInstanceOf(
+      PanelTimeoutError
+    );
+  });
+
+  it("reports a caller's own cancellation as itself, not as a timeout", async () => {
+    hang();
+    const caller = new AbortController();
+    const pending = panelFetch("t", "/api/x", { signal: caller.signal });
+    caller.abort();
+    const error = await pending.catch((e: unknown) => e);
+    expect(error).toBeInstanceOf(DOMException);
+    expect(error).not.toBeInstanceOf(PanelTimeoutError);
+  });
+
+  it("waits indefinitely when the timeout is null", async () => {
+    vi.useFakeTimers();
+    try {
+      hang();
+      let settled = false;
+      const pending = panelFetch("t", "/api/x", {}, null).finally(() => {
+        settled = true;
+      });
+      pending.catch(() => {
+        // never settles; nothing to handle
+      });
+      await vi.advanceTimersByTimeAsync(10 * 60_000);
+      expect(settled).toBe(false);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 });

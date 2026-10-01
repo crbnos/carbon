@@ -11,12 +11,15 @@ import {
   selectInBatches
 } from "@carbon/ee/onshape";
 import { requireOnshapePanelPermissions } from "@carbon/ee/onshape/panel-session.server";
+import { getLogger } from "@carbon/logger";
 import type { LoaderFunctionArgs } from "react-router";
 import { data } from "react-router";
 
 export const config = {
   runtime: "nodejs"
 };
+
+const logger = getLogger("erp", "integrations-onshape-panel-releases");
 
 const MAX_RELEASES = 20;
 
@@ -68,6 +71,20 @@ export async function loader({ request }: LoaderFunctionArgs) {
     MAX_RELEASES
   );
 
+  // Release management is an Onshape company feature, while a part can still
+  // carry a revision letter as plain metadata. When the list is empty, one
+  // call tells "none yet" from "not available to the connected account".
+  let releaseManagementAvailable = true;
+  if (releases.length === 0) {
+    try {
+      releaseManagementAvailable =
+        (await onshape.client.getCompanies()).length > 0;
+    } catch (error) {
+      // The generic empty state is still correct; don't fail the read.
+      logger.warn("Onshape companies read failed", { companyId, error });
+    }
+  }
+
   const partNumbers = [
     ...new Set(
       releases.flatMap((release) =>
@@ -89,7 +106,10 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const carbonRows = rows.data as ReleaseCarbonItemRow[];
 
   return data(
-    { releases: resolveReleaseStates(releases, carbonRows) },
+    {
+      releases: resolveReleaseStates(releases, carbonRows),
+      releaseManagementAvailable
+    },
     { headers: { "Cache-Control": "no-store" } }
   );
 }
