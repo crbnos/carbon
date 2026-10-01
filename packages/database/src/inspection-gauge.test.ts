@@ -301,6 +301,67 @@ describe.skipIf(!url)("inspection gauges against a migrated database", () => {
     });
   });
 
+  // ─── Deleting a recorded gauge (20261001022340) ───────────────────────────
+
+  describe("deleting a gauge recorded on a lot", () => {
+    const gauge = id("recorded");
+
+    // The delete's ON DELETE SET NULL re-checks every foreign key of a plan
+    // row inserted in this transaction, so these fixtures need a real company
+    // and feature behind them.
+    async function seed(status: string) {
+      await begin();
+      const { rows } = await client.query(`SELECT id FROM "company" LIMIT 1`);
+      const companyId = rows[0].id as string;
+      await insert("inspectionFeature", [{ id: id("ftr"), companyId }]);
+      await insert("inspection", [
+        { id: id("lot"), companyId, status, sourceDocument: "Receipt" }
+      ]);
+      await insert("inspectionSamplingPlan", [
+        {
+          id: id("plan"),
+          inspectionId: id("lot"),
+          inspectionFeatureId: id("ftr"),
+          companyId,
+          gaugeId: gauge
+        }
+      ]);
+      await insert("gauge", [
+        { id: gauge, companyId, gaugeTypeId: id("gt-caliper") }
+      ]);
+      // Fixtures go in with triggers off; the delete must run with them on.
+      await client.query("SET LOCAL session_replication_role = origin");
+    }
+
+    const deleteGauge = () =>
+      client.query(`DELETE FROM "gauge" WHERE id = $1`, [gauge]);
+
+    it.each([
+      "Passed",
+      "Failed",
+      "Partial"
+    ])("is refused when the lot is %s", async (status) => {
+      await seed(status);
+      await expect(deleteGauge()).rejects.toMatchObject({ code: "23503" });
+    });
+
+    it("clears the gauge from an open lot", async () => {
+      await seed("In Progress");
+      await deleteGauge();
+      const { rows } = await client.query(
+        `SELECT "gaugeId" FROM "inspectionSamplingPlan" WHERE id = $1`,
+        [id("plan")]
+      );
+      expect(rows[0].gaugeId).toBeNull();
+    });
+
+    it("lets a company wipe through", async () => {
+      await seed("Passed");
+      await client.query(`SET LOCAL "app.sync_in_progress" = 'true'`);
+      await expect(deleteGauge()).resolves.toMatchObject({ rowCount: 1 });
+    });
+  });
+
   // ─── getRecentInspectionGauges ────────────────────────────────────────────
 
   describe("getRecentInspectionGauges", () => {

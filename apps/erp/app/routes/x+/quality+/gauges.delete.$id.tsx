@@ -21,7 +21,16 @@ export async function action({ request, params }: ActionFunctionArgs) {
       {
         success: false
       },
-      await flash(request, error(mutation.error, "Failed to delete gauge"))
+      await flash(
+        request,
+        error(
+          mutation.error,
+          // A gauge recorded on a closed inspection is kept for traceability.
+          mutation.error.code === "23503"
+            ? "Gauge is used elsewhere. Set it to Inactive instead."
+            : "Failed to delete gauge"
+        )
+      )
     );
   }
 
